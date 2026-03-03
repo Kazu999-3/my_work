@@ -13,8 +13,6 @@
 | スキル名 | ファイルリンク | 役割と目的 |
 | :--- | :--- | :--- |
 | **話題出し・お題提案** | [TopicIdeaGenerator.md](./01_content_generation/TopicIdeaGenerator.md) | 最新トレンドから収益化に直結する「売れる記事の種」を3つ提案するシニア・プランナー。 |
-| **本文執筆エージェント** | [ArticleWriter.md](./01_content_generation/ArticleWriter.md) | 構成案を元に、AIの硬いトーンを消去した「人間味があり読者に寄り添う」記事本文を執筆する。 |
-| **収益化検証・レビュー** | [MonetizationReviewer.md](./01_content_generation/MonetizationReviewer.md) | 完成した記事が「本当に売れるか」を厳格に採点し、より自然な誘導（CTA）の修正案を出す。 |
 | **高収益note記事・完全自動生成エージェント** | [HighConvertingNoteGenerator.md](./01_content_generation/HighConvertingNoteGenerator.md) | （★3名体制エージェント）セールス・監査・編集の3プロセスで、読者が思わず課金する高品質なnoteを全自動作成する。 |
 
 ---
@@ -44,9 +42,7 @@
 | **サムネイル・プロンプト生成** | [ThumbnailPromptAlchemist.md](./03_promotion_automation/ThumbnailPromptAlchemist.md) | CTRを最大化する超高品質な画像をMidjourney等で作らせるための「完璧な英語プロンプト」を錬成する。 |
 | **ショート動画台本クリエイター**| [ShortVideoScriptCreator.md](./03_promotion_automation/ShortVideoScriptCreator.md) | 元記事から、TikTok等の縦型動画で「絶対に離脱されない」60秒以内のテンポ最強の台本を作成する。 |
 | **Python自動化エンジニア** | [PythonAutomationEngineer.md](./03_promotion_automation/PythonAutomationEngineer.md) | リサーチやAPI連携等の手作業を完全自動化する「コピペで確実に動くPythonコード」を生成する。 |
-| **X＆note連携・収益化オートメーター** | [XNoteMonetizationAutomator.md](./03_promotion_automation/XNoteMonetizationAutomator.md) | （★3名体制エージェント）Xでの自動集客とnote販売用記事（無料・有料）までを1週間分のタイムラインとして全自動設計する。 |
-| **毎週更新用・収益最大化オーケストレーター** | [WeeklyRevenueMaximizer.md](./03_promotion_automation/WeeklyRevenueMaximizer.md) | （★3名体制エージェント）今週のテーマとゴールを入力するだけで、Xのストーリーと無料/有料note構成を週次で全自動生成する。 |
-| **Xアルゴリズム攻略・高度ファネル構築チーム** | [AdvancedXNoteFunnelBuilder.md](./03_promotion_automation/AdvancedXNoteFunnelBuilder.md) | （★3名体制エージェント）Xの最新アルゴリズムをハックし、熱狂的なファン化からnoteへの販売導線を1週間単位で自動構築する。 |
+| **究極版 X＆note自動ファネル構築チーム** | [UltimateXNoteFunnelBuilder.md](./03_promotion_automation/UltimateXNoteFunnelBuilder.md) | （★3名体制エージェント）強力だった旧X・note運用ツール群を【完全統合】。一週間分の強烈な集客とnoteへの教育・販売導線を全自動構築する。 |
 
 ---
 
@@ -57,8 +53,7 @@
 
 | スキル名 | ファイルリンク | 役割と目的 |
 | :--- | :--- | :--- |
-| **ソロキュープロコーチ** | [LoLCoach.md](./04_lol_coach/LoLCoach.md) | 対面チャンピの指定に基づき、最新の勝率データから「最高勝率のルーン＆ビルド」と立ち回りを指導。 |
-| **対面分析アナリスト** | [LoLMatchupAnalyzer.md](./04_lol_coach/LoLMatchupAnalyzer.md) | 苦手な対面チャンプの弱点やキルライン、アンチビルドのロジックまで深くえぐり出す対策の鬼。 |
+| **対面特化・最強勝率コーチ** | [LoLMatchupMasterCoach.md](./04_lol_coach/LoLMatchupMasterCoach.md) | 旧コーチスキルと対面分析スキルを【完全統合】。特定の対面に対し、最高勝率のルーン・ビルドと「なぜ刺さるかのロジック」を徹底解説する。 |
 | **海外解説動画 翻訳家** | [LoLVideoTranslator.md](./04_lol_coach/LoLVideoTranslator.md) | 海外のトップ動画を日本語コミュニティ特有の用語（マクロ等）で正確に翻訳し、実践アクションに落とし込む。 |
 | **辞め時管理ヘッドコーチ** | [LoLRiskManager.md](./04_lol_coach/LoLRiskManager.md) | （★3名体制エージェント）時間帯やメタからランク戦のリスクを分析し、LPを守るため「回すか否か」を断言する。 |
 | **MBTI連動型メンタルコーチ** | [MBTIMindsetCoach.md](./04_lol_coach/MBTIMindsetCoach.md) | （★3名体制エージェント）プレイヤーのMBTI特性を分析し、性格に最も合ったチャンピオン・戦術・メンタル管理術を提案する。 |
@@ -72,8 +67,7 @@
 
 | スキル名 | ファイルリンク | 役割と目的 |
 | :--- | :--- | :--- |
-| **深津式プロンプト診断・最適化チーム** | [FukatsuPromptAnalyzer.md](./05_system_architect/FukatsuPromptAnalyzer.md) | （★3名体制エージェント）ユーザーのプロンプトを10点満点で評価・診断し、完璧な深津式プロンプトへ全自動で書き換える。 |
-| **プロンプト最適化職人** | [PromptOptimizer.md](./05_system_architect/PromptOptimizer.md) | ユーザーの雑多な思いつきを、LLMが最高精度で出力できる「構造化された高品質プロンプト」に清書する。 |
+| **究極版 深津式プロンプト最適化チーム** | [UltimatePromptOptimizer.md](./05_system_architect/UltimatePromptOptimizer.md) | （★3名体制エージェント）旧モデルと深津式チームを【完全統合】。ユーザーの雑多な思いつきを、LLMが最高精度で出力できる10点満点の「構造化プロンプト」に自動で清書する。 |
 | **オーケストレーション設計**| [AgentOrchestratorDesign.md](./05_system_architect/AgentOrchestratorDesign.md) | ある目的を与えれば「実行役・批判役・統合役」の3名のAIチームとワークフローを全自動で設計構築する。 |
 
 ---
