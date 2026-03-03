@@ -46,6 +46,7 @@
 | **Python自動化エンジニア** | [PythonAutomationEngineer.md](./03_promotion_automation/PythonAutomationEngineer.md) | リサーチやAPI連携等の手作業を完全自動化する「コピペで確実に動くPythonコード」を生成する。 |
 | **X＆note連携・収益化オートメーター** | [XNoteMonetizationAutomator.md](./03_promotion_automation/XNoteMonetizationAutomator.md) | （★3名体制エージェント）Xでの自動集客とnote販売用記事（無料・有料）までを1週間分のタイムラインとして全自動設計する。 |
 | **毎週更新用・収益最大化オーケストレーター** | [WeeklyRevenueMaximizer.md](./03_promotion_automation/WeeklyRevenueMaximizer.md) | （★3名体制エージェント）今週のテーマとゴールを入力するだけで、Xのストーリーと無料/有料note構成を週次で全自動生成する。 |
+| **Xアルゴリズム攻略・高度ファネル構築チーム** | [AdvancedXNoteFunnelBuilder.md](./03_promotion_automation/AdvancedXNoteFunnelBuilder.md) | （★3名体制エージェント）Xの最新アルゴリズムをハックし、熱狂的なファン化からnoteへの販売導線を1週間単位で自動構築する。 |
 
 ---
 
