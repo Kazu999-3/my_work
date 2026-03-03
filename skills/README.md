@@ -15,6 +15,7 @@
 | **話題出し・お題提案** | [TopicIdeaGenerator.md](./01_content_generation/TopicIdeaGenerator.md) | 最新トレンドから収益化に直結する「売れる記事の種」を3つ提案するシニア・プランナー。 |
 | **本文執筆エージェント** | [ArticleWriter.md](./01_content_generation/ArticleWriter.md) | 構成案を元に、AIの硬いトーンを消去した「人間味があり読者に寄り添う」記事本文を執筆する。 |
 | **収益化検証・レビュー** | [MonetizationReviewer.md](./01_content_generation/MonetizationReviewer.md) | 完成した記事が「本当に売れるか」を厳格に採点し、より自然な誘導（CTA）の修正案を出す。 |
+| **高収益note記事・完全自動生成エージェント** | [HighConvertingNoteGenerator.md](./01_content_generation/HighConvertingNoteGenerator.md) | （★3名体制エージェント）セールス・監査・編集の3プロセスで、読者が思わず課金する高品質なnoteを全自動作成する。 |
 
 ---
 
@@ -63,7 +64,7 @@
 
 ---
 
-## 🛠️ 5. システム・アーキテクト系（自動化の心 বাহাদুর部）
+## 🛠️ 5. システム・アーキテクト系（自動化の心臓部）
 > 📂 `skills/05_system_architect/`
 
 これらを使って「アイデア」を「洗練されたツール」へと一瞬で錬金させることができます。
