@@ -71,3 +71,14 @@
 | **深津式プロンプト診断・最適化チーム** | [FukatsuPromptAnalyzer.md](./05_system_architect/FukatsuPromptAnalyzer.md) | （★3名体制エージェント）ユーザーのプロンプトを10点満点で評価・診断し、完璧な深津式プロンプトへ全自動で書き換える。 |
 | **プロンプト最適化職人** | [PromptOptimizer.md](./05_system_architect/PromptOptimizer.md) | ユーザーの雑多な思いつきを、LLMが最高精度で出力できる「構造化された高品質プロンプト」に清書する。 |
 | **オーケストレーション設計**| [AgentOrchestratorDesign.md](./05_system_architect/AgentOrchestratorDesign.md) | ある目的を与えれば「実行役・批判役・統合役」の3名のAIチームとワークフローを全自動で設計構築する。 |
+
+---
+
+## 💖 6. 自己分析・パーソナルコーチ系
+> 📂 `skills/06_personal_coach/`
+
+読者やユーザーの心理・性格に深く寄り添い、人生の前進や自己肯定感の爆発的な向上を完全自動でサポートする対人支援スキル群です。
+
+| スキル名 | ファイルリンク | 役割と目的 |
+| :--- | :--- | :--- |
+| **超ポジティブ・メンタルコーチ** | [MBTIPositiveMentalCoach.md](./06_personal_coach/MBTIPositiveMentalCoach.md) | （★3名体制エージェント）相談者のMBTIと悩みを分析し、弱点をすべて強みに変換して寄り添う超肯定コーチング班。 |
