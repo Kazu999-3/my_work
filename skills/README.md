@@ -44,6 +44,7 @@
 | **ショート動画台本クリエイター**| [ShortVideoScriptCreator.md](./03_promotion_automation/ShortVideoScriptCreator.md) | 元記事から、TikTok等の縦型動画で「絶対に離脱されない」60秒以内のテンポ最強の台本を作成する。 |
 | **Python自動化エンジニア** | [PythonAutomationEngineer.md](./03_promotion_automation/PythonAutomationEngineer.md) | リサーチやAPI連携等の手作業を完全自動化する「コピペで確実に動くPythonコード」を生成する。 |
 | **X＆note連携・収益化オートメーター** | [XNoteMonetizationAutomator.md](./03_promotion_automation/XNoteMonetizationAutomator.md) | （★3名体制エージェント）Xでの自動集客とnote販売用記事（無料・有料）までを1週間分のタイムラインとして全自動設計する。 |
+| **毎週更新用・収益最大化オーケストレーター** | [WeeklyRevenueMaximizer.md](./03_promotion_automation/WeeklyRevenueMaximizer.md) | （★3名体制エージェント）今週のテーマとゴールを入力するだけで、Xのストーリーと無料/有料note構成を週次で全自動生成する。 |
 
 ---
 
@@ -62,7 +63,7 @@
 
 ---
 
-## 🛠️ 5. システム・アーキテクト系（自動化の心臓部）
+## 🛠️ 5. システム・アーキテクト系（自動化の心 বাহাদুর部）
 > 📂 `skills/05_system_architect/`
 
 これらを使って「アイデア」を「洗練されたツール」へと一瞬で錬金させることができます。
