@@ -80,3 +80,89 @@
 | スキル名 | ファイルリンク | 役割と目的 |
 | :--- | :--- | :--- |
 | **超ポジティブ・メンタルコーチ** | [MBTIPositiveMentalCoach.md](./06_personal_coach/MBTIPositiveMentalCoach.md) | （★3名体制エージェント）相談者のMBTIと悩みを分析し、弱点をすべて強みに変換して寄り添う超肯定コーチング班。 |
+
+---
+
+## 🔍 7. SEOスペシャリスト系
+> 📂 `skills/07_seo_specialist/`
+
+検索エンジンの深層を理解し、トラフィックを爆発させるための高度なSEO分析・執筆スキル群です。
+
+| スキル名 | ファイルリンク | 役割と目的 |
+| :--- | :--- | :--- |
+| 👑 **SEO指揮官（統合）** | [SKILL.md](./07_seo_specialist/SKILL.md) | 下記の全SEOスキルを状況に応じて呼び出し、一貫した戦略を遂行するチーフ。 |
+| **SEO監査ドクター** | [seo-audit.md](./07_seo_specialist/seo-audit.md) | サイトの技術的問題とクローラビリティの診断。 |
+| **カニバリ検知** | [seo-cannibalization-detector.md](./07_seo_specialist/seo-cannibalization-detector.md) | 重複コンテンツの特定と解消。 |
+| **SEOコンテンツ・ライター** | [seo-content-writer.md](./07_seo_specialist/seo-content-writer.md) | E-E-A-Tを満たし検索意図に完全に応える高品質記事の執筆。 |
+| **メタ情報最適化** | [seo-meta-optimizer.md](./07_seo_specialist/seo-meta-optimizer.md) | クリック率（CTR）を最大化するタイトルと説明の作成。 |
+| **プログラマティックSEO** | [programmatic-seo.md](./07_seo_specialist/programmatic-seo.md) | データ駆動の大規模ページ自動生成設計。 |
+
+---
+
+## 📊 8. リサーチ＆ビジネス戦略系
+> 📂 `skills/08_research_strategy/`
+
+市場の穴を見つけ出し、勝てるポジションと価格戦略を導き出す「軍師」としてのスキル群です。
+
+| スキル名 | ファイルリンク | 役割と目的 |
+| :--- | :--- | :--- |
+| 👑 **リサーチ＆戦略指揮官** | [SKILL.md](./08_research_strategy/SKILL.md) | 下記の全ビジネス分析スキルを指揮し、勝利へ導くストラテジスト。 |
+| **ディープリサーチ** | [deep-research.md](./08_research_strategy/deep-research.md) | 表面的な情報ではなく、深層データと一次情報の緻密な調査。 |
+| **競合コンテンツアナリスト** | [competitive-landscape.md](./08_research_strategy/competitive-landscape.md) | 競合の弱点と見落としているユーザーの悩みの抽出。 |
+| **無料ツール戦略** | [free-tool-strategy.md](./08_research_strategy/free-tool-strategy.md) | 驚異的な価値の無料ツールによるリード（見込み客）獲得企画。 |
+
+---
+
+## 🤖 9. AIエージェント・エンジニアリング系
+> 📂 `skills/09_agent_engineering/`
+
+エージェント自身の能力を拡張し、自律的な問題解決能力と記憶を付与するための心臓部です。
+
+| スキル名 | ファイルリンク | 役割と目的 |
+| :--- | :--- | :--- |
+| 👑 **エージェント工学指揮官** | [SKILL.md](./09_agent_engineering/SKILL.md) | 自律AIの設計・アーキテクチャ全体を統括するチーフ・エンジニア。 |
+| **自律パターン設計** | [autonomous-agent-patterns.md](./09_agent_engineering/autonomous-agent-patterns.md) | AIが自ら考え、行動・検証するための「思考プロトコル」の実装。 |
+| **MCP・エージェント記憶** | [agent-memory-mcp.md](./09_agent_engineering/agent-memory-mcp.md) | プロジェクトの背景や対話履歴を長期保存・検索する仕組みの設計。 |
+| **ツール・ビルダー** | [agent-tool-builder.md](./09_agent_engineering/agent-tool-builder.md) | 外部システムと連携するための堅牢なAPIツールの仕様設計。 |
+
+---
+
+## 💎 10. 開発品質＆DevOps系
+> 📂 `skills/10_dev_ops_quality/`
+
+非破壊的で美しいコード（Vibe Coding）を維持し、セキュリティと品質を自動で担保する守護神です。
+
+| スキル名 | ファイルリンク | 役割と目的 |
+| :--- | :--- | :--- |
+| 👑 **品質＆DevOps指揮官** | [SKILL.md](./10_dev_ops_quality/SKILL.md) | クリーンコードとセキュリティの両立を絶対させるテックリード。 |
+| **クリーンコード・リファクタ**| [code-refactoring-refactor-clean.md](./10_dev_ops_quality/code-refactoring-refactor-clean.md) | SOLID原則に基づき、拡張しやすく美しいコード構造への自動変換。 |
+| **Vibeコード監査** | [vibe-code-auditor.md](./10_dev_ops_quality/vibe-code-auditor.md) | 直感的で「読んで気持ちいい」コードと意図（Why）が伝わるコメントへの修正。 |
+| **脅威のアタックツリー視覚化** | [attack-tree-construction.md](./10_dev_ops_quality/attack-tree-construction.md) | ハッカー視点での脆弱性洗い出しと防御策の提案。 |
+
+---
+
+## 🎬 11. コンテンツ制作＆メディア自動化系
+> 📂 `skills/11_content_media/`
+
+YouTubeやSNSを戦場とし、画像・動画生成AIを駆使してバイラルを引き起こすクリエイティブ拠点。
+
+| スキル名 | ファイルリンク | 役割と目的 |
+| :--- | :--- | :--- |
+| 👑 **メディア指揮官** | [SKILL.md](./11_content_media/SKILL.md) | 各チャネルを統合し、圧倒的なマーケティングと集客を生み出すプロデューサー。 |
+| **YouTube自動化** | [youtube-automation.md](./11_content_media/youtube-automation.md) | 競合分析、企画出しから離脱されない台本作成までの体系化。 |
+| **Twitter・X自動化** | [twitter-automation.md](./11_content_media/twitter-automation.md) | バズを意図的に起こし、エンゲージメントとLPへの誘導を最大化するポスト生成。 |
+| **高品質画像生成（FAL）** | [fal-image-edit.md](./11_content_media/fal-image-edit.md) | MidjourneyやImagen向けに、圧倒的な画像を生成する「完璧なプロンプト」の錬成。 |
+
+---
+
+## 🛠️ 12. データ解析＆高度ツール操作系
+> 📂 `skills/12_tools_data/`
+
+手作業を拒絶し、ブラウザ操作やデータ集計を極限まで自動化・効率化するための実務部隊。
+
+| スキル名 | ファイルリンク | 役割と目的 |
+| :--- | :--- | :--- |
+| 👑 **最適化・データ指揮官** | [SKILL.md](./12_tools_data/SKILL.md) | 手作業ゼロに向けたシステムの全体設計と分析チームの統括。 |
+| **ブラウザ自動化** | [browser-automation.md](./12_tools_data/browser-automation.md) | 人間と同様のWeb操作やスクレイピング、テストの完全な自動フロー設計。 |
+| **トレンド＆データ抽出（Apify）**| [apify-trend-analysis.md](./12_tools_data/apify-trend-analysis.md) | 市場の生のデータを抽出し、ビジネスインサイトに変換するアルゴリズムの構築。 |
+| **分析＆トラッキング** | [analytics-tracking.md](./12_tools_data/analytics-tracking.md) | ユーザーの行動計測（GA4等）と、離脱箇所を特定して改善する設計。 |

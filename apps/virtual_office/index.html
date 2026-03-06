@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>アンちゃんの仮想オフィス</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=DotGothic16&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #1a1a2e;
+            --panel-bg: rgba(22, 33, 62, 0.8);
+            --accent-color: #e94560;
+            --text-color: #e2e2e2;
+            --pixel-font: 'DotGothic16', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            overflow: hidden;
+            background: linear-gradient(180deg, #0f0c29, #302b63, #24243e);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--accent-color);
+        }
+
+        h1 {
+            font-family: var(--pixel-font);
+            margin: 0;
+            font-size: 24px;
+            color: var(--accent-color);
+            text-shadow: 2px 2px #000;
+        }
+
+        .main-stage {
+            flex: 1;
+            display: flex;
+            padding: 20px;
+            gap: 20px;
+            overflow: hidden;
+        }
+
+        /* 左右のパネル */
+        .side-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            overflow-y: auto;
+        }
+
+        /* アンちゃんの表示エリア */
+        .character-zone {
+            flex: 1.5;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        .anchan-sprite {
+            width: 300px;
+            height: 300px;
+            image-rendering: pixelated;
+            background-repeat: no-repeat;
+            background-position: center;
+            transition: transform 0.3s;
+            /* 呼吸アニメーション */
+            animation: breathe 3s ease-in-out infinite;
+        }
+
+        @keyframes breathe {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+
+        .anchan-sprite:hover {
+            transform: scale(1.1) translateY(-10px);
+        }
+
+        .speech-bubble {
+            background: white;
+            color: black;
+            padding: 15px;
+            border-radius: 10px;
+            position: absolute;
+            top: 15%;
+            left: 55%;
+            max-width: 250px;
+            font-family: var(--pixel-font);
+            box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.5);
+            z-index: 10;
+        }
+
+        .speech-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 20px;
+            border-width: 10px 10px 0;
+            border-style: solid;
+            border-color: white transparent;
+        }
+
+        /* パネルエリア */
+        .panel {
+            background: var(--panel-bg);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+        }
+
+        .panel-title {
+            font-family: var(--pixel-font);
+            color: var(--accent-color);
+            margin-bottom: 10px;
+            border-bottom: 1px solid rgba(233, 69, 96, 0.3);
+            padding-bottom: 5px;
+            font-size: 16px;
+        }
+
+        .list-container {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            font-size: 13px;
+        }
+
+        .item {
+            margin-bottom: 8px;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-top: 5px;
+            flex-shrink: 0;
+        }
+
+        .status-done {
+            background: #4caf50;
+        }
+
+        .status-doing {
+            background: #ff9800;
+            animation: blink 1s infinite;
+        }
+
+        .status-todo {
+            background: #9e9e9e;
+        }
+
+        .status-schedule {
+            background: #00bcd4;
+        }
+
+        .status-tomorrow {
+            background: #ffeb3b;
+        }
+
+        @keyframes blink {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.3;
+            }
+        }
+
+        footer {
+            padding: 10px 20px;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.5);
+            text-align: right;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>AN-CHAN VIRTUAL OFFICE</h1>
+        <div id="clock" style="font-family: var(--pixel-font);">00:00:00</div>
+    </header>
+
+    <div class="main-stage">
+        <!-- 左パネル: タスク -->
+        <div class="side-panel">
+            <div class="panel">
+                <div class="panel-title">📋 現在のタスク</div>
+                <ul class="list-container" id="task-list"></ul>
+            </div>
+            <div class="panel">
+                <div class="panel-title">📡 ログ</div>
+                <ul class="list-container" id="log-list"></ul>
+            </div>
+        </div>
+
+        <!-- 中央: アンちゃん -->
+        <div class="character-zone">
+            <div id="anchan" class="anchan-sprite"></div>
+            <div class="speech-bubble" id="message">マスター、読み込み中ですよ...</div>
+        </div>
+
+        <!-- 右パネル: 予定・明日タスク -->
+        <div class="side-panel">
+            <div class="panel">
+                <div class="panel-title">⭐ 明日やるべきこと</div>
+                <ul class="list-container" id="tomorrow-list"></ul>
+            </div>
+            <div class="panel">
+                <div class="panel-title">📅 今週の予定</div>
+                <ul class="list-container" id="schedule-list"></ul>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        An-chan v0.2 - Schedule Sync Active
+    </footer>
+
+    <script>
+        async function updateStatus() {
+            try {
+                const response = await fetch('office_status.json');
+                const data = await response.json();
+
+                // メッセージ
+                document.getElementById('message').innerText = data.anchan.message;
+
+                // アンちゃんの画像表示
+                const anchanImg = document.getElementById('anchan');
+                anchanImg.style.backgroundImage = 'url(anchan_sprite.png)';
+                // アスペクト比を固定したまま大幅に拡大（横幅を枠の4倍に設定）
+                anchanImg.style.backgroundSize = '400%';
+
+                // ステータスに応じたポーズ（切り抜き位置の調整）
+                if (data.anchan.status === 'sleeping') {
+                    // 右下あたり
+                    anchanImg.style.backgroundPosition = '100% 100%';
+                } else if (data.anchan.status === 'eating') {
+                    // 真ん中下あたり
+                    anchanImg.style.backgroundPosition = '50% 100%';
+                } else {
+                    // 真ん中上あたり
+                    anchanImg.style.backgroundPosition = '50% 0%';
+                }
+                // タスクリスト
+                document.getElementById('task-list').innerHTML = data.tasks.map(t => `
+                    <li class="item">
+                        <span class="status-dot status-${t.status}"></span>
+                        <span>${t.text}</span>
+                    </li>
+                `).join('');
+
+                // 明日のタスク
+                document.getElementById('tomorrow-list').innerHTML = data.tomorrow_tasks.map(t => `
+                    <li class="item">
+                        <span class="status-dot status-tomorrow"></span>
+                        <span>[${t.date}] ${t.content}</span>
+                    </li>
+                `).join('') || '<li class="item" style="color:gray;">予定はありません</li>';
+
+                // 週間予定
+                document.getElementById('schedule-list').innerHTML = data.schedule.map(s => `
+                    <li class="item">
+                        <span class="status-dot status-schedule"></span>
+                        <span>[${s.date}] ${s.content}</span>
+                    </li>
+                `).join('') || '<li class="item" style="color:gray;">予定はありません</li>';
+
+                // ログ
+                document.getElementById('log-list').innerHTML = data.logs.map(l => `
+                    <li class="item" style="font-size:11px; color:#aaa;">> ${l}</li>
+                `).join('');
+
+            } catch (e) {
+                console.error("Data sync error:", e);
+            }
+        }
+
+        // 時計
+        setInterval(() => {
+            const now = new Date();
+            document.getElementById('clock').innerText = now.toLocaleTimeString();
+        }, 1000);
+
+        // 5秒おきに更新
+        setInterval(updateStatus, 5000);
+        updateStatus();
+    </script>
+</body>
+
+</html>
