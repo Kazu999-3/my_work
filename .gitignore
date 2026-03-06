@@ -4,3 +4,15 @@
 **/token.pickle
 **/.env
 
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+
+# IDE
+.vscode/
+
+# Temporary / Debug
+debug_*.py
+.DS_Store
