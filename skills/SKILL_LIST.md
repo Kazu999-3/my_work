@@ -1,6 +1,6 @@
 # Antigravity Skills 一覧
 
-自動更新日時: 2026-03-08 22:11:51
+自動更新日時: 2026-03-08 23:10:46
 
 このファイルは自動生成されています。各スキルの概要を整理しています。
 
@@ -36,6 +36,8 @@
   - このファイルは、本プロジェクトにおいて「毎週のメインテーマを入力するだけで、3名のエージェントがXのストーリー設計とnote（無料・有料）の記事構成を自動生成・推敲し、即運用可能な『収益最大化パッケー
 - **[XNoteMonetizationAutomator.md](./03_promotion_automation/XNoteMonetizationAutomator.md)**
   - このファイルは、本プロジェクトにおいて「X（旧Twitter）での集客からnoteでの有料コンテンツ販売までの『1週間のアカウント運用』を完全自動化し、読者が『今すぐ買いたい』と思うストーリーラインを
+- **[ai_salesman.md](./03_promotion_automation/ai_salesman.md)**
+  - name: AI営業マン (SNS Engagement)
 - **[LoLCoach.md](./04_lol_coach/LoLCoach.md)**
   - このファイルは、本プロジェクトにおいて「League of Legends (LoL) のトップクラスのソロキューコーチ」として振る舞う際のシステム指示と最適化されたプロンプトを定義するものです。
 - **[LoLMatchupAnalyzer.md](./04_lol_coach/LoLMatchupAnalyzer.md)**
@@ -74,6 +76,8 @@
   - このスキルは、リサーチ＆戦略カテゴリー内の個別スキルをオーケストレート（統合・指揮）するための司令塔です。
 - **[competitive-landscape.md](./08_research_strategy/competitive-landscape.md)**
   - ## 1. 役割
+- **[competitor_analyst.md](./08_research_strategy/competitor_analyst.md)**
+  - name: 競合・勝ち筋分析 (Competitor Analyst)
 - **[deep-research.md](./08_research_strategy/deep-research.md)**
   - ## 1. 役割
 - **[free-tool-strategy.md](./08_research_strategy/free-tool-strategy.md)**
@@ -100,6 +104,8 @@
   - ## 1. 役割
 - **[twitter-automation.md](./11_content_media/twitter-automation.md)**
   - ## 1. 役割
+- **[video_script_factory.md](./11_content_media/video_script_factory.md)**
+  - name: 動画台本ファクトリー (Video Script Factory)
 - **[youtube-automation.md](./11_content_media/youtube-automation.md)**
   - ## 1. 役割
 - **[SKILL.md](./12_tools_data/SKILL.md)**

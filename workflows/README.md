@@ -17,6 +17,7 @@
 | :--- | :--- | :--- |
 | **作業日報の自動生成** | [daily-report.md](./daily-report.md) | 前日の成果をまとめ、Noteのネタにも流用可能なMarkdownを生成。 |
 | **収益化note量産** | [note-production.md](./note-production.md) | トレンドやメモから、500円noteとその宣伝用SNS投稿を最短ルートで自動生成。 |
+| **自動販売ファネル構築** | [sales-funnel.md](./sales-funnel.md) | note企画、ステップメール、セールスレター、集客SNS投稿をセットで生成し、自動収益化の仕組みを構築。 |
 | **収益化一貫フロー** | [monetization-flow.md](./monetization-flow.md) | **[最上位]** 記事執筆・レビュー・SNS拡散計画を一気に完結。 |
 | **YouTube自動整理** | (RUN_YT_CLEAN.bat) | Notionのルールに従ってYouTubeプレイリストを自動配分。 |
 
