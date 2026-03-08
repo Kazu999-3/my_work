@@ -5,7 +5,9 @@ from bs4 import BeautifulSoup
 from google import genai
 from dotenv import load_dotenv
 
-load_dotenv()
+# .envファイルの読み込み
+env_path = os.path.join(os.path.dirname(__file__), '..', '.env')
+load_dotenv(env_path)
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
@@ -91,9 +93,9 @@ def summarize_content(content_data):
 - アクション1
         """
         
-        # genai SDKの推奨モデル 'gemini-2.5-flash' を使用
+        # genai SDKの推奨モデル 'gemini-2.0-flash' を使用
         response = client.models.generate_content(
-            model='gemini-2.5-flash',
+            model='gemini-2.0-flash',
             contents=prompt,
         )
         
@@ -372,9 +374,10 @@ def _call_gemini(prompt):
     import time
     
     models_to_try = [
-        'gemini-2.5-flash',
         'gemini-2.0-flash',
-        'gemini-1.5-pro-latest'
+        'gemini-2.5-flash',
+        'gemini-1.5-flash',
+        'gemini-flash-latest'
     ]
     
     for attempt, model in enumerate(models_to_try):

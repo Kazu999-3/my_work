@@ -16,6 +16,7 @@
 | ワークフロー名 | ファイルリンク | 内容とメリット |
 | :--- | :--- | :--- |
 | **作業日報の自動生成** | [daily-report.md](./daily-report.md) | 前日の成果をまとめ、Noteのネタにも流用可能なMarkdownを生成。 |
+| **収益化note量産** | [note-production.md](./note-production.md) | トレンドやメモから、500円noteとその宣伝用SNS投稿を最短ルートで自動生成。 |
 | **収益化一貫フロー** | [monetization-flow.md](./monetization-flow.md) | **[最上位]** 記事執筆・レビュー・SNS拡散計画を一気に完結。 |
 | **YouTube自動整理** | (RUN_YT_CLEAN.bat) | Notionのルールに従ってYouTubeプレイリストを自動配分。 |
 
@@ -24,6 +25,8 @@
 ## 🤖 ワークフローの呼び出し方
 チャットにて以下のようにお申し付けください。
 
+- 「今日のAIトレンドレポートを生成して」（trends_analyzer.py の実行）
+- 「このネタで500円noteの構成を作って」（note-production.md の開始）
 - 「最新のメモから、いつもの3名体制で記事を書いて」
 
 これらにより、AIが定義された手順に沿って自律的に作業を開始します。
