@@ -10,6 +10,7 @@ load_dotenv()
 NOTION_TOKEN = os.getenv('NOTION_API_KEY')
 NOTION_MEMO_DB_ID = os.getenv('NOTION_MEMO_DB_ID')
 NOTION_TASKS_DB_ID = os.getenv('NOTION_TASKS_DB_ID')
+NOTION_LOL_DB_ID = os.getenv('NOTION_LOL_DB_ID')
 
 if NOTION_TOKEN:
     notion = Client(auth=NOTION_TOKEN)
@@ -292,6 +293,57 @@ def add_task(text):
              return True, f"タスクをNotionに追加しました！\nURL: {new_page['url']}"
         except Exception as e2:
             return False, f"Notionへのタスク追加に失敗しました（期日やステータス列が存在しない可能性があります）。\n詳細: {e2}"
+
+def get_lol_knowledge(champion_name=None):
+    """NotionのLoLチャンピオンDBから情報を取得する"""
+    if not NOTION_TOKEN or not NOTION_LOL_DB_ID:
+        return []
+    
+    import requests
+    try:
+        url = f"https://api.notion.com/v1/databases/{NOTION_LOL_DB_ID}/query"
+        headers = {
+            "Authorization": f"Bearer {NOTION_TOKEN}",
+            "Notion-Version": "2025-09-03",
+            "Content-Type": "application/json"
+        }
+        
+        payload = {}
+        if champion_name:
+            payload["filter"] = {
+                "property": "名前",
+                "title": {"contains": champion_name}
+            }
+            
+        res = requests.post(url, headers=headers, json=payload)
+        if res.status_code != 200:
+            return []
+            
+        results = res.json().get("results", [])
+        knowledge = []
+        for page in results:
+            props = page.get("properties", {})
+            name = props.get("名前", {}).get("title", [{}])[0].get("plain_text", "Unknown")
+            
+            # 各種情報の抽出
+            strengths = props.get("強み", {}).get("rich_text", [{}])[0].get("plain_text", "")
+            weaknesses = props.get("弱み", {}).get("rich_text", [{}])[0].get("plain_text", "")
+            synergy = props.get("シナジー", {}).get("rich_text", [{}])[0].get("plain_text", "")
+            win_con = props.get("主な勝ち筋", {}).get("rich_text", [{}])[0].get("plain_text", "")
+            points = props.get("意識ポイント", {}).get("rich_text", [{}])[0].get("plain_text", "")
+            
+            entry = f"【チャンピオン】: {name}\n"
+            if strengths: entry += f"- 強み: {strengths}\n"
+            if weaknesses: entry += f"- 弱み: {weaknesses}\n"
+            if synergy: entry += f"- シナジー: {synergy}\n"
+            if win_con: entry += f"- 勝ち筋: {win_con}\n"
+            if points: entry += f"- 意識ポイント: {points}\n"
+            knowledge.append(entry)
+            
+        return knowledge
+    except Exception as e:
+        print(f"Error fetching LoL knowledge: {e}")
+        return []
 
 if __name__ == "__main__":
     print("Notion client tests")

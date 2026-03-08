@@ -18,8 +18,9 @@
 
 | ワークフロー名 | ファイルリンク | 内容とメリット |
 | :--- | :--- | :--- |
-| **作業日報の自動生成** | [daily-report.md](./daily-report.md) | `outputs/report/` フォルダに、昨日の完了タスク、課題、次回のタスクをまとめたMarkdownファイルを自動生成します。ブログやNoteのネタとしても流用可能です。 |
-| **タスク管理** | [manage-tasks.md](./manage-tasks.md) | スプレッドシート上のタスク一覧を参照したり、チャットから直感的に「〇〇のタスクを追加して/完了にして」と指示することでスマートにタスクを管理します。 |
+| **作業日報の自動生成** | [daily-report.md](./daily-report.md) | 前日の成果をまとめ、Noteのネタにも流用可能なMarkdownを生成。 |
+| **収益化一貫フロー** | [monetization-flow.md](./monetization-flow.md) | **[最上位]** 記事執筆・レビュー・SNS拡散計画を一気に完結。 |
+| **YouTube自動整理** | (RUN_YT_CLEAN.bat) | Notionのルールに従ってYouTubeプレイリストを自動配分。 |
 
 ---
 

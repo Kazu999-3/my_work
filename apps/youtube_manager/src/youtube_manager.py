@@ -112,16 +112,25 @@ class YouTubeManager:
             return ""
 
     def list_all_playlists(self):
-        """ユーザーが所有する全てのプレイリストをリストアップ"""
-        request = self.youtube.playlists().list(
-            part="snippet,contentDetails",
-            mine=True,
-            maxResults=50
-        )
-        response = request.execute()
-        playlists = response.get('items', [])
-        for p in playlists:
-            print(f"Title: {p['snippet']['title']}, ID: {p['id']}, Items: {p['contentDetails']['itemCount']}")
+        """ユーザーが所有する全てのプレイリストをリストアップ（ページネーション対応）"""
+        playlists = []
+        next_page_token = None
+        
+        while True:
+            request = self.youtube.playlists().list(
+                part="snippet,contentDetails",
+                mine=True,
+                maxResults=50,
+                pageToken=next_page_token
+            )
+            response = request.execute()
+            playlists.extend(response.get('items', []))
+            
+            next_page_token = response.get('nextPageToken')
+            if not next_page_token:
+                break
+                
+        # print(f"Found {len(playlists)} playlists.") # デバッグ用
         return playlists
 
 if __name__ == '__main__':

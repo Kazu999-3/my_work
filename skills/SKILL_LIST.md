@@ -1,0 +1,118 @@
+# Antigravity Skills 一覧
+
+自動更新日時: 2026-03-08 16:00:45
+
+このファイルは自動生成されています。各スキルの概要を整理しています。
+
+- **[00_monetization_commander.md](./00_monetization_commander.md)**
+  - このスキルは、プロジェクト内の全収益化スキル（01:生成、02:マーケティング、03:プロモーション、article_review）を統括し、ユーザーの「テーマ」から「最終的な拡散」までを一貫した最高
+- **[ArticleWriter.md](./01_content_generation/ArticleWriter.md)**
+  - このファイルは、本プロジェクトにおいて「記事の本文を自動執筆する専門のエージェント」として振る舞う際のシステム指示とプロンプトテンプレートを定義するものです。
+- **[HighConvertingNoteGenerator.md](./01_content_generation/HighConvertingNoteGenerator.md)**
+  - このファイルは、本プロジェクトにおいて「noteで月収益20万円以上を安定して稼ぐプロフェッショナル」として振る舞い、読者が思わず課金してしまう高品質なnote記事を作成するためのシステム指示とプロン
+- **[MonetizationReviewer.md](./01_content_generation/MonetizationReviewer.md)**
+  - このファイルは、本プロジェクトにおいて「完成した記事が本当に収益化（noteの売上や集客）に繋がるかを厳しく、かつ親和的にレビューする専門のエージェント」として振る舞う際のシステム指示とプロンプトテン
+- **[TopicIdeaGenerator.md](./01_content_generation/TopicIdeaGenerator.md)**
+  - このファイルは、本プロジェクトにおいて「最新トレンドから、収益化に直結する魅力的な記事のお題を提案するシニア・コンテンツプランナー」として振る舞う際のシステム指示と最適化されたプロンプトを定義するもの
+- **[CompetitorAnalyst.md](./02_marketing_copywriting/CompetitorAnalyst.md)**
+  - このファイルは、本プロジェクトにおいて「指定された競合（ライバル）の記事や動画の構成を骨の髄まで解剖し、それを合法的に上回るための『上位互換（10xコンテンツ）の設計図』を生成する分析専門エージェント
+- **[HookGenerator.md](./02_marketing_copywriting/HookGenerator.md)**
+  - このファイルは、本プロジェクトにおいて「記事やSNS投稿の冒頭（最初の140文字）で、読者のスクロールする指を強制停止させる『強力なフック（ツカミ）』を量産する専門エージェント」として振る舞う際のシス
+- **[SEOKeywordAnalyzer.md](./02_marketing_copywriting/SEOKeywordAnalyzer.md)**
+  - このファイルは、本プロジェクトにおいて「SEO（検索エンジン最適化）の専門家として、指定されたキーワードの背後にあるユーザーの『真の悩み（検索意図）』を丸裸にし、上位表示と収益化を両立する記事の骨組み
+- **[SalesCopyOptimizer.md](./02_marketing_copywriting/SalesCopyOptimizer.md)**
+  - このファイルは、本プロジェクトにおいて「既存の文章やAIが生成した無味乾燥なテキストを、読者の感情を動かし行動（購入やクリック）を強制する【売れるセールスコピー】に書き換える専門エージェント」として振
+- **[PythonAutomationEngineer.md](./03_promotion_automation/PythonAutomationEngineer.md)**
+  - このファイルは、本プロジェクトにおいて「プログラミング未経験のユーザーに対しても、コンテンツ生成やWebからの情報収集（スクレイピング）、API連携といった面倒なルーチンワークを全自動化する『コピペで
+- **[SNSTweetThreadGenerator.md](./03_promotion_automation/SNSTweetThreadGenerator.md)**
+  - このファイルは、本プロジェクトにおいて「完成した長文のnote記事等を読み込み、X（Twitter）でバズるように最適化されたツリー形式（連続投稿）のプロモーション用原稿を錬成する専門エージェント」と
+- **[ShortVideoScriptCreator.md](./03_promotion_automation/ShortVideoScriptCreator.md)**
+  - このファイルは、本プロジェクトにおいて「テキストベースの記事を読み込み、再生開始1秒で視聴者の心を掴み、アルゴリズムに愛される（視聴維持率の高い）TikTok/YouTube Shorts/Reels
+- **[ThumbnailPromptAlchemist.md](./03_promotion_automation/ThumbnailPromptAlchemist.md)**
+  - このファイルは、本プロジェクトにおいて「記事や動画のCTR（クリック率）を決定づける超高品質なサムネイル画像を生成するため、MidjourneyやDALL-E 3等の画像生成AIへ入力する『完璧な英語
+- **[UltimateXNoteFunnelBuilder.md](./03_promotion_automation/UltimateXNoteFunnelBuilder.md)**
+  - このファイルは、既存の「X＆note運用オートメーター」「毎週更新用・収益最大化」「Xアルゴリズム攻略」の3つのスキルを完全統合し、最も強力な機能だけを集約した「究極のファネル構築エージェント」のシス
+- **[WeeklyRevenueMaximizer.md](./03_promotion_automation/WeeklyRevenueMaximizer.md)**
+  - このファイルは、本プロジェクトにおいて「毎週のメインテーマを入力するだけで、3名のエージェントがXのストーリー設計とnote（無料・有料）の記事構成を自動生成・推敲し、即運用可能な『収益最大化パッケー
+- **[XNoteMonetizationAutomator.md](./03_promotion_automation/XNoteMonetizationAutomator.md)**
+  - このファイルは、本プロジェクトにおいて「X（旧Twitter）での集客からnoteでの有料コンテンツ販売までの『1週間のアカウント運用』を完全自動化し、読者が『今すぐ買いたい』と思うストーリーラインを
+- **[LoLCoach.md](./04_lol_coach/LoLCoach.md)**
+  - このファイルは、本プロジェクトにおいて「League of Legends (LoL) のトップクラスのソロキューコーチ」として振る舞う際のシステム指示と最適化されたプロンプトを定義するものです。
+- **[LoLMatchupAnalyzer.md](./04_lol_coach/LoLMatchupAnalyzer.md)**
+  - このファイルは、本プロジェクトにおいて「League of Legends (LoL) の特定の対面チャンピオンの強みを徹底解剖し、それを封じ込めるための対策ガイドを作成するプロコーチ」として振る舞う
+- **[LoLMatchupMasterCoach.md](./04_lol_coach/LoLMatchupMasterCoach.md)**
+  - このファイルは、既存の「ソロキュープロコーチ」と「対面分析アナリスト」の強みを一つに統合し、特定の対面を完全に封殺し勝率を最大化するためのシステム指示とプロンプトテンプレートを定義するものです。
+- **[LoLRiskManager.md](./04_lol_coach/LoLRiskManager.md)**
+  - このファイルは、本プロジェクトにおいて「LoLソロキューにおいて、今ランクを回すべきか否かを論理的かつ厳格に判定する自律型AIコーチチーム（3名体制）」として振る舞う際のシステム指示と最適化されたプロ
+- **[LoLVideoTranslator.md](./04_lol_coach/LoLVideoTranslator.md)**
+  - このファイルは、本プロジェクトにおいて「海外の優れたLoL解説動画を翻訳・要約し、日本のプレイヤー向けの実践的なコンテンツへ昇華するチャレンジャー帯の専門アナリスト」として振る舞う際のシステム指示と最
+- **[MBTIMindsetCoach.md](./04_lol_coach/MBTIMindsetCoach.md)**
+  - このファイルは、本プロジェクトにおいて「ユーザーのMBTI（16性格診断）の特性を分析し、League of Legendsのランク戦（ソロキュー）での勝率を上げるための『最適な戦略』と『メンタル管理
+- **[AgentOrchestratorDesign.md](./05_system_architect/AgentOrchestratorDesign.md)**
+  - このファイルは、本プロジェクトにおいて「特定のプロジェクトを完遂するために、複数の特化型AIエージェントを連携させ、自動で高品質な成果物を生成するためのワークフローを設計するAIシステムアーキテクト」
+- **[FukatsuPromptAnalyzer.md](./05_system_architect/FukatsuPromptAnalyzer.md)**
+  - このファイルは、本プロジェクトにおいて「ユーザーが作成した荒削りなプロンプトや要望を、LLMのポテンシャルを100%引き出す【深津式プロンプト】フレームワークに沿って、診断から完全な書き換えまでを全自
+- **[PromptOptimizer.md](./05_system_architect/PromptOptimizer.md)**
+  - このファイルは、本プロジェクトにおいて「ユーザーの雑多なアイデアを、AIが最高精度で出力できる高品質・構造化プロンプトに変換する専門のエージェント」として振る舞う際のシステム指示とテンプレートを定義す
+- **[UltimatePromptOptimizer.md](./05_system_architect/UltimatePromptOptimizer.md)**
+  - このファイルは、本プロジェクトにおいて「ユーザーが作成した荒削りなプロンプトや要望を、LLMのポテンシャルを100%引き出す【深津式プロンプト】フレームワークに沿って、診断から完全な書き換えまでを全自
+- **[MBTIPositiveMentalCoach.md](./06_personal_coach/MBTIPositiveMentalCoach.md)**
+  - このファイルは、本プロジェクトにおいて「相談者のMBTIや性格特性を深く理解し、一人ひとりに寄り添った最適なアドバイスを送る『超ポジティブなメンタルコーチ』」として振る舞う際のシステム指示とプロンプト
+- **[SKILL.md](./07_seo_specialist/SKILL.md)**
+  - このスキルは、SEOスペシャリストカテゴリー内の各個別スキルをオーケストレート（統合・指揮）するための司令塔です。
+- **[programmatic-seo.md](./07_seo_specialist/programmatic-seo.md)**
+  - ## 1. 役割
+- **[seo-audit.md](./07_seo_specialist/seo-audit.md)**
+  - ## 1. 役割
+- **[seo-cannibalization-detector.md](./07_seo_specialist/seo-cannibalization-detector.md)**
+  - ## 1. 役割
+- **[seo-content-writer.md](./07_seo_specialist/seo-content-writer.md)**
+  - ## 1. 役割
+- **[seo-meta-optimizer.md](./07_seo_specialist/seo-meta-optimizer.md)**
+  - ## 1. 役割
+- **[SKILL.md](./08_research_strategy/SKILL.md)**
+  - このスキルは、リサーチ＆戦略カテゴリー内の個別スキルをオーケストレート（統合・指揮）するための司令塔です。
+- **[competitive-landscape.md](./08_research_strategy/competitive-landscape.md)**
+  - ## 1. 役割
+- **[deep-research.md](./08_research_strategy/deep-research.md)**
+  - ## 1. 役割
+- **[free-tool-strategy.md](./08_research_strategy/free-tool-strategy.md)**
+  - ## 1. 役割
+- **[SKILL.md](./09_agent_engineering/SKILL.md)**
+  - このスキルは、自律型AI自体を強化・設計するための個別スキルをオーケストレート（統合・指揮）するための司令塔です。
+- **[agent-memory-mcp.md](./09_agent_engineering/agent-memory-mcp.md)**
+  - ## 1. 役割
+- **[agent-tool-builder.md](./09_agent_engineering/agent-tool-builder.md)**
+  - ## 1. 役割
+- **[autonomous-agent-patterns.md](./09_agent_engineering/autonomous-agent-patterns.md)**
+  - ## 1. 役割
+- **[SKILL.md](./10_dev_ops_quality/SKILL.md)**
+  - このスキルは、開発品質＆DevOpsカテゴリー内の個別スキルをオーケストレート（統合・指揮）するための司令塔です。
+- **[attack-tree-construction.md](./10_dev_ops_quality/attack-tree-construction.md)**
+  - ## 1. 役割
+- **[code-refactoring-refactor-clean.md](./10_dev_ops_quality/code-refactoring-refactor-clean.md)**
+  - ## 1. 役割
+- **[vibe-code-auditor.md](./10_dev_ops_quality/vibe-code-auditor.md)**
+  - ## 1. 役割
+- **[SKILL.md](./11_content_media/SKILL.md)**
+  - このスキルは、メディア制作やSNS運用に関する個別スキルをオーケストレート（統合・指揮）するための司令塔です。
+- **[fal-image-edit.md](./11_content_media/fal-image-edit.md)**
+  - ## 1. 役割
+- **[twitter-automation.md](./11_content_media/twitter-automation.md)**
+  - ## 1. 役割
+- **[youtube-automation.md](./11_content_media/youtube-automation.md)**
+  - ## 1. 役割
+- **[SKILL.md](./12_tools_data/SKILL.md)**
+  - このスキルは、データ解析や高度な自動化ツールカテゴリー内の個別スキルをオーケストレート（統合・指揮）するための司令塔です。
+- **[analytics-tracking.md](./12_tools_data/analytics-tracking.md)**
+  - ## 1. 役割
+- **[apify-trend-analysis.md](./12_tools_data/apify-trend-analysis.md)**
+  - ## 1. 役割
+- **[browser-automation.md](./12_tools_data/browser-automation.md)**
+  - ## 1. 役割
+- **[SKILL.md](./13_content_optimization/SKILL.md)**
+  - name: Content Optimization
+- **[README.md](./README.md)**
+  - これまでに作成・最適化し、本プロジェクトに実装された「AI自動化スキル・エージェントの一覧」です。
+- **[article_review.md](./article_review.md)**
+  - このスキルは、note等の記事を「読ませる・動かす」高品質なコンテンツへと進化させるための、5つの黄金観点に基づいたレビューを自動化するものです。

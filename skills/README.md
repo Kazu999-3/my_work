@@ -14,7 +14,8 @@
 | :--- | :--- | :--- |
 | **話題出し・お題提案** | [TopicIdeaGenerator.md](./01_content_generation/TopicIdeaGenerator.md) | 最新トレンドから収益化に直結する「売れる記事の種」を3つ提案するシニア・プランナー。 |
 | **高収益note記事・完全自動生成エージェント** | [HighConvertingNoteGenerator.md](./01_content_generation/HighConvertingNoteGenerator.md) | （★3名体制エージェント）セールス・監査・編集の3プロセスで、読者が思わず課金する高品質なnoteを全自動作成する。 |
-| **コンテンツ最適化 (v1 to v2)** | [SKILL.md](../13_content_optimization/SKILL.md) | **[NEW]** 5つの評価観点で下書きを分析し、意図を崩さず最高品質のv2へ昇華させる。 |
+| **コンテンツの劇的改善** | [SKILL.md](../13_content_optimization/SKILL.md) | **[Legacy]** 5つの評価観点で下書きを分析し、v2へ昇華させる初期モデル。 |
+| **記事の極限レビュー＆自動改善** | [article_review.md](./article_review.md) | **[最新・最強]** 5つの黄金観点＋SEO対策。分析から改善版（vx）出力までを1ステップで完結させる。 |
 
 ---
 
@@ -90,5 +91,5 @@
 | **トレンド＆データ抽出** | [apify-trend-analysis.md](./12_tools_data/apify-trend-analysis.md) | 市場の生のデータを抽出し、ビジネスインサイトに変換。 |
 
 ---
-**最終更新日**: 2026年3月6日
+**最終更新日**: 2026年3月7日（極限レビュースキル実装）
 **管理**: アンちゃん

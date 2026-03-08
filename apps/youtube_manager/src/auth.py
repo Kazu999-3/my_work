@@ -13,9 +13,13 @@ SCOPES = [
 
 def get_authenticated_service():
     creds = None
-    # token.pickleにはユーザーのアクセストークンとリフレッシュトークンが保存されます
-    token_path = os.path.join('config', 'token.pickle')
-    secrets_path = os.path.join('config', 'client_secrets.json')
+    # auth.pyのあるディレクトリ（src）を取得
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    # configディレクトリへのパス (srcの親ディレクトリのconfig)
+    config_dir = os.path.join(base_dir, '..', 'config')
+    
+    token_path = os.path.join(config_dir, 'token.pickle')
+    secrets_path = os.path.join(config_dir, 'client_secrets.json')
 
     if os.path.exists(token_path):
         with open(token_path, 'rb') as token:
