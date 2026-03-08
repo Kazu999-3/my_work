@@ -5,6 +5,11 @@ from datetime import datetime
 from notion_client import Client
 from dotenv import load_dotenv
 
+# 自作モジュールのインポート
+import sys
+sys.path.append(os.path.dirname(__file__))
+import gemini_analyzer
+
 # .envファイルの読み込み
 env_path = os.path.join(os.path.dirname(__file__), '..', '.env')
 load_dotenv(env_path)
@@ -97,7 +102,9 @@ def export_memos():
 
             # 保存用ファイル名の生成
             file_title = sanitize_filename(title)
-            filename = f"{date_prefix}_{file_title}.md" if date_prefix else f"{file_title}.md"
+            # ページIDの末尾4文字を付与して重複を避ける
+            short_id = page.get("id", "").replace("-", "")[-4:]
+            filename = f"{date_prefix}_{file_title}_{short_id}.md" if date_prefix else f"{file_title}_{short_id}.md"
             filepath = os.path.join(OUTPUT_DIR, filename)
 
             # Markdownコンテンツの作成
@@ -108,7 +115,21 @@ def export_memos():
             content += "\n---\n\n"
             content += "## 💡 要約\n"
             content += summary if summary else "要約なし"
-            content += "\n"
+            content += "\n\n"
+
+            # URLが存在する場合、その中身も取得して追記する（AIが再利用しやすいように）
+            if url_val:
+                print(f"  -> URLのコンテンツを取得中: {url_val}")
+                page_data = gemini_analyzer.fetch_page_content(url_val)
+                if page_data and page_data.get('content'):
+                    content += "---\n\n"
+                    content += "## 📄 Webページ・投稿の本文データ\n"
+                    content += page_data['content']
+                    content += "\n"
+                else:
+                    content += "---\n\n"
+                    content += "## 📄 Webページ・投稿の本文データ\n"
+                    content += "（コンテンツの取得に失敗しました）\n"
 
             # 書き込み
             with open(filepath, "w", encoding="utf-8") as f:

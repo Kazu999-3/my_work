@@ -4,11 +4,8 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
 
-# 必要な権限（スコープ）の設定
 SCOPES = [
     'https://www.googleapis.com/auth/youtube.force-ssl', # YouTube操作
-    'https://www.googleapis.com/auth/spreadsheets',      # スプレッドシート操作
-    'https://www.googleapis.com/auth/drive.file'          # ドライブ内のファイル作成
 ]
 
 def get_authenticated_service():
