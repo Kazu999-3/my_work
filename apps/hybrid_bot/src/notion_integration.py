@@ -345,5 +345,14 @@ def get_lol_knowledge(champion_name=None):
         print(f"Error fetching LoL knowledge: {e}")
         return []
 
+def add_posted_url(url, category="content"):
+    """
+    発信したURLをNotionのメモ帳DBに追加する。
+    後でreaction_monitor.pyが巡回するために使用。
+    """
+    title = f"【発信済み】{url}"
+    summary = f"カテゴリ: {category}\n投稿日: {datetime.now().strftime('%Y-%m-%d')}"
+    return add_memo(title, url_val=url, summary_val=summary)
+
 if __name__ == "__main__":
     print("Notion client tests")

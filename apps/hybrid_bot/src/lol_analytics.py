@@ -136,6 +136,44 @@ def fetch_meta_tier_data(lane="default"):
     
     return {"success": False, "ban_top": [], "win_top": [], "lane": lane_param, "source": "N/A"}
 
+def get_pick_phase_guide(champion, lane="mid"):
+    """
+    ピック画面で役立つ総合ガイドを生成する。
+    1. BAN候補（メタデータに基づく）
+    2. 推奨ビルドリンク (U.GG)
+    3. 特徴や注意点（簡易版）
+    """
+    eng_name = champ_dict.translate_champion(champion)
+    
+    # チャンピオン名をURL形式に変換 (U.GG用)
+    def format_ugg_url(name):
+        return name.lower().replace(" ", "-").replace("'", "").replace(".", "")
+    
+    ugg_champ = format_ugg_url(eng_name)
+    lane_map = {"mid": "mid", "middle": "mid", "bot": "adc", "bottom": "adc", "jg": "jungle", "sup": "supp", "top": "top"}
+    ugg_lane = lane_map.get(lane.lower(), "mid")
+    
+    ugg_url = f"https://u.gg/lol/champions/{ugg_champ}/build?role={ugg_lane}"
+    opgg_url = f"https://www.op.gg/champions/{ugg_champ}/{ugg_lane}/build"
+    
+    # メタ情報からBAN候補を取得
+    meta = fetch_meta_tier_data(lane)
+    ban_candidates = []
+    if meta["success"]:
+        # BAN率トップ3 or 勝率トップ3から選出
+        ban_candidates = [c["name"] for c in meta["ban_top"][:3]]
+    
+    return {
+        "champion": eng_name,
+        "lane": lane,
+        "ban_recommendations": ban_candidates,
+        "build_urls": {
+            "u_gg": ugg_url,
+            "op_gg": opgg_url
+        },
+        "message": f"【AI軍師】{champion} ({lane}) の準備が整いました。\nBAN推奨: {', '.join(ban_candidates)}\nビルドは以下を参考にしてください。"
+    }
+
 if __name__ == "__main__":
     # テスト
     import json
