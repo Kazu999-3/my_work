@@ -1,6 +1,6 @@
 # Antigravity Skills 一覧
 
-自動更新日時: 2026-03-09 00:11:04
+自動更新日時: 2026-03-09 00:58:52
 
 このファイルは自動生成されています。各スキルの概要を整理しています。
 
@@ -116,6 +116,8 @@
   - ## 1. 役割
 - **[browser-automation.md](./12_tools_data/browser-automation.md)**
   - ## 1. 役割
+- **[pdp_analyzer.md](./12_tools_data/pdp_analyzer.md)**
+  - name: PDPアナライザー (Post-Data-Pivot Analyzer)
 - **[SKILL.md](./13_content_optimization/SKILL.md)**
   - name: Content Optimization
 - **[README.md](./README.md)**
