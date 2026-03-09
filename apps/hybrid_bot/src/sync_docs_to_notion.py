@@ -22,7 +22,6 @@ def get_md_files():
     target_dirs = {
         'skills': os.path.join(ROOT_DIR, 'skills'),
         'workflows': os.path.join(ROOT_DIR, 'workflows'),
-        'memo': os.path.join(ROOT_DIR, 'knowledge', 'memo'),
         'outputs': os.path.join(ROOT_DIR, 'outputs'),
         'root': ROOT_DIR
     }
@@ -98,13 +97,9 @@ def sync_to_notion(files):
             props["File Path"] = {"rich_text": [{"text": {"content": f['path']}}]}
 
         if title in existing_pages:
-            # 更新
-            page_id = existing_pages[title]
-            res = requests.patch(f"https://api.notion.com/v1/pages/{page_id}", headers=headers, json={"properties": props})
-            if res.status_code == 200:
-                print(f"Updated: {title}")
-            else:
-                print(f"Failed to update {title}: {res.text}")
+            # 既存の場合はスキップ
+            print(f"Already exists, skipping: {title}")
+            continue
         else:
             # 新規作成
             payload = {

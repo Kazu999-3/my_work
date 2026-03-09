@@ -83,21 +83,9 @@ def sync_to_notion(tasks):
         }
 
         if task_name in page_map:
-            # 更新
-            page_id = page_map[task_name]
-            update_url = f"https://api.notion.com/v1/pages/{page_id}"
-            try:
-                # 日本語プロパティ名で試行
-                res = requests.patch(update_url, headers=headers, json={"properties": properties})
-                if res.status_code != 200:
-                    # 英語プロパティ名でフォールバック
-                    properties_en = {
-                        "Status": {"status": {"name": "Done" if status == "完了" else "Not started"}}
-                    }
-                    requests.patch(update_url, headers=headers, json={"properties": properties_en})
-                print(f"Updated: {task_name} -> {status}")
-            except Exception as e:
-                print(f"Failed to update {task_name}: {e}")
+            # 既に存在する場合はスキップ
+            print(f"Already exists, skipping: {task_name}")
+            continue
         else:
             # 新規作成
             create_url = "https://api.notion.com/v1/pages"
