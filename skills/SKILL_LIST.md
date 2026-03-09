@@ -1,6 +1,6 @@
 # Antigravity Skills 一覧
 
-自動更新日時: 2026-03-09 22:06:58
+自動更新日時: 2026-03-09 23:09:08
 
 このファイルは自動生成されています。各スキルの概要を整理しています。
 
@@ -124,6 +124,8 @@
   - name: Content Optimization
 - **[self_reaction_analysis.md](./13_content_optimization/self_reaction_analysis.md)**
   - name: self_reaction_analysis
+- **[x_post_optimization.md](./13_content_optimization/x_post_optimization.md)**
+  - このスキルは、X（Twitter）の投稿を「140文字以内」という厳格な制約の中で、インプレッションとクリック率を最大化させるための分析・改善を行うものです。単発投稿から複数投稿による「ツリー（スレッ
 - **[README.md](./README.md)**
   - これまでに作成・最適化し、本プロジェクトに実装された「AI自動化スキル・エージェントの一覧」です。
 - **[article_review.md](./article_review.md)**
