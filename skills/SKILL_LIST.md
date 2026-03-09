@@ -1,6 +1,6 @@
 # Antigravity Skills 一覧
 
-自動更新日時: 2026-03-09 21:06:25
+自動更新日時: 2026-03-09 22:06:58
 
 このファイルは自動生成されています。各スキルの概要を整理しています。
 
@@ -82,6 +82,8 @@
   - ## 1. 役割
 - **[free-tool-strategy.md](./08_research_strategy/free-tool-strategy.md)**
   - ## 1. 役割
+- **[viral_analysis.md](./08_research_strategy/viral_analysis.md)**
+  - name: viral_analysis
 - **[SKILL.md](./09_agent_engineering/SKILL.md)**
   - このスキルは、自律型AI自体を強化・設計するための個別スキルをオーケストレート（統合・指揮）するための司令塔です。
 - **[agent-memory-mcp.md](./09_agent_engineering/agent-memory-mcp.md)**
@@ -120,6 +122,8 @@
   - name: PDPアナライザー (Post-Data-Pivot Analyzer)
 - **[SKILL.md](./13_content_optimization/SKILL.md)**
   - name: Content Optimization
+- **[self_reaction_analysis.md](./13_content_optimization/self_reaction_analysis.md)**
+  - name: self_reaction_analysis
 - **[README.md](./README.md)**
   - これまでに作成・最適化し、本プロジェクトに実装された「AI自動化スキル・エージェントの一覧」です。
 - **[article_review.md](./article_review.md)**

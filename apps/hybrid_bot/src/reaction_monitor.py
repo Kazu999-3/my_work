@@ -85,8 +85,7 @@ class ReactionMonitor:
 
 if __name__ == "__main__":
     monitor = ReactionMonitor()
-    # テスト用URL（適宜書き換え）
     test_urls = [
-        "https://x.com/HimazinProducer/status/2029494510045237557"
+        "https://x.com/JggapggLol"
     ]
     print(monitor.run_daily_analysis(test_urls))
