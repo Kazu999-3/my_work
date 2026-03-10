@@ -32,7 +32,6 @@
     📄 ANTIGRAVITY.md (プロジェクト憲法)
     📄 ULTIMATE_PROJECT_MASTER.md (本ドキュメント)
     📁 apps/ (実装プログラム本体)
-        📁 x_automator/ (NEW: X自動投稿エンジン)
     📁 skills/ (AIの思考ロジック・専門知識)
     📁 workflows/ (定型業務の手順書)
     📁 tools/ (自動化バッチ・スクリプト)
@@ -44,32 +43,41 @@
 
 ## ⚔️ 3. AIスキル百科事典 (Skills)
 
-アンちゃんが特定の専門家として振る舞うための「頭脳」の全容です。
+アンちゃんが特定の専門家として振る舞うための「頭脳」の全容です。全てのスキルは **「Proシリーズ」** へ統合され、内部で「3名のエージェントによる議論（生成、批判、統合）」を行う高度な内省ロジックが組み込まれています。
 
-### 👑 司令塔 (Commander)
-- **00_monetization_commander.md**: 全収益化スキルの最高執行責任者。テーマから拡散までを統括。
+### 👑 司令塔 (The Commander)
+- **[00_monetization_commander.md](./skills/00_monetization_commander.md)**
+  - 全スキルの最高執行責任者（COO）。テーマから戦略、実行指示までを統括。
 
-### ✍️ コンテンツ制作 & マーケティング (01-03)
-- **ArticleWriter.md**: 人間味のある親しみやすい記事本文を執筆。
-- **HighConvertingNoteGenerator.md**: 課金したくなる高品質なnote記事を3名体制で構築。
-- **MonetizationReviewer.md**: 収益化の観点から記事を厳格にレビュー。
-- **HookGenerator.md**: 読者の指を止める強力なフックを量産。
-- **SalesCopyOptimizer.md**: 売れるセールスコピーへの書き換え。
+### ✍️ コンテンツ制作 (Content Production)
+- **[01_ContentFactory_Pro.md](./skills/01_content_generation/01_ContentFactory_Pro.md)**
+  - 企画、執筆、校正、収益化記事作成を一括で行う究極の執筆エンジン。
 
-### 🎮 League of Legends コーチング (04)
-- **LoLCoach.md**: チャレンジャー帯の視点でのソロキュー分析。
-- **LoLRiskManager.md**: ランク戦を回すべきか論理的に判定。
-- **LoLMatchupMasterCoach.md**: 対面チャンピオンの完全封殺戦略。
+### 🎯 マーケティング (Marketing & Copy)
+- **[02_MarketingOptimizer_Pro.md](./skills/02_marketing_copywriting/02_MarketingOptimizer_Pro.md)**
+  - 競合分析、SEO分析、フック生成、セールスコピー最適化を統合したグロースエンジン。
 
-### 🏗️ システム設計 & 品質 (05, 09, 10)
-- **AgentOrchestratorDesign.md**: 複数エージェントによる自動ワークフロー設計。
-- **PromptOptimizer.md**: 高精度な構造化プロンプトへの変換。
-- **VibeCodeAuditor.md**: コードの品質とセキュリティを監査。
+### 🚀 プロモーション (Promotion & Automation)
+- **[03_PromotionEngine_Pro.md](./skills/03_promotion_automation/03_PromotionEngine_Pro.md)**
+  - SNS拡散カレンダー、画像プロンプト、動画台本、自動化スクリプトを一括錬成。
 
-### 🚀 最適化 & SEO (07, 13)
-- **seo-content-writer.md**: 検索上位と収益化を両立する記事作成。
-- **x_post_optimization.md**: 140文字の極限でクリック率を最大化。
-- **article_review.md**: 5つの黄金観点による記事の極限ブラッシュアップ。
+### 🎮 専門・コーチング (Specialized Coaching)
+- **[04_UltimateLoLCoach_Pro.md](./skills/04_lol_coach/04_UltimateLoLCoach_Pro.md)**
+  - LoLの勝率を最大化する軍師（分析、対策、リスク管理、メンタル）。
+- **[MBTIPositiveMentalCoach.md](./skills/06_personal_coach/MBTIPositiveMentalCoach.md)**
+  - MBTIに基づいたパーソナライズ・メンタルコーチ。
+
+### 🏗️ システム設計 (System & Engineering)
+- **[05_UltimateAIArchitect_Pro.md](./skills/05_system_architect/05_UltimateAIArchitect_Pro.md)**
+  - 最強のプロンプト作成とエージェント・ワークフローの設計。
+- **[09_UltimateAIEngineer_Pro.md](./skills/09_agent_engineering/09_UltimateAIEngineer_Pro.md)**
+  - メモリ管理、ツール構築、コード監査、セキュリティの統合基盤。
+
+### � 分析・リサーチ (Strategy & Data)
+- **[07_UltimateSEOSpecialist_Pro.md](./skills/07_seo_specialist/07_UltimateSEOSpecialist_Pro.md)**
+  - 検索1位と成約を両立するSEOの全技術。
+- **[08_UltimateStrategyAnalyst_Pro.md](./skills/08_research_strategy/08_UltimateStrategyAnalyst_Pro.md)**
+  - トレンド分析、PDP（自己反応分析）、市場調査を統合した戦略決定エンジン。
 
 ---
 
@@ -88,7 +96,6 @@
 
 ### 常用バッチファイル
 - **`tools\SYNC_ALL.bat`**: 【最重要】タスク、ドキュメント、メモ、YouTubeの全同期メニュー。
-- **`tools\X_SETUP.bat`**: 【NEW】X自動投稿ツールの初期ログイン設定。
 - **`tools\RUN_YT_CLEAN.bat`**: YouTube整理ロボットの単体実行。
 - **`tools\AUTO_RUN_BOT.bat`**: Discord Botの自動起動設定。
 
