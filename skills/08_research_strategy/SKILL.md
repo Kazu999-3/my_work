@@ -8,6 +8,7 @@
 
 ## 2. 統括する個別スキル
 - [ディープリサーチ (deep-research.md)](./deep-research.md): 市場とトレンドの深層調査。
+- [究極のディープリサーチPro (08_DeepResearch_Pro.md)](./08_DeepResearch_Pro.md): 海外メタ・SNS・LoLパッチ明記・URL保持に特化したプロ仕様リサーチ。
 - [競合分析 (competitive-landscape.md)](./competitive-landscape.md): 競合の弱点と自社の勝ち筋発見。
 - [無料ツール戦略 (free-tool-strategy.md)](./free-tool-strategy.md): リード獲得のためのツール企画。
 
