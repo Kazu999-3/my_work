@@ -11,7 +11,7 @@ sys.path.append(os.path.dirname(__file__))
 import gemini_analyzer
 
 # .envファイルの読み込み
-env_path = os.path.join(os.path.dirname(__file__), '..', '.env')
+env_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', '.env'))
 load_dotenv(env_path)
 
 NOTION_TOKEN = os.getenv('NOTION_API_KEY')
@@ -26,6 +26,26 @@ def sanitize_filename(filename):
     if len(filename) > 50:
         filename = filename[:50]
     return filename
+
+def update_notion_status(page_id, status_name, headers):
+    """Notionページのステータスを更新する"""
+    url = f"https://api.notion.com/v1/pages/{page_id}"
+    payload = {
+        "properties": {
+            "ステータス": {
+                "status": {
+                    "name": status_name
+                }
+            }
+        }
+    }
+    try:
+        res = requests.patch(url, headers=headers, json=payload)
+        res.raise_for_status()
+        return True
+    except Exception as e:
+        print(f"ステータスの更新に失敗しました ({page_id}): {e}")
+        return False
 
 def export_memos():
     if not NOTION_TOKEN or not NOTION_MEMO_DB_ID:
@@ -52,7 +72,15 @@ def export_memos():
         start_cursor = None
 
         while has_more:
-            payload = {"page_size": 100}
+            payload = {
+                "page_size": 100,
+                "filter": {
+                    "property": "ステータス",
+                    "status": {
+                        "does_not_equal": "完了"
+                    }
+                }
+            }
             if start_cursor:
                 payload["start_cursor"] = start_cursor
             
@@ -134,6 +162,10 @@ def export_memos():
             # 書き込み
             with open(filepath, "w", encoding="utf-8") as f:
                 f.write(content)
+            
+            # ステータスを「完了」に更新
+            if update_notion_status(page["id"], "完了", headers):
+                print(f"  -> ステータスを「完了」に更新しました: {title}")
             
             count += 1
 

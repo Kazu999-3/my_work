@@ -8,45 +8,36 @@ cls
 echo ==================================================
 echo   🏆 Antigravity Master Control System 🚀
 echo ==================================================
-echo   1. 全て実行 (Full Sync: Task, Docs, Memo, YT)
+echo   1. 全て実行 (Full Sync: Task, Memo, YT)
 echo   2. タスク同期のみ (task.md -^> Notion)
-echo   3. 文書一覧同期のみ (Markdown List -^> Notion)
-echo   4. メモ同期のみ (Notion -^> Local)
-echo   5. YouTube整理のみ (Notion Rules)
-echo   6. Discord Bot 起動 (RUN_BOT)
-echo   7. 終了
+echo   3. メモ同期のみ (Notion -^> Local)
+echo   4. YouTube整理のみ (Notion Rules)
+echo   5. Discord Bot 起動 (RUN_BOT)
+echo   6. 終了
 echo ==================================================
-set /p CHOICE="選択してください (1-7): "
+set /p CHOICE="選択してください (1-6): "
 
 if "%CHOICE%"=="1" goto ALL
 if "%CHOICE%"=="2" goto TASKS
-if "%CHOICE%"=="3" goto DOCS
-if "%CHOICE%"=="4" goto MEMO
-if "%CHOICE%"=="5" goto YT
-if "%CHOICE%"=="6" goto BOT
-if "%CHOICE%"=="7" exit
+if "%CHOICE%"=="3" goto MEMO
+if "%CHOICE%"=="4" goto YT
+if "%CHOICE%"=="5" goto BOT
+if "%CHOICE%"=="6" exit
 goto MENU
 
 :ALL
 echo.
-echo [1/4] タスクを同期中...
+echo [1/3] タスクを同期中...
 call :TASKS_CORE
-echo [2/4] ドキュメント一覧を同期中...
-call :DOCS_CORE
-echo [3/4] メモを同期中...
+echo [2/3] メモを同期中...
 call :MEMO_CORE
-echo [4/4] YouTube 整理中...
+echo [3/3] YouTube 整理中...
 call :YT_CORE
 goto END
 
 :TASKS
 echo.
 call :TASKS_CORE
-goto END
-
-:DOCS
-echo.
-call :DOCS_CORE
 goto END
 
 :MEMO
@@ -72,12 +63,6 @@ goto MENU
 :TASKS_CORE
 echo task.md を Notion に同期しています...
 python ..\apps\hybrid_bot\src\sync_tasks_to_notion.py
-echo 完了しました。
-exit /b
-
-:DOCS_CORE
-echo ローカルドキュメントを Notion に同期しています...
-python ..\apps\hybrid_bot\src\sync_docs_to_notion.py
 echo 完了しました。
 exit /b
 
