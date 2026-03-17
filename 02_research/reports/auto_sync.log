@@ -867,3 +867,266 @@ Notionからメモを取得中... (DB: 32061cf4543980d8a093d19d017ebcfc)
 🤖 思考モデル: models/gemini-2.5-flash
 [2026-03-18 00:01:00] ✅ 商品ドラフトを保存しました: D:\my_work\03_social\daily_posts\draft_20260318_0001.md
 [2026-03-18 00:01:00] ✨ すべての自律サイクルが正常に完了しました。
+D:\my_work\apps\intelligence\trend_watcher.py:8: FutureWarning: 
+
+All support for the `google.generativeai` package has ended. It will no longer be receiving 
+updates or bug fixes. Please switch to the `google.genai` package as soon as possible.
+See README for more details:
+
+https://github.com/google-gemini/deprecated-generative-ai-python/blob/main/README.md
+
+  import google.generativeai as genai
+💡 OmniSyncPro: 安定版エンジンを起動しました(requests仕様)
+[2026-03-18 01:00:04] 🚀 Omni-Agent 2.0: 「自律商社アンちゃん」の超知能サイクルを開始します。
+[2026-03-18 01:00:04] Step 0/6: スマホ修正の反映 (Cargo Pull)...
+[2026-03-18 01:00:26] Step 1/6: 市場トレンドの偵察 (scout_lolalytics)...
+🚀 アンちゃん・トレンドウォッチャー Pro 起動
+🔍 Lolalyticsから最新メタ情報をスカウティング中...
+【Lolalytics最新トレンド - Jungle】
+- Zaahen: Tier S+ (勝率 ??%)
+- Shen: Tier S (勝率 ??%)
+- Graves: Tier S (勝率 ??%)
+- Dr. Mundo: Tier D (勝率 ??%)
+- Lee Sin: Tier S (勝率 ??%)
+- Rek'Sai: Tier S (勝率 ??%)
+- Nunu & Willump: Tier S- (勝率 ??%)
+- Master Yi: Tier S- (勝率 ??%)
+- Viego: Tier A+ (勝率 ??%)
+- Nocturne: Tier A+ (勝率 ??%)
+
+💡 企画案を立案中...
+🤖 思考モデル: models/gemini-2.5-flash
+❌ モデル実行エラー: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash
+Please retry in 15.757663575s. [links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.5-flash"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+  quota_value: 20
+}
+, retry_delay {
+  seconds: 15
+}
+]
+DEBUG: Gemini Response:
+
+❌ JSON解析失敗: Expecting value: line 1 column 1 (char 0)
+[2026-03-18 01:00:43] Step 2/6: ネタの同期 (notion_to_local)...
+Notionからメモを取得中... (DB: 32061cf4543980d8a093d19d017ebcfc)
+同期中にエラーが発生しました: name 'NOTION_TOKEN' is not defined
+[2026-03-18 01:00:43] Step 3/6: 戦略脳 (Strategist) による今日のフック立案...
+🤖 思考モデル: models/gemini-2.5-flash
+❌ モデル実行エラー: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash
+Please retry in 15.442723619s. [links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.5-flash"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+  quota_value: 20
+}
+, retry_delay {
+  seconds: 15
+}
+]
+[2026-03-18 01:00:43] 💡 今日の戦略: ...
+[2026-03-18 01:00:43] Step 4/6: 商品化と監査脳による検閲...
+🤖 思考モデル: models/gemini-2.5-flash
+❌ モデル実行エラー: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash
+Please retry in 15.141160661s. [links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.5-flash"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+  quota_value: 20
+}
+, retry_delay {
+  seconds: 15
+}
+]
+🤖 思考モデル: models/gemini-2.5-flash
+❌ モデル実行エラー: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash
+Please retry in 14.847304493s. [links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.5-flash"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+  quota_value: 20
+}
+, retry_delay {
+  seconds: 14
+}
+]
+[2026-03-18 01:00:43] ⚠️ 監査不合格 (Score: 50): JSON解析失敗...
+[2026-03-18 01:00:43] 🔄 自動リワークを実行します (1/2)
+🤖 思考モデル: models/gemini-2.5-flash
+❌ モデル実行エラー: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash
+Please retry in 14.558507537s. [links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.5-flash"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+  quota_value: 20
+}
+, retry_delay {
+  seconds: 14
+}
+]
+🤖 思考モデル: models/gemini-2.5-flash
+❌ モデル実行エラー: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash
+Please retry in 14.263266257s. [links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.5-flash"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+  quota_value: 20
+}
+, retry_delay {
+  seconds: 14
+}
+]
+[2026-03-18 01:00:44] ⚠️ 監査不合格 (Score: 50): JSON解析失敗...
+[2026-03-18 01:00:44] 🔄 自動リワークを実行します (2/2)
+🤖 思考モデル: models/gemini-2.5-flash
+❌ モデル実行エラー: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash
+Please retry in 13.993000835s. [links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.5-flash"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+  quota_value: 20
+}
+, retry_delay {
+  seconds: 13
+}
+]
+🤖 思考モデル: models/gemini-2.5-flash
+❌ モデル実行エラー: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash
+Please retry in 13.70237297s. [links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.5-flash"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+  quota_value: 20
+}
+, retry_delay {
+  seconds: 13
+}
+]
+[2026-03-18 01:00:45] ⚠️ 監査不合格 (Score: 50): JSON解析失敗...
+[2026-03-18 01:00:45] ❗ 最大リトライ数に達しました。不格好なまま保存します。
+[2026-03-18 01:00:45] 💾 ドラフトを保存しました (Score: 50): draft_20260318_0100_s50.md
+[2026-03-18 01:00:45] Step 5/6: 全成果物のスマホ同期 (Ship)...
+  [Ship] Updated: [Foundation] ANTIGRAVITY
+  [Ship] Updated: [Foundation] action_plan
+  [Ship] Updated: [Foundation] failures
+  [Ship] Updated: [Foundation] mission
+  [Ship] Updated: [Foundation] monetization_strategy
+  [Ship] Updated: [Foundation] ng_words
+  [Ship] Updated: [Foundation] roadmap
+  [Ship] Updated: [Foundation] rules_evolution
+  [Ship] Updated: [Foundation] strategy
+  [Ship] Updated: [Foundation] target_client
+  [Ship] Updated: [Foundation] voice
+  [Ship] Updated: [Foundation] wins
+  [Ship] Updated: [Report] daily_report_2026-03-14
+  [Ship] Updated: [Report] trend_report_20260317
+  [Ship] Created: [Draft] draft_20260317_2357
+  [Ship] Created: [Draft] draft_20260318_0001
+  [Ship] Updated: [Draft] draft_20260318_0014
+  [Ship] Updated: [Draft] draft_20260318_0018
+  [Ship] Updated: [Draft] draft_20260318_0019
+  [Ship] Updated: [Draft] draft_20260318_0027
+  [Ship] Updated: [Draft] draft_20260318_0035
+  [Ship] Updated: [Draft] draft_20260318_0036
+  [Ship] Updated: [Draft] draft_20260318_0038
+  [Ship] Updated: [Draft] draft_20260318_0045_s50
+  [Ship] Created: [Draft] draft_20260318_0100_s50
+[2026-03-18 01:02:52] ✨ すべての自律サイクルが正常に完了しました。
