@@ -1,2 +1,276 @@
 C:\Users\PC_User\AppData\Local\Python\pythoncore-3.14-64\python.exe: can't open file 'D:\\my_work\\scripts\\apps\\intelligence\\trend_watcher.py': [Errno 2] No such file or directory
 C:\Users\PC_User\AppData\Local\Python\pythoncore-3.14-64\python.exe: can't open file 'D:\\my_work\\scripts\\apps\\hybrid_bot\\src\\trends_analyzer.py': [Errno 2] No such file or directory
+D:\my_work\apps\intelligence\trend_watcher.py:8: FutureWarning: 
+
+All support for the `google.generativeai` package has ended. It will no longer be receiving 
+updates or bug fixes. Please switch to the `google.genai` package as soon as possible.
+See README for more details:
+
+https://github.com/google-gemini/deprecated-generative-ai-python/blob/main/README.md
+
+  import google.generativeai as genai
+🚀 アンちゃん・トレンドウォッチャー Pro 起動
+🔍 Lolalyticsから最新メタ情報をスカウティング中...
+【Lolalytics最新トレンド - Jungle】
+- Zaahen: Tier S+ (勝率 ??%)
+- Shen: Tier S (勝率 ??%)
+- Graves: Tier S (勝率 ??%)
+- Lee Sin: Tier S (勝率 ??%)
+- Dr. Mundo: Tier D (勝率 ??%)
+- Rek'Sai: Tier S (勝率 ??%)
+- Master Yi: Tier S- (勝率 ??%)
+- Nunu & Willump: Tier S- (勝率 ??%)
+- Viego: Tier A+ (勝率 ??%)
+- Nocturne: Tier A+ (勝率 ??%)
+
+💡 企画案を立案中...
+🤖 思考モデル: models/gemini-2.5-flash
+DEBUG: Gemini Response:
+[
+  {
+    "title": "「緊急速報」新時代のS+ジャングル『Zaahen』最速攻略！秘密のビルドと勝率90%を叩き出す立ち回り、全て教えます",
+    "reason": "Lolalyticsで突如浮上したS+ジャングラー「Zaahen」。既存の常識を覆すそのパワーを最速で理解し、ライバルに差をつけるための完全ガイド。まだ誰も知らないその真価と、プロも唸る最先端の戦略を公開。",
+    "outline": [
+      "なぜ今ZaahenがS+なのか？ – 環境分析とZaahenの強み",
+      "基本スキル解説＆最適なスキルオーダー",
+      "【勝率を上げる】ルーンとサモナースペルの最適解",
+      "コアビルドパス：状況別アイテム選択の極意",
+      "徹底解説！序盤のジャングルルートとギャンクタイミング",
+      "中盤～終盤の集団戦での立ち位置と意識すべきこと",
+      "Zaahenと相性の良いチャンピオン・悪いチャンピオン",
+      "これであなたもS+ジャングラー！実践的Q&A"
+    ]
+  },
+  {
+    "title": "「もうLPを溶かさない」Lolalytics Sランク連発！【序盤を制する】最速ジャングルで圧倒的スノーボールを実現する秘策",
+    "reason": "今のジャングルメタは序盤のインパクトが全て。Graves, Lee Sin, Rek'SaiといったSランクチャンプを筆頭に、ゲームを序盤から完全に掌握し、対戦相手に何もさせずにLPを爆増させるための具体的な戦略と実践テクニックを徹底解説。",
+    "outline": [
+      "現在のジャングルメタ：なぜ序盤の有利が最も重要なのか",
+      "【Sランク】Graves, Lee Sin, Rek'Sai共通の強みと役割",
+      "開幕から差をつける！最適ジャングルルートと初手ギャンクの判断基準",
+      "カウンタージャングル vs. マップコントロール：状況に応じた選択",
+      "オブジェクト（ドラゴン/ヘラルド）を最速で取るための連携術",
+      "敵ジャングラーを完封するインベード＆トラッキングのコツ",
+      "味方レーナーを育てる「正しい」ギャンクとダイブ戦略",
+      "序盤のリードを中盤・終盤に繋げるための意識改革"
+    ]
+  },
+  {
+    "title": "「誰もが嫌がる」LOLalytics Sランク『サポート型ジャングルShen』で味方を\"絶対キャリー\"する方法！LP爆上げの真髄",
+    "reason": "ロールプレイに関わらず味方をキャリーしたいあなたへ。Sランクに君臨するShenジャングルは、その圧倒的サポート能力と奇襲性で味方を盤石にし、確実に勝利へと導く究極の選択。チームを勝利に導く「目に見えない」影響力と、他者には真似できない立ち回りを伝授。",
+    "outline": [
+      "なぜ今Shenジャングルが強いのか？ – 隠されたポテンシャルと役割",
+      "Shenの基本スキルと「味方を守る」スキルオーダー",
+      "【味方依存度ゼロ】ソロキューで輝くルーンとビルドパス",
+      "序盤のジャングルクリアと「タウント」を活用した奇襲ギャンク術",
+      "「R」究極の選択：いつ、誰に、どう使う？マップ全体を掌握する視点",
+      "集団戦での立ち位置と、味方ADCを守りきる秘訣",
+      "カウンタージャングルからの味方援護：一石二鳥のプレイスタイル",
+      "Shenジャングル使いが知るべき「負けない」ための戦略と心理戦"
+    ]
+  }
+]
+DEBUG: Notion Payload:
+{
+  "parent": {
+    "database_id": "31b61cf4543980299e0dec1313d8f24d"
+  },
+  "properties": {
+    "名前": {
+      "title": [
+        {
+          "type": "text",
+          "text": {
+            "content": "【トレンド速報】「緊急速報」新時代のS+ジャングル『Zaahen』最速攻略！秘密のビルドと勝率90%を叩き出す立ち回り、全て教えます"
+          }
+        }
+      ]
+    },
+    "ステータス": {
+      "status": {
+        "name": "Idea"
+      }
+    }
+  },
+  "children": [
+    {
+      "object": "block",
+      "type": "paragraph",
+      "paragraph": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "Lolalyticsで突如浮上したS+ジャングラー「Zaahen」。既存の常識を覆すそのパワーを最速で理解し、ライバルに差をつけるための完全ガイド。まだ誰も知らないその真価と、プロも唸る最先端の戦略を公開。"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "object": "block",
+      "type": "heading_2",
+      "heading_2": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "📝 構成案"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "object": "block",
+      "type": "paragraph",
+      "paragraph": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "なぜ今ZaahenがS+なのか？ – 環境分析とZaahenの強み\n基本スキル解説＆最適なスキルオーダー\n【勝率を上げる】ルーンとサモナースペルの最適解\nコアビルドパス：状況別アイテム選択の極意\n徹底解説！序盤のジャングルルートとギャンクタイミング\n中盤～終盤の集団戦での立ち位置と意識すべきこと\nZaahenと相性の良いチャンピオン・悪いチャンピオン\nこれであなたもS+ジャングラー！実践的Q&A"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
+❌ Notion投稿失敗 (400): {"object":"error","status":400,"code":"validation_error","message":"Invalid status option. Status option \"Idea\" does not exist\".","request_id":"a433531d-62b2-4c58-a4b6-c84f57935031"}
+DEBUG: Notion Payload:
+{
+  "parent": {
+    "database_id": "31b61cf4543980299e0dec1313d8f24d"
+  },
+  "properties": {
+    "名前": {
+      "title": [
+        {
+          "type": "text",
+          "text": {
+            "content": "【トレンド速報】「もうLPを溶かさない」Lolalytics Sランク連発！【序盤を制する】最速ジャングルで圧倒的スノーボールを実現する秘策"
+          }
+        }
+      ]
+    },
+    "ステータス": {
+      "status": {
+        "name": "Idea"
+      }
+    }
+  },
+  "children": [
+    {
+      "object": "block",
+      "type": "paragraph",
+      "paragraph": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "今のジャングルメタは序盤のインパクトが全て。Graves, Lee Sin, Rek'SaiといったSランクチャンプを筆頭に、ゲームを序盤から完全に掌握し、対戦相手に何もさせずにLPを爆増させるための具体的な戦略と実践テクニックを徹底解説。"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "object": "block",
+      "type": "heading_2",
+      "heading_2": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "📝 構成案"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "object": "block",
+      "type": "paragraph",
+      "paragraph": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "現在のジャングルメタ：なぜ序盤の有利が最も重要なのか\n【Sランク】Graves, Lee Sin, Rek'Sai共通の強みと役割\n開幕から差をつける！最適ジャングルルートと初手ギャンクの判断基準\nカウンタージャングル vs. マップコントロール：状況に応じた選択\nオブジェクト（ドラゴン/ヘラルド）を最速で取るための連携術\n敵ジャングラーを完封するインベード＆トラッキングのコツ\n味方レーナーを育てる「正しい」ギャンクとダイブ戦略\n序盤のリードを中盤・終盤に繋げるための意識改革"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
+❌ Notion投稿失敗 (400): {"object":"error","status":400,"code":"validation_error","message":"Invalid status option. Status option \"Idea\" does not exist\".","request_id":"e8122099-3922-4475-9bfc-4eddd0cee269"}
+DEBUG: Notion Payload:
+{
+  "parent": {
+    "database_id": "31b61cf4543980299e0dec1313d8f24d"
+  },
+  "properties": {
+    "名前": {
+      "title": [
+        {
+          "type": "text",
+          "text": {
+            "content": "【トレンド速報】「誰もが嫌がる」LOLalytics Sランク『サポート型ジャングルShen』で味方を\"絶対キャリー\"する方法！LP爆上げの真髄"
+          }
+        }
+      ]
+    },
+    "ステータス": {
+      "status": {
+        "name": "Idea"
+      }
+    }
+  },
+  "children": [
+    {
+      "object": "block",
+      "type": "paragraph",
+      "paragraph": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "ロールプレイに関わらず味方をキャリーしたいあなたへ。Sランクに君臨するShenジャングルは、その圧倒的サポート能力と奇襲性で味方を盤石にし、確実に勝利へと導く究極の選択。チームを勝利に導く「目に見えない」影響力と、他者には真似できない立ち回りを伝授。"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "object": "block",
+      "type": "heading_2",
+      "heading_2": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "📝 構成案"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "object": "block",
+      "type": "paragraph",
+      "paragraph": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "なぜ今Shenジャングルが強いのか？ – 隠されたポテンシャルと役割\nShenの基本スキルと「味方を守る」スキルオーダー\n【味方依存度ゼロ】ソロキューで輝くルーンとビルドパス\n序盤のジャングルクリアと「タウント」を活用した奇襲ギャンク術\n「R」究極の選択：いつ、誰に、どう使う？マップ全体を掌握する視点\n集団戦での立ち位置と、味方ADCを守りきる秘訣\nカウンタージャングルからの味方援護：一石二鳥のプレイスタイル\nShenジャングル使いが知るべき「負けない」ための戦略と心理戦"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
+❌ Notion投稿失敗 (400): {"object":"error","status":400,"code":"validation_error","message":"Invalid status option. Status option \"Idea\" does not exist\".","request_id":"7d123aff-0bf0-4018-89c8-857b153e8007"}
