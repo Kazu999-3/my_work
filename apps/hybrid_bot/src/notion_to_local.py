@@ -14,8 +14,8 @@ import gemini_analyzer
 env_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', '.env'))
 load_dotenv(env_path)
 
-NOTION_TOKEN = os.getenv('NOTION_API_KEY')
-NOTION_MEMO_DB_ID = os.getenv('NOTION_MEMO_DB_ID')
+NOTION_API_KEY = os.getenv('NOTION_API_KEY')
+NOTION_MEMO_DB_ID = os.getenv('NOTION_DB_ID')
 OUTPUT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', '02_research', 'memo'))
 
 def sanitize_filename(filename):
@@ -48,7 +48,7 @@ def update_notion_status(page_id, status_name, headers):
         return False
 
 def export_memos():
-    if not NOTION_TOKEN or not NOTION_MEMO_DB_ID:
+    if not NOTION_API_KEY or not NOTION_MEMO_DB_ID:
         print("エラー: NOTION_API_KEY または NOTION_MEMO_DB_ID が設定されていません。")
         return
 
@@ -77,7 +77,7 @@ def export_memos():
                 "filter": {
                     "property": "ステータス",
                     "status": {
-                        "does_not_equal": "完了"
+                        "does_not_equal": "Done"
                     }
                 }
             }
@@ -163,8 +163,8 @@ def export_memos():
             with open(filepath, "w", encoding="utf-8") as f:
                 f.write(content)
             
-            # ステータスを「完了」に更新
-            if update_notion_status(page["id"], "完了", headers):
+            # ステータスを「Done」に更新
+            if update_notion_status(page["id"], "Done", headers):
                 print(f"  -> ステータスを「完了」に更新しました: {title}")
             
             count += 1

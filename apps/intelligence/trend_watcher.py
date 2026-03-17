@@ -24,7 +24,7 @@ load_dotenv(ROOT_DIR / ".env")
 # API設定
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 NOTION_API_KEY = os.getenv("NOTION_API_KEY")
-NOTION_DB_ID = os.getenv("NOTION_MEMO_DB_ID") # メモDBに統合
+NOTION_DB_ID = os.getenv("NOTION_DB_ID") # 調査指示用DB
 MODEL_FLASH = os.getenv("MODEL_FLASH", "gemini-1.5-flash")
 
 genai.configure(api_key=GEMINI_API_KEY)

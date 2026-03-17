@@ -23,4 +23,4 @@ def get_db_details(db_id, label):
     else:
         print(f"Error: {r.text}")
 
-get_db_details(os.getenv("NOTION_MEMO_DB_ID"), "NOTION_MEMO_DB_ID")
+get_db_details(os.getenv("NOTION_DB_ID"), "NOTION_DB_ID")
