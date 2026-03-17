@@ -48,3 +48,28 @@ See README for more details:
 https://github.com/google-gemini/deprecated-generative-ai-python/blob/main/README.md
 
   import google.generativeai as genai
+
+--- 2026-03-17 23:54:48.868823 Task: 【トレンド速報】【LOLジャングル衝撃速報】'Zaahen'がS+に君臨！誰も知らない『最強の秘策』で勝率爆上げする方法 ---
+🔍 [【トレンド速報】【LOLジャングル衝撃速報】'Zaahen'がS+に君臨！誰も知らない『最強の秘策』で勝率爆上げする方法] のディープリサーチを開始します...
+🤖 使用モデル: models/gemini-2.5-pro (Pro)
+⚠️ Proのクォータ上限に達しました。Flashに切り替えて再試行します...
+🤖 使用モデル: models/gemini-2.5-flash (Flash)
+✅ リサーチ結果を保存しました: D:\my_work\outputs\draft\【トレンド速報】【LOLジャングル衝撃速報】'Zaahen'がS+に君臨！誰も知らない『最強の秘策』で勝率爆上げする方法_research_20260317_235449.md
+✍️ [【トレンド速報】【LOLジャングル衝撃速報】'Zaahen'がS+に君臨！誰も知らない『最強の秘策』で勝率爆上げする方法] の記事およびX投稿ドラフトを生成します...
+🤖 使用モデル: models/gemini-2.5-pro (Pro)
+⚠️ Proのクォータ上限に達しました。Flashに切り替えて再試行します...
+🤖 使用モデル: models/gemini-2.5-flash (Flash)
+✅ 記事ドラフトを保存しました: D:\my_work\outputs\draft\【トレンド速報】【LOLジャングル衝撃速報】'Zaahen'がS+に君臨！誰も知らない『最強の秘策』で勝率爆上げする方法_draft_20260317_235449.md
+
+🎉 AIパイプラインの実行が正常に完了しました！
+
+[STDERR]
+D:\my_work\apps\note_generator\ai_pipeline.py:7: FutureWarning: 
+
+All support for the `google.generativeai` package has ended. It will no longer be receiving 
+updates or bug fixes. Please switch to the `google.genai` package as soon as possible.
+See README for more details:
+
+https://github.com/google-gemini/deprecated-generative-ai-python/blob/main/README.md
+
+  import google.generativeai as genai

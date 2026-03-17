@@ -3,9 +3,13 @@ import glob
 import sys
 from datetime import datetime
 
-# srcディレクトリをパスに追加
-sys.path.append(os.path.dirname(__file__))
-import gemini_analyzer
+# srcディレクトリをパスに追加（モジュールとして実行される場合も考慮）
+if __name__ == "__main__":
+    sys.path.append(os.path.dirname(__file__))
+    import gemini_analyzer
+else:
+    # omni_agent などからインポートされる場合
+    from . import gemini_analyzer
 
 MEMO_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', '02_research', 'memo'))
 REPORT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', '02_research', 'reports'))
@@ -72,20 +76,24 @@ def generate_daily_trend_report():
     report = gemini_analyzer._call_gemini(prompt)
     return report
 
-if __name__ == "__main__":
+def analyze_latest_memos():
+    """Omhi-Agentなどから呼び出すためのエントリーポイント"""
     if not os.path.exists(REPORT_DIR):
         os.makedirs(REPORT_DIR)
         
     print("トレンドレポートを生成中...")
     report = generate_daily_trend_report()
     
-    if report and "エラー" not in report:
+    if report and "エラー" not in report and "見つかりませんでした" not in report:
         date_str = datetime.now().strftime('%Y%m%d')
         report_path = os.path.join(REPORT_DIR, f"trend_report_{date_str}.md")
         with open(report_path, "w", encoding="utf-8") as f:
             f.write(report)
         print(f"レポートを保存しました: {report_path}")
-    
-    print("\n" + "="*50 + "\n")
-    print(report)
-    print("\n" + "="*50 + "\n")
+        return True
+    else:
+        print(f"レポート生成スキップ: {report}")
+        return False
+
+if __name__ == "__main__":
+    analyze_latest_memos()

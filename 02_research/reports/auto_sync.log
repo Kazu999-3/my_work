@@ -584,3 +584,286 @@ Traceback (most recent call last):
   File "D:\my_work\apps\intelligence\omni_agent.py", line 18, in <module>
     from apps.hybrid_bot.src.trends_analyzer import analyze_latest_memos
 ImportError: cannot import name 'analyze_latest_memos' from 'apps.hybrid_bot.src.trends_analyzer' (D:\my_work\apps\hybrid_bot\src\trends_analyzer.py)
+D:\my_work\apps\intelligence\trend_watcher.py:8: FutureWarning: 
+
+All support for the `google.generativeai` package has ended. It will no longer be receiving 
+updates or bug fixes. Please switch to the `google.genai` package as soon as possible.
+See README for more details:
+
+https://github.com/google-gemini/deprecated-generative-ai-python/blob/main/README.md
+
+  import google.generativeai as genai
+[2026-03-18 00:00:04] 🚀 Omni-Agent: 「自律商社アンちゃん」の哨戒サイクルを開始します。
+[2026-03-18 00:00:04] Step 1/4: トレンド偵察 (scout_lolalytics) を実行中...
+🚀 アンちゃん・トレンドウォッチャー Pro 起動
+🔍 Lolalyticsから最新メタ情報をスカウティング中...
+【Lolalytics最新トレンド - Jungle】
+- Zaahen: Tier S+ (勝率 ??%)
+- Shen: Tier S (勝率 ??%)
+- Graves: Tier S (勝率 ??%)
+- Lee Sin: Tier S (勝率 ??%)
+- Dr. Mundo: Tier D (勝率 ??%)
+- Rek'Sai: Tier S (勝率 ??%)
+- Master Yi: Tier S- (勝率 ??%)
+- Nunu & Willump: Tier S- (勝率 ??%)
+- Viego: Tier A+ (勝率 ??%)
+- Nocturne: Tier A+ (勝率 ??%)
+
+💡 企画案を立案中...
+🤖 思考モデル: models/gemini-2.5-flash
+DEBUG: Gemini Response:
+[
+  {
+    "title": "「密かに勝率S+！？」誰も知らないジャングル『Zaahen』の異次元的キャリー術！～現環境を破壊する“裏切り者”を使いこなせ～",
+    "reason": "Lolalyticsの最新データでTier S+に位置する「Zaahen」は、多くのプレイヤーにとって未知の存在。しかし、その圧倒的な勝率は、現環境を最も効率的に破壊できるポテンシャルを秘めていることを示唆しています。このチャンピオンをいち早くマスターすることで、ライバルに差をつけ、ランクを爆上げする“秘密兵器”として機能します。高額記事として、その希少性と先行者利益を訴求します。",
+    "outline": [
+      "なぜ今ZaahenがS+なのか？～環境との驚異的な適合性と隠れたポテンシャル～",
+      "徹底解剖：Zaahenのスキルセットとジャングルでの立ち回り基礎",
+      "LoLアナリスト厳選！最強ビルドパス：コアアイテムから状況対応型まで",
+      "序盤の掌握：効率的なジャングルルートと成功率120%のGankタイミング",
+      "中盤～終盤のZaahen：集団戦での役割と勝利への導き方",
+      "苦手なマッチアップへの対処法と克服戦略",
+      "【実戦コーチング】Zaahenで勝率を爆上げする具体的手順とマインドセット"
+    ]
+  },
+  {
+    "title": "「Sティアジャングル、何使うべき？」勝つための“メタ理解度”診断！～多様化する上位ジャングルを完全攻略～",
+    "reason": "最新のLolalyticsデータでは、Shen、Graves、Lee Sin、Rek'Saiといった多様なチャンピオンがTier Sに名を連ねています。これは、一辺倒ではない多様なジャングル戦略が求められていることを意味します。プレイヤーは自分のプレイスタイルやチーム構成に合わせた最適なチャンピオン選択に悩みがちです。本記事では、Sティアジャングラーの『なぜ今強いのか』を深く掘り下げ、それぞれのチャンピオンが持つ“勝ち筋”を明確化することで、読者が最適な選択をできるよう導きます。",
+    "outline": [
+      "2024年最新版：ジャングルSティアの顔ぶれとチャンピオンタイプ別特徴",
+      "【メタ分析】なぜ彼らが強いのか？～環境要因とプレイスタイルの最適解～",
+      "『早期アグロ型』vs『スケールキャリー型』vs『ユーティリティ型』：それぞれの強みと選び方",
+      "各Sティアチャンピオンの“勝ち筋”を徹底解説（Shen, Graves, Lee Sin, Rek'Saiなどをピックアップ）",
+      "あなたのチーム構成に最適なジャングラー診断チャート",
+      "苦手なSティアジャングラーへの効果的なカウンター戦略とバン優先順位",
+      "【ロードマップ】ジャングルで“常に勝ち続ける”ための思考法とチャンピオン選択術"
+    ]
+  },
+  {
+    "title": "「勝てないジャングル」はもう卒業！ドクター・ムンドはなぜDティアなのか？～環境敗退ジャングラーから学ぶ勝ち方～",
+    "reason": "LolalyticsデータでDr. MundoがTier Dに沈んでいるのは、現環境において機能しづらいチャンピオンが存在する明確な証拠です。多くのプレイヤーは、知らず知らずのうちに環境にそぐわないチャンピオンをピックしてしまい、負けを重ねています。この記事では、Dティアに位置するチャンピオンがなぜ弱いのかを徹底分析し、その敗因から『現環境で勝つためのジャングル戦略』を逆説的に導き出します。読者は、何を選び、何を避けるべきか、そして弱い敵ジャングラーをどう利用するかを理解することで、勝率を向上させることができます。",
+    "outline": [
+      "衝撃のDティア！ドクター・ムンドがジャングルで機能しない根本的理由",
+      "「負け組ジャングラー」の共通点とは？～データが語る、避けるべきチャンピオンとその特性～",
+      "Dティアジャングラーを相手にした時の“楽勝”戦略：効果的なインベードとガンクの機会",
+      "Sティアジャングラー vs Dティアジャングラー：明確な「差」と「勝ち筋」の比較分析",
+      "【環境適応力】あなたの持ちキャラは今、“戦える”のか？自己診断シート",
+      "ピック＆バンフェーズで勝敗が決まる：賢いジャングラー選択の極意と禁忌",
+      "【特別付録】DティアからSティアへ！チャンピオンパワーを最大限引き出すためのビルド＆ルーン戦略"
+    ]
+  }
+]
+DEBUG: Notion Payload:
+{
+  "parent": {
+    "database_id": "32061cf4543980d8a093d19d017ebcfc"
+  },
+  "properties": {
+    "名前": {
+      "title": [
+        {
+          "type": "text",
+          "text": {
+            "content": "【トレンド速報】「密かに勝率S+！？」誰も知らないジャングル『Zaahen』の異次元的キャリー術！～現環境を破壊する“裏切り者”を使いこなせ～"
+          }
+        }
+      ]
+    },
+    "ステータス": {
+      "status": {
+        "name": "Idea"
+      }
+    }
+  },
+  "children": [
+    {
+      "object": "block",
+      "type": "paragraph",
+      "paragraph": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "Lolalyticsの最新データでTier S+に位置する「Zaahen」は、多くのプレイヤーにとって未知の存在。しかし、その圧倒的な勝率は、現環境を最も効率的に破壊できるポテンシャルを秘めていることを示唆しています。このチャンピオンをいち早くマスターすることで、ライバルに差をつけ、ランクを爆上げする“秘密兵器”として機能します。高額記事として、その希少性と先行者利益を訴求します。"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "object": "block",
+      "type": "heading_2",
+      "heading_2": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "📝 構成案"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "object": "block",
+      "type": "paragraph",
+      "paragraph": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "なぜ今ZaahenがS+なのか？～環境との驚異的な適合性と隠れたポテンシャル～\n徹底解剖：Zaahenのスキルセットとジャングルでの立ち回り基礎\nLoLアナリスト厳選！最強ビルドパス：コアアイテムから状況対応型まで\n序盤の掌握：効率的なジャングルルートと成功率120%のGankタイミング\n中盤～終盤のZaahen：集団戦での役割と勝利への導き方\n苦手なマッチアップへの対処法と克服戦略\n【実戦コーチング】Zaahenで勝率を爆上げする具体的手順とマインドセット"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
+✅ Notion投稿成功: 「密かに勝率S+！？」誰も知らないジャングル『Zaahen』の異次元的キャリー術！～現環境を破壊する“裏切り者”を使いこなせ～
+DEBUG: Notion Payload:
+{
+  "parent": {
+    "database_id": "32061cf4543980d8a093d19d017ebcfc"
+  },
+  "properties": {
+    "名前": {
+      "title": [
+        {
+          "type": "text",
+          "text": {
+            "content": "【トレンド速報】「Sティアジャングル、何使うべき？」勝つための“メタ理解度”診断！～多様化する上位ジャングルを完全攻略～"
+          }
+        }
+      ]
+    },
+    "ステータス": {
+      "status": {
+        "name": "Idea"
+      }
+    }
+  },
+  "children": [
+    {
+      "object": "block",
+      "type": "paragraph",
+      "paragraph": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "最新のLolalyticsデータでは、Shen、Graves、Lee Sin、Rek'Saiといった多様なチャンピオンがTier Sに名を連ねています。これは、一辺倒ではない多様なジャングル戦略が求められていることを意味します。プレイヤーは自分のプレイスタイルやチーム構成に合わせた最適なチャンピオン選択に悩みがちです。本記事では、Sティアジャングラーの『なぜ今強いのか』を深く掘り下げ、それぞれのチャンピオンが持つ“勝ち筋”を明確化することで、読者が最適な選択をできるよう導きます。"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "object": "block",
+      "type": "heading_2",
+      "heading_2": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "📝 構成案"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "object": "block",
+      "type": "paragraph",
+      "paragraph": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "2024年最新版：ジャングルSティアの顔ぶれとチャンピオンタイプ別特徴\n【メタ分析】なぜ彼らが強いのか？～環境要因とプレイスタイルの最適解～\n『早期アグロ型』vs『スケールキャリー型』vs『ユーティリティ型』：それぞれの強みと選び方\n各Sティアチャンピオンの“勝ち筋”を徹底解説（Shen, Graves, Lee Sin, Rek'Saiなどをピックアップ）\nあなたのチーム構成に最適なジャングラー診断チャート\n苦手なSティアジャングラーへの効果的なカウンター戦略とバン優先順位\n【ロードマップ】ジャングルで“常に勝ち続ける”ための思考法とチャンピオン選択術"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
+✅ Notion投稿成功: 「Sティアジャングル、何使うべき？」勝つための“メタ理解度”診断！～多様化する上位ジャングルを完全攻略～
+DEBUG: Notion Payload:
+{
+  "parent": {
+    "database_id": "32061cf4543980d8a093d19d017ebcfc"
+  },
+  "properties": {
+    "名前": {
+      "title": [
+        {
+          "type": "text",
+          "text": {
+            "content": "【トレンド速報】「勝てないジャングル」はもう卒業！ドクター・ムンドはなぜDティアなのか？～環境敗退ジャングラーから学ぶ勝ち方～"
+          }
+        }
+      ]
+    },
+    "ステータス": {
+      "status": {
+        "name": "Idea"
+      }
+    }
+  },
+  "children": [
+    {
+      "object": "block",
+      "type": "paragraph",
+      "paragraph": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "LolalyticsデータでDr. MundoがTier Dに沈んでいるのは、現環境において機能しづらいチャンピオンが存在する明確な証拠です。多くのプレイヤーは、知らず知らずのうちに環境にそぐわないチャンピオンをピックしてしまい、負けを重ねています。この記事では、Dティアに位置するチャンピオンがなぜ弱いのかを徹底分析し、その敗因から『現環境で勝つためのジャングル戦略』を逆説的に導き出します。読者は、何を選び、何を避けるべきか、そして弱い敵ジャングラーをどう利用するかを理解することで、勝率を向上させることができます。"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "object": "block",
+      "type": "heading_2",
+      "heading_2": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "📝 構成案"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "object": "block",
+      "type": "paragraph",
+      "paragraph": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "衝撃のDティア！ドクター・ムンドがジャングルで機能しない根本的理由\n「負け組ジャングラー」の共通点とは？～データが語る、避けるべきチャンピオンとその特性～\nDティアジャングラーを相手にした時の“楽勝”戦略：効果的なインベードとガンクの機会\nSティアジャングラー vs Dティアジャングラー：明確な「差」と「勝ち筋」の比較分析\n【環境適応力】あなたの持ちキャラは今、“戦える”のか？自己診断シート\nピック＆バンフェーズで勝敗が決まる：賢いジャングラー選択の極意と禁忌\n【特別付録】DティアからSティアへ！チャンピオンパワーを最大限引き出すためのビルド＆ルーン戦略"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
+✅ Notion投稿成功: 「勝てないジャングル」はもう卒業！ドクター・ムンドはなぜDティアなのか？～環境敗退ジャングラーから学ぶ勝ち方～
+[2026-03-18 00:00:40] Step 2/4: Notionからのネタ回収 (notion_to_local) を実行中...
+Notionからメモを取得中... (DB: 32061cf4543980d8a093d19d017ebcfc)
+同期中にエラーが発生しました: name 'NOTION_TOKEN' is not defined
+[2026-03-18 00:00:40] Step 3/4: 直近データの市場分析 (trends_analyzer) を実行中...
+トレンドレポートを生成中...
+レポート生成スキップ: 分析対象となるメモが見つかりませんでした。
+[2026-03-18 00:00:40] Step 4/4: コンテンツ下書き生成を実行中...
+🤖 思考モデル: models/gemini-2.5-flash
+[2026-03-18 00:01:00] ✅ 商品ドラフトを保存しました: D:\my_work\03_social\daily_posts\draft_20260318_0001.md
+[2026-03-18 00:01:00] ✨ すべての自律サイクルが正常に完了しました。
