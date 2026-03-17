@@ -1,11 +1,17 @@
 import os
 import sys
 import json
-import time
+import asyncio
 from pathlib import Path
+from datetime import datetime
 from dotenv import load_dotenv
 import google.generativeai as genai
 import requests
+from playwright.async_api import async_playwright
+import warnings
+
+# 警告を非表示にする
+warnings.filterwarnings("ignore")
 
 # Windowsコンソールでの絵文字出力エラー（cp932）回避
 sys.stdout.reconfigure(encoding='utf-8')
@@ -18,78 +24,132 @@ load_dotenv(ROOT_DIR / ".env")
 # API設定
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 NOTION_API_KEY = os.getenv("NOTION_API_KEY")
-NOTION_DB_ID = os.getenv("NOTION_DB_ID")
-MODEL_PRO = os.getenv("MODEL_PRO", "gemini-2.5-pro")
+NOTION_DB_ID = os.getenv("NOTION_MEMO_DB_ID") # メモDBに統合
 MODEL_FLASH = os.getenv("MODEL_FLASH", "gemini-1.5-flash")
 
 genai.configure(api_key=GEMINI_API_KEY)
 
+async def scout_lolalytics():
+    """Lolalyticsから最新のTierデータとトレンドをスクレイピングする"""
+    print("🔍 Lolalyticsから最新メタ情報をスカウティング中...")
+    async with async_playwright() as p:
+        browser = await p.chromium.launch(headless=True)
+        page = await browser.new_page()
+        
+        # LolalyticsのジャングルTierページへ（例としてJungle）
+        url = "https://lolalytics.com/lol/tierlist/?lane=jungle"
+        try:
+            await page.goto(url, wait_until="networkidle", timeout=60000)
+            # ページ読み込み待ち
+            await asyncio.sleep(5) 
+            
+            # 最新のLolalytics構造に対応した抽出ロジック
+            champions = await page.evaluate(r'''() => {
+                // チャンピオン詳細へのリンクを起点にする
+                const links = Array.from(document.querySelectorAll('a[href*="/build/"]'));
+                // テキスト（名前）を持っているものだけを抽出（アイコン用リンクを除く）
+                const nameLinks = links.filter(a => a.innerText && a.innerText.length > 1);
+                
+                return nameLinks.slice(0, 10).map(el => {
+                    const name = el.innerText;
+                    // 親要素を遡って行全体のテキストを取得し、パターンマッチ等で情報を探す
+                    // Lolalyticsの構造上、情報の並び順は比較的固定されている
+                    const rowText = el.closest('div')?.parentElement?.innerText || "";
+                    
+                    // シンプルに、要素の周辺から情報を探す（サブエージェントの報告に基づく）
+                    // 実際には rowText から正規表現や分割で抽出するのが安全
+                    const parts = rowText.split('\t').map(s => s.trim()).filter(s => s);
+                    
+                    // 例: ["1", "Nidalee", "S+", "52.8%", ...] のような構造を期待
+                    // ただし環境により split が効かない場合があるため、フォールバックを用意
+                    return {
+                        name: name,
+                        winrate: rowText.match(/(\d+\.\d+)%/)?.[0] || "??%",
+                        tier: rowText.match(/[SABCDE][+-]?/)?.[0] || "-"
+                    };
+                });
+            }''')
+            
+            await browser.close()
+            
+            intel_summary = "【Lolalytics最新トレンド - Jungle】\n"
+            for champ in champions:
+                intel_summary += f"- {champ['name']}: Tier {champ['tier']} (勝率 {champ['winrate']})\n"
+            
+            return intel_summary
+        except Exception as e:
+            await browser.close()
+            print(f"❌ Lolalyticsスクレイピングエラー: {e}")
+            return "Lolalyticsからのデータ取得に失敗しました。シミュレーションデータを使用します。"
+
 def generate_with_fallback(prompt: str) -> str:
-    """トレンド監視ではコスト優先で Flash を固定使用する"""
-    m_name = MODEL_FLASH
+    """トレンド監視ではコスト優先で Flash を使用"""
     try:
-        print(f"🤖 思考モデル: {m_name} (Flash-Fixed)")
-        temp_model = genai.GenerativeModel(m_name)
+        print(f"🤖 思考モデル: {MODEL_FLASH}")
+        temp_model = genai.GenerativeModel(MODEL_FLASH)
         response = temp_model.generate_content(prompt)
         return response.text
     except Exception as e:
         print(f"❌ モデル実行エラー: {e}")
-        raise e
-
-def scout_trends():
-    """
-    情報を収集する（将来的にPlaywright等を統合可能）
-    現在は、直近のリサーチ結果をベースにしたベースラインを返す
-    """
-    print("🔍 最新メタ情報を収集中...")
-    # 本来はここでYouTube APIやスクレイピングを回すが、
-    # 今日は直前のリサーチ結果を「知能」に渡すためのシミュレーションを実行。
-    # ※将来的にはここを完全自動化する。
-    research_intel = """
-    - Coach Kirei: Lillia, Hecarim Season 16 meta boost.
-    - Agurin: Spamming Nocturne, Viego, Maokai.
-    - Stats (Patch 16.5): Zaahen(WR 53%), Rek'Sai(WR 53.4%), Lee Sin(Pick 12%).
-    - Key Theme: Early jungle clear speed buffs are favoring Lillia and Rek'Sai.
-    """
-    return research_intel
+        return ""
 
 def generate_proposals(scouted_data: str):
-    """
-    リサーチ結果から企画案と目次を生成する
-    """
     print("💡 企画案を立案中...")
     prompt = f"""
-あなたはLoL情報発信のスペシャリスト・メディアプロデューサーです。
-提供された最新のトレンドリサーチ結果を基に、noteで500円〜1,000円で売れる「勝てるための戦略記事」の企画を3つ提案してください。
+あなたはLoL情報発信のスペシャリストです。提供されたLolalyticsの最新データに基づき、
+noteで500円〜1,000円で売れる「勝てるための戦略記事」の企画を3つ提案してください。
 
-[リサーチ結果]
+[最新データ]
 {scouted_data}
 
 [条件]
-- 読者が思わずクリックしたくなる「強いタイトル」にすること。
-- 内容は「中級者〜上級者が納得する深い戦略」を含むこと。
+- 読者のスクロールを止める「強いタイトル（フック）」にすること。
+- 日本語で回答してください。
+- 出力はJSON形式のリストのみにしてください。
 
-[出力フォーマット(JSON形式のリスト)]
+[フォーマット]
 [
   {{
-    "title": "記事のタイトル",
-    "reason": "なぜ今この記事を出すべきか（具体的な勝率やYouTubeでの流行）",
-    "outline": "想定される詳細な目次（箇条書き）"
+    "title": "タイトル（内部でダブルクォートを使わないでください）",
+    "reason": "なぜ今これか",
+    "outline": "目次案（箇条書きの1つ1つの要素をリスト形式にしてください）"
   }}
 ]
 
-必ずJSONのみを出力してください。日本語で回答してください。
+IMPORTANT: Respond ONLY with a valid JSON array. Do not include any markdown code blocks or preamble. Use single quotes for any quotes inside strings if necessary. Ensure all JSON special characters are escaped.
 """
+    import re
     response_text = generate_with_fallback(prompt)
-    content = response_text.strip()
-    if "```json" in content:
-        content = content.split("```json")[1].split("```")[0].strip()
-    return json.loads(content)
+    print(f"DEBUG: Gemini Response:\n{response_text}")
+    
+    # シンタックス警告対策: raw string を使用
+    match = re.search(r'\[\s*{.*}\s*\]', response_text, re.DOTALL)
+    if match:
+        content = match.group(0)
+    else:
+        content = response_text.strip()
+        if "```json" in content:
+            content = content.split("```json")[-1].split("```")[0].strip()
+        elif "```" in response_text:
+            content = response_text.split("```")[-1].split("```")[0].strip()
+        else:
+            # 配列の開始 [ と終了 ] を探す
+            start_idx = response_text.find('[')
+            end_idx = response_text.rfind(']')
+            if start_idx != -1 and end_idx != -1:
+                content = response_text[start_idx:end_idx+1]
+            else:
+                content = response_text.strip()
+        
+    # 不要な制御文字などを除去
+    content = re.sub(r'[\x00-\x1F\x7F]', '', content)
+    try:
+        return json.loads(content)
+    except Exception as e:
+        print(f"❌ JSON解析失敗: {e}")
+        return []
 
 def post_to_notion(proposal):
-    """
-    Notionにステータス未設定（Idea相当）で投稿する
-    """
     url = "https://api.notion.com/v1/pages"
     headers = {
         "Authorization": f"Bearer {NOTION_API_KEY}",
@@ -97,65 +157,40 @@ def post_to_notion(proposal):
         "Notion-Version": "2022-06-28"
     }
     
-    reason_text = str(proposal.get('reason', ''))[:1500]
-    outline_text = str(proposal.get('outline', ''))[:1500]
-
-    children = [
-        {
-            "object": "block",
-            "type": "heading_2",
-            "heading_2": { "rich_text": [{ "type": "text", "text": { "content": "🤔 なぜ今これか（アンちゃんの分析）" } }] }
-        },
-        {
-            "object": "block",
-            "type": "paragraph",
-            "paragraph": { "rich_text": [{ "type": "text", "text": { "content": reason_text } }] }
-        },
-        {
-            "object": "block",
-            "type": "heading_2",
-            "heading_2": { "rich_text": [{ "type": "text", "text": { "content": "📝 構成案・目次" } }] }
-        },
-        {
-            "object": "block",
-            "type": "paragraph",
-            "paragraph": { "rich_text": [{ "type": "text", "text": { "content": outline_text } }] }
-        }
-    ]
+    # 値を文字列に変換（リストなどで返ってきた場合への対策）
+    reason_val = proposal.get('reason', '')
+    if isinstance(reason_val, list): reason_val = "\n".join(reason_val)
+    outline_val = proposal.get('outline', '')
+    if isinstance(outline_val, list): outline_val = "\n".join(outline_val)
 
     payload = {
         "parent": { "database_id": NOTION_DB_ID },
         "properties": {
-            "名前": {
-                "title": [{ "type": "text", "text": { "content": f"【企画案】{proposal['title']}" } }]
-            },
-            "ステータス": {
-                "status": { "name": "Idea" }  # Notion側に 'Idea' というステータス名を追加してください
-            }
+            "名前": { "title": [{ "type": "text", "text": { "content": f"【トレンド速報】{proposal['title']}" } }] },
+            "ステータス": { "status": { "name": "Idea" } }
         },
-        "children": children
+        "children": [
+            { "object": "block", "type": "paragraph", "paragraph": { "rich_text": [{ "type": "text", "text": { "content": str(reason_val)[:2000] } }] } },
+            { "object": "block", "type": "heading_2", "heading_2": { "rich_text": [{ "type": "text", "text": { "content": "📝 構成案" } }] } },
+            { "object": "block", "type": "paragraph", "paragraph": { "rich_text": [{ "type": "text", "text": { "content": str(outline_val)[:2000] } }] } }
+        ]
     }
     
+    print(f"DEBUG: Notion Payload:\n{json.dumps(payload, indent=2, ensure_ascii=False)}")
     r = requests.post(url, json=payload, headers=headers)
-    if r.status_code == 200:
-        print(f"✅ Notionへの投稿に成功: {proposal['title']}")
-        return True
-    else:
-        print(f"❌ Notion投稿失敗: {r.text}")
-        return False
+    if r.status_code != 200:
+        print(f"❌ Notion投稿失敗 ({r.status_code}): {r.text}")
+    return r.status_code == 200
 
-def main():
-    print("🚀 アンちゃん・トレンドウォッチャー起動")
-    intel = scout_trends()
-    proposals = generate_proposals(intel)
+async def main():
+    print("🚀 アンちゃん・トレンドウォッチャー Pro 起動")
+    intel = await scout_lolalytics()
+    print(intel)
     
-    success_count = 0
+    proposals = generate_proposals(intel)
     for p in proposals:
         if post_to_notion(p):
-            success_count += 1
-    
-    print(f"\n✨ 完了: {success_count} 個の新しい企画をNotionに届けました。")
-    print("Notionで内容を確認し、進めたい企画のステータスを 'Ready' に変更してください。")
+            print(f"✅ Notion投稿成功: {p['title']}")
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

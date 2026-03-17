@@ -16,7 +16,7 @@ load_dotenv(env_path)
 
 NOTION_TOKEN = os.getenv('NOTION_API_KEY')
 NOTION_MEMO_DB_ID = os.getenv('NOTION_MEMO_DB_ID')
-OUTPUT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', 'knowledge', 'memo'))
+OUTPUT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', '02_research', 'memo'))
 
 def sanitize_filename(filename):
     """ファイル名として使用できない文字を除去・置換し、長さを制限する"""

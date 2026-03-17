@@ -16,3 +16,4 @@ __pycache__/
 # Temporary / Debug
 debug_*.py
 .DS_Store
+node_modules

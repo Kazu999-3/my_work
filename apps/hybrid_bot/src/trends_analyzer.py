@@ -7,8 +7,8 @@ from datetime import datetime
 sys.path.append(os.path.dirname(__file__))
 import gemini_analyzer
 
-MEMO_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', 'knowledge', 'memo'))
-REPORT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', 'knowledge', 'reports'))
+MEMO_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', '02_research', 'memo'))
+REPORT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', '02_research', 'reports'))
 
 def get_latest_memos(limit=10):
     """最新のメモファイルを取得する"""
@@ -39,31 +39,36 @@ def generate_daily_trend_report():
 
     prompt = f"""
 あなたはAIトレンド分析の専門家「アンちゃん」です。
-ユーザーが保存した最新のメモ（Xの投稿やWeb記事の要約）を基に、今日の「収益化トレンド・ダイジェスト」を作成してください。
+@HimazinProducer 氏の「偵察レポート」手法に基づき、最新のメモから「今日高反応が得られるフック（冒頭3行）」を特定・分析してください。
 
 【提供されたメモデータ】
 {full_context}
 
 【出力フォーマット】
-以下の構成で、親しみやすく、かつプロフェッショナルなレポートを作成してください。
+以下の構成で、極めて実戦的な「偵察レポート」を作成してください。
 
-# 🌟 本日のAIトレンド・ダイジェスト ({datetime.now().strftime('%Y/%m/%d')})
+# 🕵️ 最新偵察レポート ({datetime.now().strftime('%Y/%m/%d')})
 
-## 📊 今日の主要トピック
-(全体的な傾向を3行程度で)
+## 🔍 反応の良かったフック分析 (Top 3)
+1. **[分析対象]**: (メモ内の具体的なフック/冒頭3行)
+   - **反応の理由**: (なぜそのフックが刺さっているのか、心理的トリガーを分析)
+   - **共通点**: (現在のトレンドとの関連性)
 
-## 🔥 注目すべきインサイト（収益化のヒント）
-- (メモから得られた具体的な収益化のアイデアや成功例を3つほど)
+## 🔥 今日の「勝ちパターン」
+- (今すぐ真似すべき、特定の言い回しや構成のルールを提示)
 
-## 🚀 今日、あなたがすべき具体的なアクションプラン
-- **Action 1**: (即座に実行できる具体的な作業)
-- **Action 2**: (今後の準備や調査すべきこと)
+## 🚀 次のアクション：3つの投稿案の種
+- **パターンA (集客/有益型)**: (トレンドに基づいた図解やTips案。認知を広げるためのフック)
+- **パターンB (収益/感情型)**: (独自の視点や痛みを突く案。信頼を築き行動を促すためのフック)
+- **パターンC (泥臭いリアル型)**: (一次情報をベースにした、人間らしさを出すフック)
 
-## 📝 アンちゃんの独り言
-(個人的な感想や励ましのメッセージ)
+## ⚖️ 収益化・品質フィルターによる最終推敲
+- **収益化**: 「役に立った」で終わらせず、感情（恐怖/欲望）を突き、行動（導線）を促しているか？
+- **引き算の魔法 (NGワードチェック)**: `ng_words.md` にあるレベル1〜3の表現を徹底的に排除したか？
+- **独自性の担保**: AI臭いテンプレ表現を削り、あなたの「肉声」に近い言葉になっているか？
 """
 
-    # Geminiで生成
+    # Geminiで生成 (最新モデルを使用)
     report = gemini_analyzer._call_gemini(prompt)
     return report
 

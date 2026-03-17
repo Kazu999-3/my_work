@@ -25,19 +25,49 @@
 
 ---
 
-## 📂 2. 最新ディレクトリ構成
+## 📂 2. 事業OS：5階層設計 (5 Floor System)
+本プロジェクトは、AIが自律的な専門家として機能するための「5階層構造」を採用しています。各階層をフォルダとファイルで定義することで、AIの思考回路を制御します。
 
-```text
-📁 my_work/
-    📄 ANTIGRAVITY.md (プロジェクト憲法)
-    📄 ULTIMATE_PROJECT_MASTER.md (本ドキュメント)
-    📁 apps/ (実装プログラム本体)
-    📁 skills/ (AIの思考ロジック・専門知識)
-    📁 workflows/ (定型業務の手順書)
-    📁 tools/ (自動化バッチ・スクリプト)
-    📁 knowledge/ (Notion同期メモ・RAG用データ)
-    📁 outputs/ (生成された記事・成果物)
-```
+### [1F] Design Layer (設計層) - 存在意義・成功の定義
+エージェントの性格と「勝ち」の定義を司ります。
+- **[`01_foundation/`](./01_foundation/)**
+  - `target_client.md`: 誰の、どの課題を解決するか。
+  - `voice.md`: 口調、行動ルール、ペルソナ。
+  - `wins.md`: 成功（勝ち）の定義とパターン。
+  - `mission.md`: 根本目標と使命。
+  - `strategy.md`: 独自の市場戦略。
+
+### [2F] Action Layer (実行層) - スキル・手順
+具体的な作業手順と専門能力、および「資産」を生み出すサイクルを保持します。
+- **`.agent/` (AIエンジン部)**
+  - `skills/`: 特定業務に特化した専門スキル（Proシリーズ）。
+  - `workflows/`: 一連の作業手順（/コマンドに対応）。
+- **[`03_social/`](./03_social/)**
+  - `daily_posts/`: **[NEW]** 投稿原稿の蓄積（学習用）。
+  - `hit_archive/`: **[NEW]** 100いいね超えの成功事例のみを厳選。
+  - `hook_library/`: **[NEW]** 成功した「冒頭1行」のパターン。
+  - `ng_log/`: **[NEW]** 反応が悪かった投稿の反省ログ。
+  - `note_production_guide.md`: **[NEW]** 高単価 note 制作の手順書（つなげるプロンプト）。
+
+### [3F] Data Layer (記憶層) - 知識・情報のストック
+AIが参照する外部情報と独自ナレッジの蓄積地です。
+- **[`02_research/`](./02_research/)**
+  - `idea_bank/`: ストック型ネタ出し（Pain, Experience等）。
+  - `competitor/`: **[NEW]** 競合分析・ベンチマーク。
+  - `feedback.md`: ユーザーの声と実行結果のフィードバック。
+  - `memo/`: 一次情報の断片。
+
+### [4F] Analytics Layer (分析層) - 数値・レポート
+客観的なデータに基づき、現状を可視化します。
+- **[`05_analytics/`](./05_analytics/)**
+  - `kpi.md`: **[NEW]** 追跡すべき重要指標の定義。
+  - `reports/`: AIによる定期的な分析レポート。
+
+### [5F] Evolution Layer (進化層) - 自己進化・実験
+過去の教訓を未来へ繋げ、OS自体をアップデートします。
+- **[`05_analytics/`](./05_analytics/)**
+  - `changelog.md`: システム・ルールの変更履歴。
+  - `experiments.md`: A/Bテストや仮説検証の結果。
 
 ---
 
@@ -85,6 +115,7 @@
 
 | コマンド | ファイル | 役割 |
 | :--- | :--- | :--- |
+| `/auto-evolution-cycle` | `auto-evolution-cycle.md` | **[NEW]** 事業OSを自律進化させる（スキルやトーンの自動提案・更新）。 |
 | `/monetization-flow` | `monetization-flow.md` | 執筆〜レビュー〜SNS拡散までを一気通貫で実行。 |
 | `/daily-report` | `daily-report.md` | 一日の作業内容を抽出し、日報を自動生成。 |
 | `/youtube-organize` | `youtube-organize.md` | YouTubeプレイリストを指定ルールで自動整理。 |

@@ -14,6 +14,12 @@ sys.stderr.reconfigure(encoding='utf-8')
 # パス設定
 ROOT_DIR = Path(__file__).resolve().parent.parent
 PIPELINE_SCRIPT = ROOT_DIR / "apps" / "note_generator" / "ai_pipeline.py"
+MEMO_SYNC_SCRIPT = ROOT_DIR / "apps" / "hybrid_bot" / "src" / "notion_to_local.py"
+YT_SYNC_SCRIPT = ROOT_DIR / "apps" / "youtube_manager" / "src" / "notion_yt_orchestrator.py"
+
+# 定期実行の間隔（10分 = 600秒）
+MAINTENANCE_INTERVAL = 600
+last_maintenance_time = 0
 
 # .env 読み込み
 load_dotenv(ROOT_DIR / ".env")
@@ -144,6 +150,37 @@ def process_task(page):
     except Exception as e:
         print(f"❌ 処理中に致命的なエラーが発生しました: {e}")
 
+def run_maintenance_tasks():
+    """定期的なメンテナンス（メモ・YouTube同期）を実行する"""
+    global last_maintenance_time
+    now = time.time()
+    
+    # 初回実行時、または最終実行から MAINTENANCE_INTERVAL 経過している場合
+    if now - last_maintenance_time < MAINTENANCE_INTERVAL:
+        return
+
+    print(f"\n🛠️ 定期メンテナンスを開始します ({datetime.datetime.now()})")
+    
+    # 1. メモ同期 (notion_to_local.py)
+    print("📝 メモ帳の同期中...")
+    try:
+        subprocess.run([sys.executable, str(MEMO_SYNC_SCRIPT)], check=True)
+    except Exception as e:
+        print(f"⚠️ メモ同期でエラーが発生しました: {e}")
+
+    # 2. YouTube同期 (notion_yt_orchestrator.py)
+    print("📺 YouTubeインベントリの同期中...")
+    try:
+        # YouTubeマネージャーはconfigフォルダの.envを個別に読むためCWD指定
+        subprocess.run([sys.executable, str(YT_SYNC_SCRIPT)], 
+                       cwd=str(ROOT_DIR / "apps" / "youtube_manager" / "src"),
+                       check=True)
+    except Exception as e:
+        print(f"⚠️ YouTube同期でエラーが発生しました: {e}")
+
+    last_maintenance_time = now
+    print("✅ メンテナンスが完了しました。\n")
+
 def main():
     print("📡 Notion ディスパッチャーを起動しました（タスク監視中...）")
     try:
@@ -153,6 +190,9 @@ def main():
                 tasks = fetch_ready_tasks()
                 for task in tasks:
                     process_task(task)
+                
+                # 定期メンテナンスの実行
+                run_maintenance_tasks()
             except Exception as e:
                 print(f"⚠️ 監視中に一時的なエラーが発生しました（再試行します）: {e}")
             
