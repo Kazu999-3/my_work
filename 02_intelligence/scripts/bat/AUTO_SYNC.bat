@@ -11,7 +11,7 @@ set ROOT_DIR=D:\my_work
 
 echo.
 echo [1/2] 知能統合エンジン (Omni-Agent) 起動中...
-python "%ROOT_DIR%\02_intelligence\intelligence\omni_agent.py" >> "%ROOT_DIR%\04_system\logs\omni_agent.log" 2>&1
+python "%ROOT_DIR%\02_intelligence\intelligence\omni_agent.py" >> "%ROOT_DIR%\04_system\logs\auto_sync.log" 2>&1
 
 echo.
 echo [2/2] 自動メンテナンス (Git登録・フォルダマップ整理等) 実行中...
