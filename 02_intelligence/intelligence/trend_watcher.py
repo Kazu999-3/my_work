@@ -182,6 +182,37 @@ def post_to_notion(proposal):
         print(f"❌ Notion投稿失敗 ({r.status_code}): {r.text}")
     return r.status_code == 200
 
+def is_duplicate(title):
+    """Notion DBに同じタイトルの記事（Idea）が既に存在するか確認する"""
+    url = f"https://api.notion.com/v1/databases/{NOTION_DB_ID}/query"
+    headers = {
+        "Authorization": f"Bearer {NOTION_API_KEY}",
+        "Content-Type": "application/json",
+        "Notion-Version": "2022-06-28"
+    }
+    
+    full_title = f"【トレンド速報】{title}"
+    payload = {
+        "filter": {
+            "property": "名前",
+            "title": {
+                "equals": full_title
+            }
+        }
+    }
+    
+    try:
+        r = requests.post(url, json=payload, headers=headers)
+        if r.status_code == 200:
+            results = r.json().get("results", [])
+            return len(results) > 0
+        else:
+            print(f"⚠️  重複チェック失敗 ({r.status_code}): {r.text}")
+    except Exception as e:
+        print(f"❌ 重複チェックエラー: {e}")
+    
+    return False
+
 async def main():
     print("🚀 アンちゃん・トレンドウォッチャー Pro 起動")
     intel = await scout_lolalytics()
@@ -189,6 +220,10 @@ async def main():
     
     proposals = generate_proposals(intel)
     for p in proposals:
+        if is_duplicate(p['title']):
+            print(f"⏩ スキップ（重複）: {p['title']}")
+            continue
+            
         if post_to_notion(p):
             print(f"✅ Notion投稿成功: {p['title']}")
 
