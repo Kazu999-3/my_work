@@ -2,7 +2,7 @@ import os
 import requests
 from dotenv import load_dotenv
 
-env_path = r"d:\my_work\apps\hybrid_bot\.env"
+env_path = r"d:\my_work\.env"
 load_dotenv(env_path)
 
 NOTION_TOKEN = os.getenv('NOTION_API_KEY')

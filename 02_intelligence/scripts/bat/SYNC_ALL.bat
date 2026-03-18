@@ -54,7 +54,7 @@ goto END
 echo.
 echo Discord Bot を起動します...
 echo (注: このウィンドウは閉じずに、最小化してお使いください)
-start "Antigravity Discord Bot" cmd /c "python ..\apps\hybrid_bot\src\discord_bot.py & pause"
+start "Antigravity Discord Bot" cmd /c "python ..\..\hybrid_bot\src\discord_bot.py & pause"
 echo Botの起動指示を送信しました。
 goto MENU
 
@@ -62,19 +62,19 @@ goto MENU
 
 :TASKS_CORE
 echo task.md を Notion に同期しています...
-python ..\apps\hybrid_bot\src\sync_tasks_to_notion.py
+python ..\..\hybrid_bot\src\sync_tasks_to_notion.py
 echo 完了しました。
 exit /b
 
 :MEMO_CORE
 echo Notionのメモをローカルに同期しています...
-python ..\apps\hybrid_bot\src\notion_to_local.py
+python ..\..\hybrid_bot\src\notion_to_local.py
 echo 完了しました。
 exit /b
 
 :YT_CORE
 echo YouTube の自動整理を開始します...
-python ..\apps\youtube_manager\src\notion_yt_orchestrator.py
+python ..\..\youtube_manager\src\notion_yt_orchestrator.py
 echo 完了しました。
 exit /b
 

@@ -14,7 +14,7 @@ def generate_mapping():
     for name, info in data.items():
         mapping[int(info["key"])] = info["name"]
     
-    with open(r"d:\my_work\apps\hybrid_bot\src\champ_id_map.py", "w", encoding="utf-8") as f:
+    with open(r"d:\my_work\02_intelligence\hybrid_bot\src\champ_id_map.py", "w", encoding="utf-8") as f:
         f.write("# Auto-generated Champion ID -> Name mapping\n")
         f.write(f"# Version: {version}\n")
         f.write("CHAMPION_ID_TO_NAME = " + str(mapping))

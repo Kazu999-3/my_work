@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 
 def generate_user_install_url():
     # .env から TOKEN を読み込み
-    load_dotenv(r"d:\my_work\apps\hybrid_bot\.env")
+    load_dotenv(r"d:\my_work\.env")
     token = os.getenv('DISCORD_BOT_TOKEN')
     
     if not token:

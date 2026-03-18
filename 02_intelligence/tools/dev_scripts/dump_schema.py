@@ -3,7 +3,7 @@ import requests
 import json
 from dotenv import load_dotenv
 
-env_path = r"d:\my_work\apps\hybrid_bot\.env"
+env_path = r"d:\my_work\.env"
 load_dotenv(env_path)
 
 headers = {"Authorization": f"Bearer {os.getenv('NOTION_API_KEY')}", "Notion-Version": "2022-06-28"}

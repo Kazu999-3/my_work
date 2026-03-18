@@ -11,8 +11,8 @@ else:
     # omni_agent などからインポートされる場合
     from . import gemini_analyzer
 
-MEMO_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', '02_research', 'memo'))
-REPORT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', '02_research', 'reports'))
+MEMO_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', '03_factory', 'memo'))
+REPORT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', '03_factory', 'reports'))
 
 def get_latest_memos(limit=10):
     """最新のメモファイルを取得する"""

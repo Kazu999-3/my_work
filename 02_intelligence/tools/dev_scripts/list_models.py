@@ -2,7 +2,7 @@ import os
 from google import genai
 from dotenv import load_dotenv
 
-env_path = r"d:\my_work\apps\hybrid_bot\.env"
+env_path = r"d:\my_work\.env"
 print(f"Loading env from: {env_path}")
 load_dotenv(env_path)
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")

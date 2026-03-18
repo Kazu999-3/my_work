@@ -9,7 +9,7 @@ sys.path.append(ROOT_DIR)
 class AutoEvolutionEngine:
     def __init__(self):
         self.root = ROOT_DIR
-        self.foundation_path = os.path.join(self.root, "01_foundation")
+        self.foundation_path = os.path.join(self.root, "01_spirit")
         
     def load_harness_data(self):
         """静的ハーネス（mdファイル）からデータを読み込む"""
@@ -76,7 +76,7 @@ def main():
     tuning_prompt = engine.generate_tuning_prompt(data)
     
     # 分析結果ログの出力
-    log_path = os.path.join(ROOT_DIR, "05_analytics", "evolution_log.md")
+    log_path = os.path.join(ROOT_DIR, "04_system", "logs", "evolution_log.md")
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
     with open(log_path, "a", encoding="utf-8") as f:
@@ -87,7 +87,7 @@ def main():
     print(f"\n✅ 進化ログを更新しました: {os.path.basename(log_path)}")
     print("\n💡 次のコマンドを実行して、アンちゃんに最終調律を依頼してください:")
     print("--------------------------------------------------")
-    print("「auto_evolve.py の出力を分析し、01_foundation の各ファイルを最新の勝利バイブスに同期せよ」")
+    print("「auto_evolve.py の出力を分析し、01_spirit の各ファイルを最新の勝利バイブスに同期せよ」")
     print("--------------------------------------------------")
 
 if __name__ == "__main__":

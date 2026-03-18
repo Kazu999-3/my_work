@@ -12,7 +12,7 @@ echo (このウィンドウは最小化してお使いください)
 echo.
 
 :: pythonスクリプトを直接実行して待機（exitしないことでBotプロセスを維持）
-python ..\apps\hybrid_bot\src\discord_bot.py
+python ..\..\hybrid_bot\src\discord_bot.py
 
 :: 万が一クラッシュした時のためにpauseを入れておく
 echo Botが停止しました。

@@ -16,7 +16,7 @@ load_dotenv(env_path)
 
 NOTION_API_KEY = os.getenv('NOTION_API_KEY')
 NOTION_MEMO_DB_ID = os.getenv('NOTION_DB_ID')
-OUTPUT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', '02_research', 'memo'))
+OUTPUT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', '03_factory', 'memo'))
 
 def sanitize_filename(filename):
     """ファイル名として使用できない文字を除去・置換し、長さを制限する"""
@@ -62,7 +62,7 @@ def export_memos():
     try:
         url = f"https://api.notion.com/v1/databases/{NOTION_MEMO_DB_ID}/query"
         headers = {
-            "Authorization": f"Bearer {NOTION_TOKEN}",
+            "Authorization": f"Bearer {NOTION_API_KEY}",
             "Notion-Version": "2022-06-28",
             "Content-Type": "application/json"
         }
