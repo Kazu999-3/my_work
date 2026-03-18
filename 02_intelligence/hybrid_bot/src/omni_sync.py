@@ -7,7 +7,7 @@ from datetime import datetime
 from dotenv import load_dotenv
 
 # パス設定
-ROOT_DIR = Path(__file__).resolve().parent.parent.parent
+ROOT_DIR = Path(__file__).resolve().parent.parent.parent.parent
 load_dotenv(ROOT_DIR / ".env")
 
 NOTION_TOKEN = os.getenv('NOTION_API_KEY')
@@ -101,6 +101,8 @@ class OmniSyncPro:
                 target_path = ROOT_DIR / "03_factory" / "reports" / file_name
             elif category == "Draft":
                 target_path = ROOT_DIR / "03_factory" / "daily_posts" / file_name
+            elif category == "Drafts":
+                target_path = ROOT_DIR / "03_factory" / "drafts" / file_name
             
             if target_path:
                 self._update_local_file(page["id"], target_path)
@@ -142,6 +144,10 @@ def full_initial_ship():
     # Drafts
     for f in (ROOT_DIR / "03_factory" / "daily_posts").glob("*.md"):
         syncer.ship_file(f, "Draft")
+        
+    # Special drafts (One-off drafts like self-introduction)
+    for f in (ROOT_DIR / "03_factory" / "drafts").glob("*.md"):
+        syncer.ship_file(f, "Drafts")
 
 if __name__ == "__main__":
     full_initial_ship()
