@@ -85,26 +85,40 @@ async def scout_lolalytics():
 
 def generate_with_fallback(prompt: str) -> str:
     """
-    トレンド監視でも品質を担保するため、Pro -> Flash の順で試行
+    トレンド監視でも品質を担保するため、Pro -> Flash の順で試行。
+    空出力や不十分な内容（50文字以下）の場合は最大3回リトライ。
     """
     model_sequence = [MODEL_PRO, MODEL_FLASH]
     
-    for m_name in model_sequence:
-        if not m_name: continue
-        try:
-            print(f"🤖 思考モデル: {m_name}")
-            temp_model = genai.GenerativeModel(m_name)
-            response = temp_model.generate_content(prompt)
-            return response.text
-        except Exception as e:
-            if "429" in str(e):
-                import time
-                print(f"⚠️ 429制限検知。5秒待機します...")
-                time.sleep(5)
-                if m_name == MODEL_PRO:
+    max_retries = 3
+    for attempt in range(max_retries):
+        for m_name in model_sequence:
+            if not m_name: continue
+            try:
+                print(f"🤖 思考モデル: {m_name}")
+                temp_model = genai.GenerativeModel(m_name)
+                response = temp_model.generate_content(prompt)
+                
+                # 応答の存在と十分な内容をチェック
+                if response and hasattr(response, 'text') and len(response.text.strip()) > 50:
+                    return response.text.strip()
+                else:
+                    print(f"⚠️ 生成内容が不十分です (Attempt {attempt+1}/3, Model: {m_name})。再試行します...")
+                    
+            except Exception as e:
+                if "429" in str(e):
+                    import time
+                    print(f"⚠️ 429制限検知。5秒待機します...")
+                    time.sleep(5)
+                    # 429の場合は同じモデルでもう一度試す価値があるためループを継続
                     continue
-            print(f"❌ モデル({m_name})実行エラー: {e}")
-            # 次のモデルがあれば試す
+                print(f"❌ モデル({m_name})実行エラー: {e}")
+        
+        # 1周失敗したら少し待機してから次のアテンプトへ
+        if attempt < max_retries - 1:
+            import time
+            time.sleep(2)
+            
     return ""
 
 def generate_proposals(scouted_data: str):

@@ -138,26 +138,11 @@ class OmniAgent:
         ng = (ROOT_DIR / "01_spirit" / "ng_words.md").read_text(encoding="utf-8") if (ROOT_DIR / "01_spirit" / "ng_words.md").exists() else ""
         failures = (ROOT_DIR / "01_spirit" / "failures.md").read_text(encoding="utf-8") if (ROOT_DIR / "01_spirit" / "failures.md").exists() else ""
         
-        prompt = f"""
-あなたは自律商社のチーフエディターです。
-戦略フック: {strategy_hook}
-
-【過去のリジェクト理由と修正指示】
-{feedback if feedback else "初回執筆"}
-
-【勝利法則】
-{wins}
-
-【過去の失敗事例】
-{failures}
-
-【禁止事項】
-{ng}
-
-上記を厳守し、AI臭さを排した最高品質のX投稿案3つとnote構成案を作成してください。
-出力は日本語のMarkdown形式で。タイトルにはその日の日付を。
-"""
-        return generate_with_fallback(prompt)
+        content = generate_with_fallback(prompt)
+        if not content:
+            self.log("⚠️ ドラフト生成に失敗しました（空のレスポンス）。")
+            return ""
+        return content
 
     def audit_draft(self, draft):
         """Auditor: ドラフトを検閲し、スコアリングする"""
@@ -237,6 +222,10 @@ class OmniAgent:
 """
         try:
             report_text = generate_with_fallback(prompt)
+            if not report_text or len(report_text) < 100:
+                self.log("⚠️ 日報の内容が不十分なため、生成をスキップします。")
+                return
+
             report_path.write_text(report_text, encoding="utf-8")
             self.log(f"✅ 日報を生成しました: {report_path.name}")
         except Exception as e:
@@ -269,6 +258,10 @@ class OmniAgent:
 """
         try:
             tactics_draft = generate_with_fallback(prompt)
+            if not tactics_draft or len(tactics_draft) < 100:
+                self.log("⚠️ 戦術レポートの内容が不十分なため、生成をスキップします。")
+                return
+
             date_str = datetime.now().strftime("%Y%m%d_%H%M")
             save_path = ROOT_DIR / "03_factory" / "reports" / f"tactics_dive_{date_str}.md"
             save_path.write_text(tactics_draft, encoding="utf-8")
