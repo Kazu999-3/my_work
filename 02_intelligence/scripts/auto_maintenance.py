@@ -5,8 +5,8 @@ import re
 import shutil
 import time
 
-ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-SKILLS_DIR = os.path.join(ROOT_DIR, "skills")
+ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+SKILLS_DIR = os.path.join(ROOT_DIR, ".agent", "skills")
 DIR_MAP_FILE = os.path.join(ROOT_DIR, "ディレクトリ構成.md")
 SKILLS_MAP_FILE = os.path.join(SKILLS_DIR, "SKILL_LIST.md")
 

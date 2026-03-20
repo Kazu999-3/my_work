@@ -1,6 +1,6 @@
 # Antigravity Skills 一覧
 
-自動更新日時: 2026-03-12 01:02:01
+自動更新日時: 2026-03-20 14:22:36
 
 このファイルは自動生成されています。各スキルの概要を整理しています。
 
@@ -28,7 +28,15 @@
   - このスキルは、リサーチ＆戦略カテゴリー内の個別スキルをオーケストレート（統合・指揮）するための司令塔です。
 - **[09_UltimateAIEngineer_Pro.md](./09_agent_engineering/09_UltimateAIEngineer_Pro.md)**
   - このスキルは、既存の「エージェントメモリ管理」「ツール作成」「自律型パターン」「コード監査」「セキュリティ」の全機能を統合し、AIシステムの品質と自律性を極限まで高めるためのエンジニアリング・エンジン
+- **[SKILL.md](./11_x_strategy/SKILL.md)**
+  - name: X戦略・Antigravity成長アドバイザー
+- **[12_AutoEvolutionEngine_Pro.md](./12_AutoEvolutionEngine_Pro.md)**
+  - このスキルは、プロジェクト全体の「自己診断」と「自己改善」を司ります。事業OSの1F〜5Fに蓄積された全データを統合分析し、AI自身の思考ロジック（スキル）や戦略（トーン・ターゲット）を、最新の市場反
 - **[article_review.md](./article_review.md)**
   - このスキルは、note等の記事を「読ませる・動かす」高品質なコンテンツへと進化させるための、5つの黄金観点に基づいたレビューを自動化するものです。
-- **[11_x_strategy/SKILL.md](./11_x_strategy/SKILL.md)**
-  - このスキルは、コイケ先輩流の「0→5000人達成戦略」に基づき、SNS（X）での拡散とPV数増加を論理的に支援し、目標収益達成へ向けたアカウント運用を加速させるアドバイザーです。
+- **[SKILL.md](./find-skills/SKILL.md)**
+  - name: find-skills
+- **[lol_deep_research.md](./lol_deep_research.md)**
+  - LoL（ League of Legends）の特定チャンピオンとロールに関する、深い次元（勝率ブレイクポイント、ミクロテクニック、メタ対策）でのリサーチを自動化・標準化するスキル。
+- **[note_article_drafter.md](./note_article_drafter.md)**
+  - LoLディープリサーチ結果（勝率、ミクロ、メタ対策など）を受け取り、Xでの宣伝文句と、noteの無料部分・有料部分がきれいに分かれた記事ドラフトを自動生成するスキル。
