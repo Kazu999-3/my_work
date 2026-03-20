@@ -2087,3 +2087,323 @@ Notionからメモを取得中... (DB: 32061cf4543980d8a093d19d017ebcfc)
                                      ^^^^^^
 NameError: name 'prompt' is not defined
 
+D:\my_work\02_intelligence\intelligence\trend_watcher.py:8: FutureWarning: 
+
+All support for the `google.generativeai` package has ended. It will no longer be receiving 
+updates or bug fixes. Please switch to the `google.genai` package as soon as possible.
+See README for more details:
+
+https://github.com/google-gemini/deprecated-generative-ai-python/blob/main/README.md
+
+  import google.generativeai as genai
+💡 OmniSyncPro: 安定版エンジンを起動しました(requests仕様)
+[2026-03-20 18:00:07] 🚀 Omni-Agent 2.0: 「自律商社アンちゃん」の超知能サイクルを開始します。
+[2026-03-20 18:00:07] Step 0/6: スマホ修正の反映 (Cargo Pull)...
+  [Cargo] Updated local: strategy.md
+  [Cargo] Updated local: ANTIGRAVITY.md
+[2026-03-20 18:00:25] Step 1/6: 市場トレンドの偵察 (scout_lolalytics)...
+🚀 アンちゃん・トレンドウォッチャー Pro 起動
+🔍 Lolalyticsから最新メタ情報をスカウティング中...
+【Lolalytics最新トレンド - Jungle】
+- Graves: Tier S+ (勝率 ??%)
+- Rek'Sai: Tier S (勝率 ??%)
+- Sylas: Tier S (勝率 ??%)
+- Lee Sin: Tier S (勝率 ??%)
+- Xin Zhao: Tier S (勝率 ??%)
+- Nunu & Willump: Tier S- (勝率 ??%)
+- Naafiri: Tier S- (勝率 ??%)
+- Master Yi: Tier S- (勝率 ??%)
+- Diana: Tier D (勝率 ??%)
+- Elise: Tier E (勝率 ??%)
+
+💡 企画案を立案中...
+🤖 思考モデル: models/gemini-2.5-pro
+⚠️ 429制限検知。5秒待機します...
+🤖 思考モデル: models/gemini-2.5-flash
+DEBUG: Gemini Response:
+[
+  {
+    "title": "【Jungle支配術】'格上狩り' SylasでJungleを完全掌握！序盤・中盤・終盤の勝ち筋徹底解剖",
+    "ladder_step": "3.中価格帯(信頼)",
+    "reason": "SylasはLolalyticsでTier Sに位置し、非常に人気が高いが、その高いスキルキャップゆえに使いこなすのが難しいチャンプです。多くのプレイヤーが「もっとSylasで勝ちたい」と考えているため、具体的な勝ち筋と詳細なプレイガイドを提供することで、読者の信頼を獲得し、高単価でも価値を感じてもらえると判断しました。",
+    "outline": [
+      "最新JungleメタにおけるSylasの強みと役割",
+      "最適ルーン・アイテムビルドとスキルオーダー（パッチ最新対応）",
+      "プロ直伝！最速＆安全なフルクリアパスと序盤の効率的な立ち回り",
+      "序盤のパワースパイクを活かしたギャンクとインベード戦略の全貌",
+      "中盤のオブジェクトコントロールと視界戦での立ち位置",
+      "集団戦でのUltスティール活用術とダメージを出すためのポジショニング",
+      "マッチアップ別の意識すべき点とカウンターピックへの対処法",
+      "Sylasで絶対避けたい『負け筋』を理解し、勝利を掴むためのNG行動リスト"
+    ]
+  },
+  {
+    "title": "Jungle覇権争いを制す！Graves・Rek'Sai・Xin Zhaoの'最強ムーブ'で爆速レートアップ戦略",
+    "ladder_step": "3.中価格帯(信頼)",
+    "reason": "LolalyticsのS+～S Tierに君臨するGraves, Rek'Sai, Xin Zhaoは、現在のJungleメタで圧倒的な影響力を持っています。これらのチャンピオンを理解し、適切に運用することはレートアップに直結します。単一チャンプだけでなく、複数のトップティアチャンプの共通戦略や個別戦略を学ぶことで、読者は自身のピックプールを広げ、より多くの状況で勝利できるようになるため、高い価値を提供できると判断しました。",
+    "outline": [
+      "最新JungleメタのトレンドとGraves, Rek'Sai, Xin Zhaoが強い理由",
+      "各チャンピオンの基本的な役割とゲーム全体での影響力",
+      "Graves: 圧倒的ファーム力とキャリー能力を活かすビルドと立ち回り",
+      "Rek'Sai: 序盤のプレッシャーと視界コントロールでゲームを動かす方法",
+      "Xin Zhao: 高いデュエル能力とイニシエートで敵を粉砕する戦略",
+      "序盤のインベード＆カウンタージャングル成功の秘訣",
+      "オブジェクト優先順位と適切なタイミングでのコール",
+      "複数のトップティアチャンピオンを使いこなすための共通の考え方",
+      "負けゲームで「勝ち筋」を見つけるための思考プロセス"
+    ]
+  },
+  {
+    "title": "【Jungle勝率劇的UP】Graves, Rek'Sai, Sylas...“最強”を“凡庸”に変える！衝撃のカウンター戦略",
+    "ladder_step": "3.中価格帯(信頼)",
+    "reason": "多くのプレイヤーは、現在のTier S+～SのJungleチャンピオンに苦戦しています。彼らの強みを理解し、それを逆手にとるカウンター戦略は、読者にとって非常に実践的で価値の高い情報となります。「敵を知り己を知れば百戦危うからず」の精神に基づき、メタの中心にいるチャンピオンへの具体的な対策を提供することで、読者の勝率向上に直結し、深い信頼構築に繋がると考えました。",
+    "outline": [
+      "最新Jungleメタの脅威：Graves, Rek'Sai, Sylasがなぜ強いのかを理解する",
+      "Graves対策：ファームを阻害し、スケールさせないためのインベードとガンクタイミング",
+      "Rek'Sai対策：トンネルとギャンクを読んで視界で封殺する、逆方向からのプレッシャー",
+      "Sylas対策：Ultスティールを逆手に取る、集団戦でのポジショニングとカウンターピック",
+      "各チャンピオンへの効果的なルーン・アイテム選択とスキルオーダー",
+      "相手Jungleの動きを予測し、カウンターガンク・カウンタージャングルを仕掛ける実践テクニック",
+      "自分のピックが不利なマッチアップで、ゲームメイクを成功させるための考え方",
+      "チームメイトと連携して敵Jungleを孤立させる戦術とコミュニケーション"
+    ]
+  }
+]
+DEBUG: Notion Payload:
+{
+  "parent": {
+    "database_id": "32061cf4543980d8a093d19d017ebcfc"
+  },
+  "properties": {
+    "名前": {
+      "title": [
+        {
+          "type": "text",
+          "text": {
+            "content": "【トレンド速報】【Jungle支配術】'格上狩り' SylasでJungleを完全掌握！序盤・中盤・終盤の勝ち筋徹底解剖"
+          }
+        }
+      ]
+    },
+    "カテゴリ": {
+      "select": {
+        "name": "3.中価格帯(信頼)"
+      }
+    },
+    "ステータス": {
+      "status": {
+        "name": "Idea"
+      }
+    }
+  },
+  "children": [
+    {
+      "object": "block",
+      "type": "paragraph",
+      "paragraph": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "SylasはLolalyticsでTier Sに位置し、非常に人気が高いが、その高いスキルキャップゆえに使いこなすのが難しいチャンプです。多くのプレイヤーが「もっとSylasで勝ちたい」と考えているため、具体的な勝ち筋と詳細なプレイガイドを提供することで、読者の信頼を獲得し、高単価でも価値を感じてもらえると判断しました。"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "object": "block",
+      "type": "heading_2",
+      "heading_2": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "📝 構成案"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "object": "block",
+      "type": "paragraph",
+      "paragraph": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "最新JungleメタにおけるSylasの強みと役割\n最適ルーン・アイテムビルドとスキルオーダー（パッチ最新対応）\nプロ直伝！最速＆安全なフルクリアパスと序盤の効率的な立ち回り\n序盤のパワースパイクを活かしたギャンクとインベード戦略の全貌\n中盤のオブジェクトコントロールと視界戦での立ち位置\n集団戦でのUltスティール活用術とダメージを出すためのポジショニング\nマッチアップ別の意識すべき点とカウンターピックへの対処法\nSylasで絶対避けたい『負け筋』を理解し、勝利を掴むためのNG行動リスト"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
+❌ Notion投稿失敗 (400): {"object":"error","status":400,"code":"validation_error","message":"カテゴリ is not a property that exists.","request_id":"f1352be5-5046-42e1-a6d4-649162cc1fd5"}
+DEBUG: Notion Payload:
+{
+  "parent": {
+    "database_id": "32061cf4543980d8a093d19d017ebcfc"
+  },
+  "properties": {
+    "名前": {
+      "title": [
+        {
+          "type": "text",
+          "text": {
+            "content": "【トレンド速報】Jungle覇権争いを制す！Graves・Rek'Sai・Xin Zhaoの'最強ムーブ'で爆速レートアップ戦略"
+          }
+        }
+      ]
+    },
+    "カテゴリ": {
+      "select": {
+        "name": "3.中価格帯(信頼)"
+      }
+    },
+    "ステータス": {
+      "status": {
+        "name": "Idea"
+      }
+    }
+  },
+  "children": [
+    {
+      "object": "block",
+      "type": "paragraph",
+      "paragraph": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "LolalyticsのS+～S Tierに君臨するGraves, Rek'Sai, Xin Zhaoは、現在のJungleメタで圧倒的な影響力を持っています。これらのチャンピオンを理解し、適切に運用することはレートアップに直結します。単一チャンプだけでなく、複数のトップティアチャンプの共通戦略や個別戦略を学ぶことで、読者は自身のピックプールを広げ、より多くの状況で勝利できるようになるため、高い価値を提供できると判断しました。"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "object": "block",
+      "type": "heading_2",
+      "heading_2": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "📝 構成案"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "object": "block",
+      "type": "paragraph",
+      "paragraph": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "最新JungleメタのトレンドとGraves, Rek'Sai, Xin Zhaoが強い理由\n各チャンピオンの基本的な役割とゲーム全体での影響力\nGraves: 圧倒的ファーム力とキャリー能力を活かすビルドと立ち回り\nRek'Sai: 序盤のプレッシャーと視界コントロールでゲームを動かす方法\nXin Zhao: 高いデュエル能力とイニシエートで敵を粉砕する戦略\n序盤のインベード＆カウンタージャングル成功の秘訣\nオブジェクト優先順位と適切なタイミングでのコール\n複数のトップティアチャンピオンを使いこなすための共通の考え方\n負けゲームで「勝ち筋」を見つけるための思考プロセス"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
+❌ Notion投稿失敗 (400): {"object":"error","status":400,"code":"validation_error","message":"カテゴリ is not a property that exists.","request_id":"8d852bdf-e89d-421c-97a7-4ab3fe05cd01"}
+DEBUG: Notion Payload:
+{
+  "parent": {
+    "database_id": "32061cf4543980d8a093d19d017ebcfc"
+  },
+  "properties": {
+    "名前": {
+      "title": [
+        {
+          "type": "text",
+          "text": {
+            "content": "【トレンド速報】【Jungle勝率劇的UP】Graves, Rek'Sai, Sylas...“最強”を“凡庸”に変える！衝撃のカウンター戦略"
+          }
+        }
+      ]
+    },
+    "カテゴリ": {
+      "select": {
+        "name": "3.中価格帯(信頼)"
+      }
+    },
+    "ステータス": {
+      "status": {
+        "name": "Idea"
+      }
+    }
+  },
+  "children": [
+    {
+      "object": "block",
+      "type": "paragraph",
+      "paragraph": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "多くのプレイヤーは、現在のTier S+～SのJungleチャンピオンに苦戦しています。彼らの強みを理解し、それを逆手にとるカウンター戦略は、読者にとって非常に実践的で価値の高い情報となります。「敵を知り己を知れば百戦危うからず」の精神に基づき、メタの中心にいるチャンピオンへの具体的な対策を提供することで、読者の勝率向上に直結し、深い信頼構築に繋がると考えました。"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "object": "block",
+      "type": "heading_2",
+      "heading_2": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "📝 構成案"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "object": "block",
+      "type": "paragraph",
+      "paragraph": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "最新Jungleメタの脅威：Graves, Rek'Sai, Sylasがなぜ強いのかを理解する\nGraves対策：ファームを阻害し、スケールさせないためのインベードとガンクタイミング\nRek'Sai対策：トンネルとギャンクを読んで視界で封殺する、逆方向からのプレッシャー\nSylas対策：Ultスティールを逆手に取る、集団戦でのポジショニングとカウンターピック\n各チャンピオンへの効果的なルーン・アイテム選択とスキルオーダー\n相手Jungleの動きを予測し、カウンターガンク・カウンタージャングルを仕掛ける実践テクニック\n自分のピックが不利なマッチアップで、ゲームメイクを成功させるための考え方\nチームメイトと連携して敵Jungleを孤立させる戦術とコミュニケーション"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
+❌ Notion投稿失敗 (400): {"object":"error","status":400,"code":"validation_error","message":"カテゴリ is not a property that exists.","request_id":"2ef90210-7e46-44d3-b783-c20ac12b7d4a"}
+[2026-03-20 18:01:07] Step 2/6: ネタの同期 (notion_to_local)...
+Notionからメモを取得中... (DB: 32061cf4543980d8a093d19d017ebcfc)
+0 件のメモが見つかりました。同期を開始します。
+同期完了: 0 件のメモを D:\my_work\03_factory\memo に出力しました。
+[2026-03-20 18:01:09] Step 3/6: 戦略脳 (Strategist) による今日のフック立案...
+[2026-03-20 18:01:09] 💡 今日の戦略: 普遍的な勝利法則に基づく発信...
+[2026-03-20 18:01:09] Step 4/6: 商品化と監査脳による検閲...
+[2026-03-20 18:01:09] ❌ サイクル実行中に深刻なエラーが発生しました: name 'prompt' is not defined
+[2026-03-20 18:01:09] Traceback (most recent call last):
+  File "D:\my_work\02_intelligence\intelligence\omni_agent.py", line 70, in run_cycle
+    await self.generate_and_audit_drafts(strategy_hook)
+  File "D:\my_work\02_intelligence\intelligence\omni_agent.py", line 119, in generate_and_audit_drafts
+    draft = await self.produce_draft(strategy_hook, feedback)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\my_work\02_intelligence\intelligence\omni_agent.py", line 141, in produce_draft
+    content = generate_with_fallback(prompt)
+                                     ^^^^^^
+NameError: name 'prompt' is not defined
+
