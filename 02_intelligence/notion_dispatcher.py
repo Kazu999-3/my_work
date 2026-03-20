@@ -17,8 +17,8 @@ PIPELINE_SCRIPT = ROOT_DIR / "02_intelligence" / "note_generator" / "ai_pipeline
 MEMO_SYNC_SCRIPT = ROOT_DIR / "02_intelligence" / "hybrid_bot" / "src" / "notion_to_local.py"
 YT_SYNC_SCRIPT = ROOT_DIR / "02_intelligence" / "youtube_manager" / "src" / "notion_yt_orchestrator.py"
 
-# 定期実行の間隔（10分 = 600秒）
-MAINTENANCE_INTERVAL = 600
+# 定期実行の間隔（1時間 = 3600秒）
+MAINTENANCE_INTERVAL = 3600
 last_maintenance_time = 0
 
 # .env 読み込み

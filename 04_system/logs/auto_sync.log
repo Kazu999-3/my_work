@@ -3368,3 +3368,362 @@ Notionからメモを取得中... (DB: 32061cf4543980d8a093d19d017ebcfc)
                                      ^^^^^^
 NameError: name 'prompt' is not defined
 
+D:\my_work\02_intelligence\intelligence\trend_watcher.py:8: FutureWarning: 
+
+All support for the `google.generativeai` package has ended. It will no longer be receiving 
+updates or bug fixes. Please switch to the `google.genai` package as soon as possible.
+See README for more details:
+
+https://github.com/google-gemini/deprecated-generative-ai-python/blob/main/README.md
+
+  import google.generativeai as genai
+💡 OmniSyncPro: 安定版エンジンを起動しました(requests仕様)
+[2026-03-20 22:00:05] 🚀 Omni-Agent 2.0: 「自律商社アンちゃん」の超知能サイクルを開始します。
+[2026-03-20 22:00:05] Step 0/6: スマホ修正の反映 (Cargo Pull)...
+[2026-03-20 22:00:25] Step 1/6: 市場トレンドの偵察 (scout_lolalytics)...
+🚀 アンちゃん・トレンドウォッチャー Pro 起動
+🔍 Lolalyticsから最新メタ情報をスカウティング中...
+🌐 ターゲットURLに移動中: https://lolalytics.com/lol/tierlist/?lane=jungle
+⏳ ページ読み込み完了。追加待機中...
+🧬 チャンピオンデータの抽出を開始...
+【Lolalytics最新トレンド - Jungle】
+- Graves: Tier S+ (勝率 ??%)
+- Sylas: Tier S (勝率 ??%)
+- Rek'Sai: Tier S (勝率 ??%)
+- Xin Zhao: Tier S (勝率 ??%)
+- Lee Sin: Tier S (勝率 ??%)
+- Nunu & Willump: Tier S- (勝率 ??%)
+- Master Yi: Tier S- (勝率 ??%)
+- Elise: Tier E (勝率 ??%)
+- Naafiri: Tier A+ (勝率 ??%)
+- Ekko: Tier E (勝率 ??%)
+
+💡 企画案を立案中...
+🤖 思考モデル: models/gemini-2.5-pro
+⚠️ 429制限検知。5秒待機します...
+🤖 思考モデル: models/gemini-2.5-flash
+DEBUG: Gemini Response:
+[
+  {
+    "title": "【S+独走】『森の覇者』Gravesで最速キャリー！誰も止められないジャングルルートとビルド戦略",
+    "ladder_step": "3.中価格帯(信頼)",
+    "reason": "Lolalytics最新データでTier S+を独走するGravesは、現状最もランクアップに貢献できるジャングルの一角です。このチャンピオンの深い攻略は、即座に実践的な結果に繋がり、読者の『勝てた！』という成功体験を通じて当社の信頼を確立します。具体的なビルド、ルート、集団戦での立ち回りまで網羅し、高価格帯に見合う価値を提供します。",
+    "outline": [
+      "なぜ今GravesがS+なのか？その強さの秘密を徹底解剖",
+      "レーン戦から圧倒！Graves専用ジャングルルートと序盤のガンク判断",
+      "これが正解！状況別Gravesビルドパス＆ルーン最適解",
+      "集団戦での立ち位置とダメージの出し方：プロの思考をトレース",
+      "カウンターピックと相性：不利マッチアップでの立ち回り方",
+      "Q&A：Graves使いが抱えるよくある疑問を解決"
+    ]
+  },
+  {
+    "title": "【ランク爆上げ保証】Sティアジャングルで『ゲームを動かす』ための必須スキル！初動から終盤まで主導権を握る方法",
+    "ladder_step": "2.エントリー(教育)",
+    "reason": "S Tierに位置するSylas、Rek'Sai、Xin Zhao、Lee Sinといったチャンピオンは、高いポテンシャルを持つ一方で、それぞれ異なるプレイスタイルが求められます。これらのチャンピオンを横断的に分析し、「ゲームを動かす」という共通のテーマで戦略を提示することで、特定のチャンピオンだけでなく、ジャングルというロール全体の理解度向上を促し、読者のスキルアップを教育する役割を果たします。多くの読者が参考にしやすく、エントリー層へのアプローチとして最適です。",
+    "outline": [
+      "Sティアジャングルの共通項：なぜ彼らは『ゲームを動かせる』のか？",
+      "序盤の主導権を握る：カウンタージャングルとファームの優先順位",
+      "ガンク成功率90%超え！確実にキルに繋げるための位置取りとタイミング",
+      "ドラゴン・バロンを安全に取る！オブジェクトコントロールの極意",
+      "集団戦の入り方とフォーカス：状況に応じた最適なエンゲージ術",
+      "チャンピオン別ピックアップ：Sylas、Rek'Sai、Xin Zhao、Lee Sinの特性と強み"
+    ]
+  },
+  {
+    "title": "【警鐘】Tier Eジャングルを選んではいけない理由と、それでも使うなら『勝ち筋』はココだ！",
+    "ladder_step": "2.エントリー(教育)",
+    "reason": "LolalyticsでTier Eと評価されたチャンピオン（Elise, Ekko）は、現状のメタでは不利な立ち位置にあります。この『なぜ弱いのか』を明確にすることで、読者のメタ理解を深めるとともに、それでもこれらのチャンピオンへの愛着が強く使いたい読者へのニッチな需要に応えます。一般的な強キャラ攻略とは異なる、逆説的な視点を提供することで読者の興味を引きつけ、メタを深く理解するための教育的な価値を提供します。",
+    "outline": [
+      "Lolalyticsが示す『Tier E』の真実：なぜEliseとEkkoは今厳しいのか？",
+      "メタの変化と彼らの弱点：序盤の差を覆すのが困難な理由",
+      "それでも愛するチャンピオンで勝ちたい！唯一無二の『勝ち筋』を見つける",
+      "Elise：スパイダーフォームを最大限に活かす超攻撃的ガンクルートとビルド",
+      "Ekko：時間差エンゲージとセーフティを両立する立ち回り、逆転のビルドパス",
+      "『不利』を『有利』に変えるためのチームとの連携術"
+    ]
+  }
+]
+DEBUG: Notion Payload:
+{
+  "parent": {
+    "database_id": "32061cf4543980d8a093d19d017ebcfc"
+  },
+  "properties": {
+    "名前": {
+      "title": [
+        {
+          "type": "text",
+          "text": {
+            "content": "【トレンド速報】【S+独走】『森の覇者』Gravesで最速キャリー！誰も止められないジャングルルートとビルド戦略"
+          }
+        }
+      ]
+    },
+    "ステータス": {
+      "status": {
+        "name": "Idea"
+      }
+    }
+  },
+  "children": [
+    {
+      "object": "block",
+      "type": "paragraph",
+      "paragraph": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "Lolalytics最新データでTier S+を独走するGravesは、現状最もランクアップに貢献できるジャングルの一角です。このチャンピオンの深い攻略は、即座に実践的な結果に繋がり、読者の『勝てた！』という成功体験を通じて当社の信頼を確立します。具体的なビルド、ルート、集団戦での立ち回りまで網羅し、高価格帯に見合う価値を提供します。"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "object": "block",
+      "type": "heading_2",
+      "heading_2": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "📝 構成案"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "object": "block",
+      "type": "paragraph",
+      "paragraph": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "なぜ今GravesがS+なのか？その強さの秘密を徹底解剖\nレーン戦から圧倒！Graves専用ジャングルルートと序盤のガンク判断\nこれが正解！状況別Gravesビルドパス＆ルーン最適解\n集団戦での立ち位置とダメージの出し方：プロの思考をトレース\nカウンターピックと相性：不利マッチアップでの立ち回り方\nQ&A：Graves使いが抱えるよくある疑問を解決"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
+✅ Notion投稿成功: 【S+独走】『森の覇者』Gravesで最速キャリー！誰も止められないジャングルルートとビルド戦略
+DEBUG: Notion Payload:
+{
+  "parent": {
+    "database_id": "32061cf4543980d8a093d19d017ebcfc"
+  },
+  "properties": {
+    "名前": {
+      "title": [
+        {
+          "type": "text",
+          "text": {
+            "content": "【トレンド速報】【ランク爆上げ保証】Sティアジャングルで『ゲームを動かす』ための必須スキル！初動から終盤まで主導権を握る方法"
+          }
+        }
+      ]
+    },
+    "ステータス": {
+      "status": {
+        "name": "Idea"
+      }
+    }
+  },
+  "children": [
+    {
+      "object": "block",
+      "type": "paragraph",
+      "paragraph": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "S Tierに位置するSylas、Rek'Sai、Xin Zhao、Lee Sinといったチャンピオンは、高いポテンシャルを持つ一方で、それぞれ異なるプレイスタイルが求められます。これらのチャンピオンを横断的に分析し、「ゲームを動かす」という共通のテーマで戦略を提示することで、特定のチャンピオンだけでなく、ジャングルというロール全体の理解度向上を促し、読者のスキルアップを教育する役割を果たします。多くの読者が参考にしやすく、エントリー層へのアプローチとして最適です。"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "object": "block",
+      "type": "heading_2",
+      "heading_2": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "📝 構成案"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "object": "block",
+      "type": "paragraph",
+      "paragraph": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "Sティアジャングルの共通項：なぜ彼らは『ゲームを動かせる』のか？\n序盤の主導権を握る：カウンタージャングルとファームの優先順位\nガンク成功率90%超え！確実にキルに繋げるための位置取りとタイミング\nドラゴン・バロンを安全に取る！オブジェクトコントロールの極意\n集団戦の入り方とフォーカス：状況に応じた最適なエンゲージ術\nチャンピオン別ピックアップ：Sylas、Rek'Sai、Xin Zhao、Lee Sinの特性と強み"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
+✅ Notion投稿成功: 【ランク爆上げ保証】Sティアジャングルで『ゲームを動かす』ための必須スキル！初動から終盤まで主導権を握る方法
+DEBUG: Notion Payload:
+{
+  "parent": {
+    "database_id": "32061cf4543980d8a093d19d017ebcfc"
+  },
+  "properties": {
+    "名前": {
+      "title": [
+        {
+          "type": "text",
+          "text": {
+            "content": "【トレンド速報】【警鐘】Tier Eジャングルを選んではいけない理由と、それでも使うなら『勝ち筋』はココだ！"
+          }
+        }
+      ]
+    },
+    "ステータス": {
+      "status": {
+        "name": "Idea"
+      }
+    }
+  },
+  "children": [
+    {
+      "object": "block",
+      "type": "paragraph",
+      "paragraph": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "LolalyticsでTier Eと評価されたチャンピオン（Elise, Ekko）は、現状のメタでは不利な立ち位置にあります。この『なぜ弱いのか』を明確にすることで、読者のメタ理解を深めるとともに、それでもこれらのチャンピオンへの愛着が強く使いたい読者へのニッチな需要に応えます。一般的な強キャラ攻略とは異なる、逆説的な視点を提供することで読者の興味を引きつけ、メタを深く理解するための教育的な価値を提供します。"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "object": "block",
+      "type": "heading_2",
+      "heading_2": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "📝 構成案"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "object": "block",
+      "type": "paragraph",
+      "paragraph": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "Lolalyticsが示す『Tier E』の真実：なぜEliseとEkkoは今厳しいのか？\nメタの変化と彼らの弱点：序盤の差を覆すのが困難な理由\nそれでも愛するチャンピオンで勝ちたい！唯一無二の『勝ち筋』を見つける\nElise：スパイダーフォームを最大限に活かす超攻撃的ガンクルートとビルド\nEkko：時間差エンゲージとセーフティを両立する立ち回り、逆転のビルドパス\n『不利』を『有利』に変えるためのチームとの連携術"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
+✅ Notion投稿成功: 【警鐘】Tier Eジャングルを選んではいけない理由と、それでも使うなら『勝ち筋』はココだ！
+[2026-03-20 22:01:02] Step 2/6: ネタの同期 (notion_to_local)...
+Notionからメモを取得中... (DB: 32061cf4543980d8a093d19d017ebcfc)
+6 件のメモが見つかりました。同期を開始します。
+  -> ステータスを「完了」に更新しました: 【トレンド速報】【衝撃の真実】SランクJungleが知らない『Eliseの没落』と、今すぐ使うべき『Sylas』の秘策
+  -> ステータスを「完了」に更新しました: 【トレンド速報】【ランク爆上げ保証】Sティアジャングルで『ゲームを動かす』ための必須スキル！初動から終盤まで主導権を握る方法
+  -> ステータスを「完了」に更新しました: 【トレンド速報】【警鐘】Tier Eジャングルを選んではいけない理由と、それでも使うなら『勝ち筋』はココだ！
+  -> ステータスを「完了」に更新しました: 【トレンド速報】【S+独走】『森の覇者』Gravesで最速キャリー！誰も止められないジャングルルートとビルド戦略
+  -> ステータスを「完了」に更新しました: 【トレンド速報】【Jungle最速レート爆上げ】S+グレーブス完全攻略ガイド ～新環境で暴れる森の番人の秘密～
+  -> ステータスを「完了」に更新しました: 【トレンド速報】【Jungle序盤キル量産術】Sランク『XLS（Xin Zhao, Lee Sin, Rek'Sai）』でゲームを支配する暴力的な森の戦略
+同期完了: 6 件のメモを D:\my_work\03_factory\memo に出力しました。
+[2026-03-20 22:01:21] Step 3/6: 戦略脳 (Strategist) による今日のフック立案...
+[2026-03-20 22:01:21] 💡 今日の戦略: 普遍的な勝利法則に基づく発信...
+[2026-03-20 22:01:21] Step 4/6: 商品化と監査脳による検閲...
+🤖 思考モデル: models/gemini-2.5-pro
+⚠️ 429制限検知。5秒待機します...
+🤖 思考モデル: models/gemini-2.5-flash
+🤖 思考モデル: models/gemini-2.5-pro
+⚠️ 429制限検知。5秒待機します...
+🤖 思考モデル: models/gemini-2.5-flash
+[2026-03-20 22:02:04] ✅ 監査合格 (Score: 95)
+[2026-03-20 22:02:04] 💾 ドラフトを保存しました (Score: 95): draft_20260320_2202_s95.md
+[2026-03-20 22:02:04] Step 5/6: 全成果物のスマホ同期 (Ship)...
+  [Ship] Updated: [Foundation] ANTIGRAVITY
+  [Ship] Updated: [Foundation] action_plan
+  [Ship] Updated: [Foundation] ANTIGRAVITY
+  [Ship] Updated: [Foundation] failures
+  [Ship] Updated: [Foundation] mission
+  [Ship] Updated: [Foundation] monetization_strategy
+  [Ship] Updated: [Foundation] ng_words
+  [Ship] Updated: [Foundation] roadmap
+  [Ship] Updated: [Foundation] rules_evolution
+  [Ship] Updated: [Foundation] strategy
+  [Ship] Updated: [Foundation] target_client
+  [Ship] Created: [Foundation] ULTIMATE_PROJECT_MASTER
+  [Ship] Updated: [Foundation] voice
+  [Ship] Updated: [Foundation] wins
+  [Ship] Updated: [Report] daily_report_2026-03-14
+  [Ship] Created: [Report] shyvana_jg_p2606_deep_dive
+  [Ship] Created: [Draft] draft_20260318_0014
+  [Ship] Created: [Draft] draft_20260318_0018
+  [Ship] Created: [Draft] draft_20260318_0019
+  [Ship] Created: [Draft] draft_20260318_0027
+  [Ship] Created: [Draft] draft_20260318_0035
+  [Ship] Created: [Draft] draft_20260318_0036
+  [Ship] Created: [Draft] draft_20260318_0038
+  [Ship] Created: [Draft] draft_20260318_0045_s50
+  [Ship] Created: [Draft] draft_20260318_0100_s50
+  [Ship] Created: [Draft] draft_20260318_0123_s50
+  [Ship] Created: [Draft] draft_20260318_1617_s95
+  [Ship] Created: [Draft] draft_20260318_1701_s95
+  [Ship] Created: [Draft] draft_20260318_1802_s95
+  [Ship] Created: [Draft] draft_20260318_1902_s95
+  [Ship] Created: [Draft] draft_20260318_2001_s50
+  [Ship] Created: [Draft] draft_20260318_2100_s50
+  [Ship] Created: [Draft] draft_20260318_2201_s50
+  [Ship] Created: [Draft] draft_20260318_2301_s50
+  [Ship] Created: [Draft] draft_20260319_0001_s50
+  [Ship] Created: [Draft] draft_20260319_0101_s50
+  [Ship] Created: [Draft] draft_20260319_2104_s100
+  [Ship] Created: [Draft] draft_20260319_2202_s90
+  [Ship] Created: [Draft] draft_20260320_0002_s100
+  [Ship] Created: [Draft] draft_20260320_0101_s50
+  [Ship] Created: [Draft] draft_20260320_0201_s50
+  [Ship] Created: [Draft] draft_20260320_0307_s50
+  [Ship] Created: [Draft] draft_20260320_1356_s50
+  [Ship] Created: [Draft] draft_20260320_1402_s50
+  [Ship] Created: [Draft] draft_20260320_2202_s95
+[2026-03-20 22:05:29] Step 7/9: 日報の自動生成 (Daily Report)...
+🤖 思考モデル: models/gemini-2.5-pro
+⚠️ 429制限検知。5秒待機します...
+🤖 思考モデル: models/gemini-2.5-flash
+[2026-03-20 22:05:44] ✅ 日報を生成しました: 2026-03-20.md
+[2026-03-20 22:05:44] Step 8/9: 自己進化用データの同期 (Evolution)...
+[2026-03-20 22:05:44] ✅ 自己進化データの同期完了。
+[2026-03-20 22:05:44] Step 9/9: LoL戦術の深掘りリサーチ (LoL Tactics)...
+[2026-03-20 22:05:44] Step 10/10: 資産化候補のリマインドチェック...
+[2026-03-20 22:05:44] 💡 順調です！ 高スコアのドラフト（s90以上）がある場合は、'hit_archive' への格納をご検討ください。
+[2026-03-20 22:05:44] 💡 'archives' への古いファイルの移動は次回の自動メンテナンスで処理されます。
+[2026-03-20 22:05:44] ✨ すべての自律サイクルが正常に完了しました。

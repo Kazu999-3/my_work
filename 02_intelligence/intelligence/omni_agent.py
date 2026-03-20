@@ -26,7 +26,10 @@ class OmniAgent:
     """
     def __init__(self):
         load_dotenv(ROOT_DIR / ".env")
-        self.log_file = ROOT_DIR / "04_system" / "logs" / "omni_agent.log"
+        # ログ・状態管理のパス
+        LOG_DIR = ROOT_DIR / "04_system" / "logs"
+        self.log_file = LOG_DIR / "omni_agent.log"
+        self.last_run_file = LOG_DIR / "last_omni_cycle.txt"
         self.syncer = OmniSyncPro()
         self.ensure_dirs()
 
@@ -44,8 +47,28 @@ class OmniAgent:
         with open(self.log_file, "a", encoding="utf-8") as f:
             f.write(full_message + "\n")
 
-    async def run_cycle(self):
-        self.log("🚀 Omni-Agent 2.0: 「自律商社アンちゃん」の超知能サイクルを開始します。")
+    async def run_cycle(self, force=False):
+        """
+        自律経営の1サイクルを実行する
+        force=False の場合、4時間以内の再実行をスキップする
+        """
+        now = datetime.now()
+        
+        if not force and self.last_run_file.exists():
+            last_run_str = self.last_run_file.read_text(encoding="utf-8").strip()
+            try:
+                last_run = datetime.fromisoformat(last_run_str)
+                if (now - last_run).total_seconds() < 4 * 3600:
+                    self.log(f"⏭️ 前回のサイクルから4時間経過していないため、実行をスキップします。 (前回: {last_run_str})")
+                    return
+            except Exception:
+                pass
+
+        self.log(f"🚀 Omni-Agent 2.5: 「自律商社アンちゃん」の超知能サイクルを開始します。")
+        
+        # 実行時刻を記録
+        self.last_run_file.parent.mkdir(parents=True, exist_ok=True)
+        self.last_run_file.write_text(now.isoformat(), encoding="utf-8")
 
         try:
             # 0. 荷下ろし (Cargo Pull)
@@ -110,12 +133,11 @@ class OmniAgent:
         prompt = f"以下のトレンドレポートから、今日読者の心を最も動かす『140文字の戦略的なフック（急所）』を1つだけ抽出してください。箇条書きや説明は不要です。\n\n{content}"
         return generate_with_fallback(prompt)
 
-    async def generate_and_audit_drafts(self, strategy_hook):
+    async def generate_and_audit_drafts(self, strategy_hook, max_reworks=1):
         """ドラフト生成と監査を最大2回繰り返す"""
-        max_retries = 2
         feedback = ""
         
-        for i in range(max_retries + 1):
+        for i in range(max_reworks + 1):
             draft = await self.produce_draft(strategy_hook, feedback)
             score, audit_log = self.audit_draft(draft)
             
@@ -138,6 +160,26 @@ class OmniAgent:
         ng = (ROOT_DIR / "01_spirit" / "ng_words.md").read_text(encoding="utf-8") if (ROOT_DIR / "01_spirit" / "ng_words.md").exists() else ""
         failures = (ROOT_DIR / "01_spirit" / "failures.md").read_text(encoding="utf-8") if (ROOT_DIR / "01_spirit" / "failures.md").exists() else ""
         
+        prompt = f"""
+あなたはアンちゃんの「Worker（実働部隊）」です。
+以下の戦略フックに基づき、note記事の冒頭部分と、X（Twitter）向けのポスト案を3つ作成してください。
+
+【戦略フック】
+{strategy_hook}
+
+【過去の成功事例 (Wins)】
+{wins}
+
+【過去の失敗・NG (NG/Failures)】
+{ng}
+{failures}
+
+【フィードバック（ある場合）】
+{feedback}
+
+読者のスクロールを止める「強い書き出し」から始め、アンちゃんの「5層構造」や「スキルファイル」の有益性をチラ見せしてください。
+日本語で回答してください。
+"""
         content = generate_with_fallback(prompt)
         if not content:
             self.log("⚠️ ドラフト生成に失敗しました（空のレスポンス）。")

@@ -145,19 +145,19 @@ def export_memos():
             content += summary if summary else "要約なし"
             content += "\n\n"
 
-            # URLが存在する場合、その中身も取得して追記する（AIが再利用しやすいように）
-            if url_val:
-                print(f"  -> URLのコンテンツを取得中: {url_val}")
-                page_data = gemini_analyzer.fetch_page_content(url_val)
-                if page_data and page_data.get('content'):
-                    content += "---\n\n"
-                    content += "## 📄 Webページ・投稿の本文データ\n"
-                    content += page_data['content']
-                    content += "\n"
-                else:
-                    content += "---\n\n"
-                    content += "## 📄 Webページ・投稿の本文データ\n"
-                    content += "（コンテンツの取得に失敗しました）\n"
+            # [API節約] URLが存在する場合の中身取得を一時停止
+            # if url_val:
+            #     print(f"  -> URLのコンテンツを取得中: {url_val}")
+            #     page_data = gemini_analyzer.fetch_page_content(url_val)
+            #     if page_data and page_data.get('content'):
+            #         content += "---\n\n"
+            #         content += "## 📄 Webページ・投稿の本文データ\n"
+            #         content += page_data['content']
+            #         content += "\n"
+            #     else:
+            #         content += "---\n\n"
+            #         content += "## 📄 Webページ・投稿の本文データ\n"
+            #         content += "（コンテンツの取得に失敗しました）\n"
 
             # 書き込み
             with open(filepath, "w", encoding="utf-8") as f:

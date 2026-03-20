@@ -40,9 +40,12 @@ async def scout_lolalytics():
         # LolalyticsのジャングルTierページへ（例としてJungle）
         url = "https://lolalytics.com/lol/tierlist/?lane=jungle"
         try:
-            await page.goto(url, wait_until="networkidle", timeout=60000)
-            # ページ読み込み待ち
+            print(f"🌐 ターゲットURLに移動中: {url}")
+            await page.goto(url, wait_until="domcontentloaded", timeout=60000)
+            print("⏳ ページ読み込み完了。追加待機中...")
             await asyncio.sleep(5) 
+            
+            print("🧬 チャンピオンデータの抽出を開始...")
             
             # 最新のLolalytics構造に対応した抽出ロジック
             champions = await page.evaluate(r'''() => {
@@ -113,6 +116,8 @@ def generate_with_fallback(prompt: str) -> str:
                     # 429の場合は同じモデルでもう一度試す価値があるためループを継続
                     continue
                 print(f"❌ モデル({m_name})実行エラー: {e}")
+                if "429" in str(e):
+                    print("🚫 クォータ上限到達の可能性があります。")
         
         # 1周失敗したら少し待機してから次のアテンプトへ
         if attempt < max_retries - 1:
@@ -196,7 +201,6 @@ def post_to_notion(proposal):
         "parent": { "database_id": NOTION_DB_ID },
         "properties": {
             "名前": { "title": [{ "type": "text", "text": { "content": f"【トレンド速報】{proposal['title']}" } }] },
-            "カテゴリ": { "select": { "name": proposal.get('ladder_step', '1.無料') } },
             "ステータス": { "status": { "name": "Idea" } }
         },
         "children": [
