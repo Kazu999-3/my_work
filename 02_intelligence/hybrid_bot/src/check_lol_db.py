@@ -14,7 +14,7 @@ LOL_DB_ID = "2db61cf4543981ceb4e1000bed515832" # First child data source
 def check_db_schema(db_id):
     headers = {
         "Authorization": f"Bearer {NOTION_TOKEN}",
-        "Notion-Version": "2025-09-03",
+        "Notion-Version": "2022-06-28",
         "Content-Type": "application/json"
     }
     url = f"https://api.notion.com/v1/databases/{db_id}"

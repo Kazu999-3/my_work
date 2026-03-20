@@ -5,8 +5,8 @@ from bs4 import BeautifulSoup
 from google import genai
 from dotenv import load_dotenv
 
-# .envファイルの読み込み
-env_path = os.path.join(os.path.dirname(__file__), '..', '.env')
+# .envファイルの読み込み（プロジェクトルートの.envを参照）
+env_path = os.path.join(os.path.dirname(__file__), '..', '..', '..', '.env')
 load_dotenv(env_path)
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")

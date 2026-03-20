@@ -1,4 +1,4 @@
-# 🚀 スケーリング・武器庫 (apps/monetization/)
+# 🚀 スケーリング・武器庫 (02_intelligence/monetization/)
 
 収益化を加速・自動化するための高度なスクリプトやガイドラインを格納します。
 

@@ -13,9 +13,9 @@ sys.stderr.reconfigure(encoding='utf-8')
 
 # パス設定
 ROOT_DIR = Path(__file__).resolve().parent.parent
-PIPELINE_SCRIPT = ROOT_DIR / "apps" / "note_generator" / "ai_pipeline.py"
-MEMO_SYNC_SCRIPT = ROOT_DIR / "apps" / "hybrid_bot" / "src" / "notion_to_local.py"
-YT_SYNC_SCRIPT = ROOT_DIR / "apps" / "youtube_manager" / "src" / "notion_yt_orchestrator.py"
+PIPELINE_SCRIPT = ROOT_DIR / "02_intelligence" / "note_generator" / "ai_pipeline.py"
+MEMO_SYNC_SCRIPT = ROOT_DIR / "02_intelligence" / "hybrid_bot" / "src" / "notion_to_local.py"
+YT_SYNC_SCRIPT = ROOT_DIR / "02_intelligence" / "youtube_manager" / "src" / "notion_yt_orchestrator.py"
 
 # 定期実行の間隔（10分 = 600秒）
 MAINTENANCE_INTERVAL = 600
@@ -142,10 +142,10 @@ def process_task(page):
             
         if return_code == 0:
             # 成功したら Done に変更
-            print("✅ ステータスを Done に変更して完了します。")
+            print("✅ 処理が完了しました。ステータスを Done に変更します。")
             update_task_status(page_id, "Done")
         else:
-            print("❌ AIパイプラインでエラーが発生しました。タスクは Doing のまま維持されます。")
+            print(f"❌ AIパイプラインが異常終了しました (Exit Code: {return_code})。ステータスは維持されます。")
             
     except Exception as e:
         print(f"❌ 処理中に致命的なエラーが発生しました: {e}")
@@ -172,8 +172,10 @@ def run_maintenance_tasks():
     print("📺 YouTubeインベントリの同期中...")
     try:
         # YouTubeマネージャーはconfigフォルダの.envを個別に読むためCWD指定
+        # ROOT_DIR / "02_intelligence" / "youtube_manager" / "src"
+        cwd_path = ROOT_DIR / "02_intelligence" / "youtube_manager" / "src"
         subprocess.run([sys.executable, str(YT_SYNC_SCRIPT)], 
-                       cwd=str(ROOT_DIR / "apps" / "youtube_manager" / "src"),
+                       cwd=str(cwd_path),
                        check=True)
     except Exception as e:
         print(f"⚠️ YouTube同期でエラーが発生しました: {e}")

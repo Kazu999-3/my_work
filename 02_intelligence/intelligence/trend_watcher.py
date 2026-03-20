@@ -25,6 +25,7 @@ load_dotenv(ROOT_DIR / ".env")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 NOTION_API_KEY = os.getenv("NOTION_API_KEY")
 NOTION_DB_ID = os.getenv("NOTION_DB_ID") # 調査指示用DB
+MODEL_PRO = os.getenv("MODEL_PRO", "gemini-2.5-pro")
 MODEL_FLASH = os.getenv("MODEL_FLASH", "gemini-1.5-flash")
 
 genai.configure(api_key=GEMINI_API_KEY)
@@ -83,15 +84,28 @@ async def scout_lolalytics():
             return "Lolalyticsからのデータ取得に失敗しました。シミュレーションデータを使用します。"
 
 def generate_with_fallback(prompt: str) -> str:
-    """トレンド監視ではコスト優先で Flash を使用"""
-    try:
-        print(f"🤖 思考モデル: {MODEL_FLASH}")
-        temp_model = genai.GenerativeModel(MODEL_FLASH)
-        response = temp_model.generate_content(prompt)
-        return response.text
-    except Exception as e:
-        print(f"❌ モデル実行エラー: {e}")
-        return ""
+    """
+    トレンド監視でも品質を担保するため、Pro -> Flash の順で試行
+    """
+    model_sequence = [MODEL_PRO, MODEL_FLASH]
+    
+    for m_name in model_sequence:
+        if not m_name: continue
+        try:
+            print(f"🤖 思考モデル: {m_name}")
+            temp_model = genai.GenerativeModel(m_name)
+            response = temp_model.generate_content(prompt)
+            return response.text
+        except Exception as e:
+            if "429" in str(e):
+                import time
+                print(f"⚠️ 429制限検知。5秒待機します...")
+                time.sleep(5)
+                if m_name == MODEL_PRO:
+                    continue
+            print(f"❌ モデル({m_name})実行エラー: {e}")
+            # 次のモデルがあれば試す
+    return ""
 
 def generate_proposals(scouted_data: str):
     print("💡 企画案を立案中...")

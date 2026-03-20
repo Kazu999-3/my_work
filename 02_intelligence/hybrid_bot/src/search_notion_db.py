@@ -12,7 +12,7 @@ NOTION_TOKEN = os.getenv('NOTION_API_KEY')
 def search_notion(query):
     headers = {
         "Authorization": f"Bearer {NOTION_TOKEN}",
-        "Notion-Version": "2025-09-03",
+        "Notion-Version": "2022-06-28",
         "Content-Type": "application/json"
     }
     url = "https://api.notion.com/v1/search"

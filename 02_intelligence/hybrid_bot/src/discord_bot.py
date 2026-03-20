@@ -258,10 +258,10 @@ async def run_sync_logic(interaction: discord.Interaction):
     
     root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
     scripts = [
-        ("タスク同期", os.path.join(root_dir, "apps", "hybrid_bot", "src", "sync_tasks_to_notion.py")),
-        ("文書一覧同期", os.path.join(root_dir, "apps", "hybrid_bot", "src", "sync_docs_to_notion.py")),
-        ("メモ取得", os.path.join(root_dir, "apps", "hybrid_bot", "src", "notion_to_local.py")),
-        ("YouTube整理", os.path.join(root_dir, "apps", "youtube_manager", "src", "notion_yt_orchestrator.py"))
+        ("タスク同期", os.path.join(root_dir, "02_intelligence", "hybrid_bot", "src", "sync_tasks_to_notion.py")),
+        ("文書一覧同期", os.path.join(root_dir, "02_intelligence", "hybrid_bot", "src", "sync_docs_to_notion.py")),
+        ("メモ取得", os.path.join(root_dir, "02_intelligence", "hybrid_bot", "src", "notion_to_local.py")),
+        ("YouTube整理", os.path.join(root_dir, "02_intelligence", "youtube_manager", "src", "notion_yt_orchestrator.py"))
     ]
     
     status_msg = "🔄 **一括同期を開始します...**\n"

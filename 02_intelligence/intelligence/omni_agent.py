@@ -34,6 +34,7 @@ class OmniAgent:
         (ROOT_DIR / "03_factory" / "reports").mkdir(parents=True, exist_ok=True)
         (ROOT_DIR / "03_factory" / "memo").mkdir(parents=True, exist_ok=True)
         (ROOT_DIR / "03_factory" / "daily_posts").mkdir(parents=True, exist_ok=True)
+        (ROOT_DIR / "outputs" / "report").mkdir(parents=True, exist_ok=True)
 
     def log(self, message):
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -73,6 +74,18 @@ class OmniAgent:
 
             # 6. 完遂 (Finalize)
             self.finalize_instruction()
+
+            # 7. 日報生成 (Daily Report)
+            self.log("Step 7/9: 日報の自動生成 (Daily Report)...")
+            await self.generate_daily_report()
+
+            # 8. 自己進化データの同期 (Evolution)
+            self.log("Step 8/9: 自己進化用データの同期 (Evolution)...")
+            self.sync_evolution_data()
+
+            # 9. LoL戦術深掘り (LoL Tactics)
+            self.log("Step 9/9: LoL戦術の深掘りリサーチ (LoL Tactics)...")
+            await self.lol_tactics_deep_dive()
 
             self.log("✨ すべての自律サイクルが正常に完了しました。")
 
@@ -153,7 +166,7 @@ class OmniAgent:
 2. 「いかがでしたでしょうか」「要チェックです」などのAI臭い表現があれば減点。
 3. 戦略的フックが弱く、読者がスルーしそうな内容なら減点。
 
-出力形式(JSONのみ):
+必ず以下のJSON形式でのみ回答してください。余計な文章やMarkdownの枠（```jsonなど）は一切不要です。
 {{"score": 85, "feedback": "具体的な不足点や修正すべき箇所..."}}
 
 【監査対象ドラフト】
@@ -162,11 +175,15 @@ class OmniAgent:
         res_text = generate_with_fallback(prompt)
         try:
             import re
+            # JSON部分をより柔軟に抽出
             match = re.search(r'\{.*\}', res_text, re.DOTALL)
-            data = json.loads(match.group(0)) if match else {"score": 50, "feedback": "JSON解析失敗"}
-            return int(data.get("score", 50)), data.get("feedback", "理由なし")
-        except:
-            return 50, "監査エンジンエラー"
+            if match:
+                clean_json = match.group(0).replace('\n', '').replace('\r', '')
+                data = json.loads(clean_json)
+                return int(data.get("score", 50)), data.get("feedback", "理由なし")
+            return 50, f"JSON形式が見会えませんでした: {res_text[:50]}..."
+        except Exception as e:
+            return 50, f"監査パースエラー: {e}"
 
     def save_draft(self, content, score):
         draft_dir = ROOT_DIR / "03_factory" / "daily_posts"
@@ -185,18 +202,81 @@ class OmniAgent:
         for f in (ROOT_DIR / "03_factory" / "daily_posts").glob("draft_*.md"):
             self.syncer.ship_file(f, category="Draft")
 
-    def finalize_instruction(self):
-        import requests
-        token = os.getenv("NOTION_API_KEY")
-        db_id = os.getenv("NOTION_DB_ID")
-        if not token or not db_id: return
-        headers = {"Authorization": f"Bearer {token}", "Notion-Version": "2022-06-28", "Content-Type": "application/json"}
-        payload = {"filter": {"property": "ステータス", "status": {"equals": "Doing"}}}
+    async def generate_daily_report(self):
+        """今日の活動内容をサマライズして日報を作成する（1日1回）"""
+        today = datetime.now().strftime("%Y-%m-%d")
+        report_path = ROOT_DIR / "outputs" / "report" / f"{today}.md"
+        
+        if report_path.exists():
+            self.log(f"⏩ 日報は既に存在します: {report_path.name}")
+            return
+
+        # ログファイルから直近の内容を取得
+        log_content = ""
+        log_file = ROOT_DIR / "04_system" / "logs" / "pipeline.log"
+        if log_file.exists():
+            log_content = log_file.read_text(encoding="utf-8")[-5000:] # 直近5000文字
+        
+        prompt = f"""
+あなたは自律商社の経営参謀です。本日の活動ログに基づき、経営者（ユーザー）への日報を作成してください。
+【本日のログ抜粋】
+{log_content}
+
+【出力形式】
+# 日報: {today}
+## 1. 完了した主要タスク
+## 2. 発生した課題と対応
+## 3. 次回への戦略的提案（収益化・自動化の観点から）
+
+文章は簡潔かつ論理的に。
+"""
         try:
-            res = requests.post(f"https://api.notion.com/v1/databases/{db_id}/query", headers=headers, json=payload)
-            for page in res.json().get("results", []):
-                requests.patch(f"https://api.notion.com/v1/pages/{page['id']}", headers=headers, json={"properties": {"ステータス": {"status": {"name": "Done"}}}})
-        except Exception as e: self.log(f"Finalize Error: {e}")
+            report_text = generate_with_fallback(prompt)
+            report_path.write_text(report_text, encoding="utf-8")
+            self.log(f"✅ 日報を生成しました: {report_path.name}")
+        except Exception as e:
+            self.log(f"❌ 日報生成エラー: {e}")
+
+    def sync_evolution_data(self):
+        """auto_evolve.py を実行して進化データを更新する"""
+        import subprocess
+        script_path = ROOT_DIR / "02_intelligence" / "intelligence" / "auto_evolve.py"
+        try:
+            result = subprocess.run([sys.executable, str(script_path)], capture_output=True, text=True)
+            self.log("✅ 自己進化データの同期完了。")
+        except Exception as e:
+            self.log(f"❌ 自己進化データ同期エラー: {e}")
+
+    async def lol_tactics_deep_dive(self):
+        """トレンドデータに基づき、重要なチャンピオンの戦術を深掘りする"""
+        # trend_reportがあれば読み込む
+        report_files = list((ROOT_DIR / "03_factory" / "reports").glob("trend_report_*.md"))
+        if not report_files: return
+        
+        report_files.sort(key=os.path.getmtime, reverse=True)
+        intel_content = report_files[0].read_text(encoding="utf-8")
+
+        prompt = f"""
+以下のLoLトレンドレポートから、現在最も注目すべき（Tier上昇や勝率急増した）チャンピオンを1人選び、
+そのチャンピオンの「今すぐ勝てる戦術（ビルド、マクロ、対策）」を深掘りした特化レポート（ドラフト）を作成してください。
+【トレンドデータ】
+{intel_content}
+"""
+        try:
+            tactics_draft = generate_with_fallback(prompt)
+            date_str = datetime.now().strftime("%Y%m%d_%H%M")
+            save_path = ROOT_DIR / "03_factory" / "reports" / f"tactics_dive_{date_str}.md"
+            save_path.write_text(tactics_draft, encoding="utf-8")
+            self.log(f"✅ LoL戦術深掘りレポートを作成しました: {save_path.name}")
+            self.syncer.ship_file(save_path, category="Tactics")
+        except Exception as e:
+            self.log(f"❌ LoL戦術深掘りエラー: {e}")
+
+    def finalize_instruction(self):
+        """
+        [DEPRECATED] Doing全件の強制Done化は副作用が大きいため無効化。
+        """
+        pass
 
 async def main():
     agent = OmniAgent()

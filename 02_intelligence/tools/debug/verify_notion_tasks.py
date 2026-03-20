@@ -2,8 +2,8 @@ import os
 import requests
 from dotenv import load_dotenv
 
-# .envファイルの読み込み
-env_path = os.path.join(os.path.dirname(__file__), 'apps', 'hybrid_bot', '.env')
+# .envファイルの読み込み（プロジェクトルートの.envを参照）
+env_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', '.env'))
 load_dotenv(env_path)
 
 NOTION_TOKEN = os.getenv('NOTION_API_KEY')

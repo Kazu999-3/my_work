@@ -304,7 +304,7 @@ def get_lol_knowledge(champion_name=None):
         url = f"https://api.notion.com/v1/databases/{NOTION_LOL_DB_ID}/query"
         headers = {
             "Authorization": f"Bearer {NOTION_TOKEN}",
-            "Notion-Version": "2025-09-03",
+            "Notion-Version": "2022-06-28",
             "Content-Type": "application/json"
         }
         

@@ -14,7 +14,7 @@ sys.stderr.reconfigure(encoding='utf-8')
 ROOT_DIR = Path(__file__).resolve().parent.parent.parent
 AGENT_DIR = ROOT_DIR / ".agent"
 SKILLS_DIR = AGENT_DIR / "skills"
-DRAFT_DIR = ROOT_DIR / "outputs" / "draft"
+DRAFT_DIR = ROOT_DIR / "03_factory" / "research_results"
 
 # .env の読み込み
 load_dotenv(ROOT_DIR / ".env")
@@ -63,9 +63,15 @@ def generate_with_fallback(prompt: str, preferred_model: str = "Auto") -> str:
             response = temp_model.generate_content(prompt)
             return response.text
         except Exception as e:
-            if "429" in str(e) and m_type == "Pro" and "Flash" in model_sequence:
-                print(f"⚠️ Proのクォータ上限に達しました。Flashに切り替えて再試行します...")
-                continue
+            if "429" in str(e):
+                import time
+                if m_type == "Pro" and "Flash" in model_sequence:
+                    print(f"⚠️ Proのクォータ上限。Flashに切り替えて再試行(3秒待機)...")
+                    time.sleep(3)
+                    continue
+                else:
+                    print(f"⚠️ 429エラー(クォータ上限)。少し待機して終了します...")
+                    time.sleep(5)
             raise e
     return ""
 
