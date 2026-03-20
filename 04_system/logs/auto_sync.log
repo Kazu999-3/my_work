@@ -1456,3 +1456,323 @@ Notionからメモを取得中... (DB: 32061cf4543980d8a093d19d017ebcfc)
                                      ^^^^^^
 NameError: name 'prompt' is not defined
 
+D:\my_work\02_intelligence\intelligence\trend_watcher.py:8: FutureWarning: 
+
+All support for the `google.generativeai` package has ended. It will no longer be receiving 
+updates or bug fixes. Please switch to the `google.genai` package as soon as possible.
+See README for more details:
+
+https://github.com/google-gemini/deprecated-generative-ai-python/blob/main/README.md
+
+  import google.generativeai as genai
+💡 OmniSyncPro: 安定版エンジンを起動しました(requests仕様)
+[2026-03-20 16:00:06] 🚀 Omni-Agent 2.0: 「自律商社アンちゃん」の超知能サイクルを開始します。
+[2026-03-20 16:00:06] Step 0/6: スマホ修正の反映 (Cargo Pull)...
+[2026-03-20 16:00:28] Step 1/6: 市場トレンドの偵察 (scout_lolalytics)...
+🚀 アンちゃん・トレンドウォッチャー Pro 起動
+🔍 Lolalyticsから最新メタ情報をスカウティング中...
+【Lolalytics最新トレンド - Jungle】
+- Graves: Tier S+ (勝率 ??%)
+- Rek'Sai: Tier S (勝率 ??%)
+- Sylas: Tier S (勝率 ??%)
+- Xin Zhao: Tier S (勝率 ??%)
+- Lee Sin: Tier S (勝率 ??%)
+- Nunu & Willump: Tier S- (勝率 ??%)
+- Naafiri: Tier S- (勝率 ??%)
+- Master Yi: Tier S- (勝率 ??%)
+- Diana: Tier D (勝率 ??%)
+- Elise: Tier E (勝率 ??%)
+
+💡 企画案を立案中...
+🤖 思考モデル: models/gemini-2.5-pro
+⚠️ 429制限検知。5秒待機します...
+🤖 思考モデル: models/gemini-2.5-flash
+DEBUG: Gemini Response:
+[
+  {
+    "title": "JG勝率TOP現環境の覇者『Graves』完全攻略！ 勝率80%超えJGが教える最強ジャングルパスとGank戦略",
+    "ladder_step": "2.エントリー(教育)",
+    "reason": "LolalyticsでS+ティアのGravesは、現環境で最も強力なジャングラーの一人であり、その強みを最大限に引き出す戦略は多くのプレイヤーが求めています。特定の強力なチャンピオンに絞ることで、読者はより具体的で実践的な情報を得られると感じ、購入意欲を高めます。商品ラダー上では、最も需要のある「強キャラの具体的な使い方」という教育ニーズに応え、読者のJungleプレイを確実に向上させることを目的としています。",
+    "outline": [
+      "プロローグ：なぜ今GravesがS+ティアなのか？ その圧倒的な強さの秘密",
+      "Gravesのスキルセットと最適な運用方法：基本から応用まで",
+      "初心者でもできる！ 鉄板のジャングルパス（フルクリア、3キャンプGankなど複数パターン）",
+      "序盤を制する！ 正しいGankタイミングと注意点、成功率を上げるコツ",
+      "中盤以降の立ち回り：集団戦での最適な立ち位置とダメージの出し方、オブジェクトコントロール",
+      "最強ビルドパスとルーン選択：状況に応じた最適なアイテムビルドとルーンの変化も解説",
+      "Q&A：Graves使いが陥りがちなミスとその改善策、よくある疑問に答える",
+      "おわりに：この記事であなたもGravesマスター！ ランクを爆上げする準備はできたか？"
+    ]
+  },
+  {
+    "title": "【Jungleメタ解説】SティアJG使い分け完全ガイド！ リーシン・レクサイ・シンジャオ…現環境で勝つための最適なピックと立ち回り術",
+    "ladder_step": "2.エントリー(教育)",
+    "reason": "LolalyticsのデータでSティアに複数のジャングラーが並んでいる今、どのチャンピオンをどのような状況でピックし、どのようにプレイすべきかという疑問は多くのプレイヤーが抱えています。複数の選択肢がある中で「どれを選べば勝てるか」というメタ理解と戦略的な判断力を養うこの記事は、読者のゲーム理解度を高め、より幅広い状況に対応できる力を提供します。これにより、読者は単一のチャンピオンだけでなく、Jungleロール全体での勝率向上を目指せ、将来的にはより高価格帯の商品への関心にも繋がります。",
+    "outline": [
+      "プロローグ：現環境Jungleメタのトレンド分析 - なぜこれらのチャンピオンが強いのか？",
+      "診断チャート：あなたのチーム構成・相手構成に最適なSティアJGは？",
+      "各チャンピオン徹底解説：特徴、強み、弱み、最適な運用法",
+      "- リー・シン：序盤のスノーボール、インベードの極意と難易度別攻略",
+      "- レクサイ：視界コントロールとCC、確実なGankルートとマクロ戦略",
+      "- シン・ジャオ：パワースパイクを活かしたアグレッシブな攻めと集団戦での立ち位置",
+      "- シルヴァス：JGでの強み、カウンターピックの狙いと隠れたポテンシャル",
+      "状況別ジャングルパス：序盤の有利を作るためのルート選択とオブジェクト意識",
+      "中盤以降の動き：各チャンピオンの集団戦での役割と立ち位置、勝利への貢献方法",
+      "これだけはNG！ 各チャンピオンでやってはいけないこととリスク管理",
+      "おわりに：SティアJGをマスターし、ランクを爆上げしよう！"
+    ]
+  },
+  {
+    "title": "“脳死”で勝率UP？！ 隠れたS-ティア『Nunu & Willump』で楽々LP獲得術！ 知られざる真の強さとは",
+    "ladder_step": "2.エントリー(教育)",
+    "reason": "Nunu & WillumpはS-ティアに位置し、S+やSのチャンピオンほど派手さはありませんが、その使いやすさや安定性から「知られざる勝率安定キャラ」としての需要があります。「脳死」「楽々LP」といったフックは、難しい操作を苦手とするプレイヤーや、安定して勝ちたいと考えるプレイヤーに強く刺さります。他の記事とは異なる層の読者を引きつけ、ニッチな需要に応えることで、幅広い顧客獲得を目指すことができ、商品ラダー上での多様な選択肢を提供します。",
+    "outline": [
+      "プロローグ：Nunu & Willumpが'S-ティア'に潜む理由とその秘めたるポテンシャル",
+      "Nunu & Willumpの強みと弱み：本当に'脳死'で勝てるのか？ その真実に迫る",
+      "最速ジャングルパスと効果的なGank戦略：Qによるオブジェクトコントロール重視のルート構築",
+      "敵を錯乱させる！ Nunuならではの「予測不能な動き」と視界外からのアプローチ",
+      "チームに貢献する立ち回り：オブジェクトコントロールとエンゲージのタイミング、そしてタンクとしての役割",
+      "安定して勝つためのビルドとルーン：初心者向け鉄板ビルドから応用編まで",
+      "経験者も知らない！？ Nunu & Willumpの隠れたテクニックと小技集で差をつける",
+      "おわりに：もうランクで悩まない！ Nunuで安定してLPを増やし、次世代のJungleマスターへ"
+    ]
+  }
+]
+DEBUG: Notion Payload:
+{
+  "parent": {
+    "database_id": "32061cf4543980d8a093d19d017ebcfc"
+  },
+  "properties": {
+    "名前": {
+      "title": [
+        {
+          "type": "text",
+          "text": {
+            "content": "【トレンド速報】JG勝率TOP現環境の覇者『Graves』完全攻略！ 勝率80%超えJGが教える最強ジャングルパスとGank戦略"
+          }
+        }
+      ]
+    },
+    "カテゴリ": {
+      "select": {
+        "name": "2.エントリー(教育)"
+      }
+    },
+    "ステータス": {
+      "status": {
+        "name": "Idea"
+      }
+    }
+  },
+  "children": [
+    {
+      "object": "block",
+      "type": "paragraph",
+      "paragraph": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "LolalyticsでS+ティアのGravesは、現環境で最も強力なジャングラーの一人であり、その強みを最大限に引き出す戦略は多くのプレイヤーが求めています。特定の強力なチャンピオンに絞ることで、読者はより具体的で実践的な情報を得られると感じ、購入意欲を高めます。商品ラダー上では、最も需要のある「強キャラの具体的な使い方」という教育ニーズに応え、読者のJungleプレイを確実に向上させることを目的としています。"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "object": "block",
+      "type": "heading_2",
+      "heading_2": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "📝 構成案"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "object": "block",
+      "type": "paragraph",
+      "paragraph": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "プロローグ：なぜ今GravesがS+ティアなのか？ その圧倒的な強さの秘密\nGravesのスキルセットと最適な運用方法：基本から応用まで\n初心者でもできる！ 鉄板のジャングルパス（フルクリア、3キャンプGankなど複数パターン）\n序盤を制する！ 正しいGankタイミングと注意点、成功率を上げるコツ\n中盤以降の立ち回り：集団戦での最適な立ち位置とダメージの出し方、オブジェクトコントロール\n最強ビルドパスとルーン選択：状況に応じた最適なアイテムビルドとルーンの変化も解説\nQ&A：Graves使いが陥りがちなミスとその改善策、よくある疑問に答える\nおわりに：この記事であなたもGravesマスター！ ランクを爆上げする準備はできたか？"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
+❌ Notion投稿失敗 (400): {"object":"error","status":400,"code":"validation_error","message":"カテゴリ is not a property that exists.","request_id":"52af0cd0-59de-4a6f-b5c5-4c32e7337b9c"}
+DEBUG: Notion Payload:
+{
+  "parent": {
+    "database_id": "32061cf4543980d8a093d19d017ebcfc"
+  },
+  "properties": {
+    "名前": {
+      "title": [
+        {
+          "type": "text",
+          "text": {
+            "content": "【トレンド速報】【Jungleメタ解説】SティアJG使い分け完全ガイド！ リーシン・レクサイ・シンジャオ…現環境で勝つための最適なピックと立ち回り術"
+          }
+        }
+      ]
+    },
+    "カテゴリ": {
+      "select": {
+        "name": "2.エントリー(教育)"
+      }
+    },
+    "ステータス": {
+      "status": {
+        "name": "Idea"
+      }
+    }
+  },
+  "children": [
+    {
+      "object": "block",
+      "type": "paragraph",
+      "paragraph": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "LolalyticsのデータでSティアに複数のジャングラーが並んでいる今、どのチャンピオンをどのような状況でピックし、どのようにプレイすべきかという疑問は多くのプレイヤーが抱えています。複数の選択肢がある中で「どれを選べば勝てるか」というメタ理解と戦略的な判断力を養うこの記事は、読者のゲーム理解度を高め、より幅広い状況に対応できる力を提供します。これにより、読者は単一のチャンピオンだけでなく、Jungleロール全体での勝率向上を目指せ、将来的にはより高価格帯の商品への関心にも繋がります。"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "object": "block",
+      "type": "heading_2",
+      "heading_2": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "📝 構成案"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "object": "block",
+      "type": "paragraph",
+      "paragraph": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "プロローグ：現環境Jungleメタのトレンド分析 - なぜこれらのチャンピオンが強いのか？\n診断チャート：あなたのチーム構成・相手構成に最適なSティアJGは？\n各チャンピオン徹底解説：特徴、強み、弱み、最適な運用法\n- リー・シン：序盤のスノーボール、インベードの極意と難易度別攻略\n- レクサイ：視界コントロールとCC、確実なGankルートとマクロ戦略\n- シン・ジャオ：パワースパイクを活かしたアグレッシブな攻めと集団戦での立ち位置\n- シルヴァス：JGでの強み、カウンターピックの狙いと隠れたポテンシャル\n状況別ジャングルパス：序盤の有利を作るためのルート選択とオブジェクト意識\n中盤以降の動き：各チャンピオンの集団戦での役割と立ち位置、勝利への貢献方法\nこれだけはNG！ 各チャンピオンでやってはいけないこととリスク管理\nおわりに：SティアJGをマスターし、ランクを爆上げしよう！"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
+❌ Notion投稿失敗 (400): {"object":"error","status":400,"code":"validation_error","message":"カテゴリ is not a property that exists.","request_id":"1e3a125f-95bb-4f3e-a83b-c99465996753"}
+DEBUG: Notion Payload:
+{
+  "parent": {
+    "database_id": "32061cf4543980d8a093d19d017ebcfc"
+  },
+  "properties": {
+    "名前": {
+      "title": [
+        {
+          "type": "text",
+          "text": {
+            "content": "【トレンド速報】“脳死”で勝率UP？！ 隠れたS-ティア『Nunu & Willump』で楽々LP獲得術！ 知られざる真の強さとは"
+          }
+        }
+      ]
+    },
+    "カテゴリ": {
+      "select": {
+        "name": "2.エントリー(教育)"
+      }
+    },
+    "ステータス": {
+      "status": {
+        "name": "Idea"
+      }
+    }
+  },
+  "children": [
+    {
+      "object": "block",
+      "type": "paragraph",
+      "paragraph": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "Nunu & WillumpはS-ティアに位置し、S+やSのチャンピオンほど派手さはありませんが、その使いやすさや安定性から「知られざる勝率安定キャラ」としての需要があります。「脳死」「楽々LP」といったフックは、難しい操作を苦手とするプレイヤーや、安定して勝ちたいと考えるプレイヤーに強く刺さります。他の記事とは異なる層の読者を引きつけ、ニッチな需要に応えることで、幅広い顧客獲得を目指すことができ、商品ラダー上での多様な選択肢を提供します。"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "object": "block",
+      "type": "heading_2",
+      "heading_2": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "📝 構成案"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "object": "block",
+      "type": "paragraph",
+      "paragraph": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "プロローグ：Nunu & Willumpが'S-ティア'に潜む理由とその秘めたるポテンシャル\nNunu & Willumpの強みと弱み：本当に'脳死'で勝てるのか？ その真実に迫る\n最速ジャングルパスと効果的なGank戦略：Qによるオブジェクトコントロール重視のルート構築\n敵を錯乱させる！ Nunuならではの「予測不能な動き」と視界外からのアプローチ\nチームに貢献する立ち回り：オブジェクトコントロールとエンゲージのタイミング、そしてタンクとしての役割\n安定して勝つためのビルドとルーン：初心者向け鉄板ビルドから応用編まで\n経験者も知らない！？ Nunu & Willumpの隠れたテクニックと小技集で差をつける\nおわりに：もうランクで悩まない！ Nunuで安定してLPを増やし、次世代のJungleマスターへ"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
+❌ Notion投稿失敗 (400): {"object":"error","status":400,"code":"validation_error","message":"カテゴリ is not a property that exists.","request_id":"17bff979-a18e-4b79-b75b-9ccee42ccc71"}
+[2026-03-20 16:01:12] Step 2/6: ネタの同期 (notion_to_local)...
+Notionからメモを取得中... (DB: 32061cf4543980d8a093d19d017ebcfc)
+0 件のメモが見つかりました。同期を開始します。
+同期完了: 0 件のメモを D:\my_work\03_factory\memo に出力しました。
+[2026-03-20 16:01:14] Step 3/6: 戦略脳 (Strategist) による今日のフック立案...
+[2026-03-20 16:01:14] 💡 今日の戦略: 普遍的な勝利法則に基づく発信...
+[2026-03-20 16:01:14] Step 4/6: 商品化と監査脳による検閲...
+[2026-03-20 16:01:14] ❌ サイクル実行中に深刻なエラーが発生しました: name 'prompt' is not defined
+[2026-03-20 16:01:14] Traceback (most recent call last):
+  File "D:\my_work\02_intelligence\intelligence\omni_agent.py", line 70, in run_cycle
+    await self.generate_and_audit_drafts(strategy_hook)
+  File "D:\my_work\02_intelligence\intelligence\omni_agent.py", line 119, in generate_and_audit_drafts
+    draft = await self.produce_draft(strategy_hook, feedback)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\my_work\02_intelligence\intelligence\omni_agent.py", line 141, in produce_draft
+    content = generate_with_fallback(prompt)
+                                     ^^^^^^
+NameError: name 'prompt' is not defined
+
