@@ -2726,3 +2726,323 @@ Notionからメモを取得中... (DB: 32061cf4543980d8a093d19d017ebcfc)
                                      ^^^^^^
 NameError: name 'prompt' is not defined
 
+D:\my_work\02_intelligence\intelligence\trend_watcher.py:8: FutureWarning: 
+
+All support for the `google.generativeai` package has ended. It will no longer be receiving 
+updates or bug fixes. Please switch to the `google.genai` package as soon as possible.
+See README for more details:
+
+https://github.com/google-gemini/deprecated-generative-ai-python/blob/main/README.md
+
+  import google.generativeai as genai
+💡 OmniSyncPro: 安定版エンジンを起動しました(requests仕様)
+[2026-03-20 20:00:05] 🚀 Omni-Agent 2.0: 「自律商社アンちゃん」の超知能サイクルを開始します。
+[2026-03-20 20:00:05] Step 0/6: スマホ修正の反映 (Cargo Pull)...
+[2026-03-20 20:00:19] Step 1/6: 市場トレンドの偵察 (scout_lolalytics)...
+🚀 アンちゃん・トレンドウォッチャー Pro 起動
+🔍 Lolalyticsから最新メタ情報をスカウティング中...
+【Lolalytics最新トレンド - Jungle】
+- Graves: Tier S+ (勝率 ??%)
+- Rek'Sai: Tier S (勝率 ??%)
+- Sylas: Tier S (勝率 ??%)
+- Xin Zhao: Tier S (勝率 ??%)
+- Lee Sin: Tier S (勝率 ??%)
+- Nunu & Willump: Tier S- (勝率 ??%)
+- Naafiri: Tier S- (勝率 ??%)
+- Elise: Tier E (勝率 ??%)
+- Master Yi: Tier A+ (勝率 ??%)
+- Jarvan IV: Tier A+ (勝率 ??%)
+
+💡 企画案を立案中...
+🤖 思考モデル: models/gemini-2.5-pro
+⚠️ 429制限検知。5秒待機します...
+🤖 思考モデル: models/gemini-2.5-flash
+DEBUG: Gemini Response:
+[
+  {
+    "title": "【現環境Jungle最強】Gravesで最速LP爆上げ！S+チャンプの'秘密の勝ち筋'を徹底解説",
+    "ladder_step": "3.中価格帯(信頼)",
+    "reason": "LolalyticsでS+とされているGravesは、現環境で最も注目されているチャンプの一つです。読者はその強さに期待し、深い知識を求めています。この中価格帯記事は、その期待に応える網羅的かつ実践的な情報を提供することで、読者との信頼関係を築き、将来のLTV（Life Time Value）向上にも繋がります。",
+    "outline": [
+      "はじめに：なぜGravesが今、Jungle S+チャンプなのか？現環境との完璧なシナジー",
+      "プロも愛用！Gravesの基本ビルド＆ルーン：勝率を最大化するテンプレと選択肢",
+      "序盤の覇者へ！Gravesの最適Jungleルート：フルクリア、ガンクルートの使い分けとコツ",
+      "Gank成功率80%超え！Gravesの'必殺'Gankタイミングと成功率を上げる立ち回り",
+      "集団戦の要！Gravesの立ち位置とダメージを最大限に引き出す方法",
+      "有利不利マッチアップ：BAN/PICKで差をつけるGravesの運用術",
+      "Graves使いがこっそり使う'隠れたテクニック'：知ればLPが爆増する秘策",
+      "LPを確実に増やすためのGraves活用術：実践と反省を繰り返す改善サイクル"
+    ]
+  },
+  {
+    "title": "【LP爆上げ必須】Jungle 'S Tier' チャンプを使い分けろ！現環境で勝つための'戦略的ピック'完全攻略",
+    "ladder_step": "3.中価格帯(信頼)",
+    "reason": "Jungleには複数のS Tierチャンプが存在し、それぞれ異なる強みと弱点があります。単一チャンプの解説に留まらず、状況に応じて最適なS Tierチャンプを選び、使い分けるという戦略的な視点は、より上を目指す読者にとって非常に価値が高い情報です。中価格帯で、より実践的で応用可能な知識を提供することで、読者の問題解決能力を高め、深い信頼を獲得します。",
+    "outline": [
+      "はじめに：なぜJungle S Tierチャンプの使い分けがLPを爆上げするのか？",
+      "Graves (S+): 攻守兼備の万能キャリー、その強みと弱点、最適な運用戦略",
+      "Rek'Sai (S): 序盤の圧力とスノーボール性能、ピックすべき状況と運用術",
+      "Sylas (S): 脅威のカウンターピック、敵を見て輝くその強みと使い方",
+      "Xin Zhao (S): 安定した序盤と粘着力、確実なLP増加のための戦略",
+      "Lee Sin (S): 高いプレイメイキングとキャリー能力、高レート帯での輝き方",
+      "対面ピック・味方構成で選ぶ『最強のS Tierチャンプ』早見表：迷わないピック術",
+      "LPを効率的に増やすためのS Tierチャンプ運用戦略：実践と応用"
+    ]
+  },
+  {
+    "title": "【Jungle初心者必見】今日からLP爆上げ！超簡単'S Tierチャンプ'でランクを駆け上がれ！",
+    "ladder_step": "2.エントリー(教育)",
+    "reason": "Jungleは役割が多岐にわたり、初心者にとっては難しいと感じやすいロールです。LolalyticsでS Tierに位置するチャンプの中から、特に操作難易度が低く、かつ高いパフォーマンスを発揮しやすいチャンプを選んで解説することで、Jungle初心者のLP上昇のハードルを下げます。エントリー価格帯で『まず勝つ体験』を提供し、読者のLoLに対するモチベーションを高め、長期的なファン化に繋げます。",
+    "outline": [
+      "はじめに：Jungle初心者がLPを溶かす原因と、それを回避するS/S- Tierチャンプ",
+      "なぜ簡単なのに強いS/S- Tierチャンプが初心者におすすめなのか？",
+      "推薦チャンプ①：Xin Zhao (S) – シンプル操作で圧倒的序盤の強さ！",
+      "Xin Zhaoの基本スキルと'これだけ覚えればOK'なコンボ",
+      "安定したJungleクリアと序盤のガンクでリードを広げる方法",
+      "初心者でもできる集団戦での立ち回り：どこで何をすればいい？",
+      "推薦チャンプ②：Nunu & Willump (S-) – 安全なクリアとオブジェクトコントロールの鬼！",
+      "Nunu & Willumpの安全なJungleクリアとユニークなガンク術",
+      "ドラゴン・バロンを確実に確保！オブジェクト管理でチームを勝利に導く",
+      "初心者でも迷わない！Xin Zhao＆Nunuの『鉄板ビルド＆ルーン』",
+      "LPを確実に増やすための実践テクニック：ランク戦での心構えと簡単な改善点"
+    ]
+  }
+]
+DEBUG: Notion Payload:
+{
+  "parent": {
+    "database_id": "32061cf4543980d8a093d19d017ebcfc"
+  },
+  "properties": {
+    "名前": {
+      "title": [
+        {
+          "type": "text",
+          "text": {
+            "content": "【トレンド速報】【現環境Jungle最強】Gravesで最速LP爆上げ！S+チャンプの'秘密の勝ち筋'を徹底解説"
+          }
+        }
+      ]
+    },
+    "カテゴリ": {
+      "select": {
+        "name": "3.中価格帯(信頼)"
+      }
+    },
+    "ステータス": {
+      "status": {
+        "name": "Idea"
+      }
+    }
+  },
+  "children": [
+    {
+      "object": "block",
+      "type": "paragraph",
+      "paragraph": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "LolalyticsでS+とされているGravesは、現環境で最も注目されているチャンプの一つです。読者はその強さに期待し、深い知識を求めています。この中価格帯記事は、その期待に応える網羅的かつ実践的な情報を提供することで、読者との信頼関係を築き、将来のLTV（Life Time Value）向上にも繋がります。"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "object": "block",
+      "type": "heading_2",
+      "heading_2": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "📝 構成案"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "object": "block",
+      "type": "paragraph",
+      "paragraph": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "はじめに：なぜGravesが今、Jungle S+チャンプなのか？現環境との完璧なシナジー\nプロも愛用！Gravesの基本ビルド＆ルーン：勝率を最大化するテンプレと選択肢\n序盤の覇者へ！Gravesの最適Jungleルート：フルクリア、ガンクルートの使い分けとコツ\nGank成功率80%超え！Gravesの'必殺'Gankタイミングと成功率を上げる立ち回り\n集団戦の要！Gravesの立ち位置とダメージを最大限に引き出す方法\n有利不利マッチアップ：BAN/PICKで差をつけるGravesの運用術\nGraves使いがこっそり使う'隠れたテクニック'：知ればLPが爆増する秘策\nLPを確実に増やすためのGraves活用術：実践と反省を繰り返す改善サイクル"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
+❌ Notion投稿失敗 (400): {"object":"error","status":400,"code":"validation_error","message":"カテゴリ is not a property that exists.","request_id":"a96a424d-e8a4-4d14-9a07-a9eafda733b7"}
+DEBUG: Notion Payload:
+{
+  "parent": {
+    "database_id": "32061cf4543980d8a093d19d017ebcfc"
+  },
+  "properties": {
+    "名前": {
+      "title": [
+        {
+          "type": "text",
+          "text": {
+            "content": "【トレンド速報】【LP爆上げ必須】Jungle 'S Tier' チャンプを使い分けろ！現環境で勝つための'戦略的ピック'完全攻略"
+          }
+        }
+      ]
+    },
+    "カテゴリ": {
+      "select": {
+        "name": "3.中価格帯(信頼)"
+      }
+    },
+    "ステータス": {
+      "status": {
+        "name": "Idea"
+      }
+    }
+  },
+  "children": [
+    {
+      "object": "block",
+      "type": "paragraph",
+      "paragraph": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "Jungleには複数のS Tierチャンプが存在し、それぞれ異なる強みと弱点があります。単一チャンプの解説に留まらず、状況に応じて最適なS Tierチャンプを選び、使い分けるという戦略的な視点は、より上を目指す読者にとって非常に価値が高い情報です。中価格帯で、より実践的で応用可能な知識を提供することで、読者の問題解決能力を高め、深い信頼を獲得します。"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "object": "block",
+      "type": "heading_2",
+      "heading_2": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "📝 構成案"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "object": "block",
+      "type": "paragraph",
+      "paragraph": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "はじめに：なぜJungle S Tierチャンプの使い分けがLPを爆上げするのか？\nGraves (S+): 攻守兼備の万能キャリー、その強みと弱点、最適な運用戦略\nRek'Sai (S): 序盤の圧力とスノーボール性能、ピックすべき状況と運用術\nSylas (S): 脅威のカウンターピック、敵を見て輝くその強みと使い方\nXin Zhao (S): 安定した序盤と粘着力、確実なLP増加のための戦略\nLee Sin (S): 高いプレイメイキングとキャリー能力、高レート帯での輝き方\n対面ピック・味方構成で選ぶ『最強のS Tierチャンプ』早見表：迷わないピック術\nLPを効率的に増やすためのS Tierチャンプ運用戦略：実践と応用"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
+❌ Notion投稿失敗 (400): {"object":"error","status":400,"code":"validation_error","message":"カテゴリ is not a property that exists.","request_id":"f8eaca8a-dc6c-47ad-9838-975e12fd31e0"}
+DEBUG: Notion Payload:
+{
+  "parent": {
+    "database_id": "32061cf4543980d8a093d19d017ebcfc"
+  },
+  "properties": {
+    "名前": {
+      "title": [
+        {
+          "type": "text",
+          "text": {
+            "content": "【トレンド速報】【Jungle初心者必見】今日からLP爆上げ！超簡単'S Tierチャンプ'でランクを駆け上がれ！"
+          }
+        }
+      ]
+    },
+    "カテゴリ": {
+      "select": {
+        "name": "2.エントリー(教育)"
+      }
+    },
+    "ステータス": {
+      "status": {
+        "name": "Idea"
+      }
+    }
+  },
+  "children": [
+    {
+      "object": "block",
+      "type": "paragraph",
+      "paragraph": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "Jungleは役割が多岐にわたり、初心者にとっては難しいと感じやすいロールです。LolalyticsでS Tierに位置するチャンプの中から、特に操作難易度が低く、かつ高いパフォーマンスを発揮しやすいチャンプを選んで解説することで、Jungle初心者のLP上昇のハードルを下げます。エントリー価格帯で『まず勝つ体験』を提供し、読者のLoLに対するモチベーションを高め、長期的なファン化に繋げます。"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "object": "block",
+      "type": "heading_2",
+      "heading_2": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "📝 構成案"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "object": "block",
+      "type": "paragraph",
+      "paragraph": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "はじめに：Jungle初心者がLPを溶かす原因と、それを回避するS/S- Tierチャンプ\nなぜ簡単なのに強いS/S- Tierチャンプが初心者におすすめなのか？\n推薦チャンプ①：Xin Zhao (S) – シンプル操作で圧倒的序盤の強さ！\nXin Zhaoの基本スキルと'これだけ覚えればOK'なコンボ\n安定したJungleクリアと序盤のガンクでリードを広げる方法\n初心者でもできる集団戦での立ち回り：どこで何をすればいい？\n推薦チャンプ②：Nunu & Willump (S-) – 安全なクリアとオブジェクトコントロールの鬼！\nNunu & Willumpの安全なJungleクリアとユニークなガンク術\nドラゴン・バロンを確実に確保！オブジェクト管理でチームを勝利に導く\n初心者でも迷わない！Xin Zhao＆Nunuの『鉄板ビルド＆ルーン』\nLPを確実に増やすための実践テクニック：ランク戦での心構えと簡単な改善点"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
+❌ Notion投稿失敗 (400): {"object":"error","status":400,"code":"validation_error","message":"カテゴリ is not a property that exists.","request_id":"5d1bb983-a4cb-42e0-b343-e046abdea141"}
+[2026-03-20 20:01:02] Step 2/6: ネタの同期 (notion_to_local)...
+Notionからメモを取得中... (DB: 32061cf4543980d8a093d19d017ebcfc)
+0 件のメモが見つかりました。同期を開始します。
+同期完了: 0 件のメモを D:\my_work\03_factory\memo に出力しました。
+[2026-03-20 20:01:03] Step 3/6: 戦略脳 (Strategist) による今日のフック立案...
+[2026-03-20 20:01:03] 💡 今日の戦略: 普遍的な勝利法則に基づく発信...
+[2026-03-20 20:01:03] Step 4/6: 商品化と監査脳による検閲...
+[2026-03-20 20:01:03] ❌ サイクル実行中に深刻なエラーが発生しました: name 'prompt' is not defined
+[2026-03-20 20:01:03] Traceback (most recent call last):
+  File "D:\my_work\02_intelligence\intelligence\omni_agent.py", line 70, in run_cycle
+    await self.generate_and_audit_drafts(strategy_hook)
+  File "D:\my_work\02_intelligence\intelligence\omni_agent.py", line 119, in generate_and_audit_drafts
+    draft = await self.produce_draft(strategy_hook, feedback)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\my_work\02_intelligence\intelligence\omni_agent.py", line 141, in produce_draft
+    content = generate_with_fallback(prompt)
+                                     ^^^^^^
+NameError: name 'prompt' is not defined
+
