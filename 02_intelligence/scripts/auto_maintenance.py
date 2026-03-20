@@ -2,6 +2,8 @@ import os
 import subprocess
 from datetime import datetime
 import re
+import shutil
+import time
 
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 SKILLS_DIR = os.path.join(ROOT_DIR, "skills")
@@ -123,11 +125,54 @@ def optimize_git():
     except Exception as e:
         print(f"❌ 予期せぬエラー: {e}")
 
+def cleanup_factory():
+    """
+    03_factory フォルダ内の整理・アーカイブ化を自動で行う
+    """
+    print("[0/3] Factory フォルダの自動クリーンアップを実行中...")
+    factory_dir = os.path.join(ROOT_DIR, "03_factory")
+    daily_posts_dir = os.path.join(factory_dir, "daily_posts")
+    reports_dir = os.path.join(factory_dir, "reports")
+    archives_dir = os.path.join(factory_dir, "archives")
+    logs_dir = os.path.join(ROOT_DIR, "04_system", "logs")
+
+    os.makedirs(archives_dir, exist_ok=True)
+    os.makedirs(logs_dir, exist_ok=True)
+
+    # 1. reports 内のログファイルを適切な場所へ移動
+    for f in os.listdir(reports_dir):
+        if f.endswith(".log"):
+            src = os.path.join(reports_dir, f)
+            dest = os.path.join(logs_dir, f)
+            try:
+                shutil.move(src, dest)
+                print(f"  [Log Move] {f} ➔ logs/")
+            except Exception: pass
+
+    # 2. daily_posts および reports 内の古いファイル (7日以上) をアーカイブへ
+    target_folders = [daily_posts_dir, reports_dir]
+    now = time.time()
+    for folder in target_folders:
+        if not os.path.exists(folder): continue
+        for f in os.listdir(folder):
+            file_path = os.path.join(folder, f)
+            if os.path.isfile(file_path):
+                # 7日以上前のファイルを対象
+                if (now - os.path.getmtime(file_path)) > (7 * 86400):
+                    try:
+                        shutil.move(file_path, os.path.join(archives_dir, f))
+                        print(f"  [Archive] {f} ➔ archives/")
+                    except Exception: pass
+
+    print("✅ Factory フォルダの整理が完了しました。")
+
 if __name__ == "__main__":
     print("========================================")
     print("  🔧 Auto Maintenance Script Start")
     print("========================================")
     
+    
+    cleanup_factory()
     update_directory_map()
     update_skill_list()
     optimize_git()

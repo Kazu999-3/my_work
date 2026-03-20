@@ -3,6 +3,7 @@ import os
 import sys
 import asyncio
 import json
+import subprocess
 from pathlib import Path
 from datetime import datetime
 from dotenv import load_dotenv
@@ -86,6 +87,10 @@ class OmniAgent:
             # 9. LoL戦術深掘り (LoL Tactics)
             self.log("Step 9/9: LoL戦術の深掘りリサーチ (LoL Tactics)...")
             await self.lol_tactics_deep_dive()
+
+            # 10. メンテナンスリマインド (Maintenance)
+            self.log("Step 10/10: 資産化候補のリマインドチェック...")
+            self.check_asset_candidates()
 
             self.log("✨ すべての自律サイクルが正常に完了しました。")
 
@@ -271,6 +276,12 @@ class OmniAgent:
             self.syncer.ship_file(save_path, category="Tactics")
         except Exception as e:
             self.log(f"❌ LoL戦術深掘りエラー: {e}")
+
+    def check_asset_candidates(self):
+        """反応の良いドラフトや成功事例の格納リマインド用"""
+        # 現在はログへの出力のみ。将来的にはNotion上でフラグが立ったものを自動格納する
+        self.log("💡 順調です！ 高スコアのドラフト（s90以上）がある場合は、'hit_archive' への格納をご検討ください。")
+        self.log("💡 'archives' への古いファイルの移動は次回の自動メンテナンスで処理されます。")
 
     def finalize_instruction(self):
         """
