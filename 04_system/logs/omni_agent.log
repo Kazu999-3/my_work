@@ -325,3 +325,22 @@ NameError: name 'prompt' is not defined
 [2026-03-20 22:05:44] 💡 順調です！ 高スコアのドラフト（s90以上）がある場合は、'hit_archive' への格納をご検討ください。
 [2026-03-20 22:05:44] 💡 'archives' への古いファイルの移動は次回の自動メンテナンスで処理されます。
 [2026-03-20 22:05:44] ✨ すべての自律サイクルが正常に完了しました。
+[2026-03-20 22:07:36] 🚀 Omni-Agent 2.5: 「自律商社アンちゃん」の超知能サイクルを開始します。
+[2026-03-20 22:07:36] Step 0/6: スマホ修正の反映 (Cargo Pull)...
+[2026-03-20 22:08:16] Step 1/6: 市場トレンドの偵察 (scout_lolalytics)...
+[2026-03-20 22:08:36] Step 2/6: ネタの同期 (notion_to_local)...
+[2026-03-20 22:08:42] Step 3/6: 戦略脳 (Strategist) による今日のフック立案...
+[2026-03-20 22:08:42] 💡 今日の戦略: 普遍的な勝利法則に基づく発信...
+[2026-03-20 22:08:42] Step 4/6: 商品化と監査脳による検閲...
+[2026-03-20 22:08:42] ❌ サイクル実行中に深刻なエラーが発生しました: generate_with_fallback() got an unexpected keyword argument 'preferred_model'
+[2026-03-20 22:08:42] Traceback (most recent call last):
+  File "d:\my_work\02_intelligence\intelligence\omni_agent.py", line 96, in run_cycle
+    await self.generate_and_audit_drafts(strategy_hook)
+  File "d:\my_work\02_intelligence\intelligence\omni_agent.py", line 145, in generate_and_audit_drafts
+    draft = await self.produce_draft(strategy_hook, feedback)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "d:\my_work\02_intelligence\intelligence\omni_agent.py", line 188, in produce_draft
+    content = generate_with_fallback(prompt, preferred_model=self.model_pro)
+TypeError: generate_with_fallback() got an unexpected keyword argument 'preferred_model'
+
+[2026-03-20 23:00:08] ⏭️ 前回のサイクルから4時間経過していないため、実行をスキップします。 (前回: 2026-03-20T22:07:36.679612)

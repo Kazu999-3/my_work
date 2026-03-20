@@ -3727,3 +3727,14 @@ Notionからメモを取得中... (DB: 32061cf4543980d8a093d19d017ebcfc)
 [2026-03-20 22:05:44] 💡 順調です！ 高スコアのドラフト（s90以上）がある場合は、'hit_archive' への格納をご検討ください。
 [2026-03-20 22:05:44] 💡 'archives' への古いファイルの移動は次回の自動メンテナンスで処理されます。
 [2026-03-20 22:05:44] ✨ すべての自律サイクルが正常に完了しました。
+D:\my_work\02_intelligence\intelligence\trend_watcher.py:8: FutureWarning: 
+
+All support for the `google.generativeai` package has ended. It will no longer be receiving 
+updates or bug fixes. Please switch to the `google.genai` package as soon as possible.
+See README for more details:
+
+https://github.com/google-gemini/deprecated-generative-ai-python/blob/main/README.md
+
+  import google.generativeai as genai
+💡 OmniSyncPro: 安定版エンジンを起動しました(requests仕様)
+[2026-03-20 23:00:08] ⏭️ 前回のサイクルから4時間経過していないため、実行をスキップします。 (前回: 2026-03-20T22:07:36.679612)

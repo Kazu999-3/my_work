@@ -30,6 +30,9 @@ class OmniAgent:
         LOG_DIR = ROOT_DIR / "04_system" / "logs"
         self.log_file = LOG_DIR / "omni_agent.log"
         self.last_run_file = LOG_DIR / "last_omni_cycle.txt"
+        self.model_pro = os.getenv("MODEL_PRO", "models/gemini-2.5-pro")
+        self.model_flash = os.getenv("MODEL_FLASH", "models/gemini-2.5-flash")
+        self.model_lite = os.getenv("MODEL_LITE", "models/gemini-2.5-flash-lite")
         self.syncer = OmniSyncPro()
         self.ensure_dirs()
 
@@ -131,7 +134,8 @@ class OmniAgent:
         content = report_files[0].read_text(encoding="utf-8")
         
         prompt = f"以下のトレンドレポートから、今日読者の心を最も動かす『140文字の戦略的なフック（急所）』を1つだけ抽出してください。箇条書きや説明は不要です。\n\n{content}"
-        return generate_with_fallback(prompt)
+        # 戦略立案は Lite で十分
+        return generate_with_fallback(prompt, preferred_model=self.model_lite)
 
     async def generate_and_audit_drafts(self, strategy_hook, max_reworks=1):
         """ドラフト生成と監査を最大2回繰り返す"""
@@ -180,7 +184,8 @@ class OmniAgent:
 読者のスクロールを止める「強い書き出し」から始め、アンちゃんの「5層構造」や「スキルファイル」の有益性をチラ見せしてください。
 日本語で回答してください。
 """
-        content = generate_with_fallback(prompt)
+        # ドラフト執筆は Pro/Flash を使用
+        content = generate_with_fallback(prompt, preferred_model=self.model_pro)
         if not content:
             self.log("⚠️ ドラフト生成に失敗しました（空のレスポンス）。")
             return ""
@@ -204,7 +209,8 @@ class OmniAgent:
 【監査対象ドラフト】
 {draft}
 """
-        res_text = generate_with_fallback(prompt)
+        # 監査は Lite で実行
+        res_text = generate_with_fallback(prompt, preferred_model=self.model_lite)
         try:
             import re
             # JSON部分をより柔軟に抽出
@@ -263,7 +269,8 @@ class OmniAgent:
 文章は簡潔かつ論理的に。
 """
         try:
-            report_text = generate_with_fallback(prompt)
+            # 日報は Lite で十分
+            report_text = generate_with_fallback(prompt, preferred_model=self.model_lite)
             if not report_text or len(report_text) < 100:
                 self.log("⚠️ 日報の内容が不十分なため、生成をスキップします。")
                 return
@@ -299,7 +306,8 @@ class OmniAgent:
 {intel_content}
 """
         try:
-            tactics_draft = generate_with_fallback(prompt)
+            # 戦術深掘りは「リサーチ」扱いのため Pro/Flash を使用
+            tactics_draft = generate_with_fallback(prompt, preferred_model=self.model_pro)
             if not tactics_draft or len(tactics_draft) < 100:
                 self.log("⚠️ 戦術レポートの内容が不十分なため、生成をスキップします。")
                 return

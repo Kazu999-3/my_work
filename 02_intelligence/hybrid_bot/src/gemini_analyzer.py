@@ -10,6 +10,9 @@ env_path = os.path.join(os.path.dirname(__file__), '..', '..', '..', '.env')
 load_dotenv(env_path)
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+MODEL_LITE = os.getenv("MODEL_LITE", "models/gemini-2.5-flash-lite")
+MODEL_FLASH = os.getenv("MODEL_FLASH", "models/gemini-2.5-flash")
+MODEL_PRO = os.getenv("MODEL_PRO", "models/gemini-2.5-pro")
 
 if GEMINI_API_KEY:
     try:
@@ -93,9 +96,9 @@ def summarize_content(content_data):
 - アクション1
         """
         
-        # genai SDKの推奨モデル 'gemini-2.0-flash' を使用
+        # 要約は Flash-Lite を使用
         response = client.models.generate_content(
-            model='gemini-2.0-flash',
+            model=MODEL_LITE,
             contents=prompt,
         )
         
@@ -374,10 +377,9 @@ def _call_gemini(prompt):
     import time
     
     models_to_try = [
-        'gemini-2.0-flash',
-        'gemini-2.5-flash',
-        'gemini-1.5-flash',
-        'gemini-flash-latest'
+        MODEL_LITE,
+        MODEL_FLASH,
+        MODEL_PRO
     ]
     
     for attempt, model in enumerate(models_to_try):

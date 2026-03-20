@@ -25,8 +25,9 @@ load_dotenv(ROOT_DIR / ".env")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 NOTION_API_KEY = os.getenv("NOTION_API_KEY")
 NOTION_DB_ID = os.getenv("NOTION_DB_ID") # 調査指示用DB
-MODEL_PRO = os.getenv("MODEL_PRO", "gemini-2.5-pro")
-MODEL_FLASH = os.getenv("MODEL_FLASH", "gemini-1.5-flash")
+MODEL_PRO = os.getenv("MODEL_PRO", "models/gemini-2.5-pro")
+MODEL_FLASH = os.getenv("MODEL_FLASH", "models/gemini-2.5-flash")
+MODEL_LITE = os.getenv("MODEL_LITE", "models/gemini-2.5-flash-lite")
 
 genai.configure(api_key=GEMINI_API_KEY)
 
@@ -89,9 +90,9 @@ async def scout_lolalytics():
 def generate_with_fallback(prompt: str) -> str:
     """
     トレンド監視でも品質を担保するため、Pro -> Flash の順で試行。
-    空出力や不十分な内容（50文字以下）の場合は最大3回リトライ。
     """
-    model_sequence = [MODEL_PRO, MODEL_FLASH]
+    # 偵察・提案は Lite -> Flash -> Pro の順で試行して節約
+    model_sequence = [MODEL_LITE, MODEL_FLASH, MODEL_PRO]
     
     max_retries = 3
     for attempt in range(max_retries):
