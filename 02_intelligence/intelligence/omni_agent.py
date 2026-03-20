@@ -93,7 +93,9 @@ class OmniAgent:
 
             # 4. 商品化 & 監査 (Worker & Auditor)
             self.log("Step 4/6: 商品化と監査脳による検閲...")
-            await self.generate_and_audit_drafts(strategy_hook)
+            # 記憶の想起 (Persistent Memory)
+            memory = self.load_persistent_memory()
+            await self.generate_and_audit_drafts(strategy_hook, memory=memory)
             
             # 5. 出荷 (Ship)
             self.log("Step 5/6: 全成果物のスマホ同期 (Ship)...")
@@ -137,12 +139,12 @@ class OmniAgent:
         # 戦略立案は Lite で十分
         return generate_with_fallback(prompt, preferred_model=self.model_lite)
 
-    async def generate_and_audit_drafts(self, strategy_hook, max_reworks=1):
+    async def generate_and_audit_drafts(self, strategy_hook, memory="", max_reworks=1):
         """ドラフト生成と監査を最大2回繰り返す"""
         feedback = ""
         
         for i in range(max_reworks + 1):
-            draft = await self.produce_draft(strategy_hook, feedback)
+            draft = await self.produce_draft(strategy_hook, memory=memory, feedback=feedback)
             score, audit_log = self.audit_draft(draft)
             
             if score >= 70:
@@ -158,25 +160,37 @@ class OmniAgent:
                     self.log("❗ 最大リトライ数に達しました。不格好なまま保存します。")
                     self.save_draft(draft, score)
 
-    async def produce_draft(self, strategy_hook, feedback=""):
-        """Worker: ドラフトを執筆する"""
+    async def produce_draft(self, strategy_hook, memory="", persona="default", feedback=""):
+        """Worker: 戦略フック、長期記憶、および指定された人格に基づき執筆する"""
+        style_dir = ROOT_DIR / "01_spirit" / "style"
+        tone = (style_dir / "tone.md").read_text(encoding="utf-8") if (style_dir / "tone.md").exists() else ""
+        prohibited = (style_dir / "prohibited_patterns.md").read_text(encoding="utf-8") if (style_dir / "prohibited_patterns.md").exists() else ""
         wins = (ROOT_DIR / "01_spirit" / "wins.md").read_text(encoding="utf-8") if (ROOT_DIR / "01_spirit" / "wins.md").exists() else ""
         ng = (ROOT_DIR / "01_spirit" / "ng_words.md").read_text(encoding="utf-8") if (ROOT_DIR / "01_spirit" / "ng_words.md").exists() else ""
         failures = (ROOT_DIR / "01_spirit" / "failures.md").read_text(encoding="utf-8") if (ROOT_DIR / "01_spirit" / "failures.md").exists() else ""
         
         prompt = f"""
-あなたはアンちゃんの「Worker（実働部隊）」です。
-以下の戦略フックに基づき、note記事の冒頭部分と、X（Twitter）向けのポスト案を3つ作成してください。
+あなたが最強のAIビジネスプロデューサーです。
+以下の【戦略フック】と【長期記憶（過去の知見）】に基づき、note記事の冒頭（1000文字程度）と、それに対応するXポストを3つ作成してください。
 
 【戦略フック】
 {strategy_hook}
 
-【過去の成功事例 (Wins)】
+【長期記憶 (Persistent Memory)】
+{memory}
+---以下、成功・失敗のパターン---
 {wins}
-
-【過去の失敗・NG (NG/Failures)】
-{ng}
 {failures}
+
+【指定された人格 (Persona)】
+- {persona} モード
+
+【トーン＆マナー (Style Guide)】
+{tone}
+
+【禁止事項 (Style NG)】
+{prohibited}
+{ng}
 
 【フィードバック（ある場合）】
 {feedback}
@@ -193,14 +207,16 @@ class OmniAgent:
 
     def audit_draft(self, draft):
         """Auditor: ドラフトを検閲し、スコアリングする"""
+        style_dir = ROOT_DIR / "01_spirit" / "style"
+        prohibited = (style_dir / "prohibited_patterns.md").read_text(encoding="utf-8") if (style_dir / "prohibited_patterns.md").exists() else ""
         ng = (ROOT_DIR / "01_spirit" / "ng_words.md").read_text(encoding="utf-8") if (ROOT_DIR / "01_spirit" / "ng_words.md").exists() else ""
         
         prompt = f"""
 以下のドラフトを厳格に監査し、100点満点で採点してください。
 
 【採点基準】
-1. NGワード( {ng} )が1つでも含まれていたら 0点。
-2. 「いかがでしたでしょうか」「要チェックです」などのAI臭い表現があれば減点。
+1. NGワード( {ng} ) または スタイル禁止事項( {prohibited} ) が1つでも含まれていたら 0点。
+2. 日本語として不自然、またはAI丸出しの定型句があれば大幅減点。
 3. 戦略的フックが弱く、読者がスルーしそうな内容なら減点。
 
 必ず以下のJSON形式でのみ回答してください。余計な文章やMarkdownの枠（```jsonなど）は一切不要です。
@@ -279,6 +295,28 @@ class OmniAgent:
             self.log(f"✅ 日報を生成しました: {report_path.name}")
         except Exception as e:
             self.log(f"❌ 日報生成エラー: {e}")
+
+    def load_persistent_memory(self, limit=3):
+        """過去のリサーチや改善メモを想起する機能"""
+        memory_text = ""
+        
+        # 1. 調査メモの読み込み
+        memo_dir = ROOT_DIR / "02_research" / "memo"
+        if memo_dir.exists():
+            files = sorted(list(memo_dir.glob("*.md")), key=os.path.getmtime, reverse=True)[:limit]
+            for f in files:
+                memory_text += f"\n--- 過去のインサイト: {f.name} ---\n"
+                memory_text += f.read_text(encoding="utf-8")[:1000] # 各ファイル先頭1000文字
+        
+        # 2. 最新リポートの読み込み
+        report_dir = ROOT_DIR / "03_factory" / "reports"
+        if report_dir.exists():
+            files = sorted(list(report_dir.glob("*.md")), key=os.path.getmtime, reverse=True)[:limit]
+            for f in files:
+                memory_text += f"\n--- 直近のレポート: {f.name} ---\n"
+                memory_text += f.read_text(encoding="utf-8")[:1000]
+
+        return memory_text
 
     def sync_evolution_data(self):
         """auto_evolve.py を実行して進化データを更新する"""

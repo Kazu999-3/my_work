@@ -163,9 +163,9 @@ def export_memos():
             with open(filepath, "w", encoding="utf-8") as f:
                 f.write(content)
             
-            # ステータスを「Done」に更新
-            if update_notion_status(page["id"], "Done", headers):
-                print(f"  -> ステータスを「完了」に更新しました: {title}")
+            # [修正] 同期しただけで完了にしてはいけない。ユーザーが手動で Ready にするまで待機する。
+            # if update_notion_status(page["id"], "Done", headers):
+            #     print(f"  -> ステータスを「完了」に更新しました: {title}")
             
             count += 1
 

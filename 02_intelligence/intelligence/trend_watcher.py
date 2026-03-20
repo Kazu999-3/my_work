@@ -87,12 +87,16 @@ async def scout_lolalytics():
             print(f"❌ Lolalyticsスクレイピングエラー: {e}")
             return "Lolalyticsからのデータ取得に失敗しました。シミュレーションデータを使用します。"
 
-def generate_with_fallback(prompt: str) -> str:
+def generate_with_fallback(prompt: str, preferred_model: str = None) -> str:
     """
-    トレンド監視でも品質を担保するため、Pro -> Flash の順で試行。
+    トレンド監視でも品質を担保するため、指定があればそのモデルを優先し、
+    失敗した場合は Lite -> Flash -> Pro の順でフォールバック。
     """
-    # 偵察・提案は Lite -> Flash -> Pro の順で試行して節約
+    # 指定があればそれを先頭に、なければデフォルト順
     model_sequence = [MODEL_LITE, MODEL_FLASH, MODEL_PRO]
+    if preferred_model:
+        # 指定モデルを先頭に持ってくる（重複は除く）
+        model_sequence = [preferred_model] + [m for m in model_sequence if m != preferred_model]
     
     max_retries = 3
     for attempt in range(max_retries):

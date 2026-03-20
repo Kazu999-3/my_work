@@ -85,6 +85,14 @@ class OmniSyncPro:
         filter_data = {"property": "名前", "title": {"starts_with": "["}}
         results = self._query_db(filter_data)
         
+        # Notion に存在するタイトルのリスト（削除判定用）
+        notion_titles = []
+        for page in results:
+            title_prop = page["properties"]["名前"]["title"]
+            if not title_prop: continue
+            notion_titles.append(title_prop[0]["plain_text"])
+
+        # 1. Notion 側の変更をローカルに反映
         for page in results:
             full_title = page["properties"]["名前"]["title"][0]["plain_text"]
             if "]" not in full_title: continue
@@ -106,6 +114,35 @@ class OmniSyncPro:
             
             if target_path:
                 self._update_local_file(page["id"], target_path)
+
+        # 2. Notion 側にないファイルをローカルから削除（アーカイブ）
+        # 特に [Draft] カテゴリなどで、Notion 上で消されたものをローカルからも消す
+        self._cleanup_local_missing_in_notion(notion_titles)
+
+    def _cleanup_local_missing_in_notion(self, notion_titles):
+        """Notion側に存在しないファイルをローカルから退避させる"""
+        check_dirs = {
+            "Foundation": ROOT_DIR / "01_spirit",
+            "Report": ROOT_DIR / "03_factory" / "reports",
+            "Draft": ROOT_DIR / "03_factory" / "daily_posts",
+            "Drafts": ROOT_DIR / "03_factory" / "drafts"
+        }
+        
+        archive_dir = ROOT_DIR / "archives" / "deleted_via_notion"
+        
+        for category, path in check_dirs.items():
+            if not path.exists(): continue
+            for f in path.glob("*.md"):
+                expected_title = f"[{category}] {f.stem}"
+                if expected_title not in notion_titles:
+                    # Notion に存在しない場合、アーカイブへ移動
+                    archive_dir.mkdir(parents=True, exist_ok=True)
+                    dest = archive_dir / f.name
+                    try:
+                        f.rename(dest)
+                        print(f"  [Cleanup] Moved to archive (Not in Notion): {f.name}")
+                    except Exception as e:
+                        print(f"  [Cleanup] Error moving {f.name}: {e}")
 
     def _update_local_file(self, page_id, target_path):
         res = requests.get(f"https://api.notion.com/v1/blocks/{page_id}/children", headers=self.headers)
