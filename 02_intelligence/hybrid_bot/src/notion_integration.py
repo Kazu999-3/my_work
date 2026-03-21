@@ -17,6 +17,19 @@ if NOTION_TOKEN:
 else:
     notion = None
 
+# ヘルパー関数：プロパティ名の揺れを吸収
+def get_prop_name(db_id, candidates):
+    """DBのスキーマから候補に一致するプロパティ名を返す"""
+    if not notion or not db_id: return candidates[0]
+    try:
+        db = notion.databases.retrieve(database_id=db_id)
+        props = db.get("properties", {})
+        for c in candidates:
+            if c in props: return c
+        return candidates[0] # 見つからない場合はデフォルト
+    except:
+        return candidates[0]
+
 def get_tasks():
     """未完了のタスク一覧を取得する"""
     if not notion or not NOTION_TASKS_DB_ID:
@@ -53,11 +66,13 @@ def get_tasks():
             
             # ステータスを取得して完了ならスキップ
             status_text = ""
-            for p_name, p_data in props.items():
-                if p_data.get("type") == "status" and p_data.get("status"):
-                    status_text = p_data["status"]["name"]
-                elif p_data.get("type") == "select" and p_data.get("select"):
-                    status_text = p_data["select"]["name"]
+            status_prop = get_prop_name(NOTION_TASKS_DB_ID, ["ステータス", "Status", "進捗"])
+            
+            p_data = props.get(status_prop, {})
+            if p_data.get("type") == "status" and p_data.get("status"):
+                status_text = p_data["status"]["name"]
+            elif p_data.get("type") == "select" and p_data.get("select"):
+                status_text = p_data["select"]["name"]
                     
             if status_text in ["Done", "完了"]:
                 continue
@@ -83,19 +98,19 @@ def add_memo(text, url_val=None, summary_val=None):
     if not notion or not NOTION_MEMO_DB_ID:
         return False, "Notion APIキーまたはメモDBのIDが設定されていません。"
     
-    # プロパティの構築
-    # ※ユーザーが追加した「URL」「要約」「ステータス」「名前」に対応
+    # プロパティ名の取得
+    name_prop = get_prop_name(NOTION_MEMO_DB_ID, ["名前", "Name", "Title"])
+    url_prop = get_prop_name(NOTION_MEMO_DB_ID, ["URL", "Link", "外部リンク"])
+    summary_prop = get_prop_name(NOTION_MEMO_DB_ID, ["要約", "Summary", "概要"])
+
     properties = {
-        "名前": {"title": [{"text": {"content": text[:100]}}]} # タイトルは短く
+        name_prop: {"title": [{"text": {"content": text[:100]}}]}
     }
     
     if url_val:
-        properties["URL"] = {"url": url_val}
+        properties[url_prop] = {"url": url_val}
     if summary_val:
-        properties["要約"] = {"rich_text": [{"text": {"content": summary_val}}]}
-    
-    # ステータス列がある場合は「未読」に設定（存在しない場合はKeyErrorになるためtry-exceptでカバー）
-    # properties["ステータス"] = {"status": {"name": "未読"}}
+        properties[summary_prop] = {"rich_text": [{"text": {"content": summary_val}}]}
 
     try:
         new_page = notion.pages.create(
@@ -104,21 +119,7 @@ def add_memo(text, url_val=None, summary_val=None):
         )
         return True, f"メモをNotionに保存しました！\nURL: {new_page['url']}"
     except Exception as e:
-        # フォールバック（英語名プロパティなど）
-        try:
-            properties_en = {
-                "Name": {"title": [{"text": {"content": text[:100]}}]}
-            }
-            if url_val: properties_en["URL"] = {"url": url_val}
-            if summary_val: properties_en["Summary"] = {"rich_text": [{"text": {"content": summary_val}}]}
-            
-            new_page = notion.pages.create(
-                parent={"database_id": NOTION_MEMO_DB_ID},
-                properties=properties_en
-            )
-            return True, f"メモをNotionに保存しました！\nURL: {new_page['url']}"
-        except Exception as e2:
-            return False, f"Notionへの保存に失敗しました。\n詳細: {e2}"
+        return False, f"Notionへの保存に失敗しました。\n詳細: {e}"
 
 def get_all_memos():
     """Notionのメモ帳DBから全てのメモを取得する（RAG用）"""
@@ -191,6 +192,10 @@ def complete_task(keyword):
     
     import requests
     try:
+        # プロパティ名の取得
+        name_prop = get_prop_name(NOTION_TASKS_DB_ID, ["名前", "Name", "Task Name"])
+        status_prop = get_prop_name(NOTION_TASKS_DB_ID, ["ステータス", "Status", "進捗"])
+
         # 1. まずキーワードでタスクを検索
         url = f"https://api.notion.com/v1/databases/{NOTION_TASKS_DB_ID}/query"
         headers = {
@@ -199,17 +204,15 @@ def complete_task(keyword):
             "Content-Type": "application/json"
         }
         
-        # 簡易的なフィルタ：名前（タイトル）にキーワードが含まれる未完了タスクを探す
-        # ※Notion APIのfilterの制限により、正確な「含む」検索は title プロパティに対して行う
         payload = {
             "filter": {
                 "and": [
                     {
-                        "property": "名前",
+                        "property": name_prop,
                         "title": {"contains": keyword}
                     },
                     {
-                        "property": "ステータス",
+                        "property": status_prop,
                         "status": {"does_not_equal": "完了"}
                     }
                 ]
@@ -217,6 +220,11 @@ def complete_task(keyword):
         }
         
         res = requests.post(url, headers=headers, json=payload)
+        # 失敗した場合はステータスフィルタなしでリトライ（statusプロパティでない場合のため）
+        if res.status_code != 200:
+            payload["filter"]["and"].pop()
+            res = requests.post(url, headers=headers, json=payload)
+
         if res.status_code != 200:
             return False, f"検索に失敗しました (HTTP {res.status_code})"
             
@@ -228,17 +236,19 @@ def complete_task(keyword):
         target_page = results[0]
         page_id = target_page["id"]
         
+        # ステータス設定
         update_url = f"https://api.notion.com/v1/pages/{page_id}"
-        update_payload = {
-            "properties": {
-                "ステータス": {"status": {"name": "完了"}}
-            }
-        }
+        update_payload = {"properties": {status_prop: {"status": {"name": "完了"}}}}
         
         update_res = requests.patch(update_url, headers=headers, json=update_payload)
         if update_res.status_code == 200:
             return True, f"タスク「{keyword}」を完了にしました！✅"
         else:
+            # selectプロパティの場合のフォールバック
+            update_payload["properties"][status_prop] = {"select": {"name": "完了"}}
+            update_res = requests.patch(update_url, headers=headers, json=update_payload)
+            if update_res.status_code == 200:
+                return True, f"タスク「{keyword}」を完了にしました！✅"
             return False, f"ステータスの更新に失敗しました (HTTP {update_res.status_code})"
             
     except Exception as e:
@@ -321,16 +331,24 @@ def get_lol_knowledge(champion_name=None):
             
         results = res.json().get("results", [])
         knowledge = []
+        # スキーマに応じたプロパティ名の取得
+        n_p = get_prop_name(NOTION_LOL_DB_ID, ["名前", "Name", "Champion"])
+        s_p = get_prop_name(NOTION_LOL_DB_ID, ["強み", "Strengths", "Pros"])
+        w_p = get_prop_name(NOTION_LOL_DB_ID, ["弱み", "Weaknesses", "Cons"])
+        sy_p = get_prop_name(NOTION_LOL_DB_ID, ["シナジー", "Synergy"])
+        wc_p = get_prop_name(NOTION_LOL_DB_ID, ["主な勝ち筋", "Win Con"])
+        pt_p = get_prop_name(NOTION_LOL_DB_ID, ["意識ポイント", "Points"])
+
         for page in results:
             props = page.get("properties", {})
-            name = props.get("名前", {}).get("title", [{}])[0].get("plain_text", "Unknown")
+            name = props.get(n_p, {}).get("title", [{}])[0].get("plain_text", "Unknown")
             
             # 各種情報の抽出
-            strengths = props.get("強み", {}).get("rich_text", [{}])[0].get("plain_text", "")
-            weaknesses = props.get("弱み", {}).get("rich_text", [{}])[0].get("plain_text", "")
-            synergy = props.get("シナジー", {}).get("rich_text", [{}])[0].get("plain_text", "")
-            win_con = props.get("主な勝ち筋", {}).get("rich_text", [{}])[0].get("plain_text", "")
-            points = props.get("意識ポイント", {}).get("rich_text", [{}])[0].get("plain_text", "")
+            strengths = props.get(s_p, {}).get("rich_text", [{}])[0].get("plain_text", "")
+            weaknesses = props.get(w_p, {}).get("rich_text", [{}])[0].get("plain_text", "")
+            synergy = props.get(sy_p, {}).get("rich_text", [{}])[0].get("plain_text", "")
+            win_con = props.get(wc_p, {}).get("rich_text", [{}])[0].get("plain_text", "")
+            points = props.get(pt_p, {}).get("rich_text", [{}])[0].get("plain_text", "")
             
             entry = f"【チャンピオン】: {name}\n"
             if strengths: entry += f"- 強み: {strengths}\n"

@@ -25,6 +25,18 @@ class OmniSyncPro:
             "Content-Type": "application/json"
         }
 
+    def get_prop_name(self, db_id, candidates):
+        """DBのスキーマから候補に一致するプロパティ名を返す"""
+        if not NOTION_TOKEN or not db_id: return candidates[0]
+        try:
+            res = requests.get(f"https://api.notion.com/v1/databases/{db_id}", headers=self.headers)
+            props = res.json().get("properties", {})
+            for c in candidates:
+                if c in props: return c
+            return candidates[0]
+        except:
+            return candidates[0]
+
     def _query_db(self, filter_data):
         url = f"https://api.notion.com/v1/databases/{NOTION_DB_ID}/query"
         payload = {"filter": filter_data}
@@ -43,11 +55,12 @@ class OmniSyncPro:
         title = f"[{category}] {file_path.stem}"
         
         # 既存検索
-        filter_data = {"property": "名前", "title": {"equals": title}}
+        name_prop = self.get_prop_name(NOTION_DB_ID, ["名前", "Name", "Title"])
+        filter_data = {"property": name_prop, "title": {"equals": title}}
         results = self._query_db(filter_data)
         
         properties = {
-            "名前": {"title": [{"text": {"content": title}}]}
+            name_prop: {"title": [{"text": {"content": title}}]}
         }
         
         # 本文ブロック
@@ -87,14 +100,15 @@ class OmniSyncPro:
         
         # Notion に存在するタイトルのリスト（削除判定用）
         notion_titles = []
+        name_prop = self.get_prop_name(NOTION_DB_ID, ["名前", "Name", "Title"])
         for page in results:
-            title_prop = page["properties"]["名前"]["title"]
+            title_prop = page["properties"][name_prop]["title"]
             if not title_prop: continue
             notion_titles.append(title_prop[0]["plain_text"])
 
         # 1. Notion 側の変更をローカルに反映
         for page in results:
-            full_title = page["properties"]["名前"]["title"][0]["plain_text"]
+            full_title = page["properties"][name_prop]["title"][0]["plain_text"]
             if "]" not in full_title: continue
             
             category = full_title[1:full_title.find("]")]
