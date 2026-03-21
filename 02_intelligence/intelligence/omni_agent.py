@@ -18,6 +18,7 @@ from intelligence.trend_watcher import generate_with_fallback
 from hybrid_bot.src.notion_to_local import export_memos
 from hybrid_bot.src.trends_analyzer import analyze_latest_memos
 from hybrid_bot.src.omni_sync import OmniSyncPro
+from intelligence.notion_task_processor import main as process_notion_tasks
 
 class OmniAgent:
     """
@@ -80,6 +81,13 @@ class OmniAgent:
         try:
             # --- アンちゃんズ 経営サイクル 5.0 ---
             
+            # [-1] Notion 受信: ユーザーからの直接指示 (Ready タスク) の処理
+            self.log("📥 [InputAn] Step -1/12: Notion からの直接指示を確認中...")
+            try:
+                await process_notion_tasks()
+            except Exception as e:
+                self.log(f"⚠️ [InputAn] Notionタスク処理中にエラー（スキップします）: {e}")
+
             # 0. GoalAn: OKR (週次目標) の確認・設定
             self.log("🎯 [GoalAn] Step 0/12: 週次目標 (OKR) の確認...")
             okr = await self.ensure_weekly_okr()
