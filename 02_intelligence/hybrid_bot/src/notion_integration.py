@@ -93,6 +93,65 @@ def get_tasks():
     except Exception as e:
         return False, f"タスク一覧の取得に失敗しました。\n詳細: {e}"
 
+def get_human_tasks():
+    """人間が対応すべきタスク（Human Review Required等）のみを取得する"""
+    if not notion or not NOTION_TASKS_DB_ID:
+        return []
+    
+    import requests
+    try:
+        status_prop = get_prop_name(NOTION_TASKS_DB_ID, ["ステータス", "Status", "進捗"])
+        
+        url = f"https://api.notion.com/v1/databases/{NOTION_TASKS_DB_ID}/query"
+        headers = {
+            "Authorization": f"Bearer {NOTION_TOKEN}",
+            "Notion-Version": "2022-06-28",
+            "Content-Type": "application/json"
+        }
+        
+        # 人間用のアクション（Statusが「要確認」系、またはカテゴリが「Human」系）
+        payload = {
+            "filter": {
+                "or": [
+                    {
+                        "property": status_prop,
+                        "status": {"equals": "Human Review Required"}
+                    },
+                    {
+                        "property": status_prop,
+                        "select": {"equals": "要確認"}
+                    },
+                    {
+                        "property": "Category",
+                        "select": {"equals": "Human Task"}
+                    }
+                ]
+            }
+        }
+        
+        res = requests.post(url, headers=headers, json=payload)
+        if res.status_code != 200:
+            return []
+            
+        results = res.json().get("results", [])
+        human_tasks = []
+        for page in results:
+            props = page.get("properties", {})
+            title = "無題"
+            for p_name, p_data in props.items():
+                if p_data.get("type") == "title":
+                    title = p_data["title"][0]["text"]["content"] if p_data["title"] else "無題"
+            
+            human_tasks.append({
+                "id": page["id"],
+                "title": title,
+                "url": page["url"]
+            })
+            
+        return human_tasks
+    except:
+        return []
+
 def add_memo(text, url_val=None, summary_val=None):
     """Notionのメモデータベースに新しいメモを追加する（複数プロパティ対応）"""
     if not notion or not NOTION_MEMO_DB_ID:

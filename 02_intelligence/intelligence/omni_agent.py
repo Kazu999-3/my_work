@@ -162,6 +162,34 @@ class OmniAgent:
             # AdminAn による自己修復（Self-Healing）の試行
             await self.admin_an_self_heal(str(e), error_detail)
 
+    def flag_human_action(self, title, description):
+        """人間が対応すべきアクションを Notion に登録する"""
+        self.log(f"🚨 [Human Gate] 人間へのアクションを要請します: {title}")
+        from hybrid_bot.src.notion_integration import add_task, get_prop_name, NOTION_TASKS_DB_ID
+        import requests
+        
+        # add_task を呼ぶ
+        res, msg = add_task(f"【要確認】{title}")
+        if res:
+             # 作成された直後のページのステータスを更新する
+             try:
+                 url = f"https://api.notion.com/v1/databases/{NOTION_TASKS_DB_ID}/query"
+                 headers = {
+                     "Authorization": f"Bearer {os.getenv('NOTION_API_KEY')}",
+                     "Notion-Version": "2022-06-28",
+                     "Content-Type": "application/json"
+                 }
+                 query_res = requests.post(url, headers=headers, json={"page_size": 1})
+                 if query_res.status_code == 200:
+                     latest_page_id = query_res.json()["results"][0]["id"]
+                     status_prop = get_prop_name(NOTION_TASKS_DB_ID, ["ステータス", "Status", "進捗"])
+                     update_url = f"https://api.notion.com/v1/pages/{latest_page_id}"
+                     payload = {"properties": {status_prop: {"status": {"name": "Human Review Required"}}}}
+                     requests.patch(update_url, headers=headers, json=payload)
+             except:
+                 pass
+        return res, msg
+
     async def admin_an_self_heal(self, error_msg, traceback_str):
         """AdminAn: 自身のエラーを分析し、修正パッチを提案する"""
         self.log("🩹 [AdminAn] 自己修復プロセスを開始します...")
@@ -597,6 +625,8 @@ class OmniAgent:
             patch_file = ROOT_DIR / "04_system" / "patches" / f"auto_impl_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md"
             patch_file.write_text(f"# 🛠️ 自律実装プロポーザル\n\n対象: {target_task}\n\n{implementation}", encoding="utf-8")
             self.log(f"✅ [AdminAn] 実装案を作成しました: {patch_file.name}")
+            # 人間に確認を求める
+            self.flag_human_action(f"自律実装の確認: {target_task[:30]}...", f"AdminAn が自動パッチを作成しました。内容を確認して適用してください。\nファイル: {patch_file.name}")
 
     async def admin_an_scan_workspace(self):
         """AdminAn: ワークスペースをスキャンし、改善すべき課題を自律的に task.md へ追記する"""
