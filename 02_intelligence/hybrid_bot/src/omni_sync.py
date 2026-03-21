@@ -55,10 +55,13 @@ class OmniSyncPro:
         content = file_path.read_text(encoding="utf-8")
         title = f"[{category}] {file_path.stem}"
         
-        # ジャンルの特定（親フォルダ名がカテゴリ名でない場合はそれをジャンルとする）
-        genre = "General"
-        if file_path.parent.name not in ["01_spirit", "reports", "daily_posts", "drafts"]:
-            genre = file_path.parent.name
+        # ジャンルの特定（親フォルダから推測）
+        genre = "その他"
+        p_str = str(file_path).lower()
+        if "spirit" in p_str: genre = "指示書"
+        elif "daily" in p_str or "日報" in p_str: genre = "日報"
+        elif "research" in p_str or "report" in p_str: genre = "調査レポート"
+        elif "article" in p_str or "daily_posts" in p_str: genre = "記事"
             
         # 既存検索
         name_prop = self.get_prop_name(NOTION_DB_ID, ["名前", "Name", "Title"])
@@ -80,34 +83,28 @@ class OmniSyncPro:
                 page_id = results[0]["id"]
                 # 更新
                 requests.patch(f"https://api.notion.com/v1/pages/{page_id}", headers=self.headers, json={"properties": properties})
-                # ブロック更新（シンプルに全削除して追加）
+                # 本文更新
                 block_res = requests.get(f"https://api.notion.com/v1/blocks/{page_id}/children", headers=self.headers)
                 if block_res.status_code == 200:
                     for b in block_res.json().get("results", []):
                         requests.delete(f"https://api.notion.com/v1/blocks/{b['id']}", headers=self.headers)
                 requests.patch(f"https://api.notion.com/v1/blocks/{page_id}/children", headers=self.headers, json={"children": blocks})
             else:
-                # 新規作成
-                payload = {
-                    "parent": {"database_id": NOTION_DB_ID},
-                    "properties": properties,
-                    "children": blocks
-                }
+                # 新規
+                payload = {"parent": {"database_id": NOTION_DB_ID}, "properties": properties, "children": blocks}
                 requests.post("https://api.notion.com/v1/pages", headers=self.headers, json=payload)
         except Exception as e:
             print(f"  [Ship] Error for {title}: {e}")
 
     def cargo_pull_all(self):
         """
-        Notion から全カテゴリの変更を荷下ろし（ジャンル別仕分け対応）
+        Notion から全カテゴリの変更を荷下ろし（日本語カテゴリ対応）
         """
         filter_data = {"property": "名前", "title": {"starts_with": "["}}
         results = []
         
-        # ページネーション対応
         url = f"https://api.notion.com/v1/databases/{NOTION_DB_ID}/query"
-        has_more = True
-        next_cursor = None
+        has_more, next_cursor = True, None
         while has_more:
             payload = {"filter": filter_data}
             if next_cursor: payload["start_cursor"] = next_cursor
@@ -115,12 +112,20 @@ class OmniSyncPro:
             if res.status_code != 200: break
             data = res.json()
             results.extend(data.get("results", []))
-            has_more = data.get("has_more")
-            next_cursor = data.get("next_cursor")
+            has_more, next_cursor = data.get("has_more"), data.get("next_cursor")
 
         notion_titles = []
         name_prop = self.get_prop_name(NOTION_DB_ID, ["名前", "Name", "Title"])
         genre_prop = self.get_prop_name(NOTION_DB_ID, ["ジャンル", "Genre", "Category"])
+
+        # フォルダ定義
+        FOLDER_MAP = {
+            "指示書": ROOT_DIR / "01_spirit" / "instructions",
+            "記事": ROOT_DIR / "03_factory" / "articles",
+            "日報": ROOT_DIR / "03_factory" / "reports" / "daily",
+            "調査レポート": ROOT_DIR / "03_factory" / "reports" / "research",
+            "その他": ROOT_DIR / "03_factory" / "misc"
+        }
 
         for page in results:
             props = page["properties"]
@@ -135,64 +140,65 @@ class OmniSyncPro:
             file_name = full_title[full_title.find("]")+1:].strip() + ".md"
             
             # ジャンル取得
-            genre = "General"
+            genre = "その他"
             if genre_prop in props and props[genre_prop].get("select"):
                 genre = props[genre_prop]["select"]["name"]
 
-            # カテゴリに応じたベースパスの決定
-            base_dir = None
-            if category == "Foundation": base_dir = ROOT_DIR / "01_spirit"
-            elif category == "Report": base_dir = ROOT_DIR / "03_factory" / "reports"
-            elif category == "Draft": base_dir = ROOT_DIR / "03_factory" / "daily_posts"
-            elif category in ["Drafts", "Tactics"]: base_dir = ROOT_DIR / "03_factory" / "drafts"
+            # 保存先決定
+            if genre in FOLDER_MAP:
+                target_path = FOLDER_MAP[genre] / file_name
+            else:
+                # フォールバック
+                base_dir = ROOT_DIR / "03_factory" / "misc"
+                if category == "Foundation": base_dir = ROOT_DIR / "01_spirit"
+                target_path = base_dir / file_name
             
-            if base_dir:
-                # ジャンルが General でない場合はサブフォルダを作成
-                if genre != "General":
-                    target_path = base_dir / genre / file_name
-                else:
-                    target_path = base_dir / file_name
-                
-                self._update_local_file(page["id"], target_path)
+            self._update_local_file(page["id"], target_path)
 
-        # 2. Notion 側にないファイルをローカルからゴミ箱へ移動
         self._cleanup_local_to_garbage(notion_titles)
 
     def _cleanup_local_to_garbage(self, notion_titles):
-        """Notion側に存在しないファイルをゴミ箱フォルダに退避"""
-        check_dirs = {
-            "Foundation": ROOT_DIR / "01_spirit",
-            "Report": ROOT_DIR / "03_factory" / "reports",
-            "Draft": ROOT_DIR / "03_factory" / "daily_posts",
-            "Drafts": ROOT_DIR / "03_factory" / "drafts"
-        }
+        """Notion側に存在しないファイルをゴミ箱へ"""
+        base_paths = [
+            ROOT_DIR / "01_spirit",
+            ROOT_DIR / "03_factory" / "reports",
+            ROOT_DIR / "03_factory" / "articles",
+            ROOT_DIR / "03_factory" / "daily_posts",
+            ROOT_DIR / "03_factory" / "drafts",
+            ROOT_DIR / "03_factory" / "misc"
+        ]
         
         garbage_base = ROOT_DIR / "05_garbage" / "notion_deleted"
         
-        for category, base_path in check_dirs.items():
+        # 逆引き用プレフィックス判定（簡易版）
+        def get_cat_for_path(p):
+            if "spirit" in str(p): return "Foundation"
+            if "report" in str(p): return "Report"
+            return "Draft"
+
+        for base_path in base_paths:
             if not base_path.exists(): continue
-            
-            # 再帰的に全.mdファイルをチェック
             for f in base_path.glob("**/*.md"):
-                # ゴミ箱自体や、システムファイルは除外
                 if "05_garbage" in str(f): continue
-                
+                category = get_cat_for_path(f)
                 expected_title = f"[{category}] {f.stem}"
-                if expected_title not in notion_titles:
-                    # Notion に存在しない場合、ゴミ箱へ移動
-                    rel_path = f.relative_to(base_path)
-                    dest = garbage_base / category / rel_path
+                
+                # 他のカテゴリプレフィックスでも存在する可能性を考慮
+                found = False
+                for c in ["Foundation", "Report", "Draft", "Drafts"]:
+                    if f"[{c}] {f.stem}" in notion_titles:
+                        found = True; break
+                
+                if not found:
+                    dest = garbage_base / f.relative_to(ROOT_DIR)
                     dest.parent.mkdir(parents=True, exist_ok=True)
-                    
                     try:
-                        # 移動先に同名ファイルがある場合はタイムスタンプを付与
                         if dest.exists():
                             dest = dest.with_name(f"{f.stem}_{datetime.now().strftime('%H%M%S')}{f.suffix}")
-                        
                         f.rename(dest)
-                        print(f"  [Garbage] Moved to 05_garbage: {f.name} (Category: {category})")
+                        print(f"  [Garbage] Moved: {f.name}")
                     except Exception as e:
-                        print(f"  [Garbage] Error moving {f.name}: {e}")
+                        print(f"  [Garbage] Error: {e}")
 
     def _update_local_file(self, page_id, target_path):
         res = requests.get(f"https://api.notion.com/v1/blocks/{page_id}/children", headers=self.headers)
@@ -210,26 +216,23 @@ class OmniSyncPro:
                 target_path.write_text(content, encoding="utf-8")
                 print(f"  [Cargo] Updated local: {target_path.name}")
         else:
-            # 新規ファイル作成
             target_path.parent.mkdir(parents=True, exist_ok=True)
             target_path.write_text(content, encoding="utf-8")
-            print(f"  [Cargo] Created local (Genre Sync): {target_path.parent.name}/{target_path.name}")
+            print(f"  [Cargo] Created (New Category): {target_path.relative_to(ROOT_DIR)}")
 
 def full_initial_ship():
-    """全データをNotionに一斉出荷（既存の階層構造をジャンルとして反映）"""
+    """再編後の初期出荷"""
     syncer = OmniSyncPro()
-    dirs = [
+    # 既存の主要フォルダを網羅して出荷
+    search_dirs = [
         (ROOT_DIR / "01_spirit", "Foundation"),
-        (ROOT_DIR / "03_factory" / "reports", "Report"),
-        (ROOT_DIR / "03_factory" / "daily_posts", "Draft"),
-        (ROOT_DIR / "03_factory" / "drafts", "Drafts")
+        (ROOT_DIR / "03_factory", "Draft")
     ]
-    
-    for path, cat in dirs:
-        if not path.exists(): continue
-        for f in path.glob("**/*.md"):
+    for base, cat in search_dirs:
+        if not base.exists(): continue
+        for f in base.glob("**/*.md"):
+            if "archives" in str(f) or "garbage" in str(f): continue
             syncer.ship_file(f, cat)
 
 if __name__ == "__main__":
-    # 初期出荷（ジャンル反映のため）
     full_initial_ship()
