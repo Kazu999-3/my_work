@@ -5025,3 +5025,321 @@ https://github.com/google-gemini/deprecated-generative-ai-python/blob/main/READM
   import google.generativeai as genai
 💡 OmniSyncPro: 安定版エンジンを起動しました(requests仕様)
 [2026-03-21 21:00:06] ⏭️ 前回のサイクルから 4h 経過していないためスキップします。
+D:\my_work\02_intelligence\intelligence\trend_watcher.py:8: FutureWarning: 
+
+All support for the `google.generativeai` package has ended. It will no longer be receiving 
+updates or bug fixes. Please switch to the `google.genai` package as soon as possible.
+See README for more details:
+
+https://github.com/google-gemini/deprecated-generative-ai-python/blob/main/README.md
+
+  import google.generativeai as genai
+💡 OmniSyncPro: 安定版エンジンを起動しました(requests仕様)
+[2026-03-21 22:00:06] 🚀 Omni-Agent 2.5: 「自律商社アンちゃん」の超知能サイクルを開始します。
+[2026-03-21 22:00:06] 📥 [InputAn] Step -1/12: Notion からの直接指示を確認中...
+⏳ Readyタスクのチェックを開始します...
+🔍 DB (ID: 32061cf4543980d8a093d19d017ebcfc) から Ready タスクを取得中...
+📡 API応答: 0 件の Ready タスクを発見
+☕ Readyタスクはありません。
+[2026-03-21 22:00:08] 🎯 [GoalAn] Step 0/12: 週次目標 (OKR) の確認...
+[2026-03-21 22:00:08] 📡 [ScoutAn] Step 1/12: 市場トレンドの偵察...
+🚀 アンちゃん・トレンドウォッチャー Pro 起動
+🔍 Lolalyticsから最新メタ情報をスカウティング中...
+🌐 ターゲットURLに移動中: https://lolalytics.com/lol/tierlist/?lane=jungle
+⏳ ページ読み込み完了。追加待機中...
+🧬 チャンピオンデータの抽出を開始...
+【Lolalytics最新トレンド - Jungle】
+- Graves: Tier S+ (勝率 ??%)
+- Sylas: Tier S (勝率 ??%)
+- Lee Sin: Tier S (勝率 ??%)
+- Nunu & Willump: Tier S (勝率 ??%)
+- Rek'Sai: Tier S (勝率 ??%)
+- Jarvan IV: Tier S- (勝率 ??%)
+- Master Yi: Tier S- (勝率 ??%)
+- Xin Zhao: Tier S- (勝率 ??%)
+- Briar: Tier B (勝率 ??%)
+- Diana: Tier D (勝率 ??%)
+
+💡 企画案を立案中...
+🤖 思考モデル: models/gemini-2.5-flash-lite
+DEBUG: Gemini Response:
+```json
+[
+  {
+    "title": "【LoL】 jungle S+！”Graves”で勝率60%超えを狙う！初心者でもわかる jungle 必勝ガイド",
+    "ladder_step": "2.エントリー(教育)",
+    "reason": "Gravesは最新データでTier S+と非常に強力であり、勝率も高いことが予想されます。多くのプレイヤーがGravesで勝ちたいと考えているはずです。初心者でも理解できるような解説をすることで、記事の価値を高め、読者の満足度向上に繋げます。",
+    "outline": [
+      "なぜ今Gravesが最強なのか？Lolalyticsデータから見る秘密",
+      "Graves jungle の基本：ジャングルルートと最速レベルアップ戦略",
+      "序盤の駆け引き：ガンク成功率を劇的に上げる方法",
+      "中盤以降の立ち回り：集団戦での位置取りとダメージの出し方",
+      "アイテムビルドとルーン選択：勝率を左右する最適解",
+      "Graves jungle でのよくあるミスと、それを避けるためのチェックリスト"
+    ]
+  },
+  {
+    "title": "「Sylas/Lee Sin/Nunu」 jungle ３強使い分け！相手 Jungle を狩るための最速 jungle 攻略法",
+    "ladder_step": "3.中価格帯(信頼)",
+    "reason": "Sylas, Lee Sin, Nunu & Willump はTier Sと、Gravesに次ぐ強力なジャンパーたちです。これらのチャンピオンを状況に応じて使い分けることで、相手ジャンパーに対する優位を確立できます。この戦略は、より高度な判断を求めるプレイヤー層に響くため、中価格帯の商品として提供するのに適しています。",
+    "outline": [
+      "Lolalyticsデータで見る jungle ３強の強みと弱み",
+      "対戦相手 jungle 毎のピック＆バン戦略：不利マッチを回避せよ",
+      "Sylas jungle：スキルコピーを最大限に活かす jungle 回り",
+      "Lee Sin jungle：アグレッシブに仕掛けるガンクとカウンタージャンギング",
+      "Nunu & Willump jungle：序盤の有利を後半まで繋げるローテーション術",
+      "相手 jungle を狩るための高度なオブジェクトコントロールとプレッシャーのかけ方",
+      " jungle ３強を使いこなすためのメンタルハックと、試合展開を読む力"
+    ]
+  },
+  {
+    "title": "【LoL】 Rank で勝率を安定させる jungle 心理学：Tier B/Dジャンパーでも勝てる？",
+    "ladder_step": "5.スキルパック(資産)",
+    "reason": "Diana (Tier D) や Briar (Tier B) のような、本来のパワーが低いチャンピオンでも勝率を上げるための「戦略」と「心理」に焦点を当てることで、ニッチながらも深いニーズに応えることができます。これは、チャンピオンそのものよりも、プレイヤーのスキルアップに焦点を当てた商品であり、高価格帯のスキルパックとして提供する価値があります。",
+    "outline": [
+      "なぜDianaやBriarは勝てないのか？Lolalyticsデータが示す根本原因",
+      "Tier B/D ジャンパーでも勝てる！逆転を生み出すためのゲームプラン",
+      "相手のミスを誘発する！心理戦で有利を取る jungle の駆け引き",
+      "「不利な状況」を「有利な状況」に変えるためのマインドセット",
+      "ミニオンコントロールとオブジェクト管理：ジャンパーの試合決定力",
+      "メタに左右されない！普遍的な jungle スキルを磨くトレーニング方法",
+      "勝率６割超えの jungle プレイヤーが語る、 Rank アップのための秘訣"
+    ]
+  }
+]
+```
+DEBUG: Notion Payload:
+{
+  "parent": {
+    "database_id": "32061cf4543980d8a093d19d017ebcfc"
+  },
+  "properties": {
+    "名前": {
+      "title": [
+        {
+          "type": "text",
+          "text": {
+            "content": "【トレンド速報】【LoL】 jungle S+！”Graves”で勝率60%超えを狙う！初心者でもわかる jungle 必勝ガイド"
+          }
+        }
+      ]
+    },
+    "ステータス": {
+      "status": {
+        "name": "Idea"
+      }
+    }
+  },
+  "children": [
+    {
+      "object": "block",
+      "type": "paragraph",
+      "paragraph": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "Gravesは最新データでTier S+と非常に強力であり、勝率も高いことが予想されます。多くのプレイヤーがGravesで勝ちたいと考えているはずです。初心者でも理解できるような解説をすることで、記事の価値を高め、読者の満足度向上に繋げます。"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "object": "block",
+      "type": "heading_2",
+      "heading_2": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "📝 構成案"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "object": "block",
+      "type": "paragraph",
+      "paragraph": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "なぜ今Gravesが最強なのか？Lolalyticsデータから見る秘密\nGraves jungle の基本：ジャングルルートと最速レベルアップ戦略\n序盤の駆け引き：ガンク成功率を劇的に上げる方法\n中盤以降の立ち回り：集団戦での位置取りとダメージの出し方\nアイテムビルドとルーン選択：勝率を左右する最適解\nGraves jungle でのよくあるミスと、それを避けるためのチェックリスト"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
+✅ Notion投稿成功: 【LoL】 jungle S+！”Graves”で勝率60%超えを狙う！初心者でもわかる jungle 必勝ガイド
+DEBUG: Notion Payload:
+{
+  "parent": {
+    "database_id": "32061cf4543980d8a093d19d017ebcfc"
+  },
+  "properties": {
+    "名前": {
+      "title": [
+        {
+          "type": "text",
+          "text": {
+            "content": "【トレンド速報】「Sylas/Lee Sin/Nunu」 jungle ３強使い分け！相手 Jungle を狩るための最速 jungle 攻略法"
+          }
+        }
+      ]
+    },
+    "ステータス": {
+      "status": {
+        "name": "Idea"
+      }
+    }
+  },
+  "children": [
+    {
+      "object": "block",
+      "type": "paragraph",
+      "paragraph": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "Sylas, Lee Sin, Nunu & Willump はTier Sと、Gravesに次ぐ強力なジャンパーたちです。これらのチャンピオンを状況に応じて使い分けることで、相手ジャンパーに対する優位を確立できます。この戦略は、より高度な判断を求めるプレイヤー層に響くため、中価格帯の商品として提供するのに適しています。"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "object": "block",
+      "type": "heading_2",
+      "heading_2": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "📝 構成案"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "object": "block",
+      "type": "paragraph",
+      "paragraph": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "Lolalyticsデータで見る jungle ３強の強みと弱み\n対戦相手 jungle 毎のピック＆バン戦略：不利マッチを回避せよ\nSylas jungle：スキルコピーを最大限に活かす jungle 回り\nLee Sin jungle：アグレッシブに仕掛けるガンクとカウンタージャンギング\nNunu & Willump jungle：序盤の有利を後半まで繋げるローテーション術\n相手 jungle を狩るための高度なオブジェクトコントロールとプレッシャーのかけ方\n jungle ３強を使いこなすためのメンタルハックと、試合展開を読む力"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
+✅ Notion投稿成功: 「Sylas/Lee Sin/Nunu」 jungle ３強使い分け！相手 Jungle を狩るための最速 jungle 攻略法
+DEBUG: Notion Payload:
+{
+  "parent": {
+    "database_id": "32061cf4543980d8a093d19d017ebcfc"
+  },
+  "properties": {
+    "名前": {
+      "title": [
+        {
+          "type": "text",
+          "text": {
+            "content": "【トレンド速報】【LoL】 Rank で勝率を安定させる jungle 心理学：Tier B/Dジャンパーでも勝てる？"
+          }
+        }
+      ]
+    },
+    "ステータス": {
+      "status": {
+        "name": "Idea"
+      }
+    }
+  },
+  "children": [
+    {
+      "object": "block",
+      "type": "paragraph",
+      "paragraph": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "Diana (Tier D) や Briar (Tier B) のような、本来のパワーが低いチャンピオンでも勝率を上げるための「戦略」と「心理」に焦点を当てることで、ニッチながらも深いニーズに応えることができます。これは、チャンピオンそのものよりも、プレイヤーのスキルアップに焦点を当てた商品であり、高価格帯のスキルパックとして提供する価値があります。"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "object": "block",
+      "type": "heading_2",
+      "heading_2": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "📝 構成案"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "object": "block",
+      "type": "paragraph",
+      "paragraph": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "なぜDianaやBriarは勝てないのか？Lolalyticsデータが示す根本原因\nTier B/D ジャンパーでも勝てる！逆転を生み出すためのゲームプラン\n相手のミスを誘発する！心理戦で有利を取る jungle の駆け引き\n「不利な状況」を「有利な状況」に変えるためのマインドセット\nミニオンコントロールとオブジェクト管理：ジャンパーの試合決定力\nメタに左右されない！普遍的な jungle スキルを磨くトレーニング方法\n勝率６割超えの jungle プレイヤーが語る、 Rank アップのための秘訣"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
+✅ Notion投稿成功: 【LoL】 Rank で勝率を安定させる jungle 心理学：Tier B/Dジャンパーでも勝てる？
+[2026-03-21 22:00:39] 🧠 [StrategyAn] Step 2/6: 市場の急所を突く自律提案 (Proactive Proposal)...
+[2026-03-21 22:00:39] 📉 [Pivot-An] 市場の停滞を検知。新領域の探索を検討します...
+🤖 思考モデル: models/gemini-2.5-pro
+⚠️ 429制限検知。5秒待機します...
+🤖 思考モデル: models/gemini-2.5-flash-lite
+[2026-03-21 22:00:50] 🚀 [Pivot-An] ピボット案: 承知いたしました。実業家として、現在のメイン市場（LoL/ゲーム）のトレンドが一時的に落ち着いている状況を踏まえ、次に大きく成長が見込め、かつ熱量も高い市場として、私は**「AIを活用したゲーム体験の...
+[2026-03-21 22:00:50] 🔍 [AdminAn] Step 4/12: プロジェクト全体の課題を自律スキャン中...
+[2026-03-21 22:00:51] 📜 [StrategyAn] Step 5/12: 今日のフック立案 (Strategist)...
+[2026-03-21 22:00:51] 🎨 [CreativeAn] Step 6/12: 内部ディベートを経てコンテンツを生成...
+🤖 思考モデル: models/gemini-2.5-pro
+⚠️ 429制限検知。5秒待機します...
+🤖 思考モデル: models/gemini-2.5-flash-lite
+🤖 思考モデル: models/gemini-2.5-flash-lite
+[2026-03-21 22:01:07] ✅ 監査合格 (Score: 85)
+[2026-03-21 22:01:07] 💾 ドラフトを保存しました (Score: 85): draft_20260321_2201_s85.md
+[2026-03-21 22:01:07] Step 5/6: 全成果物のスマホ同期 (Ship)...
+[2026-03-21 22:09:55] Step 7/9: 日報の自動生成 (Daily Report)...
+[2026-03-21 22:09:55] ⏩ 日報は既に存在します: 2026-03-21.md
+[2026-03-21 22:09:55] 🧺 [AdminAn] Step 9/12: 高評価ドラフトの資産化...
+[2026-03-21 22:09:55] ❌ サイクル実行中に深刻なエラーが発生しました: 'OmniAgent' object has no attribute 'harvest_assets'
+[2026-03-21 22:09:55] Traceback (most recent call last):
+  File "D:\my_work\02_intelligence\intelligence\omni_agent.py", line 145, in run_cycle
+    self.harvest_assets()
+    ^^^^^^^^^^^^^^^^^^^
+AttributeError: 'OmniAgent' object has no attribute 'harvest_assets'
+
+[2026-03-21 22:09:55] 🩹 [AdminAn] 自己修復プロセスを開始します...
+🤖 思考モデル: models/gemini-2.5-pro
+⚠️ 429制限検知。5秒待機します...
+🤖 思考モデル: models/gemini-2.5-flash-lite
+[2026-03-21 22:10:07] 📝 [AdminAn] 修正案を作成し、patches/ に保存しました。
