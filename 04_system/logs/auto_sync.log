@@ -4565,3 +4565,375 @@ https://github.com/google-gemini/deprecated-generative-ai-python/blob/main/READM
   import google.generativeai as genai
 💡 OmniSyncPro: 安定版エンジンを起動しました(requests仕様)
 [2026-03-21 12:00:05] ⏭️ 前回のサイクルから 4h 経過していないためスキップします。
+D:\my_work\02_intelligence\intelligence\trend_watcher.py:8: FutureWarning: 
+
+All support for the `google.generativeai` package has ended. It will no longer be receiving 
+updates or bug fixes. Please switch to the `google.genai` package as soon as possible.
+See README for more details:
+
+https://github.com/google-gemini/deprecated-generative-ai-python/blob/main/README.md
+
+  import google.generativeai as genai
+💡 OmniSyncPro: 安定版エンジンを起動しました(requests仕様)
+[2026-03-21 13:00:07] 🚀 Omni-Agent 2.5: 「自律商社アンちゃん」の超知能サイクルを開始します。
+[2026-03-21 13:00:07] 🎯 [GoalAn] Step 0/12: 週次目標 (OKR) の確認...
+[2026-03-21 13:00:07] 📝 [GoalAn] 今週の経営目標を設定します...
+🤖 思考モデル: models/gemini-2.5-pro
+⚠️ 429制限検知。5秒待機します...
+🤖 思考モデル: models/gemini-2.5-flash-lite
+[2026-03-21 13:00:17] 📡 [ScoutAn] Step 1/12: 市場トレンドの偵察...
+🚀 アンちゃん・トレンドウォッチャー Pro 起動
+🔍 Lolalyticsから最新メタ情報をスカウティング中...
+🌐 ターゲットURLに移動中: https://lolalytics.com/lol/tierlist/?lane=jungle
+⏳ ページ読み込み完了。追加待機中...
+🧬 チャンピオンデータの抽出を開始...
+【Lolalytics最新トレンド - Jungle】
+- Graves: Tier S+ (勝率 ??%)
+- Sylas: Tier S (勝率 ??%)
+- Nunu & Willump: Tier S (勝率 ??%)
+- Lee Sin: Tier S (勝率 ??%)
+- Rek'Sai: Tier S (勝率 ??%)
+- Jarvan IV: Tier S- (勝率 ??%)
+- Xin Zhao: Tier S- (勝率 ??%)
+- Master Yi: Tier S- (勝率 ??%)
+- Diana: Tier D (勝率 ??%)
+- Ekko: Tier E (勝率 ??%)
+
+💡 企画案を立案中...
+🤖 思考モデル: models/gemini-2.5-flash-lite
+DEBUG: Gemini Response:
+```json
+[
+  {
+    "title": "【99%勝率UP】S+ジャングラーGravesを徹底解剖！初心者が陥る罠とプロだけが知る秘訣",
+    "ladder_step": "2.エントリー(教育)",
+    "reason": "GravesはTier S+であり、最新データで最も注目すべきチャンピオンです。勝率の具体的な数値がないため、読者の興味を惹きつけ、「なぜ勝てるのか」「どうすれば勝てるのか」を知りたいという欲求を刺激します。初心者が陥りやすいミスに焦点を当てることで、共感を得やすく、具体的な改善策を提示することで価値を提供できます。このコンテンツは、ジャングラーとしての基礎理解を深め、上位ティアチャンピオンへの理解を促すための第一歩として位置づけられます。",
+    "outline": [
+      "なぜGravesは最強なのか？Lolalyticsデータが示す驚愕のポテンシャル",
+      "初心者がGravesで「負ける」典型的な5つの間違い",
+      "プロが実践するGravesの超効率的なジャングルルートとクリア",
+      "レーナーを「勝たせる」Gravesのエンゲージタイミングとガンクテクニック",
+      "Gravesのパワースパイクを最大限に活かすアイテムビルドとルーン選択",
+      "集団戦でGravesが「キャリー」するための立ち回り",
+      "【特典】Gravesミラーマッチで負けないための禁断の知識"
+    ]
+  },
+  {
+    "title": "「勝てない」ジャングラーは卒業！Tier S+ & Sランク 5体の弱点と攻略法を暴露",
+    "ladder_step": "3.中価格帯(信頼)",
+    "reason": "Gravesだけでなく、Sylas, Nunu & Willump, Lee Sin, Rek'SaiといったTier S、S-のチャンピオン群を網羅することで、より広範な読者のニーズに応えられます。これらのチャンピオンはメタ上位にいるため、多くのプレイヤーが対面する機会があり、その「弱点」と「攻略法」を知りたいというニーズは非常に高いです。個別のチャンピオン解説よりも、メタ全体を俯瞰し、各チャンピオンの対策をまとめて提供することで、読者の「ゲーム理解度」を飛躍的に向上させる価値を提供します。これにより、読者はジャングルマッチアップの知識を深め、筆者への信頼感を高めることができます。",
+    "outline": [
+      "Lolalytics最新データで見る、ジャングルメタの支配者たち",
+      "Gravesに勝つための、たった一つの「カウンターピック」と「立ち回り」",
+      "SylasのCCを無効化？意外すぎる〇〇ルーンの驚愕効果",
+      "Nunu & Willumpのエンゲージを「無力化」する、隠された対抗策",
+      "Lee Sinのダイブを「返り討ち」にする、jgポジショニングの極意",
+      "Rek'Saiの潜伏を「見破る」〇〇スキルによる早期発見法",
+      "Tier D, Eチャンピオン（Diana, Ekko）がメタで通用しない「根本原因」",
+      "メタ上位チャンピオンを狩る、あなたのための「ジャングル必勝法」"
+    ]
+  },
+  {
+    "title": "【マスター以下必見】ジャングラーが「初心者でも勝てる」旬のチャンピオン3選とその理由",
+    "ladder_step": "2.エントリー(教育)",
+    "reason": "Tier DやEのチャンピオンがなぜ勝てないのか、というネガティブな情報から、逆に「勝てる」チャンピオンに焦点を当てることで、ポジティブな解決策を提示します。Lolalyticsのデータでは詳細な勝率が不明ですが、Tier S+やSランクのチャンピオンがメタの中心であることは明白です。これらのチャンピオンの中から、比較的操作が簡単で、かつメタで活躍できる、まだ広く知られていない「旬」のチャンピオンをピックアップします。これにより、読者は「自分でもできる」という期待感を持ちやすく、具体的なチャンピオンと戦略を学ぶことで、すぐに実践に繋げることができます。これは、ジャングラーとしての自信をつけ、ランクを上げるための直接的な手助けとなります。",
+    "outline": [
+      "Lolalyticsデータから見抜く、ジャングル「旬」チャンピオンの条件",
+      "【チャンピオン1】〇〇（チャンピオン名）が初心者でも勝てる！驚きの理由と簡単な使い方",
+      "【チャンピオン1】序盤～終盤まで使える、〇〇（チャンピオン名）の鉄板ビルド＆スキルオーダー",
+      "【チャンピオン2】隠れ強チャンピオン〇〇（チャンピオン名）で、敵ジャングラーを圧倒する方法",
+      "【チャンピオン2】簡単オペレーションでキルを量産！〇〇（チャンピオン名）のガンク＆エンゲージ入門",
+      "【チャンピオン3】集団戦で輝く！〇〇（チャンピオン名）の「隠し玉」テクニック",
+      "【チャンピオン3】〇〇（チャンピオン名）で勝率を爆上げする、〇〇（特定の戦略やアイテム）の活用法",
+      "なぜDianaやEkkoでは勝てないのか？メタから外れたチャンピオンの落とし穴"
+    ]
+  }
+]
+```
+DEBUG: Notion Payload:
+{
+  "parent": {
+    "database_id": "32061cf4543980d8a093d19d017ebcfc"
+  },
+  "properties": {
+    "名前": {
+      "title": [
+        {
+          "type": "text",
+          "text": {
+            "content": "【トレンド速報】【99%勝率UP】S+ジャングラーGravesを徹底解剖！初心者が陥る罠とプロだけが知る秘訣"
+          }
+        }
+      ]
+    },
+    "ステータス": {
+      "status": {
+        "name": "Idea"
+      }
+    }
+  },
+  "children": [
+    {
+      "object": "block",
+      "type": "paragraph",
+      "paragraph": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "GravesはTier S+であり、最新データで最も注目すべきチャンピオンです。勝率の具体的な数値がないため、読者の興味を惹きつけ、「なぜ勝てるのか」「どうすれば勝てるのか」を知りたいという欲求を刺激します。初心者が陥りやすいミスに焦点を当てることで、共感を得やすく、具体的な改善策を提示することで価値を提供できます。このコンテンツは、ジャングラーとしての基礎理解を深め、上位ティアチャンピオンへの理解を促すための第一歩として位置づけられます。"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "object": "block",
+      "type": "heading_2",
+      "heading_2": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "📝 構成案"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "object": "block",
+      "type": "paragraph",
+      "paragraph": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "なぜGravesは最強なのか？Lolalyticsデータが示す驚愕のポテンシャル\n初心者がGravesで「負ける」典型的な5つの間違い\nプロが実践するGravesの超効率的なジャングルルートとクリア\nレーナーを「勝たせる」Gravesのエンゲージタイミングとガンクテクニック\nGravesのパワースパイクを最大限に活かすアイテムビルドとルーン選択\n集団戦でGravesが「キャリー」するための立ち回り\n【特典】Gravesミラーマッチで負けないための禁断の知識"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
+✅ Notion投稿成功: 【99%勝率UP】S+ジャングラーGravesを徹底解剖！初心者が陥る罠とプロだけが知る秘訣
+DEBUG: Notion Payload:
+{
+  "parent": {
+    "database_id": "32061cf4543980d8a093d19d017ebcfc"
+  },
+  "properties": {
+    "名前": {
+      "title": [
+        {
+          "type": "text",
+          "text": {
+            "content": "【トレンド速報】「勝てない」ジャングラーは卒業！Tier S+ & Sランク 5体の弱点と攻略法を暴露"
+          }
+        }
+      ]
+    },
+    "ステータス": {
+      "status": {
+        "name": "Idea"
+      }
+    }
+  },
+  "children": [
+    {
+      "object": "block",
+      "type": "paragraph",
+      "paragraph": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "Gravesだけでなく、Sylas, Nunu & Willump, Lee Sin, Rek'SaiといったTier S、S-のチャンピオン群を網羅することで、より広範な読者のニーズに応えられます。これらのチャンピオンはメタ上位にいるため、多くのプレイヤーが対面する機会があり、その「弱点」と「攻略法」を知りたいというニーズは非常に高いです。個別のチャンピオン解説よりも、メタ全体を俯瞰し、各チャンピオンの対策をまとめて提供することで、読者の「ゲーム理解度」を飛躍的に向上させる価値を提供します。これにより、読者はジャングルマッチアップの知識を深め、筆者への信頼感を高めることができます。"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "object": "block",
+      "type": "heading_2",
+      "heading_2": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "📝 構成案"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "object": "block",
+      "type": "paragraph",
+      "paragraph": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "Lolalytics最新データで見る、ジャングルメタの支配者たち\nGravesに勝つための、たった一つの「カウンターピック」と「立ち回り」\nSylasのCCを無効化？意外すぎる〇〇ルーンの驚愕効果\nNunu & Willumpのエンゲージを「無力化」する、隠された対抗策\nLee Sinのダイブを「返り討ち」にする、jgポジショニングの極意\nRek'Saiの潜伏を「見破る」〇〇スキルによる早期発見法\nTier D, Eチャンピオン（Diana, Ekko）がメタで通用しない「根本原因」\nメタ上位チャンピオンを狩る、あなたのための「ジャングル必勝法」"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
+✅ Notion投稿成功: 「勝てない」ジャングラーは卒業！Tier S+ & Sランク 5体の弱点と攻略法を暴露
+DEBUG: Notion Payload:
+{
+  "parent": {
+    "database_id": "32061cf4543980d8a093d19d017ebcfc"
+  },
+  "properties": {
+    "名前": {
+      "title": [
+        {
+          "type": "text",
+          "text": {
+            "content": "【トレンド速報】【マスター以下必見】ジャングラーが「初心者でも勝てる」旬のチャンピオン3選とその理由"
+          }
+        }
+      ]
+    },
+    "ステータス": {
+      "status": {
+        "name": "Idea"
+      }
+    }
+  },
+  "children": [
+    {
+      "object": "block",
+      "type": "paragraph",
+      "paragraph": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "Tier DやEのチャンピオンがなぜ勝てないのか、というネガティブな情報から、逆に「勝てる」チャンピオンに焦点を当てることで、ポジティブな解決策を提示します。Lolalyticsのデータでは詳細な勝率が不明ですが、Tier S+やSランクのチャンピオンがメタの中心であることは明白です。これらのチャンピオンの中から、比較的操作が簡単で、かつメタで活躍できる、まだ広く知られていない「旬」のチャンピオンをピックアップします。これにより、読者は「自分でもできる」という期待感を持ちやすく、具体的なチャンピオンと戦略を学ぶことで、すぐに実践に繋げることができます。これは、ジャングラーとしての自信をつけ、ランクを上げるための直接的な手助けとなります。"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "object": "block",
+      "type": "heading_2",
+      "heading_2": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "📝 構成案"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "object": "block",
+      "type": "paragraph",
+      "paragraph": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "Lolalyticsデータから見抜く、ジャングル「旬」チャンピオンの条件\n【チャンピオン1】〇〇（チャンピオン名）が初心者でも勝てる！驚きの理由と簡単な使い方\n【チャンピオン1】序盤～終盤まで使える、〇〇（チャンピオン名）の鉄板ビルド＆スキルオーダー\n【チャンピオン2】隠れ強チャンピオン〇〇（チャンピオン名）で、敵ジャングラーを圧倒する方法\n【チャンピオン2】簡単オペレーションでキルを量産！〇〇（チャンピオン名）のガンク＆エンゲージ入門\n【チャンピオン3】集団戦で輝く！〇〇（チャンピオン名）の「隠し玉」テクニック\n【チャンピオン3】〇〇（チャンピオン名）で勝率を爆上げする、〇〇（特定の戦略やアイテム）の活用法\nなぜDianaやEkkoでは勝てないのか？メタから外れたチャンピオンの落とし穴"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
+✅ Notion投稿成功: 【マスター以下必見】ジャングラーが「初心者でも勝てる」旬のチャンピオン3選とその理由
+[2026-03-21 13:00:40] 🧠 [StrategyAn] Step 2/6: 市場の急所を突く自律提案 (Proactive Proposal)...
+[2026-03-21 13:00:40] 📉 [Pivot-An] 市場の停滞を検知。新領域の探索を検討します...
+🤖 思考モデル: models/gemini-2.5-pro
+⚠️ 429制限検知。5秒待機します...
+🤖 思考モデル: models/gemini-2.5-flash-lite
+[2026-03-21 13:00:52] 🚀 [Pivot-An] ピボット案: 承知いたしました。実業家として、現在のメイン市場（LoL/ゲーム）のトレンドが弱まっている状況を踏まえ、次に関連性が高く、かつ熱量の高い市場を1つ提案させていただきます。
+
+## 提案市場：AIを活用...
+[2026-03-21 13:00:52] 🔍 [AdminAn] Step 4/12: プロジェクト全体の課題を自律スキャン中...
+[2026-03-21 13:00:54] 📜 [StrategyAn] Step 5/12: 今日のフック立案 (Strategist)...
+[2026-03-21 13:00:54] 🎨 [CreativeAn] Step 6/12: 内部ディベートを経てコンテンツを生成...
+🤖 思考モデル: models/gemini-2.5-pro
+⚠️ 429制限検知。5秒待機します...
+🤖 思考モデル: models/gemini-2.5-flash-lite
+🤖 思考モデル: models/gemini-2.5-flash-lite
+[2026-03-21 13:01:08] ✅ 監査合格 (Score: 92)
+[2026-03-21 13:01:08] 💾 ドラフトを保存しました (Score: 92): draft_20260321_1301_s92.md
+[2026-03-21 13:01:08] Step 5/6: 全成果物のスマホ同期 (Ship)...
+  [Ship] Updated: [Foundation] ANTIGRAVITY
+  [Ship] Updated: [Foundation] action_plan
+  [Ship] Updated: [Foundation] ANTIGRAVITY
+  [Ship] Updated: [Foundation] failures
+  [Ship] Updated: [Foundation] mission
+  [Ship] Updated: [Foundation] monetization_strategy
+  [Ship] Updated: [Foundation] ng_words
+  [Ship] Created: [Foundation] okr
+  [Ship] Updated: [Foundation] roadmap
+  [Ship] Updated: [Foundation] rules_evolution
+  [Ship] Updated: [Foundation] strategy
+  [Ship] Updated: [Foundation] target_client
+  [Ship] Updated: [Foundation] voice
+  [Ship] Updated: [Foundation] wins
+  [Ship] Updated: [Report] daily_report_2026-03-14
+  [Ship] Updated: [Report] shyvana_jg_p2606_deep_dive
+  [Ship] Updated: [Draft] draft_20260318_0014
+  [Ship] Updated: [Draft] draft_20260318_0018
+  [Ship] Updated: [Draft] draft_20260318_0019
+  [Ship] Updated: [Draft] draft_20260318_0027
+  [Ship] Updated: [Draft] draft_20260318_0035
+  [Ship] Updated: [Draft] draft_20260318_0036
+  [Ship] Updated: [Draft] draft_20260318_0038
+  [Ship] Updated: [Draft] draft_20260318_0045_s50
+  [Ship] Updated: [Draft] draft_20260318_0100_s50
+  [Ship] Updated: [Draft] draft_20260318_0123_s50
+  [Ship] Updated: [Draft] draft_20260318_1617_s95
+  [Ship] Updated: [Draft] draft_20260318_1701_s95
+  [Ship] Updated: [Draft] draft_20260318_1802_s95
+  [Ship] Updated: [Draft] draft_20260318_1902_s95
+  [Ship] Updated: [Draft] draft_20260318_2001_s50
+  [Ship] Updated: [Draft] draft_20260318_2100_s50
+  [Ship] Updated: [Draft] draft_20260318_2201_s50
+  [Ship] Updated: [Draft] draft_20260318_2301_s50
+  [Ship] Updated: [Draft] draft_20260319_0001_s50
+  [Ship] Updated: [Draft] draft_20260319_0101_s50
+  [Ship] Updated: [Draft] draft_20260319_2104_s100
+  [Ship] Updated: [Draft] draft_20260319_2202_s90
+  [Ship] Updated: [Draft] draft_20260320_0002_s100
+  [Ship] Updated: [Draft] draft_20260320_0101_s50
+  [Ship] Updated: [Draft] draft_20260320_0201_s50
+  [Ship] Updated: [Draft] draft_20260320_0307_s50
+  [Ship] Updated: [Draft] draft_20260320_1356_s50
+  [Ship] Updated: [Draft] draft_20260320_1402_s50
+  [Ship] Updated: [Draft] draft_20260320_2202_s95
+  [Ship] Updated: [Draft] draft_20260321_0301_s70
+  [Ship] Updated: [Draft] draft_20260321_0801_s80
+  [Ship] Created: [Draft] draft_20260321_1301_s92
+  [Ship] Updated: [Draft] draft_self_introduction_hub
+  [Ship] Updated: [Draft] draft_shyvana_1_26_06_guide
+[2026-03-21 13:08:06] Step 7/9: 日報の自動生成 (Daily Report)...
+[2026-03-21 13:08:06] ⏩ 日報は既に存在します: 2026-03-21.md
+[2026-03-21 13:08:06] 🧺 [AdminAn] Step 9/12: 高評価ドラフトの資産化...
+[2026-03-21 13:08:06] ❌ サイクル実行中に深刻なエラーが発生しました: 'OmniAgent' object has no attribute 'harvest_assets'
+[2026-03-21 13:08:06] Traceback (most recent call last):
+  File "D:\my_work\02_intelligence\intelligence\omni_agent.py", line 137, in run_cycle
+    self.harvest_assets()
+    ^^^^^^^^^^^^^^^^^^^
+AttributeError: 'OmniAgent' object has no attribute 'harvest_assets'
+
+[2026-03-21 13:08:06] 🩹 [AdminAn] 自己修復プロセスを開始します...
+🤖 思考モデル: models/gemini-2.5-pro
+⚠️ 429制限検知。5秒待機します...
+🤖 思考モデル: models/gemini-2.5-flash-lite
+[2026-03-21 13:08:18] 📝 [AdminAn] 修正案を作成し、patches/ に保存しました。
