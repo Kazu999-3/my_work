@@ -171,7 +171,7 @@ class OmniAgent:
         # add_task を呼ぶ
         res, msg = add_task(f"【要確認】{title}")
         if res:
-             # 作成された直後のページのステータスを更新する
+             # 作成された直後のページのステータスを更新する（オプション設定などのため失敗する可能性があるが、タイトルで拾えるので続行）
              try:
                  url = f"https://api.notion.com/v1/databases/{NOTION_TASKS_DB_ID}/query"
                  headers = {
@@ -185,9 +185,11 @@ class OmniAgent:
                      status_prop = get_prop_name(NOTION_TASKS_DB_ID, ["ステータス", "Status", "進捗"])
                      update_url = f"https://api.notion.com/v1/pages/{latest_page_id}"
                      payload = {"properties": {status_prop: {"status": {"name": "Human Review Required"}}}}
-                     requests.patch(update_url, headers=headers, json=payload)
-             except:
-                 pass
+                     u_res = requests.patch(update_url, headers=headers, json=payload)
+                     if u_res.status_code != 200:
+                         self.log(f"⚠️ ステータス更新はスキップされました（環境依存）: {u_res.status_code}")
+             except Exception as e:
+                 self.log(f"⚠️ ステータス更新中に軽微なエラー: {e}")
         return res, msg
 
     async def admin_an_self_heal(self, error_msg, traceback_str):

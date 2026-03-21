@@ -109,7 +109,8 @@ def get_human_tasks():
             "Content-Type": "application/json"
         }
         
-        # 人間用のアクション（Statusが「要確認」系、またはカテゴリが「Human」系）
+        # 人間用のアクション（Statusが「要確認」系、カテゴリが「Human」系、またはタイトルに「【要確認】」を含む）
+        name_prop = get_prop_name(NOTION_TASKS_DB_ID, ["名前", "Name", "Task Name"])
         payload = {
             "filter": {
                 "or": [
@@ -124,6 +125,10 @@ def get_human_tasks():
                     {
                         "property": "Category",
                         "select": {"equals": "Human Task"}
+                    },
+                    {
+                        "property": name_prop,
+                        "title": {"contains": "【要確認】"}
                     }
                 ]
             }
