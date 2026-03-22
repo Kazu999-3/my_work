@@ -5735,3 +5735,318 @@ https://github.com/google-gemini/deprecated-generative-ai-python/blob/main/READM
   import google.generativeai as genai
 💡 OmniSyncPro: 安定版エンジンを起動しました(requests仕様)
 [2026-03-22 16:00:09] ⏭️ 前回のサイクルから 4h 経過していないためスキップします。
+D:\my_work\02_intelligence\intelligence\trend_watcher.py:8: FutureWarning: 
+
+All support for the `google.generativeai` package has ended. It will no longer be receiving 
+updates or bug fixes. Please switch to the `google.genai` package as soon as possible.
+See README for more details:
+
+https://github.com/google-gemini/deprecated-generative-ai-python/blob/main/README.md
+
+  import google.generativeai as genai
+💡 OmniSyncPro: 安定版エンジンを起動しました(requests仕様)
+[2026-03-22 17:00:09] 🚀 Omni-Agent 2.5: 「自律商社アンちゃん」の超知能サイクルを開始します。
+[2026-03-22 17:00:09] 📥 [InputAn] Step -1/12: Notion からの直接指示を確認中...
+⏳ Readyタスクのチェックを開始します...
+🔍 DB (ID: 32061cf4543980d8a093d19d017ebcfc) から Ready タスクを取得中...
+📡 API応答: 0 件の Ready タスクを発見
+☕ Readyタスクはありません。
+[2026-03-22 17:00:10] 🎯 [GoalAn] Step 0/12: 週次目標 (OKR) の確認...
+[2026-03-22 17:00:10] 📡 [ScoutAn] Step 1/12: 市場トレンドの偵察...
+🚀 アンちゃん・トレンドウォッチャー Pro 起動
+🔍 Lolalyticsから最新メタ情報をスカウティング中...
+🌐 ターゲットURLに移動中: https://lolalytics.com/lol/tierlist/?lane=jungle
+⏳ ページ読み込み完了。追加待機中...
+🧬 チャンピオンデータの抽出を開始...
+【Lolalytics最新トレンド - Jungle】
+- Graves: Tier S+ (勝率 ??%)
+- Sylas: Tier S (勝率 ??%)
+- Rek'Sai: Tier S (勝率 ??%)
+- Naafiri: Tier S (勝率 ??%)
+- Dr. Mundo: Tier D (勝率 ??%)
+- Jarvan IV: Tier S- (勝率 ??%)
+- Briar: Tier B (勝率 ??%)
+- Lee Sin: Tier S (勝率 ??%)
+- Nunu & Willump: Tier A+ (勝率 ??%)
+- Xin Zhao: Tier A+ (勝率 ??%)
+
+💡 企画案を立案中...
+🤖 思考モデル: models/gemini-2.5-flash-lite
+DEBUG: Gemini Response:
+```json
+[
+  {
+    "title": "【初心者必見】S+ティアGravesでジャングルを支配！勝率を爆上げする ekoなジャングリングとガンク術",
+    "ladder_step": "2.エントリー(教育)",
+    "reason": "Gravesは現在Tier S+という圧倒的な性能を誇り、多くのプレイヤーが興味を持っている。初心者でも扱いやすく、効率的なジャングリングとガンクの基本を解説することで、記事の読了率と満足度を高め、有料コンテンツへの誘導につなげる。",
+    "outline": [
+      "なぜGravesは今最強なのか？Tier S+の秘密を徹底解説",
+      "Gravesの ekoなジャングリングルート：最速クリアとバフ管理",
+      "序盤から主導権を握る！効果的なガンクタイミングと立ち回り",
+      "Gravesが輝く！集団戦での役割とチャンピオン別カウンター",
+      "勝率をさらに引き上げる！Gravesのビルドとルーン徹底解説"
+    ]
+  },
+  {
+    "title": "【勝率60%超え】Sylas・Rek'Sai・Naafiri・Lee Sin… 採用率激増のSティアジャングラー徹底比較＆メタ適応戦略",
+    "ladder_step": "3.中価格帯(信頼)",
+    "reason": "Sティアに複数の強力なジャングラーが存在する現状は、プレイヤーにとって「どのチャンピオンを選ぶべきか」という悩みを抱えている。これらのチャンピオンを詳細に比較し、それぞれの強みを最大限に活かす戦略を解説することで、読者の意思決定を助け、信頼性の高い情報として価値を提供する。",
+    "outline": [
+      "Sティアジャングラー徹底比較：Sylas, Rek'Sai, Naafiri, Lee Sinの長所・短所",
+      "メタに合わせる！状況別チャンピオン選択ガイド",
+      "各Sティアジャングラーの ekoなジャングルプランとガンク戦略",
+      "相手のSティアジャングラーを封じる！カウンターピック＆プレイ",
+      "Sティアジャングラーで勝率を安定させる！中盤以降の立ち回り"
+    ]
+  },
+  {
+    "title": "【勝率を諦めない！】Tier D Dr. Mundo・Tier B Briar から学ぶ！「負けパターン」回避と逆転勝利への道",
+    "ladder_step": "2.エントリー(教育)",
+    "reason": "Tier DのDr. MundoやTier BのBriarは、現在のメタでは苦戦しているプレイヤーが多い。しかし、これらのチャンピオンを「なぜ勝てないのか」を分析し、「負けパターン」を回避するための具体的な戦略を解説することで、読者が自身のプレイを改善するヒントを得られる。これは、上位ティアのチャンピオンだけではなく、あらゆる状況で役立つ情報として価値を持つ。",
+    "outline": [
+      "なぜDr. MundoはTier Dなのか？弱点と対策を徹底分析",
+      "BriarはなぜTier Bなのか？ポテンシャルを引き出すための課題",
+      "「負けパターン」に陥らないためのジャングルプレイングの基本",
+      "不利な状況から逆転！意識すべき立ち回りと考え方",
+      "メタに囚われない！ どんなチャンピオンでも勝率を上げるためのマインドセット"
+    ]
+  }
+]
+```
+DEBUG: Notion Payload:
+{
+  "parent": {
+    "database_id": "32061cf4543980d8a093d19d017ebcfc"
+  },
+  "properties": {
+    "名前": {
+      "title": [
+        {
+          "type": "text",
+          "text": {
+            "content": "【トレンド速報】【初心者必見】S+ティアGravesでジャングルを支配！勝率を爆上げする ekoなジャングリングとガンク術"
+          }
+        }
+      ]
+    },
+    "ステータス": {
+      "status": {
+        "name": "Idea"
+      }
+    }
+  },
+  "children": [
+    {
+      "object": "block",
+      "type": "paragraph",
+      "paragraph": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "Gravesは現在Tier S+という圧倒的な性能を誇り、多くのプレイヤーが興味を持っている。初心者でも扱いやすく、効率的なジャングリングとガンクの基本を解説することで、記事の読了率と満足度を高め、有料コンテンツへの誘導につなげる。"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "object": "block",
+      "type": "heading_2",
+      "heading_2": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "📝 構成案"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "object": "block",
+      "type": "paragraph",
+      "paragraph": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "なぜGravesは今最強なのか？Tier S+の秘密を徹底解説\nGravesの ekoなジャングリングルート：最速クリアとバフ管理\n序盤から主導権を握る！効果的なガンクタイミングと立ち回り\nGravesが輝く！集団戦での役割とチャンピオン別カウンター\n勝率をさらに引き上げる！Gravesのビルドとルーン徹底解説"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
+✅ Notion投稿成功: 【初心者必見】S+ティアGravesでジャングルを支配！勝率を爆上げする ekoなジャングリングとガンク術
+DEBUG: Notion Payload:
+{
+  "parent": {
+    "database_id": "32061cf4543980d8a093d19d017ebcfc"
+  },
+  "properties": {
+    "名前": {
+      "title": [
+        {
+          "type": "text",
+          "text": {
+            "content": "【トレンド速報】【勝率60%超え】Sylas・Rek'Sai・Naafiri・Lee Sin… 採用率激増のSティアジャングラー徹底比較＆メタ適応戦略"
+          }
+        }
+      ]
+    },
+    "ステータス": {
+      "status": {
+        "name": "Idea"
+      }
+    }
+  },
+  "children": [
+    {
+      "object": "block",
+      "type": "paragraph",
+      "paragraph": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "Sティアに複数の強力なジャングラーが存在する現状は、プレイヤーにとって「どのチャンピオンを選ぶべきか」という悩みを抱えている。これらのチャンピオンを詳細に比較し、それぞれの強みを最大限に活かす戦略を解説することで、読者の意思決定を助け、信頼性の高い情報として価値を提供する。"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "object": "block",
+      "type": "heading_2",
+      "heading_2": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "📝 構成案"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "object": "block",
+      "type": "paragraph",
+      "paragraph": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "Sティアジャングラー徹底比較：Sylas, Rek'Sai, Naafiri, Lee Sinの長所・短所\nメタに合わせる！状況別チャンピオン選択ガイド\n各Sティアジャングラーの ekoなジャングルプランとガンク戦略\n相手のSティアジャングラーを封じる！カウンターピック＆プレイ\nSティアジャングラーで勝率を安定させる！中盤以降の立ち回り"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
+✅ Notion投稿成功: 【勝率60%超え】Sylas・Rek'Sai・Naafiri・Lee Sin… 採用率激増のSティアジャングラー徹底比較＆メタ適応戦略
+DEBUG: Notion Payload:
+{
+  "parent": {
+    "database_id": "32061cf4543980d8a093d19d017ebcfc"
+  },
+  "properties": {
+    "名前": {
+      "title": [
+        {
+          "type": "text",
+          "text": {
+            "content": "【トレンド速報】【勝率を諦めない！】Tier D Dr. Mundo・Tier B Briar から学ぶ！「負けパターン」回避と逆転勝利への道"
+          }
+        }
+      ]
+    },
+    "ステータス": {
+      "status": {
+        "name": "Idea"
+      }
+    }
+  },
+  "children": [
+    {
+      "object": "block",
+      "type": "paragraph",
+      "paragraph": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "Tier DのDr. MundoやTier BのBriarは、現在のメタでは苦戦しているプレイヤーが多い。しかし、これらのチャンピオンを「なぜ勝てないのか」を分析し、「負けパターン」を回避するための具体的な戦略を解説することで、読者が自身のプレイを改善するヒントを得られる。これは、上位ティアのチャンピオンだけではなく、あらゆる状況で役立つ情報として価値を持つ。"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "object": "block",
+      "type": "heading_2",
+      "heading_2": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "📝 構成案"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "object": "block",
+      "type": "paragraph",
+      "paragraph": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "なぜDr. MundoはTier Dなのか？弱点と対策を徹底分析\nBriarはなぜTier Bなのか？ポテンシャルを引き出すための課題\n「負けパターン」に陥らないためのジャングルプレイングの基本\n不利な状況から逆転！意識すべき立ち回りと考え方\nメタに囚われない！ どんなチャンピオンでも勝率を上げるためのマインドセット"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
+✅ Notion投稿成功: 【勝率を諦めない！】Tier D Dr. Mundo・Tier B Briar から学ぶ！「負けパターン」回避と逆転勝利への道
+[2026-03-22 17:00:43] 🧠 [StrategyAn] Step 2/6: 市場の急所を突く自律提案 (Proactive Proposal)...
+[2026-03-22 17:00:43] 📉 [Pivot-An] 市場の停滞を検知。新領域の探索を検討します...
+🤖 思考モデル: models/gemini-2.5-pro
+⚠️ 429制限検知。5秒待機します...
+🤖 思考モデル: models/gemini-2.5-flash-lite
+[2026-03-22 17:00:54] 🚀 [Pivot-An] ピボット案: 承知いたしました。実業家として、現在のメイン市場（LoL/ゲーム）のトレンドの低下を踏まえ、次に熱量が高く、かつ関連性の高い市場を提案させていただきます。
+
+**提案市場：AIを活用した「ゲーム体験向...
+[2026-03-22 17:00:54] 🔍 [AdminAn] Step 4/12: プロジェクト全体の課題を自律スキャン中...
+[2026-03-22 17:00:56] 📜 [StrategyAn] Step 5/12: 今日のフック立案 (Strategist)...
+[2026-03-22 17:00:56] 🎨 [CreativeAn] Step 6/12: 内部ディベートを経てコンテンツを生成...
+🤖 思考モデル: models/gemini-2.5-pro
+⚠️ 429制限検知。5秒待機します...
+🤖 思考モデル: models/gemini-2.5-flash-lite
+🤖 思考モデル: models/gemini-2.5-flash-lite
+[2026-03-22 17:01:10] ✅ 監査合格 (Score: 75)
+[2026-03-22 17:01:10] 💾 ドラフトを保存しました (Score: 75): draft_20260322_1701_s75.md
+[2026-03-22 17:01:10] Step 5/6: 全成果物のスマホ同期 (Ship)...
+[2026-03-22 17:10:47] Step 7/9: 日報の自動生成 (Daily Report)...
+[2026-03-22 17:10:47] ⏩ 日報は既に存在します: 2026-03-22.md
+[2026-03-22 17:10:47] 🧺 [AdminAn] Step 9/12: 高評価ドラフトの資産化...
+[2026-03-22 17:10:47] ❌ サイクル実行中に深刻なエラーが発生しました: 'OmniAgent' object has no attribute 'harvest_assets'
+[2026-03-22 17:10:47] Traceback (most recent call last):
+  File "D:\my_work\02_intelligence\intelligence\omni_agent.py", line 145, in run_cycle
+    self.harvest_assets()
+    ^^^^^^^^^^^^^^^^^^^
+AttributeError: 'OmniAgent' object has no attribute 'harvest_assets'
+
+[2026-03-22 17:10:47] 🩹 [AdminAn] 自己修復プロセスを開始します...
+🤖 思考モデル: models/gemini-2.5-pro
+⚠️ 429制限検知。5秒待機します...
+🤖 思考モデル: models/gemini-2.5-flash-lite
+[2026-03-22 17:11:06] 📝 [AdminAn] 修正案を作成し、patches/ に保存しました。
