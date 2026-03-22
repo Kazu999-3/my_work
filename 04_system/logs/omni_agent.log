@@ -512,3 +512,4 @@ AttributeError: 'OmniAgent' object has no attribute 'harvest_assets'
 
 [2026-03-22 13:08:39] 🩹 [AdminAn] 自己修復プロセスを開始します...
 [2026-03-22 13:09:05] 📝 [AdminAn] 修正案を作成し、patches/ に保存しました。
+[2026-03-22 14:00:10] ⏭️ 前回のサイクルから 4h 経過していないためスキップします。
