@@ -6442,3 +6442,352 @@ https://github.com/google-gemini/deprecated-generative-ai-python/blob/main/READM
   import google.generativeai as genai
 💡 OmniSyncPro: 安定版エンジンを起動しました(requests仕様)
 [2026-03-23 00:00:10] ⏭️ 前回のサイクルから 4h 経過していないためスキップします。
+D:\my_work\02_intelligence\intelligence\trend_watcher.py:8: FutureWarning: 
+
+All support for the `google.generativeai` package has ended. It will no longer be receiving 
+updates or bug fixes. Please switch to the `google.genai` package as soon as possible.
+See README for more details:
+
+https://github.com/google-gemini/deprecated-generative-ai-python/blob/main/README.md
+
+  import google.generativeai as genai
+💡 OmniSyncPro: 安定版エンジンを起動しました(requests仕様)
+[2026-03-23 09:00:07] 🚀 Omni-Agent 2.5: 「自律商社アンちゃん」の超知能サイクルを開始します。
+[2026-03-23 09:00:07] 📥 [InputAn] Step -1/12: Notion からの直接指示を確認中...
+⏳ Readyタスクのチェックを開始します...
+🔍 DB (ID: 32061cf4543980d8a093d19d017ebcfc) から Ready タスクを取得中...
+📡 API応答: 0 件の Ready タスクを発見
+☕ Readyタスクはありません。
+[2026-03-23 09:00:10] 🎯 [GoalAn] Step 0/12: 週次目標 (OKR) の確認...
+[2026-03-23 09:00:10] 📝 [GoalAn] 今週の経営目標を設定します...
+🤖 思考モデル: models/gemini-2.5-pro
+⚠️ 429制限検知。5秒待機します...
+🤖 思考モデル: models/gemini-2.5-flash-lite
+[2026-03-23 09:00:19] 📡 [ScoutAn] Step 1/12: 市場トレンドの偵察...
+🚀 アンちゃん・トレンドウォッチャー Pro 起動
+🔍 Lolalyticsから最新メタ情報をスカウティング中...
+🌐 ターゲットURLに移動中: https://lolalytics.com/lol/tierlist/?lane=jungle
+⏳ ページ読み込み完了。追加待機中...
+🧬 チャンピオンデータの抽出を開始...
+【Lolalytics最新トレンド - Jungle】
+- Graves: Tier S+ (勝率 ??%)
+- Sylas: Tier S (勝率 ??%)
+- Rek'Sai: Tier S (勝率 ??%)
+- Naafiri: Tier S (勝率 ??%)
+- Lee Sin: Tier S (勝率 ??%)
+- Elise: Tier E (勝率 ??%)
+- Xin Zhao: Tier S- (勝率 ??%)
+- Jarvan IV: Tier S- (勝率 ??%)
+- Briar: Tier B (勝率 ??%)
+- Nunu & Willump: Tier A+ (勝率 ??%)
+
+💡 企画案を立案中...
+🤖 思考モデル: models/gemini-2.5-flash-lite
+DEBUG: Gemini Response:
+```json
+[
+  {
+    "title": "【決定版】GravesでS+ tierを爆進！ jungleメタを制圧する最強ビルド＆立ち回り完全解説",
+    "ladder_step": "3.中価格帯(信頼)",
+    "reason": "GravesがS+ tierという圧倒的な強さを持つ現状、そのポテンシャルを最大限に引き出す情報への需要は非常に高い。勝率 ??%という具体的な数字（データがあれば加味）をフックに、読者が「この情報で勝てる」と確信できるような、詳細なビルドパス、ジャングルルート、ガンクタイミング、集団戦での立ち回りまで網羅することで、購入の動機付けとする。他のS tierチャンピオンとの差別化や、Tier EのEliseに差をつける方法も盛り込み、メタにおけるGravesの優位性を強調する。",
+    "outline": [
+      "GravesがS+ tierに君臨する理由：データで見る圧倒的強さ",
+      "【最新】Graves 最強ビルドパス完全解析（コアアイテム、状況別選択肢）",
+      "ジャングルルート徹底解説：最短でのパワースパイク到達法",
+      "ガンク成功率を劇的に上げる！ 意識すべきポイントとタイミング",
+      "集団戦でキャリー！ Gravesの立ち回り＆エンゲージ/ディスエンゲージ術",
+      "Tier EのEliseに差をつける！ Graves有利なマッチアップ・立ち回り",
+      "S tier jungler（Sylas, Rek'Sai, Naafiri, Lee Sin）対策＆Gravesでの対処法",
+      "S- tier jungler (Xin Zhao, Jarvan IV) との差別化戦略",
+      "Tier BのBriar、Tier A+のNunu & Willumpを食う！jg対決必勝法",
+      "Gravesを使いこなしてランクを爆速で駆け上がるための最終アドバイス"
+    ]
+  },
+  {
+    "title": "勝率 ??%！ Jungleメタの裏側を暴く：S tierチャンプ徹底比較＆メタ外からの奇襲戦略",
+    "ladder_step": "2.エントリー(教育)",
+    "reason": "Lolalyticsの最新データから、S+ tierのGravesを筆頭に、S tierのSylas, Rek'Sai, Naafiri, Lee Sinといった強力なチャンピオン群の傾向を解説。それぞれの強み・弱み、そしてそれらをどう活かすか、あるいはどう対抗するかという視点を提供することで、読者のゲーム理解度を深める。さらに、Tier EのEliseやTier BのBriarといった、一般的には不利とされるチャンピオンでも勝てる可能性を示すことで、読者の「自分にもできるかも」という期待感を煽り、購入へと繋げる。メタの表面だけでなく、その裏側にある戦略まで掘り下げることで、より深い情報価値を提供する。",
+    "outline": [
+      "【必見】Jungleメタを支配するS+ & S tierチャンプ徹底解剖（Graves, Sylas, Rek'Sai, Naafiri, Lee Sin）",
+      "各S tierチャンプの強み・弱みと、それを活かすジャングルルート＆ガンク戦略",
+      "なぜEliseはTier Eなのか？ メタから外れた理由と、それでも勝つための限定的な戦術",
+      "Xin Zhao, Jarvan IV (S-) を超える！ Jungleパワーランキングの真実",
+      "Briar (Tier B) をメタゲームで活かす！ 隠れたポテンシャルと運用方法",
+      "Nunu & Willump (Tier A+) との差別化！ Jungleプレイスタイルの多様性",
+      "メタチャンピオン対策：敵のS tier junglerを無力化する counter play",
+      "メタ外からの逆襲！Tier E, BをS tierに引き上げるための奇襲ビルド＆プレイスタイル",
+      "「勝率 ??%」は本当か？ Lolalyticsデータから読み解くJungleメタの深層",
+      "この知識で君もJungleマスター！ メタを理解し、勝率を上げるための全体戦略"
+    ]
+  },
+  {
+    "title": "【図解】Jungle初〜中級者必見！Tier EのEliseからS+ Gravesまで、全tierチャンプの「勝てる」ジャングルルート＆ガンク完全ガイド",
+    "ladder_step": "1.無料(認知)",
+    "reason": "Jungle初心者や中級者が最もつまずきやすい「ジャングルルート」と「ガンクタイミング」に特化。Lolalyticsのtierリスト（S+ Graves、S Sylas、Tier E Eliseなど）を基準に、各tierの代表的なチャンピオンごとに「勝てる」ジャングルルートとガンクのタイミングを具体的に図解で解説することで、視覚的に理解しやすく、すぐに実践できる情報を提供する。高tierチャンピオンだけでなく、低tierチャンピオンでも「勝てる」ルート・ガンクが存在することを示すことで、読者の選択肢を広げ、noteへの関心を高める。これは、より深い戦略記事（3.中価格帯）への導入としても機能する。",
+    "outline": [
+      "【超入門】Jungleで勝つための第一歩：ジャングルルートの基本",
+      "S+ Graves & S Sylas: 敵を圧倒する最速パワースパイク＆ガンクルート",
+      "S Rek'Sai, Naafiri, Lee Sin: 状況別最適ジャングルルート＆ガンクポイント",
+      "S- Xin Zhao, Jarvan IV: 序盤からプレッシャーをかけるための guerilla tactics",
+      "Tier B Briar & Tier A+ Nunu & Willump: 独自の強みを活かすルート＆ガンク戦略",
+      "【最重要】Tier E Elise: なぜ勝てない？ でも勝てる！ 限定的ながら強力なガンクプラン",
+      "敵JG vs 味方JG：相手の動きを予測し、有利なガンクを仕掛ける方法",
+      "レーナーへの声かけ術：ガンク成功率を最大化するコミュニケーション",
+      "ジャングルルートを崩された時のリカバリープラン",
+      "あなたの知らないJungleの秘密：Lolalyticsデータが語る「勝てる」ルートの共通点"
+    ]
+  }
+]
+```
+DEBUG: Notion Payload:
+{
+  "parent": {
+    "database_id": "32061cf4543980d8a093d19d017ebcfc"
+  },
+  "properties": {
+    "名前": {
+      "title": [
+        {
+          "type": "text",
+          "text": {
+            "content": "【トレンド速報】【決定版】GravesでS+ tierを爆進！ jungleメタを制圧する最強ビルド＆立ち回り完全解説"
+          }
+        }
+      ]
+    },
+    "ステータス": {
+      "status": {
+        "name": "Idea"
+      }
+    }
+  },
+  "children": [
+    {
+      "object": "block",
+      "type": "paragraph",
+      "paragraph": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "GravesがS+ tierという圧倒的な強さを持つ現状、そのポテンシャルを最大限に引き出す情報への需要は非常に高い。勝率 ??%という具体的な数字（データがあれば加味）をフックに、読者が「この情報で勝てる」と確信できるような、詳細なビルドパス、ジャングルルート、ガンクタイミング、集団戦での立ち回りまで網羅することで、購入の動機付けとする。他のS tierチャンピオンとの差別化や、Tier EのEliseに差をつける方法も盛り込み、メタにおけるGravesの優位性を強調する。"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "object": "block",
+      "type": "heading_2",
+      "heading_2": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "📝 構成案"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "object": "block",
+      "type": "paragraph",
+      "paragraph": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "GravesがS+ tierに君臨する理由：データで見る圧倒的強さ\n【最新】Graves 最強ビルドパス完全解析（コアアイテム、状況別選択肢）\nジャングルルート徹底解説：最短でのパワースパイク到達法\nガンク成功率を劇的に上げる！ 意識すべきポイントとタイミング\n集団戦でキャリー！ Gravesの立ち回り＆エンゲージ/ディスエンゲージ術\nTier EのEliseに差をつける！ Graves有利なマッチアップ・立ち回り\nS tier jungler（Sylas, Rek'Sai, Naafiri, Lee Sin）対策＆Gravesでの対処法\nS- tier jungler (Xin Zhao, Jarvan IV) との差別化戦略\nTier BのBriar、Tier A+のNunu & Willumpを食う！jg対決必勝法\nGravesを使いこなしてランクを爆速で駆け上がるための最終アドバイス"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
+✅ Notion投稿成功: 【決定版】GravesでS+ tierを爆進！ jungleメタを制圧する最強ビルド＆立ち回り完全解説
+DEBUG: Notion Payload:
+{
+  "parent": {
+    "database_id": "32061cf4543980d8a093d19d017ebcfc"
+  },
+  "properties": {
+    "名前": {
+      "title": [
+        {
+          "type": "text",
+          "text": {
+            "content": "【トレンド速報】勝率 ??%！ Jungleメタの裏側を暴く：S tierチャンプ徹底比較＆メタ外からの奇襲戦略"
+          }
+        }
+      ]
+    },
+    "ステータス": {
+      "status": {
+        "name": "Idea"
+      }
+    }
+  },
+  "children": [
+    {
+      "object": "block",
+      "type": "paragraph",
+      "paragraph": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "Lolalyticsの最新データから、S+ tierのGravesを筆頭に、S tierのSylas, Rek'Sai, Naafiri, Lee Sinといった強力なチャンピオン群の傾向を解説。それぞれの強み・弱み、そしてそれらをどう活かすか、あるいはどう対抗するかという視点を提供することで、読者のゲーム理解度を深める。さらに、Tier EのEliseやTier BのBriarといった、一般的には不利とされるチャンピオンでも勝てる可能性を示すことで、読者の「自分にもできるかも」という期待感を煽り、購入へと繋げる。メタの表面だけでなく、その裏側にある戦略まで掘り下げることで、より深い情報価値を提供する。"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "object": "block",
+      "type": "heading_2",
+      "heading_2": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "📝 構成案"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "object": "block",
+      "type": "paragraph",
+      "paragraph": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "【必見】Jungleメタを支配するS+ & S tierチャンプ徹底解剖（Graves, Sylas, Rek'Sai, Naafiri, Lee Sin）\n各S tierチャンプの強み・弱みと、それを活かすジャングルルート＆ガンク戦略\nなぜEliseはTier Eなのか？ メタから外れた理由と、それでも勝つための限定的な戦術\nXin Zhao, Jarvan IV (S-) を超える！ Jungleパワーランキングの真実\nBriar (Tier B) をメタゲームで活かす！ 隠れたポテンシャルと運用方法\nNunu & Willump (Tier A+) との差別化！ Jungleプレイスタイルの多様性\nメタチャンピオン対策：敵のS tier junglerを無力化する counter play\nメタ外からの逆襲！Tier E, BをS tierに引き上げるための奇襲ビルド＆プレイスタイル\n「勝率 ??%」は本当か？ Lolalyticsデータから読み解くJungleメタの深層\nこの知識で君もJungleマスター！ メタを理解し、勝率を上げるための全体戦略"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
+✅ Notion投稿成功: 勝率 ??%！ Jungleメタの裏側を暴く：S tierチャンプ徹底比較＆メタ外からの奇襲戦略
+DEBUG: Notion Payload:
+{
+  "parent": {
+    "database_id": "32061cf4543980d8a093d19d017ebcfc"
+  },
+  "properties": {
+    "名前": {
+      "title": [
+        {
+          "type": "text",
+          "text": {
+            "content": "【トレンド速報】【図解】Jungle初〜中級者必見！Tier EのEliseからS+ Gravesまで、全tierチャンプの「勝てる」ジャングルルート＆ガンク完全ガイド"
+          }
+        }
+      ]
+    },
+    "ステータス": {
+      "status": {
+        "name": "Idea"
+      }
+    }
+  },
+  "children": [
+    {
+      "object": "block",
+      "type": "paragraph",
+      "paragraph": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "Jungle初心者や中級者が最もつまずきやすい「ジャングルルート」と「ガンクタイミング」に特化。Lolalyticsのtierリスト（S+ Graves、S Sylas、Tier E Eliseなど）を基準に、各tierの代表的なチャンピオンごとに「勝てる」ジャングルルートとガンクのタイミングを具体的に図解で解説することで、視覚的に理解しやすく、すぐに実践できる情報を提供する。高tierチャンピオンだけでなく、低tierチャンピオンでも「勝てる」ルート・ガンクが存在することを示すことで、読者の選択肢を広げ、noteへの関心を高める。これは、より深い戦略記事（3.中価格帯）への導入としても機能する。"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "object": "block",
+      "type": "heading_2",
+      "heading_2": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "📝 構成案"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "object": "block",
+      "type": "paragraph",
+      "paragraph": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "【超入門】Jungleで勝つための第一歩：ジャングルルートの基本\nS+ Graves & S Sylas: 敵を圧倒する最速パワースパイク＆ガンクルート\nS Rek'Sai, Naafiri, Lee Sin: 状況別最適ジャングルルート＆ガンクポイント\nS- Xin Zhao, Jarvan IV: 序盤からプレッシャーをかけるための guerilla tactics\nTier B Briar & Tier A+ Nunu & Willump: 独自の強みを活かすルート＆ガンク戦略\n【最重要】Tier E Elise: なぜ勝てない？ でも勝てる！ 限定的ながら強力なガンクプラン\n敵JG vs 味方JG：相手の動きを予測し、有利なガンクを仕掛ける方法\nレーナーへの声かけ術：ガンク成功率を最大化するコミュニケーション\nジャングルルートを崩された時のリカバリープラン\nあなたの知らないJungleの秘密：Lolalyticsデータが語る「勝てる」ルートの共通点"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
+✅ Notion投稿成功: 【図解】Jungle初〜中級者必見！Tier EのEliseからS+ Gravesまで、全tierチャンプの「勝てる」ジャングルルート＆ガンク完全ガイド
+[2026-03-23 09:00:50] 🧠 [StrategyAn] Step 2/6: 市場の急所を突く自律提案 (Proactive Proposal)...
+[2026-03-23 09:00:50] 📉 [Pivot-An] 市場の停滞を検知。新領域の探索を検討します...
+🤖 思考モデル: models/gemini-2.5-pro
+⚠️ 429制限検知。5秒待機します...
+🤖 思考モデル: models/gemini-2.5-flash-lite
+[2026-03-23 09:01:02] 🚀 [Pivot-An] ピボット案: 承知いたしました。実業家として、現在のメイン市場（LoL/ゲーム）のトレンドが弱まっている状況を踏まえ、関連性が高く、かつ熱量の高い市場を1つ提案させていただきます。
+
+---
+
+**提案市場：AIを...
+[2026-03-23 09:01:02] 🔍 [AdminAn] Step 4/12: プロジェクト全体の課題を自律スキャン中...
+[2026-03-23 09:01:03] 📜 [StrategyAn] Step 5/12: 今日のフック立案 (Strategist)...
+[2026-03-23 09:01:03] 🎨 [CreativeAn] Step 6/12: 内部ディベートを経てコンテンツを生成...
+🤖 思考モデル: models/gemini-2.5-pro
+⚠️ 429制限検知。5秒待機します...
+🤖 思考モデル: models/gemini-2.5-flash-lite
+🤖 思考モデル: models/gemini-2.5-flash-lite
+[2026-03-23 09:01:15] ⚠️ 監査不合格 (Score: 65): ドラフト全体を通して、AI臭さや定型表現が散見され、減点対象となっています。特に、note記事冒頭の...
+[2026-03-23 09:01:15] 🔄 自動リワークを実行します (1/2)
+[2026-03-23 09:01:15] 🧠 [AdminAn] スタイル自己学習中: 監査失敗の原因を分析しています...
+🤖 思考モデル: models/gemini-2.5-flash-lite
+[2026-03-23 09:01:17] 📝 [AdminAn] 禁止表現ガイドを自律的に更新しました。
+🤖 思考モデル: models/gemini-2.5-pro
+⚠️ 429制限検知。5秒待機します...
+🤖 思考モデル: models/gemini-2.5-flash-lite
+🤖 思考モデル: models/gemini-2.5-flash-lite
+[2026-03-23 09:01:37] ⚠️ 監査不合格 (Score: 60): ドラフトは、AI臭さや定型句の排除という点では一部努力が見られますが、NGワードや禁止事項との抵触、...
+[2026-03-23 09:01:37] ❗ 最大リトライ数に達しました。不格好なまま保存します。
+[2026-03-23 09:01:37] 💾 ドラフトを保存しました (Score: 60): draft_20260323_0901_s60.md
+[2026-03-23 09:01:37] Step 5/6: 全成果物のスマホ同期 (Ship)...
+[2026-03-23 09:10:56] Step 7/9: 日報の自動生成 (Daily Report)...
+🤖 思考モデル: models/gemini-2.5-flash-lite
+[2026-03-23 09:11:00] ✅ 日報を生成しました: 2026-03-23.md
+[2026-03-23 09:11:00] 🧺 [AdminAn] Step 9/12: 高評価ドラフトの資産化...
+[2026-03-23 09:11:00] ❌ サイクル実行中に深刻なエラーが発生しました: 'OmniAgent' object has no attribute 'harvest_assets'
+[2026-03-23 09:11:00] Traceback (most recent call last):
+  File "D:\my_work\02_intelligence\intelligence\omni_agent.py", line 145, in run_cycle
+    self.harvest_assets()
+    ^^^^^^^^^^^^^^^^^^^
+AttributeError: 'OmniAgent' object has no attribute 'harvest_assets'
+
+[2026-03-23 09:11:00] 🩹 [AdminAn] 自己修復プロセスを開始します...
+🤖 思考モデル: models/gemini-2.5-pro
+⚠️ 429制限検知。5秒待機します...
+🤖 思考モデル: models/gemini-2.5-flash-lite
+⚠️ 429制限検知。5秒待機します...
+🤖 思考モデル: models/gemini-2.5-flash
+[2026-03-23 09:12:03] 📝 [AdminAn] 修正案を作成し、patches/ に保存しました。
