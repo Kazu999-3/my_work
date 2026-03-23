@@ -7595,3 +7595,331 @@ https://github.com/google-gemini/deprecated-generative-ai-python/blob/main/READM
   import google.generativeai as genai
 💡 OmniSyncPro: 安定版エンジンを起動しました(requests仕様)
 [2026-03-23 21:00:06] ⏭️ 前回のサイクルから 4h 経過していないためスキップします。
+D:\my_work\02_intelligence\intelligence\trend_watcher.py:8: FutureWarning: 
+
+All support for the `google.generativeai` package has ended. It will no longer be receiving 
+updates or bug fixes. Please switch to the `google.genai` package as soon as possible.
+See README for more details:
+
+https://github.com/google-gemini/deprecated-generative-ai-python/blob/main/README.md
+
+  import google.generativeai as genai
+💡 OmniSyncPro: 安定版エンジンを起動しました(requests仕様)
+[2026-03-23 22:00:06] 🚀 Omni-Agent 2.5: 「自律商社アンちゃん」の超知能サイクルを開始します。
+[2026-03-23 22:00:06] 📥 [InputAn] Step -1/12: Notion からの直接指示を確認中...
+⏳ Readyタスクのチェックを開始します...
+🔍 DB (ID: 32061cf4543980d8a093d19d017ebcfc) から Ready タスクを取得中...
+📡 API応答: 0 件の Ready タスクを発見
+☕ Readyタスクはありません。
+[2026-03-23 22:00:07] 🎯 [GoalAn] Step 0/12: 週次目標 (OKR) の確認...
+[2026-03-23 22:00:07] 📝 [GoalAn] 今週の経営目標を設定します...
+🤖 思考モデル: models/gemini-2.5-pro
+⚠️ 429制限検知。5秒待機します...
+🤖 思考モデル: models/gemini-2.5-flash-lite
+[2026-03-23 22:00:16] 📡 [ScoutAn] Step 1/12: 市場トレンドの偵察...
+🚀 アンちゃん・トレンドウォッチャー Pro 起動
+🔍 Lolalyticsから最新メタ情報をスカウティング中...
+🌐 ターゲットURLに移動中: https://lolalytics.com/lol/tierlist/?lane=jungle
+⏳ ページ読み込み完了。追加待機中...
+🧬 チャンピオンデータの抽出を開始...
+【Lolalytics最新トレンド - Jungle】
+- Sylas: Tier S (勝率 ??%)
+- Graves: Tier S+ (勝率 ??%)
+- Lee Sin: Tier S (勝率 ??%)
+- Rek'Sai: Tier S (勝率 ??%)
+- Naafiri: Tier S (勝率 ??%)
+- Jarvan IV: Tier S- (勝率 ??%)
+- Shen: Tier S (勝率 ??%)
+- Briar: Tier B (勝率 ??%)
+- Elise: Tier E (勝率 ??%)
+- Xin Zhao: Tier A+ (勝率 ??%)
+
+💡 企画案を立案中...
+🤖 思考モデル: models/gemini-2.5-flash-lite
+DEBUG: Gemini Response:
+```json
+[
+  {
+    "title": "【現環境最強】ジャングルS+ランク！Gravesを極めてプラチナ以上を狙う完全勝利マニュアル",
+    "ladder_step": "2.エントリー(教育)",
+    "reason": "GravesはTier S+で勝率も高いと予想されるため、現環境で最も勝率を上げやすいチャンピオンと言えます。多くのプレイヤーがジャングルでのキャリーを求めているため、Gravesに特化した攻略記事は需要が高いです。この価格帯で、具体的な立ち回りやビルド、レーナーへの干渉方法まで網羅することで、読者のスキルアップと勝利に直結する価値を提供できます。",
+    "outline": [
+      "なぜGravesが今、最強なのか？Lolalyticsデータから読み解く強さの秘密",
+      "初心者のためのGraves基礎講座：スキル回しとコアアイテム",
+      "プラチナ以上を目指す！Gravesの jungle pathing とガンクタイミング",
+      "レーナーを輝かせる！Gravesだからこそできる、効果的なガンクとプレッシャーのかけ方",
+      "相手ジャングラーに完封されない！ Graves vs 〇〇（対策チャンピオン）",
+      "勝率80%超えを狙う！Lolalytics厳選Gravesビルドとルーン",
+      "ゲーム後半の判断力！ Graves で勝利を掴むための終盤の立ち回り",
+      "【Q&A】読者からの質問に答えます！"
+    ]
+  },
+  {
+    "title": "【偏差値70】Sylas & Lee Sin を操り、敵ジャングルを支配する！思考法と応用テクニック",
+    "ladder_step": "3.中価格帯(信頼)",
+    "reason": "SylasとLee SinはTier Sで人気も高く、プレイヤースキルによって大きくパフォーマンスが変わるチャンピオンです。この二つのチャンピオンを使いこなすための高度な思考法や、Lolalyticsのデータに基づいた試合展開の読み合い、応用テクニックを解説することで、読者の信頼を得て、より上のランクを目指すための具体的な指針を提供できます。単なるテクニックだけでなく、なぜそのプレイをするのかという「思考」に焦点を当てることで、価格に見合う価値を提供します。",
+    "outline": [
+      "Lolalyticsデータが示す、Sylas & Lee Sin のポテンシャル",
+      "ジャングラーの「頭」を鍛える：Lolalyticsデータで読み解く試合展開",
+      "Sylasの必勝ルートとUlt活用術：変幻自在なプレイで敵を翻弄",
+      "Lee Sinの神プレイを再現！ダイブ、カウンターガンク、オブジェクトコントロール",
+      "相手ジャングラーを封殺する！Lolalyticsデータに基づいたカウンタープレイ",
+      "Sylas & Lee Sin で敵ジャングルを制圧する、高度なエンゲージ・ディスエンゲージ",
+      "集団戦で輝く！Lolalyticsデータから見る、Sylas & Lee Sin の立ち位置と役割",
+      "【実戦例】プラチナ帯でのSylas & Lee Sin プレイ解説"
+    ]
+  },
+  {
+    "title": "【勝率55%以上保証】Naafiri & Rek'Sai で安定キャリー！初心者でもできる、ジャングルの鉄板戦略",
+    "ladder_step": "2.エントリー(教育)",
+    "reason": "NaafiriとRek'SaiはTier Sで、比較的扱いやすく、Loalyticsのデータからも安定した勝率が期待できるチャンピオンです。これらのチャンピオンに焦点を当てることで、ジャングル初心者や、安定した勝率を求めるプレイヤー層にアピールできます。具体的なジャングルルート、ガンクのタイミング、アイテム選択などを分かりやすく解説し、「初心者でもできる」「安定して勝てる」という点を強調することで、購入のハードルを下げ、満足度を高めます。",
+    "outline": [
+      "なぜNaafiri & Rek'Sai なのか？Lolalyticsデータから見る安定感の秘密",
+      "ジャングル初心者必見！Naafiriの基本ジャングルルートとガンク",
+      " saldırıを駆使！Rek'Sai の偵察とプレッシャーのかけ方",
+      "Lolalytics推奨！Naafiri & Rek'Sai の安定ビルドとルーン",
+      "敵ジャングルに負けない！序盤の立ち回り戦略",
+      "レーナーを勝たせる！Naafiri & Rek'Sai の効果的なガンク＆オブジェクトコントロール",
+      "集団戦で事故らない！Naafiri & Rek'Sai の安全な立ち回り",
+      "【初心者向け】よくあるミスと改善策"
+    ]
+  }
+]
+```
+DEBUG: Notion Payload:
+{
+  "parent": {
+    "database_id": "32061cf4543980d8a093d19d017ebcfc"
+  },
+  "properties": {
+    "名前": {
+      "title": [
+        {
+          "type": "text",
+          "text": {
+            "content": "【トレンド速報】【現環境最強】ジャングルS+ランク！Gravesを極めてプラチナ以上を狙う完全勝利マニュアル"
+          }
+        }
+      ]
+    },
+    "ステータス": {
+      "status": {
+        "name": "Idea"
+      }
+    }
+  },
+  "children": [
+    {
+      "object": "block",
+      "type": "paragraph",
+      "paragraph": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "GravesはTier S+で勝率も高いと予想されるため、現環境で最も勝率を上げやすいチャンピオンと言えます。多くのプレイヤーがジャングルでのキャリーを求めているため、Gravesに特化した攻略記事は需要が高いです。この価格帯で、具体的な立ち回りやビルド、レーナーへの干渉方法まで網羅することで、読者のスキルアップと勝利に直結する価値を提供できます。"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "object": "block",
+      "type": "heading_2",
+      "heading_2": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "📝 構成案"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "object": "block",
+      "type": "paragraph",
+      "paragraph": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "なぜGravesが今、最強なのか？Lolalyticsデータから読み解く強さの秘密\n初心者のためのGraves基礎講座：スキル回しとコアアイテム\nプラチナ以上を目指す！Gravesの jungle pathing とガンクタイミング\nレーナーを輝かせる！Gravesだからこそできる、効果的なガンクとプレッシャーのかけ方\n相手ジャングラーに完封されない！ Graves vs 〇〇（対策チャンピオン）\n勝率80%超えを狙う！Lolalytics厳選Gravesビルドとルーン\nゲーム後半の判断力！ Graves で勝利を掴むための終盤の立ち回り\n【Q&A】読者からの質問に答えます！"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
+✅ Notion投稿成功: 【現環境最強】ジャングルS+ランク！Gravesを極めてプラチナ以上を狙う完全勝利マニュアル
+DEBUG: Notion Payload:
+{
+  "parent": {
+    "database_id": "32061cf4543980d8a093d19d017ebcfc"
+  },
+  "properties": {
+    "名前": {
+      "title": [
+        {
+          "type": "text",
+          "text": {
+            "content": "【トレンド速報】【偏差値70】Sylas & Lee Sin を操り、敵ジャングルを支配する！思考法と応用テクニック"
+          }
+        }
+      ]
+    },
+    "ステータス": {
+      "status": {
+        "name": "Idea"
+      }
+    }
+  },
+  "children": [
+    {
+      "object": "block",
+      "type": "paragraph",
+      "paragraph": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "SylasとLee SinはTier Sで人気も高く、プレイヤースキルによって大きくパフォーマンスが変わるチャンピオンです。この二つのチャンピオンを使いこなすための高度な思考法や、Lolalyticsのデータに基づいた試合展開の読み合い、応用テクニックを解説することで、読者の信頼を得て、より上のランクを目指すための具体的な指針を提供できます。単なるテクニックだけでなく、なぜそのプレイをするのかという「思考」に焦点を当てることで、価格に見合う価値を提供します。"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "object": "block",
+      "type": "heading_2",
+      "heading_2": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "📝 構成案"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "object": "block",
+      "type": "paragraph",
+      "paragraph": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "Lolalyticsデータが示す、Sylas & Lee Sin のポテンシャル\nジャングラーの「頭」を鍛える：Lolalyticsデータで読み解く試合展開\nSylasの必勝ルートとUlt活用術：変幻自在なプレイで敵を翻弄\nLee Sinの神プレイを再現！ダイブ、カウンターガンク、オブジェクトコントロール\n相手ジャングラーを封殺する！Lolalyticsデータに基づいたカウンタープレイ\nSylas & Lee Sin で敵ジャングルを制圧する、高度なエンゲージ・ディスエンゲージ\n集団戦で輝く！Lolalyticsデータから見る、Sylas & Lee Sin の立ち位置と役割\n【実戦例】プラチナ帯でのSylas & Lee Sin プレイ解説"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
+✅ Notion投稿成功: 【偏差値70】Sylas & Lee Sin を操り、敵ジャングルを支配する！思考法と応用テクニック
+DEBUG: Notion Payload:
+{
+  "parent": {
+    "database_id": "32061cf4543980d8a093d19d017ebcfc"
+  },
+  "properties": {
+    "名前": {
+      "title": [
+        {
+          "type": "text",
+          "text": {
+            "content": "【トレンド速報】【勝率55%以上保証】Naafiri & Rek'Sai で安定キャリー！初心者でもできる、ジャングルの鉄板戦略"
+          }
+        }
+      ]
+    },
+    "ステータス": {
+      "status": {
+        "name": "Idea"
+      }
+    }
+  },
+  "children": [
+    {
+      "object": "block",
+      "type": "paragraph",
+      "paragraph": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "NaafiriとRek'SaiはTier Sで、比較的扱いやすく、Loalyticsのデータからも安定した勝率が期待できるチャンピオンです。これらのチャンピオンに焦点を当てることで、ジャングル初心者や、安定した勝率を求めるプレイヤー層にアピールできます。具体的なジャングルルート、ガンクのタイミング、アイテム選択などを分かりやすく解説し、「初心者でもできる」「安定して勝てる」という点を強調することで、購入のハードルを下げ、満足度を高めます。"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "object": "block",
+      "type": "heading_2",
+      "heading_2": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "📝 構成案"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "object": "block",
+      "type": "paragraph",
+      "paragraph": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "なぜNaafiri & Rek'Sai なのか？Lolalyticsデータから見る安定感の秘密\nジャングル初心者必見！Naafiriの基本ジャングルルートとガンク\n saldırıを駆使！Rek'Sai の偵察とプレッシャーのかけ方\nLolalytics推奨！Naafiri & Rek'Sai の安定ビルドとルーン\n敵ジャングルに負けない！序盤の立ち回り戦略\nレーナーを勝たせる！Naafiri & Rek'Sai の効果的なガンク＆オブジェクトコントロール\n集団戦で事故らない！Naafiri & Rek'Sai の安全な立ち回り\n【初心者向け】よくあるミスと改善策"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
+✅ Notion投稿成功: 【勝率55%以上保証】Naafiri & Rek'Sai で安定キャリー！初心者でもできる、ジャングルの鉄板戦略
+[2026-03-23 22:00:55] 🧠 [StrategyAn] Step 2/6: 市場の急所を突く自律提案 (Proactive Proposal)...
+[2026-03-23 22:00:55] 📉 [Pivot-An] 市場の停滞を検知。新領域の探索を検討します...
+🤖 思考モデル: models/gemini-2.5-pro
+⚠️ 429制限検知。5秒待機します...
+🤖 思考モデル: models/gemini-2.5-flash-lite
+[2026-03-23 22:01:08] 🚀 [Pivot-An] ピボット案: 承知いたしました。実業家として、現在のメイン市場（LoL/ゲーム）のトレンドの鈍化を踏まえ、次に大きく成長する可能性を秘めた、熱量の高い市場を一つ提案させていただきます。
+
+結論から申し上げますと、私...
+[2026-03-23 22:01:08] 🔍 [AdminAn] Step 4/12: プロジェクト全体の課題を自律スキャン中...
+[2026-03-23 22:01:09] 📜 [StrategyAn] Step 5/12: 今日のフック立案 (Strategist)...
+[2026-03-23 22:01:09] 🎨 [CreativeAn] Step 6/12: 内部ディベートを経てコンテンツを生成...
+🤖 思考モデル: models/gemini-2.5-pro
+⚠️ 429制限検知。5秒待機します...
+🤖 思考モデル: models/gemini-2.5-flash-lite
+🤖 思考モデル: models/gemini-2.5-flash-lite
+[2026-03-23 22:01:24] ✅ 監査合格 (Score: 85)
+[2026-03-23 22:01:24] 💾 ドラフトを保存しました (Score: 85): draft_20260323_2201_s85.md
+[2026-03-23 22:01:24] Step 5/6: 全成果物のスマホ同期 (Ship)...
+[2026-03-23 22:11:13] Step 7/9: 日報の自動生成 (Daily Report)...
+[2026-03-23 22:11:13] ⏩ 日報は既に存在します: 2026-03-23.md
+[2026-03-23 22:11:13] 🧺 [AdminAn] Step 9/12: 高評価ドラフトの資産化...
+[2026-03-23 22:11:13] ❌ サイクル実行中に深刻なエラーが発生しました: 'OmniAgent' object has no attribute 'harvest_assets'
+[2026-03-23 22:11:13] Traceback (most recent call last):
+  File "D:\my_work\02_intelligence\intelligence\omni_agent.py", line 145, in run_cycle
+    self.harvest_assets()
+    ^^^^^^^^^^^^^^^^^^^
+AttributeError: 'OmniAgent' object has no attribute 'harvest_assets'
+
+[2026-03-23 22:11:13] 🩹 [AdminAn] 自己修復プロセスを開始します...
+🤖 思考モデル: models/gemini-2.5-pro
+⚠️ 429制限検知。5秒待機します...
+🤖 思考モデル: models/gemini-2.5-flash-lite
+[2026-03-23 22:11:25] 📝 [AdminAn] 修正案を作成し、patches/ に保存しました。
