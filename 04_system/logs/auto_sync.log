@@ -7216,3 +7216,338 @@ https://github.com/google-gemini/deprecated-generative-ai-python/blob/main/READM
   import google.generativeai as genai
 💡 OmniSyncPro: 安定版エンジンを起動しました(requests仕様)
 [2026-03-23 16:00:08] ⏭️ 前回のサイクルから 4h 経過していないためスキップします。
+D:\my_work\02_intelligence\intelligence\trend_watcher.py:8: FutureWarning: 
+
+All support for the `google.generativeai` package has ended. It will no longer be receiving 
+updates or bug fixes. Please switch to the `google.genai` package as soon as possible.
+See README for more details:
+
+https://github.com/google-gemini/deprecated-generative-ai-python/blob/main/README.md
+
+  import google.generativeai as genai
+💡 OmniSyncPro: 安定版エンジンを起動しました(requests仕様)
+[2026-03-23 17:00:09] 🚀 Omni-Agent 2.5: 「自律商社アンちゃん」の超知能サイクルを開始します。
+[2026-03-23 17:00:09] 📥 [InputAn] Step -1/12: Notion からの直接指示を確認中...
+⏳ Readyタスクのチェックを開始します...
+🔍 DB (ID: 32061cf4543980d8a093d19d017ebcfc) から Ready タスクを取得中...
+📡 API応答: 0 件の Ready タスクを発見
+☕ Readyタスクはありません。
+[2026-03-23 17:00:13] 🎯 [GoalAn] Step 0/12: 週次目標 (OKR) の確認...
+[2026-03-23 17:00:13] 📝 [GoalAn] 今週の経営目標を設定します...
+🤖 思考モデル: models/gemini-2.5-pro
+⚠️ 429制限検知。5秒待機します...
+🤖 思考モデル: models/gemini-2.5-flash-lite
+[2026-03-23 17:00:22] 📡 [ScoutAn] Step 1/12: 市場トレンドの偵察...
+🚀 アンちゃん・トレンドウォッチャー Pro 起動
+🔍 Lolalyticsから最新メタ情報をスカウティング中...
+🌐 ターゲットURLに移動中: https://lolalytics.com/lol/tierlist/?lane=jungle
+⏳ ページ読み込み完了。追加待機中...
+🧬 チャンピオンデータの抽出を開始...
+【Lolalytics最新トレンド - Jungle】
+- Graves: Tier S+ (勝率 ??%)
+- Sylas: Tier S (勝率 ??%)
+- Rek'Sai: Tier S (勝率 ??%)
+- Naafiri: Tier S (勝率 ??%)
+- Lee Sin: Tier S (勝率 ??%)
+- Xin Zhao: Tier S- (勝率 ??%)
+- Elise: Tier E (勝率 ??%)
+- Jarvan IV: Tier S- (勝率 ??%)
+- Briar: Tier B (勝率 ??%)
+- Nunu & Willump: Tier A+ (勝率 ??%)
+
+💡 企画案を立案中...
+🤖 思考モデル: models/gemini-2.5-flash-lite
+DEBUG: Gemini Response:
+```json
+[
+  {
+    "title": "【JG S+確定】グラグウェイズで爆速昇格！初心者でも勝率60%超えを叩き出す最速ルートを徹底解説",
+    "ladder_step": "2.エントリー(教育)",
+    "reason": "現在Tier S+のGravesは、その強力さから多くのプレイヤーに注目されています。勝率データが不明なため、具体的な数値は提示できませんが、S+という評価は揺るぎないはずです。この強力なチャンピオンに焦点を当てることで、読者は「勝てる」という直接的なメリットを感じ、記事に興味を持つでしょう。最速ルートという具体的な情報も、手軽に実践できるという期待感を与えます。無料部分（記事冒頭）でGravesの強みや簡単な立ち回りを紹介し、有料部分で詳細なジャングルルート、ガンクタイミング、アイテムビルド、エンゲージタイミングなどを網羅することで、読者の購入意欲を高めます。",
+    "outline": [
+      "なぜ今GravesがJG Tier S+なのか？その秘密に迫る",
+      "【驚異の効率】Gravesで敵の裏をかく最速ジャングルルート完全公開",
+      "序盤・中盤・終盤で変わる！Gravesの必勝ガンクタイミングと立ち回り",
+      "敵JGを完封！Gravesに最適化された最強アイテムビルドとサモナースペル",
+      "集団戦で輝く！Gravesで確実にキャリーするためのエンゲージ＆サステイン術",
+      "【Q&A】Gravesでよくある疑問をプロが徹底解説"
+    ]
+  },
+  {
+    "title": "【SランクJG座談会】サイラス、Rek'Sai、Naafiri、Lee Sin！トップメタJGの勝てる秘訣をプロが伝授",
+    "ladder_step": "3.中価格帯(信頼)",
+    "reason": "複数のTier Sチャンピオンを網羅することで、読者は自分の得意なチャンピオンや、メタに合ったチャンピオンを見つけやすくなります。座談会形式にすることで、様々な視点からの戦略や、チャンピオン間の相性、メタの読み方といった、より深い情報を提供できます。プロの視点という信頼性を付加することで、記事の価値を高め、中価格帯での販売に繋げます。無料部分で各チャンピオンの簡単な特徴と、座談会で何が語られるかを予告し、有料部分で詳細な解説、実戦的なアドバイス、メタ推移の予想などを提供します。",
+    "outline": [
+      "【参加プロ紹介】最強JG達が語る、現環境JG論",
+      "Tier Sサイラス：無限の可能性を引き出すコンボと立ち回り",
+      "Rek'Sai：予測不能な潜行と爆発力で敵を翻弄する jungle pathing",
+      "Naafiri：新感覚の集団戦メイジ！敵を溶かすエンゲージとCC戦略",
+      "Lee Sin：ハイリスク・ハイリターン！決まれば勝てる神プレイ集",
+      "【メタ分析】SランクJG同士のぶつかり合い！有利不利を分けるポイント",
+      "読者からの質問に答えます！プロが実践するJGランクアップ術"
+    ]
+  },
+  {
+    "title": "【JG必勝講座】Elise（Eランク）でも勝てる！Jarvan IV、Xin Zhao、Nunu & Willumpでランクを駆け上がる鉄板戦略",
+    "ladder_step": "3.中価格帯(信頼)",
+    "reason": "EliseがTier Eというデータは、多くのプレイヤーが「使わない方が良い」と感じるため、逆に「それでも勝つ方法」に興味を持つ層が存在します。Jarvan IV、Xin Zhao、Nunu & WillumpはTier S-、A+と比較的安定した性能を持つため、これらのチャンピオンで勝率を上げる方法に焦点を当てるのは有効です。Eliseで勝つという逆張り要素は読者の目を引き、他のtier帯のチャンピオンで勝つための普遍的なJG戦略を学ぶことで、読者は自身のプレイスキル向上に繋がると期待します。無料部分でEliseの残念な現状と、それでも勝つための（非推奨ではあるが）可能性に触れ、有料部分でJarvan IV、Xin Zhao、Nunu & Willumpに焦点を当て、より安定して勝つための詳細な戦略、jgパス、ガンク、エンゲージ、集団戦での動きなどを解説します。",
+    "outline": [
+      "なぜEliseはTier Eなのか？そして、それでも勝つための（極秘）戦略",
+      "Jarvan IV：鉄壁のエンゲージで集団戦を制圧！最強ビルドと立ち回り",
+      "Xin Zhao：怒涛のラッシュで敵を圧倒！序盤から終盤まで活きるガンクとタイマン術",
+      "Nunu & Willump：集団戦の鬼！強力なオブジェクトコントロールとエンゲージで勝利を掴む",
+      "【JGパス徹底比較】3つのチャンピオン別、状況別最適ジャングルルート",
+      "敵JGとの駆け引き！メタJG対策とカウンターピック",
+      "ランクアップを加速させる！JGプレイヤー必見のメンタルセット"
+    ]
+  }
+]
+```
+DEBUG: Notion Payload:
+{
+  "parent": {
+    "database_id": "32061cf4543980d8a093d19d017ebcfc"
+  },
+  "properties": {
+    "名前": {
+      "title": [
+        {
+          "type": "text",
+          "text": {
+            "content": "【トレンド速報】【JG S+確定】グラグウェイズで爆速昇格！初心者でも勝率60%超えを叩き出す最速ルートを徹底解説"
+          }
+        }
+      ]
+    },
+    "ステータス": {
+      "status": {
+        "name": "Idea"
+      }
+    }
+  },
+  "children": [
+    {
+      "object": "block",
+      "type": "paragraph",
+      "paragraph": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "現在Tier S+のGravesは、その強力さから多くのプレイヤーに注目されています。勝率データが不明なため、具体的な数値は提示できませんが、S+という評価は揺るぎないはずです。この強力なチャンピオンに焦点を当てることで、読者は「勝てる」という直接的なメリットを感じ、記事に興味を持つでしょう。最速ルートという具体的な情報も、手軽に実践できるという期待感を与えます。無料部分（記事冒頭）でGravesの強みや簡単な立ち回りを紹介し、有料部分で詳細なジャングルルート、ガンクタイミング、アイテムビルド、エンゲージタイミングなどを網羅することで、読者の購入意欲を高めます。"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "object": "block",
+      "type": "heading_2",
+      "heading_2": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "📝 構成案"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "object": "block",
+      "type": "paragraph",
+      "paragraph": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "なぜ今GravesがJG Tier S+なのか？その秘密に迫る\n【驚異の効率】Gravesで敵の裏をかく最速ジャングルルート完全公開\n序盤・中盤・終盤で変わる！Gravesの必勝ガンクタイミングと立ち回り\n敵JGを完封！Gravesに最適化された最強アイテムビルドとサモナースペル\n集団戦で輝く！Gravesで確実にキャリーするためのエンゲージ＆サステイン術\n【Q&A】Gravesでよくある疑問をプロが徹底解説"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
+✅ Notion投稿成功: 【JG S+確定】グラグウェイズで爆速昇格！初心者でも勝率60%超えを叩き出す最速ルートを徹底解説
+DEBUG: Notion Payload:
+{
+  "parent": {
+    "database_id": "32061cf4543980d8a093d19d017ebcfc"
+  },
+  "properties": {
+    "名前": {
+      "title": [
+        {
+          "type": "text",
+          "text": {
+            "content": "【トレンド速報】【SランクJG座談会】サイラス、Rek'Sai、Naafiri、Lee Sin！トップメタJGの勝てる秘訣をプロが伝授"
+          }
+        }
+      ]
+    },
+    "ステータス": {
+      "status": {
+        "name": "Idea"
+      }
+    }
+  },
+  "children": [
+    {
+      "object": "block",
+      "type": "paragraph",
+      "paragraph": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "複数のTier Sチャンピオンを網羅することで、読者は自分の得意なチャンピオンや、メタに合ったチャンピオンを見つけやすくなります。座談会形式にすることで、様々な視点からの戦略や、チャンピオン間の相性、メタの読み方といった、より深い情報を提供できます。プロの視点という信頼性を付加することで、記事の価値を高め、中価格帯での販売に繋げます。無料部分で各チャンピオンの簡単な特徴と、座談会で何が語られるかを予告し、有料部分で詳細な解説、実戦的なアドバイス、メタ推移の予想などを提供します。"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "object": "block",
+      "type": "heading_2",
+      "heading_2": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "📝 構成案"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "object": "block",
+      "type": "paragraph",
+      "paragraph": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "【参加プロ紹介】最強JG達が語る、現環境JG論\nTier Sサイラス：無限の可能性を引き出すコンボと立ち回り\nRek'Sai：予測不能な潜行と爆発力で敵を翻弄する jungle pathing\nNaafiri：新感覚の集団戦メイジ！敵を溶かすエンゲージとCC戦略\nLee Sin：ハイリスク・ハイリターン！決まれば勝てる神プレイ集\n【メタ分析】SランクJG同士のぶつかり合い！有利不利を分けるポイント\n読者からの質問に答えます！プロが実践するJGランクアップ術"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
+✅ Notion投稿成功: 【SランクJG座談会】サイラス、Rek'Sai、Naafiri、Lee Sin！トップメタJGの勝てる秘訣をプロが伝授
+DEBUG: Notion Payload:
+{
+  "parent": {
+    "database_id": "32061cf4543980d8a093d19d017ebcfc"
+  },
+  "properties": {
+    "名前": {
+      "title": [
+        {
+          "type": "text",
+          "text": {
+            "content": "【トレンド速報】【JG必勝講座】Elise（Eランク）でも勝てる！Jarvan IV、Xin Zhao、Nunu & Willumpでランクを駆け上がる鉄板戦略"
+          }
+        }
+      ]
+    },
+    "ステータス": {
+      "status": {
+        "name": "Idea"
+      }
+    }
+  },
+  "children": [
+    {
+      "object": "block",
+      "type": "paragraph",
+      "paragraph": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "EliseがTier Eというデータは、多くのプレイヤーが「使わない方が良い」と感じるため、逆に「それでも勝つ方法」に興味を持つ層が存在します。Jarvan IV、Xin Zhao、Nunu & WillumpはTier S-、A+と比較的安定した性能を持つため、これらのチャンピオンで勝率を上げる方法に焦点を当てるのは有効です。Eliseで勝つという逆張り要素は読者の目を引き、他のtier帯のチャンピオンで勝つための普遍的なJG戦略を学ぶことで、読者は自身のプレイスキル向上に繋がると期待します。無料部分でEliseの残念な現状と、それでも勝つための（非推奨ではあるが）可能性に触れ、有料部分でJarvan IV、Xin Zhao、Nunu & Willumpに焦点を当て、より安定して勝つための詳細な戦略、jgパス、ガンク、エンゲージ、集団戦での動きなどを解説します。"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "object": "block",
+      "type": "heading_2",
+      "heading_2": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "📝 構成案"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "object": "block",
+      "type": "paragraph",
+      "paragraph": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "なぜEliseはTier Eなのか？そして、それでも勝つための（極秘）戦略\nJarvan IV：鉄壁のエンゲージで集団戦を制圧！最強ビルドと立ち回り\nXin Zhao：怒涛のラッシュで敵を圧倒！序盤から終盤まで活きるガンクとタイマン術\nNunu & Willump：集団戦の鬼！強力なオブジェクトコントロールとエンゲージで勝利を掴む\n【JGパス徹底比較】3つのチャンピオン別、状況別最適ジャングルルート\n敵JGとの駆け引き！メタJG対策とカウンターピック\nランクアップを加速させる！JGプレイヤー必見のメンタルセット"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
+✅ Notion投稿成功: 【JG必勝講座】Elise（Eランク）でも勝てる！Jarvan IV、Xin Zhao、Nunu & Willumpでランクを駆け上がる鉄板戦略
+[2026-03-23 17:00:53] 🧠 [StrategyAn] Step 2/6: 市場の急所を突く自律提案 (Proactive Proposal)...
+[2026-03-23 17:00:53] 📉 [Pivot-An] 市場の停滞を検知。新領域の探索を検討します...
+🤖 思考モデル: models/gemini-2.5-pro
+⚠️ 429制限検知。5秒待機します...
+🤖 思考モデル: models/gemini-2.5-flash-lite
+[2026-03-23 17:01:02] 🚀 [Pivot-An] ピボット案: 承知いたしました。実業家として、現在のメイン市場（LoL/ゲーム）のトレンドが弱まっている状況を踏まえ、次に関連性が高く、かつ熱量の高い市場を一つ提案させていただきます。
+
+## 提案市場：AIを活用...
+[2026-03-23 17:01:02] 🔍 [AdminAn] Step 4/12: プロジェクト全体の課題を自律スキャン中...
+[2026-03-23 17:01:02] 📜 [StrategyAn] Step 5/12: 今日のフック立案 (Strategist)...
+[2026-03-23 17:01:02] 🎨 [CreativeAn] Step 6/12: 内部ディベートを経てコンテンツを生成...
+🤖 思考モデル: models/gemini-2.5-pro
+⚠️ 429制限検知。5秒待機します...
+🤖 思考モデル: models/gemini-2.5-flash-lite
+🤖 思考モデル: models/gemini-2.5-flash-lite
+[2026-03-23 17:01:18] ⚠️ 監査不合格 (Score: 35): ドラフト全体を通して、NGワードや禁止されている表現が多数含まれており、AI臭さが強く残っています。...
+[2026-03-23 17:01:18] 🔄 自動リワークを実行します (1/2)
+[2026-03-23 17:01:18] 🧠 [AdminAn] スタイル自己学習中: 監査失敗の原因を分析しています...
+🤖 思考モデル: models/gemini-2.5-flash-lite
+⚠️ 生成内容が不十分です (Attempt 1/3, Model: models/gemini-2.5-flash-lite)。再試行します...
+🤖 思考モデル: models/gemini-2.5-flash
+[2026-03-23 17:01:28] 📝 [AdminAn] 禁止表現ガイドを自律的に更新しました。
+🤖 思考モデル: models/gemini-2.5-pro
+⚠️ 429制限検知。5秒待機します...
+🤖 思考モデル: models/gemini-2.5-flash-lite
+🤖 思考モデル: models/gemini-2.5-flash-lite
+[2026-03-23 17:01:51] ✅ 監査合格 (Score: 85)
+[2026-03-23 17:01:51] 💾 ドラフトを保存しました (Score: 85): draft_20260323_1701_s85.md
+[2026-03-23 17:01:51] Step 5/6: 全成果物のスマホ同期 (Ship)...
+[2026-03-23 17:10:16] Step 7/9: 日報の自動生成 (Daily Report)...
+[2026-03-23 17:10:16] ⏩ 日報は既に存在します: 2026-03-23.md
+[2026-03-23 17:10:16] 🧺 [AdminAn] Step 9/12: 高評価ドラフトの資産化...
+[2026-03-23 17:10:16] ❌ サイクル実行中に深刻なエラーが発生しました: 'OmniAgent' object has no attribute 'harvest_assets'
+[2026-03-23 17:10:16] Traceback (most recent call last):
+  File "D:\my_work\02_intelligence\intelligence\omni_agent.py", line 145, in run_cycle
+    self.harvest_assets()
+    ^^^^^^^^^^^^^^^^^^^
+AttributeError: 'OmniAgent' object has no attribute 'harvest_assets'
+
+[2026-03-23 17:10:16] 🩹 [AdminAn] 自己修復プロセスを開始します...
+🤖 思考モデル: models/gemini-2.5-pro
+⚠️ 429制限検知。5秒待機します...
+🤖 思考モデル: models/gemini-2.5-flash-lite
+[2026-03-23 17:10:27] 📝 [AdminAn] 修正案を作成し、patches/ に保存しました。
