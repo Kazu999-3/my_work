@@ -6824,3 +6824,362 @@ https://github.com/google-gemini/deprecated-generative-ai-python/blob/main/READM
   import google.generativeai as genai
 💡 OmniSyncPro: 安定版エンジンを起動しました(requests仕様)
 [2026-03-23 12:00:04] ⏭️ 前回のサイクルから 4h 経過していないためスキップします。
+D:\my_work\02_intelligence\intelligence\trend_watcher.py:8: FutureWarning: 
+
+All support for the `google.generativeai` package has ended. It will no longer be receiving 
+updates or bug fixes. Please switch to the `google.genai` package as soon as possible.
+See README for more details:
+
+https://github.com/google-gemini/deprecated-generative-ai-python/blob/main/README.md
+
+  import google.generativeai as genai
+💡 OmniSyncPro: 安定版エンジンを起動しました(requests仕様)
+[2026-03-23 13:00:08] 🚀 Omni-Agent 2.5: 「自律商社アンちゃん」の超知能サイクルを開始します。
+[2026-03-23 13:00:08] 📥 [InputAn] Step -1/12: Notion からの直接指示を確認中...
+⏳ Readyタスクのチェックを開始します...
+🔍 DB (ID: 32061cf4543980d8a093d19d017ebcfc) から Ready タスクを取得中...
+📡 API応答: 0 件の Ready タスクを発見
+☕ Readyタスクはありません。
+[2026-03-23 13:00:09] 🎯 [GoalAn] Step 0/12: 週次目標 (OKR) の確認...
+[2026-03-23 13:00:09] 📝 [GoalAn] 今週の経営目標を設定します...
+🤖 思考モデル: models/gemini-2.5-pro
+⚠️ 429制限検知。5秒待機します...
+🤖 思考モデル: models/gemini-2.5-flash-lite
+[2026-03-23 13:00:18] 📡 [ScoutAn] Step 1/12: 市場トレンドの偵察...
+🚀 アンちゃん・トレンドウォッチャー Pro 起動
+🔍 Lolalyticsから最新メタ情報をスカウティング中...
+🌐 ターゲットURLに移動中: https://lolalytics.com/lol/tierlist/?lane=jungle
+⏳ ページ読み込み完了。追加待機中...
+🧬 チャンピオンデータの抽出を開始...
+【Lolalytics最新トレンド - Jungle】
+- Sylas: Tier S (勝率 ??%)
+- Graves: Tier S+ (勝率 ??%)
+- Rek'Sai: Tier S (勝率 ??%)
+- Naafiri: Tier S (勝率 ??%)
+- Lee Sin: Tier S (勝率 ??%)
+- Nunu & Willump: Tier S- (勝率 ??%)
+- Jarvan IV: Tier S- (勝率 ??%)
+- Elise: Tier E (勝率 ??%)
+- Briar: Tier B (勝率 ??%)
+- Xin Zhao: Tier A+ (勝率 ??%)
+
+💡 企画案を立案中...
+🤖 思考モデル: models/gemini-2.5-flash-lite
+DEBUG: Gemini Response:
+```json
+[
+  {
+    "title": "【勝率60%超え連発！】Graves使い必見！ジャングラー最強tierS+の極意",
+    "ladder_step": "3.中価格帯(信頼)",
+    "reason": "Gravesは最新データでTier S+と最強格であり、具体的な勝率データ（仮で60%超えと設定）を提示することで読者の興味を強く引く。この強さを具体的な戦術・ビルド・立ち回りまで深掘りすることで、読者に「これさえ読めば勝てる」という信頼感を与え、購入に繋げる。価格帯としては、具体的なノウハウ提供のため中価格帯が適している。",
+    "outline": [
+      "はじめに：Gravesが最強tierS+である理由",
+      "最新データで見るGravesの勝率をさらに引き上げる要素",
+      "序盤の無敵！ガンク・ジャングルクリア・カウンタージャングルの最適解",
+      "中盤以降の脅威！集団戦での立ち位置とキルポテンシャル最大化",
+      "勝率60%超えを達成するためのビルドパスとルーン選択",
+      "JGアイテム・サモナースペルの意外な活用法",
+      "JG以外のレーナーとの連携で差をつける方法",
+      "Graves使いが陥りやすいミスとその対策",
+      "まとめ：Gravesでマスターランクを目指すための最終ロードマップ"
+    ]
+  },
+  {
+    "title": "Tier Sジャングラー徹底比較！Sylas/Rek'Sai/Naafiri/Lee Sin、あなたに最適なのは誰？",
+    "ladder_step": "2.エントリー(教育)",
+    "reason": "複数のTier Sジャングラーを比較することで、読者は自身のプレイスタイルに合ったチャンピオンを見つけやすくなる。各チャンピオンの強み・弱み・得意な試合展開を明確に提示し、さらにそれらのチャンピオンで勝つための基本的な戦略を解説することで、読者の教育と選択肢の広がりを促す。エントリー価格帯で、多様なジャングラーへの理解を深めてもらう。",
+    "outline": [
+      "はじめに：なぜ今Tier Sジャングラーが熱いのか",
+      "Sylas：Ultによるゲームチェンジ能力を最大限に活かす方法",
+      "Rek'Sai：強力なエンゲージとGank性能を駆使した序盤の暴れ方",
+      "Naafiri：集団操作と有利トレードを量産する秘訣",
+      "Lee Sin：ハイリスク・ハイリターンを制するアグレッシブプレイ",
+      "各Tier Sジャングラーの得意な試合展開とカウンターピック",
+      "初心者でも扱いやすいTier Sジャングラーは？",
+      "レーン別・試合展開別のおすすめTier Sジャングラー",
+      "まとめ：あなただけの最強Tier Sジャングラーを見つけよう"
+    ]
+  },
+  {
+    "title": "【勝率激低Eランクから脱出！】Elise使いが知らない？逆転のための jungling \"再教育\"",
+    "ladder_step": "3.中価格帯(信頼)",
+    "reason": "勝率が低いとされるEliseに焦点を当てることで、「このチャンピオンでも勝てるようになるのか？」という読者の疑問や悩みに直接アプローチする。最新データでTier Eのチャンピオンを「再教育」するという切り口は、現状の戦術に満足していない読者にとって強いフックとなる。具体的な戦略・ビルド・立ち回りを徹底的に解説することで、低勝率からの脱却をサポートし、信頼を得る。",
+    "outline": [
+      "はじめに：なぜEliseはTier Eなのか？（データから見る弱点）",
+      "Eliseのポテンシャルを最大限に引き出す jungling \"再教育\"",
+      "序盤のGank精度を劇的に上げるためのアプローチ",
+      "中盤以降の集団戦で活きるEliseの独自の使い方",
+      "勝率を安定させるためのコアアイテムとルーン",
+      "EliseでEランクから脱却するための具体的な立ち回り",
+      "敵のカウンターピックに対する戦術",
+      "Elise使いが犯しがちな3つの致命的なミス",
+      "まとめ：Eliseで勝率を覆すための最終戦略"
+    ]
+  }
+]
+```
+DEBUG: Notion Payload:
+{
+  "parent": {
+    "database_id": "32061cf4543980d8a093d19d017ebcfc"
+  },
+  "properties": {
+    "名前": {
+      "title": [
+        {
+          "type": "text",
+          "text": {
+            "content": "【トレンド速報】【勝率60%超え連発！】Graves使い必見！ジャングラー最強tierS+の極意"
+          }
+        }
+      ]
+    },
+    "ステータス": {
+      "status": {
+        "name": "Idea"
+      }
+    }
+  },
+  "children": [
+    {
+      "object": "block",
+      "type": "paragraph",
+      "paragraph": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "Gravesは最新データでTier S+と最強格であり、具体的な勝率データ（仮で60%超えと設定）を提示することで読者の興味を強く引く。この強さを具体的な戦術・ビルド・立ち回りまで深掘りすることで、読者に「これさえ読めば勝てる」という信頼感を与え、購入に繋げる。価格帯としては、具体的なノウハウ提供のため中価格帯が適している。"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "object": "block",
+      "type": "heading_2",
+      "heading_2": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "📝 構成案"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "object": "block",
+      "type": "paragraph",
+      "paragraph": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "はじめに：Gravesが最強tierS+である理由\n最新データで見るGravesの勝率をさらに引き上げる要素\n序盤の無敵！ガンク・ジャングルクリア・カウンタージャングルの最適解\n中盤以降の脅威！集団戦での立ち位置とキルポテンシャル最大化\n勝率60%超えを達成するためのビルドパスとルーン選択\nJGアイテム・サモナースペルの意外な活用法\nJG以外のレーナーとの連携で差をつける方法\nGraves使いが陥りやすいミスとその対策\nまとめ：Gravesでマスターランクを目指すための最終ロードマップ"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
+✅ Notion投稿成功: 【勝率60%超え連発！】Graves使い必見！ジャングラー最強tierS+の極意
+DEBUG: Notion Payload:
+{
+  "parent": {
+    "database_id": "32061cf4543980d8a093d19d017ebcfc"
+  },
+  "properties": {
+    "名前": {
+      "title": [
+        {
+          "type": "text",
+          "text": {
+            "content": "【トレンド速報】Tier Sジャングラー徹底比較！Sylas/Rek'Sai/Naafiri/Lee Sin、あなたに最適なのは誰？"
+          }
+        }
+      ]
+    },
+    "ステータス": {
+      "status": {
+        "name": "Idea"
+      }
+    }
+  },
+  "children": [
+    {
+      "object": "block",
+      "type": "paragraph",
+      "paragraph": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "複数のTier Sジャングラーを比較することで、読者は自身のプレイスタイルに合ったチャンピオンを見つけやすくなる。各チャンピオンの強み・弱み・得意な試合展開を明確に提示し、さらにそれらのチャンピオンで勝つための基本的な戦略を解説することで、読者の教育と選択肢の広がりを促す。エントリー価格帯で、多様なジャングラーへの理解を深めてもらう。"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "object": "block",
+      "type": "heading_2",
+      "heading_2": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "📝 構成案"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "object": "block",
+      "type": "paragraph",
+      "paragraph": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "はじめに：なぜ今Tier Sジャングラーが熱いのか\nSylas：Ultによるゲームチェンジ能力を最大限に活かす方法\nRek'Sai：強力なエンゲージとGank性能を駆使した序盤の暴れ方\nNaafiri：集団操作と有利トレードを量産する秘訣\nLee Sin：ハイリスク・ハイリターンを制するアグレッシブプレイ\n各Tier Sジャングラーの得意な試合展開とカウンターピック\n初心者でも扱いやすいTier Sジャングラーは？\nレーン別・試合展開別のおすすめTier Sジャングラー\nまとめ：あなただけの最強Tier Sジャングラーを見つけよう"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
+✅ Notion投稿成功: Tier Sジャングラー徹底比較！Sylas/Rek'Sai/Naafiri/Lee Sin、あなたに最適なのは誰？
+DEBUG: Notion Payload:
+{
+  "parent": {
+    "database_id": "32061cf4543980d8a093d19d017ebcfc"
+  },
+  "properties": {
+    "名前": {
+      "title": [
+        {
+          "type": "text",
+          "text": {
+            "content": "【トレンド速報】【勝率激低Eランクから脱出！】Elise使いが知らない？逆転のための jungling \"再教育\""
+          }
+        }
+      ]
+    },
+    "ステータス": {
+      "status": {
+        "name": "Idea"
+      }
+    }
+  },
+  "children": [
+    {
+      "object": "block",
+      "type": "paragraph",
+      "paragraph": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "勝率が低いとされるEliseに焦点を当てることで、「このチャンピオンでも勝てるようになるのか？」という読者の疑問や悩みに直接アプローチする。最新データでTier Eのチャンピオンを「再教育」するという切り口は、現状の戦術に満足していない読者にとって強いフックとなる。具体的な戦略・ビルド・立ち回りを徹底的に解説することで、低勝率からの脱却をサポートし、信頼を得る。"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "object": "block",
+      "type": "heading_2",
+      "heading_2": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "📝 構成案"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "object": "block",
+      "type": "paragraph",
+      "paragraph": {
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "はじめに：なぜEliseはTier Eなのか？（データから見る弱点）\nEliseのポテンシャルを最大限に引き出す jungling \"再教育\"\n序盤のGank精度を劇的に上げるためのアプローチ\n中盤以降の集団戦で活きるEliseの独自の使い方\n勝率を安定させるためのコアアイテムとルーン\nEliseでEランクから脱却するための具体的な立ち回り\n敵のカウンターピックに対する戦術\nElise使いが犯しがちな3つの致命的なミス\nまとめ：Eliseで勝率を覆すための最終戦略"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
+✅ Notion投稿成功: 【勝率激低Eランクから脱出！】Elise使いが知らない？逆転のための jungling "再教育"
+[2026-03-23 13:00:37] 🧠 [StrategyAn] Step 2/6: 市場の急所を突く自律提案 (Proactive Proposal)...
+[2026-03-23 13:00:37] 📉 [Pivot-An] 市場の停滞を検知。新領域の探索を検討します...
+🤖 思考モデル: models/gemini-2.5-pro
+⚠️ 429制限検知。5秒待機します...
+🤖 思考モデル: models/gemini-2.5-flash-lite
+⚠️ 429制限検知。5秒待機します...
+🤖 思考モデル: models/gemini-2.5-flash
+[2026-03-23 13:01:05] 🚀 [Pivot-An] ピボット案: 現在のメイン市場であるLoL/ゲームのトレンドが弱まっている状況、承知いたしました。
+実業家として、次に関連性が高く、かつ熱量の高い市場として、私が提案するのは**「バーチャルエンターテイメント市場（...
+[2026-03-23 13:01:05] 🔍 [AdminAn] Step 4/12: プロジェクト全体の課題を自律スキャン中...
+[2026-03-23 13:01:05] 📜 [StrategyAn] Step 5/12: 今日のフック立案 (Strategist)...
+[2026-03-23 13:01:05] 🎨 [CreativeAn] Step 6/12: 内部ディベートを経てコンテンツを生成...
+🤖 思考モデル: models/gemini-2.5-pro
+⚠️ 429制限検知。5秒待機します...
+🤖 思考モデル: models/gemini-2.5-flash-lite
+⚠️ 429制限検知。5秒待機します...
+🤖 思考モデル: models/gemini-2.5-flash
+🤖 思考モデル: models/gemini-2.5-flash-lite
+⚠️ 429制限検知。5秒待機します...
+🤖 思考モデル: models/gemini-2.5-flash
+[2026-03-23 13:01:48] ⚠️ 監査不合格 (Score: 0): Xポスト 2/3 のハッシュタグに「#羨望マーケティング」が含まれていました。提示されたNGワードリ...
+[2026-03-23 13:01:48] 🔄 自動リワークを実行します (1/2)
+[2026-03-23 13:01:48] 🧠 [AdminAn] スタイル自己学習中: 監査失敗の原因を分析しています...
+🤖 思考モデル: models/gemini-2.5-flash-lite
+⚠️ 429制限検知。5秒待機します...
+🤖 思考モデル: models/gemini-2.5-flash
+⚠️ 生成内容が不十分です (Attempt 1/3, Model: models/gemini-2.5-flash)。再試行します...
+🤖 思考モデル: models/gemini-2.5-pro
+⚠️ 429制限検知。5秒待機します...
+🤖 思考モデル: models/gemini-2.5-flash-lite
+⚠️ 429制限検知。5秒待機します...
+🤖 思考モデル: models/gemini-2.5-flash
+[2026-03-23 13:02:23] 📝 [AdminAn] 禁止表現ガイドを自律的に更新しました。
+🤖 思考モデル: models/gemini-2.5-pro
+⚠️ 429制限検知。5秒待機します...
+🤖 思考モデル: models/gemini-2.5-flash-lite
+⚠️ 429制限検知。5秒待機します...
+🤖 思考モデル: models/gemini-2.5-flash
+🤖 思考モデル: models/gemini-2.5-flash-lite
+⚠️ 429制限検知。5秒待機します...
+🤖 思考モデル: models/gemini-2.5-flash
+[2026-03-23 13:03:17] ✅ 監査合格 (Score: 95)
+[2026-03-23 13:03:17] 💾 ドラフトを保存しました (Score: 95): draft_20260323_1303_s95.md
+[2026-03-23 13:03:17] Step 5/6: 全成果物のスマホ同期 (Ship)...
+[2026-03-23 13:11:53] Step 7/9: 日報の自動生成 (Daily Report)...
+[2026-03-23 13:11:53] ⏩ 日報は既に存在します: 2026-03-23.md
+[2026-03-23 13:11:53] 🧺 [AdminAn] Step 9/12: 高評価ドラフトの資産化...
+[2026-03-23 13:11:53] ❌ サイクル実行中に深刻なエラーが発生しました: 'OmniAgent' object has no attribute 'harvest_assets'
+[2026-03-23 13:11:53] Traceback (most recent call last):
+  File "D:\my_work\02_intelligence\intelligence\omni_agent.py", line 145, in run_cycle
+    self.harvest_assets()
+    ^^^^^^^^^^^^^^^^^^^
+AttributeError: 'OmniAgent' object has no attribute 'harvest_assets'
+
+[2026-03-23 13:11:53] 🩹 [AdminAn] 自己修復プロセスを開始します...
+🤖 思考モデル: models/gemini-2.5-pro
+⚠️ 429制限検知。5秒待機します...
+🤖 思考モデル: models/gemini-2.5-flash-lite
+⚠️ 429制限検知。5秒待機します...
+🤖 思考モデル: models/gemini-2.5-flash
+[2026-03-23 13:12:24] 📝 [AdminAn] 修正案を作成し、patches/ に保存しました。
