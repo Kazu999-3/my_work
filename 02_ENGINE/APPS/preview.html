@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Antigravity | The Sovereign OS Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0a0a0a;
+            --panel-bg: rgba(255, 255, 255, 0.03);
+            --accent-gold: #d4af37;
+            --accent-gold-glow: rgba(212, 175, 55, 0.3);
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0a0;
+            --border-color: rgba(212, 175, 55, 0.15);
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            background: radial-gradient(circle at 50% -20%, #1a1a1a 0%, #0a0a0a 100%);
+        }
+
+        .sidebar {
+            width: 260px;
+            background: rgba(0, 0, 0, 0.6);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            padding: 2.5rem 1.5rem;
+            backdrop-filter: blur(20px);
+            z-index: 10;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 3rem;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .gold-gradient-text {
+            background: linear-gradient(135deg, #d4af37 0%, #f1c40f 50%, #d4af37 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            margin: 0;
+        }
+
+        .panel {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.8rem;
+            backdrop-filter: blur(12px);
+            transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .panel:hover {
+            transform: translateY(-5px);
+            border-color: var(--accent-gold);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .panel::after {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.05), transparent);
+            transition: 0.5s;
+        }
+
+        .panel:hover::after {
+            left: 100%;
+        }
+
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 2rem;
+            margin-top: 2.5rem;
+        }
+
+        .status-dot {
+            width: 10px; height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 12px;
+            position: relative;
+        }
+
+        .status-online { background-color: #2ecc71; box-shadow: 0 0 12px #2ecc71; }
+        .status-idle { background-color: #f1c40f; box-shadow: 0 0 12px #f1c40f; }
+
+        .badge {
+            background: var(--accent-gold-glow);
+            color: var(--accent-gold);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+        }
+
+        .btn-gold {
+            background: linear-gradient(135deg, #d4af37 0%, #f1c40f 100%);
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            color: #000;
+            transition: 0.3s;
+            width: 100%;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+        }
+
+        .btn-gold:hover {
+            filter: brightness(1.1);
+            box-shadow: 0 0 20px var(--accent-gold-glow);
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .main-content > * {
+            animation: fadeIn 0.8s ease-out forwards;
+        }
+
+        .agent-item {
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .agent-name {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .revenue-section {
+            margin-top: auto;
+            border-top: 1px solid var(--border-color);
+            padding-top: 2rem;
+        }
+
+        .revenue-value {
+            font-size: 1.8rem;
+            font-weight: 800;
+            margin: 0.5rem 0;
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h1 class="gold-gradient-text" style="font-size: 1.8rem; margin-bottom: 0.2rem;">ANTIGRAVITY</h1>
+        <p style="font-size: 0.65rem; color: #555; letter-spacing: 0.2em; margin-bottom: 3rem;">SOVEREIGN OS v1.0</p>
+        
+        <div style="margin-bottom: 3rem;">
+            <p style="font-size: 0.75rem; color: #444; font-weight: 800; margin-bottom: 1.5rem; text-transform: uppercase; letter-spacing: 0.1em;">Kingdom Agents</p>
+            <div class="agent-item"><span class="status-dot status-online"></span> <span class="agent-name">Sentinel</span></div>
+            <div class="agent-item"><span class="status-dot status-online"></span> <span class="agent-name">Scout</span></div>
+            <div class="agent-item"><span class="status-dot status-idle"></span> <span class="agent-name">Commander</span></div>
+        </div>
+
+        <div class="revenue-section">
+            <p style="font-size: 0.7rem; color: #666; font-weight: 700; margin: 0;">ESTIMATED REVENUE</p>
+            <div class="revenue-value">¥5,450</div>
+            <p style="font-size: 0.75rem; color: #2ecc71; margin: 0; font-weight: 600;">+24.5% <span style="color: #444; font-weight: 400;">this week</span></p>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <header style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 1rem;">
+            <div>
+                <h2 style="font-size: 2.2rem; font-weight: 800; margin: 0;">Intelligence Nexus</h2>
+                <p style="margin: 0.5rem 0 0 0; color: #777;">斥候スカウトが捕捉した最新の戦毅・知能ストック</p>
+            </div>
+            <div style="text-align: right;">
+                <p style="font-size: 0.7rem; color: #555; margin-bottom: 0.5rem;">NEXT PATROL: 15:40</p>
+                <div style="border: 1px solid var(--accent-gold); padding: 6px 16px; border-radius: 20px; color: var(--accent-gold); font-size: 0.7rem; font-weight: 700; cursor: pointer;">REFRESH NEXUS</div>
+            </div>
+        </header>
+
+        <div class="card-grid">
+            <div class="panel">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 1.5rem;">
+                    <span class="badge">TACTICAL INTEL</span>
+                    <span style="font-size: 0.7rem; color: #555;">2026.04.05 12:40</span>
+                </div>
+                <h3 style="margin-bottom: 0.8rem; font-size: 1.2rem;">K'Sante Burst Build</h3>
+                <p style="margin-bottom: 1.5rem; font-size: 0.85rem; color: #aaa;">特定のアイテムシナジーにより、中盤のバースト火力が30%増加。このビルドを救世主として提示する。</p>
+                <div style="font-size: 0.75rem; color: #666; font-style: italic;">Source: YouTube / Midbeast</div>
+                <button class="btn-gold" style="margin-top: 2rem;">Analyze & Draft</button>
+            </div>
+
+            <div class="panel">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 1.5rem;">
+                    <span class="badge">META ANALYSIS</span>
+                    <span style="font-size: 0.7rem; color: #555;">2026.04.04 18:30</span>
+                </div>
+                <h3 style="margin-bottom: 0.8rem; font-size: 1.2rem;">Patch 14.x Meta Shift</h3>
+                <p style="margin-bottom: 1.5rem; font-size: 0.85rem; color: #aaa;">ジャングルキャンプの経験値バフによるフルクリア環境への移行。カニの重要性が低下し、効率的なルート取りが鍵。</p>
+                <div style="font-size: 0.75rem; color: #666; font-style: italic;">Source: Official Patch Notes</div>
+                <button class="btn-gold" style="margin-top: 2rem;">Generate Guide</button>
+            </div>
+
+            <div class="panel" style="border-style: dashed; opacity: 0.5;">
+                <div style="display: flex; justify-content: center; align-items: center; height: 100%; flex-direction: column;">
+                    <p style="font-weight: 800; font-size: 1rem; color: #444;">WAITING FOR NEXT INTEL</p>
+                </div>
+            </div>
+        </div>
+
+        <div style="margin-top: 3.5rem;" class="panel">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem;">
+                <h3 style="font-size: 1.1rem;">Sovereign Orders (指令板)</h3>
+                <span class="badge" style="background: rgba(231, 76, 60, 0.2); color: #e74c3c;">1 ACTION REQUIRED</span>
+            </div>
+            <div style="border-top: 1px solid rgba(255,255,255,0.05); padding-top: 1.5rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <p style="margin:0; font-weight: 600; color: #eee;">[Monetization] note記事の錬成案承認待ち</p>
+                        <p style="margin:4px 0 0 0; font-size: 0.75rem;">王の指揮官が DRAFT_20260405_1235.md を生成しました。</p>
+                    </div>
+                    <button style="background: #e74c3c; border: none; padding: 6px 15px; border-radius: 6px; color: #fff; font-size: 0.7rem; font-weight: 700; cursor: pointer;">APPROVE MISSION</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

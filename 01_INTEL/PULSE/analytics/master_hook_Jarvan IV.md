@@ -1,0 +1,1 @@
+No data to analyze (X scraping failed or returned no results).

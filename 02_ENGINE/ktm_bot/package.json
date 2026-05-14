@@ -1,0 +1,14 @@
+{
+  "name": "ktm-sovereign-worker",
+  "version": "3.0.0",
+  "description": "KTM Sovereign OS Worker (v3 Rewrite)",
+  "main": "src/index.js",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "@google/clasp": "^3.3.0",
+    "wrangler": "^3.0.0"
+  }
+}

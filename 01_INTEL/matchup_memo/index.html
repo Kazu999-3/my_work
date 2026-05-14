@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Matchup Vault - LoL マッチアップメモ</title>
+  <meta name="description" content="LoLのマッチアップ情報を記録・検索・エクスポートできる個人用ツール">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css?v=3">
+</head>
+<body>
+  <!-- ヘッダー -->
+  <header id="app-header">
+    <div class="header-left">
+      <h1>⚔️ Matchup Vault</h1>
+      <span class="header-subtitle">マッチアップ知識の金庫</span>
+    </div>
+    <div class="header-right">
+      <span id="entry-count" class="badge">0 entries</span>
+      <button id="btn-export-md" class="btn btn-ghost" title="note記事用エクスポート">📋 Export</button>
+      <button id="btn-backup" class="btn btn-ghost" title="JSONバックアップ">📥 Backup</button>
+      <button id="btn-restore" class="btn btn-ghost" title="JSONリストア">📤 Restore</button>
+      <input type="file" id="file-restore" accept=".json" hidden>
+    </div>
+  </header>
+
+  <!-- メインコンテンツ -->
+  <main id="app-main">
+    <!-- 左: フィルタ＆チャンプ一覧 -->
+    <aside id="sidebar">
+      <div class="search-box">
+        <input type="text" id="search-input" placeholder="🔍 チャンプ名で検索..." autocomplete="off">
+      </div>
+      <div class="filter-row">
+        <select id="filter-lane">
+          <option value="">全レーン</option>
+          <option value="Top">Top</option>
+          <option value="Jg">Jg</option>
+          <option value="Mid">Mid</option>
+          <option value="Bot">Bot</option>
+          <option value="Sup">Sup</option>
+        </select>
+        <select id="filter-advantage">
+          <option value="">全判定</option>
+          <option value="有利">🟢 有利</option>
+          <option value="五分">🟡 五分</option>
+          <option value="不利">🔴 不利</option>
+        </select>
+      </div>
+      <div id="matchup-list" class="matchup-list">
+        <!-- JSで生成 -->
+      </div>
+      <button id="btn-add" class="btn btn-primary btn-add">＋ マッチアップ追加</button>
+    </aside>
+
+    <!-- 右: 詳細ビュー -->
+    <section id="detail-view">
+      <div id="detail-empty" class="detail-empty">
+        <div class="empty-icon">📖</div>
+        <p>左のリストからマッチアップを選択<br>または新規追加してください</p>
+      </div>
+      <div id="detail-content" class="detail-content" hidden>
+        <div class="detail-header">
+          <div class="matchup-vs">
+            <div class="champ-display">
+              <img id="detail-my-icon" class="champ-icon-lg" src="" alt="">
+              <span id="detail-my-name" class="champ-name-lg"></span>
+            </div>
+            <span class="vs-badge">VS</span>
+            <div class="champ-display">
+              <img id="detail-enemy-icon" class="champ-icon-lg" src="" alt="">
+              <span id="detail-enemy-name" class="champ-name-lg"></span>
+            </div>
+          </div>
+          <div class="detail-meta">
+            <span id="detail-lane" class="lane-badge"></span>
+            <span id="detail-advantage" class="advantage-badge"></span>
+            <span id="detail-date" class="date-text"></span>
+          </div>
+          <div class="detail-actions">
+            <button id="btn-edit" class="btn btn-ghost">✏️ 編集</button>
+            <button id="btn-delete" class="btn btn-danger-ghost">🗑️ 削除</button>
+          </div>
+        </div>
+        <div class="detail-body">
+          <div class="detail-grid">
+            <div class="detail-card" id="card-build">
+              <h3>🗡️ ビルド</h3>
+              <div class="card-section">
+                <label>コアビルド</label>
+                <p id="detail-core-build"></p>
+              </div>
+              <div class="card-section">
+                <label>スタートアイテム</label>
+                <p id="detail-start-item"></p>
+              </div>
+            </div>
+            <div class="detail-card" id="card-runes">
+              <h3>🔮 ルーン & サモスペ</h3>
+              <div class="card-section">
+                <label>ルーン</label>
+                <p id="detail-runes"></p>
+              </div>
+              <div class="card-section">
+                <label>サモナースペル</label>
+                <p id="detail-summoners"></p>
+              </div>
+            </div>
+          </div>
+          <div class="detail-card full-width">
+            <h3>⚔️ 戦い方メモ</h3>
+            <p id="detail-strategy" class="strategy-text"></p>
+          </div>
+          <div class="detail-grid">
+            <div class="detail-card">
+              <h3>⚡ パワースパイク</h3>
+              <p id="detail-powerspike"></p>
+            </div>
+            <div class="detail-card">
+              <h3>⚠️ 注意ポイント</h3>
+              <p id="detail-caution"></p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- モーダル: マッチアップ追加/編集 -->
+  <div id="modal-overlay" class="modal-overlay" hidden>
+    <div class="modal" id="modal-form">
+      <div class="modal-header">
+        <h2 id="modal-title">マッチアップ追加</h2>
+        <button id="btn-modal-close" class="btn-close">&times;</button>
+      </div>
+      <form id="matchup-form" class="modal-body">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="input-my-champ">自チャンプ</label>
+            <div class="autocomplete-wrap">
+              <input type="text" id="input-my-champ" required autocomplete="off" placeholder="例: Yasuo">
+              <div id="ac-my-champ" class="autocomplete-dropdown" hidden></div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="input-enemy-champ">相手チャンプ</label>
+            <div class="autocomplete-wrap">
+              <input type="text" id="input-enemy-champ" required autocomplete="off" placeholder="例: Zed">
+              <div id="ac-enemy-champ" class="autocomplete-dropdown" hidden></div>
+            </div>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="input-lane">レーン</label>
+            <select id="input-lane" required>
+              <option value="">選択...</option>
+              <option value="Top">Top</option>
+              <option value="Jg">Jg</option>
+              <option value="Mid">Mid</option>
+              <option value="Bot">Bot</option>
+              <option value="Sup">Sup</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="input-advantage">有利判定</label>
+            <select id="input-advantage" required>
+              <option value="">選択...</option>
+              <option value="有利">🟢 有利</option>
+              <option value="五分">🟡 五分</option>
+              <option value="不利">🔴 不利</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="input-core-build">コアビルド</label>
+            <input type="text" id="input-core-build" placeholder="例: クラーケン → IE → BT">
+          </div>
+          <div class="form-group">
+            <label for="input-start-item">スタートアイテム</label>
+            <input type="text" id="input-start-item" placeholder="例: ドランブレード + ポーション">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="input-runes">ルーン</label>
+            <input type="text" id="input-runes" placeholder="例: 征服者 / 凱旋 / 迅速 / 最後の慈悲">
+          </div>
+          <div class="form-group">
+            <label for="input-summoners">サモナースペル</label>
+            <input type="text" id="input-summoners" placeholder="例: フラッシュ + テレポート">
+          </div>
+        </div>
+        <div class="form-group full">
+          <label for="input-strategy">戦い方メモ</label>
+          <textarea id="input-strategy" rows="4" placeholder="レーン戦の立ち回り、トレードのコツなど..."></textarea>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="input-powerspike">パワースパイク</label>
+            <input type="text" id="input-powerspike" placeholder="例: Lv3, 1コア完成後">
+          </div>
+          <div class="form-group">
+            <label for="input-caution">注意ポイント</label>
+            <input type="text" id="input-caution" placeholder="例: Lv6のオールイン注意">
+          </div>
+        </div>
+        <div class="form-actions">
+          <button type="button" id="btn-cancel" class="btn btn-ghost">キャンセル</button>
+          <button type="submit" class="btn btn-primary">💾 保存</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- モーダル: Markdownエクスポート -->
+  <div id="export-overlay" class="modal-overlay" hidden>
+    <div class="modal modal-export">
+      <div class="modal-header">
+        <h2>📋 note記事用エクスポート</h2>
+        <button id="btn-export-close" class="btn-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="export-filters">
+          <label>対象チャンプ:</label>
+          <select id="export-champ-filter">
+            <option value="">全チャンプ</option>
+          </select>
+          <label>レーン:</label>
+          <select id="export-lane-filter">
+            <option value="">全レーン</option>
+            <option value="Top">Top</option>
+            <option value="Jg">Jg</option>
+            <option value="Mid">Mid</option>
+            <option value="Bot">Bot</option>
+            <option value="Sup">Sup</option>
+          </select>
+        </div>
+        <textarea id="export-output" rows="16" readonly></textarea>
+        <div class="form-actions">
+          <button id="btn-copy-md" class="btn btn-primary">📋 コピー</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="auto_sync.js"></script>
+  <script src="app.js?v=3"></script>
+</body>
+</html>

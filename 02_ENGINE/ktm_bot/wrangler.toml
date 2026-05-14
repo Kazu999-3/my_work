@@ -1,0 +1,8 @@
+name = "ktm-os-worker"
+main = "src/index.js"
+compatibility_date = "2024-04-17"
+
+# [vars]
+# DISCORD_PUBLIC_KEY = "..."
+# DISCORD_TOKEN = "..."
+# LOCAL_API_URL = "..."
