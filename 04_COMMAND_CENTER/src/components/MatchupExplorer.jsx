@@ -144,10 +144,10 @@ const MatchupExplorer = ({ onBack }) => {
       raw_data: mergedRawData,
     }
     
-    if (memo.id) data.id = memo.id;
+    // IDは自動採番のため、送信データからは除外する
     data.matchup_id = memo.matchup_id || `manual_${Date.now()}`;
 
-    const { error } = await supabase.from('matchup_sentinel').upsert(data)
+    const { error } = await supabase.from('matchup_sentinel').upsert(data, { onConflict: 'matchup_id' })
     if (!error) {
       if (memo.id) {
         setMatchups(prev => prev.map(p => p.id === memo.id ? { ...p, ...data } : p))

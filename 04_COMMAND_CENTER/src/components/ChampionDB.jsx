@@ -115,7 +115,7 @@ const ChampionDB = ({ onBack }) => {
         fullClearTime: dataFields.fullClearTime
       }
     }
-    const { error } = await supabase.from('matchup_sentinel').upsert(data)
+    const { error } = await supabase.from('matchup_sentinel').upsert(data, { onConflict: 'matchup_id' })
     if (error) alert('保存失敗: ' + error.message)
     setSaving(false)
   }
