@@ -36,6 +36,10 @@ class SovereignSettings(BaseSettings):
     GEMINI_API_KEY: Optional[str] = None
     DISCORD_BOT_TOKEN: Optional[str] = None
     KTM_GUILD_ID: str = "1485636149379858567"
+    # 統治者 (ユーザー) 設定
+    KING_RIOT_ID: str = "Kazurin#4036"
+    RIOT_API_KEY: Optional[str] = None
+    
     # PULSE: Lolalytics 監視設定
     WATCH_CHAMPIONS: list[str] = ["Nidalee", "Lillia", "Nocturne", "Zyra", "Jarvan IV"]
     LOLALYTICS_ENABLED: bool = True

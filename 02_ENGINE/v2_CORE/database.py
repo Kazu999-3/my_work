@@ -1,4 +1,6 @@
 import chromadb
+import httpx
+import os
 from pathlib import Path
 from .settings import settings
 import json
@@ -42,6 +44,38 @@ class IntelligenceDatabase:
     def query_tactics(self, champion: str, limit: int = 3):
         """特定のチャンピオンに関する戦術データを検索（コーディネーター互換用）"""
         return self.query_intelligence(f"tactical_report {champion}", n_results=limit)
+
+    # --- Supabase 連携メソッド ---
+    
+    def _get_supabase_headers(self):
+        key = os.getenv("SUPABASE_KEY")
+        return {
+            "apikey": key,
+            "Authorization": f"Bearer {key}",
+            "Content-Type": "application/json"
+        }
+
+    def query_matchup(self, champion: str, enemy: str):
+        """Supabase から特定のマッチアップ情報を取得する"""
+        url = f"{os.getenv('SUPABASE_URL')}/rest/v1/matchup_sentinel"
+        params = {
+            "champion": f"eq.{champion}",
+            "enemy": f"eq.{enemy}",
+            "select": "strategy,raw_data"
+        }
+        try:
+            r = httpx.get(url, headers=self._get_supabase_headers(), params=params)
+            if r.status_code == 200 and r.json():
+                return r.json()[0]
+            
+            # 対面固有がなければ GLOBAL (辞典) を探す
+            params["enemy"] = "eq.GLOBAL"
+            r = httpx.get(url, headers=self._get_supabase_headers(), params=params)
+            if r.status_code == 200 and r.json():
+                return r.json()[0]
+        except Exception as e:
+            print(f"[DB] Supabase query error: {e}")
+        return None
 
     def get_status(self):
         """データベースの状態取得"""

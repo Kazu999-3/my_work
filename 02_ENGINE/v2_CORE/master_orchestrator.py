@@ -110,6 +110,37 @@ def main():
     t_money = threading.Thread(target=run_monetization, name="MonetizationThread", daemon=True)
     threads.append(t_money)
 
+    # 7. Personal Coach Loop (15分おきに王の試合をチェック)
+    def run_personal_coach():
+        from v2_CORE.personal_coach import PersonalCoach
+        logger.info("🎓 Personal Coach starting (Every 15 mins)...")
+        coach = PersonalCoach()
+        while True:
+            try:
+                coach.run_coaching_cycle()
+            except Exception as e:
+                logger.error(f"🔥 Personal Coach failed: {e}")
+            time.sleep(60 * 15)
+            
+    t_coach = threading.Thread(target=run_personal_coach, name="CoachThread", daemon=True)
+    threads.append(t_coach)
+
+    # 8. Overseas Scout Loop (24時間おきに海外メタを精査)
+    def run_overseas_scout():
+        # TODO: v2_CORE/overseas_scout.py を実装
+        logger.info("🌐 Overseas Scout starting (Every 24 hours)...")
+        while True:
+            try:
+                logger.info("🌐 [Overseas Scout] 巡回中...")
+                # 暫定的に既存の ItemScout を流用または新規実装を呼び出す
+                time.sleep(60 * 60 * 24)
+            except Exception as e:
+                logger.error(f"🔥 Overseas Scout failed: {e}")
+                time.sleep(60 * 60)
+            
+    t_scout = threading.Thread(target=run_overseas_scout, name="ScoutThread", daemon=True)
+    threads.append(t_scout)
+
     # 全エンジンの点火
     for t in threads:
         t.start()

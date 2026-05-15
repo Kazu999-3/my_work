@@ -27,8 +27,13 @@ def setup_sovereign_logging(name="SovereignOS"):
         
     formatter = logging.Formatter('%(asctime)s [%(name)s] %(levelname)s: %(message)s')
     
-    # コンソールハンドラ (Windowsの文字化け対策としてエラーを無視するように設定可能だが、ここでは標準的な設定に留める)
+    # コンソールハンドラ (Windowsの絵文字による文字化け/エラー対策)
     console_handler = logging.StreamHandler(sys.stdout)
+    if hasattr(sys.stdout, "reconfigure"):
+        try:
+            sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+        except:
+            pass
     console_handler.setFormatter(formatter)
     
     # ファイルハンドラ (10MBごとにローテーション、最大5ファイル)

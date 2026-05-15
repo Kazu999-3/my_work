@@ -67,7 +67,8 @@ def run_monetization_loop():
     scout = ItemScout()
     item_name, impact, beneficiaries = scout.select_best_target()
     
-    if not item_name or not beneficiaries:
+    # item_name が None や "None", 空文字の場合はフォールバック
+    if not item_name or str(item_name).lower() == "none" or not beneficiaries:
         logger.warning("No clear item trends detected. Falling back to default list.")
         trending_champ = random.choice(["Lillia", "JarvanIV", "Shyvana"])
         meta_context = "標準的なメタ調査"

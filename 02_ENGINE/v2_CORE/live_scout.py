@@ -4,7 +4,6 @@ import urllib3
 import logging
 import os
 from pathlib import Path
-from supabase import create_client
 import dotenv
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -24,16 +23,26 @@ class LiveScout:
         self.active = False
         self.last_match_id = None
         
-        if SUPABASE_URL and SUPABASE_KEY:
-            self.supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
-        else:
-            self.supabase = None
+        if not (SUPABASE_URL and SUPABASE_KEY):
             logger.error("Supabase credentials missing.")
 
+    def _upsert_matchup(self, data):
+        """Supabase REST API を使用して UPSERT を実行する"""
+        url = f"{SUPABASE_URL}/rest/v1/matchup_sentinel?on_conflict=matchup_id"
+        headers = {
+            "apikey": SUPABASE_KEY,
+            "Authorization": f"Bearer {SUPABASE_KEY}",
+            "Content-Type": "application/json",
+            "Prefer": "resolution=merge-duplicates"
+        }
+        try:
+            r = requests.post(url, headers=headers, json=data, timeout=10)
+            return r.ok
+        except Exception as e:
+            logger.error(f"Supabase REST API Error: {e}")
+            return False
+
     def push_to_supabase(self, enemy_champs):
-        if not self.supabase:
-            return
-            
         data = {
             "matchup_id": "LIVE_MATCH",
             "champion": "LIVE",
@@ -46,15 +55,12 @@ class LiveScout:
             }
         }
         
-        try:
-            self.supabase.table("matchup_sentinel").upsert(data).execute()
+        if self._upsert_matchup(data):
             logger.info(f"✅ Live match data pushed to Supabase: {enemy_champs}")
-        except Exception as e:
-            logger.error(f"Failed to push live match to Supabase: {e}")
+        else:
+            logger.error(f"Failed to push live match to Supabase")
 
     def clear_live_match(self):
-        if not self.supabase:
-            return
         data = {
             "matchup_id": "LIVE_MATCH",
             "champion": "LIVE",
@@ -66,11 +72,8 @@ class LiveScout:
                 "enemy_team": []
             }
         }
-        try:
-            self.supabase.table("matchup_sentinel").upsert(data).execute()
-            logger.info("Cleared live match data (Game Ended).")
-        except:
-            pass
+        self._upsert_matchup(data)
+        logger.info("Cleared live match data (Game Ended).")
 
     def run(self):
         logger.info("🚀 Live Scout initialized. Waiting for match to start...")
