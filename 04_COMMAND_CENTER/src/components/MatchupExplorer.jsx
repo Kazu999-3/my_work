@@ -37,13 +37,24 @@ const MatchupExplorer = ({ onBack }) => {
 
   const fetchData = async () => {
     setLoading(true)
-    const [mRes, aRes] = await Promise.all([
-      supabase.from('matchup_sentinel').select('*').order('created_at', { ascending: false }),
-      supabase.from('bible_articles').select('id,title,champion').order('created_at', { ascending: false }),
-    ])
-    if (mRes.data) setMatchups(mRes.data)
-    if (aRes.data) setArticles(aRes.data)
-    setLoading(false)
+    try {
+      const [mRes, aRes] = await Promise.all([
+        supabase.from('matchup_sentinel').select('*').order('created_at', { ascending: false }),
+        supabase.from('bible_articles').select('id,title,champion').order('created_at', { ascending: false }),
+      ])
+      
+      if (mRes.error) console.error('Matchup Fetch Error:', mRes.error)
+      if (aRes.error) console.error('Article Fetch Error:', aRes.error)
+
+      // 有効なデータ（自分と相手のチャンプ名があるもの）のみに絞り込む
+      const validMatchups = (mRes.data || []).filter(m => m.champion && m.enemy)
+      setMatchups(validMatchups)
+      setArticles(aRes.data || [])
+    } catch (err) {
+      console.error('Fatal Fetch Error:', err)
+    } finally {
+      setLoading(false)
+    }
   }
 
   const results = useMemo(() => {
