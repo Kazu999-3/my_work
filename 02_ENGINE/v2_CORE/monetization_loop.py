@@ -71,13 +71,15 @@ def run_monetization_loop():
         logger.warning("No clear item trends detected. Falling back to default list.")
         trending_champ = random.choice(["Lillia", "JarvanIV", "Shyvana"])
         meta_context = "標準的なメタ調査"
+        notify_msg = f"🔍 **[Sovereign Scout]** 定期メタパトロール: 今回は **{trending_champ}** を深掘りします。"
     else:
         # トレンドアイテムに合致するチャンプからランダムで1体選択
         trending_champ = random.choice(beneficiaries)
         meta_context = f"【{item_name}】の影響: {impact}"
+        notify_msg = f"🚨 **[Sovereign Scout]** トレンド検知: **{item_name}** がメタを支配中。\n恩恵を受ける **{trending_champ}** の本気バイブルを生成します。\n文脈: {impact}"
         
-    logger.info(f"📈 トレンド検知: {item_name} の影響により {trending_champ} をターゲットに設定しました。")
-    notify_discord(f"🚨 **[Sovereign Scout]** トレンド検知: **{item_name}** がメタを支配中。\n恩恵を受ける **{trending_champ}** の本気バイブルを生成します。\n文脈: {impact}")
+    logger.info(f"📈 ターゲット選定: {trending_champ} (Context: {meta_context})")
+    notify_discord(notify_msg)
     
     # 2. バイブル（記事）の錬成とChampionDBの更新
     from v2_CORE.bible_forge import generate_bible

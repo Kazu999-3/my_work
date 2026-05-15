@@ -105,7 +105,7 @@ def main():
                 run_monetization_loop()
             except Exception as e:
                 logger.error(f"🔥 Monetization Loop failed: {e}")
-            time.sleep(60 * 60 * 6) # 6時間待機
+            time.sleep(60 * 60 * 12) # 12時間待機
             
     t_money = threading.Thread(target=run_monetization, name="MonetizationThread", daemon=True)
     threads.append(t_money)

@@ -43,6 +43,9 @@ const Dashboard = () => {
 
   const [liveEnemies, setLiveEnemies] = useState([])
 
+  const [activities, setActivities] = useState([])
+  const [statsSummary, setStatsSummary] = useState({ research: 0, bibles: 0 })
+
   useEffect(() => {
     const checkLiveMatch = async () => {
       try {
@@ -61,10 +64,65 @@ const Dashboard = () => {
         // ignore
       }
     }
+
+    const fetchRecentActivity = async () => {
+      try {
+        // 最近のマッチアップとバイブルを並列で取得
+        const [mRes, aRes] = await Promise.all([
+          supabase.from('matchup_sentinel').select('id, title, created_at, champion, enemy').order('created_at', { ascending: false }).limit(5),
+          supabase.from('bible_articles').select('id, title, created_at, champion').order('created_at', { ascending: false }).limit(5)
+        ])
+
+        const combined = [
+          ...(mRes.data || []).map(m => ({
+            id: `m-${m.id}`,
+            text: m.enemy === 'GLOBAL' ? `${m.champion} の辞典データを更新` : `${m.champion} vs ${m.enemy} の対策を記録`,
+            time: m.created_at,
+            raw_time: new Date(m.created_at).getTime()
+          })),
+          ...(aRes.data || []).map(a => ({
+            id: `a-${a.id}`,
+            text: `${a.champion} の攻略バイブルを錬成`,
+            time: a.created_at,
+            raw_time: new Date(a.created_at).getTime()
+          }))
+        ]
+
+        // 時間順に並び替え
+        combined.sort((a, b) => b.raw_time - a.raw_time)
+        setActivities(combined.slice(0, 5))
+        
+        // 統計の更新
+        setStatsSummary({
+          research: (mRes.data || []).length + 40, // 累計+40(モック)
+          bibles: (aRes.data || []).length + 10  // 累計+10(モック)
+        })
+      } catch (e) {
+        console.error('Activity Fetch Error:', e)
+      }
+    }
+
     checkLiveMatch()
-    const interval = setInterval(checkLiveMatch, 5000)
+    fetchRecentActivity()
+    
+    const interval = setInterval(() => {
+      checkLiveMatch()
+      fetchRecentActivity()
+    }, 10000)
+    
     return () => clearInterval(interval)
   }, [])
+
+  // 時間の相対表記ヘルパー
+  const formatTime = (isoString) => {
+    const diff = Date.now() - new Date(isoString).getTime()
+    const mins = Math.floor(diff / 60000)
+    if (mins < 1) return 'たった今'
+    if (mins < 60) return `${mins}分前`
+    const hours = Math.floor(mins / 60)
+    if (hours < 24) return `${hours}時間前`
+    return new Date(isoString).toLocaleDateString('ja-JP')
+  }
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: '#06070a', color: '#f0f5f5' }}>
@@ -164,9 +222,9 @@ const Dashboard = () => {
 
               {/* ステータスカード */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '24px', marginBottom: '32px' }}>
-                <StatusCard title="リサーチエンジン" status="稼働中" metric="25件の分析完了" icon={<Zap style={{ color: '#00cfef' }} />} statusColor="#00cfef" />
+                <StatusCard title="リサーチエンジン" status="稼働中" metric={`${statsSummary.research}件の分析完了`} icon={<Zap style={{ color: '#00cfef' }} />} statusColor="#00cfef" />
                 <StatusCard title="KTMボット" status="接続中" metric="Riot API 正常" icon={<Users style={{ color: '#c89b3c' }} />} statusColor="#c89b3c" />
-                <StatusCard title="バイブル生成" status="待機中" metric="次回: リリア" icon={<BookOpen style={{ color: '#a78bfa' }} />} statusColor="#a78bfa" />
+                <StatusCard title="バイブル生成" status="待機中" metric={`累計 ${statsSummary.bibles} 件の錬成`} icon={<BookOpen style={{ color: '#a78bfa' }} />} statusColor="#a78bfa" />
               </div>
 
               {/* Live Briefing */}
@@ -191,9 +249,13 @@ const Dashboard = () => {
               <div className="glass-card" style={{ padding: '32px' }}>
                 <h3 style={{ fontSize: '18px', fontWeight: 700, fontFamily: "'Space Grotesk', monospace", marginBottom: '24px' }}>最近の活動</h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <ActivityItem text="OnerのVODを解析完了" time="12分前" />
-                  <ActivityItem text="全プレイヤーのランク同期成功" time="45分前" />
-                  <ActivityItem text="Jarvan IV の攻略記事を錬成" time="2時間前" />
+                  {activities.length > 0 ? (
+                    activities.map(a => (
+                      <ActivityItem key={a.id} text={a.text} time={formatTime(a.time)} />
+                    ))
+                  ) : (
+                    <p style={{ color: '#a0a5b0', fontSize: '13px', padding: '10px' }}>活動履歴はありません</p>
+                  )}
                 </div>
               </div>
             </motion.div>
