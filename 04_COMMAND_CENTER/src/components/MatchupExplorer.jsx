@@ -239,6 +239,14 @@ const MatchupExplorer = ({ onBack }) => {
   // ===== メイン =====
   return (
     <div>
+      {/* 診断用デバッグパネル */}
+      <div style={{ fontSize: '10px', background: 'rgba(0,0,0,0.4)', padding: '8px', borderRadius: '8px', marginBottom: '16px', border: '1px solid rgba(255,255,255,0.1)', color: '#888', fontFamily: 'monospace' }}>
+        Status: {loading ? 'FETCHING...' : 'IDLE'} | 
+        URL: {import.meta.env.VITE_SUPABASE_URL ? 'OK' : 'MISSING'} | 
+        Data: {matchups.length} rows | 
+        {matchups.length === 0 && !loading && <span style={{ color: '#ef4444' }}> (No Data - Check RLS or Env)</span>}
+      </div>
+
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
         <div>
           <h2 style={{ fontSize: '26px', fontWeight: 900, fontFamily: "'Space Grotesk', monospace", display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
