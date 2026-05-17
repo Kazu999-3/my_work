@@ -6,6 +6,9 @@ import {
   Menu, X, BookHeart
 } from 'lucide-react'
 import BibleReader from './BibleReader'
+import DraftingHub from './DraftingHub'
+import PerformanceTimeline from './PerformanceTimeline'
+import NewsTicker from './NewsTicker'
 import MatchupExplorer from './MatchupExplorer'
 import StatsPanel from './StatsPanel'
 import ChampionDB from './ChampionDB'
@@ -45,6 +48,7 @@ const Dashboard = () => {
 
   const [activities, setActivities] = useState([])
   const [statsSummary, setStatsSummary] = useState({ research: 0, bibles: 0 })
+  const [matchups, setMatchups] = useState([])
 
   useEffect(() => {
     const checkLiveMatch = async () => {
@@ -67,14 +71,17 @@ const Dashboard = () => {
 
     const fetchRecentActivity = async () => {
       try {
-        // 最近のマッチアップとバイブルを並列で取得
+        // マッチアップの全件と最近のバイブルを取得
         const [mRes, aRes] = await Promise.all([
-          supabase.from('matchup_sentinel').select('id, title, created_at, champion, enemy').order('created_at', { ascending: false }).limit(5),
+          supabase.from('matchup_sentinel').select('*').order('created_at', { ascending: false }),
           supabase.from('bible_articles').select('id, title, created_at, champion').order('created_at', { ascending: false }).limit(5)
         ])
 
+        const mData = mRes.data || []
+        setMatchups(mData)
+
         const combined = [
-          ...(mRes.data || []).map(m => ({
+          ...mData.slice(0, 5).map(m => ({
             id: `m-${m.id}`,
             text: m.enemy === 'GLOBAL' ? `${m.champion} の辞典データを更新` : `${m.champion} vs ${m.enemy} の対策を記録`,
             time: m.created_at,
@@ -94,7 +101,7 @@ const Dashboard = () => {
         
         // 統計の更新
         setStatsSummary({
-          research: (mRes.data || []).length + 40, // 累計+40(モック)
+          research: mData.length + 40, // 累計+40(モック)
           bibles: (aRes.data || []).length + 10  // 累計+10(モック)
         })
       } catch (e) {
@@ -220,6 +227,9 @@ const Dashboard = () => {
                 </div>
               </div>
 
+              <DraftingHub />
+              <PerformanceTimeline matchups={matchups} />
+
               {/* ステータスカード */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '24px', marginBottom: '32px' }}>
                 <StatusCard title="リサーチエンジン" status="稼働中" metric={`${statsSummary.research}件の分析完了`} icon={<Zap style={{ color: '#00cfef' }} />} statusColor="#00cfef" />
@@ -262,6 +272,8 @@ const Dashboard = () => {
           )}
         </AnimatePresence>
       </main>
+
+      <NewsTicker />
     </div>
   )
 }

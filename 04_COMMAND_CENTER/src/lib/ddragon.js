@@ -2,7 +2,7 @@
  * Data Dragon ユーティリティ
  * チャンピオンアイコン・スプラッシュアートのURL生成
  */
-const DDRAGON_VERSION = '14.10.1'
+const DDRAGON_VERSION = '16.10.1'
 const DDRAGON_BASE = `https://ddragon.leagueoflegends.com/cdn/${DDRAGON_VERSION}`
 
 // チャンピオン名の正規化マップ（API名 → DDragon名）

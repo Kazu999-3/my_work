@@ -2,7 +2,7 @@ import React, { useEffect, useState, useMemo } from 'react'
 import { supabase } from '../lib/supabase'
 import { getChampIcon } from '../lib/ddragon'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Shield, Target, Zap, Search, AlertTriangle, ChevronLeft, Swords, Plus, X, Save, ChevronDown, Star, RefreshCw } from 'lucide-react'
+import { Shield, Target, Zap, Search, AlertTriangle, ChevronLeft, Swords, Plus, X, Save, ChevronDown, Star, RefreshCw, Trash2 } from 'lucide-react'
 
 const EMPTY_MEMO = {
   champion: '', enemy: '', role: 'Jungle', title: '',
@@ -25,8 +25,13 @@ const MatchupExplorer = ({ onBack }) => {
 
   useEffect(() => {
     fetchData()
-    // カタカナ・ひらがな検索用の日本語名辞書を取得
-    fetch('https://ddragon.leagueoflegends.com/cdn/14.10.1/data/ja_JP/champion.json')
+    // カタカナ・ひらがな検索用の日本語名辞書を取得（常に最新バージョンを使用）
+    fetch('https://ddragon.leagueoflegends.com/api/versions.json')
+      .then(r => r.json())
+      .then(versions => {
+        const latest = versions[0];
+        return fetch(`https://ddragon.leagueoflegends.com/cdn/${latest}/data/ja_JP/champion.json`);
+      })
       .then(r => r.json())
       .then(d => {
         const m = {}
@@ -159,6 +164,18 @@ const MatchupExplorer = ({ onBack }) => {
     setSaving(false)
   }
 
+  const handleDelete = async (id) => {
+    if (!window.confirm('このマッチアップメモを完全に削除しますか？')) return
+    
+    const { error } = await supabase.from('matchup_sentinel').delete().eq('id', id)
+    if (!error) {
+      setMatchups(prev => prev.filter(m => m.id !== id))
+      setSelected(null)
+    } else {
+      alert('削除失敗: ' + error.message)
+    }
+  }
+
   // ===== 詳細ビュー =====
   if (selected) {
     const m = selected; const rd = m.raw_data || {}
@@ -189,7 +206,10 @@ const MatchupExplorer = ({ onBack }) => {
                   <h1 style={{ fontSize: '24px', fontWeight: 900, fontFamily: "'Space Grotesk', monospace", margin: 0 }}>{m.title}</h1>
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <button onClick={() => handleEdit(m)} style={{ padding: '6px 12px', background: 'rgba(34,197,94,0.15)', color: '#22c55e', borderRadius: '6px', fontSize: '11px', fontWeight: 800, border: '1px solid rgba(34,197,94,0.3)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      📝 メモを編集／追記
+                      📝 編集
+                    </button>
+                    <button onClick={() => handleDelete(m.id)} style={{ padding: '6px 12px', background: 'rgba(239,68,68,0.15)', color: '#ef4444', borderRadius: '6px', fontSize: '11px', fontWeight: 800, border: '1px solid rgba(239,68,68,0.3)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <Trash2 size={13} /> 削除
                     </button>
                     <a href={lolUrl} target="_blank" rel="noreferrer" style={{ padding: '6px 12px', background: 'rgba(212,175,55,0.15)', color: '#d4af37', borderRadius: '6px', fontSize: '11px', fontWeight: 800, textDecoration: 'none', border: '1px solid rgba(212,175,55,0.3)' }}>
                       📊 Lolalytics ↗

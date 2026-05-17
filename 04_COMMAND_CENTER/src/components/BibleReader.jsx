@@ -110,6 +110,9 @@ const BibleReader = ({ onBack }) => {
                 </button>
               </>
             )}
+            <button onClick={(e) => deleteArticle(selectedArticle.id, e)} style={btnStyle('#ef4444', 'rgba(239,68,68,0.1)')}>
+              <Trash2 size={14} /> 削除
+            </button>
           </div>
         </div>
 

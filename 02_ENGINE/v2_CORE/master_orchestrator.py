@@ -127,19 +127,39 @@ def main():
 
     # 8. Overseas Scout Loop (24時間おきに海外メタを精査)
     def run_overseas_scout():
-        # TODO: v2_CORE/overseas_scout.py を実装
+        from v2_CORE.overseas_scout import OverseasScout
         logger.info("🌐 Overseas Scout starting (Every 24 hours)...")
-        while True:
-            try:
-                logger.info("🌐 [Overseas Scout] 巡回中...")
-                # 暫定的に既存の ItemScout を流用または新規実装を呼び出す
-                time.sleep(60 * 60 * 24)
-            except Exception as e:
-                logger.error(f"🔥 Overseas Scout failed: {e}")
-                time.sleep(60 * 60)
+        try:
+            OverseasScout().run()
+        except Exception as e:
+            logger.error(f"🔥 Overseas Scout failed: {e}")
             
     t_scout = threading.Thread(target=run_overseas_scout, name="ScoutThread", daemon=True)
     threads.append(t_scout)
+
+    # 9. Draft Analyzer Loop (ライブ試合の構成分析)
+    def run_draft_analyzer():
+        from v2_CORE.draft_analyzer import DraftAnalyzer
+        logger.info("🧠 Draft Analyzer starting...")
+        try:
+            DraftAnalyzer().run()
+        except Exception as e:
+            logger.error(f"🔥 Draft Analyzer failed: {e}")
+            
+    t_draft = threading.Thread(target=run_draft_analyzer, name="DraftThread", daemon=True)
+    threads.append(t_draft)
+
+    # 10. News Scout Loop (メタニュースの収集)
+    def run_news_scout():
+        from v2_CORE.news_scout import NewsScout
+        logger.info("📰 News Scout starting...")
+        try:
+            NewsScout().run()
+        except Exception as e:
+            logger.error(f"🔥 News Scout failed: {e}")
+            
+    t_news = threading.Thread(target=run_news_scout, name="NewsThread", daemon=True)
+    threads.append(t_news)
 
     # 全エンジンの点火
     for t in threads:

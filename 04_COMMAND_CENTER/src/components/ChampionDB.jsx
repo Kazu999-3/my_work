@@ -25,8 +25,13 @@ const ChampionDB = ({ onBack }) => {
   const [stats, setStats] = useState({ matches: 0, wins: 0, kda: '0.00' })
 
   useEffect(() => {
-    // チャンピオン一覧を取得
-    fetch('https://ddragon.leagueoflegends.com/cdn/14.10.1/data/ja_JP/champion.json')
+    // 常に最新の DDragon バージョンを取得してからチャンピオン一覧を取得
+    fetch('https://ddragon.leagueoflegends.com/api/versions.json')
+      .then(r => r.json())
+      .then(versions => {
+        const latest = versions[0];
+        return fetch(`https://ddragon.leagueoflegends.com/cdn/${latest}/data/ja_JP/champion.json`);
+      })
       .then(r => r.json())
       .then(d => {
         const list = Object.values(d.data).map(c => ({
