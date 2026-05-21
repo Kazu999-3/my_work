@@ -1,6 +1,6 @@
-import React, { useMemo } from 'react'
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts'
-import { TrendingUp, Award, Target, Activity, Zap } from 'lucide-react'
+import { useMemo } from 'react'
+import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts'
+import { TrendingUp, Zap } from 'lucide-react'
 import { format } from 'date-fns'
 
 const PerformanceTimeline = ({ matchups }) => {
@@ -94,7 +94,7 @@ const PerformanceTimeline = ({ matchups }) => {
           <Zap size={14} /> AI 成長レポート
         </div>
         <p style={{ fontSize: '13px', color: '#a0a5b0', lineHeight: 1.6 }}>
-          王、直近10試合のデータから、あなたの立ち回りは安定期に入っております。特にKDAが{stats.avgKda}を維持している点は賞賛に値します。
+          マスター、直近10試合のデータから、あなたの立ち回りは安定期に入っております。特にKDAが{stats.avgKda}を維持している点は賞賛に値します。
           次の課題は、高いパフォーマンスを維持しつつ、オブジェクト関与をさらに15%引き上げること。
           そうすれば、帝国の版図はさらに広がるでしょう。
         </p>

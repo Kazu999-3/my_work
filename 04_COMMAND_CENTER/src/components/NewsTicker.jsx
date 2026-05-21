@@ -1,10 +1,17 @@
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { motion } from 'framer-motion'
-import { Zap, Globe, AlertTriangle } from 'lucide-react'
+import { Globe } from 'lucide-react'
 
 const NewsTicker = () => {
   const [news, setNews] = useState("Sovereign OS Intelligence Network Initializing...")
+
+  const fetchNews = async () => {
+    const { data } = await supabase.from('matchup_sentinel').select('strategy').eq('matchup_id', 'NEWS_TICKER').single()
+    if (data && data.strategy) {
+      setNews(data.strategy)
+    }
+  }
 
   useEffect(() => {
     fetchNews()
@@ -15,13 +22,6 @@ const NewsTicker = () => {
 
     return () => { supabase.removeChannel(channel) }
   }, [])
-
-  const fetchNews = async () => {
-    const { data } = await supabase.from('matchup_sentinel').select('strategy').eq('matchup_id', 'NEWS_TICKER').single()
-    if (data && data.strategy) {
-      setNews(data.strategy)
-    }
-  }
 
   return (
     <div style={{

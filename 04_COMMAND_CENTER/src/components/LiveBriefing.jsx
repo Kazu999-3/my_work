@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { AlertTriangle, Crosshair, ShieldAlert, Swords, Zap, Shield } from 'lucide-react'
+import { Crosshair, Swords, Zap } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { getChampIcon } from '../lib/ddragon'
 

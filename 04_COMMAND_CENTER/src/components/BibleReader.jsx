@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react'
 import { supabase } from '../lib/supabase'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { Book, ChevronLeft, ChevronDown, ChevronUp, Clock, User, Sparkles, Pencil, Save, X, Trash2, Search } from 'lucide-react'
 
 const BibleReader = ({ onBack }) => {
@@ -13,8 +13,7 @@ const BibleReader = ({ onBack }) => {
   const [search, setSearch] = useState('')
   const [collapsedGroups, setCollapsedGroups] = useState({})
   const [groupMode, setGroupMode] = useState('champion') // 'champion' or 'keyword'
-
-  useEffect(() => { fetchArticles() }, [])
+  const [sortOrder, setSortOrder] = useState('updated_desc') // 'updated_desc', 'updated_asc', 'name_asc'
 
   const fetchArticles = async () => {
     setLoading(true)
@@ -24,6 +23,8 @@ const BibleReader = ({ onBack }) => {
     } catch (e) { console.error(e) }
     setLoading(false)
   }
+
+  useEffect(() => { fetchArticles() }, [])
 
   // グループ化ロジック
   const grouped = useMemo(() => {
@@ -42,7 +43,6 @@ const BibleReader = ({ onBack }) => {
         if (!groups[key]) groups[key] = []
         groups[key].push(a)
       })
-    } else {
       // キーワードでグループ化
       filtered.forEach(a => {
         const keys = (a.keywords && a.keywords.length > 0) ? a.keywords : ['未分類']
@@ -53,8 +53,30 @@ const BibleReader = ({ onBack }) => {
       })
     }
     
-    return Object.entries(groups).sort((a, b) => a[0].localeCompare(b[0]))
-  }, [articles, search, groupMode])
+    // 各グループ内の記事をソート
+    Object.keys(groups).forEach(key => {
+      groups[key].sort((a, b) => {
+        if (sortOrder === 'updated_desc') return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        if (sortOrder === 'updated_asc') return new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+        return a.title.localeCompare(b.title)
+      })
+    })
+
+    // グループ自体をソート
+    return Object.entries(groups).sort((a, b) => {
+      if (sortOrder === 'updated_desc') {
+        const maxA = Math.max(...a[1].map(x => new Date(x.created_at).getTime()))
+        const maxB = Math.max(...b[1].map(x => new Date(x.created_at).getTime()))
+        return maxB - maxA
+      }
+      if (sortOrder === 'updated_asc') {
+        const minA = Math.min(...a[1].map(x => new Date(x.created_at).getTime()))
+        const minB = Math.min(...b[1].map(x => new Date(x.created_at).getTime()))
+        return minA - minB
+      }
+      return a[0].localeCompare(b[0])
+    })
+  }, [articles, search, groupMode, sortOrder])
 
   const toggleGroup = (key) => {
     setCollapsedGroups(prev => ({ ...prev, [key]: !prev[key] }))
@@ -65,10 +87,11 @@ const BibleReader = ({ onBack }) => {
 
   const saveArticle = async () => {
     setSaving(true)
-    const { error } = await supabase.from('bible_articles').update({ content: editContent }).eq('id', selectedArticle.id)
+    const now = new Date().toISOString()
+    const { error } = await supabase.from('bible_articles').update({ content: editContent, created_at: now }).eq('id', selectedArticle.id)
     if (!error) {
-      setSelectedArticle({ ...selectedArticle, content: editContent })
-      setArticles(prev => prev.map(a => a.id === selectedArticle.id ? { ...a, content: editContent } : a))
+      setSelectedArticle({ ...selectedArticle, content: editContent, created_at: now })
+      setArticles(prev => prev.map(a => a.id === selectedArticle.id ? { ...a, content: editContent, created_at: now } : a))
       setEditing(false)
     } else { alert('保存失敗: ' + error.message) }
     setSaving(false)
@@ -172,16 +195,24 @@ const BibleReader = ({ onBack }) => {
             style={{ width: '100%', padding: '14px 14px 14px 44px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', color: '#f0f5f5', fontSize: '14px', fontFamily: "'Outfit', sans-serif", outline: 'none' }} />
         </div>
         
-        {/* カテゴリー切り替え */}
-        <div style={{ display: 'flex', background: 'rgba(0,0,0,0.3)', padding: '4px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
-          <button onClick={() => setGroupMode('champion')} 
-            style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: 700, transition: 'all 0.2s', background: groupMode === 'champion' ? '#c89b3c' : 'transparent', color: groupMode === 'champion' ? '#000' : '#a0a5b0' }}>
-            チャンピオン別
-          </button>
-          <button onClick={() => setGroupMode('keyword')} 
-            style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: 700, transition: 'all 0.2s', background: groupMode === 'keyword' ? '#c89b3c' : 'transparent', color: groupMode === 'keyword' ? '#000' : '#a0a5b0' }}>
-            キーワード別
-          </button>
+        {/* カテゴリー＆ソート */}
+        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', background: 'rgba(0,0,0,0.3)', padding: '4px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)', height: '48px', alignItems: 'center' }}>
+            <button onClick={() => setGroupMode('champion')} 
+              style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: 700, transition: 'all 0.2s', background: groupMode === 'champion' ? '#c89b3c' : 'transparent', color: groupMode === 'champion' ? '#000' : '#a0a5b0' }}>
+              チャンピオン別
+            </button>
+            <button onClick={() => setGroupMode('keyword')} 
+              style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: 700, transition: 'all 0.2s', background: groupMode === 'keyword' ? '#c89b3c' : 'transparent', color: groupMode === 'keyword' ? '#000' : '#a0a5b0' }}>
+              キーワード別
+            </button>
+          </div>
+          
+          <select value={sortOrder} onChange={e => setSortOrder(e.target.value)} style={{ padding: '0 16px', background: 'rgba(20,22,30,0.8)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', color: '#f0f5f5', fontSize: '14px', fontWeight: 700, outline: 'none', cursor: 'pointer', height: '48px' }}>
+            <option value="updated_desc">更新日が新しい順</option>
+            <option value="updated_asc">更新日が古い順</option>
+            <option value="name_asc">名前順</option>
+          </select>
         </div>
       </div>
 

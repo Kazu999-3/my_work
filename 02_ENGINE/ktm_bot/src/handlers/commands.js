@@ -125,7 +125,7 @@ export async function performBalance(interaction, names, env, ctx, isUpdate = fa
             title: "✅ メンバー同期完了",
             description: data.message,
             color: 0x3498db,
-            footer: { text: "チーム分けボタンを押して実行してください" }
+            footer: { text: "スプレッドシートから確認・手動調整してください" }
           }],
           components: []
         });

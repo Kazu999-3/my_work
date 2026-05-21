@@ -1,12 +1,16 @@
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
-import { motion, AnimatePresence } from 'framer-motion'
-import { Swords, AlertCircle, Zap, Shield, Target, ChevronRight } from 'lucide-react'
+import { motion } from 'framer-motion'
+import { Swords, Zap } from 'lucide-react'
 import { getChampIcon } from '../lib/ddragon'
 
 const DraftingHub = () => {
   const [liveMatch, setLiveMatch] = useState(null)
-  const [loading, setLoading] = useState(true)
+
+  const fetchLiveMatch = async () => {
+    const { data } = await supabase.from('matchup_sentinel').select('*').eq('matchup_id', 'LIVE_MATCH').single()
+    if (data) setLiveMatch(data)
+  }
 
   useEffect(() => {
     fetchLiveMatch()
@@ -17,12 +21,6 @@ const DraftingHub = () => {
 
     return () => { supabase.removeChannel(channel) }
   }, [])
-
-  const fetchLiveMatch = async () => {
-    const { data } = await supabase.from('matchup_sentinel').select('*').eq('matchup_id', 'LIVE_MATCH').single()
-    if (data) setLiveMatch(data)
-    setLoading(false)
-  }
 
   if (!liveMatch || !liveMatch.raw_data?.enemy_team || liveMatch.raw_data.enemy_team.length === 0) {
     return null // 試合中でなければ何も表示しない

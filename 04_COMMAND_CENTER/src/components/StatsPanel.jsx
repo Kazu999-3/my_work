@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { supabase } from '../lib/supabase'
 import { getChampIcon } from '../lib/ddragon'
 import { TrendingUp, Trophy, Target, Flame, Skull } from 'lucide-react'

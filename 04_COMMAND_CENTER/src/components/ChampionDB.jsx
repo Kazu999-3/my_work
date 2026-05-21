@@ -1,14 +1,16 @@
-import React, { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { supabase } from '../lib/supabase'
 import { getChampIcon, getChampSplash } from '../lib/ddragon'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { ChevronLeft, Search, Save, BookOpen, RefreshCw, Zap, ShieldAlert, Swords, Shield } from 'lucide-react'
 
 const ChampionDB = ({ onBack }) => {
   const [champions, setChampions] = useState([])
   const [search, setSearch] = useState('')
+  const [sortOrder, setSortOrder] = useState('updated_desc') // 'updated_desc', 'name_asc'
   const [selected, setSelected] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [champDates, setChampDates] = useState({})
   
   // 各チャンピオンの細分化メモ
   const [dataFields, setDataFields] = useState({
@@ -23,36 +25,6 @@ const ChampionDB = ({ onBack }) => {
   
   // 戦績データ
   const [stats, setStats] = useState({ matches: 0, wins: 0, kda: '0.00' })
-
-  useEffect(() => {
-    // 常に最新の DDragon バージョンを取得してからチャンピオン一覧を取得
-    fetch('https://ddragon.leagueoflegends.com/api/versions.json')
-      .then(r => r.json())
-      .then(versions => {
-        const latest = versions[0];
-        return fetch(`https://ddragon.leagueoflegends.com/cdn/${latest}/data/ja_JP/champion.json`);
-      })
-      .then(r => r.json())
-      .then(d => {
-        const list = Object.values(d.data).map(c => ({
-          id: c.id,
-          key: c.key,
-          name: c.name,
-          title: c.title,
-          tags: c.tags,
-          searchKey: `${c.id.toLowerCase()} ${c.name}`
-        }))
-        setChampions(list)
-        setLoading(false)
-      })
-      .catch(console.error)
-  }, [])
-
-  // チャンピオン詳細が選択されたらデータ取得
-  useEffect(() => {
-    if (!selected) return
-    loadChampionData(selected.id)
-  }, [selected])
 
   const loadChampionData = async (champId) => {
     // 1. 戦績データ (matchup_sentinel)
@@ -101,6 +73,63 @@ const ChampionDB = ({ onBack }) => {
     })
   }
 
+  useEffect(() => {
+    // 常に最新の DDragon バージョンを取得してからチャンピオン一覧を取得
+    let fetchedChampions = []
+    fetch('https://ddragon.leagueoflegends.com/api/versions.json')
+      .then(r => r.json())
+      .then(versions => {
+        const latest = versions[0];
+        return fetch(`https://ddragon.leagueoflegends.com/cdn/${latest}/data/ja_JP/champion.json`);
+      })
+      .then(r => r.json())
+      .then(d => {
+        fetchedChampions = Object.values(d.data).map(c => ({
+          id: c.id,
+          key: c.key,
+          name: c.name,
+          title: c.title,
+          tags: c.tags,
+          searchKey: `${c.id.toLowerCase()} ${c.name}`
+        }))
+        // 同時に各チャンピオンの GLOBAL メモの最終更新日時を取得
+        return supabase.from('matchup_sentinel').select('champion, created_at').eq('enemy', 'GLOBAL')
+      })
+      .then(({ data, error }) => {
+        const dates = {}
+        if (data) {
+          data.forEach(row => {
+            dates[row.champion] = row.created_at
+          })
+        }
+        setChampDates(dates)
+        setChampions(fetchedChampions)
+        setLoading(false)
+      })
+      .catch(console.error)
+  }, [])
+      .then(r => r.json())
+      .then(d => {
+        const list = Object.values(d.data).map(c => ({
+          id: c.id,
+          key: c.key,
+          name: c.name,
+          title: c.title,
+          tags: c.tags,
+          searchKey: `${c.id.toLowerCase()} ${c.name}`
+        }))
+        setChampions(list)
+        setLoading(false)
+      })
+      .catch(console.error)
+  }, [])
+
+  // チャンピオン詳細が選択されたらデータ取得
+  useEffect(() => {
+    if (!selected) return
+    loadChampionData(selected.id)
+  }, [selected])
+
   const setField = (key, val) => setDataFields(p => ({ ...p, [key]: val }))
 
   const saveMemo = async () => {
@@ -111,6 +140,7 @@ const ChampionDB = ({ onBack }) => {
       enemy: 'GLOBAL',
       title: `${selected.name} 基本戦略・トレンド`,
       strategy: dataFields.strategy,
+      created_at: new Date().toISOString(), // 強制的に更新日時を最新にする
       raw_data: { 
         source: 'champ_db', role: 'GLOBAL',
         strengths: dataFields.strengths,
@@ -122,15 +152,33 @@ const ChampionDB = ({ onBack }) => {
     }
     const { error } = await supabase.from('matchup_sentinel').upsert(data, { onConflict: 'matchup_id' })
     if (error) alert('保存失敗: ' + error.message)
+    else {
+      // 成功したらローカルの更新日時も更新する
+      setChampDates(prev => ({ ...prev, [selected.id]: data.created_at }))
+    }
     setSaving(false)
   }
 
   const filtered = useMemo(() => {
-    if (!search.trim()) return champions
-    const q = search.toLowerCase()
-    const hiraToKata = q.replace(/[\u3041-\u3096]/g, match => String.fromCharCode(match.charCodeAt(0) + 0x60))
-    return champions.filter(c => c.searchKey.includes(q) || c.searchKey.includes(hiraToKata))
-  }, [champions, search])
+    let result = champions
+    if (search.trim()) {
+      const q = search.toLowerCase()
+      const hiraToKata = q.replace(/[\u3041-\u3096]/g, match => String.fromCharCode(match.charCodeAt(0) + 0x60))
+      result = result.filter(c => c.searchKey.includes(q) || c.searchKey.includes(hiraToKata))
+    }
+    
+    // ソート処理
+    result = [...result].sort((a, b) => {
+      if (sortOrder === 'updated_desc') {
+        const dateA = champDates[a.id] ? new Date(champDates[a.id]).getTime() : 0
+        const dateB = champDates[b.id] ? new Date(champDates[b.id]).getTime() : 0
+        if (dateA !== dateB) return dateB - dateA
+      }
+      return a.name.localeCompare(b.name)
+    })
+    
+    return result
+  }, [champions, search, sortOrder, champDates])
 
   const linkBtn = { display: 'flex', alignItems: 'center', gap: '8px', color: '#00cfef', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: '14px', marginBottom: '20px' }
 
@@ -221,16 +269,27 @@ const ChampionDB = ({ onBack }) => {
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-      <div style={{ marginBottom: '32px' }}>
-        <h1 style={{ fontSize: '28px', fontWeight: 900, fontFamily: "'Space Grotesk', monospace", marginBottom: '8px' }}>チャンピオン辞典</h1>
-        <p style={{ color: '#a0a5b0', fontSize: '14px' }}>動画の知識や基本戦略をチャンピオンごとに蓄積するデータベース。</p>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '32px', flexWrap: 'wrap', gap: '16px' }}>
+        <div>
+          <h1 style={{ fontSize: '28px', fontWeight: 900, fontFamily: "'Space Grotesk', monospace", marginBottom: '8px' }}>チャンピオン辞典</h1>
+          <p style={{ color: '#a0a5b0', fontSize: '14px' }}>動画の知識や基本戦略をチャンピオンごとに蓄積するデータベース。</p>
+        </div>
+        <button onClick={onBack} style={{ padding: '8px 16px', border: 'none', cursor: 'pointer', color: '#c89b3c', fontWeight: 700, fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(20,22,30,0.7)', borderRadius: '10px' }}>
+          <ChevronLeft size={16} /> 戻る
+        </button>
       </div>
 
-      <div style={{ position: 'relative', marginBottom: '32px', maxWidth: '600px' }}>
-        <Search style={{ position: 'absolute', left: '20px', top: '50%', transform: 'translateY(-50%)', color: '#00cfef' }} size={22} />
-        <input type="text" autoFocus placeholder="チャンピオン名で検索..."
-          value={search} onChange={e => setSearch(e.target.value)}
-          style={{ width: '100%', padding: '18px 18px 18px 54px', background: 'rgba(0,207,239,0.05)', border: '2px solid rgba(0,207,239,0.2)', borderRadius: '14px', color: '#f0f5f5', fontSize: '16px', fontWeight: 700, outline: 'none' }} />
+      <div style={{ display: 'flex', gap: '12px', marginBottom: '32px', maxWidth: '800px' }}>
+        <div style={{ position: 'relative', flex: 1 }}>
+          <Search style={{ position: 'absolute', left: '20px', top: '50%', transform: 'translateY(-50%)', color: '#00cfef' }} size={22} />
+          <input type="text" autoFocus placeholder="チャンピオン名で検索..."
+            value={search} onChange={e => setSearch(e.target.value)}
+            style={{ width: '100%', padding: '16px 16px 16px 54px', background: 'rgba(0,207,239,0.05)', border: '2px solid rgba(0,207,239,0.2)', borderRadius: '14px', color: '#f0f5f5', fontSize: '16px', fontWeight: 700, outline: 'none' }} />
+        </div>
+        <select value={sortOrder} onChange={e => setSortOrder(e.target.value)} style={{ padding: '0 16px', background: 'rgba(20,22,30,0.8)', border: '2px solid rgba(255,255,255,0.1)', borderRadius: '14px', color: '#f0f5f5', fontSize: '14px', fontWeight: 700, outline: 'none', cursor: 'pointer' }}>
+          <option value="updated_desc">更新日が新しい順</option>
+          <option value="name_asc">名前順</option>
+        </select>
       </div>
 
       {loading ? (
@@ -241,11 +300,16 @@ const ChampionDB = ({ onBack }) => {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '16px' }}>
           {filtered.map(c => (
             <div key={c.id} onClick={() => setSelected(c)} className="glass-card"
-              style={{ padding: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', cursor: 'pointer', transition: 'all 0.2s', background: 'rgba(255,255,255,0.02)' }}
-              onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.background = 'rgba(0,207,239,0.08)'; e.currentTarget.style.borderColor = 'rgba(0,207,239,0.3)' }}
-              onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.background = 'rgba(255,255,255,0.02)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.05)' }}>
+              style={{ padding: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', cursor: 'pointer', transition: 'all 0.2s', background: champDates[c.id] ? 'rgba(0,207,239,0.05)' : 'rgba(255,255,255,0.02)', border: champDates[c.id] ? '1px solid rgba(0,207,239,0.2)' : '1px solid rgba(255,255,255,0.05)' }}
+              onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.background = 'rgba(0,207,239,0.1)'; e.currentTarget.style.borderColor = 'rgba(0,207,239,0.4)' }}
+              onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.background = champDates[c.id] ? 'rgba(0,207,239,0.05)' : 'rgba(255,255,255,0.02)'; e.currentTarget.style.borderColor = champDates[c.id] ? '1px solid rgba(0,207,239,0.2)' : '1px solid rgba(255,255,255,0.05)' }}>
               <img src={getChampIcon(c.id)} alt={c.name} style={{ width: '60px', height: '60px', borderRadius: '50%', border: '2px solid rgba(255,255,255,0.1)' }} />
               <span style={{ fontSize: '13px', fontWeight: 800, textAlign: 'center', lineHeight: 1.2 }}>{c.name}</span>
+              {champDates[c.id] && (
+                <span style={{ fontSize: '10px', color: '#00cfef', fontWeight: 700 }}>
+                  {new Date(champDates[c.id]).toLocaleDateString('ja-JP')}
+                </span>
+              )}
             </div>
           ))}
         </div>

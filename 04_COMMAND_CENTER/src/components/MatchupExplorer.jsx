@@ -1,8 +1,8 @@
-import React, { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { supabase } from '../lib/supabase'
 import { getChampIcon } from '../lib/ddragon'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Shield, Target, Zap, Search, AlertTriangle, ChevronLeft, Swords, Plus, X, Save, ChevronDown, Star, RefreshCw, Trash2 } from 'lucide-react'
+import { Shield, Target, Search, ChevronLeft, Swords, Plus, X, Save, ChevronDown, Trash2 } from 'lucide-react'
 
 const EMPTY_MEMO = {
   champion: '', enemy: '', role: 'Jungle', title: '',
@@ -15,6 +15,7 @@ const MatchupExplorer = ({ onBack }) => {
   const [matchups, setMatchups] = useState([])
   const [articles, setArticles] = useState([])
   const [search, setSearch] = useState('')
+  const [sortOrder, setSortOrder] = useState('updated_desc') // 'updated_desc', 'updated_asc', 'difficulty_desc'
   const [loading, setLoading] = useState(true)
   const [selected, setSelected] = useState(null)
   const [showForm, setShowForm] = useState(false)
@@ -22,23 +23,6 @@ const MatchupExplorer = ({ onBack }) => {
   const [saving, setSaving] = useState(false)
 
   const [champMap, setChampMap] = useState({})
-
-  useEffect(() => {
-    fetchData()
-    // カタカナ・ひらがな検索用の日本語名辞書を取得（常に最新バージョンを使用）
-    fetch('https://ddragon.leagueoflegends.com/api/versions.json')
-      .then(r => r.json())
-      .then(versions => {
-        const latest = versions[0];
-        return fetch(`https://ddragon.leagueoflegends.com/cdn/${latest}/data/ja_JP/champion.json`);
-      })
-      .then(r => r.json())
-      .then(d => {
-        const m = {}
-        Object.values(d.data).forEach(c => m[c.id.toLowerCase()] = c.name)
-        setChampMap(m)
-      }).catch(console.error)
-  }, [])
 
   const fetchData = async () => {
     setLoading(true)
@@ -62,6 +46,23 @@ const MatchupExplorer = ({ onBack }) => {
     }
   }
 
+  useEffect(() => {
+    fetchData()
+    // カタカナ・ひらがな検索用の日本語名辞書を取得（常に最新バージョンを使用）
+    fetch('https://ddragon.leagueoflegends.com/api/versions.json')
+      .then(r => r.json())
+      .then(versions => {
+        const latest = versions[0];
+        return fetch(`https://ddragon.leagueoflegends.com/cdn/${latest}/data/ja_JP/champion.json`);
+      })
+      .then(r => r.json())
+      .then(d => {
+        const m = {}
+        Object.values(d.data).forEach(c => m[c.id.toLowerCase()] = c.name)
+        setChampMap(m)
+      }).catch(console.error)
+  }, [])
+
   const results = useMemo(() => {
     if (!search.trim()) return { matchups, articles: [] }
     const q = search.toLowerCase()
@@ -82,18 +83,33 @@ const MatchupExplorer = ({ onBack }) => {
       return false
     }
 
+    let filteredMatchups = matchups.filter(m => 
+      champMatch(m.champion) || 
+      champMatch(m.enemy) || 
+      [m.title, m.strategy].some(f => f?.toLowerCase().includes(q))
+    )
+
+    filteredMatchups.sort((a, b) => {
+      if (sortOrder === 'updated_desc') {
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      } else if (sortOrder === 'updated_asc') {
+        return new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+      } else if (sortOrder === 'difficulty_desc') {
+        const diffA = a.raw_data?.difficulty || 0
+        const diffB = b.raw_data?.difficulty || 0
+        return diffB - diffA
+      }
+      return 0
+    })
+
     return {
-      matchups: matchups.filter(m => 
-        champMatch(m.champion) || 
-        champMatch(m.enemy) || 
-        [m.title, m.strategy].some(f => f?.toLowerCase().includes(q))
-      ),
+      matchups: filteredMatchups,
       articles: articles.filter(a => 
         a.title?.toLowerCase().includes(q) || 
         champMatch(a.champion)
       ).slice(0, 4),
     }
-  }, [search, matchups, articles, champMap])
+  }, [search, matchups, articles, champMap, sortOrder])
 
   const groupedMatchups = useMemo(() => {
     const groups = {}
@@ -149,16 +165,17 @@ const MatchupExplorer = ({ onBack }) => {
       raw_data: mergedRawData,
     }
     
-    // IDは自動採番のため、送信データからは除外する
-    data.matchup_id = memo.matchup_id || `manual_${Date.now()}`;
-
-    const { error } = await supabase.from('matchup_sentinel').upsert(data, { onConflict: 'matchup_id' })
-    if (!error) {
-      if (memo.id) {
-        setMatchups(prev => prev.map(p => p.id === memo.id ? { ...p, ...data } : p))
-      } else {
-        setMatchups(prev => [{ ...data, id: Date.now(), created_at: new Date().toISOString() }, ...prev])
-      }
+      // IDは自動採番のため、送信データからは除外する
+      data.matchup_id = memo.matchup_id || `manual_${Date.now()}`;
+      data.created_at = new Date().toISOString(); // 強制的に更新日時を最新にする
+  
+      const { error } = await supabase.from('matchup_sentinel').upsert(data, { onConflict: 'matchup_id' })
+      if (!error) {
+        if (memo.id) {
+          setMatchups(prev => prev.map(p => p.id === memo.id ? { ...p, ...data } : p))
+        } else {
+          setMatchups(prev => [{ ...data, id: Date.now() }, ...prev])
+        }
       setMemo({ ...EMPTY_MEMO }); setShowForm(false)
     } else alert('保存失敗: ' + error.message)
     setSaving(false)
@@ -371,12 +388,19 @@ const MatchupExplorer = ({ onBack }) => {
       </AnimatePresence>
 
       {/* 検索バー */}
-      <div style={{ position: 'relative', marginBottom: '24px' }}>
-        <Search style={{ position: 'absolute', left: '20px', top: '50%', transform: 'translateY(-50%)', color: '#00cfef' }} size={22} />
-        <input type="text" autoFocus placeholder="例: Yone, Lee Sin, Lillia..."
-          value={search} onChange={e => setSearch(e.target.value)}
-          style={{ width: '100%', padding: '18px 18px 18px 54px', background: 'rgba(0,207,239,0.05)', border: '2px solid rgba(0,207,239,0.2)', borderRadius: '14px', color: '#f0f5f5', fontSize: '17px', fontWeight: 700, fontFamily: "'Outfit', sans-serif", outline: 'none' }} />
-        {search && <button onClick={() => setSearch('')} style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '8px', padding: '5px 12px', color: '#a0a5b0', cursor: 'pointer', fontSize: '12px', fontWeight: 700 }}>クリア</button>}
+      <div style={{ display: 'flex', gap: '12px', marginBottom: '24px', flexWrap: 'wrap' }}>
+        <div style={{ position: 'relative', flex: 1, minWidth: '280px' }}>
+          <Search style={{ position: 'absolute', left: '20px', top: '50%', transform: 'translateY(-50%)', color: '#00cfef' }} size={22} />
+          <input type="text" autoFocus placeholder="例: Yone, Lee Sin, Lillia..."
+            value={search} onChange={e => setSearch(e.target.value)}
+            style={{ width: '100%', padding: '18px 18px 18px 54px', background: 'rgba(0,207,239,0.05)', border: '2px solid rgba(0,207,239,0.2)', borderRadius: '14px', color: '#f0f5f5', fontSize: '17px', fontWeight: 700, fontFamily: "'Outfit', sans-serif", outline: 'none' }} />
+          {search && <button onClick={() => setSearch('')} style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '8px', padding: '5px 12px', color: '#a0a5b0', cursor: 'pointer', fontSize: '12px', fontWeight: 700 }}>クリア</button>}
+        </div>
+        <select value={sortOrder} onChange={e => setSortOrder(e.target.value)} style={{ padding: '0 16px', background: 'rgba(20,22,30,0.8)', border: '2px solid rgba(255,255,255,0.1)', borderRadius: '14px', color: '#f0f5f5', fontSize: '14px', fontWeight: 700, outline: 'none', cursor: 'pointer' }}>
+          <option value="updated_desc">更新日が新しい順</option>
+          <option value="updated_asc">更新日が古い順</option>
+          <option value="difficulty_desc">難易度が高い順</option>
+        </select>
       </div>
 
       {/* 結果表示 */}
@@ -414,12 +438,17 @@ const MatchupExplorer = ({ onBack }) => {
                           </div>
                           <h3 style={{ fontSize: '14px', fontWeight: 800, marginBottom: '8px', lineHeight: 1.3 }}>{m.title}</h3>
                           {(rd.winCondition || m.strategy) && (
-                            <div style={{ background: 'rgba(0,0,0,0.3)', borderRadius: '8px', padding: '10px', fontSize: '12px', color: '#c0c5ca', fontStyle: 'italic', lineHeight: 1.5 }}>
+                            <div style={{ background: 'rgba(0,0,0,0.3)', borderRadius: '8px', padding: '10px', fontSize: '12px', color: '#c0c5ca', fontStyle: 'italic', lineHeight: 1.5, marginBottom: '10px' }}>
                               「{(rd.winCondition || m.strategy || '').slice(0, 100)}...」
                             </div>
                           )}
-                          <div style={{ marginTop: '10px', fontSize: '11px', color: '#00cfef', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <ChevronDown size={14} /> 詳細を見る
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto' }}>
+                            <div style={{ fontSize: '10px', color: '#888', fontWeight: 700 }}>
+                              更新: {new Date(m.created_at).toLocaleDateString('ja-JP')}
+                            </div>
+                            <div style={{ fontSize: '11px', color: '#00cfef', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                              <ChevronDown size={14} /> 詳細
+                            </div>
                           </div>
                         </div>
                       )

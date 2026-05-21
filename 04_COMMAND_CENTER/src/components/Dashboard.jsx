@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
-  Shield, Zap, BookOpen, Activity, 
-  LayoutDashboard, Users, ChevronRight,
+  Shield, Zap, BookOpen, 
+  LayoutDashboard, Users,
   Menu, X, BookHeart
 } from 'lucide-react'
 import BibleReader from './BibleReader'
@@ -64,17 +64,18 @@ const Dashboard = () => {
         } else {
           setLiveEnemies([])
         }
-      } catch (e) {
+      } catch {
         // ignore
       }
     }
 
     const fetchRecentActivity = async () => {
       try {
-        // マッチアップの全件と最近のバイブルを取得
-        const [mRes, aRes] = await Promise.all([
+        // マッチアップの全件、最近のバイブル、およびバイブルの総件数を取得
+        const [mRes, aRes, aCountRes] = await Promise.all([
           supabase.from('matchup_sentinel').select('*').order('created_at', { ascending: false }),
-          supabase.from('bible_articles').select('id, title, created_at, champion').order('created_at', { ascending: false }).limit(5)
+          supabase.from('bible_articles').select('id, title, created_at, champion').order('created_at', { ascending: false }).limit(5),
+          supabase.from('bible_articles').select('*', { count: 'exact', head: true })
         ])
 
         const mData = mRes.data || []
@@ -99,30 +100,50 @@ const Dashboard = () => {
         combined.sort((a, b) => b.raw_time - a.raw_time)
         setActivities(combined.slice(0, 5))
         
-        // 統計の更新
+        // 統計の更新 (実際のSupabaseの正確な件数を取得してバインド)
+        const totalBibles = aCountRes.count !== null ? aCountRes.count : 0
         setStatsSummary({
-          research: mData.length + 40, // 累計+40(モック)
-          bibles: (aRes.data || []).length + 10  // 累計+10(モック)
+          research: mData.length, // マッチアップの実際の登録総数
+          bibles: totalBibles     // 攻略バイブルの実際の登録総数
         })
-      } catch (e) {
-        console.error('Activity Fetch Error:', e)
+      } catch {
+        console.error('Activity Fetch Error')
       }
     }
 
     checkLiveMatch()
     fetchRecentActivity()
     
+    // WebSockets (リアルタイム監視) による LIVE_MATCH の検知
+    const liveMatchChannel = supabase
+      .channel('live_match_changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'matchup_sentinel', filter: 'matchup_id=eq.LIVE_MATCH' },
+        (payload) => {
+          if (payload.new && payload.new.raw_data && payload.new.raw_data.enemy_team) {
+            setLiveEnemies(payload.new.raw_data.enemy_team)
+          } else {
+            setLiveEnemies([])
+          }
+        }
+      )
+      .subscribe()
+      
+    // その他の統計更新は今まで通り10秒に1回 (バックグラウンドポーリング)
     const interval = setInterval(() => {
-      checkLiveMatch()
       fetchRecentActivity()
     }, 10000)
     
-    return () => clearInterval(interval)
+    return () => {
+      clearInterval(interval)
+      supabase.removeChannel(liveMatchChannel)
+    }
   }, [])
 
   // 時間の相対表記ヘルパー
   const formatTime = (isoString) => {
-    const diff = Date.now() - new Date(isoString).getTime()
+    const diff = new Date().getTime() - new Date(isoString).getTime()
     const mins = Math.floor(diff / 60000)
     if (mins < 1) return 'たった今'
     if (mins < 60) return `${mins}分前`

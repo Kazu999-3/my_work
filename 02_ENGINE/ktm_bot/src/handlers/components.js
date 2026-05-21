@@ -330,7 +330,12 @@ export async function handleButtonInteraction(interaction, env, ctx) {
       
       await sendInteractionFollowup(appId, token, { content: `⚔️ **メンバー確定！** 対戦準備を開始してください（対戦入力シートへ転送しました）。\n通知: ${mentions}` });
     })());
-    return Response.json({ type: 7, data: { content: createMessageContent(metadata) + "\n🚨 **定員に達したため締め切りました。チーム分けボタンから実行してください。**", embeds: [createRecruitEmbed(metadata)], components: createRecruitButtons(metadata) } });
+    
+    const closingMessage = (metadata.mode === 'ノーマル' || metadata.mode === 'ARAM')
+      ? "\n🚨 **定員に達しました。対戦準備を開始してください！**" 
+      : "\n🚨 **定員に達したため締め切りました。チーム分けボタンから実行してください。**";
+      
+    return Response.json({ type: 7, data: { content: createMessageContent(metadata) + closingMessage, embeds: [createRecruitEmbed(metadata)], components: createRecruitButtons(metadata) } });
   }
 
   return Response.json({ type: 7, data: { content: createMessageContent(metadata), embeds: [createRecruitEmbed(metadata)], components: createRecruitButtons(metadata) } });
