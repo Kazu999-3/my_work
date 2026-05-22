@@ -14,7 +14,8 @@ const EMPTY_MEMO = {
 const MatchupExplorer = ({ onBack }) => {
   const [matchups, setMatchups] = useState([])
   const [articles, setArticles] = useState([])
-  const [search, setSearch] = useState('')
+  const [mySearch, setMySearch] = useState('')
+  const [enemySearch, setEnemySearch] = useState('')
   const [sortOrder, setSortOrder] = useState('updated_desc') // 'updated_desc', 'updated_asc', 'difficulty_desc'
   const [loading, setLoading] = useState(true)
   const [selected, setSelected] = useState(null)
@@ -65,29 +66,24 @@ const MatchupExplorer = ({ onBack }) => {
   }, [])
 
   const results = useMemo(() => {
-    if (!search.trim()) return { matchups, articles: [] }
-    const q = search.toLowerCase()
+    if (!mySearch.trim() && !enemySearch.trim()) return { matchups, articles: [] }
     
-    // ひらがな・カタカナ・英語対応の検索ヘルパー
-    const champMatch = (name) => {
+    const isMatch = (name, q) => {
+      if (!q.trim()) return true
       if (!name) return false
-      if (name.toLowerCase().includes(q)) return true
-      
-      const key = name.toLowerCase().replace(/[^a-z0-9]/g, '')
+      const lowerN = name.toLowerCase()
+      const lowerQ = q.toLowerCase()
+      if (lowerN.includes(lowerQ)) return true
+      const key = lowerN.replace(/[^a-z0-9]/g, '')
       const jpName = champMap[key] || ''
-      if (jpName && jpName.includes(q)) return true
-      
-      // ひらがなで入力された場合をカタカナに変換して比較
-      const hiraToKata = q.replace(/[\u3041-\u3096]/g, match => String.fromCharCode(match.charCodeAt(0) + 0x60))
+      if (jpName && jpName.includes(lowerQ)) return true
+      const hiraToKata = lowerQ.replace(/[\u3041-\u3096]/g, match => String.fromCharCode(match.charCodeAt(0) + 0x60))
       if (jpName && jpName.includes(hiraToKata)) return true
-      
       return false
     }
 
     let filteredMatchups = matchups.filter(m => 
-      champMatch(m.champion) || 
-      champMatch(m.enemy) || 
-      [m.title, m.strategy].some(f => f?.toLowerCase().includes(q))
+      isMatch(m.champion, mySearch) && isMatch(m.enemy, enemySearch)
     )
 
     filteredMatchups.sort((a, b) => {
@@ -116,11 +112,10 @@ const MatchupExplorer = ({ onBack }) => {
     return {
       matchups: filteredMatchups,
       articles: articles.filter(a => 
-        a.title?.toLowerCase().includes(q) || 
-        champMatch(a.champion)
+        (mySearch && isMatch(a.champion, mySearch)) || (enemySearch && isMatch(a.champion, enemySearch))
       ).slice(0, 4),
     }
-  }, [search, matchups, articles, champMap, sortOrder, roleFilter])
+  }, [mySearch, enemySearch, matchups, articles, champMap, sortOrder, roleFilter])
 
   const groupedMatchups = useMemo(() => {
     const groups = {}
@@ -400,12 +395,20 @@ const MatchupExplorer = ({ onBack }) => {
 
       {/* 検索バー */}
       <div style={{ display: 'flex', gap: '12px', marginBottom: '24px', flexWrap: 'wrap' }}>
-        <div style={{ position: 'relative', flex: 1, minWidth: '280px' }}>
-          <Search style={{ position: 'absolute', left: '20px', top: '50%', transform: 'translateY(-50%)', color: '#00cfef' }} size={22} />
-          <input type="text" autoFocus placeholder="例: Yone, Lee Sin, Lillia..."
-            value={search} onChange={e => setSearch(e.target.value)}
-            style={{ width: '100%', padding: '18px 18px 18px 54px', background: 'rgba(0,207,239,0.05)', border: '2px solid rgba(0,207,239,0.2)', borderRadius: '14px', color: '#f0f5f5', fontSize: '17px', fontWeight: 700, fontFamily: "'Outfit', sans-serif", outline: 'none' }} />
-          {search && <button onClick={() => setSearch('')} style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '8px', padding: '5px 12px', color: '#a0a5b0', cursor: 'pointer', fontSize: '12px', fontWeight: 700 }}>クリア</button>}
+        <div style={{ position: 'relative', flex: 1, minWidth: '220px' }}>
+          <Shield style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#c89b3c' }} size={20} />
+          <input type="text" placeholder="自分のチャンプ (例: Yone)"
+            value={mySearch} onChange={e => setMySearch(e.target.value)}
+            style={{ width: '100%', padding: '16px 16px 16px 46px', background: 'rgba(200,155,60,0.05)', border: '2px solid rgba(200,155,60,0.2)', borderRadius: '14px', color: '#f0f5f5', fontSize: '15px', fontWeight: 700, fontFamily: "'Outfit', sans-serif", outline: 'none' }} />
+          {mySearch && <button onClick={() => setMySearch('')} style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#a0a5b0', cursor: 'pointer', fontSize: '18px' }}>×</button>}
+        </div>
+        
+        <div style={{ position: 'relative', flex: 1, minWidth: '220px' }}>
+          <Target style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#00cfef' }} size={20} />
+          <input type="text" placeholder="相手のチャンプ (例: Yasuo)"
+            value={enemySearch} onChange={e => setEnemySearch(e.target.value)}
+            style={{ width: '100%', padding: '16px 16px 16px 46px', background: 'rgba(0,207,239,0.05)', border: '2px solid rgba(0,207,239,0.2)', borderRadius: '14px', color: '#f0f5f5', fontSize: '15px', fontWeight: 700, fontFamily: "'Outfit', sans-serif", outline: 'none' }} />
+          {enemySearch && <button onClick={() => setEnemySearch('')} style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#a0a5b0', cursor: 'pointer', fontSize: '18px' }}>×</button>}
         </div>
         
         {/* ロールフィルター */}
@@ -435,7 +438,7 @@ const MatchupExplorer = ({ onBack }) => {
         <>
           {results.matchups.length > 0 && (
             <div style={{ marginBottom: '28px' }}>
-              {search && <SectLabel label={`マッチアップ (${results.matchups.length}件)`} color="#00cfef" />}
+              {(mySearch || enemySearch) && <SectLabel label={`マッチアップ (${results.matchups.length}件)`} color="#00cfef" />}
               
               {Object.entries(groupedMatchups).map(([role, items]) => (
                 <div key={role} style={{ marginBottom: '32px' }}>
@@ -451,26 +454,46 @@ const MatchupExplorer = ({ onBack }) => {
                       const rd = m.raw_data || {}
                       return (
                         <div key={m.id} className="glass-card" onClick={() => setSelected(m)}
-                          style={{ padding: '24px', borderLeft: '4px solid #00cfef', cursor: 'pointer', position: 'relative' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px', flexWrap: 'wrap' }}>
-                            <Badge name={m.champion} color="#c89b3c" />
-                            <span style={{ color: '#00cfef', fontWeight: 900, fontSize: '10px', fontStyle: 'italic' }}>VS</span>
-                            <Badge name={m.enemy} color="#00cfef" />
-                            {rd.difficulty > 0 && <DiffStars val={rd.difficulty} small />}
-                            {rd.result && <span style={{ fontSize: '10px', fontWeight: 800, color: String(rd.result).toLowerCase() === 'win' ? '#22c55e' : '#ef4444', marginLeft: 'auto' }}>{String(rd.result).toLowerCase() === 'win' ? '勝ち' : '負け'}</span>}
+                          style={{ padding: '0', cursor: 'pointer', position: 'relative', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.05)', transition: 'transform 0.2s, box-shadow 0.2s' }}
+                          onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,207,239,0.15)' }}
+                          onMouseLeave={(e) => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = 'none' }}>
+                          
+                          {/* Header with VS layout */}
+                          <div style={{ display: 'flex', alignItems: 'center', background: 'rgba(0,0,0,0.4)', padding: '12px 16px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                            <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                               <ChampImg name={m.champion} size={32} />
+                               <span style={{ fontWeight: 800, color: '#c89b3c', fontSize: '13px', textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>{m.champion}</span>
+                            </div>
+                            <div style={{ padding: '0 8px', textAlign: 'center' }}>
+                               <span style={{ color: '#666', fontWeight: 900, fontSize: '11px', fontStyle: 'italic', letterSpacing: '0.1em' }}>VS</span>
+                               <div style={{ marginTop: '2px' }}>
+                                 {rd.difficulty > 0 && <DiffStars val={rd.difficulty} small />}
+                               </div>
+                            </div>
+                            <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'flex-end' }}>
+                               <span style={{ fontWeight: 800, color: '#00cfef', fontSize: '13px', textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>{m.enemy}</span>
+                               <ChampImg name={m.enemy} size={32} />
+                            </div>
                           </div>
-                          <h3 style={{ fontSize: '14px', fontWeight: 800, marginBottom: '8px', lineHeight: 1.3 }}>{m.title}</h3>
-                          {(rd.winCondition || m.strategy) && (
-                            <div style={{ background: 'rgba(0,0,0,0.3)', borderRadius: '8px', padding: '10px', fontSize: '12px', color: '#c0c5ca', fontStyle: 'italic', lineHeight: 1.5, marginBottom: '10px' }}>
-                              「{(rd.winCondition || m.strategy || '').slice(0, 100)}...」
+                          
+                          {/* Body */}
+                          <div style={{ padding: '16px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                               <h3 style={{ fontSize: '14px', fontWeight: 800, lineHeight: 1.4, flex: 1, margin: 0 }}>{m.title}</h3>
+                               {rd.result && <span style={{ fontSize: '10px', fontWeight: 800, padding: '4px 8px', borderRadius: '6px', background: String(rd.result).toLowerCase() === 'win' ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)', color: String(rd.result).toLowerCase() === 'win' ? '#22c55e' : '#ef4444', marginLeft: '8px' }}>{String(rd.result).toLowerCase() === 'win' ? '勝ち' : '負け'}</span>}
                             </div>
-                          )}
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto' }}>
-                            <div style={{ fontSize: '10px', color: '#888', fontWeight: 700 }}>
-                              更新: {new Date(m.created_at).toLocaleDateString('ja-JP')}
-                            </div>
-                            <div style={{ fontSize: '11px', color: '#00cfef', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                              <ChevronDown size={14} /> 詳細
+                            {(rd.winCondition || m.strategy) && (
+                              <div style={{ background: 'rgba(0,0,0,0.2)', borderRadius: '8px', padding: '12px', fontSize: '12px', color: '#a0a5b0', fontStyle: 'italic', lineHeight: 1.6, marginBottom: '10px', border: '1px solid rgba(255,255,255,0.02)' }}>
+                                「{(rd.winCondition || m.strategy || '').slice(0, 70)}...」
+                              </div>
+                            )}
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '12px' }}>
+                              <div style={{ fontSize: '10px', color: '#666', fontWeight: 700 }}>
+                                更新: {new Date(m.created_at).toLocaleDateString('ja-JP')}
+                              </div>
+                              <div style={{ fontSize: '11px', color: '#00cfef', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '4px', background: 'rgba(0,207,239,0.1)', padding: '4px 10px', borderRadius: '6px' }}>
+                                詳細 <ChevronDown size={14} />
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -481,7 +504,7 @@ const MatchupExplorer = ({ onBack }) => {
               ))}
             </div>
           )}
-          {search && results.articles.length > 0 && (
+          {(mySearch || enemySearch) && results.articles.length > 0 && (
             <div>
               <SectLabel label={`関連記事 (${results.articles.length}件)`} color="#c89b3c" />
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '12px' }}>
@@ -497,7 +520,7 @@ const MatchupExplorer = ({ onBack }) => {
           {results.matchups.length === 0 && (
             <div className="glass-card" style={{ padding: '48px', textAlign: 'center' }}>
               <Shield size={40} style={{ color: '#00cfef', marginBottom: '12px' }} />
-              <h3 style={{ fontSize: '18px', fontWeight: 800, marginBottom: '6px' }}>{search ? `「${search}」一致なし` : 'マッチアップ未登録'}</h3>
+              <h3 style={{ fontSize: '18px', fontWeight: 800, marginBottom: '6px' }}>{(mySearch || enemySearch) ? '一致するマッチアップが見つかりません' : 'マッチアップ未登録'}</h3>
               <p style={{ color: '#a0a5b0', fontSize: '13px' }}>「メモ追加」から記録を始めましょう</p>
             </div>
           )}
