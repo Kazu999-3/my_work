@@ -84,7 +84,8 @@ class NewsScout:
 
     def run(self):
         """1時間おきにニュースを更新"""
-        logger.info("News Scout starting...")
+        logger.info("📰 News Scout: Waiting 60s before first run to prevent startup API clash...")
+        time.sleep(60)
         while True:
             try:
                 news = self.generate_news()

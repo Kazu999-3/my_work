@@ -1,1 +1,30 @@
-{}
+{
+  "python.analysis.extraPaths": [
+    "./02_ENGINE",
+    "./02_ENGINE/v2_CORE",
+    "./02_ENGINE/v3_SOVEREIGN",
+    "."
+  ],
+  "python.autoComplete.extraPaths": [
+    "./02_ENGINE",
+    "./02_ENGINE/v2_CORE",
+    "./02_ENGINE/v3_SOVEREIGN",
+    "."
+  ],
+  "python.defaultInterpreterPath": "${workspaceFolder}/.venv/Scripts/python.exe",
+  "python.analysis.typeCheckingMode": "basic",
+  "python.analysis.exclude": [
+    "**/node_modules",
+    "**/dist",
+    "**/.venv",
+    "**/dist/**"
+  ],
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/.venv": true
+  },
+  "files.exclude": {
+    "**/dist": true
+  }
+}

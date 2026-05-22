@@ -72,6 +72,23 @@ class SovereignPulse:
         if any(kw in (title + description) for kw in ignore_keywords):
             logger.info(f"[Pulse] 一時的なエラーを含む通知を抑制しました: {title}")
             return
+
+        # 見出し（title）が長すぎるか改行がある場合、description の先頭に退避させ、タイトルを標準化する
+        if len(title) > 200 or "\n" in title:
+            description = f"**{title}**\n\n{description}"
+            title = "Sovereign Pulse 通知"
+
+        # Webhookはcomponents（ボタンなど）をサポートしていないため、テキスト情報に変換して結合する
+        if components:
+            extra_info = "\n\n**🤖 [Bot Actions Available]**\n"
+            for comp_group in components:
+                for comp in comp_group.get("components", []):
+                    label = comp.get("label", "アクション")
+                    custom_id = comp.get("custom_id", "")
+                    extra_info += f"- `{label}` (Custom ID: `{custom_id}`)\n"
+            description += extra_info
+            components = None # 送信ペイロードからは安全に除去
+
         try:
             embed = {
                 "title": f"👑 {title}",
@@ -84,12 +101,14 @@ class SovereignPulse:
                 embed["fields"] = fields
                 
             payload = {"embeds": [embed]}
-            if components:
-                payload["components"] = components
                 
-            requests.post(self.discord_webhook, json=payload, timeout=10)
+            res = requests.post(self.discord_webhook, json=payload, timeout=10)
+            res.raise_for_status()
         except Exception as e:
-            logger.error(f"Discord通知に失敗: {e}")
+            response_text = ""
+            if 'res' in locals():
+                response_text = f" | Response: {res.text}"
+            logger.error(f"Discord通知に失敗: {e}{response_text}")
 
     def check_file_changes(self):
         """全監視対象フォルダの自動同期と連鎖反応"""

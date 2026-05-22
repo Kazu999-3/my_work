@@ -1,15 +1,21 @@
+import sys
 import asyncio
 import logging
 import os
 from pathlib import Path
 from datetime import datetime
 
+# 親の親ディレクトリ (02_ENGINE) をインポートパスに追加して、v2_CORE や v3_SOVEREIGN が確実に解決できるようにする
+BASE_DIR = Path(__file__).resolve().parent.parent
+if str(BASE_DIR) not in sys.path:
+    sys.path.append(str(BASE_DIR))
+
 # ロギング設定
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(name)s] %(levelname)s: %(message)s",
     handlers=[
-        logging.FileHandler("d:/my_work/02_ENGINE/v3_SOVEREIGN/sovereign.log", encoding="utf-8"),
+        logging.FileHandler(BASE_DIR / "v3_SOVEREIGN/sovereign.log", encoding="utf-8"),
         logging.StreamHandler()
     ]
 )
@@ -24,9 +30,9 @@ class SovereignOrchestrator:
         self.active_tasks = []
         self.memory_context = {}
         # 拡張コンポーネントの初期化
-        from v3_SOVEREIGN.router import router
-        from v3_SOVEREIGN.dispatcher import SovereignDispatcher
-        from v3_SOVEREIGN.hijacker import CompetitorHijacker
+        from .router import router
+        from .dispatcher import SovereignDispatcher
+        from .hijacker import CompetitorHijacker
         
         self.router = router
         self.dispatcher = SovereignDispatcher()

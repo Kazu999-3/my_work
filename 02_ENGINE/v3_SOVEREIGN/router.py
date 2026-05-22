@@ -1,12 +1,19 @@
+import sys
 import logging
 import os
 from pathlib import Path
+
+# 親の親ディレクトリ (02_ENGINE) をインポートパスに追加して、v2_CORE が確実に解決できるようにする
+BASE_DIR = Path(__file__).resolve().parent.parent
+if str(BASE_DIR) not in sys.path:
+    sys.path.append(str(BASE_DIR))
+
 from google import genai
 from google.genai import types
 import dotenv
 
 logger = logging.getLogger("ModelRouter")
-dotenv.load_dotenv(Path("D:/my_work/.env"))
+dotenv.load_dotenv(BASE_DIR / ".env")
 
 class ModelRouter:
     """
@@ -14,9 +21,10 @@ class ModelRouter:
     429 Resource Exhausted 等のエラーを検知し、自律的にモデルやAPIキーを切り替えて処理を完走させる。
     """
     def __init__(self):
-        self.primary_model = "gemini-flash-latest"
+        from v2_CORE.settings import settings
+        self.primary_model = settings.DEFAULT_MODEL
         self.secondary_model = "gemini-2.0-flash" # バックアップ用
-        self.fallback_model = "gemini-pro-latest" # 最終防衛ライン
+        self.fallback_model = "gemini-1.5-flash"  # 最終防衛ライン
         
         self.api_keys = [
             os.environ.get("GEMINI_API_KEY"),

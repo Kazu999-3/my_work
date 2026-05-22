@@ -15,6 +15,7 @@ sys.path.append(str(Path(__file__).resolve().parent))
 from v2_CORE.settings import settings
 from v2_CORE.database import db
 from v2_CORE.herald import herald
+from supabase import create_client
 
 dotenv.load_dotenv()
 
@@ -92,11 +93,17 @@ class OLEAnalyzerV3:
         self.model_id = model_id or settings.DEFAULT_MODEL
         self.mode = mode if mode in MODE_CONFIGS else "TACTICAL"
         self.config = MODE_CONFIGS[self.mode]
+        
+        self.supabase = None
+        supabase_url = os.environ.get("SUPABASE_URL")
+        supabase_key = os.environ.get("SUPABASE_KEY")
+        if supabase_url and supabase_key:
+            self.supabase = create_client(supabase_url, supabase_key)
 
     def notify(self, message, herald_notify=False):
         logger.info(message)
         if herald_notify:
-            try: herald.notify_progress(f"【OLE v3:{self.mode}】{message}")
+            try: herald.notify_progress(f"【OLE v3:{self.mode}】{message}", portal_link=True)
             except: pass
 
     def download_audio(self, url: str) -> dict:
@@ -219,7 +226,7 @@ class OLEAnalyzerV3:
                 
                 self.notify(f"✅ 納品完了: {output_path.name}", herald_notify=True)
                 
-                # DB登録
+                # DB登録 (ChromaDB)
                 db.add_intelligence(
                     id=f"ole_report_v3_{self.mode}_{video_id}",
                     content=final_response.text,
@@ -231,6 +238,19 @@ class OLEAnalyzerV3:
                         "source": "OLE_Pro_V3"
                     }
                 )
+                
+                # Web Portal (Supabase) 登録
+                if self.supabase:
+                    try:
+                        self.supabase.table('bible_articles').insert({
+                            'title': f"[YouTube] {video_title}",
+                            'content': f"URL: https://www.youtube.com/watch?v={video_id}\n\n{final_response.text}",
+                            'champion': 'YouTube 解析',
+                            'keywords': ['YouTube', self.config['name']]
+                        }).execute()
+                        logger.info("✅ Supabaseへの保存が完了しました。")
+                    except Exception as e:
+                        logger.error(f"Supabaseへの保存に失敗しました: {e}")
                 
                 if cache_file.exists(): cache_file.unlink()
                 break

@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { 
   Shield, Zap, BookOpen, 
   LayoutDashboard, Users,
-  Menu, X, BookHeart
+  Menu, X, BookHeart, Send
 } from 'lucide-react'
 import BibleReader from './BibleReader'
 import DraftingHub from './DraftingHub'
@@ -13,6 +13,7 @@ import MatchupExplorer from './MatchupExplorer'
 import StatsPanel from './StatsPanel'
 import ChampionDB from './ChampionDB'
 import LiveBriefing from './LiveBriefing'
+import PublishTracker from './PublishTracker'
 import { supabase } from '../lib/supabase'
 
 const MENU_ITEMS = [
@@ -20,6 +21,7 @@ const MENU_ITEMS = [
   { id: 'bible',     label: '攻略ライブラリ', icon: BookOpen },
   { id: 'matchups',  label: 'マッチアップ',   icon: Shield },
   { id: 'champdb',   label: 'チャンピオン辞典', icon: BookHeart },
+  { id: 'posts',     label: '投稿管理',       icon: Send },
 ]
 
 // ウィンドウ幅を追跡するフック
@@ -234,6 +236,11 @@ const Dashboard = () => {
               <ChampionDB onBack={() => navigate('dashboard')} />
             </motion.div>
           )}
+          {view === 'posts' && (
+            <motion.div key="posts" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <PublishTracker onBack={() => navigate('dashboard')} />
+            </motion.div>
+          )}
           {view === 'dashboard' && (
             <motion.div key="dashboard" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
               {/* ヘッダー */}
@@ -273,6 +280,7 @@ const Dashboard = () => {
                   <QuickAction label="攻略ライブラリ" desc="AIが錬成した記事" icon={<BookOpen size={22} />} onClick={() => navigate('bible')} />
                   <QuickAction label="マッチアップ" desc="対面の対策メモ" icon={<Shield size={22} />} onClick={() => navigate('matchups')} />
                   <QuickAction label="チャンピオン辞典" desc="チャンプ固有の知識" icon={<BookHeart size={22} />} onClick={() => navigate('champdb')} />
+                  <QuickAction label="投稿管理" desc="X / note履歴" icon={<Send size={22} />} onClick={() => navigate('posts')} />
                 </div>
               </div>
 

@@ -62,18 +62,11 @@ class EvolutionEngine:
         （※肯定的な意見は不要です。売上を最大化するための冷酷なダメ出しをしてください）
         """
         
-        try:
-            response = self.client.models.generate_content(
-                model=self.model_id,
-                contents=prompt,
-                config=types.GenerateContentConfig(temperature=0.3)
-            )
-            feedback = response.text
-            logger.info(f"[Evolution] 📝 レビュー完了: {len(feedback)}文字のフィードバックを獲得")
-            return feedback
-        except Exception as e:
-            logger.error(f"[Evolution] レビュー中にエラー: {e}")
-            return "Error during review"
+        from v2_CORE.ai_helper import generate_content_safe
+        config = types.GenerateContentConfig(temperature=0.3)
+        feedback = generate_content_safe(self.client, prompt, model_id=self.model_id, config=config)
+        logger.info(f"[Evolution] 📝 レビュー完了: {len(feedback)}文字のフィードバックを獲得")
+        return feedback
 
     def apply_evolution(self, content: str, feedback: str) -> str:
         """フィードバックを元にコンテンツを再構築（進化）させる"""
@@ -97,17 +90,11 @@ class EvolutionEngine:
         フィードバックで指摘された弱点を完全に克服した、新しい記事（Markdown形式）のみを出力してください。
         """
         
-        try:
-            response = self.client.models.generate_content(
-                model=self.model_id,
-                contents=prompt,
-                config=types.GenerateContentConfig(temperature=0.5, max_output_tokens=8000)
-            )
-            logger.info("[Evolution] ✨ コンテンツの自己進化が完了しました！")
-            return response.text
-        except Exception as e:
-            logger.error(f"[Evolution] 再構築中にエラー: {e}")
-            return content
+        from v2_CORE.ai_helper import generate_content_safe
+        config = types.GenerateContentConfig(temperature=0.5, max_output_tokens=8000)
+        evolved = generate_content_safe(self.client, prompt, model_id=self.model_id, config=config)
+        logger.info("[Evolution] ✨ コンテンツの自己進化が完了しました！")
+        return evolved
 
     def evolve_draft(self, content: str) -> str:
         """レビューと再構築を一貫して行うメイン処理"""

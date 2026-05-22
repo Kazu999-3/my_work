@@ -114,6 +114,18 @@ class SovereignSync:
                     timeout=15
                 )
 
+                # カラムが存在しないなどの理由でエラーが発生した場合の自動フォールバック
+                if res.status_code == 400 and ("column" in res.text or "keywords" in res.text):
+                    logger.warning(f"⚠️ {title} の同期に失敗しました（Supabase側に keywords カラムがない可能性があります）。keywords を除外してフォールバック同期します...")
+                    fallback_data = data.copy()
+                    fallback_data.pop("keywords", None)
+                    res = httpx.post(
+                        self._api("bible_articles") + "?on_conflict=title",
+                        headers=self._headers(),
+                        json=fallback_data,
+                        timeout=15
+                    )
+
                 if res.status_code in (200, 201):
                     synced += 1
                 else:

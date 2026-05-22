@@ -57,14 +57,21 @@ def merge_and_extract_intel(champ_name: str, new_text: str, existing_data: dict)
     - 立ち回り: {existing_data.get('strategy', '')}
     """
     
+    existing_note_draft = old_raw.get("note_draft", "")
+    if existing_note_draft:
+        note_draft_context = f"\n【既存のnoteドラフト記事（この構成・内容をベースに磨き上げること）】:\n{existing_note_draft}\n"
+    else:
+        note_draft_context = "\n【既存のnoteドラフト記事】: まだありません。新規に魅力的で説得力のある攻略バイブル記事（Markdown形式）を錬成してください。\n"
+    
     prompt = f"""
-    あなたはLeague of Legendsの最高峰の戦略データベース管理者です。
-    ユーザーが手書きで残した【既存のメモ】と、AIが新たに収集・執筆した【最新のトレンド記事】を統合し、
+    あなたはLeague of Legendsの最高峰の戦略ライターおよびデータベース管理者です。
+    ユーザーが手書きで残した【既存のメモ】、既存の【noteドラフト記事】、そして新たに収集した【最新のトレンド記事】を統合・ブラッシュアップし、
     指定されたフィールドを更新してください。
     
     【対象チャンピオン】: {champ_name}
     
     {existing_text}
+    {note_draft_context}
     
     【最新のトレンド記事・AI調査結果】
     {new_text[:8000]}
@@ -73,7 +80,8 @@ def merge_and_extract_intel(champ_name: str, new_text: str, existing_data: dict)
     1. 既存のメモのニュアンスは絶対に削除せず、ベースとして残すこと。
     2. 新しい記事から有用な知識を見つけたら、既存のメモに「追記・整理」する形でマージすること。
     3. 「fullClearTime」については、対象がジャングラーであれば最適な周回ルートや時間を抽出し、そうでなければ空白にすること。
-    4. 出力は必ず以下のスキーマに準拠した有効なJSON形式のみで行うこと。
+    4. 「note_draft」については、既存のnoteドラフトが存在する場合はその構成やマスターの知恵を100%残しつつ、今回の最新トレンド統計（ルーン・ビルドの変更など）や実戦からの戒め（反省フィードバック）を反映して、より読みやすく説得力のあるプロフェッショナルな攻略バイブル記事へと自然にブラッシュアップ（上書き更新）してください。存在しない場合は、新規に4000文字程度の非常に詳しく読み応えのある最高品質のnote攻略記事（Markdown形式）を作成してください。
+    5. 出力は必ず以下のスキーマに準拠した有効なJSON形式のみで行うこと。改行やダブルクォーテーションはJSONの文字列ルールに従って正しくエスケープしてください。
     
     {{
       "strengths": "強み",
@@ -81,7 +89,8 @@ def merge_and_extract_intel(champ_name: str, new_text: str, existing_data: dict)
       "powerSpikes": "パワースパイク",
       "buildRunes": "ビルドとルーン",
       "fullClearTime": "フルクリア時間（JG以外は空白）",
-      "strategy": "全体的な立ち回り"
+      "strategy": "全体的な立ち回り",
+      "note_draft": "磨き上げられた最新のnoteドラフト記事（Markdownテキスト）"
     }}
     """
     
@@ -125,7 +134,8 @@ def update_champion_db(champ_id: str, champ_name: str, new_text: str):
             "weaknesses": merged_json.get("weaknesses", ""),
             "powerSpikes": merged_json.get("powerSpikes", ""),
             "buildRunes": merged_json.get("buildRunes", ""),
-            "fullClearTime": merged_json.get("fullClearTime", "")
+            "fullClearTime": merged_json.get("fullClearTime", ""),
+            "note_draft": merged_json.get("note_draft", "")
         }
     }
     

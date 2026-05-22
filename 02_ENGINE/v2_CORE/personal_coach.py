@@ -108,15 +108,8 @@ class PersonalCoach:
         4. 300文字以内でまとめてください。
         """
         
-        try:
-            response = client.models.generate_content(
-                model=settings.DEFAULT_MODEL,
-                contents=prompt
-            )
-            return response.text
-        except Exception as e:
-            logger.error(f"Failed to generate advice: {e}")
-            return "分析中にエラーが発生した。次はもっとうまくやってみせるよ。"
+        from v2_CORE.ai_helper import generate_content_safe
+        return generate_content_safe(client, prompt, model_id=settings.DEFAULT_MODEL)
 
     def log_to_supabase(self, details, advice):
         """分析結果を Supabase に活動ログとして保存する"""

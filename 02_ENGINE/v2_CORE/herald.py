@@ -34,6 +34,10 @@ class SovereignHerald:
                 {
                     "name": "📱 SNS拡散案",
                     "value": "プロモーション用のフック案も作成済みです。"
+                },
+                {
+                    "name": "🌐 ポータルで確認",
+                    "value": f"[攻略ライブラリを開く]({os.environ.get('PORTAL_URL', 'http://localhost:5173')})"
                 }
             ],
             "footer": {
@@ -85,11 +89,17 @@ class SovereignHerald:
         except Exception as e:
             logger.error(f"[Herald] エラー通知の送信に失敗しました: {e}")
 
-    def notify_progress(self, msg):
+    def notify_progress(self, msg, portal_link=False):
         """システム進捗を王へ報告する"""
         if not self.webhook_url: return
+        
+        content = f"📡 **【通信】進捗報告:** {msg}"
+        if portal_link:
+            portal_url = os.environ.get("PORTAL_URL", "http://localhost:5173") # デフォルトはローカル
+            content += f"\n🌐 [Webポータルで確認する]({portal_url})"
+            
         payload = {
-            "content": f"📡 **【通信】進捗報告:** {msg}",
+            "content": content,
             "username": "Sovereign Herald"
         }
         requests.post(self.webhook_url, json=payload, timeout=5)

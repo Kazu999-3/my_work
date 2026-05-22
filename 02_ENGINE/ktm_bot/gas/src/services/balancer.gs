@@ -299,14 +299,6 @@ function coreBalanceTeams() {
           return false;
         };
 
-        const yukizoSUP_A = isAssigned(teamA, pA, 'ゆきぞー', 'SUP');
-        const kazukiJG_A = isAssigned(teamA, pA, 'かずき', 'JG');
-        const yukizoSUP_B = isAssigned(teamB, pB, 'ゆきぞー', 'SUP');
-        const kazukiJG_B = isAssigned(teamB, pB, 'かずき', 'JG');
-
-        // 二人が指定ロールなら同じチームにする（10億から2万へ緩和）
-        if ((yukizoSUP_A && kazukiJG_B) || (yukizoSUP_B && kazukiJG_A)) penalty += 20000;
-
         // 【新設】レーンごとの有利不利が片方に偏りすぎないようにする
         const advantageGap = Math.abs(lanesAdvantagedA - lanesAdvantagedB);
         if (advantageGap >= 2) penalty += Math.pow(advantageGap, 2) * 2000;

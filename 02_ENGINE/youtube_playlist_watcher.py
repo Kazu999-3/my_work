@@ -137,7 +137,7 @@ def process_playlists():
                 success = gas_gateway.remove_youtube_item(remove_id) 
                 if success:
                     logger.info(f"🗑️ 削除成功: {title}")
-                    herald.notify_progress(f"解析完了・プレイリストから削除しました: {title} ({mode})")
+                    herald.notify_progress(f"解析完了・プレイリストから削除しました: {title} ({mode})", portal_link=True)
                 else:
                     logger.warning(f"⚠️ 削除失敗（プレイリスト内でのID不一致の可能性）: {title}")
             

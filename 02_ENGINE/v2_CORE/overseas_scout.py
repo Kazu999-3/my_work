@@ -72,16 +72,23 @@ class OverseasScout:
         }}
         """
 
-        try:
-            response = self.client.models.generate_content(
-                model=settings.DEFAULT_MODEL,
-                contents=prompt,
-                config={'response_mime_type': 'application/json'}
-            )
-            return json.loads(response.text)
-        except Exception as e:
-            logger.error(f"Generation failed for {champ_id}: {e}")
-            return None
+        for attempt in range(3):
+            try:
+                response = self.client.models.generate_content(
+                    model=settings.DEFAULT_MODEL,
+                    contents=prompt,
+                    config={'response_mime_type': 'application/json'}
+                )
+                return json.loads(response.text)
+            except Exception as e:
+                if "429" in str(e) or "RESOURCE_EXHAUSTED" in str(e):
+                    wait_time = 15 * (attempt + 1)
+                    logger.warning(f"⚠️ Rate limit hit (429) for {champ_id}. Retrying in {wait_time}s... (Attempt {attempt+1}/3)")
+                    time.sleep(wait_time)
+                else:
+                    logger.error(f"Generation failed for {champ_id}: {e}")
+                    return None
+        return None
 
     def update_champion_dictionary(self, champ_id, data):
         """Supabase のマッチアップ辞典 (GLOBAL) を更新"""
@@ -116,7 +123,7 @@ class OverseasScout:
         logger.info("🌐 Overseas Scout cycle starting...")
         champs = self.fetch_champions()
         if not champs:
-            return
+            return 0
 
         # 一度のサイクルで3体のチャンピオンを更新 (API負荷軽減)
         targets = random.sample(champs, 3)
@@ -133,13 +140,23 @@ class OverseasScout:
             time.sleep(5) # APIレートリミット対策
             
         if updated_list:
-            herald.notify_progress(f"👑 **【海外メタ・リサーチ完了】** {', '.join(updated_list)} の戦略データ同期がすべて完了しました！")
+            herald.notify_progress(f"👑 **【海外メタ・リサーチ完了】** {', '.join(updated_list)} の戦略データ同期がすべて完了しました！", portal_link=True)
+            return len(updated_list)
+        return 0
 
     def run(self):
         """無限ループ"""
+        # 他の起動負荷と衝突するのを防ぐため、最初は30秒間待機してから実行を開始する
+        logger.info("🌐 Overseas Scout: Waiting 30s before first run to prevent rate-limit clash at startup...")
+        time.sleep(30)
         while True:
-            self.run_cycle()
-            time.sleep(60 * 60 * 24) # 24時間おき
+            updated_count = self.run_cycle()
+            if updated_count == 0:
+                logger.warning("⚠️ No champions were successfully updated in this cycle. Retrying in 5 minutes...")
+                time.sleep(60 * 5)
+            else:
+                logger.info(f"✅ Successful cycle completed ({updated_count} champs). Sleeping for 24 hours.")
+                time.sleep(60 * 60 * 24) # 24時間おき
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)

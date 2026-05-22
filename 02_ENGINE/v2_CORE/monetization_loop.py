@@ -4,7 +4,9 @@ import time
 import logging
 from pathlib import Path
 import requests
-import google.generativeai as genai
+import json
+from google import genai
+from google.genai import types
 import dotenv
 
 dotenv.load_dotenv(Path("D:/my_work/.env"))
@@ -14,7 +16,7 @@ DISCORD_WEBHOOK = os.environ.get("DISCORD_WEBHOOK")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
 if GEMINI_API_KEY:
-    genai.configure(api_key=GEMINI_API_KEY)
+    client = genai.Client(api_key=GEMINI_API_KEY)
 
 # 今回のトレンド調査対象（例）
 TARGET_CHAMPS = ["Lillia", "JarvanIV", "Shyvana", "Zyra", "Nocturne", "Nidalee", "Brand", "Karthus"]
@@ -29,34 +31,47 @@ def notify_discord(message: str):
         logger.error(f"Discord Webhook Error: {e}")
 
 def generate_x_promo_thread(champion: str, bible_text: str):
-    """バイブルをもとにX(Twitter)用の煽りスレッド原稿を錬成する"""
+    """バイブルをもとにX(Twitter)用の煽りスレッド原稿を錬成し、JSON配列で返す"""
     if not GEMINI_API_KEY:
-        return "Gemini APIキーが設定されていません。"
+        return "[]"
         
-    model = genai.GenerativeModel('gemini-2.0-flash')
     prompt = f"""
     あなたは超一流のWebマーケターであり、League of Legendsの戦略家です。
     以下の{champion}の攻略バイブルを元に、X（Twitter）で爆発的にバズり、noteの購入へ誘導するための
     「煽り」と「有益性」が同居したツリー形式（スレッド形式）の投稿原稿を作成してください。
     
-    【ルール】
-    1. 1ポスト目は、読者の常識を破壊するフック（例：「まだ〇〇で苦労してるの？14.xパッチはこれ一択」）。
-    2. 2〜3ポスト目は、具体的な強さの証明（バイブル内の情報から抜粋）。
-    3. 最後のポストは、詳細な解説記事（note等）への誘導リンク枠を含める。
-    4. AI臭い言葉（「結論から言うと」「〜と言えるでしょう」）は絶対に使わないこと。
-    5. **「ティアリスト（Tier List）」や「Sティア」「Aティア」といった安っぽい格付け表現は一切使わないこと。**
+    【厳格なルール (Ghost Writer DRM)】
+    1. 1ポスト目 (Hook): 読者の常識を破壊するフック（例：「まだ〇〇で苦労してるの？」）。絶対に要約から始めないこと。Curiosity Gap(好奇心)かLoss Aversion(損失回避)を刺激せよ。
+    2. 2ポスト目 (Evidence): 具体的な強さの証明（バイブル内の情報から抜粋）。「いつ・どこで・何が起きたか」の具体性を持たせること。
+    3. 3ポスト目 (CTA): 詳細な解説記事（note）への誘導リンク枠。読者がクリックしたくなる「気づきのギブ」を直前に入れること。
+    4. AI臭い言葉（「結論から言うと」「最適化」「本質」「〜と言えるでしょう」）は絶対に使わないこと。
+    5. 「ティアリスト」や「Sティア」といった安っぽい格付け表現は一切使わないこと。
     6. 各ポストは140文字以内に収める想定で書くこと。
+    
+    出力は必ず以下のJSON配列形式のみとすること:
+    [
+      "1ポスト目のテキスト（フック）",
+      "2ポスト目のテキスト（証拠・学び）",
+      "3ポスト目のテキスト（CTA・誘導リンク枠）"
+    ]
     
     【バイブル本文】
     {bible_text[:5000]}
     """
     
     try:
-        response = model.generate_content(prompt)
-        return response.text
+        response = client.models.generate_content(
+            model='gemini-flash-latest',
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json",
+                temperature=0.7
+            )
+        )
+        return response.text.strip()
     except Exception as e:
         logger.error(f"Gemini Error generating X thread: {e}")
-        return "原稿の生成に失敗しました。"
+        return "[]"
 
 def run_monetization_loop():
     """トレンド検知（アイテム起点） ➔ バイブル生成 ➔ X原稿 のループ"""
@@ -83,11 +98,11 @@ def run_monetization_loop():
     notify_discord(notify_msg)
     
     # 2. バイブル（記事）の錬成とChampionDBの更新
-    from v2_CORE.bible_forge import generate_bible
+    from v2_CORE.bible_forge import BibleForge
     logger.info(f"📖 {trending_champ} の本気バイブルを錬成中... (Context: {meta_context})")
     
-    # generate_bible に meta_context を渡せるように後ほど bible_forge.py も改修する
-    output_path = generate_bible(trending_champ, meta_context=meta_context)
+    forge_engine = BibleForge()
+    output_path = forge_engine.generate_bible(trending_champ, meta_context=meta_context)
     if not output_path or not output_path.exists():
         notify_discord(f"❌ {trending_champ} のバイブル錬成に失敗しました。")
         return
@@ -96,20 +111,84 @@ def run_monetization_loop():
     
     # 3. X(Twitter)用スレッドの生成
     logger.info(f"🐦 {trending_champ} のX販促スレッドを錬成中...")
-    x_thread_text = generate_x_promo_thread(trending_champ, bible_text)
+    x_thread_json_str = generate_x_promo_thread(trending_champ, bible_text)
     
-    promo_path = Path(f"D:/my_work/01_INTEL/prompts/X_PROMO_{trending_champ}.md")
+    promo_path = Path(f"D:/my_work/01_INTEL/prompts/X_PROMO_{trending_champ}.json")
     promo_path.parent.mkdir(parents=True, exist_ok=True)
-    promo_path.write_text(x_thread_text, encoding="utf-8")
+    promo_path.write_text(x_thread_json_str, encoding="utf-8")
     
-    # 4. 完了通知
+    # 3.5 Supabaseへの同期
+    SUPABASE_URL = os.environ.get("SUPABASE_URL")
+    SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
+    if SUPABASE_URL and SUPABASE_KEY:
+        try:
+            x_thread_data = json.loads(x_thread_json_str)
+            url = f"{SUPABASE_URL}/rest/v1/matchup_sentinel?matchup_id=eq.champ_{trending_champ}_global&select=raw_data,strategy"
+            headers = {"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}"}
+            r = requests.get(url, headers=headers)
+            if r.status_code == 200 and r.json():
+                existing_raw = r.json()[0].get("raw_data", {})
+                existing_strategy = r.json()[0].get("strategy", "")
+                existing_raw["x_promo_thread"] = x_thread_data
+                
+                upsert_data = {
+                    "matchup_id": f"champ_{trending_champ}_global",
+                    "champion": trending_champ,
+                    "enemy": "GLOBAL",
+                    "title": f"{trending_champ} 基本戦略・トレンド",
+                    "strategy": existing_strategy,
+                    "raw_data": existing_raw
+                }
+                upsert_headers = {**headers, "Content-Type": "application/json", "Prefer": "resolution=merge-duplicates"}
+                res = requests.post(f"{SUPABASE_URL}/rest/v1/matchup_sentinel?on_conflict=matchup_id", headers=upsert_headers, json=upsert_data)
+                if res.status_code in (200, 201):
+                    logger.info("✅ Supabase に X販促スレッド(JSON)を同期しました。")
+                else:
+                    logger.error(f"Failed to sync X promo to Supabase: {res.text}")
+        except Exception as e:
+            logger.error(f"Supabase JSON sync error: {e}")
+            
+    # 4. 完全自動パブリッシュ (X & note)
+    logger.info("🚀 完全自動パブリッシュ（錬金術最終フェーズ）を開始します...")
+    try:
+        from v2_CORE.publisher import XPublisher, NotePublisher
+        
+        # noteへ自動パブリッシュ (500円)
+        note_pub = NotePublisher(headless=True)
+        note_title = f"【最新メタ】{trending_champ} 独占勝率レポート＆完全攻略バイブル"
+        note_success = note_pub.post_draft(
+            title=note_title,
+            markdown_body=bible_text,
+            auto_publish=True,
+            price="500"
+        )
+        
+        # Xへスレッド投稿
+        x_pub = XPublisher(headless=True)
+        try:
+            tweets = json.loads(x_thread_json_str)
+        except:
+            tweets = []
+        x_success = x_pub.post_thread(tweets) if tweets else False
+        
+        if note_success and x_success:
+            publish_status = "✅ Xとnoteの両方に完全自動パブリッシュが成功しました！（価格: 500円）"
+        else:
+            publish_status = "⚠️ パブリッシュ処理の一部（または全部）が失敗しました。ログを確認してください。"
+            
+        logger.info(publish_status)
+    except Exception as e:
+        logger.error(f"Auto-publish failed: {e}")
+        publish_status = f"❌ パブリッシュ処理で致命的なエラー: {e}"
+        
+    # 5. 完了通知
     success_msg = (
         f"✅ **[自動錬金術ループ完了]**\n"
         f"対象: **{trending_champ}**\n\n"
         f"1️⃣ **ChampionDB更新**: 最新の立ち回り・ビルドを辞典にマージ完了。\n"
-        f"2️⃣ **バイブル生成**: `{output_path.name}` に1万文字級の攻略記事を出力しました。\n"
-        f"3️⃣ **X販促原稿**: `{promo_path.name}` にバズ誘発用のスレッド原稿を出力しました。コピペして投稿可能です。\n"
-        f"💰 次の行動: Xへ投稿し、noteへのリンクを繋げてください。"
+        f"2️⃣ **バイブル生成**: `{output_path.name}` に攻略記事を出力しました。\n"
+        f"3️⃣ **X販促同期**: Supabaseの `x_promo_thread` にデータを同期しました。\n"
+        f"4️⃣ **自動パブリッシュ**: {publish_status}"
     )
     logger.info("✨ ループ完了")
     notify_discord(success_msg)

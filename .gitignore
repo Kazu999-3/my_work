@@ -1,4 +1,3 @@
-
 # Antigravity Secrets
 **/client_secrets.json
 **/token.pickle
@@ -39,3 +38,5 @@ scratch/
 03_FACTORY/note_drafts/
 03_FACTORY/sns_assets/
 03_FACTORY/sns_promotions/
+
+.agent/playwright_data/

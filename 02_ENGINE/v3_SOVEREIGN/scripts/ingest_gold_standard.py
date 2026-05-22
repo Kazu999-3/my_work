@@ -2,10 +2,12 @@ import sys
 import os
 from pathlib import Path
 
-# PYTHONPATH の設定
-sys.path.append(str(Path(__file__).parent.parent.parent))
+# PYTHONPATH の設定 (02_ENGINEを確実に追加)
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+if str(BASE_DIR) not in sys.path:
+    sys.path.append(str(BASE_DIR))
 
-from v3_SOVEREIGN.memory import SovereignMemory
+from ..memory import SovereignMemory
 
 def ingest_bible(champ_name: str, file_path: Path):
     memory = SovereignMemory()

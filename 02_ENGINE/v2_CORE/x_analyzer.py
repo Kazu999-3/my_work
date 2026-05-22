@@ -48,11 +48,6 @@ class XAnalyzer:
                 )
                 page = await context.new_page()
 
-                # ダミー戦績取得ロジック（実装未完成のためデフォルトMMR 1200 を設定）
-                dummy_mmr = 1200
-                logger.info(f"[Pulse] {ign} のダミーMMRを {dummy_mmr} として設定します。")
-                updates.append({"ign": ign, "mmr": dummy_mmr})
-                
                 # 1. ログイン処理
                 logging.info("🔐 Xにログイン中...")
                 await page.goto("https://x.com/i/flow/login")
@@ -145,12 +140,4 @@ async def main():
         print(analyzer.analyze_hooks("LoL Jarvan IV", posts))
 
 if __name__ == "__main__":
-    import sys
-    if len(sys.argv) > 1 and sys.argv[1] == "--once":
-        coordinator = SovereignCoordinator()
-        coordinator.run_full_cycle()
-        logger.info("✅ One autonomous cycle completed.")
-    else:
-        coordinator = SovereignCoordinator()
-        # デフォルトで3時間おきの監視ループを実行
-        coordinator.main_loop(interval_hours=3)
+    asyncio.run(main())

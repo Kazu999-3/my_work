@@ -28,7 +28,8 @@ def run_pulse():
     """インフラ監視エンジンの起動"""
     logger.info("💓 Pulse (Heartbeat) starting...")
     try:
-        pulse.start()
+        pulse.running = True
+        pulse.pulse_loop()
     except Exception as e:
         logger.error(f"🔥 Pulse failed: {e}")
 
@@ -54,6 +55,9 @@ def run_coordinator():
     """メインのコンテンツ生成・リサーチエンジンの起動"""
     logger.info("🏰 Sovereign Coordinator (Kingdom) starting...")
     try:
+        # 他のスレッドと衝突しないように、起動時に3分（180秒）待機
+        logger.info("🏰 Sovereign Coordinator: Waiting 180s before first run to prevent startup API clash...")
+        time.sleep(180)
         coordinator = SovereignCoordinator()
         # デフォルト3時間おきに実行
         coordinator.main_loop(interval_hours=3)
@@ -100,6 +104,9 @@ def main():
     def run_monetization():
         from v2_CORE.monetization_loop import run_monetization_loop
         logger.info("💰 Monetization Loop starting (Every 6 hours)...")
+        # 起動時に2分（120秒）待機して API 競合を防ぐ
+        logger.info("💰 Monetization Loop: Waiting 120s before first run to prevent startup API clash...")
+        time.sleep(120)
         while True:
             try:
                 run_monetization_loop()
@@ -114,6 +121,9 @@ def main():
     def run_personal_coach():
         from v2_CORE.personal_coach import PersonalCoach
         logger.info("🎓 Personal Coach starting (Every 15 mins)...")
+        # 起動時に15秒待機して API 競合を防ぐ
+        logger.info("🎓 Personal Coach: Waiting 15s before first run to prevent startup API clash...")
+        time.sleep(15)
         coach = PersonalCoach()
         while True:
             try:
@@ -138,6 +148,7 @@ def main():
     threads.append(t_scout)
 
     # 9. Draft Analyzer Loop (ライブ試合の構成分析)
+
     def run_draft_analyzer():
         from v2_CORE.draft_analyzer import DraftAnalyzer
         logger.info("🧠 Draft Analyzer starting...")
@@ -161,6 +172,32 @@ def main():
     t_news = threading.Thread(target=run_news_scout, name="NewsThread", daemon=True)
     threads.append(t_news)
 
+    # 11. Magazine Forge Loop (月刊マガジン自動生成)
+    def run_magazine_forge():
+        from v2_CORE.magazine_forge import MagazineForge
+        import datetime
+        logger.info("📚 Magazine Forge starting (Monthly check)...")
+        # 起動時に3分待機して API 競合を防ぐ
+        logger.info("📚 Magazine Forge: Waiting 180s before first run to prevent startup API clash...")
+        time.sleep(180)
+        forge = MagazineForge()
+        while True:
+            try:
+                now = datetime.datetime.now()
+                # 毎月1日に実行
+                if now.day == 1:
+                    logger.info("📚 Today is the 1st of the month! Forging Monthly Magazine...")
+                    forge.generate_magazine()
+                    # 生成後は24時間待機して重複実行を防止
+                    time.sleep(60 * 60 * 24)
+            except Exception as e:
+                logger.error(f"🔥 Magazine Forge failed: {e}")
+            # 1時間おきに日付をチェック
+            time.sleep(60 * 60)
+            
+    t_magazine = threading.Thread(target=run_magazine_forge, name="MagazineThread", daemon=True)
+    threads.append(t_magazine)
+
     # 全エンジンの点火
     for t in threads:
         t.start()
@@ -170,15 +207,26 @@ def main():
     logger.info("💡 Press Ctrl+C to stop all services.")
 
     try:
+        # 自己修復対象となる重要スレッドのリスト（これらが死んだらプロセスを再起動する）
+        critical_threads = ["PulseThread", "YouTubeThread", "KingdomThread", "RiotThread", "CoachThread"]
         while True:
-            # メインスレッドは死活監視のみ行う
-            alive_threads = [t.name for t in threads if t.is_alive()]
-            if not alive_threads:
+            alive_names = [t.name for t in threads if t.is_alive()]
+            if not alive_names:
                 logger.warning("⚠️ All sub-engines have stopped. Exiting...")
                 break
+            
+            # 重要スレッドが死亡していないかチェック
+            for name in critical_threads:
+                if name not in alive_names:
+                    logger.error(f"🚨 Critical engine thread '{name}' is dead! Forcing process exit for recovery...")
+                    sys.exit(1)
+                    
             time.sleep(10)
     except KeyboardInterrupt:
-        logger.info("👋 Shutdown signal received from King. Stopping Sovereign OS...")
+        logger.info("👋 Shutdown signal received from Master. Stopping Sovereign OS...")
+    except SystemExit:
+        # sys.exit(1) による終了をキャッチして、ログのノイズを出さずに終了する
+        pass
     finally:
         pulse.stop()
         logger.info("[!] Unified Sovereign OS halted.")

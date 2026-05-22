@@ -1,5 +1,11 @@
+import sys
 import logging
 from pathlib import Path
+
+# 親の親ディレクトリ (02_ENGINE) をインポートパスに追加して、v2_CORE が確実に解決できるようにする
+BASE_DIR = Path(__file__).resolve().parent.parent
+if str(BASE_DIR) not in sys.path:
+    sys.path.append(str(BASE_DIR))
 
 logger = logging.getLogger("Dispatcher")
 
@@ -40,7 +46,7 @@ class SovereignDispatcher:
         """noteへ下書き保存"""
         if self.run_security_audit(article_path):
             logger.info(f"📝 Deploying {article_path.name} to note (Draft)...")
-            from v3_SOVEREIGN.scripts.note_uploader import NoteUploader
+            from .scripts.note_uploader import NoteUploader
             uploader = NoteUploader()
             success = await uploader.upload_draft(article_path)
             return success

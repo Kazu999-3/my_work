@@ -3,7 +3,7 @@ from bs4 import BeautifulSoup
 import logging
 from datetime import datetime
 from .settings import settings
-import google.generativeai as genai
+from google import genai
 
 logger = logging.getLogger("Scout")
 
@@ -15,8 +15,10 @@ class SovereignScout:
     def __init__(self):
         self.api_key = settings.GEMINI_API_KEY
         if self.api_key:
-            genai.configure(api_key=self.api_key)
-            self.model = genai.GenerativeModel('gemini-2.0-flash')
+            self.client = genai.Client(api_key=self.api_key)
+            self.model_id = settings.DEFAULT_MODEL
+        else:
+            self.client = None
 
     def search_patch_details(self, patch_url: str):
         """パッチノートのURLから核心的な変更点（バフ・ナーフ）を抽出して要約"""
@@ -45,9 +47,9 @@ class SovereignScout:
             {text[:8000]}  # トークン制限を考慮して冒頭部分を使用
             """
             
-            if self.api_key:
-                response = self.model.generate_content(prompt)
-                return response.text
+            if self.client:
+                from v2_CORE.ai_helper import generate_content_safe
+                return generate_content_safe(self.client, prompt, model_id=self.model_id)
             else:
                 return "Gemini APIキーが設定されていないため、簡易要約は利用できません。"
                 
