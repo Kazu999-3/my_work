@@ -58,7 +58,8 @@ class AutoForge:
             logger.error(f"[Forge] エラー: {e}")
             content = self.template.replace("{{champion}}", champion).replace("{{patch}}", patch)
         
-        file_name = f"sovereign_draft_{patch}_{champion}_{role}.md"
+        role_suffix = f"_{role}" if role and role != "Unknown" else ""
+        file_name = f"sovereign_draft_{patch}_{champion}{role_suffix}.md"
         file_path = self.draft_dir / file_name
         with open(file_path, "w", encoding="utf-8") as f:
             f.write(content)

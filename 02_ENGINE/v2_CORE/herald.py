@@ -15,11 +15,13 @@ class SovereignHerald:
     def __init__(self):
         self.webhook_url = settings.DISCORD_WEBHOOK
 
-    def announce_article(self, champion, patch, draft_path, promo_hooks, image_path=None):
+    def announce_article(self, champion, patch, draft_path, promo_hooks, image_prompt=None):
         """記事の錬成完了を報告する"""
         if not self.webhook_url:
             logger.warning("[Herald] Discord Webhook が設定されていないため、報告をスキップします。")
             return
+
+        portal_url = os.environ.get('PORTAL_URL', 'http://localhost:5173')
 
         # 進言メッセージの錬成
         embed = {
@@ -28,16 +30,12 @@ class SovereignHerald:
             "color": 0x00ff00, # Green
             "fields": [
                 {
-                    "name": "📄 錬成された資産",
-                    "value": f"[{draft_path.name}](file:///{draft_path})"
+                    "name": "📄 錬成された記事",
+                    "value": f"[{draft_path.name}]({portal_url})"
                 },
                 {
-                    "name": "📱 SNS拡散案",
-                    "value": "プロモーション用のフック案も作成済みです。"
-                },
-                {
-                    "name": "🌐 ポータルで確認",
-                    "value": f"[攻略ライブラリを開く]({os.environ.get('PORTAL_URL', 'http://localhost:5173')})"
+                    "name": "📱 SNS拡散・プロモーション",
+                    "value": f"SNS拡散用のフック案を錬成しました。ポータルの「投稿管理」画面から確認できます。\n[投稿管理を開く]({portal_url})"
                 }
             ],
             "footer": {
@@ -45,17 +43,12 @@ class SovereignHerald:
             }
         }
 
-        # 🏮 Imperial Eye: 画像が指定されている場合
-        if image_path:
-            # Discord Webhook ではローカルパスを直接表示できないため、
-            # 将来的に外部ストレージへのアップロードが必要。
-            # 現状はファイル名を表示。
+        # 画像プロンプトが指定されている場合
+        if image_prompt:
             embed["fields"].append({
-                "name": "🖼️ 帝国視覚アセット",
-                "value": f"[{os.path.basename(image_path)}](file:///{image_path})"
+                "name": "🖼️ おすすめのサムネイル画像生成プロンプト (Midjourney等)",
+                "value": f"```{image_prompt}```"
             })
-            # Webhook経由で画像を表示させるにはURLが必要だが、現状はローカルパスを表示
-            # embed["image"] = {"url": f"attachment://{os.path.basename(image_path)}"}
 
         payload = {
             "username": "Sovereign Herald",

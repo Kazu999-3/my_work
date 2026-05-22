@@ -124,10 +124,10 @@ class SovereignCoordinator:
 
                 # 8. Herald: 王への進言 (Discord報告)
                 logger.info(f"Trumpeting results to the King...")
-                herald.announce_article(champ, patch, draft_path, promo_content, image_path=str(image_prompt) if image_prompt else None)
+                herald.announce_article(champ, patch, draft_path, promo_content, image_prompt=str(image_prompt) if image_prompt else None)
                 
                 # リサイクル成果の追加報告
-                herald.notify_progress(f"マルチプラットフォーム資産を錬成しました: {recycled_path.name}")
+                herald.notify_progress("マルチプラットフォーム資産 (TikTok/X/note 向け) を錬成しました。")
                 
                 logger.info(f"📱 SNS Hooks Ready: {promo_path}")
                 
