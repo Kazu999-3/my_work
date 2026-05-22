@@ -189,10 +189,11 @@ const BibleReader = ({ onBack }) => {
       {/* 検索・フィルターエリア */}
       <div style={{ display: 'flex', gap: '16px', marginBottom: '24px', alignItems: 'center', flexWrap: 'wrap' }}>
         <div style={{ position: 'relative', flex: 1, minWidth: '300px' }}>
-          <Search style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#a0a5b0' }} size={18} />
+          <Search style={{ position: 'absolute', left: '20px', top: '50%', transform: 'translateY(-50%)', color: '#c89b3c' }} size={22} />
           <input type="text" placeholder="キーワード、チャンピオン、アイテム名で検索..."
             value={search} onChange={(e) => setSearch(e.target.value)}
-            style={{ width: '100%', padding: '14px 14px 14px 44px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', color: '#f0f5f5', fontSize: '14px', fontFamily: "'Outfit', sans-serif", outline: 'none' }} />
+            style={{ width: '100%', padding: '16px 16px 16px 54px', background: 'rgba(200,155,60,0.05)', border: '2px solid rgba(200,155,60,0.2)', borderRadius: '14px', color: '#f0f5f5', fontSize: '16px', fontWeight: 700, fontFamily: "'Outfit', sans-serif", outline: 'none' }} />
+          {search && <button onClick={() => setSearch('')} style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '8px', padding: '5px 12px', color: '#a0a5b0', cursor: 'pointer', fontSize: '12px', fontWeight: 700 }}>クリア</button>}
         </div>
         
         {/* カテゴリー＆ソート */}
@@ -239,9 +240,9 @@ const BibleReader = ({ onBack }) => {
               {!collapsedGroups[champName] && (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '12px' }}>
                   {items.map(article => (
-                    <div key={article.id} className="glass-card"
+                    <div key={article.id} className="glass-card-gold"
                       onClick={() => setSelectedArticle(article)}
-                      style={{ padding: '20px', cursor: 'pointer', borderLeft: '3px solid #c89b3c', position: 'relative' }}>
+                      style={{ padding: '24px', cursor: 'pointer', borderLeft: '4px solid #c89b3c', position: 'relative' }}>
                       {/* 削除ボタン */}
                       <button onClick={(e) => deleteArticle(article.id, e)}
                         style={{ position: 'absolute', top: '12px', right: '12px', background: 'rgba(255,255,255,0.05)', border: 'none', borderRadius: '8px', padding: '6px', cursor: 'pointer', color: '#a0a5b0', opacity: 0.4, transition: 'all 0.2s' }}

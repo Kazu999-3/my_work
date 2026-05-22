@@ -14,6 +14,17 @@
   --color-glass-border: rgba(255, 255, 255, 0.08);
   --font-main: 'Outfit', sans-serif;
   --font-mono: 'Space Grotesk', monospace;
+
+  --animate-glow: glow 2s ease-in-out infinite alternate;
+  
+  @keyframes glow {
+    from {
+      box-shadow: 0 0 10px -10px var(--color-accent-cyan);
+    }
+    to {
+      box-shadow: 0 0 20px 5px var(--color-accent-cyan);
+    }
+  }
 }
 
 /* ベーススタイル */
@@ -74,8 +85,8 @@ h1, h2, h3 {
 /* グラスモーフィズム・カード */
 .glass-card {
   background: var(--color-bg-card);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--color-glass-border);
   border-radius: 16px;
   box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
@@ -83,8 +94,15 @@ h1, h2, h3 {
 }
 
 .glass-card:hover {
-  border-color: var(--color-border-glow);
-  box-shadow: 0 0 20px var(--color-border-glow);
+  border-color: rgba(0, 207, 239, 0.4);
+  box-shadow: 0 0 24px rgba(0, 207, 239, 0.15);
+  transform: translateY(-2px);
+}
+
+.glass-card-gold:hover {
+  border-color: rgba(200, 155, 60, 0.4);
+  box-shadow: 0 0 24px rgba(200, 155, 60, 0.15);
+  transform: translateY(-2px);
 }
 
 /* スクロールバーのカスタマイズ */

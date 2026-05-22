@@ -21,6 +21,7 @@ const MatchupExplorer = ({ onBack }) => {
   const [showForm, setShowForm] = useState(false)
   const [memo, setMemo] = useState({ ...EMPTY_MEMO })
   const [saving, setSaving] = useState(false)
+  const [roleFilter, setRoleFilter] = useState('ALL')
 
   const [champMap, setChampMap] = useState({})
 
@@ -102,6 +103,16 @@ const MatchupExplorer = ({ onBack }) => {
       return 0
     })
 
+    if (roleFilter !== 'ALL') {
+      filteredMatchups = filteredMatchups.filter(m => {
+        const rd = m.raw_data || {}
+        let role = (rd.role || m.role || 'UNKNOWN').toUpperCase()
+        if (role === 'UTILITY') role = 'SUPPORT'
+        if (role === 'BOTTOM') role = 'BOT'
+        return role === roleFilter
+      })
+    }
+
     return {
       matchups: filteredMatchups,
       articles: articles.filter(a => 
@@ -109,7 +120,7 @@ const MatchupExplorer = ({ onBack }) => {
         champMatch(a.champion)
       ).slice(0, 4),
     }
-  }, [search, matchups, articles, champMap, sortOrder])
+  }, [search, matchups, articles, champMap, sortOrder, roleFilter])
 
   const groupedMatchups = useMemo(() => {
     const groups = {}
@@ -396,7 +407,21 @@ const MatchupExplorer = ({ onBack }) => {
             style={{ width: '100%', padding: '18px 18px 18px 54px', background: 'rgba(0,207,239,0.05)', border: '2px solid rgba(0,207,239,0.2)', borderRadius: '14px', color: '#f0f5f5', fontSize: '17px', fontWeight: 700, fontFamily: "'Outfit', sans-serif", outline: 'none' }} />
           {search && <button onClick={() => setSearch('')} style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '8px', padding: '5px 12px', color: '#a0a5b0', cursor: 'pointer', fontSize: '12px', fontWeight: 700 }}>クリア</button>}
         </div>
-        <select value={sortOrder} onChange={e => setSortOrder(e.target.value)} style={{ padding: '0 16px', background: 'rgba(20,22,30,0.8)', border: '2px solid rgba(255,255,255,0.1)', borderRadius: '14px', color: '#f0f5f5', fontSize: '14px', fontWeight: 700, outline: 'none', cursor: 'pointer' }}>
+        
+        {/* ロールフィルター */}
+        <div style={{ display: 'flex', background: 'rgba(0,0,0,0.3)', padding: '4px', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.05)', alignItems: 'center', height: '62px' }}>
+          {['ALL', 'TOP', 'JUNGLE', 'MID', 'BOT', 'SUPPORT'].map(r => (
+            <button key={r} onClick={() => setRoleFilter(r)}
+              style={{
+                padding: '8px 16px', borderRadius: '10px', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: 800, transition: 'all 0.2s', height: '100%',
+                background: roleFilter === r ? '#00cfef' : 'transparent', color: roleFilter === r ? '#000' : '#a0a5b0'
+              }}>
+              {r}
+            </button>
+          ))}
+        </div>
+
+        <select value={sortOrder} onChange={e => setSortOrder(e.target.value)} style={{ padding: '0 16px', background: 'rgba(20,22,30,0.8)', border: '2px solid rgba(255,255,255,0.1)', borderRadius: '14px', color: '#f0f5f5', fontSize: '14px', fontWeight: 700, outline: 'none', cursor: 'pointer', height: '62px' }}>
           <option value="updated_desc">更新日が新しい順</option>
           <option value="updated_asc">更新日が古い順</option>
           <option value="difficulty_desc">難易度が高い順</option>
@@ -426,9 +451,7 @@ const MatchupExplorer = ({ onBack }) => {
                       const rd = m.raw_data || {}
                       return (
                         <div key={m.id} className="glass-card" onClick={() => setSelected(m)}
-                          style={{ padding: '20px', borderLeft: '4px solid #00cfef', cursor: 'pointer', position: 'relative', transition: 'all 0.2s' }}
-                          onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
-                          onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}>
+                          style={{ padding: '24px', borderLeft: '4px solid #00cfef', cursor: 'pointer', position: 'relative' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px', flexWrap: 'wrap' }}>
                             <Badge name={m.champion} color="#c89b3c" />
                             <span style={{ color: '#00cfef', fontWeight: 900, fontSize: '10px', fontStyle: 'italic' }}>VS</span>

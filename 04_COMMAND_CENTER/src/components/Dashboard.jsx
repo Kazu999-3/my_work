@@ -255,24 +255,11 @@ const Dashboard = () => {
                 </div>
               </div>
 
-              <DraftingHub />
-              <PerformanceTimeline matchups={matchups} />
-
-              {/* ステータスカード */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '24px', marginBottom: '32px' }}>
-                <StatusCard title="リサーチエンジン" status="稼働中" metric={`${statsSummary.research}件の分析完了`} icon={<Zap style={{ color: '#00cfef' }} />} statusColor="#00cfef" />
-                <StatusCard title="KTMボット" status="接続中" metric="Riot API 正常" icon={<Users style={{ color: '#c89b3c' }} />} statusColor="#c89b3c" />
-                <StatusCard title="バイブル生成" status="待機中" metric={`累計 ${statsSummary.bibles} 件の錬成`} icon={<BookOpen style={{ color: '#a78bfa' }} />} statusColor="#a78bfa" />
-              </div>
-
-              {/* Live Briefing */}
+              {/* Live Briefing (最重要情報を最上部に) */}
               <LiveBriefing enemies={liveEnemies} />
 
-              {/* 戦績サマリー (Riot API データ) */}
-              <StatsPanel />
-
               {/* クイックアクション */}
-              <div className="glass-card" style={{ padding: '32px', marginBottom: '32px' }}>
+              <div className="glass-card" style={{ padding: '32px', marginBottom: '32px', borderTop: '3px solid #c89b3c' }}>
                 <h3 style={{ fontSize: '18px', fontWeight: 700, fontFamily: "'Space Grotesk', monospace", marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <Zap size={18} style={{ color: '#c89b3c' }} /> クイック・アクション
                 </h3>
@@ -283,6 +270,19 @@ const Dashboard = () => {
                   <QuickAction label="投稿管理" desc="X / note履歴" icon={<Send size={22} />} onClick={() => navigate('posts')} />
                 </div>
               </div>
+
+              {/* ステータスカード */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '24px', marginBottom: '32px' }}>
+                <StatusCard title="リサーチエンジン" status="稼働中" metric={`${statsSummary.research}件の分析完了`} icon={<Zap style={{ color: '#00cfef' }} />} statusColor="#00cfef" />
+                <StatusCard title="KTMボット" status="接続中" metric="Riot API 正常" icon={<Users style={{ color: '#c89b3c' }} />} statusColor="#c89b3c" />
+                <StatusCard title="バイブル生成" status="待機中" metric={`累計 ${statsSummary.bibles} 件の錬成`} icon={<BookOpen style={{ color: '#a78bfa' }} />} statusColor="#a78bfa" />
+              </div>
+
+              <DraftingHub />
+              <PerformanceTimeline matchups={matchups} />
+
+              {/* 戦績サマリー (Riot API データ) */}
+              <StatsPanel />
 
               {/* 最近の活動 */}
               <div className="glass-card" style={{ padding: '32px' }}>
@@ -343,14 +343,14 @@ const QuickAction = ({ label, desc, icon, onClick }) => {
   return (
     <button onClick={onClick}
       onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}
-      className="glass-card"
-      style={{ padding: '24px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '12px', cursor: 'pointer', border: '1px solid ' + (hovered ? 'rgba(200,155,60,0.5)' : 'rgba(255,255,255,0.08)'), textAlign: 'center', background: 'rgba(20,22,30,0.7)', borderRadius: '16px', color: '#f0f5f5', transition: 'all 0.2s' }}>
-      <div style={{ padding: '10px', borderRadius: '12px', background: hovered ? 'rgba(200,155,60,0.1)' : 'rgba(255,255,255,0.05)', color: hovered ? '#c89b3c' : '#f0f5f5', transition: 'all 0.2s' }}>
+      className="glass-card-gold"
+      style={{ padding: '24px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '12px', cursor: 'pointer', textAlign: 'center', borderRadius: '16px', color: '#f0f5f5' }}>
+      <div style={{ padding: '12px', borderRadius: '14px', background: hovered ? 'rgba(200,155,60,0.15)' : 'rgba(255,255,255,0.05)', color: hovered ? '#c89b3c' : '#f0f5f5', transition: 'all 0.2s', transform: hovered ? 'scale(1.1)' : 'scale(1)' }}>
         {icon}
       </div>
       <div>
-        <p style={{ fontSize: '13px', fontWeight: 700, color: hovered ? '#c89b3c' : '#f0f5f5', transition: 'color 0.2s' }}>{label}</p>
-        <p style={{ fontSize: '10px', color: '#a0a5b0', marginTop: '4px' }}>{desc}</p>
+        <p style={{ fontSize: '14px', fontWeight: 800, color: hovered ? '#c89b3c' : '#f0f5f5', transition: 'color 0.2s' }}>{label}</p>
+        <p style={{ fontSize: '11px', color: '#a0a5b0', marginTop: '6px' }}>{desc}</p>
       </div>
     </button>
   )

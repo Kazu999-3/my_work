@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { motion } from 'framer-motion'
-import { Send, ExternalLink, RefreshCw, Clock, Twitter, FileText } from 'lucide-react'
+import { Send, ExternalLink, RefreshCw, Clock, MessageSquare, FileText } from 'lucide-react'
 
 const PublishTracker = ({ onBack }) => {
   const [posts, setPosts] = useState([])
@@ -27,7 +27,7 @@ const PublishTracker = ({ onBack }) => {
 
   const getPlatformStyle = (platform) => {
     if (platform === 'X' || platform.toLowerCase() === 'twitter') {
-      return { color: '#000', bg: '#fff', icon: <Twitter size={14} />, label: 'X (Twitter)' }
+      return { color: '#000', bg: '#fff', icon: <MessageSquare size={14} />, label: 'X (Twitter)' }
     }
     if (platform === 'note') {
       return { color: '#fff', bg: '#41C9B4', icon: <FileText size={14} />, label: 'note' }

@@ -108,21 +108,6 @@ const ChampionDB = ({ onBack }) => {
       })
       .catch(console.error)
   }, [])
-      .then(r => r.json())
-      .then(d => {
-        const list = Object.values(d.data).map(c => ({
-          id: c.id,
-          key: c.key,
-          name: c.name,
-          title: c.title,
-          tags: c.tags,
-          searchKey: `${c.id.toLowerCase()} ${c.name}`
-        }))
-        setChampions(list)
-        setLoading(false)
-      })
-      .catch(console.error)
-  }, [])
 
   // チャンピオン詳細が選択されたらデータ取得
   useEffect(() => {
@@ -279,12 +264,13 @@ const ChampionDB = ({ onBack }) => {
         </button>
       </div>
 
-      <div style={{ display: 'flex', gap: '12px', marginBottom: '32px', maxWidth: '800px' }}>
+      <div style={{ position: 'sticky', top: '70px', zIndex: 10, display: 'flex', gap: '12px', marginBottom: '32px', maxWidth: '800px', background: 'rgba(10,11,16,0.85)', backdropFilter: 'blur(12px)', padding: '16px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)', boxShadow: '0 8px 32px rgba(0,0,0,0.4)' }}>
         <div style={{ position: 'relative', flex: 1 }}>
           <Search style={{ position: 'absolute', left: '20px', top: '50%', transform: 'translateY(-50%)', color: '#00cfef' }} size={22} />
           <input type="text" autoFocus placeholder="チャンピオン名で検索..."
             value={search} onChange={e => setSearch(e.target.value)}
             style={{ width: '100%', padding: '16px 16px 16px 54px', background: 'rgba(0,207,239,0.05)', border: '2px solid rgba(0,207,239,0.2)', borderRadius: '14px', color: '#f0f5f5', fontSize: '16px', fontWeight: 700, outline: 'none' }} />
+          {search && <button onClick={() => setSearch('')} style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '8px', padding: '5px 12px', color: '#a0a5b0', cursor: 'pointer', fontSize: '12px', fontWeight: 700 }}>クリア</button>}
         </div>
         <select value={sortOrder} onChange={e => setSortOrder(e.target.value)} style={{ padding: '0 16px', background: 'rgba(20,22,30,0.8)', border: '2px solid rgba(255,255,255,0.1)', borderRadius: '14px', color: '#f0f5f5', fontSize: '14px', fontWeight: 700, outline: 'none', cursor: 'pointer' }}>
           <option value="updated_desc">更新日が新しい順</option>
@@ -299,12 +285,10 @@ const ChampionDB = ({ onBack }) => {
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '16px' }}>
           {filtered.map(c => (
-            <div key={c.id} onClick={() => setSelected(c)} className="glass-card"
-              style={{ padding: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', cursor: 'pointer', transition: 'all 0.2s', background: champDates[c.id] ? 'rgba(0,207,239,0.05)' : 'rgba(255,255,255,0.02)', border: champDates[c.id] ? '1px solid rgba(0,207,239,0.2)' : '1px solid rgba(255,255,255,0.05)' }}
-              onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.background = 'rgba(0,207,239,0.1)'; e.currentTarget.style.borderColor = 'rgba(0,207,239,0.4)' }}
-              onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.background = champDates[c.id] ? 'rgba(0,207,239,0.05)' : 'rgba(255,255,255,0.02)'; e.currentTarget.style.borderColor = champDates[c.id] ? '1px solid rgba(0,207,239,0.2)' : '1px solid rgba(255,255,255,0.05)' }}>
+            <div key={c.id} onClick={() => setSelected(c)} className={champDates[c.id] ? "glass-card" : "glass-card"}
+              style={{ padding: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', cursor: 'pointer', background: champDates[c.id] ? 'rgba(0,207,239,0.05)' : 'rgba(255,255,255,0.02)', border: champDates[c.id] ? '1px solid rgba(0,207,239,0.3)' : '1px solid rgba(255,255,255,0.05)', position: 'relative' }}>
               <img src={getChampIcon(c.id)} alt={c.name} style={{ width: '60px', height: '60px', borderRadius: '50%', border: '2px solid rgba(255,255,255,0.1)' }} />
-              <span style={{ fontSize: '13px', fontWeight: 800, textAlign: 'center', lineHeight: 1.2 }}>{c.name}</span>
+              <span style={{ fontSize: '13px', fontWeight: 800, textAlign: 'center', lineHeight: 1.2, color: champDates[c.id] ? '#00cfef' : '#f0f5f5' }}>{c.name}</span>
               {champDates[c.id] && (
                 <span style={{ fontSize: '10px', color: '#00cfef', fontWeight: 700 }}>
                   {new Date(champDates[c.id]).toLocaleDateString('ja-JP')}
