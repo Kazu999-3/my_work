@@ -218,7 +218,7 @@ const MatchupExplorer = ({ onBack }) => {
               <span style={{ color: '#00cfef', fontWeight: 900, fontSize: '16px', fontStyle: 'italic' }}>VS</span>
               <Badge name={m.enemy} color="#00cfef" lg />
               {rd.difficulty > 0 && <DiffStars val={rd.difficulty} />}
-              {rd.result && <span style={{ padding: '4px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 800, background: rd.result === 'Win' ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)', color: rd.result === 'Win' ? '#22c55e' : '#ef4444' }}>{rd.result}</span>}
+              {rd.result && <span style={{ padding: '4px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 800, background: String(rd.result).toLowerCase() === 'win' ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)', color: String(rd.result).toLowerCase() === 'win' ? '#22c55e' : '#ef4444' }}>{rd.result}</span>}
             </div>
             {(() => {
               const clean = n => (n||'').toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -457,7 +457,7 @@ const MatchupExplorer = ({ onBack }) => {
                             <span style={{ color: '#00cfef', fontWeight: 900, fontSize: '10px', fontStyle: 'italic' }}>VS</span>
                             <Badge name={m.enemy} color="#00cfef" />
                             {rd.difficulty > 0 && <DiffStars val={rd.difficulty} small />}
-                            {rd.result && <span style={{ fontSize: '10px', fontWeight: 800, color: rd.result === 'Win' ? '#22c55e' : '#ef4444', marginLeft: 'auto' }}>{rd.result === 'Win' ? '勝ち' : '負け'}</span>}
+                            {rd.result && <span style={{ fontSize: '10px', fontWeight: 800, color: String(rd.result).toLowerCase() === 'win' ? '#22c55e' : '#ef4444', marginLeft: 'auto' }}>{String(rd.result).toLowerCase() === 'win' ? '勝ち' : '負け'}</span>}
                           </div>
                           <h3 style={{ fontSize: '14px', fontWeight: 800, marginBottom: '8px', lineHeight: 1.3 }}>{m.title}</h3>
                           {(rd.winCondition || m.strategy) && (

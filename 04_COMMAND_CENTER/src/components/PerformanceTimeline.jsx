@@ -21,7 +21,7 @@ const PerformanceTimeline = ({ matchups }) => {
           kda: kda,
           cs: cs,
           champion: m.champion,
-          result: m.raw_data.result === 'Win' ? 1 : 0
+          result: String(m.raw_data.result).toLowerCase() === 'win' ? 1 : 0
         }
       })
   }, [matchups])

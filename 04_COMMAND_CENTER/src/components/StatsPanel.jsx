@@ -35,7 +35,7 @@ const StatsPanel = () => {
       if (!map[c]) map[c] = { wins: 0, losses: 0, kills: 0, deaths: 0, assists: 0, games: 0 }
       const s = map[c]
       s.games++
-      if (m.raw_data?.result === 'Win') s.wins++; else s.losses++
+      if (String(m.raw_data?.result).toLowerCase() === 'win') s.wins++; else s.losses++
       const kda = m.raw_data?.my_kda?.split('/') || []
       s.kills += parseInt(kda[0]) || 0
       s.deaths += parseInt(kda[1]) || 0
@@ -52,7 +52,7 @@ const StatsPanel = () => {
     riotMatches.forEach(m => {
       const key = `${m.champion}|${m.enemy}`
       if (!map[key]) map[key] = { champion: m.champion, enemy: m.enemy, wins: 0, losses: 0 }
-      if (m.raw_data?.result === 'Win') map[key].wins++; else map[key].losses++
+      if (String(m.raw_data?.result).toLowerCase() === 'win') map[key].wins++; else map[key].losses++
     })
     return Object.values(map).sort((a, b) => (b.wins + b.losses) - (a.wins + a.losses))
   }, [riotMatches])
@@ -60,10 +60,11 @@ const StatsPanel = () => {
   // 直近ストリーク
   const streak = useMemo(() => {
     if (!riotMatches.length) return { type: 'none', count: 0 }
-    const first = riotMatches[0]?.raw_data?.result
+    const first = String(riotMatches[0]?.raw_data?.result).toLowerCase() === 'win' ? 'Win' : 'Lose'
     let count = 0
     for (const m of riotMatches) {
-      if (m.raw_data?.result === first) count++; else break
+      const mResult = String(m.raw_data?.result).toLowerCase() === 'win' ? 'Win' : 'Lose'
+      if (mResult === first) count++; else break
     }
     return { type: first, count }
   }, [riotMatches])
@@ -71,7 +72,7 @@ const StatsPanel = () => {
   if (loading) return <div style={{ opacity: 0.3 }}>読み込み中...</div>
   if (!riotMatches.length) return null
 
-  const totalWins = riotMatches.filter(m => m.raw_data?.result === 'Win').length
+  const totalWins = riotMatches.filter(m => String(m.raw_data?.result).toLowerCase() === 'win').length
   const totalGames = riotMatches.length
   const overallWR = Math.round((totalWins / totalGames) * 100)
 

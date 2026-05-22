@@ -57,12 +57,19 @@ const Dashboard = () => {
       try {
         const { data } = await supabase
           .from('matchup_sentinel')
-          .select('raw_data')
+          .select('raw_data, updated_at')
           .eq('matchup_id', 'LIVE_MATCH')
           .maybeSingle()
         
         if (data && data.raw_data && data.raw_data.enemy_team) {
-          setLiveEnemies(data.raw_data.enemy_team)
+          // 2時間以上古いデータはライブ表示から消す
+          const updatedAt = new Date(data.updated_at || Date.now()).getTime()
+          const now = Date.now()
+          if ((now - updatedAt) < 1000 * 60 * 120) {
+            setLiveEnemies(data.raw_data.enemy_team)
+          } else {
+            setLiveEnemies([])
+          }
         } else {
           setLiveEnemies([])
         }
