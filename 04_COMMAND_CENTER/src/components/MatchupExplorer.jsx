@@ -37,8 +37,8 @@ const MatchupExplorer = ({ onBack }) => {
       if (mRes.error) console.error('Matchup Fetch Error:', mRes.error)
       if (aRes.error) console.error('Article Fetch Error:', aRes.error)
 
-      // 有効なデータ（自分と相手のチャンプ名があるもの）のみに絞り込む
-      const validMatchups = (mRes.data || []).filter(m => m.champion && m.enemy)
+      // 有効なデータ（自分と相手のチャンプ名があるもの、かつGLOBALではないもの）のみに絞り込む
+      const validMatchups = (mRes.data || []).filter(m => m.champion && m.enemy && m.enemy !== 'GLOBAL')
       setMatchups(validMatchups)
       setArticles(aRes.data || [])
     } catch (err) {
@@ -66,8 +66,6 @@ const MatchupExplorer = ({ onBack }) => {
   }, [])
 
   const results = useMemo(() => {
-    if (!mySearch.trim() && !enemySearch.trim()) return { matchups, articles: [] }
-    
     const isMatch = (name, q) => {
       if (!q.trim()) return true
       if (!name) return false
@@ -109,11 +107,16 @@ const MatchupExplorer = ({ onBack }) => {
       })
     }
 
+    let filteredArticles = []
+    if (mySearch.trim() || enemySearch.trim()) {
+      filteredArticles = articles.filter(a => 
+        (mySearch && isMatch(a.champion, mySearch)) || (enemySearch && isMatch(a.champion, enemySearch))
+      ).slice(0, 4)
+    }
+
     return {
       matchups: filteredMatchups,
-      articles: articles.filter(a => 
-        (mySearch && isMatch(a.champion, mySearch)) || (enemySearch && isMatch(a.champion, enemySearch))
-      ).slice(0, 4),
+      articles: filteredArticles,
     }
   }, [mySearch, enemySearch, matchups, articles, champMap, sortOrder, roleFilter])
 
