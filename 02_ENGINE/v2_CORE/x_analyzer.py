@@ -26,7 +26,7 @@ class XAnalyzer:
         
         if self.api_key:
             self.client = genai.Client(api_key=self.api_key)
-            self.model_id = "gemini-flash-latest" # 最新の2.5系を採用
+            self.model_id = "gemini-1.5-flash-8b" # 最新の2.5系を採用
         else:
             self.client = None
 

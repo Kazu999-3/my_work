@@ -52,7 +52,7 @@ def research_champion(champ_name: str, champ_id: str) -> str:
         try:
             # Google Search Tool を使わずに内部知識で生成（クォータ制限回避のため）
             response = client.models.generate_content(
-                model="gemini-flash-latest",
+                model="gemini-1.5-flash-8b",
                 contents=prompt
             )
             return response.text

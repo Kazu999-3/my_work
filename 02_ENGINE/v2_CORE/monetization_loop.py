@@ -61,7 +61,7 @@ def generate_x_promo_thread(champion: str, bible_text: str):
     
     try:
         response = client.models.generate_content(
-            model='gemini-flash-latest',
+            model='gemini-1.5-flash-8b',
             contents=prompt,
             config=types.GenerateContentConfig(
                 response_mime_type="application/json",

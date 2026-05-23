@@ -17,7 +17,7 @@ def generate_content_safe(client, prompt, model_id=None, config=None) -> str:
     primary_model = model_id or settings.DEFAULT_MODEL
     models_to_try = [
         primary_model,
-        "gemini-2.0-flash",
+        "gemini-1.5-flash-8b",
         "gemini-1.5-flash"
     ]
     
@@ -55,8 +55,9 @@ def generate_content_safe(client, prompt, model_id=None, config=None) -> str:
                 is_service_error = e.code == 503
                 
                 if (is_quota or is_service_error) and attempt < retries - 1:
-                    logger.warning(f"⚠️ [AIHelper] クォータ制限またはサーバー一時エラーを検知 ({model}: {e.message})。{delay}秒後にリトライします...")
-                    time.sleep(delay)
+                    wait_time = max(60.0, delay) if is_quota else delay
+                    logger.warning(f"⚠️ [AIHelper] クォータ制限またはサーバー一時エラーを検知 ({model}: {e.message})。{wait_time}秒後にリトライします...")
+                    time.sleep(wait_time)
                     delay *= 2.0  # 指数バックオフ
                     continue
                 else:

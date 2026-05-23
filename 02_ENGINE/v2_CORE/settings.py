@@ -45,7 +45,7 @@ class SovereignSettings(BaseSettings):
     LOLALYTICS_ENABLED: bool = True
 
     # モデル設定
-    DEFAULT_MODEL: str = "gemini-flash-lite-latest"
+    DEFAULT_MODEL: str = "gemini-1.5-flash-8b"
     
     model_config = SettingsConfigDict(
         env_file=str(Path("D:/my_work/.env")),
