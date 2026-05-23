@@ -222,7 +222,7 @@ const ChampionDB = ({ onBack }) => {
 
           <div className="glass-card" style={{ padding: '24px', borderTop: '3px solid #a78bfa' }}>
             <h3 style={{ fontSize: '15px', fontWeight: 800, color: '#a78bfa', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}><Shield size={18} /> コアビルド / ルーン</h3>
-            <textarea value={dataFields.buildRunes} onChange={e => setField('buildRunes', e.target.value)} placeholder="例: メイン: 征服者 / コア: リッチベイン..." style={{ width: '100%', height: '100px', padding: '12px', background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(167,139,250,0.3)', borderRadius: '8px', color: '#f0f5f5', fontSize: '13px', outline: 'none', resize: 'vertical' }} />
+            <textarea value={dataFields.buildRunes} onChange={e => setField('buildRunes', e.target.value)} placeholder="例: メイン: 征服者 / コア: リッチベイン（理由: 序盤のトレードを強化し、スノーボールするため）..." style={{ width: '100%', height: '100px', padding: '12px', background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(167,139,250,0.3)', borderRadius: '8px', color: '#f0f5f5', fontSize: '13px', outline: 'none', resize: 'vertical' }} />
           </div>
 
           <div className="glass-card" style={{ padding: '24px', borderTop: '3px solid #f59e0b' }}>

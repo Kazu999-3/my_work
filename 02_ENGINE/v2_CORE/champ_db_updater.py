@@ -87,7 +87,7 @@ def merge_and_extract_intel(champ_name: str, new_text: str, existing_data: dict)
       "strengths": "強み",
       "weaknesses": "弱み",
       "powerSpikes": "パワースパイク",
-      "buildRunes": "ビルドとルーン",
+      "buildRunes": "おすすめのビルドとルーン（※なぜそのアイテム/ルーンを採用するのか、具体的な理由も必ず記述すること）",
       "fullClearTime": "フルクリア時間（JG以外は空白）",
       "strategy": "全体的な立ち回り",
       "note_draft": "磨き上げられた最新のnoteドラフト記事（Markdownテキスト）"
