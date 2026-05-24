@@ -233,7 +233,27 @@ const Dashboard = () => {
               </div>
 
               {/* Live Briefing (最重要情報を最上部に) */}
-              <LiveBriefing enemies={liveEnemies} />
+              <LiveBriefing enemies={dashboardData.liveEnemies} />
+
+              {/* AIコーチの辛口フィードバック */}
+              {dashboardData.coachAdvice && (
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                  style={{
+                    marginBottom: '24px', background: 'linear-gradient(135deg, rgba(200, 40, 40, 0.1), rgba(10, 11, 16, 0.9))',
+                    border: '1px solid rgba(200, 40, 40, 0.3)', borderRadius: '16px', padding: '24px', position: 'relative', overflow: 'hidden'
+                  }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
+                    <Zap style={{ color: '#ff4444' }} size={24} />
+                    <h2 style={{ fontSize: '18px', fontWeight: 700, margin: 0, color: '#f0f5f5' }}>
+                      AIコーチの辛口フィードバック ({dashboardData.coachAdvice.champion} 運用分析)
+                    </h2>
+                    <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)' }}>{formatTime(dashboardData.coachAdvice.created_at)}</span>
+                  </div>
+                  <p style={{ fontSize: '15px', color: 'rgba(255,255,255,0.8)', lineHeight: 1.6, margin: 0, whiteSpace: 'pre-wrap' }}>
+                    {dashboardData.coachAdvice.strategy}
+                  </p>
+                </motion.div>
+              )}
 
               {/* クイックアクション */}
               <div className="glass-card" style={{ padding: '32px', marginBottom: '32px', borderTop: '3px solid #c89b3c' }}>
