@@ -15,8 +15,7 @@ sys.path.append(str(Path(__file__).resolve().parent))
 from v2_CORE.settings import settings
 from v2_CORE.database import db
 from v2_CORE.herald import herald
-from supabase import create_client
-
+import httpx
 dotenv.load_dotenv()
 
 # ロギング設定
@@ -94,11 +93,8 @@ class OLEAnalyzerV3:
         self.mode = mode if mode in MODE_CONFIGS else "TACTICAL"
         self.config = MODE_CONFIGS[self.mode]
         
-        self.supabase = None
-        supabase_url = os.environ.get("SUPABASE_URL")
-        supabase_key = os.environ.get("SUPABASE_KEY")
-        if supabase_url and supabase_key:
-            self.supabase = create_client(supabase_url, supabase_key)
+        self.supabase_url = os.environ.get("VITE_SUPABASE_URL") or os.environ.get("SUPABASE_URL")
+        self.supabase_key = os.environ.get("VITE_SUPABASE_ANON_KEY") or os.environ.get("SUPABASE_KEY")
 
     def notify(self, message, herald_notify=False):
         logger.info(message)
@@ -240,14 +236,23 @@ class OLEAnalyzerV3:
                 )
                 
                 # Web Portal (Supabase) 登録
-                if self.supabase:
+                if self.supabase_url and self.supabase_key:
                     try:
-                        self.supabase.table('bible_articles').insert({
+                        url = f"{self.supabase_url}/rest/v1/bible_articles"
+                        headers = {
+                            "apikey": self.supabase_key,
+                            "Authorization": f"Bearer {self.supabase_key}",
+                            "Content-Type": "application/json",
+                            "Prefer": "return=minimal"
+                        }
+                        payload = {
                             'title': f"[YouTube] {video_title}",
                             'content': f"URL: https://www.youtube.com/watch?v={video_id}\n\n{final_response.text}",
                             'champion': 'YouTube 解析',
                             'keywords': ['YouTube', self.config['name']]
-                        }).execute()
+                        }
+                        r = httpx.post(url, headers=headers, json=payload, timeout=10.0)
+                        r.raise_for_status()
                         logger.info("✅ Supabaseへの保存が完了しました。")
                     except Exception as e:
                         logger.error(f"Supabaseへの保存に失敗しました: {e}")

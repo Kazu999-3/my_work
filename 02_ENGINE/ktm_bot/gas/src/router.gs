@@ -12,6 +12,7 @@ function onOpen() {
       .addSeparator()
       .addItem('MMR試算レポートを作成 (Riot連携)', 'uiInitializeMMRsWithRiotForce')
       .addItem('試算結果をMMRに一括反映', 'uiApplyReportedMMRs')
+      .addItem('👤 特定プレイヤーのMMR初期化', 'uiInitializeMMRSingle')
       .addSeparator()
       .addItem('🔥 【禁断】全リセット＆全試合再計算', 'uiFullAutomatedRecalculate')
       .addSeparator()

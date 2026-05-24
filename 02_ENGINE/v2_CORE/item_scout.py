@@ -25,13 +25,20 @@ class ItemScout:
 
     def get_latest_patch_meta(self):
         """Webから最新のパッチノートやメタトレンドを収集し、キーとなるアイテムと恩恵を受けるチャンプを特定する"""
+        from v2_CORE.cache_manager import CacheManager
+        cache = CacheManager()
+        cache_key = "latest_patch_meta_v1"
+        
+        cached_data = cache.get(cache_key, max_age_seconds=86400) # 24時間キャッシュ
+        if cached_data:
+            logger.info("Using cached meta trends.")
+            return cached_data
+
         if not self.client:
             logger.error("Gemini API Key missing.")
             return []
 
         # 最新のパッチ情報を想定したメタ・プロンプトを実行
-        # ※パッチ26.x以降の最新メタを抽出する
-        
         prompt = """
         League of Legendsの最新パッチ（パッチ26.0以降）における、ゲームバランスを大きく変えている「アイテム」または「ルーン」を3つ特定してください。
         
@@ -51,16 +58,22 @@ class ItemScout:
         """
 
         try:
-            response = self.client.models.generate_content(
-                model="gemini-1.5-flash-8b",
-                contents=prompt,
+            from v2_CORE.ai_helper import generate_content_safe
+            response_text = generate_content_safe(
+                client=self.client,
+                prompt=prompt,
+                model_id="gemini-1.5-flash-8b",
                 config=types.GenerateContentConfig(
                     temperature=0.3,
                     response_mime_type="application/json"
                 )
             )
-            meta_trends = json.loads(response.text)
+            meta_trends = json.loads(response_text)
             logger.info(f"Detected {len(meta_trends)} meta trends.")
+            
+            # 取得成功したらキャッシュに保存
+            cache.set(cache_key, meta_trends)
+            
             return meta_trends
         except Exception as e:
             logger.error(f"Failed to scout items: {e}")

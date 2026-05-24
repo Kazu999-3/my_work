@@ -28,8 +28,9 @@ function postTeamsToDiscord(teamBlue, teamRed, spectators = []) {
     const response = UrlFetchApp.fetch(url, options);
     const code = response.getResponseCode();
     if (code !== 200) {
-      console.error('Worker Proxy Error: ' + code + ' - ' + response.getContentText());
-      throw new Error('Proxy Server Error (' + code + ')');
+      const errText = response.getContentText();
+      console.error('Worker Proxy Error: ' + code + ' - ' + errText);
+      throw new Error('Proxy Server Error (' + code + '): ' + errText);
     }
     return code;
   } catch (e) {

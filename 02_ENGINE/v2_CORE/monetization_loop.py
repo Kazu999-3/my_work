@@ -30,14 +30,26 @@ def notify_discord(message: str):
     except Exception as e:
         logger.error(f"Discord Webhook Error: {e}")
 
-def generate_x_promo_thread(champion: str, bible_text: str):
-    """バイブルをもとにX(Twitter)用の煽りスレッド原稿を錬成し、JSON配列で返す"""
-    if not GEMINI_API_KEY:
+def generate_x_promo_thread(champion_name: str, bible_text: str) -> str:
+    """バイブルの本文から、X(Twitter)用のバズるスレッド（3連投）を錬成する"""
+    if not client:
         return "[]"
         
+    # 自己進化するマーケティングルールの読み込み
+    from pathlib import Path
+    rules_path = Path('D:/my_work/01_INTEL/prompts/marketing_rules.txt')
+    marketing_rules = ''
+    if rules_path.exists():
+        marketing_rules = rules_path.read_text(encoding='utf-8')
+        
     prompt = f"""
-    あなたは超一流のWebマーケターであり、League of Legendsの戦略家です。
-    以下の{champion}の攻略バイブルを元に、X（Twitter）で爆発的にバズり、noteの購入へ誘導するための
+    あなたはSNSマーケティングの天才です。
+    以下の【自己進化マーケティング・ルール】を最優先して、フック文を作成してください。
+    【ルール】
+    {marketing_rules}
+    
+    バイブルの本文を読み込み、Xで拡散されやすいスレッド（3連投）の原稿を作成してください。
+    以下の{champion_name}の攻略バイブルを元に、X（Twitter）で爆発的にバズり、noteの購入へ誘導するための
     「煽り」と「有益性」が同居したツリー形式（スレッド形式）の投稿原稿を作成してください。
     
     【厳格なルール (Ghost Writer DRM)】
@@ -72,6 +84,13 @@ def generate_x_promo_thread(champion: str, bible_text: str):
     except Exception as e:
         logger.error(f"Gemini Error generating X thread: {e}")
         return "[]"
+
+def calculate_dynamic_price(trending_champ: str, item_impact: str) -> str:
+    # 勝率急増のメタや、影響度が強いキーワードがあれば高価格に設定する
+    high_demand_keywords = ['壊れ', 'OP', '必須', '勝率急増', '極限まで加速']
+    if any(k in item_impact for k in high_demand_keywords):
+        return "980"
+    return "500"
 
 def run_monetization_loop():
     """トレンド検知（アイテム起点） ➔ バイブル生成 ➔ X原稿 のループ"""
@@ -153,14 +172,17 @@ def run_monetization_loop():
     try:
         from v2_CORE.publisher import XPublisher, NotePublisher
         
-        # noteへ自動パブリッシュ (500円)
+        # ダイナミック・プライシングによる価格決定
+        dynamic_price = calculate_dynamic_price(trending_champ, meta_context)
+        
+        # noteへ自動パブリッシュ
         note_pub = NotePublisher(headless=True)
         note_title = f"【最新メタ】{trending_champ} 独占勝率レポート＆完全攻略バイブル"
-        note_success = note_pub.post_draft(
+        note_url = note_pub.post_draft(
             title=note_title,
             markdown_body=bible_text,
             auto_publish=True,
-            price="500"
+            price=dynamic_price
         )
         
         # Xへスレッド投稿
@@ -169,10 +191,14 @@ def run_monetization_loop():
             tweets = json.loads(x_thread_json_str)
         except:
             tweets = []
-        x_success = x_pub.post_thread(tweets) if tweets else False
+        x_url = x_pub.post_thread(tweets) if tweets else None
         
-        if note_success and x_success:
-            publish_status = "✅ Xとnoteの両方に完全自動パブリッシュが成功しました！（価格: 500円）"
+        if note_url and x_url:
+            publish_status = f"✅ 完全自動パブリッシュ成功！（価格: {dynamic_price}円）\n🔗 note: {note_url}\n🔗 X: {x_url}"
+        elif note_url:
+            publish_status = f"⚠️ noteのみ成功しました。\n🔗 note: {note_url}"
+        elif x_url:
+            publish_status = f"⚠️ Xのみ成功しました。\n🔗 X: {x_url}"
         else:
             publish_status = "⚠️ パブリッシュ処理の一部（または全部）が失敗しました。ログを確認してください。"
             

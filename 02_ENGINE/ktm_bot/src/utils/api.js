@@ -9,9 +9,9 @@ export async function sendDiscordMessage(endpoint, token, method, bodyJSON) {
   };
   const res = await fetch(url, { method, headers, body: JSON.stringify(bodyJSON) });
   if (!res.ok) {
-    const errorText = await res.text();
-    console.error(`Discord API Error (${endpoint}):`, errorText);
-    throw new Error(`Discord API Error: ${errorText}`);
+    const clone = res.clone();
+    const errorText = await clone.text();
+    console.error(`Discord API Error (${endpoint}): ${res.status} ${errorText}`);
   }
   return res;
 }
@@ -55,5 +55,13 @@ export async function fetchGAS(payload) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload)
   });
-  return res.json();
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(`GAS HTTP Error: ${res.status} - ${errorText}`);
+  }
+  const data = await res.json();
+  if (data && data.status && data.status !== "SUCCESS") {
+    throw new Error(data.message || `GAS Error: ${JSON.stringify(data)}`);
+  }
+  return data;
 }

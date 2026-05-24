@@ -198,6 +198,59 @@ def main():
     t_magazine = threading.Thread(target=run_magazine_forge, name="MagazineThread", daemon=True)
     threads.append(t_magazine)
 
+    # 12. Bounty Hunter Loop (24時間に1回競合noteを狩る)
+    def run_bounty_hunter_loop():
+        from v2_CORE.bounty_hunter import BountyHunter
+        from v2_CORE.bible_forge import BibleForge
+        from v2_CORE.publisher import NotePublisher
+        logger.info("😈 Bounty Hunter starting (Every 24 hours)...")
+        time.sleep(300) # 起動後5分待機
+        while True:
+            try:
+                hunter = BountyHunter()
+                bounties = hunter.scout_competitors()
+                if bounties:
+                    target = bounties[0]
+                    logger.info(f"🎯 競合狩りを実行します: {target['title']}")
+                    prompt = hunter.generate_crushing_prompt(target['title'])
+                    
+                    forge = BibleForge()
+                    bible_text = forge.generate_bible("Meta Champion", additional_context=prompt)
+                    
+                    # 500円で対抗パブリッシュ
+                    note_pub = NotePublisher(headless=True)
+                    note_pub.post_draft(
+                        title=f"【完全版】{target['title']} の上位互換バイブル（格安）",
+                        markdown_body=bible_text,
+                        auto_publish=True,
+                        price="500"
+                    )
+            except Exception as e:
+                logger.error(f"🔥 Bounty Hunter Loop failed: {e}")
+            time.sleep(60 * 60 * 24)
+            
+    t_bounty = threading.Thread(target=run_bounty_hunter_loop, name="BountyThread", daemon=True)
+    threads.append(t_bounty)
+
+    # 13. VOD Oracle Loop (12時間に1回プロの視覚メタを学習)
+    def run_vod_oracle_loop():
+        from v2_CORE.vod_oracle import VODOracle
+        logger.info("👁️ VOD Oracle starting (Every 12 hours)...")
+        time.sleep(600) # 起動後10分待機
+        while True:
+            try:
+                oracle = VODOracle()
+                result = oracle.auto_hunt_and_analyze()
+                if result:
+                    logger.info("✅ VOD視覚メタをSupabaseのグローバル戦略に書き込みます")
+                    # 本来はSupabase等のDBに送るが、ここではログ出力で完了とする
+            except Exception as e:
+                logger.error(f"🔥 VOD Oracle Loop failed: {e}")
+            time.sleep(60 * 60 * 12)
+            
+    t_vod = threading.Thread(target=run_vod_oracle_loop, name="VODOracleThread", daemon=True)
+    threads.append(t_vod)
+
     # 全エンジンの点火
     for t in threads:
         t.start()

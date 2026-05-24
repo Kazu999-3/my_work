@@ -219,6 +219,10 @@ function coreBalanceTeams() {
         let penalty = 0, totalA = 0, totalB = 0;
         let lanesAdvantagedA = 0, lanesAdvantagedB = 0;
         let highRankCountA = 0, highRankCountB = 0;
+        // ★新設：チーム別レーン優位スコア（MMR差の強い側を累積）
+        let laneAdvantageScoreA = 0, laneAdvantageScoreB = 0;
+        // ★新設：メインレーン充足人数（10人中何人がメインレーンになれたか）
+        let mainCount = 0;
         const HIGH_RANKS = ['PLATINUM', 'EMERALD', 'DIAMOND', 'MASTER', 'GRANDMASTER', 'CHALLENGER'];
 
         for (let rIdx = 0; rIdx < 5; rIdx++) {
@@ -233,7 +237,12 @@ function coreBalanceTeams() {
           // レーン単位の格差をより厳しく見る (自乗和)
           penalty += Math.pow(Math.abs(mmrA - mmrB), 2) / 4;
           totalA += mmrA; totalB += mmrB;
-          
+
+          // ★新設：各レーンで強い側のMMR差をチーム別に累積
+          // 同じチームに優位レーンが偏るほど大きな値になる
+          laneAdvantageScoreA += Math.max(0, mmrA - mmrB);
+          laneAdvantageScoreB += Math.max(0, mmrB - mmrA);
+
           // どちらのレーンが有利かをカウント
           if (mmrA > mmrB + 150) lanesAdvantagedA++;
           if (mmrB > mmrA + 150) lanesAdvantagedB++;
@@ -269,7 +278,11 @@ function coreBalanceTeams() {
             const isSpecialist = ['JG', 'SUP', 'ADC'].includes(p.pref1);
             let rolePenalty = 0;
             if (currentRole === p.ng1 || currentRole === p.ng2) {
-              rolePenalty = 50000; // NGロールは10億から5万へ
+              rolePenalty = 50000; // NGロールの基本ペナルティ
+              // ★修正：こだわり度によってNGレーンのペナルティも強化
+              // weight=1（絶対）は10倍(500000)にして、「不得意レーン(100000)」より必ず重くする
+              if (p.weight === 1) rolePenalty *= 10;
+              else if (p.weight === 2) rolePenalty *= 2; // 通常も強化（100000）
             } else if (p.isFixed || p.pref1 === 'ALL' || p.pref1 === currentRole) {
               rolePenalty = 0;
             } else if (p.pref2 === currentRole) {
@@ -290,7 +303,12 @@ function coreBalanceTeams() {
           };
           checkRolePenalty(pLayerA, role);
           checkRolePenalty(pLayerB, role);
-        }
+
+          // ★新設：メインレーン充足人数のカウント
+          // isFixed / pref1=ALL / pref1=割り当てレーン のいずれかなら「メイン希期が叶わった」とみなす
+          if (pLayerA.isFixed || pLayerA.pref1 === 'ALL' || pLayerA.pref1 === role) mainCount++;
+          if (pLayerB.isFixed || pLayerB.pref1 === 'ALL' || pLayerB.pref1 === role) mainCount++;
+        } // for rIdx ループ終了
         
         const isAssigned = (team, pIndices, name, role) => {
           for (let i = 0; i < 5; i++) {
@@ -299,11 +317,26 @@ function coreBalanceTeams() {
           return false;
         };
 
-        // 【新設】レーンごとの有利不利が片方に偏りすぎないようにする
+        // ★新設：メインレーン充足ペナルティ（「何人メインになれたか」を最優先評価軸に）
+        // 1人メインになれないことのペナルティ = 80,000
+        // MMR差550のレーン差ペナルティ = 550²/4 = 75,625
+        // → MMR差が550以下ならレーン希期が必ず優先される
+        const mainShortfall = 10 - mainCount;
+        penalty += mainShortfall * 80000;
+
+        // 【既存】レーンごとの有利不利が片方に偏りすぎないようにする
         const advantageGap = Math.abs(lanesAdvantagedA - lanesAdvantagedB);
         if (advantageGap >= 2) penalty += Math.pow(advantageGap, 2) * 2000;
 
-        // 【新設】プラチナ以上の人数を均等にする
+        // ★新設：チーム別レーン優位スコアの均等化ペナルティ
+        // 各レーンで「強い側」が同じチームに集まらないようにする
+        // laneAdvantageScoreA: Team Aが優位なレーンのMMR差の合計
+        // laneAdvantageScoreB: Team Bが優位なレーンのMMR差の合計
+        // この差が大きいほど片方チームへの偏りが大きいことを意味する
+        const laneAdvantageGap = Math.abs(laneAdvantageScoreA - laneAdvantageScoreB);
+        penalty += laneAdvantageGap * 3.0;
+
+        // 【既存】プラチナ以上の人数を均等にする
         const rankGap = Math.abs(highRankCountA - highRankCountB);
         if (rankGap >= 2) penalty += Math.pow(rankGap, 2) * 5000;
 

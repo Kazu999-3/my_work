@@ -157,13 +157,14 @@ function executeInitializeMMR(isOverwriteAll = false, isForceRiot = false, start
 
       reportRows.push([playerName, status, maxRank, reason, ...detailTexts, ...rowMMRs]);
 
+      // targetNameの有無に関わらずシートへ必ず書き込む
+      const targetRow = i + 2;
+      playerSheet.getRange(targetRow, 8, 1, 5).setValues([rowMMRs]);
+      playerSheet.getRange(targetRow, 13).setValue(0); // 不運度リセット
+      playerSheet.getRange(targetRow, 14, 1, 5).setValues([rowMMRs.map(mmr => getKtmRank(mmr))]);
+      successCount++;
       if (!targetName) {
-        const targetRow = i + 2;
-        playerSheet.getRange(targetRow, 8, 1, 5).setValues([rowMMRs]);
-        playerSheet.getRange(targetRow, 13).setValue(0);
-        playerSheet.getRange(targetRow, 14, 1, 5).setValues([rowMMRs.map(mmr => getKtmRank(mmr))]);
-        successCount++;
-        // 1人完了するごとに次のインデックスを保存
+        // 全员初期化時のみ再開インデックスを保存
         PropertiesService.getScriptProperties().setProperty('MMR_INIT_RESUME_IDX', i + 1);
         if (successCount % 5 === 0) SpreadsheetApp.flush();
       }
@@ -180,8 +181,12 @@ function executeInitializeMMR(isOverwriteAll = false, isForceRiot = false, start
   }
   
   if (targetName) {
+    SpreadsheetApp.flush();
+    applyPlayerRankStyles(playerSheet);
     const r = reportRows[0];
-    return r ? `【詳細試算結果: ${r[0]}】\n状態: ${r[1]}\nランク: ${r[2]}\n理由: ${r[3]}\n\nTOP: ${r[4]}\nJG: ${r[5]}\nMID: ${r[6]}\nADC: ${r[7]}\nSUP: ${r[8]}` : "対象が見つかりません。";
+    return r
+      ? `【${r[0]} のMMR初期化完了】\n状態: ${r[1]}\nランク: ${r[2]}\n理由: ${r[3]}\n\nTOP: ${r[4]}\nJG:  ${r[5]}\nMID: ${r[6]}\nADC: ${r[7]}\nSUP: ${r[8]}\n\nプレイヤー一覧シートを更新しました。`
+      : "対象が見つかりません。名前のスペルを確認してください。";
   }
 
   PropertiesService.getScriptProperties().deleteProperty('MMR_INIT_RESUME_IDX');
@@ -259,6 +264,38 @@ function uiInitializeMMRs() {
   
   const isOverwriteAll = (response === ui.Button.YES);
   const result = executeInitializeMMR(isOverwriteAll, false, 0); // 通常初期化
+  ui.alert('実行完了', result, ui.ButtonSet.OK);
+}
+
+/**
+ * 特定の一人だけMMR初期化（スプレッドシートメニューから実行）
+ */
+function uiInitializeMMRSingle() {
+  const ui = SpreadsheetApp.getUi();
+
+  // 名前入力ダイアログ
+  const nameRes = ui.prompt(
+    '」特定プレイヤー『MMR初期化',
+    '対象プレイヤーの名前（プレイヤー一覧の山田など）を入力してください：',
+    ui.ButtonSet.OK_CANCEL
+  );
+  if (nameRes.getSelectedButton() !== ui.Button.OK) return;
+  const targetName = nameRes.getResponseText().trim();
+  if (!targetName) {
+    ui.alert('エラー', '名前が入力されていません。', ui.ButtonSet.OK);
+    return;
+  }
+
+  // 上書き確認
+  const owRes = ui.alert(
+    `」${targetName}『のMMRを初期化`,
+    `【上書き】」${targetName}『の全レーンMMRを再計算して上書きしますか？\n(「いいえ」 = 未設定のレーンのみ初期化)`,
+    ui.ButtonSet.YES_NO_CANCEL
+  );
+  if (owRes === ui.Button.CANCEL) return;
+  const isOverwriteAll = (owRes === ui.Button.YES);
+
+  const result = executeInitializeMMR(isOverwriteAll, false, 0, targetName);
   ui.alert('実行完了', result, ui.ButtonSet.OK);
 }
 

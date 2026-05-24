@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  engine:
+    build: .
+    container_name: antigravity_engine
+    env_file:
+      - .env
+    volumes:
+      # ブラウザのログインセッションを維持するため、ローカルのプロファイルをマウント
+      - ./.agent/playwright_data:/app/.agent/playwright_data
+    restart: unless-stopped
+    command: ["python", "02_ENGINE/v2_CORE/master_orchestrator.py"]

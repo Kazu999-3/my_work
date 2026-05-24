@@ -307,18 +307,26 @@ export async function handleAnnounceMatch(payload, env, ctx) {
     }
   ];
 
-  const res = await sendDiscordMessage(`channels/${CONFIG.MATCH_CHANNEL_ID}/messages`, env.DISCORD_TOKEN, "POST", { embeds: [embed], components });
-  
-  if (!res.ok) {
-    const errorText = await res.text();
-    console.error("Discord send error:", errorText);
-    return new Response(JSON.stringify({ status: "ERROR", message: `Discord API Error: ${res.status} ${errorText}` }), { 
+  try {
+    const res = await sendDiscordMessage(`channels/${CONFIG.MATCH_CHANNEL_ID}/messages`, env.DISCORD_TOKEN, "POST", { embeds: [embed], components });
+    
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error("Discord send error:", res.status, errorText);
+      return new Response(JSON.stringify({ status: "ERROR", message: `Discord API Error: ${res.status} - ${errorText}` }), { 
+        status: 500,
+        headers: { "Content-Type": "application/json" }
+      });
+    }
+
+    return Response.json({ status: "SUCCESS" });
+  } catch (err) {
+    console.error("handleAnnounceMatch unexpected error:", err.message);
+    return new Response(JSON.stringify({ status: "ERROR", message: err.message }), {
       status: 500,
       headers: { "Content-Type": "application/json" }
     });
   }
-
-  return Response.json({ status: "SUCCESS" });
 }
 
 export function handleLaneCommand(interaction, env, ctx) {

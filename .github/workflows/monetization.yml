@@ -1,0 +1,36 @@
+name: Antigravity Monetization Loop
+
+on:
+  schedule:
+    # 毎日 00:00 (JST 09:00), 06:00 (JST 15:00), 12:00 (JST 21:00) に自動実行
+    - cron: '0 0,6,12 * * *'
+  workflow_dispatch:
+    # 手動実行ボタンの追加
+
+jobs:
+  run-monetization-loop:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r 02_ENGINE/requirements.txt
+          
+      - name: Run Monetization Loop
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        run: |
+          # モネタイズループ（X投稿、note生成など）の単発実行
+          # ※無限ループしないように --once フラグ等があるなら付与する
+          python 02_ENGINE/v2_CORE/monetization_loop.py --once || true

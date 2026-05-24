@@ -8,8 +8,8 @@ class SovereignSettings(BaseSettings):
     Antigravity Sovereign OS v2.0: 統治環境設定 (Uniform Context)
     全ての絶対パスと環境変数をここで一元的に定義し、デグレードを防止する。
     """
-    # 基本ルートパス
-    ROOT_DIR: Path = Path("D:/my_work")
+    # 基本ルートパス (クロスプラットフォーム対応)
+    ROOT_DIR: Path = Path(__file__).resolve().parent.parent.parent
     
     # 聖域の各部パス (Sovereign Rebuilt)
     THRONE_DIR: Path = ROOT_DIR 
@@ -48,7 +48,7 @@ class SovereignSettings(BaseSettings):
     DEFAULT_MODEL: str = "gemini-1.5-flash-8b"
     
     model_config = SettingsConfigDict(
-        env_file=str(Path("D:/my_work/.env")),
+        env_file=str(ROOT_DIR / ".env"),
         env_file_encoding='utf-8',
         extra='ignore'
     )

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
   Shield, Zap, BookOpen, 
@@ -46,109 +47,72 @@ const Dashboard = () => {
     window.scrollTo(0, 0)
   }
 
-  const [liveEnemies, setLiveEnemies] = useState([])
-
-  const [activities, setActivities] = useState([])
-  const [statsSummary, setStatsSummary] = useState({ research: 0, bibles: 0 })
-  const [matchups, setMatchups] = useState([])
-
-  useEffect(() => {
-    const checkLiveMatch = async () => {
+  const { data: dashboardData = { liveEnemies: [], activities: [], statsSummary: { research: 0, bibles: 0 }, matchups: [] }, isLoading } = useQuery({
+    queryKey: ['dashboardData'],
+    queryFn: async () => {
+      let liveEnemies = []
       try {
         const { data } = await supabase
           .from('matchup_sentinel')
           .select('raw_data, updated_at')
           .eq('matchup_id', 'LIVE_MATCH')
           .maybeSingle()
-        
         if (data && data.raw_data && data.raw_data.enemy_team) {
-          // 2時間以上古いデータはライブ表示から消す
           const updatedAt = new Date(data.updated_at || Date.now()).getTime()
-          const now = Date.now()
-          if ((now - updatedAt) < 1000 * 60 * 120) {
-            setLiveEnemies(data.raw_data.enemy_team)
-          } else {
-            setLiveEnemies([])
-          }
-        } else {
-          setLiveEnemies([])
-        }
-      } catch {
-        // ignore
-      }
-    }
-
-    const fetchRecentActivity = async () => {
-      try {
-        // マッチアップの全件、最近のバイブル、およびバイブルの総件数を取得
-        const [mRes, aRes, aCountRes] = await Promise.all([
-          supabase.from('matchup_sentinel').select('*').order('created_at', { ascending: false }),
-          supabase.from('bible_articles').select('id, title, created_at, champion').order('created_at', { ascending: false }).limit(5),
-          supabase.from('bible_articles').select('*', { count: 'exact', head: true })
-        ])
-
-        const mData = mRes.data || []
-        setMatchups(mData)
-
-        const combined = [
-          ...mData.slice(0, 5).map(m => ({
-            id: `m-${m.id}`,
-            text: m.enemy === 'GLOBAL' ? `${m.champion} の辞典データを更新` : `${m.champion} vs ${m.enemy} の対策を記録`,
-            time: m.created_at,
-            raw_time: new Date(m.created_at).getTime()
-          })),
-          ...(aRes.data || []).map(a => ({
-            id: `a-${a.id}`,
-            text: `${a.champion} の攻略バイブルを錬成`,
-            time: a.created_at,
-            raw_time: new Date(a.created_at).getTime()
-          }))
-        ]
-
-        // 時間順に並び替え
-        combined.sort((a, b) => b.raw_time - a.raw_time)
-        setActivities(combined.slice(0, 5))
-        
-        // 統計の更新 (実際のSupabaseの正確な件数を取得してバインド)
-        const totalBibles = aCountRes.count !== null ? aCountRes.count : 0
-        setStatsSummary({
-          research: mData.length, // マッチアップの実際の登録総数
-          bibles: totalBibles     // 攻略バイブルの実際の登録総数
-        })
-      } catch {
-        console.error('Activity Fetch Error')
-      }
-    }
-
-    checkLiveMatch()
-    fetchRecentActivity()
-    
-    // WebSockets (リアルタイム監視) による LIVE_MATCH の検知
-    const liveMatchChannel = supabase
-      .channel('live_match_changes')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'matchup_sentinel', filter: 'matchup_id=eq.LIVE_MATCH' },
-        (payload) => {
-          if (payload.new && payload.new.raw_data && payload.new.raw_data.enemy_team) {
-            setLiveEnemies(payload.new.raw_data.enemy_team)
-          } else {
-            setLiveEnemies([])
+          if ((Date.now() - updatedAt) < 1000 * 60 * 120) {
+            liveEnemies = data.raw_data.enemy_team
           }
         }
-      )
-      .subscribe()
+      } catch (e) { /* ignore */ }
       
-    // その他の統計更新は今まで通り10秒に1回 (バックグラウンドポーリング)
-    const interval = setInterval(() => {
-      fetchRecentActivity()
-    }, 10000)
-    
-    return () => {
-      clearInterval(interval)
-      supabase.removeChannel(liveMatchChannel)
+      let coachAdvice = null
+      try {
+        const { data: cData } = await supabase
+          .from('matchup_sentinel')
+          .select('strategy, created_at, champion, raw_data')
+          .like('matchup_id', 'COACH_%')
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle()
+        if (cData) {
+           coachAdvice = cData
+        }
+      } catch (e) { /* ignore */ }
+
+      const [mRes, aRes, aCountRes] = await Promise.all([
+        supabase.from('matchup_sentinel').select('*').order('created_at', { ascending: false }),
+        supabase.from('bible_articles').select('id, title, created_at, champion').order('created_at', { ascending: false }).limit(5),
+        supabase.from('bible_articles').select('*', { count: 'exact', head: true })
+      ])
+
+      const mData = mRes.data || []
+      const combined = [
+        ...mData.slice(0, 5).map(m => ({
+          id: `m-${m.id}`,
+          text: m.enemy === 'GLOBAL' ? `${m.champion} の辞典データを更新` : `${m.champion} vs ${m.enemy} の対策を記録`,
+          time: m.created_at,
+          raw_time: new Date(m.created_at).getTime()
+        })),
+        ...(aRes.data || []).map(a => ({
+          id: `a-${a.id}`,
+          text: `${a.champion} 攻略バイブルを錬成`,
+          time: a.created_at,
+          raw_time: new Date(a.created_at).getTime()
+        }))
+      ].sort((a, b) => b.raw_time - a.raw_time).slice(0, 10)
+
+      return {
+        coachAdvice,
+        liveEnemies,
+        matchups: mData,
+        activities: combined,
+        statsSummary: {
+          research: mData.length,
+          bibles: aCountRes.count || 0
+        }
+      }
     }
-  }, [])
+  })
 
   // 時間の相対表記ヘルパー
   const formatTime = (isoString) => {
@@ -280,13 +244,13 @@ const Dashboard = () => {
 
               {/* ステータスカード */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '24px', marginBottom: '32px' }}>
-                <StatusCard title="リサーチエンジン" status="稼働中" metric={`${statsSummary.research}件の分析完了`} icon={<Zap style={{ color: '#00cfef' }} />} statusColor="#00cfef" />
+                <StatusCard title="リサーチエンジン" status="稼働中" metric={`${dashboardData.statsSummary.research}件の分析完了`} icon={<Zap style={{ color: '#00cfef' }} />} statusColor="#00cfef" />
                 <StatusCard title="KTMボット" status="接続中" metric="Riot API 正常" icon={<Users style={{ color: '#c89b3c' }} />} statusColor="#c89b3c" />
-                <StatusCard title="バイブル生成" status="待機中" metric={`累計 ${statsSummary.bibles} 件の錬成`} icon={<BookOpen style={{ color: '#a78bfa' }} />} statusColor="#a78bfa" />
+                <StatusCard title="バイブル生成" status="待機中" metric={`累計 ${dashboardData.statsSummary.bibles} 件の錬成`} icon={<BookOpen style={{ color: '#a78bfa' }} />} statusColor="#a78bfa" />
               </div>
 
               <DraftingHub />
-              <PerformanceTimeline matchups={matchups} />
+              <PerformanceTimeline matchups={dashboardData.matchups} />
 
               {/* 戦績サマリー (Riot API データ) */}
               <StatsPanel />
@@ -295,8 +259,8 @@ const Dashboard = () => {
               <div className="glass-card" style={{ padding: '32px' }}>
                 <h3 style={{ fontSize: '18px', fontWeight: 700, fontFamily: "'Space Grotesk', monospace", marginBottom: '24px' }}>最近の活動</h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  {activities.length > 0 ? (
-                    activities.map(a => (
+                  {dashboardData.activities.length > 0 ? (
+                    dashboardData.activities.map(a => (
                       <ActivityItem key={a.id} text={a.text} time={formatTime(a.time)} />
                     ))
                   ) : (

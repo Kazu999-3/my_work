@@ -9,24 +9,24 @@ from supabase import create_client
 
 try:
     from v2_CORE.herald import herald
+    from v2_CORE.settings import settings
 except ImportError:
     import sys
     sys.path.append(str(Path(__file__).resolve().parent.parent))
     from v2_CORE.herald import herald
+    from v2_CORE.settings import settings
 
-dotenv.load_dotenv(Path("D:/my_work/.env"))
 logger = logging.getLogger("Publisher")
 
-SUPABASE_URL = os.environ.get("SUPABASE_URL")
-SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
+SUPABASE_URL = settings.SUPABASE_URL if hasattr(settings, 'SUPABASE_URL') else os.environ.get("SUPABASE_URL")
+SUPABASE_KEY = settings.SUPABASE_KEY if hasattr(settings, 'SUPABASE_KEY') else os.environ.get("SUPABASE_KEY")
 supabase = None
 if SUPABASE_URL and SUPABASE_KEY:
     supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 X_EMAIL = os.environ.get("X_EMAIL")
 X_PASSWORD = os.environ.get("X_PASSWORD")
-# 永続プロファイル（クッキー等を保存して毎回ログインするのを防ぐ）
-USER_DATA_DIR = Path("D:/my_work/.agent/playwright_data/x_profile")
+USER_DATA_DIR = settings.ROOT_DIR / ".agent/playwright_data/x_profile"
 
 class XPublisher:
     def __init__(self, headless=True):
@@ -137,7 +137,7 @@ class XPublisher:
                 herald.notify_progress(f"📢 **X(Twitter) へのスレッド投稿が完了しました！** ({len(tweets)} ポスト)\nURL: {post_url}", portal_link=True)
                 time.sleep(3) # 投稿完了を待つ
                 context.close()
-                return True
+                return post_url
                 
             except Exception as e:
                 logger.error(f"Error during posting: {e}")
@@ -148,7 +148,7 @@ class XPublisher:
                 except Exception as ss_e:
                     logger.error(f"Failed to save screenshot: {ss_e}")
                 context.close()
-                return False
+                return None
 
 class NotePublisher:
     def __init__(self, headless=True):
@@ -235,7 +235,7 @@ class NotePublisher:
                     herald.notify_progress(f"📝 **note.com への下書き保存が完了しました！**\nタイトル: `{title}`\nURL: {draft_url}")
                     time.sleep(3)
                     context.close()
-                    return True
+                    return draft_url
                 
                 logger.info("🚀 Auto Publish mode enabled. Setting up Paid parameters...")
                 # 「公開に進む」ボタン
@@ -282,7 +282,7 @@ class NotePublisher:
                 
                 herald.notify_progress(f"💰 **note.com で有料記事（{price}円）の完全自動公開が完了しました！**\nタイトル: `{title}`\nURL: {published_url}", portal_link=True)
                 context.close()
-                return True
+                return published_url
                 
                 
             except Exception as e:
@@ -293,7 +293,7 @@ class NotePublisher:
                 except:
                     pass
                 context.close()
-                return False
+                return None
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
