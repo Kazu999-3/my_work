@@ -196,14 +196,26 @@ class NotePublisher:
                 
             logger.info("Navigating to new draft via intent URL...")
             try:
-                # ドロップダウンメニューのUIは環境によって不安定なため、公式の投稿トリガーURLへ直接飛ぶ
-                page.goto("https://note.com/intent/post")
+                logger.info("Navigate to Note Homepage...")
+                page.goto("https://note.com/")
+                time.sleep(3)
+                
+                # 「投稿」ボタンを探してクリック
+                logger.info("Clicking the Post button...")
+                post_btn = page.locator('a[href*="/intent/post"], a[href*="editor.note.com"]').first
+                if post_btn.is_visible():
+                    post_btn.click()
+                else:
+                    # 別の「投稿」ボタンを探す
+                    page.locator('text="投稿"').first.click()
                 
                 # 新規エディタ画面のロードを待つ
-                page.wait_for_url("https://editor.note.com/**", timeout=15000)
+                page.wait_for_url("**editor.note.com**", timeout=15000)
                 time.sleep(3)
             except Exception as e:
                 logger.error(f"Failed to navigate to editor: {e}")
+                context.close()
+                return None
             
             try:
                 # タイトルの入力

@@ -127,7 +127,8 @@ class OverseasScout:
 
         # 一度のサイクルで3体のチャンピオンを更新 (API負荷軽減)
         targets = random.sample(champs, 3)
-        herald.notify_progress(f"🌐 **【海外メタ・リサーチ】** チャンピオン辞典の定期調査を開始します（対象: {', '.join(targets)}）...")
+        # 進行状況の通知は不要なため削除（またはコメントアウト）
+        # herald.notify_progress(f"🌐 **【海外メタ・リサーチ】** チャンピオン辞典の定期調査を開始します（対象: {', '.join(targets)}）...")
         
         updated_list = []
         for champ in targets:

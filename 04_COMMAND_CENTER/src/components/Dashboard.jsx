@@ -116,13 +116,19 @@ const Dashboard = () => {
 
   // 時間の相対表記ヘルパー
   const formatTime = (isoString) => {
-    const diff = new Date().getTime() - new Date(isoString).getTime()
-    const mins = Math.floor(diff / 60000)
-    if (mins < 1) return 'たった今'
-    if (mins < 60) return `${mins}分前`
-    const hours = Math.floor(mins / 60)
-    if (hours < 24) return `${hours}時間前`
-    return new Date(isoString).toLocaleDateString('ja-JP')
+    if (!isoString) return '不明'
+    try {
+      const diff = new Date().getTime() - new Date(isoString).getTime()
+      if (isNaN(diff)) return '不明'
+      const mins = Math.floor(diff / 60000)
+      if (mins < 1) return 'たった今'
+      if (mins < 60) return `${mins}分前`
+      const hours = Math.floor(mins / 60)
+      if (hours < 24) return `${hours}時間前`
+      return new Date(isoString).toLocaleDateString('ja-JP')
+    } catch (e) {
+      return '不明'
+    }
   }
 
   return (
