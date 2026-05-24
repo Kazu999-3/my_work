@@ -5,7 +5,6 @@ import logging
 from pathlib import Path
 from playwright.sync_api import sync_playwright
 import dotenv
-from supabase import create_client
 
 try:
     from v2_CORE.herald import herald
@@ -20,9 +19,7 @@ logger = logging.getLogger("Publisher")
 
 SUPABASE_URL = settings.SUPABASE_URL if hasattr(settings, 'SUPABASE_URL') else os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = settings.SUPABASE_KEY if hasattr(settings, 'SUPABASE_KEY') else os.environ.get("SUPABASE_KEY")
-supabase = None
-if SUPABASE_URL and SUPABASE_KEY:
-    supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+import requests
 
 X_EMAIL = os.environ.get("X_EMAIL")
 X_PASSWORD = os.environ.get("X_PASSWORD")
@@ -123,14 +120,20 @@ class XPublisher:
                     logger.warning(f"Could not extract post URL from toast: {e}")
                 
                 # Supabaseに履歴を保存
-                if supabase:
+                if SUPABASE_URL and SUPABASE_KEY:
                     try:
                         title_summary = tweets[0][:30] + "..." if len(tweets[0]) > 30 else tweets[0]
-                        supabase.table('published_posts').insert({
+                        headers = {
+                            "apikey": SUPABASE_KEY,
+                            "Authorization": f"Bearer {SUPABASE_KEY}",
+                            "Content-Type": "application/json"
+                        }
+                        payload = {
                             'platform': 'X',
                             'title': title_summary,
                             'url': post_url
-                        }).execute()
+                        }
+                        requests.post(f"{SUPABASE_URL}/rest/v1/published_posts", headers=headers, json=payload)
                     except Exception as e:
                         logger.error(f"Supabaseへの履歴保存に失敗しました: {e}")
                 
@@ -282,13 +285,19 @@ class NotePublisher:
                 logger.info("✅ Paid Article fully published successfully!")
                 
                 # Supabaseに履歴を保存
-                if supabase:
+                if SUPABASE_URL and SUPABASE_KEY:
                     try:
-                        supabase.table('published_posts').insert({
+                        headers = {
+                            "apikey": SUPABASE_KEY,
+                            "Authorization": f"Bearer {SUPABASE_KEY}",
+                            "Content-Type": "application/json"
+                        }
+                        payload = {
                             'platform': 'note',
                             'title': title,
                             'url': published_url
-                        }).execute()
+                        }
+                        requests.post(f"{SUPABASE_URL}/rest/v1/published_posts", headers=headers, json=payload)
                     except Exception as e:
                         logger.error(f"Supabaseへの履歴保存に失敗しました: {e}")
                 

@@ -24,7 +24,7 @@ class SovereignSentinel:
         self.api_key = settings.GEMINI_API_KEY
         if self.api_key:
             self.client = genai.Client(api_key=self.api_key)
-            self.model_name = 'gemini-1.5-flash-8b-exp' # 最新のフラッシュモデルを使用
+            self.model_name = 'gemini-2.5-flash' # 最新のフラッシュモデルを使用
 
     def audit_codebase(self):
         """全ての Python ファイルの構文チェックを行い、デグレードを防止する"""

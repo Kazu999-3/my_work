@@ -62,7 +62,7 @@ class ItemScout:
             response_text = generate_content_safe(
                 client=self.client,
                 prompt=prompt,
-                model_id="gemini-1.5-flash-8b",
+                model_id="gemini-2.5-flash",
                 config=types.GenerateContentConfig(
                     temperature=0.3,
                     response_mime_type="application/json"

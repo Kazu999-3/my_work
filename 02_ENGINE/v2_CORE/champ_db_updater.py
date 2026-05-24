@@ -96,7 +96,7 @@ def merge_and_extract_intel(champ_name: str, new_text: str, existing_data: dict)
     
     try:
         response = client.models.generate_content(
-            model="gemini-1.5-flash-8b",
+            model="gemini-2.5-flash",
             contents=prompt,
             config=types.GenerateContentConfig(
                 temperature=0.4, # マージタスクなので温度低め

@@ -17,8 +17,8 @@ def generate_content_safe(client, prompt, model_id=None, config=None) -> str:
     primary_model = model_id or settings.DEFAULT_MODEL
     models_to_try = [
         primary_model,
-        "gemini-1.5-flash-8b",
-        "gemini-1.5-flash"
+        "gemini-2.5-flash",
+        "gemini-2.5-pro"
     ]
     
     # 重複を排除しつつ順序を維持
@@ -29,7 +29,7 @@ def generate_content_safe(client, prompt, model_id=None, config=None) -> str:
     
     for model in models_to_try:
         retries = 3
-        delay = 2.0
+        delay = 10.0 # 初期ディレイを長めに設定 (10秒)
         
         for attempt in range(retries):
             try:
@@ -58,11 +58,10 @@ def generate_content_safe(client, prompt, model_id=None, config=None) -> str:
                     wait_time = max(60.0, delay) if is_quota else delay
                     logger.warning(f"⚠️ [AIHelper] クォータ制限またはサーバー一時エラーを検知 ({model}: {e.message})。{wait_time}秒後にリトライします...")
                     time.sleep(wait_time)
-                    delay *= 2.0  # 指数バックオフ
-                    continue
+                    delay *= 2 # 指数バックオフ (10 -> 20 -> 40)
                 else:
-                    logger.error(f"❌ [AIHelper] モデル {model} での試行が失敗しました: {e}")
-                    break  # 次のフォールバックモデルへ移行
+                    logger.error(f"❌ [AIHelper] モデル {model} での試行が失敗しました: {e.code} {e.status}. {e.message}")
+                    break # 次のフォールバックモデルへ移行
                     
             except Exception as e:
                 last_error = e

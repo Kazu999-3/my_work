@@ -21,7 +21,7 @@ class VideoForge:
         self.api_key = os.getenv("GEMINI_API_KEY")
         if self.api_key:
             self.client = genai.Client(api_key=self.api_key)
-            self.model_id = "gemini-1.5-flash-8b"
+            self.model_id = "gemini-2.5-flash"
         else:
             self.client = None
 

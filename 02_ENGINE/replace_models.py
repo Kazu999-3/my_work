@@ -6,9 +6,9 @@ def replace_in_files():
         with open(file, 'r', encoding='utf-8') as f:
             content = f.read()
             
-        new_content = content.replace('gemini-2.0-flash', 'gemini-1.5-flash-8b')
-        new_content = new_content.replace('gemini-flash-latest', 'gemini-1.5-flash-8b')
-        new_content = new_content.replace('gemini-flash-lite-latest', 'gemini-1.5-flash-8b')
+        new_content = content.replace('gemini-2.0-flash', 'gemini-2.5-flash')
+        new_content = new_content.replace('gemini-flash-latest', 'gemini-2.5-flash')
+        new_content = new_content.replace('gemini-flash-lite-latest', 'gemini-2.5-flash')
         
         if new_content != content:
             with open(file, 'w', encoding='utf-8') as f:

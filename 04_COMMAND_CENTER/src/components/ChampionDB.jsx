@@ -19,6 +19,9 @@ const ChampionDB = ({ onBack }) => {
     powerSpikes: '',
     buildRunes: '',
     fullClearTime: '',
+    counterChampions: '',
+    mustBanChampions: '',
+    pickRecommendation: '',
     strategy: ''
   })
   const [saving, setSaving] = useState(false)
@@ -69,6 +72,9 @@ const ChampionDB = ({ onBack }) => {
       powerSpikes: rd.powerSpikes || '',
       buildRunes: rd.buildRunes || '',
       fullClearTime: rd.fullClearTime || '',
+      counterChampions: rd.counterChampions || '',
+      mustBanChampions: rd.mustBanChampions || '',
+      pickRecommendation: rd.pickRecommendation || '',
       strategy: noteData?.strategy || ''
     })
   }
@@ -132,7 +138,10 @@ const ChampionDB = ({ onBack }) => {
         weaknesses: dataFields.weaknesses,
         powerSpikes: dataFields.powerSpikes,
         buildRunes: dataFields.buildRunes,
-        fullClearTime: dataFields.fullClearTime
+        fullClearTime: dataFields.fullClearTime,
+        counterChampions: dataFields.counterChampions,
+        mustBanChampions: dataFields.mustBanChampions,
+        pickRecommendation: dataFields.pickRecommendation
       }
     }
     const { error } = await supabase.from('matchup_sentinel').upsert(data, { onConflict: 'matchup_id' })
@@ -228,6 +237,21 @@ const ChampionDB = ({ onBack }) => {
           <div className="glass-card" style={{ padding: '24px', borderTop: '3px solid #f59e0b' }}>
             <h3 style={{ fontSize: '15px', fontWeight: 800, color: '#f59e0b', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}><Zap size={18} /> フルクリア時間 (JGのみ)</h3>
             <textarea value={dataFields.fullClearTime} onChange={e => setField('fullClearTime', e.target.value)} placeholder="例: 3:15 (リーシュあり), 3:28 (ソロ)..." style={{ width: '100%', height: '100px', padding: '12px', background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: '8px', color: '#f0f5f5', fontSize: '13px', outline: 'none', resize: 'vertical' }} />
+          </div>
+
+          <div className="glass-card" style={{ padding: '24px', borderTop: '3px solid #06b6d4' }}>
+            <h3 style={{ fontSize: '15px', fontWeight: 800, color: '#06b6d4', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}><Swords size={18} /> 対面の有利・不利チャンプ</h3>
+            <textarea value={dataFields.counterChampions} onChange={e => setField('counterChampions', e.target.value)} placeholder="例: カウンター: サイラス（理由: ウルトを奪われると被害甚大）..." style={{ width: '100%', height: '100px', padding: '12px', background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(6,182,212,0.3)', borderRadius: '8px', color: '#f0f5f5', fontSize: '13px', outline: 'none', resize: 'vertical' }} />
+          </div>
+
+          <div className="glass-card" style={{ padding: '24px', borderTop: '3px solid #dc2626' }}>
+            <h3 style={{ fontSize: '15px', fontWeight: 800, color: '#dc2626', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}><ShieldAlert size={18} /> BAN必須チャンプ</h3>
+            <textarea value={dataFields.mustBanChampions} onChange={e => setField('mustBanChampions', e.target.value)} placeholder="例: アーリ、ゼド（機動力が高いアサシン系）..." style={{ width: '100%', height: '100px', padding: '12px', background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(220,38,38,0.3)', borderRadius: '8px', color: '#f0f5f5', fontSize: '13px', outline: 'none', resize: 'vertical' }} />
+          </div>
+
+          <div className="glass-card" style={{ padding: '24px', borderTop: '3px solid #10b981' }}>
+            <h3 style={{ fontSize: '15px', fontWeight: 800, color: '#10b981', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}><Shield size={18} /> ピック推奨 (先出し/後出し)</h3>
+            <textarea value={dataFields.pickRecommendation} onChange={e => setField('pickRecommendation', e.target.value)} placeholder="例: 先出し非推奨。相手の構成が見えてから出す後出しカウンターピック向け..." style={{ width: '100%', height: '100px', padding: '12px', background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(16,185,129,0.3)', borderRadius: '8px', color: '#f0f5f5', fontSize: '13px', outline: 'none', resize: 'vertical' }} />
           </div>
         </div>
 

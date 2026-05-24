@@ -68,6 +68,9 @@ class OverseasScout:
             "powerSpikes": "2026年現在のパワースパイク（いつ、どの新アイテム完成で最も強いか）",
             "buildRunes": "2026年（パッチ16.x以降）の最新推奨コアビルド（新アイテム対応）とキーストーン・ルーン",
             "fullClearTime": "ジャングラーの場合、2026年の仕様変更後（モンスター硬化後）の平均フルクリア時間（ジャングラー以外は空文字にする）",
+            "counterChampions": "対面で不利な、あるいは有利なカウンターチャンプ数名（理由も簡潔に）",
+            "mustBanChampions": "このチャンプを使う場合にBAN必須・推奨のチャンプ名",
+            "pickRecommendation": "先出し（ブラインドピック）が安全か、後出しでカウンターとして出すべきかの推奨情報",
             "strategy": "2026年最新メタでの立ち回りや、BAN/ピックにおける評価を100文字程度で"
         }}
         """
@@ -81,9 +84,9 @@ class OverseasScout:
                 )
                 return json.loads(response.text)
             except Exception as e:
-                if "429" in str(e) or "RESOURCE_EXHAUSTED" in str(e):
+                if "429" in str(e) or "RESOURCE_EXHAUSTED" in str(e) or "503" in str(e):
                     wait_time = 15 * (attempt + 1)
-                    logger.warning(f"⚠️ Rate limit hit (429) for {champ_id}. Retrying in {wait_time}s... (Attempt {attempt+1}/3)")
+                    logger.warning(f"⚠️ Rate limit or server error ({e}) for {champ_id}. Retrying in {wait_time}s... (Attempt {attempt+1}/3)")
                     time.sleep(wait_time)
                 else:
                     logger.error(f"Generation failed for {champ_id}: {e}")

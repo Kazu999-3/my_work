@@ -57,7 +57,7 @@ class MagazineForge:
         for attempt in range(5):
             try:
                 response = self.client.models.generate_content(
-                    model='gemini-1.5-flash-8b',
+                    model='gemini-2.5-flash',
                     contents=prompt,
                     config=types.GenerateContentConfig(
                         temperature=0.8,
