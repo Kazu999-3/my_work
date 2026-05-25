@@ -47,6 +47,19 @@ class SovereignSettings(BaseSettings):
     # モデル設定
     DEFAULT_MODEL: str = "gemini-2.5-flash"
     
+    # クォータ（1日あたりのAPI実行回数）制限
+    DAILY_QUOTA_LIMITS: dict = {
+        "kingdom_cycle": 100,  # 記事作成、リライト、SNSフック等の合計
+        "draft_analyzer": 50,  # ライブドラフトの分析
+        "news_scout": 20,      # 海外ニュースの翻訳・要約
+        "oracle": 50,          # 隠れメタの調査
+        "video_forge": 15,     # 動画台本の作成
+        "bounty_hunter": 20,   # 競合noteのハンティング
+        "magazine_forge": 5,   # マガジン生成
+        "bible_forge": 50,     # バイブルの生成
+        "x_analyzer": 30,      # Xのトレンド解析
+    }
+    
     model_config = SettingsConfigDict(
         env_file=str(ROOT_DIR / ".env"),
         env_file_encoding='utf-8',

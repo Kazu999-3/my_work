@@ -5,6 +5,7 @@ from google import genai
 from google.genai import types
 from .settings import settings
 from .database import db
+from .ai_helper import generate_content_safe
 
 logger = logging.getLogger("Recycler")
 
@@ -64,26 +65,32 @@ class SovereignRecycler:
             return None
 
         # 生成
-        response = self.client.models.generate_content(
-            model=self.model_id,
-            contents=prompt,
+        response_text = generate_content_safe(
+            self.client,
+            prompt,
+            self.model_id,
             config=types.GenerateContentConfig(
                 temperature=0.8,
                 top_p=0.95,
                 max_output_tokens=3000
-            )
+            ),
+            feature_name="kingdom_cycle"
         )
+        
+        if not response_text or response_text.startswith("⚠️") or response_text.startswith("❌"):
+             logger.error("Recycler AI generation failed.")
+             raise Exception("Recycler AI generation failed due to API error")
         
         # ファイル保存
         output_file = self.output_dir / f"recycled_{tactics_path.name}"
-        output_file.write_text(response.text, encoding="utf-8")
+        output_file.write_text(response_text, encoding="utf-8")
         
         logger.info(f"[Recycler] 錬成完了: {output_file.name}")
         
         # データベースへ登録
         db.add_intelligence(
             id=f"recycled_{tactics_path.stem}",
-            content=response.text,
+            content=response_text,
             metadata={
                 "type": "recycled_content",
                 "source": tactics_path.name,
@@ -91,7 +98,7 @@ class SovereignRecycler:
             }
         )
         
-        return response.text, output_file
+        return response_text, output_file
 
     def format_for_discord(self, recycled_text: str, source_name: str):
         """

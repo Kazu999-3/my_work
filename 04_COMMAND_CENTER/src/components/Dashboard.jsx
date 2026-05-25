@@ -15,6 +15,7 @@ import StatsPanel from './StatsPanel'
 import ChampionDB from './ChampionDB'
 import LiveBriefing from './LiveBriefing'
 import PublishTracker from './PublishTracker'
+import HealerPanel from './HealerPanel'
 import { supabase } from '../lib/supabase'
 
 const MENU_ITEMS = [
@@ -91,13 +92,15 @@ const Dashboard = () => {
           id: `m-${m.id}`,
           text: m.enemy === 'GLOBAL' ? `${m.champion} の辞典データを更新` : `${m.champion} vs ${m.enemy} の対策を記録`,
           time: m.created_at,
-          raw_time: new Date(m.created_at).getTime()
+          raw_time: new Date(m.created_at).getTime(),
+          type: m.enemy === 'GLOBAL' ? 'champdb' : 'matchups'
         })),
         ...(aRes.data || []).map(a => ({
           id: `a-${a.id}`,
           text: `${a.champion} 攻略バイブルを錬成`,
           time: a.created_at,
-          raw_time: new Date(a.created_at).getTime()
+          raw_time: new Date(a.created_at).getTime(),
+          type: 'bible'
         }))
       ].sort((a, b) => b.raw_time - a.raw_time).slice(0, 10)
 
@@ -232,6 +235,9 @@ const Dashboard = () => {
                 </div>
               </div>
 
+              {/* Healer Panel (自己修復) */}
+              <HealerPanel />
+
               {/* Live Briefing (最重要情報を最上部に) */}
               <LiveBriefing enemies={dashboardData.liveEnemies} />
 
@@ -287,7 +293,7 @@ const Dashboard = () => {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   {dashboardData.activities.length > 0 ? (
                     dashboardData.activities.map(a => (
-                      <ActivityItem key={a.id} text={a.text} time={formatTime(a.time)} />
+                      <ActivityItem key={a.id} text={a.text} time={formatTime(a.time)} onClick={() => navigate(a.type)} />
                     ))
                   ) : (
                     <p style={{ color: '#a0a5b0', fontSize: '13px', padding: '10px' }}>活動履歴はありません</p>
@@ -353,12 +359,12 @@ const QuickAction = ({ label, desc, icon, onClick }) => {
   )
 }
 
-const ActivityItem = ({ text, time }) => {
+const ActivityItem = ({ text, time, onClick }) => {
   const [hovered, setHovered] = useState(false)
   return (
-    <div onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}
-      style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px', borderRadius: '12px', background: hovered ? 'rgba(255,255,255,0.03)' : 'transparent', transition: 'background 0.2s' }}>
-      <span style={{ fontSize: '14px', fontWeight: 500 }}>{text}</span>
+    <div onClick={onClick} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}
+      style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px', borderRadius: '12px', background: hovered ? 'rgba(255,255,255,0.05)' : 'transparent', transition: 'background 0.2s', cursor: onClick ? 'pointer' : 'default' }}>
+      <span style={{ fontSize: '14px', fontWeight: 500, color: hovered ? '#c89b3c' : '#f0f5f5', transition: 'color 0.2s' }}>{text}</span>
       <span style={{ fontSize: '10px', color: '#a0a5b0', fontFamily: "'Space Grotesk', monospace", background: 'rgba(255,255,255,0.05)', padding: '4px 10px', borderRadius: '8px', whiteSpace: 'nowrap' }}>{time}</span>
     </div>
   )

@@ -8,6 +8,8 @@ import json
 from pathlib import Path
 from google import genai
 from google.genai import types
+from datetime import datetime
+from v2_CORE.ai_helper import generate_content_safe
 
 logger = logging.getLogger("Forge")
 
@@ -48,12 +50,16 @@ class AutoForge:
         prompt = f"あなたはカリスマ戦術家です。{champion} ({patch}) の高品質な note 記事を執筆してください。\n\n【コンテキスト】:\n{context}"
         
         try:
-            response = self.client.models.generate_content(
-                model=self.model_id,
-                contents=prompt,
-                config=types.GenerateContentConfig(temperature=0.7, max_output_tokens=4000)
+            response_text = generate_content_safe(
+                self.client,
+                prompt,
+                self.model_id,
+                config=types.GenerateContentConfig(temperature=0.7, max_output_tokens=4000),
+                feature_name="kingdom_cycle"
             )
-            content = response.text
+            if not response_text or response_text.startswith("⚠️") or response_text.startswith("❌"):
+                raise Exception("Forge AI generation failed")
+            content = response_text
         except Exception as e:
             logger.error(f"[Forge] エラー: {e}")
             content = self.template.replace("{{champion}}", champion).replace("{{patch}}", patch)
@@ -90,12 +96,16 @@ class AutoForge:
         """
 
         try:
-            response = self.client.models.generate_content(
-                model=self.model_id,
-                contents=prompt,
-                config=types.GenerateContentConfig(response_mime_type="application/json")
+            response_text = generate_content_safe(
+                self.client,
+                prompt,
+                self.model_id,
+                config=types.GenerateContentConfig(response_mime_type="application/json"),
+                feature_name="kingdom_cycle"
             )
-            package = json.loads(response.text)
+            if not response_text or response_text.startswith("⚠️") or response_text.startswith("❌"):
+                raise Exception("Forge AI JSON generation failed")
+            package = json.loads(response_text)
             outbox_dir = Path("d:/my_work/03_FACTORY/INFRA/outbox")
             outbox_dir.mkdir(parents=True, exist_ok=True)
             file_path = outbox_dir / f"PostPackage_{champion}_{patch}.json"

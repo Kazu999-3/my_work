@@ -2,6 +2,7 @@ import logging
 from google import genai
 from google.genai import types
 from .settings import settings
+from v2_CORE.ai_helper import generate_content_safe
 import requests
 from bs4 import BeautifulSoup
 
@@ -40,13 +41,15 @@ class SovereignOracle:
             """
             
             try:
-                response = self.client.models.generate_content(
-                    model=self.model_id,
-                    contents=prompt
+                response_text = generate_content_safe(
+                    self.client,
+                    prompt,
+                    self.model_id,
+                    feature_name="oracle"
                 )
-                if "FLAG" in response.text:
+                if response_text and "FLAG" in response_text:
                     logger.warning(f"🔮 [Oracle] {champ} に深層トレンドを検知！解析を推奨します。")
-                    targets.append({"champion": champ, "reason": response.text})
+                    targets.append({"champion": champ, "reason": response_text})
             except Exception as e:
                 err_str = str(e)
                 if any(kw in err_str for kw in ["429", "503", "quota", "RESOURCE_EXHAUSTED"]):
@@ -76,20 +79,22 @@ class SovereignOracle:
         
         try:
             # 最新のWeb検索を行うために gemini-2.5-flash と Grounding を使用
-            response = self.client.models.generate_content(
-                model="gemini-2.5-flash",
-                contents=prompt,
+            response_text = generate_content_safe(
+                self.client,
+                prompt,
+                "gemini-2.5-flash",
                 config=types.GenerateContentConfig(
                     tools=[{"google_search": {}}],
                     temperature=0.4
-                )
+                ),
+                feature_name="oracle"
             )
             
             import json
             import re
             
             # JSON部分の抽出とパース
-            text = response.text
+            text = response_text
             match = re.search(r'\[.*\]', text, re.DOTALL)
             if match:
                 json_str = match.group(0)

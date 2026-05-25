@@ -66,7 +66,8 @@ class ItemScout:
                 config=types.GenerateContentConfig(
                     temperature=0.3,
                     response_mime_type="application/json"
-                )
+                ),
+                feature_name="kingdom_cycle"
             )
             meta_trends = json.loads(response_text)
             logger.info(f"Detected {len(meta_trends)} meta trends.")

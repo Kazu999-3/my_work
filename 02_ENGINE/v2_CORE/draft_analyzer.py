@@ -5,6 +5,7 @@ import requests
 import json
 from google import genai
 from v2_CORE.settings import settings
+from v2_CORE.ai_helper import generate_content_safe
 
 logger = logging.getLogger("DraftAnalyzer")
 
@@ -62,11 +63,17 @@ class DraftAnalyzer:
         """
 
         try:
-            response = self.client.models.generate_content(
-                model=settings.DEFAULT_MODEL,
-                contents=prompt
+            response_text = generate_content_safe(
+                self.client,
+                prompt,
+                settings.DEFAULT_MODEL,
+                feature_name="draft_analyzer"
             )
-            return response.text
+            
+            if not response_text or response_text.startswith("⚠️") or response_text.startswith("❌"):
+                raise Exception("DraftAnalyzer AI generation failed due to API error")
+                
+            return response_text
         except Exception as e:
             logger.error(f"Draft analysis failed: {e}")
             return "戦術データの錬成に失敗いたしました。王、ご自身の直感を信じてください。"

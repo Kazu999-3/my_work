@@ -11,6 +11,7 @@ from datetime import datetime
 import dotenv
 from v2_CORE.database import db
 from v2_CORE.evolution import evolution_engine
+from v2_CORE.ai_helper import generate_content_safe
 
 dotenv.load_dotenv(Path("D:/my_work/.env"))
 
@@ -125,16 +126,22 @@ class BibleForge:
             section_success = False
             for attempt in range(max_retries):
                 try:
-                    response = self.client.models.generate_content(
-                        model=self.model_id,
-                        contents=prompt,
+                    response_text = generate_content_safe(
+                        self.client,
+                        prompt,
+                        self.model_id,
                         config=types.GenerateContentConfig(
                             temperature=0.75,
                             top_p=0.95,
                             max_output_tokens=4000
-                        )
+                        ),
+                        feature_name="bible_forge"
                     )
-                    text = response.text.strip() if response.text else ""
+                    
+                    if not response_text or response_text.startswith("⚠️") or response_text.startswith("❌"):
+                        raise Exception("BibleForge AI generation failed due to API error")
+                        
+                    text = response_text.strip()
                     if len(text) > 500: # 最低500文字以上の出力を保証
                         full_markdown.append(text)
                         logging.info(f"Section {i+1} completed ({len(text)} chars).")
@@ -145,13 +152,8 @@ class BibleForge:
                     else:
                         logging.warning(f"Section {i+1} output too short ({len(text)} chars). Retrying...")
                 except Exception as e:
-                    if ("503" in str(e) or "429" in str(e) or "exhausted" in str(e).lower()) and attempt < max_retries - 1:
-                        wait_time = (attempt + 1) * 120 
-                        logging.warning(f"Forge Error ({e}). Retrying in {wait_time}s... (Attempt {attempt+1})")
-                        time.sleep(wait_time)
-                    else:
-                        logging.error(f"Section {i+1} failed definitively: {e}")
-                        break
+                    logging.warning(f"Forge Error ({e}). Retrying... (Attempt {attempt+1})")
+                    time.sleep(10 * (attempt + 1))
             
             if not section_success:
                 logging.error(f"Abandoning forge for {champion_name} due to failure at section {i+1}")

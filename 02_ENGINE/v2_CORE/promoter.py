@@ -2,6 +2,7 @@ from .settings import settings
 import logging
 from google import genai
 from google.genai import types
+from .ai_helper import generate_content_safe
 
 logger = logging.getLogger("Promoter")
 
@@ -48,16 +49,22 @@ class XPromoter:
         """
         
         try:
-            response = self.client.models.generate_content(
-                model=self.model_id,
-                contents=prompt,
+            response_text = generate_content_safe(
+                self.client,
+                prompt,
+                self.model_id,
                 config=types.GenerateContentConfig(
                     temperature=0.7,
                     top_p=0.95,
                     max_output_tokens=2000
-                )
+                ),
+                feature_name="kingdom_cycle"
             )
-            promotion = response.text
+            
+            if not response_text or response_text.startswith("⚠️") or response_text.startswith("❌"):
+                 raise Exception("Promoter AI generation failed due to API error")
+            
+            promotion = response_text
         except Exception as e:
             logger.error(f"[Promoter] プロモーション案の生成中にエラー: {e}")
             promotion = "プロモーション案の生成に失敗いたしました。"

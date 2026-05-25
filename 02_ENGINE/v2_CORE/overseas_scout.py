@@ -6,6 +6,7 @@ import json
 import random
 from google import genai
 from v2_CORE.settings import settings
+from v2_CORE.ai_helper import generate_content_safe
 from v2_CORE.herald import herald
 
 logger = logging.getLogger("OverseasScout")
@@ -75,18 +76,24 @@ class OverseasScout:
         }}
         """
 
-        for attempt in range(3):
+        max_retries = 3
+        for attempt in range(max_retries):
             try:
-                response = self.client.models.generate_content(
-                    model=settings.DEFAULT_MODEL,
-                    contents=prompt,
-                    config={'response_mime_type': 'application/json'}
+                response_text = generate_content_safe(
+                    self.client,
+                    prompt,
+                    settings.DEFAULT_MODEL,
+                    feature_name="oracle"
                 )
-                return json.loads(response.text)
+                
+                if not response_text or response_text.startswith("⚠️") or response_text.startswith("❌"):
+                    raise Exception("OverseasScout AI generation failed")
+                    
+                return json.loads(response_text)
             except Exception as e:
                 if "429" in str(e) or "RESOURCE_EXHAUSTED" in str(e) or "503" in str(e):
                     wait_time = 15 * (attempt + 1)
-                    logger.warning(f"⚠️ Rate limit or server error ({e}) for {champ_id}. Retrying in {wait_time}s... (Attempt {attempt+1}/3)")
+                    logger.warning(f"⚠️ Rate limit or server error ({e}) for {champ_id}. Retrying in {wait_time}s... (Attempt {attempt+1}/{max_retries})")
                     time.sleep(wait_time)
                 else:
                     logger.error(f"Generation failed for {champ_id}: {e}")
@@ -139,7 +146,6 @@ class OverseasScout:
             data = self.generate_champ_data(champ)
             if data:
                 self.update_champion_dictionary(champ, data)
-                herald.notify_progress(f"📈 **{champ}** の最新データを海外から収集し、チャンピオン辞典に同期しました。")
                 updated_list.append(champ)
             time.sleep(5) # APIレートリミット対策
             

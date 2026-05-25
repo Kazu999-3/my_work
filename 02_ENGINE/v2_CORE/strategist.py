@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 from google import genai
 from google.genai import types
+from v2_CORE.ai_helper import generate_content_safe
 import dotenv
 import json
 
@@ -27,12 +28,16 @@ class AIStrategist:
         """指定された人格としてAIに回答させる"""
         full_prompt = f"【あなたは {persona} です】\n\n{prompt}"
         try:
-            response = self.client.models.generate_content(
-                model=self.model_id,
-                contents=full_prompt,
-                config=types.GenerateContentConfig(temperature=0.7)
+            response_text = generate_content_safe(
+                self.client,
+                full_prompt,
+                self.model_id,
+                config=types.GenerateContentConfig(temperature=0.7),
+                feature_name="kingdom_cycle"
             )
-            return response.text
+            if not response_text or response_text.startswith("⚠️") or response_text.startswith("❌"):
+                raise Exception("Strategist AI generation failed")
+            return response_text
         except Exception as e:
             logging.error(f"AI回答取得中にエラー ({persona}): {e}")
             return ""

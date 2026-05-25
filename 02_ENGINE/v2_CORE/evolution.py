@@ -64,7 +64,7 @@ class EvolutionEngine:
         
         from v2_CORE.ai_helper import generate_content_safe
         config = types.GenerateContentConfig(temperature=0.3)
-        feedback = generate_content_safe(self.client, prompt, model_id=self.model_id, config=config)
+        feedback = generate_content_safe(self.client, prompt, model_id=self.model_id, config=config, feature_name="kingdom_cycle")
         logger.info(f"[Evolution] 📝 レビュー完了: {len(feedback)}文字のフィードバックを獲得")
         return feedback
 
@@ -92,7 +92,7 @@ class EvolutionEngine:
         
         from v2_CORE.ai_helper import generate_content_safe
         config = types.GenerateContentConfig(temperature=0.5, max_output_tokens=8000)
-        evolved = generate_content_safe(self.client, prompt, model_id=self.model_id, config=config)
+        evolved = generate_content_safe(self.client, prompt, model_id=self.model_id, config=config, feature_name="kingdom_cycle")
         logger.info("[Evolution] ✨ コンテンツの自己進化が完了しました！")
         return evolved
 

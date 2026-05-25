@@ -7,6 +7,8 @@ import requests
 import json
 from google import genai
 from google.genai import types
+from v2_CORE.settings import settings
+from v2_CORE.ai_helper import generate_content_safe
 import dotenv
 
 dotenv.load_dotenv(Path("D:/my_work/.env"))
@@ -72,15 +74,17 @@ def generate_x_promo_thread(champion_name: str, bible_text: str) -> str:
     """
     
     try:
-        response = client.models.generate_content(
-            model='gemini-2.5-flash',
-            contents=prompt,
-            config=types.GenerateContentConfig(
-                response_mime_type="application/json",
-                temperature=0.7
-            )
+        response_text = generate_content_safe(
+            client,
+            prompt,
+            settings.DEFAULT_MODEL,
+            feature_name="kingdom_cycle"
         )
-        return response.text.strip()
+        
+        if not response_text or response_text.startswith("⚠️") or response_text.startswith("❌"):
+            raise Exception("MonetizationLoop AI generation failed")
+            
+        return response_text.strip()
     except Exception as e:
         logger.error(f"Gemini Error generating X thread: {e}")
         return "[]"

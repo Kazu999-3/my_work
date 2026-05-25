@@ -2,7 +2,21 @@ import sys
 import threading
 import time
 import logging
+import os
+import msvcrt
 from pathlib import Path
+
+# ==========================================
+# Single Instance Lock
+# ==========================================
+LOCK_FILE_PATH = Path(__file__).resolve().parent / "orchestrator.lock"
+lock_file = open(LOCK_FILE_PATH, "w")
+try:
+    msvcrt.locking(lock_file.fileno(), msvcrt.LK_NBLCK, 1)
+except IOError:
+    print("[ERROR] 既に別のオーケストレーターが起動しています。多重起動を防止するため終了します。")
+    sys.exit(0)
+
 
 # ==========================================
 # Sovereign OS: Unified Master Orchestrator
@@ -135,7 +149,57 @@ def main():
     t_coach = threading.Thread(target=run_personal_coach, name="CoachThread", daemon=True)
     threads.append(t_coach)
 
-    # 8. Overseas Scout Loop (24時間おきに海外メタを精査)
+    # 8. Auto Healer (自己治癒ループ: 1分おきにログ監視)
+    def run_auto_healer():
+        from v2_CORE.auto_healer import AutoHealer
+        logger.info("⚕️ Auto Healer starting (Every 60s)...")
+        time.sleep(30) # 起動後30秒待機
+        healer = AutoHealer()
+        while True:
+            try:
+                healer.run_cycle()
+            except Exception as e:
+                logger.error(f"🔥 Auto Healer failed: {e}")
+            time.sleep(60)
+            
+    t_healer = threading.Thread(target=run_auto_healer, name="AutoHealerThread", daemon=True)
+    threads.append(t_healer)
+
+    # 9. Skill Synthesizer (自己スキル獲得ループ: 1分おきに要求監視)
+    def run_skill_synthesizer():
+        from v2_CORE.skill_synthesizer import SkillSynthesizer
+        logger.info("🧠 Skill Synthesizer starting (Every 60s)...")
+        synth = SkillSynthesizer()
+        # 起動時に既存のスキルを全て読み込んで起動
+        synth.load_existing_skills()
+        
+        while True:
+            try:
+                synth.run_cycle()
+            except Exception as e:
+                logger.error(f"🔥 Skill Synthesizer failed: {e}")
+            time.sleep(60)
+            
+    t_synth = threading.Thread(target=run_skill_synthesizer, name="SkillSynthThread", daemon=True)
+    threads.append(t_synth)
+
+    # 10. Darwin Engine (データ駆動の自己進化ループ: 24時間おき)
+    def run_darwin_engine():
+        from v2_CORE.darwin_engine import DarwinEngine
+        logger.info("🧬 Darwin Engine starting (Every 24 hours)...")
+        time.sleep(180) # 起動後3分待機
+        darwin = DarwinEngine()
+        while True:
+            try:
+                darwin.run_cycle()
+            except Exception as e:
+                logger.error(f"🔥 Darwin Engine failed: {e}")
+            time.sleep(60 * 60 * 24)
+            
+    t_darwin = threading.Thread(target=run_darwin_engine, name="DarwinThread", daemon=True)
+    threads.append(t_darwin)
+
+    # 11. Overseas Scout Loop (24時間おきに海外メタを精査)
     def run_overseas_scout():
         from v2_CORE.overseas_scout import OverseasScout
         logger.info("🌐 Overseas Scout starting (Every 24 hours)...")

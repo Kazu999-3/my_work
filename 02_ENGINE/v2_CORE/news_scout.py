@@ -5,6 +5,7 @@ import requests
 import json
 from google import genai
 from v2_CORE.settings import settings
+from v2_CORE.ai_helper import generate_content_safe
 
 logger = logging.getLogger("NewsScout")
 
@@ -51,12 +52,15 @@ class NewsScout:
         """
 
         try:
-            response = self.client.models.generate_content(
-                model=settings.DEFAULT_MODEL,
-                contents=prompt,
-                config={'response_mime_type': 'application/json'}
+            response_text = generate_content_safe(
+                self.client,
+                prompt,
+                settings.DEFAULT_MODEL,
+                feature_name="news_scout"
             )
-            return json.loads(response.text)
+            if not response_text or response_text.startswith("⚠️") or response_text.startswith("❌"):
+                raise Exception("NewsScout AI generation failed")
+            return json.loads(response_text)
         except Exception as e:
             logger.error(f"News generation failed: {e}")
             return ["帝国の知能網は正常に稼働中...", "最新のメタデータを解析しています...", "王、次の試合の準備はよろしいですか？"]

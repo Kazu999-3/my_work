@@ -2,6 +2,7 @@ import logging
 from google import genai
 from google.genai import types
 from .settings import settings
+from v2_CORE.ai_helper import generate_content_safe
 
 logger = logging.getLogger("Council")
 
@@ -37,10 +38,14 @@ class SovereignCouncil:
             
             具体的な「修正すべき点」または「追加すべき戦術的洞察」を箇条書きで提示せよ。
             """
-            analyst_critique = self.client.models.generate_content(
-                model=self.model_id,
-                contents=analyst_prompt
-            ).text
+            analyst_critique = generate_content_safe(
+                self.client,
+                analyst_prompt,
+                self.model_id,
+                feature_name="kingdom_cycle"
+            )
+            if not analyst_critique or analyst_critique.startswith("⚠️") or analyst_critique.startswith("❌"):
+                raise Exception("Council AI generation failed")
             logger.info("[Council] 分析官からのフィードバックを領収。")
             
             # 2. セールスライターの批判 (The Marketer)
@@ -53,10 +58,14 @@ class SovereignCouncil:
             
             「修正・強化すべき感情的フック」を箇条書きで提示せよ。
             """
-            marketer_critique = self.client.models.generate_content(
-                model=self.model_id,
-                contents=marketer_prompt
-            ).text
+            marketer_critique = generate_content_safe(
+                self.client,
+                marketer_prompt,
+                self.model_id,
+                feature_name="kingdom_cycle"
+            )
+            if not marketer_critique or marketer_critique.startswith("⚠️") or marketer_critique.startswith("❌"):
+                raise Exception("Council AI generation failed")
             logger.info("[Council] ライターからのフィードバックを領収。")
             
             # 3. 統合・推敲 (The Polisher)
@@ -70,10 +79,14 @@ class SovereignCouncil:
             
             二人の指摘を単に足すのではなく、最も強力な形で融合させた Markdown テキストを出力してください。
             """
-            final_draft = self.client.models.generate_content(
-                model=self.model_id,
-                contents=refine_prompt
-            ).text
+            final_draft = generate_content_safe(
+                self.client,
+                refine_prompt,
+                self.model_id,
+                feature_name="kingdom_cycle"
+            )
+            if not final_draft or final_draft.startswith("⚠️") or final_draft.startswith("❌"):
+                raise Exception("Council AI generation failed")
             logger.info("[Council] 編集会議が終了しました。決定稿が完成。")
             return final_draft
             

@@ -4,6 +4,7 @@ import logging
 from pathlib import Path
 from google import genai
 from google.genai import types
+from v2_CORE.ai_helper import generate_content_safe
 import dotenv
 from datetime import datetime
 import uuid
@@ -66,17 +67,21 @@ class MatchupSync:
         """
 
         try:
-            response = self.client.models.generate_content(
-                model=self.model_id,
-                contents=prompt,
+            response_text = generate_content_safe(
+                self.client,
+                prompt,
+                self.model_id,
                 config=types.GenerateContentConfig(
                     temperature=0.2,
                     tools=[{"google_search": {}}]
-                )
+                ),
+                feature_name="kingdom_cycle"
             )
+            if not response_text or response_text.startswith("⚠️") or response_text.startswith("❌"):
+                raise Exception("MatchupSync AI generation failed")
             
             # クリーニング
-            result_text = response.text.strip()
+            result_text = response_text.strip()
             if result_text.startswith("```json"):
                 result_text = result_text.replace("```json", "").replace("```", "").strip()
             elif result_text.startswith("```"):

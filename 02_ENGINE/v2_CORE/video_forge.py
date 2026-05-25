@@ -4,6 +4,7 @@ from pathlib import Path
 import asyncio
 from google import genai
 from google.genai import types
+from v2_CORE.ai_helper import generate_content_safe
 import edge_tts
 from moviepy import AudioFileClip, ImageClip
 import dotenv
@@ -72,12 +73,16 @@ class VideoForge:
         """
         
         try:
-            response = self.client.models.generate_content(
-                model=self.model_id,
-                contents=prompt,
-                config=types.GenerateContentConfig(temperature=0.7)
+            response_text = generate_content_safe(
+                self.client,
+                prompt,
+                self.model_id,
+                config=types.GenerateContentConfig(temperature=0.7),
+                feature_name="video_forge"
             )
-            script = response.text.replace("*", "").replace("#", "")
+            if not response_text or response_text.startswith("⚠️") or response_text.startswith("❌"):
+                raise Exception("VideoForge AI generation failed")
+            script = response_text.replace("*", "").replace("#", "")
             logging.info("✅ 台本の生成が完了しました。")
             return script
         except Exception as e:

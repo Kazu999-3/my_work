@@ -60,7 +60,7 @@ class ABTestManager:
 
         try:
             from v2_CORE.ai_helper import generate_content_safe
-            new_rules = generate_content_safe(client, prompt, model_id=settings.DEFAULT_MODEL)
+            new_rules = generate_content_safe(client, prompt, model_id=settings.DEFAULT_MODEL, feature_name="kingdom_cycle")
             if new_rules:
                 self.rules_file.write_text(new_rules.strip(), encoding="utf-8")
                 logger.info("✨ A/Bテスト完了: マーケティング・ルールが自己進化しました！")

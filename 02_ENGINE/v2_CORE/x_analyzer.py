@@ -7,6 +7,7 @@ from pathlib import Path
 from playwright.async_api import async_playwright
 from google import genai
 from google.genai import types
+from v2_CORE.ai_helper import generate_content_safe
 import dotenv
 import asyncio
 
@@ -123,12 +124,16 @@ class XAnalyzer:
         """
         
         try:
-            response = self.client.models.generate_content(
-                model=self.model_id,
-                contents=prompt,
-                config=types.GenerateContentConfig(temperature=0.4)
+            response_text = generate_content_safe(
+                self.client,
+                prompt,
+                self.model_id,
+                config=types.GenerateContentConfig(temperature=0.2),
+                feature_name="x_analyzer"
             )
-            return response.text
+            if not response_text or response_text.startswith("⚠️") or response_text.startswith("❌"):
+                raise Exception("XAnalyzer AI generation failed")
+            return response_text
         except Exception as e:
             logging.error(f"❌ 解析中にエラー: {e}")
             return f"Error during analysis: {e}"

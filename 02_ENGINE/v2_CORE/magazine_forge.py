@@ -8,6 +8,8 @@ import json
 from google import genai
 from google.genai import types
 import dotenv
+from v2_CORE.settings import settings
+from v2_CORE.ai_helper import generate_content_safe
 
 dotenv.load_dotenv(Path("D:/my_work/.env"))
 logger = logging.getLogger("MagazineForge")
@@ -56,15 +58,15 @@ class MagazineForge:
             return ""
         for attempt in range(5):
             try:
-                response = self.client.models.generate_content(
-                    model='gemini-2.5-flash',
-                    contents=prompt,
-                    config=types.GenerateContentConfig(
-                        temperature=0.8,
-                        max_output_tokens=4000
-                    )
+                response_text = generate_content_safe(
+                    self.client,
+                    prompt,
+                    settings.DEFAULT_MODEL,
+                    feature_name="magazine_forge"
                 )
-                return response.text.strip()
+                if not response_text or response_text.startswith("⚠️") or response_text.startswith("❌"):
+                    raise Exception("MagazineForge AI generation failed")
+                return response_text.strip()
             except Exception as e:
                 wait_time = 15 * (attempt + 1)
                 logger.warning(f"⚠️ Gemini API error in chunk generation: {e}. Retrying in {wait_time}s... (Attempt {attempt+1}/5)")

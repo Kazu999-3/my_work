@@ -5,6 +5,7 @@ from pathlib import Path
 import subprocess
 from google import genai
 from google.genai import types
+from v2_CORE.ai_helper import generate_content_safe
 
 logger = logging.getLogger("VODOracle")
 
@@ -82,27 +83,28 @@ class VODOracle:
             具体的な事実のみを簡潔な箇条書きで答えてください。
             """
             
-            # 視覚と推論能力の高い 1.5 Pro を使用
-            response = self.client.models.generate_content(
-                model='gemini-1.5-pro',
-                contents=[
-                    uploaded_file,
-                    prompt
-                ],
+            response_text = generate_content_safe(
+                self.client,
+                [uploaded_file, prompt],
+                'gemini-1.5-pro',
                 config=types.GenerateContentConfig(
                     temperature=0.2
-                )
+                ),
+                feature_name="oracle"
             )
             
+            if not response_text or response_text.startswith("⚠️") or response_text.startswith("❌"):
+                raise Exception("VOD Oracle AI generation failed")
+            
             logger.info("✅ VOD視覚解析が完了しました！")
-            logger.info(f"抽出結果:\n{response.text}")
+            logger.info(f"抽出結果:\n{response_text}")
             
             # API容量節約のため、解析後はクラウド上の動画ファイルを削除
             self.client.files.delete(name=uploaded_file.name)
             if video_path.exists():
                 video_path.unlink() # ローカルファイルも削除
                 
-            return response.text
+            return response_text
             
         except Exception as e:
             logger.error(f"動画解析中にエラーが発生しました: {e}")

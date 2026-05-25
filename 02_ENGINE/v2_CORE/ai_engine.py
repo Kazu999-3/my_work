@@ -52,7 +52,7 @@ class AntigravityAIEngine:
                 top_p=0.95,
                 max_output_tokens=2000
             )
-            response_text = generate_content_safe(self.client, full_prompt, model_id=self.model_id, config=config)
+            response_text = generate_content_safe(self.client, full_prompt, model_id=self.model_id, config=config, feature_name="kingdom_cycle")
             return response_text
 
         except Exception as e:

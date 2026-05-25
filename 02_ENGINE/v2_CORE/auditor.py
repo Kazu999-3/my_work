@@ -2,6 +2,7 @@ import logging
 from google import genai
 from google.genai import types
 from .settings import settings
+from v2_CORE.ai_helper import generate_content_safe
 import re
 
 logger = logging.getLogger("Auditor")
@@ -45,16 +46,21 @@ class SovereignAuditor:
         """
         
         try:
-            response = self.client.models.generate_content(
-                model=self.model_id,
-                contents=prompt,
+            response_text = generate_content_safe(
+                self.client,
+                prompt,
+                self.model_id,
                 config=types.GenerateContentConfig(
                     temperature=0.7,
                     top_p=0.95,
                     max_output_tokens=4000
-                )
+                ),
+                feature_name="kingdom_cycle"
             )
-            rewritten_content = response.text
+            if not response_text or response_text.startswith("⚠️") or response_text.startswith("❌"):
+                raise Exception("Auditor generation failed")
+            
+            rewritten_content = response_text
             logger.info("[Auditor] 自律リライトが完了しました。")
             return rewritten_content
         except Exception as e:
