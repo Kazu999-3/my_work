@@ -147,9 +147,17 @@ class AutoHealer:
             logger.info("🛠️ Auto-Healer: エラーを検知しました。自己修復パッチを生成中...")
             patch = self.analyze_error(err)
             if patch:
+                # AUTO_HEAL: ユーザーの手動承認を待たず、即座に自己修復を実行する
+                patch['status'] = 'approved'
                 self.save_patch(patch)
                 
-        # 承認済みパッチの確認と適用
+                logger.info(f"⚡ 限界突破モード: パッチ {patch['id']} を即時自動適用します！")
+                success = apply_patch(patch['id'])
+                
+                new_status = 'applied' if success else 'failed'
+                self._update_supabase_status(patch['id'], new_status)
+                
+        # 過去の手動承認済みパッチの確認と適用
         self.poll_approved_patches()
         
     def poll_approved_patches(self):
@@ -220,6 +228,23 @@ class AutoHealer:
                 logger.error(f"Failed to sync patch to Supabase: {r.text}")
         except Exception as e:
             logger.error(f"Supabase sync error: {e}")
+
+    def _update_supabase_status(self, patch_id: str, status: str):
+        supabase_url = os.getenv("SUPABASE_URL")
+        supabase_key = os.getenv("SUPABASE_KEY")
+        if not supabase_url or not supabase_key:
+            return
+            
+        url = f"{supabase_url}/rest/v1/system_patches?id=eq.{patch_id}"
+        headers = {
+            "apikey": supabase_key,
+            "Authorization": f"Bearer {supabase_key}",
+            "Content-Type": "application/json"
+        }
+        try:
+            requests.patch(url, headers=headers, json={"status": status})
+        except Exception as e:
+            logger.error(f"Failed to update patch status: {e}")
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
