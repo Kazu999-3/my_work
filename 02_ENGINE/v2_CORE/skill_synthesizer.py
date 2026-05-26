@@ -31,6 +31,31 @@ class SkillSynthesizer:
         init_file = self.dynamic_dir / "__init__.py"
         if not init_file.exists():
             init_file.write_text("", encoding="utf-8")
+            
+        self.discord_webhook = os.getenv("DISCORD_WEBHOOK")
+
+    def _notify_discord(self, filename: str, description: str, code: str):
+        """スキル生成完了をDiscordに通知する"""
+        if not self.discord_webhook:
+            return
+            
+        try:
+            # コードが長すぎる場合は切り詰める（Discordの制限対策）
+            display_code = code
+            if len(display_code) > 1000:
+                display_code = display_code[:1000] + "\n... (省略されました)"
+                
+            payload = {
+                "embeds": [{
+                    "title": f"🧠 新スキル獲得: {filename}",
+                    "description": f"**概要:**\n{description}\n\n**ソースコード (抜粋):**\n```python\n{display_code}\n```\n\n✅ *システムへの動的組み込み（無停止インストール）が完了し、稼働を開始しました。*",
+                    "color": 0xa855f7, # Purple
+                    "footer": {"text": "Skill Synthesizer"}
+                }]
+            }
+            requests.post(self.discord_webhook, json=payload, timeout=5)
+        except Exception as e:
+            logger.error(f"Failed to send Discord notification: {e}")
 
     def synthesize_skill(self, request_text: str):
         prompt = f"""
@@ -84,6 +109,9 @@ class SkillSynthesizer:
             
             # 動的ロードを試行
             self._load_and_run(file_path)
+            
+            # 完了をDiscordに通知
+            self._notify_discord(filename, skill_data.get("description", "説明なし"), skill_data["code"])
             
             return True
         except Exception as e:
