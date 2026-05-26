@@ -69,6 +69,13 @@ class SovereignCoordinator:
             role = target.get('role', 'Jungle')
             logger.info(f"🎯 Target Acquired: {champ} ({role}) - [Priority Executed]")
             
+            # 既存記事の重複チェック (すでに長文で錬成済みの場合はスキップ)
+            role_suffix = f"_{role}" if role and role != "Unknown" else ""
+            expected_draft_path = Path(f"D:/my_work/03_FACTORY/note_drafts/sovereign_draft_{patch}_{champ}{role_suffix}.md")
+            if expected_draft_path.exists() and expected_draft_path.stat().st_size > 500:
+                logger.info(f"⏭️ {champ} (Patch {patch}) の高品質記事は既に錬成済みのためスキップします。")
+                continue
+            
             # 2. YouTube Search & OLE Analysis
             # Prospector による自律動画発掘
             video_url = prospector.find_best_video(champ, patch)

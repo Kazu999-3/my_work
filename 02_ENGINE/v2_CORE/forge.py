@@ -58,11 +58,11 @@ class AutoForge:
                 feature_name="kingdom_cycle"
             )
             if not response_text or response_text.startswith("⚠️") or response_text.startswith("❌"):
-                raise Exception("Forge AI generation failed")
+                raise Exception(f"Forge AI generation failed: {response_text}")
             content = response_text
         except Exception as e:
             logger.error(f"[Forge] エラー: {e}")
-            content = self.template.replace("{{champion}}", champion).replace("{{patch}}", patch)
+            raise  # テンプレートへのフォールバックを廃止し、上位の try-except で処理を中断させる
         
         role_suffix = f"_{role}" if role and role != "Unknown" else ""
         file_name = f"sovereign_draft_{patch}_{champion}{role_suffix}.md"
