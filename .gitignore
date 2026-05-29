@@ -30,6 +30,7 @@ scratch/
 !package.json
 !package-lock.json
 !**/MatchupMemo/*.json
+!**/vercel.json
 03_factory/vods/
 99_ARCHIVE/
 03_FACTORY/INFRA/outbox/
