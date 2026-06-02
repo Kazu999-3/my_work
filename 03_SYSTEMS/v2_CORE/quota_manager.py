@@ -24,7 +24,9 @@ class QuotaManager:
             return cls._instance
 
     def _init(self):
-        self.data_file = Path("D:/my_work/03_SYSTEMS/v2_CORE/quota_usage.json")
+        # 環境変数 ANTIGRAVITY_DATA_DIR があればそこを使い、なければ既存のローカルパスをフォールバックする
+        data_dir_str = os.environ.get("ANTIGRAVITY_DATA_DIR", "D:/my_work/03_SYSTEMS/v2_CORE")
+        self.data_file = Path(data_dir_str) / "quota_usage.json"
         self.file_lock = threading.Lock()
 
     def _get_today_str(self):
