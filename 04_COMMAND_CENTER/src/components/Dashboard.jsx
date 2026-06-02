@@ -7,15 +7,11 @@ import {
   Menu, X, BookHeart, Send
 } from 'lucide-react'
 import BibleReader from './BibleReader'
-import DraftingHub from './DraftingHub'
 import PerformanceTimeline from './PerformanceTimeline'
-import NewsTicker from './NewsTicker'
 import MatchupExplorer from './MatchupExplorer'
 import StatsPanel from './StatsPanel'
 import ChampionDB from './ChampionDB'
-import LiveBriefing from './LiveBriefing'
 import PublishTracker from './PublishTracker'
-import HealerPanel from './HealerPanel'
 import { supabase } from '../lib/supabase'
 
 const MENU_ITEMS = [
@@ -235,12 +231,6 @@ const Dashboard = () => {
                 </div>
               </div>
 
-              {/* Healer Panel (自己修復) */}
-              <HealerPanel />
-
-              {/* Live Briefing (最重要情報を最上部に) */}
-              <LiveBriefing enemies={dashboardData.liveEnemies} />
-
               {/* AIコーチの辛口フィードバック */}
               {dashboardData.coachAdvice && (
                 <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
@@ -281,7 +271,6 @@ const Dashboard = () => {
                 <StatusCard title="バイブル生成" status="待機中" metric={`累計 ${dashboardData.statsSummary.bibles} 件の錬成`} icon={<BookOpen style={{ color: '#a78bfa' }} />} statusColor="#a78bfa" />
               </div>
 
-              <DraftingHub />
               <PerformanceTimeline matchups={dashboardData.matchups} />
 
               {/* 戦績サマリー (Riot API データ) */}
@@ -305,7 +294,6 @@ const Dashboard = () => {
         </AnimatePresence>
       </main>
 
-      <NewsTicker />
     </div>
   )
 }
