@@ -4,6 +4,7 @@ import time
 import argparse
 import logging
 import json
+import re
 from pathlib import Path
 from google import genai
 from google.genai import types
@@ -29,6 +30,37 @@ CACHE_DIR = settings.FORGE_DIR / "cache"
 CACHE_DIR.mkdir(parents=True, exist_ok=True)
 TEMP_DIR = Path("d:/my_work/scratch/temp_audio")
 TEMP_DIR.mkdir(parents=True, exist_ok=True)
+
+SUSPEND_FILE = Path("d:/my_work/scratch/ole_quota_suspended.json")
+
+def parse_retry_delay(err_msg: str) -> float:
+    """エラーメッセージからリトライ待機時間（秒）をパースする"""
+    # Please retry in 57.17405286s のような表記をパース
+    match = re.search(r"Please retry in\s+([0-9\.]+)\s*s", err_msg, re.IGNORECASE)
+    if match:
+        return float(match.group(1))
+    
+    # APIErrorのrawレスポンスにある 'retryDelay': '57s' をパース
+    match_sec = re.search(r"'retryDelay':\s*'([0-9]+)s'", err_msg)
+    if match_sec:
+        return float(match_sec.group(1))
+        
+    return 0.0
+
+def suspend_analysis(reason: str, duration_hours: int = 12):
+    """クォータ制限超過時に一時休止ファイルを書き出す"""
+    try:
+        import datetime
+        resume_time = datetime.datetime.now() + datetime.timedelta(hours=duration_hours)
+        data = {
+            "suspended_at": datetime.datetime.now().isoformat(),
+            "resume_time": resume_time.isoformat(),
+            "reason": reason
+        }
+        SUSPEND_FILE.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+        logger.warning(f"🛑 クォータ枯渇のためYouTube解析を一時休止します。再開予定: {resume_time.strftime('%Y-%m-%d %H:%M:%S')} (理由: {reason})")
+    except Exception as e:
+        logger.error(f"一時休止ファイルの書き込みに失敗: {e}")
 
 MODE_CONFIGS = {
     "TACTICAL": {
@@ -83,13 +115,13 @@ MODE_CONFIGS = {
 
 class OLEAnalyzerV3:
     def __init__(self, mode="TACTICAL", model_id=None):
-        self.api_key = settings.GEMINI_API_KEY
+        self.api_key = settings.GEMINI_API_KEY_FREE or settings.GEMINI_API_KEY
         if not self.api_key:
             logger.error("GEMINI_API_KEY is not set.")
             sys.exit(1)
         
         self.client = genai.Client(api_key=self.api_key)
-        self.model_id = model_id or settings.DEFAULT_MODEL
+        self.model_id = model_id or settings.OLE_MODEL
         self.mode = mode if mode in MODE_CONFIGS else "TACTICAL"
         self.config = MODE_CONFIGS[self.mode]
         
@@ -188,7 +220,16 @@ class OLEAnalyzerV3:
                     success = True
                     break
                 except Exception as e:
-                    wait_time = (2 ** attempt) * 30
+                    err_msg = str(e)
+                    is_daily_limit = "RequestsPerDay" in err_msg or "requests per day" in err_msg.lower() or "limit: 0" in err_msg
+                    parsed_delay = parse_retry_delay(err_msg)
+                    
+                    if is_daily_limit or parsed_delay > 300:
+                        reason = "デイリー制限（RequestsPerDay制限超過）" if is_daily_limit else f"長時間制限 ({parsed_delay}秒)"
+                        suspend_analysis(reason, duration_hours=12)
+                        raise e
+                    
+                    wait_time = parsed_delay if parsed_delay > 0 else (2 ** attempt) * 30
                     self.notify(f"⚠️ クォータ制限/エラー: {e}。{wait_time}s後に再試行...")
                     time.sleep(wait_time)
             
@@ -260,8 +301,22 @@ class OLEAnalyzerV3:
                 if cache_file.exists(): cache_file.unlink()
                 break
             except Exception as e:
-                self.notify(f"❌ 統合エラー: {e}")
-                time.sleep(30)
+                err_msg = str(e)
+                is_daily_limit = "RequestsPerDay" in err_msg or "requests per day" in err_msg.lower() or "limit: 0" in err_msg
+                parsed_delay = parse_retry_delay(err_msg)
+                
+                if is_daily_limit or parsed_delay > 300:
+                    reason = "最終統合時のデイリー制限超過" if is_daily_limit else f"最終統合時の長時間制限 ({parsed_delay}秒)"
+                    suspend_analysis(reason, duration_hours=12)
+                    output_path = None
+                    break
+                
+                wait_time = parsed_delay if parsed_delay > 0 else 30
+                self.notify(f"❌ 統合エラー: {e}。{wait_time}s後に再試行...")
+                time.sleep(wait_time)
+                if attempt == 2:
+                    self.notify("⚠️ 最終統合に失敗しました。セグメントキャッシュは保持します。")
+                    output_path = None # 失敗した場合はパスを返さない
 
         # Cleanup
         try:
@@ -269,7 +324,7 @@ class OLEAnalyzerV3:
             if os.path.exists(audio_path): os.remove(audio_path)
         except: pass
         
-        return str(output_path)
+        return str(output_path) if output_path else None
 
 def main():
     parser = argparse.ArgumentParser(description="OLE YouTube Analyzer v3.1")

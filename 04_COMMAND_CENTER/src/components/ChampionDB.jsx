@@ -2,7 +2,9 @@ import { useEffect, useState, useMemo } from 'react'
 import { supabase } from '../lib/supabase'
 import { getChampIcon, getChampSplash } from '../lib/ddragon'
 import { motion } from 'framer-motion'
-import { ChevronLeft, Search, Save, BookOpen, RefreshCw, Zap, ShieldAlert, Swords, Shield } from 'lucide-react'
+import { ChevronLeft, Search, Save, BookOpen, RefreshCw, Zap, ShieldAlert, Swords, Shield, Copy, Check, FileText, Edit2, Eye } from 'lucide-react'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 
 const ChampionDB = ({ onBack }) => {
   const [champions, setChampions] = useState([])
@@ -22,9 +24,12 @@ const ChampionDB = ({ onBack }) => {
     counterChampions: '',
     mustBanChampions: '',
     pickRecommendation: '',
-    strategy: ''
+    strategy: '',
+    note_draft: ''
   })
   const [saving, setSaving] = useState(false)
+  const [copied, setCopied] = useState(false)
+  const [noteDraftMode, setNoteDraftMode] = useState('preview') // 'preview' | 'edit'
   
   // 戦績データ
   const [stats, setStats] = useState({ matches: 0, wins: 0, kda: '0.00' })
@@ -75,7 +80,8 @@ const ChampionDB = ({ onBack }) => {
       counterChampions: rd.counterChampions || '',
       mustBanChampions: rd.mustBanChampions || '',
       pickRecommendation: rd.pickRecommendation || '',
-      strategy: noteData?.strategy || ''
+      strategy: noteData?.strategy || '',
+      note_draft: rd.note_draft || ''
     })
   }
 
@@ -141,7 +147,8 @@ const ChampionDB = ({ onBack }) => {
         fullClearTime: dataFields.fullClearTime,
         counterChampions: dataFields.counterChampions,
         mustBanChampions: dataFields.mustBanChampions,
-        pickRecommendation: dataFields.pickRecommendation
+        pickRecommendation: dataFields.pickRecommendation,
+        note_draft: dataFields.note_draft
       }
     }
     const { error } = await supabase.from('matchup_sentinel').upsert(data, { onConflict: 'matchup_id' })
@@ -253,6 +260,59 @@ const ChampionDB = ({ onBack }) => {
             <h3 style={{ fontSize: '15px', fontWeight: 800, color: '#10b981', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}><Shield size={18} /> ピック推奨 (先出し/後出し)</h3>
             <textarea value={dataFields.pickRecommendation} onChange={e => setField('pickRecommendation', e.target.value)} placeholder="例: 先出し非推奨。相手の構成が見えてから出す後出しカウンターピック向け..." style={{ width: '100%', height: '100px', padding: '12px', background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(16,185,129,0.3)', borderRadius: '8px', color: '#f0f5f5', fontSize: '13px', outline: 'none', resize: 'vertical' }} />
           </div>
+        </div>
+
+        {/* noteドラフト記事（AI自動生成＆ブラッシュアップ用） */}
+        <div className="glass-card" style={{ padding: '24px', borderTop: '3px solid #e11d48', marginTop: '24px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
+            <h3 style={{ fontSize: '16px', fontWeight: 800, fontFamily: "'Space Grotesk', monospace", display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <FileText size={18} style={{ color: '#e11d48' }} /> noteドラフト記事 (自動ブラッシュアップ)
+            </h3>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <div style={{ display: 'flex', background: 'rgba(0,0,0,0.3)', padding: '4px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                <button onClick={() => setNoteDraftMode('preview')}
+                  style={{ padding: '6px 12px', borderRadius: '6px', border: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: 700, transition: 'all 0.2s', background: noteDraftMode === 'preview' ? '#e11d48' : 'transparent', color: noteDraftMode === 'preview' ? '#fff' : '#a0a5b0', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <Eye size={14} /> プレビュー
+                </button>
+                <button onClick={() => setNoteDraftMode('edit')}
+                  style={{ padding: '6px 12px', borderRadius: '6px', border: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: 700, transition: 'all 0.2s', background: noteDraftMode === 'edit' ? '#e11d48' : 'transparent', color: noteDraftMode === 'edit' ? '#fff' : '#a0a5b0', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <Edit2 size={14} /> 編集
+                </button>
+              </div>
+              <button 
+                onClick={() => {
+                  navigator.clipboard.writeText(dataFields.note_draft);
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 2000);
+                }}
+                style={{ padding: '8px 16px', background: 'rgba(255,255,255,0.05)', color: copied ? '#22c55e' : '#f0f5f5', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+              >
+                {copied ? <><Check size={16} /> コピー完了</> : <><Copy size={16} /> Markdownをコピー</>}
+              </button>
+            </div>
+          </div>
+          <p style={{ color: '#a0a5b0', fontSize: '13px', marginBottom: '16px', lineHeight: 1.5 }}>
+            このフィールドは、最新パッチ情報やあなたの反省メモをベースにAIが自動でブラッシュアップします。<br/>
+            直接追記・編集することも可能で、保存すると次回の自動生成のベースとして引き継がれます。
+          </p>
+          
+          {noteDraftMode === 'edit' ? (
+            <textarea 
+              value={dataFields.note_draft} onChange={e => setField('note_draft', e.target.value)}
+              placeholder="# 究極の攻略バイブル..."
+              style={{ width: '100%', height: '400px', padding: '16px', background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(225,29,72,0.3)', borderRadius: '12px', color: '#f0f5f5', fontSize: '14px', lineHeight: 1.6, outline: 'none', resize: 'vertical', fontFamily: 'monospace' }}
+            />
+          ) : (
+            <div className="markdown-preview" style={{ width: '100%', minHeight: '400px', padding: '24px', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '12px', color: '#e0e5ea', fontSize: '14px', lineHeight: 1.8 }}>
+              {dataFields.note_draft ? (
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  {dataFields.note_draft}
+                </ReactMarkdown>
+              ) : (
+                <p style={{ color: '#a0a5b0', fontStyle: 'italic' }}>まだドラフト記事がありません。情報が蓄積されるとAIが自動生成します。</p>
+              )}
+            </div>
+          )}
         </div>
 
         {/* 全体メモ（トレンド・動画）エディタ */}

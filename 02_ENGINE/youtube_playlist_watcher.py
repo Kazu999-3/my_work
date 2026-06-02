@@ -19,6 +19,19 @@ logger = logging.getLogger("PlaylistWatcher")
 
 # PIDファイルのパス
 PID_FILE = Path("d:/my_work/scratch/youtube_playlist_watcher.pid")
+PROCESSED_VIDEOS_FILE = Path("d:/my_work/scratch/youtube_processed_videos.txt")
+
+def is_video_processed(video_id: str) -> bool:
+    """処理済み履歴にあるか確認する"""
+    if not PROCESSED_VIDEOS_FILE.exists():
+        return False
+    processed = PROCESSED_VIDEOS_FILE.read_text().splitlines()
+    return video_id in processed
+
+def mark_video_processed(video_id: str):
+    """動画を処理済み履歴に追加する"""
+    with open(PROCESSED_VIDEOS_FILE, "a", encoding="utf-8") as f:
+        f.write(f"{video_id}\n")
 
 def check_single_instance():
     """PIDファイルを使用して二重起動を防止する"""
@@ -76,6 +89,31 @@ def get_tasks_via_ytdlp(playlist_id: str):
 
 def process_playlists():
     """プレイリストを巡回し、動画を解析・処理する"""
+    # 🛑 クォータ枯渇による一時休止のチェック
+    SUSPEND_FILE = Path("d:/my_work/scratch/ole_quota_suspended.json")
+    if SUSPEND_FILE.exists():
+        try:
+            import datetime
+            data = json.loads(SUSPEND_FILE.read_text(encoding="utf-8"))
+            resume_time_str = data.get("resume_time")
+            if resume_time_str:
+                resume_time = datetime.datetime.fromisoformat(resume_time_str)
+                if datetime.datetime.now() < resume_time:
+                    logger.info(f"⏸️ クォータ制限によりYouTube解析を休止中です。(再開予定: {resume_time.strftime('%Y-%m-%d %H:%M:%S')}、理由: {data.get('reason')})")
+                    return
+                else:
+                    # 期限切れの場合は休止ファイルを削除
+                    SUSPEND_FILE.unlink(missing_ok=True)
+                    logger.info("🌅 クォータ休止期間が終了したため、解析を再開します。")
+        except Exception as e:
+            logger.error(f"一時休止ファイルのチェックに失敗: {e}")
+
+    # 💰 コスト防止: 無料枠キーが未設定の場合、有料キーの浪費を防ぐため全スキップ
+    free_key = os.environ.get("GEMINI_API_KEY_FREE")
+    if not free_key:
+        logger.info("⏸️ GEMINI_API_KEY_FREE が未設定のため、YouTube解析をスキップします。（有料キーのコスト防止）")
+        return
+    
     logger.info("📡 タスクを取得中...")
     
     # 1. GAS ゲートウェイからタスク取得を試みる
@@ -109,8 +147,8 @@ def process_playlists():
         report_prefix = {"TACTICAL": "TACTICAL", "STUDY": "STUDY", "CONTENT": "NOTE"}.get(mode, "TACTICAL")
         expected_path = settings.FORGE_DIR / f"note_drafts/youtube_intel/{mode}/{report_prefix}_{video_id}.md"
         
-        if expected_path.exists():
-            logger.info(f"⏩ 既存レポートあり。スキップして削除を試行: {title}")
+        if expected_path.exists() or is_video_processed(video_id):
+            logger.info(f"⏩ 既存レポートまたは処理済み履歴あり。スキップして削除を試行: {title}")
             gas_gateway.remove_youtube_item(remove_id)
             continue
 
@@ -126,20 +164,30 @@ def process_playlists():
             # 1時間以上の動画はスキップ (28時間動画対策)
             if video_info.get("duration", 0) > 3600:
                 logger.warning(f"⚠️ 動画が長すぎます ({video_info['duration']}s)。スキップします: {title}")
-                # プレイリストからは削除せず、ユーザーに通知
                 herald.notify_error(f"長時間動画スキップ: {title} ({video_info['duration']//3600}時間)")
                 continue
 
             report_path = analyzer.analyze(video_info)
             
-            if report_path:
-                logger.info(f"✅ 解析完了。プレイリストから削除を依頼中: {title}")
-                success = gas_gateway.remove_youtube_item(remove_id) 
+            if report_path and Path(report_path).exists():
+                logger.info(f"✅ 解析完了。履歴に追加し、プレイリストから削除を依頼中: {title}")
+                mark_video_processed(video_id)
+                success = gas_gateway.remove_youtube_item(remove_id)
                 if success:
                     logger.info(f"🗑️ 削除成功: {title}")
-                    herald.notify_progress(f"解析完了・プレイリストから削除しました: {title} ({mode})", portal_link=True)
+                    herald.notify_progress(f"解析完了: {title} ({mode})", portal_link=True)
                 else:
-                    logger.warning(f"⚠️ 削除失敗（プレイリスト内でのID不一致の可能性）: {title}")
+                    logger.warning(f"⚠️ 削除失敗（ID不一致の可能性）: {title}")
+            else:
+                # キャッシュが残っている場合 = クォータ切れによる一時的な失敗
+                # → 処理済みにせず次のループで再挑戦させる
+                from v2_CORE.settings import settings as _s
+                cache_dir = _s.FORGE_DIR / "cache"
+                cache_exists = any(cache_dir.glob(f"ole_cache_{video_id}_*.json")) if cache_dir.exists() else False
+                if cache_exists:
+                    logger.warning(f"⏳ クォータ切れによる一時失敗（キャッシュ保持中）。次回ループで再試行します: {title}")
+                else:
+                    logger.warning(f"⚠️ 解析に失敗しました（キャッシュなし）。履歴には追加しません: {title}")
             
         except Exception as e:
             logger.error(f"❌ 動画 {title} の処理中にエラー: {e}")

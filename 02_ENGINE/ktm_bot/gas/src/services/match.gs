@@ -296,7 +296,7 @@ function processMatchReportQueue(e) {
 /**
  * 実際のRiot API通信とDiscord投稿処理
  */
-function coreExecuteMatchReport(teamBlue, teamRed, winner) {
+function coreExecuteMatchReport(teamBlue, teamRed, winner, spectators = []) {
   const apiKey = PropertiesService.getScriptProperties().getProperty('RIOT_API_KEY');
   if (!apiKey) return;
   
@@ -399,20 +399,31 @@ function coreExecuteMatchReport(teamBlue, teamRed, winner) {
   
   const mvpName = mvp ? (puuidToDiscordName[mvp.puuid] || mvp.riotIdGameName || mvp.summonerName) : "不明";
   
-  // ━━━ Riot APIのKDAをBULKシートに反映 ━━━
+  // ━━━ Riot APIのKDA/パフォーマンススコアをBULKシートに反映 ━━━
   try {
     const bulkSheet = getSheet(SHEET_NAMES.BULK);
     if (bulkSheet) {
       const bulkData = bulkSheet.getDataRange().getValues();
       const roles = ['TOP','JG','MID','ADC','SUP'];
       
-      // 参加者名 → KDA(小数点1桁) のマップを作成
+      const blueKills = participants.filter(p => p.teamId === 100).reduce((sum, p) => sum + p.kills, 0);
+      const redKills = participants.filter(p => p.teamId === 200).reduce((sum, p) => sum + p.kills, 0);
+      
+      // 参加者名 → ロール のマッピング
+      const playerRoleMap = {};
+      allPlayers.forEach(p => {
+        playerRoleMap[p.name.toUpperCase()] = p.role;
+      });
+      
+      // 参加者名 → 総合パフォーマンススコア のマップを作成
       const kdaFromRiot = {};
       participants.forEach(p => {
         const dName = puuidToDiscordName[p.puuid] || p.riotIdGameName || p.summonerName;
         if (dName) {
-          const kda = (p.kills + p.assists) / Math.max(1, p.deaths);
-          kdaFromRiot[dName] = Math.round(kda * 10) / 10;
+          const role = playerRoleMap[dName.toUpperCase()] || 'MID';
+          const teamKills = p.teamId === 100 ? blueKills : redKills;
+          const perfScore = calculatePerformanceScore(p, role, targetMatch.info.gameDuration, teamKills);
+          kdaFromRiot[dName] = perfScore;
         }
       });
       
@@ -437,7 +448,7 @@ function coreExecuteMatchReport(teamBlue, teamRed, winner) {
               bulkSheet.getRange(i + 1, redKdaCol + 1).setValue(kdaFromRiot[redName]);
             }
           });
-          console.log(`BULKシート行${i+1}のKDAをRiot APIデータで更新しました`);
+          console.log(`BULKシート行${i+1}のKDAをRiot APIデータ(パフォーマンススコア)で更新しました`);
           break; // 最新1件のみ更新
         }
       }
@@ -459,6 +470,15 @@ function coreExecuteMatchReport(teamBlue, teamRed, winner) {
   };
   
   postEmbedToDiscord([embed], CONFIG.MATCH_CHANNEL_ID || "1485636511679651871", "🔄 **自動リザルトレポート**");
+
+  // ━━━ MMRの自動計算・更新の実行 ━━━
+  try {
+    console.log("MMRの自動更新を実行します...");
+    uiUpdateRates(winner, true, spectators);
+    console.log("MMRの自動更新が完了しました。");
+  } catch (updateErr) {
+    console.error("MMRの自動更新中にエラーが発生しました:", updateErr);
+  }
 }
 
 /**
@@ -474,4 +494,50 @@ function uiClearAllBulkCalculatedFlags() {
   const values = range.getValues();
   const cleared = values.map(r => [String(r[0]).replace(/✅計算済/g, "").trim()]);
   range.setValues(cleared);
+}
+
+/**
+ * 📊 Riot APIスタッツに基づき、ロールに応じた総合パフォーマンススコア(1.0〜8.0)を算出する
+ */
+function calculatePerformanceScore(p, role, gameDurationSec, teamKills) {
+  const durationMin = gameDurationSec / 60;
+  if (durationMin <= 0) return 3.0;
+  
+  const rawKda = (p.kills + p.assists) / Math.max(1, p.deaths);
+  
+  const csPerMin = ((p.totalMinionsKilled || 0) + (p.neutralMinionsKilled || 0)) / durationMin;
+  const dmgPerMin = (p.totalDamageDealtToChampions || 0) / durationMin;
+  const tankPerMin = ((p.totalDamageTaken || 0) + (p.damageSelfMitigated || 0)) / durationMin;
+  const visionPerMin = (p.visionScore || 0) / durationMin;
+  
+  const kp = teamKills > 0 ? (p.kills + p.assists) / teamKills : 0;
+  
+  let score = rawKda;
+  
+  switch(role) {
+    case 'TOP':
+      score += (csPerMin - 6.0) * 0.3;
+      score += (tankPerMin - 800) * 0.0005;
+      break;
+    case 'JG':
+      score += (kp - 0.5) * 1.0;
+      score += (tankPerMin - 600) * 0.0003;
+      break;
+    case 'MID':
+      score += (csPerMin - 6.5) * 0.3;
+      score += (dmgPerMin - 600) * 0.001;
+      break;
+    case 'ADC':
+      score += (csPerMin - 7.0) * 0.3;
+      score += (dmgPerMin - 700) * 0.001;
+      break;
+    case 'SUP':
+      score += (visionPerMin - 1.2) * 0.5;
+      score += (kp - 0.5) * 1.0;
+      break;
+  }
+  
+  // 制限ガード
+  score = Math.max(1.0, Math.min(8.0, score));
+  return Math.round(score * 10) / 10;
 }

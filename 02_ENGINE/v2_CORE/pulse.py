@@ -312,9 +312,9 @@ class SovereignPulse:
                     # 3. 各チャンピオンの統計収集
                     self.check_lolalytics_stats(patch_no)
                     
-                    # 記事ドラフトの生成
-                    for champion in settings.WATCH_CHAMPIONS:
-                        forge.generate_draft(champion, patch_no)
+                    # 記事ドラフトの生成 (APIクォータ保護のため自動全キャラ更新を停止)
+                    # for champion in settings.WATCH_CHAMPIONS:
+                    #     forge.generate_draft(champion, patch_no)
                     
                 self.last_patch_url = latest_link
         except Exception as e:

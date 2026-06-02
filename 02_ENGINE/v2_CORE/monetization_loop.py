@@ -15,7 +15,7 @@ dotenv.load_dotenv(Path("D:/my_work/.env"))
 logger = logging.getLogger("MonetizationLoop")
 
 DISCORD_WEBHOOK = os.environ.get("DISCORD_WEBHOOK")
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY") or os.environ.get("GEMINI_API_KEY_FREE")
 
 if GEMINI_API_KEY:
     client = genai.Client(api_key=GEMINI_API_KEY)
@@ -51,7 +51,7 @@ def generate_x_promo_thread(champion_name: str, bible_text: str) -> str:
     {marketing_rules}
     
     バイブルの本文を読み込み、Xで拡散されやすいスレッド（3連投）の原稿を作成してください。
-    以下の{champion_name}の攻略バイブルを元に、X（Twitter）で爆発的にバズり、noteの購入へ誘導するための
+    以下の{champion_name}の攻略記事を元に、X（Twitter）での反応を良くし、noteの購入へ誘導するための
     「煽り」と「有益性」が同居したツリー形式（スレッド形式）の投稿原稿を作成してください。
     
     【厳格なルール (Ghost Writer DRM)】
@@ -98,7 +98,7 @@ def calculate_dynamic_price(trending_champ: str, item_impact: str) -> str:
 
 def run_monetization_loop():
     """トレンド検知（アイテム起点） ➔ バイブル生成 ➔ X原稿 のループ"""
-    logger.info("💰 自動錬金術ループ（アイテム・ルーン起点）を開始します...")
+    logger.info("💰 自動生成処理（アイテム・ルーン起点）を開始します...")
     
     # 1. アイテム・ルーン起点のトレンド調査
     from v2_CORE.item_scout import ItemScout
@@ -115,19 +115,19 @@ def run_monetization_loop():
         # トレンドアイテムに合致するチャンプからランダムで1体選択
         trending_champ = random.choice(beneficiaries)
         meta_context = f"【{item_name}】の影響: {impact}"
-        notify_msg = f"🚨 **[Sovereign Scout]** トレンド検知: **{item_name}** がメタを支配中。\n恩恵を受ける **{trending_champ}** の本気バイブルを生成します。\n文脈: {impact}"
+        notify_msg = f"🚨 **[Sovereign Scout]** トレンド検知: **{item_name}** が流行中。\n恩恵を受ける **{trending_champ}** の攻略記事を生成します。\n文脈: {impact}"
         
     logger.info(f"📈 ターゲット選定: {trending_champ} (Context: {meta_context})")
     notify_discord(notify_msg)
     
-    # 2. バイブル（記事）の錬成とChampionDBの更新
+    # 2. 攻略記事の生成とデータベースの更新
     from v2_CORE.bible_forge import BibleForge
-    logger.info(f"📖 {trending_champ} の本気バイブルを錬成中... (Context: {meta_context})")
+    logger.info(f"📖 {trending_champ} の攻略記事を生成中... (Context: {meta_context})")
     
     forge_engine = BibleForge()
     output_path = forge_engine.generate_bible(trending_champ, meta_context=meta_context)
     if not output_path or not output_path.exists():
-        notify_discord(f"❌ {trending_champ} のバイブル錬成に失敗しました。")
+        notify_discord(f"❌ {trending_champ} の攻略記事生成に失敗しました。")
         return
         
     bible_text = output_path.read_text(encoding="utf-8")
@@ -172,7 +172,7 @@ def run_monetization_loop():
             logger.error(f"Supabase JSON sync error: {e}")
             
     # 4. 完全自動パブリッシュ (X & note)
-    logger.info("🚀 完全自動パブリッシュ（錬金術最終フェーズ）を開始します...")
+    logger.info("🚀 完全自動パブリッシュを開始します...")
     try:
         from v2_CORE.publisher import XPublisher, NotePublisher
         
@@ -181,7 +181,7 @@ def run_monetization_loop():
         
         # noteへ自動パブリッシュ
         note_pub = NotePublisher(headless=True)
-        note_title = f"【最新メタ】{trending_champ} 独占勝率レポート＆完全攻略バイブル"
+        note_title = f"【最新メタ】{trending_champ} 完全攻略ガイド"
         note_url = note_pub.post_draft(
             title=note_title,
             markdown_body=bible_text,
@@ -220,10 +220,10 @@ def run_monetization_loop():
         
     # 5. 完了通知
     success_msg = (
-        f"✅ **[自動錬金術ループ完了]**\n"
+        f"✅ **[自動生成プロセス完了]**\n"
         f"対象: **{trending_champ}**\n\n"
-        f"1️⃣ **ChampionDB更新**: 最新の立ち回り・ビルドを辞典にマージ完了。\n"
-        f"2️⃣ **バイブル生成**: `{output_path.name}` に攻略記事を出力しました。\n"
+        f"1️⃣ **データベース更新**: 最新の立ち回り・ビルドをデータベースにマージ完了。\n"
+        f"2️⃣ **記事生成**: `{output_path.name}` に攻略記事を出力しました。\n"
         f"3️⃣ **X販促同期**: Supabaseの `x_promo_thread` にデータを同期しました。\n"
         f"4️⃣ **自動パブリッシュ**: {publish_status}"
     )

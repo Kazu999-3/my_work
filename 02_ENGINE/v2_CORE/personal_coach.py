@@ -10,14 +10,16 @@ import requests
 import json
 import dotenv
 from google import genai
+from google.genai import types
 from v2_CORE.settings import settings
 from v2_CORE.database import db
 
 dotenv.load_dotenv(settings.ROOT_DIR / ".env")
 logger = logging.getLogger("PersonalCoach")
 
-if os.getenv("GEMINI_API_KEY"):
-    client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+api_key = os.getenv("GEMINI_API_KEY_FREE") or os.getenv("GEMINI_API_KEY")
+if api_key:
+    client = genai.Client(api_key=api_key)
 else:
     client = None
 
@@ -157,6 +159,17 @@ class PersonalCoach:
             logger.info("No recent matches found.")
             return
             
+        # 既読ガード: すでに分析済みであればスキップ
+        LAST_MATCH_FILE = Path("d:/my_work/scratch/last_coached_match.txt")
+        if LAST_MATCH_FILE.exists():
+            try:
+                last_match = LAST_MATCH_FILE.read_text(encoding="utf-8").strip()
+                if last_match == match_id:
+                    logger.info(f"⏩ 試合 {match_id} はすでにコーチング分析済みです。スキップします。")
+                    return
+            except Exception as e:
+                logger.error(f"Failed to read last match file: {e}")
+            
         details = self.get_match_details(match_id, puuid)
         if details:
             print(f"--- Latest Match Analysis: {self.riot_id} ---")
@@ -170,6 +183,14 @@ class PersonalCoach:
             print(advice)
             
             self.log_to_supabase(details, advice)
+            
+            # 既読の記録
+            try:
+                LAST_MATCH_FILE.write_text(match_id, encoding="utf-8")
+                logger.info(f"💾 試合 {match_id} をコーチング済みとして記録しました。")
+            except Exception as e:
+                logger.error(f"Failed to write last match file: {e}")
+                
             return details
 
 if __name__ == "__main__":

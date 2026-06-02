@@ -31,7 +31,7 @@ class ABTestManager:
         logger.info("🧪 過去の投稿データを元にA/Bテストの勝者を分析中...")
         
         from google import genai
-        api_key = os.getenv("GEMINI_API_KEY")
+        api_key = os.getenv("GEMINI_API_KEY_FREE") or os.getenv("GEMINI_API_KEY")
         if not api_key:
             logger.error("GEMINI_API_KEY is missing.")
             return

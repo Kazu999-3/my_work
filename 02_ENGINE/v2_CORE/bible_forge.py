@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import os
 import sys
 import time
@@ -20,7 +21,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 class BibleForge:
     """
     Tool J: Master Bible Forge v1.0
-    10,000文字級の「本気」バイブルを分割生成して結合するエンジン。
+    高品質な攻略記事を分割生成して結合するエンジン。
     """
     def __init__(self):
         self.api_key = os.environ.get("GEMINI_API_KEY")
@@ -39,8 +40,8 @@ class BibleForge:
         try:
             payload = {
                 "embeds": [{
-                    "title": f"👑 究極の書、完成せり：{champ}",
-                    "description": f"パッチ 16.8.1 対応の10,000文字級『本気バイブル』の鍛造が完了しました。\n\n**ファイルパス:** `{file_path}`",
+                    "title": f"✅ 攻略記事生成完了：{champ}",
+                    "description": f"パッチ 16.8.1 対応の攻略記事の生成が完了しました。\n\n**ファイルパス:** `{file_path}`",
                     "color": 0xFFD700, # Gold
                     "timestamp": datetime.now().isoformat(),
                     "footer": {"text": "Antigravity Bible Forge v1.1"}
@@ -70,114 +71,85 @@ class BibleForge:
             except Exception as e:
                 logging.error(f"Failed to load marketing reference: {e}")
         
-        # 章の定義
-        sections = [
-            {
-                "title": "🎭 序章：心理的支配とメタの解釈",
-                "focus": "読者の心を掴む煽り、パッチメタにおける存在意義、心理的優位性の構築。AI臭を一蹴する強い言葉。"
-            },
-            {
-                "title": "🧭 第1章：適応型ビルド理論と深層統計",
-                "focus": "状況別のアイテム分岐、ルーンの数学的根拠、Hidden Stat（隠れた勝率スパイク）の解説。"
-            },
-            {
-                "title": "⚡ 第2章：ミクロの極致・スキルの『呼吸』",
-                "focus": "AAキャンセル、隠しコンボ、エフェクトの隠蔽、プロ級の操作技術を詳細に言語化。"
-            },
-            {
-                "title": "🗺️ 第3章：マクロプロトコル・戦場の支配",
-                "focus": "ジャングルルート（時間指定）、オブジェクト優先順位、時間帯別の立ち回り。"
-            },
-            {
-                "title": "⚔️ 第4章：マッチアップ・全方位制圧マトリクス",
-                "focus": "主要対面への具体的なカウンタープラン、スキル交換のタイミング、心理戦の仕掛け方。"
-            },
-            {
-                "title": "🎓 終章：王への道・明日からの宿題",
-                "focus": "今日から意識を変えるための一つの行動、読者への激励。"
-            }
-        ]
+        prompt = f"""
+        League of Legendsの超ハイエンドな攻略記事（バイブル）を作成しています。
+        ターゲットは「本気で勝ちたい、他を圧倒したいプレイヤー」です。
         
-        full_markdown = []
+        【現在の対象チャンピオン】: {champion_name}
+        {meta_prompt}
+        【追加コンテキスト】: {additional_context}
         
-        for i, sec in enumerate(sections):
-            logging.info(f"Forging Section {i+1}/{len(sections)}: {sec['title']}")
-            
-            prompt = f"""
-            League of Legendsの超ハイエンドな攻略記事（バイブル）を作成しています。
-            ターゲットは「本気で勝ちたい、他を圧倒したいプレイヤー」です。
-            
-            【現在の対象チャンピオン】: {champion_name}
-            【この章のタイトル】: {sec['title']}
-            【重点項目】: {sec['focus']}
-            {meta_prompt}
-            【追加コンテキスト】: {additional_context}
-            
-            【厳格な執筆ルール (Ghost Writer 制約)】
-            1. **圧倒的な密度**: 1つの章だけで1,500～2,000文字程度の圧倒的ボリュームを執筆してください。
-            2. **Antigravityスタイル**: 「～だ」「～である」といった強い口調。感情を揺さぶる論理的かつ情熱的な煽り。
-            3. **情報の具体性**: コンボ入力、秒数、距離、心理状態の変化を具体的に記述してください。
-            4. **Anti-AI-Smell**: 挨拶、まとめ（「いかがでしたか？」）、メタな構造宣言（「本記事では〜」）、保険表現（「状況によりますが」）、AI特有のテンプレ比喩（「羅針盤」「架け橋」）は絶対に禁止。
-            5. **「ティアリスト」形式の安易な格付けは禁止**: 具体的な戦術的優位性を論理で語ってください。
-            6. **Evidence Gap**: 具体的なプロの動きや対面事例を挙げ、「いつ・どこで・何が起きたか」の架空ではない証拠感を演出してください。
-            """
-            
-            max_retries = 3
-            section_success = False
-            for attempt in range(max_retries):
-                try:
-                    response_text = generate_content_safe(
-                        self.client,
-                        prompt,
-                        self.model_id,
-                        config=types.GenerateContentConfig(
-                            temperature=0.75,
-                            top_p=0.95,
-                            max_output_tokens=4000
-                        ),
-                        feature_name="bible_forge"
-                    )
-                    
-                    if not response_text or response_text.startswith("⚠️") or response_text.startswith("❌"):
-                        raise Exception("BibleForge AI generation failed due to API error")
-                        
-                    text = response_text.strip()
-                    if len(text) > 500: # 最低500文字以上の出力を保証
-                        full_markdown.append(text)
-                        logging.info(f"Section {i+1} completed ({len(text)} chars).")
-                        section_success = True
-                        # クォータ制限徹底回避のため長めのインターバル
-                        time.sleep(60)
-                        break 
-                    else:
-                        logging.warning(f"Section {i+1} output too short ({len(text)} chars). Retrying...")
-                except Exception as e:
-                    logging.warning(f"Forge Error ({e}). Retrying... (Attempt {attempt+1})")
-                    time.sleep(10 * (attempt + 1))
-            
-            if not section_success:
-                logging.error(f"Abandoning forge for {champion_name} due to failure at section {i+1}")
-                return None
+        【執筆ルール】
+        以下の構成に従い、Markdown形式で**1つの完全な記事として一気に出力**してください。
+        合計で3000〜5000文字程度の非常に詳細な解説を記述してください。
+        
+        【必須構成】
+        1. はじめに：現在のメタにおける立ち位置 (存在意義と強みの解説)
+        2. 第1章：ビルドとルーンの選択 (状況別のアイテム分岐、ルーンの選択理由)
+        3. 第2章：コンボと基本操作 (AAキャンセル、スキルの使い方、具体的な操作技術)
+        4. 第3章：立ち回りとマクロ戦略 (ジャングルルートやレーン戦の動き、時間帯別の立ち回り)
+        5. 第4章：マッチアップと対策 (主要な対面への具体的な対策、有利不利)
+        6. まとめ：実践に向けて (実践で意識すべきポイントの総括)
 
-        # 結合とディレクトリ保存
-        if not full_markdown or len(full_markdown) < len(sections):
-            logging.error("Not all sections were forged. Aborting file write.")
+        【細部ルール】
+        1. 文体：「～です」「～ます」調で、丁寧かつ論理的で分かりやすい説明。
+        2. 具体性：コンボ入力、秒数、距離などの具体的な数値を交えること。
+        3. AI感の排除：不自然な比喩表現や冗長な挨拶は避け、端的に要点を伝えること。
+        4. 客観的評価：安易な格付けは避け、具体的な理由とデータに基づいて評価を語ること。
+        """
+        
+        max_retries = 3
+        final_content = ""
+        for attempt in range(max_retries):
+            try:
+                response_text = generate_content_safe(
+                    self.client,
+                    prompt,
+                    self.model_id,
+                    config=types.GenerateContentConfig(
+                        temperature=0.75,
+                        top_p=0.95,
+                        max_output_tokens=8192
+                    ),
+                    feature_name="bible_forge"
+                )
+                
+                if not response_text or response_text.startswith("⚠️") or response_text.startswith("❌"):
+                    raise Exception("BibleForge AI generation failed due to API error")
+                    
+                text = response_text.strip()
+                if len(text) > 1500: # 最低1500文字以上の出力を保証
+                    final_content = text
+                    logging.info(f"Bible generated successfully in one shot ({len(text)} chars).")
+                    break 
+                else:
+                    logging.warning(f"Output too short ({len(text)} chars). Retrying...")
+            except Exception as e:
+                err_msg = str(e).lower()
+                if "429" in err_msg or "resource_exhausted" in err_msg or "quota" in err_msg:
+                    wait_time = 65 * (attempt + 1)
+                    logging.warning(f"Rate Limit (429) Error detected. Waiting for {wait_time} seconds before retrying... (Attempt {attempt+1})")
+                    time.sleep(wait_time)
+                else:
+                    logging.warning(f"Forge Error ({e}). Retrying... (Attempt {attempt+1})")
+                    time.sleep(20 * (attempt + 1))
+        
+        if not final_content:
+            logging.error(f"Abandoning forge for {champion_name} due to failure.")
             return None
-            
-        final_content = "\n\n---\n\n".join(full_markdown)
         
         # --- 自己進化（マーケティング部によるレビューと再構築） ---
         logging.info("--- 🧬 Initiating Auto-Evolution Phase ---")
         final_content = evolution_engine.evolve_draft(final_content)
         
-        output_file = Path(f"d:/my_work/03_FACTORY/PRODUCTS/ARTICLES/HONKI_BIBLE_{champion_name}_16.8.1.md")
+        output_file = Path(f"d:/my_work/03_FACTORY/PRODUCTS/ARTICLES/ARTICLE_{champion_name}_16.8.1.md")
         output_file.parent.mkdir(parents=True, exist_ok=True)
         output_file.write_text(final_content, encoding="utf-8")
         
-        logging.info(f"--- SUCCESS! 'Honki' Bible forged at: {output_file} ({len(final_content)} chars) ---")
+        logging.info(f"--- SUCCESS! Article generated at: {output_file} ({len(final_content)} chars) ---")
         self.send_notification(champion_name, output_file)
         
-        # --- 自動でChampionDB (辞典) をマージ・更新する ---
+        # --- 自動でChampionDB をマージ・更新する ---
         try:
             from v2_CORE.champ_db_updater import update_champion_db
             # チャンピオン名はファイル名などから適切に取るのがベターだが、ここでは引数のchampion_nameを使用

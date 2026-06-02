@@ -17,7 +17,7 @@ class AIStrategist:
     最高品質のシステム（プロンプトやロジック）を自律的に開発・進化させる。
     """
     def __init__(self):
-        self.api_key = os.getenv("GEMINI_API_KEY")
+        self.api_key = os.getenv("GEMINI_API_KEY_FREE") or os.getenv("GEMINI_API_KEY")
         if self.api_key:
             self.client = genai.Client(api_key=self.api_key)
             self.model_id = "gemini-2.5-flash"

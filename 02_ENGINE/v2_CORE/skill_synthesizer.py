@@ -21,10 +21,10 @@ class SkillSynthesizer:
     Pythonコードを自動生成し、動的にシステムへ組み込む。
     """
     def __init__(self):
-        self.api_key = settings.GEMINI_API_KEY
+        self.api_key = settings.GEMINI_API_KEY_FREE or settings.GEMINI_API_KEY
         self.client = genai.Client(api_key=self.api_key) if self.api_key else None
         
-        self.dynamic_dir = settings.ENGINE_DIR / "v2_CORE" / "dynamic_skills"
+        self.dynamic_dir = settings.WORKSHOP_DIR / "v2_CORE" / "dynamic_skills"
         self.dynamic_dir.mkdir(parents=True, exist_ok=True)
         
         # __init__.py が無ければ作成

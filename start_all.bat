@@ -1,45 +1,56 @@
 @echo off
-:: UTF-8 コードページを強制適用して日本語や絵文字の文字化けを防止
 chcp 65001 >nul
-title SOVEREIGN OS: UNIFIED MASTER ORCHESTRATOR
+title SOVEREIGN OS
 cd /d "%~dp0"
 
 echo ==================================================
-echo   [START] SOVEREIGN OS: Unified Master Orchestrator
-echo   (YouTube + Research + Forge + Sync + Pulse)
+echo   SOVEREIGN OS: Unified Master Orchestrator
 echo ==================================================
 
-:: 1. Virtual Environment Check
-if exist .venv\Scripts\activate goto VENV_EXISTS
-echo [!] Virtual environment (.venv) not found.
-pause
-exit /b
+:: Check venv
+if not exist ".venv\Scripts\activate.bat" (
+    echo [ERROR] .venv not found.
+    pause
+    exit /b
+)
 
-:VENV_EXISTS
-echo [+] Activating virtual environment...
-call .venv\Scripts\activate
+:: Activate venv (no errorlevel check - activate returns 1 even on success)
+call ".venv\Scripts\activate.bat"
 
-:: 2. Set PYTHONPATH and Audit by Sentinel
-echo [+] Starting system audit by Sentinel...
-set PYTHONPATH=%PYTHONPATH%;%~dp002_ENGINE
-python -m v2_CORE.sentinel
+:: Verify Python works
+python --version >nul 2>&1
+if %errorlevel% neq 0 (
+    echo [ERROR] Python not found. Check venv.
+    pause
+    exit /b
+)
 
-:: 3. Launch Match Importer (Background, every 15min, Self-healing)
-echo [+] Starting Match Importer (background, every 15min, Self-healing)...
-start /min "MatchImporter" cmd /c "chcp 65001 >nul && for /L %%i in () do (python 02_ENGINE\v2_CORE\match_importer.py && echo [!] MatchImporter exited. Restarting in 5s... && timeout /t 5 >nul)"
+:: Set environment variables
+set "PYTHONPATH=%~dp002_ENGINE"
+set "PYTHONUNBUFFERED=1"
 
-:: 4. Launch Command Center (Frontend)
-echo [+] Starting Sovereign Portal (React Frontend)...
-start "Command Center" cmd /c "cd /d %~dp004_COMMAND_CENTER && npm run dev"
-
-:: 5. Launch Unified Master Orchestrator (Self-healing Loop)
-echo [+] Launching Unified Sovereign OS (Self-healing Loop)...
-echo [*] All sub-engines (YouTube Watcher, Kingdom, Pulse, MatchImporter) will run in parallel.
+echo [OK] venv activated
+echo [OK] PYTHONPATH=%PYTHONPATH%
 echo --------------------------------------------------
 
+:: Launch Sentinel in background (no window)
+echo [+] Starting Sentinel (background)...
+start "" /b cmd /c "cd /d "%~dp0" && call .venv\Scripts\activate.bat && set PYTHONPATH=%~dp002_ENGINE && set PYTHONUNBUFFERED=1 && python -m v2_CORE.sentinel"
+
+:: Launch Match Importer (minimized, auto-restart)
+echo [+] Starting Match Importer...
+start /min "MatchImporter" cmd /c "chcp 65001 >nul && cd /d "%~dp0" && call .venv\Scripts\activate.bat && set PYTHONPATH=%~dp002_ENGINE && set PYTHONUNBUFFERED=1 && :loop && python "02_ENGINE\v2_CORE\match_importer.py" & timeout /t 5 >nul & goto loop"
+
+:: Launch Command Center (minimized)
+echo [+] Starting Command Center...
+start /min "CommandCenter" cmd /c "cd /d "%~dp004_COMMAND_CENTER" && npm run dev"
+
+echo [+] All sub-processes launched.
+echo --------------------------------------------------
+
+:: Run Master Orchestrator in this window (auto-restart loop)
 :ORCH_LOOP
-python 02_ENGINE\v2_CORE\master_orchestrator.py
-echo [!] Master Orchestrator exited or crashed with code %errorlevel%.
-echo [!] Restarting Unified Master Orchestrator in 5 seconds...
-timeout /t 5 >nul
+python -u "02_ENGINE\v2_CORE\master_orchestrator.py"
+echo [!] Master Orchestrator stopped (code: %errorlevel%). Restarting in 5s...
+timeout /t 5
 goto ORCH_LOOP

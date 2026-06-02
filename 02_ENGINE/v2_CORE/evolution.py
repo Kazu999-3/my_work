@@ -14,7 +14,7 @@ class EvolutionEngine:
     そのフィードバックをもとに再構築（自己進化）させるマルチエージェントシステム。
     """
     def __init__(self):
-        self.api_key = settings.GEMINI_API_KEY
+        self.api_key = settings.GEMINI_API_KEY_FREE or settings.GEMINI_API_KEY
         if self.api_key:
             self.client = genai.Client(api_key=self.api_key)
             self.model_id = "gemini-2.5-flash"  # 高速かつ賢いモデルを採用
@@ -99,10 +99,17 @@ class EvolutionEngine:
     def evolve_draft(self, content: str) -> str:
         """レビューと再構築を一貫して行うメイン処理"""
         feedback = self.review_content(content)
-        if not feedback or "No Review" in feedback or "Error" in feedback:
+        # エラー文言（❌ または ⚠️ または "Error" または "エラー"）が含まれている場合は処理を中断し、元のコンテンツをそのまま返す
+        if not feedback or any(x in feedback for x in ["No Review", "Error", "エラー", "⚠️", "❌"]):
+            logger.warning("[Evolution] ⚠️ レビューフェーズでエラーが発生したため、自己進化をスキップし、元のドラフトを維持します。")
             return content
             
         evolved_content = self.apply_evolution(content, feedback)
+        
+        if not evolved_content or any(x in evolved_content for x in ["Error", "エラー", "⚠️", "❌"]):
+            logger.warning("[Evolution] ⚠️ 再構築フェーズでエラーが発生したため、自己進化をスキップし、元のドラフトを維持します。")
+            return content
+            
         return evolved_content
 
 # インスタンス提供

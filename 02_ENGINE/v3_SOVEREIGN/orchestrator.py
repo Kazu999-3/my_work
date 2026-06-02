@@ -95,8 +95,8 @@ class SovereignOrchestrator:
         """王（ユーザー）からの重要ミッション、または自律的な強奪ミッションを完遂する"""
         logger.info(f"👑 Executing [{mission_type}] Mission: {champion_name}")
         
-        # 1. リサーチ (思考ルーター経由)
-        research_data = await self.dispatch_task("Research", f"LoL {champion_name} 勝ち方")
+        # 1. リサーチ (思考ルーター経由) - 重すぎるため一旦停止
+        # research_data = await self.dispatch_task("Research", f"LoL {champion_name} 勝ち方")
         
         # 2. 執筆 (思考ルーター経由)
         bible_path = await self.dispatch_task("Forge", champion_name)
@@ -104,20 +104,21 @@ class SovereignOrchestrator:
         if bible_path:
             logger.info(f"✅ Bible forged: {bible_path}")
             
-            # 3. 動画生成
-            from v2_CORE.video_forge import VideoForge
-            video_engine = VideoForge()
-            note_content = Path(bible_path).read_text(encoding="utf-8")
-            shorts_script = video_engine.generate_script(note_content)
-            
-            base_name = f"{champion_name}_shorts"
-            audio_path = video_engine.output_dir / f"{base_name}.mp3"
-            video_path = video_engine.output_dir / f"{base_name}.mp4"
-            
-            await video_engine.generate_voice(shorts_script, audio_path)
-            video_engine.assemble_video(audio_path, video_path)
-            
-            logger.info(f"✅ Video forged: {video_path}")
+            # 3. 動画生成 (APIクォータ保護のため停止)
+            # from v2_CORE.video_forge import VideoForge
+            # video_engine = VideoForge()
+            # note_content = Path(bible_path).read_text(encoding="utf-8")
+            # shorts_script = video_engine.generate_script(note_content)
+            # 
+            # base_name = f"{champion_name}_shorts"
+            # audio_path = video_engine.output_dir / f"{base_name}.mp3"
+            # video_path = video_engine.output_dir / f"{base_name}.mp4"
+            # 
+            # await video_engine.generate_voice(shorts_script, audio_path)
+            # video_engine.assemble_video(audio_path, video_path)
+            # 
+            # logger.info(f"✅ Video forged: {video_path}")
+            video_path = None
             
             # 4. 配信準備 & 安全監査
             audit_passed = self.dispatcher.run_security_audit(Path(bible_path))

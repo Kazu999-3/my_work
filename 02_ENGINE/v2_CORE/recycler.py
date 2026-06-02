@@ -15,7 +15,7 @@ class SovereignRecycler:
     1つの知能資産(MD)を、マルチプラットフォーム向けの収益用コンテンツに変換・錬成する。
     """
     def __init__(self):
-        self.api_key = settings.GEMINI_API_KEY
+        self.api_key = settings.GEMINI_API_KEY_FREE or settings.GEMINI_API_KEY
         self.client = None
         if self.api_key:
             self.client = genai.Client(api_key=self.api_key)

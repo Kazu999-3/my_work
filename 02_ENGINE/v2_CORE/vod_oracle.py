@@ -16,7 +16,7 @@ class VODOracle:
     Gemini 1.5 Pro のネイティブ動画理解能力を用いてマクロ戦略（ワード位置、クリア時間）を抽出する。
     """
     def __init__(self):
-        self.api_key = os.getenv("GEMINI_API_KEY")
+        self.api_key = os.getenv("GEMINI_API_KEY_FREE") or os.getenv("GEMINI_API_KEY")
         if self.api_key:
             self.client = genai.Client(api_key=self.api_key)
         else:

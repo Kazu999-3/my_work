@@ -30,7 +30,7 @@ def generate_content_safe(client, prompt, model_id=None, config=None, feature_na
     models_to_try = [
         primary_model,
         "gemini-2.5-flash",
-        "gemini-2.5-pro"
+        "gemini-2.0-flash-exp"
     ]
     
     # 重複を排除しつつ順序を維持
@@ -86,13 +86,14 @@ def generate_content_safe(client, prompt, model_id=None, config=None, feature_na
                 if (is_quota or is_service_error) and attempt < retries - 1:
                     # e.message に RetryInfo がある場合はそれを利用、なければ指数バックオフ
                     import re
-                    retry_match = re.search(r"Please retry in ([\d\.]+)s", e.message)
+                    retry_match = re.search(r"Please retry in ([\d\.]+)s", str(e.message) if hasattr(e, 'message') else str(e))
                     if retry_match:
-                        # 複数スレッドが同時に起床して競合するのを防ぐため、ランダムなジッター(Jitter)を1〜10秒追加
-                        wait_time = float(retry_match.group(1)) + random.uniform(1.0, 10.0)
+                        # 複数スレッドが同時に起床して競合するのを防ぐため、ランダムなジッター(Jitter)を追加しつつ最低でも指定秒数+30秒待機する
+                        wait_time = float(retry_match.group(1)) + random.uniform(30.0, 45.0)
                     else:
+                        # 429等で明示的な秒数がない場合は、最低60秒から開始して指数バックオフ
                         wait_time = max(60.0, delay) if is_quota else delay
-                        wait_time += random.uniform(1.0, 5.0)
+                        wait_time += random.uniform(5.0, 15.0)
                         
                     logger.warning(f"⚠️ [AIHelper] クォータ制限またはサーバー一時エラーを検知 ({model})。スレッド競合回避のため {wait_time:.1f}秒後にリトライします... (試行 {attempt + 1}/{retries})")
                     time.sleep(wait_time)
@@ -109,4 +110,4 @@ def generate_content_safe(client, prompt, model_id=None, config=None, feature_na
     # すべてのモデルとリトライが失敗した場合
     error_msg = f"❌ [AIHelper] すべての試行およびフォールバックモデルが失敗しました。最後のエラー: {last_error}"
     logger.error(error_msg)
-    return "分析中に一時的なエラーが発生した。次はもっとうまくやってみせるよ。"
+    return "❌ 分析中に一時的なエラーが発生した。次はもっとうまくやってみせるよ。"

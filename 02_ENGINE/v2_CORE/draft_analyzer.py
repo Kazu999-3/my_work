@@ -15,7 +15,7 @@ class DraftAnalyzer:
     Live Scout が検知した敵チームの構成を分析し、最適な戦略を提案する。
     """
     def __init__(self):
-        self.api_key = settings.GEMINI_API_KEY
+        self.api_key = settings.GEMINI_API_KEY_FREE or settings.GEMINI_API_KEY
         if self.api_key:
             self.client = genai.Client(api_key=self.api_key)
         else:

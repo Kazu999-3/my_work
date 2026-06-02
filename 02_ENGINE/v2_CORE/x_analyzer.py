@@ -23,7 +23,7 @@ class XAnalyzer:
     def __init__(self):
         self.username = os.getenv("X_EMAIL") or os.getenv("X_USERNAME")
         self.password = os.getenv("X_PASSWORD")
-        self.api_key = os.getenv("GEMINI_API_KEY")
+        self.api_key = os.getenv("GEMINI_API_KEY_FREE") or os.getenv("GEMINI_API_KEY")
         
         if self.api_key:
             self.client = genai.Client(api_key=self.api_key)

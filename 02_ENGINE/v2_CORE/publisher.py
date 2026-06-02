@@ -137,7 +137,7 @@ class XPublisher:
                     except Exception as e:
                         logger.error(f"Supabaseへの履歴保存に失敗しました: {e}")
                 
-                herald.notify_progress(f"📢 **X(Twitter) へのスレッド投稿が完了しました！** ({len(tweets)} ポスト)\nURL: {post_url}", portal_link=True)
+                herald.notify_progress(f"📢 **X(Twitter) へのスレッド投稿が完了しました！** ({len(tweets)} ポスト)\nURL: {post_url}", portal_link=True, page="sns")
                 time.sleep(3) # 投稿完了を待つ
                 context.close()
                 return post_url
@@ -213,10 +213,22 @@ class NotePublisher:
                     page.locator('text="投稿"').first.click()
                 
                 # 新規エディタ画面のロードを待つ
-                page.wait_for_url("**editor.note.com**", timeout=15000)
+                logger.info("Waiting for editor.note.com to load (timeout: 30s)...")
+                page.wait_for_url("**editor.note.com**", timeout=30000)
                 time.sleep(3)
+                
+                # 「AIアシスタント利用規約」等のモーダルが表示されている場合は閉じる
+                try:
+                    logger.info("Checking for any blocking modal dialogs...")
+                    modal_btn = page.locator('button:has-text("利用条件に同意して始める"), button:has-text("キャンセル")').first
+                    if modal_btn.is_visible():
+                        logger.info("Modal detected. Clicking button to close modal...")
+                        modal_btn.click()
+                        time.sleep(2)
+                except Exception as modal_e:
+                    logger.warning(f"Could not dismiss modal: {modal_e}")
             except Exception as e:
-                logger.error(f"Failed to navigate to editor: {e}")
+                logger.error(f"Failed to navigate to editor (login session might have expired): {e}")
                 context.close()
                 return None
             
@@ -228,7 +240,7 @@ class NotePublisher:
                 if not title_area.is_visible():
                     title_area = page.locator('.editor-titleInput').first
                 
-                title_area.wait_for(state="visible", timeout=10000)
+                title_area.wait_for(state="visible", timeout=20000)
                 title_area.fill(title)
                 
                 # 本文の入力 (コピペを利用して高速化＆マークダウン維持)
@@ -247,7 +259,7 @@ class NotePublisher:
                 if not auto_publish:
                     logger.info("✅ Draft auto-populated successfully! (Kept as draft)")
                     draft_url = page.url
-                    herald.notify_progress(f"📝 **note.com への下書き保存が完了しました！**\nタイトル: `{title}`\nURL: {draft_url}")
+                    herald.notify_progress(f"📝 **note.com への下書き保存が完了しました！**\nタイトル: `{title}`\nURL: {draft_url}", portal_link=True, page="drafts")
                     time.sleep(3)
                     context.close()
                     return draft_url
@@ -255,7 +267,7 @@ class NotePublisher:
                 logger.info("🚀 Auto Publish mode enabled. Setting up Paid parameters...")
                 # 「公開に進む」ボタン
                 publish_btn = page.locator('button:has-text("公開に進む")').first
-                publish_btn.wait_for(state="visible", timeout=10000)
+                publish_btn.wait_for(state="visible", timeout=20000)
                 publish_btn.click()
                 time.sleep(5)
                 
@@ -301,7 +313,7 @@ class NotePublisher:
                     except Exception as e:
                         logger.error(f"Supabaseへの履歴保存に失敗しました: {e}")
                 
-                herald.notify_progress(f"💰 **note.com で有料記事（{price}円）の完全自動公開が完了しました！**\nタイトル: `{title}`\nURL: {published_url}", portal_link=True)
+                herald.notify_progress(f"💰 **note.com で有料記事（{price}円）の完全自動公開が完了しました！**\nタイトル: `{title}`\nURL: {published_url}", portal_link=True, page="publish")
                 context.close()
                 return published_url
                 

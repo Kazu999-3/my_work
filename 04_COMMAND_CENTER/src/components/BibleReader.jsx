@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react'
 import { supabase } from '../lib/supabase'
 import { motion } from 'framer-motion'
-import { Book, ChevronLeft, ChevronDown, ChevronUp, Clock, User, Sparkles, Pencil, Save, X, Trash2, Search } from 'lucide-react'
+import { Book, ChevronLeft, ChevronDown, ChevronUp, Clock, User, Sparkles, Pencil, Save, X, Trash2, Search, Terminal, Copy } from 'lucide-react'
 
 const BibleReader = ({ onBack }) => {
   const [articles, setArticles] = useState([])
@@ -107,6 +107,12 @@ const BibleReader = ({ onBack }) => {
     } else { alert('削除失敗: ' + error.message) }
   }
 
+  const copyPublishCommand = (championName) => {
+    const cmd = `py d:\\my_work\\02_ENGINE\\TOOLS\\publish_local_article.py "${championName}"`;
+    navigator.clipboard.writeText(cmd);
+    alert('コマンドをコピーしました！ターミナルに貼り付けて実行してください。\\n' + cmd);
+  }
+
   // ===== 記事閲覧/編集画面 =====
   if (selectedArticle) {
     return (
@@ -133,6 +139,9 @@ const BibleReader = ({ onBack }) => {
                 </button>
               </>
             )}
+            <button onClick={() => copyPublishCommand(selectedArticle.champion || selectedArticle.title.split(' ')[0])} style={btnStyle('#06b6d4', 'rgba(6,182,212,0.1)')}>
+              <Terminal size={14} /> 投稿コマンドをコピー
+            </button>
             <button onClick={(e) => deleteArticle(selectedArticle.id, e)} style={btnStyle('#ef4444', 'rgba(239,68,68,0.1)')}>
               <Trash2 size={14} /> 削除
             </button>
@@ -145,7 +154,7 @@ const BibleReader = ({ onBack }) => {
           <div style={{ padding: '40px' }}>
             <header style={{ marginBottom: '32px', paddingBottom: '24px', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#c89b3c', fontFamily: "'Space Grotesk', monospace", fontSize: '11px', marginBottom: '12px', letterSpacing: '0.15em', textTransform: 'uppercase', fontWeight: 900 }}>
-                <Sparkles size={14} /> Sovereign Intelligence Report
+                <Sparkles size={14} /> 攻略記事
               </div>
               <h1 style={{ fontSize: '28px', fontWeight: 900, lineHeight: 1.3, fontFamily: "'Space Grotesk', monospace" }}>
                 {selectedArticle.title.replace(/_/g, ' ')}
@@ -177,9 +186,9 @@ const BibleReader = ({ onBack }) => {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
         <div>
           <h2 style={{ fontSize: '26px', fontWeight: 900, fontFamily: "'Space Grotesk', monospace", display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px' }}>
-            <Book style={{ color: '#c89b3c' }} size={26} /> 攻略ライブラリ
+            <Book style={{ color: '#c89b3c' }} size={26} /> 攻略記事ライブラリ
           </h2>
-          <p style={{ color: '#a0a5b0', fontSize: '13px' }}>AIが錬成した究極のチャンピオン・バイブル（{articles.length}件）</p>
+          <p style={{ color: '#a0a5b0', fontSize: '13px' }}>AIが生成したチャンピオン攻略記事（{articles.length}件）</p>
         </div>
         <button onClick={onBack} style={btnStyle('#c89b3c', 'rgba(20,22,30,0.7)')}>
           <ChevronLeft size={16} /> 戻る
@@ -236,35 +245,39 @@ const BibleReader = ({ onBack }) => {
                 <span style={{ color: '#a0a5b0', fontSize: '12px', fontWeight: 500 }}>({items.length})</span>
               </button>
 
-              {/* グループ内の記事カード */}
+              {/* グループ内の記事リスト */}
               {!collapsedGroups[champName] && (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '12px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   {items.map(article => (
-                    <div key={article.id} className="glass-card-gold"
-                      onClick={() => setSelectedArticle(article)}
-                      style={{ padding: '24px', cursor: 'pointer', borderLeft: '4px solid #c89b3c', position: 'relative' }}>
-                      {/* 削除ボタン */}
-                      <button onClick={(e) => deleteArticle(article.id, e)}
-                        style={{ position: 'absolute', top: '12px', right: '12px', background: 'rgba(255,255,255,0.05)', border: 'none', borderRadius: '8px', padding: '6px', cursor: 'pointer', color: '#a0a5b0', opacity: 0.4, transition: 'all 0.2s' }}
-                        onMouseEnter={e => { e.target.style.opacity = 1; e.target.style.color = '#ef4444' }}
-                        onMouseLeave={e => { e.target.style.opacity = 0.4; e.target.style.color = '#a0a5b0' }}>
-                        <Trash2 size={14} />
-                      </button>
-                      <h3 style={{ fontSize: '14px', fontWeight: 700, marginBottom: '12px', lineHeight: 1.4, paddingRight: '32px' }}>
-                        {article.title.replace(/_/g, ' ')}
-                      </h3>
+                    <div key={article.id} onClick={() => setSelectedArticle(article)}
+                      style={{ padding: '16px 20px', cursor: 'pointer', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', transition: 'all 0.2s' }}
+                      onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+                      onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.02)'}>
                       
-                      {/* キーワードタグ */}
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '12px' }}>
-                        {article.keywords && article.keywords.map((kw, kidx) => (
-                          <span key={kidx} style={{ fontSize: '9px', background: 'rgba(200,155,60,0.1)', color: '#c89b3c', padding: '2px 6px', borderRadius: '4px', border: '1px solid rgba(200,155,60,0.2)' }}>
-                            {kw}
-                          </span>
-                        ))}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <h3 style={{ fontSize: '15px', fontWeight: 700, margin: 0, color: '#f0f5f5' }}>
+                          {article.title.replace(/_/g, ' ')}
+                        </h3>
+                        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                          {article.keywords && article.keywords.map((kw, kidx) => (
+                            <span key={kidx} style={{ fontSize: '10px', color: '#a0a5b0', background: 'rgba(255,255,255,0.05)', padding: '2px 6px', borderRadius: '4px' }}>
+                              {kw}
+                            </span>
+                          ))}
+                        </div>
                       </div>
 
-                      <div style={{ fontSize: '10px', color: '#a0a5b0', fontFamily: "'Space Grotesk', monospace", display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <Clock size={10} /> {new Date(article.created_at).toLocaleDateString('ja-JP')}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                        <div style={{ fontSize: '12px', color: '#a0a5b0', fontFamily: "'Space Grotesk', monospace", display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <Clock size={12} /> {new Date(article.created_at).toLocaleDateString('ja-JP')}
+                        </div>
+                        {/* 削除ボタン */}
+                        <button onClick={(e) => deleteArticle(article.id, e)}
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#a0a5b0', padding: '4px', transition: 'all 0.2s' }}
+                          onMouseEnter={e => e.currentTarget.style.color = '#ef4444'}
+                          onMouseLeave={e => e.currentTarget.style.color = '#a0a5b0'}>
+                          <Trash2 size={16} />
+                        </button>
                       </div>
                     </div>
                   ))}

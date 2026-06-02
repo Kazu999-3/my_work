@@ -91,6 +91,19 @@ function coreBalanceTeams() {
     });
   }
 
+  // ━━━ 案K：こだわり度1（絶対）の過剰競合を自動調停 ━━━
+  // 同一ロールにweight=1が3人以上いる場合、Pity最低（最近メインをプレイできた）の人をweight=2に降格
+  rolesOrder.forEach(role => {
+    const strictCandidates = players
+      .filter(p => p.pref1 === role && p.weight === 1 && !p.isFixed)
+      .sort((a, b) => a.pity - b.pity); // Pity低い順
+    if (strictCandidates.length > 2) {
+      for (let i = 2; i < strictCandidates.length; i++) {
+        strictCandidates[i].weight = 2; // 今回だけ「通常」扱いに格下げ
+      }
+    }
+  });
+
   const statsMap = getGlobalStatsMap();
   players.forEach(p => {
     const s = statsMap[p.name.toUpperCase()];
@@ -112,6 +125,24 @@ function coreBalanceTeams() {
     p.isOutlierHigh = (avgP > globalAvgMMR + 1000); // 平均より1000以上高い
   });
 
+  // ━━━ 案A：ハンデMMR — チーム分け計算専用の補正レートを生成 ━━━
+  // 実力MMRは変更せず、チームバランス評価のみに「差の50%を縮めた値」を使用
+  // 効果：格下プレイヤーが「弱チームの調整役」に固定されにくくなる
+  // 【案3：低勝率救済】勝率が42%を下回るプレイヤーは、チーム分け評価時にレートをさらに低く見積もり（勝率1%下回るごとに -15）、強い味方と組める確率を上げる
+  players.forEach(p => {
+    p.adjustedRates = {};
+    let wrPityPenalty = 0;
+    if (p.games >= 5 && p.winRate < 42) {
+      wrPityPenalty = Math.round((42 - p.winRate) * 15);
+      wrPityPenalty = Math.min(250, wrPityPenalty); // 最大補正幅は250
+    }
+    rolesOrder.forEach(role => {
+      const raw = p.rates[role];
+      const adj = Math.round(raw + (globalAvgMMR - raw) * 0.5) - wrPityPenalty;
+      p.adjustedRates[role] = Math.max(100, adj); // 最低100は維持
+    });
+  });
+
   const sortedByWR = [...players].sort((a, b) => b.winRate - a.winRate);
   const bestWRPlayerName = sortedByWR[0].name;
   const worstWRPlayerName = sortedByWR[9].name;
@@ -120,6 +151,10 @@ function coreBalanceTeams() {
   const lowestMMRPlayerName = sortedByMMR[9].name;
 
   const history = getMatchupHistory();
+  // 案H: 同チームメイト重複回避
+  const teammateHistory = getTeammateHistory();
+  // 案I: 直近2連勝チームのセット（連勝なければnull）
+  const winStreakTeam = getRecentWinStreakTeams();
   const topResults = [];
   const combinations = getCombinations([0,1,2,3,4,5,6,7,8,9], 5);
   const perms = getPermutations([0,1,2,3,4]);
@@ -177,6 +212,21 @@ function coreBalanceTeams() {
     const teamA = teamAIndices.map(i => players[i]);
     const teamB = teamBIndices.map(i => players[i]);
 
+    // 特定の二人（こんぺい、tamias）が同じチームに入らないように制限
+    const checkSameTeam = (name1, name2) => {
+      const n1 = name1.toLowerCase().trim();
+      const n2 = name2.toLowerCase().trim();
+      const hasN1A = teamA.some(p => p.name.toLowerCase().trim() === n1);
+      const hasN2A = teamA.some(p => p.name.toLowerCase().trim() === n2);
+      const hasN1B = teamB.some(p => p.name.toLowerCase().trim() === n1);
+      const hasN2B = teamB.some(p => p.name.toLowerCase().trim() === n2);
+      return (hasN1A && hasN2A) || (hasN1B && hasN2B);
+    };
+
+    if (checkSameTeam("こんぺい", "tamias")) {
+      continue;
+    }
+
     const pA = greedyAssign(teamA);
     const pB = greedyAssign(teamB);
 
@@ -195,6 +245,34 @@ function coreBalanceTeams() {
     const { teamAIndices, teamBIndices } = candidate;
     const teamA = teamAIndices.map(i => players[i]);
     const teamB = teamBIndices.map(i => players[i]);
+
+    // ━━━ チーム構成ペナルティ（ロール割り当て非依存 → 外側で1回だけ計算） ━━━
+    let compositionPenalty = 0;
+
+    // 案H: 同チームメイト重複ペナルティ（直近10試合で3回以上同じ味方 → 加算）
+    const addTeammatePenalty = (teamIndices) => {
+      const names = teamIndices.map(i => players[i].name);
+      for (let x = 0; x < names.length; x++) {
+        for (let y = x + 1; y < names.length; y++) {
+          const key = [names[x], names[y]].sort().join("<=>");
+          const count = teammateHistory.get(key) || 0;
+          // 3回目から加速的にペナルティを加算（3回目=8000, 4回目=16000, ...）
+          if (count >= 3) compositionPenalty += (count - 2) * 8000;
+        }
+      }
+    };
+    addTeammatePenalty(teamAIndices);
+    addTeammatePenalty(teamBIndices);
+
+    // 案I: 連勝チームの強制シャッフル（同じ5人が2連勝していたら再結成を強く阻止）
+    if (winStreakTeam && winStreakTeam.size === 5) {
+      const setsEqual = (a, b) => a.size === b.size && [...a].every(v => b.has(v));
+      const teamASet = new Set(teamAIndices.map(i => players[i].name));
+      const teamBSet = new Set(teamBIndices.map(i => players[i].name));
+      if (setsEqual(teamASet, winStreakTeam) || setsEqual(teamBSet, winStreakTeam)) {
+        compositionPenalty += 150000; // 連勝チームそのまま再結成はほぼ阻止
+      }
+    }
 
     for (const pA of perms) {
       let validA = true;
@@ -216,7 +294,8 @@ function coreBalanceTeams() {
         }
         if (!validB) continue;
 
-        let penalty = 0, totalA = 0, totalB = 0;
+        // compositionPenaltyを初期値に設定（案H+Iのチーム構成ペナルティを引き継ぐ）
+        let penalty = compositionPenalty, totalA = 0, totalB = 0;
         let lanesAdvantagedA = 0, lanesAdvantagedB = 0;
         let highRankCountA = 0, highRankCountB = 0;
         // ★新設：チーム別レーン優位スコア（MMR差の強い側を累積）
@@ -231,27 +310,30 @@ function coreBalanceTeams() {
           const bIdx = pB.indexOf(rIdx);
           const pLayerA = teamA[aIdx];
           const pLayerB = teamB[bIdx];
-          const mmrA = pLayerA.rates[role];
-          const mmrB = pLayerB.rates[role];
+          const mmrA = pLayerA.rates[role];    // 生 MMR（checkOpponent等の対面チェックに使用）
+          const mmrB = pLayerB.rates[role];    // 生 MMR
+          const adjA = pLayerA.adjustedRates[role]; // 案A: 補正MMR（バランス評価に使用）
+          const adjB = pLayerB.adjustedRates[role]; // 案A: 補正MMR
 
-          // レーン単位の格差をより厳しく見る (自乗和)
-          penalty += Math.pow(Math.abs(mmrA - mmrB), 2) / 4;
-          totalA += mmrA; totalB += mmrB;
+          // 案A: レーン単位の格差評価は補正MMRで行う（実力差を縮めた評価）
+          penalty += Math.pow(Math.abs(adjA - adjB), 2) / 4;
+          totalA += adjA; totalB += adjB;
 
-          // ★新設：各レーンで強い側のMMR差をチーム別に累積
-          // 同じチームに優位レーンが偏るほど大きな値になる
-          laneAdvantageScoreA += Math.max(0, mmrA - mmrB);
-          laneAdvantageScoreB += Math.max(0, mmrB - mmrA);
+          // 案A: レーン有利スコアも補正MMRで計算
+          laneAdvantageScoreA += Math.max(0, adjA - adjB);
+          laneAdvantageScoreB += Math.max(0, adjB - adjA);
 
-          // どちらのレーンが有利かをカウント
-          if (mmrA > mmrB + 150) lanesAdvantagedA++;
-          if (mmrB > mmrA + 150) lanesAdvantagedB++;
+          // 案A: レーン有利カウントも補正MMRで
+          if (adjA > adjB + 150) lanesAdvantagedA++;
+          if (adjB > adjA + 150) lanesAdvantagedB++;
 
           // 高ランク(プラチナ以上)のカウント
           if (HIGH_RANKS.includes(pLayerA.rank)) highRankCountA++;
           if (HIGH_RANKS.includes(pLayerB.rank)) highRankCountB++;
 
-          if (history.has([pLayerA.name, pLayerB.name].sort().join("<=>"))){penalty += 200;}
+          // ★修正：ロール込みのキーで対面重複を判定 + ペナルティを200→15,000に引き上げ
+          const matchupHistKey = [pLayerA.name, pLayerB.name].sort().join("<=>") + ":" + role;
+          if (history.has(matchupHistKey)){penalty += 15000;}
 
           const checkOpponent = (p, opp, currentRole) => {
              const oppMmr = opp.rates[currentRole];
@@ -286,12 +368,20 @@ function coreBalanceTeams() {
             } else if (p.isFixed || p.pref1 === 'ALL' || p.pref1 === currentRole) {
               rolePenalty = 0;
             } else if (p.pref2 === currentRole) {
-              rolePenalty = 500 + (p.pity * 100);
+              // Pityの影響力を100から10000に大幅強化（MMR差ペナルティ等に押しつぶされないため）
+              rolePenalty = 500 + (p.pity * 10000);
+              // 天井システム: Pityが4以上ならサブレーン配置ペナルティに100,000を上乗せ
+              if (p.pity >= 4) rolePenalty += 100000;
+              
               if (isSpecialist) rolePenalty *= 2;
               if (p.weight === 1) rolePenalty *= 10;   
               if (p.weight === 3) rolePenalty *= 0.5; 
             } else {
-              rolePenalty = 5000 + (p.pity * 500);
+              // Pityの影響力を500から20000に大幅強化
+              rolePenalty = 5000 + (p.pity * 20000);
+              // 天井システム: Pityが4以上なら他レーン配置ペナルティに200,000を上乗せ
+              if (p.pity >= 4) rolePenalty += 200000;
+              
               if (isSpecialist) rolePenalty *= 3;
               if (p.weight === 1) rolePenalty *= 20;  
               if (p.weight === 3) rolePenalty *= 0.2;  
@@ -303,6 +393,21 @@ function coreBalanceTeams() {
           };
           checkRolePenalty(pLayerA, role);
           checkRolePenalty(pLayerB, role);
+
+          // ★案D：格上当番制 - isOutlierHighのプレイヤーがMMR格差600以上のレーンで
+          // メイン以外に配置される場合のペナルティを軽減し、苦手レーンへ回りやすくする
+          const applyOutlierRelief = (p, oppMmr, currentRole) => {
+            if (p.isOutlierHigh && currentRole !== p.pref1 && currentRole !== p.ng1 && currentRole !== p.ng2) {
+              const myMmr = p.rates[currentRole];
+              const mmrDiff = myMmr - oppMmr;
+              if (mmrDiff > 600) {
+                // 格差が大きいほど救済量を増やす（最大30,000）
+                penalty -= Math.min(mmrDiff * 5, 30000);
+              }
+            }
+          };
+          applyOutlierRelief(pLayerA, mmrB, role);
+          applyOutlierRelief(pLayerB, mmrA, role);
 
           // ★新設：メインレーン充足人数のカウント
           // isFixed / pref1=ALL / pref1=割り当てレーン のいずれかなら「メイン希期が叶わった」とみなす
@@ -389,11 +494,12 @@ function coreBalanceTeams() {
   // pA[i] = roleIdx → player tA[i] が rolesOrder[pA[i]] を担当
   const rawAssignA = bestPA.map((rIdx, i) => {
     const r = rolesOrder[rIdx];
-    return { ...tA[i], currentRole: r, mmr: tA[i].rates[r] };
+    // 案L： mainLaneを追加し、Discord表示で「なぜこのレーンなのか」を一目でわかるようにする
+    return { ...tA[i], currentRole: r, mmr: tA[i].rates[r], mainLane: tA[i].pref1, subLane: tA[i].pref2 };
   });
   const rawAssignB = bestPB.map((rIdx, i) => {
     const r = rolesOrder[rIdx];
-    return { ...tB[i], currentRole: r, mmr: tB[i].rates[r] };
+    return { ...tB[i], currentRole: r, mmr: tB[i].rates[r], mainLane: tB[i].pref1, subLane: tB[i].pref2 };
   });
 
   // rolesOrder順にソート

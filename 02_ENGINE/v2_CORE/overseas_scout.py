@@ -17,7 +17,7 @@ class OverseasScout:
     海外のメタ情報やプロのビルドを分析し、チャンピオン辞典の空欄を自動で埋める。
     """
     def __init__(self):
-        self.api_key = settings.GEMINI_API_KEY
+        self.api_key = settings.GEMINI_API_KEY_FREE or settings.GEMINI_API_KEY
         if self.api_key:
             self.client = genai.Client(api_key=self.api_key)
         else:
@@ -92,8 +92,8 @@ class OverseasScout:
                 return json.loads(response_text)
             except Exception as e:
                 if "429" in str(e) or "RESOURCE_EXHAUSTED" in str(e) or "503" in str(e):
-                    wait_time = 15 * (attempt + 1)
-                    logger.warning(f"⚠️ Rate limit or server error ({e}) for {champ_id}. Retrying in {wait_time}s... (Attempt {attempt+1}/{max_retries})")
+                    wait_time = 60 + (30 * attempt) + random.uniform(5.0, 15.0)
+                    logger.warning(f"⚠️ Rate limit or server error ({e}) for {champ_id}. Retrying in {wait_time:.1f}s... (Attempt {attempt+1}/{max_retries})")
                     time.sleep(wait_time)
                 else:
                     logger.error(f"Generation failed for {champ_id}: {e}")
@@ -147,10 +147,10 @@ class OverseasScout:
             if data:
                 self.update_champion_dictionary(champ, data)
                 updated_list.append(champ)
-            time.sleep(5) # APIレートリミット対策
+            time.sleep(10) # APIレートリミット対策を強化
             
         if updated_list:
-            herald.notify_progress(f"👑 **【海外メタ・リサーチ完了】** {', '.join(updated_list)} の戦略データ同期がすべて完了しました！", portal_link=True)
+            herald.notify_progress(f"👑 **【海外メタ・リサーチ完了】** {', '.join(updated_list)} の戦略データ同期がすべて完了しました！", portal_link=True, page="champdb")
             return len(updated_list)
         return 0
 

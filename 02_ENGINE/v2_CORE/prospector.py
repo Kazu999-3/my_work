@@ -14,7 +14,7 @@ class SovereignProspector:
     Web/YouTube から最新の攻略動画を自律的に発掘し、解析対象として選定する。
     """
     def __init__(self):
-        self.api_key = settings.GEMINI_API_KEY
+        self.api_key = settings.GEMINI_API_KEY_FREE or settings.GEMINI_API_KEY
         if self.api_key:
             self.client = genai.Client(api_key=self.api_key)
             self.model_id = 'gemini-2.5-flash'

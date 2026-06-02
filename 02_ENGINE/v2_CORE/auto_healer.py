@@ -28,7 +28,7 @@ class AutoHealer:
         self.patches_dir.mkdir(parents=True, exist_ok=True)
         self.patches_index = self.patches_dir / "patches.json"
         
-        self.api_key = settings.GEMINI_API_KEY
+        self.api_key = settings.GEMINI_API_KEY_FREE or settings.GEMINI_API_KEY
         self.client = genai.Client(api_key=self.api_key) if self.api_key else None
         
         self.last_position = 0

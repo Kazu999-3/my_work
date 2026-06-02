@@ -12,7 +12,7 @@ class AntigravityAIEngine:
     知略データベース (RAG) と Gemini を統合した対話生成エンジン。
     """
     def __init__(self):
-        self.api_key = settings.GEMINI_API_KEY
+        self.api_key = settings.GEMINI_API_KEY_FREE or settings.GEMINI_API_KEY
         if self.api_key:
             self.client = genai.Client(api_key=self.api_key)
             # グローバル設定のモデルを使用

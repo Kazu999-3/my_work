@@ -94,7 +94,7 @@ export async function handleAutoMatchEnd(interaction, players, winner, env, ctx,
       
       // ② 3分後にRiot APIリザルトを自動取得するスケジューリング
       //    （即時投稿は行わない → ③ 次のチーム分け の後に自然な流れで④ リザルトが来る）
-      await fetchGAS({ type: "SCHEDULE_MATCH_REPORT", teamBlue, teamRed, winner });
+      await fetchGAS({ type: "SCHEDULE_MATCH_REPORT", teamBlue, teamRed, winner, spectators });
       
     } catch (err) { 
       console.error("AutoLog Error:", err); 

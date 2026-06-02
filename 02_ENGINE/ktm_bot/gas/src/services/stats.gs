@@ -145,16 +145,19 @@ function getMatchupHistory() {
   const lastRow = bulkSheet.getLastRow();
   if (lastRow < 2) return new Set();
   
-  const scanRows = 5;
+  // ★修正：参照試合数を 5 → 10 に拡大し、より長い期間の対面重複を回避
+  const scanRows = 10;
   const startRow = Math.max(2, lastRow - scanRows + 1);
   const data = bulkSheet.getRange(startRow, 1, Math.min(scanRows, lastRow - 1), 30).getValues();
   
+  const rolesOrder = ['TOP', 'JG', 'MID', 'ADC', 'SUP'];
   const history = new Set();
   data.forEach(row => {
     const rolesCols = [[2,5], [8,11], [14,17], [20,23], [26,29]];
-    rolesCols.forEach(cols => {
+    // ★修正：ロール情報をキーに含めることで「同じレーンで同じ対面」を正確に検知
+    rolesCols.forEach((cols, rIdx) => {
       const p1 = String(row[cols[0]]||"").trim(), p2 = String(row[cols[1]]||"").trim();
-      if (p1 && p2) history.add([p1, p2].sort().join("<=>"));
+      if (p1 && p2) history.add([p1, p2].sort().join("<=>") + ":" + rolesOrder[rIdx]);
     });
   });
   return history;
@@ -195,3 +198,70 @@ function getRivalryStats(puuid) {
     prey: getTop(killed)
   };
 }
+
+/**
+ * 同チームメイトのペア出現回数を集計する（直近10試合）
+ * 案H: 同じ味方が続くことへのペナルティに使用
+ */
+function getTeammateHistory() {
+  const bulkSheet = getSheet(SHEET_NAMES.BULK);
+  if (!bulkSheet) return new Map();
+  const lastRow = bulkSheet.getLastRow();
+  if (lastRow < 2) return new Map();
+
+  const scanRows = 10;
+  const startRow = Math.max(2, lastRow - scanRows + 1);
+  const data = bulkSheet.getRange(startRow, 1, Math.min(scanRows, lastRow - 1), 31).getValues();
+
+  const blueCols = [2, 8, 14, 20, 26];
+  const redCols  = [5, 11, 17, 23, 29];
+  const teammateMap = new Map();
+
+  const addPair = (p1, p2) => {
+    const key = [p1, p2].sort().join("<=>");
+    teammateMap.set(key, (teammateMap.get(key) || 0) + 1);
+  };
+
+  data.forEach(row => {
+    const blue = blueCols.map(c => String(row[c] || "").trim()).filter(n => n);
+    const red  = redCols.map(c => String(row[c] || "").trim()).filter(n => n);
+    for (let i = 0; i < blue.length; i++)
+      for (let j = i + 1; j < blue.length; j++) addPair(blue[i], blue[j]);
+    for (let i = 0; i < red.length; i++)
+      for (let j = i + 1; j < red.length; j++) addPair(red[i], red[j]);
+  });
+
+  return teammateMap;
+}
+
+/**
+ * 直近2試合が同一メンバーで連勝していれば、そのメンバーのSetを返す
+ * 案I: 連勝チームの強制シャッフルに使用
+ */
+function getRecentWinStreakTeams() {
+  const bulkSheet = getSheet(SHEET_NAMES.BULK);
+  if (!bulkSheet) return null;
+  const lastRow = bulkSheet.getLastRow();
+  if (lastRow < 3) return null;
+
+  const data = bulkSheet.getRange(Math.max(2, lastRow - 1), 1, 2, 32).getValues();
+  if (data.length < 2) return null;
+
+  const blueCols = [2, 8, 14, 20, 26];
+  const redCols  = [5, 11, 17, 23, 29];
+
+  const getWinnerSet = (row) => {
+    const winner = String(row[1]).trim().toUpperCase();
+    if (winner !== 'BLUE' && winner !== 'RED') return null;
+    const cols = winner === 'BLUE' ? blueCols : redCols;
+    return new Set(cols.map(c => String(row[c] || "").trim()).filter(n => n));
+  };
+
+  const set1 = getWinnerSet(data[0]);
+  const set2 = getWinnerSet(data[1]);
+  if (!set1 || !set2 || set1.size === 0 || set2.size === 0) return null;
+
+  const setsEqual = (a, b) => a.size === b.size && [...a].every(v => b.has(v));
+  return setsEqual(set1, set2) ? set2 : null;
+}
+

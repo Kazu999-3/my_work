@@ -19,7 +19,7 @@ class DarwinEngine:
     「マーケティングルール（執筆バイブル）」へと自らを書き換える。
     """
     def __init__(self):
-        self.api_key = settings.GEMINI_API_KEY
+        self.api_key = settings.GEMINI_API_KEY_FREE or settings.GEMINI_API_KEY
         self.client = genai.Client(api_key=self.api_key) if self.api_key else None
         
         self.rules_file = settings.FORGE_DIR / "marketing_rules.md"

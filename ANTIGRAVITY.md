@@ -52,8 +52,17 @@ CREATE TABLE matchup_sentinel (
 
 ALTER TABLE bible_articles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE matchup_sentinel ENABLE ROW LEVEL SECURITY;
+
+-- 読み取り許可 (全ユーザー)
 CREATE POLICY "Allow read" ON bible_articles FOR SELECT USING (true);
 CREATE POLICY "Allow read" ON matchup_sentinel FOR SELECT USING (true);
+
+-- 書き込み・更新許可 (Anon Key 経由のWebポータル操作用)
+-- ※注意: URLを全世界に公開する場合、悪意ある書き込みを防ぐため、将来的に auth.uid() 等を用いた制限の導入を推奨します。
+CREATE POLICY "Allow insert" ON bible_articles FOR INSERT WITH CHECK (true);
+CREATE POLICY "Allow update" ON bible_articles FOR UPDATE USING (true);
+CREATE POLICY "Allow insert" ON matchup_sentinel FOR INSERT WITH CHECK (true);
+CREATE POLICY "Allow update" ON matchup_sentinel FOR UPDATE USING (true);
 ```
 
 #### B. APIキーの紐付け
@@ -97,5 +106,5 @@ CREATE POLICY "Allow read" ON matchup_sentinel FOR SELECT USING (true);
 - [x] ソロキュー自動監視の実装
 - [x] クラウド同期エンジンの実装
 - [x] インフラ＆Discord通知バグの治療
-- [ ] **[進行中] noteドラフト記事の自動同期とブラッシュアップ機能の実装**
-- [ ] Supabase 連携完了 ➔ Webポータル正式稼働
+- [x] **[完了] noteドラフト記事の自動同期とブラッシュアップ機能の実装**
+- [ ] **[進行中]** Supabase 連携完了 ➔ Webポータル正式稼働

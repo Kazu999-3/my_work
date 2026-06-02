@@ -64,24 +64,68 @@ class SovereignDispatcher:
         """Discord へ制作完了通知と成果物のプレビューを送信"""
         from v2_CORE.settings import settings
         import requests
+        from datetime import datetime
 
         webhook_url = settings.DISCORD_WEBHOOK
         if not webhook_url:
             logger.warning("⚠️ DISCORD_WEBHOOK not set. Skipping notification.")
             return
 
+        portal_url = getattr(settings, 'PORTAL_URL', None) or 'http://localhost:5173'
+        draft_page_url   = f"{portal_url}/drafts"   # 記事下書き一覧ページ
+        publish_page_url = f"{portal_url}/publish"  # 投稿管理ページ
+
         content = article_path.read_text(encoding="utf-8")
-        # プレビュー用に冒頭300文字を抽出
-        preview = content[:800] + "..." if len(content) > 800 else content
+        # プレビュー用に冒頭300文字のみ抽出
+        preview = content[:300] + "..." if len(content) > 300 else content
+        today_str = datetime.now().strftime("%Y年%m月%d日 %H:%M")
 
         embed = {
-            "title": f"🏆 【制作完了】{champion_name} 攻略教典",
-            "description": f"Antigravity Sovereign OS が最新のメタ分析に基づき、新たな教典を錬成しました。\n\n**📄 記事プレビュー:**\n```markdown\n{preview}\n```",
+            "title": f"🏆【制作完了】{champion_name} 攻略教典が錬成されました！",
+            "description": (
+                f"Antigravity Sovereign OS が最新メタ分析に基づき、新たな教典を錬成しました。\n"
+                f"以下のリンクから確認・公開設定を行ってください。"
+            ),
             "color": 0x3498db,
             "fields": [
-                {"name": "📍 記事ファイル", "value": f"`{article_path.name}`", "inline": True},
-                {"name": "🎬 ショート動画", "value": f"`{video_path.name if video_path else '生成なし'}`", "inline": True},
-                {"name": "🚀 ステータス", "value": "note 下書き保存済み", "inline": False}
+                {
+                    "name": "📌 対象チャンピオン",
+                    "value": f"`{champion_name}`",
+                    "inline": True
+                },
+                {
+                    "name": "🕐 完成日時",
+                    "value": today_str,
+                    "inline": True
+                },
+                {
+                    "name": "📄 記事ファイル",
+                    "value": f"`{article_path.name}`",
+                    "inline": False
+                },
+                {
+                    "name": "🎬 ショート動画",
+                    "value": f"`{video_path.name if video_path else '生成なし'}`",
+                    "inline": True
+                },
+                {
+                    "name": "🚀 ステータス",
+                    "value": "note 下書き保存済み",
+                    "inline": True
+                },
+                {
+                    "name": "📄 記事プレビュー",
+                    "value": f"```markdown\n{preview}\n```",
+                    "inline": False
+                },
+                {
+                    "name": "🔍 ポータルで確認・公開",
+                    "value": (
+                        f"[🔗 記事下書き一覧を開く]({draft_page_url})\n"
+                        f"[🔗 投稿管理ページを開く]({publish_page_url})"
+                    ),
+                    "inline": False
+                }
             ],
             "footer": {"text": "Antigravity Sovereign OS v3 | Autonomous Output"}
         }

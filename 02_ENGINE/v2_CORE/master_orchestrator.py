@@ -114,7 +114,7 @@ def main():
     t_live = threading.Thread(target=run_live_scout, name="LiveScoutThread", daemon=True)
     threads.append(t_live)
 
-    # 6. Monetization Loop (自動錬金術ループ: 6時間に1回)
+    # 6. Monetization Loop (自動生成ループ: 6時間に1回)
     def run_monetization():
         from v2_CORE.monetization_loop import run_monetization_loop
         logger.info("💰 Monetization Loop starting (Every 6 hours)...")

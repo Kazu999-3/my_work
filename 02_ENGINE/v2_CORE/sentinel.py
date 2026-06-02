@@ -21,7 +21,7 @@ class SovereignSentinel:
             settings.CITADEL_DIR,
             settings.LOG_DIR
         ]
-        self.api_key = settings.GEMINI_API_KEY
+        self.api_key = settings.GEMINI_API_KEY_FREE or settings.GEMINI_API_KEY
         if self.api_key:
             self.client = genai.Client(api_key=self.api_key)
             self.model_name = 'gemini-2.5-flash' # 最新のフラッシュモデルを使用

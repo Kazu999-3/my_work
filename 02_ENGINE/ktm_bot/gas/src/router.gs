@@ -192,7 +192,7 @@ function doPost(e) {
     }
 
     if (type === "SCHEDULE_MATCH_REPORT") {
-      scheduleMatchReport(payload.teamBlue || [], payload.teamRed || [], payload.winner || "BLUE");
+      scheduleMatchReport(payload.teamBlue || [], payload.teamRed || [], payload.winner || "BLUE", payload.spectators || []);
       return ContentService.createTextOutput(JSON.stringify({ status: "SUCCESS" })).setMimeType(ContentService.MimeType.JSON);
     }
 

@@ -3,6 +3,7 @@ import json
 import logging
 import time
 import requests
+import re
 from pathlib import Path
 from champ_db_updater import update_champion_db
 from google import genai
@@ -12,29 +13,51 @@ import dotenv
 dotenv.load_dotenv(Path("D:/my_work/.env"))
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [AutonomousFiller] %(levelname)s: %(message)s")
 
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY_FREE") or os.environ.get("GEMINI_API_KEY")
 
-def get_all_champions():
+def get_latest_patch() -> str:
+    """Ddragonから最新パッチバージョンを取得"""
+    url = "https://ddragon.leagueoflegends.com/api/versions.json"
+    try:
+        import urllib.request
+        with urllib.request.urlopen(url, timeout=5) as response:
+            data = json.loads(response.read().decode('utf-8'))
+            return data[0]
+    except Exception as e:
+        logging.error(f"Failed to fetch patch version from Ddragon: {e}")
+        return "16.11.1" # デフォルトフォールバック
+
+def get_all_champions(patch_version: str):
     """Data Dragonから全チャンピオンリストを取得"""
-    url = "https://ddragon.leagueoflegends.com/cdn/14.10.1/data/ja_JP/champion.json"
+    url = f"https://ddragon.leagueoflegends.com/cdn/{patch_version}/data/ja_JP/champion.json"
     r = requests.get(url)
     if r.status_code == 200:
         data = r.json()
         return data["data"]
     return {}
 
-def research_champion(champ_name: str, champ_id: str) -> str:
+def parse_retry_delay(err_msg: str) -> float:
+    """エラーメッセージからリトライ待機時間（秒）をパースする"""
+    match = re.search(r"Please retry in\s+([0-9\.]+)\s*s", err_msg, re.IGNORECASE)
+    if match:
+        return float(match.group(1))
+    match_sec = re.search(r"'retryDelay':\s*'([0-9]+)s'", err_msg)
+    if match_sec:
+        return float(match_sec.group(1))
+    return 0.0
+
+def research_champion(champ_name: str, champ_id: str, patch_version: str) -> str:
     """Geminiの検索能力を使用してチャンピオンの最新情報をリサーチする"""
     if not GEMINI_API_KEY:
         return "GEMINI_API_KEY not found"
 
     client = genai.Client(api_key=GEMINI_API_KEY)
     
-    # 検索クエリ
-    query = f"League of Legends {champ_name} ({champ_id}) build guide patch 14.10 lolalytics mobafire jungle full clear time"
+    # パッチメジャーバージョン (例: 16.11.1 -> 16.11)
+    patch_major = ".".join(patch_version.split(".")[:2]) if patch_version else "16.11"
     
     prompt = f"""
-    League of Legendsのチャンピオン「{champ_name} ({champ_id})」について、最新パッチ（14.10想定）の情報をリサーチしてください。
+    League of Legendsのチャンピオン「{champ_name} ({champ_id})」について、最新パッチ（パッチ {patch_major}想定）の情報をリサーチしてください。
     
     以下の項目を詳しくまとめてください：
     1. 強み (Strengths)
@@ -48,30 +71,39 @@ def research_champion(champ_name: str, champ_id: str) -> str:
     """
     
     # リトライループ (429対策)
-    for attempt in range(3):
+    for attempt in range(5):
         try:
-            # Google Search Tool を使わずに内部知識で生成（クォータ制限回避のため）
             response = client.models.generate_content(
                 model="gemini-2.5-flash",
                 contents=prompt
             )
             return response.text
         except Exception as e:
-            if "429" in str(e):
-                wait_time = (attempt + 1) * 60
-                logging.warning(f"Quota exceeded (429). Waiting {wait_time}s before retry...")
-                time.sleep(wait_time)
-                continue
+            err_msg = str(e)
+            parsed_delay = parse_retry_delay(err_msg)
             
-            logging.error(f"Research failed for {champ_name}: {str(e)}")
-            import traceback
-            logging.error(traceback.format_exc())
-            return ""
+            # デイリー制限判定：5分以上の待機指定、または待機時間0(パース不可)かつデイリー上限のエラー文言
+            is_daily_limit = (parsed_delay > 300) or (parsed_delay == 0.0 and ("RequestsPerDay" in err_msg or "requests per day" in err_msg.lower() or "limit: 0" in err_msg))
+            
+            if is_daily_limit:
+                logging.warning("🛑 無料APIキーのデイリー上限に達しました。12時間スリープして自動再開します...")
+                time.sleep(12 * 3600)  # 12時間スリープ
+                continue
+                
+            # 一時的制限
+            wait_time = parsed_delay if parsed_delay > 0 else (attempt + 1) * 60
+            logging.warning(f"Quota exceeded or error. Waiting {wait_time:.1f}s before retry...")
+            time.sleep(wait_time)
+            continue
+            
     return ""
 
 def run_autonomous_filling():
     """全チャンピオンを順に処理する"""
-    champions = get_all_champions()
+    patch_version = get_latest_patch()
+    logging.info(f"🌐 最新パッチ特定: {patch_version}")
+    
+    champions = get_all_champions(patch_version)
     logging.info(f"🚀 {len(champions)} 件のチャンピオンを順次処理します。")
     
     # すでに完了したものを取得（二重処理防止）
@@ -87,7 +119,7 @@ def run_autonomous_filling():
 
         champ_name = info["name"]
         logging.info(f"🔍 Researching: {champ_name} ({champ_id})...")
-        intel = research_champion(champ_name, champ_id)
+        intel = research_champion(champ_name, champ_id, patch_version)
         
         if intel:
             logging.info(f"📝 Updating DB for {champ_name}...")

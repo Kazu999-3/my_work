@@ -34,6 +34,7 @@ class SovereignSettings(BaseSettings):
     ANTIGRAVITY_API_KEY: Optional[str] = None
     DISCORD_WEBHOOK: Optional[str] = None
     GEMINI_API_KEY: Optional[str] = None
+    GEMINI_API_KEY_FREE: Optional[str] = None
     DISCORD_BOT_TOKEN: Optional[str] = None
     KTM_GUILD_ID: str = "1485636149379858567"
     # 統治者 (ユーザー) 設定
@@ -46,18 +47,21 @@ class SovereignSettings(BaseSettings):
 
     # モデル設定
     DEFAULT_MODEL: str = "gemini-2.5-flash"
+    # OLE（動画解析）専用モデル: 無料枠の制限分散のため DEFAULT_MODEL とは別に設定
+    # gemini-2.0-flash は gemini-2.5-flash より無料枠が広いため適している
+    OLE_MODEL: str = "gemini-2.0-flash"
     
-    # クォータ（1日あたりのAPI実行回数）制限
+    # クォータ（1日あたりのAPI実行回数）制限: チャンピオン辞典（oracle）最優先モード
     DAILY_QUOTA_LIMITS: dict = {
-        "kingdom_cycle": 100,  # 記事作成、リライト、SNSフック等の合計
-        "draft_analyzer": 50,  # ライブドラフトの分析
-        "news_scout": 20,      # 海外ニュースの翻訳・要約
-        "oracle": 50,          # 隠れメタの調査
-        "video_forge": 15,     # 動画台本の作成
-        "bounty_hunter": 20,   # 競合noteのハンティング
-        "magazine_forge": 5,   # マガジン生成
-        "bible_forge": 50,     # バイブルの生成
-        "x_analyzer": 30,      # Xのトレンド解析
+        "kingdom_cycle": 20,   # 記事作成、リライト、SNSフック等の合計 (制限)
+        "draft_analyzer": 10,  # ライブドラフトの分析 (制限)
+        "news_scout": 5,       # 海外ニュースの翻訳・要約 (制限)
+        "oracle": 150,         # 隠れメタの調査/チャンピオン辞典 (最優先・枠最大化)
+        "video_forge": 5,      # 動画台本の作成 (制限)
+        "bounty_hunter": 5,    # 競合noteのハンティング (制限)
+        "magazine_forge": 2,   # マガジン生成 (制限)
+        "bible_forge": 10,     # バイブルの生成 (制限)
+        "x_analyzer": 10,      # Xのトレンド解析 (制限)
     }
     
     model_config = SettingsConfigDict(

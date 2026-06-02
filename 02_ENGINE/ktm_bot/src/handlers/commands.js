@@ -138,8 +138,28 @@ export async function performBalance(interaction, names, env, ctx, isUpdate = fa
       title: "⚔️ チーム分けの結果 (KTM Balancer)",
       color: 0x2ecc71,
       fields: [
-        { name: "🟦 Team A (Blue)", value: result.assignA.map(p => `\`${p.currentRole.padEnd(3)}\` ${p.name}`).join("\n"), inline: true },
-        { name: "🟥 Team B (Red)", value: result.assignB.map(p => `\`${p.currentRole.padEnd(3)}\` ${p.name}`).join("\n"), inline: true }
+        {
+          name: "🟦 Team A (Blue)",
+          value: result.assignA.map(p => {
+            const isMain = p.mainLane === p.currentRole || p.mainLane === 'ALL';
+            const isSub  = !isMain && p.subLane === p.currentRole;
+            const icon   = isMain ? '✅' : (isSub ? '🔄' : '⚠️');
+            const note   = (!isMain && p.mainLane && p.mainLane !== 'ALL') ? ` (本来:${p.mainLane})` : '';
+            return `\`${p.currentRole.padEnd(3)}\` ${icon} ${p.name}${note}`;
+          }).join("\n"),
+          inline: true
+        },
+        {
+          name: "🟥 Team B (Red)",
+          value: result.assignB.map(p => {
+            const isMain = p.mainLane === p.currentRole || p.mainLane === 'ALL';
+            const isSub  = !isMain && p.subLane === p.currentRole;
+            const icon   = isMain ? '✅' : (isSub ? '🔄' : '⚠️');
+            const note   = (!isMain && p.mainLane && p.mainLane !== 'ALL') ? ` (本来:${p.mainLane})` : '';
+            return `\`${p.currentRole.padEnd(3)}\` ${icon} ${p.name}${note}`;
+          }).join("\n"),
+          inline: true
+        }
       ],
       footer: { text: `勝率平準化適用済み | ID: ${Math.floor(Date.now() / 1000).toString(16)}` },
       timestamp: new Date().toISOString()
@@ -259,12 +279,19 @@ export async function handleAnnounceMatch(payload, env, ctx) {
   console.log("Received AnnounceMatch Payload:", JSON.stringify({ blue: teamBlue.length, red: teamRed.length, spec: spectators.length }));
 
   // Discord 埋め込みの制限（値が空だとエラーになる）への対策
+  // 案L: レーン判定インジケーター付き表示（スプレッドシート経由の場合は mainLane がない可能性あり）
   const renderTeam = (team) => {
     if (!Array.isArray(team) || team.length === 0) return "なし";
     return team.map(p => {
-      const role = String(p.role || "???").trim().padEnd(3);
-      const name = String(p.name || "Unknown").trim();
-      return `\`${role}\` ${name}`;
+      const role   = String(p.role || p.currentRole || "???").trim();
+      const name   = String(p.name || "Unknown").trim();
+      const main   = String(p.mainLane || "").toUpperCase();
+      const sub    = String(p.subLane  || "").toUpperCase();
+      const isMain = main === role || main === 'ALL' || main === '';
+      const isSub  = !isMain && sub === role;
+      const icon   = isMain ? '✅' : (isSub ? '🔄' : '⚠️');
+      const note   = (!isMain && main && main !== 'ALL') ? ` (本来:${main})` : '';
+      return `\`${role.padEnd(3)}\` ${icon} ${name}${note}`;
     }).join("\n") || "なし";
   };
 
