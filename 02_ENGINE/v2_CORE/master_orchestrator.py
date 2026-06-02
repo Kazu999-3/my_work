@@ -116,8 +116,8 @@ def main():
     # 毎分: 内部ファイル監視（Pulse）
     schedule.every(1).minutes.do(job_pulse_cycle)
     
-    # 30分毎: 公式パッチ監視
-    schedule.every(30).minutes.do(job_pulse_patches)
+    # 30分毎: 公式パッチ監視 [Phase 1: Edge Function に移行済みのため無効化]
+    # schedule.every(30).minutes.do(job_pulse_patches)
     
     # 15分毎: ソロキューの戦績自動取り込み
     schedule.every(15).minutes.do(job_match_importer)
