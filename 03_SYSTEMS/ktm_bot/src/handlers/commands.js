@@ -1,6 +1,8 @@
 import { CONFIG } from '../config.js';
 import { fetchGAS, patchInteractionResponse, sendDiscordMessage } from '../utils/api.js';
 import { createMessageContent, createRecruitButtons, createRecruitEmbed, getPortalComponents, getPortalEmbed } from '../ui/embeds.js';
+import { getPlayersByNames } from '../utils/supabase.js';
+import { performAutoBalance } from '../utils/balancer.js';
 
 export function handleRecruitDirect(interaction) {
   const options = interaction.data.options || [];
@@ -104,35 +106,35 @@ export async function performBalance(interaction, names, env, ctx, isUpdate = fa
       });
     }
 
-    // ステップ2: GAS へのリクエスト（25秒タイムアウト付き）
-    // プレイヤー名のクリーニング・重複排除
+    // ステップ2: Cloudflare Workers内で直接チームバランス計算を行う (GAS依存の脱却)
     let validNames = [...new Set(
       (names || []).map(n => String(n).trim()).filter(n => n && n !== "ユーザー" && n !== "不明")
     )];
     
-    const gasPromise = fetchGAS({ type: "AUTO_BALANCE", names: validNames });
-    const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("GAS応答タイムアウト（25秒）。チーム分け計算が長すぎます。")), 25000));
-    const data = await Promise.race([gasPromise, timeoutPromise]);
-    if (data.status !== "SUCCESS") throw new Error(data.message || "GAS計算エラー");
-
-    const result = data.result;
-    
-    if (!result || !result.assignA || !result.assignB) {
-      if (data.message && data.message.includes("SYNCED")) {
-        // 同期のみ成功した場合（手動実行待ち）
-        await patchInteractionResponse(appId, token, {
-          embeds: [{
-            title: "✅ メンバー同期完了",
-            description: data.message,
-            color: 0x3498db,
-            footer: { text: "スプレッドシートから確認・手動調整してください" }
-          }],
-          components: []
-        });
-        return;
-      }
-      throw new Error(`GAS返却データ異常: ${data.message || "resultが空です"}`);
+    // SupabaseからプレイヤーのMMRやレーン設定を取得
+    let playersData = [];
+    try {
+      playersData = await getPlayersByNames(env, validNames);
+    } catch (e) {
+      throw new Error(`データベース通信エラー: ${e.message}`);
     }
+
+    // データベースにいない未登録ユーザーの仮データ補完
+    const dbNames = playersData.map(p => p.name);
+    for (const vName of validNames) {
+      if (!dbNames.includes(vName)) {
+        playersData.push({
+          name: vName,
+          discord_id: "unknown",
+          mmr: 1000,
+          role_preferences: { primary: "FILL", secondary: "FILL" }
+        });
+      }
+    }
+
+    // KTMチームバランス計算アルゴリズムの実行
+    const data = performAutoBalance(playersData);
+    const result = data.result;
     
     const embed = {
       title: "⚔️ チーム分けの結果 (KTM Balancer)",

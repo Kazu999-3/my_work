@@ -1,0 +1,52 @@
+/** 
+ * Supabase への軽量なRESTアクセスユーティリティ (Cloudflare Workers用)
+ */
+
+export async function fetchSupabase(env, table, query = "", method = "GET", body = null) {
+  const url = `${env.SUPABASE_URL}/rest/v1/${table}${query ? '?' + query : ''}`;
+  const headers = {
+    "apikey": env.SUPABASE_KEY,
+    "Authorization": `Bearer ${env.SUPABASE_KEY}`,
+    "Content-Type": "application/json",
+    "Prefer": "return=representation"
+  };
+
+  const options = { method, headers };
+  if (body) options.body = JSON.stringify(body);
+
+  const res = await fetch(url, options);
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`Supabase Error (${method} ${table}): ${res.status} ${errText}`);
+  }
+  
+  if (method !== "DELETE") {
+    return await res.json();
+  }
+  return null;
+}
+
+export async function getPlayersByNames(env, names) {
+  if (!names || names.length === 0) return [];
+  // PostgREST で in 句を使って取得
+  const namesStr = names.map(n => `"${encodeURIComponent(n)}"`).join(',');
+  const query = `name=in.(${namesStr})`;
+  return await fetchSupabase(env, 'ktm_players', query);
+}
+
+export async function upsertPlayer(env, player) {
+  const headers = {
+    "apikey": env.SUPABASE_KEY,
+    "Authorization": `Bearer ${env.SUPABASE_KEY}`,
+    "Content-Type": "application/json",
+    "Prefer": "resolution=merge-duplicates,return=representation"
+  };
+  const url = `${env.SUPABASE_URL}/rest/v1/ktm_players?on_conflict=discord_id`;
+  
+  const res = await fetch(url, { method: "POST", headers, body: JSON.stringify(player) });
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`Supabase Upsert Error: ${res.status} ${errText}`);
+  }
+  return await res.json();
+}
