@@ -18,11 +18,21 @@ SUPABASE_KEY = os.getenv("SUPABASE_KEY", "")
 REGION = "asia"  # アジアリージョン
 PLATFORM = "jp1"  # 日本サーバー
 
-def riot_get(url):
-    """Riot API GET"""
-    r = httpx.get(url, headers={"X-Riot-Token": RIOT_KEY}, timeout=15)
-    if r.status_code == 200: return r.json()
-    log.warning(f"Riot API {r.status_code}: {url[:80]}...")
+def riot_get(url, max_retries=3):
+    """Riot API GET (429 Rate Limit 対応)"""
+    for attempt in range(max_retries):
+        r = httpx.get(url, headers={"X-Riot-Token": RIOT_KEY}, timeout=15)
+        if r.status_code == 200: 
+            return r.json()
+        elif r.status_code == 429:
+            # 制限に引っかかった時だけ待機するスマートな処理
+            wait_time = int(r.headers.get("Retry-After", 2 ** attempt))
+            log.warning(f"Riot API Rate Limit (429). Waiting for {wait_time}s...")
+            time.sleep(wait_time)
+            continue
+        else:
+            log.warning(f"Riot API {r.status_code}: {url[:80]}...")
+            return None
     return None
 
 def supabase_upsert(table, data):
@@ -40,6 +50,9 @@ def get_puuid(name, tag):
     """Riot IDからPUUIDを取得"""
     data = riot_get(f"https://{REGION}.api.riotgames.com/riot/account/v1/accounts/by-riot-id/{name}/{tag}")
     return data.get("puuid") if data else None
+
+# すでにDBへ送信済みのマッチIDを記録し、無駄な通信を防ぐキャッシュ
+processed_match_ids = set()
 
 def get_recent_matches(puuid, count=10):
     """直近のランク戦マッチIDを取得"""
@@ -130,7 +143,9 @@ def import_matches():
         log.info(f"  {len(match_ids)} 件のランク戦を検出")
 
         for mid in match_ids:
-            time.sleep(1.2)  # レートリミット対策
+            if mid in processed_match_ids:
+                continue  # 既に処理済みのマッチはスキップ（無駄なDBコストを削減）
+
             detail = get_match_detail(mid)
             if not detail: continue
 
@@ -171,6 +186,7 @@ def import_matches():
 
             if supabase_upsert("matchup_sentinel", data):
                 total_imported += 1
+                processed_match_ids.add(mid)  # 成功したらキャッシュに追加
                 log.info(f"  ✅ {matchup['champion']} vs {matchup['enemy']} ({matchup['result']}) - {matchup['my_kda']}")
                 
                 # --- AI 鬼コーチ反省会 トリガー (ユーザー要望により停止中) ---
