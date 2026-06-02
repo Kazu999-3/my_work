@@ -12,17 +12,20 @@ npx supabase login
 ```
 
 ### 2. 環境変数の設定 (Secrets)
-エッジ関数がデータベースやDiscordへアクセスできるように、クラウド上に環境変数を設定します。
+エッジ関数がデータベースや外部API（Discord, Riot API等）へアクセスできるように、クラウド上に環境変数を設定します。
 ```bash
-npx supabase secrets set SUPABASE_URL="https://[YOUR_PROJECT_REF].supabase.co"
-npx supabase secrets set SUPABASE_SERVICE_ROLE_KEY="[YOUR_SERVICE_ROLE_KEY]"
+npx supabase secrets set PROJECT_URL="https://[YOUR_PROJECT_REF].supabase.co"
+npx supabase secrets set PROJECT_SERVICE_KEY="[YOUR_SERVICE_ROLE_KEY]"
 npx supabase secrets set DISCORD_WEBHOOK="[YOUR_DISCORD_WEBHOOK_URL]"
+npx supabase secrets set RIOT_API_KEY="[YOUR_RIOT_API_KEY]"
+npx supabase secrets set RIOT_IDS="[YOUR_RIOT_ID_1,YOUR_RIOT_ID_2]"
 ```
 
 ### 3. 関数のデプロイ
-作成したエッジ関数（例：`pulse-patches`）をデプロイします。
+作成したエッジ関数をそれぞれデプロイします。
 ```bash
 npx supabase functions deploy pulse-patches --no-verify-jwt
+npx supabase functions deploy match-importer --no-verify-jwt
 ```
 ※ `--no-verify-jwt` は、Cronトリガーから直接呼び出せるようにするための設定です。
 

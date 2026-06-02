@@ -119,8 +119,8 @@ def main():
     # 30分毎: 公式パッチ監視 [Phase 1: Edge Function に移行済みのため無効化]
     # schedule.every(30).minutes.do(job_pulse_patches)
     
-    # 15分毎: ソロキューの戦績自動取り込み
-    schedule.every(15).minutes.do(job_match_importer)
+    # 15分毎: ソロキューの戦績自動取り込み [Phase 1-2: Edge Function に移行済みのため無効化]
+    # schedule.every(15).minutes.do(job_match_importer)
     
     # 6時間毎: 収益化ループ（note記事の自動作成と公開）
     schedule.every(6).hours.do(job_monetization)
