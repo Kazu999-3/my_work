@@ -8,6 +8,10 @@ from v2_CORE.settings import settings
 
 logger = logging.getLogger("QuotaManager")
 
+class QuotaExceededError(Exception):
+    """APIのクォータ上限に達した際に発生する例外"""
+    pass
+
 class QuotaManager:
     _instance = None
     _lock = threading.Lock()
@@ -62,6 +66,12 @@ class QuotaManager:
                 
             current_usage = data[today].get(feature_name, 0)
             return current_usage < limit
+
+    def check_quota_or_raise(self, feature_name: str):
+        """クォータ上限に達している場合は例外を発生させる厳格なチェック"""
+        if not self.check_quota(feature_name):
+            logger.warning(f"🚨 APIクォータ制限到達: {feature_name}")
+            raise QuotaExceededError(f"APIクォータが上限に達しました: {feature_name}。本日はこれ以上リクエストできません。")
 
     def consume_quota(self, feature_name: str):
         """指定された機能の今日のクォータを1消費する"""

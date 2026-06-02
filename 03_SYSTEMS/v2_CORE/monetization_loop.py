@@ -191,18 +191,17 @@ def run_monetization_loop():
         
         # Xへスレッド投稿
         x_url = None
-        if note_url:
-            logger.info("note投稿に成功したため、Xへの販促スレッド投稿を開始します...")
+        logger.info("Xへの販促スレッド投稿を開始します...")
+        try:
             x_pub = XPublisher(headless=True)
-            try:
-                tweets = json.loads(x_thread_json_str)
-                # ツイートの最後にnoteのURLを追加することも可能ですが、
-                # プロンプト側で「URLはこちら」と書かれていると仮定します
-            except:
-                tweets = []
+            tweets = json.loads(x_thread_json_str)
+            if not note_url and tweets:
+                logger.warning("noteの投稿に失敗したため、noteのリンク無しでXへ投稿を強行します。")
+                # 最後の誘導ツイートからリンク部分を削るなどの処理も可能ですが、まずは投稿自体を続行します
+            
             x_url = x_pub.post_thread(tweets) if tweets else None
-        else:
-            logger.warning("noteの投稿に失敗したため、Xへの投稿をスキップします。")
+        except Exception as ex:
+            logger.error(f"Xへの投稿中にエラーが発生しました: {ex}")
         
         if note_url and x_url:
             publish_status = f"✅ 完全自動パブリッシュ成功！（価格: {dynamic_price}円）\n🔗 note: {note_url}\n🔗 X: {x_url}"
