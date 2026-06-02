@@ -144,14 +144,15 @@ class XPublisher:
                 
             except Exception as e:
                 logger.error(f"Error during posting: {e}")
-                error_path = "D:/my_work/x_error.png"
+                error_path = "D:/my_work/.agent/logs/x_error.png"
                 try:
                     page.screenshot(path=error_path)
                     logger.info(f"Screenshot saved to {error_path}")
                 except Exception as ss_e:
                     logger.error(f"Failed to save screenshot: {ss_e}")
-                context.close()
                 return None
+            finally:
+                context.close()
 
 class NotePublisher:
     def __init__(self, headless=True):
@@ -320,13 +321,14 @@ class NotePublisher:
                 
             except Exception as e:
                 logger.error(f"Error during note posting: {e}")
-                error_path = "D:/my_work/note_error.png"
+                error_path = "D:/my_work/.agent/logs/note_error.png"
                 try:
                     page.screenshot(path=error_path)
                 except:
                     pass
-                context.close()
                 return None
+            finally:
+                context.close()
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)

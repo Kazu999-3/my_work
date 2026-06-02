@@ -177,7 +177,11 @@ def process_interrogation_queue():
                     update_champion_db(target_enemy, target_enemy, new_text)
                     
                 # 処理完了したキューを削除
-                del_url = f"{SUPABASE_URL}/rest/v1/matchup_sentinel?matchup_id=eq.{record['matchup_id']}"
+                m_id = record.get("matchup_id")
+                if not m_id:
+                    logging.error("Critical: matchup_id is empty. Skipping deletion to prevent wiping entire table.")
+                    continue
+                del_url = f"{SUPABASE_URL}/rest/v1/matchup_sentinel?matchup_id=eq.{m_id}"
                 requests.delete(del_url, headers=headers)
     except Exception as e:
         logging.error(f"Interrogation process failed: {e}")
