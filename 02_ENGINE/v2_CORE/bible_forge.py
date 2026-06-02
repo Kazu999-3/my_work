@@ -13,6 +13,7 @@ import dotenv
 from v2_CORE.database import db
 from v2_CORE.evolution import evolution_engine
 from v2_CORE.ai_helper import generate_content_safe
+from v2_CORE.settings import settings
 
 dotenv.load_dotenv(Path("D:/my_work/.env"))
 
@@ -30,7 +31,7 @@ class BibleForge:
             sys.exit(1)
             
         self.client = genai.Client(api_key=self.api_key)
-        self.model_id = "gemini-2.5-flash" # 最新の2.5系を採用
+        self.model_id = settings.DEFAULT_MODEL # グローバル設定に統一
         self.discord_webhook = os.environ.get("DISCORD_WEBHOOK")
 
     def send_notification(self, champ: str, file_path: Path):
@@ -118,7 +119,7 @@ class BibleForge:
                     raise Exception("BibleForge AI generation failed due to API error")
                     
                 text = response_text.strip()
-                if len(text) > 1500: # 最低1500文字以上の出力を保証
+                if len(text) > 500: # 最低500文字以上の出力を保証 (API破棄ループを防ぐためのMVP基準)
                     final_content = text
                     logging.info(f"Bible generated successfully in one shot ({len(text)} chars).")
                     break 
