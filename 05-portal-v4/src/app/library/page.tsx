@@ -19,8 +19,6 @@ export default function LibraryPage() {
   const [groupMode, setGroupMode] = useState<'champion' | 'keyword'>('champion');
   const [sortOrder, setSortOrder] = useState('updated_desc');
 
-  useEffect(() => { fetchArticles(); }, []);
-
   const fetchArticles = async () => {
     setLoading(true);
     try {
@@ -28,6 +26,8 @@ export default function LibraryPage() {
       if (!error && data) setArticles(data);
     } catch (e) { console.error(e); } finally { setLoading(false); }
   };
+
+  useEffect(() => { fetchArticles(); }, []);
 
   const grouped = useMemo(() => {
     const q = search.toLowerCase();

@@ -26,6 +26,15 @@ export default function MatchupsPage() {
   const [roleFilter, setRoleFilter] = useState('ALL');
   const [champMap, setChampMap] = useState<Record<string, string>>({});
 
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.from('matchup_sentinel').select('*').order('created_at', { ascending: false });
+      if (error) throw error;
+      setMatchups((data || []).filter(m => m.champion && m.enemy && m.enemy !== 'GLOBAL'));
+    } catch (err) { console.error(err); } finally { setLoading(false); }
+  };
+
   useEffect(() => {
     fetchData();
     fetch('https://ddragon.leagueoflegends.com/api/versions.json')
@@ -38,15 +47,6 @@ export default function MatchupsPage() {
         setChampMap(m);
       }).catch(console.error);
   }, []);
-
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      const { data, error } = await supabase.from('matchup_sentinel').select('*').order('created_at', { ascending: false });
-      if (error) throw error;
-      setMatchups((data || []).filter(m => m.champion && m.enemy && m.enemy !== 'GLOBAL'));
-    } catch (err) { console.error(err); } finally { setLoading(false); }
-  };
 
   const results = useMemo(() => {
     const isMatch = (name: string, q: string) => {
