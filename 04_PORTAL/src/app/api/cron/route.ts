@@ -5,7 +5,7 @@ export const maxDuration = 30; // 30秒でタイムアウト
 export async function GET(request: Request) {
   // RenderにデプロイしたAntigravity APIのURL
   // （本番環境では環境変数 process.env.API_SERVER_URL にする）
-  const API_SERVER_URL = process.env.API_SERVER_URL || 'https://antigravity-api.onrender.com';
+  const API_SERVER_URL = process.env.API_SERVER_URL || 'https://antigravity-api-nzo3.onrender.com';
   
   // 認証キー（Cronからのリクエストであることを証明する）
   const authHeader = request.headers.get('authorization');
