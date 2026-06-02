@@ -411,12 +411,18 @@ class SovereignPulse:
         except Exception as e:
             logger.error(f"❌ [Pulse] ランク同期中にエラー: {e}")
 
-    def pulse_loop(self):
-        """脈動のメインループ (1分周期)"""
-        logger.info("[Pulse] Sovereign Pulse 起動。不眠不休の監視を開始します。")
+    def run_cycle(self):
+        """1回の脈動（監視）サイクルを実行する（外部スケジューラから定期的に呼ばれる）"""
+        try:
+            # 内部ファイル監視
+            self.check_file_changes()
+        except Exception as e:
+            logger.error(f"Pulse サイクル内でエラー: {e}")
+
+    def initial_startup(self):
+        """起動時の初期化処理（メンバー同期など）"""
+        logger.info("[Pulse] Sovereign Pulse 起動。監視サイクルを開始します。")
         self.send_discord_notification("Sovereign Pulse が起動しました。監視を開始します。")
-        
-        # 起動時に一度だけメンバー同期を実行 (Async実行)
         try:
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
@@ -424,38 +430,6 @@ class SovereignPulse:
             loop.close()
         except Exception as e:
             logger.error(f"起動時同期に失敗: {e}")
-
-        while self.running:
-            try:
-                # 1. 内部ファイル監視 (1分ごと)
-                self.check_file_changes()
-                
-                # 2. 外部パッチ監視 (30分ごと)
-                if datetime.now().minute % 30 == 0:
-                    self.check_lol_patches()
-
-                # 3. ランク同期 (12時間ごと)
-                if datetime.now().hour % 12 == 0 and datetime.now().minute == 0:
-                    self.sync_player_ranks()
-                
-                # 4. 自己監査監視 (24時間ごと - 00:00頃)
-                if datetime.now().hour == 0 and datetime.now().minute == 0:
-                    logger.info("[Pulse] 日次自己監査 (Sentinel Audit) を執行します。")
-                    sentinel.run_daily_audit()
-
-                time.sleep(60)
-            except Exception as e:
-                logger.error(f"Pulse サイクル内でエラー: {e}")
-                time.sleep(60)
-
-    def start(self):
-        if not self.running:
-            self.running = True
-            self.thread = threading.Thread(target=self.pulse_loop, daemon=True)
-            self.thread.start()
-
-    def stop(self):
-        self.running = False
 
 # グローバルな脈動インスタンス
 pulse = SovereignPulse()

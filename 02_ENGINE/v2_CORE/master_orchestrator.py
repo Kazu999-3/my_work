@@ -1,9 +1,9 @@
 import sys
-import threading
 import time
 import logging
 import os
 import msvcrt
+import schedule
 from pathlib import Path
 
 # ==========================================
@@ -17,13 +17,11 @@ except IOError:
     print("[ERROR] 既に別のオーケストレーターが起動しています。多重起動を防止するため終了します。")
     sys.exit(0)
 
-
 # ==========================================
 # Sovereign OS: Unified Master Orchestrator
-# YouTube監視、コンテンツ生成、同期を統合管理する中心核
+# (Centralized Schedule Manager)
 # ==========================================
 
-# パス設定
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 ENGINE_DIR = BASE_DIR / "02_ENGINE"
 sys.path.append(str(ENGINE_DIR))
@@ -31,322 +29,128 @@ sys.path.append(str(ENGINE_DIR / "LEGACY"))
 
 from v2_CORE.pulse import pulse
 from v2_CORE.logger_config import setup_sovereign_logging
-from LEGACY.autonomous_kingdom import SovereignCoordinator
-from v2_CORE.riot_observer import RiotObserver
-import youtube_playlist_watcher
+from v2_CORE.sentinel import sentinel
+from v2_CORE.monetization_loop import run_monetization_loop
+from v2_CORE.darwin_engine import DarwinEngine
+from v2_CORE.bounty_hunter import BountyHunter
+from v2_CORE.bible_forge import BibleForge
+from v2_CORE.publisher import NotePublisher
 
 # 統合ロガー
 logger = setup_sovereign_logging("Orchestrator")
 
-def run_pulse():
-    """インフラ監視エンジンの起動"""
-    logger.info("💓 Pulse (Heartbeat) starting...")
-    try:
-        pulse.running = True
-        pulse.pulse_loop()
-    except Exception as e:
-        logger.error(f"🔥 Pulse failed: {e}")
+# --- ジョブ定義 ---
 
-def run_youtube_watcher():
-    """YouTubeプレイリスト監視エンジンの起動"""
-    logger.info("📺 YouTube Playlist Watcher starting...")
-    try:
-        # すでに youtube_playlist_watcher.py に main() があるためそれを呼び出す
-        youtube_playlist_watcher.main()
-    except Exception as e:
-        logger.error(f"🔥 YouTube Watcher failed: {e}")
+def job_pulse_cycle():
+    pulse.run_cycle()
 
-def run_riot_observer():
-    """ソロキュー試合監視エンジンの起動"""
-    logger.info("🎮 Riot Observer (SoloQ Monitoring) starting...")
-    try:
-        observer = RiotObserver()
-        observer.monitor()
-    except Exception as e:
-        logger.error(f"🔥 Riot Observer failed: {e}")
+def job_pulse_patches():
+    pulse.check_lol_patches()
 
-def run_coordinator():
-    """メインのコンテンツ生成・リサーチエンジンの起動"""
-    logger.info("🏰 Sovereign Coordinator (Kingdom) starting...")
+def job_pulse_ranks():
+    pulse.sync_player_ranks()
+
+def job_sentinel_audit():
     try:
-        # 他のスレッドと衝突しないように、起動時に3分（180秒）待機
-        logger.info("🏰 Sovereign Coordinator: Waiting 180s before first run to prevent startup API clash...")
-        time.sleep(180)
-        coordinator = SovereignCoordinator()
-        # デフォルト3時間おきに実行
-        coordinator.main_loop(interval_hours=3)
+        sentinel.run_daily_audit()
     except Exception as e:
-        logger.error(f"🔥 Coordinator failed: {e}")
+        logger.error(f"Sentinel Audit failed: {e}")
+
+def job_monetization():
+    try:
+        run_monetization_loop()
+    except Exception as e:
+        logger.error(f"Monetization Loop failed: {e}")
+
+def job_darwin():
+    try:
+        DarwinEngine().run_cycle()
+    except Exception as e:
+        logger.error(f"Darwin Engine failed: {e}")
+
+def job_bounty_hunter():
+    try:
+        hunter = BountyHunter()
+        bounties = hunter.scout_competitors()
+        if bounties:
+            target = bounties[0]
+            logger.info(f"🎯 競合狩りを実行します: {target['title']}")
+            prompt = hunter.generate_crushing_prompt(target['title'])
+            forge = BibleForge()
+            bible_text = forge.generate_bible("Meta Champion", additional_context=prompt)
+            note_pub = NotePublisher(headless=True)
+            note_pub.post_draft(
+                title=f"【完全版】{target['title']} の上位互換バイブル（格安）",
+                markdown_body=bible_text,
+                auto_publish=True,
+                price="500"
+            )
+    except Exception as e:
+        logger.error(f"Bounty Hunter failed: {e}")
 
 def main():
     logger.info("==================================================")
     logger.info("   🔱 SOVEREIGN OS: UNIFIED MASTER ORCHESTRATOR")
-    logger.info("   (YouTube + Research + Forge + Sync + Pulse)")
+    logger.info("   (Centralized Schedule Manager - Diet Mode)")
     logger.info("==================================================")
 
-    threads = []
-
-    # 1. Pulse (監視)
-    t_pulse = threading.Thread(target=run_pulse, name="PulseThread", daemon=True)
-    threads.append(t_pulse)
-
-    # 2. YouTube Watcher (目)
-    t_yt = threading.Thread(target=run_youtube_watcher, name="YouTubeThread", daemon=True)
-    threads.append(t_yt)
-
-    # 3. Coordinator (脳)
-    t_coord = threading.Thread(target=run_coordinator, name="KingdomThread", daemon=True)
-    threads.append(t_coord)
-
-    # 4. Riot Observer (ソロキュー監視)
-    t_riot = threading.Thread(target=run_riot_observer, name="RiotThread", daemon=True)
-    threads.append(t_riot)
-
-    # 5. Live Scout (ローディング画面監視)
-    def run_live_scout():
-        from v2_CORE.live_scout import LiveScout
-        logger.info("🟢 Live Scout (Client Monitor) starting...")
-        try:
-            LiveScout().run()
-        except Exception as e:
-            logger.error(f"🔥 Live Scout failed: {e}")
-            
-    t_live = threading.Thread(target=run_live_scout, name="LiveScoutThread", daemon=True)
-    threads.append(t_live)
-
-    # 6. Monetization Loop (自動生成ループ: 6時間に1回)
-    def run_monetization():
-        from v2_CORE.monetization_loop import run_monetization_loop
-        logger.info("💰 Monetization Loop starting (Every 6 hours)...")
-        # 起動時に2分（120秒）待機して API 競合を防ぐ
-        logger.info("💰 Monetization Loop: Waiting 120s before first run to prevent startup API clash...")
-        time.sleep(120)
-        while True:
-            try:
-                run_monetization_loop()
-            except Exception as e:
-                logger.error(f"🔥 Monetization Loop failed: {e}")
-            time.sleep(60 * 60 * 12) # 12時間待機
-            
-    t_money = threading.Thread(target=run_monetization, name="MonetizationThread", daemon=True)
-    threads.append(t_money)
-
-    # 7. Personal Coach Loop (15分おきに王の試合をチェック)
-    def run_personal_coach():
-        from v2_CORE.personal_coach import PersonalCoach
-        logger.info("🎓 Personal Coach starting (Every 15 mins)...")
-        # 起動時に15秒待機して API 競合を防ぐ
-        logger.info("🎓 Personal Coach: Waiting 15s before first run to prevent startup API clash...")
-        time.sleep(15)
-        coach = PersonalCoach()
-        while True:
-            try:
-                coach.run_coaching_cycle()
-            except Exception as e:
-                logger.error(f"🔥 Personal Coach failed: {e}")
-            time.sleep(60 * 15)
-            
-    t_coach = threading.Thread(target=run_personal_coach, name="CoachThread", daemon=True)
-    threads.append(t_coach)
-
-    # 8. Auto Healer (自己治癒ループ: 1分おきにログ監視)
-    def run_auto_healer():
-        from v2_CORE.auto_healer import AutoHealer
-        logger.info("⚕️ Auto Healer starting (Every 60s)...")
-        time.sleep(30) # 起動後30秒待機
-        healer = AutoHealer()
-        while True:
-            try:
-                healer.run_cycle()
-            except Exception as e:
-                logger.error(f"🔥 Auto Healer failed: {e}")
-            time.sleep(60)
-            
-    t_healer = threading.Thread(target=run_auto_healer, name="AutoHealerThread", daemon=True)
-    threads.append(t_healer)
-
-    # 9. Skill Synthesizer (自己スキル獲得ループ: 1分おきに要求監視)
-    def run_skill_synthesizer():
-        from v2_CORE.skill_synthesizer import SkillSynthesizer
-        logger.info("🧠 Skill Synthesizer starting (Every 60s)...")
-        synth = SkillSynthesizer()
-        # 起動時に既存のスキルを全て読み込んで起動
-        synth.load_existing_skills()
-        
-        while True:
-            try:
-                synth.run_cycle()
-            except Exception as e:
-                logger.error(f"🔥 Skill Synthesizer failed: {e}")
-            time.sleep(60)
-            
-    t_synth = threading.Thread(target=run_skill_synthesizer, name="SkillSynthThread", daemon=True)
-    threads.append(t_synth)
-
-    # 10. Darwin Engine (データ駆動の自己進化ループ: 24時間おき)
-    def run_darwin_engine():
-        from v2_CORE.darwin_engine import DarwinEngine
-        logger.info("🧬 Darwin Engine starting (Every 24 hours)...")
-        time.sleep(180) # 起動後3分待機
-        darwin = DarwinEngine()
-        while True:
-            try:
-                darwin.run_cycle()
-            except Exception as e:
-                logger.error(f"🔥 Darwin Engine failed: {e}")
-            time.sleep(60 * 60 * 24)
-            
-    t_darwin = threading.Thread(target=run_darwin_engine, name="DarwinThread", daemon=True)
-    threads.append(t_darwin)
-
-    # 11. Overseas Scout Loop (24時間おきに海外メタを精査)
-    def run_overseas_scout():
-        from v2_CORE.overseas_scout import OverseasScout
-        logger.info("🌐 Overseas Scout starting (Every 24 hours)...")
-        try:
-            OverseasScout().run()
-        except Exception as e:
-            logger.error(f"🔥 Overseas Scout failed: {e}")
-            
-    t_scout = threading.Thread(target=run_overseas_scout, name="ScoutThread", daemon=True)
-    threads.append(t_scout)
-
-    # 9. Draft Analyzer Loop (ライブ試合の構成分析)
-
-    def run_draft_analyzer():
-        from v2_CORE.draft_analyzer import DraftAnalyzer
-        logger.info("🧠 Draft Analyzer starting...")
-        try:
-            DraftAnalyzer().run()
-        except Exception as e:
-            logger.error(f"🔥 Draft Analyzer failed: {e}")
-            
-    t_draft = threading.Thread(target=run_draft_analyzer, name="DraftThread", daemon=True)
-    threads.append(t_draft)
-
-    # 10. News Scout Loop (メタニュースの収集)
-    def run_news_scout():
-        from v2_CORE.news_scout import NewsScout
-        logger.info("📰 News Scout starting...")
-        try:
-            NewsScout().run()
-        except Exception as e:
-            logger.error(f"🔥 News Scout failed: {e}")
-            
-    t_news = threading.Thread(target=run_news_scout, name="NewsThread", daemon=True)
-    threads.append(t_news)
-
-    # 11. Magazine Forge Loop (月刊マガジン自動生成)
-    def run_magazine_forge():
-        from v2_CORE.magazine_forge import MagazineForge
-        import datetime
-        logger.info("📚 Magazine Forge starting (Monthly check)...")
-        # 起動時に3分待機して API 競合を防ぐ
-        logger.info("📚 Magazine Forge: Waiting 180s before first run to prevent startup API clash...")
-        time.sleep(180)
-        forge = MagazineForge()
-        while True:
-            try:
-                now = datetime.datetime.now()
-                # 毎月1日に実行
-                if now.day == 1:
-                    logger.info("📚 Today is the 1st of the month! Forging Monthly Magazine...")
-                    forge.generate_magazine()
-                    # 生成後は24時間待機して重複実行を防止
-                    time.sleep(60 * 60 * 24)
-            except Exception as e:
-                logger.error(f"🔥 Magazine Forge failed: {e}")
-            # 1時間おきに日付をチェック
-            time.sleep(60 * 60)
-            
-    t_magazine = threading.Thread(target=run_magazine_forge, name="MagazineThread", daemon=True)
-    threads.append(t_magazine)
-
-    # 12. Bounty Hunter Loop (24時間に1回競合noteを狩る)
-    def run_bounty_hunter_loop():
-        from v2_CORE.bounty_hunter import BountyHunter
-        from v2_CORE.bible_forge import BibleForge
-        from v2_CORE.publisher import NotePublisher
-        logger.info("😈 Bounty Hunter starting (Every 24 hours)...")
-        time.sleep(300) # 起動後5分待機
-        while True:
-            try:
-                hunter = BountyHunter()
-                bounties = hunter.scout_competitors()
-                if bounties:
-                    target = bounties[0]
-                    logger.info(f"🎯 競合狩りを実行します: {target['title']}")
-                    prompt = hunter.generate_crushing_prompt(target['title'])
-                    
-                    forge = BibleForge()
-                    bible_text = forge.generate_bible("Meta Champion", additional_context=prompt)
-                    
-                    # 500円で対抗パブリッシュ
-                    note_pub = NotePublisher(headless=True)
-                    note_pub.post_draft(
-                        title=f"【完全版】{target['title']} の上位互換バイブル（格安）",
-                        markdown_body=bible_text,
-                        auto_publish=True,
-                        price="500"
-                    )
-            except Exception as e:
-                logger.error(f"🔥 Bounty Hunter Loop failed: {e}")
-            time.sleep(60 * 60 * 24)
-            
-    t_bounty = threading.Thread(target=run_bounty_hunter_loop, name="BountyThread", daemon=True)
-    threads.append(t_bounty)
-
-    # 13. VOD Oracle Loop (12時間に1回プロの視覚メタを学習)
-    def run_vod_oracle_loop():
-        from v2_CORE.vod_oracle import VODOracle
-        logger.info("👁️ VOD Oracle starting (Every 12 hours)...")
-        time.sleep(600) # 起動後10分待機
-        while True:
-            try:
-                oracle = VODOracle()
-                result = oracle.auto_hunt_and_analyze()
-                if result:
-                    logger.info("✅ VOD視覚メタをSupabaseのグローバル戦略に書き込みます")
-                    # 本来はSupabase等のDBに送るが、ここではログ出力で完了とする
-            except Exception as e:
-                logger.error(f"🔥 VOD Oracle Loop failed: {e}")
-            time.sleep(60 * 60 * 12)
-            
-    t_vod = threading.Thread(target=run_vod_oracle_loop, name="VODOracleThread", daemon=True)
-    threads.append(t_vod)
-
-    # 全エンジンの点火
-    for t in threads:
-        t.start()
-        time.sleep(1) # 起動タイミングを少しずらしてログの混線を防ぐ
-
-    logger.info("✅ All systems initialized and running in parallel.")
-    logger.info("💡 Press Ctrl+C to stop all services.")
-
+    # 1. 初期起動タスク
     try:
-        # 自己修復対象となる重要スレッドのリスト（これらが死んだらプロセスを再起動する）
-        critical_threads = ["PulseThread", "YouTubeThread", "KingdomThread", "RiotThread", "CoachThread"]
+        pulse.initial_startup()
+    except Exception as e:
+        logger.error(f"Initial startup failed: {e}")
+
+    # ---------------------------------------------
+    # 2. スケジュール登録（MVPと収益化に特化）
+    # ---------------------------------------------
+    
+    # 毎分: 内部ファイル監視（Pulse）
+    schedule.every(1).minutes.do(job_pulse_cycle)
+    
+    # 30分毎: 公式パッチ監視
+    schedule.every(30).minutes.do(job_pulse_patches)
+    
+    # 6時間毎: 収益化ループ（note記事の自動作成と公開）
+    schedule.every(6).hours.do(job_monetization)
+    
+    # 12時間毎: プレイヤーランク同期
+    schedule.every(12).hours.do(job_pulse_ranks)
+    
+    # 毎日 00:00: 自己監査 (Sentinel Audit)
+    schedule.every().day.at("00:00").do(job_sentinel_audit)
+    
+    # 毎日 02:00: Darwin進化 (DBレビューと学習)
+    schedule.every().day.at("02:00").do(job_darwin)
+    
+    # 毎日 04:00: 競合狩り (Bounty Hunter)
+    schedule.every().day.at("04:00").do(job_bounty_hunter)
+    
+    # ---------------------------------------------
+    # 3. 無効化されたオーバースペック機能（コメントアウト）
+    # API節約・無料枠維持のため、本当に必要な時以外は動かさない
+    # ---------------------------------------------
+    # - Live Scout (ライブ試合監視)
+    # - Personal Coach (15分ごとのコーチング)
+    # - Auto Healer (1分ごとの自己修復 - リソース過多)
+    # - Skill Synthesizer (1分ごとのスキル自己生成 - 無限API消費の危険)
+    # - Overseas Scout (海外メタ精査)
+    # - Draft Analyzer
+    # - News Scout
+    # - Magazine Forge (月刊誌自動生成)
+    # - VOD Oracle (動画視覚メタ学習 - 12時間ごと)
+    # - YouTube Watcher (旧YouTube監視機能)
+    
+    logger.info("✅ Scheduler initialized. Entering main loop...")
+    
+    try:
         while True:
-            alive_names = [t.name for t in threads if t.is_alive()]
-            if not alive_names:
-                logger.warning("⚠️ All sub-engines have stopped. Exiting...")
-                break
-            
-            # 重要スレッドが死亡していないかチェック
-            for name in critical_threads:
-                if name not in alive_names:
-                    logger.error(f"🚨 Critical engine thread '{name}' is dead! Forcing process exit for recovery...")
-                    sys.exit(1)
-                    
-            time.sleep(10)
+            # 時間が来たジョブを1つずつ順番に実行する（API衝突の完全回避）
+            schedule.run_pending()
+            time.sleep(1)
     except KeyboardInterrupt:
-        logger.info("👋 Shutdown signal received from Master. Stopping Sovereign OS...")
-    except SystemExit:
-        # sys.exit(1) による終了をキャッチして、ログのノイズを出さずに終了する
-        pass
-    finally:
-        pulse.stop()
-        logger.info("[!] Unified Sovereign OS halted.")
+        logger.info("👋 Shutdown signal received. Stopping Sovereign OS...")
+    except Exception as e:
+        logger.error(f"🚨 Orchestrator crashed: {e}")
 
 if __name__ == "__main__":
     main()
