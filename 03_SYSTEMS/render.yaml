@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: antigravity-api
+    env: python
+    region: singapore # または oregon
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "uvicorn v2_CORE.api:app --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: DISCORD_WEBHOOK
+        sync: false
+      - key: ANTIGRAVITY_DATA_DIR
+        value: /var/data
+    disk:
+      name: antigravity-data
+      mountPath: /var/data
+      sizeGB: 1
