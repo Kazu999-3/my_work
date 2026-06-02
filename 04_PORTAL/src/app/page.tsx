@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Activity, Zap, TrendingUp, ShieldAlert, Cpu, Network, Gamepad2 } from 'lucide-react';
+import { Activity, Zap, TrendingUp, ShieldAlert, Cpu, Network, Gamepad2, Users } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
+import Link from 'next/link';
 
 const dummyData = [
   { name: 'Mon', value: 4000 },
@@ -100,14 +101,21 @@ export default function Home() {
           </p>
         </div>
         
-        <div className="glass-panel rounded-full px-6 py-2 flex gap-6">
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-[var(--color-success)] animate-pulse shadow-[0_0_8px_var(--color-success)]"></div>
-            <span className="text-sm font-medium text-gray-300">システム正常</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-[var(--color-success)] animate-pulse shadow-[0_0_8px_var(--color-success)]"></div>
-            <span className="text-sm font-medium text-gray-300">データ同期完了</span>
+        <div className="flex flex-col md:flex-row items-center gap-4">
+          <Link href="/ktm-admin" className="glass-panel glass-panel-hover rounded-full px-6 py-2 flex items-center gap-2 text-blue-400 hover:text-blue-300 transition-colors">
+            <Users size={16} />
+            <span className="text-sm font-medium">KTM 管理ダッシュボード</span>
+          </Link>
+          
+          <div className="glass-panel rounded-full px-6 py-2 flex gap-6">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-[var(--color-success)] animate-pulse shadow-[0_0_8px_var(--color-success)]"></div>
+              <span className="text-sm font-medium text-gray-300">システム正常</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-[var(--color-success)] animate-pulse shadow-[0_0_8px_var(--color-success)]"></div>
+              <span className="text-sm font-medium text-gray-300">データ同期完了</span>
+            </div>
           </div>
         </div>
       </motion.header>
