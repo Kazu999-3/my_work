@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Activity, Zap, TrendingUp, ShieldAlert, Cpu, Network } from 'lucide-react';
+import { Activity, Zap, TrendingUp, ShieldAlert, Cpu, Network, Gamepad2 } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { supabase } from '@/lib/supabase';
 
 const dummyData = [
   { name: 'Mon', value: 4000 },
@@ -17,6 +18,29 @@ const dummyData = [
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState('overview');
+  const [recentMatches, setRecentMatches] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchMatches() {
+      try {
+        const { data, error } = await supabase
+          .from('lol_matches')
+          .select('*')
+          .order('match_date', { ascending: false })
+          .limit(5);
+        
+        if (error) throw error;
+        if (data) setRecentMatches(data);
+      } catch (err) {
+        console.error('Error fetching matches:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    
+    fetchMatches();
+  }, []);
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -51,18 +75,18 @@ export default function Home() {
           </h1>
           <p className="text-[var(--color-primary)] font-medium text-glow flex items-center gap-2">
             <Activity size={18} className="animate-pulse" />
-            クラウド帝国オンライン
+            システムオンライン
           </p>
         </div>
         
         <div className="glass-panel rounded-full px-6 py-2 flex gap-6">
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-[var(--color-success)] animate-pulse shadow-[0_0_8px_var(--color-success)]"></div>
-            <span className="text-sm font-medium text-gray-300">脈動アクティブ</span>
+            <span className="text-sm font-medium text-gray-300">システム正常</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-[var(--color-success)] animate-pulse shadow-[0_0_8px_var(--color-success)]"></div>
-            <span className="text-sm font-medium text-gray-300">エッジ同期完了</span>
+            <span className="text-sm font-medium text-gray-300">データ同期完了</span>
           </div>
         </div>
       </motion.header>
@@ -80,7 +104,7 @@ export default function Home() {
           <div className="absolute -right-4 -top-4 w-24 h-24 bg-blue-500/10 rounded-full blur-2xl group-hover:bg-blue-500/20 transition-all"></div>
           <div className="flex justify-between items-start mb-4">
             <div>
-              <p className="text-sm text-gray-400 font-medium mb-1">同期済み資産（合計）</p>
+              <p className="text-sm text-gray-400 font-medium mb-1">同期済みデータ（合計）</p>
               <h3 className="text-3xl font-bold text-white">1,284</h3>
             </div>
             <div className="p-3 bg-blue-500/20 rounded-xl text-blue-400">
@@ -96,7 +120,7 @@ export default function Home() {
           <div className="absolute -right-4 -top-4 w-24 h-24 bg-purple-500/10 rounded-full blur-2xl group-hover:bg-purple-500/20 transition-all"></div>
           <div className="flex justify-between items-start mb-4">
             <div>
-              <p className="text-sm text-gray-400 font-medium mb-1">クラウド知能</p>
+              <p className="text-sm text-gray-400 font-medium mb-1">バックグラウンド処理</p>
               <h3 className="text-3xl font-bold text-white">稼働中</h3>
             </div>
             <div className="p-3 bg-purple-500/20 rounded-xl text-purple-400">
@@ -112,7 +136,7 @@ export default function Home() {
           <div className="absolute -right-4 -top-4 w-24 h-24 bg-red-500/10 rounded-full blur-2xl group-hover:bg-red-500/20 transition-all"></div>
           <div className="flex justify-between items-start mb-4">
             <div>
-              <p className="text-sm text-gray-400 font-medium mb-1">要対応アクション</p>
+              <p className="text-sm text-gray-400 font-medium mb-1">要確認タスク</p>
               <h3 className="text-3xl font-bold text-white">3</h3>
             </div>
             <div className="p-3 bg-red-500/20 rounded-xl text-red-400">
@@ -120,14 +144,14 @@ export default function Home() {
             </div>
           </div>
           <p className="text-xs text-red-400 flex items-center gap-1 mt-4">
-            未処理の反省会があります
+            確認待ちのデータがあります
           </p>
         </motion.div>
 
         {/* Large Chart Area */}
         <motion.div variants={itemVariants} className="md:col-span-2 glass-panel rounded-2xl p-6 h-[400px] flex flex-col">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-bold text-white">システム脈動メトリクス</h2>
+            <h2 className="text-xl font-bold text-white">システムメトリクス</h2>
             <div className="flex gap-2 bg-[var(--color-surface)] p-1 rounded-lg">
               {[
                 { id: 'overview', label: '概要' },
@@ -170,24 +194,31 @@ export default function Home() {
 
         {/* Recent Activity List */}
         <motion.div variants={itemVariants} className="glass-panel rounded-2xl p-6">
-          <h2 className="text-xl font-bold text-white mb-6">最新のアクティビティ</h2>
+          <h2 className="text-xl font-bold text-white mb-6">最新の戦績データ</h2>
           <div className="space-y-4">
-            {[
-              { id: 1, title: 'パッチ 15.1 検知', time: '12分前', icon: <Zap size={16} className="text-yellow-400" /> },
-              { id: 2, title: '戦績取り込み: Jarvan IV', time: '45分前', icon: <Activity size={16} className="text-blue-400" /> },
-              { id: 3, title: 'note記事錬成完了', time: '2時間前', icon: <Cpu size={16} className="text-purple-400" /> },
-              { id: 4, title: 'ランク同期完了', time: '5時間前', icon: <Network size={16} className="text-green-400" /> },
-            ].map((activity) => (
-              <div key={activity.id} className="flex gap-4 items-start group">
-                <div className="mt-1 p-2 bg-[var(--color-surface)] rounded-lg group-hover:bg-[var(--color-surface-hover)] transition-colors">
-                  {activity.icon}
+            {isLoading ? (
+              <div className="text-center py-4 text-gray-400 text-sm animate-pulse">データを同期中...</div>
+            ) : recentMatches.length > 0 ? (
+              recentMatches.map((match) => (
+                <div key={match.id || match.match_id} className="flex gap-4 items-start group">
+                  <div className="mt-1 p-2 bg-[var(--color-surface)] rounded-lg group-hover:bg-[var(--color-surface-hover)] transition-colors">
+                    <Gamepad2 size={16} className={match.win ? "text-blue-400" : "text-red-400"} />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-200">
+                      {match.champion_name} ({match.win ? 'Victory' : 'Defeat'})
+                    </h4>
+                    <p className="text-xs text-gray-500 flex gap-2">
+                      <span>KDA: {match.kills}/{match.deaths}/{match.assists}</span>
+                      <span>•</span>
+                      <span>対面: {match.enemy_jungler || '不明'}</span>
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h4 className="text-sm font-medium text-gray-200">{activity.title}</h4>
-                  <p className="text-xs text-gray-500">{activity.time}</p>
-                </div>
-              </div>
-            ))}
+              ))
+            ) : (
+              <div className="text-center py-4 text-gray-500 text-sm">データがありません</div>
+            )}
           </div>
           <button className="w-full mt-6 py-2 rounded-lg bg-[var(--color-surface)] hover:bg-[var(--color-surface-hover)] text-sm text-gray-300 font-medium transition-all">
             すべてのログを表示
