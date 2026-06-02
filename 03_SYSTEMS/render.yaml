@@ -17,8 +17,4 @@ services:
       - key: DISCORD_WEBHOOK
         sync: false
       - key: ANTIGRAVITY_DATA_DIR
-        value: /var/data
-    disk:
-      name: antigravity-data
-      mountPath: /var/data
-      sizeGB: 1
+        value: /tmp
