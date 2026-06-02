@@ -1,11 +1,10 @@
-name: Antigravity Monetization Loop
+﻿name: Antigravity Monetization Loop
 
 on:
   schedule:
-    # 毎日 00:00 (JST 09:00), 06:00 (JST 15:00), 12:00 (JST 21:00) に自動実行
-    - cron: '0 0,6,12 * * *'
+    # 豈取律 00:00 (JST 09:00), 06:00 (JST 15:00), 12:00 (JST 21:00) 縺ｫ閾ｪ蜍募ｮ溯｡・    - cron: '0 0,6,12 * * *'
   workflow_dispatch:
-    # 手動実行ボタンの追加
+    # 謇句虚螳溯｡後・繧ｿ繝ｳ縺ｮ霑ｽ蜉
 
 jobs:
   run-monetization-loop:
@@ -23,7 +22,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r 02_ENGINE/requirements.txt
+          pip install -r 03_SYSTEMS/requirements.txt
           
       - name: Run Monetization Loop
         env:
@@ -31,6 +30,5 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
         run: |
-          # モネタイズループ（X投稿、note生成など）の単発実行
-          # ※無限ループしないように --once フラグ等があるなら付与する
-          python 02_ENGINE/v2_CORE/monetization_loop.py --once || true
+          # 繝｢繝阪ち繧､繧ｺ繝ｫ繝ｼ繝暦ｼ・謚慕ｨｿ縲］ote逕滓・縺ｪ縺ｩ・峨・蜊倡匱螳溯｡・          # 窶ｻ辟｡髯舌Ν繝ｼ繝励＠縺ｪ縺・ｈ縺・↓ --once 繝輔Λ繧ｰ遲峨′縺ゅｋ縺ｪ繧我ｻ倅ｸ弱☆繧・          python 03_SYSTEMS/v2_CORE/monetization_loop.py --once || true
+

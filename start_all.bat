@@ -26,7 +26,7 @@ if %errorlevel% neq 0 (
 )
 
 :: Set environment variables
-set "PYTHONPATH=%~dp002_ENGINE"
+set "PYTHONPATH=%~dp003_SYSTEMS"
 set "PYTHONUNBUFFERED=1"
 
 echo [OK] venv activated
@@ -37,14 +37,14 @@ echo --------------------------------------------------
 
 :: Launch Command Center (minimized)
 echo [+] Starting Command Center...
-start /min "CommandCenter" cmd /c "cd /d "%~dp004_COMMAND_CENTER" && npm run dev"
+start /min "CommandCenter" cmd /c "cd /d "%~dp099_ARCHIVE/04_COMMAND_CENTER_old" && npm run dev"
 
 echo [+] All sub-processes launched.
 echo --------------------------------------------------
 
 :: Run Master Orchestrator in this window (auto-restart loop)
 :ORCH_LOOP
-python -u "02_ENGINE\v2_CORE\master_orchestrator.py"
+python -u "03_SYSTEMS\v2_CORE\master_orchestrator.py"
 echo [!] Master Orchestrator stopped (code: %errorlevel%). Restarting in 5s...
 timeout /t 5
 goto ORCH_LOOP

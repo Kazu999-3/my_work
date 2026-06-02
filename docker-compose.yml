@@ -10,4 +10,4 @@ services:
       # ブラウザのログインセッションを維持するため、ローカルのプロファイルをマウント
       - ./.agent/playwright_data:/app/.agent/playwright_data
     restart: unless-stopped
-    command: ["python", "02_ENGINE/v2_CORE/master_orchestrator.py"]
+    command: ["python", "03_SYSTEMS/v2_CORE/master_orchestrator.py"]

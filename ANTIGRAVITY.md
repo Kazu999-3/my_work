@@ -66,7 +66,7 @@ CREATE POLICY "Allow update" ON matchup_sentinel FOR UPDATE TO authenticated USI
 
 #### B. APIキーの紐付け
 - **システム同期用 (.env)**: `SUPABASE_URL`, `SUPABASE_KEY` (service_role)
-- **Webポータル用 (04_COMMAND_CENTER/.env)**: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`
+- **Webポータル用 (99_ARCHIVE/04_COMMAND_CENTER_old/.env)**: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`
 
 ---
 

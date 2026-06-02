@@ -1,20 +1,11 @@
----
-description: OLE Pro Beta の動画解析エンジン (yt-dlp + Gemini API) をバッチ起動し、対象のYouTube動画群の勝率に直結する情報を自動レポート化する手順。
----
+﻿---
+description: OLE Pro Beta 縺ｮ蜍慕判隗｣譫舌お繝ｳ繧ｸ繝ｳ (yt-dlp + Gemini API) 繧偵ヰ繝・メ襍ｷ蜍輔＠縲∝ｯｾ雎｡縺ｮYouTube蜍慕判鄒､縺ｮ蜍晉紫縺ｫ逶ｴ邨舌☆繧区ュ蝣ｱ繧定・蜍輔Ξ繝昴・繝亥喧縺吶ｋ謇矩・・---
 
-# 🎥 OLE 一括解析 ワークフロー (/ole-analyze-batch)
+# 磁 OLE 荳諡ｬ隗｣譫・繝ｯ繝ｼ繧ｯ繝輔Ο繝ｼ (/ole-analyze-batch)
 
-KireiLOL等のハイレートなチャレンジャー・プロプレイヤーの動画から、「マクロ・ミクロのカンペ」を自動で抽出するバッチを走らせます。
-
-## 📋 実行ステップ
-
-### Step 1: 環境の事前チェック
-1. ルートディレクトリ (`d:\my_work`) に `.env` が存在し、`GEMINI_API_KEY` が正しく設定されているかを確認します。
-2. Pythonの仮想環境 (`.venv`) と必要なパッケージ (`yt-dlp`, `google-generativeai`, `python-dotenv`) が揃っているか監査します。
-
-### Step 2: 解析エンジンの起動
-1. `d:\my_work\scratch\batch_ole_analyzer.py` をバックグラウンドで（`WaitMsBeforeAsync`などを用いて）起動します。
-2. アナライザは設定された動画（24本等）順番にダウンロードし、Gemini 1.5 Pro へ音声を投げて OLE Report を生成し続けます。
-
-### Step 3: 状況トラッキングの開始
-- 実行の `CommandId` を王に報告し、「現在裏側で動画を解析中です。結果は `03_FACTORY/note_drafts/ole_reports/` に順次出力されます」と伝達します。
+KireiLOL遲峨・繝上う繝ｬ繝ｼ繝医↑繝√Ε繝ｬ繝ｳ繧ｸ繝｣繝ｼ繝ｻ繝励Ο繝励Ξ繧､繝､繝ｼ縺ｮ蜍慕判縺九ｉ縲√後・繧ｯ繝ｭ繝ｻ繝溘け繝ｭ縺ｮ繧ｫ繝ｳ繝壹阪ｒ閾ｪ蜍輔〒謚ｽ蜃ｺ縺吶ｋ繝舌ャ繝√ｒ襍ｰ繧峨○縺ｾ縺吶・
+## 搭 螳溯｡後せ繝・ャ繝・
+### Step 1: 迺ｰ蠅・・莠句燕繝√ぉ繝・け
+1. 繝ｫ繝ｼ繝医ョ繧｣繝ｬ繧ｯ繝医Μ (`d:\my_work`) 縺ｫ `.env` 縺悟ｭ伜惠縺励～GEMINI_API_KEY` 縺梧ｭ｣縺励￥險ｭ螳壹＆繧後※縺・ｋ縺九ｒ遒ｺ隱阪＠縺ｾ縺吶・2. Python縺ｮ莉ｮ諠ｳ迺ｰ蠅・(`.venv`) 縺ｨ蠢・ｦ√↑繝代ャ繧ｱ繝ｼ繧ｸ (`yt-dlp`, `google-generativeai`, `python-dotenv`) 縺梧純縺｣縺ｦ縺・ｋ縺狗屮譟ｻ縺励∪縺吶・
+### Step 2: 隗｣譫舌お繝ｳ繧ｸ繝ｳ縺ｮ襍ｷ蜍・1. `d:\my_work\scratch\batch_ole_analyzer.py` 繧偵ヰ繝・け繧ｰ繝ｩ繧ｦ繝ｳ繝峨〒・・WaitMsBeforeAsync`縺ｪ縺ｩ繧堤畑縺・※・芽ｵｷ蜍輔＠縺ｾ縺吶・2. 繧｢繝翫Λ繧､繧ｶ縺ｯ險ｭ螳壹＆繧後◆蜍慕判・・4譛ｬ遲会ｼ蛾・分縺ｫ繝繧ｦ繝ｳ繝ｭ繝ｼ繝峨＠縲；emini 1.5 Pro 縺ｸ髻ｳ螢ｰ繧呈兜縺偵※ OLE Report 繧堤函謌舌＠邯壹￠縺ｾ縺吶・
+### Step 3: 迥ｶ豕√ヨ繝ｩ繝・く繝ｳ繧ｰ縺ｮ髢句ｧ・- 螳溯｡後・ `CommandId` 繧堤視縺ｫ蝣ｱ蜻翫＠縲√檎樟蝨ｨ陬丞・縺ｧ蜍慕判繧定ｧ｣譫蝉ｸｭ縺ｧ縺吶らｵ先棡縺ｯ `02_FACTORY/note_drafts/ole_reports/` 縺ｫ鬆・ｬ｡蜃ｺ蜉帙＆繧後∪縺吶阪→莨晞＃縺励∪縺吶・

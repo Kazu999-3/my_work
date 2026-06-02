@@ -26,19 +26,19 @@ d:\my_work\.venv\Scripts\python.exe d:\my_work\scratch\batch_ole_analyzer.py
 
 ### 1. 状況サマリー
 - **実施済み**:
-    - `02_ENGINE/v2_CORE/forge_protocol.py` の構築（統計データと Forge の連携）。
+    - `03_SYSTEMS/v2_CORE/forge_protocol.py` の構築（統計データと Forge の連携）。
     - `forge.py` のプロンプトテンプレート強化（統計解釈ロジックの追加）。
 - **中断理由**: Gemini API の **本日分クォータ制限（Daily Limit）** に到達したため（429 Error）。
 
 ### 2. 再開用ワンライナー
 ```powershell
 # 仮想環境のPythonを使用して Jarvan IV の記事を錬成
-d:\my_work\.venv\Scripts\python.exe d:\my_work\02_ENGINE\v2_CORE\forge_protocol.py
+d:\my_work\.venv\Scripts\python.exe d:\my_work\03_SYSTEMS\v2_CORE\forge_protocol.py
 ```
 
 ### 3. 次にすべきこと (TODO)
 - [ ] クォータリセット後にプロトコルを実行し、Jarvan IV の高品質記事下書きを生成する。
-- [ ] 生成された下書き（03_FACTORY/note_drafts/）の内容を王へ報告する。
+- [ ] 生成された下書き（02_FACTORY/note_drafts/）の内容を王へ報告する。
 
 ---
 **次回開始時のヒント**: 王から「引継ぎログを確認して作業を再開せよ」と命じられた場合、このファイルを読み込み、上記のコマンドを実行してください。
