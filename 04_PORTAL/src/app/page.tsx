@@ -101,24 +101,38 @@ export default function Home() {
           </p>
         </div>
         
-        <div className="flex flex-col md:flex-row items-center gap-4">
-          <Link href="/ktm-admin" className="glass-panel glass-panel-hover rounded-full px-6 py-2 flex items-center gap-2 text-blue-400 hover:text-blue-300 transition-colors">
-            <Users size={16} />
-            <span className="text-sm font-medium">KTM 管理ダッシュボード</span>
-          </Link>
-          
-          <div className="glass-panel rounded-full px-6 py-2 flex gap-6">
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-[var(--color-success)] animate-pulse shadow-[0_0_8px_var(--color-success)]"></div>
-              <span className="text-sm font-medium text-gray-300">システム正常</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-[var(--color-success)] animate-pulse shadow-[0_0_8px_var(--color-success)]"></div>
-              <span className="text-sm font-medium text-gray-300">データ同期完了</span>
-            </div>
+        <div className="glass-panel rounded-full px-6 py-2 flex gap-6">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-[var(--color-success)] animate-pulse shadow-[0_0_8px_var(--color-success)]"></div>
+            <span className="text-sm font-medium text-gray-300">システム正常</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-[var(--color-success)] animate-pulse shadow-[0_0_8px_var(--color-success)]"></div>
+            <span className="text-sm font-medium text-gray-300">データ同期完了</span>
           </div>
         </div>
       </motion.header>
+
+      {/* Quick Action / Admin Banner */}
+      <motion.div 
+        initial={{ y: -20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.5, delay: 0.2 }}
+        className="glass-panel rounded-2xl p-4 flex flex-col md:flex-row justify-between items-center bg-blue-900/20 border border-blue-500/30 shadow-[0_0_15px_rgba(59,130,246,0.1)] gap-4"
+      >
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-blue-500/20 rounded-lg text-blue-400">
+            <Users size={20} />
+          </div>
+          <div>
+            <h3 className="text-white font-bold text-lg">KTM マネジメント</h3>
+            <p className="text-blue-300 text-xs">スプレッドシートの代わりにこちらからプレイヤー管理が可能です</p>
+          </div>
+        </div>
+        <Link href="/ktm-admin" className="bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-blue-500/20 transition-all flex items-center gap-2 w-full md:w-auto justify-center">
+          ダッシュボードを開く
+        </Link>
+      </motion.div>
 
       {/* Main Content */}
       <motion.main 
