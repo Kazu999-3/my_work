@@ -35,6 +35,8 @@ from v2_CORE.darwin_engine import DarwinEngine
 from v2_CORE.bounty_hunter import BountyHunter
 from v2_CORE.bible_forge import BibleForge
 from v2_CORE.publisher import NotePublisher
+from v2_CORE.match_importer import import_matches
+from v2_CORE.champ_db_updater import process_interrogation_queue
 
 # 統合ロガー
 logger = setup_sovereign_logging("Orchestrator")
@@ -49,6 +51,13 @@ def job_pulse_patches():
 
 def job_pulse_ranks():
     pulse.sync_player_ranks()
+
+def job_match_importer():
+    try:
+        import_matches()
+        process_interrogation_queue()
+    except Exception as e:
+        logger.error(f"Match Importer failed: {e}")
 
 def job_sentinel_audit():
     try:
@@ -109,6 +118,9 @@ def main():
     
     # 30分毎: 公式パッチ監視
     schedule.every(30).minutes.do(job_pulse_patches)
+    
+    # 15分毎: ソロキューの戦績自動取り込み
+    schedule.every(15).minutes.do(job_match_importer)
     
     # 6時間毎: 収益化ループ（note記事の自動作成と公開）
     schedule.every(6).hours.do(job_monetization)

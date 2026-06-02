@@ -33,13 +33,7 @@ echo [OK] venv activated
 echo [OK] PYTHONPATH=%PYTHONPATH%
 echo --------------------------------------------------
 
-:: Launch Sentinel in background (no window)
-echo [+] Starting Sentinel (background)...
-start "" /b cmd /c "cd /d "%~dp0" && call .venv\Scripts\activate.bat && set PYTHONPATH=%~dp002_ENGINE && set PYTHONUNBUFFERED=1 && python -m v2_CORE.sentinel"
-
-:: Launch Match Importer (minimized, auto-restart)
-echo [+] Starting Match Importer...
-start /min "MatchImporter" cmd /c "chcp 65001 >nul && cd /d "%~dp0" && call .venv\Scripts\activate.bat && set PYTHONPATH=%~dp002_ENGINE && set PYTHONUNBUFFERED=1 && :loop && python "02_ENGINE\v2_CORE\match_importer.py" & timeout /t 5 >nul & goto loop"
+:: Sentinel and Match Importer are now managed by the Master Orchestrator.
 
 :: Launch Command Center (minimized)
 echo [+] Starting Command Center...
