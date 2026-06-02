@@ -25,9 +25,9 @@ export default function Home() {
     async function fetchMatches() {
       try {
         const { data, error } = await supabase
-          .from('lol_matches')
-          .select('*')
-          .order('match_date', { ascending: false })
+          .from('matchup_sentinel')
+          .select('matchup_id, champion, enemy, raw_data, created_at')
+          .order('created_at', { ascending: false })
           .limit(5);
         
         if (error) throw error;
@@ -199,23 +199,26 @@ export default function Home() {
             {isLoading ? (
               <div className="text-center py-4 text-gray-400 text-sm animate-pulse">データを同期中...</div>
             ) : recentMatches.length > 0 ? (
-              recentMatches.map((match) => (
-                <div key={match.id || match.match_id} className="flex gap-4 items-start group">
-                  <div className="mt-1 p-2 bg-[var(--color-surface)] rounded-lg group-hover:bg-[var(--color-surface-hover)] transition-colors">
-                    <Gamepad2 size={16} className={match.win ? "text-blue-400" : "text-red-400"} />
+              recentMatches.map((match) => {
+                const isWin = match.raw_data?.result === 'Win';
+                return (
+                  <div key={match.matchup_id} className="flex gap-4 items-start group">
+                    <div className="mt-1 p-2 bg-[var(--color-surface)] rounded-lg group-hover:bg-[var(--color-surface-hover)] transition-colors">
+                      <Gamepad2 size={16} className={isWin ? "text-blue-400" : "text-red-400"} />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-medium text-gray-200">
+                        {match.champion} ({isWin ? 'Victory' : 'Defeat'})
+                      </h4>
+                      <p className="text-xs text-gray-500 flex gap-2">
+                        <span>KDA: {match.raw_data?.my_kda || '不明'}</span>
+                        <span>•</span>
+                        <span>対面: {match.enemy || '不明'}</span>
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-200">
-                      {match.champion_name} ({match.win ? 'Victory' : 'Defeat'})
-                    </h4>
-                    <p className="text-xs text-gray-500 flex gap-2">
-                      <span>KDA: {match.kills}/{match.deaths}/{match.assists}</span>
-                      <span>•</span>
-                      <span>対面: {match.enemy_jungler || '不明'}</span>
-                    </p>
-                  </div>
-                </div>
-              ))
+                );
+              })
             ) : (
               <div className="text-center py-4 text-gray-500 text-sm">データがありません</div>
             )}
