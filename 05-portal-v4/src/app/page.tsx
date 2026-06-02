@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Activity, Zap, TrendingUp, ShieldAlert, Cpu, Network, Gamepad2 } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/supabaseClient';
 
 const dummyData = [
   { name: 'Mon', value: 4000 },

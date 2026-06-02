@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/supabaseClient';
 import { getChampIcon } from '@/lib/ddragon';
 import { Shield, Target, ChevronLeft, Swords, Plus, X, Save, Trash2, Activity } from 'lucide-react';
 import { motion } from 'framer-motion';
