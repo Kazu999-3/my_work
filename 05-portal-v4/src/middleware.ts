@@ -5,9 +5,9 @@ export function middleware(req: NextRequest) {
   const basicAuth = req.headers.get('authorization');
   const url = req.nextUrl;
 
-  // Basic認証の設定 (ID: admin, PW: sovereign)
+  // Basic認証の設定 (ID: admin, PW: admin311)
   const user = 'admin';
-  const pwd = 'sovereign';
+  const pwd = 'admin311';
 
   if (basicAuth) {
     const authValue = basicAuth.split(' ')[1];
