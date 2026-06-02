@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState, useMemo } from 'react';
-import { supabase } from '../../lib/supabaseClient';
-import { getChampIcon, getChampSplash } from '../../lib/ddragonClient';
+import { supabase } from '@/lib/supabaseClient';
+import { getChampIcon, getChampSplash } from '@/lib/ddragonClient';
 import { ChevronLeft, Search, Save, BookOpen, RefreshCw, Zap, ShieldAlert, Swords, Shield, Copy, Check, FileText, Eye, Edit2, Activity } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
