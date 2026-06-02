@@ -131,16 +131,12 @@ def main():
     # 毎日 00:00: 自己監査 (Sentinel Audit)
     schedule.every().day.at("00:00").do(job_sentinel_audit)
     
-    # 毎日 02:00: Darwin進化 (DBレビューと学習)
-    schedule.every().day.at("02:00").do(job_darwin)
-    
-    # 毎日 04:00: 競合狩り (Bounty Hunter)
-    schedule.every().day.at("04:00").do(job_bounty_hunter)
-    
     # ---------------------------------------------
     # 3. 無効化されたオーバースペック機能（コメントアウト）
     # API節約・無料枠維持のため、本当に必要な時以外は動かさない
     # ---------------------------------------------
+    # - Darwin進化 (DBレビューと学習 - 毎日 02:00)
+    # - 競合狩り / Bounty Hunter (毎日 04:00 - 自動スパム防止のため停止)
     # - Live Scout (ライブ試合監視)
     # - Personal Coach (15分ごとのコーチング)
     # - Auto Healer (1分ごとの自己修復 - リソース過多)
