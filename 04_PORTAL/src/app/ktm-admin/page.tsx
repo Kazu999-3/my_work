@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
-import { Save, Plus, Users, Swords, AlertCircle, RefreshCw, Filter, ArrowUpDown } from "lucide-react";
+import { Save, Plus, Users, Swords, AlertCircle, RefreshCw, Filter, ArrowUpDown, X } from "lucide-react";
+import MatchRecordPanel from "./MatchRecordPanel";
 
 // MMRからランクと色を判定するユーティリティ
 function getRankFromMMR(mmr: number): { tier: string, color: string } {
@@ -53,6 +54,13 @@ export default function KtmAdminPage() {
   const [message, setMessage] = useState({ type: "", text: "" });
   const [sortConfig, setSortConfig] = useState({ key: "mmr", direction: "desc" });
   const [filterActive, setFilterActive] = useState(false);
+  
+  // バランサー用ステート
+  const [balancing, setBalancing] = useState(false);
+  const [balanceResult, setBalanceResult] = useState<any>(null);
+  
+  // Discord通知用ステート
+  const [sendingDiscord, setSendingDiscord] = useState(false);
 
   useEffect(() => {
     fetchPlayers();
@@ -156,6 +164,60 @@ export default function KtmAdminPage() {
     setSortConfig({ key, direction });
   };
 
+  const handleBalance = async () => {
+    const activePlayers = players.filter(p => p.is_active);
+    if (activePlayers.length < 10) {
+      setMessage({ type: "error", text: `チーム分けには最低10人のActiveプレイヤーが必要です。(現在 ${activePlayers.length}人)` });
+      return;
+    }
+
+    setBalancing(true);
+    setMessage({ type: "", text: "" });
+    setBalanceResult(null);
+
+    try {
+      const res = await fetch('/api/balancer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          participants: activePlayers.map(p => ({
+            name: p.name,
+            isFixed: false // TODO: 今後UIから固定プレイヤーを指定可能にする
+          }))
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'チーム分けに失敗しました');
+      
+      setBalanceResult(data);
+      setMessage({ type: "success", text: "✅ チーム分けが完了しました！" });
+    } catch (err: any) {
+      setMessage({ type: "error", text: err.message });
+    } finally {
+      setBalancing(false);
+    }
+  };
+
+  const handleSendDiscord = async () => {
+    if (!balanceResult) return;
+    setSendingDiscord(true);
+    try {
+      const res = await fetch('/api/discord', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(balanceResult)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Discord通知に失敗しました');
+      setMessage({ type: "success", text: "✅ Discordに結果を送信しました！" });
+    } catch (err: any) {
+      setMessage({ type: "error", text: err.message });
+    } finally {
+      setSendingDiscord(false);
+    }
+  };
+
   const sortedPlayers = [...players]
     .filter(p => filterActive ? p.is_active : true)
     .sort((a, b) => {
@@ -226,6 +288,16 @@ export default function KtmAdminPage() {
               <Plus className="h-4 w-4" /> 行を追加
             </button>
             <button
+              onClick={handleBalance}
+              disabled={balancing}
+              className={`flex items-center gap-2 px-5 py-2 rounded-lg font-bold transition ${
+                balancing ? "bg-amber-800 text-amber-300 cursor-not-allowed" : "bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white shadow-lg shadow-orange-900/20"
+              }`}
+            >
+              {balancing ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Swords className="h-4 w-4" />}
+              {balancing ? "計算中..." : "チーム分け実行"}
+            </button>
+            <button
               onClick={handleSave}
               disabled={saving}
               className={`flex items-center gap-2 px-5 py-2 rounded-lg font-medium transition ${
@@ -237,6 +309,116 @@ export default function KtmAdminPage() {
             </button>
           </div>
         </div>
+
+        {/* バランス結果表示エリア */}
+        {balanceResult && (
+          <div className="bg-gray-900 border border-gray-700 rounded-xl overflow-hidden shadow-2xl relative mb-8">
+            <button 
+              onClick={() => setBalanceResult(null)}
+              className="absolute top-4 right-4 text-gray-500 hover:text-white bg-gray-800 hover:bg-gray-700 rounded-full p-1 transition"
+            >
+              <X className="h-5 w-5" />
+            </button>
+            
+            <div className="p-6 border-b border-gray-800 bg-gray-800/50 flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+                <Swords className="h-6 w-6 text-amber-500" /> チーム分け結果
+              </h2>
+              <button
+                onClick={handleSendDiscord}
+                disabled={sendingDiscord}
+                className={`px-4 py-2 rounded-lg font-bold text-sm transition flex items-center gap-2 ${
+                  sendingDiscord ? 'bg-[#404eed] text-white opacity-50 cursor-not-allowed' : 'bg-[#5865F2] hover:bg-[#4752C4] text-white shadow-lg shadow-indigo-500/20'
+                }`}
+              >
+                {sendingDiscord ? <RefreshCw className="h-4 w-4 animate-spin" /> : null}
+                {sendingDiscord ? "送信中..." : "Discordへ結果を送信"}
+              </button>
+            </div>
+            
+            <div className="flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x divide-gray-800">
+              {/* BLUE TEAM */}
+              <div className="flex-1 p-6">
+                <h3 className="text-xl font-black text-blue-400 mb-4 tracking-wider flex items-center justify-between">
+                  <span>BLUE TEAM</span>
+                  <span className="text-sm font-medium text-gray-500 bg-gray-800 px-3 py-1 rounded-full">
+                    Avg: {Math.round(balanceResult.teamBlue.reduce((s:number,p:any)=>s+p.mmr,0)/5)}
+                  </span>
+                </h3>
+                <div className="space-y-2">
+                  {['TOP','JG','MID','ADC','SUP'].map((role) => {
+                    const player = balanceResult.teamBlue.find((p:any) => p.currentRole === role);
+                    if (!player) return null;
+                    const rank = getRankFromMMR(player.mmr);
+                    return (
+                      <div key={role} className="flex items-center justify-between bg-gray-800/40 hover:bg-gray-800 p-3 rounded-lg border border-gray-700/50">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 text-center font-bold text-gray-400 text-xs">{role}</div>
+                          <div className="font-bold text-white text-lg">{player.name}</div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className={`text-[10px] font-bold px-2 py-0.5 rounded ${rank.color}`}>{rank.tier}</div>
+                          <div className="w-12 text-right font-mono text-blue-300 font-bold">{player.mmr}</div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+              
+              {/* RED TEAM */}
+              <div className="flex-1 p-6">
+                <h3 className="text-xl font-black text-red-400 mb-4 tracking-wider flex items-center justify-between">
+                  <span>RED TEAM</span>
+                  <span className="text-sm font-medium text-gray-500 bg-gray-800 px-3 py-1 rounded-full">
+                    Avg: {Math.round(balanceResult.teamRed.reduce((s:number,p:any)=>s+p.mmr,0)/5)}
+                  </span>
+                </h3>
+                <div className="space-y-2">
+                  {['TOP','JG','MID','ADC','SUP'].map((role) => {
+                    const player = balanceResult.teamRed.find((p:any) => p.currentRole === role);
+                    if (!player) return null;
+                    const rank = getRankFromMMR(player.mmr);
+                    return (
+                      <div key={role} className="flex items-center justify-between bg-gray-800/40 hover:bg-gray-800 p-3 rounded-lg border border-gray-700/50">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 text-center font-bold text-gray-400 text-xs">{role}</div>
+                          <div className="font-bold text-white text-lg">{player.name}</div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className={`text-[10px] font-bold px-2 py-0.5 rounded ${rank.color}`}>{rank.tier}</div>
+                          <div className="w-12 text-right font-mono text-red-300 font-bold">{player.mmr}</div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+            
+            {balanceResult.spectators && balanceResult.spectators.length > 0 && (
+              <div className="p-4 bg-gray-800/80 border-t border-gray-700 flex flex-col md:flex-row items-center gap-4">
+                <div className="text-sm font-bold text-gray-400 whitespace-nowrap">観戦 (Pity選抜漏れ):</div>
+                <div className="flex flex-wrap gap-2">
+                  {balanceResult.spectators.map((name: string) => (
+                    <span key={name} className="px-3 py-1 bg-gray-900 border border-gray-700 text-gray-300 rounded text-sm font-medium">
+                      {name}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* 試合結果記録用パネル */}
+            <MatchRecordPanel 
+              balanceResult={balanceResult} 
+              onComplete={() => {
+                setBalanceResult(null);
+                fetchPlayers();
+              }} 
+            />
+          </div>
+        )}
 
         {/* Message Banner */}
         {message.text && (
