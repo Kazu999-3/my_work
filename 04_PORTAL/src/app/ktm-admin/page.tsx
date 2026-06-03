@@ -110,9 +110,12 @@ export default function KtmAdminPage() {
     setSaving(true);
     setMessage({ type: "", text: "" });
     try {
-      const { error } = await supabase.from("ktm_players").upsert(
-        players.map((p) => ({
-          id: p.id,
+      const existingPlayers = players.filter(p => p.id);
+      const newPlayers = players.filter(p => !p.id && !p.discord_id.startsWith('new-'));
+
+      // 既存のプレイヤーを更新
+      for (const p of existingPlayers) {
+        const { error } = await supabase.from("ktm_players").update({
           discord_id: p.discord_id,
           name: p.name,
           ign: p.ign,
@@ -129,9 +132,37 @@ export default function KtmAdminPage() {
           mmr_mid: parseInt(p.mmr_mid) || 1000,
           mmr_adc: parseInt(p.mmr_adc) || 1000,
           mmr_sup: parseInt(p.mmr_sup) || 1000,
-        }))
-      );
-      if (error) throw error;
+        }).eq('id', p.id);
+        
+        if (error) throw error;
+      }
+
+      // 新規プレイヤーを追加 (新規の判定として ID がないものを対象とする)
+      const playersToInsert = players.filter(p => !p.id);
+      if (playersToInsert.length > 0) {
+        const { error } = await supabase.from("ktm_players").insert(
+          playersToInsert.map(p => ({
+            discord_id: p.discord_id.startsWith('new-') ? '' : p.discord_id, // 新規作成時のダミーIDを消す
+            name: p.name,
+            ign: p.ign,
+            mmr: parseInt(p.mmr) || 1000,
+            role_preferences: p.role_preferences,
+            is_active: p.is_active,
+            ng_lane_1: p.ng_lane_1 || null,
+            ng_lane_2: p.ng_lane_2 || null,
+            weight: parseInt(p.weight) || 2,
+            allow_higher: p.allow_higher !== undefined ? p.allow_higher : true,
+            highest_rank: p.highest_rank || null,
+            mmr_top: parseInt(p.mmr_top) || 1000,
+            mmr_jg: parseInt(p.mmr_jg) || 1000,
+            mmr_mid: parseInt(p.mmr_mid) || 1000,
+            mmr_adc: parseInt(p.mmr_adc) || 1000,
+            mmr_sup: parseInt(p.mmr_sup) || 1000,
+          }))
+        );
+        if (error) throw error;
+      }
+
       setMessage({ type: "success", text: "✅ プレイヤー情報をすべて保存しました。" });
       fetchPlayers();
     } catch (err: any) {
