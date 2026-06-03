@@ -86,7 +86,10 @@ export async function POST(request: Request) {
         mainRank,
         numGames,
         matchupCount,
-        totalWinRate
+        totalWinRate,
+        visionScore: 0, // 速報時はまだ取得できないため0
+        cs: 0,          // 速報時はまだ取得できないため0
+        role: input.role
       };
 
       const mmrDelta = calculateNewMMR(ctx);

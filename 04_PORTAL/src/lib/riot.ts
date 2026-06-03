@@ -14,6 +14,8 @@ interface ParticipantStats {
   deaths: number;
   assists: number;
   visionScore: number;
+  totalMinionsKilled: number;
+  neutralMinionsKilled: number;
   win: boolean;
   lane: string; // TOP, JUNGLE, MIDDLE, BOTTOM, UTILITY
 }
@@ -70,7 +72,9 @@ export async function fetchMatchDetails(matchId: string, apiKey: string): Promis
     kills: p.kills,
     deaths: p.deaths,
     assists: p.assists,
-    visionScore: p.visionScore,
+    visionScore: p.visionScore || 0,
+    totalMinionsKilled: p.totalMinionsKilled || 0,
+    neutralMinionsKilled: p.neutralMinionsKilled || 0,
     win: p.win,
     lane: p.teamPosition || p.lane // TOP, JUNGLE, MIDDLE, BOTTOM, UTILITY
   }));
@@ -81,3 +85,33 @@ export async function fetchMatchDetails(matchId: string, apiKey: string): Promis
     participants
   };
 }
+
+// ==========================================
+// 追加: Spectator-V5 (Live Status)
+// ==========================================
+export async function fetchLiveGameByPuuid(puuid: string, apiKey: string): Promise<any> {
+  const url = `${RIOT_API_BASE_ASIA}/lol/spectator/v5/active-games/by-puuid/${puuid}?api_key=${apiKey}`;
+  const res = await fetch(url);
+  if (res.status === 404) return null; // 試合中ではない
+  if (!res.ok) throw new Error(`Live game status error: ${res.statusText}`);
+  return await res.json();
+}
+
+// ==========================================
+// 追加: League-V4 (Rank Sync)
+// ※ Summoner ID への変換が必要
+// ==========================================
+export async function fetchSummonerByPuuid(puuid: string, apiKey: string): Promise<any> {
+  const url = `${RIOT_API_BASE_ASIA}/lol/summoner/v4/summoners/by-puuid/${puuid}?api_key=${apiKey}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Summoner fetch error: ${res.statusText}`);
+  return await res.json();
+}
+
+export async function fetchLeagueBySummonerId(summonerId: string, apiKey: string): Promise<any[]> {
+  const url = `${RIOT_API_BASE_ASIA}/lol/league/v4/entries/by-summoner/${summonerId}?api_key=${apiKey}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`League fetch error: ${res.statusText}`);
+  return await res.json();
+}
+

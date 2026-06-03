@@ -23,13 +23,16 @@ export interface MmrCalcContext {
   numGames: number; // そのレーンでの試合数
   matchupCount: number; // 相手との対面回数
   totalWinRate: number; // 全体勝率 (0~100)
+  visionScore: number;  // 追加: 視界スコア
+  cs: number;           // 追加: ミニオン+中立キル
+  role: string;         // 追加: ロール (TOP, JG, MID, ADC, SUP)
 }
 
 /**
  * 1人のプレイヤーのMMR変動値を計算する
  */
 export function calculateNewMMR(ctx: MmrCalcContext): number {
-  const { currentMmr, opponentMmr, isWin, kills, deaths, assists, mainRank, numGames, matchupCount, totalWinRate } = ctx;
+  const { currentMmr, opponentMmr, isWin, kills, deaths, assists, mainRank, numGames, matchupCount, totalWinRate, visionScore, cs, role } = ctx;
 
   // ① Elo基本計算
   const expectedWin = 1 / (1 + Math.pow(10, (opponentMmr - currentMmr) / 400));
@@ -39,6 +42,28 @@ export function calculateNewMMR(ctx: MmrCalcContext): number {
   const kdaScore = deaths === 0 ? (kills + assists) * 1.2 : (kills + assists) / deaths;
   let kdaB = (kdaScore - 3) * 8;
   kdaB = Math.max(-20, Math.min(20, kdaB));
+
+  // ⑥ 視界・CSボーナス (追加)
+  let visionB = 0;
+  let csB = 0;
+  
+  // ロール別の期待値に対する働き（簡易的）
+  if (role === 'SUP') {
+    // サポートは視界スコアを重視（例：1分あたり1.5以上でボーナスなどですが、今回は絶対値で仮評価）
+    if (visionScore > 40) visionB = 5;
+    if (visionScore > 60) visionB = 10;
+  } else if (role === 'ADC' || role === 'MID') {
+    // キャリーはCSを重視
+    if (cs > 200) csB = 5;
+    if (cs > 250) csB = 10;
+  } else if (role === 'JG') {
+    if (visionScore > 20) visionB = 5;
+    if (cs > 150) csB = 5;
+  } else {
+    // TOP等
+    if (cs > 180) csB = 5;
+    if (visionScore > 15) visionB = 3;
+  }
 
   // ③ ランク収束引力
   // 最高ランクの基礎MMRへ引っ張る力
@@ -67,7 +92,7 @@ export function calculateNewMMR(ctx: MmrCalcContext): number {
   if (matchupCount >= 5) matchupDampener = 0.6;
   if (matchupCount >= 8) matchupDampener = 0.4;
 
-  let delta = (eloDelta + kdaB + grav + wrComp) * matchupDampener;
+  let delta = (eloDelta + kdaB + visionB + csB + grav + wrComp) * matchupDampener;
   delta = Math.round(delta);
 
   // 上限・下限のセーフティ
