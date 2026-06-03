@@ -27,38 +27,38 @@ interface LeaderboardData {
 
 // ランク判定ヘルパー (Phase 1 互換)
 const KTM_TIERS = [
-  { name: 'CHALLENGER', min: 15001, color: '#eab308', bg: '#fef08a' }, // Gold風
-  { name: 'GRANDMASTER', min: 10001, color: '#eab308', bg: '#fef08a' },
-  { name: 'MASTER', min: 7501, color: '#a855f7', bg: '#f3e8ff' }, // Purple
-  { name: 'DIAMOND I', min: 7051, color: '#3b82f6', bg: '#dbeafe' }, // Blue
-  { name: 'DIAMOND II', min: 6601, color: '#3b82f6', bg: '#dbeafe' },
-  { name: 'DIAMOND III', min: 6151, color: '#3b82f6', bg: '#dbeafe' },
-  { name: 'DIAMOND IV', min: 5701, color: '#3b82f6', bg: '#dbeafe' },
-  { name: 'EMERALD I', min: 5351, color: '#10b981', bg: '#d1fae5' }, // Green
-  { name: 'EMERALD II', min: 5001, color: '#10b981', bg: '#d1fae5' },
-  { name: 'EMERALD III', min: 4651, color: '#10b981', bg: '#d1fae5' },
-  { name: 'EMERALD IV', min: 4301, color: '#10b981', bg: '#d1fae5' },
-  { name: 'PLATINUM I', min: 4026, color: '#0B5394', bg: '#CFE2F3' },
-  { name: 'PLATINUM II', min: 3751, color: '#0B5394', bg: '#CFE2F3' },
-  { name: 'PLATINUM III', min: 3476, color: '#0B5394', bg: '#CFE2F3' },
-  { name: 'PLATINUM IV', min: 3201, color: '#0B5394', bg: '#CFE2F3' },
-  { name: 'GOLD I', min: 2976, color: '#BF9000', bg: '#FFF2CC' },
-  { name: 'GOLD II', min: 2751, color: '#BF9000', bg: '#FFF2CC' },
-  { name: 'GOLD III', min: 2526, color: '#BF9000', bg: '#FFF2CC' },
-  { name: 'GOLD IV', min: 2301, color: '#BF9000', bg: '#FFF2CC' },
-  { name: 'SILVER I', min: 2126, color: '#666666', bg: '#EFEFEF' },
-  { name: 'SILVER II', min: 1951, color: '#666666', bg: '#EFEFEF' },
-  { name: 'SILVER III', min: 1776, color: '#666666', bg: '#EFEFEF' },
-  { name: 'SILVER IV', min: 1601, color: '#666666', bg: '#EFEFEF' },
-  { name: 'BRONZE I', min: 1451, color: '#783F04', bg: '#F9CB9C' },
-  { name: 'BRONZE II', min: 1301, color: '#783F04', bg: '#F9CB9C' },
-  { name: 'BRONZE III', min: 1151, color: '#783F04', bg: '#F9CB9C' },
-  { name: 'BRONZE IV', min: 1001, color: '#783F04', bg: '#F9CB9C' },
-  { name: 'IRON I', min: 876, color: '#434343', bg: '#D9D9D9' },
-  { name: 'IRON II', min: 751, color: '#434343', bg: '#D9D9D9' },
-  { name: 'IRON III', min: 626, color: '#434343', bg: '#D9D9D9' },
-  { name: 'IRON IV', min: 501, color: '#434343', bg: '#D9D9D9' },
-  { name: 'UNRANKED', min: 0, color: '#999999', bg: '#F3F4F6' },
+  { name: 'CHALLENGER', min: 15001, color: 'text-sky-300', bg: 'bg-sky-300/10' },
+  { name: 'GRANDMASTER', min: 10001, color: 'text-red-500', bg: 'bg-red-500/10' },
+  { name: 'MASTER', min: 7501, color: 'text-purple-500', bg: 'bg-purple-500/10' },
+  { name: 'DIAMOND I', min: 7051, color: 'text-blue-400', bg: 'bg-blue-400/10' },
+  { name: 'DIAMOND II', min: 6601, color: 'text-blue-400', bg: 'bg-blue-400/10' },
+  { name: 'DIAMOND III', min: 6151, color: 'text-blue-400', bg: 'bg-blue-400/10' },
+  { name: 'DIAMOND IV', min: 5701, color: 'text-blue-400', bg: 'bg-blue-400/10' },
+  { name: 'EMERALD I', min: 5351, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+  { name: 'EMERALD II', min: 5001, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+  { name: 'EMERALD III', min: 4651, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+  { name: 'EMERALD IV', min: 4301, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+  { name: 'PLATINUM I', min: 4026, color: 'text-teal-400', bg: 'bg-teal-400/10' },
+  { name: 'PLATINUM II', min: 3751, color: 'text-teal-400', bg: 'bg-teal-400/10' },
+  { name: 'PLATINUM III', min: 3476, color: 'text-teal-400', bg: 'bg-teal-400/10' },
+  { name: 'PLATINUM IV', min: 3201, color: 'text-teal-400', bg: 'bg-teal-400/10' },
+  { name: 'GOLD I', min: 2976, color: 'text-yellow-400', bg: 'bg-yellow-400/10' },
+  { name: 'GOLD II', min: 2751, color: 'text-yellow-400', bg: 'bg-yellow-400/10' },
+  { name: 'GOLD III', min: 2526, color: 'text-yellow-400', bg: 'bg-yellow-400/10' },
+  { name: 'GOLD IV', min: 2301, color: 'text-yellow-400', bg: 'bg-yellow-400/10' },
+  { name: 'SILVER I', min: 2126, color: 'text-slate-300', bg: 'bg-slate-300/10' },
+  { name: 'SILVER II', min: 1951, color: 'text-slate-300', bg: 'bg-slate-300/10' },
+  { name: 'SILVER III', min: 1776, color: 'text-slate-300', bg: 'bg-slate-300/10' },
+  { name: 'SILVER IV', min: 1601, color: 'text-slate-300', bg: 'bg-slate-300/10' },
+  { name: 'BRONZE I', min: 1451, color: 'text-amber-700', bg: 'bg-amber-700/10' },
+  { name: 'BRONZE II', min: 1301, color: 'text-amber-700', bg: 'bg-amber-700/10' },
+  { name: 'BRONZE III', min: 1151, color: 'text-amber-700', bg: 'bg-amber-700/10' },
+  { name: 'BRONZE IV', min: 1001, color: 'text-amber-700', bg: 'bg-amber-700/10' },
+  { name: 'IRON I', min: 876, color: 'text-gray-500', bg: 'bg-gray-500/10' },
+  { name: 'IRON II', min: 751, color: 'text-gray-500', bg: 'bg-gray-500/10' },
+  { name: 'IRON III', min: 626, color: 'text-gray-500', bg: 'bg-gray-500/10' },
+  { name: 'IRON IV', min: 501, color: 'text-gray-500', bg: 'bg-gray-500/10' },
+  { name: 'UNRANKED', min: 0, color: 'text-gray-400', bg: 'bg-gray-800' },
 ];
 
 function getRankBadge(mmr: number) {
@@ -67,7 +67,7 @@ function getRankBadge(mmr: number) {
       return { name: tier.name, color: tier.color, bg: tier.bg };
     }
   }
-  return { name: 'UNRANKED', color: '#999999', bg: '#F3F4F6' };
+  return { name: 'UNRANKED', color: 'text-gray-400', bg: 'bg-gray-800' };
 }
 
 export default function LeaderboardPage() {
@@ -81,7 +81,7 @@ export default function LeaderboardPage() {
       // 1. ktm_playersから全プレイヤーの現在のMMRを取得
       const { data: players, error: pError } = await supabase
         .from('ktm_players')
-        .select('name, top_mmr, jg_mmr, mid_mmr, adc_mmr, sup_mmr');
+        .select('name, mmr_top, mmr_jg, mmr_mid, mmr_adc, mmr_sup');
 
       if (pError || !players) {
         console.error('Failed to fetch players', pError);
@@ -137,7 +137,7 @@ export default function LeaderboardPage() {
       const newLeaderboard: LeaderboardData = { TOP: [], JG: [], MID: [], ADC: [], SUP: [] };
 
       ROLES.forEach(role => {
-        const mmrKey = `${role.toLowerCase()}_mmr` as keyof typeof players[0];
+        const mmrKey = `mmr_${role.toLowerCase()}` as keyof typeof players[0];
         
         const roleRanking = players
           .filter(p => {
@@ -172,24 +172,24 @@ export default function LeaderboardPage() {
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-gray-50">
+      <div className="flex h-screen items-center justify-center bg-gray-950">
         <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-10 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-950 py-10 px-4 sm:px-6 lg:px-8 text-gray-200">
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-3xl font-extrabold text-gray-900 text-center mb-10 tracking-tight">
-          🏆 KTM LEADERBOARD
+        <h1 className="text-3xl font-extrabold text-white text-center mb-10 tracking-tight flex items-center justify-center gap-3">
+          <span className="text-blue-500">🏆</span> KTM LEADERBOARD
         </h1>
-        <p className="text-center text-gray-500 mb-12">各レーンのMMR TOP 5 (※1勝以上が条件)</p>
+        <p className="text-center text-gray-400 mb-12">各レーンのMMR TOP 5 (※1勝以上が条件)</p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
           {ROLES.map(role => (
-            <div key={role} className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-              <div className="bg-gray-900 px-4 py-3 border-b border-gray-800">
+            <div key={role} className="bg-gray-900 rounded-2xl shadow-xl border border-gray-800 overflow-hidden">
+              <div className="bg-gray-800 px-4 py-3 border-b border-gray-700">
                 <h2 className="text-lg font-bold text-white text-center flex items-center justify-center gap-2">
                   <span className="text-xl">
                     {role === 'TOP' && '🪓'}
@@ -202,27 +202,27 @@ export default function LeaderboardPage() {
                 </h2>
               </div>
               
-              <div className="divide-y divide-gray-100">
+              <div className="divide-y divide-gray-800">
                 {data[role].length === 0 ? (
-                  <div className="p-8 text-center text-gray-400 text-sm">
+                  <div className="p-8 text-center text-gray-500 text-sm">
                     データがありません
                   </div>
                 ) : (
                   data[role].map((player, idx) => (
-                    <div key={player.name} className="p-4 hover:bg-gray-50 transition-colors flex items-center justify-between">
+                    <div key={player.name} className="p-4 hover:bg-gray-800/50 transition-colors flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <div className={`w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold
                           ${idx === 0 ? 'bg-yellow-400 text-yellow-900' : 
                             idx === 1 ? 'bg-gray-300 text-gray-800' : 
                             idx === 2 ? 'bg-amber-600 text-amber-50' : 
-                            'text-gray-400'}`}>
+                            'bg-gray-800 text-gray-400'}`}>
                           {idx + 1}
                         </div>
                         <div>
-                          <div className="font-bold text-gray-900 truncate max-w-[100px]" title={player.name}>
+                          <div className="font-bold text-white truncate max-w-[90px]" title={player.name}>
                             {player.name}
                           </div>
-                          <div className="text-xs text-gray-500">
+                          <div className="text-[10px] text-gray-400">
                             {player.games} Games ({player.winRate}%)
                           </div>
                         </div>
@@ -230,13 +230,12 @@ export default function LeaderboardPage() {
                       
                       <div className="text-right">
                         <div 
-                          className="text-[10px] font-bold px-2 py-0.5 rounded shadow-sm inline-block whitespace-nowrap mb-1"
-                          style={{ backgroundColor: player.rankBadge.bg, color: player.rankBadge.color }}
+                          className={`text-[10px] font-bold px-2 py-0.5 rounded border border-current/20 inline-block whitespace-nowrap mb-1 ${player.rankBadge.bg} ${player.rankBadge.color}`}
                         >
                           {player.rankBadge.name}
                         </div>
-                        <div className="text-sm font-bold text-gray-700">
-                          {player.mmr.toLocaleString()} <span className="text-xs font-normal text-gray-400">MMR</span>
+                        <div className="text-sm font-bold text-gray-200">
+                          {player.mmr.toLocaleString()} <span className="text-[10px] font-normal text-gray-500">MMR</span>
                         </div>
                       </div>
                     </div>

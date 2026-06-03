@@ -56,13 +56,13 @@ export async function POST(request: Request) {
       const dbP = dbPlayers.find(p => p.name === input.name);
       if (!dbP) continue;
 
-      const roleMmrKey = `${input.role.toLowerCase()}_mmr` as keyof typeof dbP;
+      const roleMmrKey = `mmr_${input.role.toLowerCase()}` as keyof typeof dbP;
       const currentMmr = Number(dbP[roleMmrKey]) || 1200;
 
       // 対面相手のMMRを探す
       const opponent = participants.find((p: any) => p.role === input.role && p.team !== input.team);
       const oppDbP = opponent ? dbPlayers.find(p => p.name === opponent.name) : null;
-      const oppMmrKey = opponent ? `${opponent.role.toLowerCase()}_mmr` as keyof typeof oppDbP : null;
+      const oppMmrKey = opponent ? `mmr_${opponent.role.toLowerCase()}` as keyof typeof oppDbP : null;
       const opponentMmr = oppDbP && oppMmrKey ? (Number(oppDbP[oppMmrKey]) || 1200) : 1200;
 
       // スタッツ計算用データ準備
@@ -142,15 +142,15 @@ export async function POST(request: Request) {
     // (3) ktm_players のMMRをUPDATE
     // それぞれのレコードを更新
     for (const r of results) {
-      const roleMmrKey = `${r.role.toLowerCase()}_mmr`;
+      const roleMmrKey = `mmr_${r.role.toLowerCase()}`;
       const newRoleMmr = r.currentMmr + r.mmrDelta;
       
       // 全体MMRは各レーンの平均をとるのがKTMの仕様
-      const top = r.role === 'TOP' ? newRoleMmr : r.dbPlayer.top_mmr;
-      const jg = r.role === 'JG' ? newRoleMmr : r.dbPlayer.jg_mmr;
-      const mid = r.role === 'MID' ? newRoleMmr : r.dbPlayer.mid_mmr;
-      const adc = r.role === 'ADC' ? newRoleMmr : r.dbPlayer.adc_mmr;
-      const sup = r.role === 'SUP' ? newRoleMmr : r.dbPlayer.sup_mmr;
+      const top = r.role === 'TOP' ? newRoleMmr : (r.dbPlayer.mmr_top || 1200);
+      const jg = r.role === 'JG' ? newRoleMmr : (r.dbPlayer.mmr_jg || 1200);
+      const mid = r.role === 'MID' ? newRoleMmr : (r.dbPlayer.mmr_mid || 1200);
+      const adc = r.role === 'ADC' ? newRoleMmr : (r.dbPlayer.mmr_adc || 1200);
+      const sup = r.role === 'SUP' ? newRoleMmr : (r.dbPlayer.mmr_sup || 1200);
       const newTotalMmr = Math.round((top + jg + mid + adc + sup) / 5);
 
       const updateData: any = {
