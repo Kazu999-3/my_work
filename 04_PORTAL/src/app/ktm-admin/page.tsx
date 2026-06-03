@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
-import { Save, Plus, Users, Swords, AlertCircle, RefreshCw, Filter, ArrowUpDown, X, Trophy } from "lucide-react";
 import MatchRecordPanel from "./MatchRecordPanel";
+import { Info } from "lucide-react";
 
 // MMRからランクと色を判定するユーティリティ
 function getRankFromMMR(mmr: number): { tier: string, color: string } {
@@ -82,6 +82,7 @@ export default function KtmAdminPage() {
   const [message, setMessage] = useState({ type: "", text: "" });
   const [sortConfig, setSortConfig] = useState({ key: "mmr", direction: "desc" });
   const [filterActive, setFilterActive] = useState(false);
+  const [showMmrInfo, setShowMmrInfo] = useState(false);
   
   // バランサー用ステート
   const [balancing, setBalancing] = useState(false);
@@ -391,8 +392,66 @@ export default function KtmAdminPage() {
               {balancing ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Swords className="h-4 w-4" />}
               {balancing ? "計算中..." : "チーム分け実行"}
             </button>
+            <button
+              onClick={() => setShowMmrInfo(!showMmrInfo)}
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg transition border ${showMmrInfo ? 'bg-cyan-900/50 border-cyan-500 text-cyan-300' : 'bg-gray-800 border-gray-700 text-gray-400 hover:text-white'}`}
+              title="MMR計算ロジックを見る"
+            >
+              <Info className="h-5 w-5" />
+            </button>
           </div>
         </div>
+
+        {/* MMR Info Panel */}
+        {showMmrInfo && (
+          <div className="bg-gray-900 border border-cyan-800/50 rounded-xl p-6 shadow-xl relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-1 h-full bg-cyan-500"></div>
+            <div className="flex justify-between items-start mb-4">
+              <h2 className="text-xl font-bold text-cyan-400 flex items-center gap-2">
+                <Info className="h-6 w-6" /> MMR計算ロジック
+              </h2>
+              <button onClick={() => setShowMmrInfo(false)} className="text-gray-500 hover:text-white">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm text-gray-300">
+              <div className="space-y-3">
+                <div>
+                  <h3 className="font-bold text-white text-base">1. Eloベースの勝敗変動</h3>
+                  <p>相手のMMRと自分のMMRの差から期待勝率を計算し、勝利時は加点、敗北時は減点。基本変動幅は <span className="text-amber-400 font-mono">±16</span> 前後。</p>
+                </div>
+                <div>
+                  <h3 className="font-bold text-white text-base">2. KDAボーナス</h3>
+                  <p>KDAスコア <span className="text-amber-400 font-mono">(K+A)/D</span> の基準を 3.0 とし、それを上回ればボーナス、下回ればマイナス。（最大 <span className="text-amber-400 font-mono">±20</span>）</p>
+                </div>
+                <div>
+                  <h3 className="font-bold text-white text-base">3. ランク収束引力</h3>
+                  <p>RiotのSolo/Duoランク帯（Gold等）の適正MMRへ引き寄せられる力が働き、ランクとかけ離れたMMRに滞在しにくくします。</p>
+                </div>
+              </div>
+              <div className="space-y-3">
+                <div>
+                  <h3 className="font-bold text-white text-base">4. 視界・CSボーナス (Riot同期後)</h3>
+                  <ul className="list-disc list-inside pl-2 space-y-1">
+                    <li><span className="text-teal-300">SUP</span>: 視界スコア 40以上で <span className="text-green-400">+5</span>, 60以上で <span className="text-green-400">+10</span></li>
+                    <li><span className="text-blue-300">ADC/MID</span>: CS 200以上で <span className="text-green-400">+5</span>, 250以上で <span className="text-green-400">+10</span></li>
+                    <li><span className="text-green-400">JG</span>: 視界20以上で <span className="text-green-400">+5</span>, CS 150以上で <span className="text-green-400">+5</span></li>
+                    <li><span className="text-orange-400">TOP</span>: CS 180以上で <span className="text-green-400">+5</span>, 視界15以上で <span className="text-green-400">+3</span></li>
+                  </ul>
+                </div>
+                <div>
+                  <h3 className="font-bold text-white text-base">5. 対面回数ダンパー & 勝率補正</h3>
+                  <p>同じ相手と短期間に何度も対面すると、MMRの変動幅が縮小します（最大0.4倍）。また、特定ロールでの全体勝率が極端に高い/低い場合は補正がかかります。</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="mt-4 pt-4 border-t border-gray-800 text-xs text-gray-500">
+              ※ Riot同期による視界・CSボーナスは、Discordで勝敗報告をした約3分後にバックグラウンドで自動計算され上書き反映されます。
+            </div>
+          </div>
+        )}
 
         {/* バランス結果表示エリア */}
         {balanceResult && (
