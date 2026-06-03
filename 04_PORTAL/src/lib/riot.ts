@@ -86,16 +86,6 @@ export async function fetchMatchDetails(matchId: string, apiKey: string): Promis
   };
 }
 
-// ==========================================
-// 追加: Spectator-V5 (Live Status)
-// ==========================================
-export async function fetchLiveGameByPuuid(puuid: string, apiKey: string): Promise<any> {
-  const url = `${RIOT_API_BASE_ASIA}/lol/spectator/v5/active-games/by-puuid/${puuid}?api_key=${apiKey}`;
-  const res = await fetch(url);
-  if (res.status === 404) return null; // 試合中ではない
-  if (!res.ok) throw new Error(`Live game status error: ${res.statusText}`);
-  return await res.json();
-}
 
 // ==========================================
 // 追加: League-V4 (Rank Sync)
