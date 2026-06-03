@@ -2,13 +2,15 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
-import { Save, Plus, Users, Swords, AlertCircle, RefreshCw } from "lucide-react";
+import { Save, Plus, Users, Swords, AlertCircle, RefreshCw, Filter, ArrowUpDown } from "lucide-react";
 
 export default function KtmAdminPage() {
   const [players, setPlayers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState({ type: "", text: "" });
+  const [sortConfig, setSortConfig] = useState({ key: "mmr", direction: "desc" });
+  const [filterActive, setFilterActive] = useState(false);
 
   useEffect(() => {
     fetchPlayers();
@@ -31,8 +33,10 @@ export default function KtmAdminPage() {
     }
   };
 
-  const handleInputChange = (index: number, field: string, value: any) => {
+  const handleInputChange = (uid: string, field: string, value: any) => {
     const updated = [...players];
+    const index = updated.findIndex(p => (p.id || p.discord_id) === uid);
+    if (index === -1) return;
     
     // role_preferences の入れ子に対応
     if (field === "primary_role") {
@@ -64,7 +68,17 @@ export default function KtmAdminPage() {
           ign: p.ign,
           mmr: parseInt(p.mmr) || 1000,
           role_preferences: p.role_preferences,
-          is_active: p.is_active
+          is_active: p.is_active,
+          ng_lane_1: p.ng_lane_1 || null,
+          ng_lane_2: p.ng_lane_2 || null,
+          weight: parseInt(p.weight) || 2,
+          allow_higher: p.allow_higher !== undefined ? p.allow_higher : true,
+          highest_rank: p.highest_rank || null,
+          mmr_top: parseInt(p.mmr_top) || 1000,
+          mmr_jg: parseInt(p.mmr_jg) || 1000,
+          mmr_mid: parseInt(p.mmr_mid) || 1000,
+          mmr_adc: parseInt(p.mmr_adc) || 1000,
+          mmr_sup: parseInt(p.mmr_sup) || 1000,
         }))
       );
       if (error) throw error;
@@ -84,10 +98,53 @@ export default function KtmAdminPage() {
       ign: "",
       mmr: 1000,
       role_preferences: { primary: "FILL", secondary: "FILL" },
-      is_active: true
+      is_active: true,
+      ng_lane_1: "", ng_lane_2: "",
+      weight: 2, allow_higher: true, highest_rank: "",
+      mmr_top: 1000, mmr_jg: 1000, mmr_mid: 1000, mmr_adc: 1000, mmr_sup: 1000
     };
     setPlayers([newPlayer, ...players]);
   };
+
+  const requestSort = (key: string) => {
+    let direction = "desc";
+    if (sortConfig.key === key && sortConfig.direction === "desc") {
+      direction = "asc";
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const sortedPlayers = [...players]
+    .filter(p => filterActive ? p.is_active : true)
+    .sort((a, b) => {
+      let aVal = a[sortConfig.key];
+      let bVal = b[sortConfig.key];
+      
+      // 数値として扱うカラム
+      if (sortConfig.key === "mmr" || sortConfig.key.startsWith("mmr_") || sortConfig.key === "weight") {
+        aVal = parseInt(aVal) || 0;
+        bVal = parseInt(bVal) || 0;
+      }
+      
+      if (aVal < bVal) return sortConfig.direction === "asc" ? -1 : 1;
+      if (aVal > bVal) return sortConfig.direction === "asc" ? 1 : -1;
+      return 0;
+    });
+
+  const SortableHeader = ({ label, sortKey }: { label: string, sortKey: string }) => (
+    <th 
+      className="px-6 py-4 font-medium cursor-pointer hover:bg-gray-700/50 transition whitespace-nowrap"
+      onClick={() => requestSort(sortKey)}
+    >
+      <div className="flex items-center gap-1 justify-center">
+        {label}
+        {sortConfig.key === sortKey && (
+          <span className="text-blue-400 text-xs">{sortConfig.direction === "desc" ? "↓" : "↑"}</span>
+        )}
+        {sortConfig.key !== sortKey && <ArrowUpDown className="h-3 w-3 text-gray-500 opacity-0 group-hover:opacity-100" />}
+      </div>
+    </th>
+  );
 
   if (loading && players.length === 0) {
     return (
@@ -114,6 +171,12 @@ export default function KtmAdminPage() {
           </div>
 
           <div className="flex items-center gap-3">
+            <button
+              onClick={() => setFilterActive(!filterActive)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition border ${filterActive ? 'bg-blue-900/50 border-blue-500 text-blue-300' : 'bg-gray-800 border-gray-700 text-gray-400 hover:text-white'}`}
+            >
+              <Filter className="h-4 w-4" /> {filterActive ? "参加者のみ" : "全員表示"}
+            </button>
             <button
               onClick={addNewPlayer}
               className="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition"
@@ -145,25 +208,37 @@ export default function KtmAdminPage() {
         <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden shadow-2xl">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm whitespace-nowrap">
-              <thead className="bg-gray-800/50 text-gray-400 uppercase text-xs tracking-wider">
+              <thead className="bg-gray-800/50 text-gray-400 uppercase text-xs tracking-wider sticky top-0 z-10 shadow-md">
                 <tr>
-                  <th className="px-6 py-4 font-medium">Discord ID</th>
-                  <th className="px-6 py-4 font-medium">名前 (表示名)</th>
-                  <th className="px-6 py-4 font-medium">Riot IGN</th>
-                  <th className="px-6 py-4 font-medium text-center">MMR</th>
-                  <th className="px-6 py-4 font-medium">Main Lane</th>
-                  <th className="px-6 py-4 font-medium">Sub Lane</th>
-                  <th className="px-6 py-4 font-medium text-center">Active</th>
+                  <SortableHeader label="Discord ID" sortKey="discord_id" />
+                  <SortableHeader label="名前" sortKey="name" />
+                  <SortableHeader label="Riot IGN" sortKey="ign" />
+                  <SortableHeader label="Active" sortKey="is_active" />
+                  <SortableHeader label="最高Rank" sortKey="highest_rank" />
+                  <th className="px-6 py-4 font-medium text-center">Main</th>
+                  <th className="px-6 py-4 font-medium text-center">Sub</th>
+                  <th className="px-6 py-4 font-medium text-center">NG 1</th>
+                  <th className="px-6 py-4 font-medium text-center">NG 2</th>
+                  <SortableHeader label="こだわり" sortKey="weight" />
+                  <SortableHeader label="格上許可" sortKey="allow_higher" />
+                  <SortableHeader label="MMR(Top)" sortKey="mmr_top" />
+                  <SortableHeader label="MMR(Jg)" sortKey="mmr_jg" />
+                  <SortableHeader label="MMR(Mid)" sortKey="mmr_mid" />
+                  <SortableHeader label="MMR(Adc)" sortKey="mmr_adc" />
+                  <SortableHeader label="MMR(Sup)" sortKey="mmr_sup" />
+                  <SortableHeader label="MMR(総合)" sortKey="mmr" />
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-800">
-                {players.map((p, i) => (
-                  <tr key={p.id || p.discord_id} className="hover:bg-gray-800/30 transition">
+                {sortedPlayers.map((p) => {
+                  const uid = p.id || p.discord_id;
+                  return (
+                  <tr key={uid} className="hover:bg-gray-800/30 transition">
                     <td className="px-6 py-3">
                       <input
                         type="text"
                         value={p.discord_id}
-                        onChange={(e) => handleInputChange(i, "discord_id", e.target.value)}
+                        onChange={(e) => handleInputChange(uid, "discord_id", e.target.value)}
                         className="bg-transparent border border-transparent focus:border-gray-700 hover:border-gray-700 focus:bg-gray-800 rounded px-2 py-1 outline-none w-32"
                       />
                     </td>
@@ -171,7 +246,7 @@ export default function KtmAdminPage() {
                       <input
                         type="text"
                         value={p.name}
-                        onChange={(e) => handleInputChange(i, "name", e.target.value)}
+                        onChange={(e) => handleInputChange(uid, "name", e.target.value)}
                         className="bg-transparent border border-transparent focus:border-gray-700 hover:border-gray-700 focus:bg-gray-800 rounded px-2 py-1 outline-none w-32 font-medium text-white"
                       />
                     </td>
@@ -179,23 +254,32 @@ export default function KtmAdminPage() {
                       <input
                         type="text"
                         value={p.ign || ""}
-                        onChange={(e) => handleInputChange(i, "ign", e.target.value)}
+                        onChange={(e) => handleInputChange(uid, "ign", e.target.value)}
                         placeholder="Name#TAG"
                         className="bg-transparent border border-transparent focus:border-gray-700 hover:border-gray-700 focus:bg-gray-800 rounded px-2 py-1 outline-none w-40 text-blue-400"
                       />
                     </td>
                     <td className="px-6 py-3 text-center">
                       <input
-                        type="number"
-                        value={p.mmr}
-                        onChange={(e) => handleInputChange(i, "mmr", e.target.value)}
-                        className="bg-gray-800 border border-gray-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded px-2 py-1 outline-none w-20 text-center text-white font-mono"
+                        type="checkbox"
+                        checked={p.is_active}
+                        onChange={(e) => handleInputChange(uid, "is_active", e.target.checked)}
+                        className="h-4 w-4 rounded border-gray-700 text-blue-600 focus:ring-blue-500 bg-gray-800 cursor-pointer"
+                      />
+                    </td>
+                    <td className="px-6 py-3">
+                      <input
+                        type="text"
+                        value={p.highest_rank || ""}
+                        onChange={(e) => handleInputChange(uid, "highest_rank", e.target.value)}
+                        placeholder="Gold 1"
+                        className="bg-transparent border border-transparent focus:border-gray-700 hover:border-gray-700 focus:bg-gray-800 rounded px-2 py-1 outline-none w-20 text-yellow-500 font-medium"
                       />
                     </td>
                     <td className="px-6 py-3">
                       <select
                         value={p.role_preferences?.primary || "FILL"}
-                        onChange={(e) => handleInputChange(i, "primary_role", e.target.value)}
+                        onChange={(e) => handleInputChange(uid, "primary_role", e.target.value)}
                         className="bg-gray-800 border border-gray-700 rounded px-2 py-1 outline-none focus:border-blue-500 w-24"
                       >
                         <option value="TOP">TOP</option>
@@ -204,12 +288,13 @@ export default function KtmAdminPage() {
                         <option value="ADC">ADC</option>
                         <option value="SUPPORT">SUPPORT</option>
                         <option value="FILL">FILL</option>
+                        <option value="ALL">ALL</option>
                       </select>
                     </td>
                     <td className="px-6 py-3">
                       <select
                         value={p.role_preferences?.secondary || "FILL"}
-                        onChange={(e) => handleInputChange(i, "secondary_role", e.target.value)}
+                        onChange={(e) => handleInputChange(uid, "secondary_role", e.target.value)}
                         className="bg-gray-800 border border-gray-700 rounded px-2 py-1 outline-none focus:border-blue-500 w-24"
                       >
                         <option value="TOP">TOP</option>
@@ -218,18 +303,82 @@ export default function KtmAdminPage() {
                         <option value="ADC">ADC</option>
                         <option value="SUPPORT">SUPPORT</option>
                         <option value="FILL">FILL</option>
+                        <option value="ALL">ALL</option>
+                      </select>
+                    </td>
+                    <td className="px-6 py-3">
+                      <select
+                        value={p.ng_lane_1 || ""}
+                        onChange={(e) => handleInputChange(uid, "ng_lane_1", e.target.value)}
+                        className="bg-gray-800 border border-gray-700 rounded px-2 py-1 outline-none focus:border-red-500 w-24 text-red-400"
+                      >
+                        <option value="">なし</option>
+                        <option value="TOP">TOP</option>
+                        <option value="JUNGLE">JUNGLE</option>
+                        <option value="MID">MID</option>
+                        <option value="ADC">ADC</option>
+                        <option value="SUPPORT">SUPPORT</option>
+                      </select>
+                    </td>
+                    <td className="px-6 py-3">
+                      <select
+                        value={p.ng_lane_2 || ""}
+                        onChange={(e) => handleInputChange(uid, "ng_lane_2", e.target.value)}
+                        className="bg-gray-800 border border-gray-700 rounded px-2 py-1 outline-none focus:border-red-500 w-24 text-red-400"
+                      >
+                        <option value="">なし</option>
+                        <option value="TOP">TOP</option>
+                        <option value="JUNGLE">JUNGLE</option>
+                        <option value="MID">MID</option>
+                        <option value="ADC">ADC</option>
+                        <option value="SUPPORT">SUPPORT</option>
+                      </select>
+                    </td>
+                    <td className="px-6 py-3 text-center">
+                      <select
+                        value={p.weight || 2}
+                        onChange={(e) => handleInputChange(uid, "weight", parseInt(e.target.value))}
+                        className="bg-gray-800 border border-gray-700 rounded px-2 py-1 outline-none focus:border-blue-500 w-16 text-center"
+                      >
+                        <option value={1}>1 (絶対)</option>
+                        <option value={2}>2 (通常)</option>
+                        <option value={3}>3 (柔軟)</option>
                       </select>
                     </td>
                     <td className="px-6 py-3 text-center">
                       <input
                         type="checkbox"
-                        checked={p.is_active}
-                        onChange={(e) => handleInputChange(i, "is_active", e.target.checked)}
-                        className="h-4 w-4 rounded border-gray-700 text-blue-600 focus:ring-blue-500 bg-gray-800 cursor-pointer"
+                        checked={p.allow_higher !== false}
+                        onChange={(e) => handleInputChange(uid, "allow_higher", e.target.checked)}
+                        className="h-4 w-4 rounded border-gray-700 text-green-500 focus:ring-green-500 bg-gray-800 cursor-pointer"
+                      />
+                    </td>
+                    <td className="px-6 py-3 text-center">
+                      <input type="number" value={p.mmr_top || 1000} onChange={(e) => handleInputChange(uid, "mmr_top", e.target.value)} className="bg-gray-800 border border-gray-700 rounded px-2 py-1 outline-none w-16 text-center font-mono" />
+                    </td>
+                    <td className="px-6 py-3 text-center">
+                      <input type="number" value={p.mmr_jg || 1000} onChange={(e) => handleInputChange(uid, "mmr_jg", e.target.value)} className="bg-gray-800 border border-gray-700 rounded px-2 py-1 outline-none w-16 text-center font-mono" />
+                    </td>
+                    <td className="px-6 py-3 text-center">
+                      <input type="number" value={p.mmr_mid || 1000} onChange={(e) => handleInputChange(uid, "mmr_mid", e.target.value)} className="bg-gray-800 border border-gray-700 rounded px-2 py-1 outline-none w-16 text-center font-mono" />
+                    </td>
+                    <td className="px-6 py-3 text-center">
+                      <input type="number" value={p.mmr_adc || 1000} onChange={(e) => handleInputChange(uid, "mmr_adc", e.target.value)} className="bg-gray-800 border border-gray-700 rounded px-2 py-1 outline-none w-16 text-center font-mono" />
+                    </td>
+                    <td className="px-6 py-3 text-center">
+                      <input type="number" value={p.mmr_sup || 1000} onChange={(e) => handleInputChange(uid, "mmr_sup", e.target.value)} className="bg-gray-800 border border-gray-700 rounded px-2 py-1 outline-none w-16 text-center font-mono" />
+                    </td>
+                    <td className="px-6 py-3 text-center">
+                      <input
+                        type="number"
+                        value={p.mmr || 1000}
+                        onChange={(e) => handleInputChange(uid, "mmr", e.target.value)}
+                        className="bg-gray-700 border border-gray-600 focus:border-blue-500 rounded px-2 py-1 outline-none w-20 text-center text-white font-mono"
                       />
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
                 
                 {players.length === 0 && !loading && (
                   <tr>

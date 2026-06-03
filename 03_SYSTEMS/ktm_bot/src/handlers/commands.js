@@ -3,6 +3,7 @@ import { fetchGAS, patchInteractionResponse, sendDiscordMessage } from '../utils
 import { createMessageContent, createRecruitButtons, createRecruitEmbed, getPortalComponents, getPortalEmbed } from '../ui/embeds.js';
 import { getPlayersByNames } from '../utils/supabase.js';
 import { performAutoBalance } from '../utils/balancer.js';
+import { fetchSupabase, upsertPlayer } from '../utils/supabase.js';
 
 export function handleRecruitDirect(interaction) {
   const options = interaction.data.options || [];
@@ -372,7 +373,19 @@ export function handleLaneCommand(interaction, env, ctx) {
     const discordName = interaction.member.user.global_name || interaction.member.user.username;
     ctx.waitUntil((async () => {
       try {
-        await fetchGAS({ type: "UPDATE_LANE", discordId: userId, discordName, main, sub, ng1, ng2, weight, allowHigher });
+        // 現在のプレイヤー情報を取得し、マージしてUpsertする
+        const existingData = await fetchSupabase(env, 'ktm_players', `discord_id=eq.${userId}`);
+        const player = existingData && existingData.length > 0 ? existingData[0] : { discord_id: userId, name: discordName, is_active: true };
+        
+        player.role_preferences = player.role_preferences || {};
+        if (main) player.role_preferences.primary = main;
+        if (sub) player.role_preferences.secondary = sub;
+        if (ng1) player.ng_lane_1 = ng1;
+        if (ng2) player.ng_lane_2 = ng2;
+        if (weight) player.weight = parseInt(weight);
+        if (allowHigher !== undefined) player.allow_higher = allowHigher === 'true' || allowHigher === true;
+        
+        await upsertPlayer(env, player);
         await patchInteractionResponse(appId, token, { content: `✅ **引数からレーン設定を完了しました**\nメイン:${main} / サブ:${sub} / こだわり:${weight || "未指定"} / 格上許可:${allowHigher !== undefined ? allowHigher : "未指定"}` });
       } catch (err) { console.error("Lane Update Error:", err); }
     })());
@@ -410,10 +423,13 @@ export async function handleSetIgn(interaction, env, ctx) {
   const discordName = (interaction.member?.user || interaction.user).global_name || (interaction.member?.user || interaction.user).username;
   ctx.waitUntil((async () => {
     try {
-      const res = await fetchGAS({ type: "UPDATE_LANE", discordId: userId, discordName, lolIgn: ign });
-      if (res.status === "NOT_FOUND") {
+      const existingData = await fetchSupabase(env, 'ktm_players', `discord_id=eq.${userId}`);
+      if (!existingData || existingData.length === 0) {
           await patchInteractionResponse(appId, token, { content: "⚠️ 名簿にあなたの Discord ID が見わたりませんでした。新メンバー同期を待つか、一度対戦に参加してください。" });
       } else {
+          const player = existingData[0];
+          player.ign = ign;
+          await upsertPlayer(env, player);
           await patchInteractionResponse(appId, token, { content: `✅ LoL IGN を **${ign}** に設定しました。これ以降、ランク情報が自動同期されます。` });
       }
     } catch (err) {

@@ -25,7 +25,18 @@ export async function handleModalSubmit(interaction, env, ctx) {
     const discordName = interaction.member.user.global_name || interaction.member.user.username;
     ctx.waitUntil((async () => {
       try {
-        await fetchGAS({ type: "UPDATE_LANE", discordId: userId, discordName, main, sub, ng1, ng2, weight });
+        const { fetchSupabase, upsertPlayer } = await import('../utils/supabase.js');
+        const existingData = await fetchSupabase(env, 'ktm_players', `discord_id=eq.${userId}`);
+        const player = existingData && existingData.length > 0 ? existingData[0] : { discord_id: userId, name: discordName, is_active: true };
+        
+        player.role_preferences = player.role_preferences || {};
+        if (main) player.role_preferences.primary = main;
+        if (sub) player.role_preferences.secondary = sub;
+        if (ng1) player.ng_lane_1 = ng1;
+        if (ng2) player.ng_lane_2 = ng2;
+        if (weight) player.weight = weight;
+        
+        await upsertPlayer(env, player);
       } catch (err) {
         console.error("Modal Lane Update Error:", err);
       }
