@@ -3,7 +3,7 @@ import json
 from pathlib import Path
 from v2_CORE.agents.state import MonetizationState
 from v2_CORE.publisher import NotePublisher, XPublisher
-from v2_CORE.monetization_loop import generate_x_promo_thread, calculate_dynamic_price
+from v2_CORE.monetization_loop_legacy import generate_x_promo_thread, calculate_dynamic_price
 
 logger = logging.getLogger("PublisherNode")
 
@@ -28,7 +28,7 @@ def publisher_node(state: MonetizationState) -> MonetizationState:
         note_url = note_pub.post_draft(
             title=note_title,
             markdown_body=draft,
-            auto_publish=True,
+            auto_publish=False, # 🚨 [安全策] 自動公開を停止し下書き保存に留める
             price=dynamic_price
         )
     except Exception as e:
@@ -40,7 +40,8 @@ def publisher_node(state: MonetizationState) -> MonetizationState:
         x_pub = XPublisher(headless=True)
         tweets = json.loads(x_thread_json_str)
         if tweets:
-            x_url = x_pub.post_thread(tweets)
+            logger.info(f"🚨 [安全策] Xへの投稿をスキップしました。\n投稿予定内容: {tweets}")
+            x_url = "dry_run_x_url_dummy"
     except Exception as e:
         logger.error(f"[Publisher Agent] X Publish Error: {e}")
 

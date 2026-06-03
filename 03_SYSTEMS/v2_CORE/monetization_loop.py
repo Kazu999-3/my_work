@@ -65,8 +65,8 @@ def run_monetization_loop():
     
     # 初期状態
     initial_state = {
-        "champion": "",
-        "meta_context": "",
+        "champion": "Teemo", # 🚨 テスト用ハードコード
+        "meta_context": "仮テストメタ",
         "draft_article": "",
         "audit_feedback": "",
         "audit_passed": False,
