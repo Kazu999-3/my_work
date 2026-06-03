@@ -440,6 +440,26 @@ export default function KtmAdminPage() {
               </div>
             )}
 
+            {/* 📊 チーム分けの理由と分析 */}
+            {balanceResult.balanceReport && balanceResult.balanceReport.length > 0 && (
+              <div className="p-6 bg-gray-900 border-t border-gray-700">
+                <h3 className="text-lg font-bold text-blue-400 mb-3 flex items-center gap-2">
+                  <AlertCircle className="h-5 w-5" />
+                  チーム分けの理由と分析
+                </h3>
+                <div className="space-y-2 text-gray-300 text-sm bg-gray-800/50 p-4 rounded-lg border border-gray-700/50">
+                  {balanceResult.balanceReport.map((line: string, i: number) => {
+                    const formattedLine = line
+                      .replace(/\*\*(.*?)\*\*/g, '<strong class="text-white">$1</strong>')
+                      .replace(/`(.*?)`/g, '<span class="text-amber-400 font-mono font-bold">$1</span>');
+                    return (
+                      <p key={i} dangerouslySetInnerHTML={{ __html: formattedLine }} className="leading-relaxed" />
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             {/* 試合結果記録用パネル */}
             <MatchRecordPanel 
               balanceResult={balanceResult} 
