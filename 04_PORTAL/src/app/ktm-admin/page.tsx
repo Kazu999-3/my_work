@@ -19,6 +19,34 @@ function getRankFromMMR(mmr: number): { tier: string, color: string } {
   return { tier: "CHALLENGER", color: "text-sky-300 bg-sky-300/10" };
 }
 
+// ランク名から色を判定するユーティリティ（highest_rank入力用）
+function getColorFromRankName(rank: string): string {
+  const r = (rank || "").toUpperCase();
+  if (r.includes("IRON")) return "text-gray-500 font-bold";
+  if (r.includes("BRONZE")) return "text-amber-700 font-bold";
+  if (r.includes("SILVER")) return "text-slate-300 font-bold";
+  if (r.includes("GOLD")) return "text-yellow-400 font-bold";
+  if (r.includes("PLATINUM")) return "text-teal-400 font-bold";
+  if (r.includes("EMERALD")) return "text-emerald-500 font-bold";
+  if (r.includes("DIAMOND")) return "text-blue-400 font-bold";
+  if (r.includes("MASTER")) return "text-purple-500 font-bold";
+  if (r.includes("GRANDMASTER")) return "text-red-500 font-bold";
+  if (r.includes("CHALLENGER")) return "text-sky-300 font-bold";
+  return "text-gray-400 font-medium";
+}
+
+// レーン名から色を判定するユーティリティ
+function getColorFromRole(role: string): string {
+  const r = (role || "").toUpperCase();
+  if (r.includes("TOP")) return "text-orange-400 font-bold";
+  if (r.includes("JUNGLE") || r.includes("JG")) return "text-green-500 font-bold";
+  if (r.includes("MID")) return "text-red-400 font-bold";
+  if (r.includes("ADC")) return "text-blue-400 font-bold";
+  if (r.includes("SUPPORT") || r.includes("SUP")) return "text-teal-300 font-bold";
+  if (r === "ALL") return "text-amber-300 font-bold";
+  return "text-gray-400 font-medium";
+}
+
 // MMR用のクリックして編集できるバッジコンポーネント
 const MmrBadgeInput = ({ value, onChange }: { value: number, onChange: (v: number) => void }) => {
   const [editing, setEditing] = useState(false);
@@ -537,63 +565,63 @@ export default function KtmAdminPage() {
                         value={p.highest_rank || ""}
                         onChange={(e) => handleInputChange(uid, "highest_rank", e.target.value)}
                         placeholder="Gold 1"
-                        className="bg-transparent border border-transparent focus:border-gray-700 hover:border-gray-700 focus:bg-gray-800 rounded px-1 py-0.5 outline-none w-16 text-yellow-500 font-medium text-xs"
+                        className={`bg-transparent border border-transparent focus:border-gray-700 hover:border-gray-700 focus:bg-gray-800 rounded px-1 py-0.5 outline-none w-16 text-xs ${getColorFromRankName(p.highest_rank)}`}
                       />
                     </td>
                     <td className="px-2 py-1.5">
                       <select
                         value={p.role_preferences?.primary || "ALL"}
                         onChange={(e) => handleInputChange(uid, "primary_role", e.target.value)}
-                        className="bg-gray-800 border border-gray-700 rounded px-1 py-0.5 outline-none focus:border-blue-500 w-20 text-xs"
+                        className={`bg-gray-800 border border-gray-700 rounded px-1 py-0.5 outline-none focus:border-blue-500 w-20 text-xs ${getColorFromRole(p.role_preferences?.primary || "ALL")}`}
                       >
-                        <option value="TOP">TOP</option>
-                        <option value="JUNGLE">JUNGLE</option>
-                        <option value="MID">MID</option>
-                        <option value="ADC">ADC</option>
-                        <option value="SUPPORT">SUPPORT</option>
-                        <option value="ALL">ALL</option>
+                        <option value="TOP" className={getColorFromRole("TOP")}>TOP</option>
+                        <option value="JUNGLE" className={getColorFromRole("JUNGLE")}>JUNGLE</option>
+                        <option value="MID" className={getColorFromRole("MID")}>MID</option>
+                        <option value="ADC" className={getColorFromRole("ADC")}>ADC</option>
+                        <option value="SUPPORT" className={getColorFromRole("SUPPORT")}>SUPPORT</option>
+                        <option value="ALL" className={getColorFromRole("ALL")}>ALL</option>
                       </select>
                     </td>
                     <td className="px-2 py-1.5">
                       <select
                         value={p.role_preferences?.secondary || "ALL"}
                         onChange={(e) => handleInputChange(uid, "secondary_role", e.target.value)}
-                        className="bg-gray-800 border border-gray-700 rounded px-1 py-0.5 outline-none focus:border-blue-500 w-20 text-xs"
+                        className={`bg-gray-800 border border-gray-700 rounded px-1 py-0.5 outline-none focus:border-blue-500 w-20 text-xs ${getColorFromRole(p.role_preferences?.secondary || "ALL")}`}
                       >
-                        <option value="TOP">TOP</option>
-                        <option value="JUNGLE">JUNGLE</option>
-                        <option value="MID">MID</option>
-                        <option value="ADC">ADC</option>
-                        <option value="SUPPORT">SUPPORT</option>
-                        <option value="ALL">ALL</option>
+                        <option value="TOP" className={getColorFromRole("TOP")}>TOP</option>
+                        <option value="JUNGLE" className={getColorFromRole("JUNGLE")}>JUNGLE</option>
+                        <option value="MID" className={getColorFromRole("MID")}>MID</option>
+                        <option value="ADC" className={getColorFromRole("ADC")}>ADC</option>
+                        <option value="SUPPORT" className={getColorFromRole("SUPPORT")}>SUPPORT</option>
+                        <option value="ALL" className={getColorFromRole("ALL")}>ALL</option>
                       </select>
                     </td>
                     <td className="px-2 py-1.5">
                       <select
                         value={p.ng_lane_1 || ""}
                         onChange={(e) => handleInputChange(uid, "ng_lane_1", e.target.value)}
-                        className="bg-gray-800 border border-gray-700 rounded px-1 py-0.5 outline-none focus:border-red-500 w-20 text-red-400 text-xs"
+                        className={`bg-gray-800 border border-gray-700 rounded px-1 py-0.5 outline-none focus:border-red-500 w-20 text-xs ${p.ng_lane_1 ? getColorFromRole(p.ng_lane_1) : 'text-gray-500'}`}
                       >
-                        <option value="">なし</option>
-                        <option value="TOP">TOP</option>
-                        <option value="JUNGLE">JUNGLE</option>
-                        <option value="MID">MID</option>
-                        <option value="ADC">ADC</option>
-                        <option value="SUPPORT">SUPPORT</option>
+                        <option value="" className="text-gray-500">なし</option>
+                        <option value="TOP" className={getColorFromRole("TOP")}>TOP</option>
+                        <option value="JUNGLE" className={getColorFromRole("JUNGLE")}>JUNGLE</option>
+                        <option value="MID" className={getColorFromRole("MID")}>MID</option>
+                        <option value="ADC" className={getColorFromRole("ADC")}>ADC</option>
+                        <option value="SUPPORT" className={getColorFromRole("SUPPORT")}>SUPPORT</option>
                       </select>
                     </td>
                     <td className="px-2 py-1.5">
                       <select
                         value={p.ng_lane_2 || ""}
                         onChange={(e) => handleInputChange(uid, "ng_lane_2", e.target.value)}
-                        className="bg-gray-800 border border-gray-700 rounded px-1 py-0.5 outline-none focus:border-red-500 w-20 text-red-400 text-xs"
+                        className={`bg-gray-800 border border-gray-700 rounded px-1 py-0.5 outline-none focus:border-red-500 w-20 text-xs ${p.ng_lane_2 ? getColorFromRole(p.ng_lane_2) : 'text-gray-500'}`}
                       >
-                        <option value="">なし</option>
-                        <option value="TOP">TOP</option>
-                        <option value="JUNGLE">JUNGLE</option>
-                        <option value="MID">MID</option>
-                        <option value="ADC">ADC</option>
-                        <option value="SUPPORT">SUPPORT</option>
+                        <option value="" className="text-gray-500">なし</option>
+                        <option value="TOP" className={getColorFromRole("TOP")}>TOP</option>
+                        <option value="JUNGLE" className={getColorFromRole("JUNGLE")}>JUNGLE</option>
+                        <option value="MID" className={getColorFromRole("MID")}>MID</option>
+                        <option value="ADC" className={getColorFromRole("ADC")}>ADC</option>
+                        <option value="SUPPORT" className={getColorFromRole("SUPPORT")}>SUPPORT</option>
                       </select>
                     </td>
                     <td className="px-2 py-1.5 text-center">
