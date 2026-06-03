@@ -114,8 +114,9 @@ export default function KtmAdminPage() {
       const newPlayers = players.filter(p => !p.id && !p.discord_id.startsWith('new-'));
 
       // 既存のプレイヤーを更新
+      let updatedCount = 0;
       for (const p of existingPlayers) {
-        const { error } = await supabase.from("ktm_players").update({
+        const { data, error } = await supabase.from("ktm_players").update({
           discord_id: p.discord_id,
           name: p.name,
           ign: p.ign,
@@ -132,9 +133,14 @@ export default function KtmAdminPage() {
           mmr_mid: parseInt(p.mmr_mid) || 1000,
           mmr_adc: parseInt(p.mmr_adc) || 1000,
           mmr_sup: parseInt(p.mmr_sup) || 1000,
-        }).eq('id', p.id);
+        }).eq('id', p.id).select();
         
         if (error) throw error;
+        if (data && data.length > 0) updatedCount++;
+      }
+
+      if (existingPlayers.length > 0 && updatedCount === 0) {
+        throw new Error("更新が0件でした。Supabaseの RLS (Row Level Security) によりフロントエンドからの更新が弾かれている可能性があります。");
       }
 
       // 新規プレイヤーを追加 (新規の判定として ID がないものを対象とする)

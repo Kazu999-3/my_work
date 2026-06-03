@@ -35,14 +35,28 @@ export async function POST(request: Request) {
       const dbPlayer = playersData.find(p => p.name === input.name);
       if (!dbPlayer) throw new Error(`プレイヤーが見つかりません: ${input.name}`);
       
+      const roleMap: Record<string, Role | 'ALL'> = {
+        'JUNGLE': 'JG',
+        'SUPPORT': 'SUP',
+        'TOP': 'TOP',
+        'MID': 'MID',
+        'ADC': 'ADC',
+        'ALL': 'ALL'
+      };
+
+      const rawPref1 = dbPlayer.role_preferences?.primary || 'ALL';
+      const rawPref2 = dbPlayer.role_preferences?.secondary || 'ALL';
+      const rawNg1 = dbPlayer.ng_lane_1 || '';
+      const rawNg2 = dbPlayer.ng_lane_2 || '';
+
       return {
         name: dbPlayer.name,
         discordId: dbPlayer.discord_id,
         rank: 'UNRANKED', // 必要に応じてマッピング
-        pref1: dbPlayer.main_lane,
-        pref2: dbPlayer.sub_lane,
-        ng1: dbPlayer.ng_lane1 || '',
-        ng2: dbPlayer.ng_lane2 || '',
+        pref1: roleMap[rawPref1] || rawPref1,
+        pref2: roleMap[rawPref2] || rawPref2,
+        ng1: roleMap[rawNg1] || rawNg1,
+        ng2: roleMap[rawNg2] || rawNg2,
         pity: dbPlayer.pity || 0,
         weight: dbPlayer.weight || 2,
         allowHigher: dbPlayer.allow_higher || false,
