@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
-import { Save, Plus, Users, Swords, AlertCircle, RefreshCw, Filter, ArrowUpDown, X } from "lucide-react";
+import { Save, Plus, Users, Swords, AlertCircle, RefreshCw, Filter, ArrowUpDown, X, Trophy } from "lucide-react";
 import MatchRecordPanel from "./MatchRecordPanel";
 
 // MMRからランクと色を判定するユーティリティ
@@ -339,7 +339,36 @@ export default function KtmAdminPage() {
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-4">
+            <button
+              onClick={() => fetchPlayers()}
+              className="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 text-gray-200 px-4 py-2 rounded-lg font-bold transition"
+            >
+              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+              更新
+            </button>
+            
+            <button
+              onClick={() => {
+                if (confirm('全ての変更を保存しますか？')) handleSave();
+              }}
+              disabled={saving}
+              className={`flex items-center gap-2 px-6 py-2 rounded-lg font-bold transition shadow-lg ${
+                saving ? 'bg-indigo-400 text-white cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-500/20'
+              }`}
+            >
+              {saving ? <RefreshCw className="h-5 w-5 animate-spin" /> : <Save className="h-5 w-5" />}
+              {saving ? "保存中..." : "変更を保存"}
+            </button>
+
+            <a 
+              href="/ktm-admin/record"
+              className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg font-bold transition ml-auto"
+            >
+              <Trophy className="h-4 w-4" />
+              カスタム試合を手動記録
+            </a>
+
             <button
               onClick={() => setFilterActive(!filterActive)}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg transition border ${filterActive ? 'bg-blue-900/50 border-blue-500 text-blue-300' : 'bg-gray-800 border-gray-700 text-gray-400 hover:text-white'}`}
@@ -415,16 +444,33 @@ export default function KtmAdminPage() {
                     const player = balanceResult.teamBlue.find((p:any) => p.currentRole === role);
                     if (!player) return null;
                     const rank = getRankFromMMR(player.mmr);
+                    
+                    // 理由テキストの抽出
+                    let reasonText = null;
+                    if (balanceResult.balanceReport) {
+                      const reasonLine = balanceResult.balanceReport.find((line: string) => line.includes(`**${player.name}**`));
+                      if (reasonLine) {
+                        reasonText = reasonLine.split(': ')[1] || reasonLine;
+                      }
+                    }
+
                     return (
-                      <div key={role} className="flex items-center justify-between bg-gray-800/40 hover:bg-gray-800 p-3 rounded-lg border border-gray-700/50">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 text-center font-bold text-gray-400 text-xs">{role}</div>
-                          <div className="font-bold text-white text-lg">{player.name}</div>
+                      <div key={role} className="flex flex-col bg-gray-800/40 hover:bg-gray-800 rounded-lg border border-gray-700/50 overflow-hidden">
+                        <div className="flex items-center justify-between p-3">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 text-center font-bold text-gray-400 text-xs">{role}</div>
+                            <div className="font-bold text-white text-lg">{player.name}</div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <div className={`text-[10px] font-bold px-2 py-0.5 rounded ${rank.color}`}>{rank.tier}</div>
+                            <div className="w-12 text-right font-mono text-blue-300 font-bold">{player.mmr}</div>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <div className={`text-[10px] font-bold px-2 py-0.5 rounded ${rank.color}`}>{rank.tier}</div>
-                          <div className="w-12 text-right font-mono text-blue-300 font-bold">{player.mmr}</div>
-                        </div>
+                        {reasonText && (
+                          <div className="px-3 pb-2 text-xs text-amber-400/90 font-medium pl-14">
+                            ↳ {reasonText}
+                          </div>
+                        )}
                       </div>
                     );
                   })}
@@ -444,16 +490,33 @@ export default function KtmAdminPage() {
                     const player = balanceResult.teamRed.find((p:any) => p.currentRole === role);
                     if (!player) return null;
                     const rank = getRankFromMMR(player.mmr);
+                    
+                    // 理由テキストの抽出
+                    let reasonText = null;
+                    if (balanceResult.balanceReport) {
+                      const reasonLine = balanceResult.balanceReport.find((line: string) => line.includes(`**${player.name}**`));
+                      if (reasonLine) {
+                        reasonText = reasonLine.split(': ')[1] || reasonLine;
+                      }
+                    }
+
                     return (
-                      <div key={role} className="flex items-center justify-between bg-gray-800/40 hover:bg-gray-800 p-3 rounded-lg border border-gray-700/50">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 text-center font-bold text-gray-400 text-xs">{role}</div>
-                          <div className="font-bold text-white text-lg">{player.name}</div>
+                      <div key={role} className="flex flex-col bg-gray-800/40 hover:bg-gray-800 rounded-lg border border-gray-700/50 overflow-hidden">
+                        <div className="flex items-center justify-between p-3">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 text-center font-bold text-gray-400 text-xs">{role}</div>
+                            <div className="font-bold text-white text-lg">{player.name}</div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <div className={`text-[10px] font-bold px-2 py-0.5 rounded ${rank.color}`}>{rank.tier}</div>
+                            <div className="w-12 text-right font-mono text-red-300 font-bold">{player.mmr}</div>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <div className={`text-[10px] font-bold px-2 py-0.5 rounded ${rank.color}`}>{rank.tier}</div>
-                          <div className="w-12 text-right font-mono text-red-300 font-bold">{player.mmr}</div>
-                        </div>
+                        {reasonText && (
+                          <div className="px-3 pb-2 text-xs text-amber-400/90 font-medium pl-14">
+                            ↳ {reasonText}
+                          </div>
+                        )}
                       </div>
                     );
                   })}
