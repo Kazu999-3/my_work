@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { fetchPuuidByRiotId, fetchRecentCustomMatchId, fetchMatchDetails } from '../../../lib/riot';
+import { fetchPuuidByRiotId, fetchRecentCustomMatchId, fetchMatchDetails } from '../../../../lib/riot';
 
 export async function POST(request: Request) {
   try {
