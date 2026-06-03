@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabaseClient';
+import { supabase } from '../../../lib/supabaseClient';
 import { 
   Player, 
   Role, 
   BalanceContext, 
   selectPlayersWithPity, 
   coreBalanceTeams 
-} from '@/lib/balancer';
+} from '../../../lib/balancer';
 
 export async function POST(request: Request) {
   try {

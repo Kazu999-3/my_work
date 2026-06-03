@@ -234,12 +234,16 @@ class NotePublisher:
                 return None
             
             try:
-                # タイトルの入力
-                logger.info("Typing title...")
                 # Noteエディタのタイトル入力欄（クラス名や構造に依存しないよう複数のセレクタを試行）
-                title_area = page.locator('textarea[placeholder*="タイトル"]').first
-                if not title_area.is_visible():
-                    title_area = page.locator('.editor-titleInput').first
+                title_selectors = [
+                    'textarea[placeholder*="タイトル"]',
+                    '.editor-titleInput',
+                    '[data-name="title"]',
+                    'textarea.title',
+                    '[aria-label*="タイトル"]'
+                ]
+                # 複数のセレクタをカンマ区切りで指定し、いずれかが表示されるまで待機する
+                title_area = page.locator(", ".join(title_selectors)).first
                 
                 title_area.wait_for(state="visible", timeout=20000)
                 title_area.fill(title)
@@ -247,6 +251,7 @@ class NotePublisher:
                 # 本文の入力 (コピペを利用して高速化＆マークダウン維持)
                 logger.info("Pasting markdown body...")
                 body_area = page.locator('div[contenteditable="true"]').last
+                body_area.wait_for(state="visible", timeout=10000)
                 body_area.click()
                 
                 # Playwrightを通じてブラウザのクリップボードにテキストを書き込み
