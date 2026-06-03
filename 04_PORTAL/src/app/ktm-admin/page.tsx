@@ -391,16 +391,6 @@ export default function KtmAdminPage() {
               {balancing ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Swords className="h-4 w-4" />}
               {balancing ? "計算中..." : "チーム分け実行"}
             </button>
-            <button
-              onClick={handleSave}
-              disabled={saving}
-              className={`flex items-center gap-2 px-5 py-2 rounded-lg font-medium transition ${
-                saving ? "bg-blue-800 text-blue-300 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-500 text-white"
-              }`}
-            >
-              {saving ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-              {saving ? "保存中..." : "変更を保存"}
-            </button>
           </div>
         </div>
 
