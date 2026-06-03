@@ -47,11 +47,11 @@ export async function POST(request: Request) {
         weight: dbPlayer.weight || 2,
         allowHigher: dbPlayer.allow_higher || false,
         rates: {
-          TOP: dbPlayer.top_mmr || 1200,
-          JG: dbPlayer.jg_mmr || 1200,
-          MID: dbPlayer.mid_mmr || 1200,
-          ADC: dbPlayer.adc_mmr || 1200,
-          SUP: dbPlayer.sup_mmr || 1200
+          TOP: dbPlayer.mmr_top || 1200,
+          JG: dbPlayer.mmr_jg || 1200,
+          MID: dbPlayer.mmr_mid || 1200,
+          ADC: dbPlayer.mmr_adc || 1200,
+          SUP: dbPlayer.mmr_sup || 1200
         },
         games: 0, // 仮 (後で集計またはDBから取得)
         winRate: 50.0, // 仮

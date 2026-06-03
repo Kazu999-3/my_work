@@ -47,6 +47,7 @@ export interface BalanceResult {
   teamBlue: AssignedPlayer[];
   teamRed: AssignedPlayer[];
   spectators: string[];
+  balanceReport: string[];
 }
 
 // ==========================================
@@ -497,5 +498,42 @@ export function coreBalanceTeams(players: Player[], ctx: BalanceContext): Balanc
   const teamBlue = isSwapped ? assignB : assignA;
   const teamRed = isSwapped ? assignA : assignB;
 
-  return { teamBlue, teamRed, spectators: [] };
+  // --- 事後分析レポートの作成 ---
+  const balanceReport: string[] = [];
+  const avgBlue = Math.round(teamBlue.reduce((s, p) => s + p.mmr, 0) / 5);
+  const avgRed = Math.round(teamRed.reduce((s, p) => s + p.mmr, 0) / 5);
+  const diff = Math.abs(avgBlue - avgRed);
+  
+  balanceReport.push(`**チーム間戦力差**: 両チームの平均レート差はわずか \`${diff}\` です。`);
+
+  const allAssigned = [...teamBlue, ...teamRed];
+  const mainCount = allAssigned.filter(p => p.currentRole === p.mainLane || p.mainLane === 'ALL' || p.isFixed).length;
+  balanceReport.push(`**レーン希望**: 10人中 \`${mainCount}人\` が第一希望（または固定）を獲得しました。`);
+
+  const subPlayers = allAssigned.filter(p => p.currentRole !== p.mainLane && p.mainLane !== 'ALL' && !p.isFixed);
+  if (subPlayers.length > 0) {
+    balanceReport.push(`**調整の背景**:`);
+    subPlayers.forEach(p => {
+      let reason = "全体の戦力バランスを整えるために調整されました。";
+      // 簡単な推測
+      const mainSeekers = allAssigned.filter(other => other.mainLane === p.mainLane && other.name !== p.name);
+      if (mainSeekers.length > 0) {
+        reason = `${p.mainLane} 希望者が競合したため、チームの戦力バランスを考慮して ${p.currentRole} へ回っていただきました。`;
+      } else if (p.currentRole === p.subLane) {
+        reason = `チーム全体のバランスを最適化するため、第二希望の ${p.currentRole} へ配置されました。`;
+      }
+      // Outlier
+      if (p.isOutlierHigh) {
+        reason = `圧倒的なキャリー力を持つため、相手との戦力均衡を図るべく ${p.currentRole} に配置されました。`;
+      }
+
+      const roleIcons: Record<string, string> = { TOP: '🪓', JG: '🌲', MID: '🔥', ADC: '🏹', SUP: '🛡️' };
+      const icon = roleIcons[p.currentRole] || '👤';
+      balanceReport.push(`- ${icon} **${p.name}** (${p.currentRole}): ${reason}`);
+    });
+  } else {
+    balanceReport.push(`**調整の背景**: 全員が希望通りの完璧な構成です！`);
+  }
+
+  return { teamBlue, teamRed, spectators: [], balanceReport };
 }
