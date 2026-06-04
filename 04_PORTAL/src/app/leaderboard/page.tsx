@@ -29,37 +29,37 @@ interface LeaderboardData {
 
 // ランク判定ヘルパー (Phase 1 互換)
 const KTM_TIERS = [
-  { name: 'CHALLENGER', min: 2600, color: 'text-sky-300', bg: 'bg-sky-300/10' },
-  { name: 'GRANDMASTER', min: 2400, color: 'text-red-500', bg: 'bg-red-500/10' },
-  { name: 'MASTER', min: 2200, color: 'text-purple-500', bg: 'bg-purple-500/10' },
-  { name: 'DIAMOND I', min: 2150, color: 'text-blue-400', bg: 'bg-blue-400/10' },
-  { name: 'DIAMOND II', min: 2100, color: 'text-blue-400', bg: 'bg-blue-400/10' },
-  { name: 'DIAMOND III', min: 2050, color: 'text-blue-400', bg: 'bg-blue-400/10' },
-  { name: 'DIAMOND IV', min: 2000, color: 'text-blue-400', bg: 'bg-blue-400/10' },
-  { name: 'EMERALD I', min: 1925, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
-  { name: 'EMERALD II', min: 1850, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
-  { name: 'EMERALD III', min: 1775, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
-  { name: 'EMERALD IV', min: 1700, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
-  { name: 'PLATINUM I', min: 1650, color: 'text-teal-400', bg: 'bg-teal-400/10' },
-  { name: 'PLATINUM II', min: 1600, color: 'text-teal-400', bg: 'bg-teal-400/10' },
-  { name: 'PLATINUM III', min: 1550, color: 'text-teal-400', bg: 'bg-teal-400/10' },
-  { name: 'PLATINUM IV', min: 1500, color: 'text-teal-400', bg: 'bg-teal-400/10' },
-  { name: 'GOLD I', min: 1420, color: 'text-yellow-400', bg: 'bg-yellow-400/10' },
-  { name: 'GOLD II', min: 1340, color: 'text-yellow-400', bg: 'bg-yellow-400/10' },
-  { name: 'GOLD III', min: 1260, color: 'text-yellow-400', bg: 'bg-yellow-400/10' },
-  { name: 'GOLD IV', min: 1180, color: 'text-yellow-400', bg: 'bg-yellow-400/10' },
-  { name: 'SILVER I', min: 1100, color: 'text-slate-300', bg: 'bg-slate-300/10' },
-  { name: 'SILVER II', min: 1020, color: 'text-slate-300', bg: 'bg-slate-300/10' },
-  { name: 'SILVER III', min: 940, color: 'text-slate-300', bg: 'bg-slate-300/10' },
-  { name: 'SILVER IV', min: 860, color: 'text-slate-300', bg: 'bg-slate-300/10' },
-  { name: 'BRONZE I', min: 780, color: 'text-amber-700', bg: 'bg-amber-700/10' },
-  { name: 'BRONZE II', min: 700, color: 'text-amber-700', bg: 'bg-amber-700/10' },
-  { name: 'BRONZE III', min: 620, color: 'text-amber-700', bg: 'bg-amber-700/10' },
-  { name: 'BRONZE IV', min: 540, color: 'text-amber-700', bg: 'bg-amber-700/10' },
-  { name: 'IRON I', min: 460, color: 'text-gray-500', bg: 'bg-gray-500/10' },
-  { name: 'IRON II', min: 380, color: 'text-gray-500', bg: 'bg-gray-500/10' },
-  { name: 'IRON III', min: 300, color: 'text-gray-500', bg: 'bg-gray-500/10' },
-  { name: 'IRON IV', min: 220, color: 'text-gray-500', bg: 'bg-gray-500/10' },
+  { name: 'CHALLENGER', min: 1600, color: 'text-sky-300', bg: 'bg-sky-300/10' },
+  { name: 'GRANDMASTER', min: 1550, color: 'text-red-500', bg: 'bg-red-500/10' },
+  { name: 'MASTER', min: 1500, color: 'text-purple-500', bg: 'bg-purple-500/10' },
+  { name: 'DIAMOND I', min: 1480, color: 'text-blue-400', bg: 'bg-blue-400/10' },
+  { name: 'DIAMOND II', min: 1470, color: 'text-blue-400', bg: 'bg-blue-400/10' },
+  { name: 'DIAMOND III', min: 1460, color: 'text-blue-400', bg: 'bg-blue-400/10' },
+  { name: 'DIAMOND IV', min: 1450, color: 'text-blue-400', bg: 'bg-blue-400/10' },
+  { name: 'EMERALD I', min: 1425, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+  { name: 'EMERALD II', min: 1400, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+  { name: 'EMERALD III', min: 1375, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+  { name: 'EMERALD IV', min: 1350, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+  { name: 'PLATINUM I', min: 1325, color: 'text-teal-400', bg: 'bg-teal-400/10' },
+  { name: 'PLATINUM II', min: 1300, color: 'text-teal-400', bg: 'bg-teal-400/10' },
+  { name: 'PLATINUM III', min: 1275, color: 'text-teal-400', bg: 'bg-teal-400/10' },
+  { name: 'PLATINUM IV', min: 1250, color: 'text-teal-400', bg: 'bg-teal-400/10' },
+  { name: 'GOLD I', min: 1225, color: 'text-yellow-400', bg: 'bg-yellow-400/10' },
+  { name: 'GOLD II', min: 1200, color: 'text-yellow-400', bg: 'bg-yellow-400/10' },
+  { name: 'GOLD III', min: 1175, color: 'text-yellow-400', bg: 'bg-yellow-400/10' },
+  { name: 'GOLD IV', min: 1150, color: 'text-yellow-400', bg: 'bg-yellow-400/10' },
+  { name: 'SILVER I', min: 1125, color: 'text-slate-300', bg: 'bg-slate-300/10' },
+  { name: 'SILVER II', min: 1100, color: 'text-slate-300', bg: 'bg-slate-300/10' },
+  { name: 'SILVER III', min: 1075, color: 'text-slate-300', bg: 'bg-slate-300/10' },
+  { name: 'SILVER IV', min: 1050, color: 'text-slate-300', bg: 'bg-slate-300/10' },
+  { name: 'BRONZE I', min: 1025, color: 'text-amber-700', bg: 'bg-amber-700/10' },
+  { name: 'BRONZE II', min: 1000, color: 'text-amber-700', bg: 'bg-amber-700/10' },
+  { name: 'BRONZE III', min: 975, color: 'text-amber-700', bg: 'bg-amber-700/10' },
+  { name: 'BRONZE IV', min: 950, color: 'text-amber-700', bg: 'bg-amber-700/10' },
+  { name: 'IRON I', min: 925, color: 'text-gray-500', bg: 'bg-gray-500/10' },
+  { name: 'IRON II', min: 900, color: 'text-gray-500', bg: 'bg-gray-500/10' },
+  { name: 'IRON III', min: 875, color: 'text-gray-500', bg: 'bg-gray-500/10' },
+  { name: 'IRON IV', min: 850, color: 'text-gray-500', bg: 'bg-gray-500/10' },
   { name: 'UNRANKED', min: 0, color: 'text-gray-400', bg: 'bg-gray-800' },
 ];
 
@@ -163,8 +163,7 @@ export default function LeaderboardPage() {
               rankBadge: getRankBadge(mmr)
             };
           })
-          .sort((a, b) => b.mmr - a.mmr) // MMR降順
-          .slice(0, 5); // TOP5
+          .sort((a, b) => b.mmr - a.mmr); // MMR降順
 
         newLeaderboard[role] = roleRanking;
       });

@@ -7,15 +7,15 @@ import { Info, Users, RefreshCw, Save, Trophy, Filter, Plus, Swords, AlertCircle
 
 // MMRからランクと色を判定するユーティリティ
 function getRankFromMMR(mmr: number): { tier: string, color: string } {
-  if (mmr >= 2600) return { tier: "CHALLENGER", color: "text-sky-300 bg-sky-300/10" };
-  if (mmr >= 2400) return { tier: "GRANDMASTER", color: "text-red-500 bg-red-500/10" };
-  if (mmr >= 2200) return { tier: "MASTER", color: "text-purple-500 bg-purple-500/10" };
-  if (mmr >= 2000) return { tier: "DIAMOND", color: "text-blue-400 bg-blue-400/10" };
-  if (mmr >= 1700) return { tier: "EMERALD", color: "text-emerald-500 bg-emerald-500/10" };
-  if (mmr >= 1500) return { tier: "PLATINUM", color: "text-teal-400 bg-teal-400/10" };
-  if (mmr >= 1180) return { tier: "GOLD", color: "text-yellow-400 bg-yellow-400/10" };
-  if (mmr >= 860) return { tier: "SILVER", color: "text-slate-300 bg-slate-300/10" };
-  if (mmr >= 540) return { tier: "BRONZE", color: "text-amber-700 bg-amber-700/10" };
+  if (mmr >= 1600) return { tier: "CHALLENGER", color: "text-sky-300 bg-sky-300/10" };
+  if (mmr >= 1550) return { tier: "GRANDMASTER", color: "text-red-500 bg-red-500/10" };
+  if (mmr >= 1500) return { tier: "MASTER", color: "text-purple-500 bg-purple-500/10" };
+  if (mmr >= 1450) return { tier: "DIAMOND", color: "text-blue-400 bg-blue-400/10" };
+  if (mmr >= 1350) return { tier: "EMERALD", color: "text-emerald-500 bg-emerald-500/10" };
+  if (mmr >= 1250) return { tier: "PLATINUM", color: "text-teal-400 bg-teal-400/10" };
+  if (mmr >= 1150) return { tier: "GOLD", color: "text-yellow-400 bg-yellow-400/10" };
+  if (mmr >= 1050) return { tier: "SILVER", color: "text-slate-300 bg-slate-300/10" };
+  if (mmr >= 950) return { tier: "BRONZE", color: "text-amber-700 bg-amber-700/10" };
   return { tier: "IRON", color: "text-gray-500 bg-gray-500/10" };
 }
 
