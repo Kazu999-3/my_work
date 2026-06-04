@@ -20,18 +20,25 @@ export interface RolePreferences {
  */
 export function calculateInitialMmr(highestRank: string | null, role: string, prefs: RolePreferences | null): number {
   const rankStr = highestRank ? highestRank.split(' ')[0].toUpperCase() : 'UNRANKED';
-  const baseMmr = RANKS[rankStr] || 1200;
+  const originalRankMmr = RANKS[rankStr] || 1200;
   
-  if (!prefs) return baseMmr - 500;
+  // 初期レートの圧縮 (Soft Reset)
+  // 1200を基準に、元のMMRとの差分を 0.4 倍に圧縮して初期MMRとする
+  // 例: ダイヤ(2000) -> 1200 + 800*0.4 = 1520
+  // 例: シルバー(1350) -> 1200 + 150*0.4 = 1260
+  const COMPRESSION_RATE = 0.4;
+  const baseMmr = Math.round(1200 + (originalRankMmr - 1200) * COMPRESSION_RATE);
+
+  if (!prefs) return baseMmr - 150;
 
   if (prefs.primary === role || prefs.primary === 'ALL') {
     return baseMmr; // メインレーンは減衰なし
   }
   if (prefs.secondary === role || prefs.secondary === 'ALL') {
-    return baseMmr - 200; // サブレーンは -200
+    return baseMmr - 60; // サブレーン
   }
   
-  return baseMmr - 500; // それ以外のレーンは -500
+  return baseMmr - 150; // それ以外のレーン
 }
 
 export interface MmrCalcContext {

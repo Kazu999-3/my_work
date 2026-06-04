@@ -86,16 +86,22 @@ export default function WinrateMatrixPanel() {
         colorClass = "text-emerald-400";
         bgClass = "bg-emerald-500/10 border-emerald-500/20";
         Icon = TrendingUp;
-      } else if (winrate <= 40) {
-        colorClass = "text-red-400";
-        bgClass = "bg-red-500/10 border-red-500/20";
-        Icon = TrendingDown;
       } else if (winrate > 50) {
         colorClass = "text-blue-400";
         bgClass = "bg-blue-500/10 border-blue-500/20";
-      } else {
+        Icon = Activity;
+      } else if (winrate >= 45) {
+        colorClass = "text-gray-300";
+        bgClass = "bg-gray-800/50 border-gray-700/50";
+        Icon = Activity;
+      } else if (winrate >= 40) {
         colorClass = "text-orange-400";
         bgClass = "bg-orange-500/10 border-orange-500/20";
+        Icon = Activity;
+      } else {
+        colorClass = "text-red-400";
+        bgClass = "bg-red-500/10 border-red-500/20";
+        Icon = TrendingDown;
       }
     }
 
