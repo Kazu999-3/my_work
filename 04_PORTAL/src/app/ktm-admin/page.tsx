@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
 import MatchRecordPanel from "./MatchRecordPanel";
-import { Info } from "lucide-react";
+import { Info, Users, RefreshCw, Save, Trophy, Filter, Plus, Swords, AlertCircle, X } from "lucide-react";
 
 // MMRからランクと色を判定するユーティリティ
 function getRankFromMMR(mmr: number): { tier: string, color: string } {
@@ -311,7 +311,7 @@ export default function KtmAdminPage() {
         {sortConfig.key === sortKey && (
           <span className="text-blue-400 text-xs">{sortConfig.direction === "desc" ? "↓" : "↑"}</span>
         )}
-        {sortConfig.key !== sortKey && <ArrowUpDown className="h-3 w-3 text-gray-500 opacity-0 group-hover:opacity-100" />}
+        {sortConfig.key !== sortKey && <span className="text-gray-500 opacity-30 text-xs">↕</span>}
       </div>
     </th>
   );
