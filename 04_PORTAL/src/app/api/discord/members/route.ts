@@ -79,10 +79,20 @@ export async function GET() {
       }
     });
 
-    // DBにはいるが、Discordにいないアクティブな人
+    // DBにはいるが、Discordにいない人（Active/Inactive問わず）
     dbPlayers.forEach(p => {
-      if (p.is_active && p.discord_id) {
+      if (p.discord_id) {
+        // IDで判定
         if (!discordIdsFound.has(p.discord_id)) {
+          toDeactivate.push(p);
+        }
+      } else {
+        // IDが未登録の場合は名前で判定
+        const found = humanMembers.some(m => {
+          const displayName = m.nick || m.user.global_name || m.user.username;
+          return displayName.toLowerCase() === p.name.toLowerCase();
+        });
+        if (!found) {
           toDeactivate.push(p);
         }
       }
