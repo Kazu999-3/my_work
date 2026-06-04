@@ -144,6 +144,7 @@ export async function POST(req: Request) {
 
     // 4-2. ktm_players の更新
     for (const [name, p] of playersMap.entries()) {
+      console.log(`[DEBUG MMR] ${name} | TOP:${p.mmr_top} JG:${p.mmr_jg} MID:${p.mmr_mid} ADC:${p.mmr_adc} SUP:${p.mmr_sup} | WINS:${p.totalWins}/${p.totalGames}`);
       await supabase
         .from('ktm_players')
         .update({

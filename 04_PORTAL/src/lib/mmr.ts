@@ -62,10 +62,10 @@ export function calculateNewMMR(ctx: MmrCalcContext): number {
   const expectedWin = 1 / (1 + Math.pow(10, (opponentMmr - currentMmr) / 400));
   const eloDelta = K * ((isWin ? 1 : 0) - expectedWin);
 
-  // ② KDAボーナス
+  // ② KDAボーナス (基準を2.0に引き下げてマイルドに)
   const kdaScore = deaths === 0 ? (kills + assists) * 1.2 : (kills + assists) / deaths;
-  let kdaB = (kdaScore - 2.5) * 4; 
-  kdaB = Math.max(-12, Math.min(12, kdaB));
+  let kdaB = (kdaScore - 2.0) * 4; 
+  kdaB = Math.max(-10, Math.min(12, kdaB));
 
   // ⑥ 視界・CSボーナス
   let visionB = 0;
@@ -101,17 +101,17 @@ export function calculateNewMMR(ctx: MmrCalcContext): number {
     }
   }
 
-  // 勝率による強制ペナルティ（特に初期値高すぎ問題の是正）
+  // 勝率による強制ペナルティ
   let wrComp = 0;
   if (numGames > 5) {
     if (totalWinRate < 45 && isWin) wrComp = 10;
-    else if (totalWinRate < 35 && !isWin) wrComp = -100; // 圧縮スケール(150差)での -100 は強烈
-    else if (totalWinRate < 45 && !isWin) wrComp = -30;
+    else if (totalWinRate < 35 && !isWin) wrComp = -80; // 過剰な絶望を少しだけ緩和 (-100 -> -80)
+    else if (totalWinRate < 45 && !isWin) wrComp = -20;
     else if (totalWinRate > 55 && !isWin) wrComp = -10;
     else if (totalWinRate > 60 && isWin) wrComp = -10;
   }
 
-  // 対面回数補正 (プレースメント中は減衰なし)
+  // 対面回数補正
   let matchupDampener = 1.0;
   if (!isPlacement) {
     if (matchupCount >= 3) matchupDampener = 0.8;
@@ -124,12 +124,11 @@ export function calculateNewMMR(ctx: MmrCalcContext): number {
 
   // 上限・下限のセーフティ
   if (isWin) {
-    // プレースメント中は上限を大きく
     const maxWin = isPlacement ? 200 : 80;
     delta = Math.max(5, Math.min(maxWin, delta));
   } else {
-    // 敗北時の下限（急降下）を -300 に拡大
-    delta = Math.max(-300, Math.min(-10, delta));
+    // 敗北時の下限（急降下）
+    delta = Math.max(-200, Math.min(-10, delta));
   }
 
   return delta;
