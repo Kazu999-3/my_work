@@ -89,6 +89,10 @@ export default function KtmAdminPage() {
   
   // Discord通知用ステート
   const [sendingDiscord, setSendingDiscord] = useState(false);
+  
+  // Discordメンバー同期用ステート
+  const [syncingDiscord, setSyncingDiscord] = useState(false);
+  const [syncData, setSyncData] = useState<any>(null);
 
   useEffect(() => {
     fetchPlayers();
@@ -283,6 +287,46 @@ export default function KtmAdminPage() {
     }
   };
 
+  const handleSyncCheck = async () => {
+    setSyncingDiscord(true);
+    setMessage({ type: "", text: "" });
+    try {
+      const res = await fetch('/api/discord/members');
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Discordメンバーの取得に失敗しました');
+      
+      setSyncData(data);
+    } catch (err: any) {
+      setMessage({ type: "error", text: "❌ Discord同期エラー: " + err.message });
+      setSyncingDiscord(false);
+    }
+  };
+
+  const executeSync = async () => {
+    if (!syncData) return;
+    setSyncingDiscord(true);
+    try {
+      const res = await fetch('/api/discord/members', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          add: syncData.toAdd,
+          deactivate: syncData.toDeactivate,
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || '同期処理に失敗しました');
+      
+      setMessage({ type: "success", text: `✅ 同期が完了しました: ${data.message}` });
+      setSyncData(null);
+      fetchPlayers();
+    } catch (err: any) {
+      setMessage({ type: "error", text: "❌ 同期実行エラー: " + err.message });
+    } finally {
+      setSyncingDiscord(false);
+    }
+  };
+
   const sortedPlayers = [...players]
     .filter(p => filterActive ? p.is_active : true)
     .sort((a, b) => {
@@ -370,6 +414,16 @@ export default function KtmAdminPage() {
             </a>
 
             <button
+              onClick={handleSyncCheck}
+              disabled={syncingDiscord}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold transition border ${
+                syncingDiscord ? 'bg-[#404eed]/50 border-[#404eed]/50 text-gray-400 cursor-not-allowed' : 'bg-[#5865F2]/20 border-[#5865F2] text-[#5865F2] hover:bg-[#5865F2] hover:text-white'
+              }`}
+            >
+              <Users className={`h-4 w-4 ${syncingDiscord && !syncData ? 'animate-spin' : ''}`} /> 
+              {syncingDiscord && !syncData ? "確認中..." : "Discord同期"}
+            </button>
+            <button
               onClick={() => setFilterActive(!filterActive)}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg transition border ${filterActive ? 'bg-blue-900/50 border-blue-500 text-blue-300' : 'bg-gray-800 border-gray-700 text-gray-400 hover:text-white'}`}
             >
@@ -400,6 +454,83 @@ export default function KtmAdminPage() {
             </button>
           </div>
         </div>
+
+        {/* Sync Preview Modal */}
+        {syncData && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+            <div className="bg-gray-900 border border-gray-700 rounded-xl max-w-2xl w-full shadow-2xl flex flex-col max-h-[90vh]">
+              <div className="p-6 border-b border-gray-800 flex justify-between items-center bg-gray-800/30">
+                <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                  <Users className="h-6 w-6 text-[#5865F2]" />
+                  Discordメンバー同期の確認
+                </h2>
+                <button onClick={() => { setSyncData(null); setSyncingDiscord(false); }} className="text-gray-500 hover:text-white">
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+              
+              <div className="p-6 overflow-y-auto space-y-6 flex-1">
+                <p className="text-gray-300 text-sm">
+                  現在のDiscordサーバーには <strong>{syncData.totalDiscordMembers}</strong> 人のメンバーがいます（Botを除く）。<br />
+                  以下の差分が見つかりました。同期を実行すると、データベースが自動的に更新されます。
+                </p>
+
+                {syncData.toAdd.length > 0 && (
+                  <div className="bg-green-900/20 border border-green-800/50 rounded-lg p-4">
+                    <h3 className="text-green-400 font-bold mb-3 flex items-center gap-2">
+                      <Plus className="h-4 w-4" /> 新規追加されるメンバー ({syncData.toAdd.length}人)
+                    </h3>
+                    <div className="flex flex-wrap gap-2">
+                      {syncData.toAdd.map((p: any) => (
+                        <span key={p.discord_id} className="bg-green-900/40 text-green-300 px-2 py-1 rounded text-xs border border-green-800">
+                          {p.name}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {syncData.toDeactivate.length > 0 && (
+                  <div className="bg-red-900/20 border border-red-800/50 rounded-lg p-4">
+                    <h3 className="text-red-400 font-bold mb-3 flex items-center gap-2">
+                      <AlertCircle className="h-4 w-4" /> 無効化 (is_active: false) されるメンバー ({syncData.toDeactivate.length}人)
+                    </h3>
+                    <div className="flex flex-wrap gap-2">
+                      {syncData.toDeactivate.map((p: any) => (
+                        <span key={p.id} className="bg-red-900/40 text-red-300 px-2 py-1 rounded text-xs border border-red-800">
+                          {p.name}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {syncData.toAdd.length === 0 && syncData.toDeactivate.length === 0 && (
+                  <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-6 text-center text-gray-400">
+                    差分はありません。現在のデータベースはDiscordサーバーと完全に同期されています。
+                  </div>
+                )}
+              </div>
+
+              <div className="p-6 border-t border-gray-800 bg-gray-800/30 flex justify-end gap-3">
+                <button 
+                  onClick={() => { setSyncData(null); setSyncingDiscord(false); }}
+                  className="px-4 py-2 rounded-lg font-bold text-gray-400 hover:bg-gray-800 transition"
+                >
+                  キャンセル
+                </button>
+                <button 
+                  onClick={executeSync}
+                  disabled={syncData.toAdd.length === 0 && syncData.toDeactivate.length === 0}
+                  className="px-6 py-2 rounded-lg font-bold bg-[#5865F2] hover:bg-[#4752C4] text-white transition shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  {syncingDiscord && syncData.toAdd.length > 0 ? <RefreshCw className="h-4 w-4 animate-spin" /> : null}
+                  同期を実行する
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* MMR Info Panel */}
         {showMmrInfo && (

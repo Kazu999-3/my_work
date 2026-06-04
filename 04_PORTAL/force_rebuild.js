@@ -136,7 +136,7 @@ async function rebuild() {
       const isHealMvp = teamParticipants.every(pt => (p.heal_shield || 0) >= (pt.heal_shield || 0)) && (p.heal_shield || 0) > 0;
 
       const ctx = {
-        currentMmr: 1200, opponentMmr, isWin,
+        currentMmr: memPlayer[mmrKey] || 1200, opponentMmr, isWin,
         kills: p.kills || 0, deaths: p.deaths || 0, assists: p.assists || 0,
         mainRank: memPlayer.highest_rank ? memPlayer.highest_rank.split(' ')[0].toUpperCase() : 'UNRANKED',
         numGames: memPlayer.laneGames[role] || 0,
