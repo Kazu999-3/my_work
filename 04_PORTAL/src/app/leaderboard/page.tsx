@@ -73,7 +73,7 @@ function getRankBadge(mmr: number) {
 }
 
 import WinrateMatrixPanel from './WinrateMatrixPanel';
-import { Trophy, Activity } from 'lucide-react';
+import { Trophy, Activity, Info } from 'lucide-react';
 
 export default function LeaderboardPage() {
   const [data, setData] = useState<LeaderboardData>({
@@ -222,7 +222,15 @@ export default function LeaderboardPage() {
           <WinrateMatrixPanel />
         ) : (
           <>
-            <p className="text-center text-gray-400 mb-8">各レーンのMMR TOP 5 (※1勝以上が条件)</p>
+            <div className="bg-blue-900/30 border border-blue-500/50 rounded-lg p-4 mb-8 flex items-start gap-3 max-w-3xl mx-auto">
+              <Info className="h-5 w-5 text-blue-400 flex-shrink-0 mt-0.5" />
+              <div className="text-sm text-blue-200">
+                <p className="font-bold text-blue-300 mb-1">ランキングの集計仕様について</p>
+                <p>このリーダーボードは現在の「希望レーン」ではなく、<strong>過去の試合でそのレーンを担当して1勝以上した実績</strong>に基づいて自動集計されています。レーン変更後も過去の戦績は残り続けます。</p>
+              </div>
+            </div>
+
+            <p className="text-center text-gray-400 mb-6 font-bold">各レーンのMMR TOP 5</p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
               {ROLES.map(role => (

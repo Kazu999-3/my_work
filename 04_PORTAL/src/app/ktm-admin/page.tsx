@@ -258,14 +258,101 @@ export default function KtmAdminPage() {
 
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'チーム分けに失敗しました');
-      
-      setBalanceResult(data);
-      setMessage({ type: "success", text: "✅ チーム分けが完了しました！" });
+      if (res.ok) {
+        setBalanceResult(data);
+      } else {
+        throw new Error(data.error || "計算に失敗しました");
+      }
     } catch (err: any) {
-      setMessage({ type: "error", text: err.message });
+      setMessage({ type: "error", text: "❌ バランス計算エラー: " + err.message });
     } finally {
       setBalancing(false);
     }
+  };
+
+  const handleSwapPlayer = (targetTeam: 'teamBlue' | 'teamRed' | 'spectators', targetRole: string, newPlayerName: string) => {
+    if (!balanceResult) return;
+    
+    // 全プレイヤーの現在の場所を検索
+    let sourceLocation = { team: '', role: '', index: -1 };
+    
+    // Blueを検索
+    const blueIdx = balanceResult.teamBlue.findIndex((p:any) => p.name === newPlayerName);
+    if (blueIdx !== -1) sourceLocation = { team: 'teamBlue', role: balanceResult.teamBlue[blueIdx].currentRole, index: blueIdx };
+    
+    // Redを検索
+    const redIdx = balanceResult.teamRed.findIndex((p:any) => p.name === newPlayerName);
+    if (redIdx !== -1 && sourceLocation.index === -1) sourceLocation = { team: 'teamRed', role: balanceResult.teamRed[redIdx].currentRole, index: redIdx };
+    
+    // Spectatorsを検索
+    const specIdx = balanceResult.spectators?.findIndex((name:string) => name === newPlayerName);
+    if (specIdx !== -1 && specIdx !== undefined && sourceLocation.index === -1) sourceLocation = { team: 'spectators', role: '', index: specIdx };
+
+    if (sourceLocation.index === -1) return; // 見つからない場合は何もしない
+
+    const newResult = { ...balanceResult };
+
+    // 対象枠に現在いるプレイヤーを取得
+    let targetPlayer: any = null;
+    let targetIndex = -1;
+    if (targetTeam === 'spectators') {
+      targetPlayer = balanceResult.spectators[parseInt(targetRole)]; // spectatorsの場合はroleをindexとして使う
+      targetIndex = parseInt(targetRole);
+    } else {
+      targetIndex = newResult[targetTeam].findIndex((p:any) => p.currentRole === targetRole);
+      if (targetIndex !== -1) targetPlayer = newResult[targetTeam][targetIndex];
+    }
+
+    // 移動元プレイヤーオブジェクトを取得
+    let sourcePlayerObj: any = null;
+    if (sourceLocation.team === 'spectators') {
+      // 観戦者からチームへの移動の場合、プレイヤーデータ（MMR等）を `players` ステートから復元する
+      const pData = players.find(p => p.name === newPlayerName);
+      sourcePlayerObj = { 
+        name: newPlayerName, 
+        currentRole: targetRole,
+        mmr: pData ? pData.mmr : 1000,
+        mainLane: pData?.role_preferences?.primary || 'ALL',
+        subLane: pData?.role_preferences?.secondary || 'ALL'
+      };
+    } else {
+      sourcePlayerObj = { ...newResult[sourceLocation.team][sourceLocation.index] };
+    }
+
+    // --- スワップ実行 ---
+    
+    // 1. まず移動元に targetPlayer を入れる（入れ替え）
+    if (sourceLocation.team === 'spectators') {
+      if (targetPlayer) {
+        newResult.spectators[sourceLocation.index] = targetPlayer.name; // チームから観戦者へ
+      } else {
+        newResult.spectators.splice(sourceLocation.index, 1); // 枠が空だった場合
+      }
+    } else {
+      if (targetPlayer) {
+        // 観戦者が元だった場合は、元チーム枠の role を targetPlayer にセット
+        targetPlayer.currentRole = sourceLocation.role;
+        newResult[sourceLocation.team][sourceLocation.index] = targetPlayer;
+      } else {
+        newResult[sourceLocation.team].splice(sourceLocation.index, 1);
+      }
+    }
+
+    // 2. 移動先に sourcePlayerObj を入れる
+    if (targetTeam === 'spectators') {
+      if (sourcePlayerObj) {
+        newResult.spectators[targetIndex] = sourcePlayerObj.name;
+      }
+    } else {
+      sourcePlayerObj.currentRole = targetRole;
+      if (targetIndex !== -1) {
+        newResult[targetTeam][targetIndex] = sourcePlayerObj;
+      } else {
+        newResult[targetTeam].push(sourcePlayerObj);
+      }
+    }
+
+    setBalanceResult(newResult);
   };
 
   const handleSendDiscord = async () => {
@@ -638,7 +725,23 @@ export default function KtmAdminPage() {
                         <div className="flex items-center justify-between p-3">
                           <div className="flex items-center gap-3">
                             <div className="w-10 text-center font-bold text-gray-400 text-xs">{role}</div>
-                            <div className="font-bold text-white text-lg">{player.name}</div>
+                            <select
+                              className="bg-gray-900 border border-gray-700 text-white font-bold text-sm rounded px-2 py-1 outline-none focus:border-blue-500 max-w-[120px]"
+                              value={player.name}
+                              onChange={(e) => handleSwapPlayer('teamBlue', role, e.target.value)}
+                            >
+                              <optgroup label="Blue Team">
+                                {balanceResult.teamBlue.map((p:any) => <option key={`b-${p.name}`} value={p.name}>{p.name}</option>)}
+                              </optgroup>
+                              <optgroup label="Red Team">
+                                {balanceResult.teamRed.map((p:any) => <option key={`r-${p.name}`} value={p.name}>{p.name}</option>)}
+                              </optgroup>
+                              {balanceResult.spectators && balanceResult.spectators.length > 0 && (
+                                <optgroup label="Spectators">
+                                  {balanceResult.spectators.map((name:string) => <option key={`s-${name}`} value={name}>{name}</option>)}
+                                </optgroup>
+                              )}
+                            </select>
                           </div>
                           <div className="flex items-center gap-2">
                             <div className={`text-[10px] font-bold px-2 py-0.5 rounded ${rank.color}`}>{rank.tier}</div>
@@ -684,7 +787,23 @@ export default function KtmAdminPage() {
                         <div className="flex items-center justify-between p-3">
                           <div className="flex items-center gap-3">
                             <div className="w-10 text-center font-bold text-gray-400 text-xs">{role}</div>
-                            <div className="font-bold text-white text-lg">{player.name}</div>
+                            <select
+                              className="bg-gray-900 border border-gray-700 text-white font-bold text-sm rounded px-2 py-1 outline-none focus:border-red-500 max-w-[120px]"
+                              value={player.name}
+                              onChange={(e) => handleSwapPlayer('teamRed', role, e.target.value)}
+                            >
+                              <optgroup label="Red Team">
+                                {balanceResult.teamRed.map((p:any) => <option key={`r-${p.name}`} value={p.name}>{p.name}</option>)}
+                              </optgroup>
+                              <optgroup label="Blue Team">
+                                {balanceResult.teamBlue.map((p:any) => <option key={`b-${p.name}`} value={p.name}>{p.name}</option>)}
+                              </optgroup>
+                              {balanceResult.spectators && balanceResult.spectators.length > 0 && (
+                                <optgroup label="Spectators">
+                                  {balanceResult.spectators.map((name:string) => <option key={`s-${name}`} value={name}>{name}</option>)}
+                                </optgroup>
+                              )}
+                            </select>
                           </div>
                           <div className="flex items-center gap-2">
                             <div className={`text-[10px] font-bold px-2 py-0.5 rounded ${rank.color}`}>{rank.tier}</div>
@@ -707,10 +826,23 @@ export default function KtmAdminPage() {
               <div className="p-4 bg-gray-800/80 border-t border-gray-700 flex flex-col md:flex-row items-center gap-4">
                 <div className="text-sm font-bold text-gray-400 whitespace-nowrap">観戦 (Pity選抜漏れ):</div>
                 <div className="flex flex-wrap gap-2">
-                  {balanceResult.spectators.map((name: string) => (
-                    <span key={name} className="px-3 py-1 bg-gray-900 border border-gray-700 text-gray-300 rounded text-sm font-medium">
-                      {name}
-                    </span>
+                  {balanceResult.spectators.map((name: string, index: number) => (
+                    <select
+                      key={`spec-${index}`}
+                      className="px-2 py-1 bg-gray-900 border border-gray-700 text-gray-300 rounded text-sm font-medium outline-none focus:border-emerald-500"
+                      value={name}
+                      onChange={(e) => handleSwapPlayer('spectators', index.toString(), e.target.value)}
+                    >
+                      <optgroup label="Spectators">
+                        {balanceResult.spectators.map((n:string) => <option key={`s-${n}`} value={n}>{n}</option>)}
+                      </optgroup>
+                      <optgroup label="Blue Team">
+                        {balanceResult.teamBlue.map((p:any) => <option key={`b-${p.name}`} value={p.name}>{p.name}</option>)}
+                      </optgroup>
+                      <optgroup label="Red Team">
+                        {balanceResult.teamRed.map((p:any) => <option key={`r-${p.name}`} value={p.name}>{p.name}</option>)}
+                      </optgroup>
+                    </select>
                   ))}
                 </div>
               </div>
