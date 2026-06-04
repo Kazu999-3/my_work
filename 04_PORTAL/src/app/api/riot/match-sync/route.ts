@@ -5,7 +5,7 @@ import { calculateNewMMR, calculateKdaScore, MmrCalcContext } from '../../../lib
 
 export async function POST(req: Request) {
   try {
-    const { matchId } = await req.json(); // ktm_matches 縺ｮ ID
+    const { matchId } = await req.json(); // ktm_matches の ID
 
     if (!matchId) {
       return NextResponse.json({ status: "ERROR", message: "Missing matchId" }, { status: 400 });
@@ -14,7 +14,8 @@ export async function POST(req: Request) {
     const apiKey = process.env.RIOT_API_KEY;
     if (!apiKey) throw new Error("RIOT_API_KEY is not set.");
 
-    // 1. DB縺九ｉ隧ｦ蜷医→蜿ょ刈閠・ｒ蜿門ｾ・    const { data: match, error: matchError } = await supabase
+    // 1. DBから試合と参加者を取得
+    const { data: match, error: matchError } = await supabase
       .from('ktm_matches')
       .select('*, ktm_match_participants(*)')
       .eq('id', matchId)
@@ -25,21 +26,30 @@ export async function POST(req: Request) {
     }
 
     if (!match.riot_match_id) {
-      // 譛ｬ譚･縺ｯ participants 縺ｮ puuid 縺九ｉ逶ｴ霑代・繧ｫ繧ｹ繧ｿ繝繧ｲ繝ｼ繝繧貞ｼ輔￥蜃ｦ逅・′蠢・ｦ√□縺後・      // MVP縺ｨ縺励※ match.riot_match_id 縺悟・縺｣縺ｦ縺・ｋ蜑肴署縺九√％縺薙〒繧ｨ繝ｩ繝ｼ縺ｫ縺吶ｋ
-      // ・・iscord繝懊ャ繝亥・縺ｮ螳溯｣・↓繧医ｋ・・      throw new Error("This match doesn't have a Riot Match ID associated yet.");
+      // 本来は participants の puuid から直近のカスタムゲームを引く処理が必要だが、
+      // MVPとして match.riot_match_id が入っている前提か、ここでエラーにする
+      // （Discordボット側の実装による）
+      throw new Error("This match doesn't have a Riot Match ID associated yet.");
     }
 
-    // 2. Riot API縺九ｉ隧ｦ蜷郁ｩｳ邏ｰ繧貞叙蠕・    const riotDetails = await fetchMatchDetails(match.riot_match_id, apiKey);
+    // 2. Riot APIから試合詳細を取得
+    const riotDetails = await fetchMatchDetails(match.riot_match_id, apiKey);
 
-    // 3. DB縺ｮ蜷・・繝ｬ繧､繝､繝ｼ縺ｫ蟇ｾ縺励※蜀崎ｨ育ｮ・    const participants = match.ktm_match_participants;
+    // 3. DBの各プレイヤーに対して再計算
+    const participants = match.ktm_match_participants;
     
-    // ・医・繝ｬ繧､繝､繝ｼ諠・ｱ縺ｨ驕主悉蜍晉紫縺ｮ蜿門ｾ怜・逅・・縲∵悽譚･ record/route.ts 縺ｨ蜷梧ｧ倥↓陦後≧蠢・ｦ√′縺ゅｋ縺後・    // 縲莉雁屓縺ｯ邁｡譏鍋噪縺ｫ蜿ょ刈閠・・迴ｾ蝨ｨ縺ｮMMR縺九ｉ騾・ｮ励√∪縺溘・蜿門ｾ励＠逶ｴ縺呻ｼ・    const names = participants.map((p: any) => p.player_name);
+    // （プレイヤー情報と過去勝率の取得処理は、本来 record/route.ts と同様に行う必要があるが、
+    // 　今回は簡易的に参加者の現在のMMRから逆算、または取得し直す）
+    const names = participants.map((p: any) => p.player_name);
     const { data: dbPlayers } = await supabase.from('ktm_players').select('*').in('name', names);
     
-    // 邁｡蜊倥・縺溘ａ縲∝享邇・↑縺ｩ縺ｯ荳蠕・0%縺ｧ險育ｮ暦ｼ・VP螳溯｣・ょｮ悟・迚医〒縺ｯ蜷梧ｧ倥↓history繧貞ｼ輔￥・・    const updates = [];
+    // 簡単のため、勝率などは一律50%で計算（MVP実装。完全版では同様にhistoryを引く）
+    const updates = [];
 
     for (const p of participants) {
-      // Riot邨先棡縺九ｉ隧ｲ蠖薙・繝ｬ繧､繝､繝ｼ繧呈爾縺・      // IGN縺ｮ繝槭ャ繝√Φ繧ｰ縺碁屮縺励＞蝣ｴ蜷医・邁｡譏鍋噪縺ｫ繝ｭ繝ｼ繝ｫ縺ｨ繝√・繝縺ｧ蛻､螳・      const riotP = riotDetails.participants.find((rp: any) => {
+      // Riot結果から該当プレイヤーを探す
+      // IGNのマッチングが難しい場合は簡易的にロールとチームで判定
+      const riotP = riotDetails.participants.find((rp: any) => {
         // Red = 200, Blue = 100
         const isRed = rp.teamId === 200;
         const dbIsRed = p.team === 'RED';
@@ -47,7 +57,7 @@ export async function POST(req: Request) {
 
         const dbRole = p.role.toUpperCase();
         const rpLane = rp.lane.toUpperCase();
-        // 邁｡譏薙・繝・メ繝ｳ繧ｰ
+        // 簡易マッチング
         if (dbRole === 'TOP' && rpLane.includes('TOP')) return true;
         if (dbRole === 'JG' && rpLane.includes('JUNGLE')) return true;
         if (dbRole === 'MID' && rpLane.includes('MIDDLE')) return true;
@@ -67,7 +77,7 @@ export async function POST(req: Request) {
 
       const ctx: MmrCalcContext = {
         currentMmr,
-        opponentMmr: 1200, // 邁｡譏灘喧
+        opponentMmr: 1200, // 簡易化
         isWin: p.team === match.winning_team,
         kills: riotP.kills,
         deaths: riotP.deaths,
@@ -84,7 +94,7 @@ export async function POST(req: Request) {
       const mmrDelta = calculateNewMMR(ctx);
       const kdaScore = calculateKdaScore(riotP.kills, riotP.deaths, riotP.assists);
 
-      // participant 譖ｴ譁ｰ逕ｨ繝・・繧ｿ
+      // participant 更新用データ
       const pUpdate = {
         id: p.id,
         kills: riotP.kills,
@@ -97,7 +107,9 @@ export async function POST(req: Request) {
       
       updates.push(pUpdate);
 
-      // 繝励Ξ繧､繝､繝ｼ縺ｮMMR繧呈峩譁ｰ・域悽譚･縺ｯ蟾ｮ蛻・ｒ驕ｩ蛻・↓蠖薙※繧句ｿ・ｦ√′縺ゅｋ・・      // 莉雁屓縺ｯ譖ｴ譁ｰ蜑阪・蛟､繧貞宍蟇・↓霑ｽ縺医↑縺・◆繧√∫ｰ｡逡･蛹・      await supabase
+      // プレイヤーのMMRを更新（本来は差分を適切に当てる必要がある）
+      // 今回は更新前の値を厳密に追えないため、簡略化
+      await supabase
         .from('ktm_match_participants')
         .update({
           kills: pUpdate.kills,

@@ -10,7 +10,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ status: "ERROR", message: "Missing discordId" }, { status: 400 });
     }
 
-    // 1. 繝励Ξ繧､繝､繝ｼ縺ｮ蝓ｺ譛ｬ諠・ｱ繧貞叙蠕・    const { data: player, error: playerError } = await supabase
+    // 1. プレイヤーの基本情報を取得
+    const { data: player, error: playerError } = await supabase
       .from('ktm_players')
       .select('*')
       .eq('discord_id', discordId)
@@ -20,7 +21,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ status: "NOT_FOUND" });
     }
 
-    // 2. 逶ｴ霑代・隧ｦ蜷亥盾蜉險倬鹸繧貞叙蠕・    const { data: participants, error: partError } = await supabase
+    // 2. 直近の試合参加記録を取得
+    const { data: participants, error: partError } = await supabase
       .from('ktm_match_participants')
       .select('*, ktm_matches(*)')
       .eq('player_name', player.name)
@@ -57,7 +59,7 @@ export async function POST(req: Request) {
         stats.recent.push({ win: isWin });
       }
 
-      // 'TOP', 'JG' 遲峨ｒ蜈磯ｭ螟ｧ譁・ｭ励↓逶ｴ縺・(Top, Jg, Mid, Adc, Sup)
+      // 'TOP', 'JG' 等を先頭大文字に直す (Top, Jg, Mid, Adc, Sup)
       let role = p.role ? p.role.toUpperCase() : 'UNKNOWN';
       if (role === 'TOP') role = 'Top';
       if (role === 'JG') role = 'Jg';
@@ -73,7 +75,7 @@ export async function POST(req: Request) {
 
     stats.total = { g: totalG, w: totalW };
 
-    // MMR繧呈紛蠖｢
+    // MMRを整形
     const mmrs = {
       Top: player.mmr_top || player.mmr || 1200,
       Jg: player.mmr_jg || player.mmr || 1200,
@@ -88,7 +90,7 @@ export async function POST(req: Request) {
       pity: player.pity_points || 0,
       mmrs: mmrs,
       stats: stats,
-      rivalry: {}, // 莉雁ｾ後・諡｡蠑ｵ逕ｨ
+      rivalry: {}, // 今後の拡張用
       lolIgn: player.ign || null
     };
 

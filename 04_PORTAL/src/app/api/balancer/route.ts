@@ -14,25 +14,26 @@ export async function POST(request: Request) {
     const { participants } = body;
     
     if (!participants || !Array.isArray(participants) || participants.length < 10) {
-      return NextResponse.json({ error: '蜿ょ刈閠・・譛菴・0莠ｺ蠢・ｦ√〒縺吶・ }, { status: 400 });
+      return NextResponse.json({ error: '参加者は最低10人必要です。' }, { status: 400 });
     }
 
     // participants: { name: string, isFixed?: boolean, fixedRole?: Role }[]
 
-    // 1. ktm_players 縺九ｉ隧ｲ蠖薙・繝ｬ繧､繝､繝ｼ縺ｮ諠・ｱ繧貞叙蠕・    const names = participants.map(p => p.name);
+    // 1. ktm_players から該当プレイヤーの情報を取得
+    const names = participants.map(p => p.name);
     const { data: playersData, error: pError } = await supabase
       .from('ktm_players')
       .select('*')
       .in('name', names);
 
     if (pError || !playersData) {
-      return NextResponse.json({ error: '繝励Ξ繧､繝､繝ｼ諠・ｱ縺ｮ蜿門ｾ励↓螟ｱ謨励＠縺ｾ縺励◆縲・ }, { status: 500 });
+      return NextResponse.json({ error: 'プレイヤー情報の取得に失敗しました。' }, { status: 500 });
     }
 
-    // 2. Player 繧､繝ｳ繧ｿ繝輔ぉ繝ｼ繧ｹ縺ｸ繝槭ャ繝斐Φ繧ｰ
+    // 2. Player インタフェースへマッピング
     const allPlayers: Player[] = participants.map(input => {
       const dbPlayer = playersData.find(p => p.name === input.name);
-      if (!dbPlayer) throw new Error(`繝励Ξ繧､繝､繝ｼ縺瑚ｦ九▽縺九ｊ縺ｾ縺帙ｓ: ${input.name}`);
+      if (!dbPlayer) throw new Error(`プレイヤーが見つかりません: ${input.name}`);
       
       const roleMap: Record<string, Role | 'ALL'> = {
         'JUNGLE': 'JG',
@@ -51,7 +52,7 @@ export async function POST(request: Request) {
       return {
         name: dbPlayer.name,
         discordId: dbPlayer.discord_id,
-        rank: 'UNRANKED', // 蠢・ｦ√↓蠢懊§縺ｦ繝槭ャ繝斐Φ繧ｰ
+        rank: 'UNRANKED', // 必要に応じてマッピング
         pref1: roleMap[rawPref1] || rawPref1,
         pref2: roleMap[rawPref2] || rawPref2,
         ng1: roleMap[rawNg1] || rawNg1,
@@ -66,35 +67,40 @@ export async function POST(request: Request) {
           ADC: dbPlayer.mmr_adc || 1200,
           SUP: dbPlayer.mmr_sup || 1200
         },
-        games: 0, // 莉ｮ (蠕後〒髮・ｨ医∪縺溘・DB縺九ｉ蜿門ｾ・
-        winRate: 50.0, // 莉ｮ
+        games: 0, // 仮 (後で集計またはDBから取得)
+        winRate: 50.0, // 仮
         isFixed: input.isFixed,
         fixedRole: input.fixedRole
       };
     });
 
-    // 3. Pity驕ｸ謚・    const { selected, spectators } = selectPlayersWithPity(allPlayers);
+    // 3. Pity選抜
+    const { selected, spectators } = selectPlayersWithPity(allPlayers);
 
     if (selected.length !== 10) {
-      return NextResponse.json({ error: '驕ｸ謚懊＆繧後◆繝励Ξ繧､繝､繝ｼ縺・0莠ｺ縺ｫ縺ｪ繧翫∪縺帙ｓ縺ｧ縺励◆縲・ }, { status: 500 });
+      return NextResponse.json({ error: '選抜されたプレイヤーが10人になりませんでした。' }, { status: 500 });
     }
 
-    // 4. 繧ｳ繝ｳ繝・く繧ｹ繝医ョ繝ｼ繧ｿ(螻･豁ｴ)縺ｮ讒狗ｯ・    // 莉雁屓縺ｯ繝槭う繧ｰ繝ｬ繝ｼ繧ｷ繝ｧ繝ｳ逶ｴ蠕後〒DB縺ｫ螻･豁ｴ縺後↑縺・◆繧∫ｩｺ縺ｧ蛻晄悄蛹・    // 窶ｻ螳滄°逕ｨ縺ｧ縺ｯ ktm_match_participants 繧呈､懃ｴ｢縺励※讒狗ｯ峨☆繧・    const ctx: BalanceContext = {
+    // 4. コンテキストデータ(履歴)の構築
+    // 今回はマイグレーション直後でDBに履歴がないため空で初期化
+    // ※実運用では ktm_match_participants を検索して構築する
+    const ctx: BalanceContext = {
       history: new Set<string>(),
       teammateHistory: new Map<string, number>(),
       winStreakTeam: null,
       sideHistory: {}
     };
 
-    // 5. 繝舌Λ繝ｳ繧ｹ螳溯｡・    const result = coreBalanceTeams(selected, ctx);
+    // 5. バランス実行
+    const result = coreBalanceTeams(selected, ctx);
     
-    // 繧ｹ繝斐Ν縺励◆・磯∈縺ｰ繧後↑縺九▲縺滂ｼ峨・繝ｬ繧､繝､繝ｼ蜷阪ｒ隕ｳ謌ｦ閠・→縺励※霑ｽ蜉
+    // スピルした（選ばれなかった）プレイヤー名を観戦者として追加
     result.spectators = spectators.map(p => p.name);
 
     return NextResponse.json(result);
 
   } catch (error: any) {
     console.error('Balancer API Error:', error);
-    return NextResponse.json({ error: error.message || '蜀・Κ繧ｨ繝ｩ繝ｼ縺檎匱逕溘＠縺ｾ縺励◆縲・ }, { status: 500 });
+    return NextResponse.json({ error: error.message || '内部エラーが発生しました。' }, { status: 500 });
   }
 }

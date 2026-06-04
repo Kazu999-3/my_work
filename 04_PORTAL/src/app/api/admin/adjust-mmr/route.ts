@@ -13,7 +13,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ status: "ERROR", message: "amount must be a valid number." }, { status: 400 });
     }
 
-    // 繝励Ξ繧､繝､繝ｼ繧貞叙蠕・    const { data: player, error: playerError } = await supabase
+    // プレイヤーを取得
+    const { data: player, error: playerError } = await supabase
       .from('ktm_players')
       .select('*')
       .eq('name', targetName)
@@ -23,14 +24,16 @@ export async function POST(req: Request) {
       return NextResponse.json({ status: "ERROR", message: "Player not found." }, { status: 404 });
     }
 
-    // 譖ｴ譁ｰ縺吶ｋ繧ｫ繝ｩ繝繧呈ｱｺ螳・    const targetRole = role.toUpperCase();
+    // 更新するカラムを決定
+    const targetRole = role.toUpperCase();
     const updateData: any = {};
     if (targetRole === 'TOP') updateData.mmr_top = newMmr;
     else if (targetRole === 'JG') updateData.mmr_jg = newMmr;
     else if (targetRole === 'MID') updateData.mmr_mid = newMmr;
     else if (targetRole === 'ADC') updateData.mmr_adc = newMmr;
     else if (targetRole === 'SUP') updateData.mmr_sup = newMmr;
-    else updateData.mmr = newMmr; // 蜈ｨ菴・縺ｾ縺溘・ 荳肴・縺ｪ蝣ｴ蜷・
+    else updateData.mmr = newMmr; // 全体 または 不明な場合
+
     const { error: updateError } = await supabase
       .from('ktm_players')
       .update(updateData)

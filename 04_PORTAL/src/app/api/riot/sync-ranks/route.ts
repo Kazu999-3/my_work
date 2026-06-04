@@ -10,14 +10,15 @@ export async function POST(req: Request) {
     const apiKey = process.env.RIOT_API_KEY;
     if (!apiKey) throw new Error("RIOT_API_KEY is not set.");
 
-    // DB縺九ｉ繝励Ξ繧､繝､繝ｼ蜿門ｾ・    const { data: player, error } = await supabase
+    // DBからプレイヤー取得
+    const { data: player, error } = await supabase
       .from('ktm_players')
       .select('id, ign')
       .eq('name', discordName)
       .single();
 
     if (error || !player) throw new Error("Player not found in DB.");
-    if (!player.ign || !player.ign.includes('#')) throw new Error("IGN縺梧悴逋ｻ骭ｲ縺ｾ縺溘・荳肴ｭ｣縺ｧ縺吶・);
+    if (!player.ign || !player.ign.includes('#')) throw new Error("IGNが未登録または不正です。");
 
     const [gameName, tagLine] = player.ign.split('#');
     
@@ -26,13 +27,14 @@ export async function POST(req: Request) {
     const summoner = await fetchSummonerByPuuid(puuid, apiKey);
     const leagues = await fetchLeagueBySummonerId(summoner.id, apiKey);
 
-    // Solo Queue 縺ｮ繝ｩ繝ｳ繧ｯ繧呈爾縺・    const soloQ = leagues.find(l => l.queueType === 'RANKED_SOLO_5x5');
+    // Solo Queue のランクを探す
+    const soloQ = leagues.find(l => l.queueType === 'RANKED_SOLO_5x5');
     let rankStr = "UNRANKED";
     if (soloQ) {
       rankStr = `${soloQ.tier} ${soloQ.rank}`;
     }
 
-    // DB譖ｴ譁ｰ
+    // DB更新
     const { error: updateError } = await supabase
       .from('ktm_players')
       .update({ highest_rank: rankStr })
@@ -42,7 +44,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ 
       status: "SUCCESS", 
-      message: `繝ｩ繝ｳ繧ｯ諠・ｱ繧貞酔譛溘＠縺ｾ縺励◆: ${rankStr}` 
+      message: `ランク情報を同期しました: ${rankStr}` 
     });
   } catch (err: any) {
     return NextResponse.json({ status: "ERROR", message: err.message }, { status: 500 });

@@ -6,14 +6,14 @@ export async function POST(req: Request) {
   try {
     const { adminCode } = await req.json();
 
-    // 邁｡譏鍋噪縺ｪ邂｡逅・・ヰ繝ｪ繝・・繧ｷ繝ｧ繝ｳ
+    // 簡易的な管理者バリデーション
     if (adminCode !== process.env.ADMIN_CODE && adminCode !== 'rebuild-force') {
       return NextResponse.json({ status: "ERROR", message: "Unauthorized" }, { status: 401 });
     }
 
     console.log("[REBUILD] Starting Full MMR Rebuild Process...");
 
-    // 1. 蜈ｨ繝励Ξ繧､繝､繝ｼ縺ｮ繝輔ぉ繝・メ縺ｨMMR蛻晄悄蛹・(繝｡繝｢繝ｪ荳・
+    // 1. 全プレイヤーのフェッチとMMR初期化 (メモリ上)
     const { data: allPlayers, error: pError } = await supabase.from('ktm_players').select('*');
     if (pError || !allPlayers) throw new Error("Failed to fetch players");
 
@@ -36,7 +36,7 @@ export async function POST(req: Request) {
       });
     }
 
-    // 2. 蜈ｨ隧ｦ蜷医・蜿門ｾ・(菴懈・譌･譎よ・鬆・= 蜿､縺・・
+    // 2. 全試合の取得 (作成日時昇順 = 古い順)
     const { data: allMatches, error: mError } = await supabase
       .from('ktm_matches')
       .select('id, winning_team, created_at')
@@ -47,8 +47,10 @@ export async function POST(req: Request) {
     let processedMatches = 0;
     const participantUpdates = [];
 
-    // 3. 驕主悉縺ｮ隧ｦ蜷医°繧蛾・分縺ｫ險育ｮ・    for (const match of allMatches) {
-      // 隧ｲ蠖楢ｩｦ蜷医・蜿ょ刈閠・ｒ蜿門ｾ・      const { data: participants, error: partError } = await supabase
+    // 3. 過去の試合から順番に計算
+    for (const match of allMatches) {
+      // 該当試合の参加者を取得
+      const { data: participants, error: partError } = await supabase
         .from('ktm_match_participants')
         .select('*')
         .eq('match_id', match.id);
@@ -84,7 +86,8 @@ export async function POST(req: Request) {
         const mainRank = memPlayer.highest_rank ? memPlayer.highest_rank.split(' ')[0].toUpperCase() : 'UNRANKED';
         const isWin = p.team === match.winning_team;
 
-        // 險育ｮ励↓蠢・ｦ√↑蜍慕噪繝・・繧ｿ繧貞叙蠕・        const numGames = memPlayer.laneGames[role] || 0;
+        // 計算に必要な動的データを取得
+        const numGames = memPlayer.laneGames[role] || 0;
         const totalGames = memPlayer.totalGames || 0;
         const totalWinRate = totalGames > 0 ? (memPlayer.totalWins / totalGames) * 100 : 50;
 
@@ -107,17 +110,17 @@ export async function POST(req: Request) {
         const mmrDelta = calculateNewMMR(ctx);
         const kdaScore = calculateKdaScore(p.kills, p.deaths, p.assists);
 
-        // 繝｡繝｢繝ｪ荳翫・MMR繧呈峩譁ｰ
+        // メモリ上のMMRを更新
         memPlayer[mmrKey] += mmrDelta;
 
-        // 谺｡縺ｮ隧ｦ蜷医・險育ｮ励・縺溘ａ縺ｫ謌ｦ邵ｾ繧呈峩譁ｰ
+        // 次の試合の計算のために戦績を更新
         memPlayer.totalGames += 1;
         if (isWin) memPlayer.totalWins += 1;
         if (memPlayer.laneGames[role] !== undefined) {
           memPlayer.laneGames[role] += 1;
         }
 
-        // participants 縺ｮ繧｢繝・・繝・・繝磯・蛻励↓霑ｽ蜉
+        // participants のアップデート配列に追加
         participantUpdates.push({
           id: p.id,
           kda_score: kdaScore,
@@ -130,8 +133,8 @@ export async function POST(req: Request) {
 
     console.log(`[REBUILD] Calculated ${processedMatches} matches.`);
 
-    // 4. 險育ｮ礼ｵ先棡繧奪B縺ｫ蜿肴丐
-    // 4-1. ktm_match_participants 縺ｮ譖ｴ譁ｰ (荳諡ｬ譖ｴ譁ｰ縺ｧ縺阪↑縺・ｴ蜷医・蛻・牡)
+    // 4. 計算結果をDBに反映
+    // 4-1. ktm_match_participants の更新 (一括更新できない場合は分割)
     for (const pu of participantUpdates) {
       await supabase
         .from('ktm_match_participants')
@@ -139,7 +142,7 @@ export async function POST(req: Request) {
         .eq('id', pu.id);
     }
 
-    // 4-2. ktm_players 縺ｮ譖ｴ譁ｰ
+    // 4-2. ktm_players の更新
     for (const [name, p] of playersMap.entries()) {
       console.log(`[DEBUG MMR] ${name} | TOP:${p.mmr_top} JG:${p.mmr_jg} MID:${p.mmr_mid} ADC:${p.mmr_adc} SUP:${p.mmr_sup} | WINS:${p.totalWins}/${p.totalGames}`);
       await supabase
