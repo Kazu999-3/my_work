@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '../../../lib/supabaseClient';
-import { fetchPuuidByRiotId, fetchSummonerByPuuid, fetchLeagueBySummonerId } from '../../../lib/riot';
+import { supabase } from '../../../../lib/supabaseClient';
+import { fetchPuuidByRiotId, fetchSummonerByPuuid, fetchLeagueBySummonerId } from '../../../../lib/riot';
 
 export async function POST(req: Request) {
   try {

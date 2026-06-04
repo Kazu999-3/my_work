@@ -19,7 +19,7 @@ export async function POST(request: Request) {
       return roles.map(r => {
         const p = team.find(player => player.currentRole === r);
         return p ? `**${r}**: ${p.name}` : `**${r}**: -`;
-      }).join('\n');
+      }).join('/n');
     };
 
     const payload: any = {
@@ -52,7 +52,7 @@ export async function POST(request: Request) {
     if (balanceReport && Array.isArray(balanceReport)) {
       payload.embeds.push({
         title: "📊 チーム分けの理由と分析",
-        description: balanceReport.join('\n'),
+        description: balanceReport.join('/n'),
         color: 3447003, // 青系
         fields: [],
         footer: { text: '' },

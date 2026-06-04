@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '../../../lib/supabaseClient';
-import { calculateNewMMR, calculateKdaScore, MmrCalcContext, calculateInitialMmr } from '../../../lib/mmr';
+import { supabase } from '../../../../lib/supabaseClient';
+import { calculateNewMMR, calculateKdaScore, MmrCalcContext, calculateInitialMmr } from '../../../../lib/mmr';
 
 export async function POST(req: Request) {
   try {
