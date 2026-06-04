@@ -4,12 +4,10 @@
 
 import { Role } from './balancer';
 
-const K = 40; // Eloレート変動係数 (48から40に落としマイルド化)
-
 const RANKS: Record<string, number> = {
-  'UNRANKED': 1200, 'IRON': 500, 'BRONZE': 1000, 'SILVER': 1600, 'GOLD': 2300,
-  'PLATINUM': 3200, 'EMERALD': 4300, 'DIAMOND': 5700, 'MASTER': 7500, 
-  'GRANDMASTER': 10000, 'CHALLENGER': 15000
+  'UNRANKED': 1200, 'IRON': 1100, 'BRONZE': 1200, 'SILVER': 1350, 'GOLD': 1500,
+  'PLATINUM': 1650, 'EMERALD': 1800, 'DIAMOND': 2000, 'MASTER': 2200, 
+  'GRANDMASTER': 2400, 'CHALLENGER': 2600
 };
 
 export interface RolePreferences {
@@ -24,16 +22,16 @@ export function calculateInitialMmr(highestRank: string | null, role: string, pr
   const rankStr = highestRank ? highestRank.split(' ')[0].toUpperCase() : 'UNRANKED';
   const baseMmr = RANKS[rankStr] || 1200;
   
-  if (!prefs) return baseMmr - 400;
+  if (!prefs) return baseMmr - 300;
 
   if (prefs.primary === role || prefs.primary === 'ALL') {
     return baseMmr; // メインレーンは減衰なし
   }
   if (prefs.secondary === role || prefs.secondary === 'ALL') {
-    return baseMmr - 200; // サブレーンは -200
+    return baseMmr - 100; // サブレーンは -100
   }
   
-  return baseMmr - 400; // それ以外のレーンは -400
+  return baseMmr - 300; // それ以外のレーンは -300
 }
 
 export interface MmrCalcContext {
@@ -64,7 +62,7 @@ export function calculateNewMMR(ctx: MmrCalcContext): number {
   const expectedWin = 1 / (1 + Math.pow(10, (opponentMmr - currentMmr) / 400));
   const eloDelta = K * ((isWin ? 1 : 0) - expectedWin);
 
-  // ② KDAボーナス (デフレ解消のため基準を3.0 -> 2.5に引き下げ)
+  // ② KDAボーナス
   const kdaScore = deaths === 0 ? (kills + assists) * 1.2 : (kills + assists) / deaths;
   let kdaB = (kdaScore - 2.5) * 4; 
   kdaB = Math.max(-12, Math.min(12, kdaB));
@@ -107,8 +105,8 @@ export function calculateNewMMR(ctx: MmrCalcContext): number {
   let wrComp = 0;
   if (numGames > 5) {
     if (totalWinRate < 45 && isWin) wrComp = 10;
-    else if (totalWinRate < 35 && !isWin) wrComp = -150; // 35%未満で負けたら -150 の強烈ペナルティ
-    else if (totalWinRate < 45 && !isWin) wrComp = -50;  // 45%未満で負けたら -50 ペナルティ
+    else if (totalWinRate < 35 && !isWin) wrComp = -100; // 圧縮スケール(150差)での -100 は強烈
+    else if (totalWinRate < 45 && !isWin) wrComp = -30;
     else if (totalWinRate > 55 && !isWin) wrComp = -10;
     else if (totalWinRate > 60 && isWin) wrComp = -10;
   }
