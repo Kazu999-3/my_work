@@ -39,14 +39,24 @@ export async function upsertPlayer(env, player) {
     "apikey": env.SUPABASE_KEY,
     "Authorization": `Bearer ${env.SUPABASE_KEY}`,
     "Content-Type": "application/json",
-    "Prefer": "resolution=merge-duplicates,return=representation"
+    "Prefer": "return=representation"
   };
-  const url = `${env.SUPABASE_URL}/rest/v1/ktm_players?on_conflict=discord_id`;
+
+  let url;
+  let method;
+
+  if (player.id) {
+    url = `${env.SUPABASE_URL}/rest/v1/ktm_players?id=eq.${player.id}`;
+    method = "PATCH";
+  } else {
+    url = `${env.SUPABASE_URL}/rest/v1/ktm_players`;
+    method = "POST";
+  }
   
-  const res = await fetch(url, { method: "POST", headers, body: JSON.stringify(player) });
+  const res = await fetch(url, { method, headers, body: JSON.stringify(player) });
   if (!res.ok) {
     const errText = await res.text();
-    throw new Error(`Supabase Upsert Error: ${res.status} ${errText}`);
+    throw new Error(`Supabase ${method} Error: ${res.status} ${errText}`);
   }
   return await res.json();
 }
