@@ -17,9 +17,10 @@ export async function handleModalSubmit(interaction, env, ctx) {
   if (customId === 'portal_lane_modal') {
     const getVal = (cid) => {
       const row = interaction.data.components.find(c => c.components[0].custom_id === cid);
-      return row ? row.components[0].value : "";
+      return row ? row.components[0].value.trim().toUpperCase() : "";
     };
-    const main = getVal('main'), sub = getVal('sub'), ng1 = getVal('ng1'), ng2 = getVal('ng2'), weightRaw = getVal('weight');
+    const main = getVal('main'), sub = getVal('sub'), ng1 = getVal('ng1'), ng2 = getVal('ng2');
+    const weightRaw = interaction.data.components.find(c => c.components[0].custom_id === 'weight')?.components[0].value;
     const weight = weightRaw ? parseInt(weightRaw) : undefined;
     
     const discordName = interaction.member.user.global_name || interaction.member.user.username;
