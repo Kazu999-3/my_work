@@ -29,10 +29,23 @@ export function calculateInitialMmr(highestRank: string | null, role: string, pr
 
   if (!prefs) return baseMmr - 400;
 
-  if (prefs.primary === role || prefs.primary === 'ALL') {
+  // 表記揺れ（JUNGLE <-> JG, SUPPORT <-> SUP）を吸収
+  const norm = (r: string) => {
+    if (!r) return '';
+    const upper = r.toUpperCase();
+    if (upper === 'JUNGLE') return 'JG';
+    if (upper === 'SUPPORT') return 'SUP';
+    return upper;
+  };
+
+  const p = norm(prefs.primary as string);
+  const s = norm(prefs.secondary as string);
+  const r = norm(role);
+
+  if (p === r || p === 'ALL') {
     return baseMmr; // メインレーンは減衰なし
   }
-  if (prefs.secondary === role || prefs.secondary === 'ALL') {
+  if (s === r || s === 'ALL') {
     return baseMmr - 150; // サブレーン
   }
   
@@ -60,13 +73,10 @@ export function calculateNewMMR(ctx: MmrCalcContext): number {
 
   // Kファクター (一律30に抑制し、ブレを防ぐ)
   const isPlacement = false; // プレースメント判定削除
-  const K = 30;
 
-  // ① Elo基本計算
-  const expectedWin = 1 / (1 + Math.pow(10, (opponentMmr - currentMmr) / 400));
-  const eloDelta = K * ((isWin ? 1 : 0) - expectedWin);
-
-  // ② KDAボーナス (基準を2.0に引き下げてマイルドに)
+  // Eloの格差ペナルティ（吸い込み）を完全に排除した「完全固定ポイント制」
+  // 勝てば +20、負ければ -20
+  let baseDelta = isWin ? 20 : -20;
   const kdaScore = deaths === 0 ? (kills + assists) * 1.2 : (kills + assists) / deaths;
   let kdaB = (kdaScore - 2.0) * 4; 
   kdaB = Math.max(-10, Math.min(12, kdaB));
@@ -114,7 +124,7 @@ export function calculateNewMMR(ctx: MmrCalcContext): number {
     if (matchupCount >= 8) matchupDampener = 0.4;
   }
 
-  let delta = (eloDelta + kdaB + visionB + csB + grav + wrComp + expBonus) * matchupDampener;
+  let delta = (baseDelta + kdaB + visionB + csB + grav + wrComp + expBonus) * matchupDampener;
   delta = Math.round(delta);
 
   // 上限・下限のセーフティ
