@@ -493,11 +493,11 @@ export default function KtmAdminPage() {
                 {syncData.toDeactivate.length > 0 && (
                   <div className="bg-red-900/20 border border-red-800/50 rounded-lg p-4">
                     <h3 className="text-red-400 font-bold mb-3 flex items-center gap-2">
-                      <AlertCircle className="h-4 w-4" /> 無効化 (is_active: false) されるメンバー ({syncData.toDeactivate.length}人)
+                      <AlertCircle className="h-4 w-4" /> 削除 (名簿から完全消去) されるメンバー ({syncData.toDeactivate.length}人)
                     </h3>
                     <div className="flex flex-wrap gap-2">
                       {syncData.toDeactivate.map((p: any) => (
-                        <span key={p.id} className="bg-red-900/40 text-red-300 px-2 py-1 rounded text-xs border border-red-800">
+                        <span key={p.id} className="bg-red-900/40 text-red-300 px-2 py-1 rounded text-xs border border-red-800 line-through">
                           {p.name}
                         </span>
                       ))}

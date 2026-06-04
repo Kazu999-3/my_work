@@ -125,12 +125,12 @@ export async function POST(request: Request) {
       if (addError) throw addError;
     }
 
-    // 無効化処理
+    // 削除処理
     if (deactivate && deactivate.length > 0) {
       const idsToDeactivate = deactivate.map((p: any) => p.id);
       const { error: deactError } = await supabase
         .from('ktm_players')
-        .update({ is_active: false })
+        .delete()
         .in('id', idsToDeactivate);
       
       if (deactError) throw deactError;
