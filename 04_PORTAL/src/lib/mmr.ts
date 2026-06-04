@@ -40,8 +40,8 @@ export function calculateNewMMR(ctx: MmrCalcContext): number {
 
   // ② KDAボーナス
   const kdaScore = deaths === 0 ? (kills + assists) * 1.2 : (kills + assists) / deaths;
-  let kdaB = (kdaScore - 3) * 8;
-  kdaB = Math.max(-20, Math.min(20, kdaB));
+  let kdaB = (kdaScore - 3) * 5; // 係数を8から5へマイルド化
+  kdaB = Math.max(-15, Math.min(15, kdaB)); // 上下限を20から15へ
 
   // ⑥ 視界・CSボーナス (追加)
   let visionB = 0;
@@ -66,14 +66,19 @@ export function calculateNewMMR(ctx: MmrCalcContext): number {
   }
 
   // ③ ランク収束引力
-  // 最高ランクの基礎MMRへ引っ張る力
+  // 最高ランクの基礎MMRへ引っ張る力 (敗北時は甘えを許さないため引力無効化)
   const rankTarget = RANKS[mainRank] || 1200;
   const rankDiff = rankTarget - currentMmr;
   let grav = 0;
-  if (Math.abs(rankDiff) > 100) {
+  // 引力は勝った時か、現在MMRが適正より大幅に低い時のみ働く
+  if (Math.abs(rankDiff) > 100 && (isWin || rankDiff > 0)) {
     let gravStrength = 0.001;
     if (numGames < 5) gravStrength = 0.005;
     else if (numGames < 10) gravStrength = 0.003;
+    
+    // 負けた試合で上に引っ張る力は大幅に弱める
+    if (!isWin && rankDiff > 0) gravStrength *= 0.1;
+
     grav = rankDiff * gravStrength;
   }
 
@@ -81,7 +86,7 @@ export function calculateNewMMR(ctx: MmrCalcContext): number {
   let wrComp = 0;
   if (numGames > 10) {
     if (totalWinRate < 45 && isWin) wrComp = 5;       // 負け越し時は勝利にボーナス
-    else if (totalWinRate < 40 && !isWin) wrComp = 5; // 負け越し時は敗北時の減点を緩和 (+5)
+    else if (totalWinRate < 40 && !isWin) wrComp = 0; // 負け越し時の敗北時の減点緩和(+5)を削除 (実力で上がってもらう)
     else if (totalWinRate > 55 && !isWin) wrComp = -5; // 勝ち越し時は敗北ペナルティ増
     else if (totalWinRate > 60 && isWin) wrComp = -5;  // 勝ち越し時は勝利ボーナス減
   }
@@ -99,7 +104,8 @@ export function calculateNewMMR(ctx: MmrCalcContext): number {
   if (isWin) {
     delta = Math.max(5, Math.min(50, delta));
   } else {
-    delta = Math.max(-50, Math.min(-5, delta));
+    // 敗北時は最低でも -12 引かれ、最大で -80 まで落ちる
+    delta = Math.max(-80, Math.min(-12, delta));
   }
 
   return delta;
