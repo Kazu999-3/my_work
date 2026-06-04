@@ -7,9 +7,9 @@ import { Role } from './balancer';
 const K = 40; // Eloレート変動係数 (48から40に落としマイルド化)
 
 const RANKS: Record<string, number> = {
-  'UNRANKED': 1200, 'IRON': 1100, 'BRONZE': 1200, 'SILVER': 1350, 'GOLD': 1500,
-  'PLATINUM': 1650, 'EMERALD': 1800, 'DIAMOND': 2000, 'MASTER': 2200, 
-  'GRANDMASTER': 2400, 'CHALLENGER': 2600
+  'UNRANKED': 1200, 'IRON': 500, 'BRONZE': 1000, 'SILVER': 1600, 'GOLD': 2300,
+  'PLATINUM': 3200, 'EMERALD': 4300, 'DIAMOND': 5700, 'MASTER': 7500, 
+  'GRANDMASTER': 10000, 'CHALLENGER': 15000
 };
 
 export interface RolePreferences {
@@ -24,16 +24,16 @@ export function calculateInitialMmr(highestRank: string | null, role: string, pr
   const rankStr = highestRank ? highestRank.split(' ')[0].toUpperCase() : 'UNRANKED';
   const baseMmr = RANKS[rankStr] || 1200;
   
-  if (!prefs) return baseMmr - 300;
+  if (!prefs) return baseMmr - 400;
 
   if (prefs.primary === role || prefs.primary === 'ALL') {
     return baseMmr; // メインレーンは減衰なし
   }
   if (prefs.secondary === role || prefs.secondary === 'ALL') {
-    return baseMmr - 100; // サブレーンは -100 (約1ティア下)
+    return baseMmr - 200; // サブレーンは -200
   }
   
-  return baseMmr - 300; // それ以外のレーンは -300 (約2ティア下)
+  return baseMmr - 400; // それ以外のレーンは -400
 }
 
 export interface MmrCalcContext {
@@ -54,6 +54,11 @@ export interface MmrCalcContext {
 
 export function calculateNewMMR(ctx: MmrCalcContext): number {
   const { currentMmr, opponentMmr, isWin, kills, deaths, assists, mainRank, numGames, matchupCount, totalWinRate, visionScore, cs, role } = ctx;
+
+  // プレースメント判定 (10試合以下は超変動)
+  const isPlacement = numGames <= 10;
+  // 通常の変動幅Kを60に引き上げ、プレースメント時は150とする
+  const K = isPlacement ? 150 : 60;
 
   // ① Elo基本計算
   const expectedWin = 1 / (1 + Math.pow(10, (opponentMmr - currentMmr) / 400));
@@ -98,31 +103,35 @@ export function calculateNewMMR(ctx: MmrCalcContext): number {
     }
   }
 
-  // ④ 勝率補正
+  // 勝率による強制ペナルティ（特に初期値高すぎ問題の是正）
   let wrComp = 0;
-  if (numGames > 10) {
-    if (totalWinRate < 45 && isWin) wrComp = 5;
-    else if (totalWinRate < 35 && !isWin) wrComp = -15; // 勝率35%未満での敗北ペナルティ
-    else if (totalWinRate < 45 && !isWin) wrComp = -5;  // 勝率45%未満での敗北ペナルティ
-    else if (totalWinRate > 55 && !isWin) wrComp = -5;
-    else if (totalWinRate > 60 && isWin) wrComp = -5;
+  if (numGames > 5) {
+    if (totalWinRate < 45 && isWin) wrComp = 10;
+    else if (totalWinRate < 35 && !isWin) wrComp = -150; // 35%未満で負けたら -150 の強烈ペナルティ
+    else if (totalWinRate < 45 && !isWin) wrComp = -50;  // 45%未満で負けたら -50 ペナルティ
+    else if (totalWinRate > 55 && !isWin) wrComp = -10;
+    else if (totalWinRate > 60 && isWin) wrComp = -10;
   }
 
-  // ⑤ 対面回数補正
+  // 対面回数補正 (プレースメント中は減衰なし)
   let matchupDampener = 1.0;
-  if (matchupCount >= 3) matchupDampener = 0.8;
-  if (matchupCount >= 5) matchupDampener = 0.6;
-  if (matchupCount >= 8) matchupDampener = 0.4;
+  if (!isPlacement) {
+    if (matchupCount >= 3) matchupDampener = 0.8;
+    if (matchupCount >= 5) matchupDampener = 0.6;
+    if (matchupCount >= 8) matchupDampener = 0.4;
+  }
 
   let delta = (eloDelta + kdaB + visionB + csB + grav + wrComp) * matchupDampener;
   delta = Math.round(delta);
 
   // 上限・下限のセーフティ
   if (isWin) {
-    delta = Math.max(5, Math.min(50, delta));
+    // プレースメント中は上限を大きく
+    const maxWin = isPlacement ? 200 : 80;
+    delta = Math.max(5, Math.min(maxWin, delta));
   } else {
-    // 敗北時の下限を -60 から -90 に拡大
-    delta = Math.max(-90, Math.min(-10, delta));
+    // 敗北時の下限（急降下）を -300 に拡大
+    delta = Math.max(-300, Math.min(-10, delta));
   }
 
   return delta;
