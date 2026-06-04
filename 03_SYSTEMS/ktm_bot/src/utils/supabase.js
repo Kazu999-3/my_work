@@ -44,16 +44,22 @@ export async function upsertPlayer(env, player) {
 
   let url;
   let method;
+  
+  // 送信用のペイロードをコピーして作成
+  const payload = { ...player };
 
   if (player.id) {
     url = `${env.SUPABASE_URL}/rest/v1/ktm_players?id=eq.${player.id}`;
     method = "PATCH";
+    // UPDATE時にGENERATED ALWAYSのカラムが含まれているとエラーになるため削除
+    delete payload.id;
+    delete payload.created_at;
   } else {
     url = `${env.SUPABASE_URL}/rest/v1/ktm_players`;
     method = "POST";
   }
   
-  const res = await fetch(url, { method, headers, body: JSON.stringify(player) });
+  const res = await fetch(url, { method, headers, body: JSON.stringify(payload) });
   if (!res.ok) {
     const errText = await res.text();
     throw new Error(`Supabase ${method} Error: ${res.status} ${errText}`);
