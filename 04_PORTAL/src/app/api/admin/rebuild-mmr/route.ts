@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabaseClient';
-import { calculateNewMMR, calculateKdaScore, MmrCalcContext } from '@/lib/mmr';
+import { calculateNewMMR, calculateKdaScore, MmrCalcContext, calculateInitialMmr } from '@/lib/mmr';
 
 export async function POST(req: Request) {
   try {
@@ -20,15 +20,17 @@ export async function POST(req: Request) {
     // playersMap: in-memory state of players' MMR
     const playersMap = new Map();
     for (const p of allPlayers) {
+      const prefs = p.role_preferences || { primary: 'ALL', secondary: 'ALL' };
       playersMap.set(p.name, {
         id: p.id,
         name: p.name,
         highest_rank: p.highest_rank,
-        mmr_top: 1200,
-        mmr_jg: 1200,
-        mmr_mid: 1200,
-        mmr_adc: 1200,
-        mmr_sup: 1200
+        role_preferences: prefs,
+        mmr_top: calculateInitialMmr(p.highest_rank, 'TOP', prefs),
+        mmr_jg: calculateInitialMmr(p.highest_rank, 'JG', prefs),
+        mmr_mid: calculateInitialMmr(p.highest_rank, 'MID', prefs),
+        mmr_adc: calculateInitialMmr(p.highest_rank, 'ADC', prefs),
+        mmr_sup: calculateInitialMmr(p.highest_rank, 'SUP', prefs)
       });
     }
 
