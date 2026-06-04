@@ -65,23 +65,33 @@ export interface MmrCalcContext {
   totalWinRate: number; // 全体勝率 (0~100)
   visionScore: number;
   cs: number;
+  damageDealt: number;
+  damageTaken: number;
+  objectiveDamage: number;
+  healShield: number;
   role: string;
+  teamTotalKills: number;
+  isDamageMvp: boolean;
+  isObjectiveMvp: boolean;
+  isTankMvp: boolean;
+  isHealMvp: boolean;
 }
 
 export function calculateNewMMR(ctx: MmrCalcContext): number {
-  const { currentMmr, opponentMmr, isWin, kills, deaths, assists, mainRank, numGames, matchupCount, totalWinRate, visionScore, cs, role } = ctx;
+  const { currentMmr, opponentMmr, isWin, kills, deaths, assists, mainRank, numGames, matchupCount, totalWinRate, visionScore, cs, role, teamTotalKills, isDamageMvp, isObjectiveMvp, isTankMvp, isHealMvp } = ctx;
 
-  // Kファクター (一律30に抑制し、ブレを防ぐ)
-  const isPlacement = false; // プレースメント判定削除
+  const isPlacement = false;
 
-  // Eloの格差ペナルティ（吸い込み）を完全に排除した「完全固定ポイント制」
-  // 勝てば +20、負ければ -20
-  let baseDelta = isWin ? 20 : -20;
+  // ① 勝敗のベースポイント (±20 -> ±15へ縮小、個人成績の比重を高める)
+  let baseDelta = isWin ? 15 : -15;
+
+  // ② KDAボーナスの爆増
+  // 基準を2.0とし、係数を8に上げる
   const kdaScore = deaths === 0 ? (kills + assists) * 1.2 : (kills + assists) / deaths;
-  let kdaB = (kdaScore - 2.0) * 4; 
-  kdaB = Math.max(-10, Math.min(12, kdaB));
+  let kdaB = (kdaScore - 2.0) * 8;
+  kdaB = Math.max(-15, Math.min(20, kdaB)); // 最大+20、最小-15
 
-  // ⑥ 視界・CSボーナス
+  // ③ 視界・CSボーナス (基礎業務)
   let visionB = 0;
   let csB = 0;
   if (role === 'SUP') {
@@ -93,30 +103,27 @@ export function calculateNewMMR(ctx: MmrCalcContext): number {
   } else if (role === 'JG') {
     if (visionScore > 20) visionB = 5;
     if (cs > 150) csB = 5;
-  } else {
+  } else { // TOP
     if (cs > 180) csB = 5;
     if (visionScore > 15) visionB = 3;
   }
 
-  // ③ ランク収束引力 (削除: 完全に実力主義化)
-  let grav = 0;
+  // ④ ダメージ＆オブジェクト貢献ボーナス
+  let damageB = 0;
+  let objB = 0;
+  if (isDamageMvp) damageB = 5;
+  if (isObjectiveMvp) objB = 5;
 
-  // 勝率による強制ペナルティ（過剰な沼落ちを防ぐため超緩和）
-  let wrComp = 0;
-  if (numGames > 5) {
-    if (totalWinRate < 45 && isWin) wrComp = 5;
-    else if (totalWinRate < 40 && !isWin) wrComp = -5; // -80 だったものを -5 に激減
-    else if (totalWinRate > 60 && !isWin) wrComp = -5;
-    else if (totalWinRate > 60 && isWin) wrComp = -5;
-  }
+  // ⑤ 縁の下の力持ちボーナス (KP, 盾/回復)
+  let kpB = 0;
+  let tankHealB = 0;
+  const kp = teamTotalKills > 0 ? (kills + assists) / teamTotalKills : 0;
+  if (kp >= 0.65) kpB = 6;
+  else if (kp >= 0.50) kpB = 3;
 
-  // 経験値(試合数)ボーナス: たくさん回しているロールが不当に下がらないように、負けの減点を少し緩和
-  let expBonus = 0;
-  if (!isWin && numGames > 5) {
-     expBonus = Math.min(15, numGames * 0.5); // 試合数が多いほど、敗北時の減点が緩和される (最大+15)
-  }
+  if (isTankMvp || isHealMvp) tankHealB = 5;
 
-  // 対面回数補正
+  // ⑥ 対面回数補正 (身内戦で同じマッチアップが続く場合のブレ防止)
   let matchupDampener = 1.0;
   if (!isPlacement) {
     if (matchupCount >= 3) matchupDampener = 0.8;
@@ -124,16 +131,15 @@ export function calculateNewMMR(ctx: MmrCalcContext): number {
     if (matchupCount >= 8) matchupDampener = 0.4;
   }
 
-  let delta = (baseDelta + kdaB + visionB + csB + grav + wrComp + expBonus) * matchupDampener;
+  // 勝率補正や経験値ボーナスは「完全実力主義」のためすべて撤廃
+  let delta = (baseDelta + kdaB + visionB + csB + damageB + objB + kpB + tankHealB) * matchupDampener;
   delta = Math.round(delta);
 
-  // 上限・下限のセーフティ
+  // ⑦ 上限・下限のセーフティ (個人成績の爆発を許容するため上限を緩和)
   if (isWin) {
-    const maxWin = 40; // 上限も抑制
-    delta = Math.max(5, Math.min(maxWin, delta));
+    delta = Math.max(0, Math.min(60, delta)); // 大戦犯は0、超キャリーは最大+60
   } else {
-    // 敗北時の下限（急降下を防ぐ）
-    delta = Math.max(-40, Math.min(-5, delta)); // 最大-40までに抑える
+    delta = Math.max(-50, Math.min(20, delta)); // 最大-50、超キャリーは負けても最大+20
   }
 
   return delta;

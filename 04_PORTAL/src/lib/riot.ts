@@ -16,6 +16,11 @@ interface ParticipantStats {
   visionScore: number;
   totalMinionsKilled: number;
   neutralMinionsKilled: number;
+  damageDealtToChampions: number;
+  totalDamageTaken: number;
+  damageDealtToObjectives: number;
+  totalHeal: number;
+  damageSelfMitigated: number;
   win: boolean;
   lane: string; // TOP, JUNGLE, MIDDLE, BOTTOM, UTILITY
 }
@@ -75,6 +80,11 @@ export async function fetchMatchDetails(matchId: string, apiKey: string): Promis
     visionScore: p.visionScore || 0,
     totalMinionsKilled: p.totalMinionsKilled || 0,
     neutralMinionsKilled: p.neutralMinionsKilled || 0,
+    damageDealtToChampions: p.totalDamageDealtToChampions || 0,
+    totalDamageTaken: p.totalDamageTaken || 0,
+    damageDealtToObjectives: p.damageDealtToObjectives || 0,
+    totalHeal: (p.totalHeal || 0) + (p.totalDamageShieldedOnTeammates || 0),
+    damageSelfMitigated: p.damageSelfMitigated || 0,
     win: p.win,
     lane: p.teamPosition || p.lane // TOP, JUNGLE, MIDDLE, BOTTOM, UTILITY
   }));

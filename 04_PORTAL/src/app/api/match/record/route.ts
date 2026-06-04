@@ -76,20 +76,37 @@ export async function POST(request: Request) {
       // 対面回数の計算 (今回は簡易的に0とするか、historyDataからさらに集計可能だが省略)
       const matchupCount = 0; 
 
+      const teamParticipants = participants.filter((p: any) => p.team === input.team);
+      const teamTotalKills = teamParticipants.reduce((acc: number, curr: any) => acc + (Number(curr.kills) || 0), 0);
+      
+      const isDamageMvp = teamParticipants.every((p: any) => (Number(input.damage_dealt) || 0) >= (Number(p.damage_dealt) || 0)) && (Number(input.damage_dealt) || 0) > 0;
+      const isObjectiveMvp = teamParticipants.every((p: any) => (Number(input.objective_damage) || 0) >= (Number(p.objective_damage) || 0)) && (Number(input.objective_damage) || 0) > 0;
+      const isTankMvp = teamParticipants.every((p: any) => (Number(input.damage_taken) || 0) >= (Number(p.damage_taken) || 0)) && (Number(input.damage_taken) || 0) > 0;
+      const isHealMvp = teamParticipants.every((p: any) => (Number(input.heal_shield) || 0) >= (Number(p.heal_shield) || 0)) && (Number(input.heal_shield) || 0) > 0;
+
       const ctx: MmrCalcContext = {
         currentMmr,
         opponentMmr,
         isWin,
-        kills: Number(input.kills),
-        deaths: Number(input.deaths),
-        assists: Number(input.assists),
+        kills: Number(input.kills) || 0,
+        deaths: Number(input.deaths) || 0,
+        assists: Number(input.assists) || 0,
         mainRank,
         numGames,
         matchupCount,
         totalWinRate,
-        visionScore: 0, // 速報時はまだ取得できないため0
-        cs: 0,          // 速報時はまだ取得できないため0
-        role: input.role
+        visionScore: Number(input.vision_score) || 0,
+        cs: Number(input.cs) || 0,
+        damageDealt: Number(input.damage_dealt) || 0,
+        damageTaken: Number(input.damage_taken) || 0,
+        objectiveDamage: Number(input.objective_damage) || 0,
+        healShield: Number(input.heal_shield) || 0,
+        role: input.role,
+        teamTotalKills,
+        isDamageMvp,
+        isObjectiveMvp,
+        isTankMvp,
+        isHealMvp
       };
 
       const mmrDelta = calculateNewMMR(ctx);
@@ -132,6 +149,11 @@ export async function POST(request: Request) {
       deaths: r.deaths,
       assists: r.assists,
       vision_score: r.vision_score || 0,
+      cs: r.cs || 0,
+      damage_dealt: r.damage_dealt || 0,
+      damage_taken: r.damage_taken || 0,
+      objective_damage: r.objective_damage || 0,
+      heal_shield: r.heal_shield || 0,
       kda_score: r.kdaScore,
       mmr_delta: r.mmrDelta
     }));

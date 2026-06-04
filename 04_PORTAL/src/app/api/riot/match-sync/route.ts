@@ -75,6 +75,14 @@ export async function POST(req: Request) {
       const currentMmr = Number(dbP[`mmr_${p.role.toLowerCase()}`]) || 1200;
       const mainRank = dbP.highest_rank ? dbP.highest_rank.split(' ')[0].toUpperCase() : 'UNRANKED';
 
+      const teamRiotParticipants = riotDetails.participants.filter((rp: any) => rp.teamId === riotP.teamId);
+      const teamTotalKills = teamRiotParticipants.reduce((acc: number, curr: any) => acc + (curr.kills || 0), 0);
+      
+      const isDamageMvp = teamRiotParticipants.every((rp: any) => (riotP.damageDealtToChampions || 0) >= (rp.damageDealtToChampions || 0)) && (riotP.damageDealtToChampions || 0) > 0;
+      const isObjectiveMvp = teamRiotParticipants.every((rp: any) => (riotP.damageDealtToObjectives || 0) >= (rp.damageDealtToObjectives || 0)) && (riotP.damageDealtToObjectives || 0) > 0;
+      const isTankMvp = teamRiotParticipants.every((rp: any) => (riotP.totalDamageTaken || 0) >= (rp.totalDamageTaken || 0)) && (riotP.totalDamageTaken || 0) > 0;
+      const isHealMvp = teamRiotParticipants.every((rp: any) => (riotP.totalHeal || 0) >= (rp.totalHeal || 0)) && (riotP.totalHeal || 0) > 0;
+
       const ctx: MmrCalcContext = {
         currentMmr,
         opponentMmr: 1200, // 簡易化
@@ -88,7 +96,16 @@ export async function POST(req: Request) {
         totalWinRate: 50,
         visionScore: riotP.visionScore || 0,
         cs: (riotP.totalMinionsKilled || 0) + (riotP.neutralMinionsKilled || 0),
-        role: p.role
+        damageDealt: riotP.damageDealtToChampions || 0,
+        damageTaken: riotP.totalDamageTaken || 0,
+        objectiveDamage: riotP.damageDealtToObjectives || 0,
+        healShield: riotP.totalHeal || 0,
+        role: p.role,
+        teamTotalKills,
+        isDamageMvp,
+        isObjectiveMvp,
+        isTankMvp,
+        isHealMvp
       };
 
       const mmrDelta = calculateNewMMR(ctx);

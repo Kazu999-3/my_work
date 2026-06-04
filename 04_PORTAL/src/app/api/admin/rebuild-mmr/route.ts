@@ -91,6 +91,14 @@ export async function POST(req: Request) {
         const totalGames = memPlayer.totalGames || 0;
         const totalWinRate = totalGames > 0 ? (memPlayer.totalWins / totalGames) * 100 : 50;
 
+        const teamParticipants = participants.filter(pt => pt.team === p.team);
+        const teamTotalKills = teamParticipants.reduce((acc, curr) => acc + (curr.kills || 0), 0);
+        
+        const isDamageMvp = teamParticipants.every(pt => (p.damage_dealt || 0) >= (pt.damage_dealt || 0)) && (p.damage_dealt || 0) > 0;
+        const isObjectiveMvp = teamParticipants.every(pt => (p.objective_damage || 0) >= (pt.objective_damage || 0)) && (p.objective_damage || 0) > 0;
+        const isTankMvp = teamParticipants.every(pt => (p.damage_taken || 0) >= (pt.damage_taken || 0)) && (p.damage_taken || 0) > 0;
+        const isHealMvp = teamParticipants.every(pt => (p.heal_shield || 0) >= (pt.heal_shield || 0)) && (p.heal_shield || 0) > 0;
+
         const ctx: MmrCalcContext = {
           currentMmr,
           opponentMmr,
@@ -103,8 +111,17 @@ export async function POST(req: Request) {
           matchupCount: 0,
           totalWinRate,
           visionScore: p.vision_score || 0,
-          cs: 0,
-          role
+          cs: p.cs || 0,
+          damageDealt: p.damage_dealt || 0,
+          damageTaken: p.damage_taken || 0,
+          objectiveDamage: p.objective_damage || 0,
+          healShield: p.heal_shield || 0,
+          role,
+          teamTotalKills,
+          isDamageMvp,
+          isObjectiveMvp,
+          isTankMvp,
+          isHealMvp
         };
 
         const mmrDelta = calculateNewMMR(ctx);
