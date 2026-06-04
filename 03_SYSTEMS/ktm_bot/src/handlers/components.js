@@ -62,29 +62,6 @@ export async function handleButtonInteraction(interaction, env, ctx) {
     // 即座にレスポンスを返す (type: 7 は現在操作している ephemeral メッセージを更新/消去する)
     return Response.json({ type: 7, data: { content: "⌛ メンバーを追加処理中です...", components: [] } });
   }
-  
-  if (customId.startsWith('forge_show_')) {
-    const [action, filePath] = customId.split(':');
-    const label = action === 'forge_show_article' ? "📄 記事本文" : "🪩 SNS拡散案";
-    
-    ctx.waitUntil((async () => {
-      try {
-        const res = await fetch(`${env.LOCAL_API_URL || "https://antigravity-local.lhr.life"}/forge/get_content?file_path=${encodeURIComponent(filePath)}`);
-        const data = await res.json();
-        if (data.status !== 'success') throw new Error(data.detail || "取得失敗");
-        
-        const chunks = splitMessage(data.content);
-        await sendInteractionFollowup(appId, token, { content: `✅ **${label}を取得しました** (1/${chunks.length}):\n\n\`\`\`markdown\n${chunks[0]}\n\`\`\``, flags: 64 });
-        for (let i = 1; i < chunks.length; i++) {
-          await sendInteractionFollowup(appId, token, { content: `(${i+1}/${chunks.length}):\n\n\`\`\`markdown\n${chunks[i]}\n\`\`\``, flags: 64 });
-        }
-      } catch (err) {
-        await sendInteractionFollowup(appId, token, { content: `❌ **データ取得エラー**: ${err.message}`, flags: 64 });
-      }
-    })());
-    
-    return Response.json({ type: 4, data: { content: `⌛ ${label}を読み込み中...`, flags: 64 } });
-  }
 
   if (customId === 'portal_menu') {
     const value = interaction.data.values[0];
@@ -114,7 +91,8 @@ export async function handleButtonInteraction(interaction, env, ctx) {
       const discordName = interaction.member?.user?.global_name || interaction.member?.user?.username;
       ctx.waitUntil((async () => {
         try {
-          const gasData = await fetchGAS({ type: "TRIGGER_RIOT_SYNC", discordName });
+          const { fetchPortalAPI } = await import('../utils/api.js');
+          const gasData = await fetchPortalAPI(env, '/api/riot/sync-ranks', { discordName });
           await patchInteractionResponse(appId, token, { content: `✅ **同期完了**: ${gasData.message}`, components: [] });
         } catch (err) {
           await fetch(`https://discord.com/api/v10/webhooks/${appId}/${token}/messages/@original`, { method: "DELETE" });
@@ -141,7 +119,8 @@ export async function handleButtonInteraction(interaction, env, ctx) {
     const isOverwriteAll = (customId.split(':')[1] === 'all');
     ctx.waitUntil((async () => {
       try {
-        const gasData = await fetchGAS({ type: "INITIALIZE_MMR", isOverwriteAll });
+        const { fetchPortalAPI } = await import('../utils/api.js');
+        const gasData = await fetchPortalAPI(env, '/api/admin/init-mmr', { isOverwriteAll });
         await patchInteractionResponse(appId, token, { content: `✅ **実行完了**: ${gasData.message}`, components: [] });
       } catch (err) {
         await fetch(`https://discord.com/api/v10/webhooks/${appId}/${token}/messages/@original`, { method: "DELETE" });
@@ -168,15 +147,31 @@ export async function handleButtonInteraction(interaction, env, ctx) {
     
     ctx.waitUntil((async () => {
       try {
-        const res = await fetchGAS({ type: "GET_OPGG_URLS", teamBlue: teamA, teamRed: teamB });
-        if (res.status !== "SUCCESS") throw new Error(res.message || "通信エラー");
+        const { getPlayersByNames } = await import('../utils/supabase.js');
+        const allNames = [...teamA, ...teamB];
+        const playersData = await getPlayersByNames(env, allNames);
         
+        const getIgn = (name) => {
+          const p = playersData.find(pd => pd.name === name);
+          return p && p.ign && p.ign.includes('#') ? encodeURIComponent(p.ign) : null;
+        };
+
+        const blueIgns = teamA.map(getIgn).filter(ign => ign !== null);
+        const redIgns = teamB.map(getIgn).filter(ign => ign !== null);
+
         let content = "🕵️ **OP.GG スカウティングレポート**\n以下のリンクから両チームの詳細な戦績を確認できます。\n\n";
-        if (res.blueUrl) content += `🟦 **TEAM BLUE**\n${res.blueUrl}\n\n`;
-        else content += `🟦 **TEAM BLUE**: 登録されているIGNがありません\n\n`;
         
-        if (res.redUrl) content += `🟥 **TEAM RED**\n${res.redUrl}`;
-        else content += `🟥 **TEAM RED**: 登録されているIGNがありません`;
+        if (blueIgns.length > 0) {
+          content += `🟦 **TEAM BLUE**\nhttps://www.op.gg/multisearch/jp?summoners=${blueIgns.join(encodeURIComponent(','))}\n\n`;
+        } else {
+          content += `🟦 **TEAM BLUE**: 登録されているIGNがありません\n\n`;
+        }
+        
+        if (redIgns.length > 0) {
+          content += `🟥 **TEAM RED**\nhttps://www.op.gg/multisearch/jp?summoners=${redIgns.join(encodeURIComponent(','))}`;
+        } else {
+          content += `🟥 **TEAM RED**: 登録されているIGNがありません`;
+        }
         
         await fetch(`https://discord.com/api/v10/webhooks/${appId}/${token}/messages/@original`, { method: "DELETE" });
         await sendInteractionFollowup(appId, token, { content: content, flags: 64 });
@@ -287,32 +282,6 @@ export async function handleButtonInteraction(interaction, env, ctx) {
     return Response.json({ type: 9, data: { title: "📢 一括連絡", custom_id: `broadcast_modal:${metadata.owner}`, components: [{ type: 1, components: [{ type: 4, custom_id: "msg", label: "送信メッセージ", style: 2, required: true }] }] } });
   } else if (customId.startsWith('balance_from_recruit')) {
      return await executeBalance(interaction, metadata.joined.map(id => metadata.names[id]), env, ctx);
-  } else if (customId.startsWith('check_live')) {
-    const allIds = [...new Set([...metadata.joined, ...metadata.spectating])];
-    if (allIds.length === 0) return Response.json({ type: 4, data: { content: "⚠️ 参加者がいません。", flags: 64 } });
-    
-    ctx.waitUntil((async () => {
-      try {
-        const res = await fetchGAS({ type: "GET_LIVE_STATUS", discordIds: allIds });
-        if (res.status !== "SUCCESS") throw new Error(res.message || "通信エラー");
-        
-        let lines = ["📡 **メンバーのライブステータス**\n"];
-        allIds.forEach(id => {
-          const s = res.statuses[id];
-          const stName = s ? (s.name || metadata.names[id] || "不明") : (metadata.names[id] || "不明");
-          const stMsg = s ? s.message : "データなし";
-          lines.push(`- **${stName}**: ${stMsg}`);
-        });
-        
-        await fetch(`https://discord.com/api/v10/webhooks/${appId}/${token}/messages/@original`, { method: "DELETE" });
-        await sendInteractionFollowup(appId, token, { content: lines.join("\n"), flags: 64 });
-      } catch (err) {
-        await fetch(`https://discord.com/api/v10/webhooks/${appId}/${token}/messages/@original`, { method: "DELETE" });
-        await sendInteractionFollowup(appId, token, { content: `❌ **ライブ取得エラー**: ${err.message}`, flags: 64 });
-      }
-    })());
-    
-    return Response.json({ type: 5, data: { flags: 64 } });
   }
 
   // 自動締切 & メンション (チーム分けは手動ボタンで実行)
@@ -322,11 +291,8 @@ export async function handleButtonInteraction(interaction, env, ctx) {
       const players = metadata.joined.map(id => metadata.names[id]).slice(0, 10);
       const spectators = metadata.spectating.map(id => metadata.names[id]);
       
-      try {
-        await fetchGAS({ type: "SYNC_TO_INPUT", players, spectators });
-      } catch (err) {
-        console.error("Auto Sync to Input Error:", err);
-      }
+      // SYNC_TO_INPUT は不要になったため削除
+      // try { await fetchGAS({ type: "SYNC_TO_INPUT", players, spectators }); } catch(err) {}
       
       await sendInteractionFollowup(appId, token, { content: `⚔️ **メンバー確定！** 対戦準備を開始してください（対戦入力シートへ転送しました）。\n通知: ${mentions}` });
     })());

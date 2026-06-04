@@ -50,14 +50,21 @@ export async function handleModalSubmit(interaction, env, ctx) {
 
   if (customId === 'admin_fix_match_modal') {
     const winner = interaction.data.components[0].components[0].value.toUpperCase();
-    await fetchGAS({ type: "FIX_LAST_MATCH", winner });
+    const { fetchPortalAPI } = await import('../utils/api.js');
+    await fetchPortalAPI(env, '/api/admin/fix-match', { winner });
     return Response.json({ type: 4, data: { content: `✅ 直近の試合を **${winner} 勝利** に更新しました。`, flags: 64 } });
   }
 
   if (customId === 'admin_adjust_mmr_modal') {
-    const getVal = (cid) => interaction.data.components.find(c => c.components[0].custom_id === cid).components[0].value;
-    await fetchGAS({ type: "ADJUST_MMR", targetName: getVal('target'), role: getVal('role'), amount: getVal('amount') });
-    return Response.json({ type: 4, data: { content: "✅ MMR を調整しました。", flags: 64 } });
+    const getVal = (cid) => interaction.data.components[0].components[0] ? interaction.data.components.find(c => c.components[0].custom_id === cid)?.components[0]?.value : null;
+    const { fetchPortalAPI } = await import('../utils/api.js');
+    // カスタムモーダルの値取得が若干不安定な場合を考慮し安全に取得（すでに元のコードがあるのでそれに準拠）
+    const targetName = interaction.data.components.find(c => c.components[0].custom_id === 'target').components[0].value;
+    const role = interaction.data.components.find(c => c.components[0].custom_id === 'role').components[0].value;
+    const amount = interaction.data.components.find(c => c.components[0].custom_id === 'amount').components[0].value;
+    
+    await fetchPortalAPI(env, '/api/admin/adjust-mmr', { targetName, role, amount });
+    return Response.json({ type: 4, data: { content: `✅ ${targetName} の ${role} MMRを更新しました。`, flags: 64 } });
   }
 
   if (customId.startsWith('broadcast_modal:')) {

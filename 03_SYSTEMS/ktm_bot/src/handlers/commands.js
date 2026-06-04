@@ -231,7 +231,8 @@ export function handleStatsCommand(interaction, env, ctx) {
   const discordName = interaction.member.user.global_name || interaction.member.user.username;
   ctx.waitUntil((async () => {
     try {
-      const data = await fetchGAS({ type: "GET_STATS", discordId, discordName });
+      const { fetchPortalAPI } = await import('../utils/api.js');
+      const data = await fetchPortalAPI(env, "/api/player/stats", { discordId, discordName });
       if (data.status === "NOT_FOUND") {
          await patchInteractionResponse(appId, token, { content: "⚠️ あなたの Discord ID が登録されていません。" });
          return;
@@ -445,30 +446,4 @@ export async function handleSetIgn(interaction, env, ctx) {
   return new Response(successBody, { headers: { 'Content-Type': 'application/json' } });
 }
 
-export async function handleForgeCommand(interaction, env, ctx) {
-  const options = interaction.data?.options || [];
-  const champion = options.find(o => o.name === 'champion' || o.name === 'チャンピオン')?.value;
-  const missionType = options.find(o => o.name === 'type' || o.name === 'タイプ')?.value || "STANDARD";
-  const appId = interaction.application_id;
-  const token = interaction.token;
 
-  if (!champion) return Response.json({ type: 4, data: { content: "⚠️ チャンピオン名を指定してください。", flags: 64 } });
-
-  ctx.waitUntil((async () => {
-    try {
-      const res = await fetchGAS({ type: "MISSION_ADD", champion, mission_type: missionType });
-      if (res.status === "SUCCESS") {
-        await patchInteractionResponse(appId, token, { 
-          content: `⚡ **錬成ミッションを受理しました**\n対象: **${champion}**\nタイプ: \`${missionType}\`\n\n裏側で Antigravity Sovereign OS がリサーチと執筆を開始します。完成まで1〜2分お待ちください。` 
-        });
-      } else {
-        throw new Error(res.message || "Unknown error");
-      }
-    } catch (err) {
-      console.error("Forge Command Error:", err);
-      await patchInteractionResponse(appId, token, { content: `❌ 錬成指示の送信に失敗しました: ${err.message}` });
-    }
-  })());
-
-  return Response.json({ type: 5 }); // Deferred
-}

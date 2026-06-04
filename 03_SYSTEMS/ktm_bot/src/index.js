@@ -1,5 +1,5 @@
 import { verifySignature } from './utils/security.js';
-import { handleAnnounceMatch, handleBalanceCommand, handleForgeCommand, handleLaneCommand, handlePortalCommand, handleRecruitDirect, handleSetIgn, handleStatsCommand } from './handlers/commands.js';
+import { handleAnnounceMatch, handleBalanceCommand, handleLaneCommand, handlePortalCommand, handleRecruitDirect, handleSetIgn, handleStatsCommand } from './handlers/commands.js';
 import { handleButtonInteraction } from './handlers/components.js';
 import { handleModalSubmit } from './handlers/modals.js';
 
@@ -78,7 +78,6 @@ export default {
         if (name === 'balance') return await handleBalanceCommand(interaction, context, ctx);
         if (name === 'stats') return handleStatsCommand(interaction, context, ctx);
         if (name === 'lane') return handleLaneCommand(interaction, context, ctx);
-        if (name === 'forge') return await handleForgeCommand(interaction, context, ctx);
       }
 
       // Message Component (Buttons/Select Menus)

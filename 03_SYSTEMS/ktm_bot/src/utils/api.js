@@ -48,7 +48,7 @@ export async function sendInteractionFollowup(appId, token, bodyJSON) {
   return res;
 }
 
-/** GAS への通信ラップ */
+/** GAS への通信ラップ (レガシー) */
 export async function fetchGAS(payload) {
   const res = await fetch(CONFIG.GAS_URL, {
     method: "POST",
@@ -65,3 +65,26 @@ export async function fetchGAS(payload) {
   }
   return data;
 }
+
+/** Webポータル (Next.js) API への通信ラップ */
+export async function fetchPortalAPI(env, endpointPath, payload, method = "POST") {
+  const baseUrl = env.PORTAL_API_URL || "https://ktm-portal.vercel.app";
+  const url = `${baseUrl}${endpointPath}`;
+  
+  const options = {
+    method,
+    headers: { "Content-Type": "application/json" }
+  };
+  
+  if (payload && (method === "POST" || method === "PUT" || method === "PATCH")) {
+    options.body = JSON.stringify(payload);
+  }
+
+  const res = await fetch(url, options);
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(`Portal API Error (${res.status}): ${errorText}`);
+  }
+  return await res.json();
+}
+

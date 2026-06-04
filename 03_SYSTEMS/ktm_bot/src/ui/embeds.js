@@ -64,7 +64,6 @@ export function createRecruitButtons(metadata) {
   if (!isFull && metadata.mode !== 'カスタム' && metadata.joined.length >= 5) {
     row2.push({ type: 2, label: "🚀 10人に拡張", style: 1, custom_id: `upgrade_to_10:${metadata.owner}` });
   }
-  row2.push({ type: 2, label: "📡 ライブ確認", style: 1, custom_id: `check_live:${metadata.owner}` });
 
   // Row 3: システム・終了
   const row3 = [

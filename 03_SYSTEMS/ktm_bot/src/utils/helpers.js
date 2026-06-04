@@ -1,5 +1,5 @@
 import { CONFIG } from '../config.js';
-import { fetchGAS, sendDiscordMessage, sendInteractionFollowup } from './api.js';
+import { fetchGAS, fetchPortalAPI, sendDiscordMessage, sendInteractionFollowup } from './api.js';
 
 /** parseMessageData: 元メッセージから募集のメタデータを復元する */
 export function parseMessageData(message) {
@@ -79,32 +79,47 @@ export function parseMessageData(message) {
 }
 
 /** 自動マッチ終了処理の流れ */
-export async function handleAutoMatchEnd(interaction, players, winner, env, ctx, kdaMap = null, spectators = []) {
-  const botToken = env.DISCORD_TOKEN;
+export async function handleAutoMatchEnd(interaction, players, winnerTeam, env, ctx) {
   const appId = interaction.application_id;
   const token = interaction.token;
 
   ctx.waitUntil((async () => {
     try {
-      const teamBlue = players.filter(p => p.team === 'BLUE').map(p => ({ name: p.name, role: p.role }));
-      const teamRed  = players.filter(p => p.team === 'RED').map(p  => ({ name: p.name, role: p.role }));
+      const { fetchPortalAPI } = await import('./api.js');
+      const payload = {
+        winningTeam: winnerTeam,
+        gameDuration: 0,
+        participants: players.map(p => ({
+          name: p.name,
+          team: p.team,
+          role: p.role,
+          kills: 0,
+          deaths: 0,
+          assists: 0
+        }))
+      };
+
+      const resultData = await fetchPortalAPI(env, '/api/match/record', payload);
       
-      // ① 試合データをBULKシートに記録
-      await fetchGAS({ type: "RECORD_RESULT", winner, kdaMap, spectators, teamBlue, teamRed });
-      
-      // ② 3分後にRiot APIリザルトを自動取得するスケジューリング
-      //    （即時投稿は行わない → ③ 次のチーム分け の後に自然な流れで④ リザルトが来る）
-      await fetchGAS({ type: "SCHEDULE_MATCH_REPORT", teamBlue, teamRed, winner, spectators });
-      
+      // 3分後に match-sync を実行
+      if (resultData && resultData.matchId) {
+        setTimeout(async () => {
+          try {
+            console.log(`Triggering match-sync for matchId: ${resultData.matchId}`);
+            await fetchPortalAPI(env, '/api/riot/match-sync', { matchId: resultData.matchId });
+          } catch (err) {
+            console.error("Match Sync Delayed Error:", err);
+          }
+        }, 180000);
+      }
     } catch (err) { 
       console.error("AutoLog Error:", err); 
-      await sendInteractionFollowup(appId, token, { content: `⚠️ **リザルト送信エラー**: ${err.message}`, flags: 64 });
     }
   })());
 
   const updatedEmbed = interaction.message.embeds[0];
-  updatedEmbed.title = `✅ 試合終了: ${winner} 勝利で記録されました`;
-  updatedEmbed.color = winner === 'BLUE' ? 0x3498db : 0xe74c3c;
+  updatedEmbed.title = `✅ 試合終了: ${winnerTeam} 勝利で記録されました`;
+  updatedEmbed.color = winnerTeam === 'BLUE' ? 0x3498db : 0xe74c3c;
   
   if (!updatedEmbed.footer) updatedEmbed.footer = {};
   updatedEmbed.footer.text = `✅ 記録完了 | 約3分後にリザルト自動取得... (ID: ${Math.floor(Date.now() / 1000).toString(16)})`;
