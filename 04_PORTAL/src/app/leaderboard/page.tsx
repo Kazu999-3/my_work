@@ -72,11 +72,15 @@ function getRankBadge(mmr: number) {
   return { name: 'UNRANKED', color: 'text-gray-400', bg: 'bg-gray-800' };
 }
 
+import WinrateMatrixPanel from './WinrateMatrixPanel';
+import { Trophy, Activity } from 'lucide-react';
+
 export default function LeaderboardPage() {
   const [data, setData] = useState<LeaderboardData>({
     TOP: [], JG: [], MID: [], ADC: [], SUP: []
   });
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'ranking' | 'winrate'>('ranking');
 
   useEffect(() => {
     async function fetchLeaderboard() {
@@ -183,70 +187,105 @@ export default function LeaderboardPage() {
   return (
     <div className="min-h-screen bg-gray-950 py-10 px-4 sm:px-6 lg:px-8 text-gray-200">
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-3xl font-extrabold text-white text-center mb-10 tracking-tight flex items-center justify-center gap-3">
+        <h1 className="text-3xl font-extrabold text-white text-center mb-6 tracking-tight flex items-center justify-center gap-3">
           <span className="text-blue-500">🏆</span> KTM LEADERBOARD
         </h1>
-        <p className="text-center text-gray-400 mb-12">各レーンのMMR TOP 5 (※1勝以上が条件)</p>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
-          {ROLES.map(role => (
-            <div key={role} className="bg-gray-900 rounded-2xl shadow-xl border border-gray-800 overflow-hidden">
-              <div className="bg-gray-800 px-4 py-3 border-b border-gray-700">
-                <h2 className="text-lg font-bold text-white text-center flex items-center justify-center gap-2">
-                  <span className="text-xl">
-                    {role === 'TOP' && '🪓'}
-                    {role === 'JG' && '🌲'}
-                    {role === 'MID' && '🔥'}
-                    {role === 'ADC' && '🏹'}
-                    {role === 'SUP' && '🛡️'}
-                  </span>
-                  {role}
-                </h2>
-              </div>
-              
-              <div className="divide-y divide-gray-800">
-                {data[role].length === 0 ? (
-                  <div className="p-8 text-center text-gray-500 text-sm">
-                    データがありません
-                  </div>
-                ) : (
-                  data[role].map((player, idx) => (
-                    <div key={player.name} className="p-4 hover:bg-gray-800/50 transition-colors flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold
-                          ${idx === 0 ? 'bg-yellow-400 text-yellow-900' : 
-                            idx === 1 ? 'bg-gray-300 text-gray-800' : 
-                            idx === 2 ? 'bg-amber-600 text-amber-50' : 
-                            'bg-gray-800 text-gray-400'}`}>
-                          {idx + 1}
-                        </div>
-                        <div>
-                          <div className="font-bold text-white truncate max-w-[90px]" title={player.name}>
-                            {player.name}
-                          </div>
-                          <div className="text-[10px] text-gray-400">
-                            {player.games} Games ({player.winRate}%)
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="text-right">
-                        <div 
-                          className={`text-[10px] font-bold px-2 py-0.5 rounded border border-current/20 inline-block whitespace-nowrap mb-1 ${player.rankBadge.bg} ${player.rankBadge.color}`}
-                        >
-                          {player.rankBadge.name}
-                        </div>
-                        <div className="text-sm font-bold text-gray-200">
-                          {player.mmr.toLocaleString()} <span className="text-[10px] font-normal text-gray-500">MMR</span>
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          ))}
+        
+        {/* タブナビゲーション */}
+        <div className="flex justify-center mb-10">
+          <div className="inline-flex bg-gray-900 rounded-xl p-1 border border-gray-800">
+            <button
+              onClick={() => setActiveTab('ranking')}
+              className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold transition-all ${
+                activeTab === 'ranking'
+                  ? 'bg-blue-600 text-white shadow-lg'
+                  : 'text-gray-400 hover:text-white hover:bg-gray-800'
+              }`}
+            >
+              <Trophy size={16} />
+              MMRランキング
+            </button>
+            <button
+              onClick={() => setActiveTab('winrate')}
+              className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold transition-all ${
+                activeTab === 'winrate'
+                  ? 'bg-emerald-600 text-white shadow-lg'
+                  : 'text-gray-400 hover:text-white hover:bg-gray-800'
+              }`}
+            >
+              <Activity size={16} />
+              レーン別勝率
+            </button>
+          </div>
         </div>
+
+        {activeTab === 'winrate' ? (
+          <WinrateMatrixPanel />
+        ) : (
+          <>
+            <p className="text-center text-gray-400 mb-8">各レーンのMMR TOP 5 (※1勝以上が条件)</p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+              {ROLES.map(role => (
+                <div key={role} className="bg-gray-900 rounded-2xl shadow-xl border border-gray-800 overflow-hidden">
+                  <div className="bg-gray-800 px-4 py-3 border-b border-gray-700">
+                    <h2 className="text-lg font-bold text-white text-center flex items-center justify-center gap-2">
+                      <span className="text-xl">
+                        {role === 'TOP' && '🪓'}
+                        {role === 'JG' && '🌲'}
+                        {role === 'MID' && '🔥'}
+                        {role === 'ADC' && '🏹'}
+                        {role === 'SUP' && '🛡️'}
+                      </span>
+                      {role}
+                    </h2>
+                  </div>
+                  
+                  <div className="divide-y divide-gray-800">
+                    {data[role].length === 0 ? (
+                      <div className="p-8 text-center text-gray-500 text-sm">
+                        データがありません
+                      </div>
+                    ) : (
+                      data[role].map((player, idx) => (
+                        <div key={player.name} className="p-4 hover:bg-gray-800/50 transition-colors flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className={`w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold
+                              ${idx === 0 ? 'bg-yellow-400 text-yellow-900' : 
+                                idx === 1 ? 'bg-gray-300 text-gray-800' : 
+                                idx === 2 ? 'bg-amber-600 text-amber-50' : 
+                                'bg-gray-800 text-gray-400'}`}>
+                              {idx + 1}
+                            </div>
+                            <div>
+                              <div className="font-bold text-white truncate max-w-[90px]" title={player.name}>
+                                {player.name}
+                              </div>
+                              <div className="text-[10px] text-gray-400">
+                                {player.games} Games ({player.winRate}%)
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div className="text-right">
+                            <div 
+                              className={`text-[10px] font-bold px-2 py-0.5 rounded border border-current/20 inline-block whitespace-nowrap mb-1 ${player.rankBadge.bg} ${player.rankBadge.color}`}
+                            >
+                              {player.rankBadge.name}
+                            </div>
+                            <div className="text-sm font-bold text-gray-200">
+                              {player.mmr.toLocaleString()} <span className="text-[10px] font-normal text-gray-500">MMR</span>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
