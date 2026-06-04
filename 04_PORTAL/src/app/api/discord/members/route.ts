@@ -5,10 +5,10 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN;
-const DISCORD_GUILD_ID = process.env.DISCORD_GUILD_ID;
-
 export async function GET() {
+  const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN;
+  const DISCORD_GUILD_ID = process.env.DISCORD_GUILD_ID;
+
   if (!DISCORD_BOT_TOKEN || !DISCORD_GUILD_ID) {
     return NextResponse.json({ error: 'Discord credentials not configured' }, { status: 500 });
   }
