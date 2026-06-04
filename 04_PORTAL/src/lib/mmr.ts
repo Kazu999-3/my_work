@@ -23,13 +23,12 @@ export function calculateInitialMmr(highestRank: string | null, role: string, pr
   const originalRankMmr = RANKS[rankStr] || 1200;
   
   // 初期レートの圧縮 (Soft Reset)
-  // 1200を基準に、元のMMRとの差分を 0.8 倍に圧縮して初期MMRとする
   const COMPRESSION_RATE = 0.8;
   const baseMmr = Math.round(1200 + (originalRankMmr - 1200) * COMPRESSION_RATE);
 
-  if (!prefs) return baseMmr - 400;
+  if (!prefs) return baseMmr - 200;
 
-  // 表記揺れ（JUNGLE <-> JG, SUPPORT <-> SUP）を吸収
+  // 表記揺れ吸収
   const norm = (r: string) => {
     if (!r) return '';
     const upper = r.toUpperCase();
@@ -46,10 +45,10 @@ export function calculateInitialMmr(highestRank: string | null, role: string, pr
     return baseMmr; // メインレーンは減衰なし
   }
   if (s === r || s === 'ALL') {
-    return baseMmr - 150; // サブレーン
+    return baseMmr - 100; // サブレーン
   }
   
-  return baseMmr - 400; // それ以外のレーン
+  return baseMmr - 200; // それ以外のレーン
 }
 
 export interface MmrCalcContext {
@@ -82,14 +81,19 @@ export function calculateNewMMR(ctx: MmrCalcContext): number {
 
   const isPlacement = false;
 
-  // ① 勝敗のベースポイント (±20 -> ±15へ縮小、個人成績の比重を高める)
+  // ① 勝敗のベースポイント (±15)
   let baseDelta = isWin ? 15 : -15;
 
-  // ② KDAボーナスの爆増
-  // 基準を2.0とし、係数を8に上げる
-  const kdaScore = deaths === 0 ? (kills + assists) * 1.2 : (kills + assists) / deaths;
-  let kdaB = (kdaScore - 2.0) * 8;
-  kdaB = Math.max(-15, Math.min(20, kdaB)); // 最大+20、最小-15
+  // ② KDAボーナスの調整
+  // SUPはデスが増えやすいため、計算上のスコアを底上げする
+  let kdaScore = deaths === 0 ? (kills + assists) * 1.2 : (kills + assists) / deaths;
+  if (role === 'SUP') {
+    kdaScore += 0.8; // サポート専用のKDA下駄（デスによる過剰なマイナスを防ぐ）
+  }
+  
+  // 基準を2.0とし、係数を6に抑える (8は大きすぎた)
+  let kdaB = (kdaScore - 2.0) * 6;
+  kdaB = Math.max(-15, Math.min(15, kdaB)); // 最大+15、最小-15に抑制
 
   // ③ 視界・CSボーナス (基礎業務)
   let visionB = 0;
@@ -131,15 +135,15 @@ export function calculateNewMMR(ctx: MmrCalcContext): number {
     if (matchupCount >= 8) matchupDampener = 0.4;
   }
 
-  // 勝率補正や経験値ボーナスは「完全実力主義」のためすべて撤廃
   let delta = (baseDelta + kdaB + visionB + csB + damageB + objB + kpB + tankHealB) * matchupDampener;
   delta = Math.round(delta);
 
-  // ⑦ 上限・下限のセーフティ (個人成績の爆発を許容するため上限を緩和)
+  // ⑦ 上限・下限のセーフティ (敗北時の上限を厳しくする)
   if (isWin) {
     delta = Math.max(0, Math.min(60, delta)); // 大戦犯は0、超キャリーは最大+60
   } else {
-    delta = Math.max(-50, Math.min(20, delta)); // 最大-50、超キャリーは負けても最大+20
+    // 負けた時はどんなにキャリーしていても最大+5までしか上がらないようにする
+    delta = Math.max(-40, Math.min(5, delta)); 
   }
 
   return delta;
