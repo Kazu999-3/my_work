@@ -85,8 +85,8 @@ export function calculateNewMMR(ctx: MmrCalcContext): number {
 
   const isPlacement = false;
 
-  // ① 勝敗のベースポイント (±15)
-  let baseDelta = isWin ? 15 : -15;
+  // ① 勝敗のベースポイント (マイルド化のため ±12 に縮小)
+  let baseDelta = isWin ? 12 : -12;
 
   // ② KDAボーナスの調整
   // SUPはデスが増えやすいため、計算上のスコアを底上げする
@@ -95,9 +95,10 @@ export function calculateNewMMR(ctx: MmrCalcContext): number {
     kdaScore += 0.8; // サポート専用のKDA下駄（デスによる過剰なマイナスを防ぐ）
   }
   
-  // 基準を2.0とし、係数を6に抑える (8は大きすぎた)
+  // 基準を2.0とし、係数を6に抑える
   let kdaB = (kdaScore - 2.0) * 6;
-  kdaB = Math.max(-15, Math.min(15, kdaB)); // 最大+15、最小-15に抑制
+  // マイナス方向への引力をマイルドにする (最大-8まで、プラスは+15まで)
+  kdaB = Math.max(-8, Math.min(15, kdaB));
 
   // ③ 視界・CSボーナス (基礎業務)
   let visionB = 0;
@@ -142,12 +143,12 @@ export function calculateNewMMR(ctx: MmrCalcContext): number {
   let delta = (baseDelta + kdaB + visionB + csB + damageB + objB + kpB + tankHealB) * matchupDampener;
   delta = Math.round(delta);
 
-  // ⑦ 上限・下限のセーフティ (敗北時の上限を厳しくする)
+  // ⑦ 上限・下限のセーフティ (沼落ちをマイルドにする)
   if (isWin) {
     delta = Math.max(0, Math.min(60, delta)); // 大戦犯は0、超キャリーは最大+60
   } else {
-    // 負けた時はどんなにキャリーしていても最大+5までしか上がらないようにする
-    delta = Math.max(-40, Math.min(5, delta)); 
+    // 負けた時はどんなに戦犯しても最大-25までしか落ちないように緩和 (-40 -> -25)
+    delta = Math.max(-25, Math.min(5, delta)); 
   }
 
   return delta;
