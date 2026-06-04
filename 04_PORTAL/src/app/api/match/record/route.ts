@@ -148,6 +148,7 @@ export async function POST(request: Request) {
       kills: r.kills,
       deaths: r.deaths,
       assists: r.assists,
+      champion_name: r.champion_name || null,
       vision_score: r.vision_score || 0,
       cs: r.cs || 0,
       damage_dealt: r.damage_dealt || 0,

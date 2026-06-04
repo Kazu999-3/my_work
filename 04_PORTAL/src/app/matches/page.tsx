@@ -20,6 +20,10 @@ interface Participant {
   assists: number;
   kda_score: number;
   mmr_delta: number;
+  champion_name?: string;
+  cs?: number;
+  damage_dealt?: number;
+  vision_score?: number;
 }
 
 const ROLES = ['TOP', 'JG', 'MID', 'ADC', 'SUP'];
@@ -38,7 +42,8 @@ export default function MatchesPage() {
           .select(`
             id, created_at, winning_team,
             ktm_match_participants (
-              player_name, team, role, kills, deaths, assists, kda_score, mmr_delta
+              player_name, team, role, kills, deaths, assists, kda_score, mmr_delta,
+              champion_name, cs, damage_dealt, vision_score
             )
           `)
           .order('created_at', { ascending: false })
@@ -119,47 +124,93 @@ export default function MatchesPage() {
               <div className="flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x divide-gray-800">
                 {/* BLUE TEAM */}
                 <div className="flex-1 p-4 bg-gray-900/50">
-                  <div className="space-y-2">
-                    {blueSorted.map(p => (
-                      <div key={p.player_name} className="flex items-center gap-3 bg-gray-800/40 p-2 rounded hover:bg-gray-800 transition">
-                        <div className="w-10 text-center text-xs font-bold text-gray-500">{p.role}</div>
-                        <div className="flex-1 font-bold text-gray-200 truncate">{p.player_name}</div>
-                        
-                        <div className="flex items-center gap-4">
-                          {p.kills === 0 && p.deaths === 0 && p.assists === 0 && p.kda_score > 0 ? (
-                            <div className="text-xs text-gray-400 w-16 text-right">KDA {p.kda_score}</div>
+                  <div className="space-y-3">
+                    {blueSorted.map(p => {
+                      const maxDmg = Math.max(...blueSorted.map(x => x.damage_dealt || 0));
+                      const dmgPercent = maxDmg > 0 ? ((p.damage_dealt || 0) / maxDmg) * 100 : 0;
+                      return (
+                        <div key={p.player_name} className="flex items-center gap-3 bg-gray-800/40 p-2 rounded hover:bg-gray-800 transition">
+                          <div className="w-8 text-center text-xs font-bold text-gray-500 flex-shrink-0">{p.role}</div>
+                          {p.champion_name ? (
+                            <img 
+                              src={`https://ddragon.leagueoflegends.com/cdn/14.10.1/img/champion/${p.champion_name}.png`} 
+                              alt={p.champion_name}
+                              className="w-10 h-10 rounded-full border border-gray-700 flex-shrink-0 object-cover"
+                              onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                            />
                           ) : (
-                            <div className="text-xs text-gray-400 w-16 text-right">{p.kills} / {p.deaths} / {p.assists}</div>
+                            <div className="w-10 h-10 rounded-full bg-gray-700 flex-shrink-0 border border-gray-600 flex items-center justify-center text-[10px] text-gray-500">?</div>
                           )}
-                          <div className={`w-14 text-right font-bold text-sm ${p.mmr_delta > 0 ? 'text-emerald-400' : p.mmr_delta < 0 ? 'text-red-400' : 'text-gray-500'}`}>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-bold text-gray-200 truncate text-sm">{p.player_name}</div>
+                            <div className="text-xs text-gray-500 mt-0.5 flex gap-2">
+                              <span>CS {p.cs || 0}</span>
+                              <span title="Vision Score">VS {p.vision_score || 0}</span>
+                            </div>
+                          </div>
+                          
+                          <div className="flex flex-col items-end gap-1 flex-shrink-0 w-24">
+                            <div className="text-xs font-bold text-gray-300">
+                              {p.kills} / <span className="text-red-400">{p.deaths}</span> / {p.assists}
+                            </div>
+                            <div className="w-full h-1.5 bg-gray-700 rounded-full overflow-hidden mt-0.5">
+                              <div className="h-full bg-blue-500 rounded-full" style={{ width: `${dmgPercent}%` }}></div>
+                            </div>
+                            <div className="text-[10px] text-gray-500">{p.damage_dealt ? p.damage_dealt.toLocaleString() : '0'} DMG</div>
+                          </div>
+
+                          <div className={`w-12 text-right font-black text-sm flex-shrink-0 ${p.mmr_delta > 0 ? 'text-emerald-400' : p.mmr_delta < 0 ? 'text-red-400' : 'text-gray-500'}`}>
                             {p.mmr_delta > 0 ? '+' : ''}{p.mmr_delta}
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
 
                 {/* RED TEAM */}
                 <div className="flex-1 p-4 bg-gray-900/50">
-                  <div className="space-y-2">
-                    {redSorted.map(p => (
-                      <div key={p.player_name} className="flex items-center gap-3 bg-gray-800/40 p-2 rounded hover:bg-gray-800 transition">
-                        <div className="w-10 text-center text-xs font-bold text-gray-500">{p.role}</div>
-                        <div className="flex-1 font-bold text-gray-200 truncate">{p.player_name}</div>
-                        
-                        <div className="flex items-center gap-4">
-                          {p.kills === 0 && p.deaths === 0 && p.assists === 0 && p.kda_score > 0 ? (
-                            <div className="text-xs text-gray-400 w-16 text-right">KDA {p.kda_score}</div>
+                  <div className="space-y-3">
+                    {redSorted.map(p => {
+                      const maxDmg = Math.max(...redSorted.map(x => x.damage_dealt || 0));
+                      const dmgPercent = maxDmg > 0 ? ((p.damage_dealt || 0) / maxDmg) * 100 : 0;
+                      return (
+                        <div key={p.player_name} className="flex items-center gap-3 bg-gray-800/40 p-2 rounded hover:bg-gray-800 transition">
+                          <div className="w-8 text-center text-xs font-bold text-gray-500 flex-shrink-0">{p.role}</div>
+                          {p.champion_name ? (
+                            <img 
+                              src={`https://ddragon.leagueoflegends.com/cdn/14.10.1/img/champion/${p.champion_name}.png`} 
+                              alt={p.champion_name}
+                              className="w-10 h-10 rounded-full border border-gray-700 flex-shrink-0 object-cover"
+                              onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                            />
                           ) : (
-                            <div className="text-xs text-gray-400 w-16 text-right">{p.kills} / {p.deaths} / {p.assists}</div>
+                            <div className="w-10 h-10 rounded-full bg-gray-700 flex-shrink-0 border border-gray-600 flex items-center justify-center text-[10px] text-gray-500">?</div>
                           )}
-                          <div className={`w-14 text-right font-bold text-sm ${p.mmr_delta > 0 ? 'text-emerald-400' : p.mmr_delta < 0 ? 'text-red-400' : 'text-gray-500'}`}>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-bold text-gray-200 truncate text-sm">{p.player_name}</div>
+                            <div className="text-xs text-gray-500 mt-0.5 flex gap-2">
+                              <span>CS {p.cs || 0}</span>
+                              <span title="Vision Score">VS {p.vision_score || 0}</span>
+                            </div>
+                          </div>
+                          
+                          <div className="flex flex-col items-end gap-1 flex-shrink-0 w-24">
+                            <div className="text-xs font-bold text-gray-300">
+                              {p.kills} / <span className="text-red-400">{p.deaths}</span> / {p.assists}
+                            </div>
+                            <div className="w-full h-1.5 bg-gray-700 rounded-full overflow-hidden mt-0.5">
+                              <div className="h-full bg-red-500 rounded-full" style={{ width: `${dmgPercent}%` }}></div>
+                            </div>
+                            <div className="text-[10px] text-gray-500">{p.damage_dealt ? p.damage_dealt.toLocaleString() : '0'} DMG</div>
+                          </div>
+
+                          <div className={`w-12 text-right font-black text-sm flex-shrink-0 ${p.mmr_delta > 0 ? 'text-emerald-400' : p.mmr_delta < 0 ? 'text-red-400' : 'text-gray-500'}`}>
                             {p.mmr_delta > 0 ? '+' : ''}{p.mmr_delta}
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               </div>

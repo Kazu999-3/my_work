@@ -14,10 +14,10 @@ export default function MatchRecordPanel({ balanceResult, onComplete }: MatchRec
   const [stats, setStats] = useState<any[]>(() => {
     const initial: any[] = [];
     if (balanceResult?.teamBlue) {
-      balanceResult.teamBlue.forEach((p: any) => initial.push({ ...p, team: 'BLUE', kills: 0, deaths: 0, assists: 0, vision: 0 }));
+      balanceResult.teamBlue.forEach((p: any) => initial.push({ ...p, team: 'BLUE', kills: 0, deaths: 0, assists: 0, vision: 0, champion_name: '', cs: 0, damage_dealt: 0, damage_taken: 0, objective_damage: 0, heal_shield: 0 }));
     }
     if (balanceResult?.teamRed) {
-      balanceResult.teamRed.forEach((p: any) => initial.push({ ...p, team: 'RED', kills: 0, deaths: 0, assists: 0, vision: 0 }));
+      balanceResult.teamRed.forEach((p: any) => initial.push({ ...p, team: 'RED', kills: 0, deaths: 0, assists: 0, vision: 0, champion_name: '', cs: 0, damage_dealt: 0, damage_taken: 0, objective_damage: 0, heal_shield: 0 }));
     }
     return initial;
   });
@@ -68,6 +68,12 @@ export default function MatchRecordPanel({ balanceResult, onComplete }: MatchRec
           newStats[matchingPlayerIndex].deaths = riotP.deaths;
           newStats[matchingPlayerIndex].assists = riotP.assists;
           newStats[matchingPlayerIndex].vision = riotP.visionScore;
+          newStats[matchingPlayerIndex].champion_name = riotP.championName;
+          newStats[matchingPlayerIndex].cs = riotP.totalMinionsKilled + riotP.neutralMinionsKilled;
+          newStats[matchingPlayerIndex].damage_dealt = riotP.damageDealtToChampions;
+          newStats[matchingPlayerIndex].damage_taken = riotP.totalDamageTaken;
+          newStats[matchingPlayerIndex].objective_damage = riotP.damageDealtToObjectives;
+          newStats[matchingPlayerIndex].heal_shield = riotP.totalHeal;
           // 勝敗も自動セット（代表者の1人から）
           if (riotP.win) {
             setWinningTeam(newStats[matchingPlayerIndex].team as 'BLUE' | 'RED');
@@ -103,7 +109,13 @@ export default function MatchRecordPanel({ balanceResult, onComplete }: MatchRec
             kills: s.kills,
             deaths: s.deaths,
             assists: s.assists,
-            vision_score: s.vision
+            vision_score: s.vision,
+            champion_name: s.champion_name,
+            cs: s.cs,
+            damage_dealt: s.damage_dealt,
+            damage_taken: s.damage_taken,
+            objective_damage: s.objective_damage,
+            heal_shield: s.heal_shield
           }))
         })
       });
