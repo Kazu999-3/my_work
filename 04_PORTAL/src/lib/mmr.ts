@@ -41,10 +41,14 @@ export function calculateInitialMmr(highestRank: string | null, role: string, pr
   const s = norm(prefs.secondary as string);
   const r = norm(role);
 
-  if (p === r || p === 'ALL') {
+  if (p === r) {
     return baseMmr; // メインレーンは減衰なし
   }
-  if (s === r || s === 'ALL') {
+  // ALL/FILL の場合はすべてサブレーン扱いとする（メインほど上手くない）
+  if (p === 'ALL' || p === 'FILL') {
+    return baseMmr - 100;
+  }
+  if (s === r || s === 'ALL' || s === 'FILL') {
     return baseMmr - 100; // サブレーン
   }
   
