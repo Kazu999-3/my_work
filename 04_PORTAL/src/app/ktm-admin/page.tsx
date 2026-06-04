@@ -817,10 +817,10 @@ export default function KtmAdminPage() {
                         className={`bg-gray-800 border border-gray-700 rounded px-1 py-0.5 outline-none focus:border-blue-500 w-20 text-xs ${getColorFromRole(p.role_preferences?.primary || "ALL")}`}
                       >
                         <option value="TOP" className={getColorFromRole("TOP")}>TOP</option>
-                        <option value="JUNGLE" className={getColorFromRole("JUNGLE")}>JUNGLE</option>
+                        <option value="JG" className={getColorFromRole("JG")}>JUNGLE</option>
                         <option value="MID" className={getColorFromRole("MID")}>MID</option>
                         <option value="ADC" className={getColorFromRole("ADC")}>ADC</option>
-                        <option value="SUPPORT" className={getColorFromRole("SUPPORT")}>SUPPORT</option>
+                        <option value="SUP" className={getColorFromRole("SUP")}>SUPPORT</option>
                         <option value="ALL" className={getColorFromRole("ALL")}>ALL</option>
                       </select>
                     </td>
@@ -831,10 +831,10 @@ export default function KtmAdminPage() {
                         className={`bg-gray-800 border border-gray-700 rounded px-1 py-0.5 outline-none focus:border-blue-500 w-20 text-xs ${getColorFromRole(p.role_preferences?.secondary || "ALL")}`}
                       >
                         <option value="TOP" className={getColorFromRole("TOP")}>TOP</option>
-                        <option value="JUNGLE" className={getColorFromRole("JUNGLE")}>JUNGLE</option>
+                        <option value="JG" className={getColorFromRole("JG")}>JUNGLE</option>
                         <option value="MID" className={getColorFromRole("MID")}>MID</option>
                         <option value="ADC" className={getColorFromRole("ADC")}>ADC</option>
-                        <option value="SUPPORT" className={getColorFromRole("SUPPORT")}>SUPPORT</option>
+                        <option value="SUP" className={getColorFromRole("SUP")}>SUPPORT</option>
                         <option value="ALL" className={getColorFromRole("ALL")}>ALL</option>
                       </select>
                     </td>
@@ -846,10 +846,10 @@ export default function KtmAdminPage() {
                       >
                         <option value="" className="text-gray-500">なし</option>
                         <option value="TOP" className={getColorFromRole("TOP")}>TOP</option>
-                        <option value="JUNGLE" className={getColorFromRole("JUNGLE")}>JUNGLE</option>
+                        <option value="JG" className={getColorFromRole("JG")}>JUNGLE</option>
                         <option value="MID" className={getColorFromRole("MID")}>MID</option>
                         <option value="ADC" className={getColorFromRole("ADC")}>ADC</option>
-                        <option value="SUPPORT" className={getColorFromRole("SUPPORT")}>SUPPORT</option>
+                        <option value="SUP" className={getColorFromRole("SUP")}>SUPPORT</option>
                       </select>
                     </td>
                     <td className="px-2 py-1.5">
@@ -860,10 +860,10 @@ export default function KtmAdminPage() {
                       >
                         <option value="" className="text-gray-500">なし</option>
                         <option value="TOP" className={getColorFromRole("TOP")}>TOP</option>
-                        <option value="JUNGLE" className={getColorFromRole("JUNGLE")}>JUNGLE</option>
+                        <option value="JG" className={getColorFromRole("JG")}>JUNGLE</option>
                         <option value="MID" className={getColorFromRole("MID")}>MID</option>
                         <option value="ADC" className={getColorFromRole("ADC")}>ADC</option>
-                        <option value="SUPPORT" className={getColorFromRole("SUPPORT")}>SUPPORT</option>
+                        <option value="SUP" className={getColorFromRole("SUP")}>SUPPORT</option>
                       </select>
                     </td>
                     <td className="px-2 py-1.5 text-center">
