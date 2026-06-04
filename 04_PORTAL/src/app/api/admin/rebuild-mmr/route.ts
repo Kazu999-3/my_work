@@ -17,7 +17,6 @@ export async function POST(req: Request) {
     const { data: allPlayers, error: pError } = await supabase.from('ktm_players').select('*');
     if (pError || !allPlayers) throw new Error("Failed to fetch players");
 
-    // playersMap: in-memory state of players' MMR
     const playersMap = new Map();
     for (const p of allPlayers) {
       const prefs = p.role_preferences || { primary: 'ALL', secondary: 'ALL' };
@@ -30,7 +29,10 @@ export async function POST(req: Request) {
         mmr_jg: calculateInitialMmr(p.highest_rank, 'JG', prefs),
         mmr_mid: calculateInitialMmr(p.highest_rank, 'MID', prefs),
         mmr_adc: calculateInitialMmr(p.highest_rank, 'ADC', prefs),
-        mmr_sup: calculateInitialMmr(p.highest_rank, 'SUP', prefs)
+        mmr_sup: calculateInitialMmr(p.highest_rank, 'SUP', prefs),
+        totalGames: 0,
+        totalWins: 0,
+        laneGames: { TOP: 0, JG: 0, MID: 0, ADC: 0, SUP: 0 }
       });
     }
 
@@ -55,8 +57,6 @@ export async function POST(req: Request) {
 
       if (partError || !participants || participants.length === 0) continue;
 
-      // 簡易的な「対面プレイヤーのMMR」を計算するための準備
-      // 本来は正確に対面を引くが、今回はチーム平均を相手MMRとする（あるいは各ロールの相手）
       const blueTeam = participants.filter(p => p.team === 'BLUE');
       const redTeam = participants.filter(p => p.team === 'RED');
 
@@ -68,7 +68,6 @@ export async function POST(req: Request) {
         const mmrKey = `mmr_${role.toLowerCase()}`;
         const currentMmr = memPlayer[mmrKey] || 1200;
         
-        // 対面のMMRを簡易取得 (同じロールの相手)
         const opponentList = p.team === 'BLUE' ? redTeam : blueTeam;
         const opponent = opponentList.find(op => op.role.toUpperCase() === role);
         let opponentMmr = 1200;
@@ -78,7 +77,6 @@ export async function POST(req: Request) {
             opponentMmr = memOpponent[`mmr_${opponent.role.toLowerCase()}`] || 1200;
           }
         } else {
-          // 対面が見つからなければ敵チーム平均
           opponentMmr = opponentList.reduce((acc, op) => {
             const mop = playersMap.get(op.player_name);
             return acc + (mop ? (mop[`mmr_${op.role.toLowerCase()}`] || 1200) : 1200);
@@ -86,20 +84,26 @@ export async function POST(req: Request) {
         }
 
         const mainRank = memPlayer.highest_rank ? memPlayer.highest_rank.split(' ')[0].toUpperCase() : 'UNRANKED';
+        const isWin = p.team === match.winning_team;
+
+        // 計算に必要な動的データを取得
+        const numGames = memPlayer.laneGames[role] || 0;
+        const totalGames = memPlayer.totalGames || 0;
+        const totalWinRate = totalGames > 0 ? (memPlayer.totalWins / totalGames) * 100 : 50;
 
         const ctx: MmrCalcContext = {
           currentMmr,
           opponentMmr,
-          isWin: p.team === match.winning_team,
+          isWin,
           kills: p.kills || 0,
           deaths: p.deaths || 0,
           assists: p.assists || 0,
           mainRank,
-          numGames: 10, // MVP: 一律
-          matchupCount: 0, // MVP: 一律
-          totalWinRate: 50, // MVP: 一律
+          numGames,
+          matchupCount: 0,
+          totalWinRate,
           visionScore: p.vision_score || 0,
-          cs: 0, // participantテーブルにCSカラムがない場合は0（拡張時は追加する）
+          cs: 0,
           role
         };
 
@@ -108,6 +112,13 @@ export async function POST(req: Request) {
 
         // メモリ上のMMRを更新
         memPlayer[mmrKey] += mmrDelta;
+
+        // 次の試合の計算のために戦績を更新
+        memPlayer.totalGames += 1;
+        if (isWin) memPlayer.totalWins += 1;
+        if (memPlayer.laneGames[role] !== undefined) {
+          memPlayer.laneGames[role] += 1;
+        }
 
         // participants のアップデート配列に追加
         participantUpdates.push({
