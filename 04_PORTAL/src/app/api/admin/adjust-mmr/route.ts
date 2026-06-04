@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabaseClient';
+import { supabase } from '../../../lib/supabaseClient';
 
 export async function POST(req: Request) {
   try {
@@ -13,8 +13,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ status: "ERROR", message: "amount must be a valid number." }, { status: 400 });
     }
 
-    // プレイヤーを取得
-    const { data: player, error: playerError } = await supabase
+    // プレイヤーを取征E    const { data: player, error: playerError } = await supabase
       .from('ktm_players')
       .select('*')
       .eq('name', targetName)
@@ -24,16 +23,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ status: "ERROR", message: "Player not found." }, { status: 404 });
     }
 
-    // 更新するカラムを決定
-    const targetRole = role.toUpperCase();
+    // 更新するカラムを決宁E    const targetRole = role.toUpperCase();
     const updateData: any = {};
     if (targetRole === 'TOP') updateData.mmr_top = newMmr;
     else if (targetRole === 'JG') updateData.mmr_jg = newMmr;
     else if (targetRole === 'MID') updateData.mmr_mid = newMmr;
     else if (targetRole === 'ADC') updateData.mmr_adc = newMmr;
     else if (targetRole === 'SUP') updateData.mmr_sup = newMmr;
-    else updateData.mmr = newMmr; // 全体 または 不明な場合
-
+    else updateData.mmr = newMmr; // 全佁Eまた�E 不�Eな場吁E
     const { error: updateError } = await supabase
       .from('ktm_players')
       .update(updateData)

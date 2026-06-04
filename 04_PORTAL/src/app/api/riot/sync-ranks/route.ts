@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabaseClient';
-import { fetchPuuidByRiotId, fetchSummonerByPuuid, fetchLeagueBySummonerId } from '@/lib/riot';
+import { supabase } from '../../../lib/supabaseClient';
+import { fetchPuuidByRiotId, fetchSummonerByPuuid, fetchLeagueBySummonerId } from '../../../lib/riot';
 
 export async function POST(req: Request) {
   try {
@@ -10,15 +10,14 @@ export async function POST(req: Request) {
     const apiKey = process.env.RIOT_API_KEY;
     if (!apiKey) throw new Error("RIOT_API_KEY is not set.");
 
-    // DBからプレイヤー取得
-    const { data: player, error } = await supabase
+    // DBからプレイヤー取征E    const { data: player, error } = await supabase
       .from('ktm_players')
       .select('id, ign')
       .eq('name', discordName)
       .single();
 
     if (error || !player) throw new Error("Player not found in DB.");
-    if (!player.ign || !player.ign.includes('#')) throw new Error("IGNが未登録または不正です。");
+    if (!player.ign || !player.ign.includes('#')) throw new Error("IGNが未登録また�E不正です、E);
 
     const [gameName, tagLine] = player.ign.split('#');
     
@@ -27,8 +26,7 @@ export async function POST(req: Request) {
     const summoner = await fetchSummonerByPuuid(puuid, apiKey);
     const leagues = await fetchLeagueBySummonerId(summoner.id, apiKey);
 
-    // Solo Queue のランクを探す
-    const soloQ = leagues.find(l => l.queueType === 'RANKED_SOLO_5x5');
+    // Solo Queue のランクを探ぁE    const soloQ = leagues.find(l => l.queueType === 'RANKED_SOLO_5x5');
     let rankStr = "UNRANKED";
     if (soloQ) {
       rankStr = `${soloQ.tier} ${soloQ.rank}`;
@@ -44,7 +42,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ 
       status: "SUCCESS", 
-      message: `ランク情報を同期しました: ${rankStr}` 
+      message: `ランク惁E��を同期しました: ${rankStr}` 
     });
   } catch (err: any) {
     return NextResponse.json({ status: "ERROR", message: err.message }, { status: 500 });
