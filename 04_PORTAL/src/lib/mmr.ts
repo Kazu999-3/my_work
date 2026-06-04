@@ -58,9 +58,9 @@ export interface MmrCalcContext {
 export function calculateNewMMR(ctx: MmrCalcContext): number {
   const { currentMmr, opponentMmr, isWin, kills, deaths, assists, mainRank, numGames, matchupCount, totalWinRate, visionScore, cs, role } = ctx;
 
-  // プレースメント判定 (5試合以下に短縮、Kもマイルドに)
-  const isPlacement = numGames <= 5;
-  const K = isPlacement ? 60 : 50;
+  // Kファクター (一律50)
+  const isPlacement = false; // プレースメント判定削除
+  const K = 50;
 
   // ① Elo基本計算
   const expectedWin = 1 / (1 + Math.pow(10, (opponentMmr - currentMmr) / 400));
@@ -119,7 +119,7 @@ export function calculateNewMMR(ctx: MmrCalcContext): number {
 
   // 上限・下限のセーフティ
   if (isWin) {
-    const maxWin = isPlacement ? 100 : 60; // プレースメントの最大上昇幅も抑制
+    const maxWin = 60; // プレースメントボーナス削除
     delta = Math.max(5, Math.min(maxWin, delta));
   } else {
     // 敗北時の下限（急降下を防ぐ）
