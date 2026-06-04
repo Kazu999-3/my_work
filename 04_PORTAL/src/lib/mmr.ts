@@ -22,16 +22,16 @@ export function calculateInitialMmr(highestRank: string | null, role: string, pr
   const rankStr = highestRank ? highestRank.split(' ')[0].toUpperCase() : 'UNRANKED';
   const baseMmr = RANKS[rankStr] || 1200;
   
-  if (!prefs) return baseMmr - 300;
+  if (!prefs) return baseMmr - 500;
 
   if (prefs.primary === role || prefs.primary === 'ALL') {
     return baseMmr; // メインレーンは減衰なし
   }
   if (prefs.secondary === role || prefs.secondary === 'ALL') {
-    return baseMmr - 100; // サブレーンは -100
+    return baseMmr - 200; // サブレーンは -200
   }
   
-  return baseMmr - 300; // それ以外のレーンは -300
+  return baseMmr - 500; // それ以外のレーンは -500
 }
 
 export interface MmrCalcContext {
@@ -53,10 +53,9 @@ export interface MmrCalcContext {
 export function calculateNewMMR(ctx: MmrCalcContext): number {
   const { currentMmr, opponentMmr, isWin, kills, deaths, assists, mainRank, numGames, matchupCount, totalWinRate, visionScore, cs, role } = ctx;
 
-  // プレースメント判定 (10試合以下は超変動)
-  const isPlacement = numGames <= 10;
-  // 通常の変動幅Kを60に引き上げ、プレースメント時は150とする
-  const K = isPlacement ? 150 : 60;
+  // プレースメント判定 (5試合以下に短縮、Kもマイルドに)
+  const isPlacement = numGames <= 5;
+  const K = isPlacement ? 90 : 50;
 
   // ① Elo基本計算
   const expectedWin = 1 / (1 + Math.pow(10, (opponentMmr - currentMmr) / 400));
@@ -101,14 +100,19 @@ export function calculateNewMMR(ctx: MmrCalcContext): number {
     }
   }
 
-  // 勝率による強制ペナルティ
+  // 勝率による強制ペナルティ（過剰な沼落ちを防ぐため超緩和）
   let wrComp = 0;
   if (numGames > 5) {
-    if (totalWinRate < 45 && isWin) wrComp = 10;
-    else if (totalWinRate < 35 && !isWin) wrComp = -80; // 過剰な絶望を少しだけ緩和 (-100 -> -80)
-    else if (totalWinRate < 45 && !isWin) wrComp = -20;
-    else if (totalWinRate > 55 && !isWin) wrComp = -10;
-    else if (totalWinRate > 60 && isWin) wrComp = -10;
+    if (totalWinRate < 45 && isWin) wrComp = 5;
+    else if (totalWinRate < 40 && !isWin) wrComp = -5; // -80 だったものを -5 に激減
+    else if (totalWinRate > 60 && !isWin) wrComp = -5;
+    else if (totalWinRate > 60 && isWin) wrComp = -5;
+  }
+
+  // 経験値(試合数)ボーナス: たくさん回しているロールが不当に下がらないように、負けの減点を少し緩和
+  let expBonus = 0;
+  if (!isWin && numGames > 5) {
+     expBonus = Math.min(15, numGames * 0.5); // 試合数が多いほど、敗北時の減点が緩和される (最大+15)
   }
 
   // 対面回数補正
@@ -119,16 +123,16 @@ export function calculateNewMMR(ctx: MmrCalcContext): number {
     if (matchupCount >= 8) matchupDampener = 0.4;
   }
 
-  let delta = (eloDelta + kdaB + visionB + csB + grav + wrComp) * matchupDampener;
+  let delta = (eloDelta + kdaB + visionB + csB + grav + wrComp + expBonus) * matchupDampener;
   delta = Math.round(delta);
 
   // 上限・下限のセーフティ
   if (isWin) {
-    const maxWin = isPlacement ? 200 : 80;
+    const maxWin = isPlacement ? 100 : 60; // プレースメントの最大上昇幅も抑制
     delta = Math.max(5, Math.min(maxWin, delta));
   } else {
-    // 敗北時の下限（急降下）
-    delta = Math.max(-200, Math.min(-10, delta));
+    // 敗北時の下限（急降下を防ぐ）
+    delta = Math.max(-60, Math.min(-5, delta)); // 最大-60までに抑える
   }
 
   return delta;

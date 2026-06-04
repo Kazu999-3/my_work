@@ -144,7 +144,9 @@ export async function POST(req: Request) {
 
     // 4-2. ktm_players の更新
     for (const [name, p] of playersMap.entries()) {
-      console.log(`[DEBUG MMR] ${name} | TOP:${p.mmr_top} JG:${p.mmr_jg} MID:${p.mmr_mid} ADC:${p.mmr_adc} SUP:${p.mmr_sup} | WINS:${p.totalWins}/${p.totalGames}`);
+      const avgMmr = Math.round((p.mmr_top + p.mmr_jg + p.mmr_mid + p.mmr_adc + p.mmr_sup) / 5);
+      console.log(`[DEBUG MMR] ${name} | TOP:${p.mmr_top} JG:${p.mmr_jg} MID:${p.mmr_mid} ADC:${p.mmr_adc} SUP:${p.mmr_sup} | AVG:${avgMmr} | WINS:${p.totalWins}/${p.totalGames}`);
+      
       await supabase
         .from('ktm_players')
         .update({
@@ -152,7 +154,8 @@ export async function POST(req: Request) {
           mmr_jg: p.mmr_jg,
           mmr_mid: p.mmr_mid,
           mmr_adc: p.mmr_adc,
-          mmr_sup: p.mmr_sup
+          mmr_sup: p.mmr_sup,
+          mmr: avgMmr
         })
         .eq('id', p.id);
     }
