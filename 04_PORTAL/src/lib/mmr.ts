@@ -85,22 +85,38 @@ export function calculateNewMMR(ctx: MmrCalcContext): number {
 
   const isPlacement = false;
 
-  // ① 勝敗のベースポイント (マイルド化のため ±12 に縮小)
-  let baseDelta = isWin ? 12 : -12;
+  // ① 勝敗のベースポイント (インフレ型: 勝率40%台でも維持可能に)
+  let baseDelta = isWin ? 15 : -10;
 
-  // ② KDAボーナスの調整
-  // SUPはデスが増えやすいため、計算上のスコアを底上げする
+  // ② 格差補正 (Elo Gravity)
+  // 相手チームの同ロールとのMMR差分を計算
+  const mmrDiff = opponentMmr - currentMmr;
+  let eloBonus = 0;
+  if (mmrDiff > 0) {
+    // 相手が格上: 最大+15程度の補正
+    eloBonus = Math.min(15, mmrDiff / 20);
+  } else if (mmrDiff < 0) {
+    // 相手が格下: 最大-10程度の補正
+    eloBonus = Math.max(-10, mmrDiff / 25);
+  }
+
+  if (isWin) {
+    baseDelta += eloBonus; // 格上に勝てば爆上がり、格下に勝っても少し上がり幅が減る程度
+  } else {
+    // 負けた場合、格上相手ならマイナスが軽減されるが、最低でも -2 は下がるようにする
+    baseDelta = Math.min(-2, baseDelta + eloBonus);
+  }
+
+  // ③ KDAボーナス (加点方式のみへ変更。KDAが悪くてもマイナス評価しない)
   let kdaScore = deaths === 0 ? (kills + assists) * 1.2 : (kills + assists) / deaths;
   if (role === 'SUP') {
-    kdaScore += 0.8; // サポート専用のKDA下駄（デスによる過剰なマイナスを防ぐ）
+    kdaScore += 0.8;
   }
   
-  // 基準を2.0とし、係数を6に抑える
-  let kdaB = (kdaScore - 2.0) * 6;
-  // マイナス方向への引力をマイルドにする (最大-8まで、プラスは+15まで)
-  kdaB = Math.max(-8, Math.min(15, kdaB));
+  // 基準を2.0とし、最大+10の加点ボーナスのみを与える
+  let kdaB = Math.max(0, Math.min(10, (kdaScore - 2.0) * 4));
 
-  // ③ 視界・CSボーナス (基礎業務)
+  // ④ 視界・CSボーナス (基礎業務)
   let visionB = 0;
   let csB = 0;
   if (role === 'SUP') {
@@ -117,13 +133,13 @@ export function calculateNewMMR(ctx: MmrCalcContext): number {
     if (visionScore > 15) visionB = 3;
   }
 
-  // ④ ダメージ＆オブジェクト貢献ボーナス
+  // ⑤ ダメージ＆オブジェクト貢献ボーナス
   let damageB = 0;
   let objB = 0;
   if (isDamageMvp) damageB = 5;
   if (isObjectiveMvp) objB = 5;
 
-  // ⑤ 縁の下の力持ちボーナス (KP, 盾/回復)
+  // ⑥ 縁の下の力持ちボーナス (KP, 盾/回復)
   let kpB = 0;
   let tankHealB = 0;
   const kp = teamTotalKills > 0 ? (kills + assists) / teamTotalKills : 0;
@@ -132,7 +148,7 @@ export function calculateNewMMR(ctx: MmrCalcContext): number {
 
   if (isTankMvp || isHealMvp) tankHealB = 5;
 
-  // ⑥ 対面回数補正 (身内戦で同じマッチアップが続く場合のブレ防止)
+  // ⑦ 対面回数補正 (身内戦でのブレ防止)
   let matchupDampener = 1.0;
   if (!isPlacement) {
     if (matchupCount >= 3) matchupDampener = 0.8;
@@ -140,15 +156,16 @@ export function calculateNewMMR(ctx: MmrCalcContext): number {
     if (matchupCount >= 8) matchupDampener = 0.4;
   }
 
+  // 全てのボーナスを合算 (加点のみなのでデフレが起きない)
   let delta = (baseDelta + kdaB + visionB + csB + damageB + objB + kpB + tankHealB) * matchupDampener;
   delta = Math.round(delta);
 
-  // ⑦ 上限・下限のセーフティ (沼落ちをマイルドにする)
+  // ⑧ 上限・下限のセーフティ
   if (isWin) {
-    delta = Math.max(0, Math.min(60, delta)); // 大戦犯は0、超キャリーは最大+60
+    delta = Math.max(0, Math.min(60, delta));
   } else {
-    // 負けた時はどんなに戦犯しても最大-25までしか落ちないように緩和 (-40 -> -25)
-    delta = Math.max(-25, Math.min(5, delta)); 
+    // 負けた時は、加点が多くても最終的に「0」で踏みとどまる (プラスにはならない)
+    delta = Math.max(-30, Math.min(0, delta)); 
   }
 
   return delta;

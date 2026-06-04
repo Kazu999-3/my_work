@@ -38,15 +38,26 @@ function calculateInitialMmr(highestRank, role, prefs) {
 function calculateNewMMR(ctx) {
   const { currentMmr, opponentMmr, isWin, kills, deaths, assists, role, matchupCount, visionScore, cs, teamTotalKills, isDamageMvp, isObjectiveMvp, isTankMvp, isHealMvp } = ctx;
   
-  // マイルド化
-  let baseDelta = isWin ? 12 : -12;
+  let baseDelta = isWin ? 15 : -10;
+
+  const mmrDiff = opponentMmr - currentMmr;
+  let eloBonus = 0;
+  if (mmrDiff > 0) {
+    eloBonus = Math.min(15, mmrDiff / 20);
+  } else if (mmrDiff < 0) {
+    eloBonus = Math.max(-10, mmrDiff / 25);
+  }
+
+  if (isWin) {
+    baseDelta += eloBonus;
+  } else {
+    baseDelta = Math.min(-2, baseDelta + eloBonus);
+  }
 
   let kdaScore = deaths === 0 ? (kills + assists) * 1.2 : (kills + assists) / deaths;
   if (role === 'SUP') kdaScore += 0.8;
 
-  let kdaB = (kdaScore - 2.0) * 6;
-  // マイナスを -8 までに緩和
-  kdaB = Math.max(-8, Math.min(15, kdaB));
+  let kdaB = Math.max(0, Math.min(10, (kdaScore - 2.0) * 4));
 
   let visionB = 0, csB = 0;
   if (role === 'SUP') { if (visionScore > 40) visionB = 5; if (visionScore > 60) visionB = 10; }
@@ -74,8 +85,7 @@ function calculateNewMMR(ctx) {
   if (isWin) {
     delta = Math.max(0, Math.min(60, delta));
   } else {
-    // 最大下落を -25 に緩和
-    delta = Math.max(-25, Math.min(5, delta));
+    delta = Math.max(-30, Math.min(0, delta));
   }
   return { delta, kdaScore: Number(kdaScore.toFixed(2)) };
 }
