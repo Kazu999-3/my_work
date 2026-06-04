@@ -23,22 +23,20 @@ export function calculateInitialMmr(highestRank: string | null, role: string, pr
   const originalRankMmr = RANKS[rankStr] || 1200;
   
   // 初期レートの圧縮 (Soft Reset)
-  // 1200を基準に、元のMMRとの差分を 0.4 倍に圧縮して初期MMRとする
-  // 例: ダイヤ(2000) -> 1200 + 800*0.4 = 1520
-  // 例: シルバー(1350) -> 1200 + 150*0.4 = 1260
-  const COMPRESSION_RATE = 0.4;
+  // 1200を基準に、元のMMRとの差分を 0.6 倍に圧縮して初期MMRとする
+  const COMPRESSION_RATE = 0.6;
   const baseMmr = Math.round(1200 + (originalRankMmr - 1200) * COMPRESSION_RATE);
 
-  if (!prefs) return baseMmr - 150;
+  if (!prefs) return baseMmr - 250;
 
   if (prefs.primary === role || prefs.primary === 'ALL') {
     return baseMmr; // メインレーンは減衰なし
   }
   if (prefs.secondary === role || prefs.secondary === 'ALL') {
-    return baseMmr - 60; // サブレーン
+    return baseMmr - 100; // サブレーン
   }
   
-  return baseMmr - 150; // それ以外のレーン
+  return baseMmr - 250; // それ以外のレーン
 }
 
 export interface MmrCalcContext {
@@ -62,7 +60,7 @@ export function calculateNewMMR(ctx: MmrCalcContext): number {
 
   // プレースメント判定 (5試合以下に短縮、Kもマイルドに)
   const isPlacement = numGames <= 5;
-  const K = isPlacement ? 90 : 50;
+  const K = isPlacement ? 60 : 50;
 
   // ① Elo基本計算
   const expectedWin = 1 / (1 + Math.pow(10, (opponentMmr - currentMmr) / 400));
@@ -90,22 +88,8 @@ export function calculateNewMMR(ctx: MmrCalcContext): number {
     if (visionScore > 15) visionB = 3;
   }
 
-  // ③ ランク収束引力
+  // ③ ランク収束引力 (削除: 完全に実力主義化)
   let grav = 0;
-  if (mainRank !== 'UNRANKED') {
-    const rankTarget = RANKS[mainRank] || 1200;
-    const rankDiff = rankTarget - currentMmr;
-    
-    if (Math.abs(rankDiff) > 100 && (isWin || rankDiff > 0)) {
-      let gravStrength = 0.001;
-      if (numGames < 5) gravStrength = 0.005;
-      else if (numGames < 10) gravStrength = 0.003;
-      
-      if (!isWin && rankDiff > 0) gravStrength *= 0.1;
-
-      grav = rankDiff * gravStrength;
-    }
-  }
 
   // 勝率による強制ペナルティ（過剰な沼落ちを防ぐため超緩和）
   let wrComp = 0;
