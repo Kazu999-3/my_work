@@ -388,7 +388,10 @@ export function handleLaneCommand(interaction, env, ctx) {
         
         await upsertPlayer(env, player);
         await patchInteractionResponse(appId, token, { content: `✅ **引数からレーン設定を完了しました**\nメイン:${main} / サブ:${sub} / こだわり:${weight || "未指定"} / 格上許可:${allowHigher !== undefined ? allowHigher : "未指定"}` });
-      } catch (err) { console.error("Lane Update Error:", err); }
+      } catch (err) { 
+        console.error("Lane Update Error:", err); 
+        await patchInteractionResponse(appId, token, { content: `❌ **エラーが発生しました:** ${err.message}` }).catch(e => console.error("Error reporting failed:", e));
+      }
     })());
     return Response.json({ type: 5 });
   }
