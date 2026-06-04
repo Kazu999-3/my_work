@@ -7,9 +7,9 @@ import { Role } from './balancer';
 const K = 40; // Eloレート変動係数 (48から40に落としマイルド化)
 
 const RANKS: Record<string, number> = {
-  'UNRANKED': 1200, 'IRON': 500, 'BRONZE': 1000, 'SILVER': 1600, 'GOLD': 2300,
-  'PLATINUM': 3200, 'EMERALD': 4300, 'DIAMOND': 5700, 'MASTER': 7500, 
-  'GRANDMASTER': 10000, 'CHALLENGER': 15000
+  'UNRANKED': 1200, 'IRON': 1100, 'BRONZE': 1200, 'SILVER': 1350, 'GOLD': 1500,
+  'PLATINUM': 1650, 'EMERALD': 1800, 'DIAMOND': 2000, 'MASTER': 2200, 
+  'GRANDMASTER': 2400, 'CHALLENGER': 2600
 };
 
 export interface RolePreferences {
@@ -24,16 +24,16 @@ export function calculateInitialMmr(highestRank: string | null, role: string, pr
   const rankStr = highestRank ? highestRank.split(' ')[0].toUpperCase() : 'UNRANKED';
   const baseMmr = RANKS[rankStr] || 1200;
   
-  if (!prefs) return baseMmr - 400;
+  if (!prefs) return baseMmr - 300;
 
   if (prefs.primary === role || prefs.primary === 'ALL') {
     return baseMmr; // メインレーンは減衰なし
   }
   if (prefs.secondary === role || prefs.secondary === 'ALL') {
-    return baseMmr - 200; // サブレーンは -200
+    return baseMmr - 100; // サブレーンは -100 (約1ティア下)
   }
   
-  return baseMmr - 400; // それ以外のレーンは -400
+  return baseMmr - 300; // それ以外のレーンは -300 (約2ティア下)
 }
 
 export interface MmrCalcContext {
@@ -102,7 +102,8 @@ export function calculateNewMMR(ctx: MmrCalcContext): number {
   let wrComp = 0;
   if (numGames > 10) {
     if (totalWinRate < 45 && isWin) wrComp = 5;
-    else if (totalWinRate < 40 && !isWin) wrComp = 0;
+    else if (totalWinRate < 35 && !isWin) wrComp = -15; // 勝率35%未満での敗北ペナルティ
+    else if (totalWinRate < 45 && !isWin) wrComp = -5;  // 勝率45%未満での敗北ペナルティ
     else if (totalWinRate > 55 && !isWin) wrComp = -5;
     else if (totalWinRate > 60 && isWin) wrComp = -5;
   }
@@ -120,8 +121,8 @@ export function calculateNewMMR(ctx: MmrCalcContext): number {
   if (isWin) {
     delta = Math.max(5, Math.min(50, delta));
   } else {
-    // デフレを和らげるため、下限を-12から-10にし、最大も-60程度に抑える
-    delta = Math.max(-60, Math.min(-10, delta));
+    // 敗北時の下限を -60 から -90 に拡大
+    delta = Math.max(-90, Math.min(-10, delta));
   }
 
   return delta;
