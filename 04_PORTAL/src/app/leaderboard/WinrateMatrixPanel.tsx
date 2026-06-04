@@ -6,12 +6,14 @@ import { Trophy, TrendingUp, TrendingDown, Minus, Swords, Activity } from 'lucid
 interface LaneStats {
   games: number;
   wins: number;
+  mmr: number;
 }
 
 interface PlayerWinrate {
   name: string;
   totalGames: number;
   totalWins: number;
+  overallMmr: number;
   lanes: {
     TOP: LaneStats;
     JG: LaneStats;
@@ -103,8 +105,11 @@ export default function WinrateMatrixPanel() {
           {winrate >= 60 || winrate <= 40 ? <Icon size={14} /> : null}
           {winrate.toFixed(1)}%
         </div>
-        <div className="text-xs text-gray-500 font-medium">
-          {stats.games}戦 <span className="text-emerald-500/70">{stats.wins}W</span>
+        <div className="text-[10px] text-gray-500 font-medium mb-1 flex gap-1">
+          <span>{stats.games}戦</span> <span className="text-emerald-500/70">{stats.wins}W</span>
+        </div>
+        <div className="text-xs font-mono font-bold text-gray-300 bg-gray-900/50 px-1.5 py-0.5 rounded border border-gray-700/50">
+          {stats.mmr.toLocaleString()}
         </div>
       </div>
     );
@@ -169,8 +174,11 @@ export default function WinrateMatrixPanel() {
                       <div className={`text-lg font-black ${overallWr >= 55 ? 'text-blue-400' : overallWr < 45 && player.totalGames > 0 ? 'text-red-400' : 'text-gray-200'}`}>
                         {player.totalGames > 0 ? `${overallWr.toFixed(1)}%` : '-'}
                       </div>
-                      <div className="text-xs text-gray-500 mt-1">
+                      <div className="text-[10px] text-gray-500 mb-1">
                         {player.totalGames}戦
+                      </div>
+                      <div className="text-xs font-mono font-bold text-gray-300 bg-gray-900/50 px-2 py-0.5 rounded border border-gray-700/50">
+                        {player.overallMmr.toLocaleString()} <span className="text-[10px] text-gray-500 font-normal">MMR</span>
                       </div>
                     </div>
                   </td>

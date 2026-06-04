@@ -8,7 +8,7 @@ export async function GET() {
     // 1. アクティブなプレイヤー一覧を取得
     const { data: players, error: pError } = await supabase
       .from('ktm_players')
-      .select('name, is_active')
+      .select('name, is_active, mmr_top, mmr_jg, mmr_mid, mmr_adc, mmr_sup, mmr')
       .eq('is_active', true);
 
     if (pError || !players) {
@@ -33,12 +33,13 @@ export async function GET() {
         name: p.name,
         totalGames: 0,
         totalWins: 0,
+        overallMmr: p.mmr || 1200,
         lanes: {
-          TOP: { games: 0, wins: 0 },
-          JG: { games: 0, wins: 0 },
-          MID: { games: 0, wins: 0 },
-          ADC: { games: 0, wins: 0 },
-          SUP: { games: 0, wins: 0 },
+          TOP: { games: 0, wins: 0, mmr: p.mmr_top || 1200 },
+          JG: { games: 0, wins: 0, mmr: p.mmr_jg || 1200 },
+          MID: { games: 0, wins: 0, mmr: p.mmr_mid || 1200 },
+          ADC: { games: 0, wins: 0, mmr: p.mmr_adc || 1200 },
+          SUP: { games: 0, wins: 0, mmr: p.mmr_sup || 1200 },
         }
       };
     });
