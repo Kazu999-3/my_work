@@ -6,15 +6,15 @@ import MatchRecordPanel from "./MatchRecordPanel";
 import { Info, Users, RefreshCw, Save, Trophy, Filter, Plus, Swords, AlertCircle, X } from "lucide-react";
 
 function getRankFromMMR(mmr: number): { tier: string, color: string } {
-  if (mmr >= 1900) return { tier: "CHALLENGER", color: "text-sky-300 bg-sky-300/10" };
-  if (mmr >= 1800) return { tier: "GRANDMASTER", color: "text-red-500 bg-red-500/10" };
-  if (mmr >= 1700) return { tier: "MASTER", color: "text-purple-500 bg-purple-500/10" };
-  if (mmr >= 1600) return { tier: "DIAMOND", color: "text-blue-400 bg-blue-400/10" };
-  if (mmr >= 1500) return { tier: "EMERALD", color: "text-emerald-500 bg-emerald-500/10" };
-  if (mmr >= 1450) return { tier: "PLATINUM", color: "text-teal-400 bg-teal-400/10" };
-  if (mmr >= 1300) return { tier: "GOLD", color: "text-yellow-400 bg-yellow-400/10" };
-  if (mmr >= 1150) return { tier: "SILVER", color: "text-slate-300 bg-slate-300/10" };
-  if (mmr >= 1000) return { tier: "BRONZE", color: "text-amber-700 bg-amber-700/10" };
+  if (mmr >= 2000) return { tier: "CHALLENGER", color: "text-sky-300 bg-sky-300/10" };
+  if (mmr >= 1900) return { tier: "GRANDMASTER", color: "text-red-500 bg-red-500/10" };
+  if (mmr >= 1850) return { tier: "MASTER", color: "text-purple-500 bg-purple-500/10" };
+  if (mmr >= 1800) return { tier: "DIAMOND", color: "text-blue-400 bg-blue-400/10" };
+  if (mmr >= 1650) return { tier: "EMERALD", color: "text-emerald-500 bg-emerald-500/10" };
+  if (mmr >= 1500) return { tier: "PLATINUM", color: "text-teal-400 bg-teal-400/10" };
+  if (mmr >= 1350) return { tier: "GOLD", color: "text-yellow-400 bg-yellow-400/10" };
+  if (mmr >= 1200) return { tier: "SILVER", color: "text-slate-300 bg-slate-300/10" };
+  if (mmr >= 1050) return { tier: "BRONZE", color: "text-amber-700 bg-amber-700/10" };
   return { tier: "IRON", color: "text-gray-500 bg-gray-500/10" };
 }
 

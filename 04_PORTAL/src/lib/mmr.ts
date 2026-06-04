@@ -23,20 +23,20 @@ export function calculateInitialMmr(highestRank: string | null, role: string, pr
   const originalRankMmr = RANKS[rankStr] || 1200;
   
   // 初期レートの圧縮 (Soft Reset)
-  // 1200を基準に、元のMMRとの差分を 0.6 倍に圧縮して初期MMRとする
-  const COMPRESSION_RATE = 0.6;
+  // 1200を基準に、元のMMRとの差分を 0.8 倍に圧縮して初期MMRとする
+  const COMPRESSION_RATE = 0.8;
   const baseMmr = Math.round(1200 + (originalRankMmr - 1200) * COMPRESSION_RATE);
 
-  if (!prefs) return baseMmr - 250;
+  if (!prefs) return baseMmr - 400;
 
   if (prefs.primary === role || prefs.primary === 'ALL') {
     return baseMmr; // メインレーンは減衰なし
   }
   if (prefs.secondary === role || prefs.secondary === 'ALL') {
-    return baseMmr - 100; // サブレーン
+    return baseMmr - 150; // サブレーン
   }
   
-  return baseMmr - 250; // それ以外のレーン
+  return baseMmr - 400; // それ以外のレーン
 }
 
 export interface MmrCalcContext {
@@ -58,9 +58,9 @@ export interface MmrCalcContext {
 export function calculateNewMMR(ctx: MmrCalcContext): number {
   const { currentMmr, opponentMmr, isWin, kills, deaths, assists, mainRank, numGames, matchupCount, totalWinRate, visionScore, cs, role } = ctx;
 
-  // Kファクター (一律50)
+  // Kファクター (一律30に抑制し、ブレを防ぐ)
   const isPlacement = false; // プレースメント判定削除
-  const K = 50;
+  const K = 30;
 
   // ① Elo基本計算
   const expectedWin = 1 / (1 + Math.pow(10, (opponentMmr - currentMmr) / 400));
@@ -119,11 +119,11 @@ export function calculateNewMMR(ctx: MmrCalcContext): number {
 
   // 上限・下限のセーフティ
   if (isWin) {
-    const maxWin = 60; // プレースメントボーナス削除
+    const maxWin = 40; // 上限も抑制
     delta = Math.max(5, Math.min(maxWin, delta));
   } else {
     // 敗北時の下限（急降下を防ぐ）
-    delta = Math.max(-60, Math.min(-5, delta)); // 最大-60までに抑える
+    delta = Math.max(-40, Math.min(-5, delta)); // 最大-40までに抑える
   }
 
   return delta;
