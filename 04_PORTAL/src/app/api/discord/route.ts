@@ -16,14 +16,17 @@ export async function POST(request: Request) {
 
     const formatTeam = (team: any[]) => {
       const roles = ['TOP', 'JG', 'MID', 'ADC', 'SUP'];
+      const icons: Record<string, string> = {
+        TOP: '🛡️', JG: '🌲', MID: '🔥', ADC: '🏹', SUP: '✨'
+      };
       return roles.map(r => {
         const p = team.find(player => player.currentRole === r);
-        return p ? `**${r}**: ${p.name}` : `**${r}**: -`;
-      }).join('/n');
+        return p ? `${icons[r]} **${r}**: ${p.name}` : `${icons[r]} **${r}**: -`;
+      }).join('\n');
     };
 
     const payload: any = {
-      content: "<@&ROLE_ID_HERE> チーム分けが完了しました！", // 必要に応じてメンション用ロールIDを設定
+      content: "チーム分けが完了しました！ <@&ROLE_ID_HERE>", // 必要に応じてメンション用ロールIDを設定
       embeds: [
         {
           title: "⚔️ KTM チーム分け結果",
@@ -42,7 +45,7 @@ export async function POST(request: Request) {
             }
           ],
           footer: {
-            text: `観戦: ${spectators && spectators.length > 0 ? spectators.join(', ') : 'なし'}`
+            text: `👀 観戦: ${spectators && spectators.length > 0 ? spectators.join(', ') : 'なし'}`
           },
           timestamp: new Date().toISOString()
         }
@@ -52,11 +55,8 @@ export async function POST(request: Request) {
     if (balanceReport && Array.isArray(balanceReport)) {
       payload.embeds.push({
         title: "📊 チーム分けの理由と分析",
-        description: balanceReport.join('/n'),
+        description: balanceReport.map((r: string) => `> ${r}`).join('\n\n'),
         color: 3447003, // 青系
-        fields: [],
-        footer: { text: '' },
-        timestamp: ''
       });
     }
 
