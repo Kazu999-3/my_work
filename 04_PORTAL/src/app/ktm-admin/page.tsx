@@ -18,6 +18,39 @@ function getRankFromMMR(mmr: number): { tier: string, color: string } {
   return { tier: "IRON", color: "text-gray-500 bg-gray-500/10" };
 }
 
+const RANKS_MMR: Record<string, number> = { 
+  'UNRANKED': 1200, 'IRON': 1100, 'BRONZE': 1200, 'SILVER': 1350, 
+  'GOLD': 1500, 'PLATINUM': 1650, 'EMERALD': 1800, 'DIAMOND': 2000, 
+  'MASTER': 2200, 'GRANDMASTER': 2400, 'CHALLENGER': 2600 
+};
+
+function calculateAutoMmr(highestRank: string | null, targetRole: string, prefs: { primary: string, secondary: string }) {
+  const rankStr = highestRank ? highestRank.split(' ')[0].toUpperCase() : 'UNRANKED';
+  const originalRankMmr = RANKS_MMR[rankStr] || 1200;
+  const COMPRESSION_RATE = 0.8;
+  const baseMmr = Math.round(1200 + (originalRankMmr - 1200) * COMPRESSION_RATE);
+
+  if (!prefs) return baseMmr - 200;
+
+  const norm = (r: string) => {
+    if (!r) return '';
+    const upper = r.toUpperCase();
+    if (upper === 'JUNGLE') return 'JG';
+    if (upper === 'SUPPORT') return 'SUP';
+    return upper;
+  };
+
+  const p = norm(prefs.primary);
+  const s = norm(prefs.secondary);
+  const r = norm(targetRole);
+
+  if (p === r) return baseMmr;
+  if (p === 'ALL' || p === 'FILL') return baseMmr - 100;
+  if (s === r || s === 'ALL' || s === 'FILL') return baseMmr - 100;
+  return baseMmr - 200;
+}
+
+
 // ランク名から色を判定するユーティリティ（highest_rank入力用）
 function getColorFromRankName(rank: string): string {
   const r = (rank || "").toUpperCase();
@@ -215,6 +248,41 @@ export default function KtmAdminPage() {
       mmr_top: 1000, mmr_jg: 1000, mmr_mid: 1000, mmr_adc: 1000, mmr_sup: 1000
     };
     setPlayers([newPlayer, ...players]);
+  };
+
+  const handleAutoFillMmr = (uid: string) => {
+    setPlayers(prevPlayers => prevPlayers.map(p => {
+      if ((p.id || p.discord_id) === uid) {
+        const prefs = p.role_preferences || { primary: 'ALL', secondary: 'FILL' };
+        const mmr_top = calculateAutoMmr(p.highest_rank, 'TOP', prefs);
+        const mmr_jg = calculateAutoMmr(p.highest_rank, 'JG', prefs);
+        const mmr_mid = calculateAutoMmr(p.highest_rank, 'MID', prefs);
+        const mmr_adc = calculateAutoMmr(p.highest_rank, 'ADC', prefs);
+        const mmr_sup = calculateAutoMmr(p.highest_rank, 'SUP', prefs);
+        const mmr = Math.round((mmr_top + mmr_jg + mmr_mid + mmr_adc + mmr_sup) / 5);
+        return { ...p, mmr_top, mmr_jg, mmr_mid, mmr_adc, mmr_sup, mmr };
+      }
+      return p;
+    }));
+  };
+
+  const handleRebuildMmr = async () => {
+    if (!confirm("過去のすべての試合履歴をもとに全プレイヤーのMMRを再計算します。よろしいですか？")) return;
+    
+    setLoading(true);
+    setMessage({ type: "", text: "" });
+    try {
+      const res = await fetch("/api/mmr/rebuild", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "再計算に失敗しました");
+      
+      setMessage({ type: "success", text: "✅ " + data.message });
+      fetchPlayers(); // 再読み込み
+    } catch (err: any) {
+      setMessage({ type: "error", text: "❌ Rebuild エラー: " + err.message });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const requestSort = (key: string) => {
@@ -509,6 +577,13 @@ export default function KtmAdminPage() {
             >
               <Users className={`h-4 w-4 ${syncingDiscord && !syncData ? 'animate-spin' : ''}`} /> 
               {syncingDiscord && !syncData ? "確認中..." : "Discord同期"}
+            </button>
+            <button
+              onClick={handleRebuildMmr}
+              className="flex items-center gap-2 bg-red-900/40 hover:bg-red-800 text-red-200 border border-red-800/50 px-4 py-2 rounded-lg font-bold transition"
+              title="過去のすべての試合履歴を元にMMRを再計算し、全員のデータを上書きします"
+            >
+              <RefreshCw className="h-4 w-4" /> 🔄 Rebuild
             </button>
             <button
               onClick={() => setFilterActive(!filterActive)}
@@ -910,6 +985,7 @@ export default function KtmAdminPage() {
                   <SortableHeader label="総合" sortKey="mmr" />
                   <SortableHeader label="Discord ID" sortKey="discord_id" />
                   <SortableHeader label="Riot IGN" sortKey="ign" />
+                  <th className="px-2 py-2 font-medium text-center">操作</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-800/50 text-sm">
@@ -1058,6 +1134,15 @@ export default function KtmAdminPage() {
                         className="bg-transparent border border-transparent focus:border-gray-700 hover:border-gray-700 focus:bg-gray-800 rounded px-1 py-0.5 outline-none w-24 text-[10px] text-blue-300"
                         title={p.ign || "未登録"}
                       />
+                    </td>
+                    <td className="px-2 py-1.5 text-center">
+                      <button
+                        onClick={() => handleAutoFillMmr(uid)}
+                        className="bg-indigo-900/50 hover:bg-indigo-800 text-indigo-300 border border-indigo-700/50 rounded px-2 py-1 text-[10px] font-bold transition flex items-center gap-1 mx-auto"
+                        title="ランクと希望レーンから初期MMRを自動計算して仮入力します"
+                      >
+                        ✨ Auto
+                      </button>
                     </td>
                   </tr>
                   );
