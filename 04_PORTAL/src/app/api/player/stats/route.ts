@@ -87,7 +87,7 @@ export async function POST(req: Request) {
     const responseData = {
       status: "SUCCESS",
       player: player.name,
-      pity: player.pity_points || 0,
+      pity: player.pity || 0,
       mmrs: mmrs,
       stats: stats,
       rivalry: {}, // 今後の拡張用
