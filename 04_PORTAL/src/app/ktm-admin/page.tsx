@@ -399,6 +399,7 @@ export default function KtmAdminPage() {
         body: JSON.stringify({
           add: syncData.toAdd,
           deactivate: syncData.toDeactivate,
+          update_metadata: syncData.activeSync
         })
       });
       const data = await res.json();
@@ -414,14 +415,21 @@ export default function KtmAdminPage() {
     }
   };
 
-  const sortedPlayers = [...players]
+  // まず全員に joined_at 順のNoを振る (joined_at がない場合は後ろへ)
+  const playersWithNo = [...players].sort((a, b) => {
+    const timeA = a.metadata?.joined_at ? new Date(a.metadata.joined_at).getTime() : Infinity;
+    const timeB = b.metadata?.joined_at ? new Date(b.metadata.joined_at).getTime() : Infinity;
+    return timeA - timeB;
+  }).map((p, index) => ({ ...p, no: index + 1 }));
+
+  const sortedPlayers = playersWithNo
     .filter(p => filterActive ? p.is_active : true)
     .sort((a, b) => {
       let aVal = a[sortConfig.key];
       let bVal = b[sortConfig.key];
       
       // 数値として扱うカラム
-      if (sortConfig.key === "mmr" || sortConfig.key.startsWith("mmr_") || sortConfig.key === "weight") {
+      if (sortConfig.key === "mmr" || sortConfig.key.startsWith("mmr_") || sortConfig.key === "weight" || sortConfig.key === "no") {
         aVal = parseInt(aVal) || 0;
         bVal = parseInt(bVal) || 0;
       }
@@ -893,6 +901,7 @@ export default function KtmAdminPage() {
             <table className="w-full text-left text-sm whitespace-nowrap">
               <thead className="bg-gray-800/80 text-gray-400 uppercase text-xs tracking-wider sticky top-0 z-30 shadow-md backdrop-blur-sm">
                 <tr>
+                  <SortableHeader label="No." sortKey="no" />
                   <SortableHeader label="Active" sortKey="is_active" />
                   <SortableHeader label="名前" sortKey="name" sticky={true} />
                   <SortableHeader label="最高Rank" sortKey="highest_rank" />
@@ -917,6 +926,9 @@ export default function KtmAdminPage() {
                   const uid = p.id || p.discord_id;
                   return (
                   <tr key={uid} className="hover:bg-gray-800/40 transition">
+                    <td className="px-2 py-1.5 text-center font-bold text-gray-500 text-xs">
+                      {p.no}
+                    </td>
                     <td className="px-2 py-1.5 text-center">
                       <input
                         type="checkbox"
@@ -934,13 +946,15 @@ export default function KtmAdminPage() {
                       />
                     </td>
                     <td className="px-2 py-1.5">
-                      <input
-                        type="text"
-                        value={p.highest_rank || ""}
+                      <select
+                        value={p.highest_rank || "UNRANKED"}
                         onChange={(e) => handleInputChange(uid, "highest_rank", e.target.value)}
-                        placeholder="Gold 1"
-                        className={`bg-transparent border border-transparent focus:border-gray-700 hover:border-gray-700 focus:bg-gray-800 rounded px-1 py-0.5 outline-none w-16 text-xs ${getColorFromRankName(p.highest_rank)}`}
-                      />
+                        className={`bg-gray-800 border border-gray-700 rounded px-1 py-0.5 outline-none focus:border-blue-500 w-24 text-xs ${getColorFromRankName(p.highest_rank)}`}
+                      >
+                        {["UNRANKED", "IRON", "BRONZE", "SILVER", "GOLD", "PLATINUM", "EMERALD", "DIAMOND", "MASTER", "GRANDMASTER", "CHALLENGER"].map(r => (
+                          <option key={r} value={r}>{r}</option>
+                        ))}
+                      </select>
                     </td>
                     <td className="px-2 py-1.5">
                       <select

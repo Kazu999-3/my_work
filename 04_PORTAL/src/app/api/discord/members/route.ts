@@ -73,9 +73,14 @@ export async function GET() {
           discord_id: discordId,
           name: displayName,
           ign: `${m.user.username}#...`, // ダミー
+          metadata: { joined_at: m.joined_at }
         });
       } else {
-        activeSync.push(dbPlayer);
+        // joined_atが未保存、または更新が必要な場合のために保持
+        activeSync.push({
+          ...dbPlayer,
+          metadata: { ...(dbPlayer.metadata || {}), joined_at: m.joined_at }
+        });
       }
     });
 
@@ -112,7 +117,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const { add, deactivate } = await request.json();
+    const { add, deactivate, update_metadata } = await request.json();
     
     // 追加処理
     if (add && add.length > 0) {
@@ -128,7 +133,8 @@ export async function POST(request: Request) {
         mmr_mid: 1000,
         mmr_adc: 1000,
         mmr_sup: 1000,
-        is_active: true
+        is_active: true,
+        metadata: p.metadata || {}
       }));
 
       const { error: addError } = await supabase.from('ktm_players').insert(newPlayers);
@@ -146,7 +152,20 @@ export async function POST(request: Request) {
       if (deactError) throw deactError;
     }
 
-    return NextResponse.json({ success: true, message: `Added ${add?.length || 0}, Deactivated ${deactivate?.length || 0}` });
+    // 既存プレイヤーのメタデータ(joined_at等)更新処理
+    if (update_metadata && update_metadata.length > 0) {
+      for (const p of update_metadata) {
+        if (p.id) {
+          const { error: updateError } = await supabase
+            .from('ktm_players')
+            .update({ metadata: p.metadata })
+            .eq('id', p.id);
+          if (updateError) console.error(`Metadata update failed for ID ${p.id}:`, updateError);
+        }
+      }
+    }
+
+    return NextResponse.json({ success: true, message: `Added ${add?.length || 0}, Deactivated ${deactivate?.length || 0}, Updated ${update_metadata?.length || 0}` });
   } catch (error: any) {
     console.error('Discord Sync POST Error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
