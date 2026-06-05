@@ -116,26 +116,18 @@ export default function KtmAdminPage() {
   };
 
   const handleInputChange = (uid: string, field: string, value: any) => {
-    const updated = [...players];
-    const index = updated.findIndex(p => (p.id || p.discord_id) === uid);
-    if (index === -1) return;
-    
-    // role_preferences の入れ子に対応
-    if (field === "primary_role") {
-      updated[index].role_preferences = {
-        ...updated[index].role_preferences,
-        primary: value
-      };
-    } else if (field === "secondary_role") {
-      updated[index].role_preferences = {
-        ...updated[index].role_preferences,
-        secondary: value
-      };
-    } else {
-      updated[index][field] = value;
-    }
-    
-    setPlayers(updated);
+    setPlayers(prevPlayers => prevPlayers.map(p => {
+      if ((p.id || p.discord_id) === uid) {
+        if (field === "primary_role") {
+          return { ...p, role_preferences: { ...p.role_preferences, primary: value } };
+        } else if (field === "secondary_role") {
+          return { ...p, role_preferences: { ...p.role_preferences, secondary: value } };
+        } else {
+          return { ...p, [field]: value };
+        }
+      }
+      return p;
+    }));
   };
 
   const handleSave = async () => {
