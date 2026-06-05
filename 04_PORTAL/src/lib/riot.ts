@@ -42,21 +42,28 @@ export async function fetchPuuidByRiotId(gameName: string, tagLine: string, apiK
 }
 
 export async function fetchRecentCustomMatchId(puuid: string, apiKey: string): Promise<string> {
-  // queue=0 (Custom games) または未指定で最新を取得
-  const url = `${RIOT_API_BASE_ASIA}/lol/match/v5/matches/by-puuid/${puuid}/ids?start=0&count=5&type=custom&api_key=${apiKey}`;
+  // 直近20試合からカスタムゲームを検索
+  const url = `${RIOT_API_BASE_ASIA}/lol/match/v5/matches/by-puuid/${puuid}/ids?start=0&count=20&type=custom&api_key=${apiKey}`;
   const res = await fetch(url);
+  
   if (!res.ok) {
+    throw new Error("Riot API: 試合履歴の取得に失敗しました。");
+  }
+
+  let data = await res.json();
+
+  if (data.length === 0) {
     // カスタムで引っかからない場合は全試合から最新を引く
     const fallbackUrl = `${RIOT_API_BASE_ASIA}/lol/match/v5/matches/by-puuid/${puuid}/ids?start=0&count=1&api_key=${apiKey}`;
     const fallbackRes = await fetch(fallbackUrl);
-    if (!fallbackRes.ok) throw new Error("試合履歴の取得に失敗しました。");
+    if (!fallbackRes.ok) throw new Error("Riot API: 試合履歴の取得(フォールバック)に失敗しました。");
+    
     const fbData = await fallbackRes.json();
-    if (fbData.length === 0) throw new Error("試合履歴がありません。");
-    return fbData[0];
+    if (fbData.length === 0) throw new Error("Riot API: 試合履歴がありません。");
+    data = fbData;
   }
-  const data = await res.json();
-  if (data.length === 0) throw new Error("最近のカスタムゲームが見つかりません。");
-  return data[0]; // 最新のカスタムゲーム
+  
+  return data[0]; // 最新の試合ID
 }
 
 export async function fetchMatchDetails(matchId: string, apiKey: string): Promise<MatchResult> {
