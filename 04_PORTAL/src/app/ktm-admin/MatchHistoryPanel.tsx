@@ -1,5 +1,3 @@
-'use client';
-
 import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import { History, Swords, Trophy, Calendar, RefreshCw } from 'lucide-react';
@@ -28,7 +26,7 @@ interface Participant {
 
 const ROLES = ['TOP', 'JG', 'MID', 'ADC', 'SUP'];
 
-export default function MatchesPage() {
+export default function MatchHistoryPanel() {
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -70,22 +68,22 @@ export default function MatchesPage() {
   }, []);
 
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center"><RefreshCw className="h-8 w-8 animate-spin text-blue-500" /></div>;
+    return <div className="py-20 flex flex-col items-center justify-center text-gray-400"><RefreshCw className="h-8 w-8 animate-spin text-blue-500 mb-4" />戦績データを読み込み中...</div>;
   }
 
   if (error) {
-    return <div className="p-8 text-red-500 font-bold">Error: {error}</div>;
+    return <div className="p-8 text-red-500 font-bold bg-red-900/20 rounded-xl border border-red-900/50">Error: {error}</div>;
   }
 
   return (
-    <div className="p-4 md:p-8 max-w-7xl mx-auto">
-      <div className="flex items-center gap-3 mb-8">
+    <div className="space-y-6">
+      <div className="flex items-center gap-3 mb-6">
         <div className="p-3 bg-emerald-500/10 rounded-xl">
-          <History className="h-8 w-8 text-emerald-400" />
+          <History className="h-6 w-6 text-emerald-400" />
         </div>
         <div>
-          <h1 className="text-3xl font-extrabold text-white">戦績一覧 (Match History)</h1>
-          <p className="text-gray-400 font-medium">最近の試合結果とMMR変動</p>
+          <h2 className="text-2xl font-extrabold text-white">直近の試合履歴</h2>
+          <p className="text-gray-400 font-medium text-sm">最新30件の試合結果とMMR変動履歴</p>
         </div>
       </div>
 
@@ -218,7 +216,7 @@ export default function MatchesPage() {
           );
         })}
         {matches.length === 0 && (
-          <div className="text-center p-12 text-gray-500 font-bold">試合履歴がありません</div>
+          <div className="text-center p-12 text-gray-500 font-bold border border-gray-800 border-dashed rounded-xl">試合履歴がありません</div>
         )}
       </div>
     </div>

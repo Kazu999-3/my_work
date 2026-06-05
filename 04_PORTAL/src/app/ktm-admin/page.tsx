@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { supabase } from "../../lib/supabaseClient";
 import MatchRecordPanel from "./MatchRecordPanel";
-import { Info, Users, RefreshCw, Save, Trophy, Filter, Plus, Swords, AlertCircle, X } from "lucide-react";
+import MatchHistoryPanel from "./MatchHistoryPanel";
+import { Info, Users, RefreshCw, Save, Trophy, Filter, Plus, Swords, AlertCircle, X, History } from "lucide-react";
 
 function getRankFromMMR(mmr: number): { tier: string, color: string } {
   if (mmr >= 2000) return { tier: "CHALLENGER", color: "text-sky-300 bg-sky-300/10" };
@@ -116,6 +117,9 @@ export default function KtmAdminPage() {
   const [filterActive, setFilterActive] = useState(false);
   const [showMmrInfo, setShowMmrInfo] = useState(false);
   
+  const [activeTab, setActiveTab] = useState<'players' | 'history'>('players');
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
   // バランサー用ステート
   const [balancing, setBalancing] = useState(false);
   const [balanceResult, setBalanceResult] = useState<any>(null);
@@ -149,26 +153,36 @@ export default function KtmAdminPage() {
   };
 
   const handleInputChange = (uid: string, field: string, value: any) => {
-    setPlayers(prevPlayers => prevPlayers.map(p => {
-      if ((p.id || p.discord_id) === uid) {
-        if (field === "primary_role") {
-          return { ...p, role_preferences: { ...p.role_preferences, primary: value } };
-        } else if (field === "secondary_role") {
-          return { ...p, role_preferences: { ...p.role_preferences, secondary: value } };
-        } else {
-          return { ...p, [field]: value };
+    setPlayers(prevPlayers => {
+      const nextPlayers = prevPlayers.map(p => {
+        if ((p.id || p.discord_id) === uid) {
+          if (field === "primary_role") {
+            return { ...p, role_preferences: { ...p.role_preferences, primary: value } };
+          } else if (field === "secondary_role") {
+            return { ...p, role_preferences: { ...p.role_preferences, secondary: value } };
+          } else {
+            return { ...p, [field]: value };
+          }
         }
-      }
-      return p;
-    }));
+        return p;
+      });
+
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+      saveTimeoutRef.current = setTimeout(() => {
+        handleSave(nextPlayers);
+      }, 1500);
+
+      return nextPlayers;
+    });
   };
 
-  const handleSave = async () => {
+  const handleSave = async (currentPlayers?: any[]) => {
     setSaving(true);
     setMessage({ type: "", text: "" });
     try {
-      const existingPlayers = players.filter(p => p.id);
-      const newPlayers = players.filter(p => !p.id && !p.discord_id.startsWith('new-'));
+      const targetPlayers = currentPlayers || players;
+      const existingPlayers = targetPlayers.filter(p => p.id);
+      const newPlayers = targetPlayers.filter(p => !p.id && !p.discord_id.startsWith('new-'));
 
       // 既存のプレイヤーを更新
       let updatedCount = 0;
@@ -203,7 +217,7 @@ export default function KtmAdminPage() {
       }
 
       // 新規プレイヤーを追加 (新規の判定として ID がないものを対象とする)
-      const playersToInsert = players.filter(p => !p.id);
+      const playersToInsert = targetPlayers.filter(p => !p.id);
       if (playersToInsert.length > 0) {
         const { error } = await supabase.from("ktm_players").insert(
           playersToInsert.map(p => ({
@@ -530,8 +544,38 @@ export default function KtmAdminPage() {
 
   return (
     <div className="min-h-screen bg-gray-950 text-gray-200 p-8">
-      <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
+      <div className="max-w-[1600px] mx-auto space-y-6">
+        {/* Tabs */}
+        <div className="flex border-b border-gray-800 mb-6">
+          <button
+            onClick={() => setActiveTab('players')}
+            className={`px-6 py-3 font-bold text-sm flex items-center gap-2 transition border-b-2 ${
+              activeTab === 'players' 
+                ? 'border-blue-500 text-blue-400 bg-blue-500/5' 
+                : 'border-transparent text-gray-500 hover:text-gray-300 hover:bg-gray-800/50'
+            }`}
+          >
+            <Users className="h-4 w-4" /> プレイヤー管理＆チーム分け
+          </button>
+          <button
+            onClick={() => setActiveTab('history')}
+            className={`px-6 py-3 font-bold text-sm flex items-center gap-2 transition border-b-2 ${
+              activeTab === 'history' 
+                ? 'border-emerald-500 text-emerald-400 bg-emerald-500/5' 
+                : 'border-transparent text-gray-500 hover:text-gray-300 hover:bg-gray-800/50'
+            }`}
+          >
+            <History className="h-4 w-4" /> 戦績履歴
+          </button>
+        </div>
+
+        {activeTab === 'history' && (
+          <MatchHistoryPanel />
+        )}
+
+        {activeTab === 'players' && (
+          <div className="space-y-6">
+            {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-gray-800 pb-6 gap-4">
           <div>
             <h1 className="text-3xl font-bold text-white flex items-center gap-3">
@@ -1175,7 +1219,7 @@ export default function KtmAdminPage() {
                 
                 {players.length === 0 && !loading && (
                   <tr>
-                    <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
+                    <td colSpan={17} className="px-6 py-12 text-center text-gray-500">
                       プレイヤーが登録されていません。「行を追加」から新規作成するか、Discord Botで登録を行ってください。
                     </td>
                   </tr>
@@ -1184,6 +1228,9 @@ export default function KtmAdminPage() {
             </table>
           </div>
         </div>
+
+        </div>
+        )}
       </div>
     </div>
   );
