@@ -26,7 +26,7 @@ export async function POST(request: Request) {
     };
 
     const payload: any = {
-      content: "チーム分けが完了しました！ <@&ROLE_ID_HERE>", // 必要に応じてメンション用ロールIDを設定
+      content: "チーム分けが完了しました！",
       embeds: [
         {
           title: "⚔️ KTM チーム分け結果",
