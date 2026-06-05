@@ -33,33 +33,44 @@ export default function MatchRecordPanel({ balanceResult, onComplete }: MatchRec
   };
 
   const fetchFromRiot = async () => {
-    if (!riotIgn) {
-      setMessage('Riot IGN (Name#TAG) を入力してください。');
-      return;
+    // 入力がなければ、参加者の中からignが登録されている人を自動で探す
+    let targetIgn = riotIgn;
+    if (!targetIgn) {
+      const playerWithIgn = stats.find(p => p.ign && p.ign.includes('#'));
+      if (playerWithIgn) {
+        targetIgn = playerWithIgn.ign;
+        setRiotIgn(targetIgn);
+      } else {
+        setMessage('Riot IGN が登録されている参加者が見つかりません。手動でRiot IGN (Name#TAG) を入力してください。');
+        return;
+      }
     }
+
     setFetchingRiot(true);
     setMessage('');
     try {
       const res = await fetch('/api/riot/fetch-match', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ign: riotIgn })
+        body: JSON.stringify({ ign: targetIgn })
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
 
       // Riot APIの結果から各プレイヤーのスタッツをマッピング
-      // API側の participants: { riotIdName, kills, deaths, assists, win, teamId... }
       const newStats = [...stats];
       
-      // チームID判定 (100:Blue, 200:Red)
-      // fetchMatchからは全員分が返るが、KTMの参加者名とRiot ID名が完全一致しないことがある
-      // 簡易的に名前の部分一致でマッピングを試みる
       data.participants.forEach((riotP: any) => {
+        // API側からは riotIdName と riotIdTagline が返ってくる想定
+        const fullRiotId = `${riotP.riotIdName}#${riotP.riotIdTagline}`.toLowerCase().replace(/\s+/g, '');
+        
         const matchingPlayerIndex = newStats.findIndex(p => {
-          // もし ign フィールドがあればそれを使う
-          if (p.ign && p.ign.toLowerCase().startsWith(riotP.riotIdName.toLowerCase())) return true;
-          // なければ名前を比較
+          if (p.ign) {
+            const pIgn = p.ign.toLowerCase().replace(/\s+/g, '');
+            // 登録されているIGNとRiot側のIGN(Name#Tag)を比較
+            return pIgn === fullRiotId || pIgn.startsWith(riotP.riotIdName.toLowerCase().replace(/\s+/g, ''));
+          }
+          // ignがなければ、KTM名とRiotID(Name)だけで簡易比較
           return p.name.toLowerCase() === riotP.riotIdName.toLowerCase();
         });
 
@@ -67,21 +78,21 @@ export default function MatchRecordPanel({ balanceResult, onComplete }: MatchRec
           newStats[matchingPlayerIndex].kills = riotP.kills;
           newStats[matchingPlayerIndex].deaths = riotP.deaths;
           newStats[matchingPlayerIndex].assists = riotP.assists;
-          newStats[matchingPlayerIndex].vision = riotP.visionScore;
-          newStats[matchingPlayerIndex].champion_name = riotP.championName;
-          newStats[matchingPlayerIndex].cs = riotP.totalMinionsKilled + riotP.neutralMinionsKilled;
-          newStats[matchingPlayerIndex].damage_dealt = riotP.damageDealtToChampions;
-          newStats[matchingPlayerIndex].damage_taken = riotP.totalDamageTaken;
-          newStats[matchingPlayerIndex].objective_damage = riotP.damageDealtToObjectives;
-          newStats[matchingPlayerIndex].heal_shield = riotP.totalHeal;
-          // 勝敗も自動セット（代表者の1人から）
+          newStats[matchingPlayerIndex].vision = riotP.visionScore || 0;
+          newStats[matchingPlayerIndex].champion_name = riotP.championName || '';
+          newStats[matchingPlayerIndex].cs = (riotP.totalMinionsKilled || 0) + (riotP.neutralMinionsKilled || 0);
+          newStats[matchingPlayerIndex].damage_dealt = riotP.totalDamageDealtToChampions || 0;
+          newStats[matchingPlayerIndex].damage_taken = riotP.totalDamageTaken || 0;
+          newStats[matchingPlayerIndex].objective_damage = riotP.damageDealtToObjectives || 0;
+          newStats[matchingPlayerIndex].heal_shield = riotP.totalHeal || 0;
+          
           if (riotP.win) {
             setWinningTeam(newStats[matchingPlayerIndex].team as 'BLUE' | 'RED');
           }
         }
       });
       setStats(newStats);
-      setMessage('Riot APIからスタッツを取得しました。一致しなかったプレイヤーは手動で入力してください。');
+      setMessage(`参加者 ${targetIgn} の最新カスタム試合を取得し、自動割り当てしました。`);
     } catch (err: any) {
       setMessage(`Riot取得エラー: ${err.message}`);
     } finally {
