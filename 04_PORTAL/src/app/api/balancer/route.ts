@@ -91,15 +91,18 @@ export async function POST(request: Request) {
     };
 
     try {
-      // 直近5試合を取得
+      // 直近15試合を取得（サイド履歴用には広く、対面履歴用には直近のみ使うため）
       const { data: recentMatches } = await supabase
         .from('ktm_matches')
         .select('id, team_red_win')
         .order('created_at', { ascending: false })
-        .limit(5);
+        .limit(15);
 
       if (recentMatches && recentMatches.length > 0) {
         const matchIds = recentMatches.map(m => m.id);
+        // 対面履歴・味方履歴用には、直近5試合のIDのみを抽出する
+        const recent5MatchIds = recentMatches.slice(0, 5).map(m => m.id);
+
         const { data: participantsHistory } = await supabase
           .from('ktm_match_participants')
           .select('match_id, discord_id, role, team')
@@ -119,7 +122,7 @@ export async function POST(request: Request) {
           for (const matchId of matchIds) {
             const matchParts = pByMatchId[matchId] || [];
             
-            // Side History の構築
+            // Side History の構築 (直近15試合すべてを使用)
             matchParts.forEach(p => {
               const pName = d2n[p.discord_id];
               if (!pName) return;
@@ -128,28 +131,30 @@ export async function POST(request: Request) {
               if (p.team === 'RED') ctx.sideHistory[pName].RED++;
             });
 
-            // Teammate History & Matchup History の構築
-            for (let i = 0; i < matchParts.length; i++) {
-              const p1 = matchParts[i];
-              const p1Name = d2n[p1.discord_id];
-              if (!p1Name) continue;
+            // Teammate History & Matchup History の構築 (直近5試合のみ使用)
+            if (recent5MatchIds.includes(matchId)) {
+              for (let i = 0; i < matchParts.length; i++) {
+                const p1 = matchParts[i];
+                const p1Name = d2n[p1.discord_id];
+                if (!p1Name) continue;
 
-              for (let j = i + 1; j < matchParts.length; j++) {
-                const p2 = matchParts[j];
-                const p2Name = d2n[p2.discord_id];
-                if (!p2Name) continue;
+                for (let j = i + 1; j < matchParts.length; j++) {
+                  const p2 = matchParts[j];
+                  const p2Name = d2n[p2.discord_id];
+                  if (!p2Name) continue;
 
-                if (p1.team === p2.team) {
-                  // 同じチームだった場合
-                  const key1 = `${p1Name}<=>${p2Name}`;
-                  const key2 = `${p2Name}<=>${p1Name}`;
-                  ctx.teammateHistory.set(key1, (ctx.teammateHistory.get(key1) || 0) + 1);
-                  ctx.teammateHistory.set(key2, (ctx.teammateHistory.get(key2) || 0) + 1);
-                } else {
-                  // 敵同士で、かつ同じロールだった場合（対面履歴）
-                  if (p1.role === p2.role) {
-                    ctx.history.add(`${p1Name}<=>${p2Name}:${p1.role}`);
-                    ctx.history.add(`${p2Name}<=>${p1Name}:${p1.role}`);
+                  if (p1.team === p2.team) {
+                    // 同じチームだった場合
+                    const key1 = `${p1Name}<=>${p2Name}`;
+                    const key2 = `${p2Name}<=>${p1Name}`;
+                    ctx.teammateHistory.set(key1, (ctx.teammateHistory.get(key1) || 0) + 1);
+                    ctx.teammateHistory.set(key2, (ctx.teammateHistory.get(key2) || 0) + 1);
+                  } else {
+                    // 敵同士で、かつ同じロールだった場合（対面履歴）
+                    if (p1.role === p2.role) {
+                      ctx.history.add(`${p1Name}<=>${p2Name}:${p1.role}`);
+                      ctx.history.add(`${p2Name}<=>${p1Name}:${p1.role}`);
+                    }
                   }
                 }
               }
