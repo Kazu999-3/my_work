@@ -165,7 +165,7 @@ export async function POST(request: Request) {
     
     if (piError) throw new Error(`参加者データの作成に失敗: ${piError.message}`);
 
-    // (3) ktm_players のMMRをUPDATE
+    // (3) ktm_players のMMRとPityをUPDATE
     // それぞれのレコードを更新
     for (const r of results) {
       const roleMmrKey = `mmr_${r.role.toLowerCase()}`;
@@ -179,9 +179,28 @@ export async function POST(request: Request) {
       const sup = r.role === 'SUP' ? newRoleMmr : (r.dbPlayer.mmr_sup || 1200);
       const newTotalMmr = Math.round((top + jg + mid + adc + sup) / 5);
 
+      // オフロールPityの計算
+      const primary = r.dbPlayer.role_preferences?.primary || 'ALL';
+      const secondary = r.dbPlayer.role_preferences?.secondary || 'ALL';
+      const playedRole = r.role;
+      let newOffRolePity = r.dbPlayer.off_role_pity || 0;
+
+      // "ALL" や "FILL" は実質全ロールが希望レーンとみなす
+      if (primary === 'ALL' || primary === 'FILL') {
+        newOffRolePity = 0;
+      } else if (playedRole === primary) {
+        newOffRolePity = 0; // 第一希望ならリセット
+      } else if (playedRole === secondary || secondary === 'ALL' || secondary === 'FILL') {
+        // 第二希望なら維持（増減なし）
+      } else {
+        newOffRolePity += 1; // それ以外ならオフロールPity蓄積
+      }
+
       const updateData: any = {
         [roleMmrKey]: newRoleMmr,
-        mmr: newTotalMmr
+        mmr: newTotalMmr,
+        pity: 0, // 試合に参加したので通常の選抜漏れPityはリセット
+        off_role_pity: newOffRolePity
       };
 
       const { error: uError } = await supabase

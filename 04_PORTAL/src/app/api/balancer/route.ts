@@ -58,6 +58,7 @@ export async function POST(request: Request) {
         ng1: roleMap[rawNg1] || rawNg1,
         ng2: roleMap[rawNg2] || rawNg2,
         pity: dbPlayer.pity || 0,
+        off_role_pity: dbPlayer.off_role_pity || 0,
         weight: dbPlayer.weight || 2,
         allowHigher: dbPlayer.allow_higher || false,
         rates: {
@@ -82,14 +83,84 @@ export async function POST(request: Request) {
     }
 
     // 4. コンテキストデータ(履歴)の構築
-    // 今回はマイグレーション直後でDBに履歴がないため空で初期化
-    // ※実運用では ktm_match_participants を検索して構築する
     const ctx: BalanceContext = {
       history: new Set<string>(),
       teammateHistory: new Map<string, number>(),
       winStreakTeam: null,
       sideHistory: {}
     };
+
+    try {
+      // 直近5試合を取得
+      const { data: recentMatches } = await supabase
+        .from('ktm_matches')
+        .select('id, team_red_win')
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      if (recentMatches && recentMatches.length > 0) {
+        const matchIds = recentMatches.map(m => m.id);
+        const { data: participantsHistory } = await supabase
+          .from('ktm_match_participants')
+          .select('match_id, discord_id, role, team')
+          .in('match_id', matchIds);
+
+        if (participantsHistory) {
+          // 各プレイヤーのdiscord_idからnameを引けるようにする
+          const d2n: Record<string, string> = {};
+          playersData.forEach(p => { if (p.discord_id) d2n[p.discord_id] = p.name; });
+
+          const pByMatchId: Record<number, any[]> = {};
+          participantsHistory.forEach(ph => {
+            if (!pByMatchId[ph.match_id]) pByMatchId[ph.match_id] = [];
+            pByMatchId[ph.match_id].push(ph);
+          });
+
+          for (const matchId of matchIds) {
+            const matchParts = pByMatchId[matchId] || [];
+            
+            // Side History の構築
+            matchParts.forEach(p => {
+              const pName = d2n[p.discord_id];
+              if (!pName) return;
+              if (!ctx.sideHistory[pName]) ctx.sideHistory[pName] = { BLUE: 0, RED: 0 };
+              if (p.team === 'BLUE') ctx.sideHistory[pName].BLUE++;
+              if (p.team === 'RED') ctx.sideHistory[pName].RED++;
+            });
+
+            // Teammate History & Matchup History の構築
+            for (let i = 0; i < matchParts.length; i++) {
+              const p1 = matchParts[i];
+              const p1Name = d2n[p1.discord_id];
+              if (!p1Name) continue;
+
+              for (let j = i + 1; j < matchParts.length; j++) {
+                const p2 = matchParts[j];
+                const p2Name = d2n[p2.discord_id];
+                if (!p2Name) continue;
+
+                if (p1.team === p2.team) {
+                  // 同じチームだった場合
+                  const key1 = `${p1Name}<=>${p2Name}`;
+                  const key2 = `${p2Name}<=>${p1Name}`;
+                  ctx.teammateHistory.set(key1, (ctx.teammateHistory.get(key1) || 0) + 1);
+                  ctx.teammateHistory.set(key2, (ctx.teammateHistory.get(key2) || 0) + 1);
+                } else {
+                  // 敵同士で、かつ同じロールだった場合（対面履歴）
+                  if (p1.role === p2.role) {
+                    ctx.history.add(`${p1Name}<=>${p2Name}:${p1.role}`);
+                    ctx.history.add(`${p2Name}<=>${p1Name}:${p1.role}`);
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.error("履歴取得エラー:", e);
+      // エラーが起きてもチーム分け自体は進行させるため握りつぶす
+    }
 
     // 5. バランス実行
     const result = coreBalanceTeams(selected, ctx);

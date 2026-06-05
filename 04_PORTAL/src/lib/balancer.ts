@@ -14,6 +14,7 @@ export interface Player {
   ng1: string;
   ng2: string;
   pity: number;
+  off_role_pity: number;
   weight: number;
   allowHigher: boolean;
   rates: Record<Role, number>;
@@ -377,12 +378,16 @@ export function coreBalanceTeams(players: Player[], ctx: BalanceContext): Balanc
               if (isSpecialist) rolePenalty *= 2;
               if (p.weight === 1) rolePenalty *= 10;   
               if (p.weight === 3) rolePenalty *= 0.5; 
+              // オフロールPity加算（希望以外をやらされた回数）
+              rolePenalty += p.off_role_pity * 30000;
             } else {
               rolePenalty = 5000 + (p.pity * 20000);
               if (p.pity >= 4) rolePenalty += 200000;
               if (isSpecialist) rolePenalty *= 3;
               if (p.weight === 1) rolePenalty *= 20;  
               if (p.weight === 3) rolePenalty *= 0.2;  
+              // オフロールPity加算（第二希望ですら無い場合はさらに重く）
+              rolePenalty += p.off_role_pity * 50000;
             }
             if ((p.isNewbie || p.isOutlierLow) && (currentRole === 'JG' || currentRole === 'MID')) {
               rolePenalty += 10000; 

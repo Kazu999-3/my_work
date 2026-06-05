@@ -190,6 +190,8 @@ export default function KtmAdminPage() {
           mmr_mid: parseInt(p.mmr_mid) || 1000,
           mmr_adc: parseInt(p.mmr_adc) || 1000,
           mmr_sup: parseInt(p.mmr_sup) || 1000,
+          pity: parseInt(p.pity) || 0,
+          off_role_pity: parseInt(p.off_role_pity) || 0,
         }).eq('id', p.id).select();
         
         if (error) throw error;
@@ -221,6 +223,8 @@ export default function KtmAdminPage() {
             mmr_mid: parseInt(p.mmr_mid) || 1000,
             mmr_adc: parseInt(p.mmr_adc) || 1000,
             mmr_sup: parseInt(p.mmr_sup) || 1000,
+            pity: parseInt(p.pity) || 0,
+            off_role_pity: parseInt(p.off_role_pity) || 0,
           }))
         );
         if (error) throw error;
@@ -245,7 +249,8 @@ export default function KtmAdminPage() {
       is_active: true,
       ng_lane_1: "", ng_lane_2: "",
       weight: 2, allow_higher: true, highest_rank: "",
-      mmr_top: 1000, mmr_jg: 1000, mmr_mid: 1000, mmr_adc: 1000, mmr_sup: 1000
+      mmr_top: 1000, mmr_jg: 1000, mmr_mid: 1000, mmr_adc: 1000, mmr_sup: 1000,
+      pity: 0, off_role_pity: 0
     };
     setPlayers([newPlayer, ...players]);
   };
@@ -977,6 +982,8 @@ export default function KtmAdminPage() {
                   <th className="px-2 py-2 font-medium text-center">NG 2</th>
                   <SortableHeader label="こだわり" sortKey="weight" />
                   <SortableHeader label="格上" sortKey="allow_higher" />
+                  <SortableHeader label="Pity" sortKey="pity" />
+                  <SortableHeader label="Off Pity" sortKey="off_role_pity" />
                   <SortableHeader label="Top" sortKey="mmr_top" />
                   <SortableHeader label="Jg" sortKey="mmr_jg" />
                   <SortableHeader label="Mid" sortKey="mmr_mid" />
@@ -1096,6 +1103,24 @@ export default function KtmAdminPage() {
                         checked={p.allow_higher !== false}
                         onChange={(e) => handleInputChange(uid, "allow_higher", e.target.checked)}
                         className="h-3 w-3 rounded border-gray-700 text-green-500 focus:ring-green-500 bg-gray-800 cursor-pointer"
+                      />
+                    </td>
+                    <td className="px-2 py-1.5 text-center">
+                      <input
+                        type="number"
+                        value={p.pity || 0}
+                        onChange={(e) => handleInputChange(uid, "pity", parseInt(e.target.value) || 0)}
+                        className="bg-transparent text-amber-500 border border-transparent focus:border-gray-700 hover:border-gray-700 focus:bg-gray-800 rounded px-1 py-0.5 outline-none w-10 text-center text-xs font-bold"
+                        title="参加漏れPity"
+                      />
+                    </td>
+                    <td className="px-2 py-1.5 text-center">
+                      <input
+                        type="number"
+                        value={p.off_role_pity || 0}
+                        onChange={(e) => handleInputChange(uid, "off_role_pity", parseInt(e.target.value) || 0)}
+                        className="bg-transparent text-purple-400 border border-transparent focus:border-gray-700 hover:border-gray-700 focus:bg-gray-800 rounded px-1 py-0.5 outline-none w-10 text-center text-xs font-bold"
+                        title="希望外レーンPity"
                       />
                     </td>
                     <td className="px-2 py-1.5 text-center">
