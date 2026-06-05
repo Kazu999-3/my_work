@@ -601,8 +601,8 @@ export default function KtmAdminPage() {
                 )}
 
                 {syncData.toAdd.length === 0 && syncData.toDeactivate.length === 0 && (
-                  <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-6 text-center text-gray-400">
-                    差分はありません。現在のデータベースはDiscordサーバーと完全に同期されています。
+                  <div className="bg-blue-900/20 border border-blue-800/50 rounded-lg p-6 text-center text-blue-300">
+                    メンバーの増減はありませんが、参加日時などの隠しデータ（メタデータ）を最新に更新するため「同期を実行する」を押してください。
                   </div>
                 )}
               </div>
@@ -616,8 +616,7 @@ export default function KtmAdminPage() {
                 </button>
                 <button 
                   onClick={executeSync}
-                  disabled={syncData.toAdd.length === 0 && syncData.toDeactivate.length === 0}
-                  className="px-6 py-2 rounded-lg font-bold bg-[#5865F2] hover:bg-[#4752C4] text-white transition shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  className="px-6 py-2 rounded-lg font-bold bg-[#5865F2] hover:bg-[#4752C4] text-white transition shadow-lg disabled:opacity-50 flex items-center gap-2"
                 >
                   {syncingDiscord && syncData.toAdd.length > 0 ? <RefreshCw className="h-4 w-4 animate-spin" /> : null}
                   同期を実行する
