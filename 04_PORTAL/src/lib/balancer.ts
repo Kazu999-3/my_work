@@ -367,7 +367,8 @@ export function coreBalanceTeams(players: Player[], ctx: BalanceContext): Balanc
             const isSpecialist = ['JG', 'SUP', 'ADC'].includes(p.pref1);
             let rolePenalty = 0;
             if (currentRole === p.ng1 || currentRole === p.ng2) {
-              rolePenalty = 50000;
+              // NGレーンは絶対に割り当てないよう、Off-Role Pity等の計算をすべて吹き飛ばす絶対的ペナルティを設定
+              rolePenalty = 1000000;
               if (p.weight === 1) rolePenalty *= 10;
               else if (p.weight === 2) rolePenalty *= 2;
             } else if (p.isFixed || p.pref1 === 'ALL' || p.pref1 === currentRole) {
