@@ -211,6 +211,61 @@ export async function POST(request: Request) {
       if (uError) console.error(`Player ${r.name} の更新エラー:`, uError);
     }
 
+    // 5. Discordへ試合結果を速報通知 (非同期で送信して待たないか、待つか。エラーになっても保存は完了させる)
+    try {
+      const webhookUrl = process.env.DISCORD_KTM_WEBHOOK_URL;
+      if (webhookUrl) {
+        const blueTeam = results.filter(r => r.team === 'BLUE');
+        const redTeam = results.filter(r => r.team === 'RED');
+        
+        const formatPlayer = (p: any) => {
+          const delta = p.mmrDelta > 0 ? `+${p.mmrDelta}` : `${p.mmrDelta}`;
+          const kda = `${p.kills}/${p.deaths}/${p.assists}`;
+          const champ = p.champion_name ? p.champion_name : 'Unknown';
+          return `\`${p.name}\` (${champ}) - **${kda}** (MMR: ${delta})`;
+        };
+
+        const roles = ['TOP', 'JG', 'MID', 'ADC', 'SUP'];
+        const icons: Record<string, string> = { TOP: '🛡️', JG: '🌲', MID: '🔥', ADC: '🏹', SUP: '✨' };
+        
+        const matchupsText = roles.map(role => {
+          const pb = blueTeam.find(p => p.role === role);
+          const pr = redTeam.find(p => p.role === role);
+          const bText = pb ? formatPlayer(pb) : '-';
+          const rText = pr ? formatPlayer(pr) : '-';
+          return `${icons[role]} **${role}**: ${bText} 🆚 ${rText}`;
+        }).join('\n\n');
+
+        const blueTitle = winningTeam === 'BLUE' ? '🏆 🟦 BLUE TEAM (WIN)' : '💀 🟦 BLUE TEAM';
+        const redTitle = winningTeam === 'RED' ? '🏆 🟥 RED TEAM (WIN)' : '💀 🟥 RED TEAM';
+
+        const payload = {
+          content: "📜 **KTM 試合結果が記録されました！** 📜\n各プレイヤーのMMRが更新されました。",
+          embeds: [
+            {
+              title: "⚔️ 試合リザルト",
+              color: winningTeam === 'BLUE' ? 3447003 : 15158332, // Blue or Red
+              fields: [
+                {
+                  name: `${blueTitle}  🆚  ${redTitle}`,
+                  value: matchupsText,
+                  inline: false
+                }
+              ]
+            }
+          ]
+        };
+
+        await fetch(webhookUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        }).catch(err => console.error("Discord webhook error:", err));
+      }
+    } catch (discordErr) {
+      console.error("Failed to send discord notification", discordErr);
+    }
+
     return NextResponse.json({ success: true, matchId: newMatchId, updates: results });
 
   } catch (error: any) {
