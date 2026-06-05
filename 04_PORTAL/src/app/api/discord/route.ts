@@ -14,34 +14,38 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'サーバーにWebhook URLが設定されていません。(.env.local を確認してください)' }, { status: 500 });
     }
 
-    const formatTeam = (team: any[]) => {
-      const roles = ['TOP', 'JG', 'MID', 'ADC', 'SUP'];
+    const formatMatchup = (role: string) => {
       const icons: Record<string, string> = {
         TOP: '🛡️', JG: '🌲', MID: '🔥', ADC: '🏹', SUP: '✨'
       };
-      return roles.map(r => {
-        const p = team.find(player => player.currentRole === r);
-        return p ? `${icons[r]} **${r}**: ${p.name}` : `${icons[r]} **${r}**: -`;
-      }).join('\n');
+      const pBlue = teamBlue.find(p => p.currentRole === role);
+      const pRed = teamRed.find(p => p.currentRole === role);
+      
+      const blueName = pBlue ? pBlue.name : "-";
+      const redName = pRed ? pRed.name : "-";
+      
+      // スマホでも見やすいVS形式: 🛡️ **TOP**: `BluePlayer` 🆚 `RedPlayer`
+      return `${icons[role]} **${role}**: \`${blueName}\` 🆚 \`${redName}\``;
     };
 
+    const matchupsText = ['TOP', 'JG', 'MID', 'ADC', 'SUP'].map(formatMatchup).join('\n\n');
+    
+    // MMRの平均を計算
+    const blueAvgMmr = Math.round(teamBlue.reduce((s: number, p: any) => s + (p.mmr || 1000), 0) / 5);
+    const redAvgMmr = Math.round(teamRed.reduce((s: number, p: any) => s + (p.mmr || 1000), 0) / 5);
+
     const payload: any = {
-      content: "チーム分けが完了しました！",
+      content: "🔥 **KTM チーム分けが完了しました！** 🔥\n準備ができたらロビーに参加してください。",
       embeds: [
         {
-          title: "⚔️ KTM チーム分け結果",
-          description: "本日も熱い戦いを期待しています🔥",
+          title: "⚔️ 本日のマッチアップ",
+          description: "左側が `🟦 BLUE TEAM`、右側が `🟥 RED TEAM` です。",
           color: 16753920, // 琥珀色
           fields: [
             {
-              name: `🟦 BLUE TEAM`,
-              value: formatTeam(teamBlue),
-              inline: true
-            },
-            {
-              name: `🟥 RED TEAM`,
-              value: formatTeam(teamRed),
-              inline: true
+              name: `🟦 BLUE (Avg: ${blueAvgMmr})  🆚  🟥 RED (Avg: ${redAvgMmr})`,
+              value: matchupsText,
+              inline: false
             }
           ],
           footer: {
