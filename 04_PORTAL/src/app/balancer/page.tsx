@@ -37,6 +37,8 @@ export default function BalancerPage() {
 
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  const [fetchingDiscord, setFetchingDiscord] = useState(false);
+
   useEffect(() => {
     fetchPlayers();
   }, []);
@@ -63,6 +65,46 @@ export default function BalancerPage() {
       setMessage({ type: "error", text: err.message });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleFetchDiscordReactions = async () => {
+    if (!confirm("Discordの募集チャンネルから「カスタム募集」の参加者を取得し、チェックを自動入力しますか？")) return;
+    
+    setFetchingDiscord(true);
+    setMessage({ type: "", text: "" });
+    try {
+      const res = await fetch('/api/discord/participants');
+      const data = await res.json();
+      
+      if (!res.ok) throw new Error(data.error || 'Discordからの取得に失敗しました');
+      if (!data.activeDiscordIds || data.activeDiscordIds.length === 0) {
+        throw new Error("募集メッセージに参加者が見つかりませんでした。");
+      }
+
+      // 取得したDiscord IDの配列を使って、プレイヤー一覧の is_active を更新
+      setPlayers(prevPlayers => {
+        const nextPlayers = prevPlayers.map(p => {
+          if (p.discord_id && data.activeDiscordIds.includes(p.discord_id)) {
+            return { ...p, is_active: true };
+          }
+          return { ...p, is_active: false };
+        });
+
+        // 自動保存処理をトリガー
+        if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+        saveTimeoutRef.current = setTimeout(() => {
+          handleSave(nextPlayers);
+        }, 1500);
+
+        return nextPlayers;
+      });
+
+      setMessage({ type: "success", text: `✅ Discordからカスタム募集の参加者 ${data.activeDiscordIds.length} 人を自動チェックしました！` });
+    } catch (err: any) {
+      setMessage({ type: "error", text: "❌ " + err.message });
+    } finally {
+      setFetchingDiscord(false);
     }
   };
 
@@ -348,6 +390,13 @@ export default function BalancerPage() {
                 {activeCount} <span className="text-sm font-normal text-gray-500">人</span>
               </span>
             </div>
+            <a 
+              href="/balancer/record"
+              className="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 text-gray-200 px-6 py-4 rounded-xl font-bold transition shadow-lg text-lg"
+            >
+              <Trophy className="h-5 w-5 text-emerald-400" />
+              成績履歴の記録と閲覧
+            </a>
             <button
               onClick={handleBalance}
               disabled={balancing || activeCount < 10}
@@ -459,8 +508,13 @@ export default function BalancerPage() {
                 <h3 className="text-sm font-bold text-indigo-400 mb-2 flex items-center gap-2">
                   <Activity className="h-4 w-4" /> AI バランス分析レポート
                 </h3>
-                <div className="text-xs text-indigo-200/80 whitespace-pre-wrap leading-relaxed font-mono">
-                  {balanceResult.balanceReport}
+                <div className="text-sm text-indigo-100/90 leading-relaxed font-mono space-y-3">
+                  {Array.isArray(balanceResult.balanceReport) 
+                    ? balanceResult.balanceReport.map((line: string, i: number) => (
+                        <div key={i}>{line}</div>
+                      ))
+                    : balanceResult.balanceReport
+                  }
                 </div>
               </div>
             )}
@@ -485,6 +539,22 @@ export default function BalancerPage() {
 
         {/* プレイヤー一覧 (Active変更・レーン変更用) */}
         <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden shadow-2xl">
+          <div className="p-4 border-b border-gray-800 flex justify-between items-center bg-gray-900">
+            <h2 className="text-xl font-bold text-white flex items-center gap-2">
+              <Users className="h-5 w-5 text-blue-400" />
+              参加者リスト
+            </h2>
+            <button
+              onClick={handleFetchDiscordReactions}
+              disabled={fetchingDiscord}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold transition border ${
+                fetchingDiscord ? 'bg-[#404eed]/50 border-[#404eed]/50 text-gray-400 cursor-not-allowed' : 'bg-[#5865F2]/20 border-[#5865F2] text-[#5865F2] hover:bg-[#5865F2] hover:text-white'
+              }`}
+            >
+              <RefreshCw className={`h-4 w-4 ${fetchingDiscord ? 'animate-spin' : ''}`} /> 
+              {fetchingDiscord ? "取得中..." : "Discordから参加者を取得"}
+            </button>
+          </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm text-left">
               <thead className="text-xs text-gray-400 bg-gray-950 border-b border-gray-800">
@@ -497,6 +567,8 @@ export default function BalancerPage() {
                   <SortableHeader label="総合MMR" sortKey="mmr" />
                   <th className="px-4 py-3 font-medium">第1希望</th>
                   <th className="px-4 py-3 font-medium">第2希望</th>
+                  <th className="px-4 py-3 font-medium text-red-400">NG 1</th>
+                  <th className="px-4 py-3 font-medium text-red-400">NG 2</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-800/50">
@@ -562,6 +634,34 @@ export default function BalancerPage() {
                         >
                           <option value="FILL">FILL</option>
                           <option value="ALL">ALL</option>
+                          <option value="TOP">TOP</option>
+                          <option value="JG">JG</option>
+                          <option value="MID">MID</option>
+                          <option value="ADC">ADC</option>
+                          <option value="SUP">SUP</option>
+                        </select>
+                      </td>
+                      <td className="px-4 py-2">
+                        <select
+                          value={p.ng_lane_1 || ""}
+                          onChange={(e) => handleInputChange(p.id, "ng_lane_1", e.target.value)}
+                          className="bg-gray-950 border border-gray-700 rounded px-2 py-1 text-red-300 outline-none focus:border-red-500 w-24"
+                        >
+                          <option value="">なし</option>
+                          <option value="TOP">TOP</option>
+                          <option value="JG">JG</option>
+                          <option value="MID">MID</option>
+                          <option value="ADC">ADC</option>
+                          <option value="SUP">SUP</option>
+                        </select>
+                      </td>
+                      <td className="px-4 py-2">
+                        <select
+                          value={p.ng_lane_2 || ""}
+                          onChange={(e) => handleInputChange(p.id, "ng_lane_2", e.target.value)}
+                          className="bg-gray-950 border border-gray-700 rounded px-2 py-1 text-red-300 outline-none focus:border-red-500 w-24"
+                        >
+                          <option value="">なし</option>
                           <option value="TOP">TOP</option>
                           <option value="JG">JG</option>
                           <option value="MID">MID</option>

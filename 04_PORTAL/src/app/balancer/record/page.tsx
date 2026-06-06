@@ -211,8 +211,8 @@ export default function CustomRecordPage() {
             <Trophy className="h-8 w-8 text-emerald-400" />
             カスタム試合を手動記録
           </h1>
-          <Link href="/ktm-admin" className="flex items-center gap-2 text-gray-400 hover:text-white transition">
-            <ArrowLeft className="h-4 w-4" /> 管理画面へ戻る
+          <Link href="/balancer" className="flex items-center gap-2 text-gray-400 hover:text-white transition">
+            <ArrowLeft className="h-4 w-4" /> チーム分け画面へ戻る
           </Link>
         </div>
 
