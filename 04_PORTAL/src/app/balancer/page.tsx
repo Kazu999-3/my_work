@@ -75,7 +75,13 @@ export default function BalancerPage() {
     setFetchingDiscord(true);
     setMessage({ type: "", text: "" });
     try {
-      const res = await fetch('/api/discord/participants');
+      // APIキャッシュを確実にバイパスするためのクエリとオプション
+      const res = await fetch(`/api/discord/participants?_t=${Date.now()}`, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache'
+        }
+      });
       const data = await res.json();
       
       if (!res.ok) throw new Error(data.error || 'Discordからの取得に失敗しました');
