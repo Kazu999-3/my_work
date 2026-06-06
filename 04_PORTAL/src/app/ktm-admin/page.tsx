@@ -270,7 +270,7 @@ export default function KtmAdminPage() {
         return { ...p, mmr_top, mmr_jg, mmr_mid, mmr_adc, mmr_sup, mmr };
       }
       return p;
-    });
+    }));
   };
 
   const handleRebuildMmr = async () => {
