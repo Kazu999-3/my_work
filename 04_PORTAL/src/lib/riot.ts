@@ -124,3 +124,16 @@ export async function fetchLeagueBySummonerId(summonerId: string, apiKey: string
   return await res.json();
 }
 
+/**
+ * PUUIDからチャンピオンマスタリー(熟練度)の上位3件を取得します
+ */
+export async function fetchChampionMasteryByPuuid(puuid: string, apiKey: string, count: number = 3): Promise<any[]> {
+  const url = `${RIOT_API_BASE_JP}/lol/champion-mastery/v4/champion-masteries/by-puuid/${puuid}/top?count=${count}&api_key=${apiKey}`;
+  const res = await fetch(url);
+  if (!res.ok) {
+    if (res.status === 404) return []; // マスタリーがないプレイヤー
+    throw new Error(`Mastery fetch error: ${res.statusText}`);
+  }
+  return await res.json();
+}
+

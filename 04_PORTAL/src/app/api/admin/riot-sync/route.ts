@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '../../../../lib/supabaseClient';
-import { fetchPuuidByRiotId, fetchSummonerByPuuid, fetchLeagueBySummonerId } from '../../../../lib/riot';
+import { fetchPuuidByRiotId, fetchSummonerByPuuid, fetchLeagueBySummonerId, fetchChampionMasteryByPuuid } from '../../../../lib/riot';
 
 export async function POST(request: Request) {
   try {
@@ -68,11 +68,20 @@ export async function POST(request: Request) {
           }
         }
 
-        // DBを更新 (puuid, summoner_id, highest_rank)
+        // (C) チャンピオンマスタリー (得意チャンピオンTOP3) を取得
+        const masteries = await fetchChampionMasteryByPuuid(puuid, apiKey, 3);
+        const topChampions = masteries.map((m: any) => ({
+          championId: m.championId,
+          championLevel: m.championLevel,
+          championPoints: m.championPoints
+        }));
+
+        // DBを更新 (puuid, summoner_id, highest_rank, main_champions)
         const updateData: any = {
           puuid,
           summoner_id: summonerId,
-          highest_rank: highestRank
+          highest_rank: highestRank,
+          main_champions: topChampions
         };
 
         const { error: updateError } = await supabase
@@ -83,8 +92,8 @@ export async function POST(request: Request) {
         if (updateError) throw updateError;
         updatedCount++;
         
-        // レートリミット対策で少し待機 (例: 200ms)
-        await new Promise(resolve => setTimeout(resolve, 200));
+        // レートリミット対策で少し待機 (例: 250ms)
+        await new Promise(resolve => setTimeout(resolve, 250));
 
       } catch (err: any) {
         console.error(`Player ${player.ign} sync error:`, err);

@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { supabase } from "../../lib/supabaseClient";
 import MatchRecordPanel from "./MatchRecordPanel";
 import MatchHistoryPanel from "./MatchHistoryPanel";
+import ProfileModal from "./ProfileModal";
 import { Info, Users, RefreshCw, Save, Trophy, Filter, Plus, Swords, AlertCircle, X, History, Globe } from "lucide-react";
 
 function getRankFromMMR(mmr: number): { tier: string, color: string } {
@@ -116,6 +117,7 @@ export default function KtmAdminPage() {
   const [sortConfig, setSortConfig] = useState({ key: "mmr", direction: "desc" });
   const [filterActive, setFilterActive] = useState(false);
   const [showMmrInfo, setShowMmrInfo] = useState(false);
+  const [selectedPlayer, setSelectedPlayer] = useState<any>(null);
   
   const [activeTab, setActiveTab] = useState<'players' | 'history'>('players');
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -1088,12 +1090,21 @@ export default function KtmAdminPage() {
                       />
                     </td>
                     <td className="px-2 py-1.5 sticky left-0 z-10 bg-gray-900 shadow-[2px_0_5px_rgba(0,0,0,0.3)]">
-                      <input
-                        type="text"
-                        value={p.name}
-                        onChange={(e) => handleInputChange(uid, "name", e.target.value)}
-                        className="bg-transparent border border-transparent focus:border-gray-700 hover:border-gray-700 focus:bg-gray-800 rounded px-1 py-0.5 outline-none w-24 font-bold text-white text-xs"
-                      />
+                      <div className="flex items-center gap-1">
+                        <button 
+                          onClick={() => setSelectedPlayer(p)}
+                          className="text-blue-400 hover:text-white p-1 hover:bg-gray-800 rounded transition"
+                          title="プロフィールを表示"
+                        >
+                          <Info className="w-3 h-3" />
+                        </button>
+                        <input
+                          type="text"
+                          value={p.name}
+                          onChange={(e) => handleInputChange(uid, "name", e.target.value)}
+                          className="bg-transparent border border-transparent focus:border-gray-700 hover:border-gray-700 focus:bg-gray-800 rounded px-1 py-0.5 outline-none w-20 font-bold text-white text-xs"
+                        />
+                      </div>
                     </td>
                     <td className="px-2 py-1.5">
                       <select
@@ -1259,9 +1270,12 @@ export default function KtmAdminPage() {
               </tbody>
             </table>
           </div>
-        </div>
+            </div>
+          </div>
+        )}
 
-        </div>
+        {selectedPlayer && (
+          <ProfileModal player={selectedPlayer} onClose={() => setSelectedPlayer(null)} />
         )}
       </div>
     </div>
