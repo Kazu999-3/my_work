@@ -399,14 +399,14 @@ export default function BalancerPage() {
             </div>
             <Link 
               href="/history"
-              className="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 text-orange-400 px-6 py-4 rounded-xl font-bold transition shadow-lg text-lg border border-orange-900/50"
+              className="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 text-orange-400 px-3 py-2 md:px-6 md:py-4 rounded-xl font-bold transition shadow-lg text-sm md:text-lg border border-orange-900/50 flex-1 md:flex-none justify-center"
             >
               <History className="h-5 w-5" />
               過去の試合を閲覧
             </Link>
             <a 
               href="/balancer/record"
-              className="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 text-gray-200 px-6 py-4 rounded-xl font-bold transition shadow-lg text-lg"
+              className="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 text-gray-200 px-3 py-2 md:px-6 md:py-4 rounded-xl font-bold transition shadow-lg text-sm md:text-lg flex-1 md:flex-none justify-center"
             >
               <Trophy className="h-5 w-5 text-emerald-400" />
               カスタム成績を手動入力
@@ -414,7 +414,7 @@ export default function BalancerPage() {
             <button
               onClick={handleBalance}
               disabled={balancing || activeCount < 10}
-              className={`flex items-center gap-2 px-8 py-4 rounded-xl font-black transition text-lg ${
+              className={`flex items-center justify-center gap-2 px-4 py-3 md:px-8 md:py-4 rounded-xl font-black transition text-sm md:text-lg w-full md:w-auto ${
                 balancing || activeCount < 10 ? "bg-gray-800 text-gray-600 cursor-not-allowed" : "bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white shadow-[0_0_20px_rgba(217,119,6,0.4)]"
               }`}
             >
@@ -445,7 +445,7 @@ export default function BalancerPage() {
                 <button
                   onClick={handleSendDiscord}
                   disabled={sendingDiscord}
-                  className="flex items-center gap-2 bg-[#5865F2] hover:bg-[#4752C4] text-white px-6 py-2 rounded-lg font-bold transition shadow-lg shadow-[#5865F2]/20"
+                  className="flex items-center justify-center gap-2 bg-[#5865F2] hover:bg-[#4752C4] text-white px-3 py-2 md:px-6 md:py-2 rounded-lg font-bold transition shadow-lg shadow-[#5865F2]/20 text-xs md:text-base w-full md:w-auto"
                 >
                   {sendingDiscord ? <RefreshCw className="h-4 w-4 animate-spin" /> : <MessageSquare className="h-4 w-4" />}
                   Discordへ通知
@@ -579,14 +579,14 @@ export default function BalancerPage() {
         {/* プレイヤー一覧 (Active変更・レーン変更用) */}
         <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden shadow-2xl">
           <div className="p-4 border-b border-gray-800 flex justify-between items-center bg-gray-900">
-            <h2 className="text-xl font-bold text-white flex items-center gap-2">
+            <h2 className="text-lg md:text-xl font-bold text-white flex items-center gap-2">
               <Users className="h-5 w-5 text-blue-400" />
               参加者リスト
             </h2>
             <button
               onClick={handleFetchDiscordReactions}
               disabled={fetchingDiscord}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold transition border ${
+              className={`flex items-center gap-2 px-3 py-2 md:px-4 md:py-2 rounded-lg font-bold transition border text-xs md:text-sm ${
                 fetchingDiscord ? 'bg-[#404eed]/50 border-[#404eed]/50 text-gray-400 cursor-not-allowed' : 'bg-[#5865F2]/20 border-[#5865F2] text-[#5865F2] hover:bg-[#5865F2] hover:text-white'
               }`}
             >

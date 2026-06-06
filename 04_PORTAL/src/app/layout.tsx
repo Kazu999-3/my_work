@@ -16,7 +16,7 @@ export default function RootLayout({
     <html lang="ja">
       <body className="antialiased bg-[#06070a] text-white flex min-h-screen">
         <Sidebar />
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 pb-20 md:pb-0">
           {children}
         </div>
       </body>

@@ -20,7 +20,9 @@ export default function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="hidden md:flex flex-col w-64 h-screen sticky top-0 bg-[#0a0b10]/60 backdrop-blur-2xl border-r border-white/10 p-8 shadow-[4px_0_24px_rgba(0,0,0,0.5)] z-50">
+    <>
+      {/* PC用サイドバー */}
+      <aside className="hidden md:flex flex-col w-64 h-screen sticky top-0 bg-[#0a0b10]/60 backdrop-blur-2xl border-r border-white/10 p-8 shadow-[4px_0_24px_rgba(0,0,0,0.5)] z-50">
       {/* Logo */}
       <div className="flex items-center gap-3 mb-12">
         <div className="relative">
@@ -77,6 +79,37 @@ export default function Sidebar() {
           </div>
         </div>
       </div>
-    </aside>
+      </aside>
+
+      {/* スマホ用ボトムナビゲーション */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[#0a0b10]/90 backdrop-blur-xl border-t border-white/10 z-50 flex items-center overflow-x-auto no-scrollbar px-2 py-2 gap-2 shadow-[0_-4px_24px_rgba(0,0,0,0.5)] pb-[env(safe-area-inset-bottom)]">
+        {MENU_ITEMS.map((item) => {
+          const isActive = pathname === item.href || (item.id === 'leaderboard' && pathname.startsWith('/player'));
+          
+          const isPublicPage = pathname.startsWith('/balancer') || pathname.startsWith('/leaderboard') || pathname.startsWith('/synergy') || pathname.startsWith('/history');
+          const isPublicMenu = item.id === 'balancer' || item.id === 'leaderboard' || item.id === 'synergy' || item.id === 'ktm-admin' || item.id === 'history';
+          
+          if (isPublicPage && !isPublicMenu) {
+            return null; 
+          }
+
+          return (
+            <Link 
+              key={`mobile-${item.id}`} 
+              href={item.href}
+              prefetch={false}
+              className={`flex flex-col items-center justify-center min-w-[4.5rem] p-2 rounded-xl transition-all duration-300 ${
+                isActive 
+                  ? `${item.activeBg} ${item.color} shadow-inner border border-white/5` 
+                  : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'
+              }`}
+            >
+              <item.icon size={20} className={`mb-1 transition-transform duration-300 ${isActive ? 'scale-110' : ''}`} />
+              <span className="text-[10px] font-bold tracking-wider truncate w-full text-center">{item.label}</span>
+            </Link>
+          );
+        })}
+      </nav>
+    </>
   );
 }
