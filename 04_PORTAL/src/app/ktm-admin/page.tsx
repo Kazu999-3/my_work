@@ -741,9 +741,6 @@ export default function KtmAdminPage() {
                             ))}
                           </select>
                         </td>
-                            <option value="SUP" className={getColorFromRole("SUP")}>SUPPORT</option>
-                          </select>
-                        </td>
                         <td className="px-2 py-1.5 text-center">
                           <select
                             value={p.weight || 2}
