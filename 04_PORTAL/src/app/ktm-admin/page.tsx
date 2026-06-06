@@ -76,7 +76,6 @@ function getColorFromRole(role: string): string {
   if (r === "ALL") return "text-amber-300 font-bold";
   return "text-gray-400 font-medium";
 }
-
 const MmrBadgeInput = ({ value, onChange }: { value: number, onChange: (v: number) => void }) => {
   const [editing, setEditing] = useState(false);
   const rank = getRankFromMMR(value);
@@ -186,16 +185,12 @@ export default function KtmAdminPage() {
           is_active: p.is_active,
           ng_lane_1: p.ng_lane_1 || null,
           ng_lane_2: p.ng_lane_2 || null,
-          weight: parseInt(p.weight) || 2,
-          allow_higher: p.allow_higher !== undefined ? p.allow_higher : true,
           highest_rank: p.highest_rank || null,
           mmr_top: parseInt(p.mmr_top) || 1000,
           mmr_jg: parseInt(p.mmr_jg) || 1000,
           mmr_mid: parseInt(p.mmr_mid) || 1000,
           mmr_adc: parseInt(p.mmr_adc) || 1000,
           mmr_sup: parseInt(p.mmr_sup) || 1000,
-          pity: parseInt(p.pity) || 0,
-          off_role_pity: parseInt(p.off_role_pity) || 0,
         }).eq('id', p.id).select();
         
         if (error) throw error;
@@ -217,16 +212,12 @@ export default function KtmAdminPage() {
             is_active: p.is_active,
             ng_lane_1: p.ng_lane_1 || null,
             ng_lane_2: p.ng_lane_2 || null,
-            weight: parseInt(p.weight) || 2,
-            allow_higher: p.allow_higher !== undefined ? p.allow_higher : true,
             highest_rank: p.highest_rank || null,
             mmr_top: parseInt(p.mmr_top) || 1000,
             mmr_jg: parseInt(p.mmr_jg) || 1000,
             mmr_mid: parseInt(p.mmr_mid) || 1000,
             mmr_adc: parseInt(p.mmr_adc) || 1000,
             mmr_sup: parseInt(p.mmr_sup) || 1000,
-            pity: parseInt(p.pity) || 0,
-            off_role_pity: parseInt(p.off_role_pity) || 0,
           }))
         );
         if (error) throw error;
@@ -250,9 +241,8 @@ export default function KtmAdminPage() {
       role_preferences: { primary: "ALL", secondary: "ALL" },
       is_active: true,
       ng_lane_1: "", ng_lane_2: "",
-      weight: 2, allow_higher: true, highest_rank: "",
-      mmr_top: 1000, mmr_jg: 1000, mmr_mid: 1000, mmr_adc: 1000, mmr_sup: 1000,
-      pity: 0, off_role_pity: 0
+      highest_rank: "",
+      mmr_top: 1000, mmr_jg: 1000, mmr_mid: 1000, mmr_adc: 1000, mmr_sup: 1000
     };
     setPlayers([newPlayer, ...players]);
   };
@@ -379,7 +369,7 @@ export default function KtmAdminPage() {
       let aVal = a[sortConfig.key];
       let bVal = b[sortConfig.key];
       
-      if (sortConfig.key === "mmr" || sortConfig.key.startsWith("mmr_") || sortConfig.key === "weight" || sortConfig.key === "no") {
+      if (sortConfig.key === "mmr" || sortConfig.key.startsWith("mmr_") || sortConfig.key === "no") {
         aVal = parseInt(aVal) || 0;
         bVal = parseInt(bVal) || 0;
       }
@@ -682,10 +672,6 @@ export default function KtmAdminPage() {
                       <SortableHeader label="Active" sortKey="is_active" />
                       <SortableHeader label="名前" sortKey="name" sticky={true} />
                       <SortableHeader label="最高Rank" sortKey="highest_rank" />
-                      <SortableHeader label="こだわり" sortKey="weight" />
-                      <SortableHeader label="格上" sortKey="allow_higher" />
-                      <SortableHeader label="Pity" sortKey="pity" />
-                      <SortableHeader label="Off Pity" sortKey="off_role_pity" />
                       <SortableHeader label="Top" sortKey="mmr_top" />
                       <SortableHeader label="Jg" sortKey="mmr_jg" />
                       <SortableHeader label="Mid" sortKey="mmr_mid" />
@@ -740,43 +726,6 @@ export default function KtmAdminPage() {
                               <option key={r} value={r}>{r}</option>
                             ))}
                           </select>
-                        </td>
-                        <td className="px-2 py-1.5 text-center">
-                          <select
-                            value={p.weight || 2}
-                            onChange={(e) => handleInputChange(uid, "weight", parseInt(e.target.value))}
-                            className="bg-gray-800 border border-gray-700 rounded px-1 py-0.5 outline-none focus:border-blue-500 w-12 text-center text-xs"
-                          >
-                            <option value={1}>1</option>
-                            <option value={2}>2</option>
-                            <option value={3}>3</option>
-                          </select>
-                        </td>
-                        <td className="px-2 py-1.5 text-center">
-                          <input
-                            type="checkbox"
-                            checked={p.allow_higher !== false}
-                            onChange={(e) => handleInputChange(uid, "allow_higher", e.target.checked)}
-                            className="h-3 w-3 rounded border-gray-700 text-green-500 focus:ring-green-500 bg-gray-800 cursor-pointer"
-                          />
-                        </td>
-                        <td className="px-2 py-1.5 text-center">
-                          <input
-                            type="number"
-                            value={p.pity || 0}
-                            onChange={(e) => handleInputChange(uid, "pity", parseInt(e.target.value) || 0)}
-                            className="bg-transparent text-amber-500 border border-transparent focus:border-gray-700 hover:border-gray-700 focus:bg-gray-800 rounded px-1 py-0.5 outline-none w-10 text-center text-xs font-bold"
-                            title="参加漏れPity"
-                          />
-                        </td>
-                        <td className="px-2 py-1.5 text-center">
-                          <input
-                            type="number"
-                            value={p.off_role_pity || 0}
-                            onChange={(e) => handleInputChange(uid, "off_role_pity", parseInt(e.target.value) || 0)}
-                            className="bg-transparent text-purple-400 border border-transparent focus:border-gray-700 hover:border-gray-700 focus:bg-gray-800 rounded px-1 py-0.5 outline-none w-10 text-center text-xs font-bold"
-                            title="希望外レーンPity"
-                          />
                         </td>
                         <td className="px-2 py-1.5 text-center">
                           <MmrBadgeInput value={p.mmr_top || 1000} onChange={(v) => handleInputChange(uid, "mmr_top", v)} />
