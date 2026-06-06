@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { supabase } from "../../lib/supabaseClient";
-import { Users, RefreshCw, Swords, X, Activity, Globe, MessageSquare, Info, Crown } from "lucide-react";
+import { Users, RefreshCw, Swords, X, Activity, Globe, MessageSquare, Info, Crown, Trophy } from "lucide-react";
 import { getChampIcon } from "../../lib/ddragonClient";
 import ProfileModal from "../ktm-admin/ProfileModal";
 
