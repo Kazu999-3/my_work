@@ -35,23 +35,23 @@ export default function RadarChart({ stats, mmr }: RadarChartProps) {
     // TODO: 今後APIにKDAや視界スコアを追加した場合は、ここの計算式を本物のデータに置き換える
     
     // 攻撃力 (勝率とプレイ回数が高いほど高くなる)
-    aggro = Math.min(100, Math.max(30, winRate + (totalGames * 0.5) + (mmr / 50)));
+    aggro = Math.min(100, Math.max(30, (winRate * 0.4) + Math.min(20, totalGames * 0.5) + (mmr / 40)));
     
-    // 生存力 (ベース50に、MMRボーナス)
-    survive = Math.min(100, Math.max(30, 40 + (mmr / 30) - (totalGames * 0.2)));
+    // 生存力 (ベース30に、MMRボーナスと勝率)
+    survive = Math.min(100, Math.max(30, 30 + (mmr / 50) + (winRate * 0.2)));
     
-    // ファーム力 (MMRに大きく依存)
-    farm = Math.min(100, Math.max(30, 30 + (mmr / 20)));
+    // ファーム力 (MMRに依存するが係数を下げる)
+    farm = Math.min(100, Math.max(30, 20 + (mmr / 40) + Math.min(30, totalGames * 0.5)));
     
     // 視界管理 (サポートなどをプレイしていると高くなる擬似調整)
     const supGames = stats['SUP']?.totalGames || 0;
     const jgGames = stats['JG']?.totalGames || 0;
-    vision = Math.min(100, Math.max(30, 40 + (supGames * 2) + (jgGames * 1) + (mmr / 40)));
+    vision = Math.min(100, Math.max(30, 30 + (supGames * 4) + (jgGames * 2) + (mmr / 50)));
     
-    // キャリー力 (Mid/ADCのプレイ回数と勝率に依存)
+    // 影響力 (勝率とキャリーロールのプレイ数に依存)
     const adcGames = stats['ADC']?.totalGames || 0;
     const midGames = stats['MID']?.totalGames || 0;
-    carry = Math.min(100, Math.max(30, winRate - 10 + (adcGames + midGames)));
+    carry = Math.min(100, Math.max(30, (winRate * 0.5) + (mmr / 50) + Math.min(20, adcGames + midGames)));
   }
 
   const data = [

@@ -37,9 +37,14 @@ export default function ProfileModal({ player, onClose }: ProfileModalProps) {
       }
 
       // 2. Riotマスタリーのチャンピオン名解決
-      if (player.main_champions && Array.isArray(player.main_champions)) {
+      let mainChamps = player.main_champions;
+      if (typeof mainChamps === 'string') {
+        try { mainChamps = JSON.parse(mainChamps); } catch (e) {}
+      }
+      
+      if (mainChamps && Array.isArray(mainChamps)) {
         const resolved = await Promise.all(
-          player.main_champions.map(async (m: any) => {
+          mainChamps.map(async (m: any) => {
             const name = await getChampNameById(m.championId);
             return {
               ...m,
@@ -201,18 +206,29 @@ export default function ProfileModal({ player, onClose }: ProfileModalProps) {
 
                       <div className="mt-auto space-y-2">
                         <div className="text-xs text-gray-500 font-bold uppercase mb-2">よく使うチャンピオン</div>
-                        {s.topChampions.map((champ: any, cIdx: number) => (
-                          <div key={cIdx} className="flex items-center gap-2 bg-gray-900/50 p-1.5 rounded">
-                            <img 
-                              src={getChampIcon(champ.name)} 
-                              alt={champ.name} 
-                              className="w-6 h-6 rounded-full bg-gray-800"
-                              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
-                            />
-                            <div className="flex-1 text-sm font-medium text-gray-300 truncate">{champ.name}</div>
-                            <div className="text-xs text-gray-500">{champ.games}戦</div>
-                          </div>
-                        ))}
+                        {s.topChampions.map((champ: any, cIdx: number) => {
+                          if (champ.name === 'Unknown') {
+                            return (
+                              <div key={cIdx} className="flex items-center gap-2 bg-gray-900/50 p-1.5 rounded">
+                                <div className="w-6 h-6 rounded-full bg-gray-800 flex items-center justify-center text-gray-600 text-[10px]">?</div>
+                                <div className="flex-1 text-sm font-medium text-gray-500 italic">記録なし</div>
+                                <div className="text-xs text-gray-600">{champ.games}戦</div>
+                              </div>
+                            );
+                          }
+                          return (
+                            <div key={cIdx} className="flex items-center gap-2 bg-gray-900/50 p-1.5 rounded">
+                              <img 
+                                src={getChampIcon(champ.name)} 
+                                alt={champ.name} 
+                                className="w-6 h-6 rounded-full bg-gray-800"
+                                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                              />
+                              <div className="flex-1 text-sm font-medium text-gray-300 truncate">{champ.name}</div>
+                              <div className="text-xs text-gray-500">{champ.games}戦</div>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   );

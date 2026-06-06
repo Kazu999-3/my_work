@@ -47,9 +47,14 @@ export default function PlayerMyPage() {
         if (sData.stats) setStats(sData.stats);
 
         // 3. マスタリーの解決
-        if (pData.main_champions && Array.isArray(pData.main_champions)) {
+        let mainChamps = pData.main_champions;
+        if (typeof mainChamps === 'string') {
+          try { mainChamps = JSON.parse(mainChamps); } catch (e) {}
+        }
+        
+        if (mainChamps && Array.isArray(mainChamps)) {
           const resolved = await Promise.all(
-            pData.main_champions.map(async (m: any) => {
+            mainChamps.map(async (m: any) => {
               const name = await getChampNameById(m.championId);
               return { ...m, name, iconUrl: getChampIcon(name) };
             })
@@ -267,21 +272,36 @@ export default function PlayerMyPage() {
 
                       <div className="space-y-2 mt-4 pt-4 border-t border-gray-800/50">
                         <div className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-2">Top Picks</div>
-                        {s.topChampions.map((champ: any, cIdx: number) => (
-                          <div key={cIdx} className="flex items-center gap-3 bg-gray-950 p-2 rounded border border-gray-800">
-                            <img 
-                              src={getChampIcon(champ.name)} 
-                              className="w-8 h-8 rounded-full shadow-sm"
-                              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
-                            />
-                            <div className="flex-1 font-bold text-gray-300 truncate">{champ.name}</div>
-                            <div className="text-sm font-medium text-gray-500">
-                              <span className={champ.winRate >= 50 ? 'text-emerald-500' : 'text-gray-400'}>{champ.wins}W</span>
-                              {" - "}
-                              <span className="text-gray-500">{champ.games - champ.wins}L</span>
+                        {s.topChampions.map((champ: any, cIdx: number) => {
+                          if (champ.name === 'Unknown') {
+                            return (
+                              <div key={cIdx} className="flex items-center gap-3 bg-gray-950 p-2 rounded border border-gray-800">
+                                <div className="w-8 h-8 rounded-full shadow-sm bg-gray-800 flex items-center justify-center text-gray-600 text-xs">?</div>
+                                <div className="flex-1 font-bold text-gray-500 italic truncate">記録なし</div>
+                                <div className="text-sm font-medium text-gray-600">
+                                  <span>{champ.wins}W</span>
+                                  {" - "}
+                                  <span>{champ.games - champ.wins}L</span>
+                                </div>
+                              </div>
+                            );
+                          }
+                          return (
+                            <div key={cIdx} className="flex items-center gap-3 bg-gray-950 p-2 rounded border border-gray-800">
+                              <img 
+                                src={getChampIcon(champ.name)} 
+                                className="w-8 h-8 rounded-full shadow-sm"
+                                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                              />
+                              <div className="flex-1 font-bold text-gray-300 truncate">{champ.name}</div>
+                              <div className="text-sm font-medium text-gray-500">
+                                <span className={champ.winRate >= 50 ? 'text-emerald-500' : 'text-gray-400'}>{champ.wins}W</span>
+                                {" - "}
+                                <span className="text-gray-500">{champ.games - champ.wins}L</span>
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     </div>
                   );
