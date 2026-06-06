@@ -143,11 +143,17 @@ export default function BalancerPage() {
       const targetPlayers = currentPlayers || players;
       const existingPlayers = targetPlayers.filter(p => p.id);
 
-      // バランサーページでは「Activeかどうか」と「希望レーン」のみ更新を許可する
+      // バランサーページでは「Activeかどうか」と「希望レーン」および各種Pity設定を更新
       for (const p of existingPlayers) {
         await supabase.from("ktm_players").update({
           role_preferences: p.role_preferences,
           is_active: p.is_active,
+          ng_lane_1: p.ng_lane_1,
+          ng_lane_2: p.ng_lane_2,
+          weight: p.weight,
+          allow_higher: p.allow_higher,
+          pity: p.pity,
+          off_pity: p.off_pity
         }).eq('id', p.id);
       }
       setSaving(false);
@@ -545,6 +551,31 @@ export default function BalancerPage() {
           </div>
         )}
 
+        {/* 用語解説エリア */}
+        <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 shadow-xl text-sm">
+          <h3 className="text-lg font-bold text-blue-400 mb-4 flex items-center gap-2">
+            <Info className="h-5 w-5" /> KTM専用マッチング用語
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-gray-950 p-4 rounded border border-gray-800">
+              <span className="font-bold text-amber-500 mb-1 block">こだわり (1〜3)</span>
+              <p className="text-gray-400">メインレーンをどれくらいやりたいかの度合いです。1(絶対やりたい) 〜 3(どこでもいい) で設定し、AIが希望レーンを割り当てる優先度になります。</p>
+            </div>
+            <div className="bg-gray-950 p-4 rounded border border-gray-800">
+              <span className="font-bold text-rose-500 mb-1 block">格上 (0〜2)</span>
+              <p className="text-gray-400">自分よりMMRが高い相手と対面することをどれくらい許容するかの設定です。数字が大きいほど、格上とマッチしやすくなります。</p>
+            </div>
+            <div className="bg-gray-950 p-4 rounded border border-gray-800">
+              <span className="font-bold text-emerald-500 mb-1 block">PITY (ピティ)</span>
+              <p className="text-gray-400">過去の試合で「希望外レーン」に飛ばされた人に貯まる同情ポイント。これが高い人ほど、次回の試合で優先的にメインレーンに配属されます。</p>
+            </div>
+            <div className="bg-gray-950 p-4 rounded border border-gray-800">
+              <span className="font-bold text-fuchsia-500 mb-1 block">OFF PITY (オフピティ)</span>
+              <p className="text-gray-400">逆に「希望レーン」を連続でやっている人に貯まるポイント。全体のバランスを調整するため、一時的に他レーンに飛ばされる確率が上がります。</p>
+            </div>
+          </div>
+        </div>
+
         {/* プレイヤー一覧 (Active変更・レーン変更用) */}
         <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden shadow-2xl">
           <div className="p-4 border-b border-gray-800 flex justify-between items-center bg-gray-900">
@@ -575,8 +606,12 @@ export default function BalancerPage() {
                   <SortableHeader label="総合MMR" sortKey="mmr" />
                   <th className="px-4 py-3 font-medium">第1希望</th>
                   <th className="px-4 py-3 font-medium">第2希望</th>
-                  <th className="px-4 py-3 font-medium text-red-400">NG 1</th>
-                  <th className="px-4 py-3 font-medium text-red-400">NG 2</th>
+                  <th className="px-2 py-3 font-medium text-red-400">NG 1</th>
+                  <th className="px-2 py-3 font-medium text-red-400">NG 2</th>
+                  <SortableHeader label="こだわり" sortKey="weight" />
+                  <SortableHeader label="格上" sortKey="allow_higher" />
+                  <SortableHeader label="Pity" sortKey="pity" />
+                  <SortableHeader label="OffPity" sortKey="off_pity" />
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-800/50">
@@ -649,11 +684,11 @@ export default function BalancerPage() {
                           <option value="SUP">SUP</option>
                         </select>
                       </td>
-                      <td className="px-4 py-2">
+                      <td className="px-2 py-2 text-center">
                         <select
                           value={p.ng_lane_1 || ""}
                           onChange={(e) => handleInputChange(p.id, "ng_lane_1", e.target.value)}
-                          className="bg-gray-950 border border-gray-700 rounded px-2 py-1 text-red-300 outline-none focus:border-red-500 w-24"
+                          className="bg-gray-950 border border-gray-700 rounded px-1 py-1 text-red-300 outline-none focus:border-red-500 w-16 text-xs"
                         >
                           <option value="">なし</option>
                           <option value="TOP">TOP</option>
@@ -663,11 +698,11 @@ export default function BalancerPage() {
                           <option value="SUP">SUP</option>
                         </select>
                       </td>
-                      <td className="px-4 py-2">
+                      <td className="px-2 py-2 text-center">
                         <select
                           value={p.ng_lane_2 || ""}
                           onChange={(e) => handleInputChange(p.id, "ng_lane_2", e.target.value)}
-                          className="bg-gray-950 border border-gray-700 rounded px-2 py-1 text-red-300 outline-none focus:border-red-500 w-24"
+                          className="bg-gray-950 border border-gray-700 rounded px-1 py-1 text-red-300 outline-none focus:border-red-500 w-16 text-xs"
                         >
                           <option value="">なし</option>
                           <option value="TOP">TOP</option>
@@ -676,6 +711,44 @@ export default function BalancerPage() {
                           <option value="ADC">ADC</option>
                           <option value="SUP">SUP</option>
                         </select>
+                      </td>
+                      <td className="px-2 py-2 text-center">
+                        <select
+                          value={p.weight || 2}
+                          onChange={(e) => handleInputChange(p.id, "weight", parseInt(e.target.value))}
+                          className="bg-gray-950 border border-gray-700 rounded px-2 py-1 text-amber-300 outline-none focus:border-amber-500 w-16"
+                        >
+                          <option value="1">1</option>
+                          <option value="2">2</option>
+                          <option value="3">3</option>
+                        </select>
+                      </td>
+                      <td className="px-2 py-2 text-center">
+                        <select
+                          value={p.allow_higher || 0}
+                          onChange={(e) => handleInputChange(p.id, "allow_higher", parseInt(e.target.value))}
+                          className="bg-gray-950 border border-gray-700 rounded px-2 py-1 text-rose-300 outline-none focus:border-rose-500 w-16"
+                        >
+                          <option value="0">0</option>
+                          <option value="1">1</option>
+                          <option value="2">2</option>
+                        </select>
+                      </td>
+                      <td className="px-2 py-2 text-center">
+                        <input
+                          type="number"
+                          value={p.pity || 0}
+                          onChange={(e) => handleInputChange(p.id, "pity", parseInt(e.target.value))}
+                          className="w-16 bg-gray-950 border border-gray-700 text-emerald-400 font-mono text-center rounded focus:border-emerald-500 outline-none"
+                        />
+                      </td>
+                      <td className="px-2 py-2 text-center">
+                        <input
+                          type="number"
+                          value={p.off_pity || 0}
+                          onChange={(e) => handleInputChange(p.id, "off_pity", parseInt(e.target.value))}
+                          className="w-16 bg-gray-950 border border-gray-700 text-fuchsia-400 font-mono text-center rounded focus:border-fuchsia-500 outline-none"
+                        />
                       </td>
                     </tr>
                   );
