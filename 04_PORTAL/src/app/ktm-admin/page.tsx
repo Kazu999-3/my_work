@@ -366,7 +366,8 @@ export default function KtmAdminPage() {
       
       if (data.errors && data.errors.length > 0) {
         console.warn("Riot Sync Errors:", data.errors);
-        setMessage({ type: "error", text: `⚠️ ${data.message} ただし ${data.errors.length}件のエラーが発生しました。原因: ${data.errors[0]}` });
+        const errorDetails = data.errors.join('\n');
+        setMessage({ type: "error", text: `⚠️ ${data.message} ただし ${data.errors.length}件のエラーが発生しました。\n\n【失敗リスト】\n${errorDetails}` });
       } else {
         setMessage({ type: "success", text: data.message });
       }
@@ -1046,7 +1047,7 @@ export default function KtmAdminPage() {
         {message.text && (
           <div className={`p-4 rounded-lg flex items-center gap-3 ${message.type === 'error' ? 'bg-red-900/30 text-red-400 border border-red-800' : 'bg-green-900/30 text-green-400 border border-green-800'}`}>
             <AlertCircle className="h-5 w-5 flex-shrink-0" />
-            <p className="text-sm font-medium">{message.text}</p>
+            <p className="text-sm font-medium whitespace-pre-wrap">{message.text}</p>
           </div>
         )}
 
