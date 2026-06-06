@@ -146,9 +146,10 @@ export default function BalancerPage() {
       const targetPlayers = currentPlayers || players;
       const existingPlayers = targetPlayers.filter(p => p.id);
 
-      // バランサーページでは「Activeかどうか」と「希望レーン」および各種Pity設定を更新
+      // バランサーページでは「Activeかどうか」と「希望レーン」および名前等を更新
       for (const p of existingPlayers) {
         await supabase.from("ktm_players").update({
+          name: p.name,
           role_preferences: p.role_preferences,
           is_active: p.is_active,
           ng_lane_1: p.ng_lane_1,

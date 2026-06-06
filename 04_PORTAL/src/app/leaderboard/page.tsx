@@ -13,6 +13,7 @@ const ROLES: Role[] = ['TOP', 'JG', 'MID', 'ADC', 'SUP'];
 
 interface PlayerStats {
   name: string;
+  discordId: string;
   mmr: number;
   games: number;
   winRate: string;
@@ -84,10 +85,10 @@ export default function LeaderboardPage() {
 
   useEffect(() => {
     async function fetchLeaderboard() {
-      // 1. ktm_playersから全プレイヤーの現在のMMRを取得
+      // 1. ktm_playersから全プレイヤーの現在のMMRとdiscord_idを取得
       const { data: players, error: pError } = await supabase
         .from('ktm_players')
-        .select('name, mmr_top, mmr_jg, mmr_mid, mmr_adc, mmr_sup');
+        .select('name, discord_id, mmr_top, mmr_jg, mmr_mid, mmr_adc, mmr_sup');
 
       if (pError || !players) {
         console.error('Failed to fetch players', pError);
@@ -157,6 +158,7 @@ export default function LeaderboardPage() {
             const winRate = stats.games > 0 ? ((stats.wins / stats.games) * 100).toFixed(1) : '0.0';
             return {
               name: p.name,
+              discordId: p.discord_id,
               mmr,
               games: stats.games,
               winRate,
@@ -257,17 +259,17 @@ export default function LeaderboardPage() {
                       data[role].map((player, idx) => (
                         <div key={player.name} className="p-4 hover:bg-gray-800/50 transition-colors flex items-center justify-between">
                           <div className="flex items-center gap-3">
-                            <div className={`w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold
+                            <div className={`w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0
                               ${idx === 0 ? 'bg-yellow-400 text-yellow-900' : 
                                 idx === 1 ? 'bg-gray-300 text-gray-800' : 
                                 idx === 2 ? 'bg-amber-600 text-amber-50' : 
                                 'bg-gray-800 text-gray-400'}`}>
                               {idx + 1}
                             </div>
-                            <div>
-                              <div className="font-bold text-white truncate max-w-[90px]" title={player.name}>
+                            <div className="min-w-0 flex-1">
+                              <a href={`/player/${player.discordId}`} className="font-bold text-white hover:text-blue-400 truncate block transition" title={`${player.name} の詳細を見る`}>
                                 {player.name}
-                              </div>
+                              </a>
                               <div className="text-[10px] text-gray-400">
                                 {player.games} Games ({player.winRate}%)
                               </div>

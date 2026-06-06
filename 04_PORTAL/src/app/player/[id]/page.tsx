@@ -70,45 +70,7 @@ export default function PlayerMyPage() {
     fetchData();
   }, [id]);
 
-  const toggleActive = async () => {
-    if (!player) return;
-    setSaving(true);
-    const newStatus = !player.is_active;
-    try {
-      const { error } = await supabase
-        .from("ktm_players")
-        .update({ is_active: newStatus })
-        .eq("id", player.id);
-      
-      if (!error) {
-        setPlayer({ ...player, is_active: newStatus });
-      }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setSaving(false);
-    }
-  };
 
-  const updateRole = async (type: 'primary' | 'secondary', val: string) => {
-    if (!player) return;
-    setSaving(true);
-    const newPrefs = { ...player.role_preferences, [type]: val };
-    try {
-      const { error } = await supabase
-        .from("ktm_players")
-        .update({ role_preferences: newPrefs })
-        .eq("id", player.id);
-      
-      if (!error) {
-        setPlayer({ ...player, role_preferences: newPrefs });
-      }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setSaving(false);
-    }
-  };
 
   if (loading) {
     return <div className="min-h-screen bg-black text-white flex items-center justify-center">
@@ -149,45 +111,23 @@ export default function PlayerMyPage() {
               </div>
             </div>
 
-            {/* Participation Controls */}
+            {/* Participation Status */}
             <div className="bg-gray-950 border border-gray-800 rounded-xl p-4 w-full md:w-auto shadow-inner">
               <div className="flex items-center justify-between gap-6 mb-4">
-                <div className="font-bold text-gray-300">本日の内戦に参加する</div>
-                <button 
-                  onClick={toggleActive}
-                  disabled={saving}
-                  className={`relative inline-flex h-7 w-14 items-center rounded-full transition-colors focus:outline-none ${player.is_active ? 'bg-emerald-500' : 'bg-gray-700'} ${saving ? 'opacity-50' : ''}`}
-                >
-                  <span className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${player.is_active ? 'translate-x-8' : 'translate-x-1'}`} />
-                </button>
+                <div className="font-bold text-gray-300">本日の内戦参加</div>
+                <div className={`px-3 py-1 rounded-full text-xs font-bold ${player.is_active ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-gray-800 text-gray-400 border border-gray-700'}`}>
+                  {player.is_active ? '参加中' : '未参加'}
+                </div>
               </div>
-              <div className="flex gap-2">
-                <select 
-                  className="bg-gray-800 border border-gray-700 rounded text-sm px-2 py-1 outline-none text-white w-24"
-                  value={player.role_preferences?.primary || "ALL"}
-                  onChange={(e) => updateRole('primary', e.target.value)}
-                  disabled={saving}
-                >
-                  <option value="TOP">TOP</option>
-                  <option value="JG">JG</option>
-                  <option value="MID">MID</option>
-                  <option value="ADC">ADC</option>
-                  <option value="SUP">SUP</option>
-                  <option value="ALL">ALL</option>
-                </select>
-                <select 
-                  className="bg-gray-800 border border-gray-700 rounded text-sm px-2 py-1 outline-none text-white w-24"
-                  value={player.role_preferences?.secondary || "ALL"}
-                  onChange={(e) => updateRole('secondary', e.target.value)}
-                  disabled={saving}
-                >
-                  <option value="TOP">TOP</option>
-                  <option value="JG">JG</option>
-                  <option value="MID">MID</option>
-                  <option value="ADC">ADC</option>
-                  <option value="SUP">SUP</option>
-                  <option value="ALL">ALL</option>
-                </select>
+              <div className="flex gap-4">
+                <div className="flex flex-col">
+                  <span className="text-[10px] text-gray-500 font-bold mb-1">MAIN ROLE</span>
+                  <span className="text-white font-bold">{player.role_preferences?.primary || "ALL"}</span>
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[10px] text-gray-500 font-bold mb-1">SUB ROLE</span>
+                  <span className="text-gray-400 font-bold">{player.role_preferences?.secondary || "ALL"}</span>
+                </div>
               </div>
             </div>
           </div>
