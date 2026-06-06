@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { supabase } from "../../../../lib/supabaseClient";
-import RadarChart from "../../../../components/RadarChart";
+import { supabase } from "../../../lib/supabaseClient";
+import RadarChart from "../../../components/RadarChart";
 import { Activity, Shield, Swords, Star, Zap, Crosshair, RefreshCw, CheckCircle2 } from "lucide-react";
-import { getChampIcon, getChampNameById } from "../../../../lib/ddragonClient";
+import { getChampIcon, getChampNameById } from "../../../lib/ddragonClient";
 
 const roleIcons: Record<string, any> = {
   TOP: <Shield className="w-4 h-4 text-purple-400" />,
