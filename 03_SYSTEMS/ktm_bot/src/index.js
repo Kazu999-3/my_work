@@ -1,5 +1,5 @@
 import { verifySignature } from './utils/security.js';
-import { handleAnnounceMatch, handleLaneCommand, handlePortalCommand, handleRecruitDirect, handleSetIgn, handleStatsCommand } from './handlers/commands.js';
+import { handleAnnounceMatch, handleLaneCommand, handleRecruitDirect, handleSetIgn, handleStatsCommand } from './handlers/commands.js';
 import { handleButtonInteraction } from './handlers/components.js';
 import { handleModalSubmit } from './handlers/modals.js';
 
@@ -74,7 +74,6 @@ export default {
         const context = { ...env, DISCORD_TOKEN }; // トークンを注入
         if (name === 'ign') return await handleSetIgn(interaction, context, ctx);
         if (name === 'recruit') return handleRecruitDirect(interaction);
-        if (name === 'ktm_portal') return handlePortalCommand(interaction);
         if (name === 'stats') return handleStatsCommand(interaction, context, ctx);
         if (name === 'lane') return handleLaneCommand(interaction, context, ctx);
       }

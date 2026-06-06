@@ -45,11 +45,7 @@ export function handleRecruitDirect(interaction) {
   });
 }
 
-export function handlePortalCommand(interaction) {
-  const userId = interaction.member.user.id;
-  if (userId !== CONFIG.ADMIN_ID) return Response.json({ type: 4, data: { content: "⚠️ **権限エラー**: このコマンドは管理者（王）のみ実行可能です。", flags: 64 } });
-  return Response.json({ type: 4, data: { embeds: [getPortalEmbed()], components: getPortalComponents(userId) } });
-}
+
 
 
 export function handleStatsCommand(interaction, env, ctx) {
