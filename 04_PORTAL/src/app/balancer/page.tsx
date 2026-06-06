@@ -395,7 +395,7 @@ export default function BalancerPage() {
               className="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 text-gray-200 px-6 py-4 rounded-xl font-bold transition shadow-lg text-lg"
             >
               <Trophy className="h-5 w-5 text-emerald-400" />
-              成績履歴の記録と閲覧
+              カスタム成績を手動入力 (Match-V5連携)
             </a>
             <button
               onClick={handleBalance}

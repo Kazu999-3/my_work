@@ -26,14 +26,13 @@ export async function GET() {
 
     const messages = await msgsRes.json();
     
-    // 自作Botが出した「カスタム募集」のメッセージを探す
-    // Embedのタイトルに「募集」が含まれ、かつ本文等からモードが「カスタム」であることを判定
+    // Embedのタイトルに「募集」または「確定」が含まれ、かつフッターからモードが「カスタム」であることを判定
     const targetMsg = messages.find((m: any) => {
       if (m.embeds && m.embeds.length > 0) {
         const embed = m.embeds[0];
-        // embedのタイトルが募集関連であり、かつフィールドや説明に「カスタム」が含まれるものを探す
-        const isRecruit = embed.title && embed.title.includes('募集');
-        const isCustom = embed.fields?.some((f: any) => f.name.includes('モード') && f.value.includes('カスタム'));
+        // embedのタイトルが募集関連であり、かつフッターに「カスタム」が含まれるものを探す
+        const isRecruit = embed.title && (embed.title.includes('募集') || embed.title.includes('確定'));
+        const isCustom = embed.footer?.text?.includes('モード: カスタム');
         return isRecruit && isCustom;
       }
       return false;

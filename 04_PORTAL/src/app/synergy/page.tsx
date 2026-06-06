@@ -44,11 +44,20 @@ export default function SynergyPage() {
           .from('ktm_match_participants')
           .select('match_id, player_name, team, role, ktm_matches!inner(winning_team)');
 
+        const { data: activePlayersData } = await supabase
+          .from('ktm_players')
+          .select('name');
+        
+        const activePlayerNames = new Set(activePlayersData?.map(p => p.name) || []);
+
         if (error) throw error;
         
         // 試合ごとにグループ化
         const matches: Record<number, { BLUE: string[], RED: string[], winner: 'BLUE' | 'RED' }> = {};
         data.forEach((row: any) => {
+          // 現在居ないプレイヤーは集計から除外
+          if (!activePlayerNames.has(row.player_name)) return;
+
           if (!matches[row.match_id]) {
             matches[row.match_id] = { BLUE: [], RED: [], winner: row.ktm_matches.winning_team };
           }
