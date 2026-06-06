@@ -114,7 +114,7 @@ export default function KtmAdminPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState({ type: "", text: "" });
-  const [sortConfig, setSortConfig] = useState({ key: "mmr", direction: "desc" });
+  const [sortConfig, setSortConfig] = useState({ key: "no", direction: "asc" });
   const [filterActive, setFilterActive] = useState(false);
   const [showMmrInfo, setShowMmrInfo] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState<any>(null);
