@@ -598,9 +598,9 @@ export default function BalancerPage() {
             <table className="w-full text-sm text-left">
               <thead className="text-xs text-gray-400 bg-gray-950 border-b border-gray-800">
                 <tr>
-                  <th className="px-4 py-3 font-medium w-16 text-center">参加</th>
-                  <th className="px-2 py-3 font-medium w-12 text-center" title="絶対に第1希望レーンに配属する">👑固定</th>
-                  <SortableHeader label="No." sortKey="no" className="w-16" />
+                  <SortableHeader label="参加" sortKey="is_active" className="w-16 text-center" />
+                  <SortableHeader label="👑固定" sortKey="is_fixed" className="w-16 text-center" />
+                  <SortableHeader label="No." sortKey="no" className="w-16 text-center" />
                   <SortableHeader label="プレイヤー名" sortKey="name" />
                   <SortableHeader label="ランク" sortKey="highest_rank" />
                   <SortableHeader label="総合MMR" sortKey="mmr" />
