@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../../../lib/supabaseClient';
 import { RefreshCw, Trophy, Target, Search, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
+import { getChampIcon } from '../../../lib/ddragonClient';
 
 type Role = 'TOP' | 'JG' | 'MID' | 'ADC' | 'SUP';
 const ROLES: Role[] = ['TOP', 'JG', 'MID', 'ADC', 'SUP'];
@@ -16,6 +17,12 @@ interface PlayerStat {
   deaths: number;
   assists: number;
   vision: number;
+  champion_name: string;
+  damage_dealt: number;
+  damage_taken: number;
+  heal_shield: number;
+  objective_damage: number;
+  cs: number;
 }
 
 export default function CustomRecordPage() {
@@ -27,7 +34,12 @@ export default function CustomRecordPage() {
     const initial: PlayerStat[] = [];
     ['BLUE', 'RED'].forEach(team => {
       ROLES.forEach(role => {
-        initial.push({ name: '', team: team as 'BLUE' | 'RED', currentRole: role, kills: 0, deaths: 0, assists: 0, vision: 0 });
+        initial.push({ 
+          name: '', team: team as 'BLUE' | 'RED', currentRole: role, 
+          kills: 0, deaths: 0, assists: 0, vision: 0, 
+          champion_name: '', damage_dealt: 0, damage_taken: 0, 
+          heal_shield: 0, objective_damage: 0, cs: 0 
+        });
       });
     });
     return initial;
@@ -43,7 +55,7 @@ export default function CustomRecordPage() {
     async function fetchPlayers() {
       const { data, error } = await supabase
         .from('ktm_players')
-        .select('name')
+        .select('name, ign')
         .order('name', { ascending: true });
       if (!error && data) {
         setPlayersPool(data);
@@ -81,21 +93,51 @@ export default function CustomRecordPage() {
       if (!res.ok) throw new Error(data.error);
 
       const newStats = [...stats];
+      
+      // Auto-fill logic
       data.participants.forEach((riotP: any) => {
-        // 現在選択されている名前と一致するか確認
-        const matchingPlayerIndex = newStats.findIndex(p => p.name.toLowerCase() === riotP.riotIdName.toLowerCase());
-        if (matchingPlayerIndex !== -1) {
-          newStats[matchingPlayerIndex].kills = riotP.kills;
-          newStats[matchingPlayerIndex].deaths = riotP.deaths;
-          newStats[matchingPlayerIndex].assists = riotP.assists;
-          newStats[matchingPlayerIndex].vision = riotP.visionScore;
+        // Find KTM player by matching IGN or Name
+        const ktmPlayer = playersPool.find((p: any) => {
+          if (p.ign) {
+            const [ignName] = p.ign.split('#');
+            return ignName.toLowerCase() === riotP.riotIdName.toLowerCase();
+          }
+          return p.name.toLowerCase() === riotP.riotIdName.toLowerCase();
+        });
+
+        const teamLabel = riotP.teamId === 100 ? 'BLUE' : 'RED';
+        const roleStr = riotP.teamPosition || riotP.lane; // TOP, JUNGLE, MIDDLE, BOTTOM, UTILITY
+        
+        let targetRole: Role = 'TOP';
+        if (roleStr.includes('JUNGLE')) targetRole = 'JG';
+        if (roleStr.includes('MID')) targetRole = 'MID';
+        if (roleStr.includes('BOT')) targetRole = 'ADC';
+        if (roleStr.includes('UTILITY')) targetRole = 'SUP';
+
+        const idx = newStats.findIndex(p => p.team === teamLabel && p.currentRole === targetRole);
+        if (idx !== -1) {
+          if (ktmPlayer) {
+            newStats[idx].name = ktmPlayer.name;
+          }
+          newStats[idx].kills = riotP.kills;
+          newStats[idx].deaths = riotP.deaths;
+          newStats[idx].assists = riotP.assists;
+          newStats[idx].vision = riotP.visionScore || 0;
+          newStats[idx].champion_name = riotP.championName;
+          newStats[idx].damage_dealt = riotP.totalDamageDealtToChampions || 0;
+          newStats[idx].damage_taken = riotP.totalDamageTaken || 0;
+          newStats[idx].heal_shield = (riotP.totalHealsOnTeammates || 0) + (riotP.totalDamageShieldedOnTeammates || 0);
+          newStats[idx].objective_damage = riotP.damageDealtToObjectives || 0;
+          newStats[idx].cs = (riotP.totalMinionsKilled || 0) + (riotP.neutralMinionsKilled || 0);
+          
           if (riotP.win) {
-            setWinningTeam(newStats[matchingPlayerIndex].team);
+            setWinningTeam(teamLabel);
           }
         }
       });
+      
       setStats(newStats);
-      setMessage('Riot APIからスタッツを取得しました。一致しなかったプレイヤーは手動で入力してください。');
+      setMessage('✅ Match-V5 から全自動でプレイヤー、チャンピオン、スタッツを割り当てました！名前が空欄の箇所があれば手動で選択してください。');
     } catch (err: any) {
       setMessage(`Riot取得エラー: ${err.message}`);
     } finally {
@@ -130,16 +172,25 @@ export default function CustomRecordPage() {
             kills: s.kills,
             deaths: s.deaths,
             assists: s.assists,
-            vision_score: s.vision
+            vision_score: s.vision,
+            champion_name: s.champion_name,
+            damage_dealt: s.damage_dealt,
+            damage_taken: s.damage_taken,
+            heal_shield: s.heal_shield,
+            objective_damage: s.objective_damage,
+            cs: s.cs
           }))
         })
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
       
-      alert('試合結果を保存し、MMRを更新しました！');
+      alert('試合結果と詳細スタッツを保存し、MMRを更新しました！');
       // リセット
-      setStats(stats.map(s => ({ ...s, name: '', kills: 0, deaths: 0, assists: 0, vision: 0 })));
+      setStats(stats.map(s => ({ 
+        ...s, name: '', kills: 0, deaths: 0, assists: 0, vision: 0,
+        champion_name: '', damage_dealt: 0, damage_taken: 0, heal_shield: 0, objective_damage: 0, cs: 0 
+      })));
       setWinningTeam(null);
     } catch (err: any) {
       setMessage(`保存エラー: ${err.message}`);
@@ -168,10 +219,10 @@ export default function CustomRecordPage() {
         <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 shadow-2xl">
           <div className="mb-8 p-4 bg-gray-800/50 rounded-lg border border-gray-700">
             <h3 className="text-lg font-bold text-white mb-2 flex items-center gap-2">
-              <Search className="h-5 w-5 text-blue-400" /> Riot API からスタッツを自動取得
+              <Search className="h-5 w-5 text-blue-400" /> Match-V5 全自動インポート
             </h3>
             <p className="text-sm text-gray-400 mb-4">
-              ※先に下のフォームで「全員の名前（KTM登録名）」を選択してから取得ボタンを押してください。名前が一致した人のKDAが自動入力されます。
+              ※参加者の誰か一人のRiot IGNを入力して取得ボタンを押すだけで、直近のカスタムゲームから全員の名前・使用チャンピオン・詳細な戦闘スタッツを自動で割り当てます。
             </p>
             <div className="flex gap-2 max-w-xl">
               <input 
@@ -210,6 +261,15 @@ export default function CustomRecordPage() {
                         <option value="">選択...</option>
                         {playersPool.map(p => <option key={p.name} value={p.name}>{p.name}</option>)}
                       </select>
+                      {s.champion_name && (
+                        <img 
+                          src={getChampIcon(s.champion_name)} 
+                          className="w-8 h-8 rounded-full border border-gray-600" 
+                          alt={s.champion_name}
+                          title={s.champion_name}
+                          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                        />
+                      )}
                       <div className="flex-1 flex gap-2 justify-end">
                         <input type="number" value={s.kills} onChange={e => handleStatChange('BLUE', role, 'kills', e.target.value)} className="w-14 bg-gray-900 border border-gray-700 text-white text-center rounded py-1" placeholder="K" />
                         <span className="text-gray-500 self-center">/</span>
@@ -240,6 +300,15 @@ export default function CustomRecordPage() {
                         <option value="">選択...</option>
                         {playersPool.map(p => <option key={p.name} value={p.name}>{p.name}</option>)}
                       </select>
+                      {s.champion_name && (
+                        <img 
+                          src={getChampIcon(s.champion_name)} 
+                          className="w-8 h-8 rounded-full border border-gray-600" 
+                          alt={s.champion_name}
+                          title={s.champion_name}
+                          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                        />
+                      )}
                       <div className="flex-1 flex gap-2 justify-end">
                         <input type="number" value={s.kills} onChange={e => handleStatChange('RED', role, 'kills', e.target.value)} className="w-14 bg-gray-900 border border-gray-700 text-white text-center rounded py-1" placeholder="K" />
                         <span className="text-gray-500 self-center">/</span>

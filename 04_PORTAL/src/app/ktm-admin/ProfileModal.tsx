@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { X, RefreshCw, Swords, Shield, Star, Crosshair, Zap, Activity, Globe } from "lucide-react";
+import { X, RefreshCw, Swords, Shield, Star, Crosshair, Zap, Activity, Info } from "lucide-react";
 import { getChampIcon, getChampNameById } from "../../lib/ddragonClient";
-import RadarChart from "../../components/RadarChart";
+import AIPlayerAnalysis from "../../components/AIPlayerAnalysis";
 
 interface ProfileModalProps {
   player: any;
@@ -138,10 +138,17 @@ export default function ProfileModal({ player, onClose }: ProfileModalProps) {
             ) : stats && Object.keys(stats).some(k => stats[k] !== null) ? (
               <div className="space-y-6">
                 
-                {/* プレイスタイル・レーダーチャート */}
+                {/* プレイスタイル・AI分析 */}
                 <div className="bg-gray-800/40 border border-gray-700/50 rounded-lg p-4 flex flex-col md:flex-row gap-6 items-center">
                   <div className="w-full md:w-1/3">
-                    <RadarChart stats={stats} mmr={player.mmr || 1000} />
+                    <AIPlayerAnalysis 
+                      playerId={player.id} 
+                      name={player.name} 
+                      stats={stats} 
+                      mmr={player.mmr || 1000} 
+                      highestRank={player.highest_rank}
+                      initialComment={player.ai_comment}
+                    />
                   </div>
                   <div className="w-full md:w-2/3 space-y-3">
                     <h4 className="text-lg font-bold text-white flex items-center gap-2">
