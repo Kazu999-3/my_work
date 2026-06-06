@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { supabase } from "../../../lib/supabaseClient";
-import AIPlayerAnalysis from "../../../components/AIPlayerAnalysis";
+import ScoutingReport from "../../../components/ScoutingReport";
 import { Activity, Shield, Swords, Star, Zap, Crosshair, RefreshCw, CheckCircle2 } from "lucide-react";
 import { getChampIcon, getChampNameById } from "../../../lib/ddragonClient";
 
@@ -202,14 +202,7 @@ export default function PlayerMyPage() {
                 <Activity className="w-5 h-5 text-blue-400" />
                 プレイスタイル分析
               </h3>
-              <AIPlayerAnalysis 
-                playerId={player.id} 
-                name={player.name} 
-                stats={stats} 
-                mmr={player.mmr || 1000} 
-                highestRank={player.highest_rank}
-                initialComment={player.ai_comment}
-              />
+              <ScoutingReport stats={stats} mmr={player.mmr || 1000} />
             </div>
 
             <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-xl">
