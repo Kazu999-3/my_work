@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { X, RefreshCw, Swords, Shield, Star, Crosshair, Zap, Activity } from "lucide-react";
+import { X, RefreshCw, Swords, Shield, Star, Crosshair, Zap, Activity, Globe } from "lucide-react";
 import { getChampIcon, getChampNameById } from "../../lib/ddragonClient";
 import RadarChart from "../../components/RadarChart";
 

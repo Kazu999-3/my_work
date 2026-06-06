@@ -364,7 +364,13 @@ export default function KtmAdminPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
       
-      setMessage({ type: "success", text: data.message });
+      if (data.errors && data.errors.length > 0) {
+        console.warn("Riot Sync Errors:", data.errors);
+        setMessage({ type: "error", text: `⚠️ ${data.message} ただし ${data.errors.length}件のエラーが発生しました。原因: ${data.errors[0]}` });
+      } else {
+        setMessage({ type: "success", text: data.message });
+      }
+      
       fetchPlayers(); // 最新データを再取得
     } catch (err: any) {
       setMessage({ type: "error", text: err.message });
