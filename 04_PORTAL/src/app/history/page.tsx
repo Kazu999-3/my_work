@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import { History, RefreshCw, Trophy, Swords, Calendar } from 'lucide-react';
 import Link from 'next/link';
+import { getChampIcon } from '../../lib/ddragonClient';
 
 interface MatchData {
   id: number;
@@ -143,15 +144,29 @@ export default function HistoryPage() {
 
 function PlayerRow({ p }: { p: any }) {
   return (
-    <div className="flex items-center justify-between bg-gray-950/50 p-2 rounded border border-gray-800/50">
+    <div className="flex items-center justify-between bg-gray-950/50 p-2 rounded-lg border border-gray-800/50 hover:bg-gray-800/80 transition">
       <div className="flex items-center gap-3">
-        <span className="text-xs font-bold text-gray-500 w-8">{p.role}</span>
+        <span className="text-xs font-black text-gray-500 w-8">{p.role}</span>
+        {p.champion_name ? (
+          <img 
+            src={getChampIcon(p.champion_name)} 
+            alt={p.champion_name}
+            title={p.champion_name}
+            className="w-8 h-8 rounded-full border border-gray-700 shadow-sm"
+            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+          />
+        ) : (
+          <div className="w-8 h-8 rounded-full bg-gray-800 border border-gray-700 flex items-center justify-center text-xs text-gray-500">?</div>
+        )}
         <span className="font-bold text-gray-200 w-24 truncate">{p.player_name}</span>
       </div>
       <div className="flex items-center gap-4">
-        {p.champion_name && <span className="text-xs text-gray-400 bg-gray-800 px-2 py-0.5 rounded">{p.champion_name}</span>}
-        <span className="font-mono text-sm tracking-tighter">
-          <span className="text-emerald-400">{p.kills}</span><span className="text-gray-600">/</span><span className="text-red-400">{p.deaths}</span><span className="text-gray-600">/</span><span className="text-blue-400">{p.assists}</span>
+        <span className="font-mono text-sm tracking-tighter bg-gray-900 px-2 py-1 rounded">
+          <span className="text-emerald-400 font-bold">{p.kills}</span>
+          <span className="text-gray-600 px-0.5">/</span>
+          <span className="text-red-400 font-bold">{p.deaths}</span>
+          <span className="text-gray-600 px-0.5">/</span>
+          <span className="text-blue-400 font-bold">{p.assists}</span>
         </span>
       </div>
     </div>
