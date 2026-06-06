@@ -562,8 +562,8 @@ export default function BalancerPage() {
               <p className="text-gray-400">メインレーンをどれくらいやりたいかの度合いです。1(絶対やりたい) 〜 3(どこでもいい) で設定し、AIが希望レーンを割り当てる優先度になります。</p>
             </div>
             <div className="bg-gray-950 p-4 rounded border border-gray-800">
-              <span className="font-bold text-rose-500 mb-1 block">格上 (0〜2)</span>
-              <p className="text-gray-400">自分よりMMRが高い相手と対面することをどれくらい許容するかの設定です。数字が大きいほど、格上とマッチしやすくなります。</p>
+              <span className="font-bold text-rose-500 mb-1 block">格上許可 (ON/OFF)</span>
+              <p className="text-gray-400">自分よりMMRが高い相手と対面することを許容するかどうかの設定です。ONにすると、格上とマッチしやすくなります。</p>
             </div>
             <div className="bg-gray-950 p-4 rounded border border-gray-800">
               <span className="font-bold text-emerald-500 mb-1 block">PITY (ピティ)</span>
@@ -724,31 +724,18 @@ export default function BalancerPage() {
                         </select>
                       </td>
                       <td className="px-2 py-2 text-center">
-                        <select
-                          value={p.allow_higher || 0}
-                          onChange={(e) => handleInputChange(p.id, "allow_higher", parseInt(e.target.value))}
-                          className="bg-gray-950 border border-gray-700 rounded px-2 py-1 text-rose-300 outline-none focus:border-rose-500 w-16"
-                        >
-                          <option value="0">0</option>
-                          <option value="1">1</option>
-                          <option value="2">2</option>
-                        </select>
-                      </td>
-                      <td className="px-2 py-2 text-center">
                         <input
-                          type="number"
-                          value={p.pity || 0}
-                          onChange={(e) => handleInputChange(p.id, "pity", parseInt(e.target.value))}
-                          className="w-16 bg-gray-950 border border-gray-700 text-emerald-400 font-mono text-center rounded focus:border-emerald-500 outline-none"
+                          type="checkbox"
+                          checked={!!p.allow_higher}
+                          onChange={(e) => handleInputChange(p.id, "allow_higher", e.target.checked)}
+                          className="w-5 h-5 rounded border-gray-700 bg-gray-950 text-rose-500 focus:ring-rose-500/50 cursor-pointer"
                         />
                       </td>
-                      <td className="px-2 py-2 text-center">
-                        <input
-                          type="number"
-                          value={p.off_pity || 0}
-                          onChange={(e) => handleInputChange(p.id, "off_pity", parseInt(e.target.value))}
-                          className="w-16 bg-gray-950 border border-gray-700 text-fuchsia-400 font-mono text-center rounded focus:border-fuchsia-500 outline-none"
-                        />
+                      <td className="px-2 py-2 text-center font-mono text-emerald-400 font-bold">
+                        {p.pity || 0}
+                      </td>
+                      <td className="px-2 py-2 text-center font-mono text-fuchsia-400 font-bold">
+                        {p.off_pity || 0}
                       </td>
                     </tr>
                   );
