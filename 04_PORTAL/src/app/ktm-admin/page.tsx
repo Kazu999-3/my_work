@@ -2,10 +2,9 @@
 
 import { useEffect, useState, useRef } from "react";
 import { supabase } from "../../lib/supabaseClient";
-import MatchRecordPanel from "./MatchRecordPanel";
 import MatchHistoryPanel from "./MatchHistoryPanel";
 import ProfileModal from "./ProfileModal";
-import { Info, Users, RefreshCw, Save, Trophy, Filter, Plus, Swords, AlertCircle, X, History, Globe } from "lucide-react";
+import { Info, Users, RefreshCw, Save, Trophy, Filter, Plus, AlertCircle, X, History, Globe } from "lucide-react";
 
 function getRankFromMMR(mmr: number): { tier: string, color: string } {
   if (mmr >= 2000) return { tier: "CHALLENGER", color: "text-sky-300 bg-sky-300/10" };
@@ -52,8 +51,6 @@ function calculateAutoMmr(highestRank: string | null, targetRole: string, prefs:
   return baseMmr - 200;
 }
 
-
-// ランク名から色を判定するユーティリティ（highest_rank入力用）
 function getColorFromRankName(rank: string): string {
   const r = (rank || "").toUpperCase();
   if (r.includes("IRON")) return "text-gray-500 font-bold";
@@ -69,7 +66,6 @@ function getColorFromRankName(rank: string): string {
   return "text-gray-400 font-medium";
 }
 
-// レーン名から色を判定するユーティリティ
 function getColorFromRole(role: string): string {
   const r = (role || "").toUpperCase();
   if (r.includes("TOP")) return "text-orange-400 font-bold";
@@ -81,7 +77,6 @@ function getColorFromRole(role: string): string {
   return "text-gray-400 font-medium";
 }
 
-// MMR用のクリックして編集できるバッジコンポーネント
 const MmrBadgeInput = ({ value, onChange }: { value: number, onChange: (v: number) => void }) => {
   const [editing, setEditing] = useState(false);
   const rank = getRankFromMMR(value);
@@ -122,18 +117,9 @@ export default function KtmAdminPage() {
   const [activeTab, setActiveTab] = useState<'players' | 'history'>('players');
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
-  // バランサー用ステート
-  const [balancing, setBalancing] = useState(false);
-  const [balanceResult, setBalanceResult] = useState<any>(null);
-  
-  // Discord通知用ステート
-  const [sendingDiscord, setSendingDiscord] = useState(false);
-  
-  // Discordメンバー同期用ステート
   const [syncingDiscord, setSyncingDiscord] = useState(false);
   const [syncData, setSyncData] = useState<any>(null);
 
-  // Riot API 同期用ステート
   const [syncingRiot, setSyncingRiot] = useState(false);
 
   useEffect(() => {
@@ -187,9 +173,8 @@ export default function KtmAdminPage() {
     try {
       const targetPlayers = currentPlayers || players;
       const existingPlayers = targetPlayers.filter(p => p.id);
-      const newPlayers = targetPlayers.filter(p => !p.id && !p.discord_id.startsWith('new-'));
+      const playersToInsert = targetPlayers.filter(p => !p.id);
 
-      // 既存のプレイヤーを更新
       let updatedCount = 0;
       for (const p of existingPlayers) {
         const { data, error } = await supabase.from("ktm_players").update({
@@ -218,15 +203,13 @@ export default function KtmAdminPage() {
       }
 
       if (existingPlayers.length > 0 && updatedCount === 0) {
-        throw new Error("更新が0件でした。Supabaseの RLS (Row Level Security) によりフロントエンドからの更新が弾かれている可能性があります。");
+        throw new Error("更新が0件でした。Supabaseの RLS によりフロントエンドからの更新が弾かれている可能性があります。");
       }
 
-      // 新規プレイヤーを追加 (新規の判定として ID がないものを対象とする)
-      const playersToInsert = targetPlayers.filter(p => !p.id);
       if (playersToInsert.length > 0) {
         const { error } = await supabase.from("ktm_players").insert(
           playersToInsert.map(p => ({
-            discord_id: p.discord_id.startsWith('new-') ? '' : p.discord_id, // 新規作成時のダミーIDを消す
+            discord_id: p.discord_id.startsWith('new-') ? '' : p.discord_id,
             name: p.name,
             ign: p.ign,
             mmr: parseInt(p.mmr) || 1000,
@@ -287,7 +270,7 @@ export default function KtmAdminPage() {
         return { ...p, mmr_top, mmr_jg, mmr_mid, mmr_adc, mmr_sup, mmr };
       }
       return p;
-    }));
+    });
   };
 
   const handleRebuildMmr = async () => {
@@ -301,7 +284,7 @@ export default function KtmAdminPage() {
       if (!res.ok) throw new Error(data.error || "再計算に失敗しました");
       
       setMessage({ type: "success", text: "✅ " + data.message });
-      fetchPlayers(); // 再読み込み
+      fetchPlayers(); 
     } catch (err: any) {
       setMessage({ type: "error", text: "❌ Rebuild エラー: " + err.message });
     } finally {
@@ -315,43 +298,6 @@ export default function KtmAdminPage() {
       direction = "asc";
     }
     setSortConfig({ key, direction });
-  };
-
-  const handleBalance = async () => {
-    const activePlayers = players.filter(p => p.is_active);
-    if (activePlayers.length < 10) {
-      setMessage({ type: "error", text: `チーム分けには最低10人のActiveプレイヤーが必要です。(現在 ${activePlayers.length}人)` });
-      return;
-    }
-
-    setBalancing(true);
-    setMessage({ type: "", text: "" });
-    setBalanceResult(null);
-
-    try {
-      const res = await fetch('/api/balancer', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          participants: activePlayers.map(p => ({
-            name: p.name,
-            isFixed: false // TODO: 今後UIから固定プレイヤーを指定可能にする
-          }))
-        })
-      });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'チーム分けに失敗しました');
-      if (res.ok) {
-        setBalanceResult(data);
-      } else {
-        throw new Error(data.error || "計算に失敗しました");
-      }
-    } catch (err: any) {
-      setMessage({ type: "error", text: "❌ バランス計算エラー: " + err.message });
-    } finally {
-      setBalancing(false);
-    }
   };
 
   const handleRiotSync = async () => {
@@ -372,115 +318,11 @@ export default function KtmAdminPage() {
         setMessage({ type: "success", text: data.message });
       }
       
-      fetchPlayers(); // 最新データを再取得
+      fetchPlayers(); 
     } catch (err: any) {
       setMessage({ type: "error", text: err.message });
     } finally {
       setSyncingRiot(false);
-    }
-  };
-
-  const handleSwapPlayer = (targetTeam: 'teamBlue' | 'teamRed' | 'spectators', targetRole: string, newPlayerName: string) => {
-    if (!balanceResult) return;
-    
-    // 全プレイヤーの現在の場所を検索
-    let sourceLocation = { team: '', role: '', index: -1 };
-    
-    // Blueを検索
-    const blueIdx = balanceResult.teamBlue.findIndex((p:any) => p.name === newPlayerName);
-    if (blueIdx !== -1) sourceLocation = { team: 'teamBlue', role: balanceResult.teamBlue[blueIdx].currentRole, index: blueIdx };
-    
-    // Redを検索
-    const redIdx = balanceResult.teamRed.findIndex((p:any) => p.name === newPlayerName);
-    if (redIdx !== -1 && sourceLocation.index === -1) sourceLocation = { team: 'teamRed', role: balanceResult.teamRed[redIdx].currentRole, index: redIdx };
-    
-    // Spectatorsを検索
-    const specIdx = balanceResult.spectators?.findIndex((name:string) => name === newPlayerName);
-    if (specIdx !== -1 && specIdx !== undefined && sourceLocation.index === -1) sourceLocation = { team: 'spectators', role: '', index: specIdx };
-
-    if (sourceLocation.index === -1) return; // 見つからない場合は何もしない
-
-    const newResult = { ...balanceResult };
-
-    // 対象枠に現在いるプレイヤーを取得
-    let targetPlayer: any = null;
-    let targetIndex = -1;
-    if (targetTeam === 'spectators') {
-      targetPlayer = balanceResult.spectators[parseInt(targetRole)]; // spectatorsの場合はroleをindexとして使う
-      targetIndex = parseInt(targetRole);
-    } else {
-      targetIndex = newResult[targetTeam].findIndex((p:any) => p.currentRole === targetRole);
-      if (targetIndex !== -1) targetPlayer = newResult[targetTeam][targetIndex];
-    }
-
-    // 移動元プレイヤーオブジェクトを取得
-    let sourcePlayerObj: any = null;
-    if (sourceLocation.team === 'spectators') {
-      // 観戦者からチームへの移動の場合、プレイヤーデータ（MMR等）を `players` ステートから復元する
-      const pData = players.find(p => p.name === newPlayerName);
-      sourcePlayerObj = { 
-        name: newPlayerName, 
-        currentRole: targetRole,
-        mmr: pData ? pData.mmr : 1000,
-        mainLane: pData?.role_preferences?.primary || 'ALL',
-        subLane: pData?.role_preferences?.secondary || 'ALL'
-      };
-    } else {
-      sourcePlayerObj = { ...newResult[sourceLocation.team][sourceLocation.index] };
-    }
-
-    // --- スワップ実行 ---
-    
-    // 1. まず移動元に targetPlayer を入れる（入れ替え）
-    if (sourceLocation.team === 'spectators') {
-      if (targetPlayer) {
-        newResult.spectators[sourceLocation.index] = targetPlayer.name; // チームから観戦者へ
-      } else {
-        newResult.spectators.splice(sourceLocation.index, 1); // 枠が空だった場合
-      }
-    } else {
-      if (targetPlayer) {
-        // 観戦者が元だった場合は、元チーム枠の role を targetPlayer にセット
-        targetPlayer.currentRole = sourceLocation.role;
-        newResult[sourceLocation.team][sourceLocation.index] = targetPlayer;
-      } else {
-        newResult[sourceLocation.team].splice(sourceLocation.index, 1);
-      }
-    }
-
-    // 2. 移動先に sourcePlayerObj を入れる
-    if (targetTeam === 'spectators') {
-      if (sourcePlayerObj) {
-        newResult.spectators[targetIndex] = sourcePlayerObj.name;
-      }
-    } else {
-      sourcePlayerObj.currentRole = targetRole;
-      if (targetIndex !== -1) {
-        newResult[targetTeam][targetIndex] = sourcePlayerObj;
-      } else {
-        newResult[targetTeam].push(sourcePlayerObj);
-      }
-    }
-
-    setBalanceResult(newResult);
-  };
-
-  const handleSendDiscord = async () => {
-    if (!balanceResult) return;
-    setSendingDiscord(true);
-    try {
-      const res = await fetch('/api/discord', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(balanceResult)
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Discord通知に失敗しました');
-      setMessage({ type: "success", text: "✅ Discordに結果を送信しました！" });
-    } catch (err: any) {
-      setMessage({ type: "error", text: err.message });
-    } finally {
-      setSendingDiscord(false);
     }
   };
 
@@ -525,7 +367,6 @@ export default function KtmAdminPage() {
     }
   };
 
-  // まず全員に joined_at 順のNoを振る (joined_at がない場合は後ろへ)
   const playersWithNo = [...players].sort((a, b) => {
     const timeA = a.metadata?.joined_at ? new Date(a.metadata.joined_at).getTime() : Infinity;
     const timeB = b.metadata?.joined_at ? new Date(b.metadata.joined_at).getTime() : Infinity;
@@ -538,7 +379,6 @@ export default function KtmAdminPage() {
       let aVal = a[sortConfig.key];
       let bVal = b[sortConfig.key];
       
-      // 数値として扱うカラム
       if (sortConfig.key === "mmr" || sortConfig.key.startsWith("mmr_") || sortConfig.key === "weight" || sortConfig.key === "no") {
         aVal = parseInt(aVal) || 0;
         bVal = parseInt(bVal) || 0;
@@ -586,7 +426,7 @@ export default function KtmAdminPage() {
                 : 'border-transparent text-gray-500 hover:text-gray-300 hover:bg-gray-800/50'
             }`}
           >
-            <Users className="h-4 w-4" /> プレイヤー管理＆チーム分け
+            <Users className="h-4 w-4" /> プレイヤー名簿・MMR編集
           </button>
           <button
             onClick={() => setActiveTab('history')}
@@ -607,676 +447,457 @@ export default function KtmAdminPage() {
         {activeTab === 'players' && (
           <div className="space-y-6">
             {/* Header */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-gray-800 pb-6 gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-white flex items-center gap-3">
-              <Users className="h-8 w-8 text-blue-500" />
-              KTM 管理ダッシュボード
-            </h1>
-            <p className="text-gray-400 mt-2 text-sm">
-              プレイヤー名簿の管理とMMRの手動調整（旧スプレッドシート機能）
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-4">
-            <button
-              onClick={() => fetchPlayers()}
-              className="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 text-gray-200 px-4 py-2 rounded-lg font-bold transition"
-            >
-              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-              更新
-            </button>
-            
-            <button
-              onClick={() => {
-                if (confirm('全ての変更を保存しますか？')) handleSave();
-              }}
-              disabled={saving}
-              className={`flex items-center gap-2 px-6 py-2 rounded-lg font-bold transition shadow-lg ${
-                saving ? 'bg-indigo-400 text-white cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-500/20'
-              }`}
-            >
-              {saving ? <RefreshCw className="h-5 w-5 animate-spin" /> : <Save className="h-5 w-5" />}
-              {saving ? "保存中..." : "変更を保存"}
-            </button>
-
-            <a 
-              href="/ktm-admin/record"
-              className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg font-bold transition ml-auto"
-            >
-              <Trophy className="h-4 w-4" />
-              カスタム試合を手動記録
-            </a>
-
-            <button
-              onClick={handleSyncCheck}
-              disabled={syncingDiscord}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold transition border ${
-                syncingDiscord ? 'bg-[#404eed]/50 border-[#404eed]/50 text-gray-400 cursor-not-allowed' : 'bg-[#5865F2]/20 border-[#5865F2] text-[#5865F2] hover:bg-[#5865F2] hover:text-white'
-              }`}
-            >
-              <Users className={`h-4 w-4 ${syncingDiscord && !syncData ? 'animate-spin' : ''}`} /> 
-              {syncingDiscord && !syncData ? "確認中..." : "Discord同期"}
-            </button>
-            <button
-              onClick={handleRiotSync}
-              disabled={syncingRiot}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold transition border ${
-                syncingRiot ? 'bg-sky-900/50 border-sky-500/50 text-sky-400 cursor-not-allowed' : 'bg-sky-900/20 border-sky-500/50 text-sky-400 hover:bg-sky-800/40 hover:text-white'
-              }`}
-            >
-              <Globe className={`h-4 w-4 ${syncingRiot ? 'animate-pulse' : ''}`} /> 
-              {syncingRiot ? "同期中..." : "Riotランク同期"}
-            </button>
-            <button
-              onClick={handleRebuildMmr}
-              className="flex items-center gap-2 bg-red-900/40 hover:bg-red-800 text-red-200 border border-red-800/50 px-4 py-2 rounded-lg font-bold transition"
-              title="過去のすべての試合履歴を元にMMRを再計算し、全員のデータを上書きします"
-            >
-              <RefreshCw className="h-4 w-4" /> 🔄 Rebuild
-            </button>
-            <button
-              onClick={() => setFilterActive(!filterActive)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition border ${filterActive ? 'bg-blue-900/50 border-blue-500 text-blue-300' : 'bg-gray-800 border-gray-700 text-gray-400 hover:text-white'}`}
-            >
-              <Filter className="h-4 w-4" /> {filterActive ? "参加者のみ" : "全員表示"}
-            </button>
-            <button
-              onClick={addNewPlayer}
-              className="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition"
-            >
-              <Plus className="h-4 w-4" /> 行を追加
-            </button>
-            <button
-              onClick={handleBalance}
-              disabled={balancing}
-              className={`flex items-center gap-2 px-5 py-2 rounded-lg font-bold transition ${
-                balancing ? "bg-amber-800 text-amber-300 cursor-not-allowed" : "bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white shadow-lg shadow-orange-900/20"
-              }`}
-            >
-              {balancing ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Swords className="h-4 w-4" />}
-              {balancing ? "計算中..." : "チーム分け実行"}
-            </button>
-            <button
-              onClick={() => setShowMmrInfo(!showMmrInfo)}
-              className={`flex items-center gap-2 px-3 py-2 rounded-lg transition border ${showMmrInfo ? 'bg-cyan-900/50 border-cyan-500 text-cyan-300' : 'bg-gray-800 border-gray-700 text-gray-400 hover:text-white'}`}
-              title="MMR計算ロジックを見る"
-            >
-              <Info className="h-5 w-5" />
-            </button>
-          </div>
-        </div>
-
-        {/* Sync Preview Modal */}
-        {syncData && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-            <div className="bg-gray-900 border border-gray-700 rounded-xl max-w-2xl w-full shadow-2xl flex flex-col max-h-[90vh]">
-              <div className="p-6 border-b border-gray-800 flex justify-between items-center bg-gray-800/30">
-                <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                  <Users className="h-6 w-6 text-[#5865F2]" />
-                  Discordメンバー同期の確認
-                </h2>
-                <button onClick={() => { setSyncData(null); setSyncingDiscord(false); }} className="text-gray-500 hover:text-white">
-                  <X className="h-6 w-6" />
-                </button>
-              </div>
-              
-              <div className="p-6 overflow-y-auto space-y-6 flex-1">
-                <p className="text-gray-300 text-sm">
-                  現在のDiscordサーバーには <strong>{syncData.totalDiscordMembers}</strong> 人のメンバーがいます（Botを除く）。<br />
-                  以下の差分が見つかりました。同期を実行すると、データベースが自動的に更新されます。
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-gray-800 pb-6 gap-4">
+              <div>
+                <h1 className="text-3xl font-bold text-white flex items-center gap-3">
+                  <Users className="h-8 w-8 text-blue-500" />
+                  KTM 管理ダッシュボード
+                </h1>
+                <p className="text-gray-400 mt-2 text-sm">
+                  管理者用: プレイヤー名簿の管理とMMRの手動調整
                 </p>
-
-                {syncData.toAdd.length > 0 && (
-                  <div className="bg-green-900/20 border border-green-800/50 rounded-lg p-4">
-                    <h3 className="text-green-400 font-bold mb-3 flex items-center gap-2">
-                      <Plus className="h-4 w-4" /> 新規追加されるメンバー ({syncData.toAdd.length}人)
-                    </h3>
-                    <div className="flex flex-wrap gap-2">
-                      {syncData.toAdd.map((p: any) => (
-                        <span key={p.discord_id} className="bg-green-900/40 text-green-300 px-2 py-1 rounded text-xs border border-green-800">
-                          {p.name}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {syncData.toDeactivate.length > 0 && (
-                  <div className="bg-red-900/20 border border-red-800/50 rounded-lg p-4">
-                    <h3 className="text-red-400 font-bold mb-3 flex items-center gap-2">
-                      <AlertCircle className="h-4 w-4" /> 削除 (名簿から完全消去) されるメンバー ({syncData.toDeactivate.length}人)
-                    </h3>
-                    <div className="flex flex-wrap gap-2">
-                      {syncData.toDeactivate.map((p: any) => (
-                        <span key={p.id} className="bg-red-900/40 text-red-300 px-2 py-1 rounded text-xs border border-red-800 line-through">
-                          {p.name}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {syncData.toAdd.length === 0 && syncData.toDeactivate.length === 0 && (
-                  <div className="bg-blue-900/20 border border-blue-800/50 rounded-lg p-6 text-center text-blue-300">
-                    メンバーの増減はありませんが、参加日時などの隠しデータ（メタデータ）を最新に更新するため「同期を実行する」を押してください。
-                  </div>
-                )}
               </div>
 
-              <div className="p-6 border-t border-gray-800 bg-gray-800/30 flex justify-end gap-3">
-                <button 
-                  onClick={() => { setSyncData(null); setSyncingDiscord(false); }}
-                  className="px-4 py-2 rounded-lg font-bold text-gray-400 hover:bg-gray-800 transition"
+              <div className="flex flex-wrap items-center gap-4">
+                <button
+                  onClick={() => fetchPlayers()}
+                  className="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 text-gray-200 px-4 py-2 rounded-lg font-bold transition"
                 >
-                  キャンセル
+                  <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                  更新
                 </button>
-                <button 
-                  onClick={executeSync}
-                  className="px-6 py-2 rounded-lg font-bold bg-[#5865F2] hover:bg-[#4752C4] text-white transition shadow-lg disabled:opacity-50 flex items-center gap-2"
-                >
-                  {syncingDiscord && syncData.toAdd.length > 0 ? <RefreshCw className="h-4 w-4 animate-spin" /> : null}
-                  同期を実行する
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* MMR Info Panel */}
-        {showMmrInfo && (
-          <div className="bg-gray-900 border border-cyan-800/50 rounded-xl p-6 shadow-xl relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-1 h-full bg-cyan-500"></div>
-            <div className="flex justify-between items-start mb-4">
-              <h2 className="text-xl font-bold text-cyan-400 flex items-center gap-2">
-                <Info className="h-6 w-6" /> MMR計算ロジック
-              </h2>
-              <button onClick={() => setShowMmrInfo(false)} className="text-gray-500 hover:text-white">
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm text-gray-300">
-              <div className="space-y-3">
-                <div>
-                  <h3 className="font-bold text-white text-base">1. Eloベースの勝敗変動</h3>
-                  <p>相手のMMRと自分のMMRの差から期待勝率を計算し、勝利時は加点、敗北時は減点。基本変動幅は <span className="text-amber-400 font-mono">±16</span> 前後。</p>
-                </div>
-                <div>
-                  <h3 className="font-bold text-white text-base">2. KDAボーナス</h3>
-                  <p>KDAスコア <span className="text-amber-400 font-mono">(K+A)/D</span> の基準を 3.0 とし、それを上回ればボーナス、下回ればマイナス。（最大 <span className="text-amber-400 font-mono">±20</span>）</p>
-                </div>
-                <div>
-                  <h3 className="font-bold text-white text-base">3. ランク収束引力</h3>
-                  <p>RiotのSolo/Duoランク帯（Gold等）の適正MMRへ引き寄せられる力が働き、ランクとかけ離れたMMRに滞在しにくくします。</p>
-                </div>
-              </div>
-              <div className="space-y-3">
-                <div>
-                  <h3 className="font-bold text-white text-base">4. 視界・CSボーナス (Riot同期後)</h3>
-                  <ul className="list-disc list-inside pl-2 space-y-1">
-                    <li><span className="text-teal-300">SUP</span>: 視界スコア 40以上で <span className="text-green-400">+5</span>, 60以上で <span className="text-green-400">+10</span></li>
-                    <li><span className="text-blue-300">ADC/MID</span>: CS 200以上で <span className="text-green-400">+5</span>, 250以上で <span className="text-green-400">+10</span></li>
-                    <li><span className="text-green-400">JG</span>: 視界20以上で <span className="text-green-400">+5</span>, CS 150以上で <span className="text-green-400">+5</span></li>
-                    <li><span className="text-orange-400">TOP</span>: CS 180以上で <span className="text-green-400">+5</span>, 視界15以上で <span className="text-green-400">+3</span></li>
-                  </ul>
-                </div>
-                <div>
-                  <h3 className="font-bold text-white text-base">5. 対面回数ダンパー & 勝率補正</h3>
-                  <p>同じ相手と短期間に何度も対面すると、MMRの変動幅が縮小します（最大0.4倍）。また、特定ロールでの全体勝率が極端に高い/低い場合は補正がかかります。</p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="mt-4 pt-4 border-t border-gray-800 text-xs text-gray-500">
-              ※ Riot同期による視界・CSボーナスは、Discordで勝敗報告をした約3分後にバックグラウンドで自動計算され上書き反映されます。
-            </div>
-          </div>
-        )}
-
-        {/* バランス結果表示エリア */}
-        {balanceResult && (
-          <div className="bg-gray-900 border border-gray-700 rounded-xl overflow-hidden shadow-2xl relative mb-8">
-            <button 
-              onClick={() => setBalanceResult(null)}
-              className="absolute top-4 right-4 text-gray-500 hover:text-white bg-gray-800 hover:bg-gray-700 rounded-full p-1 transition"
-            >
-              <X className="h-5 w-5" />
-            </button>
-            
-            <div className="p-6 border-b border-gray-800 bg-gray-800/50 flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-                <Swords className="h-6 w-6 text-amber-500" /> チーム分け結果
-              </h2>
-              <button
-                onClick={handleSendDiscord}
-                disabled={sendingDiscord}
-                className={`px-4 py-2 rounded-lg font-bold text-sm transition flex items-center gap-2 ${
-                  sendingDiscord ? 'bg-[#404eed] text-white opacity-50 cursor-not-allowed' : 'bg-[#5865F2] hover:bg-[#4752C4] text-white shadow-lg shadow-indigo-500/20'
-                }`}
-              >
-                {sendingDiscord ? <RefreshCw className="h-4 w-4 animate-spin" /> : null}
-                {sendingDiscord ? "送信中..." : "Discordへ結果を送信"}
-              </button>
-            </div>
-            
-            <div className="flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x divide-gray-800">
-              {/* BLUE TEAM */}
-              <div className="flex-1 p-6">
-                <h3 className="text-xl font-black text-blue-400 mb-4 tracking-wider flex items-center justify-between">
-                  <span>BLUE TEAM</span>
-                  <span className="text-sm font-medium text-gray-500 bg-gray-800 px-3 py-1 rounded-full">
-                    Avg: {Math.round(balanceResult.teamBlue.reduce((s:number,p:any)=>s+p.mmr,0)/5)}
-                  </span>
-                </h3>
-                <div className="space-y-2">
-                  {['TOP','JG','MID','ADC','SUP'].map((role) => {
-                    const player = balanceResult.teamBlue.find((p:any) => p.currentRole === role);
-                    if (!player) return null;
-                    const rank = getRankFromMMR(player.mmr);
-                    
-                    // 理由テキストの抽出
-                    let reasonText = null;
-                    if (balanceResult.balanceReport) {
-                      const reasonLine = balanceResult.balanceReport.find((line: string) => line.includes(`**${player.name}**`));
-                      if (reasonLine) {
-                        reasonText = reasonLine.split(': ')[1] || reasonLine;
-                      }
-                    }
-
-                    return (
-                      <div key={role} className="flex flex-col bg-gray-800/40 hover:bg-gray-800 rounded-lg border border-gray-700/50 overflow-hidden">
-                        <div className="flex items-center justify-between p-3">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 text-center font-bold text-gray-400 text-xs">{role}</div>
-                            <select
-                              className="bg-gray-900 border border-gray-700 text-white font-bold text-sm rounded px-2 py-1 outline-none focus:border-blue-500 max-w-[120px]"
-                              value={player.name}
-                              onChange={(e) => handleSwapPlayer('teamBlue', role, e.target.value)}
-                            >
-                              <optgroup label="Blue Team">
-                                {balanceResult.teamBlue.map((p:any) => <option key={`b-${p.name}`} value={p.name}>{p.name}</option>)}
-                              </optgroup>
-                              <optgroup label="Red Team">
-                                {balanceResult.teamRed.map((p:any) => <option key={`r-${p.name}`} value={p.name}>{p.name}</option>)}
-                              </optgroup>
-                              {balanceResult.spectators && balanceResult.spectators.length > 0 && (
-                                <optgroup label="Spectators">
-                                  {balanceResult.spectators.map((name:string) => <option key={`s-${name}`} value={name}>{name}</option>)}
-                                </optgroup>
-                              )}
-                            </select>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <div className={`text-[10px] font-bold px-2 py-0.5 rounded ${rank.color}`}>{rank.tier}</div>
-                            <div className="w-12 text-right font-mono text-blue-300 font-bold">{player.mmr}</div>
-                          </div>
-                        </div>
-                        {reasonText && (
-                          <div className="px-3 pb-2 text-xs text-amber-400/90 font-medium pl-14">
-                            ↳ {reasonText}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-              
-              {/* RED TEAM */}
-              <div className="flex-1 p-6">
-                <h3 className="text-xl font-black text-red-400 mb-4 tracking-wider flex items-center justify-between">
-                  <span>RED TEAM</span>
-                  <span className="text-sm font-medium text-gray-500 bg-gray-800 px-3 py-1 rounded-full">
-                    Avg: {Math.round(balanceResult.teamRed.reduce((s:number,p:any)=>s+p.mmr,0)/5)}
-                  </span>
-                </h3>
-                <div className="space-y-2">
-                  {['TOP','JG','MID','ADC','SUP'].map((role) => {
-                    const player = balanceResult.teamRed.find((p:any) => p.currentRole === role);
-                    if (!player) return null;
-                    const rank = getRankFromMMR(player.mmr);
-                    
-                    // 理由テキストの抽出
-                    let reasonText = null;
-                    if (balanceResult.balanceReport) {
-                      const reasonLine = balanceResult.balanceReport.find((line: string) => line.includes(`**${player.name}**`));
-                      if (reasonLine) {
-                        reasonText = reasonLine.split(': ')[1] || reasonLine;
-                      }
-                    }
-
-                    return (
-                      <div key={role} className="flex flex-col bg-gray-800/40 hover:bg-gray-800 rounded-lg border border-gray-700/50 overflow-hidden">
-                        <div className="flex items-center justify-between p-3">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 text-center font-bold text-gray-400 text-xs">{role}</div>
-                            <select
-                              className="bg-gray-900 border border-gray-700 text-white font-bold text-sm rounded px-2 py-1 outline-none focus:border-red-500 max-w-[120px]"
-                              value={player.name}
-                              onChange={(e) => handleSwapPlayer('teamRed', role, e.target.value)}
-                            >
-                              <optgroup label="Red Team">
-                                {balanceResult.teamRed.map((p:any) => <option key={`r-${p.name}`} value={p.name}>{p.name}</option>)}
-                              </optgroup>
-                              <optgroup label="Blue Team">
-                                {balanceResult.teamBlue.map((p:any) => <option key={`b-${p.name}`} value={p.name}>{p.name}</option>)}
-                              </optgroup>
-                              {balanceResult.spectators && balanceResult.spectators.length > 0 && (
-                                <optgroup label="Spectators">
-                                  {balanceResult.spectators.map((name:string) => <option key={`s-${name}`} value={name}>{name}</option>)}
-                                </optgroup>
-                              )}
-                            </select>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <div className={`text-[10px] font-bold px-2 py-0.5 rounded ${rank.color}`}>{rank.tier}</div>
-                            <div className="w-12 text-right font-mono text-red-300 font-bold">{player.mmr}</div>
-                          </div>
-                        </div>
-                        {reasonText && (
-                          <div className="px-3 pb-2 text-xs text-amber-400/90 font-medium pl-14">
-                            ↳ {reasonText}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-            
-            {balanceResult.spectators && balanceResult.spectators.length > 0 && (
-              <div className="p-4 bg-gray-800/80 border-t border-gray-700 flex flex-col md:flex-row items-center gap-4">
-                <div className="text-sm font-bold text-gray-400 whitespace-nowrap">観戦 (Pity選抜漏れ):</div>
-                <div className="flex flex-wrap gap-2">
-                  {balanceResult.spectators.map((name: string, index: number) => (
-                    <select
-                      key={`spec-${index}`}
-                      className="px-2 py-1 bg-gray-900 border border-gray-700 text-gray-300 rounded text-sm font-medium outline-none focus:border-emerald-500"
-                      value={name}
-                      onChange={(e) => handleSwapPlayer('spectators', index.toString(), e.target.value)}
-                    >
-                      <optgroup label="Spectators">
-                        {balanceResult.spectators.map((n:string) => <option key={`s-${n}`} value={n}>{n}</option>)}
-                      </optgroup>
-                      <optgroup label="Blue Team">
-                        {balanceResult.teamBlue.map((p:any) => <option key={`b-${p.name}`} value={p.name}>{p.name}</option>)}
-                      </optgroup>
-                      <optgroup label="Red Team">
-                        {balanceResult.teamRed.map((p:any) => <option key={`r-${p.name}`} value={p.name}>{p.name}</option>)}
-                      </optgroup>
-                    </select>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* 📊 チーム分けの理由と分析 */}
-            {balanceResult.balanceReport && balanceResult.balanceReport.length > 0 && (
-              <div className="p-6 bg-gray-900 border-t border-gray-700">
-                <h3 className="text-lg font-bold text-blue-400 mb-3 flex items-center gap-2">
-                  <AlertCircle className="h-5 w-5" />
-                  チーム分けの理由と分析
-                </h3>
-                <div className="space-y-2 text-gray-300 text-sm bg-gray-800/50 p-4 rounded-lg border border-gray-700/50">
-                  {balanceResult.balanceReport.map((line: string, i: number) => {
-                    const formattedLine = line
-                      .replace(/\*\*(.*?)\*\*/g, '<strong class="text-white">$1</strong>')
-                      .replace(/`(.*?)`/g, '<span class="text-amber-400 font-mono font-bold">$1</span>');
-                    return (
-                      <p key={i} dangerouslySetInnerHTML={{ __html: formattedLine }} className="leading-relaxed" />
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* 試合結果記録用パネル */}
-            <MatchRecordPanel 
-              balanceResult={balanceResult} 
-              onComplete={() => {
-                setBalanceResult(null);
-                fetchPlayers();
-              }} 
-            />
-          </div>
-        )}
-
-        {/* Message Banner */}
-        {message.text && (
-          <div className={`p-4 rounded-lg flex items-center gap-3 ${message.type === 'error' ? 'bg-red-900/30 text-red-400 border border-red-800' : 'bg-green-900/30 text-green-400 border border-green-800'}`}>
-            <AlertCircle className="h-5 w-5 flex-shrink-0" />
-            <p className="text-sm font-medium whitespace-pre-wrap">{message.text}</p>
-          </div>
-        )}
-
-        {/* Player Table */}
-        <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden shadow-2xl">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm whitespace-nowrap">
-              <thead className="bg-gray-800/80 text-gray-400 uppercase text-xs tracking-wider sticky top-0 z-30 shadow-md backdrop-blur-sm">
-                <tr>
-                  <SortableHeader label="No." sortKey="no" />
-                  <SortableHeader label="Active" sortKey="is_active" />
-                  <SortableHeader label="名前" sortKey="name" sticky={true} />
-                  <SortableHeader label="最高Rank" sortKey="highest_rank" />
-                  <th className="px-2 py-2 font-medium text-center">Main</th>
-                  <th className="px-2 py-2 font-medium text-center">Sub</th>
-                  <th className="px-2 py-2 font-medium text-center">NG 1</th>
-                  <th className="px-2 py-2 font-medium text-center">NG 2</th>
-                  <SortableHeader label="こだわり" sortKey="weight" />
-                  <SortableHeader label="格上" sortKey="allow_higher" />
-                  <SortableHeader label="Pity" sortKey="pity" />
-                  <SortableHeader label="Off Pity" sortKey="off_role_pity" />
-                  <SortableHeader label="Top" sortKey="mmr_top" />
-                  <SortableHeader label="Jg" sortKey="mmr_jg" />
-                  <SortableHeader label="Mid" sortKey="mmr_mid" />
-                  <SortableHeader label="Adc" sortKey="mmr_adc" />
-                  <SortableHeader label="Sup" sortKey="mmr_sup" />
-                  <SortableHeader label="総合" sortKey="mmr" />
-                  <SortableHeader label="Discord ID" sortKey="discord_id" />
-                  <SortableHeader label="Riot IGN" sortKey="ign" />
-                  <th className="px-2 py-2 font-medium text-center">操作</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-800/50 text-sm">
-                {sortedPlayers.map((p) => {
-                  const uid = p.id || p.discord_id;
-                  return (
-                  <tr key={uid} className="hover:bg-gray-800/40 transition">
-                    <td className="px-2 py-1.5 text-center font-bold text-gray-500 text-xs">
-                      {p.no}
-                    </td>
-                    <td className="px-2 py-1.5 text-center">
-                      <input
-                        type="checkbox"
-                        checked={p.is_active}
-                        onChange={(e) => handleInputChange(uid, "is_active", e.target.checked)}
-                        className="h-4 w-4 rounded border-gray-700 text-blue-600 focus:ring-blue-500 bg-gray-800 cursor-pointer"
-                      />
-                    </td>
-                    <td className="px-2 py-1.5 sticky left-0 z-10 bg-gray-900 shadow-[2px_0_5px_rgba(0,0,0,0.3)]">
-                      <div className="flex items-center gap-1">
-                        <button 
-                          onClick={() => setSelectedPlayer(p)}
-                          className="text-blue-400 hover:text-white p-1 hover:bg-gray-800 rounded transition"
-                          title="プロフィールを表示"
-                        >
-                          <Info className="w-3 h-3" />
-                        </button>
-                        <input
-                          type="text"
-                          value={p.name}
-                          onChange={(e) => handleInputChange(uid, "name", e.target.value)}
-                          className="bg-transparent border border-transparent focus:border-gray-700 hover:border-gray-700 focus:bg-gray-800 rounded px-1 py-0.5 outline-none w-20 font-bold text-white text-xs"
-                        />
-                      </div>
-                    </td>
-                    <td className="px-2 py-1.5">
-                      <select
-                        value={p.highest_rank || "UNRANKED"}
-                        onChange={(e) => handleInputChange(uid, "highest_rank", e.target.value)}
-                        className={`bg-gray-800 border border-gray-700 rounded px-1 py-0.5 outline-none focus:border-blue-500 w-24 text-xs ${getColorFromRankName(p.highest_rank)}`}
-                      >
-                        {["UNRANKED", "IRON", "BRONZE", "SILVER", "GOLD", "PLATINUM", "EMERALD", "DIAMOND", "MASTER", "GRANDMASTER", "CHALLENGER"].map(r => (
-                          <option key={r} value={r}>{r}</option>
-                        ))}
-                      </select>
-                    </td>
-                    <td className="px-2 py-1.5">
-                      <select
-                        value={p.role_preferences?.primary || "ALL"}
-                        onChange={(e) => handleInputChange(uid, "primary_role", e.target.value)}
-                        className={`bg-gray-800 border border-gray-700 rounded px-1 py-0.5 outline-none focus:border-blue-500 w-20 text-xs ${getColorFromRole(p.role_preferences?.primary || "ALL")}`}
-                      >
-                        <option value="TOP" className={getColorFromRole("TOP")}>TOP</option>
-                        <option value="JG" className={getColorFromRole("JG")}>JUNGLE</option>
-                        <option value="MID" className={getColorFromRole("MID")}>MID</option>
-                        <option value="ADC" className={getColorFromRole("ADC")}>ADC</option>
-                        <option value="SUP" className={getColorFromRole("SUP")}>SUPPORT</option>
-                        <option value="ALL" className={getColorFromRole("ALL")}>ALL</option>
-                      </select>
-                    </td>
-                    <td className="px-2 py-1.5">
-                      <select
-                        value={p.role_preferences?.secondary || "ALL"}
-                        onChange={(e) => handleInputChange(uid, "secondary_role", e.target.value)}
-                        className={`bg-gray-800 border border-gray-700 rounded px-1 py-0.5 outline-none focus:border-blue-500 w-20 text-xs ${getColorFromRole(p.role_preferences?.secondary || "ALL")}`}
-                      >
-                        <option value="TOP" className={getColorFromRole("TOP")}>TOP</option>
-                        <option value="JG" className={getColorFromRole("JG")}>JUNGLE</option>
-                        <option value="MID" className={getColorFromRole("MID")}>MID</option>
-                        <option value="ADC" className={getColorFromRole("ADC")}>ADC</option>
-                        <option value="SUP" className={getColorFromRole("SUP")}>SUPPORT</option>
-                        <option value="ALL" className={getColorFromRole("ALL")}>ALL</option>
-                      </select>
-                    </td>
-                    <td className="px-2 py-1.5">
-                      <select
-                        value={p.ng_lane_1 || ""}
-                        onChange={(e) => handleInputChange(uid, "ng_lane_1", e.target.value)}
-                        className={`bg-gray-800 border border-gray-700 rounded px-1 py-0.5 outline-none focus:border-red-500 w-20 text-xs ${p.ng_lane_1 ? getColorFromRole(p.ng_lane_1) : 'text-gray-500'}`}
-                      >
-                        <option value="" className="text-gray-500">なし</option>
-                        <option value="TOP" className={getColorFromRole("TOP")}>TOP</option>
-                        <option value="JG" className={getColorFromRole("JG")}>JUNGLE</option>
-                        <option value="MID" className={getColorFromRole("MID")}>MID</option>
-                        <option value="ADC" className={getColorFromRole("ADC")}>ADC</option>
-                        <option value="SUP" className={getColorFromRole("SUP")}>SUPPORT</option>
-                      </select>
-                    </td>
-                    <td className="px-2 py-1.5">
-                      <select
-                        value={p.ng_lane_2 || ""}
-                        onChange={(e) => handleInputChange(uid, "ng_lane_2", e.target.value)}
-                        className={`bg-gray-800 border border-gray-700 rounded px-1 py-0.5 outline-none focus:border-red-500 w-20 text-xs ${p.ng_lane_2 ? getColorFromRole(p.ng_lane_2) : 'text-gray-500'}`}
-                      >
-                        <option value="" className="text-gray-500">なし</option>
-                        <option value="TOP" className={getColorFromRole("TOP")}>TOP</option>
-                        <option value="JG" className={getColorFromRole("JG")}>JUNGLE</option>
-                        <option value="MID" className={getColorFromRole("MID")}>MID</option>
-                        <option value="ADC" className={getColorFromRole("ADC")}>ADC</option>
-                        <option value="SUP" className={getColorFromRole("SUP")}>SUPPORT</option>
-                      </select>
-                    </td>
-                    <td className="px-2 py-1.5 text-center">
-                      <select
-                        value={p.weight || 2}
-                        onChange={(e) => handleInputChange(uid, "weight", parseInt(e.target.value))}
-                        className="bg-gray-800 border border-gray-700 rounded px-1 py-0.5 outline-none focus:border-blue-500 w-12 text-center text-xs"
-                      >
-                        <option value={1}>1</option>
-                        <option value={2}>2</option>
-                        <option value={3}>3</option>
-                      </select>
-                    </td>
-                    <td className="px-2 py-1.5 text-center">
-                      <input
-                        type="checkbox"
-                        checked={p.allow_higher !== false}
-                        onChange={(e) => handleInputChange(uid, "allow_higher", e.target.checked)}
-                        className="h-3 w-3 rounded border-gray-700 text-green-500 focus:ring-green-500 bg-gray-800 cursor-pointer"
-                      />
-                    </td>
-                    <td className="px-2 py-1.5 text-center">
-                      <input
-                        type="number"
-                        value={p.pity || 0}
-                        onChange={(e) => handleInputChange(uid, "pity", parseInt(e.target.value) || 0)}
-                        className="bg-transparent text-amber-500 border border-transparent focus:border-gray-700 hover:border-gray-700 focus:bg-gray-800 rounded px-1 py-0.5 outline-none w-10 text-center text-xs font-bold"
-                        title="参加漏れPity"
-                      />
-                    </td>
-                    <td className="px-2 py-1.5 text-center">
-                      <input
-                        type="number"
-                        value={p.off_role_pity || 0}
-                        onChange={(e) => handleInputChange(uid, "off_role_pity", parseInt(e.target.value) || 0)}
-                        className="bg-transparent text-purple-400 border border-transparent focus:border-gray-700 hover:border-gray-700 focus:bg-gray-800 rounded px-1 py-0.5 outline-none w-10 text-center text-xs font-bold"
-                        title="希望外レーンPity"
-                      />
-                    </td>
-                    <td className="px-2 py-1.5 text-center">
-                      <MmrBadgeInput value={p.mmr_top || 1000} onChange={(v) => handleInputChange(uid, "mmr_top", v)} />
-                    </td>
-                    <td className="px-2 py-1.5 text-center">
-                      <MmrBadgeInput value={p.mmr_jg || 1000} onChange={(v) => handleInputChange(uid, "mmr_jg", v)} />
-                    </td>
-                    <td className="px-2 py-1.5 text-center">
-                      <MmrBadgeInput value={p.mmr_mid || 1000} onChange={(v) => handleInputChange(uid, "mmr_mid", v)} />
-                    </td>
-                    <td className="px-2 py-1.5 text-center">
-                      <MmrBadgeInput value={p.mmr_adc || 1000} onChange={(v) => handleInputChange(uid, "mmr_adc", v)} />
-                    </td>
-                    <td className="px-2 py-1.5 text-center">
-                      <MmrBadgeInput value={p.mmr_sup || 1000} onChange={(v) => handleInputChange(uid, "mmr_sup", v)} />
-                    </td>
-                    <td className="px-2 py-1.5 text-center">
-                      <MmrBadgeInput value={p.mmr || 1000} onChange={(v) => handleInputChange(uid, "mmr", v)} />
-                    </td>
-                    <td className="px-2 py-1.5 opacity-50 hover:opacity-100 transition">
-                      <input
-                        type="text"
-                        value={p.discord_id}
-                        onChange={(e) => handleInputChange(uid, "discord_id", e.target.value)}
-                        className="bg-transparent border border-transparent focus:border-gray-700 hover:border-gray-700 focus:bg-gray-800 rounded px-1 py-0.5 outline-none w-24 text-[10px]"
-                        title={p.discord_id}
-                      />
-                    </td>
-                    <td className="px-2 py-1.5 opacity-50 hover:opacity-100 transition">
-                      <input
-                        type="text"
-                        value={p.ign || ""}
-                        onChange={(e) => handleInputChange(uid, "ign", e.target.value)}
-                        placeholder="Name#TAG"
-                        className="bg-transparent border border-transparent focus:border-gray-700 hover:border-gray-700 focus:bg-gray-800 rounded px-1 py-0.5 outline-none w-24 text-[10px] text-blue-300"
-                        title={p.ign || "未登録"}
-                      />
-                    </td>
-                    <td className="px-2 py-1.5 text-center">
-                      <button
-                        onClick={() => handleAutoFillMmr(uid)}
-                        className="bg-indigo-900/50 hover:bg-indigo-800 text-indigo-300 border border-indigo-700/50 rounded px-2 py-1 text-[10px] font-bold transition flex items-center gap-1 mx-auto"
-                        title="ランクと希望レーンから初期MMRを自動計算して仮入力します"
-                      >
-                        ✨ Auto
-                      </button>
-                    </td>
-                  </tr>
-                  );
-                })}
                 
-                {players.length === 0 && !loading && (
-                  <tr>
-                    <td colSpan={17} className="px-6 py-12 text-center text-gray-500">
-                      プレイヤーが登録されていません。「行を追加」から新規作成するか、Discord Botで登録を行ってください。
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+                <button
+                  onClick={() => {
+                    if (confirm('全ての変更を保存しますか？')) handleSave();
+                  }}
+                  disabled={saving}
+                  className={`flex items-center gap-2 px-6 py-2 rounded-lg font-bold transition shadow-lg ${
+                    saving ? 'bg-indigo-400 text-white cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-500/20'
+                  }`}
+                >
+                  {saving ? <RefreshCw className="h-5 w-5 animate-spin" /> : <Save className="h-5 w-5" />}
+                  {saving ? "保存中..." : "変更を保存"}
+                </button>
+
+                <a 
+                  href="/ktm-admin/record"
+                  className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg font-bold transition ml-auto"
+                >
+                  <Trophy className="h-4 w-4" />
+                  カスタム試合を手動記録
+                </a>
+
+                <button
+                  onClick={handleSyncCheck}
+                  disabled={syncingDiscord}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold transition border ${
+                    syncingDiscord ? 'bg-[#404eed]/50 border-[#404eed]/50 text-gray-400 cursor-not-allowed' : 'bg-[#5865F2]/20 border-[#5865F2] text-[#5865F2] hover:bg-[#5865F2] hover:text-white'
+                  }`}
+                >
+                  <Users className={`h-4 w-4 ${syncingDiscord && !syncData ? 'animate-spin' : ''}`} /> 
+                  {syncingDiscord && !syncData ? "確認中..." : "Discord同期"}
+                </button>
+                <button
+                  onClick={handleRiotSync}
+                  disabled={syncingRiot}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold transition border ${
+                    syncingRiot ? 'bg-sky-900/50 border-sky-500/50 text-sky-400 cursor-not-allowed' : 'bg-sky-900/20 border-sky-500/50 text-sky-400 hover:bg-sky-800/40 hover:text-white'
+                  }`}
+                >
+                  <Globe className={`h-4 w-4 ${syncingRiot ? 'animate-pulse' : ''}`} /> 
+                  {syncingRiot ? "同期中..." : "Riotランク同期"}
+                </button>
+                <button
+                  onClick={handleRebuildMmr}
+                  className="flex items-center gap-2 bg-red-900/40 hover:bg-red-800 text-red-200 border border-red-800/50 px-4 py-2 rounded-lg font-bold transition"
+                  title="過去のすべての試合履歴を元にMMRを再計算し、全員のデータを上書きします"
+                >
+                  <RefreshCw className="h-4 w-4" /> 🔄 Rebuild
+                </button>
+                <button
+                  onClick={() => setFilterActive(!filterActive)}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg transition border ${filterActive ? 'bg-blue-900/50 border-blue-500 text-blue-300' : 'bg-gray-800 border-gray-700 text-gray-400 hover:text-white'}`}
+                >
+                  <Filter className="h-4 w-4" /> {filterActive ? "参加者のみ" : "全員表示"}
+                </button>
+                <button
+                  onClick={addNewPlayer}
+                  className="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition"
+                >
+                  <Plus className="h-4 w-4" /> 行を追加
+                </button>
+                <button
+                  onClick={() => setShowMmrInfo(!showMmrInfo)}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg transition border ${showMmrInfo ? 'bg-cyan-900/50 border-cyan-500 text-cyan-300' : 'bg-gray-800 border-gray-700 text-gray-400 hover:text-white'}`}
+                  title="MMR計算ロジックを見る"
+                >
+                  <Info className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Sync Preview Modal */}
+            {syncData && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+                <div className="bg-gray-900 border border-gray-700 rounded-xl max-w-2xl w-full shadow-2xl flex flex-col max-h-[90vh]">
+                  <div className="p-6 border-b border-gray-800 flex justify-between items-center bg-gray-800/30">
+                    <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                      <Users className="h-6 w-6 text-[#5865F2]" />
+                      Discordメンバー同期の確認
+                    </h2>
+                    <button onClick={() => { setSyncData(null); setSyncingDiscord(false); }} className="text-gray-500 hover:text-white">
+                      <X className="h-6 w-6" />
+                    </button>
+                  </div>
+                  
+                  <div className="p-6 overflow-y-auto space-y-6 flex-1">
+                    <p className="text-gray-300 text-sm">
+                      現在のDiscordサーバーには <strong>{syncData.totalDiscordMembers}</strong> 人のメンバーがいます（Botを除く）。<br />
+                      以下の差分が見つかりました。同期を実行すると、データベースが自動的に更新されます。
+                    </p>
+
+                    {syncData.toAdd.length > 0 && (
+                      <div className="bg-green-900/20 border border-green-800/50 rounded-lg p-4">
+                        <h3 className="text-green-400 font-bold mb-3 flex items-center gap-2">
+                          <Plus className="h-4 w-4" /> 新規追加されるメンバー ({syncData.toAdd.length}人)
+                        </h3>
+                        <div className="flex flex-wrap gap-2">
+                          {syncData.toAdd.map((p: any) => (
+                            <span key={p.discord_id} className="bg-green-900/40 text-green-300 px-2 py-1 rounded text-xs border border-green-800">
+                              {p.name}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {syncData.toDeactivate.length > 0 && (
+                      <div className="bg-red-900/20 border border-red-800/50 rounded-lg p-4">
+                        <h3 className="text-red-400 font-bold mb-3 flex items-center gap-2">
+                          <AlertCircle className="h-4 w-4" /> 削除 (名簿から完全消去) されるメンバー ({syncData.toDeactivate.length}人)
+                        </h3>
+                        <div className="flex flex-wrap gap-2">
+                          {syncData.toDeactivate.map((p: any) => (
+                            <span key={p.id} className="bg-red-900/40 text-red-300 px-2 py-1 rounded text-xs border border-red-800 line-through">
+                              {p.name}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {syncData.toAdd.length === 0 && syncData.toDeactivate.length === 0 && (
+                      <div className="bg-blue-900/20 border border-blue-800/50 rounded-lg p-6 text-center text-blue-300">
+                        メンバーの増減はありませんが、参加日時などの隠しデータ（メタデータ）を最新に更新するため「同期を実行する」を押してください。
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="p-6 border-t border-gray-800 bg-gray-800/30 flex justify-end gap-3">
+                    <button 
+                      onClick={() => { setSyncData(null); setSyncingDiscord(false); }}
+                      className="px-4 py-2 rounded-lg font-bold text-gray-400 hover:bg-gray-800 transition"
+                    >
+                      キャンセル
+                    </button>
+                    <button 
+                      onClick={executeSync}
+                      className="px-6 py-2 rounded-lg font-bold bg-[#5865F2] hover:bg-[#4752C4] text-white transition shadow-lg disabled:opacity-50 flex items-center gap-2"
+                    >
+                      {syncingDiscord && syncData.toAdd.length > 0 ? <RefreshCw className="h-4 w-4 animate-spin" /> : null}
+                      同期を実行する
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* MMR Info Panel */}
+            {showMmrInfo && (
+              <div className="bg-gray-900 border border-cyan-800/50 rounded-xl p-6 shadow-xl relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-1 h-full bg-cyan-500"></div>
+                <div className="flex justify-between items-start mb-4">
+                  <h2 className="text-xl font-bold text-cyan-400 flex items-center gap-2">
+                    <Info className="h-6 w-6" /> MMR計算ロジック
+                  </h2>
+                  <button onClick={() => setShowMmrInfo(false)} className="text-gray-500 hover:text-white">
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm text-gray-300">
+                  <div className="space-y-3">
+                    <div>
+                      <h3 className="font-bold text-white text-base">1. Eloベースの勝敗変動</h3>
+                      <p>相手のMMRと自分のMMRの差から期待勝率を計算し、勝利時は加点、敗北時は減点。基本変動幅は <span className="text-amber-400 font-mono">±16</span> 前後。</p>
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-white text-base">2. KDAボーナス</h3>
+                      <p>KDAスコア <span className="text-amber-400 font-mono">(K+A)/D</span> の基準を 3.0 とし、それを上回ればボーナス、下回ればマイナス。（最大 <span className="text-amber-400 font-mono">±20</span>）</p>
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-white text-base">3. ランク収束引力</h3>
+                      <p>RiotのSolo/Duoランク帯（Gold等）の適正MMRへ引き寄せられる力が働き、ランクとかけ離れたMMRに滞在しにくくします。</p>
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    <div>
+                      <h3 className="font-bold text-white text-base">4. 視界・CSボーナス (Riot同期後)</h3>
+                      <ul className="list-disc list-inside pl-2 space-y-1">
+                        <li><span className="text-teal-300">SUP</span>: 視界スコア 40以上で <span className="text-green-400">+5</span>, 60以上で <span className="text-green-400">+10</span></li>
+                        <li><span className="text-blue-300">ADC/MID</span>: CS 200以上で <span className="text-green-400">+5</span>, 250以上で <span className="text-green-400">+10</span></li>
+                        <li><span className="text-green-400">JG</span>: 視界20以上で <span className="text-green-400">+5</span>, CS 150以上で <span className="text-green-400">+5</span></li>
+                        <li><span className="text-orange-400">TOP</span>: CS 180以上で <span className="text-green-400">+5</span>, 視界15以上で <span className="text-green-400">+3</span></li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-white text-base">5. 対面回数ダンパー & 勝率補正</h3>
+                      <p>同じ相手と短期間に何度も対面すると、MMRの変動幅が縮小します（最大0.4倍）。また、特定ロールでの全体勝率が極端に高い/低い場合は補正がかかります。</p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="mt-4 pt-4 border-t border-gray-800 text-xs text-gray-500">
+                  ※ Riot同期による視界・CSボーナスは、Discordで勝敗報告をした約3分後にバックグラウンドで自動計算され上書き反映されます。
+                </div>
+              </div>
+            )}
+
+            {/* Message Banner */}
+            {message.text && (
+              <div className={`p-4 rounded-lg flex items-center gap-3 ${message.type === 'error' ? 'bg-red-900/30 text-red-400 border border-red-800' : 'bg-green-900/30 text-green-400 border border-green-800'}`}>
+                <AlertCircle className="h-5 w-5 flex-shrink-0" />
+                <p className="text-sm font-medium whitespace-pre-wrap">{message.text}</p>
+              </div>
+            )}
+
+            {/* Player Table */}
+            <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden shadow-2xl">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm whitespace-nowrap">
+                  <thead className="bg-gray-800/80 text-gray-400 uppercase text-xs tracking-wider sticky top-0 z-30 shadow-md backdrop-blur-sm">
+                    <tr>
+                      <SortableHeader label="No." sortKey="no" />
+                      <SortableHeader label="Active" sortKey="is_active" />
+                      <SortableHeader label="名前" sortKey="name" sticky={true} />
+                      <SortableHeader label="最高Rank" sortKey="highest_rank" />
+                      <th className="px-2 py-2 font-medium text-center">Main</th>
+                      <th className="px-2 py-2 font-medium text-center">Sub</th>
+                      <th className="px-2 py-2 font-medium text-center">NG 1</th>
+                      <th className="px-2 py-2 font-medium text-center">NG 2</th>
+                      <SortableHeader label="こだわり" sortKey="weight" />
+                      <SortableHeader label="格上" sortKey="allow_higher" />
+                      <SortableHeader label="Pity" sortKey="pity" />
+                      <SortableHeader label="Off Pity" sortKey="off_role_pity" />
+                      <SortableHeader label="Top" sortKey="mmr_top" />
+                      <SortableHeader label="Jg" sortKey="mmr_jg" />
+                      <SortableHeader label="Mid" sortKey="mmr_mid" />
+                      <SortableHeader label="Adc" sortKey="mmr_adc" />
+                      <SortableHeader label="Sup" sortKey="mmr_sup" />
+                      <SortableHeader label="総合" sortKey="mmr" />
+                      <SortableHeader label="Discord ID" sortKey="discord_id" />
+                      <SortableHeader label="Riot IGN" sortKey="ign" />
+                      <th className="px-2 py-2 font-medium text-center">操作</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-800/50 text-sm">
+                    {sortedPlayers.map((p) => {
+                      const uid = p.id || p.discord_id;
+                      return (
+                      <tr key={uid} className="hover:bg-gray-800/40 transition">
+                        <td className="px-2 py-1.5 text-center font-bold text-gray-500 text-xs">
+                          {p.no}
+                        </td>
+                        <td className="px-2 py-1.5 text-center">
+                          <input
+                            type="checkbox"
+                            checked={p.is_active}
+                            onChange={(e) => handleInputChange(uid, "is_active", e.target.checked)}
+                            className="h-4 w-4 rounded border-gray-700 text-blue-600 focus:ring-blue-500 bg-gray-800 cursor-pointer"
+                          />
+                        </td>
+                        <td className="px-2 py-1.5 sticky left-0 z-10 bg-gray-900 shadow-[2px_0_5px_rgba(0,0,0,0.3)]">
+                          <div className="flex items-center gap-1">
+                            <button 
+                              onClick={() => setSelectedPlayer(p)}
+                              className="text-blue-400 hover:text-white p-1 hover:bg-gray-800 rounded transition"
+                              title="プロフィールを表示"
+                            >
+                              <Info className="w-3 h-3" />
+                            </button>
+                            <input
+                              type="text"
+                              value={p.name}
+                              onChange={(e) => handleInputChange(uid, "name", e.target.value)}
+                              className="bg-transparent border border-transparent focus:border-gray-700 hover:border-gray-700 focus:bg-gray-800 rounded px-1 py-0.5 outline-none w-20 font-bold text-white text-xs"
+                            />
+                          </div>
+                        </td>
+                        <td className="px-2 py-1.5">
+                          <select
+                            value={p.highest_rank || "UNRANKED"}
+                            onChange={(e) => handleInputChange(uid, "highest_rank", e.target.value)}
+                            className={`bg-gray-800 border border-gray-700 rounded px-1 py-0.5 outline-none focus:border-blue-500 w-24 text-xs ${getColorFromRankName(p.highest_rank)}`}
+                          >
+                            {["UNRANKED", "IRON", "BRONZE", "SILVER", "GOLD", "PLATINUM", "EMERALD", "DIAMOND", "MASTER", "GRANDMASTER", "CHALLENGER"].map(r => (
+                              <option key={r} value={r}>{r}</option>
+                            ))}
+                          </select>
+                        </td>
+                        <td className="px-2 py-1.5">
+                          <select
+                            value={p.role_preferences?.primary || "ALL"}
+                            onChange={(e) => handleInputChange(uid, "primary_role", e.target.value)}
+                            className={`bg-gray-800 border border-gray-700 rounded px-1 py-0.5 outline-none focus:border-blue-500 w-20 text-xs ${getColorFromRole(p.role_preferences?.primary || "ALL")}`}
+                          >
+                            <option value="TOP" className={getColorFromRole("TOP")}>TOP</option>
+                            <option value="JG" className={getColorFromRole("JG")}>JUNGLE</option>
+                            <option value="MID" className={getColorFromRole("MID")}>MID</option>
+                            <option value="ADC" className={getColorFromRole("ADC")}>ADC</option>
+                            <option value="SUP" className={getColorFromRole("SUP")}>SUPPORT</option>
+                            <option value="ALL" className={getColorFromRole("ALL")}>ALL</option>
+                          </select>
+                        </td>
+                        <td className="px-2 py-1.5">
+                          <select
+                            value={p.role_preferences?.secondary || "ALL"}
+                            onChange={(e) => handleInputChange(uid, "secondary_role", e.target.value)}
+                            className={`bg-gray-800 border border-gray-700 rounded px-1 py-0.5 outline-none focus:border-blue-500 w-20 text-xs ${getColorFromRole(p.role_preferences?.secondary || "ALL")}`}
+                          >
+                            <option value="TOP" className={getColorFromRole("TOP")}>TOP</option>
+                            <option value="JG" className={getColorFromRole("JG")}>JUNGLE</option>
+                            <option value="MID" className={getColorFromRole("MID")}>MID</option>
+                            <option value="ADC" className={getColorFromRole("ADC")}>ADC</option>
+                            <option value="SUP" className={getColorFromRole("SUP")}>SUPPORT</option>
+                            <option value="ALL" className={getColorFromRole("ALL")}>ALL</option>
+                          </select>
+                        </td>
+                        <td className="px-2 py-1.5">
+                          <select
+                            value={p.ng_lane_1 || ""}
+                            onChange={(e) => handleInputChange(uid, "ng_lane_1", e.target.value)}
+                            className={`bg-gray-800 border border-gray-700 rounded px-1 py-0.5 outline-none focus:border-red-500 w-20 text-xs ${p.ng_lane_1 ? getColorFromRole(p.ng_lane_1) : 'text-gray-500'}`}
+                          >
+                            <option value="" className="text-gray-500">なし</option>
+                            <option value="TOP" className={getColorFromRole("TOP")}>TOP</option>
+                            <option value="JG" className={getColorFromRole("JG")}>JUNGLE</option>
+                            <option value="MID" className={getColorFromRole("MID")}>MID</option>
+                            <option value="ADC" className={getColorFromRole("ADC")}>ADC</option>
+                            <option value="SUP" className={getColorFromRole("SUP")}>SUPPORT</option>
+                          </select>
+                        </td>
+                        <td className="px-2 py-1.5">
+                          <select
+                            value={p.ng_lane_2 || ""}
+                            onChange={(e) => handleInputChange(uid, "ng_lane_2", e.target.value)}
+                            className={`bg-gray-800 border border-gray-700 rounded px-1 py-0.5 outline-none focus:border-red-500 w-20 text-xs ${p.ng_lane_2 ? getColorFromRole(p.ng_lane_2) : 'text-gray-500'}`}
+                          >
+                            <option value="" className="text-gray-500">なし</option>
+                            <option value="TOP" className={getColorFromRole("TOP")}>TOP</option>
+                            <option value="JG" className={getColorFromRole("JG")}>JUNGLE</option>
+                            <option value="MID" className={getColorFromRole("MID")}>MID</option>
+                            <option value="ADC" className={getColorFromRole("ADC")}>ADC</option>
+                            <option value="SUP" className={getColorFromRole("SUP")}>SUPPORT</option>
+                          </select>
+                        </td>
+                        <td className="px-2 py-1.5 text-center">
+                          <select
+                            value={p.weight || 2}
+                            onChange={(e) => handleInputChange(uid, "weight", parseInt(e.target.value))}
+                            className="bg-gray-800 border border-gray-700 rounded px-1 py-0.5 outline-none focus:border-blue-500 w-12 text-center text-xs"
+                          >
+                            <option value={1}>1</option>
+                            <option value={2}>2</option>
+                            <option value={3}>3</option>
+                          </select>
+                        </td>
+                        <td className="px-2 py-1.5 text-center">
+                          <input
+                            type="checkbox"
+                            checked={p.allow_higher !== false}
+                            onChange={(e) => handleInputChange(uid, "allow_higher", e.target.checked)}
+                            className="h-3 w-3 rounded border-gray-700 text-green-500 focus:ring-green-500 bg-gray-800 cursor-pointer"
+                          />
+                        </td>
+                        <td className="px-2 py-1.5 text-center">
+                          <input
+                            type="number"
+                            value={p.pity || 0}
+                            onChange={(e) => handleInputChange(uid, "pity", parseInt(e.target.value) || 0)}
+                            className="bg-transparent text-amber-500 border border-transparent focus:border-gray-700 hover:border-gray-700 focus:bg-gray-800 rounded px-1 py-0.5 outline-none w-10 text-center text-xs font-bold"
+                            title="参加漏れPity"
+                          />
+                        </td>
+                        <td className="px-2 py-1.5 text-center">
+                          <input
+                            type="number"
+                            value={p.off_role_pity || 0}
+                            onChange={(e) => handleInputChange(uid, "off_role_pity", parseInt(e.target.value) || 0)}
+                            className="bg-transparent text-purple-400 border border-transparent focus:border-gray-700 hover:border-gray-700 focus:bg-gray-800 rounded px-1 py-0.5 outline-none w-10 text-center text-xs font-bold"
+                            title="希望外レーンPity"
+                          />
+                        </td>
+                        <td className="px-2 py-1.5 text-center">
+                          <MmrBadgeInput value={p.mmr_top || 1000} onChange={(v) => handleInputChange(uid, "mmr_top", v)} />
+                        </td>
+                        <td className="px-2 py-1.5 text-center">
+                          <MmrBadgeInput value={p.mmr_jg || 1000} onChange={(v) => handleInputChange(uid, "mmr_jg", v)} />
+                        </td>
+                        <td className="px-2 py-1.5 text-center">
+                          <MmrBadgeInput value={p.mmr_mid || 1000} onChange={(v) => handleInputChange(uid, "mmr_mid", v)} />
+                        </td>
+                        <td className="px-2 py-1.5 text-center">
+                          <MmrBadgeInput value={p.mmr_adc || 1000} onChange={(v) => handleInputChange(uid, "mmr_adc", v)} />
+                        </td>
+                        <td className="px-2 py-1.5 text-center">
+                          <MmrBadgeInput value={p.mmr_sup || 1000} onChange={(v) => handleInputChange(uid, "mmr_sup", v)} />
+                        </td>
+                        <td className="px-2 py-1.5 text-center">
+                          <MmrBadgeInput value={p.mmr || 1000} onChange={(v) => handleInputChange(uid, "mmr", v)} />
+                        </td>
+                        <td className="px-2 py-1.5 opacity-50 hover:opacity-100 transition">
+                          <input
+                            type="text"
+                            value={p.discord_id}
+                            onChange={(e) => handleInputChange(uid, "discord_id", e.target.value)}
+                            className="bg-transparent border border-transparent focus:border-gray-700 hover:border-gray-700 focus:bg-gray-800 rounded px-1 py-0.5 outline-none w-24 text-[10px]"
+                            title={p.discord_id}
+                          />
+                        </td>
+                        <td className="px-2 py-1.5 opacity-50 hover:opacity-100 transition">
+                          <input
+                            type="text"
+                            value={p.ign || ""}
+                            onChange={(e) => handleInputChange(uid, "ign", e.target.value)}
+                            placeholder="Name#TAG"
+                            className="bg-transparent border border-transparent focus:border-gray-700 hover:border-gray-700 focus:bg-gray-800 rounded px-1 py-0.5 outline-none w-24 text-[10px] text-blue-300"
+                            title={p.ign || "未登録"}
+                          />
+                        </td>
+                        <td className="px-2 py-1.5 text-center">
+                          <button
+                            onClick={() => handleAutoFillMmr(uid)}
+                            className="bg-indigo-900/50 hover:bg-indigo-800 text-indigo-300 border border-indigo-700/50 rounded px-2 py-1 text-[10px] font-bold transition flex items-center gap-1 mx-auto"
+                            title="ランクと希望レーンから初期MMRを自動計算して仮入力します"
+                          >
+                            ✨ Auto
+                          </button>
+                        </td>
+                      </tr>
+                      );
+                    })}
+                    
+                    {players.length === 0 && !loading && (
+                      <tr>
+                        <td colSpan={17} className="px-6 py-12 text-center text-gray-500">
+                          プレイヤーが登録されていません。「行を追加」から新規作成するか、Discord Botで登録を行ってください。
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         )}
