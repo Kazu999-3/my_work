@@ -7,7 +7,7 @@ from pydantic import BaseModel
 # 既存のコアモジュール群をインポート
 from v2_CORE.monetization_loop import run_monetization_loop
 from v2_CORE.pulse import system_pulse
-from v2_CORE.match_importer import MatchImporter
+from v2_CORE.match_importer import import_matches
 
 logger = logging.getLogger("AntigravityAPI")
 logging.basicConfig(level=logging.INFO)
@@ -56,9 +56,5 @@ def trigger_match_import(background_tasks: BackgroundTasks, api_key: str = Depen
     """KTMプレイヤーの最新のソロキュー戦績をデータベースに取り込む"""
     logger.info("Received request to trigger Match Importer.")
     
-    def run_import():
-        importer = MatchImporter()
-        importer.run_full_sync()
-        
-    background_tasks.add_task(run_import)
+    background_tasks.add_task(import_matches)
     return {"status": "accepted", "message": "Match import started in background."}

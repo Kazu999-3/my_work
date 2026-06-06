@@ -1,0 +1,37 @@
+name: Antigravity Overseas Scout
+
+on:
+  schedule:
+    # 毎日午前4時(JST) = 19:00(UTC) に自動実行 (1日1回、ランダム3体のみ)
+    - cron: '0 19 * * *'
+  workflow_dispatch:
+    # 手動実行用
+
+jobs:
+  run-scout:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r 03_SYSTEMS/requirements.txt
+          
+      - name: Run Overseas Scout
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_API_KEY_FREE: ${{ secrets.GEMINI_API_KEY_FREE }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+        run: |
+          python 03_SYSTEMS/v2_CORE/overseas_scout.py

@@ -434,11 +434,19 @@ class SovereignPulse:
 # グローバルな脈動インスタンス
 pulse = SovereignPulse()
 
+def system_pulse():
+    """APIから呼び出されるグローバルなトリガー関数"""
+    try:
+        pulse.run_cycle()
+        pulse.check_lol_patches()
+    except Exception as e:
+        logger.error(f"System Pulse実行中にエラーが発生しました: {e}")
+
 if __name__ == "__main__":
     # 直接実行時のテスト用
-    pulse.start()
+    pulse.initial_startup()
     try:
         while True:
             time.sleep(1)
     except KeyboardInterrupt:
-        pulse.stop()
+        pass

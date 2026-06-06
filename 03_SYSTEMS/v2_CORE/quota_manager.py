@@ -3,6 +3,7 @@ import json
 import logging
 import threading
 from datetime import datetime
+from zoneinfo import ZoneInfo
 from pathlib import Path
 from v2_CORE.settings import settings
 
@@ -30,7 +31,8 @@ class QuotaManager:
         self.file_lock = threading.Lock()
 
     def _get_today_str(self):
-        return datetime.now().strftime("%Y-%m-%d")
+        # サーバーのタイムゾーン（UTC等）に依存せず、常に日本時間(JST)の深夜0時をリセット基準とする
+        return datetime.now(ZoneInfo("Asia/Tokyo")).strftime("%Y-%m-%d")
 
     def _load_data(self):
         if not self.data_file.exists():
@@ -47,6 +49,26 @@ class QuotaManager:
             self.data_file.parent.mkdir(parents=True, exist_ok=True)
             with open(self.data_file, "w", encoding="utf-8") as f:
                 json.dump(data, f, ensure_ascii=False, indent=4)
+            
+            # Supabaseへの同期
+            try:
+                import httpx
+                supabase_url = os.environ.get("SUPABASE_URL")
+                supabase_key = os.environ.get("SUPABASE_KEY")
+                if supabase_url and supabase_key:
+                    today = self._get_today_str()
+                    usage_data = data.get(today, {})
+                    url = f"{supabase_url}/rest/v1/api_usage_logs?on_conflict=date"
+                    headers = {
+                        "apikey": supabase_key,
+                        "Authorization": f"Bearer {supabase_key}",
+                        "Content-Type": "application/json",
+                        "Prefer": "resolution=merge-duplicates"
+                    }
+                    payload = {"date": today, "usage_data": usage_data}
+                    httpx.post(url, headers=headers, json=payload, timeout=5.0)
+            except Exception as e:
+                logger.warning(f"[QuotaManager] Supabase sync failed: {e}")
         except Exception as e:
             logger.error(f"[QuotaManager] Failed to save data: {e}")
 

@@ -20,6 +20,7 @@ export default function Home() {
   const [recentMatches, setRecentMatches] = useState<any[]>([]);
   const [totalAssets, setTotalAssets] = useState<number>(0);
   const [pendingTasks, setPendingTasks] = useState<number>(0);
+  const [apiUsage, setApiUsage] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -52,6 +53,24 @@ export default function Home() {
 
         if (!pendingError && pendingCount !== null) {
           setPendingTasks(pendingCount);
+        }
+
+        // 4. API使用量の取得
+        const todayObj = new Date();
+        const yyyy = todayObj.getFullYear();
+        const mm = String(todayObj.getMonth() + 1).padStart(2, '0');
+        const dd = String(todayObj.getDate()).padStart(2, '0');
+        const todayFormatted = `${yyyy}-${mm}-${dd}`;
+
+        const { data: apiData, error: apiError } = await supabase
+          .from('api_usage_logs')
+          .select('usage_data')
+          .eq('date', todayFormatted)
+          .single();
+
+        if (!apiError && apiData && apiData.usage_data) {
+          const total = Object.values(apiData.usage_data).reduce((a: any, b: any) => Number(a) + Number(b), 0);
+          setApiUsage(Number(total));
         }
 
       } catch (err) {
@@ -139,7 +158,7 @@ export default function Home() {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="grid grid-cols-1 md:grid-cols-3 gap-6"
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
       >
         
         {/* Stat Cards */}
@@ -147,7 +166,7 @@ export default function Home() {
           <div className="absolute -right-4 -top-4 w-24 h-24 bg-blue-500/10 rounded-full blur-2xl group-hover:bg-blue-500/20 transition-all"></div>
           <div className="flex justify-between items-start mb-4">
             <div>
-              <p className="text-sm text-gray-400 font-medium mb-1">同期済みデータ（合計）</p>
+              <p className="text-sm text-gray-400 font-medium mb-1">同期済みデータ</p>
               <h3 className="text-3xl font-bold text-white">{isLoading ? '-' : totalAssets}</h3>
             </div>
             <div className="p-3 bg-blue-500/20 rounded-xl text-blue-400">
@@ -162,16 +181,42 @@ export default function Home() {
         <motion.div variants={itemVariants} className="glass-panel glass-panel-hover rounded-2xl p-6 relative overflow-hidden group">
           <div className="absolute -right-4 -top-4 w-24 h-24 bg-purple-500/10 rounded-full blur-2xl group-hover:bg-purple-500/20 transition-all"></div>
           <div className="flex justify-between items-start mb-4">
+            <div className="w-full">
+              <div className="flex justify-between items-center mb-1">
+                <p className="text-sm text-gray-400 font-medium">本日のAPI利用枠</p>
+                <div className="p-2 bg-purple-500/20 rounded-xl text-purple-400">
+                  <Zap size={20} />
+                </div>
+              </div>
+              <h3 className="text-3xl font-bold text-white mb-2">
+                {isLoading ? '-' : apiUsage} <span className="text-lg text-gray-400 font-normal">/ 217</span>
+              </h3>
+              <div className="w-full bg-gray-700/50 rounded-full h-2.5 overflow-hidden">
+                <div 
+                  className={`h-2.5 rounded-full transition-all duration-1000 ${apiUsage > 180 ? 'bg-red-500' : apiUsage > 130 ? 'bg-yellow-500' : 'bg-purple-500'}`}
+                  style={{ width: `${Math.min((apiUsage / 217) * 100, 100)}%` }}
+                ></div>
+              </div>
+            </div>
+          </div>
+          <p className="text-xs text-gray-400 flex items-center gap-1 mt-2">
+            上限到達時は自動で安全停止します
+          </p>
+        </motion.div>
+
+        <motion.div variants={itemVariants} className="glass-panel glass-panel-hover rounded-2xl p-6 relative overflow-hidden group">
+          <div className="absolute -right-4 -top-4 w-24 h-24 bg-indigo-500/10 rounded-full blur-2xl group-hover:bg-indigo-500/20 transition-all"></div>
+          <div className="flex justify-between items-start mb-4">
             <div>
-              <p className="text-sm text-gray-400 font-medium mb-1">バックグラウンド処理</p>
+              <p className="text-sm text-gray-400 font-medium mb-1">システム状態</p>
               <h3 className="text-3xl font-bold text-white">稼働中</h3>
             </div>
-            <div className="p-3 bg-purple-500/20 rounded-xl text-purple-400">
+            <div className="p-3 bg-indigo-500/20 rounded-xl text-indigo-400">
               <Cpu size={24} />
             </div>
           </div>
           <p className="text-xs text-gray-400 flex items-center gap-1 mt-4">
-            エッジ関数は正常に動作しています
+            エッジ関数・自動化は正常です
           </p>
         </motion.div>
 
@@ -192,7 +237,7 @@ export default function Home() {
         </motion.div>
 
         {/* Recent Activity List (グラフを消して全幅に) */}
-        <motion.div variants={itemVariants} className="md:col-span-3 glass-panel rounded-2xl p-6">
+        <motion.div variants={itemVariants} className="md:col-span-2 lg:col-span-4 glass-panel rounded-2xl p-6">
           <h2 className="text-xl font-bold text-white mb-6">最新の戦績データ</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {isLoading ? (
