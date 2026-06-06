@@ -5,10 +5,19 @@ export function middleware(req: NextRequest) {
   // 環境変数からパスワードを取得。設定されていない場合はデフォルトで 'ktm' とする（安全のため本番では必ず設定する）
   const adminPassword = process.env.ADMIN_PASSWORD || 'ktm';
 
-  // ktm-admin 配下、または /api/admin 配下のアクセスかどうか
   const url = req.nextUrl;
-  if (url.pathname.startsWith('/ktm-admin') || url.pathname.startsWith('/api/admin')) {
-    
+  const path = url.pathname;
+
+  // パスワード保護の対象となるパス（一般公開しないパス）
+  const isProtected = 
+    path === '/' ||
+    path.startsWith('/ktm-admin') ||
+    path.startsWith('/matchups') ||
+    path.startsWith('/champions') ||
+    path.startsWith('/library') ||
+    path.startsWith('/api/admin');
+
+  if (isProtected) {
     // Authorization ヘッダーの確認
     const basicAuth = req.headers.get('authorization');
     if (basicAuth) {
@@ -16,14 +25,13 @@ export function middleware(req: NextRequest) {
       // base64デコード (username:password)
       const [user, pwd] = atob(authValue).split(':');
 
-      // ユーザー名は任意(例えば 'admin')とし、パスワードが一致するか確認
+      // パスワードが一致するか確認
       if (pwd === adminPassword) {
         return NextResponse.next();
       }
     }
 
     // 認証失敗時、またはAuthorizationヘッダーがない場合は401を返しブラウザのダイアログを出す
-    url.pathname = '/api/auth'; // Next.jsで401を直接返すためのダミーではなく、Responseを直接返す
     return new NextResponse('Auth Required.', {
       status: 401,
       headers: {
@@ -37,8 +45,5 @@ export function middleware(req: NextRequest) {
 
 // 適用するルートの定義
 export const config = {
-  matcher: [
-    '/ktm-admin/:path*',
-    '/api/admin/:path*'
-  ],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
 };

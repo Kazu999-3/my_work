@@ -2,8 +2,9 @@
 
 import { useEffect, useState, useRef } from "react";
 import { supabase } from "../../lib/supabaseClient";
-import { Users, RefreshCw, Swords, X, Activity, Globe, MessageSquare } from "lucide-react";
+import { Users, RefreshCw, Swords, X, Activity, Globe, MessageSquare, Info, Crown } from "lucide-react";
 import { getChampIcon } from "../../lib/ddragonClient";
+import ProfileModal from "../ktm-admin/ProfileModal";
 
 // ランク名から色を判定するユーティリティ
 function getColorFromRankName(rank: string): string {
@@ -31,6 +32,9 @@ export default function BalancerPage() {
   const [balanceResult, setBalanceResult] = useState<any>(null);
   const [sendingDiscord, setSendingDiscord] = useState(false);
   
+  const [sortConfig, setSortConfig] = useState({ key: "no", direction: "asc" });
+  const [selectedPlayer, setSelectedPlayer] = useState<any>(null);
+
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -47,12 +51,12 @@ export default function BalancerPage() {
 
       if (error) throw error;
       
-      // No順にソートして保持
+      // No順にソートして保持。ローカル用フラグ is_fixed も初期化
       const playersWithNo = (data || []).sort((a, b) => {
         const timeA = a.metadata?.joined_at ? new Date(a.metadata.joined_at).getTime() : Infinity;
         const timeB = b.metadata?.joined_at ? new Date(b.metadata.joined_at).getTime() : Infinity;
         return timeA - timeB;
-      }).map((p, index) => ({ ...p, no: index + 1 }));
+      }).map((p, index) => ({ ...p, no: index + 1, is_fixed: false }));
 
       setPlayers(playersWithNo);
     } catch (err: any) {
@@ -77,10 +81,13 @@ export default function BalancerPage() {
         return p;
       });
 
-      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-      saveTimeoutRef.current = setTimeout(() => {
-        handleSave(nextPlayers);
-      }, 1500);
+      // is_fixed の変更はDBに保存しない一時フラグなので保存トリガーを引かない
+      if (field !== "is_fixed") {
+        if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+        saveTimeoutRef.current = setTimeout(() => {
+          handleSave(nextPlayers);
+        }, 1500);
+      }
 
       return nextPlayers;
     });
@@ -123,10 +130,14 @@ export default function BalancerPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          participants: activePlayers.map(p => ({
-            name: p.name,
-            isFixed: false
-          }))
+          participants: activePlayers.map(p => {
+            const pref1 = p.role_preferences?.primary;
+            return {
+              name: p.name,
+              isFixed: p.is_fixed || false,
+              fixedRole: (p.is_fixed && pref1 && pref1 !== 'ALL' && pref1 !== 'FILL') ? pref1 : null
+            };
+          })
         })
       });
 
@@ -265,7 +276,44 @@ export default function BalancerPage() {
     );
   };
 
-  if (loading) {
+  const requestSort = (key: string) => {
+    let direction = "desc";
+    if (sortConfig.key === key && sortConfig.direction === "desc") {
+      direction = "asc";
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const sortedPlayers = [...players].sort((a, b) => {
+    let aVal = a[sortConfig.key];
+    let bVal = b[sortConfig.key];
+    
+    if (sortConfig.key === "mmr" || sortConfig.key === "no") {
+      aVal = parseInt(aVal) || 0;
+      bVal = parseInt(bVal) || 0;
+    }
+    
+    if (aVal < bVal) return sortConfig.direction === "asc" ? -1 : 1;
+    if (aVal > bVal) return sortConfig.direction === "asc" ? 1 : -1;
+    return 0;
+  });
+
+  const SortableHeader = ({ label, sortKey, className = "" }: { label: string, sortKey: string, className?: string }) => (
+    <th 
+      className={`px-4 py-3 font-medium cursor-pointer hover:bg-gray-800 transition whitespace-nowrap ${className}`}
+      onClick={() => requestSort(sortKey)}
+    >
+      <div className="flex items-center gap-1 justify-center">
+        {label}
+        {sortConfig.key === sortKey && (
+          <span className="text-blue-400 text-xs">{sortConfig.direction === "desc" ? "↓" : "↑"}</span>
+        )}
+        {sortConfig.key !== sortKey && <span className="text-gray-600 text-xs">↕</span>}
+      </div>
+    </th>
+  );
+
+  if (loading && players.length === 0) {
     return (
       <div className="flex h-screen items-center justify-center bg-gray-950 text-white">
         <RefreshCw className="h-8 w-8 animate-spin text-blue-500" />
@@ -288,7 +336,8 @@ export default function BalancerPage() {
               チーム分けバランサー
             </h1>
             <p className="text-gray-400 mt-2 text-sm">
-              今日の参加者のActiveチェックを入れ、希望レーンを変更してから「チーム分け実行」ボタンを押してください。
+              参加者にチェックを入れ、希望レーンを変更して「チーム分け実行」を押してください。<br/>
+              ※<Crown className="inline w-4 h-4 text-amber-400"/>マークを入れると、AIがそのプレイヤーを最優先で第1希望レーンに配属します。
             </p>
           </div>
           
@@ -307,7 +356,7 @@ export default function BalancerPage() {
               }`}
             >
               {balancing ? <RefreshCw className="h-6 w-6 animate-spin" /> : <Swords className="h-6 w-6" />}
-              {balancing ? "AIがチームを編成中..." : "チーム分け実行"}
+              {balancing ? "AIが編成中..." : "チーム分け実行"}
             </button>
           </div>
         </div>
@@ -341,7 +390,7 @@ export default function BalancerPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 relative">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 relative mb-8">
               {/* VS Divider */}
               <div className="hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 w-12 h-12 bg-gray-950 border-2 border-gray-800 rounded-full items-center justify-center font-black text-gray-600 italic text-xl">
                 VS
@@ -404,9 +453,21 @@ export default function BalancerPage() {
               </div>
             </div>
 
+            {/* AI 分析レポート */}
+            {balanceResult.balanceReport && (
+              <div className="mt-6 p-4 bg-indigo-950/30 border border-indigo-900/50 rounded-lg">
+                <h3 className="text-sm font-bold text-indigo-400 mb-2 flex items-center gap-2">
+                  <Activity className="h-4 w-4" /> AI バランス分析レポート
+                </h3>
+                <div className="text-xs text-indigo-200/80 whitespace-pre-wrap leading-relaxed font-mono">
+                  {balanceResult.balanceReport}
+                </div>
+              </div>
+            )}
+
             {/* SPECTATORS */}
             {balanceResult.spectators && balanceResult.spectators.length > 0 && (
-              <div className="mt-8 pt-6 border-t border-gray-800">
+              <div className="mt-6 pt-6 border-t border-gray-800">
                 <h3 className="text-sm font-bold text-gray-500 mb-4 flex items-center gap-2">
                   <Activity className="h-4 w-4" /> 観戦 / 待機メンバー
                 </h3>
@@ -429,15 +490,17 @@ export default function BalancerPage() {
               <thead className="text-xs text-gray-400 bg-gray-950 border-b border-gray-800">
                 <tr>
                   <th className="px-4 py-3 font-medium w-16 text-center">参加</th>
-                  <th className="px-4 py-3 font-medium">プレイヤー名</th>
-                  <th className="px-4 py-3 font-medium">ランク</th>
-                  <th className="px-4 py-3 font-medium text-center">総合MMR</th>
+                  <th className="px-2 py-3 font-medium w-12 text-center" title="絶対に第1希望レーンに配属する">👑固定</th>
+                  <SortableHeader label="No." sortKey="no" className="w-16" />
+                  <SortableHeader label="プレイヤー名" sortKey="name" />
+                  <SortableHeader label="ランク" sortKey="highest_rank" />
+                  <SortableHeader label="総合MMR" sortKey="mmr" />
                   <th className="px-4 py-3 font-medium">第1希望</th>
                   <th className="px-4 py-3 font-medium">第2希望</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-800/50">
-                {players.map((p) => {
+                {sortedPlayers.map((p) => {
                   const prefs = p.role_preferences || { primary: 'ALL', secondary: 'FILL' };
                   return (
                     <tr key={p.id} className={`hover:bg-gray-800/50 transition ${p.is_active ? 'bg-blue-900/5' : 'opacity-40'}`}>
@@ -449,7 +512,26 @@ export default function BalancerPage() {
                           className="w-5 h-5 rounded border-gray-700 bg-gray-800 text-blue-500 focus:ring-blue-500/50 cursor-pointer"
                         />
                       </td>
-                      <td className="px-4 py-2 font-bold text-white whitespace-nowrap">
+                      <td className="px-2 py-2 text-center">
+                        <button
+                          onClick={() => handleInputChange(p.id, "is_fixed", !p.is_fixed)}
+                          className={`p-1 rounded transition-colors ${p.is_fixed ? 'bg-amber-500/20 text-amber-400' : 'text-gray-600 hover:text-amber-500 hover:bg-amber-500/10'}`}
+                          title="第1希望レーンで固定する"
+                        >
+                          <Crown className={`w-4 h-4 ${p.is_fixed ? 'opacity-100' : 'opacity-50'}`} />
+                        </button>
+                      </td>
+                      <td className="px-4 py-2 text-center font-bold text-gray-600 text-xs">
+                        {p.no}
+                      </td>
+                      <td className="px-4 py-2 font-bold text-white whitespace-nowrap flex items-center gap-2">
+                        <button 
+                          onClick={() => setSelectedPlayer(p)}
+                          className="text-blue-400 hover:text-white p-1 hover:bg-gray-800 rounded transition flex-shrink-0"
+                          title="プロフィールを表示"
+                        >
+                          <Info className="w-4 h-4" />
+                        </button>
                         {p.name}
                       </td>
                       <td className={`px-4 py-2 text-xs ${getColorFromRankName(p.highest_rank)}`}>
@@ -495,6 +577,9 @@ export default function BalancerPage() {
           </div>
         </div>
 
+        {selectedPlayer && (
+          <ProfileModal player={selectedPlayer} onClose={() => setSelectedPlayer(null)} />
+        )}
       </div>
     </div>
   );

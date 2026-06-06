@@ -31,7 +31,16 @@ export default function Sidebar() {
       {/* Navigation */}
       <nav className="flex flex-col gap-3">
         {MENU_ITEMS.map((item) => {
-          const isActive = pathname === item.href;
+          const isActive = pathname === item.href || (item.id === 'leaderboard' && pathname.startsWith('/player'));
+          
+          // 公開ページにいる時は、公開メニュー以外隠す
+          const isPublicPage = pathname.startsWith('/balancer') || pathname.startsWith('/leaderboard') || pathname.startsWith('/player');
+          const isPublicMenu = item.id === 'balancer' || item.id === 'leaderboard';
+          
+          if (isPublicPage && !isPublicMenu) {
+            return null; // 非表示
+          }
+
           return (
             <Link 
               key={item.id} 
