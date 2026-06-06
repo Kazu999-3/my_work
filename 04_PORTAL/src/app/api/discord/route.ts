@@ -18,8 +18,8 @@ export async function POST(request: Request) {
       const icons: Record<string, string> = {
         TOP: '🛡️', JG: '🌲', MID: '🔥', ADC: '🏹', SUP: '✨'
       };
-      const pBlue = teamBlue.find(p => p.currentRole === role);
-      const pRed = teamRed.find(p => p.currentRole === role);
+      const pBlue = teamBlue.find((p: any) => p.currentRole === role);
+      const pRed = teamRed.find((p: any) => p.currentRole === role);
       
       const blueName = pBlue ? pBlue.name : "-";
       const redName = pRed ? pRed.name : "-";
