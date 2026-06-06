@@ -108,15 +108,17 @@ export async function fetchMatchDetails(matchId: string, apiKey: string): Promis
 // 追加: League-V4 (Rank Sync)
 // ※ Summoner ID への変換が必要
 // ==========================================
+const RIOT_API_BASE_JP = "https://jp1.api.riotgames.com";
+
 export async function fetchSummonerByPuuid(puuid: string, apiKey: string): Promise<any> {
-  const url = `${RIOT_API_BASE_ASIA}/lol/summoner/v4/summoners/by-puuid/${puuid}?api_key=${apiKey}`;
+  const url = `${RIOT_API_BASE_JP}/lol/summoner/v4/summoners/by-puuid/${puuid}?api_key=${apiKey}`;
   const res = await fetch(url);
   if (!res.ok) throw new Error(`Summoner fetch error: ${res.statusText}`);
   return await res.json();
 }
 
 export async function fetchLeagueBySummonerId(summonerId: string, apiKey: string): Promise<any[]> {
-  const url = `${RIOT_API_BASE_ASIA}/lol/league/v4/entries/by-summoner/${summonerId}?api_key=${apiKey}`;
+  const url = `${RIOT_API_BASE_JP}/lol/league/v4/entries/by-summoner/${summonerId}?api_key=${apiKey}`;
   const res = await fetch(url);
   if (!res.ok) throw new Error(`League fetch error: ${res.statusText}`);
   return await res.json();

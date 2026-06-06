@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { supabase } from "../../lib/supabaseClient";
 import MatchRecordPanel from "./MatchRecordPanel";
 import MatchHistoryPanel from "./MatchHistoryPanel";
-import { Info, Users, RefreshCw, Save, Trophy, Filter, Plus, Swords, AlertCircle, X, History } from "lucide-react";
+import { Info, Users, RefreshCw, Save, Trophy, Filter, Plus, Swords, AlertCircle, X, History, Globe } from "lucide-react";
 
 function getRankFromMMR(mmr: number): { tier: string, color: string } {
   if (mmr >= 2000) return { tier: "CHALLENGER", color: "text-sky-300 bg-sky-300/10" };
@@ -130,6 +130,9 @@ export default function KtmAdminPage() {
   // Discordメンバー同期用ステート
   const [syncingDiscord, setSyncingDiscord] = useState(false);
   const [syncData, setSyncData] = useState<any>(null);
+
+  // Riot API 同期用ステート
+  const [syncingRiot, setSyncingRiot] = useState(false);
 
   useEffect(() => {
     fetchPlayers();
@@ -346,6 +349,25 @@ export default function KtmAdminPage() {
       setMessage({ type: "error", text: "❌ バランス計算エラー: " + err.message });
     } finally {
       setBalancing(false);
+    }
+  };
+
+  const handleRiotSync = async () => {
+    if (!confirm('Riot APIから全員の最新のランク情報を取得・同期しますか？\n（※数十秒かかる場合があります）')) return;
+    
+    setSyncingRiot(true);
+    setMessage({ type: "", text: "" });
+    try {
+      const res = await fetch('/api/admin/riot-sync', { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      
+      setMessage({ type: "success", text: data.message });
+      fetchPlayers(); // 最新データを再取得
+    } catch (err: any) {
+      setMessage({ type: "error", text: err.message });
+    } finally {
+      setSyncingRiot(false);
     }
   };
 
@@ -626,6 +648,16 @@ export default function KtmAdminPage() {
             >
               <Users className={`h-4 w-4 ${syncingDiscord && !syncData ? 'animate-spin' : ''}`} /> 
               {syncingDiscord && !syncData ? "確認中..." : "Discord同期"}
+            </button>
+            <button
+              onClick={handleRiotSync}
+              disabled={syncingRiot}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold transition border ${
+                syncingRiot ? 'bg-sky-900/50 border-sky-500/50 text-sky-400 cursor-not-allowed' : 'bg-sky-900/20 border-sky-500/50 text-sky-400 hover:bg-sky-800/40 hover:text-white'
+              }`}
+            >
+              <Globe className={`h-4 w-4 ${syncingRiot ? 'animate-pulse' : ''}`} /> 
+              {syncingRiot ? "同期中..." : "Riotランク同期"}
             </button>
             <button
               onClick={handleRebuildMmr}
