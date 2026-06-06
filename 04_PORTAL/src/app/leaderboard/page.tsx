@@ -74,7 +74,7 @@ function getRankBadge(mmr: number) {
 }
 
 import WinrateMatrixPanel from './WinrateMatrixPanel';
-import { Trophy, Activity, Info } from 'lucide-react';
+import { Trophy, Activity, Info, RefreshCw } from 'lucide-react';
 
 export default function LeaderboardPage() {
   const [data, setData] = useState<LeaderboardData>({
@@ -82,6 +82,22 @@ export default function LeaderboardPage() {
   });
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'ranking' | 'winrate'>('ranking');
+  const [syncing, setSyncing] = useState(false);
+
+  const handleSyncDiscordNames = async () => {
+    if (!confirm('全プレイヤーのDiscord名を最新のものに一括同期しますか？少し時間がかかります。')) return;
+    setSyncing(true);
+    try {
+      const res = await fetch(`/api/discord/sync?_t=${Date.now()}`, { cache: 'no-store' });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || '同期に失敗しました');
+      alert(`✅ ${result.syncedCount}人の名前を最新のDiscord名に更新しました！\nページを再読み込みして反映します。`);
+      window.location.reload();
+    } catch (err: any) {
+      alert('エラー: ' + err.message);
+      setSyncing(false);
+    }
+  };
 
   useEffect(() => {
     async function fetchLeaderboard() {
@@ -188,9 +204,19 @@ export default function LeaderboardPage() {
   return (
     <div className="min-h-screen bg-gray-950 py-10 px-4 sm:px-6 lg:px-8 text-gray-200">
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-3xl font-extrabold text-white text-center mb-6 tracking-tight flex items-center justify-center gap-3">
-          <span className="text-blue-500">🏆</span> KTM LEADERBOARD
-        </h1>
+        <div className="relative mb-6">
+          <h1 className="text-3xl font-extrabold text-white text-center tracking-tight flex items-center justify-center gap-3">
+            <span className="text-blue-500">🏆</span> KTM LEADERBOARD
+          </h1>
+          <button
+            onClick={handleSyncDiscordNames}
+            disabled={syncing}
+            className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition disabled:opacity-50"
+          >
+            <RefreshCw className={`w-3 h-3 ${syncing ? 'animate-spin' : ''}`} />
+            <span className="hidden sm:inline">{syncing ? '同期中...' : '名前の一括同期'}</span>
+          </button>
+        </div>
         
         {/* タブナビゲーション */}
         <div className="flex justify-center mb-10">
