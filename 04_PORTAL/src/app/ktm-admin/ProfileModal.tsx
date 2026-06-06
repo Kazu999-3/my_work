@@ -151,15 +151,15 @@ export default function ProfileModal({ player, onClose }: ProfileModalProps) {
                         <div className="text-xs text-gray-500 font-bold mb-1">総合勝率</div>
                         <div className="text-2xl font-black text-emerald-400">
                           {Math.round(
-                            Object.values(stats).reduce((acc:any, s:any) => acc + (s ? s.totalWins : 0), 0) /
-                            Math.max(1, Object.values(stats).reduce((acc:any, s:any) => acc + (s ? s.totalGames : 0), 0)) * 100
+                            Object.values(stats as Record<string, any>).reduce((acc:any, s:any) => acc + (s ? s.totalWins : 0), 0) /
+                            Math.max(1, Object.values(stats as Record<string, any>).reduce((acc:any, s:any) => acc + (s ? s.totalGames : 0), 0)) * 100
                           )}%
                         </div>
                       </div>
                       <div className="bg-gray-900 p-3 rounded border border-gray-800">
                         <div className="text-xs text-gray-500 font-bold mb-1">総試合数</div>
                         <div className="text-2xl font-black text-blue-400">
-                          {Object.values(stats).reduce((acc:any, s:any) => acc + (s ? s.totalGames : 0), 0)}戦
+                          {Object.values(stats as Record<string, any>).reduce((acc:any, s:any) => acc + (s ? s.totalGames : 0), 0)}戦
                         </div>
                       </div>
                     </div>
