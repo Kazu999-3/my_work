@@ -83,11 +83,14 @@ export default function BalancerPage() {
         throw new Error("募集メッセージに参加者が見つかりませんでした。");
       }
 
-      // 取得したDiscord IDの配列を使って、プレイヤー一覧の is_active を更新
+      // 取得したDiscord IDの配列を使って、プレイヤー一覧の is_active と name を更新
       setPlayers(prevPlayers => {
         const nextPlayers = prevPlayers.map(p => {
           if (p.discord_id && data.activeDiscordIds.includes(p.discord_id)) {
-            return { ...p, is_active: true };
+            // APIから取得した最新のDiscord名があれば上書きする
+            const discordInfo = data.participants?.find((dp: any) => dp.id === p.discord_id);
+            const newName = (discordInfo && discordInfo.name && discordInfo.name !== "Unknown") ? discordInfo.name : p.name;
+            return { ...p, is_active: true, name: newName };
           }
           return { ...p, is_active: false };
         });

@@ -69,11 +69,36 @@ export async function GET() {
     // もし本文側にもあれば抽出
     extractMentions(targetMsg.content);
 
+    // 抽出したID群から、Discord APIを叩いて最新のユーザー名を取得する
+    const participantIds = Array.from(activeDiscordIds);
+    const participants = await Promise.all(
+      participantIds.map(async (id) => {
+        try {
+          const userRes = await fetch(`https://discord.com/api/v10/users/${id}`, {
+            headers: {
+              Authorization: `Bot ${DISCORD_BOT_TOKEN}`,
+            },
+          });
+          if (userRes.ok) {
+            const userData = await userRes.json();
+            return {
+              id: id,
+              name: userData.global_name || userData.username || "Unknown"
+            };
+          }
+        } catch (e) {
+          console.error(`Failed to fetch user ${id}`, e);
+        }
+        return { id: id, name: "Unknown" }; // 取得失敗時のフォールバック
+      })
+    );
+
     return NextResponse.json({ 
       success: true, 
       messageId: targetMsg.id,
       title: embed.title,
-      activeDiscordIds: Array.from(activeDiscordIds) 
+      activeDiscordIds: participantIds,
+      participants: participants
     });
 
   } catch (error: any) {
