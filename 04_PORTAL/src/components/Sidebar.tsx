@@ -6,9 +6,11 @@ import { Shield, LayoutDashboard, Swords, BookOpen, BookHeart, Trophy, History, 
 
 const MENU_ITEMS = [
   { id: 'dashboard', label: 'ダッシュボード', icon: LayoutDashboard, href: '/', color: 'text-white', activeBg: 'bg-white/10' },
-  { id: 'leaderboard', label: 'リーダーボード', icon: Trophy, href: '/leaderboard', color: 'text-amber-400', activeBg: 'bg-amber-400/15' },
-  { id: 'balancer',    label: 'チーム分け',       icon: Users, href: '/balancer', color: 'text-emerald-400', activeBg: 'bg-emerald-400/15' },
+  { id: 'history',   label: '過去の試合履歴', icon: History, href: '/history', color: 'text-orange-400', activeBg: 'bg-orange-400/15' },
+  { id: 'leaderboard', label: 'リーダーボード', icon: Trophy, href: '/leaderboard', color: 'text-yellow-400', activeBg: 'bg-yellow-400/15' },
+  { id: 'balancer',  label: 'チーム分け', icon: Swords, href: '/balancer', color: 'text-rose-500', activeBg: 'bg-rose-500/15' },
   { id: 'synergy',   label: '相性・ライバル', icon: HeartHandshake, href: '/synergy', color: 'text-fuchsia-400', activeBg: 'bg-fuchsia-400/15' },
+  { id: 'player',    label: 'マイページ', icon: Users, href: '/player', color: 'text-indigo-400', activeBg: 'bg-indigo-400/15' },
   { id: 'matchups',  label: 'バトルサーチ',   icon: Swords,          href: '/matchups', color: 'text-[#00cfef]', activeBg: 'bg-[#00cfef]/15' },
   { id: 'champions', label: 'チャンピオン辞典', icon: BookHeart,     href: '/champions', color: 'text-[#c89b3c]', activeBg: 'bg-[#c89b3c]/15' },
   { id: 'library',   label: '攻略ライブラリ', icon: BookOpen,        href: '/library', color: 'text-[#a78bfa]', activeBg: 'bg-[#a78bfa]/15' },
@@ -35,8 +37,8 @@ export default function Sidebar() {
           const isActive = pathname === item.href || (item.id === 'leaderboard' && pathname.startsWith('/player'));
           
           // 公開ページにいる時は、公開メニュー以外隠す
-          const isPublicPage = pathname.startsWith('/balancer') || pathname.startsWith('/leaderboard') || pathname.startsWith('/player') || pathname.startsWith('/synergy');
-          const isPublicMenu = item.id === 'balancer' || item.id === 'leaderboard' || item.id === 'synergy' || item.id === 'ktm-admin';
+          const isPublicPage = pathname.startsWith('/balancer') || pathname.startsWith('/leaderboard') || pathname.startsWith('/player') || pathname.startsWith('/synergy') || pathname.startsWith('/history');
+          const isPublicMenu = item.id === 'balancer' || item.id === 'leaderboard' || item.id === 'synergy' || item.id === 'ktm-admin' || item.id === 'history';
           
           if (isPublicPage && !isPublicMenu) {
             return null; // 非表示

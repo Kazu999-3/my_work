@@ -49,24 +49,25 @@ export async function GET() {
     // Embedのフィールドを舐めてメンションを探す
     const embed = targetMsg.embeds[0];
     
-    // 通常、募集Embedには参加者リストが含まれる
-    embed.fields?.forEach((f: any) => {
-      // <@123456789> の形式を抽出
+    const extractMentions = (text: string) => {
+      if (!text) return;
       const regex = /<@!?(\d+)>/g;
       let match;
-      while ((match = regex.exec(f.value)) !== null) {
+      while ((match = regex.exec(text)) !== null) {
         activeDiscordIds.add(match[1]);
       }
+    };
+
+    // 説明文 (description) に参加者リストが書かれている
+    extractMentions(embed.description);
+
+    // フィールドにもあれば抽出
+    embed.fields?.forEach((f: any) => {
+      extractMentions(f.value);
     });
 
     // もし本文側にもあれば抽出
-    if (targetMsg.content) {
-      const regex = /<@!?(\d+)>/g;
-      let match;
-      while ((match = regex.exec(targetMsg.content)) !== null) {
-        activeDiscordIds.add(match[1]);
-      }
-    }
+    extractMentions(targetMsg.content);
 
     return NextResponse.json({ 
       success: true, 

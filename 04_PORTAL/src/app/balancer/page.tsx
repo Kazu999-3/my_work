@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { supabase } from "../../lib/supabaseClient";
-import { Users, RefreshCw, Swords, X, Activity, Globe, MessageSquare, Info, Crown, Trophy } from "lucide-react";
+import { Users, RefreshCw, Swords, X, Activity, Globe, MessageSquare, Info, Crown, Trophy, History } from "lucide-react";
 import { getChampIcon } from "../../lib/ddragonClient";
 import ProfileModal from "../ktm-admin/ProfileModal";
 
@@ -390,12 +390,19 @@ export default function BalancerPage() {
                 {activeCount} <span className="text-sm font-normal text-gray-500">人</span>
               </span>
             </div>
+            <Link 
+              href="/history"
+              className="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 text-orange-400 px-6 py-4 rounded-xl font-bold transition shadow-lg text-lg border border-orange-900/50"
+            >
+              <History className="h-5 w-5" />
+              過去の試合を閲覧
+            </Link>
             <a 
               href="/balancer/record"
               className="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 text-gray-200 px-6 py-4 rounded-xl font-bold transition shadow-lg text-lg"
             >
               <Trophy className="h-5 w-5 text-emerald-400" />
-              カスタム成績を手動入力 (Match-V5連携)
+              カスタム成績を手動入力
             </a>
             <button
               onClick={handleBalance}
