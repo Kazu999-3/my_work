@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { X, RefreshCw, Swords, Shield, Star, Crosshair, Zap } from "lucide-react";
+import { X, RefreshCw, Swords, Shield, Star, Crosshair, Zap, Activity } from "lucide-react";
 import { getChampIcon, getChampNameById } from "../../lib/ddragonClient";
+import RadarChart from "../../components/RadarChart";
 
 interface ProfileModalProps {
   player: any;
@@ -119,11 +120,10 @@ export default function ProfileModal({ player, onClose }: ProfileModalProps) {
             )}
           </section>
 
-          {/* KTM Match Stats */}
           <section>
             <h3 className="text-xl font-bold text-gray-200 mb-4 flex items-center gap-2">
               <Swords className="w-5 h-5 text-emerald-500" />
-              KTM レーン別戦績
+              KTM 戦績 ＆ プレイスタイル分析
             </h3>
             
             {loading ? (
@@ -131,7 +131,43 @@ export default function ProfileModal({ player, onClose }: ProfileModalProps) {
                 <RefreshCw className="w-8 h-8 text-blue-500 animate-spin" />
               </div>
             ) : stats && Object.keys(stats).some(k => stats[k] !== null) ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+              <div className="space-y-6">
+                
+                {/* プレイスタイル・レーダーチャート */}
+                <div className="bg-gray-800/40 border border-gray-700/50 rounded-lg p-4 flex flex-col md:flex-row gap-6 items-center">
+                  <div className="w-full md:w-1/3">
+                    <RadarChart stats={stats} mmr={player.mmr || 1000} />
+                  </div>
+                  <div className="w-full md:w-2/3 space-y-3">
+                    <h4 className="text-lg font-bold text-white flex items-center gap-2">
+                      <Activity className="w-5 h-5 text-blue-400" />
+                      AI プレイスタイル分析
+                    </h4>
+                    <p className="text-gray-400 text-sm">
+                      過去のKTM内戦の勝率、プレイ回数、選択レーン、そして現在のMMRから算出されたプレイスタイル指標です。
+                    </p>
+                    <div className="grid grid-cols-2 gap-4 mt-2">
+                      <div className="bg-gray-900 p-3 rounded border border-gray-800">
+                        <div className="text-xs text-gray-500 font-bold mb-1">総合勝率</div>
+                        <div className="text-2xl font-black text-emerald-400">
+                          {Math.round(
+                            Object.values(stats).reduce((acc:any, s:any) => acc + (s ? s.totalWins : 0), 0) /
+                            Math.max(1, Object.values(stats).reduce((acc:any, s:any) => acc + (s ? s.totalGames : 0), 0)) * 100
+                          )}%
+                        </div>
+                      </div>
+                      <div className="bg-gray-900 p-3 rounded border border-gray-800">
+                        <div className="text-xs text-gray-500 font-bold mb-1">総試合数</div>
+                        <div className="text-2xl font-black text-blue-400">
+                          {Object.values(stats).reduce((acc:any, s:any) => acc + (s ? s.totalGames : 0), 0)}戦
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* レーン別スタッツ */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                 {['TOP', 'JG', 'MID', 'ADC', 'SUP'].map(role => {
                   const s = stats[role];
                   if (!s) return null;
@@ -182,6 +218,7 @@ export default function ProfileModal({ player, onClose }: ProfileModalProps) {
                   );
                 })}
               </div>
+            </div>
             ) : (
                <div className="text-gray-500 italic bg-gray-800/30 p-4 rounded-lg border border-gray-800">
                 KTMでの試合記録がまだありません。
