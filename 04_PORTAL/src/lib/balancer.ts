@@ -27,7 +27,6 @@ export interface Player {
   avgMMR?: number;
   isOutlierLow?: boolean;
   isOutlierHigh?: boolean;
-  isOutlierHigh?: boolean;
   adjustedRates?: Record<Role, number>;
   spectator_pity?: number;
 }
