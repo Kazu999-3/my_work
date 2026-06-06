@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+import Link from "next/link";
 import { supabase } from "../../lib/supabaseClient";
 import { Users, RefreshCw, Swords, X, Activity, Globe, MessageSquare, Info, Crown, Trophy, History } from "lucide-react";
 import { getChampIcon } from "../../lib/ddragonClient";
