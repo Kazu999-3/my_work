@@ -129,7 +129,7 @@ export default function Home() {
             <p className="text-blue-300 text-xs">スプレッドシートの代わりにこちらからプレイヤー管理が可能です</p>
           </div>
         </div>
-        <Link href="/ktm-admin" className="bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-blue-500/20 transition-all flex items-center gap-2 w-full md:w-auto justify-center">
+        <Link href="/ktm-admin" prefetch={false} className="bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-blue-500/20 transition-all flex items-center gap-2 w-full md:w-auto justify-center">
           ダッシュボードを開く
         </Link>
       </motion.div>
