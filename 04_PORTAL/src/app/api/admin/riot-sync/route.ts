@@ -39,12 +39,33 @@ export async function POST(request: Request) {
         
         // ソロキュー(RANKED_SOLO_5x5)を探す
         const soloQ = leagueEntries.find((entry: any) => entry.queueType === 'RANKED_SOLO_5x5');
-        
-        let highestRank = player.highest_rank;
+
+        // ランクの強さを数値化して比較する関数
+        const getRankValue = (rankStr: string) => {
+          if (!rankStr || rankStr === 'UNRANKED') return 0;
+          const tiers: Record<string, number> = {
+            IRON: 100, BRONZE: 200, SILVER: 300, GOLD: 400, PLATINUM: 500, 
+            EMERALD: 600, DIAMOND: 700, MASTER: 800, GRANDMASTER: 900, CHALLENGER: 1000
+          };
+          const divs: Record<string, number> = { 'IV': 1, 'III': 2, 'II': 3, 'I': 4 };
+          
+          const parts = rankStr.toUpperCase().split(' ');
+          const tierVal = tiers[parts[0]] || 0;
+          const divVal = parts[1] ? (divs[parts[1]] || 0) : 0;
+          return tierVal + divVal;
+        };
+
+        let highestRank = player.highest_rank || 'UNRANKED';
         
         if (soloQ) {
-          // 例: "GOLD IV"
-          highestRank = `${soloQ.tier} ${soloQ.rank}`;
+          const currentRank = `${soloQ.tier} ${soloQ.rank}`;
+          const currentVal = getRankValue(currentRank);
+          const dbVal = getRankValue(highestRank);
+
+          // 自己ベスト更新方式: 現在のランクが過去の最高ランクを上回っている場合のみ上書きする
+          if (currentVal > dbVal) {
+            highestRank = currentRank;
+          }
         }
 
         // DBを更新 (puuid, summoner_id, highest_rank)
