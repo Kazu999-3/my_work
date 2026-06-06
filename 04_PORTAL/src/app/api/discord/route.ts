@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { supabase } from '../../../lib/supabaseClient';
 
 export async function POST(request: Request) {
   try {
@@ -73,6 +74,39 @@ export async function POST(request: Request) {
     if (!res.ok) {
       throw new Error(`Discord API Error: ${res.status} ${res.statusText}`);
     }
+
+    // --- ここから待機PITY(spectator_pity)の自動更新処理 ---
+    try {
+      // 1. 出場者の spectator_pity を 0 にリセット
+      const playingNames = [...teamBlue, ...teamRed].map((p: any) => p.name);
+      if (playingNames.length > 0) {
+        await supabase
+          .from('ktm_players')
+          .update({ spectator_pity: 0 })
+          .in('name', playingNames);
+      }
+
+      // 2. 観戦者の spectator_pity を +1
+      if (spectators && spectators.length > 0) {
+        const { data: specData } = await supabase
+          .from('ktm_players')
+          .select('id, name, spectator_pity')
+          .in('name', spectators);
+
+        if (specData) {
+          for (const spec of specData) {
+            await supabase
+              .from('ktm_players')
+              .update({ spectator_pity: (spec.spectator_pity || 0) + 1 })
+              .eq('id', spec.id);
+          }
+        }
+      }
+    } catch (dbError) {
+      console.error('Spectator Pity Update Error:', dbError);
+      // Pity更新エラーはDiscord通知自体には影響させないため握りつぶす
+    }
+    // --- ここまで ---
 
     return NextResponse.json({ success: true });
   } catch (error: any) {

@@ -1,9 +1,7 @@
 import { CONFIG } from '../config.js';
 import { fetchGAS, patchInteractionResponse, sendDiscordMessage } from '../utils/api.js';
 import { createMessageContent, createRecruitButtons, createRecruitEmbed, getPortalComponents, getPortalEmbed } from '../ui/embeds.js';
-import { getPlayersByNames } from '../utils/supabase.js';
-import { performAutoBalance } from '../utils/balancer.js';
-import { fetchSupabase, upsertPlayer } from '../utils/supabase.js';
+import { getPlayersByNames, fetchSupabase, upsertPlayer } from '../utils/supabase.js';
 
 export function handleRecruitDirect(interaction) {
   const options = interaction.data.options || [];
@@ -53,175 +51,6 @@ export function handlePortalCommand(interaction) {
   return Response.json({ type: 4, data: { embeds: [getPortalEmbed()], components: getPortalComponents(userId) } });
 }
 
-export async function handleBalanceCommand(interaction, env, ctx) {
-  const GUILD_ID = interaction.guild_id || "1485636149379858567";
-  const widgetUrl = `https://discord.com/api/guilds/${GUILD_ID}/widget.json`;
-  try {
-    const res = await fetch(widgetUrl);
-    if (!res.ok) throw new Error("ウィジェットが見つかりません。サーバー設定で有効化してください。");
-    const data = await res.json();
-    const vcMembers = (data.members || []).filter(m => m.channel_id).map(m => m.nick || m.username);
-    if (vcMembers.length !== 10) throw new Error(`VCに10名必要です（現在: ${vcMembers.length}名）`);
-    return await executeBalance(interaction, vcMembers, env, ctx);
-  } catch (err) {
-    return Response.json({ type: 4, data: { content: `⚠️ **エラー**: ${err.message}`, flags: 64 } });
-  }
-}
-
-export async function executeBalance(interaction, names, env, ctx, isUpdate = false) {
-  ctx.waitUntil(performBalance(interaction, names, env, ctx, isUpdate));
-  
-  if (interaction.type === 3) {
-    return Response.json({ type: 6 }); // DEFERRED_UPDATE_MESSAGE (既存メッセージをDeferred更新)
-  }
-  return Response.json({ type: 5 }); // DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE
-}
-
-export async function performBalance(interaction, names, env, ctx, isUpdate = false) {
-  const appId = interaction.application_id;
-  const token = interaction.token;
-  const authorId = interaction.member?.user?.id || interaction.user?.id;
-
-  try {
-    // ステップ1:「計算中」表示
-    if (isUpdate) {
-      // リバランスボタン → MATCHチャンネルに直接「計算中」を投稿（ボットトークン使用）
-      await sendDiscordMessage(`channels/${CONFIG.MATCH_CHANNEL_ID}/messages`, env.DISCORD_TOKEN, "POST", {
-        embeds: [{
-          title: "⚙️ チーム分け計算中...",
-          description: "最適なチームを計算しています。しばらくお待ちください。",
-          color: 0xf39c12,
-          footer: { text: "KTM Balancer | 処理中..." }
-        }]
-      });
-    } else {
-      // 初回チーム分け → @original（思考中メッセージ）を更新
-      await patchInteractionResponse(appId, token, {
-        embeds: [{
-          title: "⚙️ チーム分け計算中...",
-          description: "最適なチームを計算しています。しばらくお待ちください。",
-          color: 0xf39c12,
-          footer: { text: "KTM Balancer | 処理中..." }
-        }],
-        components: []
-      });
-    }
-
-    // ステップ2: Cloudflare Workers内で直接チームバランス計算を行う (GAS依存の脱却)
-    let validNames = [...new Set(
-      (names || []).map(n => String(n).trim()).filter(n => n && n !== "ユーザー" && n !== "不明")
-    )];
-    
-    // SupabaseからプレイヤーのMMRやレーン設定を取得
-    let playersData = [];
-    try {
-      playersData = await getPlayersByNames(env, validNames);
-    } catch (e) {
-      throw new Error(`データベース通信エラー: ${e.message}`);
-    }
-
-    // データベースにいない未登録ユーザーの仮データ補完
-    const dbNames = playersData.map(p => p.name);
-    for (const vName of validNames) {
-      if (!dbNames.includes(vName)) {
-        playersData.push({
-          name: vName,
-          discord_id: "unknown",
-          mmr: 1000,
-          role_preferences: { primary: "FILL", secondary: "FILL" }
-        });
-      }
-    }
-
-    // KTMチームバランス計算アルゴリズムの実行
-    const data = performAutoBalance(playersData);
-    const result = data.result;
-    
-    const embed = {
-      title: "⚔️ チーム分けの結果 (KTM Balancer)",
-      color: 0x2ecc71,
-      fields: [
-        {
-          name: "🟦 Team A (Blue)",
-          value: result.assignA.map(p => {
-            const isMain = p.mainLane === p.currentRole || p.mainLane === 'ALL';
-            const isSub  = !isMain && p.subLane === p.currentRole;
-            const icon   = isMain ? '✅' : (isSub ? '🔄' : '⚠️');
-            const note   = (!isMain && p.mainLane && p.mainLane !== 'ALL') ? ` (本来:${p.mainLane})` : '';
-            return `\`${p.currentRole.padEnd(3)}\` ${icon} ${p.name}${note}`;
-          }).join("\n"),
-          inline: true
-        },
-        {
-          name: "🟥 Team B (Red)",
-          value: result.assignB.map(p => {
-            const isMain = p.mainLane === p.currentRole || p.mainLane === 'ALL';
-            const isSub  = !isMain && p.subLane === p.currentRole;
-            const icon   = isMain ? '✅' : (isSub ? '🔄' : '⚠️');
-            const note   = (!isMain && p.mainLane && p.mainLane !== 'ALL') ? ` (本来:${p.mainLane})` : '';
-            return `\`${p.currentRole.padEnd(3)}\` ${icon} ${p.name}${note}`;
-          }).join("\n"),
-          inline: true
-        }
-      ],
-      footer: { text: `勝率平準化適用済み | ID: ${Math.floor(Date.now() / 1000).toString(16)}` },
-      timestamp: new Date().toISOString()
-    };
-
-    if (data.spectators && data.spectators.length > 0) {
-      embed.fields.push({ name: "⏳ カスタム待機", value: data.spectators.join(", "), inline: false });
-    }
-
-    const components = [
-      {
-        type: 1,
-        components: [
-          { type: 2, label: "🟦 BLUE 勝利", style: 1, custom_id: `win_blue:${authorId}` },
-          { type: 2, label: "🟥 RED 勝利", style: 4, custom_id: `win_red:${authorId}` },
-          { type: 2, label: "🔄 次の試合を振る", style: 3, custom_id: "rebalance" },
-          { type: 2, label: "🕵️ OP.GG スカウティング", style: 2, custom_id: "opgg_scout" }
-        ]
-      }
-    ];
-
-    if (isUpdate) {
-      // リバランスボタン → MATCHチャンネルに直接投稿（ボットトークン使用）
-      await sendDiscordMessage(`channels/${CONFIG.MATCH_CHANNEL_ID}/messages`, env.DISCORD_TOKEN, "POST", { embeds: [embed], components });
-    } else {
-      // 初回チーム分け → MATCHチャンネルに通知 + @originalを結果で更新
-      await sendDiscordMessage(`channels/${CONFIG.MATCH_CHANNEL_ID}/messages`, env.DISCORD_TOKEN, "POST", { content: "🆕 **MATCH START**: 新しい試合が組まれました。", embeds: [embed] });
-      await patchInteractionResponse(appId, token, { embeds: [embed], components });
-    }
-
-  } catch (err) {
-    console.error("PerformBalance Error:", err);
-    try {
-      if (isUpdate) {
-        // リバランス中のエラーもMATCHチャンネルに直接投稿
-        await sendDiscordMessage(`channels/${CONFIG.MATCH_CHANNEL_ID}/messages`, env.DISCORD_TOKEN, "POST", {
-          embeds: [{
-            title: "❌ チーム分けエラー",
-            description: `\`\`\`\n${err.message}\n\`\`\``,
-            color: 0xe74c3c,
-            footer: { text: "再度お試しください" }
-          }]
-        });
-      } else {
-        await patchInteractionResponse(appId, token, {
-          embeds: [{
-            title: "❌ チーム分けエラー",
-            description: `\`\`\`\n${err.message}\n\`\`\``,
-            color: 0xe74c3c,
-            footer: { text: "再度お試しください" }
-          }],
-          components: []
-        });
-      }
-    } catch (innerErr) {
-      console.error("Error reporting failed:", innerErr);
-    }
-  }
-}
 
 export function handleStatsCommand(interaction, env, ctx) {
   const discordId = interaction.member.user.id;
@@ -273,7 +102,14 @@ export function handleStatsCommand(interaction, env, ctx) {
 
       await sendDiscordMessage(`channels/${CONFIG.STATS_CHANNEL_ID}/messages`, env.DISCORD_TOKEN, "POST", { embeds: [embed] });
       await patchInteractionResponse(appId, token, { content: "✅ #戦績板 に発表しました！", components });
-    } catch (e) { console.error(e); }
+    } catch (e) { 
+      console.error(e); 
+      try {
+        await patchInteractionResponse(appId, token, { content: `⚠️ エラーが発生しました: ${e.message}` });
+      } catch (innerErr) {
+        // do nothing
+      }
+    }
   })());
   return Response.json({ type: 5, data: { flags: 64 } });
 }

@@ -27,7 +27,9 @@ export interface Player {
   avgMMR?: number;
   isOutlierLow?: boolean;
   isOutlierHigh?: boolean;
+  isOutlierHigh?: boolean;
   adjustedRates?: Record<Role, number>;
+  spectator_pity?: number;
 }
 
 export interface BalanceContext {
@@ -103,11 +105,20 @@ export function selectPlayersWithPity(allPlayers: Player[]): { selected: Player[
   const candidateInfo = candidatesPool.map(p => ({
     player: p,
     pity: p.pity,
+    spectator_pity: p.spectator_pity || 0,
     rand: Math.random()
   }));
 
-  // Pity降順、同値ならランダム
-  candidateInfo.sort((a, b) => (b.pity - a.pity) || (b.rand - a.rand));
+  // Spectator Pity降順（最優先） > レーンPity降順 > ランダム
+  candidateInfo.sort((a, b) => {
+    if (b.spectator_pity !== a.spectator_pity) {
+      return b.spectator_pity - a.spectator_pity;
+    }
+    if (b.pity !== a.pity) {
+      return b.pity - a.pity;
+    }
+    return b.rand - a.rand;
+  });
 
   const needed = Math.max(0, 10 - fixedPlayers.length);
   const selectedFromPool = candidateInfo.slice(0, needed).map(c => c.player);

@@ -68,7 +68,7 @@ export async function fetchGAS(payload) {
 
 /** Webポータル (Next.js) API への通信ラップ */
 export async function fetchPortalAPI(env, endpointPath, payload, method = "POST") {
-  const baseUrl = env.PORTAL_API_URL || "https://ktm-portal.vercel.app";
+  const baseUrl = env.PORTAL_API_URL || "https://my-work-8jbd.vercel.app";
   const url = `${baseUrl}${endpointPath}`;
   
   const options = {
