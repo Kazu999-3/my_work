@@ -51,17 +51,17 @@ class SovereignSettings(BaseSettings):
     # gemini-2.0-flash は gemini-2.5-flash より無料枠が広いため適している
     OLE_MODEL: str = "gemini-2.0-flash"
     
-    # クォータ（1日あたりのAPI実行回数）制限: チャンピオン辞典（oracle）最優先モード
+    # クォータ（1日あたりのAPI実行回数）制限: 合計780枠 (余裕をもったバッファ)
     DAILY_QUOTA_LIMITS: dict = {
-        "kingdom_cycle": 20,   # 記事作成、リライト、SNSフック等の合計 (制限)
-        "draft_analyzer": 10,  # ライブドラフトの分析 (制限)
-        "news_scout": 5,       # 海外ニュースの翻訳・要約 (制限)
-        "oracle": 150,         # 隠れメタの調査/チャンピオン辞典 (最優先・枠最大化)
-        "video_forge": 5,      # 動画台本の作成 (制限)
-        "bounty_hunter": 5,    # 競合noteのハンティング (制限)
-        "magazine_forge": 2,   # マガジン生成 (制限)
-        "bible_forge": 10,     # バイブルの生成 (制限)
-        "x_analyzer": 10,      # Xのトレンド解析 (制限)
+        "kingdom_cycle": 50,   # 記事作成、リライト、SNSフック等の合計 (制限)
+        "draft_analyzer": 20,  # ライブドラフトの分析 (制限)
+        "news_scout": 20,      # 海外ニュースの翻訳・要約 (制限)
+        "oracle": 400,         # 隠れメタの調査/チャンピオン辞典 (最優先・枠最大化)
+        "video_forge": 200,    # 動画台本の作成 (制限)
+        "bounty_hunter": 10,   # 競合noteのハンティング (制限)
+        "magazine_forge": 10,  # マガジン生成 (制限)
+        "bible_forge": 50,     # バイブルの生成 (制限)
+        "x_analyzer": 20,      # Xのトレンド解析 (制限)
     }
     
     model_config = SettingsConfigDict(

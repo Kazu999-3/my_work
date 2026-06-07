@@ -189,12 +189,12 @@ export default function Home() {
                 </div>
               </div>
               <h3 className="text-3xl font-bold text-white mb-2">
-                {isLoading ? '-' : apiUsage} <span className="text-lg text-gray-400 font-normal">/ 217</span>
+                {isLoading ? '-' : apiUsage} <span className="text-lg text-gray-400 font-normal">/ 780</span>
               </h3>
               <div className="w-full bg-gray-700/50 rounded-full h-2.5 overflow-hidden">
                 <div 
-                  className={`h-2.5 rounded-full transition-all duration-1000 ${apiUsage > 180 ? 'bg-red-500' : apiUsage > 130 ? 'bg-yellow-500' : 'bg-purple-500'}`}
-                  style={{ width: `${Math.min((apiUsage / 217) * 100, 100)}%` }}
+                  className={`h-2.5 rounded-full transition-all duration-1000 ${apiUsage > 650 ? 'bg-red-500' : apiUsage > 400 ? 'bg-yellow-500' : 'bg-purple-500'}`}
+                  style={{ width: `${Math.min((apiUsage / 780) * 100, 100)}%` }}
                 ></div>
               </div>
             </div>
