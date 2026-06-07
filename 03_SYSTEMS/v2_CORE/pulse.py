@@ -48,7 +48,8 @@ class SovereignPulse:
         self.watch_targets = [
             settings.NEXUS_DIR / "tactics",
             settings.FORGE_DIR / "note_drafts",
-            settings.FORGE_DIR / "note_drafts" / "ole_reports"
+            settings.FORGE_DIR / "note_drafts" / "ole_reports",
+            settings.FORGE_DIR / "bible" / "kirei_bible"
         ]
         
         # 初回のファイル状態を記録
