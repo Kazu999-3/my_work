@@ -101,8 +101,16 @@ class OverseasScout:
                 
                 if not response_text or response_text.startswith("⚠️") or response_text.startswith("❌"):
                     raise Exception("OverseasScout AI generation failed")
-                    
-                return json.loads(response_text)
+                
+                # 安全なJSON抽出
+                import re
+                text = response_text.strip()
+                match = re.search(r'\{.*\}', text, re.DOTALL)
+                if match:
+                    json_str = match.group(0)
+                    return json.loads(json_str)
+                else:
+                    return json.loads(text)
             except Exception as e:
                 if "429" in str(e) or "RESOURCE_EXHAUSTED" in str(e) or "503" in str(e):
                     wait_time = 60 + (30 * attempt) + random.uniform(5.0, 15.0)
