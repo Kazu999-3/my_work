@@ -141,17 +141,18 @@ class OverseasScout:
         except Exception as e:
             logger.error(f"Supabase update error: {e}")
 
-    def run_cycle(self):
+    def run_cycle(self, force_targets=None):
         """一度の実行サイクル"""
         logger.info("🌐 Overseas Scout cycle starting...")
         champs = self.fetch_champions()
         if not champs:
             return 0
 
-        # 一度のサイクルで3体のチャンピオンを更新 (API負荷軽減)
-        targets = random.sample(champs, 3)
-        # 進行状況の通知は不要なため削除（またはコメントアウト）
-        # herald.notify_progress(f"🌐 **【海外メタ・リサーチ】** チャンピオン辞典の定期調査を開始します（対象: {', '.join(targets)}）...")
+        if force_targets:
+            targets = [c for c in force_targets if c in champs]
+        else:
+            # 一度のサイクルで3体のチャンピオンを更新 (API負荷軽減)
+            targets = random.sample(champs, 3)
         
         updated_list = []
         for champ in targets:

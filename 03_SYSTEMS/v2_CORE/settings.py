@@ -42,7 +42,7 @@ class SovereignSettings(BaseSettings):
     RIOT_API_KEY: Optional[str] = None
     
     # PULSE: Lolalytics 監視設定
-    WATCH_CHAMPIONS: list[str] = ["Nidalee", "Lillia", "Nocturne", "Zyra", "Jarvan IV"]
+    WATCH_CHAMPIONS: list[str] = ["JarvanIV", "MonkeyKing", "Zyra", "Lillia", "Nocturne"]
     LOLALYTICS_ENABLED: bool = True
 
     # モデル設定
