@@ -60,13 +60,22 @@ class SovereignSync:
         if not self.ready:
             return
 
-        article_dir = Path("d:/my_work/02_FACTORY/PRODUCTS/ARTICLES")
-        if not article_dir.exists():
-            logger.warning(f"⚠️ 記事フォルダなし: {article_dir}")
+        article_dirs = [
+            Path("d:/my_work/02_FACTORY/PRODUCTS/ARTICLES"),
+            Path("d:/my_work/02_FACTORY/bible/kirei_bible"),
+            Path("d:/my_work/01_INTEL/tactics")
+        ]
+        
+        md_files = []
+        for d in article_dirs:
+            if d.exists():
+                md_files.extend(list(d.glob("*.md")))
+                
+        if not md_files:
+            logger.warning("⚠️ 記事フォルダに.mdファイルが見つかりません。")
             return
 
-        md_files = list(article_dir.glob("*.md"))
-        logger.info(f"📂 {len(md_files)} 件の記事ファイルを検出")
+        logger.info(f"📂 {len(md_files)} 件の記事ファイルを検出 (複数ディレクトリ合計)")
 
         synced = 0
         for md_file in md_files:
