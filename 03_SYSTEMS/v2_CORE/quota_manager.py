@@ -2,8 +2,7 @@ import os
 import json
 import logging
 import threading
-from datetime import datetime
-from zoneinfo import ZoneInfo
+from datetime import datetime, timedelta
 from pathlib import Path
 from v2_CORE.settings import settings
 
@@ -32,7 +31,9 @@ class QuotaManager:
 
     def _get_today_str(self):
         # サーバーのタイムゾーン（UTC等）に依存せず、常に日本時間(JST)の深夜0時をリセット基準とする
-        return datetime.now(ZoneInfo("Asia/Tokyo")).strftime("%Y-%m-%d")
+        # Windows環境での tzdata 依存エラーを回避するため timedelta を使用
+        jst_now = datetime.utcnow() + timedelta(hours=9)
+        return jst_now.strftime("%Y-%m-%d")
 
     def _load_data(self):
         if not self.data_file.exists():
