@@ -53,10 +53,23 @@ class OverseasScout:
         if not self.client:
             return None
 
+        from v2_CORE.database import db
+        try:
+            # データベースからこのチャンピオンに関する知識を引き出す
+            tactics_results = db.query_intelligence(f"tactical_report {champ_id}", n_results=3)
+            tactics_info = tactics_results.get("documents", []) if tactics_results else []
+        except Exception as e:
+            logger.warning(f"Failed to query ChromaDB for {champ_id}: {e}")
+            tactics_info = []
+
         prompt = f"""
         あなたは LoL の世界情勢を精査するプロのアナリストです。
         【最重要】必ず「2026年（シーズン16 / パッチ16.x以降）」の最新環境に基づいて、チャンピオン「{champ_id}」の攻略辞典データを生成してください。
         古い過去のシーズン（シーズン13, 14, 15等）のデータは絶対に除外してください。
+
+        【データベースからの参考知識（Kirei氏の動画や教科書の知識など）】
+        以下の検索結果がある場合、その知識を優先して辞典に組み込んでください。
+        {tactics_info}
 
         【ジャングルフルクリア時間に関する注意】
         - シーズン16（2026年）では中立モンスターのHPが約15%増加しているため、過去のパッチの高速クリア時間（3:10前後など）は現在不可能です。
