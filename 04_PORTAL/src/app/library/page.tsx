@@ -13,6 +13,9 @@ export default function LibraryPage() {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [editContent, setEditContent] = useState('');
+  const [editTitle, setEditTitle] = useState('');
+  const [editChampion, setEditChampion] = useState('');
+  const [editKeywords, setEditKeywords] = useState('');
   const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState('');
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
@@ -64,15 +67,35 @@ export default function LibraryPage() {
 
   const toggleGroup = (key: string) => setCollapsedGroups(prev => ({ ...prev, [key]: !prev[key] }));
 
-  const startEditing = () => { setEditContent(selectedArticle.content); setEditing(true); };
-  const cancelEditing = () => { setEditing(false); setEditContent(''); };
+  const startEditing = () => { 
+    setEditContent(selectedArticle.content); 
+    setEditTitle(selectedArticle.title);
+    setEditChampion(selectedArticle.champion || '');
+    setEditKeywords((selectedArticle.keywords || []).join(', '));
+    setEditing(true); 
+  };
+  const cancelEditing = () => { 
+    setEditing(false); 
+    setEditContent(''); 
+    setEditTitle('');
+    setEditChampion('');
+    setEditKeywords('');
+  };
 
   const saveArticle = async () => {
     setSaving(true);
     const now = new Date().toISOString();
-    const { error } = await supabase.from('bible_articles').update({ content: editContent, created_at: now }).eq('id', selectedArticle.id);
+    const keywordsArray = editKeywords.split(',').map(k => k.trim()).filter(k => k);
+    const updateData = { 
+      title: editTitle,
+      champion: editChampion,
+      keywords: keywordsArray,
+      content: editContent, 
+      created_at: now 
+    };
+    const { error } = await supabase.from('bible_articles').update(updateData).eq('id', selectedArticle.id);
     if (!error) {
-      const updated = { ...selectedArticle, content: editContent, created_at: now };
+      const updated = { ...selectedArticle, ...updateData };
       setSelectedArticle(updated);
       setArticles(prev => prev.map(a => a.id === selectedArticle.id ? updated : a));
       setEditing(false);
@@ -126,7 +149,26 @@ export default function LibraryPage() {
           <div className="p-10 relative z-10">
             <header className="mb-10 pb-8 border-b border-white/10">
               <div className="flex items-center gap-2 text-[#a78bfa] font-mono text-xs mb-4 tracking-[0.15em] uppercase font-black"><Sparkles size={14} /> 攻略記事</div>
-              <h1 className="text-4xl md:text-5xl font-black leading-tight font-mono mb-6 text-white">{selectedArticle.title.replace(/_/g, ' ')}</h1>
+              {editing ? (
+                <div className="flex flex-col gap-4 mb-6">
+                  <div>
+                    <label className="text-xs text-[#a78bfa] font-bold">タイトル</label>
+                    <input type="text" value={editTitle} onChange={e => setEditTitle(e.target.value)} className="w-full bg-black/50 border border-[#a78bfa]/30 rounded-xl p-3 text-2xl font-bold text-white outline-none focus:border-[#a78bfa]/60 transition-colors" />
+                  </div>
+                  <div className="flex gap-4 flex-wrap">
+                    <div className="flex-1 min-w-[200px]">
+                      <label className="text-xs text-[#a78bfa] font-bold">チャンピオン (タブ用)</label>
+                      <input type="text" value={editChampion} onChange={e => setEditChampion(e.target.value)} className="w-full bg-black/50 border border-[#a78bfa]/30 rounded-xl p-3 text-sm text-white outline-none focus:border-[#a78bfa]/60 transition-colors" placeholder="未設定の場合は「その他」になります" />
+                    </div>
+                    <div className="flex-1 min-w-[200px]">
+                      <label className="text-xs text-[#a78bfa] font-bold">キーワード (カンマ区切り)</label>
+                      <input type="text" value={editKeywords} onChange={e => setEditKeywords(e.target.value)} className="w-full bg-black/50 border border-[#a78bfa]/30 rounded-xl p-3 text-sm text-white outline-none focus:border-[#a78bfa]/60 transition-colors" placeholder="例: マクロ, 序盤, カウンター" />
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <h1 className="text-4xl md:text-5xl font-black leading-tight font-mono mb-6 text-white">{selectedArticle.title.replace(/_/g, ' ')}</h1>
+              )}
               <div className="flex flex-wrap gap-4 text-xs text-gray-400">
                 <span className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-full font-bold uppercase tracking-widest border border-white/5"><User size={14} className="text-[#a78bfa]" /> AI AGENT</span>
                 <span className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-full font-bold uppercase tracking-widest border border-white/5"><Clock size={14} className="text-[#a78bfa]" /> {new Date(selectedArticle.created_at).toLocaleString('ja-JP')}</span>
