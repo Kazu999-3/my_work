@@ -17,6 +17,7 @@ try:
     from .sentinel import sentinel
     from .scout import scout
     from .recycler import recycler
+    from .sovereign_sync import SovereignSync
 except ImportError:
     # 起動スクリプトからの直接実行用
     import sys
@@ -28,6 +29,7 @@ except ImportError:
     from v2_CORE.sentinel import sentinel
     from v2_CORE.scout import scout
     from v2_CORE.recycler import recycler
+    from v2_CORE.sovereign_sync import SovereignSync
 
 # ロギング設定
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
@@ -113,12 +115,16 @@ class SovereignPulse:
 
     def check_file_changes(self):
         """全監視対象フォルダの自動同期と連鎖反応"""
+        any_changes = False
         for target in self.watch_targets:
             if not target.exists():
                 continue
 
             current_files = {str(f.absolute()) for f in target.glob("*.md")}
             new_files = current_files - self.known_files
+
+            if new_files:
+                any_changes = True
 
             for file_path_str in new_files:
                 md_file = Path(file_path_str)
@@ -162,6 +168,15 @@ class SovereignPulse:
 
                 logger.info(f"[Pulse] 資産を自動同期しました: {md_file.name}")
                 self.known_files.add(file_path_str)
+
+        if any_changes:
+            try:
+                logger.info("[Pulse] 新しい資産を検知したため、ポータル(Supabase)へクラウド同期を実行します...")
+                sync = SovereignSync()
+                sync.sync_articles()
+                sync.sync_matchups()
+            except Exception as e:
+                logger.error(f"[Pulse] クラウド同期中にエラー: {e}")
 
     def trigger_youtube_analysis(self, video_url: str):
         """YouTube 解析エンジンの実行 (OLE_Pro_Beta)"""
