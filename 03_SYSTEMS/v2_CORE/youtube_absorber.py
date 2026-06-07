@@ -170,5 +170,5 @@ class YouTubeAbsorber:
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     absorber = YouTubeAbsorber()
-    # 短期間で早く消化するため、1回の実行上限を80本に引き上げ
-    absorber.run_cycle(limit=80)
+    # 短期間で早く消化するため、1回の実行上限を200本に引き上げ
+    absorber.run_cycle(limit=200)
