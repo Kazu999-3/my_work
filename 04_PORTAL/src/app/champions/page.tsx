@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import { getChampIcon, getChampSplash } from '../../lib/ddragonClient';
-import { ChevronLeft, Search, Save, BookOpen, RefreshCw, Zap, ShieldAlert, Swords, Shield, Copy, Check, FileText, Eye, Edit2, Activity } from 'lucide-react';
+import { ChevronLeft, Search, Save, BookOpen, RefreshCw, Zap, ShieldAlert, Swords, Shield, Copy, Check, FileText, Eye, Edit2, Activity, Plus, Trash } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { motion } from 'framer-motion';
@@ -19,7 +19,7 @@ export default function ChampionsPage() {
   const [dataFields, setDataFields] = useState<any>({
     strengths: '', weaknesses: '', powerSpikes: '', buildRunes: '',
     fullClearTime: '', counterChampions: '', mustBanChampions: '', pickRecommendation: '',
-    strategy: '', note_draft: ''
+    strategy: '', note_draft: '', customFields: {}
   });
   const [saving, setSaving] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -73,13 +73,32 @@ export default function ChampionsPage() {
         powerSpikes: rd.powerSpikes || '', buildRunes: rd.buildRunes || '',
         fullClearTime: rd.fullClearTime || '', counterChampions: rd.counterChampions || '',
         mustBanChampions: rd.mustBanChampions || '', pickRecommendation: rd.pickRecommendation || '',
-        strategy: noteData?.strategy || '', note_draft: rd.note_draft || ''
+        strategy: noteData?.strategy || '', note_draft: rd.note_draft || '',
+        customFields: rd.customFields || {}
       });
     };
     loadChampionData(selected.id);
   }, [selected]);
 
-  const setField = (key: string, val: string) => setDataFields((p: any) => ({ ...p, [key]: val }));
+  const setField = (key: string, val: string | object) => setDataFields((p: any) => ({ ...p, [key]: val }));
+
+  const addCustomField = () => {
+    const fieldName = prompt('追加する項目の名前を入力してください（例：スキルコンボ、JGマクロなど）');
+    if (fieldName && fieldName.trim() && !dataFields.customFields?.[fieldName.trim()]) {
+      setField('customFields', { ...(dataFields.customFields || {}), [fieldName.trim()]: '' });
+    }
+  };
+
+  const removeCustomField = (key: string) => {
+    if (!confirm(`項目「${key}」を削除しますか？`)) return;
+    const newFields = { ...dataFields.customFields };
+    delete newFields[key];
+    setField('customFields', newFields);
+  };
+
+  const updateCustomField = (key: string, val: string) => {
+    setField('customFields', { ...dataFields.customFields, [key]: val });
+  };
 
   const saveMemo = async () => {
     setSaving(true);
@@ -93,7 +112,7 @@ export default function ChampionsPage() {
         powerSpikes: dataFields.powerSpikes, buildRunes: dataFields.buildRunes,
         fullClearTime: dataFields.fullClearTime, counterChampions: dataFields.counterChampions,
         mustBanChampions: dataFields.mustBanChampions, pickRecommendation: dataFields.pickRecommendation,
-        note_draft: dataFields.note_draft
+        note_draft: dataFields.note_draft, customFields: dataFields.customFields
       }
     };
     const { error } = await supabase.from('matchup_sentinel').upsert(data, { onConflict: 'matchup_id' });
@@ -160,6 +179,19 @@ export default function ChampionsPage() {
           <TextAreaCard title="コアビルド / ルーン" icon={Shield} color="text-purple-400 border-purple-500 shadow-purple-500" value={dataFields.buildRunes} onChange={v => setField('buildRunes', v)} />
           <TextAreaCard title="対面の有利・不利" icon={Swords} color="text-[#00cfef] border-[#00cfef] shadow-[#00cfef]" value={dataFields.counterChampions} onChange={v => setField('counterChampions', v)} />
           <TextAreaCard title="ピック推奨 (先/後)" icon={Shield} color="text-emerald-400 border-emerald-500 shadow-emerald-500" value={dataFields.pickRecommendation} onChange={v => setField('pickRecommendation', v)} />
+          
+          {Object.entries(dataFields.customFields || {}).map(([key, val]) => (
+            <div key={key} className="glass-panel border-t-2 border-pink-400 p-5 rounded-2xl group transition-all hover:shadow-[0_4px_20px_rgba(0,0,0,0.3)] shadow-pink-400/20 relative">
+              <button onClick={() => removeCustomField(key)} className="absolute top-4 right-4 text-gray-500 hover:text-red-400 transition-colors"><Trash size={14}/></button>
+              <h3 className="text-sm font-black mb-4 flex items-center gap-2 text-pink-400"><FileText size={16} /> {key}</h3>
+              <textarea value={val as string} onChange={e => updateCustomField(key, e.target.value)} className="w-full h-28 bg-black/30 border border-white/5 rounded-xl p-3 text-sm text-gray-200 outline-none focus:border-white/20 resize-y shadow-inner transition-colors" placeholder={`${key}を記録...`} />
+            </div>
+          ))}
+          
+          <button onClick={addCustomField} className="glass-panel border-2 border-dashed border-[#c89b3c]/30 hover:border-[#c89b3c] hover:bg-[#c89b3c]/10 text-[#c89b3c] p-5 rounded-2xl flex flex-col items-center justify-center gap-2 transition-all min-h-[160px]">
+            <Plus size={24} />
+            <span className="font-bold text-sm">新しい項目を追加</span>
+          </button>
         </div>
 
         <div className="glass-panel border-t-4 border-pink-500 rounded-2xl p-6 relative overflow-hidden group">
