@@ -20,6 +20,7 @@ export default function PlayerMyPage() {
   const [player, setPlayer] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<any>(null);
+  const [matchups, setMatchups] = useState<any[]>([]);
   const [riotMasteries, setRiotMasteries] = useState<any[]>([]);
   const [saving, setSaving] = useState(false);
 
@@ -45,6 +46,7 @@ export default function PlayerMyPage() {
         const res = await fetch(`/api/player/profile?name=${encodeURIComponent(pData.name)}`);
         const sData = await res.json();
         if (sData.stats) setStats(sData.stats);
+        if (sData.matchups) setMatchups(sData.matchups);
 
         // 3. マスタリーの解決
         let mainChamps = pData.main_champions;
@@ -165,6 +167,38 @@ export default function PlayerMyPage() {
                   </div>
                 )) : (
                   <div className="text-gray-500 text-sm">データがありません</div>
+                )}
+              </div>
+            </div>
+
+            {/* Matchup Stats */}
+            <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-xl">
+              <h3 className="text-xl font-bold flex items-center gap-2 mb-4">
+                <Crosshair className="w-5 h-5 text-red-500" />
+                ⚔️ 対面マッチアップ勝率
+              </h3>
+              <div className="space-y-3 max-h-80 overflow-y-auto pr-2">
+                {matchups.length > 0 ? matchups.map((m, idx) => (
+                  <div key={idx} className="flex items-center justify-between bg-gray-800/40 p-2.5 rounded-lg border border-gray-700/30">
+                    <div className="flex items-center gap-3">
+                      <img 
+                        src={getChampIcon(m.opponentChampion)} 
+                        className="w-8 h-8 rounded-full shadow-sm"
+                        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                      />
+                      <div className="font-bold text-gray-300 text-sm w-24 truncate">vs {m.opponentChampion}</div>
+                    </div>
+                    <div className="text-right">
+                      <div className={`font-black text-sm ${m.winRate >= 50 ? 'text-emerald-400' : 'text-red-400'}`}>
+                        {m.winRate}%
+                      </div>
+                      <div className="text-[10px] text-gray-500 font-medium">
+                        {m.wins}W - {m.games - m.wins}L
+                      </div>
+                    </div>
+                  </div>
+                )) : (
+                  <div className="text-gray-500 text-sm text-center py-4">まだ対面データがありません</div>
                 )}
               </div>
             </div>

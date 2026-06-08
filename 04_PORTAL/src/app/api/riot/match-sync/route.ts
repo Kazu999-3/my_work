@@ -47,17 +47,19 @@ export async function POST(req: Request) {
     const updates = [];
 
     for (const p of participants) {
-      // Riot結果から該当プレイヤーを探す
-      // IGNのマッチングが難しい場合は簡易的にロールとチームで判定
+      const dbP = dbPlayers?.find(dp => dp.name === p.player_name);
+      if (!dbP) continue;
+
+      // DBのpuuidとRiotのpuuidでマッチング。puuidがなければ簡易マッチング
       const riotP = riotDetails.participants.find((rp: any) => {
-        // Red = 200, Blue = 100
+        if (dbP.puuid && rp.puuid === dbP.puuid) return true;
+
         const isRed = rp.teamId === 200;
         const dbIsRed = p.team === 'RED';
         if (isRed !== dbIsRed) return false;
 
         const dbRole = p.role.toUpperCase();
         const rpLane = rp.lane.toUpperCase();
-        // 簡易マッチング
         if (dbRole === 'TOP' && rpLane.includes('TOP')) return true;
         if (dbRole === 'JG' && rpLane.includes('JUNGLE')) return true;
         if (dbRole === 'MID' && rpLane.includes('MIDDLE')) return true;
@@ -68,9 +70,6 @@ export async function POST(req: Request) {
       });
 
       if (!riotP) continue;
-
-      const dbP = dbPlayers?.find(dp => dp.name === p.player_name);
-      if (!dbP) continue;
 
       const currentMmr = Number(dbP[`mmr_${p.role.toLowerCase()}`]) || 1200;
       const mainRank = dbP.highest_rank ? dbP.highest_rank.split(' ')[0].toUpperCase() : 'UNRANKED';
@@ -85,7 +84,7 @@ export async function POST(req: Request) {
 
       const ctx: MmrCalcContext = {
         currentMmr,
-        opponentMmr: 1200, // 簡易化
+        opponentMmr: 1200, 
         isWin: p.team === match.winning_team,
         kills: riotP.kills,
         deaths: riotP.deaths,
@@ -111,7 +110,6 @@ export async function POST(req: Request) {
       const mmrDelta = calculateNewMMR(ctx);
       const kdaScore = calculateKdaScore(riotP.kills, riotP.deaths, riotP.assists);
 
-      // participant 更新用データ
       const pUpdate = {
         id: p.id,
         kills: riotP.kills,
@@ -119,13 +117,12 @@ export async function POST(req: Request) {
         assists: riotP.assists,
         vision_score: riotP.visionScore || 0,
         kda_score: kdaScore,
-        mmr_delta: mmrDelta
+        mmr_delta: mmrDelta,
+        champion_name: riotP.championName // ここでチャンピオン名を保存
       };
       
       updates.push(pUpdate);
 
-      // プレイヤーのMMRを更新（本来は差分を適切に当てる必要がある）
-      // 今回は更新前の値を厳密に追えないため、簡略化
       await supabase
         .from('ktm_match_participants')
         .update({
@@ -134,7 +131,8 @@ export async function POST(req: Request) {
           assists: pUpdate.assists,
           vision_score: pUpdate.vision_score,
           kda_score: pUpdate.kda_score,
-          mmr_delta: pUpdate.mmr_delta
+          mmr_delta: pUpdate.mmr_delta,
+          champion_name: pUpdate.champion_name
         })
         .eq('id', p.id);
     }
