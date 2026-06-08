@@ -26,12 +26,14 @@ export default function Home() {
   useEffect(() => {
     async function fetchData() {
       try {
-        // 1. 最新の戦績5件を取得
+        // 1. 最新の戦績10件を取得 (辞典データやシステムログを除外)
         const { data: matchesData, error: matchesError } = await supabase
           .from('matchup_sentinel')
           .select('matchup_id, champion, enemy, raw_data, created_at')
+          .neq('enemy', 'GLOBAL')
+          .neq('champion', 'SYSTEM')
           .order('created_at', { ascending: false })
-          .limit(10); // グラフを消したので10件に増やす
+          .limit(10);
         
         if (matchesError) throw matchesError;
         if (matchesData) setRecentMatches(matchesData);
@@ -45,11 +47,11 @@ export default function Home() {
           setTotalAssets(totalCount);
         }
 
-        // 3. 要確認タスク数の取得 (strategy が空のものを未処理とみなす)
+        // 3. 要確認タスク数の取得 (raw_data内のstrategyが空のものを未処理とみなす)
         const { count: pendingCount, error: pendingError } = await supabase
           .from('matchup_sentinel')
           .select('*', { count: 'exact', head: true })
-          .or('strategy.eq.,strategy.is.null'); // 空文字 または null
+          .or('raw_data->>strategy.is.null,raw_data->>strategy.eq.');
 
         if (!pendingError && pendingCount !== null) {
           setPendingTasks(pendingCount);
@@ -140,30 +142,7 @@ export default function Home() {
         </div>
       </motion.header>
 
-      {/* Quick Action / Admin Banner */}
-      <motion.div 
-        initial={{ y: 20, opacity: 0, scale: 0.98 }}
-        animate={{ y: 0, opacity: 1, scale: 1 }}
-        transition={{ duration: 0.5, delay: 0.2 }}
-        className="relative rounded-3xl p-1 overflow-hidden"
-      >
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 animate-gradient-x opacity-40"></div>
-        <div className="relative glass-panel rounded-[22px] p-6 md:p-8 flex flex-col md:flex-row justify-between items-center bg-black/40 backdrop-blur-2xl border-none gap-6">
-          <div className="flex items-center gap-5">
-            <div className="p-4 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl text-white shadow-[0_0_20px_rgba(59,130,246,0.4)]">
-              <Users size={28} />
-            </div>
-            <div>
-              <h3 className="text-white font-black text-2xl tracking-tight mb-1">KTM マネジメントポータル</h3>
-              <p className="text-blue-200/70 text-sm font-medium">参加プレイヤーの管理、MMR調整、チーム編成をスマートに実行します</p>
-            </div>
-          </div>
-          <Link href="/ktm-admin" prefetch={false} className="group relative w-full md:w-auto flex items-center justify-center gap-2 bg-white text-indigo-950 px-8 py-4 rounded-xl font-black text-sm uppercase tracking-wider transition-all hover:scale-105 shadow-[0_0_20px_rgba(255,255,255,0.3)]">
-            <span>ダッシュボードを開く</span>
-            <TrendingUp size={16} className="group-hover:translate-x-1 transition-transform" />
-          </Link>
-        </div>
-      </motion.div>
+
 
       {/* Main Content */}
       <motion.main 
@@ -225,20 +204,25 @@ export default function Home() {
           </div>
         </motion.div>
 
-        <motion.div variants={itemVariants} className="glass-panel glass-panel-hover rounded-3xl p-6 relative overflow-hidden border border-white/5 bg-gradient-to-b from-white/[0.05] to-transparent">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-rose-500/20 rounded-full blur-[50px] -mr-10 -mt-10 pointer-events-none"></div>
-          <div className="flex justify-between items-start mb-6">
-            <div className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl text-rose-400">
-              <ShieldAlert size={22} />
+        <motion.div variants={itemVariants}>
+          <Link href="/champions" className="block glass-panel glass-panel-hover rounded-3xl p-6 relative overflow-hidden border border-white/5 bg-gradient-to-b from-white/[0.05] to-transparent cursor-pointer group">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-rose-500/20 rounded-full blur-[50px] -mr-10 -mt-10 pointer-events-none"></div>
+            <div className="flex justify-between items-start mb-6">
+              <div className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl text-rose-400 group-hover:scale-110 transition-transform">
+                <ShieldAlert size={22} />
+              </div>
+              {pendingTasks > 0 && (
+                <p className="text-xs font-bold text-rose-400/80 bg-rose-500/10 px-3 py-1 rounded-full border border-rose-500/20 animate-pulse">ATTENTION</p>
+              )}
             </div>
-            {pendingTasks > 0 && (
-              <p className="text-xs font-bold text-rose-400/80 bg-rose-500/10 px-3 py-1 rounded-full border border-rose-500/20">ATTENTION</p>
-            )}
-          </div>
-          <div>
-            <h3 className="text-4xl font-black text-white mb-1 tracking-tight">{isLoading ? '-' : pendingTasks}</h3>
-            <p className="text-sm text-gray-400 font-medium">要確認・未処理タスク</p>
-          </div>
+            <div>
+              <h3 className="text-4xl font-black text-white mb-1 tracking-tight">{isLoading ? '-' : pendingTasks}</h3>
+              <div className="flex items-center gap-2">
+                <p className="text-sm text-gray-400 font-medium">要確認・未処理タスク</p>
+                <TrendingUp size={14} className="text-gray-500 group-hover:text-white transition-colors" />
+              </div>
+            </div>
+          </Link>
         </motion.div>
 
         {/* Recent Activity List */}
@@ -269,7 +253,9 @@ export default function Home() {
                         </span>
                       </div>
                       
-                      <h4 className="text-xl font-black text-white mb-3 group-hover:text-blue-300 transition-colors">{match.champion}</h4>
+                      <h4 className="text-xl font-black text-white mb-3 group-hover:text-blue-300 transition-colors">
+                        {match.champion || match.raw_data?.myChamp || 'Unknown'}
+                      </h4>
                       
                       <div className="space-y-2 bg-black/20 p-3 rounded-xl border border-white/5">
                         <div className="flex justify-between text-sm">
@@ -278,7 +264,7 @@ export default function Home() {
                         </div>
                         <div className="flex justify-between text-sm">
                           <span className="text-gray-500 font-medium">対面</span>
-                          <span className="text-gray-200 font-bold">{match.enemy || '-'}</span>
+                          <span className="text-gray-200 font-bold">{match.enemy || match.raw_data?.enemyChamp || '-'}</span>
                         </div>
                       </div>
                     </div>
