@@ -173,10 +173,10 @@ export default function LibraryPage() {
             
         if (upsertError) throw upsertError;
         
-        // ライブラリから削除
+        // ライブラリから削除フラグを立てる（裏のSRE Daemonがローカルファイルを消してから完全削除する）
         const { error: deleteError } = await supabase
             .from('bible_articles')
-            .delete()
+            .update({ keywords: ['__DELETED__'] })
             .eq('id', selectedArticle.id);
             
         if (deleteError) throw deleteError;
@@ -208,10 +208,11 @@ export default function LibraryPage() {
 
   const deleteArticle = async (id: number | string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!confirm('この記事を削除しますか？')) return;
+    if (!confirm('この記事を削除しますか？\n（サーバー上の元ファイルも完全に削除されます）')) return;
     
     try {
-      const { error } = await supabase.from('bible_articles').delete().eq('id', id);
+      // ローカルファイルも削除できるよう削除フラグを立てる
+      const { error } = await supabase.from('bible_articles').update({ keywords: ['__DELETED__'] }).eq('id', id);
       if (error) {
         alert('削除エラー: ' + error.message);
         console.error("Delete Error:", error);
