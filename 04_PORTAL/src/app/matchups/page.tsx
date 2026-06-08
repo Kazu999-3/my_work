@@ -5,6 +5,7 @@ import { supabase } from '../../lib/supabaseClient';
 import { getChampIcon } from '../../lib/ddragonClient';
 import { Shield, Target, ChevronLeft, Swords, Plus, X, Save, Trash2, Activity } from 'lucide-react';
 import { motion } from 'framer-motion';
+import ChampSelect from '../../components/ChampSelect';
 
 const EMPTY_MEMO = {
   champion: '', enemy: '', role: 'Jungle', title: '',
@@ -213,8 +214,14 @@ export default function MatchupsPage() {
           <div className="absolute -right-10 -top-10 w-32 h-32 bg-[#00cfef]/10 rounded-full blur-2xl"></div>
           <h3 className="text-[#00cfef] font-bold mb-4 font-mono relative z-10">新規マッチアップメモ</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 relative z-10">
-            <Inp label="自分のチャンプ *" val={memo.champion} set={v => set('champion', v)} />
-            <Inp label="相手のチャンプ *" val={memo.enemy} set={v => set('enemy', v)} />
+            <div>
+              <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">自分のチャンプ *</label>
+              <ChampSelect value={memo.champion} onChange={v => set('champion', v)} placeholder="Yone" className="border-[#00cfef]/30 focus:border-[#00cfef]/60" />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">相手のチャンプ *</label>
+              <ChampSelect value={memo.enemy} onChange={v => set('enemy', v)} placeholder="Yasuo" className="border-[#00cfef]/30 focus:border-[#00cfef]/60" />
+            </div>
             <div>
               <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">ロール</label>
               <select value={memo.role} onChange={e => set('role', e.target.value)} className="w-full bg-[var(--color-surface)] border border-white/5 rounded-xl p-3 text-white outline-none">
@@ -250,14 +257,12 @@ export default function MatchupsPage() {
       {/* 検索バー */}
       <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }} className="flex gap-4 flex-wrap">
         <div className="relative flex-1 min-w-[200px]">
-          <Shield className="absolute left-4 top-1/2 -translate-y-1/2 text-[#c89b3c]" size={20} />
-          <input type="text" placeholder="自分のチャンプ (例: Yone)" value={mySearch} onChange={e => setMySearch(e.target.value)}
-            className="w-full glass-panel border-2 border-transparent focus:border-[#c89b3c]/50 rounded-2xl py-4 pl-12 pr-4 text-white font-bold outline-none transition-colors shadow-lg" />
+          <Shield className="absolute left-4 top-1/2 -translate-y-1/2 text-[#c89b3c] z-10" size={20} />
+          <ChampSelect value={mySearch} onChange={setMySearch} placeholder="自分のチャンプ (例: Yone)" className="pl-12 py-4 border-2 border-transparent focus:border-[#c89b3c]/50 shadow-lg" />
         </div>
         <div className="relative flex-1 min-w-[200px]">
-          <Target className="absolute left-4 top-1/2 -translate-y-1/2 text-[#00cfef]" size={20} />
-          <input type="text" placeholder="相手のチャンプ (例: Yasuo)" value={enemySearch} onChange={e => setEnemySearch(e.target.value)}
-            className="w-full glass-panel border-2 border-transparent focus:border-[#00cfef]/50 rounded-2xl py-4 pl-12 pr-4 text-white font-bold outline-none transition-colors shadow-lg" />
+          <Target className="absolute left-4 top-1/2 -translate-y-1/2 text-[#00cfef] z-10" size={20} />
+          <ChampSelect value={enemySearch} onChange={setEnemySearch} placeholder="相手のチャンプ (例: Yasuo)" className="pl-12 py-4 border-2 border-transparent focus:border-[#00cfef]/50 shadow-lg" />
         </div>
         <select value={roleFilter} onChange={e => setRoleFilter(e.target.value)} className="glass-panel rounded-2xl px-6 font-bold text-[#c89b3c] outline-none min-w-[140px] appearance-none cursor-pointer text-center">
           <option value="ALL">ALL ROLES</option>

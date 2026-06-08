@@ -1,20 +1,24 @@
 "use client";
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { supabase } from '../../lib/supabaseClient';
 import { getChampIcon, getChampSplash } from '../../lib/ddragonClient';
-import { ChevronLeft, Search, Save, BookOpen, RefreshCw, Zap, ShieldAlert, Swords, Shield, Copy, Check, FileText, Eye, Edit2, Activity, Plus, Trash } from 'lucide-react';
+import { ChevronLeft, Search, Save, BookOpen, RefreshCw, Zap, ShieldAlert, Swords, Shield, Copy, Check, FileText, Eye, Edit2, Activity, Plus, Trash, Filter } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { motion } from 'framer-motion';
 
-export default function ChampionsPage() {
+function ChampionsContent() {
+  const searchParams = useSearchParams();
   const [champions, setChampions] = useState<any[]>([]);
   const [search, setSearch] = useState('');
   const [sortOrder, setSortOrder] = useState('updated_desc');
+  const [showPendingOnly, setShowPendingOnly] = useState(searchParams.get('filter') === 'pending');
   const [selected, setSelected] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [champDates, setChampDates] = useState<Record<string, string>>({});
+  const [champPending, setChampPending] = useState<Record<string, boolean>>({});
   
   const [dataFields, setDataFields] = useState<any>({
     strengths: '', weaknesses: '', powerSpikes: '', buildRunes: '',
@@ -37,12 +41,19 @@ export default function ChampionsPage() {
           id: c.id, key: c.key, name: c.name, title: c.title, tags: c.tags,
           searchKey: `${c.id.toLowerCase()} ${c.name}`
         }));
-        return supabase.from('matchup_sentinel').select('champion, created_at').eq('enemy', 'GLOBAL');
+        return supabase.from('matchup_sentinel').select('champion, created_at, strategy').eq('enemy', 'GLOBAL');
       })
       .then(({ data }) => {
         const dates: Record<string, string> = {};
-        if (data) data.forEach(row => dates[row.champion] = row.created_at);
+        const pending: Record<string, boolean> = {};
+        if (data) {
+          data.forEach(row => {
+            dates[row.champion] = row.created_at;
+            pending[row.champion] = !row.strategy; // strategyが空・nullならpending
+          });
+        }
         setChampDates(dates);
+        setChampPending(pending);
         setChampions(fetchedChampions);
         setLoading(false);
       })
@@ -116,7 +127,12 @@ export default function ChampionsPage() {
       }
     };
     const { error } = await supabase.from('matchup_sentinel').upsert(data, { onConflict: 'matchup_id' });
-    if (error) alert('保存失敗: ' + error.message); else setChampDates(prev => ({ ...prev, [selected.id]: now }));
+    if (error) {
+      alert('保存失敗: ' + error.message);
+    } else {
+      setChampDates(prev => ({ ...prev, [selected.id]: now }));
+      setChampPending(prev => ({ ...prev, [selected.id]: !dataFields.strategy }));
+    }
     setSaving(false);
   };
 
@@ -127,6 +143,9 @@ export default function ChampionsPage() {
       const hiraToKata = q.replace(/[\u3041-\u3096]/g, match => String.fromCharCode(match.charCodeAt(0) + 0x60));
       result = result.filter(c => c.searchKey.includes(q) || c.searchKey.includes(hiraToKata));
     }
+    if (showPendingOnly) {
+      result = result.filter(c => champPending[c.id]);
+    }
     return [...result].sort((a, b) => {
       if (sortOrder === 'updated_desc') {
         const dateA = champDates[a.id] ? new Date(champDates[a.id]).getTime() : 0;
@@ -135,7 +154,7 @@ export default function ChampionsPage() {
       }
       return a.name.localeCompare(b.name);
     });
-  }, [champions, search, sortOrder, champDates]);
+  }, [champions, search, sortOrder, champDates, showPendingOnly, champPending]);
 
   const containerVariants = { hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.02 } } };
   const itemVariants = { hidden: { scale: 0.9, opacity: 0 }, visible: { scale: 1, opacity: 1 } };
@@ -250,6 +269,12 @@ export default function ChampionsPage() {
           <input type="text" placeholder="チャンピオン名で検索..." value={search} onChange={e => setSearch(e.target.value)}
             className="w-full bg-[var(--color-surface)] border border-transparent focus:border-[#c89b3c]/50 rounded-xl py-3 pl-12 pr-4 text-white font-bold outline-none transition-colors" />
         </div>
+        <button 
+          onClick={() => setShowPendingOnly(!showPendingOnly)} 
+          className={`flex items-center gap-2 px-5 rounded-xl font-bold text-sm transition-all border ${showPendingOnly ? 'bg-rose-500/20 text-rose-400 border-rose-500/50 shadow-[0_0_15px_rgba(244,63,94,0.3)]' : 'glass-panel text-gray-400 border-transparent hover:text-white'}`}
+        >
+          <Filter size={16} /> 要確認タスク
+        </button>
         <select value={sortOrder} onChange={e => setSortOrder(e.target.value)} className="glass-panel border-none rounded-xl px-4 font-bold text-[#c89b3c] outline-none min-w-[160px] cursor-pointer">
           <option value="updated_desc">更新日が新しい順</option>
           <option value="name_asc">名前順</option>
@@ -267,7 +292,7 @@ export default function ChampionsPage() {
                 className={`glass-panel glass-panel-hover flex flex-col items-center gap-2 p-4 rounded-2xl cursor-pointer group ${hasNote ? 'bg-[#c89b3c]/10 border-[#c89b3c]/30 shadow-[0_0_15px_rgba(200,155,60,0.15)]' : ''}`}>
                 <div className="relative">
                   <img src={getChampIcon(c.id)} alt={c.name} className={`w-14 h-14 rounded-full border-2 transition-colors ${hasNote ? 'border-[#c89b3c]' : 'border-white/10 group-hover:border-white/30'}`} />
-                  {hasNote && <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-[#c89b3c] rounded-full border-2 border-[#0a0b10]"></div>}
+                  {hasNote && <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-[#0a0b10] ${champPending[c.id] ? 'bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.8)]' : 'bg-[#c89b3c]'}`}></div>}
                 </div>
                 <span className={`text-xs font-bold text-center leading-tight transition-colors ${hasNote ? 'text-[#c89b3c]' : 'text-gray-400 group-hover:text-white'}`}>{c.name}</span>
               </motion.div>
@@ -288,3 +313,11 @@ const TextAreaCard = ({ title, icon: Icon, color, value, onChange }: { title: st
     </div>
   );
 };
+
+export default function ChampionsPage() {
+  return (
+    <Suspense fallback={<div className="flex justify-center py-20"><div className="w-8 h-8 border-4 border-[#c89b3c] border-t-transparent rounded-full animate-spin"></div></div>}>
+      <ChampionsContent />
+    </Suspense>
+  );
+}
