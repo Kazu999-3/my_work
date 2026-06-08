@@ -18,7 +18,11 @@ export async function GET(request: Request) {
         role,
         champion_name,
         team,
-        ktm_matches!inner(winning_team, ktm_match_participants(role, team, champion_name))
+        kills,
+        deaths,
+        assists,
+        mmr_delta,
+        ktm_matches!inner(created_at, winning_team, ktm_match_participants(role, team, champion_name))
       `)
       .eq('player_name', playerName);
 
@@ -111,9 +115,32 @@ export async function GET(request: Request) {
          winRate: Math.round((data.wins / data.games) * 100)
       }));
 
+    // 直近の試合履歴を抽出（最大10件）
+    const formattedHistory = playerMatches
+      .sort((a: any, b: any) => {
+         const dateA = new Date(a.ktm_matches.created_at || 0).getTime();
+         const dateB = new Date(b.ktm_matches.created_at || 0).getTime();
+         return dateB - dateA;
+      })
+      .slice(0, 10)
+      .map((row: any) => {
+        return {
+          matchId: row.match_id,
+          date: row.ktm_matches.created_at,
+          role: row.role,
+          champion: row.champion_name || 'Unknown',
+          kills: row.kills || 0,
+          deaths: row.deaths || 0,
+          assists: row.assists || 0,
+          mmrDelta: row.mmr_delta || 0,
+          isWin: row.team === row.ktm_matches.winning_team
+        };
+      });
+
     return NextResponse.json({ 
         stats: formattedStats,
-        matchups: formattedMatchups
+        matchups: formattedMatchups,
+        history: formattedHistory
     });
 
   } catch (error: any) {

@@ -21,6 +21,7 @@ export default function PlayerMyPage() {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<any>(null);
   const [matchups, setMatchups] = useState<any[]>([]);
+  const [history, setHistory] = useState<any[]>([]);
   const [riotMasteries, setRiotMasteries] = useState<any[]>([]);
   const [saving, setSaving] = useState(false);
 
@@ -47,6 +48,7 @@ export default function PlayerMyPage() {
         const sData = await res.json();
         if (sData.stats) setStats(sData.stats);
         if (sData.matchups) setMatchups(sData.matchups);
+        if (sData.history) setHistory(sData.history);
 
         // 3. マスタリーの解決
         let mainChamps = pData.main_champions;
@@ -289,6 +291,71 @@ export default function PlayerMyPage() {
           </div>
 
         </div>
+
+        {/* Match History Timeline */}
+        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-xl">
+          <h3 className="text-2xl font-black flex items-center gap-2 mb-6">
+            <Activity className="w-6 h-6 text-blue-500" />
+            直近の戦績 (KTMカスタム)
+          </h3>
+          <div className="space-y-3">
+            {history && history.length > 0 ? history.map((match, idx) => (
+              <div 
+                key={idx} 
+                className={`flex flex-col sm:flex-row items-center justify-between p-4 rounded-xl border ${match.isWin ? 'bg-emerald-900/10 border-emerald-500/20' : 'bg-red-900/10 border-red-500/20'}`}
+              >
+                <div className="flex items-center gap-6 w-full sm:w-auto">
+                  <div className={`w-1.5 h-12 rounded-full ${match.isWin ? 'bg-emerald-500' : 'bg-red-500'}`}></div>
+                  <div className="flex items-center gap-4">
+                    <div className="relative">
+                      <img 
+                        src={getChampIcon(match.champion)} 
+                        className="w-12 h-12 rounded-full shadow-sm border border-gray-700"
+                        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                      />
+                      <div className="absolute -bottom-1 -right-1 bg-gray-900 p-0.5 rounded-full border border-gray-700">
+                        {roleIcons[match.role] || <div className="w-3 h-3 bg-gray-500 rounded-full"></div>}
+                      </div>
+                    </div>
+                    <div>
+                      <div className={`font-bold text-lg leading-none ${match.isWin ? 'text-emerald-400' : 'text-red-400'}`}>
+                        {match.isWin ? 'Victory' : 'Defeat'}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        {new Date(match.date).toLocaleDateString('ja-JP', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-8 mt-4 sm:mt-0 w-full sm:w-auto justify-end">
+                  <div className="text-center">
+                    <div className="text-xs text-gray-500 font-bold mb-1">K / D / A</div>
+                    <div className="font-bold text-gray-200">
+                      <span>{match.kills}</span>
+                      <span className="text-gray-600 mx-1">/</span>
+                      <span className="text-red-400">{match.deaths}</span>
+                      <span className="text-gray-600 mx-1">/</span>
+                      <span>{match.assists}</span>
+                    </div>
+                  </div>
+                  
+                  <div className="text-right min-w-[80px]">
+                    <div className="text-xs text-gray-500 font-bold mb-1">MMR CHANGE</div>
+                    <div className={`font-black ${match.mmrDelta > 0 ? 'text-emerald-400' : match.mmrDelta < 0 ? 'text-red-400' : 'text-gray-400'}`}>
+                      {match.mmrDelta > 0 ? '+' : ''}{match.mmrDelta}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )) : (
+              <div className="text-center text-gray-500 py-8 border border-dashed border-gray-800 rounded-xl">
+                直近の試合データがありません
+              </div>
+            )}
+          </div>
+        </div>
+
       </div>
     </div>
   );
