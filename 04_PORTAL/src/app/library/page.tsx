@@ -7,6 +7,22 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { motion, AnimatePresence } from 'framer-motion';
 
+const ALL_CHAMPIONS = [
+  "Aatrox", "Ahri", "Akali", "Akshan", "Alistar", "Ambessa", "Amumu", "Anivia", "Annie", "Aphelios", "Ashe", "Aurelion Sol", "Azir", 
+  "Bard", "Bel'Veth", "Blitzcrank", "Brand", "Braum", "Briar", "Caitlyn", "Camille", "Cassiopeia", "Cho'Gath", "Corki", "Darius", "Diana", 
+  "Dr. Mundo", "Draven", "Ekko", "Elise", "Evelynn", "Ezreal", "Fiddlesticks", "Fiora", "Fizz", "Galio", "Gangplank", "Garen", "Gnar", 
+  "Gragas", "Graves", "Gwen", "Hecarim", "Heimerdinger", "Hwei", "Illaoi", "Irelia", "Ivern", "Janna", "Jarvan IV", "Jax", "Jayce", 
+  "Jhin", "Jinx", "K'Sante", "Kai'Sa", "Kalista", "Karma", "Karthus", "Kassadin", "Katarina", "Kayle", "Kayn", "Kennen", "Kha'Zix", 
+  "Kindred", "Kled", "Kog'Maw", "LeBlanc", "Lee Sin", "Leona", "Lillia", "Lissandra", "Lucian", "Lulu", "Lux", "Malphite", "Malzahar", 
+  "Maokai", "Master Yi", "Mel", "Milio", "Miss Fortune", "Mordekaiser", "Morgana", "Naafiri", "Nami", "Nasus", "Nautilus", "Neeko", 
+  "Nidalee", "Nilah", "Nocturne", "Nunu & Willump", "Olaf", "Orianna", "Ornn", "Pantheon", "Poppy", "Pyke", "Qiyana", "Quinn", "Rakan", 
+  "Rammus", "Rek'Sai", "Rell", "Renata Glasc", "Renekton", "Rengar", "Riven", "Rumble", "Ryze", "Samira", "Sejuani", "Senna", "Seraphine", 
+  "Sett", "Shaco", "Shen", "Shyvana", "Singed", "Sion", "Sivir", "Skarner", "Smolder", "Sona", "Soraka", "Swain", "Sylas", "Syndra", 
+  "Tahm Kench", "Taliyah", "Talon", "Taric", "Teemo", "Thresh", "Tristana", "Trundle", "Tryndamere", "Twisted Fate", "Twitch", "Udyr", 
+  "Urgot", "Varus", "Vayne", "Veigar", "Vel'Koz", "Vex", "Vi", "Viego", "Viktor", "Vladimir", "Volibear", "Warwick", "Wukong", "Xayah", 
+  "Xerath", "Xin Zhao", "Yasuo", "Yone", "Yorick", "Yuumi", "Zac", "Zed", "Zeri", "Ziggs", "Zilean", "Zoe", "Zyra"
+];
+
 export default function LibraryPage() {
   const [articles, setArticles] = useState<any[]>([]);
   const [selectedArticle, setSelectedArticle] = useState<any>(null);
@@ -93,6 +109,93 @@ export default function LibraryPage() {
       content: editContent, 
       created_at: now 
     };
+
+    // --- チャンピオン統合ロジック ---
+    const fakeChampions = ["", "Unknown", "その他", "[YouTube]", "YouTube", "Jungle", "jg", "lol", "ARTICLE", "draft", "SYSTEM", "LIVE", "GLOBAL", "test", "sns", "macro"];
+    const championName = editChampion.trim();
+
+    if (championName && !fakeChampions.includes(championName) && !fakeChampions.includes(championName.toLowerCase())) {
+      try {
+        const matchupId = `champ_${championName}_global`;
+        
+        // 既存データの取得
+        const { data: existingData } = await supabase
+          .from('matchup_sentinel')
+          .select('*')
+          .eq('matchup_id', matchupId)
+          .maybeSingle();
+          
+        let rawData = existingData?.raw_data || {};
+        let customFields = rawData.customFields || {};
+        
+        // マージヘルパー
+        const mergeContent = (existingText: string, newText: string, title: string) => {
+            const ext = existingText || "";
+            if (!ext.trim()) return newText;
+            if (newText.trim() === ext.trim()) return ext;
+            
+            const header = `## 【記事】${title}`;
+            if (ext.includes(header)) {
+                const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                const pattern = new RegExp(`## 【記事】${escapeRegExp(title)}\\s*\\n[\\s\\S]*?(?=\\n---|$)`);
+                const newContent = ext.replace(pattern, `${header}\n\n${newText}`);
+                if (newContent !== ext) return newContent;
+            }
+            
+            if (ext.includes(newText)) return ext;
+            return `${ext}\n\n---\n\n${header}\n\n${newText}`;
+        };
+        
+        if (editTitle.includes("HONKI_BIBLE") || editTitle.includes("ARTICLE")) {
+            rawData.note_draft = mergeContent(rawData.note_draft || "", editContent, editTitle);
+        } else {
+            const fieldName = editTitle.replace(`${championName}_`, "").replace(`_${championName}`, "");
+            customFields[fieldName] = mergeContent(customFields[fieldName] || "", editContent, editTitle);
+        }
+        
+        rawData.customFields = customFields;
+        rawData.source = "champ_db";
+        rawData.role = "GLOBAL";
+        
+        const dictData = {
+            matchup_id: matchupId,
+            champion: championName,
+            enemy: "GLOBAL",
+            title: existingData?.title || `${championName} 基本戦略・トレンド`,
+            strategy: existingData?.strategy || "",
+            raw_data: rawData
+        };
+        
+        // 辞典へUPSERT
+        const { error: upsertError } = await supabase
+            .from('matchup_sentinel')
+            .upsert(dictData, { onConflict: 'matchup_id' });
+            
+        if (upsertError) throw upsertError;
+        
+        // ライブラリから削除
+        const { error: deleteError } = await supabase
+            .from('bible_articles')
+            .delete()
+            .eq('id', selectedArticle.id);
+            
+        if (deleteError) throw deleteError;
+        
+        alert(`【統合完了】${championName} のチャンピオン辞典にマージし、ライブラリから削除しました！`);
+        setArticles(prev => prev.filter(a => String(a.id) !== String(selectedArticle.id)));
+        setSelectedArticle(null);
+        setEditing(false);
+        setSaving(false);
+        return;
+        
+      } catch (err: any) {
+        alert('辞典への統合中にエラーが発生しました: ' + err.message);
+        setSaving(false);
+        return;
+      }
+    }
+
+    // --- 既存の保存処理 (汎用記事のままの場合) ---
     const { error } = await supabase.from('bible_articles').update(updateData).eq('id', selectedArticle.id);
     if (!error) {
       const updated = { ...selectedArticle, ...updateData };
@@ -103,13 +206,22 @@ export default function LibraryPage() {
     setSaving(false);
   };
 
-  const deleteArticle = async (id: number, e: React.MouseEvent) => {
+  const deleteArticle = async (id: number | string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (!confirm('この記事を削除しますか？')) return;
-    const { error } = await supabase.from('bible_articles').delete().eq('id', id);
-    if (!error) {
-      setArticles(prev => prev.filter(a => a.id !== id));
-      if (selectedArticle?.id === id) setSelectedArticle(null);
+    
+    try {
+      const { error } = await supabase.from('bible_articles').delete().eq('id', id);
+      if (error) {
+        alert('削除エラー: ' + error.message);
+        console.error("Delete Error:", error);
+      } else {
+        setArticles(prev => prev.filter(a => String(a.id) !== String(id)));
+        if (selectedArticle && String(selectedArticle.id) === String(id)) setSelectedArticle(null);
+      }
+    } catch (err) {
+      alert('削除中に予期せぬエラーが発生しました。');
+      console.error("Unexpected Delete Error:", err);
     }
   };
 
@@ -158,7 +270,10 @@ export default function LibraryPage() {
                   <div className="flex gap-4 flex-wrap">
                     <div className="flex-1 min-w-[200px]">
                       <label className="text-xs text-[#a78bfa] font-bold">チャンピオン (タブ用)</label>
-                      <input type="text" value={editChampion} onChange={e => setEditChampion(e.target.value)} className="w-full bg-black/50 border border-[#a78bfa]/30 rounded-xl p-3 text-sm text-white outline-none focus:border-[#a78bfa]/60 transition-colors" placeholder="未設定の場合は「その他」になります" />
+                      <input type="text" list="champion-suggestions" value={editChampion} onChange={e => setEditChampion(e.target.value)} className="w-full bg-black/50 border border-[#a78bfa]/30 rounded-xl p-3 text-sm text-white outline-none focus:border-[#a78bfa]/60 transition-colors" placeholder="未設定の場合は「その他」になります" />
+                      <datalist id="champion-suggestions">
+                        {ALL_CHAMPIONS.map(c => <option key={c} value={c} />)}
+                      </datalist>
                     </div>
                     <div className="flex-1 min-w-[200px]">
                       <label className="text-xs text-[#a78bfa] font-bold">キーワード (カンマ区切り)</label>

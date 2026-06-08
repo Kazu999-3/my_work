@@ -55,6 +55,94 @@ class SovereignSync:
         # 重複削除
         return list(set(keywords))[:10]
 
+    def _sync_to_champion_dictionary(self, champion, content, title, source_folder):
+        """チャンピオン辞典 (matchup_sentinel) の GLOBAL レコードに情報を追記する"""
+        if not champion or champion == "Unknown":
+            return False
+
+        matchup_id = f"champ_{champion}_global"
+        
+        # 1. 既存のレコードを取得
+        get_res = httpx.get(
+            f"{self._api('matchup_sentinel')}?matchup_id=eq.{matchup_id}",
+            headers={"apikey": self.key, "Authorization": f"Bearer {self.key}"},
+            timeout=10
+        )
+        
+        existing = {}
+        if get_res.status_code == 200 and len(get_res.json()) > 0:
+            existing = get_res.json()[0]
+            
+        raw_data = existing.get("raw_data", {})
+        if not isinstance(raw_data, dict):
+            raw_data = {}
+            
+        custom_fields = raw_data.get("customFields", {})
+        if not isinstance(custom_fields, dict):
+            custom_fields = {}
+            
+        # マージ用のヘルパー関数
+        def merge_content(existing, new_content, title):
+            if not existing or existing.strip() == "":
+                return new_content
+            if new_content.strip() == existing.strip():
+                return existing
+            
+            header = f"## 【記事】{title}"
+            if header in existing:
+                import re
+                # 既にこのタイトルの記事がマージされている場合は、そのセクションだけを更新
+                pattern = r"## 【記事】" + re.escape(title) + r"\s*\n.*?(?=\n---|\Z)"
+                replacement = f"{header}\n\n{new_content}"
+                new_text, count = re.subn(pattern, replacement, existing, flags=re.DOTALL)
+                if count > 0:
+                    return new_text
+            
+            # すでに全文が含まれている場合は追加しない
+            if new_content in existing:
+                return existing
+                
+            # それ以外は末尾に追記
+            return f"{existing}\n\n---\n\n{header}\n\n{new_content}"
+
+        # フォルダやタイトルに応じて格納場所を振り分け、良い形でマージする
+        if source_folder == "kirei_bible":
+            custom_fields["動画解析・特記事項 (Kirei)"] = merge_content(custom_fields.get("動画解析・特記事項 (Kirei)", ""), content, title)
+        elif "HONKI_BIBLE" in title or "ARTICLE" in title:
+            # 記事ドラフトは専用フィールドに格納（既存の辞典UIの `note_draft` 枠）
+            raw_data["note_draft"] = merge_content(raw_data.get("note_draft", ""), content, title)
+        else:
+            # その他の戦術メモ等は、タイトルをそのまま項目名として追加
+            field_name = title.replace(f"{champion}_", "").replace(f"_{champion}", "")
+            custom_fields[field_name] = merge_content(custom_fields.get(field_name, ""), content, title)
+
+        raw_data["customFields"] = custom_fields
+        raw_data["source"] = "champ_db"
+        raw_data["role"] = "GLOBAL"
+        
+        data = {
+            "matchup_id": matchup_id,
+            "champion": champion,
+            "enemy": "GLOBAL",
+            "title": existing.get("title", f"{champion} 基本戦略・トレンド"),
+            "strategy": existing.get("strategy", ""),
+            "raw_data": raw_data
+        }
+        
+        # UPSERT
+        res = httpx.post(
+            self._api("matchup_sentinel") + "?on_conflict=matchup_id",
+            headers=self._headers(),
+            json=data,
+            timeout=15
+        )
+        
+        if res.status_code in (200, 201, 204):
+            return True
+        else:
+            logger.error(f"❌ 辞典同期失敗 ({champion}): {res.status_code} {res.text[:200]}")
+            return False
+
     def sync_articles(self):
         """02_FACTORY/PRODUCTS/ARTICLES 内の .md ファイルを全て同期"""
         if not self.ready:
@@ -96,11 +184,21 @@ class SovereignSync:
                 elif len(parts) > 1:
                     # Champion_Description.md
                     champion = parts[0]
+                elif len(parts) == 1:
+                    # スペース区切りの場合 (例: "[YouTube] Jungle Guide...")
+                    first_word = title.split(" ")[0]
+                    if not first_word.startswith("["):
+                        champion = first_word
                 
                 # 特殊なケース: チャンピオン名がバージョン番号っぽかったら次を探す
                 import re
                 if re.match(r"^[\d\.]+$", champion) and len(parts) > parts.index(champion) + 1:
                     champion = parts[parts.index(champion) + 1]
+
+                # 偽のチャンピオン名（汎用タグやYouTubeタグ）を除外
+                fake_champions = ["[YouTube]", "YouTube", "Jungle", "jg", "lol", "ARTICLE", "draft", "SYSTEM", "LIVE", "GLOBAL", "test", "sns", "macro"]
+                if champion in fake_champions or champion.lower() in fake_champions:
+                    champion = "Unknown"
 
                 # キーワード抽出
                 keywords = self.extract_keywords(content)
@@ -108,6 +206,22 @@ class SovereignSync:
                     # チャンプ名もキーワードに含める
                     keywords.insert(0, champion)
 
+                # Kireiバイブル判定
+                is_kirei = "kirei_bible" in md_file.parts
+
+                # チャンピオン辞典へ統合を試みる
+                integrated = self._sync_to_champion_dictionary(champion, content, title, md_file.parent.name)
+                
+                if integrated:
+                    # 辞典への統合に成功した場合、ライブラリ(bible_articles)から該当記事を削除する
+                    httpx.delete(
+                        self._api("bible_articles") + f"?title=eq.{title}",
+                        headers=self._headers(),
+                        timeout=10
+                    )
+                    synced += 1
+                    continue
+                
                 data = {
                     "title": title,
                     "content": content,
@@ -194,6 +308,17 @@ class SovereignSync:
         self.sync_articles()
         self.sync_matchups()
         logger.info("🏁 クラウド同期 完了。")
+        
+        # 完了通知
+        try:
+            from pulse import pulse
+            pulse.send_discord_notification(
+                title="クラウド同期 (Sovereign Sync) 完了",
+                description="ローカルの知識資産（攻略記事・Kireiバイブル・マッチアップデータ）を Supabase へ同期しました。"
+            )
+        except Exception as e:
+            logger.error(f"通知送信エラー: {e}")
+
 
 
 if __name__ == "__main__":
