@@ -46,10 +46,10 @@ class SovereignSettings(BaseSettings):
     LOLALYTICS_ENABLED: bool = True
 
     # モデル設定
-    DEFAULT_MODEL: str = "gemini-2.0-flash"
+    DEFAULT_MODEL: str = "gemini-2.5-flash"
     # OLE（動画解析）専用モデル: 無料枠の制限分散のため DEFAULT_MODEL とは別に設定
-    # gemini-2.0-flash は gemini-2.5-flash より無料枠が広いため適している
-    OLE_MODEL: str = "gemini-2.0-flash"
+    # gemini-2.0-flash は利用不可になっているため 2.5 を使用する
+    OLE_MODEL: str = "gemini-2.5-flash"
     
     # クォータ（1日あたりのAPI実行回数）制限: 合計780枠 (余裕をもったバッファ)
     DAILY_QUOTA_LIMITS: dict = {

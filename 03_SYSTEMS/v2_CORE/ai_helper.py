@@ -51,9 +51,10 @@ def generate_content_safe(client, prompt, model_id=None, config=None, feature_na
     primary_model = model_id or settings.DEFAULT_MODEL
     models_to_try = [
         primary_model,
+        "gemini-2.5-flash",
         "gemini-2.0-flash",
-        "gemini-1.5-flash",
-        "gemini-1.5-pro"
+        "gemini-1.5-flash-latest",
+        "gemini-1.5-pro-latest"
     ]
     
     # 重複を排除しつつ順序を維持
