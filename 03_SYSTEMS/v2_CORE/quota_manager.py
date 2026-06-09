@@ -62,7 +62,13 @@ class QuotaManager:
                 supabase_key = os.environ.get("SUPABASE_KEY")
                 if supabase_url and supabase_key:
                     today = self._get_today_str()
-                    usage_data = data.get(today, {})
+                    usage_data = data.get(today, {}).copy()
+                    
+                    # ポータル側で上限値と機能ごとの内訳を表示できるように、limitの値を付与する
+                    limits = getattr(settings, "DAILY_QUOTA_LIMITS", {})
+                    for k, v in limits.items():
+                        usage_data[f"__limit_{k}"] = v
+                        
                     url = f"{supabase_url}/rest/v1/api_usage_logs?on_conflict=date"
                     headers = {
                         "apikey": supabase_key,

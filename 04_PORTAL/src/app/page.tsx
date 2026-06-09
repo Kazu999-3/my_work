@@ -22,6 +22,8 @@ export default function Home() {
   const [pendingTasks, setPendingTasks] = useState<number>(0);
   const [apiUsage, setApiUsage] = useState<number>(0);
   const [apiErrors, setApiErrors] = useState<number>(0);
+  const [apiLimit, setApiLimit] = useState<number>(780);
+  const [apiUsageDetails, setApiUsageDetails] = useState<Record<string, { used: number, limit: number }>>({});
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -75,17 +77,40 @@ export default function Home() {
         if (!apiError && apiData && apiData.usage_data) {
           let totalSuccess = 0;
           let totalErrors = 0;
+          let totalLimit = 0;
+          const details: Record<string, { used: number, limit: number }> = {};
           
+          // First pass: extract limits and initialize details
           for (const [key, value] of Object.entries(apiData.usage_data)) {
+            if (key.startsWith('__limit_')) {
+              const featureName = key.replace('__limit_', '');
+              totalLimit += Number(value);
+              if (!details[featureName]) details[featureName] = { used: 0, limit: Number(value) };
+              else details[featureName].limit = Number(value);
+            }
+          }
+          
+          // Second pass: extract usage
+          for (const [key, value] of Object.entries(apiData.usage_data)) {
+            if (key.startsWith('__limit_')) continue;
             if (key.startsWith('error_')) {
               totalErrors += Number(value);
             } else {
               totalSuccess += Number(value);
+              if (!details[key]) details[key] = { used: Number(value), limit: 0 };
+              else details[key].used = Number(value);
             }
           }
           
           setApiUsage(totalSuccess);
           setApiErrors(totalErrors);
+          if (totalLimit > 0) setApiLimit(totalLimit);
+          
+          // Filter out features with 0 limit and 0 usage to keep it clean
+          const cleanedDetails = Object.fromEntries(
+            Object.entries(details).filter(([k, v]) => v.limit > 0 || v.used > 0)
+          );
+          setApiUsageDetails(cleanedDetails);
         }
 
       } catch (err) {
@@ -188,15 +213,15 @@ export default function Home() {
             </div>
             <p className="text-xs font-bold text-purple-400/80 bg-purple-500/10 px-3 py-1 rounded-full border border-purple-500/20">QUOTA</p>
           </div>
-          <div>
+          <div className="group/quota relative">
             <div className="flex items-end gap-2 mb-2">
               <h3 className="text-4xl font-black text-white tracking-tight">{isLoading ? '-' : apiUsage}</h3>
-              <span className="text-lg text-gray-500 font-medium mb-1">/ 780</span>
+              <span className="text-lg text-gray-500 font-medium mb-1">/ {apiLimit}</span>
             </div>
             <div className="w-full bg-black/40 rounded-full h-1.5 overflow-hidden border border-white/5">
               <div 
-                className={`h-full rounded-full transition-all duration-1000 ${apiUsage > 650 ? 'bg-gradient-to-r from-orange-500 to-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]' : apiUsage > 400 ? 'bg-gradient-to-r from-yellow-400 to-orange-500 shadow-[0_0_10px_rgba(245,158,11,0.5)]' : 'bg-gradient-to-r from-indigo-500 to-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.5)]'}`}
-                style={{ width: `${Math.min((apiUsage / 780) * 100, 100)}%` }}
+                className={`h-full rounded-full transition-all duration-1000 ${apiUsage > apiLimit * 0.8 ? 'bg-gradient-to-r from-orange-500 to-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]' : apiUsage > apiLimit * 0.5 ? 'bg-gradient-to-r from-yellow-400 to-orange-500 shadow-[0_0_10px_rgba(245,158,11,0.5)]' : 'bg-gradient-to-r from-indigo-500 to-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.5)]'}`}
+                style={{ width: `${Math.min((apiUsage / apiLimit) * 100, 100)}%` }}
               ></div>
             </div>
             <p className="text-xs text-gray-400 font-medium mt-3 flex items-center justify-between">
@@ -207,6 +232,27 @@ export default function Home() {
                 </span>
               )}
             </p>
+            
+            {/* Hover Tooltip / Detail Box for API usage per feature */}
+            <div className="absolute opacity-0 group-hover/quota:opacity-100 transition-opacity duration-300 pointer-events-none top-full left-0 mt-4 w-full min-w-[200px] z-50 bg-black/80 backdrop-blur-xl border border-white/10 rounded-2xl p-4 shadow-2xl">
+                <h4 className="text-xs font-bold text-gray-400 mb-3 uppercase tracking-widest">各機能の消費状況</h4>
+                <div className="space-y-3">
+                    {Object.entries(apiUsageDetails).map(([key, data]) => (
+                        <div key={key} className="flex flex-col gap-1">
+                            <div className="flex justify-between text-xs">
+                                <span className="text-gray-300 truncate w-24" title={key}>{key}</span>
+                                <span className="text-gray-400 font-mono"><span className={data.used >= data.limit && data.limit > 0 ? "text-rose-400 font-bold" : "text-white"}>{data.used}</span> / {data.limit > 0 ? data.limit : '∞'}</span>
+                            </div>
+                            <div className="w-full bg-white/5 rounded-full h-1 overflow-hidden">
+                                <div className={`h-full rounded-full ${data.used >= data.limit && data.limit > 0 ? 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.8)]' : 'bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.5)]'}`} style={{ width: `${Math.min((data.used / (data.limit || Math.max(data.used, 1))) * 100, 100)}%` }}></div>
+                            </div>
+                        </div>
+                    ))}
+                    {Object.keys(apiUsageDetails).length === 0 && (
+                        <p className="text-xs text-gray-500 text-center py-2">詳細データがありません</p>
+                    )}
+                </div>
+            </div>
           </div>
         </motion.div>
 
