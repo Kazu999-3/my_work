@@ -70,32 +70,19 @@ def research_champion(champ_name: str, champ_id: str, patch_version: str) -> str
     情報は Lolalytics や u.gg などの統計に基づいた客観的な内容にしてください。
     """
     
-    # リトライループ (429対策)
-    for attempt in range(5):
-        try:
-            response = client.models.generate_content(
-                model="gemini-2.5-flash",
-                contents=prompt
-            )
-            return response.text
-        except Exception as e:
-            err_msg = str(e)
-            parsed_delay = parse_retry_delay(err_msg)
-            
-            # デイリー制限判定：5分以上の待機指定、または待機時間0(パース不可)かつデイリー上限のエラー文言
-            is_daily_limit = (parsed_delay > 300) or (parsed_delay == 0.0 and ("RequestsPerDay" in err_msg or "requests per day" in err_msg.lower() or "limit: 0" in err_msg))
-            
-            if is_daily_limit:
-                logging.warning("🛑 無料APIキーのデイリー上限に達しました。12時間スリープして自動再開します...")
-                time.sleep(12 * 3600)  # 12時間スリープ
-                continue
-                
-            # 一時的制限
-            wait_time = parsed_delay if parsed_delay > 0 else (attempt + 1) * 60
-            logging.warning(f"Quota exceeded or error. Waiting {wait_time:.1f}s before retry...")
-            time.sleep(wait_time)
-            continue
-            
+    from v2_CORE.ai_helper import generate_content_safe
+    
+    # 共通のスロットリング・フォールバック機能を使用する
+    response_text = generate_content_safe(
+        client, 
+        prompt, 
+        model_id="gemini-2.5-flash",
+        feature_name="oracle"
+    )
+    
+    if response_text and not response_text.startswith("⚠️") and not response_text.startswith("❌"):
+        return response_text
+        
     return ""
 
 def run_autonomous_filling():
@@ -128,9 +115,9 @@ def run_autonomous_filling():
         else:
             logging.warning(f"⚠️ {champ_name} could not be researched.")
         
-        # クォータ制限対策として30秒の固定待機
-        logging.info("💤 Rate limit cooldown (30s)...")
-        time.sleep(30)
+        # クォータ制限対策として60秒の固定待機（動画解析の邪魔をしないよう長めにする）
+        logging.info("💤 Rate limit cooldown (60s)...")
+        time.sleep(60)
 
 if __name__ == "__main__":
     run_autonomous_filling()
