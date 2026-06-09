@@ -95,7 +95,9 @@ class YouTubeAbsorber:
         【作成要件】
         - 徹底して「LoLのジャングル/マクロ/ミクロの戦略」にフォーカスすること。無駄な雑談や挨拶は省く。
         - 全て**日本語**で出力すること。
+        - **重要**: この動画のメインとなるチャンピオンを判定し、Markdownの1行目（タイトルの上）に必ず `[Champion: チャンピオン名]` と出力すること。特定のチャンピオンがない汎用解説の場合は `[Champion: Unknown]` とすること。
         - 構成は以下の通りとする：
+        [Champion: チャンピオン名]
           # {video_data['title']}
           ## 📌 動画の結論（1行サマリー）
           ## 🧠 マクロ戦略・ルート・判断基準
@@ -131,6 +133,7 @@ class YouTubeAbsorber:
             
         targets = pending[:limit]
         success_count = 0
+        processed_details = []
         
         herald.notify_progress(f"📺 **【YouTube Absorber】** KireiLoL動画のテキスト吸収を開始します（対象: {len(targets)}件）...")
         
@@ -140,13 +143,18 @@ class YouTubeAbsorber:
             
             if not transcript or len(transcript) < 100:
                 logger.warning(f"No valid transcript found for {item['id']}")
-                # 失敗としてマークして次へ（またはスキップ）
                 item["status"] = "error_no_transcript"
                 self._save_queue(queue)
                 continue
                 
             bible_text = self.generate_bible(item, transcript)
             if bible_text and not bible_text.startswith("⚠️") and not bible_text.startswith("❌"):
+                # チャンピオン名の抽出
+                extracted_champ = "Unknown"
+                champ_match = re.search(r"\[Champion:\s*([^\]]+)\]", bible_text)
+                if champ_match:
+                    extracted_champ = champ_match.group(1).strip()
+                    
                 # Markdown保存
                 file_path = os.path.join(self.bible_dir, f"{item['id']}.md")
                 with open(file_path, "w", encoding="utf-8") as f:
@@ -155,8 +163,10 @@ class YouTubeAbsorber:
                 item["status"] = "completed"
                 self._save_queue(queue)
                 success_count += 1
+                processed_details.append(f"- {item['title']} (Champion: **{extracted_champ}**)")
+                
                 # ログに保存先を明記
-                logger.info(f"✅ Created bible for {item['id']} at {file_path}")
+                logger.info(f"✅ Created bible for {item['id']} at {file_path} (Champion: {extracted_champ})")
             else:
                 item["status"] = "error_generation"
                 self._save_queue(queue)
@@ -165,8 +175,10 @@ class YouTubeAbsorber:
             time.sleep(60) 
             
         if success_count > 0:
+            details_str = "\n".join(processed_details)
             herald.notify_progress(
-                f"👑 **【YouTube Absorber完了】** {success_count}本のKireiLoL動画をバイブル化し、以下の場所に保存しました！\n"
+                f"👑 **【YouTube Absorber完了】** {success_count}本のKireiLoL動画をバイブル化し、以下の場所に保存しました！\n\n"
+                f"{details_str}\n\n"
                 f"📁 `02_FACTORY/bible/kirei_bible/`\n"
                 f"*(※ この後、Dict Synthesizerによってチャンピオン辞典へ自動でマージされます)*"
             )

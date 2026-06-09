@@ -24,6 +24,8 @@ export default function Home() {
   const [apiErrors, setApiErrors] = useState<number>(0);
   const [apiLimit, setApiLimit] = useState<number>(780);
   const [apiUsageDetails, setApiUsageDetails] = useState<Record<string, { used: number, limit: number }>>({});
+  const [recentDictUpdates, setRecentDictUpdates] = useState<any[]>([]);
+  const [recentLibraryUpdates, setRecentLibraryUpdates] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -112,6 +114,23 @@ export default function Home() {
           );
           setApiUsageDetails(cleanedDetails);
         }
+
+        // 5. 辞典更新履歴 (GLOBAL)
+        const { data: dictData, error: dictError } = await supabase
+          .from('matchup_sentinel')
+          .select('matchup_id, champion, title, updated_at')
+          .eq('enemy', 'GLOBAL')
+          .order('updated_at', { ascending: false })
+          .limit(5);
+        if (!dictError && dictData) setRecentDictUpdates(dictData);
+
+        // 6. ライブラリ更新履歴
+        const { data: libData, error: libError } = await supabase
+          .from('bible_articles')
+          .select('id, title, champion, created_at')
+          .order('created_at', { ascending: false })
+          .limit(5);
+        if (!libError && libData) setRecentLibraryUpdates(libData);
 
       } catch (err) {
         console.error('Error fetching data:', err);
@@ -341,6 +360,59 @@ export default function Home() {
               <div className="text-center py-12 text-gray-500 text-sm col-span-full glass-panel rounded-3xl border border-white/5">データがありません</div>
             )}
           </div>
+        </motion.div>
+
+        {/* Update History Section */}
+        <motion.div variants={itemVariants} className="md:col-span-2 lg:col-span-4 mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+          
+          {/* Dictionary Updates */}
+          <div className="glass-panel rounded-3xl p-6 border border-white/5 bg-gradient-to-br from-blue-500/5 to-transparent">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-black text-white flex items-center gap-2">
+                <div className="w-2 h-6 bg-blue-500 rounded-full shadow-[0_0_10px_rgba(59,130,246,0.6)]"></div>
+                チャンピオン辞典 更新履歴
+              </h3>
+              <Link href="/champions" className="text-xs font-bold text-blue-400 hover:text-blue-300 hover:underline">すべて見る →</Link>
+            </div>
+            <div className="space-y-3">
+              {recentDictUpdates.length > 0 ? recentDictUpdates.map((item, idx) => (
+                <div key={idx} className="flex justify-between items-center bg-black/20 p-3 rounded-xl border border-white/5 hover:bg-white/5 transition-colors group">
+                  <div className="flex flex-col">
+                    <span className="text-sm font-bold text-gray-200 group-hover:text-white transition-colors">{item.champion}</span>
+                    <span className="text-xs text-gray-500 truncate max-w-[200px]">{item.title}</span>
+                  </div>
+                  <span className="text-xs font-mono text-gray-400 px-2 py-1 bg-white/5 rounded-md">{new Date(item.updated_at).toLocaleDateString('ja-JP')}</span>
+                </div>
+              )) : (
+                <p className="text-sm text-gray-500 text-center py-4">データがありません</p>
+              )}
+            </div>
+          </div>
+
+          {/* Library Updates */}
+          <div className="glass-panel rounded-3xl p-6 border border-white/5 bg-gradient-to-br from-purple-500/5 to-transparent">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-black text-white flex items-center gap-2">
+                <div className="w-2 h-6 bg-purple-500 rounded-full shadow-[0_0_10px_rgba(168,85,247,0.6)]"></div>
+                ライブラリ 追加履歴
+              </h3>
+              <Link href="/library" className="text-xs font-bold text-purple-400 hover:text-purple-300 hover:underline">すべて見る →</Link>
+            </div>
+            <div className="space-y-3">
+              {recentLibraryUpdates.length > 0 ? recentLibraryUpdates.map((item, idx) => (
+                <div key={idx} className="flex justify-between items-center bg-black/20 p-3 rounded-xl border border-white/5 hover:bg-white/5 transition-colors group">
+                  <div className="flex flex-col">
+                    <span className="text-sm font-bold text-gray-200 truncate max-w-[200px] group-hover:text-white transition-colors" title={item.title}>{item.title}</span>
+                    {item.champion && <span className="text-xs text-purple-400 mt-0.5">Champion: {item.champion}</span>}
+                  </div>
+                  <span className="text-xs font-mono text-gray-400 px-2 py-1 bg-white/5 rounded-md">{new Date(item.created_at).toLocaleDateString('ja-JP')}</span>
+                </div>
+              )) : (
+                <p className="text-sm text-gray-500 text-center py-4">データがありません</p>
+              )}
+            </div>
+          </div>
+
         </motion.div>
 
       </motion.main>

@@ -171,6 +171,14 @@ class SovereignSync:
                 content = md_file.read_text(encoding="utf-8")
                 title = md_file.stem
                 display_title = title
+                
+                import re
+                explicit_champion = None
+                champ_match = re.search(r"\[Champion:\s*([^\]]+)\]", content)
+                if champ_match:
+                    extracted = champ_match.group(1).strip()
+                    if extracted.lower() != "unknown":
+                        explicit_champion = extracted
 
                 # Markdown内の「# タイトル」行があれば、それを正式な表示名として採用
                 for line in content.splitlines():
@@ -185,33 +193,39 @@ class SovereignSync:
                         break
 
                 # --- チャンピオン名の解析ロジックを強化 ---
-                parts = title.split("_")
-                champion = "Unknown"
-                
-                if "HONKI_BIBLE" in title:
-                    # HONKI_BIBLE_Champion_Patch.md
-                    if len(parts) >= 3: champion = parts[2]
-                elif "sovereign_draft" in title:
-                    # sovereign_draft_Patch_Champion_Role.md
-                    if len(parts) >= 4: champion = parts[3]
-                elif len(parts) > 1:
-                    # Champion_Description.md
-                    champion = parts[0]
-                elif len(parts) == 1:
-                    # スペース区切りの場合 (例: "[YouTube] Jungle Guide...")
-                    first_word = title.split(" ")[0]
-                    if not first_word.startswith("["):
-                        champion = first_word
-                
-                # 特殊なケース: チャンピオン名がバージョン番号っぽかったら次を探す
-                import re
-                if re.match(r"^[\d\.]+$", champion) and len(parts) > parts.index(champion) + 1:
-                    champion = parts[parts.index(champion) + 1]
-
-                # 偽のチャンピオン名（汎用タグやYouTubeタグ）を除外
-                fake_champions = ["[YouTube]", "YouTube", "Jungle", "jg", "lol", "ARTICLE", "draft", "SYSTEM", "LIVE", "GLOBAL", "test", "sns", "macro"]
-                if champion in fake_champions or champion.lower() in fake_champions:
+                if explicit_champion:
+                    champion = explicit_champion
+                else:
+                    parts = title.split("_")
                     champion = "Unknown"
+                    
+                    if "HONKI_BIBLE" in title:
+                        # HONKI_BIBLE_Champion_Patch.md
+                        if len(parts) >= 3: champion = parts[2]
+                    elif "sovereign_draft" in title:
+                        # sovereign_draft_Patch_Champion_Role.md
+                        if len(parts) >= 4: champion = parts[3]
+                    elif len(parts) > 1:
+                        # Champion_Description.md
+                        champion = parts[0]
+                    elif len(parts) == 1:
+                        # スペース区切りの場合 (例: "[YouTube] Jungle Guide...")
+                        first_word = title.split(" ")[0]
+                        if not first_word.startswith("["):
+                            champion = first_word
+                    
+                    # 特殊なケース: チャンピオン名がバージョン番号っぽかったら次を探す
+                    if re.match(r"^[\d\.]+$", champion) and len(parts) > parts.index(champion) + 1:
+                        champion = parts[parts.index(champion) + 1]
+
+                    # 偽のチャンピオン名（汎用タグやYouTubeタグ）を除外
+                    fake_champions = ["[YouTube]", "YouTube", "Jungle", "jg", "lol", "ARTICLE", "draft", "SYSTEM", "LIVE", "GLOBAL", "test", "sns", "macro", "Unknown"]
+                    if champion in fake_champions or champion.lower() in fake_champions:
+                        champion = "Unknown"
+                        
+                    # YouTube動画ID等（Kirei_bible等での英数字羅列）の誤検知を防止
+                    if len(champion) >= 6 and not re.match(r"^[A-Z][a-z]+$", champion) and ("kirei_bible" in md_file.parts or len(parts) == 1):
+                        champion = "Unknown"
 
                 # キーワード抽出
                 keywords = self.extract_keywords(content)
