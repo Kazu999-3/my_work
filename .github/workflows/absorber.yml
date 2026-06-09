@@ -1,0 +1,48 @@
+name: Antigravity YouTube Absorber
+
+on:
+  schedule:
+    # 毎日午前5時(JST) = 20:00(UTC) に自動実行 (1日10本)
+    - cron: '0 20 * * *'
+  workflow_dispatch:
+    # 手動実行用
+
+jobs:
+  run-absorber:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r 03_SYSTEMS/requirements.txt
+          pip install yt-dlp
+          
+      - name: Run YouTube Absorber
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_API_KEY_FREE: ${{ secrets.GEMINI_API_KEY_FREE }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          PYTHONPATH: 03_SYSTEMS
+        run: |
+          python 03_SYSTEMS/v2_CORE/youtube_crawler.py
+          python 03_SYSTEMS/v2_CORE/youtube_absorber.py
+          
+      - name: Commit updated queue and bible
+        run: |
+          git config --global user.name 'Antigravity Auditor'
+          git config --global user.email 'auditor@antigravity.local'
+          git add 02_FACTORY/kirei_queue.json 02_FACTORY/bible/kirei_bible/
+          git commit -m "chore: update KireiLoL bible and queue [skip ci]" || echo "No changes to commit"
+          git push
