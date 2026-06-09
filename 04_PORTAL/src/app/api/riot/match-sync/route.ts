@@ -112,7 +112,7 @@ export async function POST(req: Request) {
 
       // Riot API の実際のレーン情報をマッピング
       let mappedRole = p.role; // デフォルトは元のロール
-      const tp = (riotP.teamPosition || riotP.lane || "").toUpperCase();
+      const tp = (riotP.lane || "").toUpperCase();
       if (tp.includes("TOP")) mappedRole = "TOP";
       else if (tp.includes("JUNGLE")) mappedRole = "JG";
       else if (tp.includes("MIDDLE") || tp.includes("MID")) mappedRole = "MID";
