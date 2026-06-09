@@ -170,6 +170,12 @@ class YouTubeAbsorber:
                 f"📁 `02_FACTORY/bible/kirei_bible/`\n"
                 f"*(※ この後、Dict Synthesizerによってチャンピオン辞典へ自動でマージされます)*"
             )
+        elif len(targets) > 0:
+            herald.notify_error(
+                f"YouTube Absorberで {len(targets)} 本の動画の処理を試みましたが、API制限（上限到達）などにより全て失敗しました。\n"
+                f"（動画はエラーキューに入り、次回以降に再試行されます）",
+                source="YouTube Absorber"
+            )
             
         return success_count
 
