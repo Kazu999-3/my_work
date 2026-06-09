@@ -2,10 +2,11 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Shield, LayoutDashboard, Swords, BookOpen, BookHeart, Trophy, History, Users, HeartHandshake } from 'lucide-react';
+import { Shield, LayoutDashboard, Swords, BookOpen, BookHeart, Trophy, History, Users, HeartHandshake, User } from 'lucide-react';
 
 const MENU_ITEMS = [
   { id: 'dashboard', label: 'ダッシュボード', icon: LayoutDashboard, href: '/', color: 'text-white', activeBg: 'bg-white/10' },
+  { id: 'mypage',    label: 'マイページ',     icon: User, href: '/mypage', color: 'text-blue-400', activeBg: 'bg-blue-400/15' },
   { id: 'history',   label: '過去の試合履歴', icon: History, href: '/history', color: 'text-orange-400', activeBg: 'bg-orange-400/15' },
   { id: 'leaderboard', label: 'リーダーボード', icon: Trophy, href: '/leaderboard', color: 'text-yellow-400', activeBg: 'bg-yellow-400/15' },
   { id: 'balancer',  label: 'チーム分け', icon: Swords, href: '/balancer', color: 'text-rose-500', activeBg: 'bg-rose-500/15' },
@@ -38,8 +39,8 @@ export default function Sidebar() {
           const isActive = pathname === item.href || (item.id === 'leaderboard' && pathname.startsWith('/player'));
           
           // 公開ページにいる時は、公開メニュー以外隠す
-          const isPublicPage = pathname.startsWith('/balancer') || pathname.startsWith('/leaderboard') || pathname.startsWith('/synergy') || pathname.startsWith('/history');
-          const isPublicMenu = item.id === 'balancer' || item.id === 'leaderboard' || item.id === 'synergy' || item.id === 'ktm-admin' || item.id === 'history';
+          const isPublicPage = pathname.startsWith('/balancer') || pathname.startsWith('/leaderboard') || pathname.startsWith('/synergy') || pathname.startsWith('/history') || pathname.startsWith('/mypage');
+          const isPublicMenu = item.id === 'balancer' || item.id === 'leaderboard' || item.id === 'synergy' || item.id === 'ktm-admin' || item.id === 'history' || item.id === 'mypage';
           
           if (isPublicPage && !isPublicMenu) {
             return null; // 非表示
@@ -86,8 +87,8 @@ export default function Sidebar() {
         {MENU_ITEMS.map((item) => {
           const isActive = pathname === item.href || (item.id === 'leaderboard' && pathname.startsWith('/player'));
           
-          const isPublicPage = pathname.startsWith('/balancer') || pathname.startsWith('/leaderboard') || pathname.startsWith('/synergy') || pathname.startsWith('/history');
-          const isPublicMenu = item.id === 'balancer' || item.id === 'leaderboard' || item.id === 'synergy' || item.id === 'ktm-admin' || item.id === 'history';
+          const isPublicPage = pathname.startsWith('/balancer') || pathname.startsWith('/leaderboard') || pathname.startsWith('/synergy') || pathname.startsWith('/history') || pathname.startsWith('/mypage');
+          const isPublicMenu = item.id === 'balancer' || item.id === 'leaderboard' || item.id === 'synergy' || item.id === 'ktm-admin' || item.id === 'history' || item.id === 'mypage';
           
           if (isPublicPage && !isPublicMenu) {
             return null; 
