@@ -95,22 +95,21 @@ export function getPortalEmbed() {
 }
 
 export function getPortalComponents(userId) {
-  const options = [
-    { label: "⚔️ メンバー募集開始", value: "portal_recruit", description: "新規募集パネルを #募集板 に投下" , emoji: { name: "⚔️" } },
-    { label: "📊 マイ戦績確認", value: "portal_stats", description: "#戦績板 に発表", emoji: { name: "📊" } },
-    { label: "🏆 チーム分け (VC同期)", value: "portal_balance", description: "VC10名で計算", emoji: { name: "🏆" } },
-    { label: "📍 レーン・NG設定", value: "portal_lane", description: "希望やNG情報を更新", emoji: { name: "📍" } },
-    { label: "📖 ヘルプ", value: "portal_help", description: "OS ガイドを確認", emoji: { name: "📖" } }
+  const row1 = [
+    { type: 2, label: "⚔️ 募集開始", style: 3, custom_id: "portal_recruit" },
+    { type: 2, label: "📊 マイ戦績", style: 1, custom_id: "portal_stats" },
+    { type: 2, label: "📍 レーン設定", style: 2, custom_id: "portal_lane" },
+    { type: 2, label: "📝 サモナー名登録", style: 2, custom_id: "portal_ign" }
   ];
-  if (userId === CONFIG.ADMIN_ID) { 
-    options.push(
-      { label: "🛠️ [管理者] 勝敗修正", value: "admin_fix_match", description: "直近の試合を修正" }, 
-      { label: "🛠️ [管理者] MMR調整", value: "admin_adjust_mmr", description: "MMRを手動変更" }, 
-      { label: "🛠️ [管理者] Riotランク同期", value: "admin_sync_ranks", description: "全プレイヤーのランクを最新化" },
-      { label: "🛠️ [管理者] MMR一括初期化", value: "admin_init_mmr", description: "全員または未設定のみ初期化" }
-    ); 
-  }
-  return [{ type: 1, components: [{ type: 3, custom_id: "portal_menu", options }] }];
+  
+  const row2 = [
+    { type: 2, label: "🌐 Webポータルへアクセス", style: 5, url: "https://my-work-8jbd.vercel.app/leaderboard" }
+  ];
+  
+  return [
+    { type: 1, components: row1 },
+    { type: 1, components: row2 }
+  ];
 }
 
 export function handleHelpPage() {
