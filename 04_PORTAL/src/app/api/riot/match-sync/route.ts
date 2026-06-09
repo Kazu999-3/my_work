@@ -110,6 +110,15 @@ export async function POST(req: Request) {
       const mmrDelta = calculateNewMMR(ctx);
       const kdaScore = calculateKdaScore(riotP.kills, riotP.deaths, riotP.assists);
 
+      // Riot API の実際のレーン情報をマッピング
+      let mappedRole = p.role; // デフォルトは元のロール
+      const tp = (riotP.teamPosition || riotP.lane || "").toUpperCase();
+      if (tp.includes("TOP")) mappedRole = "TOP";
+      else if (tp.includes("JUNGLE")) mappedRole = "JG";
+      else if (tp.includes("MIDDLE") || tp.includes("MID")) mappedRole = "MID";
+      else if (tp.includes("BOTTOM")) mappedRole = "ADC";
+      else if (tp.includes("UTILITY")) mappedRole = "SUP";
+
       const pUpdate = {
         id: p.id,
         kills: riotP.kills,
@@ -118,7 +127,8 @@ export async function POST(req: Request) {
         vision_score: riotP.visionScore || 0,
         kda_score: kdaScore,
         mmr_delta: mmrDelta,
-        champion_name: riotP.championName // ここでチャンピオン名を保存
+        champion_name: riotP.championName,
+        role: mappedRole // 実際のレーンで上書き
       };
       
       updates.push(pUpdate);
@@ -132,7 +142,8 @@ export async function POST(req: Request) {
           vision_score: pUpdate.vision_score,
           kda_score: pUpdate.kda_score,
           mmr_delta: pUpdate.mmr_delta,
-          champion_name: pUpdate.champion_name
+          champion_name: pUpdate.champion_name,
+          role: pUpdate.role
         })
         .eq('id', p.id);
     }
