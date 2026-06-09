@@ -86,16 +86,22 @@ def merge_and_extract_intel(champ_name: str, new_text: str, existing_data: dict)
     }}
     """
     
+    from v2_CORE.ai_helper import generate_content_safe
+    from v2_CORE.settings import settings
     try:
-        response = client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=prompt,
+        response_text = generate_content_safe(
+            client,
+            prompt,
+            model_id=settings.DEFAULT_MODEL,
             config=types.GenerateContentConfig(
                 temperature=0.2, # データ抽出なので温度をさらに下げる
                 response_mime_type="application/json"
-            )
+            ),
+            feature_name="oracle"
         )
-        result_json = json.loads(response.text.strip())
+        if response_text.startswith("❌") or response_text.startswith("⚠️"):
+            return None
+        result_json = json.loads(response_text.strip())
         
         # 記事(note_draft)はAIに再生成させず、引数で渡された完成版をそのまま格納する
         result_json["note_draft"] = new_text

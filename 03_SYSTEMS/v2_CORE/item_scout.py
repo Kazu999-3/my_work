@@ -96,10 +96,11 @@ class ItemScout:
 
         try:
             from v2_CORE.ai_helper import generate_content_safe
+            from v2_CORE.settings import settings
             response_text = generate_content_safe(
                 client=self.client,
                 prompt=prompt,
-                model_id="gemini-2.5-flash",
+                model_id=settings.DEFAULT_MODEL,
                 config=types.GenerateContentConfig(
                     temperature=0.1,
                     tools=[types.Tool(google_search=types.GoogleSearch())] # Google 検索を有効化

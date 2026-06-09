@@ -87,7 +87,7 @@ class DarwinEngine:
             new_rules = generate_content_safe(
                 self.client, 
                 prompt, 
-                "gemini-2.5-pro", 
+                model_id=settings.DEFAULT_MODEL, 
                 config=types.GenerateContentConfig(temperature=0.4),
                 feature_name="kingdom_cycle"
             )

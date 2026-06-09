@@ -3,6 +3,8 @@ import os
 from pathlib import Path
 import dotenv
 from langgraph.graph import StateGraph, START, END
+from langgraph.checkpoint.sqlite import SqliteSaver
+import sqlite3
 
 # --- Load Environment ---
 dotenv.load_dotenv(Path("D:/my_work/.env"))
@@ -54,41 +56,56 @@ def build_monetization_graph():
     
     workflow.add_edge("publisher", END)
     
-    return workflow.compile()
+    return workflow
 
-def run_monetization_loop():
-    """メイン実行関数（旧スクリプトからのエントリーポイント）"""
+def run_monetization_loop(thread_id="monetization_1", champion="Teemo", db_path="checkpoints.sqlite"):
+    """メイン実行関数"""
     logger.info("=== 🌐 Antigravity Agent OS: Monetization Workflow Started ===")
     notify_discord("🤖 **[Agent OS]** 収益化マルチエージェント・ワークフローを開始します...")
     
-    graph = build_monetization_graph()
+    workflow = build_monetization_graph()
     
-    # 初期状態
-    initial_state = {
-        "champion": "Teemo", # 🚨 テスト用ハードコード
-        "meta_context": "仮テストメタ",
-        "draft_article": "",
-        "audit_feedback": "",
-        "audit_passed": False,
-        "audit_count": 0,
-        "x_thread_json": "",
-        "publish_status": ""
-    }
-    
-    # グラフの実行
-    try:
-        final_state = graph.invoke(initial_state)
+    with SqliteSaver.from_conn_string(db_path) as memory:
+        graph = workflow.compile(checkpointer=memory, interrupt_before=["publisher"])
         
-        logger.info("=== 🏁 Workflow Completed ===")
-        notify_discord(
-            f"✅ **[Agent OS: ワークフロー完了]**\n"
-            f"対象: **{final_state['champion']}**\n"
-            f"監査ループ回数: {final_state['audit_count']}回\n"
-            f"結果: {final_state['publish_status']}"
-        )
-    except Exception as e:
-        logger.error(f"Workflow failed: {e}")
-        notify_discord(f"❌ **[Agent OS: 致命的エラー]** ワークフローが異常終了しました: {e}")
-
+        # 初期状態
+        initial_state = {
+            "champion": champion,
+            "meta_context": "仮テストメタ",
+            "draft_article": "",
+            "audit_feedback": "",
+            "audit_passed": False,
+            "audit_count": 0,
+            "x_thread_json": "",
+            "publish_status": ""
+        }
+        
+        config = {"configurable": {"thread_id": thread_id}}
+        
+        # グラフの実行 (publisher の前で一時停止するはず)
+        try:
+            final_state = graph.invoke(initial_state, config=config)
+            
+            # 中断状態かチェック
+            state_info = graph.get_state(config)
+            if state_info.next and "publisher" in state_info.next:
+                logger.info("⚠️ [Agent OS] パブリッシュ前に一時停止しました。ユーザーの承認を待ちます。")
+                notify_discord(
+                    f"⚠️ **[承認待ち]** {champion} の記事ドラフトと監査が完了しました。\n"
+                    f"内容を確認し、問題なければ `python v2_CORE/resume_publish.py --thread {thread_id}` を実行して投稿を再開してください。"
+                )
+                return
+                
+            logger.info("=== 🏁 Workflow Completed ===")
+            notify_discord(
+                f"✅ **[Agent OS: ワークフロー完了]**\n"
+                f"対象: **{final_state.get('champion')}**\n"
+                f"監査ループ回数: {final_state.get('audit_count')}回\n"
+                f"結果: {final_state.get('publish_status')}"
+            )
+        except Exception as e:
+            logger.error(f"Workflow failed: {e}")
+            notify_discord(f"❌ **[Agent OS: 致命的エラー]** ワークフローが異常終了しました: {e}")
+    
 if __name__ == "__main__":
     run_monetization_loop()

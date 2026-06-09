@@ -65,7 +65,7 @@ class SovereignOracle:
             logger.warning("[Oracle] APIキーがないためパッチ影響調査をスキップします。")
             return []
             
-        logger.info(f"🔮 [Oracle] パッチ {patch_version} のアイテム・ルーン変更から次期メタを先読み中 (Model: gemini-2.5-flash)...")
+        logger.info(f"🔮 [Oracle] パッチ {patch_version} のアイテム・ルーン変更から次期メタを先読み中...")
         
         prompt = f"""
         League of Legends の パッチ {patch_version} のパッチノート（特にアイテムやルーンの変更部分）を最新のWeb検索を用いて調査してください。
@@ -78,11 +78,11 @@ class SovereignOracle:
         """
         
         try:
-            # 最新のWeb検索を行うために gemini-2.5-flash と Grounding を使用
+            from v2_CORE.settings import settings
             response_text = generate_content_safe(
                 self.client,
                 prompt,
-                "gemini-2.5-flash",
+                model_id=settings.DEFAULT_MODEL,
                 config=types.GenerateContentConfig(
                     tools=[{"google_search": {}}],
                     temperature=0.4

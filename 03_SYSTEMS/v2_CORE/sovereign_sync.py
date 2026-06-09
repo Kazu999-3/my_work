@@ -170,6 +170,19 @@ class SovereignSync:
             try:
                 content = md_file.read_text(encoding="utf-8")
                 title = md_file.stem
+                display_title = title
+
+                # Markdown内の「# タイトル」行があれば、それを正式な表示名として採用
+                for line in content.splitlines():
+                    if line.startswith("# "):
+                        extracted = line[2:].strip()
+                        if extracted:
+                            # kirei_bible や youtube 系なら [YouTube] タグを付与
+                            if "kirei_bible" in md_file.parts or "youtube" in str(md_file).lower():
+                                display_title = f"[YouTube] {extracted}"
+                            else:
+                                display_title = extracted
+                        break
 
                 # --- チャンピオン名の解析ロジックを強化 ---
                 parts = title.split("_")
@@ -215,7 +228,7 @@ class SovereignSync:
                 if integrated:
                     # 辞典への統合に成功した場合、ライブラリ(bible_articles)から該当記事を削除する
                     httpx.delete(
-                        self._api("bible_articles") + f"?title=eq.{title}",
+                        self._api("bible_articles") + f"?title=eq.{display_title}",
                         headers=self._headers(),
                         timeout=10
                     )
@@ -223,9 +236,9 @@ class SovereignSync:
                     continue
                 
                 data = {
-                    "title": title,
+                    "title": display_title,
                     "content": content,
-                    "champion": champion,
+                    "champion": champion if champion != "Unknown" else None,
                     "keywords": keywords,
                     "file_path": str(md_file)
                 }

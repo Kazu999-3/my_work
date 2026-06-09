@@ -26,8 +26,9 @@ class XAnalyzer:
         self.api_key = os.getenv("GEMINI_API_KEY_FREE") or os.getenv("GEMINI_API_KEY")
         
         if self.api_key:
+            from v2_CORE.settings import settings
             self.client = genai.Client(api_key=self.api_key)
-            self.model_id = "gemini-2.5-flash" # 最新の2.5系を採用
+            self.model_id = settings.DEFAULT_MODEL # 最新のフラッシュモデルを採用
         else:
             self.client = None
 

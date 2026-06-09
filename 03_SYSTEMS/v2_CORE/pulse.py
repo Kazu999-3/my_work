@@ -3,6 +3,7 @@ import discord
 import asyncio
 import threading
 import time
+import os
 import requests
 from bs4 import BeautifulSoup
 from datetime import datetime
@@ -91,6 +92,12 @@ class SovereignPulse:
                     extra_info += f"- `{label}` (Custom ID: `{custom_id}`)\n"
             description += extra_info
             components = None # 送信ペイロードからは安全に除去
+
+        # --- Notification Designer 規約の適用 ---
+        description = description.replace("undefined", "未設定").replace("null", "未設定")
+        portal_url = os.environ.get("PORTAL_URL", "http://localhost:3000") # TODO: デプロイ後に本番URLへ変更
+        if "http" not in description and "ポータル" not in description:
+            description += f"\n\n**🔗 アクセス**\n[👉 Webポータルで確認・操作する]({portal_url})"
 
         try:
             embed = {

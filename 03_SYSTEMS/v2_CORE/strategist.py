@@ -19,8 +19,9 @@ class AIStrategist:
     def __init__(self):
         self.api_key = os.getenv("GEMINI_API_KEY_FREE") or os.getenv("GEMINI_API_KEY")
         if self.api_key:
+            from v2_CORE.settings import settings
             self.client = genai.Client(api_key=self.api_key)
-            self.model_id = "gemini-2.5-flash"
+            self.model_id = settings.DEFAULT_MODEL
         else:
             self.client = None
 

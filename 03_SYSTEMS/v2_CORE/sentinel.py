@@ -24,7 +24,7 @@ class SovereignSentinel:
         self.api_key = settings.GEMINI_API_KEY_FREE or settings.GEMINI_API_KEY
         if self.api_key:
             self.client = genai.Client(api_key=self.api_key)
-            self.model_name = 'gemini-2.5-flash' # 最新のフラッシュモデルを使用
+            self.model_name = settings.DEFAULT_MODEL # 最新のフラッシュモデルを使用
 
     def audit_codebase(self):
         """全ての Python ファイルの構文チェックを行い、デグレードを防止する"""
@@ -90,11 +90,13 @@ class SovereignSentinel:
             """
             
             if self.api_key:
-                response = self.client.models.generate_content(
-                    model=self.model_name,
-                    contents=prompt
+                from v2_CORE.ai_helper import generate_content_safe
+                proposal = generate_content_safe(
+                    self.client,
+                    prompt,
+                    model_id=settings.DEFAULT_MODEL,
+                    feature_name="oracle"
                 )
-                proposal = response.text
                 proposal_path = settings.THRONE_DIR / "PATCH_PROPOSAL.md"
                 with open(proposal_path, "w", encoding="utf-8") as f:
                     f.write(proposal)

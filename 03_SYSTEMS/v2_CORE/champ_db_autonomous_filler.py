@@ -72,11 +72,11 @@ def research_champion(champ_name: str, champ_id: str, patch_version: str) -> str
     
     from v2_CORE.ai_helper import generate_content_safe
     
-    # 共通のスロットリング・フォールバック機能を使用する
+    from v2_CORE.settings import settings
     response_text = generate_content_safe(
         client, 
         prompt, 
-        model_id="gemini-2.5-flash",
+        model_id=settings.DEFAULT_MODEL,
         feature_name="oracle"
     )
     

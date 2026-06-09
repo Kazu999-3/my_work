@@ -17,7 +17,7 @@ class EvolutionEngine:
         self.api_key = settings.GEMINI_API_KEY_FREE or settings.GEMINI_API_KEY
         if self.api_key:
             self.client = genai.Client(api_key=self.api_key)
-            self.model_id = "gemini-2.5-flash"  # 高速かつ賢いモデルを採用
+            self.model_id = settings.DEFAULT_MODEL  # 高速かつ賢いモデルを採用
         else:
             self.client = None
 
