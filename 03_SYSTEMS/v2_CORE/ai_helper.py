@@ -57,90 +57,111 @@ def generate_content_safe(client, prompt, model_id=None, config=None, feature_na
     ]
     
     # 重複を排除しつつ順序を維持
-    seen = set()
-    models_to_try = [x for x in models_to_try if not (x in seen or seen.add(x))]
-    
+    # APIキーの優先順位リストを作成
+    from google import genai
+    api_keys_to_try = []
+    if settings.GEMINI_API_KEY_FREE:
+        api_keys_to_try.append(("Free Key", settings.GEMINI_API_KEY_FREE))
+    if settings.GEMINI_API_KEY:
+        api_keys_to_try.append(("Paid Key", settings.GEMINI_API_KEY))
+        
+    # 重複キーを排除（FreeとPaidが同じ場合など）
+    seen_keys = set()
+    unique_keys = []
+    for name, key in api_keys_to_try:
+        if key not in seen_keys:
+            seen_keys.add(key)
+            unique_keys.append((name, key))
+            
+    if not unique_keys:
+        return "⚠️ Gemini API キーが設定されていません。"
+
     last_error = None
     lock = FileLock(str(THROTTLE_LOCK_FILE), timeout=120)  # 最大2分待ち
     
     for model in models_to_try:
-        retries = 15 # スレッド/プロセス競合を考慮してリトライ回数を大幅に増加
-        delay = 10.0
-        
-        for attempt in range(retries):
-            try:
-                logger.info(f"[AIHelper] モデル {model} で生成を試行中... (試行 {attempt + 1}/{retries})")
-                
-                # グローバルなファイルロックを取得し、他の全プロセスとAPIリクエストが完全に重ならないようにする
+        model_success = False
+        for key_name, api_key in unique_keys:
+            current_client = genai.Client(api_key=api_key)
+            # Free Key は 429 で即座に諦めて Paid へ切り替える。Paid は15回粘る。
+            retries = 3 if key_name == "Free Key" else 15
+            delay = 10.0
+            
+            for attempt in range(retries):
                 try:
-                    with lock:
-                        now = time.time()
-                        last_time = _get_last_request_time()
-                        elapsed = now - last_time
-                        
-                        if elapsed < MIN_REQUEST_INTERVAL:
-                            wait_sec = MIN_REQUEST_INTERVAL - elapsed
-                            logger.info(f"⏳ [AIHelper] 他のプロセスがAPIを使用した直後です。{wait_sec:.1f}秒待機します...")
-                            time.sleep(wait_sec)
-                        
-                        # リクエストを送信する「直前」に時刻を記録
-                        _set_last_request_time(time.time())
-                except Exception as e:
-                    logger.warning(f"⚠️ [AIHelper] ファイルロックの取得に失敗しました: {e}")
-                
-                response = client.models.generate_content(
-                    model=model,
-                    contents=prompt,
-                    config=config
-                )
-                
-                # 成功した場合は結果を返却
-                if response and hasattr(response, 'text') and response.text:
-                    logger.info(f"[AIHelper] 🌟 モデル {model} での生成に成功しました。")
-                    quota_manager.consume_quota(feature_name)
-                    return response.text
-                else:
-                    raise Exception("APIからの応答が空、または不正なオブジェクトです。")
+                    logger.info(f"[AIHelper] モデル {model} / {key_name} で生成を試行中... (試行 {attempt + 1}/{retries})")
                     
-            except APIError as e:
-                last_error = e
-                # 429（Resource Exhausted / Rate Limit）または 503（Service Unavailable）
-                is_quota = e.code == 429 or "RESOURCE_EXHAUSTED" in str(e)
-                is_service_error = e.code == 503
-                
-                if "limit: 0" in e.message:
-                    logger.warning(f"⚠️ [AIHelper] モデル {model} は無料枠がありません (limit: 0)。リトライせずスキップします。")
-                    break
+                    try:
+                        with lock:
+                            now = time.time()
+                            last_time = _get_last_request_time()
+                            elapsed = now - last_time
+                            
+                            if elapsed < MIN_REQUEST_INTERVAL:
+                                wait_sec = MIN_REQUEST_INTERVAL - elapsed
+                                logger.info(f"⏳ [AIHelper] 他のプロセスがAPIを使用した直後です。{wait_sec:.1f}秒待機します...")
+                                time.sleep(wait_sec)
+                            
+                            _set_last_request_time(time.time())
+                    except Exception as e:
+                        logger.warning(f"⚠️ [AIHelper] ファイルロックの取得に失敗しました: {e}")
                     
-                if (is_quota or is_service_error) and attempt < retries - 1:
+                    response = current_client.models.generate_content(
+                        model=model,
+                        contents=prompt,
+                        config=config
+                    )
+                    
+                    if response and hasattr(response, 'text') and response.text:
+                        logger.info(f"[AIHelper] 🌟 モデル {model} ({key_name}) での生成に成功しました。")
+                        quota_manager.consume_quota(feature_name)
+                        return response.text
+                    else:
+                        raise Exception("APIからの応答が空、または不正なオブジェクトです。")
+                        
+                except APIError as e:
+                    last_error = e
+                    is_quota = e.code == 429 or "RESOURCE_EXHAUSTED" in str(e) or "limit: 0" in str(e.message if hasattr(e, 'message') else e)
+                    is_service_error = e.code == 503
+                    
                     if is_quota:
                         quota_manager.record_error("error_429")
+                        if key_name == "Free Key":
+                            logger.warning(f"⚠️ [AIHelper] {key_name} の枠が枯渇しました ({model})。ただちに有料キーへ切り替えます。")
+                            break  # attemptループを抜けて、次のキー(Paid Key)へ
+                            
+                        # Paid key の場合はバックオフしてリトライ
+                        import re
+                        retry_match = re.search(r"Please retry in ([\d\.]+)s", str(e.message) if hasattr(e, 'message') else str(e))
+                        if retry_match:
+                            wait_time = float(retry_match.group(1)) + random.uniform(30.0, 45.0)
+                        else:
+                            wait_time = max(60.0, delay) + random.uniform(5.0, 15.0)
                         
-                    # e.message に RetryInfo がある場合はそれを利用、なければ指数バックオフ
-                    import re
-                    retry_match = re.search(r"Please retry in ([\d\.]+)s", str(e.message) if hasattr(e, 'message') else str(e))
-                    if retry_match:
-                        # 複数プロセスが同時に起床して競合するのを防ぐため、ランダムなジッター(Jitter)を追加
-                        wait_time = float(retry_match.group(1)) + random.uniform(30.0, 45.0)
+                        wait_time = min(wait_time, 300.0)
+                        logger.warning(f"⚠️ [AIHelper] 有料キーでクォータ制限/一時エラー検知 ({model})。{wait_time:.1f}秒後にリトライ... (試行 {attempt + 1}/{retries})")
+                        time.sleep(wait_time)
+                        delay *= 2
+                        
+                    elif is_service_error and attempt < retries - 1:
+                        wait_time = delay + random.uniform(5.0, 15.0)
+                        logger.warning(f"⚠️ [AIHelper] サーバー一時エラー(503)。{wait_time:.1f}秒後にリトライ...")
+                        time.sleep(wait_time)
+                        delay *= 2
+                        
                     else:
-                        # 429等で明示的な秒数がない場合は、最低60秒から開始して指数バックオフ
-                        wait_time = max(60.0, delay) if is_quota else delay
-                        wait_time += random.uniform(5.0, 15.0)
-                    
-                    # 待機時間が極端に長くなるのを防ぐ（最大5分）
-                    wait_time = min(wait_time, 300.0)
+                        logger.error(f"❌ [AIHelper] モデル {model} ({key_name}) で致命的エラー: {e.code} {e.status}. {e.message}")
+                        break  # 次のキーへ移行するが、400や404ならモデル自体がダメなのでキーもスキップすべき
                         
-                    logger.warning(f"⚠️ [AIHelper] クォータ制限またはサーバー一時エラーを検知 ({model})。プロセス競合回避のため {wait_time:.1f}秒後にリトライします... (試行 {attempt + 1}/{retries})")
-                    time.sleep(wait_time)
-                    delay *= 2 # 指数バックオフ
-                else:
-                    logger.error(f"❌ [AIHelper] モデル {model} での試行が失敗しました: {e.code} {e.status}. {e.message}")
-                    break # 次のフォールバックモデルへ移行
-                    
-            except Exception as e:
-                last_error = e
-                logger.error(f"❌ [AIHelper] 予期せぬエラーが発生しました ({model}): {e}")
-                break  # 次のフォールバックモデルへ移行
+                except Exception as e:
+                    last_error = e
+                    logger.error(f"❌ [AIHelper] 予期せぬエラーが発生しました ({model} / {key_name}): {e}")
+                    break  # 次のキーへ移行
+            
+            # APIキー単位でのループ終了後、もし404や400なら、別キーでも同じエラーになるため、キー切り替えを打ち切って次のモデルへ行く
+            if last_error and hasattr(last_error, 'code') and last_error.code in [400, 404]:
+                logger.warning(f"⚠️ [AIHelper] {last_error.code} エラーのため、別キーでの再試行をスキップし次のモデルへ移行します。")
+                break # keys ループを抜けて models_to_try ループの次へ
                 
     # すべてのモデルとリトライが失敗した場合
     error_msg = f"❌ [AIHelper] すべての試行およびフォールバックモデルが失敗しました。最後のエラー: {last_error}"
