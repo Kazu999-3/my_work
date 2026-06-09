@@ -125,6 +125,9 @@ def generate_content_safe(client, prompt, model_id=None, config=None, feature_na
                         # 429等で明示的な秒数がない場合は、最低60秒から開始して指数バックオフ
                         wait_time = max(60.0, delay) if is_quota else delay
                         wait_time += random.uniform(5.0, 15.0)
+                    
+                    # 待機時間が極端に長くなるのを防ぐ（最大5分）
+                    wait_time = min(wait_time, 300.0)
                         
                     logger.warning(f"⚠️ [AIHelper] クォータ制限またはサーバー一時エラーを検知 ({model})。プロセス競合回避のため {wait_time:.1f}秒後にリトライします... (試行 {attempt + 1}/{retries})")
                     time.sleep(wait_time)
