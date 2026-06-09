@@ -155,20 +155,27 @@ class YouTubeAbsorber:
                 item["status"] = "completed"
                 self._save_queue(queue)
                 success_count += 1
-                logger.info(f"✅ Created bible for {item['id']}")
+                # ログに保存先を明記
+                logger.info(f"✅ Created bible for {item['id']} at {file_path}")
             else:
                 item["status"] = "error_generation"
                 self._save_queue(queue)
                 
-            time.sleep(10) # API制限対策
+            # API制限（429）を回避するため、長めのクールダウン（60秒）を設ける
+            time.sleep(60) 
             
         if success_count > 0:
-            herald.notify_progress(f"👑 **【YouTube Absorber完了】** {success_count}本のKireiLoL動画をバイブル化しました！")
+            herald.notify_progress(
+                f"👑 **【YouTube Absorber完了】** {success_count}本のKireiLoL動画をバイブル化し、以下の場所に保存しました！\n"
+                f"📁 `02_FACTORY/bible/kirei_bible/`\n"
+                f"*(※ この後、Dict Synthesizerによってチャンピオン辞典へ自動でマージされます)*"
+            )
             
         return success_count
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     absorber = YouTubeAbsorber()
-    # 短期間で早く消化するため、1回の実行上限を200本に引き上げ
-    absorber.run_cycle(limit=200)
+    # 429 Too Many Requests エラーを回避するため、1回の実行上限を 3 本に制限し、
+    # sre_daemon.py 経由で定期的に少しずつ消化する方針に変更
+    absorber.run_cycle(limit=3)
