@@ -112,6 +112,9 @@ def generate_content_safe(client, prompt, model_id=None, config=None, feature_na
                     break
                     
                 if (is_quota or is_service_error) and attempt < retries - 1:
+                    if is_quota:
+                        quota_manager.record_error("error_429")
+                        
                     # e.message に RetryInfo がある場合はそれを利用、なければ指数バックオフ
                     import re
                     retry_match = re.search(r"Please retry in ([\d\.]+)s", str(e.message) if hasattr(e, 'message') else str(e))

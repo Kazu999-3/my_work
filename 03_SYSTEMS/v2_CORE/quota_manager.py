@@ -30,10 +30,11 @@ class QuotaManager:
         self.file_lock = threading.Lock()
 
     def _get_today_str(self):
-        # サーバーのタイムゾーン（UTC等）に依存せず、常に日本時間(JST)の深夜0時をリセット基準とする
-        # Windows環境での tzdata 依存エラーを回避するため timedelta を使用
-        jst_now = datetime.utcnow() + timedelta(hours=9)
-        return jst_now.strftime("%Y-%m-%d")
+        # Gemini APIのリセット時間（太平洋標準時 PST/PDT: 深夜0時）に合わせるため、
+        # 厳密にUTC-8（米国太平洋時間）を基準にして日付を切り替える
+        # ※夏時間(PDT: UTC-7)のズレを考慮し、最も安全なUTC-8(日本時間の17:00リセット)を採用
+        pt_now = datetime.utcnow() - timedelta(hours=8)
+        return pt_now.strftime("%Y-%m-%d")
 
     def _load_data(self):
         if not self.data_file.exists():
@@ -54,6 +55,9 @@ class QuotaManager:
             # Supabaseへの同期
             try:
                 import httpx
+                import dotenv
+                dotenv.load_dotenv(Path("D:/my_work/.env"))
+                
                 supabase_url = os.environ.get("SUPABASE_URL")
                 supabase_key = os.environ.get("SUPABASE_KEY")
                 if supabase_url and supabase_key:
@@ -124,5 +128,20 @@ class QuotaManager:
             
             self._save_data(data)
             logger.debug(f"[QuotaManager] Consumed quota for '{feature_name}': {current_usage + 1}/{limit}")
+
+    def record_error(self, error_type: str):
+        """指定されたエラー（429など）の発生回数を記録する"""
+        with self.file_lock:
+            data = self._load_data()
+            today = self._get_today_str()
+            
+            if today not in data:
+                data[today] = {}
+                
+            current_count = data[today].get(error_type, 0)
+            data[today][error_type] = current_count + 1
+            
+            self._save_data(data)
+            logger.debug(f"[QuotaManager] Recorded error '{error_type}': {current_count + 1}")
 
 quota_manager = QuotaManager()

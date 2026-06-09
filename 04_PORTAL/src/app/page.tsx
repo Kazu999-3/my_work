@@ -21,6 +21,7 @@ export default function Home() {
   const [totalAssets, setTotalAssets] = useState<number>(0);
   const [pendingTasks, setPendingTasks] = useState<number>(0);
   const [apiUsage, setApiUsage] = useState<number>(0);
+  const [apiErrors, setApiErrors] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -58,10 +59,11 @@ export default function Home() {
         }
 
         // 4. API使用量の取得
-        const todayObj = new Date();
-        const yyyy = todayObj.getFullYear();
-        const mm = String(todayObj.getMonth() + 1).padStart(2, '0');
-        const dd = String(todayObj.getDate()).padStart(2, '0');
+        // Gemini APIのリセット時間（太平洋標準時 PST/PDT: 深夜0時）に合わせるため UTC-8 を基準とする
+        const ptObj = new Date(Date.now() - 8 * 60 * 60 * 1000);
+        const yyyy = ptObj.getUTCFullYear();
+        const mm = String(ptObj.getUTCMonth() + 1).padStart(2, '0');
+        const dd = String(ptObj.getUTCDate()).padStart(2, '0');
         const todayFormatted = `${yyyy}-${mm}-${dd}`;
 
         const { data: apiData, error: apiError } = await supabase
@@ -71,8 +73,19 @@ export default function Home() {
           .single();
 
         if (!apiError && apiData && apiData.usage_data) {
-          const total = Object.values(apiData.usage_data).reduce((a: any, b: any) => Number(a) + Number(b), 0);
-          setApiUsage(Number(total));
+          let totalSuccess = 0;
+          let totalErrors = 0;
+          
+          for (const [key, value] of Object.entries(apiData.usage_data)) {
+            if (key.startsWith('error_')) {
+              totalErrors += Number(value);
+            } else {
+              totalSuccess += Number(value);
+            }
+          }
+          
+          setApiUsage(totalSuccess);
+          setApiErrors(totalErrors);
         }
 
       } catch (err) {
@@ -186,7 +199,14 @@ export default function Home() {
                 style={{ width: `${Math.min((apiUsage / 780) * 100, 100)}%` }}
               ></div>
             </div>
-            <p className="text-xs text-gray-400 font-medium mt-3">本日のAPI利用状況</p>
+            <p className="text-xs text-gray-400 font-medium mt-3 flex items-center justify-between">
+              <span>本日のAPI利用状況</span>
+              {apiErrors > 0 && (
+                <span className="text-rose-400/90 font-bold bg-rose-500/10 px-2 py-0.5 rounded-md border border-rose-500/20">
+                  ⚠️ 制限待機: {apiErrors}回
+                </span>
+              )}
+            </p>
           </div>
         </motion.div>
 
