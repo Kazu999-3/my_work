@@ -114,7 +114,8 @@ export default function Home() {
           }
         }
         
-        setApiUsage(totalSuccess);
+        // クォータ制限（1500回制限等）はエラー（429等）も消費カウントに含まれるため、総数をセット
+        setApiUsage(totalSuccess + totalErrors);
         setApiErrors(totalErrors);
         if (totalLimit > 0) setApiLimit(totalLimit);
         
