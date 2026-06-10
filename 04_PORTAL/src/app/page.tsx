@@ -17,13 +17,14 @@ const dummyData = [
 ];
 
 export default function Home() {
-  const [recentMatches, setRecentMatches] = useState<any[]>([]);
   const [totalAssets, setTotalAssets] = useState<number>(0);
   const [pendingTasks, setPendingTasks] = useState<number>(0);
+  const [pendingTaskList, setPendingTaskList] = useState<any[]>([]);
   const [apiUsage, setApiUsage] = useState<number>(0);
   const [apiErrors, setApiErrors] = useState<number>(0);
   const [apiLimit, setApiLimit] = useState<number>(780);
   const [apiUsageDetails, setApiUsageDetails] = useState<Record<string, { used: number, limit: number }>>({});
+  const [systemMetrics, setSystemMetrics] = useState<any>({ queue: { pending: 0, error: 0, completed: 0 }, logs: [] });
   const [recentDictUpdates, setRecentDictUpdates] = useState<any[]>([]);
   const [recentLibraryUpdates, setRecentLibraryUpdates] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -31,17 +32,15 @@ export default function Home() {
   useEffect(() => {
     async function fetchData() {
       try {
-        // 1. 最新の戦績10件を取得 (辞典データやシステムログを除外)
-        const { data: matchesData, error: matchesError } = await supabase
+        // 1. SYSTEM_METRICS の取得
+        const { data: metricsData } = await supabase
           .from('matchup_sentinel')
-          .select('matchup_id, champion, enemy, raw_data, created_at')
-          .neq('enemy', 'GLOBAL')
-          .neq('champion', 'SYSTEM')
-          .order('created_at', { ascending: false })
-          .limit(10);
-        
-        if (matchesError) throw matchesError;
-        if (matchesData) setRecentMatches(matchesData);
+          .select('raw_data')
+          .eq('matchup_id', 'SYSTEM_METRICS')
+          .maybeSingle();
+        if (metricsData && metricsData.raw_data) {
+          setSystemMetrics(metricsData.raw_data);
+        }
 
         // 2. 総データ数の取得
         const { count: totalCount, error: totalError } = await supabase
@@ -53,13 +52,17 @@ export default function Home() {
         }
 
         // 3. 要確認タスク数の取得 (raw_data内のstrategyが空のものを未処理とみなす)
-        const { count: pendingCount, error: pendingError } = await supabase
+        const { data: pendingData, count: pendingCount, error: pendingError } = await supabase
           .from('matchup_sentinel')
-          .select('*', { count: 'exact', head: true })
-          .or('raw_data->>strategy.is.null,raw_data->>strategy.eq.');
+          .select('matchup_id, champion, enemy, title', { count: 'exact' })
+          .neq('champion', 'SYSTEM')
+          .neq('enemy', 'GLOBAL')
+          .or('raw_data->>strategy.is.null,raw_data->>strategy.eq.')
+          .limit(3);
 
-        if (!pendingError && pendingCount !== null) {
-          setPendingTasks(pendingCount);
+        if (!pendingError) {
+          if (pendingCount !== null) setPendingTasks(pendingCount);
+          if (pendingData) setPendingTaskList(pendingData);
         }
 
         // 4. API使用量の取得
@@ -224,54 +227,42 @@ export default function Home() {
           </div>
         </motion.div>
 
-        <motion.div variants={itemVariants} className="glass-panel glass-panel-hover rounded-3xl p-6 relative overflow-hidden border border-white/5 bg-gradient-to-b from-white/[0.05] to-transparent">
+        {/* QUOTA Card (Expanded) */}
+        <motion.div variants={itemVariants} className="md:col-span-2 glass-panel glass-panel-hover rounded-3xl p-6 relative overflow-hidden border border-white/5 bg-gradient-to-b from-white/[0.05] to-transparent">
           <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/20 rounded-full blur-[50px] -mr-10 -mt-10 pointer-events-none"></div>
           <div className="flex justify-between items-start mb-6">
-            <div className="p-3 bg-purple-500/10 border border-purple-500/20 rounded-xl text-purple-400">
-              <Zap size={22} />
+            <div className="flex items-center gap-3">
+              <div className="p-3 bg-purple-500/10 border border-purple-500/20 rounded-xl text-purple-400">
+                <Zap size={22} />
+              </div>
+              <h3 className="text-xl font-black text-white tracking-tight">API Quota</h3>
             </div>
-            <p className="text-xs font-bold text-purple-400/80 bg-purple-500/10 px-3 py-1 rounded-full border border-purple-500/20">QUOTA</p>
+            {apiErrors > 0 && (
+              <span className="text-rose-400/90 text-xs font-bold bg-rose-500/10 px-3 py-1.5 rounded-lg border border-rose-500/20 shadow-[0_0_10px_rgba(244,63,94,0.2)]">
+                ⚠️ API上限による待機: {apiErrors}回
+              </span>
+            )}
           </div>
-          <div className="group/quota relative">
-            <div className="flex items-end gap-2 mb-2">
-              <h3 className="text-4xl font-black text-white tracking-tight">{isLoading ? '-' : apiUsage}</h3>
-              <span className="text-lg text-gray-500 font-medium mb-1">/ {apiLimit}</span>
-            </div>
-            <div className="w-full bg-black/40 rounded-full h-1.5 overflow-hidden border border-white/5">
-              <div 
-                className={`h-full rounded-full transition-all duration-1000 ${apiUsage > apiLimit * 0.8 ? 'bg-gradient-to-r from-orange-500 to-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]' : apiUsage > apiLimit * 0.5 ? 'bg-gradient-to-r from-yellow-400 to-orange-500 shadow-[0_0_10px_rgba(245,158,11,0.5)]' : 'bg-gradient-to-r from-indigo-500 to-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.5)]'}`}
-                style={{ width: `${Math.min((apiUsage / apiLimit) * 100, 100)}%` }}
-              ></div>
-            </div>
-            <p className="text-xs text-gray-400 font-medium mt-3 flex items-center justify-between">
-              <span>本日のAPI利用状況</span>
-              {apiErrors > 0 && (
-                <span className="text-rose-400/90 font-bold bg-rose-500/10 px-2 py-0.5 rounded-md border border-rose-500/20">
-                  ⚠️ 制限待機: {apiErrors}回
-                </span>
-              )}
-            </p>
-            
-            {/* Hover Tooltip / Detail Box for API usage per feature */}
-            <div className="absolute opacity-0 group-hover/quota:opacity-100 transition-opacity duration-300 pointer-events-none top-full left-0 mt-4 w-full min-w-[200px] z-50 bg-black/80 backdrop-blur-xl border border-white/10 rounded-2xl p-4 shadow-2xl">
-                <h4 className="text-xs font-bold text-gray-400 mb-3 uppercase tracking-widest">各機能の消費状況</h4>
-                <div className="space-y-3">
-                    {Object.entries(apiUsageDetails).map(([key, data]) => (
-                        <div key={key} className="flex flex-col gap-1">
-                            <div className="flex justify-between text-xs">
-                                <span className="text-gray-300 truncate w-24" title={key}>{key}</span>
-                                <span className="text-gray-400 font-mono"><span className={data.used >= data.limit && data.limit > 0 ? "text-rose-400 font-bold" : "text-white"}>{data.used}</span> / {data.limit > 0 ? data.limit : '∞'}</span>
-                            </div>
-                            <div className="w-full bg-white/5 rounded-full h-1 overflow-hidden">
-                                <div className={`h-full rounded-full ${data.used >= data.limit && data.limit > 0 ? 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.8)]' : 'bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.5)]'}`} style={{ width: `${Math.min((data.used / (data.limit || Math.max(data.used, 1))) * 100, 100)}%` }}></div>
-                            </div>
-                        </div>
-                    ))}
-                    {Object.keys(apiUsageDetails).length === 0 && (
-                        <p className="text-xs text-gray-500 text-center py-2">詳細データがありません</p>
-                    )}
+          
+          <div className="space-y-4">
+            {Object.entries(apiUsageDetails).map(([key, data]) => {
+              const pct = Math.min((data.used / (data.limit || Math.max(data.used, 1))) * 100, 100);
+              const isDanger = data.limit > 0 && data.used >= data.limit;
+              return (
+                <div key={key} className="flex flex-col gap-1.5">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-300 font-bold">{key}</span>
+                    <span className="text-gray-400 font-mono"><span className={isDanger ? "text-rose-400 font-bold" : "text-white"}>{data.used}</span> / {data.limit > 0 ? data.limit : '∞'}</span>
+                  </div>
+                  <div className="w-full bg-black/40 rounded-full h-2 overflow-hidden border border-white/5">
+                    <div className={`h-full rounded-full ${isDanger ? 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.8)]' : 'bg-gradient-to-r from-blue-400 to-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.5)]'}`} style={{ width: `${pct}%` }}></div>
+                  </div>
                 </div>
-            </div>
+              );
+            })}
+            {Object.keys(apiUsageDetails).length === 0 && (
+              <p className="text-sm text-gray-500 text-center py-2">本日APIはまだ利用されていません</p>
+            )}
           </div>
         </motion.div>
 
@@ -289,77 +280,97 @@ export default function Home() {
           </div>
         </motion.div>
 
-        <motion.div variants={itemVariants}>
-          <Link href="/champions" className="block glass-panel glass-panel-hover rounded-3xl p-6 relative overflow-hidden border border-white/5 bg-gradient-to-b from-white/[0.05] to-transparent cursor-pointer group">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-rose-500/20 rounded-full blur-[50px] -mr-10 -mt-10 pointer-events-none"></div>
-            <div className="flex justify-between items-start mb-6">
-              <div className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl text-rose-400 group-hover:scale-110 transition-transform">
-                <ShieldAlert size={22} />
-              </div>
-              {pendingTasks > 0 && (
-                <p className="text-xs font-bold text-rose-400/80 bg-rose-500/10 px-3 py-1 rounded-full border border-rose-500/20 animate-pulse">ATTENTION</p>
+        {/* New Dashboard Widgets (A, B, C) */}
+        <motion.div variants={itemVariants} className="md:col-span-2 lg:col-span-4 mt-4 grid grid-cols-1 lg:grid-cols-3 gap-6">
+          
+          {/* Panel A: Pending Tasks */}
+          <div className="glass-panel rounded-3xl p-6 border border-white/5 bg-gradient-to-br from-rose-500/5 to-transparent flex flex-col h-full">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-black text-white flex items-center gap-2">
+                <div className="w-2 h-6 bg-rose-500 rounded-full shadow-[0_0_10px_rgba(244,63,94,0.6)]"></div>
+                要確認タスク
+              </h3>
+            </div>
+            <div className="flex-1 space-y-3">
+              {pendingTaskList.length > 0 ? pendingTaskList.map((task, idx) => (
+                <Link href={`/champions`} key={idx} className="block bg-black/20 p-4 rounded-xl border border-white/5 hover:bg-white/5 hover:border-rose-500/30 transition-all group">
+                  <div className="flex justify-between items-start mb-2">
+                    <span className="text-sm font-bold text-gray-200 group-hover:text-rose-300 transition-colors">{task.champion}</span>
+                    <span className="text-[10px] font-bold tracking-widest uppercase bg-rose-500/10 text-rose-400 px-2 py-0.5 rounded-full">Missing</span>
+                  </div>
+                  <p className="text-xs text-gray-500 group-hover:text-gray-400">対面: {task.enemy} (戦略データ不足)</p>
+                </Link>
+              )) : (
+                <div className="flex flex-col items-center justify-center h-full text-emerald-400/80 gap-2 py-8">
+                  <Activity size={32} className="opacity-50" />
+                  <p className="text-sm font-bold">すべてのタスクが完了</p>
+                </div>
               )}
             </div>
-            <div>
-              <h3 className="text-4xl font-black text-white mb-1 tracking-tight">{isLoading ? '-' : pendingTasks}</h3>
-              <div className="flex items-center gap-2">
-                <p className="text-sm text-gray-400 font-medium">要確認・未処理タスク</p>
-                <TrendingUp size={14} className="text-gray-500 group-hover:text-white transition-colors" />
-              </div>
-            </div>
-          </Link>
-        </motion.div>
-
-        {/* Recent Activity List */}
-        <motion.div variants={itemVariants} className="md:col-span-2 lg:col-span-4 mt-4">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="h-8 w-1 bg-gradient-to-b from-blue-400 to-purple-500 rounded-full"></div>
-            <h2 className="text-2xl font-black text-white tracking-tight">最新の戦績データ</h2>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-            {isLoading ? (
-              <div className="text-center py-12 text-gray-400 text-sm animate-pulse col-span-full glass-panel rounded-3xl border border-white/5">データを同期中...</div>
-            ) : recentMatches.length > 0 ? (
-              recentMatches.map((match) => {
-                const isWin = match.raw_data?.result === 'Win';
-                return (
-                  <div key={match.matchup_id} className="group relative glass-panel rounded-2xl overflow-hidden border border-white/5 hover:border-white/20 transition-all hover:shadow-[0_8px_30px_rgba(0,0,0,0.4)]">
-                    {/* Status indicator line */}
-                    <div className={`absolute top-0 left-0 w-full h-1 ${isWin ? 'bg-gradient-to-r from-blue-400 to-cyan-400' : 'bg-gradient-to-r from-rose-400 to-red-500'}`}></div>
-                    
-                    <div className="p-5">
-                      <div className="flex justify-between items-center mb-4">
-                        <div className={`p-2.5 rounded-xl flex items-center justify-center ${isWin ? 'bg-blue-500/10 text-blue-400' : 'bg-rose-500/10 text-rose-400'}`}>
-                          <Gamepad2 size={18} />
-                        </div>
-                        <span className={`text-xs font-black tracking-widest uppercase px-3 py-1 rounded-full border ${isWin ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' : 'bg-rose-500/10 text-rose-400 border-rose-500/20'}`}>
-                          {isWin ? 'Victory' : 'Defeat'}
-                        </span>
-                      </div>
-                      
-                      <h4 className="text-xl font-black text-white mb-3 group-hover:text-blue-300 transition-colors">
-                        {match.champion || match.raw_data?.myChamp || 'Unknown'}
-                      </h4>
-                      
-                      <div className="space-y-2 bg-black/20 p-3 rounded-xl border border-white/5">
-                        <div className="flex justify-between text-sm">
-                          <span className="text-gray-500 font-medium">KDA</span>
-                          <span className="text-gray-200 font-mono font-bold">{match.raw_data?.my_kda || '-'}</span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span className="text-gray-500 font-medium">対面</span>
-                          <span className="text-gray-200 font-bold">{match.enemy || match.raw_data?.enemyChamp || '-'}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })
-            ) : (
-              <div className="text-center py-12 text-gray-500 text-sm col-span-full glass-panel rounded-3xl border border-white/5">データがありません</div>
+            {pendingTasks > 3 && (
+              <p className="text-xs text-center text-gray-500 mt-4 pt-4 border-t border-white/5">他 {pendingTasks - 3} 件のタスクがあります</p>
             )}
           </div>
+
+          {/* Panel B: YouTube Absorber Queue */}
+          <div className="glass-panel rounded-3xl p-6 border border-white/5 bg-gradient-to-br from-blue-500/5 to-transparent flex flex-col h-full">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-black text-white flex items-center gap-2">
+                <div className="w-2 h-6 bg-blue-500 rounded-full shadow-[0_0_10px_rgba(59,130,246,0.6)]"></div>
+                YouTube 吸収キュー
+              </h3>
+            </div>
+            <div className="flex-1 flex flex-col justify-center gap-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-black/20 p-4 rounded-xl border border-white/5 flex flex-col items-center justify-center">
+                  <span className="text-3xl font-black text-white mb-1">{systemMetrics.queue?.pending || 0}</span>
+                  <span className="text-xs text-gray-400 font-bold">待機中 (Pending)</span>
+                </div>
+                <div className="bg-black/20 p-4 rounded-xl border border-white/5 flex flex-col items-center justify-center">
+                  <span className="text-3xl font-black text-white mb-1">{systemMetrics.queue?.completed || 0}</span>
+                  <span className="text-xs text-gray-400 font-bold">完了 (Completed)</span>
+                </div>
+              </div>
+              {systemMetrics.queue?.error > 0 && (
+                <div className="bg-rose-500/10 border border-rose-500/20 p-4 rounded-xl flex items-center justify-between">
+                  <span className="text-sm font-bold text-rose-400">エラー / 再試行中</span>
+                  <span className="text-lg font-black text-rose-400">{systemMetrics.queue.error}</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Panel C: System Logs */}
+          <div className="glass-panel rounded-3xl p-6 border border-white/5 bg-gradient-to-br from-emerald-500/5 to-transparent flex flex-col h-full">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-black text-white flex items-center gap-2">
+                <div className="w-2 h-6 bg-emerald-500 rounded-full shadow-[0_0_10px_rgba(16,185,129,0.6)]"></div>
+                System Logs
+              </h3>
+              <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+            </div>
+            <div className="flex-1 bg-black/40 rounded-xl border border-white/5 p-4 font-mono text-[10px] leading-relaxed text-gray-400 overflow-hidden relative">
+              <div className="absolute top-0 left-0 w-full h-4 bg-gradient-to-b from-black/80 to-transparent z-10"></div>
+              <div className="flex flex-col justify-end h-full space-y-1 z-0 relative pt-2">
+                {systemMetrics.logs && systemMetrics.logs.length > 0 ? (
+                  systemMetrics.logs.slice(-7).map((log: string, idx: number) => {
+                    const isError = log.includes('[ERROR]');
+                    const isWarn = log.includes('[WARNING]');
+                    // Remove timestamps to fit more text
+                    const cleanLog = log.replace(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3} /, '');
+                    return (
+                      <div key={idx} className={`truncate ${isError ? 'text-rose-400' : isWarn ? 'text-yellow-400' : 'text-emerald-400/80'}`}>
+                        {cleanLog}
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="text-gray-500 flex items-center justify-center h-full">Waiting for logs...</div>
+                )}
+              </div>
+            </div>
+          </div>
+
         </motion.div>
 
         {/* Update History Section */}
