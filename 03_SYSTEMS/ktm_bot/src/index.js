@@ -76,6 +76,16 @@ export default {
         if (name === 'recruit') return handleRecruitDirect(interaction);
         if (name === 'stats') return handleStatsCommand(interaction, context, ctx);
         if (name === 'lane') return handleLaneCommand(interaction, context, ctx);
+        if (name === 'panel') {
+          return Response.json({
+            type: 4,
+            data: {
+              content: "🎛️ **KTM 総合コントロールパネル**\n使いたい機能のボタンを押してください。",
+              embeds: [],
+              components: (await import('./ui/embeds.js')).getPortalComponents(interaction.member?.user?.id || interaction.user?.id)
+            }
+          });
+        }
       }
 
       // Message Component (Buttons/Select Menus)

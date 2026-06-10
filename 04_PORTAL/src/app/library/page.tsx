@@ -1,15 +1,18 @@
 "use client";
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { supabase } from '../../lib/supabaseClient';
-import { Book, ChevronLeft, ChevronDown, ChevronUp, Clock, User, Sparkles, Pencil, Save, X, Trash2, Search, Terminal, Copy, Activity } from 'lucide-react';
+import { Book, ChevronLeft, ChevronDown, ChevronUp, Clock, User, Sparkles, Pencil, Save, X, Trash2, Search, Terminal, Copy, Activity, Eye, Edit2, Star as StarIcon } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { motion, AnimatePresence } from 'framer-motion';
 
 import ChampSelect from '../../components/ChampSelect';
+import { getFavorites, toggleFavoriteArticle } from '../../components/FavoritesPanel';
 
-export default function LibraryPage() {
+function LibraryContent() {
+  const searchParams = useSearchParams();
   const [articles, setArticles] = useState<any[]>([]);
   const [selectedArticle, setSelectedArticle] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -23,16 +26,87 @@ export default function LibraryPage() {
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
   const [groupMode, setGroupMode] = useState<'champion' | 'keyword'>('champion');
   const [sortOrder, setSortOrder] = useState('updated_desc');
+  // アコーディオンプレビュー用（1つだけ展開）
+  const [expandedId, setExpandedId] = useState<string | number | null>(null);
+  const [favoriteArticles, setFavoriteArticles] = useState<number[]>([]);
+
+  // お気に入りデータのロードと同期
+  useEffect(() => {
+    setFavoriteArticles(getFavorites().articles.map(a => a.id));
+
+    const handleFavUpdated = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail && detail.articles) {
+        setFavoriteArticles(detail.articles.map((a: any) => a.id));
+      }
+    };
+    window.addEventListener("favorites-updated", handleFavUpdated);
+    window.addEventListener("storage", handleFavUpdated);
+    return () => {
+      window.removeEventListener("favorites-updated", handleFavUpdated);
+      window.removeEventListener("storage", handleFavUpdated);
+    };
+  }, []);
+
+  const handleToggleFavorite = (id: number, title: string) => {
+    toggleFavoriteArticle(id, title);
+  };
 
   const fetchArticles = async () => {
     setLoading(true);
     try {
       const { data, error } = await supabase.from('bible_articles').select('*').order('created_at', { ascending: false });
-      if (!error && data) setArticles(data);
+      if (!error && data) {
+        setArticles(data);
+
+        // URLパラメータ ?article=Id の自動選択処理
+        const articleId = searchParams.get('article');
+        if (articleId) {
+          const found = data.find(a => String(a.id) === String(articleId));
+          if (found) {
+            setSelectedArticle(found);
+            setExpandedId(found.id);
+          }
+        }
+      }
     } catch (e) { console.error(e); } finally { setLoading(false); }
   };
 
-  useEffect(() => { fetchArticles(); }, []);
+  useEffect(() => { fetchArticles(); }, [searchParams]);
+
+  // 統計サマリーの計算
+  const statsSummary = useMemo(() => {
+    const total = articles.length;
+    const champCounts: Record<string, number> = {};
+    const keywordCounts: Record<string, number> = {};
+
+    articles.forEach(a => {
+      const champ = a.champion || 'その他';
+      champCounts[champ] = (champCounts[champ] || 0) + 1;
+
+      if (a.keywords && Array.isArray(a.keywords)) {
+        a.keywords.forEach((kw: string) => {
+          if (kw && kw !== '__DELETED__') {
+            keywordCounts[kw] = (keywordCounts[kw] || 0) + 1;
+          }
+        });
+      }
+    });
+
+    const sortedChamps = Object.entries(champCounts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 6);
+
+    const sortedKeywords = Object.entries(keywordCounts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 15);
+
+    return {
+      total,
+      champs: sortedChamps,
+      keywords: sortedKeywords
+    };
+  }, [articles]);
 
   const grouped = useMemo(() => {
     const q = search.toLowerCase();
@@ -266,7 +340,20 @@ export default function LibraryPage() {
                   </div>
                 </div>
               ) : (
-                <h1 className="text-4xl md:text-5xl font-black leading-tight font-mono mb-6 text-white">{selectedArticle.title.replace(/_/g, ' ')}</h1>
+                <div className="flex items-center gap-4 mb-6">
+                  <h1 className="text-4xl md:text-5xl font-black leading-tight font-mono text-white flex-1">{selectedArticle.title.replace(/_/g, ' ')}</h1>
+                  <button
+                    onClick={() => handleToggleFavorite(selectedArticle.id, selectedArticle.title)}
+                    className={`p-2.5 rounded-xl transition-all border shrink-0 ${
+                      favoriteArticles.includes(selectedArticle.id)
+                        ? 'bg-amber-400/20 border-amber-400 text-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.3)]'
+                        : 'bg-white/5 border-white/10 text-gray-400 hover:text-white hover:bg-white/10'
+                    }`}
+                    title={favoriteArticles.includes(selectedArticle.id) ? "お気に入り解除" : "お気に入り登録"}
+                  >
+                    <StarIcon size={20} fill={favoriteArticles.includes(selectedArticle.id) ? "currentColor" : "none"} />
+                  </button>
+                </div>
               )}
               <div className="flex flex-wrap gap-4 text-xs text-gray-400">
                 <span className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-full font-bold uppercase tracking-widest border border-white/5"><User size={14} className="text-[#a78bfa]" /> AI AGENT</span>
@@ -297,6 +384,60 @@ export default function LibraryPage() {
           <Activity size={18} className="animate-pulse" /> AI生成済みの攻略記事データベース
         </p>
       </motion.header>
+
+      {/* 統計サマリー & タグクラウド */}
+      {articles.length > 0 && (
+        <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.05 }} className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* 総記事数とチャンピオン統計 */}
+          <div className="glass-panel p-6 rounded-2xl relative overflow-hidden flex flex-col justify-between border-t-2 border-[#a78bfa]/50">
+            <div>
+              <h4 className="text-xs font-black text-gray-500 uppercase tracking-widest mb-4">📊 ライブラリ統計</h4>
+              <div className="flex items-baseline gap-2 mb-2">
+                <span className="text-4xl font-black text-white">{statsSummary.total}</span>
+                <span className="text-sm text-gray-500 font-bold">総記事数</span>
+              </div>
+            </div>
+            <div className="mt-4 pt-4 border-t border-white/5 space-y-2">
+              <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">主要チャンピオン</span>
+              <div className="flex flex-wrap gap-2">
+                {statsSummary.champs.map(([champ, count]) => (
+                  <button 
+                    key={champ} 
+                    onClick={() => setSearch(champ)}
+                    className="text-xs bg-white/5 border border-white/5 hover:border-[#a78bfa]/30 hover:bg-[#a78bfa]/5 text-gray-300 font-bold px-2.5 py-1 rounded-lg transition-all"
+                  >
+                    {champ} ({count})
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* よく使われるキーワード (タグクラウド) */}
+          <div className="glass-panel p-6 rounded-2xl md:col-span-2 border-t-2 border-[#00cfef]/50 flex flex-col justify-between">
+            <div>
+              <h4 className="text-xs font-black text-gray-500 uppercase tracking-widest mb-4">🎯 トレンドキーワード</h4>
+              <div className="flex flex-wrap gap-2">
+                {statsSummary.keywords.length > 0 ? statsSummary.keywords.map(([kw, count]) => (
+                  <button
+                    key={kw}
+                    onClick={() => setSearch(kw)}
+                    className="text-xs bg-black/40 hover:bg-[#00cfef]/10 border border-white/5 hover:border-[#00cfef]/30 text-gray-300 hover:text-[#00cfef] px-3 py-1.5 rounded-xl font-bold transition-all flex items-center gap-1.5"
+                  >
+                    <span># {kw}</span>
+                    <span className="text-[10px] text-gray-500 font-mono bg-white/5 px-1.5 py-0.5 rounded-md">{count}</span>
+                  </button>
+                )) : (
+                  <span className="text-sm text-gray-500 italic">タグデータがありません</span>
+                )}
+              </div>
+            </div>
+            <div className="text-[10px] text-gray-500 font-bold mt-4 pt-2">
+              ※ タグをクリックすると、そのキーワードでライブラリを瞬時にフィルタリングできます。
+            </div>
+          </div>
+        </motion.div>
+      )}
 
       <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }} className="flex gap-4 items-center flex-wrap">
         <div className="relative flex-1 min-w-[300px]">
@@ -333,22 +474,102 @@ export default function LibraryPage() {
               <AnimatePresence>
                 {!collapsedGroups[groupName] && (
                   <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="divide-y divide-white/5 overflow-hidden">
-                    {items.map(article => (
-                      <div key={article.id} onClick={() => setSelectedArticle(article)} className="p-5 hover:bg-white/[0.03] cursor-pointer transition-colors flex justify-between items-center group/item">
-                        <div className="flex flex-col gap-2">
-                          <h3 className="font-bold text-gray-200 group-hover/item:text-[#a78bfa] transition-colors">{article.title.replace(/_/g, ' ')}</h3>
-                          <div className="flex gap-2 flex-wrap">
-                            {article.keywords?.map((kw: string, kidx: number) => (
-                              <span key={kidx} className="text-[10px] text-gray-400 bg-black/40 border border-white/5 px-2 py-1 rounded-md">{kw}</span>
-                            ))}
+                    {items.map(article => {
+                      const isExpanded = expandedId === article.id;
+                      return (
+                        <div key={article.id} className="transition-colors">
+                          {/* 記事ヘッダー（クリックでアコーディオン展開） */}
+                          <div
+                            onClick={() => setExpandedId(isExpanded ? null : article.id)}
+                            className="p-5 hover:bg-white/[0.03] cursor-pointer flex justify-between items-center group/item"
+                          >
+                            <div className="flex flex-col gap-2">
+                              <div className="flex items-center gap-2">
+                                <span className={`text-[#a78bfa] transition-transform duration-300 ${isExpanded ? 'rotate-90' : 'rotate-0'}`}>
+                                  <ChevronDown size={16} />
+                                </span>
+                                <h3 className={`font-bold transition-colors flex items-center gap-2 ${isExpanded ? 'text-[#a78bfa]' : 'text-gray-200 group-hover/item:text-[#a78bfa]'}`}>
+                                  {favoriteArticles.includes(article.id) && <StarIcon size={14} className="text-amber-400 shrink-0" fill="currentColor" />}
+                                  {article.title.replace(/_/g, ' ')}
+                                </h3>
+                              </div>
+                              <div className="flex gap-2 flex-wrap ml-6">
+                                {article.keywords?.map((kw: string, kidx: number) => (
+                                  <span key={kidx} className="text-[10px] text-gray-400 bg-black/40 border border-white/5 px-2 py-1 rounded-md">{kw}</span>
+                                ))}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-6">
+                              <div className="text-xs text-gray-500 font-mono flex items-center gap-2"><Clock size={14} className="text-[#a78bfa]/50" /> {new Date(article.created_at).toLocaleDateString('ja-JP')}</div>
+                              <button onClick={(e) => deleteArticle(article.id, e)} className="text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition-all p-2 rounded-lg"><Trash2 size={16} /></button>
+                            </div>
+                          </div>
+                          {/* アコーディオン展開エリア（プレビュー + 操作ボタン） */}
+                          <div
+                            className="overflow-hidden transition-all duration-300 ease-in-out"
+                            style={{ maxHeight: isExpanded ? '600px' : '0px', opacity: isExpanded ? 1 : 0 }}
+                          >
+                            <div className="px-5 pb-5 ml-6 border-l-2 border-[#a78bfa]/20">
+                              {/* Markdownプレビュー */}
+                              <div className="prose prose-invert prose-purple prose-sm max-w-none max-h-[400px] overflow-y-auto p-4 bg-black/30 border border-white/5 rounded-xl text-sm leading-relaxed mb-4 scrollbar-thin">
+                                {article.content ? (
+                                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{article.content}</ReactMarkdown>
+                                ) : (
+                                  <p className="text-gray-500 italic">本文が空です</p>
+                                )}
+                              </div>
+                              {/* 操作ボタン群 */}
+                              <div className="flex gap-3 flex-wrap">
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); setSelectedArticle(article); }}
+                                  className="px-4 py-2 glass-panel glass-panel-hover text-[#a78bfa] rounded-xl text-sm font-bold flex items-center gap-2 transition-colors"
+                                >
+                                  <Eye size={14} /> 全文を読む
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedArticle(article);
+                                    // 編集モードに直接切り替え
+                                    setEditContent(article.content);
+                                    setEditTitle(article.title);
+                                    setEditChampion(article.champion || '');
+                                    setEditKeywords((article.keywords || []).join(', '));
+                                    setEditing(true);
+                                  }}
+                                  className="px-4 py-2 glass-panel glass-panel-hover text-[#c89b3c] rounded-xl text-sm font-bold flex items-center gap-2 transition-colors"
+                                >
+                                  <Edit2 size={14} /> 編集する
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    copyPublishCommand(article.champion || article.title.split(' ')[0]);
+                                  }}
+                                  className="px-4 py-2 glass-panel glass-panel-hover text-[#00cfef] rounded-xl text-sm font-bold flex items-center gap-2 transition-colors"
+                                >
+                                  <Terminal size={14} /> 投稿コマンド
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleToggleFavorite(article.id, article.title);
+                                  }}
+                                  className={`px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-all border ${
+                                    favoriteArticles.includes(article.id)
+                                      ? 'bg-amber-400/20 border-amber-400 text-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.2)]'
+                                      : 'glass-panel text-gray-400 hover:text-white border-transparent'
+                                  }`}
+                                >
+                                  <StarIcon size={14} fill={favoriteArticles.includes(article.id) ? "currentColor" : "none"} />
+                                  {favoriteArticles.includes(article.id) ? 'お気に入り解除' : 'お気に入り'}
+                                </button>
+                              </div>
+                            </div>
                           </div>
                         </div>
-                        <div className="flex items-center gap-6">
-                          <div className="text-xs text-gray-500 font-mono flex items-center gap-2"><Clock size={14} className="text-[#a78bfa]/50" /> {new Date(article.created_at).toLocaleDateString('ja-JP')}</div>
-                          <button onClick={(e) => deleteArticle(article.id, e)} className="text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition-all p-2 rounded-lg"><Trash2 size={16} /></button>
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -364,5 +585,13 @@ export default function LibraryPage() {
         </motion.div>
       )}
     </div>
+  );
+}
+
+export default function LibraryPage() {
+  return (
+    <Suspense fallback={<div className="flex justify-center py-20"><div className="w-8 h-8 border-4 border-[#a78bfa] border-t-transparent rounded-full animate-spin"></div></div>}>
+      <LibraryContent />
+    </Suspense>
   );
 }

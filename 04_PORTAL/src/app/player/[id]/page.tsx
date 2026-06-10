@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useParams } from "next/navigation";
 import { supabase } from "../../../lib/supabaseClient";
 import ScoutingReport from "../../../components/ScoutingReport";
-import { Activity, Shield, Swords, Star, Zap, Crosshair, RefreshCw, CheckCircle2 } from "lucide-react";
+import { Activity, Shield, Swords, Star, Zap, Crosshair, RefreshCw, CheckCircle2, TrendingUp } from "lucide-react";
 import { getChampIcon, getChampNameById } from "../../../lib/ddragonClient";
+import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, ReferenceLine, Area, AreaChart, CartesianGrid } from "recharts";
 
 const roleIcons: Record<string, any> = {
   TOP: <Shield className="w-4 h-4 text-purple-400" />,
@@ -24,6 +25,41 @@ export default function PlayerMyPage() {
   const [history, setHistory] = useState<any[]>([]);
   const [riotMasteries, setRiotMasteries] = useState<any[]>([]);
   const [saving, setSaving] = useState(false);
+
+  // MMR推移グラフ用のデータを計算（useMemoで最適化）
+  const mmrChartData = useMemo(() => {
+    if (!history || history.length === 0 || !player) return [];
+
+    // 最新の試合が先頭にあるので、古い順に並び替え
+    const sortedHistory = [...history].reverse();
+
+    // 最大20件に制限
+    const recent = sortedHistory.slice(-20);
+
+    // 現在のMMRから逆算して各時点のMMRを計算
+    // recent の最後の試合後のMMR = player.mmr
+    // そこから遡って mmrDelta を引いていく
+    const currentMmr = player.mmr || 1000;
+    let runningMmr = currentMmr;
+
+    // まず各試合の「試合後MMR」を逆順で計算
+    const mmrValues: number[] = new Array(recent.length);
+    for (let i = recent.length - 1; i >= 0; i--) {
+      mmrValues[i] = runningMmr;
+      runningMmr -= (recent[i].mmrDelta || 0);
+    }
+
+    return recent.map((match, idx) => ({
+      game: idx + 1,
+      mmr: mmrValues[idx],
+      isWin: match.isWin,
+      champion: match.champion || "Unknown",
+      date: match.date
+        ? new Date(match.date).toLocaleDateString("ja-JP", { month: "numeric", day: "numeric" })
+        : "-",
+      mmrDelta: match.mmrDelta || 0,
+    }));
+  }, [history, player]);
 
   useEffect(() => {
     async function fetchData() {
@@ -290,6 +326,119 @@ export default function PlayerMyPage() {
             )}
           </div>
 
+        </div>
+
+        {/* MMR推移グラフ */}
+        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-xl">
+          <h3 className="text-2xl font-black flex items-center gap-2 mb-6">
+            <TrendingUp className="w-6 h-6 text-cyan-400" />
+            📈 MMR推移
+          </h3>
+          {mmrChartData.length > 0 ? (
+            <div className="w-full h-72">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={mmrChartData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="mmrGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#00cfef" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#00cfef" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
+                  <XAxis
+                    dataKey="game"
+                    tick={{ fill: '#6b7280', fontSize: 12 }}
+                    axisLine={{ stroke: '#374151' }}
+                    tickLine={false}
+                    label={{ value: '試合', position: 'insideBottomRight', offset: -5, fill: '#6b7280', fontSize: 11 }}
+                  />
+                  <YAxis
+                    tick={{ fill: '#6b7280', fontSize: 12 }}
+                    axisLine={{ stroke: '#374151' }}
+                    tickLine={false}
+                    domain={['dataMin - 30', 'dataMax + 30']}
+                    label={{ value: 'MMR', angle: -90, position: 'insideLeft', offset: 20, fill: '#6b7280', fontSize: 11 }}
+                  />
+                  <Tooltip
+                    content={({ active, payload }) => {
+                      if (!active || !payload || payload.length === 0) return null;
+                      const d = payload[0].payload;
+                      return (
+                        <div className="bg-gray-950 border border-gray-700 rounded-lg p-3 shadow-2xl text-sm">
+                          <div className="flex items-center gap-2 mb-1">
+                            <img
+                              src={getChampIcon(d.champion)}
+                              className="w-6 h-6 rounded-full"
+                              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                            />
+                            <span className="font-bold text-white">{d.champion}</span>
+                          </div>
+                          <div className={`font-black ${d.isWin ? 'text-emerald-400' : 'text-red-400'}`}>
+                            {d.isWin ? 'WIN' : 'LOSE'}
+                          </div>
+                          <div className="text-gray-300 mt-1">
+                            MMR: <span className="font-bold text-white">{d.mmr}</span>
+                            <span className={`ml-2 font-bold ${d.mmrDelta > 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                              ({d.mmrDelta > 0 ? '+' : ''}{d.mmrDelta})
+                            </span>
+                          </div>
+                          <div className="text-gray-500 text-xs mt-1">{d.date}</div>
+                        </div>
+                      );
+                    }}
+                  />
+                  <ReferenceLine
+                    y={player.mmr || 1000}
+                    stroke="#00cfef"
+                    strokeDasharray="6 4"
+                    strokeOpacity={0.5}
+                    label={{ value: `現在 ${player.mmr || 1000}`, position: 'right', fill: '#00cfef', fontSize: 11 }}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="mmr"
+                    stroke="#00cfef"
+                    strokeWidth={2.5}
+                    fill="url(#mmrGradient)"
+                    dot={(props: any) => {
+                      const { cx, cy, payload } = props;
+                      return (
+                        <circle
+                          key={`dot-${payload.game}`}
+                          cx={cx}
+                          cy={cy}
+                          r={5}
+                          fill={payload.isWin ? '#22c55e' : '#ef4444'}
+                          stroke={payload.isWin ? '#166534' : '#7f1d1d'}
+                          strokeWidth={2}
+                        />
+                      );
+                    }}
+                    activeDot={{ r: 7, stroke: '#00cfef', strokeWidth: 2 }}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+              {/* 凡例 */}
+              <div className="flex items-center justify-center gap-6 mt-3 text-xs text-gray-500">
+                <div className="flex items-center gap-1.5">
+                  <div className="w-3 h-3 rounded-full bg-emerald-500"></div>
+                  <span>勝利</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                  <span>敗北</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-6 border-t-2 border-dashed border-cyan-400/50"></div>
+                  <span>現在のMMR</span>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="text-center text-gray-500 py-8 border border-dashed border-gray-800 rounded-xl">
+              まだ試合データがありません
+            </div>
+          )}
         </div>
 
         {/* Match History Timeline */}

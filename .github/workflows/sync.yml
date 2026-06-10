@@ -1,0 +1,36 @@
+name: Sovereign DB Sync
+
+on:
+  schedule:
+    # 毎日 04:00 (JST 13:00) に自動実行
+    - cron: '0 4 * * *'
+  workflow_dispatch:
+    # 手動実行ボタンの追加
+
+jobs:
+  run-sync:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r 03_SYSTEMS/requirements.txt
+          
+      - name: Run Sovereign Sync
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        run: |
+          # 攻略ライブラリおよびKireiバイブルなどのMarkdownファイルをSupabaseへ同期
+          # PYTHONPATH を設定して v2_CORE モジュールの解決エラーを防ぐ
+          export PYTHONPATH="03_SYSTEMS"
+          python 03_SYSTEMS/v2_CORE/sovereign_sync.py

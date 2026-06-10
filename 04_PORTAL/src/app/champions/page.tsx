@@ -4,16 +4,28 @@ import { useEffect, useState, useMemo, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { supabase } from '../../lib/supabaseClient';
 import { getChampIcon, getChampSplash } from '../../lib/ddragonClient';
-import { ChevronLeft, Search, Save, BookOpen, RefreshCw, Zap, ShieldAlert, Swords, Shield, Copy, Check, FileText, Eye, Edit2, Activity, Plus, Trash, Filter } from 'lucide-react';
+import { ChevronLeft, Search, Save, BookOpen, RefreshCw, Zap, ShieldAlert, Swords, Shield, Copy, Check, FileText, Eye, Edit2, Activity, Plus, Trash, Filter, Star as StarIcon } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { motion } from 'framer-motion';
+import { getFavorites, toggleFavoriteChampion } from '../../components/FavoritesPanel';
 
 function ChampionsContent() {
   const searchParams = useSearchParams();
   const [champions, setChampions] = useState<any[]>([]);
   const [search, setSearch] = useState('');
   const [sortOrder, setSortOrder] = useState('updated_desc');
+  const [roleFilter, setRoleFilter] = useState<string>('ALL');
+
+  // DDragonのtags → ロールへのマッピングテーブル
+  const ROLE_MAP: Record<string, string[]> = {
+    TOP: ['Fighter', 'Tank'],
+    JG: ['Fighter', 'Assassin', 'Tank'],
+    MID: ['Mage', 'Assassin'],
+    ADC: ['Marksman'],
+    SUP: ['Support', 'Tank', 'Mage'],
+  };
+  const ROLE_LABELS = ['ALL', 'TOP', 'JG', 'MID', 'ADC', 'SUP'] as const;
   const [showPendingOnly, setShowPendingOnly] = useState(searchParams.get('filter') === 'pending');
   const [selected, setSelected] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -29,6 +41,25 @@ function ChampionsContent() {
   const [copied, setCopied] = useState(false);
   const [noteDraftMode, setNoteDraftMode] = useState<'preview' | 'edit'>('preview');
   const [stats, setStats] = useState({ matches: 0, wins: 0, kda: '0.00' });
+  const [favoriteChamps, setFavoriteChamps] = useState<string[]>([]);
+
+  // お気に入りデータのロードとイベント購読
+  useEffect(() => {
+    setFavoriteChamps(getFavorites().champions);
+
+    const handleFavUpdated = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail && detail.champions) {
+        setFavoriteChamps(detail.champions);
+      }
+    };
+    window.addEventListener("favorites-updated", handleFavUpdated);
+    window.addEventListener("storage", handleFavUpdated);
+    return () => {
+      window.removeEventListener("favorites-updated", handleFavUpdated);
+      window.removeEventListener("storage", handleFavUpdated);
+    };
+  }, []);
 
   useEffect(() => {
     let fetchedChampions: any[] = [];
@@ -55,13 +86,24 @@ function ChampionsContent() {
         setChampDates(dates);
         setChampPending(pending);
         setChampions(fetchedChampions);
+
+        // URLパラメータ ?select=ChampId の自動選択処理
+        const selectId = searchParams.get('select');
+        if (selectId) {
+          const found = fetchedChampions.find(c => c.id === selectId);
+          if (found) setSelected(found);
+        }
+
         setLoading(false);
       })
       .catch(console.error);
-  }, []);
+  }, [searchParams]);
+
+  const isFavorited = selected ? favoriteChamps.includes(selected.id) : false;
 
   useEffect(() => {
     if (!selected) return;
+
     const loadChampionData = async (champId: string) => {
       const { data: mData } = await supabase.from('matchup_sentinel').select('raw_data').eq('champion', champId).neq('enemy', 'GLOBAL');
       if (mData && mData.length > 0) {
@@ -90,6 +132,11 @@ function ChampionsContent() {
     };
     loadChampionData(selected.id);
   }, [selected]);
+
+  const handleToggleFavorite = () => {
+    if (!selected) return;
+    toggleFavoriteChampion(selected.id);
+  };
 
   const setField = (key: string, val: string | object) => setDataFields((p: any) => ({ ...p, [key]: val }));
 
@@ -138,10 +185,16 @@ function ChampionsContent() {
 
   const filtered = useMemo(() => {
     let result = champions;
+    // テキスト検索（ひらがな→カタカナ変換対応）
     if (search.trim()) {
       const q = search.toLowerCase();
       const hiraToKata = q.replace(/[\u3041-\u3096]/g, match => String.fromCharCode(match.charCodeAt(0) + 0x60));
       result = result.filter(c => c.searchKey.includes(q) || c.searchKey.includes(hiraToKata));
+    }
+    // ロール別フィルター（DDragonのtagsベース）
+    if (roleFilter !== 'ALL') {
+      const allowedTags = ROLE_MAP[roleFilter] || [];
+      result = result.filter(c => c.tags?.some((tag: string) => allowedTags.includes(tag)));
     }
     if (showPendingOnly) {
       result = result.filter(c => champPending[c.id]);
@@ -154,7 +207,7 @@ function ChampionsContent() {
       }
       return a.name.localeCompare(b.name);
     });
-  }, [champions, search, sortOrder, champDates, showPendingOnly, champPending]);
+  }, [champions, search, sortOrder, champDates, showPendingOnly, champPending, roleFilter]);
 
   const containerVariants = { hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.02 } } };
   const itemVariants = { hidden: { scale: 0.9, opacity: 0 }, visible: { scale: 1, opacity: 1 } };
@@ -175,7 +228,20 @@ function ChampionsContent() {
             <img src={getChampIcon(selected.id)} alt={selected.name} className="w-24 h-24 rounded-full border-4 border-[#c89b3c] shadow-[0_0_30px_rgba(200,155,60,0.5)]" />
             <div>
               <p className="text-[#c89b3c] text-sm font-bold uppercase tracking-[0.2em] mb-1 text-glow">{selected.title}</p>
-              <h1 className="text-4xl md:text-5xl font-black font-mono tracking-tight text-white">{selected.name}</h1>
+              <div className="flex items-center gap-3">
+                <h1 className="text-4xl md:text-5xl font-black font-mono tracking-tight text-white">{selected.name}</h1>
+                <button
+                  onClick={handleToggleFavorite}
+                  className={`p-2 rounded-xl transition-all border ${
+                    isFavorited
+                      ? 'bg-amber-400/20 border-amber-400 text-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.3)]'
+                      : 'bg-white/5 border-white/10 text-gray-400 hover:text-white hover:bg-white/10'
+                  }`}
+                  title={isFavorited ? "お気に入り解除" : "お気に入り登録"}
+                >
+                  <StarIcon size={20} fill={isFavorited ? "currentColor" : "none"} />
+                </button>
+              </div>
             </div>
             
             <div className="ml-auto flex gap-4">
@@ -263,22 +329,50 @@ function ChampionsContent() {
         </p>
       </motion.header>
 
-      <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }} className="sticky top-6 z-20 flex gap-4 glass-panel p-4 rounded-2xl shadow-2xl backdrop-blur-2xl bg-[#06070a]/80">
-        <div className="relative flex-1">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[#c89b3c]" size={20} />
-          <input type="text" placeholder="チャンピオン名で検索..." value={search} onChange={e => setSearch(e.target.value)}
-            className="w-full bg-[var(--color-surface)] border border-transparent focus:border-[#c89b3c]/50 rounded-xl py-3 pl-12 pr-4 text-white font-bold outline-none transition-colors" />
+      {/* 検索バー・フィルター（スクロール追従） */}
+      <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }} className="sticky top-0 z-20 flex flex-col gap-3 glass-panel p-4 rounded-2xl shadow-2xl backdrop-blur-2xl bg-[#06070a]/90">
+        <div className="flex gap-4 items-center flex-wrap">
+          <div className="relative flex-1 min-w-[200px]">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[#c89b3c]" size={20} />
+            <input type="text" placeholder="チャンピオン名で検索..." value={search} onChange={e => setSearch(e.target.value)}
+              className="w-full bg-[var(--color-surface)] border border-transparent focus:border-[#c89b3c]/50 rounded-xl py-3 pl-12 pr-4 text-white font-bold outline-none transition-colors" />
+          </div>
+          {/* ロール別フィルターボタン */}
+          <div className="flex glass-panel p-1 rounded-xl items-center gap-0.5">
+            {ROLE_LABELS.map(role => (
+              <button key={role} onClick={() => setRoleFilter(role)}
+                className={`px-3 py-2 rounded-lg text-xs font-black tracking-wider transition-all ${
+                  roleFilter === role
+                    ? 'bg-[#c89b3c] text-black shadow-lg shadow-[#c89b3c]/30'
+                    : 'text-gray-400 hover:text-white hover:bg-white/5'
+                }`}>
+                {role}
+              </button>
+            ))}
+          </div>
+          <button 
+            onClick={() => setShowPendingOnly(!showPendingOnly)} 
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all border ${showPendingOnly ? 'bg-rose-500/20 text-rose-400 border-rose-500/50 shadow-[0_0_15px_rgba(244,63,94,0.3)]' : 'glass-panel text-gray-400 border-transparent hover:text-white'}`}
+          >
+            <Filter size={16} /> 要確認
+          </button>
+          <select value={sortOrder} onChange={e => setSortOrder(e.target.value)} className="glass-panel border-none rounded-xl px-4 py-2.5 font-bold text-[#c89b3c] outline-none min-w-[160px] cursor-pointer">
+            <option value="updated_desc">更新日が新しい順</option>
+            <option value="name_asc">名前順</option>
+          </select>
         </div>
-        <button 
-          onClick={() => setShowPendingOnly(!showPendingOnly)} 
-          className={`flex items-center gap-2 px-5 rounded-xl font-bold text-sm transition-all border ${showPendingOnly ? 'bg-rose-500/20 text-rose-400 border-rose-500/50 shadow-[0_0_15px_rgba(244,63,94,0.3)]' : 'glass-panel text-gray-400 border-transparent hover:text-white'}`}
-        >
-          <Filter size={16} /> 要確認タスク
-        </button>
-        <select value={sortOrder} onChange={e => setSortOrder(e.target.value)} className="glass-panel border-none rounded-xl px-4 font-bold text-[#c89b3c] outline-none min-w-[160px] cursor-pointer">
-          <option value="updated_desc">更新日が新しい順</option>
-          <option value="name_asc">名前順</option>
-        </select>
+        {/* ヒット数表示 */}
+        <div className="flex items-center gap-2 px-1 text-xs font-bold">
+          <span className="text-gray-500">{champions.length}件中</span>
+          <span className="text-[#c89b3c] text-sm">{filtered.length}件</span>
+          <span className="text-gray-500">ヒット</span>
+          {(search || roleFilter !== 'ALL' || showPendingOnly) && (
+            <button onClick={() => { setSearch(''); setRoleFilter('ALL'); setShowPendingOnly(false); }}
+              className="ml-2 text-gray-500 hover:text-white transition-colors underline underline-offset-2">
+              フィルターをリセット
+            </button>
+          )}
+        </div>
       </motion.div>
 
       {loading ? (
@@ -287,9 +381,15 @@ function ChampionsContent() {
         <motion.div variants={containerVariants} initial="hidden" animate="visible" className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-4">
           {filtered.map(c => {
             const hasNote = !!champDates[c.id];
+            const isFav = favoriteChamps.includes(c.id);
             return (
               <motion.div variants={itemVariants} key={c.id} onClick={() => setSelected(c)} 
-                className={`glass-panel glass-panel-hover flex flex-col items-center gap-2 p-4 rounded-2xl cursor-pointer group ${hasNote ? 'bg-[#c89b3c]/10 border-[#c89b3c]/30 shadow-[0_0_15px_rgba(200,155,60,0.15)]' : ''}`}>
+                className={`glass-panel glass-panel-hover flex flex-col items-center gap-2 p-4 rounded-2xl cursor-pointer group relative ${hasNote ? 'bg-[#c89b3c]/10 border-[#c89b3c]/30 shadow-[0_0_15px_rgba(200,155,60,0.15)]' : ''}`}>
+                {isFav && (
+                  <div className="absolute top-2 right-2 text-amber-400 z-10" title="お気に入り">
+                    <StarIcon size={12} fill="currentColor" />
+                  </div>
+                )}
                 <div className="relative">
                   <img src={getChampIcon(c.id)} alt={c.name} className={`w-14 h-14 rounded-full border-2 transition-colors ${hasNote ? 'border-[#c89b3c]' : 'border-white/10 group-hover:border-white/30'}`} />
                   {hasNote && <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-[#0a0b10] ${champPending[c.id] ? 'bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.8)]' : 'bg-[#c89b3c]'}`}></div>}

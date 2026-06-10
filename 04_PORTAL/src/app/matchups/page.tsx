@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import { getChampIcon } from '../../lib/ddragonClient';
-import { Shield, Target, ChevronLeft, Swords, Plus, X, Save, Trash2, Activity } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Shield, Target, ChevronLeft, ChevronDown, ChevronUp, Swords, Plus, X, Save, Trash2, Activity } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import ChampSelect from '../../components/ChampSelect';
 
 const EMPTY_MEMO = {
@@ -26,6 +26,8 @@ export default function MatchupsPage() {
   const [saving, setSaving] = useState(false);
   const [roleFilter, setRoleFilter] = useState('ALL');
   const [champMap, setChampMap] = useState<Record<string, string>>({});
+  const [viewMode, setViewMode] = useState<'list' | 'champion'>('list');
+  const [expandedChamp, setExpandedChamp] = useState<string | null>(null);
 
   const fetchData = async () => {
     setLoading(true);
@@ -49,19 +51,32 @@ export default function MatchupsPage() {
       }).catch(console.error);
   }, []);
 
-  const results = useMemo(() => {
-    const isMatch = (name: string, q: string) => {
-      if (!q.trim()) return true;
-      if (!name) return false;
-      const lowerN = name.toLowerCase();
-      const lowerQ = q.toLowerCase();
-      if (lowerN.includes(lowerQ)) return true;
-      const jpName = champMap[lowerN.replace(/[^a-z0-9]/g, '')] || '';
-      if (jpName.includes(lowerQ)) return true;
-      const hiraToKata = lowerQ.replace(/[\u3041-\u3096]/g, match => String.fromCharCode(match.charCodeAt(0) + 0x60));
-      return jpName.includes(hiraToKata);
-    };
+  // チャンピオン名マッチング（一覧・チャンピオン別ビュー共通）
+  const isMatch = useCallback((name: string, q: string) => {
+    if (!q.trim()) return true;
+    if (!name) return false;
+    const lowerN = name.toLowerCase();
+    const lowerQ = q.toLowerCase();
+    if (lowerN.includes(lowerQ)) return true;
+    const jpName = champMap[lowerN.replace(/[^a-z0-9]/g, '')] || '';
+    if (jpName.includes(lowerQ)) return true;
+    const hiraToKata = lowerQ.replace(/[\u3041-\u3096]/g, match => String.fromCharCode(match.charCodeAt(0) + 0x60));
+    return jpName.includes(hiraToKata);
+  }, [champMap]);
 
+  // ロールフィルタ適用
+  const applyRoleFilter = useCallback((list: any[]) => {
+    if (roleFilter === 'ALL') return list;
+    return list.filter(m => {
+      let role = (m.raw_data?.role || m.role || 'UNKNOWN').toUpperCase();
+      if (role === 'UTILITY') role = 'SUPPORT';
+      if (role === 'BOTTOM') role = 'BOT';
+      return role === roleFilter;
+    });
+  }, [roleFilter]);
+
+  // 一覧ビュー用のフィルタ結果
+  const results = useMemo(() => {
     let filtered = matchups.filter(m => isMatch(m.champion, mySearch) && isMatch(m.enemy, enemySearch));
     filtered.sort((a, b) => {
       if (sortOrder === 'updated_desc') return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
@@ -69,17 +84,25 @@ export default function MatchupsPage() {
       if (sortOrder === 'difficulty_desc') return (b.raw_data?.difficulty || 0) - (a.raw_data?.difficulty || 0);
       return 0;
     });
+    return applyRoleFilter(filtered);
+  }, [mySearch, enemySearch, matchups, isMatch, sortOrder, applyRoleFilter]);
 
-    if (roleFilter !== 'ALL') {
-      filtered = filtered.filter(m => {
-        let role = (m.raw_data?.role || m.role || 'UNKNOWN').toUpperCase();
-        if (role === 'UTILITY') role = 'SUPPORT';
-        if (role === 'BOTTOM') role = 'BOT';
-        return role === roleFilter;
-      });
-    }
-    return filtered;
-  }, [mySearch, enemySearch, matchups, champMap, sortOrder, roleFilter]);
+  // チャンピオン別ビュー用のグループ化
+  const championGroups = useMemo(() => {
+    const filtered = applyRoleFilter(
+      matchups.filter(m => {
+        if (!mySearch.trim()) return true;
+        return isMatch(m.champion, mySearch);
+      })
+    );
+    const groups: Record<string, any[]> = {};
+    filtered.forEach(m => {
+      if (!groups[m.champion]) groups[m.champion] = [];
+      groups[m.champion].push(m);
+    });
+    // マッチアップ数が多い順にソート
+    return Object.entries(groups).sort((a, b) => b[1].length - a[1].length);
+  }, [matchups, mySearch, isMatch, applyRoleFilter]);
 
   const set = (k: string, v: any) => setMemo((p: any) => ({ ...p, [k]: v }));
   
@@ -201,12 +224,29 @@ export default function MatchupsPage() {
             <Activity size={18} className="animate-pulse" /> 対面チャンプ名を入力して対策を表示
           </p>
         </div>
-        <button 
-          onClick={() => setShowForm(!showForm)} 
-          className="glass-panel glass-panel-hover rounded-full px-6 py-2.5 font-bold text-sm flex items-center gap-2 text-[#00cfef]"
-        >
-          {showForm ? <><X size={16} /> 閉じる</> : <><Plus size={16} /> メモ追加</>}
-        </button>
+        <div className="flex items-center gap-3">
+          {/* ビュー切替トグル */}
+          <div className="glass-panel rounded-full p-1 flex">
+            <button
+              onClick={() => setViewMode('list')}
+              className={`px-4 py-2 rounded-full text-sm font-bold transition-all duration-300 ${viewMode === 'list' ? 'bg-[#00cfef]/20 text-[#00cfef] shadow-[0_0_10px_rgba(0,207,239,0.2)]' : 'text-gray-400 hover:text-white'}`}
+            >
+              📋 一覧
+            </button>
+            <button
+              onClick={() => setViewMode('champion')}
+              className={`px-4 py-2 rounded-full text-sm font-bold transition-all duration-300 ${viewMode === 'champion' ? 'bg-[#c89b3c]/20 text-[#c89b3c] shadow-[0_0_10px_rgba(200,155,60,0.2)]' : 'text-gray-400 hover:text-white'}`}
+            >
+              🎯 チャンピオン別
+            </button>
+          </div>
+          <button 
+            onClick={() => setShowForm(!showForm)} 
+            className="glass-panel glass-panel-hover rounded-full px-6 py-2.5 font-bold text-sm flex items-center gap-2 text-[#00cfef]"
+          >
+            {showForm ? <><X size={16} /> 閉じる</> : <><Plus size={16} /> メモ追加</>}
+          </button>
+        </div>
       </motion.header>
 
       {showForm && (
@@ -254,25 +294,39 @@ export default function MatchupsPage() {
         </motion.div>
       )}
 
-      {/* 検索バー */}
-      <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }} className="flex gap-4 flex-wrap">
-        <div className="relative flex-1 min-w-[200px]">
-          <Shield className="absolute left-4 top-1/2 -translate-y-1/2 text-[#c89b3c] z-10" size={20} />
-          <ChampSelect value={mySearch} onChange={setMySearch} placeholder="自分のチャンプ (例: Yone)" className="pl-12 py-4 border-2 border-transparent focus:border-[#c89b3c]/50 shadow-lg" />
-        </div>
-        <div className="relative flex-1 min-w-[200px]">
-          <Target className="absolute left-4 top-1/2 -translate-y-1/2 text-[#00cfef] z-10" size={20} />
-          <ChampSelect value={enemySearch} onChange={setEnemySearch} placeholder="相手のチャンプ (例: Yasuo)" className="pl-12 py-4 border-2 border-transparent focus:border-[#00cfef]/50 shadow-lg" />
-        </div>
-        <select value={roleFilter} onChange={e => setRoleFilter(e.target.value)} className="glass-panel rounded-2xl px-6 font-bold text-[#c89b3c] outline-none min-w-[140px] appearance-none cursor-pointer text-center">
-          <option value="ALL">ALL ROLES</option>
-          <option value="TOP">TOP</option><option value="JUNGLE">JUNGLE</option><option value="MID">MID</option><option value="BOT">BOT</option><option value="SUPPORT">SUPPORT</option>
-        </select>
-      </motion.div>
+      {/* 検索バー（ビューモードで切替） */}
+      {viewMode === 'list' ? (
+        <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }} className="flex gap-4 flex-wrap">
+          <div className="relative flex-1 min-w-[200px]">
+            <Shield className="absolute left-4 top-1/2 -translate-y-1/2 text-[#c89b3c] z-10" size={20} />
+            <ChampSelect value={mySearch} onChange={setMySearch} placeholder="自分のチャンプ (例: Yone)" className="pl-12 py-4 border-2 border-transparent focus:border-[#c89b3c]/50 shadow-lg" />
+          </div>
+          <div className="relative flex-1 min-w-[200px]">
+            <Target className="absolute left-4 top-1/2 -translate-y-1/2 text-[#00cfef] z-10" size={20} />
+            <ChampSelect value={enemySearch} onChange={setEnemySearch} placeholder="相手のチャンプ (例: Yasuo)" className="pl-12 py-4 border-2 border-transparent focus:border-[#00cfef]/50 shadow-lg" />
+          </div>
+          <select value={roleFilter} onChange={e => setRoleFilter(e.target.value)} className="glass-panel rounded-2xl px-6 font-bold text-[#c89b3c] outline-none min-w-[140px] appearance-none cursor-pointer text-center">
+            <option value="ALL">ALL ROLES</option>
+            <option value="TOP">TOP</option><option value="JUNGLE">JUNGLE</option><option value="MID">MID</option><option value="BOT">BOT</option><option value="SUPPORT">SUPPORT</option>
+          </select>
+        </motion.div>
+      ) : (
+        <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }} className="flex gap-4 flex-wrap">
+          <div className="relative flex-1 min-w-[200px]">
+            <Shield className="absolute left-4 top-1/2 -translate-y-1/2 text-[#c89b3c] z-10" size={20} />
+            <ChampSelect value={mySearch} onChange={setMySearch} placeholder="チャンピオン名で絞り込み (例: Yone)" className="pl-12 py-4 border-2 border-transparent focus:border-[#c89b3c]/50 shadow-lg" />
+          </div>
+          <select value={roleFilter} onChange={e => setRoleFilter(e.target.value)} className="glass-panel rounded-2xl px-6 font-bold text-[#c89b3c] outline-none min-w-[140px] appearance-none cursor-pointer text-center">
+            <option value="ALL">ALL ROLES</option>
+            <option value="TOP">TOP</option><option value="JUNGLE">JUNGLE</option><option value="MID">MID</option><option value="BOT">BOT</option><option value="SUPPORT">SUPPORT</option>
+          </select>
+        </motion.div>
+      )}
 
       {loading ? (
         <div className="flex justify-center items-center py-20"><div className="w-8 h-8 border-4 border-[#00cfef] border-t-transparent rounded-full animate-spin"></div></div>
-      ) : (
+      ) : viewMode === 'list' ? (
+        /* ===== 一覧ビュー（既存） ===== */
         <motion.div variants={containerVariants} initial="hidden" animate="visible" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {results.map(m => (
             <motion.div variants={itemVariants} key={m.id} onClick={() => setSelected(m)} className="glass-panel glass-panel-hover rounded-2xl overflow-hidden cursor-pointer group flex flex-col">
@@ -318,6 +372,134 @@ export default function MatchupsPage() {
               </div>
               <h3 className="text-xl font-bold text-white mb-2">マッチアップが見つかりません</h3>
               <p className="text-sm text-gray-400">条件を変えるか、新しいメモを追加してください</p>
+            </motion.div>
+          )}
+        </motion.div>
+      ) : (
+        /* ===== チャンピオン別ビュー ===== */
+        <motion.div variants={containerVariants} initial="hidden" animate="visible" className="flex flex-col gap-4">
+          {championGroups.map(([champName, matchupList]) => {
+            // 勝率計算
+            const wins = matchupList.filter(m => String(m.raw_data?.result).toLowerCase() === 'win').length;
+            const losses = matchupList.filter(m => String(m.raw_data?.result).toLowerCase() === 'lose').length;
+            const total = wins + losses;
+            const winRate = total > 0 ? Math.round((wins / total) * 100) : 0;
+            const isExpanded = expandedChamp === champName;
+
+            // 対面ごとに集約
+            const enemyGroups: Record<string, any[]> = {};
+            matchupList.forEach(m => {
+              if (!enemyGroups[m.enemy]) enemyGroups[m.enemy] = [];
+              enemyGroups[m.enemy].push(m);
+            });
+            // 勝率順でソート（勝ち数多い順 → 負け少ない順）
+            const sortedEnemies = Object.entries(enemyGroups).sort((a, b) => {
+              const aWins = a[1].filter(m => String(m.raw_data?.result).toLowerCase() === 'win').length;
+              const bWins = b[1].filter(m => String(m.raw_data?.result).toLowerCase() === 'win').length;
+              const aRate = aWins / a[1].length;
+              const bRate = bWins / b[1].length;
+              return bRate - aRate;
+            });
+
+            return (
+              <motion.div variants={itemVariants} key={champName} className="glass-panel rounded-2xl overflow-hidden">
+                {/* チャンピオンカード（グループヘッダー） */}
+                <button
+                  onClick={() => setExpandedChamp(isExpanded ? null : champName)}
+                  className="w-full p-5 flex items-center gap-4 hover:bg-white/[0.02] transition-colors cursor-pointer"
+                >
+                  <img src={getChampIcon(champName)} className="w-12 h-12 rounded-full border-2 border-[#c89b3c]/50 shadow-[0_0_12px_rgba(200,155,60,0.3)]" alt={champName} />
+                  <div className="flex-1 text-left">
+                    <div className="flex items-center gap-3 mb-1">
+                      <span className="font-black text-lg text-[#c89b3c]">{champName}</span>
+                      <span className="text-xs text-gray-400 font-mono">{matchupList.length} マッチアップ</span>
+                    </div>
+                    {/* 勝率バー */}
+                    {total > 0 && (
+                      <div className="flex items-center gap-3">
+                        <div className="flex-1 h-2 bg-[var(--color-danger)]/30 rounded-full overflow-hidden max-w-[200px]">
+                          <div
+                            className="h-full bg-[var(--color-success)] rounded-full transition-all duration-500"
+                            style={{ width: `${winRate}%` }}
+                          />
+                        </div>
+                        <span className={`text-xs font-black font-mono ${winRate >= 50 ? 'text-[var(--color-success)]' : 'text-[var(--color-danger)]'}`}>
+                          {winRate}% ({wins}W {losses}L)
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="text-gray-400 transition-transform duration-300" style={{ transform: isExpanded ? 'rotate(180deg)' : 'rotate(0)' }}>
+                    <ChevronDown size={20} />
+                  </div>
+                </button>
+
+                {/* 対面リスト（アコーディオン展開） */}
+                <AnimatePresence>
+                  {isExpanded && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.3, ease: 'easeInOut' }}
+                      className="overflow-hidden"
+                    >
+                      <div className="p-4 pt-0 grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {sortedEnemies.map(([enemyName, enemyMatchups]) => {
+                          const eWins = enemyMatchups.filter(m => String(m.raw_data?.result).toLowerCase() === 'win').length;
+                          const eLosses = enemyMatchups.filter(m => String(m.raw_data?.result).toLowerCase() === 'lose').length;
+                          return enemyMatchups.map(m => {
+                            const rd = m.raw_data || {};
+                            const isWin = String(rd.result).toLowerCase() === 'win';
+                            const isLose = String(rd.result).toLowerCase() === 'lose';
+                            const borderColor = isWin ? 'border-l-[var(--color-success)]' : isLose ? 'border-l-[var(--color-danger)]' : 'border-l-gray-600';
+                            const summary = (rd.winCondition || m.strategy || '').slice(0, 50);
+
+                            return (
+                              <motion.div
+                                key={m.id}
+                                initial={{ x: -10, opacity: 0 }}
+                                animate={{ x: 0, opacity: 1 }}
+                                onClick={() => setSelected(m)}
+                                className={`border-l-4 ${borderColor} bg-black/20 rounded-r-xl p-3 cursor-pointer hover:bg-white/[0.03] transition-colors group/item flex items-center gap-3`}
+                              >
+                                <img src={getChampIcon(m.enemy)} className="w-9 h-9 rounded-full border border-white/10 shrink-0" alt={m.enemy} />
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2 mb-0.5">
+                                    <span className="font-bold text-sm text-[#00cfef]">{m.enemy}</span>
+                                    {rd.difficulty > 0 && <span className="text-[10px]">{'⭐'.repeat(rd.difficulty)}</span>}
+                                  </div>
+                                  {summary && (
+                                    <p className="text-[11px] text-gray-400 truncate italic">"{summary}{(rd.winCondition || m.strategy || '').length > 50 ? '…' : ''}"</p>
+                                  )}
+                                </div>
+                                <div className="shrink-0 flex items-center gap-2">
+                                  {rd.result && (
+                                    <span className={`text-[10px] font-black px-2 py-1 rounded-md ${isWin ? 'bg-[var(--color-success)]/20 text-[var(--color-success)]' : isLose ? 'bg-[var(--color-danger)]/20 text-[var(--color-danger)]' : 'bg-gray-500/20 text-gray-400'}`}>
+                                      {isWin ? 'WIN' : 'LOSE'}
+                                    </span>
+                                  )}
+                                  <span className="text-[#00cfef] text-xs font-bold opacity-0 group-hover/item:opacity-100 transition-opacity">→</span>
+                                </div>
+                              </motion.div>
+                            );
+                          });
+                        })}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
+            );
+          })}
+
+          {championGroups.length === 0 && (
+            <motion.div variants={itemVariants} className="py-20 text-center glass-panel rounded-2xl flex flex-col items-center justify-center">
+              <div className="w-16 h-16 bg-[#c89b3c]/10 rounded-full flex items-center justify-center mb-4">
+                <Target size={32} className="text-[#c89b3c]" />
+              </div>
+              <h3 className="text-xl font-bold text-white mb-2">該当チャンピオンが見つかりません</h3>
+              <p className="text-sm text-gray-400">検索条件を変更してください</p>
             </motion.div>
           )}
         </motion.div>

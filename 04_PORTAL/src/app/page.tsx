@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Activity, Zap, TrendingUp, ShieldAlert, Cpu, Network, Gamepad2, Users } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Activity, Zap, TrendingUp, ShieldAlert, Cpu, Network, Gamepad2, Users, RefreshCw } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import Link from 'next/link';
 
@@ -24,126 +24,164 @@ export default function Home() {
   const [apiErrors, setApiErrors] = useState<number>(0);
   const [apiLimit, setApiLimit] = useState<number>(780);
   const [apiUsageDetails, setApiUsageDetails] = useState<Record<string, { used: number, limit: number }>>({});
-  const [systemMetrics, setSystemMetrics] = useState<any>({ queue: { pending: 0, error: 0, completed: 0 }, logs: [] });
+  const [systemMetrics, setSystemMetrics] = useState<any>({ queue: { pending: 0, error: 0, completed: 0, error_details: [] }, logs: [] });
   const [recentDictUpdates, setRecentDictUpdates] = useState<any[]>([]);
   const [recentLibraryUpdates, setRecentLibraryUpdates] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<string>('');
+
+  // エラー詳細モーダル用
+  const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
+
+  const fetchData = async (silent = false) => {
+    if (!silent) setIsLoading(true);
+    else setIsRefreshing(true);
+    try {
+      // 1. SYSTEM_METRICS の取得
+      const { data: metricsData } = await supabase
+        .from('matchup_sentinel')
+        .select('raw_data')
+        .eq('matchup_id', 'SYSTEM_METRICS')
+        .maybeSingle();
+      if (metricsData && metricsData.raw_data) {
+        setSystemMetrics(metricsData.raw_data);
+      }
+
+      // 2. 総データ数の取得
+      const { count: totalCount, error: totalError } = await supabase
+        .from('matchup_sentinel')
+        .select('*', { count: 'exact', head: true });
+      
+      if (!totalError && totalCount !== null) {
+        setTotalAssets(totalCount);
+      }
+
+      // 3. 要確認タスク数の取得 (raw_data内のstrategyが空のものを未処理とみなす)
+      const { data: pendingData, count: pendingCount, error: pendingError } = await supabase
+        .from('matchup_sentinel')
+        .select('matchup_id, champion, enemy, title', { count: 'exact' })
+        .neq('champion', 'SYSTEM')
+        .neq('enemy', 'GLOBAL')
+        .or('raw_data->>strategy.is.null,raw_data->>strategy.eq.')
+        .limit(3);
+
+      if (!pendingError) {
+        if (pendingCount !== null) setPendingTasks(pendingCount);
+        if (pendingData) setPendingTaskList(pendingData);
+      }
+
+      // 4. API使用量の取得
+      // Gemini APIのリセット時間（太平洋標準時 PST/PDT: 深夜0時）に合わせるため UTC-8 を基準とする
+      const ptObj = new Date(Date.now() - 8 * 60 * 60 * 1000);
+      const yyyy = ptObj.getUTCFullYear();
+      const mm = String(ptObj.getUTCMonth() + 1).padStart(2, '0');
+      const dd = String(ptObj.getUTCDate()).padStart(2, '0');
+      const todayFormatted = `${yyyy}-${mm}-${dd}`;
+
+      const { data: apiData, error: apiError } = await supabase
+        .from('api_usage_logs')
+        .select('usage_data')
+        .eq('date', todayFormatted)
+        .single();
+
+      if (!apiError && apiData && apiData.usage_data) {
+        let totalSuccess = 0;
+        let totalErrors = 0;
+        let totalLimit = 0;
+        const details: Record<string, { used: number, limit: number }> = {};
+        
+        // First pass: extract limits and initialize details
+        for (const [key, value] of Object.entries(apiData.usage_data)) {
+          if (key.startsWith('__limit_')) {
+            const featureName = key.replace('__limit_', '');
+            totalLimit += Number(value);
+            if (!details[featureName]) details[featureName] = { used: 0, limit: Number(value) };
+            else details[featureName].limit = Number(value);
+          }
+        }
+        
+        // Second pass: extract usage
+        for (const [key, value] of Object.entries(apiData.usage_data)) {
+          if (key.startsWith('__limit_')) continue;
+          if (key.startsWith('error_')) {
+            totalErrors += Number(value);
+          } else {
+            totalSuccess += Number(value);
+            if (!details[key]) details[key] = { used: Number(value), limit: 0 };
+            else details[key].used = Number(value);
+          }
+        }
+        
+        setApiUsage(totalSuccess);
+        setApiErrors(totalErrors);
+        if (totalLimit > 0) setApiLimit(totalLimit);
+        
+        // Filter out features with 0 limit and 0 usage to keep it clean
+        const cleanedDetails = Object.fromEntries(
+          Object.entries(details).filter(([k, v]) => v.limit > 0 || v.used > 0)
+        );
+        setApiUsageDetails(cleanedDetails);
+      }
+
+      // 5. 辞典更新履歴 (GLOBAL)
+      const { data: dictData, error: dictError } = await supabase
+        .from('matchup_sentinel')
+        .select('matchup_id, champion, title, updated_at')
+        .eq('enemy', 'GLOBAL')
+        .order('updated_at', { ascending: false })
+        .limit(5);
+      if (!dictError && dictData) setRecentDictUpdates(dictData);
+
+      // 6. ライブラリ更新履歴
+      const { data: libData, error: libError } = await supabase
+        .from('bible_articles')
+        .select('id, title, champion, created_at')
+        .order('created_at', { ascending: false })
+        .limit(5);
+      if (!libError && libData) setRecentLibraryUpdates(libData);
+
+      // 最終更新時刻を設定
+      const now = new Date();
+      setLastUpdated(now.toLocaleTimeString('ja-JP'));
+
+    } catch (err) {
+      console.error('Error fetching data:', err);
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
+    }
+  };
 
   useEffect(() => {
-    async function fetchData() {
-      try {
-        // 1. SYSTEM_METRICS の取得
-        const { data: metricsData } = await supabase
-          .from('matchup_sentinel')
-          .select('raw_data')
-          .eq('matchup_id', 'SYSTEM_METRICS')
-          .maybeSingle();
-        if (metricsData && metricsData.raw_data) {
-          setSystemMetrics(metricsData.raw_data);
-        }
-
-        // 2. 総データ数の取得
-        const { count: totalCount, error: totalError } = await supabase
-          .from('matchup_sentinel')
-          .select('*', { count: 'exact', head: true });
-        
-        if (!totalError && totalCount !== null) {
-          setTotalAssets(totalCount);
-        }
-
-        // 3. 要確認タスク数の取得 (raw_data内のstrategyが空のものを未処理とみなす)
-        const { data: pendingData, count: pendingCount, error: pendingError } = await supabase
-          .from('matchup_sentinel')
-          .select('matchup_id, champion, enemy, title', { count: 'exact' })
-          .neq('champion', 'SYSTEM')
-          .neq('enemy', 'GLOBAL')
-          .or('raw_data->>strategy.is.null,raw_data->>strategy.eq.')
-          .limit(3);
-
-        if (!pendingError) {
-          if (pendingCount !== null) setPendingTasks(pendingCount);
-          if (pendingData) setPendingTaskList(pendingData);
-        }
-
-        // 4. API使用量の取得
-        // Gemini APIのリセット時間（太平洋標準時 PST/PDT: 深夜0時）に合わせるため UTC-8 を基準とする
-        const ptObj = new Date(Date.now() - 8 * 60 * 60 * 1000);
-        const yyyy = ptObj.getUTCFullYear();
-        const mm = String(ptObj.getUTCMonth() + 1).padStart(2, '0');
-        const dd = String(ptObj.getUTCDate()).padStart(2, '0');
-        const todayFormatted = `${yyyy}-${mm}-${dd}`;
-
-        const { data: apiData, error: apiError } = await supabase
-          .from('api_usage_logs')
-          .select('usage_data')
-          .eq('date', todayFormatted)
-          .single();
-
-        if (!apiError && apiData && apiData.usage_data) {
-          let totalSuccess = 0;
-          let totalErrors = 0;
-          let totalLimit = 0;
-          const details: Record<string, { used: number, limit: number }> = {};
-          
-          // First pass: extract limits and initialize details
-          for (const [key, value] of Object.entries(apiData.usage_data)) {
-            if (key.startsWith('__limit_')) {
-              const featureName = key.replace('__limit_', '');
-              totalLimit += Number(value);
-              if (!details[featureName]) details[featureName] = { used: 0, limit: Number(value) };
-              else details[featureName].limit = Number(value);
-            }
-          }
-          
-          // Second pass: extract usage
-          for (const [key, value] of Object.entries(apiData.usage_data)) {
-            if (key.startsWith('__limit_')) continue;
-            if (key.startsWith('error_')) {
-              totalErrors += Number(value);
-            } else {
-              totalSuccess += Number(value);
-              if (!details[key]) details[key] = { used: Number(value), limit: 0 };
-              else details[key].used = Number(value);
-            }
-          }
-          
-          setApiUsage(totalSuccess);
-          setApiErrors(totalErrors);
-          if (totalLimit > 0) setApiLimit(totalLimit);
-          
-          // Filter out features with 0 limit and 0 usage to keep it clean
-          const cleanedDetails = Object.fromEntries(
-            Object.entries(details).filter(([k, v]) => v.limit > 0 || v.used > 0)
-          );
-          setApiUsageDetails(cleanedDetails);
-        }
-
-        // 5. 辞典更新履歴 (GLOBAL)
-        const { data: dictData, error: dictError } = await supabase
-          .from('matchup_sentinel')
-          .select('matchup_id, champion, title, updated_at')
-          .eq('enemy', 'GLOBAL')
-          .order('updated_at', { ascending: false })
-          .limit(5);
-        if (!dictError && dictData) setRecentDictUpdates(dictData);
-
-        // 6. ライブラリ更新履歴
-        const { data: libData, error: libError } = await supabase
-          .from('bible_articles')
-          .select('id, title, champion, created_at')
-          .order('created_at', { ascending: false })
-          .limit(5);
-        if (!libError && libData) setRecentLibraryUpdates(libData);
-
-      } catch (err) {
-        console.error('Error fetching data:', err);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    
     fetchData();
+
+    // 30秒ごとに自動リフレッシュ
+    const interval = setInterval(() => {
+      fetchData(true);
+    }, 30000);
+
+    return () => clearInterval(interval);
   }, []);
+
+  const handleResetQueue = async () => {
+    setIsResetting(true);
+    try {
+      const res = await fetch('/api/queue/reset', { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        setIsErrorModalOpen(false);
+        fetchData(true);
+      } else {
+        alert(`エラー: ${data.error}`);
+      }
+    } catch (e: any) {
+      alert(`通信エラーが発生しました: ${e.message}`);
+    } finally {
+      setIsResetting(false);
+    }
+  };
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -190,14 +228,25 @@ export default function Home() {
           </p>
         </div>
         
-        <div className="glass-panel border border-white/5 rounded-2xl px-6 py-3 flex gap-6 shadow-[0_0_30px_rgba(59,130,246,0.15)] relative overflow-hidden group">
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-purple-500/10 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
-          <div className="flex items-center gap-3 relative z-10">
-            <div className="relative flex h-3 w-3">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500 shadow-[0_0_10px_#10b981]"></span>
+        <div className="flex flex-col md:flex-row items-end md:items-center gap-3">
+          {lastUpdated && (
+            <span className="text-xs text-gray-500 font-mono">最終更新: {lastUpdated}</span>
+          )}
+          <div className="glass-panel border border-white/5 rounded-2xl px-6 py-3 flex gap-6 shadow-[0_0_30px_rgba(59,130,246,0.15)] relative overflow-hidden group">
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-purple-500/10 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
+            <div className="flex items-center gap-3 relative z-10">
+              {isRefreshing ? (
+                <RefreshCw size={14} className="animate-spin text-blue-400" />
+              ) : (
+                <div className="relative flex h-3 w-3">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500 shadow-[0_0_10px_#10b981]"></span>
+                </div>
+              )}
+              <span className="text-sm font-bold text-emerald-100 tracking-wide">
+                {isRefreshing ? 'REFRESHING' : 'SYSTEM ONLINE'}
+              </span>
             </div>
-            <span className="text-sm font-bold text-emerald-100 tracking-wide">SYSTEM ONLINE</span>
           </div>
         </div>
       </motion.header>
@@ -228,27 +277,27 @@ export default function Home() {
         </motion.div>
 
         {/* QUOTA Card (Simplified) */}
-        <motion.div variants={itemVariants} className="md:col-span-2 glass-panel glass-panel-hover rounded-3xl p-6 relative overflow-hidden border border-white/5 bg-gradient-to-b from-white/[0.05] to-transparent">
+        <motion.div variants={itemVariants} className="md:col-span-2 lg:col-span-2 glass-panel glass-panel-hover rounded-3xl p-6 relative overflow-hidden border border-white/5 bg-gradient-to-b from-white/[0.05] to-transparent">
           <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/20 rounded-full blur-[50px] -mr-10 -mt-10 pointer-events-none"></div>
           <div className="flex justify-between items-start mb-6">
             <div className="flex items-center gap-3">
               <div className="p-3 bg-purple-500/10 border border-purple-500/20 rounded-xl text-purple-400">
                 <Zap size={22} />
               </div>
-              <h3 className="text-xl font-black text-white tracking-tight">API Quota (1500回/日)</h3>
+              <h3 className="text-base md:text-xl font-black text-white tracking-tight">API Quota (1500回/日)</h3>
             </div>
           </div>
           
           <div className="space-y-4">
             <div className="flex flex-col gap-2">
-              <div className="flex justify-between items-end">
-                <div className="flex items-baseline gap-2">
-                  <span className="text-5xl font-black text-white tracking-tight">{apiUsage}</span>
-                  <span className="text-lg text-gray-400 font-medium">/ 1500 消費</span>
+              <div className="flex justify-between items-end gap-2">
+                <div className="flex items-baseline gap-1 md:gap-2">
+                  <span className="text-3xl md:text-5xl font-black text-white tracking-tight">{apiUsage}</span>
+                  <span className="text-xs md:text-lg text-gray-400 font-medium">/ 1500 消費</span>
                 </div>
                 <div className="text-right">
-                  <span className="text-sm text-gray-500 block">残り</span>
-                  <span className="text-2xl font-bold text-emerald-400">{Math.max(0, 1500 - apiUsage)}</span>
+                  <span className="text-[10px] md:text-sm text-gray-500 block">残り</span>
+                  <span className="text-xl md:text-2xl font-bold text-emerald-400">{Math.max(0, 1500 - apiUsage)}</span>
                 </div>
               </div>
               
@@ -259,7 +308,7 @@ export default function Home() {
                 ></div>
               </div>
               
-              <div className="flex justify-between text-xs text-gray-500 mt-1 font-medium">
+              <div className="flex justify-between text-[10px] md:text-xs text-gray-500 mt-1 font-medium">
                 <span>0%</span>
                 <span>リセット時間: 日本時間 16:00 (または17:00)</span>
                 <span>100%</span>
@@ -333,12 +382,7 @@ export default function Home() {
                   <span className="text-xs text-gray-400 font-bold">完了 (Completed)</span>
                 </div>
               </div>
-              {systemMetrics.queue?.error > 0 && (
-                <div className="bg-rose-500/10 border border-rose-500/20 p-4 rounded-xl flex items-center justify-between">
-                  <span className="text-sm font-bold text-rose-400">エラー / 再試行中</span>
-                  <span className="text-lg font-black text-rose-400">{systemMetrics.queue.error}</span>
-                </div>
-              )}
+
             </div>
           </div>
 
@@ -351,7 +395,7 @@ export default function Home() {
               </h3>
               <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
             </div>
-            <div className="flex-1 bg-black/40 rounded-xl border border-white/5 p-4 font-mono text-[10px] leading-relaxed text-gray-400 overflow-hidden relative">
+            <div className="flex-1 bg-black/40 rounded-xl border border-white/5 p-4 font-mono text-[9px] md:text-[10px] leading-relaxed text-gray-400 overflow-hidden relative">
               <div className="absolute top-0 left-0 w-full h-4 bg-gradient-to-b from-black/80 to-transparent z-10"></div>
               <div className="flex flex-col justify-end h-full space-y-1 z-0 relative pt-2">
                 {systemMetrics.logs && systemMetrics.logs.length > 0 ? (
@@ -429,6 +473,8 @@ export default function Home() {
         </motion.div>
 
       </motion.main>
+
+
     </div>
   );
 }

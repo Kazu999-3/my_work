@@ -6,12 +6,8 @@ from pathlib import Path
 import dotenv
 
 dotenv.load_dotenv(Path("d:/my_work/.env"))
-logger = logging.getLogger("DictSynthesizer")
-logger.setLevel(logging.INFO)
-if not logger.handlers:
-    handler = logging.StreamHandler()
-    handler.setFormatter(logging.Formatter("%(asctime)s [%(name)s] %(message)s"))
-    logger.addHandler(handler)
+from v2_CORE.logger_config import setup_sovereign_logging
+logger = setup_sovereign_logging("DictSynthesizer")
 
 from v2_CORE.ai_helper import generate_content_safe
 from v2_CORE.herald import herald

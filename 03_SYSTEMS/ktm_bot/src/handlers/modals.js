@@ -14,6 +14,44 @@ export async function handleModalSubmit(interaction, env, ctx) {
     return Response.json({ type: 4, data: { content: "✅ **募集を #募集板 に投下しました！**", flags: 64 } });
   }
 
+  if (customId === 'portal_ign_modal') {
+    const ign = interaction.data.components.find(c => c.components[0].custom_id === 'ign').components[0].value;
+    const discordName = interaction.member.user.global_name || interaction.member.user.username;
+    const appId = interaction.application_id;
+    const token = interaction.token;
+    
+    ctx.waitUntil((async () => {
+      try {
+        const { fetchSupabase } = await import('../utils/supabase.js');
+        const { patchInteractionResponse } = await import('../utils/api.js');
+        const existingData = await fetchSupabase(env, 'ktm_players', `discord_id=eq.${userId}`);
+        if (!existingData || existingData.length === 0) {
+            await patchInteractionResponse(appId, token, { content: "⚠️ 名簿にあなたの Discord ID が見わたりませんでした。新メンバー同期を待つか、一度対戦に参加してください。" });
+        } else {
+            // Next.js ポータル API経由で IGN と PUUID を登録する
+            const res = await fetch(`https://my-work-8jbd.vercel.app/api/player/update-puuid`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ discordId: userId, ign: ign })
+            });
+            const data = await res.json();
+            if (data.status === "SUCCESS") {
+              await patchInteractionResponse(appId, token, { content: `✅ LoL IGN を **${ign}** に設定し、Riot API との紐付け(PUUID)を完了しました！これ以降、ランク情報が自動同期されます。` });
+            } else {
+              await patchInteractionResponse(appId, token, { content: `⚠️ IGNは登録されましたが、PUUIDの取得に失敗しました: ${data.message}` });
+            }
+        }
+      } catch (err) {
+        console.error("Modal SetIGN Error:", err);
+      }
+    })());
+    
+    return Response.json({ 
+      type: 4, 
+      data: { content: "⌛ IGNの登録を開始しました。処理完了まで少々お待ちください...", flags: 64 } 
+    });
+  }
+
   if (customId === 'portal_lane_modal') {
     const getVal = (cid) => {
       const row = interaction.data.components.find(c => c.components[0].custom_id === cid);

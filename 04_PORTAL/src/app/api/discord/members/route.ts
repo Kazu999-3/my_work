@@ -121,24 +121,49 @@ export async function POST(request: Request) {
     
     // 追加処理
     if (add && add.length > 0) {
-      const newPlayers = add.map((p: any) => ({
-        discord_id: p.discord_id,
-        name: p.name,
-        ign: p.ign || 'Unknown#0000',
-        highest_rank: 'UNRANKED',
-        role_preferences: { primary: 'ALL', secondary: 'FILL' },
-        mmr: 1200,
-        mmr_top: 1000,
-        mmr_jg: 1000,
-        mmr_mid: 1000,
-        mmr_adc: 1000,
-        mmr_sup: 1000,
-        is_active: true,
-        metadata: p.metadata || {}
-      }));
+      // データベースから最新の discord_id 一覧を取得して競合を防ぐ
+      const { data: existingPlayers, error: fetchError } = await supabase
+        .from('ktm_players')
+        .select('discord_id')
+        .not('discord_id', 'is', null);
 
-      const { error: addError } = await supabase.from('ktm_players').insert(newPlayers);
-      if (addError) throw addError;
+      if (fetchError) throw fetchError;
+
+      const existingIds = new Set(existingPlayers.map(p => p.discord_id));
+
+      // すでにDBに存在する discord_id は除外する
+      const filteredAdd = add.filter((p: any) => p.discord_id && !existingIds.has(p.discord_id));
+
+      // リクエスト(add配列)内での重複も排除する
+      const uniqueAdd: any[] = [];
+      const seenIds = new Set();
+      for (const p of filteredAdd) {
+        if (!seenIds.has(p.discord_id)) {
+          seenIds.add(p.discord_id);
+          uniqueAdd.push(p);
+        }
+      }
+
+      if (uniqueAdd.length > 0) {
+        const newPlayers = uniqueAdd.map((p: any) => ({
+          discord_id: p.discord_id,
+          name: p.name,
+          ign: p.ign || 'Unknown#0000',
+          highest_rank: 'UNRANKED',
+          role_preferences: { primary: 'ALL', secondary: 'FILL' },
+          mmr: 1200,
+          mmr_top: 1000,
+          mmr_jg: 1000,
+          mmr_mid: 1000,
+          mmr_adc: 1000,
+          mmr_sup: 1000,
+          is_active: true,
+          metadata: p.metadata || {}
+        }));
+
+        const { error: addError } = await supabase.from('ktm_players').insert(newPlayers);
+        if (addError) throw addError;
+      }
     }
 
     // 削除処理

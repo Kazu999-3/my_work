@@ -11,7 +11,8 @@ from v2_CORE.settings import settings
 from v2_CORE.ai_helper import generate_content_safe
 from v2_CORE.herald import herald
 
-logger = logging.getLogger("YouTubeAbsorber")
+from v2_CORE.logger_config import setup_sovereign_logging
+logger = setup_sovereign_logging("YouTubeAbsorber")
 
 class YouTubeAbsorber:
     def __init__(self):
