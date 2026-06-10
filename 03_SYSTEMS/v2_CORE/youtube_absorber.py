@@ -129,6 +129,18 @@ class YouTubeAbsorber:
         pending = [item for item in queue if item.get("status") == "pending"]
         
         if not pending:
+            # error_generation のうち、リトライ回数が5回未満のものを pending に戻す
+            retry_candidates = [item for item in queue if item.get("status") == "error_generation" and item.get("retry_count", 0) < 5]
+            if retry_candidates:
+                reset_count = 0
+                for item in retry_candidates:
+                    item["status"] = "pending"
+                    reset_count += 1
+                logger.info(f"🔄 [Auto-Healer] {reset_count} 件のエラー動画を pending にリセットして再試行します。")
+                self._save_queue(queue)
+                pending = [item for item in queue if item.get("status") == "pending"]
+        
+        if not pending:
             logger.info("🎉 All KireiLoL videos have been processed!")
             return 0
             
@@ -169,7 +181,13 @@ class YouTubeAbsorber:
                 # ログに保存先を明記
                 logger.info(f"✅ Created bible for {item['id']} at {file_path} (Champion: {extracted_champ})")
             else:
-                item["status"] = "error_generation"
+                retry_count = item.get("retry_count", 0) + 1
+                item["retry_count"] = retry_count
+                if retry_count >= 5:
+                    item["status"] = "failed"
+                    logger.warning(f"❌ Video {item['id']} has failed after 5 retries. Marked as failed.")
+                else:
+                    item["status"] = "error_generation"
                 self._save_queue(queue)
                 
             # API制限（429）を回避するため、長めのクールダウン（60秒）を設ける

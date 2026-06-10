@@ -14,7 +14,7 @@ logger = logging.getLogger("AIHelper")
 # 全プロセスで共有するためのファイルパス
 THROTTLE_STATE_FILE = settings.FORGE_DIR / "api_throttle.json"
 THROTTLE_LOCK_FILE = settings.FORGE_DIR / "api_throttle.lock"
-MIN_REQUEST_INTERVAL = 4.5  # 1分間に約13回まで（15RPMを超えないように制限）
+MIN_REQUEST_INTERVAL = 20.0  # 1分間に3回まで（TPM/RPM制限を安全に回避するため長めに設定）
 
 def _get_last_request_time():
     try:
@@ -135,11 +135,11 @@ def generate_content_safe(client, prompt, model_id=None, config=None, feature_na
                         import re
                         retry_match = re.search(r"Please retry in ([\d\.]+)s", str(e.message) if hasattr(e, 'message') else str(e))
                         if retry_match:
-                            wait_time = float(retry_match.group(1)) + random.uniform(30.0, 45.0)
+                            wait_time = float(retry_match.group(1)) + random.uniform(2.0, 5.0)
                         else:
-                            wait_time = max(60.0, delay) + random.uniform(5.0, 15.0)
+                            wait_time = max(30.0, delay) + random.uniform(2.0, 5.0)
                         
-                        wait_time = min(wait_time, 300.0)
+                        wait_time = min(wait_time, 180.0)
                         logger.warning(f"⚠️ [AIHelper] 有料キーでクォータ制限/一時エラー検知 ({model})。{wait_time:.1f}秒後にリトライ... (試行 {attempt + 1}/{retries})")
                         time.sleep(wait_time)
                         delay *= 2

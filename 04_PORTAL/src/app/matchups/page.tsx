@@ -28,6 +28,7 @@ export default function MatchupsPage() {
   const [champMap, setChampMap] = useState<Record<string, string>>({});
   const [viewMode, setViewMode] = useState<'list' | 'champion'>('list');
   const [expandedChamp, setExpandedChamp] = useState<string | null>(null);
+  const [paramsProcessed, setParamsProcessed] = useState(false);
 
   const fetchData = async () => {
     setLoading(true);
@@ -50,6 +51,53 @@ export default function MatchupsPage() {
         setChampMap(m);
       }).catch(console.error);
   }, []);
+
+  // URLパラメータ（champion, enemy）の連携処理
+  useEffect(() => {
+    if (loading || paramsProcessed || matchups.length === 0) return;
+
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const champParam = params.get('champion');
+      const enemyParam = params.get('enemy');
+
+      if (champParam || enemyParam) {
+        setParamsProcessed(true);
+        if (champParam) setMySearch(champParam);
+        if (enemyParam) setEnemySearch(enemyParam);
+
+        // 既存のマッチアップを検索
+        const found = matchups.find(
+          m =>
+            m.champion?.toLowerCase() === champParam?.toLowerCase() &&
+            m.enemy?.toLowerCase() === enemyParam?.toLowerCase()
+        );
+
+        if (found) {
+          handleEdit(found);
+        } else {
+          // 新規作成フォームをパラメータ付きで開く
+          setMemo({
+            ...EMPTY_MEMO,
+            champion: champParam || '',
+            enemy: enemyParam || '',
+            role: 'Jungle',
+            title: `${champParam || ''} vs ${enemyParam || ''} (Jungle)`,
+            difficulty: 3,
+            winCondition: '',
+            earlyGame: '',
+            powerSpikes: '',
+            buildRunes: '',
+            firstClear: '',
+            counterJg: '',
+            result: '',
+            strategy: '',
+          });
+          setShowForm(true);
+        }
+      }
+    }
+  }, [loading, matchups, paramsProcessed]);
 
   // チャンピオン名マッチング（一覧・チャンピオン別ビュー共通）
   const isMatch = useCallback((name: string, q: string) => {

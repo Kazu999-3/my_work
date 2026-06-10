@@ -7,7 +7,7 @@ import { getChampIcon, getChampSplash } from '../../lib/ddragonClient';
 import { ChevronLeft, Search, Save, BookOpen, RefreshCw, Zap, ShieldAlert, Swords, Shield, Copy, Check, FileText, Eye, Edit2, Activity, Plus, Trash, Filter, Star as StarIcon } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { getFavorites, toggleFavoriteChampion } from '../../components/FavoritesPanel';
 
 function ChampionsContent() {
@@ -42,6 +42,8 @@ function ChampionsContent() {
   const [noteDraftMode, setNoteDraftMode] = useState<'preview' | 'edit'>('preview');
   const [stats, setStats] = useState({ matches: 0, wins: 0, kda: '0.00' });
   const [favoriteChamps, setFavoriteChamps] = useState<string[]>([]);
+  const [matchupsList, setMatchupsList] = useState<any[]>([]);
+  const [expandedMatchupId, setExpandedMatchupId] = useState<string | null>(null);
 
   // お気に入りデータのロードとイベント購読
   useEffect(() => {
@@ -103,10 +105,13 @@ function ChampionsContent() {
 
   useEffect(() => {
     if (!selected) return;
+    setExpandedMatchupId(null); // 選択したチャンピオンが変わったときにアコーディオンをリセット
 
     const loadChampionData = async (champId: string) => {
-      const { data: mData } = await supabase.from('matchup_sentinel').select('raw_data').eq('champion', champId).neq('enemy', 'GLOBAL');
+      // 対面マッチアップ履歴の表示に必要な詳細フィールド（id, matchup_id, champion, enemy, title, strategy, raw_data）を取得
+      const { data: mData } = await supabase.from('matchup_sentinel').select('id, matchup_id, champion, enemy, title, strategy, raw_data').eq('champion', champId).neq('enemy', 'GLOBAL');
       if (mData && mData.length > 0) {
+        setMatchupsList(mData);
         let wins = 0; let k = 0; let d = 0; let a = 0;
         mData.forEach(row => {
           const rd = row.raw_data || {};
@@ -117,7 +122,10 @@ function ChampionsContent() {
           }
         });
         setStats({ matches: mData.length, wins, kda: d === 0 ? (k + a).toFixed(2) : ((k + a) / d).toFixed(2) });
-      } else { setStats({ matches: 0, wins: 0, kda: '0.00' }); }
+      } else { 
+        setMatchupsList([]);
+        setStats({ matches: 0, wins: 0, kda: '0.00' }); 
+      }
 
       const { data: noteData } = await supabase.from('matchup_sentinel').select('strategy, raw_data').eq('champion', champId).eq('enemy', 'GLOBAL').single();
       const rd = noteData?.raw_data || {};
@@ -277,6 +285,110 @@ function ChampionsContent() {
             <Plus size={24} />
             <span className="font-bold text-sm">新しい項目を追加</span>
           </button>
+        </div>
+
+        {/* ⚔️ 対面マッチアップ履歴 (バトルサーチ連携) */}
+        <div className="glass-panel border-t-4 border-[#00cfef] rounded-2xl p-6 relative overflow-hidden group">
+          <div className="absolute -right-20 -top-20 w-64 h-64 bg-[#00cfef]/5 rounded-full blur-3xl group-hover:bg-[#00cfef]/10 transition-colors"></div>
+          <h3 className="text-lg font-black font-mono mb-6 flex items-center gap-2 text-white"><Swords className="text-[#00cfef]" size={20} /> ⚔️ 対面マッチアップ履歴 (バトルサーチ連携)</h3>
+          
+          {matchupsList.length === 0 ? (
+            <p className="text-gray-500 italic text-sm">バトルサーチにこのチャンピオンのマッチアップ記録はありません。</p>
+          ) : (
+            <div className="flex flex-col gap-3 relative z-10">
+              {matchupsList.map((m) => {
+                const isExpanded = expandedMatchupId === m.matchup_id;
+                const rd = m.raw_data || {};
+                const difficulty = rd.difficulty || 3;
+                const result = rd.result || 'UNKNOWN';
+                
+                return (
+                  <div key={m.matchup_id} className={`glass-panel border-l-4 rounded-xl transition-all ${
+                    result === 'Win' ? 'border-[var(--color-success)] hover:bg-[#22c55e]/5' : 
+                    result === 'Lose' ? 'border-[var(--color-danger)] hover:bg-[#ef4444]/5' : 
+                    'border-gray-500 hover:bg-white/5'
+                  }`}>
+                    {/* ヘッダー部分。クリックでアコーディオン開閉 */}
+                    <div 
+                      onClick={() => setExpandedMatchupId(isExpanded ? null : m.matchup_id)}
+                      className="p-4 flex items-center justify-between cursor-pointer select-none flex-wrap gap-4"
+                    >
+                      <div className="flex items-center gap-3">
+                        <img src={getChampIcon(m.enemy)} alt={m.enemy} className="w-10 h-10 rounded-full border border-white/10" />
+                        <div>
+                          <p className="text-sm font-bold text-white flex items-center gap-2">
+                            vs {m.enemy} 
+                            <span className={`text-xs px-2 py-0.5 rounded-full font-black ${
+                              result === 'Win' ? 'bg-[#22c55e]/15 text-[var(--color-success)]' : 
+                              result === 'Lose' ? 'bg-[#ef4444]/15 text-[var(--color-danger)]' : 
+                              'bg-white/10 text-gray-400'
+                            }`}>
+                              {result}
+                            </span>
+                          </p>
+                          <p className="text-xs text-gray-400">{m.title || `${m.champion} vs ${m.enemy}`}</p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center gap-6">
+                        {/* 難易度(星)表示 */}
+                        <div className="flex gap-0.5" title={`難易度: ${difficulty}`}>
+                          {Array.from({ length: 5 }).map((_, idx) => (
+                            <StarIcon 
+                              key={idx} 
+                              size={14} 
+                              className={idx < difficulty ? "text-amber-400 fill-amber-400" : "text-gray-600"} 
+                            />
+                          ))}
+                        </div>
+                        
+                        {/* バトルサーチの該当マッチアップへ直接ジャンプするリンク */}
+                        <a 
+                          href={`/matchups?champion=${m.champion}&enemy=${m.enemy}`}
+                          onClick={(e) => e.stopPropagation()} // 親アコーディオンのクリック伝播を防止
+                          className="px-3 py-1 bg-white/5 hover:bg-[#c89b3c]/20 hover:text-[#c89b3c] border border-white/10 rounded-lg text-xs font-bold transition-all flex items-center gap-1 text-gray-300"
+                        >
+                          <Edit2 size={12} /> 編集
+                        </a>
+                      </div>
+                    </div>
+                    
+                    {/* アコーディオンによる詳細開閉 (winCondition, strategyを表示) */}
+                    <AnimatePresence>
+                      {isExpanded && (
+                        <motion.div 
+                          initial={{ height: 0, opacity: 0 }} 
+                          animate={{ height: 'auto', opacity: 1 }} 
+                          exit={{ height: 0, opacity: 0 }}
+                          className="overflow-hidden border-t border-white/5 bg-black/20"
+                        >
+                          <div className="p-5 flex flex-col gap-4 text-sm leading-relaxed">
+                            {rd.winCondition && (
+                              <div>
+                                <h4 className="text-xs font-bold text-[#00cfef] uppercase tracking-wider mb-1">💡 勝ち筋・主要コンセプト</h4>
+                                <p className="text-gray-200">{rd.winCondition}</p>
+                              </div>
+                            )}
+                            {m.strategy && (
+                              <div>
+                                <h4 className="text-xs font-bold text-[#c89b3c] uppercase tracking-wider mb-1">🧠 具体的な立ち回り・対策メモ</h4>
+                                <div className="prose prose-invert prose-xs max-w-none text-gray-300">
+                                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.strategy}</ReactMarkdown>
+                                </div>
+                              </div>
+                            )}
+                            {!rd.winCondition && !m.strategy && (
+                              <p className="text-gray-500 italic text-xs">このマッチアップに関する詳細な立ち回りメモは登録されていません。</p>
+                            )}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         <div className="glass-panel border-t-4 border-pink-500 rounded-2xl p-6 relative overflow-hidden group">
