@@ -183,6 +183,15 @@ class YouTubeAbsorber:
                 f"📁 `02_FACTORY/bible/kirei_bible/`\n"
                 f"*(※ この後、Dict Synthesizerによってチャンピオン辞典へ自動でマージされます)*"
             )
+            
+            # 自動同期（Sovereign Sync）を実行してクラウドへ同期し、Discordへ通知を送る
+            try:
+                logger.info("🔄 SovereignSync を呼び出して自動同期を実行します...")
+                from v2_CORE.sovereign_sync import SovereignSync
+                sync = SovereignSync()
+                sync.run_sync()
+            except Exception as e:
+                logger.error(f"❌ 自動同期呼び出しエラー: {e}")
         elif len(targets) > 0:
             herald.notify_error(
                 f"YouTube Absorberで {len(targets)} 本の動画の処理を試みましたが、API制限（上限到達）などにより全て失敗しました。\n"
