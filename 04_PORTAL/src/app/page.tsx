@@ -227,7 +227,7 @@ export default function Home() {
           </div>
         </motion.div>
 
-        {/* QUOTA Card (Expanded) */}
+        {/* QUOTA Card (Simplified) */}
         <motion.div variants={itemVariants} className="md:col-span-2 glass-panel glass-panel-hover rounded-3xl p-6 relative overflow-hidden border border-white/5 bg-gradient-to-b from-white/[0.05] to-transparent">
           <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/20 rounded-full blur-[50px] -mr-10 -mt-10 pointer-events-none"></div>
           <div className="flex justify-between items-start mb-6">
@@ -235,34 +235,36 @@ export default function Home() {
               <div className="p-3 bg-purple-500/10 border border-purple-500/20 rounded-xl text-purple-400">
                 <Zap size={22} />
               </div>
-              <h3 className="text-xl font-black text-white tracking-tight">API Quota</h3>
+              <h3 className="text-xl font-black text-white tracking-tight">API Quota (1500回/日)</h3>
             </div>
-            {apiErrors > 0 && (
-              <span className="text-rose-400/90 text-xs font-bold bg-rose-500/10 px-3 py-1.5 rounded-lg border border-rose-500/20 shadow-[0_0_10px_rgba(244,63,94,0.2)]">
-                ⚠️ API上限による待機: {apiErrors}回
-              </span>
-            )}
           </div>
           
           <div className="space-y-4">
-            {Object.entries(apiUsageDetails).map(([key, data]) => {
-              const pct = Math.min((data.used / (data.limit || Math.max(data.used, 1))) * 100, 100);
-              const isDanger = data.limit > 0 && data.used >= data.limit;
-              return (
-                <div key={key} className="flex flex-col gap-1.5">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-300 font-bold">{key}</span>
-                    <span className="text-gray-400 font-mono"><span className={isDanger ? "text-rose-400 font-bold" : "text-white"}>{data.used}</span> / {data.limit > 0 ? data.limit : '∞'}</span>
-                  </div>
-                  <div className="w-full bg-black/40 rounded-full h-2 overflow-hidden border border-white/5">
-                    <div className={`h-full rounded-full ${isDanger ? 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.8)]' : 'bg-gradient-to-r from-blue-400 to-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.5)]'}`} style={{ width: `${pct}%` }}></div>
-                  </div>
+            <div className="flex flex-col gap-2">
+              <div className="flex justify-between items-end">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-5xl font-black text-white tracking-tight">{apiUsage}</span>
+                  <span className="text-lg text-gray-400 font-medium">/ 1500 消費</span>
                 </div>
-              );
-            })}
-            {Object.keys(apiUsageDetails).length === 0 && (
-              <p className="text-sm text-gray-500 text-center py-2">本日APIはまだ利用されていません</p>
-            )}
+                <div className="text-right">
+                  <span className="text-sm text-gray-500 block">残り</span>
+                  <span className="text-2xl font-bold text-emerald-400">{Math.max(0, 1500 - apiUsage)}</span>
+                </div>
+              </div>
+              
+              <div className="w-full bg-black/40 rounded-full h-3 overflow-hidden border border-white/5 mt-2">
+                <div 
+                  className={`h-full rounded-full transition-all duration-1000 ${apiUsage >= 1500 ? 'bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.8)]' : apiUsage > 1200 ? 'bg-gradient-to-r from-orange-400 to-rose-500' : 'bg-gradient-to-r from-blue-400 to-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.5)]'}`} 
+                  style={{ width: `${Math.min((apiUsage / 1500) * 100, 100)}%` }}
+                ></div>
+              </div>
+              
+              <div className="flex justify-between text-xs text-gray-500 mt-1 font-medium">
+                <span>0%</span>
+                <span>リセット時間: 日本時間 16:00 (または17:00)</span>
+                <span>100%</span>
+              </div>
+            </div>
           </div>
         </motion.div>
 
