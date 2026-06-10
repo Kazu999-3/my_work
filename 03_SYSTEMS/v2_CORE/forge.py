@@ -64,7 +64,8 @@ class AutoForge:
             logger.error(f"[Forge] エラー: {e}")
             raise  # テンプレートへのフォールバックを廃止し、上位の try-except で処理を中断させる
         
-        role_suffix = f"_{role}" if role and role != "Unknown" else ""
+        clean_role = str(role).strip().lower() if role else ""
+        role_suffix = f"_{role.strip()}" if role and clean_role not in ("", "unknown") else ""
         file_name = f"sovereign_draft_{patch}_{champion}{role_suffix}.md"
         file_path = self.draft_dir / file_name
         with open(file_path, "w", encoding="utf-8") as f:

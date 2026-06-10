@@ -47,8 +47,8 @@ class SovereignHerald:
                     "inline": True
                 },
                 {
-                    "name": "📱 SNS 拡散",
-                    "value": f"[ポータル › SNS拡散]({sns_page_url})",
+                    "name": "📱 SNS 拡散案",
+                    "value": f"X(Twitter)用連投スレッド下書きはポータル内の記事詳細、または `02_FACTORY/sns_assets/` (ローカル) にて確認できます。\n[ポータル › SNS拡散]({sns_page_url})",
                     "inline": True
                 }
             ],
@@ -61,8 +61,8 @@ class SovereignHerald:
         # 画像プロンプトが指定されている場合
         if image_prompt:
             embed["fields"].append({
-                "name": "🖼️ サムネイル画像生成プロンプト (Midjourney等)",
-                "value": f"```{image_prompt[:500]}```"  # 長すぎる場合は切り詰め
+                "name": "🖼️ アイキャッチ(サムネイル)画像生成AI用プロンプト (Midjourney / DALL-E 等)",
+                "value": f"以下の英文プロンプトを画像生成AIに入力して、note記事のアイキャッチ画像を生成してください：\n```{image_prompt[:500]}```"
             })
 
         payload = {
