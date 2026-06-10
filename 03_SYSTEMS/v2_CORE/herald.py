@@ -22,10 +22,10 @@ class SovereignHerald:
             return
 
         portal_url = os.environ.get('PORTAL_URL', 'http://localhost:5173').rstrip("/")
-        # ポータルの各ページURLを構築
-        draft_page_url  = f"{portal_url}/drafts"          # 記事下書き一覧ページ
-        publish_page_url = f"{portal_url}/publish"        # 投稿管理ページ
-        sns_page_url     = f"{portal_url}/sns"            # SNS拡散ページ
+        # ポータルの各ページURLを構築（実装済みのページに合わせる）
+        draft_page_url   = f"{portal_url}/library"        # 攻略ライブラリ（記事一覧）
+        publish_page_url = f"{portal_url}/library"        # 投稿管理はライブラリ内で可能
+        sns_page_url     = f"{portal_url}/"               # SNS拡散ページ（未実装のためダッシュボード）
 
         # 通知メッセージの構築
         embed = {
@@ -89,7 +89,7 @@ class SovereignHerald:
             return
 
         portal_url = os.environ.get('PORTAL_URL', 'http://localhost:5173').rstrip("/")
-        log_page_url = f"{portal_url}/logs"  # ポータルのログページ
+        log_page_url = f"{portal_url}/"  # ポータルのログページ (未実装のためダッシュボード)
 
         embed = {
             "title": "🚨 システムエラーが発生しました",
@@ -145,20 +145,36 @@ class SovereignHerald:
 
         # ページ名の日本語対応テーブル
         page_labels = {
-            "drafts":   "📄 記事下書き一覧",
-            "publish":  "🚀 投稿管理",
-            "sns":      "📱 SNS拡散",
-            "logs":     "🔍 ログ一覧",
+            "drafts":   "📄 攻略ライブラリ（記事・下書き）",
+            "publish":  "🚀 投稿管理（ライブラリ内）",
+            "sns":      "📱 SNS拡散（未実装/ダッシュボードへ）",
+            "logs":     "🔍 ログ一覧（未実装/ダッシュボードへ）",
             "dashboard":"🏠 ダッシュボード",
             "analysis": "📊 分析レポート",
             "champdb":  "📖 チャンピオン辞典",
+        }
+        
+        # 実際のポータルのURLパスへのマッピング
+        path_mapping = {
+            "champdb": "champions",
+            "drafts": "library",
+            "publish": "library",
+            "dashboard": "",
+            "sns": "",
+            "logs": "",
+            "analysis": ""
         }
 
         content = f"📡 **{msg}**"
         if portal_link:
             portal_url = os.environ.get("PORTAL_URL", "http://localhost:5173").rstrip("/")
-            target_path = page if page else ""
+            target_path = path_mapping.get(page, page) if page else ""
             target_url  = f"{portal_url}/{target_path}".rstrip("/")
+            
+            # trailing slash 回避のため、空の場合はルートにする
+            if not target_path:
+                target_url = portal_url
+                
             label = page_labels.get(page, "🌐 Webポータル")
             content += f"\n{label} → [ポータルを開く]({target_url})"
 
@@ -173,7 +189,7 @@ class SovereignHerald:
         if not self.webhook_url: return
 
         portal_url = os.environ.get('PORTAL_URL', 'http://localhost:5173').rstrip("/")
-        dashboard_url = f"{portal_url}/dashboard"  # ダッシュボードページ
+        dashboard_url = f"{portal_url}/"  # ダッシュボードページ (ルート)
         today_str = datetime.now().strftime("%Y年%m月%d日")
 
         fields = []
