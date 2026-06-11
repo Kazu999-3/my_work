@@ -163,7 +163,183 @@ class DictSynthesizer:
         else:
             logger.info("ℹ️ 今回整理が必要なチャンピオンは見つかりませんでした。")
 
+    def fetch_generic_articles(self):
+        logger.info("🔍 攻略ライブラリから汎用記事を取得中...")
+        res = httpx.get(
+            self._api("bible_articles"),
+            headers=self._headers(),
+            timeout=15
+        )
+        if res.status_code == 200:
+            articles = res.json()
+            generic = []
+            fake_champions = ["", "Unknown", "その他", "[YouTube]", "YouTube", "Jungle", "jg", "lol", "ARTICLE", "draft", "SYSTEM", "LIVE", "GLOBAL", "test", "sns", "macro"]
+            for a in articles:
+                kw = a.get("keywords", [])
+                if kw and "__DELETED__" in kw:
+                    continue
+                champ = a.get("champion")
+                if not champ or champ in fake_champions or champ.lower() in [fc.lower() for fc in fake_champions]:
+                    generic.append(a)
+            return generic
+        else:
+            logger.error(f"❌ ライブラリデータ取得失敗: {res.status_code}")
+            return []
+
+    def classify_by_genre(self, articles):
+        genres = {
+            "マクロ": [],
+            "ジャングルルート": [],
+            "集団戦": [],
+            "ドラフト": []
+        }
+        
+        genre_keywords = {
+            "マクロ": ["マクロ", "macro", "判断", "ウェーブ", "ファーム", "オブジェクト", "マップ", "視界", "gank", "ガンク"],
+            "ジャングルルート": ["ルート", "route", "clear", "パフ", "ジャングルルート", "jgルート", "周回", "1st", "キャンプ"],
+            "集団戦": ["集団戦", "teamfight", "戦闘", "ポジショニング", "ミクロ", "立ち回り", "ファイティング"],
+            "ドラフト": ["ドラフト", "draft", "構成", "ピック", "バン", "pick", "ban", "メタ"]
+        }
+        
+        for a in articles:
+            title = a.get("title", "").lower()
+            content = a.get("content", "").lower()
+            keywords = [k.lower() for k in a.get("keywords", []) if k]
+            
+            if "[総合バイブル]" in a.get("title", ""):
+                continue
+                
+            matched_genre = None
+            for genre, kws in genre_keywords.items():
+                if any(kw in keywords for kw in kws) or any(kw in title for kw in kws) or any(kw in content[:200] for kw in kws):
+                    matched_genre = genre
+                    break
+                    
+            if matched_genre:
+                genres[matched_genre].append(a)
+                
+        return genres
+
+    def synthesize_genre_text(self, genre, text):
+        prompt = f"""
+        あなたはLoLの最上位プレイヤー（チャレンジャー／プロコーチ）です。
+        以下のテキストは、攻略ライブラリからジャンル「{genre}」について収集された複数の攻略メモの寄せ集めです。
+        情報が重複していたり、読みやすさがバラバラなため、これらを論理的で体系的な1つのMarkdownドキュメント（総合バイブル）に再構成・統合してください。
+
+        【要件】
+        - 雑談や重複する内容は省き、実践的で高度な知見を漏らさず体系化してください。
+        - 全て**日本語**で出力してください。
+        - フォーマットは以下の通り整理してください：
+        ### 📌 ジャンル基本概念・重要性
+        ### 🧠 判断基準・コア戦略
+        ### ⚔️ 実践での立ち回り・コツ
+        ### 💡 注意点・警戒すべきこと
+
+        【対象の攻略テキスト群（寄せ集め）】
+        {text}
+        """
+        return generate_content_safe(
+            self.client,
+            prompt,
+            feature_name="dict_synthesizer"
+        )
+
+    def process_library_genres(self):
+        if not self.ready:
+            return
+            
+        generic_articles = self.fetch_generic_articles()
+        if not generic_articles:
+            logger.info("ℹ️ 処理対象の汎用記事がありません。")
+            return
+            
+        genres = self.classify_by_genre(generic_articles)
+        processed_any = False
+        
+        for genre, items in genres.items():
+            if len(items) < 2:
+                continue
+                
+            target_title = f"[総合バイブル] {genre}"
+            existing_article = None
+            
+            for ga in generic_articles:
+                if ga.get("title") == target_title:
+                    existing_article = ga
+                    break
+            
+            # API 429を回避するため、一度にマージする新規記事数を最大 5 件に制限します
+            limit_items = items[:5]
+            
+            logger.info(f"🔄 ジャンル「{genre}」の新規記事 {len(items)} 件のうち {len(limit_items)} 件を自動マージします...")
+            
+            combined_text = ""
+            if existing_article:
+                combined_text += f"## 【既存の総合バイブル】\n\n{existing_article['content']}\n\n---\n\n"
+                
+            for item in limit_items:
+                combined_text += f"## 【元記事】{item['title']}\n\n{item['content']}\n\n---\n\n"
+                
+            synthesized = self.synthesize_genre_text(genre, combined_text)
+            if synthesized.startswith("⚠️") or synthesized.startswith("❌"):
+                logger.error(f"❌ 「{genre}」のマージテキスト生成に失敗しました。")
+                continue
+                
+            payload = {
+                "title": target_title,
+                "content": synthesized,
+                "champion": "Unknown",
+                "keywords": [genre, "総合バイブル"],
+                "file_path": existing_article.get("file_path") if existing_article else f"d:\\my_work\\02_FACTORY\\bible\\kirei_bible\\genre_{genre}.md"
+            }
+            
+            if existing_article:
+                res = httpx.patch(
+                    self._api("bible_articles") + f"?id=eq.{existing_article['id']}",
+                    headers=self._headers(),
+                    json=payload,
+                    timeout=15
+                )
+            else:
+                res = httpx.post(
+                    self._api("bible_articles"),
+                    headers=self._headers(),
+                    json=payload,
+                    timeout=15
+                )
+                
+            if res.status_code in (200, 201, 204):
+                logger.info(f"✅ 「{genre}」の総合バイブル記事を保存しました！")
+                processed_any = True
+                
+                try:
+                    file_path = payload["file_path"]
+                    os.makedirs(os.path.dirname(file_path), exist_ok=True)
+                    with open(file_path, "w", encoding="utf-8") as f:
+                        f.write(synthesized)
+                    logger.info(f"💾 ローカルファイルに保存完了: {file_path}")
+                except Exception as e:
+                    logger.error(f"❌ ローカルファイル保存エラー: {e}")
+                
+                # 今回統合した個別記事のみを __DELETED__ マークします
+                for item in limit_items:
+                    del_payload = {"keywords": ["__DELETED__"]}
+                    httpx.patch(
+                        self._api("bible_articles") + f"?id=eq.{item['id']}",
+                        headers=self._headers(),
+                        json=del_payload,
+                        timeout=10
+                    )
+                logger.info(f"🗑️ 今回統合した個別記事 {len(limit_items)} 件を __DELETED__ マークしました。")
+            else:
+                logger.error(f"❌ 総合バイブル保存エラー ({genre}): {res.status_code}")
+                
+        if processed_any:
+            herald.notify_progress("✨ **【ライブラリ Synthesizer】** 攻略ライブラリ内の汎用攻略メモをジャンルごとに自動マージ・統合し、新たな「総合バイブル」を錬成しました！")
+
 if __name__ == "__main__":
     synthesizer = DictSynthesizer()
-    # 1回の実行で最大5体を処理する
+    # 1. チャンピオン辞典の整理
     synthesizer.process_and_update(limit=5)
+    # 2. 攻略ライブラリのジャンル別マージ
+    synthesizer.process_library_genres()

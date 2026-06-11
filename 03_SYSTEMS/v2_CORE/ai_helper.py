@@ -51,10 +51,9 @@ def generate_content_safe(client, prompt, model_id=None, config=None, feature_na
     primary_model = model_id or settings.DEFAULT_MODEL
     models_to_try = [
         primary_model,
+        "gemini-2.5-pro",
         "gemini-2.5-flash",
-        "gemini-2.0-flash",
-        "gemini-1.5-flash-latest",
-        "gemini-1.5-pro-latest"
+        "gemini-2.0-flash"
     ]
     
     # 重複を排除しつつ順序を維持
@@ -127,6 +126,8 @@ def generate_content_safe(client, prompt, model_id=None, config=None, feature_na
                     
                     if is_quota:
                         quota_manager.record_error("error_429")
+                        err_msg = e.message if hasattr(e, 'message') else str(e)
+                        logger.warning(f"⚠️ [AIHelper] クォータ制限詳細 ({key_name}): {err_msg}")
                         if key_name == "Free Key":
                             logger.warning(f"⚠️ [AIHelper] {key_name} の枠が枯渇しました ({model})。ただちに有料キーへ切り替えます。")
                             break  # attemptループを抜けて、次のキー(Paid Key)へ
