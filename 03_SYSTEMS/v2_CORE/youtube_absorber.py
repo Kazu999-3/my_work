@@ -14,6 +14,15 @@ from v2_CORE.herald import herald
 from v2_CORE.logger_config import setup_sovereign_logging
 logger = setup_sovereign_logging("YouTubeAbsorber")
 
+# ===================================================
+# トークン予算の設定
+# 1サイクルで使用する字幕テキストの最大文字数（概算トークン）
+# 短い動画を複数処理するための上限
+# ===================================================
+CYCLE_CHAR_BUDGET = 150000  # 1サイクルで消費する字幕文字数の合計上限
+MAX_VIDEOS_PER_CYCLE = 10   # 1サイクルで処理する動画の最大本数（安全弁）
+DURATION_UNKNOWN = 99999    # 秒数不明の場合は後回し（大きな値にする）
+
 class YouTubeAbsorber:
     def __init__(self):
         self.api_key = settings.GEMINI_API_KEY_FREE or settings.GEMINI_API_KEY
@@ -28,15 +37,116 @@ class YouTubeAbsorber:
         else:
             self.yt_dlp = "yt-dlp"
         
-    def _load_queue(self):
-        if not os.path.exists(self.queue_file):
-            return []
-        with open(self.queue_file, "r", encoding="utf-8") as f:
-            return json.load(f)
+    def _supabase_request(self, path, method='GET', payload=None, headers=None):
+        if not settings.SUPABASE_URL or not settings.SUPABASE_KEY:
+            logger.error("Supabase URL or Key is not configured.")
+            return None, "Not configured", None
             
-    def _save_queue(self, q):
-        with open(self.queue_file, "w", encoding="utf-8") as f:
-            json.dump(q, f, ensure_ascii=False, indent=4)
+        url = f"{settings.SUPABASE_URL}/rest/v1/{path}"
+        data = None
+        if payload is not None:
+            data = json.dumps(payload).encode('utf-8')
+            
+        req_headers = {
+            'apikey': settings.SUPABASE_KEY,
+            'Authorization': f'Bearer {settings.SUPABASE_KEY}',
+            'Content-Type': 'application/json'
+        }
+        if headers:
+            req_headers.update(headers)
+            
+        req = urllib.request.Request(
+            url,
+            data=data,
+            headers=req_headers,
+            method=method
+        )
+        try:
+            import urllib.request
+            with urllib.request.urlopen(req, timeout=30) as r:
+                body = r.read().decode('utf-8')
+                return r.status, body, r
+        except urllib.error.HTTPError as e:
+            body = e.read().decode('utf-8')
+            logger.error(f"Supabase HTTP Error {e.code}: {body}")
+            return e.code, body, None
+        except Exception as e:
+            logger.error(f"Supabase request failed: {e}")
+            return None, str(e), None
+
+    def get_pending_videos(self):
+        """status=pending の動画一覧を取得する"""
+        status, body, _ = self._supabase_request("youtube_queue?status=eq.pending", method='GET')
+        if status in (200, 201):
+            return json.loads(body)
+        return []
+
+    def get_retry_candidates(self):
+        """status=error_generation かつ retry_count < 5 の動画を取得する"""
+        status, body, _ = self._supabase_request("youtube_queue?status=eq.error_generation&retry_count=lt.5", method='GET')
+        if status in (200, 201):
+            return json.loads(body)
+        return []
+
+    def update_video(self, video_id, updates):
+        """動画の情報を更新する（status, retry_count, duration_secなど）"""
+        status, body, _ = self._supabase_request(f"youtube_queue?id=eq.{video_id}", method='PATCH', payload=updates)
+        return status in (200, 201, 204)
+
+    def get_pending_count(self):
+        """残りの pending 件数を取得する"""
+        headers = {'Prefer': 'count=exact'}
+        status, body, r = self._supabase_request("youtube_queue?status=eq.pending&select=id&limit=1", method='GET', headers=headers)
+        if r:
+            content_range = r.headers.get('Content-Range', '')
+            if '/' in content_range:
+                try:
+                    return int(content_range.split('/')[-1])
+                except:
+                    pass
+        return 0
+
+    def fetch_duration(self, url: str) -> int:
+        """
+        yt-dlp --print duration で動画の長さ（秒）を取得する。
+        APIを使わないため無料・高速。
+        取得失敗時は DURATION_UNKNOWN を返す。
+        """
+        try:
+            result = subprocess.run(
+                [self.yt_dlp, "--print", "duration", "--no-warnings", url],
+                capture_output=True, text=True, timeout=15
+            )
+            val = result.stdout.strip()
+            if val and val.isdigit():
+                return int(val)
+        except Exception as e:
+            logger.warning(f"動画長さ取得失敗: {url[:50]} — {e}")
+        return DURATION_UNKNOWN
+
+    def enrich_queue_with_duration(self, max_enrich: int = 30):
+        """
+        pending アイテムのうち duration_sec が未設定のものに対して
+        yt-dlp で動画長さを取得してキューに保存する。
+        max_enrich 件だけ処理して終了（呼び出しごとに少しずつ充填）。
+        """
+        pending = self.get_pending_videos()
+        targets = [item for item in pending if item.get("duration_sec") is None]
+
+        if not targets:
+            logger.info("✅ [SmartQueue] 全pendingアイテムのduration_secが設定済みです。")
+            return
+
+        enriched = 0
+        for item in targets[:max_enrich]:
+            dur = self.fetch_duration(item["url"])
+            self.update_video(item["id"], {"duration_sec": dur})
+            mins = dur // 60 if dur != DURATION_UNKNOWN else "?"
+            logger.info(f"📐 [SmartQueue] {item['title'][:40]} → {mins}分")
+            enriched += 1
+            time.sleep(1)  # yt-dlp への連続アクセスを少し間引く
+
+        logger.info(f"✅ [SmartQueue] {enriched}件のduration_secを更新しました（残り未取得: {len(targets) - enriched}件）")
             
     def extract_text_from_vtt(self, file_path):
         try:
@@ -125,30 +235,68 @@ class YouTubeAbsorber:
             return None
 
     def run_cycle(self, limit=10):
-        queue = self._load_queue()
-        pending = [item for item in queue if item.get("status") == "pending"]
+        pending = self.get_pending_videos()
         
         if not pending:
             # error_generation のうち、リトライ回数が5回未満のものを pending に戻す
-            retry_candidates = [item for item in queue if item.get("status") == "error_generation" and item.get("retry_count", 0) < 5]
+            retry_candidates = self.get_retry_candidates()
             if retry_candidates:
                 reset_count = 0
                 for item in retry_candidates:
-                    item["status"] = "pending"
+                    self.update_video(item["id"], {"status": "pending"})
                     reset_count += 1
                 logger.info(f"🔄 [Auto-Healer] {reset_count} 件のエラー動画を pending にリセットして再試行します。")
-                self._save_queue(queue)
-                pending = [item for item in queue if item.get("status") == "pending"]
+                pending = self.get_pending_videos()
         
         if not pending:
             logger.info("🎉 All KireiLoL videos have been processed!")
             return 0
-            
-        targets = pending[:limit]
+
+        # ===================================================
+        # 【スマートキュー】
+        # Step 1: duration_sec が未設定の pending アイテムを先に最大10件充填
+        # Step 2: 短い順にソート（duration_sec 昇順、不明は後回し）
+        # Step 3: 字幕長ベース of トークン予算管理で複数本処理
+        # ===================================================
+        needs_duration = [item for item in pending if item.get("duration_sec") is None]
+        if needs_duration:
+            logger.info(f"📐 [SmartQueue] {len(needs_duration)}件のduration_sec未取得。先に最大10件取得します...")
+            self.enrich_queue_with_duration(max_enrich=10)
+            # キュー再読み込み
+            pending = self.get_pending_videos()
+
+        # 短い順ソート（duration_sec が None または DURATION_UNKNOWN は後回し）
+        pending_sorted = sorted(
+            pending,
+            key=lambda x: x.get("duration_sec") or DURATION_UNKNOWN
+        )
+
+        # トークン予算内で処理対象を決定
+        targets = []
+        char_budget_used = 0
+        for item in pending_sorted:
+            if len(targets) >= MAX_VIDEOS_PER_CYCLE:
+                break
+            # duration_sec から字幕文字数を概算（秒数 × 15文字が目安）
+            dur = item.get("duration_sec") or DURATION_UNKNOWN
+            estimated_chars = min(dur * 15, 30000) if dur != DURATION_UNKNOWN else 20000
+            if char_budget_used + estimated_chars <= CYCLE_CHAR_BUDGET:
+                targets.append(item)
+                char_budget_used += estimated_chars
+            else:
+                # 予算超過 — 短い動画でも詰め込めないならストップ
+                break
+
+        if not targets:
+            logger.info("⚠️ [SmartQueue] トークン予算内で処理できる動画がありません。スキップします。")
+            return 0
+
+        dur_info = ", ".join([f"{(t.get('duration_sec') or 0)//60}分" for t in targets])
+        logger.info(f"🎯 [SmartQueue] {len(targets)}本を処理予定（動画長さ: {dur_info}、推定字幕量: {char_budget_used:,}文字）")
+        herald.notify_progress(f"📺 **【YouTube Absorber】** KireiLoL動画 {len(targets)}本を吸収開始（短い順: {dur_info}）...")
+        
         success_count = 0
         processed_details = []
-        
-        herald.notify_progress(f"📺 **【YouTube Absorber】** KireiLoL動画のテキスト吸収を開始します（対象: {len(targets)}件）...")
         
         for item in targets:
             logger.info(f"Processing: {item['title']}")
@@ -156,9 +304,11 @@ class YouTubeAbsorber:
             
             if not transcript or len(transcript) < 100:
                 logger.warning(f"No valid transcript found for {item['id']}")
-                item["status"] = "error_no_transcript"
-                self._save_queue(queue)
+                self.update_video(item["id"], {"status": "error_no_transcript"})
                 continue
+
+            # 実際の字幕長をログに記録
+            logger.info(f"📝 字幕取得完了: {len(transcript):,}文字 ({item['title'][:40]})")
                 
             bible_text = self.generate_bible(item, transcript)
             if bible_text and not bible_text.startswith("⚠️") and not bible_text.startswith("❌"):
@@ -173,32 +323,36 @@ class YouTubeAbsorber:
                 with open(file_path, "w", encoding="utf-8") as f:
                     f.write(bible_text)
                     
-                item["status"] = "completed"
-                self._save_queue(queue)
+                self.update_video(item["id"], {"status": "completed"})
                 success_count += 1
-                processed_details.append(f"- {item['title']} (Champion: **{extracted_champ}**)")
+                dur_min = (item.get('duration_sec') or 0) // 60
+                processed_details.append(f"- {item['title']} (Champion: **{extracted_champ}**, {dur_min}分)")
                 
                 # ログに保存先を明記
                 logger.info(f"✅ Created bible for {item['id']} at {file_path} (Champion: {extracted_champ})")
             else:
                 retry_count = item.get("retry_count", 0) + 1
-                item["retry_count"] = retry_count
+                updates = {"retry_count": retry_count}
                 if retry_count >= 5:
-                    item["status"] = "failed"
+                    updates["status"] = "failed"
                     logger.warning(f"❌ Video {item['id']} has failed after 5 retries. Marked as failed.")
                 else:
-                    item["status"] = "error_generation"
-                self._save_queue(queue)
+                    updates["status"] = "error_generation"
+                self.update_video(item["id"], updates)
                 
-            # API制限（429）を回避するため、長めのクールダウン（60秒）を設ける
-            time.sleep(60) 
+            # API制限（429）を回避するため、動画間にクールダウンを設ける
+            if item != targets[-1]:  # 最後の動画の後はスリープ不要
+                logger.info("⏳ 次の動画まで30秒クールダウン中...")
+                time.sleep(30) 
             
         if success_count > 0:
             details_str = "\n".join(processed_details)
+            pending_remaining = self.get_pending_count()
             herald.notify_progress(
-                f"👑 **【YouTube Absorber完了】** {success_count}本のKireiLoL動画をバイブル化し、以下の場所に保存しました！\n\n"
+                f"👑 **【YouTube Absorber完了】** {success_count}本のKireiLoL動画をバイブル化しました！\n\n"
                 f"{details_str}\n\n"
                 f"📁 `02_FACTORY/bible/kirei_bible/`\n"
+                f"📊 残りキュー: **{pending_remaining}件**\n"
                 f"*(※ この後、Dict Synthesizerによってチャンピオン辞典へ自動でマージされます)*"
             )
             
@@ -222,6 +376,6 @@ class YouTubeAbsorber:
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     absorber = YouTubeAbsorber()
-    # 429 Too Many Requests エラーを回避するため、1回の実行上限を 3 本に制限し、
+    # 429 Too Many Requests エラーを回避するため、1回の実行上限を 1 本に制限し、
     # sre_daemon.py 経由で定期的に少しずつ消化する方針に変更
-    absorber.run_cycle(limit=3)
+    absorber.run_cycle(limit=1)

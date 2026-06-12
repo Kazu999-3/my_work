@@ -178,6 +178,9 @@ class DictSynthesizer:
                 kw = a.get("keywords", [])
                 if kw and "__DELETED__" in kw:
                     continue
+                # Reddit トレンド記事は自動マージ（総合バイブル化）の対象外とする
+                if kw and "Reddit" in kw:
+                    continue
                 champ = a.get("champion")
                 if not champ or champ in fake_champions or champ.lower() in [fc.lower() for fc in fake_champions]:
                     generic.append(a)

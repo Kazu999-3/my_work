@@ -40,6 +40,10 @@ class SovereignSettings(BaseSettings):
     # 統治者 (ユーザー) 設定
     KING_RIOT_ID: str = "Kazurin#4036"
     RIOT_API_KEY: Optional[str] = None
+
+    # Supabase Cloud Sync Settings
+    SUPABASE_URL: Optional[str] = None
+    SUPABASE_KEY: Optional[str] = None
     
     # PULSE: Lolalytics 監視設定
     WATCH_CHAMPIONS: list[str] = ["JarvanIV", "MonkeyKing", "Zyra", "Lillia", "Nocturne"]

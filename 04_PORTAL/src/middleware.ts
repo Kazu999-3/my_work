@@ -16,6 +16,7 @@ export function middleware(req: NextRequest) {
     path.startsWith('/champions') ||
     path.startsWith('/library') ||
     path.startsWith('/design') ||
+    path.startsWith('/admin') ||
     path.startsWith('/api/admin');
 
   if (isProtected) {

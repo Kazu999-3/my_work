@@ -1,0 +1,337 @@
+'use client';
+
+import React, { useState, useEffect } from 'react';
+
+interface QueueItem {
+  id: string;
+  title: string;
+  channel_name?: string;
+  url: string;
+  status: string;
+  retry_count: number;
+}
+
+export default function YoutubeQueueManager() {
+  const [queue, setQueue] = useState<QueueItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState<string | null>(null); // 特定のIDの処理中フラグ
+  const [newUrl, setNewUrl] = useState('');
+  const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+
+  // 1. キューデータの取得
+  const fetchQueue = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch('/api/admin/youtube');
+      if (res.ok) {
+        const data = await res.json();
+        setQueue(data);
+      } else {
+        showFeedback('データの取得に失敗しました。', 'error');
+      }
+    } catch (err) {
+      showFeedback('エラーが発生しました。', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchQueue();
+  }, []);
+
+  const showFeedback = (text: string, type: 'success' | 'error') => {
+    setMessage({ text, type });
+    setTimeout(() => setMessage(null), 5000);
+  };
+
+  // 2. 新規動画の追加
+  const handleAddVideo = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newUrl.trim()) return;
+
+    setActionLoading('add');
+    try {
+      const res = await fetch('/api/admin/youtube', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: newUrl }),
+      });
+
+      const result = await res.json();
+      if (res.ok) {
+        showFeedback(result.message || '動画を追加しました。', 'success');
+        setNewUrl('');
+        fetchQueue();
+      } else {
+        showFeedback(result.error || '動画の追加に失敗しました。', 'error');
+      }
+    } catch (err) {
+      showFeedback('リクエストに失敗しました。', 'error');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  // 3. 動画ステータスの更新 (再試行)
+  const handleRetryVideo = async (id: string) => {
+    setActionLoading(id);
+    try {
+      const res = await fetch('/api/admin/youtube', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, status: 'pending' }),
+      });
+
+      const result = await res.json();
+      if (res.ok) {
+        showFeedback('ステータスを pending にリセットしました。SREデーモンが再解析します。', 'success');
+        fetchQueue();
+      } else {
+        showFeedback(result.error || '再試行に失敗しました。', 'error');
+      }
+    } catch (err) {
+      showFeedback('リクエストに失敗しました。', 'error');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  // 4. 動画の削除
+  const handleDeleteVideo = async (id: string) => {
+    if (!confirm('この動画をキューから削除しますか？')) return;
+
+    setActionLoading(id);
+    try {
+      const res = await fetch('/api/admin/youtube', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      });
+
+      const result = await res.json();
+      if (res.ok) {
+        showFeedback('動画をキューから削除しました。', 'success');
+        fetchQueue();
+      } else {
+        showFeedback(result.error || '削除に失敗しました。', 'error');
+      }
+    } catch (err) {
+      showFeedback('リクエストに失敗しました。', 'error');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  // ステータスバッジのスタイル定義
+  const getStatusBadge = (status: string) => {
+    let classes = 'px-3 py-1 text-xs font-semibold rounded-full border ';
+    if (status === 'completed') {
+      classes += 'bg-green-950/40 text-green-400 border-green-800/60';
+    } else if (status === 'pending') {
+      classes += 'bg-cyan-950/40 text-cyan-400 border-cyan-800/60 animate-pulse';
+    } else if (status === 'failed') {
+      classes += 'bg-red-950/40 text-red-400 border-red-800/60';
+    } else if (status.startsWith('error')) {
+      classes += 'bg-orange-950/40 text-orange-400 border-orange-800/60';
+    } else {
+      classes += 'bg-gray-950/40 text-gray-400 border-gray-800/60';
+    }
+    return <span className={classes}>{status}</span>;
+  };
+
+  // 統計の計算
+  const stats = {
+    total: queue.length,
+    pending: queue.filter((i) => i.status === 'pending').length,
+    completed: queue.filter((i) => i.status === 'completed').length,
+    error: queue.filter((i) => i.status.startsWith('error') || i.status === 'failed').length,
+  };
+
+  return (
+    <div className="max-w-6xl mx-auto space-y-8">
+      {/* ヘッダー */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-800/80 pb-6">
+        <div>
+          <h1 className="text-3xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-amber-200 to-cyan-400">
+            📺 YouTube Absorber コマンドセンター
+          </h1>
+          <p className="text-sm text-gray-400 mt-1">
+            攻略動画の字幕テキストを自動抽出・AI解析し、戦略バイブルへとライブラリ化します。
+          </p>
+        </div>
+      </div>
+
+      {/* フィードバックメッセージ */}
+      {message && (
+        <div
+          className={`p-4 rounded-lg border text-sm transition-all duration-300 ${
+            message.type === 'success'
+              ? 'bg-green-950/30 text-green-400 border-green-800/60 shadow-[0_0_15px_rgba(34,197,94,0.1)]'
+              : 'bg-red-950/30 text-red-400 border-red-800/60 shadow-[0_0_15px_rgba(239,68,68,0.1)]'
+          }`}
+        >
+          {message.text}
+        </div>
+      )}
+
+      {/* 統計パネル */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="bg-[#0f111a] border border-gray-800/80 rounded-xl p-4 flex flex-col justify-center">
+          <span className="text-xs text-gray-400 font-semibold uppercase tracking-wider">総登録本数</span>
+          <span className="text-2xl font-bold mt-1 text-gray-200">{stats.total} 本</span>
+        </div>
+        <div className="bg-[#0f111a] border border-cyan-900/40 rounded-xl p-4 flex flex-col justify-center shadow-[0_0_15px_rgba(6,182,212,0.02)]">
+          <span className="text-xs text-cyan-400 font-semibold uppercase tracking-wider">解析待ち</span>
+          <span className="text-2xl font-bold mt-1 text-cyan-300">{stats.pending} 本</span>
+        </div>
+        <div className="bg-[#0f111a] border border-green-900/40 rounded-xl p-4 flex flex-col justify-center shadow-[0_0_15px_rgba(34,197,94,0.02)]">
+          <span className="text-xs text-green-400 font-semibold uppercase tracking-wider">完了済み</span>
+          <span className="text-2xl font-bold mt-1 text-green-300">{stats.completed} 本</span>
+        </div>
+        <div className="bg-[#0f111a] border border-red-900/40 rounded-xl p-4 flex flex-col justify-center shadow-[0_0_15px_rgba(239,68,68,0.02)]">
+          <span className="text-xs text-red-400 font-semibold uppercase tracking-wider">エラー/リトライ超過</span>
+          <span className="text-2xl font-bold mt-1 text-red-300">{stats.error} 本</span>
+        </div>
+      </div>
+
+      {/* 動画追加フォーム */}
+      <div className="bg-[#0f111a] border border-gray-800/80 rounded-2xl p-6 shadow-xl relative overflow-hidden">
+        <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-amber-500 via-amber-300 to-cyan-500" />
+        <h2 className="text-lg font-bold text-gray-200 mb-4 flex items-center gap-2">
+          <span>➕ 攻略動画の自動解析指示</span>
+        </h2>
+        <form onSubmit={handleAddVideo} className="flex flex-col md:flex-row gap-4">
+          <input
+            type="text"
+            placeholder="https://www.youtube.com/watch?v=..."
+            value={newUrl}
+            onChange={(e) => setNewUrl(e.target.value)}
+            disabled={actionLoading === 'add'}
+            className="flex-1 px-4 py-3 bg-[#07080e] border border-gray-800 rounded-xl focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 text-sm text-gray-200 placeholder-gray-600 transition-all"
+          />
+          <button
+            type="submit"
+            disabled={actionLoading === 'add' || !newUrl.trim()}
+            className="px-6 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-gray-950 font-bold text-sm shadow-[0_0_20px_rgba(245,158,11,0.2)] hover:shadow-[0_0_25px_rgba(245,158,11,0.35)] disabled:opacity-40 disabled:pointer-events-none transition-all duration-300 flex items-center justify-center min-w-[140px]"
+          >
+            {actionLoading === 'add' ? (
+              <span className="flex items-center gap-2">
+                <svg className="animate-spin h-4 w-4 text-gray-950" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+                登録中...
+              </span>
+            ) : (
+              'キューに追加'
+            )}
+          </button>
+        </form>
+      </div>
+
+      {/* キュー一覧リスト */}
+      <div className="bg-[#0f111a] border border-gray-800/80 rounded-2xl shadow-xl overflow-hidden">
+        <div className="p-6 border-b border-gray-800/80 flex items-center justify-between">
+          <h2 className="text-lg font-bold text-gray-200">📋 登録動画キュー一覧</h2>
+          <button
+            onClick={fetchQueue}
+            disabled={loading}
+            className="p-2 hover:bg-gray-800/60 rounded-lg text-gray-400 hover:text-gray-200 transition-all"
+            title="リフレッシュ"
+          >
+            <svg className={`h-5 w-5 ${loading ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.253 8H18v3" />
+            </svg>
+          </button>
+        </div>
+
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-20 space-y-4">
+            <svg className="animate-spin h-8 w-8 text-amber-400" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+            </svg>
+            <span className="text-sm text-gray-400">キュー情報を読み込み中...</span>
+          </div>
+        ) : queue.length === 0 ? (
+          <div className="py-20 text-center text-gray-500 text-sm">
+            キューが空です。上にYouTube動画のURLを入力して、解析を指示してください。
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b border-gray-800/60 text-xs text-gray-400 uppercase bg-[#08090f]">
+                  <th className="px-6 py-4 font-semibold">動画情報</th>
+                  <th className="px-6 py-4 font-semibold">ステータス</th>
+                  <th className="px-6 py-4 font-semibold text-right">アクション</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-800/40 text-sm text-gray-300">
+                {queue.map((item) => (
+                  <tr key={item.id} className="hover:bg-[#0c0d15]/60 transition-all duration-150">
+                    <td className="px-6 py-4 max-w-lg">
+                      <div className="flex flex-col space-y-1">
+                        <span className="font-bold text-gray-200 truncate" title={item.title}>
+                          {item.title}
+                        </span>
+                        <div className="flex items-center gap-2 text-xs">
+                          {item.channel_name && (
+                            <span className="text-gray-400 bg-gray-900/60 px-1.5 py-0.5 rounded border border-gray-800/80">
+                              {item.channel_name}
+                            </span>
+                          )}
+                          <a
+                            href={item.url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-cyan-400 hover:underline flex items-center gap-1 w-fit"
+                          >
+                            <span>{item.id}</span>
+                            <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                            </svg>
+                          </a>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2">
+                        {getStatusBadge(item.status)}
+                        {item.retry_count > 0 && item.status !== 'completed' && (
+                          <span className="text-xs text-gray-500 font-medium">({item.retry_count}/5)</span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex justify-end gap-2">
+                        {/* エラーまたは失敗動画にのみ「再試行」ボタンを表示 */}
+                        {(item.status.startsWith('error') || item.status === 'failed') && (
+                          <button
+                            onClick={() => handleRetryVideo(item.id)}
+                            disabled={actionLoading !== null}
+                            className="px-3 py-1.5 bg-cyan-950/60 hover:bg-cyan-900/80 border border-cyan-800/60 hover:border-cyan-700/60 text-cyan-400 text-xs font-semibold rounded-lg disabled:opacity-40 disabled:pointer-events-none transition-all flex items-center gap-1"
+                          >
+                            {actionLoading === item.id ? '処理中...' : '再試行'}
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleDeleteVideo(item.id)}
+                          disabled={actionLoading !== null}
+                          className="px-3 py-1.5 bg-red-950/20 hover:bg-red-950/50 border border-red-900/40 hover:border-red-800/60 text-red-400 text-xs font-semibold rounded-lg disabled:opacity-40 disabled:pointer-events-none transition-all flex items-center gap-1"
+                        >
+                          削除
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

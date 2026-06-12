@@ -47,44 +47,34 @@ def generate_content_safe(client, prompt, model_id=None, config=None, feature_na
     if not client:
         return "⚠️ Gemini API クライアントが初期化されていません。"
 
-    # 試行するモデルの優先順リスト
-    primary_model = model_id or settings.DEFAULT_MODEL
+    # 試行するモデルの優先順リスト (無料枠で安定して動作するフラッシュ系のみに限定)
     models_to_try = [
-        primary_model,
-        "gemini-2.5-pro",
         "gemini-2.5-flash",
         "gemini-2.0-flash"
     ]
     
-    # 重複を排除しつつ順序を維持
-    # APIキーの優先順位リストを作成
+    # APIキーの優先順位リストを作成 (無料キーのみに限定)
     from google import genai
     api_keys_to_try = []
     if settings.GEMINI_API_KEY_FREE:
         api_keys_to_try.append(("Free Key", settings.GEMINI_API_KEY_FREE))
-    if settings.GEMINI_API_KEY:
-        api_keys_to_try.append(("Paid Key", settings.GEMINI_API_KEY))
-        
-    # 重複キーを排除（FreeとPaidが同じ場合など）
-    seen_keys = set()
-    unique_keys = []
-    for name, key in api_keys_to_try:
-        if key not in seen_keys:
-            seen_keys.add(key)
-            unique_keys.append((name, key))
+    else:
+        api_key_fallback = os.getenv("GEMINI_API_KEY_FREE") or os.getenv("GEMINI_API_KEY")
+        if api_key_fallback:
+            api_keys_to_try.append(("Free Key", api_key_fallback))
             
-    if not unique_keys:
-        return "⚠️ Gemini API キーが設定されていません。"
+    if not api_keys_to_try:
+        return "⚠️ Gemini API フリーキーが設定されていません。"
 
     last_error = None
     lock = FileLock(str(THROTTLE_LOCK_FILE), timeout=120)  # 最大2分待ち
     
     for model in models_to_try:
         model_success = False
-        for key_name, api_key in unique_keys:
+        for key_name, api_key in api_keys_to_try:
             current_client = genai.Client(api_key=api_key)
-            # Free Key は 429 で即座に諦めて Paid へ切り替える。Paid は15回粘る。
-            retries = 3 if key_name == "Free Key" else 15
+            # 無料キーのみの構成のため、スロットル制限時に待機しながら最大10回リトライして処理を完結させる
+            retries = 10
             delay = 10.0
             
             for attempt in range(retries):
@@ -128,20 +118,14 @@ def generate_content_safe(client, prompt, model_id=None, config=None, feature_na
                         quota_manager.record_error("error_429")
                         err_msg = e.message if hasattr(e, 'message') else str(e)
                         logger.warning(f"⚠️ [AIHelper] クォータ制限詳細 ({key_name}): {err_msg}")
-                        if key_name == "Free Key":
-                            logger.warning(f"⚠️ [AIHelper] {key_name} の枠が枯渇しました ({model})。ただちに有料キーへ切り替えます。")
-                            break  # attemptループを抜けて、次のキー(Paid Key)へ
-                            
-                        # Paid key の場合はバックオフしてリトライ
+                        
+                        # 無料キーのみの構成のため、有料キーに切り替える代わりにクォータ回復を待ってリトライ
                         import re
                         retry_match = re.search(r"Please retry in ([\d\.]+)s", str(e.message) if hasattr(e, 'message') else str(e))
-                        if retry_match:
-                            wait_time = float(retry_match.group(1)) + random.uniform(2.0, 5.0)
-                        else:
-                            wait_time = max(30.0, delay) + random.uniform(2.0, 5.0)
+                        wait_time = float(retry_match.group(1)) + random.uniform(2.0, 5.0) if retry_match else max(35.0, delay) + random.uniform(2.0, 5.0)
+                        wait_time = min(wait_time, 120.0)
                         
-                        wait_time = min(wait_time, 180.0)
-                        logger.warning(f"⚠️ [AIHelper] 有料キーでクォータ制限/一時エラー検知 ({model})。{wait_time:.1f}秒後にリトライ... (試行 {attempt + 1}/{retries})")
+                        logger.warning(f"⚠️ [AIHelper] 無料キーの制限/一時エラー検知 ({model})。回復のため {wait_time:.1f} 秒待機してリトライします... (試行 {attempt + 1}/{retries})")
                         time.sleep(wait_time)
                         delay *= 2
                         
