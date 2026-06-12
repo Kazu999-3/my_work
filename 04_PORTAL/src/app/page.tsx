@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Activity, Zap, TrendingUp, ShieldAlert, Cpu, Network, Gamepad2, Users, RefreshCw } from 'lucide-react';
+import { Activity, Zap, TrendingUp, ShieldAlert, Cpu, Network, Gamepad2, Users, RefreshCw, CheckCircle2, Circle, Clock, Plus, X, Bot, User, Handshake, ChevronRight, Trash2 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import Link from 'next/link';
 
@@ -34,6 +34,13 @@ export default function Home() {
   // エラー詳細モーダル用
   const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
+
+  // 共同タスクボード用
+  const [collabTasks, setCollabTasks] = useState<any[]>([]);
+  const [isAddingTask, setIsAddingTask] = useState(false);
+  const [newTaskTitle, setNewTaskTitle] = useState('');
+  const [newTaskOwner, setNewTaskOwner] = useState<'anchan' | 'user' | 'both'>('both');
+  const [newTaskPriority, setNewTaskPriority] = useState<'high' | 'medium' | 'low'>('medium');
 
   const fetchData = async (silent = false) => {
     if (!silent) setIsLoading(true);
@@ -143,6 +150,13 @@ export default function Home() {
         .limit(5);
       if (!libError && libData) setRecentLibraryUpdates(libData);
 
+      // 7. 共同タスクボードの取得（Supabase直接）
+      const { data: collabData, error: collabError } = await supabase
+        .from('collab_tasks')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (!collabError && collabData) setCollabTasks(collabData);
+
       // 最終更新時刻を設定
       const now = new Date();
       setLastUpdated(now.toLocaleTimeString('ja-JP'));
@@ -152,6 +166,41 @@ export default function Home() {
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
+    }
+  };
+
+  // タスクのステータスを循環させる: todo → in_progress → done → todo
+  const cycleTaskStatus = async (task: any) => {
+    const nextStatus = task.status === 'todo' ? 'in_progress' : task.status === 'in_progress' ? 'done' : 'todo';
+    const { error } = await supabase
+      .from('collab_tasks')
+      .update({ status: nextStatus })
+      .eq('id', task.id);
+    if (!error) {
+      setCollabTasks(prev => prev.map(t => t.id === task.id ? { ...t, status: nextStatus } : t));
+    }
+  };
+
+  // タスク追加
+  const addCollabTask = async () => {
+    if (!newTaskTitle.trim()) return;
+    const { data, error } = await supabase
+      .from('collab_tasks')
+      .insert([{ title: newTaskTitle, owner: newTaskOwner, priority: newTaskPriority, status: 'todo' }])
+      .select()
+      .single();
+    if (!error && data) {
+      setCollabTasks(prev => [data, ...prev]);
+      setNewTaskTitle('');
+      setIsAddingTask(false);
+    }
+  };
+
+  // タスク削除
+  const deleteCollabTask = async (id: string) => {
+    const { error } = await supabase.from('collab_tasks').delete().eq('id', id);
+    if (!error) {
+      setCollabTasks(prev => prev.filter(t => t.id !== id));
     }
   };
 
@@ -471,6 +520,150 @@ export default function Home() {
             </div>
           </div>
 
+        </motion.div>
+
+        {/* 共同タスクボード */}
+        <motion.div variants={itemVariants} className="md:col-span-2 lg:col-span-4 mt-8">
+          <div className="glass-panel rounded-3xl p-6 border border-white/5 bg-gradient-to-br from-teal-500/5 via-indigo-500/5 to-transparent">
+            {/* ヘッダー */}
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-black text-white flex items-center gap-3">
+                <div className="w-2 h-6 bg-gradient-to-b from-teal-400 to-indigo-500 rounded-full shadow-[0_0_10px_rgba(20,184,166,0.6)]"></div>
+                <span>🤝 あんちゃんと私のタスクボード</span>
+              </h3>
+              <button
+                id="add-collab-task-btn"
+                onClick={() => setIsAddingTask(!isAddingTask)}
+                className="flex items-center gap-2 text-xs font-bold px-4 py-2 rounded-xl bg-teal-500/10 border border-teal-500/20 text-teal-400 hover:bg-teal-500/20 hover:text-teal-300 transition-all"
+              >
+                <Plus size={14} />
+                タスクを追加
+              </button>
+            </div>
+
+            {/* 凡例 */}
+            <div className="flex flex-wrap gap-4 mb-6 text-xs font-bold">
+              <span className="flex items-center gap-1.5 text-indigo-400"><Bot size={12} /> あんちゃん担当</span>
+              <span className="flex items-center gap-1.5 text-amber-400"><User size={12} /> 自分担当</span>
+              <span className="flex items-center gap-1.5 text-teal-400"><Handshake size={12} /> 共同作業</span>
+              <span className="flex items-center gap-1.5 ml-auto text-gray-500">クリックでステータス変更 →</span>
+            </div>
+
+            {/* タスク追加フォーム */}
+            {isAddingTask && (
+              <div className="mb-6 p-4 rounded-2xl bg-black/30 border border-teal-500/20">
+                <div className="flex flex-col gap-3">
+                  <input
+                    id="new-task-title-input"
+                    type="text"
+                    value={newTaskTitle}
+                    onChange={e => setNewTaskTitle(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && addCollabTask()}
+                    placeholder="タスク名を入力..."
+                    className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-teal-500/50"
+                    autoFocus
+                  />
+                  <div className="flex gap-3 flex-wrap">
+                    <div className="flex gap-2">
+                      {(['anchan', 'user', 'both'] as const).map(o => (
+                        <button
+                          key={o}
+                          onClick={() => setNewTaskOwner(o)}
+                          className={`text-xs font-bold px-3 py-1.5 rounded-lg border transition-all ${
+                            newTaskOwner === o
+                              ? o === 'anchan' ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-300'
+                              : o === 'user'   ? 'bg-amber-500/20 border-amber-500/50 text-amber-300'
+                              : 'bg-teal-500/20 border-teal-500/50 text-teal-300'
+                              : 'bg-white/5 border-white/10 text-gray-500'
+                          }`}
+                        >
+                          {o === 'anchan' ? '🤖 あんちゃん' : o === 'user' ? '👤 自分' : '🤝 共同'}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="flex gap-2 ml-auto">
+                      <button onClick={() => setIsAddingTask(false)} className="text-xs font-bold px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-gray-500 hover:text-gray-300 transition-all">
+                        キャンセル
+                      </button>
+                      <button
+                        id="submit-new-task-btn"
+                        onClick={addCollabTask}
+                        disabled={!newTaskTitle.trim()}
+                        className="text-xs font-bold px-4 py-1.5 rounded-lg bg-teal-500/20 border border-teal-500/40 text-teal-300 hover:bg-teal-500/30 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        追加する
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* タスクリスト — 3カラム（todo / in_progress / done） */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {(['todo', 'in_progress', 'done'] as const).map(col => {
+                const colTasks = collabTasks.filter(t => t.status === col);
+                const colMeta = {
+                  todo:        { label: '📋 未着手', color: 'border-gray-500/30', headerBg: 'bg-gray-500/10', textColor: 'text-gray-400', icon: <Circle size={15} /> },
+                  in_progress: { label: '⚡ 進行中', color: 'border-yellow-500/30', headerBg: 'bg-yellow-500/10', textColor: 'text-yellow-400', icon: <Clock size={15} /> },
+                  done:        { label: '✅ 完了',   color: 'border-emerald-500/30', headerBg: 'bg-emerald-500/10', textColor: 'text-emerald-400', icon: <CheckCircle2 size={15} /> },
+                }[col];
+                return (
+                  <div key={col} className={`rounded-2xl border ${colMeta.color} bg-black/20 overflow-hidden`}>
+                    {/* カラムヘッダー */}
+                    <div className={`${colMeta.headerBg} px-4 py-3 flex items-center justify-between`}>
+                      <span className={`text-xs font-black ${colMeta.textColor} flex items-center gap-2`}>
+                        {colMeta.icon} {colMeta.label}
+                      </span>
+                      <span className={`text-xs font-black ${colMeta.textColor} bg-black/20 px-2 py-0.5 rounded-full`}>{colTasks.length}</span>
+                    </div>
+                    {/* タスクカード */}
+                    <div className="p-3 space-y-2 min-h-[120px]">
+                      {colTasks.length === 0 ? (
+                        <div className="flex items-center justify-center h-20 text-gray-600 text-xs">タスクなし</div>
+                      ) : colTasks.map(task => {
+                        const ownerMeta = task.owner === 'anchan'
+                          ? { bg: 'bg-indigo-500/10', border: 'border-indigo-500/20', label: '🤖', labelColor: 'text-indigo-400' }
+                          : task.owner === 'user'
+                          ? { bg: 'bg-amber-500/10', border: 'border-amber-500/20', label: '👤', labelColor: 'text-amber-400' }
+                          : { bg: 'bg-teal-500/10', border: 'border-teal-500/20', label: '🤝', labelColor: 'text-teal-400' };
+                        const priorityBadge = task.priority === 'high'
+                          ? 'bg-rose-500/10 text-rose-400 border-rose-500/20'
+                          : task.priority === 'low'
+                          ? 'bg-gray-500/10 text-gray-500 border-gray-500/20'
+                          : 'bg-blue-500/10 text-blue-400 border-blue-500/20';
+                        return (
+                          <div
+                            key={task.id}
+                            className={`group relative ${ownerMeta.bg} border ${ownerMeta.border} rounded-xl p-3 cursor-pointer hover:brightness-125 transition-all`}
+                            onClick={() => cycleTaskStatus(task)}
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex-1 min-w-0">
+                                <p className={`text-xs font-black text-white mb-1.5 leading-snug ${task.status === 'done' ? 'line-through opacity-50' : ''}`}>
+                                  <span className={`${ownerMeta.labelColor} mr-1`}>{ownerMeta.label}</span>
+                                  {task.title}
+                                </p>
+                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${priorityBadge}`}>
+                                  {task.priority === 'high' ? '🔴 高' : task.priority === 'low' ? '⚪ 低' : '🔵 中'}
+                                </span>
+                              </div>
+                              <button
+                                onClick={e => { e.stopPropagation(); deleteCollabTask(task.id); }}
+                                className="opacity-0 group-hover:opacity-100 text-gray-600 hover:text-rose-400 transition-all p-0.5 rounded"
+                              >
+                                <Trash2 size={12} />
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </motion.div>
 
       </motion.main>
