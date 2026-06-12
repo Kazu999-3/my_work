@@ -17,13 +17,23 @@ function extractVideoId(url: string): string | null {
 }
 
 // 1. キュー一覧の取得
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    const { data, error } = await supabase
-      .from('youtube_queue')
-      .select('*')
-      .order('date_added', { ascending: false, nullsFirst: false })
-      .order('id', { ascending: true });
+    const { searchParams } = new URL(req.url);
+    const sort = searchParams.get('sort') || 'date_added';
+
+    let query = supabase.from('youtube_queue').select('*');
+
+    if (sort === 'published_at') {
+      query = query.order('published_at', { ascending: false, nullsFirst: false });
+    } else {
+      query = query.order('date_added', { ascending: false, nullsFirst: false });
+    }
+    
+    // タイブレーカーとして id 順は維持
+    query = query.order('id', { ascending: true });
+
+    const { data, error } = await query;
 
     if (error) throw error;
     return NextResponse.json(data || []);
@@ -59,14 +69,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'この動画はすでにキューに登録されています。' }, { status: 400 });
     }
 
-    // yt-dlp によるタイトル・チャンネル名取得の試行 (ローカル用)
+    // yt-dlp によるタイトル・チャンネル名・投稿日取得の試行 (ローカル用)
     let title = 'YouTube Video';
     let channelName = 'Unknown';
+    let publishedAt: string | null = null;
     const ytDlpPath = path.join(process.cwd(), '../.venv/Scripts/yt-dlp.exe');
 
     if (fs.existsSync(ytDlpPath)) {
       try {
-        const getInfoCmd = `"${ytDlpPath}" --print "%(title)s" --print "%(uploader)s" "${url}"`;
+        const getInfoCmd = `"${ytDlpPath}" --print "%(title)s" --print "%(uploader)s" --print "%(upload_date)s" "${url}"`;
         const stdout = await new Promise<string>((resolve, reject) => {
           exec(getInfoCmd, { timeout: 10000 }, (err, stdout) => {
             if (err) reject(err);
@@ -77,9 +88,15 @@ export async function POST(req: NextRequest) {
           const lines = stdout.split('\n');
           if (lines[0]) title = lines[0].trim();
           if (lines[1]) channelName = lines[1].trim();
+          if (lines[2]) {
+            const rawDate = lines[2].trim(); // YYYYMMDD
+            if (rawDate.length === 8 && /^\d+$/.test(rawDate)) {
+              publishedAt = `${rawDate.slice(0, 4)}-${rawDate.slice(4, 6)}-${rawDate.slice(6, 8)}`;
+            }
+          }
         }
       } catch (err) {
-        console.warn('⚠️ [YouTube API] yt-dlp によるタイトル・チャンネル名取得に失敗しました。フォールバックします:', err);
+        console.warn('⚠️ [YouTube API] yt-dlp によるタイトル・チャンネル名・投稿日取得に失敗しました。フォールバックします:', err);
       }
     }
 
@@ -90,7 +107,8 @@ export async function POST(req: NextRequest) {
       url: `https://www.youtube.com/watch?v=${videoId}`,
       status: 'pending',
       retry_count: 0,
-      date_added: Math.floor(Date.now() / 1000)
+      date_added: Math.floor(Date.now() / 1000),
+      published_at: publishedAt
     };
 
     const { data: inserted, error: insertError } = await supabase

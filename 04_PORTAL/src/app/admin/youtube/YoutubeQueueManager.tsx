@@ -10,6 +10,7 @@ interface QueueItem {
   status: string;
   retry_count: number;
   priority?: 'high' | 'medium' | 'low';
+  published_at?: string;
 }
 
 export default function YoutubeQueueManager() {
@@ -20,12 +21,13 @@ export default function YoutubeQueueManager() {
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
   const [filterStatus, setFilterStatus] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState<'date_added' | 'published_at'>('date_added');
 
   // 1. キューデータの取得
-  const fetchQueue = async (silent = false) => {
+  const fetchQueue = async (silent = false, currentSort = sortBy) => {
     try {
       if (!silent) setLoading(true);
-      const res = await fetch('/api/admin/youtube');
+      const res = await fetch(`/api/admin/youtube?sort=${currentSort}`);
       if (res.ok) {
         const data = await res.json();
         setQueue(data);
@@ -40,8 +42,13 @@ export default function YoutubeQueueManager() {
   };
 
   useEffect(() => {
-    fetchQueue(false);
+    fetchQueue(false, sortBy);
   }, []);
+
+  const handleSortChange = (newSort: 'date_added' | 'published_at') => {
+    setSortBy(newSort);
+    fetchQueue(true, newSort);
+  };
 
   const showFeedback = (text: string, type: 'success' | 'error') => {
     setMessage({ text, type });
@@ -65,7 +72,7 @@ export default function YoutubeQueueManager() {
       if (res.ok) {
         showFeedback(result.message || '動画を追加しました。', 'success');
         setNewUrl('');
-        fetchQueue(true);
+        fetchQueue(true, sortBy);
       } else {
         showFeedback(result.error || '動画の追加に失敗しました。', 'error');
       }
@@ -89,7 +96,7 @@ export default function YoutubeQueueManager() {
       const result = await res.json();
       if (res.ok) {
         showFeedback('ステータスを pending にリセットしました。SREデーモンが再解析します。', 'success');
-        fetchQueue(true);
+        fetchQueue(true, sortBy);
       } else {
         showFeedback(result.error || '再試行に失敗しました。', 'error');
       }
@@ -115,7 +122,7 @@ export default function YoutubeQueueManager() {
       const result = await res.json();
       if (res.ok) {
         showFeedback('動画をキューから削除しました。', 'success');
-        fetchQueue(true);
+        fetchQueue(true, sortBy);
       } else {
         showFeedback(result.error || '削除に失敗しました。', 'error');
       }
@@ -142,7 +149,7 @@ export default function YoutubeQueueManager() {
       const result = await res.json();
       if (res.ok) {
         showFeedback(`優先度を「${nextPriority === 'high' ? '高' : nextPriority === 'low' ? '低' : '中'}」に変更しました。`, 'success');
-        fetchQueue(true);
+        fetchQueue(true, sortBy);
       } else {
         showFeedback(result.error || '優先度の変更に失敗しました。', 'error');
       }
@@ -168,7 +175,7 @@ export default function YoutubeQueueManager() {
       const result = await res.json();
       if (res.ok) {
         showFeedback(nextStatus === 'on_hold' ? '動画を保留にしました。SREの自動解析から除外されます。' : '保留を解除しました。次回サイクルで解析されます。', 'success');
-        fetchQueue(true);
+        fetchQueue(true, sortBy);
       } else {
         showFeedback(result.error || 'ステータスの更新に失敗しました。', 'error');
       }
@@ -354,18 +361,38 @@ export default function YoutubeQueueManager() {
           ))}
         </div>
 
-        {/* 検索窓 */}
-        <div className="relative w-full md:w-64">
-          <input
-            type="text"
-            placeholder="タイトル、チャンネルで検索..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 bg-[#07080e] border border-gray-800 rounded-xl focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 text-xs text-gray-200"
-          />
-          <svg className="absolute left-3 top-2.5 h-4 w-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
+        {/* 検索 ＆ ソート */}
+        <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+          {/* ソート順選択 */}
+          <div className="relative">
+            <select
+              value={sortBy}
+              onChange={(e) => handleSortChange(e.target.value as any)}
+              className="px-3 py-2 bg-[#07080e] border border-gray-800 rounded-xl focus:outline-none focus:border-cyan-500 text-xs text-gray-300 w-full sm:w-auto appearance-none pr-8 cursor-pointer font-bold"
+            >
+              <option value="date_added">登録日順</option>
+              <option value="published_at">投稿日順</option>
+            </select>
+            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
+              <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
+              </svg>
+            </div>
+          </div>
+
+          {/* 検索窓 */}
+          <div className="relative w-full sm:w-64">
+            <input
+              type="text"
+              placeholder="タイトル、チャンネルで検索..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-4 py-2 bg-[#07080e] border border-gray-800 rounded-xl focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 text-xs text-gray-200"
+            />
+            <svg className="absolute left-3 top-2.5 h-4 w-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
         </div>
       </div>
 
@@ -421,6 +448,11 @@ export default function YoutubeQueueManager() {
                       {item.channel_name && (
                         <span className="text-gray-400 bg-gray-900/60 px-1.5 py-0.5 rounded border border-gray-800/80">
                           {item.channel_name}
+                        </span>
+                      )}
+                      {item.published_at && (
+                        <span className="text-gray-500 bg-gray-900/40 px-1.5 py-0.5 rounded border border-gray-800/40 font-medium">
+                          投稿: {item.published_at}
                         </span>
                       )}
                       <a
@@ -520,6 +552,11 @@ export default function YoutubeQueueManager() {
                               {item.channel_name && (
                                 <span className="text-gray-400 bg-gray-900/60 px-1.5 py-0.5 rounded border border-gray-800/80">
                                   {item.channel_name}
+                                </span>
+                              )}
+                              {item.published_at && (
+                                <span className="text-gray-500 bg-gray-900/40 px-1.5 py-0.5 rounded border border-gray-800/40 font-medium">
+                                  投稿: {item.published_at}
                                 </span>
                               )}
                               <a
