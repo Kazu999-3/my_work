@@ -51,8 +51,10 @@ export async function POST(request: Request) {
       // 詳細を取得してカスタムゲームか確認
       const details = await fetchMatchDetails(matchId, apiKey);
       
-      // queueIdが 0（カスタムゲーム）または gameType が 'CUSTOM_GAME' であるかチェック
-      if (details.queueId === 0 || details.gameType === 'CUSTOM_GAME') {
+      const gType = (details.gameType || "").toUpperCase();
+
+      // queueIdが 0（カスタムゲーム）または gameType に 'CUSTOM' が含まれているかチェック
+      if (details.queueId === 0 || gType.includes("CUSTOM")) {
         targetMatchDetails = details;
         break; // 未登録の最新カスタムが見つかったのでループを抜ける
       }
