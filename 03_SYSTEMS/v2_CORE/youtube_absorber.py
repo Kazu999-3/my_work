@@ -8,6 +8,7 @@ import re
 import platform
 import urllib.request
 import urllib.error
+import urllib
 from google import genai
 from v2_CORE.settings import settings
 from v2_CORE.ai_helper import generate_content_safe

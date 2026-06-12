@@ -150,6 +150,8 @@ export default function KtmAdminPage() {
             return { ...p, role_preferences: { ...p.role_preferences, primary: value } };
           } else if (field === "secondary_role") {
             return { ...p, role_preferences: { ...p.role_preferences, secondary: value } };
+          } else if (field === "notes") {
+            return { ...p, metadata: { ...p.metadata, notes: value } };
           } else {
             return { ...p, [field]: value };
           }
@@ -191,6 +193,7 @@ export default function KtmAdminPage() {
           mmr_mid: parseInt(p.mmr_mid) || 1000,
           mmr_adc: parseInt(p.mmr_adc) || 1000,
           mmr_sup: parseInt(p.mmr_sup) || 1000,
+          metadata: p.metadata
         }).eq('id', p.id).select();
         
         if (error) throw error;
@@ -218,6 +221,7 @@ export default function KtmAdminPage() {
             mmr_mid: parseInt(p.mmr_mid) || 1000,
             mmr_adc: parseInt(p.mmr_adc) || 1000,
             mmr_sup: parseInt(p.mmr_sup) || 1000,
+            metadata: p.metadata || { notes: "" }
           }))
         );
         if (error) throw error;
@@ -242,7 +246,8 @@ export default function KtmAdminPage() {
       is_active: true,
       ng_lane_1: "", ng_lane_2: "",
       highest_rank: "",
-      mmr_top: 1000, mmr_jg: 1000, mmr_mid: 1000, mmr_adc: 1000, mmr_sup: 1000
+      mmr_top: 1000, mmr_jg: 1000, mmr_mid: 1000, mmr_adc: 1000, mmr_sup: 1000,
+      metadata: { notes: "" }
     };
     setPlayers([newPlayer, ...players]);
   };
@@ -680,6 +685,7 @@ export default function KtmAdminPage() {
                       <SortableHeader label="総合" sortKey="mmr" />
                       <SortableHeader label="Discord ID" sortKey="discord_id" />
                       <SortableHeader label="Riot IGN" sortKey="ign" />
+                      <th className="px-2 py-2 font-medium text-center">備考</th>
                       <th className="px-2 py-2 font-medium text-center">操作</th>
                     </tr>
                   </thead>
@@ -762,6 +768,15 @@ export default function KtmAdminPage() {
                             placeholder="Name#TAG"
                             className="bg-transparent border border-transparent focus:border-gray-700 hover:border-gray-700 focus:bg-gray-800 rounded px-1 py-0.5 outline-none w-24 text-[10px] text-blue-300"
                             title={p.ign || "未登録"}
+                          />
+                        </td>
+                        <td className="px-2 py-1.5">
+                          <input
+                            type="text"
+                            value={p.metadata?.notes || ""}
+                            onChange={(e) => handleInputChange(uid, "notes", e.target.value)}
+                            placeholder="備考を入力"
+                            className="bg-transparent border border-transparent focus:border-gray-700 hover:border-gray-700 focus:bg-gray-800 rounded px-1 py-0.5 outline-none w-32 text-xs text-gray-200"
                           />
                         </td>
                         <td className="px-2 py-1.5 text-center">

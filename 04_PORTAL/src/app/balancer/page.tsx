@@ -126,6 +126,8 @@ export default function BalancerPage() {
             return { ...p, role_preferences: { ...p.role_preferences, primary: value } };
           } else if (field === "secondary_role") {
             return { ...p, role_preferences: { ...p.role_preferences, secondary: value } };
+          } else if (field === "notes") {
+            return { ...p, metadata: { ...p.metadata, notes: value } };
           } else {
             return { ...p, [field]: value };
           }
@@ -163,7 +165,8 @@ export default function BalancerPage() {
           weight: p.weight,
           allow_higher: p.allow_higher,
           pity: p.pity,
-          off_pity: p.off_pity
+          off_pity: p.off_pity,
+          metadata: p.metadata
         }).eq('id', p.id);
       }
       setSaving(false);
@@ -622,6 +625,7 @@ export default function BalancerPage() {
                   <SortableHeader label="格上" sortKey="allow_higher" />
                   <SortableHeader label="Pity" sortKey="pity" />
                   <SortableHeader label="OffPity" sortKey="off_pity" />
+                  <th className="px-4 py-3 font-medium">備考</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-800/50">
@@ -746,6 +750,15 @@ export default function BalancerPage() {
                       </td>
                       <td className="px-2 py-2 text-center font-mono text-fuchsia-400 font-bold">
                         {p.off_pity || 0}
+                      </td>
+                      <td className="px-2 py-2">
+                        <input
+                          type="text"
+                          value={p.metadata?.notes || ""}
+                          onChange={(e) => handleInputChange(p.id, "notes", e.target.value)}
+                          placeholder="備考"
+                          className="bg-gray-950 border border-gray-700 rounded px-2 py-1 text-gray-200 outline-none focus:border-blue-500 w-32 text-xs"
+                        />
                       </td>
                     </tr>
                   );
