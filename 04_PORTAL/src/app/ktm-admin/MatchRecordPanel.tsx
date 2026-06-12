@@ -24,6 +24,8 @@ export default function MatchRecordPanel({ balanceResult, onComplete }: MatchRec
   });
 
   const [championsList, setChampionsList] = useState<{ id: string, name: string }[]>([]);
+  const [activeChampSelectorPlayer, setActiveChampSelectorPlayer] = useState<string | null>(null);
+  const [champSearchQuery, setChampSearchQuery] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState('');
 
@@ -133,27 +135,27 @@ export default function MatchRecordPanel({ balanceResult, onComplete }: MatchRec
               <div key={s.name} className="flex items-center gap-2 bg-gray-900 p-2 rounded border border-gray-800">
                 <div className="w-8 text-center font-bold text-gray-500 text-xs">{s.currentRole}</div>
                 <div className="w-20 truncate font-bold text-sm text-gray-300" title={s.name}>{s.name}</div>
-                <select 
-                  value={s.champion_name || ''}
-                  onChange={e => handleStatChange(s.name, 'champion_name', e.target.value)}
-                  className="w-28 bg-gray-850 border border-gray-700 rounded px-1.5 py-1 text-white outline-none focus:border-blue-500 text-xs"
+                <button
+                  onClick={() => setActiveChampSelectorPlayer(s.name)}
+                  type="button"
+                  className="w-28 bg-gray-850 border border-gray-700 hover:border-blue-500 rounded px-1.5 py-1 text-gray-300 hover:text-white text-xs flex items-center justify-between gap-1 transition shrink-0"
                 >
-                  <option value="">チャンプ選択</option>
-                  {championsList.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                </select>
-                {s.champion_name && (
-                  <img 
-                    src={getChampIcon(s.champion_name)} 
-                    className="w-6 h-6 rounded-full border border-gray-600 shrink-0" 
-                    alt={s.champion_name}
-                    title={s.champion_name}
-                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
-                  />
-                )}
+                  <span className="truncate">
+                    {s.champion_name ? (championsList.find(c => c.id === s.champion_name)?.name || 'チャンプ') : '選択'}
+                  </span>
+                  {s.champion_name && (
+                    <img 
+                      src={getChampIcon(s.champion_name)} 
+                      className="w-4 h-4 rounded-full border border-gray-600 shrink-0 object-cover" 
+                      alt={s.champion_name}
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                    />
+                  )}
+                </button>
                 <div className="flex-1 flex gap-1 justify-end">
                   <input type="number" value={s.kills} onChange={e => handleStatChange(s.name, 'kills', e.target.value)} className="w-10 bg-gray-850 border border-gray-700 text-white text-center rounded text-xs py-0.5" placeholder="K" />
                   <span className="text-gray-500 text-xs self-center">/</span>
-                  <input type="number" value={s.deaths} onChange={e => handleStatChange(s.name, 'deaths', e.target.value)} className="w-10 bg-gray-850 border border-red-900 text-red-200 text-center rounded text-xs py-0.5" placeholder="D" />
+                  <input type="number" value={s.deaths} onChange={e => handleStatChange(s.name, 'deaths', e.target.value)} className="w-10 bg-gray-855 border border-red-900 text-red-200 text-center rounded text-xs py-0.5" placeholder="D" />
                   <span className="text-gray-500 text-xs self-center">/</span>
                   <input type="number" value={s.assists} onChange={e => handleStatChange(s.name, 'assists', e.target.value)} className="w-10 bg-gray-850 border border-gray-700 text-white text-center rounded text-xs py-0.5" placeholder="A" />
                 </div>
@@ -170,23 +172,23 @@ export default function MatchRecordPanel({ balanceResult, onComplete }: MatchRec
               <div key={s.name} className="flex items-center gap-2 bg-gray-900 p-2 rounded border border-gray-800">
                 <div className="w-8 text-center font-bold text-gray-500 text-xs">{s.currentRole}</div>
                 <div className="w-20 truncate font-bold text-sm text-gray-300" title={s.name}>{s.name}</div>
-                <select 
-                  value={s.champion_name || ''}
-                  onChange={e => handleStatChange(s.name, 'champion_name', e.target.value)}
-                  className="w-28 bg-gray-855 border border-gray-700 rounded px-1.5 py-1 text-white outline-none focus:border-red-500 text-xs"
+                <button
+                  onClick={() => setActiveChampSelectorPlayer(s.name)}
+                  type="button"
+                  className="w-28 bg-gray-855 border border-gray-700 hover:border-red-500 rounded px-1.5 py-1 text-gray-300 hover:text-white text-xs flex items-center justify-between gap-1 transition shrink-0"
                 >
-                  <option value="">チャンプ選択</option>
-                  {championsList.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                </select>
-                {s.champion_name && (
-                  <img 
-                    src={getChampIcon(s.champion_name)} 
-                    className="w-6 h-6 rounded-full border border-gray-600 shrink-0" 
-                    alt={s.champion_name}
-                    title={s.champion_name}
-                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
-                  />
-                )}
+                  <span className="truncate">
+                    {s.champion_name ? (championsList.find(c => c.id === s.champion_name)?.name || 'チャンプ') : '選択'}
+                  </span>
+                  {s.champion_name && (
+                    <img 
+                      src={getChampIcon(s.champion_name)} 
+                      className="w-4 h-4 rounded-full border border-gray-600 shrink-0 object-cover" 
+                      alt={s.champion_name}
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                    />
+                  )}
+                </button>
                 <div className="flex-1 flex gap-1 justify-end">
                   <input type="number" value={s.kills} onChange={e => handleStatChange(s.name, 'kills', e.target.value)} className="w-10 bg-gray-855 border border-gray-700 text-white text-center rounded text-xs py-0.5" placeholder="K" />
                   <span className="text-gray-500 text-xs self-center">/</span>
@@ -230,6 +232,72 @@ export default function MatchRecordPanel({ balanceResult, onComplete }: MatchRec
         </button>
       </div>
 
+      {/* チャンピオン選択モーダル */}
+      {activeChampSelectorPlayer && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl w-full max-w-2xl p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-extrabold text-white flex items-center gap-2">
+                <Target className="h-5 w-5 text-emerald-400" />
+                チャンピオン選択 ({activeChampSelectorPlayer})
+              </h3>
+              <button 
+                onClick={() => { setActiveChampSelectorPlayer(null); setChampSearchQuery(''); }}
+                className="text-gray-400 hover:text-white text-sm bg-gray-800 px-3 py-1.5 rounded-lg border border-gray-700 transition"
+              >
+                閉じる
+              </button>
+            </div>
+            
+            <input 
+              type="text" 
+              placeholder="チャンピオン名で検索 (ひらがな・カタカナ・英語名)..." 
+              value={champSearchQuery}
+              onChange={e => setChampSearchQuery(e.target.value)}
+              className="w-full bg-gray-950 border border-gray-800 rounded-lg px-4 py-2.5 text-white mb-4 outline-none focus:border-emerald-500 text-sm"
+              autoFocus
+            />
+            
+            <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-3 max-h-[50vh] overflow-y-auto pr-2 custom-scrollbar">
+              {championsList
+                .filter(c => 
+                  c.name.toLowerCase().includes(champSearchQuery.toLowerCase()) || 
+                  c.id.toLowerCase().includes(champSearchQuery.toLowerCase())
+                )
+                .map(c => (
+                  <button
+                    key={c.id}
+                    onClick={() => {
+                      handleStatChange(activeChampSelectorPlayer, 'champion_name', c.id);
+                      setActiveChampSelectorPlayer(null);
+                      setChampSearchQuery('');
+                    }}
+                    type="button"
+                    className="flex flex-col items-center gap-1.5 p-2 rounded-xl hover:bg-gray-800 transition group"
+                  >
+                    <img 
+                      src={getChampIcon(c.id)} 
+                      className="w-12 h-12 rounded-xl border border-gray-800 group-hover:border-emerald-500 transition object-cover" 
+                      alt={c.name} 
+                    />
+                    <span className="text-[10px] text-gray-400 truncate w-14 text-center group-hover:text-white transition">
+                      {c.name}
+                    </span>
+                  </button>
+                ))
+              }
+              {championsList.filter(c => 
+                c.name.toLowerCase().includes(champSearchQuery.toLowerCase()) || 
+                c.id.toLowerCase().includes(champSearchQuery.toLowerCase())
+              ).length === 0 && (
+                <div className="col-span-full text-center py-12 text-gray-500 text-sm">
+                  該当するチャンピオンが見つかりません。
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
