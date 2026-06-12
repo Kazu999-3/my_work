@@ -10,6 +10,18 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'プレイヤー名が指定されていません。' }, { status: 400 });
     }
 
+    // プレイヤーの現在MMR等の情報を取得
+    const { data: dbPlayer, error: pError } = await supabase
+      .from('ktm_players')
+      .select('*')
+      .eq('name', playerName)
+      .single();
+
+    if (pError || !dbPlayer) {
+      // プレイヤーがいない場合は空データを返す
+      return NextResponse.json({ stats: {}, matchupStats: {}, history: [] });
+    }
+
     // KTMの試合履歴を取得 (勝敗判定のために ktm_matches の winning_team も取得)
     const { data: playerMatches, error } = await supabase
       .from('ktm_match_participants')
@@ -115,27 +127,55 @@ export async function GET(request: Request) {
          winRate: Math.round((data.wins / data.games) * 100)
       }));
 
-    // 直近の試合履歴を抽出（最大10件）
-    const formattedHistory = playerMatches
+    // 直近の試合履歴を抽出
+    // 逆算を行うために、すべてのマッチを新しい順にソート
+    const sortedMatches = [...playerMatches]
       .sort((a: any, b: any) => {
          const dateA = new Date(a.ktm_matches.created_at || 0).getTime();
          const dateB = new Date(b.ktm_matches.created_at || 0).getTime();
-         return dateB - dateA;
-      })
-      .slice(0, 10)
-      .map((row: any) => {
-        return {
-          matchId: row.match_id,
-          date: row.ktm_matches.created_at,
-          role: row.role,
-          champion: row.champion_name || 'Unknown',
-          kills: row.kills || 0,
-          deaths: row.deaths || 0,
-          assists: row.assists || 0,
-          mmrDelta: row.mmr_delta || 0,
-          isWin: row.team === row.ktm_matches.winning_team
-        };
+         return dateB - dateA; // 降順（新しい順）
       });
+
+    // 現在のMMR値から逆算を開始
+    let currentTop = dbPlayer.mmr_top || 1200;
+    let currentJg = dbPlayer.mmr_jg || 1200;
+    let currentMid = dbPlayer.mmr_mid || 1200;
+    let currentAdc = dbPlayer.mmr_adc || 1200;
+    let currentSup = dbPlayer.mmr_sup || 1200;
+
+    const formattedHistory = sortedMatches.map((row: any) => {
+      // この試合終了時点のMMRを格納
+      const matchMmr = {
+        TOP: currentTop,
+        JG: currentJg,
+        MID: currentMid,
+        ADC: currentAdc,
+        SUP: currentSup,
+        TOTAL: Math.round((currentTop + currentJg + currentMid + currentAdc + currentSup) / 5)
+      };
+
+      // 次の過去試合（時間を戻す）のために、この試合での変動量を引く
+      const role = row.role?.toUpperCase();
+      const delta = row.mmr_delta || 0;
+      if (role === 'TOP') currentTop -= delta;
+      else if (role === 'JG') currentJg -= delta;
+      else if (role === 'MID') currentMid -= delta;
+      else if (role === 'ADC') currentAdc -= delta;
+      else if (role === 'SUP') currentSup -= delta;
+
+      return {
+        matchId: row.match_id,
+        date: row.ktm_matches.created_at,
+        role: row.role,
+        champion: row.champion_name || 'Unknown',
+        kills: row.kills || 0,
+        deaths: row.deaths || 0,
+        assists: row.assists || 0,
+        mmrDelta: delta,
+        isWin: row.team === row.ktm_matches.winning_team,
+        mmrHistory: matchMmr // 各レーンのMMR推移をマージ
+      };
+    }).slice(0, 20); // 履歴表示用に直近20件を返す
 
     return NextResponse.json({ 
         stats: formattedStats,

@@ -109,6 +109,13 @@ export default function CustomRecordPage() {
       return;
     }
 
+    const pwd = prompt('保存するには管理者パスワードを入力してください:');
+    if (pwd === null) return; // キャンセル
+    if (!pwd) {
+      setMessage('管理者パスワードが必要です。');
+      return;
+    }
+
     setSubmitting(true);
     setMessage('');
     try {
@@ -118,6 +125,7 @@ export default function CustomRecordPage() {
         body: JSON.stringify({
           winningTeam,
           riotMatchId: null, // 手動入力のため常にnull
+          adminPassword: pwd,
           participants: stats.map(s => ({
             name: s.name,
             team: s.team,

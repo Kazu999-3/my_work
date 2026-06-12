@@ -63,6 +63,14 @@ export default function MatchRecordPanel({ balanceResult, onComplete }: MatchRec
       setMessage('勝利チームを選択してください。');
       return;
     }
+
+    const pwd = prompt('保存するには管理者パスワードを入力してください:');
+    if (pwd === null) return; // キャンセル
+    if (!pwd) {
+      setMessage('管理者パスワードが必要です。');
+      return;
+    }
+
     setSubmitting(true);
     setMessage('');
     try {
@@ -72,6 +80,7 @@ export default function MatchRecordPanel({ balanceResult, onComplete }: MatchRec
         body: JSON.stringify({
           winningTeam,
           riotMatchId: null,
+          adminPassword: pwd,
           participants: stats.map(s => ({
             name: s.name,
             team: s.team,

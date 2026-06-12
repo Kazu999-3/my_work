@@ -3,9 +3,10 @@
 import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { supabase } from "../../lib/supabaseClient";
-import { Users, RefreshCw, Swords, X, Activity, Globe, MessageSquare, Info, Crown, Trophy, History } from "lucide-react";
+import { Users, RefreshCw, Swords, X, Activity, Globe, MessageSquare, Info, Crown, Trophy, History, Shield } from "lucide-react";
 import { getChampIcon } from "../../lib/ddragonClient";
 import ProfileModal from "../ktm-admin/ProfileModal";
+import MatchRecordPanel from "../ktm-admin/MatchRecordPanel";
 
 // ランク名から色を判定するユーティリティ
 function getColorFromRankName(rank: string): string {
@@ -35,6 +36,7 @@ export default function BalancerPage() {
   
   const [sortConfig, setSortConfig] = useState({ key: "no", direction: "asc" });
   const [selectedPlayer, setSelectedPlayer] = useState<any>(null);
+  const [showRecordPanel, setShowRecordPanel] = useState(false);
 
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -186,6 +188,7 @@ export default function BalancerPage() {
     setBalancing(true);
     setMessage({ type: "", text: "" });
     setBalanceResult(null);
+    setShowRecordPanel(false);
 
     try {
       const res = await fetch('/api/balancer', {
@@ -411,6 +414,14 @@ export default function BalancerPage() {
               </span>
             </div>
             <Link 
+              href="/ktm-admin"
+              prefetch={false}
+              className="flex items-center gap-2 bg-amber-500/10 hover:bg-amber-500/25 border border-amber-500/20 hover:border-amber-500/50 text-amber-400 hover:text-white px-3 py-2 md:px-6 md:py-4 rounded-xl font-bold transition shadow-lg text-sm md:text-lg flex-1 md:flex-none justify-center"
+            >
+              <Shield className="h-5 w-5 text-amber-400" />
+              管理者画面へ 🔑
+            </Link>
+            <Link 
               href="/history"
               className="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 text-orange-400 px-3 py-2 md:px-6 md:py-4 rounded-xl font-bold transition shadow-lg text-sm md:text-lg border border-orange-900/50 flex-1 md:flex-none justify-center"
             >
@@ -434,6 +445,35 @@ export default function BalancerPage() {
               {balancing ? <RefreshCw className="h-6 w-6 animate-spin" /> : <Swords className="h-6 w-6" />}
               {balancing ? "AIが編成中..." : "チーム分け実行"}
             </button>
+          </div>
+        </div>
+
+        {/* KTM運用ステップガイド */}
+        <div className="bg-gray-900/20 border border-gray-800/80 rounded-2xl p-5 shadow-inner">
+          <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-1.5 justify-center sm:justify-start">
+            <Activity className="h-4 w-4 text-amber-500" /> KTM内戦 運用フロー
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 text-center">
+            <div className="bg-gray-950/40 border border-gray-900/50 p-3.5 rounded-xl flex flex-col items-center">
+              <span className="w-6 h-6 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/30 flex items-center justify-center text-xs font-black mb-2">1</span>
+              <span className="font-bold text-gray-300 text-xs mb-1">参加者の取得</span>
+              <p className="text-[10px] text-gray-500 leading-tight">募集から参加者を自動(または手動)でチェックします。</p>
+            </div>
+            <div className="bg-gray-950/40 border border-gray-900/50 p-3.5 rounded-xl flex flex-col items-center">
+              <span className="w-6 h-6 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/30 flex items-center justify-center text-xs font-black mb-2">2</span>
+              <span className="font-bold text-gray-300 text-xs mb-1">チーム分け</span>
+              <p className="text-[10px] text-gray-500 leading-tight">「チーム分け実行」を押しAI編成結果を出力します。</p>
+            </div>
+            <div className="bg-gray-950/40 border border-gray-900/50 p-3.5 rounded-xl flex flex-col items-center">
+              <span className="w-6 h-6 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/30 flex items-center justify-center text-xs font-black mb-2">3</span>
+              <span className="font-bold text-gray-300 text-xs mb-1">Discordへ通知</span>
+              <p className="text-[10px] text-gray-500 leading-tight">編成結果をワンクリックでDiscordへ共有・対戦開始！</p>
+            </div>
+            <div className="bg-gray-950/40 border border-gray-900/50 p-3.5 rounded-xl flex flex-col items-center">
+              <span className="w-6 h-6 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/30 flex items-center justify-center text-xs font-black mb-2">4</span>
+              <span className="font-bold text-gray-300 text-xs mb-1">戦績の記録</span>
+              <p className="text-[10px] text-gray-500 leading-tight">試合後、結果記録フォームからKDAを入力して保存。</p>
+            </div>
           </div>
         </div>
 
@@ -561,6 +601,45 @@ export default function BalancerPage() {
                 </div>
               </div>
             )}
+
+            {/* 試合結果記録セクション */}
+            <div className="mt-8 pt-8 border-t border-gray-800">
+              {!showRecordPanel ? (
+                <div className="text-center">
+                  <button
+                    onClick={() => setShowRecordPanel(true)}
+                    type="button"
+                    className="bg-emerald-600 hover:bg-emerald-500 text-white px-8 py-3.5 rounded-xl font-black transition flex items-center gap-2 mx-auto shadow-lg shadow-emerald-950/20"
+                  >
+                    <Trophy className="h-5 w-5" /> この編成で試合結果を記録する 🏆 (管理者用)
+                  </button>
+                </div>
+              ) : (
+                <div>
+                  <div className="flex justify-between items-center mb-4 pb-2 border-b border-gray-800">
+                    <h3 className="text-lg font-bold text-gray-200 flex items-center gap-2">
+                      <Trophy className="h-5 w-5 text-emerald-400 animate-bounce" />
+                      対戦戦績の直接入力
+                    </h3>
+                    <button
+                      onClick={() => setShowRecordPanel(false)}
+                      type="button"
+                      className="text-xs bg-gray-800 hover:bg-gray-750 text-gray-400 hover:text-white px-3 py-1.5 rounded border border-gray-700 transition"
+                    >
+                      記録パネルを閉じる ×
+                    </button>
+                  </div>
+                  <MatchRecordPanel
+                    balanceResult={balanceResult}
+                    onComplete={() => {
+                      setShowRecordPanel(false);
+                      // MMR再計算の完了等により、最新のプレイヤー一覧を再取得
+                      fetchPlayers();
+                    }}
+                  />
+                </div>
+              )}
+            </div>
           </div>
         )}
 

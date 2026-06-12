@@ -120,9 +120,26 @@ export default function KtmAdminPage() {
   const [syncData, setSyncData] = useState<any>(null);
 
   const [syncingRiot, setSyncingRiot] = useState(false);
+  const [integrityData, setIntegrityData] = useState<any>(null);
+  const [checkingIntegrity, setCheckingIntegrity] = useState(false);
+
+  const checkIntegrity = async () => {
+    setCheckingIntegrity(true);
+    try {
+      const res = await fetch('/api/mmr/check-integrity');
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      setIntegrityData(data);
+    } catch (err: any) {
+      console.error("Integrity check failed:", err);
+    } finally {
+      setCheckingIntegrity(false);
+    }
+  };
 
   useEffect(() => {
     fetchPlayers();
+    checkIntegrity();
   }, []);
 
   const fetchPlayers = async () => {
@@ -135,6 +152,8 @@ export default function KtmAdminPage() {
 
       if (error) throw error;
       setPlayers(data || []);
+      // 名簿リフレッシュ時に整合性も再確認
+      checkIntegrity();
     } catch (err: any) {
       setMessage({ type: "error", text: err.message });
     } finally {
@@ -280,6 +299,7 @@ export default function KtmAdminPage() {
       
       setMessage({ type: "success", text: "✅ " + data.message });
       fetchPlayers(); 
+      checkIntegrity(); // 再計算完了後に整合性を再確認
     } catch (err: any) {
       setMessage({ type: "error", text: "❌ Rebuild エラー: " + err.message });
     } finally {
@@ -664,6 +684,49 @@ export default function KtmAdminPage() {
               <div className={`p-4 rounded-lg flex items-center gap-3 ${message.type === 'error' ? 'bg-red-900/30 text-red-400 border border-red-800' : 'bg-green-900/30 text-green-400 border border-green-800'}`}>
                 <AlertCircle className="h-5 w-5 flex-shrink-0" />
                 <p className="text-sm font-medium whitespace-pre-wrap">{message.text}</p>
+              </div>
+            )}
+
+            {/* MMR整合性チェックの表示 */}
+            {integrityData && (
+              <div className={`p-4 rounded-xl border ${
+                integrityData.hasDiscrepancy 
+                  ? 'bg-amber-950/40 border-amber-900/60 text-amber-200' 
+                  : 'bg-emerald-950/40 border-emerald-900/60 text-emerald-200'
+              }`}>
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2 rounded-lg ${integrityData.hasDiscrepancy ? 'bg-amber-500/10 text-amber-400' : 'bg-emerald-500/10 text-emerald-400'}`}>
+                      <Info className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-sm">MMR整合性ステータス</h4>
+                      <p className="text-xs text-gray-400 mt-0.5">
+                        {integrityData.hasDiscrepancy 
+                          ? `⚠️ ${integrityData.discrepancyCount}名のプレイヤーのMMRに過去の対戦履歴（累積値）とのズレが発生しています。Rebuildを実行して再計算してください。` 
+                          : '✅ すべてのプレイヤーのMMRは過去の対戦履歴と完全に一致しています。'
+                        }
+                      </p>
+                    </div>
+                  </div>
+                  {integrityData.hasDiscrepancy && (
+                    <button
+                      onClick={handleRebuildMmr}
+                      className="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-black font-black text-xs rounded-lg transition shadow-md shadow-amber-900/20"
+                    >
+                      🔄 Rebuildを実行
+                    </button>
+                  )}
+                </div>
+                {integrityData.hasDiscrepancy && (
+                  <div className="mt-3 pt-3 border-t border-amber-900/40 text-[10px] text-amber-300/80 max-h-24 overflow-y-auto space-y-1 font-mono">
+                    {integrityData.discrepancies.map((d: any) => (
+                      <div key={d.name}>
+                        • {d.name}: 現在値と期待値にズレがあります (差分: TOP: {d.diff.TOP}, JG: {d.diff.JG}, MID: {d.diff.MID}, ADC: {d.diff.ADC}, SUP: {d.diff.SUP}, 総合: {d.diff.TOTAL})
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 

@@ -4,7 +4,13 @@ import { calculateNewMMR, calculateKdaScore, MmrCalcContext } from '../../../../
 
 export async function POST(request: Request) {
   try {
-    const { winningTeam, gameDuration, participants, riotMatchId } = await request.json();
+    const { winningTeam, gameDuration, participants, riotMatchId, adminPassword } = await request.json();
+
+    // 管理者パスワードの検証 (安全のためのセキュリティチェック)
+    const expectedPassword = process.env.ADMIN_PASSWORD || 'ktm';
+    if (adminPassword !== expectedPassword) {
+      return NextResponse.json({ error: '管理者パスワードが正しくありません。保存権限がありません。' }, { status: 403 });
+    }
 
     if (!winningTeam || !participants || participants.length !== 10) {
       return NextResponse.json({ error: '入力データが不正です。10人の参加者と勝利チームが必要です。' }, { status: 400 });

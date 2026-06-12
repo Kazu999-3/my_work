@@ -62,14 +62,15 @@ export default function Sidebar() {
         {/* お気に入りパネル */}
         <FavoritesPanel />
 
-        {/* 管理者用ログインひっそりリンク */}
+        {/* 管理者用ログインリンク */}
         <div className="mt-4 text-center">
           <Link 
             href="/ktm-admin" 
             prefetch={false}
-            className="inline-flex items-center gap-2 text-xs text-gray-500 hover:text-gray-300 transition-colors font-medium py-1.5 px-3.5 rounded-full hover:bg-white/5 border border-white/5"
+            className="inline-flex items-center justify-center gap-2 text-xs text-amber-400 hover:text-white transition-all duration-300 font-black py-2.5 px-4 rounded-xl bg-amber-500/10 hover:bg-amber-500/25 border border-amber-500/20 hover:border-amber-500/50 w-full shadow-lg shadow-amber-950/10"
           >
-            <span>管理者ログイン 🔑</span>
+            <Shield size={14} className="text-amber-400 animate-pulse" />
+            <span>管理者ダッシュボード 🔑</span>
           </Link>
         </div>
 

@@ -25,41 +25,39 @@ export default function PlayerMyPage() {
   const [history, setHistory] = useState<any[]>([]);
   const [riotMasteries, setRiotMasteries] = useState<any[]>([]);
   const [saving, setSaving] = useState(false);
+  const [activeLane, setActiveLane] = useState<'TOTAL' | 'TOP' | 'JG' | 'MID' | 'ADC' | 'SUP'>('TOTAL');
 
   // MMR推移グラフ用のデータを計算（useMemoで最適化）
   const mmrChartData = useMemo(() => {
-    if (!history || history.length === 0 || !player) return [];
+    if (!history || history.length === 0) return [];
 
     // 最新の試合が先頭にあるので、古い順に並び替え
     const sortedHistory = [...history].reverse();
 
-    // 最大20件に制限
-    const recent = sortedHistory.slice(-20);
+    return sortedHistory.map((match, idx) => {
+      const historyObj = match.mmrHistory || { TOTAL: match.mmr || 1200 };
+      const val = historyObj[activeLane] !== undefined ? historyObj[activeLane] : (historyObj.TOTAL || 1200);
+      return {
+        game: idx + 1,
+        mmr: val,
+        isWin: match.isWin,
+        champion: match.champion || "Unknown",
+        date: match.date
+          ? new Date(match.date).toLocaleDateString("ja-JP", { month: "numeric", day: "numeric" })
+          : "-",
+        mmrDelta: match.mmrDelta || 0,
+        role: match.role,
+        allMmr: historyObj
+      };
+    });
+  }, [history, activeLane]);
 
-    // 現在のMMRから逆算して各時点のMMRを計算
-    // recent の最後の試合後のMMR = player.mmr
-    // そこから遡って mmrDelta を引いていく
-    const currentMmr = player.mmr || 1000;
-    let runningMmr = currentMmr;
-
-    // まず各試合の「試合後MMR」を逆順で計算
-    const mmrValues: number[] = new Array(recent.length);
-    for (let i = recent.length - 1; i >= 0; i--) {
-      mmrValues[i] = runningMmr;
-      runningMmr -= (recent[i].mmrDelta || 0);
-    }
-
-    return recent.map((match, idx) => ({
-      game: idx + 1,
-      mmr: mmrValues[idx],
-      isWin: match.isWin,
-      champion: match.champion || "Unknown",
-      date: match.date
-        ? new Date(match.date).toLocaleDateString("ja-JP", { month: "numeric", day: "numeric" })
-        : "-",
-      mmrDelta: match.mmrDelta || 0,
-    }));
-  }, [history, player]);
+  const currentLaneMmr = useMemo(() => {
+    if (!player) return 1000;
+    if (activeLane === 'TOTAL') return player.mmr || 1000;
+    const key = `mmr_${activeLane.toLowerCase()}`;
+    return player[key] || 1000;
+  }, [player, activeLane]);
 
   useEffect(() => {
     async function fetchData() {
@@ -330,10 +328,31 @@ export default function PlayerMyPage() {
 
         {/* MMR推移グラフ */}
         <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-xl">
-          <h3 className="text-2xl font-black flex items-center gap-2 mb-6">
-            <TrendingUp className="w-6 h-6 text-cyan-400" />
-            📈 MMR推移
-          </h3>
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+            <h3 className="text-2xl font-black flex items-center gap-2">
+              <TrendingUp className="w-6 h-6 text-cyan-400" />
+              📈 MMR推移
+            </h3>
+            
+            {/* レーン切り替えトグル */}
+            <div className="flex flex-wrap gap-1 bg-gray-950 p-1 rounded-xl border border-gray-800">
+              {(['TOTAL', 'TOP', 'JG', 'MID', 'ADC', 'SUP'] as const).map(lane => (
+                <button
+                  key={lane}
+                  onClick={() => setActiveLane(lane)}
+                  type="button"
+                  className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all ${
+                    activeLane === lane 
+                      ? 'bg-cyan-500 text-black shadow-md shadow-cyan-500/20' 
+                      : 'text-gray-400 hover:text-white hover:bg-gray-900'
+                  }`}
+                >
+                  {lane === 'TOTAL' ? '総合' : lane}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {mmrChartData.length > 0 ? (
             <div className="w-full h-72">
               <ResponsiveContainer width="100%" height="100%">
@@ -363,8 +382,9 @@ export default function PlayerMyPage() {
                     content={({ active, payload }) => {
                       if (!active || !payload || payload.length === 0) return null;
                       const d = payload[0].payload;
+                      const laneLabels: Record<string, string> = { TOTAL: '総合', TOP: 'TOP', JG: 'JG', MID: 'MID', ADC: 'ADC', SUP: 'SUP' };
                       return (
-                        <div className="bg-gray-950 border border-gray-700 rounded-lg p-3 shadow-2xl text-sm">
+                        <div className="bg-gray-950 border border-gray-700 rounded-lg p-3 shadow-2xl text-sm min-w-[170px]">
                           <div className="flex items-center gap-2 mb-1">
                             <img
                               src={getChampIcon(d.champion)}
@@ -373,26 +393,43 @@ export default function PlayerMyPage() {
                             />
                             <span className="font-bold text-white">{d.champion}</span>
                           </div>
-                          <div className={`font-black ${d.isWin ? 'text-emerald-400' : 'text-red-400'}`}>
-                            {d.isWin ? 'WIN' : 'LOSE'}
-                          </div>
-                          <div className="text-gray-300 mt-1">
-                            MMR: <span className="font-bold text-white">{d.mmr}</span>
-                            <span className={`ml-2 font-bold ${d.mmrDelta > 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                              ({d.mmrDelta > 0 ? '+' : ''}{d.mmrDelta})
+                          <div className="flex justify-between items-center mt-1">
+                            <span className={`font-black text-xs ${d.isWin ? 'text-emerald-400' : 'text-red-400'}`}>
+                              {d.isWin ? 'WIN' : 'LOSE'} ({d.role})
+                            </span>
+                            <span className={`text-[10px] px-1 rounded font-bold bg-cyan-500/10 text-cyan-300 border border-cyan-500/20`}>
+                              {laneLabels[activeLane]}
                             </span>
                           </div>
-                          <div className="text-gray-500 text-xs mt-1">{d.date}</div>
+                          <div className="text-gray-300 mt-2 pt-2 border-t border-gray-800 space-y-1">
+                            <div>
+                              MMR: <span className="font-bold text-white">{d.mmr}</span>
+                              <span className={`ml-2 font-bold ${d.mmrDelta > 0 && d.role === activeLane ? 'text-emerald-400' : d.mmrDelta < 0 && d.role === activeLane ? 'text-red-400' : 'text-gray-400'}`}>
+                                ({d.mmrDelta > 0 ? '+' : ''}{d.mmrDelta})
+                              </span>
+                            </div>
+                            {d.allMmr && (
+                              <div className="text-[10px] text-gray-500 grid grid-cols-2 gap-x-3 gap-y-1 pt-1.5 border-t border-gray-900/50 mt-1">
+                                <div>総合: {d.allMmr.TOTAL}</div>
+                                <div>TOP: {d.allMmr.TOP}</div>
+                                <div>JG: {d.allMmr.JG}</div>
+                                <div>MID: {d.allMmr.MID}</div>
+                                <div>ADC: {d.allMmr.ADC}</div>
+                                <div>SUP: {d.allMmr.SUP}</div>
+                              </div>
+                            )}
+                          </div>
+                          <div className="text-gray-500 text-[10px] mt-2 text-right">{d.date}</div>
                         </div>
                       );
                     }}
                   />
                   <ReferenceLine
-                    y={player.mmr || 1000}
+                    y={currentLaneMmr}
                     stroke="#00cfef"
                     strokeDasharray="6 4"
                     strokeOpacity={0.5}
-                    label={{ value: `現在 ${player.mmr || 1000}`, position: 'right', fill: '#00cfef', fontSize: 11 }}
+                    label={{ value: `現在 ${currentLaneMmr}`, position: 'right', fill: '#00cfef', fontSize: 11 }}
                   />
                   <Area
                     type="monotone"
