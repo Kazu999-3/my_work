@@ -17,6 +17,8 @@ export default function YoutubeQueueManager() {
   const [actionLoading, setActionLoading] = useState<string | null>(null); // 特定のIDの処理中フラグ
   const [newUrl, setNewUrl] = useState('');
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+  const [filterStatus, setFilterStatus] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
 
   // 1. キューデータの取得
   const fetchQueue = async () => {
@@ -148,6 +150,24 @@ export default function YoutubeQueueManager() {
     error: queue.filter((i) => i.status.startsWith('error') || i.status === 'failed').length,
   };
 
+  const filteredQueue = queue.filter((item) => {
+    // 1. ステータスでの絞り込み
+    if (filterStatus === 'pending' && item.status !== 'pending') return false;
+    if (filterStatus === 'completed' && item.status !== 'completed') return false;
+    if (filterStatus === 'error' && !(item.status.startsWith('error') || item.status === 'failed')) return false;
+
+    // 2. 検索キーワードでの絞り込み (タイトル or チャンネル名 or ID)
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      const titleMatch = item.title.toLowerCase().includes(query);
+      const channelMatch = item.channel_name?.toLowerCase().includes(query) || false;
+      const idMatch = item.id.toLowerCase().includes(query);
+      return titleMatch || channelMatch || idMatch;
+    }
+
+    return true;
+  });
+
   return (
     <div className="max-w-6xl mx-auto space-y-8">
       {/* ヘッダー */}
@@ -230,6 +250,51 @@ export default function YoutubeQueueManager() {
         </form>
       </div>
 
+      {/* 検索 ＆ フィルターバー */}
+      <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-[#0f111a] border border-gray-800/80 rounded-2xl p-4 shadow-md">
+        {/* ステータスタブ */}
+        <div className="flex flex-wrap gap-1 bg-[#07080e] p-1 rounded-xl border border-gray-800/60 w-full md:w-auto">
+          {[
+            { id: 'all', label: 'すべて', count: stats.total },
+            { id: 'pending', label: '解析待ち', count: stats.pending, color: 'text-cyan-400' },
+            { id: 'completed', label: '完了', count: stats.completed, color: 'text-green-400' },
+            { id: 'error', label: 'エラー/失敗', count: stats.error, color: 'text-red-400' }
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setFilterStatus(tab.id)}
+              type="button"
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                filterStatus === tab.id
+                  ? 'bg-amber-500 text-gray-950 shadow-md'
+                  : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/40'
+              }`}
+            >
+              <span className={filterStatus === tab.id ? 'text-gray-950' : tab.color}>{tab.label}</span>
+              <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
+                filterStatus === tab.id ? 'bg-gray-950/20 text-gray-950' : 'bg-gray-900 text-gray-500'
+              }`}>
+                {tab.count}
+              </span>
+            </button>
+          ))}
+        </div>
+
+        {/* 検索窓 */}
+        <div className="relative w-full md:w-64">
+          <input
+            type="text"
+            placeholder="タイトル、チャンネルで検索..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-9 pr-4 py-2 bg-[#07080e] border border-gray-800 rounded-xl focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 text-xs text-gray-200"
+          />
+          <svg className="absolute left-3 top-2.5 h-4 w-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+        </div>
+      </div>
+
       {/* キュー一覧リスト */}
       <div className="bg-[#0f111a] border border-gray-800/80 rounded-2xl shadow-xl overflow-hidden">
         <div className="p-6 border-b border-gray-800/80 flex items-center justify-between">
@@ -254,82 +319,143 @@ export default function YoutubeQueueManager() {
             </svg>
             <span className="text-sm text-gray-400">キュー情報を読み込み中...</span>
           </div>
-        ) : queue.length === 0 ? (
+        ) : filteredQueue.length === 0 ? (
           <div className="py-20 text-center text-gray-500 text-sm">
-            キューが空です。上にYouTube動画のURLを入力して、解析を指示してください。
+            該当する動画がありません。
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-gray-800/60 text-xs text-gray-400 uppercase bg-[#08090f]">
-                  <th className="px-6 py-4 font-semibold">動画情報</th>
-                  <th className="px-6 py-4 font-semibold">ステータス</th>
-                  <th className="px-6 py-4 font-semibold text-right">アクション</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-800/40 text-sm text-gray-300">
-                {queue.map((item) => (
-                  <tr key={item.id} className="hover:bg-[#0c0d15]/60 transition-all duration-150">
-                    <td className="px-6 py-4 max-w-lg">
-                      <div className="flex flex-col space-y-1">
-                        <span className="font-bold text-gray-200 truncate" title={item.title}>
-                          {item.title}
+          <>
+            {/* モバイル用カードレイアウト (md未満で表示) */}
+            <div className="block md:hidden divide-y divide-gray-800/40">
+              {filteredQueue.map((item) => (
+                <div key={item.id} className="p-4 space-y-3 hover:bg-[#0c0d15]/40 transition-all">
+                  <div className="flex justify-between items-start gap-3">
+                    <span className="font-bold text-gray-200 text-sm line-clamp-2 flex-1" title={item.title}>
+                      {item.title}
+                    </span>
+                    <div className="shrink-0">
+                      {getStatusBadge(item.status)}
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center justify-between text-xs">
+                    <div className="flex flex-wrap items-center gap-2">
+                      {item.channel_name && (
+                        <span className="text-gray-400 bg-gray-900/60 px-1.5 py-0.5 rounded border border-gray-800/80">
+                          {item.channel_name}
                         </span>
-                        <div className="flex items-center gap-2 text-xs">
-                          {item.channel_name && (
-                            <span className="text-gray-400 bg-gray-900/60 px-1.5 py-0.5 rounded border border-gray-800/80">
-                              {item.channel_name}
-                            </span>
-                          )}
-                          <a
-                            href={item.url}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-cyan-400 hover:underline flex items-center gap-1 w-fit"
-                          >
-                            <span>{item.id}</span>
-                            <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                            </svg>
-                          </a>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        {getStatusBadge(item.status)}
-                        {item.retry_count > 0 && item.status !== 'completed' && (
-                          <span className="text-xs text-gray-500 font-medium">({item.retry_count}/5)</span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex justify-end gap-2">
-                        {/* エラーまたは失敗動画にのみ「再試行」ボタンを表示 */}
-                        {(item.status.startsWith('error') || item.status === 'failed') && (
-                          <button
-                            onClick={() => handleRetryVideo(item.id)}
-                            disabled={actionLoading !== null}
-                            className="px-3 py-1.5 bg-cyan-950/60 hover:bg-cyan-900/80 border border-cyan-800/60 hover:border-cyan-700/60 text-cyan-400 text-xs font-semibold rounded-lg disabled:opacity-40 disabled:pointer-events-none transition-all flex items-center gap-1"
-                          >
-                            {actionLoading === item.id ? '処理中...' : '再試行'}
-                          </button>
-                        )}
-                        <button
-                          onClick={() => handleDeleteVideo(item.id)}
-                          disabled={actionLoading !== null}
-                          className="px-3 py-1.5 bg-red-950/20 hover:bg-red-950/50 border border-red-900/40 hover:border-red-800/60 text-red-400 text-xs font-semibold rounded-lg disabled:opacity-40 disabled:pointer-events-none transition-all flex items-center gap-1"
-                        >
-                          削除
-                        </button>
-                      </div>
-                    </td>
+                      )}
+                      <a
+                        href={item.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-cyan-400 hover:underline flex items-center gap-1"
+                      >
+                        <span>{item.id}</span>
+                        <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                        </svg>
+                      </a>
+                    </div>
+                    {item.retry_count > 0 && item.status !== 'completed' && (
+                      <span className="text-gray-500 font-medium">({item.retry_count}/5)</span>
+                    )}
+                  </div>
+
+                  <div className="flex gap-2 pt-1 justify-end">
+                    {(item.status.startsWith('error') || item.status === 'failed') && (
+                      <button
+                        onClick={() => handleRetryVideo(item.id)}
+                        disabled={actionLoading !== null}
+                        className="flex-1 py-2 bg-cyan-950/60 hover:bg-cyan-900/80 border border-cyan-800/60 text-cyan-400 text-xs font-semibold rounded-lg disabled:opacity-40 transition-all text-center"
+                      >
+                        {actionLoading === item.id ? '処理中...' : '再試行'}
+                      </button>
+                    )}
+                    <button
+                      onClick={() => handleDeleteVideo(item.id)}
+                      disabled={actionLoading !== null}
+                      className="flex-1 py-2 bg-red-950/20 hover:bg-red-950/50 border border-red-900/40 text-red-400 text-xs font-semibold rounded-lg disabled:opacity-40 transition-all text-center"
+                    >
+                      削除
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* PC用テーブルレイアウト (md以上で表示) */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-gray-800/60 text-xs text-gray-400 uppercase bg-[#08090f]">
+                    <th className="px-6 py-4 font-semibold">動画情報</th>
+                    <th className="px-6 py-4 font-semibold">ステータス</th>
+                    <th className="px-6 py-4 font-semibold text-right">アクション</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-gray-800/40 text-sm text-gray-300">
+                  {filteredQueue.map((item) => (
+                    <tr key={item.id} className="hover:bg-[#0c0d15]/60 transition-all duration-150">
+                      <td className="px-6 py-4 max-w-lg">
+                        <div className="flex flex-col space-y-1">
+                          <span className="font-bold text-gray-200 truncate" title={item.title}>
+                            {item.title}
+                          </span>
+                          <div className="flex items-center gap-2 text-xs">
+                            {item.channel_name && (
+                              <span className="text-gray-400 bg-gray-900/60 px-1.5 py-0.5 rounded border border-gray-800/80">
+                                {item.channel_name}
+                              </span>
+                            )}
+                            <a
+                              href={item.url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-cyan-400 hover:underline flex items-center gap-1 w-fit"
+                            >
+                              <span>{item.id}</span>
+                              <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                              </svg>
+                            </a>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          {getStatusBadge(item.status)}
+                          {item.retry_count > 0 && item.status !== 'completed' && (
+                            <span className="text-xs text-gray-500 font-medium">({item.retry_count}/5)</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex justify-end gap-2">
+                          {(item.status.startsWith('error') || item.status === 'failed') && (
+                            <button
+                              onClick={() => handleRetryVideo(item.id)}
+                              disabled={actionLoading !== null}
+                              className="px-3 py-1.5 bg-cyan-950/60 hover:bg-cyan-900/80 border border-cyan-800/60 hover:border-cyan-700/60 text-cyan-400 text-xs font-semibold rounded-lg disabled:opacity-40 disabled:pointer-events-none transition-all flex items-center gap-1"
+                            >
+                              {actionLoading === item.id ? '処理中...' : '再試行'}
+                            </button>
+                          )}
+                          <button
+                            onClick={() => handleDeleteVideo(item.id)}
+                            disabled={actionLoading !== null}
+                            className="px-3 py-1.5 bg-red-950/20 hover:bg-red-950/50 border border-red-900/40 hover:border-red-800/60 text-red-400 text-xs font-semibold rounded-lg disabled:opacity-40 disabled:pointer-events-none transition-all flex items-center gap-1"
+                          >
+                            削除
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
     </div>
