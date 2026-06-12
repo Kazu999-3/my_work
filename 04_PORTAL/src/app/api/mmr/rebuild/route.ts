@@ -1,97 +1,10 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { calculateInitialMmr, calculateNewMMR, calculateKdaScore } from '../../../../lib/mmr';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 const supabase = createClient(supabaseUrl, supabaseKey);
-
-const RANKS: Record<string, number> = { 
-  'UNRANKED': 1200, 'IRON': 1100, 'BRONZE': 1200, 'SILVER': 1350, 
-  'GOLD': 1500, 'PLATINUM': 1650, 'EMERALD': 1800, 'DIAMOND': 2000, 
-  'MASTER': 2200, 'GRANDMASTER': 2400, 'CHALLENGER': 2600 
-};
-
-function calculateInitialMmr(highestRank: string | null, role: string, prefs: any) {
-  const rankStr = highestRank ? highestRank.split(' ')[0].toUpperCase() : 'UNRANKED';
-  const originalRankMmr = RANKS[rankStr] || 1200;
-  const COMPRESSION_RATE = 0.8;
-  // ベースMMRの計算式 (元は圧縮があったが、現在はそのまま使うことも多い。しかしforce_rebuild.jsに合わせる)
-  const baseMmr = Math.round(1200 + (originalRankMmr - 1200) * COMPRESSION_RATE);
-
-  if (!prefs) return baseMmr - 200;
-
-  const norm = (r: string) => {
-    if (!r) return '';
-    const upper = r.toUpperCase();
-    if (upper === 'JUNGLE') return 'JG';
-    if (upper === 'SUPPORT') return 'SUP';
-    return upper;
-  };
-
-  const p = norm(prefs.primary);
-  const s = norm(prefs.secondary);
-  const r = norm(role);
-
-  if (p === r) return baseMmr;
-  if (p === 'ALL' || p === 'FILL') return baseMmr - 100;
-  if (s === r || s === 'ALL' || s === 'FILL') return baseMmr - 100;
-  return baseMmr - 200;
-}
-
-function calculateNewMMR(ctx: any) {
-  const { currentMmr, opponentMmr, isWin, kills, deaths, assists, role, matchupCount, visionScore, cs, teamTotalKills, isDamageMvp, isObjectiveMvp, isTankMvp, isHealMvp } = ctx;
-  
-  let baseDelta = isWin ? 15 : -10;
-
-  const mmrDiff = opponentMmr - currentMmr;
-  let eloBonus = 0;
-  if (mmrDiff > 0) {
-    eloBonus = Math.min(15, mmrDiff / 20);
-  } else if (mmrDiff < 0) {
-    eloBonus = Math.max(-10, mmrDiff / 25);
-  }
-
-  if (isWin) {
-    baseDelta += eloBonus;
-  } else {
-    baseDelta = Math.min(-2, baseDelta + eloBonus);
-  }
-
-  let kdaScore = deaths === 0 ? (kills + assists) * 1.2 : (kills + assists) / deaths;
-  if (role === 'SUP') kdaScore += 0.8;
-
-  let kdaB = Math.max(0, Math.min(10, (kdaScore - 2.0) * 4));
-
-  let visionB = 0, csB = 0;
-  if (role === 'SUP') { if (visionScore > 40) visionB = 5; if (visionScore > 60) visionB = 10; }
-  else if (role === 'ADC' || role === 'MID') { if (cs > 200) csB = 5; if (cs > 250) csB = 10; }
-  else if (role === 'JG') { if (visionScore > 20) visionB = 5; if (cs > 150) csB = 5; }
-  else { if (cs > 180) csB = 5; if (visionScore > 15) visionB = 3; }
-
-  let damageB = 0, objB = 0;
-  if (isDamageMvp) damageB = 5;
-  if (isObjectiveMvp) objB = 5;
-
-  let kpB = 0, tankHealB = 0;
-  const kp = teamTotalKills > 0 ? (kills + assists) / teamTotalKills : 0;
-  if (kp >= 0.65) kpB = 6; else if (kp >= 0.50) kpB = 3;
-  if (isTankMvp || isHealMvp) tankHealB = 5;
-
-  let matchupDampener = 1.0;
-  if (matchupCount >= 3) matchupDampener = 0.8;
-  if (matchupCount >= 5) matchupDampener = 0.6;
-  if (matchupCount >= 8) matchupDampener = 0.4;
-
-  let delta = (baseDelta + kdaB + visionB + csB + damageB + objB + kpB + tankHealB) * matchupDampener;
-  delta = Math.round(delta);
-
-  if (isWin) {
-    delta = Math.max(0, Math.min(60, delta));
-  } else {
-    delta = Math.max(-30, Math.min(0, delta));
-  }
-  return { delta, kdaScore: Number(kdaScore.toFixed(2)) };
-}
 
 export async function POST(request: Request) {
   try {
@@ -153,10 +66,12 @@ export async function POST(request: Request) {
           visionScore: p.vision_score || 0, cs: p.cs || 0,
           damageDealt: p.damage_dealt || 0, damageTaken: p.damage_taken || 0,
           objectiveDamage: p.objective_damage || 0, healShield: p.heal_shield || 0,
-          role, teamTotalKills, isDamageMvp, isObjectiveMvp, isTankMvp, isHealMvp
+          role, teamTotalKills, isDamageMvp, isObjectiveMvp, isTankMvp, isHealMvp,
+          csd15: p.csd15
         };
 
-        const { delta, kdaScore } = calculateNewMMR(ctx);
+        const delta = calculateNewMMR(ctx);
+        const kdaScore = calculateKdaScore(p.kills || 0, p.deaths || 0, p.assists || 0);
         memPlayer[mmrKey] += delta;
         memPlayer.totalGames += 1;
         if (isWin) memPlayer.totalWins += 1;

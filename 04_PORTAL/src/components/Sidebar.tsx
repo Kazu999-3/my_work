@@ -21,7 +21,7 @@ const MENU_ITEMS = [
 ];
 
 // モバイル用：表示するメニューを絞る（全部並べると多すぎるため）
-const MOBILE_MENU_IDS = ['dashboard', 'leaderboard', 'balancer', 'champions', 'library', 'design', 'ktm-admin'];
+const MOBILE_MENU_IDS = ['dashboard', 'leaderboard', 'balancer', 'matchups', 'champions', 'library', 'design', 'ktm-admin'];
 
 export default function Sidebar() {
   const pathname = usePathname();

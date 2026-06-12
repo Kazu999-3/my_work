@@ -11,7 +11,7 @@ const EMPTY_MEMO = {
   champion: '', enemy: '', role: 'Jungle', title: '',
   difficulty: 3, winCondition: '', earlyGame: '', powerSpikes: '',
   buildRunes: '', firstClear: '', counterJg: '', result: '',
-  strategy: '',
+  strategy: '', csd15: 0,
 };
 
 export default function MatchupsPage() {
@@ -29,6 +29,7 @@ export default function MatchupsPage() {
   const [viewMode, setViewMode] = useState<'list' | 'champion'>('list');
   const [expandedChamp, setExpandedChamp] = useState<string | null>(null);
   const [paramsProcessed, setParamsProcessed] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
 
   const fetchData = async () => {
     setLoading(true);
@@ -160,6 +161,9 @@ export default function MatchupsPage() {
     
     const mergedRawData = memo.original_raw_data ? { ...memo.original_raw_data, ...memo } : { source: 'manual', ...memo };
     delete mergedRawData.original_raw_data;
+    delete mergedRawData.id;
+    delete mergedRawData.matchup_id;
+    delete mergedRawData.created_at;
 
     const data = {
       champion: memo.champion, enemy: memo.enemy,
@@ -170,7 +174,7 @@ export default function MatchupsPage() {
     };
   
     const { error } = await supabase.from('matchup_sentinel').upsert(data, { onConflict: 'matchup_id' });
-    if (!error) { fetchData(); setMemo({ ...EMPTY_MEMO }); setShowForm(false); } 
+    if (!error) { fetchData(); setMemo({ ...EMPTY_MEMO }); setShowForm(false); setShowDetails(false); } 
     else alert('保存失敗: ' + error.message);
     setSaving(false);
   };
@@ -192,7 +196,8 @@ export default function MatchupsPage() {
       champion: m.champion, enemy: m.enemy, role: rl, title: m.title, difficulty: rd.difficulty || 3,
       winCondition: rd.winCondition || '', earlyGame: rd.earlyGame || '',
       firstClear: rd.firstClear || '', counterJg: rd.counterJg || '', powerSpikes: rd.powerSpikes || '',
-      buildRunes: rd.buildRunes || '', result: rd.result || '', strategy: m.strategy || ''
+      buildRunes: rd.buildRunes || '', result: rd.result || '', strategy: m.strategy || '',
+      csd15: rd.csd15 !== undefined ? rd.csd15 : 0
     });
     setShowForm(true); setSelected(null);
   };
@@ -238,6 +243,16 @@ export default function MatchupsPage() {
             </div>
 
             <div className="space-y-4">
+              {rd.csd15 !== undefined && rd.csd15 !== 0 && (
+                <div className="glass-panel border-l-4 rounded-r-xl p-4 border-indigo-500">
+                  <h3 className="text-xs font-black uppercase tracking-widest mb-2 flex items-center gap-2 text-indigo-400">
+                    <span>📊</span> 15分段階のCS差 (CSD@15)
+                  </h3>
+                  <p className="text-lg font-black font-mono text-white">
+                    {rd.csd15 > 0 ? `+${rd.csd15}` : rd.csd15}
+                  </p>
+                </div>
+              )}
               {rd.winCondition && <InfoBlock title="勝ち筋" icon="🎯" text={rd.winCondition} color="text-[#c89b3c] border-[#c89b3c]" />}
               {rd.earlyGame && <InfoBlock title="序盤の動き (Lv1-6)" icon="⚔️" text={rd.earlyGame} color="text-[#00cfef] border-[#00cfef]" />}
               {rd.firstClear && <InfoBlock title="ルート / 警戒スキル" icon="🚨" text={rd.firstClear} color="text-[#a78bfa] border-[#a78bfa]" />}
@@ -330,6 +345,76 @@ export default function MatchupsPage() {
               </div>
             </div>
           </div>
+          {/* 詳細設定アコーディオン */}
+          <div className="mb-4 border border-white/5 bg-black/10 rounded-xl overflow-hidden relative z-10">
+            <button
+              type="button"
+              onClick={() => setShowDetails(!showDetails)}
+              className="w-full px-4 py-3 flex items-center justify-between font-bold text-xs text-gray-400 hover:text-white transition-colors select-none"
+            >
+              <span>{showDetails ? '▼ 詳細設定を閉じる' : '▶ 詳細設定を開く（難易度、CS差、勝ち筋など）'}</span>
+            </button>
+            <AnimatePresence>
+              {showDetails && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  className="p-4 border-t border-white/5 space-y-4"
+                >
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">難易度 (1〜5)</label>
+                      <select value={memo.difficulty} onChange={e => set('difficulty', parseInt(e.target.value))} className="w-full bg-[var(--color-surface)] border border-white/5 rounded-xl p-3 text-white outline-none">
+                        <option value="1">⭐ (とても簡単)</option>
+                        <option value="2">⭐⭐ (簡単)</option>
+                        <option value="3">⭐⭐⭐ (普通)</option>
+                        <option value="4">⭐⭐⭐⭐ (難しい)</option>
+                        <option value="5">⭐⭐⭐⭐⭐ (極めて困難)</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">15分段階のCS差 (CSD@15)</label>
+                      <input
+                        type="number"
+                        placeholder="例: 15 (勝っている) / -10 (負けている)"
+                        value={memo.csd15}
+                        onChange={e => set('csd15', parseInt(e.target.value) || 0)}
+                        className="w-full bg-[var(--color-surface)] border border-white/5 focus:border-[#00cfef]/50 rounded-xl p-3 text-white outline-none transition-colors"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">🎯 勝ち筋</label>
+                    <textarea value={memo.winCondition} onChange={e => set('winCondition', e.target.value)} className="w-full bg-[var(--color-surface)] border border-white/5 focus:border-[#00cfef]/50 rounded-xl p-3 text-white outline-none min-h-[80px]" placeholder="対面との主要勝機、意識すべきポイント..." />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">⚔️ 序盤の動き (Lv1-6)</label>
+                    <textarea value={memo.earlyGame} onChange={e => set('earlyGame', e.target.value)} className="w-full bg-[var(--color-surface)] border border-white/5 focus:border-[#00cfef]/50 rounded-xl p-3 text-white outline-none min-h-[80px]" placeholder="Lv1での配置、ウェーブコントロール、Lv3/6での仕掛け方..." />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">🚨 ルート / 警戒スキル</label>
+                    <textarea value={memo.firstClear} onChange={e => set('firstClear', e.target.value)} className="w-full bg-[var(--color-surface)] border border-white/5 focus:border-[#00cfef]/50 rounded-xl p-3 text-white outline-none min-h-[80px]" placeholder="相手のジャングル周回ルート予測、避けるべきスキル..." />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">⚠️ ガンク警戒 / ダイブ</label>
+                    <textarea value={memo.counterJg} onChange={e => set('counterJg', e.target.value)} className="w-full bg-[var(--color-surface)] border border-white/5 focus:border-[#00cfef]/50 rounded-xl p-3 text-white outline-none min-h-[80px]" placeholder="何分頃にガンクされやすいか、カウンタージャングルの狙いどころ..." />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">⚡ パワースパイク</label>
+                      <textarea value={memo.powerSpikes} onChange={e => set('powerSpikes', e.target.value)} className="w-full bg-[var(--color-surface)] border border-white/5 focus:border-[#00cfef]/50 rounded-xl p-3 text-white outline-none min-h-[80px]" placeholder="相手が強い時間帯、コアアイテム完成時..." />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">🛡️ ビルド / ルーン</label>
+                      <textarea value={memo.buildRunes} onChange={e => set('buildRunes', e.target.value)} className="w-full bg-[var(--color-surface)] border border-white/5 focus:border-[#00cfef]/50 rounded-xl p-3 text-white outline-none min-h-[80px]" placeholder="推奨ビルド、対面用の対抗ルーン..." />
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
           <div className="mb-4 relative z-10">
             <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">📝 反省メモ / 自由記述</label>
             <textarea value={memo.strategy} onChange={e => set('strategy', e.target.value)} className="w-full bg-[var(--color-surface)] border border-white/5 focus:border-[#00cfef]/50 rounded-xl p-3 text-white outline-none min-h-[100px] transition-colors" placeholder="次回はこうする、今回の敗因など..." />

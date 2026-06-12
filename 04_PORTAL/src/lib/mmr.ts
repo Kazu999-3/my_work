@@ -78,10 +78,11 @@ export interface MmrCalcContext {
   isObjectiveMvp: boolean;
   isTankMvp: boolean;
   isHealMvp: boolean;
+  csd15?: number; // 15分時点での対面とのCS差
 }
 
 export function calculateNewMMR(ctx: MmrCalcContext): number {
-  const { currentMmr, opponentMmr, isWin, kills, deaths, assists, mainRank, numGames, matchupCount, totalWinRate, visionScore, cs, role, teamTotalKills, isDamageMvp, isObjectiveMvp, isTankMvp, isHealMvp } = ctx;
+  const { currentMmr, opponentMmr, isWin, kills, deaths, assists, mainRank, numGames, matchupCount, totalWinRate, visionScore, cs, role, teamTotalKills, isDamageMvp, isObjectiveMvp, isTankMvp, isHealMvp, csd15 } = ctx;
 
   const isPlacement = false;
 
@@ -148,6 +149,16 @@ export function calculateNewMMR(ctx: MmrCalcContext): number {
 
   if (isTankMvp || isHealMvp) tankHealB = 5;
 
+  // ⑥-2 15分段階のCS差ボーナス (CSD@15)
+  // 対象ロール: TOP, JG, JUNGLE, MID, MIDDLE, ADC, BOTTOM (サポートを除く)
+  let csdBonus = 0;
+  const upperRole = role.toUpperCase();
+  if (['TOP', 'JG', 'JUNGLE', 'MID', 'MIDDLE', 'ADC', 'BOTTOM'].includes(upperRole) && csd15 !== undefined) {
+    if (csd15 >= 20) csdBonus = 5;
+    else if (csd15 >= 10) csdBonus = 2;
+    else if (csd15 <= -20) csdBonus = -3;
+  }
+
   // ⑦ 対面回数補正 (身内戦でのブレ防止)
   let matchupDampener = 1.0;
   if (!isPlacement) {
@@ -156,8 +167,8 @@ export function calculateNewMMR(ctx: MmrCalcContext): number {
     if (matchupCount >= 8) matchupDampener = 0.4;
   }
 
-  // 全てのボーナスを合算 (加点のみなのでデフレが起きない)
-  let delta = (baseDelta + kdaB + visionB + csB + damageB + objB + kpB + tankHealB) * matchupDampener;
+  // 全てのボーナスを合算 (csdBonus も合算)
+  let delta = (baseDelta + kdaB + visionB + csB + damageB + objB + kpB + tankHealB + csdBonus) * matchupDampener;
   delta = Math.round(delta);
 
   // ⑧ 上限・下限のセーフティ

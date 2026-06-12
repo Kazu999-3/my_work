@@ -121,7 +121,8 @@ export async function POST(req: Request) {
           isDamageMvp,
           isObjectiveMvp,
           isTankMvp,
-          isHealMvp
+          isHealMvp,
+          csd15: p.csd15
         };
 
         const mmrDelta = calculateNewMMR(ctx);

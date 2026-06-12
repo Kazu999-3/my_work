@@ -137,9 +137,9 @@ export default function Home() {
       // 5. 辞典更新履歴 (GLOBAL)
       const { data: dictData, error: dictError } = await supabase
         .from('matchup_sentinel')
-        .select('matchup_id, champion, title, updated_at')
+        .select('matchup_id, champion, title, created_at')
         .eq('enemy', 'GLOBAL')
-        .order('updated_at', { ascending: false })
+        .order('created_at', { ascending: false })
         .limit(5);
       if (!dictError && dictData) setRecentDictUpdates(dictData);
 
@@ -541,7 +541,7 @@ export default function Home() {
                     <span className="text-sm font-bold text-gray-200 group-hover:text-white transition-colors">{item.champion}</span>
                     <span className="text-xs text-gray-500 truncate max-w-[200px]">{item.title}</span>
                   </div>
-                  <span className="text-xs font-mono text-gray-400 px-2 py-1 bg-white/5 rounded-md">{new Date(item.updated_at).toLocaleDateString('ja-JP')}</span>
+                  <span className="text-xs font-mono text-gray-400 px-2 py-1 bg-white/5 rounded-md">{new Date(item.created_at).toLocaleDateString('ja-JP')}</span>
                 </div>
               )) : (
                 <p className="text-sm text-gray-500 text-center py-4">データがありません</p>
