@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '../../../../lib/supabaseClient';
 import { fetchPuuidByRiotId, fetchRecentMatchIds, fetchMatchDetails } from '../../../../lib/riot';
 
 export async function POST(request: Request) {
@@ -27,27 +26,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Riot API: 試合履歴がありません。' }, { status: 404 });
     }
 
-    // 3. すでに登録済みの試合IDをDBから取得
-    const { data: existingMatches } = await supabase
-      .from('ktm_matches')
-      .select('riot_match_id')
-      .in('riot_match_id', matchIds);
-
-    const existingIds = new Set<string>();
-    if (existingMatches) {
-      existingMatches.forEach(m => {
-        if (m.riot_match_id) existingIds.add(m.riot_match_id);
-      });
-    }
-
     let targetMatchDetails = null;
 
-    // 4. 未登録の最新カスタムゲームを探す
+    // 3. 直近20試合から最も新しいカスタムゲームを探す
     for (const matchId of matchIds) {
-      if (existingIds.has(matchId)) {
-        continue; // すでに登録済み
-      }
-
       // 詳細を取得してカスタムゲームか確認
       const details = await fetchMatchDetails(matchId, apiKey);
       
@@ -56,13 +38,13 @@ export async function POST(request: Request) {
       // queueIdが 0（カスタムゲーム）または gameType に 'CUSTOM' が含まれているかチェック
       if (details.queueId === 0 || gType.includes("CUSTOM")) {
         targetMatchDetails = details;
-        break; // 未登録の最新カスタムが見つかったのでループを抜ける
+        break; // 最も新しいカスタムが見つかったのでループを抜ける
       }
     }
 
     if (!targetMatchDetails) {
       return NextResponse.json({ 
-        error: '未登録の最新のカスタムゲームが見つかりませんでした。反映まで最大3分ほどかかる場合があります。しばらく経ってから再度お試しください。' 
+        error: '最新のカスタムゲームが見つかりませんでした。反映まで最大3分ほどかかる場合があります。しばらく経ってから再度お試しください。' 
       }, { status: 404 });
     }
 
