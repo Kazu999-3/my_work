@@ -29,6 +29,8 @@ interface MatchResult {
   matchId: string;
   gameDuration: number; // seconds
   participants: ParticipantStats[];
+  queueId?: number;
+  gameType?: string;
 }
 
 export async function fetchPuuidByRiotId(gameName: string, tagLine: string, apiKey: string): Promise<string> {
@@ -57,6 +59,17 @@ export async function fetchRecentCustomMatchId(puuid: string, apiKey: string): P
   }
   
   return data[0]; // 最新の試合ID
+}
+
+export async function fetchRecentMatchIds(puuid: string, apiKey: string, count: number = 20): Promise<string[]> {
+  const url = `${RIOT_API_BASE_ASIA}/lol/match/v5/matches/by-puuid/${puuid}/ids?start=0&count=${count}&api_key=${apiKey}`;
+  const res = await fetch(url);
+  
+  if (!res.ok) {
+    throw new Error(`Riot API: 試合履歴の取得に失敗しました。(${res.statusText})`);
+  }
+
+  return await res.json();
 }
 
 export async function fetchMatchDetails(matchId: string, apiKey: string): Promise<MatchResult> {
@@ -92,7 +105,9 @@ export async function fetchMatchDetails(matchId: string, apiKey: string): Promis
   return {
     matchId,
     gameDuration,
-    participants
+    participants,
+    queueId: data.info.queueId,
+    gameType: data.info.gameType
   };
 }
 

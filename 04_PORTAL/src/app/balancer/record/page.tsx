@@ -47,6 +47,7 @@ export default function CustomRecordPage() {
 
   const [riotIgn, setRiotIgn] = useState('');
   const [fetchingRiot, setFetchingRiot] = useState(false);
+  const [riotMatchId, setRiotMatchId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState('');
   const [winningTeam, setWinningTeam] = useState<'BLUE' | 'RED' | null>(null);
@@ -92,6 +93,7 @@ export default function CustomRecordPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
 
+      setRiotMatchId(data.matchId);
       const newStats = [...stats];
       
       // Auto-fill logic
@@ -165,6 +167,7 @@ export default function CustomRecordPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           winningTeam,
+          riotMatchId,
           participants: stats.map(s => ({
             name: s.name,
             team: s.team,
@@ -192,6 +195,7 @@ export default function CustomRecordPage() {
         champion_name: '', damage_dealt: 0, damage_taken: 0, heal_shield: 0, objective_damage: 0, cs: 0 
       })));
       setWinningTeam(null);
+      setRiotMatchId(null);
     } catch (err: any) {
       setMessage(`保存エラー: ${err.message}`);
     } finally {

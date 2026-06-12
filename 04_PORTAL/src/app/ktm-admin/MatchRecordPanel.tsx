@@ -24,6 +24,7 @@ export default function MatchRecordPanel({ balanceResult, onComplete }: MatchRec
 
   const [riotIgn, setRiotIgn] = useState('');
   const [fetchingRiot, setFetchingRiot] = useState(false);
+  const [riotMatchIdState, setRiotMatchIdState] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState('');
 
@@ -57,6 +58,7 @@ export default function MatchRecordPanel({ balanceResult, onComplete }: MatchRec
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
 
+      setRiotMatchIdState(data.matchId);
       // Riot APIの結果から各プレイヤーのスタッツをマッピング
       const newStats = [...stats];
       
@@ -113,6 +115,7 @@ export default function MatchRecordPanel({ balanceResult, onComplete }: MatchRec
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           winningTeam,
+          riotMatchId: riotMatchIdState,
           participants: stats.map(s => ({
             name: s.name,
             team: s.team,
