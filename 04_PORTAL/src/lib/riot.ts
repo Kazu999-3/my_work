@@ -61,8 +61,11 @@ export async function fetchRecentCustomMatchId(puuid: string, apiKey: string): P
   return data[0]; // 最新の試合ID
 }
 
-export async function fetchRecentMatchIds(puuid: string, apiKey: string, count: number = 20): Promise<string[]> {
-  const url = `${RIOT_API_BASE_ASIA}/lol/match/v5/matches/by-puuid/${puuid}/ids?start=0&count=${count}&api_key=${apiKey}`;
+export async function fetchRecentMatchIds(puuid: string, apiKey: string, count: number = 20, queue?: number): Promise<string[]> {
+  let url = `${RIOT_API_BASE_ASIA}/lol/match/v5/matches/by-puuid/${puuid}/ids?start=0&count=${count}&api_key=${apiKey}`;
+  if (queue !== undefined) {
+    url += `&queue=${queue}`;
+  }
   const res = await fetch(url, { cache: 'no-store' });
   
   if (!res.ok) {

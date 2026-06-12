@@ -7,21 +7,11 @@ import NotificationBell from './NotificationBell';
 import FavoritesPanel from './FavoritesPanel';
 
 const MENU_ITEMS = [
-  { id: 'dashboard', label: 'ダッシュボード', icon: LayoutDashboard, href: '/', color: 'text-white', activeBg: 'bg-white/10' },
-  { id: 'history',   label: '過去の試合履歴', icon: History, href: '/history', color: 'text-orange-400', activeBg: 'bg-orange-400/15' },
-  { id: 'leaderboard', label: 'リーダーボード', icon: Trophy, href: '/leaderboard', color: 'text-yellow-400', activeBg: 'bg-yellow-400/15' },
   { id: 'balancer',  label: 'チーム分け', icon: Swords, href: '/balancer', color: 'text-rose-500', activeBg: 'bg-rose-500/15' },
+  { id: 'leaderboard', label: 'リーダーボード', icon: Trophy, href: '/leaderboard', color: 'text-yellow-400', activeBg: 'bg-yellow-400/15' },
+  { id: 'history',   label: '過去の試合履歴', icon: History, href: '/history', color: 'text-orange-400', activeBg: 'bg-orange-400/15' },
   { id: 'synergy',   label: '相性・ライバル', icon: HeartHandshake, href: '/synergy', color: 'text-fuchsia-400', activeBg: 'bg-fuchsia-400/15' },
-  { id: 'matchups',  label: 'バトルサーチ',   icon: Swords,          href: '/matchups', color: 'text-[#00cfef]', activeBg: 'bg-[#00cfef]/15' },
-  { id: 'champions', label: 'チャンピオン辞典', icon: BookHeart,     href: '/champions', color: 'text-[#c89b3c]', activeBg: 'bg-[#c89b3c]/15' },
-  { id: 'library',   label: '攻略ライブラリ', icon: BookOpen,        href: '/library', color: 'text-[#a78bfa]', activeBg: 'bg-[#a78bfa]/15' },
-  { id: 'design',    label: 'システム設計書', icon: ScrollText,      href: '/design', color: 'text-cyan-400', activeBg: 'bg-cyan-400/15' },
-  { id: 'youtube-admin', label: 'YouTube管理', icon: ListVideo,     href: '/admin/youtube', color: 'text-red-400', activeBg: 'bg-red-400/15' },
-  { id: 'ktm-admin',   label: '⚙️ 管理者専用',     icon: Shield, href: '/ktm-admin', color: 'text-indigo-400', activeBg: 'bg-indigo-400/15' },
 ];
-
-// モバイル用：表示するメニューを絞る（全部並べると多すぎるため）
-const MOBILE_MENU_IDS = ['dashboard', 'leaderboard', 'balancer', 'matchups', 'champions', 'library', 'design', 'ktm-admin'];
 
 export default function Sidebar() {
   const pathname = usePathname();
@@ -30,9 +20,9 @@ export default function Sidebar() {
     <>
       {/* PC用サイドバー */}
       <aside className="hidden md:flex flex-col w-64 h-screen sticky top-0 bg-[#0a0b10]/60 backdrop-blur-2xl border-r border-white/10 p-8 shadow-[4px_0_24px_rgba(0,0,0,0.5)] z-50">
-        {/* ロゴ（クリックでダッシュボードへ） */}
+        {/* ロゴ */}
         <div className="flex items-center justify-between mb-12">
-          <Link href="/" prefetch={false} className="flex items-center gap-3 group cursor-pointer">
+          <Link href="/balancer" prefetch={false} className="flex items-center gap-3 group cursor-pointer">
             <div className="relative">
               <div className="absolute inset-0 bg-[#c89b3c] blur-lg opacity-50 rounded-full group-hover:opacity-80 transition-opacity"></div>
               <Shield className="text-[#c89b3c] relative z-10 group-hover:scale-110 transition-transform" size={28} />
@@ -43,7 +33,7 @@ export default function Sidebar() {
           <NotificationBell />
         </div>
 
-        {/* ナビゲーション — 全メニュー常時表示 */}
+        {/* ナビゲーション — 固定4メニュー */}
         <nav className="flex flex-col gap-3">
           {MENU_ITEMS.map((item) => {
             const isActive = pathname === item.href || (item.id === 'leaderboard' && pathname.startsWith('/player'));
@@ -72,6 +62,17 @@ export default function Sidebar() {
         {/* お気に入りパネル */}
         <FavoritesPanel />
 
+        {/* 管理者用ログインひっそりリンク */}
+        <div className="mt-4 text-center">
+          <Link 
+            href="/ktm-admin" 
+            prefetch={false}
+            className="inline-flex items-center gap-2 text-xs text-gray-500 hover:text-gray-300 transition-colors font-medium py-1.5 px-3.5 rounded-full hover:bg-white/5 border border-white/5"
+          >
+            <span>管理者ログイン 🔑</span>
+          </Link>
+        </div>
+
         {/* フッター システムステータス */}
         <div className="mt-auto pt-8 border-t border-white/5">
           <div className="flex items-center gap-3 bg-black/40 p-4 rounded-2xl border border-white/5">
@@ -87,9 +88,9 @@ export default function Sidebar() {
         </div>
       </aside>
 
-      {/* スマホ用ボトムナビゲーション（主要メニューのみ表示） */}
+      {/* スマホ用ボトムナビゲーション */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[#0a0b10]/90 backdrop-blur-xl border-t border-white/10 z-50 flex items-center justify-around px-1 py-2 shadow-[0_-4px_24px_rgba(0,0,0,0.5)] pb-[env(safe-area-inset-bottom)]">
-        {MENU_ITEMS.filter(item => MOBILE_MENU_IDS.includes(item.id)).map((item) => {
+        {MENU_ITEMS.map((item) => {
           const isActive = pathname === item.href || (item.id === 'leaderboard' && pathname.startsWith('/player'));
 
           return (

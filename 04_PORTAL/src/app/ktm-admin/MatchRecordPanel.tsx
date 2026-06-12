@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { RefreshCw, Trophy, Target, Search } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { RefreshCw, Trophy, Target } from 'lucide-react';
+import { getChampIcon } from '../../lib/ddragonClient';
 
 interface MatchRecordPanelProps {
   balanceResult: any;
@@ -22,84 +23,37 @@ export default function MatchRecordPanel({ balanceResult, onComplete }: MatchRec
     return initial;
   });
 
-  const [riotIgn, setRiotIgn] = useState('');
-  const [fetchingRiot, setFetchingRiot] = useState(false);
-  const [riotMatchIdState, setRiotMatchIdState] = useState<string | null>(null);
+  const [championsList, setChampionsList] = useState<{ id: string, name: string }[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState('');
 
-  const handleStatChange = (name: string, field: string, value: string) => {
-    const num = parseInt(value) || 0;
-    setStats(prev => prev.map(p => p.name === name ? { ...p, [field]: num } : p));
-  };
-
-  const fetchFromRiot = async () => {
-    // 入力がなければ、参加者の中からignが登録されている人を自動で探す
-    let targetIgn = riotIgn;
-    if (!targetIgn) {
-      const playerWithIgn = stats.find(p => p.ign && p.ign.includes('#'));
-      if (playerWithIgn) {
-        targetIgn = playerWithIgn.ign;
-        setRiotIgn(targetIgn);
-      } else {
-        setMessage('Riot IGN が登録されている参加者が見つかりません。手動でRiot IGN (Name#TAG) を入力してください。');
-        return;
+  useEffect(() => {
+    async function loadChampions() {
+      try {
+        const vRes = await fetch('https://ddragon.leagueoflegends.com/api/versions.json');
+        const versions = await vRes.json();
+        const cRes = await fetch(`https://ddragon.leagueoflegends.com/cdn/${versions[0]}/data/ja_JP/champion.json`);
+        const d = await cRes.json();
+        const list = Object.values(d.data).map((c: any) => ({
+          id: c.id,
+          name: c.name
+        }));
+        list.sort((a, b) => a.name.localeCompare(b.name, 'ja'));
+        setChampionsList(list);
+      } catch (err) {
+        console.error('Failed to load champions from Ddragon:', err);
       }
     }
+    loadChampions();
+  }, []);
 
-    setFetchingRiot(true);
-    setMessage('');
-    try {
-      const res = await fetch('/api/riot/fetch-match', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ign: targetIgn })
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
-
-      setRiotMatchIdState(data.matchId);
-      // Riot APIの結果から各プレイヤーのスタッツをマッピング
-      const newStats = [...stats];
-      
-      data.participants.forEach((riotP: any) => {
-        // API側からは riotIdName と riotIdTagline が返ってくる想定
-        const fullRiotId = `${riotP.riotIdName}#${riotP.riotIdTagline}`.toLowerCase().replace(/\s+/g, '');
-        
-        const matchingPlayerIndex = newStats.findIndex(p => {
-          if (p.ign) {
-            const pIgn = p.ign.toLowerCase().replace(/\s+/g, '');
-            // 登録されているIGNとRiot側のIGN(Name#Tag)を比較
-            return pIgn === fullRiotId || pIgn.startsWith(riotP.riotIdName.toLowerCase().replace(/\s+/g, ''));
-          }
-          // ignがなければ、KTM名とRiotID(Name)だけで簡易比較
-          return p.name.toLowerCase() === riotP.riotIdName.toLowerCase();
-        });
-
-        if (matchingPlayerIndex !== -1) {
-          newStats[matchingPlayerIndex].kills = riotP.kills;
-          newStats[matchingPlayerIndex].deaths = riotP.deaths;
-          newStats[matchingPlayerIndex].assists = riotP.assists;
-          newStats[matchingPlayerIndex].vision = riotP.visionScore || 0;
-          newStats[matchingPlayerIndex].champion_name = riotP.championName || '';
-          newStats[matchingPlayerIndex].cs = (riotP.totalMinionsKilled || 0) + (riotP.neutralMinionsKilled || 0);
-          newStats[matchingPlayerIndex].damage_dealt = riotP.totalDamageDealtToChampions || 0;
-          newStats[matchingPlayerIndex].damage_taken = riotP.totalDamageTaken || 0;
-          newStats[matchingPlayerIndex].objective_damage = riotP.damageDealtToObjectives || 0;
-          newStats[matchingPlayerIndex].heal_shield = riotP.totalHeal || 0;
-          
-          if (riotP.win) {
-            setWinningTeam(newStats[matchingPlayerIndex].team as 'BLUE' | 'RED');
-          }
-        }
-      });
-      setStats(newStats);
-      setMessage(`参加者 ${targetIgn} の最新カスタム試合を取得し、自動割り当てしました。`);
-    } catch (err: any) {
-      setMessage(`Riot取得エラー: ${err.message}`);
-    } finally {
-      setFetchingRiot(false);
+  const handleStatChange = (name: string, field: string, value: string) => {
+    if (field === 'champion_name') {
+      setStats(prev => prev.map(p => p.name === name ? { ...p, [field]: value } : p));
+      return;
     }
+    const num = parseInt(value) || 0;
+    setStats(prev => prev.map(p => p.name === name ? { ...p, [field]: num } : p));
   };
 
   const handleSubmit = async () => {
@@ -115,7 +69,7 @@ export default function MatchRecordPanel({ balanceResult, onComplete }: MatchRec
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           winningTeam,
-          riotMatchId: riotMatchIdState,
+          riotMatchId: null,
           participants: stats.map(s => ({
             name: s.name,
             team: s.team,
@@ -164,30 +118,6 @@ export default function MatchRecordPanel({ balanceResult, onComplete }: MatchRec
         <Target className="h-5 w-5 text-blue-400" /> 試合結果入力
       </h3>
 
-      <div className="mb-6 flex flex-col md:flex-row gap-4 items-end bg-gray-900 p-4 rounded-lg border border-gray-800">
-        <div className="flex-1 w-full">
-          <label className="block text-xs font-bold text-gray-400 mb-1">自動取得 (Riot API)</label>
-          <div className="flex gap-2">
-            <input 
-              type="text" 
-              placeholder="参加者の1人の Name#TAG を入力" 
-              value={riotIgn}
-              onChange={e => setRiotIgn(e.target.value)}
-              className="bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white w-full outline-none focus:border-blue-500"
-            />
-            <button 
-              onClick={fetchFromRiot}
-              disabled={fetchingRiot}
-              className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded font-bold transition flex items-center gap-2 whitespace-nowrap"
-            >
-              {fetchingRiot ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
-              フェッチ
-            </button>
-          </div>
-          <p className="text-xs text-gray-500 mt-1">※Riot IDと登録名が一致しない場合は手動で入力が必要です。</p>
-        </div>
-      </div>
-
       {message && (
         <div className="mb-4 p-3 bg-gray-800 border border-gray-700 text-gray-300 rounded text-sm">
           {message}
@@ -201,14 +131,31 @@ export default function MatchRecordPanel({ balanceResult, onComplete }: MatchRec
           <div className="space-y-2">
             {stats.filter(s => s.team === 'BLUE').map(s => (
               <div key={s.name} className="flex items-center gap-2 bg-gray-900 p-2 rounded border border-gray-800">
-                <div className="w-10 text-center font-bold text-gray-500 text-xs">{s.currentRole}</div>
-                <div className="w-24 truncate font-bold text-sm text-gray-300" title={s.name}>{s.name}</div>
+                <div className="w-8 text-center font-bold text-gray-500 text-xs">{s.currentRole}</div>
+                <div className="w-20 truncate font-bold text-sm text-gray-300" title={s.name}>{s.name}</div>
+                <select 
+                  value={s.champion_name || ''}
+                  onChange={e => handleStatChange(s.name, 'champion_name', e.target.value)}
+                  className="w-28 bg-gray-850 border border-gray-700 rounded px-1.5 py-1 text-white outline-none focus:border-blue-500 text-xs"
+                >
+                  <option value="">チャンプ選択</option>
+                  {championsList.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+                {s.champion_name && (
+                  <img 
+                    src={getChampIcon(s.champion_name)} 
+                    className="w-6 h-6 rounded-full border border-gray-600 shrink-0" 
+                    alt={s.champion_name}
+                    title={s.champion_name}
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                  />
+                )}
                 <div className="flex-1 flex gap-1 justify-end">
-                  <input type="number" value={s.kills} onChange={e => handleStatChange(s.name, 'kills', e.target.value)} className="w-12 bg-gray-800 border border-gray-700 text-white text-center rounded text-sm" placeholder="K" />
-                  <span className="text-gray-500">/</span>
-                  <input type="number" value={s.deaths} onChange={e => handleStatChange(s.name, 'deaths', e.target.value)} className="w-12 bg-gray-800 border border-red-900 text-red-200 text-center rounded text-sm" placeholder="D" />
-                  <span className="text-gray-500">/</span>
-                  <input type="number" value={s.assists} onChange={e => handleStatChange(s.name, 'assists', e.target.value)} className="w-12 bg-gray-800 border border-gray-700 text-white text-center rounded text-sm" placeholder="A" />
+                  <input type="number" value={s.kills} onChange={e => handleStatChange(s.name, 'kills', e.target.value)} className="w-10 bg-gray-850 border border-gray-700 text-white text-center rounded text-xs py-0.5" placeholder="K" />
+                  <span className="text-gray-500 text-xs self-center">/</span>
+                  <input type="number" value={s.deaths} onChange={e => handleStatChange(s.name, 'deaths', e.target.value)} className="w-10 bg-gray-850 border border-red-900 text-red-200 text-center rounded text-xs py-0.5" placeholder="D" />
+                  <span className="text-gray-500 text-xs self-center">/</span>
+                  <input type="number" value={s.assists} onChange={e => handleStatChange(s.name, 'assists', e.target.value)} className="w-10 bg-gray-850 border border-gray-700 text-white text-center rounded text-xs py-0.5" placeholder="A" />
                 </div>
               </div>
             ))}
@@ -221,14 +168,31 @@ export default function MatchRecordPanel({ balanceResult, onComplete }: MatchRec
           <div className="space-y-2">
             {stats.filter(s => s.team === 'RED').map(s => (
               <div key={s.name} className="flex items-center gap-2 bg-gray-900 p-2 rounded border border-gray-800">
-                <div className="w-10 text-center font-bold text-gray-500 text-xs">{s.currentRole}</div>
-                <div className="w-24 truncate font-bold text-sm text-gray-300" title={s.name}>{s.name}</div>
+                <div className="w-8 text-center font-bold text-gray-500 text-xs">{s.currentRole}</div>
+                <div className="w-20 truncate font-bold text-sm text-gray-300" title={s.name}>{s.name}</div>
+                <select 
+                  value={s.champion_name || ''}
+                  onChange={e => handleStatChange(s.name, 'champion_name', e.target.value)}
+                  className="w-28 bg-gray-855 border border-gray-700 rounded px-1.5 py-1 text-white outline-none focus:border-red-500 text-xs"
+                >
+                  <option value="">チャンプ選択</option>
+                  {championsList.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+                {s.champion_name && (
+                  <img 
+                    src={getChampIcon(s.champion_name)} 
+                    className="w-6 h-6 rounded-full border border-gray-600 shrink-0" 
+                    alt={s.champion_name}
+                    title={s.champion_name}
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                  />
+                )}
                 <div className="flex-1 flex gap-1 justify-end">
-                  <input type="number" value={s.kills} onChange={e => handleStatChange(s.name, 'kills', e.target.value)} className="w-12 bg-gray-800 border border-gray-700 text-white text-center rounded text-sm" placeholder="K" />
-                  <span className="text-gray-500">/</span>
-                  <input type="number" value={s.deaths} onChange={e => handleStatChange(s.name, 'deaths', e.target.value)} className="w-12 bg-gray-800 border border-red-900 text-red-200 text-center rounded text-sm" placeholder="D" />
-                  <span className="text-gray-500">/</span>
-                  <input type="number" value={s.assists} onChange={e => handleStatChange(s.name, 'assists', e.target.value)} className="w-12 bg-gray-800 border border-gray-700 text-white text-center rounded text-sm" placeholder="A" />
+                  <input type="number" value={s.kills} onChange={e => handleStatChange(s.name, 'kills', e.target.value)} className="w-10 bg-gray-855 border border-gray-700 text-white text-center rounded text-xs py-0.5" placeholder="K" />
+                  <span className="text-gray-500 text-xs self-center">/</span>
+                  <input type="number" value={s.deaths} onChange={e => handleStatChange(s.name, 'deaths', e.target.value)} className="w-10 bg-gray-855 border border-red-900 text-red-200 text-center rounded text-xs py-0.5" placeholder="D" />
+                  <span className="text-gray-500 text-xs self-center">/</span>
+                  <input type="number" value={s.assists} onChange={e => handleStatChange(s.name, 'assists', e.target.value)} className="w-10 bg-gray-855 border border-gray-700 text-white text-center rounded text-xs py-0.5" placeholder="A" />
                 </div>
               </div>
             ))}

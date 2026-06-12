@@ -28,6 +28,10 @@ interface PlayerStat {
 export default function CustomRecordPage() {
   const [playersPool, setPlayersPool] = useState<{name: string}[]>([]);
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [message, setMessage] = useState('');
+  const [winningTeam, setWinningTeam] = useState<'BLUE' | 'RED' | null>(null);
+  const [championsList, setChampionsList] = useState<{ id: string, name: string }[]>([]);
   
   // 10人分のステートを初期化
   const [stats, setStats] = useState<PlayerStat[]>(() => {
@@ -45,13 +49,6 @@ export default function CustomRecordPage() {
     return initial;
   });
 
-  const [riotIgn, setRiotIgn] = useState('');
-  const [fetchingRiot, setFetchingRiot] = useState(false);
-  const [riotMatchId, setRiotMatchId] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
-  const [message, setMessage] = useState('');
-  const [winningTeam, setWinningTeam] = useState<'BLUE' | 'RED' | null>(null);
-
   useEffect(() => {
     async function fetchPlayers() {
       const { data, error } = await supabase
@@ -66,85 +63,36 @@ export default function CustomRecordPage() {
     fetchPlayers();
   }, []);
 
+  useEffect(() => {
+    async function loadChampions() {
+      try {
+        const vRes = await fetch('https://ddragon.leagueoflegends.com/api/versions.json');
+        const versions = await vRes.json();
+        const cRes = await fetch(`https://ddragon.leagueoflegends.com/cdn/${versions[0]}/data/ja_JP/champion.json`);
+        const d = await cRes.json();
+        const list = Object.values(d.data).map((c: any) => ({
+          id: c.id,
+          name: c.name
+        }));
+        list.sort((a, b) => a.name.localeCompare(b.name, 'ja'));
+        setChampionsList(list);
+      } catch (err) {
+        console.error('Failed to load champions from Ddragon:', err);
+      }
+    }
+    loadChampions();
+  }, []);
+
   const handleStatChange = (team: 'BLUE' | 'RED', role: Role, field: string, value: string) => {
     setStats(prev => prev.map(p => {
       if (p.team === team && p.currentRole === role) {
         if (field === 'name') return { ...p, name: value };
+        if (field === 'champion_name') return { ...p, champion_name: value };
         const num = parseInt(value) || 0;
         return { ...p, [field]: num };
       }
       return p;
     }));
-  };
-
-  const fetchFromRiot = async () => {
-    if (!riotIgn) {
-      setMessage('Riot IGN (Name#TAG) を入力してください。');
-      return;
-    }
-    setFetchingRiot(true);
-    setMessage('');
-    try {
-      const res = await fetch('/api/riot/fetch-match', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ign: riotIgn })
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
-
-      setRiotMatchId(data.matchId);
-      const newStats = [...stats];
-      
-      // Auto-fill logic
-      data.participants.forEach((riotP: any) => {
-        // Find KTM player by matching IGN or Name
-        const ktmPlayer = playersPool.find((p: any) => {
-          if (p.ign) {
-            const [ignName] = p.ign.split('#');
-            return ignName.toLowerCase() === riotP.riotIdName.toLowerCase();
-          }
-          return p.name.toLowerCase() === riotP.riotIdName.toLowerCase();
-        });
-
-        const teamLabel = riotP.teamId === 100 ? 'BLUE' : 'RED';
-        const roleStr = riotP.teamPosition || riotP.lane; // TOP, JUNGLE, MIDDLE, BOTTOM, UTILITY
-        
-        let targetRole: Role = 'TOP';
-        if (roleStr.includes('JUNGLE')) targetRole = 'JG';
-        if (roleStr.includes('MID')) targetRole = 'MID';
-        if (roleStr.includes('BOT')) targetRole = 'ADC';
-        if (roleStr.includes('UTILITY')) targetRole = 'SUP';
-
-        const idx = newStats.findIndex(p => p.team === teamLabel && p.currentRole === targetRole);
-        if (idx !== -1) {
-          if (ktmPlayer) {
-            newStats[idx].name = ktmPlayer.name;
-          }
-          newStats[idx].kills = riotP.kills;
-          newStats[idx].deaths = riotP.deaths;
-          newStats[idx].assists = riotP.assists;
-          newStats[idx].vision = riotP.visionScore || 0;
-          newStats[idx].champion_name = riotP.championName;
-          newStats[idx].damage_dealt = riotP.totalDamageDealtToChampions || 0;
-          newStats[idx].damage_taken = riotP.totalDamageTaken || 0;
-          newStats[idx].heal_shield = (riotP.totalHealsOnTeammates || 0) + (riotP.totalDamageShieldedOnTeammates || 0);
-          newStats[idx].objective_damage = riotP.damageDealtToObjectives || 0;
-          newStats[idx].cs = (riotP.totalMinionsKilled || 0) + (riotP.neutralMinionsKilled || 0);
-          
-          if (riotP.win) {
-            setWinningTeam(teamLabel);
-          }
-        }
-      });
-      
-      setStats(newStats);
-      setMessage('✅ Match-V5 から全自動でプレイヤー、チャンピオン、スタッツを割り当てました！名前が空欄の箇所があれば手動で選択してください。');
-    } catch (err: any) {
-      setMessage(`Riot取得エラー: ${err.message}`);
-    } finally {
-      setFetchingRiot(false);
-    }
   };
 
   const handleSubmit = async () => {
@@ -167,7 +115,7 @@ export default function CustomRecordPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           winningTeam,
-          riotMatchId,
+          riotMatchId: null, // 手動入力のため常にnull
           participants: stats.map(s => ({
             name: s.name,
             team: s.team,
@@ -188,20 +136,20 @@ export default function CustomRecordPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
       
-      alert('試合結果と詳細スタッツを保存し、MMRを更新しました！');
+      alert('試合結果を保存し、MMRを更新しました！');
       // リセット
       setStats(stats.map(s => ({ 
         ...s, name: '', kills: 0, deaths: 0, assists: 0, vision: 0,
         champion_name: '', damage_dealt: 0, damage_taken: 0, heal_shield: 0, objective_damage: 0, cs: 0 
       })));
       setWinningTeam(null);
-      setRiotMatchId(null);
     } catch (err: any) {
       setMessage(`保存エラー: ${err.message}`);
     } finally {
       setSubmitting(false);
     }
   };
+
 
   if (loading) {
     return <div className="min-h-screen bg-gray-950 flex items-center justify-center"><RefreshCw className="h-8 w-8 text-blue-500 animate-spin" /></div>;
@@ -221,31 +169,11 @@ export default function CustomRecordPage() {
         </div>
 
         <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 shadow-2xl">
-          <div className="mb-8 p-4 bg-gray-800/50 rounded-lg border border-gray-700">
-            <h3 className="text-lg font-bold text-white mb-2 flex items-center gap-2">
-              <Search className="h-5 w-5 text-blue-400" /> Match-V5 全自動インポート
-            </h3>
-            <p className="text-sm text-gray-400 mb-4">
-              ※参加者の誰か一人のRiot IGNを入力して取得ボタンを押すだけで、直近のカスタムゲームから全員の名前・使用チャンピオン・詳細な戦闘スタッツを自動で割り当てます。
-            </p>
-            <div className="flex gap-2 max-w-xl">
-              <input 
-                type="text" 
-                placeholder="参加者の1人の Name#TAG を入力" 
-                value={riotIgn}
-                onChange={e => setRiotIgn(e.target.value)}
-                className="bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white flex-1 outline-none focus:border-blue-500"
-              />
-              <button 
-                onClick={fetchFromRiot}
-                disabled={fetchingRiot}
-                className="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2 rounded font-bold transition flex items-center gap-2 whitespace-nowrap"
-              >
-                {fetchingRiot ? <RefreshCw className="h-4 w-4 animate-spin" /> : '取得'}
-              </button>
+          {message && (
+            <div className="mb-6 p-4 bg-amber-950/40 border border-amber-900/60 text-amber-200 rounded-lg text-sm font-bold">
+              {message}
             </div>
-            {message && <div className="mt-4 text-amber-400 text-sm font-bold">{message}</div>}
-          </div>
+          )}
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
             {/* BLUE TEAM */}
@@ -255,31 +183,39 @@ export default function CustomRecordPage() {
                 {ROLES.map(role => {
                   const s = stats.find(x => x.team === 'BLUE' && x.currentRole === role)!;
                   return (
-                    <div key={`BLUE-${role}`} className="flex items-center gap-3 bg-gray-800/80 p-3 rounded-lg border border-gray-700">
-                      <div className="w-12 text-center font-bold text-gray-400">{role}</div>
+                    <div key={`BLUE-${role}`} className="flex items-center gap-2 bg-gray-800/80 p-3 rounded-lg border border-gray-700">
+                      <div className="w-10 text-center font-bold text-gray-400 text-sm">{role}</div>
                       <select 
                         value={s.name}
                         onChange={e => handleStatChange('BLUE', role, 'name', e.target.value)}
-                        className="w-32 bg-gray-900 border border-gray-700 rounded px-2 py-1.5 text-white outline-none focus:border-blue-500"
+                        className="w-28 bg-gray-900 border border-gray-700 rounded px-2 py-1.5 text-white outline-none focus:border-blue-500 text-sm"
                       >
                         <option value="">選択...</option>
                         {playersPool.map(p => <option key={p.name} value={p.name}>{p.name}</option>)}
                       </select>
+                      <select 
+                        value={s.champion_name}
+                        onChange={e => handleStatChange('BLUE', role, 'champion_name', e.target.value)}
+                        className="w-32 bg-gray-900 border border-gray-700 rounded px-2 py-1.5 text-white outline-none focus:border-blue-500 text-sm"
+                      >
+                        <option value="">使用チャンプ</option>
+                        {championsList.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                      </select>
                       {s.champion_name && (
                         <img 
                           src={getChampIcon(s.champion_name)} 
-                          className="w-8 h-8 rounded-full border border-gray-600" 
+                          className="w-7 h-7 rounded-full border border-gray-600 shrink-0" 
                           alt={s.champion_name}
                           title={s.champion_name}
                           onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
                         />
                       )}
-                      <div className="flex-1 flex gap-2 justify-end">
-                        <input type="number" value={s.kills} onChange={e => handleStatChange('BLUE', role, 'kills', e.target.value)} className="w-14 bg-gray-900 border border-gray-700 text-white text-center rounded py-1" placeholder="K" />
-                        <span className="text-gray-500 self-center">/</span>
-                        <input type="number" value={s.deaths} onChange={e => handleStatChange('BLUE', role, 'deaths', e.target.value)} className="w-14 bg-gray-900 border border-red-900/50 text-red-200 text-center rounded py-1" placeholder="D" />
-                        <span className="text-gray-500 self-center">/</span>
-                        <input type="number" value={s.assists} onChange={e => handleStatChange('BLUE', role, 'assists', e.target.value)} className="w-14 bg-gray-900 border border-gray-700 text-white text-center rounded py-1" placeholder="A" />
+                      <div className="flex-1 flex gap-1 justify-end">
+                        <input type="number" value={s.kills} onChange={e => handleStatChange('BLUE', role, 'kills', e.target.value)} className="w-11 bg-gray-900 border border-gray-700 text-white text-center rounded py-1 text-sm" placeholder="K" />
+                        <span className="text-gray-500 self-center text-xs">/</span>
+                        <input type="number" value={s.deaths} onChange={e => handleStatChange('BLUE', role, 'deaths', e.target.value)} className="w-11 bg-gray-900 border border-red-900/50 text-red-200 text-center rounded py-1 text-sm" placeholder="D" />
+                        <span className="text-gray-500 self-center text-xs">/</span>
+                        <input type="number" value={s.assists} onChange={e => handleStatChange('BLUE', role, 'assists', e.target.value)} className="w-11 bg-gray-900 border border-gray-700 text-white text-center rounded py-1 text-sm" placeholder="A" />
                       </div>
                     </div>
                   );
@@ -294,31 +230,39 @@ export default function CustomRecordPage() {
                 {ROLES.map(role => {
                   const s = stats.find(x => x.team === 'RED' && x.currentRole === role)!;
                   return (
-                    <div key={`RED-${role}`} className="flex items-center gap-3 bg-gray-800/80 p-3 rounded-lg border border-gray-700">
-                      <div className="w-12 text-center font-bold text-gray-400">{role}</div>
+                    <div key={`RED-${role}`} className="flex items-center gap-2 bg-gray-800/80 p-3 rounded-lg border border-gray-700">
+                      <div className="w-10 text-center font-bold text-gray-400 text-sm">{role}</div>
                       <select 
                         value={s.name}
                         onChange={e => handleStatChange('RED', role, 'name', e.target.value)}
-                        className="w-32 bg-gray-900 border border-gray-700 rounded px-2 py-1.5 text-white outline-none focus:border-red-500"
+                        className="w-28 bg-gray-900 border border-gray-700 rounded px-2 py-1.5 text-white outline-none focus:border-red-500 text-sm"
                       >
                         <option value="">選択...</option>
                         {playersPool.map(p => <option key={p.name} value={p.name}>{p.name}</option>)}
                       </select>
+                      <select 
+                        value={s.champion_name}
+                        onChange={e => handleStatChange('RED', role, 'champion_name', e.target.value)}
+                        className="w-32 bg-gray-900 border border-gray-700 rounded px-2 py-1.5 text-white outline-none focus:border-red-500 text-sm"
+                      >
+                        <option value="">使用チャンプ</option>
+                        {championsList.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                      </select>
                       {s.champion_name && (
                         <img 
                           src={getChampIcon(s.champion_name)} 
-                          className="w-8 h-8 rounded-full border border-gray-600" 
+                          className="w-7 h-7 rounded-full border border-gray-600 shrink-0" 
                           alt={s.champion_name}
                           title={s.champion_name}
                           onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
                         />
                       )}
-                      <div className="flex-1 flex gap-2 justify-end">
-                        <input type="number" value={s.kills} onChange={e => handleStatChange('RED', role, 'kills', e.target.value)} className="w-14 bg-gray-900 border border-gray-700 text-white text-center rounded py-1" placeholder="K" />
-                        <span className="text-gray-500 self-center">/</span>
-                        <input type="number" value={s.deaths} onChange={e => handleStatChange('RED', role, 'deaths', e.target.value)} className="w-14 bg-gray-900 border border-red-900/50 text-red-200 text-center rounded py-1" placeholder="D" />
-                        <span className="text-gray-500 self-center">/</span>
-                        <input type="number" value={s.assists} onChange={e => handleStatChange('RED', role, 'assists', e.target.value)} className="w-14 bg-gray-900 border border-gray-700 text-white text-center rounded py-1" placeholder="A" />
+                      <div className="flex-1 flex gap-1 justify-end">
+                        <input type="number" value={s.kills} onChange={e => handleStatChange('RED', role, 'kills', e.target.value)} className="w-11 bg-gray-900 border border-gray-700 text-white text-center rounded py-1 text-sm" placeholder="K" />
+                        <span className="text-gray-500 self-center text-xs">/</span>
+                        <input type="number" value={s.deaths} onChange={e => handleStatChange('RED', role, 'deaths', e.target.value)} className="w-11 bg-gray-900 border border-red-900/50 text-red-200 text-center rounded py-1 text-sm" placeholder="D" />
+                        <span className="text-gray-500 self-center text-xs">/</span>
+                        <input type="number" value={s.assists} onChange={e => handleStatChange('RED', role, 'assists', e.target.value)} className="w-11 bg-gray-900 border border-gray-700 text-white text-center rounded py-1 text-sm" placeholder="A" />
                       </div>
                     </div>
                   );

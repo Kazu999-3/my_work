@@ -1,0 +1,17 @@
+.git
+.venv
+.gemini
+00_LOGS
+01_INTEL
+02_FACTORY
+03_SYSTEMS
+99_ARCHIVE
+docker-compose.yml
+Dockerfile
+Dropbox
+.obsidian
+.wrangler
+check_db.py
+replace_paths.py
+scratch
+supabase

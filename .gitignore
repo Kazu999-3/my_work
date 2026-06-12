@@ -41,3 +41,4 @@ scratch/
 03_FACTORY/sns_promotions/
 
 .agent/playwright_data/
+.vercel

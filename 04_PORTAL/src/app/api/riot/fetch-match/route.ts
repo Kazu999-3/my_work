@@ -19,26 +19,39 @@ export async function POST(request: Request) {
     // 1. PUUID 取得
     const puuid = await fetchPuuidByRiotId(gameName, tagLine, apiKey);
 
-    // 2. 直近の試合IDリスト取得
-    const matchIds = await fetchRecentMatchIds(puuid, apiKey, 20);
+    // 2. カスタム(0) のマッチIDリストを取得 (最大5件)
+    let matchIds: string[] = [];
+    try {
+      matchIds = await fetchRecentMatchIds(puuid, apiKey, 5, 0);
+    } catch (err) {
+      console.error('Error fetching custom matches:', err);
+    }
 
     if (!matchIds || matchIds.length === 0) {
-      return NextResponse.json({ error: 'Riot API: 試合履歴がありません。' }, { status: 404 });
+      return NextResponse.json({ 
+        error: '最新のカスタムゲームが見つかりませんでした。反映まで最大3分ほどかかる場合があります。しばらく経ってから再度お試しください。' 
+      }, { status: 404 });
     }
 
     let targetMatchDetails = null;
 
-    // 3. 直近20試合から最も新しいカスタムゲームを探す
-    for (const matchId of matchIds) {
-      // 詳細を取得してカスタムゲームか確認
-      const details = await fetchMatchDetails(matchId, apiKey);
-      
-      const gType = (details.gameType || "").toUpperCase();
+    // 最新の最大3件まで詳細を取得して検証
+    const scanCount = Math.min(matchIds.length, 3);
+    for (let i = 0; i < scanCount; i++) {
+      try {
+        const details = await fetchMatchDetails(matchIds[i], apiKey);
+        const gType = (details.gameType || "").toUpperCase();
 
-      // queueIdが 0（カスタムゲーム）または gameType に 'CUSTOM' が含まれているかチェック
-      if (details.queueId === 0 || gType.includes("CUSTOM")) {
-        targetMatchDetails = details;
-        break; // 最も新しいカスタムが見つかったのでループを抜ける
+        // Queue IDが0、またはgameTypeにCUSTOMが含まれている場合のみ
+        if (details.queueId === 0 || gType.includes("CUSTOM")) {
+          targetMatchDetails = details;
+          break;
+        }
+      } catch (e: any) {
+        console.error(`Error fetching match details for ${matchIds[i]}:`, e);
+        if (e.message && (e.message.includes("429") || e.message.includes("Too Many Requests"))) {
+          break;
+        }
       }
     }
 

@@ -82,12 +82,12 @@ export interface MmrCalcContext {
 }
 
 export function calculateNewMMR(ctx: MmrCalcContext): number {
-  const { currentMmr, opponentMmr, isWin, kills, deaths, assists, mainRank, numGames, matchupCount, totalWinRate, visionScore, cs, role, teamTotalKills, isDamageMvp, isObjectiveMvp, isTankMvp, isHealMvp, csd15 } = ctx;
+  const { currentMmr, opponentMmr, isWin, kills, deaths, assists, role, matchupCount } = ctx;
 
   const isPlacement = false;
 
-  // ① 勝敗のベースポイント (インフレ型: 勝率40%台でも維持可能に)
-  let baseDelta = isWin ? 15 : -10;
+  // ① 勝敗のベースポイント (スタッツ加点がなくなった分、ベースを少し底上げ)
+  let baseDelta = isWin ? 18 : -12;
 
   // ② 格差補正 (Elo Gravity)
   // 相手チームの同ロールとのMMR差分を計算
@@ -95,10 +95,10 @@ export function calculateNewMMR(ctx: MmrCalcContext): number {
   let eloBonus = 0;
   if (mmrDiff > 0) {
     // 相手が格上: 最大+15程度の補正
-    eloBonus = Math.min(15, mmrDiff / 20);
+    eloBonus = Math.min(15, mmrDiff / 15);
   } else if (mmrDiff < 0) {
     // 相手が格下: 最大-10程度の補正
-    eloBonus = Math.max(-10, mmrDiff / 25);
+    eloBonus = Math.max(-10, mmrDiff / 20);
   }
 
   if (isWin) {
@@ -108,75 +108,33 @@ export function calculateNewMMR(ctx: MmrCalcContext): number {
     baseDelta = Math.min(-2, baseDelta + eloBonus);
   }
 
-  // ③ KDAボーナス (加点方式のみへ変更。KDAが悪くてもマイナス評価しない)
+  // ③ KDAボーナス (手動入力パラメータのキル・デス・アシストから実力を正しく評価)
   let kdaScore = deaths === 0 ? (kills + assists) * 1.2 : (kills + assists) / deaths;
   if (role === 'SUP') {
-    kdaScore += 0.8;
+    kdaScore += 0.8; // サポート補正
   }
   
-  // 基準を2.0とし、最大+10の加点ボーナスのみを与える
-  let kdaB = Math.max(0, Math.min(10, (kdaScore - 2.0) * 4));
+  // 基準KDA 2.0から加点 (最大+15点のボーナス)
+  const kdaBonus = Math.max(0, Math.min(15, (kdaScore - 2.0) * 5));
 
-  // ④ 視界・CSボーナス (基礎業務)
-  let visionB = 0;
-  let csB = 0;
-  if (role === 'SUP') {
-    if (visionScore > 40) visionB = 5;
-    if (visionScore > 60) visionB = 10;
-  } else if (role === 'ADC' || role === 'MID') {
-    if (cs > 200) csB = 5;
-    if (cs > 250) csB = 10;
-  } else if (role === 'JG') {
-    if (visionScore > 20) visionB = 5;
-    if (cs > 150) csB = 5;
-  } else { // TOP
-    if (cs > 180) csB = 5;
-    if (visionScore > 15) visionB = 3;
-  }
-
-  // ⑤ ダメージ＆オブジェクト貢献ボーナス
-  let damageB = 0;
-  let objB = 0;
-  if (isDamageMvp) damageB = 5;
-  if (isObjectiveMvp) objB = 5;
-
-  // ⑥ 縁の下の力持ちボーナス (KP, 盾/回復)
-  let kpB = 0;
-  let tankHealB = 0;
-  const kp = teamTotalKills > 0 ? (kills + assists) / teamTotalKills : 0;
-  if (kp >= 0.65) kpB = 6;
-  else if (kp >= 0.50) kpB = 3;
-
-  if (isTankMvp || isHealMvp) tankHealB = 5;
-
-  // ⑥-2 15分段階のCS差ボーナス (CSD@15)
-  // 対象ロール: TOP, JG, JUNGLE, MID, MIDDLE, ADC, BOTTOM (サポートを除く)
-  let csdBonus = 0;
-  const upperRole = role.toUpperCase();
-  if (['TOP', 'JG', 'JUNGLE', 'MID', 'MIDDLE', 'ADC', 'BOTTOM'].includes(upperRole) && csd15 !== undefined) {
-    if (csd15 >= 20) csdBonus = 5;
-    else if (csd15 >= 10) csdBonus = 2;
-    else if (csd15 <= -20) csdBonus = -3;
-  }
-
-  // ⑦ 対面回数補正 (身内戦でのブレ防止)
+  // ④ 対面回数補正 (身内戦でのブレ防止)
   let matchupDampener = 1.0;
-  if (!isPlacement) {
+  if (!isPlacement && matchupCount) {
     if (matchupCount >= 3) matchupDampener = 0.8;
     if (matchupCount >= 5) matchupDampener = 0.6;
     if (matchupCount >= 8) matchupDampener = 0.4;
   }
 
-  // 全てのボーナスを合算 (csdBonus も合算)
-  let delta = (baseDelta + kdaB + visionB + csB + damageB + objB + kpB + tankHealB + csdBonus) * matchupDampener;
+  // ボーナスを合算
+  let delta = (baseDelta + kdaBonus) * matchupDampener;
   delta = Math.round(delta);
 
-  // ⑧ 上限・下限のセーフティ
+  // ⑤ 上限・下限のセーフティ
   if (isWin) {
-    delta = Math.max(0, Math.min(60, delta));
+    delta = Math.max(0, Math.min(50, delta)); // 最大+50
   } else {
     // 負けた時は、加点が多くても最終的に「0」で踏みとどまる (プラスにはならない)
-    delta = Math.max(-30, Math.min(0, delta)); 
+    delta = Math.max(-30, Math.min(0, delta)); // 最小-30
   }
 
   return delta;
