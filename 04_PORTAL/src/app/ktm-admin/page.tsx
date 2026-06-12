@@ -371,8 +371,8 @@ export default function KtmAdminPage() {
   const sortedPlayers = playersWithNo
     .filter(p => filterActive ? p.is_active : true)
     .sort((a, b) => {
-      let aVal = a[sortConfig.key];
-      let bVal = b[sortConfig.key];
+      let aVal = sortConfig.key === "notes" ? (a.metadata?.notes || "") : a[sortConfig.key];
+      let bVal = sortConfig.key === "notes" ? (b.metadata?.notes || "") : b[sortConfig.key];
       
       if (sortConfig.key === "mmr" || sortConfig.key.startsWith("mmr_") || sortConfig.key === "no") {
         aVal = parseInt(aVal) || 0;
@@ -685,7 +685,7 @@ export default function KtmAdminPage() {
                       <SortableHeader label="総合" sortKey="mmr" />
                       <SortableHeader label="Discord ID" sortKey="discord_id" />
                       <SortableHeader label="Riot IGN" sortKey="ign" />
-                      <th className="px-2 py-2 font-medium text-center">備考</th>
+                      <SortableHeader label="備考" sortKey="notes" />
                       <th className="px-2 py-2 font-medium text-center">操作</th>
                     </tr>
                   </thead>
