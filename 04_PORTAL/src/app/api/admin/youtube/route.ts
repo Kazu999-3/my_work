@@ -22,7 +22,8 @@ export async function GET() {
     const { data, error } = await supabase
       .from('youtube_queue')
       .select('*')
-      .order('date_added', { ascending: false });
+      .order('date_added', { ascending: false, nullsFirst: false })
+      .order('id', { ascending: true });
 
     if (error) throw error;
     return NextResponse.json(data || []);
