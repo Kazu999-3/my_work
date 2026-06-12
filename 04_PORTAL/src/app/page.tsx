@@ -27,6 +27,7 @@ export default function Home() {
   const [systemMetrics, setSystemMetrics] = useState<any>({ queue: { pending: 0, error: 0, completed: 0, error_details: [] }, logs: [] });
   const [recentDictUpdates, setRecentDictUpdates] = useState<any[]>([]);
   const [recentLibraryUpdates, setRecentLibraryUpdates] = useState<any[]>([]);
+  const [recentYoutubeQueue, setRecentYoutubeQueue] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<string>('');
@@ -156,6 +157,14 @@ export default function Home() {
         .select('*')
         .order('created_at', { ascending: false });
       if (!collabError && collabData) setCollabTasks(collabData);
+
+      // 8. 最新のYouTubeキュー取得
+      const { data: ytQueueData, error: ytQueueError } = await supabase
+        .from('youtube_queue')
+        .select('id, title, status, channel_name, updated_at')
+        .order('updated_at', { ascending: false })
+        .limit(3);
+      if (!ytQueueError && ytQueueData) setRecentYoutubeQueue(ytQueueData);
 
       // 最終更新時刻を設定
       const now = new Date();
@@ -414,14 +423,18 @@ export default function Home() {
           </div>
 
           {/* Panel B: YouTube Absorber Queue */}
-          <div className="glass-panel rounded-3xl p-6 border border-white/5 bg-gradient-to-br from-blue-500/5 to-transparent flex flex-col h-full">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-black text-white flex items-center gap-2">
-                <div className="w-2 h-6 bg-blue-500 rounded-full shadow-[0_0_10px_rgba(59,130,246,0.6)]"></div>
-                YouTube 吸収キュー
-              </h3>
-            </div>
-            <div className="flex-1 flex flex-col justify-center gap-6">
+          <div className="glass-panel rounded-3xl p-6 border border-white/5 bg-gradient-to-br from-blue-500/5 to-transparent flex flex-col h-full justify-between">
+            <div>
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-xl font-black text-white flex items-center gap-2">
+                  <div className="w-2 h-6 bg-blue-500 rounded-full shadow-[0_0_10px_rgba(59,130,246,0.6)]"></div>
+                  YouTube 吸収キュー
+                </h3>
+                <Link href="/admin/youtube" className="text-xs font-bold text-blue-400 hover:text-blue-300 hover:underline flex items-center gap-1">
+                  管理画面へ →
+                </Link>
+              </div>
+              
               <div className="grid grid-cols-2 gap-4">
                 <div className="bg-black/20 p-4 rounded-xl border border-white/5 flex flex-col items-center justify-center">
                   <span className="text-3xl font-black text-white mb-1">{systemMetrics.queue?.pending || 0}</span>
@@ -432,8 +445,48 @@ export default function Home() {
                   <span className="text-xs text-gray-400 font-bold">完了 (Completed)</span>
                 </div>
               </div>
-
             </div>
+
+            {recentYoutubeQueue.length > 0 && (
+              <div className="space-y-2.5 mt-4 pt-4 border-t border-white/5">
+                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">直近の解析状況</p>
+                {recentYoutubeQueue.map((item, idx) => {
+                  let statusColor = 'text-gray-500';
+                  let statusBg = 'bg-gray-500/10 border-gray-500/20';
+                  let statusText = item.status;
+                  
+                  if (item.status === 'completed') {
+                    statusColor = 'text-green-400';
+                    statusBg = 'bg-green-500/10 border-green-500/20';
+                    statusText = '完了';
+                  } else if (item.status === 'pending') {
+                    statusColor = 'text-cyan-400';
+                    statusBg = 'bg-cyan-500/10 border-cyan-500/20';
+                    statusText = '解析中';
+                  } else if (item.status.startsWith('error') || item.status === 'failed') {
+                    statusColor = 'text-red-400';
+                    statusBg = 'bg-red-500/10 border-red-500/20';
+                    statusText = 'エラー';
+                  }
+                  
+                  return (
+                    <div key={idx} className="flex justify-between items-center gap-3 bg-black/20 p-2.5 rounded-xl border border-white/5 text-xs">
+                      <div className="flex flex-col min-w-0">
+                        <span className="font-bold text-gray-200 truncate" title={item.title}>
+                          {item.title}
+                        </span>
+                        {item.channel_name && (
+                          <span className="text-[10px] text-gray-500 mt-0.5">{item.channel_name}</span>
+                        )}
+                      </div>
+                      <span className={`px-2 py-0.5 rounded-full border text-[10px] font-bold shrink-0 ${statusBg} ${statusColor}`}>
+                        {statusText}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           {/* Panel C: System Logs */}
