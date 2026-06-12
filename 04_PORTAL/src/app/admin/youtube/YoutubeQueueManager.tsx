@@ -22,9 +22,9 @@ export default function YoutubeQueueManager() {
   const [searchQuery, setSearchQuery] = useState('');
 
   // 1. キューデータの取得
-  const fetchQueue = async () => {
+  const fetchQueue = async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const res = await fetch('/api/admin/youtube');
       if (res.ok) {
         const data = await res.json();
@@ -35,12 +35,12 @@ export default function YoutubeQueueManager() {
     } catch (err) {
       showFeedback('エラーが発生しました。', 'error');
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchQueue();
+    fetchQueue(false);
   }, []);
 
   const showFeedback = (text: string, type: 'success' | 'error') => {
@@ -65,7 +65,7 @@ export default function YoutubeQueueManager() {
       if (res.ok) {
         showFeedback(result.message || '動画を追加しました。', 'success');
         setNewUrl('');
-        fetchQueue();
+        fetchQueue(true);
       } else {
         showFeedback(result.error || '動画の追加に失敗しました。', 'error');
       }
@@ -89,7 +89,7 @@ export default function YoutubeQueueManager() {
       const result = await res.json();
       if (res.ok) {
         showFeedback('ステータスを pending にリセットしました。SREデーモンが再解析します。', 'success');
-        fetchQueue();
+        fetchQueue(true);
       } else {
         showFeedback(result.error || '再試行に失敗しました。', 'error');
       }
@@ -115,7 +115,7 @@ export default function YoutubeQueueManager() {
       const result = await res.json();
       if (res.ok) {
         showFeedback('動画をキューから削除しました。', 'success');
-        fetchQueue();
+        fetchQueue(true);
       } else {
         showFeedback(result.error || '削除に失敗しました。', 'error');
       }
@@ -142,7 +142,7 @@ export default function YoutubeQueueManager() {
       const result = await res.json();
       if (res.ok) {
         showFeedback(`優先度を「${nextPriority === 'high' ? '高' : nextPriority === 'low' ? '低' : '中'}」に変更しました。`, 'success');
-        fetchQueue();
+        fetchQueue(true);
       } else {
         showFeedback(result.error || '優先度の変更に失敗しました。', 'error');
       }
@@ -168,7 +168,7 @@ export default function YoutubeQueueManager() {
       const result = await res.json();
       if (res.ok) {
         showFeedback(nextStatus === 'on_hold' ? '動画を保留にしました。SREの自動解析から除外されます。' : '保留を解除しました。次回サイクルで解析されます。', 'success');
-        fetchQueue();
+        fetchQueue(true);
       } else {
         showFeedback(result.error || 'ステータスの更新に失敗しました。', 'error');
       }
@@ -374,7 +374,7 @@ export default function YoutubeQueueManager() {
         <div className="p-6 border-b border-gray-800/80 flex items-center justify-between">
           <h2 className="text-lg font-bold text-gray-200">📋 登録動画キュー一覧</h2>
           <button
-            onClick={fetchQueue}
+            onClick={() => fetchQueue(false)}
             disabled={loading}
             className="p-2 hover:bg-gray-800/60 rounded-lg text-gray-400 hover:text-gray-200 transition-all"
             title="リフレッシュ"
