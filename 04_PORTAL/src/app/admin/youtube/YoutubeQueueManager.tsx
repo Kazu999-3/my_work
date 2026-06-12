@@ -9,6 +9,7 @@ interface QueueItem {
   url: string;
   status: string;
   retry_count: number;
+  priority?: 'high' | 'medium' | 'low';
 }
 
 export default function YoutubeQueueManager() {
@@ -125,11 +126,84 @@ export default function YoutubeQueueManager() {
     }
   };
 
+  // 5. 優先度のトグル変更
+  const handleTogglePriority = async (id: string, currentPriority?: string) => {
+    const p = currentPriority || 'medium';
+    const nextPriority = p === 'high' ? 'medium' : p === 'medium' ? 'low' : 'high';
+    
+    setActionLoading(id);
+    try {
+      const res = await fetch('/api/admin/youtube', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, priority: nextPriority }),
+      });
+
+      const result = await res.json();
+      if (res.ok) {
+        showFeedback(`優先度を「${nextPriority === 'high' ? '高' : nextPriority === 'low' ? '低' : '中'}」に変更しました。`, 'success');
+        fetchQueue();
+      } else {
+        showFeedback(result.error || '優先度の変更に失敗しました。', 'error');
+      }
+    } catch (err) {
+      showFeedback('リクエストに失敗しました。', 'error');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  // 6. 保留/再開の切り替え
+  const handleToggleHold = async (id: string, currentStatus: string) => {
+    const nextStatus = currentStatus === 'on_hold' ? 'pending' : 'on_hold';
+    
+    setActionLoading(id);
+    try {
+      const res = await fetch('/api/admin/youtube', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, status: nextStatus }),
+      });
+
+      const result = await res.json();
+      if (res.ok) {
+        showFeedback(nextStatus === 'on_hold' ? '動画を保留にしました。SREの自動解析から除外されます。' : '保留を解除しました。次回サイクルで解析されます。', 'success');
+        fetchQueue();
+      } else {
+        showFeedback(result.error || 'ステータスの更新に失敗しました。', 'error');
+      }
+    } catch (err) {
+      showFeedback('リクエストに失敗しました。', 'error');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  // 優先度バッジのスタイル定義
+  const getPriorityBadge = (priority?: string) => {
+    const p = priority || 'medium';
+    let classes = 'px-3 py-1 text-xs font-semibold rounded-full border ';
+    let label = '優先度: 中';
+    if (p === 'high') {
+      classes += 'bg-red-950/40 text-red-400 border-red-800/60';
+      label = '優先度: 高';
+    } else if (p === 'low') {
+      classes += 'bg-gray-950/40 text-gray-500 border-gray-800/60';
+      label = '優先度: 低';
+    } else {
+      classes += 'bg-blue-950/40 text-blue-400 border-blue-800/60';
+      label = '優先度: 中';
+    }
+    return <span className={classes}>{label}</span>;
+  };
+
   // ステータスバッジのスタイル定義
   const getStatusBadge = (status: string) => {
     let classes = 'px-3 py-1 text-xs font-semibold rounded-full border ';
     if (status === 'completed') {
       classes += 'bg-green-950/40 text-green-400 border-green-800/60';
+    } else if (status === 'on_hold') {
+      classes += 'bg-yellow-950/40 text-yellow-400 border-yellow-800/60';
     } else if (status === 'pending') {
       classes += 'bg-cyan-950/40 text-cyan-400 border-cyan-800/60 animate-pulse';
     } else if (status === 'failed') {
@@ -139,7 +213,7 @@ export default function YoutubeQueueManager() {
     } else {
       classes += 'bg-gray-950/40 text-gray-400 border-gray-800/60';
     }
-    return <span className={classes}>{status}</span>;
+    return <span className={classes}>{status === 'on_hold' ? 'on hold (保留)' : status}</span>;
   };
 
   // 統計の計算
@@ -328,13 +402,17 @@ export default function YoutubeQueueManager() {
             {/* モバイル用カードレイアウト (md未満で表示) */}
             <div className="block md:hidden divide-y divide-gray-800/40">
               {filteredQueue.map((item) => (
-                <div key={item.id} className="p-4 space-y-3 hover:bg-[#0c0d15]/40 transition-all">
-                  <div className="flex justify-between items-start gap-3">
-                    <span className="font-bold text-gray-200 text-sm line-clamp-2 flex-1" title={item.title}>
-                      {item.title}
-                    </span>
-                    <div className="shrink-0">
-                      {getStatusBadge(item.status)}
+                <div key={item.id} className="p-4 space-y-3 hover:bg-[#0c0d15]/40 transition-all flex flex-col">
+                  <div className="flex gap-3 items-start">
+                    <img 
+                      src={`https://img.youtube.com/vi/${item.id}/mqdefault.jpg`} 
+                      className="w-20 h-12 object-cover rounded border border-gray-800 shrink-0 shadow-sm" 
+                      alt="thumbnail" 
+                    />
+                    <div className="flex-1 min-w-0">
+                      <span className="font-bold text-gray-200 text-sm line-clamp-2 leading-snug" title={item.title}>
+                        {item.title}
+                      </span>
                     </div>
                   </div>
                   
@@ -357,16 +435,45 @@ export default function YoutubeQueueManager() {
                         </svg>
                       </a>
                     </div>
-                    {item.retry_count > 0 && item.status !== 'completed' && (
-                      <span className="text-gray-500 font-medium">({item.retry_count}/5)</span>
-                    )}
                   </div>
 
-                  <div className="flex gap-2 pt-1 justify-end">
+                  <div className="flex items-center justify-between gap-2 bg-[#07080e] p-2 rounded-lg border border-gray-800/40 text-[10px] font-bold">
+                    <div className="flex items-center gap-2">
+                      {getStatusBadge(item.status)}
+                      {item.retry_count > 0 && item.status !== 'completed' && (
+                        <span className="text-gray-500">({item.retry_count}/5)</span>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => handleTogglePriority(item.id, item.priority)}
+                      disabled={actionLoading !== null}
+                      type="button"
+                      className="hover:brightness-125 transition-all"
+                    >
+                      {getPriorityBadge(item.priority)}
+                    </button>
+                  </div>
+
+                  <div className="flex gap-2 pt-1">
+                    {item.status !== 'completed' && (
+                      <button
+                        onClick={() => handleToggleHold(item.id, item.status)}
+                        disabled={actionLoading !== null}
+                        type="button"
+                        className={`flex-1 py-2 border text-xs font-semibold rounded-lg disabled:opacity-40 transition-all text-center ${
+                          item.status === 'on_hold'
+                            ? 'bg-yellow-950/20 hover:bg-yellow-950/50 border-yellow-900/40 text-yellow-400'
+                            : 'bg-gray-950/20 hover:bg-gray-950/50 border-gray-800/40 text-gray-400'
+                        }`}
+                      >
+                        {item.status === 'on_hold' ? '保留解除' : '保留にする'}
+                      </button>
+                    )}
                     {(item.status.startsWith('error') || item.status === 'failed') && (
                       <button
                         onClick={() => handleRetryVideo(item.id)}
                         disabled={actionLoading !== null}
+                        type="button"
                         className="flex-1 py-2 bg-cyan-950/60 hover:bg-cyan-900/80 border border-cyan-800/60 text-cyan-400 text-xs font-semibold rounded-lg disabled:opacity-40 transition-all text-center"
                       >
                         {actionLoading === item.id ? '処理中...' : '再試行'}
@@ -375,6 +482,7 @@ export default function YoutubeQueueManager() {
                     <button
                       onClick={() => handleDeleteVideo(item.id)}
                       disabled={actionLoading !== null}
+                      type="button"
                       className="flex-1 py-2 bg-red-950/20 hover:bg-red-950/50 border border-red-900/40 text-red-400 text-xs font-semibold rounded-lg disabled:opacity-40 transition-all text-center"
                     >
                       削除
@@ -390,7 +498,7 @@ export default function YoutubeQueueManager() {
                 <thead>
                   <tr className="border-b border-gray-800/60 text-xs text-gray-400 uppercase bg-[#08090f]">
                     <th className="px-6 py-4 font-semibold">動画情報</th>
-                    <th className="px-6 py-4 font-semibold">ステータス</th>
+                    <th className="px-6 py-4 font-semibold">ステータス / 優先度</th>
                     <th className="px-6 py-4 font-semibold text-right">アクション</th>
                   </tr>
                 </thead>
@@ -398,44 +506,75 @@ export default function YoutubeQueueManager() {
                   {filteredQueue.map((item) => (
                     <tr key={item.id} className="hover:bg-[#0c0d15]/60 transition-all duration-150">
                       <td className="px-6 py-4 max-w-lg">
-                        <div className="flex flex-col space-y-1">
-                          <span className="font-bold text-gray-200 truncate" title={item.title}>
-                            {item.title}
-                          </span>
-                          <div className="flex items-center gap-2 text-xs">
-                            {item.channel_name && (
-                              <span className="text-gray-400 bg-gray-900/60 px-1.5 py-0.5 rounded border border-gray-800/80">
-                                {item.channel_name}
-                              </span>
-                            )}
-                            <a
-                              href={item.url}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="text-cyan-400 hover:underline flex items-center gap-1 w-fit"
-                            >
-                              <span>{item.id}</span>
-                              <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                              </svg>
-                            </a>
+                        <div className="flex gap-3 items-center">
+                          <img 
+                            src={`https://img.youtube.com/vi/${item.id}/mqdefault.jpg`} 
+                            className="w-16 h-10 object-cover rounded border border-gray-800 shrink-0 shadow-sm" 
+                            alt="thumbnail" 
+                          />
+                          <div className="flex flex-col space-y-1 min-w-0">
+                            <span className="font-bold text-gray-200 truncate block" title={item.title}>
+                              {item.title}
+                            </span>
+                            <div className="flex items-center gap-2 text-xs">
+                              {item.channel_name && (
+                                <span className="text-gray-400 bg-gray-900/60 px-1.5 py-0.5 rounded border border-gray-800/80">
+                                  {item.channel_name}
+                                </span>
+                              )}
+                              <a
+                                href={item.url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-cyan-400 hover:underline flex items-center gap-1 w-fit"
+                              >
+                                <span>{item.id}</span>
+                                <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                </svg>
+                              </a>
+                            </div>
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-col gap-1.5 items-start">
                           {getStatusBadge(item.status)}
+                          <button
+                            onClick={() => handleTogglePriority(item.id, item.priority)}
+                            disabled={actionLoading !== null}
+                            type="button"
+                            className="hover:brightness-125 transition-all"
+                            title="クリックして優先度をトグル変更"
+                          >
+                            {getPriorityBadge(item.priority)}
+                          </button>
                           {item.retry_count > 0 && item.status !== 'completed' && (
-                            <span className="text-xs text-gray-500 font-medium">({item.retry_count}/5)</span>
+                            <span className="text-xs text-gray-500 font-medium">リトライ: ({item.retry_count}/5)</span>
                           )}
                         </div>
                       </td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex justify-end gap-2">
+                          {item.status !== 'completed' && (
+                            <button
+                              onClick={() => handleToggleHold(item.id, item.status)}
+                              disabled={actionLoading !== null}
+                              type="button"
+                              className={`px-3 py-1.5 border text-xs font-semibold rounded-lg disabled:opacity-40 transition-all ${
+                                item.status === 'on_hold'
+                                  ? 'bg-yellow-950/20 hover:bg-yellow-950/50 border-yellow-900/40 text-yellow-400'
+                                  : 'bg-gray-950/20 hover:bg-gray-950/50 border-gray-800/40 text-gray-400'
+                              }`}
+                            >
+                              {item.status === 'on_hold' ? '保留解除' : '保留'}
+                            </button>
+                          )}
                           {(item.status.startsWith('error') || item.status === 'failed') && (
                             <button
                               onClick={() => handleRetryVideo(item.id)}
                               disabled={actionLoading !== null}
+                              type="button"
                               className="px-3 py-1.5 bg-cyan-950/60 hover:bg-cyan-900/80 border border-cyan-800/60 hover:border-cyan-700/60 text-cyan-400 text-xs font-semibold rounded-lg disabled:opacity-40 disabled:pointer-events-none transition-all flex items-center gap-1"
                             >
                               {actionLoading === item.id ? '処理中...' : '再試行'}
@@ -444,6 +583,7 @@ export default function YoutubeQueueManager() {
                           <button
                             onClick={() => handleDeleteVideo(item.id)}
                             disabled={actionLoading !== null}
+                            type="button"
                             className="px-3 py-1.5 bg-red-950/20 hover:bg-red-950/50 border border-red-900/40 hover:border-red-800/60 text-red-400 text-xs font-semibold rounded-lg disabled:opacity-40 disabled:pointer-events-none transition-all flex items-center gap-1"
                           >
                             削除

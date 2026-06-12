@@ -9,9 +9,10 @@ const supabase = createClient(
 // ステータス更新
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const resolvedParams = await params;
     const body = await req.json();
     const { status } = body;
 
@@ -22,7 +23,7 @@ export async function PATCH(
     const { data, error } = await supabase
       .from('collab_tasks')
       .update({ status })
-      .eq('id', params.id)
+      .eq('id', resolvedParams.id)
       .select()
       .single();
 
@@ -36,13 +37,14 @@ export async function PATCH(
 // タスク削除
 export async function DELETE(
   _req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const resolvedParams = await params;
     const { error } = await supabase
       .from('collab_tasks')
       .delete()
-      .eq('id', params.id);
+      .eq('id', resolvedParams.id);
 
     if (error) throw error;
     return NextResponse.json({ success: true });

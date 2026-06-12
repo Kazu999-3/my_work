@@ -265,10 +265,14 @@ class YouTubeAbsorber:
             # キュー再読み込み
             pending = self.get_pending_videos()
 
-        # 短い順ソート（duration_sec が None または DURATION_UNKNOWN は後回し）
+        # 優先度（高>中>低）を第一キー、動画長さ（短い順、不明は後回し）を第二キーにしてソート
+        priority_weight = {'high': 0, 'medium': 1, 'low': 2}
         pending_sorted = sorted(
             pending,
-            key=lambda x: x.get("duration_sec") or DURATION_UNKNOWN
+            key=lambda x: (
+                priority_weight.get(x.get("priority", "medium"), 1),
+                x.get("duration_sec") or DURATION_UNKNOWN
+            )
         )
 
         # トークン予算内で処理対象を決定

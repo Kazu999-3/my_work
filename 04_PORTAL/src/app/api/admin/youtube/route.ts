@@ -112,18 +112,24 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// 3. 動画ステータスの更新（再試行等）
+// 3. 動画ステータス・優先度の更新（再試行、保留、優先度変更等）
 export async function PUT(req: NextRequest) {
   try {
-    const { id, status } = await req.json();
+    const { id, status, priority } = await req.json();
 
-    if (!id || !status) {
-      return NextResponse.json({ error: 'IDとステータスを指定してください。' }, { status: 400 });
+    if (!id) {
+      return NextResponse.json({ error: 'IDを指定してください。' }, { status: 400 });
     }
 
-    const updates: any = { status };
-    if (status === 'pending') {
-      updates.retry_count = 0;
+    const updates: any = {};
+    if (status !== undefined) {
+      updates.status = status;
+      if (status === 'pending') {
+        updates.retry_count = 0;
+      }
+    }
+    if (priority !== undefined) {
+      updates.priority = priority;
     }
 
     const { data, error } = await supabase
@@ -137,7 +143,7 @@ export async function PUT(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: '動画ステータスを更新しました。',
+      message: '動画を更新しました。',
       item: data
     });
 
