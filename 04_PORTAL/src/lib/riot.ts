@@ -35,7 +35,7 @@ interface MatchResult {
 
 export async function fetchPuuidByRiotId(gameName: string, tagLine: string, apiKey: string): Promise<string> {
   const url = `${RIOT_API_BASE_ASIA}/riot/account/v1/accounts/by-riot-id/${encodeURIComponent(gameName)}/${encodeURIComponent(tagLine)}?api_key=${apiKey}`;
-  const res = await fetch(url);
+  const res = await fetch(url, { cache: 'no-store' });
   if (!res.ok) {
     throw new Error(`Riot IDの検索に失敗しました (${gameName}#${tagLine}): ${res.statusText}`);
   }
@@ -46,7 +46,7 @@ export async function fetchPuuidByRiotId(gameName: string, tagLine: string, apiK
 export async function fetchRecentCustomMatchId(puuid: string, apiKey: string): Promise<string> {
   // 直近20試合から検索 (type=custom は Riot APIでエラーになるため指定しない)
   const url = `${RIOT_API_BASE_ASIA}/lol/match/v5/matches/by-puuid/${puuid}/ids?start=0&count=20&api_key=${apiKey}`;
-  const res = await fetch(url);
+  const res = await fetch(url, { cache: 'no-store' });
   
   if (!res.ok) {
     throw new Error(`Riot API: 試合履歴の取得に失敗しました。(${res.statusText})`);
@@ -63,7 +63,7 @@ export async function fetchRecentCustomMatchId(puuid: string, apiKey: string): P
 
 export async function fetchRecentMatchIds(puuid: string, apiKey: string, count: number = 20): Promise<string[]> {
   const url = `${RIOT_API_BASE_ASIA}/lol/match/v5/matches/by-puuid/${puuid}/ids?start=0&count=${count}&api_key=${apiKey}`;
-  const res = await fetch(url);
+  const res = await fetch(url, { cache: 'no-store' });
   
   if (!res.ok) {
     throw new Error(`Riot API: 試合履歴の取得に失敗しました。(${res.statusText})`);
@@ -74,7 +74,7 @@ export async function fetchRecentMatchIds(puuid: string, apiKey: string, count: 
 
 export async function fetchMatchDetails(matchId: string, apiKey: string): Promise<MatchResult> {
   const url = `${RIOT_API_BASE_ASIA}/lol/match/v5/matches/${matchId}?api_key=${apiKey}`;
-  const res = await fetch(url);
+  const res = await fetch(url, { cache: 'no-store' });
   if (!res.ok) {
     throw new Error(`試合詳細の取得に失敗しました (${matchId}): ${res.statusText}`);
   }
@@ -120,14 +120,14 @@ const RIOT_API_BASE_JP = "https://jp1.api.riotgames.com";
 
 export async function fetchSummonerByPuuid(puuid: string, apiKey: string): Promise<any> {
   const url = `${RIOT_API_BASE_JP}/lol/summoner/v4/summoners/by-puuid/${puuid}?api_key=${apiKey}`;
-  const res = await fetch(url);
+  const res = await fetch(url, { cache: 'no-store' });
   if (!res.ok) throw new Error(`Summoner fetch error: ${res.statusText}`);
   return await res.json();
 }
 
 export async function fetchLeagueBySummonerId(summonerId: string, apiKey: string): Promise<any[]> {
   const url = `${RIOT_API_BASE_JP}/lol/league/v4/entries/by-summoner/${summonerId}?api_key=${apiKey}`;
-  const res = await fetch(url);
+  const res = await fetch(url, { cache: 'no-store' });
   if (!res.ok) throw new Error(`League fetch error: ${res.statusText}`);
   return await res.json();
 }
@@ -137,7 +137,7 @@ export async function fetchLeagueBySummonerId(summonerId: string, apiKey: string
  */
 export async function fetchChampionMasteryByPuuid(puuid: string, apiKey: string, count: number = 3): Promise<any[]> {
   const url = `${RIOT_API_BASE_JP}/lol/champion-mastery/v4/champion-masteries/by-puuid/${puuid}/top?count=${count}&api_key=${apiKey}`;
-  const res = await fetch(url);
+  const res = await fetch(url, { cache: 'no-store' });
   if (!res.ok) {
     if (res.status === 404) return []; // マスタリーがないプレイヤー
     throw new Error(`Mastery fetch error: ${res.statusText}`);

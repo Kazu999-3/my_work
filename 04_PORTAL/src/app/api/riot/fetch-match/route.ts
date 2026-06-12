@@ -30,13 +30,12 @@ export async function POST(request: Request) {
     // 3. すでに登録済みの試合IDをDBから取得
     const { data: existingMatches } = await supabase
       .from('ktm_matches')
-      .select('id, riot_match_id')
-      .or(`id.in.(${matchIds.join(',')}),riot_match_id.in.(${matchIds.join(',')})`);
+      .select('riot_match_id')
+      .in('riot_match_id', matchIds);
 
     const existingIds = new Set<string>();
     if (existingMatches) {
       existingMatches.forEach(m => {
-        if (m.id) existingIds.add(m.id);
         if (m.riot_match_id) existingIds.add(m.riot_match_id);
       });
     }
