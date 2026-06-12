@@ -6,6 +6,8 @@ import subprocess
 import glob
 import re
 import platform
+import urllib.request
+import urllib.error
 from google import genai
 from v2_CORE.settings import settings
 from v2_CORE.ai_helper import generate_content_safe
@@ -62,7 +64,6 @@ class YouTubeAbsorber:
             method=method
         )
         try:
-            import urllib.request
             with urllib.request.urlopen(req, timeout=30) as r:
                 body = r.read().decode('utf-8')
                 return r.status, body, r
