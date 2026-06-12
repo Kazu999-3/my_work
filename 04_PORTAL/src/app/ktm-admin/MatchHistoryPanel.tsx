@@ -376,6 +376,9 @@ export default function MatchHistoryPanel() {
                           className="w-28 bg-gray-900 border border-gray-700 rounded px-2 py-1 text-white outline-none focus:border-blue-500 text-xs"
                         >
                           <option value="">選択...</option>
+                          {p.player_name && !playersPool.some(pl => pl.name === p.player_name) && (
+                            <option value={p.player_name}>{p.player_name} (未登録)</option>
+                          )}
                           {playersPool.map(pl => <option key={pl.name} value={pl.name}>{pl.name}</option>)}
                         </select>
                         <button
@@ -425,6 +428,9 @@ export default function MatchHistoryPanel() {
                           className="w-28 bg-gray-900 border border-gray-700 rounded px-2 py-1 text-white outline-none focus:border-red-500 text-xs"
                         >
                           <option value="">選択...</option>
+                          {p.player_name && !playersPool.some(pl => pl.name === p.player_name) && (
+                            <option value={p.player_name}>{p.player_name} (未登録)</option>
+                          )}
                           {playersPool.map(pl => <option key={pl.name} value={pl.name}>{pl.name}</option>)}
                         </select>
                         <button

@@ -7,8 +7,8 @@ export async function PUT(
 ) {
   try {
     const resolvedParams = await params;
-    const matchId = parseInt(resolvedParams.id);
-    if (isNaN(matchId)) {
+    const matchId = resolvedParams.id;
+    if (!matchId) {
       return NextResponse.json({ error: '無効なマッチIDです。' }, { status: 400 });
     }
 
@@ -62,8 +62,8 @@ export async function DELETE(
 ) {
   try {
     const resolvedParams = await params;
-    const matchId = parseInt(resolvedParams.id);
-    if (isNaN(matchId)) {
+    const matchId = resolvedParams.id;
+    if (!matchId) {
       return NextResponse.json({ error: '無効なマッチIDです。' }, { status: 400 });
     }
 
