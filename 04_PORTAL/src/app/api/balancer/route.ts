@@ -173,7 +173,16 @@ export async function POST(request: Request) {
     // スピルした（選ばれなかった）プレイヤー名を観戦者として追加
     result.spectators = spectators.map(p => p.name);
 
-    return NextResponse.json(result);
+    const teamBlueMMR = result.teamBlue.reduce((sum, p) => sum + p.mmr, 0);
+    const teamRedMMR = result.teamRed.reduce((sum, p) => sum + p.mmr, 0);
+    const mmrDiff = Math.abs(teamBlueMMR - teamRedMMR);
+
+    return NextResponse.json({
+      ...result,
+      teamBlueMMR,
+      teamRedMMR,
+      mmrDiff
+    });
 
   } catch (error: any) {
     console.error('Balancer API Error:', error);
