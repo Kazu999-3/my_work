@@ -14,7 +14,7 @@ logger = logging.getLogger("AIHelper")
 # 全プロセスで共有するためのファイルパス
 THROTTLE_STATE_FILE = settings.FORGE_DIR / "api_throttle.json"
 THROTTLE_LOCK_FILE = settings.FORGE_DIR / "api_throttle.lock"
-MIN_REQUEST_INTERVAL = 20.0  # 1分間に3回まで（TPM/RPM制限を安全に回避するため長めに設定）
+MIN_REQUEST_INTERVAL = 30.0  # 無料キーのみの運用のために1リクエスト間隔を30秒に引き上げ（RPM安全回避）
 
 def _get_last_request_time():
     try:
@@ -49,8 +49,7 @@ def generate_content_safe(client, prompt, model_id=None, config=None, feature_na
 
     # 試行するモデルの優先順リスト (無料枠で安定して動作するフラッシュ系のみに限定)
     models_to_try = [
-        "gemini-2.5-flash",
-        "gemini-2.0-flash"
+        "gemini-2.5-flash"  # 無料枠で最も安定・高性能な2.5-flashのみに限定
     ]
     
     # APIキーの優先順位リストを作成 (無料キーのみに限定)
@@ -73,8 +72,8 @@ def generate_content_safe(client, prompt, model_id=None, config=None, feature_na
         model_success = False
         for key_name, api_key in api_keys_to_try:
             current_client = genai.Client(api_key=api_key)
-            # 無料キーのみの構成のため、スロットル制限時に待機しながら最大10回リトライして処理を完結させる
-            retries = 10
+            # 無駄な待機によるフリーズを防ぐためリトライを最大3回に削減し、次回スケジュールに委ねる
+            retries = 3
             delay = 10.0
             
             for attempt in range(retries):
