@@ -55,6 +55,7 @@ export async function GET() {
     });
 
     const discordIdsFound = new Set();
+    const toUpdateName: any[] = [];
 
     humanMembers.forEach(m => {
       const discordId = m.user.id;
@@ -76,9 +77,20 @@ export async function GET() {
           metadata: { joined_at: m.joined_at }
         });
       } else {
+        const nameChanged = dbPlayer.name !== displayName;
+        if (nameChanged) {
+          toUpdateName.push({
+            id: dbPlayer.id,
+            oldName: dbPlayer.name,
+            newName: displayName,
+            discord_id: discordId
+          });
+        }
+
         // joined_atが未保存、または更新が必要な場合のために保持
         activeSync.push({
           ...dbPlayer,
+          name: displayName, // 最新のDiscord名に同期させる
           metadata: { ...(dbPlayer.metadata || {}), joined_at: m.joined_at }
         });
       }
@@ -107,6 +119,7 @@ export async function GET() {
       toAdd,
       toDeactivate,
       activeSync,
+      toUpdateName,
       totalDiscordMembers: humanMembers.length,
     });
   } catch (error: any) {
@@ -177,15 +190,18 @@ export async function POST(request: Request) {
       if (deactError) throw deactError;
     }
 
-    // 既存プレイヤーのメタデータ(joined_at等)更新処理
+    // 既存プレイヤーのメタデータ(joined_at等)や名前の更新処理
     if (update_metadata && update_metadata.length > 0) {
       for (const p of update_metadata) {
         if (p.id) {
           const { error: updateError } = await supabase
             .from('ktm_players')
-            .update({ metadata: p.metadata })
+            .update({ 
+              metadata: p.metadata,
+              name: p.name // Discordの最新の表示名で上書き保存する
+            })
             .eq('id', p.id);
-          if (updateError) console.error(`Metadata update failed for ID ${p.id}:`, updateError);
+          if (updateError) console.error(`Player update failed for ID ${p.id}:`, updateError);
         }
       }
     }

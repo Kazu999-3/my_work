@@ -602,9 +602,26 @@ export default function KtmAdminPage() {
                       </div>
                     )}
 
-                    {syncData.toAdd.length === 0 && syncData.toDeactivate.length === 0 && (
+                    {syncData.toUpdateName && syncData.toUpdateName.length > 0 && (
+                      <div className="bg-amber-900/20 border border-amber-800/50 rounded-lg p-4">
+                        <h3 className="text-amber-400 font-bold mb-3 flex items-center gap-2">
+                          <RefreshCw className="h-4 w-4" /> Discord名に修正されるメンバー ({syncData.toUpdateName.length}人)
+                        </h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          {syncData.toUpdateName.map((p: any) => (
+                            <div key={p.id} className="bg-amber-900/40 text-amber-300 px-3 py-1.5 rounded text-xs border border-amber-800 flex items-center justify-between">
+                              <span className="text-gray-400 truncate max-w-[45%]">{p.oldName}</span>
+                              <span className="text-gray-500 font-bold">→</span>
+                              <span className="font-semibold text-amber-200 truncate max-w-[45%]">{p.newName}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {syncData.toAdd.length === 0 && syncData.toDeactivate.length === 0 && (!syncData.toUpdateName || syncData.toUpdateName.length === 0) && (
                       <div className="bg-blue-900/20 border border-blue-800/50 rounded-lg p-6 text-center text-blue-300">
-                        メンバーの増減はありませんが、参加日時などの隠しデータ（メタデータ）を最新に更新するため「同期を実行する」を押してください。
+                        メンバーの増減や名前の変更はありませんが、参加日時などの隠しデータ（メタデータ）を最新に更新するため「同期を実行する」を押してください。
                       </div>
                     )}
                   </div>
