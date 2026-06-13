@@ -742,37 +742,32 @@ export default function KtmAdminPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm text-gray-300">
                   <div className="space-y-3">
                     <div>
-                      <h3 className="font-bold text-white text-base">1. Eloベースの勝敗変動</h3>
-                      <p>相手のMMRと自分のMMRの差から期待勝率を計算し、勝利時は加点、敗北時は減点。基本変動幅は <span className="text-amber-400 font-mono">±16</span> 前後。</p>
+                      <h3 className="font-bold text-white text-base">1. Eloベースの勝敗変動 (K=48)</h3>
+                      <p>対面相手との現在のMMR差から期待勝率を計算し、勝利時は加点、敗北時は減点。Elo変動係数（Kファクター）は <span className="text-amber-400 font-mono">48</span> を採用しています。</p>
                     </div>
                     <div>
                       <h3 className="font-bold text-white text-base">2. KDAボーナス</h3>
-                      <p>KDAスコア <span className="text-amber-400 font-mono">(K+A)/D</span> の基準を 3.0 とし、それを上回ればボーナス、下回ればマイナス。（最大 <span className="text-amber-400 font-mono">±20</span>）</p>
+                      <p>基準KDAを 3.0 とし、<span className="text-amber-400 font-mono">(KDA - 3.0) * 8</span> でボーナス値を算出します。（最小 <span className="text-amber-400 font-mono">-20</span> から最大 <span className="text-amber-400 font-mono">+20</span>）</p>
                     </div>
                     <div>
                       <h3 className="font-bold text-white text-base">3. ランク収束引力</h3>
-                      <p>RiotのSolo/Duoランク帯（Gold等）の適正MMRへ引き寄せられる力が働き、ランクとかけ離れたMMRに滞在しにくくします。</p>
+                      <p>設定された最高Rankの適正レートへ引き寄せられる引力が働きます。引力強度はそのロールの試合数（5試合未満: 0.005, 10試合未満: 0.003, それ以上: 0.001）に応じて減衰します。</p>
                     </div>
                   </div>
                   <div className="space-y-3">
                     <div>
-                      <h3 className="font-bold text-white text-base">4. 視界・CSボーナス (Riot同期後)</h3>
-                      <ul className="list-disc list-inside pl-2 space-y-1">
-                        <li><span className="text-teal-300">SUP</span>: 視界スコア 40以上で <span className="text-green-400">+5</span>, 60以上で <span className="text-green-400">+10</span></li>
-                        <li><span className="text-blue-300">ADC/MID</span>: CS 200以上で <span className="text-green-400">+5</span>, 250以上で <span className="text-green-400">+10</span></li>
-                        <li><span className="text-green-400">JG</span>: 視界20以上で <span className="text-green-400">+5</span>, CS 150以上で <span className="text-green-400">+5</span></li>
-                        <li><span className="text-orange-400">TOP</span>: CS 180以上で <span className="text-green-400">+5</span>, 視界15以上で <span className="text-green-400">+3</span></li>
-                      </ul>
+                      <h3 className="font-bold text-white text-base">4. 習熟度（試合数）倍率</h3>
+                      <p>レートが安定するまでの未熟期（そのロールで5試合未満は <span className="text-amber-400 font-mono">3.0倍</span>、10試合未満は <span className="text-amber-400 font-mono">2.0倍</span>、それ以降は <span className="text-amber-400 font-mono">1.0倍</span>）は変動幅が大きく増幅され、素早く適正MMRへ収束させます。</p>
                     </div>
                     <div>
-                      <h3 className="font-bold text-white text-base">5. 対面回数ダンパー & 勝率補正</h3>
-                      <p>同じ相手と短期間に何度も対面すると、MMRの変動幅が縮小します（最大0.4倍）。また、特定ロールでの全体勝率が極端に高い/低い場合は補正がかかります。</p>
+                      <h3 className="font-bold text-white text-base">5. 对面回数倍率 ＆ 最終セーフティ</h3>
+                      <p>同じ相手との対戦回数が少ないうちは変動幅を大きくする対面回数倍率（最大1.5倍〜最小1.0倍）が掛かります。また、勝利時は最低でも <span className="text-green-400 font-mono">+10</span> を保証し、敗北時は最大でも <span className="text-red-400 font-mono">-5</span>（必ずMMR減少）に制限するガードを適用しています。</p>
                     </div>
                   </div>
                 </div>
                 
                 <div className="mt-4 pt-4 border-t border-gray-800 text-xs text-gray-500">
-                  ※ Riot同期による視界・CSボーナスは、Discordで勝敗報告をした約3分後にバックグラウンドで自動計算され上書き反映されます。
+                  ※ MMRは、手動またはDiscordからの戦績記録時、および管理ダッシュボードからの「🔄 Rebuild」実行時に過去の全試合から最新仕様で一括再計算されます。
                 </div>
               </div>
             )}
