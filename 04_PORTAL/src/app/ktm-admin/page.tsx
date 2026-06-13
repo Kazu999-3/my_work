@@ -109,7 +109,7 @@ export default function KtmAdminPage() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState({ type: "", text: "" });
   const [sortConfig, setSortConfig] = useState({ key: "no", direction: "asc" });
-  const [filterActive, setFilterActive] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const [showMmrInfo, setShowMmrInfo] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState<any>(null);
   
@@ -246,8 +246,8 @@ export default function KtmAdminPage() {
         if (error) throw error;
       }
 
-      setMessage({ type: "success", text: "✅ プレイヤー情報をすべて保存しました。" });
-      fetchPlayers();
+      // 自動保存時は全体リロード(fetchPlayers)をせずチラつきを防ぐ
+      checkIntegrity(); 
     } catch (err: any) {
       setMessage({ type: "error", text: "❌ 保存エラー: " + err.message });
     } finally {
@@ -255,37 +255,7 @@ export default function KtmAdminPage() {
     }
   };
 
-  const addNewPlayer = () => {
-    const newPlayer = {
-      discord_id: `new-${Date.now()}`,
-      name: "新規プレイヤー",
-      ign: "",
-      mmr: 1000,
-      role_preferences: { primary: "ALL", secondary: "ALL" },
-      is_active: true,
-      ng_lane_1: "", ng_lane_2: "",
-      highest_rank: "",
-      mmr_top: 1000, mmr_jg: 1000, mmr_mid: 1000, mmr_adc: 1000, mmr_sup: 1000,
-      metadata: { notes: "" }
-    };
-    setPlayers([newPlayer, ...players]);
-  };
-
-  const handleAutoFillMmr = (uid: string) => {
-    setPlayers(prevPlayers => prevPlayers.map(p => {
-      if ((p.id || p.discord_id) === uid) {
-        const prefs = p.role_preferences || { primary: 'ALL', secondary: 'FILL' };
-        const mmr_top = calculateAutoMmr(p.highest_rank, 'TOP', prefs);
-        const mmr_jg = calculateAutoMmr(p.highest_rank, 'JG', prefs);
-        const mmr_mid = calculateAutoMmr(p.highest_rank, 'MID', prefs);
-        const mmr_adc = calculateAutoMmr(p.highest_rank, 'ADC', prefs);
-        const mmr_sup = calculateAutoMmr(p.highest_rank, 'SUP', prefs);
-        const mmr = Math.round((mmr_top + mmr_jg + mmr_mid + mmr_adc + mmr_sup) / 5);
-        return { ...p, mmr_top, mmr_jg, mmr_mid, mmr_adc, mmr_sup, mmr };
-      }
-      return p;
-    }));
-  };
+// addNewPlayer and handleAutoFillMmr are removed. New players are added via Discord sync modal with auto-calculation.
 
   const handleRebuildMmr = async () => {
     if (!confirm("過去のすべての試合履歴をもとに全プレイヤーのMMRを再計算します。よろしいですか？")) return;
@@ -359,22 +329,68 @@ export default function KtmAdminPage() {
   const executeSync = async () => {
     if (!syncData) return;
     setSyncingDiscord(true);
+    setMessage({ type: "", text: "" });
     try {
+      // 1. 新規追加メンバーのMMRをフロント側で自動計算してマージする
+      const processedAdd = syncData.toAdd.map((p: any) => {
+        const highest_rank = p.highest_rank || "UNRANKED";
+        const prefs = p.role_preferences || { primary: "ALL", secondary: "FILL" };
+        
+        const mmr_top = calculateAutoMmr(highest_rank, 'TOP', prefs);
+        const mmr_jg = calculateAutoMmr(highest_rank, 'JG', prefs);
+        const mmr_mid = calculateAutoMmr(highest_rank, 'MID', prefs);
+        const mmr_adc = calculateAutoMmr(highest_rank, 'ADC', prefs);
+        const mmr_sup = calculateAutoMmr(highest_rank, 'SUP', prefs);
+        const mmr = Math.round((mmr_top + mmr_jg + mmr_mid + mmr_adc + mmr_sup) / 5);
+        
+        return {
+          ...p,
+          highest_rank,
+          role_preferences: prefs,
+          mmr_top,
+          mmr_jg,
+          mmr_mid,
+          mmr_adc,
+          mmr_sup,
+          mmr
+        };
+      });
+
+      // 2. Discord同期 POST の実行
       const res = await fetch('/api/discord/members', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          add: syncData.toAdd,
+          add: processedAdd,
           deactivate: syncData.toDeactivate,
           update_metadata: syncData.activeSync
         })
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || '同期処理に失敗しました');
+
+      // 3. 複合機能：Riot同期も自動で連続実行
+      setMessage({ type: "success", text: "✅ Discord同期が完了しました。続けてRiot情報の同期を開始します..." });
       
-      setMessage({ type: "success", text: `✅ 同期が完了しました: ${data.message}` });
+      const riotRes = await fetch('/api/admin/riot-sync', { method: 'POST' });
+      const riotData = await riotRes.json();
+      if (!riotRes.ok) throw new Error(riotData.error || 'Riot情報の同期に失敗しました');
+
+      if (riotData.errors && riotData.errors.length > 0) {
+        setMessage({ 
+          type: "success", 
+          text: `✅ Discord & Riot情報の同期が完了しました（※Riot APIで一部エラーあり: ${riotData.errors.length}件）。\n新規プレイヤーの初期MMR計算値を反映させるため、名簿上部の「🔄 Rebuild」を実行してください。` 
+        });
+      } else {
+        setMessage({ 
+          type: "success", 
+          text: `✅ Discord & Riot情報の同期がすべて正常に完了しました！\n新規プレイヤーの初期MMR計算値を反映させるため、名簿上部の「🔄 Rebuild」を実行してください。` 
+        });
+      }
+      
       setSyncData(null);
       fetchPlayers();
+      checkIntegrity();
     } catch (err: any) {
       setMessage({ type: "error", text: "❌ 同期実行エラー: " + err.message });
     } finally {
@@ -389,7 +405,14 @@ export default function KtmAdminPage() {
   }).map((p, index) => ({ ...p, no: index + 1 }));
 
   const sortedPlayers = playersWithNo
-    .filter(p => filterActive ? p.is_active : true)
+    .filter(p => {
+      if (!searchQuery) return true;
+      const query = searchQuery.toLowerCase();
+      const nameMatch = p.name?.toLowerCase().includes(query);
+      const ignMatch = p.ign?.toLowerCase().includes(query);
+      const discordMatch = p.discord_id?.toLowerCase().includes(query);
+      return nameMatch || ignMatch || discordMatch;
+    })
     .sort((a, b) => {
       let aVal = sortConfig.key === "notes" ? (a.metadata?.notes || "") : a[sortConfig.key];
       let bVal = sortConfig.key === "notes" ? (b.metadata?.notes || "") : b[sortConfig.key];
@@ -473,78 +496,74 @@ export default function KtmAdminPage() {
                 </p>
               </div>
 
-              <div className="flex flex-wrap items-center gap-4">
+              <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
+                {/* 検索窓 */}
+                <div className="relative w-full md:w-64">
+                  <input
+                    type="text"
+                    placeholder="名前・IGN・Discord IDで検索..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 pl-9 text-xs text-white focus:outline-none focus:border-blue-500 transition"
+                  />
+                  <Filter className="absolute left-3 top-2.5 h-3.5 w-3.5 text-gray-500" />
+                </div>
+
+                {/* 自動保存ステータス */}
+                <div className="flex items-center gap-2 text-xs text-gray-500 font-medium">
+                  {saving ? (
+                    <span className="flex items-center gap-1.5 text-amber-400">
+                      <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                      自動保存中...
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-1.5 text-emerald-400">
+                      <span>✓</span>
+                      自動保存済み
+                    </span>
+                  )}
+                </div>
+
+                <div className="h-4 w-px bg-gray-800 hidden md:block"></div>
+
                 <button
                   onClick={() => fetchPlayers()}
-                  className="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 text-gray-200 px-4 py-2 rounded-lg font-bold transition"
+                  className="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 text-gray-200 px-4 py-2 rounded-lg font-bold transition text-xs"
                 >
                   <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
                   更新
                 </button>
                 
                 <button
-                  onClick={() => {
-                    if (confirm('全ての変更を保存しますか？')) handleSave();
-                  }}
-                  disabled={saving}
-                  className={`flex items-center gap-2 px-6 py-2 rounded-lg font-bold transition shadow-lg ${
-                    saving ? 'bg-indigo-400 text-white cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-500/20'
-                  }`}
-                >
-                  {saving ? <RefreshCw className="h-5 w-5 animate-spin" /> : <Save className="h-5 w-5" />}
-                  {saving ? "保存中..." : "変更を保存"}
-                </button>
-
-                <a 
-                  href="/balancer/record"
-                  className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg font-bold transition ml-auto"
-                >
-                  <Trophy className="h-4 w-4" />
-                  カスタム試合を手動記録
-                </a>
-
-                <button
                   onClick={handleSyncCheck}
                   disabled={syncingDiscord}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold transition border ${
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold transition border text-xs ${
                     syncingDiscord ? 'bg-[#404eed]/50 border-[#404eed]/50 text-gray-400 cursor-not-allowed' : 'bg-[#5865F2]/20 border-[#5865F2] text-[#5865F2] hover:bg-[#5865F2] hover:text-white'
                   }`}
                 >
                   <Users className={`h-4 w-4 ${syncingDiscord && !syncData ? 'animate-spin' : ''}`} /> 
-                  {syncingDiscord && !syncData ? "確認中..." : "Discord同期"}
+                  {syncingDiscord && !syncData ? "同期確認中..." : "👤 Discord & Riot同期"}
                 </button>
-                <button
-                  onClick={handleRiotSync}
-                  disabled={syncingRiot}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold transition border ${
-                    syncingRiot ? 'bg-sky-900/50 border-sky-500/50 text-sky-400 cursor-not-allowed' : 'bg-sky-900/20 border-sky-500/50 text-sky-400 hover:bg-sky-800/40 hover:text-white'
-                  }`}
-                >
-                  <Globe className={`h-4 w-4 ${syncingRiot ? 'animate-pulse' : ''}`} /> 
-                  {syncingRiot ? "同期中..." : "Riotランク同期"}
-                </button>
+
                 <button
                   onClick={handleRebuildMmr}
-                  className="flex items-center gap-2 bg-red-900/40 hover:bg-red-800 text-red-200 border border-red-800/50 px-4 py-2 rounded-lg font-bold transition"
+                  className="flex items-center gap-2 bg-red-900/40 hover:bg-red-800 text-red-200 border border-red-800/50 px-4 py-2 rounded-lg font-bold transition text-xs"
                   title="過去のすべての試合履歴を元にMMRを再計算し、全員のデータを上書きします"
                 >
                   <RefreshCw className="h-4 w-4" /> 🔄 Rebuild
                 </button>
-                <button
-                  onClick={() => setFilterActive(!filterActive)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg transition border ${filterActive ? 'bg-blue-900/50 border-blue-500 text-blue-300' : 'bg-gray-800 border-gray-700 text-gray-400 hover:text-white'}`}
+
+                <a 
+                  href="/balancer/record"
+                  className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg font-bold transition text-xs"
                 >
-                  <Filter className="h-4 w-4" /> {filterActive ? "参加者のみ" : "全員表示"}
-                </button>
-                <button
-                  onClick={addNewPlayer}
-                  className="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition"
-                >
-                  <Plus className="h-4 w-4" /> 行を追加
-                </button>
+                  <Trophy className="h-4 w-4" />
+                  手動記録 🏆
+                </a>
+
                 <button
                   onClick={() => setShowMmrInfo(!showMmrInfo)}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg transition border ${showMmrInfo ? 'bg-cyan-900/50 border-cyan-500 text-cyan-300' : 'bg-gray-800 border-gray-700 text-gray-400 hover:text-white'}`}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg transition border text-xs ${showMmrInfo ? 'bg-cyan-900/50 border-cyan-500 text-cyan-300' : 'bg-gray-800 border-gray-700 text-gray-400 hover:text-white'}`}
                   title="MMR計算ロジックを見る"
                 >
                   <Info className="h-5 w-5" />
@@ -573,15 +592,77 @@ export default function KtmAdminPage() {
                     </p>
 
                     {syncData.toAdd.length > 0 && (
-                      <div className="bg-green-900/20 border border-green-800/50 rounded-lg p-4">
-                        <h3 className="text-green-400 font-bold mb-3 flex items-center gap-2">
+                      <div className="bg-green-900/20 border border-green-800/50 rounded-lg p-4 space-y-3">
+                        <h3 className="text-green-400 font-bold mb-1 flex items-center gap-2">
                           <Plus className="h-4 w-4" /> 新規追加されるメンバー ({syncData.toAdd.length}人)
                         </h3>
-                        <div className="flex flex-wrap gap-2">
-                          {syncData.toAdd.map((p: any) => (
-                            <span key={p.discord_id} className="bg-green-900/40 text-green-300 px-2 py-1 rounded text-xs border border-green-800">
-                              {p.name}
-                            </span>
+                        <p className="text-gray-400 text-xs mb-3">
+                          新メンバーの最高Rankおよび希望レーンを選択してください。同期時に初期MMRが自動計算されて登録されます。
+                        </p>
+                        <div className="space-y-3">
+                          {syncData.toAdd.map((p: any, idx: number) => (
+                            <div key={p.discord_id} className="bg-green-950/40 border border-green-800/40 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                              <span className="font-bold text-green-300 text-sm">
+                                {p.name}
+                              </span>
+                              <div className="flex flex-wrap items-center gap-4">
+                                {/* 最高Rank選択 */}
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-gray-400">最高Rank:</span>
+                                  <select
+                                    value={p.highest_rank || "UNRANKED"}
+                                    onChange={(e) => {
+                                      const updatedAdd = [...syncData.toAdd];
+                                      updatedAdd[idx].highest_rank = e.target.value;
+                                      setSyncData({ ...syncData, toAdd: updatedAdd });
+                                    }}
+                                    className="bg-gray-900 border border-gray-700 text-white rounded px-2 py-1 outline-none focus:border-green-500 cursor-pointer"
+                                  >
+                                    {["UNRANKED", "IRON", "BRONZE", "SILVER", "GOLD", "PLATINUM", "EMERALD", "DIAMOND", "MASTER", "GRANDMASTER", "CHALLENGER"].map(r => (
+                                      <option key={r} value={r}>{r}</option>
+                                    ))}
+                                  </select>
+                                </div>
+
+                                {/* メインロール選択 */}
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-gray-400">メイン:</span>
+                                  <select
+                                    value={p.role_preferences?.primary || "ALL"}
+                                    onChange={(e) => {
+                                      const updatedAdd = [...syncData.toAdd];
+                                      if (!updatedAdd[idx].role_preferences) updatedAdd[idx].role_preferences = { primary: "ALL", secondary: "FILL" };
+                                      updatedAdd[idx].role_preferences.primary = e.target.value;
+                                      setSyncData({ ...syncData, toAdd: updatedAdd });
+                                    }}
+                                    className="bg-gray-900 border border-gray-700 text-white rounded px-2 py-1 outline-none focus:border-green-500 cursor-pointer"
+                                  >
+                                    {["ALL", "TOP", "JG", "MID", "ADC", "SUP", "FILL"].map(role => (
+                                      <option key={role} value={role}>{role}</option>
+                                    ))}
+                                  </select>
+                                </div>
+
+                                {/* サブロール選択 */}
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-gray-400">サブ:</span>
+                                  <select
+                                    value={p.role_preferences?.secondary || "FILL"}
+                                    onChange={(e) => {
+                                      const updatedAdd = [...syncData.toAdd];
+                                      if (!updatedAdd[idx].role_preferences) updatedAdd[idx].role_preferences = { primary: "ALL", secondary: "FILL" };
+                                      updatedAdd[idx].role_preferences.secondary = e.target.value;
+                                      setSyncData({ ...syncData, toAdd: updatedAdd });
+                                    }}
+                                    className="bg-gray-900 border border-gray-700 text-white rounded px-2 py-1 outline-none focus:border-green-500 cursor-pointer"
+                                  >
+                                    {["ALL", "TOP", "JG", "MID", "ADC", "SUP", "FILL"].map(role => (
+                                      <option key={role} value={role}>{role}</option>
+                                    ))}
+                                  </select>
+                                </div>
+                              </div>
+                            </div>
                           ))}
                         </div>
                       </div>
@@ -766,7 +847,6 @@ export default function KtmAdminPage() {
                       <SortableHeader label="Discord ID" sortKey="discord_id" />
                       <SortableHeader label="Riot IGN" sortKey="ign" />
                       <SortableHeader label="備考" sortKey="notes" />
-                      <th className="px-2 py-2 font-medium text-center">操作</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-800/50 text-sm">
@@ -859,23 +939,14 @@ export default function KtmAdminPage() {
                             className="bg-transparent border border-transparent focus:border-gray-700 hover:border-gray-700 focus:bg-gray-800 rounded px-1 py-0.5 outline-none w-32 text-xs text-gray-200"
                           />
                         </td>
-                        <td className="px-2 py-1.5 text-center">
-                          <button
-                            onClick={() => handleAutoFillMmr(uid)}
-                            className="bg-indigo-900/50 hover:bg-indigo-800 text-indigo-300 border border-indigo-700/50 rounded px-2 py-1 text-[10px] font-bold transition flex items-center gap-1 mx-auto"
-                            title="ランクと希望レーンから初期MMRを自動計算して仮入力します"
-                          >
-                            ✨ Auto
-                          </button>
-                        </td>
                       </tr>
                       );
                     })}
                     
                     {players.length === 0 && !loading && (
                       <tr>
-                        <td colSpan={17} className="px-6 py-12 text-center text-gray-500">
-                          プレイヤーが登録されていません。「行を追加」から新規作成するか、Discord Botで登録を行ってください。
+                        <td colSpan={13} className="px-6 py-12 text-center text-gray-500">
+                          プレイヤーが登録されていません。Discord & Riot同期を実行して登録してください。
                         </td>
                       </tr>
                     )}
