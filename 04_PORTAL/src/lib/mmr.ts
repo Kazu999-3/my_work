@@ -82,62 +82,66 @@ export interface MmrCalcContext {
 }
 
 export function calculateNewMMR(ctx: MmrCalcContext): number {
-  const { currentMmr, opponentMmr, isWin, kills, deaths, assists, role, matchupCount } = ctx;
+  const { 
+    currentMmr, 
+    opponentMmr, 
+    isWin, 
+    kills, 
+    deaths, 
+    assists, 
+    mainRank, 
+    numGames, 
+    matchupCount 
+  } = ctx;
 
-  const isPlacement = false;
+  const K = 48; // Eloレート変動係数（旧32 → 48に引き上げ）
 
-  // ① 勝敗のベースポイント (スタッツ加点がなくなった分、ベースを少し底上げ)
-  let baseDelta = isWin ? 18 : -12;
+  // ① Elo基本計算
+  const expectedWin = 1 / (1 + Math.pow(10, (opponentMmr - currentMmr) / 400));
+  const elo = K * ((isWin ? 1 : 0) - expectedWin);
 
-  // ② 格差補正 (Elo Gravity)
-  // 相手チームの同ロールとのMMR差分を計算
-  const mmrDiff = opponentMmr - currentMmr;
-  let eloBonus = 0;
-  if (mmrDiff > 0) {
-    // 相手が格上: 最大+15程度の補正
-    eloBonus = Math.min(15, mmrDiff / 15);
-  } else if (mmrDiff < 0) {
-    // 相手が格下: 最大-10程度の補正
-    eloBonus = Math.max(-10, mmrDiff / 20);
+  // ② KDAボーナス
+  const kda = calculateKdaScore(kills, deaths, assists);
+  let kdaB = (kda - 3) * 8;
+  kdaB = Math.max(-20, Math.min(20, kdaB));
+
+  // ③ ランク収束引力
+  const rankStr = mainRank ? mainRank.split(' ')[0].toUpperCase() : 'UNRANKED';
+  const rankTarget = RANKS[rankStr] || 1200;
+  const rankDiff = rankTarget - currentMmr;
+  let grav = 0;
+  if (Math.abs(rankDiff) > 100) {
+    let gravStrength = 0.001;
+    if (numGames < 5) gravStrength = 0.005;
+    else if (numGames < 10) gravStrength = 0.003;
+    grav = rankDiff * gravStrength;
   }
 
-  if (isWin) {
-    baseDelta += eloBonus; // 格上に勝てば爆上がり、格下に勝っても少し上がり幅が減る程度
-  } else {
-    // 負けた場合、格上相手ならマイナスが軽減されるが、最低でも -2 は下がるようにする
-    baseDelta = Math.min(-2, baseDelta + eloBonus);
-  }
+  // ④ 勝率補正 (地獄のデバフループ) は削除されました
+  const wrCorrection = 0;
 
-  // ③ KDAボーナス (手動入力パラメータのキル・デス・アシストから実力を正しく評価)
-  let kdaScore = deaths === 0 ? (kills + assists) * 1.2 : (kills + assists) / deaths;
-  if (role === 'SUP') {
-    kdaScore += 0.8; // サポート補正
-  }
+  // ⑤ 合算と制限
+  const baseDelta = elo + kdaB + grav + wrCorrection;
   
-  // 基準KDA 2.0から加点 (最大+15点のボーナス)
-  const kdaBonus = Math.max(0, Math.min(15, (kdaScore - 2.0) * 5));
+  // ⑥ 習熟度と対面回数による倍率調整
+  let multiplier = 1.0;
+  if (numGames < 5) multiplier = 3.0;
+  else if (numGames < 10) multiplier = 2.0;
 
-  // ④ 対面回数補正 (身内戦でのブレ防止)
-  let matchupDampener = 1.0;
-  if (!isPlacement && matchupCount) {
-    if (matchupCount >= 3) matchupDampener = 0.8;
-    if (matchupCount >= 5) matchupDampener = 0.6;
-    if (matchupCount >= 8) matchupDampener = 0.4;
-  }
-
-  // ボーナスを合算
-  let delta = (baseDelta + kdaBonus) * matchupDampener;
-  delta = Math.round(delta);
-
-  // ⑤ 上限・下限のセーフティ
+  // 【新設】対面との対戦回数による増減率の調整
+  // 1戦目(0回)は1.5倍、回数を重ねるごとに1.0に収束
+  const matchupMultiplier = Math.max(1.0, 1.5 - (matchupCount * 0.1));
+  
+  let finalDelta = Math.round(baseDelta * multiplier * matchupMultiplier);
+  
+  // 最終的な増減のガード
   if (isWin) {
-    delta = Math.max(0, Math.min(50, delta)); // 最大+50
+    finalDelta = Math.max(10, finalDelta); // 勝利時は最低 +10
   } else {
-    // 負けた時は、加点が多くても最終的に「0」で踏みとどまる (プラスにはならない)
-    delta = Math.max(-30, Math.min(0, delta)); // 最小-30
+    finalDelta = Math.min(-5, finalDelta); // 敗北時は最大 -5
   }
 
-  return delta;
+  return finalDelta;
 }
 
 export function calculateKdaScore(kills: number, deaths: number, assists: number): number {
