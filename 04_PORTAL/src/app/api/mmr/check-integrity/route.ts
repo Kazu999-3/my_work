@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { calculateInitialMmr, calculateNewMMR } from '../../../../lib/mmr';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 export async function GET(request: Request) {
@@ -49,7 +49,24 @@ export async function GET(request: Request) {
         
         const opponentList = p.team === 'BLUE' ? redTeam : blueTeam;
         const opponent = opponentList.find((op: any) => op.role.toUpperCase() === role);
-        let opponentMmr = 1200; 
+        let opponentMmr = 1200;
+        if (opponent) {
+          const oppMem = playersMap.get(opponent.player_name);
+          if (oppMem) {
+            const oppExpectedKey = `expected${role.charAt(0) + role.slice(1).toLowerCase()}` as 'expectedTop' | 'expectedJg' | 'expectedMid' | 'expectedAdc' | 'expectedSup';
+            opponentMmr = oppMem[oppExpectedKey] || 1200;
+          }
+        } else {
+          opponentMmr = opponentList.reduce((acc: number, op: any) => {
+            const mop = playersMap.get(op.player_name);
+            if (mop) {
+              const opRoleUpper = op.role.toUpperCase();
+              const oppExpectedKey = `expected${opRoleUpper.charAt(0) + opRoleUpper.slice(1).toLowerCase()}` as 'expectedTop' | 'expectedJg' | 'expectedMid' | 'expectedAdc' | 'expectedSup';
+              return acc + (mop[oppExpectedKey] || 1200);
+            }
+            return acc + 1200;
+          }, 0) / (opponentList.length || 1);
+        } 
 
         const isWin = p.team === match.winning_team;
         const teamParticipants = participants.filter((pt: any) => pt.team === p.team);
@@ -93,7 +110,14 @@ export async function GET(request: Request) {
       const diffSup = p.expectedSup - p.currentSup;
       const diffTotal = expectedTotal - p.currentTotal;
 
-      if (diffTop !== 0 || diffJg !== 0 || diffMid !== 0 || diffAdc !== 0 || diffSup !== 0 || diffTotal !== 0) {
+      if (
+        Math.abs(diffTop) > 2 || 
+        Math.abs(diffJg) > 2 || 
+        Math.abs(diffMid) > 2 || 
+        Math.abs(diffAdc) > 2 || 
+        Math.abs(diffSup) > 2 || 
+        Math.abs(diffTotal) > 2
+      ) {
         discrepancies.push({
           name: p.name,
           current: { TOP: p.currentTop, JG: p.currentJg, MID: p.currentMid, ADC: p.currentAdc, SUP: p.currentSup, TOTAL: p.currentTotal },

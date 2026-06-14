@@ -170,7 +170,9 @@ class NotePublisher:
                 headless=self.headless,
                 channel="chrome",
                 viewport={'width': 1280, 'height': 720},
-                locale="ja-JP"
+                locale="ja-JP",
+                args=["--disable-blink-features=AutomationControlled"],
+                user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
             )
             
             # クリップボードを許可（テキスト貼り付け用）
@@ -214,8 +216,23 @@ class NotePublisher:
                     page.locator('text="投稿"').first.click()
                 
                 # 新規エディタ画面のロードを待つ
+                # 新規エディタ画面のロードを待つ（ログイン切れの場合はログイン画面へリダイレクトされる）
                 logger.info("Waiting for editor.note.com to load (timeout: 30s)...")
-                page.wait_for_url("**editor.note.com**", timeout=30000)
+                try:
+                    page.wait_for_url(lambda url: "editor.note.com" in url or "login" in url, timeout=30000)
+                    if "login" in page.url:
+                        logger.error("🚨 [ERROR] Redirected to note.com login screen. Session might have expired.")
+                        if self.headless:
+                            logger.error("Cannot perform manual login in headless mode. Aborting.")
+                            context.close()
+                            return None
+                        else:
+                            logger.info("Waiting up to 5 minutes for manual login...")
+                            page.wait_for_url("**editor.note.com**", timeout=300000)
+                except Exception as wait_e:
+                    logger.error(f"Timeout waiting for editor page: {wait_e}")
+                    context.close()
+                    return None
                 time.sleep(3)
                 
                 # 「AIアシスタント利用規約」等のモーダルが表示されている場合は閉じる
@@ -336,18 +353,87 @@ class NotePublisher:
                 context.close()
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
+    import argparse
+    import sys
     
-    print("=============================================")
-    print("1. Xのテスト (実行しない)")
-    print("2. noteの初回ログイン＆テスト")
-    print("=============================================")
+    # ログの設定
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s [%(name)s] %(levelname)s: %(message)s'
+    )
     
-    # note初回ログインおよび「下書き」保存テスト用
-    pub_note = NotePublisher(headless=False)
-    test_title = "【パッチ14.X】完全自動化テスト記事"
-    test_body = "# 挨拶\nこれはPlaywrightによる自動化テストです。\n\n## 本文\nクリップボード経由の貼り付けが成功していれば、このMarkdownも見出しになっています。"
+    parser = argparse.ArgumentParser(description="note.com & X.com Playwright Auto-Publisher CLI")
+    subparsers = parser.add_subparsers(dest="command", help="Sub-commands")
     
-    # 下書きで止める場合は False, 完全自動有料公開までする場合は True をセット
-    pub_note.post_draft(test_title, test_body, auto_publish=False)
+    # noteサブコマンド
+    note_parser = subparsers.add_parser("note", help="Post an article to note.com")
+    note_parser.add_argument("--title", required=True, help="Title of the note article")
+    note_group = note_parser.add_mutually_exclusive_group(required=True)
+    note_group.add_argument("--body", help="Raw markdown content of the article")
+    note_group.add_argument("--body-file", help="Path to markdown file containing the body")
+    note_parser.add_argument("--publish", action="store_true", help="Publish immediately (default: save as draft)")
+    note_parser.add_argument("--price", default="500", help="Price if publishing as paid article (default: 500)")
+    note_parser.add_argument("--no-headless", action="store_true", help="Run browser in headful mode (visible)")
+    
+    # xサブコマンド
+    x_parser = subparsers.add_parser("x", help="Post a thread to X.com (Twitter)")
+    x_group = x_parser.add_mutually_exclusive_group(required=True)
+    x_group.add_argument("--tweets", nargs="+", help="List of tweets to post in a thread")
+    x_group.add_argument("--tweets-json", help="Path to JSON file containing array of tweets")
+    x_parser.add_argument("--no-headless", action="store_true", help="Run browser in headful mode (visible)")
+    
+    args = parser.parse_args()
+    
+    if not args.command:
+        parser.print_help()
+        sys.exit(1)
+        
+    headless = not args.no_headless
+    
+    if args.command == "note":
+        # 本文のロード
+        if args.body_file:
+            body_path = Path(args.body_file)
+            if not body_path.exists():
+                logger.error(f"Body file not found: {args.body_file}")
+                sys.exit(1)
+            with open(body_path, "r", encoding="utf-8") as f:
+                body_content = f.read()
+        else:
+            body_content = args.body
+
+        pub = NotePublisher(headless=headless)
+        logger.info(f"Starting note posting (headless={headless})...")
+        url = pub.post_draft(
+            title=args.title,
+            markdown_body=body_content,
+            auto_publish=args.publish,
+            price=args.price
+        )
+        if url:
+            print(f"SUCCESS:{url}")
+        else:
+            print("FAILED")
+            sys.exit(1)
+            
+    elif args.command == "x":
+        # ツイートリストのロード
+        if args.tweets_json:
+            json_path = Path(args.tweets_json)
+            if not json_path.exists():
+                logger.error(f"Tweets JSON file not found: {args.tweets_json}")
+                sys.exit(1)
+            with open(json_path, "r", encoding="utf-8") as f:
+                tweets = json.load(f)
+        else:
+            tweets = args.tweets
+            
+        pub = XPublisher(headless=headless)
+        logger.info(f"Starting X thread posting (headless={headless})...")
+        url = pub.post_thread(tweets)
+        if url:
+            print(f"SUCCESS:{url}")
+        else:
+            print("FAILED")
+            sys.exit(1)
 

@@ -186,11 +186,25 @@ export async function POST(request: Request) {
       const sup = r.role === 'SUP' ? newRoleMmr : (r.dbPlayer.mmr_sup || 1200);
       const newTotalMmr = Math.round((top + jg + mid + adc + sup) / 5);
 
-      // オフロールPityの計算
+      // Pity（通常の選抜漏れ・配置Pity）の計算
       const primary = r.dbPlayer.role_preferences?.primary || 'ALL';
       const secondary = r.dbPlayer.role_preferences?.secondary || 'ALL';
       const playedRole = r.role;
-      let newOffRolePity = r.dbPlayer.off_role_pity || 0;
+      let newPity = Number(r.dbPlayer.pity) || 0;
+
+      // 試合に参加したので、メイン配置ならリセット、サブなら+2、その他なら+5
+      if (primary === 'ALL' || primary === 'FILL') {
+        newPity = 0;
+      } else if (playedRole === primary) {
+        newPity = 0; // メインロール
+      } else if (playedRole === secondary || secondary === 'ALL' || secondary === 'FILL') {
+        newPity += 2; // サブロール
+      } else {
+        newPity += 5; // 希望外ロール
+      }
+
+      // オフロールPityの計算
+      let newOffRolePity = Number(r.dbPlayer.off_role_pity) || 0;
 
       // "ALL" や "FILL" は実質全ロールが希望レーンとみなす
       if (primary === 'ALL' || primary === 'FILL') {
@@ -206,7 +220,7 @@ export async function POST(request: Request) {
       const updateData: any = {
         [roleMmrKey]: newRoleMmr,
         mmr: newTotalMmr,
-        pity: 0, // 試合に参加したので通常の選抜漏れPityはリセット
+        pity: newPity,
         off_role_pity: newOffRolePity
       };
 
@@ -215,7 +229,34 @@ export async function POST(request: Request) {
         .update(updateData)
         .eq('name', r.name);
         
-      if (uError) console.error(`Player ${r.name} の更新エラー:`, uError);
+      if (uError) {
+        throw new Error(`Player ${r.name} の更新エラー: ${uError.message}`);
+      }
+    }
+
+    // (4) 今回の試合に選出されなかったアクティブプレイヤーの Pity 加算 (+10)
+    const { data: allActivePlayers, error: apError } = await supabase
+      .from('ktm_players')
+      .select('name, pity')
+      .eq('is_active', true);
+
+    if (apError) {
+      throw new Error(`アクティブプレイヤー一覧の取得失敗: ${apError.message}`);
+    } else if (allActivePlayers) {
+      const waitingPlayers = allActivePlayers.filter(p => !names.includes(p.name));
+      
+      // 待機プレイヤーのPityを一括更新 (+10)
+      for (const p of waitingPlayers) {
+        const nextPity = (Number(p.pity) || 0) + 10;
+        const { error: wUpdateError } = await supabase
+          .from('ktm_players')
+          .update({ pity: nextPity })
+          .eq('name', p.name);
+        
+        if (wUpdateError) {
+          throw new Error(`待機プレイヤー ${p.name} のPity更新に失敗: ${wUpdateError.message}`);
+        }
+      }
     }
 
     // 5. Discordへ試合結果を速報通知 (非同期で送信して待たないか、待つか。エラーになっても保存は完了させる)

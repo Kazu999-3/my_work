@@ -194,14 +194,35 @@ export async function POST(request: Request) {
     if (update_metadata && update_metadata.length > 0) {
       for (const p of update_metadata) {
         if (p.id) {
+          const { data: oldPlayer } = await supabase
+            .from('ktm_players')
+            .select('name')
+            .eq('id', p.id)
+            .single();
+
+          const oldName = oldPlayer?.name;
+          const newName = p.name;
+
           const { error: updateError } = await supabase
             .from('ktm_players')
             .update({ 
               metadata: p.metadata,
-              name: p.name // Discordの最新の表示名で上書き保存する
+              name: newName
             })
             .eq('id', p.id);
-          if (updateError) console.error(`Player update failed for ID ${p.id}:`, updateError);
+          
+          if (updateError) {
+            console.error(`Player update failed for ID ${p.id}:`, updateError);
+          } else if (oldName && oldName !== newName) {
+            console.log(`[Discord Sync Name Change] Updating matches for ${oldName} -> ${newName}`);
+            const { error: matchesUpdateError } = await supabase
+              .from('ktm_match_participants')
+              .update({ player_name: newName })
+              .eq('player_name', oldName);
+            if (matchesUpdateError) {
+              console.error(`Failed to update matches for ${oldName} -> ${newName}:`, matchesUpdateError);
+            }
+          }
         }
       }
     }

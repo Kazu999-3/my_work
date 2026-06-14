@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic';
 
 import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabaseClient';
+import { getKtmRank } from '../../lib/mmr';
 
 // ==========================================
 // Types
@@ -28,49 +29,8 @@ interface LeaderboardData {
   SUP: PlayerStats[];
 }
 
-// ランク判定ヘルパー (Phase 1 互換)
-const KTM_TIERS = [
-  { name: 'CHALLENGER', min: 2000, color: 'text-sky-300', bg: 'bg-sky-300/10' },
-  { name: 'GRANDMASTER', min: 1900, color: 'text-red-500', bg: 'bg-red-500/10' },
-  { name: 'MASTER', min: 1850, color: 'text-purple-500', bg: 'bg-purple-500/10' },
-  { name: 'DIAMOND I', min: 1840, color: 'text-blue-400', bg: 'bg-blue-400/10' },
-  { name: 'DIAMOND II', min: 1825, color: 'text-blue-400', bg: 'bg-blue-400/10' },
-  { name: 'DIAMOND III', min: 1810, color: 'text-blue-400', bg: 'bg-blue-400/10' },
-  { name: 'DIAMOND IV', min: 1800, color: 'text-blue-400', bg: 'bg-blue-400/10' },
-  { name: 'EMERALD I', min: 1760, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
-  { name: 'EMERALD II', min: 1720, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
-  { name: 'EMERALD III', min: 1680, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
-  { name: 'EMERALD IV', min: 1650, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
-  { name: 'PLATINUM I', min: 1600, color: 'text-teal-400', bg: 'bg-teal-400/10' },
-  { name: 'PLATINUM II', min: 1560, color: 'text-teal-400', bg: 'bg-teal-400/10' },
-  { name: 'PLATINUM III', min: 1530, color: 'text-teal-400', bg: 'bg-teal-400/10' },
-  { name: 'PLATINUM IV', min: 1500, color: 'text-teal-400', bg: 'bg-teal-400/10' },
-  { name: 'GOLD I', min: 1460, color: 'text-yellow-400', bg: 'bg-yellow-400/10' },
-  { name: 'GOLD II', min: 1420, color: 'text-yellow-400', bg: 'bg-yellow-400/10' },
-  { name: 'GOLD III', min: 1380, color: 'text-yellow-400', bg: 'bg-yellow-400/10' },
-  { name: 'GOLD IV', min: 1350, color: 'text-yellow-400', bg: 'bg-yellow-400/10' },
-  { name: 'SILVER I', min: 1310, color: 'text-slate-300', bg: 'bg-slate-300/10' },
-  { name: 'SILVER II', min: 1270, color: 'text-slate-300', bg: 'bg-slate-300/10' },
-  { name: 'SILVER III', min: 1230, color: 'text-slate-300', bg: 'bg-slate-300/10' },
-  { name: 'SILVER IV', min: 1200, color: 'text-slate-300', bg: 'bg-slate-300/10' },
-  { name: 'BRONZE I', min: 1160, color: 'text-amber-700', bg: 'bg-amber-700/10' },
-  { name: 'BRONZE II', min: 1120, color: 'text-amber-700', bg: 'bg-amber-700/10' },
-  { name: 'BRONZE III', min: 1080, color: 'text-amber-700', bg: 'bg-amber-700/10' },
-  { name: 'BRONZE IV', min: 1050, color: 'text-amber-700', bg: 'bg-amber-700/10' },
-  { name: 'IRON I', min: 1010, color: 'text-gray-500', bg: 'bg-gray-500/10' },
-  { name: 'IRON II', min: 970, color: 'text-gray-500', bg: 'bg-gray-500/10' },
-  { name: 'IRON III', min: 930, color: 'text-gray-500', bg: 'bg-gray-500/10' },
-  { name: 'IRON IV', min: 900, color: 'text-gray-500', bg: 'bg-gray-500/10' },
-  { name: 'UNRANKED', min: 0, color: 'text-gray-400', bg: 'bg-gray-800' },
-];
-
 function getRankBadge(mmr: number) {
-  for (const tier of KTM_TIERS) {
-    if (mmr >= tier.min) {
-      return { name: tier.name, color: tier.color, bg: tier.bg };
-    }
-  }
-  return { name: 'UNRANKED', color: 'text-gray-400', bg: 'bg-gray-800' };
+  return getKtmRank(mmr);
 }
 
 import WinrateMatrixPanel from './WinrateMatrixPanel';

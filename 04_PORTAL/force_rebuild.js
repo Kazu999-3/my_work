@@ -125,6 +125,17 @@ async function rebuild() {
       const opponentList = p.team === 'BLUE' ? redTeam : blueTeam;
       const opponent = opponentList.find(op => op.role.toUpperCase() === role);
       let opponentMmr = 1200;
+      if (opponent) {
+        const oppMem = playersMap.get(opponent.player_name);
+        if (oppMem) {
+          opponentMmr = oppMem[mmrKey] || 1200;
+        }
+      } else {
+        opponentMmr = opponentList.reduce((acc, op) => {
+          const mop = playersMap.get(op.player_name);
+          return acc + (mop ? (mop[`mmr_${op.role.toLowerCase()}`] || 1200) : 1200);
+        }, 0) / (opponentList.length || 1);
+      }
 
       const isWin = p.team === match.winning_team;
       const teamParticipants = participants.filter(pt => pt.team === p.team);

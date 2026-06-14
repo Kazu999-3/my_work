@@ -10,11 +10,8 @@ from .quota_manager import quota_manager
 
 logger = logging.getLogger("AIHelper")
 
-# クロスプロセス用のAPIロックとスロットリング設定
-# 全プロセスで共有するためのファイルパス
-THROTTLE_STATE_FILE = settings.FORGE_DIR / "api_throttle.json"
-THROTTLE_LOCK_FILE = settings.FORGE_DIR / "api_throttle.lock"
-MIN_REQUEST_INTERVAL = 30.0  # 無料キーのみの運用のために1リクエスト間隔を30秒に引き上げ（RPM安全回避）
+# APIGateway のインポート
+from .api_gateway import APIGateway
 
 def _get_last_request_time():
     try:
@@ -52,21 +49,30 @@ def generate_content_safe(client, prompt, model_id=None, config=None, feature_na
         "gemini-2.5-flash"  # 無料枠で最も安定・高性能な2.5-flashのみに限定
     ]
     
-    # APIキーの優先順位リストを作成 (無料キーのみに限定)
+    # APIキーの優先順位リストを作成 (無料キーを最優先とし、フォールバックとしてメインキーも許容)
     from google import genai
     api_keys_to_try = []
+    seen_keys = set()
+    
+    def add_key(name, val):
+        if val and val not in seen_keys:
+            api_keys_to_try.append((name, val))
+            seen_keys.add(val)
+            
     if settings.GEMINI_API_KEY_FREE:
-        api_keys_to_try.append(("Free Key", settings.GEMINI_API_KEY_FREE))
+        add_key("Free Key", settings.GEMINI_API_KEY_FREE)
     else:
-        api_key_fallback = os.getenv("GEMINI_API_KEY_FREE") or os.getenv("GEMINI_API_KEY")
-        if api_key_fallback:
-            api_keys_to_try.append(("Free Key", api_key_fallback))
+        add_key("Free Key", os.getenv("GEMINI_API_KEY_FREE"))
+        
+    if settings.GEMINI_API_KEY:
+        add_key("Main Key", settings.GEMINI_API_KEY)
+    else:
+        add_key("Main Key", os.getenv("GEMINI_API_KEY"))
             
     if not api_keys_to_try:
-        return "⚠️ Gemini API フリーキーが設定されていません。"
+        return "⚠️ Gemini API キーが設定されていません。"
 
     last_error = None
-    lock = FileLock(str(THROTTLE_LOCK_FILE), timeout=120)  # 最大2分待ち
     
     for model in models_to_try:
         model_success = False
@@ -81,19 +87,9 @@ def generate_content_safe(client, prompt, model_id=None, config=None, feature_na
                     logger.info(f"[AIHelper] モデル {model} / {key_name} で生成を試行中... (試行 {attempt + 1}/{retries})")
                     
                     try:
-                        with lock:
-                            now = time.time()
-                            last_time = _get_last_request_time()
-                            elapsed = now - last_time
-                            
-                            if elapsed < MIN_REQUEST_INTERVAL:
-                                wait_sec = MIN_REQUEST_INTERVAL - elapsed
-                                logger.info(f"⏳ [AIHelper] 他のプロセスがAPIを使用した直後です。{wait_sec:.1f}秒待機します...")
-                                time.sleep(wait_sec)
-                            
-                            _set_last_request_time(time.time())
+                        APIGateway.wait_if_needed(api_key, feature_name=f"{model}:{feature_name}")
                     except Exception as e:
-                        logger.warning(f"⚠️ [AIHelper] ファイルロックの取得に失敗しました: {e}")
+                        logger.warning(f"⚠️ [AIHelper] APIGatewayでの待機処理に失敗しました: {e}")
                     
                     response = current_client.models.generate_content(
                         model=model,
@@ -113,14 +109,23 @@ def generate_content_safe(client, prompt, model_id=None, config=None, feature_na
                     is_quota = e.code == 429 or "RESOURCE_EXHAUSTED" in str(e) or "limit: 0" in str(e.message if hasattr(e, 'message') else e)
                     is_service_error = e.code == 503
                     
+                    err_msg = e.message if hasattr(e, 'message') else str(e)
+                    
+                    # 支出上限エラー (Spend Cap) を検知した場合、待機しても無駄なので即座にこのキーでの試行を打ち切る
+                    if "spending cap" in err_msg.lower() or "spend cap" in err_msg.lower():
+                        logger.error(f"❌ [AIHelper] キー '{key_name}' の支出上限 (Spend Cap) に達しています。リトライをスキップします。")
+                        break
+                    
                     if is_quota:
                         quota_manager.record_error("error_429")
-                        err_msg = e.message if hasattr(e, 'message') else str(e)
                         logger.warning(f"⚠️ [AIHelper] クォータ制限詳細 ({key_name}): {err_msg}")
                         
-                        # 無料キーのみの構成のため、有料キーに切り替える代わりにクォータ回復を待ってリトライ
+                        # 最後の試行なら、次のキーへの移行を急ぐため待機をスキップする
+                        if attempt == retries - 1:
+                            break
+                            
                         import re
-                        retry_match = re.search(r"Please retry in ([\d\.]+)s", str(e.message) if hasattr(e, 'message') else str(e))
+                        retry_match = re.search(r"Please retry in ([\d\.]+)s", err_msg)
                         wait_time = float(retry_match.group(1)) + random.uniform(2.0, 5.0) if retry_match else max(35.0, delay) + random.uniform(2.0, 5.0)
                         wait_time = min(wait_time, 120.0)
                         

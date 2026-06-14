@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo } from "react";
 import { useParams } from "next/navigation";
 import { supabase } from "../../../lib/supabaseClient";
 import ScoutingReport from "../../../components/ScoutingReport";
-import { Activity, Shield, Swords, Star, Zap, Crosshair, RefreshCw, CheckCircle2, TrendingUp } from "lucide-react";
+import { Activity, Shield, Swords, Star, Zap, Crosshair, RefreshCw, CheckCircle2, TrendingUp, Users } from "lucide-react";
 import { getChampIcon, getChampNameById } from "../../../lib/ddragonClient";
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, ReferenceLine, Area, AreaChart, CartesianGrid } from "recharts";
 
@@ -26,6 +26,9 @@ export default function PlayerMyPage() {
   const [riotMasteries, setRiotMasteries] = useState<any[]>([]);
   const [saving, setSaving] = useState(false);
   const [activeLane, setActiveLane] = useState<'TOTAL' | 'TOP' | 'JG' | 'MID' | 'ADC' | 'SUP'>('TOTAL');
+  const [chemistry, setChemistry] = useState<any[]>([]);
+  const [rivals, setRivals] = useState<any[]>([]);
+
 
   // MMR推移グラフ用のデータを計算（useMemoで最適化）
   const mmrChartData = useMemo(() => {
@@ -83,6 +86,15 @@ export default function PlayerMyPage() {
         if (sData.stats) setStats(sData.stats);
         if (sData.matchups) setMatchups(sData.matchups);
         if (sData.history) setHistory(sData.history);
+
+        // 4. 相性・ライバルの取得
+        const cRes = await fetch(`/api/player/chemistry?name=${encodeURIComponent(pData.name)}`);
+        const cData = await cRes.json();
+        if (cData.success) {
+          setChemistry(cData.chemistry || []);
+          setRivals(cData.rivals || []);
+        }
+
 
         // 3. マスタリーの解決
         let mainChamps = pData.main_champions;
@@ -322,6 +334,60 @@ export default function PlayerMyPage() {
                 まだKTMでの試合記録がありません。内戦に参加してデータを集めましょう！
               </div>
             )}
+
+            {/* 相性 ＆ ライバル分析 */}
+            <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-xl space-y-4">
+              <h3 className="text-xl font-bold flex items-center gap-2 border-b border-gray-800 pb-3">
+                <Users className="w-5 h-5 text-cyan-400" />
+                👥 相性 ＆ ライバル分析
+              </h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* 味方相性 (Chemistry) */}
+                <div className="space-y-3">
+                  <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider border-b border-gray-800/40 pb-2">
+                    🤝 最高の相棒 (味方時の勝率が高い)
+                  </h4>
+                  <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                    {chemistry.length > 0 ? (
+                      chemistry.slice(0, 5).map((c, idx) => (
+                        <div key={idx} className="flex justify-between items-center bg-gray-950/40 p-2.5 rounded-lg border border-gray-800/40">
+                          <span className="font-bold text-gray-300 text-sm">{c.name}</span>
+                          <div className="text-right">
+                            <span className="text-emerald-400 font-black text-sm">{c.winRate}%</span>
+                            <span className="text-[10px] text-gray-500 block">{c.wins}勝 - {c.games - c.wins}敗</span>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-gray-500 text-xs py-4 text-center">まだ十分な味方データがありません</div>
+                    )}
+                  </div>
+                </div>
+
+                {/* 宿敵ライバル (Rivals) */}
+                <div className="space-y-3">
+                  <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider border-b border-gray-800/40 pb-2">
+                    🔥 最大の好敵手・宿敵 (敵対時の敗率が高い)
+                  </h4>
+                  <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                    {rivals.length > 0 ? (
+                      rivals.slice(0, 5).map((r, idx) => (
+                        <div key={idx} className="flex justify-between items-center bg-gray-950/40 p-2.5 rounded-lg border border-gray-800/40">
+                          <span className="font-bold text-gray-300 text-sm">{r.name}</span>
+                          <div className="text-right">
+                            <span className="text-red-400 font-black text-sm">{100 - r.winRate}%</span>
+                            <span className="text-[10px] text-gray-500 block">対面敗率 (相手の勝率: {r.winRate}%)</span>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-gray-500 text-xs py-4 text-center">まだ十分な敵対データがありません</div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
         </div>

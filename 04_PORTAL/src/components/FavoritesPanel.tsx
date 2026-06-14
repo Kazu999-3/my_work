@@ -68,7 +68,7 @@ export function isFavoriteArticle(id: number): boolean {
 }
 
 // サイドバーに表示するお気に入りパネル
-export default function FavoritesPanel() {
+export default function FavoritesPanel({ isCollapsed = false }: { isCollapsed?: boolean }) {
   const [favs, setFavs] = useState<FavoritesData>({ champions: [], articles: [] });
 
   const loadFavorites = useCallback(() => {
@@ -87,8 +87,8 @@ export default function FavoritesPanel() {
     };
   }, [loadFavorites]);
 
-  // お気に入りが空なら何も表示しない
-  if (favs.champions.length === 0 && favs.articles.length === 0) return null;
+  // お気に入りが空なら何も表示しない (最小化時はチャンピオンが空なら非表示)
+  if (favs.champions.length === 0 && (isCollapsed || favs.articles.length === 0)) return null;
 
   const removeChamp = (id: string) => {
     toggleFavoriteChampion(id);
@@ -101,20 +101,26 @@ export default function FavoritesPanel() {
   };
 
   return (
-    <div className="pt-4 border-t border-white/5">
-      <h4 className="flex items-center gap-2 text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mb-3 px-2">
-        <Star size={12} className="text-amber-400" /> お気に入り
-      </h4>
+    <div className={`pt-4 border-t border-white/5 ${isCollapsed ? 'flex flex-col items-center w-full px-0' : ''}`}>
+      {!isCollapsed ? (
+        <h4 className="flex items-center gap-2 text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mb-3 px-2">
+          <Star size={12} className="text-amber-400" /> お気に入り
+        </h4>
+      ) : (
+        <div className="mb-3 text-amber-400 flex justify-center w-full" title="お気に入り">
+          <Star size={16} className="animate-pulse" />
+        </div>
+      )}
 
       {/* チャンピオン一覧 */}
       {favs.champions.length > 0 && (
-        <div className="flex flex-wrap gap-1.5 mb-3 px-2">
+        <div className={isCollapsed ? "flex flex-col items-center gap-2 mb-2 w-full" : "flex flex-wrap gap-1.5 mb-3 px-2"}>
           {favs.champions.map((champId) => (
             <Link
               key={champId}
               href={`/champions?select=${champId}`}
               prefetch={false}
-              className="relative group"
+              className="relative group flex justify-center"
               title={champId}
             >
               <img
@@ -137,8 +143,8 @@ export default function FavoritesPanel() {
         </div>
       )}
 
-      {/* 記事一覧 */}
-      {favs.articles.length > 0 && (
+      {/* 記事一覧 (最小化時は非表示) */}
+      {!isCollapsed && favs.articles.length > 0 && (
         <div className="space-y-1 px-1">
           {favs.articles.slice(0, 5).map((article) => (
             <div key={article.id} className="flex items-center gap-2 group">

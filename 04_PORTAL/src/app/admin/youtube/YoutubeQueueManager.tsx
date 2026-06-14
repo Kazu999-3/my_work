@@ -107,6 +107,32 @@ export default function YoutubeQueueManager() {
     }
   };
 
+  // エラー動画を一括再試行
+  const handleRetryAllErrors = async () => {
+    if (!confirm(`全てのエラー動画（${stats.error}件）を再試行キュー（pending）に戻しますか？`)) return;
+
+    setActionLoading('retry_all');
+    try {
+      const res = await fetch('/api/admin/youtube', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'retry_all_errors' }),
+      });
+
+      const result = await res.json();
+      if (res.ok) {
+        showFeedback(result.message || 'エラー動画を一括リセットしました。', 'success');
+        fetchQueue(true, sortBy);
+      } else {
+        showFeedback(result.error || '一括再試行に失敗しました。', 'error');
+      }
+    } catch (err) {
+      showFeedback('リクエストに失敗しました。', 'error');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   // 4. 動画の削除
   const handleDeleteVideo = async (id: string) => {
     if (!confirm('この動画をキューから削除しますか？')) return;
@@ -261,6 +287,15 @@ export default function YoutubeQueueManager() {
             攻略動画の字幕テキストを自動抽出・AI解析し、戦略バイブルへとライブラリ化します。
           </p>
         </div>
+        {stats.error > 0 && (
+          <button
+            onClick={handleRetryAllErrors}
+            disabled={actionLoading !== null}
+            className="px-4 py-2.5 rounded-xl bg-cyan-950/40 hover:bg-cyan-900/60 border border-cyan-800/60 hover:border-cyan-700/60 text-cyan-400 text-xs font-bold shadow-[0_0_15px_rgba(6,182,212,0.1)] hover:shadow-[0_0_20px_rgba(6,182,212,0.2)] disabled:opacity-40 disabled:pointer-events-none transition-all duration-300 flex items-center gap-1.5 shrink-0"
+          >
+            🔄 エラー動画を一括再試行 ({stats.error}件)
+          </button>
+        )}
       </div>
 
       {/* フィードバックメッセージ */}

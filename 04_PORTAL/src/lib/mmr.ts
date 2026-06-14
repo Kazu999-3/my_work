@@ -4,11 +4,75 @@
 
 import { Role } from './balancer';
 
-const RANKS: Record<string, number> = {
+export const RANKS: Record<string, number> = {
   'UNRANKED': 1200, 'IRON': 1100, 'BRONZE': 1200, 'SILVER': 1350, 'GOLD': 1500,
   'PLATINUM': 1650, 'EMERALD': 1800, 'DIAMOND': 2000, 'MASTER': 2200, 
   'GRANDMASTER': 2400, 'CHALLENGER': 2600
 };
+
+export interface KtmTier {
+  name: string;
+  min: number;
+  color: string;
+  bg: string;
+}
+
+export const KTM_TIERS: KtmTier[] = [
+  { name: 'CHALLENGER', min: 2000, color: 'text-sky-300', bg: 'bg-sky-300/10' },
+  { name: 'GRANDMASTER', min: 1900, color: 'text-red-500', bg: 'bg-red-500/10' },
+  { name: 'MASTER', min: 1850, color: 'text-purple-500', bg: 'bg-purple-500/10' },
+  { name: 'DIAMOND I', min: 1840, color: 'text-blue-400', bg: 'bg-blue-400/10' },
+  { name: 'DIAMOND II', min: 1825, color: 'text-blue-400', bg: 'bg-blue-400/10' },
+  { name: 'DIAMOND III', min: 1810, color: 'text-blue-400', bg: 'bg-blue-400/10' },
+  { name: 'DIAMOND IV', min: 1800, color: 'text-blue-400', bg: 'bg-blue-400/10' },
+  { name: 'EMERALD I', min: 1760, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+  { name: 'EMERALD II', min: 1720, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+  { name: 'EMERALD III', min: 1680, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+  { name: 'EMERALD IV', min: 1650, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+  { name: 'PLATINUM I', min: 1600, color: 'text-teal-400', bg: 'bg-teal-400/10' },
+  { name: 'PLATINUM II', min: 1560, color: 'text-teal-400', bg: 'bg-teal-400/10' },
+  { name: 'PLATINUM III', min: 1530, color: 'text-teal-400', bg: 'bg-teal-400/10' },
+  { name: 'PLATINUM IV', min: 1500, color: 'text-teal-400', bg: 'bg-teal-400/10' },
+  { name: 'GOLD I', min: 1460, color: 'text-yellow-400', bg: 'bg-yellow-400/10' },
+  { name: 'GOLD II', min: 1420, color: 'text-yellow-400', bg: 'bg-yellow-400/10' },
+  { name: 'GOLD III', min: 1380, color: 'text-yellow-400', bg: 'bg-yellow-400/10' },
+  { name: 'GOLD IV', min: 1350, color: 'text-yellow-400', bg: 'bg-yellow-400/10' },
+  { name: 'SILVER I', min: 1310, color: 'text-slate-300', bg: 'bg-slate-300/10' },
+  { name: 'SILVER II', min: 1270, color: 'text-slate-300', bg: 'bg-slate-300/10' },
+  { name: 'SILVER III', min: 1230, color: 'text-slate-300', bg: 'bg-slate-300/10' },
+  { name: 'SILVER IV', min: 1200, color: 'text-slate-300', bg: 'bg-slate-300/10' },
+  { name: 'BRONZE I', min: 1160, color: 'text-amber-700', bg: 'bg-amber-700/10' },
+  { name: 'BRONZE II', min: 1120, color: 'text-amber-700', bg: 'bg-amber-700/10' },
+  { name: 'BRONZE III', min: 1080, color: 'text-amber-700', bg: 'bg-amber-700/10' },
+  { name: 'BRONZE IV', min: 1050, color: 'text-amber-700', bg: 'bg-amber-700/10' },
+  { name: 'IRON I', min: 1010, color: 'text-gray-500', bg: 'bg-gray-500/10' },
+  { name: 'IRON II', min: 970, color: 'text-gray-500', bg: 'bg-gray-500/10' },
+  { name: 'IRON III', min: 930, color: 'text-gray-500', bg: 'bg-gray-500/10' },
+  { name: 'IRON IV', min: 900, color: 'text-gray-500', bg: 'bg-gray-500/10' },
+  { name: 'UNRANKED', min: 0, color: 'text-gray-400', bg: 'bg-gray-800' }
+];
+
+export function getKtmRank(mmr: number): { name: string; color: string; bg: string } {
+  const tier = KTM_TIERS.find(t => mmr >= t.min);
+  return tier ? { name: tier.name, color: tier.color, bg: tier.bg } : { name: 'UNRANKED', color: 'text-gray-400', bg: 'bg-gray-800' };
+}
+
+export function getMultiplierByAffinity(pref1: string, pref2: string, targetRole: string): number {
+  const isAllMain = (pref1 === 'ALL' || pref1 === 'FILL');
+  const isAllSub  = (pref2 === 'ALL' || pref2 === 'FILL');
+
+  if (targetRole === pref1 || isAllMain) return 1.0;
+  
+  const soloLanes = ['TOP', 'MID'];
+  const isSoloPref1 = soloLanes.includes(pref1);
+  const isTargetSolo = soloLanes.includes(targetRole);
+
+  if (targetRole === pref2 || isAllSub) {
+    return (isSoloPref1 && isTargetSolo) ? 0.85 : 0.80;
+  } else {
+    return (isSoloPref1 && isTargetSolo) ? 0.75 : 0.65;
+  }
+}
 
 export interface RolePreferences {
   primary?: string;
@@ -82,66 +146,62 @@ export interface MmrCalcContext {
 }
 
 export function calculateNewMMR(ctx: MmrCalcContext): number {
-  const { 
-    currentMmr, 
-    opponentMmr, 
-    isWin, 
-    kills, 
-    deaths, 
-    assists, 
-    mainRank, 
-    numGames, 
-    matchupCount 
-  } = ctx;
+  const { currentMmr, opponentMmr, isWin, kills, deaths, assists, role, matchupCount } = ctx;
 
-  const K = 48; // Eloレート変動係数（旧32 → 48に引き上げ）
+  const isPlacement = false;
 
-  // ① Elo基本計算
-  const expectedWin = 1 / (1 + Math.pow(10, (opponentMmr - currentMmr) / 400));
-  const elo = K * ((isWin ? 1 : 0) - expectedWin);
+  // ① 勝敗のベースポイント (スタッツ加点がなくなった分、ベースを少し底上げ)
+  let baseDelta = isWin ? 18 : -12;
 
-  // ② KDAボーナス
-  const kda = calculateKdaScore(kills, deaths, assists);
-  let kdaB = (kda - 3) * 8;
-  kdaB = Math.max(-20, Math.min(20, kdaB));
-
-  // ③ ランク収束引力
-  const rankStr = mainRank ? mainRank.split(' ')[0].toUpperCase() : 'UNRANKED';
-  const rankTarget = RANKS[rankStr] || 1200;
-  const rankDiff = rankTarget - currentMmr;
-  let grav = 0;
-  if (Math.abs(rankDiff) > 100) {
-    let gravStrength = 0.001;
-    if (numGames < 5) gravStrength = 0.005;
-    else if (numGames < 10) gravStrength = 0.003;
-    grav = rankDiff * gravStrength;
+  // ② 格差補正 (Elo Gravity)
+  // 相手チームの同ロールとのMMR差分を計算
+  const mmrDiff = opponentMmr - currentMmr;
+  let eloBonus = 0;
+  if (mmrDiff > 0) {
+    // 相手が格上: 最大+15程度の補正
+    eloBonus = Math.min(15, mmrDiff / 15);
+  } else if (mmrDiff < 0) {
+    // 相手が格下: 最大-10程度の補正
+    eloBonus = Math.max(-10, mmrDiff / 20);
   }
 
-  // ④ 勝率補正 (地獄のデバフループ) は削除されました
-  const wrCorrection = 0;
-
-  // ⑤ 合算と制限
-  const baseDelta = elo + kdaB + grav + wrCorrection;
-  
-  // ⑥ 習熟度と対面回数による倍率調整
-  let multiplier = 1.0;
-  if (numGames < 5) multiplier = 3.0;
-  else if (numGames < 10) multiplier = 2.0;
-
-  // 【新設】対面との対戦回数による増減率の調整
-  // 1戦目(0回)は1.5倍、回数を重ねるごとに1.0に収束
-  const matchupMultiplier = Math.max(1.0, 1.5 - (matchupCount * 0.1));
-  
-  let finalDelta = Math.round(baseDelta * multiplier * matchupMultiplier);
-  
-  // 最終的な増減のガード
   if (isWin) {
-    finalDelta = Math.max(10, finalDelta); // 勝利時は最低 +10
+    baseDelta += eloBonus; // 格上に勝てば爆上がり、格下に勝っても少し上がり幅が減る程度
   } else {
-    finalDelta = Math.min(-5, finalDelta); // 敗北時は最大 -5
+    // 負けた場合、格上相手ならマイナスが軽減されるが、最低でも -2 は下がるようにする
+    baseDelta = Math.min(-2, baseDelta + eloBonus);
   }
 
-  return finalDelta;
+  // ③ KDAボーナス (手動入力パラメータのキル・デス・アシストから実力を正しく評価)
+  let kdaScore = deaths === 0 ? (kills + assists) * 1.2 : (kills + assists) / deaths;
+  if (role === 'SUP') {
+    kdaScore += 0.8; // サポート補正
+  }
+  
+  // 基準KDA 2.0から加点 (最大+15点のボーナス)
+  const kdaBonus = Math.max(0, Math.min(15, (kdaScore - 2.0) * 5));
+
+  // ④ 対面回数補正 (身内戦でのブレ防止)
+  let matchupDampener = 1.0;
+  if (!isPlacement && matchupCount) {
+    if (matchupCount >= 3) matchupDampener = 0.8;
+    if (matchupCount >= 5) matchupDampener = 0.6;
+    if (matchupCount >= 8) matchupDampener = 0.4;
+  }
+
+  // ボーナスを合算
+  let delta = (baseDelta + kdaBonus) * matchupDampener;
+  delta = Math.round(delta);
+
+  // ⑤ 上限・下限のセーフティ
+  if (isWin) {
+    delta = Math.max(0, Math.min(50, delta)); // 最大+50
+  } else {
+    // 負けた時は、加点が多くても最終的に「0」で踏みとどまる (プラスにはならない)
+    delta = Math.max(-30, Math.min(0, delta)); // 最小-30
+  }
+
+  return delta;
 }
 
 export function calculateKdaScore(kills: number, deaths: number, assists: number): number {

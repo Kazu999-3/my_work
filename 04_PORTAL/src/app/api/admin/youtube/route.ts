@@ -203,3 +203,32 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: '削除に失敗しました。' }, { status: 500 });
   }
 }
+
+// 5. エラー動画の一括再試行
+export async function PATCH(req: NextRequest) {
+  try {
+    const { action } = await req.json();
+
+    if (action !== 'retry_all_errors') {
+      return NextResponse.json({ error: '無効なアクションです。' }, { status: 400 });
+    }
+
+    const { data, error } = await supabase
+      .from('youtube_queue')
+      .update({ status: 'pending', retry_count: 0 })
+      .in('status', ['error_generation', 'error_no_transcript', 'failed'])
+      .select();
+
+    if (error) throw error;
+
+    return NextResponse.json({
+      success: true,
+      message: `${data?.length || 0} 件のエラー動画を再試行キューにリセットしました。`,
+      count: data?.length || 0
+    });
+
+  } catch (err: any) {
+    console.error('❌ [YouTube API] PATCH Error:', err);
+    return NextResponse.json({ error: '一括再試行に失敗しました。' }, { status: 500 });
+  }
+}
