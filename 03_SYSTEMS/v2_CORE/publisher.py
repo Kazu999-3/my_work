@@ -281,11 +281,59 @@ class NotePublisher:
                 
                 if not auto_publish:
                     logger.info("✅ Draft auto-populated successfully! (Kept as draft)")
-                    draft_url = page.url
-                    herald.notify_progress(f"📝 **note.com への下書き保存が完了しました！**\nタイトル: `{title}`\nURL: {draft_url}", portal_link=True, page="drafts")
-                    time.sleep(3)
-                    context.close()
-                    return draft_url
+                    
+                    # 下書き共有URLの取得を試行
+                    preview_url = None
+                    try:
+                        logger.info("Attempting to generate draft preview share URL...")
+                        # 1. その他のメニュー（三点リーダー）をクリック
+                        more_menu = page.locator('button[aria-label="その他のアクション"], button[class*="menu"], button:has-text("...")').first
+                        if more_menu.is_visible():
+                            more_menu.click()
+                            time.sleep(2)
+                            
+                            # 2. 「下書きの共有」メニューをクリック
+                            share_btn = page.locator('button:has-text("下書きの共有"), text="下書きの共有"').first
+                            if share_btn.is_visible():
+                                share_btn.click()
+                                time.sleep(3)
+                                
+                                # 3. トグルをチェック（有効化）
+                                toggle = page.locator('input[type="checkbox"], button[role="switch"]').first
+                                if toggle.is_visible():
+                                    is_checked = toggle.is_checked() if toggle.locator('input').count() > 0 else False
+                                    aria_checked = toggle.get_attribute("aria-checked")
+                                    if aria_checked == "false" or not is_checked:
+                                        toggle.click()
+                                        time.sleep(2)
+                                
+                                # 4. 共有URLテキストボックスからURLを取得
+                                share_input = page.locator('input[readonly], input[value*="note.com/preview"]').first
+                                if share_input.is_visible():
+                                    val = share_input.get_attribute("value")
+                                    if val and "note.com/preview" in val:
+                                        preview_url = val
+                                        logger.info(f"✅ Generated preview URL successfully: {preview_url}")
+                                        
+                                # ダイアログを閉じる
+                                close_btn = page.locator('button[aria-label="閉じる"], button:has-text("閉じる")').first
+                                if close_btn.is_visible():
+                                    close_btn.click()
+                                    time.sleep(1)
+                    except Exception as share_e:
+                        logger.warning(f"⚠️ Failed to get draft preview URL: {share_e}")
+
+                    # プレビューURLが取得できたらそれを返す。取得できなければNoneを返してX投稿をスキップ
+                    if preview_url:
+                        draft_url = preview_url
+                        herald.notify_progress(f"📝 **note.com への下書き保存が完了しました！**\nタイトル: `{title}`\nURL: {draft_url}", portal_link=True, page="drafts")
+                        time.sleep(3)
+                        context.close()
+                        return draft_url
+                    else:
+                        logger.error("❌ Could not obtain public-viewable draft preview URL. Aborting to prevent dead link posting on X.")
+                        context.close()
+                        return None
                 
                 logger.info("🚀 Auto Publish mode enabled. Setting up Paid parameters...")
                 # 「公開に進む」ボタン

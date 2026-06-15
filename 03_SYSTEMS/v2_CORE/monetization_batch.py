@@ -242,8 +242,8 @@ class MonetizationBatch:
                 auto_publish=False # 下書きとして保存
             )
             
-            if not draft_url:
-                logger.error(f"❌ note.com への下書き保存に失敗しました: '{title}'")
+            if not draft_url or "editor.note.com" in draft_url or "/edit" in draft_url:
+                logger.error(f"❌ 有効な公開プレビューURLが取得できなかったため、SNSへの宣伝投稿をスキップします: '{title}'")
                 continue
                 
             logger.info(f"✅ note.com 下書き保存成功: {draft_url}")
