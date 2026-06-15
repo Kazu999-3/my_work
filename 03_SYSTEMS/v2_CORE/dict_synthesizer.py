@@ -77,11 +77,15 @@ class DictSynthesizer:
 【対象の生テキスト（ごちゃごちゃな状態）】
 {text}
 """
-        return generate_content_safe(
+        res = generate_content_safe(
             self.client,
             prompt,
             feature_name="dict_synthesizer"
         )
+        import time
+        logger.info("⏳ API制限(429)を回避するため、10秒間スリープします...")
+        time.sleep(10)
+        return res
 
     def process_and_update(self, limit=5):
         if not self.ready:
