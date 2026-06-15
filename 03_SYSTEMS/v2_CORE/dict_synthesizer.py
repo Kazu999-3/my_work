@@ -245,11 +245,15 @@ class DictSynthesizer:
         【対象の攻略テキスト群（寄せ集め）】
         {text}
         """
-        return generate_content_safe(
+        res = generate_content_safe(
             self.client,
             prompt,
             feature_name="dict_synthesizer"
         )
+        import time
+        logger.info("⏳ API制限(429)を回避するため、10秒間スリープします...")
+        time.sleep(10)
+        return res
 
     def process_library_genres(self):
         if not self.ready:

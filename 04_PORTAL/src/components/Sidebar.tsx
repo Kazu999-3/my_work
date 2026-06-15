@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Shield, LayoutDashboard, Swords, BookOpen, BookHeart, Trophy, Users, HeartHandshake, ScrollText, ListVideo, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Shield, LayoutDashboard, Swords, BookOpen, BookHeart, Trophy, Users, HeartHandshake, ScrollText, ListVideo, ChevronLeft, ChevronRight, Coins } from 'lucide-react';
 import NotificationBell from './NotificationBell';
 import FavoritesPanel from './FavoritesPanel';
 
@@ -23,6 +23,7 @@ const ADMIN_ONLY_MENU_ITEMS = [
   { id: 'library',   label: '攻略ライブラリ', icon: BookOpen,        href: '/library', color: 'text-[#a78bfa]', activeBg: 'bg-[#a78bfa]/15' },
   { id: 'design',    label: 'システム設計書', icon: ScrollText,      href: '/design', color: 'text-cyan-400', activeBg: 'bg-cyan-400/15' },
   { id: 'youtube-admin', label: 'YouTube管理', icon: ListVideo,     href: '/admin/youtube', color: 'text-red-400', activeBg: 'bg-red-400/15' },
+  { id: 'affiliate-admin', label: '副業管理', icon: Coins,           href: '/admin/affiliate', color: 'text-emerald-400', activeBg: 'bg-emerald-400/15' },
   { id: 'ktm-admin',   label: '⚙️ 管理者専用',     icon: Shield, href: '/ktm-admin', color: 'text-indigo-400', activeBg: 'bg-indigo-400/15' },
 ];
 

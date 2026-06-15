@@ -42,3 +42,4 @@ scratch/
 
 .agent/playwright_data/
 .vercel
+**/.env.bak
