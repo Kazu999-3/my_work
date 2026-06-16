@@ -1,12 +1,10 @@
+# -*- coding: utf-8 -*-
 import os
 import json
 import time
 import logging
-import re
 from pathlib import Path
-import httpx
 import requests
-from google import genai
 import dotenv
 
 # .env ファイルのロード
@@ -15,21 +13,33 @@ dotenv.load_dotenv(Path("d:/my_work/.env"))
 try:
     from v2_CORE.settings import settings
     from v2_CORE.logger_config import setup_sovereign_logging
-    from v2_CORE.tool_scout import ToolScout
-    from v2_CORE.tool_forge import ToolForge
-    from v2_CORE.publisher import NotePublisher, XPublisher
-    from v2_CORE.herald import herald
-    from v2_CORE.ai_helper import generate_content_safe
+    from v2_CORE._MONETIZE.tool_scout import ToolScout
+    from v2_CORE._MONETIZE.tool_forge import ToolForge
+    from v2_CORE._MONETIZE.publisher import NotePublisher, XPublisher
+    from v2_CORE._LOL.herald import herald
+    from v2_CORE.agents.state import (
+        create_initial_state, load_active_collab_tasks, update_collab_task_status
+    )
+    from v2_CORE._MONETIZE.tool_scout import run_researcher_agent
+    from v2_CORE._MONETIZE.tool_forge import run_creator_agent
+    from v2_CORE._MONETIZE.note_analytics import run_analyst_agent
+    from v2_CORE._MONETIZE.evolution import run_evolution_agent
 except ImportError:
     import sys
     sys.path.append(str(Path(__file__).resolve().parent.parent))
     from v2_CORE.settings import settings
     from v2_CORE.logger_config import setup_sovereign_logging
-    from v2_CORE.tool_scout import ToolScout
-    from v2_CORE.tool_forge import ToolForge
-    from v2_CORE.publisher import NotePublisher, XPublisher
-    from v2_CORE.herald import herald
-    from v2_CORE.ai_helper import generate_content_safe
+    from v2_CORE._MONETIZE.tool_scout import ToolScout
+    from v2_CORE._MONETIZE.tool_forge import ToolForge
+    from v2_CORE._MONETIZE.publisher import NotePublisher, XPublisher
+    from v2_CORE._LOL.herald import herald
+    from v2_CORE.agents.state import (
+        create_initial_state, load_active_collab_tasks, update_collab_task_status
+    )
+    from v2_CORE._MONETIZE.tool_scout import run_researcher_agent
+    from v2_CORE._MONETIZE.tool_forge import run_creator_agent
+    from v2_CORE._MONETIZE.note_analytics import run_analyst_agent
+    from v2_CORE._MONETIZE.evolution import run_evolution_agent
 
 logger = setup_sovereign_logging("MonetizationBatch")
 
@@ -38,6 +48,7 @@ class MonetizationBatch:
         self.headless = headless
         self.gemini_key = settings.GEMINI_API_KEY_FREE or settings.GEMINI_API_KEY
         if self.gemini_key:
+            from google import genai
             self.client = genai.Client(api_key=self.gemini_key)
         else:
             self.client = None
@@ -58,7 +69,6 @@ class MonetizationBatch:
             "Content-Type": "application/json"
         }
         try:
-            # platform = 'note' のものを取得
             res = requests.get(
                 f"{self.supabase_url}/rest/v1/published_posts?platform=eq.note&select=title", 
                 headers=headers, 
@@ -103,192 +113,195 @@ class MonetizationBatch:
         except Exception as e:
             logger.error(f"❌ published_posts 通信エラー: {e}")
 
-    def generate_x_thread(self, note_title: str, note_url: str, note_summary: str) -> list:
-        """Gemini AIを使って、記事プロモ用のXスレッド（3連投）を自動生成"""
-        logger.info(f"✏️ {note_title} 用のXプロモスレッド原稿を生成中...")
+    def run_batch(self, dry_run=False, target_title=None):
+        logger.info("========================================")
+        logger.info("🚀 Monetization Batch (エージェント駆動) 起動開始")
+        logger.info("========================================")
         
-        prompt = f"""
-        あなたはプロのIT・ツールライターであり、SNSを活用したマーケターです。
-        以下のnote記事（タイトルと要約）をX（Twitter）上で宣伝するための、魅力的でクリックしたくなるような3連投ツイートスレッドを作成してください。
-
-        【記事タイトル】: {note_title}
-        【記事のURL】: {note_url}
-        【記事の要約】:
-        {note_summary}
-
-        【絶対要件】
-        1. スレッドは正確に3つのツイート（3連投）で構成してください。
-        2. 各ツイートは、ツールを使うことで解決できる課題やメリットを明確にし、続きが読みたくなるようなフックを持たせてください。
-        3. 3つ目（最後）のツイートの末尾に、必ず以下のように note の URL を掲載してください。
-           「続きはこちらから👇\n{note_url}」
-        4. 各ツイートのテキストは 140文字（日本語）以内におさめてください。
-        5. 出力は以下のJSON配列形式（テキストのリスト）のみで返してください。マークダウンの ```json などの装飾や、挨拶、説明は一切含めず、純粋なJSON配列文字列のみを出力してください。
-        [
-          "ツイート1の内容...",
-          "ツイート2の内容...",
-          "ツイート3の内容..."
-        ]
-        """
-
-        if not self.client:
-            logger.warning("⚠️ Geminiクライアントが未設定のため、ダミーのXスレッドを返します。")
-            return self.get_dummy_tweets(note_title, note_url)
-
-        try:
-            res = generate_content_safe(
-                self.client,
-                prompt,
-                model_id=settings.DEFAULT_MODEL,
-                feature_name="x_promo"
-            )
-            if not res or "❌" in res or "⚠️" in res or "一時的なエラーが発生した" in res:
-                logger.warning("⚠️ APIエラー応答が返されたため、ダミーのXスレッドを返します。")
-                return self.get_dummy_tweets(note_title, note_url)
+        # 1. 共同タスクボードからアクティブタスクを検知
+        active_tasks = load_active_collab_tasks()
+        linked_task_id = None
+        target_tool = ""
+        
+        scout_helper = ToolScout()
+        registered_tools = scout_helper.load_tools()
+        
+        for t in active_tasks:
+            title = t.get("title", "")
+            description = t.get("description", "")
+            # タイトルまたは説明に登録ツールが含まれているかチェック
+            for tool in registered_tools:
+                if tool.lower() in title.lower() or tool.lower() in description.lower():
+                    target_tool = tool
+                    linked_task_id = t.get("id")
+                    logger.info(f"🎯 共同タスクボードからアフィリエイトタスクを検知: '{title}' (ツール: {target_tool})")
+                    break
+            if target_tool:
+                break
                 
-            # JSONブロックの抽出
-            cleaned = res.strip()
-            if cleaned.startswith("```"):
-                match = re.search(r"```(?:json)?\s*(.*?)\s*```", cleaned, re.DOTALL)
-                if match:
-                    cleaned = match.group(1).strip()
-            
-            tweets = json.loads(cleaned)
-            if isinstance(tweets, list) and len(tweets) >= 3:
-                return tweets[:3]
-            else:
-                logger.warning(f"⚠️ 生成されたJSONの形式が正しくありません (内容: {res})。ダミーを使用します。")
-        except Exception as e:
-            logger.error(f"❌ Xスレッド自動生成エラー: {e}。ダミーを使用します。")
-            
-        return self.get_dummy_tweets(note_title, note_url)
-
-    def get_dummy_tweets(self, tool_name: str, note_url: str) -> list:
-        clean_name = tool_name.replace("[ITツール攻略] ", "").split("超活用術")[0].split("を使いこなして")[0].strip()
-        return [
-            f"【作業効率化】話題の「{clean_name}」を使って、日々の業務生産性を劇的に向上させる方法をまとめました！特にAI連携による自動化は必見です。気になる方はぜひチェックしてみてください！ 👇",
-            f"今回の記事では、初心者でもすぐに実践できる「{clean_name}」の3つの活用ステップについて詳しく解説しています。テンプレートの最適化や共同編集のコツなど、現場で即役立つノウハウが満載です！",
-            f"直感的に使えて非常に強力なパートナーになる「{clean_name}」、まずは無料プランから始めてその便利さを実感してみましょう！\n\n続きはnote記事で公開中！👇\n{note_url}"
-        ]
-
-    def run_batch(self, dry_run=False):
-        logger.info("========================================")
-        logger.info("🚀 Monetization Batch (一気通貫) 起動開始")
-        logger.info("========================================")
-        
-        # 1. Tool Scout を動かす
-        logger.info("➡️ ステップ1: トレンド情報を自動収集中 (ToolScout)")
-        scout = ToolScout()
-        scout.run_scout()
-        
-        # 2. Tool Forge を動かす
-        logger.info("➡️ ステップ2: アフィリエイト記事を生成中 (ToolForge)")
-        forge = ToolForge()
-        forge.run_forge()
-        
-        # 3. 未投稿のアフィリエイト記事を特定する
+        # タスク履歴との重複チェック
         published_titles = self.get_published_note_titles()
         
-        drafts_dir = Path("d:/my_work/02_FACTORY/note_drafts")
-        if not drafts_dir.exists():
-            logger.warning("⚠️ note_drafts フォルダが存在しません。処理を終了します。")
-            return
-            
-        markdown_files = list(drafts_dir.glob("*_review.md"))
-        if not markdown_files:
-            logger.warning("⚠️ note_drafts フォルダ内に *_review.md ファイルがありません。")
-            return
-            
-        logger.info(f"🔍 検出されたMarkdownファイル数: {len(markdown_files)}件")
+        if target_title:
+            title = target_title
+            target_tool = "AIツール"
+            for tool in registered_tools:
+                if tool.lower() in target_title.lower():
+                    target_tool = tool
+                    break
+            logger.info(f"🎯 指定されたタイトル「{title}」からバッチを実行します (ツール: {target_tool})")
         
-        for file_path in markdown_files:
-            # タイトルを抽出
-            title = ""
-            content = ""
-            try:
-                with open(file_path, "r", encoding="utf-8") as f:
-                    content = f.read()
-                
-                lines = content.strip().split("\n")
-                for line in lines:
-                    if line.startswith("# "):
-                        title = line.replace("# ", "").strip()[:32]
+        elif not target_tool:
+            # 共同タスクがない場合は、登録ツールの中から未投稿のものを自動選択 (無人自動巡回)
+            logger.info("ℹ️ アクティブな共同タスクがないため、未投稿のツールを自動探索します。")
+            for tool in registered_tools:
+                # 重複していないツールをターゲットにする
+                is_published = False
+                for p_title in published_titles:
+                    if tool.lower() in p_title.lower():
+                        is_published = True
                         break
-            except Exception as e:
-                logger.error(f"❌ ファイルの読み込みエラー ({file_path.name}): {e}")
-                continue
-                
-            if not title:
-                title = file_path.stem.replace("_review", "超活用術")
-                
-            logger.info(f"📝 処理対象記事: '{title}' ({file_path.name})")
+                if not is_published:
+                    target_tool = tool
+                    logger.info(f"🎯 自動巡回ターゲットとして未投稿のツールを選択: {target_tool}")
+                    break
+                    
+        if not target_tool:
+            logger.warning("⚠️ 処理対象となる未投稿のツールがありません。処理を終了します。")
+            return
             
-            # 重複チェック
-            if title in published_titles:
-                logger.info(f"⏭️ すでにnoteに投稿済みのタイトルのため、スキップします: '{title}'")
-                continue
-                
-            if dry_run:
-                logger.info(f"✨ [DRY RUN] note.com に下書き保存します: '{title}'")
-                logger.info(f"✨ [DRY RUN] X.com にプロモスレッドを投稿します。")
-                continue
-                
-            # 4. note.com への下書き投稿
-            logger.info(f"🌐 note.com へ下書き保存を開始します (headless={self.headless})...")
-            note_pub = NotePublisher(headless=self.headless)
+        title = f"{target_tool}超活用術"
+        
+        # すでに投稿済みならスキップ (タスクが残っていても二重投稿防止)
+        is_published = False
+        for p_title in published_titles:
+            if target_tool.lower() in p_title.lower():
+                is_published = True
+                break
+        if is_published:
+            logger.info(f"⏭️ すでにnoteに投稿済みのタイトルのため、スキップします: '{title}'")
+            if linked_task_id:
+                # すでに完了しているため、タスクを done に更新して終了
+                update_collab_task_status(linked_task_id, "done", "すでに投稿済みであることを検知し、タスクを自動完了にしました。")
+            return
             
-            draft_url = note_pub.post_draft(
-                title=title,
-                markdown_body=content,
-                auto_publish=False # 下書きとして保存
-            )
-            
-            if not draft_url or "editor.note.com" in draft_url or "/edit" in draft_url:
-                logger.error(f"❌ 有効な公開プレビューURLが取得できなかったため、SNSへの宣伝投稿をスキップします: '{title}'")
-                continue
-                
-            logger.info(f"✅ note.com 下書き保存成功: {draft_url}")
-            
-            # DBに履歴登録
-            self.record_published_post("note", title, draft_url)
-            
-            # 5. Xプロモスレッドの作成・投稿
-            summary = "\n".join(content.strip().split("\n")[:10])
-            tweets = self.generate_x_thread(title, draft_url, summary)
-            
-            logger.info(f"🌐 X.com へプロモスレッドを投稿します (headless={self.headless})...")
-            x_pub = XPublisher(headless=self.headless)
-            x_success = x_pub.post_thread(tweets)
-            
-            if x_success:
-                logger.info(f"✅ X.com プロモスレッド投稿成功！")
-                self.record_published_post("x", f"[Xプロモ] {title}", draft_url)
-                herald.notify_progress(
-                    f"🚀 **【一気通貫アフィリエイトバッチ完了】**\n"
-                    f"ツール名: `{file_path.stem.replace('_review', '')}`\n"
-                    f"タイトル: `{title}`\n"
-                    f"📝 note下書きURL: {draft_url}\n"
-                    f"🐦 Xプロモスレッドを連投しました。",
-                    portal_link=True,
-                    page="affiliate"
-                )
+        if dry_run:
+            logger.info(f"✨ [DRY RUN] 状態を作成してエージェント処理をシミュレートします: '{target_tool}'")
+            if linked_task_id:
+                logger.info(f"✨ [DRY RUN] タスクを in_progress に変更します: {linked_task_id}")
+            return
+
+        # 2. 状態の初期化
+        state = create_initial_state()
+        state["target_urls"] = [target_tool]
+        state["linked_task_id"] = linked_task_id
+        
+        # タスクがある場合は status を in_progress に更新
+        if linked_task_id:
+            update_collab_task_status(linked_task_id, "in_progress", f"[エージェント起動] {target_tool} の調査・執筆を開始しました。")
+
+        # 2-A. 自己進化ループの駆動 (Analyst ➔ Evolution)
+        try:
+            logger.info("📈 自己進化ループ (Analyst ➔ Evolution) を開始します...")
+            state = run_analyst_agent(state)
+            if state["task_status"] != "failed":
+                state = run_evolution_agent(state)
             else:
-                logger.error(f"❌ X.com へのスレッド投稿に失敗しました。")
-                herald.notify_progress(
-                    f"⚠️ **【一部完了】**\n"
-                    f"note.com への下書き保存は成功しましたが、X.com へのスレッド投稿に失敗しました。\n"
-                    f"タイトル: `{title}`\n"
-                    f"📝 note下書きURL: {draft_url}",
-                    portal_link=True,
-                    page="affiliate"
-                )
+                logger.warning(f"⚠️ Analyst エージェントが失敗したため、Evolutionをスキップします: {state['error_log']}")
+        except Exception as e:
+            logger.error(f"❌ 自己進化ループ実行中にエラーが発生しました（処理は継続します）: {e}")
+
+        # 3. Researcher エージェントの駆動
+        state = run_researcher_agent(state)
+        if state["task_status"] == "failed":
+            logger.error(f"❌ Researcher エージェントが失敗しました: {state['error_log']}")
+            if linked_task_id:
+                update_collab_task_status(linked_task_id, "todo", f"[エラー] リサーチ失敗: {state['error_log']}")
+            return
+
+        # 4. Creator エージェントの駆動
+        state = run_creator_agent(state)
+        if state["task_status"] == "failed":
+            logger.error(f"❌ Creator エージェントが失敗しました: {state['error_log']}")
+            if linked_task_id:
+                update_collab_task_status(linked_task_id, "todo", f"[エラー] 執筆失敗: {state['error_log']}")
+            return
+            
+        content = state["note_draft"]
+        x_tweets = state["x_thread"]
+        
+        if not content:
+            logger.error("❌ 執筆されたnote原稿が空です。処理を中断します。")
+            if linked_task_id:
+                update_collab_task_status(linked_task_id, "todo", "[エラー] 執筆されたnote原稿が空です。")
+            return
+
+        # 5. note.com への下書き投稿
+        logger.info(f"🌐 note.com へ下書き保存を開始します (headless={self.headless})...")
+        note_pub = NotePublisher(headless=self.headless)
+        
+        draft_url = note_pub.post_draft(
+            title=title,
+            markdown_body=content,
+            auto_publish=False # 下書きとして保存
+        )
+        
+        if not draft_url or "editor.note.com" in draft_url or "/edit" in draft_url:
+            logger.error(f"❌ 有効な公開プレビューURLが取得できなかったため、SNSへの宣伝投稿をスキップします: '{title}'")
+            if linked_task_id:
+                update_collab_task_status(linked_task_id, "todo", "[エラー] note公開プレビューURLの取得に失敗したため、処理を一時中断しました。")
+            return
+            
+        logger.info(f"✅ note.com 下書き保存成功: {draft_url}")
+        state["note_url"] = draft_url
+        
+        # DBに履歴登録
+        self.record_published_post("note", title, draft_url)
+        
+        # 6. Xプロモスレッドの作成・投稿
+        tweets_to_post = []
+        for tweet in x_tweets:
+            tweets_to_post.append(tweet.replace("[NOTE_URL]", draft_url))
+            
+        logger.info(f"🌐 X.com へプロモスレッドを投稿します (headless={self.headless})...")
+        x_pub = XPublisher(headless=self.headless)
+        x_success = x_pub.post_thread(tweets_to_post)
+        
+        if x_success:
+            logger.info(f"✅ X.com プロモスレッド投稿成功！")
+            self.record_published_post("x", f"[Xプロモ] {title}", draft_url)
+            herald.notify_progress(
+                f"🚀 **【一気通貫アフィリエイトバッチ完了】**\n"
+                f"ツール名: `{target_tool}`\n"
+                f"タイトル: `{title}`\n"
+                f"📝 note下書きURL: {draft_url}\n"
+                f"🐦 Xプロモスレッドを連投しました。",
+                portal_link=True,
+                page="affiliate"
+            )
+            if linked_task_id:
+                update_collab_task_status(linked_task_id, "done", f"[完了] note下書き保存とX投稿が成功しました。\nURL: {draft_url}")
+        else:
+            logger.error(f"❌ X.com へのスレッド投稿に失敗しました。")
+            herald.notify_progress(
+                f"⚠️ **【一部完了】**\n"
+                f"note.com への下書き保存は成功しましたが、X.com へのスレッド投稿に失敗しました。\n"
+                f"タイトル: `{title}`\n"
+                f"📝 note下書きURL: {draft_url}",
+                portal_link=True,
+                page="affiliate"
+            )
+            if linked_task_id:
+                update_collab_task_status(linked_task_id, "done", f"[一部成功] note下書きは完了しましたが、X投稿に失敗しました。\nURL: {draft_url}")
 
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description="Monetization Batch (One-stop Scout, Forge, and Publish)")
     parser.add_argument("--dry-run", action="store_true", help="Perform a dry run without actual browser automation")
     parser.add_argument("--no-headless", action="store_true", help="Run browser in headful mode (visible)")
+    parser.add_argument("--title", type=str, default=None, help="Specify target article title directly")
     
     args = parser.parse_args()
     
     batch = MonetizationBatch(headless=not args.no_headless)
-    batch.run_batch(dry_run=args.dry_run)
+    batch.run_batch(dry_run=args.dry_run, target_title=args.title)
