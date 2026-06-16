@@ -298,3 +298,53 @@ export async function handleBalanceCommand(interaction, env, ctx) {
 }
 
 export async function performBalance() {}
+
+export async function handleMemoCommand(interaction, env, ctx) {
+  const options = interaction.data?.options || [];
+  const content = options.find(o => o.name === 'content' || o.name === '内容')?.value;
+  const appId = interaction.application_id;
+  const token = interaction.token;
+
+  if (!content) {
+    return Response.json({ type: 4, data: { content: "⚠️ メモ内容またはURLを入力してください。", flags: 64 } });
+  }
+
+  ctx.waitUntil((async () => {
+    try {
+      const portalUrl = env.PORTAL_API_URL || env.LOCAL_API_URL || "https://ktm-portal.vercel.app";
+      const payload = {};
+      if (content.startsWith('http://') || content.startsWith('https://')) {
+        payload.url = content;
+      } else {
+        payload.text = content;
+      }
+
+      const res = await fetch(`${portalUrl}/api/admin/knowledge/add`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        await patchInteractionResponse(appId, token, { 
+          content: `🧠 **ナレッジベースに登録・要約しました！**\n**タイトル**: ${data.data.title}\n**ジャンル**: ${data.data.genre}\n**要約**: ${data.data.content}`
+        });
+      } else {
+        await patchInteractionResponse(appId, token, { 
+          content: `❌ **登録に失敗しました**: ${data.error || "未知のエラー"}`
+        });
+      }
+    } catch (err) {
+      console.error("Memo command error:", err);
+      await patchInteractionResponse(appId, token, { 
+        content: `❌ **通信エラー**: ${err.message}`
+      });
+    }
+  })());
+
+  return Response.json({ 
+    type: 4, 
+    data: { content: "🧠 AIがナレッジベースへの分類・要約処理を行っています。少々お待ちください...", flags: 64 } 
+  });
+}
