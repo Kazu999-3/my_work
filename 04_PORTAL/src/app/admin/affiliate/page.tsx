@@ -9,7 +9,12 @@ import {
 import { supabase } from '../../../lib/supabaseClient';
 
 export default function AffiliateAdminPage() {
-  const [activeTab, setActiveTab] = useState<'analytics' | 'links' | 'batch' | 'knowledge'>('analytics');
+  const [activeTab, setActiveTab] = useState<'analytics' | 'ideas' | 'links' | 'batch' | 'knowledge'>('analytics');
+  
+  // 記事ネタ提案用
+  const [ideas, setIdeas] = useState<any[]>([]);
+  const [loadingIdeas, setLoadingIdeas] = useState(true);
+  const [generatingIdeaId, setGeneratingIdeaId] = useState<number | null>(null);
   
   // 1. 分析データ
   const [aiFeedback, setAiFeedback] = useState<any>({
@@ -45,6 +50,7 @@ export default function AffiliateAdminPage() {
   // データのフェッチ
   useEffect(() => {
     fetchAnalytics();
+    fetchIdeas();
     fetchLinks();
     fetchKnowledge();
     checkBatchStatus();
@@ -117,6 +123,67 @@ export default function AffiliateAdminPage() {
       console.error('Error checking batch status:', e);
     } finally {
       setRefreshingBatch(false);
+    }
+  };
+
+  // 提案ネタ取得
+  const fetchIdeas = async () => {
+    setLoadingIdeas(true);
+    try {
+      const { data, error } = await supabase
+        .from('article_ideas')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (!error && data) {
+        setIdeas(data);
+      }
+    } catch (e) {
+      console.error('Error fetching ideas:', e);
+    } finally {
+      setLoadingIdeas(false);
+    }
+  };
+
+  const handleGenerateFromIdea = async (ideaId: number, title: string) => {
+    if (!confirm(`提案「${title}」をベースにアフィリエイト記事を自動生成しますか？\n(注: monetization_batch.py が非同期で起動します)`)) return;
+    
+    setGeneratingIdeaId(ideaId);
+    try {
+      const res = await fetch('/api/admin/jobs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          job: 'monetization_batch',
+          args: ['--title', title]
+        })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        const { error } = await supabase
+          .from('article_ideas')
+          .update({ status: 'generated' })
+          .eq('id', ideaId);
+        
+        alert('記事生成ジョブを起動しました。自動バッチ実行タブで進捗ログを確認できます。');
+        fetchIdeas();
+      } else {
+        alert(`起動失敗: ${data.error}`);
+      }
+    } catch (e: any) {
+      alert(`通信エラー: ${e.message}`);
+    } finally {
+      setGeneratingIdeaId(null);
+    }
+  };
+
+  const handleDiscardIdea = async (ideaId: number) => {
+    if (!confirm('この記事ネタを却下（アーカイブ）しますか？')) return;
+    const { error } = await supabase
+      .from('article_ideas')
+      .update({ status: 'discarded' })
+      .eq('id', ideaId);
+    if (!error) {
+      fetchIdeas();
     }
   };
 
@@ -271,6 +338,7 @@ export default function AffiliateAdminPage() {
       <div className="flex border-b border-white/10 gap-2 overflow-x-auto pb-px">
         {[
           { id: 'analytics', label: '📊 アクセス分析' },
+          { id: 'ideas', label: '💡 提案された記事ネタ' },
           { id: 'links', label: '🔗 リンク管理' },
           { id: 'batch', label: '🚀 自動バッチ実行' },
           { id: 'knowledge', label: '🧠 副業ナレッジ' }
@@ -410,6 +478,106 @@ export default function AffiliateAdminPage() {
                     </div>
                   </div>
                 </>
+              )}
+            </motion.div>
+          )}
+
+          {/* TAB: Ideas */}
+          {activeTab === 'ideas' && (
+            <motion.div
+              key="ideas"
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -15 }}
+              className="space-y-6"
+            >
+              <div className="flex justify-between items-center">
+                <div>
+                  <h3 className="text-lg font-black text-white">💡 AI 提案された記事ネタ一覧</h3>
+                  <p className="text-xs text-gray-400 mt-1">蓄積されたナレッジを元にAIが分析・考案した、クリックされやすく収益に直結するコンテンツ案。</p>
+                </div>
+                <button
+                  onClick={() => {
+                    fetch('/api/admin/jobs', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ job: 'idea_generator' })
+                    }).then(res => {
+                      if (res.ok) alert('記事ネタの自動提案ジョブを起動しました。数分後にダッシュボードや本タブに反映されます。');
+                    });
+                  }}
+                  className="bg-pink-500/10 hover:bg-pink-500 border border-pink-500/20 hover:border-transparent text-pink-300 hover:text-white font-black text-xs py-2 px-4 rounded-xl transition-all cursor-pointer"
+                >
+                  🔄 今すぐ記事ネタを考案させる
+                </button>
+              </div>
+
+              {loadingIdeas ? (
+                <div className="flex items-center justify-center py-20 text-gray-400">
+                  <RefreshCw size={24} className="animate-spin text-emerald-400 mr-3" />
+                  ネタ情報を取得中...
+                </div>
+              ) : ideas.length === 0 ? (
+                <div className="py-20 text-center text-gray-500 text-sm bg-black/20 rounded-3xl border border-white/5">
+                  提案された記事ネタがまだありません。上のボタンから「今すぐ記事ネタを考案させる」を起動するか、ナレッジを蓄積してください。
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {ideas.filter(i => i.status === 'pending').map((idea) => (
+                    <div key={idea.id} className="glass-panel p-6 border border-white/5 rounded-3xl bg-gradient-to-br from-indigo-500/5 to-transparent flex flex-col justify-between gap-5 relative overflow-hidden">
+                      <div className="absolute top-0 right-0 w-24 h-24 bg-pink-500/10 rounded-full blur-2xl -mr-8 -mt-8 pointer-events-none" />
+                      
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="px-2.5 py-0.5 rounded-full border border-pink-500/25 bg-pink-500/10 text-pink-400 text-[10px] font-black uppercase">
+                            {idea.genre}
+                          </span>
+                          <span className="text-[10px] text-gray-500 font-bold">
+                            ターゲット: {idea.target_audience}
+                          </span>
+                        </div>
+
+                        <h4 className="text-base font-bold text-gray-100 leading-snug">{idea.title}</h4>
+                        
+                        <div className="text-xs text-gray-400 bg-black/30 p-3.5 rounded-xl border border-white/5 whitespace-pre-wrap leading-relaxed text-left">
+                          {idea.concept}
+                        </div>
+                      </div>
+
+                      <div className="flex gap-3 pt-2">
+                        <button
+                          onClick={() => handleGenerateFromIdea(idea.id, idea.title)}
+                          disabled={generatingIdeaId !== null}
+                          className="flex-1 flex items-center justify-center gap-1.5 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-40 text-black py-2 rounded-xl font-black text-xs transition-all cursor-pointer shadow-lg shadow-emerald-500/10"
+                        >
+                          {generatingIdeaId === idea.id ? (
+                            <>
+                              <RefreshCw size={12} className="animate-spin" />
+                              起動中...
+                            </>
+                          ) : (
+                            <>
+                              <Play size={12} fill="black" />
+                              このネタで記事生成
+                            </>
+                          )}
+                        </button>
+                        <button
+                          onClick={() => handleDiscardIdea(idea.id)}
+                          className="px-3 py-2 bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white rounded-xl border border-white/5 font-bold text-xs transition-all cursor-pointer"
+                        >
+                          却下
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                  
+                  {ideas.filter(i => i.status === 'pending').length === 0 && (
+                    <div className="col-span-2 py-10 text-center text-gray-500 text-sm">
+                      保留中の提案ネタはありません。
+                    </div>
+                  )}
+                </div>
               )}
             </motion.div>
           )}

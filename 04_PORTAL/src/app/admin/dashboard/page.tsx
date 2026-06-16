@@ -22,6 +22,7 @@ export default function Home() {
     youtube_absorber: { name: 'YouTube動画解析', isRunning: false },
     dict_synthesizer: { name: '総合辞典マージ', isRunning: false },
     research_scout: { name: 'トレンド自動リサーチ', isRunning: false },
+    idea_generator: { name: '記事ネタ自動提案', isRunning: false },
     evolution: { name: 'AI自己進化プロンプト更新', isRunning: false },
     monetization_batch: { name: 'アフィリエイト一気通貫バッチ', isRunning: false }
   });
