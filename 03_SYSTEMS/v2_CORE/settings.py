@@ -51,9 +51,13 @@ class SovereignSettings(BaseSettings):
 
     # モデル設定
     DEFAULT_MODEL: str = "gemini-2.5-flash"
-    # OLE（動画解析）専用モデル: 無料枠の制限分散のため DEFAULT_MODEL とは別に設定
-    # gemini-2.0-flash は利用不可になっているため 2.5 を使用する
+    # OLE（動画解析）専用モデル
     OLE_MODEL: str = "gemini-2.5-flash"
+    
+    # Ollama（ローカルLLM）設定: 記事生成・リライト等のローカル処理用
+    OLLAMA_BASE_URL: str = "http://localhost:11434"
+    OLLAMA_MODEL: str = "gemma3:12b"  # gemma3, qwen3, llama3 等
+    OLLAMA_ENABLED: bool = True  # Falseの場合はすべてGeminiにフォールバック
     
     # クォータ（1日あたりのAPI実行回数）制限: 合計780枠 (余裕をもったバッファ)
     DAILY_QUOTA_LIMITS: dict = {

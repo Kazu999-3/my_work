@@ -157,3 +157,97 @@ def generate_content_safe(client, prompt, model_id=None, config=None, feature_na
     error_msg = f"❌ [AIHelper] すべての試行およびフォールバックモデルが失敗しました。最後のエラー: {last_error}"
     logger.error(error_msg)
     return "❌ 分析中に一時的なエラーが発生した。次はもっとうまくやってみせるよ。"
+
+
+# ============================================================
+# ③ ハイブリッドAI ルーター（Gemini + Ollama 自動振り分け）
+# ============================================================
+
+# Gemini（クラウド）で処理すべきタスク: リサーチ・最新情報・要約
+CLOUD_TASKS = {"research", "summarize", "trend_analysis", "news_scout", "oracle", "draft_analyzer"}
+
+# Ollama（ローカル）で処理すべきタスク: 記事生成・リライト・校正
+LOCAL_TASKS = {"article_draft", "rewrite", "proofread", "tweet_gen", "newsletter", "kingdom_cycle", "bible_forge"}
+
+
+def _generate_with_ollama(prompt: str, model: str = None) -> str:
+    """Ollama ローカルLLM でテキスト生成（APIキー不要・無料・無制限）"""
+    import requests
+    
+    base_url = settings.OLLAMA_BASE_URL
+    model_name = model or settings.OLLAMA_MODEL
+    
+    try:
+        res = requests.post(
+            f"{base_url}/api/generate",
+            json={
+                "model": model_name,
+                "prompt": prompt,
+                "stream": False,
+                "options": {
+                    "temperature": 0.7,
+                    "num_predict": 4096
+                }
+            },
+            timeout=120  # ローカルモデルは時間がかかることがある
+        )
+        
+        if res.status_code == 200:
+            result = res.json()
+            response_text = result.get("response", "")
+            if response_text:
+                logger.info(f"[AIHelper] 🏠 Ollama ({model_name}) でローカル生成に成功しました。")
+                return response_text
+            else:
+                raise Exception("Ollamaからの応答が空です。")
+        else:
+            raise Exception(f"Ollama HTTP {res.status_code}: {res.text[:200]}")
+            
+    except requests.exceptions.ConnectionError:
+        logger.warning(f"⚠️ [AIHelper] Ollama ({base_url}) に接続できません。`ollama serve` が起動しているか確認してください。")
+        raise
+    except Exception as e:
+        logger.error(f"❌ [AIHelper] Ollama生成エラー: {e}")
+        raise
+
+
+def generate_with_routing(client, prompt: str, task_type: str = "auto", 
+                          feature_name: str = "default", config=None,
+                          force_cloud: bool = False, force_local: bool = False) -> str:
+    """
+    タスク種別に応じてGemini（クラウド）とOllama（ローカル）を自動振り分けるルーター。
+    
+    Args:
+        client: Gemini APIクライアント
+        prompt: プロンプト
+        task_type: タスク種別（CLOUD_TASKS / LOCAL_TASKS で判定）
+        feature_name: クォータ管理用の機能名
+        config: Gemini生成設定
+        force_cloud: 強制的にGeminiを使用
+        force_local: 強制的にOllamaを使用
+    
+    Returns:
+        生成されたテキスト
+    """
+    use_ollama = False
+    
+    if force_cloud:
+        use_ollama = False
+    elif force_local:
+        use_ollama = True
+    elif settings.OLLAMA_ENABLED and task_type in LOCAL_TASKS:
+        use_ollama = True
+    # task_type が "auto" または CLOUD_TASKS の場合はGeminiを使用
+    
+    if use_ollama:
+        try:
+            logger.info(f"[AIHelper] 🔀 ルーター: タスク '{task_type}' → Ollama（ローカル）に振り分け")
+            return _generate_with_ollama(prompt)
+        except Exception as e:
+            logger.warning(f"⚠️ [AIHelper] Ollamaへのフォールバック失敗。Gemini（クラウド）で再試行します: {e}")
+            # Ollamaが使えない場合はGeminiにフォールバック
+    
+    # Gemini（クラウド）で処理
+    logger.info(f"[AIHelper] 🔀 ルーター: タスク '{task_type}' → Gemini（クラウド）に振り分け")
+    return generate_content_safe(client, prompt, config=config, feature_name=feature_name)
+
