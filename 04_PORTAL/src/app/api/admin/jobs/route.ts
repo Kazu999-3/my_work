@@ -3,7 +3,20 @@ import fs from 'fs';
 import path from 'path';
 import { spawn } from 'child_process';
 
-const WORKSPACE_DIR = path.resolve(process.cwd(), '../');
+// ============================================================
+// Vercel本番環境の検知
+// Vercel上ではローカルのPythonスクリプトを実行できないため、
+// IS_VERCEL=true の場合はジョブ起動を拒否し案内を返す
+// ============================================================
+const IS_VERCEL = !!process.env.VERCEL;
+
+// ワークスペースのルートを特定する（ポータルの1つ上のディレクトリ）
+// ローカル開発: d:/my_work/04_PORTAL/../ → d:/my_work/
+// 環境変数 MY_WORK_DIR が設定されていればそちらを優先する
+const WORKSPACE_DIR = process.env.MY_WORK_DIR
+  ? process.env.MY_WORK_DIR
+  : path.resolve(process.cwd(), '../');
+
 const PYTHON_PATH = path.join(WORKSPACE_DIR, '.venv/Scripts/python.exe');
 
 interface JobConfig {
@@ -13,47 +26,61 @@ interface JobConfig {
   name: string;
 }
 
+// ============================================================
+// ジョブ定義：全て WORKSPACE_DIR からの相対パスで記述
+// ============================================================
 const JOBS: Record<string, JobConfig> = {
   youtube_absorber: {
     script: '03_SYSTEMS/v2_CORE/_LOL/youtube_absorber.py',
-    lock: '03_SYSTEMS/v2_CORE/_LOL/youtube_absorber.lock',
-    log: '00_LOGS/youtube_absorber_run.log',
-    name: 'YouTube動画解析'
+    lock:   '03_SYSTEMS/v2_CORE/_LOL/youtube_absorber.lock',
+    log:    '00_LOGS/youtube_absorber_run.log',
+    name:   'YouTube動画解析'
   },
   dict_synthesizer: {
     script: '03_SYSTEMS/v2_CORE/_LOL/dict_synthesizer.py',
-    lock: '03_SYSTEMS/v2_CORE/_LOL/dict_synthesizer.lock',
-    log: '00_LOGS/dict_synthesizer_run.log',
-    name: '総合辞典マージ'
+    lock:   '03_SYSTEMS/v2_CORE/_LOL/dict_synthesizer.lock',
+    log:    '00_LOGS/dict_synthesizer_run.log',
+    name:   '総合辞典マージ'
   },
   research_scout: {
     script: '03_SYSTEMS/v2_CORE/_MONETIZE/research_scout.py',
-    lock: '03_SYSTEMS/v2_CORE/_MONETIZE/research_scout.lock',
-    log: '00_LOGS/research_scout_run.log',
-    name: 'トレンド自動リサーチ'
+    lock:   '03_SYSTEMS/v2_CORE/_MONETIZE/research_scout.lock',
+    log:    '00_LOGS/research_scout_run.log',
+    name:   'トレンド自動リサーチ'
   },
   idea_generator: {
     script: '03_SYSTEMS/v2_CORE/_MONETIZE/idea_generator.py',
-    lock: '03_SYSTEMS/v2_CORE/_MONETIZE/idea_generator.lock',
-    log: '00_LOGS/idea_generator_run.log',
-    name: '記事ネタ自動提案'
+    lock:   '03_SYSTEMS/v2_CORE/_MONETIZE/idea_generator.lock',
+    log:    '00_LOGS/idea_generator_run.log',
+    name:   '記事ネタ自動提案'
   },
   evolution: {
     script: '03_SYSTEMS/v2_CORE/_MONETIZE/evolution.py',
-    lock: '03_SYSTEMS/v2_CORE/_MONETIZE/evolution.lock',
-    log: '00_LOGS/evolution_run.log',
-    name: 'AI自己進化プロンプト更新'
+    lock:   '03_SYSTEMS/v2_CORE/_MONETIZE/evolution.lock',
+    log:    '00_LOGS/evolution_run.log',
+    name:   'AI自己進化プロンプト更新'
   },
   monetization_batch: {
     script: '03_SYSTEMS/v2_CORE/monetization_batch.py',
-    lock: '03_SYSTEMS/v2_CORE/monetization_batch.lock',
-    log: '00_LOGS/monetization_batch_run.log',
-    name: 'アフィリエイト一気通貫バッチ'
+    lock:   '03_SYSTEMS/v2_CORE/monetization_batch.lock',
+    log:    '00_LOGS/monetization_batch_run.log',
+    name:   'アフィリエイト一気通貫バッチ'
   }
 };
 
-// 1. 全ジョブの実行ステータス及び直近ログの取得
+// ============================================================
+// GET: 全ジョブのステータス＆ログ取得
+// ============================================================
 export async function GET(req: NextRequest) {
+  // Vercel環境では常にIDLE状態を返す（ログは取得不可）
+  if (IS_VERCEL) {
+    const result: Record<string, { name: string; isRunning: boolean; vercelMode: boolean }> = {};
+    for (const [key, config] of Object.entries(JOBS)) {
+      result[key] = { name: config.name, isRunning: false, vercelMode: true };
+    }
+    return NextResponse.json(result);
+  }
+
   try {
     const { searchParams } = new URL(req.url);
     const targetJob = searchParams.get('job');
@@ -65,7 +92,7 @@ export async function GET(req: NextRequest) {
       }
 
       const lockPath = path.join(WORKSPACE_DIR, config.lock);
-      const logPath = path.join(WORKSPACE_DIR, config.log);
+      const logPath  = path.join(WORKSPACE_DIR, config.log);
       const isRunning = fs.existsSync(lockPath);
 
       let logs = '';
@@ -76,24 +103,15 @@ export async function GET(req: NextRequest) {
         logs = '実行履歴はありません。';
       }
 
-      return NextResponse.json({
-        job: targetJob,
-        name: config.name,
-        isRunning,
-        logs
-      });
+      return NextResponse.json({ job: targetJob, name: config.name, isRunning, logs });
     }
 
     // クエリ指定がない場合は全ジョブの簡易ステータスを返す
     const result: Record<string, { name: string; isRunning: boolean }> = {};
     for (const [key, config] of Object.entries(JOBS)) {
       const lockPath = path.join(WORKSPACE_DIR, config.lock);
-      result[key] = {
-        name: config.name,
-        isRunning: fs.existsSync(lockPath)
-      };
+      result[key] = { name: config.name, isRunning: fs.existsSync(lockPath) };
     }
-
     return NextResponse.json(result);
 
   } catch (err: any) {
@@ -102,8 +120,21 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// 2. 指定ジョブの実行
+// ============================================================
+// POST: 指定ジョブの実行
+// ============================================================
 export async function POST(req: NextRequest) {
+  // Vercel本番環境ではPythonスクリプトを実行できない
+  if (IS_VERCEL) {
+    return NextResponse.json(
+      {
+        error: 'VERCEL_MODE',
+        message: 'この機能はローカルのSREデーモンが自動実行します。手動で起動したい場合はDiscord Bot の /run コマンドを使用してください。',
+      },
+      { status: 503 }
+    );
+  }
+
   try {
     const { job, args = [] } = await req.json();
 
@@ -111,14 +142,25 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: '無効または未指定のジョブ名です。' }, { status: 400 });
     }
 
-    const config = JOBS[job];
+    const config     = JOBS[job];
     const scriptPath = path.join(WORKSPACE_DIR, config.script);
-    const lockPath = path.join(WORKSPACE_DIR, config.lock);
-    const logPath = path.join(WORKSPACE_DIR, config.log);
+    const lockPath   = path.join(WORKSPACE_DIR, config.lock);
+    const logPath    = path.join(WORKSPACE_DIR, config.log);
+
+    // デバッグ用：パスを確認
+    console.log(`[Jobs API] WORKSPACE_DIR: ${WORKSPACE_DIR}`);
+    console.log(`[Jobs API] scriptPath: ${scriptPath}`);
+    console.log(`[Jobs API] exists: ${fs.existsSync(scriptPath)}`);
 
     // スクリプトの存在チェック
     if (!fs.existsSync(scriptPath)) {
-      return NextResponse.json({ error: `スクリプトファイルが存在しません: ${config.script}` }, { status: 404 });
+      return NextResponse.json(
+        {
+          error: `スクリプトファイルが存在しません: ${config.script}`,
+          debug: { WORKSPACE_DIR, scriptPath },
+        },
+        { status: 404 }
+      );
     }
 
     // 二重起動防止
@@ -133,9 +175,9 @@ export async function POST(req: NextRequest) {
     fs.mkdirSync(path.dirname(logPath), { recursive: true });
     fs.writeFileSync(logPath, `[${new Date().toLocaleString()}] ジョブ「${config.name}」を手動起動します...\n`, 'utf-8');
 
-    const runArgs = [scriptPath, ...args];
-    const env = { ...process.env, PYTHONPATH: path.join(WORKSPACE_DIR, '03_SYSTEMS') };
-
+    const runArgs  = [scriptPath, ...args];
+    // PYTHONPATHは必ず絶対パスで設定する
+    const env      = { ...process.env, PYTHONPATH: path.join(WORKSPACE_DIR, '03_SYSTEMS') };
     const logStream = fs.createWriteStream(logPath, { flags: 'a' });
 
     // 非同期でPythonスクリプトを実行し、標準入出力をログにリダイレクトする
@@ -150,9 +192,7 @@ export async function POST(req: NextRequest) {
 
     child.on('close', (code) => {
       try {
-        if (fs.existsSync(lockPath)) {
-          fs.unlinkSync(lockPath);
-        }
+        if (fs.existsSync(lockPath)) fs.unlinkSync(lockPath);
         const finishMsg = `\n[${new Date().toLocaleString()}] ジョブが終了しました (終了コード: ${code})\n`;
         fs.appendFileSync(logPath, finishMsg, 'utf-8');
       } catch (err) {

@@ -221,15 +221,26 @@ export default function Home() {
           const jobsData = await resJobs.json();
           setJobsStatus(jobsData);
         }
+        setSelectedJobLogs(`✅ ジョブを起動しました。ログパネルを更新してください。`);
+      } else if (data.error === 'VERCEL_MODE') {
+        // Vercel本番環境での起動試行 → 分かりやすいメッセージを表示
+        setSelectedJobLogs(
+          `⚠️ Vercel本番環境ではバックグラウンドジョブを直接起動できません。\n\n` +
+          `【代替手段】\n` +
+          `・ローカルのSREデーモンが自動的に定期実行します（起動中であれば不要です）\n` +
+          `・ローカルのdev環境（npm run dev）からアクセスすると手動起動ができます\n` +
+          `・SREデーモンが停止している場合は start_systems.bat を実行してください`
+        );
       } else {
-        alert(`起動失敗: ${data.error}`);
+        setSelectedJobLogs(`❌ 起動失敗: ${data.error}`);
       }
     } catch (e: any) {
-      alert(`通信エラー: ${e.message}`);
+      setSelectedJobLogs(`❌ 通信エラー: ${e.message}`);
     } finally {
       setJobActionLoading(null);
     }
   };
+
 
   const handleFetchJobLogs = async (jobName: string) => {
     setSelectedJob(jobName);
