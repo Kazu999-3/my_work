@@ -17,18 +17,6 @@ const dummyData = [
 ];
 
 export default function Home() {
-  // システムジョブコントロール用
-  const [jobsStatus, setJobsStatus] = useState<Record<string, { name: string; isRunning: boolean }>>({
-    youtube_absorber: { name: 'YouTube動画解析', isRunning: false },
-    dict_synthesizer: { name: '総合辞典マージ', isRunning: false },
-    research_scout: { name: 'トレンド自動リサーチ', isRunning: false },
-    idea_generator: { name: '記事ネタ自動提案', isRunning: false },
-    evolution: { name: 'AI自己進化プロンプト更新', isRunning: false },
-    monetization_batch: { name: 'アフィリエイト一気通貫バッチ', isRunning: false }
-  });
-  const [selectedJob, setSelectedJob] = useState<string>('youtube_absorber');
-  const [selectedJobLogs, setSelectedJobLogs] = useState<string>('');
-  const [jobActionLoading, setJobActionLoading] = useState<string | null>(null);
 
   const [totalAssets, setTotalAssets] = useState<number>(0);
   const [pendingTasks, setPendingTasks] = useState<number>(0);
@@ -179,23 +167,6 @@ export default function Home() {
         .limit(3);
       if (!ytQueueError && ytQueueData) setRecentYoutubeQueue(ytQueueData);
 
-      // 最終更新時刻を設定
-      const now = new Date();
-      setLastUpdated(now.toLocaleTimeString('ja-JP'));
-
-      // 9. ジョブステータスの取得
-      const resJobs = await fetch('/api/admin/jobs');
-      if (resJobs.ok) {
-        const jobsData = await resJobs.json();
-        setJobsStatus(jobsData);
-      }
-
-      // 10. 選択中のジョブのログ取得
-      const resLogs = await fetch(`/api/admin/jobs?job=${selectedJob}`);
-      if (resLogs.ok) {
-        const logData = await resLogs.json();
-        setSelectedJobLogs(logData.logs);
-      }
 
     } catch (err) {
       console.error('Error fetching data:', err);
@@ -205,55 +176,6 @@ export default function Home() {
     }
   };
 
-  const handleStartJob = async (jobName: string) => {
-    setJobActionLoading(jobName);
-    try {
-      const res = await fetch('/api/admin/jobs', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ job: jobName })
-      });
-      const data = await res.json();
-      if (res.ok) {
-        // ステータスを即座に再取得
-        const resJobs = await fetch('/api/admin/jobs');
-        if (resJobs.ok) {
-          const jobsData = await resJobs.json();
-          setJobsStatus(jobsData);
-        }
-        setSelectedJobLogs(`✅ ジョブを起動しました。ログパネルを更新してください。`);
-      } else if (data.error === 'VERCEL_MODE') {
-        // Vercel本番環境での起動試行 → 分かりやすいメッセージを表示
-        setSelectedJobLogs(
-          `⚠️ Vercel本番環境ではバックグラウンドジョブを直接起動できません。\n\n` +
-          `【代替手段】\n` +
-          `・ローカルのSREデーモンが自動的に定期実行します（起動中であれば不要です）\n` +
-          `・ローカルのdev環境（npm run dev）からアクセスすると手動起動ができます\n` +
-          `・SREデーモンが停止している場合は start_systems.bat を実行してください`
-        );
-      } else {
-        setSelectedJobLogs(`❌ 起動失敗: ${data.error}`);
-      }
-    } catch (e: any) {
-      setSelectedJobLogs(`❌ 通信エラー: ${e.message}`);
-    } finally {
-      setJobActionLoading(null);
-    }
-  };
-
-
-  const handleFetchJobLogs = async (jobName: string) => {
-    setSelectedJob(jobName);
-    try {
-      const res = await fetch(`/api/admin/jobs?job=${jobName}`);
-      if (res.ok) {
-        const data = await res.json();
-        setSelectedJobLogs(data.logs);
-      }
-    } catch (e) {
-      console.error('ログの取得に失敗しました', e);
-    }
-  };
 
   // タスクのステータスを循環させる: todo → in_progress → done → todo
   const cycleTaskStatus = async (task: any) => {
@@ -796,81 +718,6 @@ export default function Home() {
           </div>
         </motion.div>
 
-        {/* Panel D: System Jobs Control Panel */}
-        <motion.div variants={itemVariants} className="md:col-span-2 lg:col-span-4 mt-8">
-          <div className="glass-panel rounded-3xl p-6 border border-white/5 bg-gradient-to-br from-indigo-500/5 via-blue-500/5 to-transparent">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-black text-white flex items-center gap-3">
-                <div className="w-2 h-6 bg-gradient-to-b from-blue-400 to-indigo-500 rounded-full shadow-[0_0_10px_rgba(59,130,246,0.6)]"></div>
-                <span>💻 システム手動実行コントロール（Sovereign ADO）</span>
-              </h3>
-              <div className="text-xs text-gray-500">
-                ポータルからバックエンドの各モジュールを今すぐ起動できます
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* ジョブ一覧 */}
-              <div className="lg:col-span-1 space-y-3">
-                <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">ジョブ一覧</p>
-                {Object.entries(jobsStatus).map(([key, job]) => (
-                  <div 
-                    key={key} 
-                    onClick={() => handleFetchJobLogs(key)}
-                    className={`p-4 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between gap-3 ${
-                      selectedJob === key 
-                        ? 'bg-blue-500/10 border-blue-500/30' 
-                        : 'bg-black/20 border-white/5 hover:bg-white/5'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-bold text-gray-200">{job.name}</span>
-                      <div className="flex items-center gap-2">
-                        {job.isRunning ? (
-                          <span className="flex h-2.5 w-2.5 relative">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
-                            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-cyan-500"></span>
-                          </span>
-                        ) : (
-                          <span className="h-2.5 w-2.5 rounded-full bg-gray-600"></span>
-                        )}
-                        <span className="text-[10px] text-gray-500 font-bold uppercase">
-                          {job.isRunning ? 'RUNNING' : 'IDLE'}
-                        </span>
-                      </div>
-                    </div>
-
-                    <button
-                      onClick={(e) => { e.stopPropagation(); handleStartJob(key); }}
-                      disabled={job.isRunning || jobActionLoading !== null}
-                      className="w-full py-2 rounded-xl bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/40 text-blue-300 font-bold text-xs disabled:opacity-40 disabled:pointer-events-none transition-all flex items-center justify-center gap-1.5"
-                    >
-                      {job.isRunning ? '実行中...' : 'ジョブを起動'}
-                    </button>
-                  </div>
-                ))}
-              </div>
-
-              {/* コンソールログ */}
-              <div className="lg:col-span-2 flex flex-col h-[400px]">
-                <div className="flex justify-between items-center mb-2">
-                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">
-                    📜 実行ログ: {jobsStatus[selectedJob]?.name || selectedJob}
-                  </p>
-                  <button
-                    onClick={() => handleFetchJobLogs(selectedJob)}
-                    className="p-1 hover:bg-white/5 rounded text-gray-500 hover:text-gray-300 transition-all text-xs font-bold flex items-center gap-1"
-                  >
-                    <RefreshCw size={10} /> ログ更新
-                  </button>
-                </div>
-                <div className="flex-1 bg-black/40 rounded-2xl border border-white/5 p-4 font-mono text-[11px] leading-relaxed text-gray-400 overflow-y-auto whitespace-pre relative">
-                  {selectedJobLogs ? selectedJobLogs : 'ログは空、または履歴がありません。'}
-                </div>
-              </div>
-            </div>
-          </div>
-        </motion.div>
 
       </motion.main>
 
