@@ -74,9 +74,9 @@ export async function handleButtonInteraction(interaction, env, ctx) {
       type: 9, data: {
         title: "⚔️ 新規メンバー募集の設定", custom_id: "portal_recruit_modal",
         components: [
-          { type: 1, components: [{ type: 4, custom_id: "mode", label: "モード", style: 1, value: "カスタム", required: true }] },
+          { type: 1, components: [{ type: 4, custom_id: "mode", label: "モード", style: 1, value: "ノーマル", required: true }] },
           { type: 1, components: [{ type: 4, custom_id: "time", label: "開始予定時刻", style: 1, required: false }] },
-          { type: 1, components: [{ type: 4, custom_id: "max", label: "最大人数", style: 1, value: "10", required: false }] },
+          { type: 1, components: [{ type: 4, custom_id: "max", label: "最大人数", style: 1, value: "5", required: false }] },
           { type: 1, components: [{ type: 4, custom_id: "memo", label: "一言メモ", style: 2, required: false }] }
         ]
       }

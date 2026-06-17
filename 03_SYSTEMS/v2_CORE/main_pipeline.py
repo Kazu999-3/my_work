@@ -4,8 +4,8 @@ import os
 from pathlib import Path
 import time
 from v2_CORE.x_analyzer import XAnalyzer
-from v2_CORE.bible_forge import BibleForge
-from v2_CORE.video_forge import VideoForge
+from v2_CORE._LOL.bible_forge import BibleForge
+from v2_CORE._LOL.video_forge import VideoForge
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [MASTER-PIPELINE] %(levelname)s: %(message)s")
 logger = logging.getLogger("MasterPipeline")

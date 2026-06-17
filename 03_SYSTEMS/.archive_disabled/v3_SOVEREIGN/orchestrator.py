@@ -55,7 +55,7 @@ class SovereignOrchestrator:
                 return result
             
             elif agent_name == "Forge":
-                from v2_CORE.bible_forge import BibleForge
+                from v2_CORE._LOL.bible_forge import BibleForge
                 forge = BibleForge()
                 result = forge.generate_bible(task_description)
                 return result
@@ -105,7 +105,7 @@ class SovereignOrchestrator:
             logger.info(f"✅ Bible forged: {bible_path}")
             
             # 3. 動画生成 (APIクォータ保護のため停止)
-            # from v2_CORE.video_forge import VideoForge
+            # from v2_CORE._LOL.video_forge import VideoForge
             # video_engine = VideoForge()
             # note_content = Path(bible_path).read_text(encoding="utf-8")
             # shorts_script = video_engine.generate_script(note_content)

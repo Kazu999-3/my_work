@@ -5,7 +5,7 @@ import threading
 import re
 from dotenv import load_dotenv
 from autonomous_kingdom import SovereignCoordinator
-from v2_CORE.herald import herald
+from v2_CORE._LOL.herald import herald
 
 load_dotenv()
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [AnchanAgent] %(levelname)s: %(message)s")

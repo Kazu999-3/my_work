@@ -10,16 +10,16 @@ from v2_CORE.settings import settings
 from v2_CORE.logger_config import setup_sovereign_logging
 from v2_CORE.database import db
 from v2_CORE.forge import forge
-from v2_CORE.promoter import promoter
+from v2_CORE._MONETIZE.promoter import promoter
 from v2_CORE.prospector import prospector
 from v2_CORE.auditor import auditor
-from v2_CORE.council import council
-from v2_CORE.herald import herald
-from v2_CORE.oracle import oracle
+from v2_CORE._LOL.council import council
+from v2_CORE._LOL.herald import herald
+from v2_CORE._LOL.oracle import oracle
 from v2_CORE.strategist import strategist
 from v2_CORE.recycler import recycler
 from v2_CORE.archivist import archivist
-from v2_CORE.matchup_sync import MatchupSync
+from v2_CORE._LOL.matchup_sync import MatchupSync
 from v2_CORE.sovereign_sync import SovereignSync
 from scout_agent import ScoutAgent
 

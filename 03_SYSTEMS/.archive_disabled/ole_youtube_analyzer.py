@@ -15,7 +15,7 @@ import dotenv
 sys.path.append(str(Path(__file__).resolve().parent))
 from v2_CORE.settings import settings
 from v2_CORE.database import db
-from v2_CORE.herald import herald
+from v2_CORE._LOL.herald import herald
 import httpx
 dotenv.load_dotenv()
 

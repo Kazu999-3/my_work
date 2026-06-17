@@ -10,7 +10,7 @@ from google import genai
 from google.genai import types
 import dotenv
 from v2_CORE.database import db
-from v2_CORE.herald import herald
+from v2_CORE._LOL.herald import herald
 
 dotenv.load_dotenv()
 

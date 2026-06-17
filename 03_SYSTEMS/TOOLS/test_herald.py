@@ -5,7 +5,7 @@ from pathlib import Path
 # PYTHONPATH の調整
 sys.path.append(str(Path(__file__).parent))
 
-from v2_CORE.herald import herald
+from v2_CORE._LOL.herald import herald
 from v2_CORE.settings import settings
 from v2_CORE.logger_config import setup_sovereign_logging
 

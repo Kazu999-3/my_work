@@ -4,18 +4,21 @@
 League of Legends のリサーチ、記事生成、ソロキュー監視を統合し、自分だけの「勝利の方程式」を構築・Webサービス化するプロジェクト。
 
 ## 🏛️ 技術スタック
-- **Core Engine**: Python (threading, requests)
-- **Database/Cloud**: Supabase (PostgreSQL)
-- **Web Portal**: Next.js (App Router)
-- **Monitoring**: Riot API (Spectator v5), YouTube Data API
+- **Core Engine**: Python (Playwright, requests, google-genai)
+- **Database/Cloud**: Supabase (PostgreSQL), ChromaDB (Vector DB)
+- **Web Portal**: Next.js (App Router, TailwindCSS/Vanilla CSS)
+- **Monitoring**: Riot API (Spectator v5), YouTube Data API, Playwright note Scraping
 
 ## 🛰️ 主要モジュール (Diet Mode / MVP)
 システム全体の軽量化とAPIコスト削減のため、以下のコアモジュールを稼働させます。
-1.  **Pulse**: システムの死活監視と、外部パッチ情報のスマート検知。
-2.  **Match Importer**: 定期的なソロキュー戦績の自動取り込み（重複DB送信防止機能付き）。
-3.  **Monetization Loop**: 流行 of アイテムやルーンを起点とした、コスト効率の高いnote記事の自動生成とパブリッシュ。
-4.  **API Gateway**: SQLiteとファイルロックを用いた、複数プロセス間のGemini APIレートリミッター（429競合の根本防止）。
-
+1. **Pulse**: システムの死活監視と、外部パッチ情報のスマート検知。
+2. **Match Importer**: 定期的なソロキュー戦績の自動取り込み（重複DB送信防止機能付き）。
+3. **Sovereign ADO Engine (自己進化マルチエージェント)** [NEW]:
+   - **Researcher**: 入力情報から客観的なファクト（JSON構造）のみを抽出。
+   - **Creator**: 辛口読者（ペルソナAI）との自己壁打ち・自己修正校正フローにより、AI臭さを徹底排除したnote記事（Markdown）およびX（Twitter）スレッドを生成。
+   - **Analyst**: note.com のアクセス統計をPlaywright経由で自動収集し、Geminiで読者の関心要因を分析。
+   - **Evolution**: 分析結果に基づき、ライター（Creator）用の共通ルールを自己更新・保存。
+4. **API Gateway**: SQLiteとファイルロックを用いた、複数プロセス間のGemini APIレートリミッター（429競合の根本防止）。
 
 ---
 
@@ -37,7 +40,6 @@ CREATE TABLE bible_articles (
     file_path text
 );
 
--- 既存のテーブルがある場合は、以下を実行してカラムを追加してください：
 ALTER TABLE bible_articles ADD COLUMN IF NOT EXISTS keywords text[];
 
 CREATE TABLE matchup_sentinel (
@@ -51,54 +53,70 @@ CREATE TABLE matchup_sentinel (
     raw_data jsonb
 );
 
+CREATE TABLE collab_tasks (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    created_at timestamptz DEFAULT now(),
+    updated_at timestamptz DEFAULT now(),
+    title text,
+    description text,
+    owner text,
+    status text,
+    priority text
+);
+
 ALTER TABLE bible_articles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE matchup_sentinel ENABLE ROW LEVEL SECURITY;
+ALTER TABLE collab_tasks ENABLE ROW LEVEL SECURITY;
 
 -- 読み取り許可 (全ユーザー)
 CREATE POLICY "Allow read" ON bible_articles FOR SELECT USING (true);
 CREATE POLICY "Allow read" ON matchup_sentinel FOR SELECT USING (true);
+CREATE POLICY "Allow read" ON collab_tasks FOR SELECT USING (true);
 
 -- 【重要】書き込み・更新許可 (認証済み管理者のみに制限)
--- セキュリティ防壁 (RLS): 全世界に公開するため、誰でも書き込める設定は廃止しました。
 CREATE POLICY "Allow insert" ON bible_articles FOR INSERT TO authenticated WITH CHECK (true);
 CREATE POLICY "Allow update" ON bible_articles FOR UPDATE TO authenticated USING (true);
 CREATE POLICY "Allow insert" ON matchup_sentinel FOR INSERT TO authenticated WITH CHECK (true);
 CREATE POLICY "Allow update" ON matchup_sentinel FOR UPDATE TO authenticated USING (true);
+CREATE POLICY "Allow insert" ON collab_tasks FOR INSERT TO authenticated WITH CHECK (true);
+CREATE POLICY "Allow update" ON collab_tasks FOR UPDATE TO authenticated USING (true);
 ```
 
 #### B. APIキーの紐付け
 - **システム同期用 (.env)**: `SUPABASE_URL`, `SUPABASE_KEY` (service_role)
-- **Webポータル用 (99_ARCHIVE/04_COMMAND_CENTER_old/.env)**: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`
+- **Webポータル用 (.env)**: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 
 ---
 
-## 📚 拡張機能: noteドラフト記事の自動同期とブラッシュアップ (MVP v2.4)
+## 📂 ドメイン物理分離（物理整理）ルール
 
-### 🌟 目的とベネフィット
-ポータル内の「チャンピオン辞典 (GLOBAL)」の中で、AIが自動生成した `noteドラフト記事（Markdownテキスト）` を直接閲覧・コピー・編集できるようにし、日々のデータ更新や実戦の教訓によって、その記事が自律的かつ有機的にブラッシュアップされるエコシステムを確立する。
+AIのコンテキスト理解効率とファイル探索のノイズを低減するため、LoL（ゲーム）とMONETIZE（アフィリエイト）のドメインを完全に分離して管理します。
 
-### 💾 データ構造 (Database Schema)
-`matchup_sentinel` テーブルの `enemy="GLOBAL"` レコードの `raw_data` フィールド内に `note_draft` キーを追加し、Markdownテキストを直接埋め込む。
-
-```json
-// matchup_sentinel.raw_data の定義
-{
-  "source": "champ_db",
-  "role": "GLOBAL",
-  "strengths": "強み",
-  "weaknesses": "弱み",
-  "powerSpikes": "パワースパイク",
-  "buildRunes": "ビルド/ルーン",
-  "fullClearTime": "JG周回時間",
-  "note_draft": "# 究極のリリア攻略バイブル...\n(自動ブラッシュアップされるMarkdown原稿)"
-}
+### 📁 フォルダ構成
+```text
+my_work/
+├── 01_INTEL/                  # [知識・プロンプト層]
+│   ├── _LOL/                  # LoL関連の戦術、マッチアップメモ、パッチデータ
+│   └── _MONETIZE/             # アフィリエイト関連のプロンプト、進化ルール
+│       └── prompts/
+│           └── evolution_rules.md # Evolutionが自動更新する執筆ルール
+│
+├── 02_FACTORY/                # [成果物・キャッシュ層]
+│   ├── _LOL/                  # LoL記事ドラフト、戦績、動画
+│   └── _MONETIZE/             # アフィリエイトドラフト、アフィリエイトリンクJSON
+│
+├── 03_SYSTEMS/                # [実行・プログラム層]
+│   ├── v2_CORE/
+│   │   ├── _LOL/              # LoLエンジン (riot_observer, dict_synthesizerなど)
+│   │   ├── _MONETIZE/         # アフィリエイトエンジン (tool_scout, tool_forge, note_analytics, evolution)
+│   │   ├── agents/            # 共通エージェント状態管理 (state)
+│   │   ├── monetization_batch.py # 一気通貫バッチ (エントリポイント)
+│   │   └── pulse.py           # 死活監視・LoL脈動 (エントリポイント)
+│   └── ktm_bot/               # 大会運営用Discord Bot
+│
+└── 04_PORTAL/                 # [フロントエンド・表示層]
+    └── src/
 ```
-
-### 🔄 自律的ブラッシュアップ（マージ）フロー
-1. **パッチ検知・最新統計更新時**:
-   `champ_db_updater.py` が最新トレンド記事をマージする際、**既存 of `note_draft` をベースに最新の統計・パッチトレンドを上書き・マージし、日々ブラッシュアップされた最新ドラフト記事へ更新**する。
-2. **反省会フィードバック受信時**:
-   マスターが敗北から得た「鬼コーチの教訓」を `matchup_sentinel` の `strategy` に追記する際、同時に **`note_draft` 内の該当セクション（例: 『実戦からの戒め・弱点克服対策』）へ教訓を追記マージ**する。
 
 ---
 
@@ -119,8 +137,11 @@ CREATE POLICY "Allow update" ON matchup_sentinel FOR UPDATE TO authenticated USI
 - [x] **[フェーズ2]** Playwrightによるnote自動投稿＆Xプロモ連携スキル (B-3) のライブラリ化
 - [x] **[フェーズ3]** API Gateway ＆ レートリミッター（共有DB版）の構築（API競合の根本解決）
 - [x] **[フェーズ3]** SRE自己修復オートヒーラーエージェント (C-3) の構築（サンドボックス実行化）
-- [/] **[フェーズ4]** 自律成長・ソーシャル分析 ＆ 相性分析（バッチ化・PV分析・味方/敵勝率）
+- [x] **[フェーズ3]** 4つの自律型エージェント連携 ＆ 共同タスクボード（collab_tasks）自律連動同期の実装
+- [x] **[フェーズ3]** noteアクセス統計の自律分析（Analyst） ➔ プロンプト・ナレッジのメタ自動更新（Evolution）ループの構築
+- [x] **[フェーズ4]** ドメイン完全分離（_LOL / _MONETIZE）による物理整理 ＆ インポートパス自動置換の完了
 
+---
 
 ## 💰 拡張機能: ハイブリッド自動収益化ロードマップ (MVP v3.0)
 
@@ -133,12 +154,12 @@ CREATE POLICY "Allow update" ON matchup_sentinel FOR UPDATE TO authenticated USI
 
 #### 1. ASP（アフィリエイト・サービス・プロバイダ）および個別プログラムへの登録
 紹介したいIT・AIツールのアフィリエイトリンクを取得します。
-- **主要ASP**: [A8.net](https://www.a8.net/) や [もしもアフィリエイト](https://af.moshimo.com/) に登録します（Canvaやレンタルサーバー、ITサービスなどの案件が多数あります）。
-- **個別ツール**: 紹介したいAIツール（例: Notion, Canva, AI画像・動画生成ツール）の公式サイト最下部にある「Affiliate」や「Partner Program」リンクから直接プログラムに申請し、専用 of 紹介用URLを発行します。
+- **主要ASP**: [A8.net](https://www.a8.net/) や [もしもアフィリエイト](https://af.moshimo.com/) に登録します。
+- **個別ツール**: 紹介したいAIツール（例: Notion, Canva, ChatGPTなど）の公式サイト最下部にある「Affiliate」や「Partner Program」リンクから直接プログラムに申請し、紹介用URLを発行します。
 
 #### 2. システムへのアフィリエイトリンクの紐付け
-システムが自動生成した記事の中にアフィリエイトリンクを自動で挿入できるよう、マスターデータを新規作成して設定します。
-- **保存先ファイル**: `d:\my_work\02_FACTORY\affiliate_links.json` (新規作成)
+システムが自動生成した記事の中にアフィリエイトリンクを自動で挿入できるよう、マスターデータを設定します。
+- **保存先ファイル**: `d:\my_work\02_FACTORY\_MONETIZE\affiliate_links.json`
 - **記述例 (JSON形式)**:
   ```json
   {
@@ -150,8 +171,8 @@ CREATE POLICY "Allow update" ON matchup_sentinel FOR UPDATE TO authenticated USI
 
 #### 3. 自動化スクリプトの実行と運用
 アフィリエイトリンクの設定完了後、以下のサイクルを自動で回します。
-- **トレンド収集と記事生成**: `tool_scout.py` [NEW] でトレンドツールを自動収集し、`tool_forge.py` [NEW] で広告リンク入りのレビュー記事を生成します。
-- **無料 note 配信**: `NotePublisher` を用いて「無料」で下書き保存/公開します。
+- **トレンド収集と記事生成**: `tool_scout.py` でトレンドツールを自動収集し、`tool_forge.py` で広告リンク入りのレビュー記事を生成します。
+- **無料 note 配信**: `NotePublisher` を用いて「無料」で下書き保存します。
 - **Xでのアクセス誘導**: 生成されたX用スレッド原稿を元に、X（Twitter）からnote記事へのアクセス流入を誘導します。
 
 ---
@@ -166,10 +187,11 @@ CREATE POLICY "Allow update" ON matchup_sentinel FOR UPDATE TO authenticated USI
 - ポータル上の管理画面（💰 アフィリエイト管理タブ内）に「一括生成＆下書き保存」ボタンを追加し、バッチの実行状況やログを確認できるようにする。
 - 毎週3回程度、SREデーモン等のタイマー等と連動して自動実行可能とする。
 
-### 2. note PVアナリティクス ＆ AI分析
+### 2. note PVアクセス統計 ＆ 自己進化
 - note.com のアクセス状況ページから各記事のPV数を自動取得（Playwright）する機能。
 - 取得したPVデータを `note_pv_history` テーブル等に蓄積。
-- Gemini APIを用いて「PVが高い記事の傾向（キーワード、テーマ、構成）」を分析し、次回以降のツール記事自動選定のパラメータへフィードバックする。
+- AnalystエージェントでPV統計から読者の興味関心を分析し、Evolutionエージェントでその分析結果を `evolution_rules.md` に蓄積。
+- 次回以降の執筆時に、進化したルールをプロンプトに動的注入して自律的に改善を重ねる。
 
 ### 3. 相性・ライバル勝率マトリクス
 - 選手Aと選手Bが「同じチームになった時の勝率 (相性)」および「敵同士になった時の勝率 (ライバル)」を過去の全対戦履歴から算出するAPI `/api/player/chemistry` を実装。
@@ -193,3 +215,4 @@ CREATE POLICY "Allow update" ON matchup_sentinel FOR UPDATE TO authenticated USI
 ### 3. デプロイとパスの安全原則
 - Discord通知のリンクURLは、必ず環境変数または設定ファイルから取得した「絶対URL（フルパス）」を使用し、リンク切れ（デッドリンク）を防いでください。
 - スクリプトの起動パスは、実行環境の差異を吸収できるよう、必ず絶対パスまたは基準ディレクトリからの確実な相対解決を行ってください（ハードコードの禁止）。
+- **Next.jsプロジェクトにおいて絶対パスエイリアス（@/）は一切使用しないこと。常に相対パスを使用すること。**

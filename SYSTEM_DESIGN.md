@@ -528,6 +528,39 @@ Sovereign OSの自走化を極限まで高めるため、Antigravityのサブエ
 - エラー修正および監査差し戻しのループは、最大 **3回まで** にハードリミットされます。
 - 3回繰り返しても解決しない場合、ループは自動的に停止（Kill）され、状況ログを保持した状態で「人間に確認待ち（Request Review）」へと安全にフォールバックします。これにより、API制限の枯渇や無限バグ生成を根本的に遮断します。
 
+## 9. マルチエージェント自己進化システム (Sovereign ADO Engine) [New]
+
+my_workプロジェクト全体を、4つの自律型エージェント（Researcher, Creator, Analyst, Evolution）が「共通ナレッジベース」を介して自律的に協調し、データフィードバックによって自己進化し続けるマルチエージェントシステムへと改修するための設計仕様です。
+
+### 9-1. 4つの自律エージェントの定義
+1. **リサーチャー (Researcher)**:
+   - 役割: トレンドソース（X, note, Reddit等）からノイズを排除し、ファクトと数値データのみを抽出してナレッジDBへ構造化格納する。
+2. **クリエイター (Creator)**:
+   - 役割: ナレッジDBを参照し、成果物（note、X用スレッド等）を生成する。内部で「ペルソナAI」と壁打ち校正を行い、AI臭さを徹底排除する。
+3. **アナリスト (Analyst)**:
+   - 役割: 公開後の成果データ（PV、Likes、成約率など）を収集し、成否の「因果関係」を分析して改善ポイントを抽出する。
+4. **エボリューション (Evolution)**:
+   - 役割: アナリストの分析レポートを元に、ナレッジDBの共通執筆ルールや、クリエイターのプロンプト定義を自動で最適化（自己進化）する。
+
+### 9-2. 状態管理 (SovereignState) の仕様
+エージェントの進捗やフィードバック情報を一元管理する状態オブジェクト。Supabaseの既存 `matchup_sentinel` テーブル内の `matchup_id = 'SYSTEM_STATE'` レコードに JSONB 形式で永続化保存し、エージェント間で同期します。
+```python
+# state.py のデータ構造
+class SovereignState(TypedDict):
+    current_agent: str          # アクティブエージェント
+    task_status: str            # タスク進行状態
+    last_updated: str           # 最終更新日時
+    target_urls: List[str]      # 収集対象URL
+    structured_knowledge: Dict  # 構造化データ
+    note_draft: str             # 生成記事
+    x_thread: List[str]         # X用スレッド
+    note_url: Optional[str]     # note公開URL
+    performance_metrics: Dict   # アクセス実数値
+    analysis_report: Optional   # アナリスト分析結果
+    prompt_diff: Dict           # プロンプト更新差分
+    rule_updates: List[str]     # 共通ルール更新
+```
+
 ---
 
 

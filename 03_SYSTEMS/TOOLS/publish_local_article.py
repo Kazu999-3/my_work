@@ -14,8 +14,8 @@ logger = logging.getLogger("PublishLocal")
 # パスを追加
 sys.path.append(str(Path("D:/my_work/03_SYSTEMS")))
 
-from v2_CORE.publisher import NotePublisher, XPublisher
-from v2_CORE.monetization_loop import generate_x_promo_thread
+from v2_CORE._MONETIZE.publisher import NotePublisher, XPublisher
+from v2_CORE._MONETIZE.monetization_loop import generate_x_promo_thread
 
 def publish_local_article(champion_name: str, price: str = "500", auto_publish: bool = True):
     article_dir = Path("D:/my_work/02_FACTORY/PRODUCTS/ARTICLES")

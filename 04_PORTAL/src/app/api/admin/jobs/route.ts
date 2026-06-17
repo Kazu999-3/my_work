@@ -32,6 +32,12 @@ const JOBS: Record<string, JobConfig> = {
     log: '00_LOGS/research_scout_run.log',
     name: 'トレンド自動リサーチ'
   },
+  idea_generator: {
+    script: '03_SYSTEMS/v2_CORE/_MONETIZE/idea_generator.py',
+    lock: '03_SYSTEMS/v2_CORE/_MONETIZE/idea_generator.lock',
+    log: '00_LOGS/idea_generator_run.log',
+    name: '記事ネタ自動提案'
+  },
   evolution: {
     script: '03_SYSTEMS/v2_CORE/_MONETIZE/evolution.py',
     lock: '03_SYSTEMS/v2_CORE/_MONETIZE/evolution.lock',

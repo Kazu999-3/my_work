@@ -29,14 +29,14 @@ sys.path.append(str(ENGINE_DIR / "LEGACY"))
 
 from v2_CORE.pulse import pulse
 from v2_CORE.logger_config import setup_sovereign_logging
-from v2_CORE.sentinel import sentinel
-from v2_CORE.monetization_loop import run_monetization_loop
+from v2_CORE._LOL.sentinel import sentinel
+from v2_CORE._MONETIZE.monetization_loop import run_monetization_loop
 from v2_CORE.darwin_engine import DarwinEngine
-from v2_CORE.bounty_hunter import BountyHunter
-from v2_CORE.bible_forge import BibleForge
-from v2_CORE.publisher import NotePublisher
-from v2_CORE.match_importer import import_matches
-from v2_CORE.champ_db_updater import process_interrogation_queue
+from v2_CORE._LOL.bounty_hunter import BountyHunter
+from v2_CORE._LOL.bible_forge import BibleForge
+from v2_CORE._MONETIZE.publisher import NotePublisher
+from v2_CORE._LOL.match_importer import import_matches
+from v2_CORE._LOL.champ_db_updater import process_interrogation_queue
 
 # 統合ロガー
 logger = setup_sovereign_logging("Orchestrator")

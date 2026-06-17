@@ -5,9 +5,9 @@ from fastapi.security import APIKeyHeader
 from pydantic import BaseModel
 
 # 既存のコアモジュール群をインポート
-from v2_CORE.monetization_loop import run_monetization_loop
+from v2_CORE._MONETIZE.monetization_loop import run_monetization_loop
 from v2_CORE.pulse import system_pulse
-from v2_CORE.match_importer import import_matches
+from v2_CORE._LOL.match_importer import import_matches
 
 logger = logging.getLogger("AntigravityAPI")
 logging.basicConfig(level=logging.INFO)

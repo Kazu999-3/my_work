@@ -11,7 +11,7 @@ from v2_CORE.settings import settings
 from v2_CORE.database import db
 from v2_CORE.pulse import pulse
 from v2_CORE.forge import forge
-from v2_CORE.promoter import promoter
+from v2_CORE._MONETIZE.promoter import promoter
 from v2_CORE.ai_engine import ai_engine
 
 app = FastAPI(

@@ -9,7 +9,7 @@ from pathlib import Path
 # v2_CORE のパスを通す
 sys.path.append(str(Path(__file__).resolve().parent))
 from v2_CORE.gas_gateway import gas_gateway
-from v2_CORE.herald import herald
+from v2_CORE._LOL.herald import herald
 from v2_CORE.settings import settings
 from ole_youtube_analyzer import OLEAnalyzerV3
 

@@ -1,5 +1,5 @@
 from v2_CORE.forge import forge
-from v2_CORE.promoter import promoter
+from v2_CORE._MONETIZE.promoter import promoter
 from v2_CORE.database import db
 import logging
 

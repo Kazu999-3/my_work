@@ -1,7 +1,7 @@
 import logging
 import random
 from v2_CORE.agents.state import MonetizationState
-from v2_CORE.item_scout import ItemScout
+from v2_CORE._LOL.item_scout import ItemScout
 
 logger = logging.getLogger("ScoutNode")
 

@@ -1,7 +1,7 @@
 import logging
 from v2_CORE.agents.state import MonetizationState
-from v2_CORE.bible_forge import BibleForge
-from v2_CORE.evolution import evolution_engine
+from v2_CORE._LOL.bible_forge import BibleForge
+from v2_CORE._MONETIZE.evolution import evolution_engine
 
 logger = logging.getLogger("WriterNode")
 
