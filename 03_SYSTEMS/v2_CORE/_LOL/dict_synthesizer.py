@@ -170,7 +170,7 @@ class DictSynthesizer:
     def fetch_generic_articles(self):
         logger.info("🔍 攻略ライブラリから汎用記事を取得中...")
         res = httpx.get(
-            self._api("bible_articles"),
+            self._api("personal_knowledge"),
             headers=self._headers(),
             timeout=15
         )
@@ -179,7 +179,7 @@ class DictSynthesizer:
             generic = []
             fake_champions = ["", "Unknown", "その他", "[YouTube]", "YouTube", "Jungle", "jg", "lol", "ARTICLE", "draft", "SYSTEM", "LIVE", "GLOBAL", "test", "sns", "macro"]
             for a in articles:
-                kw = a.get("keywords", [])
+                kw = a.get("tags", [])
                 if kw and "__DELETED__" in kw:
                     continue
                 # Reddit トレンド記事は自動マージ（総合バイブル化）の対象外とする
@@ -210,8 +210,8 @@ class DictSynthesizer:
         
         for a in articles:
             title = a.get("title", "").lower()
-            content = a.get("content", "").lower()
-            keywords = [k.lower() for k in a.get("keywords", []) if k]
+            content = a.get("raw_content", "").lower()
+            keywords = [k.lower() for k in a.get("tags", []) if k]
             
             if "[総合バイブル]" in a.get("title", ""):
                 continue
@@ -286,10 +286,10 @@ class DictSynthesizer:
             
             combined_text = ""
             if existing_article:
-                combined_text += f"## 【既存の総合バイブル】\n\n{existing_article['content']}\n\n---\n\n"
+                combined_text += f"## 【既存の総合バイブル】\n\n{existing_article['raw_content']}\n\n---\n\n"
                 
             for item in limit_items:
-                combined_text += f"## 【元記事】{item['title']}\n\n{item['content']}\n\n---\n\n"
+                combined_text += f"## 【元記事】{item['title']}\n\n{item['raw_content']}\n\n---\n\n"
                 
             synthesized = self.synthesize_genre_text(genre, combined_text)
             if synthesized.startswith("⚠️") or synthesized.startswith("❌"):
@@ -298,22 +298,23 @@ class DictSynthesizer:
                 
             payload = {
                 "title": target_title,
-                "content": synthesized,
+                "raw_content": synthesized,
                 "champion": "Unknown",
-                "keywords": [genre, "総合バイブル"],
-                "file_path": existing_article.get("file_path") if existing_article else f"d:\\my_work\\02_FACTORY\\bible\\kirei_bible\\genre_{genre}.md"
+                "tags": [genre, "総合バイブル"],
+                "source_url": existing_article.get("source_url") if existing_article else f"d:\\my_work\\02_FACTORY\\bible\\kirei_bible\\genre_{genre}.md",
+                "genre": "LoL攻略"
             }
             
             if existing_article:
                 res = httpx.patch(
-                    self._api("bible_articles") + f"?id=eq.{existing_article['id']}",
+                    self._api("personal_knowledge") + f"?id=eq.{existing_article['id']}",
                     headers=self._headers(),
                     json=payload,
                     timeout=15
                 )
             else:
                 res = httpx.post(
-                    self._api("bible_articles"),
+                    self._api("personal_knowledge"),
                     headers=self._headers(),
                     json=payload,
                     timeout=15
@@ -324,7 +325,7 @@ class DictSynthesizer:
                 processed_any = True
                 
                 try:
-                    file_path = payload["file_path"]
+                    file_path = payload["source_url"]
                     os.makedirs(os.path.dirname(file_path), exist_ok=True)
                     with open(file_path, "w", encoding="utf-8") as f:
                         f.write(synthesized)
@@ -334,9 +335,9 @@ class DictSynthesizer:
                 
                 # 今回統合した個別記事のみを __DELETED__ マークします
                 for item in limit_items:
-                    del_payload = {"keywords": ["__DELETED__"]}
+                    del_payload = {"tags": ["__DELETED__"]}
                     httpx.patch(
-                        self._api("bible_articles") + f"?id=eq.{item['id']}",
+                        self._api("personal_knowledge") + f"?id=eq.{item['id']}",
                         headers=self._headers(),
                         json=del_payload,
                         timeout=10

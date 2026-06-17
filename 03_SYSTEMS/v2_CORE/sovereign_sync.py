@@ -240,9 +240,9 @@ class SovereignSync:
                 integrated = self._sync_to_champion_dictionary(champion, content, title, md_file.parent.name)
                 
                 if integrated:
-                    # 辞典への統合に成功した場合、ライブラリ(bible_articles)から該当記事を削除する
+                    # 辞典への統合に成功した場合、ライブラリ(personal_knowledge)から該当記事を削除する
                     httpx.delete(
-                        self._api("bible_articles") + f"?title=eq.{display_title}",
+                        self._api("personal_knowledge") + f"?title=eq.{display_title}",
                         headers=self._headers(),
                         timeout=10
                     )
@@ -251,26 +251,26 @@ class SovereignSync:
                 
                 data = {
                     "title": display_title,
-                    "content": content,
+                    "raw_content": content,
                     "champion": champion if champion != "Unknown" else None,
-                    "keywords": keywords,
-                    "file_path": str(md_file)
+                    "tags": keywords,
+                    "source_url": str(md_file)
                 }
 
                 res = httpx.post(
-                    self._api("bible_articles") + "?on_conflict=title",
+                    self._api("personal_knowledge") + "?on_conflict=title",
                     headers=self._headers(),
                     json=data,
                     timeout=15
                 )
 
                 # カラムが存在しないなどの理由でエラーが発生した場合の自動フォールバック
-                if res.status_code == 400 and ("column" in res.text or "keywords" in res.text):
-                    logger.warning(f"⚠️ {title} の同期に失敗しました（Supabase側に keywords カラムがない可能性があります）。keywords を除外してフォールバック同期します...")
+                if res.status_code == 400 and ("column" in res.text or "tags" in res.text):
+                    logger.warning(f"⚠️ {title} の同期に失敗しました（Supabase側に tags カラムがない可能性があります）。tags を除外してフォールバック同期します...")
                     fallback_data = data.copy()
-                    fallback_data.pop("keywords", None)
+                    fallback_data.pop("tags", None)
                     res = httpx.post(
-                        self._api("bible_articles") + "?on_conflict=title",
+                        self._api("personal_knowledge") + "?on_conflict=title",
                         headers=self._headers(),
                         json=fallback_data,
                         timeout=15

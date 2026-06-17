@@ -202,10 +202,11 @@ class RedditScout:
         
         payload = {
             "title": title,
-            "content": analysis_with_links,
+            "raw_content": analysis_with_links,
             "champion": "Unknown",
-            "keywords": ["Reddit", "トレンド"],
-            "file_path": file_path
+            "tags": ["Reddit", "トレンド"],
+            "source_url": file_path,
+            "genre": "LoL攻略"
         }
         
         # 保存先ディレクトリの作成
@@ -215,7 +216,7 @@ class RedditScout:
         headers = self._headers()
         headers["Prefer"] = "resolution=merge-duplicates"
         res = httpx.post(
-            self._api("bible_articles") + "?on_conflict=title",
+            self._api("personal_knowledge") + "?on_conflict=title",
             headers=headers,
             json=payload,
             timeout=15

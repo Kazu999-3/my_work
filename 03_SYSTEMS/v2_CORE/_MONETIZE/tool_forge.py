@@ -118,7 +118,7 @@ class ToolForge:
             return self.get_dummy_article(tool_name, affiliate_link)
 
     def save_to_supabase(self, title: str, content: str, tool_name: str, file_path: Path):
-        """Supabase の bible_articles テーブルに登録・更新"""
+        """Supabaseの personal_knowledge テーブルに登録・更新"""
         url = os.getenv("SUPABASE_URL")
         key = os.getenv("SUPABASE_KEY")
         if not url or not key:
@@ -135,21 +135,22 @@ class ToolForge:
         # タイトルのユニーク制約や上書き対応のため [ITツール攻略] などのプレフィックスを統一
         payload = {
             "title": f"[ITツール攻略] {title}",
-            "content": content,
+            "raw_content": content,
             "champion": tool_name,
-            "keywords": ["ITツール", "アフィリエイト", "レビュー"],
-            "file_path": str(file_path.resolve())
+            "tags": ["ITツール", "アフィリエイト", "レビュー"],
+            "source_url": str(file_path.resolve()),
+            "genre": "AIツール"
         }
         
         try:
             res = httpx.post(
-                f"{url}/rest/v1/bible_articles?on_conflict=title",
+                f"{url}/rest/v1/personal_knowledge?on_conflict=title",
                 headers=headers,
                 json=payload,
                 timeout=15
             )
             if res.status_code in (200, 201, 204):
-                logger.info(f"✅ Supabaseの bible_articles に '{title}' を登録/更新しました。")
+                logger.info(f"✅ Supabaseの personal_knowledge に '{title}' を登録/更新しました。")
             else:
                 logger.error(f"❌ Supabase登録エラー ({tool_name}): {res.text}")
         except Exception as e:
