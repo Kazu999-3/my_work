@@ -37,19 +37,16 @@ export async function GET() {
       links = defaultLinks;
     }
 
-    // 2. データベース（bible_articles）からITツールアフィリエイト記事をフェッチ
-    // keywords 配列に 'ITツール' または 'アフィリエイト' を含むものを取得
-    // postgres 配列フィルタは ?select=*&keywords=cs.{ITツール} のような形式で指定可能だが、
-    // ここでは安全に全攻略記事を取得して JavaScript 側でフィルタリングする
+    // 2. データベース（personal_knowledge）からITツールアフィリエイト記事をフェッチ
     const { data: articles, error } = await supabase
-      .from('bible_articles')
+      .from('personal_knowledge')
       .select('*')
       .order('created_at', { ascending: false });
 
     if (error) throw error;
 
     const filteredArticles = (articles || []).filter(art => {
-      const kws = art.keywords || [];
+      const kws = art.tags || [];
       return kws.includes('ITツール') || kws.includes('アフィリエイト');
     });
 
@@ -114,14 +111,14 @@ export async function POST(request: Request) {
 
         // 再生成された記事を取得
         const { data: articles, error } = await supabase
-          .from('bible_articles')
+          .from('personal_knowledge')
           .select('*')
           .order('created_at', { ascending: false });
 
         if (error) throw error;
 
         const filteredArticles = (articles || []).filter(art => {
-          const kws = art.keywords || [];
+          const kws = art.tags || [];
           return kws.includes('ITツール') || kws.includes('アフィリエイト');
         });
 
@@ -158,14 +155,14 @@ export async function POST(request: Request) {
 
         // 生成・投稿後に記事リストを再フェッチ
         const { data: articles, error } = await supabase
-          .from('bible_articles')
+          .from('personal_knowledge')
           .select('*')
           .order('created_at', { ascending: false });
 
         if (error) throw error;
 
         const filteredArticles = (articles || []).filter(art => {
-          const kws = art.keywords || [];
+          const kws = art.tags || [];
           return kws.includes('ITツール') || kws.includes('アフィリエイト');
         });
 

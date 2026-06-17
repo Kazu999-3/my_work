@@ -146,7 +146,7 @@ export default function Home() {
 
       // 6. ライブラリ更新履歴
       const { data: libData, error: libError } = await supabase
-        .from('bible_articles')
+        .from('personal_knowledge')
         .select('id, title, champion, created_at')
         .order('created_at', { ascending: false })
         .limit(5);

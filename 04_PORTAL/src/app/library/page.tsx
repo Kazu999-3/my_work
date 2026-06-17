@@ -55,7 +55,7 @@ function LibraryContent() {
   const fetchArticles = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.from('bible_articles').select('*').order('created_at', { ascending: false });
+      const { data, error } = await supabase.from('personal_knowledge').select('*').order('created_at', { ascending: false });
       if (!error && data) {
         setArticles(data);
 
@@ -84,8 +84,8 @@ function LibraryContent() {
       const champ = a.champion || 'その他';
       champCounts[champ] = (champCounts[champ] || 0) + 1;
 
-      if (a.keywords && Array.isArray(a.keywords)) {
-        a.keywords.forEach((kw: string) => {
+      if (a.tags && Array.isArray(a.tags)) {
+        a.tags.forEach((kw: string) => {
           if (kw && kw !== '__DELETED__') {
             keywordCounts[kw] = (keywordCounts[kw] || 0) + 1;
           }
@@ -235,8 +235,8 @@ function LibraryContent() {
         
         // ライブラリから削除フラグを立てる（裏のSRE Daemonがローカルファイルを消してから完全削除する）
         const { error: deleteError } = await supabase
-            .from('bible_articles')
-            .update({ keywords: ['__DELETED__'] })
+            .from('personal_knowledge')
+            .update({ tags: ['__DELETED__'] })
             .eq('id', selectedArticle.id);
             
         if (deleteError) throw deleteError;
@@ -256,7 +256,7 @@ function LibraryContent() {
     }
 
     // --- 既存の保存処理 (汎用記事のままの場合) ---
-    const { error } = await supabase.from('bible_articles').update(updateData).eq('id', selectedArticle.id);
+    const { error } = await supabase.from('personal_knowledge').update(updateData).eq('id', selectedArticle.id);
     if (!error) {
       const updated = { ...selectedArticle, ...updateData };
       setSelectedArticle(updated);
@@ -272,7 +272,7 @@ function LibraryContent() {
     
     try {
       // ローカルファイルも削除できるよう削除フラグを立てる
-      const { error } = await supabase.from('bible_articles').update({ keywords: ['__DELETED__'] }).eq('id', id);
+      const { error } = await supabase.from('personal_knowledge').update({ tags: ['__DELETED__'] }).eq('id', id);
       if (error) {
         alert('削除エラー: ' + error.message);
         console.error("Delete Error:", error);
