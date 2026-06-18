@@ -181,6 +181,7 @@ export function coreBalanceTeams(players: Player[], ctx: BalanceContext): Balanc
   const worstWRPlayerName = sortedByWR[9].name;
 
   const sortedByMMR = [...players].sort((a, b) => (b.avgMMR || 0) - (a.avgMMR || 0));
+  const highestMMRPlayerName = sortedByMMR[0].name;
   const lowestMMRPlayerName = sortedByMMR[9].name;
 
   const combinations = getCombinations([0, 1, 2, 3, 4, 5, 6, 7, 8, 9], 5);
@@ -321,6 +322,14 @@ export function coreBalanceTeams(players: Player[], ctx: BalanceContext): Balanc
         if (!validB) continue;
 
         let penalty = compositionPenalty, totalA = 0, totalB = 0;
+
+        // ソフト制限: 最高MMRと最低MMRが同じチームでない場合、ペナルティを加算
+        const highestInAPenalty = teamAIndices.some(idx => players[idx].name === highestMMRPlayerName);
+        const lowestInAPenalty = teamAIndices.some(idx => players[idx].name === lowestMMRPlayerName);
+        if (highestInAPenalty !== lowestInAPenalty && highestMMRPlayerName && lowestMMRPlayerName) {
+          penalty += 30000;
+        }
+
         let lanesAdvantagedA = 0, lanesAdvantagedB = 0;
         let highRankCountA = 0, highRankCountB = 0;
         let laneAdvantageScoreA = 0, laneAdvantageScoreB = 0;

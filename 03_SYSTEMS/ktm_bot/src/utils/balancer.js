@@ -24,7 +24,13 @@ export function performAutoBalance(players) {
     currentRole: 'FILL' // 一時割り当て用
   }));
 
-  let bestDiff = Infinity;
+  // 最もMMRが高いプレイヤーと最も低いプレイヤーを特定
+  const sortedPool = [...pool].sort((a, b) => b.mmr - a.mmr);
+  const highestMmrPlayerName = sortedPool[0]?.name;
+  const lowestMmrPlayerName = sortedPool[9]?.name;
+
+  let bestScore = Infinity;
+  let bestDiff = 0;
   let bestTeamA = [];
   let bestTeamB = [];
 
@@ -50,14 +56,24 @@ export function performAutoBalance(players) {
     const mmrB = teamB.reduce((sum, p) => sum + p.mmr, 0);
     const diff = Math.abs(mmrA - mmrB);
 
-    if (diff < bestDiff) {
+    // 最高・最低MMRプレイヤーが同じチームにいるか判定
+    const hasHighestA = teamA.some(p => p.name === highestMmrPlayerName);
+    const hasLowestA = teamA.some(p => p.name === lowestMmrPlayerName);
+    const isSameTeam = (hasHighestA === hasLowestA);
+
+    // ソフト制限: 最高と最低が別チームの場合はペナルティ（見かけ上の差を増やす）を課す
+    const penalty = (!isSameTeam && highestMmrPlayerName && lowestMmrPlayerName) ? 300 : 0;
+    const score = diff + penalty;
+
+    if (score < bestScore) {
+      bestScore = score;
       bestDiff = diff;
       bestTeamA = [...teamA];
       bestTeamB = [...teamB];
     }
   }
 
-  if (bestDiff === Infinity) {
+  if (bestScore === Infinity) {
     throw new Error("制約（人間関係ルールなど）を満たすチーム分けが見つかりませんでした。");
   }
 
