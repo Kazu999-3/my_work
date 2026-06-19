@@ -11,7 +11,7 @@ import urllib.error
 import urllib
 from google import genai
 from v2_CORE.settings import settings
-from v2_CORE.ai_helper import generate_content_safe
+from v2_CORE.ai_helper import generate_content_safe, generate_with_routing
 from v2_CORE._LOL.herald import herald
 
 from v2_CORE.logger_config import setup_sovereign_logging
@@ -225,11 +225,11 @@ class YouTubeAbsorber:
         """
         
         try:
-            # video_forge のクォータを消費（重い処理のため）
-            response_text = generate_content_safe(
+            # ルーターを経由し、ローカルLLM（Ollama）で処理可能な場合はローカルで実行
+            response_text = generate_with_routing(
                 self.client,
                 prompt,
-                settings.DEFAULT_MODEL,
+                task_type="bible_forge",
                 feature_name="video_forge"
             )
             return response_text
