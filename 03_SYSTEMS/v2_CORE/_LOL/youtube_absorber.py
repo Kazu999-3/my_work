@@ -199,6 +199,11 @@ class YouTubeAbsorber:
         if not self.client:
             return None
             
+        # 3万文字制限チェック
+        if len(transcript) > 30000:
+            logger.error(f"❌ [YouTubeAbsorber] 字幕が制限文字数（30,000文字）を超えています: {len(transcript)}文字 ({video_data['title']})")
+            return "❌ エラー: 字幕が3万文字の制限を超えています。"
+            
         prompt = f"""
         あなたはLoLの最上位プレイヤー（チャレンジャー／プロコーチ）です。
         以下のYouTube動画（タイトル: {video_data['title']}）の英語字幕テキストを読み込み、高度な戦略バイブル（Markdown形式）を作成してください。
@@ -221,7 +226,7 @@ class YouTubeAbsorber:
           ## 💡 重要な金言（名言・Tips）
 
         【字幕テキスト】
-        {transcript[:30000]} # 最大文字数制限
+        {transcript}
         """
         
         try:
