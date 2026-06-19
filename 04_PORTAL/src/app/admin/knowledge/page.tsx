@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Brain, Search, Plus, Trash2, Calendar, Link as LinkIcon, RefreshCw, FileText, ChevronDown, ChevronUp, BookOpen, Layers, Sparkles, Tag, Video } from 'lucide-react';
 import Link from 'next/link';
 import YoutubeQueueManager from '../youtube/YoutubeQueueManager';
+import LibraryTabContent from './LibraryTabContent';
 
 interface KnowledgeItem {
   id: number;
@@ -36,8 +37,8 @@ export default function KnowledgeBase() {
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
-  // ページ内タブ: ナレッジ一覧 or 動画キュー
-  const [activeTab, setActiveTab] = useState<'knowledge' | 'video'>('knowledge');
+  // ページ内タブ: ナレッジ一覧 or 動画キュー or 攻略ライブラリ
+  const [activeTab, setActiveTab] = useState<'knowledge' | 'video' | 'library'>('knowledge');
 
   const showFeedback = (text: string, type: 'success' | 'error') => {
     setMessage({ text, type });
@@ -301,7 +302,7 @@ export default function KnowledgeBase() {
         </form>
       </div>
 
-      {/* タブ切り替え: ナレッジ一覧 / 動画キュー */}
+      {/* タブ切り替え: ナレッジ一覧 / 動画キュー / 攻略ライブラリ */}
       <div className="flex bg-[#0f111a] p-1 rounded-2xl border border-gray-800/60">
         <button
           onClick={() => setActiveTab('knowledge')}
@@ -322,6 +323,16 @@ export default function KnowledgeBase() {
           }`}
         >
           <Video size={16} /> 動画解析キュー
+        </button>
+        <button
+          onClick={() => setActiveTab('library')}
+          className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 ${
+            activeTab === 'library'
+              ? 'bg-gradient-to-r from-purple-500/20 to-indigo-500/20 text-purple-400 border border-purple-500/30 shadow-[0_0_12px_rgba(167,139,250,0.15)]'
+              : 'text-gray-500 hover:text-gray-300'
+          }`}
+        >
+          <BookOpen size={16} /> 攻略ライブラリ
         </button>
       </div>
 
@@ -489,9 +500,12 @@ export default function KnowledgeBase() {
             )}
           </div>
         </>
-      ) : (
+      ) : activeTab === 'video' ? (
         /* 動画キュータブ: 既存のYoutubeQueueManagerをそのまま表示 */
         <YoutubeQueueManager />
+      ) : (
+        /* 攻略ライブラリタブ */
+        <LibraryTabContent />
       )}
     </div>
   );

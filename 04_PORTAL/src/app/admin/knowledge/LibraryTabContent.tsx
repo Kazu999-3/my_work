@@ -1,17 +1,17 @@
 "use client";
 
-import { useEffect, useState, useMemo, Suspense } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { supabase } from '../../lib/supabaseClient';
-import { Book, ChevronLeft, ChevronDown, ChevronUp, Clock, User, Sparkles, Pencil, Save, X, Trash2, Search, Terminal, Copy, Activity, Eye, Edit2, Star as StarIcon } from 'lucide-react';
+import { supabase } from '../../../lib/supabaseClient';
+import { Book, ChevronLeft, ChevronDown, ChevronUp, Clock, User, Sparkles, Pencil, Save, X, Trash2, Search, Terminal, Activity, Eye, Edit2, Star as StarIcon } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { motion, AnimatePresence } from 'framer-motion';
 
-import ChampSelect from '../../components/ChampSelect';
-import { getFavorites, toggleFavoriteArticle } from '../../components/FavoritesPanel';
+import ChampSelect from '../../../components/ChampSelect';
+import { getFavorites, toggleFavoriteArticle } from '../../../components/FavoritesPanel';
 
-function LibraryContent() {
+export default function LibraryTabContent() {
   const searchParams = useSearchParams();
   const [articles, setArticles] = useState<any[]>([]);
   const [selectedArticle, setSelectedArticle] = useState<any>(null);
@@ -379,7 +379,7 @@ function LibraryContent() {
   }
 
   return (
-    <div className="min-h-screen p-6 md:p-12 max-w-7xl mx-auto flex flex-col gap-8">
+    <div className="max-w-7xl mx-auto flex flex-col gap-8">
       <motion.header initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.5 }}>
         <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-2 flex items-center gap-4">
           <Book className="text-[#a78bfa]" size={36} /> <span className="text-gradient text-gradient-purple">攻略ライブラリ</span>
@@ -581,21 +581,13 @@ function LibraryContent() {
           ))}
         </motion.div>
       ) : (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="py-24 text-center glass-panel rounded-2xl flex flex-col items-center justify-center">
+        <div className="py-24 text-center glass-panel rounded-2xl flex flex-col items-center justify-center">
           <div className="w-16 h-16 bg-[#a78bfa]/10 rounded-full flex items-center justify-center mb-4">
             <Book size={32} className="text-[#a78bfa]" />
           </div>
           <h3 className="text-xl font-bold text-white mb-2">{search ? `「${search}」に一致する記事なし` : 'まだ記事がありません'}</h3>
-        </motion.div>
+        </div>
       )}
     </div>
-  );
-}
-
-export default function LibraryPage() {
-  return (
-    <Suspense fallback={<div className="flex justify-center py-20"><div className="w-8 h-8 border-4 border-[#a78bfa] border-t-transparent rounded-full animate-spin"></div></div>}>
-      <LibraryContent />
-    </Suspense>
   );
 }

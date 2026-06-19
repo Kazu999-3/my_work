@@ -19,7 +19,6 @@ const ADMIN_ONLY_MENU_ITEMS = [
   { id: 'dashboard', label: 'ダッシュボード', icon: LayoutDashboard, href: '/admin/dashboard', color: 'text-white', activeBg: 'bg-white/10' },
   { id: 'matchups',  label: 'バトルサーチ',   icon: Swords,          href: '/matchups', color: 'text-[#00cfef]', activeBg: 'bg-[#00cfef]/15' },
   { id: 'champions', label: 'チャンピオン辞典', icon: BookHeart,     href: '/champions', color: 'text-[#c89b3c]', activeBg: 'bg-[#c89b3c]/15' },
-  { id: 'library',   label: '攻略ライブラリ', icon: BookOpen,        href: '/library', color: 'text-[#a78bfa]', activeBg: 'bg-[#a78bfa]/15' },
   { id: 'design',    label: 'システム設計書', icon: ScrollText,      href: '/design', color: 'text-cyan-400', activeBg: 'bg-cyan-400/15' },
   { id: 'knowledge-admin', label: 'ナレッジベース', icon: Brain,       href: '/admin/knowledge', color: 'text-pink-400', activeBg: 'bg-pink-400/15' },
   { id: 'ktm-admin',   label: '⚙️ 管理者専用',     icon: Shield, href: '/ktm-admin', color: 'text-indigo-400', activeBg: 'bg-indigo-400/15' },
@@ -58,7 +57,6 @@ export default function Sidebar() {
     pathname.startsWith('/ktm-admin') ||
     pathname.startsWith('/matchups') ||
     pathname.startsWith('/champions') ||
-    pathname.startsWith('/library') ||
     pathname.startsWith('/design') ||
     pathname.startsWith('/admin');
 
