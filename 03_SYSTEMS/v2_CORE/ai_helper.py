@@ -192,23 +192,24 @@ def _generate_with_ollama(prompt: str, model: str = None) -> str:
     base_url = settings.OLLAMA_BASE_URL
     model_name = model or settings.OLLAMA_MODEL
     
-    # 2026年コンテキストの動的付与
+    # 2026年コンテキストの動的付与を system パラメータとして分離
     now_str = datetime.datetime.now().strftime("%Y年%m月%d日")
-    context_prompt = f"【システムコンテキスト：現在の年は2026年です（本日は {now_str}）。この日時を基準に、未来や過去の出来事を正しく判定し、文脈を構築してください。】\n\n{prompt}"
+    system_prompt = f"現在の年は2026年です（本日は {now_str}）。この日時を基準に、未来や過去の出来事を正しく判定し、文脈を構築してください。"
     
     try:
         res = requests.post(
             f"{base_url}/api/generate",
             json={
                 "model": model_name,
-                "prompt": context_prompt,
+                "prompt": prompt,
+                "system": system_prompt,
                 "stream": False,
                 "options": {
                     "temperature": 0.7,
                     "num_predict": 4096
                 }
             },
-            timeout=120  # ローカルモデルは時間がかかることがある
+            timeout=300  # 長尺の生成タスク（動画解析等）に備えてタイムアウトを5分に延長
         )
         
         if res.status_code == 200:
