@@ -18,8 +18,7 @@ if (-not $ollamaConn) {
 # 2. Next.js Portal の起動 (Port: 3000)
 $portalConn = Get-NetTCPConnection -LocalPort 3000 -ErrorAction SilentlyContinue
 if (-not $portalConn) {
-    Write-Host "🌐 [Next.js Portal] 起動中..." -ForegroundColor Cyan
-    Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd d:\my_work\04_PORTAL; npm run dev"
+    Start-Process powershell -WindowStyle Hidden -ArgumentList "-Command", "cd d:\my_work\04_PORTAL; npm run dev > d:\my_work\00_LOGS\portal.log 2>&1"
 } else {
     Write-Host "🌐 [Next.js Portal] すでに起動しています (Port: 3000)。" -ForegroundColor Green
 }
@@ -27,8 +26,7 @@ if (-not $portalConn) {
 # 3. Discord Bot (ktm_bot) の起動 (Port: 8787)
 $botConn = Get-NetTCPConnection -LocalPort 8787 -ErrorAction SilentlyContinue
 if (-not $botConn) {
-    Write-Host "🤖 [Discord Bot] 起動中..." -ForegroundColor Cyan
-    Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd d:\my_work\03_SYSTEMS\ktm_bot; npm run dev"
+    Start-Process powershell -WindowStyle Hidden -ArgumentList "-Command", "cd d:\my_work\03_SYSTEMS\ktm_bot; npm run dev > d:\my_work\00_LOGS\ktm_bot.log 2>&1"
 } else {
     Write-Host "🤖 [Discord Bot] すでに起動しています (Port: 8787)。" -ForegroundColor Green
 }
@@ -36,8 +34,7 @@ if (-not $botConn) {
 # 4. Core API / API Gateway の起動 (Port: 8000)
 $apiConn = Get-NetTCPConnection -LocalPort 8000 -ErrorAction SilentlyContinue
 if (-not $apiConn) {
-    Write-Host "🔑 [Core API] 起動中..." -ForegroundColor Cyan
-    Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd d:\my_work\03_SYSTEMS; python -m uvicorn v2_CORE.api:app --host 0.0.0.0 --port 8000"
+    Start-Process powershell -WindowStyle Hidden -ArgumentList "-Command", "cd d:\my_work\03_SYSTEMS; python -m uvicorn v2_CORE.api:app --host 0.0.0.0 --port 8000 > d:\my_work\00_LOGS\core_api.log 2>&1"
 } else {
     Write-Host "🔑 [Core API] すでに起動しています (Port: 8000)。" -ForegroundColor Green
 }
@@ -45,8 +42,7 @@ if (-not $apiConn) {
 # 5. SRE Daemon の起動 (プロセスチェック)
 $sreProc = Get-CimInstance Win32_Process -Filter "CommandLine LIKE '%sre_daemon.py%'"
 if (-not $sreProc) {
-    Write-Host "🛡️ [SRE Daemon] 起動中..." -ForegroundColor Cyan
-    Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd d:\my_work\03_SYSTEMS; python v2_CORE\sre_daemon.py"
+    Start-Process powershell -WindowStyle Hidden -ArgumentList "-Command", "cd d:\my_work\03_SYSTEMS; python v2_CORE\sre_daemon.py > d:\my_work\00_LOGS\sre_daemon_startup.log 2>&1"
 } else {
     Write-Host "🛡️ [SRE Daemon] すでに起動しています。" -ForegroundColor Green
 }
