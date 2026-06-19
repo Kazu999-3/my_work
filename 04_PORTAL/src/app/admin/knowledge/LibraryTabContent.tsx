@@ -11,7 +11,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import ChampSelect from '../../../components/ChampSelect';
 import { getFavorites, toggleFavoriteArticle } from '../../../components/FavoritesPanel';
 
-export default function LibraryTabContent() {
+export function LibraryTabContentInner() {
   const searchParams = useSearchParams();
   const [articles, setArticles] = useState<any[]>([]);
   const [selectedArticle, setSelectedArticle] = useState<any>(null);
@@ -85,9 +85,10 @@ export default function LibraryTabContent() {
     try {
       const { data, error } = await supabase
         .from('personal_knowledge')
-        .select('*')
+        .select('id, created_at, title, content, source_url, genre, tags, champion')
         .eq('genre', 'LoL攻略')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(100);
       if (!error && data) {
         setArticles(data);
 
@@ -145,7 +146,7 @@ export default function LibraryTabContent() {
     const filtered = articles.filter(a =>
       a.title.toLowerCase().includes(q) || 
       a.champion?.toLowerCase().includes(q) ||
-      (a.keywords && a.keywords.some((k: string) => k.toLowerCase().includes(q)))
+      (a.tags && a.tags.some((k: string) => k.toLowerCase().includes(q)))
     );
 
     const groups: Record<string, any[]> = {};
@@ -153,7 +154,7 @@ export default function LibraryTabContent() {
       filtered.forEach(a => { const key = a.champion || 'その他'; if (!groups[key]) groups[key] = []; groups[key].push(a); });
     } else {
       filtered.forEach(a => {
-        const keys = (a.keywords && a.keywords.length > 0) ? a.keywords : ['未分類'];
+        const keys = (a.tags && a.tags.length > 0) ? a.tags : ['未分類'];
         keys.forEach((k: string) => { if (!groups[k]) groups[k] = []; groups[k].push(a); });
       });
     }
@@ -195,7 +196,7 @@ export default function LibraryTabContent() {
     setEditContent(selectedArticle.content); 
     setEditTitle(selectedArticle.title);
     setEditChampion(selectedArticle.champion || '');
-    setEditKeywords((selectedArticle.keywords || []).join(', '));
+    setEditKeywords((selectedArticle.tags || []).join(', '));
     setEditing(true); 
   };
   const cancelEditing = () => { 
@@ -213,7 +214,7 @@ export default function LibraryTabContent() {
     const updateData = { 
       title: editTitle,
       champion: editChampion,
-      keywords: keywordsArray,
+      tags: keywordsArray,
       content: editContent, 
       created_at: now 
     };
@@ -565,7 +566,7 @@ export default function LibraryTabContent() {
                               </h3>
                             </div>
                             <div className="flex gap-2 flex-wrap ml-6">
-                              {article.keywords?.map((kw: string, kidx: number) => (
+                              {article.tags?.map((kw: string, kidx: number) => (
                                 <span key={kidx} className="text-[10px] text-gray-400 bg-black/40 border border-white/5 px-2 py-1 rounded-md">{kw}</span>
                               ))}
                             </div>
@@ -605,7 +606,7 @@ export default function LibraryTabContent() {
                                   setEditContent(article.content);
                                   setEditTitle(article.title);
                                   setEditChampion(article.champion || '');
-                                  setEditKeywords((article.keywords || []).join(', '));
+                                  setEditKeywords((article.tags || []).join(', '));
                                   setEditing(true);
                                 }}
                                 className="px-4 py-2 glass-panel glass-panel-hover text-[#c89b3c] rounded-xl text-sm font-bold flex items-center gap-2 transition-colors"
@@ -666,5 +667,15 @@ export default function LibraryTabContent() {
         </div>
       )}
     </div>
+  );
+}
+
+import { Suspense } from 'react';
+
+export default function LibraryTabContent() {
+  return (
+    <Suspense fallback={<div className="flex justify-center items-center py-20"><div className="w-8 h-8 border-4 border-[#a78bfa] border-t-transparent rounded-full animate-spin"></div></div>}>
+      <LibraryTabContentInner />
+    </Suspense>
   );
 }

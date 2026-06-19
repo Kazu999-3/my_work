@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
     const genre = searchParams.get('genre');
     const queryStr = searchParams.get('query');
 
-    let dbQuery = supabase.from('personal_knowledge').select('*');
+    let dbQuery = supabase.from('personal_knowledge').select('id, created_at, title, content, source_url, genre, tags, champion');
 
     if (genre && genre !== 'all') {
       dbQuery = dbQuery.eq('genre', genre);
@@ -24,8 +24,8 @@ export async function GET(req: NextRequest) {
       dbQuery = dbQuery.or(`title.ilike.%${queryStr}%,content.ilike.%${queryStr}%,raw_content.ilike.%${queryStr}%`);
     }
 
-    // 最新順
-    dbQuery = dbQuery.order('created_at', { ascending: false });
+    // 最新順 (上限100件に制限してメモリと描画負荷を低減)
+    dbQuery = dbQuery.order('created_at', { ascending: false }).limit(100);
 
     const { data, error } = await dbQuery;
 
