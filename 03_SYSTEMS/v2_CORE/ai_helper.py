@@ -206,10 +206,11 @@ def _generate_with_ollama(prompt: str, model: str = None) -> str:
                 "stream": False,
                 "options": {
                     "temperature": 0.7,
-                    "num_predict": 4096
+                    "num_predict": 4096,
+                    "num_ctx": 32768  # 32k コンテキストを指定して3万文字入力の切り捨てを防ぐ
                 }
             },
-            timeout=300  # 長尺の生成タスク（動画解析等）に備えてタイムアウトを5分に延長
+            timeout=900  # 長尺の生成タスク（3万文字解析等）に備えてタイムアウトを15分に延長
         )
         
         if res.status_code == 200:
