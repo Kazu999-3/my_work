@@ -55,7 +55,11 @@ function LibraryContent() {
   const fetchArticles = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.from('personal_knowledge').select('*').order('created_at', { ascending: false });
+      const { data, error } = await supabase
+        .from('personal_knowledge')
+        .select('*')
+        .eq('genre', 'LoL攻略')
+        .order('created_at', { ascending: false });
       if (!error && data) {
         setArticles(data);
 

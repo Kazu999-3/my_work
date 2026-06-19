@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Shield, LayoutDashboard, Swords, BookOpen, BookHeart, Trophy, Users, HeartHandshake, ScrollText, ListVideo, ChevronLeft, ChevronRight, Coins, Brain } from 'lucide-react';
-import NotificationBell from './NotificationBell';
 import FavoritesPanel from './FavoritesPanel';
 
 // 一般ユーザー用 (管理者エリア外で表示)
@@ -22,9 +21,7 @@ const ADMIN_ONLY_MENU_ITEMS = [
   { id: 'champions', label: 'チャンピオン辞典', icon: BookHeart,     href: '/champions', color: 'text-[#c89b3c]', activeBg: 'bg-[#c89b3c]/15' },
   { id: 'library',   label: '攻略ライブラリ', icon: BookOpen,        href: '/library', color: 'text-[#a78bfa]', activeBg: 'bg-[#a78bfa]/15' },
   { id: 'design',    label: 'システム設計書', icon: ScrollText,      href: '/design', color: 'text-cyan-400', activeBg: 'bg-cyan-400/15' },
-  { id: 'youtube-admin', label: 'YouTube管理', icon: ListVideo,     href: '/admin/youtube', color: 'text-red-400', activeBg: 'bg-red-400/15' },
   { id: 'knowledge-admin', label: 'ナレッジベース', icon: Brain,       href: '/admin/knowledge', color: 'text-pink-400', activeBg: 'bg-pink-400/15' },
-  { id: 'affiliate-admin', label: '副業管理', icon: Coins,           href: '/admin/affiliate', color: 'text-emerald-400', activeBg: 'bg-emerald-400/15' },
   { id: 'ktm-admin',   label: '⚙️ 管理者専用',     icon: Shield, href: '/ktm-admin', color: 'text-indigo-400', activeBg: 'bg-indigo-400/15' },
 ];
 
@@ -99,8 +96,7 @@ export default function Sidebar() {
               SOVEREIGN
             </span>
           </Link>
-          {/* 通知ベル (展開時のみ表示) */}
-          {!isCollapsed && <NotificationBell />}
+          {/* 通知ベル (非表示化) */}
         </div>
 
         {/* 管理者ログイン時のタブ切り替えUI */}
@@ -209,7 +205,7 @@ export default function Sidebar() {
       {/* スマホ用ボトムナビゲーション */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[#0a0b10]/95 backdrop-blur-xl border-t border-white/10 z-50 flex items-center justify-around px-1 py-2 shadow-[0_-4px_24px_rgba(0,0,0,0.5)] pb-[env(safe-area-inset-bottom)] overflow-x-auto custom-scrollbar">
         {/* 通常アイテムの表示 */}
-        {activeMenuItems.slice(0, 4).map((item) => {
+        {activeMenuItems.map((item) => {
           const isActive = pathname === item.href || (item.id === 'leaderboard' && pathname.startsWith('/player'));
 
           return (

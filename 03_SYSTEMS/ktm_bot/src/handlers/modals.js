@@ -8,8 +8,14 @@ export async function handleModalSubmit(interaction, env, ctx) {
   const userId = interaction.member.user.id;
 
   if (customId === 'portal_recruit_modal') {
-    const getVal = (cid) => interaction.data.components.find(c => c.components[0].custom_id === cid).components[0].value;
-    const metadata = { mode: getVal('mode'), time: getVal('time'), maxCount: parseInt(getVal('max')), memo: getVal('memo'), owner: userId, joined: [], spectating: [], roles: { Top: null, Jg: null, Mid: null, Adc: null, Sup: null }, names: {} };
+    const getVal = (cid) => {
+      const row = interaction.data.components.find(c => c.components[0].custom_id === cid);
+      return row ? row.components[0].value.trim() : "";
+    };
+    const rawMode = getVal('mode');
+    const mode = (rawMode === 'ノーマル' || rawMode === 'カスタム' || rawMode === 'ARAM') ? rawMode : 'ノーマル';
+    const maxCount = parseInt(getVal('max')) || (mode === 'カスタム' ? 10 : 5);
+    const metadata = { mode, time: getVal('time'), maxCount, memo: getVal('memo'), owner: userId, joined: [], spectating: [], roles: { Top: null, Jg: null, Mid: null, Adc: null, Sup: null }, names: {} };
     ctx.waitUntil(sendDiscordMessage(`channels/${CONFIG.RECRUIT_CHANNEL_ID}/messages`, env.DISCORD_TOKEN, "POST", { content: createMessageContent(metadata), embeds: [createRecruitEmbed(metadata)], components: createRecruitButtons(metadata) }));
     return Response.json({ type: 4, data: { content: "✅ **募集を #募集板 に投下しました！**", flags: 64 } });
   }
