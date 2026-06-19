@@ -410,7 +410,7 @@ export default function KnowledgeBase() {
                             </a>
                           )}
                         </div>
-                        <h2 className="text-lg font-bold text-gray-100 line-clamp-1">{item.title}</h2>
+                        <h2 className="text-lg font-bold text-gray-100 line-clamp-1">{item.title || '無題のナレッジ'}</h2>
                       </div>
 
                       <div className="flex items-center gap-2 shrink-0">
@@ -434,7 +434,7 @@ export default function KnowledgeBase() {
                     {/* 短縮要約（展開されていない時に少し見せる） */}
                     {!isExpanded && (
                       <p className="text-xs text-gray-400 mt-3 line-clamp-2 leading-relaxed bg-[#07080e]/40 p-3 rounded-xl border border-gray-900/60">
-                        {item.content.replace(/[#*`]/g, '')}
+                        {(item.content || '').replace(/[#*`]/g, '')}
                       </p>
                     )}
 
@@ -454,7 +454,7 @@ export default function KnowledgeBase() {
                               <BookOpen size={10} /> AI要約 (ナレッジベース)
                             </p>
                             <div className="bg-[#07080e] p-4 rounded-2xl border border-gray-900 text-sm text-gray-300 leading-relaxed whitespace-pre-wrap font-sans">
-                              {item.content}
+                              {item.content || '要約データはありません。'}
                             </div>
                           </div>
 
@@ -476,7 +476,7 @@ export default function KnowledgeBase() {
                                 <Layers size={10} /> 収集テキスト (生データ)
                               </p>
                               <div className="bg-[#07080e]/50 p-4 rounded-2xl border border-gray-900/60 text-[11px] text-gray-500 leading-relaxed max-h-48 overflow-y-auto font-mono whitespace-pre-wrap">
-                                {item.raw_content}
+                                {item.raw_content || '収集テキスト（生データ）はありません。'}
                               </div>
                             </div>
                           )}
