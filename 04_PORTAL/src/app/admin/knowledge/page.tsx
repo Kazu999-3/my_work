@@ -63,13 +63,16 @@ export default function KnowledgeBase() {
     }
   };
 
+  // 検索とフィルタの自動デバウンス実行
   useEffect(() => {
-    fetchKnowledge();
-  }, [filterGenre]);
+    const timer = setTimeout(() => {
+      fetchKnowledge();
+    }, 150);
+    return () => clearTimeout(timer);
+  }, [filterGenre, searchQuery]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    fetchKnowledge();
   };
 
   // YouTube URL判定
@@ -395,9 +398,8 @@ export default function KnowledgeBase() {
               knowledgeList.map((item) => {
                 const isExpanded = expandedId === item.id;
                 return (
-                  <motion.div
+                  <div
                     key={item.id}
-                    layout
                     className="bg-[#0f111a] border border-gray-800/60 rounded-3xl p-5 hover:border-gray-700/60 transition-all duration-300 relative overflow-hidden"
                   >
                     {/* カードヘッダー */}
@@ -450,51 +452,50 @@ export default function KnowledgeBase() {
                     )}
 
                     {/* 展開時の中身 */}
-                    <AnimatePresence>
-                      {isExpanded && (
-                        <motion.div
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: 'auto' }}
-                          exit={{ opacity: 0, height: 0 }}
-                          transition={{ duration: 0.3 }}
-                          className="mt-4 pt-4 border-t border-gray-800/80 space-y-4"
-                        >
-                          {/* 要約 (Markdown風表示) */}
+                    <div
+                      className="transition-all duration-300 ease-in-out overflow-hidden"
+                      style={{ 
+                        maxHeight: isExpanded ? '1000px' : '0px', 
+                        opacity: isExpanded ? 1 : 0,
+                        marginTop: isExpanded ? '16px' : '0px'
+                      }}
+                    >
+                      <div className="pt-4 border-t border-gray-800/80 space-y-4">
+                        {/* 要約 (Markdown風表示) */}
+                        <div className="space-y-1.5">
+                          <p className="text-[10px] font-bold text-pink-400 uppercase tracking-widest flex items-center gap-1">
+                            <BookOpen size={10} /> AI要約 (ナレッジベース)
+                          </p>
+                          <div className="bg-[#07080e] p-4 rounded-2xl border border-gray-900 text-sm text-gray-300 leading-relaxed whitespace-pre-wrap font-sans">
+                            {item.content || '要約データはありません。'}
+                          </div>
+                        </div>
+
+                        {/* タグ一覧 */}
+                        {item.tags && item.tags.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5">
+                            {item.tags.map((tag, tIdx) => (
+                              <span key={tIdx} className="px-2 py-0.5 rounded bg-black/40 border border-white/5 text-[10px] text-gray-400 flex items-center gap-1">
+                                <Tag size={8} /> {tag}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* 生の登録テキスト（メモや記事本文） */}
+                        {item.raw_content && (
                           <div className="space-y-1.5">
-                            <p className="text-[10px] font-bold text-pink-400 uppercase tracking-widest flex items-center gap-1">
-                              <BookOpen size={10} /> AI要約 (ナレッジベース)
+                            <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest flex items-center gap-1">
+                              <Layers size={10} /> 収集テキスト (生データ)
                             </p>
-                            <div className="bg-[#07080e] p-4 rounded-2xl border border-gray-900 text-sm text-gray-300 leading-relaxed whitespace-pre-wrap font-sans">
-                              {item.content || '要約データはありません。'}
+                            <div className="bg-[#07080e]/50 p-4 rounded-2xl border border-gray-900/60 text-[11px] text-gray-500 leading-relaxed max-h-48 overflow-y-auto font-mono whitespace-pre-wrap">
+                              {item.raw_content || '収集テキスト（生データ）はありません。'}
                             </div>
                           </div>
-
-                          {/* タグ一覧 */}
-                          {item.tags && item.tags.length > 0 && (
-                            <div className="flex flex-wrap gap-1.5">
-                              {item.tags.map((tag, tIdx) => (
-                                <span key={tIdx} className="px-2 py-0.5 rounded bg-black/40 border border-white/5 text-[10px] text-gray-400 flex items-center gap-1">
-                                  <Tag size={8} /> {tag}
-                                </span>
-                              ))}
-                            </div>
-                          )}
-
-                          {/* 生の登録テキスト（メモや記事本文） */}
-                          {item.raw_content && (
-                            <div className="space-y-1.5">
-                              <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest flex items-center gap-1">
-                                <Layers size={10} /> 収集テキスト (生データ)
-                              </p>
-                              <div className="bg-[#07080e]/50 p-4 rounded-2xl border border-gray-900/60 text-[11px] text-gray-500 leading-relaxed max-h-48 overflow-y-auto font-mono whitespace-pre-wrap">
-                                {item.raw_content || '収集テキスト（生データ）はありません。'}
-                              </div>
-                            </div>
-                          )}
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </motion.div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                 );
               })
             )}
