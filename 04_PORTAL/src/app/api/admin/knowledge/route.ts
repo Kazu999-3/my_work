@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
     const genre = searchParams.get('genre');
     const queryStr = searchParams.get('query');
 
-    let dbQuery = supabase.from('personal_knowledge').select('id, created_at, title, content, source_url, genre, tags, champion');
+    let dbQuery = supabase.from('personal_knowledge').select('id, created_at, title, content, raw_content, source_url, genre, tags, champion');
 
     if (genre && genre !== 'all') {
       dbQuery = dbQuery.eq('genre', genre);

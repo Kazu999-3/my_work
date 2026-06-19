@@ -85,7 +85,7 @@ export function LibraryTabContentInner() {
     try {
       const { data, error } = await supabase
         .from('personal_knowledge')
-        .select('id, created_at, title, content, source_url, genre, tags, champion')
+        .select('id, created_at, title, content, raw_content, source_url, genre, tags, champion')
         .eq('genre', 'LoL攻略')
         .order('created_at', { ascending: false })
         .limit(100);
@@ -193,7 +193,7 @@ export function LibraryTabContentInner() {
   const toggleGroup = (key: string) => setCollapsedGroups(prev => ({ ...prev, [key]: !prev[key] }));
 
   const startEditing = () => { 
-    setEditContent(selectedArticle.content); 
+    setEditContent(selectedArticle.raw_content || selectedArticle.content || ''); 
     setEditTitle(selectedArticle.title);
     setEditChampion(selectedArticle.champion || '');
     setEditKeywords((selectedArticle.tags || []).join(', '));
@@ -215,7 +215,8 @@ export function LibraryTabContentInner() {
       title: editTitle,
       champion: editChampion,
       tags: keywordsArray,
-      content: editContent, 
+      content: editContent.slice(0, 300).replace(/[#*`]/g, ''), 
+      raw_content: editContent,
       created_at: now 
     };
 
@@ -420,7 +421,7 @@ export function LibraryTabContentInner() {
               </div>
             ) : (
               <div className="prose prose-invert prose-purple max-w-none text-[15px] leading-loose text-gray-300">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>{selectedArticle.content}</ReactMarkdown>
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{selectedArticle.raw_content || selectedArticle.content}</ReactMarkdown>
               </div>
             )}
           </div>
@@ -584,8 +585,8 @@ export function LibraryTabContentInner() {
                           <div className="px-5 pb-5 ml-6 border-l-2 border-[#a78bfa]/20">
                             {/* Markdownプレビュー */}
                             <div className="prose prose-invert prose-purple prose-sm max-w-none max-h-[400px] overflow-y-auto p-4 bg-black/30 border border-white/5 rounded-xl text-sm leading-relaxed mb-4 scrollbar-thin">
-                              {article.content ? (
-                                <ReactMarkdown remarkPlugins={[remarkGfm]}>{article.content}</ReactMarkdown>
+                              {article.raw_content || article.content ? (
+                                <ReactMarkdown remarkPlugins={[remarkGfm]}>{article.raw_content || article.content}</ReactMarkdown>
                               ) : (
                                 <p className="text-gray-500 italic">本文が空です</p>
                               )}
