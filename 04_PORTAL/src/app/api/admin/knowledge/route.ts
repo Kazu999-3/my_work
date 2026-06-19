@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
       dbQuery = dbQuery.eq('genre', genre);
     }
 
-    if (queryStr) {
+    if (queryStr && queryStr.trim() !== '' && queryStr !== 'null' && queryStr !== 'undefined') {
       dbQuery = dbQuery.or(`title.ilike.%${queryStr}%,content.ilike.%${queryStr}%,raw_content.ilike.%${queryStr}%`);
     }
 
