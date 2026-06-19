@@ -91,9 +91,14 @@ def generate_content_safe(client, prompt, model_id=None, config=None, feature_na
                     except Exception as e:
                         logger.warning(f"⚠️ [AIHelper] APIGatewayでの待機処理に失敗しました: {e}")
                     
+                    # 2026年コンテキストの動的付与
+                    import datetime
+                    now_str = datetime.datetime.now().strftime("%Y年%m月%d日")
+                    context_prompt = f"【システムコンテキスト：現在の年は2026年です（本日は {now_str}）。この日時を基準に、未来や過去の出来事を正しく判定し、文脈を構築してください。】\n\n{prompt}"
+                    
                     response = current_client.models.generate_content(
                         model=model,
-                        contents=prompt,
+                        contents=context_prompt,
                         config=config
                     )
                     
@@ -182,16 +187,21 @@ LOCAL_TASKS = {"article_draft", "rewrite", "proofread", "tweet_gen", "newsletter
 def _generate_with_ollama(prompt: str, model: str = None) -> str:
     """Ollama ローカルLLM でテキスト生成（APIキー不要・無料・無制限）"""
     import requests
+    import datetime
     
     base_url = settings.OLLAMA_BASE_URL
     model_name = model or settings.OLLAMA_MODEL
+    
+    # 2026年コンテキストの動的付与
+    now_str = datetime.datetime.now().strftime("%Y年%m月%d日")
+    context_prompt = f"【システムコンテキスト：現在の年は2026年です（本日は {now_str}）。この日時を基準に、未来や過去の出来事を正しく判定し、文脈を構築してください。】\n\n{prompt}"
     
     try:
         res = requests.post(
             f"{base_url}/api/generate",
             json={
                 "model": model_name,
-                "prompt": prompt,
+                "prompt": context_prompt,
                 "stream": False,
                 "options": {
                     "temperature": 0.7,
