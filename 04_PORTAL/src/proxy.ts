@@ -20,7 +20,14 @@ export function proxy(req: NextRequest) {
     path.startsWith('/api/admin');
 
   if (isProtected) {
-    // Authorization ヘッダーの確認
+    // 1. クッキーによる長期セッションの確認
+    const authCookie = req.cookies.get('admin_auth')?.value;
+    const expectedAuthValue = btoa(`admin:${adminPassword}`);
+    if (authCookie && authCookie === expectedAuthValue) {
+      return NextResponse.next();
+    }
+
+    // 2. Authorization ヘッダーの確認
     const basicAuth = req.headers.get('authorization');
     if (basicAuth) {
       const authValue = basicAuth.split(' ')[1];
@@ -29,7 +36,16 @@ export function proxy(req: NextRequest) {
 
       // パスワードが一致するか確認
       if (pwd === adminPassword) {
-        return NextResponse.next();
+        const response = NextResponse.next();
+        // 30日間有効なクッキーをセット
+        response.cookies.set('admin_auth', expectedAuthValue, {
+          path: '/',
+          maxAge: 60 * 60 * 24 * 30, // 30日間
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax',
+        });
+        return response;
       }
     }
 
