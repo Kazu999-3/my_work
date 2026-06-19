@@ -338,7 +338,7 @@ class SovereignSync:
         
         # 完了通知
         try:
-            from pulse import pulse
+            from v2_CORE.pulse import pulse
             pulse.send_discord_notification(
                 title="クラウド同期 (Sovereign Sync) 完了",
                 description="ローカルの知識資産（攻略記事・Kireiバイブル・マッチアップデータ）を Supabase へ同期しました。"
