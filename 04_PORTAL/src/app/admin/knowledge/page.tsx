@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Brain, Search, Plus, Trash2, Calendar, Link as LinkIcon, RefreshCw, FileText, ChevronDown, ChevronUp, BookOpen, Layers, Sparkles, Tag, Video } from 'lucide-react';
 import Link from 'next/link';
+import YoutubeQueueManager from '../youtube/YoutubeQueueManager';
 
 interface KnowledgeItem {
   id: number;
@@ -35,7 +36,8 @@ export default function KnowledgeBase() {
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
-
+  // ページ内タブ: ナレッジ一覧 or 動画キュー
+  const [activeTab, setActiveTab] = useState<'knowledge' | 'video'>('knowledge');
 
   const showFeedback = (text: string, type: 'success' | 'error') => {
     setMessage({ text, type });
@@ -49,7 +51,7 @@ export default function KnowledgeBase() {
       const res = await fetch(`/api/admin/knowledge?genre=${filterGenre}&query=${searchQuery}`);
       if (res.ok) {
         const data = await res.json();
-        setKnowledgeList(data);
+        setKnowledgeList(Array.isArray(data) ? data : []);
       } else {
         showFeedback('ナレッジの取得に失敗しました。', 'error');
       }
@@ -88,8 +90,24 @@ export default function KnowledgeBase() {
 
     setActionLoading(true);
     try {
-      // 通常のURLまたはメモ → AI要約・分類
-      const res = await fetch('/api/admin/knowledge/add', {
+      // YouTube URLの場合は動画キューに送る
+      if (inputType === 'url' && isYoutubeUrl(payload.url)) {
+        const res = await fetch('/api/admin/youtube', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: payload.url }),
+        });
+        const result = await res.json();
+        if (res.ok) {
+          showFeedback('📺 YouTube動画としてキューに追加しました。SREデーモンが自動解析します。', 'success');
+          setInputUrl('');
+          setActiveTab('video'); // 動画キュータブに自動切り替え
+        } else {
+          showFeedback(result.error || '動画キューへの追加に失敗しました。', 'error');
+        }
+      } else {
+        // 通常のURLまたはメモ → AI要約・分類
+        const res = await fetch('/api/admin/knowledge/add', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
@@ -103,6 +121,7 @@ export default function KnowledgeBase() {
         } else {
           showFeedback(result.error || 'ナレッジの解析に失敗しました。', 'error');
         }
+      }
     } catch (err) {
       showFeedback('解析リクエストに失敗しました。', 'error');
     } finally {
@@ -282,7 +301,34 @@ export default function KnowledgeBase() {
         </form>
       </div>
 
-      {/* 検索・絞り込み */}
+      {/* タブ切り替え: ナレッジ一覧 / 動画キュー */}
+      <div className="flex bg-[#0f111a] p-1 rounded-2xl border border-gray-800/60">
+        <button
+          onClick={() => setActiveTab('knowledge')}
+          className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 ${
+            activeTab === 'knowledge'
+              ? 'bg-gradient-to-r from-pink-500/20 to-indigo-500/20 text-pink-400 border border-pink-500/30 shadow-[0_0_12px_rgba(244,63,94,0.15)]'
+              : 'text-gray-500 hover:text-gray-300'
+          }`}
+        >
+          <Brain size={16} /> ナレッジ一覧
+        </button>
+        <button
+          onClick={() => setActiveTab('video')}
+          className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 ${
+            activeTab === 'video'
+              ? 'bg-gradient-to-r from-red-500/20 to-orange-500/20 text-red-400 border border-red-500/30 shadow-[0_0_12px_rgba(239,68,68,0.15)]'
+              : 'text-gray-500 hover:text-gray-300'
+          }`}
+        >
+          <Video size={16} /> 動画解析キュー
+        </button>
+      </div>
+
+      {/* タブに応じてコンテンツ切り替え */}
+      {activeTab === 'knowledge' ? (
+        <>
+          {/* 検索・絞り込み */}
           <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-[#0f111a] border border-gray-800/80 rounded-3xl p-4 shadow-lg">
             {/* ジャンルフィルタ */}
             <div className="flex flex-wrap gap-1 bg-[#07080e] p-1 rounded-2xl border border-gray-800/60 w-full md:w-auto">
@@ -442,6 +488,11 @@ export default function KnowledgeBase() {
               })
             )}
           </div>
+        </>
+      ) : (
+        /* 動画キュータブ: 既存のYoutubeQueueManagerをそのまま表示 */
+        <YoutubeQueueManager />
+      )}
     </div>
   );
 }
