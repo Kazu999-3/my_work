@@ -5,11 +5,19 @@ import httpx
 from pathlib import Path
 import dotenv
 
-dotenv.load_dotenv(Path("d:/my_work/.env"))
-from v2_CORE.logger_config import setup_sovereign_logging
-logger = setup_sovereign_logging("DictSynthesizer")
+# パス追加（v2_COREモジュール解決のため）
+try:
+    dotenv.load_dotenv(Path("d:/my_work/.env"))
+    from v2_CORE.logger_config import setup_sovereign_logging
+    logger = setup_sovereign_logging("DictSynthesizer")
+except ImportError:
+    import sys
+    sys.path.append(str(Path(__file__).resolve().parent.parent.parent))
+    dotenv.load_dotenv(Path("d:/my_work/.env"))
+    from v2_CORE.logger_config import setup_sovereign_logging
+    logger = setup_sovereign_logging("DictSynthesizer")
 
-from v2_CORE.ai_helper import generate_content_safe
+from v2_CORE.ai_helper import generate_content_safe, generate_with_routing
 from v2_CORE._LOL.herald import herald
 from google import genai
 
@@ -77,10 +85,11 @@ class DictSynthesizer:
 【対象の生テキスト（ごちゃごちゃな状態）】
 {text}
 """
-        res = generate_content_safe(
+        res = generate_with_routing(
             self.client,
             prompt,
-            feature_name="dict_synthesizer"
+            task_type="rewrite",
+            feature_name="oracle"
         )
         import time
         logger.info("⏳ API制限(429)を回避するため、10秒間スリープします...")
@@ -245,10 +254,11 @@ class DictSynthesizer:
         【対象の攻略テキスト群（寄せ集め）】
         {text}
         """
-        res = generate_content_safe(
+        res = generate_with_routing(
             self.client,
             prompt,
-            feature_name="dict_synthesizer"
+            task_type="rewrite",
+            feature_name="oracle"
         )
         import time
         logger.info("⏳ API制限(429)を回避するため、10秒間スリープします...")
