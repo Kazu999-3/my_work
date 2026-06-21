@@ -3,21 +3,18 @@ import json
 import time
 import logging
 import httpx
-import re
 from pathlib import Path
 from playwright.sync_api import sync_playwright
 import dotenv
-from google import genai
 
-# パス追加
 try:
     from v2_CORE._LOL.herald import herald
-    from v2_CORE.settings import settings
+    from v2_CORE._MONETIZE.knowledge_connector import KnowledgeConnector
 except ImportError:
     import sys
     sys.path.append(str(Path(__file__).resolve().parent.parent.parent))
     from v2_CORE._LOL.herald import herald
-    from v2_CORE.settings import settings
+    from v2_CORE._MONETIZE.knowledge_connector import KnowledgeConnector
 
 logger = logging.getLogger("NoteMagazineImporter")
 logger.setLevel(logging.INFO)
@@ -26,86 +23,21 @@ if not logger.handlers:
     handler.setFormatter(logging.Formatter("%(asctime)s [%(name)s] %(message)s"))
     logger.addHandler(handler)
 
-SUPABASE_URL = settings.SUPABASE_URL
-SUPABASE_KEY = settings.SUPABASE_KEY
-
 class NoteMagazineImporter:
+    """noteマガジンを巡回し、KnowledgeConnectorプラグインを利用してナレッジを自動登録するクラス"""
+    
     def __init__(self, headless=True):
         self.headless = headless
-        self.user_data_dir = Path("D:/my_work/.agent/playwright_data/note_profile")
-        api_key = os.getenv("GEMINI_API_KEY_FREE") or os.getenv("GEMINI_API_KEY")
-        self.client = genai.Client(api_key=api_key) if api_key else None
-
-    def _headers(self):
-        return {
-            "apikey": SUPABASE_KEY,
-            "Authorization": f"Bearer {SUPABASE_KEY}",
-            "Content-Type": "application/json"
-        }
+        self.connector = KnowledgeConnector(headless=headless)
+        self.user_data_dir = self.connector.user_data_dir
 
     def is_already_imported(self, article_url: str) -> bool:
         """指定されたURLの記事がすでに登録されているかチェック"""
-        url = f"{SUPABASE_URL}/rest/v1/personal_knowledge?source_url=eq.{article_url}"
-        res = httpx.get(url, headers=self._headers(), timeout=10)
+        url = f"{self.connector.supabase_url}/rest/v1/personal_knowledge?source_url=eq.{article_url}"
+        res = httpx.get(url, headers=self.connector._headers(), timeout=10)
         if res.status_code == 200:
             return len(res.json()) > 0
         return False
-
-    def analyze_and_summarize(self, title: str, content: str):
-        """Gemini API を使って記事の要約・分類を生成"""
-        if not self.client:
-            logger.warning("⚠️ Gemini APIクライアント未設定。簡易処理を行います。")
-            return {
-                "genre": "その他",
-                "champion": None,
-                "tags": ["note"],
-                "summary": content[:300]
-            }
-
-        prompt = f"""
-あなたは優秀な知識管理アシスタントです。
-以下の note 記事のタイトルと本文を解析し、次の4つの項目を JSON 形式で出力してください。
-
-【項目】
-1. genre: 'LoL攻略', '副業ノウハウ', 'AIツール', 'その他' のいずれか。
-2. champion: LoL攻略記事の場合、対象のチャンピオン名（英語。例: 'Ahri', 'JarvanIV'）。該当しない場合は null。
-3. tags: 関連するキーワードタグの配列（最大5つ。例: ["マクロ", "ジャングル", "ビルド"]）。
-4. summary: 読者が要点を理解できる、3行〜5行程度のMarkdownフォーマットの要約（箇条書きなどを活用して見やすく記述）。
-
-【制約事項】
-- JSON以外の説明テキストやマークダウン記法（```json など）は出力に含めず、純粋な JSON テキストのみを返してください。
-
-タイトル: {title}
-本文:
-{content[:5000]}
-"""
-        try:
-            from v2_CORE.ai_helper import generate_content_safe
-            response_text = generate_content_safe(
-                self.client,
-                prompt,
-                model_id=settings.DEFAULT_MODEL,
-                feature_name="oracle"
-            )
-            # JSONパース
-            clean_text = re.sub(r"^```[a-zA-Z0-9]*\n", "", response_text)
-            clean_text = re.sub(r"\n```$", "", clean_text).strip()
-            result = json.loads(clean_text)
-            return {
-                "genre": result.get("genre", "その他"),
-                "champion": result.get("champion"),
-                "tags": result.get("tags", []),
-                "summary": result.get("summary", "要約の生成に失敗しました。")
-            }
-        except Exception as e:
-            logger.error(f"❌ AI解析中にエラーが発生しました: {e}")
-            # フォールバック
-            return {
-                "genre": "その他",
-                "champion": None,
-                "tags": ["note"],
-                "summary": content[:300]
-            }
 
     def import_magazine(self, magazine_url: str):
         """マガジンURLから記事を巡回してインポート"""
@@ -130,7 +62,6 @@ class NoteMagazineImporter:
                 time.sleep(5)
                 
                 # 記事リンク (例: /n/xxxxxxxx や note.com/.../n/xxxxxxxx)
-                # Playwrightのセレクタでa[href*="/n/"] を抽出
                 links = page.locator('a[href*="/n/"]').all()
                 article_urls = []
                 for link in links:
@@ -174,32 +105,20 @@ class NoteMagazineImporter:
                             
                         logger.info(f"  📖 記事取得完了: '{title}' (本文 {len(body)} 文字)")
                         
-                        # AI要約・分類
-                        analysis = self.analyze_and_summarize(title, body)
-                        
-                        # Supabase へ登録
-                        payload = {
-                            "title": title,
-                            "content": analysis["summary"],
-                            "raw_content": body,
-                            "source_url": url,
-                            "genre": analysis["genre"],
-                            "tags": analysis["tags"],
-                            "champion": analysis["champion"]
-                        }
-                        
-                        res = httpx.post(
-                            f"{SUPABASE_URL}/rest/v1/personal_knowledge?on_conflict=title",
-                            headers=self._headers(),
-                            json=payload,
-                            timeout=15
+                        # ナレッジプラグイン (KnowledgeConnector) の要約・DB登録ロジックを呼び出し
+                        analysis = self.connector.analyze_content(title, body)
+                        success = self.connector.register_knowledge(
+                            title=title,
+                            content_summary=analysis["summary"],
+                            raw_content=body,
+                            source_url=url,
+                            genre=analysis["genre"],
+                            tags=analysis["tags"],
+                            champion=analysis["champion"]
                         )
                         
-                        if res.status_code in (200, 201):
-                            logger.info(f"  ✅ ナレッジ登録成功: {title}")
+                        if success:
                             imported_count += 1
-                        else:
-                            logger.error(f"  ❌ ナレッジ登録失敗: {res.status_code} {res.text}")
                             
                     except Exception as article_e:
                         logger.error(f"  ❌ 記事のパース中にエラーが発生しました: {article_e}")
