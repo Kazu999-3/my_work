@@ -9,7 +9,13 @@ from pathlib import Path
 from collections import deque
 from google import genai
 from google.genai import types
-from v2_CORE.settings import settings
+
+try:
+    from v2_CORE.settings import settings
+except ImportError:
+    import sys
+    sys.path.append(str(Path(__file__).resolve().parent.parent))
+    from v2_CORE.settings import settings
 from v2_CORE.pulse import SovereignPulse
 
 from v2_CORE.logger_config import setup_sovereign_logging
