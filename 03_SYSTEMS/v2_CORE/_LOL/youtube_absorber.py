@@ -294,50 +294,45 @@ class YouTubeAbsorber:
         return " ".join(lines)
 
     def generate_bible(self, video_data, transcript):
-        if not self.client:
-            return None
-            
         # 3万文字制限チェック
         if len(transcript) > 30000:
             logger.error(f"❌ [YouTubeAbsorber] 字幕が制限文字数（30,000文字）を超えています: {len(transcript)}文字 ({video_data['title']})")
             return "❌ エラー: 字幕が3万文字の制限を超えています。"
             
-        prompt = f"""
-        あなたはLoLの最上位プレイヤー（チャレンジャー／プロコーチ）です。
-        以下のYouTube動画（タイトル: {video_data['title']}）の英語字幕テキストを読み込み、高度な戦略バイブル（Markdown形式）を作成してください。
-
-        【対象動画の情報】
-        URL: {video_data['url']}
+        import httpx
         
-        【作成要件】
-        - 徹底して「LoLのジャングル/マクロ/ミクロの戦略」にフォーカスすること。無駄な雑談や挨拶は省く。
-        - 全て**日本語**で出力すること。
-        - **重要**: この動画のメインとなるチャンピオンを判定し、Markdownの1行目（タイトルの上）に必ず `[Champion: チャンピオン名]` と出力すること。特定のチャンピオンがない汎用解説の場合は `[Champion: Unknown]` とすること。
-        - 構成は以下の通りとする：
-        [Champion: チャンピオン名]
-          # {video_data['title']}
-          ## 📌 動画の結論（1行サマリー）
-          ## 🧠 マクロ戦略・ルート・判断基準
-          （具体的なジャングルルート、なぜその選択をしたかの理由付け）
-          ## 🗡️ ミクロ・戦闘のコツ
-          （ガンクのタイミング、スキルコンボ、ポジション等）
-          ## 💡 重要な金言（名言・Tips）
-
-        【字幕テキスト】
-        {transcript}
-        """
+        api_key = os.environ.get("ANTIGRAVITY_API_KEY", "default_dev_key_2026")
+        url = "http://localhost:8000/api/v1/agent/generate"
+        headers = {
+            "X-Antigravity-Key": api_key,
+            "Content-Type": "application/json"
+        }
+        
+        payload = {
+            "prompt_id": "youtube_bible_forge",
+            "variables": {
+                "title": video_data["title"],
+                "url": video_data["url"],
+                "transcript": transcript
+            }
+        }
         
         try:
-            # ルーターを経由し、ローカルLLM（Ollama）で処理可能な場合はローカルで実行
-            response_text = generate_with_routing(
-                self.client,
-                prompt,
-                task_type="bible_forge",
-                feature_name="video_forge"
-            )
-            return response_text
+            logger.info("📡 AI Agent Gateway (Port 8000) へ要約生成リクエストを送信中...")
+            res = httpx.post(url, headers=headers, json=payload, timeout=900)
+            if res.status_code == 200:
+                data = res.json()
+                if data.get("success"):
+                    logger.info(f"✅ AI Agent Gateway経由での生成成功 (モデル: {data.get('model_used')}, フォールバック: {data.get('fallback_occurred')})")
+                    return data.get("text")
+                else:
+                    logger.error(f"❌ AI Agent Gatewayがエラーを返しました: {data.get('error_message')}")
+                    return None
+            else:
+                logger.error(f"❌ AI Agent Gateway接続失敗 (HTTP {res.status_code}): {res.text[:200]}")
+                return None
         except Exception as e:
-            logger.error(f"Generation failed: {e}")
+            logger.error(f"❌ AI Agent Gatewayとの通信で例外が発生しました: {e}")
             return None
 
     def run_cycle(self, limit=10):

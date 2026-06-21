@@ -244,6 +244,10 @@ export default function Home() {
         </div>
         
         <div className="flex flex-col md:flex-row items-end md:items-center gap-4">
+          <Link href="/admin/prompts" className="px-4 py-2.5 rounded-2xl bg-slate-900 border border-slate-800 hover:bg-slate-800 hover:border-slate-700 text-xs font-bold text-slate-300 transition-all flex items-center gap-2">
+            <Cpu size={14} className="text-cyan-400" />
+            <span>AI プロンプト設定 ➔</span>
+          </Link>
           <Link href="/admin/analytics" className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 border border-indigo-500/20 hover:from-indigo-500 hover:to-purple-500 hover:border-indigo-400/30 text-xs font-bold text-white transition-all shadow-[0_0_20px_rgba(99,102,241,0.3)] flex items-center gap-2">
             <TrendingUp size={14} />
             <span>note 分析 ➔</span>
