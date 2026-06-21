@@ -51,6 +51,15 @@ if (-not $sreProc) {
     Write-Host "[SRE Daemon] Already running." -ForegroundColor Green
 }
 
+# 6. Edge Worker Daemon Startup (Process check)
+$workerProc = Get-CimInstance Win32_Process -Filter "CommandLine LIKE '%edge_worker_daemon%'"
+if (-not $workerProc) {
+    Write-Host "[Edge Worker Daemon] Starting background job..." -ForegroundColor Cyan
+    Start-Job -Name "EdgeWorker" -ScriptBlock { cd d:\my_work\03_SYSTEMS; d:\my_work\.venv\Scripts\python.exe -m v2_CORE.edge_worker_daemon > d:\my_work\00_LOGS\edge_worker_daemon_startup.log 2>&1 } | Out-Null
+} else {
+    Write-Host "[Edge Worker Daemon] Already running." -ForegroundColor Green
+}
+
 Write-Host "------------------------------------------------------------"
 Write-Host "All background jobs registered!" -ForegroundColor Yellow
 Write-Host "Here is the current job status:" -ForegroundColor DarkGray
