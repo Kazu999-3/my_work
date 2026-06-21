@@ -8,6 +8,16 @@ from pathlib import Path
 # 環境変数のロード
 dotenv.load_dotenv(Path("d:/my_work/.env"))
 
+class MonetizationState(TypedDict):
+    champion: str
+    meta_context: str
+    draft_article: str
+    audit_feedback: str
+    audit_passed: bool
+    audit_count: int
+    x_thread_json: str
+    publish_status: str
+
 class SovereignState(TypedDict):
     # 1. 実行制御 (Control)
     current_agent: str          # 現在アクティブなエージェント ('researcher' | 'creator' | 'analyst' | 'evolution')

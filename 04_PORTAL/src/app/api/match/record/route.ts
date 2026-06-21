@@ -7,10 +7,13 @@ export async function POST(request: Request) {
     const { winningTeam, gameDuration, participants, riotMatchId, adminPassword } = await request.json();
 
     // 管理者パスワードの検証 (安全のためのセキュリティチェック)
+    // 一般ユーザーでも保存可能にするため、チェックを無効化しています
+    /*
     const expectedPassword = process.env.ADMIN_PASSWORD || 'ktm';
     if (adminPassword !== expectedPassword) {
       return NextResponse.json({ error: '管理者パスワードが正しくありません。保存権限がありません。' }, { status: 403 });
     }
+    */
 
     if (!winningTeam || !participants || participants.length !== 10) {
       return NextResponse.json({ error: '入力データが不正です。10人の参加者と勝利チームが必要です。' }, { status: 400 });
@@ -32,7 +35,7 @@ export async function POST(request: Request) {
     const { data: historyData, error: hError } = await supabase
       .from('ktm_match_participants')
       .select(`
-        player_name, role, team, ktm_matches!inner(winning_team)
+        match_id, player_name, role, team, ktm_matches!inner(winning_team)
       `)
       .in('player_name', names);
 
@@ -79,8 +82,18 @@ export async function POST(request: Request) {
       const numGames = pStats.roleGames[input.role] || 0;
       const totalWinRate = pStats.totalGames > 0 ? (pStats.totalWins / pStats.totalGames) * 100 : 50;
       
-      // 対面回数の計算 (今回は簡易的に0とするか、historyDataからさらに集計可能だが省略)
-      const matchupCount = 0; 
+      // 対面相手との対面回数を historyData から集計
+      let matchupCount = 0;
+      if (historyData && opponent) {
+        const myMatches = historyData.filter((r: any) => r.player_name === input.name && r.role === input.role);
+        const oppMatches = historyData.filter((r: any) => r.player_name === opponent.name && r.role === input.role);
+        myMatches.forEach((myM: any) => {
+          const matchedOpp = oppMatches.find((oppM: any) => oppM.match_id === myM.match_id && oppM.team !== myM.team);
+          if (matchedOpp) {
+            matchupCount++;
+          }
+        });
+      } 
 
       const teamParticipants = participants.filter((p: any) => p.team === input.team);
       const teamTotalKills = teamParticipants.reduce((acc: number, curr: any) => acc + (Number(curr.kills) || 0), 0);

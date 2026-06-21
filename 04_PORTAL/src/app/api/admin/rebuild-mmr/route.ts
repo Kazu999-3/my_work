@@ -46,6 +46,7 @@ export async function POST(req: Request) {
 
     let processedMatches = 0;
     const participantUpdates = [];
+    const matchupHistoryMap = new Map<string, number>(); // "PlayerA<=>PlayerB:ROLE" -> count
 
     // 3. 過去の試合から順番に計算
     for (const match of allMatches) {
@@ -83,6 +84,14 @@ export async function POST(req: Request) {
           }, 0) / (opponentList.length || 1);
         }
 
+        // 対面相手との対面回数のシミュレーション
+        let matchupCount = 0;
+        let matchupKey = "";
+        if (opponent) {
+          matchupKey = [p.player_name, opponent.player_name].sort().join("<=>") + ":" + role;
+          matchupCount = matchupHistoryMap.get(matchupKey) || 0;
+        }
+
         const mainRank = memPlayer.highest_rank ? memPlayer.highest_rank.split(' ')[0].toUpperCase() : 'UNRANKED';
         const isWin = p.team === match.winning_team;
 
@@ -108,7 +117,7 @@ export async function POST(req: Request) {
           assists: p.assists || 0,
           mainRank,
           numGames,
-          matchupCount: 0,
+          matchupCount,
           totalWinRate,
           visionScore: p.vision_score || 0,
           cs: p.cs || 0,
@@ -136,6 +145,11 @@ export async function POST(req: Request) {
         if (isWin) memPlayer.totalWins += 1;
         if (memPlayer.laneGames[role] !== undefined) {
           memPlayer.laneGames[role] += 1;
+        }
+
+        // MMR更新に成功したため、対面回数をインクリメント
+        if (opponent && matchupKey) {
+          matchupHistoryMap.set(matchupKey, matchupCount + 1);
         }
 
         // participants のアップデート配列に追加

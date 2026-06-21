@@ -2,6 +2,7 @@ import { CONFIG } from '../config.js';
 import { fetchGAS, patchInteractionResponse, sendDiscordMessage } from '../utils/api.js';
 import { createMessageContent, createRecruitButtons, createRecruitEmbed, getPortalComponents, getPortalEmbed } from '../ui/embeds.js';
 import { getPlayersByNames, fetchSupabase, upsertPlayer } from '../utils/supabase.js';
+import { parseMessageData } from '../utils/helpers.js';
 
 export function handleRecruitDirect(interaction) {
   const options = interaction.data.options || [];
@@ -290,11 +291,191 @@ export async function handleSetIgn(interaction, env, ctx) {
 }
 
 export async function executeBalance(interaction, names, env, ctx, isRebalance = false) {
-  return Response.json({ type: 4, data: { content: "⚠️ チーム分け機能は現在メンテナンス中です。", flags: 64 } });
+  const appId = interaction.application_id;
+  const token = interaction.token;
+  const authorId = interaction.member?.user?.id || interaction.user?.id;
+
+  ctx.waitUntil((async () => {
+    try {
+      // 1. 処理中表示の投稿/更新
+      const progressEmbed = {
+        title: "⚙️ チーム分け計算中...",
+        description: "ポータルAPI経由で最適なチームを計算しています。しばらくお待ちください。",
+        color: 0xf39c12,
+        footer: { text: "KTM Balancer | 処理中..." }
+      };
+
+      if (isRebalance) {
+        await sendDiscordMessage(`channels/${CONFIG.MATCH_CHANNEL_ID}/messages`, env.DISCORD_TOKEN, "POST", { embeds: [progressEmbed] });
+      } else {
+        await patchInteractionResponse(appId, token, { embeds: [progressEmbed], components: [] });
+      }
+
+      // 2. プレイヤー一覧のクリーンアップ
+      let validNames = [...new Set(
+        (names || []).map(n => String(n).trim()).filter(n => n && n !== "ユーザー" && n !== "不明")
+      )];
+
+      if (validNames.length < 10) {
+        throw new Error(`プレイヤーが不足しています（現在: ${validNames.length}名）。10名必要です。`);
+      }
+
+      // 3. メタデータから固定ロールプレイヤーを検出
+      let participants = [];
+      try {
+        if (interaction.message) {
+          const metadata = parseMessageData(interaction.message);
+          if (metadata && metadata.roles) {
+            const fixedUsers = {};
+            Object.entries(metadata.roles).forEach(([role, id]) => {
+              if (id) {
+                fixedUsers[id] = role.toUpperCase(); // 'TOP', 'JG' など
+              }
+            });
+
+            participants = validNames.map(name => {
+              const dId = Object.keys(metadata.names || {}).find(key => metadata.names[key] === name);
+              const fixedRole = dId ? fixedUsers[dId] : null;
+              return {
+                name,
+                isFixed: !!fixedRole,
+                fixedRole: fixedRole || null
+              };
+            });
+          }
+        }
+      } catch (e) {
+        console.error("Failed to parse fixed players:", e);
+      }
+
+      if (participants.length === 0) {
+        participants = validNames.map(name => ({ name, isFixed: false, fixedRole: null }));
+      }
+
+      // 4. ポータルAPIを叩く
+      const portalUrl = env.PORTAL_API_URL || env.LOCAL_API_URL || "https://ktm-portal.vercel.app";
+      const res = await fetch(`${portalUrl}/api/balancer`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ participants })
+      });
+
+      if (!res.ok) {
+        throw new Error(`ポータルAPIエラー: ${res.status} - ${await res.text()}`);
+      }
+
+      const data = await res.json();
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      const { teamBlue, teamRed, spectators, balanceReport, banProtect } = data;
+
+      // 5. 結果埋め込みの構築
+      const renderTeam = (team) => {
+        if (!Array.isArray(team) || team.length === 0) return "なし";
+        return team.map(p => {
+          const role = String(p.currentRole || "FILL").trim();
+          const name = String(p.name || "Unknown").trim();
+          const main = String(p.mainLane || "").toUpperCase();
+          const sub = String(p.subLane || "").toUpperCase();
+          const isMain = main === role || main === 'ALL' || main === '';
+          const isSub = !isMain && sub === role;
+          const icon = isMain ? '✅' : (isSub ? '🔄' : '⚠️');
+          const note = (!isMain && main && main !== 'ALL') ? ` (本来:${main})` : '';
+          return `\`${role.padEnd(3)}\` ${icon} ${name}${note}`;
+        }).join("\n") || "なし";
+      };
+
+      const embed = {
+        title: "⚔️ チーム分けの結果 (KTM Balancer)",
+        color: 0x2ecc71,
+        fields: [
+          { name: "🟦 Team A (Blue)", value: renderTeam(teamBlue), inline: true },
+          { name: "🟥 Team B (Red)", value: renderTeam(teamRed), inline: true }
+        ],
+        footer: { text: `勝率平準化＆格差プロテクト適用済み | ID: ${Math.floor(Date.now() / 1000).toString(16)}` },
+        timestamp: new Date().toISOString()
+      };
+
+      if (Array.isArray(spectators) && spectators.length > 0) {
+        embed.fields.push({ 
+          name: "⏳ カスタム待機", 
+          value: spectators.map(n => String(n).trim()).join(", ") || "なし", 
+          inline: false 
+        });
+      }
+
+      if (Array.isArray(balanceReport) && balanceReport.length > 0) {
+        embed.fields.push({
+          name: "📋 バランス分析レポート",
+          value: balanceReport.join("\n"),
+          inline: false
+        });
+      }
+
+      // BANプロテクト（紳士協定）アナウンス
+      let contentMessage = isRebalance ? "" : "🆕 **MATCH START**: 新しい試合が組まれました。";
+      if (banProtect && banProtect.targetName) {
+        contentMessage += `\n🚨 **格差救済BANプロテクト適用**: **${banProtect.targetName}** さんは、BANされたくない特定の1チャンピオンをチャットで伝えてください。敵チームはそれをBANしないようご協力をお願いします（紳士協定ルール）。`;
+      }
+
+      const components = [
+        {
+          type: 1,
+          components: [
+            { type: 2, label: "🟦 BLUE 勝利", style: 1, custom_id: `win_blue:${authorId}` },
+            { type: 2, label: "🟥 RED 勝利", style: 4, custom_id: `win_red:${authorId}` },
+            { type: 2, label: "🔄 次の試合を振る", style: 3, custom_id: "rebalance" },
+            { type: 2, label: "🕵️ OP.GG スカウティング", style: 2, custom_id: "opgg_scout" }
+          ]
+        }
+      ];
+
+      if (isRebalance) {
+        await sendDiscordMessage(`channels/${CONFIG.MATCH_CHANNEL_ID}/messages`, env.DISCORD_TOKEN, "POST", { content: contentMessage, embeds: [embed], components });
+      } else {
+        await sendDiscordMessage(`channels/${CONFIG.MATCH_CHANNEL_ID}/messages`, env.DISCORD_TOKEN, "POST", { content: "🆕 **MATCH START**: 新しい試合が組まれました。" });
+        await patchInteractionResponse(appId, token, { content: contentMessage, embeds: [embed], components });
+      }
+
+    } catch (err) {
+      console.error("executeBalance Error:", err);
+      const errEmbed = {
+        title: "❌ チーム分けエラー",
+        description: `\`\`\`\n${err.message}\n\`\`\``,
+        color: 0xe74c3c,
+        footer: { text: "再度お試しください" }
+      };
+
+      try {
+        if (isRebalance) {
+          await sendDiscordMessage(`channels/${CONFIG.MATCH_CHANNEL_ID}/messages`, env.DISCORD_TOKEN, "POST", { embeds: [errEmbed] });
+        } else {
+          await patchInteractionResponse(appId, token, { embeds: [errEmbed], components: [] });
+        }
+      } catch (innerErr) {
+        console.error("Error reporting failed:", innerErr);
+      }
+    }
+  })());
+
+  return Response.json({ type: 5 }); // Deferred
 }
 
 export async function handleBalanceCommand(interaction, env, ctx) {
-  return Response.json({ type: 4, data: { content: "⚠️ チーム分け機能は現在メンテナンス中です。", flags: 64 } });
+  const appId = interaction.application_id;
+  const token = interaction.token;
+  
+  ctx.waitUntil((async () => {
+    try {
+      await patchInteractionResponse(appId, token, { content: "⚠️ **チーム分けを実行するには、募集パネルの「🏆 チーム分け実行」ボタンをご利用ください。**" });
+    } catch (err) {
+      console.error("handleBalanceCommand Error:", err);
+    }
+  })());
+
+  return Response.json({ type: 5 });
 }
 
 export async function performBalance() {}

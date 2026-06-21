@@ -1,4 +1,5 @@
 import os
+import sys
 import json
 import time
 import logging
@@ -25,6 +26,34 @@ logger = setup_sovereign_logging("YouTubeAbsorber")
 CYCLE_CHAR_BUDGET = 150000  # 1サイクルで消費する字幕文字数の合計上限
 MAX_VIDEOS_PER_CYCLE = 10   # 1サイクルで処理する動画の最大本数（安全弁）
 DURATION_UNKNOWN = 99999    # 秒数不明の場合は後回し（大きな値にする）
+
+def setup_cuda_dll_path():
+    """ctranslate2用のCUDA DLLパスをDLL検索パスに追加する"""
+    import os
+    import sys
+    import platform
+    if platform.system() != "Windows":
+        return
+
+    # site-packages内のnvidiaパッケージのbinディレクトリを探す
+    venv_dir = os.path.dirname(os.path.dirname(sys.executable))
+    site_packages = os.path.join(venv_dir, "Lib", "site-packages")
+    
+    # 探索対象のパッケージ名
+    nvidia_dirs = [
+        os.path.join(site_packages, "nvidia", "cublas", "bin"),
+        os.path.join(site_packages, "nvidia", "cudnn", "bin"),
+        os.path.join(site_packages, "nvidia", "cuda_nvrtc", "bin"),
+    ]
+    
+    for d in nvidia_dirs:
+        if os.path.isdir(d):
+            try:
+                os.add_dll_directory(d)
+                logger.info(f"Added DLL directory: {d}")
+            except Exception as e:
+                logger.warning(f"Failed to add DLL directory {d}: {e}")
+
 
 class YouTubeAbsorber:
     def __init__(self):
@@ -195,6 +224,75 @@ class YouTubeAbsorber:
             return ""
         return self.extract_text_from_vtt(vtt_files[0])
 
+    def download_audio(self, url, video_id):
+        # 先に temp フォルダを作成
+        temp_dir = os.path.join(settings.ROOT_DIR, "scratch", "audio")
+        os.makedirs(temp_dir, exist_ok=True)
+        # 古い同一IDの音声ファイルを削除
+        for f in glob.glob(f"{temp_dir}/{video_id}.*"):
+            try: os.remove(f)
+            except: pass
+            
+        cmd = [
+            self.yt_dlp,
+            "-f", "ba",  # ffmpeg がない環境でもポストプロセスを走らせずにベストオーディオをそのままダウンロード
+            "-o", f"{temp_dir}/{video_id}.%(ext)s",
+            "--no-playlist",
+            url
+        ]
+        logger.info(f"Downloading audio for Whisper: {url}")
+        res = subprocess.run(cmd, capture_output=True, text=True)
+        if res.returncode != 0:
+            logger.error(f"Failed to download audio: {res.stderr}")
+            return ""
+            
+        audio_files = glob.glob(f"{temp_dir}/{video_id}.*")
+        if not audio_files:
+            return ""
+        return audio_files[0]
+
+    def transcribe_audio_local(self, audio_path):
+        if not audio_path or not os.path.exists(audio_path):
+            return ""
+            
+        setup_cuda_dll_path()
+        
+        try:
+            from faster_whisper import WhisperModel
+        except ImportError:
+            logger.error("faster-whisper is not installed in the environment.")
+            return ""
+            
+        logger.info("Initializing WhisperModel (large-v3, device=cuda, compute_type=float16)...")
+        try:
+            model = WhisperModel(
+                model_size_or_path="large-v3",
+                device="cuda",
+                compute_type="float16"
+            )
+        except Exception as e:
+            logger.warning(f"CUDA initialization failed ({e}). Falling back to CPU...")
+            model = WhisperModel(
+                model_size_or_path="large-v3",
+                device="cpu",
+                compute_type="int8"
+            )
+            
+        logger.info(f"Transcribing audio file: {audio_path}")
+        start_time = time.time()
+        
+        segments, info = model.transcribe(audio_path, beam_size=5, language="en")
+        logger.info(f"Detected language '{info.language}' with probability {info.language_probability:.2f}")
+        
+        lines = []
+        for segment in segments:
+            lines.append(segment.text)
+            
+        elapsed = time.time() - start_time
+        logger.info(f"Transcription completed in {elapsed:.1f} seconds. Text length: {len(lines)} segments.")
+        
+        return " ".join(lines)
+
     def generate_bible(self, video_data, transcript):
         if not self.client:
             return None
@@ -312,8 +410,24 @@ class YouTubeAbsorber:
         
         for item in targets:
             logger.info(f"Processing: {item['title']}")
-            transcript = self.download_subtitle(item["url"], item["id"])
             
+            # クオリティ重視のため、YouTube自動字幕をスキップし、常にローカルの GPU Whisper で高精度文字起こしを実行
+            logger.info(f"Downloading audio for Whisper processing: {item['title']}")
+            audio_path = self.download_audio(item["url"], item["id"])
+            transcript = ""
+            if audio_path:
+                try:
+                    transcript = self.transcribe_audio_local(audio_path)
+                except Exception as e:
+                    logger.error(f"Whisper transcription failed: {e}")
+                finally:
+                    if os.path.exists(audio_path):
+                        try:
+                            os.remove(audio_path)
+                            logger.info(f"Cleaned up audio file: {audio_path}")
+                        except Exception as ce:
+                            logger.warning(f"Failed to clean up audio file: {ce}")
+                
             if not transcript or len(transcript) < 100:
                 logger.warning(f"No valid transcript found for {item['id']}")
                 self.update_video(item["id"], {"status": "error_no_transcript"})

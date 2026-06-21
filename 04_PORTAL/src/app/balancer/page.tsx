@@ -32,6 +32,8 @@ export default function BalancerPage() {
   
   const [balancing, setBalancing] = useState(false);
   const [balanceResult, setBalanceResult] = useState<any>(null);
+  const [proposals, setProposals] = useState<any[]>([]);
+  const [selectedProposalIdx, setSelectedProposalIdx] = useState<number>(0);
   const [sendingDiscord, setSendingDiscord] = useState(false);
   
   const [sortConfig, setSortConfig] = useState({ key: "no", direction: "asc" });
@@ -208,7 +210,16 @@ export default function BalancerPage() {
 
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'チーム分けに失敗しました');
-      setBalanceResult(data);
+      
+      if (data.proposals && Array.isArray(data.proposals) && data.proposals.length > 0) {
+        setProposals(data.proposals);
+        setBalanceResult(data.proposals[0]);
+        setSelectedProposalIdx(0);
+      } else {
+        setBalanceResult(data);
+        setProposals([data]);
+        setSelectedProposalIdx(0);
+      }
     } catch (err: any) {
       setMessage({ type: "error", text: "❌ バランス計算エラー: " + err.message });
     } finally {
@@ -308,6 +319,8 @@ export default function BalancerPage() {
     }
 
     setBalanceResult(newResult);
+    // proposalsの該当する案も同期
+    setProposals(prev => prev.map((p, idx) => idx === selectedProposalIdx ? newResult : p));
   };
 
   const renderSwapSelect = (team: 'teamBlue' | 'teamRed' | 'spectators', role: string, currentPlayerName: string) => {
@@ -486,6 +499,29 @@ export default function BalancerPage() {
         {/* チーム分け結果表示エリア */}
         {balanceResult && (
           <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 md:p-8 shadow-2xl relative overflow-hidden">
+            
+            {/* 案選択タブUI */}
+            {proposals && proposals.length > 1 && (
+              <div className="flex border-b border-gray-800 mb-6 gap-2 overflow-x-auto pb-1">
+                {proposals.map((prop, idx) => (
+                  <button
+                    key={prop.id || idx}
+                    onClick={() => {
+                      setBalanceResult(prop);
+                      setSelectedProposalIdx(idx);
+                    }}
+                    className={`px-4 py-2 text-sm font-bold border-b-2 transition whitespace-nowrap ${
+                      selectedProposalIdx === idx 
+                        ? 'border-amber-500 text-amber-400 font-black' 
+                        : 'border-transparent text-gray-500 hover:text-gray-300'
+                    }`}
+                  >
+                    {prop.title || `案${prop.id || idx}`}
+                  </button>
+                ))}
+              </div>
+            )}
+
             <div className="flex justify-between items-center mb-8">
               <h2 className="text-2xl font-black text-white flex items-center gap-3">
                 <Globe className="h-6 w-6 text-indigo-400" />

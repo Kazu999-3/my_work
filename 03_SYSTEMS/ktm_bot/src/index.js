@@ -2,6 +2,7 @@ import { verifySignature } from './utils/security.js';
 import { handleAnnounceMatch, handleLaneCommand, handleRecruitDirect, handleSetIgn, handleStatsCommand, handleMemoCommand } from './handlers/commands.js';
 import { handleButtonInteraction } from './handlers/components.js';
 import { handleModalSubmit } from './handlers/modals.js';
+import { handleScheduledEvent } from './handlers/scheduled.js';
 
 export default {
   async fetch(request, env, ctx) {
@@ -49,6 +50,28 @@ export default {
         return new Response(`Discord Error: ${await res.text()}`, { status: 500 });
       }
       return new Response('OK', { status: 200 });
+    }
+
+    // 手動で Scheduled Event をキックする管理者用エンドポイント
+    if (url.pathname === '/trigger-scheduled' && request.method === 'GET') {
+      const authKey = url.searchParams.get('key');
+      const expectedSecret = env.INTERNAL_GAS_SECRET || "ktm_v3_internal_secret_2026";
+      
+      if (authKey !== expectedSecret) {
+        console.error(`Unauthorized trigger attempt: key=${authKey}`);
+        return new Response('Unauthorized', { status: 401 });
+      }
+
+      const mode = url.searchParams.get('mode') || "";
+
+      ctx.waitUntil((async () => {
+        try {
+          await handleScheduledEvent({ cron: "manual", mode }, { ...env, DISCORD_TOKEN }, ctx);
+        } catch (e) {
+          console.error("Manual trigger error:", e);
+        }
+      })());
+      return new Response('Scheduled event triggered successfully', { status: 200 });
     }
 
     if (request.method !== 'POST') return new Response('Method Not Allowed', { status: 405 });
@@ -106,4 +129,8 @@ export default {
 
     return new Response(JSON.stringify({ type: 1 }), { headers: { 'Content-Type': 'application/json' } });
   },
+
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil(handleScheduledEvent(event, env, ctx));
+  }
 };

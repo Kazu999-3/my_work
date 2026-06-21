@@ -103,6 +103,7 @@ export function getPortalComponents(userId) {
   ];
   
   const row2 = [
+    { type: 2, label: "🔔 募集通知 (ON/OFF)", style: 2, custom_id: "toggle_recruit_notification" },
     { type: 2, label: "🌐 Webポータルへアクセス", style: 5, url: "https://my-work-8jbd.vercel.app/leaderboard" }
   ];
   
@@ -122,7 +123,17 @@ export function handleHelpPage() {
 }
 
 export function createMessageContent(metadata) { 
-  return `${metadata.time ? "⏰ **開始予定**: " + metadata.time : ""}\n${metadata.memo ? "💬 **メモ**: " + metadata.memo : ""}`.trim(); 
+  const lines = [];
+  if (CONFIG.NOTIFICATION_ROLE_ID) {
+    lines.push(`<@&${CONFIG.NOTIFICATION_ROLE_ID}>`);
+  }
+  if (metadata.time) {
+    lines.push(`⏰ **開始予定**: ${metadata.time}`);
+  }
+  if (metadata.memo) {
+    lines.push(`💬 **メモ**: ${metadata.memo}`);
+  }
+  return lines.join('\n').trim(); 
 }
 
 /** チーム分けEmbedからプレイヤー情報抽出 */

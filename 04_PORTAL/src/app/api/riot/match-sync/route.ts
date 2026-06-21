@@ -43,7 +43,30 @@ export async function POST(req: Request) {
     const names = participants.map((p: any) => p.player_name);
     const { data: dbPlayers } = await supabase.from('ktm_players').select('*').in('name', names);
     
-    // 簡単のため、勝率などは一律50%で計算（MVP実装。完全版では同様にhistoryを引く）
+    // 過去の勝率・試合数を取得
+    const { data: historyData } = await supabase
+      .from('ktm_match_participants')
+      .select('match_id, player_name, role, team, ktm_matches!inner(winning_team)')
+      .in('player_name', names);
+
+    const statsMap: Record<string, { roleGames: Record<string, number>, totalGames: number, totalWins: number }> = {};
+    names.forEach((name: string) => {
+      statsMap[name] = { roleGames: {}, totalGames: 0, totalWins: 0 };
+    });
+
+    if (historyData) {
+      historyData.forEach((row: any) => {
+        const pName = row.player_name;
+        const role = row.role;
+        const isWin = row.team === row.ktm_matches.winning_team;
+        if (!statsMap[pName]) return;
+        
+        statsMap[pName].totalGames += 1;
+        if (isWin) statsMap[pName].totalWins += 1;
+        statsMap[pName].roleGames[role] = (statsMap[pName].roleGames[role] || 0) + 1;
+      });
+    }
+
     const updates = [];
 
     for (const p of participants) {
@@ -74,6 +97,33 @@ export async function POST(req: Request) {
       const currentMmr = Number(dbP[`mmr_${p.role.toLowerCase()}`]) || 1200;
       const mainRank = dbP.highest_rank ? dbP.highest_rank.split(' ')[0].toUpperCase() : 'UNRANKED';
 
+      // 対面相手の特定とMMRの取得
+      const opponent = participants.find((pt: any) => pt.role === p.role && pt.team !== p.team);
+      let opponentMmr = 1200;
+      if (opponent) {
+        const oppDbP = dbPlayers?.find(dp => dp.name === opponent.player_name);
+        if (oppDbP) {
+          opponentMmr = Number(oppDbP[`mmr_${opponent.role.toLowerCase()}`]) || 1200;
+        }
+      }
+
+      // 対面回数の計算
+      let matchupCount = 0;
+      if (historyData && opponent) {
+        const myMatches = historyData.filter((r: any) => r.player_name === p.player_name && r.role === p.role);
+        const oppMatches = historyData.filter((r: any) => r.player_name === opponent.player_name && r.role === p.role);
+        myMatches.forEach((myM: any) => {
+          const matchedOpp = oppMatches.find((oppM: any) => oppM.match_id === myM.match_id && oppM.team !== myM.team);
+          if (matchedOpp) {
+            matchupCount++;
+          }
+        });
+      }
+
+      const pStats = statsMap[p.player_name] || { roleGames: {}, totalGames: 0, totalWins: 0 };
+      const numGames = pStats.roleGames[p.role] || 0;
+      const totalWinRate = pStats.totalGames > 0 ? (pStats.totalWins / pStats.totalGames) * 100 : 50;
+
       const teamRiotParticipants = riotDetails.participants.filter((rp: any) => rp.teamId === riotP.teamId);
       const teamTotalKills = teamRiotParticipants.reduce((acc: number, curr: any) => acc + (curr.kills || 0), 0);
       
@@ -84,15 +134,15 @@ export async function POST(req: Request) {
 
       const ctx: MmrCalcContext = {
         currentMmr,
-        opponentMmr: 1200, 
+        opponentMmr,
         isWin: p.team === match.winning_team,
         kills: riotP.kills,
         deaths: riotP.deaths,
         assists: riotP.assists,
         mainRank,
-        numGames: 10,
-        matchupCount: 0,
-        totalWinRate: 50,
+        numGames,
+        matchupCount,
+        totalWinRate,
         visionScore: riotP.visionScore || 0,
         cs: (riotP.totalMinionsKilled || 0) + (riotP.neutralMinionsKilled || 0),
         damageDealt: riotP.damageDealtToChampions || 0,

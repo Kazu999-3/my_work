@@ -11,6 +11,55 @@ export async function handleButtonInteraction(interaction, env, ctx) {
   const token = interaction.token;
   const botToken = env.DISCORD_TOKEN;
 
+  if (customId === 'toggle_recruit_notification') {
+    const roleId = CONFIG.NOTIFICATION_ROLE_ID;
+    if (!roleId) {
+      return Response.json({ type: 4, data: { content: "⚠️ 通知ロールIDが設定されていません。", flags: 64 } });
+    }
+
+    const guildId = interaction.guild_id;
+    if (!guildId) {
+      return Response.json({ type: 4, data: { content: "⚠️ サーバーIDが取得できませんでした。", flags: 64 } });
+    }
+
+    const userRoles = interaction.member?.roles || [];
+    const hasRole = userRoles.includes(roleId);
+
+    ctx.waitUntil((async () => {
+      try {
+        if (hasRole) {
+          // ロール削除
+          const res = await fetch(`https://discord.com/api/v10/guilds/${guildId}/members/${userId}/roles/${roleId}`, {
+            method: "DELETE",
+            headers: {
+              "Authorization": `Bot ${botToken}`
+            }
+          });
+          if (!res.ok) throw new Error(`Role removal failed: ${res.status} ${await res.text()}`);
+          await patchInteractionResponse(appId, token, { content: "🔔 **募集通知ロールを解除しました。**\n以降、メンバー募集時の通知は届きません。" });
+        } else {
+          // ロール付与
+          const res = await fetch(`https://discord.com/api/v10/guilds/${guildId}/members/${userId}/roles/${roleId}`, {
+            method: "PUT",
+            headers: {
+              "Authorization": `Bot ${botToken}`,
+              "Content-Length": "0"
+            }
+          });
+          if (!res.ok) throw new Error(`Role assignment failed: ${res.status} ${await res.text()}`);
+          await patchInteractionResponse(appId, token, { content: "🔔 **募集通知ロールを付与しました！**\n以降、メンバー募集時に通知（メンション）が届くようになります。" });
+        }
+      } catch (err) {
+        console.error("Toggle Role Error:", err);
+        try {
+          await patchInteractionResponse(appId, token, { content: `❌ **ロール操作エラー**: ${err.message}\nBotのロール権限の順位を確認してください。` });
+        } catch (e) {}
+      }
+    })());
+
+    return Response.json({ type: 5, data: { flags: 64 } });
+  }
+
   if (customId.startsWith('proxy_add_init:')) {
     const ownerId = customId.split(':')[1];
     if (userId !== ownerId) return Response.json({ type: 4, data: { content: "⚠️ 募集主のみ代理追加が可能です。", flags: 64 } });
@@ -135,8 +184,6 @@ export async function handleButtonInteraction(interaction, env, ctx) {
   }
 
   if (customId.startsWith('win_blue:') || customId.startsWith('win_red:')) {
-    const ownerId = customId.split(':')[1];
-    if (userId !== ownerId && userId !== CONFIG.ADMIN_ID) return Response.json({ type: 4, data: { content: "⚠️ 実行した本人のみ報告可能です。", flags: 64 } });
     const winner = customId.startsWith('win_blue') ? "BLUE" : "RED";
     const players = extractPlayersFromEmbed(interaction.message.embeds[0]);
     return await handleAutoMatchEnd(interaction, players, winner, env, ctx);

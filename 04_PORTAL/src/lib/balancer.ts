@@ -28,6 +28,7 @@ export interface Player {
   isOutlierLow?: boolean;
   isOutlierHigh?: boolean;
   adjustedRates?: Record<Role, number>;
+  balanceRates?: Record<Role, number>;
   spectator_pity?: number;
 }
 
@@ -50,6 +51,17 @@ export interface BalanceResult {
   teamRed: AssignedPlayer[];
   spectators: string[];
   balanceReport: string[];
+  banProtect?: {
+    targetName: string;
+  } | null;
+}
+
+export interface ProposalResult extends BalanceResult {
+  id: string; // 'A' | 'B' | 'C'
+  title: string;
+  teamBlueMMR: number;
+  teamRedMMR: number;
+  mmrDiff: number;
 }
 
 // ==========================================
@@ -121,29 +133,43 @@ export function selectPlayersWithPity(allPlayers: Player[]): { selected: Player[
 
   const needed = Math.max(0, 10 - fixedPlayers.length);
   const selectedFromPool = candidateInfo.slice(0, needed).map(c => c.player);
-  const spilled = candidateInfo.slice(needed).map(c => c.player);
+  
+  const selected = [...fixedPlayers, ...selectedFromPool].slice(0, 10);
+  const selectedNames = new Set(selected.map(p => p.name));
+  const spectators = allPlayers.filter(p => !selectedNames.has(p.name));
 
   return {
-    selected: [...fixedPlayers, ...selectedFromPool].slice(0, 10),
-    spectators: spilled
+    selected,
+    spectators
   };
 }
 
 // ==========================================
-// コアチーム分けアルゴリズム
+// 共通バランスエンジン (探索フェーズ)
 // ==========================================
-export function coreBalanceTeams(players: Player[], ctx: BalanceContext): BalanceResult {
+interface RawBalanceCandidate {
+  score: number;       // 総合スコア（小さいほど良い）
+  mmrDiffVal: number;  // チーム間MMR差の絶対値（ハンデ込）
+  mainCount: number;   // 第一希望配属人数
+  pA: number[];
+  pB: number[];
+  teamAIndices: number[];
+  teamBIndices: number[];
+  signature: string;   // 重複判定用シグネチャ
+}
+
+function runBalanceSearch(players: Player[], ctx: BalanceContext): RawBalanceCandidate[] {
   if (players.length !== 10) {
     throw new Error('プレイヤー数はちょうど10人である必要があります。');
   }
 
   const HIGH_RANKS = ['PLATINUM', 'EMERALD', 'DIAMOND', 'MASTER', 'GRANDMASTER', 'CHALLENGER'];
 
-  // ━━━ 案K：こだわり度1（絶対）の過剰競合を自動調停 ━━━
+  // こだわり度1（絶対）の過剰競合を自動調停
   ROLES.forEach(role => {
     const strictCandidates = players
       .filter(p => p.pref1 === role && p.weight === 1 && !p.isFixed)
-      .sort((a, b) => a.pity - b.pity); // Pity低い順
+      .sort((a, b) => b.pity - a.pity);
     if (strictCandidates.length > 2) {
       for (let i = 2; i < strictCandidates.length; i++) {
         strictCandidates[i].weight = 2; // 通常に格下げ
@@ -151,19 +177,24 @@ export function coreBalanceTeams(players: Player[], ctx: BalanceContext): Balanc
     }
   });
 
-  // 基礎データの計算
-  const allMMRs = players.map(p => Object.values(p.rates).reduce((s, v) => s + v, 0) / 5);
-  const globalAvgMMR = allMMRs.reduce((s, v) => s + v, 0) / 10;
+  // 代表MMRをメインロール（pref1）基準で算出
+  players.forEach(p => {
+    const mainRole = p.pref1 as Role;
+    const hasMainRole = mainRole && ROLES.includes(mainRole);
+    p.avgMMR = hasMainRole ? p.rates[mainRole] : (Object.values(p.rates).reduce((s, v) => s + v, 0) / 5);
+  });
 
-  players.forEach((p, i) => {
+  const globalAvgMMR = players.reduce((s, p) => s + (p.avgMMR || 1200), 0) / 10;
+
+  players.forEach((p) => {
     p.isNewbie = (p.rank === 'UNRANKED' && p.games < 3);
-    const avgP = allMMRs[i];
-    p.avgMMR = avgP;
-    p.isOutlierLow = (avgP < globalAvgMMR - 1500);
+    const avgP = p.avgMMR || 1200;
+    p.isOutlierLow = (avgP < globalAvgMMR - 350);
     p.isOutlierHigh = (avgP > globalAvgMMR + 1000);
 
-    // 案A: ハンデMMR
+    // 平準化・バランス計算用MMR
     p.adjustedRates = {} as Record<Role, number>;
+    p.balanceRates = {} as Record<Role, number>;
     let wrPityPenalty = 0;
     if (p.games >= 5 && p.winRate < 42) {
       wrPityPenalty = Math.round((42 - p.winRate) * 15);
@@ -173,6 +204,12 @@ export function coreBalanceTeams(players: Player[], ctx: BalanceContext): Balanc
       const raw = p.rates[role];
       const adj = Math.round(raw + (globalAvgMMR - raw) * 0.5) - wrPityPenalty;
       p.adjustedRates![role] = Math.max(100, adj);
+
+      let bRate = raw - wrPityPenalty;
+      if (p.isOutlierLow) {
+        bRate -= 200; // 格差救済補正
+      }
+      p.balanceRates![role] = Math.max(100, bRate);
     });
   });
 
@@ -241,7 +278,7 @@ export function coreBalanceTeams(players: Player[], ctx: BalanceContext): Balanc
     const teamA = teamAIndices.map(i => players[i]);
     const teamB = teamBIndices.map(i => players[i]);
 
-    // 特定の二人（こんぺい、tamias）が同じチームに入らないように制限（ハードコードを維持）
+    // 特定の二人（こんぺい、tamias）が同じチームに入らないように制限
     const checkSameTeam = (name1: string, name2: string) => {
       const n1 = name1.toLowerCase().trim();
       const n2 = name2.toLowerCase().trim();
@@ -269,7 +306,7 @@ export function coreBalanceTeams(players: Player[], ctx: BalanceContext): Balanc
   const topCandidates = screenResults.slice(0, 50);
 
   // フェーズ2：精密探索
-  const topResults: any[] = [];
+  const allCandidates: RawBalanceCandidate[] = [];
   for (const candidate of topCandidates) {
     const { teamAIndices, teamBIndices } = candidate;
     const teamA = teamAIndices.map(i => players[i]);
@@ -277,7 +314,7 @@ export function coreBalanceTeams(players: Player[], ctx: BalanceContext): Balanc
 
     let compositionPenalty = 0;
 
-    // 案H: 同チーム重複ペナルティ
+    // 同チーム重複ペナルティ
     const addTeammatePenalty = (teamIndices: number[]) => {
       const names = teamIndices.map(i => players[i].name);
       for (let x = 0; x < names.length; x++) {
@@ -291,7 +328,7 @@ export function coreBalanceTeams(players: Player[], ctx: BalanceContext): Balanc
     addTeammatePenalty(teamAIndices);
     addTeammatePenalty(teamBIndices);
 
-    // 案I: 連勝シャッフル
+    // 連勝シャッフル
     if (ctx.winStreakTeam && ctx.winStreakTeam.size === 5) {
       const teamASet = new Set(teamAIndices.map(i => players[i].name));
       const teamBSet = new Set(teamBIndices.map(i => players[i].name));
@@ -345,9 +382,11 @@ export function coreBalanceTeams(players: Player[], ctx: BalanceContext): Balanc
           const mmrB = pLayerB.rates[role];
           const adjA = pLayerA.adjustedRates![role];
           const adjB = pLayerB.adjustedRates![role];
+          const balA = pLayerA.balanceRates![role];
+          const balB = pLayerB.balanceRates![role];
 
           penalty += Math.pow(Math.abs(adjA - adjB), 2) / 4;
-          totalA += adjA; totalB += adjB;
+          totalA += balA; totalB += balB;
 
           laneAdvantageScoreA += Math.max(0, adjA - adjB);
           laneAdvantageScoreB += Math.max(0, adjB - adjA);
@@ -386,7 +425,6 @@ export function coreBalanceTeams(players: Player[], ctx: BalanceContext): Balanc
             const isSpecialist = ['JG', 'SUP', 'ADC'].includes(p.pref1);
             let rolePenalty = 0;
             if (currentRole === p.ng1 || currentRole === p.ng2) {
-              // NGレーンは絶対に割り当てないよう、Off-Role Pity等の計算をすべて吹き飛ばす絶対的ペナルティを設定
               rolePenalty = 1000000;
               if (p.weight === 1) rolePenalty *= 10;
               else if (p.weight === 2) rolePenalty *= 2;
@@ -398,7 +436,6 @@ export function coreBalanceTeams(players: Player[], ctx: BalanceContext): Balanc
               if (isSpecialist) rolePenalty *= 2;
               if (p.weight === 1) rolePenalty *= 10;   
               if (p.weight === 3) rolePenalty *= 0.5; 
-              // オフロールPity加算（希望以外をやらされた回数）
               rolePenalty += p.off_role_pity * 30000;
             } else {
               rolePenalty = 5000 + (p.pity * 20000);
@@ -406,12 +443,22 @@ export function coreBalanceTeams(players: Player[], ctx: BalanceContext): Balanc
               if (isSpecialist) rolePenalty *= 3;
               if (p.weight === 1) rolePenalty *= 20;  
               if (p.weight === 3) rolePenalty *= 0.2;  
-              // オフロールPity加算（第二希望ですら無い場合はさらに重く）
               rolePenalty += p.off_role_pity * 50000;
             }
             if ((p.isNewbie || p.isOutlierLow) && (currentRole === 'JG' || currentRole === 'MID')) {
               rolePenalty += 10000; 
             }
+
+            if (p.isOutlierLow) {
+              if (currentRole !== p.pref1 && p.pref1 !== 'ALL' && p.pref1 !== 'FILL') {
+                if (currentRole === p.pref2) {
+                  rolePenalty += 50000;
+                } else {
+                  rolePenalty += 150000;
+                }
+              }
+            }
+
             penalty += rolePenalty;
           };
           checkRolePenalty(pLayerA, role);
@@ -459,8 +506,7 @@ export function coreBalanceTeams(players: Player[], ctx: BalanceContext): Balanc
 
         let handicap = 0;
         if (lowestMMRPlayerName) {
-          const pLowest = players.find(p => p.name === lowestMMRPlayerName);
-          const baseHandicap = pLowest?.isOutlierLow ? 800 : 100;
+          const baseHandicap = 0;
           handicap += (lowestInA ? baseHandicap : -baseHandicap);
         }
         if (worstWRPlayerName) handicap += (worstWRInA ? 100 : -100);  
@@ -471,31 +517,50 @@ export function coreBalanceTeams(players: Player[], ctx: BalanceContext): Balanc
 
         handicap += (totalWRB - totalWRA) * 30;
 
+        // MMR差および総合スコアの決定
         const score = penalty + Math.abs(totalA - totalB - handicap);
-        
-        topResults.push({ score, pA: [...pA], pB: [...pB], teamAIndices, teamBIndices });
-        topResults.sort((a, b) => a.score - b.score);
-        if (topResults.length > 3) topResults.pop();
+        const mmrDiffVal = Math.abs(totalA - totalB - handicap);
+
+        // 重複チェック用の一意なシグネチャを生成
+        // (メンバーの組み合わせとそれぞれの配置レーン)
+        const teamANames = teamAIndices.map((idx, i) => `${players[idx].name}:${ROLES[pA[i]]}`).sort().join(',');
+        const teamBNames = teamBIndices.map((idx, i) => `${players[idx].name}:${ROLES[pB[i]]}`).sort().join(',');
+        const signature = [teamANames, teamBNames].sort().join('|');
+
+        allCandidates.push({
+          score,
+          mmrDiffVal,
+          mainCount,
+          pA: [...pA],
+          pB: [...pB],
+          teamAIndices,
+          teamBIndices,
+          signature
+        });
       }
     }
   }
 
-  if (topResults.length === 0) {
-    throw new Error('有効なチーム分けが見つかりませんでした。制約が競合しています。');
-  }
+  return allCandidates;
+}
 
-  // 上位3つのうちからランダムに1つ選ぶ
-  const bestResult = topResults[Math.floor(Math.random() * topResults.length)];
+// ==========================================
+// 共通バランス結果構築 (サイド公平化 & 分析レポート)
+// ==========================================
+function buildBalanceResult(
+  candidate: RawBalanceCandidate, 
+  players: Player[], 
+  ctx: BalanceContext
+): BalanceResult {
+  const { pA, pB, teamAIndices, teamBIndices } = candidate;
+  const tA = teamAIndices.map(i => players[i]);
+  const tB = teamBIndices.map(i => players[i]);
 
-  const { pA: bestPA, pB: bestPB, teamAIndices: bestTAIdx, teamBIndices: bestTBIdx } = bestResult;
-  const tA = bestTAIdx.map((i: number) => players[i]);
-  const tB = bestTBIdx.map((i: number) => players[i]);
-
-  const rawAssignA: AssignedPlayer[] = bestPA.map((rIdx: number, i: number) => {
+  const rawAssignA: AssignedPlayer[] = pA.map((rIdx: number, i: number) => {
     const r = ROLES[rIdx];
     return { ...tA[i], currentRole: r, mmr: tA[i].rates[r], mainLane: tA[i].pref1, subLane: tA[i].pref2 };
   });
-  const rawAssignB: AssignedPlayer[] = bestPB.map((rIdx: number, i: number) => {
+  const rawAssignB: AssignedPlayer[] = pB.map((rIdx: number, i: number) => {
     const r = ROLES[rIdx];
     return { ...tB[i], currentRole: r, mmr: tB[i].rates[r], mainLane: tB[i].pref1, subLane: tB[i].pref2 };
   });
@@ -540,14 +605,12 @@ export function coreBalanceTeams(players: Player[], ctx: BalanceContext): Balanc
     balanceReport.push(`**調整の背景**:`);
     subPlayers.forEach(p => {
       let reason = "全体の戦力バランスを整えるために調整されました。";
-      // 簡単な推測
       const mainSeekers = allAssigned.filter(other => other.mainLane === p.mainLane && other.name !== p.name);
       if (mainSeekers.length > 0) {
         reason = `${p.mainLane} 希望者が競合したため、チームの戦力バランスを考慮して ${p.currentRole} へ回っていただきました。`;
       } else if (p.currentRole === p.subLane) {
         reason = `チーム全体のバランスを最適化するため、第二希望の ${p.currentRole} へ配置されました。`;
       }
-      // Outlier
       if (p.isOutlierHigh) {
         reason = `圧倒的なキャリー力を持つため、相手との戦力均衡を図るべく ${p.currentRole} に配置されました。`;
       }
@@ -560,5 +623,92 @@ export function coreBalanceTeams(players: Player[], ctx: BalanceContext): Balanc
     balanceReport.push(`**調整の背景**: 全員が希望通りの完璧な構成です！`);
   }
 
-  return { teamBlue, teamRed, spectators: [], balanceReport };
+  const outlierLowPlayer = allAssigned.find(p => p.isOutlierLow);
+  const banProtect = outlierLowPlayer ? { targetName: outlierLowPlayer.name } : null;
+
+  return { teamBlue, teamRed, spectators: [], balanceReport, banProtect };
+}
+
+// ==========================================
+// コアチーム分けアルゴリズム (単一/互換用)
+// ==========================================
+export function coreBalanceTeams(players: Player[], ctx: BalanceContext): BalanceResult {
+  const candidates = runBalanceSearch(players, ctx);
+  if (candidates.length === 0) {
+    throw new Error('有効なチーム分けが見つかりませんでした。制約が競合しています。');
+  }
+
+  // 総合スコアでソートし、上位3つからランダムに1つ選ぶ（KTMの従来仕様を踏襲）
+  candidates.sort((a, b) => a.score - b.score);
+  const topCandidates = candidates.slice(0, Math.min(3, candidates.length));
+  const bestCandidate = topCandidates[Math.floor(Math.random() * topCandidates.length)];
+
+  return buildBalanceResult(bestCandidate, players, ctx);
+}
+
+// ==========================================
+// コア3案生成アルゴリズム (新設)
+// ==========================================
+export function coreBalanceProposals(players: Player[], ctx: BalanceContext): ProposalResult[] {
+  const candidates = runBalanceSearch(players, ctx);
+  if (candidates.length === 0) {
+    throw new Error('有効なチーム分けが見つかりませんでした。制約が競合しています。');
+  }
+
+  // 1. 総合バランス (スコア昇順)
+  const listC = [...candidates].sort((a, b) => a.score - b.score);
+  // 2. 戦力均等 (MMR差昇順)
+  const listA = [...candidates].sort((a, b) => a.mmrDiffVal - b.mmrDiffVal || a.score - b.score);
+  // 3. 希望優先 (希望合致数降順)
+  const listB = [...candidates].sort((a, b) => b.mainCount - a.mainCount || a.score - b.score);
+
+  const proposals: ProposalResult[] = [];
+  const usedSignatures = new Set<string>();
+
+  // 案C: 総合バランス決定
+  const bestC = listC[0];
+  const resC = buildBalanceResult(bestC, players, ctx);
+  const mmrBlueC = resC.teamBlue.reduce((s, p) => s + p.mmr, 0);
+  const mmrRedC = resC.teamRed.reduce((s, p) => s + p.mmr, 0);
+  proposals.push({
+    ...resC,
+    id: 'C',
+    title: '案C：総合バランス',
+    teamBlueMMR: mmrBlueC,
+    teamRedMMR: mmrRedC,
+    mmrDiff: Math.abs(mmrBlueC - mmrRedC)
+  });
+  usedSignatures.add(bestC.signature);
+
+  // 案A: 戦力均等（重複回避）
+  const bestA = listA.find(c => !usedSignatures.has(c.signature)) || listA[0];
+  const resA = buildBalanceResult(bestA, players, ctx);
+  const mmrBlueA = resA.teamBlue.reduce((s, p) => s + p.mmr, 0);
+  const mmrRedA = resA.teamRed.reduce((s, p) => s + p.mmr, 0);
+  proposals.push({
+    ...resA,
+    id: 'A',
+    title: '案A：戦力均等',
+    teamBlueMMR: mmrBlueA,
+    teamRedMMR: mmrRedA,
+    mmrDiff: Math.abs(mmrBlueA - mmrRedA)
+  });
+  usedSignatures.add(bestA.signature);
+
+  // 案B: 希望優先（重複回避）
+  const bestB = listB.find(c => !usedSignatures.has(c.signature)) || listB[0];
+  const resB = buildBalanceResult(bestB, players, ctx);
+  const mmrBlueB = resB.teamBlue.reduce((s, p) => s + p.mmr, 0);
+  const mmrRedB = resB.teamRed.reduce((s, p) => s + p.mmr, 0);
+  proposals.push({
+    ...resB,
+    id: 'B',
+    title: '案B：希望優先',
+    teamBlueMMR: mmrBlueB,
+    teamRedMMR: mmrRedB,
+    mmrDiff: Math.abs(mmrBlueB - mmrRedB)
+  });
+
+  // 切り替え時に綺麗に表示されるように、インデックス順にソート（案A、案B、案C）して返却
+  return proposals.sort((a, b) => a.id.localeCompare(b.id));
 }

@@ -5,7 +5,7 @@ import {
   Role, 
   BalanceContext, 
   selectPlayersWithPity, 
-  coreBalanceTeams 
+  coreBalanceProposals 
 } from '../../../lib/balancer';
 
 export async function POST(request: Request) {
@@ -17,8 +17,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: '参加者は最低10人必要です。' }, { status: 400 });
     }
 
-    // participants: { name: string, isFixed?: boolean, fixedRole?: Role }[]
-
     // 1. ktm_players から該当プレイヤーの情報を取得
     const names = participants.map(p => p.name);
     const { data: playersData, error: pError } = await supabase
@@ -28,6 +26,30 @@ export async function POST(request: Request) {
 
     if (pError || !playersData) {
       return NextResponse.json({ error: 'プレイヤー情報の取得に失敗しました。' }, { status: 500 });
+    }
+
+    // 各参加者の実際の戦績（試合数・勝率）を Supabase から取得・集計
+    const { data: participantsStats, error: statsError } = await supabase
+      .from('ktm_match_participants')
+      .select('player_name, team, ktm_matches!inner(winning_team)')
+      .in('player_name', names);
+
+    // プレイヤー名ごとに 試合数 (games) と 勝利数 (wins) をマップ
+    const playerStatsMap: Record<string, { games: number; wins: number }> = {};
+    names.forEach(name => {
+      playerStatsMap[name] = { games: 0, wins: 0 };
+    });
+
+    if (participantsStats && !statsError) {
+      participantsStats.forEach((row: any) => {
+        const name = row.player_name;
+        if (playerStatsMap[name]) {
+          playerStatsMap[name].games++;
+          if (row.team === row.ktm_matches?.winning_team) {
+            playerStatsMap[name].wins++;
+          }
+        }
+      });
     }
 
     // 2. Player インタフェースへマッピング
@@ -49,10 +71,15 @@ export async function POST(request: Request) {
       const rawNg1 = dbPlayer.ng_lane_1 || '';
       const rawNg2 = dbPlayer.ng_lane_2 || '';
 
+      const pGames = playerStatsMap[dbPlayer.name]?.games || 0;
+      const pWinRate = pGames > 0 
+        ? Number(((playerStatsMap[dbPlayer.name].wins / pGames) * 100).toFixed(1)) 
+        : 50.0;
+
       return {
         name: dbPlayer.name,
         discordId: dbPlayer.discord_id,
-        rank: 'UNRANKED', // 必要に応じてマッピング
+        rank: dbPlayer.highest_rank || 'UNRANKED',
         pref1: roleMap[rawPref1] || rawPref1,
         pref2: roleMap[rawPref2] || rawPref2,
         ng1: roleMap[rawNg1] || rawNg1,
@@ -68,8 +95,8 @@ export async function POST(request: Request) {
           ADC: dbPlayer.mmr_adc || 1200,
           SUP: dbPlayer.mmr_sup || 1200
         },
-        games: 0, // 仮 (後で集計またはDBから取得)
-        winRate: 50.0, // 仮
+        games: pGames,
+        winRate: pWinRate,
         isFixed: input.isFixed,
         fixedRole: input.fixedRole
       };
@@ -94,63 +121,78 @@ export async function POST(request: Request) {
       // 直近15試合を取得（サイド履歴用には広く、対面履歴用には直近のみ使うため）
       const { data: recentMatches } = await supabase
         .from('ktm_matches')
-        .select('id, team_red_win')
+        .select('id, winning_team, team_red_win')
         .order('created_at', { ascending: false })
         .limit(15);
 
       if (recentMatches && recentMatches.length > 0) {
         const matchIds = recentMatches.map(m => m.id);
-        // 対面履歴・味方履歴用には、直近5試合のIDのみを抽出する
         const recent5MatchIds = recentMatches.slice(0, 5).map(m => m.id);
 
         const { data: participantsHistory } = await supabase
           .from('ktm_match_participants')
-          .select('match_id, discord_id, role, team')
+          .select('match_id, player_name, role, team') // discord_id ではなく player_name を取得
           .in('match_id', matchIds);
 
         if (participantsHistory) {
-          // 各プレイヤーのdiscord_idからnameを引けるようにする
-          const d2n: Record<string, string> = {};
-          playersData.forEach(p => { if (p.discord_id) d2n[p.discord_id] = p.name; });
-
           const pByMatchId: Record<number, any[]> = {};
           participantsHistory.forEach(ph => {
             if (!pByMatchId[ph.match_id]) pByMatchId[ph.match_id] = [];
             pByMatchId[ph.match_id].push(ph);
           });
 
+          // 直近2連勝した5人を特定するロジック (winStreakTeam)
+          if (recentMatches && recentMatches.length >= 2) {
+            const m1 = recentMatches[0];
+            const m2 = recentMatches[1];
+            const wTeam1 = m1.winning_team || (m1.team_red_win ? 'RED' : 'BLUE');
+            const wTeam2 = m2.winning_team || (m2.team_red_win ? 'RED' : 'BLUE');
+
+            const parts1 = pByMatchId[m1.id] || [];
+            const parts2 = pByMatchId[m2.id] || [];
+
+            const winners1 = parts1.filter(p => p.team === wTeam1).map(p => p.player_name).filter(Boolean);
+            const winners2 = parts2.filter(p => p.team === wTeam2).map(p => p.player_name).filter(Boolean);
+
+            if (winners1.length === 5 && winners2.length === 5) {
+              const set1 = new Set(winners1);
+              const isSame = winners2.every(name => set1.has(name));
+              if (isSame) {
+                ctx.winStreakTeam = set1;
+              }
+            }
+          }
+
           for (const matchId of matchIds) {
             const matchParts = pByMatchId[matchId] || [];
             
-            // Side History の構築 (直近15試合すべてを使用)
+            // Side History の構築 (直近15試合すべてを使用、player_nameベース)
             matchParts.forEach(p => {
-              const pName = d2n[p.discord_id];
+              const pName = p.player_name;
               if (!pName) return;
               if (!ctx.sideHistory[pName]) ctx.sideHistory[pName] = { BLUE: 0, RED: 0 };
               if (p.team === 'BLUE') ctx.sideHistory[pName].BLUE++;
               if (p.team === 'RED') ctx.sideHistory[pName].RED++;
             });
 
-            // Teammate History & Matchup History の構築 (直近5試合のみ使用)
+            // Teammate History & Matchup History の構築 (直近5試合のみ使用、player_nameベース)
             if (recent5MatchIds.includes(matchId)) {
               for (let i = 0; i < matchParts.length; i++) {
                 const p1 = matchParts[i];
-                const p1Name = d2n[p1.discord_id];
+                const p1Name = p1.player_name;
                 if (!p1Name) continue;
 
                 for (let j = i + 1; j < matchParts.length; j++) {
                   const p2 = matchParts[j];
-                  const p2Name = d2n[p2.discord_id];
+                  const p2Name = p2.player_name;
                   if (!p2Name) continue;
 
                   if (p1.team === p2.team) {
-                    // 同じチームだった場合
                     const key1 = `${p1Name}<=>${p2Name}`;
                     const key2 = `${p2Name}<=>${p1Name}`;
                     ctx.teammateHistory.set(key1, (ctx.teammateHistory.get(key1) || 0) + 1);
                     ctx.teammateHistory.set(key2, (ctx.teammateHistory.get(key2) || 0) + 1);
                   } else {
-                    // 敵同士で、かつ同じロールだった場合（対面履歴）
                     if (p1.role === p2.role) {
                       ctx.history.add(`${p1Name}<=>${p2Name}:${p1.role}`);
                       ctx.history.add(`${p2Name}<=>${p1Name}:${p1.role}`);
@@ -164,25 +206,18 @@ export async function POST(request: Request) {
       }
     } catch (e) {
       console.error("履歴取得エラー:", e);
-      // エラーが起きてもチーム分け自体は進行させるため握りつぶす
     }
 
-    // 5. バランス実行
-    const result = coreBalanceTeams(selected, ctx);
+    // 5. バランス実行 (3案の生成)
+    const proposals = coreBalanceProposals(selected, ctx);
     
     // スピルした（選ばれなかった）プレイヤー名を観戦者として追加
-    result.spectators = spectators.map(p => p.name);
-
-    const teamBlueMMR = result.teamBlue.reduce((sum, p) => sum + p.mmr, 0);
-    const teamRedMMR = result.teamRed.reduce((sum, p) => sum + p.mmr, 0);
-    const mmrDiff = Math.abs(teamBlueMMR - teamRedMMR);
-
-    return NextResponse.json({
-      ...result,
-      teamBlueMMR,
-      teamRedMMR,
-      mmrDiff
+    const spectatorNames = spectators.map(p => p.name);
+    proposals.forEach(prop => {
+      prop.spectators = spectatorNames;
     });
+
+    return NextResponse.json({ proposals });
 
   } catch (error: any) {
     console.error('Balancer API Error:', error);

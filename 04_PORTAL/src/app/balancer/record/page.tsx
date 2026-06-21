@@ -26,14 +26,16 @@ interface PlayerStat {
 }
 
 export default function CustomRecordPage() {
-  const [playersPool, setPlayersPool] = useState<{name: string}[]>([]);
+  const [playersPool, setPlayersPool] = useState<{name: string, ign?: string}[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState('');
   const [winningTeam, setWinningTeam] = useState<'BLUE' | 'RED' | null>(null);
   const [championsList, setChampionsList] = useState<{ id: string, name: string }[]>([]);
-  const [activeChampSelector, setActiveChampSelector] = useState<{ team: 'BLUE' | 'RED', role: Role } | null>(null);
+  const [activeChampSelector, setActiveChampSelector] = useState<{ team: 'BLUE' | 'RED', role: Role, slotIndex: number } | null>(null);
   const [champSearchQuery, setChampSearchQuery] = useState('');
+  const [analyzing, setAnalyzing] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   
   // 10人分のステートを初期化
   const [stats, setStats] = useState<PlayerStat[]>(() => {
@@ -50,6 +52,192 @@ export default function CustomRecordPage() {
     });
     return initial;
   });
+
+  // プレイヤー名曖昧マッチング
+  const matchPlayer = (extractedName: string, pool: { name: string, ign?: string }[]) => {
+    if (!extractedName) return '';
+    const cleanExtracted = extractedName.toLowerCase().replace(/[^a-z0-9ぁ-んァ-ヶ一-龠]/g, '');
+    
+    // 1. 完全一致（記号除外後）
+    for (const p of pool) {
+      const cleanName = p.name.toLowerCase().replace(/[^a-z0-9ぁ-んァ-ヶ一-龠]/g, '');
+      const cleanIgn = (p.ign || '').toLowerCase().replace(/[^a-z0-9ぁ-んァ-ヶ一-龠]/g, '');
+      
+      if (cleanName === cleanExtracted || (p.ign && cleanIgn === cleanExtracted)) {
+        return p.name;
+      }
+    }
+    
+    // 2. 部分一致
+    for (const p of pool) {
+      const cleanName = p.name.toLowerCase().replace(/[^a-z0-9ぁ-んァ-ヶ一-龠]/g, '');
+      const cleanIgn = (p.ign || '').toLowerCase().replace(/[^a-z0-9ぁ-んァ-ヶ一-龠]/g, '');
+      
+      if (cleanName.includes(cleanExtracted) || cleanExtracted.includes(cleanName) ||
+          (p.ign && (cleanIgn.includes(cleanExtracted) || cleanExtracted.includes(cleanIgn)))) {
+        return p.name;
+      }
+    }
+    
+    return '';
+  };
+
+  // チャンピオン曖昧マッチング
+  const matchChampion = (extractedChamp: string, list: { id: string, name: string }[]) => {
+    if (!extractedChamp) return '';
+    const cleanExtracted = extractedChamp.toLowerCase().replace(/[^a-z0-9]/g, '');
+    
+    // 1. Ddragon ID (id) との一致を検索
+    for (const c of list) {
+      const cleanId = c.id.toLowerCase().replace(/[^a-z0-9]/g, '');
+      if (cleanId === cleanExtracted) {
+        return c.id;
+      }
+    }
+    
+    // 2. 日本語名 (name) との一致を検索
+    for (const c of list) {
+      const cleanName = c.name.toLowerCase().replace(/[^a-z0-9ぁ-んァ-ヶ一-龠]/g, '');
+      if (cleanName === cleanExtracted) {
+        return c.id;
+      }
+    }
+    
+    return '';
+  };
+
+  // 画像アップロード・解析
+  const handleImageUpload = async (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      setMessage('画像ファイルのみアップロード可能です。');
+      return;
+    }
+    
+    setAnalyzing(true);
+    setMessage('');
+    
+    try {
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        try {
+          const base64Data = e.target?.result as string;
+          const base64Content = base64Data.split(',')[1];
+          
+          const res = await fetch('/api/match/analyze-image', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              imageBase64: base64Content,
+              mimeType: file.type,
+              champions: championsList
+            })
+          });
+          
+          const resData = await res.json();
+          if (!res.ok || resData.status !== 'SUCCESS') {
+            throw new Error(resData.error || '画像の解析に失敗しました。');
+          }
+          
+          const data = resData.data;
+          
+          // 勝敗の反映
+          if (data.winningTeam === 'BLUE' || data.winningTeam === 'RED') {
+            setWinningTeam(data.winningTeam as 'BLUE' | 'RED');
+          }
+          
+          // スタッツの反映
+          if (data.players && Array.isArray(data.players)) {
+            const bluePlayers = data.players.filter((p: any) => p.team === 'BLUE');
+            const redPlayers = data.players.filter((p: any) => p.team === 'RED');
+            
+            setStats(prev => {
+              return prev.map((currentStat, idx) => {
+                const isBlue = currentStat.team === 'BLUE';
+                const teamPlayers = isBlue ? bluePlayers : redPlayers;
+                const playerIdx = isBlue ? idx : idx - 5;
+                const found = teamPlayers[playerIdx];
+                
+                if (found) {
+                  const matchedName = matchPlayer(found.name, playersPool);
+                  const matchedChamp = matchChampion(found.champion_name, championsList);
+                  
+                  // ロールが正当な値かチェック。不正ならデフォルトロール
+                  let assignedRole: Role = ROLES[playerIdx];
+                  if (found.role && ROLES.includes(found.role.toUpperCase() as Role)) {
+                    assignedRole = found.role.toUpperCase() as Role;
+                  }
+                  
+                  return {
+                    ...currentStat,
+                    currentRole: assignedRole,
+                    name: matchedName,
+                    champion_name: matchedChamp,
+                    kills: Number(found.kills) || 0,
+                    deaths: Number(found.deaths) || 0,
+                    assists: Number(found.assists) || 0
+                  };
+                }
+                return currentStat;
+              });
+            });
+            setMessage('画像の解析結果を反映しました。誤りがないか確認し、必要に応じて修正してください。');
+          }
+        } catch (innerErr: any) {
+          setMessage(`解析処理エラー: ${innerErr.message}`);
+        }
+      };
+      reader.onerror = () => {
+        setMessage('ファイルの読み込みに失敗しました。');
+      };
+      reader.readAsDataURL(file);
+    } catch (err: any) {
+      setMessage(`解析エラー: ${err.message}`);
+    } finally {
+      setAnalyzing(false);
+    }
+  };
+
+  // ペースト監視 (画面全体のイベント)
+  useEffect(() => {
+    const handlePaste = (e: ClipboardEvent) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].type.indexOf('image') !== -1) {
+          const file = items[i].getAsFile();
+          if (file) {
+            handleImageUpload(file);
+            break;
+          }
+        }
+      }
+    };
+    
+    window.addEventListener('paste', handlePaste);
+    return () => {
+      window.removeEventListener('paste', handlePaste);
+    };
+  }, [playersPool, championsList]);
+
+  // ドラッグ＆ドロップハンドラー
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      handleImageUpload(files[0]);
+    }
+  };
 
   useEffect(() => {
     async function fetchPlayers() {
@@ -85,9 +273,10 @@ export default function CustomRecordPage() {
     loadChampions();
   }, []);
 
-  const handleStatChange = (team: 'BLUE' | 'RED', role: Role, field: string, value: string) => {
-    setStats(prev => prev.map(p => {
-      if (p.team === team && p.currentRole === role) {
+  const handleStatChangeByIndex = (index: number, field: string, value: string) => {
+    setStats(prev => prev.map((p, idx) => {
+      if (idx === index) {
+        if (field === 'currentRole') return { ...p, currentRole: value as Role };
         if (field === 'name') return { ...p, name: value };
         if (field === 'champion_name') return { ...p, champion_name: value };
         const num = parseInt(value) || 0;
@@ -98,6 +287,18 @@ export default function CustomRecordPage() {
   };
 
   const handleSubmit = async () => {
+    // ロールの重複・過不足チェック
+    const blueRoles = stats.filter(s => s.team === 'BLUE').map(s => s.currentRole);
+    const redRoles = stats.filter(s => s.team === 'RED').map(s => s.currentRole);
+    const hasDuplicateRoles = (roles: Role[]) => {
+      const unique = new Set(roles);
+      return unique.size !== 5;
+    };
+    if (hasDuplicateRoles(blueRoles) || hasDuplicateRoles(redRoles)) {
+      setMessage('各チーム内でTOP, JG, MID, ADC, SUPのロールが重複なく1人ずつ設定されている必要があります。');
+      return;
+    }
+
     // バリデーション
     const missingNames = stats.filter(s => !s.name);
     if (missingNames.length > 0) {
@@ -106,13 +307,6 @@ export default function CustomRecordPage() {
     }
     if (!winningTeam) {
       setMessage('勝利チームを選択してください。');
-      return;
-    }
-
-    const pwd = prompt('保存するには管理者パスワードを入力してください:');
-    if (pwd === null) return; // キャンセル
-    if (!pwd) {
-      setMessage('管理者パスワードが必要です。');
       return;
     }
 
@@ -125,7 +319,7 @@ export default function CustomRecordPage() {
         body: JSON.stringify({
           winningTeam,
           riotMatchId: null, // 手動入力のため常にnull
-          adminPassword: pwd,
+          adminPassword: 'ktm', // API側で検証を無効化したため、デフォルト値を設定
           participants: stats.map(s => ({
             name: s.name,
             team: s.team,
@@ -147,9 +341,11 @@ export default function CustomRecordPage() {
       if (!res.ok) throw new Error(data.error);
       
       alert('試合結果を保存し、MMRを更新しました！');
-      // リセット
-      setStats(stats.map(s => ({ 
-        ...s, name: '', kills: 0, deaths: 0, assists: 0, vision: 0,
+      // リセット（ロールもデフォルトに戻す）
+      setStats(stats.map((s, idx) => ({ 
+        ...s, 
+        currentRole: ROLES[idx % 5],
+        name: '', kills: 0, deaths: 0, assists: 0, vision: 0,
         champion_name: '', damage_dealt: 0, damage_taken: 0, heal_shield: 0, objective_damage: 0, cs: 0 
       })));
       setWinningTeam(null);
@@ -185,26 +381,75 @@ export default function CustomRecordPage() {
             </div>
           )}
 
+          {/* 画像貼り付け・アップロードエリア */}
+          <div
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            className={`mb-8 p-8 border-2 border-dashed rounded-xl flex flex-col items-center justify-center gap-3 transition-all ${
+              isDragging
+                ? 'border-emerald-500 bg-emerald-950/20 text-emerald-300 shadow-[0_0_15px_rgba(16,185,129,0.2)]'
+                : 'border-gray-800 bg-gray-900/40 text-gray-400 hover:border-gray-700 hover:bg-gray-900/70'
+            }`}
+          >
+            {analyzing ? (
+              <div className="flex flex-col items-center gap-2 py-4">
+                <RefreshCw className="h-10 w-10 text-emerald-400 animate-spin" />
+                <span className="text-sm font-bold text-emerald-300 animate-pulse">Gemini APIで対戦結果画像を解析中...</span>
+              </div>
+            ) : (
+              <div 
+                className="text-center cursor-pointer w-full py-4" 
+                onClick={() => {
+                  const input = document.createElement('input');
+                  input.type = 'file';
+                  input.accept = 'image/*';
+                  input.onchange = (e) => {
+                    const file = (e.target as HTMLInputElement).files?.[0];
+                    if (file) handleImageUpload(file);
+                  };
+                  input.click();
+                }}
+              >
+                <div className="flex justify-center mb-3">
+                  <Target className="h-12 w-12 text-emerald-500 animate-pulse" />
+                </div>
+                <p className="font-bold text-white mb-1 text-base">
+                  スクリーンショット画像を貼り付け (Ctrl+V)
+                </p>
+                <p className="text-xs text-gray-500">
+                  または、ここにファイルをドラッグ＆ドロップ / クリックして選択
+                </p>
+              </div>
+            )}
+          </div>
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
             {/* BLUE TEAM */}
             <div>
               <h4 className="font-bold text-blue-400 mb-4 text-xl tracking-wider">🟦 BLUE TEAM</h4>
               <div className="space-y-3">
-                {ROLES.map(role => {
-                  const s = stats.find(x => x.team === 'BLUE' && x.currentRole === role)!;
+                {[0, 1, 2, 3, 4].map(index => {
+                  const s = stats[index];
                   return (
-                    <div key={`BLUE-${role}`} className="flex items-center gap-2 bg-gray-800/80 p-3 rounded-lg border border-gray-700">
-                      <div className="w-10 text-center font-bold text-gray-400 text-sm">{role}</div>
+                    <div key={`BLUE-slot-${index}`} className="flex items-center gap-2 bg-gray-800/80 p-3 rounded-lg border border-gray-700">
+                      <select
+                        value={s.currentRole}
+                        onChange={e => handleStatChangeByIndex(index, 'currentRole', e.target.value)}
+                        className="w-16 bg-gray-900 border border-gray-700 rounded px-1.5 py-1 text-white outline-none focus:border-blue-500 text-xs font-bold"
+                      >
+                        {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
+                      </select>
                       <select 
                         value={s.name}
-                        onChange={e => handleStatChange('BLUE', role, 'name', e.target.value)}
+                        onChange={e => handleStatChangeByIndex(index, 'name', e.target.value)}
                         className="w-28 bg-gray-900 border border-gray-700 rounded px-2 py-1.5 text-white outline-none focus:border-blue-500 text-sm"
                       >
                         <option value="">選択...</option>
                         {playersPool.map(p => <option key={p.name} value={p.name}>{p.name}</option>)}
                       </select>
                       <button
-                        onClick={() => setActiveChampSelector({ team: 'BLUE', role })}
+                        onClick={() => setActiveChampSelector({ team: 'BLUE', role: s.currentRole, slotIndex: index })}
                         type="button"
                         className="w-32 bg-gray-900 border border-gray-700 hover:border-blue-500 rounded px-2 py-1.5 text-gray-300 hover:text-white text-xs flex items-center justify-between gap-1 transition shrink-0"
                       >
@@ -221,11 +466,11 @@ export default function CustomRecordPage() {
                         )}
                       </button>
                       <div className="flex-1 flex gap-1 justify-end">
-                        <input type="number" value={s.kills} onChange={e => handleStatChange('BLUE', role, 'kills', e.target.value)} className="w-11 bg-gray-900 border border-gray-700 text-white text-center rounded py-1 text-sm" placeholder="K" />
+                        <input type="number" value={s.kills} onChange={e => handleStatChangeByIndex(index, 'kills', e.target.value)} className="w-11 bg-gray-900 border border-gray-700 text-white text-center rounded py-1 text-sm" placeholder="K" />
                         <span className="text-gray-500 self-center text-xs">/</span>
-                        <input type="number" value={s.deaths} onChange={e => handleStatChange('BLUE', role, 'deaths', e.target.value)} className="w-11 bg-gray-900 border border-red-900/50 text-red-200 text-center rounded py-1 text-sm" placeholder="D" />
+                        <input type="number" value={s.deaths} onChange={e => handleStatChangeByIndex(index, 'deaths', e.target.value)} className="w-11 bg-gray-900 border border-red-900/50 text-red-200 text-center rounded py-1 text-sm" placeholder="D" />
                         <span className="text-gray-500 self-center text-xs">/</span>
-                        <input type="number" value={s.assists} onChange={e => handleStatChange('BLUE', role, 'assists', e.target.value)} className="w-11 bg-gray-900 border border-gray-700 text-white text-center rounded py-1 text-sm" placeholder="A" />
+                        <input type="number" value={s.assists} onChange={e => handleStatChangeByIndex(index, 'assists', e.target.value)} className="w-11 bg-gray-900 border border-gray-700 text-white text-center rounded py-1 text-sm" placeholder="A" />
                       </div>
                     </div>
                   );
@@ -237,21 +482,27 @@ export default function CustomRecordPage() {
             <div>
               <h4 className="font-bold text-red-400 mb-4 text-xl tracking-wider">🟥 RED TEAM</h4>
               <div className="space-y-3">
-                {ROLES.map(role => {
-                  const s = stats.find(x => x.team === 'RED' && x.currentRole === role)!;
+                {[5, 6, 7, 8, 9].map(index => {
+                  const s = stats[index];
                   return (
-                    <div key={`RED-${role}`} className="flex items-center gap-2 bg-gray-800/80 p-3 rounded-lg border border-gray-700">
-                      <div className="w-10 text-center font-bold text-gray-400 text-sm">{role}</div>
+                    <div key={`RED-slot-${index}`} className="flex items-center gap-2 bg-gray-800/80 p-3 rounded-lg border border-gray-700">
+                      <select
+                        value={s.currentRole}
+                        onChange={e => handleStatChangeByIndex(index, 'currentRole', e.target.value)}
+                        className="w-16 bg-gray-900 border border-gray-700 rounded px-1.5 py-1 text-white outline-none focus:border-red-500 text-xs font-bold"
+                      >
+                        {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
+                      </select>
                       <select 
                         value={s.name}
-                        onChange={e => handleStatChange('RED', role, 'name', e.target.value)}
+                        onChange={e => handleStatChangeByIndex(index, 'name', e.target.value)}
                         className="w-28 bg-gray-900 border border-gray-700 rounded px-2 py-1.5 text-white outline-none focus:border-red-500 text-sm"
                       >
                         <option value="">選択...</option>
                         {playersPool.map(p => <option key={p.name} value={p.name}>{p.name}</option>)}
                       </select>
                       <button
-                        onClick={() => setActiveChampSelector({ team: 'RED', role })}
+                        onClick={() => setActiveChampSelector({ team: 'RED', role: s.currentRole, slotIndex: index })}
                         type="button"
                         className="w-32 bg-gray-900 border border-gray-700 hover:border-red-500 rounded px-2 py-1.5 text-gray-300 hover:text-white text-xs flex items-center justify-between gap-1 transition shrink-0"
                       >
@@ -268,11 +519,11 @@ export default function CustomRecordPage() {
                         )}
                       </button>
                       <div className="flex-1 flex gap-1 justify-end">
-                        <input type="number" value={s.kills} onChange={e => handleStatChange('RED', role, 'kills', e.target.value)} className="w-11 bg-gray-900 border border-gray-700 text-white text-center rounded py-1 text-sm" placeholder="K" />
+                        <input type="number" value={s.kills} onChange={e => handleStatChangeByIndex(index, 'kills', e.target.value)} className="w-11 bg-gray-900 border border-gray-700 text-white text-center rounded py-1 text-sm" placeholder="K" />
                         <span className="text-gray-500 self-center text-xs">/</span>
-                        <input type="number" value={s.deaths} onChange={e => handleStatChange('RED', role, 'deaths', e.target.value)} className="w-11 bg-gray-900 border border-red-900/50 text-red-200 text-center rounded py-1 text-sm" placeholder="D" />
+                        <input type="number" value={s.deaths} onChange={e => handleStatChangeByIndex(index, 'deaths', e.target.value)} className="w-11 bg-gray-900 border border-red-900/50 text-red-200 text-center rounded py-1 text-sm" placeholder="D" />
                         <span className="text-gray-500 self-center text-xs">/</span>
-                        <input type="number" value={s.assists} onChange={e => handleStatChange('RED', role, 'assists', e.target.value)} className="w-11 bg-gray-900 border border-gray-700 text-white text-center rounded py-1 text-sm" placeholder="A" />
+                        <input type="number" value={s.assists} onChange={e => handleStatChangeByIndex(index, 'assists', e.target.value)} className="w-11 bg-gray-900 border border-gray-700 text-white text-center rounded py-1 text-sm" placeholder="A" />
                       </div>
                     </div>
                   );
@@ -348,7 +599,7 @@ export default function CustomRecordPage() {
                   <button
                     key={c.id}
                     onClick={() => {
-                      handleStatChange(activeChampSelector.team, activeChampSelector.role, 'champion_name', c.id);
+                      handleStatChangeByIndex(activeChampSelector.slotIndex, 'champion_name', c.id);
                       setActiveChampSelector(null);
                       setChampSearchQuery('');
                     }}

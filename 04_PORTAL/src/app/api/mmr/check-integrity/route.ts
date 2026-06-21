@@ -34,6 +34,8 @@ export async function GET(request: Request) {
     const { data: allMatches, error: mError } = await supabase.from('ktm_matches').select('id, winning_team').order('created_at', { ascending: true });
     if (mError) throw mError;
 
+    const matchupHistoryMap = new Map<string, number>(); // "PlayerA<=>PlayerB:ROLE" -> count
+
     for (const match of allMatches) {
       const { data: participants } = await supabase.from('ktm_match_participants').select('*').eq('match_id', match.id);
       if (!participants || participants.length === 0) continue;
@@ -68,6 +70,14 @@ export async function GET(request: Request) {
           }, 0) / (opponentList.length || 1);
         } 
 
+        // 対面相手との対面回数のシミュレーション
+        let matchupCount = 0;
+        let matchupKey = "";
+        if (opponent) {
+          matchupKey = [p.player_name, opponent.player_name].sort().join("<=>") + ":" + role;
+          matchupCount = matchupHistoryMap.get(matchupKey) || 0;
+        }
+
         const isWin = p.team === match.winning_team;
         const teamParticipants = participants.filter((pt: any) => pt.team === p.team);
         const teamTotalKills = teamParticipants.reduce((acc: number, curr: any) => acc + (curr.kills || 0), 0);
@@ -82,7 +92,7 @@ export async function GET(request: Request) {
           kills: p.kills || 0, deaths: p.deaths || 0, assists: p.assists || 0,
           mainRank: memPlayer.highest_rank ? memPlayer.highest_rank.split(' ')[0].toUpperCase() : 'UNRANKED',
           numGames: memPlayer.laneGames[role] || 0,
-          matchupCount: 0,
+          matchupCount,
           totalWinRate: memPlayer.totalGames > 0 ? (memPlayer.totalWins / memPlayer.totalGames) * 100 : 50,
           visionScore: p.vision_score || 0, cs: p.cs || 0,
           damageDealt: p.damage_dealt || 0, damageTaken: p.damage_taken || 0,
@@ -96,6 +106,11 @@ export async function GET(request: Request) {
         memPlayer.totalGames += 1;
         if (isWin) memPlayer.totalWins += 1;
         if (memPlayer.laneGames[role] !== undefined) memPlayer.laneGames[role] += 1;
+
+        // MMR更新に成功したため、対面回数をインクリメント
+        if (opponent && matchupKey) {
+          matchupHistoryMap.set(matchupKey, matchupCount + 1);
+        }
       }
     }
 
