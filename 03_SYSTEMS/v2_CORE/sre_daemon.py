@@ -67,32 +67,33 @@ class SREDaemon:
         return hashlib.md5(error_text[:200].encode()).hexdigest()
 
     def analyze_error_with_ai(self, error_text):
-        """AIを使ってエラー原因と解決策を分析"""
-        if not self.client:
-            return "⚠️ Gemini APIキーが未設定のため、AI解析をスキップしました。"
-            
-        prompt = f"""
-あなたはシステムのSRE（Site Reliability Engineering）エージェントです。
-以下のエラーログを解析し、原因と解決策を簡潔に回答してください。
-システム用語は極力控え、ユーザーが「次にどうアクションすればよいか」を明確にすること。
-Playwrightのタイムアウトの場合は、「対象サイトのUI仕様が変更された可能性があります。セレクタの再確認が必要です」と指摘してください。
-API制限の場合は、「一定時間待機することで自動的に解消される見込みです」と案内してください。
-
-[エラーログ]:
-{error_text}
-"""
+        """AIを使ってエラー原因と解決策を分析（APIゲートウェイ経由）"""
+        import httpx
+        url = "http://localhost:8000/api/v1/agent/generate"
+        api_key = os.getenv("ANTIGRAVITY_API_KEY", "default_dev_key_2026")
+        
+        headers = {
+            "X-Antigravity-Key": api_key,
+            "Content-Type": "application/json"
+        }
+        payload = {
+            "prompt_id": "sre_error_analysis",
+            "variables": {
+                "error_text": error_text
+            }
+        }
         try:
-            from v2_CORE.ai_helper import generate_content_safe
-            from v2_CORE.settings import settings
-            response_text = generate_content_safe(
-                self.client,
-                prompt,
-                model_id=settings.DEFAULT_MODEL,
-                feature_name="oracle"
-            )
-            return response_text
+            res = httpx.post(url, headers=headers, json=payload, timeout=30)
+            if res.status_code == 200:
+                data = res.json()
+                if data.get("success"):
+                    return data.get("text", "")
+                else:
+                    return f"⚠️ AI解析失敗 (ゲートウェイエラー): {data.get('error_message')}"
+            else:
+                return f"⚠️ AI解析失敗 (HTTP {res.status_code}): {res.text}"
         except Exception as e:
-            return f"⚠️ AI解析中にエラーが発生しました: {e}"
+            return f"⚠️ AI解析通信エラー: {e}"
 
     def run(self):
         if not self.log_file.exists():

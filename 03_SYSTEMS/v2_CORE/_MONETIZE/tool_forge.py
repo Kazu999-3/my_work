@@ -3,7 +3,6 @@ import json
 import logging
 import re
 from pathlib import Path
-from google import genai
 import httpx
 from v2_CORE.settings import settings
 from v2_CORE.logger_config import setup_sovereign_logging
@@ -16,13 +15,33 @@ class ToolForge:
         self.trends_file = Path("d:/my_work/02_FACTORY/tool_trends.json")
         self.affiliate_file = Path("d:/my_work/02_FACTORY/affiliate_links.json")
         self.output_dir = Path("d:/my_work/02_FACTORY/note_drafts")
+
+    def _call_gateway(self, prompt_id: str, variables: dict) -> tuple[bool, str]:
+        """APIゲートウェイ経由でAI生成を実行"""
+        import httpx
+        url = "http://localhost:8000/api/v1/agent/generate"
+        api_key = os.getenv("ANTIGRAVITY_API_KEY", "default_dev_key_2026")
         
-        self.gemini_key = settings.GEMINI_API_KEY_FREE or settings.GEMINI_API_KEY
-        if self.gemini_key:
-            self.client = genai.Client(api_key=self.gemini_key)
-        else:
-            self.client = None
-            logger.error("❌ GEMINI_API_KEY が環境変数に設定されていません。")
+        headers = {
+            "X-Antigravity-Key": api_key,
+            "Content-Type": "application/json"
+        }
+        payload = {
+            "prompt_id": prompt_id,
+            "variables": variables
+        }
+        try:
+            res = httpx.post(url, headers=headers, json=payload, timeout=90)
+            if res.status_code == 200:
+                data = res.json()
+                if data.get("success"):
+                    return True, data.get("text", "")
+                else:
+                    return False, f"⚠️ ゲートウェイエラー: {data.get('error_message')}"
+            else:
+                return False, f"⚠️ HTTP {res.status_code}: {res.text}"
+        except Exception as e:
+            return False, f"⚠️ 通信エラー: {e}"
 
     def load_data(self) -> tuple[dict, dict]:
         """トレンド情報とアフィリエイトリンクの一覧をロード"""
@@ -78,44 +97,19 @@ class ToolForge:
 """
 
     def generate_review_article(self, tool_name: str, trend_context: str, affiliate_link: str) -> str:
-        """アフィリエイトリンク付きの高品質 note ドラフト Markdown 記事を生成"""
+        """アフィリエイトリンク付きの高品質 note ドラフト Markdown 記事を生成 (APIゲートウェイ経由)"""
         logger.info(f"🔨 {tool_name} の広告リンク付き記事を生成中...")
         
-        prompt = f"""
-        あなたはプロのIT・ツールライターであり、個人の業務効率化を支援するコンサルタントです。
-        以下の情報に基づき、note.comに投稿するための高品質で読者を惹きつける「無料の攻略・解説記事」を執筆してください。
-        
-        【対象ツール名】: {tool_name}
-        【最新トレンド・文脈】:
-        {trend_context}
-        
-        【絶対要件】
-        1. 読者が今すぐ試したくなるような具体的かつ実用的な活用ステップを提示すること。
-        2. 記事の途中の適切な箇所（ツールを試してみるよう促す文脈）および記事の最後のまとめ部分の合計2箇所以上に、必ず以下のアフィリエイトリンクを自然なハイパーリンク形式で挿入してください。
-           リンクURL: {affiliate_link}
-           アンカーテキスト例: 「[{tool_name}の公式サイトはこちら（無料登録可能）]({affiliate_link})」
-        3. 語尾は「〜です」「〜ます」の親しみやすく人間味のあるトーンで書いてください。「王」「王国の舞」などのAI臭いポエミーな比喩表現は一切使用禁止です。
-        4. Markdown形式で出力し、タイトルは32文字以内で考えて最上部に「# タイトル」として記述してください。
-        """
-
-        if not self.client:
+        variables = {
+            "tool_name": tool_name,
+            "trend_context": trend_context,
+            "affiliate_link": affiliate_link
+        }
+        success, text = self._call_gateway("monetize_review_article", variables)
+        if not success or "❌" in text or "⚠️" in text or "一時的なエラーが発生した" in text:
+            logger.warning(f"⚠️ {tool_name} の記事API生成がエラーを返したため、ダミー記事を生成します。")
             return self.get_dummy_article(tool_name, affiliate_link)
-
-        try:
-            from v2_CORE.ai_helper import generate_content_safe
-            res = generate_content_safe(
-                self.client,
-                prompt,
-                model_id=settings.DEFAULT_MODEL,
-                feature_name="bible_forge"
-            )
-            if not res or "❌" in res or "⚠️" in res or "一時的なエラーが発生した" in res:
-                logger.warning(f"⚠️ {tool_name} の記事API生成がエラーを返したため、ダミー記事を生成します。")
-                return self.get_dummy_article(tool_name, affiliate_link)
-            return res
-        except Exception as e:
-            logger.error(f"❌ {tool_name} の記事生成失敗: {e}")
-            return self.get_dummy_article(tool_name, affiliate_link)
+        return text
 
     def save_to_supabase(self, title: str, content: str, tool_name: str, file_path: Path):
         """Supabaseの personal_knowledge テーブルに登録・更新"""
@@ -194,141 +188,55 @@ class ToolForge:
             self.save_to_supabase(title, article_content, tool, file_path)
 
     def generate_first_draft(self, tool_name: str, structured_knowledge: dict, affiliate_link: str) -> str:
-        """構造化知識に基づいてアフィリエイトレビュー記事の初稿を生成"""
+        """構造化知識に基づいてアフィリエイトレビュー記事の初稿を生成 (APIゲートウェイ経由)"""
         logger.info(f"✍️ [Creator Agent] {tool_name} の初稿を生成中...")
         
-        prompt = f"""
-        あなたはプロのIT・ツールライターであり、個人の業務効率化を支援するコンサルタントです。
-        以下の構造化知識に基づいて、note.comに投稿するための高品質な解説記事（初稿）を執筆してください。
-        
-        【対象ツール名】: {tool_name}
-        【ツールの詳細ファクト】:
-        {json.dumps(structured_knowledge, ensure_ascii=False, indent=2)}
-        
-        【アフィリエイトリンク】: {affiliate_link}
-        
-        【要件】
-        1. 読者が今すぐ試したくなるような具体的かつ実用的な活用手順（ファクトの steps に準拠）を提示してください。
-        2. 記事の途中の適切な箇所および記事の最後のまとめ部分の合計2箇所以上に、必ず以下のアフィリエイトリンクを自然なハイパーリンク形式で挿入してください。
-           リンクURL: {affiliate_link}
-           アンカーテキスト例: 「[{tool_name}の公式サイトはこちら（無料登録可能）]({affiliate_link})」
-        3. 語尾は「〜です」「〜ます」の親しみやすく人間味のあるトーンで書いてください。「王」「王国の舞」などのAI臭いポエミーな比喩表現は一切使用禁止です。
-        4. Markdown形式で出力し、タイトルは32文字以内で考えて最上部に「# タイトル」として記述してください。
-        """ + self._load_evolution_rules()
-        
-        if not self.client:
+        variables = {
+            "tool_name": tool_name,
+            "structured_knowledge": json.dumps(structured_knowledge, ensure_ascii=False, indent=2),
+            "affiliate_link": affiliate_link,
+            "evolution_rules": self._load_evolution_rules()
+        }
+        success, text = self._call_gateway("monetize_first_draft", variables)
+        if not success:
+            logger.error(f"❌ 初稿生成失敗: {text}")
             return self.get_dummy_article(tool_name, affiliate_link)
-            
-        try:
-            from v2_CORE.ai_helper import generate_content_safe
-            res = generate_content_safe(
-                self.client,
-                prompt,
-                model_id=settings.DEFAULT_MODEL,
-                feature_name="creator_first_draft"
-            )
-            return res
-        except Exception as e:
-            logger.error(f"❌ 初稿生成失敗: {e}")
-            return self.get_dummy_article(tool_name, affiliate_link)
+        return text
 
     def generate_persona_critique(self, first_draft: str) -> str:
-        """辛口な読者（ペルソナAI）になりきり、初稿への批判・改善指示を生成"""
+        """辛口な読者（ペルソナAI）になりきり、初稿への批判・改善指示を生成 (APIゲートウェイ経由)"""
         logger.info(f"🔎 [Creator Agent] 辛口読者による査定中...")
         
-        prompt = f"""
-        あなたはIT・ツール系記事を日々読んでいる非常に目が肥えた「辛口な一般読者」です。
-        以下の記事（ドラフト）を読み、読者の視点から「物足りない点」「分かりにくい点」「AIっぽくて説得力に欠ける点」「アフィリエイトへの誘導が強引な点」などを、厳しく客観的に指摘してください。
-        
-        【記事のドラフト】:
-        {first_draft}
-        
-        【制約】
-        - 良かった点（褒め言葉）は一切不要です。改善すべきポイントのみを3点、箇条書きで具体的に指摘してください。
-        - 指摘は簡潔かつ手短に記述してください。
-        """
-        
-        if not self.client:
-            return "1. 全体的に説明が一般的すぎる。\n2. 料金のメリットが伝わりにくい。\n3. アフィリエイトリンクの挿入位置が不自然。"
-            
-        try:
-            from v2_CORE.ai_helper import generate_content_safe
-            res = generate_content_safe(
-                self.client,
-                prompt,
-                model_id=settings.DEFAULT_MODEL,
-                feature_name="creator_critique"
-            )
-            logger.info(f"📝 辛口フィードバック:\n{res}")
-            return res
-        except Exception as e:
-            logger.error(f"❌ 査定生成失敗: {e}")
+        variables = {
+            "first_draft": first_draft
+        }
+        success, text = self._call_gateway("monetize_persona_critique", variables)
+        if not success:
+            logger.error(f"❌ 査定生成失敗: {text}")
             return "改善の余地あり"
+        logger.info(f"📝 辛口フィードバック:\n{text}")
+        return text
 
     def rewrite_with_critique(self, tool_name: str, first_draft: str, critique: str, affiliate_link: str) -> str:
-        """初稿とフィードバックを踏まえ、AI臭さを排除した高品質な決定稿を生成"""
+        """初稿とフィードバックを踏まえ、AI臭さを排除した高品質な決定稿を生成 (APIゲートウェイ経由)"""
         logger.info(f"✨ [Creator Agent] フィードバックを反映した決定稿を執筆中...")
         
-        prompt = f"""
-        あなたはプロのIT・ツールライターです。
-        あなたが執筆した初稿に対し、品質管理部（辛口読者）から厳しい指摘が届きました。
-        この指摘事項をすべて解消し、より自然で、説得力があり、アフィリエイト成約率の高い「決定稿」の記事へリライトしてください。
-        
-        【対象ツール名】: {tool_name}
-        【元の初稿】:
-        {first_draft}
-        
-        【指摘事項・改善指示】:
-        {critique}
-        
-        【絶対制約】
-        1. 指摘された問題点を完全に修正し、説明の具体性を高めてください。
-        2. 「王」「王国」「舞」などのポエミーなAI臭い表現は絶対に排除し、一般の人間が書いたブログ記事と見分けがつかないナチュラルな文章にしてください。
-        3. 指定されたアフィリエイトリンク（{affiliate_link}）を、記事中と最後の計2箇所以上に自然なハイパーリンク形式で必ず挿入してください。
-        4. Markdown形式で出力し、タイトルは32文字以内で考えて最上部に「# タイトル」として記述してください。
-        """ + self._load_evolution_rules()
-        
-        if not self.client:
+        variables = {
+            "tool_name": tool_name,
+            "first_draft": first_draft,
+            "critique": critique,
+            "affiliate_link": affiliate_link,
+            "evolution_rules": self._load_evolution_rules()
+        }
+        success, text = self._call_gateway("monetize_rewrite_critique", variables)
+        if not success:
+            logger.error(f"❌ 決定稿リライト失敗: {text}")
             return first_draft
-            
-        try:
-            from v2_CORE.ai_helper import generate_content_safe
-            res = generate_content_safe(
-                self.client,
-                prompt,
-                model_id=settings.DEFAULT_MODEL,
-                feature_name="creator_final_draft"
-            )
-            return res
-        except Exception as e:
-            logger.error(f"❌ 決定稿リライト失敗: {e}")
-            return first_draft
+        return text
 
     def generate_x_thread(self, note_title: str, note_summary: str) -> list[str]:
-        """X（Twitter）での宣伝用スレッド（3連投テキスト）を生成"""
+        """X（Twitter）での宣伝用スレッド（3連投テキスト）を生成 (APIゲートウェイ経由)"""
         logger.info(f"🐦 [Creator Agent] {note_title} 用のX宣伝スレッドを生成中...")
-        
-        prompt = f"""
-        あなたはプロのIT・ツールライターであり、SNSを活用したマーケターです。
-        以下のnote記事（タイトルと要約）をX上で宣伝するための、魅力的でクリックしたくなるような3連投ツイートスレッドを作成してください。
-        
-        【記事タイトル】: {note_title}
-        【記事の要約】:
-        {note_summary}
-        
-        【絶対要件】
-        1. スレッドは正確に3つのツイート（3連投）で構成してください。
-        2. 各ツイートは、ツールを使うことで解決できる課題やメリットを明確にし、続きが読みたくなるようなフックを持たせてください。
-        3. 3つ目（最後）のツイートの末尾に、必ず以下のようにプレースホルダー文字列「[NOTE_URL]」を掲載してください（後からプログラムで実際のURLに置換します）。
-           「続きはこちらから👇\n[NOTE_URL]」
-        4. 各ツイートのテキストは 140文字（日本語）以内におさめてください。AI臭い大げさな表現は避けてください。
-        5. 出力は以下のJSON配列形式（テキストのリスト）のみで返してください。マークダウンや ```json などの装飾や、挨拶、説明は一切含めず、純粋なJSON配列文字列のみを出力してください。
-        [
-          "ツイート1の内容...",
-          "ツイート2の内容...",
-          "ツイート3の内容..."
-        ]
-        """ + self._load_evolution_rules()
         
         default_tweets = [
             f"【作業効率化】話題のツールを使って日々の業務生産性を劇的に向上させる方法をまとめました！特にAI連携による自動化は必見です。気になる方はぜひチェックしてみてください！ 👇",
@@ -336,28 +244,28 @@ class ToolForge:
             f"直感的に使えて非常に強力なパートナーになります。まずは無料プランから始めてその便利さを実感してみましょう！\n\n続きはnote記事で公開中！👇\n[NOTE_URL]"
         ]
         
-        if not self.client:
+        variables = {
+            "note_title": note_title,
+            "note_summary": note_summary,
+            "evolution_rules": self._load_evolution_rules()
+        }
+        success, text = self._call_gateway("monetize_x_thread", variables)
+        if not success:
+            logger.error(f"❌ Xスレッド生成失敗: {text}")
             return default_tweets
             
         try:
-            from v2_CORE.ai_helper import generate_content_safe
-            res = generate_content_safe(
-                self.client,
-                prompt,
-                model_id=settings.DEFAULT_MODEL,
-                feature_name="creator_x_thread"
-            )
-            cleaned = res.strip()
+            cleaned = text.strip()
             if cleaned.startswith("```"):
                 match = re.search(r"```(?:json)?\s*(.*?)\s*```", cleaned, re.DOTALL)
                 if match:
                     cleaned = match.group(1).strip()
             
-            tweets = json.loads(cleaned)
+            tweets = json.loads(cleaned, strict=False)
             if isinstance(tweets, list) and len(tweets) >= 3:
                 return tweets[:3]
         except Exception as e:
-            logger.error(f"❌ Xスレッド生成失敗: {e}")
+            logger.error(f"❌ XスレッドJSONパース失敗: {e}, text: {text}")
             
         return default_tweets
 
