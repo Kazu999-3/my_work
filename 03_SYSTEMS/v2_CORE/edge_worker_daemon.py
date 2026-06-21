@@ -81,6 +81,40 @@ class EdgeWorkerDaemon:
         except Exception as e:
             logger.error(f"❌ タスクステータス更新中に通信エラーが発生しました: {e}")
 
+    def _run_subprocess_task(self, script_path: str, args: list = None) -> dict:
+        """指定されたPythonスクリプトを安全に独立プロセスで実行する"""
+        import subprocess
+        import sys
+        
+        env = os.environ.copy()
+        env["PYTHONPATH"] = "d:/my_work/03_SYSTEMS"
+        
+        cmd = [sys.executable, script_path]
+        if args:
+            cmd.extend(args)
+            
+        logger.info(f"💾 サブプロセス起動: {' '.join(cmd)}")
+        res = subprocess.run(
+            cmd,
+            cwd="d:/my_work",
+            env=env,
+            capture_output=True,
+            text=True,
+            check=False
+        )
+        
+        if res.returncode == 0:
+            logger.info(f"✅ サブプロセス正常終了: {script_path}")
+            return {
+                "success": True,
+                "stdout": res.stdout[-2000:],  # ログ肥大化防止のため末尾のみ
+                "stderr": res.stderr[-2000:]
+            }
+        else:
+            logger.error(f"❌ サブプロセスエラー終了 ({res.returncode}): {script_path}")
+            logger.error(f"Stderr: {res.stderr[-1000:]}")
+            raise RuntimeError(f"プロセス実行エラー (Exit code: {res.returncode})\nStderr: {res.stderr[-1000:]}")
+
     def execute_task(self, task: dict):
         """指示されたタスクの中身に応じた実行分岐"""
         task_id = task["id"]
@@ -101,18 +135,46 @@ class EdgeWorkerDaemon:
                 self.update_task_status(task_id, "completed", result=result)
                 
             elif task_type == "note_magazine_import":
-                # noteマガジンインポート
+                # noteマガジンインポート (Playwright)
                 logger.info("📰 [note_magazine_import] noteマガジン巡回・要約インポートを開始...")
-                from v2_CORE._MONETIZE.note_magazine_importer import NoteMagazineImporter
+                result = self._run_subprocess_task("03_SYSTEMS/v2_CORE/_MONETIZE/note_magazine_importer.py")
+                self.update_task_status(task_id, "completed", result=result)
                 
-                magazine_url = payload.get("magazine_url")
-                if not magazine_url:
-                    raise ValueError("magazine_url が payload に指定されていません。")
+            elif task_type == "youtube_absorb":
+                # YouTube自動解析・音声認識・記事生成
+                logger.info("🎥 [youtube_absorb] YouTube自動解析（Whisper GPU）を実行...")
+                result = self._run_subprocess_task("03_SYSTEMS/v2_CORE/_LOL/youtube_absorber.py")
+                self.update_task_status(task_id, "completed", result=result)
                 
-                importer = NoteMagazineImporter()
-                importer.import_magazine(magazine_url)
+            elif task_type == "monetization_batch":
+                # アフィリエイト記事自動生成・投稿バッチ
+                logger.info("💰 [monetization_batch] 自動収益化バッチ（Playwright自動投稿含む）を実行...")
+                result = self._run_subprocess_task("03_SYSTEMS/v2_CORE/monetization_batch.py")
+                self.update_task_status(task_id, "completed", result=result)
                 
-                self.update_task_status(task_id, "completed", result={"message": "マガジンインポートが完了しました。"})
+            elif task_type == "reddit_scout":
+                # Redditトレンド情報収集
+                logger.info("🤖 [reddit_scout] Redditトレンド巡回・収集を実行...")
+                result = self._run_subprocess_task("03_SYSTEMS/v2_CORE/_LOL/reddit_scout.py")
+                self.update_task_status(task_id, "completed", result=result)
+                
+            elif task_type == "lol_trend_collect":
+                # 最新メタ情報のスマート検知
+                logger.info("⚡ [lol_trend_collect] LoL最新トレンド情報の収集を実行...")
+                result = self._run_subprocess_task("03_SYSTEMS/v2_CORE/_LOL/lol_trend_collector.py")
+                self.update_task_status(task_id, "completed", result=result)
+                
+            elif task_type == "note_analytics":
+                # noteアクセス分析とフィードバック
+                logger.info("📊 [note_analytics] noteアクセス分析・自己進化ループを実行...")
+                result = self._run_subprocess_task("03_SYSTEMS/v2_CORE/_MONETIZE/note_analytics.py")
+                self.update_task_status(task_id, "completed", result=result)
+                
+            elif task_type == "dict_synthesizer":
+                # 攻略辞典整理
+                logger.info("📚 [dict_synthesizer] 攻略辞典（DictSynthesizer）の統合・整理を実行...")
+                result = self._run_subprocess_task("03_SYSTEMS/v2_CORE/_LOL/dict_synthesizer.py")
+                self.update_task_status(task_id, "completed", result=result)
                 
             else:
                 raise NotImplementedError(f"未サポートのタスクタイプです: {task_type}")
