@@ -416,6 +416,77 @@ class SREDaemon:
                     logger.error(f"❌ noteアクセス分析キューイングエラー: {e}")
                 time.sleep(86400)  # 1日（24時間）おきに実行
 
+        # --- プランC: エージェント自律連携調整ループ (Swarm Coordinator) ---
+        def run_swarm_coordinator_loop():
+            # 起動直後に前回の蓄積を処理しないよう、少し待機して last_checked を現在時刻に設定
+            time.sleep(30)
+            
+            from datetime import datetime, timezone
+            last_checked = datetime.now(timezone.utc).isoformat()
+            
+            url = os.getenv("SUPABASE_URL")
+            key = os.getenv("SUPABASE_KEY")
+            if not url or not key: return
+            headers = {
+                "apikey": key,
+                "Authorization": f"Bearer {key}",
+                "Content-Type": "application/json"
+            }
+            
+            logger.info("🤖 Sovereign OS Agent Swarm Coordinator が監視を開始しました。")
+            
+            while True:
+                try:
+                    query_url = f"{url}/rest/v1/edge_tasks"
+                    params = {
+                        "status": "eq.completed",
+                        "updated_at": f"gt.{last_checked}",
+                        "order": "updated_at.asc"
+                    }
+                    res = httpx.get(query_url, headers=headers, params=params, timeout=10)
+                    if res.status_code == 200:
+                        completed_tasks = res.json()
+                        for task in completed_tasks:
+                            task_type = task["task_type"]
+                            task_id = task["id"]
+                            logger.info(f"🔗 [Swarm] 完了タスクを検知しました: {task_type} (ID: {task_id})")
+                            
+                            # 1. lol_trend_collect が完了した場合
+                            if task_type == "lol_trend_collect":
+                                # kirei_queue.json に pending の動画があるか確認
+                                queue_file = Path("d:/my_work/02_FACTORY/kirei_queue.json")
+                                has_pending_videos = False
+                                if queue_file.exists():
+                                    try:
+                                        with open(queue_file, "r", encoding="utf-8") as f:
+                                            queue = json.load(f)
+                                            has_pending_videos = any(item.get("status") == "pending" for item in queue)
+                                    except Exception:
+                                        pass
+                                
+                                if has_pending_videos:
+                                    logger.info("📣 [Swarm] 新しい動画がキューに含まれているため、youtube_absorb を自動起票します。")
+                                    self._enqueue_edge_task("youtube_absorb")
+                                else:
+                                    logger.info("ℹ️ [Swarm] 新しい保留動画がないため、youtube_absorb の自動起票をスキップしました。")
+                            
+                            # 2. youtube_absorb が完了した場合
+                            elif task_type == "youtube_absorb":
+                                logger.info("📣 [Swarm] 動画要約・バイブルの生成が完了したため、monetization_batch を自動起票します。")
+                                self._enqueue_edge_task("monetization_batch")
+                                
+                            # 3. monetization_batch が完了した場合
+                            elif task_type == "monetization_batch":
+                                logger.info("📣 [Swarm] アフィリエイト投稿が完了したため、note_analytics を自動起票します。")
+                                self._enqueue_edge_task("note_analytics")
+                                
+                            # チェック済みとして更新時刻を記録
+                            last_checked = task["updated_at"]
+                            
+                except Exception as e:
+                    logger.error(f"❌ Swarm coordinator loop error: {e}")
+                time.sleep(15)
+
         threading.Thread(target=run_synthesizer_loop, daemon=True).start()
         threading.Thread(target=run_youtube_absorber_loop, daemon=True).start()
         threading.Thread(target=run_reddit_scout_loop, daemon=True).start()
@@ -425,6 +496,7 @@ class SREDaemon:
         threading.Thread(target=run_note_magazine_import_loop, daemon=True).start()
         threading.Thread(target=run_lol_trend_collector_loop, daemon=True).start()
         threading.Thread(target=run_note_analytics_loop, daemon=True).start()
+        threading.Thread(target=run_swarm_coordinator_loop, daemon=True).start()
 
         # Windowsでのファイルロック（PermissionError）を回避するため、開きっぱなしにせず毎回クローズする監視ロジック
         last_position = self.log_file.stat().st_size if self.log_file.exists() else 0

@@ -34,14 +34,49 @@ class EdgeWorkerDaemon:
             "Prefer": "return=representation"  # 更新時にレコードの内容を返す
         }
 
+    def is_task_conflicting(self, task_type: str) -> bool:
+        """指定したタスクタイプと競合するタスクが現在実行中（running）であるかを確認"""
+        # 競合排他グループの定義
+        conflict_groups = [
+            {"youtube_absorb", "dict_synthesizer"},  # DB/辞書書き換え競合
+            {"monetization_batch", "note_magazine_import"}  # note操作（Playwright）競合
+        ]
+        
+        # 自タスクが含まれる競合グループを特定
+        conflicting_types = set()
+        for group in conflict_groups:
+            if task_type in group:
+                conflicting_types.update(group)
+                
+        if not conflicting_types:
+            return False  # 競合なし
+            
+        # データベースから現在 running 中の競合タスクタイプを取得
+        types_str = ",".join(f"{t}" for t in conflicting_types)
+        url = f"{self.supabase_url}/rest/v1/edge_tasks?status=eq.running&task_type=in.({types_str})"
+        try:
+            res = httpx.get(url, headers=self.headers, timeout=5)
+            if res.status_code == 200 and res.json():
+                running_tasks = res.json()
+                logger.warning(f"⏳ 競合タスクが現在実行中のため実行を見送ります: {[t['task_type'] for t in running_tasks]} (対象: {task_type})")
+                return True
+        except Exception as e:
+            logger.error(f"❌ 競合確認の通信エラー: {e}")
+        return False
+
     def fetch_pending_task(self):
-        """status=pending のタスクを1件取得し、即座に running にロックして返す (他ワーカーとの競合を防ぐ)"""
+        """status=pending のタスクを1件取得し、競合チェック後に即座に running にロックして返す"""
         url = f"{self.supabase_url}/rest/v1/edge_tasks?status=eq.pending&order=created_at.asc&limit=1"
         try:
             res = httpx.get(url, headers=self.headers, timeout=10)
             if res.status_code == 200 and res.json():
                 task = res.json()[0]
                 task_id = task["id"]
+                task_type = task["task_type"]
+                
+                # 競合排他制御チェック
+                if self.is_task_conflicting(task_type):
+                    return None  # 競合タスク実行中のためスルー
                 
                 # 楽観的ロック: status='pending' であることを条件に更新し、成功したか確認
                 update_url = f"{self.supabase_url}/rest/v1/edge_tasks?id=eq.{task_id}&status=eq.pending"
@@ -53,7 +88,7 @@ class EdgeWorkerDaemon:
                 
                 up_res = httpx.patch(update_url, headers=self.headers, json=update_payload, timeout=10)
                 if up_res.status_code == 200 and up_res.json():
-                    logger.info(f"🔒 タスクのロックを確保しました: {task['task_type']} (ID: {task_id})")
+                    logger.info(f"🔒 タスクのロックを確保しました: {task_type} (ID: {task_id})")
                     return task
                 else:
                     logger.warning(f"⚠️ タスクロックの確保に競合が発生しました: ID: {task_id}")
