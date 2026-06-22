@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { supabase } from '../../lib/supabaseClient';
 import { getChampIcon, getChampSplash } from '../../lib/ddragonClient';
-import { ChevronLeft, Search, Save, BookOpen, RefreshCw, Zap, ShieldAlert, Swords, Shield, Copy, Check, FileText, Eye, Edit2, Activity, Plus, Trash, Filter, Star as StarIcon } from 'lucide-react';
+import { ChevronLeft, Search, Save, BookOpen, RefreshCw, Zap, ShieldAlert, Swords, Shield, Copy, Check, FileText, Eye, Edit2, Activity, Plus, Trash, Filter, Star as StarIcon, Award } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -35,7 +35,8 @@ function ChampionsContent() {
   const [dataFields, setDataFields] = useState<any>({
     strengths: '', weaknesses: '', powerSpikes: '', buildRunes: '',
     fullClearTime: '', counterChampions: '', mustBanChampions: '', pickRecommendation: '',
-    strategy: '', note_draft: '', customFields: {}
+    strategy: '', note_draft: '', customFields: {},
+    patch_meta: null, pro_builds: []
   });
   const [saving, setSaving] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -44,6 +45,7 @@ function ChampionsContent() {
   const [favoriteChamps, setFavoriteChamps] = useState<string[]>([]);
   const [matchupsList, setMatchupsList] = useState<any[]>([]);
   const [expandedMatchupId, setExpandedMatchupId] = useState<string | null>(null);
+  const [fetchingTrend, setFetchingTrend] = useState(false);
 
   // お気に入りデータのロードとイベント購読
   useEffect(() => {
@@ -135,7 +137,9 @@ function ChampionsContent() {
         fullClearTime: rd.fullClearTime || '', counterChampions: rd.counterChampions || '',
         mustBanChampions: rd.mustBanChampions || '', pickRecommendation: rd.pickRecommendation || '',
         strategy: noteData?.strategy || '', note_draft: rd.note_draft || '',
-        customFields: rd.customFields || {}
+        customFields: rd.customFields || {},
+        patch_meta: rd.patch_meta || null,
+        pro_builds: rd.pro_builds || []
       });
     };
     loadChampionData(selected.id);
@@ -144,6 +148,37 @@ function ChampionsContent() {
   const handleToggleFavorite = () => {
     if (!selected) return;
     toggleFavoriteChampion(selected.id);
+  };
+
+  const handleFetchTrend = async () => {
+    if (!selected) return;
+    setFetchingTrend(true);
+    try {
+      const role = roleFilter === 'ALL' ? 'Jungle' : roleFilter;
+      const res = await fetch('/api/admin/champions/trend', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ champion: selected.id, role })
+      });
+      
+      const result = await res.json();
+      if (result.success) {
+        const { data: noteData } = await supabase.from('matchup_sentinel').select('strategy, raw_data').eq('champion', selected.id).eq('enemy', 'GLOBAL').single();
+        const rd = noteData?.raw_data || {};
+        setDataFields((p: any) => ({
+          ...p,
+          patch_meta: rd.patch_meta || null,
+          pro_builds: rd.pro_builds || []
+        }));
+        alert('最新のトレンド情報を更新しました！');
+      } else {
+        alert(`更新に失敗しました: ${result.error || '不明なエラー'}`);
+      }
+    } catch (err: any) {
+      alert(`通信エラー: ${err.message}`);
+    } finally {
+      setFetchingTrend(false);
+    }
   };
 
   const setField = (key: string, val: string | object) => setDataFields((p: any) => ({ ...p, [key]: val }));
@@ -178,7 +213,8 @@ function ChampionsContent() {
         powerSpikes: dataFields.powerSpikes, buildRunes: dataFields.buildRunes,
         fullClearTime: dataFields.fullClearTime, counterChampions: dataFields.counterChampions,
         mustBanChampions: dataFields.mustBanChampions, pickRecommendation: dataFields.pickRecommendation,
-        note_draft: dataFields.note_draft, customFields: dataFields.customFields
+        note_draft: dataFields.note_draft, customFields: dataFields.customFields,
+        patch_meta: dataFields.patch_meta, pro_builds: dataFields.pro_builds
       }
     };
     const { error } = await supabase.from('matchup_sentinel').upsert(data, { onConflict: 'matchup_id' });
@@ -252,7 +288,16 @@ function ChampionsContent() {
               </div>
             </div>
             
-            <div className="ml-auto flex gap-4">
+            <div className="ml-auto flex gap-4 items-center">
+              <button 
+                onClick={handleFetchTrend} 
+                disabled={fetchingTrend}
+                className="px-4 py-3 bg-[#c89b3c] hover:bg-[#c89b3c]/80 text-black font-black rounded-xl transition-all flex items-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_15px_rgba(200,155,60,0.3)] hover:shadow-[0_0_25px_rgba(200,155,60,0.5)]"
+              >
+                <RefreshCw size={16} className={fetchingTrend ? "animate-spin" : ""} />
+                {fetchingTrend ? "取得中..." : "最新トレンド取得"}
+              </button>
+              
               <div className="glass-panel px-6 py-3 rounded-2xl text-center">
                 <p className="text-xs text-gray-400 font-bold mb-1 uppercase tracking-widest">Win Rate</p>
                 <p className={`text-2xl font-black ${winRate >= 50 ? 'text-[var(--color-success)]' : 'text-[var(--color-danger)]'}`}>{stats.matches > 0 ? `${winRate}%` : '-'}</p>
@@ -272,6 +317,117 @@ function ChampionsContent() {
           <TextAreaCard title="コアビルド / ルーン" icon={Shield} color="text-purple-400 border-purple-500 shadow-purple-500" value={dataFields.buildRunes} onChange={v => setField('buildRunes', v)} />
           <TextAreaCard title="対面の有利・不利" icon={Swords} color="text-[#00cfef] border-[#00cfef] shadow-[#00cfef]" value={dataFields.counterChampions} onChange={v => setField('counterChampions', v)} />
           <TextAreaCard title="ピック推奨 (先/後)" icon={Shield} color="text-emerald-400 border-emerald-500 shadow-emerald-500" value={dataFields.pickRecommendation} onChange={v => setField('pickRecommendation', v)} />
+          
+          {/* 📈 最新パッチトレンド (自動収集) */}
+          <div className="glass-panel border-t-2 border-cyan-400 p-5 rounded-2xl group transition-all hover:shadow-[0_4px_20px_rgba(0,0,0,0.3)] shadow-cyan-400/20 relative">
+            <h3 className="text-sm font-black mb-4 flex items-center gap-2 text-cyan-400">
+              <Activity size={16} /> 📈 最新パッチトレンド (自動収集)
+            </h3>
+            {dataFields.patch_meta ? (
+              <div className="flex flex-col gap-4 text-sm text-gray-200">
+                <div className="flex gap-2 flex-wrap">
+                  <span className="px-3 py-1 bg-cyan-400/10 border border-cyan-400/30 text-cyan-300 rounded-lg font-bold text-xs">
+                    Patch {dataFields.patch_meta.patch || '不明'}
+                  </span>
+                  <span className="px-3 py-1 bg-amber-400/10 border border-amber-400/30 text-amber-300 rounded-lg font-bold text-xs">
+                    Tier {dataFields.patch_meta.tier || '-'}
+                  </span>
+                  <span className="px-3 py-1 bg-white/5 border border-white/10 text-white rounded-lg font-bold text-xs">
+                    勝率 {dataFields.patch_meta.win_rate ? `${dataFields.patch_meta.win_rate}%` : '-'}
+                  </span>
+                  <span className="px-3 py-1 bg-white/5 border border-white/10 text-white rounded-lg font-bold text-xs">
+                    ピック {dataFields.patch_meta.pick_rate ? `${dataFields.patch_meta.pick_rate}%` : '-'}
+                  </span>
+                </div>
+                
+                {dataFields.patch_meta.trend_items && dataFields.patch_meta.trend_items.length > 0 && (
+                  <div>
+                    <h4 className="text-xs font-bold text-gray-400 mb-2">🔥 コアアイテムビルド</h4>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {dataFields.patch_meta.trend_items.map((item: string, idx: number) => (
+                        <div key={idx} className="flex items-center gap-2">
+                          <span className="px-3 py-1.5 bg-black/40 border border-white/5 rounded-lg text-xs font-bold text-gray-300">
+                            {item}
+                          </span>
+                          {idx < dataFields.patch_meta.trend_items.length - 1 && <span className="text-gray-600 font-bold">→</span>}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {dataFields.patch_meta.trend_runes && (
+                  <div>
+                    <h4 className="text-xs font-bold text-gray-400 mb-1">🧬 トレンドルーン</h4>
+                    <p className="text-xs text-gray-300 font-bold">
+                      {dataFields.patch_meta.trend_runes.keystone && <span className="text-cyan-300 mr-2">[{dataFields.patch_meta.trend_runes.keystone}]</span>}
+                      {dataFields.patch_meta.trend_runes.primary} / {dataFields.patch_meta.trend_runes.secondary}
+                    </p>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <p className="text-gray-500 italic text-xs py-4">最新パッチのトレンドデータは未収集です。上の「最新トレンド取得」ボタンを押してロードしてください。</p>
+            )}
+          </div>
+
+          {/* 🏆 プロ推奨ルーン・ビルド (自動収集) */}
+          <div className="glass-panel border-t-2 border-amber-400 p-5 rounded-2xl group transition-all hover:shadow-[0_4px_20px_rgba(0,0,0,0.3)] shadow-amber-400/20 relative col-span-1 md:col-span-2">
+            <h3 className="text-sm font-black mb-4 flex items-center gap-2 text-amber-400">
+              <Award size={16} /> 🏆 プロ最先端ビルド (直近のソロキュー実例)
+            </h3>
+            {dataFields.pro_builds && dataFields.pro_builds.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {dataFields.pro_builds.map((pb: any, idx: number) => (
+                  <div key={idx} className="bg-black/30 border border-white/5 rounded-xl p-4 flex flex-col gap-3">
+                    <div className="flex justify-between items-center flex-wrap gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-black text-white">{pb.player}</span>
+                        {pb.team && <span className="text-xs text-gray-400">({pb.team})</span>}
+                      </div>
+                      {pb.win_lose && (
+                        <span className="text-xs px-2 py-0.5 bg-amber-400/10 border border-amber-400/30 text-amber-400 rounded-full font-black">
+                          {pb.win_lose}
+                        </span>
+                      )}
+                    </div>
+                    
+                    {pb.build && pb.build.length > 0 && (
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        {pb.build.map((item: string, i: number) => (
+                          <div key={i} className="flex items-center gap-1.5">
+                            <span className="text-xs px-2.5 py-1 bg-black/50 border border-white/10 rounded-md text-gray-300 font-medium">
+                              {item}
+                            </span>
+                            {i < pb.build.length - 1 && <span className="text-gray-700 text-xs">→</span>}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    
+                    {pb.runes && pb.runes.length > 0 && (
+                      <div className="text-xs text-gray-400 flex items-center gap-1.5 flex-wrap">
+                        <span className="font-bold text-gray-500">ルーン:</span>
+                        {pb.runes.map((rune: string, i: number) => (
+                          <span key={i} className="px-1.5 py-0.5 bg-white/5 rounded border border-white/5 text-gray-300">
+                            {rune}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    {pb.description && (
+                      <p className="text-xs text-gray-300 leading-relaxed border-t border-white/5 pt-2 mt-1 italic">
+                        💡 {pb.description}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-500 italic text-xs py-4">プロの採用ビルドデータは未収集です。上の「最新トレンド取得」ボタンを押してロードしてください。</p>
+            )}
+          </div>
           
           {Object.entries(dataFields.customFields || {}).map(([key, val]) => (
             <div key={key} className="glass-panel border-t-2 border-pink-400 p-5 rounded-2xl group transition-all hover:shadow-[0_4px_20px_rgba(0,0,0,0.3)] shadow-pink-400/20 relative">

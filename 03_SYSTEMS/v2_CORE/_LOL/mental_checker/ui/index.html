@@ -51,16 +51,20 @@
             <!-- 設定エリア (スライド展開) -->
             <div class="glass-card settings-card" id="settings-area">
                 <h3>⚙️ アカウント設定</h3>
-                <div class="form-row">
-                    <div class="form-group flex-2">
+                <div class="form-row flex-wrap">
+                    <div class="form-group flex-2" style="min-width: 180px;">
                         <label for="riot-id-input">Riot ID (Name#Tag)</label>
                         <input type="text" id="riot-id-input" placeholder="ExamplePlayer#JP1">
                     </div>
-                    <div class="form-group flex-3">
-                        <label for="gemini-key-input">Gemini API Key (<a href="https://aistudio.google.com/" target="_blank" class="text-link">キーを取得</a>)</label>
-                        <input type="password" id="gemini-key-input" placeholder="AI Studioで取得したAPIキーを入力" autocomplete="current-password">
+                    <div class="form-group flex-3" style="min-width: 220px;">
+                        <label for="riot-key-input">Riot API Key (<a href="https://developer.riotgames.com/" target="_blank" class="text-link">キーを取得</a>)</label>
+                        <input type="password" id="riot-key-input" placeholder="Riot API Keyを入力" autocomplete="current-password">
                     </div>
-                    <button id="save-settings-btn" class="btn secondary-btn">保存</button>
+                    <div class="form-group flex-3" style="min-width: 220px;">
+                        <label for="gemini-key-input">Gemini API Key (<a href="https://aistudio.google.com/" target="_blank" class="text-link">キーを取得</a>)</label>
+                        <input type="password" id="gemini-key-input" placeholder="Gemini API Keyを入力" autocomplete="current-password">
+                    </div>
+                    <button id="save-settings-btn" class="btn secondary-btn" style="align-self: flex-end; margin-bottom: 5px;">保存</button>
                 </div>
                 <div class="info-msg" id="settings-msg"></div>
             </div>

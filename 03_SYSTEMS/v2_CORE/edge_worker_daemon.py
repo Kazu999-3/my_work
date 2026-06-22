@@ -58,8 +58,40 @@ class EdgeWorkerDaemon:
             res = httpx.get(url, headers=self.headers, timeout=5)
             if res.status_code == 200 and res.json():
                 running_tasks = res.json()
-                logger.warning(f"⏳ 競合タスクが現在実行中のため実行を見送ります: {[t['task_type'] for t in running_tasks]} (対象: {task_type})")
-                return True
+                active_running_tasks = []
+                now = datetime.now(timezone.utc)
+                
+                for r_task in running_tasks:
+                    time_str = r_task.get("updated_at") or r_task.get("created_at")
+                    is_timeout = False
+                    if time_str:
+                        try:
+                            # 'Z' 終端のタイムゾーンを Python 3.7+ の fromisoformat 用に補正
+                            if time_str.endswith('Z'):
+                                time_str = time_str[:-1] + '+00:00'
+                            task_time = datetime.fromisoformat(time_str)
+                            if task_time.tzinfo is None:
+                                task_time = task_time.replace(tzinfo=timezone.utc)
+                            
+                            diff = now - task_time
+                            if diff.total_seconds() > 10800:  # 3時間
+                                is_timeout = True
+                        except Exception as pe:
+                            logger.error(f"⚠️ タスク時刻パースエラー ({time_str}): {pe}")
+                    
+                    if is_timeout:
+                        logger.warning(f"⏰ 実行時間が3時間を超過したゾンビタスクを自動解除します: {r_task['task_type']} (ID: {r_task['id']})")
+                        self.update_task_status(
+                            r_task["id"], 
+                            "failed", 
+                            error_message="Task automatically timed out after running for over 3 hours."
+                        )
+                    else:
+                        active_running_tasks.append(r_task)
+                
+                if active_running_tasks:
+                    logger.warning(f"⏳ 競合タスクが現在実行中のため実行を見送ります: {[t['task_type'] for t in active_running_tasks]} (対象: {task_type})")
+                    return True
         except Exception as e:
             logger.error(f"❌ 競合確認の通信エラー: {e}")
         return False

@@ -43,6 +43,10 @@ async function initApp() {
                 // Riot ID未設定なら設定エリアを開く
                 document.getElementById("settings-area").classList.add("active");
             }
+            // Riot API キーの設定
+            if (config.riot_key) {
+                document.getElementById("riot-key-input").value = config.riot_key;
+            }
             // Gemini API キーの設定
             if (config.gemini_key) {
                 document.getElementById("gemini-key-input").value = config.gemini_key;
@@ -154,6 +158,9 @@ async function unlockApp() {
             } else {
                 document.getElementById("settings-area").classList.add("active");
             }
+            if (config.riot_key) {
+                document.getElementById("riot-key-input").value = config.riot_key;
+            }
             if (config.gemini_key) {
                 document.getElementById("gemini-key-input").value = config.gemini_key;
             }
@@ -170,6 +177,7 @@ async function unlockApp() {
 // 💾 設定の保存（Riot ID ＆ Gemini API Key）
 async function saveSettings() {
     const riotId = document.getElementById("riot-id-input").value.trim();
+    const riotKey = document.getElementById("riot-key-input").value.trim();
     const geminiKey = document.getElementById("gemini-key-input").value.trim();
     const msgDiv = document.getElementById("settings-msg");
     
@@ -181,7 +189,7 @@ async function saveSettings() {
     }
 
     try {
-        const res = await window.pywebview.api.save_settings(riotId, geminiKey);
+        const res = await window.pywebview.api.save_settings(riotId, geminiKey, riotKey);
         if (res.success) {
             msgDiv.innerText = res.message;
             msgDiv.className = "info-msg";
@@ -611,6 +619,7 @@ function setupMockApi() {
     let mockConfig = {
         riot_id: "Kazurin#4036",
         unlocked: false,
+        riot_key: "",
         gemini_key: "",
         history: []
     };
@@ -625,9 +634,10 @@ function setupMockApi() {
                 }
                 return { success: false, message: "パスコードが正しくありません。" };
             },
-            save_settings: async (riot_id, gemini_key) => {
+            save_settings: async (riot_id, gemini_key, riot_key) => {
                 mockConfig.riot_id = riot_id;
                 mockConfig.gemini_key = gemini_key;
+                mockConfig.riot_key = riot_key;
                 return { success: true, message: "設定を保存しました。" };
             },
             save_riot_id: async (riot_id) => {

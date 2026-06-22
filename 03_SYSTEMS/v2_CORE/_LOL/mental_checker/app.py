@@ -10,14 +10,23 @@ from pathlib import Path
 import dotenv
 
 # ロードパスの設定（v2_CORE をインポートできるようにする）
-dotenv.load_dotenv(Path("d:/my_work/.env"))
+if not hasattr(sys, '_MEIPASS'):
+    dotenv.load_dotenv(Path("d:/my_work/.env"))
 sys.path.append(str(Path("d:/my_work/03_SYSTEMS")))
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(name)s] %(message)s")
 logger = logging.getLogger("MentalCheckerBackend")
 
-CONFIG_PATH = Path("d:/my_work/03_SYSTEMS/v2_CORE/_LOL/mental_checker/config.json")
-CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
+if hasattr(sys, '_MEIPASS'):
+    # 配布パッケージでの実行時
+    appdata = os.environ.get("APPDATA") or os.path.expanduser("~")
+    CONFIG_DIR = Path(appdata) / "SovereignMind"
+else:
+    # 開発環境での実行時
+    CONFIG_DIR = Path("d:/my_work/03_SYSTEMS/v2_CORE/_LOL/mental_checker")
+
+CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+CONFIG_PATH = CONFIG_DIR / "config.json"
 
 # デフォルト設定
 DEFAULT_CONFIG = {
@@ -26,6 +35,7 @@ DEFAULT_CONFIG = {
     "passcode": "SOVEREIGN_MIND_777", # デフォルトの共通パスコード
     "check_interval": 120, # 監視間隔 (秒)
     "gemini_key": "", # ユーザー独自の Gemini API キー
+    "riot_key": "", # ユーザー独自の Riot API キー
     "history": [] # 過去のティルト診断履歴
 }
 
@@ -49,7 +59,7 @@ class MentalCheckerAPI:
     def __init__(self):
         self.window = None
         self.config = load_config()
-        self.riot_key = os.getenv("RIOT_API_KEY", "")
+        self.riot_key = self.config.get("riot_key") or os.getenv("RIOT_API_KEY", "")
         self.region = "asia"
         self.platform = "jp1"
         self.monitor_thread = None
@@ -62,7 +72,8 @@ class MentalCheckerAPI:
         return {
             "riot_id": self.config["riot_id"],
             "unlocked": self.config["unlocked"],
-            "gemini_key": self.config.get("gemini_key", "")
+            "gemini_key": self.config.get("gemini_key", ""),
+            "riot_key": self.config.get("riot_key", "")
         }
 
     def unlock_app(self, input_passcode):
@@ -77,15 +88,18 @@ class MentalCheckerAPI:
             logger.warning("❌ 無効なパスコードが入力されました。")
             return {"success": False, "message": "パスコードが正しくありません。"}
 
-    def save_settings(self, riot_id, gemini_key):
-        """Riot ID と Gemini API キーを保存し、監視を開始する"""
+    def save_settings(self, riot_id, gemini_key, riot_key=""):
+        """Riot ID, Gemini API キー, Riot API キーを保存し、監視を開始する"""
         if not riot_id or "#" not in riot_id:
             return {"success": False, "message": "Riot IDの形式が正しくありません (Name#Tag)。"}
 
         self.config["riot_id"] = riot_id
         self.config["gemini_key"] = gemini_key.strip()
+        self.config["riot_key"] = riot_key.strip()
         save_config(self.config)
-        logger.info(f"💾 設定を保存しました。Riot ID: {riot_id}, Gemini Key: {'設定済' if gemini_key else '未設定'}")
+        
+        self.riot_key = self.config["riot_key"] or os.getenv("RIOT_API_KEY", "")
+        logger.info(f"💾 設定を保存しました。Riot ID: {riot_id}, Gemini Key: {'設定済' if gemini_key else '未設定'}, Riot Key: {'設定済' if riot_key else '未設定'}")
 
         if self.config["unlocked"]:
             self.start_monitoring()

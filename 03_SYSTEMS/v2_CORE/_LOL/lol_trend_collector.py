@@ -8,7 +8,7 @@ import urllib.request
 import urllib.error
 from google import genai
 from v2_CORE.settings import settings
-from v2_CORE.ai_helper import generate_with_routing
+from v2_CORE.ai_helper import generate_with_routing, generate_content_safe
 from v2_CORE.logger_config import setup_sovereign_logging
 
 logger = setup_sovereign_logging("LolTrendCollector")
@@ -105,13 +105,14 @@ class LolTrendCollector:
             config = {
                 "tools": [{"google_search": {}}]
             }
-            response = self.client.models.generate_content(
-                model='gemini-2.5-flash',
-                contents=prompt,
-                config=config
+            text = generate_content_safe(
+                self.client,
+                prompt,
+                config=config,
+                feature_name="lol_trend"
             )
             
-            text = response.text.strip()
+            text = text.strip()
             text = text.replace("```json", "").replace("```", "").strip()
             champions = json.loads(text)
             logger.info(f"Detected OP Champions: {champions}")
@@ -198,7 +199,149 @@ class LolTrendCollector:
         logger.info(f"✅ LoL Trend Collector finished. Added {added_count} new videos to the queue.")
         return added_count
 
+    def collect_champ_trends(self, champion: str, role: str) -> dict:
+        """指定したチャンピオンとロールの最新パッチトレンドおよびプロビルド情報を収集し、DBに保存する"""
+        if not self.client:
+            logger.error("Gemini Client is not initialized.")
+            return {}
+
+        logger.info(f"🔍 Collecting trends and pro builds for {champion} ({role})...")
+        
+        prompt = f"""
+        League of Legendsの最新パッチにおける、チャンピオン「{champion}」のロール「{role}」の統計データおよびプロプレイヤーの最新ビルド情報をリサーチしてください。
+        
+        以下のJSONフォーマットのみで出力してください（マークダウンの```jsonや、余計な説明文は一切含めないでください。純粋なJSONオブジェクトのみを出力してください）。
+        
+        {{
+          "champion": "{champion}",
+          "role": "{role}",
+          "patch": "最新パッチ番号 (例: 14.12)",
+          "win_rate": 50.2, // 最新勝率 (%、数値のみ)
+          "pick_rate": 5.4, // 最新ピック率 (%、数値のみ)
+          "ban_rate": 8.1,  // 最新バン率 (%、数値のみ)
+          "tier": "S",      // ティア (S+, S, A, B, C など)
+          "trend_items": ["コアアイテム1", "コアアイテム2", "コアアイテム3"], // 主要なビルドの1st, 2nd, 3rdアイテム
+          "trend_runes": {{
+            "keystone": "キーストーン名",
+            "primary": "メインルーンパス名 (例: Precision, Inspiration, Dominationなど)",
+            "secondary": "サブルーンパス名 (例: Sorcery, Resolveなど)"
+          }},
+          "pro_builds": [
+            {{
+              "player": "プロ選手名 (例: Canyon, Oner, Faker, Chovy, Zeus, ShowMaker, Rulerなど。実在するプロ選手)",
+              "team": "チーム名 (例: GEN, T1, DK, HLE, BLGなど)",
+              "win_lose": "直近の勝敗 (例: 3勝1敗, 4W-1Lなど)",
+              "build": ["1stコア", "2ndコア", "3rdコア"],
+              "runes": ["キーストーン名", "主要ルーン"],
+              "description": "このビルドの特徴や狙いに関する短い日本語の解説（1文。AI臭い比喩は禁止し、'バースト重視'や'序盤のトレード強化'など簡潔に）"
+            }}
+          ]
+        }}
+        """
+
+        config = {
+            "tools": [{"google_search": {}}]
+        }
+        
+        try:
+            text = generate_content_safe(
+                self.client,
+                prompt,
+                config=config,
+                feature_name="champ_trends"
+            )
+
+            if text.startswith("```"):
+                lines = text.split("\n")
+                if lines[0].startswith("```json") or lines[0].startswith("```"):
+                    text = "\n".join(lines[1:-1])
+            text = text.strip()
+            
+            data = json.loads(text)
+            logger.info(f"Successfully collected trend data for {champion}: win_rate={data.get('win_rate')}%")
+            return data
+        except Exception as e:
+            logger.error(f"❌ Failed to collect trends via Gemini: {e}")
+            return {}
+
+    def save_champ_trends(self, champion: str, role: str, trend_data: dict) -> bool:
+        """収集したトレンド・プロビルドデータをSupabaseのmatchup_sentinel（GLOBALレコード）にマージする"""
+        matchup_id = f"champ_{champion.lower()}_global"
+        
+        # 1. 既存のレコードを取得
+        status, body = self._supabase_request(f"matchup_sentinel?matchup_id=eq.{matchup_id}", method='GET')
+        
+        existing_record = None
+        if status in (200, 201) and body:
+            records = json.loads(body)
+            if records:
+                existing_record = records[0]
+                
+        # 2. raw_dataをマージ
+        raw_data = {}
+        strategy = ""
+        title = f"{champion} 基本戦略・トレンド"
+        
+        if existing_record:
+            raw_data = existing_record.get("raw_data", {}) or {}
+            strategy = existing_record.get("strategy") or ""
+            title = existing_record.get("title") or title
+            
+        # raw_data 内のメタデータを更新
+        raw_data["patch_meta"] = {
+            "win_rate": trend_data.get("win_rate"),
+            "pick_rate": trend_data.get("pick_rate"),
+            "ban_rate": trend_data.get("ban_rate"),
+            "tier": trend_data.get("tier"),
+            "trend_items": trend_data.get("trend_items", []),
+            "trend_runes": trend_data.get("trend_runes", {}),
+            "patch": trend_data.get("patch"),
+            "updated_at": int(time.time())
+        }
+        raw_data["pro_builds"] = trend_data.get("pro_builds", [])
+        
+        payload = {
+            "matchup_id": matchup_id,
+            "champion": champion,
+            "enemy": "GLOBAL",
+            "title": title,
+            "strategy": strategy,
+            "raw_data": raw_data
+        }
+        
+        # 3. upsertを実行
+        headers = {"Prefer": "resolution=merge-duplicates"}
+        status, res_body = self._supabase_request("matchup_sentinel?on_conflict=matchup_id", method='POST', payload=payload, headers=headers)
+        
+        if status in (200, 201, 204):
+            logger.info(f"✅ Supabase matchup_sentinel to {matchup_id} upsert success.")
+            return True
+        else:
+            logger.error(f"❌ Failed to upsert matchup_sentinel: {status} - {res_body}")
+            return False
+
 if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser(description="LoL Trend & Pro Build Collector")
+    parser.add_argument("--champion", type=str, help="Champion name (e.g. Nidalee)")
+    parser.add_argument("--role", type=str, default="Jungle", help="Role (e.g. Jungle, Top, Mid, ADC, Support)")
+    args = parser.parse_args()
+
     logging.basicConfig(level=logging.INFO)
     collector = LolTrendCollector()
-    collector.run_collector()
+
+    if args.champion:
+        trend = collector.collect_champ_trends(args.champion, args.role)
+        if trend:
+            success = collector.save_champ_trends(args.champion, args.role, trend)
+            if success:
+                print(json.dumps({"success": True, "message": f"Successfully updated trend for {args.champion}"}))
+                sys.exit(0)
+            else:
+                print(json.dumps({"success": False, "message": "Failed to save trend to Supabase"}))
+                sys.exit(1)
+        else:
+            print(json.dumps({"success": False, "message": "Failed to collect trend data from Gemini"}))
+            sys.exit(1)
+    else:
+        collector.run_collector()

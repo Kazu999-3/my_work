@@ -329,3 +329,29 @@ def trigger_ab_test_evolve(request: EvolveRequest, background_tasks: BackgroundT
         mutation_rate=request.mutation_rate
     )
     return {"status": "accepted", "message": f"GA Evolve loop started in background for {request.task_type}."}
+
+class ChampionTrendRequest(BaseModel):
+    champion: str
+    role: str = "Jungle"
+
+@app.post("/api/champions/trend")
+def update_champion_trend(request: ChampionTrendRequest, api_key: str = Depends(get_api_key)):
+    """指定されたチャンピオンの最新トレンド（勝率・ビルド・プロ推奨ルーン等）を即時収集し、DBを更新する"""
+    from v2_CORE._LOL.lol_trend_collector import LolTrendCollector
+    
+    logger.info(f"Received request to update trend for {request.champion} ({request.role})")
+    try:
+        collector = LolTrendCollector()
+        trend_data = collector.collect_champ_trends(request.champion, request.role)
+        if not trend_data:
+            raise HTTPException(status_code=500, detail="Failed to collect trend data from Gemini.")
+            
+        success = collector.save_champ_trends(request.champion, request.role, trend_data)
+        if not success:
+            raise HTTPException(status_code=500, detail="Failed to save trend data to Supabase.")
+            
+        return {"status": "success", "message": f"Successfully updated trend for {request.champion}"}
+    except Exception as e:
+        logger.error(f"Error in update_champion_trend: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
