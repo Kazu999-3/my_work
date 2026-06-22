@@ -31,6 +31,20 @@ function ChampionsContent() {
   const [loading, setLoading] = useState(true);
   const [champDates, setChampDates] = useState<Record<string, string>>({});
   const [champPending, setChampPending] = useState<Record<string, boolean>>({});
+  const [champPatchMetas, setChampPatchMetas] = useState<Record<string, any>>({});
+
+  // 相対時間フォーマット関数
+  const getRelativeTimeString = (timestampSec?: number) => {
+    if (!timestampSec) return '';
+    const diffMs = Date.now() - (timestampSec * 1000);
+    const diffMins = Math.floor(diffMs / 60000);
+    if (diffMins < 60) return `${diffMins}分前`;
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return `${diffHours}時間前`;
+    const diffDays = Math.floor(diffHours / 24);
+    if (diffDays === 1) return '昨日';
+    return `${diffDays}日前`;
+  };
   
   const [dataFields, setDataFields] = useState<any>({
     strengths: '', weaknesses: '', powerSpikes: '', buildRunes: '',
@@ -76,19 +90,22 @@ function ChampionsContent() {
           id: c.id, key: c.key, name: c.name, title: c.title, tags: c.tags,
           searchKey: `${c.id.toLowerCase()} ${c.name}`
         }));
-        return supabase.from('matchup_sentinel').select('champion, created_at, strategy').eq('enemy', 'GLOBAL');
+        return supabase.from('matchup_sentinel').select('champion, created_at, strategy, patch_meta:raw_data->patch_meta').eq('enemy', 'GLOBAL');
       })
       .then(({ data }) => {
         const dates: Record<string, string> = {};
         const pending: Record<string, boolean> = {};
+        const metas: Record<string, any> = {};
         if (data) {
           data.forEach(row => {
             dates[row.champion] = row.created_at;
             pending[row.champion] = !row.strategy; // strategyが空・nullならpending
+            metas[row.champion] = row.patch_meta || null;
           });
         }
         setChampDates(dates);
         setChampPending(pending);
+        setChampPatchMetas(metas);
         setChampions(fetchedChampions);
 
         // URLパラメータ ?select=ChampId の自動選択処理
@@ -169,6 +186,10 @@ function ChampionsContent() {
           ...p,
           patch_meta: rd.patch_meta || null,
           pro_builds: rd.pro_builds || []
+        }));
+        setChampPatchMetas((p: any) => ({
+          ...p,
+          [selected.id]: rd.patch_meta || null
         }));
         alert('最新のトレンド情報を更新しました！');
       } else {
@@ -325,7 +346,7 @@ function ChampionsContent() {
             </h3>
             {dataFields.patch_meta ? (
               <div className="flex flex-col gap-4 text-sm text-gray-200">
-                <div className="flex gap-2 flex-wrap">
+                <div className="flex gap-2 flex-wrap items-center w-full">
                   <span className="px-3 py-1 bg-cyan-400/10 border border-cyan-400/30 text-cyan-300 rounded-lg font-bold text-xs">
                     Patch {dataFields.patch_meta.patch || '不明'}
                   </span>
@@ -338,6 +359,11 @@ function ChampionsContent() {
                   <span className="px-3 py-1 bg-white/5 border border-white/10 text-white rounded-lg font-bold text-xs">
                     ピック {dataFields.patch_meta.pick_rate ? `${dataFields.patch_meta.pick_rate}%` : '-'}
                   </span>
+                  {dataFields.patch_meta.updated_at && (
+                    <span className="px-3 py-1 bg-white/5 border border-white/10 text-gray-400 rounded-lg font-bold text-xs ml-auto">
+                      最終更新: {new Date(dataFields.patch_meta.updated_at * 1000).toLocaleString('ja-JP', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  )}
                 </div>
                 
                 {dataFields.patch_meta.trend_items && dataFields.patch_meta.trend_items.length > 0 && (
@@ -663,6 +689,30 @@ function ChampionsContent() {
                   {hasNote && <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-[#0a0b10] ${champPending[c.id] ? 'bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.8)]' : 'bg-[#c89b3c]'}`}></div>}
                 </div>
                 <span className={`text-xs font-bold text-center leading-tight transition-colors ${hasNote ? 'text-[#c89b3c]' : 'text-gray-400 group-hover:text-white'}`}>{c.name}</span>
+                {(() => {
+                  const patchMeta = champPatchMetas[c.id];
+                  if (!patchMeta) return null;
+                  
+                  // 更新から3日以上経っている場合は少し古いトレンドと判定 (259200秒)
+                  const isOld = patchMeta.updated_at ? (Date.now() / 1000 - patchMeta.updated_at > 259200) : false;
+                  
+                  return (
+                    <div className="flex flex-col items-center gap-0.5 mt-1 pointer-events-none">
+                      <span className={`px-1.5 py-0.5 rounded text-[9px] font-black leading-none border transition-colors ${
+                        isOld 
+                          ? 'bg-amber-400/5 border-amber-400/20 text-amber-400/60' 
+                          : 'bg-cyan-400/10 border-cyan-400/20 text-cyan-400'
+                      }`}>
+                        P{patchMeta.patch || '?'}
+                      </span>
+                      {patchMeta.updated_at && (
+                        <span className={`text-[8px] font-bold leading-none ${isOld ? 'text-gray-600' : 'text-gray-500'}`}>
+                          {getRelativeTimeString(patchMeta.updated_at)}
+                        </span>
+                      )}
+                    </div>
+                  );
+                })()}
               </motion.div>
             );
           })}
