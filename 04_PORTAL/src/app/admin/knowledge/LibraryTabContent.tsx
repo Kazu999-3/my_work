@@ -99,6 +99,11 @@ export function LibraryTabContentInner() {
   const fetchArticles = async () => {
     setLoading(true);
     try {
+      if (!supabase) {
+        showToast('Supabase接続が有効ではありません。環境変数(NEXT_PUBLIC_SUPABASE_URL 等)をご確認ください。', 'error');
+        setLoading(false);
+        return;
+      }
       const { data, error } = await supabase
         .from('personal_knowledge')
         .select('id, created_at, title, content, raw_content, source_url, genre, tags, champion')
@@ -107,13 +112,13 @@ export function LibraryTabContentInner() {
         .limit(1000);
       if (!error && data) {
         // titleがnullまたは空文字、もしくはtagsに'__DELETED__'が含まれるものを除外する
-        const validData = data.filter(a => a && a.title && (!a.tags || !a.tags.includes('__DELETED__')));
+        const validData = data.filter((a: any) => a && a.title && (!a.tags || !a.tags.includes('__DELETED__')));
         setArticles(validData);
 
         // URLパラメータ ?article=Id の自動選択処理
         const articleId = searchParams ? searchParams.get('article') : null;
         if (articleId) {
-          const found = validData.find(a => String(a.id) === String(articleId));
+          const found = validData.find((a: any) => String(a.id) === String(articleId));
           if (found) {
             setSelectedArticle(found);
             setExpandedId(found.id);
@@ -252,6 +257,10 @@ export function LibraryTabContentInner() {
   };
 
   const saveArticle = async () => {
+    if (!supabase) {
+      showToast('エラー: Supabase接続が無効なため保存できません。', 'error');
+      return;
+    }
     setSaving(true);
     const now = new Date().toISOString();
     const keywordsArray = editKeywords.split(',').map(k => k.trim()).filter(k => k);
@@ -364,6 +373,10 @@ export function LibraryTabContentInner() {
     e.stopPropagation();
     if (!confirm('この記事を削除しますか？\n（サーバー上の元ファイルも完全に削除されます）')) return;
     
+    if (!supabase) {
+      showToast('エラー: Supabase接続が無効なため削除できません。', 'error');
+      return;
+    }
     try {
       // ローカルファイルも削除できるよう削除フラグを立てる
       const { error } = await supabase.from('personal_knowledge').update({ tags: ['__DELETED__'] }).eq('id', id);
