@@ -90,12 +90,14 @@ export function LibraryTabContentInner() {
         .order('created_at', { ascending: false })
         .limit(1000);
       if (!error && data) {
-        setArticles(data);
+        // titleがnullまたは空文字、もしくはtagsに'__DELETED__'が含まれるものを除外する
+        const validData = data.filter(a => a && a.title && (!a.tags || !a.tags.includes('__DELETED__')));
+        setArticles(validData);
 
         // URLパラメータ ?article=Id の自動選択処理
         const articleId = searchParams.get('article');
         if (articleId) {
-          const found = data.find(a => String(a.id) === String(articleId));
+          const found = validData.find(a => String(a.id) === String(articleId));
           if (found) {
             setSelectedArticle(found);
             setExpandedId(found.id);
@@ -114,12 +116,13 @@ export function LibraryTabContentInner() {
     const keywordCounts: Record<string, number> = {};
 
     articles.forEach(a => {
+      if (!a) return;
       const champ = a.champion || 'その他';
       champCounts[champ] = (champCounts[champ] || 0) + 1;
 
       if (a.tags && Array.isArray(a.tags)) {
-        a.tags.forEach((kw: string) => {
-          if (kw && kw !== '__DELETED__') {
+        a.tags.forEach((kw: any) => {
+          if (kw && typeof kw === 'string' && kw !== '__DELETED__') {
             keywordCounts[kw] = (keywordCounts[kw] || 0) + 1;
           }
         });
@@ -143,33 +146,58 @@ export function LibraryTabContentInner() {
 
   const grouped = useMemo(() => {
     const q = debouncedSearch.toLowerCase();
-    const filtered = articles.filter(a =>
-      a.title.toLowerCase().includes(q) || 
-      a.champion?.toLowerCase().includes(q) ||
-      (a.tags && a.tags.some((k: string) => k.toLowerCase().includes(q)))
-    );
+    const filtered = articles.filter(a => {
+      if (!a) return false;
+      const titleMatch = a.title ? a.title.toLowerCase().includes(q) : false;
+      const champMatch = a.champion ? a.champion.toLowerCase().includes(q) : false;
+      const tagsMatch = (a.tags && Array.isArray(a.tags))
+        ? a.tags.some((k: any) => k && typeof k === 'string' && k.toLowerCase().includes(q))
+        : false;
+      return titleMatch || champMatch || tagsMatch;
+    });
 
     const groups: Record<string, any[]> = {};
     if (groupMode === 'champion') {
-      filtered.forEach(a => { const key = a.champion || 'その他'; if (!groups[key]) groups[key] = []; groups[key].push(a); });
+      filtered.forEach(a => {
+        const key = a.champion || 'その他';
+        if (!groups[key]) groups[key] = [];
+        groups[key].push(a);
+      });
     } else {
       filtered.forEach(a => {
-        const keys = (a.tags && a.tags.length > 0) ? a.tags : ['未分類'];
-        keys.forEach((k: string) => { if (!groups[k]) groups[k] = []; groups[k].push(a); });
+        const keys = (a.tags && Array.isArray(a.tags) && a.tags.length > 0) ? a.tags : ['未分類'];
+        keys.forEach((k: any) => {
+          const key = (k && typeof k === 'string') ? k : '未分類';
+          if (!groups[key]) groups[key] = [];
+          groups[key].push(a);
+        });
       });
     }
     
     Object.keys(groups).forEach(key => {
       groups[key].sort((a, b) => {
-        if (sortOrder === 'updated_desc') return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-        if (sortOrder === 'updated_asc') return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
-        return a.title.localeCompare(b.title);
+        const timeA = a.created_at ? new Date(a.created_at).getTime() : 0;
+        const timeB = b.created_at ? new Date(b.created_at).getTime() : 0;
+        if (sortOrder === 'updated_desc') return timeB - timeA;
+        if (sortOrder === 'updated_asc') return timeA - timeB;
+        
+        const titleA = a.title || '';
+        const titleB = b.title || '';
+        return titleA.localeCompare(titleB);
       });
     });
 
     return Object.entries(groups).sort((a, b) => {
-      if (sortOrder === 'updated_desc') return Math.max(...b[1].map(x => new Date(x.created_at).getTime())) - Math.max(...a[1].map(x => new Date(x.created_at).getTime()));
-      if (sortOrder === 'updated_asc') return Math.min(...a[1].map(x => new Date(x.created_at).getTime())) - Math.min(...b[1].map(x => new Date(x.created_at).getTime()));
+      if (sortOrder === 'updated_desc') {
+        const maxB = b[1].length > 0 ? Math.max(...b[1].map(x => x.created_at ? new Date(x.created_at).getTime() : 0)) : 0;
+        const maxA = a[1].length > 0 ? Math.max(...a[1].map(x => x.created_at ? new Date(x.created_at).getTime() : 0)) : 0;
+        return maxB - maxA;
+      }
+      if (sortOrder === 'updated_asc') {
+        const minB = b[1].length > 0 ? Math.min(...b[1].map(x => x.created_at ? new Date(x.created_at).getTime() : 0)) : 0;
+        const minA = a[1].length > 0 ? Math.min(...a[1].map(x => x.created_at ? new Date(x.created_at).getTime() : 0)) : 0;
+        return minA - minB;
+      }
       return a[0].localeCompare(b[0]);
     });
   }, [articles, debouncedSearch, groupMode, sortOrder]);
@@ -361,7 +389,7 @@ export function LibraryTabContentInner() {
                 <button onClick={saveArticle} disabled={saving} className="px-4 py-2 bg-white text-black hover:-translate-y-0.5 shadow-lg shadow-white/20 rounded-xl text-sm font-black flex items-center gap-2 transition-all"><Save size={14} /> {saving ? '保存中...' : '保存する'}</button>
               </>
             )}
-            <button onClick={() => copyPublishCommand(selectedArticle.champion || selectedArticle.title.split(' ')[0])} className="px-4 py-2 glass-panel glass-panel-hover text-[#00cfef] rounded-xl text-sm font-bold flex items-center gap-2"><Terminal size={14} /> 投稿コマンドをコピー</button>
+            <button onClick={() => copyPublishCommand(selectedArticle.champion || selectedArticle.title?.split(' ')[0] || '')} className="px-4 py-2 glass-panel glass-panel-hover text-[#00cfef] rounded-xl text-sm font-bold flex items-center gap-2"><Terminal size={14} /> 投稿コマンドをコピー</button>
             <button onClick={(e) => deleteArticle(selectedArticle.id, e)} className="px-4 py-2 glass-panel glass-panel-hover text-red-400 rounded-xl text-sm font-bold flex items-center gap-2"><Trash2 size={14} /> 削除</button>
           </div>
         </div>
@@ -391,9 +419,9 @@ export function LibraryTabContentInner() {
                 </div>
               ) : (
                 <div className="flex items-center gap-4 mb-6">
-                  <h1 className="text-4xl md:text-5xl font-black leading-tight font-mono text-white flex-1">{selectedArticle.title.replace(/_/g, ' ')}</h1>
+                  <h1 className="text-4xl md:text-5xl font-black leading-tight font-mono text-white flex-1">{selectedArticle.title ? selectedArticle.title.replace(/_/g, ' ') : ''}</h1>
                   <button
-                    onClick={() => handleToggleFavorite(selectedArticle.id, selectedArticle.title)}
+                    onClick={() => handleToggleFavorite(selectedArticle.id, selectedArticle.title || '')}
                     className={`p-2.5 rounded-xl transition-all border shrink-0 ${
                       favoriteArticles.includes(selectedArticle.id)
                         ? 'bg-amber-400/20 border-amber-400 text-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.3)]'
@@ -563,7 +591,7 @@ export function LibraryTabContentInner() {
                               </span>
                               <h3 className={`font-bold transition-colors flex items-center gap-2 ${isExpanded ? 'text-[#a78bfa]' : 'text-gray-200 group-hover/item:text-[#a78bfa]'}`}>
                                 {favoriteArticles.includes(article.id) && <StarIcon size={14} className="text-amber-400 shrink-0" fill="currentColor" />}
-                                {article.title.replace(/_/g, ' ')}
+                                {article.title ? article.title.replace(/_/g, ' ') : ''}
                               </h3>
                             </div>
                             <div className="flex gap-2 flex-wrap ml-6">
@@ -605,7 +633,7 @@ export function LibraryTabContentInner() {
                                   setSelectedArticle(article);
                                   // 編集モードに直接切り替え
                                   setEditContent(article.content);
-                                  setEditTitle(article.title);
+                                  setEditTitle(article.title || '');
                                   setEditChampion(article.champion || '');
                                   setEditKeywords((article.tags || []).join(', '));
                                   setEditing(true);
@@ -617,7 +645,7 @@ export function LibraryTabContentInner() {
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  copyPublishCommand(article.champion || article.title.split(' ')[0]);
+                                  copyPublishCommand(article.champion || article.title?.split(' ')[0] || '');
                                 }}
                                 className="px-4 py-2 glass-panel glass-panel-hover text-[#00cfef] rounded-xl text-sm font-bold flex items-center gap-2 transition-colors"
                               >
@@ -626,7 +654,7 @@ export function LibraryTabContentInner() {
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleToggleFavorite(article.id, article.title);
+                                  handleToggleFavorite(article.id, article.title || '');
                                 }}
                                 className={`px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-all border ${
                                   favoriteArticles.includes(article.id)
