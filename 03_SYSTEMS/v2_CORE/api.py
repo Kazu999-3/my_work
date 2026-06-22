@@ -183,14 +183,35 @@ async def generate_agent_response(request: GenerateRequest, api_key: str = Depen
                 model=ollama_model
             )
         except Exception as e:
-            logger.error(f"❌ Local Ollama execution failed: {e}")
-            return GenerateResponse(
-                success=False,
-                text="",
-                model_used=model_used,
-                fallback_occurred=fallback_occurred,
-                error_message=f"Primary and fallback execution failed. Ollama error: {e}. Primary error: {error_msg}"
-            )
+            logger.warning(f"⚠️ Local Ollama execution failed with model '{ollama_model}': {e}. Retrying with settings.OLLAMA_MODEL ('{settings.OLLAMA_MODEL}')...")
+            # 404等でエラーになった場合、settings.OLLAMA_MODEL で二重リトライを試みる
+            if ollama_model != settings.OLLAMA_MODEL:
+                try:
+                    result_text = await asyncio.to_thread(
+                        _generate_with_ollama,
+                        prompt=final_prompt,
+                        model=settings.OLLAMA_MODEL
+                    )
+                    model_used = f"ollama/{settings.OLLAMA_MODEL}"
+                    logger.info(f"✅ Successfully recovered using local Ollama model: {settings.OLLAMA_MODEL}")
+                except Exception as retry_e:
+                    logger.error(f"❌ Both primary and secondary Ollama fallback failed: {retry_e}")
+                    return GenerateResponse(
+                        success=False,
+                        text="",
+                        model_used=model_used,
+                        fallback_occurred=fallback_occurred,
+                        error_message=f"Primary and fallback execution failed. Ollama recovery error: {retry_e}. Original Ollama error: {e}. Primary error: {error_msg}"
+                    )
+            else:
+                logger.error(f"❌ Local Ollama execution failed: {e}")
+                return GenerateResponse(
+                    success=False,
+                    text="",
+                    model_used=model_used,
+                    fallback_occurred=fallback_occurred,
+                    error_message=f"Primary and fallback execution failed. Ollama error: {e}. Primary error: {error_msg}"
+                )
             
     return GenerateResponse(
         success=True,
@@ -198,3 +219,113 @@ async def generate_agent_response(request: GenerateRequest, api_key: str = Depen
         model_used=model_used,
         fallback_occurred=fallback_occurred
     )
+
+# ============================================================
+# Antigravity GA Optimizer: A/B Test Variations & Evolve API
+# ============================================================
+
+class EvolveRequest(BaseModel):
+    task_type: str
+    mutation_rate: float = 0.2
+
+class VariationPayload(BaseModel):
+    task_type: str
+    dna: str
+    generation: int
+    fitness: float = 1.0
+    status: str = "pending"
+
+class VariationUpdatePayload(BaseModel):
+    fitness: float = None
+    status: str = None
+
+@app.get("/api/ab-test/variations")
+async def get_ab_test_variations(task_type: str = None, api_key: str = Depends(get_api_key)):
+    """SupabaseからA/BテストのDNAバリエーションリストを取得する"""
+    supabase_url = settings.SUPABASE_URL
+    supabase_key = settings.SUPABASE_KEY
+    if not supabase_url or not supabase_key:
+        raise HTTPException(status_code=500, detail="Supabase URL or Key is not configured.")
+        
+    headers = {
+        "apikey": supabase_key,
+        "Authorization": f"Bearer {supabase_key}",
+        "Content-Type": "application/json"
+    }
+    
+    url = f"{supabase_url}/rest/v1/ab_test_variations"
+    params = {}
+    if task_type:
+        params["task_type"] = f"eq.{task_type}"
+    params["order"] = "created_at.desc"
+    
+    try:
+        async with httpx.AsyncClient() as client:
+            res = await client.get(url, headers=headers, params=params, timeout=10)
+        if res.status_code != 200:
+            raise HTTPException(status_code=500, detail=f"Failed to fetch variations: {res.text}")
+        return res.json()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/ab-test/variations")
+async def create_ab_test_variation(payload: VariationPayload, api_key: str = Depends(get_api_key)):
+    """Supabaseに新しいDNA（個体）を保存する"""
+    from v2_CORE._MONETIZE.genetic_optimizer import genetic_optimizer
+    success = genetic_optimizer.save_variation(
+        task_type=payload.task_type,
+        dna=payload.dna,
+        generation=payload.generation,
+        status=payload.status
+    )
+    if not success:
+        raise HTTPException(status_code=500, detail="Failed to save variation to Supabase.")
+    return {"status": "success", "message": "Variation created successfully."}
+
+@app.patch("/api/ab-test/variations/{variation_id}")
+async def update_ab_test_variation(variation_id: str, payload: VariationUpdatePayload, api_key: str = Depends(get_api_key)):
+    """DNAのステータスまたは適合度を更新する"""
+    supabase_url = settings.SUPABASE_URL
+    supabase_key = settings.SUPABASE_KEY
+    if not supabase_url or not supabase_key:
+        raise HTTPException(status_code=500, detail="Supabase URL or Key is not configured.")
+        
+    headers = {
+        "apikey": supabase_key,
+        "Authorization": f"Bearer {supabase_key}",
+        "Content-Type": "application/json"
+    }
+    
+    url = f"{supabase_url}/rest/v1/ab_test_variations"
+    params = {"id": f"eq.{variation_id}"}
+    
+    updates = {}
+    if payload.fitness is not None:
+        updates["fitness"] = payload.fitness
+    if payload.status is not None:
+        updates["status"] = payload.status
+        
+    if not updates:
+        return {"status": "skipped", "message": "No updates provided."}
+        
+    try:
+        async with httpx.AsyncClient() as client:
+            res = await client.patch(url, headers=headers, params=params, json=updates, timeout=10)
+        if res.status_code not in (200, 204):
+            raise HTTPException(status_code=500, detail=f"Failed to update variation: {res.text}")
+        return {"status": "success", "message": "Variation updated successfully."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/ab-test/evolve", response_model=TriggerResponse)
+def trigger_ab_test_evolve(request: EvolveRequest, background_tasks: BackgroundTasks, api_key: str = Depends(get_api_key)):
+    """指定したタスクタイプの世代交代（GA Evolve）を非同期実行する"""
+    from v2_CORE._MONETIZE.genetic_optimizer import genetic_optimizer
+    logger.info(f"Received request to trigger GA Evolve for: {request.task_type}")
+    
+    background_tasks.add_task(
+        genetic_optimizer.evolve_generation,
+        task_type=request.task_type,
+        mutation_rate=request.mutation_rate
+    )
+    return {"status": "accepted", "message": f"GA Evolve loop started in background for {request.task_type}."}

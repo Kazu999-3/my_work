@@ -24,7 +24,7 @@ import requests
 X_EMAIL = os.environ.get("X_EMAIL")
 X_PASSWORD = os.environ.get("X_PASSWORD")
 USER_DATA_DIR = settings.ROOT_DIR / ".agent/playwright_data/x_profile"
-PUBLISH_DISABLED = True  # 現在は動作不良のため自動投稿を完全停止 (Dry Run)
+PUBLISH_DISABLED = False  # 現在は動作不良のため自動投稿を完全停止 (Dry Run)
 
 class XPublisher:
     def __init__(self, headless=True):
@@ -344,7 +344,8 @@ class NotePublisher:
                 
                 # Ctrl+V (Windows/Linux) or Meta+V (Mac)
                 page.keyboard.press("Control+V")
-                time.sleep(3)
+                logger.info("Waiting 10 seconds for note auto-save...")
+                time.sleep(10)
                 
                 if not auto_publish:
                     logger.info("✅ Draft auto-populated successfully! (Kept as draft)")
@@ -399,6 +400,9 @@ class NotePublisher:
                         return draft_url
                     else:
                         logger.error("❌ Could not obtain public-viewable draft preview URL. Aborting to prevent dead link posting on X.")
+                        if not self.headless:
+                            logger.info("Headful mode detected. Keeping browser open for 120 seconds to allow manual save and preview URL retrieval...")
+                            time.sleep(120)
                         context.close()
                         return None
                 

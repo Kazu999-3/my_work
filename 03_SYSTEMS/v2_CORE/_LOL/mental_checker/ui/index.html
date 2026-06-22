@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sovereign Mind - LoL Mental Checker</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Noto+Sans+JP:wght@300;400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        
+        <!-- ================= 1. パスコードロック画面 ================= -->
+        <section id="lock-screen" class="screen active">
+            <div class="glass-card fade-in">
+                <div class="logo-area">
+                    <div class="glow-logo">🧠</div>
+                    <h1>Sovereign Mind</h1>
+                    <p class="subtitle">LoL Tilt Prevention System</p>
+                </div>
+                <div class="form-group">
+                    <label for="passcode-input">アクセスパスコードを入力</label>
+                    <input type="password" id="passcode-input" placeholder="••••••••••••" autocomplete="current-password">
+                    <p class="help-text">※有料note購入者に配布された認証コードを入力してください。</p>
+                </div>
+                <button id="unlock-btn" class="btn primary-btn">
+                    <span>ロック解除</span>
+                    <div class="btn-glow"></div>
+                </button>
+                <div class="error-msg" id="lock-error"></div>
+            </div>
+        </section>
+
+        <!-- ================= 2. メイン画面 ================= -->
+        <section id="main-screen" class="screen">
+            <div class="header">
+                <div class="title-section">
+                    <h2>Sovereign Mind</h2>
+                    <div class="status-badge" id="monitor-status">
+                        <span class="pulse-dot"></span>
+                        <span id="status-text">監視待機中</span>
+                    </div>
+                </div>
+                <div class="header-right">
+                    <div class="settings-trigger" id="settings-toggle">⚙️ 設定</div>
+                </div>
+            </div>
+
+            <!-- 設定エリア (スライド展開) -->
+            <div class="glass-card settings-card" id="settings-area">
+                <h3>⚙️ アカウント設定</h3>
+                <div class="form-row">
+                    <div class="form-group flex-2">
+                        <label for="riot-id-input">Riot ID (Name#Tag)</label>
+                        <input type="text" id="riot-id-input" placeholder="ExamplePlayer#JP1">
+                    </div>
+                    <div class="form-group flex-3">
+                        <label for="gemini-key-input">Gemini API Key (<a href="https://aistudio.google.com/" target="_blank" class="text-link">キーを取得</a>)</label>
+                        <input type="password" id="gemini-key-input" placeholder="AI Studioで取得したAPIキーを入力" autocomplete="current-password">
+                    </div>
+                    <button id="save-settings-btn" class="btn secondary-btn">保存</button>
+                </div>
+                <div class="info-msg" id="settings-msg"></div>
+            </div>
+
+            <!-- タブナビゲーション -->
+            <div class="tab-nav">
+                <button class="tab-btn active" id="tab-btn-diagnosis">🧠 ティルト診断</button>
+                <button class="tab-btn" id="tab-btn-history">📊 診断履歴 ＆ 統計</button>
+            </div>
+
+            <!-- ティルト診断コンテンツ -->
+            <div id="diagnosis-content" class="tab-content active">
+                <div class="main-layout">
+                    <!-- 左側：直前の戦績表示 -->
+                    <div class="glass-card match-card">
+                        <h3>🎮 直近のソロキュー戦績</h3>
+                        <div id="match-loading" class="loading-spinner" style="display: none;">戦績を取得中...</div>
+                        <div id="match-data-area">
+                            <div class="no-data-placeholder">
+                                Riot IDを設定して、試合終了を待つか「戦績をロード」を押してください。
+                            </div>
+                        </div>
+                        <button id="reload-stats-btn" class="btn secondary-btn width-100 mt-2">
+                            <span>🔄 最新の戦績をロード</span>
+                        </button>
+                    </div>
+
+                    <!-- 右側：感情チェックフォーム -->
+                    <div class="glass-card survey-card">
+                        <h3>📊 現在のメンタルチェック</h3>
+                        <form id="survey-form">
+                            
+                            <div class="form-group range-group">
+                                <div class="range-header">
+                                    <label>1. イライラ・怒り度</label>
+                                    <span class="range-val" id="anger-val">1</span>
+                                </div>
+                                <input type="range" id="survey-anger" min="1" max="5" value="1">
+                                <div class="range-labels">
+                                    <span>冷静</span>
+                                    <span>穏やか</span>
+                                    <span>普通</span>
+                                    <span>やや苛立ち</span>
+                                    <span>ティルト寸前</span>
+                                </div>
+                            </div>
+
+                            <div class="form-group range-group">
+                                <div class="range-header">
+                                    <label>2. 精神的・身体的疲労度</label>
+                                    <span class="range-val" id="fatigue-val">1</span>
+                                </div>
+                                <input type="range" id="survey-fatigue" min="1" max="5" value="1">
+                                <div class="range-labels">
+                                    <span>万全</span>
+                                    <span>元気</span>
+                                    <span>普通</span>
+                                    <span>眠気・だるさ</span>
+                                    <span>極限疲労</span>
+                                </div>
+                            </div>
+
+                            <div class="form-group range-group">
+                                <div class="range-header">
+                                    <label>3. 味方へのフラストレーション</label>
+                                    <span class="range-val" id="team-val">1</span>
+                                </div>
+                                <input type="range" id="survey-team" min="1" max="5" value="1">
+                                <div class="range-labels">
+                                    <span>なし</span>
+                                    <span>許容内</span>
+                                    <span>普通</span>
+                                    <span>不満あり</span>
+                                    <span>チャットしたい</span>
+                                </div>
+                            </div>
+
+                            <button type="submit" id="submit-check-btn" class="btn primary-btn width-100 mt-3" disabled>
+                                <span>🧠 メンタル状態を診断</span>
+                                <div class="btn-glow"></div>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 診断履歴 ＆ 統計コンテンツ -->
+            <div id="history-content" class="tab-content">
+                <div class="history-layout">
+                    <!-- 統計サマリー -->
+                    <div class="glass-card stats-summary-card">
+                        <h3>📊 メンタル相関スタッツ</h3>
+                        <div class="stats-grid-row">
+                            <div class="stat-box text-center">
+                                <span class="stat-label">ティルト発生率 (Score 40+)</span>
+                                <span class="stat-value text-large" id="stats-tilt-rate">0%</span>
+                            </div>
+                            <div class="stat-box text-center">
+                                <span class="stat-label">冷静時 (イライラ1-2) 勝率</span>
+                                <span class="stat-value text-large win" id="stats-calm-winrate">0%</span>
+                            </div>
+                            <div class="stat-box text-center">
+                                <span class="stat-label">苛立ち時 (イライラ3+) 勝率</span>
+                                <span class="stat-value text-large lose" id="stats-tilt-winrate">0%</span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 履歴リスト -->
+                    <div class="glass-card history-list-card mt-3">
+                        <h3>📜 過去の診断履歴 (直近50試合)</h3>
+                        <div class="history-list" id="history-list-area">
+                            <div class="no-data-placeholder">履歴データがありません。</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        <!-- ================= 3. 診断結果画面 ================= -->
+        <section id="result-screen" class="screen">
+            <div class="glass-card result-card text-center fade-in">
+                <div class="result-back-header">
+                    <button id="result-back-arrow" class="back-arrow-btn">← ロビーに戻る</button>
+                </div>
+                <div class="result-header">
+                    <div class="result-badge" id="result-badge">GREEN</div>
+                    <h1 class="result-title" id="result-title">メンタル良好です！</h1>
+                </div>
+
+                <div class="score-circle-container">
+                    <svg class="score-svg" viewBox="0 0 100 100">
+                        <circle class="score-bg" cx="50" cy="50" r="45"></circle>
+                        <circle class="score-bar" id="score-bar" cx="50" cy="50" r="45"></circle>
+                    </svg>
+                    <div class="score-text">
+                        <span class="score-num" id="score-num">0</span>
+                        <span class="score-label">ティルト度</span>
+                    </div>
+                </div>
+
+                <p class="result-desc" id="result-desc">
+                    素晴らしい自己管理能力です。次のゲームも集中力を維持し、勝利を掴みましょう！
+                </p>
+
+                <!-- AIアドバイスエリア -->
+                <div class="glass-card advice-card-inner mt-2 mb-3">
+                    <h4>🤖 AIコーチの精神指導</h4>
+                    <div id="advice-loading" class="loading-spinner small" style="display: none;">AIが分析中...</div>
+                    <p class="advice-text" id="advice-text">
+                        （戦績と感情を入力して診断を開始すると、ここにティルト防止のアドバイスが表示されます）
+                    </p>
+                </div>
+
+                <!-- 呼吸ガイドエリア (Yellow/Red時に表示) -->
+                <div id="breathing-area" class="breathing-box" style="display: none;">
+                    <h3>🧘 マインドフルネス呼吸で脳をリセット</h3>
+                    <p class="breathing-instruction" id="breathing-instruction">ボタンを押して、呼吸セッションを開始してください。</p>
+                    
+                    <div class="breathing-circle-outer">
+                        <div class="breathing-circle-inner" id="breathing-circle"></div>
+                        <div class="breathing-text" id="breathing-timer-text">READY</div>
+                    </div>
+
+                    <div class="breathing-controls mt-2">
+                        <button id="start-breathing-btn" class="btn secondary-btn">セッション開始 (1分)</button>
+                    </div>
+                </div>
+
+                <div class="result-footer">
+                    <button id="back-to-main-btn" class="btn primary-btn mt-3">
+                        <span>ロビーに戻る</span>
+                        <div class="btn-glow"></div>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= 4. インゲーム対策メモ画面 ================= -->
+        <section id="matchup-screen" class="screen">
+            <div class="glass-card matchup-guide-card text-center fade-in">
+                <div class="matchup-guide-header">
+                    <div class="vs-badge">⚔️ MATCHUP ACTIVE DETECTED</div>
+                    <h1 class="matchup-guide-title">
+                        <span id="matchup-my-champ">MyChamp</span> <span class="vs-text">vs</span> <span id="matchup-enemy-champ">EnemyJG</span>
+                    </h1>
+                </div>
+
+                <div class="matchup-guide-body mt-3">
+                    <div class="strategy-box-inner text-left">
+                        <h4>💡 対面ジャングル対策メモ</h4>
+                        <div class="strategy-text-content" id="matchup-strategy-text">
+                            対策メモを読み込んでいます...
+                        </div>
+                    </div>
+                </div>
+
+                <div class="matchup-guide-footer mt-3">
+                    <button id="close-matchup-btn" class="btn primary-btn width-100">
+                        <span>了解（閉じる）</span>
+                        <div class="btn-glow"></div>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <!-- UI制御スクリプト -->
+    <script src="script.js"></script>
+</body>
+</html>

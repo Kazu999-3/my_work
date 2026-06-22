@@ -238,15 +238,24 @@ class ToolForge:
         """X（Twitter）での宣伝用スレッド（3連投テキスト）を生成 (APIゲートウェイ経由)"""
         logger.info(f"🐦 [Creator Agent] {note_title} 用のX宣伝スレッドを生成中...")
         
+        # 遺伝的アルゴリズム（GA）から現在最も優秀なXのフックDNAを選択
+        try:
+            from v2_CORE._MONETIZE.genetic_optimizer import genetic_optimizer
+            x_hook_variation = genetic_optimizer.select_active_dna("x_hook")
+        except Exception as ga_e:
+            logger.warning(f"⚠️ Failed to select active x_hook DNA: {ga_e}")
+            x_hook_variation = "30分の解説動画を「一時停止を繰り返しながらメモを取る」のは、もう時間の無駄です。"
+            
         default_tweets = [
-            f"【作業効率化】話題のツールを使って日々の業務生産性を劇的に向上させる方法をまとめました！特にAI連携による自動化は必見です。気になる方はぜひチェックしてみてください！ 👇",
-            f"今回の記事では、初心者でもすぐに実践できる活用ステップについて詳しく解説しています。テンプレートの最適化や共同編集のコツなど、現場で即役立つノウハウが満載です！",
+            f"{x_hook_variation}\n\n詳細はこちら 👇",
+            f"今回のは、初心者でもすぐに実践できる活用ステップについて詳しく解説しています。テンプレートの最適化や共同編集のコツなど、現場で即役立つノウハウが満載です！",
             f"直感的に使えて非常に強力なパートナーになります。まずは無料プランから始めてその便利さを実感してみましょう！\n\n続きはnote記事で公開中！👇\n[NOTE_URL]"
         ]
         
         variables = {
             "note_title": note_title,
             "note_summary": note_summary,
+            "x_hook_variation": x_hook_variation,
             "evolution_rules": self._load_evolution_rules()
         }
         success, text = self._call_gateway("monetize_x_thread", variables)
@@ -309,14 +318,22 @@ def run_creator_agent(state: SovereignState) -> SovereignState:
         # 3. リライト（決定稿）
         final_article = forge.rewrite_with_critique(tool_name, first_draft, critique, affiliate_link)
         
-        # タイトル抽出
-        title = f"{tool_name}超活用術"
-        lines = final_article.strip().split("\n")
-        for line in lines:
-            if line.startswith("# "):
-                title = line.replace("# ", "").strip()[:32]
-                break
-                
+        # タイトル抽出および遺伝的アルゴリズム（GA）によるタイトルDNAの適用
+        try:
+            from v2_CORE._MONETIZE.genetic_optimizer import genetic_optimizer
+            ga_title = genetic_optimizer.select_active_dna("note_title")
+        except Exception as ga_title_e:
+            logger.warning(f"⚠️ Failed to select active note_title DNA: {ga_title_e}")
+            ga_title = None
+
+        title = ga_title if ga_title else f"{tool_name}超活用術"
+        if not ga_title:
+            lines = final_article.strip().split("\n")
+            for line in lines:
+                if line.startswith("# "):
+                    title = line.replace("# ", "").strip()[:32]
+                    break
+                    
         # 4. Xスレッドの生成
         summary = knowledge.get("overview", "ツールの最新活用ノウハウをご紹介。")
         x_tweets = forge.generate_x_thread(title, summary)
