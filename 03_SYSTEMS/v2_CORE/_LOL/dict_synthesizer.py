@@ -61,17 +61,18 @@ class DictSynthesizer:
     def synthesize_text(self, champion, text):
         prompt = f"""
 あなたはLoLの最上位プレイヤー（チャレンジャー／プロコーチ）です。
-以下のテキストは、攻略ライブラリからチャンピオン「{champion}」の辞典に統合された複数の記事の寄せ集めです。
+以下のテキストは、攻略ライブラリからチャンピオン「{champion}」の辞典に統合された複数の攻略メモや下書き記事の寄せ集めです。
 情報が重複していたり、構成がバラバラで読みにくいため、これらの内容を読み込んで**綺麗に要約・統合（マージ）された1つのMarkdownドキュメント**に再構成してください。
 
 【要件】
 - 以下のフォーマットに沿って整理してください。
 - 各記事から得られる重要な知見は漏らさず、重複する内容は1つにまとめてください。
+- もし「最新パッチトレンド ＆ プロビルド情報」が以下に提供されている場合は、その統計やビルドトレンド（コアアイテムなど）も考慮し、「主要な戦略と役割」や「ミクロ・スキルコンボ」などの攻略要約内にテキストとして自然に溶け込ませてください（そのままJSONを貼り付けるのではなく、実践的な解説に組み込んでください）。
 - 日本語で出力してください。
 
 【出力フォーマット】
 ### 📌 主要な戦略と役割
-(このチャンピオンの強みや勝つための基本戦略)
+(このチャンピオンの強みや勝つための基本戦略。最新パッチトレンドやプロのプレイスタイルを踏まえた解説も含める)
 
 ### 🧠 マクロ・ウェーブ管理
 (ファーム、ガンク、オブジェクト管理、ウェーブコントロールなど)
@@ -81,6 +82,8 @@ class DictSynthesizer:
 
 ### 💡 対策・その他Tips
 (弱点、警戒すべきこと、その他重要な知見)
+
+{trend_info_str}
 
 【対象の生テキスト（ごちゃごちゃな状態）】
 {text}
@@ -120,6 +123,35 @@ class DictSynthesizer:
             if "archived_notes" not in updated_raw_data:
                 updated_raw_data["archived_notes"] = {}
 
+            # 0. 最新トレンドデータの自動取得・マージ (更新から3日以上経過している場合)
+            import time
+            patch_meta = updated_raw_data.get("patch_meta", {})
+            last_updated = patch_meta.get("updated_at", 0) if isinstance(patch_meta, dict) else 0
+            now_ts = int(time.time())
+            
+            if not last_updated or (now_ts - last_updated > 259200):
+                logger.info(f"🔄 {champion_name} のパッチトレンドが古い、または存在しないため自動更新します...")
+                try:
+                    from v2_CORE._LOL.lol_trend_collector import LolTrendCollector
+                    collector = LolTrendCollector()
+                    role = updated_raw_data.get("role") or "Jungle"
+                    trend_data = collector.collect_champ_trends(champion_name, role)
+                    if trend_data:
+                        updated_raw_data["patch_meta"] = {
+                            "win_rate": trend_data.get("win_rate"),
+                            "pick_rate": trend_data.get("pick_rate"),
+                            "ban_rate": trend_data.get("ban_rate"),
+                            "tier": trend_data.get("tier"),
+                            "trend_items": trend_data.get("trend_items", []),
+                            "trend_runes": trend_data.get("trend_runes", {}),
+                            "patch": trend_data.get("patch"),
+                            "updated_at": now_ts
+                        }
+                        updated_raw_data["pro_builds"] = trend_data.get("pro_builds", [])
+                        needs_update = True
+                except Exception as te:
+                    logger.error(f"⚠️ {champion_name} の自動トレンド更新に失敗: {te}")
+
             # 1. note_draft の整理
             note_draft = updated_raw_data.get("note_draft", "")
             if isinstance(note_draft, str) and note_draft.count("## 【記事】") >= 1:
@@ -127,7 +159,12 @@ class DictSynthesizer:
                 # アーカイブに退避
                 updated_raw_data["archived_notes"]["note_draft_raw"] = note_draft
                 
-                synthesized = self.synthesize_text(champion_name, note_draft)
+                synthesized = self.synthesize_text(
+                    champion_name, 
+                    note_draft,
+                    patch_meta=updated_raw_data.get("patch_meta"),
+                    pro_builds=updated_raw_data.get("pro_builds")
+                )
                 if not synthesized.startswith("⚠️") and not synthesized.startswith("❌"):
                     updated_raw_data["note_draft"] = synthesized
                     needs_update = True
@@ -141,7 +178,12 @@ class DictSynthesizer:
                     logger.info(f"🔄 {champion_name} の customField '{field}' をAIで整理します...")
                     updated_raw_data["archived_notes"][f"{field}_raw"] = content
                     
-                    synthesized = self.synthesize_text(champion_name, content)
+                    synthesized = self.synthesize_text(
+                        champion_name, 
+                        content,
+                        patch_meta=updated_raw_data.get("patch_meta"),
+                        pro_builds=updated_raw_data.get("pro_builds")
+                    )
                     if not synthesized.startswith("⚠️") and not synthesized.startswith("❌"):
                         updated_custom_fields[field] = synthesized
                         needs_update = True
