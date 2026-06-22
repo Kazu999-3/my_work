@@ -179,9 +179,8 @@ function ChampionsContent() {
       });
       
       const result = await res.json();
-      if (result.success) {
-        const { data: noteData } = await supabase.from('matchup_sentinel').select('strategy, raw_data').eq('champion', selected.id).eq('enemy', 'GLOBAL').single();
-        const rd = noteData?.raw_data || {};
+      if (result.success && result.data) {
+        const rd = result.data.raw_data || {};
         setDataFields({
           strengths: rd.strengths || '',
           weaknesses: rd.weaknesses || '',
@@ -191,7 +190,7 @@ function ChampionsContent() {
           counterChampions: rd.counterChampions || '',
           mustBanChampions: rd.mustBanChampions || '',
           pickRecommendation: rd.pickRecommendation || '',
-          strategy: noteData?.strategy || '',
+          strategy: result.data.strategy || '',
           note_draft: rd.note_draft || '',
           customFields: rd.customFields || {},
           patch_meta: rd.patch_meta || null,

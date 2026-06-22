@@ -168,7 +168,11 @@ League of Legendsの最新パッチにおける、チャンピオン「${champio
       return NextResponse.json({ success: false, error: `Supabase書き込みエラー: ${upsertErr.message}` }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true, message: `Successfully updated trend for ${champion}` });
+    return NextResponse.json({ 
+      success: true, 
+      message: `Successfully updated trend for ${champion}`,
+      data: payload
+    });
   } catch (err: any) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
   }
