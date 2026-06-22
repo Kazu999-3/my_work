@@ -182,11 +182,21 @@ function ChampionsContent() {
       if (result.success) {
         const { data: noteData } = await supabase.from('matchup_sentinel').select('strategy, raw_data').eq('champion', selected.id).eq('enemy', 'GLOBAL').single();
         const rd = noteData?.raw_data || {};
-        setDataFields((p: any) => ({
-          ...p,
+        setDataFields({
+          strengths: rd.strengths || '',
+          weaknesses: rd.weaknesses || '',
+          powerSpikes: rd.powerSpikes || '',
+          buildRunes: rd.buildRunes || '',
+          fullClearTime: rd.fullClearTime || '',
+          counterChampions: rd.counterChampions || '',
+          mustBanChampions: rd.mustBanChampions || '',
+          pickRecommendation: rd.pickRecommendation || '',
+          strategy: noteData?.strategy || '',
+          note_draft: rd.note_draft || '',
+          customFields: rd.customFields || {},
           patch_meta: rd.patch_meta || null,
           pro_builds: rd.pro_builds || []
-        }));
+        });
         setChampPatchMetas((p: any) => ({
           ...p,
           [selected.id]: rd.patch_meta || null

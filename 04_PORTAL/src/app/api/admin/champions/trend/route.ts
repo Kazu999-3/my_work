@@ -46,7 +46,13 @@ League of Legendsの最新パッチにおける、チャンピオン「${champio
       "runes": ["キーストーン名", "主要ルーン"],
       "description": "このビルドの特徴や狙いに関する短い日本語の解説（1文。'バースト重視'や'序盤のトレード強化'など簡潔に）"
     }
-  ]
+  ],
+  "strengths": "最新パッチのトレンドを踏まえた、このチャンピオンの現在の主な強み（簡潔な日本語文章で2〜3文）",
+  "weaknesses": "最新パッチのトレンドを踏まえた、現在の主な弱点・対策されやすい点（簡潔な日本語文章で2〜3文）",
+  "powerSpikes": "パワースパイク（どの時間帯、どのアイテム完成時に強いか。簡潔な日本語で1〜2文）",
+  "buildRunes": "推奨されるコアビルドとルーンの選び方の簡単な解説（簡潔な日本語で2〜3文）",
+  "counterChampions": "対面での有利・不利、カウンターチャンピオンに関する情報（簡潔な日本語で2〜3文）",
+  "pickRecommendation": "現在のメタにおけるピックの推奨度や、先出し・後出しの適性（簡潔な日本語で1〜2文）"
 }`;
 
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}`;
@@ -103,8 +109,8 @@ League of Legendsの最新パッチにおける、チャンピオン「${champio
       return NextResponse.json({ success: false, error: `AIの応答をJSONとしてパースできませんでした: ${e.message}` }, { status: 500 });
     }
 
-    // Supabase の GLOBAL レコードとマージ
-    const matchupId = `champ_${champion.toLowerCase()}_global`;
+    // Supabase の GLOBAL レコードとマージ (フロントエンドに合わせ、小文字化せずに元のケースを使用)
+    const matchupId = `champ_${champion}_global`;
     const { data: existing, error: fetchErr } = await supabase
       .from('matchup_sentinel')
       .select('raw_data, strategy, title')
@@ -120,6 +126,7 @@ League of Legendsの最新パッチにおける、チャンピオン「${champio
       rawData = {};
     }
 
+    // 最新パッチトレンドとプロビルドの更新
     rawData.patch_meta = {
       win_rate: trendData.win_rate,
       pick_rate: trendData.pick_rate,
@@ -132,7 +139,16 @@ League of Legendsの最新パッチにおける、チャンピオン「${champio
     };
     rawData.pro_builds = trendData.pro_builds || [];
 
+    // 攻略フィールド（強み・弱み等）を最新パッチトレンドを考慮したAI生成文で上書き更新
+    rawData.strengths = trendData.strengths || rawData.strengths || '';
+    rawData.weaknesses = trendData.weaknesses || rawData.weaknesses || '';
+    rawData.powerSpikes = trendData.powerSpikes || rawData.powerSpikes || '';
+    rawData.buildRunes = trendData.buildRunes || rawData.buildRunes || '';
+    rawData.counterChampions = trendData.counterChampions || rawData.counterChampions || '';
+    rawData.pickRecommendation = trendData.pickRecommendation || rawData.pickRecommendation || '';
+
     const title = existing?.title || `${champion} 基本戦略・トレンド`;
+    // 手動で記述された strategy（立ち回りメモ）は上書きせず、完全に保護して維持する
     const strategy = existing?.strategy || '';
 
     const payload = {
