@@ -88,7 +88,7 @@ export function LibraryTabContentInner() {
         .select('id, created_at, title, content, raw_content, source_url, genre, tags, champion')
         .eq('genre', 'LoL攻略')
         .order('created_at', { ascending: false })
-        .limit(100);
+        .limit(1000);
       if (!error && data) {
         setArticles(data);
 

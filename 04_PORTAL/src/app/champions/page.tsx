@@ -28,6 +28,7 @@ function ChampionsContent() {
   const ROLE_LABELS = ['ALL', 'TOP', 'JG', 'MID', 'ADC', 'SUP'] as const;
   const [showPendingOnly, setShowPendingOnly] = useState(searchParams.get('filter') === 'pending');
   const [selected, setSelected] = useState<any>(null);
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const [loading, setLoading] = useState(true);
   const [champDates, setChampDates] = useState<Record<string, string>>({});
   const [champPending, setChampPending] = useState<Record<string, boolean>>({});
@@ -179,34 +180,87 @@ function ChampionsContent() {
       });
       
       const result = await res.json();
-      if (result.success && result.data) {
-        const rd = result.data.raw_data || {};
-        setDataFields({
-          strengths: rd.strengths || '',
-          weaknesses: rd.weaknesses || '',
-          powerSpikes: rd.powerSpikes || '',
-          buildRunes: rd.buildRunes || '',
-          fullClearTime: rd.fullClearTime || '',
-          counterChampions: rd.counterChampions || '',
-          mustBanChampions: rd.mustBanChampions || '',
-          pickRecommendation: rd.pickRecommendation || '',
-          strategy: result.data.strategy || '',
-          note_draft: rd.note_draft || '',
-          customFields: rd.customFields || {},
-          patch_meta: rd.patch_meta || null,
-          pro_builds: rd.pro_builds || []
-        });
-        setChampPatchMetas((p: any) => ({
-          ...p,
-          [selected.id]: rd.patch_meta || null
-        }));
-        alert('最新のトレンド情報を更新しました！');
-      } else {
-        alert(`更新に失敗しました: ${result.error || '不明なエラー'}`);
+      if (!result.success || !result.task_id) {
+        throw new Error(result.error || 'タスクのキュー登録に失敗しました。');
       }
+
+      const taskId = result.task_id;
+      
+      // ポーリング開始
+      let attempts = 0;
+      const maxAttempts = 30; // 3秒 × 30回 = 90秒
+      
+      const poll = async () => {
+        if (attempts >= maxAttempts) {
+          setFetchingTrend(false);
+          alert('トレンド取得タスクがタイムアウトしました。バックグラウンドで処理が継続している可能性があります。');
+          return;
+        }
+        
+        attempts++;
+        const { data: task, error } = await supabase
+          .from('edge_tasks')
+          .select('status, error_message')
+          .eq('id', taskId)
+          .single();
+          
+        if (error) {
+          console.error('Task fetch error:', error);
+          setTimeout(poll, 3000);
+          return;
+        }
+        
+        if (task.status === 'completed') {
+          // 完了したため、最新データ（updated_atも更新されている）をフェッチして状態を更新
+          const { data: noteData } = await supabase
+            .from('matchup_sentinel')
+            .select('strategy, raw_data, created_at')
+            .eq('champion', selected.id)
+            .eq('enemy', 'GLOBAL')
+            .single();
+            
+          const rd = noteData?.raw_data || {};
+          setDataFields({
+            strengths: rd.strengths || '',
+            weaknesses: rd.weaknesses || '',
+            powerSpikes: rd.powerSpikes || '',
+            buildRunes: rd.buildRunes || '',
+            fullClearTime: rd.fullClearTime || '',
+            counterChampions: rd.counterChampions || '',
+            mustBanChampions: rd.mustBanChampions || '',
+            pickRecommendation: rd.pickRecommendation || '',
+            strategy: noteData?.strategy || '',
+            note_draft: rd.note_draft || '',
+            customFields: rd.customFields || {},
+            patch_meta: rd.patch_meta || null,
+            pro_builds: rd.pro_builds || []
+          });
+          setChampPatchMetas((p: any) => ({
+            ...p,
+            [selected.id]: rd.patch_meta || null
+          }));
+          if (noteData?.created_at) {
+            setChampDates(p => ({
+              ...p,
+              [selected.id]: noteData.created_at
+            }));
+          }
+          
+          setFetchingTrend(false);
+          alert('最新のトレンド情報を更新しました！');
+        } else if (task.status === 'failed') {
+          setFetchingTrend(false);
+          alert(`更新に失敗しました: ${task.error_message || 'タスク実行エラー'}`);
+        } else {
+          // pending or running
+          setTimeout(poll, 3000);
+        }
+      };
+      
+      setTimeout(poll, 3000);
+      
     } catch (err: any) {
       alert(`通信エラー: ${err.message}`);
-    } finally {
       setFetchingTrend(false);
     }
   };
@@ -273,15 +327,22 @@ function ChampionsContent() {
     if (showPendingOnly) {
       result = result.filter(c => champPending[c.id]);
     }
+    if (showFavoritesOnly) {
+      result = result.filter(c => favoriteChamps.includes(c.id));
+    }
     return [...result].sort((a, b) => {
       if (sortOrder === 'updated_desc') {
         const dateA = champDates[a.id] ? new Date(champDates[a.id]).getTime() : 0;
         const dateB = champDates[b.id] ? new Date(champDates[b.id]).getTime() : 0;
         if (dateA !== dateB) return dateB - dateA;
+      } else if (sortOrder === 'updated_asc') {
+        const dateA = champDates[a.id] ? new Date(champDates[a.id]).getTime() : 9999999999999;
+        const dateB = champDates[b.id] ? new Date(champDates[b.id]).getTime() : 9999999999999;
+        if (dateA !== dateB) return dateA - dateB;
       }
       return a.name.localeCompare(b.name);
     });
-  }, [champions, search, sortOrder, champDates, showPendingOnly, champPending, roleFilter]);
+  }, [champions, search, sortOrder, champDates, showPendingOnly, champPending, roleFilter, showFavoritesOnly, favoriteChamps]);
 
   const containerVariants = { hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.02 } } };
   const itemVariants = { hidden: { scale: 0.9, opacity: 0 }, visible: { scale: 1, opacity: 1 } };
@@ -659,8 +720,15 @@ function ChampionsContent() {
           >
             <Filter size={16} /> 要確認
           </button>
+          <button 
+            onClick={() => setShowFavoritesOnly(!showFavoritesOnly)} 
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all border ${showFavoritesOnly ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/50 shadow-[0_0_15px_rgba(234,179,8,0.3)]' : 'glass-panel text-gray-400 border-transparent hover:text-white'}`}
+          >
+            <StarIcon size={16} fill={showFavoritesOnly ? 'currentColor' : 'none'} className={showFavoritesOnly ? 'text-yellow-400' : ''} /> お気に入り
+          </button>
           <select value={sortOrder} onChange={e => setSortOrder(e.target.value)} className="glass-panel border-none rounded-xl px-4 py-2.5 font-bold text-[#c89b3c] outline-none min-w-[160px] cursor-pointer">
             <option value="updated_desc">更新日が新しい順</option>
+            <option value="updated_asc">更新日が古い順</option>
             <option value="name_asc">名前順</option>
           </select>
         </div>
@@ -669,8 +737,8 @@ function ChampionsContent() {
           <span className="text-gray-500">{champions.length}件中</span>
           <span className="text-[#c89b3c] text-sm">{filtered.length}件</span>
           <span className="text-gray-500">ヒット</span>
-          {(search || roleFilter !== 'ALL' || showPendingOnly) && (
-            <button onClick={() => { setSearch(''); setRoleFilter('ALL'); setShowPendingOnly(false); }}
+          {(search || roleFilter !== 'ALL' || showPendingOnly || showFavoritesOnly) && (
+            <button onClick={() => { setSearch(''); setRoleFilter('ALL'); setShowPendingOnly(false); setShowFavoritesOnly(false); }}
               className="ml-2 text-gray-500 hover:text-white transition-colors underline underline-offset-2">
               フィルターをリセット
             </button>
