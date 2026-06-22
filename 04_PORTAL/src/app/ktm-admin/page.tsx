@@ -247,6 +247,24 @@ export default function KtmAdminPage() {
   useEffect(() => {
     fetchPlayers();
     checkIntegrity();
+
+    // ktm_playersテーブルのリアルタイム購読をセットアップ
+    const channel = supabase
+      .channel('ktm_players_realtime_changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'ktm_players' },
+        (payload) => {
+          console.log('Realtime change detected in ktm_players:', payload);
+          // 他ユーザーによる追加・編集・削除が発生した際に自動で再読み込み
+          fetchPlayers();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const fetchPlayers = async () => {

@@ -31,7 +31,7 @@ def _set_last_request_time(t):
     except Exception as e:
         logger.error(f"[AIHelper] スロットル状態の保存に失敗: {e}")
 
-def generate_content_safe(client, prompt, model_id=None, config=None, feature_name="default") -> str:
+def generate_content_safe(client, prompt, model_id=None, config=None, feature_name="default", sleep_on_rate_limit=True) -> str:
     """
     クォータ制限 (429 RESOURCE_EXHAUSTED) や一時的なサーバーエラー (503) を
     自動的に指数バックオフでリトライし、必要に応じて別モデルへフォールバックする堅牢なテキスト生成関数。
@@ -128,8 +128,8 @@ def generate_content_safe(client, prompt, model_id=None, config=None, feature_na
                         quota_manager.record_error("error_429")
                         logger.warning(f"⚠️ [AIHelper] クォータ制限詳細 ({key_name}): {err_msg}")
                         
-                        # 最後の試行なら、次のキーへの移行を急ぐため待機をスキップする
-                        if attempt == retries - 1:
+                        # 最後の試行またはスリープ無効化時は、次のキーへの移行を急ぐため待機をスキップする
+                        if attempt == retries - 1 or not sleep_on_rate_limit:
                             break
                             
                         import re

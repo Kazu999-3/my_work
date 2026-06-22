@@ -248,8 +248,12 @@ class LolTrendCollector:
                 self.client,
                 prompt,
                 config=config,
-                feature_name="champ_trends"
+                feature_name="champ_trends",
+                sleep_on_rate_limit=False
             )
+
+            if text.startswith("⚠️") or text.startswith("❌"):
+                raise Exception(text)
 
             if text.startswith("```"):
                 lines = text.split("\n")
@@ -262,7 +266,7 @@ class LolTrendCollector:
             return data
         except Exception as e:
             logger.error(f"❌ Failed to collect trends via Gemini: {e}")
-            return {}
+            raise e
 
     def save_champ_trends(self, champion: str, role: str, trend_data: dict) -> bool:
         """収集したトレンド・プロビルドデータをSupabaseのmatchup_sentinel（GLOBALレコード）にマージする"""
