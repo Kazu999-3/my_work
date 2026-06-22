@@ -145,7 +145,7 @@ export function LibraryTabContentInner() {
   }, [articles]);
 
   const grouped = useMemo(() => {
-    const q = debouncedSearch.toLowerCase();
+    const q = (debouncedSearch || '').toLowerCase();
     const filtered = articles.filter(a => {
       if (!a) return false;
       const titleMatch = a.title ? a.title.toLowerCase().includes(q) : false;
@@ -222,9 +222,9 @@ export function LibraryTabContentInner() {
 
   const startEditing = () => { 
     setEditContent(selectedArticle.raw_content || selectedArticle.content || ''); 
-    setEditTitle(selectedArticle.title);
+    setEditTitle(selectedArticle.title || '');
     setEditChampion(selectedArticle.champion || '');
-    setEditKeywords((selectedArticle.tags || []).join(', '));
+    setEditKeywords(Array.isArray(selectedArticle.tags) ? selectedArticle.tags.join(', ') : '');
     setEditing(true); 
   };
   const cancelEditing = () => { 
@@ -435,7 +435,7 @@ export function LibraryTabContentInner() {
               )}
               <div className="flex flex-wrap gap-4 text-xs text-gray-400">
                 <span className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-full font-bold uppercase tracking-widest border border-white/5"><User size={14} className="text-[#a78bfa]" /> AI AGENT</span>
-                <span className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-full font-bold uppercase tracking-widest border border-white/5"><Clock size={14} className="text-[#a78bfa]" /> {new Date(selectedArticle.created_at).toLocaleString('ja-JP')}</span>
+                <span className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-full font-bold uppercase tracking-widest border border-white/5"><Clock size={14} className="text-[#a78bfa]" /> {selectedArticle.created_at ? new Date(selectedArticle.created_at).toLocaleString('ja-JP') : '日付不明'}</span>
               </div>
             </header>
 
@@ -595,13 +595,13 @@ export function LibraryTabContentInner() {
                               </h3>
                             </div>
                             <div className="flex gap-2 flex-wrap ml-6">
-                              {article.tags?.map((kw: string, kidx: number) => (
+                              {article.tags && Array.isArray(article.tags) && article.tags.map((kw: string, kidx: number) => (
                                 <span key={kidx} className="text-[10px] text-gray-400 bg-black/40 border border-white/5 px-2 py-1 rounded-md">{kw}</span>
                               ))}
                             </div>
                           </div>
                           <div className="flex items-center gap-6">
-                            <div className="text-xs text-gray-500 font-mono flex items-center gap-2"><Clock size={14} className="text-[#a78bfa]/50" /> {new Date(article.created_at).toLocaleDateString('ja-JP')}</div>
+                            <div className="text-xs text-gray-500 font-mono flex items-center gap-2"><Clock size={14} className="text-[#a78bfa]/50" /> {article.created_at ? new Date(article.created_at).toLocaleDateString('ja-JP') : '日付不明'}</div>
                             <button onClick={(e) => deleteArticle(article.id, e)} className="text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition-all p-2 rounded-lg"><Trash2 size={16} /></button>
                           </div>
                         </div>
@@ -632,10 +632,10 @@ export function LibraryTabContentInner() {
                                   e.stopPropagation();
                                   setSelectedArticle(article);
                                   // 編集モードに直接切り替え
-                                  setEditContent(article.content);
+                                  setEditContent(article.content || article.raw_content || '');
                                   setEditTitle(article.title || '');
                                   setEditChampion(article.champion || '');
-                                  setEditKeywords((article.tags || []).join(', '));
+                                  setEditKeywords(Array.isArray(article.tags) ? article.tags.join(', ') : '');
                                   setEditing(true);
                                 }}
                                 className="px-4 py-2 glass-panel glass-panel-hover text-[#c89b3c] rounded-xl text-sm font-bold flex items-center gap-2 transition-colors"
