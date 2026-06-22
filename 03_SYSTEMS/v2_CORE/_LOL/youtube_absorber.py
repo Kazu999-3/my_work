@@ -293,11 +293,80 @@ class YouTubeAbsorber:
         
         return " ".join(lines)
 
+    def summarize_chunk(self, chunk_idx, total_chunks, chunk_text, title):
+        """巨大な字幕の1チャンクをGeminiで攻略要点（日本語）に中間要約する (Mapフェーズ)"""
+        if not self.client:
+            logger.error("Gemini Client is not initialized for chunk summarization.")
+            return ""
+
+        prompt = f"""
+        あなたはプロのLoL攻略コーチです。
+        動画「{title}」の音声書き起こしテキスト（一部、セグメント {chunk_idx + 1}/{total_chunks}）から、
+        ゲームの攻略に直接役立つ重要な知見（ルーン、アイテム、スキル回し、ウェーブ管理、対面ごとの立ち回り、マクロプランなど）を抽出し、
+        詳細かつ簡潔な日本語の箇条書き（箇条書き1つにつき1文）で要約してください。
+        
+        【制約事項】
+        - 挨拶、動画の導入部分、日常の雑談、高評価・チャンネル登録の促し、およびLoL以外の話題は完全に無視してください。
+        - 攻略の核心となる知見のみを残すこと。
+        - 余計な説明（「このパートでは〜」「以下は要約です」など）は一切含めず、純粋な要約の箇条書きのみを出力してください。
+        
+        【対象テキスト】
+        {chunk_text}
+        """
+
+        try:
+            # 429クォータ回避のためスリープは行わない（即時フォールバック優先）
+            res = generate_content_safe(
+                self.client,
+                prompt,
+                feature_name="youtube_absorber",
+                sleep_on_rate_limit=False
+            )
+            return res
+        except Exception as e:
+            logger.error(f"❌ Failed to summarize chunk {chunk_idx + 1}: {e}")
+            return f"❌ [セグメント {chunk_idx + 1} 要約エラー: {e}]"
+
     def generate_bible(self, video_data, transcript):
-        # 3万文字制限チェック
+        # 3万文字制限チェック ➜ MapReduce（分割要約）にフォールバック
         if len(transcript) > 30000:
-            logger.error(f"❌ [YouTubeAbsorber] 字幕が制限文字数（30,000文字）を超えています: {len(transcript)}文字 ({video_data['title']})")
-            return "❌ エラー: 字幕が3万文字の制限を超えています。"
+            logger.info(f"🔄 [YouTubeAbsorber] 字幕が {len(transcript):,}文字 と制限文字数（30,000文字）を超えているため、MapReduce（分割要約）を開始します: {video_data['title']}")
+            
+            # 1. 1.2万文字ごとにテキストを分割
+            chunks = []
+            chunk_size = 12000
+            current_pos = 0
+            total_len = len(transcript)
+            
+            while current_pos < total_len:
+                if total_len - current_pos <= chunk_size:
+                    chunks.append(transcript[current_pos:])
+                    break
+                end_pos = current_pos + chunk_size
+                space_pos = transcript.rfind(" ", current_pos, end_pos)
+                if space_pos > current_pos:
+                    end_pos = space_pos
+                chunks.append(transcript[current_pos:end_pos])
+                current_pos = end_pos + 1
+                
+            # 2. 各チャンクをGeminiで要約 (Map)
+            logger.info(f"⏳ {len(chunks)}個のセグメントに分割完了。順次中間要約を実行します...")
+            summarized_parts = []
+            for i, chunk in enumerate(chunks):
+                logger.info(f" - セグメント {i+1}/{len(chunks)} の要約を試行中...")
+                summary = self.summarize_chunk(i, len(chunks), chunk, video_data["title"])
+                if summary and not summary.startswith("⚠️") and not summary.startswith("❌"):
+                    summarized_parts.append(summary)
+                else:
+                    logger.warning(f"⚠️ セグメント {i+1} の要約が空、またはエラーになりました。")
+                    
+            if not summarized_parts:
+                logger.error("❌ 全セグメントの要約に失敗したため、処理を打ち切ります。")
+                return "❌ エラー: 字幕の分割要約に失敗しました。"
+                
+            # 3. 中間要約を結合して transcript を上書き (Reduce)
+            transcript = "\n\n".join(summarized_parts)
+            logger.info(f"📉 中間要約により、字幕長が {total_len:,}文字 ➜ {len(transcript):,}文字 に圧縮されました。")
             
         import httpx
         
