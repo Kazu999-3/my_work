@@ -10,9 +10,15 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 import ChampSelect from '../../../components/ChampSelect';
 import { getFavorites, toggleFavoriteArticle } from '../../../components/FavoritesPanel';
+const parseDate = (dStr: any) => {
+  if (!dStr) return 0;
+  const t = new Date(dStr).getTime();
+  return isNaN(t) ? 0 : t;
+};
 
 export function LibraryTabContentInner() {
   const searchParams = useSearchParams();
+  const [isMounted, setIsMounted] = useState(false);
   const [articles, setArticles] = useState<any[]>([]);
   const [selectedArticle, setSelectedArticle] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -30,11 +36,21 @@ export function LibraryTabContentInner() {
   // アコーディオンプレビュー用（1つだけ展開）
   const [expandedId, setExpandedId] = useState<string | number | null>(null);
   const [favoriteArticles, setFavoriteArticles] = useState<number[]>([]);
+  const [visibleGroupsCount, setVisibleGroupsCount] = useState(20);
   const [toast, setToast] = useState<{ show: boolean; message: string; type: 'success' | 'error' | 'info' }>({
     show: false,
     message: '',
     type: 'success',
   });
+
+  // 検索条件やモード変更時に表示グループ数をリセット
+  useEffect(() => {
+    setVisibleGroupsCount(20);
+  }, [debouncedSearch, groupMode, sortOrder]);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // デバウンス処理
   useEffect(() => {
@@ -95,7 +111,7 @@ export function LibraryTabContentInner() {
         setArticles(validData);
 
         // URLパラメータ ?article=Id の自動選択処理
-        const articleId = searchParams.get('article');
+        const articleId = searchParams ? searchParams.get('article') : null;
         if (articleId) {
           const found = validData.find(a => String(a.id) === String(articleId));
           if (found) {
@@ -176,8 +192,8 @@ export function LibraryTabContentInner() {
     
     Object.keys(groups).forEach(key => {
       groups[key].sort((a, b) => {
-        const timeA = a.created_at ? new Date(a.created_at).getTime() : 0;
-        const timeB = b.created_at ? new Date(b.created_at).getTime() : 0;
+        const timeA = parseDate(a.created_at);
+        const timeB = parseDate(b.created_at);
         if (sortOrder === 'updated_desc') return timeB - timeA;
         if (sortOrder === 'updated_asc') return timeA - timeB;
         
@@ -189,13 +205,13 @@ export function LibraryTabContentInner() {
 
     return Object.entries(groups).sort((a, b) => {
       if (sortOrder === 'updated_desc') {
-        const maxB = b[1].length > 0 ? Math.max(...b[1].map(x => x.created_at ? new Date(x.created_at).getTime() : 0)) : 0;
-        const maxA = a[1].length > 0 ? Math.max(...a[1].map(x => x.created_at ? new Date(x.created_at).getTime() : 0)) : 0;
+        const maxB = b[1].length > 0 ? Math.max(...b[1].map(x => parseDate(x.created_at))) : 0;
+        const maxA = a[1].length > 0 ? Math.max(...a[1].map(x => parseDate(x.created_at))) : 0;
         return maxB - maxA;
       }
       if (sortOrder === 'updated_asc') {
-        const minB = b[1].length > 0 ? Math.min(...b[1].map(x => x.created_at ? new Date(x.created_at).getTime() : 0)) : 0;
-        const minA = a[1].length > 0 ? Math.min(...a[1].map(x => x.created_at ? new Date(x.created_at).getTime() : 0)) : 0;
+        const minB = b[1].length > 0 ? Math.min(...b[1].map(x => parseDate(x.created_at))) : 0;
+        const minA = a[1].length > 0 ? Math.min(...a[1].map(x => parseDate(x.created_at))) : 0;
         return minA - minB;
       }
       return a[0].localeCompare(b[0]);
@@ -435,7 +451,7 @@ export function LibraryTabContentInner() {
               )}
               <div className="flex flex-wrap gap-4 text-xs text-gray-400">
                 <span className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-full font-bold uppercase tracking-widest border border-white/5"><User size={14} className="text-[#a78bfa]" /> AI AGENT</span>
-                <span className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-full font-bold uppercase tracking-widest border border-white/5"><Clock size={14} className="text-[#a78bfa]" /> {selectedArticle.created_at ? new Date(selectedArticle.created_at).toLocaleString('ja-JP') : '日付不明'}</span>
+                <span className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-full font-bold uppercase tracking-widest border border-white/5"><Clock size={14} className="text-[#a78bfa]" /> {isMounted && selectedArticle.created_at ? new Date(selectedArticle.created_at).toLocaleString('ja-JP') : '日付不明'}</span>
               </div>
             </header>
 
@@ -449,7 +465,11 @@ export function LibraryTabContentInner() {
               </div>
             ) : (
               <div className="prose prose-invert prose-purple max-w-none text-[15px] leading-loose text-gray-300">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>{selectedArticle.raw_content || selectedArticle.content}</ReactMarkdown>
+                {typeof (selectedArticle.raw_content || selectedArticle.content) === 'string' ? (
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{selectedArticle.raw_content || selectedArticle.content}</ReactMarkdown>
+                ) : (
+                  <p className="text-gray-500 italic">本文が空です</p>
+                )}
               </div>
             )}
           </div>
@@ -559,122 +579,138 @@ export function LibraryTabContentInner() {
         <div className="flex justify-center items-center py-20"><div className="w-8 h-8 border-4 border-[#a78bfa] border-t-transparent rounded-full animate-spin"></div></div>
       ) : grouped.length > 0 ? (
         <div className="space-y-6">
-          {grouped.map(([groupName, items]) => (
-            <div key={groupName} className="glass-panel rounded-2xl overflow-hidden group">
-              <button onClick={() => toggleGroup(groupName)} className="w-full flex items-center gap-4 p-5 bg-white/[0.02] hover:bg-white/[0.05] transition-colors text-left border-b border-white/5">
-                <span className="text-[#a78bfa] transition-transform duration-300" style={{ transform: collapsedGroups[groupName] ? 'rotate(-90deg)' : 'rotate(0)' }}><ChevronDown size={20} /></span>
-                <span className="bg-[#a78bfa]/10 text-[#a78bfa] border border-[#a78bfa]/30 px-4 py-1.5 rounded-lg font-black font-mono tracking-wider shadow-[0_0_10px_rgba(167,139,250,0.1)]">{groupName}</span>
-                <span className="text-gray-500 text-sm font-bold">({items.length} 記事)</span>
-              </button>
+          {grouped.slice(0, visibleGroupsCount).map(([groupName, items]) => {
+            const isCollapsed = collapsedGroups[groupName] === undefined ? true : collapsedGroups[groupName];
+            return (
+              <div key={groupName} className="glass-panel rounded-2xl overflow-hidden group">
+                <button onClick={() => toggleGroup(groupName)} className="w-full flex items-center gap-4 p-5 bg-white/[0.02] hover:bg-white/[0.05] transition-colors text-left border-b border-white/5">
+                  <span className="text-[#a78bfa] transition-transform duration-300" style={{ transform: isCollapsed ? 'rotate(-90deg)' : 'rotate(0)' }}><ChevronDown size={20} /></span>
+                  <span className="bg-[#a78bfa]/10 text-[#a78bfa] border border-[#a78bfa]/30 px-4 py-1.5 rounded-lg font-black font-mono tracking-wider shadow-[0_0_10px_rgba(167,139,250,0.1)]">{groupName}</span>
+                  <span className="text-gray-500 text-sm font-bold">({items.length} 記事)</span>
+                </button>
 
-              <div 
-                className="transition-all duration-300 ease-in-out overflow-hidden" 
-                style={{ 
-                  maxHeight: collapsedGroups[groupName] ? '0px' : '9999px',
-                  opacity: collapsedGroups[groupName] ? 0 : 1 
-                }}
-              >
-                <div className="divide-y divide-white/5">
-                  {items.map(article => {
-                    const isExpanded = expandedId === article.id;
-                    return (
-                      <div key={article.id} className="transition-colors">
-                        {/* 記事ヘッダー（クリックでアコーディオン展開） */}
-                        <div
-                          onClick={() => setExpandedId(isExpanded ? null : article.id)}
-                          className="p-5 hover:bg-white/[0.03] cursor-pointer flex justify-between items-center group/item"
-                        >
-                          <div className="flex flex-col gap-2">
-                            <div className="flex items-center gap-2">
-                              <span className={`text-[#a78bfa] transition-transform duration-300 ${isExpanded ? 'rotate-90' : 'rotate-0'}`}>
-                                <ChevronDown size={16} />
-                              </span>
-                              <h3 className={`font-bold transition-colors flex items-center gap-2 ${isExpanded ? 'text-[#a78bfa]' : 'text-gray-200 group-hover/item:text-[#a78bfa]'}`}>
-                                {favoriteArticles.includes(article.id) && <StarIcon size={14} className="text-amber-400 shrink-0" fill="currentColor" />}
-                                {article.title ? article.title.replace(/_/g, ' ') : ''}
-                              </h3>
+                <div 
+                  className="transition-all duration-300 ease-in-out overflow-hidden" 
+                  style={{ 
+                    maxHeight: isCollapsed ? '0px' : '9999px',
+                    opacity: isCollapsed ? 0 : 1 
+                  }}
+                >
+                  {!isCollapsed && (
+                    <div className="divide-y divide-white/5">
+                      {items.map(article => {
+                        const isExpanded = expandedId === article.id;
+                        return (
+                          <div key={article.id} className="transition-colors">
+                            {/* 記事ヘッダー（クリックでアコーディオン展開） */}
+                            <div
+                              onClick={() => setExpandedId(isExpanded ? null : article.id)}
+                              className="p-5 hover:bg-white/[0.03] cursor-pointer flex justify-between items-center group/item"
+                            >
+                              <div className="flex flex-col gap-2">
+                                <div className="flex items-center gap-2">
+                                  <span className={`text-[#a78bfa] transition-transform duration-300 ${isExpanded ? 'rotate-90' : 'rotate-0'}`}>
+                                    <ChevronDown size={16} />
+                                  </span>
+                                  <h3 className={`font-bold transition-colors flex items-center gap-2 ${isExpanded ? 'text-[#a78bfa]' : 'text-gray-200 group-hover/item:text-[#a78bfa]'}`}>
+                                    {favoriteArticles.includes(article.id) && <StarIcon size={14} className="text-amber-400 shrink-0" fill="currentColor" />}
+                                    {article.title ? article.title.replace(/_/g, ' ') : ''}
+                                  </h3>
+                                </div>
+                                <div className="flex gap-2 flex-wrap ml-6">
+                                  {article.tags && Array.isArray(article.tags) && article.tags.map((kw: string, kidx: number) => (
+                                    <span key={kidx} className="text-[10px] text-gray-400 bg-black/40 border border-white/5 px-2 py-1 rounded-md">{kw}</span>
+                                  ))}
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-6">
+                                <div className="text-xs text-gray-500 font-mono flex items-center gap-2"><Clock size={14} className="text-[#a78bfa]/50" /> {isMounted && article.created_at ? new Date(article.created_at).toLocaleDateString('ja-JP') : '日付不明'}</div>
+                                <button onClick={(e) => deleteArticle(article.id, e)} className="text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition-all p-2 rounded-lg"><Trash2 size={16} /></button>
+                              </div>
                             </div>
-                            <div className="flex gap-2 flex-wrap ml-6">
-                              {article.tags && Array.isArray(article.tags) && article.tags.map((kw: string, kidx: number) => (
-                                <span key={kidx} className="text-[10px] text-gray-400 bg-black/40 border border-white/5 px-2 py-1 rounded-md">{kw}</span>
-                              ))}
+                            {/* アコーディオン展開エリア（プレビュー + 操作ボタン） */}
+                            <div
+                              className="overflow-hidden transition-all duration-300 ease-in-out"
+                              style={{ maxHeight: isExpanded ? '1000px' : '0px', opacity: isExpanded ? 1 : 0 }}
+                            >
+                              <div className="px-5 pb-5 ml-6 border-l-2 border-[#a78bfa]/20">
+                                {/* Markdownプレビュー */}
+                                <div className="prose prose-invert prose-purple prose-sm max-w-none max-h-[400px] overflow-y-auto p-4 bg-black/30 border border-white/5 rounded-xl text-sm leading-relaxed mb-4 scrollbar-thin">
+                                  {typeof (article.raw_content || article.content) === 'string' ? (
+                                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{article.raw_content || article.content}</ReactMarkdown>
+                                  ) : (
+                                    <p className="text-gray-500 italic">本文が空です</p>
+                                  )}
+                                </div>
+                                {/* 操作ボタン群 */}
+                                <div className="flex gap-3 flex-wrap">
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); setSelectedArticle(article); }}
+                                    className="px-4 py-2 glass-panel glass-panel-hover text-[#a78bfa] rounded-xl text-sm font-bold flex items-center gap-2 transition-colors"
+                                  >
+                                    <Eye size={14} /> 全文を読む
+                                  </button>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setSelectedArticle(article);
+                                      // 編集モードに直接切り替え
+                                      setEditContent(article.content || article.raw_content || '');
+                                      setEditTitle(article.title || '');
+                                      setEditChampion(article.champion || '');
+                                      setEditKeywords(Array.isArray(article.tags) ? article.tags.join(', ') : '');
+                                      setEditing(true);
+                                    }}
+                                    className="px-4 py-2 glass-panel glass-panel-hover text-[#c89b3c] rounded-xl text-sm font-bold flex items-center gap-2 transition-colors"
+                                  >
+                                    <Edit2 size={14} /> 編集する
+                                  </button>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      copyPublishCommand(article.champion || article.title?.split(' ')[0] || '');
+                                    }}
+                                    className="px-4 py-2 glass-panel glass-panel-hover text-[#00cfef] rounded-xl text-sm font-bold flex items-center gap-2 transition-colors"
+                                  >
+                                    <Terminal size={14} /> 投稿コマンド
+                                  </button>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleToggleFavorite(article.id, article.title || '');
+                                    }}
+                                    className={`px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-all border ${
+                                      favoriteArticles.includes(article.id)
+                                        ? 'bg-amber-400/20 border-amber-400 text-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.2)]'
+                                        : 'glass-panel text-gray-400 hover:text-white border-transparent'
+                                    }`}
+                                  >
+                                    <StarIcon size={14} fill={favoriteArticles.includes(article.id) ? "currentColor" : "none"} />
+                                    {favoriteArticles.includes(article.id) ? 'お気に入り解除' : 'お気に入り'}
+                                  </button>
+                                </div>
+                              </div>
                             </div>
                           </div>
-                          <div className="flex items-center gap-6">
-                            <div className="text-xs text-gray-500 font-mono flex items-center gap-2"><Clock size={14} className="text-[#a78bfa]/50" /> {article.created_at ? new Date(article.created_at).toLocaleDateString('ja-JP') : '日付不明'}</div>
-                            <button onClick={(e) => deleteArticle(article.id, e)} className="text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition-all p-2 rounded-lg"><Trash2 size={16} /></button>
-                          </div>
-                        </div>
-                        {/* アコーディオン展開エリア（プレビュー + 操作ボタン） */}
-                        <div
-                          className="overflow-hidden transition-all duration-300 ease-in-out"
-                          style={{ maxHeight: isExpanded ? '1000px' : '0px', opacity: isExpanded ? 1 : 0 }}
-                        >
-                          <div className="px-5 pb-5 ml-6 border-l-2 border-[#a78bfa]/20">
-                            {/* Markdownプレビュー */}
-                            <div className="prose prose-invert prose-purple prose-sm max-w-none max-h-[400px] overflow-y-auto p-4 bg-black/30 border border-white/5 rounded-xl text-sm leading-relaxed mb-4 scrollbar-thin">
-                              {article.raw_content || article.content ? (
-                                <ReactMarkdown remarkPlugins={[remarkGfm]}>{article.raw_content || article.content}</ReactMarkdown>
-                              ) : (
-                                <p className="text-gray-500 italic">本文が空です</p>
-                              )}
-                            </div>
-                            {/* 操作ボタン群 */}
-                            <div className="flex gap-3 flex-wrap">
-                              <button
-                                onClick={(e) => { e.stopPropagation(); setSelectedArticle(article); }}
-                                className="px-4 py-2 glass-panel glass-panel-hover text-[#a78bfa] rounded-xl text-sm font-bold flex items-center gap-2 transition-colors"
-                              >
-                                <Eye size={14} /> 全文を読む
-                              </button>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setSelectedArticle(article);
-                                  // 編集モードに直接切り替え
-                                  setEditContent(article.content || article.raw_content || '');
-                                  setEditTitle(article.title || '');
-                                  setEditChampion(article.champion || '');
-                                  setEditKeywords(Array.isArray(article.tags) ? article.tags.join(', ') : '');
-                                  setEditing(true);
-                                }}
-                                className="px-4 py-2 glass-panel glass-panel-hover text-[#c89b3c] rounded-xl text-sm font-bold flex items-center gap-2 transition-colors"
-                              >
-                                <Edit2 size={14} /> 編集する
-                              </button>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  copyPublishCommand(article.champion || article.title?.split(' ')[0] || '');
-                                }}
-                                className="px-4 py-2 glass-panel glass-panel-hover text-[#00cfef] rounded-xl text-sm font-bold flex items-center gap-2 transition-colors"
-                              >
-                                <Terminal size={14} /> 投稿コマンド
-                              </button>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleToggleFavorite(article.id, article.title || '');
-                                }}
-                                className={`px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-all border ${
-                                  favoriteArticles.includes(article.id)
-                                    ? 'bg-amber-400/20 border-amber-400 text-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.2)]'
-                                    : 'glass-panel text-gray-400 hover:text-white border-transparent'
-                                }`}
-                              >
-                                <StarIcon size={14} fill={favoriteArticles.includes(article.id) ? "currentColor" : "none"} />
-                                {favoriteArticles.includes(article.id) ? 'お気に入り解除' : 'お気に入り'}
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               </div>
+            );
+          })}
+
+          {grouped.length > visibleGroupsCount && (
+            <div className="flex justify-center pt-6">
+              <button 
+                onClick={() => setVisibleGroupsCount(prev => prev + 20)}
+                className="px-6 py-3 bg-[#a78bfa] text-black hover:-translate-y-0.5 shadow-lg shadow-[#a78bfa]/20 rounded-xl text-sm font-black transition-all"
+              >
+                もっとグループを読み込む (残り {grouped.length - visibleGroupsCount} グループ)
+              </button>
             </div>
-          ))}
+          )}
         </div>
       ) : (
         <div className="py-24 text-center glass-panel rounded-2xl flex flex-col items-center justify-center">
