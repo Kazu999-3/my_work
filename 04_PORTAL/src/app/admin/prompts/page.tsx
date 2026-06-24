@@ -65,7 +65,7 @@ export default function PromptsAdmin() {
       if (data && data.length > 0 && !selectedPrompt) {
         handleSelectPrompt(data[0]);
       } else if (selectedPrompt) {
-        const updatedSelected = data.find(p => p.prompt_id === selectedPrompt.prompt_id);
+        const updatedSelected = data.find((p: any) => p.prompt_id === selectedPrompt.prompt_id);
         if (updatedSelected) handleSelectPrompt(updatedSelected);
       }
     } catch (err: any) {

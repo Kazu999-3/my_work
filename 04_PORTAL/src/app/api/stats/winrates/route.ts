@@ -27,7 +27,7 @@ export async function GET() {
 
     // 3. データ集計用の初期化
     const statsMap: Record<string, any> = {};
-    players.forEach(p => {
+    players.forEach((p: any) => {
       statsMap[p.name] = {
         name: p.name,
         totalGames: 0,

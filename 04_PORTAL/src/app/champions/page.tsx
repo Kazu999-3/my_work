@@ -98,7 +98,7 @@ function ChampionsContent() {
         const pending: Record<string, boolean> = {};
         const metas: Record<string, any> = {};
         if (data) {
-          data.forEach(row => {
+          data.forEach((row: any) => {
             dates[row.champion] = row.created_at;
             pending[row.champion] = !row.strategy; // strategyが空・nullならpending
             metas[row.champion] = row.patch_meta || null;
@@ -133,7 +133,7 @@ function ChampionsContent() {
       if (mData && mData.length > 0) {
         setMatchupsList(mData);
         let wins = 0; let k = 0; let d = 0; let a = 0;
-        mData.forEach(row => {
+        mData.forEach((row: any) => {
           const rd = row.raw_data || {};
           if (rd.result === 'Win') wins++;
           if (rd.my_kda) {

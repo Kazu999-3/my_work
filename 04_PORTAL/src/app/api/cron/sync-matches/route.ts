@@ -43,8 +43,8 @@ export async function GET(request: Request) {
       .select('id, name, puuid, discord_id, role_preferences, pity, off_pity')
       .not('puuid', 'is', null);
     
-    const allPuuids = allPlayers?.map(p => p.puuid) || [];
-    const allNames = allPlayers?.map(p => p.name) || [];
+    const allPuuids = allPlayers?.map((p: any) => p.puuid) || [];
+    const allNames = allPlayers?.map((p: any) => p.name) || [];
 
     const processedMatchIds = new Set<string>();
     let savedMatchesCount = 0;
@@ -77,10 +77,10 @@ export async function GET(request: Request) {
         let ktmMemberCount = 0;
         // ※riot.ts の fetchMatchDetails は現在 puuid を返していないので、名前かpuuidで判定
         // ここではRiotID（GameName）がKTMプレイヤーの名前と一致するかどうかで簡易判定する
-        matchDetails.participants.forEach(p => {
+        matchDetails.participants.forEach((p: any) => {
           // TODO: riotIdName が登録済みの name か ign と一致するか
           // 今回は簡易的に、RiotIdNameが含まれていればOKとする
-          if (allNames.some(n => n.toLowerCase() === p.riotIdName.toLowerCase() || p.riotIdName.includes(n))) {
+          if (allNames.some((n: any) => n.toLowerCase() === p.riotIdName.toLowerCase() || p.riotIdName.includes(n))) {
             ktmMemberCount++;
           }
         });
@@ -88,7 +88,7 @@ export async function GET(request: Request) {
         // 5人以上一致すればKTMの内戦とみなす
         if (ktmMemberCount >= 5) {
           // ktm_matchesに登録
-          const blueWin = matchDetails.participants.find(p => p.teamId === 100)?.win || false;
+          const blueWin = matchDetails.participants.find((p: any) => p.teamId === 100)?.win || false;
           await supabase.from('ktm_matches').insert({
             id: matchId,
             team_red_win: !blueWin,
@@ -106,7 +106,7 @@ export async function GET(request: Request) {
             if (roleStr === 'UTILITY') roleStr = 'SUP';
 
             // DB上のプレイヤーを特定
-            const dbPlayer = allPlayers?.find(k => k.name.toLowerCase() === p.riotIdName.toLowerCase() || p.riotIdName.includes(k.name));
+            const dbPlayer = allPlayers?.find((k: any) => k.name.toLowerCase() === p.riotIdName.toLowerCase() || p.riotIdName.includes(k.name));
             
             const discordId = dbPlayer ? dbPlayer.discord_id : `unknown-${p.riotIdName}`;
 

@@ -36,7 +36,7 @@ export default function MatchupsPage() {
     try {
       const { data, error } = await supabase.from('matchup_sentinel').select('*').order('created_at', { ascending: false });
       if (error) throw error;
-      setMatchups((data || []).filter(m => m.champion && m.enemy && m.enemy !== 'GLOBAL'));
+      setMatchups((data || []).filter((m: any) => m.champion && m.enemy && m.enemy !== 'GLOBAL'));
     } catch (err) { console.error(err); } finally { setLoading(false); }
   };
 

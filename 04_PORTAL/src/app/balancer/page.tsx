@@ -59,11 +59,11 @@ export default function BalancerPage() {
       if (error) throw error;
       
       // No順にソートして保持。ローカル用フラグ is_fixed も初期化
-      const playersWithNo = (data || []).sort((a, b) => {
+      const playersWithNo = (data || []).sort((a: any, b: any) => {
         const timeA = a.metadata?.joined_at ? new Date(a.metadata.joined_at).getTime() : Infinity;
         const timeB = b.metadata?.joined_at ? new Date(b.metadata.joined_at).getTime() : Infinity;
         return timeA - timeB;
-      }).map((p, index) => ({ ...p, no: index + 1, is_fixed: false }));
+      }).map((p: any, index: number) => ({ ...p, no: index + 1, is_fixed: false }));
 
       setPlayers(playersWithNo);
     } catch (err: any) {

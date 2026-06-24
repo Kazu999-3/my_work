@@ -70,7 +70,7 @@ export async function POST(req: Request) {
     const updates = [];
 
     for (const p of participants) {
-      const dbP = dbPlayers?.find(dp => dp.name === p.player_name);
+      const dbP = dbPlayers?.find((dp: any) => dp.name === p.player_name);
       if (!dbP) continue;
 
       // DBのpuuidとRiotのpuuidでマッチング。puuidがなければ簡易マッチング
@@ -101,7 +101,7 @@ export async function POST(req: Request) {
       const opponent = participants.find((pt: any) => pt.role === p.role && pt.team !== p.team);
       let opponentMmr = 1200;
       if (opponent) {
-        const oppDbP = dbPlayers?.find(dp => dp.name === opponent.player_name);
+        const oppDbP = dbPlayers?.find((dp: any) => dp.name === opponent.player_name);
         if (oppDbP) {
           opponentMmr = Number(oppDbP[`mmr_${opponent.role.toLowerCase()}`]) || 1200;
         }

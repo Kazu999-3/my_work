@@ -90,7 +90,7 @@ export default function LeaderboardPage() {
       // 集計用マップ
       // statsMap[playerName][role] = { games: 0, wins: 0 }
       const statsMap: Record<string, Record<string, { games: number; wins: number }>> = {};
-      players.forEach(p => {
+      players.forEach((p: any) => {
         statsMap[p.name] = {
           TOP: { games: 0, wins: 0 },
           JG: { games: 0, wins: 0 },
@@ -123,12 +123,12 @@ export default function LeaderboardPage() {
         const mmrKey = `mmr_${role.toLowerCase()}` as keyof typeof players[0];
         
         const roleRanking = players
-          .filter(p => {
+          .filter((p: any) => {
             const stats = statsMap[p.name]?.[role];
             // 仕様: そのレーンでの勝利数が0より大きい（つまり1勝以上している）プレイヤーのみ表示
             return stats && stats.wins > 0;
           })
-          .map(p => {
+          .map((p: any) => {
             const stats = statsMap[p.name][role];
             const mmr = Number(p[mmrKey] || 1200);
             const winRate = stats.games > 0 ? ((stats.wins / stats.games) * 100).toFixed(1) : '0.0';
@@ -141,7 +141,7 @@ export default function LeaderboardPage() {
               rankBadge: getRankBadge(mmr)
             };
           })
-          .sort((a, b) => b.mmr - a.mmr); // MMR降順
+          .sort((a: any, b: any) => b.mmr - a.mmr); // MMR降順
 
         newLeaderboard[role] = roleRanking;
       });

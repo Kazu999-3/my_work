@@ -58,8 +58,8 @@ export async function POST(req: Request) {
 
       if (partError || !participants || participants.length === 0) continue;
 
-      const blueTeam = participants.filter(p => p.team === 'BLUE');
-      const redTeam = participants.filter(p => p.team === 'RED');
+      const blueTeam = participants.filter((p: any) => p.team === 'BLUE');
+      const redTeam = participants.filter((p: any) => p.team === 'RED');
 
       for (const p of participants) {
         const memPlayer = playersMap.get(p.player_name);
@@ -70,7 +70,7 @@ export async function POST(req: Request) {
         const currentMmr = memPlayer[mmrKey] || 1200;
         
         const opponentList = p.team === 'BLUE' ? redTeam : blueTeam;
-        const opponent = opponentList.find(op => op.role.toUpperCase() === role);
+        const opponent = opponentList.find((op: any) => op.role.toUpperCase() === role);
         let opponentMmr = 1200;
         if (opponent) {
           const memOpponent = playersMap.get(opponent.player_name);
@@ -78,7 +78,7 @@ export async function POST(req: Request) {
             opponentMmr = memOpponent[`mmr_${opponent.role.toLowerCase()}`] || 1200;
           }
         } else {
-          opponentMmr = opponentList.reduce((acc, op) => {
+          opponentMmr = opponentList.reduce((acc: number, op: any) => {
             const mop = playersMap.get(op.player_name);
             return acc + (mop ? (mop[`mmr_${op.role.toLowerCase()}`] || 1200) : 1200);
           }, 0) / (opponentList.length || 1);
@@ -100,13 +100,13 @@ export async function POST(req: Request) {
         const totalGames = memPlayer.totalGames || 0;
         const totalWinRate = totalGames > 0 ? (memPlayer.totalWins / totalGames) * 100 : 50;
 
-        const teamParticipants = participants.filter(pt => pt.team === p.team);
-        const teamTotalKills = teamParticipants.reduce((acc, curr) => acc + (curr.kills || 0), 0);
+        const teamParticipants = participants.filter((pt: any) => pt.team === p.team);
+        const teamTotalKills = teamParticipants.reduce((acc: number, curr: any) => acc + (curr.kills || 0), 0);
         
-        const isDamageMvp = teamParticipants.every(pt => (p.damage_dealt || 0) >= (pt.damage_dealt || 0)) && (p.damage_dealt || 0) > 0;
-        const isObjectiveMvp = teamParticipants.every(pt => (p.objective_damage || 0) >= (pt.objective_damage || 0)) && (p.objective_damage || 0) > 0;
-        const isTankMvp = teamParticipants.every(pt => (p.damage_taken || 0) >= (pt.damage_taken || 0)) && (p.damage_taken || 0) > 0;
-        const isHealMvp = teamParticipants.every(pt => (p.heal_shield || 0) >= (pt.heal_shield || 0)) && (p.heal_shield || 0) > 0;
+        const isDamageMvp = teamParticipants.every((pt: any) => (p.damage_dealt || 0) >= (pt.damage_dealt || 0)) && (p.damage_dealt || 0) > 0;
+        const isObjectiveMvp = teamParticipants.every((pt: any) => (p.objective_damage || 0) >= (pt.objective_damage || 0)) && (p.objective_damage || 0) > 0;
+        const isTankMvp = teamParticipants.every((pt: any) => (p.damage_taken || 0) >= (pt.damage_taken || 0)) && (p.damage_taken || 0) > 0;
+        const isHealMvp = teamParticipants.every((pt: any) => (p.heal_shield || 0) >= (pt.heal_shield || 0)) && (p.heal_shield || 0) > 0;
 
         const ctx: MmrCalcContext = {
           currentMmr,

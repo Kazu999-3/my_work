@@ -54,7 +54,7 @@ export async function POST(request: Request) {
 
     // 2. Player インタフェースへマッピング
     const allPlayers: Player[] = participants.map(input => {
-      const dbPlayer = playersData.find(p => p.name === input.name);
+      const dbPlayer = playersData.find((p: any) => p.name === input.name);
       if (!dbPlayer) throw new Error(`プレイヤーが見つかりません: ${input.name}`);
       
       const roleMap: Record<string, Role | 'ALL'> = {
@@ -126,8 +126,8 @@ export async function POST(request: Request) {
         .limit(15);
 
       if (recentMatches && recentMatches.length > 0) {
-        const matchIds = recentMatches.map(m => m.id);
-        const recent5MatchIds = recentMatches.slice(0, 5).map(m => m.id);
+        const matchIds = recentMatches.map((m: any) => m.id);
+        const recent5MatchIds = recentMatches.slice(0, 5).map((m: any) => m.id);
 
         const { data: participantsHistory } = await supabase
           .from('ktm_match_participants')
@@ -136,7 +136,7 @@ export async function POST(request: Request) {
 
         if (participantsHistory) {
           const pByMatchId: Record<number, any[]> = {};
-          participantsHistory.forEach(ph => {
+          participantsHistory.forEach((ph: any) => {
             if (!pByMatchId[ph.match_id]) pByMatchId[ph.match_id] = [];
             pByMatchId[ph.match_id].push(ph);
           });
@@ -151,12 +151,12 @@ export async function POST(request: Request) {
             const parts1 = pByMatchId[m1.id] || [];
             const parts2 = pByMatchId[m2.id] || [];
 
-            const winners1 = parts1.filter(p => p.team === wTeam1).map(p => p.player_name).filter(Boolean);
-            const winners2 = parts2.filter(p => p.team === wTeam2).map(p => p.player_name).filter(Boolean);
+            const winners1 = parts1.filter((p: any) => p.team === wTeam1).map((p: any) => p.player_name).filter(Boolean);
+            const winners2 = parts2.filter((p: any) => p.team === wTeam2).map((p: any) => p.player_name).filter(Boolean);
 
             if (winners1.length === 5 && winners2.length === 5) {
               const set1 = new Set(winners1);
-              const isSame = winners2.every(name => set1.has(name));
+              const isSame = winners2.every((name: any) => set1.has(name));
               if (isSame) {
                 ctx.winStreakTeam = set1;
               }
@@ -167,7 +167,7 @@ export async function POST(request: Request) {
             const matchParts = pByMatchId[matchId] || [];
             
             // Side History の構築 (直近15試合すべてを使用、player_nameベース)
-            matchParts.forEach(p => {
+            matchParts.forEach((p: any) => {
               const pName = p.player_name;
               if (!pName) return;
               if (!ctx.sideHistory[pName]) ctx.sideHistory[pName] = { BLUE: 0, RED: 0 };

@@ -26,7 +26,7 @@ export async function GET(request: Request) {
     }
 
     // match_id リストを作成
-    const matchIds = myMatches.map(m => m.match_id);
+    const matchIds = myMatches.map((m: any) => m.match_id);
 
     // 2. それらの試合に同席した全員のデータを一括取得
     const { data: allParticipants, error: allError } = await supabase
@@ -40,7 +40,7 @@ export async function GET(request: Request) {
     // 3. マップ化して集計を容易にする
     // myMatchesMap[match_id] = { team, isWin }
     const myMatchesMap: Record<number, { team: string, isWin: boolean }> = {};
-    myMatches.forEach(m => {
+    myMatches.forEach((m: any) => {
       const winningTeam = Array.isArray(m.ktm_matches) 
         ? (m.ktm_matches[0] as any)?.winning_team 
         : (m.ktm_matches as any)?.winning_team;
@@ -55,7 +55,7 @@ export async function GET(request: Request) {
     const rivals: Record<string, { games: number, wins: number }> = {};
 
     // 参加者レコードをループして集計
-    allParticipants.forEach(p => {
+    allParticipants.forEach((p: any) => {
       const myMatch = myMatchesMap[p.match_id];
       if (!myMatch) return;
 

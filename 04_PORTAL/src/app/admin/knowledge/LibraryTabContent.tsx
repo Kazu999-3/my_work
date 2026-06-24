@@ -107,9 +107,8 @@ export function LibraryTabContentInner() {
       const { data, error } = await supabase
         .from('personal_knowledge')
         .select('id, created_at, title, content, raw_content, source_url, genre, tags, champion')
-        .eq('genre', 'LoL攻略')
         .order('created_at', { ascending: false })
-        .limit(1000);
+        .limit(2000);
       if (!error && data) {
         // titleがnullまたは空文字、もしくはtagsに'__DELETED__'が含まれるものを除外する
         const validData = data.filter((a: any) => a && a.title && (!a.tags || !a.tags.includes('__DELETED__')));
@@ -593,7 +592,7 @@ export function LibraryTabContentInner() {
       ) : grouped.length > 0 ? (
         <div className="space-y-6">
           {grouped.slice(0, visibleGroupsCount).map(([groupName, items]) => {
-            const isCollapsed = collapsedGroups[groupName] === undefined ? true : collapsedGroups[groupName];
+            const isCollapsed = collapsedGroups[groupName] === undefined ? false : collapsedGroups[groupName];
             return (
               <div key={groupName} className="glass-panel rounded-2xl overflow-hidden group">
                 <button onClick={() => toggleGroup(groupName)} className="w-full flex items-center gap-4 p-5 bg-white/[0.02] hover:bg-white/[0.05] transition-colors text-left border-b border-white/5">

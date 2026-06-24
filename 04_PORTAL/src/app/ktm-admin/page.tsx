@@ -254,7 +254,7 @@ export default function KtmAdminPage() {
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'ktm_players' },
-        (payload) => {
+        (payload: any) => {
           console.log('Realtime change detected in ktm_players:', payload);
           // 他ユーザーによる追加・編集・削除が発生した際に自動で再読み込み
           fetchPlayers();

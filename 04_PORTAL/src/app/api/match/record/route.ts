@@ -62,7 +62,7 @@ export async function POST(request: Request) {
     const results = [];
     
     for (const input of participants) {
-      const dbP = dbPlayers.find(p => p.name === input.name);
+      const dbP = dbPlayers.find((p: any) => p.name === input.name);
       if (!dbP) continue;
 
       const roleMmrKey = `mmr_${input.role.toLowerCase()}` as keyof typeof dbP;
@@ -70,7 +70,7 @@ export async function POST(request: Request) {
 
       // 対面相手のMMRを探す
       const opponent = participants.find((p: any) => p.role === input.role && p.team !== input.team);
-      const oppDbP = opponent ? dbPlayers.find(p => p.name === opponent.name) : null;
+      const oppDbP = opponent ? dbPlayers.find((p: any) => p.name === opponent.name) : null;
       const oppMmrKey = opponent ? `mmr_${opponent.role.toLowerCase()}` as keyof typeof oppDbP : null;
       const opponentMmr = oppDbP && oppMmrKey ? (Number(oppDbP[oppMmrKey]) || 1200) : 1200;
 
@@ -256,7 +256,7 @@ export async function POST(request: Request) {
     if (apError) {
       throw new Error(`アクティブプレイヤー一覧の取得失敗: ${apError.message}`);
     } else if (allActivePlayers) {
-      const waitingPlayers = allActivePlayers.filter(p => !names.includes(p.name));
+      const waitingPlayers = allActivePlayers.filter((p: any) => !names.includes(p.name));
       
       // 待機プレイヤーのPityを一括更新 (+10)
       for (const p of waitingPlayers) {
@@ -276,8 +276,8 @@ export async function POST(request: Request) {
     try {
       const webhookUrl = process.env.DISCORD_KTM_WEBHOOK_URL;
       if (webhookUrl) {
-        const blueTeam = results.filter(r => r.team === 'BLUE');
-        const redTeam = results.filter(r => r.team === 'RED');
+        const blueTeam = results.filter((r: any) => r.team === 'BLUE');
+        const redTeam = results.filter((r: any) => r.team === 'RED');
         
         const formatPlayer = (p: any) => {
           const delta = p.mmrDelta > 0 ? `+${p.mmrDelta}` : `${p.mmrDelta}`;
@@ -289,9 +289,9 @@ export async function POST(request: Request) {
         const roles = ['TOP', 'JG', 'MID', 'ADC', 'SUP'];
         const icons: Record<string, string> = { TOP: '🛡️', JG: '🌲', MID: '🔥', ADC: '🏹', SUP: '✨' };
         
-        const matchupsText = roles.map(role => {
-          const pb = blueTeam.find(p => p.role === role);
-          const pr = redTeam.find(p => p.role === role);
+        const matchupsText = roles.map((role: any) => {
+          const pb = blueTeam.find((p: any) => p.role === role);
+          const pr = redTeam.find((p: any) => p.role === role);
           const bText = pb ? formatPlayer(pb) : '-';
           const rText = pr ? formatPlayer(pr) : '-';
           return `${icons[role]} **${role}**: ${bText} 🆚 ${rText}`;

@@ -48,7 +48,7 @@ export default function SynergyPage() {
           .from('ktm_players')
           .select('name');
         
-        const activePlayerNames = new Set(activePlayersData?.map(p => p.name) || []);
+        const activePlayerNames = new Set(activePlayersData?.map((p: any) => p.name) || []);
 
         if (error) throw error;
         
