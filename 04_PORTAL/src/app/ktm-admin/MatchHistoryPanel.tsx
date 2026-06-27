@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabaseClient';
-import { History, Swords, Trophy, Calendar, RefreshCw, Edit, Trash2, Search, AlertCircle, X, Target } from 'lucide-react';
+import { History, Swords, Trophy, Calendar, RefreshCw, Edit, Trash2, Search, AlertCircle, X, Target, GripVertical } from 'lucide-react';
 import { getChampIcon } from '../../lib/ddragonClient';
 
 interface Match {
@@ -34,6 +34,7 @@ export default function MatchHistoryPanel() {
 
   // 編集・削除用の追加ステート
   const [editingMatch, setEditingMatch] = useState<Match | null>(null);
+  const [draggedParticipantIndex, setDraggedParticipantIndex] = useState<number | null>(null);
   const [playersPool, setPlayersPool] = useState<{ name: string }[]>([]);
   const [championsList, setChampionsList] = useState<{ id: string, name: string }[]>([]);
   const [activeChampSelectorPlayer, setActiveChampSelectorPlayer] = useState<string | null>(null);
@@ -163,6 +164,73 @@ export default function MatchHistoryPanel() {
       }
       return { ...prev, participants: nextParticipants };
     });
+  };
+
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    setDraggedParticipantIndex(index);
+    e.dataTransfer.setData('text/plain', index.toString());
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = (e: React.DragEvent, targetIndex: number) => {
+    e.preventDefault();
+    const rawIndex = e.dataTransfer.getData('text/plain');
+    if (!rawIndex) return;
+    const sourceIndex = parseInt(rawIndex, 10);
+
+    if (isNaN(sourceIndex) || sourceIndex === targetIndex) return;
+    if (!editingMatch) return;
+
+    const pStart = editingMatch.participants[sourceIndex];
+    const pTarget = editingMatch.participants[targetIndex];
+
+    // 同一チーム内のみスワップを許可する
+    if (pStart.team !== pTarget.team) return;
+
+    setEditingMatch(prev => {
+      if (!prev) return null;
+      const nextParticipants = [...prev.participants];
+
+      // role と team 以外のデータをスワップ
+      const updatedStart = {
+        ...pStart,
+        player_name: pTarget.player_name,
+        champion_name: pTarget.champion_name,
+        kills: pTarget.kills,
+        deaths: pTarget.deaths,
+        assists: pTarget.assists,
+        kda_score: pTarget.kda_score,
+        mmr_delta: pTarget.mmr_delta,
+        cs: pTarget.cs,
+        damage_dealt: pTarget.damage_dealt,
+        vision_score: pTarget.vision_score
+      };
+
+      const updatedTarget = {
+        ...pTarget,
+        player_name: pStart.player_name,
+        champion_name: pStart.champion_name,
+        kills: pStart.kills,
+        deaths: pStart.deaths,
+        assists: pStart.assists,
+        kda_score: pStart.kda_score,
+        mmr_delta: pStart.mmr_delta,
+        cs: pStart.cs,
+        damage_dealt: pStart.damage_dealt,
+        vision_score: pStart.vision_score
+      };
+
+      nextParticipants[sourceIndex] = updatedStart;
+      nextParticipants[targetIndex] = updatedTarget;
+
+      return { ...prev, participants: nextParticipants };
+    });
+
+    setDraggedParticipantIndex(null);
   };
 
   if (loading) {
@@ -367,12 +435,27 @@ export default function MatchHistoryPanel() {
                     const idx = editingMatch.participants.findIndex(p => p.team === 'BLUE' && p.role === role);
                     if (idx === -1) return null;
                     const p = editingMatch.participants[idx];
+                    const isDragging = draggedParticipantIndex === idx;
                     return (
-                      <div key={`edit-BLUE-${role}`} className="flex items-center gap-2 bg-gray-800/80 p-3 rounded-lg border border-gray-750">
+                      <div 
+                        key={`edit-BLUE-${role}`} 
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, idx)}
+                        onDragOver={handleDragOver}
+                        onDrop={(e) => handleDrop(e, idx)}
+                        onDragEnd={() => setDraggedParticipantIndex(null)}
+                        className={`flex items-center gap-2 bg-gray-800/80 p-3 rounded-lg border border-gray-750 cursor-grab active:cursor-grabbing hover:bg-gray-750 hover:border-gray-700 transition-all ${
+                          isDragging ? 'opacity-40 border-dashed border-indigo-500 bg-gray-900' : ''
+                        }`}
+                      >
+                        <div className="text-gray-500 hover:text-gray-300 transition cursor-grab shrink-0">
+                          <GripVertical className="h-4 w-4" />
+                        </div>
                         <div className="w-8 text-center font-bold text-gray-500 text-xs">{role}</div>
                         <select 
                           value={p.player_name}
                           onChange={e => handleEditingParticipantChange(idx, 'player_name', e.target.value)}
+                          onDragStart={e => e.stopPropagation()}
                           className="w-28 bg-gray-900 border border-gray-700 rounded px-2 py-1 text-white outline-none focus:border-blue-500 text-xs"
                         >
                           <option value="">選択...</option>
@@ -383,6 +466,7 @@ export default function MatchHistoryPanel() {
                         </select>
                         <button
                           onClick={() => setActiveChampSelectorPlayer(idx.toString())}
+                          onDragStart={e => e.stopPropagation()}
                           type="button"
                           className="w-28 bg-gray-900 border border-gray-700 hover:border-blue-500 rounded px-1.5 py-1 text-gray-300 hover:text-white text-xs flex items-center justify-between gap-1 transition shrink-0"
                         >
@@ -398,7 +482,7 @@ export default function MatchHistoryPanel() {
                             />
                           )}
                         </button>
-                        <div className="flex-1 flex gap-1 justify-end">
+                        <div className="flex-1 flex gap-1 justify-end" onDragStart={e => e.stopPropagation()}>
                           <input type="number" value={p.kills} onChange={e => handleEditingParticipantChange(idx, 'kills', e.target.value)} className="w-10 bg-gray-900 border border-gray-700 text-white text-center rounded text-xs py-0.5" placeholder="K" />
                           <span className="text-gray-500 text-xs self-center">/</span>
                           <input type="number" value={p.deaths} onChange={e => handleEditingParticipantChange(idx, 'deaths', e.target.value)} className="w-10 bg-gray-900 border border-red-900/50 text-red-200 text-center rounded text-xs py-0.5" placeholder="D" />
@@ -419,12 +503,27 @@ export default function MatchHistoryPanel() {
                     const idx = editingMatch.participants.findIndex(p => p.team === 'RED' && p.role === role);
                     if (idx === -1) return null;
                     const p = editingMatch.participants[idx];
+                    const isDragging = draggedParticipantIndex === idx;
                     return (
-                      <div key={`edit-RED-${role}`} className="flex items-center gap-2 bg-gray-800/80 p-3 rounded-lg border border-gray-750">
+                      <div 
+                        key={`edit-RED-${role}`} 
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, idx)}
+                        onDragOver={handleDragOver}
+                        onDrop={(e) => handleDrop(e, idx)}
+                        onDragEnd={() => setDraggedParticipantIndex(null)}
+                        className={`flex items-center gap-2 bg-gray-800/80 p-3 rounded-lg border border-gray-750 cursor-grab active:cursor-grabbing hover:bg-gray-750 hover:border-gray-700 transition-all ${
+                          isDragging ? 'opacity-40 border-dashed border-red-500 bg-gray-900' : ''
+                        }`}
+                      >
+                        <div className="text-gray-500 hover:text-gray-300 transition cursor-grab shrink-0">
+                          <GripVertical className="h-4 w-4" />
+                        </div>
                         <div className="w-8 text-center font-bold text-gray-500 text-xs">{role}</div>
                         <select 
                           value={p.player_name}
                           onChange={e => handleEditingParticipantChange(idx, 'player_name', e.target.value)}
+                          onDragStart={e => e.stopPropagation()}
                           className="w-28 bg-gray-900 border border-gray-700 rounded px-2 py-1 text-white outline-none focus:border-red-500 text-xs"
                         >
                           <option value="">選択...</option>
@@ -435,6 +534,7 @@ export default function MatchHistoryPanel() {
                         </select>
                         <button
                           onClick={() => setActiveChampSelectorPlayer(idx.toString())}
+                          onDragStart={e => e.stopPropagation()}
                           type="button"
                           className="w-28 bg-gray-900 border border-gray-700 hover:border-red-500 rounded px-1.5 py-1 text-gray-300 hover:text-white text-xs flex items-center justify-between gap-1 transition shrink-0"
                         >
@@ -450,7 +550,7 @@ export default function MatchHistoryPanel() {
                             />
                           )}
                         </button>
-                        <div className="flex-1 flex gap-1 justify-end">
+                        <div className="flex-1 flex gap-1 justify-end" onDragStart={e => e.stopPropagation()}>
                           <input type="number" value={p.kills} onChange={e => handleEditingParticipantChange(idx, 'kills', e.target.value)} className="w-10 bg-gray-900 border border-gray-700 text-white text-center rounded text-xs py-0.5" placeholder="K" />
                           <span className="text-gray-500 text-xs self-center">/</span>
                           <input type="number" value={p.deaths} onChange={e => handleEditingParticipantChange(idx, 'deaths', e.target.value)} className="w-10 bg-gray-900 border border-red-900/50 text-red-200 text-center rounded text-xs py-0.5" placeholder="D" />
