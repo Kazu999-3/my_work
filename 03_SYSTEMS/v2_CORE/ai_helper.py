@@ -112,7 +112,7 @@ def generate_content_safe(client, prompt, model_id=None, config=None, feature_na
                 except APIError as e:
                     last_error = e
                     is_quota = e.code == 429 or "RESOURCE_EXHAUSTED" in str(e) or "limit: 0" in str(e.message if hasattr(e, 'message') else e)
-                    is_service_error = e.code == 503
+                    is_service_error = e.code in (502, 503, 504)
                     
                     err_msg = e.message if hasattr(e, 'message') else str(e)
                     

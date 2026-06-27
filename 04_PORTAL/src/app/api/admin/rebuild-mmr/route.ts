@@ -44,19 +44,28 @@ export async function POST(req: Request) {
     
     if (mError || !allMatches) throw new Error("Failed to fetch matches");
 
+    // すべての参加者データを一括ロードして match_id ごとにマッピング (N+1問題の解消)
+    const { data: allParticipants, error: pErr } = await supabase.from('ktm_match_participants').select('*');
+    if (pErr) throw new Error("Failed to fetch participants");
+
+    const participantsByMatch = new Map<string, any[]>();
+    if (allParticipants) {
+      for (const part of allParticipants) {
+        const list = participantsByMatch.get(part.match_id) || [];
+        list.push(part);
+        participantsByMatch.set(part.match_id, list);
+      }
+    }
+
     let processedMatches = 0;
     const participantUpdates = [];
     const matchupHistoryMap = new Map<string, number>(); // "PlayerA<=>PlayerB:ROLE" -> count
 
     // 3. 過去の試合から順番に計算
     for (const match of allMatches) {
-      // 該当試合の参加者を取得
-      const { data: participants, error: partError } = await supabase
-        .from('ktm_match_participants')
-        .select('*')
-        .eq('match_id', match.id);
+      const participants = participantsByMatch.get(match.id) || [];
 
-      if (partError || !participants || participants.length === 0) continue;
+      if (!participants || participants.length === 0) continue;
 
       const blueTeam = participants.filter((p: any) => p.team === 'BLUE');
       const redTeam = participants.filter((p: any) => p.team === 'RED');
@@ -204,30 +213,38 @@ export async function POST(req: Request) {
     console.log(`[REBUILD] Calculated ${processedMatches} matches.`);
 
     // 4. 計算結果をDBに反映
-    // 4-1. ktm_match_participants の更新 (一括更新できない場合は分割)
-    for (const pu of participantUpdates) {
-      await supabase
+    // 4-1. ktm_match_participants の一括更新 (upsertによるバルクアップデート)
+    if (participantUpdates.length > 0) {
+      const { error: upsertError } = await supabase
         .from('ktm_match_participants')
-        .update({ kda_score: pu.kda_score, mmr_delta: pu.mmr_delta })
-        .eq('id', pu.id);
+        .upsert(participantUpdates.map(pu => ({
+          id: pu.id,
+          kda_score: pu.kda_score,
+          mmr_delta: pu.mmr_delta
+        })));
+      if (upsertError) throw new Error(`Failed to bulk update participants: ${upsertError.message}`);
     }
 
-    // 4-2. ktm_players の更新
-    for (const [name, p] of playersMap.entries()) {
+    // 4-2. ktm_players の一括更新 (upsertによるバルクアップデート)
+    const playerUpdates = Array.from(playersMap.entries()).map(([name, p]) => {
       const avgMmr = Math.round((p.mmr_top + p.mmr_jg + p.mmr_mid + p.mmr_adc + p.mmr_sup) / 5);
       console.log(`[DEBUG MMR] ${name} | TOP:${p.mmr_top} JG:${p.mmr_jg} MID:${p.mmr_mid} ADC:${p.mmr_adc} SUP:${p.mmr_sup} | AVG:${avgMmr} | WINS:${p.totalWins}/${p.totalGames}`);
-      
-      await supabase
+      return {
+        id: p.id,
+        mmr_top: p.mmr_top,
+        mmr_jg: p.mmr_jg,
+        mmr_mid: p.mmr_mid,
+        mmr_adc: p.mmr_adc,
+        mmr_sup: p.mmr_sup,
+        mmr: avgMmr
+      };
+    });
+
+    if (playerUpdates.length > 0) {
+      const { error: playerUpsertError } = await supabase
         .from('ktm_players')
-        .update({
-          mmr_top: p.mmr_top,
-          mmr_jg: p.mmr_jg,
-          mmr_mid: p.mmr_mid,
-          mmr_adc: p.mmr_adc,
-          mmr_sup: p.mmr_sup,
-          mmr: avgMmr
-        })
-        .eq('id', p.id);
+        .upsert(playerUpdates);
+      if (playerUpsertError) throw new Error(`Failed to bulk update players: ${playerUpsertError.message}`);
     }
 
     return NextResponse.json({ 

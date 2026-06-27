@@ -43,3 +43,14 @@ scratch/
 .agent/playwright_data/
 .vercel
 **/.env.bak
+
+# Generated products & temporary assets
+02_FACTORY/bible/kirei_bible/
+02_FACTORY/note_drafts/
+02_FACTORY/sns_assets/
+02_FACTORY/sns_promotions/
+
+# Wrangler / Cloudflare temporary files
+.wrangler/
+**/tmp/bundle-*/
+**/tmp/dev-*/

@@ -2,8 +2,8 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { calculateInitialMmr, calculateNewMMR, calculateKdaScore } from '../../../../lib/mmr';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 export async function POST(request: Request) {
@@ -28,11 +28,24 @@ export async function POST(request: Request) {
     const { data: allMatches, error: mError } = await supabase.from('ktm_matches').select('id, winning_team').order('created_at', { ascending: true });
     if (mError) throw mError;
 
+    // すべての参加者データを一括ロードして match_id ごとにマッピング (N+1問題の解消)
+    const { data: allParticipants, error: pErr } = await supabase.from('ktm_match_participants').select('*');
+    if (pErr) throw pErr;
+
+    const participantsByMatch = new Map<string, any[]>();
+    if (allParticipants) {
+      for (const part of allParticipants) {
+        const list = participantsByMatch.get(part.match_id) || [];
+        list.push(part);
+        participantsByMatch.set(part.match_id, list);
+      }
+    }
+
     const participantUpdates: any[] = [];
     const matchupHistoryMap = new Map<string, number>(); // "PlayerA<=>PlayerB:ROLE" -> count
 
     for (const match of allMatches) {
-      const { data: participants } = await supabase.from('ktm_match_participants').select('*').eq('match_id', match.id);
+      const participants = participantsByMatch.get(match.id) || [];
       if (!participants || participants.length === 0) continue;
       const blueTeam = participants.filter((p: any) => p.team === 'BLUE');
       const redTeam = participants.filter((p: any) => p.team === 'RED');
@@ -152,33 +165,40 @@ export async function POST(request: Request) {
       }
     }
 
-    // 参加者テーブルのKDA等更新
-    for (let i = 0; i < participantUpdates.length; i += 10) {
-      const chunk = participantUpdates.slice(i, i + 10);
-      const results = await Promise.all(chunk.map(pu => supabase.from('ktm_match_participants').update({ kda_score: pu.kda_score, mmr_delta: pu.mmr_delta }).eq('id', pu.id).select()));
-      for (let j = 0; j < results.length; j++) {
-        const res = results[j];
-        if (res.error) {
-          throw new Error(`Failed to update participant ID ${chunk[j].id}: ${res.error.message}`);
-        }
-        if (!res.data || res.data.length === 0) {
-          throw new Error(`Participant update affected 0 rows for ID ${chunk[j].id}. RLS policy might be blocking the write.`);
-        }
+    // 参加者テーブルのKDA等一括更新 (upsertによるバルクアップデート)
+    if (participantUpdates.length > 0) {
+      const { error: upsertError } = await supabase
+        .from('ktm_match_participants')
+        .upsert(participantUpdates.map(pu => ({
+          id: pu.id,
+          kda_score: pu.kda_score,
+          mmr_delta: pu.mmr_delta
+        })));
+      if (upsertError) {
+        throw new Error(`Failed to bulk update participants: ${upsertError.message}`);
       }
     }
 
-    // プレイヤーテーブルのMMR一括更新
-    for (const p of Array.from(playersMap.values())) {
+    // プレイヤーテーブルのMMR一括更新 (upsertによるバルクアップデート)
+    const playerUpdates = Array.from(playersMap.values()).map(p => {
       const avgMmr = Math.round((p.mmr_top + p.mmr_jg + p.mmr_mid + p.mmr_adc + p.mmr_sup) / 5);
-      const { data, error } = await supabase.from('ktm_players').update({
-        mmr_top: p.mmr_top, mmr_jg: p.mmr_jg, mmr_mid: p.mmr_mid, mmr_adc: p.mmr_adc, mmr_sup: p.mmr_sup, mmr: avgMmr
-      }).eq('id', p.id).select();
-      
-      if (error) {
-        throw new Error(`Failed to update player ${p.name}: ${error.message}`);
-      }
-      if (!data || data.length === 0) {
-        throw new Error(`Player ${p.name} update affected 0 rows. RLS policy might be blocking the write.`);
+      return {
+        id: p.id,
+        mmr_top: p.mmr_top,
+        mmr_jg: p.mmr_jg,
+        mmr_mid: p.mmr_mid,
+        mmr_adc: p.mmr_adc,
+        mmr_sup: p.mmr_sup,
+        mmr: avgMmr
+      };
+    });
+
+    if (playerUpdates.length > 0) {
+      const { error: playerUpsertError } = await supabase
+        .from('ktm_players')
+        .upsert(playerUpdates);
+      if (playerUpsertError) {
+        throw new Error(`Failed to bulk update players: ${playerUpsertError.message}`);
       }
     }
 
