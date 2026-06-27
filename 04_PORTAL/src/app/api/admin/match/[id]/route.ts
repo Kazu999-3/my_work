@@ -1,5 +1,9 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '../../../../../lib/supabaseClient';
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder';
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 export async function PUT(
   request: Request,
@@ -38,7 +42,11 @@ export async function PUT(
           deaths: Number(p.deaths) || 0,
           assists: Number(p.assists) || 0,
           champion_name: p.champion_name || null,
-          kda_score: Number(p.deaths) === 0 ? (Number(p.kills) + Number(p.assists)) * 1.2 : Number(((Number(p.kills) + Number(p.assists)) / Number(p.deaths)).toFixed(2))
+          kda_score: Number(p.deaths) === 0 ? (Number(p.kills) + Number(p.assists)) * 1.2 : Number(((Number(p.kills) + Number(p.assists)) / Number(p.deaths)).toFixed(2)),
+          cs: p.cs !== undefined ? Number(p.cs) : null,
+          damage_dealt: p.damage_dealt !== undefined ? Number(p.damage_dealt) : null,
+          vision_score: p.vision_score !== undefined ? Number(p.vision_score) : null,
+          mmr_delta: p.mmr_delta !== undefined ? Number(p.mmr_delta) : 0
         })
         .eq('match_id', matchId)
         .eq('role', p.role)
