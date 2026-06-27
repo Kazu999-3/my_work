@@ -476,13 +476,45 @@ function ChampionsContent() {
               {/* タイプ名 */}
               <div>
                 <label className="block text-xs text-gray-400 font-bold mb-1">プレイスタイルタイプ</label>
-                <input
-                  type="text"
-                  value={dataFields.jg_style?.type || ''}
-                  onChange={e => setJgStyleField('type', e.target.value)}
-                  placeholder="例: 侵入型, アサシン, コントロール"
-                  className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-white text-xs focus:outline-none focus:border-emerald-500 transition-colors"
-                />
+                {(dataFields.jg_style?.role || 'JUNGLE') === 'JUNGLE' ? (
+                  <>
+                    <select
+                      value={['侵入型', 'ガング型', 'ファーム型', 'タンク型'].includes(dataFields.jg_style?.type || '') ? dataFields.jg_style?.type : (dataFields.jg_style?.type ? 'other' : '')}
+                      onChange={e => {
+                        if (e.target.value === 'other') {
+                          setJgStyleField('type', 'その他');
+                        } else {
+                          setJgStyleField('type', e.target.value);
+                        }
+                      }}
+                      className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-white text-xs focus:outline-none focus:border-emerald-500 transition-colors"
+                    >
+                      <option value="">未設定</option>
+                      <option value="侵入型">侵入型 (インベード・1v1)</option>
+                      <option value="ガング型">ガング型 (CC・序盤関与)</option>
+                      <option value="ファーム型">ファーム型 (高速・キャリー)</option>
+                      <option value="タンク型">タンク型 (集団戦・エンゲージ)</option>
+                      <option value="other">その他 (手動入力する)</option>
+                    </select>
+                    {(!['', '侵入型', 'ガング型', 'ファーム型', 'タンク型'].includes(dataFields.jg_style?.type || '')) && (
+                      <input
+                        type="text"
+                        value={dataFields.jg_style?.type === 'その他' ? '' : (dataFields.jg_style?.type || '')}
+                        onChange={e => setJgStyleField('type', e.target.value)}
+                        placeholder="スタイルタイプを手動入力..."
+                        className="w-full mt-2 bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-white text-xs focus:outline-none focus:border-emerald-500 transition-colors"
+                      />
+                    )}
+                  </>
+                ) : (
+                  <input
+                    type="text"
+                    value={dataFields.jg_style?.type || ''}
+                    onChange={e => setJgStyleField('type', e.target.value)}
+                    placeholder="例: アサシン, コントロール"
+                    className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-white text-xs focus:outline-none focus:border-emerald-500 transition-colors"
+                  />
+                )}
               </div>
 
               {/* 先出し安定度 */}
