@@ -38,7 +38,7 @@ class EdgeWorkerDaemon:
         """指定したタスクタイプと競合するタスクが現在実行中（running）であるかを確認"""
         # 競合排他グループの定義
         conflict_groups = [
-            {"youtube_absorb", "dict_synthesizer"},  # DB/辞書書き換え競合
+            {"youtube_absorb", "dict_synthesizer", "champion_trend"},  # DB/辞書書き換え競合
             {"monetization_batch", "note_magazine_import"}  # note操作（Playwright）競合
         ]
         
@@ -97,33 +97,35 @@ class EdgeWorkerDaemon:
         return False
 
     def fetch_pending_task(self):
-        """status=pending のタスクを1件取得し、競合チェック後に即座に running にロックして返す"""
-        url = f"{self.supabase_url}/rest/v1/edge_tasks?status=eq.pending&order=created_at.asc&limit=1"
+        """status=pending のタスクを複数件取得し、競合チェックを行って最初に実行可能なタスクを running にロックして返す"""
+        url = f"{self.supabase_url}/rest/v1/edge_tasks?status=eq.pending&order=created_at.asc&limit=10"
         try:
             res = httpx.get(url, headers=self.headers, timeout=10)
             if res.status_code == 200 and res.json():
-                task = res.json()[0]
-                task_id = task["id"]
-                task_type = task["task_type"]
-                
-                # 競合排他制御チェック
-                if self.is_task_conflicting(task_type):
-                    return None  # 競合タスク実行中のためスルー
-                
-                # 楽観的ロック: status='pending' であることを条件に更新し、成功したか確認
-                update_url = f"{self.supabase_url}/rest/v1/edge_tasks?id=eq.{task_id}&status=eq.pending"
-                now_str = datetime.now(timezone.utc).isoformat()
-                update_payload = {
-                    "status": "running",
-                    "updated_at": now_str
-                }
-                
-                up_res = httpx.patch(update_url, headers=self.headers, json=update_payload, timeout=10)
-                if up_res.status_code == 200 and up_res.json():
-                    logger.info(f"🔒 タスクのロックを確保しました: {task_type} (ID: {task_id})")
-                    return task
-                else:
-                    logger.warning(f"⚠️ タスクロックの確保に競合が発生しました: ID: {task_id}")
+                tasks = res.json()
+                for task in tasks:
+                    task_id = task["id"]
+                    task_type = task["task_type"]
+                    
+                    # 競合排他制御チェック
+                    if self.is_task_conflicting(task_type):
+                        logger.info(f"⏳ タスク {task_type} (ID: {task_id}) は競合のためスキップし、他のタスクをチェックします。")
+                        continue  # 競合しているので次のタスクへ
+                    
+                    # 楽観的ロック: status='pending' であることを条件に更新し、成功したか確認
+                    update_url = f"{self.supabase_url}/rest/v1/edge_tasks?id=eq.{task_id}&status=eq.pending"
+                    now_str = datetime.now(timezone.utc).isoformat()
+                    update_payload = {
+                        "status": "running",
+                        "updated_at": now_str
+                    }
+                    
+                    up_res = httpx.patch(update_url, headers=self.headers, json=update_payload, timeout=10)
+                    if up_res.status_code == 200 and up_res.json():
+                        logger.info(f"🔒 タスクのロックを確保しました: {task_type} (ID: {task_id})")
+                        return task
+                    else:
+                        logger.warning(f"⚠️ タスクロックの確保に競合が発生しました: ID: {task_id}")
             return None
         except Exception as e:
             logger.error(f"❌ タスク取得中に通信エラーが発生しました: {e}")
@@ -167,6 +169,8 @@ class EdgeWorkerDaemon:
             env=env,
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             check=False
         )
         
@@ -241,6 +245,17 @@ class EdgeWorkerDaemon:
                 # 攻略辞典整理
                 logger.info("📚 [dict_synthesizer] 攻略辞典（DictSynthesizer）の統合・整理を実行...")
                 result = self._run_subprocess_task("03_SYSTEMS/v2_CORE/_LOL/dict_synthesizer.py")
+                self.update_task_status(task_id, "completed", result=result)
+                
+            elif task_type == "champion_trend":
+                # チャンピオントレンドの自動取得タスク
+                champion = payload.get("champion")
+                role = payload.get("role", "Jungle")
+                logger.info(f"🏆 [champion_trend] チャンピオントレンド取得を実行 ({champion} / {role})...")
+                result = self._run_subprocess_task(
+                    "03_SYSTEMS/v2_CORE/_LOL/champion_trend_worker.py",
+                    args=[champion, role]
+                )
                 self.update_task_status(task_id, "completed", result=result)
                 
             else:

@@ -33,6 +33,7 @@ function ChampionsContent() {
   const [champDates, setChampDates] = useState<Record<string, string>>({});
   const [champPending, setChampPending] = useState<Record<string, boolean>>({});
   const [champPatchMetas, setChampPatchMetas] = useState<Record<string, any>>({});
+  const [champJgStyles, setChampJgStyles] = useState<Record<string, any>>({});
 
   // 相対時間フォーマット関数
   const getRelativeTimeString = (timestampSec?: number) => {
@@ -51,7 +52,7 @@ function ChampionsContent() {
     strengths: '', weaknesses: '', powerSpikes: '', buildRunes: '',
     fullClearTime: '', counterChampions: '', mustBanChampions: '', pickRecommendation: '',
     strategy: '', note_draft: '', customFields: {},
-    patch_meta: null, pro_builds: []
+    patch_meta: null, pro_builds: [], jg_style: null
   });
   const [saving, setSaving] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -91,22 +92,25 @@ function ChampionsContent() {
           id: c.id, key: c.key, name: c.name, title: c.title, tags: c.tags,
           searchKey: `${c.id.toLowerCase()} ${c.name}`
         }));
-        return supabase.from('matchup_sentinel').select('champion, created_at, strategy, patch_meta:raw_data->patch_meta').eq('enemy', 'GLOBAL');
+        return supabase.from('matchup_sentinel').select('champion, created_at, strategy, patch_meta:raw_data->patch_meta, jg_style:raw_data->jg_style').eq('enemy', 'GLOBAL');
       })
       .then(({ data }) => {
         const dates: Record<string, string> = {};
         const pending: Record<string, boolean> = {};
         const metas: Record<string, any> = {};
+        const jgStyles: Record<string, any> = {};
         if (data) {
           data.forEach((row: any) => {
             dates[row.champion] = row.created_at;
             pending[row.champion] = !row.strategy; // strategyが空・nullならpending
             metas[row.champion] = row.patch_meta || null;
+            jgStyles[row.champion] = row.jg_style || null;
           });
         }
         setChampDates(dates);
         setChampPending(pending);
         setChampPatchMetas(metas);
+        setChampJgStyles(jgStyles);
         setChampions(fetchedChampions);
 
         // URLパラメータ ?select=ChampId の自動選択処理
@@ -157,7 +161,8 @@ function ChampionsContent() {
         strategy: noteData?.strategy || '', note_draft: rd.note_draft || '',
         customFields: rd.customFields || {},
         patch_meta: rd.patch_meta || null,
-        pro_builds: rd.pro_builds || []
+        pro_builds: rd.pro_builds || [],
+        jg_style: rd.jg_style || null
       });
     };
     loadChampionData(selected.id);
@@ -188,7 +193,7 @@ function ChampionsContent() {
       
       // ポーリング開始
       let attempts = 0;
-      const maxAttempts = 30; // 3秒 × 30回 = 90秒
+      const maxAttempts = 60; // 3秒 × 60回 = 180秒 (3分)
       
       const poll = async () => {
         if (attempts >= maxAttempts) {
@@ -233,11 +238,16 @@ function ChampionsContent() {
             note_draft: rd.note_draft || '',
             customFields: rd.customFields || {},
             patch_meta: rd.patch_meta || null,
-            pro_builds: rd.pro_builds || []
+            pro_builds: rd.pro_builds || [],
+            jg_style: rd.jg_style || null
           });
           setChampPatchMetas((p: any) => ({
             ...p,
             [selected.id]: rd.patch_meta || null
+          }));
+          setChampJgStyles((p: any) => ({
+            ...p,
+            [selected.id]: rd.jg_style || null
           }));
           if (noteData?.created_at) {
             setChampDates(p => ({
@@ -266,6 +276,19 @@ function ChampionsContent() {
   };
 
   const setField = (key: string, val: string | object) => setDataFields((p: any) => ({ ...p, [key]: val }));
+
+  const setJgStyleField = (subKey: string, val: any) => {
+    setDataFields((p: any) => {
+      const currentJgStyle = p.jg_style || { role: 'JUNGLE', type: '', blind_pickable: 3, counter_pickable: 3, description: '' };
+      return {
+        ...p,
+        jg_style: {
+          ...currentJgStyle,
+          [subKey]: val
+        }
+      };
+    });
+  };
 
   const addCustomField = () => {
     const fieldName = prompt('追加する項目の名前を入力してください（例：スキルコンボ、JGマクロなど）');
@@ -298,15 +321,24 @@ function ChampionsContent() {
         fullClearTime: dataFields.fullClearTime, counterChampions: dataFields.counterChampions,
         mustBanChampions: dataFields.mustBanChampions, pickRecommendation: dataFields.pickRecommendation,
         note_draft: dataFields.note_draft, customFields: dataFields.customFields,
-        patch_meta: dataFields.patch_meta, pro_builds: dataFields.pro_builds
+        patch_meta: dataFields.patch_meta, pro_builds: dataFields.pro_builds,
+        jg_style: dataFields.jg_style
       }
     };
-    const { error } = await supabase.from('matchup_sentinel').upsert(data, { onConflict: 'matchup_id' });
-    if (error) {
-      alert('保存失敗: ' + error.message);
-    } else {
+    try {
+      const res = await fetch('/api/admin/champions/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || '保存APIエラー');
+
       setChampDates(prev => ({ ...prev, [selected.id]: now }));
       setChampPending(prev => ({ ...prev, [selected.id]: !dataFields.strategy }));
+      setChampJgStyles(prev => ({ ...prev, [selected.id]: dataFields.jg_style }));
+    } catch (err: any) {
+      alert('保存失敗: ' + err.message);
     }
     setSaving(false);
   };
@@ -339,6 +371,14 @@ function ChampionsContent() {
         const dateA = champDates[a.id] ? new Date(champDates[a.id]).getTime() : 9999999999999;
         const dateB = champDates[b.id] ? new Date(champDates[b.id]).getTime() : 9999999999999;
         if (dateA !== dateB) return dateA - dateB;
+      } else if (sortOrder === 'blind_pickable_desc') {
+        const valA = champJgStyles[a.id]?.blind_pickable || 0;
+        const valB = champJgStyles[b.id]?.blind_pickable || 0;
+        if (valA !== valB) return valB - valA;
+      } else if (sortOrder === 'counter_pickable_desc') {
+        const valA = champJgStyles[a.id]?.counter_pickable || 0;
+        const valB = champJgStyles[b.id]?.counter_pickable || 0;
+        if (valA !== valB) return valB - valA;
       }
       return a.name.localeCompare(b.name);
     });
@@ -409,6 +449,87 @@ function ChampionsContent() {
           <TextAreaCard title="対面の有利・不利" icon={Swords} color="text-[#00cfef] border-[#00cfef] shadow-[#00cfef]" value={dataFields.counterChampions} onChange={v => setField('counterChampions', v)} />
           <TextAreaCard title="ピック推奨 (先/後)" icon={Shield} color="text-emerald-400 border-emerald-500 shadow-emerald-500" value={dataFields.pickRecommendation} onChange={v => setField('pickRecommendation', v)} />
           
+          {/* 🌲 ジャングルプレイスタイル分類 (自動判定) */}
+          {/* 🎯 プレイスタイル分類 (手動編集・全ロール対応) */}
+          <div className="glass-panel border-t-2 border-emerald-400 p-5 rounded-2xl group transition-all hover:shadow-[0_4px_20px_rgba(0,0,0,0.3)] shadow-emerald-400/20 relative col-span-1 md:col-span-2">
+            <h3 className="text-sm font-black mb-4 flex items-center gap-2 text-emerald-400">
+              <Shield size={16} /> 🎯 プレイスタイル分類 ({(dataFields.jg_style?.role || 'JUNGLE').toUpperCase()}基準)
+            </h3>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+              {/* 基準ロール */}
+              <div>
+                <label className="block text-xs text-gray-400 font-bold mb-1">基準ロール</label>
+                <select
+                  value={dataFields.jg_style?.role || 'JUNGLE'}
+                  onChange={e => setJgStyleField('role', e.target.value)}
+                  className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-white text-xs focus:outline-none focus:border-emerald-500 transition-colors"
+                >
+                  <option value="TOP">TOP</option>
+                  <option value="JUNGLE">JUNGLE (Jg)</option>
+                  <option value="MID">MID</option>
+                  <option value="ADC">ADC</option>
+                  <option value="SUPPORT">SUPPORT (Sup)</option>
+                </select>
+              </div>
+
+              {/* タイプ名 */}
+              <div>
+                <label className="block text-xs text-gray-400 font-bold mb-1">プレイスタイルタイプ</label>
+                <input
+                  type="text"
+                  value={dataFields.jg_style?.type || ''}
+                  onChange={e => setJgStyleField('type', e.target.value)}
+                  placeholder="例: 侵入型, アサシン, コントロール"
+                  className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-white text-xs focus:outline-none focus:border-emerald-500 transition-colors"
+                />
+              </div>
+
+              {/* 先出し安定度 */}
+              <div>
+                <label className="block text-xs text-gray-400 font-bold mb-1">先出し安定度</label>
+                <select
+                  value={dataFields.jg_style?.blind_pickable || 3}
+                  onChange={e => setJgStyleField('blind_pickable', parseInt(e.target.value) || 3)}
+                  className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-white text-xs focus:outline-none focus:border-emerald-500 transition-colors font-mono"
+                >
+                  <option value="1">★☆☆☆☆ (1)</option>
+                  <option value="2">★★☆☆☆ (2)</option>
+                  <option value="3">★★★☆☆ (3)</option>
+                  <option value="4">★★★★☆ (4)</option>
+                  <option value="5">★★★★★ (5)</option>
+                </select>
+              </div>
+
+              {/* 後出し有利度 */}
+              <div>
+                <label className="block text-xs text-gray-400 font-bold mb-1">後出し有利度</label>
+                <select
+                  value={dataFields.jg_style?.counter_pickable || 3}
+                  onChange={e => setJgStyleField('counter_pickable', parseInt(e.target.value) || 3)}
+                  className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-white text-xs focus:outline-none focus:border-emerald-500 transition-colors font-mono"
+                >
+                  <option value="1">★☆☆☆☆ (1)</option>
+                  <option value="2">★★☆☆☆ (2)</option>
+                  <option value="3">★★★☆☆ (3)</option>
+                  <option value="4">★★★★☆ (4)</option>
+                  <option value="5">★★★★★ (5)</option>
+                </select>
+              </div>
+            </div>
+
+            {/* 立ち回り解説 */}
+            <div>
+              <label className="block text-xs text-gray-400 font-bold mb-1">立ち回り解説 (低〜中レート帯基準のポイント)</label>
+              <textarea
+                value={dataFields.jg_style?.description || ''}
+                onChange={e => setJgStyleField('description', e.target.value)}
+                placeholder="このチャンピオンの立ち回りの特徴や、そのタイプ・星評価になった理由を2文程度で記述..."
+                className="w-full h-20 bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-white text-xs resize-none focus:outline-none focus:border-emerald-500 transition-colors"
+              />
+            </div>
+          </div>
+
           {/* 📈 最新パッチトレンド (自動収集) */}
           <div className="glass-panel border-t-2 border-cyan-400 p-5 rounded-2xl group transition-all hover:shadow-[0_4px_20px_rgba(0,0,0,0.3)] shadow-cyan-400/20 relative">
             <h3 className="text-sm font-black mb-4 flex items-center gap-2 text-cyan-400">
@@ -729,6 +850,8 @@ function ChampionsContent() {
           <select value={sortOrder} onChange={e => setSortOrder(e.target.value)} className="glass-panel border-none rounded-xl px-4 py-2.5 font-bold text-[#c89b3c] outline-none min-w-[160px] cursor-pointer">
             <option value="updated_desc">更新日が新しい順</option>
             <option value="updated_asc">更新日が古い順</option>
+            <option value="blind_pickable_desc">先出し安定度順 (★順)</option>
+            <option value="counter_pickable_desc">後出し有利度順 (★順)</option>
             <option value="name_asc">名前順</option>
           </select>
         </div>
@@ -786,6 +909,27 @@ function ChampionsContent() {
                         <span className={`text-[8px] font-bold leading-none ${isOld ? 'text-gray-600' : 'text-gray-500'}`}>
                           {getRelativeTimeString(patchMeta.updated_at)}
                         </span>
+                      )}
+                    </div>
+                  );
+                })()}
+                {(() => {
+                  const jgStyle = champJgStyles[c.id];
+                  if (!jgStyle || (jgStyle.blind_pickable === undefined && jgStyle.counter_pickable === undefined)) return null;
+                  
+                  return (
+                    <div className="flex flex-col items-center gap-0.5 mt-1 border-t border-white/5 pt-1.5 w-full text-[9px] font-bold pointer-events-none">
+                      {jgStyle.blind_pickable !== undefined && (
+                        <div className="flex justify-between w-full px-1 text-emerald-400">
+                          <span>先</span>
+                          <span className="font-mono">★{jgStyle.blind_pickable}</span>
+                        </div>
+                      )}
+                      {jgStyle.counter_pickable !== undefined && (
+                        <div className="flex justify-between w-full px-1 text-[#00cfef]">
+                          <span>後</span>
+                          <span className="font-mono">★{jgStyle.counter_pickable}</span>
+                        </div>
                       )}
                     </div>
                   );
