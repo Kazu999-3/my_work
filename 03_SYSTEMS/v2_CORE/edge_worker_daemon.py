@@ -258,6 +258,25 @@ class EdgeWorkerDaemon:
                 )
                 self.update_task_status(task_id, "completed", result=result)
                 
+            elif task_type == "matchup_simulation":
+                # 対戦シミュレーション予測タスク
+                import json
+                champion = payload.get("champion")
+                enemy = payload.get("enemy")
+                role = payload.get("role", "Jungle")
+                logger.info(f"⚔️ [matchup_simulation] 対戦シミュレーションを実行 ({champion} vs {enemy} / {role})...")
+                result = self._run_subprocess_task(
+                    "03_SYSTEMS/v2_CORE/_LOL/matchup_simulator_worker.py",
+                    args=[champion, enemy, role]
+                )
+                # サブプロセスの標準出力をパースして result にマージ
+                try:
+                    stdout_json = json.loads(result.get("stdout", "{}"))
+                    self.update_task_status(task_id, "completed", result=stdout_json)
+                except Exception as je:
+                    logger.error(f"Failed to parse simulator stdout JSON: {je}")
+                    self.update_task_status(task_id, "completed", result=result)
+                
             else:
                 raise NotImplementedError(f"未サポートのタスクタイプです: {task_type}")
                 

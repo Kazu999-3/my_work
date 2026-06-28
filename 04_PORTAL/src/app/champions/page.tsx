@@ -552,11 +552,11 @@ function ChampionsContent() {
 
             {/* 立ち回り解説 */}
             <div>
-              <label className="block text-xs text-gray-400 font-bold mb-1">立ち回り解説 (低〜中レート帯基準のポイント)</label>
+              <label className="block text-xs text-gray-400 font-bold mb-1">先出し・後出し評価の根拠 ＆ 立ち回り解説</label>
               <textarea
                 value={dataFields.jg_style?.description || ''}
                 onChange={e => setJgStyleField('description', e.target.value)}
-                placeholder="このチャンピオンの立ち回りの特徴や、そのタイプ・星評価になった理由を2文程度で記述..."
+                placeholder="なぜその先出し・後出しの星評価になったのかの具体的な理由や、立ち回り上の強み・弱みを記述..."
                 className="w-full h-20 bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-white text-xs resize-none focus:outline-none focus:border-emerald-500 transition-colors"
               />
             </div>

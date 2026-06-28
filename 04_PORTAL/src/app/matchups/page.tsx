@@ -3,7 +3,8 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import { getChampIcon } from '../../lib/ddragonClient';
-import { Shield, Target, ChevronLeft, ChevronDown, ChevronUp, Swords, Plus, X, Save, Trash2, Activity } from 'lucide-react';
+import { Shield, Target, ChevronLeft, ChevronDown, ChevronUp, Swords, Plus, X, Save, Trash2, Activity, Award, Zap, AlertCircle, CheckCircle } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 import { motion, AnimatePresence } from 'framer-motion';
 import ChampSelect from '../../components/ChampSelect';
 
@@ -26,10 +27,19 @@ export default function MatchupsPage() {
   const [saving, setSaving] = useState(false);
   const [roleFilter, setRoleFilter] = useState('ALL');
   const [champMap, setChampMap] = useState<Record<string, string>>({});
-  const [viewMode, setViewMode] = useState<'list' | 'champion'>('list');
+  const [viewMode, setViewMode] = useState<'list' | 'champion' | 'simulator'>('list');
   const [expandedChamp, setExpandedChamp] = useState<string | null>(null);
   const [paramsProcessed, setParamsProcessed] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
+
+  // AIシミュレータ用ステート
+  const [simMyChamp, setSimMyChamp] = useState('');
+  const [simEnemyChamp, setSimEnemyChamp] = useState('');
+  const [simRole, setSimRole] = useState('Jungle');
+  const [simLoading, setSimLoading] = useState(false);
+  const [simError, setSimError] = useState<string | null>(null);
+  const [simResult, setSimResult] = useState<any>(null);
+  const [simStatus, setSimStatus] = useState('');
 
   const fetchData = async () => {
     setLoading(true);
@@ -202,6 +212,251 @@ export default function MatchupsPage() {
     setShowForm(true); setSelected(null);
   };
 
+  const startSimulation = async () => {
+    if (!simMyChamp || !simEnemyChamp) {
+      alert('自分と相手のチャンピオンを選択してください。');
+      return;
+    }
+    setSimLoading(true);
+    setSimError(null);
+    setSimResult(null);
+    setSimStatus('タスクを登録中...');
+
+    try {
+      const res = await fetch('/api/match/simulate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          champion: simMyChamp,
+          enemy: simEnemyChamp,
+          role: simRole
+        })
+      });
+      const data = await res.json();
+      if (!data.success) {
+        throw new Error(data.error || 'シミュレーションタスクの登録に失敗しました。');
+      }
+
+      const taskId = data.task_id;
+      setSimStatus('AIが対戦データを解析中...');
+      
+      // ポーリング開始
+      let attempts = 0;
+      const interval = setInterval(async () => {
+        attempts++;
+        if (attempts > 40) { // 最大60秒
+          clearInterval(interval);
+          setSimError('シミュレーションがタイムアウトしました。もう一度お試しください。');
+          setSimLoading(false);
+          return;
+        }
+
+        // 進行状況のテキスト変化
+        if (attempts === 5) setSimStatus('パワースパイクの衝突をシミュレート中...');
+        if (attempts === 10) setSimStatus('立ち回りの有利不利を計算中...');
+        if (attempts === 15) setSimStatus('勝利のアドバイスを構築中...');
+
+        const { data: task, error } = await supabase
+          .from('edge_tasks')
+          .select('status, result, error_message')
+          .eq('id', taskId)
+          .single();
+
+        if (error) {
+          clearInterval(interval);
+          setSimError(`タスク監視エラー: ${error.message}`);
+          setSimLoading(false);
+          return;
+        }
+
+        if (task.status === 'completed') {
+          clearInterval(interval);
+          setSimResult(task.result);
+          setSimLoading(false);
+        } else if (task.status === 'failed') {
+          clearInterval(interval);
+          setSimError(task.error_message || 'AIシミュレーションの実行中にエラーが発生しました。');
+          setSimLoading(false);
+        }
+      }, 1500);
+
+    } catch (err: any) {
+      setSimError(err.message || '通信エラーが発生しました。');
+      setSimLoading(false);
+    }
+  };
+
+  // AIシミュレーターのレンダリング
+  const renderSimulator = () => {
+    return (
+      <div className="flex flex-col gap-8 max-w-5xl mx-auto w-full">
+        {/* 入力パネル */}
+        <div className="glass-panel p-6 rounded-2xl border-l-4 border-[#a78bfa] relative overflow-hidden">
+          <div className="absolute -right-10 -top-10 w-32 h-32 bg-[#a78bfa]/10 rounded-full blur-2xl"></div>
+          <h3 className="text-[#a78bfa] font-black mb-4 flex items-center gap-2">
+            <Swords size={18} /> AI 展開予測シミュレーター
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div>
+              <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">自分のチャンプ</label>
+              <ChampSelect value={simMyChamp} onChange={setSimMyChamp} placeholder="Yone" className="border-[#a78bfa]/30 focus:border-[#a78bfa]/60" />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">相手のチャンプ</label>
+              <ChampSelect value={simEnemyChamp} onChange={setSimEnemyChamp} placeholder="Yasuo" className="border-[#a78bfa]/30 focus:border-[#a78bfa]/60" />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">ロール</label>
+              <select value={simRole} onChange={e => setSimRole(e.target.value)} className="w-full bg-[var(--color-surface)] border border-white/5 rounded-xl p-3 text-white outline-none">
+                <option>Jungle</option><option>Top</option><option>Mid</option><option>Bot</option><option>Support</option>
+              </select>
+            </div>
+          </div>
+          <div className="text-right">
+            <button
+              onClick={startSimulation}
+              disabled={simLoading || !simMyChamp || !simEnemyChamp}
+              className="px-6 py-3.5 bg-[#a78bfa] text-black font-black rounded-xl hover:shadow-[0_0_20px_rgba(167,139,250,0.5)] transition-all flex items-center gap-2 ml-auto disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Zap size={16} /> 予測シミュレーションを開始
+            </button>
+          </div>
+        </div>
+
+        {/* エラー表示 */}
+        {simError && (
+          <div className="glass-panel p-6 border-l-4 border-red-500 rounded-2xl flex items-center gap-4 text-red-400">
+            <AlertCircle size={24} />
+            <div>
+              <h4 className="font-bold">シミュレーションエラー</h4>
+              <p className="text-sm">{simError}</p>
+            </div>
+          </div>
+        )}
+
+        {/* ローディング */}
+        {simLoading && (
+          <div className="glass-panel py-20 rounded-2xl flex flex-col items-center justify-center gap-6">
+            <div className="relative w-20 h-20 flex items-center justify-center">
+              <Swords className="text-[#a78bfa] animate-spin absolute animate-duration-3000" size={48} />
+              <div className="absolute inset-0 border-4 border-t-[#a78bfa] border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin"></div>
+            </div>
+            <div className="text-center">
+              <h4 className="text-lg font-black text-white animate-pulse mb-1">{simStatus}</h4>
+              <p className="text-xs text-gray-500 font-mono">通常 10秒〜20秒 で完了します</p>
+            </div>
+          </div>
+        )}
+
+        {/* シミュレーション結果表示 */}
+        {simResult && (
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col gap-6">
+            {/* メイン概要カード */}
+            <div className="glass-panel p-6 md:p-8 rounded-3xl relative overflow-hidden flex flex-col md:flex-row items-center gap-8">
+              <div className="absolute -left-10 -bottom-10 w-48 h-48 bg-[#a78bfa]/5 rounded-full blur-3xl"></div>
+              
+              {/* 有利度スコアメーター */}
+              <div className="flex flex-col items-center gap-2 shrink-0">
+                <div className="relative w-36 h-36 flex items-center justify-center">
+                  {/* 背景の円 */}
+                  <svg className="w-full h-full transform -rotate-90">
+                    <circle cx="72" cy="72" r="64" stroke="rgba(255,255,255,0.05)" strokeWidth="8" fill="transparent" />
+                    <circle 
+                      cx="72" cy="72" r="64" 
+                      stroke={simResult.matchup_score >= 50 ? '#00cfef' : '#ef4444'} 
+                      strokeWidth="10" 
+                      fill="transparent" 
+                      strokeDasharray={402}
+                      strokeDashoffset={402 - (402 * simResult.matchup_score) / 100}
+                      className="transition-all duration-1000 ease-out"
+                    />
+                  </svg>
+                  <div className="absolute text-center">
+                    <span className="text-4xl font-black font-mono text-white">{simResult.matchup_score}%</span>
+                    <span className="block text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">有利度スコア</span>
+                  </div>
+                </div>
+                <div className="flex gap-1 mt-2">
+                  <span className="text-xs font-bold text-gray-400">対面難易度:</span>
+                  <span className="text-xs font-mono text-yellow-400">{'★'.repeat(simResult.difficulty)}{'☆'.repeat(5 - simResult.difficulty)}</span>
+                </div>
+              </div>
+
+              {/* チャンピオン対面バッジ */}
+              <div className="flex-1 space-y-4 text-center md:text-left">
+                <div className="flex items-center justify-center md:justify-start gap-4 flex-wrap">
+                  <div className="flex items-center gap-2 bg-black/40 border border-[#c89b3c]/30 px-4 py-2 rounded-full">
+                    <img src={getChampIcon(simResult.my_champion)} className="w-6 h-6 rounded-full" alt={simResult.my_champion} />
+                    <span className="font-bold text-[#c89b3c]">{simResult.my_champion}</span>
+                  </div>
+                  <span className="text-gray-500 font-black italic">VS</span>
+                  <div className="flex items-center gap-2 bg-black/40 border border-[#00cfef]/30 px-4 py-2 rounded-full">
+                    <img src={getChampIcon(simResult.enemy_champion)} className="w-6 h-6 rounded-full" alt={simResult.enemy_champion} />
+                    <span className="font-bold text-[#00cfef]">{simResult.enemy_champion}</span>
+                  </div>
+                </div>
+                <div>
+                  <h4 className="text-2xl font-black text-gradient inline-block">AI レーン戦展開シミュレーション</h4>
+                  <p className="text-sm text-gray-300 leading-relaxed mt-2">
+                    {simResult.my_champion} が {simResult.enemy_champion} に対面した際の、中レート帯（アイアン〜ゴールド）を想定したシミュレーション展開です。パワースパイクのタイミングを見極めて戦闘を行いましょう。
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* スキル衝突解説 */}
+            <div className="glass-panel p-6 rounded-2xl border-l-4 border-[#00cfef] relative">
+              <h3 className="text-[#00cfef] font-black text-xs uppercase tracking-widest mb-3 flex items-center gap-2">
+                <Swords size={14} /> 強みとスキルの衝突 (Key Clash)
+              </h3>
+              <p className="text-sm leading-relaxed text-gray-300">{simResult.key_clash}</p>
+            </div>
+
+            {/* レーン戦タイムライン */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Early */}
+              <TimelineCard 
+                phase="序盤 (Lv1 - 5)" 
+                advantage={simResult.timeline.early.advantage}
+                description={simResult.timeline.early.description}
+                color="border-amber-500/30"
+              />
+              {/* Mid */}
+              <TimelineCard 
+                phase="中盤 (Lv6 / 1stコア)" 
+                advantage={simResult.timeline.mid.advantage}
+                description={simResult.timeline.mid.description}
+                color="border-purple-500/30"
+              />
+              {/* Late */}
+              <TimelineCard 
+                phase="終盤 (集団戦 / 2ndコア〜)" 
+                advantage={simResult.timeline.late.advantage}
+                description={simResult.timeline.late.description}
+                color="border-emerald-500/30"
+              />
+            </div>
+
+            {/* 勝利の鍵アドバイス */}
+            <div className="glass-panel p-6 rounded-2xl border-t border-white/5 relative">
+              <h3 className="text-white font-black text-sm mb-4 flex items-center gap-2">
+                <Award className="text-[#c89b3c]" size={18} /> 勝利への鍵 (Win Keys)
+              </h3>
+              <ul className="space-y-3">
+                {simResult.win_keys && simResult.win_keys.map((key: string, idx: number) => (
+                  <li key={idx} className="flex items-start gap-3 text-sm text-gray-300">
+                    <CheckCircle className="text-emerald-400 shrink-0 mt-0.5" size={16} />
+                    <span>{key}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </motion.div>
+        )}
+      </div>
+    );
+  };
+
   const containerVariants = { hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.05 } } };
   const itemVariants = { hidden: { y: 20, opacity: 0 }, visible: { y: 0, opacity: 1, transition: { type: 'spring' as const, stiffness: 100 } } };
 
@@ -302,13 +557,21 @@ export default function MatchupsPage() {
             >
               🎯 チャンピオン別
             </button>
+            <button
+              onClick={() => setViewMode('simulator')}
+              className={`px-4 py-2 rounded-full text-sm font-bold transition-all duration-300 ${viewMode === 'simulator' ? 'bg-[#a78bfa]/20 text-[#a78bfa] shadow-[0_0_10px_rgba(167,139,250,0.2)]' : 'text-gray-400 hover:text-white'}`}
+            >
+              ⚔️ AIシミュレータ
+            </button>
           </div>
-          <button 
-            onClick={() => setShowForm(!showForm)} 
-            className="glass-panel glass-panel-hover rounded-full px-6 py-2.5 font-bold text-sm flex items-center gap-2 text-[#00cfef]"
-          >
-            {showForm ? <><X size={16} /> 閉じる</> : <><Plus size={16} /> メモ追加</>}
-          </button>
+          {viewMode !== 'simulator' && (
+            <button 
+              onClick={() => setShowForm(!showForm)} 
+              className="glass-panel glass-panel-hover rounded-full px-6 py-2.5 font-bold text-sm flex items-center gap-2 text-[#00cfef]"
+            >
+              {showForm ? <><X size={16} /> 閉じる</> : <><Plus size={16} /> メモ追加</>}
+            </button>
+          )}
         </div>
       </motion.header>
 
@@ -458,6 +721,8 @@ export default function MatchupsPage() {
 
       {loading ? (
         <div className="flex justify-center items-center py-20"><div className="w-8 h-8 border-4 border-[#00cfef] border-t-transparent rounded-full animate-spin"></div></div>
+      ) : viewMode === 'simulator' ? (
+        renderSimulator()
       ) : viewMode === 'list' ? (
         /* ===== 一覧ビュー（既存） ===== */
         <motion.div variants={containerVariants} initial="hidden" animate="visible" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -661,3 +926,22 @@ const InfoBlock = ({ title, icon, text, color }: { title: string, icon: string, 
     <p className="text-sm leading-relaxed text-gray-300 whitespace-pre-wrap">{text}</p>
   </div>
 );
+
+const TimelineCard = ({ phase, advantage, description, color }: { phase: string, advantage: string, description: string, color: string }) => {
+  const getAdvLabel = () => {
+    if (advantage === 'MY_ADVANTAGE') return { text: '自分有利', bg: 'bg-[#c89b3c]/15 text-[#c89b3c] border-[#c89b3c]/30' };
+    if (advantage === 'ENEMY_ADVANTAGE') return { text: '相手有利', bg: 'bg-red-500/15 text-red-400 border-red-500/30' };
+    return { text: '互角', bg: 'bg-gray-500/15 text-gray-400 border-gray-600/30' };
+  };
+  const adv = getAdvLabel();
+
+  return (
+    <div className={`glass-panel p-5 rounded-2xl border-t-2 ${color} flex flex-col gap-3`}>
+      <div className="flex justify-between items-center">
+        <span className="text-xs font-black text-gray-400">{phase}</span>
+        <span className={`px-2.5 py-0.5 rounded-full border text-[10px] font-black ${adv.bg}`}>{adv.text}</span>
+      </div>
+      <p className="text-xs leading-relaxed text-gray-300 flex-1">{description}</p>
+    </div>
+  );
+};

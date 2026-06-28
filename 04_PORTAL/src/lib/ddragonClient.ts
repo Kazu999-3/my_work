@@ -1,15 +1,33 @@
-export const LATEST_PATCH = "14.1.1"; // 必要に応じて自動取得にできますが、フェールセーフのため固定値か適宜更新
+let cachedLatestPatch = "14.22.1"; // デフォルトのフォールバックパッチ
+
+export async function initLatestPatch() {
+  try {
+    const res = await fetch("https://ddragon.leagueoflegends.com/api/versions.json");
+    if (res.ok) {
+      const versions = await res.json();
+      if (versions && versions.length > 0) {
+        cachedLatestPatch = versions[0];
+      }
+    }
+  } catch (e) {
+    console.error("Failed to fetch latest patch version", e);
+  }
+}
+
+// 起動時に非同期で実行
+if (typeof window !== "undefined") {
+  initLatestPatch().catch(console.error);
+}
 
 /**
  * チャンピオンIDからアイコン画像のURLを取得します
  */
 export function getChampIcon(champId: string): string {
   if (!champId) return "";
-  // Wukong(MonkeyKing) などの例外処理
   let formattedId = champId;
   if (formattedId.toLowerCase() === "wukong") formattedId = "MonkeyKing";
   // 基本は先頭大文字、以降小文字（Nunu等例外あり）
-  return `https://ddragon.leagueoflegends.com/cdn/${LATEST_PATCH}/img/champion/${formattedId}.png`;
+  return `https://ddragon.leagueoflegends.com/cdn/${cachedLatestPatch}/img/champion/${formattedId}.png`;
 }
 
 /**
@@ -31,7 +49,7 @@ let champDataCache: Record<string, string> | null = null;
 export async function getChampNameById(id: number): Promise<string> {
   if (!champDataCache) {
     try {
-      const res = await fetch(`https://ddragon.leagueoflegends.com/cdn/${LATEST_PATCH}/data/en_US/champion.json`);
+      const res = await fetch(`https://ddragon.leagueoflegends.com/cdn/${cachedLatestPatch}/data/en_US/champion.json`);
       if (res.ok) {
         const data = await res.json();
         const champDict: Record<string, string> = {};
