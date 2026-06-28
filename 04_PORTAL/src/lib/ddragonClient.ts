@@ -1,4 +1,4 @@
-let cachedLatestPatch = "14.22.1"; // デフォルトのフォールバックパッチ
+let cachedLatestPatch = "16.13.1"; // デフォルトのフォールバックパッチ
 
 export async function initLatestPatch() {
   try {

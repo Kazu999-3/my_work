@@ -419,9 +419,23 @@ export default function MatchupsPage() {
                       <div className="flex items-center gap-3 w-full md:w-[240px] shrink-0">
                         <span className="w-10 text-xs font-black text-gray-400 font-mono tracking-wider">{role}</span>
                         <div className="flex items-center gap-1.5">
-                          <img src={getChampIcon(blueChamps[role])} className="w-8 h-8 rounded-full border border-blue-500/30" alt={blueChamps[role]} />
+                          <img 
+                            src={getChampIcon(blueChamps[role])} 
+                            className="w-8 h-8 rounded-full border border-blue-500/30" 
+                            alt={blueChamps[role]} 
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = 'https://ddragon.leagueoflegends.com/cdn/16.13.1/img/profileicon/29.png';
+                            }}
+                          />
                           <span className="text-[10px] text-gray-500 font-black italic">VS</span>
-                          <img src={getChampIcon(redChamps[role])} className="w-8 h-8 rounded-full border border-red-500/30" alt={redChamps[role]} />
+                          <img 
+                            src={getChampIcon(redChamps[role])} 
+                            className="w-8 h-8 rounded-full border border-red-500/30" 
+                            alt={redChamps[role]} 
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = 'https://ddragon.leagueoflegends.com/cdn/16.13.1/img/profileicon/29.png';
+                            }}
+                          />
                         </div>
                       </div>
 
