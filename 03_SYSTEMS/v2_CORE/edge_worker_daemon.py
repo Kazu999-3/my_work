@@ -258,23 +258,22 @@ class EdgeWorkerDaemon:
                 )
                 self.update_task_status(task_id, "completed", result=result)
                 
-            elif task_type == "matchup_simulation":
-                # 対戦シミュレーション予測タスク
+            elif task_type == "matchup_simulation_5v5":
+                # 5v5対戦構成シミュレーション予測タスク
                 import json
-                champion = payload.get("champion")
-                enemy = payload.get("enemy")
-                role = payload.get("role", "Jungle")
-                logger.info(f"⚔️ [matchup_simulation] 対戦シミュレーションを実行 ({champion} vs {enemy} / {role})...")
+                blue = payload.get("blue")
+                red = payload.get("red")
+                logger.info(f"⚔️ [matchup_simulation_5v5] 5v5対戦構成シミュレーションを実行...")
                 result = self._run_subprocess_task(
-                    "03_SYSTEMS/v2_CORE/_LOL/matchup_simulator_worker.py",
-                    args=[champion, enemy, role]
+                    "03_SYSTEMS/v2_CORE/_LOL/matchup_simulator_5v5_worker.py",
+                    args=[json.dumps(blue), json.dumps(red)]
                 )
                 # サブプロセスの標準出力をパースして result にマージ
                 try:
                     stdout_json = json.loads(result.get("stdout", "{}"))
                     self.update_task_status(task_id, "completed", result=stdout_json)
                 except Exception as je:
-                    logger.error(f"Failed to parse simulator stdout JSON: {je}")
+                    logger.error(f"Failed to parse 5v5 simulator stdout JSON: {je}")
                     self.update_task_status(task_id, "completed", result=result)
                 
             else:

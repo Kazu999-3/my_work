@@ -32,10 +32,13 @@ export default function MatchupsPage() {
   const [paramsProcessed, setParamsProcessed] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
 
-  // AIシミュレータ用ステート
-  const [simMyChamp, setSimMyChamp] = useState('');
-  const [simEnemyChamp, setSimEnemyChamp] = useState('');
-  const [simRole, setSimRole] = useState('Jungle');
+  // 5v5 AIシミュレータ用ステート
+  const [blueChamps, setBlueChamps] = useState<Record<string, string>>({
+    TOP: '', JG: '', MID: '', BOT: '', SUP: ''
+  });
+  const [redChamps, setRedChamps] = useState<Record<string, string>>({
+    TOP: '', JG: '', MID: '', BOT: '', SUP: ''
+  });
   const [simLoading, setSimLoading] = useState(false);
   const [simError, setSimError] = useState<string | null>(null);
   const [simResult, setSimResult] = useState<any>(null);
@@ -213,23 +216,28 @@ export default function MatchupsPage() {
   };
 
   const startSimulation = async () => {
-    if (!simMyChamp || !simEnemyChamp) {
-      alert('自分と相手のチャンピオンを選択してください。');
+    // 全て選択されているか検証
+    const roles = ['TOP', 'JG', 'MID', 'BOT', 'SUP'] as const;
+    const blueMissing = roles.filter(r => !blueChamps[r]);
+    const redMissing = roles.filter(r => !redChamps[r]);
+    
+    if (blueMissing.length > 0 || redMissing.length > 0) {
+      alert('すべてのポジション（味方5名、敵5名）のチャンピオンを選択してください。');
       return;
     }
+
     setSimLoading(true);
     setSimError(null);
     setSimResult(null);
-    setSimStatus('タスクを登録中...');
+    setSimStatus('5v5シミュレーションタスクを登録中...');
 
     try {
       const res = await fetch('/api/match/simulate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          champion: simMyChamp,
-          enemy: simEnemyChamp,
-          role: simRole
+          blue: blueChamps,
+          red: redChamps
         })
       });
       const data = await res.json();
@@ -238,13 +246,13 @@ export default function MatchupsPage() {
       }
 
       const taskId = data.task_id;
-      setSimStatus('AIが対戦データを解析中...');
+      setSimStatus('10名のスキル・相性データを集計中...');
       
       // ポーリング開始
       let attempts = 0;
       const interval = setInterval(async () => {
         attempts++;
-        if (attempts > 40) { // 最大60秒
+        if (attempts > 50) { // 最大75秒
           clearInterval(interval);
           setSimError('シミュレーションがタイムアウトしました。もう一度お試しください。');
           setSimLoading(false);
@@ -252,9 +260,9 @@ export default function MatchupsPage() {
         }
 
         // 進行状況のテキスト変化
-        if (attempts === 5) setSimStatus('パワースパイクの衝突をシミュレート中...');
-        if (attempts === 10) setSimStatus('立ち回りの有利不利を計算中...');
-        if (attempts === 15) setSimStatus('勝利のアドバイスを構築中...');
+        if (attempts === 5) setSimStatus('各レーンの主導権バランスを計算中...');
+        if (attempts === 12) setSimStatus('チーム構成スタイルとシナジーを分析中...');
+        if (attempts === 20) setSimStatus('勝利条件と時間帯別ゲームプランを構築中...');
 
         const { data: task, error } = await supabase
           .from('edge_tasks')
@@ -275,7 +283,7 @@ export default function MatchupsPage() {
           setSimLoading(false);
         } else if (task.status === 'failed') {
           clearInterval(interval);
-          setSimError(task.error_message || 'AIシミュレーションの実行中にエラーが発生しました。');
+          setSimError(task.error_message || 'AI 5v5シミュレーションの実行中にエラーが発生しました。');
           setSimLoading(false);
         }
       }, 1500);
@@ -288,37 +296,68 @@ export default function MatchupsPage() {
 
   // AIシミュレーターのレンダリング
   const renderSimulator = () => {
+    const roles = ['TOP', 'JG', 'MID', 'BOT', 'SUP'] as const;
+
     return (
       <div className="flex flex-col gap-8 max-w-5xl mx-auto w-full">
-        {/* 入力パネル */}
-        <div className="glass-panel p-6 rounded-2xl border-l-4 border-[#a78bfa] relative overflow-hidden">
-          <div className="absolute -right-10 -top-10 w-32 h-32 bg-[#a78bfa]/10 rounded-full blur-2xl"></div>
-          <h3 className="text-[#a78bfa] font-black mb-4 flex items-center gap-2">
-            <Swords size={18} /> AI 展開予測シミュレーター
+        {/* 入力パネル (Blue vs Red) */}
+        <div className="glass-panel p-6 md:p-8 rounded-3xl relative overflow-hidden border-t-2 border-[#a78bfa]/20">
+          <div className="absolute -right-20 -top-20 w-48 h-48 bg-[#a78bfa]/5 rounded-full blur-3xl"></div>
+          <h3 className="text-[#a78bfa] font-black text-lg mb-6 flex items-center gap-2">
+            <Swords size={20} /> 5v5 チーム構成＆勝利プラン・アナライザー
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div>
-              <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">自分のチャンプ</label>
-              <ChampSelect value={simMyChamp} onChange={setSimMyChamp} placeholder="Yone" className="border-[#a78bfa]/30 focus:border-[#a78bfa]/60" />
+
+          <div className="grid grid-cols-1 lg:grid-cols-9 gap-6 items-center">
+            {/* Blue Side */}
+            <div className="lg:col-span-4 space-y-4 bg-blue-500/5 p-5 rounded-2xl border border-blue-500/10">
+              <h4 className="font-black text-sm text-blue-400 tracking-wider uppercase mb-3 flex items-center gap-2">
+                <div className="w-2.5 h-2.5 rounded-full bg-blue-400 animate-pulse"></div> Blue Side (味方)
+              </h4>
+              {roles.map(role => (
+                <div key={role} className="flex flex-col gap-1">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{role}</label>
+                  <ChampSelect 
+                    value={blueChamps[role]} 
+                    onChange={(val) => setBlueChamps(prev => ({ ...prev, [role]: val }))} 
+                    placeholder="チャンピオンを選択" 
+                    className="border-blue-500/20 focus:border-blue-500/50" 
+                  />
+                </div>
+              ))}
             </div>
-            <div>
-              <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">相手のチャンプ</label>
-              <ChampSelect value={simEnemyChamp} onChange={setSimEnemyChamp} placeholder="Yasuo" className="border-[#a78bfa]/30 focus:border-[#a78bfa]/60" />
+
+            {/* VS Divider */}
+            <div className="lg:col-span-1 flex flex-col items-center justify-center py-4">
+              <span className="text-2xl font-black italic text-gray-500 tracking-widest">VS</span>
+              <div className="w-px h-20 bg-gradient-to-b from-transparent via-gray-700 to-transparent hidden lg:block my-4"></div>
             </div>
-            <div>
-              <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">ロール</label>
-              <select value={simRole} onChange={e => setSimRole(e.target.value)} className="w-full bg-[var(--color-surface)] border border-white/5 rounded-xl p-3 text-white outline-none">
-                <option>Jungle</option><option>Top</option><option>Mid</option><option>Bot</option><option>Support</option>
-              </select>
+
+            {/* Red Side */}
+            <div className="lg:col-span-4 space-y-4 bg-red-500/5 p-5 rounded-2xl border border-red-500/10">
+              <h4 className="font-black text-sm text-red-400 tracking-wider uppercase mb-3 flex items-center gap-2">
+                <div className="w-2.5 h-2.5 rounded-full bg-red-400 animate-pulse"></div> Red Side (敵)
+              </h4>
+              {roles.map(role => (
+                <div key={role} className="flex flex-col gap-1">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{role}</label>
+                  <ChampSelect 
+                    value={redChamps[role]} 
+                    onChange={(val) => setRedChamps(prev => ({ ...prev, [role]: val }))} 
+                    placeholder="チャンピオンを選択" 
+                    className="border-red-500/20 focus:border-red-500/50" 
+                  />
+                </div>
+              ))}
             </div>
           </div>
-          <div className="text-right">
+
+          <div className="text-right mt-8 border-t border-white/5 pt-6">
             <button
               onClick={startSimulation}
-              disabled={simLoading || !simMyChamp || !simEnemyChamp}
-              className="px-6 py-3.5 bg-[#a78bfa] text-black font-black rounded-xl hover:shadow-[0_0_20px_rgba(167,139,250,0.5)] transition-all flex items-center gap-2 ml-auto disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={simLoading || Object.values(blueChamps).some(v => !v) || Object.values(redChamps).some(v => !v)}
+              className="px-8 py-4 bg-gradient-to-r from-[#a78bfa] to-[#818cf8] text-black font-black rounded-xl hover:shadow-[0_0_25px_rgba(167,139,250,0.4)] transition-all flex items-center gap-3 ml-auto disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
             >
-              <Zap size={16} /> 予測シミュレーションを開始
+              <Zap size={18} /> 構成相性 ＆ 勝利プランを分析
             </button>
           </div>
         </div>
@@ -328,7 +367,7 @@ export default function MatchupsPage() {
           <div className="glass-panel p-6 border-l-4 border-red-500 rounded-2xl flex items-center gap-4 text-red-400">
             <AlertCircle size={24} />
             <div>
-              <h4 className="font-bold">シミュレーションエラー</h4>
+              <h4 className="font-bold">分析エラー</h4>
               <p className="text-sm">{simError}</p>
             </div>
           </div>
@@ -337,120 +376,159 @@ export default function MatchupsPage() {
         {/* ローディング */}
         {simLoading && (
           <div className="glass-panel py-20 rounded-2xl flex flex-col items-center justify-center gap-6">
-            <div className="relative w-20 h-20 flex items-center justify-center">
-              <Swords className="text-[#a78bfa] animate-spin absolute animate-duration-3000" size={48} />
+            <div className="relative w-24 h-24 flex items-center justify-center">
+              <Swords className="text-[#a78bfa] animate-spin absolute animate-duration-3000" size={56} />
               <div className="absolute inset-0 border-4 border-t-[#a78bfa] border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin"></div>
             </div>
             <div className="text-center">
               <h4 className="text-lg font-black text-white animate-pulse mb-1">{simStatus}</h4>
-              <p className="text-xs text-gray-500 font-mono">通常 10秒〜20秒 で完了します</p>
+              <p className="text-xs text-gray-500 font-mono">通常 15秒〜25秒 で完了します</p>
             </div>
           </div>
         )}
 
         {/* シミュレーション結果表示 */}
         {simResult && (
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col gap-6">
-            {/* メイン概要カード */}
-            <div className="glass-panel p-6 md:p-8 rounded-3xl relative overflow-hidden flex flex-col md:flex-row items-center gap-8">
-              <div className="absolute -left-10 -bottom-10 w-48 h-48 bg-[#a78bfa]/5 rounded-full blur-3xl"></div>
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col gap-8">
+            
+            {/* 1. 各レーンの主導権マップ */}
+            <div className="glass-panel p-6 md:p-8 rounded-3xl relative">
+              <h3 className="text-white font-black text-base mb-6 flex items-center gap-2">
+                <Activity className="text-[#00cfef]" size={20} /> ⚖️ 各レーン主導権分析 (Lane Priority Map)
+              </h3>
               
-              {/* 有利度スコアメーター */}
-              <div className="flex flex-col items-center gap-2 shrink-0">
-                <div className="relative w-36 h-36 flex items-center justify-center">
-                  {/* 背景の円 */}
-                  <svg className="w-full h-full transform -rotate-90">
-                    <circle cx="72" cy="72" r="64" stroke="rgba(255,255,255,0.05)" strokeWidth="8" fill="transparent" />
-                    <circle 
-                      cx="72" cy="72" r="64" 
-                      stroke={simResult.matchup_score >= 50 ? '#00cfef' : '#ef4444'} 
-                      strokeWidth="10" 
-                      fill="transparent" 
-                      strokeDasharray={402}
-                      strokeDashoffset={402 - (402 * simResult.matchup_score) / 100}
-                      className="transition-all duration-1000 ease-out"
-                    />
-                  </svg>
-                  <div className="absolute text-center">
-                    <span className="text-4xl font-black font-mono text-white">{simResult.matchup_score}%</span>
-                    <span className="block text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">有利度スコア</span>
-                  </div>
-                </div>
-                <div className="flex gap-1 mt-2">
-                  <span className="text-xs font-bold text-gray-400">対面難易度:</span>
-                  <span className="text-xs font-mono text-yellow-400">{'★'.repeat(simResult.difficulty)}{'☆'.repeat(5 - simResult.difficulty)}</span>
-                </div>
-              </div>
+              <div className="divide-y divide-white/5 space-y-4">
+                {roles.map(role => {
+                  const laneData = simResult.lanes[role] || { priority: 'EVEN', reason: '' };
+                  
+                  // プライオリティ表示判定
+                  const getPriorityLabel = () => {
+                    if (laneData.priority === 'BLUE_PRIORITY') {
+                      return { text: '味方有利 (Blue)', style: 'bg-blue-500/20 text-blue-400 border-blue-500/30' };
+                    }
+                    if (laneData.priority === 'RED_PRIORITY') {
+                      return { text: '敵有利 (Red)', style: 'bg-red-500/20 text-red-400 border-red-500/30' };
+                    }
+                    return { text: '互角 (Even)', style: 'bg-gray-500/10 text-gray-400 border-gray-600/30' };
+                  };
+                  const label = getPriorityLabel();
 
-              {/* チャンピオン対面バッジ */}
-              <div className="flex-1 space-y-4 text-center md:text-left">
-                <div className="flex items-center justify-center md:justify-start gap-4 flex-wrap">
-                  <div className="flex items-center gap-2 bg-black/40 border border-[#c89b3c]/30 px-4 py-2 rounded-full">
-                    <img src={getChampIcon(simResult.my_champion)} className="w-6 h-6 rounded-full" alt={simResult.my_champion} />
-                    <span className="font-bold text-[#c89b3c]">{simResult.my_champion}</span>
-                  </div>
-                  <span className="text-gray-500 font-black italic">VS</span>
-                  <div className="flex items-center gap-2 bg-black/40 border border-[#00cfef]/30 px-4 py-2 rounded-full">
-                    <img src={getChampIcon(simResult.enemy_champion)} className="w-6 h-6 rounded-full" alt={simResult.enemy_champion} />
-                    <span className="font-bold text-[#00cfef]">{simResult.enemy_champion}</span>
-                  </div>
-                </div>
-                <div>
-                  <h4 className="text-2xl font-black text-gradient inline-block">AI レーン戦展開シミュレーション</h4>
-                  <p className="text-sm text-gray-300 leading-relaxed mt-2">
-                    {simResult.my_champion} が {simResult.enemy_champion} に対面した際の、中レート帯（アイアン〜ゴールド）を想定したシミュレーション展開です。パワースパイクのタイミングを見極めて戦闘を行いましょう。
-                  </p>
-                </div>
+                  return (
+                    <div key={role} className="flex flex-col md:flex-row md:items-center gap-4 pt-4 first:pt-0">
+                      {/* ポジションと両チャンプ */}
+                      <div className="flex items-center gap-3 w-full md:w-[240px] shrink-0">
+                        <span className="w-10 text-xs font-black text-gray-400 font-mono tracking-wider">{role}</span>
+                        <div className="flex items-center gap-1.5">
+                          <img src={getChampIcon(blueChamps[role])} className="w-8 h-8 rounded-full border border-blue-500/30" alt={blueChamps[role]} />
+                          <span className="text-[10px] text-gray-500 font-black italic">VS</span>
+                          <img src={getChampIcon(redChamps[role])} className="w-8 h-8 rounded-full border border-red-500/30" alt={redChamps[role]} />
+                        </div>
+                      </div>
+
+                      {/* 有利ステータス */}
+                      <div className="shrink-0 w-[140px]">
+                        <span className={`px-3 py-1 rounded-full border text-[10px] font-black inline-block ${label.style}`}>
+                          {label.text}
+                        </span>
+                      </div>
+
+                      {/* 理由解説 */}
+                      <p className="text-xs text-gray-300 leading-relaxed flex-1">
+                        {laneData.reason}
+                      </p>
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
-            {/* スキル衝突解説 */}
-            <div className="glass-panel p-6 rounded-2xl border-l-4 border-[#00cfef] relative">
-              <h3 className="text-[#00cfef] font-black text-xs uppercase tracking-widest mb-3 flex items-center gap-2">
-                <Swords size={14} /> 強みとスキルの衝突 (Key Clash)
-              </h3>
-              <p className="text-sm leading-relaxed text-gray-300">{simResult.key_clash}</p>
+            {/* 2. 両チームの構成タイプ ＆ シナジー分析 */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Blue Side */}
+              <div className="glass-panel p-6 rounded-2xl border-l-4 border-blue-500/50">
+                <h4 className="text-blue-400 font-black text-sm mb-4 flex items-center gap-2">
+                  🛡️ Blue Side 構成分析
+                </h4>
+                <div className="space-y-3">
+                  <div>
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">構成タイプ</span>
+                    <p className="text-sm font-black text-white mt-0.5">{simResult.blue_team.composition_style}</p>
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">強みと狙い</span>
+                    <p className="text-xs text-gray-300 leading-relaxed mt-0.5">{simResult.blue_team.strengths}</p>
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">弱点・警戒点</span>
+                    <p className="text-xs text-gray-300 leading-relaxed mt-0.5">{simResult.blue_team.weaknesses}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Red Side */}
+              <div className="glass-panel p-6 rounded-2xl border-l-4 border-red-500/50">
+                <h4 className="text-red-400 font-black text-sm mb-4 flex items-center gap-2">
+                  ⚔️ Red Side 構成分析
+                </h4>
+                <div className="space-y-3">
+                  <div>
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">構成タイプ</span>
+                    <p className="text-sm font-black text-white mt-0.5">{simResult.red_team.composition_style}</p>
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">強みと狙い</span>
+                    <p className="text-xs text-gray-300 leading-relaxed mt-0.5">{simResult.red_team.strengths}</p>
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">弱点・警戒点</span>
+                    <p className="text-xs text-gray-300 leading-relaxed mt-0.5">{simResult.red_team.weaknesses}</p>
+                  </div>
+                </div>
+              </div>
             </div>
 
-            {/* レーン戦タイムライン */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* Early */}
-              <TimelineCard 
-                phase="序盤 (Lv1 - 5)" 
-                advantage={simResult.timeline.early.advantage}
-                description={simResult.timeline.early.description}
-                color="border-amber-500/30"
-              />
-              {/* Mid */}
-              <TimelineCard 
-                phase="中盤 (Lv6 / 1stコア)" 
-                advantage={simResult.timeline.mid.advantage}
-                description={simResult.timeline.mid.description}
-                color="border-purple-500/30"
-              />
-              {/* Late */}
-              <TimelineCard 
-                phase="終盤 (集団戦 / 2ndコア〜)" 
-                advantage={simResult.timeline.late.advantage}
-                description={simResult.timeline.late.description}
-                color="border-emerald-500/30"
-              />
+            {/* 3. 勝利へのロードマップ（時間帯別のチーム戦術） */}
+            <div className="glass-panel p-6 md:p-8 rounded-3xl">
+              <h3 className="text-white font-black text-base mb-6 flex items-center gap-2">
+                <Target className="text-[#a78bfa]" size={20} /> 🗺️ 勝利へのロードマップ (Game Plan)
+              </h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* Early */}
+                <div className="glass-panel p-5 rounded-2xl border-t-2 border-amber-500/30 flex flex-col gap-2">
+                  <span className="text-xs font-black text-amber-400">序盤 (〜Lv6 / オブジェクト戦準備)</span>
+                  <p className="text-xs leading-relaxed text-gray-300">{simResult.game_plan.early}</p>
+                </div>
+                {/* Mid */}
+                <div className="glass-panel p-5 rounded-2xl border-t-2 border-purple-500/30 flex flex-col gap-2">
+                  <span className="text-xs font-black text-purple-400">中盤 (1stタワー破壊 / サイドプッシュ開始)</span>
+                  <p className="text-xs leading-relaxed text-gray-300">{simResult.game_plan.mid}</p>
+                </div>
+                {/* Late */}
+                <div className="glass-panel p-5 rounded-2xl border-t-2 border-emerald-500/30 flex flex-col gap-2">
+                  <span className="text-xs font-black text-emerald-400">終盤 (集団戦 / ソウル・バロン決戦)</span>
+                  <p className="text-xs leading-relaxed text-gray-300">{simResult.game_plan.late}</p>
+                </div>
+              </div>
             </div>
 
-            {/* 勝利の鍵アドバイス */}
-            <div className="glass-panel p-6 rounded-2xl border-t border-white/5 relative">
-              <h3 className="text-white font-black text-sm mb-4 flex items-center gap-2">
-                <Award className="text-[#c89b3c]" size={18} /> 勝利への鍵 (Win Keys)
+            {/* 4. 勝利条件 (Win Conditions) */}
+            <div className="glass-panel p-6 md:p-8 rounded-3xl border-b-2 border-[#c89b3c]/20">
+              <h3 className="text-[#c89b3c] font-black text-base mb-6 flex items-center gap-2">
+                <Award size={22} /> 🎯 勝利条件 (Win Conditions)
               </h3>
-              <ul className="space-y-3">
-                {simResult.win_keys && simResult.win_keys.map((key: string, idx: number) => (
-                  <li key={idx} className="flex items-start gap-3 text-sm text-gray-300">
-                    <CheckCircle className="text-emerald-400 shrink-0 mt-0.5" size={16} />
-                    <span>{key}</span>
+              <ul className="space-y-4">
+                {simResult.win_conditions && simResult.win_conditions.map((cond: string, idx: number) => (
+                  <li key={idx} className="flex items-start gap-4 text-sm text-gray-200">
+                    <div className="w-6 h-6 rounded-full bg-[#c89b3c]/15 text-[#c89b3c] border border-[#c89b3c]/30 flex items-center justify-center shrink-0 text-xs font-bold font-mono">
+                      {idx + 1}
+                    </div>
+                    <span className="pt-0.5 font-bold leading-relaxed">{cond}</span>
                   </li>
                 ))}
               </ul>
             </div>
+
           </motion.div>
         )}
       </div>

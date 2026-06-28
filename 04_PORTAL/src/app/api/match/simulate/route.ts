@@ -9,21 +9,20 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { champion, enemy, role } = body;
+    const { blue, red } = body;
     
-    if (!champion || !enemy) {
-      return NextResponse.json({ success: false, error: 'Missing champion or enemy name' }, { status: 400 });
+    if (!blue || !red || Object.keys(blue).length !== 5 || Object.keys(red).length !== 5) {
+      return NextResponse.json({ success: false, error: '味方チーム5名、敵チーム5名のチャンピオンをすべて選択してください。' }, { status: 400 });
     }
 
-    // edge_tasks にシミュレーションキューを追加
+    // edge_tasks に 5v5 シミュレーションキューを追加
     const { data: inserted, error: insertErr } = await supabase
       .from('edge_tasks')
       .insert({
-        task_type: 'matchup_simulation',
+        task_type: 'matchup_simulation_5v5',
         payload: {
-          champion,
-          enemy,
-          role: role || 'Jungle'
+          blue,
+          red
         },
         status: 'pending'
       })
@@ -36,7 +35,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ 
       success: true, 
-      message: 'AI対戦シミュレーターの計算を開始しました。',
+      message: 'AI 5v5構成シミュレーションを開始しました。',
       task_id: inserted.id
     });
   } catch (err: any) {
