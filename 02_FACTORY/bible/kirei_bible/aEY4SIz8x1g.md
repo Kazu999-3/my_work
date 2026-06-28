@@ -1,4 +1,4 @@
-[Champion: Rek'Sai]
+[Champions: Rek'Sai, Brand, Diana, Gragas, Irelia, Jax, Pyke, Thresh]
 # NEW S+ JUNGLER TO CLIMB (how to 1v9)
 ## 📌 動画の結論（1行サマリー）
 Rek'Saiはエメラルド～マスター帯で非常に強力な「Eloポーション」チャンプであり、レーン心理の理解、ジャングルトラッキング、テンポを活用したクロスプッシュ、サイドでのピックアップにフォーカスすることで、どんな不利な状況からでも1v9で試合をキャリーできる。

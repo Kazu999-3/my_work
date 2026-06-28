@@ -1,4 +1,4 @@
-[Champion: Lilia]
+[Champions: Lilia, Lillia]
 
 # Win a Game With 3 Losing Lanes
 

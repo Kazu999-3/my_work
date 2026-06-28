@@ -1,4 +1,4 @@
-[Champion: Viego]
+[Champions: Viego, Jayce]
 # Jungle Secrets That 99% of Players DON'T do (Think like a Challenger)
 
 ## 📌 動画の結論（1行サマリー）

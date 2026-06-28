@@ -27,11 +27,11 @@ def setup_sovereign_logging(name="SovereignOS"):
         
     formatter = logging.Formatter('%(asctime)s [%(name)s] %(levelname)s: %(message)s')
     
-    # コンソールハンドラ (Windowsの絵文字による文字化け/エラー対策)
-    console_handler = logging.StreamHandler(sys.stdout)
-    if hasattr(sys.stdout, "reconfigure"):
+    # コンソールハンドラ (標準エラー出力に流すことで、標準出力を結果JSON専用に保つ)
+    console_handler = logging.StreamHandler(sys.stderr)
+    if hasattr(sys.stderr, "reconfigure"):
         try:
-            sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+            sys.stderr.reconfigure(encoding='utf-8', errors='replace')
         except:
             pass
     console_handler.setFormatter(formatter)

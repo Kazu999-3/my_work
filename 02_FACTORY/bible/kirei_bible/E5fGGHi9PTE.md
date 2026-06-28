@@ -1,4 +1,4 @@
-[Champion: Master Yi]
+[Champions: Master Yi, Lillia]
 # 3 COMMON MISTAKES in LOW ELO - START DOING THIS INSTEAD!
 
 ## 📌 動画の結論（1行サマリー）

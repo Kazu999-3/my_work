@@ -3,6 +3,7 @@ Sovereign Sync: ローカル資産 → Supabase クラウド同期エンジン
 postgrest ライブラリで直接 REST API を叩くシンプルな実装。
 """
 import os
+import re
 import json
 import logging
 import httpx
@@ -172,13 +173,18 @@ class SovereignSync:
                 title = md_file.stem
                 display_title = title
                 
-                import re
                 explicit_champion = None
-                champ_match = re.search(r"\[Champion:\s*([^\]]+)\]", content)
+                explicit_champions = []  # 複数チャンピオン対応リスト
+                champ_match = re.search(r"\[Champion[s]?:\s*([^\]]+)\]", content)
                 if champ_match:
-                    extracted = champ_match.group(1).strip()
-                    if extracted.lower() != "unknown":
-                        explicit_champion = extracted
+                    raw = champ_match.group(1).strip()
+                    # カンマ区切りで複数チャンピオン名をパース
+                    candidates = [c.strip() for c in raw.split(",") if c.strip()]
+                    fake_champs = {"unknown", "[youtube]", "youtube", "jungle", "jg", "lol", "article", "draft", "system", "live", "global", "test", "sns", "macro"}
+                    valid = [c for c in candidates if c.lower() not in fake_champs]
+                    if valid:
+                        explicit_champions = valid
+                        explicit_champion = valid[0]  # 先頭を代表チャンピオンとして使用
 
                 # Markdown内の「# タイトル」行があれば、それを正式な表示名として採用
                 for line in content.splitlines():
@@ -229,15 +235,26 @@ class SovereignSync:
 
                 # キーワード抽出
                 keywords = self.extract_keywords(content)
-                if champion != "Unknown" and champion not in keywords:
-                    # チャンプ名もキーワードに含める
-                    keywords.insert(0, champion)
+                for champ_name in (explicit_champions if explicit_champions else ([champion] if champion != "Unknown" else [])):
+                    if champ_name not in keywords:
+                        keywords.insert(0, champ_name)
 
                 # Kireiバイブル判定
                 is_kirei = "kirei_bible" in md_file.parts
 
-                # チャンピオン辞典へ統合を試みる
-                integrated = self._sync_to_champion_dictionary(champion, content, title, md_file.parent.name)
+                # チャンピオン辞典へ統合を試みる（複数チャンピオン対応）
+                champions_to_sync = explicit_champions if explicit_champions else ([champion] if champion != "Unknown" else [])
+                integrated_count = 0
+                for champ_name in champions_to_sync:
+                    ok = self._sync_to_champion_dictionary(champ_name, content, title, md_file.parent.name)
+                    if ok:
+                        integrated_count += 1
+                        logger.info(f"  ✅ [{champ_name}] 辞典統合完了")
+                    else:
+                        logger.warning(f"  ⚠️ [{champ_name}] 辞典統合スキップ")
+
+                # 全チャンピオンへの統合が1件以上成功したら、ライブラリから削除
+                integrated = integrated_count > 0
                 
                 if integrated:
                     # 辞典への統合に成功した場合、ライブラリ(personal_knowledge)から該当記事を削除する

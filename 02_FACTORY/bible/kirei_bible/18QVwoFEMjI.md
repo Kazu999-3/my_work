@@ -1,4 +1,4 @@
-[Champion: Malphite]
+[Champions: Malphite, Irelia]
 # MALPHITE TOP IS THE #1 BEST TANK OF SEASON 14 (NEW META) - S14 Malphite TOP Gameplay Guide
 
 ## 📌 動画の結論（1行サマリー）

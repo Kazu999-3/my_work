@@ -196,9 +196,14 @@ function runBalanceSearch(players: Player[], ctx: BalanceContext): RawBalanceCan
     p.adjustedRates = {} as Record<Role, number>;
     p.balanceRates = {} as Record<Role, number>;
     let wrPityPenalty = 0;
-    if (p.games >= 5 && p.winRate < 42) {
-      wrPityPenalty = Math.round((42 - p.winRate) * 15);
-      wrPityPenalty = Math.min(250, wrPityPenalty);
+    if (p.games >= 5) {
+      if (p.winRate < 42) {
+        wrPityPenalty = Math.round((42 - p.winRate) * 15);
+        wrPityPenalty = Math.min(250, wrPityPenalty); // 低勝率の救済補正
+      } else if (p.winRate > 58) {
+        wrPityPenalty = -Math.round((p.winRate - 58) * 12);
+        wrPityPenalty = Math.max(-200, wrPityPenalty); // 高勝率のキャリー補正（最大MMR評価+200）
+      }
     }
     ROLES.forEach(role => {
       const raw = p.rates[role];
@@ -278,14 +283,14 @@ function runBalanceSearch(players: Player[], ctx: BalanceContext): RawBalanceCan
     const teamA = teamAIndices.map(i => players[i]);
     const teamB = teamBIndices.map(i => players[i]);
 
-    // 特定の二人（こんぺい、tamias）が同じチームに入らないように制限
+    // 特定の二人（こんぺい、tamias）が同じチームに入らないように制限（表記揺れや部分一致対応）
     const checkSameTeam = (name1: string, name2: string) => {
       const n1 = name1.toLowerCase().trim();
       const n2 = name2.toLowerCase().trim();
-      const hasN1A = teamA.some(p => p.name.toLowerCase().trim() === n1);
-      const hasN2A = teamA.some(p => p.name.toLowerCase().trim() === n2);
-      const hasN1B = teamB.some(p => p.name.toLowerCase().trim() === n1);
-      const hasN2B = teamB.some(p => p.name.toLowerCase().trim() === n2);
+      const hasN1A = teamA.some(p => p.name.toLowerCase().includes(n1) || n1.includes(p.name.toLowerCase()));
+      const hasN2A = teamA.some(p => p.name.toLowerCase().includes(n2) || n2.includes(p.name.toLowerCase()));
+      const hasN1B = teamB.some(p => p.name.toLowerCase().includes(n1) || n1.includes(p.name.toLowerCase()));
+      const hasN2B = teamB.some(p => p.name.toLowerCase().includes(n2) || n2.includes(p.name.toLowerCase()));
       return (hasN1A && hasN2A) || (hasN1B && hasN2B);
     };
 
@@ -385,7 +390,7 @@ function runBalanceSearch(players: Player[], ctx: BalanceContext): RawBalanceCan
           const balA = pLayerA.balanceRates![role];
           const balB = pLayerB.balanceRates![role];
 
-          penalty += Math.pow(Math.abs(adjA - adjB), 2) / 4;
+          penalty += Math.pow(Math.abs(adjA - adjB), 2) / 2.5; // 対面のレーン格差ペナルティをより重視して評価（4から2.5へ）
           totalA += balA; totalB += balB;
 
           laneAdvantageScoreA += Math.max(0, adjA - adjB);
@@ -495,7 +500,7 @@ function runBalanceSearch(players: Player[], ctx: BalanceContext): RawBalanceCan
         const totalWRA = teamAIndices.reduce((sum, idx) => sum + (players[idx].winRate - 50.0) * Math.min(1.0, players[idx].games / 10), 0);
         const totalWRB = teamBIndices.reduce((sum, idx) => sum + (players[idx].winRate - 50.0) * Math.min(1.0, players[idx].games / 10), 0);
         
-        penalty += Math.abs(totalWRA - totalWRB) * 1500;
+        penalty += Math.abs(totalWRA - totalWRB) * 400; // 勝率偏りペナルティをマイルドに調整（1500から400へ）
 
         if (teamAIndices.some(idx => players[idx].name === bestWRPlayerName) !== teamAIndices.some(idx => players[idx].name === worstWRPlayerName)) {
           penalty += 8000;
@@ -655,58 +660,61 @@ export function coreBalanceProposals(players: Player[], ctx: BalanceContext): Pr
     throw new Error('有効なチーム分けが見つかりませんでした。制約が競合しています。');
   }
 
-  // 1. 総合バランス (スコア昇順)
-  const listC = [...candidates].sort((a, b) => a.score - b.score);
-  // 2. 戦力均等 (MMR差昇順)
-  const listA = [...candidates].sort((a, b) => a.mmrDiffVal - b.mmrDiffVal || a.score - b.score);
-  // 3. 希望優先 (希望合致数降順)
-  const listB = [...candidates].sort((a, b) => b.mainCount - a.mainCount || a.score - b.score);
+  // 1. 総合バランス (スコア昇順) -> 案A
+  const listA = [...candidates].sort((a, b) => a.score - b.score);
+  // 2. 戦力均等 (MMR差昇順) -> 案B
+  const listB = [...candidates].sort((a, b) => a.mmrDiffVal - b.mmrDiffVal || a.score - b.score);
+  // 3. 希望優先 (希望合致数降順) -> 案C
+  const listC = [...candidates].sort((a, b) => b.mainCount - a.mainCount || a.score - b.score);
 
   const proposals: ProposalResult[] = [];
   const usedSignatures = new Set<string>();
 
-  // 案C: 総合バランス決定
-  const bestC = listC[0];
-  const resC = buildBalanceResult(bestC, players, ctx);
-  const mmrBlueC = resC.teamBlue.reduce((s, p) => s + p.mmr, 0);
-  const mmrRedC = resC.teamRed.reduce((s, p) => s + p.mmr, 0);
-  proposals.push({
-    ...resC,
-    id: 'C',
-    title: '案C：総合バランス',
-    teamBlueMMR: mmrBlueC,
-    teamRedMMR: mmrRedC,
-    mmrDiff: Math.abs(mmrBlueC - mmrRedC)
-  });
-  usedSignatures.add(bestC.signature);
-
-  // 案A: 戦力均等（重複回避）
-  const bestA = listA.find(c => !usedSignatures.has(c.signature)) || listA[0];
+  // 案A: バランス（旧 案C：総合バランス）
+  const bestA = listA[0];
   const resA = buildBalanceResult(bestA, players, ctx);
+  resA.balanceReport.unshift("💡 **チーム分けの根拠 (バランス)**: 各プレイヤーのロール希望の合致度、MMR（内部レート）の差、直近の同チーム履歴などを総合的に考慮し、全体の快適性と公平性を最大化する最適な組み合わせを提示しています。");
   const mmrBlueA = resA.teamBlue.reduce((s, p) => s + p.mmr, 0);
   const mmrRedA = resA.teamRed.reduce((s, p) => s + p.mmr, 0);
   proposals.push({
     ...resA,
     id: 'A',
-    title: '案A：戦力均等',
+    title: '案A：バランス',
     teamBlueMMR: mmrBlueA,
     teamRedMMR: mmrRedA,
     mmrDiff: Math.abs(mmrBlueA - mmrRedA)
   });
   usedSignatures.add(bestA.signature);
 
-  // 案B: 希望優先（重複回避）
+  // 案B: 戦力均等（旧 案A：戦力均等）
   const bestB = listB.find(c => !usedSignatures.has(c.signature)) || listB[0];
   const resB = buildBalanceResult(bestB, players, ctx);
+  resB.balanceReport.unshift("💡 **チーム分けの根拠 (戦力均等)**: レーン間およびチーム全体のMMR格差を最小化し、両チームの実力差が最も平坦（公平なレーン戦・勝率期待値）になるように計算されています。");
   const mmrBlueB = resB.teamBlue.reduce((s, p) => s + p.mmr, 0);
   const mmrRedB = resB.teamRed.reduce((s, p) => s + p.mmr, 0);
   proposals.push({
     ...resB,
     id: 'B',
-    title: '案B：希望優先',
+    title: '案B：戦力均等',
     teamBlueMMR: mmrBlueB,
     teamRedMMR: mmrRedB,
     mmrDiff: Math.abs(mmrBlueB - mmrRedB)
+  });
+  usedSignatures.add(bestB.signature);
+
+  // 案C: 希望優先（旧 案B：希望優先）
+  const bestC = listC.find(c => !usedSignatures.has(c.signature)) || listC[0];
+  const resC = buildBalanceResult(bestC, players, ctx);
+  resC.balanceReport.unshift("💡 **チーム分けの根拠 (希望優先)**: できる限り多くのプレイヤーが第一希望（メインロール）でプレイできるように、ロール希望の合致数を最優先にして計算されています。");
+  const mmrBlueC = resC.teamBlue.reduce((s, p) => s + p.mmr, 0);
+  const mmrRedC = resC.teamRed.reduce((s, p) => s + p.mmr, 0);
+  proposals.push({
+    ...resC,
+    id: 'C',
+    title: '案C：希望優先',
+    teamBlueMMR: mmrBlueC,
+    teamRedMMR: mmrRedC,
+    mmrDiff: Math.abs(mmrBlueC - mmrRedC)
   });
 
   // 切り替え時に綺麗に表示されるように、インデックス順にソート（案A、案B、案C）して返却

@@ -122,11 +122,12 @@ class APIGateway:
                 break
                 
             except sqlite3.OperationalError as e:
-                # データベースロック競合時はコミットせず、少し時間をおいてリトライ
+                # データベースロック競合時はコミットせず、ランダムな待機時間(ジッター)をおいてリトライし競合を回避
+                import random
                 try: conn.rollback()
                 except: pass
                 conn.close()
-                time.sleep(0.5)
+                time.sleep(random.uniform(0.2, 1.5))
             except Exception as e:
                 try: conn.rollback()
                 except: pass

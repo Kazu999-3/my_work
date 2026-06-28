@@ -1,4 +1,4 @@
-[Champion: Diana]
+[Champions: Diana, Sivir, Sona, Taliyah]
 # HOW TO JUNGLE FROM BEHIND AND 3 LOSING LANES? - Here is How.
 
 ## 📌 動画の結論（1行サマリー）

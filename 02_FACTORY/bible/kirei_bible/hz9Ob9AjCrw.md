@@ -1,4 +1,4 @@
-[Champion: Unknown]
+[Champions: Nami, Talon]
 
 # #1 Fundamental hack to print LP (BROKEN)
 

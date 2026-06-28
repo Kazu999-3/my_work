@@ -1,6 +1,6 @@
 [Champion: Unknown]
 
-# YouTube Video
+# #1 COMPLETE Jungle Fundamentals Guide (1v9 after this video)
 ## 📌 動画の結論（1行サマリー）
 序盤のジャングルルート、ミッドとの連携、オブジェクト獲得、そして状況判断を最適化することで、LoLで圧倒的な強さを発揮し、確実に勝利へと導くための戦略解説。
 

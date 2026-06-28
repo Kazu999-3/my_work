@@ -323,6 +323,38 @@ export default function BalancerPage() {
     setProposals(prev => prev.map((p, idx) => idx === selectedProposalIdx ? newResult : p));
   };
 
+  const [dragOverSlot, setDragOverSlot] = useState<string | null>(null);
+
+  const handleDragStart = (e: React.DragEvent, team: string, role: string, name: string) => {
+    e.dataTransfer.setData("text/plain", JSON.stringify({ team, role, name }));
+    e.dataTransfer.effectAllowed = "move";
+  };
+
+  const handleDragOver = (e: React.DragEvent, slotKey: string) => {
+    e.preventDefault();
+    if (dragOverSlot !== slotKey) {
+      setDragOverSlot(slotKey);
+    }
+  };
+
+  const handleDragLeave = () => {
+    setDragOverSlot(null);
+  };
+
+  const handleDropPlayer = (e: React.DragEvent, targetTeam: 'teamBlue' | 'teamRed' | 'spectators', targetRole: string) => {
+    e.preventDefault();
+    setDragOverSlot(null);
+    try {
+      const dataStr = e.dataTransfer.getData("text/plain");
+      if (!dataStr) return;
+      const dragSource = JSON.parse(dataStr);
+      if (dragSource.team === targetTeam && dragSource.role === targetRole) return;
+      handleSwapPlayer(targetTeam, targetRole, dragSource.name);
+    } catch (err) {
+      console.error("Drop error:", err);
+    }
+  };
+
   const renderSwapSelect = (team: 'teamBlue' | 'teamRed' | 'spectators', role: string, currentPlayerName: string) => {
     return (
       <select 
@@ -558,8 +590,23 @@ export default function BalancerPage() {
                   {['TOP', 'JG', 'MID', 'ADC', 'SUP'].map((role) => {
                     const p = balanceResult.teamBlue.find((x:any) => x.currentRole === role);
                     const isOffRole = p && p.mainLane !== 'ALL' && p.mainLane !== 'FILL' && p.currentRole !== p.mainLane;
+                    const slotKey = `teamBlue-${role}`;
+                    const isDragOver = dragOverSlot === slotKey;
+                    
                     return (
-                      <div key={`blue-${role}`} className="flex items-center gap-3 bg-gray-950/50 hover:bg-gray-800 p-2 rounded border border-gray-800 transition group relative">
+                      <div 
+                        key={`blue-${role}`} 
+                        draggable={!!p?.name}
+                        onDragStart={(e) => handleDragStart(e, 'teamBlue', role, p?.name || '')}
+                        onDragOver={(e) => handleDragOver(e, slotKey)}
+                        onDragLeave={handleDragLeave}
+                        onDrop={(e) => handleDropPlayer(e, 'teamBlue', role)}
+                        className={`flex items-center gap-3 p-2 rounded border transition group relative cursor-grab active:cursor-grabbing ${
+                          isDragOver 
+                            ? 'border-indigo-400 bg-indigo-950/40 border-dashed shadow-[0_0_15px_rgba(129,140,248,0.2)]' 
+                            : 'bg-gray-950/50 hover:bg-gray-800 border-gray-800'
+                        }`}
+                      >
                         <div className="w-10 text-center font-bold text-gray-600 text-xs">{role}</div>
                         <div className="flex-1">
                           {renderSwapSelect('teamBlue', role, p?.name || '')}
@@ -586,8 +633,23 @@ export default function BalancerPage() {
                   {['TOP', 'JG', 'MID', 'ADC', 'SUP'].map((role) => {
                     const p = balanceResult.teamRed.find((x:any) => x.currentRole === role);
                     const isOffRole = p && p.mainLane !== 'ALL' && p.mainLane !== 'FILL' && p.currentRole !== p.mainLane;
+                    const slotKey = `teamRed-${role}`;
+                    const isDragOver = dragOverSlot === slotKey;
+                    
                     return (
-                      <div key={`red-${role}`} className="flex items-center gap-3 bg-gray-950/50 hover:bg-gray-800 p-2 rounded border border-gray-800 transition group relative">
+                      <div 
+                        key={`red-${role}`} 
+                        draggable={!!p?.name}
+                        onDragStart={(e) => handleDragStart(e, 'teamRed', role, p?.name || '')}
+                        onDragOver={(e) => handleDragOver(e, slotKey)}
+                        onDragLeave={handleDragLeave}
+                        onDrop={(e) => handleDropPlayer(e, 'teamRed', role)}
+                        className={`flex items-center gap-3 p-2 rounded border transition group relative cursor-grab active:cursor-grabbing ${
+                          isDragOver 
+                            ? 'border-indigo-400 bg-indigo-950/40 border-dashed shadow-[0_0_15px_rgba(129,140,248,0.2)]' 
+                            : 'bg-gray-950/50 hover:bg-gray-800 border-gray-800'
+                        }`}
+                      >
                         <div className="w-10 text-center font-bold text-gray-600 text-xs">{role}</div>
                         <div className="flex-1">
                           {renderSwapSelect('teamRed', role, p?.name || '')}
@@ -629,11 +691,28 @@ export default function BalancerPage() {
                   <Activity className="h-4 w-4" /> 観戦 / 待機メンバー
                 </h3>
                 <div className="flex flex-wrap gap-2">
-                  {balanceResult.spectators.map((name: string, index: number) => (
-                    <div key={`spec-${index}`} className="bg-gray-950 border border-gray-800 rounded px-3 py-1.5 min-w-[120px]">
-                      {renderSwapSelect('spectators', index.toString(), name)}
-                    </div>
-                  ))}
+                  {balanceResult.spectators.map((name: string, index: number) => {
+                    const slotKey = `spectators-${index}`;
+                    const isDragOver = dragOverSlot === slotKey;
+                    
+                    return (
+                      <div 
+                        key={`spec-${index}`} 
+                        draggable={true}
+                        onDragStart={(e) => handleDragStart(e, 'spectators', index.toString(), name)}
+                        onDragOver={(e) => handleDragOver(e, slotKey)}
+                        onDragLeave={handleDragLeave}
+                        onDrop={(e) => handleDropPlayer(e, 'spectators', index.toString())}
+                        className={`border rounded px-3 py-1.5 min-w-[120px] transition cursor-grab active:cursor-grabbing ${
+                          isDragOver 
+                            ? 'border-indigo-400 bg-indigo-950/40 border-dashed shadow-[0_0_15px_rgba(129,140,248,0.2)]' 
+                            : 'bg-gray-950 border-gray-800 hover:bg-gray-800'
+                        }`}
+                      >
+                        {renderSwapSelect('spectators', index.toString(), name)}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}

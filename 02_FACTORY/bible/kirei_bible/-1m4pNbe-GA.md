@@ -1,4 +1,4 @@
-[Champion: Kindred]
+[Champions: Kindred, Warwick]
           # When I Played Buffed Kindred Against Warwick!
           ## 📌 動画の結論（1行サマリー）
           Kindred vs. Warwickという状況で、相手の挑発に乗らずに冷静な判断と積極的なプレイングでゲームを有利に進め、最終的に勝利する戦略と精神性を解説。

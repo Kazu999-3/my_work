@@ -67,7 +67,6 @@ class SovereignHerald:
 
         payload = {
             "username": "Antigravity OS",
-            "avatar_url": "https://raw.githubusercontent.com/Antigravity-OS/icons/main/herald.png",
             "embeds": [embed]
         }
 

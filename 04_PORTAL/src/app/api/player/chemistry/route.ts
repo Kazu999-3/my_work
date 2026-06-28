@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '../../../../lib/supabaseClient';
 
+const cache = new Map<string, { data: any; expiry: number }>();
+const CACHE_TTL_MS = 30000; // 30 seconds TTL
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -8,6 +11,11 @@ export async function GET(request: Request) {
 
     if (!playerName) {
       return NextResponse.json({ error: 'プレイヤー名が指定されていません。' }, { status: 400 });
+    }
+
+    const cached = cache.get(playerName);
+    if (cached && cached.expiry > Date.now()) {
+      return NextResponse.json(cached.data);
     }
 
     // 1. 指定したプレイヤーの全試合データを取得（winning_teamも取得）
@@ -105,11 +113,15 @@ export async function GET(request: Request) {
         return b.games - a.games;
       });
 
-    return NextResponse.json({
+    const result = {
       success: true,
       chemistry: formattedChemistry,
       rivals: formattedRivals
-    });
+    };
+
+    cache.set(playerName, { data: result, expiry: Date.now() + CACHE_TTL_MS });
+
+    return NextResponse.json(result);
 
   } catch (error: any) {
     console.error('Chemistry Fetch Error:', error);

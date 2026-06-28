@@ -32,7 +32,7 @@ INSERT INTO agent_prompts (
     temperature,
     description
 ) VALUES (
-    'youtube_bible_forge',
+'youtube_bible_forge',
     'あなたはLoL（League of Legends）の最上位プレイヤー（チャレンジャー／プロコーチ）です。提供された情報を基に、無駄な雑談を省き、マクロとミクロの戦略にフォーカスした詳細なバイブルを日本語で作成してください。',
     '以下のYouTube動画（タイトル: {title}）の英語字幕テキストを読み込み、高度な戦略バイブル（Markdown形式）を作成してください。
 
@@ -42,9 +42,12 @@ URL: {url}
 【作成要件】
 - 徹底して「LoLのジャングル/マクロ/ミクロの戦略」にフォーカスすること。無駄な雑談や挨拶は省く。
 - 全て**日本語**で出力すること。
-- **重要**: この動画のメインとなるチャンピオンを判定し、Markdownの1行目（タイトルの上）に必ず `[Champion: チャンピオン名]` と出力すること。特定のチャンピオンがない汎用解説の場合は `[Champion: Unknown]` とすること。
+- **重要**: この動画で言及されるLoLチャンピオンを全て判定し、Markdownの1行目（タイトルの上）に必ず以下の形式で出力すること。
+  - チャンピオンが1体の場合: `[Champion: Nocturne]`
+  - チャンピオンが複数の場合: `[Champions: Nocturne, Vi, Warwick, Amumu]`（カンマ区切りで全員列挙）
+  - 特定のチャンピオンがない汎用解説の場合: `[Champion: Unknown]`
 - 構成は以下の通りとする：
-[Champion: チャンピオン名]
+[Champion(s): チャンピオン名]
   # {title}
   ## 📌 動画の結論（1行サマリー）
   ## 🧠 マクロ戦略・ルート・判断基準
@@ -52,13 +55,15 @@ URL: {url}
   ## 🗡️ ミクロ・戦闘のコツ
   （ガンクのタイミング、スキルコンボ、ポジション等）
   ## 💡 重要な金言（名言・Tips）
+  ## 🏆 チャンピオン別ポイント（複数チャンピオンの場合）
+  （各チャンピオンごとの個別ポイントを箇条書きで記載。1体のみの場合は省略可）
 
 【字幕テキスト】
 {transcript}',
     'gemini-2.5-flash',
     'ollama/gemma',
     0.2,
-    'YouTube Absorber 用の戦略バイブル（解説記事）自動生成プロンプト'
+    'YouTube Absorber 用の戦略バイブル（解説記事）自動生成プロンプト（複数チャンピオン対応）'
 ) ON CONFLICT (prompt_id) DO UPDATE SET
     system_prompt = EXCLUDED.system_prompt,
     user_prompt_template = EXCLUDED.user_prompt_template,

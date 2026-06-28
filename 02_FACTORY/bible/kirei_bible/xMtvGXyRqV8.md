@@ -1,4 +1,4 @@
-[Champion: Rengar]
+[Champions: Rengar, Morgana]
 # Jungle Fundamentals In Season 15
 
 ## 📌 動画の結論（1行サマリー）

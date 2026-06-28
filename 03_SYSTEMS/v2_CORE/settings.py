@@ -50,9 +50,9 @@ class SovereignSettings(BaseSettings):
     LOLALYTICS_ENABLED: bool = True
 
     # モデル設定
-    DEFAULT_MODEL: str = "gemini-2.5-flash"
+    DEFAULT_MODEL: str = "ollama/gemma3:12b"
     # OLE（動画解析）専用モデル
-    OLE_MODEL: str = "gemini-2.5-flash"
+    OLE_MODEL: str = "ollama/gemma3:12b"
     
     # Ollama（ローカルLLM）設定: 記事生成・リライト等のローカル処理用
     OLLAMA_BASE_URL: str = "http://localhost:11434"

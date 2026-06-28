@@ -1,4 +1,4 @@
-[Champion: Ivern]
+[Champions: Ivern, Lillia]
 # EX PRO PLAYER VS FAKER
 
 ## 📌 動画の結論（1行サマリー）

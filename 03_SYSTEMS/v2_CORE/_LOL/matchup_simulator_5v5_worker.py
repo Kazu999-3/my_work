@@ -158,9 +158,7 @@ def main():
   ]
 }}"""
 
-    config = types.GenerateContentConfig(
-        tools=[{"google_search": {}}]
-    )
+    config = types.GenerateContentConfig()
     
     try:
         res_text = generate_content_safe(

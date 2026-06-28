@@ -1,4 +1,4 @@
-[Champion: Hecarim]
+[Champions: Hecarim, Jinx]
 # My Hecarim Was #1 Before Dantes Even Existed! Coach Kirei
 
 ## 📌 動画の結論（1行サマリー）

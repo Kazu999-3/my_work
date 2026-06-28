@@ -241,7 +241,7 @@ class YouTubeAbsorber:
             url
         ]
         logger.info(f"Downloading audio for Whisper: {url}")
-        res = subprocess.run(cmd, capture_output=True, text=True)
+        res = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace")
         if res.returncode != 0:
             logger.error(f"Failed to download audio: {res.stderr}")
             return ""
@@ -449,7 +449,7 @@ class YouTubeAbsorber:
         targets = []
         char_budget_used = 0
         for item in pending_sorted:
-            if len(targets) >= MAX_VIDEOS_PER_CYCLE:
+            if len(targets) >= limit:
                 break
             # duration_sec から字幕文字数を概算（秒数 × 15文字が目安）
             dur = item.get("duration_sec") or DURATION_UNKNOWN
@@ -473,6 +473,29 @@ class YouTubeAbsorber:
         processed_details = []
         
         for item in targets:
+            # ===== タイトルが未取得（フォールバック値）の場合、先にyt-dlpで実タイトルを取得 =====
+            if not item.get("title") or item["title"] in ("YouTube Video", "Unknown", ""):
+                logger.info(f"🔍 [TitleFix] タイトル未取得のため yt-dlp で実タイトルを取得します: {item['url']}")
+                try:
+                    result = subprocess.run(
+                        [self.yt_dlp, "--print", "%(title)s\n%(uploader)s", "--no-warnings", item["url"]],
+                        capture_output=True, text=True, timeout=20
+                    )
+                    lines = result.stdout.strip().split("\n")
+                    if lines[0] and lines[0].strip():
+                        real_title = lines[0].strip()
+                        real_channel = lines[1].strip() if len(lines) > 1 and lines[1].strip() else item.get("channel_name", "Unknown")
+                        self.update_video(item["id"], {"title": real_title, "channel_name": real_channel})
+                        item["title"] = real_title
+                        item["channel_name"] = real_channel
+                        logger.info(f"✅ [TitleFix] タイトル取得成功: 「{real_title}」")
+                    else:
+                        logger.warning(f"⚠️ [TitleFix] タイトル取得失敗（空文字）。動画IDをタイトルとして使用します。")
+                        item["title"] = f"LoL Guide ({item['id']})"
+                except Exception as e:
+                    logger.warning(f"⚠️ [TitleFix] yt-dlp タイトル取得エラー: {e}。動画IDをタイトルとして使用します。")
+                    item["title"] = f"LoL Guide ({item['id']})"
+
             logger.info(f"Processing: {item['title']}")
             
             # クオリティ重視のため、YouTube自動字幕をスキップし、常にローカルの GPU Whisper で高精度文字起こしを実行
@@ -499,6 +522,7 @@ class YouTubeAbsorber:
 
             # 実際の字幕長をログに記録
             logger.info(f"📝 字幕取得完了: {len(transcript):,}文字 ({item['title'][:40]})")
+
                 
             bible_text = self.generate_bible(item, transcript)
             if bible_text and not bible_text.startswith("⚠️") and not bible_text.startswith("❌"):

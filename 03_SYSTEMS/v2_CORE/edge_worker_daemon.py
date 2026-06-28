@@ -178,8 +178,8 @@ class EdgeWorkerDaemon:
             logger.info(f"✅ サブプロセス正常終了: {script_path}")
             return {
                 "success": True,
-                "stdout": res.stdout[-2000:],  # ログ肥大化防止のため末尾のみ
-                "stderr": res.stderr[-2000:]
+                "stdout": res.stdout,
+                "stderr": res.stderr[-50000:]
             }
         else:
             logger.error(f"❌ サブプロセスエラー終了 ({res.returncode}): {script_path}")

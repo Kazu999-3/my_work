@@ -1,4 +1,4 @@
-[Champion: Unknown]
+[Champion: Kindred]
 
 # Kesha Jungle Incident, Taking FREE LP
 

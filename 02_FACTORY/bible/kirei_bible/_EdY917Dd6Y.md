@@ -1,4 +1,4 @@
-[Champion: Unknown]
+[Champions: Kindred, Twitch]
 # JUNGLE IS DEAD IN SEASON 2026? - (My Honest Opinion)
 
 ## 📌 動画の結論（1行サマリー）

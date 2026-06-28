@@ -1,4 +1,4 @@
-[Champion: Kindred]
+[Champions: Kindred, Poppy]
 # How to Jungle With a BAD Support - vs Broxah
 
 ## 📌 動画の結論（1行サマリー）

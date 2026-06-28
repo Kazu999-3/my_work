@@ -1,4 +1,4 @@
-[Champion: Malphite]
+[Champions: Malphite, Caitlyn, Quinn, Zed]
 # MALPHITE TOP IS NOW #1 BEST TANK IN 2026! (HIGH W/R + GOD-TIER) - 2026 Malphite TOP Gameplay Guide
 
 ## 📌 動画の結論（1行サマリー）

@@ -8,9 +8,12 @@ export async function handleScheduledEvent(event, env, ctx) {
   if (cronExpression === "0 12 * * 6" || mode === "create") {
     // 毎週土曜 21:00 のイベント自動作成処理
     await createWeeklyEvents(env);
+  } else if (cronExpression === "0 12 * * 3" || mode === "wednesday") {
+    // 毎週水曜 21:00 の事前告知（土曜イベントを7日先まで検索）
+    await sendEventUsersNotification(env, { lookaheadHours: 7 * 24 });
   } else {
-    // 毎週金・土 20:00 の「興味あり」自動抽出・送信処理
-    await sendEventUsersNotification(env);
+    // 毎週金・土 20:00 の直前通知（48時間以内）
+    await sendEventUsersNotification(env, { lookaheadHours: 48 });
   }
 }
 
@@ -184,8 +187,10 @@ async function createWeeklyEvents(env) {
 }
 
 /** イベントの「興味あり」メンバーを自動抽出して送信する */
-async function sendEventUsersNotification(env) {
-  console.log("Starting event users extraction notification...");
+async function sendEventUsersNotification(env, options = {}) {
+  const lookaheadHours = options.lookaheadHours || 48;
+  const isAdvanceNotice = lookaheadHours > 48;
+  console.log(`Starting event users extraction notification... (lookahead: ${lookaheadHours}h)`);
   try {
     const channelId = CONFIG.MATCH_CHANNEL_ID || "1487077567939743995";
     
@@ -220,22 +225,23 @@ async function sendEventUsersNotification(env) {
     const scheduledEvents = await eventsRes.json();
     console.log(`Fetched ${scheduledEvents.length} events from guild.`);
 
-    // 3. 直近48時間以内の「【定期】」が含まれるアクティブなイベントをフィルタ
+    // 3. lookaheadHours以内の「【定期】」が含まれるアクティブなイベントをフィルタ
     const now = Date.now();
-    const maxStartLimit = now + 48 * 60 * 60 * 1000;
+    const minStartLimit = now - 3 * 60 * 60 * 1000; // Allow events started up to 3 hours ago (timezone buffer)
+    const maxStartLimit = now + lookaheadHours * 60 * 60 * 1000;
 
     const targetEvents = scheduledEvents.filter(e => {
       const startTime = new Date(e.scheduled_start_time).getTime();
-      const isWithin48h = startTime >= now && startTime <= maxStartLimit;
+      const isWithinRange = startTime >= minStartLimit && startTime <= maxStartLimit;
       const hasTeiki = e.name && e.name.includes("【定期】");
-      const isActive = e.status === 1 || e.status === 2; // 1=SCHEDULED, 2=ACTIVE
-      return isWithin48h && hasTeiki && isActive;
+      const isActive = e.status === 1 || e.status === 2;
+      return isWithinRange && hasTeiki && isActive;
     });
 
     console.log(`Found ${targetEvents.length} target events matching criteria.`);
 
     if (targetEvents.length === 0) {
-      console.log("No matching scheduled events found within 48 hours containing '【定期】'. Skipping notification.");
+      console.log(`No matching scheduled events found within ${lookaheadHours}h containing '【定期】'. Skipping notification.`);
       return;
     }
 
@@ -314,7 +320,8 @@ async function sendEventUsersNotification(env) {
       const { event: targetEvent, users: eventUsers } = ed;
       
       const userListText = eventUsers.map((eu, index) => {
-        const displayName = eu.member?.nick || eu.user.global_name || eu.user.username;
+        if (!eu || !eu.user) return `\`${String(index + 1).padStart(2, '0')}.\` 不明なユーザー`;
+        const displayName = eu.member?.nick || eu.user.global_name || eu.user.username || "不明";
         return `\`${String(index + 1).padStart(2, '0')}.\` <@${eu.user.id}> (${displayName})`;
       }).join('\n') || "「興味あり」を押しているプレイヤーはいません。";
 
@@ -337,8 +344,12 @@ async function sendEventUsersNotification(env) {
     });
 
     const embed = {
-      title: `📅 【定期】イベント「興味あり」表明メンバー状況`,
-      description: statusMessage,
+      title: isAdvanceNotice
+        ? `📅 【定期】イベント 今週土曜の事前告知 🔔`
+        : `📅 【定期】イベント「興味あり」表明メンバー状況`,
+      description: isAdvanceNotice
+        ? `⚠️ **今週土曜のカスタム戦まで残り約3日です！**\n\n${statusMessage}\n\n参加予定の方はイベントから「興味あり」を押してください！`
+        : statusMessage,
       color: embedColor,
       fields: embedFields,
       footer: {

@@ -1,6 +1,6 @@
 import { CONFIG } from '../config.js';
 import { fetchGAS, patchInteractionResponse, sendDiscordMessage, sendInteractionFollowup } from '../utils/api.js';
-import { executeBalance, handleBalanceCommand, handleLaneCommand, handleStatsCommand, performBalance } from './commands.js';
+import { handleLaneCommand, handleStatsCommand } from './commands.js';
 import { createMessageContent, createRecruitButtons, createRecruitEmbed, extractPlayersFromEmbed, getPortalComponents, getPortalEmbed, handleHelpPage, splitMessage } from '../ui/embeds.js';
 import { parseMessageData, handleAutoMatchEnd } from '../utils/helpers.js';
 
@@ -235,41 +235,7 @@ export async function handleButtonInteraction(interaction, env, ctx) {
     return Response.json({ type: 5, data: { flags: 64 } });
   }
 
-  if (customId === 'rebalance') {
-    // ━━━ デバッグ: まず即座に「処理中」を返す ━━━
-    try {
-      const meta = parseMessageData(interaction.message);
-      const names = meta.joined.map(id => meta.names[id]).slice(0, 10);
-      
-      // 募集メタデータがない場合（Match announcement の場合）は Embed から直接抽出
-      if (names.length === 0) {
-        const embed0 = interaction.message?.embeds?.[0];
-        if (!embed0) {
-          // Embedなし → エラーを即時表示
-          return Response.json({ type: 4, data: { content: "⚠️ **rebalance失敗**: メッセージにEmbedが見つかりません。", flags: 64 } });
-        }
-        const players = extractPlayersFromEmbed(embed0);
-        let spectators = [];
-        const specField = embed0.fields?.find(f => f.name.includes("待機"));
-        if (specField) {
-          spectators = specField.value.split(',').map(n => n.trim()).filter(n => n && n !== "なし");
-        }
-        
-        if (players.length > 0) {
-          const allNames = [...players.map(p => p.name), ...spectators];
-          return await executeBalance(interaction, allNames, env, ctx, true);
-        } else {
-          // players抽出失敗 → フィールド内容をデバッグ表示
-          const fieldNames = (embed0.fields || []).map(f => f.name).join(", ");
-          const firstFieldVal = (embed0.fields?.[0]?.value || "").slice(0, 100);
-          return Response.json({ type: 4, data: { content: `⚠️ **rebalance失敗**: Embedからプレイヤー抽出失敗\nfields: ${fieldNames}\n最初のfield値: ${firstFieldVal}`, flags: 64 } });
-        }
-      }
-      return await executeBalance(interaction, names, env, ctx, true);
-    } catch (err) {
-      return Response.json({ type: 4, data: { content: `⚠️ **rebalance例外**: ${err.message}`, flags: 64 } });
-    }
-  }
+
 
   // 募集パネル操作
   const metadata = parseMessageData(interaction.message);
@@ -331,8 +297,6 @@ export async function handleButtonInteraction(interaction, env, ctx) {
     return Response.json({ type: 7, data: { content: createMessageContent(metadata), embeds: [embed], components: [{ type: 1, components: [{ type: 2, label: "📢 一括連絡", style: 1, custom_id: `broadcast_start:${metadata.owner}` }] }] } });
   } else if (customId.startsWith('broadcast_start:')) {
     return Response.json({ type: 9, data: { title: "📢 一括連絡", custom_id: `broadcast_modal:${metadata.owner}`, components: [{ type: 1, components: [{ type: 4, custom_id: "msg", label: "送信メッセージ", style: 2, required: true }] }] } });
-  } else if (customId.startsWith('balance_from_recruit')) {
-     return await executeBalance(interaction, metadata.joined.map(id => metadata.names[id]), env, ctx);
   }
 
   // 自動締切 & メンション (チーム分けは手動ボタンで実行)
@@ -350,7 +314,7 @@ export async function handleButtonInteraction(interaction, env, ctx) {
     
     const closingMessage = (metadata.mode === 'ノーマル' || metadata.mode === 'ARAM')
       ? "\n🚨 **定員に達しました。対戦準備を開始してください！**" 
-      : "\n🚨 **定員に達したため締め切りました。チーム分けボタンから実行してください。**";
+      : "\n🚨 **定員に達したため締め切りました。ポータル画面からチーム分けを行ってください。**";
       
     return Response.json({ type: 7, data: { content: createMessageContent(metadata) + closingMessage, embeds: [createRecruitEmbed(metadata)], components: createRecruitButtons(metadata) } });
   }

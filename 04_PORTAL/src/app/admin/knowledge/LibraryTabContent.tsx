@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { supabase } from '../../../lib/supabaseClient';
-import { Book, ChevronLeft, ChevronDown, ChevronUp, Clock, User, Sparkles, Pencil, Save, X, Trash2, Search, Terminal, Activity, Eye, Edit2, Star as StarIcon } from 'lucide-react';
+import { Book, ChevronLeft, ChevronDown, ChevronUp, Clock, User, Sparkles, Pencil, Save, X, Trash2, Search, Terminal, Activity, Eye, Edit2, Star as StarIcon, RefreshCw } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -25,9 +25,11 @@ export function LibraryTabContentInner() {
   const [editing, setEditing] = useState(false);
   const [editContent, setEditContent] = useState('');
   const [editTitle, setEditTitle] = useState('');
-  const [editChampion, setEditChampion] = useState('');
+  const [editChampions, setEditChampions] = useState<string[]>([]);
+  const [champInput, setChampInput] = useState('');
   const [editKeywords, setEditKeywords] = useState('');
   const [saving, setSaving] = useState(false);
+  const [syncingAll, setSyncingAll] = useState(false);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
@@ -243,7 +245,11 @@ export function LibraryTabContentInner() {
   const startEditing = () => { 
     setEditContent(selectedArticle.raw_content || selectedArticle.content || ''); 
     setEditTitle(selectedArticle.title || '');
-    setEditChampion(selectedArticle.champion || '');
+    // champion フィールドがカンマ区切り複数の場合も対応
+    const rawChamp = selectedArticle.champion || '';
+    const champList = rawChamp.split(',').map((c: string) => c.trim()).filter((c: string) => c && c.toLowerCase() !== 'unknown');
+    setEditChampions(champList);
+    setChampInput('');
     setEditKeywords(Array.isArray(selectedArticle.tags) ? selectedArticle.tags.join(', ') : '');
     setEditing(true); 
   };
@@ -251,8 +257,25 @@ export function LibraryTabContentInner() {
     setEditing(false); 
     setEditContent(''); 
     setEditTitle('');
-    setEditChampion('');
+    setEditChampions([]);
+    setChampInput('');
     setEditKeywords('');
+  };
+
+  const handleSyncAllArticles = async () => {
+    if (!supabase) return;
+    if (!confirm("既存のすべての攻略ライブラリ記事をスキャンし、指定されている複数チャンピオンの各辞典（matchup_sentinel）へ情報を一括マージ・同期しますか？")) return;
+    setSyncingAll(true);
+    try {
+      const res = await fetch('/api/admin/knowledge/sync', { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || '同期エラーが発生しました');
+      showToast(`✅ 既存記事から延べ ${data.synced} 件のチャンピオン辞典データを一括同期・振り分け完了しました！`, 'success');
+    } catch (err: any) {
+      showToast(`❌ 同期失敗: ${err.message}`, 'error');
+    } finally {
+      setSyncingAll(false);
+    }
   };
 
   const saveArticle = async () => {
@@ -263,39 +286,28 @@ export function LibraryTabContentInner() {
     setSaving(true);
     const now = new Date().toISOString();
     const keywordsArray = editKeywords.split(',').map(k => k.trim()).filter(k => k);
+    // 複数チャンピオンをカンマ区切りで保存
+    const championsStr = editChampions.join(', ');
     const updateData = { 
       title: editTitle,
-      champion: editChampion,
+      champion: championsStr || null,
       tags: keywordsArray,
       content: editContent.slice(0, 300).replace(/[#*`]/g, ''), 
       raw_content: editContent,
       created_at: now 
     };
 
-    // --- チャンピオン統合ロジック ---
+    // --- チャンピオン辞典統合ロジック（複数チャンピオン対応）---
     const fakeChampions = ["", "Unknown", "その他", "[YouTube]", "YouTube", "Jungle", "jg", "lol", "ARTICLE", "draft", "SYSTEM", "LIVE", "GLOBAL", "test", "sns", "macro"];
-    const championName = editChampion.trim();
+    const validChampions = editChampions.filter(c => c.trim() && !fakeChampions.includes(c.trim()) && !fakeChampions.includes(c.trim().toLowerCase()));
 
-    if (championName && !fakeChampions.includes(championName) && !fakeChampions.includes(championName.toLowerCase())) {
+    if (validChampions.length > 0) {
       try {
-        const matchupId = `champ_${championName}_global`;
-        
-        // 既存データの取得
-        const { data: existingData } = await supabase
-          .from('matchup_sentinel')
-          .select('*')
-          .eq('matchup_id', matchupId)
-          .maybeSingle();
-          
-        let rawData = existingData?.raw_data || {};
-        let customFields = rawData.customFields || {};
-        
         // マージヘルパー
         const mergeContent = (existingText: string, newText: string, title: string) => {
             const ext = existingText || "";
             if (!ext.trim()) return newText;
             if (newText.trim() === ext.trim()) return ext;
-            
             const header = `## 【記事】${title}`;
             if (ext.includes(header)) {
                 const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -303,47 +315,56 @@ export function LibraryTabContentInner() {
                 const newContent = ext.replace(pattern, `${header}\n\n${newText}`);
                 if (newContent !== ext) return newContent;
             }
-            
             if (ext.includes(newText)) return ext;
             return `${ext}\n\n---\n\n${header}\n\n${newText}`;
         };
-        
-        if (editTitle.includes("HONKI_BIBLE") || editTitle.includes("ARTICLE")) {
-            rawData.note_draft = mergeContent(rawData.note_draft || "", editContent, editTitle);
-        } else {
-            const fieldName = editTitle.replace(`${championName}_`, "").replace(`_${championName}`, "");
-            customFields[fieldName] = mergeContent(customFields[fieldName] || "", editContent, editTitle);
+
+        // 全チャンピオンに対してループ統合
+        for (const championName of validChampions) {
+          const matchupId = `champ_${championName}_global`;
+          const { data: existingData } = await supabase
+            .from('matchup_sentinel')
+            .select('*')
+            .eq('matchup_id', matchupId)
+            .maybeSingle();
+            
+          let rawData = existingData?.raw_data || {};
+          let customFields = rawData.customFields || {};
+          
+          if (editTitle.includes("HONKI_BIBLE") || editTitle.includes("ARTICLE")) {
+              rawData.note_draft = mergeContent(rawData.note_draft || "", editContent, editTitle);
+          } else {
+              const fieldName = editTitle.replace(`${championName}_`, "").replace(`_${championName}`, "");
+              customFields[fieldName] = mergeContent(customFields[fieldName] || "", editContent, editTitle);
+          }
+          rawData.customFields = customFields;
+          rawData.source = "champ_db";
+          rawData.role = "GLOBAL";
+          
+          const dictData = {
+              matchup_id: matchupId,
+              champion: championName,
+              enemy: "GLOBAL",
+              title: existingData?.title || `${championName} 基本戦略・トレンド`,
+              strategy: existingData?.strategy || "",
+              raw_data: rawData
+          };
+          
+          const { error: upsertError } = await supabase
+              .from('matchup_sentinel')
+              .upsert(dictData, { onConflict: 'matchup_id' });
+          if (upsertError) throw upsertError;
         }
         
-        rawData.customFields = customFields;
-        rawData.source = "champ_db";
-        rawData.role = "GLOBAL";
-        
-        const dictData = {
-            matchup_id: matchupId,
-            champion: championName,
-            enemy: "GLOBAL",
-            title: existingData?.title || `${championName} 基本戦略・トレンド`,
-            strategy: existingData?.strategy || "",
-            raw_data: rawData
-        };
-        
-        // 辞典へUPSERT
-        const { error: upsertError } = await supabase
-            .from('matchup_sentinel')
-            .upsert(dictData, { onConflict: 'matchup_id' });
-            
-        if (upsertError) throw upsertError;
-        
-        // ライブラリから削除フラグを立てる（裏のSRE Daemonがローカルファイルを消してから完全削除する）
+        // ライブラリから削除
         const { error: deleteError } = await supabase
             .from('personal_knowledge')
             .update({ tags: ['__DELETED__'] })
             .eq('id', selectedArticle.id);
-            
         if (deleteError) throw deleteError;
         
-        showToast(`【統合完了】${championName} のチャンピオン辞典にマージし、ライブラリから削除しました！`, 'success');
+        const champLabel = validChampions.length > 1 ? `${validChampions.join(', ')} (${validChampions.length}体)` : validChampions[0];
+        showToast(`【統合完了】${champLabel} のチャンピオン辞典にマージし、ライブラリから削除しました！`, 'success');
         setArticles(prev => prev.filter(a => String(a.id) !== String(selectedArticle.id)));
         setSelectedArticle(null);
         setEditing(false);
@@ -357,7 +378,7 @@ export function LibraryTabContentInner() {
       }
     }
 
-    // --- 既存の保存処理 (汎用記事のままの場合) ---
+    // --- 汎用記事として保存（チャンピオン指定なし）---
     const { error } = await supabase.from('personal_knowledge').update(updateData).eq('id', selectedArticle.id);
     if (!error) {
       const updated = { ...selectedArticle, ...updateData };
@@ -436,8 +457,31 @@ export function LibraryTabContentInner() {
                   </div>
                   <div className="flex gap-4 flex-wrap">
                     <div className="flex-1 min-w-[200px]">
-                      <label className="text-xs text-[#a78bfa] font-bold">チャンピオン (タブ用)</label>
-                      <ChampSelect value={editChampion} onChange={setEditChampion} placeholder="未設定の場合は「その他」になります" className="bg-black/50 border-[#a78bfa]/30 focus:border-[#a78bfa]/60" />
+                      <label className="text-xs text-[#a78bfa] font-bold">チャンピオン（複数選択可）</label>
+                      {/* 選択済みタグ */}
+                      {editChampions.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 mb-2">
+                          {editChampions.map(c => (
+                            <span key={c} className="flex items-center gap-1 px-2.5 py-1 bg-[#a78bfa]/20 border border-[#a78bfa]/40 rounded-full text-xs font-bold text-[#a78bfa]">
+                              {c}
+                              <button onClick={() => setEditChampions(prev => prev.filter(x => x !== c))} className="hover:text-white transition-colors ml-0.5"><X size={10} /></button>
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      {/* サジェスト付き入力 */}
+                      <ChampSelect
+                        value={champInput}
+                        onChange={v => setChampInput(v)}
+                        placeholder={editChampions.length === 0 ? "未設定の場合は「その他」になります" : "追加するチャンピオン名..."}
+                        className="bg-black/50 border-[#a78bfa]/30 focus:border-[#a78bfa]/60"
+                        onSelect={(champ: string) => {
+                          if (champ && !editChampions.includes(champ)) {
+                            setEditChampions(prev => [...prev, champ]);
+                          }
+                          setChampInput('');
+                        }}
+                      />
                     </div>
                     <div className="flex-1 min-w-[200px]">
                       <label className="text-xs text-[#a78bfa] font-bold">キーワード (カンマ区切り)</label>
@@ -575,6 +619,14 @@ export function LibraryTabContentInner() {
           >
             すべて閉じる
           </button>
+          <button 
+            onClick={handleSyncAllArticles} 
+            disabled={syncingAll}
+            className="px-4 py-2.5 bg-gradient-to-r from-pink-500 to-indigo-600 hover:from-pink-400 hover:to-indigo-500 text-white text-xs font-bold rounded-2xl transition-all shadow-[0_0_15px_rgba(244,63,94,0.15)] flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <RefreshCw className={`h-3 w-3 ${syncingAll ? 'animate-spin' : ''}`} />
+            {syncingAll ? "同期中..." : "全チャンプ辞典に一括同期"}
+          </button>
           <div className="flex glass-panel p-1 rounded-2xl items-center">
             <button onClick={() => setGroupMode('champion')} className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${groupMode === 'champion' ? 'bg-[#a78bfa] text-black shadow-lg shadow-[#a78bfa]/20' : 'text-gray-400 hover:text-white'}`}>チャンピオン別</button>
             <button onClick={() => setGroupMode('keyword')} className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${groupMode === 'keyword' ? 'bg-[#a78bfa] text-black shadow-lg shadow-[#a78bfa]/20' : 'text-gray-400 hover:text-white'}`}>キーワード別</button>
@@ -645,11 +697,12 @@ export function LibraryTabContentInner() {
                               className="overflow-hidden transition-all duration-300 ease-in-out"
                               style={{ maxHeight: isExpanded ? '1000px' : '0px', opacity: isExpanded ? 1 : 0 }}
                             >
-                              <div className="px-5 pb-5 ml-6 border-l-2 border-[#a78bfa]/20">
-                                {/* Markdownプレビュー */}
-                                <div className="prose prose-invert prose-purple prose-sm max-w-none max-h-[400px] overflow-y-auto p-4 bg-black/30 border border-white/5 rounded-xl text-sm leading-relaxed mb-4 scrollbar-thin">
-                                  {typeof (article.raw_content || article.content) === 'string' ? (
-                                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{article.raw_content || article.content}</ReactMarkdown>
+                              {isExpanded && (
+                                <div className="px-5 pb-5 ml-6 border-l-2 border-[#a78bfa]/20">
+                                  {/* Markdownプレビュー */}
+                                  <div className="prose prose-invert prose-purple prose-sm max-w-none max-h-[400px] overflow-y-auto p-4 bg-black/30 border border-white/5 rounded-xl text-sm leading-relaxed mb-4 scrollbar-thin">
+                                    {typeof (article.raw_content || article.content) === 'string' ? (
+                                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{article.raw_content || article.content}</ReactMarkdown>
                                   ) : (
                                     <p className="text-gray-500 italic">本文が空です</p>
                                   )}
@@ -669,7 +722,9 @@ export function LibraryTabContentInner() {
                                       // 編集モードに直接切り替え
                                       setEditContent(article.content || article.raw_content || '');
                                       setEditTitle(article.title || '');
-                                      setEditChampion(article.champion || '');
+                                      const rawChamp = article.champion || '';
+                                      setEditChampions(rawChamp.split(',').map((c: string) => c.trim()).filter((c: string) => c && c.toLowerCase() !== 'unknown'));
+                                      setChampInput('');
                                       setEditKeywords(Array.isArray(article.tags) ? article.tags.join(', ') : '');
                                       setEditing(true);
                                     }}
@@ -702,8 +757,9 @@ export function LibraryTabContentInner() {
                                   </button>
                                 </div>
                               </div>
-                            </div>
+                            )}
                           </div>
+                        </div>
                         );
                       })}
                     </div>

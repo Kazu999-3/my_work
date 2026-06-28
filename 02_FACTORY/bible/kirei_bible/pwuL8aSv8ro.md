@@ -1,4 +1,4 @@
-[Champion: Brand]
+[Champions: Brand, Draven, Lulu]
 # What's My Job as a Brand Jungler? - Coach Kirei
 ## 📌 動画の結論（1行サマリー）
 Brandジャングラーは、自身の優れたスケーリングを活かすためファームを重視し、効率的なベースタイミングとWin Condition（主にBotレーン）への意識を持ってオブジェクトを確保し、テンポを管理することでゲームを有利に進める。

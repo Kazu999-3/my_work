@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '../../../../lib/supabaseClient';
-import { calculateNewMMR, calculateKdaScore, MmrCalcContext } from '../../../../lib/mmr';
+import { calculateNewMMR, calculateKdaScore, MmrCalcContext, calculateInitialMmr } from '../../../../lib/mmr';
 
 export async function POST(request: Request) {
   try {
@@ -66,13 +66,22 @@ export async function POST(request: Request) {
       if (!dbP) continue;
 
       const roleMmrKey = `mmr_${input.role.toLowerCase()}` as keyof typeof dbP;
-      const currentMmr = Number(dbP[roleMmrKey]) || 1200;
+      const dbMmr = dbP[roleMmrKey];
+      const currentMmr = (dbMmr !== null && dbMmr !== undefined) 
+        ? Number(dbMmr) 
+        : calculateInitialMmr(dbP.highest_rank, input.role, dbP.role_preferences);
 
       // 対面相手のMMRを探す
       const opponent = participants.find((p: any) => p.role === input.role && p.team !== input.team);
       const oppDbP = opponent ? dbPlayers.find((p: any) => p.name === opponent.name) : null;
-      const oppMmrKey = opponent ? `mmr_${opponent.role.toLowerCase()}` as keyof typeof oppDbP : null;
-      const opponentMmr = oppDbP && oppMmrKey ? (Number(oppDbP[oppMmrKey]) || 1200) : 1200;
+      let opponentMmr = 1200;
+      if (oppDbP && opponent) {
+        const oppMmrKey = `mmr_${opponent.role.toLowerCase()}` as keyof typeof oppDbP;
+        const oppMmr = oppDbP[oppMmrKey];
+        opponentMmr = (oppMmr !== null && oppMmr !== undefined)
+          ? Number(oppMmr)
+          : calculateInitialMmr(oppDbP.highest_rank, opponent.role, oppDbP.role_preferences);
+      }
 
       // スタッツ計算用データ準備
       const isWin = input.team === winningTeam;

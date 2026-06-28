@@ -1,4 +1,4 @@
-[Champion: Fiddlesticks]
+[Champions: Fiddlesticks, Draven, Ezreal, Karma, Leona]
 # How To Easily Carry With Fiddlesticks In EUW Challenger
 
 ## 📌 動画の結論（1行サマリー）

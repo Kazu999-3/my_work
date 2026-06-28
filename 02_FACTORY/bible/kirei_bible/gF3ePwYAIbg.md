@@ -1,5 +1,5 @@
 [Champion: Wukong]
-# YouTube Video
+# Carrying my TRASH teammates with the Monkey King | Wukong Guide
 ## 📌 動画の結論（1行サマリー）
 Wukongは2アイテム完成とレベル6がパワースパイクであり、特に16～26分の強力な時間帯にゲームを終わらせることを目指すジャングラーだ。
 

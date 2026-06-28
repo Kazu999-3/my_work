@@ -1,6 +1,6 @@
-[Champion: Unknown]
+[Champions: Malphite, Maokai, Nautilus]
 
-# YouTube Video
+# 【本気】でランクを上げたい人だけ見てください
 ## 📌 動画の結論（1行サマリー）
 ランクを上げるには、立ち位置の選択、3連敗時の休憩、マップ観察、状況に応じた柔軟な判断、そして何よりもメンタル管理が重要である。
 

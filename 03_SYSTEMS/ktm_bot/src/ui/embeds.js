@@ -48,11 +48,7 @@ export function createRecruitButtons(metadata) {
   if (!isFull) {
     row1.push({ type: 2, label: "✋ どこでも参加", style: 1, custom_id: `join_any:${metadata.owner}` });
   } else {
-    if (metadata.mode === 'ノーマル' || metadata.mode === 'ARAM') {
-      row1.push({ type: 2, label: "✅ 募集完了 (同期済)", style: 2, custom_id: `recruit_completed`, disabled: true });
-    } else {
-      row1.push({ type: 2, label: "🏆 チーム分け実行", style: 3, custom_id: `balance_from_recruit:${metadata.owner}` });
-    }
+    row1.push({ type: 2, label: "✅ 募集完了 (ポータルでチーム分け)", style: 2, custom_id: `recruit_completed`, disabled: true });
   }
   row1.push({ type: 2, label: spectateLabel, style: 2, custom_id: `spectate:${metadata.owner}` });
 

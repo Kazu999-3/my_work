@@ -1,4 +1,4 @@
-[Champion: Lee Sin]
+[Champions: Lee Sin, Nidalee]
 # Who Wins? Lee Sin vs. Nidalee  - Coach Kirei
 
 ## 📌 動画の結論（1行サマリー）

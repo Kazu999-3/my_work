@@ -1,4 +1,4 @@
-[Champion: Unknown]
+[Champions: Azir, Kindred]
 
 # This is How You Play Buffed Kindred in Season 14
 

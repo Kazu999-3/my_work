@@ -1,4 +1,4 @@
-[Champion: Unknown]
+[Champion: Kindred]
 
 # Hard Carry My L9 Team ft. RATIRL and YamatosDeath
 ## 📌 動画の結論（1行サマリー）

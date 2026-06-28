@@ -1,4 +1,4 @@
-[Champion: Lillia]
+[Champions: Lillia, Ahri, Amumu, Braum]
 # LILLIA JUNGLE BUFFS ARE HUGE - League of Legends Season 16
 
 ## 📌 動画の結論（1行サマリー）

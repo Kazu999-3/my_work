@@ -1,0 +1,17 @@
+.git
+.agent
+.venv
+00_LOGS
+01_DOCS
+02_ASSETS
+03_SYSTEMS
+ktm_bot
+node_modules
+.next
+04_PORTAL/node_modules
+04_PORTAL/.next
+*.bat
+*.ps1
+requirements.txt
+*.md
+*.lock

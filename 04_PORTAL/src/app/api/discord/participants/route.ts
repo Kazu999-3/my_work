@@ -47,7 +47,49 @@ export async function GET() {
 
     const activeDiscordIds = new Set<string>();
 
-    // 参加者リストはBotがメッセージ内（例: メンション文字列やEmbedのフィールド）に記録していると想定
+    // 2. Discord Scheduled Events から「興味あり」表明メンバーの Discord ID をマージ
+    const guildId = process.env.DISCORD_GUILD_ID;
+    if (guildId) {
+      try {
+        console.log(`Fetching scheduled events from guild: ${guildId}`);
+        const eventsRes = await fetch(`https://discord.com/api/v10/guilds/${guildId}/scheduled-events`, {
+          headers: {
+            Authorization: `Bot ${DISCORD_BOT_TOKEN}`,
+          },
+        });
+
+        if (eventsRes.ok) {
+          const scheduledEvents = await eventsRes.json();
+          // アクティブなイベント（ステータスが1: SCHEDULED または 2: ACTIVE）をフィルタリング
+          const targetEvents = scheduledEvents.filter((e: any) => {
+            const isActive = e.status === 1 || e.status === 2;
+            const isTarget = e.name && (e.name.includes("【定期】") || e.name.includes("カスタム"));
+            return isActive && isTarget;
+          });
+
+          for (const ev of targetEvents) {
+            console.log(`Fetching interested users for scheduled event: ${ev.name} (${ev.id})`);
+            const usersRes = await fetch(`https://discord.com/api/v10/guilds/${guildId}/scheduled-events/${ev.id}/users?limit=100&with_member=true`, {
+              headers: {
+                Authorization: `Bot ${DISCORD_BOT_TOKEN}`,
+              },
+            });
+            if (usersRes.ok) {
+              const eventUsers = await usersRes.json();
+              eventUsers.forEach((eu: any) => {
+                if (eu.user && eu.user.id) {
+                  activeDiscordIds.add(eu.user.id);
+                }
+              });
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch scheduled event participants:', err);
+      }
+    }
+
+    // 3. 参加者リストはBotがメッセージ内（例: メンション文字列やEmbedのフィールド）に記録していると想定
     // ここでは一番確実な、BotがEmbed内またはメッセージ本文に <@DiscordID> 形式で並べているものを抽出する
     // Embedのフィールドを舐めてメンションを探す
     const embed = targetMsg.embeds[0];
