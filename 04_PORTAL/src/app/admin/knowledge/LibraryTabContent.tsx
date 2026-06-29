@@ -643,61 +643,7 @@ export function LibraryTabContentInner() {
         </p>
       </motion.header>
 
-      {/* 統計サマリー & タグクラウド */}
-      {articles.length > 0 && (
-        <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.05 }} className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* 総記事数とチャンピオン統計 */}
-          <div className="glass-panel p-6 rounded-2xl relative overflow-hidden flex flex-col justify-between border-t-2 border-[#a78bfa]/50">
-            <div>
-              <h4 className="text-xs font-black text-gray-500 uppercase tracking-widest mb-4">📊 ライブラリ統計</h4>
-              <div className="flex items-baseline gap-2 mb-2">
-                <span className="text-4xl font-black text-white">{statsSummary.total}</span>
-                <span className="text-sm text-gray-500 font-bold">総記事数</span>
-              </div>
-            </div>
-            <div className="mt-4 pt-4 border-t border-white/5 space-y-2">
-              <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">主要チャンピオン</span>
-              <div className="flex flex-wrap gap-2">
-                {statsSummary.champs.map(([champ, count]) => (
-                  <button 
-                    key={champ} 
-                    onClick={() => setSearch(champ)}
-                    className="text-xs bg-white/5 border border-white/5 hover:border-[#a78bfa]/30 hover:bg-[#a78bfa]/5 text-gray-300 font-bold px-2.5 py-1 rounded-lg transition-all"
-                  >
-                    {champ} ({count})
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* よく使われるキーワード (タグクラウド) */}
-          <div className="glass-panel p-6 rounded-2xl md:col-span-2 border-t-2 border-[#00cfef]/50 flex flex-col justify-between">
-            <div>
-              <h4 className="text-xs font-black text-gray-500 uppercase tracking-widest mb-4">🎯 トレンドキーワード</h4>
-              <div className="flex flex-wrap gap-2">
-                {statsSummary.keywords.length > 0 ? statsSummary.keywords.map(([kw, count]) => (
-                  <button
-                    key={kw}
-                    onClick={() => setSearch(kw)}
-                    className="text-xs bg-black/40 hover:bg-[#00cfef]/10 border border-white/5 hover:border-[#00cfef]/30 text-gray-300 hover:text-[#00cfef] px-3 py-1.5 rounded-xl font-bold transition-all flex items-center gap-1.5"
-                  >
-                    <span># {kw}</span>
-                    <span className="text-[10px] text-gray-500 font-mono bg-white/5 px-1.5 py-0.5 rounded-md">{count}</span>
-                  </button>
-                )) : (
-                  <span className="text-sm text-gray-500 italic">タグデータがありません</span>
-                )}
-              </div>
-            </div>
-            <div className="text-[10px] text-gray-500 font-bold mt-4 pt-2">
-              ※ タグをクリックすると、そのキーワードでライブラリを瞬時にフィルタリングできます。
-            </div>
-          </div>
-        </motion.div>
-      )}
-
-      {/* 辞典一括更新状況カード */}
+      {/* 辞典一括更新状況カード（一番上に配置） */}
       <motion.div 
         initial={{ y: 20, opacity: 0 }} 
         animate={{ y: 0, opacity: 1 }} 
@@ -765,6 +711,62 @@ export function LibraryTabContentInner() {
           </div>
         </div>
       </motion.div>
+
+      {/* 統計サマリー & タグクラウド */}
+      {articles.length > 0 && (
+        <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.05 }} className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* 総記事数とチャンピオン統計 */}
+          <div className="glass-panel p-6 rounded-2xl relative overflow-hidden flex flex-col justify-between border-t-2 border-[#a78bfa]/50">
+            <div>
+              <h4 className="text-xs font-black text-gray-500 uppercase tracking-widest mb-4">📊 ライブラリ統計</h4>
+              <div className="flex items-baseline gap-2 mb-2">
+                <span className="text-4xl font-black text-white">{statsSummary.total}</span>
+                <span className="text-sm text-gray-500 font-bold">総記事数</span>
+              </div>
+            </div>
+            <div className="mt-4 pt-4 border-t border-white/5 space-y-2">
+              <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">主要チャンピオン</span>
+              <div className="flex flex-wrap gap-2">
+                {statsSummary.champs.map(([champ, count]) => (
+                  <button 
+                    key={champ} 
+                    onClick={() => setSearch(champ)}
+                    className="text-xs bg-white/5 border border-white/5 hover:border-[#a78bfa]/30 hover:bg-[#a78bfa]/5 text-gray-300 font-bold px-2.5 py-1 rounded-lg transition-all"
+                  >
+                    {champ} ({count})
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* よく使われるキーワード (タグクラウド) */}
+          <div className="glass-panel p-6 rounded-2xl md:col-span-2 border-t-2 border-[#00cfef]/50 flex flex-col justify-between">
+            <div>
+              <h4 className="text-xs font-black text-gray-500 uppercase tracking-widest mb-4">🎯 トレンドキーワード</h4>
+              <div className="flex flex-wrap gap-2">
+                {statsSummary.keywords.length > 0 ? statsSummary.keywords.map(([kw, count]) => (
+                  <button
+                    key={kw}
+                    onClick={() => setSearch(kw)}
+                    className="text-xs bg-black/40 hover:bg-[#00cfef]/10 border border-white/5 hover:border-[#00cfef]/30 text-gray-300 hover:text-[#00cfef] px-3 py-1.5 rounded-xl font-bold transition-all flex items-center gap-1.5"
+                  >
+                    <span># {kw}</span>
+                    <span className="text-[10px] text-gray-500 font-mono bg-white/5 px-1.5 py-0.5 rounded-md">{count}</span>
+                  </button>
+                )) : (
+                  <span className="text-sm text-gray-500 italic">タグデータがありません</span>
+                )}
+              </div>
+            </div>
+            <div className="text-[10px] text-gray-500 font-bold mt-4 pt-2">
+              ※ タグをクリックすると、そのキーワードでライブラリを瞬時にフィルタリングできます。
+            </div>
+          </div>
+        </motion.div>
+      )}
+
+
 
       <div className="flex gap-4 items-center flex-wrap">
         <div className="relative flex-1 min-w-[300px]">
