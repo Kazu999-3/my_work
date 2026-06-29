@@ -11,38 +11,57 @@ export async function GET(req: NextRequest) {
   try {
     const heartbeatId = '00000000-0000-0000-0000-000000000000';
     
-    const { data, error } = await supabase
+    // 1. ハートビートレコードの取得
+    const { data: heartbeat, error: hbError } = await supabase
       .from('edge_tasks')
       .select('*')
       .eq('id', heartbeatId)
       .maybeSingle();
 
-    if (error) throw error;
+    if (hbError) throw hbError;
 
-    if (!data) {
-      return NextResponse.json({
-        active: false,
-        status: 'unknown',
-        last_active: null,
-        message: 'No heartbeat record found in DB.'
-      });
+    // 2. 現在実行中(running)および待機中(pending)のタスクを取得 (heartbeatを除く)
+    const { data: queueTasks, error: qError } = await supabase
+      .from('edge_tasks')
+      .select('*')
+      .neq('id', heartbeatId)
+      .in('status', ['running', 'pending'])
+      .order('created_at', { ascending: true });
+
+    if (qError) throw qError;
+
+    // 3. 直近で完了・失敗したタスク履歴を取得 (heartbeatを除く)
+    const { data: historyTasks, error: hError } = await supabase
+      .from('edge_tasks')
+      .select('*')
+      .neq('id', heartbeatId)
+      .in('status', ['completed', 'failed'])
+      .order('updated_at', { ascending: false })
+      .limit(5);
+
+    if (hError) throw hError;
+
+    let isActive = false;
+    let payload: any = {};
+    let diffSec = 9999;
+
+    if (heartbeat) {
+      const updatedAt = new Date(heartbeat.updated_at);
+      const now = new Date();
+      diffSec = Math.floor((now.getTime() - updatedAt.getTime()) / 1000);
+      isActive = diffSec <= 30; // 30秒以内なら稼働中
+      payload = heartbeat.payload || {};
     }
 
-    const updatedAt = new Date(data.updated_at);
-    const now = new Date();
-    const diffSec = Math.floor((now.getTime() - updatedAt.getTime()) / 1000);
-
-    // 最終アクティブが30秒以内なら稼働中とみなす
-    const isActive = diffSec <= 30;
-
-    const payload = data.payload || {};
-
     return NextResponse.json({
-      active: isActive,
-      status: payload.status || 'idle',
-      current_task_id: payload.current_task_id || null,
-      last_active: data.updated_at,
-      diff_seconds: diffSec
+      worker: {
+        active: isActive,
+        status: payload.status || 'idle',
+        last_active: heartbeat ? heartbeat.updated_at : null,
+        diff_seconds: diffSec
+      },
+      queue: queueTasks || [],
+      history: historyTasks || []
     });
 
   } catch (err: any) {

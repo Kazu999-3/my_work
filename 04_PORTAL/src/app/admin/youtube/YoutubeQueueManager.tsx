@@ -29,11 +29,15 @@ export default function YoutubeQueueManager() {
   const [channelsLoading, setChannelsLoading] = useState(false);
   const [newChannelUrl, setNewChannelUrl] = useState('');
 
-  // エッジワーカーの生存状況を監視する状態
-  const [workerStatus, setWorkerStatus] = useState<{ active: boolean; status: string; last_active: string | null }>({
-    active: false,
-    status: 'unknown',
-    last_active: null
+  // システムの稼働状況とジョブキューの状況を監視する状態
+  const [systemStatus, setSystemStatus] = useState<{
+    worker: { active: boolean; status: string; last_active: string | null };
+    queue: any[];
+    history: any[];
+  }>({
+    worker: { active: false, status: 'unknown', last_active: null },
+    queue: [],
+    history: []
   });
 
   useEffect(() => {
@@ -42,10 +46,10 @@ export default function YoutubeQueueManager() {
         const res = await fetch('/api/admin/system/status');
         if (res.ok) {
           const data = await res.json();
-          setWorkerStatus(data);
+          setSystemStatus(data);
         }
       } catch (err) {
-        console.error('Failed to fetch worker status:', err);
+        console.error('Failed to fetch system status:', err);
       }
     };
     checkStatus();
@@ -415,12 +419,12 @@ export default function YoutubeQueueManager() {
           <h1 className="text-3xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-amber-200 to-cyan-400 flex items-center gap-3 flex-wrap">
             📺 YouTube Absorber コマンドセンター
             <span className={`text-[10px] font-black border px-2.5 py-0.5 rounded-full flex items-center gap-1.5 transition-all ${
-              workerStatus.active 
+              systemStatus.worker.active 
                 ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.1)]' 
                 : 'bg-rose-500/10 border-rose-500/30 text-rose-400 animate-pulse'
             }`}>
-              <span className={`w-1.5 h-1.5 rounded-full ${workerStatus.active ? 'bg-emerald-400' : 'bg-rose-400'}`} />
-              {workerStatus.active ? 'エッジワーカー: 稼働中' : 'エッジワーカー: 停止中'}
+              <span className={`w-1.5 h-1.5 rounded-full ${systemStatus.worker.active ? 'bg-emerald-400' : 'bg-rose-400'}`} />
+              {systemStatus.worker.active ? 'エッジワーカー: 稼働中' : 'エッジワーカー: 停止中'}
             </span>
           </h1>
           <p className="text-sm text-gray-400 mt-1">
@@ -968,6 +972,129 @@ export default function YoutubeQueueManager() {
           </div>
         </>
       )}
+      {/* ⚡ ローカルタスク実行キュー状況パネル */}
+      <div className="glass-panel p-6 rounded-2xl border-t border-gray-800 bg-[#07080e]/60 space-y-6">
+        <div className="flex justify-between items-center border-b border-gray-800/80 pb-4">
+          <div className="space-y-1">
+            <h3 className="text-lg font-bold text-white flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse" />
+              ローカルタスク実行キュー状況
+            </h3>
+            <p className="text-xs text-gray-400">
+              Supabase上のタスク待機列（edge_tasks）のリアルタイム処理状況です。
+            </p>
+          </div>
+          <span className="text-xs text-gray-500 font-mono">
+            最終更新: {systemStatus.worker.last_active ? new Date(systemStatus.worker.last_active).toLocaleTimeString() : '未受信'}
+          </span>
+        </div>
+
+        {/* 現在実行中のタスク */}
+        <div className="space-y-3">
+          <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400 flex items-center gap-1.5">
+            <span>●</span> 現在実行中のタスク
+          </h4>
+          {systemStatus.queue.filter(t => t.status === 'running').length === 0 ? (
+            <div className="text-xs text-gray-500 py-3 px-4 rounded-xl border border-gray-800/40 bg-gray-900/10">
+              現在実行中のタスクはありません（待機中）
+            </div>
+          ) : (
+            systemStatus.queue.filter(t => t.status === 'running').map(task => (
+              <div key={task.id} className="p-4 rounded-xl border border-cyan-500/20 bg-cyan-500/5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 px-2 py-0.5 rounded font-mono font-bold">
+                      {task.task_type}
+                    </span>
+                    <span className="text-[10px] text-gray-500 font-mono">ID: {task.id.slice(0, 8)}...</span>
+                  </div>
+                  <div className="text-xs text-gray-300 font-mono truncate max-w-lg">
+                    パラメータ: {JSON.stringify(task.payload)}
+                  </div>
+                </div>
+                <div className="text-right">
+                  <span className="text-xs text-cyan-400 font-bold block">🔥 実行中</span>
+                  <span className="text-[10px] text-gray-500">
+                    開始: {new Date(task.updated_at).toLocaleTimeString()}
+                  </span>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* 待機中のキュー一覧 */}
+        <div className="space-y-3">
+          <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400 flex items-center gap-1.5">
+            <span>●</span> 待機中のタスク列 ({systemStatus.queue.filter(t => t.status === 'pending').length})
+          </h4>
+          {systemStatus.queue.filter(t => t.status === 'pending').length === 0 ? (
+            <div className="text-xs text-gray-500 py-3 px-4 rounded-xl border border-gray-800/40 bg-gray-900/10">
+              キューに待機中のタスクはありません。
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {systemStatus.queue.filter(t => t.status === 'pending').map((task, idx) => (
+                <div key={task.id} className="p-3 rounded-lg border border-gray-800/60 bg-gray-900/10 flex justify-between items-center gap-4">
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs font-bold text-gray-500 font-mono w-5">#{idx + 1}</span>
+                    <span className="text-xs bg-gray-800/60 border border-gray-700/60 text-gray-300 px-2 py-0.5 rounded font-mono font-medium">
+                      {task.task_type}
+                    </span>
+                    <span className="text-[10px] text-gray-400 truncate hidden md:inline font-mono max-w-sm">
+                      {JSON.stringify(task.payload)}
+                    </span>
+                  </div>
+                  <div className="text-right text-[10px] text-gray-500">
+                    作成: {new Date(task.created_at).toLocaleTimeString()}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* 直近の実行履歴 */}
+        <div className="space-y-3">
+          <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400 flex items-center gap-1.5">
+            <span>●</span> 直近の実行履歴 (直近5件)
+          </h4>
+          {systemStatus.history.length === 0 ? (
+            <div className="text-xs text-gray-500 py-3 px-4 rounded-xl border border-gray-800/40 bg-gray-900/10">
+              履歴はありません
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {systemStatus.history.map(task => (
+                <div key={task.id} className="p-3 rounded-lg border border-gray-800/40 bg-[#0c0d14]/40 flex flex-col gap-2">
+                  <div className="flex justify-between items-center gap-4">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs bg-gray-800/80 text-gray-400 px-2 py-0.5 rounded font-mono">
+                        {task.task_type}
+                      </span>
+                      <span className={`px-2 py-0.5 text-[10px] font-bold rounded ${
+                        task.status === 'completed' 
+                          ? 'bg-emerald-950/20 text-emerald-400 border border-emerald-900/40' 
+                          : 'bg-rose-950/20 text-rose-400 border border-rose-900/40'
+                      }`}>
+                        {task.status === 'completed' ? '成功' : '失敗'}
+                      </span>
+                    </div>
+                    <span className="text-[10px] text-gray-500">
+                      完了: {new Date(task.updated_at).toLocaleString('ja-JP')}
+                    </span>
+                  </div>
+                  {task.status === 'failed' && task.error_message && (
+                    <div className="text-[10px] text-rose-400 bg-rose-950/10 border border-rose-900/20 p-2 rounded font-mono break-all">
+                      エラー: {task.error_message}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
       </div>
   );
 }

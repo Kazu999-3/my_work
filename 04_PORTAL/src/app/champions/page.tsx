@@ -86,7 +86,7 @@ function ChampionsContent() {
         const res = await fetch('/api/admin/system/status');
         if (res.ok) {
           const data = await res.json();
-          setWorkerStatus(data);
+          setWorkerStatus(data.worker || { active: false, status: 'unknown', last_active: null });
         }
       } catch (err) {
         console.error('Failed to fetch worker status:', err);
