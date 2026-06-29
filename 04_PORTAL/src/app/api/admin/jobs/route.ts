@@ -65,6 +65,12 @@ const JOBS: Record<string, JobConfig> = {
     lock:   '03_SYSTEMS/v2_CORE/monetization_batch.lock',
     log:    '00_LOGS/monetization_batch_run.log',
     name:   'アフィリエイト一気通貫バッチ'
+  },
+  champion_db_bulk_update: {
+    script: '03_SYSTEMS/v2_CORE/_LOL/champ_db_bulk_updater.py',
+    lock:   '03_SYSTEMS/v2_CORE/_LOL/champ_db_bulk_updater.lock',
+    log:    '00_LOGS/champion_db_bulk_update_run.log',
+    name:   'チャンピオン辞典一括更新'
   }
 };
 
