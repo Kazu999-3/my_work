@@ -150,8 +150,8 @@ class EdgeWorkerDaemon:
         except Exception as e:
             logger.error(f"❌ タスクステータス更新中に通信エラーが発生しました: {e}")
 
-    def _run_subprocess_task(self, script_path: str, args: list = None) -> dict:
-        """指定されたPythonスクリプトを安全に独立プロセスで実行する"""
+    def _run_subprocess_task(self, script_path: str, args: list = None, timeout: int = 600) -> dict:
+        """指定されたPythonスクリプトを安全に独立プロセスで実行する（タイムアウト付き）"""
         import subprocess
         import sys
         
@@ -162,17 +162,27 @@ class EdgeWorkerDaemon:
         if args:
             cmd.extend(args)
             
-        logger.info(f"💾 サブプロセス起動: {' '.join(cmd)}")
-        res = subprocess.run(
-            cmd,
-            cwd="d:/my_work",
-            env=env,
-            capture_output=True,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-            check=False
-        )
+        logger.info(f"💾 サブプロセス起動 (Timeout: {timeout}s): {' '.join(cmd)}")
+        try:
+            res = subprocess.run(
+                cmd,
+                cwd="d:/my_work",
+                env=env,
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                check=False,
+                timeout=timeout
+            )
+        except subprocess.TimeoutExpired as te:
+            logger.error(f"❌ サブプロセスがタイムアウトしました ({timeout}s): {script_path}")
+            # ゾンビプロセスを強制終了
+            try:
+                te.process.kill()
+            except Exception:
+                pass
+            raise TimeoutError(f"タスク実行時間制限（{timeout}秒）を超過したため強制終了されました。") from te
         
         if res.returncode == 0:
             logger.info(f"✅ サブプロセス正常終了: {script_path}")
@@ -186,6 +196,35 @@ class EdgeWorkerDaemon:
             logger.error(f"Stderr: {res.stderr[-1000:]}")
             raise RuntimeError(f"プロセス実行エラー (Exit code: {res.returncode})\nStderr: {res.stderr[-1000:]}")
 
+    def send_heartbeat(self):
+        """Supabase の edge_tasks に対し、固定IDで生存シグナル（ハートビート）を UPSERT する"""
+        heartbeat_id = "00000000-0000-0000-0000-000000000000"
+        url = f"{self.supabase_url}/rest/v1/edge_tasks"
+        now_str = datetime.now(timezone.utc).isoformat()
+        
+        headers = self.headers.copy()
+        headers["Prefer"] = "resolution=merge-duplicates"
+        
+        payload = {
+            "id": heartbeat_id,
+            "task_type": "worker_heartbeat",
+            "status": "completed",
+            "payload": {
+                "status": getattr(self, "current_status", "idle"),
+                "current_task_id": getattr(self, "current_task_id", None),
+                "last_active": now_str
+            },
+            "updated_at": now_str,
+            "created_at": now_str
+        }
+        
+        try:
+            res = httpx.post(url, headers=headers, json=payload, timeout=5)
+            if res.status_code not in (200, 201):
+                logger.error(f"❌ ハートビート送信失敗: {res.status_code} {res.text}")
+        except Exception as e:
+            logger.error(f"❌ ハートビート送信中に通信エラーが発生しました: {e}")
+
     def execute_task(self, task: dict):
         """指示されたタスクの中身に応じた実行分岐"""
         task_id = task["id"]
@@ -193,10 +232,12 @@ class EdgeWorkerDaemon:
         payload = task.get("payload", {})
         
         logger.info(f"🏃 タスク処理を開始します: {task_type} (ID: {task_id})")
+        self.current_status = f"running:{task_type}"
+        self.current_task_id = task_id
+        self.send_heartbeat()
         
         try:
             if task_type == "test_ping":
-                # 双方向接続確認（Ping-Pong）
                 logger.info(f"📶 [test_ping] メッセージ受信: '{payload.get('message')}'")
                 result = {
                     "reply": "Pong! Active on Local Windows",
@@ -206,69 +247,61 @@ class EdgeWorkerDaemon:
                 self.update_task_status(task_id, "completed", result=result)
                 
             elif task_type == "note_magazine_import":
-                # noteマガジンインポート (Playwright)
                 logger.info("📰 [note_magazine_import] noteマガジン巡回・要約インポートを開始...")
-                result = self._run_subprocess_task("03_SYSTEMS/v2_CORE/_MONETIZE/note_magazine_importer.py")
+                result = self._run_subprocess_task("03_SYSTEMS/v2_CORE/_MONETIZE/note_magazine_importer.py", timeout=900)
                 self.update_task_status(task_id, "completed", result=result)
                 
             elif task_type == "youtube_absorb":
-                # YouTube自動解析・音声認識・記事生成
                 logger.info("🎥 [youtube_absorb] YouTube自動解析（Whisper GPU）を実行...")
-                result = self._run_subprocess_task("03_SYSTEMS/v2_CORE/_LOL/youtube_absorber.py")
+                result = self._run_subprocess_task("03_SYSTEMS/v2_CORE/_LOL/youtube_absorber.py", timeout=1800)
                 self.update_task_status(task_id, "completed", result=result)
                 
             elif task_type == "monetization_batch":
-                # アフィリエイト記事自動生成・投稿バッチ
                 logger.info("💰 [monetization_batch] 自動収益化バッチ（Playwright自動投稿含む）を実行...")
-                result = self._run_subprocess_task("03_SYSTEMS/v2_CORE/monetization_batch.py")
+                result = self._run_subprocess_task("03_SYSTEMS/v2_CORE/monetization_batch.py", timeout=900)
                 self.update_task_status(task_id, "completed", result=result)
                 
             elif task_type == "reddit_scout":
-                # Redditトレンド情報収集
                 logger.info("🤖 [reddit_scout] Redditトレンド巡回・収集を実行...")
-                result = self._run_subprocess_task("03_SYSTEMS/v2_CORE/_LOL/reddit_scout.py")
+                result = self._run_subprocess_task("03_SYSTEMS/v2_CORE/_LOL/reddit_scout.py", timeout=600)
                 self.update_task_status(task_id, "completed", result=result)
                 
             elif task_type == "lol_trend_collect":
-                # 最新メタ情報のスマート検知
                 logger.info("⚡ [lol_trend_collect] LoL最新トレンド情報の収集を実行...")
-                result = self._run_subprocess_task("03_SYSTEMS/v2_CORE/_LOL/lol_trend_collector.py")
+                result = self._run_subprocess_task("03_SYSTEMS/v2_CORE/_LOL/lol_trend_collector.py", timeout=600)
                 self.update_task_status(task_id, "completed", result=result)
                 
             elif task_type == "note_analytics":
-                # noteアクセス分析とフィードバック
                 logger.info("📊 [note_analytics] noteアクセス分析・自己進化ループを実行...")
-                result = self._run_subprocess_task("03_SYSTEMS/v2_CORE/_MONETIZE/note_analytics.py")
+                result = self._run_subprocess_task("03_SYSTEMS/v2_CORE/_MONETIZE/note_analytics.py", timeout=600)
                 self.update_task_status(task_id, "completed", result=result)
                 
             elif task_type == "dict_synthesizer":
-                # 攻略辞典整理
                 logger.info("📚 [dict_synthesizer] 攻略辞典（DictSynthesizer）の統合・整理を実行...")
-                result = self._run_subprocess_task("03_SYSTEMS/v2_CORE/_LOL/dict_synthesizer.py")
+                result = self._run_subprocess_task("03_SYSTEMS/v2_CORE/_LOL/dict_synthesizer.py", timeout=600)
                 self.update_task_status(task_id, "completed", result=result)
                 
             elif task_type == "champion_trend":
-                # チャンピオントレンドの自動取得タスク
                 champion = payload.get("champion")
                 role = payload.get("role", "Jungle")
                 logger.info(f"🏆 [champion_trend] チャンピオントレンド取得を実行 ({champion} / {role})...")
                 result = self._run_subprocess_task(
                     "03_SYSTEMS/v2_CORE/_LOL/champion_trend_worker.py",
-                    args=[champion, role]
+                    args=[champion, role],
+                    timeout=600
                 )
                 self.update_task_status(task_id, "completed", result=result)
                 
             elif task_type == "matchup_simulation_5v5":
-                # 5v5対戦構成シミュレーション予測タスク
                 import json
                 blue = payload.get("blue")
                 red = payload.get("red")
                 logger.info(f"⚔️ [matchup_simulation_5v5] 5v5対戦構成シミュレーションを実行...")
                 result = self._run_subprocess_task(
                     "03_SYSTEMS/v2_CORE/_LOL/matchup_simulator_5v5_worker.py",
-                    args=[json.dumps(blue), json.dumps(red)]
+                    args=[json.dumps(blue), json.dumps(red)],
+                    timeout=300
                 )
-                # サブプロセスの標準出力をパースして result にマージ
                 try:
                     stdout_json = json.loads(result.get("stdout", "{}"))
                     self.update_task_status(task_id, "completed", result=stdout_json)
@@ -277,21 +310,21 @@ class EdgeWorkerDaemon:
                     self.update_task_status(task_id, "completed", result=result)
                 
             elif task_type == "resolve_youtube_channel":
-                # YouTube チャンネルURL解決 & 登録
                 channel_url = payload.get("url")
                 logger.info(f"📺 [resolve_youtube_channel] チャンネルURLの解決を開始: {channel_url}")
                 result = self._run_subprocess_task(
                     "03_SYSTEMS/v2_CORE/_LOL/youtube_monitor.py",
-                    args=["--resolve", channel_url]
+                    args=["--resolve", channel_url],
+                    timeout=120
                 )
                 self.update_task_status(task_id, "completed", result=result)
                 
             elif task_type == "youtube_channel_monitor":
-                # YouTube 監視チャンネルの巡回・新着チェック
                 logger.info("📺 [youtube_channel_monitor] 監視チャンネルの新着動画チェックを実行...")
                 result = self._run_subprocess_task(
                     "03_SYSTEMS/v2_CORE/_LOL/youtube_monitor.py",
-                    args=["--monitor"]
+                    args=["--monitor"],
+                    timeout=300
                 )
                 self.update_task_status(task_id, "completed", result=result)
                 
@@ -301,25 +334,39 @@ class EdgeWorkerDaemon:
         except Exception as e:
             logger.error(f"❌ タスク実行エラー (ID: {task_id}): {e}")
             self.update_task_status(task_id, "failed", error_message=str(e))
+        finally:
+            self.current_status = "idle"
+            self.current_task_id = None
+            self.send_heartbeat()
 
     def run(self):
         """監視ポーリングループ"""
         logger.info("🚀 Sovereign OS Edge Worker Daemon が正常に起動しました。")
         logger.info("📡 Supabase からのタスク待機キュー (edge_tasks) の監視を開始します...")
         
+        self.current_status = "idle"
+        self.current_task_id = None
+        self.send_heartbeat()
+        
+        last_heartbeat_time = time.time()
+        
         while True:
             try:
+                if time.time() - last_heartbeat_time >= 5:
+                    self.send_heartbeat()
+                    last_heartbeat_time = time.time()
+                    
                 task = self.fetch_pending_task()
                 if task:
                     self.execute_task(task)
                 else:
-                    time.sleep(10)  # 10秒待機
+                    time.sleep(5)
             except KeyboardInterrupt:
                 logger.info("👋 デーモンを正常に停止します。")
                 break
             except Exception as e:
                 logger.error(f"❌ メインループ内でエラーが発生しました: {e}")
-                time.sleep(10)
+                time.sleep(5)
 
 if __name__ == "__main__":
     daemon = EdgeWorkerDaemon()

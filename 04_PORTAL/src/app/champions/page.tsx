@@ -73,6 +73,30 @@ function ChampionsContent() {
     return { total, completed, pending, percentage };
   }, [champions, champDates, champPending]);
 
+  // エッジワーカーの生存状況を監視する状態
+  const [workerStatus, setWorkerStatus] = useState<{ active: boolean; status: string; last_active: string | null }>({
+    active: false,
+    status: 'unknown',
+    last_active: null
+  });
+
+  useEffect(() => {
+    const checkStatus = async () => {
+      try {
+        const res = await fetch('/api/admin/system/status');
+        if (res.ok) {
+          const data = await res.json();
+          setWorkerStatus(data);
+        }
+      } catch (err) {
+        console.error('Failed to fetch worker status:', err);
+      }
+    };
+    checkStatus();
+    const interval = setInterval(checkStatus, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
   // 辞典一括更新用の状態
   const [bulkStatus, setBulkStatus] = useState<any>({
     initialized: false,
@@ -964,7 +988,7 @@ function ChampionsContent() {
         <div className="absolute -right-10 -top-10 w-40 h-40 bg-[#c89b3c]/5 rounded-full blur-2xl pointer-events-none" />
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
           <div className="flex-1 space-y-2 w-full">
-            <h3 className="text-lg font-bold text-white flex items-center gap-2">
+            <h3 className="text-lg font-bold text-white flex items-center gap-2 flex-wrap">
               <Sparkles size={20} className="text-[#c89b3c]" />
               AIチャンピオン辞典一括更新システム
               {bulkStatus.patch_version && (
@@ -972,6 +996,14 @@ function ChampionsContent() {
                   パッチ: {bulkStatus.patch_version}
                 </span>
               )}
+              <span className={`text-[10px] font-black border px-2.5 py-0.5 rounded-full flex items-center gap-1.5 transition-all ${
+                workerStatus.active 
+                  ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.1)]' 
+                  : 'bg-rose-500/10 border-rose-500/30 text-rose-400 animate-pulse'
+              }`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${workerStatus.active ? 'bg-emerald-400' : 'bg-rose-400'}`} />
+                {workerStatus.active ? 'エッジワーカー: 稼働中' : 'エッジワーカー: 停止中'}
+              </span>
             </h3>
             <p className="text-xs text-gray-400">
               全チャンピオンの統計・ルーン・ビルドをGemini APIで自動リサーチし、既存のユーザーメモを保護しながら辞書を一括更新します。

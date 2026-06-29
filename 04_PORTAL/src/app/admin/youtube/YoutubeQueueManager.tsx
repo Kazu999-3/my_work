@@ -29,6 +29,30 @@ export default function YoutubeQueueManager() {
   const [channelsLoading, setChannelsLoading] = useState(false);
   const [newChannelUrl, setNewChannelUrl] = useState('');
 
+  // エッジワーカーの生存状況を監視する状態
+  const [workerStatus, setWorkerStatus] = useState<{ active: boolean; status: string; last_active: string | null }>({
+    active: false,
+    status: 'unknown',
+    last_active: null
+  });
+
+  useEffect(() => {
+    const checkStatus = async () => {
+      try {
+        const res = await fetch('/api/admin/system/status');
+        if (res.ok) {
+          const data = await res.json();
+          setWorkerStatus(data);
+        }
+      } catch (err) {
+        console.error('Failed to fetch worker status:', err);
+      }
+    };
+    checkStatus();
+    const interval = setInterval(checkStatus, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
   // 1. キューデータの取得
   const fetchQueue = async (silent = false, currentSort = sortBy) => {
     try {
@@ -388,8 +412,16 @@ export default function YoutubeQueueManager() {
       {/* ヘッダー */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-800/80 pb-6">
         <div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-amber-200 to-cyan-400">
+          <h1 className="text-3xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-amber-200 to-cyan-400 flex items-center gap-3 flex-wrap">
             📺 YouTube Absorber コマンドセンター
+            <span className={`text-[10px] font-black border px-2.5 py-0.5 rounded-full flex items-center gap-1.5 transition-all ${
+              workerStatus.active 
+                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.1)]' 
+                : 'bg-rose-500/10 border-rose-500/30 text-rose-400 animate-pulse'
+            }`}>
+              <span className={`w-1.5 h-1.5 rounded-full ${workerStatus.active ? 'bg-emerald-400' : 'bg-rose-400'}`} />
+              {workerStatus.active ? 'エッジワーカー: 稼働中' : 'エッジワーカー: 停止中'}
+            </span>
           </h1>
           <p className="text-sm text-gray-400 mt-1">
             攻略動画の字幕テキストを自動抽出・AI解析し、戦略バイブルへとライブラリ化します。
