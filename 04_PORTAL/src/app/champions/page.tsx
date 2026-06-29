@@ -63,6 +63,16 @@ function ChampionsContent() {
   const [expandedMatchupId, setExpandedMatchupId] = useState<string | null>(null);
   const [fetchingTrend, setFetchingTrend] = useState(false);
 
+  // データベース全体の完成度（進捗）を計算
+  const dbProgress = useMemo(() => {
+    if (champions.length === 0) return { total: 0, completed: 0, percentage: 0, pending: 0 };
+    const total = champions.length;
+    const completed = champions.filter(c => champDates[c.id] && !champPending[c.id]).length;
+    const pending = total - completed;
+    const percentage = Math.round((completed / total) * 100) || 0;
+    return { total, completed, pending, percentage };
+  }, [champions, champDates, champPending]);
+
   // 辞典一括更新用の状態
   const [bulkStatus, setBulkStatus] = useState<any>({
     initialized: false,
@@ -967,10 +977,11 @@ function ChampionsContent() {
               全チャンピオンの統計・ルーン・ビルドをGemini APIで自動リサーチし、既存のユーザーメモを保護しながら辞書を一括更新します。
             </p>
             
-            {bulkStatus.initialized && (
+            {/* 進行中のジョブがある場合はジョブの進捗を表示、そうでない場合はDB全体の進捗を常に表示 */}
+            {isBulkRunning || (bulkStatus.initialized && bulkStatus.total > 0) ? (
               <div className="space-y-2 mt-2 w-full">
                 <div className="flex justify-between text-xs font-bold text-gray-300 flex-wrap gap-2">
-                  <span>進捗率: {Math.round((bulkStatus.completed / bulkStatus.total) * 100) || 0}% ({bulkStatus.completed} / {bulkStatus.total} 体)</span>
+                  <span>ジョブ進捗率: {Math.round((bulkStatus.completed / bulkStatus.total) * 100) || 0}% ({bulkStatus.completed} / {bulkStatus.total} 体)</span>
                   <span className="text-gray-400">
                     {isBulkRunning ? `🔥 ${bulkStatus.current_champ || '調査中'} をリサーチ中...` : 
                      bulkStatus.status === 'suspended' ? '⏸️ API制限により一時停止中' : 
@@ -988,6 +999,19 @@ function ChampionsContent() {
                   <span className="text-amber-500">実行中: {bulkStatus.running}</span>
                   <span className="text-emerald-400">完了: {bulkStatus.completed}</span>
                   <span className="text-red-400">失敗: {bulkStatus.failed}</span>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-2 mt-2 w-full">
+                <div className="flex justify-between text-xs font-bold text-gray-300 flex-wrap gap-2">
+                  <span>辞典データベース構築率: {dbProgress.percentage}% ({dbProgress.completed} / {dbProgress.total} 体 構築完了)</span>
+                  <span className="text-gray-400">未構築: {dbProgress.pending} 体</span>
+                </div>
+                <div className="w-full bg-white/5 rounded-full h-2 overflow-hidden border border-white/5">
+                  <div 
+                    className="h-full bg-emerald-500/80 transition-all duration-500"
+                    style={{ width: `${dbProgress.percentage}%` }}
+                  />
                 </div>
               </div>
             )}
