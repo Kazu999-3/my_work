@@ -33,9 +33,36 @@ export default function Home() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<string>('');
 
-  // エラー詳細モーダル用
   const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
+
+  // システムの稼働状況とジョブキューの状況を監視する状態
+  const [systemStatus, setSystemStatus] = useState<{
+    worker: { active: boolean; status: string; last_active: string | null };
+    queue: any[];
+    history: any[];
+  }>({
+    worker: { active: false, status: 'unknown', last_active: null },
+    queue: [],
+    history: []
+  });
+
+  useEffect(() => {
+    const checkStatus = async () => {
+      try {
+        const res = await fetch('/api/admin/system/status');
+        if (res.ok) {
+          const data = await res.json();
+          setSystemStatus(data);
+        }
+      } catch (err) {
+        console.error('Failed to fetch system status:', err);
+      }
+    };
+    checkStatus();
+    const interval = setInterval(checkStatus, 5000);
+    return () => clearInterval(interval);
+  }, []);
 
 
 
@@ -605,6 +632,135 @@ export default function Home() {
                   </div>
                 );
               })}
+            </div>
+          </div>
+        </motion.div>
+
+        {/* ⚡ ローカルタスク実行キュー状況パネル */}
+        <motion.div variants={itemVariants} className="md:col-span-2 lg:col-span-4 mt-8">
+          <div className="glass-panel rounded-3xl p-6 border border-white/5 bg-gradient-to-br from-cyan-500/5 to-transparent space-y-6">
+            <div className="flex justify-between items-center border-b border-white/5 pb-4 flex-wrap gap-2">
+              <div className="space-y-1">
+                <h3 className="text-xl font-black text-white flex items-center gap-3 flex-wrap">
+                  <div className="w-2 h-6 bg-cyan-400 rounded-full shadow-[0_0_10px_rgba(34,211,238,0.6)]"></div>
+                  <span>⚡ ローカルタスク実行キュー状況</span>
+                  <span className={`text-[10px] font-black border px-2.5 py-0.5 rounded-full flex items-center gap-1.5 transition-all ${
+                    systemStatus.worker.active 
+                      ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.1)]' 
+                      : 'bg-rose-500/10 border-rose-500/30 text-rose-400 animate-pulse'
+                  }`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${systemStatus.worker.active ? 'bg-emerald-400' : 'bg-rose-400'}`} />
+                    {systemStatus.worker.active ? 'エッジワーカー: 稼働中' : 'エッジワーカー: 停止中'}
+                  </span>
+                </h3>
+                <p className="text-xs text-gray-400">
+                  Sovereign OS ローカル環境で実行される全バッチ処理の進行状況です。
+                </p>
+              </div>
+              <span className="text-xs text-gray-500 font-mono">
+                最終更新: {systemStatus.worker.last_active ? new Date(systemStatus.worker.last_active).toLocaleTimeString() : '未受信'}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* 現在実行中のタスク */}
+              <div className="space-y-3">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-cyan-400 flex items-center gap-1.5">
+                  <span>●</span> 現在実行中のタスク
+                </h4>
+                {systemStatus.queue.filter(t => t.status === 'running').length === 0 ? (
+                  <div className="text-xs text-gray-500 py-6 text-center rounded-2xl border border-white/5 bg-black/20">
+                    現在実行中のタスクはありません（待機中）
+                  </div>
+                ) : (
+                  systemStatus.queue.filter(t => t.status === 'running').map(task => (
+                    <div key={task.id} className="p-4 rounded-2xl border border-cyan-500/20 bg-cyan-500/5 space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 px-2 py-0.5 rounded font-mono font-bold">
+                          {task.task_type}
+                        </span>
+                        <span className="text-[10px] text-gray-500 font-mono">ID: {task.id.slice(0, 8)}...</span>
+                      </div>
+                      <div className="text-[10px] text-gray-400 font-mono bg-black/40 p-2 rounded border border-white/5 break-all max-h-24 overflow-y-auto">
+                        {JSON.stringify(task.payload, null, 2)}
+                      </div>
+                      <div className="flex justify-between items-center text-[10px] text-gray-500 pt-1">
+                        <span>🔥 実行中</span>
+                        <span>開始: {new Date(task.updated_at).toLocaleTimeString()}</span>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* 待機中のキュー一覧 */}
+              <div className="space-y-3">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400 flex items-center gap-1.5">
+                  <span>●</span> 待機中のタスク列 ({systemStatus.queue.filter(t => t.status === 'pending').length})
+                </h4>
+                {systemStatus.queue.filter(t => t.status === 'pending').length === 0 ? (
+                  <div className="text-xs text-gray-500 py-6 text-center rounded-2xl border border-white/5 bg-black/20">
+                    待機中のタスクはありません
+                  </div>
+                ) : (
+                  <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
+                    {systemStatus.queue.filter(t => t.status === 'pending').map((task, idx) => (
+                      <div key={task.id} className="p-3 rounded-xl border border-white/5 bg-black/20 flex justify-between items-center gap-4 hover:border-white/10 transition-colors">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <span className="text-xs font-bold text-gray-500 font-mono w-5">#{idx + 1}</span>
+                          <span className="text-xs bg-white/5 border border-white/10 text-gray-300 px-2 py-0.5 rounded font-mono truncate" title={task.task_type}>
+                            {task.task_type}
+                          </span>
+                        </div>
+                        <span className="text-[9px] text-gray-500 font-mono shrink-0">
+                          {new Date(task.created_at).toLocaleTimeString()}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* 直近の実行履歴 */}
+              <div className="space-y-3">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400 flex items-center gap-1.5">
+                  <span>●</span> 直近の実行履歴 (直近5件)
+                </h4>
+                {systemStatus.history.length === 0 ? (
+                  <div className="text-xs text-gray-500 py-6 text-center rounded-2xl border border-white/5 bg-black/20">
+                    履歴はありません
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {systemStatus.history.map(task => (
+                      <div key={task.id} className="p-3 rounded-xl border border-white/5 bg-black/20 space-y-1.5">
+                        <div className="flex justify-between items-center gap-4">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs bg-white/5 text-gray-400 px-2 py-0.5 rounded font-mono">
+                              {task.task_type}
+                            </span>
+                            <span className={`px-2 py-0.5 text-[9px] font-bold rounded ${
+                              task.status === 'completed' 
+                                ? 'bg-emerald-950/20 text-emerald-400 border border-emerald-900/40' 
+                                : 'bg-rose-950/20 text-rose-400 border border-rose-900/40'
+                            }`}>
+                              {task.status === 'completed' ? '成功' : '失敗'}
+                            </span>
+                          </div>
+                          <span className="text-[9px] text-gray-500 font-mono">
+                            {new Date(task.updated_at).toLocaleTimeString()}
+                          </span>
+                        </div>
+                        {task.status === 'failed' && task.error_message && (
+                          <div className="text-[9px] text-rose-400 bg-rose-950/10 border border-rose-900/20 p-2 rounded font-mono break-all max-h-16 overflow-y-auto">
+                            エラー: {task.error_message}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </motion.div>
