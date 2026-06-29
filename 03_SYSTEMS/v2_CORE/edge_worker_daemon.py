@@ -197,7 +197,33 @@ class EdgeWorkerDaemon:
             raise RuntimeError(f"プロセス実行エラー (Exit code: {res.returncode})\nStderr: {res.stderr[-1000:]}")
 
     def send_heartbeat(self):
-        """Supabase の edge_tasks に対し、固定IDで生存シグナル（ハートビート）を UPSERT する"""
+        """Supabase の edge_tasks に対し、固定IDで生存シグナル（ハートビート）を PATCH (UPDATE) する"""
+        heartbeat_id = "00000000-0000-0000-0000-000000000000"
+        url = f"{self.supabase_url}/rest/v1/edge_tasks?id=eq.{heartbeat_id}"
+        now_str = datetime.now(timezone.utc).isoformat()
+        
+        headers = self.headers.copy()
+        
+        payload = {
+            "task_type": "worker_heartbeat",
+            "status": "completed",
+            "payload": {
+                "status": getattr(self, "current_status", "idle"),
+                "current_task_id": getattr(self, "current_task_id", None),
+                "last_active": now_str
+            },
+            "updated_at": now_str
+        }
+        
+        try:
+            res = httpx.patch(url, headers=headers, json=payload, timeout=5)
+            if res.status_code not in (200, 204):
+                logger.error(f"❌ ハートビート送信(PATCH)失敗: {res.status_code} {res.text}")
+        except Exception as e:
+            logger.error(f"❌ ハートビート送信中に通信エラーが発生しました: {e}")
+
+    def _insert_initial_heartbeat(self):
+        """初回のみハートビート用ダミーレコードを POST 挿入する"""
         heartbeat_id = "00000000-0000-0000-0000-000000000000"
         url = f"{self.supabase_url}/rest/v1/edge_tasks"
         now_str = datetime.now(timezone.utc).isoformat()
@@ -210,20 +236,17 @@ class EdgeWorkerDaemon:
             "task_type": "worker_heartbeat",
             "status": "completed",
             "payload": {
-                "status": getattr(self, "current_status", "idle"),
-                "current_task_id": getattr(self, "current_task_id", None),
+                "status": "idle",
+                "current_task_id": None,
                 "last_active": now_str
             },
             "updated_at": now_str,
             "created_at": now_str
         }
-        
         try:
-            res = httpx.post(url, headers=headers, json=payload, timeout=5)
-            if res.status_code not in (200, 201):
-                logger.error(f"❌ ハートビート送信失敗: {res.status_code} {res.text}")
-        except Exception as e:
-            logger.error(f"❌ ハートビート送信中に通信エラーが発生しました: {e}")
+            httpx.post(url, headers=headers, json=payload, timeout=5)
+        except Exception:
+            pass
 
     def execute_task(self, task: dict):
         """指示されたタスクの中身に応じた実行分岐"""
@@ -339,6 +362,16 @@ class EdgeWorkerDaemon:
             self.current_task_id = None
             self.send_heartbeat()
 
+    def heartbeat_loop(self):
+        """別スレッドで5秒おきにハートビートを送信し続ける"""
+        logger.info("📡 バックグラウンド・ハートビート監視スレッドを開始しました。")
+        while getattr(self, "_heartbeat_active", True):
+            try:
+                self.send_heartbeat()
+            except Exception as e:
+                logger.error(f"❌ ハートビート送信エラー: {e}")
+            time.sleep(5)
+
     def run(self):
         """監視ポーリングループ"""
         logger.info("🚀 Sovereign OS Edge Worker Daemon が正常に起動しました。")
@@ -346,16 +379,15 @@ class EdgeWorkerDaemon:
         
         self.current_status = "idle"
         self.current_task_id = None
-        self.send_heartbeat()
+        self._heartbeat_active = True
         
-        last_heartbeat_time = time.time()
+        # バックグラウンドでハートビートスレッドを起動
+        import threading
+        self.heartbeat_thread = threading.Thread(target=self.heartbeat_loop, daemon=True)
+        self.heartbeat_thread.start()
         
         while True:
             try:
-                if time.time() - last_heartbeat_time >= 5:
-                    self.send_heartbeat()
-                    last_heartbeat_time = time.time()
-                    
                 task = self.fetch_pending_task()
                 if task:
                     self.execute_task(task)
@@ -363,6 +395,7 @@ class EdgeWorkerDaemon:
                     time.sleep(5)
             except KeyboardInterrupt:
                 logger.info("👋 デーモンを正常に停止します。")
+                self._heartbeat_active = False
                 break
             except Exception as e:
                 logger.error(f"❌ メインループ内でエラーが発生しました: {e}")
