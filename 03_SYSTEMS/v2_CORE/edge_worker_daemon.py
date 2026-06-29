@@ -276,6 +276,25 @@ class EdgeWorkerDaemon:
                     logger.error(f"Failed to parse 5v5 simulator stdout JSON: {je}")
                     self.update_task_status(task_id, "completed", result=result)
                 
+            elif task_type == "resolve_youtube_channel":
+                # YouTube チャンネルURL解決 & 登録
+                channel_url = payload.get("url")
+                logger.info(f"📺 [resolve_youtube_channel] チャンネルURLの解決を開始: {channel_url}")
+                result = self._run_subprocess_task(
+                    "03_SYSTEMS/v2_CORE/_LOL/youtube_monitor.py",
+                    args=["--resolve", channel_url]
+                )
+                self.update_task_status(task_id, "completed", result=result)
+                
+            elif task_type == "youtube_channel_monitor":
+                # YouTube 監視チャンネルの巡回・新着チェック
+                logger.info("📺 [youtube_channel_monitor] 監視チャンネルの新着動画チェックを実行...")
+                result = self._run_subprocess_task(
+                    "03_SYSTEMS/v2_CORE/_LOL/youtube_monitor.py",
+                    args=["--monitor"]
+                )
+                self.update_task_status(task_id, "completed", result=result)
+                
             else:
                 raise NotImplementedError(f"未サポートのタスクタイプです: {task_type}")
                 

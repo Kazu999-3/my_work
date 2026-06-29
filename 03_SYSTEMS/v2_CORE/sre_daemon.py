@@ -422,6 +422,19 @@ class SREDaemon:
                     logger.error(f"❌ noteアクセス分析キューイングエラー: {e}")
                 time.sleep(86400)  # 1日（24時間）おきに実行
 
+        # --- 定期タスク: YouTube チャンネル監視・新着巡回 ---
+        def run_youtube_channel_monitor_loop():
+            # 起動直後の競合を避けるため、初回実行前に1分待機
+            time.sleep(60)
+            while True:
+                try:
+                    with self.task_lock:
+                        logger.info("🔧 [SRE Daemon] 定期タスク: YouTube チャンネル監視 (巡回チェック) をキューイングします...")
+                        self._enqueue_edge_task("youtube_channel_monitor")
+                except Exception as e:
+                    logger.error(f"❌ YouTubeChannelMonitorキューイングエラー: {e}")
+                time.sleep(10800)  # 3時間おきに実行 (10800秒)
+
         # --- プランC: エージェント自律連携調整ループ (Swarm Coordinator) ---
         def run_swarm_coordinator_loop():
             # 起動直後に前回の蓄積を処理しないよう、少し待機して last_checked を現在時刻に設定
@@ -503,6 +516,7 @@ class SREDaemon:
         threading.Thread(target=run_lol_trend_collector_loop, daemon=True).start()
         threading.Thread(target=run_note_analytics_loop, daemon=True).start()
         threading.Thread(target=run_swarm_coordinator_loop, daemon=True).start()
+        threading.Thread(target=run_youtube_channel_monitor_loop, daemon=True).start()
 
         # Windowsでのファイルロック（PermissionError）を回避するため、開きっぱなしにせず毎回クローズする監視ロジック
         last_position = self.log_file.stat().st_size if self.log_file.exists() else 0
