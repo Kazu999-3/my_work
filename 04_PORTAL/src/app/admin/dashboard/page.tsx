@@ -35,6 +35,7 @@ export default function Home() {
 
   const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
+  const [activeSystemTab, setActiveSystemTab] = useState<'nodes' | 'queue' | 'logs'>('nodes');
 
   // システムの稼働状況とジョブキューの状況を監視する状態
   const [systemStatus, setSystemStatus] = useState<{
@@ -381,8 +382,8 @@ export default function Home() {
           </div>
         </motion.div>
 
-        {/* New Dashboard Widgets (A, B, C) */}
-        <motion.div variants={itemVariants} className="md:col-span-2 lg:col-span-4 mt-4 grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* New Dashboard Widgets (A, B) */}
+        <motion.div variants={itemVariants} className="md:col-span-2 lg:col-span-4 mt-4 grid grid-cols-1 lg:grid-cols-2 gap-6">
           
           {/* Panel A: Pending Tasks */}
           <div className="glass-panel rounded-3xl p-6 border border-white/5 bg-gradient-to-br from-rose-500/5 to-transparent flex flex-col h-full">
@@ -409,7 +410,7 @@ export default function Home() {
               )}
             </div>
             {pendingTasks > 3 && (
-              <p className="text-xs text-center text-gray-500 mt-4 pt-4 border-t border-white/5">他 {pendingTasks - 3} 件のタスクがあります</p>
+              <p className="text-xs text-center text-gray-500 mt-4 pt-4 border-t border-white/5">他 {pendingTasks - 3} 件 of tasksがあります</p>
             )}
           </div>
 
@@ -491,281 +492,298 @@ export default function Home() {
             )}
           </div>
 
-          {/* Panel C: System Logs */}
-          <div className="glass-panel rounded-3xl p-6 border border-white/5 bg-gradient-to-br from-emerald-500/5 to-transparent flex flex-col h-full">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-black text-white flex items-center gap-2">
-                <div className="w-2 h-6 bg-emerald-500 rounded-full shadow-[0_0_10px_rgba(16,185,129,0.6)]"></div>
-                System Logs
-              </h3>
-              <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-            </div>
-            <div className="flex-1 bg-black/40 rounded-xl border border-white/5 p-4 font-mono text-[9px] md:text-[10px] leading-relaxed text-gray-400 overflow-hidden relative">
-              <div className="absolute top-0 left-0 w-full h-4 bg-gradient-to-b from-black/80 to-transparent z-10"></div>
-              <div className="flex flex-col justify-end h-full space-y-1 z-0 relative pt-2">
-                {systemMetrics.logs && systemMetrics.logs.length > 0 ? (
-                  systemMetrics.logs.slice(-7).map((log: string, idx: number) => {
-                    const isError = log.includes('[ERROR]');
-                    const isWarn = log.includes('[WARNING]');
-                    // Remove timestamps to fit more text
-                    const cleanLog = log.replace(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3} /, '');
-                    return (
-                      <div key={idx} className={`truncate ${isError ? 'text-rose-400' : isWarn ? 'text-yellow-400' : 'text-emerald-400/80'}`}>
-                        {cleanLog}
-                      </div>
-                    );
-                  })
-                ) : (
-                  <div className="text-gray-500 flex items-center justify-center h-full">Waiting for logs...</div>
-                )}
-              </div>
-            </div>
-          </div>
-
         </motion.div>
 
-        {/* Sovereign Nodes Sentinel */}
+        {/* 🛠️ システムコクピット (System Cockpit) */}
         <motion.div variants={itemVariants} className="md:col-span-2 lg:col-span-4 mt-8">
-          <div className="glass-panel rounded-3xl p-6 border border-white/5 bg-gradient-to-br from-indigo-500/5 via-rose-500/5 to-transparent">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-black text-white flex items-center gap-3">
-                <div className="w-2 h-6 bg-gradient-to-b from-indigo-400 to-rose-500 rounded-full shadow-[0_0_10px_rgba(99,102,241,0.6)]"></div>
-                <span>Sovereign OS ノード監視 (Nodes Sentinel)</span>
-              </h3>
-              <span className="text-[10px] text-gray-500 font-bold bg-white/5 px-2.5 py-1 rounded-full border border-white/5">15秒おきに自動更新</span>
+          <div className="glass-panel rounded-3xl p-6 border border-white/5 bg-[#07080e]/60 space-y-6">
+            
+            {/* タブナビゲーション */}
+            <div className="flex justify-between items-center border-b border-white/5 pb-4 flex-wrap gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-2 h-6 bg-gradient-to-b from-indigo-400 via-cyan-400 to-rose-500 rounded-full shadow-[0_0_10px_rgba(99,102,241,0.5)]"></div>
+                <h3 className="text-xl font-black text-white">🛠️ システムコクピット</h3>
+              </div>
+              <div className="flex glass-panel p-1 rounded-xl items-center border border-white/5 bg-black/40">
+                {[
+                  { id: 'nodes', label: '🛰️ サービス監視' },
+                  { id: 'queue', label: '⚡ ジョブ実行キュー' },
+                  { id: 'logs', label: '📋 リアルタイムログ' }
+                ].map((tab) => (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => setActiveSystemTab(tab.id as any)}
+                    className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+                      activeSystemTab === tab.id
+                        ? 'bg-white/10 text-white shadow-[0_0_10px_rgba(255,255,255,0.05)] border border-white/10'
+                        : 'text-gray-400 hover:text-gray-200'
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-              {[
-                { id: 'ollama', name: 'Ollama (LLM)', port: 11434, desc: 'ローカルAI推論エンジン' },
-                { id: 'portal', name: 'Next.js Portal', port: 3000, desc: '本管理画面・フロント' },
-                { id: 'bot', name: 'Discord Bot (KTM)', port: 8787, desc: '大会運営・Discordボット' },
-                { id: 'api', name: 'Core API', port: 8000, desc: 'Sovereign OS API' },
-                { id: 'sre', name: 'SRE Daemon', port: null, desc: '自律監視・自己修復デモ' },
-                { id: 'youtube_absorber', name: 'YouTube Absorber', port: null, desc: '動画音声の文字起こし・解析' }
-              ].map((service) => {
-                const status = systemMetrics.services?.[service.id] || {};
-                
-                // 監視データの最終更新時刻が1分（60秒）以上経過している場合は監視デーモンオフラインとみなす
-                const metricsTime = systemMetrics.updated_at ? Number(systemMetrics.updated_at) * 1000 : 0;
-                const isDaemonOffline = !metricsTime || (Date.now() - metricsTime > 60000);
-                
-                const isRunning = isDaemonOffline ? false : status.running;
-                const log = systemMetrics.logs_status?.[service.id] || {};
-                const hasErrors = log.error_count > 0;
+            {/* タブコンテンツ */}
+            <div className="mt-4">
+              {/* 1. 🛰️ サービス監視 (Nodes Sentinel) */}
+              {activeSystemTab === 'nodes' && (
+                <div className="space-y-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+                    {[
+                      { id: 'ollama', name: 'Ollama (LLM)', port: 11434, desc: 'ローカルAI推論エンジン' },
+                      { id: 'portal', name: 'Next.js Portal', port: 3000, desc: '本管理画面・フロント' },
+                      { id: 'bot', name: 'Discord Bot (KTM)', port: 8787, desc: '大会運営・Discordボット' },
+                      { id: 'api', name: 'Core API', port: 8000, desc: 'Sovereign OS API' },
+                      { id: 'sre', name: 'SRE Daemon', port: null, desc: '自律監視・自己修復デモ' },
+                      { id: 'youtube_absorber', name: 'YouTube Absorber', port: null, desc: '動画音声の文字起こし・解析' }
+                    ].map((service) => {
+                      const status = systemMetrics.services?.[service.id] || {};
+                      const metricsTime = systemMetrics.updated_at ? Number(systemMetrics.updated_at) * 1000 : 0;
+                      const isDaemonOffline = !metricsTime || (Date.now() - metricsTime > 60000);
+                      const isRunning = isDaemonOffline ? false : status.running;
+                      const log = systemMetrics.logs_status?.[service.id] || {};
+                      const hasErrors = log.error_count > 0;
 
-                let statusText = '停止中';
-                let statusColor = 'text-gray-500 bg-gray-500/10 border-gray-500/20';
-                let indicatorColor = 'bg-gray-600';
+                      let statusText = '停止中';
+                      let statusColor = 'text-gray-500 bg-gray-500/10 border-gray-500/20';
+                      let indicatorColor = 'bg-gray-600';
 
-                if (isRunning) {
-                  if (service.id === 'youtube_absorber') {
-                    statusText = '解析中';
-                    statusColor = 'text-cyan-400 bg-cyan-500/10 border-cyan-500/20';
-                    indicatorColor = 'bg-cyan-400 animate-pulse shadow-[0_0_8px_rgba(34,211,238,0.8)]';
-                  } else if (hasErrors) {
-                    statusText = '警告あり';
-                    statusColor = 'text-yellow-400 bg-yellow-500/10 border-yellow-500/20';
-                    indicatorColor = 'bg-yellow-400 animate-pulse';
-                  } else {
-                    statusText = '稼働中';
-                    statusColor = 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20';
-                    indicatorColor = 'bg-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.8)]';
-                  }
-                } else if (service.id === 'youtube_absorber') {
-                  statusText = '待機中 (アイドル)';
-                  statusColor = 'text-gray-400 bg-white/5 border-white/5';
-                  indicatorColor = 'bg-gray-600';
-                }
+                      if (isRunning) {
+                        if (service.id === 'youtube_absorber') {
+                          statusText = '解析中';
+                          statusColor = 'text-cyan-400 bg-cyan-500/10 border-cyan-500/20';
+                          indicatorColor = 'bg-cyan-400 animate-pulse shadow-[0_0_8px_rgba(34,211,238,0.8)]';
+                        } else if (hasErrors) {
+                          statusText = '警告あり';
+                          statusColor = 'text-yellow-400 bg-yellow-500/10 border-yellow-500/20';
+                          indicatorColor = 'bg-yellow-400 animate-pulse';
+                        } else {
+                          statusText = '稼働中';
+                          statusColor = 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20';
+                          indicatorColor = 'bg-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.8)]';
+                        }
+                      } else if (service.id === 'youtube_absorber') {
+                        statusText = '待機中 (アイドル)';
+                        statusColor = 'text-gray-400 bg-white/5 border-white/5';
+                        indicatorColor = 'bg-gray-600';
+                      }
 
-                return (
-                  <div key={service.id} className="bg-black/30 p-4 rounded-2xl border border-white/5 flex flex-col justify-between hover:border-white/10 transition-colors">
-                    <div>
-                      <div className="flex justify-between items-center mb-2">
-                        <span className="text-xs font-bold text-gray-200">{service.name}</span>
-                        <span className={`w-2 h-2 rounded-full ${indicatorColor}`}></span>
-                      </div>
-                      <p className="text-[9px] text-gray-500 mb-4">{service.desc}</p>
-                    </div>
-                    <div className="flex justify-between items-center mt-auto">
-                      <span className="text-[9px] font-mono text-gray-600">{service.port ? `Port: ${service.port}` : 'Background'}</span>
-                      <span className={`px-2 py-0.5 rounded-full border text-[9px] font-bold ${statusColor}`}>{statusText}</span>
-                    </div>
+                      return (
+                        <div key={service.id} className="bg-black/30 p-4 rounded-2xl border border-white/5 flex flex-col justify-between hover:border-white/10 transition-colors">
+                          <div>
+                            <div className="flex justify-between items-center mb-2">
+                              <span className="text-xs font-bold text-gray-200">{service.name}</span>
+                              <span className={`w-2 h-2 rounded-full ${indicatorColor}`}></span>
+                            </div>
+                            <p className="text-[9px] text-gray-500 mb-4">{service.desc}</p>
+                          </div>
+                          <div className="flex justify-between items-center mt-auto">
+                            <span className="text-[9px] font-mono text-gray-600">{service.port ? `Port: ${service.port}` : 'Background'}</span>
+                            <span className={`px-2 py-0.5 rounded-full border text-[9px] font-bold ${statusColor}`}>{statusText}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
-                );
-              })}
-            </div>
 
-            {/* ログエラー状況 */}
-            <div className="mt-6 pt-6 border-t border-white/5 grid grid-cols-1 md:grid-cols-2 gap-4">
-              {Object.entries(systemMetrics.logs_status || {}).map(([key, val]: [string, any]) => {
-                if (!val) return null;
-                const nameMap: Record<string, string> = {
-                  portal: 'Next.js Portal ログ',
-                  bot: 'Discord Bot ログ',
-                  api: 'Core API ログ',
-                  sre: 'SRE Daemon ログ'
-                };
-                const hasErrors = (val.error_count || 0) > 0;
-                const recentErrors = val.recent_errors || [];
-                
-                return (
-                  <div key={key} className={`p-4 rounded-2xl border text-xs bg-black/20 ${hasErrors ? 'border-rose-500/20 bg-rose-500/5' : 'border-white/5'}`}>
-                    <div className="flex justify-between items-center mb-2">
-                      <span className={`font-bold ${hasErrors ? 'text-rose-400' : 'text-gray-300'}`}>{nameMap[key] || key}</span>
-                      <span className="text-[9px] text-gray-500">
-                        最終更新: {val.last_updated ? new Date(val.last_updated).toLocaleTimeString('ja-JP') : '不明'}
+                  <div className="pt-6 border-t border-white/5 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {Object.entries(systemMetrics.logs_status || {}).map(([key, val]: [string, any]) => {
+                      if (!val) return null;
+                      const nameMap: Record<string, string> = {
+                        portal: 'Next.js Portal ログ',
+                        bot: 'Discord Bot ログ',
+                        api: 'Core API ログ',
+                        sre: 'SRE Daemon ログ'
+                      };
+                      const hasErrors = (val.error_count || 0) > 0;
+                      const recentErrors = val.recent_errors || [];
+                      
+                      return (
+                        <div key={key} className={`p-4 rounded-2xl border text-xs bg-black/20 ${hasErrors ? 'border-rose-500/20 bg-rose-500/5' : 'border-white/5'}`}>
+                          <div className="flex justify-between items-center mb-2">
+                            <span className={`font-bold ${hasErrors ? 'text-rose-400' : 'text-gray-300'}`}>{nameMap[key] || key}</span>
+                            <span className="text-[9px] text-gray-500">
+                              最終更新: {val.last_updated ? new Date(val.last_updated).toLocaleTimeString('ja-JP') : '不明'}
+                            </span>
+                          </div>
+                          {hasErrors ? (
+                            <div className="space-y-1.5 mt-2">
+                              <span className="text-[9px] font-bold text-rose-400/80 block">⚠️ 直近のエラーログ:</span>
+                              {recentErrors.slice(0, 2).map((err: string, i: number) => (
+                                <p key={i} className="font-mono text-[9px] text-rose-300/90 truncate bg-black/40 p-1.5 rounded border border-rose-500/10" title={err}>{err}</p>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-[9px] text-emerald-400/80 mt-1 flex items-center gap-1">
+                              <CheckCircle2 size={10} /> エラーは検知されていません
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* 2. ⚡ ジョブ実行キュー (Job Queue) */}
+              {activeSystemTab === 'queue' && (
+                <div className="space-y-6">
+                  <div className="flex justify-between items-center border-b border-white/5 pb-4 flex-wrap gap-2">
+                    <p className="text-xs text-gray-400">
+                      Sovereign OS ローカル環境で実行される全バッチ処理の進行状況です。
+                    </p>
+                    <div className="flex items-center gap-3">
+                      <span className={`text-[10px] font-black border px-2.5 py-0.5 rounded-full flex items-center gap-1.5 transition-all ${
+                        systemStatus.worker.active 
+                          ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.1)]' 
+                          : 'bg-rose-500/10 border-rose-500/30 text-rose-400 animate-pulse'
+                      }`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${systemStatus.worker.active ? 'bg-emerald-400' : 'bg-rose-400'}`} />
+                        {systemStatus.worker.active ? 'エッジワーカー: 稼働中' : 'エッジワーカー: 停止中'}
+                      </span>
+                      <span className="text-xs text-gray-500 font-mono">
+                        最終更新: {systemStatus.worker.last_active ? new Date(systemStatus.worker.last_active).toLocaleTimeString() : '未受信'}
                       </span>
                     </div>
-                    {hasErrors ? (
-                      <div className="space-y-1.5 mt-2">
-                        <span className="text-[9px] font-bold text-rose-400/80 block">⚠️ 直近のエラーログ:</span>
-                        {recentErrors.slice(0, 2).map((err: string, i: number) => (
-                          <p key={i} className="font-mono text-[9px] text-rose-300/90 truncate bg-black/40 p-1.5 rounded border border-rose-500/10" title={err}>{err}</p>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-[9px] text-emerald-400/80 mt-1 flex items-center gap-1">
-                        <CheckCircle2 size={10} /> エラーは検知されていません
-                      </p>
-                    )}
                   </div>
-                );
-              })}
-            </div>
-          </div>
-        </motion.div>
 
-        {/* ⚡ ローカルタスク実行キュー状況パネル */}
-        <motion.div variants={itemVariants} className="md:col-span-2 lg:col-span-4 mt-8">
-          <div className="glass-panel rounded-3xl p-6 border border-white/5 bg-gradient-to-br from-cyan-500/5 to-transparent space-y-6">
-            <div className="flex justify-between items-center border-b border-white/5 pb-4 flex-wrap gap-2">
-              <div className="space-y-1">
-                <h3 className="text-xl font-black text-white flex items-center gap-3 flex-wrap">
-                  <div className="w-2 h-6 bg-cyan-400 rounded-full shadow-[0_0_10px_rgba(34,211,238,0.6)]"></div>
-                  <span>⚡ ローカルタスク実行キュー状況</span>
-                  <span className={`text-[10px] font-black border px-2.5 py-0.5 rounded-full flex items-center gap-1.5 transition-all ${
-                    systemStatus.worker.active 
-                      ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.1)]' 
-                      : 'bg-rose-500/10 border-rose-500/30 text-rose-400 animate-pulse'
-                  }`}>
-                    <span className={`w-1.5 h-1.5 rounded-full ${systemStatus.worker.active ? 'bg-emerald-400' : 'bg-rose-400'}`} />
-                    {systemStatus.worker.active ? 'エッジワーカー: 稼働中' : 'エッジワーカー: 停止中'}
-                  </span>
-                </h3>
-                <p className="text-xs text-gray-400">
-                  Sovereign OS ローカル環境で実行される全バッチ処理の進行状況です。
-                </p>
-              </div>
-              <span className="text-xs text-gray-500 font-mono">
-                最終更新: {systemStatus.worker.last_active ? new Date(systemStatus.worker.last_active).toLocaleTimeString() : '未受信'}
-              </span>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* 現在実行中のタスク */}
-              <div className="space-y-3">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-cyan-400 flex items-center gap-1.5">
-                  <span>●</span> 現在実行中のタスク
-                </h4>
-                {systemStatus.queue.filter(t => t.status === 'running').length === 0 ? (
-                  <div className="text-xs text-gray-500 py-6 text-center rounded-2xl border border-white/5 bg-black/20">
-                    現在実行中のタスクはありません（待機中）
-                  </div>
-                ) : (
-                  systemStatus.queue.filter(t => t.status === 'running').map(task => (
-                    <div key={task.id} className="p-4 rounded-2xl border border-cyan-500/20 bg-cyan-500/5 space-y-2">
-                      <div className="flex justify-between items-center">
-                        <span className="text-xs bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 px-2 py-0.5 rounded font-mono font-bold">
-                          {task.task_type}
-                        </span>
-                        <span className="text-[10px] text-gray-500 font-mono">ID: {task.id.slice(0, 8)}...</span>
-                      </div>
-                      <div className="text-[10px] text-gray-400 font-mono bg-black/40 p-2 rounded border border-white/5 break-all max-h-24 overflow-y-auto">
-                        {JSON.stringify(task.payload, null, 2)}
-                      </div>
-                      <div className="flex justify-between items-center text-[10px] text-gray-500 pt-1">
-                        <span>🔥 実行中</span>
-                        <span>開始: {new Date(task.updated_at).toLocaleTimeString()}</span>
-                      </div>
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    {/* 現在実行中のタスク */}
+                    <div className="space-y-3">
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-cyan-400 flex items-center gap-1.5">
+                        <span>●</span> 現在実行中のタスク
+                      </h4>
+                      {systemStatus.queue.filter(t => t.status === 'running').length === 0 ? (
+                        <div className="text-xs text-gray-500 py-6 text-center rounded-2xl border border-white/5 bg-black/20">
+                          現在実行中のタスクはありません（待機中）
+                        </div>
+                      ) : (
+                        systemStatus.queue.filter(t => t.status === 'running').map(task => (
+                          <div key={task.id} className="p-4 rounded-2xl border border-cyan-500/20 bg-cyan-500/5 space-y-2">
+                            <div className="flex justify-between items-center">
+                              <span className="text-xs bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 px-2 py-0.5 rounded font-mono font-bold">
+                                {task.task_type}
+                              </span>
+                              <span className="text-[10px] text-gray-500 font-mono">ID: {task.id.slice(0, 8)}...</span>
+                            </div>
+                            <div className="text-[10px] text-gray-400 font-mono bg-black/40 p-2 rounded border border-white/5 break-all max-h-24 overflow-y-auto">
+                              {JSON.stringify(task.payload, null, 2)}
+                            </div>
+                            <div className="flex justify-between items-center text-[10px] text-gray-500 pt-1">
+                              <span>🔥 実行中</span>
+                              <span>開始: {new Date(task.updated_at).toLocaleTimeString()}</span>
+                            </div>
+                          </div>
+                        ))
+                      )}
                     </div>
-                  ))
-                )}
-              </div>
 
-              {/* 待機中のキュー一覧 */}
-              <div className="space-y-3">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400 flex items-center gap-1.5">
-                  <span>●</span> 待機中のタスク列 ({systemStatus.queue.filter(t => t.status === 'pending').length})
-                </h4>
-                {systemStatus.queue.filter(t => t.status === 'pending').length === 0 ? (
-                  <div className="text-xs text-gray-500 py-6 text-center rounded-2xl border border-white/5 bg-black/20">
-                    待機中のタスクはありません
-                  </div>
-                ) : (
-                  <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
-                    {systemStatus.queue.filter(t => t.status === 'pending').map((task, idx) => (
-                      <div key={task.id} className="p-3 rounded-xl border border-white/5 bg-black/20 flex justify-between items-center gap-4 hover:border-white/10 transition-colors">
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          <span className="text-xs font-bold text-gray-500 font-mono w-5">#{idx + 1}</span>
-                          <span className="text-xs bg-white/5 border border-white/10 text-gray-300 px-2 py-0.5 rounded font-mono truncate" title={task.task_type}>
-                            {task.task_type}
-                          </span>
+                    {/* 待機中のキュー一覧 */}
+                    <div className="space-y-3">
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400 flex items-center gap-1.5">
+                        <span>●</span> 待機中のタスク列 ({systemStatus.queue.filter(t => t.status === 'pending').length})
+                      </h4>
+                      {systemStatus.queue.filter(t => t.status === 'pending').length === 0 ? (
+                        <div className="text-xs text-gray-500 py-6 text-center rounded-2xl border border-white/5 bg-black/20">
+                          待機中のタスクはありません
                         </div>
-                        <span className="text-[9px] text-gray-500 font-mono shrink-0">
-                          {new Date(task.created_at).toLocaleTimeString()}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+                      ) : (
+                        <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
+                          {systemStatus.queue.filter(t => t.status === 'pending').map((task, idx) => (
+                            <div key={task.id} className="p-3 rounded-xl border border-white/5 bg-black/20 flex justify-between items-center gap-4 hover:border-white/10 transition-colors">
+                              <div className="flex items-center gap-2.5 min-w-0">
+                                <span className="text-xs font-bold text-gray-500 font-mono w-5">#{idx + 1}</span>
+                                <span className="text-xs bg-white/5 border border-white/10 text-gray-300 px-2 py-0.5 rounded font-mono truncate" title={task.task_type}>
+                                  {task.task_type}
+                                </span>
+                              </div>
+                              <span className="text-[9px] text-gray-500 font-mono shrink-0">
+                                {new Date(task.created_at).toLocaleTimeString()}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
 
-              {/* 直近の実行履歴 */}
-              <div className="space-y-3">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400 flex items-center gap-1.5">
-                  <span>●</span> 直近の実行履歴 (直近5件)
-                </h4>
-                {systemStatus.history.length === 0 ? (
-                  <div className="text-xs text-gray-500 py-6 text-center rounded-2xl border border-white/5 bg-black/20">
-                    履歴はありません
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {systemStatus.history.map(task => (
-                      <div key={task.id} className="p-3 rounded-xl border border-white/5 bg-black/20 space-y-1.5">
-                        <div className="flex justify-between items-center gap-4">
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs bg-white/5 text-gray-400 px-2 py-0.5 rounded font-mono">
-                              {task.task_type}
-                            </span>
-                            <span className={`px-2 py-0.5 text-[9px] font-bold rounded ${
-                              task.status === 'completed' 
-                                ? 'bg-emerald-950/20 text-emerald-400 border border-emerald-900/40' 
-                                : 'bg-rose-950/20 text-rose-400 border border-rose-900/40'
-                            }`}>
-                              {task.status === 'completed' ? '成功' : '失敗'}
-                            </span>
-                          </div>
-                          <span className="text-[9px] text-gray-500 font-mono">
-                            {new Date(task.updated_at).toLocaleTimeString()}
-                          </span>
+                    {/* 直近の実行履歴 */}
+                    <div className="space-y-3">
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400 flex items-center gap-1.5">
+                        <span>●</span> 直近の実行履歴 (直近5件)
+                      </h4>
+                      {systemStatus.history.length === 0 ? (
+                        <div className="text-xs text-gray-500 py-6 text-center rounded-2xl border border-white/5 bg-black/20">
+                          履歴はありません
                         </div>
-                        {task.status === 'failed' && task.error_message && (
-                          <div className="text-[9px] text-rose-400 bg-rose-950/10 border border-rose-900/20 p-2 rounded font-mono break-all max-h-16 overflow-y-auto">
-                            エラー: {task.error_message}
-                          </div>
-                        )}
-                      </div>
-                    ))}
+                      ) : (
+                        <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
+                          {systemStatus.history.map(task => (
+                            <div key={task.id} className="p-3 rounded-xl border border-white/5 bg-black/20 space-y-1.5">
+                              <div className="flex justify-between items-center gap-4">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs bg-white/5 text-gray-400 px-2 py-0.5 rounded font-mono">
+                                    {task.task_type}
+                                  </span>
+                                  <span className={`px-2 py-0.5 text-[9px] font-bold rounded ${
+                                    task.status === 'completed' 
+                                      ? 'bg-emerald-950/20 text-emerald-400 border border-emerald-900/40' 
+                                      : 'bg-rose-950/20 text-rose-400 border border-rose-900/40'
+                                  }`}>
+                                    {task.status === 'completed' ? '成功' : '失敗'}
+                                  </span>
+                                </div>
+                                <span className="text-[9px] text-gray-500 font-mono">
+                                  {new Date(task.updated_at).toLocaleTimeString()}
+                                </span>
+                              </div>
+                              {task.status === 'failed' && task.error_message && (
+                                <div className="text-[9px] text-rose-400 bg-rose-950/10 border border-rose-900/20 p-2 rounded font-mono break-all max-h-16 overflow-y-auto">
+                                  エラー: {task.error_message}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                )}
-              </div>
+                </div>
+              )}
+
+              {/* 3. 📋 リアルタイムログ (System Logs) */}
+              {activeSystemTab === 'logs' && (
+                <div className="flex flex-col h-[350px] space-y-3">
+                  <p className="text-xs text-gray-400">
+                    Sovereign OS デーモン全体の最終ログ（直近15行）です。
+                  </p>
+                  <div className="flex-1 bg-black/40 rounded-xl border border-white/5 p-4 font-mono text-[9px] md:text-[10px] leading-relaxed text-gray-400 overflow-hidden relative">
+                    <div className="absolute top-0 left-0 w-full h-4 bg-gradient-to-b from-black/80 to-transparent z-10"></div>
+                    <div className="flex flex-col justify-end h-full space-y-1 z-0 relative pt-2 overflow-y-auto max-h-[280px]">
+                      {systemMetrics.logs && systemMetrics.logs.length > 0 ? (
+                        systemMetrics.logs.slice(-15).map((log: string, idx: number) => {
+                          const isError = log.includes('[ERROR]');
+                          const isWarn = log.includes('[WARNING]');
+                          const cleanLog = log.replace(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3} /, '');
+                          return (
+                            <div key={idx} className={`truncate ${isError ? 'text-rose-400' : isWarn ? 'text-yellow-400' : 'text-emerald-400/80'}`}>
+                              {cleanLog}
+                            </div>
+                          );
+                        })
+                      ) : (
+                        <div className="text-gray-500 flex items-center justify-center h-full">Waiting for logs...</div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </motion.div>
 
-        {/* Update History Section */}
         <motion.div variants={itemVariants} className="md:col-span-2 lg:col-span-4 mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
           
           {/* Dictionary Updates */}
