@@ -2,6 +2,7 @@ import os
 import time
 import logging
 import httpx
+import ctypes
 from datetime import datetime, timezone
 from pathlib import Path
 import dotenv
@@ -33,6 +34,25 @@ class EdgeWorkerDaemon:
             "Content-Type": "application/json",
             "Prefer": "return=representation"  # 更新時にレコードの内容を返す
         }
+
+    def prevent_sleep(self):
+        """デーモン起動中、PCの自動スリープを防止する（画面はオフになります）"""
+        try:
+            if os.name == "nt":
+                # ES_CONTINUOUS | ES_SYSTEM_REQUIRED
+                ctypes.windll.kernel32.SetThreadExecutionState(0x80000000 | 0x00000001)
+                logger.info("🛌 PCの自動スリープ防止を有効にしました（システム稼働を維持）。")
+        except Exception as e:
+            logger.error(f"⚠️ スリープ防止設定エラー: {e}")
+
+    def allow_sleep(self):
+        """自動スリープ防止を解除する"""
+        try:
+            if os.name == "nt":
+                ctypes.windll.kernel32.SetThreadExecutionState(0x80000000)
+                logger.info("🛌 PCのスリープ防止制限を解除しました。")
+        except Exception as e:
+            logger.error(f"⚠️ スリープ解除エラー: {e}")
 
     def is_task_conflicting(self, task_type: str) -> bool:
         """指定したタスクタイプと競合するタスクが現在実行中（running）であるかを確認"""
@@ -342,12 +362,30 @@ class EdgeWorkerDaemon:
                 )
                 self.update_task_status(task_id, "completed", result=result)
                 
+            elif task_type == "resolve_youtube_playlist":
+                playlist_url = payload.get("url")
+                logger.info(f"📺 [resolve_youtube_playlist] プレイリストURLの解決を開始: {playlist_url}")
+                result = self._run_subprocess_task(
+                    "03_SYSTEMS/v2_CORE/_LOL/youtube_monitor.py",
+                    args=["--resolve-playlist", playlist_url],
+                    timeout=120
+                )
+                self.update_task_status(task_id, "completed", result=result)
+                
             elif task_type == "youtube_channel_monitor":
                 logger.info("📺 [youtube_channel_monitor] 監視チャンネルの新着動画チェックを実行...")
                 result = self._run_subprocess_task(
                     "03_SYSTEMS/v2_CORE/_LOL/youtube_monitor.py",
                     args=["--monitor"],
                     timeout=300
+                )
+                self.update_task_status(task_id, "completed", result=result)
+                
+            elif task_type == "champion_db_bulk_update":
+                logger.info("📚 [champion_db_bulk_update] チャンピオン辞典一括更新を実行...")
+                result = self._run_subprocess_task(
+                    "03_SYSTEMS/v2_CORE/_LOL/champ_db_bulk_updater.py",
+                    timeout=3600
                 )
                 self.update_task_status(task_id, "completed", result=result)
                 
@@ -386,20 +424,27 @@ class EdgeWorkerDaemon:
         self.heartbeat_thread = threading.Thread(target=self.heartbeat_loop, daemon=True)
         self.heartbeat_thread.start()
         
-        while True:
-            try:
-                task = self.fetch_pending_task()
-                if task:
-                    self.execute_task(task)
-                else:
+        # スリープ防止の開始
+        self.prevent_sleep()
+        
+        try:
+            while True:
+                try:
+                    task = self.fetch_pending_task()
+                    if task:
+                        self.execute_task(task)
+                    else:
+                        time.sleep(5)
+                except KeyboardInterrupt:
+                    logger.info("👋 デーモンを正常に停止します。")
+                    self._heartbeat_active = False
+                    break
+                except Exception as e:
+                    logger.error(f"❌ メインループ内でエラーが発生しました: {e}")
                     time.sleep(5)
-            except KeyboardInterrupt:
-                logger.info("👋 デーモンを正常に停止します。")
-                self._heartbeat_active = False
-                break
-            except Exception as e:
-                logger.error(f"❌ メインループ内でエラーが発生しました: {e}")
-                time.sleep(5)
+        finally:
+            # スリープ防止の解除
+            self.allow_sleep()
 
 if __name__ == "__main__":
     daemon = EdgeWorkerDaemon()

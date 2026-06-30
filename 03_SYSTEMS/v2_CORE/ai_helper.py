@@ -192,6 +192,12 @@ def _generate_with_ollama(prompt: str, model: str = None) -> str:
     base_url = settings.OLLAMA_BASE_URL
     model_name = model or settings.OLLAMA_MODEL
     
+    # ローカルLLMの過負荷を防ぐため、入力テキストを制限して切り詰める
+    MAX_OLLAMA_PROMPT_LEN = 8000
+    if len(prompt) > MAX_OLLAMA_PROMPT_LEN:
+        logger.warning(f"[AIHelper] Ollama入力テキストが長すぎるため（{len(prompt)}文字）、{MAX_OLLAMA_PROMPT_LEN}文字に切り詰めます。")
+        prompt = prompt[:MAX_OLLAMA_PROMPT_LEN] + "\n\n... (ローカルLLMの負荷削減のため、以降のテキストはシステムによって切り捨てられました) ..."
+    
     # 2026年コンテキストの動的付与を system パラメータとして分離
     now_str = datetime.datetime.now().strftime("%Y年%m月%d日")
     system_prompt = f"現在の年は2026年です（本日は {now_str}）。この日時を基準に、未来や過去の出来事を正しく判定し、文脈を構築してください。"
@@ -206,11 +212,11 @@ def _generate_with_ollama(prompt: str, model: str = None) -> str:
                 "stream": False,
                 "options": {
                     "temperature": 0.7,
-                    "num_predict": 4096,
-                    "num_ctx": 32768  # 32k コンテキストを指定して3万文字入力の切り捨てを防ぐ
+                    "num_predict": 2048,  # 生成トークン数を現実的な値に制限
+                    "num_ctx": 16384  # コンテキストサイズを16kに抑えてメモリとCPU/GPU負荷を削減
                 }
             },
-            timeout=900  # 長尺の生成タスク（3万文字解析等）に備えてタイムアウトを15分に延長
+            timeout=180  # タイムアウトを15分から3分に短縮
         )
         
         if res.status_code == 200:

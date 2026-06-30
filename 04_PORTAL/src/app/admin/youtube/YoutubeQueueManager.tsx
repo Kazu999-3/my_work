@@ -24,7 +24,7 @@ export default function YoutubeQueueManager() {
   const [sortBy, setSortBy] = useState<'date_added' | 'published_at'>('date_added');
 
   // チャンネル監視用の状態
-  const [activeTab, setActiveTab] = useState<'queue' | 'channels'>('queue');
+  const [activeTab, setActiveTab] = useState<'queue' | 'channels' | 'playlists'>('queue');
   const [channels, setChannels] = useState<any[]>([]);
   const [channelsLoading, setChannelsLoading] = useState(false);
   const [newChannelUrl, setNewChannelUrl] = useState('');
@@ -218,6 +218,131 @@ export default function YoutubeQueueManager() {
     }
   };
 
+  // プレイリスト監視用の状態
+  const [playlists, setPlaylists] = useState<any[]>([]);
+  const [playlistsLoading, setPlaylistsLoading] = useState(false);
+  const [newPlaylistUrl, setNewPlaylistUrl] = useState('');
+
+  // プレイリスト整理タスクのキックハンドラー
+  const handleTriggerDictSynthesizer = async () => {
+    setActionLoading('trigger_dict');
+    try {
+      const res = await fetch('/api/admin/youtube', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ trigger_task: 'dict_synthesizer' })
+      });
+
+      const result = await res.json();
+      if (res.ok) {
+        showFeedback('辞典の自動整理・要約タスクを起票しました。エッジワーカーが順次処理します。', 'success');
+      } else {
+        showFeedback(result.error || 'タスクの起票に失敗しました。', 'error');
+      }
+    } catch (err) {
+      showFeedback('リクエストに失敗しました。', 'error');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  // プレイリスト一覧の取得
+  const fetchPlaylists = async (silent = false) => {
+    try {
+      if (!silent) setPlaylistsLoading(true);
+      const res = await fetch('/api/admin/youtube/playlists');
+      if (res.ok) {
+        const data = await res.json();
+        setPlaylists(Array.isArray(data) ? data : []);
+      } else {
+        showFeedback('プレイリストの取得に失敗しました。', 'error');
+      }
+    } catch (err) {
+      showFeedback('プレイリスト取得エラーが発生しました。', 'error');
+    } finally {
+      if (!silent) setPlaylistsLoading(false);
+    }
+  };
+
+  // プレイリストの登録要求
+  const handleAddPlaylist = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newPlaylistUrl.trim()) return;
+
+    setActionLoading('add_playlist');
+    try {
+      const res = await fetch('/api/admin/youtube/playlists', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: newPlaylistUrl }),
+      });
+
+      const result = await res.json();
+      if (res.ok) {
+        showFeedback(result.message || 'プレイリスト登録解決要求を送信しました。', 'success');
+        setNewPlaylistUrl('');
+        // エッジワーカーで非同期登録されるため、数秒後に自動更新
+        setTimeout(() => fetchPlaylists(true), 4000);
+      } else {
+        showFeedback(result.error || 'プレイリスト登録に失敗しました。', 'error');
+      }
+    } catch (err) {
+      showFeedback('通信エラーが発生しました。', 'error');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  // プレイリスト自動監視の有効/無効トグル
+  const handleTogglePlaylistActive = async (id: string, currentActive: boolean) => {
+    setActionLoading(id);
+    try {
+      const res = await fetch('/api/admin/youtube/playlists', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, active: !currentActive }),
+      });
+
+      const result = await res.json();
+      if (res.ok) {
+        showFeedback(`プレイリスト監視を${!currentActive ? '再開' : '一時停止'}しました。`, 'success');
+        fetchPlaylists(true);
+      } else {
+        showFeedback(result.error || '設定の更新に失敗しました。', 'error');
+      }
+    } catch (err) {
+      showFeedback('通信エラーが発生しました。', 'error');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  // プレイリストの削除
+  const handleDeletePlaylist = async (id: string, name: string) => {
+    if (!confirm(`プレイリスト「${name}」の監視を解除しますか？`)) return;
+
+    setActionLoading(id);
+    try {
+      const res = await fetch('/api/admin/youtube/playlists', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      });
+
+      const result = await res.json();
+      if (res.ok) {
+        showFeedback('プレイリストの監視を解除しました。', 'success');
+        fetchPlaylists(true);
+      } else {
+        showFeedback(result.error || '削除に失敗しました。', 'error');
+      }
+    } catch (err) {
+      showFeedback('通信エラーが発生しました。', 'error');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   // 7. 監視チャンネル一覧の取得
   const fetchChannels = async (silent = false) => {
     try {
@@ -315,9 +440,10 @@ export default function YoutubeQueueManager() {
     }
   };
 
-  // 初期ロードでチャンネル一覧もフェッチしておく
+  // 初期ロードでチャンネル一覧とプレイリスト一覧もフェッチしておく
   useEffect(() => {
     fetchChannels(true);
+    fetchPlaylists(true);
   }, []);
 
   // 優先度バッジのスタイル定義
@@ -416,17 +542,36 @@ export default function YoutubeQueueManager() {
           >
             監視チャンネル設定
           </button>
+          <button 
+            type="button"
+            onClick={() => { setActiveTab('playlists'); fetchPlaylists(); }} 
+            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+              activeTab === 'playlists' ? 'bg-amber-500 text-gray-950 shadow-md font-extrabold' : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            監視プレイリスト設定
+          </button>
         </div>
 
-        {activeTab === 'queue' && stats.error > 0 && (
+        <div className="flex items-center gap-2">
+          {activeTab === 'queue' && stats.error > 0 && (
+            <button
+              onClick={handleRetryAllErrors}
+              disabled={actionLoading !== null}
+              className="px-4 py-2.5 rounded-xl bg-cyan-950/40 hover:bg-cyan-900/60 border border-cyan-800/60 hover:border-cyan-700/60 text-cyan-400 text-xs font-bold shadow-[0_0_15px_rgba(6,182,212,0.1)] hover:shadow-[0_0_20px_rgba(6,182,212,0.2)] disabled:opacity-40 disabled:pointer-events-none transition-all duration-300 flex items-center gap-1.5 shrink-0"
+            >
+              🔄 エラー動画を一括再試行 ({stats.error}件)
+            </button>
+          )}
+          
           <button
-            onClick={handleRetryAllErrors}
+            onClick={handleTriggerDictSynthesizer}
             disabled={actionLoading !== null}
-            className="px-4 py-2.5 rounded-xl bg-cyan-950/40 hover:bg-cyan-900/60 border border-cyan-800/60 hover:border-cyan-700/60 text-cyan-400 text-xs font-bold shadow-[0_0_15px_rgba(6,182,212,0.1)] hover:shadow-[0_0_20px_rgba(6,182,212,0.2)] disabled:opacity-40 disabled:pointer-events-none transition-all duration-300 flex items-center gap-1.5 shrink-0"
+            className="px-4 py-2.5 rounded-xl bg-amber-950/40 hover:bg-amber-900/60 border border-amber-800/60 hover:border-amber-700/60 text-amber-400 text-xs font-bold shadow-[0_0_15px_rgba(245,158,11,0.1)] hover:shadow-[0_0_20px_rgba(245,158,11,0.2)] disabled:opacity-40 disabled:pointer-events-none transition-all duration-300 flex items-center gap-1.5 shrink-0"
           >
-            🔄 エラー動画を一括再試行 ({stats.error}件)
+            📚 辞典整理を手動実行
           </button>
-        )}
+        </div>
       </div>
 
       {/* フィードバックメッセージ */}
@@ -936,6 +1081,156 @@ export default function YoutubeQueueManager() {
           </div>
         </>
       )}
+
+      {/* === タブ 3: 監視プレイリスト設定 === */}
+      {activeTab === 'playlists' && (
+        <>
+          {/* プレイリスト登録フォーム */}
+          <div className="bg-[#0f111a] border border-gray-800/80 rounded-2xl p-6 shadow-xl relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-amber-500 via-amber-300 to-cyan-500" />
+            <h2 className="text-lg font-bold text-gray-200 mb-4 flex items-center gap-2">
+              <span>➕ 自動巡回監視プレイリストの追加</span>
+            </h2>
+            <p className="text-xs text-gray-400 mb-3">
+              YouTubeプレイリストのURL（例: https://youtube.com/playlist?list=PL7aNfKUA-1lvPVfUoYHpD6jaK0p44HQGM ）を入力してください。ローカルPCのエッジワーカーがプレイリスト名を自動解析して登録します。
+            </p>
+            <form onSubmit={handleAddPlaylist} className="flex flex-col md:flex-row gap-4">
+              <input
+                type="text"
+                placeholder="https://youtube.com/playlist?list=PL..."
+                value={newPlaylistUrl}
+                onChange={(e) => setNewPlaylistUrl(e.target.value)}
+                disabled={actionLoading === 'add_playlist'}
+                className="flex-1 px-4 py-3 bg-[#07080e] border border-gray-800 rounded-xl focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 text-sm text-gray-200 placeholder-gray-600 transition-all"
+              />
+              <button
+                type="submit"
+                disabled={actionLoading === 'add_playlist' || !newPlaylistUrl.trim()}
+                className="px-6 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-gray-950 font-bold text-sm shadow-[0_0_20px_rgba(245,158,11,0.2)] hover:shadow-[0_0_25px_rgba(245,158,11,0.35)] disabled:opacity-40 disabled:pointer-events-none transition-all duration-300 flex items-center justify-center min-w-[140px]"
+              >
+                {actionLoading === 'add_playlist' ? (
+                  <span className="flex items-center gap-2">
+                    <svg className="animate-spin h-4 w-4 text-gray-950" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    登録解決中...
+                  </span>
+                ) : (
+                  '監視対象に追加'
+                )}
+              </button>
+            </form>
+          </div>
+
+          {/* 監視プレイリスト一覧リスト */}
+          <div className="bg-[#0f111a] border border-gray-800/80 rounded-2xl shadow-xl overflow-hidden">
+            <div className="p-6 border-b border-gray-800/80 flex items-center justify-between">
+              <h2 className="text-lg font-bold text-gray-200">📋 登録済み監視プレイリストリスト</h2>
+              <button
+                onClick={() => fetchPlaylists(false)}
+                disabled={playlistsLoading}
+                className="p-2 hover:bg-gray-800/60 rounded-lg text-gray-400 hover:text-gray-200 transition-all"
+                title="リフレッシュ"
+              >
+                <svg className={`h-5 w-5 ${playlistsLoading ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.253 8H18v3" />
+                </svg>
+              </button>
+            </div>
+
+            {playlistsLoading ? (
+              <div className="flex flex-col items-center justify-center py-20 space-y-4">
+                <svg className="animate-spin h-8 w-8 text-amber-400" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+                <span className="text-sm text-gray-400">プレイリスト情報を読み込み中...</span>
+              </div>
+            ) : playlists.length === 0 ? (
+              <div className="py-20 text-center text-gray-500 text-sm">
+                登録されている監視プレイリストはありません。
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-gray-800/60 text-xs text-gray-400 uppercase bg-[#08090f]">
+                      <th className="px-6 py-4 font-semibold">プレイリスト</th>
+                      <th className="px-6 py-4 font-semibold">最終巡回日時</th>
+                      <th className="px-6 py-4 font-semibold">自動監視状況</th>
+                      <th className="px-6 py-4 font-semibold text-right">アクション</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-800/40 text-sm text-gray-300">
+                    {playlists.map((pl) => (
+                      <tr key={pl.id} className="hover:bg-[#0c0d15]/60 transition-all duration-150">
+                        <td className="px-6 py-4">
+                          <div className="flex flex-col space-y-0.5">
+                            <span className="font-bold text-gray-200">{pl.name}</span>
+                            <div className="flex items-center gap-2 text-xs">
+                              <a 
+                                href={pl.url} 
+                                target="_blank" 
+                                rel="noreferrer" 
+                                className="text-cyan-400 hover:underline flex items-center gap-1"
+                              >
+                                <span>{pl.id}</span>
+                                <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                </svg>
+                              </a>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 font-mono text-xs text-gray-400">
+                          {pl.last_fetched_at ? new Date(pl.last_fetched_at).toLocaleString('ja-JP') : '未巡回'}
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-2">
+                            <span className={`px-2.5 py-0.5 text-[10px] font-bold rounded border ${
+                              pl.active 
+                                ? 'bg-green-950/40 text-green-400 border-green-800/60' 
+                                : 'bg-gray-950/40 text-gray-500 border-gray-800/60'
+                            }`}>
+                              {pl.active ? '監視ON' : '監視OFF'}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <div className="flex justify-end gap-2">
+                            <button
+                              onClick={() => handleTogglePlaylistActive(pl.id, pl.active)}
+                              disabled={actionLoading !== null}
+                              type="button"
+                              className={`px-3 py-1.5 border text-xs font-semibold rounded-lg disabled:opacity-40 transition-all ${
+                                pl.active
+                                  ? 'bg-yellow-950/20 hover:bg-yellow-950/50 border-yellow-900/40 text-yellow-400'
+                                  : 'bg-green-950/20 hover:bg-green-950/50 border-green-900/40 text-green-400'
+                              }`}
+                            >
+                              {pl.active ? '監視を停止' : '監視を再開'}
+                            </button>
+                            <button
+                              onClick={() => handleDeletePlaylist(pl.id, pl.name)}
+                              disabled={actionLoading !== null}
+                              type="button"
+                              className="px-3 py-1.5 bg-red-950/20 hover:bg-red-950/50 border border-red-900/40 hover:border-red-800/60 text-red-400 text-xs font-semibold rounded-lg disabled:opacity-40 disabled:pointer-events-none transition-all flex items-center gap-1"
+                            >
+                              監視解除
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </>
+      )}
+
       {/* ⚡ ローカルタスク実行キュー状況パネル */}
       </div>
   );

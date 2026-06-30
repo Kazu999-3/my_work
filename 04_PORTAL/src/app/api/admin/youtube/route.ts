@@ -43,9 +43,36 @@ export async function GET(req: NextRequest) {
 }
 
 // 2. 新規動画の追加
+// 2. 新規動画の追加 または タスク起動
 export async function POST(req: NextRequest) {
   try {
-    const { url } = await req.json();
+    const body = await req.json();
+    
+    // 手動タスク起動の処理
+    if (body.trigger_task) {
+      const { trigger_task } = body;
+      
+      const taskData = {
+        task_type: trigger_task,
+        payload: {},
+        status: 'pending'
+      };
+
+      const { data, error } = await supabase
+        .from('edge_tasks')
+        .insert(taskData)
+        .select();
+
+      if (error) throw error;
+
+      return NextResponse.json({
+        success: true,
+        message: `タスク「${trigger_task}」の実行要求を送信しました。`,
+        task: data ? data[0] : null
+      });
+    }
+
+    const { url } = body;
 
     if (!url || typeof url !== 'string') {
       return NextResponse.json({ error: 'URLを指定してください。' }, { status: 400 });

@@ -312,23 +312,8 @@ export default function Home() {
         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
       >
         
-        {/* Stat Cards */}
-        <motion.div variants={itemVariants} className="glass-panel glass-panel-hover rounded-3xl p-6 relative overflow-hidden border border-white/5 bg-gradient-to-b from-white/[0.05] to-transparent">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/20 rounded-full blur-[50px] -mr-10 -mt-10 pointer-events-none"></div>
-          <div className="flex justify-between items-start mb-6">
-            <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-xl text-blue-400">
-              <Network size={22} />
-            </div>
-            <p className="text-xs font-bold text-blue-400/80 bg-blue-500/10 px-3 py-1 rounded-full border border-blue-500/20">SYNCED</p>
-          </div>
-          <div>
-            <h3 className="text-4xl font-black text-white mb-1 tracking-tight">{isLoading ? '-' : totalAssets}</h3>
-            <p className="text-sm text-gray-400 font-medium">同期済みデータ総数</p>
-          </div>
-        </motion.div>
-
-        {/* QUOTA Card (Simplified) */}
-        <motion.div variants={itemVariants} className="md:col-span-2 lg:col-span-2 glass-panel glass-panel-hover rounded-3xl p-6 relative overflow-hidden border border-white/5 bg-gradient-to-b from-white/[0.05] to-transparent">
+        {/* QUOTA Card (Simplified & Full-width) */}
+        <motion.div variants={itemVariants} className="md:col-span-2 lg:col-span-4 glass-panel glass-panel-hover rounded-3xl p-6 relative overflow-hidden border border-white/5 bg-gradient-to-b from-white/[0.05] to-transparent">
           <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/20 rounded-full blur-[50px] -mr-10 -mt-10 pointer-events-none"></div>
           <div className="flex justify-between items-start mb-6">
             <div className="flex items-center gap-3">
@@ -354,7 +339,7 @@ export default function Home() {
               
               <div className="w-full bg-black/40 rounded-full h-3 overflow-hidden border border-white/5 mt-2">
                 <div 
-                  className={`h-full rounded-full transition-all duration-1000 ${apiUsage >= 1500 ? 'bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.8)]' : apiUsage > 1200 ? 'bg-gradient-to-r from-orange-400 to-rose-500' : 'bg-gradient-to-r from-blue-400 to-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.5)]'}`} 
+                  className={`h-full rounded-full transition-all duration-1000 ${apiUsage >= 1500 ? 'bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.8)]' : apiUsage > 1200 ? 'bg-gradient-to-r from-orange-400 to-rose-500' : 'bg-gradient-to-r from-blue-400 to-purple-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]'}`} 
                   style={{ width: `${Math.min((apiUsage / 1500) * 100, 100)}%` }}
                 ></div>
               </div>
@@ -365,20 +350,6 @@ export default function Home() {
                 <span>100%</span>
               </div>
             </div>
-          </div>
-        </motion.div>
-
-        <motion.div variants={itemVariants} className="glass-panel glass-panel-hover rounded-3xl p-6 relative overflow-hidden border border-white/5 bg-gradient-to-b from-white/[0.05] to-transparent">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/20 rounded-full blur-[50px] -mr-10 -mt-10 pointer-events-none"></div>
-          <div className="flex justify-between items-start mb-6">
-            <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400">
-              <Cpu size={22} />
-            </div>
-            <p className="text-xs font-bold text-emerald-400/80 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20 animate-pulse">ACTIVE</p>
-          </div>
-          <div>
-            <h3 className="text-4xl font-black text-white mb-1 tracking-tight">正常</h3>
-            <p className="text-sm text-gray-400 font-medium">システム・ワーカー状態</p>
           </div>
         </motion.div>
 

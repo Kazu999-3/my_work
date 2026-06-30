@@ -58,7 +58,24 @@ class DictSynthesizer:
             logger.error(f"❌ データ取得失敗: {res.status_code}")
             return []
 
-    def synthesize_text(self, champion, text):
+    def synthesize_text(self, champion, text, patch_meta=None, pro_builds=None):
+        trend_info_str = ""
+        if patch_meta:
+            trend_items = patch_meta.get("trend_items", [])
+            items_str = ", ".join(trend_items) if isinstance(trend_items, list) else str(trend_items)
+            trend_info_str += f"""
+【最新パッチトレンド情報】
+- パッチ: {patch_meta.get('patch')}
+- 勝率: {patch_meta.get('win_rate')}%
+- ピック率: {patch_meta.get('pick_rate')}%
+- バン率: {patch_meta.get('ban_rate')}%
+- ティア: {patch_meta.get('tier')}
+- 主要アイテム: {items_str}
+"""
+        if pro_builds:
+            pro_builds_str = ", ".join([f"{b.get('item_name')} (x{b.get('count')})" for b in pro_builds if isinstance(b, dict)])
+            trend_info_str += f"\n【プロのビルドトレンド】\n- コアアイテム: {pro_builds_str}\n"
+
         prompt = f"""
 あなたはLoLの最上位プレイヤー（チャレンジャー／プロコーチ）です。
 以下のテキストは、攻略ライブラリからチャンピオン「{champion}」の辞典に統合された複数の攻略メモや下書き記事の寄せ集めです。

@@ -496,8 +496,8 @@ class SREDaemon:
                                 
                             # 3. monetization_batch が完了した場合
                             elif task_type == "monetization_batch":
-                                logger.info("📣 [Swarm] アフィリエイト投稿が完了したため、note_analytics を自動起票します。")
-                                self._enqueue_edge_task("note_analytics")
+                                logger.info("📣 [Swarm] アフィリエイト投稿が完了しましたが、note_analytics は一時停止中のため自動起票をスキップします。")
+                                # self._enqueue_edge_task("note_analytics")
                                 
                             # チェック済みとして更新時刻を記録
                             last_checked = task["updated_at"]
@@ -514,7 +514,7 @@ class SREDaemon:
         threading.Thread(target=run_monetization_batch_loop, daemon=True).start()
         threading.Thread(target=run_note_magazine_import_loop, daemon=True).start()
         threading.Thread(target=run_lol_trend_collector_loop, daemon=True).start()
-        threading.Thread(target=run_note_analytics_loop, daemon=True).start()
+        # threading.Thread(target=run_note_analytics_loop, daemon=True).start()  # note分析タスク一時停止のためコメントアウト
         threading.Thread(target=run_swarm_coordinator_loop, daemon=True).start()
         threading.Thread(target=run_youtube_channel_monitor_loop, daemon=True).start()
 

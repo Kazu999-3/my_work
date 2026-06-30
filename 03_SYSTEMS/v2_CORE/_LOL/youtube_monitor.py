@@ -91,6 +91,7 @@ def resolve_and_register_channel(channel_url: str) -> bool:
         # --print オプションで改行区切りで取るのが最もシンプル
         cmd = [
             YT_DLP,
+            "--extractor-args", "youtube:client=android",
             "--playlist-items", "1", # 1番目の動画情報を取得（チャンネル解決が安定する）
             "--print", "%(channel_id)s\n%(channel)s",
             channel_url
@@ -145,6 +146,58 @@ def resolve_and_register_channel(channel_url: str) -> bool:
             
     except Exception as e:
         logger.error(f"Error resolving channel: {e}")
+        return False
+
+# ============================================================
+# プレイリスト解決機能 (yt-dlp を使用)
+# ============================================================
+def resolve_and_register_playlist(playlist_url: str) -> bool:
+    logger.info(f"🔍 プレイリストURLの解決を試行中: {playlist_url}")
+    try:
+        # プレイリストIDの抽出
+        pl_id_match = re.search(r"[?&]list=([a-zA-Z0-9_\-]+)", playlist_url)
+        if not pl_id_match:
+            logger.error(f"Invalid playlist URL: {playlist_url}")
+            return False
+        playlist_id = pl_id_match.group(1)
+        
+        # yt-dlp を使ってプレイリストのタイトルを取得
+        cmd = [
+            YT_DLP,
+            "--extractor-args", "youtube:client=android",
+            "--playlist-items", "1",
+            "--print", "playlist_title",
+            playlist_url
+        ]
+        res = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=30)
+        if res.returncode != 0:
+            logger.error(f"yt-dlp resolution failed: {res.stderr}")
+            return False
+            
+        playlist_title = res.stdout.strip()
+        if not playlist_title:
+            playlist_title = f"Playlist {playlist_id}"
+            
+        logger.info(f"✨ プレイリスト解決成功: {playlist_title} (ID: {playlist_id})")
+        
+        payload = {
+            "id": playlist_id,
+            "name": playlist_title,
+            "url": playlist_url,
+            "active": True,
+            "last_fetched_at": None
+        }
+        
+        status, body = _supabase_request(f"youtube_playlists?on_conflict=id", method='POST', payload=payload)
+        if status in (200, 201, 204):
+            logger.info(f"✅ Supabase にプレイリストを登録しました: {playlist_title}")
+            herald.notify_progress(f"📺 **【プレイリスト監視登録】** {playlist_title} が新しく自動監視リストに追加されました！", portal_link=True, page="youtube")
+            return True
+        else:
+            logger.error(f"Failed to upsert playlist in Supabase: {status} - {body}")
+            return False
+    except Exception as e:
+        logger.error(f"Error resolving playlist: {e}")
         return False
 
 # ============================================================
@@ -272,24 +325,135 @@ def monitor_channels():
         herald.notify_progress(f"📺 **【自動動画解析】** 監視チャンネルから新しく {new_videos_found} 本の動画を検知し、解析キューに追加しました！", portal_link=True, page="youtube")
 
 # ============================================================
+# プレイリスト動画監視機能 (yt-dlp を使用)
+# ============================================================
+def monitor_playlists():
+    logger.info("⚡ 登録プレイリストの新着動画スキャンを開始します...")
+    
+    status, body = _supabase_request("youtube_playlists?active=eq.true", method='GET')
+    if status != 200:
+        logger.error(f"Failed to fetch active playlists from Supabase: {status}")
+        return
+        
+    playlists = json.loads(body)
+    logger.info(f"監視対象プレイリスト数: {len(playlists)} 件")
+    
+    if not playlists:
+        return
+
+    new_videos_found = 0
+
+    for pl in playlists:
+        pl_id = pl["id"]
+        pl_name = pl["name"]
+        pl_url = pl["url"]
+        logger.info(f"📡 プレイリスト巡回中: {pl_name} (ID: {pl_id})")
+        
+        try:
+            cmd = [
+                YT_DLP,
+                "--extractor-args", "youtube:client=android",
+                "--flat-playlist",
+                "--dump-json",
+                pl_url
+            ]
+            res = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=60)
+            if res.returncode != 0:
+                logger.error(f"yt-dlp failed to fetch playlist {pl_name}: {res.stderr}")
+                continue
+                
+            videos = []
+            for line in res.stdout.strip().split('\n'):
+                if not line:
+                    continue
+                try:
+                    data = json.loads(line)
+                    v_id = data.get("id")
+                    title = data.get("title", "")
+                    if v_id:
+                        videos.append({
+                            "video_id": v_id,
+                            "title": title,
+                            "url": f"https://www.youtube.com/watch?v={v_id}"
+                        })
+                except Exception as e:
+                    logger.error(f"Failed to parse playlist JSON line: {e}")
+                    
+            logger.info(f"  プレイリストから {len(videos)} 件の動画を取得しました。")
+            
+            if not videos:
+                continue
+                
+            for v in videos:
+                video_id = v["video_id"]
+                title = v["title"]
+                url = v["url"]
+                
+                check_status, check_body = _supabase_request(f"youtube_queue?id=eq.{video_id}&select=id", method='GET')
+                if check_status == 200:
+                    records = json.loads(check_body)
+                    if records:
+                        continue
+                
+                logger.info(f"  🆕 新着動画を検出しました: {title} ({video_id})")
+                payload = {
+                    "id": video_id,
+                    "title": title,
+                    "url": url,
+                    "status": "pending",
+                    "channel_name": f"[PL] {pl_name}",
+                    "retry_count": 0,
+                    "created_at": datetime.now(timezone.utc).isoformat(),
+                    "updated_at": datetime.now(timezone.utc).isoformat(),
+                    "duration_sec": None
+                }
+                post_status, post_body = _supabase_request("youtube_queue", method='POST', payload=payload)
+                if post_status in (200, 201, 204):
+                    logger.info(f"    ✅ キューに追加完了: {title}")
+                    new_videos_found += 1
+                else:
+                    logger.error(f"    ❌ キュー追加失敗: {post_status} - {post_body}")
+            
+            _supabase_request(
+                f"youtube_playlists?id=eq.{pl_id}",
+                method='PATCH',
+                payload={"last_fetched_at": datetime.now(timezone.utc).isoformat()}
+            )
+            
+        except Exception as e:
+            logger.error(f"Error monitoring playlist {pl_name}: {e}")
+            
+        time.sleep(2)
+
+    logger.info(f"🎉 プレイリストスキャン完了。新規動画 {new_videos_found} 件を追加しました。")
+    if new_videos_found > 0:
+        herald.notify_progress(f"📺 **【自動動画解析】** 監視プレイリストから新しく {new_videos_found} 本の動画を検知し、解析キューに追加しました！", portal_link=True, page="youtube")
+
+# ============================================================
 # メインエントリーポイント
 # ============================================================
 if __name__ == "__main__":
     import re
     # 簡易 handle 抽出用のインポート
-    parser = argparse.ArgumentParser(description="YouTube Channel Monitor & Resolver")
+    parser = argparse.ArgumentParser(description="YouTube Channel & Playlist Monitor")
     parser.add_argument("--resolve", type=str, help="Resolve YouTube channel URL and register it to Supabase")
-    parser.add_argument("--monitor", action="store_true", help="Monitor registered channels and pull new videos")
+    parser.add_argument("--resolve-playlist", type=str, help="Resolve YouTube playlist URL and register it to Supabase")
+    parser.add_argument("--monitor", action="store_true", help="Monitor registered channels and playlists to pull new videos")
     
     args = parser.parse_args()
     
     if args.resolve:
         success = resolve_and_register_channel(args.resolve)
         sys.exit(0 if success else 1)
+    elif args.resolve_playlist:
+        success = resolve_and_register_playlist(args.resolve_playlist)
+        sys.exit(0 if success else 1)
     elif args.monitor:
         monitor_channels()
+        monitor_playlists()
         sys.exit(0)
     else:
-        # 引数なしの場合は両方実行（まず登録要求キューを処理し、その後監視を実行）
-        # 登録要求は edge_tasks を介して処理されるため、このスクリプト単体で直接叩かれた場合は監視のみを行う
+        # 引数なしの場合は両方実行
         monitor_channels()
+        monitor_playlists()
+

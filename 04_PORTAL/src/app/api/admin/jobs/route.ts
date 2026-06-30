@@ -2,13 +2,22 @@ import { NextRequest, NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
 import { spawn } from 'child_process';
+import { createClient } from '@supabase/supabase-js';
+
+// サーバーサイド用クライアント（サービスキーを使用）
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder';
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 // ============================================================
 // Vercel本番環境の検知
 // Vercel上ではローカルのPythonスクリプトを実行できないため、
 // IS_VERCEL=true の場合はジョブ起動を拒否し案内を返す
 // ============================================================
-const IS_VERCEL = !!process.env.VERCEL;
+// Windows環境、または明示的なローカル強制フラグがある場合はVercel環境ではないと判定する
+const IS_VERCEL = (process.platform === 'win32' || process.env.PORTAL_FORCE_LOCAL === 'true')
+  ? false
+  : !!process.env.VERCEL;
 
 // ワークスペースのルートを特定する（ポータルの1つ上のディレクトリ）
 // ローカル開発: d:/my_work/04_PORTAL/../ → d:/my_work/
@@ -130,22 +139,36 @@ export async function GET(req: NextRequest) {
 // POST: 指定ジョブの実行
 // ============================================================
 export async function POST(req: NextRequest) {
-  // Vercel本番環境ではPythonスクリプトを実行できない
-  if (IS_VERCEL) {
-    return NextResponse.json(
-      {
-        error: 'VERCEL_MODE',
-        message: 'この機能はローカルのSREデーモンが自動実行します。手動で起動したい場合はDiscord Bot の /run コマンドを使用してください。',
-      },
-      { status: 503 }
-    );
-  }
-
   try {
     const { job, args = [] } = await req.json();
 
     if (!job || !JOBS[job]) {
       return NextResponse.json({ error: '無効または未指定のジョブ名です。' }, { status: 400 });
+    }
+
+    // Vercel本番環境ではPythonスクリプトを実行できないため、エッジタスクとして登録
+    if (IS_VERCEL) {
+      const taskData = {
+        task_type: job,
+        payload: { args },
+        status: 'pending'
+      };
+
+      const { data, error } = await supabase
+        .from('edge_tasks')
+        .insert(taskData)
+        .select();
+
+      if (error) {
+        console.error('❌ [Jobs API] failed to insert edge task:', error);
+        return NextResponse.json({ error: 'ローカルエッジワーカーへのタスク起票に失敗しました。' }, { status: 500 });
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: `ローカルエッジワーカーへジョブ「${JOBS[job].name}」の実行要求を送信しました。`,
+        task: data ? data[0] : null
+      });
     }
 
     const config     = JOBS[job];

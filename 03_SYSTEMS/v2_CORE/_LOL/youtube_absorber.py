@@ -69,6 +69,7 @@ class YouTubeAbsorber:
             self.yt_dlp = str(settings.ROOT_DIR / ".venv" / "Scripts" / "yt-dlp.exe")
         else:
             self.yt_dlp = "yt-dlp"
+        self._whisper_model = None
         
     def _supabase_request(self, path, method='GET', payload=None, headers=None):
         if not settings.SUPABASE_URL or not settings.SUPABASE_KEY:
@@ -251,32 +252,48 @@ class YouTubeAbsorber:
             return ""
         return audio_files[0]
 
-    def transcribe_audio_local(self, audio_path):
-        if not audio_path or not os.path.exists(audio_path):
-            return ""
+    def get_whisper_model(self):
+        if hasattr(self, "_whisper_model") and self._whisper_model is not None:
+            return self._whisper_model
             
         setup_cuda_dll_path()
-        
         try:
             from faster_whisper import WhisperModel
         except ImportError:
             logger.error("faster-whisper is not installed in the environment.")
-            return ""
+            return None
             
-        logger.info("Initializing WhisperModel (large-v3, device=cuda, compute_type=float16)...")
+        # VRAMの削減のため、デフォルトは "medium" にする (large-v3 はローカル環境で重すぎるため)
+        model_size = os.getenv("WHISPER_MODEL_SIZE", "medium")
+        logger.info(f"Initializing WhisperModel ({model_size}, device=cuda, compute_type=float16)...")
         try:
-            model = WhisperModel(
-                model_size_or_path="large-v3",
+            self._whisper_model = WhisperModel(
+                model_size_or_path=model_size,
                 device="cuda",
                 compute_type="float16"
             )
         except Exception as e:
             logger.warning(f"CUDA initialization failed ({e}). Falling back to CPU...")
-            model = WhisperModel(
-                model_size_or_path="large-v3",
-                device="cpu",
-                compute_type="int8"
-            )
+            try:
+                self._whisper_model = WhisperModel(
+                    model_size_or_path=model_size,
+                    device="cpu",
+                    compute_type="int8"
+                )
+            except Exception as e2:
+                logger.error(f"CPU initialization failed: {e2}")
+                self._whisper_model = None
+                
+        return self._whisper_model
+
+    def transcribe_audio_local(self, audio_path):
+        if not audio_path or not os.path.exists(audio_path):
+            return ""
+            
+        model = self.get_whisper_model()
+        if not model:
+            logger.error("WhisperModel could not be initialized.")
+            return ""
             
         logger.info(f"Transcribing audio file: {audio_path}")
         start_time = time.time()
@@ -388,7 +405,7 @@ class YouTubeAbsorber:
         
         try:
             logger.info("📡 AI Agent Gateway (Port 8000) へ要約生成リクエストを送信中...")
-            res = httpx.post(url, headers=headers, json=payload, timeout=900)
+            res = httpx.post(url, headers=headers, json=payload, timeout=240)
             if res.status_code == 200:
                 data = res.json()
                 if data.get("success"):
@@ -498,22 +515,29 @@ class YouTubeAbsorber:
 
             logger.info(f"Processing: {item['title']}")
             
-            # クオリティ重視のため、YouTube自動字幕をスキップし、常にローカルの GPU Whisper で高精度文字起こしを実行
-            logger.info(f"Downloading audio for Whisper processing: {item['title']}")
-            audio_path = self.download_audio(item["url"], item["id"])
-            transcript = ""
-            if audio_path:
-                try:
-                    transcript = self.transcribe_audio_local(audio_path)
-                except Exception as e:
-                    logger.error(f"Whisper transcription failed: {e}")
-                finally:
-                    if os.path.exists(audio_path):
-                        try:
-                            os.remove(audio_path)
-                            logger.info(f"Cleaned up audio file: {audio_path}")
-                        except Exception as ce:
-                            logger.warning(f"Failed to clean up audio file: {ce}")
+            logger.info(f"Attempting to download YouTube subtitles/auto-subtitles for: {item['title']}")
+            transcript = self.download_subtitle(item["url"], item["id"])
+            
+            if transcript and len(transcript) >= 100:
+                logger.info(f"✅ Successfully retrieved subtitles from YouTube: {len(transcript):,} chars")
+            else:
+                logger.info(f"⚠️ Subtitles not available on YouTube. Falling back to local Whisper processing: {item['title']}")
+                # フォールバック: ローカルの Whisper で音声認識を実行
+                logger.info(f"Downloading audio for Whisper processing: {item['title']}")
+                audio_path = self.download_audio(item["url"], item["id"])
+                transcript = ""
+                if audio_path:
+                    try:
+                        transcript = self.transcribe_audio_local(audio_path)
+                    except Exception as e:
+                        logger.error(f"Whisper transcription failed: {e}")
+                    finally:
+                        if os.path.exists(audio_path):
+                            try:
+                                os.remove(audio_path)
+                                logger.info(f"Cleaned up audio file: {audio_path}")
+                            except Exception as ce:
+                                logger.warning(f"Failed to clean up audio file: {ce}")
                 
             if not transcript or len(transcript) < 100:
                 logger.warning(f"No valid transcript found for {item['id']}")
@@ -576,8 +600,14 @@ class YouTubeAbsorber:
                 from v2_CORE.sovereign_sync import SovereignSync
                 sync = SovereignSync()
                 sync.run_sync()
+                
+                # 自動同期の直後に辞典整理を実行して即座にマージ・要約する
+                logger.info("📚 DictSynthesizer を呼び出して辞典の整理・統合を実行します...")
+                from v2_CORE._LOL.dict_synthesizer import DictSynthesizer
+                synthesizer = DictSynthesizer()
+                synthesizer.process_and_update(limit=5)
             except Exception as e:
-                logger.error(f"❌ 自動同期呼び出しエラー: {e}")
+                logger.error(f"❌ 自動同期・辞典整理呼び出しエラー: {e}")
         elif len(targets) > 0:
             herald.notify_error(
                 f"YouTube Absorberで {len(targets)} 本の動画の処理を試みましたが、API制限（上限到達）などにより全て失敗しました。\n"
