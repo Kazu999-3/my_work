@@ -161,7 +161,7 @@ export async function POST(req: NextRequest) {
 
       if (error) {
         console.error('❌ [Jobs API] failed to insert edge task:', error);
-        return NextResponse.json({ error: 'ローカルエッジワーカーへのタスク起票に失敗しました。' }, { status: 500 });
+        return NextResponse.json({ error: `ローカルエッジワーカーへのタスク起票に失敗しました。詳細: ${error.message} (${error.details || '詳細なし'})` }, { status: 500 });
       }
 
       return NextResponse.json({
