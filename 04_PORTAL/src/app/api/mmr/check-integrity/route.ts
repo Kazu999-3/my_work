@@ -13,7 +13,7 @@ export async function GET(request: Request) {
 
     const playersMap = new Map();
     for (const p of allPlayers) {
-      const prefs = p.role_preferences || { primary: 'ALL', secondary: 'FILL' };
+      const prefs = p.role_preferences || { primary: 'ALL', secondary: '-' };
       playersMap.set(p.name, {
         id: p.id, name: p.name, highest_rank: p.highest_rank, role_preferences: prefs,
         currentTop: p.mmr_top || 1000,

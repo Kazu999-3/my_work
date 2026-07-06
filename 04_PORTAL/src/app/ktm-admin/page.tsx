@@ -354,7 +354,7 @@ export default function KtmAdminPage() {
       // 新規追加メンバーにデフォルトのRankと希望ロールを設定し、初期MMRを計算
       const processedAdd = discData.toAdd.map((p: any) => {
         const highest_rank = "UNRANKED";
-        const prefs = { primary: "ALL", secondary: "FILL" };
+        const prefs = { primary: "ALL", secondary: "-" };
         
         const mmr_top = calculateAutoMmr(highest_rank, 'TOP', prefs);
         const mmr_jg = calculateAutoMmr(highest_rank, 'JG', prefs);
@@ -584,7 +584,7 @@ export default function KtmAdminPage() {
       // 1. 新規追加メンバーのMMRをフロント側で自動計算してマージする
       const processedAdd = syncData.toAdd.map((p: any) => {
         const highest_rank = p.highest_rank || "UNRANKED";
-        const prefs = p.role_preferences || { primary: "ALL", secondary: "FILL" };
+        const prefs = p.role_preferences || { primary: "ALL", secondary: "-" };
         
         const mmr_top = calculateAutoMmr(highest_rank, 'TOP', prefs);
         const mmr_jg = calculateAutoMmr(highest_rank, 'JG', prefs);
@@ -627,9 +627,10 @@ export default function KtmAdminPage() {
       if (!riotRes.ok) throw new Error(riotData.error || 'Riot情報の同期に失敗しました');
 
       if (riotData.errors && riotData.errors.length > 0) {
+        const errorDetails = riotData.errors.slice(0, 10).join('\n') + (riotData.errors.length > 10 ? `\n...他 ${riotData.errors.length - 10} 件` : '');
         setMessage({ 
           type: "success", 
-          text: `✅ Discord & Riot情報の同期が完了しました（※Riot APIで一部エラーあり: ${riotData.errors.length}件）。\n新規プレイヤーの初期MMR計算値を反映させるため、名簿上部の「🔄 Rebuild」を実行してください。` 
+          text: `✅ Discord & Riot情報の同期が完了しました（※Riot APIで一部エラーあり: ${riotData.errors.length}件）。\n新規プレイヤーの初期MMR計算値を反映させるため、名簿上部の「🔄 Rebuild」を実行してください。\n\n【エラー詳細（サモナー名不一致など）】\n${errorDetails}` 
         });
       } else {
         setMessage({ 
@@ -904,13 +905,17 @@ export default function KtmAdminPage() {
                                     value={p.role_preferences?.primary || "ALL"}
                                     onChange={(e) => {
                                       const updatedAdd = [...syncData.toAdd];
-                                      if (!updatedAdd[idx].role_preferences) updatedAdd[idx].role_preferences = { primary: "ALL", secondary: "FILL" };
-                                      updatedAdd[idx].role_preferences.primary = e.target.value;
+                                      if (!updatedAdd[idx].role_preferences) updatedAdd[idx].role_preferences = { primary: "ALL", secondary: "-" };
+                                      const newVal = e.target.value;
+                                      updatedAdd[idx].role_preferences.primary = newVal;
+                                      if (newVal === "ALL") {
+                                        updatedAdd[idx].role_preferences.secondary = "-";
+                                      }
                                       setSyncData({ ...syncData, toAdd: updatedAdd });
                                     }}
                                     className="bg-gray-900 border border-gray-700 text-white rounded px-2 py-1 outline-none focus:border-green-500 cursor-pointer"
                                   >
-                                    {["ALL", "TOP", "JG", "MID", "ADC", "SUP", "FILL"].map(role => (
+                                    {["ALL", "TOP", "JG", "MID", "ADC", "SUP"].map(role => (
                                       <option key={role} value={role}>{role}</option>
                                     ))}
                                   </select>
@@ -920,19 +925,36 @@ export default function KtmAdminPage() {
                                 <div className="flex items-center gap-1.5">
                                   <span className="text-gray-400">サブ:</span>
                                   <select
-                                    value={p.role_preferences?.secondary || "FILL"}
+                                    value={p.role_preferences?.secondary || "-"}
+                                    disabled={p.role_preferences?.primary === "ALL"}
                                     onChange={(e) => {
                                       const updatedAdd = [...syncData.toAdd];
-                                      if (!updatedAdd[idx].role_preferences) updatedAdd[idx].role_preferences = { primary: "ALL", secondary: "FILL" };
+                                      if (!updatedAdd[idx].role_preferences) updatedAdd[idx].role_preferences = { primary: "ALL", secondary: "-" };
                                       updatedAdd[idx].role_preferences.secondary = e.target.value;
                                       setSyncData({ ...syncData, toAdd: updatedAdd });
                                     }}
-                                    className="bg-gray-900 border border-gray-700 text-white rounded px-2 py-1 outline-none focus:border-green-500 cursor-pointer"
+                                    className="bg-gray-900 border border-gray-700 text-white rounded px-2 py-1 outline-none focus:border-green-500 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                                   >
-                                    {["ALL", "TOP", "JG", "MID", "ADC", "SUP", "FILL"].map(role => (
+                                    {["-", "ALL", "TOP", "JG", "MID", "ADC", "SUP"].map(role => (
                                       <option key={role} value={role}>{role}</option>
                                     ))}
                                   </select>
+                                </div>
+
+                                {/* Riot ID (ign) 入力 */}
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-gray-400">Riot ID:</span>
+                                  <input
+                                    type="text"
+                                    placeholder="Name#TAG"
+                                    value={p.ign || ""}
+                                    onChange={(e) => {
+                                      const updatedAdd = [...syncData.toAdd];
+                                      updatedAdd[idx].ign = e.target.value;
+                                      setSyncData({ ...syncData, toAdd: updatedAdd });
+                                    }}
+                                    className="bg-gray-900 border border-gray-700 text-white rounded px-2 py-1 outline-none focus:border-green-500 w-36 placeholder-gray-600 font-mono"
+                                  />
                                 </div>
                               </div>
                             </div>

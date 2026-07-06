@@ -131,7 +131,6 @@ export async function handleButtonInteraction(interaction, env, ctx) {
       }
     });
     if (value === 'portal_stats') return handleStatsCommand(interaction, env, ctx);
-    if (value === 'portal_balance') return await handleBalanceCommand(interaction, env, ctx);
     if (value === 'portal_lane') return handleLaneCommand(interaction, env, ctx);
     if (value === 'portal_ign') return Response.json({ type: 9, data: { title: "📝 サモナー名登録", custom_id: "portal_ign_modal", components: [{ type: 1, components: [{ type: 4, custom_id: "ign", label: "サモナー名 (Riot ID#Tag)", style: 1, placeholder: "Faker#KR1", required: true }] }] } });
     

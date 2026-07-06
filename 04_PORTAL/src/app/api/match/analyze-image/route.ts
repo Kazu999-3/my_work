@@ -2,17 +2,22 @@ import { NextResponse } from 'next/server';
 
 export async function POST(req: Request) {
   try {
-    const { imageBase64, mimeType, champions } = await req.json();
+    const { imageBase64, mimeType, champions, testApiKey } = await req.json();
     if (!imageBase64) {
       return NextResponse.json({ error: '画像データがありません。' }, { status: 400 });
     }
 
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
+    const apiKeysEnv = testApiKey || process.env.GEMINI_API_KEY;
+    if (!apiKeysEnv) {
       return NextResponse.json({ error: 'GEMINI_API_KEY が設定されていません。Vercel等の環境変数を確認してください。' }, { status: 500 });
     }
 
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+    const apiKeys = apiKeysEnv.split(',').map((k: string) => k.trim()).filter(Boolean);
+    if (apiKeys.length === 0) {
+      return NextResponse.json({ error: '有効な GEMINI_API_KEY が見つかりません。' }, { status: 500 });
+    }
+
+    // geminiUrl はループ内でキーごとに動的に生成します
 
     const championsText = champions && Array.isArray(champions)
       ? champions.map((c: any) => `${c.name} (${c.id})`).join(', ')
@@ -67,7 +72,7 @@ ${championsText}
    - "deaths": デス数（数値）
    - "assists": アシスト数（数値）
    - "champion_analysis_notes": 上記観点による顔アイコンの分析と思考プロセス
-   - "champion_name": 思考を踏まえて特定した、マスターリスト内の正確なチャンピオン名または英語名ID
+   - "champion_name": マスターリストに書かれている正確な「英語名ID（例: Aatrox, Ahri, LeeSin）」の文字列を厳密に抽出して出力してください（日本語名は含めないでください）。
 
 期待するJSON出力フォーマット：
 {
@@ -109,12 +114,22 @@ ${championsText}
     };
 
     let response;
-    const attempts = 3;
-    let delay = 1500; // 1.5秒
+    let success = false;
+    let lastErrorMsg = '';
+    
+    // 無料枠制限(RPM/TPM)を別枠クォータで回避するため、モデルローテーションも行う
+    const models = ['gemini-2.5-flash', 'gemini-1.5-flash-latest'];
+    const totalKeys = apiKeys.length;
+    const attempts = Math.max(totalKeys * models.length, 3); // キーとモデルの全探索数、または最低3回
+    let delay = 1000;
 
     for (let i = 0; i < attempts; i++) {
+      const currentKey = apiKeys[i % totalKeys];
+      const currentModel = models[Math.floor(i / totalKeys) % models.length];
+      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:generateContent?key=${currentKey}`;
+      
       try {
-        console.log(`Sending image to Gemini API (Attempt ${i + 1}/${attempts})...`);
+        console.log(`Sending image to Gemini (Attempt ${i + 1}/${attempts}, Model: ${currentModel}, Key Index ${i % totalKeys})...`);
         response = await fetch(geminiUrl, {
           method: 'POST',
           headers: {
@@ -123,34 +138,38 @@ ${championsText}
           body: JSON.stringify(payload)
         });
 
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.warn(`Gemini API Attempt ${i + 1} failed: ${response.status} - ${errorText}`);
-          
-          if (response.status === 503 || response.status === 429 || response.status >= 500) {
-            if (i < attempts - 1) {
-              console.log(`Retrying in ${delay}ms...`);
-              await new Promise(resolve => setTimeout(resolve, delay));
-              delay *= 2; // 指数バックオフ
-              continue;
-            }
-          }
-          throw new Error(`Gemini API Error: ${response.status} - ${errorText}`);
+        if (response.ok) {
+          success = true;
+          break; // 成功
         }
-        break; // 成功
+
+        const errorText = await response.text();
+        lastErrorMsg = `Status ${response.status} - ${errorText}`;
+        console.warn(`Gemini API Attempt ${i + 1} (${currentModel}) failed: ${lastErrorMsg}`);
+        
+        // 429 または 5xx の場合は次のキー/モデルでリトライ
+        if (response.status === 429 || response.status === 503 || response.status >= 500) {
+          if (i < attempts - 1) {
+            console.log(`Retrying with next configuration in ${delay}ms...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+            delay = Math.min(delay * 1.5, 5000); // 指数バックオフ
+            continue;
+          }
+        }
+        throw new Error(lastErrorMsg);
       } catch (fetchErr: any) {
+        lastErrorMsg = fetchErr.message;
         if (i < attempts - 1) {
-          console.log(`Fetch error on attempt ${i + 1}, retrying in ${delay}ms...: ${fetchErr.message}`);
+          console.log(`Fetch error on attempt ${i + 1}, retrying with next configuration in ${delay}ms...: ${fetchErr.message}`);
           await new Promise(resolve => setTimeout(resolve, delay));
-          delay *= 2;
+          delay = Math.min(delay * 1.5, 5000);
           continue;
         }
-        throw fetchErr;
       }
     }
 
-    if (!response) {
-      throw new Error("Gemini API からのレスポンスが取得できませんでした。");
+    if (!success || !response) {
+      throw new Error(`Gemini APIへのすべての試行に失敗しました。最後のエラー: ${lastErrorMsg}`);
     }
 
     const result = await response.json();
@@ -159,7 +178,12 @@ ${championsText}
       throw new Error("Gemini からの解析結果が空です。");
     }
 
-    const parsedData = JSON.parse(textOutput.trim());
+    let cleanText = textOutput.trim();
+    if (cleanText.startsWith("```json")) cleanText = cleanText.substring(7);
+    if (cleanText.endsWith("```")) cleanText = cleanText.substring(0, cleanText.length - 3);
+    cleanText = cleanText.trim();
+
+    const parsedData = JSON.parse(cleanText);
     return NextResponse.json({ status: "SUCCESS", data: parsedData });
 
   } catch (err: any) {

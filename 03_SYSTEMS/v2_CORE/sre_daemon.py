@@ -69,8 +69,15 @@ class SREDaemon:
 
     def _get_error_fingerprint(self, error_text):
         """エラーのスタックトレースから不要なタイムスタンプ等を抜いたハッシュを生成"""
-        # 簡易的に最初の200文字を使用
-        return hashlib.md5(error_text[:200].encode()).hexdigest()
+        import re
+        # ログプレフィックス（タイムスタンプ、ロガー名、ログレベル）を除去する
+        # 例: "2026-07-04 19:40:00,123 [SREDaemon] ERROR: " を除去
+        cleaned = re.sub(r'^\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2},\d{3}\s+\[[^\]]+\]\s+[A-Z]+:\s*', '', error_text)
+        # 行ごとのタイムスタンプも同様に除去（複数行トレースの場合）
+        cleaned = re.sub(r'\n\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2},\d{3}\s+\[[^\]]+\]\s+[A-Z]+:\s*', '\n', cleaned)
+        cleaned = cleaned.strip()
+        return hashlib.md5(cleaned[:200].encode()).hexdigest()
+
 
     def analyze_error_with_ai(self, error_text):
         """AIを使ってエラー原因と解決策を分析（APIゲートウェイ経由）"""
@@ -514,7 +521,7 @@ class SREDaemon:
         threading.Thread(target=run_monetization_batch_loop, daemon=True).start()
         threading.Thread(target=run_note_magazine_import_loop, daemon=True).start()
         threading.Thread(target=run_lol_trend_collector_loop, daemon=True).start()
-        # threading.Thread(target=run_note_analytics_loop, daemon=True).start()  # note分析タスク一時停止のためコメントアウト
+        #threading.Thread(target=run_note_analytics_loop, daemon=True).start()  # note分析タスク一時停止のためコメントアウト
         threading.Thread(target=run_swarm_coordinator_loop, daemon=True).start()
         threading.Thread(target=run_youtube_channel_monitor_loop, daemon=True).start()
 
@@ -630,5 +637,13 @@ class SREDaemon:
         )
 
 if __name__ == "__main__":
-    daemon = SREDaemon()
-    daemon.run()
+    from v2_CORE.lock import SocketLock
+    import sys
+    lock = SocketLock(19001, "SRE Daemon")
+    if not lock.acquire():
+        sys.exit(0)
+    try:
+        daemon = SREDaemon()
+        daemon.run()
+    finally:
+        lock.release()

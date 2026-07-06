@@ -148,3 +148,16 @@ export async function fetchChampionMasteryByPuuid(puuid: string, apiKey: string,
   return await res.json();
 }
 
+/**
+ * PUUIDから最新の Riot ID（gameName, tagLine）を取得します
+ */
+export async function fetchRiotIdByPuuid(puuid: string, apiKey: string): Promise<{ gameName: string; tagLine: string }> {
+  const url = `${RIOT_API_BASE_ASIA}/riot/account/v1/accounts/by-puuid/${puuid}?api_key=${apiKey}`;
+  const res = await fetch(url, { cache: 'no-store' });
+  if (!res.ok) {
+    throw new Error(`Riot IDの逆引きに失敗しました (PUUID: ${puuid}): ${res.statusText}`);
+  }
+  const data = await res.json();
+  return { gameName: data.gameName, tagLine: data.tagLine };
+}
+

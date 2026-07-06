@@ -132,62 +132,24 @@ export async function POST(request: Request) {
   try {
     const { add, deactivate, update_metadata } = await request.json();
     
-    // 追加処理
-    if (add && add.length > 0) {
-      // データベースから最新の discord_id 一覧を取得して競合を防ぐ
-      const { data: existingPlayers, error: fetchError } = await supabase
-        .from('ktm_players')
-        .select('discord_id')
-        .not('discord_id', 'is', null);
+    // 追加・削除処理を FastAPI (Sovereign Core API) へ委譲 (Proxy)
+    if ((add && add.length > 0) || (deactivate && deactivate.length > 0)) {
+      const fastapiUrl = 'http://localhost:8000/api/v1/players/sync';
+      const apiKey = process.env.ANTIGRAVITY_API_KEY || 'default_dev_key_2026';
 
-      if (fetchError) throw fetchError;
+      const response = await fetch(fastapiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Antigravity-Key': apiKey
+        },
+        body: JSON.stringify({ add: add || [], deactivate: deactivate || [] })
+      });
 
-      const existingIds = new Set(existingPlayers.map(p => p.discord_id));
-
-      // すでにDBに存在する discord_id は除外する
-      const filteredAdd = add.filter((p: any) => p.discord_id && !existingIds.has(p.discord_id));
-
-      // リクエスト(add配列)内での重複も排除する
-      const uniqueAdd: any[] = [];
-      const seenIds = new Set();
-      for (const p of filteredAdd) {
-        if (!seenIds.has(p.discord_id)) {
-          seenIds.add(p.discord_id);
-          uniqueAdd.push(p);
-        }
+      if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(`FastAPI Sync Error: ${errText}`);
       }
-
-      if (uniqueAdd.length > 0) {
-        const newPlayers = uniqueAdd.map((p: any) => ({
-          discord_id: p.discord_id,
-          name: p.name,
-          ign: p.ign || 'Unknown#0000',
-          highest_rank: p.highest_rank || 'UNRANKED',
-          role_preferences: p.role_preferences || { primary: 'ALL', secondary: 'FILL' },
-          mmr: p.mmr || 1200,
-          mmr_top: p.mmr_top || 1000,
-          mmr_jg: p.mmr_jg || 1000,
-          mmr_mid: p.mmr_mid || 1000,
-          mmr_adc: p.mmr_adc || 1000,
-          mmr_sup: p.mmr_sup || 1000,
-          is_active: true,
-          metadata: p.metadata || {}
-        }));
-
-        const { error: addError } = await supabase.from('ktm_players').insert(newPlayers);
-        if (addError) throw addError;
-      }
-    }
-
-    // 削除処理
-    if (deactivate && deactivate.length > 0) {
-      const idsToDeactivate = deactivate.map((p: any) => p.id);
-      const { error: deactError } = await supabase
-        .from('ktm_players')
-        .delete()
-        .in('id', idsToDeactivate);
-      
-      if (deactError) throw deactError;
     }
 
     // 既存プレイヤーのメタデータ(joined_at等)や名前の更新処理

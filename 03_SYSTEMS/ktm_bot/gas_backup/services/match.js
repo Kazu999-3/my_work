@@ -51,7 +51,7 @@ function calculateNewMMR(c, o, w, k, m, numGames, matchupCount, totalWinRate) {
   if (w) {
     finalDelta = Math.max(10, finalDelta); // 勝利時は最低 +10
   } else {
-    finalDelta = Math.min(-5, finalDelta); // 敗北時は最大 -5
+    finalDelta = Math.max(-35, Math.min(-5, finalDelta)); // 敗北時は最大 -5、かつ最低 -35 まで（急激なデフレを防止）
   }
 
   return c + finalDelta;
@@ -166,7 +166,7 @@ function uiUpdateRates(winnerArg, isSilent = false, spectators = []) {
         const currentPity = Number(playerData[pIdx][12]) || 0;
         let nextPity = 0;
         
-        if (p.role === mainRole) nextPity = 0; 
+        if (mainRole === 'ALL' || p.role === mainRole) nextPity = 0; 
         else if (p.role === subRole) nextPity = currentPity + 2; 
         else nextPity = currentPity + 5; 
         
@@ -512,24 +512,35 @@ function calculatePerformanceScore(p, role, gameDurationSec, teamKills) {
   
   const kp = teamKills > 0 ? (p.kills + p.assists) / teamKills : 0;
   
+  // 早期降参などのショートゲーム（15分未満）の場合はスタッツのペナルティ・ボーナスを評価しない
+  const isShortGame = gameDurationSec < 900;
+  
   let score = rawKda;
   
   switch(role) {
     case 'TOP':
-      score += (csPerMin - 6.0) * 0.3;
-      score += (tankPerMin - 800) * 0.0005;
+      if (!isShortGame) {
+        score += (csPerMin - 6.0) * 0.3;
+        score += (tankPerMin - 800) * 0.0005;
+      }
       break;
     case 'JG':
       score += (kp - 0.5) * 1.0;
-      score += (tankPerMin - 600) * 0.0003;
+      if (!isShortGame) {
+        score += (tankPerMin - 600) * 0.0003;
+      }
       break;
     case 'MID':
-      score += (csPerMin - 6.5) * 0.3;
-      score += (dmgPerMin - 600) * 0.001;
+      if (!isShortGame) {
+        score += (csPerMin - 6.5) * 0.3;
+        score += (dmgPerMin - 600) * 0.001;
+      }
       break;
     case 'ADC':
-      score += (csPerMin - 7.0) * 0.3;
-      score += (dmgPerMin - 700) * 0.001;
+      if (!isShortGame) {
+        score += (csPerMin - 7.0) * 0.3;
+        score += (dmgPerMin - 700) * 0.001;
+      }
       break;
     case 'SUP':
       score += (visionPerMin - 1.2) * 0.5;

@@ -2,8 +2,12 @@
 Match Importer: Riot API から直近のソロキュー試合を取得し、
 対面JG情報を自動検出してSupabaseに下書き保存する。
 """
-import os, json, time, logging, httpx, dotenv
+import os, json, time, logging, httpx, dotenv, sys
 from pathlib import Path
+
+# PYTHONPATHを動的に解決
+ROOT_DIR = Path(__file__).resolve().parent.parent.parent.parent
+sys.path.append(str(ROOT_DIR / "03_SYSTEMS"))
 
 dotenv.load_dotenv(Path("d:/my_work/.env"))
 log = logging.getLogger("MatchImporter")

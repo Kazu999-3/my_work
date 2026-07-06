@@ -85,6 +85,7 @@ export async function POST(request: Request) {
         ng1: roleMap[rawNg1] || rawNg1,
         ng2: roleMap[rawNg2] || rawNg2,
         pity: dbPlayer.pity || 0,
+        spectator_pity: dbPlayer.spectator_pity || 0,
         off_role_pity: dbPlayer.off_role_pity || 0,
         weight: dbPlayer.weight || 2,
         allowHigher: dbPlayer.allow_higher || false,
@@ -98,15 +99,85 @@ export async function POST(request: Request) {
         games: pGames,
         winRate: pWinRate,
         isFixed: input.isFixed,
+        isSpectatorFixed: input.isSpectatorFixed,
         fixedRole: input.fixedRole
       };
     });
 
-    // 3. Pity選抜
-    const { selected, spectators } = selectPlayersWithPity(allPlayers);
+    // 3. Pity選抜と組み合わせ生成
+    // 見学固定のプレイヤーを事前に除外して spectators 確定枠とする
+    const forcedSpectators = allPlayers.filter(p => p.isSpectatorFixed);
+    const balanceCandidates = allPlayers.filter(p => !p.isSpectatorFixed);
 
-    if (selected.length !== 10) {
-      return NextResponse.json({ error: '選抜されたプレイヤーが10人になりませんでした。' }, { status: 500 });
+    let selectedPatterns: { selected: Player[]; spectators: Player[] }[] = [];
+
+    if (balanceCandidates.length <= 10) {
+      selectedPatterns.push({ selected: balanceCandidates, spectators: forcedSpectators });
+    } else {
+      // Pity順（固定枠 > 待機Pity降順 > レーンPity降順 > ランダム）でソート
+      const fixedPlayers = balanceCandidates.filter(p => p.isFixed);
+      const candidatesPool = balanceCandidates.filter(p => !p.isFixed);
+      
+      const candidateInfo = candidatesPool.map(p => ({
+        player: p,
+        pity: p.pity || 0,
+        spectator_pity: p.spectator_pity || 0,
+        rand: Math.random()
+      }));
+
+      candidateInfo.sort((a, b) => {
+        if (b.spectator_pity !== a.spectator_pity) return b.spectator_pity - a.spectator_pity;
+        if (b.pity !== a.pity) return b.pity - a.pity;
+        return b.rand - a.rand;
+      });
+
+      // 待機Pity（spectator_pity）が高い人を「強制選出」にする
+      const highPityCandidates = candidateInfo.filter(c => c.spectator_pity >= 10).map(c => c.player);
+      const otherCandidates = candidateInfo.filter(c => c.spectator_pity < 10).map(c => c.player);
+
+      // 対面に必要な残り人数
+      const needed = Math.max(0, 10 - fixedPlayers.length - highPityCandidates.length);
+
+      if (needed === 0) {
+        const selected = [...fixedPlayers, ...highPityCandidates].slice(0, 10);
+        const selectedNames = new Set(selected.map(p => p.name));
+        const spectators = [...forcedSpectators, ...balanceCandidates.filter(p => !selectedNames.has(p.name))];
+        selectedPatterns.push({ selected, spectators });
+      } else {
+        // 残り枠を otherCandidates から選ぶ組み合わせを生成する（最大20通りに制限するため上位候補に絞る）
+        const poolToChooseFrom = otherCandidates.slice(0, Math.min(otherCandidates.length, needed + 4));
+        
+        const getCombinations = (array: Player[], r: number): Player[][] => {
+          const result: Player[][] = [];
+          const helper = (start: number, combo: Player[]) => {
+            if (combo.length === r) {
+              result.push([...combo]);
+              return;
+            }
+            for (let i = start; i < array.length; i++) {
+              combo.push(array[i]);
+              helper(i + 1, combo);
+              combo.pop();
+            }
+          };
+          helper(0, []);
+          return result;
+        };
+
+        const combos = getCombinations(poolToChooseFrom, needed);
+
+        // 各組み合わせに対してパターンを作成（最大20パターン）
+        for (const combo of combos.slice(0, 20)) {
+          const selected = [...fixedPlayers, ...highPityCandidates, ...combo];
+          const selectedNames = new Set(selected.map(p => p.name));
+          const spectators = [...forcedSpectators, ...balanceCandidates.filter(p => !selectedNames.has(p.name))];
+          selectedPatterns.push({ selected, spectators });
+        }
+      }
+    }
+
+    if (selectedPatterns.length === 0) {
+      return NextResponse.json({ error: '選抜されたプレイヤーパターンが生成できませんでした。' }, { status: 500 });
     }
 
     // 4. コンテキストデータ(履歴)の構築
@@ -208,16 +279,51 @@ export async function POST(request: Request) {
       console.error("履歴取得エラー:", e);
     }
 
-    // 5. バランス実行 (3案の生成)
-    const proposals = coreBalanceProposals(selected, ctx);
-    
-    // スピルした（選ばれなかった）プレイヤー名を観戦者として追加
-    const spectatorNames = spectators.map(p => p.name);
-    proposals.forEach(prop => {
-      prop.spectators = spectatorNames;
+    // 5. 各選抜パターンについてバランス実行
+    let allProposals: any[] = [];
+
+    for (const pattern of selectedPatterns) {
+      const proposalsForPattern = coreBalanceProposals(pattern.selected, ctx);
+      
+      const spectatorNames = pattern.spectators.map(p => p.name);
+      proposalsForPattern.forEach(prop => {
+        prop.spectators = spectatorNames;
+        allProposals.push(prop);
+      });
+    }
+
+    // 6. 全提案の中から「MMR差（ハンデ込）」が小さく、「希望ロール配置数」が多い順にソートして上位3案を抽出
+    allProposals.sort((a, b) => {
+      const diffA = Math.abs(a.mmrDiff);
+      const diffB = Math.abs(b.mmrDiff);
+      if (Math.abs(diffA - diffB) > 50) {
+        return diffA - diffB;
+      }
+      const mainA = a.teamBlue.filter((p: any) => p.currentRole === p.mainLane).length +
+                    a.teamRed.filter((p: any) => p.currentRole === p.mainLane).length;
+      const mainB = b.teamBlue.filter((p: any) => p.currentRole === p.mainLane).length +
+                    b.teamRed.filter((p: any) => p.currentRole === p.mainLane).length;
+      if (mainB !== mainA) {
+        return mainB - mainA;
+      }
+      return diffA - diffB;
     });
 
-    return NextResponse.json({ proposals });
+    const uniqueProposals: any[] = [];
+    const seenSignatures = new Set<string>();
+
+    for (const prop of allProposals) {
+      const blueNames = prop.teamBlue.map((p: any) => p.name).sort().join(',');
+      const redNames = prop.teamRed.map((p: any) => p.name).sort().join(',');
+      const sig = [blueNames, redNames].sort().join('<=>');
+      if (!seenSignatures.has(sig)) {
+        seenSignatures.add(sig);
+        uniqueProposals.push(prop);
+        if (uniqueProposals.length >= 3) break;
+      }
+    }
+
+    return NextResponse.json({ proposals: uniqueProposals });
 
   } catch (error: any) {
     console.error('Balancer API Error:', error);

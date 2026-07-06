@@ -16,28 +16,20 @@ export async function POST(req: NextRequest) {
     }
 
     // edge_tasks にキューを追加
-    const { data: inserted, error: insertErr } = await supabase
-      .from('edge_tasks')
-      .insert({
-        task_type: 'champion_trend',
-        payload: {
-          champion,
-          role: role || 'Jungle'
-        },
-        status: 'pending'
-      })
-      .select('id')
-      .single();
-
-    if (insertErr) {
+    try {
+      const { enqueueEdgeTask } = await import('../../../../../lib/edgeTask');
+      const inserted = await enqueueEdgeTask('champion_trend', {
+        champion,
+        role: role || 'Jungle'
+      });
+      return NextResponse.json({ 
+        success: true, 
+        message: '最新トレンド取得タスクをキューに追加しました。処理開始をお待ちください。',
+        task_id: inserted.id
+      });
+    } catch (insertErr: any) {
       return NextResponse.json({ success: false, error: `キューの追加に失敗しました: ${insertErr.message}` }, { status: 500 });
     }
-
-    return NextResponse.json({ 
-      success: true, 
-      message: '最新トレンド取得タスクをキューに追加しました。処理開始をお待ちください。',
-      task_id: inserted.id
-    });
   } catch (err: any) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
   }

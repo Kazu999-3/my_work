@@ -2,7 +2,7 @@ import argparse
 import logging
 from langgraph.checkpoint.sqlite import SqliteSaver
 from v2_CORE._MONETIZE.monetization_loop import build_monetization_graph
-from v2_CORE._MONETIZE.monetization_loop_legacy import notify_discord
+from v2_CORE.ai_helper import notify_discord
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(name)s] %(message)s")
 logger = logging.getLogger("ResumePublish")

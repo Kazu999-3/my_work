@@ -1,8 +1,45 @@
 # ============================================================
 # Sovereign OS - Local Services Startup Script (start_all.ps1)
+# 使い方:
+#   start_all.bat       → 全サービス起動
+#   start_all.bat edge  → Edge Worker Daemon のみ起動
 # ============================================================
+param(
+    [ValidateSet("all", "edge")]
+    [string]$Mode = "all"
+)
+
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
+# ============================================================
+# Edge Worker 単独起動モード
+# ============================================================
+if ($Mode -eq "edge") {
+    Write-Host "🏰 Edge Worker Daemon のみを起動します..." -ForegroundColor Yellow
+    Write-Host "------------------------------------------------------------"
+
+    # ロックファイルのクリーンアップ
+    $lockFile = "d:\my_work\03_SYSTEMS\v2_CORE\orchestrator.lock"
+    if (Test-Path $lockFile) {
+        Remove-Item $lockFile -Force
+        Write-Host "[Cleanup] Removed stale orchestrator.lock" -ForegroundColor DarkGray
+    }
+
+    $workerProc = Get-CimInstance Win32_Process -Filter "CommandLine LIKE '%task_worker%'" -ErrorAction SilentlyContinue
+    if ($workerProc) {
+        Write-Host "[Task Worker] Already running. PID: $($workerProc.ProcessId)" -ForegroundColor Green
+    } else {
+        Write-Host "[Task Worker] Starting (foreground)..." -ForegroundColor Cyan
+        Set-Location "d:\my_work\03_SYSTEMS"
+        $env:PYTHONPATH = "d:\my_work\03_SYSTEMS"
+        & "d:\my_work\.venv\Scripts\python.exe" -m v2_CORE.task_worker
+    }
+    exit
+}
+
+# ============================================================
+# 全サービス起動モード (デフォルト)
+# ============================================================
 Write-Host "Starting Sovereign OS local services..." -ForegroundColor Yellow
 Write-Host "------------------------------------------------------------"
 
@@ -70,17 +107,17 @@ if (-not $sreProc) {
     } | Out-Null
 }
 
-# 6. Edge Worker Daemon (Queue Monitor)
-$workerProc = Get-CimInstance Win32_Process -Filter "CommandLine LIKE '%edge_worker_daemon%'" -ErrorAction SilentlyContinue
+# 6. Task Worker (Sovereign Task Queue Monitor)
+$workerProc = Get-CimInstance Win32_Process -Filter "CommandLine LIKE '%task_worker%'" -ErrorAction SilentlyContinue
 if (-not $workerProc) {
-    Write-Host "[Edge Worker Daemon] Starting..." -ForegroundColor Cyan
-    Start-Job -Name "EdgeWorker" -ScriptBlock {
+    Write-Host "[Task Worker] Starting..." -ForegroundColor Cyan
+    Start-Job -Name "TaskWorker" -ScriptBlock {
         Set-Location "d:\my_work\03_SYSTEMS"
         $env:PYTHONPATH = "d:\my_work\03_SYSTEMS"
-        & "d:\my_work\.venv\Scripts\python.exe" -m v2_CORE.edge_worker_daemon 2>&1 | Out-File "d:\my_work\00_LOGS\edge_worker_daemon_startup.log"
+        & "d:\my_work\.venv\Scripts\python.exe" -m v2_CORE.task_worker 2>&1 | Out-File "d:\my_work\00_LOGS\task_worker_startup.log"
     } | Out-Null
 } else {
-    Write-Host "[Edge Worker Daemon] Already running." -ForegroundColor Green
+    Write-Host "[Task Worker] Already running." -ForegroundColor Green
 }
 
 Write-Host "------------------------------------------------------------"
@@ -95,3 +132,4 @@ Read-Host
 Stop-Job *
 Get-Job | Remove-Job -Force
 Write-Host "All services stopped. Bye!" -ForegroundColor Yellow
+

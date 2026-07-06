@@ -54,3 +54,6 @@ scratch/
 .wrangler/
 **/tmp/bundle-*/
 **/tmp/dev-*/
+
+.vercel
+.env*

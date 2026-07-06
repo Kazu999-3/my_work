@@ -2,8 +2,7 @@ import logging
 import json
 from pathlib import Path
 from v2_CORE.agents.state import MonetizationState
-from v2_CORE._MONETIZE.publisher import NotePublisher, XPublisher
-from v2_CORE._MONETIZE.monetization_loop_legacy import generate_x_promo_thread, calculate_dynamic_price
+from v2_CORE._MONETIZE.publisher import NotePublisher, XPublisher, generate_x_promo_thread, calculate_dynamic_price
 
 logger = logging.getLogger("PublisherNode")
 

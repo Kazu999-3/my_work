@@ -182,6 +182,11 @@ export async function POST(req: Request) {
         // participants のアップデート配列に追加
         participantUpdates.push({
           id: p.id,
+          match_id: p.match_id,
+          player_name: p.player_name,
+          role: p.role,
+          team: p.team,
+          champion_name: p.champion_name,
           kda_score: kdaScore,
           mmr_delta: mmrDelta
         });
@@ -213,19 +218,30 @@ export async function POST(req: Request) {
     console.log(`[REBUILD] Calculated ${processedMatches} matches.`);
 
     // 4. 計算結果をDBに反映
-    // 4-1. ktm_match_participants の一括更新 (upsertによるバルクアップデート)
+    // 4-1. ktm_match_participants の一括更新 (upsertによるバルクアップデート - 100件ずつチャンク処理)
     if (participantUpdates.length > 0) {
-      const { error: upsertError } = await supabase
-        .from('ktm_match_participants')
-        .upsert(participantUpdates.map(pu => ({
-          id: pu.id,
-          kda_score: pu.kda_score,
-          mmr_delta: pu.mmr_delta
-        })));
-      if (upsertError) throw new Error(`Failed to bulk update participants: ${upsertError.message}`);
+      const chunkSize = 100;
+      for (let i = 0; i < participantUpdates.length; i += chunkSize) {
+        const chunk = participantUpdates.slice(i, i + chunkSize);
+        const { error: upsertError } = await supabase
+          .from('ktm_match_participants')
+          .upsert(chunk.map(pu => ({
+            id: pu.id,
+            match_id: pu.match_id,
+            player_name: pu.player_name,
+            role: pu.role,
+            team: pu.team,
+            champion_name: pu.champion_name,
+            kda_score: pu.kda_score,
+            mmr_delta: pu.mmr_delta
+          })));
+        if (upsertError) {
+          throw new Error(`Failed to bulk update participants at chunk ${i}: ${upsertError.message}`);
+        }
+      }
     }
 
-    // 4-2. ktm_players の一括更新 (upsertによるバルクアップデート)
+    // 4-2. ktm_players の更新 (個別 update の並行処理)
     const playerUpdates = Array.from(playersMap.entries()).map(([name, p]) => {
       const avgMmr = Math.round((p.mmr_top + p.mmr_jg + p.mmr_mid + p.mmr_adc + p.mmr_sup) / 5);
       console.log(`[DEBUG MMR] ${name} | TOP:${p.mmr_top} JG:${p.mmr_jg} MID:${p.mmr_mid} ADC:${p.mmr_adc} SUP:${p.mmr_sup} | AVG:${avgMmr} | WINS:${p.totalWins}/${p.totalGames}`);
@@ -241,10 +257,22 @@ export async function POST(req: Request) {
     });
 
     if (playerUpdates.length > 0) {
-      const { error: playerUpsertError } = await supabase
-        .from('ktm_players')
-        .upsert(playerUpdates);
-      if (playerUpsertError) throw new Error(`Failed to bulk update players: ${playerUpsertError.message}`);
+      const updatePromises = playerUpdates.map(pu =>
+        supabase
+          .from('ktm_players')
+          .update({
+            mmr_top: pu.mmr_top,
+            mmr_jg: pu.mmr_jg,
+            mmr_mid: pu.mmr_mid,
+            mmr_adc: pu.mmr_adc,
+            mmr_sup: pu.mmr_sup,
+            mmr: pu.mmr
+          })
+          .eq('id', pu.id)
+      );
+      const results = await Promise.all(updatePromises);
+      const firstError = results.find(r => r.error);
+      if (firstError) throw new Error(`Failed to update players: ${firstError.error?.message || 'Unknown error'}`);
     }
 
     return NextResponse.json({ 

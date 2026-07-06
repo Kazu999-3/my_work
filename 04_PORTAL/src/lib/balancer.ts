@@ -21,6 +21,7 @@ export interface Player {
   games: number;
   winRate: number;
   isFixed?: boolean;
+  isSpectatorFixed?: boolean;
   fixedRole?: Role | null;
   // 計算用
   isNewbie?: boolean;
@@ -308,7 +309,7 @@ function runBalanceSearch(players: Player[], ctx: BalanceContext): RawBalanceCan
   }
 
   screenResults.sort((a, b) => a.quickScore - b.quickScore);
-  const topCandidates = screenResults.slice(0, 50);
+  const topCandidates = screenResults.slice(0, 100);
 
   // フェーズ2：精密探索
   const allCandidates: RawBalanceCandidate[] = [];
@@ -437,14 +438,14 @@ function runBalanceSearch(players: Player[], ctx: BalanceContext): RawBalanceCan
               rolePenalty = 0;
             } else if (p.pref2 === currentRole) {
               rolePenalty = 500 + (p.pity * 10000);
-              if (p.pity >= 4) rolePenalty += 100000;
+              if (p.pity >= 4) rolePenalty += 40000;
               if (isSpecialist) rolePenalty *= 2;
               if (p.weight === 1) rolePenalty *= 10;   
               if (p.weight === 3) rolePenalty *= 0.5; 
               rolePenalty += p.off_role_pity * 30000;
             } else {
               rolePenalty = 5000 + (p.pity * 20000);
-              if (p.pity >= 4) rolePenalty += 200000;
+              if (p.pity >= 4) rolePenalty += 60000;
               if (isSpecialist) rolePenalty *= 3;
               if (p.weight === 1) rolePenalty *= 20;  
               if (p.weight === 3) rolePenalty *= 0.2;  
@@ -455,7 +456,7 @@ function runBalanceSearch(players: Player[], ctx: BalanceContext): RawBalanceCan
             }
 
             if (p.isOutlierLow) {
-              if (currentRole !== p.pref1 && p.pref1 !== 'ALL' && p.pref1 !== 'FILL') {
+              if (currentRole !== p.pref1 && p.pref1 !== 'ALL' && p.pref1 !== '-') {
                 if (currentRole === p.pref2) {
                   rolePenalty += 50000;
                 } else {

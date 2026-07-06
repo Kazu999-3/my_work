@@ -148,27 +148,18 @@ export async function POST(req: NextRequest) {
 
     // Vercel本番環境ではPythonスクリプトを実行できないため、エッジタスクとして登録
     if (IS_VERCEL) {
-      const taskData = {
-        task_type: job,
-        payload: { args },
-        status: 'pending'
-      };
-
-      const { data, error } = await supabase
-        .from('edge_tasks')
-        .insert(taskData)
-        .select();
-
-      if (error) {
+      try {
+        const { enqueueEdgeTask } = await import('../../../../lib/edgeTask');
+        const task = await enqueueEdgeTask(job, { args });
+        return NextResponse.json({
+          success: true,
+          message: `ローカルエッジワーカーへジョブ「${JOBS[job].name}」の実行要求を送信しました。`,
+          task
+        });
+      } catch (error: any) {
         console.error('❌ [Jobs API] failed to insert edge task:', error);
-        return NextResponse.json({ error: `ローカルエッジワーカーへのタスク起票に失敗しました。詳細: ${error.message} (${error.details || '詳細なし'})` }, { status: 500 });
+        return NextResponse.json({ error: `ローカルエッジワーカーへのタスク起票に失敗しました。詳細: ${error.message}` }, { status: 500 });
       }
-
-      return NextResponse.json({
-        success: true,
-        message: `ローカルエッジワーカーへジョブ「${JOBS[job].name}」の実行要求を送信しました。`,
-        task: data ? data[0] : null
-      });
     }
 
     const config     = JOBS[job];

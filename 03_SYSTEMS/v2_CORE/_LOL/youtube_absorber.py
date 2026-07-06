@@ -69,6 +69,13 @@ class YouTubeAbsorber:
             self.yt_dlp = str(settings.ROOT_DIR / ".venv" / "Scripts" / "yt-dlp.exe")
         else:
             self.yt_dlp = "yt-dlp"
+        # yt-dlp 2025+: YouTubeのn-challenge解決にJSランタイムが必須
+        self.yt_dlp_base = [self.yt_dlp, "--js-runtimes", "deno"]
+        # ボット検知回避用のクッキー設定がある場合は追加
+        cookies_from = os.getenv("YT_DLP_COOKIES_FROM")
+        if cookies_from:
+            logger.info(f"🍪 yt-dlp にブラウザ '{cookies_from}' からのクッキーを適用します")
+            self.yt_dlp_base.extend(["--cookies-from-browser", cookies_from])
         self._whisper_model = None
         
     def _supabase_request(self, path, method='GET', payload=None, headers=None):
@@ -147,7 +154,7 @@ class YouTubeAbsorber:
         """
         try:
             result = subprocess.run(
-                [self.yt_dlp, "--print", "duration", "--no-warnings", url],
+                self.yt_dlp_base + ["--print", "duration", "--no-warnings", url],
                 capture_output=True, text=True, timeout=15
             )
             val = result.stdout.strip()
@@ -208,8 +215,7 @@ class YouTubeAbsorber:
             try: os.remove(f)
             except: pass
             
-        cmd = [
-            self.yt_dlp,
+        cmd = self.yt_dlp_base + [
             "--write-auto-subs",
             "--write-subs",
             "--sub-lang", "en",
@@ -229,13 +235,20 @@ class YouTubeAbsorber:
         # 先に temp フォルダを作成
         temp_dir = os.path.join(settings.ROOT_DIR, "scratch", "audio")
         os.makedirs(temp_dir, exist_ok=True)
-        # 古い同一IDの音声ファイルを削除
-        for f in glob.glob(f"{temp_dir}/{video_id}.*"):
-            try: os.remove(f)
-            except: pass
+        
+        # すでにダウンロード済みの同一IDの音声ファイルがあるか確認（レジューム対応）
+        audio_files = glob.glob(f"{temp_dir}/{video_id}.*")
+        if audio_files:
+            existing_file = audio_files[0]
+            # 1MB以上であれば正常なオーディオファイルとみなして再利用
+            if os.path.exists(existing_file) and os.path.getsize(existing_file) > 1024 * 1024:
+                logger.info(f"♻️ [Resume] Download skipped. Found existing audio file: {existing_file} ({os.path.getsize(existing_file) // 1024} KB)")
+                return existing_file
+            else:
+                try: os.remove(existing_file)
+                except: pass
             
-        cmd = [
-            self.yt_dlp,
+        cmd = self.yt_dlp_base + [
             "-f", "ba",  # ffmpeg がない環境でもポストプロセスを走らせずにベストオーディオをそのままダウンロード
             "-o", f"{temp_dir}/{video_id}.%(ext)s",
             "--no-playlist",
@@ -394,12 +407,27 @@ class YouTubeAbsorber:
             "Content-Type": "application/json"
         }
         
+        # 動画タイトルからチャンピオン名を推定し、関連ナレッジを取得
+        knowledge_context = ""
+        try:
+            from v2_CORE.knowledge_retriever import knowledge_retriever
+            guessed_champs = knowledge_retriever.guess_champions_from_title(video_data["title"])
+            if guessed_champs:
+                logger.info(f"🧠 タイトルからチャンピオン名を推定: {guessed_champs}")
+                pk_entries = knowledge_retriever.fetch_by_champions(guessed_champs, limit=5)
+                if pk_entries:
+                    knowledge_context = knowledge_retriever.format_as_context(pk_entries, max_chars=3000)
+                    logger.info(f"📚 攻略ライブラリから {len(pk_entries)} 件のナレッジを注入します")
+        except Exception as ke:
+            logger.warning(f"⚠️ ナレッジ取得をスキップ: {ke}")
+        
         payload = {
             "prompt_id": "youtube_bible_forge",
             "variables": {
                 "title": video_data["title"],
                 "url": video_data["url"],
-                "transcript": transcript
+                "transcript": transcript,
+                "knowledge_context": knowledge_context
             }
         }
         
@@ -495,7 +523,7 @@ class YouTubeAbsorber:
                 logger.info(f"🔍 [TitleFix] タイトル未取得のため yt-dlp で実タイトルを取得します: {item['url']}")
                 try:
                     result = subprocess.run(
-                        [self.yt_dlp, "--print", "%(title)s\n%(uploader)s", "--no-warnings", item["url"]],
+                        self.yt_dlp_base + ["--print", "%(title)s\n%(uploader)s", "--no-warnings", item["url"]],
                         capture_output=True, text=True, timeout=20
                     )
                     lines = result.stdout.strip().split("\n")
@@ -552,7 +580,7 @@ class YouTubeAbsorber:
             if bible_text and not bible_text.startswith("⚠️") and not bible_text.startswith("❌"):
                 # チャンピオン名の抽出
                 extracted_champ = "Unknown"
-                champ_match = re.search(r"\[Champion:\s*([^\]]+)\]", bible_text)
+                champ_match = re.search(r"\[Champion[s]?:\s*([^\]]+)\]", bible_text)
                 if champ_match:
                     extracted_champ = champ_match.group(1).strip()
                     
@@ -578,10 +606,7 @@ class YouTubeAbsorber:
                     updates["status"] = "error_generation"
                 self.update_video(item["id"], updates)
                 
-            # API制限（429）を回避するため、動画間にクールダウンを設ける
-            if item != targets[-1]:  # 最後の動画の後はスリープ不要
-                logger.info("⏳ 次の動画まで30秒クールダウン中...")
-                time.sleep(30) 
+
             
         if success_count > 0:
             details_str = "\n".join(processed_details)
@@ -619,7 +644,22 @@ class YouTubeAbsorber:
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
-    absorber = YouTubeAbsorber()
-    # 429 Too Many Requests エラーを回避するため、1回の実行上限を 1 本に制限し、
-    # sre_daemon.py 経由で定期的に少しずつ消化する方針に変更
-    absorber.run_cycle(limit=1)
+    try:
+        from v2_CORE.lock import SocketLock
+    except ImportError:
+        import sys
+        from pathlib import Path
+        sys.path.append(str(Path(__file__).resolve().parent.parent.parent))
+        from v2_CORE.lock import SocketLock
+    
+    import sys
+    lock = SocketLock(19003, "YouTube Absorber")
+    if not lock.acquire():
+        sys.exit(0)
+    try:
+        absorber = YouTubeAbsorber()
+        # 429 Too Many Requests エラーを回避するため、1回の実行上限を 1 本に制限し、
+        # sre_daemon.py 経由で定期的に少しずつ消化する方針に変更
+        absorber.run_cycle(limit=1)
+    finally:
+        lock.release()

@@ -97,7 +97,7 @@ export async function POST(request: Request) {
           for (const spec of specData) {
             await supabase
               .from('ktm_players')
-              .update({ spectator_pity: (spec.spectator_pity || 0) + 1 })
+              .update({ spectator_pity: (spec.spectator_pity || 0) + 10 })
               .eq('id', spec.id);
           }
         }

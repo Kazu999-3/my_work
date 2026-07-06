@@ -17,7 +17,7 @@ from v2_CORE.agents.scout_node import scout_node
 from v2_CORE.agents.writer_node import writer_node
 from v2_CORE.agents.auditor_node import auditor_node
 from v2_CORE.agents.publisher_node import publisher_node
-from v2_CORE._MONETIZE.monetization_loop_legacy import notify_discord
+from v2_CORE.ai_helper import notify_discord
 
 # --- Define Conditional Routing ---
 def audit_router(state: MonetizationState) -> str:

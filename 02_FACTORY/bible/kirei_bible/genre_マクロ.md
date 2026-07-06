@@ -1,82 +1,62 @@
-## League of Legends マクロ攻略 総合バイブル (2026年版)
+## LoL Macro Guide: A Comprehensive Overview 
 
-このドキュメントは、トッププレイヤー/プロコーチ向けに作成されたマクロ戦略の総合的なガイドです。複数の情報源を統合し、実践的で高度な知見を体系的にまとめました。
+This document provides a detailed breakdown of macro play in League of Legends, focusing on building a strong foundation for success. It outlines the fundamental principles and strategies that will enhance your gameplay across all ranks. 
 
-### ### 📌 ジャンル基本概念・重要性
 
-*   **マクロとは何か:** マクロプレイとは、レーニングフェイズからゲーム中盤以降にかけて、マップ全体を見渡し、オブジェクトコントロール、ロケーション戦略、敵の動きへの対応などを通して、チーム全体の勝利に貢献するプレイスタイルです。
-*   **なぜ重要なのか:** 個人のスキル（マイクロ）も重要ですが、現代のLoLではマクロが勝敗を大きく左右します。特にスローペースなゲームや、チーム構成・戦略が重要な試合では、マクロの精度が勝利への鍵となります。
-*   **継続的な学習**: 敵のメタ変化に対応するためには、常に最新情報を収集し、自身のマクロ戦略を改善していく必要があります。
+### I. Understanding Macro Play
 
-### ### 🧠 判断基準・コア戦略
+**What is Macro Play?**
+Macro play focuses on understanding and influencing the flow of the game beyond individual actions. It involves predicting enemy movement, managing resources strategically, controlling map objectives, and exploiting opponent weaknesses to gain a decisive advantage. 
 
-*   **情報収集と共有:** 敵の位置情報はゲームの流れを左右します。Pingを活用し、チームとのコミュニケーションを密にしましょう。
-*   **状況判断**: ミニオンウェーブの状態、敵ジャングラーのルート、オブジェクトタイマーなど、常に情報を分析し、最適な行動を選択する必要があります。
-*   **勝利条件の特定**: 敵チームと味方チームそれぞれの勝利条件（メインキャリー、キーオブジェクト）を把握し、それらを阻害または強化する戦略を実行します。
-*   **敵の行動パターン逆手に取る:** 観察眼を養い、敵の癖を見抜きましょう。
-*   **柔軟性**: 味方の状況に合わせて戦略を調整する能力は不可欠です。特定のレーナーが得意な場合は、そのプレイヤーに焦点を当てた戦略を実行しましょう。
-*   **リスク管理:** 無理なガンクやオブジェクトコントロールは逆効果になる可能性があります。常にリスクとリターンを比較衡量し、安全なプレイを選択することも重要です。
-*   **時間配分 (Taliyah例):** ジャングラーは80%の時間をBotサイドに割くべきで、Topレーンがキルポテンシャルを持つ場合はTopへ。
-*   **チーム構成の分析:** 敵と味方の強みを理解し、それに基づいてゲームプランを立てる（例：敵はスケーリング重視、味方はブラウムによる序盤の戦闘能力）。
 
-### ### ⚔️ 実践での立ち回り・コツ
+**Why Is Macro Important?**
+* **Dominance:**  Mastering macro enables you to control the pace of the game, dictate the battlefield environment, and outmaneuver your opponents.
+* **Long-term Strategy:** It allows for creating opportunities based on long-term planning and adapting to changing situations throughout the game. 
 
-#### ジャングルにおける実践戦略
-*   **序盤の侵入（Narnia戦略）:** 敵ジャングラーの位置を確認し、キャンプを積極的に侵略することで、時間と資源を奪いましょう。
-*   **スローペースなゲームにおける波管理**: ミニオンウェーブの状態を常に把握し、ジャングルルートやゴレム/レイダーの取得タイミングを調整します。
-*   **オブジェクトコントロール:** ドローンやドラゴンなどのオブジェクト獲得を最優先し、チーム全体で状況を把握し連携して攻略を目指します。
-*   **トップサイドからのプレッシャー**: トップサイドへのアプローチは、敵チームの視界管理を崩し、オブジェクトコントロールを容易にする手段です。特にバロンコントロール時に重要です。
-*   **ダウンテンポ戦略 (Taliyah):** 一時的にテンポを落とし、「敵に猶予を与える」ことで、より有利な状況を作り出すことも有効です。敵が動けばカウンターします。
-*   **レーンコントロール**: 味方のレーンがスロープッシュしている場合は積極的にサポートし、不利なレーンには効果的なガンクやダイブを検討しましょう。
-*   **ゲームプランの策定:** オブジェクト獲得後には必ず「何の勝ち筋をプレイしているのか？」というゲームプランを立て直します。
-*   **ジャングルにおける実践戦略 (QhPcwQkNMw4):**
-    *   Bレーンをウィンコンとする場合、状況に合わせてトップサイドへの介入を選択。
-    *   敵ジャングラーの位置とキャンプ状況を把握し、カウンタージャングルやロームの機会を見極める。
-    *   オブジェクトコントロールを最優先とし、チーム全体で連携して攻略を目指す。
-    *   ランナーとの連携は限定的と考え、自己完結型の動きを心がける。
-*   **コーチング事例 (I Coached Him till Challenger):**
-    *   トップサイドへの侵攻とB側のジャングルクリアを状況に応じて選択。
-    *   敵ジャングラーの行動を予測し、それに対応したルート変更を行う。
-    *   ウェーブコントロールを活かし、ジャングルクリアやガンクのタイミングを調整する。
-    *   チーム全体のテンポをコントロールし、指示を通じてゲームを有利に進める。
+### II. Core Principles of Macro Play
 
-#### オブジェクト獲得戦略
-* **オブジェクトの優先順位とテンポ管理:**
-    *   **Grubies (グラブ)**：特にEliseのようなチャンピオンにとって、Grubiesは最優先オブジェクト。敵に取らせないことで、敵チームのタワープレッシャーとゴールド獲得を遅延させる。Grubiesを巡る戦いでは、敵ジャングルのテンポを把握し、自分が対応できるかどうかを常に考える。
-    *   **ドラゴン/ヘラルド:** Grubiesの次点に優先される。しかし、敵ジャングルが反対側のオブジェクトを取る可能性も考慮し、クロス・マッププレイの準備もする。
-    *   **リコール後の思考プロセス:** ベースに戻ったら、必ずTabキーを押し、以下の3点を自問自答する。
-        1.  どのオブジェクトをプレイしたいか？ (先行しているなら自分で選択、遅れているなら敵の逆サイドをプレイ)
-        2.  どのレーナーと一緒にプレイしたいか？ (自分の勝ち筋となるレーナーを見極める)
-        3.  敵ジャングルはどこにいるか？ (常に敵の位置を予測し、行動を決定する)
-* **オブジェクト獲得のためのルート選択:** 特定のオブジェクト（ボットタワーなど）を獲得するために、ジャングルルートを調整する。例えば、ミッドレーンとの連携を考慮し、ボット側へ進む。
-*  **オブジェクト獲得における注意点:** 敵チームの行動を予測し、オブジェクトを確実に獲得するために、チーム全体でテンポを意識した立ち回りが重要。
+**1.  Decision Making: The "What and When"**
+The bedrock of successful macro is understanding *when* to act and *what* actions are best to take in each situation. This requires a keen understanding of your opponents' intentions, the current state of the game, and your own strategic positioning on the map. 
 
-#### 個人的なプレイとメンタリティ
-*   **ジャングラーは常に判断を迫られる:** 複数の選択肢があり、その中で最適なプレイを選択する必要がある。
-* **敵ジャングルの予測とカウンター:** 動画ではIvernを選択しているが、基本的な3キャンプルートを重視。特定の状況下で敵ジャングルにインベードを試みている。常に敵ジャングルの位置を予測し、自分の行動を決定する。「今、敵ジャングルはどこにいるか？」が最も重要な問い。
-*   **5秒ルール**: ジャングル開始時に河川敷で敵のスタート位置を確認する習慣を身につけましょう。
-*  **常に敵の行動を観察する:** 常に敵の動きを観察し、それを逆手に取った戦略を実行しましょう。
+**2.  Efficient Map Control:**  Gaining map control is crucial for establishing dominance. Understanding how to push lanes, secure objectives (like dragons), and outmaneuver enemies in advantageous positions will allow you to gain a significant edge over your opponents.
+    *   **Lane Management:** Prioritize the most strategic lanes based on the current game state.  Focus on pushing lanes that offer better early-game advantages or those that can be used for impactful ganks. 
+    *   **Objective Control:** Focus on securing key objectives like dragons and Rift Herald to gain a tactical advantage and set yourself up for future actions.
 
-#### その他のテクニック
-*   **初期侵入（Invade）:** 対戦相手のジャングラーの動きを予測し、有利な状況で初期侵攻を行う。敵ジャングルがトップサイドにいる場合、ボットサイドへの侵略を検討する。
-*   **チームとの連携:** 状況に応じて、チームに安全な行動を指示したり、オブジェクト獲得時にチームのサポートを行う。
-*   **アイテムビルド:** ゲーム状況や敵チャンピオンに合わせて、リフトメーカーなどのアイテムを選択する。
+**3. Resource Management:  A Balancing Act**
+Effectively managing resources (health, mana, gold) is vital for long-term survival and sustained aggression. 
+    *   **Prioritize Your Needs:** Determine which resource needs to be prioritized and what action can best address them. For example, if your health is low, focusing on getting more healing items or a potion should be considered over pushing lanes.  
+    *   **Utilize Resources Wisely:** Don't squander resources by engaging in unnecessary fights. Use calculated risks to gain an advantage in the long run. 
 
-### ### 💡 注意点・警戒すべきこと
 
-*   **過信しない**: リードしている状況でも油断は禁物です。敵の反撃に注意し、常に警戒心を持ちましょう。
-*   **チームとの連携:** 個人のスキルだけでなく、チーム全体の協力体制が重要です。
-*   **メタ変化への対応**: 常に最新情報を収集し、自身のマクロ戦略を改善していく必要があります。
-* **ジャングラーのメンタリティ (How I Would Learn Jungle):** 他者のミスに責任転嫁せず、自身のプレイに集中する。チームメイトとの連携を意識しつつも、最終的な判断は自分で行う。
+### III. Mastering Macro Play: Key Tactics
 
-*   **Pingの重要性**: 味方とのコミュニケーション不足は、連携の欠如に繋がり、敗北を招きます。
-*   **敵の行動パターン**: 常に敵の動きを観察し、それを逆手に取った戦略を実行しましょう。
-*   **ゲーム内のテンポ（Tempo）:** 常に敵ジャングルの位置と状況を把握し、テンポをコントロールする。
+ **1. Jungle Paths and Tracking (The "Hunter's Path")** 
+Understanding how to utilize your jungle route effectively is crucial for success in macro play. You need to predict enemy movements, anticipate their actions, and be prepared to counter them accordingly. 
 
-*   **基盤となる思考プロセス**
-    1.  「ベースに戻ったら、必ずTabキーを押し、何をプレイしたいかを考える。」
-    2.  「勝ち筋の状況で、どうすれば負けるのか？敵がプレイを起こさなければ、技術的には負けることはない。」
-    3.  「私のマインドセットは『敵ジャングルはどこにいるか？』だ。それ以外は今は気にしない。」
-    4.  「スノーボールしたいなら、常に『敵ジャングルはどこにいるのか』を考える必要がある。」
+*   **Jungle Route Mastery:** Learn the optimal pathing strategies for each champion based on individual playstyles and opponent compositions.  This will allow you to maximize gold income, secure buffs and experience points efficiently, and outmaneuver your opponents. 
+    *   **Early Game Advantage:** Use jungle routes strategically to gain an early game advantage by securing last hits, ganking vulnerable targets, or setting up favorable conditions for a team fight.  
+*   **Enemy Jungle Awareness:**  Develop a keen awareness of enemy junglers and their potential actions throughout the game. Learn how to predict their movements based on past patterns and anticipate when they will be most dangerous. 
 
-このバイブルはあくまでガイドラインであり、状況に応じて柔軟に対応する必要があります。経験を積むことで、より高度なマクロプレイが出来るようになるでしょう。Good luck!
+ **2. Early Game Domination: Setting the Stage for Victory** 
+*   **Lane Pushing & Objectives:** Prioritize pushing lanes that offer a strong advantage, securing objectives like Dragons or Rift Herald, and denying your opponents access to resources.
+*   **Understanding Your Opponent's Playstyle:** Analyze the opposing team's composition and playstyle to anticipate their strategies, counter their strengths, and exploit their weaknesses.  
+
+ **3. Mid-Game Mastery: Controlling the Flow of the Game** 
+ *   **Teamfight Control & Positioning:** Learn how to control teamfights by utilizing your champion's unique abilities effectively, positioning yourself strategically for maximum impact, and using crowd control to secure kills or create advantageous situations.
+*   **Resource Management:  Balance Offense and Defense** Don’t neglect your own needs while engaging in combat; prioritize health and mana when needed.
+
+ **4. Late-Game Mastery: The Winning Edge** 
+ *   **Objective Control:** Continue securing key objectives like Dragons, Rift Herald, and Baron Nashor to gain a crucial advantage in team fights and dictate the overall flow of the game.  
+*   **Champion Scaling & Power Spikes:** Understand how your champion scales with the game's progression, maximizing their power spikes through items and strategic rotations. 
+
+
+### IV. Tools and Resources for Mastery
+
+* **League Wiki:** A comprehensive resource for information on champions, items, strategies, and more. [https://leagueoflegends.fandom.com/wiki/League_of_Legends_Wiki](https://leagueoflegends.fandom.com/wiki/League_of_Legends_Wiki)
+* **Streamers and YouTubers:**  Observe skilled players who can showcase advanced macro strategies in action. They offer valuable insights into game mechanics, positioning, timing, and decision-making. 
+    *   **Pro Players:** Pay attention to the way high-level players approach game scenarios, anticipate opponent moves, manipulate objectives, and outmaneuver opponents.  
+
+
+### Conclusion: A Foundation for Success
+
+Mastering macro play in LoL takes time and dedication but delivers a significant advantage over your opponents. By implementing these principles, you will build a strong foundation that allows you to achieve greater success in the game! 

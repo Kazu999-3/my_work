@@ -90,6 +90,14 @@ class PersonalCoach:
         knowledge = db.query_matchup(champ, enemy)
         knowledge_text = json.dumps(knowledge, indent=2, ensure_ascii=False) if knowledge else "No specific data found."
         
+        # 攻略ライブラリ（personal_knowledge）から関連ナレッジを取得
+        from v2_CORE.knowledge_retriever import knowledge_retriever
+        champ_targets = [champ]
+        if enemy and enemy != "UNKNOWN":
+            champ_targets.append(enemy)
+        pk_entries = knowledge_retriever.fetch_by_champions(champ_targets, limit=5)
+        pk_context = knowledge_retriever.format_as_context(pk_entries, max_chars=2000)
+        
         prompt = f"""
         あなたは League of Legends の専属コーチです。
         プレイヤー {settings.KING_RIOT_ID} の最新の試合結果に基づいて、簡潔かつ鋭いフィードバックを行ってください。
@@ -103,8 +111,11 @@ class PersonalCoach:
         【辞典の知識 (ナレッジベース)】
         {knowledge_text}
 
+        【攻略ライブラリからの参考情報】
+        {pk_context if pk_context else "該当するナレッジなし"}
+
         【指示】
-        1. 辞典の知識と照らし合わせて、今回の対面で意識すべきだったポイントを1つ挙げてください。
+        1. 辞典の知識と攻略ライブラリの情報を照らし合わせて、今回の対面で意識すべきだったポイントを1つ挙げてください。
         2. KDAや勝敗を見て、全体的な立ち回りの改善点を1つ指摘してください。
         3. 語尾は「〜だ」「〜だね」など、少し親しみやすくも厳しい師匠のような口調でお願いします。
         4. 300文字以内でまとめてください。

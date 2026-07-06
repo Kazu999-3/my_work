@@ -75,35 +75,67 @@ def save_queue(data: dict):
         logging.error(f"Failed to save queue file: {e}")
 
 def research_champion(champ_name: str, champ_id: str, patch_version: str) -> str:
-    if not GEMINI_API_KEY:
-        return "❌ GEMINI_API_KEY not found"
+    # 1. まず Gemini API での生成を試みる
+    if GEMINI_API_KEY:
+        try:
+            from google import genai
+            client = genai.Client(api_key=GEMINI_API_KEY)
+            patch_major = ".".join(patch_version.split(".")[:2]) if patch_version else "16.11"
+            
+            prompt = f"""
+            League of Legendsのチャンピオン「{champ_name} ({champ_id})」について、最新パッチ（パッチ {patch_major}想定）の情報をリサーチしてください。
+            
+            以下の項目を詳しくまとめてください：
+            1. 強み (Strengths)
+            2. 弱み (Weaknesses)
+            3. パワースパイク (コアアイテムやレベル)
+            4. 推奨ビルドと主要ルーン
+            5. フルクリア時間とルート（ジャングラーの場合のみ。それ以外は「対象外」と記載）
+            6. 基本的な立ち回りとメタでの位置づけ
+            
+            情報は Lolalytics や u.gg などの統計に基づいた客観的な内容にしてください。
+            """
+            
+            # generate_content_safe は内部で APIGateway を介してレート制限をハンドリングする
+            response_text = generate_content_safe(
+                client, 
+                prompt, 
+                model_id=settings.DEFAULT_MODEL,
+                feature_name="oracle",
+                sleep_on_rate_limit=False  # クォータ回避のためスリープはしない
+            )
+            # 正常に取得できたら返す
+            if response_text and not response_text.startswith("❌") and not response_text.startswith("⚠️") and "本日の利用上限に達しました" not in response_text:
+                return response_text
+        except Exception as e:
+            logging.warning(f"⚠️ Geminiでの {champ_name} のリサーチに失敗しました。ローカルOllamaへのフォールバックを試みます。エラー: {e}")
 
-    from google import genai
-    client = genai.Client(api_key=GEMINI_API_KEY)
-    patch_major = ".".join(patch_version.split(".")[:2]) if patch_version else "16.11"
-    
-    prompt = f"""
-    League of Legendsのチャンピオン「{champ_name} ({champ_id})」について、最新パッチ（パッチ {patch_major}想定）の情報をリサーチしてください。
-    
-    以下の項目を詳しくまとめてください：
-    1. 強み (Strengths)
-    2. 弱み (Weaknesses)
-    3. パワースパイク (コアアイテムやレベル)
-    4. 推奨ビルドと主要ルーン
-    5. フルクリア時間とルート（ジャングラーの場合のみ。それ以外は「対象外」と記載）
-    6. 基本的な立ち回りとメタでの位置づけ
-    
-    情報は Lolalytics や u.gg などの統計に基づいた客観的な内容にしてください。
-    """
-    
-    # generate_content_safe は内部で APIGateway を介してレート制限をハンドリングする
-    response_text = generate_content_safe(
-        client, 
-        prompt, 
-        model_id=settings.DEFAULT_MODEL,
-        feature_name="oracle"
-    )
-    return response_text
+    # 2. Gemini が制限やエラーで失敗した場合は、ローカルの Ollama (gemma3:12b) にフォールバックする
+    logging.info(f"🏠 Ollama (ローカルLLM) を使用して {champ_name} をリサーチします...")
+    try:
+        from v2_CORE.ai_helper import _generate_with_ollama
+        patch_major = ".".join(patch_version.split(".")[:2]) if patch_version else "16.11"
+        prompt = f"""
+        League of Legendsのチャンピオン「{champ_name} ({champ_id})」について、最新パッチ（パッチ {patch_major}想定）の情報をリサーチしてください。
+        
+        以下の項目を詳しくまとめてください：
+        1. 強み (Strengths)
+        2. 弱み (Weaknesses)
+        3. パワースパイク (コアアイテムやレベル)
+        4. 推奨ビルドと主要ルーン
+        5. フルクリア時間とルート（ジャングラーの場合のみ。それ以外は「対象外」と記載）
+        6. 基本的な立ち回りとメタでの位置づけ
+        
+        情報は Lolalytics や u.gg などの統計に基づいた客観的な内容にしてください。
+        """
+        
+        response_text = _generate_with_ollama(prompt, model=settings.OLLAMA_MODEL)
+        if response_text:
+            return response_text
+    except Exception as e:
+        logging.error(f"❌ ローカルOllamaでの {champ_name} のリサーチも失敗しました: {e}")
+        
+    return "❌ リサーチに失敗しました。"
 
 def run_bulk_update():
     logging.info("🏁 チャンピオン辞典一括更新プロセスを起動しました。")
@@ -163,6 +195,7 @@ def run_bulk_update():
         return
 
     processed_count = 0
+    consecutive_db_failures = 0
     suspended = False
     
     for champ_id in target_champs:
@@ -195,15 +228,20 @@ def run_bulk_update():
             queue[champ_id]["updated_at"] = datetime.now(timezone.utc).isoformat()
             queue[champ_id]["error"] = None
             logging.info(f"✅ {champ_name} の更新に成功しました。")
+            consecutive_db_failures = 0
             processed_count += 1
         else:
             logging.error(f"❌ {champ_name} のデータベース更新に失敗しました。")
             queue[champ_id]["status"] = "failed"
             queue[champ_id]["error"] = "Database upsert failed"
-            # データベース保存失敗の場合は即座にブレイクせず、一度リトライまたは次へ行くが、連続で失敗する可能性もあるため様子を見る
-            # ここでは安全のため、DB保存失敗も一時停止扱いとする（Supabaseの接続切れ等の可能性があるため）
-            suspended = True
-            break
+            consecutive_db_failures += 1
+            processed_count += 1
+            if consecutive_db_failures >= 5:
+                logging.error("❌ データベースの連続更新失敗が上限(5回)に達したため、処理を一時停止します。")
+                suspended = True
+                break
+            else:
+                logging.warning(f"⚠️ {champ_name} のデータベース更新失敗をスキップして次のチャンピオンへ進みます (連続失敗: {consecutive_db_failures}/5)")
             
         # キューの進捗を保存
         queue_data["updated_at"] = datetime.now(timezone.utc).isoformat()

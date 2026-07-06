@@ -124,16 +124,8 @@ export async function handleAutoMatchEnd(interaction, players, winnerTeam, env, 
   if (!updatedEmbed.footer) updatedEmbed.footer = {};
   updatedEmbed.footer.text = `✅ 記録完了 | 約3分後にリザルト自動取得... (ID: ${Math.floor(Date.now() / 1000).toString(16)})`;
 
-  // 勝利報告後のメッセージに「次の試合を振る」ボタンを表示
-  const postMatchComponents = [{
-    type: 1,
-    components: [
-      { type: 2, label: "🔄 次の試合を振る", style: 3, custom_id: "rebalance" }
-    ]
-  }];
-
   return Response.json({ 
     type: 7, 
-    data: { embeds: [updatedEmbed], components: postMatchComponents } 
+    data: { embeds: [updatedEmbed], components: [] } 
   });
 }

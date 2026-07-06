@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '../../../../lib/supabaseClient';
-import { fetchPuuidByRiotId, fetchSummonerByPuuid, fetchChampionMasteryByPuuid } from '../../../../lib/riot';
+import { fetchPuuidByRiotId, fetchSummonerByPuuid, fetchChampionMasteryByPuuid, fetchRiotIdByPuuid } from '../../../../lib/riot';
 
 export async function POST(request: Request) {
   try {
@@ -21,17 +21,29 @@ export async function POST(request: Request) {
     // 2. プレイヤーごとに同期処理 (レートリミットを考慮して直列で実行)
     for (const player of players) {
       try {
-        if (!player.ign || !player.ign.includes('#')) continue;
-
         let puuid = player.puuid;
         let summonerId = player.summoner_id;
+        let currentIgn = player.ign;
 
         // (A) puuid または summoner_id がない場合は RiotID から取得
         if (!puuid || !summonerId) {
-          const [gameName, tagLine] = player.ign.split('#');
+          if (!currentIgn || !currentIgn.includes('#')) continue;
+          const [gameName, tagLine] = currentIgn.split('#');
           puuid = await fetchPuuidByRiotId(gameName, tagLine, apiKey);
           const summoner = await fetchSummonerByPuuid(puuid, apiKey);
           summonerId = summoner.id;
+        } else {
+          // (A-2) すでに puuid がある場合は、Riot ID（改名）の自動同期を試みる
+          try {
+            const latestRiotId = await fetchRiotIdByPuuid(puuid, apiKey);
+            const latestIgn = `${latestRiotId.gameName}#${latestRiotId.tagLine}`;
+            if (latestIgn !== currentIgn) {
+              console.log(`🔔 [Riot Sync] 改名を検知: ${currentIgn} ➜ ${latestIgn}`);
+              currentIgn = latestIgn;
+            }
+          } catch (nameErr: any) {
+            console.warn(`[Riot Sync] 最新Riot IDの取得に失敗しました: ${nameErr.message}`);
+          }
         }
 
         // (B) ランクの同期は廃止（403エラー回避のため）
@@ -46,8 +58,9 @@ export async function POST(request: Request) {
           championPoints: m.championPoints
         }));
 
-        // DBを更新 (puuid, summoner_id, highest_rank, main_champions)
+        // DBを更新 (ign, puuid, summoner_id, highest_rank, main_champions)
         const updateData: any = {
+          ign: currentIgn,
           puuid,
           summoner_id: summonerId,
           highest_rank: highestRank,
@@ -68,6 +81,15 @@ export async function POST(request: Request) {
       } catch (err: any) {
         console.error(`Player ${player.ign} sync error:`, err);
         errors.push(`[${player.ign}] ${err.message}`);
+
+        // APIキーの無効（403）またはレートリミット（429）を検知した場合は、
+        // ループを早期脱出して後続のAPI乱打によるクラッシュやIP BANを防ぐ（安全停止）
+        const errMsg = err.message || '';
+        if (errMsg.includes('403') || errMsg.includes('429') || errMsg.includes('Forbidden') || errMsg.includes('Too Many Requests')) {
+          console.warn("⚠️ [Riot Sync] APIキーのエラー (403/429) を検知したため、同期処理を安全に中断します。");
+          errors.push(`[SYSTEM] APIキーエラー（403/429）のため、処理を安全に中断しました。APIキーを確認してください。`);
+          break;
+        }
       }
     }
 

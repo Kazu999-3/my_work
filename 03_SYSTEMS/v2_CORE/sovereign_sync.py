@@ -253,11 +253,11 @@ class SovereignSync:
                     else:
                         logger.warning(f"  ⚠️ [{champ_name}] 辞典統合スキップ")
 
-                # 全チャンピオンへの統合が1件以上成功したら、ライブラリから削除
+                # 全チャンピオンへの統合が1件以上成功したかチェック
                 integrated = integrated_count > 0
                 
-                if integrated:
-                    # 辞典への統合に成功した場合、ライブラリ(personal_knowledge)から該当記事を削除する
+                if integrated and not is_kirei:
+                    # チャンピオン専用記事（非YouTube解析）は辞典統合後、ライブラリから削除
                     httpx.delete(
                         self._api("personal_knowledge") + f"?title=eq.{display_title}",
                         headers=self._headers(),
@@ -265,6 +265,8 @@ class SovereignSync:
                     )
                     synced += 1
                     continue
+                # kirei_bible（YouTube動画解析）記事は辞典に統合しつつ、
+                # 攻略ライブラリにも残す（汎用テーマの記事がライブラリから消える問題を防止）
                 
                 data = {
                     "title": display_title,

@@ -95,15 +95,19 @@ export async function POST(req: Request) {
       if (!riotP) continue;
 
       const currentMmr = Number(dbP[`mmr_${p.role.toLowerCase()}`]) || 1200;
+      // 簡易登録されたMMRから、その時の変動値を引いて試合前のベースMMRを復元する（二重加算を防止）
+      const baseMmr = currentMmr - (p.mmr_delta || 0);
       const mainRank = dbP.highest_rank ? dbP.highest_rank.split(' ')[0].toUpperCase() : 'UNRANKED';
 
       // 対面相手の特定とMMRの取得
       const opponent = participants.find((pt: any) => pt.role === p.role && pt.team !== p.team);
       let opponentMmr = 1200;
+      let oppBaseMmr = 1200;
       if (opponent) {
         const oppDbP = dbPlayers?.find((dp: any) => dp.name === opponent.player_name);
         if (oppDbP) {
           opponentMmr = Number(oppDbP[`mmr_${opponent.role.toLowerCase()}`]) || 1200;
+          oppBaseMmr = opponentMmr - (opponent.mmr_delta || 0);
         }
       }
 
@@ -133,8 +137,8 @@ export async function POST(req: Request) {
       const isHealMvp = teamRiotParticipants.every((rp: any) => (riotP.totalHeal || 0) >= (rp.totalHeal || 0)) && (riotP.totalHeal || 0) > 0;
 
       const ctx: MmrCalcContext = {
-        currentMmr,
-        opponentMmr,
+        currentMmr: baseMmr,
+        opponentMmr: oppBaseMmr,
         isWin: p.team === match.winning_team,
         kills: riotP.kills,
         deaths: riotP.deaths,
@@ -197,6 +201,27 @@ export async function POST(req: Request) {
           role: pUpdate.role
         })
         .eq('id', p.id);
+
+      // プレイヤーデータベース (ktm_players) の該当ロールMMRおよび全体平均MMRを更新する
+      const roleMmrKey = `mmr_${p.role.toLowerCase()}`;
+      const newRoleMmr = baseMmr + mmrDelta;
+      
+      const top = p.role === 'TOP' ? newRoleMmr : (dbP.mmr_top || 1200);
+      const jg = p.role === 'JG' ? newRoleMmr : (dbP.mmr_jg || 1200);
+      const mid = p.role === 'MID' ? newRoleMmr : (dbP.mmr_mid || 1200);
+      const adc = p.role === 'ADC' ? newRoleMmr : (dbP.mmr_adc || 1200);
+      const sup = p.role === 'SUP' ? newRoleMmr : (dbP.mmr_sup || 1200);
+      const newTotalMmr = Math.round((top + jg + mid + adc + sup) / 5);
+
+      const playerUpdateData: any = {
+        [roleMmrKey]: newRoleMmr,
+        mmr: newTotalMmr
+      };
+
+      await supabase
+        .from('ktm_players')
+        .update(playerUpdateData)
+        .eq('name', p.player_name);
     }
 
     return NextResponse.json({ status: "SUCCESS", message: "Match detailed stats synchronized.", updates });

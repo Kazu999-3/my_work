@@ -165,7 +165,6 @@ export async function handleAnnounceMatch(payload, env, ctx) {
       components: [
         { type: 2, label: "🟦 BLUE 勝利", style: 1, custom_id: "win_blue:admin" },
         { type: 2, label: "🟥 RED 勝利", style: 4, custom_id: "win_red:admin" },
-        { type: 2, label: "🔄 次の試合を振る", style: 3, custom_id: "rebalance" },
         { type: 2, label: "🕵️ OP.GG スカウティング", style: 2, custom_id: "opgg_scout" }
       ]
     }
@@ -197,7 +196,10 @@ export function handleLaneCommand(interaction, env, ctx) {
   const options = interaction.data.options || [];
   if (options.length > 0) {
     const getOpt = (name) => options.find(o => o.name === name)?.value;
-    const main = getOpt('main'), sub = getOpt('sub') || "", ng1 = getOpt('ng1') || "", ng2 = getOpt('ng2') || "";
+    let main = getOpt('main'), sub = getOpt('sub') || "", ng1 = getOpt('ng1') || "", ng2 = getOpt('ng2') || "";
+    if (main === 'ALL') {
+      sub = '-';
+    }
     const weight = getOpt('weight'); 
     const allowHigher = getOpt('allow_higher');
     const userId = interaction.member.user.id;
@@ -208,8 +210,24 @@ export function handleLaneCommand(interaction, env, ctx) {
     ctx.waitUntil((async () => {
       try {
         // 現在のプレイヤー情報を取得し、マージしてUpsertする
-        const existingData = await fetchSupabase(env, 'ktm_players', `discord_id=eq.${userId}`);
-        const player = existingData && existingData.length > 0 ? existingData[0] : { discord_id: userId, name: discordName, is_active: true };
+        let existingData = await fetchSupabase(env, 'ktm_players', `discord_id=eq.${userId}`);
+        let player = existingData && existingData.length > 0 ? existingData[0] : null;
+        
+        if (!player) {
+          // 名前（またはニックネーム）で既存のプレイヤーを探す
+          const nameEscaped = encodeURIComponent(discordName);
+          const dataByName = await fetchSupabase(env, 'ktm_players', `name=eq.${nameEscaped}`);
+          if (dataByName && dataByName.length > 0) {
+            player = dataByName[0];
+            // Discord ID を紐付ける
+            player.discord_id = userId;
+          }
+        }
+        
+        if (!player) {
+          // 既存プレイヤーが無ければ新規作成
+          player = { discord_id: userId, name: discordName, is_active: true };
+        }
         
         player.role_preferences = player.role_preferences || {};
         if (main) player.role_preferences.primary = main;

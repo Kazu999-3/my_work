@@ -48,14 +48,14 @@ class DictSynthesizer:
     def fetch_champions(self):
         logger.info("🔍 チャンピオン辞典(matchup_sentinel)のGLOBALレコードを取得中...")
         res = httpx.get(
-            self._api("matchup_sentinel") + "?enemy=eq.GLOBAL",
+            self._api("matchup_sentinel") + "?enemy=eq.GLOBAL&order=created_at.asc",
             headers=self._headers(),
             timeout=15
         )
         if res.status_code == 200:
             return res.json()
         else:
-            logger.error(f"❌ データ取得失敗: {res.status_code}")
+            logger.error(f"❌ データ取得失敗: {res.status_code} - {res.text}")
             return []
 
     def synthesize_text(self, champion, text, patch_meta=None, pro_builds=None):
@@ -111,9 +111,7 @@ class DictSynthesizer:
             task_type="rewrite",
             feature_name="oracle"
         )
-        import time
-        logger.info("⏳ API制限(429)を回避するため、10秒間スリープします...")
-        time.sleep(10)
+
         return res
 
     def process_and_update(self, limit=5):
@@ -121,19 +119,34 @@ class DictSynthesizer:
             return
 
         champions = self.fetch_champions()
+        if not champions:
+            logger.info("ℹ️ チャンピオン辞典が空です。")
+            return
+
+        # Python側で dict_synthesized_at が古い順にソートする
+        def get_sort_key(c):
+            raw = c.get("raw_data")
+            if isinstance(raw, dict):
+                return raw.get("dict_synthesized_at", 0)
+            return 0
+
+        champions.sort(key=get_sort_key)
+
         processed_count = 0
         processed_champions = []
+        loop_count = 0
 
         for champ_data in champions:
-            if processed_count >= limit:
+            if loop_count >= limit:
                 break
 
             champion_name = champ_data.get("champion")
             raw_data = champ_data.get("raw_data", {})
             if not isinstance(raw_data, dict):
-                continue
+                raw_data = {}
 
-            needs_update = False
+            loop_count += 1
+            changed = False
             updated_raw_data = dict(raw_data)
             
             # 既存のアーカイブ用フィールドがなければ作成
@@ -165,7 +178,7 @@ class DictSynthesizer:
                             "updated_at": now_ts
                         }
                         updated_raw_data["pro_builds"] = trend_data.get("pro_builds", [])
-                        needs_update = True
+                        changed = True
                 except Exception as te:
                     logger.error(f"⚠️ {champion_name} の自動トレンド更新に失敗: {te}")
 
@@ -173,7 +186,6 @@ class DictSynthesizer:
             note_draft = updated_raw_data.get("note_draft", "")
             if isinstance(note_draft, str) and note_draft.count("## 【記事】") >= 1:
                 logger.info(f"🔄 {champion_name} の note_draft をAIで整理します...")
-                # アーカイブに退避
                 updated_raw_data["archived_notes"]["note_draft_raw"] = note_draft
                 
                 synthesized = self.synthesize_text(
@@ -184,11 +196,12 @@ class DictSynthesizer:
                 )
                 if not synthesized.startswith("⚠️") and not synthesized.startswith("❌"):
                     updated_raw_data["note_draft"] = synthesized
-                    needs_update = True
+                    changed = True
                     
             # 2. customFields の整理（特定のフィールドにごちゃごちゃがある場合）
             custom_fields = updated_raw_data.get("customFields", {})
             updated_custom_fields = dict(custom_fields)
+            custom_fields_changed = False
             
             for field, content in custom_fields.items():
                 if isinstance(content, str) and content.count("## 【記事】") >= 1:
@@ -203,37 +216,42 @@ class DictSynthesizer:
                     )
                     if not synthesized.startswith("⚠️") and not synthesized.startswith("❌"):
                         updated_custom_fields[field] = synthesized
-                        needs_update = True
+                        custom_fields_changed = True
+                        changed = True
 
-            if needs_update:
+            if custom_fields_changed:
                 updated_raw_data["customFields"] = updated_custom_fields
                 
-                # データベースの更新
-                update_payload = {
-                    "matchup_id": champ_data["matchup_id"],
-                    "raw_data": updated_raw_data
-                }
-                
-                res = httpx.post(
-                    self._api("matchup_sentinel") + "?on_conflict=matchup_id",
-                    headers=self._headers(),
-                    json=update_payload,
-                    timeout=15
-                )
-                
-                if res.status_code in (200, 201, 204):
-                    logger.info(f"✅ {champion_name} の辞典整理＆更新が完了しました！")
+            # 常に巡回タイムスタンプを更新して保存（ローテーション用）
+            updated_raw_data["dict_synthesized_at"] = int(time.time())
+            
+            # データベースの更新
+            update_payload = {
+                "matchup_id": champ_data["matchup_id"],
+                "raw_data": updated_raw_data
+            }
+            
+            res = httpx.post(
+                self._api("matchup_sentinel") + "?on_conflict=matchup_id",
+                headers=self._headers(),
+                json=update_payload,
+                timeout=15
+            )
+            
+            if res.status_code in (200, 201, 204):
+                logger.info(f"✅ {champion_name} の辞典巡回チェックが完了しました。 (データ更新: {changed})")
+                if changed:
                     processed_count += 1
                     processed_champions.append(champion_name)
-                else:
-                    logger.error(f"❌ 更新エラー ({champion_name}): {res.text}")
+            else:
+                logger.error(f"❌ 更新エラー ({champion_name}): {res.text}")
 
         if processed_count > 0:
             champ_list_str = ", ".join(processed_champions)
             herald.notify_progress(f"✨ **【辞典 Synthesizer】** {processed_count}体のチャンピオン辞典の乱雑な記事をAIで綺麗に整理・統合しました！\n- 対象: {champ_list_str}")
             logger.info(f"🎉 今回の整理サイクルで {processed_count} 体のチャンピオンを処理しました。")
         else:
-            logger.info("ℹ️ 今回整理が必要なチャンピオンは見つかりませんでした。")
+            logger.info("ℹ️ 今回整理（変更）が必要なチャンピオンは見つかりませんでした。")
 
     def fetch_generic_articles(self):
         logger.info("🔍 攻略ライブラリから汎用記事を取得中...")
@@ -258,7 +276,7 @@ class DictSynthesizer:
                     generic.append(a)
             return generic
         else:
-            logger.error(f"❌ ライブラリデータ取得失敗: {res.status_code}")
+            logger.error(f"❌ ライブラリデータ取得失敗: {res.status_code} - {res.text}")
             return []
 
     def classify_by_genre(self, articles):
@@ -319,9 +337,7 @@ class DictSynthesizer:
             task_type="rewrite",
             feature_name="oracle"
         )
-        import time
-        logger.info("⏳ API制限(429)を回避するため、10秒間スリープします...")
-        time.sleep(10)
+
         return res
 
     def process_library_genres(self):
@@ -359,6 +375,20 @@ class DictSynthesizer:
                 
             for item in limit_items:
                 combined_text += f"## 【元記事】{item['title']}\n\n{item['raw_content']}\n\n---\n\n"
+                # 元記事の tags に分類されたタイプを永続保存
+                try:
+                    curr_tags = item.get("tags") or []
+                    if genre not in curr_tags:
+                        updated_tags = curr_tags + [genre]
+                        httpx.patch(
+                            self._api("personal_knowledge") + f"?id=eq.{item['id']}",
+                            headers=self._headers(),
+                            json={"tags": updated_tags},
+                            timeout=10
+                        )
+                        logger.info(f"💾 「{item['title']}」の tags にタイプ「{genre}」を永続保存しました。")
+                except Exception as e:
+                    logger.error(f"Failed to update tags for article {item.get('id')}: {e}")
                 
             synthesized = self.synthesize_genre_text(genre, combined_text)
             if synthesized.startswith("⚠️") or synthesized.startswith("❌"):

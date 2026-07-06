@@ -31,6 +31,7 @@ export default function MatchupsPage() {
   const [expandedChamp, setExpandedChamp] = useState<string | null>(null);
   const [paramsProcessed, setParamsProcessed] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
+  const [champStats, setChampStats] = useState<Record<string, any>>({});
 
   // 5v5 AIシミュレータ用ステート
   const [blueChamps, setBlueChamps] = useState<Record<string, string>>({
@@ -55,6 +56,13 @@ export default function MatchupsPage() {
 
   useEffect(() => {
     fetchData();
+    fetch('/api/champions/stats')
+      .then(r => r.json())
+      .then(data => {
+        if (data.success) setChampStats(data.stats);
+      })
+      .catch(console.error);
+
     fetch('https://ddragon.leagueoflegends.com/api/versions.json')
       .then(r => r.json())
       .then(versions => fetch(`https://ddragon.leagueoflegends.com/cdn/${versions[0]}/data/ja_JP/champion.json`))
@@ -607,6 +615,173 @@ export default function MatchupsPage() {
               {rd.powerSpikes && <InfoBlock title="パワースパイク" icon="⚡" text={rd.powerSpikes} color="text-[#ef4444] border-[#ef4444]" />}
               {rd.buildRunes && <InfoBlock title="ビルド / ルーン" icon="🛡️" text={rd.buildRunes} color="text-[#22d3ee] border-[#22d3ee]" />}
               {m.strategy && <InfoBlock title="反省メモ" icon="📝" text={m.strategy} color="text-gray-400 border-gray-600" />}
+              
+              {/* KTMカスタムマッチ対面直接対決データ分析の表示 */}
+              {champStats[m.champion] && (() => {
+                const history = champStats[m.champion].match_history?.filter((h: any) => h.enemy_champion === m.enemy) || [];
+                const trendHistory = [...history].reverse();
+                
+                // プレイヤー別の集計ロジック
+                const playerAgg: Record<string, { games: number, wins: number, kills: number, deaths: number, assists: number, role: string }> = {};
+                history.forEach((h: any) => {
+                  const name = h.player_name;
+                  if (!playerAgg[name]) {
+                    playerAgg[name] = { games: 0, wins: 0, kills: 0, deaths: 0, assists: 0, role: h.role || 'UNKNOWN' };
+                  }
+                  const a = playerAgg[name];
+                  a.games += 1;
+                  if (h.is_win) a.wins += 1;
+                  const parts = String(h.score).split('/').map(Number);
+                  a.kills += parts[0] || 0;
+                  a.deaths += parts[1] || 0;
+                  a.assists += parts[2] || 0;
+                });
+
+                return (
+                  <div className="glass-panel border-l-4 rounded-r-xl p-6 border-amber-500 bg-amber-500/5 mt-6 space-y-6">
+                    {/* ヘッダー */}
+                    <div className="flex justify-between items-center border-b border-white/5 pb-3 flex-wrap gap-2">
+                      <h3 className="text-sm font-black uppercase tracking-widest text-amber-400 flex items-center gap-2">
+                        <Swords size={16} /> KTM直接対決データ分析 ({m.champion} vs {m.enemy})
+                      </h3>
+                      {champStats[m.champion].matchup_stats?.[m.enemy] ? (
+                        <span className="text-xs font-mono font-black px-3 py-1 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-md">
+                          対面勝率: {champStats[m.champion].matchup_stats[m.enemy].win_rate}% ({champStats[m.champion].matchup_stats[m.enemy].games}戦)
+                        </span>
+                      ) : (
+                        <span className="text-[10px] text-gray-500 font-bold">直接対戦データ未記録</span>
+                      )}
+                    </div>
+
+                    {history.length > 0 ? (
+                      <>
+                        {/* 1. 勝敗推移タイムライン (トレンド) */}
+                        <div className="space-y-2">
+                          <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest block">📈 直近の勝敗トレンド (時系列)</span>
+                          <div className="flex items-center gap-2 overflow-x-auto py-2 pr-4 scrollbar-thin">
+                            {trendHistory.map((h: any, idx: number) => (
+                              <div key={idx} className="flex items-center gap-2 shrink-0">
+                                <div className={`flex flex-col items-center px-4 py-2.5 rounded-xl border ${h.is_win ? 'bg-green-500/10 border-green-500/30' : 'bg-red-500/10 border-red-500/30'}`}>
+                                  <span className={`w-3 h-3 rounded-full ${h.is_win ? 'bg-green-400 shadow-[0_0_8px_rgba(74,222,128,0.5)]' : 'bg-red-400 shadow-[0_0_8px_rgba(248,113,113,0.5)]'}`}></span>
+                                  <span className="text-[10px] font-bold text-white mt-1.5">{h.player_name}</span>
+                                  <span className="text-[8px] text-gray-400 font-mono mt-0.5">{new Date(h.created_at).toLocaleDateString('ja-JP', {month: '2-digit', day: '2-digit'})}</span>
+                                </div>
+                                {idx < trendHistory.length - 1 && <span className="text-gray-600 font-bold text-sm">➔</span>}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* 2. プレイヤー/ロール別の集計サマリーテーブル */}
+                        <div className="space-y-2">
+                          <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest block">📊 プレイヤー別の集計サマリー</span>
+                          <div className="overflow-hidden rounded-xl border border-white/5 bg-black/40">
+                            <table className="w-full text-left border-collapse text-[11px]">
+                              <thead>
+                                <tr className="bg-white/5 text-gray-400 font-bold tracking-wider uppercase border-b border-white/5 text-[9px]">
+                                  <th className="p-3">プレイヤー</th>
+                                  <th className="p-3 text-center">ロール</th>
+                                  <th className="p-3 text-center">試合数</th>
+                                  <th className="p-3 text-center">勝率</th>
+                                  <th className="p-3 text-center">平均KDA</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-white/5 font-medium">
+                                {Object.entries(playerAgg).map(([name, pa]: any) => {
+                                  const winRate = Math.round((pa.wins / pa.games) * 100);
+                                  const kda = pa.deaths > 0 ? Math.round(((pa.kills + pa.assists) / pa.deaths) * 10) / 10 : (pa.kills + pa.assists);
+                                  return (
+                                    <tr key={name} className="hover:bg-white/[0.02] transition-colors">
+                                      <td className="p-3 font-bold text-white">{name}</td>
+                                      <td className="p-3 text-center font-mono text-gray-400">{pa.role}</td>
+                                      <td className="p-3 text-center text-gray-300 font-bold">{pa.games}</td>
+                                      <td className={`p-3 text-center font-black ${winRate >= 60 ? 'text-green-400' : winRate <= 40 ? 'text-red-400' : 'text-gray-300'}`}>
+                                        {winRate}% ({pa.wins}W)
+                                      </td>
+                                      <td className="p-3 text-center font-mono">
+                                        <span className={`px-2 py-0.5 rounded text-[10px] font-black ${kda >= 3.0 ? 'bg-green-500/10 text-green-400' : kda <= 1.5 ? 'bg-red-500/10 text-red-400' : 'bg-gray-500/10 text-gray-300'}`}>
+                                          {kda} KDA
+                                        </span>
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+
+                        {/* 3. AIによる対戦データ分析サマリー */}
+                        {champStats[m.champion].matchup_stats?.[m.enemy] && (
+                          <div className="space-y-2">
+                            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest block">💡 対面分析アドバイス (過去データに基づく)</span>
+                            <p className="text-xs text-gray-200 leading-relaxed font-semibold italic bg-black/20 p-3 rounded-lg border border-white/5">
+                              " {champStats[m.champion].matchup_stats[m.enemy].analysis_summary} "
+                            </p>
+                          </div>
+                        )}
+
+                        {/* 4. 対面個別試合履歴 (日付の降順) */}
+                        <div className="space-y-2">
+                          <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest block">⚔️ 対面個別試合履歴 (日付順)</span>
+                          <div className="overflow-hidden rounded-xl border border-white/5 bg-black/40">
+                            <table className="w-full text-left border-collapse text-[11px]">
+                              <thead>
+                                <tr className="bg-white/5 text-gray-400 font-bold tracking-wider uppercase border-b border-white/5 text-[9px]">
+                                  <th className="p-3">試合日</th>
+                                  <th className="p-3">使用プレイヤー</th>
+                                  <th className="p-3 text-center">ロール</th>
+                                  <th className="p-3 text-center">スコア (KDA)</th>
+                                  <th className="p-3 text-center">勝敗</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-white/5 font-medium">
+                                {history.map((h: any, idx: number) => {
+                                  const parts = String(h.score).split('/').map(Number);
+                                  const kills = parts[0] || 0;
+                                  const deaths = parts[1] || 0;
+                                  const assists = parts[2] || 0;
+                                  const kda = deaths > 0 ? Math.round(((kills + assists) / deaths) * 10) / 10 : (kills + assists);
+                                  
+                                  return (
+                                    <tr key={idx} className="hover:bg-white/[0.02] transition-colors">
+                                      <td className="p-3 font-mono text-gray-300">
+                                        {new Date(h.created_at).toLocaleDateString('ja-JP', {
+                                          year: 'numeric',
+                                          month: '2-digit',
+                                          day: '2-digit'
+                                        })}
+                                      </td>
+                                      <td className="p-3 font-bold text-white">{h.player_name}</td>
+                                      <td className="p-3 text-center font-mono text-gray-400">{h.role}</td>
+                                      <td className="p-3 text-center font-mono font-bold text-gray-300">
+                                        <span className="text-green-400">{kills}</span>/
+                                        <span className="text-red-400">{deaths}</span>/
+                                        <span className="text-yellow-400">{assists}</span>
+                                        <span className="text-[10px] text-gray-500 ml-1.5">({kda} KDA)</span>
+                                      </td>
+                                      <td className="p-3 text-center">
+                                        <span className={`px-2 py-0.5 rounded text-[10px] font-black ${h.is_win ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}`}>
+                                          {h.is_win ? 'WIN' : 'LOSE'}
+                                        </span>
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-xs text-gray-400 leading-relaxed py-2">
+                        <p className="mb-2">⚠️ KTMカスタムマッチにおける {m.champion} vs {m.enemy} の直接対面データはまだ登録されていません。</p>
+                        <p className="text-gray-500 italic">全体の勝率統計: 勝率 {champStats[m.champion].win_rate}% (総プレイ {champStats[m.champion].pick_count}戦, 平均KDA {champStats[m.champion].avg_kda})</p>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
             
             <div className="mt-8 text-xs text-gray-500 font-mono flex items-center gap-2">
@@ -900,24 +1075,10 @@ export default function MatchupsPage() {
                 >
                   <img src={getChampIcon(champName)} className="w-12 h-12 rounded-full border-2 border-[#c89b3c]/50 shadow-[0_0_12px_rgba(200,155,60,0.3)]" alt={champName} />
                   <div className="flex-1 text-left">
-                    <div className="flex items-center gap-3 mb-1">
+                    <div className="flex items-center gap-3">
                       <span className="font-black text-lg text-[#c89b3c]">{champName}</span>
                       <span className="text-xs text-gray-400 font-mono">{matchupList.length} マッチアップ</span>
                     </div>
-                    {/* 勝率バー */}
-                    {total > 0 && (
-                      <div className="flex items-center gap-3">
-                        <div className="flex-1 h-2 bg-[var(--color-danger)]/30 rounded-full overflow-hidden max-w-[200px]">
-                          <div
-                            className="h-full bg-[var(--color-success)] rounded-full transition-all duration-500"
-                            style={{ width: `${winRate}%` }}
-                          />
-                        </div>
-                        <span className={`text-xs font-black font-mono ${winRate >= 50 ? 'text-[var(--color-success)]' : 'text-[var(--color-danger)]'}`}>
-                          {winRate}% ({wins}W {losses}L)
-                        </span>
-                      </div>
-                    )}
                   </div>
                   <div className="text-gray-400 transition-transform duration-300" style={{ transform: isExpanded ? 'rotate(180deg)' : 'rotate(0)' }}>
                     <ChevronDown size={20} />
@@ -934,6 +1095,161 @@ export default function MatchupsPage() {
                       transition={{ duration: 0.3, ease: 'easeInOut' }}
                       className="overflow-hidden"
                     >
+                      {/* KTMカスタムマッチ統計の表示 */}
+                      {champStats[champName] && (() => {
+                        const history = champStats[champName].match_history || [];
+                        const trendHistory = [...history].reverse().slice(-5); // 直近最大5件
+                        
+                        // プレイヤー別の集計ロジック
+                        const playerAgg: Record<string, { games: number, wins: number, kills: number, deaths: number, assists: number, role: string }> = {};
+                        history.forEach((h: any) => {
+                          const name = h.player_name;
+                          if (!playerAgg[name]) {
+                            playerAgg[name] = { games: 0, wins: 0, kills: 0, deaths: 0, assists: 0, role: h.role || 'UNKNOWN' };
+                          }
+                          const a = playerAgg[name];
+                          a.games += 1;
+                          if (h.is_win) a.wins += 1;
+                          const parts = String(h.score).split('/').map(Number);
+                          a.kills += parts[0] || 0;
+                          a.deaths += parts[1] || 0;
+                          a.assists += parts[2] || 0;
+                        });
+
+                        return (
+                          <div className="bg-black/20 border-t border-b border-white/5 p-5 mb-4 flex flex-col gap-4">
+                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-white/5 pb-3 flex-wrap">
+                              <div className="flex items-center gap-3 flex-wrap">
+                                <h4 className="font-bold text-xs text-[#00cfef] flex items-center gap-1.5 uppercase tracking-widest">
+                                  <Award size={14} /> KTMカスタムマッチ統計 (全体実績)
+                                </h4>
+                                {champStats[champName].pick_count > 0 && (
+                                  <span className="text-[10px] font-black font-mono px-2 py-0.5 bg-green-500/10 text-green-400 border border-green-500/20 rounded-md">
+                                    KTM勝率: {champStats[champName].win_rate}% ({champStats[champName].pick_count}戦, 平均KDA: {champStats[champName].avg_kda})
+                                  </span>
+                                )}
+                              </div>
+                              {champStats[champName].top_players?.length > 0 && (
+                                <span className="text-[10px] text-gray-400 font-mono">
+                                  主な使用者: <strong className="text-gray-200">{champStats[champName].top_players.map((p: any) => `${p.player_name} (${p.games}戦 ${p.win_rate}%勝率)`).join(', ')}</strong>
+                                </span>
+                              )}
+                            </div>
+                            
+                            {history.length > 0 ? (
+                              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                                {/* 勝敗トレンド */}
+                                <div className="space-y-1.5">
+                                  <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest block">📈 直近の勝敗トレンド</span>
+                                  <div className="flex items-center gap-2 overflow-x-auto py-1">
+                                    {trendHistory.map((h: any, idx: number) => (
+                                      <div key={idx} className="flex items-center gap-2 shrink-0">
+                                        <div className={`flex flex-col items-center px-3 py-1.5 rounded-lg border ${h.is_win ? 'bg-green-500/10 border-green-500/30' : 'bg-red-500/10 border-red-500/30'}`}>
+                                          <span className={`w-2 h-2 rounded-full ${h.is_win ? 'bg-green-400 shadow-[0_0_6px_rgba(74,222,128,0.5)]' : 'bg-red-400 shadow-[0_0_6px_rgba(248,113,113,0.5)]'}`}></span>
+                                          <span className="text-[9px] font-bold text-white mt-1">{h.player_name}</span>
+                                          <span className="text-[8px] text-gray-400 font-mono mt-0.5">{h.enemy_champion ? `vs ${h.enemy_champion}` : ''}</span>
+                                        </div>
+                                        {idx < trendHistory.length - 1 && <span className="text-gray-700 font-bold text-xs">➔</span>}
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+
+                                {/* 集計テーブル */}
+                                <div className="space-y-1.5">
+                                  <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest block">📊 プレイヤー集計</span>
+                                  <div className="overflow-hidden rounded-lg border border-white/5 bg-black/40">
+                                    <table className="w-full text-left border-collapse text-[10px]">
+                                      <thead>
+                                        <tr className="bg-white/5 text-gray-400 font-bold tracking-wider uppercase border-b border-white/5 text-[8px]">
+                                          <th className="p-2">プレイヤー</th>
+                                          <th className="p-2 text-center">ロール</th>
+                                          <th className="p-2 text-center">試合数</th>
+                                          <th className="p-2 text-center">勝率</th>
+                                          <th className="p-2 text-center">平均KDA</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody className="divide-y divide-white/5 font-medium">
+                                        {Object.entries(playerAgg).slice(0, 3).map(([name, pa]: any) => {
+                                          const winRate = Math.round((pa.wins / pa.games) * 100);
+                                          const kda = pa.deaths > 0 ? Math.round(((pa.kills + pa.assists) / pa.deaths) * 10) / 10 : (pa.kills + pa.assists);
+                                          return (
+                                            <tr key={name} className="hover:bg-white/[0.02] transition-colors">
+                                              <td className="p-2 font-bold text-white">{name}</td>
+                                              <td className="p-2 text-center font-mono text-gray-500">{pa.role}</td>
+                                              <td className="p-2 text-center text-gray-300 font-bold">{pa.games}</td>
+                                              <td className={`p-2 text-center font-black ${winRate >= 60 ? 'text-green-400' : winRate <= 40 ? 'text-red-400' : 'text-gray-300'}`}>
+                                                {winRate}%
+                                              </td>
+                                              <td className="p-2 text-center font-mono">
+                                                <span className={`px-1.5 py-0.5 rounded text-[9px] font-black ${kda >= 3.0 ? 'bg-green-500/10 text-green-400' : kda <= 1.5 ? 'bg-red-500/10 text-red-400' : 'bg-gray-500/10 text-gray-300'}`}>
+                                                  {kda}
+                                                </span>
+                                              </td>
+                                            </tr>
+                                          );
+                                        })}
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                </div>
+                              </div>
+                            ) : (
+                              <span className="text-xs text-gray-500 italic">過去のKTMでのプレイ履歴はありません</span>
+                            )}
+
+                            {/* 個別試合リスト (日付の降順) */}
+                            {history.length > 0 && (
+                              <div className="space-y-1.5 col-span-full border-t border-white/5 pt-3 mt-1">
+                                <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest block">⚔️ 直近の個別試合履歴 (日付順)</span>
+                                <div className="overflow-hidden rounded-lg border border-white/5 bg-black/40">
+                                  <table className="w-full text-left border-collapse text-[10px]">
+                                    <thead>
+                                      <tr className="bg-white/5 text-gray-400 font-bold tracking-wider uppercase border-b border-white/5 text-[8px]">
+                                        <th className="p-2">試合日</th>
+                                        <th className="p-2">プレイヤー</th>
+                                        <th className="p-2 text-center">対面相手</th>
+                                        <th className="p-2 text-center">スコア (KDA)</th>
+                                        <th className="p-2 text-center">勝敗</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-white/5 font-medium">
+                                      {history.slice(0, 5).map((h: any, idx: number) => {
+                                        const parts = String(h.score).split('/').map(Number);
+                                        const kills = parts[0] || 0;
+                                        const deaths = parts[1] || 0;
+                                        const assists = parts[2] || 0;
+                                        const kda = deaths > 0 ? Math.round(((kills + assists) / deaths) * 10) / 10 : (kills + assists);
+                                        return (
+                                          <tr key={idx} className="hover:bg-white/[0.02] transition-colors">
+                                            <td className="p-2 font-mono text-gray-400">
+                                              {new Date(h.created_at).toLocaleDateString('ja-JP')}
+                                            </td>
+                                            <td className="p-2 font-bold text-white">{h.player_name}</td>
+                                            <td className="p-2 text-center text-amber-400 font-bold">{h.enemy_champion}</td>
+                                            <td className="p-2 text-center font-mono text-gray-300">
+                                              <span className="text-green-400">{kills}</span>/
+                                              <span className="text-red-400">{deaths}</span>/
+                                              <span className="text-yellow-400">{assists}</span>
+                                              <span className="text-gray-500 ml-1">({kda})</span>
+                                            </td>
+                                            <td className="p-2 text-center">
+                                              <span className={`px-1.5 py-0.5 rounded text-[9px] font-black ${h.is_win ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}`}>
+                                                {h.is_win ? 'WIN' : 'LOSE'}
+                                              </span>
+                                            </td>
+                                          </tr>
+                                        );
+                                      })}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()}
+
                       <div className="p-4 pt-0 grid grid-cols-1 md:grid-cols-2 gap-3">
                         {sortedEnemies.map(([enemyName, enemyMatchups]) => {
                           const eWins = enemyMatchups.filter(m => String(m.raw_data?.result).toLowerCase() === 'win').length;
@@ -955,7 +1271,7 @@ export default function MatchupsPage() {
                               >
                                 <img src={getChampIcon(m.enemy)} className="w-9 h-9 rounded-full border border-white/10 shrink-0" alt={m.enemy} />
                                 <div className="flex-1 min-w-0">
-                                  <div className="flex items-center gap-2 mb-0.5">
+                                  <div className="flex items-center gap-2 mb-0.5 flex-wrap">
                                     <span className="font-bold text-sm text-[#00cfef]">{m.enemy}</span>
                                     {rd.difficulty > 0 && <span className="text-[10px]">{'⭐'.repeat(rd.difficulty)}</span>}
                                   </div>
@@ -963,12 +1279,42 @@ export default function MatchupsPage() {
                                     <p className="text-[11px] text-gray-400 truncate italic">"{summary}{(rd.winCondition || m.strategy || '').length > 50 ? '…' : ''}"</p>
                                   )}
                                 </div>
-                                <div className="shrink-0 flex items-center gap-2">
-                                  {rd.result && (
-                                    <span className={`text-[10px] font-black px-2 py-1 rounded-md ${isWin ? 'bg-[var(--color-success)]/20 text-[var(--color-success)]' : isLose ? 'bg-[var(--color-danger)]/20 text-[var(--color-danger)]' : 'bg-gray-500/20 text-gray-400'}`}>
-                                      {isWin ? 'WIN' : 'LOSE'}
-                                    </span>
-                                  )}
+                                <div className="shrink-0 flex items-center gap-3">
+                                  {(() => {
+                                    // 1. KTMカスタムマッチの対面勝率があれば最優先で使用
+                                    const ktmMatchup = champStats[champName]?.matchup_stats?.[m.enemy];
+                                    if (ktmMatchup && ktmMatchup.games > 0) {
+                                      const winRate = ktmMatchup.win_rate;
+                                      return (
+                                        <div className={`px-2 py-1 rounded-md border flex flex-col items-center justify-center min-w-[65px] ${winRate >= 60 ? 'bg-green-500/10 text-green-400 border-green-500/20' : winRate <= 40 ? 'bg-red-500/10 text-red-400 border-red-500/20' : 'bg-amber-500/10 text-amber-400 border-amber-500/20'}`}>
+                                          <span className="text-[8px] text-gray-400 font-bold uppercase tracking-wider scale-90 leading-none">KTM {ktmMatchup.games}戦</span>
+                                          <span className="font-mono text-xs font-black mt-0.5 leading-none">{winRate}%</span>
+                                        </div>
+                                      );
+                                    }
+                                    
+                                    // 2. なければメモの勝敗結果から勝率を算出して表示
+                                    const eTotal = eWins + eLosses;
+                                    const memoWinRate = eTotal > 0 ? Math.round((eWins / eTotal) * 100) : null;
+                                    if (memoWinRate !== null) {
+                                      return (
+                                        <div className={`px-2 py-1 rounded-md border flex flex-col items-center justify-center min-w-[65px] ${memoWinRate >= 60 ? 'bg-green-500/10 text-green-400 border-green-500/20' : memoWinRate <= 40 ? 'bg-red-500/10 text-red-400 border-red-500/20' : 'bg-gray-500/10 text-gray-300 border-white/5'}`}>
+                                          <span className="text-[8px] text-gray-500 font-bold uppercase tracking-wider scale-90 leading-none">メモ {eTotal}戦</span>
+                                          <span className="font-mono text-xs font-black mt-0.5 leading-none">{memoWinRate}%</span>
+                                        </div>
+                                      );
+                                    }
+
+                                    // 3. どちらもなければ元のメモの単体勝敗結果を出す
+                                    if (rd.result) {
+                                      return (
+                                        <span className={`text-[10px] font-black px-2 py-1 rounded-md ${isWin ? 'bg-[var(--color-success)]/20 text-[var(--color-success)]' : isLose ? 'bg-[var(--color-danger)]/20 text-[var(--color-danger)]' : 'bg-gray-500/20 text-gray-400'}`}>
+                                          {isWin ? 'WIN' : 'LOSE'}
+                                        </span>
+                                      );
+                                    }
+                                    return null;
+                                  })()}
                                   <span className="text-[#00cfef] text-xs font-bold opacity-0 group-hover/item:opacity-100 transition-opacity">→</span>
                                 </div>
                               </motion.div>

@@ -88,27 +88,69 @@ def merge_and_extract_intel(champ_name: str, new_text: str, existing_data: dict)
     
     from v2_CORE.ai_helper import generate_content_safe
     from v2_CORE.settings import settings
+    response_text = None
     try:
         response_text = generate_content_safe(
             client,
             prompt,
-            model_id=settings.DEFAULT_MODEL,
             config=types.GenerateContentConfig(
                 temperature=0.2, # データ抽出なので温度をさらに下げる
                 response_mime_type="application/json"
             ),
-            feature_name="oracle"
+            model_id=settings.DEFAULT_MODEL,
+            feature_name="oracle",
+            sleep_on_rate_limit=False  # クォータ回避のためスリープはしない
         )
-        if response_text.startswith("❌") or response_text.startswith("⚠️"):
-            return None
-        result_json = json.loads(response_text.strip())
-        
-        # 記事(note_draft)はAIに再生成させず、引数で渡された完成版をそのまま格納する
-        result_json["note_draft"] = new_text
-        return result_json
+        if response_text and not response_text.startswith("❌") and not response_text.startswith("⚠️") and "本日の利用上限に達しました" not in response_text:
+            result_json = json.loads(response_text.strip())
+            result_json["note_draft"] = new_text
+            return result_json
     except Exception as e:
-        logging.error(f"Gemini processing failed: {e}")
-        return None
+        logging.warning(f"⚠️ Geminiでのマージ処理に失敗しました。Ollamaフォールバックを試みます。エラー: {e}")
+
+    # Ollamaへのフォールバック
+    logging.info(f"🏠 Ollama (ローカルLLM) を使用して {champ_name} のデータをマージ・抽出します...")
+    try:
+        from v2_CORE.ai_helper import _generate_with_ollama
+        # JSON形式での返却を確実にするためのプロンプト調整
+        ollama_prompt = prompt + "\n\n【出力形式の絶対ルール】\n必ず指定されたスキーマに従った有効なJSON形式のみを返してください。不要な前置きや説明（```json 等のコードブロック含む）は一切出力しないでください。"
+        
+        response_text = _generate_with_ollama(ollama_prompt, model=settings.OLLAMA_MODEL)
+        if response_text:
+            cleaned_text = response_text.strip()
+            # Markdownコードブロックの除去
+            if cleaned_text.startswith("```"):
+                lines = cleaned_text.split("\n")
+                if len(lines) >= 2 and (lines[0].startswith("```json") or lines[0].startswith("```")):
+                    cleaned_text = "\n".join(lines[1:-1]).strip()
+            
+            # JSONパースの堅牢化 (不正な制御文字の除去・エスケープ)
+            import re
+            def escape_control_chars(match):
+                char = match.group(0)
+                if char == "\n": return "\\n"
+                if char == "\r": return "\\r"
+                if char == "\t": return "\\t"
+                return "" # その他の制御文字は消去
+                
+            try:
+                result_json = json.loads(cleaned_text)
+            except json.JSONDecodeError:
+                try:
+                    # 生の制御文字(0x00-0x1f)をエスケープ表現に置換して再試行
+                    fixed_text = re.sub(r'[\x00-\x1f]', escape_control_chars, cleaned_text)
+                    result_json = json.loads(fixed_text)
+                except Exception as je:
+                    logging.error(f"❌ JSON parsing failed even after escaping control characters: {je}")
+                    logging.error(f"Raw text was: {cleaned_text[:1000]}")
+                    return None
+            
+            result_json["note_draft"] = new_text
+            return result_json
+    except Exception as oe:
+        logging.error(f"❌ ローカルOllamaでのマージ処理も失敗しました: {oe}")
+        
+    return None
 
 def update_champion_db(champ_id: str, champ_name: str, new_text: str):
     """メイン関数：既存データを取得、マージ、SupabaseへUpsert"""

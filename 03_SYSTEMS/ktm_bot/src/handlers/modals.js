@@ -63,7 +63,10 @@ export async function handleModalSubmit(interaction, env, ctx) {
       const row = interaction.data.components.find(c => c.components[0].custom_id === cid);
       return row ? row.components[0].value.trim().toUpperCase() : "";
     };
-    const main = getVal('main'), sub = getVal('sub'), ng1 = getVal('ng1'), ng2 = getVal('ng2');
+    let main = getVal('main'), sub = getVal('sub'), ng1 = getVal('ng1'), ng2 = getVal('ng2');
+    if (main === 'ALL') {
+      sub = '-';
+    }
     const weightRaw = interaction.data.components.find(c => c.components[0].custom_id === 'weight')?.components[0].value;
     const weight = weightRaw ? parseInt(weightRaw) : undefined;
     
@@ -71,8 +74,22 @@ export async function handleModalSubmit(interaction, env, ctx) {
     ctx.waitUntil((async () => {
       try {
         const { fetchSupabase, upsertPlayer } = await import('../utils/supabase.js');
-        const existingData = await fetchSupabase(env, 'ktm_players', `discord_id=eq.${userId}`);
-        const player = existingData && existingData.length > 0 ? existingData[0] : { discord_id: userId, name: discordName, is_active: true };
+        let existingData = await fetchSupabase(env, 'ktm_players', `discord_id=eq.${userId}`);
+        let player = existingData && existingData.length > 0 ? existingData[0] : null;
+        
+        if (!player) {
+          // 名前で既存のプレイヤーを探す
+          const nameEscaped = encodeURIComponent(discordName);
+          const dataByName = await fetchSupabase(env, 'ktm_players', `name=eq.${nameEscaped}`);
+          if (dataByName && dataByName.length > 0) {
+            player = dataByName[0];
+            player.discord_id = userId;
+          }
+        }
+        
+        if (!player) {
+          player = { discord_id: userId, name: discordName, is_active: true };
+        }
         
         player.role_preferences = player.role_preferences || {};
         if (main) player.role_preferences.primary = main;

@@ -46,6 +46,38 @@ export default function BalancerPage() {
 
   useEffect(() => {
     fetchPlayers();
+
+    // Supabase Realtime 購読によるプレイヤーロールのリアルタイム同期＆画面上での通知メッセージ
+    const channel = supabase
+      .channel('realtime-ktm-players')
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'ktm_players' },
+        (payload: any) => {
+          const updatedPlayer = payload.new;
+          setPlayers(prev => prev.map(p => {
+            if (p.id === updatedPlayer.id) {
+              const oldPref = p.role_preferences || {};
+              const newPref = updatedPlayer.role_preferences || {};
+              if (oldPref.primary !== newPref.primary || oldPref.secondary !== newPref.secondary) {
+                const primaryStr = `${oldPref.primary || 'ALL'} ➜ ${newPref.primary || 'ALL'}`;
+                const secondaryStr = `${oldPref.secondary || '-'} ➜ ${newPref.secondary || '-'}`;
+                setMessage({
+                  type: "success",
+                  text: `🔔 [通知] ${updatedPlayer.name} の希望レーンが更新されました！ (メイン: ${primaryStr} / サブ: ${secondaryStr})`
+                });
+              }
+              return { ...p, ...updatedPlayer };
+            }
+            return p;
+          }));
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const fetchPlayers = async () => {
@@ -63,7 +95,7 @@ export default function BalancerPage() {
         const timeA = a.metadata?.joined_at ? new Date(a.metadata.joined_at).getTime() : Infinity;
         const timeB = b.metadata?.joined_at ? new Date(b.metadata.joined_at).getTime() : Infinity;
         return timeA - timeB;
-      }).map((p: any, index: number) => ({ ...p, no: index + 1, is_fixed: false }));
+      }).map((p: any, index: number) => ({ ...p, no: index + 1, is_fixed: false, is_spectator_fixed: false }));
 
       setPlayers(playersWithNo);
     } catch (err: any) {
@@ -127,7 +159,11 @@ export default function BalancerPage() {
       const nextPlayers = prevPlayers.map(p => {
         if ((p.id || p.discord_id) === uid) {
           if (field === "primary_role") {
-            return { ...p, role_preferences: { ...p.role_preferences, primary: value } };
+            const nextPrefs = { ...p.role_preferences, primary: value };
+            if (value === "ALL") {
+              nextPrefs.secondary = "-";
+            }
+            return { ...p, role_preferences: nextPrefs };
           } else if (field === "secondary_role") {
             return { ...p, role_preferences: { ...p.role_preferences, secondary: value } };
           } else if (field === "notes") {
@@ -174,6 +210,7 @@ export default function BalancerPage() {
         }).eq('id', p.id);
       }
       setSaving(false);
+      setMessage({ type: "success", text: "✅ プレイヤー情報を更新しました。" });
     } catch (err: any) {
       setMessage({ type: "error", text: "保存エラー: " + err.message });
       setSaving(false);
@@ -202,7 +239,8 @@ export default function BalancerPage() {
             return {
               name: p.name,
               isFixed: p.is_fixed || false,
-              fixedRole: (p.is_fixed && pref1 && pref1 !== 'ALL' && pref1 !== 'FILL') ? pref1 : null
+              isSpectatorFixed: p.is_spectator_fixed || false,
+              fixedRole: (p.is_fixed && pref1 && pref1 !== 'ALL' && pref1 !== '-') ? pref1 : null
             };
           })
         })
@@ -398,7 +436,8 @@ export default function BalancerPage() {
     let aVal = a[sortConfig.key];
     let bVal = b[sortConfig.key];
     
-    if (sortConfig.key === "mmr" || sortConfig.key === "no") {
+    const numericKeys = ["mmr", "no", "pity", "off_pity", "spectator_pity", "weight"];
+    if (numericKeys.includes(sortConfig.key)) {
       aVal = parseInt(aVal) || 0;
       bVal = parseInt(bVal) || 0;
     }
@@ -589,7 +628,7 @@ export default function BalancerPage() {
                 <div className="space-y-2">
                   {['TOP', 'JG', 'MID', 'ADC', 'SUP'].map((role) => {
                     const p = balanceResult.teamBlue.find((x:any) => x.currentRole === role);
-                    const isOffRole = p && p.mainLane !== 'ALL' && p.mainLane !== 'FILL' && p.currentRole !== p.mainLane;
+                    const isOffRole = p && p.mainLane !== 'ALL' && p.mainLane !== '-' && p.currentRole !== p.mainLane;
                     const slotKey = `teamBlue-${role}`;
                     const isDragOver = dragOverSlot === slotKey;
                     
@@ -632,7 +671,7 @@ export default function BalancerPage() {
                 <div className="space-y-2">
                   {['TOP', 'JG', 'MID', 'ADC', 'SUP'].map((role) => {
                     const p = balanceResult.teamRed.find((x:any) => x.currentRole === role);
-                    const isOffRole = p && p.mainLane !== 'ALL' && p.mainLane !== 'FILL' && p.currentRole !== p.mainLane;
+                    const isOffRole = p && p.mainLane !== 'ALL' && p.mainLane !== '-' && p.currentRole !== p.mainLane;
                     const slotKey = `teamRed-${role}`;
                     const isDragOver = dragOverSlot === slotKey;
                     
@@ -807,6 +846,7 @@ export default function BalancerPage() {
                 <tr>
                   <SortableHeader label="参加" sortKey="is_active" className="w-16 text-center" />
                   <SortableHeader label="👑固定" sortKey="is_fixed" className="w-16 text-center" />
+                  <SortableHeader label="📺見学" sortKey="is_spectator_fixed" className="w-16 text-center" />
                   <SortableHeader label="No." sortKey="no" className="w-16 text-center" />
                   <SortableHeader label="プレイヤー名" sortKey="name" />
                   <SortableHeader label="ランク" sortKey="highest_rank" />
@@ -819,12 +859,13 @@ export default function BalancerPage() {
                   <SortableHeader label="格上" sortKey="allow_higher" />
                   <SortableHeader label="Pity" sortKey="pity" />
                   <SortableHeader label="OffPity" sortKey="off_pity" />
+                  <SortableHeader label="観戦Pity" sortKey="spectator_pity" />
                   <th className="px-4 py-3 font-medium">備考</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-800/50">
                 {sortedPlayers.map((p) => {
-                  const prefs = p.role_preferences || { primary: 'ALL', secondary: 'FILL' };
+                  const prefs = p.role_preferences || { primary: 'ALL', secondary: '-' };
                   return (
                     <tr key={p.id} className={`hover:bg-gray-800/50 transition ${p.is_active ? 'bg-blue-900/5' : 'opacity-40'}`}>
                       <td className="px-4 py-2 text-center">
@@ -842,6 +883,15 @@ export default function BalancerPage() {
                           title="第1希望レーンで固定する"
                         >
                           <Crown className={`w-4 h-4 ${p.is_fixed ? 'opacity-100' : 'opacity-50'}`} />
+                        </button>
+                      </td>
+                      <td className="px-2 py-2 text-center">
+                        <button
+                          onClick={() => handleInputChange(p.id, "is_spectator_fixed", !p.is_spectator_fixed)}
+                          className={`p-1 rounded transition-colors ${p.is_spectator_fixed ? 'bg-indigo-500/20 text-indigo-400' : 'text-gray-600 hover:text-indigo-400 hover:bg-indigo-500/10'}`}
+                          title="この回は見学固定にする"
+                        >
+                          <X className={`w-4 h-4 ${p.is_spectator_fixed ? 'opacity-100' : 'opacity-50'}`} />
                         </button>
                       </td>
                       <td className="px-4 py-2 text-center font-bold text-gray-600 text-xs">
@@ -879,11 +929,12 @@ export default function BalancerPage() {
                       </td>
                       <td className="px-4 py-2">
                         <select
-                          value={prefs.secondary || 'FILL'}
+                          value={prefs.secondary || '-'}
+                          disabled={prefs.primary === 'ALL'}
                           onChange={(e) => handleInputChange(p.id, "secondary_role", e.target.value)}
-                          className="bg-gray-950 border border-gray-700 rounded px-2 py-1 text-gray-300 outline-none focus:border-blue-500 w-24"
+                          className="bg-gray-950 border border-gray-700 rounded px-2 py-1 text-gray-300 outline-none focus:border-blue-500 w-24 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          <option value="FILL">FILL</option>
+                          <option value="-">-</option>
                           <option value="ALL">ALL</option>
                           <option value="TOP">TOP</option>
                           <option value="JG">JG</option>
@@ -944,6 +995,9 @@ export default function BalancerPage() {
                       </td>
                       <td className="px-2 py-2 text-center font-mono text-fuchsia-400 font-bold">
                         {p.off_pity || 0}
+                      </td>
+                      <td className="px-2 py-2 text-center font-mono text-sky-400 font-bold">
+                        {p.spectator_pity || 0}
                       </td>
                       <td className="px-2 py-2">
                         <input

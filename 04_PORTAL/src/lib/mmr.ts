@@ -58,8 +58,8 @@ export function getKtmRank(mmr: number): { name: string; color: string; bg: stri
 }
 
 export function getMultiplierByAffinity(pref1: string, pref2: string, targetRole: string): number {
-  const isAllMain = (pref1 === 'ALL' || pref1 === 'FILL');
-  const isAllSub  = (pref2 === 'ALL' || pref2 === 'FILL');
+  const isAllMain = (pref1 === 'ALL' || pref1 === 'FILL' || pref1 === '-');
+  const isAllSub  = (pref2 === 'ALL' || pref2 === 'FILL' || pref2 === '-');
 
   if (targetRole === pref1 || isAllMain) return 1.0;
   
@@ -108,11 +108,11 @@ export function calculateInitialMmr(highestRank: string | null, role: string, pr
   if (p === r) {
     return baseMmr; // メインレーンは減衰なし
   }
-  // ALL/FILL の場合はすべてサブレーン扱いとする（メインほど上手くない）
-  if (p === 'ALL' || p === 'FILL') {
+  // ALL/FILL/- の場合はすべてサブレーン扱いとする（メインほど上手くない）
+  if (p === 'ALL' || p === 'FILL' || p === '-') {
     return baseMmr - 100;
   }
-  if (s === r || s === 'ALL' || s === 'FILL') {
+  if (s === r || s === 'ALL' || s === 'FILL' || s === '-') {
     return baseMmr - 100; // サブレーン
   }
   

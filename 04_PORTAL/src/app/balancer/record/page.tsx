@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { supabase } from '../../../lib/supabaseClient';
 import { RefreshCw, Trophy, Target, Search, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
@@ -29,9 +29,11 @@ export default function CustomRecordPage() {
   const [playersPool, setPlayersPool] = useState<{name: string, ign?: string}[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useState<{ type: 'success' | 'error' | '', text: string }>({ type: '', text: '' });
   const [winningTeam, setWinningTeam] = useState<'BLUE' | 'RED' | null>(null);
   const [championsList, setChampionsList] = useState<{ id: string, name: string }[]>([]);
+  const championsListRef = useRef(championsList);
+  championsListRef.current = championsList;
   const [activeChampSelector, setActiveChampSelector] = useState<{ team: 'BLUE' | 'RED', role: Role, slotIndex: number } | null>(null);
   const [champSearchQuery, setChampSearchQuery] = useState('');
   const [analyzing, setAnalyzing] = useState(false);
@@ -85,7 +87,7 @@ export default function CustomRecordPage() {
   // チャンピオン曖昧マッチング
   const matchChampion = (extractedChamp: string, list: { id: string, name: string }[]) => {
     if (!extractedChamp) return '';
-    const cleanExtracted = extractedChamp.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const cleanExtracted = extractedChamp.toLowerCase().replace(/[^a-z0-9ぁ-んァ-ヶ一-龠]/g, '');
     
     // 1. Ddragon ID (id) との一致を検索
     for (const c of list) {
@@ -109,90 +111,116 @@ export default function CustomRecordPage() {
   // 画像アップロード・解析
   const handleImageUpload = async (file: File) => {
     if (!file.type.startsWith('image/')) {
-      setMessage('画像ファイルのみアップロード可能です。');
+      setMessage({ type: 'error', text: '画像ファイルのみアップロード可能です。' });
       return;
     }
     
     setAnalyzing(true);
-    setMessage('');
+    setMessage({ type: '', text: '' });
     
     try {
       const reader = new FileReader();
-      reader.onload = async (e) => {
-        try {
-          const base64Data = e.target?.result as string;
-          const base64Content = base64Data.split(',')[1];
-          
-          const res = await fetch('/api/match/analyze-image', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              imageBase64: base64Content,
-              mimeType: file.type,
-              champions: championsList
-            })
-          });
-          
-          const resData = await res.json();
-          if (!res.ok || resData.status !== 'SUCCESS') {
-            throw new Error(resData.error || '画像の解析に失敗しました。');
-          }
-          
-          const data = resData.data;
-          
-          // 勝敗の反映
-          if (data.winningTeam === 'BLUE' || data.winningTeam === 'RED') {
-            setWinningTeam(data.winningTeam as 'BLUE' | 'RED');
-          }
-          
-          // スタッツの反映
-          if (data.players && Array.isArray(data.players)) {
-            const bluePlayers = data.players.filter((p: any) => p.team === 'BLUE');
-            const redPlayers = data.players.filter((p: any) => p.team === 'RED');
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = async () => {
+          try {
+            // 429制限(TPM/RPM)を劇的に防ぐため、送信前にCanvasで最大幅1280pxにリサイズ＆圧縮
+            const canvas = document.createElement('canvas');
+            const maxW = 1280;
+            let w = img.width;
+            let h = img.height;
+            if (w > maxW) {
+              h = Math.round((h * maxW) / w);
+              w = maxW;
+            }
+            canvas.width = w;
+            canvas.height = h;
             
-            setStats(prev => {
-              return prev.map((currentStat, idx) => {
-                const isBlue = currentStat.team === 'BLUE';
-                const teamPlayers = isBlue ? bluePlayers : redPlayers;
-                const playerIdx = isBlue ? idx : idx - 5;
-                const found = teamPlayers[playerIdx];
-                
-                if (found) {
-                  const matchedName = matchPlayer(found.name, playersPool);
-                  const matchedChamp = matchChampion(found.champion_name, championsList);
-                  
-                  // ロールが正当な値かチェック。不正ならデフォルトロール
-                  let assignedRole: Role = ROLES[playerIdx];
-                  if (found.role && ROLES.includes(found.role.toUpperCase() as Role)) {
-                    assignedRole = found.role.toUpperCase() as Role;
-                  }
-                  
-                  return {
-                    ...currentStat,
-                    currentRole: assignedRole,
-                    name: matchedName,
-                    champion_name: matchedChamp,
-                    kills: Number(found.kills) || 0,
-                    deaths: Number(found.deaths) || 0,
-                    assists: Number(found.assists) || 0
-                  };
-                }
-                return currentStat;
-              });
+            const ctx = canvas.getContext('2d');
+            ctx?.drawImage(img, 0, 0, w, h);
+            
+            // 圧縮率 0.7 の JPEG に変換して送信サイズを軽量化
+            const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+            const base64Content = compressedBase64.split(',')[1];
+            
+            const res = await fetch('/api/match/analyze-image', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                imageBase64: base64Content,
+                mimeType: 'image/jpeg',
+                champions: championsListRef.current,
+                testApiKey: 'AIzaSyB4yLgJ1hS-M9L4-XQEVYl-kk5508ZUNKI'
+              })
             });
-            setMessage('画像の解析結果を反映しました。誤りがないか確認し、必要に応じて修正してください。');
+            
+            const resData = await res.json();
+            if (!res.ok || resData.status !== 'SUCCESS') {
+              throw new Error(resData.error || '画像の解析に失敗しました。');
+            }
+            
+            const data = resData.data;
+            
+            // 勝敗の反映
+            if (data.winningTeam === 'BLUE' || data.winningTeam === 'RED') {
+              setWinningTeam(data.winningTeam as 'BLUE' | 'RED');
+            }
+            
+            // スタッツの反映
+            if (data.players && Array.isArray(data.players)) {
+              const bluePlayers = data.players.filter((p: any) => p.team === 'BLUE');
+              const redPlayers = data.players.filter((p: any) => p.team === 'RED');
+              
+              setStats(prev => {
+                return prev.map((currentStat, idx) => {
+                  const isBlue = currentStat.team === 'BLUE';
+                  const teamPlayers = isBlue ? bluePlayers : redPlayers;
+                  const playerIdx = isBlue ? idx : idx - 5;
+                  const found = teamPlayers[playerIdx];
+                  
+                  if (found) {
+                    const matchedName = matchPlayer(found.name, playersPool);
+                    const matchedChamp = matchChampion(found.champion_name, championsList);
+                    
+                    let assignedRole: Role = ROLES[playerIdx];
+                    if (found.role && ROLES.includes(found.role.toUpperCase() as Role)) {
+                      assignedRole = found.role.toUpperCase() as Role;
+                    }
+                    
+                    return {
+                      ...currentStat,
+                      currentRole: assignedRole,
+                      name: matchedName,
+                      champion_name: matchedChamp,
+                      kills: Number(found.kills) || 0,
+                      deaths: Number(found.deaths) || 0,
+                      assists: Number(found.assists) || 0
+                    };
+                  }
+                  return currentStat;
+                });
+              });
+              setMessage({ type: 'success', text: '画像の解析結果を反映しました。誤りがないか確認し、必要に応じて修正してください。' });
+            }
+          } catch (innerErr: any) {
+            setMessage({ type: 'error', text: `解析処理エラー: ${innerErr.message}` });
+          } finally {
+            setAnalyzing(false);
           }
-        } catch (innerErr: any) {
-          setMessage(`解析処理エラー: ${innerErr.message}`);
-        }
+        };
+        img.onerror = () => {
+          setMessage({ type: 'error', text: '画像のデコードに失敗しました。' });
+          setAnalyzing(false);
+        };
+        img.src = e.target?.result as string;
       };
       reader.onerror = () => {
-        setMessage('ファイルの読み込みに失敗しました。');
+        setMessage({ type: 'error', text: 'ファイルの読み込みに失敗しました。' });
+        setAnalyzing(false);
       };
       reader.readAsDataURL(file);
     } catch (err: any) {
-      setMessage(`解析エラー: ${err.message}`);
-    } finally {
+      setMessage({ type: 'error', text: `解析エラー: ${err.message}` });
       setAnalyzing(false);
     }
   };
@@ -200,25 +228,48 @@ export default function CustomRecordPage() {
   // ペースト監視 (画面全体のイベント)
   useEffect(() => {
     const handlePaste = (e: ClipboardEvent) => {
-      const items = e.clipboardData?.items;
-      if (!items) return;
+      let isImage = false;
       
-      for (let i = 0; i < items.length; i++) {
-        if (items[i].type.indexOf('image') !== -1) {
-          const file = items[i].getAsFile();
-          if (file) {
-            handleImageUpload(file);
+      // 1. filesから優先的に画像ファイルを検出
+      const files = e.clipboardData?.files;
+      if (files && files.length > 0) {
+        for (let i = 0; i < files.length; i++) {
+          if (files[i].type.startsWith('image/')) {
+            handleImageUpload(files[i]);
+            isImage = true;
             break;
           }
         }
       }
+      
+      // 2. itemsから画像を検出 (フォールバック)
+      if (!isImage) {
+        const items = e.clipboardData?.items;
+        if (items) {
+          for (let i = 0; i < items.length; i++) {
+            if (items[i].type.indexOf('image') !== -1) {
+              const file = items[i].getAsFile();
+              if (file) {
+                handleImageUpload(file);
+                isImage = true;
+                break;
+              }
+            }
+          }
+        }
+      }
+      
+      // クリップボードに画像が含まれるペーストイベントの場合は、ブラウザのデフォルト挙動を止める
+      if (isImage) {
+        e.preventDefault();
+      }
     };
     
-    window.addEventListener('paste', handlePaste);
+    document.addEventListener('paste', handlePaste);
     return () => {
-      window.removeEventListener('paste', handlePaste);
+      document.removeEventListener('paste', handlePaste);
     };
-  }, [playersPool, championsList]);
+  }, []);
 
   // ドラッグ＆ドロップハンドラー
   const handleDragOver = (e: React.DragEvent) => {
@@ -295,23 +346,23 @@ export default function CustomRecordPage() {
       return unique.size !== 5;
     };
     if (hasDuplicateRoles(blueRoles) || hasDuplicateRoles(redRoles)) {
-      setMessage('各チーム内でTOP, JG, MID, ADC, SUPのロールが重複なく1人ずつ設定されている必要があります。');
+      setMessage({ type: 'error', text: '各チーム内でTOP, JG, MID, ADC, SUPのロールが重複なく1人ずつ設定されている必要があります。' });
       return;
     }
 
     // バリデーション
     const missingNames = stats.filter(s => !s.name);
     if (missingNames.length > 0) {
-      setMessage('全員の名前を選択してください。');
+      setMessage({ type: 'error', text: '全員の名前を選択してください。' });
       return;
     }
     if (!winningTeam) {
-      setMessage('勝利チームを選択してください。');
+      setMessage({ type: 'error', text: '勝利チームを選択してください。' });
       return;
     }
 
     setSubmitting(true);
-    setMessage('');
+    setMessage({ type: '', text: '' });
     try {
       const res = await fetch('/api/match/record', {
         method: 'POST',
@@ -350,7 +401,7 @@ export default function CustomRecordPage() {
       })));
       setWinningTeam(null);
     } catch (err: any) {
-      setMessage(`保存エラー: ${err.message}`);
+      setMessage({ type: 'error', text: `保存エラー: ${err.message}` });
     } finally {
       setSubmitting(false);
     }
@@ -375,9 +426,13 @@ export default function CustomRecordPage() {
         </div>
 
         <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 shadow-2xl">
-          {message && (
-            <div className="mb-6 p-4 bg-amber-950/40 border border-amber-900/60 text-amber-200 rounded-lg text-sm font-bold">
-              {message}
+          {message.text && (
+            <div className={`mb-6 p-4 rounded-lg text-sm font-bold border ${
+              message.type === 'success'
+                ? 'bg-emerald-950/30 text-emerald-400 border-emerald-800/60 shadow-[0_0_15px_rgba(16,185,129,0.1)]'
+                : 'bg-amber-950/40 border-amber-900/60 text-amber-200'
+            }`}>
+              {message.text}
             </div>
           )}
 

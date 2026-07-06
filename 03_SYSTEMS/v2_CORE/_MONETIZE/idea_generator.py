@@ -9,6 +9,10 @@ from google import genai
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../")))
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
 
+import dotenv
+from pathlib import Path
+dotenv.load_dotenv(Path("d:/my_work/.env"))
+
 from v2_CORE.settings import settings
 from v2_CORE.ai_helper import generate_content_safe
 from v2_CORE.logger_config import setup_sovereign_logging
@@ -16,7 +20,7 @@ from v2_CORE.logger_config import setup_sovereign_logging
 logger = setup_sovereign_logging("IdeaGenerator")
 
 def get_supabase_headers():
-    key = os.getenv("SUPABASE_KEY")
+    key = settings.SUPABASE_KEY
     return {
         "apikey": key,
         "Authorization": f"Bearer {key}",
@@ -24,25 +28,32 @@ def get_supabase_headers():
         "Prefer": "return=representation"
     }
 
-def fetch_recent_knowledge():
-    """最近蓄積されたナレッジを取得 (最大30件)"""
-    url = f"{os.getenv('SUPABASE_URL')}/rest/v1/personal_knowledge"
-    params = {
-        "select": "id,title,content,genre",
-        "order": "created_at.desc",
-        "limit": "30"
-    }
-    try:
-        r = httpx.get(url, headers=get_supabase_headers(), params=params)
-        if r.status_code == 200:
-            return r.json()
-    except Exception as e:
-        logger.error(f"ナレッジの取得に失敗しました: {e}")
-    return []
+def fetch_balanced_knowledge():
+    """ジャンルごとに偏りなくナレッジを取得する"""
+    from v2_CORE.knowledge_retriever import knowledge_retriever
+    
+    genres = ["LoL攻略", "AIツール", "副業ノウハウ", "その他"]
+    balanced_list = []
+    
+    for genre in genres:
+        # ジャンルごとに最大10件取得
+        entries = knowledge_retriever.fetch_by_genre(genre, limit=10)
+        balanced_list.extend(entries)
+        
+    # もし全体で極端に少ない場合は、ジャンル不問で追加取得する
+    if len(balanced_list) < 15:
+        recent = knowledge_retriever.fetch_recent(limit=30)
+        existing_ids = {item["id"] for item in balanced_list}
+        for item in recent:
+            if item["id"] not in existing_ids:
+                balanced_list.append(item)
+                existing_ids.add(item["id"])
+                
+    return balanced_list
 
 def get_existing_idea_titles():
     """重複登録を防ぐため既存のネタタイトルを取得"""
-    url = f"{os.getenv('SUPABASE_URL')}/rest/v1/article_ideas"
+    url = f"{settings.SUPABASE_URL}/rest/v1/article_ideas"
     params = {"select": "title"}
     try:
         r = httpx.get(url, headers=get_supabase_headers(), params=params)
@@ -58,18 +69,36 @@ def generate_ideas(knowledge_list):
         logger.warn("蓄積されたナレッジが空のため、アイデア生成をスキップします。")
         return []
 
-    api_key = os.getenv("GEMINI_API_KEY_FREE") or os.getenv("GEMINI_API_KEY")
+    api_key = settings.GEMINI_API_KEY_FREE or settings.GEMINI_API_KEY
     if not api_key:
         logger.error("Gemini APIキーが設定されていません。")
         return []
 
-    # ナレッジ情報をテキストに変換
+    # ナレッジ情報をテキストに変換（最大文字数制限をかける：概ね4000文字程度）
+    max_chars = 4000
+    current_chars = 0
     knowledge_parts = []
+    
     for item in knowledge_list:
-        knowledge_parts.append(
-            f"ID: {item['id']}\nジャンル: {item['genre']}\nタイトル: {item['title']}\n要約: {item['content']}\n---"
-        )
+        content = item.get('content') or ""
+        if not content:
+            raw = item.get('raw_content') or ""
+            content = raw[:400] + ("..." if len(raw) > 400 else "")
+            
+        # 1件あたりの情報が長すぎる場合は切り詰める
+        if len(content) > 500:
+            content = content[:500] + "..."
+            
+        part = f"ID: {item['id']}\nジャンル: {item.get('genre', 'その他')}\nタイトル: {item['title']}\n要約: {content}\n---"
+        
+        if current_chars + len(part) > max_chars:
+            break
+            
+        knowledge_parts.append(part)
+        current_chars += len(part)
+        
     knowledge_text = "\n".join(knowledge_parts)
+    logger.info(f"💡 {len(knowledge_parts)} 件のナレッジ（合計 {current_chars} 文字）を基にアイデアを生成します。")
 
     prompt = f"""
 あなたは凄腕の編集長 兼 コンテンツマーケター（Sovereign ADO Analyst/Creator）です。
@@ -121,7 +150,7 @@ def generate_ideas(knowledge_list):
 
 def save_idea(idea):
     """Supabaseに記事アイデアを保存"""
-    url = f"{os.getenv('SUPABASE_URL')}/rest/v1/article_ideas"
+    url = f"{settings.SUPABASE_URL}/rest/v1/article_ideas"
     payload = {
         "title": idea["title"],
         "concept": idea["concept"],
@@ -143,7 +172,7 @@ def save_idea(idea):
 
 def run_generator():
     logger.info("🧠 蓄積されたナレッジを元に、新しい記事ネタの自動生成を開始します...")
-    knowledge = fetch_recent_knowledge()
+    knowledge = fetch_balanced_knowledge()
     if not knowledge:
         logger.info("解析対象のナレッジが蓄積されていないため終了します。")
         return

@@ -13,7 +13,7 @@ export async function POST(request: Request) {
 
     const playersMap = new Map();
     for (const p of allPlayers) {
-      const prefs = p.role_preferences || { primary: 'ALL', secondary: 'FILL' };
+      const prefs = p.role_preferences || { primary: 'ALL', secondary: '-' };
       playersMap.set(p.name, {
         id: p.id, name: p.name, highest_rank: p.highest_rank, role_preferences: prefs,
         mmr_top: calculateInitialMmr(p.highest_rank, 'TOP', prefs),
@@ -141,7 +141,16 @@ export async function POST(request: Request) {
         });
 
         // participants のアップデート配列に追加
-        participantUpdates.push({ id: p.id, kda_score: kdaScore, mmr_delta: delta });
+        participantUpdates.push({ 
+          id: p.id, 
+          match_id: p.match_id,
+          player_name: p.player_name,
+          role: p.role,
+          team: p.team,
+          champion_name: p.champion_name,
+          kda_score: kdaScore, 
+          mmr_delta: delta 
+        });
       }
 
       // 2. 全員の計算が終わってから MMR 累積値、試合数を一括更新し、対戦数も記録する
@@ -165,21 +174,29 @@ export async function POST(request: Request) {
       }
     }
 
-    // 参加者テーブルのKDA等一括更新 (upsertによるバルクアップデート)
+    // 参加者テーブルのKDA等一括更新 (Identityエラーを回避するため、id指定の個別 update をチャンクごとに並列処理)
     if (participantUpdates.length > 0) {
-      const { error: upsertError } = await supabase
-        .from('ktm_match_participants')
-        .upsert(participantUpdates.map(pu => ({
-          id: pu.id,
-          kda_score: pu.kda_score,
-          mmr_delta: pu.mmr_delta
-        })));
-      if (upsertError) {
-        throw new Error(`Failed to bulk update participants: ${upsertError.message}`);
+      const chunkSize = 50; // コネクションプールを考慮し50件ずつ並行処理
+      for (let i = 0; i < participantUpdates.length; i += chunkSize) {
+        const chunk = participantUpdates.slice(i, i + chunkSize);
+        const updatePromises = chunk.map(pu =>
+          supabase
+            .from('ktm_match_participants')
+            .update({
+              kda_score: pu.kda_score,
+              mmr_delta: pu.mmr_delta
+            })
+            .eq('id', pu.id)
+        );
+        const results = await Promise.all(updatePromises);
+        const firstError = results.find(r => r.error);
+        if (firstError) {
+          throw new Error(`Failed to update participants at chunk ${i}: ${firstError.error?.message || 'Unknown error'}`);
+        }
       }
     }
 
-    // プレイヤーテーブルのMMR一括更新 (upsertによるバルクアップデート)
+    // プレイヤーテーブルのMMR一括更新 (個別 update の並行処理)
     const playerUpdates = Array.from(playersMap.values()).map(p => {
       const avgMmr = Math.round((p.mmr_top + p.mmr_jg + p.mmr_mid + p.mmr_adc + p.mmr_sup) / 5);
       return {
@@ -194,11 +211,23 @@ export async function POST(request: Request) {
     });
 
     if (playerUpdates.length > 0) {
-      const { error: playerUpsertError } = await supabase
-        .from('ktm_players')
-        .upsert(playerUpdates);
-      if (playerUpsertError) {
-        throw new Error(`Failed to bulk update players: ${playerUpsertError.message}`);
+      const updatePromises = playerUpdates.map(pu =>
+        supabase
+          .from('ktm_players')
+          .update({
+            mmr_top: pu.mmr_top,
+            mmr_jg: pu.mmr_jg,
+            mmr_mid: pu.mmr_mid,
+            mmr_adc: pu.mmr_adc,
+            mmr_sup: pu.mmr_sup,
+            mmr: pu.mmr
+          })
+          .eq('id', pu.id)
+      );
+      const results = await Promise.all(updatePromises);
+      const firstError = results.find(r => r.error);
+      if (firstError) {
+        throw new Error(`Failed to update players: ${firstError.error?.message || 'Unknown error'}`);
       }
     }
 

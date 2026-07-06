@@ -251,6 +251,9 @@ class LolTrendCollector:
                 feature_name="champ_trends",
                 sleep_on_rate_limit=False
             )
+            
+            # デバッグ: 生レスポンスを記録（問題発生時の原因特定用）
+            logger.debug(f"Gemini raw response for {champion} (first 300 chars): {repr(text[:300])}")
 
             if text.startswith("⚠️") or text.startswith("❌"):
                 raise Exception(text)
@@ -260,6 +263,10 @@ class LolTrendCollector:
                 if lines[0].startswith("```json") or lines[0].startswith("```"):
                     text = "\n".join(lines[1:-1])
             text = text.strip()
+            
+            # 空レスポンスのガード: マークダウン除去後に中身が空の場合を防ぐ
+            if not text:
+                raise Exception(f"Gemini APIの応答が空です（{champion}）。レートリミットまたは検索結果なしの可能性があります。")
             
             data = json.loads(text)
             logger.info(f"Successfully collected trend data for {champion}: win_rate={data.get('win_rate')}%")

@@ -427,14 +427,25 @@ class EdgeWorkerDaemon:
         # スリープ防止の開始
         self.prevent_sleep()
         
+        signal_file = Path("d:/my_work/02_FACTORY/task_trigger.signal")
+        
         try:
             while True:
                 try:
                     task = self.fetch_pending_task()
                     if task:
                         self.execute_task(task)
-                    else:
-                        time.sleep(5)
+                        continue
+                        
+                    # タスクがない場合はシグナルファイルを監視（最大60秒）
+                    for _ in range(60):
+                        if signal_file.exists():
+                            try:
+                                signal_file.unlink(missing_ok=True)
+                            except Exception:
+                                pass
+                            break
+                        time.sleep(1)
                 except KeyboardInterrupt:
                     logger.info("👋 デーモンを正常に停止します。")
                     self._heartbeat_active = False
@@ -447,5 +458,13 @@ class EdgeWorkerDaemon:
             self.allow_sleep()
 
 if __name__ == "__main__":
-    daemon = EdgeWorkerDaemon()
-    daemon.run()
+    from v2_CORE.lock import SocketLock
+    import sys
+    lock = SocketLock(19002, "Edge Worker Daemon")
+    if not lock.acquire():
+        sys.exit(0)
+    try:
+        daemon = EdgeWorkerDaemon()
+        daemon.run()
+    finally:
+        lock.release()

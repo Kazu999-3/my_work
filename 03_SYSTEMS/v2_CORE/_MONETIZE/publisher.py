@@ -5,6 +5,7 @@ import logging
 from pathlib import Path
 from playwright.sync_api import sync_playwright
 import dotenv
+from google import genai
 
 try:
     from v2_CORE._LOL.herald import herald
@@ -24,7 +25,7 @@ import requests
 X_EMAIL = os.environ.get("X_EMAIL")
 X_PASSWORD = os.environ.get("X_PASSWORD")
 USER_DATA_DIR = settings.ROOT_DIR / ".agent/playwright_data/x_profile"
-PUBLISH_DISABLED = False  # 現在は動作不良のため自動投稿を完全停止 (Dry Run)
+PUBLISH_DISABLED = os.environ.get("PUBLISH_DISABLED", "False").lower() in ("true", "1")
 
 class XPublisher:
     def __init__(self, headless=True):
@@ -471,6 +472,76 @@ class NotePublisher:
             finally:
                 context.close()
 
+
+def generate_x_promo_thread(champion_name: str, bible_text: str) -> str:
+    """バイブルの本文から、X(Twitter)用のバズるスレッド（3連投）をスレッドとして連投する"""
+    gemini_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GEMINI_API_KEY_FREE")
+    if not gemini_key:
+        logger.error("Gemini API key is missing. Skipping X thread generation.")
+        return "[]"
+        
+    client = genai.Client(api_key=gemini_key)
+    
+    rules_path = Path('D:/my_work/01_INTEL/prompts/marketing_rules.txt')
+    marketing_rules = ''
+    if rules_path.exists():
+        marketing_rules = rules_path.read_text(encoding='utf-8')
+        
+    prompt = f"""
+    あなたはSNSマーケティングの天才です。
+    以下の【自己進化マーケティング・ルール】を最優先して、フック文を作成してください。
+    【ルール】
+    {marketing_rules}
+    
+    バイブルの本文を読み込み、Xで拡散されやすいスレッド（3連投）の原稿を作成してください。
+    以下の{champion_name}の攻略記事を元に、X（Twitter）での反応を良くし、noteの購入へ誘導するための
+    「煽り」と「有益性」が同居したツリー形式（スレッド形式）の投稿原稿を作成してください。
+    
+    【厳格なルール (Ghost Writer DRM)】
+    1. 1ポスト目 (Hook): 読者の常識を破壊するフック（例：「まだ〇〇で苦労してるの？」）。絶対に要約から始めないこと。Curiosity Gap(好奇心)かLoss Aversion(損失回避)を刺激せよ。
+    2. 2ポスト目 (Evidence): 具体的な強さの証明（バイブル内の情報から抜粋）。「いつ・どこで・何が起きたか」の具体性を持たせること。
+    3. 3ポスト目 (CTA): 詳細な解説記事（note）への誘導リンク枠。読者がクリックしたくなる「気づきのギブ」を直前に入れること。
+    4. AI臭い言葉（「結論から言うと」「最適化」「本質」「〜と言えるでしょう」）は絶対に使わないこと。
+    5. 「ティアリスト」や「Sティア」といった安っぽい格付け表現は一切使わないこと。
+    6. 各ポストは140文字以内に収める想定で書くこと。
+    
+    出力は必ず以下のJSON配列形式のみとすること:
+    [
+      "1ポスト目のテキスト（フック）",
+      "2ポスト目のテキスト（証拠・学び）",
+      "3ポスト目のテキスト（CTA・誘導リンク枠）"
+    ]
+    
+    【バイブル本文】
+    {bible_text[:5000]}
+    """
+    
+    try:
+        from v2_CORE.ai_helper import generate_content_safe
+        response_text = generate_content_safe(
+            client,
+            prompt,
+            settings.DEFAULT_MODEL,
+            feature_name="kingdom_cycle"
+        )
+        
+        if not response_text or response_text.startswith("⚠️") or response_text.startswith("❌"):
+            raise Exception("AI generation failed for X thread")
+            
+        return response_text.strip()
+    except Exception as e:
+        logger.error(f"Gemini Error generating X thread: {e}")
+        return "[]"
+
+
+def calculate_dynamic_price(trending_champ: str, item_impact: str) -> str:
+    """トレンド情報に基づいて価格を動的に決定する"""
+    high_demand_keywords = ['壊れ', 'OP', '必須', '勝率急増', '極限まで加速']
+    if any(k in item_impact for k in high_demand_keywords):
+        return "980"
+    return "500"
+
+
 if __name__ == "__main__":
     import argparse
     import sys
@@ -482,6 +553,8 @@ if __name__ == "__main__":
     )
     
     parser = argparse.ArgumentParser(description="note.com & X.com Playwright Auto-Publisher CLI")
+    parser.add_argument("--dry-run", action="store_true", help="Dry run mode (do not post, log only)")
+    parser.add_argument("--real-run", action="store_true", help="Force real execution (skip dry-run default)")
     subparsers = parser.add_subparsers(dest="command", help="Sub-commands")
     
     # noteサブコマンド
@@ -502,6 +575,13 @@ if __name__ == "__main__":
     x_parser.add_argument("--no-headless", action="store_true", help="Run browser in headful mode (visible)")
     
     args = parser.parse_args()
+    
+    if args.dry_run:
+        PUBLISH_DISABLED = True
+        logger.info("🚫 Dry Run mode is explicitly enabled by CLI flag.")
+    elif args.real_run:
+        PUBLISH_DISABLED = False
+        logger.info("🔥 Real Run mode is explicitly enabled by CLI flag.")
     
     if not args.command:
         parser.print_help()

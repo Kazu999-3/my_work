@@ -239,17 +239,31 @@ def main():
     except Exception as e:
         logger.warning(f"Failed to fetch champion data: {e}. Analyzing with generic knowledge.")
 
+    # 攻略ライブラリ（personal_knowledge）から全チャンピオンのナレッジを一括取得
+    from v2_CORE.knowledge_retriever import knowledge_retriever
+    pk_entries = knowledge_retriever.fetch_by_champions(unique_champs, limit=30)
+    # チャンピオン名ごとにナレッジを振り分け
+    pk_by_champ = {}
+    for entry in pk_entries:
+        champ_key = (entry.get("champion") or "").lower()
+        if champ_key:
+            pk_by_champ.setdefault(champ_key, []).append(entry)
+
     # 各チャンピオンの強み・弱み・プレイスタイルのテキストを構築
     def get_champ_context(champ_name, role):
         data = champ_data_map.get(champ_name.lower()) or {}
         jg_style = data.get("jg_style") or {}
+        # 攻略ライブラリからのナレッジを整形
+        champ_pk = pk_by_champ.get(champ_name.lower(), [])
+        knowledge_notes = knowledge_retriever.format_as_context(champ_pk, max_chars=400) if champ_pk else ""
         return {
             "name": champ_name,
             "role": role,
             "style": jg_style.get("type") or "未設定",
             "strengths": data.get("strengths") or "一般データなし",
             "weaknesses": data.get("weaknesses") or "一般データなし",
-            "power_spikes": data.get("powerSpikes") or "一般データなし"
+            "power_spikes": data.get("powerSpikes") or "一般データなし",
+            "knowledge_notes": knowledge_notes
         }
         
     blue_context = {role: get_champ_context(name, role) for role, name in blue_champs.items()}
@@ -285,18 +299,18 @@ def main():
 現在は2026年です（本日：{now_str}）。最新パッチのメタ情報を踏まえて予測を行ってください。
 
 【味方チーム (Blue Side)】
-- TOP: {blue_context['TOP']['name']} （スタイル: {blue_context['TOP']['style']}, 強み: {blue_context['TOP']['strengths']}, パワースパイク: {blue_context['TOP']['power_spikes']}）
-- JG: {blue_context['JG']['name']} （スタイル: {blue_context['JG']['style']}, 強み: {blue_context['JG']['strengths']}, パワースパイク: {blue_context['JG']['power_spikes']}）
-- MID: {blue_context['MID']['name']} （スタイル: {blue_context['MID']['style']}, 強み: {blue_context['MID']['strengths']}, パワースパイク: {blue_context['MID']['power_spikes']}）
-- BOT: {blue_context['BOT']['name']} （スタイル: {blue_context['BOT']['style']}, 強み: {blue_context['BOT']['strengths']}, パワースパイク: {blue_context['BOT']['power_spikes']}）
-- SUP: {blue_context['SUP']['name']} （スタイル: {blue_context['SUP']['style']}, 強み: {blue_context['SUP']['strengths']}, パワースパイク: {blue_context['SUP']['power_spikes']}）
+- TOP: {blue_context['TOP']['name']} （スタイル: {blue_context['TOP']['style']}, 強み: {blue_context['TOP']['strengths']}, パワースパイク: {blue_context['TOP']['power_spikes']}）{chr(10) + '  攻略ノート: ' + blue_context['TOP']['knowledge_notes'] if blue_context['TOP']['knowledge_notes'] else ''}
+- JG: {blue_context['JG']['name']} （スタイル: {blue_context['JG']['style']}, 強み: {blue_context['JG']['strengths']}, パワースパイク: {blue_context['JG']['power_spikes']}）{chr(10) + '  攻略ノート: ' + blue_context['JG']['knowledge_notes'] if blue_context['JG']['knowledge_notes'] else ''}
+- MID: {blue_context['MID']['name']} （スタイル: {blue_context['MID']['style']}, 強み: {blue_context['MID']['strengths']}, パワースパイク: {blue_context['MID']['power_spikes']}）{chr(10) + '  攻略ノート: ' + blue_context['MID']['knowledge_notes'] if blue_context['MID']['knowledge_notes'] else ''}
+- BOT: {blue_context['BOT']['name']} （スタイル: {blue_context['BOT']['style']}, 強み: {blue_context['BOT']['strengths']}, パワースパイク: {blue_context['BOT']['power_spikes']}）{chr(10) + '  攻略ノート: ' + blue_context['BOT']['knowledge_notes'] if blue_context['BOT']['knowledge_notes'] else ''}
+- SUP: {blue_context['SUP']['name']} （スタイル: {blue_context['SUP']['style']}, 強み: {blue_context['SUP']['strengths']}, パワースパイク: {blue_context['SUP']['power_spikes']}）{chr(10) + '  攻略ノート: ' + blue_context['SUP']['knowledge_notes'] if blue_context['SUP']['knowledge_notes'] else ''}
 
 【敵チーム (Red Side)】
-- TOP: {red_context['TOP']['name']} （スタイル: {red_context['TOP']['style']}, 強み: {red_context['TOP']['strengths']}, パワースパイク: {red_context['TOP']['power_spikes']}）
-- JG: {red_context['JG']['name']} （スタイル: {red_context['JG']['style']}, 強み: {red_context['JG']['strengths']}, パワースパイク: {red_context['JG']['power_spikes']}）
-- MID: {red_context['MID']['name']} （スタイル: {red_context['MID']['style']}, 強み: {red_context['MID']['strengths']}, パワースパイク: {red_context['MID']['power_spikes']}）
-- BOT: {red_context['BOT']['name']} （スタイル: {red_context['BOT']['style']}, 強み: {red_context['BOT']['strengths']}, パワースパイク: {red_context['BOT']['power_spikes']}）
-- SUP: {red_context['SUP']['name']} （スタイル: {red_context['SUP']['style']}, 強み: {red_context['SUP']['strengths']}, パワースパイク: {red_context['SUP']['power_spikes']}）
+- TOP: {red_context['TOP']['name']} （スタイル: {red_context['TOP']['style']}, 強み: {red_context['TOP']['strengths']}, パワースパイク: {red_context['TOP']['power_spikes']}）{chr(10) + '  攻略ノート: ' + red_context['TOP']['knowledge_notes'] if red_context['TOP']['knowledge_notes'] else ''}
+- JG: {red_context['JG']['name']} （スタイル: {red_context['JG']['style']}, 強み: {red_context['JG']['strengths']}, パワースパイク: {red_context['JG']['power_spikes']}）{chr(10) + '  攻略ノート: ' + red_context['JG']['knowledge_notes'] if red_context['JG']['knowledge_notes'] else ''}
+- MID: {red_context['MID']['name']} （スタイル: {red_context['MID']['style']}, 強み: {red_context['MID']['strengths']}, パワースパイク: {red_context['MID']['power_spikes']}）{chr(10) + '  攻略ノート: ' + red_context['MID']['knowledge_notes'] if red_context['MID']['knowledge_notes'] else ''}
+- BOT: {red_context['BOT']['name']} （スタイル: {red_context['BOT']['style']}, 強み: {red_context['BOT']['strengths']}, パワースパイク: {red_context['BOT']['power_spikes']}）{chr(10) + '  攻略ノート: ' + red_context['BOT']['knowledge_notes'] if red_context['BOT']['knowledge_notes'] else ''}
+- SUP: {red_context['SUP']['name']} （スタイル: {red_context['SUP']['style']}, 強み: {red_context['SUP']['strengths']}, パワースパイク: {red_context['SUP']['power_spikes']}）{chr(10) + '  攻略ノート: ' + red_context['SUP']['knowledge_notes'] if red_context['SUP']['knowledge_notes'] else ''}
 
 【分析基準】
 アイアン〜ゴールド帯（中レート帯・再現性の高い立ち回り）を基準に、各レーン対面のスキルの噛み合わせ、プッシュ優先権（Priority）、ジャングルの周回ルートと関与力、および5v5集団戦やオブジェクト戦での構成全体のシナジーを考慮してください。
