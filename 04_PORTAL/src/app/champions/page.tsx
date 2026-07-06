@@ -74,6 +74,37 @@ function ChampionsContent() {
     return { total, completed, pending, percentage };
   }, [champions, champDates, champPending]);
 
+  // 描画用のソート済みマッチアップリストの作成（勝率の降順）
+  const sortedMatchups = useMemo(() => {
+    return [...matchupsList].sort((a, b) => {
+      // a の勝率算出
+      const aKtm = champStats[a.champion]?.matchup_stats?.[a.enemy];
+      let aRate = 50;
+      if (aKtm && aKtm.games > 0) {
+        aRate = aKtm.win_rate;
+      } else {
+        const aEnemyMatchups = matchupsList.filter(x => x.enemy === a.enemy);
+        const aWins = aEnemyMatchups.filter(x => String(x.raw_data?.result).toLowerCase() === 'win').length;
+        const aTotal = aEnemyMatchups.length;
+        if (aTotal > 0) aRate = Math.round((aWins / aTotal) * 100);
+      }
+
+      // b の勝率算出
+      const bKtm = champStats[b.champion]?.matchup_stats?.[b.enemy];
+      let bRate = 50;
+      if (bKtm && bKtm.games > 0) {
+        bRate = bKtm.win_rate;
+      } else {
+        const bEnemyMatchups = matchupsList.filter(x => x.enemy === b.enemy);
+        const bWins = bEnemyMatchups.filter(x => String(x.raw_data?.result).toLowerCase() === 'win').length;
+        const bTotal = bEnemyMatchups.length;
+        if (bTotal > 0) bRate = Math.round((bWins / bTotal) * 100);
+      }
+
+      return bRate - aRate;
+    });
+  }, [matchupsList, champStats]);
+
   // エッジワーカーの生存状況を監視する状態
   const [workerStatus, setWorkerStatus] = useState<{ active: boolean; status: string; last_active: string | null }>({
     active: false,
@@ -845,18 +876,37 @@ function ChampionsContent() {
             <p className="text-gray-500 italic text-sm">バトルサーチにこのチャンピオンのマッチアップ記録はありません。</p>
           ) : (
             <div className="flex flex-col gap-3 relative z-10">
-              {matchupsList.map((m) => {
+              {sortedMatchups.map((m) => {
                 const isExpanded = expandedMatchupId === m.matchup_id;
                 const rd = m.raw_data || {};
                 const difficulty = rd.difficulty || 3;
                 const result = rd.result || 'UNKNOWN';
+
+                // 動的な有利・不利の算出とカラーの決定
+                const ktmMatchup = champStats[m.champion]?.matchup_stats?.[m.enemy];
+                let winRate = 50;
+                let hasData = false;
+                if (ktmMatchup && ktmMatchup.games > 0) {
+                  winRate = ktmMatchup.win_rate;
+                  hasData = true;
+                } else {
+                  const enemyMatchups = matchupsList.filter(x => x.enemy === m.enemy);
+                  const eWins = enemyMatchups.filter(x => String(x.raw_data?.result).toLowerCase() === 'win').length;
+                  if (enemyMatchups.length > 0) {
+                    winRate = Math.round((eWins / enemyMatchups.length) * 100);
+                    hasData = true;
+                  }
+                }
+
+                const isFavored = winRate >= 60;
+                const isUnfavored = winRate <= 40;
+                
+                const cardBorderColor = isFavored ? 'border-l-green-500 bg-green-500/5 hover:bg-[#22c55e]/10' : 
+                                       isUnfavored ? 'border-l-red-500 bg-red-500/5 hover:bg-[#ef4444]/10' : 
+                                       'border-l-amber-500 bg-amber-500/5 hover:bg-amber-500/10';
                 
                 return (
-                  <div key={m.matchup_id} className={`glass-panel border-l-4 rounded-xl transition-all ${
-                    result === 'Win' ? 'border-[var(--color-success)] hover:bg-[#22c55e]/5' : 
-                    result === 'Lose' ? 'border-[var(--color-danger)] hover:bg-[#ef4444]/5' : 
-                    'border-gray-500 hover:bg-white/5'
-                  }`}>
+                  <div key={m.matchup_id} className={`glass-panel border-l-4 rounded-xl transition-all ${cardBorderColor}`}>
                     {/* ヘッダー部分。クリックでアコーディオン開閉 */}
                     <div 
                       onClick={() => setExpandedMatchupId(isExpanded ? null : m.matchup_id)}
@@ -865,8 +915,17 @@ function ChampionsContent() {
                       <div className="flex items-center gap-3">
                         <img src={getChampIcon(m.enemy)} alt={m.enemy} className="w-10 h-10 rounded-full border border-white/10" />
                         <div>
-                          <p className="text-sm font-bold text-white flex items-center gap-2">
+                          <p className="text-sm font-bold text-white flex items-center gap-2 flex-wrap">
                             vs {m.enemy} 
+                            {hasData && (
+                              <span className={`text-[9px] px-2 py-0.5 rounded-full font-black uppercase tracking-wider ${
+                                isFavored ? 'bg-green-500/15 text-green-400 border border-green-500/30' : 
+                                isUnfavored ? 'bg-red-500/15 text-red-400 border border-red-500/30' : 
+                                'bg-amber-500/15 text-amber-400 border border-amber-500/30'
+                              }`}>
+                                {isFavored ? '🟢 有利' : isUnfavored ? '🔴 不利' : '🟡 互角'}
+                              </span>
+                            )}
                           </p>
                           <p className="text-xs text-gray-400">{m.title || `${m.champion} vs ${m.enemy}`}</p>
                         </div>

@@ -1057,12 +1057,31 @@ export default function MatchupsPage() {
               if (!enemyGroups[m.enemy]) enemyGroups[m.enemy] = [];
               enemyGroups[m.enemy].push(m);
             });
-            // 勝率順でソート（勝ち数多い順 → 負け少ない順）
+            // 勝率順でソート（KTM勝率を最優先、なければメモ勝率）
             const sortedEnemies = Object.entries(enemyGroups).sort((a, b) => {
-              const aWins = a[1].filter(m => String(m.raw_data?.result).toLowerCase() === 'win').length;
-              const bWins = b[1].filter(m => String(m.raw_data?.result).toLowerCase() === 'win').length;
-              const aRate = aWins / a[1].length;
-              const bRate = bWins / b[1].length;
+              const aEnemy = a[0];
+              const bEnemy = b[0];
+
+              // aの勝率算出
+              const aKtm = champStats[champName]?.matchup_stats?.[aEnemy];
+              let aRate = 50;
+              if (aKtm && aKtm.games > 0) {
+                aRate = aKtm.win_rate;
+              } else {
+                const aWins = a[1].filter(m => String(m.raw_data?.result).toLowerCase() === 'win').length;
+                aRate = Math.round((aWins / a[1].length) * 100);
+              }
+
+              // bの勝率算出
+              const bKtm = champStats[champName]?.matchup_stats?.[bEnemy];
+              let bRate = 50;
+              if (bKtm && bKtm.games > 0) {
+                bRate = bKtm.win_rate;
+              } else {
+                const bWins = b[1].filter(m => String(m.raw_data?.result).toLowerCase() === 'win').length;
+                bRate = Math.round((bWins / b[1].length) * 100);
+              }
+
               return bRate - aRate;
             });
 
@@ -1258,8 +1277,29 @@ export default function MatchupsPage() {
                             const rd = m.raw_data || {};
                             const isWin = String(rd.result).toLowerCase() === 'win';
                             const isLose = String(rd.result).toLowerCase() === 'lose';
-                            const borderColor = isWin ? 'border-l-[var(--color-success)]' : isLose ? 'border-l-[var(--color-danger)]' : 'border-l-gray-600';
                             const summary = (rd.winCondition || m.strategy || '').slice(0, 50);
+
+                            // 動的な有利・不利の決定
+                            const ktmMatchup = champStats[champName]?.matchup_stats?.[m.enemy];
+                            let winRate = 50;
+                            let hasData = false;
+                            if (ktmMatchup && ktmMatchup.games > 0) {
+                              winRate = ktmMatchup.win_rate;
+                              hasData = true;
+                            } else {
+                              const eTotal = eWins + eLosses;
+                              if (eTotal > 0) {
+                                winRate = Math.round((eWins / eTotal) * 100);
+                                hasData = true;
+                              }
+                            }
+
+                            const isFavored = winRate >= 60;
+                            const isUnfavored = winRate <= 40;
+                            
+                            const cardBorderColor = isFavored ? 'border-l-green-500 bg-green-500/5 hover:bg-[#22c55e]/10' : 
+                                                   isUnfavored ? 'border-l-red-500 bg-red-500/5 hover:bg-[#ef4444]/10' : 
+                                                   'border-l-amber-500 bg-amber-500/5 hover:bg-amber-500/10';
 
                             return (
                               <motion.div
@@ -1267,13 +1307,22 @@ export default function MatchupsPage() {
                                 initial={{ x: -10, opacity: 0 }}
                                 animate={{ x: 0, opacity: 1 }}
                                 onClick={() => setSelected(m)}
-                                className={`border-l-4 ${borderColor} bg-black/20 rounded-r-xl p-3 cursor-pointer hover:bg-white/[0.03] transition-colors group/item flex items-center gap-3`}
+                                className={`border-l-4 ${cardBorderColor} rounded-r-xl p-3 cursor-pointer transition-colors group/item flex items-center gap-3`}
                               >
                                 <img src={getChampIcon(m.enemy)} className="w-9 h-9 rounded-full border border-white/10 shrink-0" alt={m.enemy} />
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center gap-2 mb-0.5 flex-wrap">
                                     <span className="font-bold text-sm text-[#00cfef]">{m.enemy}</span>
                                     {rd.difficulty > 0 && <span className="text-[10px]">{'⭐'.repeat(rd.difficulty)}</span>}
+                                    {hasData && (
+                                      <span className={`text-[8px] px-1.5 py-0.5 rounded font-black uppercase tracking-wider ${
+                                        isFavored ? 'bg-green-500/15 text-green-400 border border-green-500/30' : 
+                                        isUnfavored ? 'bg-red-500/15 text-red-400 border border-red-500/30' : 
+                                        'bg-amber-500/15 text-amber-400 border border-amber-500/30'
+                                      }`}>
+                                        {isFavored ? '🟢 有利' : isUnfavored ? '🔴 不利' : '🟡 互角'}
+                                      </span>
+                                    )}
                                   </div>
                                   {summary && (
                                     <p className="text-[11px] text-gray-400 truncate italic">"{summary}{(rd.winCondition || m.strategy || '').length > 50 ? '…' : ''}"</p>
