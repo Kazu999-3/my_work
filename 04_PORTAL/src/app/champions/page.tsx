@@ -176,6 +176,13 @@ function ChampionsContent() {
   const handleStartBulkUpdate = async () => {
     if (!confirm("全チャンピオンの辞典データをGemini APIを用いて一括更新しますか？\n（API制限が発生した場合は安全に自動停止し、次回続きから再開できます）")) return;
     try {
+      // 一括更新開始した時点で、自動的に古い進捗データを0%（初期状態）にリセットする
+      await fetch('/api/admin/champions/queue', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'reset' }),
+      });
+
       const res = await fetch('/api/admin/jobs', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

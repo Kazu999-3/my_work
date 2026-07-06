@@ -1,6 +1,6 @@
-## LoL Macro Guide: A Comprehensive Overview 
+## LoL Macro Guide: A Comprehensive Overview
 
-This document provides a detailed breakdown of macro play in League of Legends, focusing on building a strong foundation for success. It outlines the fundamental principles and strategies that will enhance your gameplay across all ranks.  
+This document provides a detailed breakdown of macro play in League of Legends, focusing on building a strong foundation for success. It outlines the fundamental principles and strategies that will enhance your gameplay across all ranks. 
 
 
 ### I. Understanding Macro Play
@@ -22,7 +22,7 @@ The bedrock of successful macro is understanding *when* to act and *what* action
     *   **Lane Management:** Prioritize the most strategic lanes based on the current game state.  Focus on pushing lanes that offer better early-game advantages or those that can be used for impactful ganks. 
     *   **Objective Control:** Focus on securing key objectives like dragons and Rift Herald to gain a tactical advantage and set yourself up for future actions.
 
-**3. Resource Management:  A Balancing Act**
+**3. Resource Management: A Balancing Act**
 Effectively managing resources (health, mana, gold) is vital for long-term survival and sustained aggression. 
     *   **Prioritize Your Needs:** Determine which resource needs to be prioritized and what action can best address them. For example, if your health is low, focusing on getting more healing items or a potion should be considered over pushing lanes.  
     *   **Utilize Resources Wisely:** Don’t squander resources by engaging in unnecessary fights. Use calculated risks to gain an advantage in the long run. 
