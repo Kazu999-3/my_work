@@ -55,8 +55,22 @@ def run_task_process(task_id: str, script_path: str, args: list = None, env: dic
         # ログを蓄積しながら1秒おきに読み込む
         logs_accumulated = []
         
+        # タイムアウトガード (30分 = 1800秒)
+        import time
+        start_time = time.time()
+        timeout_sec = 1800
+        rc = None
+        
         # Windows等でのnon-blocking読み込み
         while True:
+            # タイムアウト判定
+            if time.time() - start_time > timeout_sec:
+                logger.error(f"❌ [Timeout] Task execution exceeded {timeout_sec} seconds. Killing process...")
+                process.kill()
+                rc = -9
+                logs_accumulated.append(f"\n[TIMEOUT ERROR] Task execution exceeded {timeout_sec} seconds. Process was killed.")
+                break
+                
             line = process.stdout.readline()
             if not line and process.poll() is not None:
                 break
@@ -70,9 +84,13 @@ def run_task_process(task_id: str, script_path: str, args: list = None, env: dic
                 # ログが多すぎると重くなるため、最新の1000行程度に制限する
                 recent_logs = "\n".join(logs_accumulated[-1000:])
                 queue.update_status(task_id, "running", logs=recent_logs)
+            
+            # ビジーウェイト防止の微小スリープ
+            time.sleep(0.05)
                 
         # 終了ステータスの確認
-        rc = process.poll()
+        if rc is None:
+            rc = process.poll()
         final_logs = "\n".join(logs_accumulated)
         if rc == 0:
             logger.info(f"Task completed successfully: {task_id}")
@@ -155,6 +173,25 @@ def main():
         
     while True:
         try:
+            # 0. ゾンビタスクの自動クリーンアップ（30分以上 running 状態のタスクを failed に強制変更して解放）
+            with queue._get_conn() as conn:
+                from datetime import datetime, timedelta
+                thirty_mins_ago = (datetime.now() - timedelta(minutes=30)).isoformat()
+                
+                zombies = conn.execute(
+                    "SELECT id, task_type FROM tasks WHERE status = 'running' AND started_at < ?",
+                    (thirty_mins_ago,)
+                ).fetchall()
+                
+                for z in zombies:
+                    logger.warning(f"⚠️ [Zombie Alert] Task {z['id']} ({z['task_type']}) has been running for over 30 minutes. Force-terminating status as failed...")
+                    conn.execute(
+                        "UPDATE tasks SET status = 'failed', result = 'TIMEOUT (Force-terminated by Worker)', completed_at = ? WHERE id = ?",
+                        (datetime.now().isoformat(), z["id"])
+                    )
+                if zombies:
+                    conn.commit()
+
             # 1. 実行中のタスクがあるかチェック
             active = queue.get_active_task()
             if active:
