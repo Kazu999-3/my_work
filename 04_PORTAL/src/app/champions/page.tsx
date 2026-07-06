@@ -34,7 +34,8 @@ function ChampionsContent() {
   const [champPending, setChampPending] = useState<Record<string, boolean>>({});
   const [champPatchMetas, setChampPatchMetas] = useState<Record<string, any>>({});
   const [champJgStyles, setChampJgStyles] = useState<Record<string, any>>({});
-  const [typeFilter, setTypeFilter] = useState<'ALL' | 'BLIND' | 'COUNTER' | 'FARM' | 'GANK'>('ALL');
+  const [typeFilter, setTypeFilter] = useState<'ALL' | 'FARM' | 'GANK' | 'INVASION' | 'TANK'>('ALL');
+  const [pickFilter, setPickFilter] = useState<'ALL' | 'BLIND' | 'COUNTER'>('ALL');
 
   // 相対時間フォーマット関数
   const getRelativeTimeString = (timestampSec?: number) => {
@@ -538,24 +539,36 @@ function ChampionsContent() {
     if (showFavoritesOnly) {
       result = result.filter(c => favoriteChamps.includes(c.id));
     }
-    // タイプ（戦術）フィルター
-    if (typeFilter !== 'ALL') {
+    // 1. ピック属性フィルター (pickFilter)
+    if (pickFilter !== 'ALL') {
       result = result.filter(c => {
         const jgStyle = champJgStyles[c.id] || {};
         const blindPickable = jgStyle.blind_pickable || 0;
-        
-        if (typeFilter === 'BLIND') {
+        if (pickFilter === 'BLIND') {
           return blindPickable >= 4 || String(jgStyle.pickRecommendation).includes('先出し');
         }
-        if (typeFilter === 'COUNTER') {
+        if (pickFilter === 'COUNTER') {
           const counterPickable = jgStyle.counter_pickable || 0;
           return (blindPickable > 0 && blindPickable <= 2) || counterPickable >= 4 || String(jgStyle.pickRecommendation).includes('後出し') || String(jgStyle.pickRecommendation).includes('カウンター');
         }
+        return true;
+      });
+    }
+    // 2. 戦術スタイル（タイプ）フィルター (typeFilter)
+    if (typeFilter !== 'ALL') {
+      result = result.filter(c => {
+        const jgStyle = champJgStyles[c.id] || {};
         if (typeFilter === 'FARM') {
           return String(jgStyle.type).includes('ファーム') || String(jgStyle.description).includes('ファーム') || String(jgStyle.description).includes('パワーファーム');
         }
         if (typeFilter === 'GANK') {
           return String(jgStyle.type).includes('ガング') || String(jgStyle.type).includes('ガンク') || String(jgStyle.description).includes('ガンク') || String(jgStyle.description).includes('アクション');
+        }
+        if (typeFilter === 'INVASION') {
+          return String(jgStyle.type).includes('侵入') || String(jgStyle.description).includes('侵入') || String(jgStyle.description).includes('カウンタージャングル');
+        }
+        if (typeFilter === 'TANK') {
+          return String(jgStyle.type).includes('タンク') || String(jgStyle.description).includes('タンク') || String(jgStyle.description).includes('フロントライン');
         }
         return true;
       });
@@ -584,7 +597,7 @@ function ChampionsContent() {
       }
       return a.name.localeCompare(b.name);
     });
-  }, [champions, search, sortOrder, champDates, showPendingOnly, champPending, roleFilter, showFavoritesOnly, favoriteChamps, typeFilter, champJgStyles]);
+  }, [champions, search, sortOrder, champDates, showPendingOnly, champPending, roleFilter, showFavoritesOnly, favoriteChamps, typeFilter, pickFilter, champJgStyles]);
 
   const containerVariants = { hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.02 } } };
   const itemVariants = { hidden: { scale: 0.9, opacity: 0 }, visible: { scale: 1, opacity: 1 } };
@@ -1358,14 +1371,32 @@ function ChampionsContent() {
               </button>
             ))}
           </div>
+          {/* ピック属性フィルターボタン */}
+          <div className="flex glass-panel p-1 rounded-xl items-center gap-0.5">
+            {[
+              { id: 'ALL', label: 'すべてのピック属性' },
+              { id: 'BLIND', label: '🟢 先出し向け' },
+              { id: 'COUNTER', label: '🔴 後出し向け' }
+            ].map(p => (
+              <button key={p.id} onClick={() => setPickFilter(p.id as any)}
+                className={`px-3 py-2 rounded-lg text-xs font-black tracking-wider transition-all ${
+                  pickFilter === p.id
+                    ? 'bg-emerald-500 text-black shadow-lg shadow-emerald-500/30'
+                    : 'text-gray-400 hover:text-white hover:bg-white/5'
+                }`}>
+                {p.label}
+              </button>
+            ))}
+          </div>
+
           {/* タイプ（戦術）フィルターボタン */}
           <div className="flex glass-panel p-1 rounded-xl items-center gap-0.5">
             {[
               { id: 'ALL', label: 'すべてのタイプ' },
-              { id: 'BLIND', label: '🟢 先出し' },
-              { id: 'COUNTER', label: '🔴 後出し' },
               { id: 'FARM', label: '🚜 ファーム' },
-              { id: 'GANK', label: '⚔️ ガンク' }
+              { id: 'GANK', label: '⚔️ ガンク' },
+              { id: 'INVASION', label: '🎒 侵入' },
+              { id: 'TANK', label: '🛡️ タンク' }
             ].map(t => (
               <button key={t.id} onClick={() => setTypeFilter(t.id as any)}
                 className={`px-3 py-2 rounded-lg text-xs font-black tracking-wider transition-all ${

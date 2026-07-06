@@ -120,6 +120,20 @@ if (-not $workerProc) {
     Write-Host "[Task Worker] Already running." -ForegroundColor Green
 }
 
+# 7. Edge Worker Daemon (Cloud/Vercel Task Receiver)
+$edgeProc = Get-CimInstance Win32_Process -Filter "CommandLine LIKE '%edge_worker_daemon%'" -ErrorAction SilentlyContinue
+if (-not $edgeProc) {
+    Write-Host "[Edge Worker Daemon] Starting..." -ForegroundColor Cyan
+    Start-Job -Name "EdgeWorker" -ScriptBlock {
+        Set-Location "d:\my_work\03_SYSTEMS"
+        $env:PYTHONPATH = "d:\my_work\03_SYSTEMS"
+        & "d:\my_work\.venv\Scripts\python.exe" -m v2_CORE.edge_worker_daemon 2>&1 | Out-File "d:\my_work\00_LOGS\edge_worker_daemon_startup.log"
+    } | Out-Null
+} else {
+    Write-Host "[Edge Worker Daemon] Already running." -ForegroundColor Green
+}
+
+
 Write-Host "------------------------------------------------------------"
 Write-Host "All background jobs registered!" -ForegroundColor Yellow
 Get-Job | Select-Object Name, State
