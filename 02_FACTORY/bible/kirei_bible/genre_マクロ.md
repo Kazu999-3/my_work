@@ -8,7 +8,6 @@ This document provides a detailed breakdown of macro play in League of Legends, 
 **What is Macro Play?**
 Macro play focuses on understanding and influencing the flow of the game beyond individual actions. It involves predicting enemy movement, managing resources strategically, controlling map objectives, and exploiting opponent weaknesses to gain a decisive advantage. 
 
-
 **Why Is Macro Important?**
 * **Dominance:** Mastering macro enables you to control the pace of the game, dictate the battlefield environment, and outmaneuver your opponents.
 * **Long-term Strategy:** It allows for creating opportunities based on long-term planning and adapting to changing situations throughout the game. 
@@ -53,10 +52,14 @@ Understanding how to utilize your jungle route effectively is crucial for succes
 ### IV. Tools and Resources for Mastery
 
 * **League Wiki:** A comprehensive resource for information on champions, items, strategies, and more. [https://leagueoflegends.fandom.com/wiki/League_of_Legends_Wiki](https://leagueoflegends.fandom.com/wiki/League_of_Legends_Wiki)
-* **Streamers and YouTubers:**  Observe skilled players who can showcase advanced macro strategies in action. They offer valuable insights into game mechanics, positioning, timing, and decision-making. 
+* **Streamers and YouTubers:** Observe skilled players who can showcase advanced macro strategies in action. They offer valuable insights into game mechanics, positioning, timing, and decision-making. 
     *   **Pro Players:** Pay attention to the way high-level players approach game scenarios, anticipate opponent moves, manipulate objectives, and outmaneuver opponents.  
 
 
 ### Conclusion: A Foundation for Success
 
 Mastering macro play in LoL takes time and dedication but delivers a significant advantage over your opponents. By implementing these principles, you will build a strong foundation that allows you to achieve greater success in the game! 
+
+
+
+---

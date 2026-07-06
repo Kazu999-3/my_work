@@ -276,19 +276,23 @@ function ChampionsContent() {
           id: c.id, key: c.key, name: c.name, title: c.title, tags: c.tags,
           searchKey: `${c.id.toLowerCase()} ${c.name}`
         }));
-        return supabase.from('matchup_sentinel').select('champion, created_at, strategy, patch_meta:raw_data->patch_meta, jg_style:raw_data->jg_style').eq('enemy', 'GLOBAL');
+        return supabase.from('matchup_sentinel').select('champion, created_at, strategy, patch_meta:raw_data->patch_meta, jg_style:raw_data->jg_style, is_favorited:raw_data->is_favorited').eq('enemy', 'GLOBAL');
       })
       .then(({ data }) => {
         const dates: Record<string, string> = {};
         const pending: Record<string, boolean> = {};
         const metas: Record<string, any> = {};
         const jgStyles: Record<string, any> = {};
+        const dbFavorites: string[] = [];
         if (data) {
           data.forEach((row: any) => {
             dates[row.champion] = row.created_at;
             pending[row.champion] = !row.strategy; // strategyが空・nullならpending
             metas[row.champion] = row.patch_meta || null;
             jgStyles[row.champion] = row.jg_style || null;
+            if (row.is_favorited === true) {
+              dbFavorites.push(row.champion);
+            }
           });
         }
         setChampDates(dates);
@@ -296,6 +300,11 @@ function ChampionsContent() {
         setChampPatchMetas(metas);
         setChampJgStyles(jgStyles);
         setChampions(fetchedChampions);
+
+        // localStorage と Supabase のお気に入りをマージしてセット
+        const localFavs = getFavorites().champions;
+        const mergedFavs = Array.from(new Set([...localFavs, ...dbFavorites]));
+        setFavoriteChamps(mergedFavs);
 
         // URLパラメータ ?select=ChampId の自動選択処理
         const selectId = searchParams.get('select');
@@ -352,9 +361,49 @@ function ChampionsContent() {
     loadChampionData(selected.id);
   }, [selected]);
 
-  const handleToggleFavorite = () => {
+  const handleToggleFavorite = async () => {
     if (!selected) return;
-    toggleFavoriteChampion(selected.id);
+    
+    // 1. localStorage をトグル
+    const isNowFav = toggleFavoriteChampion(selected.id);
+    
+    // 2. Supabase への非同期同期保存
+    try {
+      const jgStyle = champJgStyles[selected.id] || {};
+      const currentStrategy = dataFields.strategy || '';
+      
+      const raw = {
+        source: 'champ_db',
+        role: 'GLOBAL',
+        strengths: dataFields.strengths,
+        weaknesses: dataFields.weaknesses,
+        powerSpikes: dataFields.powerSpikes,
+        buildRunes: dataFields.buildRunes,
+        fullClearTime: dataFields.fullClearTime,
+        pickRecommendation: dataFields.pickRecommendation,
+        counterChampions: dataFields.counterChampions,
+        jg_style: dataFields.jg_style || jgStyle,
+        patch_meta: champPatchMetas[selected.id] || null,
+        is_favorited: isNowFav
+      };
+      
+      const payload = {
+        matchup_id: `champ_${selected.id}_global`,
+        champion: selected.id,
+        enemy: 'GLOBAL',
+        strategy: currentStrategy,
+        raw_data: raw
+      };
+      
+      await fetch('/api/admin/champions/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      
+    } catch (err) {
+      console.error('❌ Failed to sync favorite to Supabase:', err);
+    }
   };
 
   const handleFetchTrend = async () => {
@@ -535,10 +584,24 @@ function ChampionsContent() {
       const hiraToKata = q.replace(/[\u3041-\u3096]/g, match => String.fromCharCode(match.charCodeAt(0) + 0x60));
       result = result.filter(c => c.searchKey.includes(q) || c.searchKey.includes(hiraToKata));
     }
-    // ロール別フィルター（DDragonのtagsベース）
+    // ロール（レーン）別フィルター
     if (roleFilter !== 'ALL') {
-      const allowedTags = ROLE_MAP[roleFilter] || [];
-      result = result.filter(c => c.tags?.some((tag: string) => allowedTags.includes(tag)));
+      result = result.filter(c => {
+        const jgStyle = champJgStyles[c.id] || {};
+        const dbRole = jgStyle.role || '';
+        
+        // 1. 手動設定されたロール（レーン）がDBにある場合は、それを最優先で判定
+        if (dbRole) {
+          let normalizedDbRole = dbRole.toUpperCase();
+          if (normalizedDbRole === 'JUNGLE') normalizedDbRole = 'JG';
+          if (normalizedDbRole === 'SUPPORT') normalizedDbRole = 'SUP';
+          return normalizedDbRole === roleFilter;
+        }
+        
+        // 2. なければ DDragon の tags ベースでフォールバック判定
+        const allowedTags = ROLE_MAP[roleFilter] || [];
+        return c.tags?.some((tag: string) => allowedTags.includes(tag));
+      });
     }
     if (showPendingOnly) {
       result = result.filter(c => champPending[c.id]);
