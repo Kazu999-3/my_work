@@ -73,8 +73,9 @@ def merge_and_extract_intel(champ_name: str, new_text: str, existing_data: dict)
     【厳格なルール】
     1. 既存のメモのニュアンスは絶対に削除せず、ベースとして残すこと。
     2. 新しい記事から有用な知識を見つけたら、既存のメモに「追記・整理」する形でマージすること。
-    3. 「fullClearTime」は最新パッチ（シーズン14等）での最適な周回ルートや時間のみを抽出すること（JG以外は空白）。
-    4. 出力は必ず以下のスキーマに準拠した有効なJSON形式のみで行うこと。改行やダブルクォーテーションは正しくエスケープしてください。
+    3. 「fullClearTime」は最新パッチでの最適な周回ルートや時間のみを抽出すること（JG以外は空白）。
+    4. 「jg_style」には、このチャンピオンのメインのプレイスタイル、先出し耐性、カウンター（後出し）耐性を客観的に判定して設定してください。
+    5. 出力は必ず以下のスキーマに準拠した有効なJSON形式のみで行うこと。改行やダブルクォーテーションは正しくエスケープしてください。
     
     {{
       "strengths": "強み",
@@ -82,7 +83,13 @@ def merge_and_extract_intel(champ_name: str, new_text: str, existing_data: dict)
       "powerSpikes": "パワースパイク",
       "buildRunes": "おすすめのビルドとルーン（※具体的な理由も記述）",
       "fullClearTime": "フルクリア時間（JG以外は空白）",
-      "strategy": "全体的な立ち回り"
+      "strategy": "全体的な立ち回り",
+      "jg_style": {{
+        "type": "「ファーム型」「ガンク型」「侵入型」「タンク型」のいずれか1つを必ず設定",
+        "description": "そのプレイスタイルの短い日本語説明（50文字以内）",
+        "blind_pickable": 1から5の数値（5:先出し最強、1:先出し不可能）,
+        "counter_pickable": 1から5の数値（5:カウンター特化、1:カウンター不可）
+      }}
     }}
     """
     
@@ -152,7 +159,7 @@ def merge_and_extract_intel(champ_name: str, new_text: str, existing_data: dict)
         
     return None
 
-def update_champion_db(champ_id: str, champ_name: str, new_text: str):
+def update_champion_db(champ_id: str, champ_name: str, new_text: str, patch_version: str = "16.11"):
     """メイン関数：既存データを取得、マージ、SupabaseへUpsert"""
     logging.info(f"[{champ_id}] Auto-updating Champion DB...")
     
@@ -163,6 +170,29 @@ def update_champion_db(champ_id: str, champ_name: str, new_text: str):
         logging.error(f"[{champ_id}] Failed to merge data, aborting update.")
         return False
         
+    # 既存データの引き継ぎ・マージ
+    existing_raw = existing_data.get("raw_data", {}) if isinstance(existing_data.get("raw_data"), dict) else {}
+    existing_jg_style = existing_raw.get("jg_style", {}) if isinstance(existing_raw.get("jg_style"), dict) else {}
+    existing_patch_meta = existing_raw.get("patch_meta", {}) if isinstance(existing_raw.get("patch_meta"), dict) else {}
+    
+    # 新しい jg_style の決定
+    new_jg_style = merged_json.get("jg_style", {}) if isinstance(merged_json.get("jg_style"), dict) else {}
+    jg_style_type = new_jg_style.get("type") or existing_jg_style.get("type") or "ガンク型"
+    jg_style_desc = new_jg_style.get("description") or existing_jg_style.get("description") or "標準的なプレイスタイルです。"
+    jg_style_blind = new_jg_style.get("blind_pickable") or existing_jg_style.get("blind_pickable") or 3
+    jg_style_counter = new_jg_style.get("counter_pickable") or existing_jg_style.get("counter_pickable") or 3
+    
+    # 新しい patch_meta の決定
+    import time
+    patch_meta = {
+        "patch": patch_version or existing_patch_meta.get("patch") or "16.11",
+        "updated_at": int(time.time()),
+        "win_rate": existing_patch_meta.get("win_rate") or 50.0,
+        "pick_rate": existing_patch_meta.get("pick_rate") or 5.0,
+        "ban_rate": existing_patch_meta.get("ban_rate") or 5.0,
+        "tier": existing_patch_meta.get("tier") or "A"
+    }
+
     # Upsertデータ構築
     upsert_data = {
         "matchup_id": f"champ_{champ_id}_global",
@@ -178,7 +208,14 @@ def update_champion_db(champ_id: str, champ_name: str, new_text: str):
             "powerSpikes": merged_json.get("powerSpikes", ""),
             "buildRunes": merged_json.get("buildRunes", ""),
             "fullClearTime": merged_json.get("fullClearTime", ""),
-            "note_draft": merged_json.get("note_draft", "")
+            "note_draft": merged_json.get("note_draft", ""),
+            "jg_style": {
+                "type": jg_style_type,
+                "description": jg_style_desc,
+                "blind_pickable": int(jg_style_blind),
+                "counter_pickable": int(jg_style_counter)
+            },
+            "patch_meta": patch_meta
         }
     }
     

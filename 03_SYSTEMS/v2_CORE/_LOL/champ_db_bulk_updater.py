@@ -221,7 +221,7 @@ def run_bulk_update():
             break
             
         # データベースの更新
-        success = update_champion_db(champ_id, champ_name, intel)
+        success = update_champion_db(champ_id, champ_name, intel, patch_version)
         
         if success:
             queue[champ_id]["status"] = "completed"
