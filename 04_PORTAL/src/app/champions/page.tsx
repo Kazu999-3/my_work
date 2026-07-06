@@ -34,6 +34,7 @@ function ChampionsContent() {
   const [champPending, setChampPending] = useState<Record<string, boolean>>({});
   const [champPatchMetas, setChampPatchMetas] = useState<Record<string, any>>({});
   const [champJgStyles, setChampJgStyles] = useState<Record<string, any>>({});
+  const [typeFilter, setTypeFilter] = useState<'ALL' | 'BLIND' | 'COUNTER' | 'FARM' | 'GANK'>('ALL');
 
   // 相対時間フォーマット関数
   const getRelativeTimeString = (timestampSec?: number) => {
@@ -537,6 +538,29 @@ function ChampionsContent() {
     if (showFavoritesOnly) {
       result = result.filter(c => favoriteChamps.includes(c.id));
     }
+    // タイプ（戦術）フィルター
+    if (typeFilter !== 'ALL') {
+      result = result.filter(c => {
+        const jgStyle = champJgStyles[c.id] || {};
+        const isFarm = String(jgStyle.style).toLowerCase().includes('farm') || String(jgStyle.style).includes('ファーム');
+        const isGank = String(jgStyle.style).toLowerCase().includes('gank') || String(jgStyle.style).includes('ガンク');
+        const blindPickable = jgStyle.blind_pickable || 3;
+        
+        if (typeFilter === 'BLIND') {
+          return blindPickable >= 4 || String(jgStyle.pickRecommendation).includes('先出し');
+        }
+        if (typeFilter === 'COUNTER') {
+          return blindPickable <= 2 || String(jgStyle.pickRecommendation).includes('後出し') || String(jgStyle.pickRecommendation).includes('カウンター');
+        }
+        if (typeFilter === 'FARM') {
+          return isFarm || String(jgStyle.description).includes('ファーム') || String(jgStyle.description).includes('パワーファーム');
+        }
+        if (typeFilter === 'GANK') {
+          return isGank || String(jgStyle.description).includes('ガンク') || String(jgStyle.description).includes('アクション');
+        }
+        return true;
+      });
+    }
     return [...result].sort((a, b) => {
       if (sortOrder === 'updated_desc') {
         const dateA = champDates[a.id] ? new Date(champDates[a.id]).getTime() : 0;
@@ -554,10 +578,14 @@ function ChampionsContent() {
         const valA = champJgStyles[a.id]?.counter_pickable || 0;
         const valB = champJgStyles[b.id]?.counter_pickable || 0;
         if (valA !== valB) return valB - valA;
+      } else if (sortOrder === 'style_farm_desc') {
+        const isFarmA = String(champJgStyles[a.id]?.style).toLowerCase().includes('farm') ? 1 : 0;
+        const isFarmB = String(champJgStyles[b.id]?.style).toLowerCase().includes('farm') ? 1 : 0;
+        if (isFarmA !== isFarmB) return isFarmB - isFarmA;
       }
       return a.name.localeCompare(b.name);
     });
-  }, [champions, search, sortOrder, champDates, showPendingOnly, champPending, roleFilter, showFavoritesOnly, favoriteChamps]);
+  }, [champions, search, sortOrder, champDates, showPendingOnly, champPending, roleFilter, showFavoritesOnly, favoriteChamps, typeFilter, champJgStyles]);
 
   const containerVariants = { hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.02 } } };
   const itemVariants = { hidden: { scale: 0.9, opacity: 0 }, visible: { scale: 1, opacity: 1 } };
@@ -1331,6 +1359,25 @@ function ChampionsContent() {
               </button>
             ))}
           </div>
+          {/* タイプ（戦術）フィルターボタン */}
+          <div className="flex glass-panel p-1 rounded-xl items-center gap-0.5">
+            {[
+              { id: 'ALL', label: 'すべてのタイプ' },
+              { id: 'BLIND', label: '🟢 先出し' },
+              { id: 'COUNTER', label: '🔴 後出し' },
+              { id: 'FARM', label: '🚜 ファーム' },
+              { id: 'GANK', label: '⚔️ ガンク' }
+            ].map(t => (
+              <button key={t.id} onClick={() => setTypeFilter(t.id as any)}
+                className={`px-3 py-2 rounded-lg text-xs font-black tracking-wider transition-all ${
+                  typeFilter === t.id
+                    ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/30'
+                    : 'text-gray-400 hover:text-white hover:bg-white/5'
+                }`}>
+                {t.label}
+              </button>
+            ))}
+          </div>
           <button 
             onClick={() => setShowPendingOnly(!showPendingOnly)} 
             className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all border ${showPendingOnly ? 'bg-rose-500/20 text-rose-400 border-rose-500/50 shadow-[0_0_15px_rgba(244,63,94,0.3)]' : 'glass-panel text-gray-400 border-transparent hover:text-white'}`}
@@ -1348,6 +1395,7 @@ function ChampionsContent() {
             <option value="updated_asc">更新日が古い順</option>
             <option value="blind_pickable_desc">先出し安定度順 (★順)</option>
             <option value="counter_pickable_desc">後出し有利度順 (★順)</option>
+            <option value="style_farm_desc">ファーム重視度順</option>
             <option value="name_asc">名前順</option>
           </select>
         </div>
@@ -1356,8 +1404,8 @@ function ChampionsContent() {
           <span className="text-gray-500">{champions.length}件中</span>
           <span className="text-[#c89b3c] text-sm">{filtered.length}件</span>
           <span className="text-gray-500">ヒット</span>
-          {(search || roleFilter !== 'ALL' || showPendingOnly || showFavoritesOnly) && (
-            <button onClick={() => { setSearch(''); setRoleFilter('ALL'); setShowPendingOnly(false); setShowFavoritesOnly(false); }}
+          {(search || roleFilter !== 'ALL' || typeFilter !== 'ALL' || showPendingOnly || showFavoritesOnly) && (
+            <button onClick={() => { setSearch(''); setRoleFilter('ALL'); setTypeFilter('ALL'); setShowPendingOnly(false); setShowFavoritesOnly(false); }}
               className="ml-2 text-gray-500 hover:text-white transition-colors underline underline-offset-2">
               フィルターをリセット
             </button>
@@ -1411,7 +1459,7 @@ function ChampionsContent() {
                 })()}
                 {(() => {
                   const jgStyle = champJgStyles[c.id];
-                  if (!jgStyle || (jgStyle.blind_pickable === undefined && jgStyle.counter_pickable === undefined)) return null;
+                  if (!jgStyle || (jgStyle.blind_pickable === undefined && jgStyle.counter_pickable === undefined && !jgStyle.style)) return null;
                   
                   return (
                     <div className="flex flex-col items-center gap-0.5 mt-1 border-t border-white/5 pt-1.5 w-full text-[9px] font-bold pointer-events-none">
@@ -1425,6 +1473,14 @@ function ChampionsContent() {
                         <div className="flex justify-between w-full px-1 text-[#00cfef]">
                           <span>後</span>
                           <span className="font-mono">★{jgStyle.counter_pickable}</span>
+                        </div>
+                      )}
+                      {jgStyle.style && (
+                        <div className="mt-1 px-1 py-0.5 rounded text-[8px] font-black leading-none bg-amber-500/10 border border-amber-500/20 text-amber-400 text-center w-full truncate" title={jgStyle.style}>
+                          {String(jgStyle.style).toLowerCase().includes('farm') ? '🚜 ファーム' :
+                           String(jgStyle.style).toLowerCase().includes('gank') ? '⚔️ ガンク' :
+                           String(jgStyle.style).toLowerCase().includes('invad') ? '🎒 侵入' :
+                           String(jgStyle.style).toLowerCase().includes('util') ? '🛡️ 支援' : jgStyle.style}
                         </div>
                       )}
                     </div>
