@@ -149,8 +149,7 @@ export default function CustomRecordPage() {
               body: JSON.stringify({
                 imageBase64: base64Content,
                 mimeType: 'image/jpeg',
-                champions: championsListRef.current,
-                testApiKey: 'AIzaSyB4yLgJ1hS-M9L4-XQEVYl-kk5508ZUNKI'
+                champions: championsListRef.current
               })
             });
             

@@ -1,6 +1,6 @@
 ## LoL Macro Guide: A Comprehensive Overview 
 
-This document provides a detailed breakdown of macro play in League of Legends, focusing on building a strong foundation for success. It outlines the fundamental principles and strategies that will enhance your gameplay across all ranks. 
+This document provides a detailed breakdown of macro play in League of Legends, focusing on building a strong foundation for success. It outlines the fundamental principles and strategies that will enhance your gameplay across all ranks.  
 
 
 ### I. Understanding Macro Play
@@ -10,7 +10,7 @@ Macro play focuses on understanding and influencing the flow of the game beyond 
 
 
 **Why Is Macro Important?**
-* **Dominance:**  Mastering macro enables you to control the pace of the game, dictate the battlefield environment, and outmaneuver your opponents.
+* **Dominance:** Mastering macro enables you to control the pace of the game, dictate the battlefield environment, and outmaneuver your opponents.
 * **Long-term Strategy:** It allows for creating opportunities based on long-term planning and adapting to changing situations throughout the game. 
 
 ### II. Core Principles of Macro Play
@@ -25,7 +25,7 @@ The bedrock of successful macro is understanding *when* to act and *what* action
 **3. Resource Management:  A Balancing Act**
 Effectively managing resources (health, mana, gold) is vital for long-term survival and sustained aggression. 
     *   **Prioritize Your Needs:** Determine which resource needs to be prioritized and what action can best address them. For example, if your health is low, focusing on getting more healing items or a potion should be considered over pushing lanes.  
-    *   **Utilize Resources Wisely:** Don't squander resources by engaging in unnecessary fights. Use calculated risks to gain an advantage in the long run. 
+    *   **Utilize Resources Wisely:** Don’t squander resources by engaging in unnecessary fights. Use calculated risks to gain an advantage in the long run. 
 
 
 ### III. Mastering Macro Play: Key Tactics
