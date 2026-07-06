@@ -542,21 +542,20 @@ function ChampionsContent() {
     if (typeFilter !== 'ALL') {
       result = result.filter(c => {
         const jgStyle = champJgStyles[c.id] || {};
-        const isFarm = String(jgStyle.style).toLowerCase().includes('farm') || String(jgStyle.style).includes('ファーム');
-        const isGank = String(jgStyle.style).toLowerCase().includes('gank') || String(jgStyle.style).includes('ガンク');
-        const blindPickable = jgStyle.blind_pickable || 3;
+        const blindPickable = jgStyle.blind_pickable || 0;
         
         if (typeFilter === 'BLIND') {
           return blindPickable >= 4 || String(jgStyle.pickRecommendation).includes('先出し');
         }
         if (typeFilter === 'COUNTER') {
-          return blindPickable <= 2 || String(jgStyle.pickRecommendation).includes('後出し') || String(jgStyle.pickRecommendation).includes('カウンター');
+          const counterPickable = jgStyle.counter_pickable || 0;
+          return (blindPickable > 0 && blindPickable <= 2) || counterPickable >= 4 || String(jgStyle.pickRecommendation).includes('後出し') || String(jgStyle.pickRecommendation).includes('カウンター');
         }
         if (typeFilter === 'FARM') {
-          return isFarm || String(jgStyle.description).includes('ファーム') || String(jgStyle.description).includes('パワーファーム');
+          return String(jgStyle.type).includes('ファーム') || String(jgStyle.description).includes('ファーム') || String(jgStyle.description).includes('パワーファーム');
         }
         if (typeFilter === 'GANK') {
-          return isGank || String(jgStyle.description).includes('ガンク') || String(jgStyle.description).includes('アクション');
+          return String(jgStyle.type).includes('ガング') || String(jgStyle.type).includes('ガンク') || String(jgStyle.description).includes('ガンク') || String(jgStyle.description).includes('アクション');
         }
         return true;
       });
@@ -579,8 +578,8 @@ function ChampionsContent() {
         const valB = champJgStyles[b.id]?.counter_pickable || 0;
         if (valA !== valB) return valB - valA;
       } else if (sortOrder === 'style_farm_desc') {
-        const isFarmA = String(champJgStyles[a.id]?.style).toLowerCase().includes('farm') ? 1 : 0;
-        const isFarmB = String(champJgStyles[b.id]?.style).toLowerCase().includes('farm') ? 1 : 0;
+        const isFarmA = String(champJgStyles[a.id]?.type).includes('ファーム') ? 1 : 0;
+        const isFarmB = String(champJgStyles[b.id]?.type).includes('ファーム') ? 1 : 0;
         if (isFarmA !== isFarmB) return isFarmB - isFarmA;
       }
       return a.name.localeCompare(b.name);
@@ -1459,7 +1458,7 @@ function ChampionsContent() {
                 })()}
                 {(() => {
                   const jgStyle = champJgStyles[c.id];
-                  if (!jgStyle || (jgStyle.blind_pickable === undefined && jgStyle.counter_pickable === undefined && !jgStyle.style)) return null;
+                  if (!jgStyle || (jgStyle.blind_pickable === undefined && jgStyle.counter_pickable === undefined && !jgStyle.type)) return null;
                   
                   return (
                     <div className="flex flex-col items-center gap-0.5 mt-1 border-t border-white/5 pt-1.5 w-full text-[9px] font-bold pointer-events-none">
@@ -1475,12 +1474,12 @@ function ChampionsContent() {
                           <span className="font-mono">★{jgStyle.counter_pickable}</span>
                         </div>
                       )}
-                      {jgStyle.style && (
-                        <div className="mt-1 px-1 py-0.5 rounded text-[8px] font-black leading-none bg-amber-500/10 border border-amber-500/20 text-amber-400 text-center w-full truncate" title={jgStyle.style}>
-                          {String(jgStyle.style).toLowerCase().includes('farm') ? '🚜 ファーム' :
-                           String(jgStyle.style).toLowerCase().includes('gank') ? '⚔️ ガンク' :
-                           String(jgStyle.style).toLowerCase().includes('invad') ? '🎒 侵入' :
-                           String(jgStyle.style).toLowerCase().includes('util') ? '🛡️ 支援' : jgStyle.style}
+                      {jgStyle.type && (
+                        <div className="mt-1 px-1 py-0.5 rounded text-[8px] font-black leading-none bg-amber-500/10 border border-amber-500/20 text-amber-400 text-center w-full truncate" title={jgStyle.type}>
+                          {jgStyle.type === 'ファーム型' ? '🚜 ファーム' :
+                           jgStyle.type === 'ガング型' ? '⚔️ ガンク' :
+                           jgStyle.type === '侵入型' ? '🎒 侵入' :
+                           jgStyle.type === 'タンク型' ? '🛡️ タンク' : jgStyle.type}
                         </div>
                       )}
                     </div>
