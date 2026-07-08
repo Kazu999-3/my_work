@@ -342,40 +342,59 @@ export async function POST(request: Request) {
       }
     }
 
-    // 既存プレイヤーのメタデータ(joined_at等)や名前の更新処理
+    // 既存プレイヤーのメタデータ(joined_at等)や名前の更新処理（差分がある場合のみ並列で高速更新）
     if (update_metadata && update_metadata.length > 0) {
-      for (const p of update_metadata) {
-        if (p.id) {
-          const { data: oldPlayer } = await supabase
-            .from('ktm_players')
-            .select('name')
-            .eq('id', p.id)
-            .single();
+      const { data: dbPlayers } = await supabase
+        .from('ktm_players')
+        .select('id, name, metadata');
 
-          const oldName = oldPlayer?.name;
+      const dbPlayerMap = new Map();
+      (dbPlayers || []).forEach(p => dbPlayerMap.set(p.id, p));
+
+      const updatePromises = [];
+
+      for (const p of update_metadata) {
+        if (!p.id) continue;
+        const dbPlayer = dbPlayerMap.get(p.id);
+        if (!dbPlayer) continue;
+
+        const isNameChanged = dbPlayer.name !== p.name;
+        const isMetaChanged = JSON.stringify(dbPlayer.metadata || {}) !== JSON.stringify(p.metadata || {});
+
+        if (isNameChanged || isMetaChanged) {
+          const oldName = dbPlayer.name;
           const newName = p.name;
 
-          const { error: updateError } = await supabase
-            .from('ktm_players')
-            .update({ 
-              metadata: p.metadata,
-              name: newName
-            })
-            .eq('id', p.id);
-          
-          if (updateError) {
-            console.error(`Player update failed for ID ${p.id}:`, updateError);
-          } else if (oldName && oldName !== newName) {
-            console.log(`[Discord Sync Name Change] Updating matches for ${oldName} -> ${newName}`);
-            const { error: matchesUpdateError } = await supabase
-              .from('ktm_match_participants')
-              .update({ player_name: newName })
-              .eq('player_name', oldName);
-            if (matchesUpdateError) {
-              console.error(`Failed to update matches for ${oldName} -> ${newName}:`, matchesUpdateError);
+          const updatePromise = (async () => {
+            const { error: updateError } = await supabase
+              .from('ktm_players')
+              .update({ 
+                metadata: p.metadata,
+                name: newName
+              })
+              .eq('id', p.id);
+            
+            if (updateError) {
+              console.error(`Player update failed for ID ${p.id}:`, updateError);
+            } else if (isNameChanged) {
+              console.log(`[Discord Sync Name Change] Updating matches for ${oldName} -> ${newName}`);
+              const { error: matchesUpdateError } = await supabase
+                .from('ktm_match_participants')
+                .update({ player_name: newName })
+                .eq('player_name', oldName);
+              if (matchesUpdateError) {
+                console.error(`Failed to update matches for ${oldName} -> ${newName}:`, matchesUpdateError);
+              }
             }
-          }
+          })();
+
+          updatePromises.push(updatePromise);
         }
+      }
+
+      if (updatePromises.length > 0) {
+        console.log(`[Discord Sync POST] Executing parallel update for ${updatePromises.length} players with differences.`);
+        await Promise.all(updatePromises);
       }
     }
 
