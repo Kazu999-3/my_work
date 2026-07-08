@@ -315,6 +315,8 @@ export default function KtmAdminPage() {
             return { ...p, role_preferences: { ...p.role_preferences, primary: value } };
           } else if (field === "secondary_role") {
             return { ...p, role_preferences: { ...p.role_preferences, secondary: value } };
+          } else if (field === "ignore_role") {
+            return { ...p, role_preferences: { ...p.role_preferences, ignore_role: value } };
           } else if (field === "notes") {
             return { ...p, metadata: { ...p.metadata, notes: value } };
           } else {
@@ -335,6 +337,21 @@ export default function KtmAdminPage() {
   const handleBlurSave = () => {
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     handleSave();
+  };
+
+  const handleDeactivateAll = async () => {
+    if (!confirm("全員を非アクティブ（Activeのチェックを全て外す）にしますか？\n（本日の参加者だけをチェックし直す際に便利です）")) return;
+    setSaving(true);
+    try {
+      const nextPlayers = players.map(p => ({ ...p, is_active: false }));
+      setPlayers(nextPlayers);
+      await handleSave(nextPlayers);
+      setMessage({ type: "success", text: "全員を非アクティブに設定しました。" });
+    } catch (err: any) {
+      setMessage({ type: "error", text: "一括更新エラー: " + err.message });
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleAutoSyncAll = async () => {
@@ -822,6 +839,15 @@ export default function KtmAdminPage() {
                 <div className="h-4 w-px bg-gray-800 hidden md:block"></div>
 
                 <button
+                  onClick={handleDeactivateAll}
+                  disabled={loading || saving}
+                  className="flex items-center gap-2 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 hover:border-rose-500/50 text-rose-400 px-4 py-2 rounded-lg font-bold transition text-xs"
+                >
+                  <X className="h-4 w-4" />
+                  全員非アクティブ
+                </button>
+
+                <button
                   onClick={() => fetchPlayers()}
                   className="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 text-gray-200 px-4 py-2 rounded-lg font-bold transition text-xs"
                 >
@@ -1245,18 +1271,47 @@ export default function KtmAdminPage() {
                           </select>
                         </td>
                         <td className="px-2 py-1.5 text-center text-xs">
-                          <span className={getColorFromRole(p.role_preferences?.primary)}>
-                            {p.role_preferences?.primary || '-'}
-                          </span>
-                          <span className="text-gray-500 mx-0.5">/</span>
-                          <span className={getColorFromRole(p.role_preferences?.secondary)}>
-                            {p.role_preferences?.secondary || '-'}
-                          </span>
+                          <div className="flex items-center justify-center gap-1">
+                            {/* 第一希望 */}
+                            <select
+                              value={p.role_preferences?.primary || "ALL"}
+                              onChange={(e) => {
+                                const newVal = e.target.value;
+                                handleInputSave(uid, "primary_role", newVal);
+                                if (newVal === "ALL") {
+                                  handleInputSave(uid, "secondary_role", "-");
+                                }
+                              }}
+                              className={`bg-gray-800 border border-gray-700 rounded px-1 py-0.5 outline-none focus:border-green-500 cursor-pointer ${getColorFromRole(p.role_preferences?.primary)}`}
+                            >
+                              {["ALL", "TOP", "JG", "MID", "ADC", "SUP"].map(role => (
+                                <option key={role} value={role} className="text-gray-200 bg-gray-900">{role}</option>
+                              ))}
+                            </select>
+                            <span className="text-gray-500">/</span>
+                            {/* 第二希望 */}
+                            <select
+                              value={p.role_preferences?.secondary || "-"}
+                              disabled={p.role_preferences?.primary === "ALL"}
+                              onChange={(e) => handleInputSave(uid, "secondary_role", e.target.value)}
+                              className={`bg-gray-800 border border-gray-700 rounded px-1 py-0.5 outline-none focus:border-green-500 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${getColorFromRole(p.role_preferences?.secondary)}`}
+                            >
+                              {["-", "ALL", "TOP", "JG", "MID", "ADC", "SUP"].map(role => (
+                                <option key={role} value={role} className="text-gray-200 bg-gray-900">{role}</option>
+                              ))}
+                            </select>
+                          </div>
                         </td>
                         <td className="px-2 py-1.5 text-center text-xs">
-                          <span className="text-rose-400 font-bold">
-                            {p.role_preferences?.ignore_role || '-'}
-                          </span>
+                          <select
+                            value={p.role_preferences?.ignore_role || "-"}
+                            onChange={(e) => handleInputSave(uid, "ignore_role", e.target.value)}
+                            className="bg-gray-800 border border-gray-700 text-rose-400 font-bold rounded px-1 py-0.5 outline-none focus:border-red-500 cursor-pointer"
+                          >
+                            {["-", "TOP", "JG", "MID", "ADC", "SUP"].map(role => (
+                              <option key={role} value={role} className="text-rose-400 bg-gray-900">{role}</option>
+                            ))}
+                          </select>
                         </td>
                         <td className="px-2 py-1.5 text-center">
                           <MmrBadgeInput value={p.mmr_top || 1000} onChange={(v) => handleInputSave(uid, "mmr_top", v)} />
