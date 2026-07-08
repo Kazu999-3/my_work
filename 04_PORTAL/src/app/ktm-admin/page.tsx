@@ -7,6 +7,23 @@ import ProfileModal from "./ProfileModal";
 import { Info, Users, RefreshCw, Save, Trophy, Filter, Plus, AlertCircle, X, History, Globe, ChevronDown, Shield, Trees, Zap, Target, Heart, Sparkles, Settings, AlertTriangle } from "lucide-react";
 import { getKtmRank, RANKS, calculateInitialMmr } from "../../lib/mmr";
 
+async function fetchWithTimeout(resource: RequestInfo, options: RequestInit & { timeout?: number } = {}) {
+  const { timeout = 15000 } = options; // デフォルト15秒でタイムアウト
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeout);
+  try {
+    const response = await fetch(resource, {
+      ...options,
+      signal: controller.signal
+    });
+    clearTimeout(id);
+    return response;
+  } catch (error: any) {
+    clearTimeout(id);
+    throw error;
+  }
+}
+
 const RoleIcon = ({ role, className = "w-3.5 h-3.5" }: { role: string; className?: string }) => {
   const r = role.toUpperCase();
   switch (r) {
@@ -151,10 +168,11 @@ export default function KtmAdminPage() {
 
       if (updateErr) throw new Error(`Riot IDの保存に失敗: ${updateErr.message}`);
 
-      const res = await fetch('/api/admin/riot-sync', {
+      const res = await fetchWithTimeout('/api/admin/riot-sync', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ playerIds: [playerId] })
+        body: JSON.stringify({ playerIds: [playerId] }),
+        timeout: 10000 // 1人分の同期なので10秒タイムアウト
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || '個別同期処理に失敗しました');
@@ -664,10 +682,11 @@ export default function KtmAdminPage() {
       const chunk = playerIds.slice(i, i + chunkSize);
       onProgress(`Riot APIから最新情報を同期中 (${i + chunk.length}/${playerIds.length}人)...`);
 
-      const res = await fetch('/api/admin/riot-sync', {
+      const res = await fetchWithTimeout('/api/admin/riot-sync', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ playerIds: chunk })
+        body: JSON.stringify({ playerIds: chunk }),
+        timeout: 20000 // 5人分の同期なので20秒タイムアウト
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Riot同期処理に失敗しました');
@@ -717,13 +736,19 @@ export default function KtmAdminPage() {
     setSyncingDiscord(true);
     setMessage({ type: "", text: "" });
     try {
-      const res = await fetch('/api/discord/members');
+      const res = await fetchWithTimeout('/api/discord/members', { timeout: 15000 });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Discordメンバーの取得に失敗しました');
       
       setSyncData(data);
     } catch (err: any) {
-      setMessage({ type: "error", text: "❌ Discord同期エラー: " + err.message });
+      const isAbort = err.name === 'AbortError';
+      setMessage({ 
+        type: "error", 
+        text: isAbort 
+          ? "❌ 同期確認タイムアウト: Discord APIの応答がありません。しばらく時間をおいて再試行してください。" 
+          : "❌ Discord同期エラー: " + err.message 
+      });
       setSyncingDiscord(false);
     }
   };
@@ -760,14 +785,15 @@ export default function KtmAdminPage() {
       });
 
       // 2. Discord同期 POST の実行
-      const res = await fetch('/api/discord/members', {
+      const res = await fetchWithTimeout('/api/discord/members', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           add: processedAdd,
           deactivate: syncData.toDeactivate,
           update_metadata: syncData.activeSync
-        })
+        }),
+        timeout: 25000 // POST は少し長めに25秒タイムアウト
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || '同期処理に失敗しました');
