@@ -440,6 +440,8 @@ export default function KtmAdminPage() {
               ng_lane_1: ngVal,
               role_preferences: { ...p.role_preferences, ignore_role: ignoreVal }
             };
+          } else if (field === "ng_lane_2") {
+            return { ...p, ng_lane_2: value === "-" ? null : value };
           } else if (field === "notes") {
             return { ...p, metadata: { ...p.metadata, notes: value } };
           } else {
@@ -1441,7 +1443,8 @@ export default function KtmAdminPage() {
                       <SortableHeader label="名前" sortKey="name" sticky={true} />
                       <SortableHeader label="最高Rank" sortKey="highest_rank" />
                       <th className="px-2 py-1.5 text-xs text-gray-400 font-semibold text-center">希望レーン</th>
-                      <th className="px-2 py-1.5 text-xs text-gray-400 font-semibold text-center">NG</th>
+                      <th className="px-2 py-1.5 text-xs text-gray-400 font-semibold text-center">NG1</th>
+                      <th className="px-2 py-1.5 text-xs text-gray-400 font-semibold text-center">NG2</th>
                       <SortableHeader label="平均MMR" sortKey="mmr" />
                       <SortableHeader label="Discord ID" sortKey="discord_id" />
                       <SortableHeader label="Riot IGN" sortKey="ign" />
@@ -1545,6 +1548,20 @@ export default function KtmAdminPage() {
                             <select
                               value={p.ng_lane_1 || "-"}
                               onChange={(e) => handleInputSave(uid, "ng_lane_1", e.target.value)}
+                              className="bg-transparent text-rose-400 font-bold outline-none cursor-pointer text-xs"
+                            >
+                              {["-", "TOP", "JG", "MID", "ADC", "SUP"].map(role => (
+                                <option key={role} value={role} className="text-rose-400 bg-gray-900">{role}</option>
+                              ))}
+                            </select>
+                          </div>
+                        </td>
+                        <td className="px-2 py-1.5 text-center text-xs">
+                          <div className="flex items-center justify-center gap-1 bg-gray-800 border border-gray-700 rounded px-1.5 py-0.5 mx-auto w-max">
+                            <RoleIcon role={p.ng_lane_2 || "-"} />
+                            <select
+                              value={p.ng_lane_2 || "-"}
+                              onChange={(e) => handleInputSave(uid, "ng_lane_2", e.target.value)}
                               className="bg-transparent text-rose-400 font-bold outline-none cursor-pointer text-xs"
                             >
                               {["-", "TOP", "JG", "MID", "ADC", "SUP"].map(role => (
