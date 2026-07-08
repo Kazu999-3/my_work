@@ -53,6 +53,16 @@ export default function BalancerPage() {
   const [selectedPlayer, setSelectedPlayer] = useState<any>(null);
   const [showRecordPanel, setShowRecordPanel] = useState(false);
 
+  const [flashingPlayerIds, setFlashingPlayerIds] = useState<number[]>([]);
+
+  const triggerRowFlash = (id: number) => {
+    if (!id) return;
+    setFlashingPlayerIds(prev => [...prev, id]);
+    setTimeout(() => {
+      setFlashingPlayerIds(prev => prev.filter(x => x !== id));
+    }, 1000);
+  };
+
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const [fetchingDiscord, setFetchingDiscord] = useState(false);
@@ -171,6 +181,7 @@ export default function BalancerPage() {
     setPlayers(prevPlayers => {
       const nextPlayers = prevPlayers.map(p => {
         if ((p.id || p.discord_id) === uid) {
+          triggerRowFlash(p.id);
           if (field === "primary_role") {
             const nextPrefs = { ...p.role_preferences, primary: value };
             if (value === "ALL") {
@@ -945,31 +956,48 @@ export default function BalancerPage() {
                 {sortedPlayers.map((p) => {
                   const prefs = p.role_preferences || { primary: 'ALL', secondary: '-' };
                   return (
-                    <tr key={p.id} className={`hover:bg-gray-800/50 transition ${p.is_active ? 'bg-blue-900/5' : 'opacity-40'}`}>
+                    <tr 
+                      key={p.id} 
+                      className={`hover:bg-gray-800/60 transition-all duration-1000 ${
+                        flashingPlayerIds.includes(p.id) 
+                          ? 'bg-emerald-950/40 text-emerald-400 font-bold border-y border-emerald-500/50 shadow-[inset_0_0_15px_rgba(16,185,129,0.15)]' 
+                          : p.is_active 
+                            ? 'bg-blue-950/15 border-l-2 border-blue-500 text-gray-200' 
+                            : 'opacity-40 hover:opacity-100'
+                      }`}
+                    >
                       <td className="px-4 py-2 text-center">
                         <input
                           type="checkbox"
                           checked={p.is_active}
                           onChange={(e) => handleInputChange(p.id, "is_active", e.target.checked)}
-                          className="w-5 h-5 rounded border-gray-700 bg-gray-800 text-blue-500 focus:ring-blue-500/50 cursor-pointer"
+                          className="w-5 h-5 rounded border-gray-700 bg-gray-800 text-blue-500 focus:ring-blue-500/50 cursor-pointer transition-transform hover:scale-110"
                         />
                       </td>
                       <td className="px-2 py-2 text-center">
                         <button
                           onClick={() => handleInputChange(p.id, "is_fixed", !p.is_fixed)}
-                          className={`p-1 rounded transition-colors ${p.is_fixed ? 'bg-amber-500/20 text-amber-400' : 'text-gray-600 hover:text-amber-500 hover:bg-amber-500/10'}`}
+                          className={`p-1 rounded-lg border transition-all ${
+                            p.is_fixed 
+                              ? 'bg-amber-500/20 border-amber-500/40 text-amber-400 shadow-[0_0_8px_rgba(245,158,11,0.2)]' 
+                              : 'border-transparent text-gray-600 hover:text-amber-500 hover:bg-amber-500/10'
+                          }`}
                           title="第1希望レーンで固定する"
                         >
-                          <Crown className={`w-4 h-4 ${p.is_fixed ? 'opacity-100' : 'opacity-50'}`} />
+                          <Crown className={`w-4 h-4 ${p.is_fixed ? 'scale-110' : 'opacity-60'}`} />
                         </button>
                       </td>
                       <td className="px-2 py-2 text-center">
                         <button
                           onClick={() => handleInputChange(p.id, "is_spectator_fixed", !p.is_spectator_fixed)}
-                          className={`p-1 rounded transition-colors ${p.is_spectator_fixed ? 'bg-indigo-500/20 text-indigo-400' : 'text-gray-600 hover:text-indigo-400 hover:bg-indigo-500/10'}`}
+                          className={`p-1 rounded-lg border transition-all ${
+                            p.is_spectator_fixed 
+                              ? 'bg-indigo-500/20 border-indigo-500/40 text-indigo-400 shadow-[0_0_8px_rgba(99,102,241,0.2)]' 
+                              : 'border-transparent text-gray-600 hover:text-indigo-400 hover:bg-indigo-500/10'
+                          }`}
                           title="この回は見学固定にする"
                         >
-                          <X className={`w-4 h-4 ${p.is_spectator_fixed ? 'opacity-100' : 'opacity-50'}`} />
+                          <X className={`w-4 h-4 ${p.is_spectator_fixed ? 'scale-110 font-black' : 'opacity-60'}`} />
                         </button>
                       </td>
                       <td className="px-4 py-2 text-center font-bold text-gray-600 text-xs">
@@ -992,68 +1020,80 @@ export default function BalancerPage() {
                         {p.mmr}
                       </td>
                       <td className="px-4 py-2">
-                        <select
-                          value={prefs.primary || 'ALL'}
-                          onChange={(e) => handleInputChange(p.id, "primary_role", e.target.value)}
-                          className="bg-gray-950 border border-gray-700 rounded px-2 py-1 text-white outline-none focus:border-blue-500 w-24 font-bold"
-                        >
-                          <option value="ALL">ALL</option>
-                          <option value="TOP">TOP</option>
-                          <option value="JG">JG</option>
-                          <option value="MID">MID</option>
-                          <option value="ADC">ADC</option>
-                          <option value="SUP">SUP</option>
-                        </select>
+                        <div className="flex items-center gap-1.5 bg-gray-950 border border-gray-800 rounded px-2 py-1 w-28">
+                          <RoleIcon role={prefs.primary || 'ALL'} className="w-3.5 h-3.5 flex-shrink-0" />
+                          <select
+                            value={prefs.primary || 'ALL'}
+                            onChange={(e) => handleInputChange(p.id, "primary_role", e.target.value)}
+                            className="bg-transparent text-white outline-none cursor-pointer w-full text-xs font-bold"
+                          >
+                            <option value="ALL" className="bg-gray-950 text-gray-200">ALL</option>
+                            <option value="TOP" className="bg-gray-950 text-gray-200">TOP</option>
+                            <option value="JG" className="bg-gray-950 text-gray-200">JG</option>
+                            <option value="MID" className="bg-gray-950 text-gray-200">MID</option>
+                            <option value="ADC" className="bg-gray-950 text-gray-200">ADC</option>
+                            <option value="SUP" className="bg-gray-950 text-gray-200">SUP</option>
+                          </select>
+                        </div>
                       </td>
                       <td className="px-4 py-2">
-                        <select
-                          value={prefs.secondary || '-'}
-                          disabled={prefs.primary === 'ALL'}
-                          onChange={(e) => handleInputChange(p.id, "secondary_role", e.target.value)}
-                          className="bg-gray-950 border border-gray-700 rounded px-2 py-1 text-gray-300 outline-none focus:border-blue-500 w-24 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          <option value="-">-</option>
-                          <option value="ALL">ALL</option>
-                          <option value="TOP">TOP</option>
-                          <option value="JG">JG</option>
-                          <option value="MID">MID</option>
-                          <option value="ADC">ADC</option>
-                          <option value="SUP">SUP</option>
-                        </select>
+                        <div className="flex items-center gap-1.5 bg-gray-950 border border-gray-800 rounded px-2 py-1 w-28 disabled:opacity-50">
+                          <RoleIcon role={prefs.secondary || '-'} className="w-3.5 h-3.5 flex-shrink-0" />
+                          <select
+                            value={prefs.secondary || '-'}
+                            disabled={prefs.primary === 'ALL'}
+                            onChange={(e) => handleInputChange(p.id, "secondary_role", e.target.value)}
+                            className="bg-transparent text-gray-300 outline-none cursor-pointer w-full text-xs disabled:cursor-not-allowed"
+                          >
+                            <option value="-" className="bg-gray-950 text-gray-200">-</option>
+                            <option value="ALL" className="bg-gray-950 text-gray-200">ALL</option>
+                            <option value="TOP" className="bg-gray-950 text-gray-200">TOP</option>
+                            <option value="JG" className="bg-gray-950 text-gray-200">JG</option>
+                            <option value="MID" className="bg-gray-950 text-gray-200">MID</option>
+                            <option value="ADC" className="bg-gray-950 text-gray-200">ADC</option>
+                            <option value="SUP" className="bg-gray-950 text-gray-200">SUP</option>
+                          </select>
+                        </div>
                       </td>
                       <td className="px-2 py-2 text-center">
-                        <select
-                          value={p.ng_lane_1 || ""}
-                          onChange={(e) => handleInputChange(p.id, "ng_lane_1", e.target.value)}
-                          className="bg-gray-950 border border-gray-700 rounded px-1 py-1 text-red-300 outline-none focus:border-red-500 w-16 text-xs"
-                        >
-                          <option value="">なし</option>
-                          <option value="TOP">TOP</option>
-                          <option value="JG">JG</option>
-                          <option value="MID">MID</option>
-                          <option value="ADC">ADC</option>
-                          <option value="SUP">SUP</option>
-                        </select>
+                        <div className="flex items-center gap-1 bg-gray-950 border border-gray-800 rounded px-1.5 py-1 w-20 mx-auto">
+                          <RoleIcon role={p.ng_lane_1 || ''} className="w-3 h-3 flex-shrink-0" />
+                          <select
+                            value={p.ng_lane_1 || ""}
+                            onChange={(e) => handleInputChange(p.id, "ng_lane_1", e.target.value)}
+                            className="bg-transparent text-red-400 font-bold outline-none cursor-pointer w-full text-xs"
+                          >
+                            <option value="" className="bg-gray-950 text-gray-400">なし</option>
+                            <option value="TOP" className="bg-gray-950 text-red-400">TOP</option>
+                            <option value="JG" className="bg-gray-950 text-red-400">JG</option>
+                            <option value="MID" className="bg-gray-950 text-red-400">MID</option>
+                            <option value="ADC" className="bg-gray-950 text-red-400">ADC</option>
+                            <option value="SUP" className="bg-gray-950 text-red-400">SUP</option>
+                          </select>
+                        </div>
                       </td>
                       <td className="px-2 py-2 text-center">
-                        <select
-                          value={p.ng_lane_2 || ""}
-                          onChange={(e) => handleInputChange(p.id, "ng_lane_2", e.target.value)}
-                          className="bg-gray-950 border border-gray-700 rounded px-1 py-1 text-red-300 outline-none focus:border-red-500 w-16 text-xs"
-                        >
-                          <option value="">なし</option>
-                          <option value="TOP">TOP</option>
-                          <option value="JG">JG</option>
-                          <option value="MID">MID</option>
-                          <option value="ADC">ADC</option>
-                          <option value="SUP">SUP</option>
-                        </select>
+                        <div className="flex items-center gap-1 bg-gray-950 border border-gray-800 rounded px-1.5 py-1 w-20 mx-auto">
+                          <RoleIcon role={p.ng_lane_2 || ''} className="w-3 h-3 flex-shrink-0" />
+                          <select
+                            value={p.ng_lane_2 || ""}
+                            onChange={(e) => handleInputChange(p.id, "ng_lane_2", e.target.value)}
+                            className="bg-transparent text-red-400 font-bold outline-none cursor-pointer w-full text-xs"
+                          >
+                            <option value="" className="bg-gray-950 text-gray-400">なし</option>
+                            <option value="TOP" className="bg-gray-950 text-red-400">TOP</option>
+                            <option value="JG" className="bg-gray-950 text-red-400">JG</option>
+                            <option value="MID" className="bg-gray-950 text-red-400">MID</option>
+                            <option value="ADC" className="bg-gray-950 text-red-400">ADC</option>
+                            <option value="SUP" className="bg-gray-950 text-red-400">SUP</option>
+                          </select>
+                        </div>
                       </td>
                       <td className="px-2 py-2 text-center">
                         <select
                           value={p.weight || 2}
                           onChange={(e) => handleInputChange(p.id, "weight", parseInt(e.target.value))}
-                          className="bg-gray-950 border border-gray-700 rounded px-2 py-1 text-amber-300 outline-none focus:border-amber-500 w-16"
+                          className="bg-gray-950 border border-gray-700 rounded px-2 py-1 text-amber-300 font-bold outline-none focus:border-amber-500 w-14 cursor-pointer text-xs"
                         >
                           <option value="1">1</option>
                           <option value="2">2</option>
@@ -1065,17 +1105,23 @@ export default function BalancerPage() {
                           type="checkbox"
                           checked={!!p.allow_higher}
                           onChange={(e) => handleInputChange(p.id, "allow_higher", e.target.checked)}
-                          className="w-5 h-5 rounded border-gray-700 bg-gray-950 text-rose-500 focus:ring-rose-500/50 cursor-pointer"
+                          className="w-5 h-5 rounded border-gray-700 bg-gray-950 text-rose-500 focus:ring-rose-500/50 cursor-pointer transition-transform hover:scale-110"
                         />
                       </td>
-                      <td className="px-2 py-2 text-center font-mono text-emerald-400 font-bold">
-                        {p.pity || 0}
+                      <td className="px-2 py-2 text-center">
+                        <span className="px-2 py-0.5 rounded-full bg-emerald-950/40 border border-emerald-800/60 text-emerald-400 text-xs font-mono font-bold">
+                          {p.pity || 0}
+                        </span>
                       </td>
-                      <td className="px-2 py-2 text-center font-mono text-fuchsia-400 font-bold">
-                        {p.off_pity || 0}
+                      <td className="px-2 py-2 text-center">
+                        <span className="px-2 py-0.5 rounded-full bg-fuchsia-950/40 border border-fuchsia-800/60 text-fuchsia-400 text-xs font-mono font-bold">
+                          {p.off_pity || 0}
+                        </span>
                       </td>
-                      <td className="px-2 py-2 text-center font-mono text-sky-400 font-bold">
-                        {p.spectator_pity || 0}
+                      <td className="px-2 py-2 text-center">
+                        <span className="px-2 py-0.5 rounded-full bg-sky-950/40 border border-sky-800/60 text-sky-400 text-xs font-mono font-bold">
+                          {p.spectator_pity || 0}
+                        </span>
                       </td>
                       <td className="px-2 py-2">
                         <input
@@ -1083,7 +1129,7 @@ export default function BalancerPage() {
                           value={p.metadata?.notes || ""}
                           onChange={(e) => handleInputChange(p.id, "notes", e.target.value)}
                           placeholder="備考"
-                          className="bg-gray-950 border border-gray-700 rounded px-2 py-1 text-gray-200 outline-none focus:border-blue-500 w-32 text-xs"
+                          className="bg-transparent border border-transparent hover:border-gray-800 focus:border-gray-700 hover:bg-gray-900/60 focus:bg-gray-900 focus:ring-1 focus:ring-blue-500/30 rounded px-2 py-1 outline-none text-xs text-gray-300 w-28 transition-all"
                         />
                       </td>
                     </tr>
