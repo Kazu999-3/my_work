@@ -180,7 +180,7 @@ export async function POST(request: Request) {
             mmr_mid: p.mmr_mid,
             mmr_adc: p.mmr_adc,
             mmr_sup: p.mmr_sup,
-            is_active: p.is_active ?? true
+            is_active: p.is_active ?? false
           }));
 
           const { error: upsertError } = await supabase

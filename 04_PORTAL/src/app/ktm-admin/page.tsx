@@ -372,7 +372,8 @@ export default function KtmAdminPage() {
           mmr_mid,
           mmr_adc,
           mmr_sup,
-          mmr
+          mmr,
+          is_active: false
         };
       });
 
@@ -633,7 +634,8 @@ export default function KtmAdminPage() {
           mmr_mid,
           mmr_adc,
           mmr_sup,
-          mmr
+          mmr,
+          is_active: false
         };
       });
 
@@ -1160,6 +1162,8 @@ export default function KtmAdminPage() {
                       <SortableHeader label="Active" sortKey="is_active" />
                       <SortableHeader label="名前" sortKey="name" sticky={true} />
                       <SortableHeader label="最高Rank" sortKey="highest_rank" />
+                      <th className="px-2 py-1.5 text-xs text-gray-400 font-semibold text-center">希望レーン</th>
+                      <th className="px-2 py-1.5 text-xs text-gray-400 font-semibold text-center">NG</th>
                       <SortableHeader label="Top" sortKey="mmr_top" />
                       <SortableHeader label="Jg" sortKey="mmr_jg" />
                       <SortableHeader label="Mid" sortKey="mmr_mid" />
@@ -1215,6 +1219,20 @@ export default function KtmAdminPage() {
                               <option key={r} value={r}>{r}</option>
                             ))}
                           </select>
+                        </td>
+                        <td className="px-2 py-1.5 text-center text-xs">
+                          <span className={getColorFromRole(p.role_preferences?.primary)}>
+                            {p.role_preferences?.primary || '-'}
+                          </span>
+                          <span className="text-gray-500 mx-0.5">/</span>
+                          <span className={getColorFromRole(p.role_preferences?.secondary)}>
+                            {p.role_preferences?.secondary || '-'}
+                          </span>
+                        </td>
+                        <td className="px-2 py-1.5 text-center text-xs">
+                          <span className="text-rose-400 font-bold">
+                            {p.role_preferences?.ignore_role || '-'}
+                          </span>
                         </td>
                         <td className="px-2 py-1.5 text-center">
                           <MmrBadgeInput value={p.mmr_top || 1000} onChange={(v) => handleInputSave(uid, "mmr_top", v)} />
