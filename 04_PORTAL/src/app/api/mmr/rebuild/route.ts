@@ -174,29 +174,33 @@ export async function POST(request: Request) {
       }
     }
 
-    // 参加者テーブルのKDA等一括更新 (Identityエラーを回避するため、id指定の個別 update をチャンクごとに並列処理)
+    // 参加者テーブルのKDA等一括更新 (タイムアウトを回避するためupsertを用いたバルク更新に変更)
     if (participantUpdates.length > 0) {
-      const chunkSize = 50; // コネクションプールを考慮し50件ずつ並行処理
+      const chunkSize = 100; // 100件ずつまとめてupsertを実行
       for (let i = 0; i < participantUpdates.length; i += chunkSize) {
         const chunk = participantUpdates.slice(i, i + chunkSize);
-        const updatePromises = chunk.map(pu =>
-          supabase
-            .from('ktm_match_participants')
-            .update({
-              kda_score: pu.kda_score,
-              mmr_delta: pu.mmr_delta
-            })
-            .eq('id', pu.id)
-        );
-        const results = await Promise.all(updatePromises);
-        const firstError = results.find(r => r.error);
-        if (firstError) {
-          throw new Error(`Failed to update participants at chunk ${i}: ${firstError.error?.message || 'Unknown error'}`);
+        
+        // Identityシーケンスへの影響を防ぐため、元のidを指定してupsertします
+        const { error: updateError } = await supabase
+          .from('ktm_match_participants')
+          .upsert(chunk.map(pu => ({
+            id: pu.id,
+            match_id: pu.match_id,
+            player_name: pu.player_name,
+            role: pu.role,
+            team: pu.team,
+            champion_name: pu.champion_name,
+            kda_score: pu.kda_score,
+            mmr_delta: pu.mmr_delta
+          })));
+
+        if (updateError) {
+          throw new Error(`Failed to upsert participants at chunk ${i}: ${updateError.message}`);
         }
       }
     }
 
-    // プレイヤーテーブルのMMR一括更新 (個別 update の並行処理)
+    // プレイヤーテーブルのMMR一括更新 (タイムアウトを回避するためupsertによる一括更新に変更)
     const playerUpdates = Array.from(playersMap.values()).map(p => {
       const avgMmr = Math.round((p.mmr_top + p.mmr_jg + p.mmr_mid + p.mmr_adc + p.mmr_sup) / 5);
       return {
@@ -211,23 +215,20 @@ export async function POST(request: Request) {
     });
 
     if (playerUpdates.length > 0) {
-      const updatePromises = playerUpdates.map(pu =>
-        supabase
-          .from('ktm_players')
-          .update({
-            mmr_top: pu.mmr_top,
-            mmr_jg: pu.mmr_jg,
-            mmr_mid: pu.mmr_mid,
-            mmr_adc: pu.mmr_adc,
-            mmr_sup: pu.mmr_sup,
-            mmr: pu.mmr
-          })
-          .eq('id', pu.id)
-      );
-      const results = await Promise.all(updatePromises);
-      const firstError = results.find(r => r.error);
-      if (firstError) {
-        throw new Error(`Failed to update players: ${firstError.error?.message || 'Unknown error'}`);
+      const { error: playerUpdateError } = await supabase
+        .from('ktm_players')
+        .upsert(playerUpdates.map(pu => ({
+          id: pu.id,
+          mmr_top: pu.mmr_top,
+          mmr_jg: pu.mmr_jg,
+          mmr_mid: pu.mmr_mid,
+          mmr_adc: pu.mmr_adc,
+          mmr_sup: pu.mmr_sup,
+          mmr: pu.mmr
+        })));
+
+      if (playerUpdateError) {
+        throw new Error(`Failed to upsert players: ${playerUpdateError.message}`);
       }
     }
 

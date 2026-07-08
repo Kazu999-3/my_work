@@ -668,13 +668,57 @@ export function coreBalanceProposals(players: Player[], ctx: BalanceContext): Pr
   // 3. 希望優先 (希望合致数降順) -> 案C
   const listC = [...candidates].sort((a, b) => b.mainCount - a.mainCount || a.score - b.score);
 
+  // 4. 低MMR優先 (低MMRオフロールペナルティ昇順) -> 案D
+  // プレイヤーをMMRの昇順（低い順）でソート
+  const sortedPlayersByMMR = [...players].sort((a, b) => (a.avgMMR || 0) - (b.avgMMR || 0));
+
+  // 低MMRプレイヤーほどメインロールに配属されていない場合のペナルティを計算する
+  const calcLowMMROffRolePenalty = (c: RawBalanceCandidate): number => {
+    let penalty = 0;
+    // チームA
+    c.teamAIndices.forEach((idx, i) => {
+      const p = players[idx];
+      const role = ROLES[c.pA[i]];
+      const isMain = p.isFixed || p.pref1 === 'ALL' || p.pref1 === role;
+      if (!isMain) {
+        const rankIndex = sortedPlayersByMMR.findIndex(sp => sp.name === p.name);
+        if (rankIndex !== -1) {
+          // MMRが低い（rankIndexが小さい）ほど、ペナルティを大きくする (10-rankIndex) の2乗
+          penalty += Math.pow(10 - rankIndex, 2);
+        }
+      }
+    });
+    // チームB
+    c.teamBIndices.forEach((idx, i) => {
+      const p = players[idx];
+      const role = ROLES[c.pB[i]];
+      const isMain = p.isFixed || p.pref1 === 'ALL' || p.pref1 === role;
+      if (!isMain) {
+        const rankIndex = sortedPlayersByMMR.findIndex(sp => sp.name === p.name);
+        if (rankIndex !== -1) {
+          penalty += Math.pow(10 - rankIndex, 2);
+        }
+      }
+    });
+    return penalty;
+  };
+
+  const listD = [...candidates].sort((a, b) => {
+    const penA = calcLowMMROffRolePenalty(a);
+    const penB = calcLowMMROffRolePenalty(b);
+    if (penA !== penB) {
+      return penA - penB;
+    }
+    return a.score - b.score; // ペナルティが同じなら総合スコアが良い順
+  });
+
   const proposals: ProposalResult[] = [];
   const usedSignatures = new Set<string>();
 
-  // 案A: バランス（旧 案C：総合バランス）
+  // 案A: バランス
   const bestA = listA[0];
   const resA = buildBalanceResult(bestA, players, ctx);
-  resA.balanceReport.unshift("💡 **チーム分けの根拠 (バランス)**: 各プレイヤーのロール希望の合致度、MMR（内部レート）の差、直近の同チーム履歴などを総合的に考慮し、全体の快適性と公平性を最大化する最適な組み合わせを提示しています。");
+  resA.balanceReport.unshift("💡 **【コンセプト：総合バランス】**\n各プレイヤーのロール希望、MMR（内部レート）の差、直近の同チーム履歴などを総合的に考慮した、最もバランスの良い標準的な組み合わせです。\n**こんな時におすすめ**：対面のレーン実力差を抑えつつ、多くの人が希望ロールで遊びたい時。");
   const mmrBlueA = resA.teamBlue.reduce((s, p) => s + p.mmr, 0);
   const mmrRedA = resA.teamRed.reduce((s, p) => s + p.mmr, 0);
   proposals.push({
@@ -687,10 +731,10 @@ export function coreBalanceProposals(players: Player[], ctx: BalanceContext): Pr
   });
   usedSignatures.add(bestA.signature);
 
-  // 案B: 戦力均等（旧 案A：戦力均等）
+  // 案B: 戦力均等
   const bestB = listB.find(c => !usedSignatures.has(c.signature)) || listB[0];
   const resB = buildBalanceResult(bestB, players, ctx);
-  resB.balanceReport.unshift("💡 **チーム分けの根拠 (戦力均等)**: レーン間およびチーム全体のMMR格差を最小化し、両チームの実力差が最も平坦（公平なレーン戦・勝率期待値）になるように計算されています。");
+  resB.balanceReport.unshift("💡 **【コンセプト：戦力均等（実力勝負）】**\nレーン間およびチーム全体のMMR格差を最小化し、両チームの実力差が最も平坦（公平なレーン戦・勝率期待値）になるように計算されています。\n**こんな時におすすめ**：実力が拮抗した真剣勝負や、公平な試合を楽しみたい時。");
   const mmrBlueB = resB.teamBlue.reduce((s, p) => s + p.mmr, 0);
   const mmrRedB = resB.teamRed.reduce((s, p) => s + p.mmr, 0);
   proposals.push({
@@ -703,10 +747,10 @@ export function coreBalanceProposals(players: Player[], ctx: BalanceContext): Pr
   });
   usedSignatures.add(bestB.signature);
 
-  // 案C: 希望優先（旧 案B：希望優先）
+  // 案C: 希望優先
   const bestC = listC.find(c => !usedSignatures.has(c.signature)) || listC[0];
   const resC = buildBalanceResult(bestC, players, ctx);
-  resC.balanceReport.unshift("💡 **チーム分けの根拠 (希望優先)**: できる限り多くのプレイヤーが第一希望（メインロール）でプレイできるように、ロール希望の合致数を最優先にして計算されています。");
+  resC.balanceReport.unshift("💡 **【コンセプト：希望優先（楽しさ重視）】**\nできる限り多くのプレイヤーが第一希望（メインロール）でプレイできるように、ロール希望の合致数を最優先にして計算されています。\n**こんな時におすすめ**：自分の得意ロールや練習したいロールで全員がノーストレスで遊びたい時。");
   const mmrBlueC = resC.teamBlue.reduce((s, p) => s + p.mmr, 0);
   const mmrRedC = resC.teamRed.reduce((s, p) => s + p.mmr, 0);
   proposals.push({
@@ -717,7 +761,23 @@ export function coreBalanceProposals(players: Player[], ctx: BalanceContext): Pr
     teamRedMMR: mmrRedC,
     mmrDiff: Math.abs(mmrBlueC - mmrRedC)
   });
+  usedSignatures.add(bestC.signature);
 
-  // 切り替え時に綺麗に表示されるように、インデックス順にソート（案A、案B、案C）して返却
+  // 案D: 低MMR優先
+  const bestD = listD.find(c => !usedSignatures.has(c.signature)) || listD[0];
+  const resD = buildBalanceResult(bestD, players, ctx);
+  resD.balanceReport.unshift("💡 **【コンセプト：低MMR（初心者）優先配属】**\n初心者や低レートのプレイヤーが慣れたメインロールで快適にプレイできるように、MMR（内部レート）の低いプレイヤーから優先的に第一希望ロールへ配属し、高MMRのプレイヤーが他のロールに回ってカバーする構成です。\n**こんな時におすすめ**：初心者やレートの低いプレイヤーを主役に据え、快適にプレイさせてあげたい時。");
+  const mmrBlueD = resD.teamBlue.reduce((s, p) => s + p.mmr, 0);
+  const mmrRedD = resD.teamRed.reduce((s, p) => s + p.mmr, 0);
+  proposals.push({
+    ...resD,
+    id: 'D',
+    title: '案D：低MMR優先',
+    teamBlueMMR: mmrBlueD,
+    teamRedMMR: mmrRedD,
+    mmrDiff: Math.abs(mmrBlueD - mmrRedD)
+  });
+
+  // 切り替え時に綺麗に表示されるように、インデックス順にソートして返却
   return proposals.sort((a, b) => a.id.localeCompare(b.id));
 }

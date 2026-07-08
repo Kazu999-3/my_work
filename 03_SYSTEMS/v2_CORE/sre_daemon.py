@@ -163,12 +163,13 @@ class SREDaemon:
 
         # --- ライブラリから削除されたファイルのローカルクリーンアップ処理 ---
         def cleanup_deleted_files_loop():
+            from datetime import datetime, timedelta
             url = os.getenv("SUPABASE_URL")
             key = os.getenv("SUPABASE_KEY")
             if not url or not key: return
             headers = {"apikey": key, "Authorization": f"Bearer {key}", "Content-Type": "application/json"}
             
-            interval = 15
+            interval = 1800  # 容量・通信回数削減のため30分（1800秒）に変更
             while True:
                 try:
                     # 全件取得してPythonでフィルタ（API文法の不整合回避）
@@ -193,7 +194,21 @@ class SREDaemon:
                                 del_res = httpx.delete(f"{url}/rest/v1/personal_knowledge?id=eq.{article['id']}", headers=headers, timeout=10)
                                 if del_res.status_code in (200, 204):
                                     logger.info(f"✅ [Cleanup] データベースから完全に削除しました: {title}")
-                    interval = 15
+
+                    # 3. [容量削減対策B] 1週間以上経過した古いタスク履歴 (edge_tasks) の自動物理削除
+                    try:
+                        seven_days_ago = (datetime.utcnow() - timedelta(days=7)).isoformat() + "Z"
+                        del_tasks_res = httpx.delete(
+                            f"{url}/rest/v1/edge_tasks?created_at=lt.{seven_days_ago}",
+                            headers=headers,
+                            timeout=10
+                        )
+                        if del_tasks_res.status_code in (200, 204):
+                            logger.info("🗑️ [Cleanup] 1週間以上経過した古いタスク履歴を削除しました。")
+                    except Exception as ex:
+                        logger.error(f"❌ [Cleanup] 古いタスク履歴の削除中にエラーが発生しました: {ex}")
+
+                    interval = 1800
                     time.sleep(interval)
                 except Exception as e:
                     err_msg = str(e)
@@ -204,7 +219,7 @@ class SREDaemon:
                         interval = min(interval * 2, 300)
                     else:
                         logger.error(f"❌ Cleanup loop error: {e}")
-                        interval = 15
+                        interval = 1800
                         time.sleep(interval)
 
         # --- ダッシュボード用 システムメトリクス配信処理 ---
@@ -256,7 +271,7 @@ class SREDaemon:
             
             queue_file = Path("d:/my_work/02_FACTORY/kirei_queue.json")
 
-            interval = 30
+            interval = 300  # 通信回数削減のため5分（300秒）に変更
             while True:
                 try:
                     # 1. YouTube キューの集計
@@ -306,7 +321,7 @@ class SREDaemon:
                                     # 旧形式 [INFO] / [WARNING] / [ERROR] または 新形式 INFO: / WARNING: / ERROR:
                                     if any(kw in line for kw in ("INFO:", "WARNING:", "ERROR:", "[INFO]", "[WARNING]", "[ERROR]")):
                                         filtered.append(line)
-                                recent_logs = filtered[-20:] if filtered else []
+                                recent_logs = filtered[-10:] if filtered else []
                         except Exception:
                             pass
                             
@@ -363,7 +378,7 @@ class SREDaemon:
                         json=payload,
                         timeout=10
                     )
-                    interval = 30
+                    interval = 300
                     time.sleep(interval)
                 except Exception as e:
                     err_msg = str(e)
@@ -374,7 +389,7 @@ class SREDaemon:
                         interval = min(interval * 2, 300)
                     else:
                         logger.error(f"❌ Metrics publish loop error: {e}")
-                        interval = 15
+                        interval = 300
                         time.sleep(interval)
 
         # --- 定期タスク: アフィリエイト一気通貫バッチ ---

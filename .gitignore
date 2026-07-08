@@ -57,3 +57,6 @@ scratch/
 
 .vercel
 .env*
+
+# Cloudflare Wrangler local variables
+**/.dev.vars

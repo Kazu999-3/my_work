@@ -18,12 +18,45 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: '必須パラメータが不足しています。' }, { status: 400 });
     }
 
+    // 容量削減対策①：note_draftをSupabase Storageへ退避させる
+    let updatedRawData = { ...(raw_data || {}) };
+    if (updatedRawData.note_draft) {
+      try {
+        const draftContent = updatedRawData.note_draft;
+        const fileName = `${champion}_draft.txt`;
+        
+        // drafts バケットへアップロード（upsert: true で上書き）
+        const { error: uploadError } = await supabase
+          .storage
+          .from('drafts')
+          .upload(fileName, draftContent, {
+            contentType: 'text/plain; charset=utf-8',
+            upsert: true
+          });
+
+        if (uploadError) {
+          console.error('❌ [Champion Save API] Storage Upload Error:', uploadError);
+        } else {
+          // アップロード成功時、URLを記録して、元データは削除して容量を節約
+          const { data: urlData } = supabase
+            .storage
+            .from('drafts')
+            .getPublicUrl(fileName);
+            
+          updatedRawData.note_draft_url = urlData?.publicUrl || `/storage/v1/object/public/drafts/${fileName}`;
+          delete updatedRawData.note_draft;
+        }
+      } catch (uploadErr) {
+        console.error('❌ [Champion Save API] Storage Process Exception:', uploadErr);
+      }
+    }
+
     const data = {
       matchup_id,
       champion,
       enemy,
       strategy: strategy || '',
-      raw_data: raw_data || {},
+      raw_data: updatedRawData,
       updated_at: new Date().toISOString()
     };
 

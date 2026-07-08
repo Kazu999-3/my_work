@@ -280,7 +280,12 @@ export async function POST(request: Request) {
     }
 
     // 5. 各選抜パターンについてバランス実行
-    let allProposals: any[] = [];
+    const proposalsGrouped: Record<string, any[]> = {
+      'A': [],
+      'B': [],
+      'C': [],
+      'D': []
+    };
 
     for (const pattern of selectedPatterns) {
       const proposalsForPattern = coreBalanceProposals(pattern.selected, ctx);
@@ -288,42 +293,96 @@ export async function POST(request: Request) {
       const spectatorNames = pattern.spectators.map(p => p.name);
       proposalsForPattern.forEach(prop => {
         prop.spectators = spectatorNames;
-        allProposals.push(prop);
+        if (proposalsGrouped[prop.id]) {
+          proposalsGrouped[prop.id].push(prop);
+        }
       });
     }
 
-    // 6. 全提案の中から「MMR差（ハンデ込）」が小さく、「希望ロール配置数」が多い順にソートして上位3案を抽出
-    allProposals.sort((a, b) => {
-      const diffA = Math.abs(a.mmrDiff);
-      const diffB = Math.abs(b.mmrDiff);
-      if (Math.abs(diffA - diffB) > 50) {
-        return diffA - diffB;
-      }
-      const mainA = a.teamBlue.filter((p: any) => p.currentRole === p.mainLane).length +
-                    a.teamRed.filter((p: any) => p.currentRole === p.mainLane).length;
-      const mainB = b.teamBlue.filter((p: any) => p.currentRole === p.mainLane).length +
-                    b.teamRed.filter((p: any) => p.currentRole === p.mainLane).length;
-      if (mainB !== mainA) {
-        return mainB - mainA;
-      }
-      return diffA - diffB;
-    });
-
-    const uniqueProposals: any[] = [];
+    // 6. 各コンセプト（A, B, C, D）ごとに最も良い提案を1つずつ抽出
+    const finalProposals: any[] = [];
     const seenSignatures = new Set<string>();
 
-    for (const prop of allProposals) {
-      const blueNames = prop.teamBlue.map((p: any) => p.name).sort().join(',');
-      const redNames = prop.teamRed.map((p: any) => p.name).sort().join(',');
-      const sig = [blueNames, redNames].sort().join('<=>');
-      if (!seenSignatures.has(sig)) {
-        seenSignatures.add(sig);
-        uniqueProposals.push(prop);
-        if (uniqueProposals.length >= 3) break;
+    const sortProposals = (list: any[]) => {
+      list.sort((a, b) => {
+        const diffA = Math.abs(a.mmrDiff);
+        const diffB = Math.abs(b.mmrDiff);
+        if (Math.abs(diffA - diffB) > 50) {
+          return diffA - diffB;
+        }
+        const mainA = a.teamBlue.filter((p: any) => p.currentRole === p.mainLane).length +
+                      a.teamRed.filter((p: any) => p.currentRole === p.mainLane).length;
+        const mainB = b.teamBlue.filter((p: any) => p.currentRole === p.mainLane).length +
+                      b.teamRed.filter((p: any) => p.currentRole === p.mainLane).length;
+        if (mainB !== mainA) {
+          return mainB - mainA;
+        }
+        return diffA - diffB;
+      });
+    };
+
+    const conceptIds = ['A', 'B', 'C', 'D'];
+    conceptIds.forEach(id => {
+      const group = proposalsGrouped[id] || [];
+      sortProposals(group);
+      
+      for (const prop of group) {
+        const blueNames = prop.teamBlue.map((p: any) => p.name).sort().join(',');
+        const redNames = prop.teamRed.map((p: any) => p.name).sort().join(',');
+        const sig = [blueNames, redNames].sort().join('<=>');
+        
+        const sigWithId = `${id}:${sig}`;
+        if (!seenSignatures.has(sigWithId)) {
+          seenSignatures.add(sigWithId);
+          finalProposals.push(prop);
+          break; // 1つ選出できたので、次のグループへ
+        }
       }
+    });
+
+    // ID順にソート（A, B, C, Dの順）
+    finalProposals.sort((a, b) => a.id.localeCompare(b.id));
+
+    // 7. レート格差判定（環境分析）
+    // 最初のパターン（最も優先される10名）のMMRを利用して計算
+    let analysisData = null;
+    if (selectedPatterns.length > 0 && selectedPatterns[0].selected.length === 10) {
+      const selectedPlayers = selectedPatterns[0].selected;
+      const mmrs = selectedPlayers.map(p => {
+        if (p.avgMMR !== undefined) return p.avgMMR;
+        const mainRole = p.pref1 as Role;
+        const hasMainRole = mainRole && ['TOP', 'JG', 'MID', 'ADC', 'SUP'].includes(mainRole);
+        return hasMainRole ? p.rates[mainRole] : (Object.values(p.rates).reduce((s, v) => s + v, 0) / 5);
+      });
+      
+      const sum = mmrs.reduce((s, v) => s + v, 0);
+      const avg = Math.round(sum / 10);
+      const min = Math.min(...mmrs);
+      const max = Math.max(...mmrs);
+      const range = max - min;
+      
+      let level = 'STANDARD';
+      let message = 'ℹ️ 本日のレート差は標準的な範囲に収まっています。全体のバランスが最も良い「案A（バランス）」の採用がおすすめです。';
+      
+      if (range >= 800) {
+        level = 'HIGH_DIFFERENCE';
+        message = '⚠️ 本日は実力差（レート差）が非常に大きい日です。初心者や低レートの方が得意ロールでプレイできる「案D（低MMR優先）」や、対面の戦力を平準化する「案B（戦力均等）」の採用を強く推奨します。';
+      } else if (range < 400) {
+        level = 'CLOSE';
+        message = '✨ 本日は実力差が小さく、非常に拮抗した好カードが期待できる日です。お好みのコンセプト（希望優先など）で自由に楽しめます！';
+      }
+      
+      analysisData = {
+        averageMMR: avg,
+        minMMR: min,
+        maxMMR: max,
+        mmrRange: range,
+        level,
+        message
+      };
     }
 
-    return NextResponse.json({ proposals: uniqueProposals });
+    return NextResponse.json({ proposals: finalProposals, analysis: analysisData });
 
   } catch (error: any) {
     console.error('Balancer API Error:', error);

@@ -9,8 +9,24 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'RIOT_API_KEY が設定されていません。' }, { status: 500 });
     }
 
-    // 1. Supabaseから全プレイヤーを取得
-    const { data: players, error } = await supabase.from('ktm_players').select('*');
+    // リクエストボディから playerIds を取得（部分同期用）
+    let playerIds: number[] | undefined;
+    try {
+      const body = await request.json();
+      if (body && Array.isArray(body.playerIds)) {
+        playerIds = body.playerIds;
+      }
+    } catch (e) {
+      // ボディがない、またはJSONパース失敗の場合は無視して全員取得
+    }
+
+    // 1. Supabaseからプレイヤーを取得
+    let dbQuery = supabase.from('ktm_players').select('*');
+    if (playerIds && playerIds.length > 0) {
+      dbQuery = dbQuery.in('id', playerIds);
+    }
+
+    const { data: players, error } = await dbQuery;
     if (error || !players) {
       return NextResponse.json({ error: 'プレイヤーの取得に失敗しました。' }, { status: 500 });
     }

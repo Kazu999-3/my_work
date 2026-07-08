@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
+export const revalidate = 30; // 30秒間キャッシュしてDiscord APIへのリクエストを削減
 
 export async function GET() {
   const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN;

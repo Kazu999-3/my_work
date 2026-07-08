@@ -78,6 +78,35 @@ class YouTubeAbsorber:
             self.yt_dlp_base.extend(["--cookies-from-browser", cookies_from])
         self._whisper_model = None
         
+    def _run_ytdlp(self, args, capture_output=True, text=True, timeout=None):
+        """yt-dlpコマンドを実行し、DPAPIなどのクッキーエラーが起きた場合にクッキー引数を除外して自動リトライする"""
+        import subprocess
+        cmd = self.yt_dlp_base + args
+        try:
+            res = subprocess.run(cmd, capture_output=capture_output, text=text, timeout=timeout)
+            stderr_str = ""
+            if capture_output:
+                stderr_str = res.stderr if text else res.stderr.decode('utf-8', errors='replace')
+            
+            if res.returncode != 0 and "Failed to decrypt with DPAPI" in stderr_str:
+                logger.warning("⚠️ [yt-dlp] クッキーの復号化(DPAPI)に失敗しました。クッキーなしで再試行します。")
+                clean_base = []
+                skip_next = False
+                for token in self.yt_dlp_base:
+                    if skip_next:
+                        skip_next = False
+                        continue
+                    if token == "--cookies-from-browser":
+                        skip_next = True
+                        continue
+                    clean_base.append(token)
+                
+                cmd_retry = clean_base + args
+                res = subprocess.run(cmd_retry, capture_output=capture_output, text=text, timeout=timeout)
+            return res
+        except subprocess.TimeoutExpired as e:
+            raise e
+        
     def _supabase_request(self, path, method='GET', payload=None, headers=None):
         if not settings.SUPABASE_URL or not settings.SUPABASE_KEY:
             logger.error("Supabase URL or Key is not configured.")
@@ -215,15 +244,14 @@ class YouTubeAbsorber:
             try: os.remove(f)
             except: pass
             
-        cmd = self.yt_dlp_base + [
+        self._run_ytdlp([
             "--write-auto-subs",
             "--write-subs",
             "--sub-lang", "en",
             "--skip-download",
             "-o", f"{temp_dir}/{video_id}.%(ext)s",
             url
-        ]
-        subprocess.run(cmd, capture_output=True)
+        ], capture_output=True, text=False)
         
         # vttファイルを探す
         vtt_files = glob.glob(f"{temp_dir}/{video_id}.*.vtt")
@@ -248,14 +276,13 @@ class YouTubeAbsorber:
                 try: os.remove(existing_file)
                 except: pass
             
-        cmd = self.yt_dlp_base + [
+        logger.info(f"Downloading audio for Whisper: {url}")
+        res = self._run_ytdlp([
             "-f", "ba",  # ffmpeg がない環境でもポストプロセスを走らせずにベストオーディオをそのままダウンロード
             "-o", f"{temp_dir}/{video_id}.%(ext)s",
             "--no-playlist",
             url
-        ]
-        logger.info(f"Downloading audio for Whisper: {url}")
-        res = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace")
+        ], capture_output=True, text=True)
         if res.returncode != 0:
             logger.error(f"Failed to download audio: {res.stderr}")
             return ""
@@ -522,10 +549,11 @@ class YouTubeAbsorber:
             if not item.get("title") or item["title"] in ("YouTube Video", "Unknown", ""):
                 logger.info(f"🔍 [TitleFix] タイトル未取得のため yt-dlp で実タイトルを取得します: {item['url']}")
                 try:
-                    result = subprocess.run(
-                        self.yt_dlp_base + ["--print", "%(title)s\n%(uploader)s", "--no-warnings", item["url"]],
-                        capture_output=True, text=True, timeout=20
-                    )
+                    result = self._run_ytdlp([
+                        "--print", "%(title)s\n%(uploader)s",
+                        "--no-warnings",
+                        item["url"]
+                    ], capture_output=True, text=True, timeout=20)
                     lines = result.stdout.strip().split("\n")
                     if lines[0] and lines[0].strip():
                         real_title = lines[0].strip()

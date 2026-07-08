@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { supabase } from "../../lib/supabaseClient";
-import { Users, RefreshCw, Swords, X, Activity, Globe, MessageSquare, Info, Crown, Trophy, History, Shield } from "lucide-react";
+import { Users, RefreshCw, Swords, X, Activity, Globe, MessageSquare, Info, Crown, Trophy, History, Shield, AlertTriangle } from "lucide-react";
 import { getChampIcon } from "../../lib/ddragonClient";
 import ProfileModal from "../ktm-admin/ProfileModal";
 import MatchRecordPanel from "../ktm-admin/MatchRecordPanel";
@@ -34,6 +34,7 @@ export default function BalancerPage() {
   const [balanceResult, setBalanceResult] = useState<any>(null);
   const [proposals, setProposals] = useState<any[]>([]);
   const [selectedProposalIdx, setSelectedProposalIdx] = useState<number>(0);
+  const [analysis, setAnalysis] = useState<any>(null);
   const [sendingDiscord, setSendingDiscord] = useState(false);
   
   const [sortConfig, setSortConfig] = useState({ key: "no", direction: "asc" });
@@ -253,10 +254,12 @@ export default function BalancerPage() {
         setProposals(data.proposals);
         setBalanceResult(data.proposals[0]);
         setSelectedProposalIdx(0);
+        setAnalysis(data.analysis || null);
       } else {
         setBalanceResult(data);
         setProposals([data]);
         setSelectedProposalIdx(0);
+        setAnalysis(null);
       }
     } catch (err: any) {
       setMessage({ type: "error", text: "❌ バランス計算エラー: " + err.message });
@@ -570,6 +573,46 @@ export default function BalancerPage() {
         {/* チーム分け結果表示エリア */}
         {balanceResult && (
           <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 md:p-8 shadow-2xl relative overflow-hidden">
+            
+            {/* 本日のカスタム環境分析 */}
+            {analysis && (
+              <div className={`mb-6 p-4 rounded-xl border text-sm flex flex-col gap-2 ${
+                analysis.level === 'HIGH_DIFFERENCE' 
+                  ? 'bg-amber-950/40 border-amber-800/80 text-amber-200' 
+                  : analysis.level === 'CLOSE'
+                    ? 'bg-emerald-950/40 border-emerald-800/80 text-emerald-200'
+                    : 'bg-indigo-950/40 border-indigo-800/80 text-indigo-200'
+              }`}>
+                <div className="flex items-center gap-2 font-bold text-base">
+                  {analysis.level === 'HIGH_DIFFERENCE' ? (
+                    <AlertTriangle className="h-5 w-5 text-amber-400 shrink-0" />
+                  ) : analysis.level === 'CLOSE' ? (
+                    <Globe className="h-5 w-5 text-emerald-400 shrink-0" />
+                  ) : (
+                    <Info className="h-5 w-5 text-indigo-400 shrink-0" />
+                  )}
+                  <span>本日のカスタム環境分析:</span>
+                  <span className={`px-2 py-0.5 rounded text-xs font-black ${
+                    analysis.level === 'HIGH_DIFFERENCE'
+                      ? 'bg-amber-800 text-amber-100'
+                      : analysis.level === 'CLOSE'
+                        ? 'bg-emerald-800 text-emerald-100'
+                        : 'bg-indigo-800 text-indigo-100'
+                  }`}>
+                    {analysis.level === 'HIGH_DIFFERENCE' ? '格差大（レート差多）' : analysis.level === 'CLOSE' ? '実力拮抗' : '標準的'}
+                  </span>
+                </div>
+                <p className="text-gray-300 font-medium leading-relaxed">
+                  {analysis.message}
+                </p>
+                <div className="flex flex-wrap gap-x-6 gap-y-1 text-xs text-gray-400 mt-1 pt-2 border-t border-gray-800/60">
+                  <div>平均レート: <strong className="text-white font-mono">{analysis.averageMMR}</strong></div>
+                  <div>最低レート: <strong className="text-white font-mono">{analysis.minMMR}</strong></div>
+                  <div>最高レート: <strong className="text-white font-mono">{analysis.maxMMR}</strong></div>
+                  <div>レート差: <strong className={`font-mono ${analysis.level === 'HIGH_DIFFERENCE' ? 'text-amber-400 font-bold' : 'text-white'}`}>{analysis.mmrRange}</strong></div>
+                </div>
+              </div>
+            )}
             
             {/* 案選択タブUI */}
             {proposals && proposals.length > 1 && (

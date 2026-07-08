@@ -35,6 +35,7 @@ function ChampionsContent() {
   const [champPatchMetas, setChampPatchMetas] = useState<Record<string, any>>({});
   const [champJgStyles, setChampJgStyles] = useState<Record<string, any>>({});
   const [typeFilter, setTypeFilter] = useState<'ALL' | 'FARM' | 'GANK' | 'INVASION' | 'TANK'>('ALL');
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [pickFilter, setPickFilter] = useState<'ALL' | 'BLIND' | 'COUNTER'>('ALL');
 
   // 相対時間フォーマット関数
@@ -289,7 +290,14 @@ function ChampionsContent() {
             dates[row.champion] = row.created_at;
             pending[row.champion] = !row.strategy; // strategyが空・nullならpending
             metas[row.champion] = row.patch_meta || null;
-            jgStyles[row.champion] = row.jg_style || null;
+            
+            // jg_styleが文字列だった場合でも安全にパースする
+            let parsedJgStyle = null;
+            if (row.jg_style) {
+              parsedJgStyle = typeof row.jg_style === 'string' ? JSON.parse(row.jg_style) : row.jg_style;
+            }
+            jgStyles[row.champion] = parsedJgStyle || null;
+
             if (row.is_favorited === true) {
               dbFavorites.push(row.champion);
             }
@@ -346,12 +354,26 @@ function ChampionsContent() {
 
       const { data: noteData } = await supabase.from('matchup_sentinel').select('strategy, raw_data').eq('champion', champId).eq('enemy', 'GLOBAL').single();
       const rd = noteData?.raw_data || {};
+      
+      // Storageからの下書きデータ取得連携（削減案①）
+      let loadedNoteDraft = rd.note_draft || '';
+      if (rd.note_draft_url) {
+        try {
+          const res = await fetch(rd.note_draft_url);
+          if (res.ok) {
+            loadedNoteDraft = await res.text();
+          }
+        } catch (fetchErr) {
+          console.error("❌ Failed to fetch note_draft from storage URL:", rd.note_draft_url, fetchErr);
+        }
+      }
+
       setDataFields({
         strengths: rd.strengths || '', weaknesses: rd.weaknesses || '',
         powerSpikes: rd.powerSpikes || '', buildRunes: rd.buildRunes || '',
         fullClearTime: rd.fullClearTime || '', counterChampions: rd.counterChampions || '',
         mustBanChampions: rd.mustBanChampions || '', pickRecommendation: rd.pickRecommendation || '',
-        strategy: noteData?.strategy || '', note_draft: rd.note_draft || '',
+        strategy: noteData?.strategy || '', note_draft: loadedNoteDraft,
         customFields: rd.customFields || {},
         patch_meta: rd.patch_meta || null,
         pro_builds: rd.pro_builds || [],
@@ -458,6 +480,19 @@ function ChampionsContent() {
             .single();
             
           const rd = noteData?.raw_data || {};
+          
+          let loadedNoteDraft = rd.note_draft || '';
+          if (rd.note_draft_url) {
+            try {
+              const res = await fetch(rd.note_draft_url);
+              if (res.ok) {
+                loadedNoteDraft = await res.text();
+              }
+            } catch (fetchErr) {
+              console.error("❌ Failed to fetch note_draft from storage URL:", rd.note_draft_url, fetchErr);
+            }
+          }
+
           setDataFields({
             strengths: rd.strengths || '',
             weaknesses: rd.weaknesses || '',
@@ -468,7 +503,7 @@ function ChampionsContent() {
             mustBanChampions: rd.mustBanChampions || '',
             pickRecommendation: rd.pickRecommendation || '',
             strategy: noteData?.strategy || '',
-            note_draft: rd.note_draft || '',
+            note_draft: loadedNoteDraft,
             customFields: rd.customFields || {},
             patch_meta: rd.patch_meta || null,
             pro_builds: rd.pro_builds || [],
@@ -764,7 +799,7 @@ function ChampionsContent() {
                 {(dataFields.jg_style?.role || 'JUNGLE') === 'JUNGLE' ? (
                   <>
                     <select
-                      value={['侵入型', 'ガング型', 'ファーム型', 'タンク型'].includes(dataFields.jg_style?.type || '') ? dataFields.jg_style?.type : (dataFields.jg_style?.type ? 'other' : '')}
+                      value={['侵入型', 'ガンク型', 'ファーム型', 'タンク型'].includes(dataFields.jg_style?.type || '') ? dataFields.jg_style?.type : (dataFields.jg_style?.type ? 'other' : '')}
                       onChange={e => {
                         if (e.target.value === 'other') {
                           setJgStyleField('type', 'その他');
@@ -776,12 +811,12 @@ function ChampionsContent() {
                     >
                       <option value="">未設定</option>
                       <option value="侵入型">侵入型 (インベード・1v1)</option>
-                      <option value="ガング型">ガング型 (CC・序盤関与)</option>
+                      <option value="ガンク型">ガンク型 (CC・序盤関与)</option>
                       <option value="ファーム型">ファーム型 (高速・キャリー)</option>
                       <option value="タンク型">タンク型 (集団戦・エンゲージ)</option>
                       <option value="other">その他 (手動入力する)</option>
                     </select>
-                    {(!['', '侵入型', 'ガング型', 'ファーム型', 'タンク型'].includes(dataFields.jg_style?.type || '')) && (
+                    {(!['', '侵入型', 'ガンク型', 'ファーム型', 'タンク型'].includes(dataFields.jg_style?.type || '')) && (
                       <input
                         type="text"
                         value={dataFields.jg_style?.type === 'その他' ? '' : (dataFields.jg_style?.type || '')}
@@ -1422,82 +1457,97 @@ function ChampionsContent() {
 
       {/* 検索バー・フィルター（スクロール追従） */}
       <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }} className="sticky top-0 z-20 flex flex-col gap-3 glass-panel p-4 rounded-2xl shadow-2xl backdrop-blur-2xl bg-[#06070a]/90">
-        <div className="flex gap-4 items-center flex-wrap">
-          <div className="relative flex-1 min-w-[200px]">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[#c89b3c]" size={20} />
-            <input type="text" placeholder="チャンピオン名で検索..." value={search} onChange={e => setSearch(e.target.value)}
-              className="w-full bg-[var(--color-surface)] border border-transparent focus:border-[#c89b3c]/50 rounded-xl py-3 pl-12 pr-4 text-white font-bold outline-none transition-colors" />
-          </div>
-          {/* ロール別フィルターボタン */}
-          <div className="flex glass-panel p-1 rounded-xl items-center gap-0.5">
-            {ROLE_LABELS.map(role => (
-              <button key={role} onClick={() => setRoleFilter(role)}
-                className={`px-3 py-2 rounded-lg text-xs font-black tracking-wider transition-all ${
-                  roleFilter === role
-                    ? 'bg-[#c89b3c] text-black shadow-lg shadow-[#c89b3c]/30'
-                    : 'text-gray-400 hover:text-white hover:bg-white/5'
-                }`}>
-                {role}
-              </button>
-            ))}
-          </div>
-          {/* ピック属性フィルターボタン */}
-          <div className="flex glass-panel p-1 rounded-xl items-center gap-0.5">
-            {[
-              { id: 'ALL', label: 'すべてのピック属性' },
-              { id: 'BLIND', label: '🟢 先出し向け' },
-              { id: 'COUNTER', label: '🔴 後出し向け' }
-            ].map(p => (
-              <button key={p.id} onClick={() => setPickFilter(p.id as any)}
-                className={`px-3 py-2 rounded-lg text-xs font-black tracking-wider transition-all ${
-                  pickFilter === p.id
-                    ? 'bg-emerald-500 text-black shadow-lg shadow-emerald-500/30'
-                    : 'text-gray-400 hover:text-white hover:bg-white/5'
-                }`}>
-                {p.label}
-              </button>
-            ))}
-          </div>
+        
+        {/* スマホ表示の時だけ見える「フィルター開閉ボタン」 */}
+        <button 
+          onClick={() => setIsFilterOpen(!isFilterOpen)}
+          className="md:hidden w-full flex items-center justify-between px-4 py-3 bg-gray-900 border border-gray-700 rounded-xl text-[#c89b3c] font-bold text-xs hover:bg-gray-800 transition-all"
+        >
+          <span className="flex items-center gap-1.5">
+            <Filter size={14} /> 絞り込み条件を指定する
+          </span>
+          <span>{isFilterOpen ? '▲ 閉じる' : '▼ 開く'}</span>
+        </button>
 
-          {/* タイプ（戦術）フィルターボタン */}
-          <div className="flex glass-panel p-1 rounded-xl items-center gap-0.5">
-            {[
-              { id: 'ALL', label: 'すべてのタイプ' },
-              { id: 'FARM', label: '🚜 ファーム' },
-              { id: 'GANK', label: '⚔️ ガンク' },
-              { id: 'INVASION', label: '🎒 侵入' },
-              { id: 'TANK', label: '🛡️ タンク' }
-            ].map(t => (
-              <button key={t.id} onClick={() => setTypeFilter(t.id as any)}
-                className={`px-3 py-2 rounded-lg text-xs font-black tracking-wider transition-all ${
-                  typeFilter === t.id
-                    ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/30'
-                    : 'text-gray-400 hover:text-white hover:bg-white/5'
-                }`}>
-                {t.label}
-              </button>
-            ))}
+        {/* フィルター本体：スマホ時は開閉状態に連動、PC（md以上）では常に表示 */}
+        <div className={`${isFilterOpen ? 'flex' : 'hidden'} md:flex flex-col gap-4 items-center flex-wrap w-full`}>
+          <div className="flex gap-4 items-center flex-wrap w-full">
+            <div className="relative flex-1 min-w-[200px]">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[#c89b3c]" size={20} />
+              <input type="text" placeholder="チャンピオン名で検索..." value={search} onChange={e => setSearch(e.target.value)}
+                className="w-full bg-[var(--color-surface)] border border-transparent focus:border-[#c89b3c]/50 rounded-xl py-3 pl-12 pr-4 text-white font-bold outline-none transition-colors" />
+            </div>
+            {/* ロール別フィルターボタン */}
+            <div className="flex glass-panel p-1 rounded-xl items-center gap-0.5">
+              {ROLE_LABELS.map(role => (
+                <button key={role} onClick={() => setRoleFilter(role)}
+                  className={`px-3 py-2 rounded-lg text-xs font-black tracking-wider transition-all ${
+                    roleFilter === role
+                      ? 'bg-[#c89b3c] text-black shadow-lg shadow-[#c89b3c]/30'
+                      : 'text-gray-400 hover:text-white hover:bg-white/5'
+                  }`}>
+                  {role}
+                </button>
+              ))}
+            </div>
+            {/* ピック属性フィルターボタン */}
+            <div className="flex glass-panel p-1 rounded-xl items-center gap-0.5">
+              {[
+                { id: 'ALL', label: 'すべてのピック属性' },
+                { id: 'BLIND', label: '🟢 先出し向け' },
+                { id: 'COUNTER', label: '🔴 後出し向け' }
+              ].map(p => (
+                <button key={p.id} onClick={() => setPickFilter(p.id as any)}
+                  className={`px-3 py-2 rounded-lg text-xs font-black tracking-wider transition-all ${
+                    pickFilter === p.id
+                      ? 'bg-emerald-500 text-black shadow-lg shadow-emerald-500/30'
+                      : 'text-gray-400 hover:text-white hover:bg-white/5'
+                  }`}>
+                  {p.label}
+                </button>
+              ))}
+            </div>
+
+            {/* タイプ（戦術）フィルターボタン */}
+            <div className="flex glass-panel p-1 rounded-xl items-center gap-0.5">
+              {[
+                { id: 'ALL', label: 'すべてのタイプ' },
+                { id: 'FARM', label: '🚜 ファーム' },
+                { id: 'GANK', label: '⚔️ ガンク' },
+                { id: 'INVASION', label: '🎒 侵入' },
+                { id: 'TANK', label: '🛡️ タンク' }
+              ].map(t => (
+                <button key={t.id} onClick={() => setTypeFilter(t.id as any)}
+                  className={`px-3 py-2 rounded-lg text-xs font-black tracking-wider transition-all ${
+                    typeFilter === t.id
+                      ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/30'
+                      : 'text-gray-400 hover:text-white hover:bg-white/5'
+                  }`}>
+                  {t.label}
+                </button>
+              ))}
+            </div>
+            <button 
+              onClick={() => setShowPendingOnly(!showPendingOnly)} 
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all border ${showPendingOnly ? 'bg-rose-500/20 text-rose-400 border-rose-500/50 shadow-[0_0_15px_rgba(244,63,94,0.3)]' : 'glass-panel text-gray-400 border-transparent hover:text-white'}`}
+            >
+              <Filter size={16} /> 要確認
+            </button>
+            <button 
+              onClick={() => setShowFavoritesOnly(!showFavoritesOnly)} 
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all border ${showFavoritesOnly ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/50 shadow-[0_0_15px_rgba(234,179,8,0.3)]' : 'glass-panel text-gray-400 border-transparent hover:text-white'}`}
+            >
+              <StarIcon size={16} fill={showFavoritesOnly ? 'currentColor' : 'none'} className={showFavoritesOnly ? 'text-yellow-400' : ''} /> お気に入り
+            </button>
+            <select value={sortOrder} onChange={e => setSortOrder(e.target.value)} className="glass-panel border-none rounded-xl px-4 py-2.5 font-bold text-[#c89b3c] outline-none min-w-[160px] cursor-pointer">
+              <option value="updated_desc">更新日が新しい順</option>
+              <option value="updated_asc">更新日が古い順</option>
+              <option value="blind_pickable_desc">先出し安定度順 (★順)</option>
+              <option value="counter_pickable_desc">後出し有利度順 (★順)</option>
+              <option value="style_farm_desc">ファーム重視度順</option>
+              <option value="name_asc">名前順</option>
+            </select>
           </div>
-          <button 
-            onClick={() => setShowPendingOnly(!showPendingOnly)} 
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all border ${showPendingOnly ? 'bg-rose-500/20 text-rose-400 border-rose-500/50 shadow-[0_0_15px_rgba(244,63,94,0.3)]' : 'glass-panel text-gray-400 border-transparent hover:text-white'}`}
-          >
-            <Filter size={16} /> 要確認
-          </button>
-          <button 
-            onClick={() => setShowFavoritesOnly(!showFavoritesOnly)} 
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all border ${showFavoritesOnly ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/50 shadow-[0_0_15px_rgba(234,179,8,0.3)]' : 'glass-panel text-gray-400 border-transparent hover:text-white'}`}
-          >
-            <StarIcon size={16} fill={showFavoritesOnly ? 'currentColor' : 'none'} className={showFavoritesOnly ? 'text-yellow-400' : ''} /> お気に入り
-          </button>
-          <select value={sortOrder} onChange={e => setSortOrder(e.target.value)} className="glass-panel border-none rounded-xl px-4 py-2.5 font-bold text-[#c89b3c] outline-none min-w-[160px] cursor-pointer">
-            <option value="updated_desc">更新日が新しい順</option>
-            <option value="updated_asc">更新日が古い順</option>
-            <option value="blind_pickable_desc">先出し安定度順 (★順)</option>
-            <option value="counter_pickable_desc">後出し有利度順 (★順)</option>
-            <option value="style_farm_desc">ファーム重視度順</option>
-            <option value="name_asc">名前順</option>
-          </select>
         </div>
         {/* ヒット数表示 */}
         <div className="flex items-center gap-2 px-1 text-xs font-bold">
@@ -1535,25 +1585,25 @@ function ChampionsContent() {
                 <span className={`text-xs font-bold text-center leading-tight transition-colors ${hasNote ? 'text-[#c89b3c]' : 'text-gray-400 group-hover:text-white'}`}>{c.name}</span>
                 {(() => {
                   const patchMeta = champPatchMetas[c.id];
-                  if (!patchMeta) return null;
+                  const patchName = patchMeta?.patch ? `P${patchMeta.patch}` : 'P??';
                   
                   // 更新から3日以上経っている場合は少し古いトレンドと判定 (259200秒)
-                  const isOld = patchMeta.updated_at ? (Date.now() / 1000 - patchMeta.updated_at > 259200) : false;
+                  const isOld = patchMeta?.updated_at ? (Date.now() / 1000 - patchMeta.updated_at > 259200) : true;
                   
                   return (
                     <div className="flex flex-col items-center gap-0.5 mt-1 pointer-events-none">
                       <span className={`px-1.5 py-0.5 rounded text-[9px] font-black leading-none border transition-colors ${
-                        isOld 
-                          ? 'bg-amber-400/5 border-amber-400/20 text-amber-400/60' 
-                          : 'bg-cyan-400/10 border-cyan-400/20 text-cyan-400'
+                        !patchMeta
+                          ? 'bg-red-500/10 border-red-500/20 text-red-400/60'
+                          : isOld 
+                            ? 'bg-amber-400/5 border-amber-400/20 text-amber-400/60' 
+                            : 'bg-cyan-400/10 border-cyan-400/20 text-cyan-400'
                       }`}>
-                        P{patchMeta.patch || '?'}
+                        {patchName}
                       </span>
-                      {patchMeta.updated_at && (
-                        <span className={`text-[8px] font-bold leading-none ${isOld ? 'text-gray-600' : 'text-gray-500'}`}>
-                          {getRelativeTimeString(patchMeta.updated_at)}
-                        </span>
-                      )}
+                      <span className={`text-[8px] font-bold leading-none ${isOld ? 'text-gray-600' : 'text-gray-500'}`}>
+                        {patchMeta?.updated_at ? getRelativeTimeString(patchMeta.updated_at) : '未解析'}
+                      </span>
                     </div>
                   );
                 })()}
@@ -1578,7 +1628,7 @@ function ChampionsContent() {
                       {jgStyle.type && (
                         <div className="mt-1 px-1 py-0.5 rounded text-[8px] font-black leading-none bg-amber-500/10 border border-amber-500/20 text-amber-400 text-center w-full truncate" title={jgStyle.type}>
                           {jgStyle.type === 'ファーム型' ? '🚜 ファーム' :
-                           jgStyle.type === 'ガング型' ? '⚔️ ガンク' :
+                           jgStyle.type === 'ガンク型' ? '⚔️ ガンク' :
                            jgStyle.type === '侵入型' ? '🎒 侵入' :
                            jgStyle.type === 'タンク型' ? '🛡️ タンク' : jgStyle.type}
                         </div>

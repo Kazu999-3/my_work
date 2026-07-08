@@ -61,8 +61,7 @@ export default function Home() {
       }
     };
     checkStatus();
-    const interval = setInterval(checkStatus, 5000);
-    return () => clearInterval(interval);
+    // 自動更新（リアルタイムポーリング）を無効化し、手動更新に変更
   }, []);
 
 
@@ -199,13 +198,8 @@ export default function Home() {
 
   useEffect(() => {
     fetchData();
-
-    // 30秒ごとに自動リフレッシュ
-    const interval = setInterval(() => {
-      fetchData(true);
-    }, 30000);
-
-    return () => clearInterval(interval);
+    setLastUpdated(new Date().toLocaleTimeString('ja-JP'));
+    // 自動リフレッシュ（リアルタイムポーリング）を無効化し、手動更新に変更
   }, []);
 
   const handleResetQueue = async () => {
@@ -280,6 +274,29 @@ export default function Home() {
             <TrendingUp size={14} />
             <span>note 分析 ➔</span>
           </Link>
+          <button
+            type="button"
+            onClick={async () => {
+              setIsRefreshing(true);
+              await fetchData(true);
+              try {
+                const res = await fetch('/api/admin/system/status');
+                if (res.ok) {
+                  const data = await res.json();
+                  setSystemStatus(data);
+                }
+              } catch (err) {
+                console.error(err);
+              }
+              setLastUpdated(new Date().toLocaleTimeString('ja-JP'));
+              setIsRefreshing(false);
+            }}
+            disabled={isRefreshing}
+            className="px-4 py-2.5 rounded-2xl bg-slate-900 border border-slate-800 hover:bg-slate-800 hover:border-slate-700 text-xs font-bold text-slate-300 transition-all flex items-center gap-2"
+          >
+            <RefreshCw size={14} className={isRefreshing ? 'animate-spin text-blue-400' : 'text-blue-400'} />
+            <span>最新情報を取得（手動同期）</span>
+          </button>
           {lastUpdated && (
             <span className="text-xs text-gray-500 font-mono">最終更新: {lastUpdated}</span>
           )}

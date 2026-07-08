@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
+export const revalidate = 300; // 5分間キャッシュしてSupabaseへの負荷を削減
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder';
@@ -13,21 +12,21 @@ export async function GET() {
     // 1. 全参加者レコードを取得
     const { data: participants, error: pError } = await supabase
       .from('ktm_match_participants')
-      .select('match_id, player_name, champion_name, kills, deaths, assists, is_win, team, role');
+      .select('match_id, player_name, champion_name, kills, deaths, assists, team, role');
       
     if (pError) throw pError;
 
-    // 2. 試合作成日時を取得
+    // 2. 試合作成日時および勝敗情報を取得
     const { data: matches, error: mError } = await supabase
       .from('ktm_matches')
-      .select('id, created_at')
+      .select('id, created_at, winning_team')
       .order('created_at', { ascending: false });
 
     if (mError) throw mError;
     
     const matchDateMap = new Map();
     matches.forEach(m => {
-      matchDateMap.set(m.id, m.created_at);
+      matchDateMap.set(m.id, { date: m.created_at, winner: m.winning_team });
     });
 
     // 3. 直接対面（マッチアップ）マッピングの事前構築
@@ -60,6 +59,9 @@ export async function GET() {
       const champ = p.champion_name;
       if (!champ) return;
 
+      const matchInfo = matchDateMap.get(p.match_id) || {};
+      const isWin = p.team === matchInfo.winner;
+
       if (!stats[champ]) {
         stats[champ] = {
           pick_count: 0,
@@ -75,7 +77,7 @@ export async function GET() {
 
       const c = stats[champ];
       c.pick_count += 1;
-      if (p.is_win) c.win_count += 1;
+      if (isWin) c.win_count += 1;
       c.total_kills += p.kills || 0;
       c.total_deaths += p.deaths || 0;
       c.total_assists += p.assists || 0;
@@ -94,7 +96,7 @@ export async function GET() {
       }
       const ps = c.player_stats[pName];
       ps.games += 1;
-      if (p.is_win) ps.wins += 1;
+      if (isWin) ps.wins += 1;
       ps.kills += p.kills || 0;
       ps.deaths += p.deaths || 0;
       ps.assists += p.assists || 0;
@@ -118,7 +120,7 @@ export async function GET() {
         }
         const ms = c.matchup_stats[enemyChamp];
         ms.games += 1;
-        if (p.is_win) ms.wins += 1;
+        if (isWin) ms.wins += 1;
         ms.kills += p.kills || 0;
         ms.deaths += p.deaths || 0;
         ms.assists += p.assists || 0;
@@ -127,12 +129,12 @@ export async function GET() {
       // マッチ履歴レコードの作成
       c.history.push({
         match_id: p.match_id,
-        created_at: matchDateMap.get(p.match_id) || '',
+        created_at: matchInfo.date || '',
         player_name: pName,
         team: p.team,
         role: p.role,
         score: `${p.kills}/${p.deaths}/${p.assists}`,
-        is_win: p.is_win,
+        is_win: isWin,
         enemy_champion: enemyChamp || 'Unknown'
       });
     });

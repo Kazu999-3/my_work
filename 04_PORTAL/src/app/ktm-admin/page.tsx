@@ -390,11 +390,12 @@ export default function KtmAdminPage() {
       const discPostData = await discPostRes.json();
       if (!discPostRes.ok) throw new Error(discPostData.error || 'Discord同期処理に失敗しました');
 
-      // 3. Riot情報の同期実行
+      // 3. Riot情報の同期実行 (タイムアウト回避のため5人ずつ分割実行)
       setMessage({ type: "info", text: "2/3: Riot APIから全員の最新情報を同期中..." });
-      const riotRes = await fetch('/api/admin/riot-sync', { method: 'POST' });
-      const riotData = await riotRes.json();
-      if (!riotRes.ok) throw new Error(riotData.error || 'Riot情報の同期に失敗しました');
+      const playerIdsToSync = players.map(p => p.id).filter(Boolean);
+      const riotData = await runRiotSyncInChunks(playerIdsToSync, (msg) => {
+        setMessage({ type: "info", text: `2/3: ${msg}` });
+      });
 
       // 4. MMR 再計算の実行
       setMessage({ type: "info", text: "3/3: 過去の全試合からMMRを再計算(Rebuild)中..." });
@@ -535,15 +536,45 @@ export default function KtmAdminPage() {
     setSortConfig({ key, direction });
   };
 
+  const runRiotSyncInChunks = async (playerIds: number[], onProgress: (msg: string) => void) => {
+    const chunkSize = 5;
+    const allErrors: string[] = [];
+    let totalUpdated = 0;
+
+    for (let i = 0; i < playerIds.length; i += chunkSize) {
+      const chunk = playerIds.slice(i, i + chunkSize);
+      onProgress(`Riot APIから最新情報を同期中 (${i + chunk.length}/${playerIds.length}人)...`);
+
+      const res = await fetch('/api/admin/riot-sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ playerIds: chunk })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Riot同期処理に失敗しました');
+
+      if (data.errors && data.errors.length > 0) {
+        allErrors.push(...data.errors);
+      }
+      totalUpdated += chunk.length;
+    }
+
+    return {
+      message: `${totalUpdated} 人のプレイヤーのRiot情報を同期しました。`,
+      errors: allErrors
+    };
+  };
+
   const handleRiotSync = async () => {
     if (!confirm('Riot APIから全員の最新のランク情報を取得・同期しますか？\n（※数十秒かかる場合があります）')) return;
     
     setSyncingRiot(true);
     setMessage({ type: "", text: "" });
     try {
-      const res = await fetch('/api/admin/riot-sync', { method: 'POST' });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
+      const playerIdsToSync = players.map(p => p.id).filter(Boolean);
+      const data = await runRiotSyncInChunks(playerIdsToSync, (msg) => {
+        setMessage({ type: "info", text: msg });
+      });
       
       if (data.errors && data.errors.length > 0) {
         console.warn("Riot Sync Errors:", data.errors);
@@ -622,9 +653,10 @@ export default function KtmAdminPage() {
       // 3. 複合機能：Riot同期も自動で連続実行
       setMessage({ type: "success", text: "✅ Discord同期が完了しました。続けてRiot情報の同期を開始します..." });
       
-      const riotRes = await fetch('/api/admin/riot-sync', { method: 'POST' });
-      const riotData = await riotRes.json();
-      if (!riotRes.ok) throw new Error(riotData.error || 'Riot情報の同期に失敗しました');
+      const playerIdsToSync = players.map(p => p.id).filter(Boolean);
+      const riotData = await runRiotSyncInChunks(playerIdsToSync, (msg) => {
+        setMessage({ type: "info", text: msg });
+      });
 
       if (riotData.errors && riotData.errors.length > 0) {
         const errorDetails = riotData.errors.slice(0, 10).join('\n') + (riotData.errors.length > 10 ? `\n...他 ${riotData.errors.length - 10} 件` : '');
