@@ -354,7 +354,7 @@ export default function KtmAdminPage() {
       // 新規追加メンバーにデフォルトのRankと希望ロールを設定し、初期MMRを計算
       const processedAdd = discData.toAdd.map((p: any) => {
         const highest_rank = "UNRANKED";
-        const prefs = { primary: "ALL", secondary: "-" };
+        const prefs = p.role_preferences || { primary: "ALL", secondary: "-", ignore_role: "-" };
         
         const mmr_top = calculateAutoMmr(highest_rank, 'TOP', prefs);
         const mmr_jg = calculateAutoMmr(highest_rank, 'JG', prefs);
@@ -616,7 +616,7 @@ export default function KtmAdminPage() {
       // 1. 新規追加メンバーのMMRをフロント側で自動計算してマージする
       const processedAdd = syncData.toAdd.map((p: any) => {
         const highest_rank = p.highest_rank || "UNRANKED";
-        const prefs = p.role_preferences || { primary: "ALL", secondary: "-" };
+        const prefs = p.role_preferences || { primary: "ALL", secondary: "-", ignore_role: "-" };
         
         const mmr_top = calculateAutoMmr(highest_rank, 'TOP', prefs);
         const mmr_jg = calculateAutoMmr(highest_rank, 'JG', prefs);
@@ -910,8 +910,13 @@ export default function KtmAdminPage() {
                         <div className="space-y-3">
                           {syncData.toAdd.map((p: any, idx: number) => (
                             <div key={p.discord_id} className="bg-green-950/40 border border-green-800/40 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-                              <span className="font-bold text-green-300 text-sm">
+                              <span className="font-bold text-green-300 text-sm flex items-center gap-1.5">
                                 {p.name}
+                                {p.metadata?.intro_parsed && (
+                                  <span className="bg-blue-500/20 text-blue-300 px-1.5 py-0.5 rounded text-[10px] font-medium border border-blue-500/30 animate-pulse animate-duration-1000" title="自己紹介からRiot ID、希望、NGを自動で読み込みました">
+                                    💡 自動入力済
+                                  </span>
+                                )}
                               </span>
                               <div className="flex flex-wrap items-center gap-4">
                                 {/* 最高Rank選択 */}
@@ -970,6 +975,25 @@ export default function KtmAdminPage() {
                                     className="bg-gray-900 border border-gray-700 text-white rounded px-2 py-1 outline-none focus:border-green-500 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                                   >
                                     {["-", "ALL", "TOP", "JG", "MID", "ADC", "SUP"].map(role => (
+                                      <option key={role} value={role}>{role}</option>
+                                    ))}
+                                  </select>
+                                </div>
+
+                                {/* NGロール選択 */}
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-rose-400 font-semibold">NG:</span>
+                                  <select
+                                    value={p.role_preferences?.ignore_role || "-"}
+                                    onChange={(e) => {
+                                      const updatedAdd = [...syncData.toAdd];
+                                      if (!updatedAdd[idx].role_preferences) updatedAdd[idx].role_preferences = { primary: "ALL", secondary: "-", ignore_role: "-" };
+                                      updatedAdd[idx].role_preferences.ignore_role = e.target.value;
+                                      setSyncData({ ...syncData, toAdd: updatedAdd });
+                                    }}
+                                    className="bg-gray-900 border border-gray-700 text-rose-300 rounded px-2 py-1 outline-none focus:border-green-500 cursor-pointer"
+                                  >
+                                    {["-", "TOP", "JG", "MID", "ADC", "SUP"].map(role => (
                                       <option key={role} value={role}>{role}</option>
                                     ))}
                                   </select>

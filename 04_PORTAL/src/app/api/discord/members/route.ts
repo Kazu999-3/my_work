@@ -5,6 +5,129 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
+function parseIntroduction(content: string) {
+  const lower = content.toLowerCase();
+  let ign: string | null = null;
+  let primary: string = "ALL";
+  let secondary: string = "-";
+  let ignore_role: string = "-";
+
+  // 1. Riot ID の抽出 (Name#TAG)
+  const riotIdRegex = /([a-zA-Z0-9\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff_ \u3000-]{2,16}#[a-zA-Z0-9]{3,5})/g;
+  const match = content.match(riotIdRegex);
+  if (match && match.length > 0) {
+    ign = match[0].trim();
+  }
+
+  // 2. 希望・NGレーンの判定
+  const roleMapping: Record<string, string> = {
+    top: "TOP", 
+    トップ: "TOP",
+    jg: "JG",
+    jungle: "JG",
+    ジャングル: "JG",
+    mid: "MID",
+    ミッド: "MID",
+    adc: "ADC",
+    bot: "ADC",
+    ボット: "ADC",
+    sup: "SUP",
+    support: "SUP",
+    サポート: "SUP"
+  };
+
+  // NGロール（苦手、NG、やりたくない、無理、できない）の検出
+  const ignorePatterns = [
+    /(?:ng|苦手|やりたくない|無理|できない)(?:な(?:ロール|レーン))?(?:\s*[:：\-\s]\s*)?([a-zトップミッドジャングルボットサポートsupjgadc]+)/i,
+    /([a-zトップミッドジャングルボットサポートsupjgadc]+)(?:(?:は|が)?(?:ng|苦手|無理|やりたくない|できません|できない))/i
+  ];
+
+  for (const pattern of ignorePatterns) {
+    const ignoreMatch = content.match(pattern);
+    if (ignoreMatch) {
+      const matchedText = ignoreMatch[1].toLowerCase();
+      for (const [key, val] of Object.entries(roleMapping)) {
+        if (matchedText.includes(key)) {
+          ignore_role = val;
+          break;
+        }
+      }
+    }
+  }
+
+  // 残りのテキストから希望ロールを探す
+  let searchContent = lower;
+  if (ignore_role !== "-") {
+    const ignoreKey = Object.keys(roleMapping).find(k => roleMapping[k] === ignore_role);
+    if (ignoreKey) {
+      searchContent = searchContent.replace(ignoreKey, "");
+    }
+  }
+
+  // 「希望」「メイン」などの付近から第1希望を探す
+  const primaryPatterns = [
+    /(?:第1|第一|1|メイン|希望|メインロール)(?:\s*[:：\-\s]\s*)?([a-zトップミッドジャングルボットサポートsupjgadc]+)/i,
+  ];
+  let primaryFound = "";
+  for (const pattern of primaryPatterns) {
+    const pMatch = searchContent.match(pattern);
+    if (pMatch) {
+      const matchedText = pMatch[1];
+      for (const [key, val] of Object.entries(roleMapping)) {
+        if (matchedText.includes(key)) {
+          primaryFound = val;
+          break;
+        }
+      }
+    }
+  }
+
+  // 第2希望を探す
+  const secondaryPatterns = [
+    /(?:第2|第二|2|サブ|サブロール)(?:\s*[:：\-\s]\s*)?([a-zトップミッドジャングルボットサポートsupjgadc]+)/i,
+  ];
+  let secondaryFound = "";
+  for (const pattern of secondaryPatterns) {
+    const sMatch = searchContent.match(pattern);
+    if (sMatch) {
+      const matchedText = sMatch[1];
+      for (const [key, val] of Object.entries(roleMapping)) {
+        if (matchedText.includes(key)) {
+          secondaryFound = val;
+          break;
+        }
+      }
+    }
+  }
+
+  // 出現順でのフォールバック
+  if (!primaryFound) {
+    const appearances: { role: string, index: number }[] = [];
+    for (const [key, val] of Object.entries(roleMapping)) {
+      const idx = searchContent.indexOf(key);
+      if (idx !== -1) {
+        appearances.push({ role: val, index: idx });
+      }
+    }
+    appearances.sort((a, b) => a.index - b.index);
+    if (appearances.length > 0) {
+      primaryFound = appearances[0].role;
+      if (appearances.length > 1 && appearances[1].role !== primaryFound) {
+        secondaryFound = appearances[1].role;
+      }
+    }
+  }
+
+  return {
+    ign,
+    role_preferences: {
+      primary: primaryFound || "ALL",
+      secondary: secondaryFound || "-",
+      ignore_role: ignore_role
+    }
+  };
+}
+
 export async function GET() {
   const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN;
   const DISCORD_GUILD_ID = process.env.DISCORD_GUILD_ID;
@@ -42,15 +165,9 @@ export async function GET() {
     const toAdd: any[] = [];
     const toDeactivate: any[] = [];
     const activeSync: any[] = [];
-
-    // Discord名とDB名をマッピングする
-    // DBには 'name' (表示名/呼び名) と 'discord_id' があるはず。
-    // 無ければ name でマッチング（Discordの global_name や username と比較）
     
     const dbPlayersMap = new Map();
     dbPlayers.forEach(p => {
-      // discord_id が登録されていればそれをキーに、なければ name をキーにするなどの工夫が必要だが、
-      // 基本は discord_id ベース、無い場合は手動追加されたものとして名前でマッチ。
       dbPlayersMap.set(p.discord_id || p.name.toLowerCase(), p);
     });
 
@@ -62,7 +179,6 @@ export async function GET() {
       const displayName = m.nick || m.user.global_name || m.user.username;
       discordIdsFound.add(discordId);
 
-      // discord_idで検索、なければ名前で検索
       let dbPlayer = dbPlayersMap.get(discordId);
       if (!dbPlayer) {
          const byName = dbPlayers.find(p => p.name.toLowerCase() === displayName.toLowerCase());
@@ -87,14 +203,58 @@ export async function GET() {
           });
         }
 
-        // joined_atが未保存、または更新が必要な場合のために保持
         activeSync.push({
           ...dbPlayer,
-          name: displayName, // 最新のDiscord名に同期させる
+          name: displayName,
           metadata: { ...(dbPlayer.metadata || {}), joined_at: m.joined_at }
         });
       }
     });
+
+    // 4. toAdd (新規追加候補) がある場合、自己紹介チャンネルから書き込みを検索・解析して初期値を埋める
+    if (toAdd.length > 0) {
+      try {
+        const introChannelId = '1485646578621616209';
+        const msgRes = await fetch(`https://discord.com/api/v10/channels/${introChannelId}/messages?limit=100`, {
+          headers: {
+            Authorization: `Bot ${DISCORD_BOT_TOKEN}`,
+          },
+        });
+        
+        if (msgRes.ok) {
+          const messages: any[] = await msgRes.json();
+          
+          const introMap = new Map<string, string>();
+          messages.forEach((msg: any) => {
+            if (msg.author && !msg.author.bot && msg.content) {
+              if (!introMap.has(msg.author.id)) {
+                introMap.set(msg.author.id, msg.content);
+              }
+            }
+          });
+
+          toAdd.forEach((p: any) => {
+            const introText = introMap.get(p.discord_id);
+            if (introText) {
+              const parsed = parseIntroduction(introText);
+              if (parsed.ign) {
+                p.ign = parsed.ign;
+              }
+              p.role_preferences = parsed.role_preferences;
+              p.metadata = {
+                ...p.metadata,
+                intro_parsed: true,
+                raw_intro: introText.slice(0, 100)
+              };
+            } else {
+              p.role_preferences = { primary: "ALL", secondary: "-", ignore_role: "-" };
+            }
+          });
+        }
+      } catch (err) {
+        console.error('Failed to parse introductions:', err);
+      }
+    }
 
     // DBにはいるが、Discordにいない人（Active/Inactive問わず）
     dbPlayers.forEach(p => {
