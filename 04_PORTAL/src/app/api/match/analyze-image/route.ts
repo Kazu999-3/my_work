@@ -71,6 +71,8 @@ ${championsText}
    - "kills": キル数（数値）
    - "deaths": デス数（数値）
    - "assists": アシスト数（数値）
+   - "damageDealt": 与ダメージ（画像内に与ダメージの数値が存在する場合のみ。存在しないタイプの場合は0またはnull）
+   - "minionsKilled": CS（画像内にCSの数値が存在する場合のみ。存在しないタイプの場合は0またはnull）
    - "champion_analysis_notes": 上記観点による顔アイコンの分析と思考プロセス
    - "champion_name": マスターリストに書かれている正確な「英語名ID（例: Aatrox, Ahri, LeeSin）」の文字列を厳密に抽出して出力してください（日本語名は含めないでください）。
 
@@ -85,6 +87,8 @@ ${championsText}
       "kills": 3,
       "deaths": 2,
       "assists": 8,
+      "damageDealt": 19915,
+      "minionsKilled": 224,
       "champion_analysis_notes": "緑色の光を纏った大剣を持つ女性戦士 ➔ Riven",
       "champion_name": "Riven"
     },

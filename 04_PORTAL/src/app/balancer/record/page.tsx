@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '../../../lib/supabaseClient';
-import { RefreshCw, Trophy, Target, Search, ArrowLeft } from 'lucide-react';
+import { RefreshCw, Trophy, Target, Search, ArrowLeft, Settings } from 'lucide-react';
 import Link from 'next/link';
 import { getChampIcon } from '../../../lib/ddragonClient';
 
@@ -38,6 +38,10 @@ export default function CustomRecordPage() {
   const [champSearchQuery, setChampSearchQuery] = useState('');
   const [analyzing, setAnalyzing] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [openDetails, setOpenDetails] = useState<Record<number, boolean>>({});
+  const toggleDetails = (index: number) => {
+    setOpenDetails(prev => ({ ...prev, [index]: !prev[index] }));
+  };
   
   // 10人分のステートを初期化
   const [stats, setStats] = useState<PlayerStat[]>(() => {
@@ -485,47 +489,80 @@ export default function CustomRecordPage() {
               <div className="space-y-3">
                 {[0, 1, 2, 3, 4].map(index => {
                   const s = stats[index];
+                  const uid = `BLUE-slot-${index}`;
                   return (
-                    <div key={`BLUE-slot-${index}`} className="flex items-center gap-2 bg-gray-800/80 p-3 rounded-lg border border-gray-700">
-                      <select
-                        value={s.currentRole}
-                        onChange={e => handleStatChangeByIndex(index, 'currentRole', e.target.value)}
-                        className="w-16 bg-gray-900 border border-gray-700 rounded px-1.5 py-1 text-white outline-none focus:border-blue-500 text-xs font-bold"
-                      >
-                        {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
-                      </select>
-                      <select 
-                        value={s.name}
-                        onChange={e => handleStatChangeByIndex(index, 'name', e.target.value)}
-                        className="w-28 bg-gray-900 border border-gray-700 rounded px-2 py-1.5 text-white outline-none focus:border-blue-500 text-sm"
-                      >
-                        <option value="">選択...</option>
-                        {playersPool.map(p => <option key={p.name} value={p.name}>{p.name}</option>)}
-                      </select>
-                      <button
-                        onClick={() => setActiveChampSelector({ team: 'BLUE', role: s.currentRole, slotIndex: index })}
-                        type="button"
-                        className="w-32 bg-gray-900 border border-gray-700 hover:border-blue-500 rounded px-2 py-1.5 text-gray-300 hover:text-white text-xs flex items-center justify-between gap-1 transition shrink-0"
-                      >
-                        <span className="truncate">
-                          {s.champion_name ? (championsList.find(c => c.id === s.champion_name)?.name || 'チャンプ') : 'チャンプ選択'}
-                        </span>
-                        {s.champion_name && (
-                          <img 
-                            src={getChampIcon(s.champion_name)} 
-                            className="w-5 h-5 rounded-full border border-gray-600 shrink-0 object-cover" 
-                            alt={s.champion_name}
-                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
-                          />
-                        )}
-                      </button>
-                      <div className="flex-1 flex gap-1 justify-end">
-                        <input type="number" value={s.kills} onChange={e => handleStatChangeByIndex(index, 'kills', e.target.value)} className="w-11 bg-gray-900 border border-gray-700 text-white text-center rounded py-1 text-sm" placeholder="K" />
-                        <span className="text-gray-500 self-center text-xs">/</span>
-                        <input type="number" value={s.deaths} onChange={e => handleStatChangeByIndex(index, 'deaths', e.target.value)} className="w-11 bg-gray-900 border border-red-900/50 text-red-200 text-center rounded py-1 text-sm" placeholder="D" />
-                        <span className="text-gray-500 self-center text-xs">/</span>
-                        <input type="number" value={s.assists} onChange={e => handleStatChangeByIndex(index, 'assists', e.target.value)} className="w-11 bg-gray-900 border border-gray-700 text-white text-center rounded py-1 text-sm" placeholder="A" />
+                    <div key={uid} className="flex flex-col bg-gray-800/80 p-3 rounded-lg border border-gray-700 gap-2">
+                      <div className="flex items-center gap-2 w-full">
+                        <select
+                          value={s.currentRole}
+                          onChange={e => handleStatChangeByIndex(index, 'currentRole', e.target.value)}
+                          className="w-16 bg-gray-900 border border-gray-700 rounded px-1.5 py-1 text-white outline-none focus:border-blue-500 text-xs font-bold"
+                        >
+                          {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
+                        </select>
+                        <select 
+                          value={s.name}
+                          onChange={e => handleStatChangeByIndex(index, 'name', e.target.value)}
+                          className="w-28 bg-gray-900 border border-gray-700 rounded px-2 py-1.5 text-white outline-none focus:border-blue-500 text-sm"
+                        >
+                          <option value="">選択...</option>
+                          {playersPool.map(p => <option key={p.name} value={p.name}>{p.name}</option>)}
+                        </select>
+                        <button
+                          onClick={() => setActiveChampSelector({ team: 'BLUE', role: s.currentRole, slotIndex: index })}
+                          type="button"
+                          className="w-32 bg-gray-900 border border-gray-700 hover:border-blue-500 rounded px-2 py-1.5 text-gray-300 hover:text-white text-xs flex items-center justify-between gap-1 transition shrink-0"
+                        >
+                          <span className="truncate">
+                            {s.champion_name ? (championsList.find(c => c.id === s.champion_name)?.name || 'チャンプ') : 'チャンプ選択'}
+                          </span>
+                          {s.champion_name && (
+                            <img 
+                              src={getChampIcon(s.champion_name)} 
+                              className="w-5 h-5 rounded-full border border-gray-600 shrink-0 object-cover" 
+                              alt={s.champion_name}
+                              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                            />
+                          )}
+                        </button>
+                        <div className="flex-1 flex gap-1 justify-end items-center">
+                          <input type="number" value={s.kills} onChange={e => handleStatChangeByIndex(index, 'kills', e.target.value)} className="w-11 bg-gray-900 border border-gray-700 text-white text-center rounded py-1 text-sm" placeholder="K" />
+                          <span className="text-gray-500 self-center text-xs">/</span>
+                          <input type="number" value={s.deaths} onChange={e => handleStatChangeByIndex(index, 'deaths', e.target.value)} className="w-11 bg-gray-900 border border-red-900/50 text-red-200 text-center rounded py-1 text-sm" placeholder="D" />
+                          <span className="text-gray-500 self-center text-xs">/</span>
+                          <input type="number" value={s.assists} onChange={e => handleStatChangeByIndex(index, 'assists', e.target.value)} className="w-11 bg-gray-900 border border-gray-700 text-white text-center rounded py-1 text-sm" placeholder="A" />
+                          <button
+                            type="button"
+                            onClick={() => toggleDetails(index)}
+                            className={`ml-2 p-1.5 rounded transition ${openDetails[index] ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-400 hover:text-white'}`}
+                            title="詳細スタッツ（CS・ダメージなど）"
+                          >
+                            <Settings className="h-4 w-4" />
+                          </button>
+                        </div>
                       </div>
+
+                      {/* 詳細入力アコーディオン */}
+                      {openDetails[index] && (
+                        <div className="mt-1 ml-18 grid grid-cols-4 gap-2 bg-gray-950/60 p-3 rounded-lg border border-gray-800/80 transition shadow-inner">
+                          <div>
+                            <label className="text-[10px] text-gray-500 font-bold block mb-1 text-center">CS</label>
+                            <input type="number" value={s.cs || 0} onChange={e => handleStatChangeByIndex(index, 'cs', e.target.value)} className="w-full bg-gray-900 border border-gray-800 text-white rounded px-2 py-1 text-xs text-center" />
+                          </div>
+                          <div>
+                            <label className="text-[10px] text-gray-500 font-bold block mb-1 text-center">与ダメージ</label>
+                            <input type="number" value={s.damage_dealt || 0} onChange={e => handleStatChangeByIndex(index, 'damage_dealt', e.target.value)} className="w-full bg-gray-900 border border-gray-800 text-white rounded px-2 py-1 text-xs text-center" />
+                          </div>
+                          <div>
+                            <label className="text-[10px] text-gray-500 font-bold block mb-1 text-center">被ダメージ</label>
+                            <input type="number" value={s.damage_taken || 0} onChange={e => handleStatChangeByIndex(index, 'damage_taken', e.target.value)} className="w-full bg-gray-900 border border-gray-800 text-white rounded px-2 py-1 text-xs text-center" />
+                          </div>
+                          <div>
+                            <label className="text-[10px] text-gray-500 font-bold block mb-1 text-center">視界スコア</label>
+                            <input type="number" value={s.vision || 0} onChange={e => handleStatChangeByIndex(index, 'vision', e.target.value)} className="w-full bg-gray-900 border border-gray-800 text-white rounded px-2 py-1 text-xs text-center" />
+                          </div>
+                        </div>
+                      )}
                     </div>
                   );
                 })}
@@ -538,47 +575,80 @@ export default function CustomRecordPage() {
               <div className="space-y-3">
                 {[5, 6, 7, 8, 9].map(index => {
                   const s = stats[index];
+                  const uid = `RED-slot-${index}`;
                   return (
-                    <div key={`RED-slot-${index}`} className="flex items-center gap-2 bg-gray-800/80 p-3 rounded-lg border border-gray-700">
-                      <select
-                        value={s.currentRole}
-                        onChange={e => handleStatChangeByIndex(index, 'currentRole', e.target.value)}
-                        className="w-16 bg-gray-900 border border-gray-700 rounded px-1.5 py-1 text-white outline-none focus:border-red-500 text-xs font-bold"
-                      >
-                        {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
-                      </select>
-                      <select 
-                        value={s.name}
-                        onChange={e => handleStatChangeByIndex(index, 'name', e.target.value)}
-                        className="w-28 bg-gray-900 border border-gray-700 rounded px-2 py-1.5 text-white outline-none focus:border-red-500 text-sm"
-                      >
-                        <option value="">選択...</option>
-                        {playersPool.map(p => <option key={p.name} value={p.name}>{p.name}</option>)}
-                      </select>
-                      <button
-                        onClick={() => setActiveChampSelector({ team: 'RED', role: s.currentRole, slotIndex: index })}
-                        type="button"
-                        className="w-32 bg-gray-900 border border-gray-700 hover:border-red-500 rounded px-2 py-1.5 text-gray-300 hover:text-white text-xs flex items-center justify-between gap-1 transition shrink-0"
-                      >
-                        <span className="truncate">
-                          {s.champion_name ? (championsList.find(c => c.id === s.champion_name)?.name || 'チャンプ') : 'チャンプ選択'}
-                        </span>
-                        {s.champion_name && (
-                          <img 
-                            src={getChampIcon(s.champion_name)} 
-                            className="w-5 h-5 rounded-full border border-gray-600 shrink-0 object-cover" 
-                            alt={s.champion_name}
-                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
-                          />
-                        )}
-                      </button>
-                      <div className="flex-1 flex gap-1 justify-end">
-                        <input type="number" value={s.kills} onChange={e => handleStatChangeByIndex(index, 'kills', e.target.value)} className="w-11 bg-gray-900 border border-gray-700 text-white text-center rounded py-1 text-sm" placeholder="K" />
-                        <span className="text-gray-500 self-center text-xs">/</span>
-                        <input type="number" value={s.deaths} onChange={e => handleStatChangeByIndex(index, 'deaths', e.target.value)} className="w-11 bg-gray-900 border border-red-900/50 text-red-200 text-center rounded py-1 text-sm" placeholder="D" />
-                        <span className="text-gray-500 self-center text-xs">/</span>
-                        <input type="number" value={s.assists} onChange={e => handleStatChangeByIndex(index, 'assists', e.target.value)} className="w-11 bg-gray-900 border border-gray-700 text-white text-center rounded py-1 text-sm" placeholder="A" />
+                    <div key={uid} className="flex flex-col bg-gray-800/80 p-3 rounded-lg border border-gray-700 gap-2">
+                      <div className="flex items-center gap-2 w-full">
+                        <select
+                          value={s.currentRole}
+                          onChange={e => handleStatChangeByIndex(index, 'currentRole', e.target.value)}
+                          className="w-16 bg-gray-900 border border-gray-700 rounded px-1.5 py-1 text-white outline-none focus:border-red-500 text-xs font-bold"
+                        >
+                          {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
+                        </select>
+                        <select 
+                          value={s.name}
+                          onChange={e => handleStatChangeByIndex(index, 'name', e.target.value)}
+                          className="w-28 bg-gray-900 border border-gray-700 rounded px-2 py-1.5 text-white outline-none focus:border-red-500 text-sm"
+                        >
+                          <option value="">選択...</option>
+                          {playersPool.map(p => <option key={p.name} value={p.name}>{p.name}</option>)}
+                        </select>
+                        <button
+                          onClick={() => setActiveChampSelector({ team: 'RED', role: s.currentRole, slotIndex: index })}
+                          type="button"
+                          className="w-32 bg-gray-900 border border-gray-700 hover:border-red-500 rounded px-2 py-1.5 text-gray-300 hover:text-white text-xs flex items-center justify-between gap-1 transition shrink-0"
+                        >
+                          <span className="truncate">
+                            {s.champion_name ? (championsList.find(c => c.id === s.champion_name)?.name || 'チャンプ') : 'チャンプ選択'}
+                          </span>
+                          {s.champion_name && (
+                            <img 
+                              src={getChampIcon(s.champion_name)} 
+                              className="w-5 h-5 rounded-full border border-gray-600 shrink-0 object-cover" 
+                              alt={s.champion_name}
+                              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                            />
+                          )}
+                        </button>
+                        <div className="flex-1 flex gap-1 justify-end items-center">
+                          <input type="number" value={s.kills} onChange={e => handleStatChangeByIndex(index, 'kills', e.target.value)} className="w-11 bg-gray-900 border border-gray-700 text-white text-center rounded py-1 text-sm" placeholder="K" />
+                          <span className="text-gray-500 self-center text-xs">/</span>
+                          <input type="number" value={s.deaths} onChange={e => handleStatChangeByIndex(index, 'deaths', e.target.value)} className="w-11 bg-gray-900 border border-red-900/50 text-red-200 text-center rounded py-1 text-sm" placeholder="D" />
+                          <span className="text-gray-500 self-center text-xs">/</span>
+                          <input type="number" value={s.assists} onChange={e => handleStatChangeByIndex(index, 'assists', e.target.value)} className="w-11 bg-gray-900 border border-gray-700 text-white text-center rounded py-1 text-sm" placeholder="A" />
+                          <button
+                            type="button"
+                            onClick={() => toggleDetails(index)}
+                            className={`ml-2 p-1.5 rounded transition ${openDetails[index] ? 'bg-red-600 text-white' : 'bg-gray-800 text-gray-400 hover:text-white'}`}
+                            title="詳細スタッツ（CS・ダメージなど）"
+                          >
+                            <Settings className="h-4 w-4" />
+                          </button>
+                        </div>
                       </div>
+
+                      {/* 詳細入力アコーディオン */}
+                      {openDetails[index] && (
+                        <div className="mt-1 ml-18 grid grid-cols-4 gap-2 bg-gray-950/60 p-3 rounded-lg border border-gray-800/80 transition shadow-inner">
+                          <div>
+                            <label className="text-[10px] text-gray-500 font-bold block mb-1 text-center">CS</label>
+                            <input type="number" value={s.cs || 0} onChange={e => handleStatChangeByIndex(index, 'cs', e.target.value)} className="w-full bg-gray-900 border border-gray-800 text-white rounded px-2 py-1 text-xs text-center" />
+                          </div>
+                          <div>
+                            <label className="text-[10px] text-gray-500 font-bold block mb-1 text-center">与ダメージ</label>
+                            <input type="number" value={s.damage_dealt || 0} onChange={e => handleStatChangeByIndex(index, 'damage_dealt', e.target.value)} className="w-full bg-gray-900 border border-gray-800 text-white rounded px-2 py-1 text-xs text-center" />
+                          </div>
+                          <div>
+                            <label className="text-[10px] text-gray-500 font-bold block mb-1 text-center">被ダメージ</label>
+                            <input type="number" value={s.damage_taken || 0} onChange={e => handleStatChangeByIndex(index, 'damage_taken', e.target.value)} className="w-full bg-gray-900 border border-gray-800 text-white rounded px-2 py-1 text-xs text-center" />
+                          </div>
+                          <div>
+                            <label className="text-[10px] text-gray-500 font-bold block mb-1 text-center">視界スコア</label>
+                            <input type="number" value={s.vision || 0} onChange={e => handleStatChangeByIndex(index, 'vision', e.target.value)} className="w-full bg-gray-900 border border-gray-800 text-white rounded px-2 py-1 text-xs text-center" />
+                          </div>
+                        </div>
+                      )}
                     </div>
                   );
                 })}
