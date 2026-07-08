@@ -933,9 +933,7 @@ export default function BalancerPage() {
             <table className="w-full text-sm text-left">
               <thead className="text-xs text-gray-400 bg-gray-950 border-b border-gray-800">
                 <tr>
-                  <SortableHeader label="参加" sortKey="is_active" className="w-12 text-center" />
-                  <SortableHeader label="👑固定" sortKey="is_fixed" className="w-12 text-center" />
-                  <SortableHeader label="📺見学" sortKey="is_spectator_fixed" className="w-12 text-center" />
+                  <th className="px-2 py-3 font-medium text-center w-28">参加設定</th>
                   <SortableHeader label="No." sortKey="no" className="w-10 text-center" />
                   <SortableHeader label="プレイヤー名" sortKey="name" className="px-2" />
                   <SortableHeader label="ランク" sortKey="highest_rank" className="px-2" />
@@ -965,38 +963,63 @@ export default function BalancerPage() {
                       }`}
                     >
                       <td className="px-2 py-1.5 text-center">
-                        <input
-                          type="checkbox"
-                          checked={p.is_active}
-                          onChange={(e) => handleInputChange(p.id, "is_active", e.target.checked)}
-                          className="w-4 h-4 rounded border-gray-700 bg-gray-800 text-blue-500 focus:ring-blue-500/50 cursor-pointer transition-transform hover:scale-110"
-                        />
-                      </td>
-                      <td className="px-1.5 py-1.5 text-center">
-                        <button
-                          onClick={() => handleInputChange(p.id, "is_fixed", !p.is_fixed)}
-                          className={`p-1 rounded-lg border transition-all ${
-                            p.is_fixed 
-                              ? 'bg-amber-500/20 border-amber-500/40 text-amber-400 shadow-[0_0_8px_rgba(245,158,11,0.2)]' 
-                              : 'border-transparent text-gray-600 hover:text-amber-500 hover:bg-amber-500/10'
-                          }`}
-                          title="第1希望レーンで固定する"
-                        >
-                          <Crown className={`w-3.5 h-3.5 ${p.is_fixed ? 'scale-110' : 'opacity-60'}`} />
-                        </button>
-                      </td>
-                      <td className="px-1.5 py-1.5 text-center">
-                        <button
-                          onClick={() => handleInputChange(p.id, "is_spectator_fixed", !p.is_spectator_fixed)}
-                          className={`p-1 rounded-lg border transition-all ${
-                            p.is_spectator_fixed 
-                              ? 'bg-indigo-500/20 border-indigo-500/40 text-indigo-400 shadow-[0_0_8px_rgba(99,102,241,0.2)]' 
-                              : 'border-transparent text-gray-600 hover:text-indigo-400 hover:bg-indigo-500/10'
-                          }`}
-                          title="この回は見学固定にする"
-                        >
-                          <X className={`w-3.5 h-3.5 ${p.is_spectator_fixed ? 'scale-110 font-black' : 'opacity-60'}`} />
-                        </button>
+                        <div className="flex items-center justify-center gap-1.5 min-w-[76px] h-7 mx-auto">
+                          {/* 参加/不参加チェック */}
+                          <input
+                            type="checkbox"
+                            checked={p.is_active}
+                            onChange={(e) => {
+                              const active = e.target.checked;
+                              handleInputChange(p.id, "is_active", active);
+                              // 不参加にした場合は固定・見学フラグもリセットする
+                              if (!active) {
+                                handleInputChange(p.id, "is_fixed", false);
+                                handleInputChange(p.id, "is_spectator_fixed", false);
+                              }
+                            }}
+                            className="w-4 h-4 rounded border-gray-700 bg-gray-800 text-blue-500 focus:ring-blue-500/50 cursor-pointer transition-transform hover:scale-110 flex-shrink-0"
+                            title="参加/不参加"
+                          />
+                          
+                          {/* activeな場合のみ設定トグルをスライド表示 */}
+                          <div className={`flex items-center gap-1 transition-all duration-300 overflow-hidden ${p.is_active ? 'opacity-100 max-w-[50px]' : 'opacity-0 max-w-0 pointer-events-none'}`}>
+                            {/* 👑固定トグル */}
+                            <button
+                              onClick={() => {
+                                if (p.is_spectator_fixed) {
+                                  handleInputChange(p.id, "is_spectator_fixed", false);
+                                }
+                                handleInputChange(p.id, "is_fixed", !p.is_fixed);
+                              }}
+                              className={`p-0.5 rounded border transition-all ${
+                                p.is_fixed 
+                                  ? 'bg-amber-500/20 border-amber-500/40 text-amber-400 shadow-[0_0_8px_rgba(245,158,11,0.2)]' 
+                                  : 'border-gray-800 text-gray-600 hover:text-amber-500 hover:bg-amber-500/10'
+                              }`}
+                              title="第1希望レーンで固定する"
+                            >
+                              <Crown className="w-3 h-3" />
+                            </button>
+
+                            {/* 📺見学トグル */}
+                            <button
+                              onClick={() => {
+                                if (p.is_fixed) {
+                                  handleInputChange(p.id, "is_fixed", false);
+                                }
+                                handleInputChange(p.id, "is_spectator_fixed", !p.is_spectator_fixed);
+                              }}
+                              className={`p-0.5 rounded border transition-all ${
+                                p.is_spectator_fixed 
+                                  ? 'bg-indigo-500/20 border-indigo-500/40 text-indigo-400 shadow-[0_0_8px_rgba(99,102,241,0.2)]' 
+                                  : 'border-gray-800 text-gray-600 hover:text-indigo-400 hover:bg-indigo-500/10'
+                              }`}
+                              title="この回は見学固定にする"
+                            >
+                              <X className="w-3 h-3 font-bold" />
+                            </button>
+                          </div>
+                        </div>
                       </td>
                       <td className="px-2 py-1.5 text-center font-bold text-gray-600 text-xs">
                         {p.no}
