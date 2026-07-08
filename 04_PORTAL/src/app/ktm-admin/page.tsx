@@ -747,6 +747,7 @@ export default function KtmAdminPage() {
       if (!res.ok) throw new Error(data.error || 'Discordメンバーの取得に失敗しました');
       
       setSyncData(data);
+      setSyncingDiscord(false); // ← モーダルを開いたらローディングを解除
     } catch (err: any) {
       const isAbort = err.name === 'AbortError';
       setMessage({ 
