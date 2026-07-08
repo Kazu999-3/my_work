@@ -933,23 +933,21 @@ export default function BalancerPage() {
             <table className="w-full text-sm text-left">
               <thead className="text-xs text-gray-400 bg-gray-950 border-b border-gray-800">
                 <tr>
-                  <SortableHeader label="参加" sortKey="is_active" className="w-16 text-center" />
-                  <SortableHeader label="👑固定" sortKey="is_fixed" className="w-16 text-center" />
-                  <SortableHeader label="📺見学" sortKey="is_spectator_fixed" className="w-16 text-center" />
-                  <SortableHeader label="No." sortKey="no" className="w-16 text-center" />
-                  <SortableHeader label="プレイヤー名" sortKey="name" />
-                  <SortableHeader label="ランク" sortKey="highest_rank" />
-                  <SortableHeader label="総合MMR" sortKey="mmr" />
-                  <th className="px-4 py-3 font-medium">第1希望</th>
-                  <th className="px-4 py-3 font-medium">第2希望</th>
-                  <th className="px-2 py-3 font-medium text-red-400">NG 1</th>
-                  <th className="px-2 py-3 font-medium text-red-400">NG 2</th>
-                  <SortableHeader label="こだわり" sortKey="weight" />
-                  <SortableHeader label="格上" sortKey="allow_higher" />
-                  <SortableHeader label="Pity" sortKey="pity" />
-                  <SortableHeader label="OffPity" sortKey="off_pity" />
-                  <SortableHeader label="観戦Pity" sortKey="spectator_pity" />
-                  <th className="px-4 py-3 font-medium">備考</th>
+                  <SortableHeader label="参加" sortKey="is_active" className="w-12 text-center" />
+                  <SortableHeader label="👑固定" sortKey="is_fixed" className="w-12 text-center" />
+                  <SortableHeader label="📺見学" sortKey="is_spectator_fixed" className="w-12 text-center" />
+                  <SortableHeader label="No." sortKey="no" className="w-10 text-center" />
+                  <SortableHeader label="プレイヤー名" sortKey="name" className="px-2" />
+                  <SortableHeader label="ランク" sortKey="highest_rank" className="px-2" />
+                  <SortableHeader label="総合MMR" sortKey="mmr" className="px-2" />
+                  <th className="px-2 py-3 font-medium text-center">第1希望</th>
+                  <th className="px-2 py-3 font-medium text-center">第2希望</th>
+                  <th className="px-1.5 py-3 font-medium text-center text-red-400">NG 1</th>
+                  <th className="px-1.5 py-3 font-medium text-center text-red-400">NG 2</th>
+                  <SortableHeader label="こだわり" sortKey="weight" className="px-1.5 text-center" />
+                  <SortableHeader label="格上" sortKey="allow_higher" className="px-1.5 text-center" />
+                  <th className="px-2 py-3 font-medium text-center">Pity (正/負/観)</th>
+                  <th className="px-2 py-3 font-medium">備考</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-800/50">
@@ -966,15 +964,15 @@ export default function BalancerPage() {
                             : 'opacity-40 hover:opacity-100'
                       }`}
                     >
-                      <td className="px-4 py-2 text-center">
+                      <td className="px-2 py-1.5 text-center">
                         <input
                           type="checkbox"
                           checked={p.is_active}
                           onChange={(e) => handleInputChange(p.id, "is_active", e.target.checked)}
-                          className="w-5 h-5 rounded border-gray-700 bg-gray-800 text-blue-500 focus:ring-blue-500/50 cursor-pointer transition-transform hover:scale-110"
+                          className="w-4 h-4 rounded border-gray-700 bg-gray-800 text-blue-500 focus:ring-blue-500/50 cursor-pointer transition-transform hover:scale-110"
                         />
                       </td>
-                      <td className="px-2 py-2 text-center">
+                      <td className="px-1.5 py-1.5 text-center">
                         <button
                           onClick={() => handleInputChange(p.id, "is_fixed", !p.is_fixed)}
                           className={`p-1 rounded-lg border transition-all ${
@@ -984,10 +982,10 @@ export default function BalancerPage() {
                           }`}
                           title="第1希望レーンで固定する"
                         >
-                          <Crown className={`w-4 h-4 ${p.is_fixed ? 'scale-110' : 'opacity-60'}`} />
+                          <Crown className={`w-3.5 h-3.5 ${p.is_fixed ? 'scale-110' : 'opacity-60'}`} />
                         </button>
                       </td>
-                      <td className="px-2 py-2 text-center">
+                      <td className="px-1.5 py-1.5 text-center">
                         <button
                           onClick={() => handleInputChange(p.id, "is_spectator_fixed", !p.is_spectator_fixed)}
                           className={`p-1 rounded-lg border transition-all ${
@@ -997,35 +995,35 @@ export default function BalancerPage() {
                           }`}
                           title="この回は見学固定にする"
                         >
-                          <X className={`w-4 h-4 ${p.is_spectator_fixed ? 'scale-110 font-black' : 'opacity-60'}`} />
+                          <X className={`w-3.5 h-3.5 ${p.is_spectator_fixed ? 'scale-110 font-black' : 'opacity-60'}`} />
                         </button>
                       </td>
-                      <td className="px-4 py-2 text-center font-bold text-gray-600 text-xs">
+                      <td className="px-2 py-1.5 text-center font-bold text-gray-600 text-xs">
                         {p.no}
                       </td>
-                      <td className="px-4 py-2 font-bold text-white whitespace-nowrap flex items-center gap-2">
+                      <td className="px-2 py-1.5 font-bold text-white whitespace-nowrap flex items-center gap-1.5 text-xs">
                         <button 
                           onClick={() => setSelectedPlayer(p)}
-                          className="text-blue-400 hover:text-white p-1 hover:bg-gray-800 rounded transition flex-shrink-0"
+                          className="text-blue-400 hover:text-white p-0.5 hover:bg-gray-800 rounded transition flex-shrink-0"
                           title="プロフィールを表示"
                         >
-                          <Info className="w-4 h-4" />
+                          <Info className="w-3.5 h-3.5" />
                         </button>
-                        {p.name}
+                        <span>{p.name}</span>
                       </td>
-                      <td className={`px-4 py-2 text-xs ${getColorFromRankName(p.highest_rank)}`}>
+                      <td className={`px-2 py-1.5 text-xs font-semibold ${getColorFromRankName(p.highest_rank)}`}>
                         {p.highest_rank ? p.highest_rank.split(' ')[0] : 'UNRANKED'}
                       </td>
-                      <td className="px-4 py-2 text-center font-mono text-blue-400 font-bold">
+                      <td className="px-2 py-1.5 text-center font-mono text-blue-400 font-bold text-xs">
                         {p.mmr}
                       </td>
-                      <td className="px-4 py-2">
-                        <div className="flex items-center gap-1.5 bg-gray-950 border border-gray-800 rounded px-2 py-1 w-28">
-                          <RoleIcon role={prefs.primary || 'ALL'} className="w-3.5 h-3.5 flex-shrink-0" />
+                      <td className="px-2 py-1.5">
+                        <div className="flex items-center gap-1 bg-gray-950 border border-gray-800 rounded px-1 py-0.5 w-20">
+                          <RoleIcon role={prefs.primary || 'ALL'} className="w-3 h-3 flex-shrink-0" />
                           <select
                             value={prefs.primary || 'ALL'}
                             onChange={(e) => handleInputChange(p.id, "primary_role", e.target.value)}
-                            className="bg-transparent text-white outline-none cursor-pointer w-full text-xs font-bold"
+                            className="bg-transparent text-white outline-none cursor-pointer w-full text-[11px] font-bold"
                           >
                             <option value="ALL" className="bg-gray-950 text-gray-200">ALL</option>
                             <option value="TOP" className="bg-gray-950 text-gray-200">TOP</option>
@@ -1036,14 +1034,14 @@ export default function BalancerPage() {
                           </select>
                         </div>
                       </td>
-                      <td className="px-4 py-2">
-                        <div className="flex items-center gap-1.5 bg-gray-950 border border-gray-800 rounded px-2 py-1 w-28 disabled:opacity-50">
-                          <RoleIcon role={prefs.secondary || '-'} className="w-3.5 h-3.5 flex-shrink-0" />
+                      <td className="px-2 py-1.5">
+                        <div className="flex items-center gap-1 bg-gray-950 border border-gray-800 rounded px-1 py-0.5 w-20 disabled:opacity-50">
+                          <RoleIcon role={prefs.secondary || '-'} className="w-3 h-3 flex-shrink-0" />
                           <select
                             value={prefs.secondary || '-'}
                             disabled={prefs.primary === 'ALL'}
                             onChange={(e) => handleInputChange(p.id, "secondary_role", e.target.value)}
-                            className="bg-transparent text-gray-300 outline-none cursor-pointer w-full text-xs disabled:cursor-not-allowed"
+                            className="bg-transparent text-gray-300 outline-none cursor-pointer w-full text-[11px] disabled:cursor-not-allowed"
                           >
                             <option value="-" className="bg-gray-950 text-gray-200">-</option>
                             <option value="ALL" className="bg-gray-950 text-gray-200">ALL</option>
@@ -1055,13 +1053,13 @@ export default function BalancerPage() {
                           </select>
                         </div>
                       </td>
-                      <td className="px-2 py-2 text-center">
-                        <div className="flex items-center gap-1 bg-gray-950 border border-gray-800 rounded px-1.5 py-1 w-20 mx-auto">
-                          <RoleIcon role={p.ng_lane_1 || ''} className="w-3 h-3 flex-shrink-0" />
+                      <td className="px-1.5 py-1.5 text-center">
+                        <div className="flex items-center gap-1 bg-gray-950 border border-gray-800 rounded px-1 py-0.5 w-18 mx-auto">
+                          <RoleIcon role={p.ng_lane_1 || ''} className="w-2.5 h-2.5 flex-shrink-0" />
                           <select
                             value={p.ng_lane_1 || ""}
                             onChange={(e) => handleInputChange(p.id, "ng_lane_1", e.target.value)}
-                            className="bg-transparent text-red-400 font-bold outline-none cursor-pointer w-full text-xs"
+                            className="bg-transparent text-red-400 font-bold outline-none cursor-pointer w-full text-[10px]"
                           >
                             <option value="" className="bg-gray-950 text-gray-400">なし</option>
                             <option value="TOP" className="bg-gray-950 text-red-400">TOP</option>
@@ -1072,13 +1070,13 @@ export default function BalancerPage() {
                           </select>
                         </div>
                       </td>
-                      <td className="px-2 py-2 text-center">
-                        <div className="flex items-center gap-1 bg-gray-950 border border-gray-800 rounded px-1.5 py-1 w-20 mx-auto">
-                          <RoleIcon role={p.ng_lane_2 || ''} className="w-3 h-3 flex-shrink-0" />
+                      <td className="px-1.5 py-1.5 text-center">
+                        <div className="flex items-center gap-1 bg-gray-950 border border-gray-800 rounded px-1 py-0.5 w-18 mx-auto">
+                          <RoleIcon role={p.ng_lane_2 || ''} className="w-2.5 h-2.5 flex-shrink-0" />
                           <select
                             value={p.ng_lane_2 || ""}
                             onChange={(e) => handleInputChange(p.id, "ng_lane_2", e.target.value)}
-                            className="bg-transparent text-red-400 font-bold outline-none cursor-pointer w-full text-xs"
+                            className="bg-transparent text-red-400 font-bold outline-none cursor-pointer w-full text-[10px]"
                           >
                             <option value="" className="bg-gray-950 text-gray-400">なし</option>
                             <option value="TOP" className="bg-gray-950 text-red-400">TOP</option>
@@ -1089,47 +1087,45 @@ export default function BalancerPage() {
                           </select>
                         </div>
                       </td>
-                      <td className="px-2 py-2 text-center">
+                      <td className="px-1.5 py-1.5 text-center">
                         <select
                           value={p.weight || 2}
                           onChange={(e) => handleInputChange(p.id, "weight", parseInt(e.target.value))}
-                          className="bg-gray-950 border border-gray-700 rounded px-2 py-1 text-amber-300 font-bold outline-none focus:border-amber-500 w-14 cursor-pointer text-xs"
+                          className="bg-gray-950 border border-gray-700 rounded px-1.5 py-0.5 text-amber-300 font-bold outline-none focus:border-amber-500 w-12 cursor-pointer text-xs"
                         >
                           <option value="1">1</option>
                           <option value="2">2</option>
                           <option value="3">3</option>
                         </select>
                       </td>
-                      <td className="px-2 py-2 text-center">
+                      <td className="px-1.5 py-1.5 text-center">
                         <input
                           type="checkbox"
                           checked={!!p.allow_higher}
                           onChange={(e) => handleInputChange(p.id, "allow_higher", e.target.checked)}
-                          className="w-5 h-5 rounded border-gray-700 bg-gray-950 text-rose-500 focus:ring-rose-500/50 cursor-pointer transition-transform hover:scale-110"
+                          className="w-4 h-4 rounded border-gray-700 bg-gray-950 text-rose-500 focus:ring-rose-500/50 cursor-pointer transition-transform hover:scale-110"
                         />
                       </td>
-                      <td className="px-2 py-2 text-center">
-                        <span className="px-2 py-0.5 rounded-full bg-emerald-950/40 border border-emerald-800/60 text-emerald-400 text-xs font-mono font-bold">
-                          {p.pity || 0}
-                        </span>
+                      <td className="px-1.5 py-1.5 text-center">
+                        <div className="flex items-center justify-center gap-1 w-24 mx-auto">
+                          <span className="px-1.5 py-0.5 rounded bg-emerald-950/40 border border-emerald-800/40 text-emerald-400 text-[10px] font-mono font-bold" title="Pity">
+                            {p.pity || 0}
+                          </span>
+                          <span className="px-1.5 py-0.5 rounded bg-fuchsia-950/40 border border-fuchsia-800/40 text-fuchsia-400 text-[10px] font-mono font-bold" title="OffPity">
+                            {p.off_pity || 0}
+                          </span>
+                          <span className="px-1.5 py-0.5 rounded bg-sky-950/40 border border-sky-800/60 text-sky-400 text-[10px] font-mono font-bold" title="観戦Pity">
+                            {p.spectator_pity || 0}
+                          </span>
+                        </div>
                       </td>
-                      <td className="px-2 py-2 text-center">
-                        <span className="px-2 py-0.5 rounded-full bg-fuchsia-950/40 border border-fuchsia-800/60 text-fuchsia-400 text-xs font-mono font-bold">
-                          {p.off_pity || 0}
-                        </span>
-                      </td>
-                      <td className="px-2 py-2 text-center">
-                        <span className="px-2 py-0.5 rounded-full bg-sky-950/40 border border-sky-800/60 text-sky-400 text-xs font-mono font-bold">
-                          {p.spectator_pity || 0}
-                        </span>
-                      </td>
-                      <td className="px-2 py-2">
+                      <td className="px-2 py-1.5">
                         <input
                           type="text"
                           value={p.metadata?.notes || ""}
                           onChange={(e) => handleInputChange(p.id, "notes", e.target.value)}
                           placeholder="備考"
-                          className="bg-transparent border border-transparent hover:border-gray-800 focus:border-gray-700 hover:bg-gray-900/60 focus:bg-gray-900 focus:ring-1 focus:ring-blue-500/30 rounded px-2 py-1 outline-none text-xs text-gray-300 w-28 transition-all"
+                          className="bg-transparent border border-transparent hover:border-gray-800 focus:border-gray-700 hover:bg-gray-900/60 focus:bg-gray-900 focus:ring-1 focus:ring-blue-500/30 rounded px-2 py-0.5 outline-none text-xs text-gray-300 w-22 transition-all"
                         />
                       </td>
                     </tr>
