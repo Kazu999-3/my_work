@@ -229,7 +229,7 @@ export default function BalancerPage() {
           weight: p.weight,
           allow_higher: p.allow_higher,
           pity: p.pity,
-          off_pity: p.off_pity,
+          off_role_pity: p.off_role_pity,
           metadata: p.metadata
         }).eq('id', p.id);
       }
@@ -476,7 +476,7 @@ export default function BalancerPage() {
     let aVal = a[sortConfig.key];
     let bVal = b[sortConfig.key];
     
-    const numericKeys = ["mmr", "no", "pity", "off_pity", "spectator_pity", "weight"];
+    const numericKeys = ["mmr", "no", "pity", "off_role_pity", "spectator_pity", "weight"];
     if (numericKeys.includes(sortConfig.key)) {
       aVal = parseInt(aVal) || 0;
       bVal = parseInt(bVal) || 0;
@@ -1112,7 +1112,7 @@ export default function BalancerPage() {
                             {p.pity || 0}
                           </span>
                           <span className="px-1.5 py-0.5 rounded bg-fuchsia-950/40 border border-fuchsia-800/40 text-fuchsia-400 text-[10px] font-mono font-bold" title="OffPity">
-                            {p.off_pity || 0}
+                            {p.off_role_pity || 0}
                           </span>
                           <span className="px-1.5 py-0.5 rounded bg-sky-950/40 border border-sky-800/60 text-sky-400 text-[10px] font-mono font-bold" title="観戦Pity">
                             {p.spectator_pity || 0}

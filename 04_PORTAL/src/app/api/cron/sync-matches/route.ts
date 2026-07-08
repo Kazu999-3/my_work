@@ -28,7 +28,7 @@ export async function GET(request: Request) {
     // 1. puuidが登録されているプレイヤーを数名取得（最近アクティブな人から3名）
     const { data: activePlayers } = await supabase
       .from('ktm_players')
-      .select('id, name, puuid, discord_id, role_preferences, pity, off_pity')
+      .select('id, name, puuid, discord_id, role_preferences, pity, off_role_pity')
       .not('puuid', 'is', null)
       .eq('is_active', true)
       .limit(3);
@@ -40,7 +40,7 @@ export async function GET(request: Request) {
     // KTMメンバー全体のpuuidリストを作っておく（参加者被り率の判定用）
     const { data: allPlayers } = await supabase
       .from('ktm_players')
-      .select('id, name, puuid, discord_id, role_preferences, pity, off_pity')
+      .select('id, name, puuid, discord_id, role_preferences, pity, off_role_pity')
       .not('puuid', 'is', null);
     
     const allPuuids = allPlayers?.map((p: any) => p.puuid) || [];
@@ -128,7 +128,7 @@ export async function GET(request: Request) {
             if (dbPlayer) {
               const primary = dbPlayer.role_preferences?.primary || 'ALL';
               let newPity = dbPlayer.pity || 0;
-              let newOffPity = dbPlayer.off_pity || 0;
+              let newOffPity = dbPlayer.off_role_pity || 0;
 
               if (primary === 'ALL' || primary === roleStr) {
                 // 希望通りだった -> Pityリセット、OffPity増加
@@ -145,7 +145,7 @@ export async function GET(request: Request) {
                 .from('ktm_players')
                 .update({ 
                   pity: newPity, 
-                  off_pity: newOffPity,
+                  off_role_pity: newOffPity,
                   spectator_pity: 0 // 試合に出たので0にリセット
                 })
                 .eq('id', dbPlayer.id);
