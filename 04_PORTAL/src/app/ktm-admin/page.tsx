@@ -943,7 +943,11 @@ export default function KtmAdminPage() {
                       <Users className="h-6 w-6 text-[#5865F2]" />
                       Discordメンバー同期の確認
                     </h2>
-                    <button onClick={() => { setSyncData(null); setSyncingDiscord(false); }} className="text-gray-500 hover:text-white">
+                    <button 
+                      onClick={() => { setSyncData(null); setSyncingDiscord(false); }} 
+                      disabled={syncingDiscord}
+                      className="text-gray-500 hover:text-white disabled:opacity-20 disabled:cursor-not-allowed"
+                    >
                       <X className="h-6 w-6" />
                     </button>
                   </div>
@@ -1118,16 +1122,24 @@ export default function KtmAdminPage() {
                   <div className="p-6 border-t border-gray-800 bg-gray-800/30 flex justify-end gap-3">
                     <button 
                       onClick={() => { setSyncData(null); setSyncingDiscord(false); }}
-                      className="px-4 py-2 rounded-lg font-bold text-gray-400 hover:bg-gray-800 transition"
+                      disabled={syncingDiscord}
+                      className="px-4 py-2 rounded-lg font-bold text-gray-400 hover:bg-gray-800 transition disabled:opacity-30 disabled:cursor-not-allowed"
                     >
                       キャンセル
                     </button>
                     <button 
                       onClick={executeSync}
-                      className="px-6 py-2 rounded-lg font-bold bg-[#5865F2] hover:bg-[#4752C4] text-white transition shadow-lg disabled:opacity-50 flex items-center gap-2"
+                      disabled={syncingDiscord}
+                      className="px-6 py-2 rounded-lg font-bold bg-[#5865F2] hover:bg-[#4752C4] text-white transition shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                     >
-                      {syncingDiscord && syncData.toAdd.length > 0 ? <RefreshCw className="h-4 w-4 animate-spin" /> : null}
-                      同期を実行する
+                      {syncingDiscord ? (
+                        <>
+                          <RefreshCw className="h-4 w-4 animate-spin" />
+                          同期を実行中...
+                        </>
+                      ) : (
+                        "同期を実行する"
+                      )}
                     </button>
                   </div>
                 </div>
