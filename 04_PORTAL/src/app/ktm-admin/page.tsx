@@ -4,8 +4,21 @@ import { useEffect, useState, useRef } from "react";
 import { supabase } from "../../lib/supabaseClient";
 import MatchHistoryPanel from "./MatchHistoryPanel";
 import ProfileModal from "./ProfileModal";
-import { Info, Users, RefreshCw, Save, Trophy, Filter, Plus, AlertCircle, X, History, Globe } from "lucide-react";
+import { Info, Users, RefreshCw, Save, Trophy, Filter, Plus, AlertCircle, X, History, Globe, ChevronDown, Shield, Trees, Zap, Target, Heart, Sparkles, Settings } from "lucide-react";
 import { getKtmRank, RANKS, calculateInitialMmr } from "../../lib/mmr";
+
+const RoleIcon = ({ role, className = "w-3.5 h-3.5" }: { role: string; className?: string }) => {
+  const r = role.toUpperCase();
+  switch (r) {
+    case 'TOP': return <Shield className={`${className} text-orange-400`} />;
+    case 'JG': return <Trees className={`${className} text-green-500`} />;
+    case 'MID': return <Zap className={`${className} text-red-400`} />;
+    case 'ADC': return <Target className={`${className} text-blue-400`} />;
+    case 'SUP': return <Heart className={`${className} text-teal-300`} />;
+    default: return null;
+  }
+};
+
 
 function getRankFromMMR(mmr: number): { tier: string, color: string } {
   const badge = getKtmRank(mmr);
@@ -80,6 +93,22 @@ export default function KtmAdminPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showMmrInfo, setShowMmrInfo] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState<any>(null);
+  
+  const [expandedPlayerIds, setExpandedPlayerIds] = useState<string[]>([]);
+  const [flashingPlayerIds, setFlashingPlayerIds] = useState<string[]>([]);
+
+  const togglePlayerDetails = (uid: string) => {
+    setExpandedPlayerIds(prev =>
+      prev.includes(uid) ? prev.filter(id => id !== uid) : [...prev, uid]
+    );
+  };
+
+  const triggerRowFlash = (uid: string) => {
+    setFlashingPlayerIds(prev => [...prev, uid]);
+    setTimeout(() => {
+      setFlashingPlayerIds(prev => prev.filter(id => id !== uid));
+    }, 1000);
+  };
   
   const [activeTab, setActiveTab] = useState<'players' | 'history' | 'affiliate'>('players');
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -327,7 +356,7 @@ export default function KtmAdminPage() {
       });
       
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-      handleSave(nextPlayers);
+      handleSave(nextPlayers).then(() => triggerRowFlash(uid));
       
       return nextPlayers;
     });
@@ -1214,12 +1243,7 @@ export default function KtmAdminPage() {
                       <SortableHeader label="最高Rank" sortKey="highest_rank" />
                       <th className="px-2 py-1.5 text-xs text-gray-400 font-semibold text-center">希望レーン</th>
                       <th className="px-2 py-1.5 text-xs text-gray-400 font-semibold text-center">NG</th>
-                      <SortableHeader label="Top" sortKey="mmr_top" />
-                      <SortableHeader label="Jg" sortKey="mmr_jg" />
-                      <SortableHeader label="Mid" sortKey="mmr_mid" />
-                      <SortableHeader label="Adc" sortKey="mmr_adc" />
-                      <SortableHeader label="Sup" sortKey="mmr_sup" />
-                      <SortableHeader label="総合" sortKey="mmr" />
+                      <SortableHeader label="平均MMR" sortKey="mmr" />
                       <SortableHeader label="Discord ID" sortKey="discord_id" />
                       <SortableHeader label="Riot IGN" sortKey="ign" />
                       <SortableHeader label="備考" sortKey="notes" />
@@ -1229,7 +1253,15 @@ export default function KtmAdminPage() {
                     {sortedPlayers.map((p) => {
                       const uid = p.id || p.discord_id;
                       return (
-                      <tr key={uid} className="hover:bg-gray-800/40 transition">
+                      <>
+                      <tr 
+                        key={uid} 
+                        className={`hover:bg-gray-800/40 transition-all duration-1000 ${
+                          flashingPlayerIds.includes(uid) 
+                            ? 'bg-emerald-950/40 text-emerald-400 font-bold border-y border-emerald-500/50 shadow-[inset_0_0_15px_rgba(16,185,129,0.15)]' 
+                            : ''
+                        }`}
+                      >
                         <td className="px-2 py-1.5 text-center font-bold text-gray-500 text-xs">
                           {p.no}
                         </td>
@@ -1271,65 +1303,69 @@ export default function KtmAdminPage() {
                           </select>
                         </td>
                         <td className="px-2 py-1.5 text-center text-xs">
-                          <div className="flex items-center justify-center gap-1">
+                          <div className="flex items-center justify-center gap-1.5">
                             {/* 第一希望 */}
-                            <select
-                              value={p.role_preferences?.primary || "ALL"}
-                              onChange={(e) => {
-                                const newVal = e.target.value;
-                                handleInputSave(uid, "primary_role", newVal);
-                                if (newVal === "ALL") {
-                                  handleInputSave(uid, "secondary_role", "-");
-                                }
-                              }}
-                              className={`bg-gray-800 border border-gray-700 rounded px-1 py-0.5 outline-none focus:border-green-500 cursor-pointer ${getColorFromRole(p.role_preferences?.primary)}`}
-                            >
-                              {["ALL", "TOP", "JG", "MID", "ADC", "SUP"].map(role => (
-                                <option key={role} value={role} className="text-gray-200 bg-gray-900">{role}</option>
-                              ))}
-                            </select>
+                            <div className="flex items-center gap-1 bg-gray-800 border border-gray-700 rounded px-1.5 py-0.5">
+                              <RoleIcon role={p.role_preferences?.primary || "ALL"} />
+                              <select
+                                value={p.role_preferences?.primary || "ALL"}
+                                onChange={(e) => {
+                                  const newVal = e.target.value;
+                                  handleInputSave(uid, "primary_role", newVal);
+                                  if (newVal === "ALL") {
+                                    handleInputSave(uid, "secondary_role", "-");
+                                  }
+                                }}
+                                className={`bg-transparent outline-none cursor-pointer text-xs font-bold ${getColorFromRole(p.role_preferences?.primary)}`}
+                              >
+                                {["ALL", "TOP", "JG", "MID", "ADC", "SUP"].map(role => (
+                                  <option key={role} value={role} className="text-gray-200 bg-gray-900">{role}</option>
+                                ))}
+                              </select>
+                            </div>
                             <span className="text-gray-500">/</span>
                             {/* 第二希望 */}
+                            <div className="flex items-center gap-1 bg-gray-800 border border-gray-700 rounded px-1.5 py-0.5">
+                              <RoleIcon role={p.role_preferences?.secondary || "-"} />
+                              <select
+                                value={p.role_preferences?.secondary || "-"}
+                                disabled={p.role_preferences?.primary === "ALL"}
+                                onChange={(e) => handleInputSave(uid, "secondary_role", e.target.value)}
+                                className={`bg-transparent outline-none cursor-pointer text-xs font-bold disabled:opacity-50 disabled:cursor-not-allowed ${getColorFromRole(p.role_preferences?.secondary)}`}
+                              >
+                                {["-", "ALL", "TOP", "JG", "MID", "ADC", "SUP"].map(role => (
+                                  <option key={role} value={role} className="text-gray-200 bg-gray-900">{role}</option>
+                                ))}
+                              </select>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-2 py-1.5 text-center text-xs">
+                          <div className="flex items-center justify-center gap-1 bg-gray-800 border border-gray-700 rounded px-1.5 py-0.5 mx-auto w-max">
+                            <RoleIcon role={p.role_preferences?.ignore_role || "-"} />
                             <select
-                              value={p.role_preferences?.secondary || "-"}
-                              disabled={p.role_preferences?.primary === "ALL"}
-                              onChange={(e) => handleInputSave(uid, "secondary_role", e.target.value)}
-                              className={`bg-gray-800 border border-gray-700 rounded px-1 py-0.5 outline-none focus:border-green-500 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${getColorFromRole(p.role_preferences?.secondary)}`}
+                              value={p.role_preferences?.ignore_role || "-"}
+                              onChange={(e) => handleInputSave(uid, "ignore_role", e.target.value)}
+                              className="bg-transparent text-rose-400 font-bold outline-none cursor-pointer text-xs"
                             >
-                              {["-", "ALL", "TOP", "JG", "MID", "ADC", "SUP"].map(role => (
-                                <option key={role} value={role} className="text-gray-200 bg-gray-900">{role}</option>
+                              {["-", "TOP", "JG", "MID", "ADC", "SUP"].map(role => (
+                                <option key={role} value={role} className="text-rose-400 bg-gray-900">{role}</option>
                               ))}
                             </select>
                           </div>
                         </td>
-                        <td className="px-2 py-1.5 text-center text-xs">
-                          <select
-                            value={p.role_preferences?.ignore_role || "-"}
-                            onChange={(e) => handleInputSave(uid, "ignore_role", e.target.value)}
-                            className="bg-gray-800 border border-gray-700 text-rose-400 font-bold rounded px-1 py-0.5 outline-none focus:border-red-500 cursor-pointer"
-                          >
-                            {["-", "TOP", "JG", "MID", "ADC", "SUP"].map(role => (
-                              <option key={role} value={role} className="text-rose-400 bg-gray-900">{role}</option>
-                            ))}
-                          </select>
-                        </td>
-                        <td className="px-2 py-1.5 text-center">
-                          <MmrBadgeInput value={p.mmr_top || 1000} onChange={(v) => handleInputSave(uid, "mmr_top", v)} />
-                        </td>
-                        <td className="px-2 py-1.5 text-center">
-                          <MmrBadgeInput value={p.mmr_jg || 1000} onChange={(v) => handleInputSave(uid, "mmr_jg", v)} />
-                        </td>
-                        <td className="px-2 py-1.5 text-center">
-                          <MmrBadgeInput value={p.mmr_mid || 1000} onChange={(v) => handleInputSave(uid, "mmr_mid", v)} />
-                        </td>
-                        <td className="px-2 py-1.5 text-center">
-                          <MmrBadgeInput value={p.mmr_adc || 1000} onChange={(v) => handleInputSave(uid, "mmr_adc", v)} />
-                        </td>
-                        <td className="px-2 py-1.5 text-center">
-                          <MmrBadgeInput value={p.mmr_sup || 1000} onChange={(v) => handleInputSave(uid, "mmr_sup", v)} />
-                        </td>
-                        <td className="px-2 py-1.5 text-center">
-                          <MmrBadgeInput value={p.mmr || 1000} onChange={(v) => handleInputSave(uid, "mmr", v)} />
+                        <td className="px-2 py-1.5 text-center text-xs font-bold">
+                          <div className="flex items-center justify-center gap-1.5">
+                            <span>{p.mmr || 1000}</span>
+                            <button
+                              type="button"
+                              onClick={() => togglePlayerDetails(uid)}
+                              className={`p-0.5 rounded transition ${expandedPlayerIds.includes(uid) ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-800'}`}
+                              title="レーン別MMR詳細"
+                            >
+                              <ChevronDown className={`w-3.5 h-3.5 transform transition-transform duration-300 ${expandedPlayerIds.includes(uid) ? 'rotate-180' : ''}`} />
+                            </button>
+                          </div>
                         </td>
                         <td className="px-2 py-1.5 opacity-50 hover:opacity-100 transition">
                           <input
@@ -1363,6 +1399,44 @@ export default function KtmAdminPage() {
                           />
                         </td>
                       </tr>
+                      {expandedPlayerIds.includes(uid) && (
+                        <tr key={`${uid}-mmr-details`} className="bg-gray-950/40 border-b border-gray-800">
+                          <td colSpan={10} className="p-3">
+                            <div className="flex flex-wrap items-center gap-6 pl-12">
+                              <div className="text-xs font-bold text-gray-400 flex items-center gap-1.5 border-r border-gray-800 pr-4">
+                                <Settings className="w-3.5 h-3.5 text-blue-500 animate-pulse" />
+                                レーン別 MMR 設定:
+                              </div>
+                              
+                              <div className="flex flex-wrap items-center gap-4 text-xs">
+                                {['TOP', 'JG', 'MID', 'ADC', 'SUP'].map(role => {
+                                  const mmrKey = `mmr_${role.toLowerCase()}` as keyof typeof p;
+                                  const val = p[mmrKey] as number || 1000;
+                                  return (
+                                    <div key={role} className="flex items-center gap-2 bg-gray-900 px-2 py-1.5 rounded border border-gray-800 hover:border-gray-700 transition">
+                                      <RoleIcon role={role} />
+                                      <span className="font-bold text-gray-300 w-8">{role}</span>
+                                      <MmrBadgeInput
+                                        value={val}
+                                        onChange={(v) => handleInputSave(uid, `mmr_${role.toLowerCase()}`, v)}
+                                      />
+                                    </div>
+                                  );
+                                })}
+                                
+                                <div className="flex items-center gap-2 bg-gray-900 px-2 py-1.5 rounded border border-amber-500/30 ml-4">
+                                  <span className="font-bold text-amber-400 w-12 text-center">平均MMR</span>
+                                  <MmrBadgeInput
+                                    value={p.mmr || 1000}
+                                    onChange={(v) => handleInputSave(uid, "mmr", v)}
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                      </>
                       );
                     })}
                     
