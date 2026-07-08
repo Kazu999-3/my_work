@@ -772,13 +772,26 @@ export default function KtmAdminPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || '同期処理に失敗しました');
 
-      // 3. 複合機能：Riot同期も自動で連続実行
-      setMessage({ type: "success", text: "✅ Discord同期が完了しました。続けてRiot情報の同期を開始します..." });
+      // 3. 複合機能：Riot同期も自動で連続実行（新規追加・Riot情報未取得プレイヤーのみに絞り、タイムアウトを防止）
+      const addedDiscordIds = syncData.toAdd.map((p: any) => p.discord_id).filter(Boolean);
       
-      const playerIdsToSync = players.map(p => p.id).filter(Boolean);
-      const riotData = await runRiotSyncInChunks(playerIdsToSync, (msg) => {
-        setMessage({ type: "info", text: msg });
-      });
+      const { data: latestPlayers } = await supabase.from('ktm_players').select('id, discord_id, puuid');
+      
+      const targetPlayerIds = (latestPlayers || [])
+        .filter((p: any) => addedDiscordIds.includes(p.discord_id) || !p.puuid)
+        .map((p: any) => p.id)
+        .filter(Boolean);
+
+      let riotData = { errors: [] as string[] };
+      if (targetPlayerIds.length > 0) {
+        setMessage({ type: "success", text: `✅ Discord同期が完了しました。続けて新規・未同期プレイヤー (${targetPlayerIds.length}名) のRiot情報の同期を開始します...` });
+        const resData = await runRiotSyncInChunks(targetPlayerIds, (msg) => {
+          setMessage({ type: "info", text: msg });
+        });
+        riotData = { errors: resData.errors || [] };
+      } else {
+        setMessage({ type: "success", text: "✅ Discord同期が完了しました。Riot API同期が必要な新規・未同期プレイヤーはいません。" });
+      }
 
       if (riotData.errors && riotData.errors.length > 0) {
         const errorDetails = riotData.errors.slice(0, 10).join('\n') + (riotData.errors.length > 10 ? `\n...他 ${riotData.errors.length - 10} 件` : '');
