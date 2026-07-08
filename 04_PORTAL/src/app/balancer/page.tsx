@@ -3,10 +3,22 @@
 import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { supabase } from "../../lib/supabaseClient";
-import { Users, RefreshCw, Swords, X, Activity, Globe, MessageSquare, Info, Crown, Trophy, History, Shield, AlertTriangle } from "lucide-react";
+import { Users, RefreshCw, Swords, X, Activity, Globe, MessageSquare, Info, Crown, Trophy, History, Shield, AlertTriangle, ChevronDown, Trees, Zap, Target, Heart, Sparkles, Settings } from "lucide-react";
 import { getChampIcon } from "../../lib/ddragonClient";
 import ProfileModal from "../ktm-admin/ProfileModal";
 import MatchRecordPanel from "../ktm-admin/MatchRecordPanel";
+
+const RoleIcon = ({ role, className = "w-3.5 h-3.5" }: { role: string; className?: string }) => {
+  const r = role.toUpperCase();
+  switch (r) {
+    case 'TOP': return <Shield className={`${className} text-orange-400`} />;
+    case 'JG': return <Trees className={`${className} text-green-500`} />;
+    case 'MID': return <Zap className={`${className} text-red-400`} />;
+    case 'ADC': return <Target className={`${className} text-blue-400`} />;
+    case 'SUP': return <Heart className={`${className} text-teal-300`} />;
+    default: return null;
+  }
+};
 
 // ランク名から色を判定するユーティリティ
 function getColorFromRankName(rank: string): string {
@@ -670,96 +682,105 @@ export default function BalancerPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 relative mb-8">
-              {/* VS Divider */}
-              <div className="hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 w-12 h-12 bg-gray-950 border-2 border-gray-800 rounded-full items-center justify-center font-black text-gray-600 italic text-xl">
-                VS
+            <div className="space-y-4 mb-8">
+              {/* Teams Headers */}
+              <div className="grid grid-cols-1 md:grid-cols-11 gap-4 items-center border-b border-gray-800 pb-4">
+                <div className="col-span-5 bg-gradient-to-r from-blue-950/40 to-transparent p-3 rounded-xl border-l-4 border-blue-500 flex justify-between items-center">
+                  <span className="text-lg font-black text-blue-400 tracking-wider">BLUE TEAM</span>
+                  <span className="text-sm font-mono font-bold text-blue-300">合計MMR: {balanceResult.teamBlueMMR}</span>
+                </div>
+                <div className="col-span-1 flex justify-center text-gray-600 font-black italic text-base">VS</div>
+                <div className="col-span-5 bg-gradient-to-l from-red-950/40 to-transparent p-3 rounded-xl border-r-4 border-red-500 flex justify-between items-center text-right">
+                  <span className="text-sm font-mono font-bold text-red-300">合計MMR: {balanceResult.teamRedMMR}</span>
+                  <span className="text-lg font-black text-red-400 tracking-wider">RED TEAM</span>
+                </div>
               </div>
 
-              {/* BLUE TEAM */}
-              <div className="space-y-4">
-                <div className="flex items-center justify-between border-b-2 border-blue-900/50 pb-2">
-                  <h3 className="text-xl font-black text-blue-400 tracking-wider">BLUE TEAM</h3>
-                  <div className="text-sm font-bold text-gray-500">MMR: {balanceResult.teamBlueMMR}</div>
-                </div>
-                <div className="space-y-2">
-                  {['TOP', 'JG', 'MID', 'ADC', 'SUP'].map((role) => {
-                    const p = balanceResult.teamBlue.find((x:any) => x.currentRole === role);
-                    const isOffRole = p && p.mainLane !== 'ALL' && p.mainLane !== '-' && p.currentRole !== p.mainLane;
-                    const slotKey = `teamBlue-${role}`;
-                    const isDragOver = dragOverSlot === slotKey;
-                    
-                    return (
+              {/* Lane by Lane Matchups */}
+              <div className="space-y-3">
+                {['TOP', 'JG', 'MID', 'ADC', 'SUP'].map((role) => {
+                  const pBlue = balanceResult.teamBlue.find((x: any) => x.currentRole === role);
+                  const pRed = balanceResult.teamRed.find((x: any) => x.currentRole === role);
+                  
+                  const isBlueOff = pBlue && pBlue.mainLane !== 'ALL' && pBlue.mainLane !== '-' && pBlue.currentRole !== pBlue.mainLane;
+                  const isRedOff = pRed && pRed.mainLane !== 'ALL' && pRed.mainLane !== '-' && pRed.currentRole !== pRed.mainLane;
+                  
+                  const blueKey = `teamBlue-${role}`;
+                  const redKey = `teamRed-${role}`;
+                  
+                  const isBlueDrag = dragOverSlot === blueKey;
+                  const isRedDrag = dragOverSlot === redKey;
+                  
+                  const blueMmr = pBlue?.mmr || 1000;
+                  const redMmr = pRed?.mmr || 1000;
+                  const mmrDiff = blueMmr - redMmr;
+
+                  return (
+                    <div key={role} className="grid grid-cols-1 md:grid-cols-11 gap-2 items-center bg-gray-900/40 p-2 md:p-3 rounded-2xl border border-gray-800/80 hover:border-gray-700/80 hover:bg-gray-900/60 transition duration-300">
+                      
+                      {/* BLUE SLOT */}
                       <div 
-                        key={`blue-${role}`} 
-                        draggable={!!p?.name}
-                        onDragStart={(e) => handleDragStart(e, 'teamBlue', role, p?.name || '')}
-                        onDragOver={(e) => handleDragOver(e, slotKey)}
+                        draggable={!!pBlue?.name}
+                        onDragStart={(e) => handleDragStart(e, 'teamBlue', role, pBlue?.name || '')}
+                        onDragOver={(e) => handleDragOver(e, blueKey)}
                         onDragLeave={handleDragLeave}
                         onDrop={(e) => handleDropPlayer(e, 'teamBlue', role)}
-                        className={`flex items-center gap-3 p-2 rounded border transition group relative cursor-grab active:cursor-grabbing ${
-                          isDragOver 
-                            ? 'border-indigo-400 bg-indigo-950/40 border-dashed shadow-[0_0_15px_rgba(129,140,248,0.2)]' 
-                            : 'bg-gray-950/50 hover:bg-gray-800 border-gray-800'
+                        className={`col-span-5 flex items-center gap-3 p-2 rounded-xl border transition cursor-grab active:cursor-grabbing ${
+                          isBlueDrag 
+                            ? 'border-blue-500 bg-blue-950/30 border-dashed shadow-[0_0_15px_rgba(59,130,246,0.2)]' 
+                            : 'bg-blue-950/10 border-blue-900/20 hover:bg-blue-950/20'
                         }`}
                       >
-                        <div className="w-10 text-center font-bold text-gray-600 text-xs">{role}</div>
-                        <div className="flex-1">
-                          {renderSwapSelect('teamBlue', role, p?.name || '')}
+                        <div className="flex-1 min-w-0">
+                          {renderSwapSelect('teamBlue', role, pBlue?.name || '')}
                         </div>
-                        {isOffRole && (
-                          <div className="text-[10px] bg-red-900/30 text-red-400 px-1.5 py-0.5 rounded font-bold border border-red-900/50" title="オフロール (希望外レーン)">
-                            OFF
-                          </div>
+                        {isBlueOff && (
+                          <span className="text-[9px] bg-red-950/80 border border-red-800 text-red-400 px-1.5 py-0.5 rounded font-black tracking-wider uppercase shrink-0" title="希望外レーン (オフロール)">
+                            ⚠️ OFF
+                          </span>
                         )}
-                        <div className="w-12 text-right font-mono text-xs text-gray-500">{p?.mmr || '---'}</div>
+                        <span className="font-mono text-xs font-bold text-blue-400 shrink-0 bg-blue-950/40 px-2 py-0.5 rounded border border-blue-900/30">{blueMmr}</span>
                       </div>
-                    );
-                  })}
-                </div>
-              </div>
 
-              {/* RED TEAM */}
-              <div className="space-y-4">
-                <div className="flex items-center justify-between border-b-2 border-red-900/50 pb-2">
-                  <h3 className="text-xl font-black text-red-400 tracking-wider">RED TEAM</h3>
-                  <div className="text-sm font-bold text-gray-500">MMR: {balanceResult.teamRedMMR}</div>
-                </div>
-                <div className="space-y-2">
-                  {['TOP', 'JG', 'MID', 'ADC', 'SUP'].map((role) => {
-                    const p = balanceResult.teamRed.find((x:any) => x.currentRole === role);
-                    const isOffRole = p && p.mainLane !== 'ALL' && p.mainLane !== '-' && p.currentRole !== p.mainLane;
-                    const slotKey = `teamRed-${role}`;
-                    const isDragOver = dragOverSlot === slotKey;
-                    
-                    return (
+                      {/* ROLE & MMR DIFF */}
+                      <div className="col-span-1 flex flex-col items-center justify-center py-2 md:py-0">
+                        <div className="w-8 h-8 rounded-full bg-gray-950 border border-gray-800 flex items-center justify-center shadow-lg transition-transform hover:scale-110">
+                          <RoleIcon role={role} className="w-4 h-4" />
+                        </div>
+                        <span className={`text-[10px] font-mono mt-1 font-extrabold ${
+                          mmrDiff > 0 ? 'text-blue-400' : mmrDiff < 0 ? 'text-red-400' : 'text-gray-500'
+                        }`}>
+                          {mmrDiff > 0 ? `+${mmrDiff}` : mmrDiff < 0 ? mmrDiff : '±0'}
+                        </span>
+                      </div>
+
+                      {/* RED SLOT */}
                       <div 
-                        key={`red-${role}`} 
-                        draggable={!!p?.name}
-                        onDragStart={(e) => handleDragStart(e, 'teamRed', role, p?.name || '')}
-                        onDragOver={(e) => handleDragOver(e, slotKey)}
+                        draggable={!!pRed?.name}
+                        onDragStart={(e) => handleDragStart(e, 'teamRed', role, pRed?.name || '')}
+                        onDragOver={(e) => handleDragOver(e, redKey)}
                         onDragLeave={handleDragLeave}
                         onDrop={(e) => handleDropPlayer(e, 'teamRed', role)}
-                        className={`flex items-center gap-3 p-2 rounded border transition group relative cursor-grab active:cursor-grabbing ${
-                          isDragOver 
-                            ? 'border-indigo-400 bg-indigo-950/40 border-dashed shadow-[0_0_15px_rgba(129,140,248,0.2)]' 
-                            : 'bg-gray-950/50 hover:bg-gray-800 border-gray-800'
+                        className={`col-span-5 flex items-center gap-3 p-2 rounded-xl border transition cursor-grab active:cursor-grabbing ${
+                          isRedDrag 
+                            ? 'border-red-500 bg-red-950/30 border-dashed shadow-[0_0_15px_rgba(239,68,68,0.2)]' 
+                            : 'bg-red-950/10 border-red-900/20 hover:bg-red-950/20'
                         }`}
                       >
-                        <div className="w-10 text-center font-bold text-gray-600 text-xs">{role}</div>
-                        <div className="flex-1">
-                          {renderSwapSelect('teamRed', role, p?.name || '')}
-                        </div>
-                        {isOffRole && (
-                          <div className="text-[10px] bg-red-900/30 text-red-400 px-1.5 py-0.5 rounded font-bold border border-red-900/50" title="オフロール (希望外レーン)">
-                            OFF
-                          </div>
+                        <span className="font-mono text-xs font-bold text-red-400 shrink-0 bg-red-950/40 px-2 py-0.5 rounded border border-red-900/30">{redMmr}</span>
+                        {isRedOff && (
+                          <span className="text-[9px] bg-red-950/80 border border-red-800 text-red-400 px-1.5 py-0.5 rounded font-black tracking-wider uppercase shrink-0" title="希望外レーン (オフロール)">
+                            ⚠️ OFF
+                          </span>
                         )}
-                        <div className="w-12 text-right font-mono text-xs text-gray-500">{p?.mmr || '---'}</div>
+                        <div className="flex-1 min-w-0">
+                          {renderSwapSelect('teamRed', role, pRed?.name || '')}
+                        </div>
                       </div>
-                    );
-                  })}
-                </div>
+
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
