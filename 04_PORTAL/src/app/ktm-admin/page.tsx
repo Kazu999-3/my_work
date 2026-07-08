@@ -997,13 +997,31 @@ export default function KtmAdminPage() {
                   全員非アクティブ
                 </button>
 
-                <button
+                 <button
                   onClick={() => fetchPlayers()}
                   className="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 text-gray-200 px-4 py-2 rounded-lg font-bold transition text-xs"
                 >
                   <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
                   更新
                 </button>
+
+                {(syncingDiscord || syncingRiot || syncingAutoAll || saving) && (
+                  <button
+                    onClick={() => {
+                      setSyncingDiscord(false);
+                      setSyncingRiot(false);
+                      setSyncingAutoAll(false);
+                      setSaving(false);
+                      setLoading(false);
+                      setMessage({ type: "info", text: "⚠️ 処理のローディング状態を強制解除しました。" });
+                    }}
+                    className="flex items-center gap-1.5 bg-gray-900 hover:bg-gray-800 text-amber-500 border border-amber-800/40 px-3 py-2 rounded-lg font-bold transition text-xs animate-pulse"
+                    title="通信が詰まってぐるぐるが終わらない場合に、強制的にボタンやローディングを元に戻します"
+                  >
+                    <X className="h-4 w-4 text-amber-500" />
+                    ローディング強制解除
+                  </button>
+                )}
                 
                 <button
                   onClick={handleSyncCheck}
