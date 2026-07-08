@@ -431,13 +431,14 @@ export default function KtmAdminPage() {
             return { ...p, role_preferences: { ...p.role_preferences, primary: value } };
           } else if (field === "secondary_role") {
             return { ...p, role_preferences: { ...p.role_preferences, secondary: value } };
-          } else if (field === "ignore_role") {
+          } else if (field === "ng_lane_1") {
+            // ng_lane_1 を正として更新し、role_preferences.ignore_role にも同期する
             const ngVal = value === "-" ? null : value;
+            const ignoreVal = value === "-" ? "-" : value;
             return { 
               ...p, 
-              role_preferences: { ...p.role_preferences, ignore_role: value },
               ng_lane_1: ngVal,
-              ng_lane_2: p.ng_lane_2 === ngVal ? null : p.ng_lane_2
+              role_preferences: { ...p.role_preferences, ignore_role: ignoreVal }
             };
           } else if (field === "notes") {
             return { ...p, metadata: { ...p.metadata, notes: value } };
@@ -1540,10 +1541,10 @@ export default function KtmAdminPage() {
                         </td>
                         <td className="px-2 py-1.5 text-center text-xs">
                           <div className="flex items-center justify-center gap-1 bg-gray-800 border border-gray-700 rounded px-1.5 py-0.5 mx-auto w-max">
-                            <RoleIcon role={p.role_preferences?.ignore_role || "-"} />
+                            <RoleIcon role={p.ng_lane_1 || "-"} />
                             <select
-                              value={p.role_preferences?.ignore_role || "-"}
-                              onChange={(e) => handleInputSave(uid, "ignore_role", e.target.value)}
+                              value={p.ng_lane_1 || "-"}
+                              onChange={(e) => handleInputSave(uid, "ng_lane_1", e.target.value)}
                               className="bg-transparent text-rose-400 font-bold outline-none cursor-pointer text-xs"
                             >
                               {["-", "TOP", "JG", "MID", "ADC", "SUP"].map(role => (

@@ -227,21 +227,21 @@ export default function BalancerPage() {
       const targetPlayers = currentPlayers || players;
       const existingPlayers = targetPlayers.filter(p => p.id);
 
-      // バランサーページでは「Activeかどうか」と「希望レーン」および名前等を更新
-      for (const p of existingPlayers) {
-        await supabase.from("ktm_players").update({
+      // 並列で全プレイヤーをアップデート（高速化）
+      await Promise.all(existingPlayers.map(p =>
+        supabase.from("ktm_players").update({
           name: p.name,
           role_preferences: p.role_preferences,
           is_active: p.is_active,
-          ng_lane_1: p.ng_lane_1,
-          ng_lane_2: p.ng_lane_2,
+          ng_lane_1: p.ng_lane_1 || null,
+          ng_lane_2: p.ng_lane_2 || null,
           weight: p.weight,
           allow_higher: p.allow_higher,
           pity: p.pity,
           off_role_pity: p.off_role_pity,
           metadata: p.metadata
-        }).eq('id', p.id);
-      }
+        }).eq('id', p.id)
+      ));
       setSaving(false);
       setMessage({ type: "success", text: "✅ プレイヤー情報を更新しました。" });
     } catch (err: any) {
