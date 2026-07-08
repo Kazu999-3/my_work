@@ -12,9 +12,8 @@ function parseIntroduction(content: string) {
   let secondary: string = "-";
   let ignore_role: string = "-";
 
-  // 1. Riot ID の抽出 (Name#TAG)
-  const riotIdRegex = /([a-zA-Z0-9\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff_ \u3000-]{2,16}#[a-zA-Z0-9]{3,5})/g;
-  const match = content.match(riotIdRegex);
+  // 1. Riot ID の抽出 (Name#TAG) - ReDoSフリーな超シンプル設計
+  const match = lower.match(/[^\s#]{2,16}#[a-z0-9]{3,5}/g);
   if (match && match.length > 0) {
     ign = match[0].trim();
   }
@@ -36,84 +35,58 @@ function parseIntroduction(content: string) {
     サポート: "SUP"
   };
 
-  // NGロール（苦手、NG、やりたくない、無理、できない）の検出
-  const ignorePatterns = [
-    /(?:ng|苦手|やりたくない|無理|できない)(?:な(?:ロール|レーン))?(?:\s*[:：\-\s]\s*)?([a-zトップミッドジャングルボットサポートsupjgadc]+)/i,
-    /([a-zトップミッドジャングルボットサポートsupjgadc]+)(?:(?:は|が)?(?:ng|苦手|無理|やりたくない|できません|できない))/i
-  ];
+  // 行単位に分割してスキャンする（ReDoSを完全に防ぐ）
+  const lines = lower.split(/[\r\n]+/);
 
-  for (const pattern of ignorePatterns) {
-    const ignoreMatch = content.match(pattern);
-    if (ignoreMatch) {
-      const matchedText = ignoreMatch[1].toLowerCase();
+  for (const line of lines) {
+    // NGロールの検出
+    const isNgLine = line.includes("ng") || line.includes("苦手") || line.includes("やりたくない") || line.includes("無理") || line.includes("できない") || line.includes("できません");
+    if (isNgLine) {
       for (const [key, val] of Object.entries(roleMapping)) {
-        if (matchedText.includes(key)) {
+        if (line.includes(key)) {
           ignore_role = val;
           break;
         }
       }
     }
-  }
 
-  // 残りのテキストから希望ロールを探す
-  let searchContent = lower;
-  if (ignore_role !== "-") {
-    const ignoreKey = Object.keys(roleMapping).find(k => roleMapping[k] === ignore_role);
-    if (ignoreKey) {
-      searchContent = searchContent.replace(ignoreKey, "");
-    }
-  }
-
-  // 「希望」「メイン」などの付近から第1希望を探す
-  const primaryPatterns = [
-    /(?:第1|第一|1|メイン|希望|メインロール)(?:\s*[:：\-\s]\s*)?([a-zトップミッドジャングルボットサポートsupjgadc]+)/i,
-  ];
-  let primaryFound = "";
-  for (const pattern of primaryPatterns) {
-    const pMatch = searchContent.match(pattern);
-    if (pMatch) {
-      const matchedText = pMatch[1];
+    // 第一希望の検出
+    const isPrimaryLine = line.includes("第1") || line.includes("第一") || line.includes("メイン") || line.includes("希望") || line.includes("1");
+    if (isPrimaryLine && primary === "ALL") {
       for (const [key, val] of Object.entries(roleMapping)) {
-        if (matchedText.includes(key)) {
-          primaryFound = val;
+        if (line.includes(key) && val !== ignore_role) {
+          primary = val;
+          break;
+        }
+      }
+    }
+
+    // 第二希望の検出
+    const isSecondaryLine = line.includes("第2") || line.includes("第二") || line.includes("サブ") || line.includes("2");
+    if (isSecondaryLine && secondary === "-") {
+      for (const [key, val] of Object.entries(roleMapping)) {
+        if (line.includes(key) && val !== ignore_role && val !== primary) {
+          secondary = val;
           break;
         }
       }
     }
   }
 
-  // 第2希望を探す
-  const secondaryPatterns = [
-    /(?:第2|第二|2|サブ|サブロール)(?:\s*[:：\-\s]\s*)?([a-zトップミッドジャングルボットサポートsupjgadc]+)/i,
-  ];
-  let secondaryFound = "";
-  for (const pattern of secondaryPatterns) {
-    const sMatch = searchContent.match(pattern);
-    if (sMatch) {
-      const matchedText = sMatch[1];
-      for (const [key, val] of Object.entries(roleMapping)) {
-        if (matchedText.includes(key)) {
-          secondaryFound = val;
-          break;
-        }
-      }
-    }
-  }
-
-  // 出現順でのフォールバック
-  if (!primaryFound) {
+  // フォールバック: 出現順での判定 (行スキャンでヒットしなかった場合)
+  if (primary === "ALL") {
     const appearances: { role: string, index: number }[] = [];
     for (const [key, val] of Object.entries(roleMapping)) {
-      const idx = searchContent.indexOf(key);
-      if (idx !== -1) {
+      const idx = lower.indexOf(key);
+      if (idx !== -1 && val !== ignore_role) {
         appearances.push({ role: val, index: idx });
       }
     }
     appearances.sort((a, b) => a.index - b.index);
     if (appearances.length > 0) {
-      primaryFound = appearances[0].role;
-      if (appearances.length > 1 && appearances[1].role !== primaryFound) {
-        secondaryFound = appearances[1].role;
+      primary = appearances[0].role;
+      if (appearances.length > 1 && appearances[1].role !== primary) {
+        secondary = appearances[1].role;
       }
     }
   }
@@ -121,9 +94,9 @@ function parseIntroduction(content: string) {
   return {
     ign,
     role_preferences: {
-      primary: primaryFound || "ALL",
-      secondary: secondaryFound || "-",
-      ignore_role: ignore_role
+      primary,
+      secondary,
+      ignore_role
     }
   };
 }
