@@ -200,7 +200,7 @@ export async function POST(request: Request) {
       }
     }
 
-    // プレイヤーテーブルのMMR一括更新 (タイムアウトを回避するためupsertによる一括更新に変更)
+    // プレイヤーテーブルのMMR一括更新 (件数が少ないため、Identity制約エラーを避けるべく個別 update で並列処理)
     const playerUpdates = Array.from(playersMap.values()).map(p => {
       const avgMmr = Math.round((p.mmr_top + p.mmr_jg + p.mmr_mid + p.mmr_adc + p.mmr_sup) / 5);
       return {
@@ -215,20 +215,23 @@ export async function POST(request: Request) {
     });
 
     if (playerUpdates.length > 0) {
-      const { error: playerUpdateError } = await supabase
-        .from('ktm_players')
-        .upsert(playerUpdates.map(pu => ({
-          id: pu.id,
-          mmr_top: pu.mmr_top,
-          mmr_jg: pu.mmr_jg,
-          mmr_mid: pu.mmr_mid,
-          mmr_adc: pu.mmr_adc,
-          mmr_sup: pu.mmr_sup,
-          mmr: pu.mmr
-        })));
-
-      if (playerUpdateError) {
-        throw new Error(`Failed to upsert players: ${playerUpdateError.message}`);
+      const updatePromises = playerUpdates.map(pu =>
+        supabase
+          .from('ktm_players')
+          .update({
+            mmr_top: pu.mmr_top,
+            mmr_jg: pu.mmr_jg,
+            mmr_mid: pu.mmr_mid,
+            mmr_adc: pu.mmr_adc,
+            mmr_sup: pu.mmr_sup,
+            mmr: pu.mmr
+          })
+          .eq('id', pu.id)
+      );
+      const results = await Promise.all(updatePromises);
+      const firstError = results.find(r => r.error);
+      if (firstError) {
+        throw new Error(`Failed to update players: ${firstError.error?.message || 'Unknown error'}`);
       }
     }
 
