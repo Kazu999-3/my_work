@@ -134,21 +134,78 @@ export async function POST(request: Request) {
     
     // 追加・削除処理を FastAPI (Sovereign Core API) へ委譲 (Proxy)
     if ((add && add.length > 0) || (deactivate && deactivate.length > 0)) {
-      const fastapiUrl = 'http://localhost:8000/api/v1/players/sync';
-      const apiKey = process.env.ANTIGRAVITY_API_KEY || 'default_dev_key_2026';
+      // 本番環境など、FastAPI がローカル同居していない場合は直接 Supabase を叩くようにフォールバック
+      const isLocalhostFastApi = process.env.NODE_ENV === 'development' && !process.env.SKIP_FASTAPI_PROXY;
+      const fastapiUrl = process.env.FASTAPI_API_URL || 'http://localhost:8000/api/v1/players/sync';
+      
+      let proxySuccess = false;
+      
+      if (isLocalhostFastApi) {
+        try {
+          const apiKey = process.env.ANTIGRAVITY_API_KEY || 'default_dev_key_2026';
+          const response = await fetch(fastapiUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Antigravity-Key': apiKey
+            },
+            body: JSON.stringify({ add: add || [], deactivate: deactivate || [] })
+          });
 
-      const response = await fetch(fastapiUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Antigravity-Key': apiKey
-        },
-        body: JSON.stringify({ add: add || [], deactivate: deactivate || [] })
-      });
+          if (response.ok) {
+            proxySuccess = true;
+          } else {
+            const errText = await response.text();
+            console.warn(`[Discord Sync POST] FastAPI proxy failed, fallback to direct Supabase. Error: ${errText}`);
+          }
+        } catch (e: any) {
+          console.warn(`[Discord Sync POST] FastAPI is offline, fallback to direct Supabase. Error: ${e.message}`);
+        }
+      }
 
-      if (!response.ok) {
-        const errText = await response.text();
-        throw new Error(`FastAPI Sync Error: ${errText}`);
+      if (!proxySuccess) {
+        console.log(`[Discord Sync POST] Executing direct Supabase sync (Add: ${add?.length || 0}, Deactivate: ${deactivate?.length || 0})`);
+        
+        // (A) 新規プレイヤーの一括インサート/アップサート
+        if (add && add.length > 0) {
+          const addData = add.map((p: any) => ({
+            discord_id: p.discord_id,
+            name: p.name,
+            ign: p.ign,
+            highest_rank: p.highest_rank,
+            role_preferences: p.role_preferences,
+            mmr: p.mmr,
+            mmr_top: p.mmr_top,
+            mmr_jg: p.mmr_jg,
+            mmr_mid: p.mmr_mid,
+            mmr_adc: p.mmr_adc,
+            mmr_sup: p.mmr_sup,
+            is_active: p.is_active ?? true
+          }));
+
+          const { error: upsertError } = await supabase
+            .from('ktm_players')
+            .upsert(addData, { onConflict: 'discord_id' });
+
+          if (upsertError) {
+            throw new Error(`Direct Database upsert error: ${upsertError.message}`);
+          }
+        }
+
+        // (B) プレイヤーの物理削除
+        if (deactivate && deactivate.length > 0) {
+          const idsToDelete = deactivate.map((p: any) => p.id).filter(Boolean);
+          if (idsToDelete.length > 0) {
+            const { error: deleteError } = await supabase
+              .from('ktm_players')
+              .delete()
+              .in('id', idsToDelete);
+
+            if (deleteError) {
+              throw new Error(`Direct Database delete error: ${deleteError.message}`);
+            }
+          }
+        }
       }
     }
 
