@@ -432,7 +432,13 @@ export default function KtmAdminPage() {
           } else if (field === "secondary_role") {
             return { ...p, role_preferences: { ...p.role_preferences, secondary: value } };
           } else if (field === "ignore_role") {
-            return { ...p, role_preferences: { ...p.role_preferences, ignore_role: value } };
+            const ngVal = value === "-" ? null : value;
+            return { 
+              ...p, 
+              role_preferences: { ...p.role_preferences, ignore_role: value },
+              ng_lane_1: ngVal,
+              ng_lane_2: p.ng_lane_2 === ngVal ? null : p.ng_lane_2
+            };
           } else if (field === "notes") {
             return { ...p, metadata: { ...p.metadata, notes: value } };
           } else {

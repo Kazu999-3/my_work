@@ -190,6 +190,15 @@ export default function BalancerPage() {
             return { ...p, role_preferences: nextPrefs };
           } else if (field === "secondary_role") {
             return { ...p, role_preferences: { ...p.role_preferences, secondary: value } };
+          } else if (field === "ng_lane_1") {
+            const ignore_role = value === "" ? "-" : value;
+            return { 
+              ...p, 
+              ng_lane_1: value,
+              role_preferences: { ...p.role_preferences, ignore_role }
+            };
+          } else if (field === "ng_lane_2") {
+            return { ...p, ng_lane_2: value };
           } else if (field === "notes") {
             return { ...p, metadata: { ...p.metadata, notes: value } };
           } else {
