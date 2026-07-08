@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { supabase } from "../../lib/supabaseClient";
 import MatchHistoryPanel from "./MatchHistoryPanel";
 import ProfileModal from "./ProfileModal";
-import { Info, Users, RefreshCw, Save, Trophy, Filter, Plus, AlertCircle, X, History, Globe, ChevronDown, Shield, Trees, Zap, Target, Heart, Sparkles, Settings } from "lucide-react";
+import { Info, Users, RefreshCw, Save, Trophy, Filter, Plus, AlertCircle, X, History, Globe, ChevronDown, Shield, Trees, Zap, Target, Heart, Sparkles, Settings, AlertTriangle } from "lucide-react";
 import { getKtmRank, RANKS, calculateInitialMmr } from "../../lib/mmr";
 
 const RoleIcon = ({ role, className = "w-3.5 h-3.5" }: { role: string; className?: string }) => {
@@ -97,6 +97,9 @@ export default function KtmAdminPage() {
   const [expandedPlayerIds, setExpandedPlayerIds] = useState<string[]>([]);
   const [flashingPlayerIds, setFlashingPlayerIds] = useState<string[]>([]);
 
+  const [riotSyncErrors, setRiotSyncErrors] = useState<{ id: number; name: string; ign: string; error: string }[]>([]);
+  const [reSyncingPlayerId, setReSyncingPlayerId] = useState<number | null>(null);
+
   const togglePlayerDetails = (uid: string) => {
     setExpandedPlayerIds(prev =>
       prev.includes(uid) ? prev.filter(id => id !== uid) : [...prev, uid]
@@ -108,6 +111,72 @@ export default function KtmAdminPage() {
     setTimeout(() => {
       setFlashingPlayerIds(prev => prev.filter(id => id !== uid));
     }, 1000);
+  };
+
+  const parseRiotErrors = (errors: string[]) => {
+    if (!errors || errors.length === 0) {
+      setRiotSyncErrors([]);
+      return;
+    }
+    const parsed: { id: number; name: string; ign: string; error: string }[] = [];
+    errors.forEach(errStr => {
+      const match = errStr.match(/^\[(.*?)\]\s*(.*)$/);
+      if (match) {
+        const errorIgn = match[1];
+        const errorMsg = match[2];
+        if (errorIgn === 'SYSTEM') return;
+
+        const targetPlayer = players.find(p => p.ign === errorIgn || p.name === errorIgn || p.ign?.startsWith(errorIgn));
+        if (targetPlayer) {
+          if (parsed.some(p => p.id === targetPlayer.id)) return;
+          parsed.push({
+            id: targetPlayer.id,
+            name: targetPlayer.name,
+            ign: targetPlayer.ign || errorIgn,
+            error: errorMsg
+          });
+        }
+      }
+    });
+    setRiotSyncErrors(parsed);
+  };
+
+  const handleResolveRiotError = async (playerId: number, newIgn: string) => {
+    setReSyncingPlayerId(playerId);
+    try {
+      const { error: updateErr } = await supabase
+        .from('ktm_players')
+        .update({ ign: newIgn })
+        .eq('id', playerId);
+
+      if (updateErr) throw new Error(`Riot IDの保存に失敗: ${updateErr.message}`);
+
+      const res = await fetch('/api/admin/riot-sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ playerIds: [playerId] })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || '個別同期処理に失敗しました');
+
+      if (data.errors && data.errors.length > 0) {
+        const newErr = data.errors[0];
+        const match = newErr.match(/^\[(.*?)\]\s*(.*)$/);
+        const errMsg = match ? match[2] : '同期エラー';
+        setRiotSyncErrors(prev => prev.map(p => p.id === playerId ? { ...p, ign: newIgn, error: errMsg } : p));
+        setMessage({ type: "error", text: `⚠️ 登録情報は保存されましたが、Riot APIでの同期はまだ失敗します: ${errMsg}` });
+      } else {
+        setRiotSyncErrors(prev => prev.filter(p => p.id !== playerId));
+        setMessage({ type: "success", text: `✅ Riot IDを [${newIgn}] に更新し、同期が正常に完了しました！` });
+        triggerRowFlash(String(playerId));
+      }
+
+      fetchPlayers();
+    } catch (err: any) {
+      setMessage({ type: "error", text: "❌ エラー解消失敗: " + err.message });
+    } finally {
+      setReSyncingPlayerId(null);
+    }
   };
   
   const [activeTab, setActiveTab] = useState<'players' | 'history' | 'affiliate'>('players');
@@ -454,6 +523,9 @@ export default function KtmAdminPage() {
       let successMsg = "✅ 一括オート同期がすべて正常に完了しました！";
       if (riotData.errors && riotData.errors.length > 0) {
         successMsg += `\n(※Riot API同期で一部エラーあり: ${riotData.errors.length}件)`;
+        parseRiotErrors(riotData.errors);
+      } else {
+        setRiotSyncErrors([]);
       }
       setMessage({ type: "success", text: successMsg });
       
@@ -627,8 +699,10 @@ export default function KtmAdminPage() {
         console.warn("Riot Sync Errors:", data.errors);
         const errorDetails = data.errors.join('\n');
         setMessage({ type: "error", text: `⚠️ ${data.message} ただし ${data.errors.length}件のエラーが発生しました。\n\n【失敗リスト】\n${errorDetails}` });
+        parseRiotErrors(data.errors);
       } else {
         setMessage({ type: "success", text: data.message });
+        setRiotSyncErrors([]);
       }
       
       fetchPlayers(); 
@@ -712,11 +786,13 @@ export default function KtmAdminPage() {
           type: "success", 
           text: `✅ Discord & Riot情報の同期が完了しました（※Riot APIで一部エラーあり: ${riotData.errors.length}件）。\n新規プレイヤーの初期MMR計算値を反映させるため、名簿上部の「🔄 Rebuild」を実行してください。\n\n【エラー詳細（サモナー名不一致など）】\n${errorDetails}` 
         });
+        parseRiotErrors(riotData.errors);
       } else {
         setMessage({ 
           type: "success", 
           text: `✅ Discord & Riot情報の同期がすべて正常に完了しました！\n新規プレイヤーの初期MMR計算値を反映させるため、名簿上部の「🔄 Rebuild」を実行してください。` 
         });
+        setRiotSyncErrors([]);
       }
       
       setSyncData(null);
@@ -1197,6 +1273,73 @@ export default function KtmAdminPage() {
               <div className={`p-4 rounded-lg flex items-center gap-3 ${message.type === 'error' ? 'bg-red-900/30 text-red-400 border border-red-800' : 'bg-green-900/30 text-green-400 border border-green-800'}`}>
                 <AlertCircle className="h-5 w-5 flex-shrink-0" />
                 <p className="text-sm font-medium whitespace-pre-wrap">{message.text}</p>
+              </div>
+            )}
+
+            {/* Riot API 同期エラー修正パネル */}
+            {riotSyncErrors.length > 0 && (
+              <div className="bg-amber-950/20 border border-amber-800/40 rounded-xl p-5 shadow-xl relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-1 h-full bg-amber-500"></div>
+                <div className="flex justify-between items-start mb-4">
+                  <h2 className="text-lg font-bold text-amber-400 flex items-center gap-2">
+                    <AlertTriangle className="h-5 w-5 text-amber-500 animate-pulse" />
+                    Riot API 同期エラー修正パネル ({riotSyncErrors.length}件)
+                  </h2>
+                  <button 
+                    onClick={() => setRiotSyncErrors([])} 
+                    className="text-gray-500 hover:text-white text-xs bg-gray-900 border border-gray-800 rounded px-2 py-1 transition"
+                  >
+                    パネルを閉じる
+                  </button>
+                </div>
+                <p className="text-gray-400 text-xs mb-4">
+                  Riot APIとの同期中に「Riot IDが存在しない」「PUUIDが見つからない」等のエラーが発生しました。<br />
+                  正しい Riot ID (Name#TAG 形式) に修正して「保存して再同期」を押してください。
+                </p>
+
+                <div className="max-h-[300px] overflow-y-auto space-y-3 pr-2">
+                  {riotSyncErrors.map((errorPlayer) => (
+                    <div key={errorPlayer.id} className="bg-gray-900/60 border border-gray-800/80 rounded-lg p-3 flex flex-col md:flex-row md:items-center justify-between gap-4 text-xs hover:border-amber-500/30 transition">
+                      <div className="space-y-1">
+                        <span className="font-bold text-white text-sm">{errorPlayer.name}</span>
+                        <div className="text-red-400 text-[11px] font-mono flex items-center gap-1">
+                          <span>❌ {errorPlayer.error}</span>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center gap-3 w-full md:w-auto">
+                        <div className="flex-1 md:flex-none">
+                          <input
+                            type="text"
+                            placeholder="Name#TAG"
+                            defaultValue={errorPlayer.ign}
+                            id={`error-ign-${errorPlayer.id}`}
+                            className="w-full md:w-48 bg-gray-950 border border-gray-700 text-white rounded px-2 py-1.5 outline-none focus:border-amber-500 placeholder-gray-600 font-mono text-xs"
+                          />
+                        </div>
+                        <button
+                          onClick={() => {
+                            const inputEl = document.getElementById(`error-ign-${errorPlayer.id}`) as HTMLInputElement;
+                            if (inputEl) {
+                              handleResolveRiotError(errorPlayer.id, inputEl.value);
+                            }
+                          }}
+                          disabled={reSyncingPlayerId === errorPlayer.id}
+                          className="px-4 py-1.5 bg-amber-600 hover:bg-amber-500 text-black font-bold rounded transition flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed text-xs"
+                        >
+                          {reSyncingPlayerId === errorPlayer.id ? (
+                            <>
+                              <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                              同期中...
+                            </>
+                          ) : (
+                            "保存して再同期"
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 
