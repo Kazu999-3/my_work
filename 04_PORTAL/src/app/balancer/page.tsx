@@ -219,12 +219,26 @@ export default function BalancerPage() {
   };
 
   const handleBalance = async () => {
-    const activePlayers = players.filter(p => p.is_active);
+    const activePlayers = players.filter((p: any) => p.is_active);
     if (activePlayers.length < 10) {
       setMessage({ type: "error", text: `チーム分けには最低10人のActiveプレイヤーが必要です。(現在 ${activePlayers.length}人)` });
       return;
     }
-
+    
+    // 前回のチーム分け結果が表示されている場合、結果記録の確認を促す
+    if (balanceResult) {
+      const confirmNext = confirm("前回のチーム分けの試合結果は記録しましたか？\n（[キャンセル] を押すと、結果記録パネルへスクロールします）");
+      if (!confirmNext) {
+        setShowRecordPanel(true);
+        // パネルがレンダリングされてからスクロールさせるため少し遅延
+        setTimeout(() => {
+          const el = document.getElementById("record-panel-section");
+          if (el) el.scrollIntoView({ behavior: "smooth" });
+        }, 100);
+        return;
+      }
+    }
+    
     setBalancing(true);
     setMessage({ type: "", text: "" });
     setBalanceResult(null);
@@ -806,13 +820,13 @@ export default function BalancerPage() {
                   <button
                     onClick={() => setShowRecordPanel(true)}
                     type="button"
-                    className="bg-emerald-600 hover:bg-emerald-500 text-white px-8 py-3.5 rounded-xl font-black transition flex items-center gap-2 mx-auto shadow-lg shadow-emerald-950/20"
+                    className="bg-emerald-600 hover:bg-emerald-500 text-white px-8 py-3.5 rounded-xl font-black transition flex items-center gap-2 mx-auto shadow-lg shadow-emerald-950/20 animate-pulse"
                   >
-                    <Trophy className="h-5 w-5" /> この編成で試合結果を記録する 🏆 (管理者用)
+                    <Trophy className="h-5 w-5" /> この編成で試合結果を記録する 🏆
                   </button>
                 </div>
               ) : (
-                <div>
+                <div id="record-panel-section">
                   <div className="flex justify-between items-center mb-4 pb-2 border-b border-gray-800">
                     <h3 className="text-lg font-bold text-gray-200 flex items-center gap-2">
                       <Trophy className="h-5 w-5 text-emerald-400 animate-bounce" />
