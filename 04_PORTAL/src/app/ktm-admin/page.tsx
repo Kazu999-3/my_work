@@ -571,20 +571,11 @@ export default function KtmAdminPage() {
       const existingPlayers = targetPlayers.filter(p => p.id);
       const playersToInsert = targetPlayers.filter(p => !p.id);
 
-      let updatedCount = 0;
-      for (const p of existingPlayers) {
-        const { data: oldPlayer } = await supabase
-          .from('ktm_players')
-          .select('name')
-          .eq('id', p.id)
-          .single();
-
-        const oldName = oldPlayer?.name;
-        const newName = p.name;
-
-        const { data, error } = await supabase.from("ktm_players").update({
+      // 並列で全プレイヤーをアップデート（シリアルループを廃止して高速化）
+      const updatePromises = existingPlayers.map(p =>
+        supabase.from("ktm_players").update({
           discord_id: p.discord_id,
-          name: newName,
+          name: p.name,
           ign: p.ign,
           mmr: parseInt(p.mmr) || 1000,
           role_preferences: p.role_preferences,
@@ -598,24 +589,12 @@ export default function KtmAdminPage() {
           mmr_adc: parseInt(p.mmr_adc) || 1000,
           mmr_sup: parseInt(p.mmr_sup) || 1000,
           metadata: p.metadata
-        }).eq('id', p.id).select();
-        
-        if (error) throw error;
-        if (data && data.length > 0) {
-          updatedCount++;
-          if (oldName && oldName !== newName) {
-            console.log(`[Manual Name Change] Updating matches for ${oldName} -> ${newName}`);
-            await supabase
-              .from('ktm_match_participants')
-              .update({ player_name: newName })
-              .eq('player_name', oldName);
-          }
-        }
-      }
+        }).eq('id', p.id)
+      );
 
-      if (existingPlayers.length > 0 && updatedCount === 0) {
-        throw new Error("更新が0件でした。Supabaseの RLS によりフロントエンドからの更新が弾かれている可能性があります。");
-      }
+      const results = await Promise.all(updatePromises);
+      const anyError = results.find(r => r.error);
+      if (anyError?.error) throw anyError.error;
 
       if (playersToInsert.length > 0) {
         const { error } = await supabase.from("ktm_players").insert(
