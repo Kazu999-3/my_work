@@ -744,6 +744,18 @@ export default function KtmAdminPage() {
 
   const executeSync = async () => {
     if (!syncData) return;
+    
+    // バリデーション: 新規追加メンバーのRiot ID(Name#TAG)が正しい形式かチェック
+    const invalidPlayer = syncData.toAdd.find((p: any) => {
+      const ign = p.ign || "";
+      return !ign.includes("#") || ign.trim().split("#").length !== 2;
+    });
+
+    if (invalidPlayer) {
+      setMessage({ type: "error", text: `❌ バリデーションエラー: [${invalidPlayer.name}] のRiot ID (Name#TAG) を正しく入力してください（例: サモナー名#JP1）。` });
+      return;
+    }
+
     setSyncingDiscord(true);
     setMessage({ type: "", text: "" });
     try {
@@ -1181,19 +1193,28 @@ export default function KtmAdminPage() {
                                 </div>
 
                                 {/* Riot ID (ign) 入力 */}
-                                <div className="flex items-center gap-1.5">
-                                  <span className="text-gray-400">Riot ID:</span>
-                                  <input
-                                    type="text"
-                                    placeholder="Name#TAG"
-                                    value={p.ign || ""}
-                                    onChange={(e) => {
-                                      const updatedAdd = [...syncData.toAdd];
-                                      updatedAdd[idx].ign = e.target.value;
-                                      setSyncData({ ...syncData, toAdd: updatedAdd });
-                                    }}
-                                    className="bg-gray-900 border border-gray-700 text-white rounded px-2 py-1 outline-none focus:border-green-500 w-36 placeholder-gray-600 font-mono"
-                                  />
+                                <div className="flex flex-col gap-1">
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="text-gray-400">Riot ID:</span>
+                                    <input
+                                      type="text"
+                                      placeholder="Name#TAG"
+                                      value={p.ign || ""}
+                                      onChange={(e) => {
+                                        const updatedAdd = [...syncData.toAdd];
+                                        updatedAdd[idx].ign = e.target.value;
+                                        setSyncData({ ...syncData, toAdd: updatedAdd });
+                                      }}
+                                      className={`bg-gray-900 border rounded px-2 py-1 outline-none w-36 placeholder-gray-600 font-mono ${
+                                        !p.ign || !p.ign.includes('#') || p.ign.trim().split('#').length !== 2
+                                          ? 'border-red-500 focus:border-red-400 text-red-200 shadow-[0_0_8px_rgba(239,68,68,0.2)]'
+                                          : 'border-gray-700 focus:border-green-500 text-white'
+                                      }`}
+                                    />
+                                  </div>
+                                  {(!p.ign || !p.ign.includes('#') || p.ign.trim().split('#').length !== 2) && (
+                                    <span className="text-[10px] text-red-400 font-semibold text-right">Name#TAG形式必須</span>
+                                  )}
                                 </div>
                               </div>
                             </div>
@@ -1242,6 +1263,14 @@ export default function KtmAdminPage() {
                   </div>
 
                   <div className="p-6 border-t border-gray-800 bg-gray-800/30 flex justify-end gap-3">
+                    {syncData.toAdd.some((p: any) => {
+                      const ign = p.ign || "";
+                      return !ign.includes("#") || ign.trim().split("#").length !== 2;
+                    }) && (
+                      <span className="text-xs text-red-400 font-bold flex items-center mr-auto">
+                        ⚠️ すべての新規メンバーに Riot ID (サモナー名#JP1 等) を入力してください
+                      </span>
+                    )}
                     <button 
                       onClick={() => { setSyncData(null); setSyncingDiscord(false); }}
                       disabled={syncingDiscord}
@@ -1251,7 +1280,10 @@ export default function KtmAdminPage() {
                     </button>
                     <button 
                       onClick={executeSync}
-                      disabled={syncingDiscord}
+                      disabled={syncingDiscord || syncData.toAdd.some((p: any) => {
+                        const ign = p.ign || "";
+                        return !ign.includes("#") || ign.trim().split("#").length !== 2;
+                      })}
                       className="px-6 py-2 rounded-lg font-bold bg-[#5865F2] hover:bg-[#4752C4] text-white transition shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                     >
                       {syncingDiscord ? (
