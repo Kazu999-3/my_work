@@ -1,48 +1,50 @@
-This text provides a detailed guide on building an AI-powered information gathering system for your business or personal projects. 
+## LoL  challenger/コーチ向けドラフト攻略バイブル
+
+### 📌 ジャンル基本概念・重要性
+
+**ドラフト**はLoLにおいて、チームの戦略を大きく左右する重要な要素です。効率的な選択と戦略策定が勝利に繋がります。このバイブルでは、ドラフトにおける基本的な考え方から、実践的な戦略まで解説します。
+
+### 🧠 判断基準・コア戦略
+
+* **チームビルド:**  
+    * **役割分担:**  レーンやポジションを理解し、チームの戦術に合わせた役割の選択 (例: ADC, Mid Lane, Support, Tankなど) 
+    * **戦術的連携:**  チームメンバーとの連携が重要。それぞれの役割を理解し、相手の動きを予測する能力が必要です。
+* **選手評価:** 
+   * **実績:** 過去の試合結果やプレイ動画で評価できる情報
+   * **スキル:** ADCやミッドレーンなど、各ポジションの専門性
+   * **チームフィット:**  チームメンバーとの相性の良さ
+
+* **状況判断:** 
+    * **試合展開:**  相手チームの戦術を予測し、チームの戦術を適応する
+    * **環境:**  状況に合わせて戦略を調整する
+* **プレゼンス:** 
+    * **自信:**  自信をもって選択することで、チームの士気を高める
+
+### ⚔️ 実践での立ち回り・コツ
+
+1. **情報収集:** 最新のメタデータやプレイヤー情報を常に収集します。
+2. **分析:**  チームメンバーの強みと弱みを把握し、戦略を立てる。
+3. **プラン:**  チームの戦術に沿った具体的なプレイプランを立て、それを実行する。
+4. **柔軟性:**  状況に合わせて戦略を柔軟に変えることが重要。
+5. **コミュニケーション:** チームメイトとのコミュニケーションを通して、戦略を共有し、協力してプレイを行う。
+
+### 💡 注意点・警戒すべきこと
+
+* **過度な自信:**  適切な判断と分析に基づいて行動する
+* **チームワーク:** チームメイトとの協力に集中
+* **プレッシャー:**  試合中のプレッシャーに負けない
+* **リスク管理:**  状況に応じてリスクを回避する
 
 
-**Here's a breakdown of the document, focusing on key points and how they can be useful:**
+### 📚 補足情報
 
-**I. Introduction**
-
-* **Problem:** The author discusses the desire to automate information collection in their business, which often involves tedious manual tasks and time-consuming processes.
-* **Solution:**  They propose utilizing AI as a solution for automated information gathering and processing. 
+* **データ分析:**  過去の試合データから、チームの戦術的な改善点を見つけ出す。
+* **コーチング:**  チームメンバーの成長を促す。
 
 
-**II. Mini-Guide: Creating an AI-powered Information Gathering System**
+このバイブルは、LoLプレイヤーのドラフト戦略を向上させるための指針となることを目指しています。 
 
-* **The Problem of Manual Data Collection**: The document addresses the issues of inefficiency and human error in manual data collection, highlighting the need to automate this process using AI.
-* **Mini-Workflow for Automated Information Collection**: This section outlines a simple but effective framework for setting up an automated information gathering system: 
-    * **Python Script**: The core logic of your system is coded into Python scripts.
-    * **Google Colab (Development & Validation):** Google Colab serves as the development and testing environment, allowing you to run Python code without installing complex software on your local computer. 
-    * **Slack Notifications:**  The system triggers notifications via Slack when new information is gathered, ensuring timely updates and reduced manual intervention.
-
-**III. The Benefits of this Approach**
-
-* **Reduced Manual Effort:** The use of AI significantly reduces the need for repetitive, time-consuming tasks. 
-* **Increased Efficiency:**  Automated data collection leads to a faster turnaround of information and analysis.
-* **Improved Accuracy:**  AI excels at processing large datasets with reduced chance of human error, ensuring accuracy in the collected information.
-
-
-**IV. Planning for Scaling Up (Future Considerations)**
-
-* **Github Actions Integration:** This section lays out the plan for incorporating Github Actions to automate the process of gathering and storing information over time. 
-* **Future Considerations**:  The author emphasizes that this is only the beginning, and they intend to expand their system in the future by integrating more sophisticated data collection techniques.
-
-
-**V. Conclusion**
-
-* The document highlights the potential of AI to transform business operations and improve efficiency. It provides a roadmap for those looking to automate information gathering, offering practical steps to build a functional system even if you're new to coding or AI. 
-
-
-
-**Key takeaways:**
-
-* **AI-powered automation is crucial for efficient data processing.**
-* **Start simple:** Focus on building a basic system that can be expanded as needed. 
-* **Plan for scalability**:  Consider the future of your system and plan for growth. 
-* **Don't underestimate the benefits of AI:** The potential to save time, reduce errors, and gain insights from data is immense!
-
-
-
-Let me know if you'd like me to elaborate on any specific aspect or dive deeper into certain parts of this guide. 
+***
+**免責事項：**
+* このバイブルは、LoLプレイヤーの参考資料として提供されています。具体的な戦略や判断基準は、プレイヤー自身の知識や経験に基づいて調整する必要があります。
+* 本バイブルの情報を利用してゲームをプレイする際は、責任を負いません。

@@ -29,23 +29,32 @@ export function proxy(req: NextRequest) {
 
     // 2. Authorization ヘッダーの確認
     const basicAuth = req.headers.get('authorization');
-    if (basicAuth) {
+    if (basicAuth && basicAuth.toLowerCase().startsWith('basic ')) {
       const authValue = basicAuth.split(' ')[1];
-      // base64デコード (username:password)
-      const [user, pwd] = atob(authValue).split(':');
+      try {
+        // base64デコード (username:password)
+        const decoded = atob(authValue);
+        const parts = decoded.split(':');
+        if (parts.length >= 2) {
+          const user = parts[0];
+          const pwd = parts.slice(1).join(':'); // パスワード自身にコロンが含まれている場合も考慮
 
-      // パスワードが一致するか確認
-      if (pwd === adminPassword) {
-        const response = NextResponse.next();
-        // 30日間有効なクッキーをセット
-        response.cookies.set('admin_auth', expectedAuthValue, {
-          path: '/',
-          maxAge: 60 * 60 * 24 * 30, // 30日間
-          httpOnly: true,
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: 'lax',
-        });
-        return response;
+          // パスワードが一致するか確認
+          if (pwd === adminPassword) {
+            const response = NextResponse.next();
+            // 30日間有効なクッキーをセット
+            response.cookies.set('admin_auth', expectedAuthValue, {
+              path: '/',
+              maxAge: 60 * 60 * 24 * 30, // 30日間
+              httpOnly: true,
+              secure: process.env.NODE_ENV === 'production',
+              sameSite: 'lax',
+            });
+            return response;
+          }
+        }
+      } catch (err) {
+        console.warn('⚠️ Basic Auth decode failed or invalid credentials:', err);
       }
     }
 
