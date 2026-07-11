@@ -327,7 +327,11 @@ function runBalanceSearch(players: Player[], ctx: BalanceContext): RawBalanceCan
         for (let y = x + 1; y < names.length; y++) {
           const key = [names[x], names[y]].sort().join("<=>");
           const count = ctx.teammateHistory.get(key) || 0;
-          if (count >= 3) compositionPenalty += (count - 2) * 8000;
+          if (count >= 3) {
+            compositionPenalty += (count - 2) * 12000; // ペナルティを8000から12000に強化
+          } else if (count === 2) {
+            compositionPenalty += 4000; // 2回連続で同チームの場合も軽微なペナルティで抑制
+          }
         }
       }
     };
@@ -390,6 +394,16 @@ function runBalanceSearch(players: Player[], ctx: BalanceContext): RawBalanceCan
           const adjB = pLayerB.adjustedRates![role];
           const balA = pLayerA.balanceRates![role];
           const balB = pLayerB.balanceRates![role];
+
+          // ★ 追加: 対面MMRの格差チェック (シルバー vs プラチナなどの格差対面を強力に抑制)
+          const laneMmrDiff = Math.abs(mmrA - mmrB);
+          if (laneMmrDiff >= 300) {
+            penalty += 500000; // 超格差（事実上の禁止）
+          } else if (laneMmrDiff >= 200) {
+            penalty += 150000; // 中格差（強い抑制）
+          } else if (laneMmrDiff >= 150) {
+            penalty += 30000;  // 軽微な格差（ソフト抑制）
+          }
 
           penalty += Math.pow(Math.abs(adjA - adjB), 2) / 2.5; // 対面のレーン格差ペナルティをより重視して評価（4から2.5へ）
           totalA += balA; totalB += balB;
@@ -486,6 +500,24 @@ function runBalanceSearch(players: Player[], ctx: BalanceContext): RawBalanceCan
           if (pLayerB.isFixed || pLayerB.pref1 === 'ALL' || pLayerB.pref1 === role) mainCount++;
         }
         
+        // ★ 追加: チーム内格差チェック（1チーム内に極端に強い人と弱い人が同居するのを抑制）
+        const calcTeamSpreadPenalty = (team: Player[], assignedRoles: number[]) => {
+          const teamMmrs = team.map((p, i) => p.rates[ROLES[assignedRoles[i]]]);
+          const minMmr = Math.min(...teamMmrs);
+          const maxMmr = Math.max(...teamMmrs);
+          const spread = maxMmr - minMmr;
+          
+          if (spread >= 500) {
+            return 300000; // 超格差（極度のキャリー/非キャリー同居を強力に排除）
+          } else if (spread >= 400) {
+            return 80000;  // 中格差（極力避ける）
+          }
+          return 0;
+        };
+
+        penalty += calcTeamSpreadPenalty(teamA, pA);
+        penalty += calcTeamSpreadPenalty(teamB, pB);
+
         const mainShortfall = 10 - mainCount;
         penalty += mainShortfall * 80000;
 

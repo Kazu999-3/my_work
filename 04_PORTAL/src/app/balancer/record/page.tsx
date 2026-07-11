@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, Suspense } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { supabase } from '../../../lib/supabaseClient';
 import { RefreshCw, Trophy, Target, Search, ArrowLeft, Settings } from 'lucide-react';
 import Link from 'next/link';
@@ -25,7 +26,11 @@ interface PlayerStat {
   cs: number;
 }
 
-export default function CustomRecordPage() {
+function CustomRecordPageContent() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pendingId = searchParams.get('pending_id');
+
   const [playersPool, setPlayersPool] = useState<{name: string, ign?: string}[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -327,6 +332,52 @@ export default function CustomRecordPage() {
     loadChampions();
   }, []);
 
+  useEffect(() => {
+    if (!pendingId) return;
+    
+    async function loadPendingMatch() {
+      try {
+        const res = await fetch(`/api/balancer/pending?id=${pendingId}`);
+        const data = await res.json();
+        if (res.ok && data.balanceResult) {
+          const br = data.balanceResult;
+          setStats(() => {
+            const initial: PlayerStat[] = [];
+            
+            ROLES.forEach(role => {
+              const pb = br.teamBlue?.find((p: any) => p.currentRole === role);
+              initial.push({
+                name: pb ? pb.name : '',
+                team: 'BLUE',
+                currentRole: role,
+                kills: 0, deaths: 0, assists: 0, vision: 0,
+                champion_name: '', damage_dealt: 0, damage_taken: 0,
+                heal_shield: 0, objective_damage: 0, cs: 0
+              });
+            });
+            
+            ROLES.forEach(role => {
+              const pr = br.teamRed?.find((p: any) => p.currentRole === role);
+              initial.push({
+                name: pr ? pr.name : '',
+                team: 'RED',
+                currentRole: role,
+                kills: 0, deaths: 0, assists: 0, vision: 0,
+                champion_name: '', damage_dealt: 0, damage_taken: 0,
+                heal_shield: 0, objective_damage: 0, cs: 0
+              });
+            });
+            
+            return initial;
+          });
+        }
+      } catch (err) {
+        console.error('Failed to load pending match:', err);
+      }
+    }
+    loadPendingMatch();
+  }, [pendingId]);
+
   const handleStatChangeByIndex = (index: number, field: string, value: string) => {
     setStats(prev => prev.map((p, idx) => {
       if (idx === index) {
@@ -395,14 +446,10 @@ export default function CustomRecordPage() {
       if (!res.ok) throw new Error(data.error);
       
       alert('試合結果を保存し、MMRを更新しました！');
-      // リセット（ロールもデフォルトに戻す）
-      setStats(stats.map((s, idx) => ({ 
-        ...s, 
-        currentRole: ROLES[idx % 5],
-        name: '', kills: 0, deaths: 0, assists: 0, vision: 0,
-        champion_name: '', damage_dealt: 0, damage_taken: 0, heal_shield: 0, objective_damage: 0, cs: 0 
-      })));
-      setWinningTeam(null);
+      if (pendingId) {
+        await fetch(`/api/balancer/pending?id=${pendingId}`, { method: 'DELETE' }).catch(() => {});
+      }
+      router.push('/balancer');
     } catch (err: any) {
       setMessage({ type: 'error', text: `保存エラー: ${err.message}` });
     } finally {
@@ -754,5 +801,13 @@ export default function CustomRecordPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function CustomRecordPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gray-950 flex items-center justify-center"><RefreshCw className="h-8 w-8 text-blue-500 animate-spin" /></div>}>
+      <CustomRecordPageContent />
+    </Suspense>
   );
 }

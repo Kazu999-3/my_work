@@ -301,20 +301,30 @@ export async function POST(request: Request) {
         
         // (A) 新規プレイヤーの一括インサート/アップサート
         if (add && add.length > 0) {
-          const addData = add.map((p: any) => ({
-            discord_id: p.discord_id,
-            name: p.name,
-            ign: p.ign,
-            highest_rank: p.highest_rank,
-            role_preferences: p.role_preferences,
-            mmr: p.mmr,
-            mmr_top: p.mmr_top,
-            mmr_jg: p.mmr_jg,
-            mmr_mid: p.mmr_mid,
-            mmr_adc: p.mmr_adc,
-            mmr_sup: p.mmr_sup,
-            is_active: p.is_active ?? false
-          }));
+          const addData = add.map((p: any) => {
+            // role_preferences.ignore_role を ng_lane_1 カラムに展開する
+            // （parseIntroduction() の検出結果を DB のトップレベルカラムへ正しく反映）
+            const ignoreRole = p.role_preferences?.ignore_role;
+            const ng_lane_1 = (ignoreRole && ignoreRole !== '-') ? ignoreRole : (p.ng_lane_1 || null);
+            const ng_lane_2 = p.ng_lane_2 || null;
+
+            return {
+              discord_id: p.discord_id,
+              name: p.name,
+              ign: p.ign,
+              highest_rank: p.highest_rank,
+              role_preferences: p.role_preferences,
+              mmr: p.mmr,
+              mmr_top: p.mmr_top,
+              mmr_jg: p.mmr_jg,
+              mmr_mid: p.mmr_mid,
+              mmr_adc: p.mmr_adc,
+              mmr_sup: p.mmr_sup,
+              is_active: p.is_active ?? false,
+              ng_lane_1, // ★ バグ修正: Discord自己紹介から解析したNGレーンをDBへ書き込む
+              ng_lane_2, // ★ バグ修正: ng_lane_2 も同様に引き継ぎ
+            };
+          });
 
           const { error: upsertError } = await supabase
             .from('ktm_players')

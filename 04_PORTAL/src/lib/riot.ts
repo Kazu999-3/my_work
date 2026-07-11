@@ -161,3 +161,30 @@ export async function fetchRiotIdByPuuid(puuid: string, apiKey: string): Promise
   return { gameName: data.gameName, tagLine: data.tagLine };
 }
 
+/**
+ * 試合のタイムラインデータを取得します (9分時点のゴールド/XP/CS差の計算用)
+ */
+export async function fetchMatchTimeline(matchId: string, apiKey: string): Promise<any> {
+  const url = `${RIOT_API_BASE_ASIA}/lol/match/v5/matches/${matchId}/timeline?api_key=${apiKey}`;
+  const res = await fetch(url, { cache: 'no-store' });
+  if (!res.ok) {
+    throw new Error(`タイムラインの取得に失敗しました (${matchId}): ${res.statusText}`);
+  }
+  return await res.json();
+}
+
+/**
+ * PUUIDから現在進行中のアクティブゲーム情報を取得します (Spectator-V5)
+ */
+export async function fetchActiveGameByPuuid(puuid: string, apiKey: string): Promise<any> {
+  const url = `${RIOT_API_BASE_JP}/lol/spectator/v5/active-games/by-puuid/${puuid}?api_key=${apiKey}`;
+  const res = await fetch(url, { cache: 'no-store' });
+  if (!res.ok) {
+    if (res.status === 404) {
+      throw new Error("ACTIVE_GAME_NOT_FOUND");
+    }
+    throw new Error(`進行中の試合取得に失敗しました: ${res.statusText}`);
+  }
+  return await res.json();
+}
+

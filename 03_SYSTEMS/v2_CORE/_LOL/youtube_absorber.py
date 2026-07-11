@@ -88,8 +88,18 @@ class YouTubeAbsorber:
             if capture_output:
                 stderr_str = res.stderr if text else res.stderr.decode('utf-8', errors='replace')
             
-            if res.returncode != 0 and "Failed to decrypt with DPAPI" in stderr_str:
-                logger.warning("⚠️ [yt-dlp] クッキーの復号化(DPAPI)に失敗しました。クッキーなしで再試行します。")
+            # Chrome起動中でDBがロックされている場合、またはDPAPI復号化失敗の場合、
+            # クッキーなしで自動リトライする
+            COOKIE_ERROR_PATTERNS = [
+                "Failed to decrypt with DPAPI",
+                "Could not copy Chrome cookie database",
+                "sqlite3.OperationalError",
+                "database is locked",
+            ]
+            has_cookie_error = any(p in stderr_str for p in COOKIE_ERROR_PATTERNS)
+            
+            if res.returncode != 0 and has_cookie_error:
+                logger.warning(f"⚠️ [yt-dlp] クッキー取得エラーを検知しました。クッキーなしで再試行します。")
                 clean_base = []
                 skip_next = False
                 for token in self.yt_dlp_base:

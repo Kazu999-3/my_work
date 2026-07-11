@@ -151,7 +151,7 @@ export function calculateNewMMR(ctx: MmrCalcContext): number {
   const isPlacement = false;
 
   // ① 勝敗のベースポイント (スタッツ加点がなくなった分、ベースを少し底上げ)
-  let baseDelta = isWin ? 18 : -12;
+  let baseDelta = isWin ? 18 : -20;
 
   // ② 格差補正 (Elo Gravity)
   // 相手チームの同ロールとのMMR差分を計算
@@ -170,6 +170,12 @@ export function calculateNewMMR(ctx: MmrCalcContext): number {
   } else {
     // 負けた場合、格上相手ならマイナスが軽減されるが、最低でも -2 は下がるようにする
     baseDelta = Math.min(-2, baseDelta + eloBonus);
+
+    // ★ 追加: 高勝率プレイヤー(60%以上)のインフレ抑制ペナルティ
+    if (ctx.totalWinRate > 60) {
+      const winRatePenalty = Math.min(8, (ctx.totalWinRate - 60) * 0.5);
+      baseDelta -= winRatePenalty;
+    }
   }
 
   // ③ KDAボーナス (手動入力パラメータのキル・デス・アシストから実力を正しく評価)
@@ -198,7 +204,8 @@ export function calculateNewMMR(ctx: MmrCalcContext): number {
     delta = Math.max(0, Math.min(50, delta)); // 最大+50
   } else {
     // 負けた時は、加点が多くても最終的に「0」で踏みとどまる (プラスにはならない)
-    delta = Math.max(-30, Math.min(0, delta)); // 最小-30
+    // 変更: 減少幅の下限を -30 から -40 に拡大し、より実力差を反映しやすくする
+    delta = Math.max(-40, Math.min(0, delta)); // 最小-40
   }
 
   return delta;

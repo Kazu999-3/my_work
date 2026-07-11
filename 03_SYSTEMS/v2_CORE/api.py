@@ -350,7 +350,7 @@ async def generate_agent_response(request: GenerateRequest, api_key: str = Depen
                         continue
                     logger.error(f"Execution error on key {active_key[:10]}: {e}")
                     error_msg = err_str
-                    break
+                    continue
                     
             if not success:
                 logger.warning("All Gemini API keys failed or hit 429. Checking fallback...")

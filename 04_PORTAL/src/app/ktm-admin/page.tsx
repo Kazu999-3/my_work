@@ -108,6 +108,8 @@ export default function KtmAdminPage() {
   const [message, setMessage] = useState({ type: "", text: "" });
   const [sortConfig, setSortConfig] = useState({ key: "no", direction: "asc" });
   const [searchQuery, setSearchQuery] = useState("");
+  const [roleFilter, setRoleFilter] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [showMmrInfo, setShowMmrInfo] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState<any>(null);
   
@@ -504,6 +506,10 @@ export default function KtmAdminPage() {
         const mmr_adc = calculateAutoMmr(highest_rank, 'ADC', prefs);
         const mmr_sup = calculateAutoMmr(highest_rank, 'SUP', prefs);
         const mmr = Math.round((mmr_top + mmr_jg + mmr_mid + mmr_adc + mmr_sup) / 5);
+
+        // ★ バグ修正: ignore_role → ng_lane_1 へ確実に展開（APIに渡す前の二重チェック）
+        const ignoreRole = prefs.ignore_role;
+        const ng_lane_1 = (ignoreRole && ignoreRole !== '-') ? ignoreRole : (p.ng_lane_1 || null);
         
         return {
           ...p,
@@ -515,7 +521,9 @@ export default function KtmAdminPage() {
           mmr_adc,
           mmr_sup,
           mmr,
-          is_active: false
+          is_active: false,
+          ng_lane_1, // ★ バグ修正: 自己紹介パースのNGレーンをフロントからも明示送信
+          ng_lane_2: p.ng_lane_2 || null,
         };
       });
 
@@ -853,12 +861,26 @@ export default function KtmAdminPage() {
 
   const sortedPlayers = playersWithNo
     .filter(p => {
-      if (!searchQuery) return true;
-      const query = searchQuery.toLowerCase();
-      const nameMatch = p.name?.toLowerCase().includes(query);
-      const ignMatch = p.ign?.toLowerCase().includes(query);
-      const discordMatch = p.discord_id?.toLowerCase().includes(query);
-      return nameMatch || ignMatch || discordMatch;
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        const nameMatch = p.name?.toLowerCase().includes(query);
+        const ignMatch = p.ign?.toLowerCase().includes(query);
+        const discordMatch = p.discord_id?.toLowerCase().includes(query);
+        if (!nameMatch && !ignMatch && !discordMatch) return false;
+      }
+      
+      const prefs = p.role_preferences || { primary: 'ALL', secondary: '-' };
+      if (roleFilter && prefs.primary !== roleFilter) {
+        return false;
+      }
+      
+      if (statusFilter) {
+        if (statusFilter === 'active' && (!p.is_active || p.is_spectator_fixed)) return false;
+        if (statusFilter === 'spectator' && !p.is_spectator_fixed) return false;
+        if (statusFilter === 'inactive' && p.is_active) return false;
+      }
+      
+      return true;
     })
     .sort((a, b) => {
       let aVal = sortConfig.key === "notes" ? (a.metadata?.notes || "") : a[sortConfig.key];
@@ -1463,6 +1485,60 @@ export default function KtmAdminPage() {
                 )}
               </div>
             )}
+
+            {/* ★ フィルターUI（junglepedia風） */}
+            <div className="flex flex-col md:flex-row gap-3 items-center justify-between bg-gray-900/60 p-4 rounded-xl border border-gray-800/80 mb-4">
+              {/* 左：ステータス */}
+              <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+                <span className="text-xs text-gray-500 font-bold mr-1">ステータス:</span>
+                {[
+                  { key: null, label: '全員' },
+                  { key: 'active', label: '参加予定' },
+                  { key: 'spectator', label: '見学のみ' },
+                  { key: 'inactive', label: '不参加' }
+                ].map(tab => (
+                  <button
+                    key={tab.label}
+                    onClick={() => setStatusFilter(tab.key)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                      statusFilter === tab.key
+                        ? 'bg-blue-600 text-white shadow-md shadow-blue-900/30'
+                        : 'bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700'
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+              {/* 右：希望ロール絞り込み */}
+              <div className="flex flex-wrap items-center gap-1.5 w-full md:w-auto overflow-x-auto">
+                <span className="text-xs text-gray-500 font-bold mr-1">希望ロール:</span>
+                <button
+                  onClick={() => setRoleFilter(null)}
+                  className={`px-2.5 py-1.5 rounded-lg text-xs font-black transition-all ${
+                    roleFilter === null
+                      ? 'bg-amber-500 text-black shadow-md shadow-amber-900/20'
+                      : 'bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700'
+                  }`}
+                >
+                  ALL
+                </button>
+                {['TOP', 'JG', 'MID', 'ADC', 'SUP'].map(role => (
+                  <button
+                    key={role}
+                    onClick={() => setRoleFilter(role)}
+                    className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all border ${
+                      roleFilter === role
+                        ? 'bg-gray-900 border-blue-500 text-blue-400 font-black shadow-inner'
+                        : 'bg-gray-800 border-transparent text-gray-400 hover:text-white hover:bg-gray-700'
+                    }`}
+                  >
+                    <RoleIcon role={role} className="w-3 h-3" />
+                    <span>{role}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
 
             {/* Player Table */}
             <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden shadow-2xl">

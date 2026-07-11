@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '../../../../lib/supabaseClient';
+import { calculatePlaystyle } from '../../../../lib/playstyle';
 
 const cache = new Map<string, { data: any; expiry: number }>();
 const CACHE_TTL_MS = 30000; // 30 seconds TTL
@@ -185,10 +186,23 @@ export async function GET(request: Request) {
       };
     }).slice(0, 20); // 履歴表示用に直近20件を返す
 
+    const customPlaystyle = calculatePlaystyle(playerMatches);
+    const savedPlaystyle = (dbPlayer.metadata as any)?.playstyle_cache || {};
+
+    const playstyle = {
+      custom: customPlaystyle,
+      soloq: savedPlaystyle.soloq || {
+        sliders: { aggressive: 50, farming: 50, supportive: 50 },
+        tags: [{ id: 'no-data', name: 'データなし', description: 'ソロキューデータが同期されていません。', reason: 'プロフィール画面から同期を実行してください。' }],
+        lastUpdated: null
+      }
+    };
+
     const result = { 
         stats: formattedStats,
         matchups: formattedMatchups,
-        history: formattedHistory
+        history: formattedHistory,
+        playstyle
     };
 
     cache.set(playerName, { data: result, expiry: Date.now() + CACHE_TTL_MS });

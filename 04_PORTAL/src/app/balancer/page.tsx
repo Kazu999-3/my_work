@@ -1,6 +1,7 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState, useRef, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "../../lib/supabaseClient";
 import { Users, RefreshCw, Swords, X, Activity, Globe, MessageSquare, Info, Crown, Trophy, History, Shield, AlertTriangle, ChevronDown, Trees, Zap, Target, Heart, Sparkles, Settings } from "lucide-react";
@@ -45,19 +46,74 @@ function getGroup(p: any): number {
 }
 
 export default function BalancerPage() {
+  const router = useRouter();
   const [players, setPlayers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [savingPending, setSavingPending] = useState(false);
+  const [announcingStats, setAnnouncingStats] = useState(false);
   const [message, setMessage] = useState({ type: "", text: "" });
+
+  const handleRecordNavigate = async () => {
+    if (!balanceResult) return;
+    setSavingPending(true);
+    try {
+      const res = await fetch('/api/balancer/pending', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ balanceResult })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || '一時保存に失敗しました。');
+      
+      router.push(`/balancer/record?pending_id=${data.pendingId}`);
+    } catch (err: any) {
+      alert(`エラー: ${err.message}`);
+    } finally {
+      setSavingPending(false);
+    }
+  };
+
+  const handleAnnounceStats = async () => {
+    const activeCount = players.filter(p => p.is_active && !p.is_spectator_fixed).length;
+    if (activeCount === 0) {
+      alert("参加予定のプレイヤーが選択されていません。");
+      return;
+    }
+    setAnnouncingStats(true);
+    try {
+      const res = await fetch('/api/discord/announce-stats', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ players })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "通知に失敗しました。");
+      
+      alert("📢 Discordへ現在の募集・希望レーン状況を通知しました！");
+    } catch (err: any) {
+      alert(`通知エラー: ${err.message}`);
+    } finally {
+      setAnnouncingStats(false);
+    }
+  };
   
   const [balancing, setBalancing] = useState(false);
   const [balanceResult, setBalanceResult] = useState<any>(null);
   const [proposals, setProposals] = useState<any[]>([]);
   const [selectedProposalIdx, setSelectedProposalIdx] = useState<number>(0);
   const [analysis, setAnalysis] = useState<any>(null);
+  
+  // フィルター用State
+  const [searchQuery, setSearchQuery] = useState("");
+  const [roleFilter, setRoleFilter] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<string | null>(null);
+  // タップスワップ用State
+  const [swapSource, setSwapSource] = useState<{ team: string; role: string; name: string } | null>(null);
   const [sendingDiscord, setSendingDiscord] = useState(false);
   // ★ チーム分け結果モーダルの表示フラグ
   const [showResultModal, setShowResultModal] = useState(false);
+  const [modalTab, setModalTab] = useState<'teams' | 'matchups'>('teams');
   
   const [sortConfig, setSortConfig] = useState({ key: "no", direction: "asc" });
   const [selectedPlayer, setSelectedPlayer] = useState<any>(null);
@@ -457,6 +513,20 @@ export default function BalancerPage() {
     }
   };
 
+  const handleSelectSwapPlayer = (team: string, role: string, name: string) => {
+    if (!name) return;
+    if (!swapSource) {
+      setSwapSource({ team, role, name });
+    } else {
+      if (swapSource.name === name) {
+        setSwapSource(null);
+        return;
+      }
+      handleSwapPlayer(team as any, role, swapSource.name);
+      setSwapSource(null);
+    }
+  };
+
   const renderSwapSelect = (team: 'teamBlue' | 'teamRed' | 'spectators', role: string, currentPlayerName: string) => {
     return (
       <select 
@@ -507,6 +577,23 @@ export default function BalancerPage() {
     if (aVal < bVal) return sortConfig.direction === "asc" ? -1 : 1;
     if (aVal > bVal) return sortConfig.direction === "asc" ? 1 : -1;
     return 0;
+  });
+
+  // ★ フィルター適用 (名前検索、希望ロール、アクティブ状態)
+  const filteredPlayers = sortedPlayers.filter(p => {
+    const prefs = p.role_preferences || { primary: 'ALL', secondary: '-' };
+    if (searchQuery && !p.name.toLowerCase().includes(searchQuery.toLowerCase())) {
+      return false;
+    }
+    if (roleFilter && prefs.primary !== roleFilter) {
+      return false;
+    }
+    if (statusFilter) {
+      if (statusFilter === 'active' && (!p.is_active || p.is_spectator_fixed)) return false;
+      if (statusFilter === 'spectator' && !p.is_spectator_fixed) return false;
+      if (statusFilter === 'inactive' && p.is_active) return false;
+    }
+    return true;
   });
 
   const SortableHeader = ({ label, sortKey, className = "" }: { label: string, sortKey: string, className?: string }) => (
@@ -602,8 +689,36 @@ export default function BalancerPage() {
                 </div>
               )}
 
+              {/* モーダル内タブ切り替え */}
+              <div className="flex gap-2 border-b border-gray-800 pb-1">
+                <button
+                  type="button"
+                  onClick={() => setModalTab('teams')}
+                  className={`px-4 py-2 text-xs font-black transition-all ${
+                    modalTab === 'teams'
+                      ? 'border-b-2 border-cyan-500 text-cyan-400 font-extrabold'
+                      : 'text-gray-400 hover:text-white'
+                  }`}
+                >
+                  チーム編成
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setModalTab('matchups')}
+                  className={`px-4 py-2 text-xs font-black transition-all ${
+                    modalTab === 'matchups'
+                      ? 'border-b-2 border-amber-500 text-amber-400 font-extrabold'
+                      : 'text-gray-400 hover:text-white'
+                  }`}
+                >
+                  対戦分析 (VS Analytics)
+                </button>
+              </div>
+
               {/* チーム表示 */}
-              <div className="space-y-3">
+              {modalTab === 'teams' && (
+                <>
+                  <div className="space-y-3">
                 <div className="grid grid-cols-1 md:grid-cols-11 gap-3 items-center border-b border-gray-800 pb-3">
                   <div className="col-span-5 bg-gradient-to-r from-blue-950/40 to-transparent p-3 rounded-xl border-l-4 border-blue-500 flex justify-between items-center">
                     <span className="text-base font-black text-blue-400">BLUE TEAM</span>
@@ -625,8 +740,18 @@ export default function BalancerPage() {
                   return (
                     <div key={role} className="grid grid-cols-1 md:grid-cols-11 gap-2 items-center bg-gray-900/40 p-2 md:p-3 rounded-2xl border border-gray-800/80">
                       <div draggable={!!pB?.name} onDragStart={e => handleDragStart(e,'teamBlue',role,pB?.name||'')} onDragOver={e => handleDragOver(e,bKey)} onDragLeave={handleDragLeave} onDrop={e => handleDropPlayer(e,'teamBlue',role)}
-                        className={`col-span-5 flex items-center gap-3 p-2 rounded-xl border transition cursor-grab active:cursor-grabbing ${dragOverSlot===bKey?'border-blue-500 bg-blue-950/30 border-dashed':'bg-blue-950/10 border-blue-900/20 hover:bg-blue-950/20'}`}>
+                        className={`col-span-5 flex items-center gap-2 p-2 rounded-xl border transition cursor-grab active:cursor-grabbing ${dragOverSlot===bKey?'border-blue-500 bg-blue-950/30 border-dashed':'bg-blue-950/10 border-blue-900/20 hover:bg-blue-950/20'} ${swapSource?.name === pB?.name ? 'border-amber-500 bg-amber-950/20 animate-pulse' : ''}`}>
                         <div className="flex-1 min-w-0">{renderSwapSelect('teamBlue',role,pB?.name||'')}</div>
+                        {pB?.name && (
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); handleSelectSwapPlayer('teamBlue', role, pB.name); }}
+                            className={`p-1 rounded transition-colors text-xs font-black shrink-0 ${swapSource?.name === pB.name ? 'bg-amber-500 text-black' : 'text-blue-400 hover:text-white hover:bg-blue-900/40'}`}
+                            title="タップして入れ替え"
+                          >
+                            ⇄
+                          </button>
+                        )}
                         {offB && <span className="text-[9px] bg-red-950/80 border border-red-800 text-red-400 px-1.5 py-0.5 rounded font-black shrink-0">⚠️OFF</span>}
                         <span className="font-mono text-xs font-bold text-blue-400 shrink-0 bg-blue-950/40 px-2 py-0.5 rounded border border-blue-900/30">{bMMR}</span>
                       </div>
@@ -635,9 +760,19 @@ export default function BalancerPage() {
                         <span className={`text-[10px] font-mono mt-1 font-extrabold ${diff>0?'text-blue-400':diff<0?'text-red-400':'text-gray-500'}`}>{diff>0?`+${diff}`:diff<0?diff:'±0'}</span>
                       </div>
                       <div draggable={!!pR?.name} onDragStart={e => handleDragStart(e,'teamRed',role,pR?.name||'')} onDragOver={e => handleDragOver(e,rKey)} onDragLeave={handleDragLeave} onDrop={e => handleDropPlayer(e,'teamRed',role)}
-                        className={`col-span-5 flex items-center gap-3 p-2 rounded-xl border transition cursor-grab active:cursor-grabbing ${dragOverSlot===rKey?'border-red-500 bg-red-950/30 border-dashed':'bg-red-950/10 border-red-900/20 hover:bg-red-950/20'}`}>
+                        className={`col-span-5 flex items-center gap-2 p-2 rounded-xl border transition cursor-grab active:cursor-grabbing ${dragOverSlot===rKey?'border-red-500 bg-red-950/30 border-dashed':'bg-red-950/10 border-red-900/20 hover:bg-red-950/20'} ${swapSource?.name === pR?.name ? 'border-amber-500 bg-amber-950/20 animate-pulse' : ''}`}>
                         <span className="font-mono text-xs font-bold text-red-400 shrink-0 bg-red-950/40 px-2 py-0.5 rounded border border-red-900/30">{rMMR}</span>
                         {offR && <span className="text-[9px] bg-red-950/80 border border-red-800 text-red-400 px-1.5 py-0.5 rounded font-black shrink-0">⚠️OFF</span>}
+                        {pR?.name && (
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); handleSelectSwapPlayer('teamRed', role, pR.name); }}
+                            className={`p-1 rounded transition-colors text-xs font-black shrink-0 ${swapSource?.name === pR.name ? 'bg-amber-500 text-black' : 'text-red-400 hover:text-white hover:bg-red-900/40'}`}
+                            title="タップして入れ替え"
+                          >
+                            ⇄
+                          </button>
+                        )}
                         <div className="flex-1 min-w-0">{renderSwapSelect('teamRed',role,pR?.name||'')}</div>
                       </div>
                     </div>
@@ -664,8 +799,18 @@ export default function BalancerPage() {
                       const slotKey = `spectators-${index}`;
                       return (
                         <div key={`spec-${index}`} draggable onDragStart={e => handleDragStart(e,'spectators',index.toString(),name)} onDragOver={e => handleDragOver(e,slotKey)} onDragLeave={handleDragLeave} onDrop={e => handleDropPlayer(e,'spectators',index.toString())}
-                          className={`border rounded px-3 py-1.5 min-w-[100px] transition cursor-grab ${dragOverSlot===slotKey?'border-indigo-400 bg-indigo-950/40 border-dashed':'bg-gray-950 border-gray-800 hover:bg-gray-800'}`}>
-                          {renderSwapSelect('spectators',index.toString(),name)}
+                          className={`border rounded px-2.5 py-1.5 min-w-[120px] flex items-center justify-between gap-1.5 transition cursor-grab ${dragOverSlot===slotKey?'border-indigo-400 bg-indigo-950/40 border-dashed':'bg-gray-950 border-gray-800 hover:bg-gray-800'} ${swapSource?.name === name ? 'border-amber-500 bg-amber-950/20 animate-pulse' : ''}`}>
+                          <div className="flex-1 min-w-0">{renderSwapSelect('spectators',index.toString(),name)}</div>
+                          {name && (
+                            <button
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); handleSelectSwapPlayer('spectators', index.toString(), name); }}
+                              className={`p-0.5 rounded transition-colors text-xs font-black shrink-0 ${swapSource?.name === name ? 'bg-amber-500 text-black' : 'text-indigo-400 hover:text-white hover:bg-gray-800'}`}
+                              title="タップして入れ替え"
+                            >
+                              ⇄
+                            </button>
+                          )}
                         </div>
                       );
                     })}
@@ -675,23 +820,128 @@ export default function BalancerPage() {
 
               {/* 試合結果記録 */}
               <div className="pt-3 border-t border-gray-800">
-                {!showRecordPanel ? (
-                  <div className="text-center">
-                    <button onClick={() => setShowRecordPanel(true)} type="button"
-                      className="bg-emerald-600 hover:bg-emerald-500 text-white px-8 py-3 rounded-xl font-black transition flex items-center gap-2 mx-auto shadow-lg">
-                      <Trophy className="h-5 w-5" /> この編成で試合結果を記録する 🏆
-                    </button>
-                  </div>
-                ) : (
-                  <div>
-                    <div className="flex justify-between items-center mb-3">
-                      <h3 className="font-bold text-gray-200 flex items-center gap-2"><Trophy className="h-4 w-4 text-emerald-400" /> 対戦戦績の直接入力</h3>
-                      <button onClick={() => setShowRecordPanel(false)} className="text-xs bg-gray-800 text-gray-400 px-3 py-1.5 rounded border border-gray-700 transition hover:text-white">閉じる ×</button>
-                    </div>
-                    <MatchRecordPanel balanceResult={balanceResult} onComplete={() => { setShowRecordPanel(false); setShowResultModal(false); fetchPlayers(); }} />
-                  </div>
-                )}
+                <div className="text-center">
+                  <button
+                    onClick={handleRecordNavigate}
+                    disabled={savingPending}
+                    type="button"
+                    className="bg-emerald-600 hover:bg-emerald-500 disabled:bg-emerald-800 text-white px-8 py-3 rounded-xl font-black transition flex items-center gap-2 mx-auto shadow-lg"
+                  >
+                    <Trophy className="h-5 w-5" />
+                    {savingPending ? '一時保存中...' : 'この編成で試合結果を記録する 🏆'}
+                  </button>
+                </div>
               </div>
+            </>)}
+
+              {/* 対面分析 (VS Analytics) */}
+              {modalTab === 'matchups' && (
+                <div className="space-y-4">
+                  {['TOP', 'JG', 'MID', 'ADC', 'SUP'].map(role => {
+                    const pB = balanceResult.teamBlue.find((x: any) => x.currentRole === role);
+                    const pR = balanceResult.teamRed.find((x: any) => x.currentRole === role);
+                    
+                    if (!pB || !pR) return null;
+
+                    const dbB = players.find((p: any) => p.name === pB.name);
+                    const dbR = players.find((p: any) => p.name === pR.name);
+
+                    // キャッシュされたプレイスタイル情報 (無ければデフォルト)
+                    const styleB = dbB?.metadata?.playstyle_cache?.custom || {
+                      sliders: { aggressive: 50, farming: 50, supportive: 50 },
+                      tags: [{ id: 'balanced', name: 'バランス型', description: '標準的なプレイスタイル。', reason: '' }],
+                      diffs: { goldDiff: 0, xpDiff: 0, csDiff: 0 }
+                    };
+
+                    const styleR = dbR?.metadata?.playstyle_cache?.custom || {
+                      sliders: { aggressive: 50, farming: 50, supportive: 50 },
+                      tags: [{ id: 'balanced', name: 'バランス型', description: '標準的なプレイスタイル。', reason: '' }],
+                      diffs: { goldDiff: 0, xpDiff: 0, csDiff: 0 }
+                    };
+
+                    const tagB = styleB.tags?.[0] || { id: 'balanced', name: 'バランス型' };
+                    const tagR = styleR.tags?.[0] || { id: 'balanced', name: 'バランス型' };
+                    const tip = generateMatchupTip(tagB, tagR, role);
+
+                    const goldDiffB = styleB.diffs?.goldDiff || 0;
+                    const goldDiffR = styleR.diffs?.goldDiff || 0;
+                    const csDiffB = styleB.diffs?.csDiff || 0;
+                    const csDiffR = styleR.diffs?.csDiff || 0;
+                    
+                    const goldDiff = goldDiffB - goldDiffR;
+                    const csDiff = csDiffB - csDiffR;
+
+                    return (
+                      <div key={role} className="bg-gray-950 p-4 rounded-2xl border border-gray-800 space-y-4">
+                        {/* ロールヘッダー */}
+                        <div className="flex items-center justify-between border-b border-white/5 pb-2">
+                          <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 rounded-full bg-gray-900 border border-gray-800 flex items-center justify-center">
+                              <RoleIcon role={role} className="w-3.5 h-3.5" />
+                            </div>
+                            <span className="text-sm font-black text-white">{role} 対面分析</span>
+                          </div>
+                          <span className="text-[10px] text-gray-500 font-mono">MMR差: {pB.mmr - pR.mmr > 0 ? `+${pB.mmr - pR.mmr}` : pB.mmr - pR.mmr}</span>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-11 gap-4 items-center">
+                          {/* BLUE側 */}
+                          <div className="col-span-4 space-y-1.5">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-black text-blue-400">{pB.name}</span>
+                              <span className="text-[9px] bg-blue-500/10 text-blue-400 px-1.5 py-0.5 rounded border border-blue-500/20 font-black">{tagB.name}</span>
+                            </div>
+                            <div className="space-y-1 text-[10px] text-gray-400">
+                              <div className="flex justify-between"><span>Aggressive:</span> <span className="font-bold text-white">{styleB.sliders?.aggressive || 50}%</span></div>
+                              <div className="flex justify-between"><span>Farming:</span> <span className="font-bold text-white">{styleB.sliders?.farming || 50}%</span></div>
+                            </div>
+                          </div>
+
+                          {/* VS (差分比較) */}
+                          <div className="col-span-3 flex flex-col items-center justify-center space-y-2">
+                            <span className="text-[10px] text-gray-500 font-black">9分スタッツ差 (B - R)</span>
+                            <div className="space-y-1 w-full text-[9px] font-mono text-center">
+                              <div className="flex justify-between px-2 bg-black/40 py-1 rounded border border-white/5">
+                                <span className="text-gray-500">ゴールド:</span>
+                                <span className={goldDiff >= 0 ? 'text-amber-400 font-bold' : 'text-rose-500 font-bold'}>
+                                  {goldDiff >= 0 ? `+${goldDiff}` : goldDiff} G
+                                </span>
+                              </div>
+                              <div className="flex justify-between px-2 bg-black/40 py-1 rounded border border-white/5">
+                                <span className="text-gray-500">CS:</span>
+                                <span className={csDiff >= 0 ? 'text-emerald-400 font-bold' : 'text-rose-500 font-bold'}>
+                                  {csDiff >= 0 ? `+${csDiff.toFixed(1)}` : csDiff.toFixed(1)}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* RED側 */}
+                          <div className="col-span-4 space-y-1.5 text-right">
+                            <div className="flex items-center gap-2 justify-end">
+                              <span className="text-[9px] bg-red-500/10 text-red-400 px-1.5 py-0.5 rounded border border-red-500/20 font-black">{tagR.name}</span>
+                              <span className="text-xs font-black text-red-400">{pR.name}</span>
+                            </div>
+                            <div className="space-y-1 text-[10px] text-gray-400">
+                              <div className="flex justify-between"><span>Aggressive:</span> <span className="font-bold text-white">{styleR.sliders?.aggressive || 50}%</span></div>
+                              <div className="flex justify-between"><span>Farming:</span> <span className="font-bold text-white">{styleR.sliders?.farming || 50}%</span></div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* 対面アドバイス */}
+                        <div className="bg-amber-500/5 border border-amber-500/10 p-2.5 rounded-xl text-[11px] text-amber-200 leading-relaxed">
+                          <div className="flex items-center gap-1 font-bold mb-1">
+                            <Sparkles className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                            <span>マッチアップ攻略アドバイス</span>
+                          </div>
+                          {tip}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -713,6 +963,14 @@ export default function BalancerPage() {
               <Link href="/ktm-admin" prefetch={false} className="flex items-center gap-1.5 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-400 px-3 py-1.5 rounded-lg font-bold transition text-xs">
                 <Shield className="h-3.5 w-3.5" /> 管理者 🔑
               </Link>
+              <button
+                onClick={handleAnnounceStats}
+                disabled={announcingStats}
+                className="flex items-center gap-1.5 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/30 text-indigo-400 px-3 py-1.5 rounded-lg font-bold transition text-xs disabled:opacity-50"
+              >
+                <MessageSquare className="h-3.5 w-3.5" />
+                {announcingStats ? '通知中...' : '募集状況を通知 📢'}
+              </button>
             </div>
           </div>
 
@@ -785,6 +1043,69 @@ export default function BalancerPage() {
             </span>
           </div>
 
+          {/* ★ 追加: フィルターUI (junglepedia風のインタラクティブなフィルタリング機能) */}
+          <div className="p-3 md:p-4 bg-gray-950/60 border-b border-gray-800/80 flex flex-col lg:flex-row gap-3 items-center justify-between">
+            {/* 検索入力 */}
+            <div className="relative w-full lg:max-w-xs">
+              <input
+                type="text"
+                placeholder="プレイヤーを検索..."
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                className="w-full bg-gray-900 border border-gray-800 rounded-lg px-3 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 transition"
+              />
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto justify-end">
+              {/* ステータスフィルター */}
+              <div className="flex bg-gray-900 rounded-lg p-0.5 border border-gray-800 text-xs">
+                <button
+                  onClick={() => setStatusFilter(null)}
+                  className={`px-3 py-1.5 rounded-md font-bold transition ${!statusFilter ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}
+                >
+                  全員
+                </button>
+                <button
+                  onClick={() => setStatusFilter('active')}
+                  className={`px-3 py-1.5 rounded-md font-bold transition ${statusFilter === 'active' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}
+                >
+                  参加予定
+                </button>
+                <button
+                  onClick={() => setStatusFilter('spectator')}
+                  className={`px-3 py-1.5 rounded-md font-bold transition ${statusFilter === 'spectator' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}
+                >
+                  見学のみ
+                </button>
+                <button
+                  onClick={() => setStatusFilter('inactive')}
+                  className={`px-3 py-1.5 rounded-md font-bold transition ${statusFilter === 'inactive' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}
+                >
+                  不参加
+                </button>
+              </div>
+
+              {/* 希望ロールフィルター */}
+              <div className="flex bg-gray-900 rounded-lg p-0.5 border border-gray-800 text-xs">
+                <button
+                  onClick={() => setRoleFilter(null)}
+                  className={`px-3 py-1.5 rounded-md font-bold transition ${!roleFilter ? 'bg-amber-600 text-white' : 'text-gray-400 hover:text-white'}`}
+                >
+                  すべてのロール
+                </button>
+                {['TOP', 'JG', 'MID', 'ADC', 'SUP'].map(role => (
+                  <button
+                    key={role}
+                    onClick={() => setRoleFilter(roleFilter === role ? null : role)}
+                    className={`px-2.5 py-1.5 rounded-md font-bold transition flex items-center gap-1 ${roleFilter === role ? 'bg-amber-600 text-white' : 'text-gray-400 hover:text-white'}`}
+                  >
+                    {role}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
           {/* デスクトップ：テーブル */}
           <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-sm text-left">
@@ -806,10 +1127,10 @@ export default function BalancerPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-800/50">
-                {sortedPlayers.map((p, idx) => {
+                {filteredPlayers.map((p, idx) => {
                   const prefs = p.role_preferences || { primary: 'ALL', secondary: '-' };
                   const curGroup = getGroup(p);
-                  const prevGroup = idx > 0 ? getGroup(sortedPlayers[idx - 1]) : -1;
+                  const prevGroup = idx > 0 ? getGroup(filteredPlayers[idx - 1]) : -1;
                   const isBoundary = idx > 0 && curGroup !== prevGroup;
                   const groupLabelMap: Record<number,string> = { 0:'👑 固定メンバー', 2:'👁 観戦固定', 3:'⚫ 不参加' };
                   const groupColorMap: Record<number,string> = { 0:'text-amber-500 bg-amber-950/10', 2:'text-indigo-400 bg-indigo-950/10', 3:'text-gray-600 bg-gray-950/50' };
@@ -919,10 +1240,10 @@ export default function BalancerPage() {
 
           {/* ★ モバイル：カードリスト */}
           <div className="md:hidden divide-y divide-gray-800/50">
-            {sortedPlayers.map((p, idx) => {
+            {filteredPlayers.map((p, idx) => {
               const prefs = p.role_preferences || { primary: 'ALL', secondary: '-' };
               const curGroup = getGroup(p);
-              const prevGroup = idx > 0 ? getGroup(sortedPlayers[idx - 1]) : -1;
+              const prevGroup = idx > 0 ? getGroup(filteredPlayers[idx - 1]) : -1;
               const isBoundary = idx > 0 && curGroup !== prevGroup;
               const groupLabelMap: Record<number,string> = { 0:'👑 固定メンバー', 2:'👁 観戦固定', 3:'⚫ 不参加' };
               const groupBgMap: Record<number,string> = { 0:'bg-amber-950/20 text-amber-500', 2:'bg-indigo-950/20 text-indigo-400', 3:'bg-gray-950 text-gray-600' };
@@ -1015,5 +1336,37 @@ export default function BalancerPage() {
       </div>
     </div>
   );
+}
+
+/**
+ * 対面のプレイスタイルタグの組み合わせに基づいて、動的な攻略ヒントを生成します。
+ */
+function generateMatchupTip(tagB: any, tagR: any, role: string): string {
+  const idB = tagB.id || 'balanced';
+  const idR = tagR.id || 'balanced';
+
+  if (role === 'JG') {
+    if (idB === 'early-brawler' && idR === 'speed-demon') {
+      return "BLUE側は戦闘重視で序盤から動くガンク型、RED側はファーム優先の周回型。BLUE側はレーンへの早期アクションで試合を壊す必要があり、RED側は視界で相手のGankを防ぎながら周回差をつけてカウンタージャングルを狙うべきです。";
+    }
+    if (idB === 'speed-demon' && idR === 'early-brawler') {
+      return "BLUE側は周回重視、RED側は戦闘重視のガンク型。RED側は早い段階でインベイドやレーンへの強襲を仕掛ける傾向があります。BLUE側はカウンターGank用のカバー視界を整え、ファーム速度の差で中盤以降圧倒するルートを目指しましょう。";
+    }
+  }
+
+  if (idB === 'early-brawler' && idR === 'kda-safeplayer') {
+    return "BLUE側は戦闘意欲が極めて高いアグレッシブ型、RED側はデスを避ける防壁型。BLUE側はタワーダイブや強引なトレードを仕掛けがちですが、RED側はそれをいなして中盤の集団戦へ繋ぎます。序盤の主導権争いが勝負の分かれ目です。";
+  }
+  
+  if (idB === 'kda-safeplayer' && idR === 'early-brawler') {
+    return "BLUE側はデスを最小限に抑える安定型、RED側は積極的に戦闘を起こす戦闘狂。RED側はジャングラーを巻き込んだ早期の仕掛けを得意とするため、BLUE側は無理なトレードをせず、ロームやタワー下でのファームで耐え切るのが最も勝率を高めます。";
+  }
+
+  if (idB === 'speed-demon' && idR === 'speed-demon') {
+    return "両者ともに高いCS管理能力を持つファーム型。お互いにレーンを押し合い、ファーム差での有利形成を目指すため、ジャングラーの介入や他レーンへのロームによるテンポ破壊がこの対面を崩す鍵となります。";
+  }
+
+  // デフォルト
+  return `BLUE側（${tagB.name || 'バランス型'}）とRED側（${tagR.name || 'バランス型'}）の対面です。MMRはほぼ均衡しています。自身のプレイスタイルを崩さず、味方のレーンカバーやオブジェクト周辺での視界争いを徹底することで主導権を握りましょう。`;
 }
 

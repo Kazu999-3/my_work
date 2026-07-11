@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Shield, LayoutDashboard, Swords, BookOpen, BookHeart, Trophy, Users, HeartHandshake, ScrollText, ListVideo, ChevronLeft, ChevronRight, Coins, Brain } from 'lucide-react';
+import { Shield, LayoutDashboard, Swords, BookOpen, BookHeart, Trophy, Users, HeartHandshake, ScrollText, ListVideo, ChevronLeft, ChevronRight, Coins, Brain, Trees, Compass } from 'lucide-react';
 import FavoritesPanel from './FavoritesPanel';
 
 // 一般ユーザー用 (管理者エリア外で表示)
@@ -12,6 +12,7 @@ const MENU_ITEMS = [
   { id: 'leaderboard', label: 'リーダーボード', icon: Trophy, href: '/leaderboard', color: 'text-yellow-400', activeBg: 'bg-yellow-400/15' },
   { id: 'history',   label: '過去の試合履歴', icon: Swords, href: '/history', color: 'text-orange-400', activeBg: 'bg-orange-400/15' },
   { id: 'synergy',   label: '相性・ライバル', icon: HeartHandshake, href: '/synergy', color: 'text-fuchsia-400', activeBg: 'bg-fuchsia-400/15' },
+  { id: 'clears', label: '周回統計ライブラリ', icon: Trees, href: '/champions/clears', color: 'text-emerald-400', activeBg: 'bg-emerald-400/15' },
 ];
 
 // 管理者ログイン時：管理者機能タブ用 (過去の試合履歴を除外)
@@ -19,6 +20,8 @@ const ADMIN_ONLY_MENU_ITEMS = [
   { id: 'dashboard', label: 'ダッシュボード', icon: LayoutDashboard, href: '/admin/dashboard', color: 'text-white', activeBg: 'bg-white/10' },
   { id: 'matchups',  label: 'バトルサーチ',   icon: Swords,          href: '/matchups', color: 'text-[#00cfef]', activeBg: 'bg-[#00cfef]/15' },
   { id: 'champions', label: 'チャンピオン辞典', icon: BookHeart,     href: '/champions', color: 'text-[#c89b3c]', activeBg: 'bg-[#c89b3c]/15' },
+  { id: 'clears', label: '周回統計ライブラリ', icon: Trees, href: '/champions/clears', color: 'text-emerald-400', activeBg: 'bg-emerald-400/15' },
+  { id: 'soloq-scout', label: 'ソロQ対面偵察', icon: Compass, href: '/admin/soloq', color: 'text-amber-400', activeBg: 'bg-amber-400/15' },
   { id: 'design',    label: 'システム設計書', icon: ScrollText,      href: '/design', color: 'text-cyan-400', activeBg: 'bg-cyan-400/15' },
   { id: 'knowledge-admin', label: 'ナレッジベース', icon: Brain,       href: '/admin/knowledge', color: 'text-pink-400', activeBg: 'bg-pink-400/15' },
   { id: 'ktm-admin',   label: '⚙️ 管理者専用',     icon: Shield, href: '/ktm-admin', color: 'text-indigo-400', activeBg: 'bg-indigo-400/15' },
@@ -29,6 +32,7 @@ const ADMIN_GENERAL_MENU_ITEMS = [
   { id: 'balancer',  label: 'チーム分け', icon: Swords, href: '/balancer', color: 'text-rose-500', activeBg: 'bg-rose-500/15' },
   { id: 'leaderboard', label: 'リーダーボード', icon: Trophy, href: '/leaderboard', color: 'text-yellow-400', activeBg: 'bg-yellow-400/15' },
   { id: 'synergy',   label: '相性・ライバル', icon: HeartHandshake, href: '/synergy', color: 'text-fuchsia-400', activeBg: 'bg-fuchsia-400/15' },
+  { id: 'clears', label: '周回統計ライブラリ', icon: Trees, href: '/champions/clears', color: 'text-emerald-400', activeBg: 'bg-emerald-400/15' },
 ];
 
 export default function Sidebar() {

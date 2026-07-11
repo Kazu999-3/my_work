@@ -256,30 +256,7 @@ export async function POST(request: Request) {
       }
     }
 
-    // (4) 今回の試合に選出されなかったアクティブプレイヤーの Pity 加算 (+10)
-    const { data: allActivePlayers, error: apError } = await supabase
-      .from('ktm_players')
-      .select('name, pity')
-      .eq('is_active', true);
-
-    if (apError) {
-      throw new Error(`アクティブプレイヤー一覧の取得失敗: ${apError.message}`);
-    } else if (allActivePlayers) {
-      const waitingPlayers = allActivePlayers.filter((p: any) => !names.includes(p.name));
-      
-      // 待機プレイヤーのPityを一括更新 (+10)
-      for (const p of waitingPlayers) {
-        const nextPity = (Number(p.pity) || 0) + 10;
-        const { error: wUpdateError } = await supabase
-          .from('ktm_players')
-          .update({ pity: nextPity })
-          .eq('name', p.name);
-        
-        if (wUpdateError) {
-          throw new Error(`待機プレイヤー ${p.name} のPity更新に失敗: ${wUpdateError.message}`);
-        }
-      }
-    }
+    // (4) 待機プレイヤーの Pity 加算はチーム確定時（pending保存時）に行うようにライフサイクルを分離・移動したため、ここでは行わない。
 
     // 5. Discordへ試合結果を速報通知 (非同期で送信して待たないか、待つか。エラーになっても保存は完了させる)
     try {

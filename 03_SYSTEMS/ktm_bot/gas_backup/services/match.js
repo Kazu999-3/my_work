@@ -47,11 +47,18 @@ function calculateNewMMR(c, o, w, k, m, numGames, matchupCount, totalWinRate) {
   
   let finalDelta = Math.round(baseDelta * multiplier * matchupMultiplier);
   
+  // ★ 追加: 高勝率プレイヤー(60%以上)の敗北ペナルティ (インフレ抑制)
+  if (!w && totalWinRate > 60) {
+    const winRatePenalty = Math.min(8, (totalWinRate - 60) * 0.5);
+    finalDelta -= Math.round(winRatePenalty);
+  }
+
   // 最終的な増減のガード
   if (w) {
     finalDelta = Math.max(10, finalDelta); // 勝利時は最低 +10
   } else {
-    finalDelta = Math.max(-35, Math.min(-5, finalDelta)); // 敗北時は最大 -5、かつ最低 -35 まで（急激なデフレを防止）
+    // 変更: 下限を -35 から -45 に拡大し、インフレ抑制の減少を正しく許容する
+    finalDelta = Math.max(-45, Math.min(-5, finalDelta)); 
   }
 
   return c + finalDelta;

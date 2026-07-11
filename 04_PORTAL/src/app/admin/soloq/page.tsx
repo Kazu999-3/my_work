@@ -1,0 +1,303 @@
+"use client";
+
+import { useState } from "react";
+import Link from "next/link";
+import { 
+  Users, 
+  Search, 
+  RefreshCw, 
+  Activity, 
+  Sparkles, 
+  ShieldAlert, 
+  Compass, 
+  Flame, 
+  TrendingUp, 
+  Zap, 
+  Award,
+  ChevronLeft
+} from "lucide-react";
+import { getChampIcon } from "../../../lib/ddragonClient";
+
+export default function SoloqScoutPage() {
+  const [riotId, setRiotId] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<any>(null);
+  const [error, setError] = useState("");
+
+  const handleSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!riotId || !riotId.includes('#')) {
+      setError("Riot IDは「名前#タグ」の形式で入力してください (例: Koike#JP1)。");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+    setResult(null);
+
+    try {
+      const res = await fetch('/api/admin/live-match', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ riotId })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || '検索エラーが発生しました。');
+
+      setResult(data);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-gray-900 via-slate-950 to-black text-white p-4 md:p-8 font-sans">
+      <div className="max-w-4xl mx-auto space-y-6">
+        
+        {/* ナビゲーション */}
+        <div className="flex justify-between items-center">
+          <Link 
+            href="/ktm-admin" 
+            className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-white bg-white/5 px-3 py-1.5 rounded-xl border border-white/5 transition"
+          >
+            <ChevronLeft className="w-4 h-4" />
+            <span>管理者ダッシュボードへ戻る</span>
+          </Link>
+          <span className="text-[10px] text-red-400 font-bold bg-red-500/10 px-2.5 py-1 rounded-full border border-red-500/20 uppercase tracking-widest">
+            管理者専用 🔑
+          </span>
+        </div>
+
+        {/* ヘッダー */}
+        <div className="text-center space-y-2">
+          <h1 className="text-2xl md:text-4xl font-black bg-gradient-to-r from-cyan-400 via-amber-400 to-rose-400 bg-clip-text text-transparent flex items-center justify-center gap-2">
+            <Compass className="w-8 h-8 text-cyan-400 animate-spin-slow" />
+            <span>ソロキュー対戦相手偵察 (Live Lookup)</span>
+          </h1>
+          <p className="text-xs text-gray-400 max-w-md mx-auto leading-relaxed">
+            現在進行中のライブゲームを検知し、敵ジャングラーの開始ルート、プレイ傾向、およびメタ対策ヒントをリアルタイム抽出します。
+          </p>
+        </div>
+
+        {/* 検索フォーム */}
+        <form onSubmit={handleSearch} className="bg-white/[0.02] backdrop-blur-xl border border-white/10 p-5 rounded-3xl shadow-2xl space-y-3">
+          <label className="block text-xs font-black text-gray-400 uppercase tracking-wider">
+            自身の Riot ID
+          </label>
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-4 top-3.5 w-5 h-5 text-gray-500" />
+              <input 
+                type="text"
+                placeholder="SummonerName#TagLine"
+                value={riotId}
+                onChange={(e) => setRiotId(e.target.value)}
+                className="w-full bg-black/40 border border-white/10 rounded-2xl py-3 pl-12 pr-4 text-sm font-bold placeholder-gray-600 focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 transition-all text-white"
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={loading}
+              className="bg-gradient-to-r from-cyan-500 to-indigo-500 hover:from-cyan-400 hover:to-indigo-400 disabled:from-gray-800 disabled:to-gray-800 text-black font-black px-6 py-3 rounded-2xl text-sm transition shadow-[0_4px_20px_rgba(6,182,212,0.25)] flex items-center gap-2 shrink-0 disabled:text-gray-600"
+            >
+              {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Compass className="w-4 h-4" />}
+              <span>{loading ? 'スキャン中...' : '偵察開始'}</span>
+            </button>
+          </div>
+        </form>
+
+        {/* エラー表示 */}
+        {error && (
+          <div className="bg-red-500/10 border border-red-500/20 p-4 rounded-2xl flex items-start gap-3 text-sm text-red-400 font-bold">
+            <ShieldAlert className="w-5 h-5 shrink-0 text-red-400" />
+            <div className="space-y-1">
+              <div>エラーが発生しました</div>
+              <p className="text-xs font-medium text-gray-400 leading-relaxed">{error}</p>
+            </div>
+          </div>
+        )}
+
+        {/* 結果表示 */}
+        {result && (
+          <div className="space-y-6">
+            
+            {/* 非稼働時 (ゲーム中ではない場合) */}
+            {!result.isGameActive ? (
+              <div className="bg-white/[0.02] border border-white/5 rounded-3xl p-10 text-center space-y-4 shadow-xl">
+                <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mx-auto border border-white/5 text-gray-500">
+                  <Activity className="w-8 h-8" />
+                </div>
+                <div className="space-y-1">
+                  <h3 className="text-lg font-black text-white">ゲーム中ではありません</h3>
+                  <p className="text-xs text-gray-400 max-w-sm mx-auto leading-relaxed">
+                    {result.message || '指定されたプレイヤーは現在進行中のマッチが見つかりませんでした。ソロキュー開始後に再度スキャンしてください。'}
+                  </p>
+                </div>
+              </div>
+            ) : (
+              
+              // 稼働時 (ライブゲーム分析結果)
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                
+                {/* 1. 敵ジャングラープロフィール & スライダー (左側 2カラム) */}
+                <div className="md:col-span-2 space-y-6">
+                  
+                  {/* プロフィールカード */}
+                  <div className="bg-white/[0.02] border border-white/10 rounded-3xl p-6 shadow-xl space-y-4">
+                    <div className="flex items-center gap-4 border-b border-white/5 pb-4">
+                      <img 
+                        src={getChampIcon(result.championName)} 
+                        alt={result.championName} 
+                        className="w-16 h-16 rounded-2xl border border-white/10 shadow-lg"
+                      />
+                      <div className="space-y-1">
+                        <div className="text-[10px] text-gray-500 font-black tracking-wider uppercase">敵ジャングラー (Opponent JG)</div>
+                        <div className="text-lg font-black text-white flex items-center gap-2">
+                          <span>{result.enemyJgName}</span>
+                          <span className="text-xs text-cyan-400 font-bold bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/20">
+                            {result.championName}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* スライダー */}
+                    <div className="space-y-5">
+                      <h4 className="text-xs font-black text-gray-400 uppercase tracking-wider">プレイスタイル・スライダー (Playstyle Sliders)</h4>
+                      
+                      <div className="space-y-4">
+                        {/* Aggressive */}
+                        <div className="space-y-1.5">
+                          <div className="flex justify-between text-xs font-bold">
+                            <span className="text-gray-400">Passive (自重)</span>
+                            <span className="text-amber-400 font-mono font-black">{result.playstyle.sliders.aggressive}%</span>
+                            <span className="text-rose-400">Aggressive (攻撃)</span>
+                          </div>
+                          <div className="h-2.5 w-full bg-gray-950 rounded-full overflow-hidden border border-white/5 p-[1px]">
+                            <div 
+                              className="h-full rounded-full bg-gradient-to-r from-gray-700 via-amber-500 to-rose-600 transition-all duration-500"
+                              style={{ width: `${result.playstyle.sliders.aggressive}%` }}
+                            ></div>
+                          </div>
+                        </div>
+
+                        {/* Farming */}
+                        <div className="space-y-1.5">
+                          <div className="flex justify-between text-xs font-bold">
+                            <span className="text-emerald-400">Ganking (関与)</span>
+                            <span className="text-cyan-400 font-mono font-black">{result.playstyle.sliders.farming}%</span>
+                            <span className="text-blue-400">Farming (成長)</span>
+                          </div>
+                          <div className="h-2.5 w-full bg-gray-950 rounded-full overflow-hidden border border-white/5 p-[1px]">
+                            <div 
+                              className="h-full rounded-full bg-gradient-to-r from-emerald-500 via-cyan-500 to-blue-600 transition-all duration-500"
+                              style={{ width: `${result.playstyle.sliders.farming}%` }}
+                            ></div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* タグ表示 */}
+                    <div className="space-y-3 pt-3 border-t border-white/5">
+                      <h4 className="text-xs font-black text-gray-400 uppercase tracking-wider">プレイスタイルタグ (Playstyle Tags)</h4>
+                      <div className="flex flex-wrap gap-2">
+                        {result.playstyle.tags.map((tag: any) => (
+                          <div 
+                            key={tag.id}
+                            className="bg-cyan-500/10 border border-cyan-500/20 px-3 py-2 rounded-2xl space-y-1"
+                          >
+                            <div className="text-xs font-black text-cyan-300">{tag.name}</div>
+                            <p className="text-[10px] text-gray-400 leading-relaxed">{tag.description}</p>
+                            <div className="text-[8px] text-gray-500 font-mono text-right">{tag.reason}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                  </div>
+
+                  {/* 攻略アドバイスカード */}
+                  <div className="bg-gradient-to-r from-amber-500/10 via-orange-500/5 to-transparent border border-amber-500/20 rounded-3xl p-6 shadow-xl space-y-3">
+                    <h3 className="text-base font-black text-amber-300 flex items-center gap-2">
+                      <Sparkles className="w-5 h-5 text-amber-400 shrink-0" />
+                      <span>敵ジャングラー攻略アドバイス</span>
+                    </h3>
+                    <p className="text-xs text-amber-100/90 leading-relaxed bg-black/30 p-4 rounded-2xl border border-amber-500/10 font-medium">
+                      {result.tips}
+                    </p>
+                  </div>
+
+                </div>
+
+                {/* 2. 戦術予測 & マップ予測 (右側 1カラム) */}
+                <div className="space-y-6">
+                  
+                  {/* マップ予測カード */}
+                  <div className="bg-white/[0.02] border border-white/10 rounded-3xl p-6 shadow-xl space-y-5">
+                    <h3 className="text-sm font-black text-white uppercase tracking-wider flex items-center gap-2 border-b border-white/5 pb-3">
+                      <Compass className="w-4 h-4 text-cyan-400" />
+                      <span>ゲーム序盤戦術予測</span>
+                    </h3>
+
+                    {/* 予測項目 1: 開始バフ */}
+                    <div className="space-y-2 bg-black/40 p-4 rounded-2xl border border-white/5">
+                      <div className="text-[10px] text-gray-500 font-black tracking-wider uppercase">予測開始位置</div>
+                      <div className="text-xs font-black text-amber-400 leading-relaxed">
+                        {result.startBuffPrediction}
+                      </div>
+                    </div>
+
+                    {/* 予測項目 2: 最初のガンクターゲット */}
+                    <div className="space-y-2 bg-black/40 p-4 rounded-2xl border border-white/5">
+                      <div className="text-[10px] text-gray-500 font-black tracking-wider uppercase">ファーストGank予測</div>
+                      <div className="text-xs font-black text-rose-400 leading-relaxed">
+                        {result.firstGankTarget}
+                      </div>
+                    </div>
+
+                    {/* 9分スタッツ差 (対面有利度) */}
+                    <div className="space-y-3 pt-3 border-t border-white/5">
+                      <h4 className="text-[10px] text-gray-500 font-black tracking-wider uppercase">敵の平均9分スタッツ先行度</h4>
+                      
+                      <div className="space-y-2.5">
+                        {/* ゴールド */}
+                        <div className="space-y-1">
+                          <div className="flex justify-between text-[10px] font-bold">
+                            <span className="text-gray-400">ゴールド先行度</span>
+                            <span className="text-amber-400">+{result.playstyle.diffs.goldDiff} G</span>
+                          </div>
+                          <div className="h-1.5 w-full bg-gray-950 rounded-full overflow-hidden">
+                            <div className="h-full bg-amber-500" style={{ width: `${Math.min(100, (result.playstyle.diffs.goldDiff / 600) * 100)}%` }}></div>
+                          </div>
+                        </div>
+
+                        {/* CS */}
+                        <div className="space-y-1">
+                          <div className="flex justify-between text-[10px] font-bold">
+                            <span className="text-gray-400">CS先行度</span>
+                            <span className="text-emerald-400">+{result.playstyle.diffs.csDiff} CS</span>
+                          </div>
+                          <div className="h-1.5 w-full bg-gray-950 rounded-full overflow-hidden">
+                            <div className="h-full bg-emerald-500" style={{ width: `${Math.min(100, (result.playstyle.diffs.csDiff / 8) * 100)}%` }}></div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                  </div>
+
+                </div>
+
+              </div>
+            )}
+
+          </div>
+        )}
+
+      </div>
+    </div>
+  );
+}
