@@ -16,15 +16,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: '不正なファイル名形式です。' }, { status: 400 });
     }
 
-    const rootDocsPath = path.join(process.cwd(), '../design_docs', filename);
+    const rootDocsPath = path.join(process.cwd(), 'src/app/design/docs', filename);
 
     // 1. 個別設計書ファイルを書き換え
     fs.writeFileSync(rootDocsPath, content, 'utf8');
     console.log(`📝 [Design API] Updated individual doc: ${filename}`);
 
-    // 2. copy_design.js を動かして portal 内の TS モジュールおよび Markdown コピーを同期・ビルド
+    // 2. copy_design.js を動かして portal 内の TS モジュールおよびコピーを同期・ビルド
     // 3. 非同期で Git Commit & Push を実行 (本番Vercelデプロイフック)
-    const gitCommand = 'node copy_design.js && git add ../design_docs/ src/app/design/ && git commit -m "docs: update design document ' + filename + ' via portal" && git push origin master';
+    const gitCommand = 'node copy_design.js && git add src/app/design/ && git commit -m "docs: update design document ' + filename + ' via portal" && git push origin master';
     
     exec(gitCommand, { cwd: process.cwd() }, (error, stdout, stderr) => {
       if (error) {

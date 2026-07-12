@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const docsSrcDir = path.join(__dirname, '../design_docs');
+const docsSrcDir = path.join(__dirname, 'src/app/design/docs');
 const destDir = path.join(__dirname, 'src/app/design');
 const tsPath = path.join(destDir, 'systemDesignMarkdown.ts');
 
