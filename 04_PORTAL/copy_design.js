@@ -35,17 +35,14 @@ try {
       const cleanKey = rawKey.replace(/^\d+_/g, '');
       const markdownContent = fs.readFileSync(filePath, 'utf8');
 
-      // エスケープ処理
-      const escapedContent = markdownContent
-        .replace(/\\/g, '\\\\')
-        .replace(/`/g, '\\`')
-        .replace(/\${/g, '\\${');
+      // JSON.stringify を使って改行やバッククォート、バックスラッシュを完璧に安全にエスケープ
+      const safeJsonContentString = JSON.stringify(markdownContent);
 
       const title = titleMapping[rawKey] || cleanKey;
       tsContent += `  "${cleanKey}": {\n`;
       tsContent += `    title: "${title}",\n`;
       tsContent += `    filename: "${file}",\n`;
-      tsContent += `    content: \`${escapedContent}\`\n`;
+      tsContent += `    content: ${safeJsonContentString}\n`;
       tsContent += `  },\n`;
       
       // ポータル側 src フォルダへも Markdown 本体をそのままコピー保存 (バックアップ・ローカル編集同期用)
