@@ -7,10 +7,9 @@ export const metadata = {
 };
 
 export default function DesignPage() {
-  const defaultMarkdown = systemDesignDocs['overview']?.content || '';
   return (
     <div className="min-h-screen bg-[#06070a] text-gray-100 p-6 md:p-12 overflow-y-auto">
-      <DesignEditor initialMarkdown={defaultMarkdown} />
+      <DesignEditor initialDocs={systemDesignDocs} />
     </div>
   );
 }

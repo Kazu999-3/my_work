@@ -4,11 +4,10 @@ import { useState, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Edit3, Save, X, RefreshCw, CheckCircle, AlertTriangle, BookOpen, ChevronRight, FileText } from 'lucide-react';
-import { systemDesignDocs, DesignDoc } from './systemDesignMarkdown';
+import { DesignDoc } from './systemDesignMarkdown';
 
-export default function DesignEditor({ initialMarkdown }: { initialMarkdown: string }) {
-  // initialMarkdown は下位互換として受け取るが、本実装では systemDesignDocs 辞書をマスターとして使用します
-  const [docs, setDocs] = useState<Record<string, DesignDoc>>(systemDesignDocs);
+export default function DesignEditor({ initialDocs }: { initialDocs: Record<string, DesignDoc> }) {
+  const [docs, setDocs] = useState<Record<string, DesignDoc>>(initialDocs);
   const [isEditing, setIsEditing] = useState(false);
   const [activeKey, setActiveKey] = useState<string>('overview');
   const [saving, setSaving] = useState(false);
