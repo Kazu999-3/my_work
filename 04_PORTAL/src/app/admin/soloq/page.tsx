@@ -15,7 +15,8 @@ import {
   TrendingUp, 
   Zap, 
   Award,
-  ChevronLeft
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
 import { getChampIcon } from "../../../lib/ddragonClient";
 
@@ -32,6 +33,9 @@ export default function SoloqScoutPage() {
   const [playstyleSource, setPlaystyleSource] = useState<'custom' | 'soloq'>('custom');
   const [syncingSoloq, setSyncingSoloq] = useState(false);
   const [playerLoading, setPlayerLoading] = useState(false);
+
+  // 鬼コーチ対策3箇条用のスライドインデックス
+  const [adviceIndex, setAdviceIndex] = useState(0);
 
   // アクティブプレイヤー一覧をロード
   useEffect(() => {
@@ -105,6 +109,7 @@ export default function SoloqScoutPage() {
     setLoading(true);
     setError("");
     setResult(null);
+    setAdviceIndex(0); // 検索時にアドバイスインデックスをリセット
 
     try {
       const res = await fetch('/api/admin/live-match', {
@@ -208,6 +213,8 @@ export default function SoloqScoutPage() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="md:col-span-2 space-y-6">
+                  
+                  {/* 敵ジャングラープロフィール */}
                   <div className="bg-white/[0.02] border border-white/10 rounded-3xl p-6 shadow-xl space-y-4">
                     <div className="flex items-center gap-4 border-b border-white/5 pb-4">
                       <img 
@@ -215,13 +222,27 @@ export default function SoloqScoutPage() {
                         alt={result.championName} 
                         className="w-16 h-16 rounded-2xl border border-white/10 shadow-lg"
                       />
-                      <div className="space-y-1">
+                      <div className="space-y-1 flex-1">
                         <div className="text-[10px] text-gray-500 font-black tracking-wider uppercase">敵ジャングラー (Opponent JG)</div>
-                        <div className="text-lg font-black text-white flex items-center gap-2">
+                        <div className="text-lg font-black text-white flex flex-wrap items-center gap-2">
                           <span>{result.enemyJgName}</span>
                           <span className="text-xs text-cyan-400 font-bold bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/20">
                             {result.championName}
                           </span>
+                          
+                          {/* OTP 警告アラートバッジ */}
+                          {result.isOtp && (
+                            <span className="text-[10px] text-orange-400 bg-orange-500/10 px-2.5 py-1 rounded border border-orange-500/20 font-black animate-pulse flex items-center gap-1">
+                              🔥 OTP警告: {result.otpChampion}
+                            </span>
+                          )}
+
+                          {/* ティルト警告アラートバッジ */}
+                          {result.isTilted && (
+                            <span className="text-[10px] text-blue-400 bg-blue-500/10 px-2.5 py-1 rounded border border-blue-500/20 font-black animate-pulse flex items-center gap-1">
+                              ❄️ ティルト警戒 ({result.consecutiveLosses}連敗中)
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -276,15 +297,54 @@ export default function SoloqScoutPage() {
                     </div>
                   </div>
 
-                  <div className="bg-gradient-to-r from-amber-500/10 via-orange-500/5 to-transparent border border-amber-500/20 rounded-3xl p-6 shadow-xl space-y-3">
-                    <h3 className="text-base font-black text-amber-300 flex items-center gap-2">
-                      <Sparkles className="w-5 h-5 text-amber-400 shrink-0" />
-                      <span>敵ジャングラー攻略アドバイス</span>
-                    </h3>
-                    <p className="text-xs text-amber-100/90 leading-relaxed bg-black/30 p-4 rounded-2xl border border-amber-500/10 font-medium">
-                      {result.tips}
-                    </p>
-                  </div>
+                  {/* 鬼コーチAIの対面対策3箇条 (スライダー形式) */}
+                  {result.coachAdvice && result.coachAdvice.length > 0 && (
+                    <div className="bg-gradient-to-r from-red-500/10 via-orange-500/5 to-transparent border border-red-500/20 rounded-3xl p-6 shadow-xl space-y-4">
+                      <div className="flex justify-between items-center border-b border-white/5 pb-3">
+                        <h3 className="text-base font-black text-red-400 flex items-center gap-2">
+                          <Flame className="w-5 h-5 text-red-500 animate-pulse animate-duration-1000" />
+                          <span>鬼コーチAIの対面対策3箇条</span>
+                        </h3>
+                        <div className="text-[10px] text-gray-500 font-mono">
+                          {adviceIndex + 1} / {result.coachAdvice.length}
+                        </div>
+                      </div>
+
+                      {/* スライド本文 */}
+                      <div className="min-h-[140px] bg-black/40 p-5 rounded-2xl border border-red-500/10 flex flex-col justify-between space-y-4 relative overflow-hidden">
+                        <div className="space-y-2">
+                          <div className="text-xs font-black text-amber-300 flex items-center gap-1.5">
+                            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                            <span>{result.coachAdvice[adviceIndex]?.title}</span>
+                          </div>
+                          <p className="text-[11px] text-red-100/90 leading-relaxed font-medium">
+                            {result.coachAdvice[adviceIndex]?.detail}
+                          </p>
+                        </div>
+
+                        {/* スライド切替ボタン */}
+                        <div className="flex justify-end gap-1.5 pt-2">
+                          <button
+                            type="button"
+                            disabled={adviceIndex === 0}
+                            onClick={() => setAdviceIndex((prev) => prev - 1)}
+                            className="bg-white/5 hover:bg-white/10 disabled:opacity-30 border border-white/5 p-1.5 rounded-lg transition"
+                          >
+                            <ChevronLeft className="w-4 h-4 text-gray-400" />
+                          </button>
+                          <button
+                            type="button"
+                            disabled={adviceIndex === result.coachAdvice.length - 1}
+                            onClick={() => setAdviceIndex((prev) => prev + 1)}
+                            className="bg-white/5 hover:bg-white/10 disabled:opacity-30 border border-white/5 p-1.5 rounded-lg transition"
+                          >
+                            <ChevronRight className="w-4 h-4 text-gray-400" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                 </div>
 
                 <div className="space-y-6">
@@ -327,7 +387,7 @@ export default function SoloqScoutPage() {
                             <span className="text-emerald-400">+{result.playstyle.diffs.csDiff} CS</span>
                           </div>
                           <div className="h-1.5 w-full bg-gray-950 rounded-full overflow-hidden">
-                            <div className="h-full bg-emerald-500" style={{ width: `${Math.min(100, (result.playstyle.diffs.csDiff / 8) * 100)}%` }}></div>
+                            <div className="h-full bg-emerald-500" style={{ width: `${Math.min(100, (result.playstyle.csDiff || result.playstyle.diffs.csDiff || 1) * 10)}%` }}></div>
                           </div>
                         </div>
                       </div>
@@ -470,7 +530,7 @@ export default function SoloqScoutPage() {
                               <span className="text-purple-400 font-mono font-black">{currentStyle.sliders.supportive}%</span>
                               <span className="text-pink-400">Supportive (献身型)</span>
                             </div>
-                            <div className="h-3 w-full bg-gray-900 rounded-full overflow-hidden border border-white/5 p-[1px]">
+                            <div className="h-3 w-full bg-gray-950 rounded-full overflow-hidden border border-white/5 p-[1px]">
                               <div className="h-full rounded-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 transition-all duration-500" style={{ width: `${currentStyle.sliders.supportive}%` }}></div>
                             </div>
                           </div>
