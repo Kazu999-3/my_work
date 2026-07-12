@@ -50,7 +50,9 @@ export function createRecruitButtons(metadata) {
   } else {
     row1.push({ type: 2, label: "✅ 募集完了 (ポータルでチーム分け)", style: 2, custom_id: `recruit_completed`, disabled: true });
   }
-  row1.push({ type: 2, label: spectateLabel, style: 2, custom_id: `spectate:${metadata.owner}` });
+  if (metadata.mode !== 'ノーマル') {
+    row1.push({ type: 2, label: spectateLabel, style: 2, custom_id: `spectate:${metadata.owner}` });
+  }
 
   // Row 2: 管理・設定
   const row2 = [
