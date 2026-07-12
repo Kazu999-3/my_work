@@ -7,6 +7,7 @@ import { Edit3, Save, X, RefreshCw, CheckCircle, AlertTriangle, BookOpen, Chevro
 import { DesignDoc, systemDesignDocs as clientDocs } from './systemDesignMarkdown';
 
 export default function DesignEditor({ initialDocs }: { initialDocs: Record<string, DesignDoc> }) {
+  const [mounted, setMounted] = useState(false);
   const [docs, setDocs] = useState<Record<string, DesignDoc>>(initialDocs || clientDocs || {});
   const [isEditing, setIsEditing] = useState(false);
   const [activeKey, setActiveKey] = useState<string>('overview');
@@ -22,19 +23,35 @@ export default function DesignEditor({ initialDocs }: { initialDocs: Record<stri
   const [editTitle, setEditTitle] = useState(activeDoc.title);
   const [editContent, setEditContent] = useState(activeDoc.content);
 
+  // マウント検知
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   // マウント時および Props 更新時のデータ強制同期 (ダブル・インジェクション)
   useEffect(() => {
+    if (!mounted) return;
     const targetDocs = (initialDocs && Object.keys(initialDocs).length > 0) ? initialDocs : clientDocs;
     if (targetDocs && Object.keys(targetDocs).length > 0) {
       setDocs(targetDocs);
     }
-  }, [initialDocs]);
+  }, [initialDocs, mounted]);
 
   // 選択ドキュメントが変化した際にエディタバッファを自動同期 (Hydration遅延解決)
   useEffect(() => {
+    if (!mounted) return;
     setEditTitle(activeDoc.title);
     setEditContent(activeDoc.content);
-  }, [activeDoc]);
+  }, [activeDoc, mounted]);
+
+  if (!mounted) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[50vh] bg-[#0f111a]/40 backdrop-blur-md rounded-3xl border border-white/10 p-12 max-w-7xl mx-auto shadow-2xl">
+        <RefreshCw className="w-8 h-8 animate-spin text-[#c89b3c] mb-4" />
+        <span className="text-xs text-gray-400 font-bold">設計書モジュールをロード中...</span>
+      </div>
+    );
+  }
 
   const handleStartEdit = () => {
     setEditTitle(activeDoc.title);
