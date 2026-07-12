@@ -14,7 +14,8 @@ import {
   HelpCircle,
   Trees,
   CheckCircle,
-  X
+  X,
+  Lock
 } from "lucide-react";
 import { getChampIcon } from "../../../lib/ddragonClient";
 
@@ -162,15 +163,15 @@ export default function ChampionClearsPage() {
         {/* ナビゲーション */}
         <div className="flex justify-between items-center">
           <Link 
-            href="/balancer" 
+            href="/ktm-admin" 
             className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-white bg-white/5 px-3 py-1.5 rounded-xl border border-white/5 transition"
           >
             <ChevronLeft className="w-4 h-4" />
-            <span>バランサー画面へ戻る</span>
+            <span>管理者ダッシュボードへ戻る</span>
           </Link>
-          <span className="text-[10px] text-emerald-400 font-bold bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20 uppercase tracking-widest flex items-center gap-1">
-            <Trees className="w-3.5 h-3.5" />
-            <span>ジャングル攻略ライブラリ</span>
+          <span className="text-[10px] text-red-400 font-bold bg-red-500/10 px-2.5 py-1 rounded-full border border-red-500/20 uppercase tracking-widest flex items-center gap-1">
+            <Lock className="w-3.5 h-3.5" />
+            <span>管理者専用 🔑 周回統計ライブラリ</span>
           </span>
         </div>
 
@@ -181,7 +182,7 @@ export default function ChampionClearsPage() {
             <span>ジャングル周回統計 ＆ 実演動画アーカイブ</span>
           </h1>
           <p className="text-xs text-gray-400 max-w-md mx-auto leading-relaxed">
-            各ジャングルチャンピオンの最速ルート、目標クリアタイム、およびカイトのコツと実演動画をまとめた戦術ライブラリです。
+            各ジャングルチャンピオンの最速ルート、目標クリアタイム、およびカイトのコツと実演動画をまとめた管理者用の戦術攻略ライブラリです。
           </p>
         </div>
 
