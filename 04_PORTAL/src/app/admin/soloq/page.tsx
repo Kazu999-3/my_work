@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { supabase } from "../../../lib/supabaseClient";
 import { 
   Users, 
   Search, 
@@ -23,6 +24,76 @@ export default function SoloqScoutPage() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState("");
+
+  // 管理者向け登録プレイヤープレイスタイル管理用のState
+  const [players, setPlayers] = useState<any[]>([]);
+  const [selectedPlayer, setSelectedPlayer] = useState<any>(null);
+  const [playstyle, setPlaystyle] = useState<any>(null);
+  const [playstyleSource, setPlaystyleSource] = useState<'custom' | 'soloq'>('custom');
+  const [syncingSoloq, setSyncingSoloq] = useState(false);
+  const [playerLoading, setPlayerLoading] = useState(false);
+
+  // アクティブプレイヤー一覧をロード
+  useEffect(() => {
+    async function loadPlayers() {
+      try {
+        const { data, error: err } = await supabase
+          .from("ktm_players")
+          .select("*")
+          .order("name", { ascending: true });
+        if (err) throw err;
+        setPlayers(data || []);
+      } catch (e) {
+        console.error("Failed to load players for playstyle manager:", e);
+      }
+    }
+    loadPlayers();
+  }, []);
+
+  // 選択プレイヤーのプレイスタイル詳細をフェッチ
+  const handlePlayerSelect = async (player: any) => {
+    setSelectedPlayer(player);
+    setPlayerLoading(true);
+    setPlaystyle(null);
+    try {
+      const res = await fetch(`/api/player/profile?name=${encodeURIComponent(player.name)}`);
+      const data = await res.json();
+      if (res.ok && data.playstyle) {
+        setPlaystyle(data.playstyle);
+      }
+    } catch (err) {
+      console.error("Failed to load playstyle:", err);
+    } finally {
+      setPlayerLoading(false);
+    }
+  };
+
+  // 選択プレイヤーのソロキューデータを同期＆プレイスタイル更新
+  const handleSyncSoloq = async () => {
+    if (!selectedPlayer) return;
+    setSyncingSoloq(true);
+    try {
+      const res = await fetch('/api/player/sync-soloq', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: selectedPlayer.name })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || '同期エラー');
+      
+      alert(data.message);
+      if (data.playstyle) {
+        setPlaystyle((prev: any) => ({
+          ...prev,
+          soloq: data.playstyle
+        }));
+      }
+    } catch (err: any) {
+      alert(`❌ ソロキュー同期失敗: ${err.message}`);
+    } finally {
+      setSyncingSoloq(false);
+    }
+  };
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,7 +125,7 @@ export default function SoloqScoutPage() {
 
   return (
     <div className="min-h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-gray-900 via-slate-950 to-black text-white p-4 md:p-8 font-sans">
-      <div className="max-w-4xl mx-auto space-y-6">
+      <div className="max-w-4xl mx-auto space-y-8">
         
         {/* ナビゲーション */}
         <div className="flex justify-between items-center">
@@ -73,7 +144,7 @@ export default function SoloqScoutPage() {
         {/* ヘッダー */}
         <div className="text-center space-y-2">
           <h1 className="text-2xl md:text-4xl font-black bg-gradient-to-r from-cyan-400 via-amber-400 to-rose-400 bg-clip-text text-transparent flex items-center justify-center gap-2">
-            <Compass className="w-8 h-8 text-cyan-400 animate-spin-slow" />
+            <Compass className="w-8 h-8 text-cyan-400" />
             <span>ソロキュー対戦相手偵察 (Live Lookup)</span>
           </h1>
           <p className="text-xs text-gray-400 max-w-md mx-auto leading-relaxed">
@@ -122,8 +193,6 @@ export default function SoloqScoutPage() {
         {/* 結果表示 */}
         {result && (
           <div className="space-y-6">
-            
-            {/* 非稼働時 (ゲーム中ではない場合) */}
             {!result.isGameActive ? (
               <div className="bg-white/[0.02] border border-white/5 rounded-3xl p-10 text-center space-y-4 shadow-xl">
                 <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mx-auto border border-white/5 text-gray-500">
@@ -137,14 +206,8 @@ export default function SoloqScoutPage() {
                 </div>
               </div>
             ) : (
-              
-              // 稼働時 (ライブゲーム分析結果)
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                
-                {/* 1. 敵ジャングラープロフィール & スライダー (左側 2カラム) */}
                 <div className="md:col-span-2 space-y-6">
-                  
-                  {/* プロフィールカード */}
                   <div className="bg-white/[0.02] border border-white/10 rounded-3xl p-6 shadow-xl space-y-4">
                     <div className="flex items-center gap-4 border-b border-white/5 pb-4">
                       <img 
@@ -163,12 +226,9 @@ export default function SoloqScoutPage() {
                       </div>
                     </div>
 
-                    {/* スライダー */}
                     <div className="space-y-5">
                       <h4 className="text-xs font-black text-gray-400 uppercase tracking-wider">プレイスタイル・スライダー (Playstyle Sliders)</h4>
-                      
                       <div className="space-y-4">
-                        {/* Aggressive */}
                         <div className="space-y-1.5">
                           <div className="flex justify-between text-xs font-bold">
                             <span className="text-gray-400">Passive (自重)</span>
@@ -183,7 +243,6 @@ export default function SoloqScoutPage() {
                           </div>
                         </div>
 
-                        {/* Farming */}
                         <div className="space-y-1.5">
                           <div className="flex justify-between text-xs font-bold">
                             <span className="text-emerald-400">Ganking (関与)</span>
@@ -200,7 +259,6 @@ export default function SoloqScoutPage() {
                       </div>
                     </div>
 
-                    {/* タグ表示 */}
                     <div className="space-y-3 pt-3 border-t border-white/5">
                       <h4 className="text-xs font-black text-gray-400 uppercase tracking-wider">プレイスタイルタグ (Playstyle Tags)</h4>
                       <div className="flex flex-wrap gap-2">
@@ -216,10 +274,8 @@ export default function SoloqScoutPage() {
                         ))}
                       </div>
                     </div>
-
                   </div>
 
-                  {/* 攻略アドバイスカード */}
                   <div className="bg-gradient-to-r from-amber-500/10 via-orange-500/5 to-transparent border border-amber-500/20 rounded-3xl p-6 shadow-xl space-y-3">
                     <h3 className="text-base font-black text-amber-300 flex items-center gap-2">
                       <Sparkles className="w-5 h-5 text-amber-400 shrink-0" />
@@ -229,20 +285,15 @@ export default function SoloqScoutPage() {
                       {result.tips}
                     </p>
                   </div>
-
                 </div>
 
-                {/* 2. 戦術予測 & マップ予測 (右側 1カラム) */}
                 <div className="space-y-6">
-                  
-                  {/* マップ予測カード */}
                   <div className="bg-white/[0.02] border border-white/10 rounded-3xl p-6 shadow-xl space-y-5">
                     <h3 className="text-sm font-black text-white uppercase tracking-wider flex items-center gap-2 border-b border-white/5 pb-3">
                       <Compass className="w-4 h-4 text-cyan-400" />
                       <span>ゲーム序盤戦術予測</span>
                     </h3>
 
-                    {/* 予測項目 1: 開始バフ */}
                     <div className="space-y-2 bg-black/40 p-4 rounded-2xl border border-white/5">
                       <div className="text-[10px] text-gray-500 font-black tracking-wider uppercase">予測開始位置</div>
                       <div className="text-xs font-black text-amber-400 leading-relaxed">
@@ -250,7 +301,6 @@ export default function SoloqScoutPage() {
                       </div>
                     </div>
 
-                    {/* 予測項目 2: 最初のガンクターゲット */}
                     <div className="space-y-2 bg-black/40 p-4 rounded-2xl border border-white/5">
                       <div className="text-[10px] text-gray-500 font-black tracking-wider uppercase">ファーストGank予測</div>
                       <div className="text-xs font-black text-rose-400 leading-relaxed">
@@ -258,12 +308,9 @@ export default function SoloqScoutPage() {
                       </div>
                     </div>
 
-                    {/* 9分スタッツ差 (対面有利度) */}
                     <div className="space-y-3 pt-3 border-t border-white/5">
                       <h4 className="text-[10px] text-gray-500 font-black tracking-wider uppercase">敵の平均9分スタッツ先行度</h4>
-                      
                       <div className="space-y-2.5">
-                        {/* ゴールド */}
                         <div className="space-y-1">
                           <div className="flex justify-between text-[10px] font-bold">
                             <span className="text-gray-400">ゴールド先行度</span>
@@ -274,7 +321,6 @@ export default function SoloqScoutPage() {
                           </div>
                         </div>
 
-                        {/* CS */}
                         <div className="space-y-1">
                           <div className="flex justify-between text-[10px] font-bold">
                             <span className="text-gray-400">CS先行度</span>
@@ -286,16 +332,191 @@ export default function SoloqScoutPage() {
                         </div>
                       </div>
                     </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
+        {/* 🔑 登録プレイヤーのプレイスタイル分析・管理 (Junglepedia) */}
+        <div className="bg-white/[0.02] backdrop-blur-xl border border-white/10 p-6 rounded-3xl shadow-2xl space-y-6">
+          <div className="flex items-center gap-2 border-b border-white/5 pb-4">
+            <Sparkles className="w-6 h-6 text-amber-400" />
+            <div>
+              <h2 className="text-lg font-black text-white">登録プレイヤーのプレイスタイル管理 (Junglepedia)</h2>
+              <p className="text-xs text-gray-400">アクティブメンバーを選択し、プレイスタイル詳細やスタッツ差分の検証、およびRiot APIとの手動同期を実行します。</p>
+            </div>
+          </div>
+
+          {/* プレイヤー選択グリッド */}
+          <div className="flex flex-wrap gap-2">
+            {players.map((p) => (
+              <button
+                key={p.id}
+                onClick={() => handlePlayerSelect(p)}
+                className={`px-3 py-2 rounded-xl text-xs font-bold transition ${
+                  selectedPlayer?.id === p.id 
+                    ? 'bg-gradient-to-r from-cyan-500 to-indigo-500 text-black shadow-md' 
+                    : 'bg-white/5 hover:bg-white/10 text-gray-300 border border-white/5'
+                }`}
+              >
+                {p.name}
+              </button>
+            ))}
+          </div>
+
+          {/* 選択されたプレイヤーのプレイスタイル詳細 */}
+          {selectedPlayer && (
+            <div className="border-t border-white/5 pt-6 space-y-6">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div>
+                  <h3 className="text-base font-black text-white flex items-center gap-1.5">
+                    <span>{selectedPlayer.name} のプレイスタイル</span>
+                    {selectedPlayer.ign && (
+                      <span className="text-[10px] bg-white/10 text-gray-400 px-2 py-0.5 rounded border border-white/5">
+                        {selectedPlayer.ign}
+                      </span>
+                    )}
+                  </h3>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <div className="flex gap-1 bg-black/40 p-1 rounded-xl border border-white/5 text-[10px] font-black">
+                    <button
+                      type="button"
+                      onClick={() => setPlaystyleSource('custom')}
+                      className={`px-3 py-1.5 rounded-lg transition-all ${
+                        playstyleSource === 'custom'
+                          ? 'bg-cyan-505 bg-cyan-500 text-black shadow-md'
+                          : 'text-gray-400 hover:text-white hover:bg-white/5'
+                      }`}
+                    >
+                      KTMカスタム
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPlaystyleSource('soloq')}
+                      className={`px-3 py-1.5 rounded-lg transition-all ${
+                        playstyleSource === 'soloq'
+                          ? 'bg-amber-500 text-black shadow-md'
+                          : 'text-gray-400 hover:text-white hover:bg-white/5'
+                      }`}
+                    >
+                      ソロキュー (Riot)
+                    </button>
+                  </div>
+
+                  {playstyleSource === 'soloq' && (
+                    <button
+                      type="button"
+                      onClick={handleSyncSoloq}
+                      disabled={syncingSoloq}
+                      className="flex items-center gap-1 bg-gray-800 hover:bg-gray-700 text-amber-400 px-3 py-1.5 rounded-xl border border-gray-700 text-xs font-bold transition disabled:opacity-50"
+                    >
+                      <RefreshCw className={`w-3.5 h-3.5 ${syncingSoloq ? 'animate-spin' : ''}`} />
+                      同期
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {playerLoading ? (
+                <div className="flex justify-center py-12">
+                  <RefreshCw className="w-8 h-8 text-cyan-400 animate-spin" />
+                </div>
+              ) : playstyle ? (
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+                  
+                  {/* 左: スライダー */}
+                  <div className="md:col-span-7 space-y-6 bg-black/30 p-5 rounded-2xl border border-white/5">
+                    <h4 className="text-xs font-black text-gray-400 uppercase tracking-wider">分析スライダー (Playstyle Sliders)</h4>
+                    
+                    {(() => {
+                      const currentStyle = playstyle[playstyleSource] || {
+                        sliders: { aggressive: 50, farming: 50, supportive: 50 },
+                        tags: []
+                      };
+                      return (
+                        <div className="space-y-6">
+                          {/* 1. Aggressive スライダー */}
+                          <div className="space-y-2">
+                            <div className="flex justify-between text-xs font-bold">
+                              <span className="text-gray-400">Passive (自重型)</span>
+                              <span className="text-amber-400 font-mono font-black">{currentStyle.sliders.aggressive}%</span>
+                              <span className="text-rose-400">Aggressive (超攻撃型)</span>
+                            </div>
+                            <div className="h-3 w-full bg-gray-900 rounded-full overflow-hidden border border-white/5 p-[1px] relative">
+                              <div className="h-full rounded-full bg-gradient-to-r from-gray-700 via-amber-500 to-rose-600 transition-all duration-500" style={{ width: `${currentStyle.sliders.aggressive}%` }}></div>
+                            </div>
+                          </div>
+
+                          {/* 2. Farming スライダー */}
+                          <div className="space-y-2">
+                            <div className="flex justify-between text-xs font-bold">
+                              <span className="text-emerald-400">Ganking (戦闘関与)</span>
+                              <span className="text-cyan-400 font-mono font-black">{currentStyle.sliders.farming}%</span>
+                              <span className="text-blue-400">Farming (成長優先)</span>
+                            </div>
+                            <div className="h-3 w-full bg-gray-900 rounded-full overflow-hidden border border-white/5 p-[1px]">
+                              <div className="h-full rounded-full bg-gradient-to-r from-emerald-500 via-cyan-500 to-blue-600 transition-all duration-500" style={{ width: `${currentStyle.sliders.farming}%` }}></div>
+                            </div>
+                          </div>
+
+                          {/* 3. Supportive スライダー */}
+                          <div className="space-y-2">
+                            <div className="flex justify-between text-xs font-bold">
+                              <span className="text-indigo-400">Selfish (キャリー型)</span>
+                              <span className="text-purple-400 font-mono font-black">{currentStyle.sliders.supportive}%</span>
+                              <span className="text-pink-400">Supportive (献身型)</span>
+                            </div>
+                            <div className="h-3 w-full bg-gray-900 rounded-full overflow-hidden border border-white/5 p-[1px]">
+                              <div className="h-full rounded-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 transition-all duration-500" style={{ width: `${currentStyle.sliders.supportive}%` }}></div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+
+                  {/* 右: 自動プレイタグ */}
+                  <div className="md:col-span-5 space-y-4">
+                    <h4 className="text-xs font-black text-gray-400 uppercase tracking-wider">プレイスタイルタグ (Playstyle Tags)</h4>
+                    {(() => {
+                      const currentStyle = playstyle[playstyleSource] || { tags: [] };
+                      if (!currentStyle.tags || currentStyle.tags.length === 0) {
+                        return (
+                          <div className="text-center text-xs text-gray-500 py-8 border border-dashed border-white/5 rounded-xl">
+                            プレイタグがありません。
+                          </div>
+                        );
+                      }
+                      return (
+                        <div className="flex flex-col gap-3">
+                          {currentStyle.tags.map((tag: any) => (
+                            <div key={tag.id} className="group relative bg-white/[0.01] hover:bg-white/[0.04] border border-white/5 hover:border-cyan-500/20 p-3 rounded-2xl transition duration-200 cursor-help">
+                              <div className="flex items-center gap-2">
+                                <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></div>
+                                <span className="text-xs font-black text-cyan-300">{tag.name}</span>
+                              </div>
+                              <p className="text-[11px] text-gray-400 mt-1.5 leading-relaxed">{tag.description}</p>
+                              <div className="text-[9px] text-gray-500 font-mono mt-1 text-right">根拠: {tag.reason}</div>
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    })()}
                   </div>
 
                 </div>
-
-              </div>
-            )}
-
-          </div>
-        )}
+              ) : (
+                <div className="text-center text-xs text-gray-500 py-12 border border-dashed border-white/5 rounded-2xl">
+                  プレイスタイルデータが存在しません。ソロキュー同期を行うかスタッツを登録してください。
+                </div>
+              )}
+            </div>
+          )}
+        </div>
 
       </div>
     </div>

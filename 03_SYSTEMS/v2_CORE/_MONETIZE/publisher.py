@@ -226,9 +226,50 @@ class NotePublisher:
         """note.com に記事を下書き保存、あるいは有料公開する"""
         if PUBLISH_DISABLED:
             logger.warning("[Publisher] note下書き自動生成は現在一時停止されています（Dry Runとしてログ出力のみ）。")
-            herald.notify_progress(f"📝 **[Dry Run] noteへの下書き投稿をスキップしました（投稿一時停止中）**\nタイトル: {title}", portal_link=True, page="sns")
+            herald.notify_progress(f"📝 **[Dry Run] noteへの下書き投稿をスキップしました（投稿一時停止中）**\nタイトル: {title}", portal_link=True, page="drafts")
             return "https://note.com/dry-run-skipped"
 
+        # 1. 直接 HTTP API 経由での下書き作成を試行 (Playwright回避)
+        note_session = os.environ.get("NOTE_SESSION") or os.environ.get("NOTE_SES")
+        if note_session:
+            logger.info("🚀 [Publisher] NOTE_SESSION found. Attempting direct HTTP API upload to note.com...")
+            try:
+                import requests
+                headers = {
+                    "Cookie": f"note_ses={note_session}",
+                    "Content-Type": "application/json",
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+                }
+                payload = {
+                    "note": {
+                        "title": title,
+                        "body": markdown_body,
+                        "publish_status": "draft"
+                    }
+                }
+                api_url = "https://note.com/api/v2/notes"
+                res = requests.post(api_url, headers=headers, json=payload, timeout=20)
+                if res.status_code in (200, 201):
+                    res_data = res.json()
+                    note_data = res_data.get("data", {}) or res_data.get("note", {})
+                    share_url = note_data.get("share_url") or note_data.get("publish_preview_url")
+                    note_key = note_data.get("key")
+                    
+                    if not share_url and note_key:
+                        share_url = f"https://note.com/preview/n/{note_key}"
+                        
+                    if share_url:
+                        logger.info(f"✨ [Publisher] Direct API upload succeeded! Share URL: {share_url}")
+                        herald.notify_progress(f"📝 **note.com への下書き直接投稿が完了しました！(API版)**\nタイトル: `{title}`\nURL: {share_url}", portal_link=True, page="drafts")
+                        return share_url
+                    else:
+                        logger.warning("⚠️ [Publisher] API succeeded but no share URL or key returned. Falling back to Playwright...")
+                else:
+                    logger.warning(f"⚠️ [Publisher] Direct API upload failed (Status: {res.status_code}): {res.text}. Falling back to Playwright...")
+            except Exception as e:
+                logger.error(f"❌ [Publisher] Direct API upload error: {e}. Falling back to Playwright...")
+
+        # 2. Playwright でのブラウザ自動操作フォールバック
         with sync_playwright() as p:
             self.user_data_dir.parent.mkdir(parents=True, exist_ok=True)
             logger.info(f"Launching browser for note.com (Headless: {self.headless})...")
