@@ -17,48 +17,6 @@ const titleMapping: Record<string, string> = {
   '09_affiliate_spa': '💵 アフィリエイト収益化SPA'
 };
 
-// 設計書データを全件取得して JSON で返す GET ハンドラ
-export async function GET() {
-  try {
-    const docsDir = path.join(process.cwd(), 'public/design_docs');
-    
-    // Vercelサーバーレス等でディレクトリが見つからない場合は、静的フォールバックデータを返す
-    if (!fs.existsSync(docsDir)) {
-      console.warn('⚠️ [Design API GET] public/design_docs not found. Using static fallback docs.');
-      return NextResponse.json({ docs: systemDesignDocs });
-    }
-
-    const files = fs.readdirSync(docsDir).filter(f => f.endsWith('.md')).sort();
-    
-    // ファイルが存在しない場合も静的フォールバックを返す
-    if (files.length === 0) {
-      console.warn('⚠️ [Design API GET] No markdown files found. Using static fallback docs.');
-      return NextResponse.json({ docs: systemDesignDocs });
-    }
-
-    const docs: Record<string, { title: string; filename: string; content: string }> = {};
-
-    files.forEach(file => {
-      const filePath = path.join(docsDir, file);
-      const rawKey = path.basename(file, '.md');
-      const cleanKey = rawKey.replace(/^\d+_/g, '');
-      const content = fs.readFileSync(filePath, 'utf8');
-      const title = titleMapping[rawKey] || cleanKey;
-
-      docs[cleanKey] = {
-        title,
-        filename: file,
-        content
-      };
-    });
-
-    return NextResponse.json({ docs });
-  } catch (err: any) {
-    console.error('❌ [Design API GET] fs read failed. Falling back to static docs. Error:', err.message);
-    // エラー発生時もクラッシュせず、静的フォールバックを返して100%画面を描画させる
-    return NextResponse.json({ docs: systemDesignDocs });
-  }
-}
 
 export async function POST(req: NextRequest) {
   try {

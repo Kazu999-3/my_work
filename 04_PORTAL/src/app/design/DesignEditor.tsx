@@ -33,7 +33,7 @@ export default function DesignEditor() {
   useEffect(() => {
     const loadDocs = async () => {
       try {
-        const res = await fetch('/api/admin/design');
+        const res = await fetch('/api/design');
         if (res.ok) {
           const data = await res.json();
           if (data.docs && Object.keys(data.docs).length > 0) {
