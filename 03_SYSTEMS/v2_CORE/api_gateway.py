@@ -59,22 +59,81 @@ class APIGateway:
         """
         API呼び出し前に実行し、必要であれば待機（time.sleep）する。
         1分あたりの件数制限および最小コール間隔制限を厳密に管理する。
+        Upstash Redis (REST) を優先し、接続不可時は SQLite ローカル制限へ自動フォールバック。
         """
         if not api_key:
             return
 
-        cls.initialize_db()
         key_hash = hashlib.sha256(api_key.encode('utf-8')).hexdigest()
+        
+        # 1. Upstash Redis (REST) 接続の試行
+        redis_url = os.environ.get("UPSTASH_REDIS_REST_URL")
+        redis_token = os.environ.get("UPSTASH_REDIS_REST_TOKEN")
+        
+        if redis_url and redis_token:
+            try:
+                import requests
+                headers = {"Authorization": f"Bearer {redis_token}"}
+                now = time.time()
+                
+                # A. 429 冷却期間チェック
+                cooldown_url = f"{redis_url}/get/cooldown:{key_hash}"
+                r_cooldown = requests.get(cooldown_url, headers=headers, timeout=0.8)
+                if r_cooldown.status_code == 200:
+                    cooldown_val = r_cooldown.json().get("result")
+                    if cooldown_val:
+                        cooldown_until = float(cooldown_val)
+                        if cooldown_until > now:
+                            wait_time = cooldown_until - now
+                            logger.info(f"⏳ [APIGateway-Redis] {feature_name}: 冷却期間（429）のため {wait_time:.2f}秒 待機します...")
+                            time.sleep(wait_time)
+                            # 待機後、再確認のため再帰呼び出し
+                            return cls.wait_if_needed(api_key, feature_name)
 
+                # B. 最小リクエスト間隔 (MIN_INTERVAL) チェック
+                last_call_url = f"{redis_url}/get/last_call:{key_hash}"
+                r_last = requests.get(last_call_url, headers=headers, timeout=0.8)
+                if r_last.status_code == 200:
+                    last_val = r_last.json().get("result")
+                    if last_val:
+                        elapsed = now - float(last_val)
+                        if elapsed < cls.MIN_INTERVAL:
+                            wait_time = cls.MIN_INTERVAL - elapsed
+                            logger.info(f"⏳ [APIGateway-Redis] {feature_name}: 最小間隔制限のため {wait_time:.2f}秒 待機します...")
+                            time.sleep(wait_time)
+                            return cls.wait_if_needed(api_key, feature_name)
+
+                # C. 1分間最大リクエスト数 (RPM_LIMIT) チェック (窓口分数をキーにする)
+                minute_key = f"rpm:{key_hash}:{int(now // 60)}"
+                incr_url = f"{redis_url}/incr/{minute_key}"
+                r_incr = requests.post(incr_url, headers=headers, timeout=0.8)
+                if r_incr.status_code == 200:
+                    call_count = int(r_incr.json().get("result", 0))
+                    if call_count == 1:
+                        # 初回インクリメント時にキーの寿命を60秒に設定
+                        requests.post(f"{redis_url}/expire/{minute_key}/60", headers=headers, timeout=0.5)
+                        
+                    if call_count > cls.RPM_LIMIT:
+                        wait_time = 60.0 - (now % 60)
+                        logger.info(f"⏳ [APIGateway-Redis] {feature_name}: クォータ制限（1分最大{cls.RPM_LIMIT}回）のため {wait_time:.2f}秒 待機します...")
+                        time.sleep(wait_time)
+                        return cls.wait_if_needed(api_key, feature_name)
+
+                # 最終コール時刻の更新 (TTL 60秒)
+                requests.post(f"{redis_url}/set/last_call:{key_hash}/{now}/ex/60", headers=headers, timeout=0.5)
+                logger.info(f"🔑 [APIGateway-Redis] {feature_name}: APIコールチェック通過 (Redis)")
+                return  # Redis経由でのチェックに成功したため終了
+                
+            except Exception as e:
+                logger.warning(f"⚠️ [APIGateway-Redis] Redis同期に失敗したため、ローカルSQLiteへフォールバックします: {e}")
+
+        # 2. ローカル SQLite フォールバック
+        cls.initialize_db()
         while True:
             now = time.time()
             conn = cls._get_connection()
             try:
-                # IMMEDIATE トランザクションでロックを即座に取得（書き込みロックの競合回避）
                 conn.execute("BEGIN IMMEDIATE;")
-                
-                # 1時間以上前の古いレコードを削除してデータベースサイズを維持
-                conn.execute("DELETE FROM api_calls WHERE timestamp < ?", (now - 3600,))
                 
                 # 1. 最小リクエスト間隔 (MIN_INTERVAL) チェック
                 cursor = conn.execute(
@@ -89,9 +148,9 @@ class APIGateway:
                         wait_time = cls.MIN_INTERVAL - elapsed
                         conn.rollback()
                         conn.close()
-                        logger.info(f"⏳ [APIGateway] {feature_name}: 最小間隔制限（{cls.MIN_INTERVAL}秒）のため {wait_time:.2f}秒 待機します...")
+                        logger.info(f"⏳ [APIGateway-Local] {feature_name}: 最小間隔制限（{cls.MIN_INTERVAL}秒）のため {wait_time:.2f}秒 待機します...")
                         time.sleep(wait_time)
-                        continue  # 待機後、再度ロックを確保して検証し直す
+                        continue
 
                 # 2. 1分間あたりの最大リクエスト数 (RPM_LIMIT) チェック
                 window_start = now - 60.0
@@ -102,27 +161,26 @@ class APIGateway:
                 recent_calls = [r[0] for r in cursor.fetchall()]
                 
                 if len(recent_calls) >= cls.RPM_LIMIT:
-                    # 最も古いコールのタイムスタンプから60秒経過するまでの時間を計算
                     oldest_call = recent_calls[0]
                     wait_time = (oldest_call + 60.0) - now
                     if wait_time > 0:
                         conn.rollback()
                         conn.close()
-                        logger.info(f"⏳ [APIGateway] {feature_name}: クォータ制限（1分間最大{cls.RPM_LIMIT}回）のため {wait_time:.2f}秒 待機します...")
+                        logger.info(f"⏳ [APIGateway-Local] {feature_name}: クォータ制限（1分最大{cls.RPM_LIMIT}回）のため {wait_time:.2f}秒 待機します...")
                         time.sleep(wait_time)
-                        continue  # 待機後、再度ループ
+                        continue
 
-                # すべての条件をクリアしたので記録を書き込み、コミットして終了
+                # コミットして終了
                 conn.execute(
                     "INSERT INTO api_calls (timestamp, key_hash, feature_name) VALUES (?, ?, ?)",
                     (now, key_hash, feature_name)
                 )
                 conn.commit()
                 conn.close()
+                logger.info(f"🔑 [APIGateway-Local] {feature_name}: APIコールチェック通過 (SQLite)")
                 break
                 
-            except sqlite3.OperationalError as e:
-                # データベースロック競合時はコミットせず、ランダムな待機時間(ジッター)をおいてリトライし競合を回避
+            except sqlite3.OperationalError:
                 import random
                 try: conn.rollback()
                 except: pass
