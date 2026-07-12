@@ -19,7 +19,7 @@ const titleMapping: Record<string, string> = {
 // 設計書データを全件取得して JSON で返す GET ハンドラ
 export async function GET() {
   try {
-    const docsDir = path.join(process.cwd(), 'src/app/design/docs');
+    const docsDir = path.join(process.cwd(), 'public/design_docs');
     
     if (!fs.existsSync(docsDir)) {
       return NextResponse.json({ docs: {} });
@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: '不正なファイル名形式です。' }, { status: 400 });
     }
 
-    const rootDocsPath = path.join(process.cwd(), 'src/app/design/docs', filename);
+    const rootDocsPath = path.join(process.cwd(), 'public/design_docs', filename);
 
     // 1. 個別設計書ファイルを書き換え
     fs.writeFileSync(rootDocsPath, content, 'utf8');

@@ -57,7 +57,7 @@ export default function DesignEditor() {
     setEditContent(activeDoc.content);
   }, [activeDoc, mounted]);
 
-  if (!mounted || loading || Object.keys(docs).length === 0) {
+  if (!mounted || loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] bg-[#0f111a]/40 backdrop-blur-md rounded-3xl border border-white/10 p-12 max-w-7xl mx-auto shadow-2xl">
         <RefreshCw className="w-8 h-8 animate-spin text-[#c89b3c] mb-4" />
@@ -211,7 +211,15 @@ export default function DesignEditor() {
 
         {/* コンテンツ描画エリア (右側) */}
         <div className="flex-1 w-full bg-[#0f111a]/40 backdrop-blur-md rounded-3xl border border-white/10 p-6 md:p-12 shadow-2xl overflow-x-hidden">
-          {!isEditing ? (
+          {Object.keys(docs).length === 0 ? (
+            <div className="text-center py-12 space-y-3">
+              <AlertTriangle className="w-12 h-12 text-[#c89b3c] mx-auto animate-bounce" />
+              <h3 className="text-sm font-black text-yellow-200">設計書ファイルが読み込めませんでした</h3>
+              <p className="text-xs text-gray-400 max-w-md mx-auto leading-relaxed">
+                サーバー上の public/design_docs フォルダ内の配置、または API (/api/admin/design) の応答状態を確認してください。
+              </p>
+            </div>
+          ) : !isEditing ? (
             // プレビュー表示モード
             <div className="prose prose-invert prose-purple max-w-none">
               <ReactMarkdown
