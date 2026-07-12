@@ -19,6 +19,7 @@ export default function DesignEditor() {
   const [activeKey, setActiveKey] = useState<string>('overview');
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState<{ type: 'success' | 'error' | '', text: string }>({ type: '', text: '' });
+  const [errorMsg, setErrorMsg] = useState<string>('');
 
   // 選択中の設計書
   const activeDoc = useMemo(() => {
@@ -38,10 +39,15 @@ export default function DesignEditor() {
           const data = await res.json();
           if (data.docs && Object.keys(data.docs).length > 0) {
             setDocs(data.docs);
+          } else {
+            setErrorMsg('APIレスポンスの docs が空オブジェクトです。');
           }
+        } else {
+          setErrorMsg(`APIフェッチ失敗 (Status: ${res.status} ${res.statusText})`);
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error('Failed to fetch design docs:', err);
+        setErrorMsg(`クライアント側例外: ${err.message || err}`);
       } finally {
         setLoading(false);
         setMounted(true);
@@ -215,8 +221,11 @@ export default function DesignEditor() {
             <div className="text-center py-12 space-y-3">
               <AlertTriangle className="w-12 h-12 text-[#c89b3c] mx-auto animate-bounce" />
               <h3 className="text-sm font-black text-yellow-200">設計書ファイルが読み込めませんでした</h3>
-              <p className="text-xs text-gray-400 max-w-md mx-auto leading-relaxed">
-                サーバー上の public/design_docs フォルダ内の配置、または API (/api/admin/design) の応答状態を確認してください。
+              <p className="text-xs text-red-400 font-mono bg-red-950/20 py-2.5 px-4 rounded-xl border border-red-900/30 max-w-lg mx-auto leading-relaxed">
+                {errorMsg || '詳細なエラー情報はありません。'}
+              </p>
+              <p className="text-[10px] text-gray-500 max-w-md mx-auto leading-relaxed">
+                サーバー上の public/design_docs フォルダ内の配置、または API (/api/design) の応答状態を確認してください。
               </p>
             </div>
           ) : !isEditing ? (
