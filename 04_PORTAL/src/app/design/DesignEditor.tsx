@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Edit3, Save, X, RefreshCw, CheckCircle, AlertTriangle, BookOpen, ChevronRight, FileText } from 'lucide-react';
-import { DesignDoc } from './systemDesignMarkdown';
+import { DesignDoc, systemDesignDocs as clientDocs } from './systemDesignMarkdown';
 
 export default function DesignEditor({ initialDocs }: { initialDocs: Record<string, DesignDoc> }) {
-  const [docs, setDocs] = useState<Record<string, DesignDoc>>(initialDocs);
+  const [docs, setDocs] = useState<Record<string, DesignDoc>>(initialDocs || clientDocs || {});
   const [isEditing, setIsEditing] = useState(false);
   const [activeKey, setActiveKey] = useState<string>('overview');
   const [saving, setSaving] = useState(false);
@@ -21,6 +21,20 @@ export default function DesignEditor({ initialDocs }: { initialDocs: Record<stri
   // 編集中の内容を保持するテンポラリバッファ
   const [editTitle, setEditTitle] = useState(activeDoc.title);
   const [editContent, setEditContent] = useState(activeDoc.content);
+
+  // マウント時および Props 更新時のデータ強制同期 (ダブル・インジェクション)
+  useEffect(() => {
+    const targetDocs = (initialDocs && Object.keys(initialDocs).length > 0) ? initialDocs : clientDocs;
+    if (targetDocs && Object.keys(targetDocs).length > 0) {
+      setDocs(targetDocs);
+    }
+  }, [initialDocs]);
+
+  // 選択ドキュメントが変化した際にエディタバッファを自動同期 (Hydration遅延解決)
+  useEffect(() => {
+    setEditTitle(activeDoc.title);
+    setEditContent(activeDoc.content);
+  }, [activeDoc]);
 
   const handleStartEdit = () => {
     setEditTitle(activeDoc.title);
