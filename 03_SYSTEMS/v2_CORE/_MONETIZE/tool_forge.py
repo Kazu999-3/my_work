@@ -64,8 +64,28 @@ class ToolForge:
                 
         return trends, links
 
-    def _load_evolution_rules(self) -> str:
-        """自己進化ルールをロードする"""
+    def _load_evolution_rules(self, query_context: str = "GLOBAL") -> str:
+        """自己進化ルールをロードする (pgvector類似度検索 ＆ ローカルファイル自動フォールバック)"""
+        # 1. pgvector (Supabase) 経由での類似ルール検索の試行
+        try:
+            from google import genai
+            from v2_CORE.settings import settings
+            from v2_CORE.ai_helper import fetch_similar_insights
+            
+            api_key = settings.GEMINI_API_KEY_FREE or settings.GEMINI_API_KEY
+            if api_key:
+                client = genai.Client(api_key=api_key)
+                # コサイン類似検索を行い、最大 3 件の類似ルールを抽出
+                similar_insights = fetch_similar_insights(client, query_context, threshold=0.55, limit=3)
+                
+                if similar_insights and len(similar_insights) > 0:
+                    rules_str = "\n".join([f"- {item['insight_text']} (類似度: {item.get('similarity', 0):.2f})" for item in similar_insights])
+                    logger.info(f"🧬 [ToolForge] pgvector から {len(similar_insights)} 件の関連進化ルールを動的注入しました (コンテキスト: '{query_context}')")
+                    return f"\n\n【適用すべき自己進化ルール (過去のアクセス実績データに基づく学習ルール)】:\n{rules_str}"
+        except Exception as e:
+            logger.warning(f"⚠️ [ToolForge] pgvectorからのルール検索に失敗したため、ローカルフォールバックします: {e}")
+
+        # 2. ローカル物理ファイルからの読み込み (フォールバック)
         evo_file = Path("d:/my_work/01_INTEL/_MONETIZE/prompts/evolution_rules.md")
         if evo_file.exists():
             try:
@@ -195,7 +215,7 @@ class ToolForge:
             "tool_name": tool_name,
             "structured_knowledge": json.dumps(structured_knowledge, ensure_ascii=False, indent=2),
             "affiliate_link": affiliate_link,
-            "evolution_rules": self._load_evolution_rules()
+            "evolution_rules": self._load_evolution_rules(tool_name)
         }
         success, text = self._call_gateway("monetize_first_draft", variables)
         if not success:
@@ -226,7 +246,7 @@ class ToolForge:
             "first_draft": first_draft,
             "critique": critique,
             "affiliate_link": affiliate_link,
-            "evolution_rules": self._load_evolution_rules()
+            "evolution_rules": self._load_evolution_rules(tool_name)
         }
         success, text = self._call_gateway("monetize_rewrite_critique", variables)
         if not success:
@@ -256,7 +276,7 @@ class ToolForge:
             "note_title": note_title,
             "note_summary": note_summary,
             "x_hook_variation": x_hook_variation,
-            "evolution_rules": self._load_evolution_rules()
+            "evolution_rules": self._load_evolution_rules(note_title)
         }
         success, text = self._call_gateway("monetize_x_thread", variables)
         if not success:

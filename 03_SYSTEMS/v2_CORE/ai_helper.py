@@ -330,3 +330,68 @@ def notify_discord(message: str):
         logger.error(f"Discord Webhook Error: {e}")
 
 
+def get_embedding(client, text: str) -> list:
+    """
+    指定されたテキストを Gemini text-embedding-004 モデルを用いて 1536 次元のベクトルに変換する。
+    """
+    if not client:
+        logger.warning("[AIHelper] client is None. Cannot generate embedding.")
+        return []
+    
+    # 429 回避のためのレートリミッターチェック
+    api_key = os.environ.get("GEMINI_API_KEY_FREE") or os.environ.get("GEMINI_API_KEY")
+    if api_key:
+        APIGateway.wait_if_needed(api_key, feature_name="embedding")
+        
+    try:
+        from google.genai import types
+        config = types.EmbedContentConfig(output_dimensionality=1536)
+        response = client.models.embed_content(
+            model="gemini-embedding-2",
+            contents=text,
+            config=config
+        )
+        if response and response.embeddings:
+            return response.embeddings[0].values
+    except Exception as e:
+        logger.error(f"[AIHelper] Embedding generation failed: {e}")
+    return []
+
+
+def fetch_similar_insights(client, query_text: str, threshold: float = 0.6, limit: int = 3) -> list:
+    """
+    クエリテキストに関連する過去の進化ルール（Evolved Insights）を Supabase pgvector からコサイン類似度で検索する。
+    """
+    embedding = get_embedding(client, query_text)
+    if not embedding:
+        return []
+    
+    supabase_url = os.environ.get("SUPABASE_URL")
+    supabase_key = os.environ.get("SUPABASE_KEY")
+    if not supabase_url or not supabase_key:
+        logger.warning("[AIHelper] Supabase credentials not found. Skipping similar insights fetch.")
+        return []
+        
+    try:
+        import httpx
+        url = f"{supabase_url}/rest/v1/rpc/match_insights"
+        headers = {
+            "apikey": supabase_key,
+            "Authorization": f"Bearer {supabase_key}",
+            "Content-Type": "application/json"
+        }
+        payload = {
+            "query_embedding": embedding,
+            "match_threshold": threshold,
+            "match_count": limit
+        }
+        res = httpx.post(url, headers=headers, json=payload, timeout=5.0)
+        if res.status_code == 200:
+            return res.json()  # [{id, insight_text, similarity}, ...] の配列が返る
+        else:
+            logger.warning(f"[AIHelper] match_insights RPC failed (Status: {res.status_code}): {res.text}")
+    except Exception as e:
+        logger.error(f"[AIHelper] Error fetching similar insights: {e}")
+    return []
+
+

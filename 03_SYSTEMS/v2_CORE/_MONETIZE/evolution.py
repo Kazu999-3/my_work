@@ -184,14 +184,61 @@ def run_evolution_agent(state: SovereignState) -> SovereignState:
                 if match:
                     cleaned_rules = match.group(1).strip()
             
-            # 物理ファイルに上書き保存
+            # 1. 物理ファイルに上書き保存 (フォールバック互換性維持)
             evo_rules_file.parent.mkdir(parents=True, exist_ok=True)
             evo_rules_file.write_text(cleaned_rules, encoding="utf-8")
-            logger.info(f"💾 自己進化ルールを保存しました: {evo_rules_file}")
+            logger.info(f"💾 自己進化ルールをローカルファイルに保存しました: {evo_rules_file}")
+            
+            # 2. Supabase pgvector DB への各ルールのベクトル登録
+            from v2_CORE.ai_helper import get_embedding
+            import requests
+            
+            supabase_url = settings.SUPABASE_URL
+            supabase_key = settings.SUPABASE_KEY
+            champion_name = state.get("champion_name", "GLOBAL")
+            
+            # 箇条書きの各項目を抽出
+            lines = [line.strip() for line in cleaned_rules.split("\n") if line.strip().startswith("-")]
+            saved_count = 0
+            
+            if supabase_url and supabase_key:
+                for line in lines:
+                    insight_text = line.replace("- ", "", 1).strip()
+                    if not insight_text:
+                        continue
+                        
+                    # Embedding 生成
+                    embedding = get_embedding(evo.client, insight_text)
+                    if embedding:
+                        try:
+                            # pgvector DB へ REST API を経由して INSERT
+                            url = f"{supabase_url}/rest/v1/evolved_insights"
+                            headers = {
+                                "apikey": supabase_key,
+                                "Authorization": f"Bearer {supabase_key}",
+                                "Content-Type": "application/json",
+                                "Prefer": "return=minimal"
+                            }
+                            payload = {
+                                "champion": champion_name,
+                                "insight_text": insight_text,
+                                "embedding": embedding,
+                                "source_pv": int(state.get("source_pv", 0)) if state.get("source_pv") is not None else 0,
+                                "source_cvr": float(state.get("source_cvr", 0.0)) if state.get("source_cvr") is not None else 0.0
+                            }
+                            res = requests.post(url, headers=headers, json=payload, timeout=5.0)
+                            if res.status_code in (200, 201, 204):
+                                saved_count += 1
+                            else:
+                                logger.warning(f"⚠️ [Evolution] pgvectorインサート失敗 (Status: {res.status_code}): {res.text}")
+                        except Exception as insert_e:
+                            logger.error(f"❌ [Evolution] pgvectorインサートエラー: {insert_e}")
+                            
+                logger.info(f"🧬 [Evolution] {saved_count} 件の自己進化ルールを pgvector データベースへ蓄積完了")
             
             # state に差分やルール情報を記録
-            state["rule_updates"] = [line.strip() for line in cleaned_rules.split("\n") if line.strip().startswith("-")]
-            state["prompt_diff"] = {"updated_at": time.strftime("%Y-%m-%d %H:%M:%S")}
+            state["rule_updates"] = lines
+            state["prompt_diff"] = {"updated_at": time.strftime("%Y-%m-%d %H:%M:%S"), "pgvector_saved": saved_count}
             state["task_status"] = "completed"
             state["error_log"] = None
             logger.info("✅ [Evolution] プロンプト・ルールの進化完了")
