@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
 import { exec } from 'child_process';
+import { systemDesignDocs } from '../../../design/systemDesignMarkdown';
 
 const titleMapping: Record<string, string> = {
   '00_overview': '🌟 全体概要・アーキテクチャ',
@@ -21,11 +22,20 @@ export async function GET() {
   try {
     const docsDir = path.join(process.cwd(), 'public/design_docs');
     
+    // Vercelサーバーレス等でディレクトリが見つからない場合は、静的フォールバックデータを返す
     if (!fs.existsSync(docsDir)) {
-      return NextResponse.json({ docs: {} });
+      console.warn('⚠️ [Design API GET] public/design_docs not found. Using static fallback docs.');
+      return NextResponse.json({ docs: systemDesignDocs });
     }
 
     const files = fs.readdirSync(docsDir).filter(f => f.endsWith('.md')).sort();
+    
+    // ファイルが存在しない場合も静的フォールバックを返す
+    if (files.length === 0) {
+      console.warn('⚠️ [Design API GET] No markdown files found. Using static fallback docs.');
+      return NextResponse.json({ docs: systemDesignDocs });
+    }
+
     const docs: Record<string, { title: string; filename: string; content: string }> = {};
 
     files.forEach(file => {
@@ -44,8 +54,9 @@ export async function GET() {
 
     return NextResponse.json({ docs });
   } catch (err: any) {
-    console.error('❌ [Design API GET] Error:', err);
-    return NextResponse.json({ error: err.message || '設計書の読み込みに失敗しました。' }, { status: 500 });
+    console.error('❌ [Design API GET] fs read failed. Falling back to static docs. Error:', err.message);
+    // エラー発生時もクラッシュせず、静的フォールバックを返して100%画面を描画させる
+    return NextResponse.json({ docs: systemDesignDocs });
   }
 }
 
