@@ -3,61 +3,29 @@
 import { useState, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Edit3, Save, X, RefreshCw, CheckCircle, AlertTriangle, BookOpen, ChevronRight } from 'lucide-react';
-
-interface Section {
-  title: string;
-  content: string;
-  id: string;
-}
-
-// Markdown を ## 見出しごとにパースする関数
-function parseSections(md: string): Section[] {
-  const rawSections = md.split(/(?=^##\s+)/m);
-  const parsed: Section[] = [];
-
-  // ## の前のイントロ部
-  if (rawSections[0] && !rawSections[0].startsWith('## ')) {
-    parsed.push({
-      title: '🌟 プロジェクト概要',
-      content: rawSections[0],
-      id: 'intro'
-    });
-  }
-
-  rawSections.forEach((sec, idx) => {
-    if (!sec.startsWith('## ')) return;
-    const lines = sec.split('\n');
-    const titleLine = lines[0].replace('## ', '').trim();
-    
-    parsed.push({
-      title: titleLine,
-      content: sec,
-      id: `section-${idx}`
-    });
-  });
-
-  return parsed;
-}
+import { Edit3, Save, X, RefreshCw, CheckCircle, AlertTriangle, BookOpen, ChevronRight, FileText } from 'lucide-react';
+import { systemDesignDocs, DesignDoc } from './systemDesignMarkdown';
 
 export default function DesignEditor({ initialMarkdown }: { initialMarkdown: string }) {
+  // initialMarkdown は下位互換として受け取るが、本実装では systemDesignDocs 辞書をマスターとして使用します
+  const [docs, setDocs] = useState<Record<string, DesignDoc>>(systemDesignDocs);
   const [isEditing, setIsEditing] = useState(false);
-  const [markdown, setMarkdown] = useState(initialMarkdown);
-  const [tempMarkdown, setTempMarkdown] = useState(initialMarkdown);
+  const [activeKey, setActiveKey] = useState<string>('overview');
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState<{ type: 'success' | 'error' | '', text: string }>({ type: '', text: '' });
-  
-  // 選択中の章の ID
-  const [activeSectionId, setActiveSectionId] = useState<string>('intro');
 
-  // セクションリストを生成
-  const sections = useMemo(() => parseSections(markdown), [markdown]);
-  const activeSection = useMemo(() => {
-    return sections.find(s => s.id === activeSectionId) || sections[0] || { title: '', content: '' };
-  }, [sections, activeSectionId]);
+  // 選択中の設計書
+  const activeDoc = useMemo(() => {
+    return docs[activeKey] || docs['overview'] || { title: '未設定', content: '', filename: '' };
+  }, [docs, activeKey]);
+
+  // 編集中の内容を保持するテンポラリバッファ
+  const [editTitle, setEditTitle] = useState(activeDoc.title);
+  const [editContent, setEditContent] = useState(activeDoc.content);
 
   const handleStartEdit = () => {
-    setTempMarkdown(markdown);
+    setEditTitle(activeDoc.title);
+    setEditContent(activeDoc.content);
     setIsEditing(true);
     setStatus({ type: '', text: '' });
   };
@@ -73,17 +41,30 @@ export default function DesignEditor({ initialMarkdown }: { initialMarkdown: str
       const res = await fetch('/api/admin/design', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: tempMarkdown })
+        body: JSON.stringify({ 
+          key: activeKey,
+          filename: activeDoc.filename,
+          title: editTitle,
+          content: editContent 
+        })
       });
 
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || '保存に失敗しました。');
 
-      setMarkdown(tempMarkdown);
+      // ローカル状態を更新
+      setDocs(prev => ({
+        ...prev,
+        [activeKey]: {
+          ...prev[activeKey],
+          title: editTitle,
+          content: editContent
+        }
+      }));
       setIsEditing(false);
       setStatus({ 
         type: 'success', 
-        text: '✅ 設計書を保存しました！バックグラウンドで自動ビルドと本番デプロイが開始されました。' 
+        text: `✅ 「${activeDoc.title}」を保存しました！バックグラウンドで自動デプロイが開始されました。` 
       });
     } catch (err: any) {
       setStatus({ type: 'error', text: `❌ エラー: ${err.message}` });
@@ -103,7 +84,7 @@ export default function DesignEditor({ initialMarkdown }: { initialMarkdown: str
             <span>SOVEREIGN SYSTEM DESIGN</span>
           </h2>
           <p className="text-xs text-gray-400">
-            {isEditing ? "設計書を編集中です。変更後は「保存して本番適用」で自動デプロイされます。" : "システム設計・仕様書のプレビュー表示"}
+            {isEditing ? `「${activeDoc.title}」を編集中です。変更後は自動デプロイされます。` : "各機能ごとの個別詳細設計書プレビュー"}
           </p>
         </div>
 
@@ -114,7 +95,7 @@ export default function DesignEditor({ initialMarkdown }: { initialMarkdown: str
               className="flex items-center justify-center gap-2 bg-[#c89b3c]/10 border border-[#c89b3c] hover:bg-[#c89b3c] hover:text-black text-[#c89b3c] px-4 py-2 rounded-xl font-bold text-xs transition-all duration-300 cursor-pointer w-full sm:w-auto"
             >
               <Edit3 size={16} />
-              設計書を編集する
+              この機能の設計書を編集する
             </button>
           ) : (
             <>
@@ -154,26 +135,30 @@ export default function DesignEditor({ initialMarkdown }: { initialMarkdown: str
       {/* メインレイアウト */}
       <div className="flex flex-col md:flex-row gap-6 items-start">
         
-        {/* プレビュー表示時の目次サイドメニュー (左側) */}
+        {/* 機能別目次サイドメニュー (左側) */}
         {!isEditing && (
           <aside className="w-full md:w-72 shrink-0 bg-[#0f111a]/40 backdrop-blur-md rounded-3xl border border-white/10 p-4 space-y-1.5 shadow-xl">
-            <div className="px-3 py-2 text-[10px] font-black text-gray-500 uppercase tracking-widest border-b border-white/5 mb-2">
-              設計書 目次 (Chapters)
+            <div className="px-3 py-2 text-[10px] font-black text-gray-500 uppercase tracking-widest border-b border-white/5 mb-2 flex items-center gap-1.5">
+              <FileText className="w-4 h-4 text-gray-500" />
+              <span>機能別設計書一覧</span>
             </div>
             <div className="space-y-1 max-h-[70vh] overflow-y-auto custom-scrollbar pr-1">
-              {sections.map((sec) => (
+              {Object.entries(docs).map(([key, sec]) => (
                 <button
-                  key={sec.id}
-                  onClick={() => setActiveSectionId(sec.id)}
+                  key={key}
+                  onClick={() => {
+                    setActiveKey(key);
+                    setStatus({ type: '', text: '' });
+                  }}
                   className={`w-full text-left px-3 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between group ${
-                    activeSectionId === sec.id
+                    activeKey === key
                       ? 'bg-[#c89b3c]/15 border border-[#c89b3c]/30 text-yellow-200'
                       : 'border border-transparent text-gray-400 hover:text-white hover:bg-white/5'
                   }`}
                 >
                   <span className="truncate pr-2">{sec.title}</span>
                   <ChevronRight className={`w-3.5 h-3.5 shrink-0 transition-transform ${
-                    activeSectionId === sec.id ? 'text-yellow-200 translate-x-0.5' : 'text-gray-600 group-hover:text-gray-300'
+                    activeKey === key ? 'text-yellow-200 translate-x-0.5' : 'text-gray-600 group-hover:text-gray-300'
                   }`} />
                 </button>
               ))}
@@ -184,7 +169,7 @@ export default function DesignEditor({ initialMarkdown }: { initialMarkdown: str
         {/* コンテンツ描画エリア (右側) */}
         <div className="flex-1 w-full bg-[#0f111a]/40 backdrop-blur-md rounded-3xl border border-white/10 p-6 md:p-12 shadow-2xl overflow-x-hidden">
           {!isEditing ? (
-            // プレビュー表示モード (選択されたセクションのみレンダリング)
+            // プレビュー表示モード
             <div className="prose prose-invert prose-purple max-w-none">
               <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
@@ -215,27 +200,39 @@ export default function DesignEditor({ initialMarkdown }: { initialMarkdown: str
                   td: ({node, ...props}) => <td className="px-4 py-3 text-xs text-gray-300" {...props} />,
                 }}
               >
-                {activeSection.content}
+                {activeDoc.content}
               </ReactMarkdown>
             </div>
           ) : (
-            // 編集エディタモード (マークダウン全体をそのまま編集)
+            // 編集エディタモード
             <div className="space-y-4">
               <div className="flex justify-between items-center pb-2 border-b border-white/10">
                 <span className="text-xs font-bold text-gray-400 flex items-center gap-1.5">
-                  <Edit3 size={14} /> Markdown エディタ
+                  <Edit3 size={14} /> Markdown エディタ: {activeDoc.title}
                 </span>
                 <span className="text-[10px] bg-white/5 px-2 py-0.5 rounded-full border border-white/10 text-gray-500 font-mono">
-                  {tempMarkdown.length} 文字
+                  {editContent.length} 文字
                 </span>
               </div>
-              <textarea
-                value={tempMarkdown}
-                onChange={(e) => setTempMarkdown(e.target.value)}
-                disabled={saving}
-                className="w-full min-h-[60vh] bg-[#07080d] border border-white/10 rounded-2xl p-6 font-mono text-sm text-gray-300 leading-relaxed focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all shadow-inner resize-y"
-                placeholder="# 設計書をここに入力..."
-              />
+              <div className="space-y-2">
+                <label className="text-xs text-[#c89b3c] font-bold">タイトル設定</label>
+                <input 
+                  type="text" 
+                  value={editTitle} 
+                  onChange={e => setEditTitle(e.target.value)} 
+                  className="w-full bg-black/50 border border-white/10 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-[#c89b3c] transition-colors"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs text-[#c89b3c] font-bold">本文 (Markdown)</label>
+                <textarea
+                  value={editContent}
+                  onChange={(e) => setEditContent(e.target.value)}
+                  disabled={saving}
+                  className="w-full min-h-[60vh] bg-[#07080d] border border-white/10 rounded-2xl p-6 font-mono text-sm text-gray-300 leading-relaxed focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all shadow-inner resize-y"
+                  placeholder="# 設計書をここに入力..."
+                />
+              </div>
             </div>
           )}
         </div>

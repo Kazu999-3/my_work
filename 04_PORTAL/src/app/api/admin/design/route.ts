@@ -5,26 +5,26 @@ import { exec } from 'child_process';
 
 export async function POST(req: NextRequest) {
   try {
-    const { content } = await req.json();
+    const { filename, content } = await req.json();
 
-    if (!content || typeof content !== 'string') {
-      return NextResponse.json({ error: '無効なコンテンツです。' }, { status: 400 });
+    if (!filename || typeof filename !== 'string' || !content || typeof content !== 'string') {
+      return NextResponse.json({ error: '無効なファイル名またはコンテンツです。' }, { status: 400 });
     }
 
-    const rootPath = path.join(process.cwd(), '../SYSTEM_DESIGN.md');
-    const localPath = path.join(process.cwd(), 'src/app/design/SYSTEM_DESIGN.md');
+    // セキュリティチェック: ディレクトリトラバーサル防止 (ファイル名が英数字、アンダースコア、ハイフン、ドットのみであることを担保)
+    if (!/^[a-zA-Z0-9_\-\.]+\.md$/.test(filename)) {
+      return NextResponse.json({ error: '不正なファイル名形式です。' }, { status: 400 });
+    }
 
-    // 1. プロジェクトルートの設計書を書き換え
-    fs.writeFileSync(rootPath, content, 'utf8');
+    const rootDocsPath = path.join(process.cwd(), '../design_docs', filename);
 
-    // 2. ポータル内の設計書も書き換え (同期)
-    fs.writeFileSync(localPath, content, 'utf8');
+    // 1. 個別設計書ファイルを書き換え
+    fs.writeFileSync(rootDocsPath, content, 'utf8');
+    console.log(`📝 [Design API] Updated individual doc: ${filename}`);
 
-    console.log('📝 [Design API] SYSTEM_DESIGN.md has been updated from portal.');
-
-    // 3. 非同期で Git Commit & Push を実行 (デプロイキック)
-    // 処理待ちを避けるため、コマンドはノンブロッキングで非同期実行します
-    const gitCommand = 'git add ../SYSTEM_DESIGN.md src/app/design/SYSTEM_DESIGN.md && git commit -m "docs: update system design via portal dashboard" && git push origin master';
+    // 2. copy_design.js を動かして portal 内の TS モジュールおよび Markdown コピーを同期・ビルド
+    // 3. 非同期で Git Commit & Push を実行 (本番Vercelデプロイフック)
+    const gitCommand = 'node copy_design.js && git add ../design_docs/ src/app/design/ && git commit -m "docs: update design document ' + filename + ' via portal" && git push origin master';
     
     exec(gitCommand, { cwd: process.cwd() }, (error, stdout, stderr) => {
       if (error) {

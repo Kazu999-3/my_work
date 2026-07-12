@@ -1,5 +1,5 @@
 import DesignEditor from './DesignEditor';
-import { systemDesignMarkdown } from './systemDesignMarkdown';
+import { systemDesignDocs } from './systemDesignMarkdown';
 
 export const metadata = {
   title: "システム設計書 | Sovereign Command Center",
@@ -7,9 +7,10 @@ export const metadata = {
 };
 
 export default function DesignPage() {
+  const defaultMarkdown = systemDesignDocs['overview']?.content || '';
   return (
     <div className="min-h-screen bg-[#06070a] text-gray-100 p-6 md:p-12 overflow-y-auto">
-      <DesignEditor initialMarkdown={systemDesignMarkdown} />
+      <DesignEditor initialMarkdown={defaultMarkdown} />
     </div>
   );
 }
