@@ -561,7 +561,32 @@ class SovereignState(TypedDict):
     rule_updates: List[str]     # 共通ルール更新
 ```
 
----
+## 10. Webポータル＆KTM運用全機能詳細設計マトリクス (Full Functional Specification)
 
+本セクションでは、Webポータル（Next.js）およびKTM Bot（CF Workers / GAS）のすべての稼働機能を詳細仕様とともに網羅します。本仕様は機能の改修・削除における設計上の基準となります。
+
+### 10-1. 機能一覧と連携定義
+
+| 機能名 | 公開区分 | URLパス / 実行環境 | 主要API / スクリプト | 関連データベース・テーブル | 処理概要と連携仕様 |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **⚖️ MMRバランサー・チーム分け** | 一般 | `/balancer` | `/api/balancer` (Next.js) | `ktm_players` | 出欠メンバーとロール希望（こだわり度）を入力し、合計ペナルティが最小のペアを自動算出する。 |
+| **📋 対戦結果登録** | 一般 | `/balancer/record` | `/api/match/record` | `ktm_matches`, `ktm_players` | 試合スコアを入力し、対面Eloレーティング（K=32）に基づき全員のMMRを更新・保存する。 |
+| **🏆 プレイヤーリーダーボード** | 一般 | `/leaderboard` | `/api/player/stats` | `ktm_players` | MMRランク順位、勝率、使用チャンピオン、プレイスタイルタグ・スライダーを一覧表示する。 |
+| **👤 プレイヤー詳細プロフィール** | 一般 | `/player/[id]` | `/api/player/profile`, `/api/player/sync-soloq` | `ktm_players` (metadata.playstyle_cache) | 9分時点のゴールド/XP/CS差分を示す非対称バーグラフ、プレイ傾向スライダー、ソロキュー履歴同期。 |
+| **⚔️ レーン対面分析 (VS Analytics)** | 一般 | `/balancer` 内確定モーダル | (バランサー内インライン) | `ktm_players` (metadata.playstyle_cache) | チーム分け確定後、5レーン対面ペアのプレイスタイル比較と動的マッチアップアドバイス（Tips）を表示する。 |
+| **🌳 ジャングル周回統計ライブラリ** | 一般 | `/champions/clears` | (フロントエンド静的データ) | - | 主要チャンプの周回タイム目標、カイトのコツを整理。インライン YouTube プレイヤーで再生可能。 |
+| **🔍 ソロQ対面リアルタイム偵察** | 管理者 | `/admin/soloq` | `/api/admin/live-match` | (Riot API, Spectator-V5) | 指定サモナーが試合中か検知し、敵のプレイスタイル、開始バフ・初動Gank予測、対策アドバイスを表示。 |
+| **⚙️ MMR一括再計算** | 管理者 | `/ktm-admin` | `/api/mmr/rebuild` | `ktm_matches`, `ktm_players` | 過去の全戦績から時系列に沿って全プレイヤーの各レーンMMR・総合MMRを再計算・更新する。 |
+| **🩺 MMR整合性検証** | 管理者 | `/ktm-admin` | `/api/mmr/check-integrity` | `ktm_players`, `ktm_matches` | メモリ上累積シミュレーション値と保存値の差を検証。浮動小数点丸め誤差（しきい値2）を考慮して判定。 |
+| **🧠 自動要約ナレッジベース** | 管理者 | `/admin/knowledge` | `/api/admin/knowledge/add`, `/api/admin/knowledge/sync` | `personal_knowledge`, `matchup_sentinel` | メモや動画要約からAIでMarkdown記事を生成。対戦アドバイス用DB `matchup_sentinel` へマージ同期。 |
+| **📺 YouTube自動解析キュー** | 管理者 | `/admin/youtube` | `/api/admin/youtube` | `kirei_queue.json` (ローカル) | 攻略動画の字幕から攻略バイブルをAI自動生成するタスクキュー。エラー動画の一括再試行機能を搭載。 |
+| **💵 アフィリエイト収益化SPA** | 管理者 | `/admin/dashboard` 内 | `/api/admin/affiliate/*` | `note_pv_history`, `affiliate_links.json` | 案件リンク管理、PV分析（Geminiフィードバック）、自動記事生成バッチ（ドライラン/本番）の監視コンソール。 |
+
+### 10-2. 機能改修・削除時の設計基準
+*   **非破壊性の維持**: 各機能はデータ取得（SELECT）や, キャッシュ更新（UPSERT）を主軸とするため、他の機能に破壊的影響を与えない独立構成とする。
+*   **絶対パスエイリアスの禁止**: Vercel等でのビルドエラーを防ぐため、Next.js 階層内では絶対パスエイリアス（`@/`）を禁止し, 相対パス（`../../` 等）を厳守する。
+*   **フォールバックガード**: Riot APIやGemini APIキーの未設定・クォータエラー時は、システム全体が停止しないようダミーデータ（モック）のフォールバックを自動で起動する。
+
+---
 
 🛡️ **Sovereign OS & KTM Bot Detailed System Design Specification - Documented by Antigravity**
