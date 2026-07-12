@@ -4,11 +4,17 @@ import { useState, useMemo, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Edit3, Save, X, RefreshCw, CheckCircle, AlertTriangle, BookOpen, ChevronRight, FileText } from 'lucide-react';
-import { DesignDoc, systemDesignDocs as clientDocs } from './systemDesignMarkdown';
 
-export default function DesignEditor({ initialDocs }: { initialDocs: Record<string, DesignDoc> }) {
+interface DesignDoc {
+  title: string;
+  content: string;
+  filename: string;
+}
+
+export default function DesignEditor() {
   const [mounted, setMounted] = useState(false);
-  const [docs, setDocs] = useState<Record<string, DesignDoc>>(initialDocs || clientDocs || {});
+  const [loading, setLoading] = useState(true);
+  const [docs, setDocs] = useState<Record<string, DesignDoc>>({});
   const [isEditing, setIsEditing] = useState(false);
   const [activeKey, setActiveKey] = useState<string>('overview');
   const [saving, setSaving] = useState(false);
@@ -23,28 +29,35 @@ export default function DesignEditor({ initialDocs }: { initialDocs: Record<stri
   const [editTitle, setEditTitle] = useState(activeDoc.title);
   const [editContent, setEditContent] = useState(activeDoc.content);
 
-  // マウント検知
+  // マウント時に API から設計書データをフェッチして初期化
   useEffect(() => {
-    setMounted(true);
+    const loadDocs = async () => {
+      try {
+        const res = await fetch('/api/admin/design');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.docs && Object.keys(data.docs).length > 0) {
+            setDocs(data.docs);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch design docs:', err);
+      } finally {
+        setLoading(false);
+        setMounted(true);
+      }
+    };
+    loadDocs();
   }, []);
 
-  // マウント時および Props 更新時のデータ強制同期 (ダブル・インジェクション)
-  useEffect(() => {
-    if (!mounted) return;
-    const targetDocs = (initialDocs && Object.keys(initialDocs).length > 0) ? initialDocs : clientDocs;
-    if (targetDocs && Object.keys(targetDocs).length > 0) {
-      setDocs(targetDocs);
-    }
-  }, [initialDocs, mounted]);
-
-  // 選択ドキュメントが変化した際にエディタバッファを自動同期 (Hydration遅延解決)
+  // 選択ドキュメントが変化した際にエディタバッファを自動同期
   useEffect(() => {
     if (!mounted) return;
     setEditTitle(activeDoc.title);
     setEditContent(activeDoc.content);
   }, [activeDoc, mounted]);
 
-  if (!mounted) {
+  if (!mounted || loading || Object.keys(docs).length === 0) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] bg-[#0f111a]/40 backdrop-blur-md rounded-3xl border border-white/10 p-12 max-w-7xl mx-auto shadow-2xl">
         <RefreshCw className="w-8 h-8 animate-spin text-[#c89b3c] mb-4" />
