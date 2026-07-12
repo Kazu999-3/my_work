@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "node copy_design.js && next dev",
-    "build": "node copy_design.js && next build",
+    "build": "next build",
     "start": "next start",
     "lint": "eslint"
   },
