@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import { supabase } from "../../../lib/supabaseClient";
 import { 
   Users, 
   Search, 
@@ -26,78 +25,8 @@ export default function SoloqScoutPage() {
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState("");
 
-  // 管理者向け登録プレイヤープレイスタイル管理用のState
-  const [players, setPlayers] = useState<any[]>([]);
-  const [selectedPlayer, setSelectedPlayer] = useState<any>(null);
-  const [playstyle, setPlaystyle] = useState<any>(null);
-  const [playstyleSource, setPlaystyleSource] = useState<'custom' | 'soloq'>('custom');
-  const [syncingSoloq, setSyncingSoloq] = useState(false);
-  const [playerLoading, setPlayerLoading] = useState(false);
-
   // 鬼コーチ対策3箇条用のスライドインデックス
   const [adviceIndex, setAdviceIndex] = useState(0);
-
-  // アクティブプレイヤー一覧をロード
-  useEffect(() => {
-    async function loadPlayers() {
-      try {
-        const { data, error: err } = await supabase
-          .from("ktm_players")
-          .select("*")
-          .order("name", { ascending: true });
-        if (err) throw err;
-        setPlayers(data || []);
-      } catch (e) {
-        console.error("Failed to load players for playstyle manager:", e);
-      }
-    }
-    loadPlayers();
-  }, []);
-
-  // 選択プレイヤーのプレイスタイル詳細をフェッチ
-  const handlePlayerSelect = async (player: any) => {
-    setSelectedPlayer(player);
-    setPlayerLoading(true);
-    setPlaystyle(null);
-    try {
-      const res = await fetch(`/api/player/profile?name=${encodeURIComponent(player.name)}`);
-      const data = await res.json();
-      if (res.ok && data.playstyle) {
-        setPlaystyle(data.playstyle);
-      }
-    } catch (err) {
-      console.error("Failed to load playstyle:", err);
-    } finally {
-      setPlayerLoading(false);
-    }
-  };
-
-  // 選択プレイヤーのソロキューデータを同期＆プレイスタイル更新
-  const handleSyncSoloq = async () => {
-    if (!selectedPlayer) return;
-    setSyncingSoloq(true);
-    try {
-      const res = await fetch('/api/player/sync-soloq', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: selectedPlayer.name })
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || '同期エラー');
-      
-      alert(data.message);
-      if (data.playstyle) {
-        setPlaystyle((prev: any) => ({
-          ...prev,
-          soloq: data.playstyle
-        }));
-      }
-    } catch (err: any) {
-      alert(`❌ ソロキュー同期失敗: ${err.message}`);
-    } finally {
-      setSyncingSoloq(false);
-    }
-  };
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -286,7 +215,7 @@ export default function SoloqScoutPage() {
                         {result.playstyle.tags.map((tag: any) => (
                           <div 
                             key={tag.id}
-                            className="bg-cyan-500/10 border border-cyan-500/20 px-3 py-2 rounded-2xl space-y-1"
+                            className="bg-cyan-505 bg-cyan-500/10 border border-cyan-500/20 px-3 py-2 rounded-2xl space-y-1"
                           >
                             <div className="text-xs font-black text-cyan-300">{tag.name}</div>
                             <p className="text-[10px] text-gray-400 leading-relaxed">{tag.description}</p>
@@ -345,6 +274,81 @@ export default function SoloqScoutPage() {
                     </div>
                   )}
 
+                  {/* 敵チーム全員の簡易分析グリッド */}
+                  {result.allParticipants && result.allParticipants.some((p: any) => p.isEnemy) && (
+                    <div className="bg-white/[0.02] border border-white/10 rounded-3xl p-6 shadow-xl space-y-4">
+                      <h3 className="text-sm font-black text-white uppercase tracking-wider flex items-center gap-2 border-b border-white/5 pb-3">
+                        <Users className="w-4 h-4 text-cyan-400" />
+                        <span>敵チーム メンバー情報 & ガンク脆弱レーン特定</span>
+                      </h3>
+
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-xs">
+                          <thead>
+                            <tr className="text-gray-500 border-b border-white/5 pb-2">
+                              <th className="pb-2 font-bold uppercase tracking-wider">プレイヤー / チャンピオン</th>
+                              <th className="pb-2 font-bold uppercase tracking-wider text-center">ロール</th>
+                              <th className="pb-2 font-bold uppercase tracking-wider text-center">ソロQ勝率</th>
+                              <th className="pb-2 font-bold uppercase tracking-wider text-right">ステータス / アラート</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-white/5">
+                            {result.allParticipants
+                              .filter((p: any) => p.isEnemy)
+                              .map((p: any, idx: number) => {
+                                const champName = getChampNameFromId(p.championId);
+                                return (
+                                  <tr key={idx} className="hover:bg-white/[0.02] transition-colors">
+                                    <td className="py-3 flex items-center gap-2.5">
+                                      <img 
+                                        src={getChampIcon(champName)} 
+                                        alt={champName} 
+                                        className="w-8 h-8 rounded-lg border border-white/10 shadow"
+                                      />
+                                      <div>
+                                        <div className="font-black text-white">{p.name}</div>
+                                        <div className="text-[10px] text-cyan-400 font-bold">{champName}</div>
+                                      </div>
+                                    </td>
+                                    <td className="py-3 text-center font-mono font-bold text-gray-400">
+                                      {p.role}
+                                    </td>
+                                    <td className="py-3 text-center">
+                                      <span className={`font-mono font-black ${
+                                        p.winRate >= 55 ? 'text-emerald-400' : p.winRate <= 40 ? 'text-rose-400 animate-pulse' : 'text-amber-400'
+                                      }`}>
+                                        {p.winRate}%
+                                      </span>
+                                    </td>
+                                    <td className="py-3 text-right space-y-1">
+                                      {p.isOtp && (
+                                        <span className="inline-block text-[9px] text-orange-400 bg-orange-500/10 px-2 py-0.5 rounded border border-orange-500/20 font-black">
+                                          🔥 OTP ({p.otpChampion})
+                                        </span>
+                                      )}
+                                      {p.isTilted && (
+                                        <span className="inline-block text-[9px] text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/20 font-black ml-1">
+                                          ❄️ 連敗ティルト ({p.consecutiveLosses}連敗)
+                                        </span>
+                                      )}
+                                      {p.isVulnerable && (
+                                        <span className="inline-block text-[9px] text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded border border-rose-500/20 font-black ml-1 animate-pulse">
+                                          🎯 集中Gank推奨 (被FB: {p.fbRate}%)
+                                        </span>
+                                      )}
+                                      {!p.isOtp && !p.isTilted && !p.isVulnerable && (
+                                        <span className="text-[10px] text-gray-500 font-bold">特記事項なし</span>
+                                      )}
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+
                 </div>
 
                 <div className="space-y-6">
@@ -367,6 +371,38 @@ export default function SoloqScoutPage() {
                         {result.firstGankTarget}
                       </div>
                     </div>
+
+                    {/* 対JG推奨カウンター & 解説 */}
+                    {result.counters && result.counters.length > 0 && (
+                      <div className="space-y-3 pt-3 border-t border-white/5">
+                        <h4 className="text-[10px] text-gray-500 font-black tracking-wider uppercase flex items-center gap-1.5">
+                          <Zap className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
+                          <span>対JG推奨カウンター & 解説</span>
+                        </h4>
+                        <div className="space-y-3">
+                          {result.counters.map((c: any, idx: number) => (
+                            <div key={idx} className="bg-black/40 p-4 rounded-2xl border border-amber-500/10 space-y-2">
+                              <div className="flex justify-between items-center">
+                                <div className="flex items-center gap-2">
+                                  <img 
+                                    src={getChampIcon(c.championName)} 
+                                    alt={c.championName} 
+                                    className="w-7 h-7 rounded-lg border border-white/10"
+                                  />
+                                  <span className="text-xs font-black text-amber-300">{c.championName}</span>
+                                </div>
+                                <span className="text-[10px] font-mono font-black text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+                                  対面勝率 {c.winRate}%
+                                </span>
+                              </div>
+                              <p className="text-[10px] text-gray-300 leading-relaxed font-medium">
+                                {c.reason}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
 
                     <div className="space-y-3 pt-3 border-t border-white/5">
                       <h4 className="text-[10px] text-gray-500 font-black tracking-wider uppercase">敵の平均9分スタッツ先行度</h4>
@@ -399,186 +435,17 @@ export default function SoloqScoutPage() {
           </div>
         )}
 
-        {/* 🔑 登録プレイヤーのプレイスタイル分析・管理 (Junglepedia) */}
-        <div className="bg-white/[0.02] backdrop-blur-xl border border-white/10 p-6 rounded-3xl shadow-2xl space-y-6">
-          <div className="flex items-center gap-2 border-b border-white/5 pb-4">
-            <Sparkles className="w-6 h-6 text-amber-400" />
-            <div>
-              <h2 className="text-lg font-black text-white">登録プレイヤーのプレイスタイル管理 (Junglepedia)</h2>
-              <p className="text-xs text-gray-400">アクティブメンバーを選択し、プレイスタイル詳細やスタッツ差分の検証、およびRiot APIとの手動同期を実行します。</p>
-            </div>
-          </div>
-
-          {/* プレイヤー選択グリッド */}
-          <div className="flex flex-wrap gap-2">
-            {players.map((p) => (
-              <button
-                key={p.id}
-                onClick={() => handlePlayerSelect(p)}
-                className={`px-3 py-2 rounded-xl text-xs font-bold transition ${
-                  selectedPlayer?.id === p.id 
-                    ? 'bg-gradient-to-r from-cyan-500 to-indigo-500 text-black shadow-md' 
-                    : 'bg-white/5 hover:bg-white/10 text-gray-300 border border-white/5'
-                }`}
-              >
-                {p.name}
-              </button>
-            ))}
-          </div>
-
-          {/* 選択されたプレイヤーのプレイスタイル詳細 */}
-          {selectedPlayer && (
-            <div className="border-t border-white/5 pt-6 space-y-6">
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <div>
-                  <h3 className="text-base font-black text-white flex items-center gap-1.5">
-                    <span>{selectedPlayer.name} のプレイスタイル</span>
-                    {selectedPlayer.ign && (
-                      <span className="text-[10px] bg-white/10 text-gray-400 px-2 py-0.5 rounded border border-white/5">
-                        {selectedPlayer.ign}
-                      </span>
-                    )}
-                  </h3>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <div className="flex gap-1 bg-black/40 p-1 rounded-xl border border-white/5 text-[10px] font-black">
-                    <button
-                      type="button"
-                      onClick={() => setPlaystyleSource('custom')}
-                      className={`px-3 py-1.5 rounded-lg transition-all ${
-                        playstyleSource === 'custom'
-                          ? 'bg-cyan-505 bg-cyan-500 text-black shadow-md'
-                          : 'text-gray-400 hover:text-white hover:bg-white/5'
-                      }`}
-                    >
-                      KTMカスタム
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setPlaystyleSource('soloq')}
-                      className={`px-3 py-1.5 rounded-lg transition-all ${
-                        playstyleSource === 'soloq'
-                          ? 'bg-amber-500 text-black shadow-md'
-                          : 'text-gray-400 hover:text-white hover:bg-white/5'
-                      }`}
-                    >
-                      ソロキュー (Riot)
-                    </button>
-                  </div>
-
-                  {playstyleSource === 'soloq' && (
-                    <button
-                      type="button"
-                      onClick={handleSyncSoloq}
-                      disabled={syncingSoloq}
-                      className="flex items-center gap-1 bg-gray-800 hover:bg-gray-700 text-amber-400 px-3 py-1.5 rounded-xl border border-gray-700 text-xs font-bold transition disabled:opacity-50"
-                    >
-                      <RefreshCw className={`w-3.5 h-3.5 ${syncingSoloq ? 'animate-spin' : ''}`} />
-                      同期
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {playerLoading ? (
-                <div className="flex justify-center py-12">
-                  <RefreshCw className="w-8 h-8 text-cyan-400 animate-spin" />
-                </div>
-              ) : playstyle ? (
-                <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-                  
-                  {/* 左: スライダー */}
-                  <div className="md:col-span-7 space-y-6 bg-black/30 p-5 rounded-2xl border border-white/5">
-                    <h4 className="text-xs font-black text-gray-400 uppercase tracking-wider">分析スライダー (Playstyle Sliders)</h4>
-                    
-                    {(() => {
-                      const currentStyle = playstyle[playstyleSource] || {
-                        sliders: { aggressive: 50, farming: 50, supportive: 50 },
-                        tags: []
-                      };
-                      return (
-                        <div className="space-y-6">
-                          {/* 1. Aggressive スライダー */}
-                          <div className="space-y-2">
-                            <div className="flex justify-between text-xs font-bold">
-                              <span className="text-gray-400">Passive (自重型)</span>
-                              <span className="text-amber-400 font-mono font-black">{currentStyle.sliders.aggressive}%</span>
-                              <span className="text-rose-400">Aggressive (超攻撃型)</span>
-                            </div>
-                            <div className="h-3 w-full bg-gray-900 rounded-full overflow-hidden border border-white/5 p-[1px] relative">
-                              <div className="h-full rounded-full bg-gradient-to-r from-gray-700 via-amber-500 to-rose-600 transition-all duration-500" style={{ width: `${currentStyle.sliders.aggressive}%` }}></div>
-                            </div>
-                          </div>
-
-                          {/* 2. Farming スライダー */}
-                          <div className="space-y-2">
-                            <div className="flex justify-between text-xs font-bold">
-                              <span className="text-emerald-400">Ganking (戦闘関与)</span>
-                              <span className="text-cyan-400 font-mono font-black">{currentStyle.sliders.farming}%</span>
-                              <span className="text-blue-400">Farming (成長優先)</span>
-                            </div>
-                            <div className="h-3 w-full bg-gray-900 rounded-full overflow-hidden border border-white/5 p-[1px]">
-                              <div className="h-full rounded-full bg-gradient-to-r from-emerald-500 via-cyan-500 to-blue-600 transition-all duration-500" style={{ width: `${currentStyle.sliders.farming}%` }}></div>
-                            </div>
-                          </div>
-
-                          {/* 3. Supportive スライダー */}
-                          <div className="space-y-2">
-                            <div className="flex justify-between text-xs font-bold">
-                              <span className="text-indigo-400">Selfish (キャリー型)</span>
-                              <span className="text-purple-400 font-mono font-black">{currentStyle.sliders.supportive}%</span>
-                              <span className="text-pink-400">Supportive (献身型)</span>
-                            </div>
-                            <div className="h-3 w-full bg-gray-950 rounded-full overflow-hidden border border-white/5 p-[1px]">
-                              <div className="h-full rounded-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 transition-all duration-500" style={{ width: `${currentStyle.sliders.supportive}%` }}></div>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })()}
-                  </div>
-
-                  {/* 右: 自動プレイタグ */}
-                  <div className="md:col-span-5 space-y-4">
-                    <h4 className="text-xs font-black text-gray-400 uppercase tracking-wider">プレイスタイルタグ (Playstyle Tags)</h4>
-                    {(() => {
-                      const currentStyle = playstyle[playstyleSource] || { tags: [] };
-                      if (!currentStyle.tags || currentStyle.tags.length === 0) {
-                        return (
-                          <div className="text-center text-xs text-gray-500 py-8 border border-dashed border-white/5 rounded-xl">
-                            プレイタグがありません。
-                          </div>
-                        );
-                      }
-                      return (
-                        <div className="flex flex-col gap-3">
-                          {currentStyle.tags.map((tag: any) => (
-                            <div key={tag.id} className="group relative bg-white/[0.01] hover:bg-white/[0.04] border border-white/5 hover:border-cyan-500/20 p-3 rounded-2xl transition duration-200 cursor-help">
-                              <div className="flex items-center gap-2">
-                                <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></div>
-                                <span className="text-xs font-black text-cyan-300">{tag.name}</span>
-                              </div>
-                              <p className="text-[11px] text-gray-400 mt-1.5 leading-relaxed">{tag.description}</p>
-                              <div className="text-[9px] text-gray-500 font-mono mt-1 text-right">根拠: {tag.reason}</div>
-                            </div>
-                          ))}
-                        </div>
-                      );
-                    })()}
-                  </div>
-
-                </div>
-              ) : (
-                <div className="text-center text-xs text-gray-500 py-12 border border-dashed border-white/5 rounded-2xl">
-                  プレイスタイルデータが存在しません。ソロキュー同期を行うかスタッツを登録してください。
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-
       </div>
     </div>
   );
+}
+
+function getChampNameFromId(id: number): string {
+  const mapping: Record<number, string> = {
+    64: 'LeeSin', 121: 'Khazix', 76: 'Nidalee', 20: 'Nunu', 59: 'JarvanIV',
+    35: 'Shaco', 24: 'Jax', 104: 'Graves', 254: 'Vi', 11: 'MasterYi',
+    56: 'Nocturne', 113: 'Sejuani', 77: 'Udyr', 200: 'Belveth', 555: 'Pyke',
+    240: 'Kled', 103: 'Ahri', 81: 'Ezreal', 201: 'Braum'
+  };
+  return mapping[id] || 'LeeSin';
 }
