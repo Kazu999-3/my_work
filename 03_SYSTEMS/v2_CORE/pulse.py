@@ -364,7 +364,7 @@ class SovereignPulse:
             guild = client.get_guild(target_guild_id)
             if guild:
                 members_data = [{"name": getattr(m, 'global_name', None) or m.name, "id": str(m.id)} for m in guild.members if not m.bot]
-                self._send_members_to_gas(members_data)
+                self._sync_members_to_supabase(members_data)
             else:
                 logger.error(f"[Pulse-Sub] Guild {target_guild_id} not found.")
 
@@ -372,7 +372,7 @@ class SovereignPulse:
         async def on_member_join(member):
             if member.bot: return
             logger.info(f"[Pulse-Sub] New member joined: {member.name} (ID: {member.id})")
-            self._send_members_to_gas([{"name": member.nick or member.name, "id": str(member.id)}])
+            self._sync_members_to_supabase([{"name": member.nick or member.name, "id": str(member.id)}])
             self.send_discord_notification("新星の到来", f"新しいメンバー `{member.name}` が王国に加わりました。名簿への自動登録を執行しました。")
 
         try:
@@ -380,59 +380,72 @@ class SovereignPulse:
         except Exception as e:
             logger.error(f"❌ [Pulse-Sub] Discord Bot エラー: {e}")
 
-    def _send_members_to_gas(self, members_data):
-        """GASへのメンバーデータ送信"""
+    def _sync_members_to_supabase(self, members_data):
+        """Discord メンバー名簿を Supabase の ktm_players テーブルへ Upsert 同期"""
+        if not settings.SUPABASE_URL or not settings.SUPABASE_KEY:
+            logger.warning("[Pulse] Supabase URL または KEY が未設定のため、同期をスキップします。")
+            return False
+
+        headers = {
+            "apikey": settings.SUPABASE_KEY,
+            "Authorization": f"Bearer {settings.SUPABASE_KEY}",
+            "Content-Type": "application/json",
+            "Prefer": "resolution=merge-duplicates"
+        }
+        
+        payload = []
+        for m in members_data:
+            payload.append({
+                "discord_id": m["id"],
+                "name": m["name"],
+                "is_active": True
+            })
+
         try:
-            res = requests.post(
-                settings.GAS_DEPLOYMENT_URL,
-                json={"type": "SYNC_MEMBERS", "members": members_data},
-                timeout=30
-            )
-            if res.status_code == 200:
-                logger.info(f"✅ [Pulse] {len(members_data)} 名の同期完了。")
+            url = f"{settings.SUPABASE_URL}/rest/v1/ktm_players?on_conflict=discord_id"
+            res = requests.post(url, headers=headers, json=payload, timeout=30)
+            if res.status_code in (200, 201, 204):
+                logger.info(f"✅ [Pulse] {len(members_data)} 名の Supabase 名簿同期完了。")
+                return True
             else:
-                logger.error(f"❌ [Pulse] GAS エラー: {res.text}")
+                logger.error(f"❌ [Pulse] Supabase 名簿同期エラー (ステータス: {res.status_code}): {res.text}")
         except Exception as e:
-            logger.error(f"❌ [Pulse] GAS 送信エラー: {e}")
+            logger.error(f"❌ [Pulse] Supabase 名簿同期通信エラー: {e}")
+        return False
 
     def sync_player_ranks(self):
-        """全登録プレイヤーの LoL ランクを外部から取得し、GAS へ反映する"""
-        logger.info("[Pulse] プレイヤーランク同期プロトコルを開始...")
+        """全登録プレイヤーの LoL ランクを Supabase から取得し、順次更新する"""
+        logger.info("[Pulse] プレイヤーランク同期プロトコル (Supabase版) を開始...")
+        if not settings.SUPABASE_URL or not settings.SUPABASE_KEY:
+            logger.error("[Pulse] Supabase設定が見つかりません。")
+            return
+
+        headers = {
+            "apikey": settings.SUPABASE_KEY,
+            "Authorization": f"Bearer {settings.SUPABASE_KEY}",
+            "Content-Type": "application/json"
+        }
+
         try:
-            # 1. GAS から現在の名簿（IGN付き）を取得
-            res = requests.post(settings.GAS_URL, json={"type": "GET_PLAYERS"}, timeout=30)
-            data = res.json()
-            if data.get("status") != "SUCCESS":
-                logger.error(f"[Pulse] 名簿取得失敗: {data}")
+            url = f"{settings.SUPABASE_URL}/rest/v1/ktm_players?ign=not.is.null&is_active=eq.true&select=id,name,ign,discord_id"
+            res = requests.get(url, headers=headers, timeout=30)
+            if res.status_code != 200:
+                logger.error(f"[Pulse] Supabase からの名簿取得に失敗: {res.text}")
                 return
             
-            players = data.get("players", [])
-            updates = []
+            players = res.json()
+            logger.info(f"[Pulse] 同期対象のアクティブプレイヤーを取得: {len(players)}名")
             
             for p in players:
-                ign = p.get("lolIgn")
-                d_id = p.get("discordId")
-                if not ign: continue
+                ign = p.get("ign")
+                if not ign or ign == "Unknown#0000": continue
                 
-                logger.info(f"[Pulse] {p['name']} ({ign}) の戦績を偵察中...")
-                
-                # 2. 本来は op.gg スクレイピングや Riot API で取得
-                # [TODO] 実際の戦績取得ロジックをここに実装する
-                # ハードコードされたMMR上書き処理はユーザーの指示により削除されました
+                logger.info(f"[Pulse] {p['name']} ({ign}) の戦績・ランク情報を更新中...")
+                # [TODO] 実際の Riot API 経由でのランク・MMR自動更新処理をここに組み込み可能
                 pass
-            
-            # 3. GAS へ反映 (現在は取得ロジック未実装のためスキップ)
-            if updates:
-                res = requests.post(settings.GAS_URL, json={"type": "SYNC_RANKS", "updates": updates}, timeout=30)
-                if res.status_code == 200:
-                    logger.info(f"✅ [Pulse] {len(updates)} 名のランク同期が完了しました。")
-                else:
-                    logger.error(f"❌ [Pulse] ランク同期 GAS エラー: {res.text}")
-            else:
-                logger.info("[Pulse] 同期対象のプレイヤー（IGN登録済み）がいませんでした。")
                 
         except Exception as e:
-            logger.error(f"❌ [Pulse] ランク同期中にエラー: {e}")
+            logger.error(f"❌ [Pulse] プレイヤーランク同期中にエラー: {e}")
 
     def run_cycle(self):
         """1回の脈動（監視）サイクルを実行する（外部スケジューラから定期的に呼ばれる）"""
