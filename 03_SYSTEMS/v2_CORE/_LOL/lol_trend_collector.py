@@ -26,6 +26,16 @@ class LolTrendCollector:
         else:
             self.yt_dlp = "yt-dlp"
 
+    def _extract_json_block(self, text: str) -> str:
+        """文字列内から最外郭の { } または [ ] を抽出して綺麗なJSONを返す"""
+        if not text:
+            return ""
+        import re
+        match = re.search(r"(\{.*\}|\[.*\])", text, re.DOTALL)
+        if match:
+            return match.group(1)
+        return text
+
     def _supabase_request(self, path, method='GET', payload=None, headers=None):
         if not settings.SUPABASE_URL or not settings.SUPABASE_KEY:
             logger.error("Supabase URL or Key is not configured.")
@@ -112,8 +122,7 @@ class LolTrendCollector:
                 feature_name="lol_trend"
             )
             
-            text = text.strip()
-            text = text.replace("```json", "").replace("```", "").strip()
+            text = self._extract_json_block(text)
             champions = json.loads(text)
             logger.info(f"Detected OP Champions: {champions}")
             return champions
@@ -141,13 +150,18 @@ class LolTrendCollector:
         ]
         
         try:
-            res = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", timeout=30)
+            res = subprocess.run(cmd, capture_output=True, timeout=30)
+            
+            # 安全にデコードを実行（例外クラッシュの防止）
+            stdout_str = res.stdout.decode("utf-8", errors="replace")
+            stderr_str = res.stderr.decode("utf-8", errors="replace")
+            
             if res.returncode != 0:
-                logger.error(f"yt-dlp search failed: {res.stderr}")
+                logger.error(f"yt-dlp search failed: {stderr_str}")
                 return []
                 
             videos = []
-            for line in res.stdout.strip().split('\n'):
+            for line in stdout_str.strip().split('\n'):
                 if not line:
                     continue
                 try:
@@ -258,15 +272,11 @@ class LolTrendCollector:
             if text.startswith("⚠️") or text.startswith("❌"):
                 raise Exception(text)
 
-            if text.startswith("```"):
-                lines = text.split("\n")
-                if lines[0].startswith("```json") or lines[0].startswith("```"):
-                    text = "\n".join(lines[1:-1])
-            text = text.strip()
+            text = self._extract_json_block(text)
             
-            # 空レスポンスのガード: マークダウン除去後に中身が空の場合を防ぐ
+            # 空レスポンスのガード: JSON抽出後に中身が空の場合を防ぐ
             if not text:
-                raise Exception(f"Gemini APIの応答が空です（{champion}）。レートリミットまたは検索結果なしの可能性があります。")
+                raise Exception(f"Gemini APIの応答から有効なJSONを抽出できませんでした（{champion}）。")
             
             data = json.loads(text)
             logger.info(f"Successfully collected trend data for {champion}: win_rate={data.get('win_rate')}%")

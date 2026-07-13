@@ -15,6 +15,42 @@ class SovereignHerald:
     def __init__(self):
         self.webhook_url = settings.DISCORD_WEBHOOK
 
+    def _send_webhook_safe(self, payload, timeout=15) -> bool:
+        """Discord Webhook へ安全に送信する（429 レートリミット時の自動リトライ機能付き）"""
+        if not self.webhook_url:
+            return False
+
+        import time
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                res = requests.post(self.webhook_url, json=payload, timeout=timeout)
+                
+                # 429 レートリミット判定
+                if res.status_code == 429:
+                    retry_after = 5.0
+                    try:
+                        retry_after_ms = res.json().get("retry_after", 0)
+                        if retry_after_ms > 0:
+                            retry_after = (retry_after_ms / 1000.0)
+                        else:
+                            retry_after = float(res.headers.get("Retry-After", 5))
+                    except:
+                        pass
+                    
+                    logger.warning(f"⚠️ [Herald] Discord Webhook 429 Rate Limit. Waiting {retry_after:.2f}s before retry... (Attempt {attempt + 1}/{max_retries})")
+                    time.sleep(retry_after)
+                    continue
+
+                res.raise_for_status()
+                return True
+            except Exception as e:
+                logger.error(f"❌ [Herald] Webhook 送信エラー (試行 {attempt + 1}/{max_retries}): {e}")
+                if attempt == max_retries - 1:
+                    return False
+                time.sleep(2.0)
+        return False
+
     def announce_article(self, champion, patch, draft_path, promo_hooks, image_prompt=None):
         """記事の錬成完了を報告する"""
         if not self.webhook_url:
@@ -70,12 +106,9 @@ class SovereignHerald:
             "embeds": [embed]
         }
 
-        try:
-            res = requests.post(self.webhook_url, json=payload, timeout=15)
-            res.raise_for_status()
+        success = self._send_webhook_safe(payload, timeout=15)
+        if success:
             logger.info(f"[Herald] Discord への通知に成功しました: {champion}")
-        except Exception as e:
-            logger.error(f"[Herald] Discord への報告に失敗しました: {e}")
 
     def notify_error(self, error_msg, source: str = "不明"):
         """自己修復 Sentinel と連携し、異常を報告する"""
@@ -126,10 +159,7 @@ class SovereignHerald:
             "username": "Antigravity OS",
             "embeds": [embed]
         }
-        try:
-            requests.post(self.webhook_url, json=payload, timeout=5)
-        except Exception as e:
-            logger.error(f"[Herald] エラー通知の送信に失敗しました: {e}")
+        self._send_webhook_safe(payload, timeout=5)
 
     def notify_progress(self, msg, portal_link=False, page: str = None):
         """システム進捗を王へ報告する
@@ -181,7 +211,7 @@ class SovereignHerald:
             "content": content,
             "username": "Antigravity OS"
         }
-        requests.post(self.webhook_url, json=payload, timeout=5)
+        self._send_webhook_safe(payload, timeout=5)
 
     def report_daily_achievements(self, achievements):
         """本日の成果を要約して王へ報告する"""
@@ -196,9 +226,23 @@ class SovereignHerald:
         for category, items in achievements.items():
             if items:
                 total_count += len(items)
+                
+                # 文字数上限 (1000文字) ガードを適用しつつ連結
+                list_str = ""
+                skipped_count = 0
+                for idx, item in enumerate(items):
+                    next_line = f"• {item}\n"
+                    if len(list_str) + len(next_line) > 950:
+                        skipped_count = len(items) - idx
+                        break
+                    list_str += next_line
+                
+                if skipped_count > 0:
+                    list_str += f"• *他 {skipped_count} 件はポータルで確認してください...*"
+                
                 fields.append({
                     "name": f"🔹 {category}（{len(items)} 件）",
-                    "value": "\n".join([f"• {item}" for item in items]),
+                    "value": list_str.strip() or "なし",
                     "inline": False
                 })
 
@@ -228,12 +272,9 @@ class SovereignHerald:
             "embeds": [embed]
         }
 
-        try:
-            res = requests.post(self.webhook_url, json=payload, timeout=15)
-            res.raise_for_status()
+        success = self._send_webhook_safe(payload, timeout=15)
+        if success:
             logger.info("[Herald] 日次成果報告の送信に成功しました。")
-        except Exception as e:
-            logger.error(f"[Herald] 成果報告の送信に失敗しました: {e}")
 
     def collect_outbox(self):
         """02_FACTORY/outbox/ フォルダをスキャンし、未処理の投稿パッケージをリストアップする"""

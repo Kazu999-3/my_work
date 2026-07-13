@@ -34,6 +34,17 @@ def riot_get(url, max_retries=3):
             log.warning(f"Riot API Rate Limit (429). Waiting for {wait_time}s...")
             time.sleep(wait_time)
             continue
+        elif r.status_code == 403:
+            log.critical("🚨 Riot API 403 Forbidden! APIキーが失効しているか無効です。")
+            try:
+                from v2_CORE._LOL.herald import herald
+                herald.notify_error(
+                    title="🔑 Riot APIキー失効警告",
+                    description="Riot APIから 403 (Forbidden) を検知しました。\nAPIキーの有効期限が切れている可能性があります。Riot Developer Portalでキーを再生成し、`.env` の `RIOT_API_KEY` を更新してください。"
+                )
+            except Exception as he:
+                log.error(f"Failed to notify Discord about 403 API key error: {he}")
+            return None
         else:
             log.warning(f"Riot API {r.status_code}: {url[:80]}...")
             return None
@@ -82,8 +93,8 @@ def extract_jg_matchup(match_data, puuid):
     my_team = me.get("teamId")
     my_role = me.get("teamPosition", "").upper()
 
-    # JGじゃなければスキップ（JG以外のマッチアップも取るなら変更可能）
-    # if my_role != "JUNGLE": return None
+    # JGじゃなければスキップ（JGの試合のみを対象とする）
+    if my_role != "JUNGLE": return None
 
     # 対面（同じロール、別チーム）を検出
     enemy = None
@@ -128,6 +139,26 @@ def import_matches():
     if not RIOT_KEY or not SUPABASE_URL:
         log.error("RIOT_API_KEY または SUPABASE 環境変数が未設定")
         return
+
+    # Supabaseから登録済みの matchup_id リストを取得してキャッシュを初期化
+    global processed_match_ids
+    try:
+        r = httpx.get(
+            f"{SUPABASE_URL}/rest/v1/matchup_sentinel?select=matchup_id",
+            headers={"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}"},
+            timeout=15
+        )
+        if r.status_code == 200:
+            existing = r.json()
+            for row in existing:
+                muid = row.get("matchup_id", "")
+                if muid.startswith("riot_"):
+                    processed_match_ids.add(muid.replace("riot_", ""))
+            log.info(f"💾 Supabase から登録済みの {len(processed_match_ids)} 件のマッチIDをキャッシュロードしました。")
+        else:
+            log.warning(f"⚠️ 既存マッチIDのキャッシュロードに失敗しました (Status: {r.status_code})")
+    except Exception as e:
+        log.warning(f"⚠️ 既存マッチIDのキャッシュロード中に例外が発生しました: {e}")
 
     total_imported = 0
 

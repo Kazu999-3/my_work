@@ -40,7 +40,7 @@ export async function GET(request: Request) {
     // KTMメンバー全体のpuuidリストを作っておく（参加者被り率の判定用）
     const { data: allPlayers } = await supabase
       .from('ktm_players')
-      .select('id, name, puuid, discord_id, role_preferences, pity, off_role_pity')
+      .select('id, name, puuid, discord_id, role_preferences, pity, off_role_pity, ign')
       .not('puuid', 'is', null);
     
     const allPuuids = allPlayers?.map((p: any) => p.puuid) || [];
@@ -78,9 +78,12 @@ export async function GET(request: Request) {
         // ※riot.ts の fetchMatchDetails は現在 puuid を返していないので、名前かpuuidで判定
         // ここではRiotID（GameName）がKTMプレイヤーの名前と一致するかどうかで簡易判定する
         matchDetails.participants.forEach((p: any) => {
-          // TODO: riotIdName が登録済みの name か ign と一致するか
-          // 今回は簡易的に、RiotIdNameが含まれていればOKとする
-          if (allNames.some((n: any) => n.toLowerCase() === p.riotIdName.toLowerCase() || p.riotIdName.includes(n))) {
+          // 部分一致を廃止し、name もしくは ign との完全一致で判定する
+          const isKtmPlayer = allPlayers?.some((k: any) => 
+            k.name.toLowerCase() === p.riotIdName.toLowerCase() ||
+            (k.ign && k.ign.toLowerCase() === p.riotIdName.toLowerCase())
+          );
+          if (isKtmPlayer) {
             ktmMemberCount++;
           }
         });
@@ -105,23 +108,29 @@ export async function GET(request: Request) {
             if (roleStr === 'BOTTOM') roleStr = 'ADC';
             if (roleStr === 'UTILITY') roleStr = 'SUP';
 
-            // DB上のプレイヤーを特定
-            const dbPlayer = allPlayers?.find((k: any) => k.name.toLowerCase() === p.riotIdName.toLowerCase() || p.riotIdName.includes(k.name));
+            // DB上のプレイヤーを特定 (完全一致で判定)
+            const dbPlayer = allPlayers?.find((k: any) => 
+              k.name.toLowerCase() === p.riotIdName.toLowerCase() || 
+              (k.ign && k.ign.toLowerCase() === p.riotIdName.toLowerCase())
+            );
             
-            const discordId = dbPlayer ? dbPlayer.discord_id : `unknown-${p.riotIdName}`;
+            // ktm_match_participants.player_name は NOT NULL のため特定できない場合はフォールバック
+            const playerName = dbPlayer ? dbPlayer.name : p.riotIdName;
+            if (!dbPlayer) {
+              console.warn(`[SyncMatches] Player not registered in DB for Riot ID: ${p.riotIdName}`);
+            }
 
             await supabase.from('ktm_match_participants').insert({
               match_id: matchId,
-              discord_id: discordId,
+              player_name: playerName,
               team: teamStr,
               role: roleStr,
-              champion: p.championName,
+              champion_name: p.championName,
               kills: p.kills,
               deaths: p.deaths,
               assists: p.assists,
-              damage: p.damageDealtToChampions,
-              vision_score: p.visionScore,
-              cs: p.totalMinionsKilled + p.neutralMinionsKilled
+              damage_dealt: p.damageDealtToChampions,
+              vision_score: p.visionScore
             });
 
             // PITY自動計算 (KTMプレイヤーの場合)

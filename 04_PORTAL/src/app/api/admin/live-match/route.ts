@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { fetchPuuidByRiotId, fetchActiveGameByPuuid, fetchRecentMatchIds, fetchMatchDetails, fetchMatchTimeline } from '../../../../lib/riot';
 import { calculatePlaystyle } from '../../../../lib/playstyle';
+import { supabase } from '../../../../lib/supabaseClient';
 
 export async function POST(req: Request) {
   try {
@@ -27,6 +28,9 @@ export async function POST(req: Request) {
     try {
       myPuuid = await fetchPuuidByRiotId(gameName, tagLine, apiKey);
     } catch (err: any) {
+      if (err.message && (err.message.includes('Forbidden') || err.message.includes('403') || err.message.includes('Unauthorized'))) {
+        return NextResponse.json({ error: "Riot APIキーが失効またはアクセス制限（Forbidden / 403）されています。管理者画面でAPIキーを更新してください。" }, { status: 403 });
+      }
       return NextResponse.json({ error: `Riot ID の検索に失敗しました: ${err.message}` }, { status: 404 });
     }
 
@@ -40,6 +44,9 @@ export async function POST(req: Request) {
           isGameActive: false, 
           message: `${gameName}#${tagLine} は現在ゲーム中ではありません。` 
         });
+      }
+      if (err.message && (err.message.includes('Forbidden') || err.message.includes('403') || err.message.includes('Unauthorized'))) {
+        return NextResponse.json({ error: "ライブゲームの取得中にRiot APIキーのアクセス制限（Forbidden / 403）を検出しました。APIキーを更新してください。" }, { status: 403 });
       }
       return NextResponse.json({ error: `ライブゲーム取得エラー: ${err.message}` }, { status: 502 });
     }
@@ -265,12 +272,67 @@ export async function POST(req: Request) {
       })
     );
 
+    // 敵チャンピオンの GLOBAL ナレッジと過去の反省点を Supabase から取得
+    let knowledgeData = {
+      strengths: "",
+      weaknesses: "",
+      powerSpikes: "",
+      buildRunes: "",
+      fullClearTime: "",
+      strategy: "",
+      pastInterrogation: [] as string[]
+    };
+
+    try {
+      // 1. GLOBAL 攻略ナレッジの取得 (matchup_sentinel テーブル)
+      const { data: globalMatchup, error: gError } = await supabase
+        .from('matchup_sentinel')
+        .select('strategy, raw_data')
+        .eq('champion', enemyChampName)
+        .eq('enemy', 'GLOBAL')
+        .maybeSingle(); // 1件もない場合でもクラッシュしないように maybeSingle を利用
+        
+      if (globalMatchup && !gError) {
+        const raw = globalMatchup.raw_data || {};
+        knowledgeData.strengths = raw.strengths || "";
+        knowledgeData.weaknesses = raw.weaknesses || "";
+        knowledgeData.powerSpikes = raw.powerSpikes || "";
+        knowledgeData.buildRunes = raw.buildRunes || "";
+        knowledgeData.fullClearTime = raw.fullClearTime || "";
+        knowledgeData.strategy = globalMatchup.strategy || "";
+      }
+
+      // 2. 過去の反省点 (INTERROGATION) の取得 (enemy=PROCESS_INTERROGATION のレコード)
+      const { data: pastRecords, error: pError } = await supabase
+        .from('matchup_sentinel')
+        .select('strategy, raw_data')
+        .eq('enemy', 'PROCESS_INTERROGATION');
+        
+      if (pastRecords && !pError) {
+        pastRecords.forEach((r: any) => {
+          const target = r.raw_data?.target_enemy || "";
+          if (target.toLowerCase() === enemyChampName.toLowerCase()) {
+            if (r.strategy) {
+              knowledgeData.pastInterrogation.push(r.strategy);
+            }
+          }
+        });
+      }
+    } catch (dbErr) {
+      console.warn("⚠️ 攻略ナレッジまたは反省データの取得に失敗しました:", dbErr);
+    }
+
     // 鬼コーチ対策3箇条の生成
     const enemyPlaystyleTag = enemyPlaystyle.tags?.[0] || { id: 'balanced-player', name: 'バランス型', description: '標準的' };
     
     let coachAdvice: any[] = [];
     if (geminiApiKey) {
-      coachAdvice = await generateCoachAdviceWithGemini(enemyChampName, enemyPlaystyleTag, geminiApiKey);
+      coachAdvice = await generateCoachAdviceWithGemini(
+        enemyChampName, 
+        enemyPlaystyleTag, 
+        geminiApiKey,
+        knowledgeData
+      );
     } else {
       coachAdvice = generateMockCoachAdvice(enemyChampName, enemyPlaystyleTag);
     }
@@ -294,7 +356,8 @@ export async function POST(req: Request) {
       consecutiveLosses,
       coachAdvice,
       counters,
-      allParticipants: analyzedParticipants
+      allParticipants: analyzedParticipants,
+      knowledge: knowledgeData
     });
 
   } catch (error: any) {
@@ -312,15 +375,35 @@ async function getChampionNameById(id: number): Promise<string> {
   return mapping[id] || 'LeeSin';
 }
 
-async function generateCoachAdviceWithGemini(champ: string, tag: any, apiKey: string): Promise<any[]> {
+async function generateCoachAdviceWithGemini(
+  champ: string, 
+  tag: any, 
+  apiKey: string,
+  knowledge: any
+): Promise<any[]> {
   try {
+    // 過去の敗北からの反省メッセージを統合
+    const pastLessonsText = knowledge.pastInterrogation && knowledge.pastInterrogation.length > 0
+      ? `\n【重要！プレイヤーが過去にこの対面で敗北した際、AIコーチと交わした反省・教訓（※これを踏まえた具体的な指示を1点含めなさい）】:\n` + knowledge.pastInterrogation.map((t: string) => `- ${t}`).join("\n")
+      : "";
+
+    // GLOBAL攻略ナレッジを統合
+    const globalKnowledgeText = knowledge.strategy || knowledge.strengths
+      ? `\n【攻略データベースのナレッジ】:\n- 強み: ${knowledge.strengths}\n- 弱み: ${knowledge.weaknesses}\n- パワースパイク: ${knowledge.powerSpikes}\n- 推奨ビルド/ルーン: ${knowledge.buildRunes}\n- クリア周回: ${knowledge.fullClearTime}\n- 基本立ち回り: ${knowledge.strategy}`
+      : "";
+
     const prompt = `
-あなたはLeague of Legendsの「鬼コーチ」です。厳しい口調（「〜しなさい」「〜は厳禁だ」）だが、勝利のための具体的かつ愛のある対面対策アドバイスを授けます。
+    
+あなたはLeague of Legendsの「AI鬼コーチ」です。厳しい口調（「〜しなさい」「〜は厳禁だ」）だが、勝利のための具体的かつ愛のある対面対策アドバイスを授けます。
 対戦相手の情報は以下の通りです：
 - 敵のチャンピオン: ${champ}
 - 敵のプレイスタイル傾向: ${tag.name} (${tag.description})
+${globalKnowledgeText}
+${pastLessonsText}
 
-上記を踏まえ、ジャングラー対面時に絶対に実践すべき【対面対策3箇条】を、スライド形式（JSON配列。3つの要素）で生成してください。
+上記の情報と、これまでの対面ナレッジおよび過去の教訓を統合し、ジャングラー対面時に絶対に実践すべき【対面対策3箇条】を、スライド形式（JSON配列。3つの要素）で生成してください。
+※過去の反省点（教訓）が提示されている場合は、必ずそれに基づいた指示を3箇条の中に1つ以上含め、過去の失敗（デスの仕方等）を繰り返さないよう厳しく忠告しなさい。
+
 各箇条は必ず以下の構造にしてください：
 - title: 箇条のタイトル（例: 「1. Lv3インベイドを徹底警戒せよ」）
 - detail: 具体的な理由と取るべき行動（例: 「相手は序盤の戦闘狂タグを持っています。Lv3で自陣の青バフに侵入してくる可能性が極めて高いため、味方レーナーにリバーの視界を置かせるか、逆サイドからスタートして衝突を回避しなさい。」）

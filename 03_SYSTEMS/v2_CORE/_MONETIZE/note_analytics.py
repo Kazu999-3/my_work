@@ -64,12 +64,13 @@ class NoteAnalytics:
             page.goto("https://note.com/")
             time.sleep(3)
             
-            page.goto(api_url)
+            response = page.goto(api_url)
             time.sleep(4)
             
             try:
-                body_text = page.locator("body").inner_text()
-                data = json.loads(body_text)
+                if response is None:
+                    raise RuntimeError("APIへのアクセス結果(Response)が空です。")
+                data = response.json()
                 logger.info("✅ note stats API からデータを正常に受信しました。")
                 context.close()
                 return self.parse_stats_data(data)

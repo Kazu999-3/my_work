@@ -4,7 +4,7 @@ const envConfig = dotenv.parse(fs.readFileSync('.env.local'));
 const { createClient } = require('@supabase/supabase-js');
 
 const supabaseUrl = envConfig.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = envConfig.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const supabaseKey = envConfig.SUPABASE_SERVICE_ROLE_KEY || envConfig.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 const RANKS = { 'UNRANKED': 1200, 'IRON': 1100, 'BRONZE': 1200, 'SILVER': 1350, 'GOLD': 1500, 'PLATINUM': 1650, 'EMERALD': 1800, 'DIAMOND': 2000, 'MASTER': 2200, 'GRANDMASTER': 2400, 'CHALLENGER': 2600 };

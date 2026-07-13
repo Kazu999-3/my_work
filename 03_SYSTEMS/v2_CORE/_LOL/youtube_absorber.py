@@ -69,8 +69,8 @@ class YouTubeAbsorber:
             self.yt_dlp = str(settings.ROOT_DIR / ".venv" / "Scripts" / "yt-dlp.exe")
         else:
             self.yt_dlp = "yt-dlp"
-        # yt-dlp 2025+: YouTubeのn-challenge解決にJSランタイムが必須
-        self.yt_dlp_base = [self.yt_dlp, "--js-runtimes", "deno"]
+        # yt-dlp 2025+: YouTubeのn-challenge解決にJSランタイムが必須（nodeまたはdenoのいずれかが使えればよい）
+        self.yt_dlp_base = [self.yt_dlp, "--js-runtimes", "node,deno"]
         # ボット検知回避用のクッキー設定がある場合は追加
         cookies_from = os.getenv("YT_DLP_COOKIES_FROM")
         if cookies_from:
@@ -275,9 +275,12 @@ class YouTubeAbsorber:
         os.makedirs(temp_dir, exist_ok=True)
         
         # すでにダウンロード済みの同一IDの音声ファイルがあるか確認（レジューム対応）
+        # .part や .ytdl などの一時ファイルは除外する
         audio_files = glob.glob(f"{temp_dir}/{video_id}.*")
-        if audio_files:
-            existing_file = audio_files[0]
+        valid_audio_files = [f for f in audio_files if not f.endswith(('.part', '.ytdl', '.temp'))]
+        
+        if valid_audio_files:
+            existing_file = valid_audio_files[0]
             # 1MB以上であれば正常なオーディオファイルとみなして再利用
             if os.path.exists(existing_file) and os.path.getsize(existing_file) > 1024 * 1024:
                 logger.info(f"♻️ [Resume] Download skipped. Found existing audio file: {existing_file} ({os.path.getsize(existing_file) // 1024} KB)")
@@ -293,14 +296,23 @@ class YouTubeAbsorber:
             "--no-playlist",
             url
         ], capture_output=True, text=True)
+        
         if res.returncode != 0:
             logger.error(f"Failed to download audio: {res.stderr}")
+            # ダウンロードエラーが発生した場合、部分的にダウンロードされた一時ファイル (.part 等) を確実に削除する
+            for f in glob.glob(f"{temp_dir}/{video_id}.*"):
+                try:
+                    os.remove(f)
+                    logger.info(f"🗑️ [Cleanup] Removed partial download artifact: {f}")
+                except:
+                    pass
             return ""
             
         audio_files = glob.glob(f"{temp_dir}/{video_id}.*")
-        if not audio_files:
+        valid_audio_files = [f for f in audio_files if not f.endswith(('.part', '.ytdl', '.temp'))]
+        if not valid_audio_files:
             return ""
-        return audio_files[0]
+        return valid_audio_files[0]
 
     def get_whisper_model(self):
         if hasattr(self, "_whisper_model") and self._whisper_model is not None:

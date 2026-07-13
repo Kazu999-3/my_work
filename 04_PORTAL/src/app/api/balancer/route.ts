@@ -28,25 +28,42 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'プレイヤー情報の取得に失敗しました。' }, { status: 500 });
     }
 
-    // 各参加者の実際の戦績（試合数・勝率）を Supabase から取得・集計
+    // 各参加者の実際の戦績（試合数・勝率）を Supabase から取得・集計 (大文字小文字の揺れに対応するため、検索クエリ用リストを拡張)
+    const namesQuery = Array.from(new Set([
+      ...names,
+      ...names.map(n => n.toLowerCase()),
+      ...names.map(n => n.toUpperCase())
+    ]));
     const { data: participantsStats, error: statsError } = await supabase
       .from('ktm_match_participants')
       .select('player_name, team, ktm_matches!inner(winning_team)')
-      .in('player_name', names);
+      .in('player_name', namesQuery);
 
-    // プレイヤー名ごとに 試合数 (games) と 勝利数 (wins) をマップ
+    // プレイヤー名ごとに 試合数 (games) と 勝利数 (wins) をマップ (すべて小文字で比較保持)
     const playerStatsMap: Record<string, { games: number; wins: number }> = {};
     names.forEach(name => {
-      playerStatsMap[name] = { games: 0, wins: 0 };
+      playerStatsMap[name.toLowerCase()] = { games: 0, wins: 0 };
     });
 
     if (participantsStats && !statsError) {
       participantsStats.forEach((row: any) => {
-        const name = row.player_name;
-        if (playerStatsMap[name]) {
-          playerStatsMap[name].games++;
-          if (row.team === row.ktm_matches?.winning_team) {
-            playerStatsMap[name].wins++;
+        const rowNameLower = row.player_name.toLowerCase();
+        // 表記揺れ（大文字小文字の違い、改名等による部分一致）を吸収して紐付ける
+        const matchedName = names.find(n => {
+          const nLower = n.toLowerCase();
+          return nLower === rowNameLower || rowNameLower.includes(nLower) || nLower.includes(rowNameLower);
+        });
+        
+        if (matchedName) {
+          const key = matchedName.toLowerCase();
+          playerStatsMap[key].games++;
+          
+          const winningTeam = Array.isArray(row.ktm_matches)
+            ? (row.ktm_matches[0] as any)?.winning_team
+            : (row.ktm_matches as any)?.winning_team;
+            
+          if (row.team === winningTeam) {
+            playerStatsMap[key].wins++;
           }
         }
       });
@@ -71,9 +88,10 @@ export async function POST(request: Request) {
       const rawNg1 = dbPlayer.ng_lane_1 || '';
       const rawNg2 = dbPlayer.ng_lane_2 || '';
 
-      const pGames = playerStatsMap[dbPlayer.name]?.games || 0;
+      const statsKey = dbPlayer.name.toLowerCase();
+      const pGames = playerStatsMap[statsKey]?.games || 0;
       const pWinRate = pGames > 0 
-        ? Number(((playerStatsMap[dbPlayer.name].wins / pGames) * 100).toFixed(1)) 
+        ? Number(((playerStatsMap[statsKey].wins / pGames) * 100).toFixed(1)) 
         : 50.0;
 
       return {

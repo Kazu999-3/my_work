@@ -350,7 +350,7 @@ class EdgeWorkerDaemon:
                     self.update_task_status(task_id, "completed", result=stdout_json)
                 except Exception as je:
                     logger.error(f"Failed to parse 5v5 simulator stdout JSON: {je}")
-                    self.update_task_status(task_id, "completed", result=result)
+                    self.update_task_status(task_id, "failed", error_message=f"Failed to parse simulator output JSON: {je}")
                 
             elif task_type == "resolve_youtube_channel":
                 channel_url = payload.get("url")

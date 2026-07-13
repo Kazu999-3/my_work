@@ -7,6 +7,9 @@ from fastapi.security import APIKeyHeader
 from pydantic import BaseModel
 from google import genai
 
+# 自分自身が Gateway プロセスであることを示すフラグを環境変数に設定（無限再帰デッドロック防止）
+os.environ["IS_GATEWAY_PROCESS"] = "true"
+
 # 既存のコアモジュール群をインポート
 from v2_CORE._MONETIZE.monetization_loop import run_monetization_loop
 from v2_CORE.pulse import system_pulse
@@ -18,11 +21,38 @@ from v2_CORE.task_queue import SovereignQueue
 logger = logging.getLogger("AntigravityAPI")
 logging.basicConfig(level=logging.INFO)
 
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+
 app = FastAPI(
     title="Antigravity Sovereign OS API",
     description="クラウドネイティブ自律稼働のための統合APIエンドポイント",
     version="1.0.0"
 )
+
+# CORS (Cross-Origin Resource Sharing) の設定を追加してポータルUIからの fetch 通信を許可
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request, exc):
+    """生のスタックトレースがクライアント側ブラウザに露出するのを防ぐグローバル例外ハンドラ"""
+    logger.error(f"🚨 [API] 未処理の例外を検知しました: {exc}", exc_info=True)
+    return JSONResponse(
+        status_code=500,
+        content={
+            "success": False,
+            "text": "",
+            "model_used": "unknown",
+            "fallback_occurred": False,
+            "error_message": f"Internal Server Error: {str(exc)}"
+        }
+    )
 
 # 簡易的なAPIキー認証 (CloudflareやVercel Cronからの不正アクセス防止)
 API_KEY_NAME = "X-Antigravity-Key"

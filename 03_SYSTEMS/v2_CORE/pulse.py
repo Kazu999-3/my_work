@@ -413,39 +413,7 @@ class SovereignPulse:
             logger.error(f"❌ [Pulse] Supabase 名簿同期通信エラー: {e}")
         return False
 
-    def sync_player_ranks(self):
-        """全登録プレイヤーの LoL ランクを Supabase から取得し、順次更新する"""
-        logger.info("[Pulse] プレイヤーランク同期プロトコル (Supabase版) を開始...")
-        if not settings.SUPABASE_URL or not settings.SUPABASE_KEY:
-            logger.error("[Pulse] Supabase設定が見つかりません。")
-            return
 
-        headers = {
-            "apikey": settings.SUPABASE_KEY,
-            "Authorization": f"Bearer {settings.SUPABASE_KEY}",
-            "Content-Type": "application/json"
-        }
-
-        try:
-            url = f"{settings.SUPABASE_URL}/rest/v1/ktm_players?ign=not.is.null&is_active=eq.true&select=id,name,ign,discord_id"
-            res = requests.get(url, headers=headers, timeout=30)
-            if res.status_code != 200:
-                logger.error(f"[Pulse] Supabase からの名簿取得に失敗: {res.text}")
-                return
-            
-            players = res.json()
-            logger.info(f"[Pulse] 同期対象のアクティブプレイヤーを取得: {len(players)}名")
-            
-            for p in players:
-                ign = p.get("ign")
-                if not ign or ign == "Unknown#0000": continue
-                
-                logger.info(f"[Pulse] {p['name']} ({ign}) の戦績・ランク情報を更新中...")
-                # [TODO] 実際の Riot API 経由でのランク・MMR自動更新処理をここに組み込み可能
-                pass
-                
-        except Exception as e:
-            logger.error(f"❌ [Pulse] プレイヤーランク同期中にエラー: {e}")
 
     def run_cycle(self):
         """1回の脈動（監視）サイクルを実行する（外部スケジューラから定期的に呼ばれる）"""
@@ -459,13 +427,19 @@ class SovereignPulse:
         """起動時の初期化処理（メンバー同期など）"""
         logger.info("[Pulse] Sovereign Pulse 起動。監視サイクルを開始します。")
         self.send_discord_notification("Sovereign Pulse が起動しました。監視を開始します。")
-        try:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            loop.run_until_complete(self.sync_server_members())
-            loop.close()
-        except Exception as e:
-            logger.error(f"起動時同期に失敗: {e}")
+        
+        # Discord Botをブロッキングせず別スレッドで並行起動し、Pulse本体の無限ループがフリーズするのを防ぐ
+        def start_discord_bot():
+            try:
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                loop.run_until_complete(self.sync_server_members())
+                loop.close()
+            except Exception as e:
+                logger.error(f"起動時同期に失敗: {e}")
+                
+        import threading
+        threading.Thread(target=start_discord_bot, daemon=True).start()
 
 # グローバルな脈動インスタンス
 pulse = SovereignPulse()

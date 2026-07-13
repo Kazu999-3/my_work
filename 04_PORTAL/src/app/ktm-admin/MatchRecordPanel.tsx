@@ -61,10 +61,11 @@ export default function MatchRecordPanel({ balanceResult, onComplete }: MatchRec
       let matchCount = 0;
       const updatedStats = stats.map(p => {
         const pNameLower = p.name.toLowerCase();
-        // Riot参加者リストから名前部分一致、または事前に登録されたign完全一致で照合
+        // Riot参加者リストから名前の完全一致（#TAGを除外したGameName）で照合
         const rp = riotPList.find((riotP: any) => {
-          const rpNameLower = (riotP.riotIdName || '').toLowerCase();
-          return rpNameLower.includes(pNameLower) || pNameLower.includes(rpNameLower);
+          const rpName = (riotP.riotIdName || '');
+          const gameName = rpName.includes('#') ? rpName.split('#')[0] : rpName;
+          return gameName.toLowerCase() === pNameLower;
         });
 
         if (rp) {
@@ -136,8 +137,6 @@ export default function MatchRecordPanel({ balanceResult, onComplete }: MatchRec
       return;
     }
 
-    const pwd = 'ktm';
-
     setSubmitting(true);
     setMessage('');
     try {
@@ -147,7 +146,6 @@ export default function MatchRecordPanel({ balanceResult, onComplete }: MatchRec
         body: JSON.stringify({
           winningTeam,
           riotMatchId: null,
-          adminPassword: pwd,
           participants: stats.map(s => ({
             name: s.name,
             team: s.team,

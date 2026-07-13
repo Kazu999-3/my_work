@@ -36,17 +36,47 @@ class QuotaManager:
         pt_now = datetime.utcnow() - timedelta(hours=8)
         return pt_now.strftime("%Y-%m-%d")
 
-    def _load_data(self):
-        if not self.data_file.exists():
-            return {}
+    def _acquire_file_lock(self):
+        """プロセス間でのファイル競合を防ぐための簡易ロックファイル制御"""
+        import time
+        lock_path = self.data_file.with_suffix(".json.lock")
+        start_time = time.time()
+        while True:
+            try:
+                # 排他的にロックファイルを作成 (x モード)
+                fd = os.open(str(lock_path), os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+                os.close(fd)
+                break
+            except FileExistsError:
+                # タイムアウト (最大5秒) を設けてデッドロックを防ぐ
+                if time.time() - start_time > 5.0:
+                    logger.warning("[QuotaManager] File lock acquisition timed out. Proceeding anyway.")
+                    break
+                time.sleep(0.05)
+
+    def _release_file_lock(self):
+        """ロックファイルの解放"""
+        lock_path = self.data_file.with_suffix(".json.lock")
         try:
+            os.remove(lock_path)
+        except Exception:
+            pass
+
+    def _load_data(self):
+        self._acquire_file_lock()
+        try:
+            if not self.data_file.exists():
+                return {}
             with open(self.data_file, "r", encoding="utf-8") as f:
                 return json.load(f)
         except Exception as e:
             logger.error(f"[QuotaManager] Failed to load data: {e}")
             return {}
+        finally:
+            self._release_file_lock()
 
     def _save_data(self, data):
+        self._acquire_file_lock()
         try:
             self.data_file.parent.mkdir(parents=True, exist_ok=True)
             with open(self.data_file, "w", encoding="utf-8") as f:
@@ -82,6 +112,8 @@ class QuotaManager:
                 logger.warning(f"[QuotaManager] Supabase sync failed: {e}")
         except Exception as e:
             logger.error(f"[QuotaManager] Failed to save data: {e}")
+        finally:
+            self._release_file_lock()
 
     def check_quota(self, feature_name: str) -> bool:
         """指定された機能が今日のクォータ上限に達していないか確認する"""

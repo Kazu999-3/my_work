@@ -66,6 +66,7 @@ function ChampionsContent() {
   const [expandedMatchupId, setExpandedMatchupId] = useState<string | null>(null);
   const [fetchingTrend, setFetchingTrend] = useState(false);
   const [champStats, setChampStats] = useState<Record<string, any>>({});
+  const [pastInterrogations, setPastInterrogations] = useState<any[]>([]);
 
   // データベース全体の完成度（進捗）を計算
   const dbProgress = useMemo(() => {
@@ -379,6 +380,27 @@ function ChampionsContent() {
         pro_builds: rd.pro_builds || [],
         jg_style: rd.jg_style || null
       });
+
+      // 過去の反省点 (INTERROGATION) の取得 (enemy=PROCESS_INTERROGATION)
+      try {
+        const { data: interrogationData, error: iError } = await supabase
+          .from('matchup_sentinel')
+          .select('strategy, raw_data, created_at')
+          .eq('enemy', 'PROCESS_INTERROGATION');
+          
+        if (interrogationData && !iError) {
+          const filtered = interrogationData.filter((r: any) => {
+            const target = r.raw_data?.target_enemy || "";
+            return target.toLowerCase() === champId.toLowerCase();
+          });
+          setPastInterrogations(filtered);
+        } else {
+          setPastInterrogations([]);
+        }
+      } catch (iErr) {
+        console.warn("⚠️ 過去の反省データのロードに失敗しました:", iErr);
+        setPastInterrogations([]);
+      }
     };
     loadChampionData(selected.id);
   }, [selected]);
@@ -937,6 +959,39 @@ function ChampionsContent() {
               </div>
             ) : (
               <p className="text-gray-500 italic text-xs py-4">最新パッチのトレンドデータは未収集です。上の「最新トレンド取得」ボタンを押してロードしてください。</p>
+            )}
+          </div>
+
+          {/* 🚨 過去の敗戦からの反省・教訓 (Sovereign Interrogation) */}
+          <div className="glass-panel border-t-2 border-red-500 p-5 rounded-2xl group transition-all hover:shadow-[0_4px_20px_rgba(0,0,0,0.3)] shadow-red-500/20 relative col-span-1 md:col-span-2">
+            <h3 className="text-sm font-black mb-4 flex items-center gap-2 text-red-400">
+              <ShieldAlert size={16} className="text-red-500 animate-pulse" /> 🚨 過去の敗因反省・教訓 (Sovereign Interrogation)
+            </h3>
+            {pastInterrogations && pastInterrogations.length > 0 ? (
+              <div className="space-y-3">
+                <div className="bg-red-500/10 border border-red-500/20 p-4 rounded-xl text-xs text-red-200/90 leading-relaxed flex items-start gap-2.5">
+                  <ShieldAlert className="w-4 h-4 shrink-0 text-red-400" />
+                  <div>
+                    <span className="font-bold block mb-1">過去にこの対面であなたが敗北した際にAIと交わした反省です。</span>
+                    同じ過ちを繰り返さないよう、立ち回りやジャングルルート選択時に十分注意しなさい。
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {pastInterrogations.map((lesson: any, idx: number) => (
+                    <div key={idx} className="bg-black/40 border border-red-500/10 p-4 rounded-xl text-xs text-red-100/90 leading-relaxed space-y-2">
+                      <div className="flex justify-between items-center border-b border-white/5 pb-1">
+                        <span className="text-red-400 font-bold font-mono">教訓 #{idx+1}</span>
+                        <span className="text-[10px] text-gray-500">
+                          {lesson.created_at ? new Date(lesson.created_at).toLocaleDateString('ja-JP') : ""}
+                        </span>
+                      </div>
+                      <p className="font-medium whitespace-pre-wrap">{lesson.strategy}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <p className="text-gray-500 italic text-xs py-4">このチャンピオン対面での過去の敗北・反省点（教訓）はありません。良好な状態です！</p>
             )}
           </div>
 

@@ -31,6 +31,9 @@ class SovereignSentinel:
         logger.info("🛡️ [Sentinel] コードベースの整合性監査を開始します。")
         errors = []
         for py_file in settings.WORKSHOP_DIR.rglob("*.py"):
+            # 仮想環境やキャッシュ、パッケージ等の不要なディレクトリを除外
+            if any(p in py_file.parts for p in (".venv", "venv", "__pycache__", "site-packages", ".git")):
+                continue
             try:
                 py_compile.compile(str(py_file), doraise=True)
             except py_compile.PyCompileError as e:
@@ -62,10 +65,11 @@ class SovereignSentinel:
             return "No logs found."
 
         try:
+            from collections import deque
             with open(log_file, "r", encoding="utf-8") as f:
-                lines = f.readlines()
+                recent_lines = deque(f, maxlen=100)
                 # 直近100行のエラーを抽出
-                recent_errors = [l for l in lines[-100:] if "ERROR" in l]
+                recent_errors = [l for l in recent_lines if "ERROR" in l]
             
             if not recent_errors:
                 logger.info("🛡️ [Sentinel] 直近のログに異常は見られません。")

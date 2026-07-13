@@ -43,6 +43,7 @@ export default function LeaderboardPage() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'ranking' | 'winrate'>('ranking');
   const [syncing, setSyncing] = useState(false);
+  const [minGames, setMinGames] = useState<number>(3); // 最小試合数フィルター（デフォルト3試合）
 
   const handleSyncDiscordNames = async () => {
     if (!confirm('全プレイヤーのDiscord名を最新のものに一括同期しますか？少し時間がかかります。')) return;
@@ -125,8 +126,8 @@ export default function LeaderboardPage() {
         const roleRanking = players
           .filter((p: any) => {
             const stats = statsMap[p.name]?.[role];
-            // 仕様: そのレーンでの勝利数が0より大きい（つまり1勝以上している）プレイヤーのみ表示
-            return stats && stats.wins > 0;
+            // 仕様: 指定した最小試合数以上の出場実績があるプレイヤーのみ表示
+            return stats && stats.games >= minGames;
           })
           .map((p: any) => {
             const stats = statsMap[p.name][role];
@@ -151,7 +152,7 @@ export default function LeaderboardPage() {
     }
 
     fetchLeaderboard();
-  }, []);
+  }, [minGames]);
 
   if (loading) {
     return (
@@ -214,7 +215,25 @@ export default function LeaderboardPage() {
               <Info className="h-5 w-5 text-blue-400 flex-shrink-0 mt-0.5" />
               <div className="text-sm text-blue-200">
                 <p className="font-bold text-blue-300 mb-1">ランキングの集計仕様について</p>
-                <p>このリーダーボードは現在の「希望レーン」ではなく、<strong>過去の試合でそのレーンを担当して1勝以上した実績</strong>に基づいて自動集計されています。レーン変更後も過去の戦績は残り続けます。</p>
+                <p>このリーダーボードは現在の「希望レーン」ではなく、<strong>過去の試合でそのレーンを担当した実績</strong>に基づいて自動集計されています。試合数フィルターを使用することで、未出場者や出場回数の少ないプレイヤーを除外できます。</p>
+              </div>
+            </div>
+
+            {/* 試合数フィルターコントロール */}
+            <div className="flex justify-center mb-8">
+              <div className="flex items-center gap-2 bg-gray-900 border border-gray-800 rounded-xl px-4 py-2">
+                <span className="text-xs text-gray-400 font-bold">表示する最小試合数:</span>
+                <select
+                  value={minGames}
+                  onChange={(e) => setMinGames(Number(e.target.value))}
+                  className="bg-gray-800 text-white text-xs font-bold rounded-lg border border-gray-700 px-2 py-1 focus:outline-none focus:border-blue-500"
+                >
+                  <option value={0}>制限なし (全登録者)</option>
+                  <option value={1}>1試合以上</option>
+                  <option value={3}>3試合以上 (デフォルト)</option>
+                  <option value={5}>5試合以上</option>
+                  <option value={10}>10試合以上</option>
+                </select>
               </div>
             </div>
 

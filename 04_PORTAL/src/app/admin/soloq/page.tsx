@@ -27,6 +27,7 @@ export default function SoloqScoutPage() {
 
   // 鬼コーチ対策3箇条用のスライドインデックス
   const [adviceIndex, setAdviceIndex] = useState(0);
+  const [activeTab, setActiveTab] = useState("advice");
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -215,7 +216,7 @@ export default function SoloqScoutPage() {
                         {result.playstyle.tags.map((tag: any) => (
                           <div 
                             key={tag.id}
-                            className="bg-cyan-505 bg-cyan-500/10 border border-cyan-500/20 px-3 py-2 rounded-2xl space-y-1"
+                            className="bg-cyan-500/10 border border-cyan-500/20 px-3 py-2 rounded-2xl space-y-1"
                           >
                             <div className="text-xs font-black text-cyan-300">{tag.name}</div>
                             <p className="text-[10px] text-gray-400 leading-relaxed">{tag.description}</p>
@@ -226,53 +227,172 @@ export default function SoloqScoutPage() {
                     </div>
                   </div>
 
-                  {/* 鬼コーチAIの対面対策3箇条 (スライダー形式) */}
-                  {result.coachAdvice && result.coachAdvice.length > 0 && (
-                    <div className="bg-gradient-to-r from-red-500/10 via-orange-500/5 to-transparent border border-red-500/20 rounded-3xl p-6 shadow-xl space-y-4">
-                      <div className="flex justify-between items-center border-b border-white/5 pb-3">
-                        <h3 className="text-base font-black text-red-400 flex items-center gap-2">
-                          <Flame className="w-5 h-5 text-red-500 animate-pulse animate-duration-1000" />
-                          <span>鬼コーチAIの対面対策3箇条</span>
-                        </h3>
-                        <div className="text-[10px] text-gray-500 font-mono">
-                          {adviceIndex + 1} / {result.coachAdvice.length}
-                        </div>
-                      </div>
-
-                      {/* スライド本文 */}
-                      <div className="min-h-[140px] bg-black/40 p-5 rounded-2xl border border-red-500/10 flex flex-col justify-between space-y-4 relative overflow-hidden">
-                        <div className="space-y-2">
-                          <div className="text-xs font-black text-amber-300 flex items-center gap-1.5">
-                            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                            <span>{result.coachAdvice[adviceIndex]?.title}</span>
-                          </div>
-                          <p className="text-[11px] text-red-100/90 leading-relaxed font-medium">
-                            {result.coachAdvice[adviceIndex]?.detail}
-                          </p>
-                        </div>
-
-                        {/* スライド切替ボタン */}
-                        <div className="flex justify-end gap-1.5 pt-2">
-                          <button
-                            type="button"
-                            disabled={adviceIndex === 0}
-                            onClick={() => setAdviceIndex((prev) => prev - 1)}
-                            className="bg-white/5 hover:bg-white/10 disabled:opacity-30 border border-white/5 p-1.5 rounded-lg transition"
-                          >
-                            <ChevronLeft className="w-4 h-4 text-gray-400" />
-                          </button>
-                          <button
-                            type="button"
-                            disabled={adviceIndex === result.coachAdvice.length - 1}
-                            onClick={() => setAdviceIndex((prev) => prev + 1)}
-                            className="bg-white/5 hover:bg-white/10 disabled:opacity-30 border border-white/5 p-1.5 rounded-lg transition"
-                          >
-                            <ChevronRight className="w-4 h-4 text-gray-400" />
-                          </button>
-                        </div>
-                      </div>
+                  {/* Sovereign Advisor タクティカルパネル */}
+                  <div className="bg-white/[0.02] border border-white/10 rounded-3xl p-6 shadow-xl space-y-4">
+                    {/* タブヘッダー */}
+                    <div className="flex border-b border-white/5 pb-1 gap-2">
+                      <button
+                        onClick={() => setActiveTab("advice")}
+                        className={`px-4 py-2.5 text-xs font-black transition-all rounded-t-xl border-b-2 uppercase tracking-wider flex items-center gap-1.5 ${
+                          activeTab === "advice"
+                            ? "border-red-500 text-red-400 bg-red-500/5"
+                            : "border-transparent text-gray-400 hover:text-white"
+                        }`}
+                      >
+                        <Flame className="w-4 h-4" />
+                        <span>AIリアルタイム指示</span>
+                      </button>
+                      <button
+                        onClick={() => setActiveTab("knowledge")}
+                        className={`px-4 py-2.5 text-xs font-black transition-all rounded-t-xl border-b-2 uppercase tracking-wider flex items-center gap-1.5 ${
+                          activeTab === "knowledge"
+                            ? "border-cyan-500 text-cyan-400 bg-cyan-500/5"
+                            : "border-transparent text-gray-400 hover:text-white"
+                        }`}
+                      >
+                        <Compass className="w-4 h-4" />
+                        <span>攻略マニュアル</span>
+                      </button>
+                      <button
+                        onClick={() => setActiveTab("lessons")}
+                        className={`px-4 py-2.5 text-xs font-black transition-all rounded-t-xl border-b-2 uppercase tracking-wider flex items-center gap-1.5 ${
+                          activeTab === "lessons"
+                            ? "border-amber-500 text-amber-400 bg-amber-500/5"
+                            : "border-transparent text-gray-400 hover:text-white"
+                        }`}
+                      >
+                        <ShieldAlert className="w-4 h-4" />
+                        <span>過去の教訓 ({result.knowledge?.pastInterrogation?.length || 0})</span>
+                      </button>
                     </div>
-                  )}
+
+                    {/* タブコンテンツ */}
+                    {activeTab === "advice" && (
+                      <div className="space-y-4">
+                        {/* 鬼コーチAIの対面対策3箇条 (スライダー形式) */}
+                        {result.coachAdvice && result.coachAdvice.length > 0 && (
+                          <div className="space-y-4">
+                            <div className="flex justify-between items-center text-xs font-bold text-gray-400">
+                              <span>鬼コーチ緊急指令3箇条</span>
+                              <span className="font-mono">{adviceIndex + 1} / {result.coachAdvice.length}</span>
+                            </div>
+
+                            {/* スライド本文 */}
+                            <div className="min-h-[140px] bg-black/40 p-5 rounded-2xl border border-red-500/10 flex flex-col justify-between space-y-4 relative overflow-hidden">
+                              <div className="space-y-2">
+                                <div className="text-xs font-black text-amber-300 flex items-center gap-1.5">
+                                  <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                                  <span>{result.coachAdvice[adviceIndex]?.title}</span>
+                                </div>
+                                <p className="text-[11px] text-red-100/90 leading-relaxed font-medium">
+                                  {result.coachAdvice[adviceIndex]?.detail}
+                                </p>
+                              </div>
+
+                              {/* スライド切替ボタン */}
+                              <div className="flex justify-end gap-1.5 pt-2">
+                                <button
+                                  type="button"
+                                  disabled={adviceIndex === 0}
+                                  onClick={() => setAdviceIndex((prev) => prev - 1)}
+                                  className="bg-white/5 hover:bg-white/10 disabled:opacity-30 border border-white/5 p-1.5 rounded-lg transition"
+                                >
+                                  <ChevronLeft className="w-4 h-4 text-gray-400" />
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={adviceIndex === result.coachAdvice.length - 1}
+                                  onClick={() => setAdviceIndex((prev) => prev + 1)}
+                                  className="bg-white/5 hover:bg-white/10 disabled:opacity-30 border border-white/5 p-1.5 rounded-lg transition"
+                                >
+                                  <ChevronRight className="w-4 h-4 text-gray-400" />
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                        {/* 一般解説ヒント */}
+                        <div className="bg-black/30 border border-white/5 p-4 rounded-2xl text-[11px] text-gray-300 leading-relaxed">
+                          <strong className="text-cyan-400 block mb-1">💡 全体対策アドバイス</strong>
+                          {result.tips}
+                        </div>
+                      </div>
+                    )}
+
+                    {activeTab === "knowledge" && (
+                      <div className="space-y-4">
+                        {/* ナレッジマニュアル表示 */}
+                        {!result.knowledge?.strategy && !result.knowledge?.strengths ? (
+                          <div className="text-center py-8 text-xs text-gray-500">
+                            このチャンピオンのGLOBAL攻略データはまだ登録されていません。
+                          </div>
+                        ) : (
+                          <div className="space-y-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div className="bg-black/40 border border-white/5 p-4 rounded-2xl space-y-1.5">
+                                <span className="text-[10px] text-emerald-400 font-black tracking-wider uppercase block">💪 対面の強み (Strengths)</span>
+                                <p className="text-[11px] text-gray-300 leading-relaxed">{result.knowledge.strengths || "未登録"}</p>
+                              </div>
+                              <div className="bg-black/40 border border-white/5 p-4 rounded-2xl space-y-1.5">
+                                <span className="text-[10px] text-rose-400 font-black tracking-wider uppercase block">☠️ 対面の弱み (Weaknesses)</span>
+                                <p className="text-[11px] text-gray-300 leading-relaxed">{result.knowledge.weaknesses || "未登録"}</p>
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div className="bg-black/40 border border-white/5 p-4 rounded-2xl space-y-1.5">
+                                <span className="text-[10px] text-amber-400 font-black tracking-wider uppercase block">⚡ パワースパイク (Power Spikes)</span>
+                                <p className="text-[11px] text-gray-300 leading-relaxed">{result.knowledge.powerSpikes || "未登録"}</p>
+                              </div>
+                              <div className="bg-black/40 border border-white/5 p-4 rounded-2xl space-y-1.5">
+                                <span className="text-[10px] text-cyan-400 font-black tracking-wider uppercase block">🌲 周回クリアルート (Full Clear Path)</span>
+                                <p className="text-[11px] text-gray-300 leading-relaxed font-bold">{result.knowledge.fullClearTime || "未登録"}</p>
+                              </div>
+                            </div>
+
+                            <div className="bg-black/40 border border-white/5 p-4 rounded-2xl space-y-1.5">
+                              <span className="text-[10px] text-blue-400 font-black tracking-wider uppercase block">🛡️ 推奨ビルドとルーン (Build / Runes)</span>
+                              <p className="text-[11px] text-gray-300 leading-relaxed whitespace-pre-wrap">{result.knowledge.buildRunes || "未登録"}</p>
+                            </div>
+
+                            <div className="bg-black/40 border border-white/5 p-4 rounded-2xl space-y-1.5">
+                              <span className="text-[10px] text-cyan-300 font-black tracking-wider uppercase block">📖 基本攻略・戦略 (Strategy)</span>
+                              <p className="text-[11px] text-gray-300 leading-relaxed whitespace-pre-wrap">{result.knowledge.strategy || "未登録"}</p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {activeTab === "lessons" && (
+                      <div className="space-y-4">
+                        {/* 過去の反省点表示 */}
+                        {!result.knowledge?.pastInterrogation || result.knowledge.pastInterrogation.length === 0 ? (
+                          <div className="text-center py-8 text-xs text-gray-500">
+                            このチャンピオン対面での過去の敗因反省データ（教訓）はありません。良好な状態です！
+                          </div>
+                        ) : (
+                          <div className="space-y-3">
+                            <div className="bg-amber-500/10 border border-amber-500/20 p-4 rounded-2xl text-[11px] text-amber-300/90 leading-relaxed flex items-start gap-2.5">
+                              <ShieldAlert className="w-4 h-4 shrink-0 text-amber-400" />
+                              <div>
+                                <span className="font-black block">過去の教訓を活かして同じ失敗を防ぎなさい</span>
+                                ユーザーが対戦後に記録したリアルな敗因データです。戦術アドバイザーがこれらを加味した指令を生成しています。
+                              </div>
+                            </div>
+                            <div className="space-y-2">
+                              {result.knowledge.pastInterrogation.map((lesson: string, idx: number) => (
+                                <div key={idx} className="bg-black/40 border border-red-500/10 p-4 rounded-2xl text-xs text-red-100/90 leading-relaxed flex gap-2">
+                                  <span className="text-red-400 font-bold font-mono">#{idx+1}</span>
+                                  <p className="font-medium whitespace-pre-wrap">{lesson}</p>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
 
                   {/* 敵チーム全員の簡易分析グリッド */}
                   {result.allParticipants && result.allParticipants.some((p: any) => p.isEnemy) && (

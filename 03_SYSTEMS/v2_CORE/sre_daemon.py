@@ -129,9 +129,8 @@ class SREDaemon:
             time.sleep(1800)
             while True:
                 try:
-                    with self.task_lock:
-                        logger.info("🔧 [SRE Daemon] 定期タスク: 辞典整理(DictSynthesizer)をキューイングします...")
-                        self._enqueue_edge_task("dict_synthesizer")
+                    logger.info("🔧 [SRE Daemon] 定期タスク: 辞典整理(DictSynthesizer)をキューイングします...")
+                    self._enqueue_edge_task("dict_synthesizer")
                 except Exception as e:
                     logger.error(f"❌ DictSynthesizerキューイングエラー: {e}")
                 time.sleep(10800)  # 3時間おきに実行
@@ -141,9 +140,8 @@ class SREDaemon:
             time.sleep(600)
             while True:
                 try:
-                    with self.task_lock:
-                        logger.info("🔧 [SRE Daemon] 定期タスク: YouTube Absorberをキューイングします...")
-                        self._enqueue_edge_task("youtube_absorb")
+                    logger.info("🔧 [SRE Daemon] 定期タスク: YouTube Absorberをキューイングします...")
+                    self._enqueue_edge_task("youtube_absorb")
                 except Exception as e:
                     logger.error(f"❌ YouTubeAbsorberキューイングエラー: {e}")
                 time.sleep(900)  # 15分おきに少しずつ実行してAPI制限を回避
@@ -153,9 +151,8 @@ class SREDaemon:
             time.sleep(3600)
             while True:
                 try:
-                    with self.task_lock:
-                        logger.info("🔧 [SRE Daemon] 定期タスク: Reddit Scoutをキューイングします...")
-                        self._enqueue_edge_task("reddit_scout")
+                    logger.info("🔧 [SRE Daemon] 定期タスク: Reddit Scoutをキューイングします...")
+                    self._enqueue_edge_task("reddit_scout")
                 except Exception as e:
                     logger.error(f"❌ RedditScoutキューイングエラー: {e}")
                 time.sleep(43200)  # 12時間おきに実行
@@ -244,8 +241,8 @@ class SREDaemon:
                     active = (time.time() - mtime) < 3600
                     recent_errors = []
                     with open(path_obj, 'r', encoding='utf-8', errors='replace') as f:
-                        lines = f.readlines()
-                        for line in reversed(lines[-100:]):
+                        recent_lines = deque(f, maxlen=100)
+                        for line in reversed(recent_lines):
                             line_str = line.strip()
                             if not line_str:
                                 continue
@@ -304,11 +301,11 @@ class SREDaemon:
                     if self.log_file.exists():
                         try:
                             with open(self.log_file, "r", encoding="utf-8", errors="replace") as f:
-                                lines = f.readlines()
+                                recent_lines = deque(f, maxlen=100)
                                 # INFO 以上の意味のあるログを抽出（新旧フォーマット両対応）
                                 # 旧: "[INFO] ..." / 新: "[SREDaemon] INFO: ..."
                                 filtered = []
-                                for l in lines:
+                                for l in recent_lines:
                                     line = l.strip()
                                     if not line:
                                         continue
@@ -398,9 +395,8 @@ class SREDaemon:
             time.sleep(7200)
             while True:
                 try:
-                    with self.task_lock:
-                        logger.info("🔧 [SRE Daemon] 定期タスク: Monetization Batchをキューイングします...")
-                        self._enqueue_edge_task("monetization_batch")
+                    logger.info("🔧 [SRE Daemon] 定期タスク: Monetization Batchをキューイングします...")
+                    self._enqueue_edge_task("monetization_batch")
                 except Exception as e:
                     logger.error(f"❌ MonetizationBatchキューイングエラー: {e}")
                 time.sleep(201600)  # 約56時間（週3回）おきに実行
@@ -411,9 +407,8 @@ class SREDaemon:
             time.sleep(300)
             while True:
                 try:
-                    with self.task_lock:
-                        logger.info("🔧 [SRE Daemon] 定期タスク: noteマガジン自動インポートをキューイングします...")
-                        self._enqueue_edge_task("note_magazine_import")
+                    logger.info("🔧 [SRE Daemon] 定期タスク: noteマガジン自動インポートをキューイングします...")
+                    self._enqueue_edge_task("note_magazine_import")
                 except Exception as e:
                     logger.error(f"❌ noteマガジンインポートキューイングエラー: {e}")
                 time.sleep(43200)  # 12時間おきに実行
@@ -424,9 +419,8 @@ class SREDaemon:
             time.sleep(1200)
             while True:
                 try:
-                    with self.task_lock:
-                        logger.info("🔧 [SRE Daemon] 定期タスク: LoLトレンド自動検知をキューイングします...")
-                        self._enqueue_edge_task("lol_trend_collect")
+                    logger.info("🔧 [SRE Daemon] 定期タスク: LoLトレンド自動検知をキューイングします...")
+                    self._enqueue_edge_task("lol_trend_collect")
                 except Exception as e:
                     logger.error(f"❌ LoLトレンド検知キューイングエラー: {e}")
                 time.sleep(86400)  # 1日（24時間）おきに実行
@@ -437,9 +431,8 @@ class SREDaemon:
             time.sleep(2400)
             while True:
                 try:
-                    with self.task_lock:
-                        logger.info("🔧 [SRE Daemon] 定期タスク: note売上・アクセス分析をキューイングします...")
-                        self._enqueue_edge_task("note_analytics")
+                    logger.info("🔧 [SRE Daemon] 定期タスク: note売上・アクセス分析をキューイングします...")
+                    self._enqueue_edge_task("note_analytics")
                 except Exception as e:
                     logger.error(f"❌ noteアクセス分析キューイングエラー: {e}")
                 time.sleep(86400)  # 1日（24時間）おきに実行

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { useParams } from "next/navigation";
+import Link from "next/link";
 import { supabase } from "../../../lib/supabaseClient";
 import ScoutingReport from "../../../components/ScoutingReport";
 import { 
@@ -225,13 +226,20 @@ export default function PlayerMyPage() {
                 </h1>
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="text-gray-400 text-sm font-semibold">{player.ign || "IGN未登録"}</span>
-                  <div className="flex gap-1.5">
+                  <div className="flex gap-1.5 flex-wrap">
                     <span className="bg-white/5 border border-white/10 px-2.5 py-0.5 rounded-full text-xs font-bold text-gray-300">
                       最高: <span className="text-cyan-400">{player.highest_rank || "UNRANKED"}</span>
                     </span>
                     <span className="bg-cyan-500/10 border border-cyan-500/20 px-2.5 py-0.5 rounded-full text-xs font-bold text-cyan-300 shadow-[0_0_10px_rgba(6,182,212,0.1)]">
                       総合MMR: <span className="text-white font-black">{player.mmr || 1000}</span>
                     </span>
+                    <Link 
+                      href={`/player/${id}/junglepedia`}
+                      className="bg-[#A63160]/10 border border-[#A63160]/30 hover:bg-[#A63160]/20 px-2.5 py-0.5 rounded-full text-[10px] font-black text-[#E35489] transition-all flex items-center gap-1 shadow-[0_0_8px_rgba(166,49,96,0.1)]"
+                    >
+                      <Activity className="w-3 h-3 text-[#E35489]" />
+                      <span>Junglepedia風分析</span>
+                    </Link>
                   </div>
                 </div>
               </div>

@@ -42,34 +42,38 @@ def generate_content_safe(client, prompt, model_id=None, config=None, feature_na
     gateway_text = ""
     api_key = os.environ.get("ANTIGRAVITY_API_KEY", "default_dev_key_2026")
     
-    try:
-        import httpx
-        with httpx.Client(timeout=90.0) as client_http:
-            res = client_http.get("http://localhost:8000/", timeout=1.5)
-            if res.status_code == 200 and res.json().get("status") == "online":
-                logger.info(f"[AIHelper] 🌐 API Gateway (Port 8000) is online. Routing generation request...")
-                payload = {
-                    "raw_prompt": prompt,
-                    "model": model_id or "gemini-2.5-flash",
-                    "priority": "normal"
-                }
-                headers = {
-                    "Content-Type": "application/json",
-                    "X-Antigravity-Key": api_key
-                }
-                gen_res = client_http.post("http://localhost:8000/api/v1/agent/generate", json=payload, headers=headers)
-                if gen_res.status_code == 200:
-                    data = gen_res.json()
-                    if data.get("success"):
-                        gateway_text = data.get("text", "")
-                        gateway_success = True
-                        logger.info(f"[AIHelper] 🌐 Generation via API Gateway succeeded. (Model: {data.get('model_used')})")
+    # 自身が Gateway プロセスである場合は、無限再帰デッドロックを防ぐためルーティングをスキップする
+    is_gateway_process = os.environ.get("IS_GATEWAY_PROCESS") == "true"
+    
+    if not is_gateway_process:
+        try:
+            import httpx
+            with httpx.Client(timeout=90.0) as client_http:
+                res = client_http.get("http://localhost:8000/", timeout=1.5)
+                if res.status_code == 200 and res.json().get("status") == "online":
+                    logger.info(f"[AIHelper] 🌐 API Gateway (Port 8000) is online. Routing generation request...")
+                    payload = {
+                        "raw_prompt": prompt,
+                        "model": model_id or "gemini-2.5-flash",
+                        "priority": "normal"
+                    }
+                    headers = {
+                        "Content-Type": "application/json",
+                        "X-Antigravity-Key": api_key
+                    }
+                    gen_res = client_http.post("http://localhost:8000/api/v1/agent/generate", json=payload, headers=headers)
+                    if gen_res.status_code == 200:
+                        data = gen_res.json()
+                        if data.get("success"):
+                            gateway_text = data.get("text", "")
+                            gateway_success = True
+                            logger.info(f"[AIHelper] 🌐 Generation via API Gateway succeeded. (Model: {data.get('model_used')})")
+                        else:
+                            logger.warning(f"⚠️ [AIHelper] API Gateway generation reported failure: {data.get('error_message')}")
                     else:
-                        logger.warning(f"⚠️ [AIHelper] API Gateway generation reported failure: {data.get('error_message')}")
-                else:
-                    logger.warning(f"⚠️ [AIHelper] API Gateway returned status code {gen_res.status_code}")
-    except Exception as e:
-        logger.debug(f"[AIHelper] API Gateway unreachable ({e}). Falling back to direct execution.")
+                        logger.warning(f"⚠️ [AIHelper] API Gateway returned status code {gen_res.status_code}")
+        except Exception as e:
+            logger.debug(f"[AIHelper] API Gateway unreachable ({e}). Falling back to direct execution.")
 
     if gateway_success:
         return gateway_text

@@ -44,6 +44,15 @@ export async function GET() {
               .from('ktm_players')
               .update({ name: latestName })
               .eq('id', player.id);
+
+            // ★ 連動更新: 過去の試合ログのプレイヤー名も新しい名前に更新
+            const { error: matchesUpdateError } = await supabase
+              .from('ktm_match_participants')
+              .update({ player_name: latestName })
+              .eq('player_name', player.name);
+            if (matchesUpdateError) {
+              console.error(`Failed to update matches for ${player.name} -> ${latestName}:`, matchesUpdateError);
+            }
           }
         }
       } catch (e) {

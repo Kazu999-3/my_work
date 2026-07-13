@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '../../../../lib/supabaseClient';
+import { performFullMmrRebuild } from '../../../../lib/mmr';
 
 export async function POST(req: Request) {
   try {
@@ -30,11 +31,12 @@ export async function POST(req: Request) {
       throw new Error(updateError.message);
     }
 
-    // ※MMRの再計算が必要な場合は、ここで別途処理を呼び出す必要があるが
-    // 現在のMVPでは「勝敗記録の修正」のみとする。
+    // MMRの再計算を自動実行し、整合性を保つ
+    await performFullMmrRebuild(supabase);
 
-    return NextResponse.json({ status: "SUCCESS", message: `Match updated to ${winner} win.` });
+    return NextResponse.json({ status: "SUCCESS", message: `Match updated to ${winner} win and MMR rebuilt.` });
   } catch (err: any) {
     return NextResponse.json({ status: "ERROR", message: err.message }, { status: 500 });
   }
 }
+

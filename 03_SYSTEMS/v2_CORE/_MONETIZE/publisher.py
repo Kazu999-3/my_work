@@ -102,30 +102,36 @@ class XPublisher:
             USER_DATA_DIR.parent.mkdir(parents=True, exist_ok=True)
             logger.info(f"Launching browser (Headless: {self.headless})...")
             
-            # Chromeチャネルを使用してボット検知を回避しつつ、プロファイルを永続化
-            context = p.chromium.launch_persistent_context(
-                user_data_dir=str(USER_DATA_DIR),
-                headless=self.headless,
-                channel="chrome",
-                viewport={'width': 1280, 'height': 720},
-                locale="ja-JP",
-                args=["--disable-blink-features=AutomationControlled"]
-            )
-            
-            page = context.new_page()
-            
-            logger.info("Navigate to X.com...")
-            page.goto("https://x.com/home")
-            time.sleep(5)
-            
-            # ログイン判定: URLがhomeか、Post(Tweet)ボタンがあるか
-            if "login" in page.url or page.locator("a[href='/login']").is_visible():
-                logger.warning("🚨 [WARNING] Not logged in to X!")
-                logger.warning("初回は headless=False で起動し、手動でログイン（2FAなど）を完了させてください。")
-                if self.headless:
-                    logger.error("Cannot perform manual login in headless mode. Aborting.")
-                    context.close()
-                    return False
+            context = None
+            try:
+                # Chromeチャネルを使用してボット検知を回避しつつ、プロファイルを永続化
+                context = p.chromium.launch_persistent_context(
+                    user_data_dir=str(USER_DATA_DIR),
+                    headless=self.headless,
+                    channel="chrome",
+                    viewport={'width': 1280, 'height': 720},
+                    locale="ja-JP",
+                    args=[
+                        "--disable-blink-features=AutomationControlled",
+                        "--disable-infobars",
+                        "--no-sandbox"
+                    ],
+                    user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+                )
+                
+                page = context.new_page()
+                
+                logger.info("Navigate to X.com...")
+                page.goto("https://x.com/home")
+                time.sleep(5)
+                
+                # ログイン判定: URLがhomeか、Post(Tweet)ボタンがあるか
+                if "login" in page.url or page.locator("a[href='/login']").is_visible():
+                    logger.warning("🚨 [WARNING] Not logged in to X!")
+                    logger.warning("初回は headless=False で起動し、手動でログイン（2FAなど）を完了させてください。")
+                    if self.headless:
+                        logger.error("Cannot perform manual login in headless mode. Aborting.")
+                        return False
                 
                 logger.info("Waiting 60 seconds for you to manually login...")
                 # ユーザーが手動でログインするのを待つ
@@ -215,7 +221,8 @@ class XPublisher:
                     logger.error(f"Failed to save screenshot: {ss_e}")
                 return None
             finally:
-                context.close()
+                if context:
+                    context.close()
 
 class NotePublisher:
     def __init__(self, headless=True):
@@ -274,31 +281,36 @@ class NotePublisher:
             self.user_data_dir.parent.mkdir(parents=True, exist_ok=True)
             logger.info(f"Launching browser for note.com (Headless: {self.headless})...")
             
-            context = p.chromium.launch_persistent_context(
-                user_data_dir=str(self.user_data_dir),
-                headless=self.headless,
-                channel="chrome",
-                viewport={'width': 1280, 'height': 720},
-                locale="ja-JP",
-                args=["--disable-blink-features=AutomationControlled"],
-                user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
-            )
-            
-            # クリップボードを許可（テキスト貼り付け用）
-            context.grant_permissions(["clipboard-read", "clipboard-write"])
-            page = context.new_page()
-            
-            logger.info("Navigate to note.com...")
-            page.goto("https://note.com/")
-            time.sleep(3)
-            
-            # ログイン確認（右上の「ログイン」または「会員登録」があるか）
-            if page.locator('a[href="/login"]').first.is_visible() or page.locator('a[href="/signup"]').first.is_visible():
-                logger.warning("🚨 [WARNING] Not logged in to note.com!")
-                logger.warning("初回は headless=False で起動し、手動でログインを完了させてください。")
-                if self.headless:
-                    context.close()
-                    return False
+            context = None
+            try:
+                context = p.chromium.launch_persistent_context(
+                    user_data_dir=str(self.user_data_dir),
+                    headless=self.headless,
+                    channel="chrome",
+                    viewport={'width': 1280, 'height': 720},
+                    locale="ja-JP",
+                    args=[
+                        "--disable-blink-features=AutomationControlled",
+                        "--disable-infobars",
+                        "--no-sandbox"
+                    ],
+                    user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+                )
+                
+                # クリップボードを許可（テキスト貼り付け用）
+                context.grant_permissions(["clipboard-read", "clipboard-write"])
+                page = context.new_page()
+                
+                logger.info("Navigate to note.com...")
+                page.goto("https://note.com/")
+                time.sleep(3)
+                
+                # ログイン確認（右上の「ログイン」または「会員登録」があるか）
+                if page.locator('a[href="/login"]').first.is_visible() or page.locator('a[href="/signup"]').first.is_visible():
+                    logger.warning("🚨 [WARNING] Not logged in to note.com!")
+                    logger.warning("初回は headless=False で起動し、手動でログインを完了させてください。")
+                    if self.headless:
+                        return False
                 logger.info("Waiting up to 5 minutes for you to manually login...")
                 try:
                     # ログイン完了後、「投稿」ボタンが現れるまで待機
@@ -511,7 +523,8 @@ class NotePublisher:
                     pass
                 return None
             finally:
-                context.close()
+                if context:
+                    context.close()
 
 
 def generate_x_promo_thread(champion_name: str, bible_text: str) -> str:

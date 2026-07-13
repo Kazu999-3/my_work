@@ -76,9 +76,22 @@ class APIGateway:
                 headers = {"Authorization": f"Bearer {redis_token}"}
                 now = time.time()
                 
+                # 簡易的な瞬断対策リトライ付きリクエスト関数
+                def r_req(method, u, timeout_sec=0.8, payload_data=None):
+                    for attempt in range(2):
+                        try:
+                            if method == "GET":
+                                return requests.get(u, headers=headers, timeout=timeout_sec)
+                            else:
+                                return requests.post(u, headers=headers, json=payload_data, timeout=timeout_sec)
+                        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as ce:
+                            if attempt == 1:
+                                raise ce
+                            time.sleep(0.1)
+                
                 # A. 429 冷却期間チェック
                 cooldown_url = f"{redis_url}/get/cooldown:{key_hash}"
-                r_cooldown = requests.get(cooldown_url, headers=headers, timeout=0.8)
+                r_cooldown = r_req("GET", cooldown_url, timeout_sec=0.8)
                 if r_cooldown.status_code == 200:
                     cooldown_val = r_cooldown.json().get("result")
                     if cooldown_val:
@@ -92,7 +105,7 @@ class APIGateway:
 
                 # B. 最小リクエスト間隔 (MIN_INTERVAL) チェック
                 last_call_url = f"{redis_url}/get/last_call:{key_hash}"
-                r_last = requests.get(last_call_url, headers=headers, timeout=0.8)
+                r_last = r_req("GET", last_call_url, timeout_sec=0.8)
                 if r_last.status_code == 200:
                     last_val = r_last.json().get("result")
                     if last_val:
@@ -106,12 +119,12 @@ class APIGateway:
                 # C. 1分間最大リクエスト数 (RPM_LIMIT) チェック (窓口分数をキーにする)
                 minute_key = f"rpm:{key_hash}:{int(now // 60)}"
                 incr_url = f"{redis_url}/incr/{minute_key}"
-                r_incr = requests.post(incr_url, headers=headers, timeout=0.8)
+                r_incr = r_req("POST", incr_url, timeout_sec=0.8)
                 if r_incr.status_code == 200:
                     call_count = int(r_incr.json().get("result", 0))
                     if call_count == 1:
                         # 初回インクリメント時にキーの寿命を60秒に設定
-                        requests.post(f"{redis_url}/expire/{minute_key}/60", headers=headers, timeout=0.5)
+                        r_req("POST", f"{redis_url}/expire/{minute_key}/60", timeout_sec=0.5)
                         
                     if call_count > cls.RPM_LIMIT:
                         wait_time = 60.0 - (now % 60)
@@ -120,7 +133,7 @@ class APIGateway:
                         return cls.wait_if_needed(api_key, feature_name)
 
                 # 最終コール時刻の更新 (TTL 60秒)
-                requests.post(f"{redis_url}/set/last_call:{key_hash}/{now}/ex/60", headers=headers, timeout=0.5)
+                r_req("POST", f"{redis_url}/set/last_call:{key_hash}/{now}/ex/60", timeout_sec=0.5)
                 logger.info(f"🔑 [APIGateway-Redis] {feature_name}: APIコールチェック通過 (Redis)")
                 return  # Redis経由でのチェックに成功したため終了
                 
