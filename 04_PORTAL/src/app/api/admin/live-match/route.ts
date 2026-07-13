@@ -16,11 +16,9 @@ export async function POST(req: Request) {
     const apiKey = process.env.RIOT_API_KEY;
     const geminiApiKey = process.env.GEMINI_API_KEY;
 
-    // APIキーが無い場合はテスト用のダミーライブゲームデータを返す (開発用モック)
+    // APIキーが無い場合はエラーを返す
     if (!apiKey) {
-      console.warn("⚠️ RIOT_API_KEY が未設定のため、デモ用ライブゲーム情報を返却します。");
-      const mockGameData = generateMockLiveGame(gameName);
-      return NextResponse.json(mockGameData);
+      return NextResponse.json({ error: "Riot APIキーが環境変数に設定されていません。管理画面、または環境変数 RIOT_API_KEY を設定してください。" }, { status: 400 });
     }
 
     // 1. PUUID の解決
