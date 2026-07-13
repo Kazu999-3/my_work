@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef, useCallback, Fragment } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "../../lib/supabaseClient";
@@ -1135,7 +1135,7 @@ export default function BalancerPage() {
                   const groupLabelMap: Record<number,string> = { 0:'👑 固定メンバー', 2:'👁 観戦固定', 3:'⚫ 不参加' };
                   const groupColorMap: Record<number,string> = { 0:'text-amber-500 bg-amber-950/10', 2:'text-indigo-400 bg-indigo-950/10', 3:'text-gray-600 bg-gray-950/50' };
                   return (
-                    <>
+                    <Fragment key={`balancer-row-${p.id}`}>
                       {isBoundary && groupLabelMap[curGroup] && (
                         <tr key={`div-${idx}`}>
                           <td colSpan={13} className={`px-4 py-1.5 text-[11px] font-bold border-t border-gray-800/80 ${groupColorMap[curGroup]}`}>
@@ -1231,7 +1231,7 @@ export default function BalancerPage() {
                             className="bg-transparent border border-transparent hover:border-gray-800 focus:border-gray-700 hover:bg-gray-900/60 focus:bg-gray-900 focus:ring-1 focus:ring-blue-500/30 rounded px-2 py-0.5 outline-none text-xs text-gray-300 w-20 transition-all" />
                         </td>
                       </tr>
-                    </>
+                    </Fragment>
                   );
                 })}
               </tbody>
