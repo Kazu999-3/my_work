@@ -8,53 +8,236 @@ export interface DesignDoc {
 
 export const systemDesignDocs: Record<string, DesignDoc> = {
   "overview": {
-    title: "🌟 全体概要・アーキテクチャ",
+    title: "🌟 全体概要・自動化デーモン",
     filename: "00_overview.md",
-    content: "# Sovereign OS & KTM Bot 全体概要・アーキテクチャ設計\n\nSovereign OS プロジェクトにおける、Webポータル、大会運営Bot (KTM Bot)、コア自動化エンジン、およびデータベース (Supabase) の全体像、機能、データ連携、およびロジックの設計仕様を詳細に定義します。\n\n---\n\n## 1. システム全体アーキテクチャ (System Architecture)\n\nSovereign OS は、Supabase データベースおよび Google Sheets を中心とし、フロントエンド（Next.js / Discord）とバックエンド自動化エンジン（Python Core / Cloudflare Workers / GAS）が連携する分散イベント駆動型アーキテクチャです。\n\n### 1-1. システム関連図\n\n```mermaid\ngraph TD\n    %% ユーザーおよびインターフェース\n    User[ユーザー / プレイヤー] <--> |Discord Slash Cmd / UI| Discord[Discord Server]\n    User <--> |Webブラウザ| Portal[Web Portal (Next.js)]\n\n    %% Discord Bot 連携\n    Discord <--> |Interactivity Webhook| Workers[KTM Bot (Cloudflare Workers)]\n    Workers <--> |HTTPS API Call| GAS[Google Apps Script (GAS)]\n    GAS <--> |Read/Write| Sheets[Google Sheets (DB/MMR)]\n    GAS <--> |HTTP Trigger| PortalAPI[Portal API (Next.js)]\n\n    %% Webポータル 連携\n    Portal <--> |Read/Write| Supabase[(Supabase DB)]\n    PortalAPI <--> |Read/Write| Supabase\n\n    %% Sovereign OS コア (Python)\n    subgraph Sovereign_OS_Core [Sovereign OS Core Engine]\n        SREDaemon[SRE Daemon]\n        DictSynthesizer[Dict Synthesizer]\n        YTAbsorber[YouTube Absorber]\n        RedditScout[Reddit Scout]\n        Pulse[Sovereign Pulse]\n    end\n\n    SREDaemon --> |Watch Log / Cleanup| Supabase\n    SREDaemon --> |Metrics Save| Supabase\n    DictSynthesizer <--> |Fetch / Merge / Mark deleted| Supabase\n    YTAbsorber <--> |Read Queue / Write Video Data| Supabase\n    RedditScout <--> |Scrape Trends / Write Articles| Supabase\n    Pulse --> |Observer SoloQ / Scraping| Supabase\n    Sovereign_OS_Core <--> |AI Request| Gemini[Gemini API (ai_helper)]\n```\n\n---\n\n## 2. データベース設計 (Database Schema & Security)\n\n### 2-1. Supabase テーブル定義\n\n#### A. `bible_articles` (攻略ライブラリ記事)\nマクロ判断や、各チャンピオンごとの攻略バイブル記事、および一時的なトレンド記事をMarkdown形式で保存します。\n\n| カラム名 | データ型 | 制約 | 説明 |\n| :--- | :--- | :--- | :--- |\n| `id` | int8 | PRIMARY KEY (Identity) | 記事の一意ID |\n| `created_at` | timestamptz | DEFAULT `now()` | 作成日時 |\n| `title` | text | UNIQUE | 記事タイトル (例: `[総合バイブル] マクロ`) |\n| `content` | text | - | 記事本文 (Markdown形式) |\n| `champion` | text | - | 対象チャンピオン名 (指定なしは `Unknown`, `GLOBAL` 等) |\n| `keywords` | text[] | - | 検索タグ・ジャンル名 (例: `[\"マクロ\", \"総合バイブル\"]` / 削除用タグは `[\"__DELETED__\"]`) |\n| `file_path` | text | - | ローカルのMarkdownファイルの保存先絶対パス |\n\n#### B. `matchup_sentinel` (チャンピオン辞典 & 戦術データ)\n各チャンピオンごとの対策やGLOBALなマクロ、さらにダッシュボード用システムメトリクス（ID: `SYSTEM_METRICS`）を保持します。\n\n| カラム名 | データ型 | 制約 | 説明 |\n| :--- | :--- | :--- | :--- |\n| `id` | int8 | PRIMARY KEY (Identity) | レコードの一意ID |\n| `created_at` | timestamptz | DEFAULT `now()` | 作成日時 |\n| `matchup_id` | text | UNIQUE | 識別キー (例: `GLOBAL`, `SYSTEM_METRICS`, `{ChampName}_GLOBAL`) |\n| `title` | text | - | チャンピオン名やタイトル |\n| `champion` | text | - | チャンピオン名 |\n| `enemy` | text | - | 対面チャンピオン名 (基本対策は `GLOBAL`) |\n| `strategy` | text | - | 対面戦術・反省会から得られた鬼コーチの教訓 |\n| `raw_data` | jsonb | - | 拡張用JSONデータ。`note_draft` (noteドラフト原稿) や `logs` (最新ログ)、`queue` (YouTubeキュー件数) を内包 |\n\n#### C. `api_usage_logs` (API使用量ログ)\n1日あたりのAPI（Gemini等）の消費トークン・リクエスト数を蓄積し、クォータオーバーを防止します。\n\n| カラム名 | date | PRIMARY KEY | 利用日 (日付) |\n| :--- | :--- | :--- | :--- |\n| `calls` | jsonb | - | 機能ごとのAPI呼び出し回数・エラーカウント履歴 |\n\n---\n\n### 2-2. Row Level Security (RLS) ポリシー\n\n全世界に安全に公開するため、Supabase上の各テーブルに以下のRLSを適用しています。\n\n```sql\n-- 読み取り許可 (未認証の一般ユーザーを含め、全員に許可)\nCREATE POLICY \"Allow read for all\" ON bible_articles FOR SELECT USING (true);\nCREATE POLICY \"Allow read for all\" ON matchup_sentinel FOR SELECT USING (true);\n\n-- 書き込み・更新許可 (認証済み管理者アカウントのみに制限)\nCREATE POLICY \"Allow insert for admin\" ON bible_articles FOR INSERT TO authenticated WITH CHECK (true);\nCREATE POLICY \"Allow update for admin\" ON bible_articles FOR UPDATE TO authenticated USING (true);\nCREATE POLICY \"Allow delete for admin\" ON bible_articles FOR DELETE TO authenticated USING (true);\n\nCREATE POLICY \"Allow insert for admin\" ON matchup_sentinel FOR INSERT TO authenticated WITH CHECK (true);\nCREATE POLICY \"Allow update for admin\" ON matchup_sentinel FOR UPDATE TO authenticated USING (true);\n```\n*※ローカルまたはVPSで動作する Python Core モジュールは、認証をバイパスする `service_role` キーを使用して書き込みを行います。*\n"
+    content: `# Sovereign OS & KTM Bot 全体概要・自動化デーモン
+
+Sovereign OSは、ポータルサイト、Discord Bot（KTM Bot）、Google Sheets、およびバックエンドのPythonデーモンを統合したイベント駆動型システムです。
+
+---
+
+## 1. システム全体構成図
+
+\`\`\`mermaid
+graph TD
+    User[ユーザー / プレイヤー] <--> |Discord Bot / ボタン| Discord[Discord Server]
+    User <--> |Webブラウザ| Portal[Web Portal (Next.js)]
+    Discord <--> |Webhook| Workers[KTM Bot (Cloudflare Workers)]
+    Workers <--> |API Call| GAS[Google Apps Script]
+    GAS <--> |Read/Write| Sheets[Google Sheets (MMR)]
+    Portal <--> |Read/Write| Supabase[(Supabase DB)]
+    
+    subgraph Sovereign_OS_Core [Sovereign OS Core Engine]
+        SREDaemon[SRE Daemon]
+        YTAbsorber[YouTube Absorber]
+        Monetize[Monetization Batch]
+        NotionSync[Notion Sync]
+    end
+    
+    SREDaemon --> |Watch Log / Healer| Supabase
+    YTAbsorber <--> |Read Queue / 要約| Supabase
+    Monetize <--> |note/X自動投稿| Supabase
+    NotionSync <--> |Notionメモ同期| Supabase
+    Sovereign_OS_Core <--> |AI生成| Gemini[Gemini API]
+\`\`\`
+
+---
+
+## 2. 自律AI自動化デーモン (Python - v2_CORE)
+
+* **AI Healer / SRE デーモン (\`sre_daemon.py\` / \`healer.py\`)**:
+  ポータルやBotのビルドログ、例外エラーを監視し、AIが自動でTypeScript等のコードを修復してGit Pushデプロイを行います。
+* **YouTube攻略動画要約 (\`youtube_absorber.py\`)**:
+  指定されたYouTubeチャンネルを巡回し、\`yt-dlp\`で字幕抽出 ➔ Geminiで攻略マニュアル化 ➔ チャンピオン辞典へマージします。
+* **note自動執筆・投稿 (\`monetization_batch.py\`)**:
+  LoLメタトレンドを自動分析し、アフィリエイト付きの有料/無料記事を執筆。Playwrightでnoteに下書き保存し、X(Twitter)に連続スレッドを自動投稿します。
+* **Notion同期 (\`sovereign_sync.py\`)**:
+  Notionの反省データベースから自分のLoLメモを定期検知し、Supabaseの \`personal_knowledge\` へ同期します。
+`
   },
   "balancer": {
-    title: "⚖️ MMRバランサー・チーム分け",
+    title: "🎮 KTM Bot ＆ レーン優先度",
     filename: "01_balancer.md",
-    content: "# ⚖️ MMRバランサー・チーム分け機能\n\n登録されているプレイヤーの希望ロール、実力（MMR）、および過去の待機状況（不満度）に基づいて、実力が最も均等であり、かつ不満度が最小になる2つのチーム（Blue / Red）を自動編成する機能です。\n\n---\n\n## 1. 概要とデータ連携\n\n*   **データソース（取得元）**: \n    *   Supabase `ktm_players` テーブルからプレイヤー名、各ロールのMMR（初期値: 1200）、および `pity`（不満度カウンター）を取得します。\n*   **データ追加・更新トリガー**:\n    *   新規プレイヤーデータは Discord Bot または管理者画面から手動で登録されます（自動追加はありません）。\n    *   各ロールのMMRおよびPityは、後述の **「対戦結果登録」** の手動送信時に自動的に更新（UPDATE）されます。\n*   **公開区分**: 一般ユーザー向け（誰でも実行可能）\n\n---\n\n## 2. ロール配置ペナルティ最小化アルゴリズム\n\nチーム分けの際、全プレイヤーのレーン配置候補パターンに対してペナルティを計算し、合計ペナルティが最小になる組み合わせを選出します。\n\n### 2-1. 配置ペナルティ値の定義\n*   **希望外レーン（メイン・サブ以外）への配置**: `500,000 pt`\n*   **サブレーン（第2希望）への配置**: `20,000 pt`\n*   **NGレーン（絶対にやりたくないレーン）への配置**: `2,000,000 pt`（絶対に回避するペナルティ）\n\n### 2-2. こだわり度 (Weight) の調整補正\n*   **「絶対（weight=1）」に設定しているレーン**: 希望レーンから外れた場合、ペナルティを **50倍** に増幅し配置を絶対回避します。\n*   **「柔軟（weight=3）」に設定しているレーン**: 希望外またはサブ配置時のペナルティを **1/4** に軽減し、他のプレイヤーの希望を優先します。\n\n### 2-3. Pity (不満度) による割引補正\n*   プレイヤーが希望レーンに配置されなかった場合、Pityカウンターが加算されます（サブ配置で `+2`、希望外で `+5`、観戦/待機で `+10`）。\n*   次回の配置ペナルティ計算時、`現在のペナルティ - (Pity * 割引係数)` として計算されるため、Pity値が高いプレイヤーほど優先的に希望レーンへ自動選出されるようになります。\n\n---\n\n## 3. チーム戦力平準化アルゴリズム\n\nロール配置確定後、チーム間の戦力を平準化するために以下の項目を2つのチームで評価し、差が最も小さくなるよう最終チーム分けを実行します。\n\n1.  **対面MMR差の平準化**: 各レーン（例: Team A TOP vs Team B TOP）の対面同士のMMR差の2乗和を算出し、それが最小になるよう調整します。\n2.  **総合MMR差の極小化**: チーム全体のMMR合計値の差を最小化します。\n3.  **格上対面の保護**: MMR差が600以上開いている対面が発生する場合、追加の配置制限ペナルティを課して極端な一方通行マッチを回避します。\n"
+    content: `# 🎮 Discord KTM大会運営機能 ＆ 希望レーン調停
+
+Discord Bot（KTM Bot）は、カスタム内戦の募集から、プレイヤーのレーン希望・こだわり度を調停したチーム分けまでを実行します。
+
+---
+
+## 1. コマンド一覧 (\`handlers/commands.js\`)
+
+* **\`/recruit\` (メンバー募集)**:
+  カスタム(10人)/ノーマル(5人)/ARAMの募集Embedを投稿。定員時に自動締め切り、\` balance \` チーム分けボタンを生成。
+* **\`/lane\` (希望設定)**:
+  メイン/サブ希望レーン、NG1/NG2、こだわり度(1〜3)、格上対面許容を登録。モーダル入力フォームに対応。
+* **\`/balance\` (チーム分け実行)**:
+  VCにいる10人または募集枠の10人から自動チーム分け。レーン配置・戦力平準化アルゴリズムを適用。
+* **\`/stats\` (戦績確認)**:
+  個人の総合勝率、直近5試合の勝敗、レーン別MMR、Pity値をEmbed投稿。
+* **\`/sync\` (手動同期)**:
+  スプレッドシートやRiot APIとSupabaseの手動同期を実行。
+
+---
+
+## 2. 特殊ハンドラー
+
+* **コンポーネント操作 (\`handlers/components.js\`)**:
+  - \`どこでも参加\`、\`観戦希望\`、\`離脱\` ボタンの登録処理。
+  - \`代理追加\` (管理者がゲストを直接追加)、\`一括連絡\` (全員メンション)。
+  - \`BLUE勝利\` / \`RED勝利\` 勝敗報告ボタンによるMMR・Pity再計算。
+  - \`次戦へ移行\`: 出場・待機枠を引き継いで自動で次戦の募集を開始。
+* **スケジュール同期 (\`handlers/scheduled.js\`)**:
+  - Discordスケジュールイベント（カスタム予定）の開始30分前・10分前に自動で \`/recruit\` 募集パネルをチャンネルに投稿。
+`
   },
   "match_record": {
-    title: "📋 対戦結果登録とElo",
+    title: "📈 MMR・Pity アルゴリズム仕様",
     filename: "02_match_record.md",
-    content: "# 📋 対戦結果登録と MMR 計算ロジック\n\nバランサーで決定されたチーム構成のもと、実際の対戦スコアや勝敗結果を手動登録し、その結果から全プレイヤーの各ロールのMMR（Eloレーティング）を更新する機能です。\n\n---\n\n## 1. 概要とデータ連携\n\n*   **データソース（取得元）**: \n    *   結果登録フォーム（`/balancer/record`）に入力された勝敗、キル数等のスコア情報。\n*   **データ追加・更新トリガー**:\n    *   **完全な手動トリガー**: 管理者またはプレイヤーが対戦結果登録画面で「結果を送信」ボタンを手動で押した際に動作します（自動で登録されることはありません）。\n    *   送信ボタン押下後、Supabase の `ktm_matches` テーブルに戦績履歴行が **自動追加 (INSERT)** され、関係した10名のプレイヤーの `ktm_players.mmr` および `pity` が **自動更新 (UPDATE)** されます。\n*   **公開区分**: 一般ユーザー向け（誰でも結果登録が可能）\n\n---\n\n## 2. Elo レーティング計算アルゴリズム\n\n試合終了後、プレイヤーのMMRの増減値（\\(\\Delta MMR\\)）は、以下の Elo 算式を適用して自動計算します。\n\n### 2-1. MMR計算公式\n\\[R_{new} = R_{old} + K \\cdot (S - E)\\]\n\n*   \\(R_{old}\\): 試合前のロールMMR\n*   \\(R_{new}\\): 試合後の新規MMR\n*   \\(K\\): 変動重み係数。標準で `32` を適用。\n*   \\(S\\): 実際の対戦結果の実績値。\n    *   勝利したチームのメンバー: `1`\n    *   敗北したチームのメンバー: `0`\n*   \\(E\\): 期待勝率（レーン対面の強さに基づく勝率予測）。以下の数式で計算されます。\n    \\[E = \\frac{1}{1 + 10^{(MMR_{opp} - MMR_{player}) / 400}}\\]\n    *   \\(MMR_{opp}\\): レーン対面（同じロール）の敵プレイヤーの試合前MMR\n    *   \\(MMR_{player}\\): 自身の試合前ロールMMR\n\n### 2-2. 計算の特徴\n*   自分より格上のプレイヤー（MMRが自分より遥かに高い相手）に勝利した場合、期待勝率 \\(E\\) が低いため、MMRの上昇量（\\(\\Delta MMR\\)）は非常に大きくなります。\n*   逆に、自分より格下のプレイヤーに敗北した場合は、MMRの減少量が非常に大きくなります。\n*   このロジックにより、対戦を重ねるにつれて全員のMMRが実力値に正確に収束していきます。\n"
+    content: `# 📈 チーム分けペナルティ ＆ レート（MMR）計算式
+
+公平なゲーム体験を実現するための数理最適化と Elo レーティング補正ロジック。
+
+---
+
+## 1. レーン配置ペナルティ算出アルゴリズム
+
+配置パターンに対して以下のペナルティを計算し、合計ペナルティが最小の組み合わせを自動決定する。
+
+$$\\text{Total Penalty} = \\sum_{p \\in \\text{Players}} (\\text{Role Penalty}(p) + \\text{Pity Penalty}(p) + \\text{NG Penalty}(p) + \\text{Job Penalty}(p))$$
+
+* **NG Penalty**: NGレーンに配置された場合、**+2,000,000 点**。
+* **Role Penalty**: サブ配置で $+20,000 \\times \\text{weight\\_factor}$、希望外で $+500,000 \\times \\text{weight\\_factor}$。
+  - こだわり度1 (絶対) ➔ $\\text{weight\\_factor} = 50.0$ (サブ配置をほぼ絶対阻止)
+  - こだわり度2 (通常) ➔ $\\text{weight\\_factor} = 1.0$
+  - こだわり度3 (柔軟) ➔ $\\text{weight\\_factor} = 0.25$
+* **Pity Penalty**: 前回の不満度。$(\\text{Pity} \\times 10,000 \\text{〜} 50,000)$ をマイナスし、我慢した人を優先配置。
+* **Job Penalty**: JG, SUP, ADC専が他レーンに行く際、ペナルティを **2倍〜3倍** にブースト。
+* **初心者保護**: 参加3戦未満の初心者をJG/MIDに振る際、**+1,000,000 点**。
+
+---
+
+## 2. Pity（不運度）蓄積ルール
+* **メインロール配置**: 0 にリセット。
+* **サブロール配置**: +2。
+* **希望外ロール配置**: +5。
+* **出場できず待機枠**: +10。
+* 11人以上いる場合は **Pity値の高い順** に優先出場。
+
+---
+
+## 3. MMR計算公式（改良型 Elo レーティング）
+
+$$\\text{MMR}_{\\text{new}} = \\text{MMR}_{\\text{old}} + K \\cdot (\\text{Actual} - \\text{Expected}) + \\text{KDA Bonus} + \\text{Placement Gravity}$$
+
+* $K$: 変動幅係数（48）。
+* $\\text{Expected}$ (予測勝率):
+  
+  $$\\text{Expected} = \\frac{1}{1 + 10^{\\frac{\\text{MMR}_{\\text{opponent}} - \\text{MMR}_{\\text{self}}}{400}}}$$
+  
+* $\\text{KDA Bonus}$: 個人KDA成績から最大 $\pm 20$。
+* $\\text{Placement Gravity}$: 10戦未満のプレイヤーに対し、公式最高ランクに基づく基礎レートに引き寄せる補正。
+* **ブースト倍率**: 5戦未満は **3倍**、10戦未満は **2倍**、直接対面回数が少ない相手との試合は最大 **1.5倍** 変動。
+`
   },
   "leaderboard": {
-    title: "🏆 プレイヤーリーダーボード",
+    title: "🏆 分析ポータル・勝率マトリクス",
     filename: "03_leaderboard.md",
-    content: "# 🏆 プレイヤーリーダーボード & プレイ傾向計算\n\nポータルに参加している全プレイヤーの総合実力順位（リーダーボード）を表示し、個人の過去戦績から Aggressive (攻撃的), Farming (成長優先), Supportive (献身的) の3大プレイスタイルスライダーとプレイタグを算出・可視化する機能です。\n\n---\n\n## 1. 概要とデータ連携\n\n*   **データソース（取得元）**:\n    *   リーダーボード: Supabase `ktm_players` テーブルから各プレイヤーの最高MMRを取得してソート。\n    *   プレイ傾向・スライダー・タグ: Supabase `ktm_players.metadata.playstyle_cache` にキャッシュされた JSON データを取得。\n*   **データ追加・更新トリガー**:\n    *   **KTMカスタムログ**: 対戦結果登録が手動で実行された際に、過去のKTMの全試合データからバックグラウンドで自動再計算・更新されます。\n    *   **ソロキュー（SoloQ）ログ**: プレイヤー詳細画面（`/player/[id]`）の **「ソロQ戦績同期」ボタンをユーザーが手動で押したタイミング** で Riot API から最新10試合をフェッチし、プレイスタイルやタグが自動計算されて `ktm_players.metadata.playstyle_cache.soloq` に **自動キャッシュ保存 (UPDATE)** されます（API制限防止のため定期自動同期は行いません）。\n*   **公開区分**: 一般ユーザー向け\n\n---\n\n## 2. プレイ傾向スライダー算出ロジック\n\n過去のスタッツ（KDA、CS数、ダメージ量等）を標準化し、0%〜100% の範囲のスライダー値として算出します。\n\n### 2-1. Aggressive (攻撃性 / アグレッシブ度)\n*   **計算要素**: キル関与率（KP）、平均キル数、デス数（デスの少なさは反比例値）、1分あたりの与ダメージ（DPM）、ファーストブラッド（FB）関与率。\n*   **処理仕様**: 各スタッツを平均値および標準偏差を用いて標準化し、戦闘的アクションが多いほど 100% に近づきます。\n\n### 2-2. Farming (成長優先度 / ファーム度)\n*   **計算要素**: CS/min（1分あたりCS獲得数）、チーム内ゴールド獲得シェア、ジャングルクリープ処理数。\n*   **処理仕様**: 自身のリソース回収率を正規化して算出。ゴールドを独占してファームするほど 100% に近づきます。\n\n### 2-3. Supportive (献身度 / サポート度)\n*   **計算要素**: 視界スコア（Ward/min）、味方に与えたシールド/ヒール量、被ダメージシェア（タンク量）、アシスト率。\n*   **処理仕様**: 味方をサポートする行動やタンクアクションが多いほど 100% に近づきます。\n\n---\n\n## 3. プレイスタイルタグ自動判定基準\n\nスライダー値および特定のアクション発生率のしきい値判定により、プレイヤーの特徴タグを自動で付与します。\n\n*   `early-brawler` (序盤の戦闘狂): Aggressive > 75% かつ 15分以内の戦闘キル関与率が平均より高い場合に自動付与。\n*   `speed-demon` (快速ファーマー): Farming > 75% かつ 15分時点の平均CS獲得数が上位10%以内の場合に自動付与。\n*   `lane-bully` (レーンの支配者): 対面スタッツ差分（ゴールド/CS差）の平均値が一定のしきい値を超えて有利な場合に自動付与。\n"
+    content: `# 🏆 分析ポータル・プレイヤー間勝率マトリクス
+
+ポータルサイト（04_PORTAL）が提供する、カスタム戦績の高度な分析ページ群。
+
+---
+
+## 1. ポータル全稼働画面
+
+* **チームバランサーWeb版 (\`/balancer\`)**:
+  ドラッグ＆ドロップでチーム分けをシミュレーションし、結果を直接Supabaseに記録。
+* **対戦履歴一覧 (\`/history\`)**:
+  過去のカスタム試合ログ一覧。勝敗、日付、各プレイヤーのチャンピオンとKDAスタッツのアコーディオン展開表示。
+* **リーダーボード (\`/leaderboard\`)**:
+  プレイヤー別MMRランキング、総合勝率、KDA順位の表示。
+* **勝率総当たりマトリクス (\`WinrateMatrixPanel.tsx\`)**:
+  リーダーボード画面内の目玉機能。プレイヤー同士が「同じチームだった時の勝率（シナジー）」と「直接対面だった時の勝率（相性）」を総当たりマトリクスで可視化するヒートマップ。
+* **デュオシナジー分析 (\`/synergy\`)**:
+  プレイヤー2名を選択し、味方時／敵対時の勝率、合計対戦数、シナジー評価を抽出。
+* **個人スタッツ詳細 (\`/stats/[discord_id]\` / \`/player/[id]\`)**:
+  プレイヤー個人のレーン別勝率、使用チャンプ勝率トップ5、KDAのヒストグラム分布、Pity値の推移グラフ。
+`
   },
   "vs_analytics": {
-    title: "⚔️ レーン対面分析 (VS)",
+    title: "⚔️ リアルタイム偵察 ＆ 辞典",
     filename: "04_vs_analytics.md",
-    content: "# ⚔️ レーン対面分析 (VS Analytics) ＆ 9分スタッツ差分バー\n\nバランサー確定時に対面ペア同士のプレイスタイルや9分時点でのレーン戦実力差（ゴールド/CS差）を可視化し、対面に勝つための具体的攻略アドバイス（Tips）を動的に出力する機能です。また、プレイヤー詳細では9分時点のスタッツ先行度（Diff Charts）を描画します。\n\n---\n\n## 1. 概要とデータ連携\n\n*   **データソース（取得元）**:\n    *   Supabase `ktm_players.metadata.playstyle_cache` 内のスタッツ（KTMカスタム、またはソロキュー情報）。\n    *   Riot Match Timeline V5 API (ソロキュー同期実行時)。\n*   **データ追加・更新トリガー**:\n    *   「対戦結果登録」または「ソロQ戦績同期」が行われた際に、裏で自動的に9分スタッツ差分（ゴールド、XP、CS）が計算され、各プレイヤーのキャッシュデータに保存されます。\n    *   バランサー画面（確定結果モーダル）を開いた際に、選択された10名のプレイヤーデータから対面ペアの比較情報が **その場で自動計算されて表示** されます（データベースへ追加で保存されるデータはありません）。\n*   **公開区分**: 一般ユーザー向け\n\n---\n\n## 2. 9分時点の対面スタッツ差分（Diff Charts）の計算ロジック\n\nゲーム開始9分（レーン戦終了の目安）時点での対面とのゴールド差、XP差、CS差をグラフで可視化します。\n\n### 2-1. Timeline データの取得 (Riot API 連携時)\n*   Riot API の Match Timeline V5 からフレーム9（9分0秒時点）の各プレイヤーの `currentGold`、`xp`、`minionsKilled`、`jungleMinionsKilled` を取得し、対面相手の値との差分を直接計算します。\n\n### 2-2. 過去ログ（タイムライン無し）での推定ロジック\n*   タイムラインデータが存在しない過去ログ（またはRiot APIキー未設定の開発環境）では、プレイヤーの最終スタッツ（最終ゴールド、最終CS）と、そのチャンピオンの平均的な「周回・レーン戦減衰カーブ係数（チャンピオン固有値）」を用いて、9分時点のスタッツを数学的に推定・補間します。\n*   **推定式**:\n    \\[9分時点スタッツ = 最終スタッツ \\times チャンピオン固有減衰係数 \\times 補正係数\\]\n    *   これにより、タイムラインAPIを毎回叩くことなく、9分時点の実力差分バーを安定して表示します。\n\n---\n\n## 3. VS Analytics 動的攻略アドバイス (Tips) 生成ロジック\n\n対面ペアそれぞれの「プレイ傾向タグ」および「使用チャンピオン」に基づき、レーン戦の戦術アドバイスを JavaScript 側で動的に判定・生成（`generateMatchupTip`）します。\n\n*   **戦闘狂タグ vs ファームタグ**: 「相手は序盤からキルを狙う戦闘狂タグを持っています。こちらはフルクリアと視界確保を優先し、相手が焦って仕掛けてくるのをタワー下で待ちましょう。」\n*   **ファームタグ vs ファームタグ**: 「両者ともにファームを優先するスタイルです。中盤のオブジェクト争い（ドラゴンやヘラルド）での集団戦が勝負の鍵となります。デッドを避け、CS差での先行を目指しましょう。」\n"
-  },
-  "jungle_clears": {
-    title: "🌳 周回統計ライブラリ",
-    filename: "05_jungle_clears.md",
-    content: "# 🌳 ジャングル周回統計ライブラリ ＆ 動画プレイヤー\n\n各ジャングルチャンピオンの最速クリアタイム目標、周回ルート、カイトのコツ、および実演動画をインライン再生する攻略ライブラリ機能です。\n\n---\n\n## 1. 概要とデータ連携\n\n*   **データソース（取得元）**:\n    *   **完全なフロントエンド静的データ (Static Master Data)**: データベース（Supabase等）は参照しておらず、すべてのデータ（チャンピオン名、開始サイド、ルート、最速タイム、YouTube動画ID、Tips）はフロントエンドのソースコード内に定数として定義されています。\n*   **データ追加・更新トリガー**:\n    *   **完全な手動によるコード編集**: データベースを介さないため、新しいチャンピオンや動画のURLを追加・修正する場合は、**`src/app/admin/clears/page.tsx` のコードを直接書き換える** 必要があります（自動で追加・更新されることはありません）。\n*   **公開区分**: **管理者専用 🔑** (サイドバーおよびルーティングを `/admin/clears` パスに制限し、管理者のみがアクセス・確認できるように保護しています)。\n\n---\n\n## 2. インライン動画プレイヤーの仕組み\n\n画面遷移や外部アプリ（YouTube等）の起動を挟まずに、ポータル内で直接動画を再生するためのインラインポップアッププレイヤーを備えています。\n\n*   **再生方式 (YouTube Embed)**:\n    *   静的マスターデータ内に登録された YouTube の `videoUrl` (11桁のビデオID、例: `tq6wQ40f7d4`) を利用し、ポップアップモーダルの中に `<iframe>` を埋め込んで自動再生します。\n    *   **埋め込み形式**:\n        ```html\n        <iframe src=\"https://www.youtube.com/embed/[videoUrl]?autoplay=1\" ...></iframe>\n        ```\n*   **フィルタリング**:\n    *   チャンピオン名によるテキスト検索、クリア難易度（EASY / MEDIUM / HARD）、および開始バフサイド（BLUE / RED）のタグ情報を React State でハンドリングし、配列の `filter()` 処理で瞬時に情報を絞り込みます。\n"
-  },
-  "soloq_scout": {
-    title: "🔍 ソロQ対面リアルタイム偵察",
-    filename: "06_soloq_scout.md",
-    content: "# 🔍 ソロQ対面リアルタイム偵察 (Live Match Lookup)\n\n管理者が自身の Riot ID（または他のプレイヤーのID）を入力して実行し、現在進行中のライブゲームを検知して、敵のジャングラーのプレイスタイル、開始バフ予測、初動Gank（レーン関与）予測、および具体的な対策Tipsを出力する機能です。\n\n---\n\n## 1. 概要とデータ連携\n\n*   **データソース（取得元）**:\n    *   **Riot Games 公式 API**:\n        *   Riot ID 解決: `/riot/account/v1/accounts/by-riot-id/`\n        *   進行中ゲーム (Spectator-V5): `/lol/spectator/v5/active-games/by-puuid/`\n        *   敵ジャングラーの過去戦績: `/lol/match/v5/matches/by-puuid/` および `/timeline`\n*   **データ追加・更新トリガー**:\n    *   **手動リアルタイムフェッチ（使い捨てデータ）**:\n        *   管理者がサモナー名（Riot ID）を入力し、「偵察開始」ボタンを **手動で押したタイミングでのみ** リアルタイムに Riot API からデータを引き出し、その場でメモリ上だけで計算・表示します。\n        *   データベース（Supabase）には分析結果や検索履歴などは一切保存されず、完全に「その場限り」の使い捨てデータです（自動巡回や定期自動保存はされません）。\n        *   ※ `RIOT_API_KEY`（環境変数）が未設定の開発・デモ環境では、Lee Sin を対面とするダミーの模擬ライブデータを自動生成して返却する「モックフォールバック機能」が自動で起動します。\n*   **公開区分**: **管理者専用 🔑** (パス: `/admin/soloq`)\n\n---\n\n## 2. 敵ジャングラー特定 ＆ 戦術予測アルゴリズム\n\n### 2-1. 敵ジャングラーの特定\n1.  API（`/lol/spectator/v5/active-games/by-puuid/`）から、進行中のゲームの全参加者（10名）のサモナースペルおよびチームIDを取得します。\n2.  検索されたサモナーのチームIDを特定し、敵チーム（もう一方のチームID）にいるプレイヤーの中から、召喚士スペルに **Smite（ID: 11）を装備しているプレイヤー** を「敵ジャングラー」として自動特定します。\n\n### 2-2. 開始バフ（赤/青）＆ 初動Gank（レーン関与）の予測\n敵の「使用チャンピオン」と「過去のプレイスタイルタグ」から、AI/ロジックで初動ルートを推測します。\n\n*   **戦闘狂タイプ (例: Lee Sin, Nidalee, Shaco 等の早期Gankチャンピオン)**:\n    *   **予測バフ**: 「青バフ（バフ3キャンプ速攻）スタート予測」または「ボット側リーシュあり赤バフスタート」。\n    *   **予測Gank**: 「トップまたはミッドへのLV3早期Gank」「リバーでの遭遇戦」。\n*   **ファーム・成長優先タイプ (例: Graves, Karthus 等のフルクリアチャンピオン)**:\n    *   **予測バフ**: 「赤バフ（フルクリア周回）スタート予測」。\n    *   **予測Gank**: 「フルクリア後のLV4でのスカトル争い、または最初のオブジェクト関与」。\n*   **対策アドバイスの生成**:\n    敵のプレイスタイルタグ（例: `early-brawler` [戦闘狂] や `speed-demon` [ファーマー]）に基づき、開始3分前後にどのレーンにワードを置くべきかなどの具体的な戦術テキストを動的に生成します。\n"
-  },
-  "mmr_admin": {
-    title: "⚙️ MMR一括再計算・検証",
-    filename: "07_mmr_admin.md",
-    content: "# ⚙️ MMR一括再計算 ＆ 整合性検証\n\n過去の対戦戦績データから、プレイヤーの全レーンMMRおよび総合MMRを時系列に沿って一括で再構築し、データの整合性を厳密に検証する管理者専用機能です。\n\n---\n\n## 1. 概要とデータ連携\n\n*   **データソース（取得元）**:\n    *   Supabase `ktm_matches` テーブル（過去の全戦績データ）。\n    *   Supabase `ktm_players` テーブル（全プレイヤーの現在のMMR）。\n*   **データ追加・更新トリガー**:\n    *   **完全な手動トリガー**: 管理者が管理者専用ダッシュボード（`/ktm-admin`）から「MMR一括再計算」または「整合性検証」ボタンを **手動でクリックした時のみ** 実行されます（自動で再計算されることはありません）。\n    *   再計算実行時、既存の `ktm_players` の全 MMR レコードが **自動で上書き更新 (UPDATE)** されます。\n*   **公開区分**: **管理者専用 🔑**\n\n---\n\n## 2. MMR 一括再計算（Rebuild）の処理仕様\n\n対戦結果の削除やMMR計算式の変更時に、整合性を保つために以下のプロセスで全プレイヤーのMMRを再計算します。\n\n1.  **初期化**: 全プレイヤーのMMRを、それぞれの「自己申告の最高ランクおよび希望ロール」に基づく初期値に一度一括リセットします。\n2.  **時系列ループ処理**:\n    *   `ktm_matches` から全試合データを「日付・作成日時が古い順（昇順）」で一括取得します。\n    *   第1試合から順番に、その試合に参加した10名のその時点でのMMRを取り出し、Elo計算式を適用して勝敗による増減値（\\(\\Delta MMR\\)）を算出します。\n    *   算出された新MMRをそのプレイヤーの「現在MMR」に適用し、次の試合へと進みます。\n3.  **バッチ保存**: 全試合のシミュレーションループ完了後、全プレイヤーの最終MMRおよび各試合の \\(\\Delta MMR\\) 変動履歴を Supabase に一括保存（UPDATE）します。\n\n---\n\n## 3. MMR 整合性検証（Check Integrity）の処理仕様\n\nメモリ上で計算した累積MMRシミュレーション値と、データベースに実際に保存されている最終MMR値にズレがないかを自動検証します。\n\n*   **ロール名の表記揺れ吸収**: 参加者データからロールキー名を生成する際、ロール名を `toUpperCase()` に変換して `expectedJg` / `expectedSup` などのキャメルケースで正しく期待値を読み込みます。\n*   **浮動小数点丸め誤差の保護（しきい値）**:\n    *   データベース保存時の丸め処理や、プログラム内の浮動小数点演算（IEEE 754）に伴う微小なズレ（1〜2点程度）をエラーと判定する偽陽性を防ぐため、各レーンの差が **`2` 以内** であれば正常（整合性あり）と判定するセーフガード設計となっています。\n"
+    content: `# ⚔️ リアルタイム偵察 ＆ チャンピオン事前学習マニュアル
+
+ソロキューの進行中マッチ対策、およびチャンピオンマッチアップ攻略辞典。
+
+---
+
+## 1. ソロキュー対戦相手偵察 (Live Lookup - \`/admin/soloq\`)
+
+* **概要**:
+  現在進行中のライブゲームを検知し、敵ジャングラーのルートや対策をリアルタイム分析。
+* **詳細仕様**:
+  - PUUID解決、Spectator API経由のゲームフェッチ、敵ジャングラー特定、過去戦績Timeline取得。
+  - GLOBALナレッジ（\`matchup_sentinel\`）および過去の自分の敗因反省（\`personal_knowledge\`）をマージし、AIリアルタイム指示3箇条を生成。
+  - 過去のやらかし反省がある場合、最上部で赤いバナーが点滅。
+  - **エラーハンドリング**: \`RIOT_API_KEY\` 未設定時はモックを表示せず、エラーメッセージを直接描画。
+
+---
+
+## 2. Junglepediaレプリカ ＆ AIアドバイザー (\`/player/[id]/junglepedia\`)
+
+* **仕様**:
+  Junglepedia.lol のデザインを再現。6大スライダー（ルート固定率、開始サイド、赤青選択、オブジェクト vs 戦闘、アグレッシブ度、クリア速度）、オブジェクト獲得率、標準フルクリア時間を表示。
+* **AI戦術アドバイス**:
+  スライダー数値を分析し、本人向けの勝率UPアドバイスと、敵視点での対策をトグル表示。APIキー未設定時はモックを表示せず、赤色警告バナーを描画。
+
+---
+
+## 3. チャンピオンマッチアップ比較 (\`/matchups\`)
+* **仕様**:
+  チャンピオン2体を選択し、対面統計データ、レーンごとのキル関与度やパワースパイクの違いをグラフィカルに比較表示する90KBの超巨大スタッツ画面。
+
+---
+
+## 4. チャンピオン辞典 ＆ 過去の敗因反省 (\`/champions\`)
+* **仕様**:
+  各チャンピオンの強み・弱み、ビルド、パワースパイク解説と、過去の自分の敗因反省履歴（やらかしメモ）を表示。
+`
   },
   "knowledge_base": {
-    title: "🧠 自動要約ナレッジ＆動画キュー",
-    filename: "08_knowledge_base.md",
-    content: "# 🧠 自動要約ナレッジベース ＆ YouTube自動解析キュー\n\nITツールのアフィリエイトノウハウやLoL攻略情報などのテキストドキュメントを管理し、YouTubeの攻略動画からAI（Gemini）によって攻略バイブルを自動生成・マージする管理者専用ナレッジシステムです。\n\n---\n\n## 1. 概要とデータ連携\n\n*   **データソース（取得元）**:\n    *   Supabase `personal_knowledge` テーブル（攻略記事や要約された戦術メモの保存先）。\n    *   Supabase `matchup_sentinel` テーブル（チャンピオン辞典）。\n    *   ローカルファイル `04_PORTAL/kirei_queue.json` (動画解析のタスクキュー)。\n*   **データ追加・更新トリガー（自動 ＆ 手動の協調）**:\n    *   **手動登録**: 管理者がURLやメモをフォーム（`/admin/knowledge`）に入力し、「追加」ボタンを手動で押した際に登録されます。\n    *   **YouTube自動要約（完全自動追加）**: \n        *   登録されたURLが YouTube 動画の場合、SREデーモン（Python）が15分おきに自動巡回し、動画字幕をフェッチ。Gemini API で要約された Markdown 形式の攻略バイブルを **自動生成してナレッジDBへ追加 (INSERT)** します。\n        *   その後、3時間ごとに `DictSynthesizer` が自動起動し、生成された攻略Markdownを対面アドバイス用DB `matchup_sentinel` へ自動マージ・同期します。\n*   **公開区分**: **管理者専用 🔑** (パス: `/admin/knowledge`, `/admin/youtube`)\n\n---\n\n## 2. YouTube動画解析 ＆ 攻略バイブル生成のフロー\n\n攻略動画の登録から最終マージまでの全自律フローは以下の通りです。\n\n1.  **キュー登録**: 管理者が YouTube URL を登録すると、ステータス `pending` で `kirei_queue.json` に追加されます。\n2.  **字幕解析**: SREデーモン（15分間隔）が起動し、`yt-dlp` を用いて英語/日本語の字幕（VTT）をダウンロードします。\n3.  **AI要約**: 字幕テキストを Gemini API (`gemini-2.5-pro` / Paid) に渡し、LoLの戦術・周回ルート・マッチアップを日本語で要約した Markdown 文書（バイブル）を生成させます。\n4.  **DB追加**: 生成された Markdown データを `personal_knowledge` に自動追加し、キューのステータスを `completed` に更新します。\n\n---\n\n## 3. チャンピオン辞典への自動同期マージ\n\n3時間おきに起動する `DictSynthesizer` が、以下のロジックでナレッジ記事をチャンピオン辞典（対面分析のTips）へマージします。\n\n*   ナレッジ記事内の対象チャンピオン（例: `Nidalee`）を検知。\n*   対戦アドバイス用DB（`matchup_sentinel`）の該当チャンピオンの戦略レコードをロード。\n*   既存の戦略テキストの末尾に、重複しないように今回の攻略 Markdown 差分を自動的にマージ（追記）して保存します。\n*   マージ完了した元記事には `__DELETED__` タグが付与され、SREデーモンによって15秒後にDBおよびローカルファイルから安全に物理削除されます。\n"
-  },
-  "affiliate_spa": {
-    title: "💵 アフィリエイト収益化SPA",
-    filename: "09_affiliate_spa.md",
-    content: "# 💵 アフィリエイト収益化SPAコントロール\n\nIT自動アフィリエイト運用のアクセス分析、案件リンクの編集、自動記事生成バッチ（ドライラン/本番）の監視コンソールなどを一元管理する管理者用のSPA（Single Page Application）機能です。\n\n---\n\n## 1. 概要とデータ連携\n\n*   **データソース（取得元）**:\n    *   Supabase `note_pv_history` テーブル（PV、Likes、Comments数などのnoteアクセス履歴）。\n    *   ローカルファイル `02_FACTORY/affiliate_links.json` (アフィリエイトリンクの一覧)。\n    *   ローカルファイル `02_FACTORY/affiliate_knowledge.md` (副業運用メモ)。\n    *   ローカルログ `00_LOGS/monetization_batch_run.log` (バッチ実行ログ)。\n*   **データ追加・更新トリガー**:\n    *   **アクセス分析 (自動取得)**: アナリストバッチが定期的に note.com からデータをスクレイピング（またはAPI連携）して `note_pv_history` を更新し、Gemini が週次でアクセス傾向へのAIフィードバックを生成します。\n    *   **案件リンク管理 (手動保存)**: 管理者がツール名とアフィリエイトURLをフォームに入力し、「リンクの保存」ボタンを **手動で押した時のみ** `affiliate_links.json` に上書き保存 (UPDATE) されます。\n    *   **自動記事生成バッチ (手動キック ＆ 自動実行)**: \n        *   「バッチを実行」ボタンを **手動でクリック** することで、Python子プロセスが非同期で起動してバッチ処理が始まります。\n        *   実行ログ（コンソール出力）は自動的に `monetization_batch_run.log` に書き込まれ、ポータル画面上の黒い疑似コンソールに **自動でリアルタイムストリーム表示** されます。\n*   **公開区分**: **管理者専用 🔑** (パス: `/admin/dashboard` タブ)\n\n---\n\n## 2. アフィリエイト一気通貫バッチの自動処理フロー\n\nバッチを実行すると、以下のライフサイクルが自律的に回ります。\n\n1.  **ITトレンド収集**: リサーチャー（Python）がホットなAI・副業トレンド情報をインターネットから収集します。\n2.  **記事の自動生成**: クリエイター（Python）が、収集したトレンドと `affiliate_links.json` に登録されている紹介用アフィリエイトURLをブレンドし、アフィリエイトリンク入りの note 有料記事案（Markdown）を自動で執筆・生成します。\n3.  **note 下書き自動保存 ＆ Xスレッド自動投稿**:\n    *   Playwright ヘッドレスブラウザが起動し、自動で note.com にログインして下書き保存を実行。同時に、X (Twitter) の宣伝用ツイートスレッドを自動投稿します。\n    *   ※ 「ドライラン（検証実行）」チェックを有効にして実行した場合、記事の生成やXスレッドの構築までは行いますが、note への実際の保存や X への投稿は行わずに挙動をテストできます。\n"
-  },
+    title: "🧠 ナレッジ ＆ プロンプト管理",
+    filename: "05_knowledge_base.md",
+    content: `# 🧠 ナレッジ管理 ＆ AIプロンプトテンプレート管理
+
+管理者専用のデータ同期、分析、プロンプトの動的編集コントロール。
+
+---
+
+## 1. 管理者ダッシュボード (\`/ktm-admin\` / \`/admin/dashboard\`)
+
+* **MMR再構築 (\`api/mmr/rebuild\`)**:
+  過去のすべての試合ログをスプレッドシートから再読み込みし、初期からMMRを時系列で一括再計算。
+* **整合性検証 (\`api/mmr/check-integrity\` / \`check-integrity\`)**:
+  データベース上の現在MMRが、試合ログの累積変動計算とズレていないかをテスト・照合する整合性スキャン。
+
+---
+
+## 2. アフィリエイト収益分析 (\`/admin/analytics\`)
+* **仕様**:
+  note記事のPV推移、アフィリエイトクリック数、アクセス数ランキング、PV推移データのグラフ化。
+
+---
+
+## 3. ジャングルクリアタイム管理 (\`/admin/clears\`)
+* **仕様**:
+  各プレイヤーの得意チャンピオン別のクリア時間の秒数・ルートデータをデータベース管理。
+
+---
+
+## 4. AIプロンプトテンプレート管理 (\`/admin/prompts\`)
+* **仕様**:
+  AI Healer、note自動執筆、リアルタイム偵察対策生成で使用している各種システムプロンプト・ユーザープロンプトテンプレートを管理画面から動的に上書き編集できる機能。
+`
+  }
 };
