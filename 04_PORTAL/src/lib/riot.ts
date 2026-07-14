@@ -177,7 +177,7 @@ export async function fetchMatchTimeline(matchId: string, apiKey: string): Promi
  * PUUIDから現在進行中のアクティブゲーム情報を取得します (Spectator-V5)
  */
 export async function fetchActiveGameByPuuid(puuid: string, apiKey: string): Promise<any> {
-  const url = `${RIOT_API_BASE_JP}/lol/spectator/v5/active-games/by-puuid/${puuid}?api_key=${apiKey}`;
+  const url = `${RIOT_API_BASE_JP}/lol/spectator/v5/active-games/by-summoner/${puuid}?api_key=${apiKey}`;
   const res = await fetch(url, { cache: 'no-store' });
   if (!res.ok) {
     if (res.status === 404) {
