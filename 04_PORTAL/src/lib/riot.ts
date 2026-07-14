@@ -6,6 +6,7 @@
 const RIOT_API_BASE_ASIA = "https://asia.api.riotgames.com";
 
 interface ParticipantStats {
+  puuid: string;
   riotIdName: string;
   riotIdTagline: string;
   championName: string;
@@ -86,6 +87,7 @@ export async function fetchMatchDetails(matchId: string, apiKey: string): Promis
   const gameDuration = data.info.gameDuration;
   
   const participants: ParticipantStats[] = data.info.participants.map((p: any) => ({
+    puuid: p.puuid,
     riotIdName: p.riotIdGameName || p.summonerName,
     riotIdTagline: p.riotIdTagline || '',
     championName: p.championName,
