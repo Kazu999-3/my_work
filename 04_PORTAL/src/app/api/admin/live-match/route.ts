@@ -39,16 +39,16 @@ export async function POST(req: Request) {
     } catch (err: any) {
       if (err.message === 'ACTIVE_GAME_NOT_FOUND') {
         try {
-          // 1. 直近10試合のソロキュー履歴 (420) の取得を試行
+          // 1. 直近5試合のソロキュー履歴 (420) の取得を試行
           let myMatchIds: string[] = [];
           try {
-            myMatchIds = await fetchRecentMatchIds(myPuuid, apiKey, 10, 420);
+            myMatchIds = await fetchRecentMatchIds(myPuuid, apiKey, 5, 420);
           } catch (e) {}
           
           // 2. ソロキュー履歴が無い場合は、全ゲームモード（ノーマル・カスタム等）から再取得
           if (!myMatchIds || myMatchIds.length === 0) {
             try {
-              myMatchIds = await fetchRecentMatchIds(myPuuid, apiKey, 10);
+              myMatchIds = await fetchRecentMatchIds(myPuuid, apiKey, 5);
             } catch (e) {}
           }
           
