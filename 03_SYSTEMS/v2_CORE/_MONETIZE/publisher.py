@@ -138,88 +138,88 @@ class XPublisher:
                 page.wait_for_url("https://x.com/home", timeout=60000)
                 logger.info("Login detected. Proceeding...")
                 
-            logger.info(f"Starting thread posting ({len(tweets)} posts)...")
-            try:
-                # ツイート入力ボックス
-                post_box = page.locator('div[data-testid="tweetTextarea_0"]')
-                post_box.wait_for(state="visible", timeout=10000)
-                
-                for i, text in enumerate(tweets):
-                    logger.info(f"Typing post {i+1}/{len(tweets)}...")
-                    if i == 0:
-                        post_box.click()
-                        page.keyboard.insert_text(text)
-                    else:
-                        # 2個目以降は「+」ボタンを押してツリーを追加
-                        try:
-                            # aria-label の付いている要素（タグ問わず）を探す
-                            add_button = page.locator('[aria-label="ポストを追加"]').first
-                            if not add_button.is_visible():
-                                add_button = page.locator('[aria-label="Add post"]').first
-                            add_button.wait_for(state="visible", timeout=5000)
-                            add_button.click()
-                        except Exception:
-                            # 念のためフォールバック
-                            add_button = page.locator('[data-testid="addTweetButton"]').first
-                            add_button.click()
-                        time.sleep(1)
-                        
-                        next_box = page.locator(f'div[data-testid="tweetTextarea_{i}"]')
-                        next_box.wait_for(state="visible", timeout=5000)
-                        next_box.click()
-                        page.keyboard.insert_text(text)
-                        
-                    time.sleep(2)
+                logger.info(f"Starting thread posting ({len(tweets)} posts)...")
+                try:
+                    # ツイート入力ボックス
+                    post_box = page.locator('div[data-testid="tweetTextarea_0"]')
+                    post_box.wait_for(state="visible", timeout=10000)
                     
-                logger.info("Clicking Post button via Ctrl+Enter shortcut...")
-                # UIのボタン名変更やモーダル/インラインの違いに左右されない最強のショートカット「Ctrl+Enter」で送信
-                page.keyboard.press("Control+Enter")
-                
-                logger.info("✅ Thread posted successfully!")
-                
-                # 投稿完了トーストからURLを取得（取得できない場合はXのホームへ）
-                post_url = "https://x.com/"
-                try:
-                    toast = page.locator('[role="status"]').last
-                    toast.wait_for(state="visible", timeout=8000)
-                    view_link = toast.locator('a[href*="/status/"]').first
-                    if view_link.is_visible():
-                        post_url = "https://x.com" + view_link.get_attribute("href")
-                except Exception as e:
-                    logger.warning(f"Could not extract post URL from toast: {e}")
-                
-                # Supabaseに履歴を保存
-                if SUPABASE_URL and SUPABASE_KEY:
+                    for i, text in enumerate(tweets):
+                        logger.info(f"Typing post {i+1}/{len(tweets)}...")
+                        if i == 0:
+                            post_box.click()
+                            page.keyboard.insert_text(text)
+                        else:
+                            # 2個目以降は「+」ボタンを押してツリーを追加
+                            try:
+                                # aria-label の付いている要素（タグ問わず）を探す
+                                add_button = page.locator('[aria-label="ポストを追加"]').first
+                                if not add_button.is_visible():
+                                    add_button = page.locator('[aria-label="Add post"]').first
+                                add_button.wait_for(state="visible", timeout=5000)
+                                add_button.click()
+                            except Exception:
+                                # 念のためフォールバック
+                                add_button = page.locator('[data-testid="addTweetButton"]').first
+                                add_button.click()
+                            time.sleep(1)
+                            
+                            next_box = page.locator(f'div[data-testid="tweetTextarea_{i}"]')
+                            next_box.wait_for(state="visible", timeout=5000)
+                            next_box.click()
+                            page.keyboard.insert_text(text)
+                            
+                        time.sleep(2)
+                        
+                    logger.info("Clicking Post button via Ctrl+Enter shortcut...")
+                    # UIのボタン名変更やモーダル/インラインの違いに左右されない最強のショートカット「Ctrl+Enter」で送信
+                    page.keyboard.press("Control+Enter")
+                    
+                    logger.info("✅ Thread posted successfully!")
+                    
+                    # 投稿完了トーストからURLを取得（取得できない場合はXのホームへ）
+                    post_url = "https://x.com/"
                     try:
-                        title_summary = tweets[0][:30] + "..." if len(tweets[0]) > 30 else tweets[0]
-                        headers = {
-                            "apikey": SUPABASE_KEY,
-                            "Authorization": f"Bearer {SUPABASE_KEY}",
-                            "Content-Type": "application/json"
-                        }
-                        payload = {
-                            'platform': 'X',
-                            'title': title_summary,
-                            'url': post_url
-                        }
-                        requests.post(f"{SUPABASE_URL}/rest/v1/published_posts", headers=headers, json=payload)
+                        toast = page.locator('[role="status"]').last
+                        toast.wait_for(state="visible", timeout=8000)
+                        view_link = toast.locator('a[href*="/status/"]').first
+                        if view_link.is_visible():
+                            post_url = "https://x.com" + view_link.get_attribute("href")
                     except Exception as e:
-                        logger.error(f"Supabaseへの履歴保存に失敗しました: {e}")
-                
-                herald.notify_progress(f"📢 **X(Twitter) へのスレッド投稿が完了しました！** ({len(tweets)} ポスト)\nURL: {post_url}", portal_link=True, page="sns")
-                time.sleep(3) # 投稿完了を待つ
-                context.close()
-                return post_url
-                
-            except Exception as e:
-                logger.error(f"Error during posting: {e}")
-                error_path = "D:/my_work/.agent/logs/x_error.png"
-                try:
-                    page.screenshot(path=error_path)
-                    logger.info(f"Screenshot saved to {error_path}")
-                except Exception as ss_e:
-                    logger.error(f"Failed to save screenshot: {ss_e}")
-                return None
+                        logger.warning(f"Could not extract post URL from toast: {e}")
+                    
+                    # Supabaseに履歴を保存
+                    if SUPABASE_URL and SUPABASE_KEY:
+                        try:
+                            title_summary = tweets[0][:30] + "..." if len(tweets[0]) > 30 else tweets[0]
+                            headers = {
+                                "apikey": SUPABASE_KEY,
+                                "Authorization": f"Bearer {SUPABASE_KEY}",
+                                "Content-Type": "application/json"
+                            }
+                            payload = {
+                                'platform': 'X',
+                                'title': title_summary,
+                                'url': post_url
+                            }
+                            requests.post(f"{SUPABASE_URL}/rest/v1/published_posts", headers=headers, json=payload)
+                        except Exception as e:
+                            logger.error(f"Supabaseへの履歴保存に失敗しました: {e}")
+                    
+                    herald.notify_progress(f"📢 **X(Twitter) へのスレッド投稿が完了しました！** ({len(tweets)} ポスト)\nURL: {post_url}", portal_link=True, page="sns")
+                    time.sleep(3) # 投稿完了を待つ
+                    context.close()
+                    return post_url
+                    
+                except Exception as e:
+                    logger.error(f"Error during posting: {e}")
+                    error_path = "D:/my_work/.agent/logs/x_error.png"
+                    try:
+                        page.screenshot(path=error_path)
+                        logger.info(f"Screenshot saved to {error_path}")
+                    except Exception as ss_e:
+                        logger.error(f"Failed to save screenshot: {ss_e}")
+                    return None
             finally:
                 if context:
                     context.close()
@@ -321,207 +321,207 @@ class NotePublisher:
                     context.close()
                     return False
                 
-            logger.info("Navigating to new draft via intent URL...")
-            try:
-                logger.info("Navigate to Note Homepage...")
-                page.goto("https://note.com/")
-                time.sleep(3)
-                
-                # 「投稿」ボタンを探してクリック
-                logger.info("Clicking the Post button...")
-                post_btn = page.locator('a[href*="/intent/post"], a[href*="editor.note.com"]').first
-                if post_btn.is_visible():
-                    post_btn.click()
-                else:
-                    # 別の「投稿」ボタンを探す
-                    page.locator('text="投稿"').first.click()
-                
-                # 新規エディタ画面のロードを待つ
-                # 新規エディタ画面のロードを待つ（ログイン切れの場合はログイン画面へリダイレクトされる）
-                logger.info("Waiting for editor.note.com to load (timeout: 30s)...")
+                logger.info("Navigating to new draft via intent URL...")
                 try:
-                    page.wait_for_url(lambda url: "editor.note.com" in url or "login" in url, timeout=30000)
-                    if "login" in page.url:
-                        logger.error("🚨 [ERROR] Redirected to note.com login screen. Session might have expired.")
-                        if self.headless:
-                            logger.error("Cannot perform manual login in headless mode. Aborting.")
-                            context.close()
-                            return None
-                        else:
-                            logger.info("Waiting up to 5 minutes for manual login...")
-                            page.wait_for_url("**editor.note.com**", timeout=300000)
-                except Exception as wait_e:
-                    logger.error(f"Timeout waiting for editor page: {wait_e}")
-                    context.close()
-                    return None
-                time.sleep(3)
-                
-                # 「AIアシスタント利用規約」等のモーダルが表示されている場合は閉じる
-                try:
-                    logger.info("Checking for any blocking modal dialogs...")
-                    modal_btn = page.locator('button:has-text("利用条件に同意して始める"), button:has-text("キャンセル")').first
-                    if modal_btn.is_visible():
-                        logger.info("Modal detected. Clicking button to close modal...")
-                        modal_btn.click()
-                        time.sleep(2)
-                except Exception as modal_e:
-                    logger.warning(f"Could not dismiss modal: {modal_e}")
-            except Exception as e:
-                logger.error(f"Failed to navigate to editor (login session might have expired): {e}")
-                context.close()
-                return None
-            
-            try:
-                # Noteエディタのタイトル入力欄（クラス名や構造に依存しないよう複数のセレクタを試行）
-                title_selectors = [
-                    'textarea[placeholder*="タイトル"]',
-                    '.editor-titleInput',
-                    '[data-name="title"]',
-                    'textarea.title',
-                    '[aria-label*="タイトル"]'
-                ]
-                # 複数のセレクタをカンマ区切りで指定し、いずれかが表示されるまで待機する
-                title_area = page.locator(", ".join(title_selectors)).first
-                
-                title_area.wait_for(state="visible", timeout=20000)
-                title_area.fill(title)
-                
-                # 本文の入力 (コピペを利用して高速化＆マークダウン維持)
-                logger.info("Pasting markdown body...")
-                body_area = page.locator('div[contenteditable="true"]').last
-                body_area.wait_for(state="visible", timeout=10000)
-                body_area.click()
-                
-                # Playwrightを通じてブラウザのクリップボードにテキストを書き込み
-                page.evaluate("text => navigator.clipboard.writeText(text)", markdown_body)
-                time.sleep(1)
-                
-                # Ctrl+V (Windows/Linux) or Meta+V (Mac)
-                page.keyboard.press("Control+V")
-                logger.info("Waiting 10 seconds for note auto-save...")
-                time.sleep(10)
-                
-                if not auto_publish:
-                    logger.info("✅ Draft auto-populated successfully! (Kept as draft)")
+                    logger.info("Navigate to Note Homepage...")
+                    page.goto("https://note.com/")
+                    time.sleep(3)
                     
-                    # 下書き共有URLの取得を試行
-                    preview_url = None
-                    try:
-                        logger.info("Attempting to generate draft preview share URL...")
-                        # 1. その他のメニュー（三点リーダー）をクリック
-                        more_menu = page.locator('button[aria-label="その他のアクション"], button[class*="menu"], button:has-text("...")').first
-                        if more_menu.is_visible():
-                            more_menu.click()
-                            time.sleep(2)
-                            
-                            # 2. 「下書きの共有」メニューをクリック
-                            share_btn = page.locator('button:has-text("下書きの共有"), text="下書きの共有"').first
-                            if share_btn.is_visible():
-                                share_btn.click()
-                                time.sleep(3)
-                                
-                                # 3. トグルをチェック（有効化）
-                                toggle = page.locator('input[type="checkbox"], button[role="switch"]').first
-                                if toggle.is_visible():
-                                    is_checked = toggle.is_checked() if toggle.locator('input').count() > 0 else False
-                                    aria_checked = toggle.get_attribute("aria-checked")
-                                    if aria_checked == "false" or not is_checked:
-                                        toggle.click()
-                                        time.sleep(2)
-                                
-                                # 4. 共有URLテキストボックスからURLを取得
-                                share_input = page.locator('input[readonly], input[value*="note.com/preview"]').first
-                                if share_input.is_visible():
-                                    val = share_input.get_attribute("value")
-                                    if val and "note.com/preview" in val:
-                                        preview_url = val
-                                        logger.info(f"✅ Generated preview URL successfully: {preview_url}")
-                                        
-                                # ダイアログを閉じる
-                                close_btn = page.locator('button[aria-label="閉じる"], button:has-text("閉じる")').first
-                                if close_btn.is_visible():
-                                    close_btn.click()
-                                    time.sleep(1)
-                    except Exception as share_e:
-                        logger.warning(f"⚠️ Failed to get draft preview URL: {share_e}")
-
-                    # プレビューURLが取得できたらそれを返す。取得できなければNoneを返してX投稿をスキップ
-                    if preview_url:
-                        draft_url = preview_url
-                        herald.notify_progress(f"📝 **note.com への下書き保存が完了しました！**\nタイトル: `{title}`\nURL: {draft_url}", portal_link=True, page="drafts")
-                        time.sleep(3)
-                        context.close()
-                        return draft_url
+                    # 「投稿」ボタンを探してクリック
+                    logger.info("Clicking the Post button...")
+                    post_btn = page.locator('a[href*="/intent/post"], a[href*="editor.note.com"]').first
+                    if post_btn.is_visible():
+                        post_btn.click()
                     else:
-                        logger.error("❌ Could not obtain public-viewable draft preview URL. Aborting to prevent dead link posting on X.")
-                        if not self.headless:
-                            logger.info("Headful mode detected. Keeping browser open for 120 seconds to allow manual save and preview URL retrieval...")
-                            time.sleep(120)
+                        # 別の「投稿」ボタンを探す
+                        page.locator('text="投稿"').first.click()
+                    
+                    # 新規エディタ画面のロードを待つ
+                    # 新規エディタ画面のロードを待つ（ログイン切れの場合はログイン画面へリダイレクトされる）
+                    logger.info("Waiting for editor.note.com to load (timeout: 30s)...")
+                    try:
+                        page.wait_for_url(lambda url: "editor.note.com" in url or "login" in url, timeout=30000)
+                        if "login" in page.url:
+                            logger.error("🚨 [ERROR] Redirected to note.com login screen. Session might have expired.")
+                            if self.headless:
+                                logger.error("Cannot perform manual login in headless mode. Aborting.")
+                                context.close()
+                                return None
+                            else:
+                                logger.info("Waiting up to 5 minutes for manual login...")
+                                page.wait_for_url("**editor.note.com**", timeout=300000)
+                    except Exception as wait_e:
+                        logger.error(f"Timeout waiting for editor page: {wait_e}")
                         context.close()
                         return None
-                
-                logger.info("🚀 Auto Publish mode enabled. Setting up Paid parameters...")
-                # 「公開に進む」ボタン
-                publish_btn = page.locator('button:has-text("公開に進む")').first
-                publish_btn.wait_for(state="visible", timeout=20000)
-                publish_btn.click()
-                time.sleep(5)
-                
-                # 有料設定
-                logger.info("Setting paid option...")
-                paid_radio = page.locator('label:has-text("有料")').first
-                if paid_radio.is_visible():
-                    paid_radio.click()
-                    time.sleep(1)
+                    time.sleep(3)
                     
-                    # 価格入力（input[type="text"] または number が現れるはず）
-                    # placeholder="例: 100~10,000" のような入力欄
-                    price_input = page.locator('input[placeholder*="100"]').first
-                    if not price_input.is_visible():
-                        price_input = page.locator('input[type="text"]').last # 最悪の場合のフォールバック
-                    
-                    price_input.fill(str(price))
-                    time.sleep(1)
-                
-                # 最終公開ボタン
-                logger.info("Clicking final publish button...")
-                final_publish = page.locator('button:has-text("公開")').last
-                final_publish.click()
-                time.sleep(10) # 投稿完了・画面遷移まで待つ
-                
-                published_url = page.url
-                logger.info("✅ Paid Article fully published successfully!")
-                
-                # Supabaseに履歴を保存
-                if SUPABASE_URL and SUPABASE_KEY:
+                    # 「AIアシスタント利用規約」等のモーダルが表示されている場合は閉じる
                     try:
-                        headers = {
-                            "apikey": SUPABASE_KEY,
-                            "Authorization": f"Bearer {SUPABASE_KEY}",
-                            "Content-Type": "application/json"
-                        }
-                        payload = {
-                            'platform': 'note',
-                            'title': title,
-                            'url': published_url
-                        }
-                        requests.post(f"{SUPABASE_URL}/rest/v1/published_posts", headers=headers, json=payload)
-                    except Exception as e:
-                        logger.error(f"Supabaseへの履歴保存に失敗しました: {e}")
+                        logger.info("Checking for any blocking modal dialogs...")
+                        modal_btn = page.locator('button:has-text("利用条件に同意して始める"), button:has-text("キャンセル")').first
+                        if modal_btn.is_visible():
+                            logger.info("Modal detected. Clicking button to close modal...")
+                            modal_btn.click()
+                            time.sleep(2)
+                    except Exception as modal_e:
+                        logger.warning(f"Could not dismiss modal: {modal_e}")
+                except Exception as e:
+                    logger.error(f"Failed to navigate to editor (login session might have expired): {e}")
+                    context.close()
+                    return None
                 
-                herald.notify_progress(f"💰 **note.com で有料記事（{price}円）の完全自動公開が完了しました！**\nタイトル: `{title}`\nURL: {published_url}", portal_link=True, page="publish")
-                context.close()
-                return published_url
-                
-                
-            except Exception as e:
-                logger.error(f"Error during note posting: {e}")
-                error_path = "D:/my_work/.agent/logs/note_error.png"
                 try:
-                    page.screenshot(path=error_path)
-                except:
-                    pass
-                return None
+                    # Noteエディタのタイトル入力欄（クラス名や構造に依存しないよう複数のセレクタを試行）
+                    title_selectors = [
+                        'textarea[placeholder*="タイトル"]',
+                        '.editor-titleInput',
+                        '[data-name="title"]',
+                        'textarea.title',
+                        '[aria-label*="タイトル"]'
+                    ]
+                    # 複数のセレクタをカンマ区切りで指定し、いずれかが表示されるまで待機する
+                    title_area = page.locator(", ".join(title_selectors)).first
+                    
+                    title_area.wait_for(state="visible", timeout=20000)
+                    title_area.fill(title)
+                    
+                    # 本文の入力 (コピペを利用して高速化＆マークダウン維持)
+                    logger.info("Pasting markdown body...")
+                    body_area = page.locator('div[contenteditable="true"]').last
+                    body_area.wait_for(state="visible", timeout=10000)
+                    body_area.click()
+                    
+                    # Playwrightを通じてブラウザのクリップボードにテキストを書き込み
+                    page.evaluate("text => navigator.clipboard.writeText(text)", markdown_body)
+                    time.sleep(1)
+                    
+                    # Ctrl+V (Windows/Linux) or Meta+V (Mac)
+                    page.keyboard.press("Control+V")
+                    logger.info("Waiting 10 seconds for note auto-save...")
+                    time.sleep(10)
+                    
+                    if not auto_publish:
+                        logger.info("✅ Draft auto-populated successfully! (Kept as draft)")
+                        
+                        # 下書き共有URLの取得を試行
+                        preview_url = None
+                        try:
+                            logger.info("Attempting to generate draft preview share URL...")
+                            # 1. その他のメニュー（三点リーダー）をクリック
+                            more_menu = page.locator('button[aria-label="その他のアクション"], button[class*="menu"], button:has-text("...")').first
+                            if more_menu.is_visible():
+                                more_menu.click()
+                                time.sleep(2)
+                                
+                                # 2. 「下書きの共有」メニューをクリック
+                                share_btn = page.locator('button:has-text("下書きの共有"), text="下書きの共有"').first
+                                if share_btn.is_visible():
+                                    share_btn.click()
+                                    time.sleep(3)
+                                    
+                                    # 3. トグルをチェック（有効化）
+                                    toggle = page.locator('input[type="checkbox"], button[role="switch"]').first
+                                    if toggle.is_visible():
+                                        is_checked = toggle.is_checked() if toggle.locator('input').count() > 0 else False
+                                        aria_checked = toggle.get_attribute("aria-checked")
+                                        if aria_checked == "false" or not is_checked:
+                                            toggle.click()
+                                            time.sleep(2)
+                                    
+                                    # 4. 共有URLテキストボックスからURLを取得
+                                    share_input = page.locator('input[readonly], input[value*="note.com/preview"]').first
+                                    if share_input.is_visible():
+                                        val = share_input.get_attribute("value")
+                                        if val and "note.com/preview" in val:
+                                            preview_url = val
+                                            logger.info(f"✅ Generated preview URL successfully: {preview_url}")
+                                            
+                                    # ダイアログを閉じる
+                                    close_btn = page.locator('button[aria-label="閉じる"], button:has-text("閉じる")').first
+                                    if close_btn.is_visible():
+                                        close_btn.click()
+                                        time.sleep(1)
+                        except Exception as share_e:
+                            logger.warning(f"⚠️ Failed to get draft preview URL: {share_e}")
+
+                        # プレビューURLが取得できたらそれを返す。取得できなければNoneを返してX投稿をスキップ
+                        if preview_url:
+                            draft_url = preview_url
+                            herald.notify_progress(f"📝 **note.com への下書き保存が完了しました！**\nタイトル: `{title}`\nURL: {draft_url}", portal_link=True, page="drafts")
+                            time.sleep(3)
+                            context.close()
+                            return draft_url
+                        else:
+                            logger.error("❌ Could not obtain public-viewable draft preview URL. Aborting to prevent dead link posting on X.")
+                            if not self.headless:
+                                logger.info("Headful mode detected. Keeping browser open for 120 seconds to allow manual save and preview URL retrieval...")
+                                time.sleep(120)
+                            context.close()
+                            return None
+                    
+                    logger.info("🚀 Auto Publish mode enabled. Setting up Paid parameters...")
+                    # 「公開に進む」ボタン
+                    publish_btn = page.locator('button:has-text("公開に進む")').first
+                    publish_btn.wait_for(state="visible", timeout=20000)
+                    publish_btn.click()
+                    time.sleep(5)
+                    
+                    # 有料設定
+                    logger.info("Setting paid option...")
+                    paid_radio = page.locator('label:has-text("有料")').first
+                    if paid_radio.is_visible():
+                        paid_radio.click()
+                        time.sleep(1)
+                        
+                        # 価格入力（input[type="text"] または number が現れるはず）
+                        # placeholder="例: 100~10,000" のような入力欄
+                        price_input = page.locator('input[placeholder*="100"]').first
+                        if not price_input.is_visible():
+                            price_input = page.locator('input[type="text"]').last # 最悪の場合のフォールバック
+                        
+                        price_input.fill(str(price))
+                        time.sleep(1)
+                    
+                    # 最終公開ボタン
+                    logger.info("Clicking final publish button...")
+                    final_publish = page.locator('button:has-text("公開")').last
+                    final_publish.click()
+                    time.sleep(10) # 投稿完了・画面遷移まで待つ
+                    
+                    published_url = page.url
+                    logger.info("✅ Paid Article fully published successfully!")
+                    
+                    # Supabaseに履歴を保存
+                    if SUPABASE_URL and SUPABASE_KEY:
+                        try:
+                            headers = {
+                                "apikey": SUPABASE_URL,
+                                "Authorization": f"Bearer {SUPABASE_KEY}",
+                                "Content-Type": "application/json"
+                            }
+                            payload = {
+                                'platform': 'note',
+                                'title': title,
+                                'url': published_url
+                            }
+                            requests.post(f"{SUPABASE_URL}/rest/v1/published_posts", headers=headers, json=payload)
+                        except Exception as e:
+                            logger.error(f"Supabaseへの履歴保存に失敗しました: {e}")
+                    
+                    herald.notify_progress(f"💰 **note.com で有料記事（{price}円）の完全自動公開が完了しました！**\nタイトル: `{title}`\nURL: {published_url}", portal_link=True, page="publish")
+                    context.close()
+                    return published_url
+                    
+                    
+                except Exception as e:
+                    logger.error(f"Error during note posting: {e}")
+                    error_path = "D:/my_work/.agent/logs/note_error.png"
+                    try:
+                        page.screenshot(path=error_path)
+                    except:
+                        pass
+                    return None
             finally:
                 if context:
                     context.close()
