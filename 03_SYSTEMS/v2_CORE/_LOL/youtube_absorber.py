@@ -688,12 +688,6 @@ class YouTubeAbsorber:
                 synthesizer.process_and_update(limit=5)
             except Exception as e:
                 logger.error(f"❌ 自動同期・辞典整理呼び出しエラー: {e}")
-        elif len(targets) > 0:
-            herald.notify_error(
-                f"YouTube Absorberで {len(targets)} 本の動画の処理を試みましたが、API制限（上限到達）などにより全て失敗しました。\n"
-                f"（動画はエラーキューに入り、次回以降に再試行されます）",
-                source="YouTube Absorber"
-            )
             
         return success_count
 
