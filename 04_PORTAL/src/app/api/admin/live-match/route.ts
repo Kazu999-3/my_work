@@ -39,13 +39,24 @@ export async function POST(req: Request) {
     } catch (err: any) {
       if (err.message === 'ACTIVE_GAME_NOT_FOUND') {
         try {
-          // 直近10試合のソロキュー履歴
-          const myMatchIds = await fetchRecentMatchIds(myPuuid, apiKey, 10, 420);
+          // 1. 直近10試合のソロキュー履歴 (420) の取得を試行
+          let myMatchIds: string[] = [];
+          try {
+            myMatchIds = await fetchRecentMatchIds(myPuuid, apiKey, 10, 420);
+          } catch (e) {}
+          
+          // 2. ソロキュー履歴が無い場合は、全ゲームモード（ノーマル・カスタム等）から再取得
+          if (!myMatchIds || myMatchIds.length === 0) {
+            try {
+              myMatchIds = await fetchRecentMatchIds(myPuuid, apiKey, 10);
+            } catch (e) {}
+          }
           
           if (!myMatchIds || myMatchIds.length === 0) {
             return NextResponse.json({ 
               isGameActive: false, 
-              message: `${gameName}#${tagLine} の直近のソロキュー履歴が見つかりませんでした。` 
+              isPreMatch: false,
+              message: `${gameName}#${tagLine} の直近の対戦履歴（ソロキュー・ノーマル等）が見つかりませんでした。` 
             });
           }
 
