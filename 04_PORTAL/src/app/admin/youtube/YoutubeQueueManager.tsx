@@ -13,6 +13,20 @@ interface QueueItem {
   published_at?: string;
 }
 
+function parseTitleAndError(fullTitle: string): { title: string; errorMessage: string | null } {
+  const match = fullTitle.match(/(.*)\s*\[エラー:\s*(.*?)\]\s*$/);
+  if (match) {
+    return {
+      title: match[1].trim(),
+      errorMessage: match[2].trim()
+    };
+  }
+  return {
+    title: fullTitle,
+    errorMessage: null
+  };
+}
+
 export default function YoutubeQueueManager() {
   const [queue, setQueue] = useState<QueueItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -748,9 +762,21 @@ export default function YoutubeQueueManager() {
                           alt="thumbnail" 
                         />
                         <div className="flex-1 min-w-0">
-                          <span className="font-bold text-gray-200 text-sm line-clamp-2 leading-snug" title={item.title}>
-                            {item.title}
-                          </span>
+                          {(() => {
+                            const { title, errorMessage } = parseTitleAndError(item.title);
+                            return (
+                              <>
+                                <span className="font-bold text-gray-200 text-sm line-clamp-2 leading-snug" title={title}>
+                                  {title}
+                                </span>
+                                {errorMessage && (
+                                  <span className="mt-1 block text-[10px] font-black text-rose-400 bg-rose-500/10 border border-rose-500/20 px-2 py-0.5 rounded w-fit animate-pulse">
+                                    ⚠️ {errorMessage}
+                                  </span>
+                                )}
+                              </>
+                            );
+                          })()}
                         </div>
                       </div>
                       <div className="flex items-center justify-between text-xs">
@@ -847,9 +873,21 @@ export default function YoutubeQueueManager() {
                                 alt="thumbnail" 
                               />
                               <div className="flex flex-col space-y-1 min-w-0">
-                                <span className="font-bold text-gray-200 truncate block" title={item.title}>
-                                  {item.title}
-                                </span>
+                                {(() => {
+                                  const { title, errorMessage } = parseTitleAndError(item.title);
+                                  return (
+                                    <>
+                                      <span className="font-bold text-gray-200 truncate block" title={title}>
+                                        {title}
+                                      </span>
+                                      {errorMessage && (
+                                        <span className="text-[10px] font-black text-rose-400 bg-rose-500/10 border border-rose-500/20 px-2 py-0.5 rounded w-fit mt-0.5 animate-pulse">
+                                          ⚠️ {errorMessage}
+                                        </span>
+                                      )}
+                                    </>
+                                  );
+                                })()}
                                 <div className="flex items-center gap-2 text-xs">
                                   {item.channel_name && (
                                     <span className="text-gray-400 bg-gray-900/60 px-1.5 py-0.5 rounded border border-gray-800/80">

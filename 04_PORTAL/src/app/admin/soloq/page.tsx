@@ -128,7 +128,14 @@ export default function SoloqScoutPage() {
         {/* 結果表示 */}
         {result && (
           <div className="space-y-6">
-            {!result.isGameActive ? (
+            {result.isPreMatch && (
+              <div className="bg-amber-500/10 border border-amber-500/20 p-4 rounded-2xl flex items-center gap-3 text-xs text-amber-400 font-bold">
+                <Sparkles className="w-5 h-5 shrink-0 text-amber-400 animate-pulse" />
+                <div>現在ゲーム中ではありません。直近戦績に基づくプレマッチ（試合前）のスカウティング分析を表示しています。</div>
+              </div>
+            )}
+
+            {(!result.isGameActive && !result.isPreMatch) ? (
               <div className="bg-white/[0.02] border border-white/5 rounded-3xl p-10 text-center space-y-4 shadow-xl">
                 <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mx-auto border border-white/5 text-gray-500">
                   <Activity className="w-8 h-8" />
@@ -136,7 +143,7 @@ export default function SoloqScoutPage() {
                 <div className="space-y-1">
                   <h3 className="text-lg font-black text-white">ゲーム中ではありません</h3>
                   <p className="text-xs text-gray-400 max-w-sm mx-auto leading-relaxed">
-                    {result.message || '指定されたプレイヤーは現在進行中のマッチが見つかりませんでした。ソロキュー開始後に再度スキャンしてください。'}
+                    {result.message || '指定されたプレイヤーは現在進行中のマッチが見つかりませんでした。'}
                   </p>
                 </div>
               </div>

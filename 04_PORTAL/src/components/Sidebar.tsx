@@ -19,7 +19,6 @@ const ADMIN_ONLY_MENU_ITEMS = [
   { id: 'dashboard', label: 'ダッシュボード', icon: LayoutDashboard, href: '/admin/dashboard', color: 'text-white', activeBg: 'bg-white/10' },
   { id: 'matchups',  label: 'バトルサーチ',   icon: Swords,          href: '/matchups', color: 'text-[#00cfef]', activeBg: 'bg-[#00cfef]/15' },
   { id: 'champions', label: 'チャンピオン辞典', icon: BookHeart,     href: '/champions', color: 'text-[#c89b3c]', activeBg: 'bg-[#c89b3c]/15' },
-  { id: 'clears', label: '周回統計ライブラリ', icon: Trees, href: '/admin/clears', color: 'text-emerald-400', activeBg: 'bg-emerald-400/15' },
   { id: 'soloq-scout', label: 'ソロQ対面偵察', icon: Compass, href: '/admin/soloq', color: 'text-amber-400', activeBg: 'bg-amber-400/15' },
   { id: 'design',    label: 'システム設計書', icon: ScrollText,      href: '/design', color: 'text-cyan-400', activeBg: 'bg-cyan-400/15' },
   { id: 'knowledge-admin', label: 'ナレッジベース', icon: Brain,       href: '/admin/knowledge', color: 'text-pink-400', activeBg: 'bg-pink-400/15' },
@@ -70,7 +69,7 @@ export default function Sidebar() {
   return (
     <>
       {/* PC用サイドバー */}
-      <aside className={`hidden md:flex flex-col h-screen sticky top-0 bg-[#0a0b10]/60 backdrop-blur-2xl border-r border-white/10 shadow-[4px_0_24px_rgba(0,0,0,0.5)] z-50 overflow-y-auto custom-scrollbar transition-all duration-300 relative ${
+      <aside className={`hidden md:flex flex-col h-screen sticky top-0 bg-[#0a0b10]/60 backdrop-blur-2xl border-r border-white/10 shadow-[4px_0_24px_rgba(0,0,0,0.5)] z-50 overflow-y-auto no-scrollbar transition-all duration-300 relative ${
         isCollapsed ? 'w-20 px-3 py-6' : 'w-64 p-8'
       }`}>
         

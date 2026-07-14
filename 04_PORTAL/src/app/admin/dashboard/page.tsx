@@ -300,22 +300,6 @@ export default function Home() {
           {lastUpdated && (
             <span className="text-xs text-gray-500 font-mono">最終更新: {lastUpdated}</span>
           )}
-          <div className="glass-panel border border-white/5 rounded-2xl px-6 py-3 flex gap-6 shadow-[0_0_30px_rgba(59,130,246,0.15)] relative overflow-hidden group">
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-purple-500/10 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
-            <div className="flex items-center gap-3 relative z-10">
-              {isRefreshing ? (
-                <RefreshCw size={14} className="animate-spin text-blue-400" />
-              ) : (
-                <div className="relative flex h-3 w-3">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500 shadow-[0_0_10px_#10b981]"></span>
-                </div>
-              )}
-              <span className="text-sm font-bold text-emerald-100 tracking-wide">
-                {isRefreshing ? 'REFRESHING' : 'SYSTEM ONLINE'}
-              </span>
-            </div>
-          </div>
         </div>
       </motion.header>
 
@@ -370,37 +354,8 @@ export default function Home() {
           </div>
         </motion.div>
 
-        {/* New Dashboard Widgets (A, B) */}
-        <motion.div variants={itemVariants} className="md:col-span-2 lg:col-span-4 mt-4 grid grid-cols-1 lg:grid-cols-2 gap-6">
-          
-          {/* Panel A: Pending Tasks */}
-          <div className="glass-panel rounded-3xl p-6 border border-white/5 bg-gradient-to-br from-rose-500/5 to-transparent flex flex-col h-full">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-black text-white flex items-center gap-2">
-                <div className="w-2 h-6 bg-rose-500 rounded-full shadow-[0_0_10px_rgba(244,63,94,0.6)]"></div>
-                要確認タスク
-              </h3>
-            </div>
-            <div className="flex-1 space-y-3">
-              {pendingTaskList.length > 0 ? pendingTaskList.map((task, idx) => (
-                <Link href={`/champions`} key={idx} className="block bg-black/20 p-4 rounded-xl border border-white/5 hover:bg-white/5 hover:border-rose-500/30 transition-all group">
-                  <div className="flex justify-between items-start mb-2">
-                    <span className="text-sm font-bold text-gray-200 group-hover:text-rose-300 transition-colors">{task.champion}</span>
-                    <span className="text-[10px] font-bold tracking-widest uppercase bg-rose-500/10 text-rose-400 px-2 py-0.5 rounded-full">Missing</span>
-                  </div>
-                  <p className="text-xs text-gray-500 group-hover:text-gray-400">対面: {task.enemy} (戦略データ不足)</p>
-                </Link>
-              )) : (
-                <div className="flex flex-col items-center justify-center h-full text-emerald-400/80 gap-2 py-8">
-                  <Activity size={32} className="opacity-50" />
-                  <p className="text-sm font-bold">すべてのタスクが完了</p>
-                </div>
-              )}
-            </div>
-            {pendingTasks > 3 && (
-              <p className="text-xs text-center text-gray-500 mt-4 pt-4 border-t border-white/5">他 {pendingTasks - 3} 件 of tasksがあります</p>
-            )}
-          </div>
+        {/* New Dashboard Widgets */}
+        <motion.div variants={itemVariants} className="md:col-span-2 lg:col-span-4 mt-4 grid grid-cols-1 gap-6">
 
           {/* Panel B: YouTube Absorber Queue */}
           <div className="glass-panel rounded-3xl p-6 border border-white/5 bg-gradient-to-br from-blue-500/5 to-transparent flex flex-col h-full justify-between">

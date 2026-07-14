@@ -38,10 +38,174 @@ export async function POST(req: Request) {
       activeGame = await fetchActiveGameByPuuid(myPuuid, apiKey);
     } catch (err: any) {
       if (err.message === 'ACTIVE_GAME_NOT_FOUND') {
-        return NextResponse.json({ 
-          isGameActive: false, 
-          message: `${gameName}#${tagLine} は現在ゲーム中ではありません。` 
-        });
+        try {
+          // 直近10試合のソロキュー履歴
+          const myMatchIds = await fetchRecentMatchIds(myPuuid, apiKey, 10, 420);
+          
+          if (!myMatchIds || myMatchIds.length === 0) {
+            return NextResponse.json({ 
+              isGameActive: false, 
+              message: `${gameName}#${tagLine} の直近のソロキュー履歴が見つかりませんでした。` 
+            });
+          }
+
+          let myMatches: any[] = [];
+          const batchSize = 3;
+          for (let i = 0; i < myMatchIds.length; i += batchSize) {
+            const batchIds = myMatchIds.slice(i, i + batchSize);
+            const promises = batchIds.map(async (id) => {
+              try {
+                const detail = await fetchMatchDetails(id, apiKey);
+                const detailMe = detail.participants.find((p: any) => p.puuid === myPuuid);
+                if (detailMe) {
+                  return {
+                    ...detailMe,
+                    game_duration: detail.gameDuration,
+                    win: detailMe.win,
+                    gold_diff_9: 0,
+                    xp_diff_9: 0,
+                    cs_diff_9: 0
+                  };
+                }
+              } catch (e) {}
+              return null;
+            });
+            const batchResults = await Promise.all(promises);
+            batchResults.forEach(r => { if (r) myMatches.push(r); });
+            await new Promise(res => setTimeout(res, 50));
+          }
+
+          if (myMatches.length === 0) {
+            return NextResponse.json({ 
+              isGameActive: false, 
+              message: `${gameName}#${tagLine} の直近の試合詳細の読み込みに失敗しました。` 
+            });
+          }
+
+          // 最多プレイチャンピオンの特定
+          const champCounts: Record<string, number> = {};
+          myMatches.forEach((m: any) => {
+            const cName = m.championName || 'Unknown';
+            champCounts[cName] = (champCounts[cName] || 0) + 1;
+          });
+          const sortedChamps = Object.entries(champCounts).sort((a, b) => b[1] - a[1]);
+          const favChamp = sortedChamps[0]?.[0] || 'Graves'; // デフォルト
+
+          // プレイスタイル計算
+          const myPlaystyle = calculatePlaystyle(myMatches);
+
+          // OTP & Tilt 判定
+          let isOtp = false;
+          let otpChampion = "";
+          let isTilted = false;
+          let consecutiveLosses = 0;
+          if (sortedChamps[0] && sortedChamps[0][1] >= 7) {
+            isOtp = true;
+            otpChampion = sortedChamps[0][0];
+          }
+          for (let i = 0; i < myMatches.length; i++) {
+            if (myMatches[i].win === false) {
+              consecutiveLosses++;
+            } else {
+              break;
+            }
+          }
+          if (consecutiveLosses >= 3) {
+            isTilted = true;
+          }
+
+          // GLOBALマニュアルのロード (favorite champを敵とみなす)
+          let matchupBible = "";
+          try {
+            const { data: bData } = await supabase
+              .from('matchup_sentinel')
+              .select('strategy')
+              .eq('matchup_id', `champ_${favChamp}_global`)
+              .maybeSingle();
+            if (bData && bData.strategy) {
+              matchupBible = bData.strategy;
+            }
+          } catch (dbErr) {}
+
+          // 過去の教訓メモのロード
+          let personalMemo = "";
+          try {
+            const { data: mData } = await supabase
+              .from('personal_knowledge')
+              .select('content')
+              .eq('champion', favChamp)
+              .order('created_at', { ascending: false });
+            if (mData && mData.length > 0) {
+              personalMemo = mData.map((m: any) => `- ${m.content}`).join("\n");
+            }
+          } catch (dbErr) {}
+
+          // Gemini 対策3箇条の生成
+          let coachAdvice: any[] = [];
+          if (geminiApiKey) {
+            try {
+              const primaryTag = myPlaystyle.tags[0] || { name: "バランス型" };
+              const knowledgeObj = {
+                pastInterrogation: personalMemo ? personalMemo.split("\n").map(l => l.replace(/^- /, '')) : [],
+                strategy: matchupBible
+              };
+              coachAdvice = await generateCoachAdviceWithGemini(
+                favChamp,
+                primaryTag,
+                geminiApiKey,
+                knowledgeObj
+              );
+            } catch (aiErr) {}
+          }
+          if (coachAdvice.length === 0) {
+            coachAdvice = generateMockCoachAdvice(favChamp, myPlaystyle.tags[0] || { name: "バランス型" });
+          }
+
+          // プレマッチ分析のレスポンスを返す
+          return NextResponse.json({
+            isGameActive: false,
+            isPreMatch: true,
+            message: `${gameName}#${tagLine} は現在対戦中ではありませんが、プレマッチ分析を表示しています。`,
+            riotId: `${gameName}#${tagLine}`,
+            enemyJg: {
+              summonerName: gameName,
+              riotIdGameName: gameName,
+              riotIdTagline: tagLine,
+              championName: favChamp,
+              championId: favChamp
+            },
+            enemyPlaystyle: myPlaystyle,
+            isOtp,
+            otpChampion,
+            isTilted,
+            consecutiveLosses,
+            coachAdvice,
+            matchupBible,
+            personalMemo,
+            activeGame: {
+              gameId: 0,
+              gameLength: 0,
+              participants: [
+                {
+                  summonerName: gameName,
+                  riotIdGameName: gameName,
+                  riotIdTagline: tagLine,
+                  championName: favChamp,
+                  teamId: 100,
+                  spell1Id: 11,
+                  spell2Id: 4
+                }
+              ]
+            }
+          });
+
+        } catch (fallbackErr: any) {
+          console.error("Fallback PreMatch lookup failed:", fallbackErr);
+          return NextResponse.json({ 
+            isGameActive: false, 
+            message: `${gameName}#${tagLine} は現在ゲーム中ではありません (プレマッチ分析に失敗しました: ${fallbackErr.message})。` 
+          });
+        }
       }
       if (err.message && (err.message.includes('Forbidden') || err.message.includes('403') || err.message.includes('Unauthorized'))) {
         return NextResponse.json({ error: "ライブゲームの取得中にRiot APIキーのアクセス制限（Forbidden / 403）を検出しました。APIキーを更新してください。" }, { status: 403 });

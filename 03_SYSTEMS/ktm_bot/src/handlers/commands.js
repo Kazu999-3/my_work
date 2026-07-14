@@ -163,8 +163,6 @@ export async function handleAnnounceMatch(payload, env, ctx) {
     {
       type: 1,
       components: [
-        { type: 2, label: "🟦 BLUE 勝利", style: 1, custom_id: "win_blue:admin" },
-        { type: 2, label: "🟥 RED 勝利", style: 4, custom_id: "win_red:admin" },
         { type: 2, label: "🕵️ OP.GG スカウティング", style: 2, custom_id: "opgg_scout" }
       ]
     }

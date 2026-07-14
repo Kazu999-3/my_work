@@ -26,7 +26,8 @@ function ChampionsContent() {
     SUP: ['Support', 'Tank', 'Mage'],
   };
   const ROLE_LABELS = ['ALL', 'TOP', 'JG', 'MID', 'ADC', 'SUP'] as const;
-  const [showPendingOnly, setShowPendingOnly] = useState(searchParams.get('filter') === 'pending');
+  const showPendingOnly = false;
+  const setShowPendingOnly = (val: boolean) => {};
   const [selected, setSelected] = useState<any>(null);
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -660,9 +661,7 @@ function ChampionsContent() {
         return c.tags?.some((tag: string) => allowedTags.includes(tag));
       });
     }
-    if (showPendingOnly) {
-      result = result.filter(c => champPending[c.id]);
-    }
+
     if (showFavoritesOnly) {
       result = result.filter(c => favoriteChamps.includes(c.id));
     }
@@ -1582,12 +1581,7 @@ function ChampionsContent() {
                 </button>
               ))}
             </div>
-            <button 
-              onClick={() => setShowPendingOnly(!showPendingOnly)} 
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all border ${showPendingOnly ? 'bg-rose-500/20 text-rose-400 border-rose-500/50 shadow-[0_0_15px_rgba(244,63,94,0.3)]' : 'glass-panel text-gray-400 border-transparent hover:text-white'}`}
-            >
-              <Filter size={16} /> 要確認
-            </button>
+
             <button 
               onClick={() => setShowFavoritesOnly(!showFavoritesOnly)} 
               className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all border ${showFavoritesOnly ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/50 shadow-[0_0_15px_rgba(234,179,8,0.3)]' : 'glass-panel text-gray-400 border-transparent hover:text-white'}`}
@@ -1609,8 +1603,8 @@ function ChampionsContent() {
           <span className="text-gray-500">{champions.length}件中</span>
           <span className="text-[#c89b3c] text-sm">{filtered.length}件</span>
           <span className="text-gray-500">ヒット</span>
-          {(search || roleFilter !== 'ALL' || typeFilter !== 'ALL' || showPendingOnly || showFavoritesOnly) && (
-            <button onClick={() => { setSearch(''); setRoleFilter('ALL'); setTypeFilter('ALL'); setShowPendingOnly(false); setShowFavoritesOnly(false); }}
+          {(search || roleFilter !== 'ALL' || typeFilter !== 'ALL' || showFavoritesOnly) && (
+            <button onClick={() => { setSearch(''); setRoleFilter('ALL'); setTypeFilter('ALL'); setShowFavoritesOnly(false); }}
               className="ml-2 text-gray-500 hover:text-white transition-colors underline underline-offset-2">
               フィルターをリセット
             </button>

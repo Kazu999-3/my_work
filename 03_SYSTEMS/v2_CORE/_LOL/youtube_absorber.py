@@ -619,7 +619,10 @@ class YouTubeAbsorber:
                 
             if not transcript or len(transcript) < 100:
                 logger.warning(f"No valid transcript found for {item['id']}")
-                self.update_video(item["id"], {"status": "error_no_transcript"})
+                self.update_video(item["id"], {
+                    "status": "error_no_transcript",
+                    "title": f"{item['title']} [エラー: 日本語/英語字幕が動画に見つかりません]"
+                })
                 continue
 
             # 実際の字幕長をログに記録
@@ -651,9 +654,11 @@ class YouTubeAbsorber:
                 updates = {"retry_count": retry_count}
                 if retry_count >= 5:
                     updates["status"] = "failed"
+                    updates["title"] = f"{item['title']} [エラー: 5回リトライしましたが要約を生成できませんでした]"
                     logger.warning(f"❌ Video {item['id']} has failed after 5 retries. Marked as failed.")
                 else:
                     updates["status"] = "error_generation"
+                    updates["title"] = f"{item['title']} [エラー: AI要約生成に失敗しました (リトライ {retry_count}回目)]"
                 self.update_video(item["id"], updates)
                 
 
