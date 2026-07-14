@@ -172,12 +172,23 @@ export async function POST(req: Request) {
             coachAdvice = generateMockCoachAdvice(favChamp, myPlaystyle.tags[0] || { name: "バランス型" });
           }
 
-          // プレマッチ分析のレスポンスを返す
+          // プレマッチ用の簡易分析および推奨カウンターを算出
+          const analysis = generateLiveAnalysis(favChamp, myPlaystyle.tags[0] || { name: "バランス型" });
+          const counters = generateCountersForJg(favChamp);
+
+          // プレマッチ分析のレスポンスを返す (UIプロパティ要件に完全追従)
           return NextResponse.json({
             isGameActive: false,
             isPreMatch: true,
             message: `${gameName}#${tagLine} は現在対戦中ではありませんが、プレマッチ分析を表示しています。`,
             riotId: `${gameName}#${tagLine}`,
+            championName: favChamp,
+            enemyJgName: `${gameName}#${tagLine}`,
+            playstyle: myPlaystyle,
+            startBuffPrediction: analysis.startBuff,
+            firstGankTarget: analysis.firstGank,
+            tips: analysis.tips,
+            counters,
             enemyJg: {
               summonerName: gameName,
               riotIdGameName: gameName,
@@ -185,14 +196,20 @@ export async function POST(req: Request) {
               championName: favChamp,
               championId: favChamp
             },
-            enemyPlaystyle: myPlaystyle,
             isOtp,
             otpChampion,
             isTilted,
             consecutiveLosses,
             coachAdvice,
-            matchupBible,
-            personalMemo,
+            knowledge: {
+              strengths: matchupBible ? "グローバル対策を参照してください" : "",
+              weaknesses: "",
+              powerSpikes: "",
+              buildRunes: "",
+              fullClearTime: "",
+              strategy: matchupBible,
+              pastInterrogation: personalMemo ? personalMemo.split("\n").map(l => l.replace(/^- /, '')) : []
+            },
             activeGame: {
               gameId: 0,
               gameLength: 0,
