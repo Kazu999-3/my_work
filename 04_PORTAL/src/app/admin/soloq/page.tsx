@@ -160,7 +160,7 @@ export default function SoloqScoutPage() {
                         className="w-16 h-16 rounded-2xl border border-white/10 shadow-lg"
                       />
                       <div className="space-y-1 flex-1">
-                        <div className="text-[10px] text-gray-500 font-black tracking-wider uppercase">敵ジャングラー (Opponent JG)</div>
+                        <div className="text-[10px] text-gray-500 font-black tracking-wider uppercase">{result.isPreMatch ? "分析対象 (Target Player)" : "敵ジャングラー (Opponent JG)"}</div>
                         <div className="text-lg font-black text-white flex flex-wrap items-center gap-2">
                           <span>{result.enemyJgName}</span>
                           <span className="text-xs text-cyan-400 font-bold bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/20">
@@ -185,7 +185,7 @@ export default function SoloqScoutPage() {
                     </div>
 
                     <div className="space-y-5">
-                      <h4 className="text-xs font-black text-gray-400 uppercase tracking-wider">プレイスタイル・スライダー (Playstyle Sliders)</h4>
+                      <h4 className="text-xs font-black text-gray-400 uppercase tracking-wider">{result.isPreMatch ? "あなたのプレイスタイル・スライダー" : "敵のプレイスタイル・スライダー"} (Playstyle Sliders)</h4>
                       <div className="space-y-4">
                         <div className="space-y-1.5">
                           <div className="flex justify-between text-xs font-bold">
@@ -218,7 +218,7 @@ export default function SoloqScoutPage() {
                     </div>
 
                     <div className="space-y-3 pt-3 border-t border-white/5">
-                      <h4 className="text-xs font-black text-gray-400 uppercase tracking-wider">プレイスタイルタグ (Playstyle Tags)</h4>
+                      <h4 className="text-xs font-black text-gray-400 uppercase tracking-wider">{result.isPreMatch ? "あなたのプレイスタイルタグ" : "プレイスタイルタグ"} (Playstyle Tags)</h4>
                       <div className="flex flex-wrap gap-2">
                         {result.playstyle.tags.map((tag: any) => (
                           <div 
@@ -280,7 +280,7 @@ export default function SoloqScoutPage() {
                         {result.coachAdvice && result.coachAdvice.length > 0 && (
                           <div className="space-y-4">
                             <div className="flex justify-between items-center text-xs font-bold text-gray-400">
-                              <span>鬼コーチ緊急指令3箇条</span>
+                              <span>{result.isPreMatch ? "鬼コーチあなたへのアドバイス3箇条" : "鬼コーチ緊急指令3箇条"}</span>
                               <span className="font-mono">{adviceIndex + 1} / {result.coachAdvice.length}</span>
                             </div>
 
@@ -482,18 +482,18 @@ export default function SoloqScoutPage() {
                   <div className="bg-white/[0.02] border border-white/10 rounded-3xl p-6 shadow-xl space-y-5">
                     <h3 className="text-sm font-black text-white uppercase tracking-wider flex items-center gap-2 border-b border-white/5 pb-3">
                       <Compass className="w-4 h-4 text-cyan-400" />
-                      <span>ゲーム序盤戦術予測</span>
+                      <span>{result.isPreMatch ? "あなたのゲーム序盤傾向" : "ゲーム序盤戦術予測"}</span>
                     </h3>
 
                     <div className="space-y-2 bg-black/40 p-4 rounded-2xl border border-white/5">
-                      <div className="text-[10px] text-gray-500 font-black tracking-wider uppercase">予測開始位置</div>
+                      <div className="text-[10px] text-gray-500 font-black tracking-wider uppercase">{result.isPreMatch ? "あなたの開始バフ傾向" : "予測開始位置"}</div>
                       <div className="text-xs font-black text-amber-400 leading-relaxed">
                         {result.startBuffPrediction}
                       </div>
                     </div>
 
                     <div className="space-y-2 bg-black/40 p-4 rounded-2xl border border-white/5">
-                      <div className="text-[10px] text-gray-500 font-black tracking-wider uppercase">ファーストGank予測</div>
+                      <div className="text-[10px] text-gray-500 font-black tracking-wider uppercase">{result.isPreMatch ? "あなたのファーストGank傾向" : "ファーストGank予測"}</div>
                       <div className="text-xs font-black text-rose-400 leading-relaxed">
                         {result.firstGankTarget}
                       </div>
@@ -504,7 +504,7 @@ export default function SoloqScoutPage() {
                       <div className="space-y-3 pt-3 border-t border-white/5">
                         <h4 className="text-[10px] text-gray-500 font-black tracking-wider uppercase flex items-center gap-1.5">
                           <Zap className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
-                          <span>対JG推奨カウンター & 解説</span>
+                          <span>{result.isPreMatch ? "あなたに対する推奨カウンター & 弱点対策" : "対JG推奨カウンター & 解説"}</span>
                         </h4>
                         <div className="space-y-3">
                           {result.counters.map((c: any, idx: number) => (
@@ -532,7 +532,7 @@ export default function SoloqScoutPage() {
                     )}
 
                     <div className="space-y-3 pt-3 border-t border-white/5">
-                      <h4 className="text-[10px] text-gray-500 font-black tracking-wider uppercase">敵の平均9分スタッツ先行度</h4>
+                      <h4 className="text-[10px] text-gray-500 font-black tracking-wider uppercase">{result.isPreMatch ? "あなたの平均9分スタッツ先行度" : "敵の平均9分スタッツ先行度"}</h4>
                       <div className="space-y-2.5">
                         <div className="space-y-1">
                           <div className="flex justify-between text-[10px] font-bold">
