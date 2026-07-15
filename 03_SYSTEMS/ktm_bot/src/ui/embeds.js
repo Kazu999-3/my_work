@@ -41,7 +41,6 @@ export function renderRoles(data) {
 
 export function createRecruitButtons(metadata) {
   const isFull = metadata.joined.length >= metadata.maxCount;
-  const spectateLabel = (metadata.mode === 'ノーマル' || metadata.mode === 'ARAM') ? "⏳ カスタム待機" : "👁️ 観戦希望";
 
   // Row 1: 参加メイン
   const row1 = [];
@@ -49,9 +48,6 @@ export function createRecruitButtons(metadata) {
     row1.push({ type: 2, label: "✋ どこでも参加", style: 1, custom_id: `join_any:${metadata.owner}` });
   } else {
     row1.push({ type: 2, label: "✅ 募集完了 (ポータルでチーム分け)", style: 2, custom_id: `recruit_completed`, disabled: true });
-  }
-  if (metadata.mode !== 'ノーマル') {
-    row1.push({ type: 2, label: spectateLabel, style: 2, custom_id: `spectate:${metadata.owner}` });
   }
 
   // Row 2: 管理・設定

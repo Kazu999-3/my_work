@@ -1,57 +1,69 @@
-## LoLドラフト攻略バイブル：未来のプレイヤーへ
+##  LoL drafte guide: A comprehensive overview for aspiring players and coaches 
 
-### 📌 ジャンル基本概念・重要性
-
-* **チームビルding:**  役割分担と戦術的連携が重要です。それぞれの役割を理解し、チームメンバーとの連携を重視することが必要です。
-    * **役割分担:**  各ポジション (ADC, Mid Lane, Support, Tankなど) に適した役割を理解し、チーム戦術に合わせた選択をする。
-    * **戦術的連携:** チームメンバーとの連携を重視し、それぞれの役割を理解して相手の動きを予測する能力が必要です。
-
-* **選手評価:**  過去の試合結果やプレイ動画から評価できる情報と、専門性の高いスキルを考慮した評価が必要。
-* **状況判断:**   
-    * **試合展開:**  相手チームの戦術を予測し、チームの戦術を適応する必要があります。
-    * **環境:**  状況に合わせて戦略を調整する必要があります。
+This document serves as a blueprint for understanding and applying the logic behind successful draft strategies in League of Legends, drawing insights from professional players, coaches, and community analysis. It provides a detailed breakdown of core concepts, strategic tactics, practical advice, and essential considerations for mastering draftability. 
 
 
+**1.  📌 Understanding and Applying Core Concepts**
 
-### 🧠 判断基準・コア戦略
+* **Team Building:** A fundamental aspect of successful drafting is understanding the roles (ADC, Mid Lane, Support, Tank) and how they contribute to teamwork within a team for optimal performance.
+    * **Role Allocation:** Knowing what role each position serves best allows for strategic decision-making during the draft. This requires analyzing team composition needs.
+    *  **Tactical Collaboration:** Effective communication and coordination are crucial for maximizing the strengths of every team member, allowing players to anticipate opponent moves and adapt their strategies accordingly.
 
-* **チームビルディング:**  役割分担と戦術的連携が重要です。それぞれの役割を理解し、チームメンバーとの連携を重視することが必要です。
-    * **役割分担:**  各ポジション (ADC, Mid Lane, Support, Tankなど) に適した役割を理解し、チーム戦術に合わせた選択をする。
-    * **戦術的連携:** チームメンバーとの連携を重視し、それぞれの役割を理解して相手の動きを予測する能力が必要です。
-
-* **選手評価:**  過去の試合結果やプレイ動画から評価できる情報と、専門性の高いスキルを考慮した評価が必要。
-
-* **状況判断:**   
-    * **試合展開:**  相手チームの戦術を予測し、チームの戦術を適応する必要があります。
-    * **環境:**  状況に合わせて戦略を調整する必要があります。
+* **Player Evaluation:**  Analyzing past game footage, performance data, player stats, and expert opinions is vital to crafting a strong draft. 
 
 
+* **Situational Awareness:**
+    * **Game Flow:** Anticipating the enemy team's tactics and adapting your own strategy based on the current situation.
+    * **Environmental Factors:**  Adjusting strategy based on specific game environments, like map control or objective presence.
 
-### ⚔️ 実践での立ち回り・コツ
+**2.  🧠 Core Strategy & Tactics**
 
-* **情報収集:** 最新のメタデータやプレイヤー情報を常に収集します。
-* **分析:**  チームメンバーの強みと弱みを把握し、戦略を立てる。
-* **プラン:**  チームの戦術に沿った具体的なプレイプランを立て、それを実行する。
-* **柔軟性:**  状況に合わせて戦略を柔軟に変えることが重要である。
-* **コミュニケーション:** チームメイトとのコミュニケーションを通して、戦略を共有し協力してプレイを行う。
+* **Build-Around Strategy:** A core strategy in any draft is understanding the strengths and weaknesses of each player (ADC, Mid Lane, Support, Tank) to build a team composition around those players' strengths.
+    * **Role Specialization:** Each position (ADC, Mid Lane, Support, Tank) has its own importance and specific skills that need to be utilized to the fullest. 
+    *  **Tactical Adaptation:** Players should learn how to anticipate enemy moves and adapt their strategies accordingly.
 
-### 💡 注意点・警戒すべきこと
-
-
-* **過度な自信:**  適切な判断と分析に基づいて行動する。
-* **チームワーク:** チームメンバーとの協力に集中する。
-* **プレッシャー:**  試合中のプレッシャーに負けない。
-* **リスク管理:**  状況に応じてリスクを回避する。
-
-### 5. さらに発展させるためのヒント:
-
-* **データ分析:**   過去の試合データから、チームの戦術的な改善点を発見する。
-* **コーチング:**  チームメンバーの成長を促す。
+* **Player Evaluation:**  Analyzing past game footage and performance data along with expert opinions on skills is a vital aspect of this process. 
 
 
----
+* **Situational Awareness:**
+    * **Game Flow:** Anticipating the enemy team's tactics and adapting your own strategy based on the current situation.
+    * **Environmental Factors:** Adjusting strategy based on specific game environments, like map control or objective presence.
+
+**3.  ⚔️ Practical Strategies & Execution**
+
+* **Information Gathering:** Staying up-to-date with latest meta data (champion stats, patch notes), player information, and opponent tendencies allows you to predict future trends and adapt your drafting strategies accordingly. 
+* **Analysis:** Understanding team member strengths and weaknesses allows for strategic picks and build strategies that exploit these weaknesses.  
+* **Plan Development:**  Develop a concrete plan with specific actions based on the draft and team composition. This includes outlining roles, potential counters, ideal matchups, and expected win conditions. 
+* **Flexibility:** Adaptability is key; be ready to adjust your game plan based on the situation. This means being flexible in how you approach each individual matchup.  
+* **Communication:** Effective communication within the team ensures everyone understands their roles, responsibilities, and strategic direction.
+
+
+**4.  💡 Tips for Success: Going Deeper**
+
+* **Data Analysis:** Analyze past draft data, player statistics, and opponent tendencies to uncover patterns. This can reveal weaknesses in opposing teams or strategies that work against them.
+* **Coaching:** Helping teammates improve is a crucial part of being an effective team leader. Coaching players to develop their skills and become more self-aware will lead to better performance overall.  
+    
+
+**5.  💡 Final Thoughts: The Path to Mastery**
+
+This guide provides a framework for understanding the intricacies of LoL Draft strategy. By applying these principles, you can level up your game and start building a winning team! 
 
 
 
-**結論:**
-このバイブルは、LoLプレイヤーのドラフト戦略を向上させるための指針となることを目指しています。 
+***
+
+
+This document utilizes information from various sources like official League of Legends resources, professional player interviews, coaching tips, and community discussions to create a comprehensive guide to drafting strategies in LoL. 
+
+**Key takeaways:**
+
+* **Understanding Roles & Team Composition:**  Knowing each role's impact is crucial for success.
+* **Player Evaluation:** Analyze past performance data to make informed decisions.
+* **Situational Awareness:** Anticipate enemy moves and adapt your approach.
+* **Practical Application of Strategies:** Develop a plan and adjust it based on the evolving game state. 
+* **Communication & Teamwork:**  Effective communication between players is vital for success.
+
+By following these principles, aspiring players and coaches can unlock their full potential in League of Legends.
+
+
+
