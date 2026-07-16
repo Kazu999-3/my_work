@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Shield, LayoutDashboard, Swords, BookOpen, BookHeart, Trophy, Users, HeartHandshake, ScrollText, ListVideo, ChevronLeft, ChevronRight, Coins, Brain, Trees, Compass } from 'lucide-react';
+import { Shield, LayoutDashboard, Swords, BookOpen, BookHeart, Trophy, Users, HeartHandshake, ScrollText, ListVideo, ChevronLeft, ChevronRight, Coins, Brain, Trees, Compass, Sparkles } from 'lucide-react';
 import FavoritesPanel from './FavoritesPanel';
 
 // 一般ユーザー用 (管理者エリア外で表示)
@@ -17,9 +17,10 @@ const MENU_ITEMS = [
 // 管理者ログイン時：管理者機能タブ用 (過去の試合履歴を除外)
 const ADMIN_ONLY_MENU_ITEMS = [
   { id: 'dashboard', label: 'ダッシュボード', icon: LayoutDashboard, href: '/admin/dashboard', color: 'text-white', activeBg: 'bg-white/10' },
+  { id: 'coach', label: 'パーソナルコーチ', icon: Sparkles, href: '/coach', color: 'text-indigo-300', activeBg: 'bg-indigo-500/15' },
   { id: 'matchups',  label: 'バトルサーチ',   icon: Swords,          href: '/matchups', color: 'text-[#00cfef]', activeBg: 'bg-[#00cfef]/15' },
   { id: 'champions', label: 'チャンピオン辞典', icon: BookHeart,     href: '/champions', color: 'text-[#c89b3c]', activeBg: 'bg-[#c89b3c]/15' },
-  { id: 'soloq-scout', label: 'ソロQ対面偵察', icon: Compass, href: '/admin/soloq', color: 'text-amber-400', activeBg: 'bg-amber-400/15' },
+  { id: 'soloq-scout', label: '🎯 スカウト', icon: Compass, href: '/coach?tab=scout', color: 'text-amber-400', activeBg: 'bg-amber-400/15' },
   { id: 'design',    label: 'システム設計書', icon: ScrollText,      href: '/design', color: 'text-cyan-400', activeBg: 'bg-cyan-400/15' },
   { id: 'knowledge-admin', label: 'ナレッジベース', icon: Brain,       href: '/admin/knowledge', color: 'text-pink-400', activeBg: 'bg-pink-400/15' },
   { id: 'ktm-admin',   label: '⚙️ 管理者専用',     icon: Shield, href: '/ktm-admin', color: 'text-indigo-400', activeBg: 'bg-indigo-400/15' },
@@ -53,13 +54,27 @@ export default function Sidebar() {
   };
 
   // 管理者エリアの判定
-  const isAdminArea = 
+  const isAdminArea =
     pathname === '/' ||
     pathname.startsWith('/ktm-admin') ||
+    pathname.startsWith('/coach') ||
     pathname.startsWith('/matchups') ||
     pathname.startsWith('/champions') ||
     pathname.startsWith('/design') ||
     pathname.startsWith('/admin');
+
+  // activeTabはページ遷移をまたいで保持される（Sidebarがルート跨ぎで再マウントされないため）。
+  // そのため、一般ページ経由で「一般機能」タブに切り替えた状態のまま別の管理者ページに
+  // 来ると、そのページ本来の管理者メニューではなく一般メニューが表示され続けるバグがあった。
+  // 「管理者エリア外→管理者エリア」に入った瞬間だけ 'admin' に戻すことで、
+  // タブ切り替え自体の利便性は残しつつ古い状態の持ち越しを防ぐ。
+  const wasAdminArea = useRef(isAdminArea);
+  useEffect(() => {
+    if (isAdminArea && !wasAdminArea.current) {
+      setActiveTab('admin');
+    }
+    wasAdminArea.current = isAdminArea;
+  }, [isAdminArea]);
 
   // 表示するメニュー項目の決定
   const activeMenuItems = isAdminArea 

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { verifyAdminSession } from '../../../../../lib/adminAuth';
 
 // ============================================================
 // Supabase クライアント
@@ -70,6 +71,7 @@ async function analyzeWithGemini(title: string, content: string): Promise<{
   summary: string;
   genre: string;
   tags: string[];
+  champion: string;
 }> {
   const apiKey = getGeminiApiKey();
   if (!apiKey) {
@@ -85,6 +87,7 @@ async function analyzeWithGemini(title: string, content: string): Promise<{
    - 'その他'
 3. 関連するキーワードタグ（最大5つ）を抽出してください。
 4. この記事に最も適した分かりやすいタイトル（日本語）を決定してください。
+5. LoLの攻略情報である場合、対象となっているチャンピオン名を1つ特定してください（該当なし、またはLoL以外の話題の場合は 'Unknown' を返却）。
 
 出力は、必ず以下のJSONフォーマットのみを返却してください。他の説明文などは一切含めないでください。
 
@@ -92,7 +95,8 @@ async function analyzeWithGemini(title: string, content: string): Promise<{
   "title": "決定したタイトル",
   "summary": "要約されたコンテンツ",
   "genre": "選択したジャンル",
-  "tags": ["タグ1", "タグ2"]
+  "tags": ["タグ1", "タグ2"],
+  "champion": "特定したチャンピオン名（例: Graves、無い場合は 'Unknown'）"
 }
 
 [インプット情報]:
@@ -101,7 +105,8 @@ async function analyzeWithGemini(title: string, content: string): Promise<{
 ${content}`;
 
   // Gemini REST API（v1beta / generateContent）
-  const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+  // 'gemini-2.0-flash'はこのAPIキーで上限0(常に429)だったため、最も余裕のある'gemini-3.1-flash-lite'に変更
+  const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${apiKey}`;
 
   const geminiRes = await fetch(geminiUrl, {
     method: 'POST',
@@ -110,7 +115,8 @@ ${content}`;
       contents: [{ parts: [{ text: prompt }] }],
       generationConfig: {
         temperature: 0.3,
-        maxOutputTokens: 1024
+        maxOutputTokens: 1024,
+        responseMimeType: "application/json"
       }
     }),
     signal: AbortSignal.timeout(30000)
@@ -124,21 +130,8 @@ ${content}`;
   const geminiData = await geminiRes.json();
   let responseText = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text || '';
 
-  // JSONブロックを抽出（```json ... ``` 形式対応）
-  responseText = responseText.trim();
-  if (responseText.startsWith('```json')) {
-    responseText = responseText.slice(7);
-  }
-  if (responseText.startsWith('```')) {
-    responseText = responseText.slice(3);
-  }
-  if (responseText.endsWith('```')) {
-    responseText = responseText.slice(0, -3);
-  }
-  responseText = responseText.trim();
-
   try {
-    return JSON.parse(responseText);
+    return JSON.parse(responseText.trim());
   } catch (e) {
     console.error('Gemini応答のJSON解析失敗:', responseText.slice(0, 300));
     throw new Error('AIの応答をJSON形式で解析できませんでした。再試行してください。');
@@ -150,6 +143,12 @@ ${content}`;
 // ============================================================
 export async function POST(req: NextRequest) {
   try {
+  // ===== 管理者セッション確認 =====
+  const authResult = await verifyAdminSession(req);
+  if (!authResult.ok) {
+    return NextResponse.json({ error: authResult.error }, { status: 401 });
+  }
+  // =================================
     const { url, text } = await req.json();
 
     if (!url && !text) {
@@ -185,7 +184,8 @@ export async function POST(req: NextRequest) {
         raw_content: rawContent.slice(0, 8000),
         source_url: url || '',
         genre: analyzed.genre,
-        tags: analyzed.tags
+        tags: analyzed.tags,
+        champion: analyzed.champion || 'Unknown'
       }])
       .select()
       .single();

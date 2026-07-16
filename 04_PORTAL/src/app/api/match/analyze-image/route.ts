@@ -122,7 +122,8 @@ ${championsText}
     let lastErrorMsg = '';
     
     // 無料枠制限(RPM/TPM)を別枠クォータで回避するため、モデルローテーションも行う
-    const models = ['gemini-2.5-flash', 'gemini-1.5-flash-latest'];
+    // ('gemini-2.5-flash'は日次上限を超過していたため、最も余裕のある'gemini-3.1-flash-lite'に変更)
+    const models = ['gemini-3.1-flash-lite', 'gemini-1.5-flash-latest'];
     const totalKeys = apiKeys.length;
     const attempts = Math.max(totalKeys * models.length, 3); // キーとモデルの全探索数、または最低3回
     let delay = 1000;
