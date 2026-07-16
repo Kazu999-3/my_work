@@ -4,8 +4,7 @@ import {
   fetchPuuidByRiotId,
   fetchRecentMatchIds,
   fetchMatchDetails,
-  fetchLeagueBySummonerId,
-  fetchSummonerByPuuid,
+  fetchLeagueByPuuid,
 } from '../../../../lib/riot';
 
 const supabase = createClient(
@@ -84,7 +83,7 @@ async function callGemini(prompt: string, cacheKey?: string): Promise<string> {
   return callGeminiWithRetry(prompt, {
     model: 'gemini-3.1-flash-lite',
     temperature: 0.7,
-    maxOutputTokens: 1024,
+    maxOutputTokens: 2048, // 分析を深くした分、出力が途中で切れないよう引き上げ
     maxRetries: 3,
     cacheKey,
   });
@@ -558,12 +557,14 @@ ${advice}`;
     // ----------------------------
     // MODE: pre - 試合前アドバイス（デフォルト）
     // ----------------------------
-    const [matchIds, summoner] = await Promise.all([
+    // Riotが2025年6月20日にby-summoner系ランクエンドポイントを廃止し、同時期に
+    // summoner-v4のby-puuidレスポンスも`id`フィールドを返さなくなったため、
+    // 旧来の「puuid→summoner.id→ランク」の流れは常に失敗し「未ランク」になっていた。
+    // puuidから直接ランクを取得するfetchLeagueByPuuidに置き換え。
+    const [matchIds, rankData] = await Promise.all([
       fetchRecentMatchIds(puuid, apiKey, 5, 420).catch(() => fetchRecentMatchIds(puuid, apiKey, 5)),
-      fetchSummonerByPuuid(puuid, apiKey),
+      fetchLeagueByPuuid(puuid, apiKey).catch(() => []),
     ]);
-
-    const rankData = await fetchLeagueBySummonerId(summoner.id, apiKey).catch(() => []);
     const soloRank = (rankData as any[]).find((r: any) => r.queueType === 'RANKED_SOLO_5x5');
 
     const matchDetails = await Promise.all(
@@ -599,7 +600,8 @@ ${advice}`;
       ? `${soloRank.tier} ${soloRank.rank} (${soloRank.leaguePoints}LP)`
       : '未ランク';
 
-    const prompt = `あなたはLoLのパーソナルコーチです。
+    const prompt = `あなたはLoLの専属パーソナルコーチです。抽象的な精神論ではなく、以下のプレイヤーデータを具体的に根拠として引用しながら、今日のランク戦で実行すべき行動を深く分析してアドバイスしてください。
+
 プレイヤー情報:
 - 現在ランク: ${rankStr}
 - 直近5試合の使用チャンピオン: ${recentChampions.join(', ') || '取得できず'}
@@ -609,12 +611,15 @@ ${champion ? `- 今日使いたいチャンピオン: ${champion}` : ''}
 ${enemyChampion ? `- 警戒する敵対面チャンピオン: ${enemyChampion}` : ''}
 
 ${counterStats ? `=== プレイヤーの対敵勝率実績 ===\n${counterStats}\n` : ''}
-${knowledgeCtx ? `参考ナレッジ（最新メタ・攻略記事）:\n${knowledgeCtx}\n` : ''}
+${knowledgeCtx ? `=== 参考ナレッジ（最新メタ・攻略記事・チャンピオン辞典）===\n${knowledgeCtx}\n` : ''}
 
-このプレイヤーに対して「今日のランク戦で何をすべきか」を以下の形式で日本語300字以内でアドバイスしてください:
-1. 今日のおすすめチャンピオン（理由1文）
-2. 今日意識すべき最重要ポイント（1文）
-3. 今日のメンタルセット（格言的な1文）`;
+以下の形式で、日本語800字程度で具体的にアドバイスしてください。各項目は一般論ではなく、上記データ（直近チャンピオン・勝率・対敵勝率実績・ナレッジ）を必ず名指しで引用して理由づけすること：
+1. 今日のおすすめチャンピオン: 直近の使用チャンピオンや勝率実績のどれを根拠にその1体を選んだのかを明示し、想定されるレーン/ロールでの具体的な強みを説明する。
+2. 今日意識すべき最重要ポイント: 直近の試合結果や対敵勝率実績から読み取れる課題（例: 特定チャンピオンへの勝率の低さ、連敗パターンなど）を指摘し、それに対する具体的な改善アクション（ビルド、立ち回り、レーン戦の意識づけなど）を挙げる。
+3. 警戒すべき敵対面: ${enemyChampion ? `${enemyChampion}に対する具体的な対策` : 'ナレッジや対敵実績から見える、今日特に注意すべき対面パターン'}を、参考ナレッジがあればそれを引用しつつ説明する。
+4. 今日のメンタルセット: 直近の連勝/連敗傾向を踏まえた、精神面での具体的な心構え（格言的な1文で締める）。
+
+ナレッジや対敵実績データが乏しい場合は、その旨を正直に述べた上で、直近チャンピオン・勝率の傾向から論理的に導ける範囲で深掘りしてください。`;
 
     const advice = await callGemini(prompt);
 

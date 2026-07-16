@@ -130,8 +130,25 @@ export async function fetchSummonerByPuuid(puuid: string, apiKey: string): Promi
   return await res.json();
 }
 
+/**
+ * @deprecated Riotが2025年6月20日にこのエンドポイント(by-summoner)を廃止済み。
+ * さらにsummoner-v4のby-puuidレスポンスも同時期に`id`フィールドを返さなくなったため、
+ * このencryptedSummonerId経由のルートは事実上ずっと404/410で失敗し続けていた。
+ * 新規実装は必ず fetchLeagueByPuuid を使うこと。
+ */
 export async function fetchLeagueBySummonerId(summonerId: string, apiKey: string): Promise<any[]> {
   const url = `${RIOT_API_BASE_JP}/lol/league/v4/entries/by-summoner/${summonerId}?api_key=${apiKey}`;
+  const res = await fetch(url, { cache: 'no-store' });
+  if (!res.ok) throw new Error(`League fetch error: ${res.statusText}`);
+  return await res.json();
+}
+
+/**
+ * PUUIDからランク情報(League-V4 entries)を取得する。
+ * by-summoner系エンドポイントの廃止に伴う正式な後継エンドポイント。
+ */
+export async function fetchLeagueByPuuid(puuid: string, apiKey: string): Promise<any[]> {
+  const url = `${RIOT_API_BASE_JP}/lol/league/v4/entries/by-puuid/${puuid}?api_key=${apiKey}`;
   const res = await fetch(url, { cache: 'no-store' });
   if (!res.ok) throw new Error(`League fetch error: ${res.statusText}`);
   return await res.json();

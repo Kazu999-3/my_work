@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '../../../../lib/supabaseClient';
-import { fetchPuuidByRiotId, fetchSummonerByPuuid, fetchLeagueBySummonerId } from '../../../../lib/riot';
+import { fetchPuuidByRiotId, fetchLeagueByPuuid } from '../../../../lib/riot';
 
 export async function POST(req: Request) {
   try {
@@ -22,10 +22,12 @@ export async function POST(req: Request) {
 
     const [gameName, tagLine] = player.ign.split('#');
     
-    // PUUID -> SummonerID -> League
+    // PUUID -> League
+    // 旧: PUUID -> summoner.id -> League だったが、Riotが2025年6月20日に
+    // by-summoner系ランクエンドポイントを廃止し、summoner-v4のby-puuidレスポンスからも
+    // `id`フィールドが消えたため、ずっと失敗し続けていた（=highest_rankが同期されない）。
     const puuid = await fetchPuuidByRiotId(gameName, tagLine, apiKey);
-    const summoner = await fetchSummonerByPuuid(puuid, apiKey);
-    const leagues = await fetchLeagueBySummonerId(summoner.id, apiKey);
+    const leagues = await fetchLeagueByPuuid(puuid, apiKey);
 
     // Solo Queue のランクを探す
     const soloQ = leagues.find(l => l.queueType === 'RANKED_SOLO_5x5');
