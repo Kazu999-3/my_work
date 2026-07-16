@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import ScoutTab from './ScoutTab';
 
 // ============================
 // 型定義
@@ -486,30 +485,16 @@ export default function CoachPage() {
     { id: 'post', label: '🔍 試合後', color: 'rose' },
     { id: 'tilt', label: '🧠 ティルト', color: 'amber' },
     { id: 'matchup', label: '⚔️ マッチアップ', color: 'emerald' },
-    // 課題③: /admin/soloq（任意プレイヤーのライブ偵察）を統合。
-    // 対象が「固定の自分」ではなく「任意のRiot ID」である点だけが他タブと異なる。
-    { id: 'scout', label: '🎯 スカウト', color: 'cyan' },
   ] as const;
 
   type TabId = typeof tabs[number]['id'];
   const [activeTab, setActiveTab] = useState<TabId>('pre');
-
-  // /admin/soloq からのリダイレクト(?tab=scout)等、クエリパラメータでタブを指定できるようにする
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const requested = new URLSearchParams(window.location.search).get('tab');
-    if (requested && tabs.some((t) => t.id === requested)) {
-      setActiveTab(requested as TabId);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   const tabContent: Record<TabId, React.ReactNode> = {
     pre: <PreGameTab />,
     post: <PostGameTab />,
     tilt: <TiltTab />,
     matchup: <MatchupTab />,
-    scout: <ScoutTab />,
   };
 
   const tabActiveColors: Record<string, string> = {
@@ -517,7 +502,6 @@ export default function CoachPage() {
     rose: 'border-rose-400 text-rose-300',
     amber: 'border-amber-400 text-amber-300',
     emerald: 'border-emerald-400 text-emerald-300',
-    cyan: 'border-cyan-400 text-cyan-300',
   };
 
   if (isAuthenticated === null) {

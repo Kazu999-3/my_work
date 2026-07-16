@@ -4,6 +4,7 @@ import {
   fetchPuuidByRiotId,
   fetchRecentMatchIds,
   fetchMatchDetails,
+  fetchMatchTimeline,
   fetchLeagueByPuuid,
 } from '../../../../lib/riot';
 
@@ -472,10 +473,51 @@ ${sentinelCtx || '（辞典データなし）'}`;
       if (me.deaths >= 7) weaknesses.push(`デス数 ${me.deaths} (要改善)`);
       if (kda !== 'Perfect' && parseFloat(kda) < 2.0) weaknesses.push(`KDA ${kda} (目標: 2.0以上)`);
 
-      const knowledgeCtx = await searchKnowledge([me.championName, ...weaknesses.slice(0, 2).map((w) => w.split(' ')[0])]);
+      // 対面（同レーンの敵）を特定する
+      const enemyLaner = match.participants.find((p) => p.teamId !== me.teamId && p.lane === me.lane);
 
-      const prompt = `あなたはLoL振り返りコーチです。
+      // タイムラインからデス発生タイミングと相手（キル者）を抽出する。
+      // 失敗しても本筋のアドバイス自体は継続できるよう握りつぶす。
+      const deathTimeline: string[] = [];
+      try {
+        const timeline = await fetchMatchTimeline(matchIds[0], apiKey);
+        const participants: any[] = timeline?.info?.participants || [];
+        const myParticipantId = participants.find((p) => p.puuid === puuid)?.participantId;
+        const participantIdToChampion = new Map<number, string>();
+        participants.forEach((p) => {
+          const champ = match.participants.find((mp) => mp.puuid === p.puuid)?.championName;
+          if (champ) participantIdToChampion.set(p.participantId, champ);
+        });
+
+        if (myParticipantId) {
+          const frames: any[] = timeline?.info?.frames || [];
+          for (const frame of frames) {
+            for (const ev of frame.events || []) {
+              if (ev.type === 'CHAMPION_KILL' && ev.victimId === myParticipantId) {
+                const min = Math.floor(ev.timestamp / 60000);
+                const killerChamp = participantIdToChampion.get(ev.killerId) || '不明';
+                const phase = min <= 10 ? '序盤' : min <= 20 ? '中盤' : '終盤';
+                deathTimeline.push(`${min}分(${phase}): ${killerChamp}に討たれた`);
+              }
+            }
+          }
+        }
+      } catch (e) {
+        console.warn('[coach/analyze] タイムライン取得に失敗（デス分析なしで続行）:', e);
+      }
+
+      const knowledgeCtx = await searchKnowledge([
+        me.championName,
+        ...(enemyLaner ? [enemyLaner.championName] : []),
+        ...weaknesses.slice(0, 2).map((w) => w.split(' ')[0]),
+      ]);
+      // searchMatchupSentinelはチャンピオン名のみで検索する仕様（enemy厳密一致ではない）ため、
+      // 手持ちの対面別マッチアップデータがヒットすれば拾える、という位置づけで利用する。
+      const matchupCtx = await searchMatchupSentinel(me.championName).catch(() => '');
+
+      const prompt = `あなたはLoL振り返りコーチです。抽象的な精神論ではなく、以下のデータを具体的に引用しながら深く分析してください。
 試合結果: ${me.win ? '✅ 勝利' : '❌ 敗北'} (${me.championName} / ロール: ${lane})
+対面（同レーンの敵）: ${enemyLaner ? enemyLaner.championName : '不明（ロール不一致のため特定できず）'}
 KDA: ${me.kills}/${me.deaths}/${me.assists} (KDA比: ${kda})
 CS/min: ${csPerMin} (レーン基準目標: ${isSupport ? '以下' : '以上'} ${targetCs}) | Vision/min: ${visionPerMin} (目標: ${targetVision})
 ダメージ: ${me.damageDealtToChampions.toLocaleString()}
@@ -483,9 +525,16 @@ CS/min: ${csPerMin} (レーン基準目標: ${isSupport ? '以下' : '以上'} $
 弱点として特定された項目:
 ${weaknesses.length > 0 ? weaknesses.map((w) => `・${w}`).join('\n') : '・特になし（良いパフォーマンスです）'}
 
+デス発生タイミング（分・フェーズ・討ち取った相手）:
+${deathTimeline.length > 0 ? deathTimeline.map((d) => `・${d}`).join('\n') : '・デスなし、またはタイムライン取得不可'}
+
+${matchupCtx ? `=== ${me.championName} vs ${enemyLaner?.championName} 対面ナレッジ ===\n${matchupCtx}\n` : ''}
 ${knowledgeCtx ? `参考ナレッジ:\n${knowledgeCtx}\n` : ''}
 
-この試合の最大の改善点を1つ特定し、次の試合で具体的に何をすべきか日本語で250字以内で述べてください。`;
+以下の観点を必ず含め、日本語600字程度で具体的にアドバイスしてください（データが乏しい項目は正直にその旨を述べた上で分かる範囲で分析すること）:
+1. デスの傾向分析: デス発生タイミングが序盤/中盤/終盤のどこに偏っているか、誰にやられているかから読み取れるパターン（例: 同じ相手に連続で狩られている、終盤の集団戦での事故が多い等）を指摘する。
+2. 対面関係を踏まえた具体策: ${enemyLaner ? `${enemyLaner.championName}という対面の特性（対面ナレッジがあれば引用）を踏まえ、次回このマッチアップで何を変えるべきか` : '対面が特定できない場合は、KDA/CS/Visionの数値から読み取れる立ち回りの課題'}を挙げる。
+3. 次の試合での具体的アクション: 上記1・2を踏まえた、次回すぐ実践できる行動を1〜2つ提示する。`;
 
       const advice = await callGemini(prompt);
 
