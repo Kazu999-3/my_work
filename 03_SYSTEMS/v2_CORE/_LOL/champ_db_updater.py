@@ -227,18 +227,33 @@ def update_champion_db(champ_id: str, champ_name: str, new_text: str, patch_vers
         "Prefer": "resolution=merge-duplicates"
     }
     
-    try:
-        r = requests.post(url, headers=headers, json=upsert_data, timeout=15)
-        if r.status_code in (200, 201):
-            logging.info(f"✅ [{champ_id}] Champion DB successfully updated & merged!")
-            herald.notify_progress(f"📖 **【辞典更新完了】** {champ_name} のデータとnoteドラフトが自動ブラッシュアップされました！", portal_link=True, page="champdb")
-            return True
-        else:
-            logging.error(f"Supabase Upsert failed: {r.status_code} - {r.text}")
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            r = requests.post(url, headers=headers, json=upsert_data, timeout=15)
+            if r.status_code in (200, 201):
+                logging.info(f"✅ [{champ_id}] Champion DB successfully updated & merged!")
+                herald.notify_progress(f"📖 **【辞典更新完了】** {champ_name} のデータとnoteドラフトが自動ブラッシュアップされました！", portal_link=True, page="champdb")
+                return True
+            elif r.status_code in (429, 500, 502, 503, 504) and attempt < max_retries - 1:
+                wait = 2 ** attempt
+                logging.warning(f"⚠️ Supabase Upsert一時エラー({r.status_code})。{wait}秒後にリトライします... ({attempt + 1}/{max_retries})")
+                import time as _time
+                _time.sleep(wait)
+                continue
+            else:
+                logging.error(f"Supabase Upsert failed: {r.status_code} - {r.text}")
+                return False
+        except requests.RequestException as e:
+            if attempt < max_retries - 1:
+                wait = 2 ** attempt
+                logging.warning(f"⚠️ Supabase接続エラー。{wait}秒後にリトライします... ({attempt + 1}/{max_retries}): {e}")
+                import time as _time
+                _time.sleep(wait)
+                continue
+            logging.error(f"Supabase connection failed after {max_retries} attempts: {e}")
             return False
-    except Exception as e:
-        logging.error(f"Supabase connection failed: {e}")
-        return False
+    return False
 
 def process_interrogation_queue():
     """UIから送信された反省会フィードバック（PROCESS_INTERROGATION_*）を処理する"""

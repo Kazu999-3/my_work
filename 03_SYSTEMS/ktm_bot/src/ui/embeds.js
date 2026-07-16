@@ -50,10 +50,9 @@ export function createRecruitButtons(metadata) {
     row1.push({ type: 2, label: "✅ 募集完了 (ポータルでチーム分け)", style: 2, custom_id: `recruit_completed`, disabled: true });
   }
 
-  // Row 2: 管理・設定
+  // Row 2: 管理・設定（一括連絡ボタンは削除。募集への返信でメンション可能）
   const row2 = [
-    { type: 2, label: "⚙️ 募集編集", style: 2, custom_id: `edit_recruit_init:${metadata.owner}` },
-    { type: 2, label: "📢 一括連絡", style: 1, custom_id: `broadcast_start:${metadata.owner}` }
+    { type: 2, label: "⚙️ 募集編集", style: 2, custom_id: `edit_recruit_init:${metadata.owner}` }
   ];
   if (!isFull && metadata.mode !== 'カスタム' && metadata.joined.length >= 5) {
     row2.push({ type: 2, label: "🚀 10人に拡張", style: 1, custom_id: `upgrade_to_10:${metadata.owner}` });
@@ -62,7 +61,8 @@ export function createRecruitButtons(metadata) {
   // Row 3: システム・終了
   const row3 = [
     { type: 2, label: "🚩 募集終了", style: 2, custom_id: `close:${metadata.owner}` },
-    { type: 2, label: "👥 代理追加", style: 2, custom_id: `proxy_add_init:${metadata.owner}` }
+    { type: 2, label: "👥 代理追加", style: 2, custom_id: `proxy_add_init:${metadata.owner}` },
+    { type: 2, label: "🗑️ 削除", style: 4, custom_id: `delete_recruit:${metadata.owner}` }
   ];
 
   const comps = [
@@ -110,7 +110,7 @@ export function getPortalComponents(userId) {
 export function handleHelpPage() {
   const pages = [
     { title: "📜 KTM ガイド (1/3): 基本", description: "VCへ入り、レーンを設定して参加しましょう。", color: 0x3498db },
-    { title: "⚔️ KTM ガイド (2/3): 募集", description: "参加/カスタム待機/10人拡張などのボタンが利用可能です。", color: 0x2ecc71 },
+    { title: "⚔️ KTM ガイド (2/3): 募集", description: "参加/10人拡張などのボタンが利用可能です。", color: 0x2ecc71 },
     { title: "📊 KTM ガイド (3/3): レート", description: "対戦結果に基づき MMR が公平なマッチを生成します。", color: 0xe67e22 }
   ];
   return { embeds: pages };

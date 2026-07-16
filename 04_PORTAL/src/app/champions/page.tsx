@@ -58,6 +58,10 @@ function ChampionsContent() {
     strategy: '', note_draft: '', customFields: {},
     patch_meta: null, pro_builds: [], jg_style: null
   });
+  const [powerSpikeScores, setPowerSpikeScores] = useState<{
+    early_game_score: number; mid_game_score: number; late_game_score: number;
+    peak_window: string; summary: string;
+  } | null>(null);
   const [saving, setSaving] = useState(false);
   const [copied, setCopied] = useState(false);
   const [noteDraftMode, setNoteDraftMode] = useState<'preview' | 'edit'>('preview');
@@ -356,6 +360,15 @@ function ChampionsContent() {
 
       const { data: noteData } = await supabase.from('matchup_sentinel').select('strategy, raw_data').eq('champion', champId).eq('enemy', 'GLOBAL').single();
       const rd = noteData?.raw_data || {};
+
+      // 時間帯別の強さ（パワースパイク・構造化データ）。champion_power_spikes は
+      // power_spike_generator.py が自動生成するテーブル（課題⑥）。
+      const { data: spikeData } = await supabase
+        .from('champion_power_spikes')
+        .select('early_game_score, mid_game_score, late_game_score, peak_window, summary')
+        .eq('champion', champId)
+        .maybeSingle();
+      setPowerSpikeScores(spikeData || null);
       
       // Storageからの下書きデータ取得連携（削減案①）
       let loadedNoteDraft = rd.note_draft || '';
@@ -785,7 +798,18 @@ function ChampionsContent() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <TextAreaCard title="強み (Strengths)" icon={Swords} color="text-[var(--color-success)] border-[var(--color-success)] shadow-[var(--color-success)]" value={dataFields.strengths} onChange={v => setField('strengths', v)} />
           <TextAreaCard title="弱み (Weaknesses)" icon={ShieldAlert} color="text-[var(--color-danger)] border-[var(--color-danger)] shadow-[var(--color-danger)]" value={dataFields.weaknesses} onChange={v => setField('weaknesses', v)} />
-          <TextAreaCard title="パワースパイク" icon={Zap} color="text-[#c89b3c] border-[#c89b3c] shadow-[#c89b3c]" value={dataFields.powerSpikes} onChange={v => setField('powerSpikes', v)} />
+          <div>
+            {powerSpikeScores && (
+              <div className="mb-2 flex items-center gap-3 rounded-lg border border-[#c89b3c] px-3 py-2 text-sm">
+                <span className="font-bold text-[#c89b3c]">時間帯別の強さ:</span>
+                <span>序盤 {'★'.repeat(powerSpikeScores.early_game_score)}{'☆'.repeat(5 - powerSpikeScores.early_game_score)}</span>
+                <span>中盤 {'★'.repeat(powerSpikeScores.mid_game_score)}{'☆'.repeat(5 - powerSpikeScores.mid_game_score)}</span>
+                <span>終盤 {'★'.repeat(powerSpikeScores.late_game_score)}{'☆'.repeat(5 - powerSpikeScores.late_game_score)}</span>
+                {powerSpikeScores.summary && <span className="text-xs opacity-80">{powerSpikeScores.summary}</span>}
+              </div>
+            )}
+            <TextAreaCard title="パワースパイク" icon={Zap} color="text-[#c89b3c] border-[#c89b3c] shadow-[#c89b3c]" value={dataFields.powerSpikes} onChange={v => setField('powerSpikes', v)} />
+          </div>
           <TextAreaCard title="コアビルド / ルーン" icon={Shield} color="text-purple-400 border-purple-500 shadow-purple-500" value={dataFields.buildRunes} onChange={v => setField('buildRunes', v)} />
           <TextAreaCard title="対面の有利・不利" icon={Swords} color="text-[#00cfef] border-[#00cfef] shadow-[#00cfef]" value={dataFields.counterChampions} onChange={v => setField('counterChampions', v)} />
           <TextAreaCard title="ピック推奨 (先/後)" icon={Shield} color="text-emerald-400 border-emerald-500 shadow-emerald-500" value={dataFields.pickRecommendation} onChange={v => setField('pickRecommendation', v)} />

@@ -3,6 +3,7 @@ import { fetchGAS, patchInteractionResponse, sendDiscordMessage, sendInteraction
 import { handleLaneCommand, handleStatsCommand } from './commands.js';
 import { createMessageContent, createRecruitButtons, createRecruitEmbed, extractPlayersFromEmbed, getPortalComponents, getPortalEmbed, handleHelpPage, splitMessage } from '../ui/embeds.js';
 import { parseMessageData, handleAutoMatchEnd } from '../utils/helpers.js';
+import { getAdminDiscordIds, markRecruitmentStatus } from '../utils/recruitPermission.js';
 
 export async function handleButtonInteraction(interaction, env, ctx) {
   const customId = interaction.data.custom_id;
@@ -241,8 +242,24 @@ export async function handleButtonInteraction(interaction, env, ctx) {
   const userName = interaction.member.user.global_name || interaction.member.user.username;
   if (customId.includes(':')) metadata.owner = customId.split(':').pop();
 
+  // 募集主 または システム管理者(env.ADMIN_DISCORD_IDS)を編集・削除許可対象とする（課題②）
+  const adminIds = getAdminDiscordIds(env);
+  const canManageRecruitment = userId === metadata.owner || adminIds.includes(userId);
+
+  if (customId.startsWith('delete_recruit')) {
+    if (!canManageRecruitment) return Response.json({ type: 4, data: { content: "⚠️ 募集主または管理者のみ削除可能です。", flags: 64 } });
+    ctx.waitUntil((async () => {
+      try {
+        await markRecruitmentStatus(env, interaction.message.id, 'deleted');
+      } catch (e) {
+        console.error("recruitments テーブルの削除反映に失敗:", e);
+      }
+    })());
+    return Response.json({ type: 7, data: { content: "🗑️ この募集は削除されました。", embeds: [], components: [] } });
+  }
+
   if (customId.startsWith('edit_recruit_init')) {
-    if (userId !== metadata.owner) return Response.json({ type: 4, data: { content: "⚠️ 募集主のみ編集可能です。", flags: 64 } });
+    if (!canManageRecruitment) return Response.json({ type: 4, data: { content: "⚠️ 募集主または管理者のみ編集可能です。", flags: 64 } });
     return Response.json({
       type: 9, data: {
         title: "⚙️ 募集内容の編集", custom_id: `edit_recruit_modal:${metadata.owner}`,
@@ -257,7 +274,7 @@ export async function handleButtonInteraction(interaction, env, ctx) {
   }
 
   if (customId.startsWith('upgrade_to_10')) {
-    if (userId !== metadata.owner) return Response.json({ type: 4, data: { content: "⚠️ 募集主のみ拡張可能です。", flags: 64 } });
+    if (!canManageRecruitment) return Response.json({ type: 4, data: { content: "⚠️ 募集主または管理者のみ拡張可能です。", flags: 64 } });
     metadata.mode = 'カスタム'; metadata.maxCount = 10;
   } else if (customId.startsWith('join_any')) {
     if (metadata.joined.includes(userId) && !Object.values(metadata.roles).includes(userId)) {
@@ -283,19 +300,10 @@ export async function handleButtonInteraction(interaction, env, ctx) {
         metadata.spectating = metadata.spectating.filter(id => id !== userId);
       }
     }
-  } else if (customId.startsWith('spectate')) {
-    if (!metadata.spectating.includes(userId)) {
-      metadata.spectating.push(userId); metadata.names[userId] = userName;
-      metadata.joined = metadata.joined.filter(id => id !== userId);
-      Object.keys(metadata.roles).forEach(r => { if (metadata.roles[r] === userId) metadata.roles[r] = null; });
-    } else {
-      metadata.spectating = metadata.spectating.filter(id => id !== userId);
-    }
   } else if (customId.startsWith('close')) {
+    // 募集終了→ボタンなしで閉じる（返信メンションで一括連絡してください）
     const embed = createRecruitEmbed(metadata); embed.title = "🚨 募集終了"; embed.color = 0xff0000;
-    return Response.json({ type: 7, data: { content: createMessageContent(metadata), embeds: [embed], components: [{ type: 1, components: [{ type: 2, label: "📢 一括連絡", style: 1, custom_id: `broadcast_start:${metadata.owner}` }] }] } });
-  } else if (customId.startsWith('broadcast_start:')) {
-    return Response.json({ type: 9, data: { title: "📢 一括連絡", custom_id: `broadcast_modal:${metadata.owner}`, components: [{ type: 1, components: [{ type: 4, custom_id: "msg", label: "送信メッセージ", style: 2, required: true }] }] } });
+    return Response.json({ type: 7, data: { content: createMessageContent(metadata), embeds: [embed], components: [] } });
   }
 
   // 自動締切 & メンション (チーム分けは手動ボタンで実行)

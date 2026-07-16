@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useRef } from "react";
 import { supabase } from "../../lib/supabaseClient";
-import { supabaseBrowser } from "../../lib/supabaseBrowserClient";
 import MatchHistoryPanel from "./MatchHistoryPanel";
 import ProfileModal from "./ProfileModal";
 import { Info, Users, RefreshCw, Save, Trophy, Filter, Plus, AlertCircle, X, History, Globe, ChevronDown, Shield, Trees, Zap, Target, Heart, Sparkles, Settings, AlertTriangle } from "lucide-react";
@@ -13,8 +12,11 @@ async function fetchWithTimeout(resource: RequestInfo, options: RequestInit & { 
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), timeout);
   try {
+    // 管理者APIへの認証はHttpOnly Cookie(admin_session)で自動送信されるため、
+    // Bearerトークンの手動付与は不要（旧Discord OAuthアクセストークン付与ロジックを削除）。
     const response = await fetch(resource, {
       ...options,
+      credentials: "include",
       signal: controller.signal
     });
     clearTimeout(id);
@@ -104,58 +106,26 @@ const MmrBadgeInput = ({ value, onChange }: { value: number, onChange: (v: numbe
 
 export default function KtmAdminPage() {
   // 認証関連の状態
-  const [session, setSession] = useState<any>(null);
+  // Discord OAuth(Supabase)依存を廃止し、パスワード認証(HttpOnly Cookie: admin_session)に統一。
+  // middleware.ts は /admin/* のみをmatcherにしているため、/ktm-admin はここで明示的に検証する。
   const [authLoading, setAuthLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      supabaseBrowser.auth.getSession().then((res: any) => {
-        const session = res.data?.session;
-        setSession(session);
-        verifyAdminStatus(session);
-        setAuthLoading(false);
-      });
-
-      const { data: { subscription } } = supabaseBrowser.auth.onAuthStateChange((_event: any, session: any) => {
-        setSession(session);
-        verifyAdminStatus(session);
-        setAuthLoading(false);
-      });
-
-      return () => {
-        subscription.unsubscribe();
-      };
-    }
+    fetch("/api/auth/verify", { method: "POST", credentials: "include" })
+      .then((res) => setIsAdmin(res.ok))
+      .catch(() => setIsAdmin(false))
+      .finally(() => setAuthLoading(false));
   }, []);
 
-  const verifyAdminStatus = (currentSession: any) => {
-    if (!currentSession) {
-      setIsAdmin(false);
-      return;
-    }
-    const adminIdsStr = process.env.NEXT_PUBLIC_ADMIN_DISCORD_IDS || "";
-    const adminIds = adminIdsStr.split(",").map(id => id.trim()).filter(Boolean);
-    const userDiscordId = currentSession.user?.user_metadata?.sub || currentSession.user?.id;
-    
-    if (userDiscordId && adminIds.includes(userDiscordId)) {
-      setIsAdmin(true);
-    } else {
-      setIsAdmin(false);
-    }
-  };
-
-  const handleLogin = async () => {
-    await supabaseBrowser.auth.signInWithOAuth({
-      provider: "discord",
-      options: {
-        redirectTo: window.location.origin + "/ktm-admin"
-      }
-    });
+  const handleLogin = () => {
+    window.location.href = "/login?next=/ktm-admin";
   };
 
   const handleLogout = async () => {
-    await supabaseBrowser.auth.signOut();
+    await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
+    setIsAdmin(false);
+    window.location.href = "/login";
   };
 
   const [players, setPlayers] = useState<any[]>([]);
@@ -987,46 +957,20 @@ export default function KtmAdminPage() {
     );
   }
 
-  if (!session) {
+  if (!isAdmin) {
     return (
       <div className="min-h-screen bg-gray-950 text-gray-200 flex items-center justify-center p-4">
         <div className="bg-gray-900 border border-gray-800 rounded-lg p-8 max-w-md w-full text-center space-y-6 shadow-2xl">
           <Shield className="h-16 w-16 text-blue-500 mx-auto" />
           <div className="space-y-2">
             <h1 className="text-2xl font-bold text-white">KTM 管理ダッシュボード</h1>
-            <p className="text-sm text-gray-400 font-medium">この画面にアクセスするには、管理者用 Discord アカウントでのログインが必要です。</p>
+            <p className="text-sm text-gray-400 font-medium">この画面にアクセスするには、管理者パスコードでのログインが必要です。</p>
           </div>
           <button
             onClick={handleLogin}
             className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-4 rounded transition flex items-center justify-center gap-2"
           >
-            <Shield className="h-5 w-5" /> Discord でログイン
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  if (!isAdmin) {
-    return (
-      <div className="min-h-screen bg-gray-950 text-gray-200 flex items-center justify-center p-4">
-        <div className="bg-gray-900 border border-gray-800 rounded-lg p-8 max-w-md w-full text-center space-y-6 shadow-2xl">
-          <AlertCircle className="h-16 w-16 text-red-500 mx-auto" />
-          <div className="space-y-2">
-            <h1 className="text-2xl font-bold text-white">アクセス権限がありません</h1>
-            <p className="text-sm text-gray-400 font-medium">
-              ログイン中の Discord アカウントは管理者として登録されていません。
-            </p>
-            <div className="bg-gray-950 border border-gray-800 rounded p-3 text-left font-mono text-xs text-gray-500 space-y-1">
-              <div>ユーザー名: {session.user?.user_metadata?.full_name || session.user?.email}</div>
-              <div>Discord ID: {session.user?.user_metadata?.sub || session.user?.id}</div>
-            </div>
-          </div>
-          <button
-            onClick={handleLogout}
-            className="w-full bg-gray-800 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded transition text-sm"
-          >
-            別のアカウントでログインし直す (ログアウト)
+            <Shield className="h-5 w-5" /> ログインページへ
           </button>
         </div>
       </div>
@@ -1044,8 +988,7 @@ export default function KtmAdminPage() {
           </div>
           <div className="flex items-center gap-4 text-xs">
             <span className="text-gray-400">
-              ログイン中: <strong className="text-white font-bold">{session?.user?.user_metadata?.full_name || "管理者"}</strong>
-              <span className="text-gray-500 font-mono ml-2">({session?.user?.user_metadata?.sub || session?.user?.id})</span>
+              ログイン中: <strong className="text-white font-bold">管理者</strong>
             </span>
             <button
               onClick={handleLogout}

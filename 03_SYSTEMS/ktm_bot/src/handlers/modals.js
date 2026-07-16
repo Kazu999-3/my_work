@@ -2,6 +2,7 @@ import { CONFIG } from '../config.js';
 import { fetchGAS, sendDiscordMessage } from '../utils/api.js';
 import { createMessageContent, createRecruitButtons, createRecruitEmbed } from '../ui/embeds.js';
 import { parseMessageData } from '../utils/helpers.js';
+import { createRecruitment } from '../utils/recruitPermission.js';
 
 export async function handleModalSubmit(interaction, env, ctx) {
   const customId = interaction.data.custom_id;
@@ -16,7 +17,23 @@ export async function handleModalSubmit(interaction, env, ctx) {
     const mode = (rawMode === 'ノーマル' || rawMode === 'カスタム' || rawMode === 'ARAM') ? rawMode : 'ノーマル';
     const maxCount = parseInt(getVal('max')) || (mode === 'カスタム' ? 10 : 5);
     const metadata = { mode, time: getVal('time'), maxCount, memo: getVal('memo'), owner: userId, joined: [], spectating: [], roles: { Top: null, Jg: null, Mid: null, Adc: null, Sup: null }, names: {} };
-    ctx.waitUntil(sendDiscordMessage(`channels/${CONFIG.RECRUIT_CHANNEL_ID}/messages`, env.DISCORD_TOKEN, "POST", { content: createMessageContent(metadata), embeds: [createRecruitEmbed(metadata)], components: createRecruitButtons(metadata) }));
+    ctx.waitUntil((async () => {
+      const res = await sendDiscordMessage(`channels/${CONFIG.RECRUIT_CHANNEL_ID}/messages`, env.DISCORD_TOKEN, "POST", { content: createMessageContent(metadata), embeds: [createRecruitEmbed(metadata)], components: createRecruitButtons(metadata) });
+      try {
+        const sentMessage = await res.clone().json();
+        // 埋め込みメタデータに加えて recruitments テーブルにも正規に記録する（課題②）。
+        // これにより owner 判定が埋め込みJSONのパースだけに依存しなくなる。
+        await createRecruitment(env, {
+          messageId: sentMessage.id,
+          channelId: CONFIG.RECRUIT_CHANNEL_ID,
+          ownerDiscordId: userId,
+          mode,
+          maxCount,
+        });
+      } catch (e) {
+        console.error("recruitments テーブルへの記録に失敗しました（埋め込みメタデータ側は投稿済み）:", e);
+      }
+    })());
     return Response.json({ type: 4, data: { content: "✅ **募集を #募集板 に投下しました！**", flags: 64 } });
   }
 

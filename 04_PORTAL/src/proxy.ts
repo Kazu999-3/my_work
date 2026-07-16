@@ -1,73 +1,87 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-export function proxy(req: NextRequest) {
-  // 環境変数からパスワードを取得。設定されていない場合はデフォルトで 'ktm' とする（安全のため本番では必ず設定する）
-  const adminPassword = process.env.ADMIN_PASSWORD || 'ktm';
+// Next.js 16はMiddlewareの概念を"proxy"(この関数)に置き換えた。
+// middleware.tsとproxy.tsを両方置くとビルドエラーになるため、
+// /admin・/api/adminのCookie認証ゲートはここに実装する。
+//
+// Edge Runtimeで動くため Node の`crypto`は使わず Web Crypto(SubtleCrypto)で
+// adminSession.ts と同じ HMAC-SHA256 署名検証ロジックを再実装している
+// （検証アルゴリズムを変える場合は両方を同時に更新すること）。
 
+const ADMIN_SESSION_COOKIE = 'admin_session';
+
+async function hmacSha256Hex(secret: string, payload: string): Promise<string> {
+  const enc = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    'raw',
+    enc.encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+  const sigBuf = await crypto.subtle.sign('HMAC', key, enc.encode(payload));
+  return Array.from(new Uint8Array(sigBuf))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+async function isValidAdminSession(token: string | undefined, secret: string): Promise<boolean> {
+  if (!token) return false;
+  const lastDot = token.lastIndexOf('.');
+  if (lastDot === -1) return false;
+
+  const payload = token.slice(0, lastDot);
+  const signature = token.slice(lastDot + 1);
+  const expected = await hmacSha256Hex(secret, payload);
+  if (signature.length !== expected.length || signature !== expected) return false;
+
+  const match = payload.match(/^admin:(\d+)$/);
+  if (!match) return false;
+  return Date.now() < Number(match[1]);
+}
+
+export async function proxy(req: NextRequest) {
   const url = req.nextUrl;
   const path = url.pathname;
 
-  // パスワード保護の対象となるパス（一般公開しないパス）
-  const isProtected = 
-    path === '/' ||
-    path.startsWith('/ktm-admin') ||
-    path.startsWith('/matchups') ||
-    path.startsWith('/champions') ||
-    path.startsWith('/library') ||
-    path.startsWith('/design') ||
-    path.startsWith('/admin') ||
-    path.startsWith('/api/admin');
-
-  if (isProtected) {
-    // 1. クッキーによる長期セッションの確認
-    const authCookie = req.cookies.get('admin_auth')?.value;
-    const expectedAuthValue = btoa(`admin:${adminPassword}`);
-    if (authCookie && authCookie === expectedAuthValue) {
-      return NextResponse.next();
-    }
-
-    // 2. Authorization ヘッダーの確認
-    const basicAuth = req.headers.get('authorization');
-    if (basicAuth && basicAuth.toLowerCase().startsWith('basic ')) {
-      const authValue = basicAuth.split(' ')[1];
-      try {
-        // base64デコード (username:password)
-        const decoded = atob(authValue);
-        const parts = decoded.split(':');
-        if (parts.length >= 2) {
-          const user = parts[0];
-          const pwd = parts.slice(1).join(':'); // パスワード自身にコロンが含まれている場合も考慮
-
-          // パスワードが一致するか確認
-          if (pwd === adminPassword) {
-            const response = NextResponse.next();
-            // 30日間有効なクッキーをセット
-            response.cookies.set('admin_auth', expectedAuthValue, {
-              path: '/',
-              maxAge: 60 * 60 * 24 * 30, // 30日間
-              httpOnly: true,
-              secure: process.env.NODE_ENV === 'production',
-              sameSite: 'lax',
-            });
-            return response;
-          }
-        }
-      } catch (err) {
-        console.warn('⚠️ Basic Auth decode failed or invalid credentials:', err);
-      }
-    }
-
-    // 認証失敗時、またはAuthorizationヘッダーがない場合は401を返しブラウザのダイアログを出す
-    return new NextResponse('Auth Required.', {
-      status: 401,
-      headers: {
-        'WWW-Authenticate': 'Basic realm="KTM Admin Area"',
-      },
-    });
+  // /login ページ自体はそのまま通す
+  if (path.startsWith('/login')) {
+    return NextResponse.next();
   }
 
-  return NextResponse.next();
+  const isAdminGuardedRoute = path.startsWith('/admin') || path.startsWith('/api/admin');
+  if (!isAdminGuardedRoute) {
+    return NextResponse.next();
+  }
+
+  const secret = process.env.ADMIN_SESSION_SECRET || process.env.ADMIN_PASSWORD;
+  if (!secret) {
+    return NextResponse.json(
+      { error: 'サーバー設定エラー: ADMIN_SESSION_SECRET/ADMIN_PASSWORD未設定です。' },
+      { status: 500 }
+    );
+  }
+
+  // cronジョブ等、Cookieを持てない呼び出し元向けの抜け道（adminSession.tsのAPI版と同じ条件）
+  const cronSecret = req.headers.get('x-cron-secret') || '';
+  const expectedCronSecret = process.env.CRON_SECRET || '';
+  if (expectedCronSecret && cronSecret === expectedCronSecret) {
+    return NextResponse.next();
+  }
+
+  const token = req.cookies.get(ADMIN_SESSION_COOKIE)?.value;
+  if (await isValidAdminSession(token, secret)) {
+    return NextResponse.next();
+  }
+
+  // API routeはJSON 401、ページ遷移は/loginへリダイレクト
+  if (path.startsWith('/api/')) {
+    return NextResponse.json({ error: '認証が必要です。' }, { status: 401 });
+  }
+  const loginUrl = new URL('/login', req.url);
+  loginUrl.searchParams.set('redirect', path);
+  return NextResponse.redirect(loginUrl);
 }
 
 // 適用するルートの定義

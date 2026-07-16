@@ -13,12 +13,14 @@ try:
     from v2_CORE.settings import settings
     from v2_CORE.ai_helper import generate_content_safe
     from v2_CORE._LOL.champ_db_updater import update_champion_db
+    from v2_CORE._LOL.power_spike_generator import generate_power_spike
     from v2_CORE._LOL.herald import herald
 except ImportError:
     sys.path.append(str(Path(__file__).resolve().parent.parent.parent))
     from v2_CORE.settings import settings
     from v2_CORE.ai_helper import generate_content_safe
     from v2_CORE._LOL.champ_db_updater import update_champion_db
+    from v2_CORE._LOL.power_spike_generator import generate_power_spike
     from v2_CORE._LOL.herald import herald
 
 dotenv.load_dotenv(Path("d:/my_work/.env"))
@@ -45,7 +47,10 @@ def get_latest_patch() -> str:
             return r.json()[0]
     except Exception as e:
         logging.error(f"Failed to fetch patch version from Ddragon: {e}")
-    return "16.11.1" # デフォルトフォールバック
+    raise RuntimeError(
+        "最新パッチバージョンの取得に失敗しました。古いパッチのまま同期を継続すると"
+        "誤ったデータで辞典を上書きするため、同期を中断します。DDragonの疎通を確認してください。"
+    )
 
 def get_all_champions(patch_version: str) -> dict:
     url = f"https://ddragon.leagueoflegends.com/cdn/{patch_version}/data/ja_JP/champion.json"
@@ -145,7 +150,14 @@ def run_bulk_update():
     patch_version = queue_data.get("patch_version")
     
     if not queue_data or not queue_data.get("queue"):
-        patch_version = get_latest_patch()
+        try:
+            patch_version = get_latest_patch()
+        except RuntimeError as e:
+            logging.error(f"❌ {e}")
+            herald.notify_progress(
+                f"❌ **【辞典一括更新 中断】** {e}", portal_link=True, page="champdb"
+            )
+            return
         logging.info(f"🌐 最新パッチ特定: {patch_version}")
         champions = get_all_champions(patch_version)
         if not champions:
@@ -213,13 +225,26 @@ def run_bulk_update():
         intel = research_champion(champ_name, champ_id, patch_version)
         
         # エラー判定 (ai_helper の戻り値検証)
-        if not intel or intel.startswith("❌") or intel.startswith("⚠️") or "本日の利用上限に達しました" in intel:
-            logging.warning(f"⚠️ [{champ_id}] API制限またはエラーを検知しました。処理を一時停止します。エラー: {intel[:100]}")
+        # 「本日の利用上限」は日次クォータ枯渇であり、これ以降の全チャンピオンも
+        # 確実に失敗するため、ここでのみバッチ全体を安全に一時停止する。
+        # それ以外の一過性エラー(❌/⚠️)は当該チャンピオンだけ failed にして次へ進める。
+        if intel and "本日の利用上限に達しました" in intel:
+            logging.warning(f"⚠️ [{champ_id}] 日次クォータ上限を検知しました。バッチ全体を一時停止します。")
             queue[champ_id]["status"] = "failed"
-            queue[champ_id]["error"] = intel or "Empty response"
+            queue[champ_id]["error"] = intel
             suspended = True
             break
-            
+
+        if not intel or intel.startswith("❌") or intel.startswith("⚠️"):
+            logging.warning(f"⚠️ [{champ_id}] 一時的なエラーを検知しました。このチャンピオンをスキップして次へ進みます。エラー: {(intel or '')[:100]}")
+            queue[champ_id]["status"] = "failed"
+            queue[champ_id]["error"] = intel or "Empty response"
+            queue_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+            save_queue(queue_data)
+            processed_count += 1
+            time.sleep(5)
+            continue
+
         # データベースの更新
         success = update_champion_db(champ_id, champ_name, intel, patch_version)
         
@@ -230,6 +255,13 @@ def run_bulk_update():
             logging.info(f"✅ {champ_name} の更新に成功しました。")
             consecutive_db_failures = 0
             processed_count += 1
+
+            # パワースパイク(時間帯別の強さ)の生成・格納。失敗してもチャンピオン辞典本体の
+            # 更新は既に成功済みなので、ここでのエラーはバッチを止めずログのみで次へ進む。
+            try:
+                generate_power_spike(champ_id, role="GLOBAL", patch=patch_version)
+            except Exception as e:
+                logging.warning(f"⚠️ [{champ_id}] パワースパイク生成でエラーが発生しましたが処理を継続します: {e}")
         else:
             logging.error(f"❌ {champ_name} のデータベース更新に失敗しました。")
             queue[champ_id]["status"] = "failed"

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Activity, Zap, TrendingUp, ShieldAlert, Cpu, Network, Gamepad2, Users, RefreshCw, CheckCircle2, X, ChevronRight } from 'lucide-react';
 import { supabase } from '../../../lib/supabaseClient';
+import { supabaseBrowser } from '../../../lib/supabaseBrowserClient';
 import Link from 'next/link';
 
 const dummyData = [
@@ -17,7 +18,7 @@ const dummyData = [
 ];
 
 export default function Home() {
-
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [totalAssets, setTotalAssets] = useState<number>(0);
   const [pendingTasks, setPendingTasks] = useState<number>(0);
   const [pendingTaskList, setPendingTaskList] = useState<any[]>([]);
@@ -48,7 +49,18 @@ export default function Home() {
     history: []
   });
 
+  // 1. 認証の確認（middleware.tsが/admin/*を既にCookieでゲートしているため、
+  // ここに到達している時点でCookie自体は有効。UI側のローディング制御のみ。）
   useEffect(() => {
+    fetch('/api/auth/verify', { method: 'POST', credentials: 'include' })
+      .then(res => setIsAuthenticated(res.ok))
+      .catch(() => setIsAuthenticated(false));
+  }, []);
+
+  // 2. 認証完了後にステータスチェックを実行
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    
     const checkStatus = async () => {
       try {
         const res = await fetch('/api/admin/system/status');
@@ -61,8 +73,7 @@ export default function Home() {
       }
     };
     checkStatus();
-    // 自動更新（リアルタイムポーリング）を無効化し、手動更新に変更
-  }, []);
+  }, [isAuthenticated]);
 
 
 
@@ -197,10 +208,10 @@ export default function Home() {
 
 
   useEffect(() => {
+    if (!isAuthenticated) return;
     fetchData();
     setLastUpdated(new Date().toLocaleTimeString('ja-JP'));
-    // 自動リフレッシュ（リアルタイムポーリング）を無効化し、手動更新に変更
-  }, []);
+  }, [isAuthenticated]);
 
   const handleResetQueue = async () => {
     setIsResetting(true);
@@ -236,6 +247,37 @@ export default function Home() {
       transition: { type: 'spring' as const, stiffness: 100 }
     }
   };
+
+  if (isAuthenticated === null) {
+    return (
+      <div style={{ minHeight: '100vh' }} className="flex-1 flex items-center justify-center bg-[#06070a]">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-white/20 border-t-blue-500" />
+      </div>
+    );
+  }
+
+  if (isAuthenticated === false) {
+    return (
+      <div
+        style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #07080e 0%, #0f111a 60%, #07080e 100%)' }}
+        className="flex-1 flex items-center justify-center p-4 font-sans text-white"
+      >
+        <div className="text-center max-w-sm rounded-3xl border border-gray-800 bg-[#0f111a] p-8 shadow-2xl">
+          <div className="text-4xl mb-4">🔑</div>
+          <h2 className="text-lg font-bold mb-2">認証が必要です</h2>
+          <p className="text-sm text-gray-400 mb-6 leading-relaxed">
+            この管理版コントロールセンターは管理者専用です。Discordアカウントでログインしてからアクセスしてください。
+          </p>
+          <a
+            href="/login?next=/admin/dashboard"
+            className="inline-block w-full rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-500 shadow-lg hover:shadow-blue-500/20"
+          >
+            ログインページへ
+          </a>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen p-6 md:p-12 max-w-7xl mx-auto flex flex-col gap-10 relative overflow-hidden">
