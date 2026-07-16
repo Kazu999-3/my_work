@@ -54,6 +54,55 @@ export default function BalancerPage() {
   const [announcingStats, setAnnouncingStats] = useState(false);
   const [message, setMessage] = useState({ type: "", text: "" });
 
+  // ★ 管理者パネル (ktm-admin/balancerをページ分割せず、ログイン中の管理者だけに
+  // MMR整合性・Rebuildなど「見たいデータ」をこの画面内で見せるための状態群)
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [showAdminPanel, setShowAdminPanel] = useState(false);
+  const [integrityData, setIntegrityData] = useState<any>(null);
+  const [checkingIntegrity, setCheckingIntegrity] = useState(false);
+  const [rebuildingMmr, setRebuildingMmr] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/auth/verify", { method: "POST", credentials: "include" })
+      .then((res) => setIsAdmin(res.ok))
+      .catch(() => setIsAdmin(false));
+  }, []);
+
+  const checkIntegrity = async () => {
+    setCheckingIntegrity(true);
+    try {
+      const res = await fetch("/api/mmr/check-integrity", { credentials: "include" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      setIntegrityData(data);
+    } catch (err: any) {
+      console.error("Integrity check failed:", err);
+    } finally {
+      setCheckingIntegrity(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isAdmin) checkIntegrity();
+  }, [isAdmin]);
+
+  const handleRebuildMmr = async () => {
+    if (!confirm("過去のすべての試合履歴をもとに全プレイヤーのMMRを再計算します。よろしいですか？")) return;
+    setRebuildingMmr(true);
+    try {
+      const res = await fetch("/api/mmr/rebuild", { method: "POST", credentials: "include" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "再計算に失敗しました");
+      setMessage({ type: "success", text: "✅ " + data.message });
+      await checkIntegrity();
+      fetchPlayers();
+    } catch (err: any) {
+      setMessage({ type: "error", text: "❌ Rebuild エラー: " + err.message });
+    } finally {
+      setRebuildingMmr(false);
+    }
+  };
+
   const handleRecordNavigate = async () => {
     if (!balanceResult) return;
     setSavingPending(true);
@@ -960,8 +1009,23 @@ export default function BalancerPage() {
               <Link href="/history" className="flex items-center gap-1.5 bg-gray-800 hover:bg-gray-700 text-orange-400 px-3 py-1.5 rounded-lg font-bold transition text-xs border border-orange-900/50">
                 <History className="h-3.5 w-3.5" /> 過去の試合
               </Link>
-              <Link href="/ktm-admin" prefetch={false} className="flex items-center gap-1.5 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-400 px-3 py-1.5 rounded-lg font-bold transition text-xs">
-                <Shield className="h-3.5 w-3.5" /> 管理者 🔑
+              {isAdmin && (
+                <button
+                  onClick={() => setShowAdminPanel(v => !v)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold transition text-xs border ${
+                    integrityData?.hasDiscrepancy
+                      ? 'bg-rose-500/10 hover:bg-rose-500/20 border-rose-500/30 text-rose-400'
+                      : 'bg-amber-500/10 hover:bg-amber-500/20 border-amber-500/30 text-amber-400'
+                  }`}
+                >
+                  <Shield className="h-3.5 w-3.5" /> 管理者パネル
+                  {integrityData?.hasDiscrepancy && (
+                    <span className="bg-rose-500 text-white rounded-full px-1.5 text-[10px] font-black">{integrityData.discrepancyCount}</span>
+                  )}
+                </button>
+              )}
+              <Link href="/ktm-admin" prefetch={false} className="flex items-center gap-1.5 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-300 px-3 py-1.5 rounded-lg font-bold transition text-xs">
+                <Shield className="h-3.5 w-3.5" /> {isAdmin ? '詳細管理へ' : '管理者 🔑'}
               </Link>
               <button
                 onClick={handleAnnounceStats}
@@ -1024,6 +1088,51 @@ export default function BalancerPage() {
             </button>
           )}
         </div>
+
+        {/* ★ 管理者パネル (isAdmin時のみ・/ktm-adminへ移動せずこの画面内でMMR整合性とRebuildを確認できる) */}
+        {isAdmin && showAdminPanel && (
+          <div className="bg-gray-900 border border-amber-800/40 rounded-xl p-4 space-y-3">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className={`h-4 w-4 ${integrityData?.hasDiscrepancy ? 'text-rose-400' : 'text-emerald-400'}`} />
+                <span className="text-sm font-bold text-white">MMR整合性ステータス</span>
+                {checkingIntegrity ? (
+                  <span className="text-xs text-gray-500">確認中...</span>
+                ) : integrityData ? (
+                  <span className={`text-xs font-bold ${integrityData.hasDiscrepancy ? 'text-rose-400' : 'text-emerald-400'}`}>
+                    {integrityData.hasDiscrepancy ? `${integrityData.discrepancyCount}人にズレがあります` : '全員一致しています'}
+                  </span>
+                ) : (
+                  <span className="text-xs text-gray-500">未確認</span>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={checkIntegrity}
+                  disabled={checkingIntegrity}
+                  className="flex items-center gap-1.5 bg-gray-800 hover:bg-gray-700 text-gray-200 px-3 py-1.5 rounded-lg font-bold transition text-xs disabled:opacity-50"
+                >
+                  <RefreshCw className={`h-3.5 w-3.5 ${checkingIntegrity ? 'animate-spin' : ''}`} /> 再チェック
+                </button>
+                <button
+                  onClick={handleRebuildMmr}
+                  disabled={rebuildingMmr}
+                  className="flex items-center gap-1.5 bg-red-900/40 hover:bg-red-800 text-red-200 border border-red-800/50 px-3 py-1.5 rounded-lg font-bold transition text-xs disabled:opacity-50"
+                  title="過去のすべての試合履歴を元にMMRを再計算し、全員のデータを上書きします"
+                >
+                  <RefreshCw className={`h-3.5 w-3.5 ${rebuildingMmr ? 'animate-spin' : ''}`} /> 🔄 Rebuild
+                </button>
+              </div>
+            </div>
+            {integrityData?.hasDiscrepancy && (
+              <div className="text-xs text-gray-400">
+                名簿の編集・Riot/Discord同期・アフィリエイト管理などの詳細操作は
+                <Link href="/ktm-admin" prefetch={false} className="text-amber-400 hover:underline mx-1">KTM管理ダッシュボード</Link>
+                で行えます。
+              </div>
+            )}
+          </div>
+        )}
 
         {/* メッセージ */}
         {message.text && (

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { verifyAdminSession } from '../../../../lib/adminAuth';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder';
@@ -101,7 +102,14 @@ function parseIntroduction(content: string) {
   };
 }
 
-export async function GET() {
+export async function GET(request: Request) {
+  // ===== 管理者セッション確認 =====
+  // ktm-adminのDiscord同期モーダル専用のエンドポイント（Discordサーバーの全メンバー情報を返す）のため保護する。
+  const authResult = await verifyAdminSession(request);
+  if (!authResult.ok) {
+    return NextResponse.json({ error: authResult.error }, { status: 401 });
+  }
+  // =================================
   const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN;
   const DISCORD_GUILD_ID = process.env.DISCORD_GUILD_ID;
 
@@ -262,6 +270,13 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  // ===== 管理者セッション確認 =====
+  // プレイヤー名簿への追加・非アクティブ化・メタデータ上書きを行う書き込みAPIのため保護する。
+  const authResult = await verifyAdminSession(request);
+  if (!authResult.ok) {
+    return NextResponse.json({ error: authResult.error }, { status: 401 });
+  }
+  // =================================
   try {
     const { add, deactivate, update_metadata } = await request.json();
     

@@ -35,6 +35,8 @@ function ChampionsContent() {
   const [champPending, setChampPending] = useState<Record<string, boolean>>({});
   const [champPatchMetas, setChampPatchMetas] = useState<Record<string, any>>({});
   const [champJgStyles, setChampJgStyles] = useState<Record<string, any>>({});
+  // 一覧グリッドでも「いつ頃強いか」がひと目でわかるように、全チャンピオン分を一括取得する
+  const [champPowerSpikes, setChampPowerSpikes] = useState<Record<string, { early_game_score: number; mid_game_score: number; late_game_score: number }>>({});
   const [typeFilter, setTypeFilter] = useState<'ALL' | 'FARM' | 'GANK' | 'INVASION' | 'TANK'>('ALL');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [pickFilter, setPickFilter] = useState<'ALL' | 'BLIND' | 'COUNTER'>('ALL');
@@ -283,9 +285,13 @@ function ChampionsContent() {
           id: c.id, key: c.key, name: c.name, title: c.title, tags: c.tags,
           searchKey: `${c.id.toLowerCase()} ${c.name}`
         }));
-        return supabase.from('matchup_sentinel').select('champion, created_at, strategy, patch_meta:raw_data->patch_meta, jg_style:raw_data->jg_style, is_favorited:raw_data->is_favorited').eq('enemy', 'GLOBAL');
+        return Promise.all([
+          supabase.from('matchup_sentinel').select('champion, created_at, strategy, patch_meta:raw_data->patch_meta, jg_style:raw_data->jg_style, is_favorited:raw_data->is_favorited').eq('enemy', 'GLOBAL'),
+          // 一覧グリッド用に全チャンピオン分のパワースパイクを一括取得（詳細表示と同じchampion_power_spikesテーブル）
+          supabase.from('champion_power_spikes').select('champion, early_game_score, mid_game_score, late_game_score')
+        ]);
       })
-      .then(({ data }) => {
+      .then(([{ data }, { data: spikeRows }]) => {
         const dates: Record<string, string> = {};
         const pending: Record<string, boolean> = {};
         const metas: Record<string, any> = {};
@@ -296,7 +302,7 @@ function ChampionsContent() {
             dates[row.champion] = row.created_at;
             pending[row.champion] = !row.strategy; // strategyが空・nullならpending
             metas[row.champion] = row.patch_meta || null;
-            
+
             // jg_styleが文字列だった場合でも安全にパースする
             let parsedJgStyle = null;
             if (row.jg_style) {
@@ -309,6 +315,17 @@ function ChampionsContent() {
             }
           });
         }
+        const spikes: Record<string, any> = {};
+        if (spikeRows) {
+          spikeRows.forEach((row: any) => {
+            spikes[row.champion] = {
+              early_game_score: row.early_game_score,
+              mid_game_score: row.mid_game_score,
+              late_game_score: row.late_game_score
+            };
+          });
+        }
+        setChampPowerSpikes(spikes);
         setChampDates(dates);
         setChampPending(pending);
         setChampPatchMetas(metas);
@@ -1706,6 +1723,28 @@ function ChampionsContent() {
                            jgStyle.type === 'タンク型' ? '🛡️ タンク' : jgStyle.type}
                         </div>
                       )}
+                    </div>
+                  );
+                })()}
+                {(() => {
+                  // 時間帯別の強さ（パワースパイク）を一覧グリッドでもひと目で確認できるようにするミニ表示
+                  const spike = champPowerSpikes[c.id];
+                  if (!spike) return null;
+                  const phases: { label: string; score: number }[] = [
+                    { label: '序', score: spike.early_game_score },
+                    { label: '中', score: spike.mid_game_score },
+                    { label: '終', score: spike.late_game_score }
+                  ];
+                  const peakIdx = phases.reduce((maxI, p, i, arr) => p.score > arr[maxI].score ? i : maxI, 0);
+                  return (
+                    <div className="flex justify-center gap-1 mt-1 pointer-events-none" title="時間帯別の強さ（序盤/中盤/終盤）">
+                      {phases.map((p, i) => (
+                        <span key={p.label} className={`text-[8px] font-black px-1 rounded leading-none ${
+                          i === peakIdx ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30' : 'text-gray-600'
+                        }`}>
+                          {p.label}{p.score}
+                        </span>
+                      ))}
                     </div>
                   );
                 })()}

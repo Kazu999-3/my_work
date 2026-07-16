@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { calculateInitialMmr, calculateNewMMR } from '../../../../lib/mmr';
+import { verifyAdminSession } from '../../../../lib/adminAuth';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder';
@@ -8,6 +9,13 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 export async function GET(request: Request) {
   try {
+  // ===== 管理者セッション確認 =====
+  // 全プレイヤーの内部MMR格差データを返す管理者専用の診断APIのため保護する。
+  const authResult = await verifyAdminSession(request);
+  if (!authResult.ok) {
+    return NextResponse.json({ error: authResult.error }, { status: 401 });
+  }
+  // =================================
     const { data: allPlayers, error: pError } = await supabase.from('ktm_players').select('*');
     if (pError) throw pError;
 

@@ -30,6 +30,7 @@ export function LibraryTabContentInner() {
   const [editKeywords, setEditKeywords] = useState('');
   const [saving, setSaving] = useState(false);
   const [syncingAll, setSyncingAll] = useState(false);
+  const [syncProgress, setSyncProgress] = useState<{ processed: number; total: number; synced: number } | null>(null);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
@@ -270,15 +271,35 @@ export function LibraryTabContentInner() {
     if (!supabase) return;
     if (!confirm("既存のすべての攻略ライブラリ記事をスキャンし、指定されている複数チャンピオンの各辞典（matchup_sentinel）へ情報を一括マージ・同期しますか？")) return;
     setSyncingAll(true);
+    setSyncProgress({ processed: 0, total: 0, synced: 0 });
     try {
-      const res = await fetch('/api/admin/knowledge/sync', { method: 'POST' });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || '同期エラーが発生しました');
-      showToast(`✅ 既存記事から延べ ${data.synced} 件のチャンピオン辞典データを一括同期・振り分け完了しました！`, 'success');
+      let offset = 0;
+      let totalSynced = 0;
+      let totalArticles = 0;
+      // ★ サーバー側はチャンク処理になっているため、完了(done)するまで進捗を表示しながら繰り返し呼び出す
+      while (true) {
+        const res = await fetch('/api/admin/knowledge/sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ offset })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || '同期エラーが発生しました');
+
+        totalSynced += data.syncedChampions || 0;
+        totalArticles = data.totalArticles || totalArticles;
+        offset = offset + (data.processed || 0);
+        setSyncProgress({ processed: Math.min(offset, totalArticles), total: totalArticles, synced: totalSynced });
+
+        if (data.done || data.nextOffset === null || data.processed === 0) break;
+        offset = data.nextOffset;
+      }
+      showToast(`✅ 全 ${totalArticles} 記事をスキャンし、延べ ${totalSynced} 件のチャンピオン辞典データを一括同期・振り分け完了しました！`, 'success');
     } catch (err: any) {
       showToast(`❌ 同期失敗: ${err.message}`, 'error');
     } finally {
       setSyncingAll(false);
+      setSyncProgress(null);
     }
   };
 
@@ -627,14 +648,24 @@ export function LibraryTabContentInner() {
           >
             すべて閉じる
           </button>
-          <button 
-            onClick={handleSyncAllArticles} 
+          <button
+            onClick={handleSyncAllArticles}
             disabled={syncingAll}
             className="px-4 py-2.5 bg-gradient-to-r from-pink-500 to-indigo-600 hover:from-pink-400 hover:to-indigo-500 text-white text-xs font-bold rounded-2xl transition-all shadow-[0_0_15px_rgba(244,63,94,0.15)] flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <RefreshCw className={`h-3 w-3 ${syncingAll ? 'animate-spin' : ''}`} />
-            {syncingAll ? "同期中..." : "全チャンプ辞典に一括同期"}
+            {syncingAll && syncProgress
+              ? (syncProgress.total > 0 ? `同期中... (${syncProgress.processed}/${syncProgress.total}件)` : "同期準備中...")
+              : "全チャンプ辞典に一括同期"}
           </button>
+          {syncingAll && syncProgress && syncProgress.total > 0 && (
+            <div className="w-full basis-full h-1.5 bg-white/5 rounded-full overflow-hidden mt-1">
+              <div
+                className="h-full bg-gradient-to-r from-pink-500 to-indigo-500 transition-all duration-300"
+                style={{ width: `${Math.min(100, Math.round((syncProgress.processed / syncProgress.total) * 100))}%` }}
+              />
+            </div>
+          )}
           <div className="flex glass-panel p-1 rounded-2xl items-center">
             <button onClick={() => setGroupMode('champion')} className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${groupMode === 'champion' ? 'bg-[#a78bfa] text-black shadow-lg shadow-[#a78bfa]/20' : 'text-gray-400 hover:text-white'}`}>チャンピオン別</button>
             <button onClick={() => setGroupMode('keyword')} className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${groupMode === 'keyword' ? 'bg-[#a78bfa] text-black shadow-lg shadow-[#a78bfa]/20' : 'text-gray-400 hover:text-white'}`}>キーワード別</button>

@@ -92,18 +92,20 @@ def research_champion(champ_name: str, champ_id: str, patch_version: str) -> str
             
             prompt = f"""
             League of Legendsのチャンピオン「{champ_name} ({champ_id})」について、最新パッチ（パッチ {patch_major}想定）の情報をリサーチしてください。
-            
+
             以下の項目を詳しくまとめてください：
-            1. 強み (Strengths)
-            2. 弱み (Weaknesses)
+            1. 強み
+            2. 弱み
             3. パワースパイク (コアアイテムやレベル)
             4. 推奨ビルドと主要ルーン
             5. フルクリア時間とルート（ジャングラーの場合のみ。それ以外は「対象外」と記載）
             6. 基本的な立ち回りとメタでの位置づけ
-            
+
             情報は Lolalytics や u.gg などの統計に基づいた客観的な内容にしてください。
+
+            【重要】アイテム名・チャンピオン名・ルーン名などの固有名詞を除き、本文は必ず日本語で記述してください。英単語や英文をそのまま出力しないでください。
             """
-            
+
             # generate_content_safe は内部で APIGateway を介してレート制限をハンドリングする
             response_text = generate_content_safe(
                 client, 
