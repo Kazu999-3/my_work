@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { verifyAdminSession } from '@/lib/adminSession';
+import { verifyAdminSession } from '../../../../lib/adminSession';
 
 // Cookie(HttpOnly)ベースの検証に統一。クライアントからsessionKeyを渡す必要はない
 // （fetchが`credentials: 'include'`でCookieを同送していれば自動的に検証される）。

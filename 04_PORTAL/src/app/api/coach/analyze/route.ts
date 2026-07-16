@@ -75,7 +75,7 @@ function normalizeChampionName(name: string): string {
 // 実体は src/lib/geminiClient.ts に一本化済み（リトライ・バックオフ・キャッシュ共通化）。
 // cacheKey を渡す呼び出し元は同一プロンプトの再生成を24h抑止できる。
 // ============================
-import { callGeminiWithRetry } from '@/lib/geminiClient';
+import { callGeminiWithRetry } from '../../../../lib/geminiClient';
 
 async function callGemini(prompt: string, cacheKey?: string): Promise<string> {
   return callGeminiWithRetry(prompt, {

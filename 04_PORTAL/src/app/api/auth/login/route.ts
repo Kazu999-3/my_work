@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createSessionToken, ADMIN_SESSION_COOKIE } from '@/lib/adminSession';
+import { createSessionToken, ADMIN_SESSION_COOKIE } from '../../../../lib/adminSession';
 
 export async function POST(req: Request) {
   try {
