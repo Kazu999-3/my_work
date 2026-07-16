@@ -38,7 +38,9 @@ logging.basicConfig(
 
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY_FREE") or os.environ.get("GEMINI_API_KEY")
+# ポータルの/coachページと同じGEMINI_API_KEYを共有すると、一括同期が対話側のクォータを
+# 食い潰す(逆もまた然り)。GEMINI_API_KEY_BATCHを.envに設定すればそちらを優先的に使う。
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY_BATCH") or os.environ.get("GEMINI_API_KEY_FREE") or os.environ.get("GEMINI_API_KEY")
 
 POWER_SPIKE_PROMPT = """
 League of Legendsのチャンピオン「{champion}」({role}想定、パッチ{patch})について、

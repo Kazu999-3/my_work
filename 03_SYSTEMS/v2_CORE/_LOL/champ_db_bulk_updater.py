@@ -36,7 +36,10 @@ logging.basicConfig(
     ]
 )
 
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY_FREE") or os.environ.get("GEMINI_API_KEY")
+# ポータルの/coachページと同じGEMINI_API_KEYを共有すると、一括同期が対話側のクォータを
+# 食い潰す(逆もまた然り)。GEMINI_API_KEY_BATCHを.envに設定すればそちらを優先的に使う。
+# 未設定の場合は従来通りの挙動にフォールバックする。
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY_BATCH") or os.environ.get("GEMINI_API_KEY_FREE") or os.environ.get("GEMINI_API_KEY")
 QUEUE_FILE = Path("d:/my_work/02_FACTORY/_LOL/champion_update_queue.json")
 
 def get_latest_patch() -> str:

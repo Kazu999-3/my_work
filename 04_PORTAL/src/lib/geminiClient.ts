@@ -18,7 +18,9 @@ export interface GeminiCallOptions {
   cacheTtlMs?: number; // デフォルト24時間
 }
 
-const DEFAULT_MODEL = 'gemini-2.0-flash-lite';
+// 'gemini-2.0-flash-lite'はこのAPIキーで上限0(常に429)だったため、最も余裕のある
+// 'gemini-3.1-flash-lite'（15 RPM / 500 RPD）に変更。model未指定の呼び出し元はここに従う。
+const DEFAULT_MODEL = 'gemini-3.1-flash-lite';
 const DEFAULT_TTL_MS = 24 * 60 * 60 * 1000;
 
 async function readCache(cacheKey: string, ttlMs: number): Promise<string | null> {

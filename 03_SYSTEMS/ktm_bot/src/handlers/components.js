@@ -302,6 +302,15 @@ export async function handleButtonInteraction(interaction, env, ctx) {
     }
   } else if (customId.startsWith('close')) {
     // 募集終了→ボタンなしで閉じる（返信メンションで一括連絡してください）
+    // recruitmentsテーブルのstatusも'closed'に反映し、ポータル側が古い募集を
+    // 「進行中」として拾い続けないようにする。
+    ctx.waitUntil((async () => {
+      try {
+        await markRecruitmentStatus(env, interaction.message.id, 'closed');
+      } catch (e) {
+        console.error("recruitments テーブルの終了反映に失敗:", e);
+      }
+    })());
     const embed = createRecruitEmbed(metadata); embed.title = "🚨 募集終了"; embed.color = 0xff0000;
     return Response.json({ type: 7, data: { content: createMessageContent(metadata), embeds: [embed], components: [] } });
   }

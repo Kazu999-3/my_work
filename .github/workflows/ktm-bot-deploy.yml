@@ -1,0 +1,38 @@
+name: KTM Bot Deploy (Cloudflare Workers)
+
+# 03_SYSTEMS/ktm_bot はこれまで npx wrangler deploy を手動実行する運用のみで、
+# GitHub Actions等の自動デプロイが存在しなかった。そのため wrangler.toml や
+# src/ を更新してもコミットするだけでは本番Workerに反映されず、
+# 「コードは直したのにデプロイし忘れて古い挙動のまま」というリスクが常にあった。
+# masterへのpushでktm_bot配下に変更があった場合のみ自動デプロイする。
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - '03_SYSTEMS/ktm_bot/**'
+  workflow_dispatch:
+    # 手動実行用のトリガー（コード変更なしで再デプロイしたい場合など）
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: 03_SYSTEMS/ktm_bot
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Deploy to Cloudflare Workers
+        run: npx wrangler deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}

@@ -7,68 +7,15 @@ import {
   fetchMatchTimeline,
   fetchLeagueByPuuid,
 } from '../../../../lib/riot';
+// チャンピオン表記揺れの正規化は src/lib/championNames.ts に共通化済み
+// （以前はこのファイルにだけローカル定義されており、他の場所で同じマップを
+// 再実装する必要があった）。
+import { getChampionSearchVariations, normalizeChampionName } from '../../../../lib/championNames';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
-
-// ============================
-// チャンピオン表記揺れの正規化マッピング
-// ============================
-const CHAMPION_NAME_MAP: Record<string, string> = {
-  'khazix': 'KhaZix',
-  'kha\'zix': 'KhaZix',
-  'kha zix': 'KhaZix',
-  'leesin': 'LeeSin',
-  'lee sin': 'LeeSin',
-  'xin zhao': 'XinZhao',
-  'xinzhao': 'XinZhao',
-  'jarvan': 'JarvanIV',
-  'jarvan iv': 'JarvanIV',
-  'jarvaniv': 'JarvanIV',
-  'drmundo': 'DrMundo',
-  'dr. mundo': 'DrMundo',
-  'dr mundo': 'DrMundo',
-  'nunu': 'Nunu',
-  'nunu & willump': 'Nunu',
-  'nunu and willump': 'Nunu',
-  'wukong': 'MonkeyKing',
-  'monkey king': 'MonkeyKing',
-  'tahm kench': 'TahmKench',
-  'tahmkench': 'TahmKench',
-  'twisted fate': 'TwistedFate',
-  'twistedfate': 'TwistedFate',
-  'tf': 'TwistedFate',
-};
-
-// 検索タグやDB比較用に表記揺れリストを展開する関数
-function getChampionSearchVariations(name: string): string[] {
-  const normalized = normalizeChampionName(name);
-  const variations = [normalized];
-  
-  // スペースあり、記号ありなど一般的な表記を追加
-  if (normalized === 'KhaZix') variations.push("Kha'Zix", "Kha Zix");
-  if (normalized === 'LeeSin') variations.push("Lee Sin");
-  if (normalized === 'XinZhao') variations.push("Xin Zhao");
-  if (normalized === 'JarvanIV') variations.push("Jarvan IV", "Jarvan");
-  if (normalized === 'DrMundo') variations.push("Dr. Mundo", "Dr Mundo", "Mundo");
-  if (normalized === 'MonkeyKing') variations.push("Wukong", "Monkey King");
-  if (normalized === 'TahmKench') variations.push("Tahm Kench");
-  if (normalized === 'TwistedFate') variations.push("Twisted Fate", "TF");
-  if (normalized === 'Nunu') variations.push("Nunu & Willump", "Nunu and Willump");
-
-  return variations;
-}
-
-function normalizeChampionName(name: string): string {
-  if (!name) return '';
-  const key = name.toLowerCase().trim();
-  if (CHAMPION_NAME_MAP[key]) return CHAMPION_NAME_MAP[key];
-  
-  // 先頭を大文字、それ以降を小文字に（例: graves -> Graves）
-  return name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
-}
 
 // ============================
 // Gemini APIヘルパー

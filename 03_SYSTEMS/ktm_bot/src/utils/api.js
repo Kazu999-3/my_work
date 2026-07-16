@@ -1,4 +1,4 @@
-import { CONFIG } from '../config.js';
+import { CONFIG, getPortalUrl } from '../config.js';
 
 /** Discord へのメッセージ送信・更新 (Webhook / PATCH) */
 export async function sendDiscordMessage(endpoint, token, method, bodyJSON) {
@@ -68,7 +68,7 @@ export async function fetchGAS(payload) {
 
 /** Webポータル (Next.js) API への通信ラップ */
 export async function fetchPortalAPI(env, endpointPath, payload, method = "POST") {
-  const baseUrl = env.PORTAL_API_URL || "https://my-work-8jbd.vercel.app";
+  const baseUrl = getPortalUrl(env);
   const url = `${baseUrl}${endpointPath}`;
   
   const options = {

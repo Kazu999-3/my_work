@@ -1,9 +1,16 @@
-import { NextResponse } from 'next/server';
+﻿import { NextResponse } from 'next/server';
 import { supabase } from '../../../../lib/supabaseClient';
-import { fetchPuuidByRiotId, fetchSummonerByPuuid, fetchChampionMasteryByPuuid, fetchRiotIdByPuuid } from '../../../../lib/riot';
+import { fetchPuuidByRiotId, fetchChampionMasteryByPuuid, fetchRiotIdByPuuid, fetchLeagueByPuuid } from '../../../../lib/riot';
+import { verifyAdminSession } from '../../../../lib/adminAuth';
 
 export async function POST(request: Request) {
   try {
+  // ===== 管理者セッション確認 =====
+  const authResult = await verifyAdminSession(request);
+  if (!authResult.ok) {
+    return NextResponse.json({ error: authResult.error }, { status: 401 });
+  }
+  // =================================
     const apiKey = process.env.RIOT_API_KEY;
     if (!apiKey) {
       return NextResponse.json({ error: 'RIOT_API_KEY が設定されていません。' }, { status: 500 });
@@ -38,16 +45,16 @@ export async function POST(request: Request) {
     for (const player of players) {
       try {
         let puuid = player.puuid;
-        let summonerId = player.summoner_id;
         let currentIgn = player.ign;
 
-        // (A) puuid または summoner_id がない場合は RiotID から取得
-        if (!puuid || !summonerId) {
+        // (A) puuid がない場合は RiotID から取得
+        // 旧実装は summoner_id (encryptedSummonerId) の有無でも分岐していたが、
+        // Riotが2025年6月20日にsummoner-v4のby-puuidレスポンスから`id`フィールド自体を
+        // 削除したため、summonerIdは常にundefinedになり事実上意味を失っていた。
+        if (!puuid) {
           if (!currentIgn || !currentIgn.includes('#')) continue;
           const [gameName, tagLine] = currentIgn.split('#');
           puuid = await fetchPuuidByRiotId(gameName, tagLine, apiKey);
-          const summoner = await fetchSummonerByPuuid(puuid, apiKey);
-          summonerId = summoner.id;
         } else {
           // (A-2) すでに puuid がある場合は、Riot ID（改名）の自動同期を試みる
           try {
@@ -62,9 +69,19 @@ export async function POST(request: Request) {
           }
         }
 
-        // (B) ランクの同期は廃止（403エラー回避のため）
-        // 既存のランク情報をそのまま保持する
+        // (B) ランク同期を復旧。旧実装はby-summonerエンドポイント廃止による403/404を
+        // 「APIキーエラー」と誤認し、ランク同期機能自体を丸ごと無効化していた。
+        // 正しくはby-puuidエンドポイントに切り替えるだけで解決する。
         let highestRank = player.highest_rank || 'UNRANKED';
+        try {
+          const leagues = await fetchLeagueByPuuid(puuid, apiKey);
+          const soloQ = leagues.find((l: any) => l.queueType === 'RANKED_SOLO_5x5');
+          if (soloQ) {
+            highestRank = `${soloQ.tier} ${soloQ.rank}`;
+          }
+        } catch (rankErr: any) {
+          console.warn(`[Riot Sync] ランク取得に失敗しました (${currentIgn}): ${rankErr.message}`);
+        }
 
         // (C) チャンピオンマスタリー (得意チャンピオンTOP3) を取得
         const masteries = await fetchChampionMasteryByPuuid(puuid, apiKey, 3);
@@ -74,11 +91,11 @@ export async function POST(request: Request) {
           championPoints: m.championPoints
         }));
 
-        // DBを更新 (ign, puuid, summoner_id, highest_rank, main_champions)
+        // DBを更新 (ign, puuid, highest_rank, main_champions)
+        // summoner_idはRiotのAPI廃止でもう取得できないため更新対象から除外（既存値はそのまま残す）
         const updateData: any = {
           ign: currentIgn,
           puuid,
-          summoner_id: summonerId,
           highest_rank: highestRank,
           main_champions: topChampions
         };

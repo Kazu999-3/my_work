@@ -1,4 +1,4 @@
-import { CONFIG } from '../config.js';
+import { CONFIG, getPortalUrl } from '../config.js';
 import { fetchGAS, patchInteractionResponse, sendDiscordMessage } from '../utils/api.js';
 import { createMessageContent, createRecruitButtons, createRecruitEmbed, getPortalComponents, getPortalEmbed } from '../ui/embeds.js';
 import { getPlayersByNames, fetchSupabase, upsertPlayer } from '../utils/supabase.js';
@@ -281,7 +281,7 @@ export async function handleSetIgn(interaction, env, ctx) {
           await patchInteractionResponse(appId, token, { content: "⚠️ 名簿にあなたの Discord ID が見わたりませんでした。新メンバー同期を待つか、一度対戦に参加してください。" });
       } else {
           // Next.js ポータル API経由で IGN と PUUID を登録する
-          const res = await fetch(`https://my-work-8jbd.vercel.app/api/player/update-puuid`, {
+          const res = await fetch(`${getPortalUrl(env)}/api/player/update-puuid`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ discordId: userId, ign: ign })
@@ -320,7 +320,7 @@ export async function handleMemoCommand(interaction, env, ctx) {
 
   ctx.waitUntil((async () => {
     try {
-      const portalUrl = env.PORTAL_API_URL || env.LOCAL_API_URL || "https://ktm-portal.vercel.app";
+      const portalUrl = getPortalUrl(env);
       const payload = {};
       if (content.startsWith('http://') || content.startsWith('https://')) {
         payload.url = content;

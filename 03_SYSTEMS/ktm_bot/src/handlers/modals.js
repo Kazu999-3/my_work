@@ -1,4 +1,4 @@
-import { CONFIG } from '../config.js';
+import { CONFIG, getPortalUrl } from '../config.js';
 import { fetchGAS, sendDiscordMessage } from '../utils/api.js';
 import { createMessageContent, createRecruitButtons, createRecruitEmbed } from '../ui/embeds.js';
 import { parseMessageData } from '../utils/helpers.js';
@@ -52,7 +52,7 @@ export async function handleModalSubmit(interaction, env, ctx) {
             await patchInteractionResponse(appId, token, { content: "⚠️ 名簿にあなたの Discord ID が見わたりませんでした。新メンバー同期を待つか、一度対戦に参加してください。" });
         } else {
             // Next.js ポータル API経由で IGN と PUUID を登録する
-            const res = await fetch(`https://my-work-8jbd.vercel.app/api/player/update-puuid`, {
+            const res = await fetch(`${getPortalUrl(env)}/api/player/update-puuid`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ discordId: userId, ign: ign })

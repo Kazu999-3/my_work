@@ -45,7 +45,9 @@ export default function PromptsAdmin() {
   const [saveStatus, setSaveStatus] = useState<{ type: 'success' | 'error' | null, message: string }>({ type: null, message: '' });
 
   const [description, setDescription] = useState('');
-  const [defaultModel, setDefaultModel] = useState('gemini-2.5-flash');
+  // 'gemini-2.5-flash'は日次上限を超過(RPD超過)していたため、最も余裕のある
+  // 'gemini-3.1-flash-lite'をデフォルトに変更（Google AI Studioの利用状況で確認済み）。
+  const [defaultModel, setDefaultModel] = useState('gemini-3.1-flash-lite');
   const [fallbackModel, setFallbackModel] = useState('ollama/gemma');
   const [temperature, setTemperature] = useState(0.2);
   const [systemPrompt, setSystemPrompt] = useState('');
@@ -464,8 +466,11 @@ export default function PromptsAdmin() {
                             onChange={(e) => setDefaultModel(e.target.value)}
                             className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-cyan-500/80 transition-colors"
                           >
-                            <option value="gemini-2.5-flash">Gemini 2.5 Flash (クラウド)</option>
-                            <option value="gemini-2.5-pro">Gemini 2.5 Pro (クラウド)</option>
+                            {/* 'gemini-2.5-flash'は日次上限超過、'gemini-2.5-pro'は上限0で
+                                いずれも常時429になるためリストから外し、実際にクォータの
+                                あるモデルのみを選択肢にしている（Google AI Studioで確認済み）。 */}
+                            <option value="gemini-3.1-flash-lite">Gemini 3.1 Flash Lite (クラウド・推奨)</option>
+                            <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash Lite (クラウド)</option>
                             <option value="ollama/gemma">Ollama: Gemma (ローカル)</option>
                             <option value="ollama/llama3">Ollama: Llama 3 (ローカル)</option>
                             <option value="ollama/phi3">Ollama: Phi 3 (ローカル)</option>
@@ -482,7 +487,7 @@ export default function PromptsAdmin() {
                             <option value="">なし (エラー時にフォールバックしない)</option>
                             <option value="ollama/gemma">Ollama: Gemma (ローカル)</option>
                             <option value="ollama/llama3">Ollama: Llama 3 (ローカル)</option>
-                            <option value="gemini-2.5-flash">Gemini 2.5 Flash (クラウド)</option>
+                            <option value="gemini-3.1-flash-lite">Gemini 3.1 Flash Lite (クラウド)</option>
                           </select>
                         </div>
 

@@ -1,7 +1,16 @@
 import { NextResponse } from 'next/server';
+import { supabase } from '../../../../lib/supabaseClient';
 
 export const revalidate = 30; // 30秒間キャッシュしてDiscord APIへのリクエストを削減
 
+/**
+ * 直近20件のチャンネルメッセージをEmbedタイトル/フッターの文字列一致で走査する旧実装は、
+ * Bot側の文言（「募集」「確定」「モード: カスタム」）が変わると静かに壊れる作りだった。
+ * recruitments テーブル（②で新設）に owner・status が正規に記録されるようになったので、
+ * まずDBから「現在open状態の募集」のmessage_idを引き、それを直接1件取得する方式に変更する。
+ * 参加者(joined)のロスター自体はまだDiscord埋め込みメタデータにしか無いため、
+ * そこだけは引き続きメッセージ本文/Embedから抽出する。
+ */
 export async function GET() {
   const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN;
   const DISCORD_CHANNEL_ID = process.env.DISCORD_KTM_CHANNEL_ID;
@@ -14,31 +23,54 @@ export async function GET() {
   }
 
   try {
-    // 1. 指定チャンネルの直近のメッセージを取得
-    const msgsRes = await fetch(`https://discord.com/api/v10/channels/${DISCORD_CHANNEL_ID}/messages?limit=20`, {
-      headers: {
-        Authorization: `Bot ${DISCORD_BOT_TOKEN}`,
-      },
-    });
+    // 1. recruitmentsテーブルから直近のopen状態の募集を取得（あればそのmessage_idを使う）
+    let targetMsg: any = null;
+    const { data: openRecruitment } = await supabase
+      .from('recruitments')
+      .select('discord_message_id')
+      .eq('discord_channel_id', DISCORD_CHANNEL_ID)
+      .eq('status', 'open')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
-    if (!msgsRes.ok) {
-      const errText = await msgsRes.text();
-      return NextResponse.json({ error: `Failed to fetch messages: ${errText}` }, { status: msgsRes.status });
+    if (openRecruitment?.discord_message_id) {
+      const singleRes = await fetch(
+        `https://discord.com/api/v10/channels/${DISCORD_CHANNEL_ID}/messages/${openRecruitment.discord_message_id}`,
+        { headers: { Authorization: `Bot ${DISCORD_BOT_TOKEN}` } }
+      );
+      if (singleRes.ok) {
+        targetMsg = await singleRes.json();
+      }
     }
 
-    const messages = await msgsRes.json();
-    
-    // Embedのタイトルに「募集」または「確定」が含まれ、かつフッターからモードが「カスタム」であることを判定
-    const targetMsg = messages.find((m: any) => {
-      if (m.embeds && m.embeds.length > 0) {
-        const embed = m.embeds[0];
-        // embedのタイトルが募集関連であり、かつフッターに「カスタム」が含まれるものを探す
-        const isRecruit = embed.title && (embed.title.includes('募集') || embed.title.includes('確定'));
-        const isCustom = embed.footer?.text?.includes('モード: カスタム');
-        return isRecruit && isCustom;
+    // 2. DB側にレコードがない/取得できなかった場合のみ、旧来のメッセージ走査にフォールバックする
+    //    （recruitmentsテーブルへの書き込みがまだ行われていないbotバージョンとの後方互換のため）
+    if (!targetMsg) {
+      const msgsRes = await fetch(`https://discord.com/api/v10/channels/${DISCORD_CHANNEL_ID}/messages?limit=20`, {
+        headers: {
+          Authorization: `Bot ${DISCORD_BOT_TOKEN}`,
+        },
+      });
+
+      if (!msgsRes.ok) {
+        const errText = await msgsRes.text();
+        return NextResponse.json({ error: `Failed to fetch messages: ${errText}` }, { status: msgsRes.status });
       }
-      return false;
-    });
+
+      const messages = await msgsRes.json();
+
+      // Embedのタイトルに「募集」または「確定」が含まれ、かつフッターからモードが「カスタム」であることを判定
+      targetMsg = messages.find((m: any) => {
+        if (m.embeds && m.embeds.length > 0) {
+          const embed = m.embeds[0];
+          const isRecruit = embed.title && (embed.title.includes('募集') || embed.title.includes('確定'));
+          const isCustom = embed.footer?.text?.includes('モード: カスタム');
+          return isRecruit && isCustom;
+        }
+        return false;
+      });
+    }
 
     if (!targetMsg) {
       return NextResponse.json({ error: '直近のメッセージに「カスタム募集」のメッセージが見つかりませんでした。' }, { status: 404 });
