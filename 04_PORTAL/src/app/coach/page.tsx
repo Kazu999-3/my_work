@@ -584,6 +584,40 @@ function TiltTab() {
             )}
           </div>
 
+          {/* 連敗相関トラッカー */}
+          {result.streakAnalysis && (
+            <Card>
+              <div className="mb-2 text-xs font-semibold text-white/50">📉 連敗相関</div>
+              <div className="grid grid-cols-3 gap-2 text-center">
+                <div className="rounded-lg bg-white/5 p-2">
+                  <div className="text-[10px] text-white/40">現在</div>
+                  <div className={`text-lg font-black ${result.streakAnalysis.streakType === 'loss' ? 'text-rose-400' : 'text-emerald-400'}`}>
+                    {result.streakAnalysis.currentStreak}{result.streakAnalysis.streakType === 'loss' ? '連敗' : '連勝'}
+                  </div>
+                </div>
+                <div className="rounded-lg bg-white/5 p-2">
+                  <div className="text-[10px] text-white/40">全体勝率</div>
+                  <div className="text-lg font-black text-white">{result.streakAnalysis.overallWinRate}%</div>
+                </div>
+                <div className="rounded-lg bg-white/5 p-2">
+                  <div className="text-[10px] text-white/40">負け直後の勝率</div>
+                  <div className={`text-lg font-black ${
+                    result.streakAnalysis.afterLossWinRate !== null && result.streakAnalysis.afterLossWinRate < result.streakAnalysis.overallWinRate ? 'text-rose-400' : 'text-white'
+                  }`}>
+                    {result.streakAnalysis.afterLossWinRate !== null ? `${result.streakAnalysis.afterLossWinRate}%` : '—'}
+                  </div>
+                </div>
+              </div>
+              {result.streakAnalysis.stopRecommended && (
+                <div className="mt-3 rounded-lg border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm font-bold text-rose-200">
+                  🛑 やめどきサイン: {result.streakAnalysis.currentStreak}連敗中です
+                  {result.streakAnalysis.afterLossWinRate !== null && result.streakAnalysis.afterLossWinRate < result.streakAnalysis.overallWinRate &&
+                    `（あなたは連敗後の勝率が${result.streakAnalysis.overallWinRate - result.streakAnalysis.afterLossWinRate}pt下がる傾向）`}。一度離れる方が期待値が高いかもしれません。
+                </div>
+              )}
+            </Card>
+          )}
+
           {result.recentMatches?.length > 0 && (
             <Card>
               <div className="mb-2 text-xs font-semibold text-white/50">直近の試合</div>
