@@ -87,7 +87,6 @@ export function getPortalEmbed() {
 }
 
 export function getPortalComponents(userId) {
-  // コマンドを打たずに済むよう、主要機能をすべてボタン化して並べる（/stats /lane /ign /memo /help 相当）
   const row1 = [
     { type: 2, label: "⚔️ 募集開始", style: 3, custom_id: "portal_recruit" },
     { type: 2, label: "📊 マイ戦績", style: 1, custom_id: "portal_stats" },
@@ -96,19 +95,13 @@ export function getPortalComponents(userId) {
   ];
 
   const row2 = [
-    { type: 2, label: "🧠 メモ登録", style: 2, custom_id: "portal_memo" },
-    { type: 2, label: "📖 使い方ガイド", style: 2, custom_id: "portal_help" },
-    { type: 2, label: "🔔 募集通知 (ON/OFF)", style: 2, custom_id: "toggle_recruit_notification" }
-  ];
-
-  const row3 = [
+    { type: 2, label: "🔔 募集通知 (ON/OFF)", style: 2, custom_id: "toggle_recruit_notification" },
     { type: 2, label: "🌐 Webポータルへアクセス", style: 5, url: `${CONFIG.PORTAL_URL}/leaderboard` }
   ];
 
   return [
     { type: 1, components: row1 },
-    { type: 1, components: row2 },
-    { type: 1, components: row3 }
+    { type: 1, components: row2 }
   ];
 }
 

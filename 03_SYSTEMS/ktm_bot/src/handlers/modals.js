@@ -175,37 +175,6 @@ export async function handleModalSubmit(interaction, env, ctx) {
     return Response.json({ type: 4, data: { content: "✅ **参加者に一括連絡（返信メンション）を送信しました**", flags: 64 } });
   }
 
-  if (customId === 'portal_memo_modal') {
-    const content = interaction.data.components.find(c => c.components[0].custom_id === 'content')?.components[0]?.value?.trim();
-    const appId = interaction.application_id;
-    const token = interaction.token;
-    if (!content) {
-      return Response.json({ type: 4, data: { content: "⚠️ メモ内容またはURLを入力してください。", flags: 64 } });
-    }
-    ctx.waitUntil((async () => {
-      try {
-        const { patchInteractionResponse } = await import('../utils/api.js');
-        const payload = {};
-        if (content.startsWith('http://') || content.startsWith('https://')) payload.url = content;
-        else payload.text = content;
-        const res = await fetch(`${getPortalUrl(env)}/api/admin/knowledge/add`, {
-          method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload)
-        });
-        const data = await res.json();
-        if (res.ok && data.success) {
-          await patchInteractionResponse(appId, token, { content: `🧠 **ナレッジベースに登録・要約しました！**\n**タイトル**: ${data.data.title}\n**ジャンル**: ${data.data.genre}\n**要約**: ${data.data.content}` });
-        } else {
-          await patchInteractionResponse(appId, token, { content: `❌ **登録に失敗しました**: ${data.error || "未知のエラー"}\n👉 URLが正しいか、少し時間をおいて再度お試しください。` });
-        }
-      } catch (err) {
-        console.error("Portal Memo Modal Error:", err);
-        const { patchInteractionResponse } = await import('../utils/api.js');
-        await patchInteractionResponse(appId, token, { content: `❌ **通信エラー**: ${err.message}` }).catch(() => {});
-      }
-    })());
-    return Response.json({ type: 4, data: { content: "🧠 AIがナレッジベースへの分類・要約処理を行っています。少々お待ちください...", flags: 64 } });
-  }
-
   if (customId.startsWith('edit_recruit_modal:')) {
     const getVal = (cid) => interaction.data.components.find(c => c.components[0].custom_id === cid).components[0].value;
     const metadata = parseMessageData(interaction.message);
