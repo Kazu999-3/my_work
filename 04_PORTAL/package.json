@@ -6,7 +6,8 @@
     "dev": "node copy_design.js && next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "tsx --test src/lib/__tests__/*.test.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.106.2",

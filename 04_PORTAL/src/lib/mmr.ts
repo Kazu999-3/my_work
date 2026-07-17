@@ -2,8 +2,8 @@
  * KTM MMR計算ロジック (match.gs の TypeScript移植)
  */
 
-import { Role } from './balancer';
-import { SupabaseClient } from '@supabase/supabase-js';
+import type { Role } from './balancer';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 
 export const RANKS: Record<string, number> = {
