@@ -103,6 +103,22 @@ export default function BalancerPage() {
     }
   };
 
+  // バランス満足度(👍/👎)の集計（課題#42）
+  const [satStats, setSatStats] = useState<{ tallied: number; totalUp: number; totalDown: number; satisfactionRate: number | null } | null>(null);
+  const [tallyingSat, setTallyingSat] = useState(false);
+  const fetchSatStats = async () => {
+    setTallyingSat(true);
+    try {
+      const res = await fetch('/api/admin/satisfaction-tally', { credentials: 'include' });
+      const data = await res.json();
+      if (res.ok) setSatStats(data);
+    } catch (e) {
+      console.error('satisfaction tally failed', e);
+    } finally {
+      setTallyingSat(false);
+    }
+  };
+
   useEffect(() => {
     if (isAdmin) { checkIntegrity(); fetchPredStats(); }
   }, [isAdmin]);
@@ -1212,6 +1228,42 @@ export default function BalancerPage() {
               <p className="text-[10px] text-gray-600 mt-2">
                 的中率が50%近い＝実力拮抗、極端に高い＝MMR差が大きいまま組んでいる可能性。平均の偏りが小さいほどバランサーが互角の試合を作れています。
               </p>
+            </div>
+
+            {/* バランス満足度(Discord 👍/👎)（課題#42） */}
+            <div className="border-t border-gray-800 pt-3">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <span className="text-sm font-bold text-white">👍 チーム分け満足度（Discord投票）</span>
+                <button
+                  onClick={fetchSatStats}
+                  disabled={tallyingSat}
+                  className="flex items-center gap-1.5 bg-gray-800 hover:bg-gray-700 text-gray-200 px-3 py-1.5 rounded-lg font-bold transition text-xs disabled:opacity-50"
+                >
+                  <RefreshCw className={`h-3.5 w-3.5 ${tallyingSat ? 'animate-spin' : ''}`} /> 集計
+                </button>
+              </div>
+              {satStats ? (
+                satStats.tallied === 0 ? (
+                  <p className="text-xs text-gray-500 mt-2">まだ投票付きの試合結果がありません（試合を記録するとDiscordの結果メッセージに👍/👎が付きます）。</p>
+                ) : (
+                  <div className="grid grid-cols-3 gap-2 mt-2">
+                    <div className="bg-gray-950/60 rounded-lg p-2 text-center">
+                      <div className="text-[10px] text-gray-500">満足度</div>
+                      <div className="text-lg font-black text-emerald-400">{satStats.satisfactionRate !== null ? `${satStats.satisfactionRate}%` : '—'}</div>
+                    </div>
+                    <div className="bg-gray-950/60 rounded-lg p-2 text-center">
+                      <div className="text-[10px] text-gray-500">👍 / 👎</div>
+                      <div className="text-lg font-black text-white">{satStats.totalUp} / {satStats.totalDown}</div>
+                    </div>
+                    <div className="bg-gray-950/60 rounded-lg p-2 text-center">
+                      <div className="text-[10px] text-gray-500">集計試合</div>
+                      <div className="text-lg font-black text-white">{satStats.tallied}</div>
+                    </div>
+                  </div>
+                )
+              ) : (
+                <p className="text-xs text-gray-500 mt-2">「集計」を押すと直近の試合結果メッセージの👍/👎を集計します。</p>
+              )}
             </div>
           </div>
         )}

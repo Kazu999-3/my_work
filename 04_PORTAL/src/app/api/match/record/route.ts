@@ -340,11 +340,34 @@ export async function POST(request: Request) {
           ]
         };
 
-        await fetch(webhookUrl, {
+        // ?wait=true でメッセージ本体(id/channel_id)を受け取り、満足度投票の👍/👎を付ける（課題#42）
+        const sep = webhookUrl.includes('?') ? '&' : '?';
+        const whRes = await fetch(`${webhookUrl}${sep}wait=true`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
-        }).catch(err => console.error("Discord webhook error:", err));
+        }).catch(err => { console.error("Discord webhook error:", err); return null; });
+
+        try {
+          const botToken = process.env.DISCORD_BOT_TOKEN;
+          const msg = whRes && whRes.ok ? await whRes.json() : null;
+          if (msg?.id && msg?.channel_id && botToken) {
+            // webhookはリアクションを付けられないため、botトークンで👍/👎を付与
+            for (const emoji of ['👍', '👎']) {
+              await fetch(`https://discord.com/api/v10/channels/${msg.channel_id}/messages/${msg.id}/reactions/${encodeURIComponent(emoji)}/@me`, {
+                method: 'PUT',
+                headers: { 'Authorization': `Bot ${botToken}` },
+              }).catch(() => {});
+            }
+            // 予測行にメッセージIDを紐付け（後で満足度を集計するため）
+            await supabase
+              .from('balancer_predictions')
+              .update({ result_message_id: msg.id, result_channel_id: msg.channel_id })
+              .eq('match_id', newMatchId);
+          }
+        } catch (reactErr) {
+          console.warn('[match/record] 満足度リアクション付与に失敗（続行）:', reactErr);
+        }
       }
     } catch (discordErr) {
       console.error("Failed to send discord notification", discordErr);
