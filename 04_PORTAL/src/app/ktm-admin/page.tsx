@@ -1617,8 +1617,56 @@ export default function KtmAdminPage() {
               </div>
             </div>
 
-            {/* Player Table */}
-            <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden shadow-2xl">
+            {/* Player Cards (モバイル専用: カスタム当日にスマホから参加/希望/ランク/MMRを編集) */}
+            <div className="md:hidden space-y-2">
+              {sortedPlayers.map((p) => {
+                const uid = p.id || p.discord_id;
+                return (
+                  <div key={uid} className={`bg-gray-900 border rounded-xl p-3 ${p.is_active ? 'border-emerald-700/50 bg-emerald-950/20' : 'border-gray-800'}`}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <input type="checkbox" checked={p.is_active}
+                        onChange={(e) => handleInputSave(uid, "is_active", e.target.checked)}
+                        className="h-5 w-5 rounded border-gray-700 text-blue-600 focus:ring-blue-500 bg-gray-800 cursor-pointer shrink-0" />
+                      <button onClick={() => setSelectedPlayer(p)} className="text-blue-400 shrink-0"><Info className="w-4 h-4" /></button>
+                      <input type="text" value={p.name}
+                        onChange={(e) => handleInputChange(uid, "name", e.target.value)}
+                        onBlur={handleBlurSave}
+                        className="bg-transparent border border-transparent focus:border-gray-700 focus:bg-gray-800 rounded px-1.5 py-1 outline-none flex-1 font-bold text-white text-sm min-w-0" />
+                      <span className="text-xs font-bold text-blue-400 shrink-0">MMR {p.mmr || 1000}</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <label className="flex flex-col gap-1">
+                        <span className="text-gray-500">最高Rank</span>
+                        <select value={p.highest_rank || "UNRANKED"} onChange={(e) => handleInputSave(uid, "highest_rank", e.target.value)}
+                          className={`bg-gray-800 border border-gray-700 rounded px-2 py-1.5 outline-none focus:border-blue-500 ${getColorFromRankName(p.highest_rank)}`}>
+                          {["UNRANKED","IRON","BRONZE","SILVER","GOLD","PLATINUM","EMERALD","DIAMOND","MASTER","GRANDMASTER","CHALLENGER"].map(r => <option key={r} value={r}>{r}</option>)}
+                        </select>
+                      </label>
+                      <label className="flex flex-col gap-1">
+                        <span className="text-gray-500">希望レーン (メイン / サブ)</span>
+                        <div className="flex items-center gap-1">
+                          <select value={p.role_preferences?.primary || "ALL"}
+                            onChange={(e) => { const v = e.target.value; handleInputSave(uid, "primary_role", v); if (v === "ALL") handleInputSave(uid, "secondary_role", "-"); }}
+                            className={`flex-1 bg-gray-800 border border-gray-700 rounded px-1.5 py-1.5 outline-none font-bold ${getColorFromRole(p.role_preferences?.primary)}`}>
+                            {["ALL","TOP","JG","MID","ADC","SUP"].map(role => <option key={role} value={role}>{role}</option>)}
+                          </select>
+                          <span className="text-gray-600">/</span>
+                          <select value={p.role_preferences?.secondary || "-"} disabled={p.role_preferences?.primary === "ALL"}
+                            onChange={(e) => handleInputSave(uid, "secondary_role", e.target.value)}
+                            className={`flex-1 bg-gray-800 border border-gray-700 rounded px-1.5 py-1.5 outline-none font-bold disabled:opacity-50 ${getColorFromRole(p.role_preferences?.secondary)}`}>
+                            {["-","ALL","TOP","JG","MID","ADC","SUP"].map(role => <option key={role} value={role}>{role}</option>)}
+                          </select>
+                        </div>
+                      </label>
+                    </div>
+                  </div>
+                );
+              })}
+              {sortedPlayers.length === 0 && <p className="text-center text-gray-500 text-sm py-8">該当プレイヤーなし</p>}
+            </div>
+
+            {/* Player Table (デスクトップ専用) */}
+            <div className="hidden md:block bg-gray-900 border border-gray-800 rounded-xl overflow-hidden shadow-2xl">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm whitespace-nowrap">
                   <thead className="bg-gray-800/80 text-gray-400 uppercase text-xs tracking-wider sticky top-0 z-30 shadow-md backdrop-blur-sm">
