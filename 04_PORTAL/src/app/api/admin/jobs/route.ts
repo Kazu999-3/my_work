@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { spawn } from 'child_process';
 import { createClient } from '@supabase/supabase-js';
+import { verifyAdminSession } from '../../../../lib/adminAuth';
 
 // サーバーサイド用クライアント（サービスキーを使用）
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
@@ -87,6 +88,12 @@ const JOBS: Record<string, JobConfig> = {
 // GET: 全ジョブのステータス＆ログ取得
 // ============================================================
 export async function GET(req: NextRequest) {
+  // ===== 管理者セッション確認 =====
+  const authResult = await verifyAdminSession(req);
+  if (!authResult.ok) {
+    return NextResponse.json({ error: authResult.error }, { status: 401 });
+  }
+  // =================================
   // Vercel環境では常にIDLE状態を返す（ログは取得不可）
   if (IS_VERCEL) {
     const result: Record<string, { name: string; isRunning: boolean; vercelMode: boolean }> = {};
@@ -139,6 +146,14 @@ export async function GET(req: NextRequest) {
 // POST: 指定ジョブの実行
 // ============================================================
 export async function POST(req: NextRequest) {
+  // ===== 管理者セッション確認 =====
+  // GET側には認証があるのにジョブを実際に起動するPOST側に無かったため追加。
+  // 未認証のままだと誰でもバッチジョブ（Python実行/エッジタスク起票）を起動できてしまう。
+  const authResult = await verifyAdminSession(req);
+  if (!authResult.ok) {
+    return NextResponse.json({ error: authResult.error }, { status: 401 });
+  }
+  // =================================
   try {
     const { job, args = [] } = await req.json();
 

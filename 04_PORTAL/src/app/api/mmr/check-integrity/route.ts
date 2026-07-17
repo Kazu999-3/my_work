@@ -44,8 +44,18 @@ export async function GET(request: Request) {
 
     const matchupHistoryMap = new Map<string, number>(); // "PlayerA<=>PlayerB:ROLE" -> count
 
+    // 全参加者を一括ロードして match_id ごとにマッピング（N+1問題の解消。rebuild側と同じ方式）
+    const { data: allParticipants, error: apError } = await supabase.from('ktm_match_participants').select('*');
+    if (apError) throw apError;
+    const participantsByMatch = new Map<string, any[]>();
+    for (const part of (allParticipants || [])) {
+      const list = participantsByMatch.get(part.match_id) || [];
+      list.push(part);
+      participantsByMatch.set(part.match_id, list);
+    }
+
     for (const match of allMatches) {
-      const { data: participants } = await supabase.from('ktm_match_participants').select('*').eq('match_id', match.id);
+      const participants = participantsByMatch.get(match.id) || [];
       if (!participants || participants.length === 0) continue;
       const blueTeam = participants.filter((p: any) => p.team === 'BLUE');
       const redTeam = participants.filter((p: any) => p.team === 'RED');
