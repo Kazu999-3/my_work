@@ -16,6 +16,17 @@ const serviceKey =
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
   '';
 
+// 安全策: サービスロールキーが未設定のままだと anon キーにフォールバックし、
+// ktm_players のRLS導入後に「原因不明で全書き込みが失敗」する事故になる。
+// 起動時（モジュール読み込み時）にサーバーログへ明確な警告を出して気付けるようにする。
+if (!process.env.SUPABASE_SERVICE_ROLE_KEY && !process.env.SUPABASE_KEY) {
+  console.error(
+    '[supabaseAdmin] ⚠️ SUPABASE_SERVICE_ROLE_KEY が未設定です。anonキーにフォールバックするため、' +
+    'ktm_players のRLS適用後はサーバー側のMMR/ランク/名簿の書き込みがすべて失敗します。' +
+    'Vercelの環境変数(Production)に SUPABASE_SERVICE_ROLE_KEY を設定してください。'
+  );
+}
+
 export const supabaseAdmin = (supabaseUrl && serviceKey)
   ? createClient(supabaseUrl, serviceKey, {
       auth: { persistSession: false },
