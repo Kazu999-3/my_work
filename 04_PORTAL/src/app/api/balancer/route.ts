@@ -206,6 +206,21 @@ export async function POST(request: Request) {
       sideHistory: {}
     };
 
+    // 禁止ペア（同チーム不可）をDB設定(ktm_settings)から読み込む。#30: 従来のコード直書きを廃止。
+    try {
+      const { data: setting } = await supabase
+        .from('ktm_settings')
+        .select('value')
+        .eq('key', 'balancer_forbidden_pairs')
+        .maybeSingle();
+      const pairs = setting?.value;
+      if (Array.isArray(pairs)) {
+        ctx.forbiddenPairs = pairs.filter((p: any) => Array.isArray(p) && p.length === 2);
+      }
+    } catch (e) {
+      console.warn('[balancer] 禁止ペア設定の読み込みに失敗（制約なしで続行）:', e);
+    }
+
     try {
       // 直近15試合を取得（サイド履歴用には広く、対面履歴用には直近のみ使うため）
       const { data: recentMatches } = await supabase

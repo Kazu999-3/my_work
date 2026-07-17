@@ -38,6 +38,9 @@ export interface BalanceContext {
   teammateHistory: Map<string, number>; // 'A<=>B' の同チーム回数
   winStreakTeam: Set<string> | null; // 直近2連勝している5人のSet
   sideHistory: Record<string, { BLUE: number; RED: number }>;
+  // 同じチームにしない禁止ペア（#30: 従来はコードに直書きされていた「こんぺい/tamias」をDB設定化）。
+  // 各要素は [名前1, 名前2]。部分一致（表記揺れ吸収）で判定する。未指定なら制約なし。
+  forbiddenPairs?: [string, string][];
 }
 
 export interface AssignedPlayer extends Player {
@@ -284,7 +287,8 @@ function runBalanceSearch(players: Player[], ctx: BalanceContext): RawBalanceCan
     const teamA = teamAIndices.map(i => players[i]);
     const teamB = teamBIndices.map(i => players[i]);
 
-    // 特定の二人（こんぺい、tamias）が同じチームに入らないように制限（表記揺れや部分一致対応）
+    // 禁止ペアが同じチームに入らないように制限（表記揺れや部分一致対応）。
+    // 禁止ペアは ctx.forbiddenPairs（DB設定由来）から渡される。#30でハードコードを廃止。
     const checkSameTeam = (name1: string, name2: string) => {
       const n1 = name1.toLowerCase().trim();
       const n2 = name2.toLowerCase().trim();
@@ -295,7 +299,8 @@ function runBalanceSearch(players: Player[], ctx: BalanceContext): RawBalanceCan
       return (hasN1A && hasN2A) || (hasN1B && hasN2B);
     };
 
-    if (checkSameTeam("こんぺい", "tamias")) continue;
+    const forbiddenPairs = ctx.forbiddenPairs || [];
+    if (forbiddenPairs.some(([a, b]) => a && b && checkSameTeam(a, b))) continue;
 
     const pA = greedyAssign(teamA);
     const pB = greedyAssign(teamB);
