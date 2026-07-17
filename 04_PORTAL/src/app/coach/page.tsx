@@ -118,8 +118,18 @@ function PreGameTab() {
   const [loading, setLoading] = useState(false);
   const [champion, setChampion] = useState('');
   const [enemyChampion, setEnemyChampion] = useState('');
+  const [focus, setFocus] = useState('');
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState('');
+
+  // 「今日の焦点」を localStorage に保持し、試合後タブ(達成度判定)へ引き継ぐ（課題C: ループ化）
+  useEffect(() => {
+    try { setFocus(localStorage.getItem('coach_focus') || ''); } catch {}
+  }, []);
+  const saveFocus = (v: string) => {
+    setFocus(v);
+    try { localStorage.setItem('coach_focus', v); } catch {}
+  };
 
   const analyze = async () => {
     setLoading(true); setError(''); setResult(null);
@@ -155,6 +165,17 @@ function PreGameTab() {
             className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder-white/30 outline-none focus:border-indigo-400"
           />
         </div>
+      </div>
+
+      <div>
+        <label className="mb-1 block text-xs text-white/50">🎯 今日の焦点（この1試合で意識すること・任意）</label>
+        <input
+          value={focus}
+          onChange={(e) => saveFocus(e.target.value)}
+          placeholder="例: 序盤の無理なオールインを控える / 10分までにデスしない"
+          className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder-white/30 outline-none focus:border-sky-400"
+        />
+        <p className="mt-1 text-xs text-white/30">設定すると「🔍 試合後」で達成できたかを自動で振り返ります。</p>
       </div>
 
       <button
@@ -210,11 +231,17 @@ function PostGameTab() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState('');
+  const [focus, setFocus] = useState('');
+
+  // 試合前タブで設定した「今日の焦点」を読み込み、達成度判定のためAPIへ渡す（課題C）
+  useEffect(() => {
+    try { setFocus(localStorage.getItem('coach_focus') || ''); } catch {}
+  }, []);
 
   const analyze = async () => {
     setLoading(true); setError(''); setResult(null);
     try {
-      const data = await callCoachAPI({ mode: 'post' });
+      const data = await callCoachAPI({ mode: 'post', focus: focus || undefined });
       setResult(data);
     } catch (e: any) { setError(e.message); }
     finally { setLoading(false); }
@@ -227,6 +254,13 @@ function PostGameTab() {
       <p className="text-sm text-white/50">
         直近1試合のデータを取得し、レーンごとの弱点と改善アドバイスを表示します。同一日の同じチャンピオンの振り返りは自動的に統合マージしてナレッジDBへ保存されます。
       </p>
+
+      {focus && (
+        <div className="rounded-xl border border-sky-500/30 bg-sky-500/5 px-4 py-2.5 text-sm text-sky-200">
+          🎯 今日の焦点: <span className="font-semibold">{focus}</span>
+          <span className="block text-xs text-white/40 mt-0.5">この試合で達成できたかを分析に含めます</span>
+        </div>
+      )}
 
       <button
         id="post-analyze-btn"
@@ -279,10 +313,154 @@ function PostGameTab() {
             )}
           </Card>
 
+          {result.focus && (
+            <div className={`rounded-xl border px-4 py-3 text-sm ${
+              result.focusAchieved === true ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-200'
+              : result.focusAchieved === false ? 'border-rose-500/40 bg-rose-500/10 text-rose-200'
+              : 'border-white/10 bg-white/5 text-white/70'
+            }`}>
+              <span className="font-semibold">
+                {result.focusAchieved === true ? '✅ 今日の焦点: 達成' : result.focusAchieved === false ? '❌ 今日の焦点: 未達成' : '🎯 今日の焦点'}
+              </span>
+              <span className="block text-xs mt-0.5 opacity-80">{result.focus}</span>
+            </div>
+          )}
+
           <AdviceBox text={result.advice} />
 
           {result.saved && (
             <p className="text-xs text-white/30">💾 ナレッジDBに自動マージ保存されました: {result.saved}</p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============================
+// タブ: 傾向分析（直近の試合後ログを集計）
+// ============================
+function TrendsTab() {
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<any>(null);
+  const [error, setError] = useState('');
+
+  const analyze = async () => {
+    setLoading(true); setError(''); setResult(null);
+    try {
+      const data = await callCoachAPI({ mode: 'trends' });
+      setResult(data);
+    } catch (e: any) { setError(e.message); }
+    finally { setLoading(false); }
+  };
+
+  const PhaseBar = ({ phases }: { phases: { 序盤: number; 中盤: number; 終盤: number } }) => {
+    const total = phases.序盤 + phases.中盤 + phases.終盤 || 1;
+    const seg = [
+      { label: '序盤', v: phases.序盤, cls: 'bg-emerald-500' },
+      { label: '中盤', v: phases.中盤, cls: 'bg-amber-500' },
+      { label: '終盤', v: phases.終盤, cls: 'bg-rose-500' },
+    ];
+    return (
+      <div>
+        <div className="flex h-4 w-full overflow-hidden rounded-full">
+          {seg.map((s) => (
+            <div key={s.label} className={s.cls} style={{ width: `${(s.v / total) * 100}%` }} title={`${s.label}: ${s.v}回`} />
+          ))}
+        </div>
+        <div className="mt-1 flex justify-between text-xs text-white/50">
+          {seg.map((s) => <span key={s.label}>{s.label} {s.v}</span>)}
+        </div>
+      </div>
+    );
+  };
+
+  const Trend = ({ label, recent, older, unit = '' }: { label: string; recent: number; older: number; unit?: string }) => {
+    const up = recent >= older;
+    return (
+      <div className="rounded-lg bg-white/5 p-3">
+        <div className="text-xs text-white/40">{label}</div>
+        <div className="flex items-baseline gap-2">
+          <span className="text-lg font-bold text-white">{recent}{unit}</span>
+          <span className={`text-xs ${up ? 'text-emerald-300' : 'text-rose-300'}`}>
+            {up ? '▲' : '▼'} 以前 {older}{unit}
+          </span>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="space-y-4">
+      <p className="text-sm text-white/50">
+        「🔍 試合後」で蓄積した直近の振り返りを集計し、繰り返し現れる課題（デスの時間帯・苦手な相手・再発する弱点）と今週のフォーカスを提示します。
+      </p>
+
+      <button
+        onClick={analyze}
+        disabled={loading}
+        className="w-full rounded-xl bg-sky-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-sky-500 disabled:opacity-50"
+      >
+        {loading ? '集計中...' : '📈 直近の傾向を分析'}
+      </button>
+
+      {loading && <Spinner />}
+      {error && <p className="text-sm text-red-400">❌ {error}</p>}
+
+      {result && !result.enough && (
+        <Card><p className="text-sm text-white/60">{result.message}（現在 {result.count} 件）</p></Card>
+      )}
+
+      {result && result.enough && (
+        <div className="space-y-3 animate-in fade-in">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-lg bg-white/5 p-3">
+              <div className="text-xs text-white/40">集計対象</div>
+              <div className="text-lg font-bold text-white">{result.count} 試合</div>
+            </div>
+            <div className="rounded-lg bg-white/5 p-3">
+              <div className="text-xs text-white/40">勝率</div>
+              <div className="text-lg font-bold text-white">{result.winRate}%</div>
+            </div>
+          </div>
+
+          <Card>
+            <div className="mb-2 text-sm font-semibold text-white/80">💀 デスの時間帯分布（計 {result.totalDeaths} 回）</div>
+            <PhaseBar phases={result.deathPhases} />
+          </Card>
+
+          <div className="grid grid-cols-2 gap-3">
+            <Trend label="CS/min" recent={result.csTrend.recent} older={result.csTrend.older} />
+            <Trend label="Vision/min" recent={result.visionTrend.recent} older={result.visionTrend.older} />
+          </div>
+
+          {result.topKillers?.length > 0 && (
+            <Card>
+              <div className="mb-2 text-sm font-semibold text-white/80">☠️ 繰り返し狩られている相手</div>
+              <div className="flex flex-wrap gap-2">
+                {result.topKillers.map((k: any) => (
+                  <Tag key={k.champion} color="red">{k.champion} ×{k.count}</Tag>
+                ))}
+              </div>
+            </Card>
+          )}
+
+          {result.topWeaknesses?.length > 0 && (
+            <Card>
+              <div className="mb-2 text-sm font-semibold text-white/80">🔁 再発している弱点</div>
+              <div className="flex flex-wrap gap-2">
+                {result.topWeaknesses.map((w: any) => (
+                  <Tag key={w.label} color="yellow">{w.label} ×{w.count}</Tag>
+                ))}
+              </div>
+            </Card>
+          )}
+
+          {result.summary && (
+            <div>
+              <div className="mb-1 text-sm font-semibold text-sky-300">🎯 今週のフォーカス</div>
+              <AdviceBox text={result.summary} />
+            </div>
           )}
         </div>
       )}
@@ -483,6 +661,7 @@ export default function CoachPage() {
   const tabs = [
     { id: 'pre', label: '⚡ 試合前', color: 'indigo' },
     { id: 'post', label: '🔍 試合後', color: 'rose' },
+    { id: 'trends', label: '📈 傾向', color: 'sky' },
     { id: 'tilt', label: '🧠 ティルト', color: 'amber' },
     { id: 'matchup', label: '⚔️ マッチアップ', color: 'emerald' },
   ] as const;
@@ -493,6 +672,7 @@ export default function CoachPage() {
   const tabContent: Record<TabId, React.ReactNode> = {
     pre: <PreGameTab />,
     post: <PostGameTab />,
+    trends: <TrendsTab />,
     tilt: <TiltTab />,
     matchup: <MatchupTab />,
   };
@@ -500,6 +680,7 @@ export default function CoachPage() {
   const tabActiveColors: Record<string, string> = {
     indigo: 'border-indigo-400 text-indigo-300',
     rose: 'border-rose-400 text-rose-300',
+    sky: 'border-sky-400 text-sky-300',
     amber: 'border-amber-400 text-amber-300',
     emerald: 'border-emerald-400 text-emerald-300',
   };
