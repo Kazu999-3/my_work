@@ -23,16 +23,25 @@ export default function DictReviewPanel() {
     finally { setLoading(false); }
   };
 
-  const apply = async (champion: string, action: 'keep' | 'archive') => {
+  const apply = async (champion: string, action: 'keep' | 'archive' | 'regenerate') => {
     setActing(champion + action);
+    setMsg('');
     try {
       const res = await fetch('/api/admin/dict-review', {
         method: 'POST', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ champion, action }),
       });
-      if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || '反映に失敗'); }
-      setCandidates(prev => prev.filter(c => c.champion !== champion));
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(d.error || '反映に失敗');
+      if (action === 'regenerate' && d.regenerated) {
+        // カードは残し、再生成結果を表示（有効確認済みとして緑に）
+        setCandidates(prev => prev.map(c => c.champion === champion
+          ? { ...c, verdict: 'keep', reason: d.usedKnowledge ? '蓄積メモを反映して再生成' : '一般メタ知識から再生成', note: '', regenerated: d.regenerated }
+          : c));
+      } else {
+        setCandidates(prev => prev.filter(c => c.champion !== champion));
+      }
     } catch (e: any) { setMsg('❌ ' + e.message); }
     finally { setActing(''); }
   };
@@ -69,6 +78,10 @@ export default function DictReviewPanel() {
                 <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${verdictStyle[c.verdict] || verdictStyle.keep}`}>{verdictLabel[c.verdict] || c.verdict}</span>
               </div>
               <div className="flex gap-2">
+                <button onClick={() => apply(c.champion, 'regenerate')} disabled={acting === c.champion + 'regenerate'}
+                  className="flex items-center gap-1 text-xs font-bold bg-amber-500/10 text-amber-300 border border-amber-500/30 px-3 py-1.5 rounded-lg hover:bg-amber-500/20 disabled:opacity-50">
+                  {acting === c.champion + 'regenerate' ? <RefreshCw size={13} className="animate-spin" /> : <RefreshCw size={13} />} 再生成
+                </button>
                 <button onClick={() => apply(c.champion, 'keep')} disabled={acting === c.champion + 'keep'}
                   className="flex items-center gap-1 text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-3 py-1.5 rounded-lg hover:bg-emerald-500/20 disabled:opacity-50">
                   <Check size={13} /> 有効確認
@@ -81,6 +94,15 @@ export default function DictReviewPanel() {
             </div>
             {c.reason && <p className="text-xs text-gray-400 mt-2">判定理由: {c.reason}</p>}
             {c.note && <p className="text-xs text-amber-300/80 mt-1">要修正点: {c.note}</p>}
+            {c.regenerated && (
+              <div className="mt-2 space-y-0.5 text-xs bg-amber-500/5 border border-amber-500/20 rounded-lg p-3">
+                <p className="text-amber-300 font-bold mb-1">🔄 再生成結果（保存済み）</p>
+                {c.regenerated.strengths && <p className="text-gray-300"><span className="text-gray-500">強み:</span> {c.regenerated.strengths}</p>}
+                {c.regenerated.weaknesses && <p className="text-gray-300"><span className="text-gray-500">弱み:</span> {c.regenerated.weaknesses}</p>}
+                {c.regenerated.power_spikes && <p className="text-gray-300"><span className="text-gray-500">パワースパイク:</span> {c.regenerated.power_spikes}</p>}
+                {c.regenerated.build_runes && <p className="text-gray-300"><span className="text-gray-500">ビルド/ルーン:</span> {c.regenerated.build_runes}</p>}
+              </div>
+            )}
           </div>
         ))}
         {candidates.length === 0 && !loading && (

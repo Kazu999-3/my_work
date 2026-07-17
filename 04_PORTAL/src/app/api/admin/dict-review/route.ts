@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 import { verifyAdminSession } from '../../../../lib/adminAuth';
 import { callGeminiWithRetry } from '../../../../lib/geminiClient';
+import { getChampionKnowledge } from '../../../../lib/championKnowledge';
 
 // ============================================================
 // 辞典の鮮度レビュー (課題#50 フェーズC)
@@ -78,10 +79,41 @@ export async function POST(req: Request) {
 
   try {
     const { champion, action } = await req.json();
-    if (!champion || !['keep', 'archive'].includes(action)) {
-      return NextResponse.json({ error: 'champion と action(keep|archive) が必要です。' }, { status: 400 });
+    if (!champion || !['keep', 'archive', 'regenerate'].includes(action)) {
+      return NextResponse.json({ error: 'champion と action(keep|archive|regenerate) が必要です。' }, { status: 400 });
     }
     const currentPatch = await getCurrentPatch();
+
+    // --- 再生成: 蓄積された記事/メモ + 現パッチのメタ知識から構造化本体を作り直す ---
+    if (action === 'regenerate') {
+      const knowledge = await getChampionKnowledge(supabase, champion, { maxNotes: 8, maxNoteChars: 500 });
+      const prompt = `あなたはLoLのメタ分析コーチです。チャンピオン「${champion}」の辞典データを現在のパッチ ${currentPatch || '最新'} 向けに作り直してください。
+${knowledge.hasData
+  ? `以下は蓄積された関連情報です。これを最優先で反映しつつ、現パッチのメタに合わせて補正してください。\n${knowledge.text}`
+  : '蓄積データが少ないため、現パッチの一般的なメタ知識に基づいて記述してください。'}
+
+必ず以下のJSONのみ出力（前置き・コードブロック・注釈禁止、すべて日本語で記述）:
+{"strengths":"<強み。80字以内>","weaknesses":"<弱み。80字以内>","power_spikes":"<パワースパイク帯。80字以内>","build_runes":"<推奨ビルド/ルーン。80字以内>"}`;
+      const raw = await callGeminiWithRetry(prompt, { model: 'gemini-3.1-flash-lite', temperature: 0.3, maxOutputTokens: 1024, maxRetries: 2 });
+      let cleaned = (raw || '').trim();
+      if (cleaned.startsWith('```')) cleaned = cleaned.replace(/^```[a-z]*\n?/, '').replace(/```$/, '').trim();
+      const s = cleaned.indexOf('{'), e = cleaned.lastIndexOf('}');
+      if (s < 0 || e <= s) throw new Error('AIの出力を解析できませんでした。もう一度お試しください。');
+      const p = JSON.parse(cleaned.slice(s, e + 1));
+      const now = new Date().toISOString();
+      const regenerated = {
+        strengths: p.strengths || null,
+        weaknesses: p.weaknesses || null,
+        power_spikes: p.power_spikes || null,
+        build_runes: p.build_runes || null,
+      };
+      const { error } = await supabase.from('champion_facts')
+        .update({ ...regenerated, patch: currentPatch || null, reviewed_at: now, review_patch: currentPatch, updated_at: now })
+        .eq('champion', champion);
+      if (error) throw error;
+      return NextResponse.json({ success: true, champion, action, usedKnowledge: knowledge.hasData, regenerated });
+    }
+
     const update = action === 'archive'
       ? { archived: true }
       : { reviewed_at: new Date().toISOString(), review_patch: currentPatch };
