@@ -44,10 +44,14 @@ export async function GET(req: Request) {
     const { data: rows, error } = await supabase.from('matchup_sentinel').select('*');
     if (error) throw error;
 
-    let factsCount = 0;
     let notesCount = 0;
+    let skippedEmptyFacts = 0;
     const facts: any[] = [];
     const notesByChampion = new Map<string, any[]>();
+
+    // 型付き本体に中身が1つでもあるか（全部nullならゴミ/テスト行として書き込まない）
+    const FACT_CONTENT_KEYS = ['strengths', 'weaknesses', 'power_spikes', 'build_runes', 'full_clear_time', 'counter_champions', 'must_ban_champions', 'pick_recommendation', 'note_draft', 'jg_type'];
+    const hasFactContent = (f: any) => FACT_CONTENT_KEYS.some((k) => f[k] !== null && f[k] !== undefined && String(f[k]).trim() !== '');
 
     for (const row of (rows || [])) {
       const champion = row.champion;
@@ -60,7 +64,7 @@ export async function GET(req: Request) {
       if (isGlobal) {
         // --- 型付きの辞典本体 ---
         const jg = rd.jg_style || {};
-        facts.push({
+        const fact = {
           champion,
           strengths: rd.strengths || null,
           weaknesses: rd.weaknesses || null,
@@ -78,8 +82,10 @@ export async function GET(req: Request) {
           jg_counter_pickable: typeof jg.counter_pickable === 'number' ? jg.counter_pickable : null,
           patch: rd.patch_meta?.patch || null,
           source: rd.source || 'champ_db',
-        });
-        factsCount++;
+        };
+        // 中身が全部空のGLOBAL行（ゴミ/テストデータ）は facts に書き込まない
+        if (hasFactContent(fact)) facts.push(fact);
+        else skippedEmptyFacts++;
 
         const list = notesByChampion.get(champion) || [];
         // strategy に継ぎ足された記事を分解
@@ -112,12 +118,17 @@ export async function GET(req: Request) {
     for (const list of notesByChampion.values()) notesCount += list.length;
 
     if (dryRun) {
+      // 中身のある実チャンピオンのサンプルを返す（マッピング検証用）
+      const sampleFact = facts.find((f) => f.strengths || f.weaknesses) || facts[0] || null;
+      const sampleNote = Array.from(notesByChampion.values()).flat().find((n) => n.body && n.body.length > 20) || null;
       return NextResponse.json({
         dryRun: true,
-        wouldWriteFacts: factsCount,
+        wouldWriteFacts: facts.length,
+        skippedEmptyFacts,
         wouldWriteNotes: notesCount,
-        champions: facts.length,
-        sampleFact: facts[0] || null,
+        factChampionsSample: facts.slice(0, 8).map((f) => f.champion),
+        sampleFact,
+        sampleNote,
       });
     }
 
@@ -144,7 +155,8 @@ export async function GET(req: Request) {
 
     return NextResponse.json({
       success: true,
-      wroteFacts: factsCount,
+      wroteFacts: facts.length,
+      skippedEmptyFacts,
       wroteNotes: notesCount,
       champions: champions.length,
     });
