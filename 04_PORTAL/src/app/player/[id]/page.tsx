@@ -23,7 +23,8 @@ import {
   Award
 } from "lucide-react";
 import { getChampIcon, getChampNameById } from "../../../lib/ddragonClient";
-import { ResponsiveContainer, XAxis, YAxis, Tooltip, ReferenceLine, Area, AreaChart, CartesianGrid } from "recharts";
+import { ResponsiveContainer, XAxis, YAxis, Tooltip, ReferenceLine, Area, CartesianGrid, Line, ComposedChart } from "recharts";
+import { KTM_TIERS } from "../../../lib/mmr";
 import { motion, AnimatePresence } from "framer-motion";
 
 const roleIcons: Record<string, any> = {
@@ -62,14 +63,17 @@ export default function PlayerMyPage() {
   // タブ管理用のステートを追加
   const [activeTab, setActiveTab] = useState<'summary' | 'lanes' | 'chemistry' | 'champions' | 'history'>('summary');
 
-  // MMR推移グラフ用のデータを計算（useMemoで最適化）
+  // グラフの表示期間フィルタ（#49）: 直近10 / 30 / 全部
+  const [chartPeriod, setChartPeriod] = useState<10 | 30 | 0>(0);
+
+  // MMR推移グラフ用のデータを計算（useMemoで最適化）。移動平均(5戦)も付与する。
   const mmrChartData = useMemo(() => {
     if (!history || history.length === 0) return [];
 
     // 最新の試合が先頭にあるので、古い順に並び替え
     const sortedHistory = [...history].reverse();
 
-    return sortedHistory.map((match, idx) => {
+    const base = sortedHistory.map((match, idx) => {
       const historyObj = match.mmrHistory || { TOTAL: match.mmr || 1200 };
       const val = historyObj[activeLane] !== undefined ? historyObj[activeLane] : (historyObj.TOTAL || 1200);
       return {
@@ -82,10 +86,30 @@ export default function PlayerMyPage() {
           : "-",
         mmrDelta: match.mmrDelta || 0,
         role: match.role,
-        allMmr: historyObj
+        allMmr: historyObj,
+        bigSwing: Math.abs(match.mmrDelta || 0) >= 30, // 大勝/大敗の注釈用
       };
     });
-  }, [history, activeLane]);
+
+    // 5戦移動平均（全系列で計算してから期間で絞る）
+    const W = 5;
+    const withMa = base.map((d, i) => {
+      const from = Math.max(0, i - W + 1);
+      const slice = base.slice(from, i + 1);
+      const ma = Math.round(slice.reduce((s, x) => s + x.mmr, 0) / slice.length);
+      return { ...d, ma };
+    });
+
+    return chartPeriod > 0 ? withMa.slice(-chartPeriod) : withMa;
+  }, [history, activeLane, chartPeriod]);
+
+  // グラフに重ねるティア境界（表示中データのMMR範囲に入るティアのみ）
+  const visibleTierBounds = useMemo(() => {
+    if (mmrChartData.length === 0) return [] as { name: string; min: number }[];
+    const vals = mmrChartData.map(d => d.mmr);
+    const lo = Math.min(...vals) - 30, hi = Math.max(...vals) + 30;
+    return KTM_TIERS.filter(t => t.min >= lo && t.min <= hi).slice(0, 6);
+  }, [mmrChartData]);
 
   const currentLaneMmr = useMemo(() => {
     if (!player) return 1000;
@@ -329,29 +353,46 @@ export default function PlayerMyPage() {
                         <span>MMR推移グラフ</span>
                       </h3>
                       
-                      {/* レーン切り替えトグル */}
-                      <div className="flex flex-wrap gap-1 bg-black/40 p-1 rounded-xl border border-white/5">
-                        {(['TOTAL', 'TOP', 'JG', 'MID', 'ADC', 'SUP'] as const).map(lane => (
-                          <button
-                            key={lane}
-                            onClick={() => setActiveLane(lane)}
-                            type="button"
-                            className={`px-2.5 py-1 rounded-lg text-[10px] font-black transition-all ${
-                              activeLane === lane 
-                                ? 'bg-cyan-500 text-black shadow-md shadow-cyan-500/20' 
-                                : 'text-gray-400 hover:text-white hover:bg-white/5'
-                            }`}
-                          >
-                            {lane === 'TOTAL' ? '総合' : lane}
-                          </button>
-                        ))}
+                      <div className="flex flex-wrap gap-2 items-center">
+                        {/* 期間フィルタ（#49） */}
+                        <div className="flex gap-1 bg-black/40 p-1 rounded-xl border border-white/5">
+                          {([[10, '直近10'], [30, '直近30'], [0, '全期間']] as const).map(([v, label]) => (
+                            <button
+                              key={v}
+                              onClick={() => setChartPeriod(v)}
+                              type="button"
+                              className={`px-2.5 py-1 rounded-lg text-[10px] font-black transition-all ${
+                                chartPeriod === v ? 'bg-indigo-500 text-white shadow-md shadow-indigo-500/20' : 'text-gray-400 hover:text-white hover:bg-white/5'
+                              }`}
+                            >
+                              {label}
+                            </button>
+                          ))}
+                        </div>
+                        {/* レーン切り替えトグル */}
+                        <div className="flex flex-wrap gap-1 bg-black/40 p-1 rounded-xl border border-white/5">
+                          {(['TOTAL', 'TOP', 'JG', 'MID', 'ADC', 'SUP'] as const).map(lane => (
+                            <button
+                              key={lane}
+                              onClick={() => setActiveLane(lane)}
+                              type="button"
+                              className={`px-2.5 py-1 rounded-lg text-[10px] font-black transition-all ${
+                                activeLane === lane
+                                  ? 'bg-cyan-500 text-black shadow-md shadow-cyan-500/20'
+                                  : 'text-gray-400 hover:text-white hover:bg-white/5'
+                              }`}
+                            >
+                              {lane === 'TOTAL' ? '総合' : lane}
+                            </button>
+                          ))}
+                        </div>
                       </div>
                     </div>
 
                     {mmrChartData.length > 0 ? (
                       <div className="w-full h-72">
                         <ResponsiveContainer width="100%" height="100%">
-                          <AreaChart data={mmrChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                          <ComposedChart data={mmrChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                             <defs>
                               <linearGradient id="mmrGradient" x1="0" y1="0" x2="0" y2="1">
                                 <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.3} />
@@ -419,6 +460,17 @@ export default function PlayerMyPage() {
                                 );
                               }}
                             />
+                            {/* ティア境界線（#49）: 表示範囲に入るKTMティアの下限を薄く引く */}
+                            {visibleTierBounds.map((t) => (
+                              <ReferenceLine
+                                key={t.name}
+                                y={t.min}
+                                stroke="#a78bfa"
+                                strokeDasharray="2 4"
+                                strokeOpacity={0.25}
+                                label={{ value: t.name, position: 'left', fill: '#a78bfa', fontSize: 8, opacity: 0.6 }}
+                              />
+                            ))}
                             <ReferenceLine
                               y={currentLaneMmr}
                               stroke="#06b6d4"
@@ -434,21 +486,34 @@ export default function PlayerMyPage() {
                               fill="url(#mmrGradient)"
                               dot={(props: any) => {
                                 const { cx, cy, payload } = props;
+                                // 大勝/大敗(MMR変動±30以上)は大きめ＆リング付きで強調（#49）
+                                const big = payload.bigSwing;
                                 return (
                                   <circle
                                     key={`dot-${payload.game}`}
                                     cx={cx}
                                     cy={cy}
-                                    r={4.5}
+                                    r={big ? 6.5 : 4.5}
                                     fill={payload.isWin ? '#10b981' : '#f43f5e'}
-                                    stroke={payload.isWin ? '#047857' : '#be123c'}
-                                    strokeWidth={1.5}
+                                    stroke={big ? '#fff' : (payload.isWin ? '#047857' : '#be123c')}
+                                    strokeWidth={big ? 2 : 1.5}
                                   />
                                 );
                               }}
                               activeDot={{ r: 6, stroke: '#06b6d4', strokeWidth: 2 }}
                             />
-                          </AreaChart>
+                            {/* 5戦移動平均線（#49）: 調子の波を滑らかに可視化 */}
+                            <Line
+                              type="monotone"
+                              dataKey="ma"
+                              stroke="#f59e0b"
+                              strokeWidth={2}
+                              strokeDasharray="5 3"
+                              dot={false}
+                              activeDot={false}
+                              isAnimationActive={false}
+                            />
+                          </ComposedChart>
                         </ResponsiveContainer>
                         {/* 凡例 */}
                         <div className="flex items-center justify-center gap-6 mt-3 text-[10px] text-gray-500">
@@ -463,6 +528,14 @@ export default function PlayerMyPage() {
                           <div className="flex items-center gap-1.5">
                             <div className="w-6 border-t-2 border-dashed border-cyan-400/50"></div>
                             <span>現在のMMR</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <div className="w-6 border-t-2 border-dashed border-amber-500"></div>
+                            <span>5戦移動平均</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <div className="w-2.5 h-2.5 rounded-full bg-white/80 border border-gray-400"></div>
+                            <span>大勝/大敗(±30)</span>
                           </div>
                         </div>
                       </div>
