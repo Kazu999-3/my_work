@@ -336,7 +336,7 @@ function computeTrendAggregates(analyses: any[]): TrendAggregates {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const mode: 'pre' | 'post' | 'matchup' | 'tilt' | 'trends' = body.mode || 'pre';
+    const mode: 'pre' | 'post' | 'matchup' | 'tilt' | 'trends' | 'practice_menu' = body.mode || 'pre';
     const championInput: string = body.champion || '';
     const enemyChampionInput: string = body.enemyChampion || '';
 
