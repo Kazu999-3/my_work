@@ -275,6 +275,9 @@ async function sendEventUsersNotification(env, options = {}) {
     // 5. 人数状況（3パターン）の判定
     let statusMessage = "";
     let embedColor = 0x3498db; // デフォルト：ブルー
+    // 欠員アラート(課題#41): 10人に満たない場合だけ、通知ロールを能動的に@メンションして呼ぶ。
+    // 通知ロールはオプトイン制なのでスパムにならない。不足人数もメッセージに出す。
+    let shortfall = 0; // 開催(10人)まで不足している人数（0なら充足）
 
     const eventCount = eventDetails.length;
     const count0 = eventDetails[0]?.users.length || 0;
@@ -288,6 +291,7 @@ async function sendEventUsersNotification(env, options = {}) {
       } else {
         statusMessage = `⚠️ **メンバー募集中！**\n現在の参加予定者は **${count0}名** です。カスタム開催（10人）まであと **${10 - count0}名** 不足しています。参加できる方は「興味あり」を押してください！`;
         embedColor = 0xe74c3c; // レッド
+        shortfall = 10 - count0;
       }
     } else {
       // イベントが2つ以上ある場合（基本2つの想定）
@@ -312,6 +316,7 @@ async function sendEventUsersNotification(env, options = {}) {
         // パターン③：足しても10人未満
         statusMessage = `⚠️ **メンバー募集中！**\n現在の合計参加予定者は **${totalCount}名** です。カスタム開催（10人）まであと **${10 - totalCount}名** 不足しています。参加できる方は「興味あり」を押してください！`;
         embedColor = 0xe74c3c; // レッド
+        shortfall = 10 - totalCount;
       }
     }
 
@@ -359,13 +364,21 @@ async function sendEventUsersNotification(env, options = {}) {
     };
 
     // 7. メッセージ送信
+    // 欠員アラート: 10人に不足している時だけ、通知ロールを能動的に@メンションして呼ぶ。
+    const messageBody = { embeds: [embed] };
+    const roleId = CONFIG.NOTIFICATION_ROLE_ID;
+    if (shortfall > 0 && roleId) {
+      messageBody.content = `<@&${roleId}> 🚨 **あと${shortfall}名でカスタム開催です！** 参加できる方は上のイベントから「興味あり」を押してください！`;
+      messageBody.allowed_mentions = { roles: [roleId] }; // 指定ロールのみ通知（@everyone等の暴発を防ぐ）
+    }
+
     const sendRes = await fetch(`https://discord.com/api/v10/channels/${channelId}/messages`, {
       method: 'POST',
       headers: {
         'Authorization': `Bot ${env.DISCORD_TOKEN}`,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ embeds: [embed] })
+      body: JSON.stringify(messageBody)
     });
 
     if (!sendRes.ok) {
