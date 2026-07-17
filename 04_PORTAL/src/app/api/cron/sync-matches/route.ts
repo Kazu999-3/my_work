@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '../../../../lib/supabaseClient';
+import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 import { fetchRecentCustomMatchId, fetchMatchDetails } from '../../../../lib/riot';
 
 export const maxDuration = 60; // Vercel タイムアウト延長(Proの場合は有効)

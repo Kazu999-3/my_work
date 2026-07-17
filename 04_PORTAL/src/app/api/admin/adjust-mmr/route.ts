@@ -1,8 +1,15 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '../../../../lib/supabaseClient';
+import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
+import { verifyAdminSession } from '../../../../lib/adminAuth';
 
 export async function POST(req: Request) {
   try {
+  // ===== 管理者セッション確認 =====
+  const authResult = await verifyAdminSession(req);
+  if (!authResult.ok) {
+    return NextResponse.json({ error: authResult.error }, { status: 401 });
+  }
+  // =================================
     const { targetName, role, amount } = await req.json();
     if (!targetName || !role || amount === undefined) {
       return NextResponse.json({ status: "ERROR", message: "Missing parameters." }, { status: 400 });

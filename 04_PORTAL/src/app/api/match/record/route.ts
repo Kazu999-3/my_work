@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '../../../../lib/supabaseClient';
+import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 import { calculateNewMMR, calculateKdaScore, MmrCalcContext, calculateInitialMmr } from '../../../../lib/mmr';
 
 export async function POST(request: Request) {
@@ -248,6 +248,52 @@ export async function POST(request: Request) {
     }
 
     // (4) 待機プレイヤーの Pity 加算はチーム確定時（pending保存時）に行うようにライフサイクルを分離・移動したため、ここでは行わない。
+
+    // (4.5) バランサー予測勝率の突き合わせ（課題: 予測勝率の検証）
+    // 直近の未突き合わせ予測から、このゲームのロスターに一致するものを探して的中/不的中を記録する。
+    // 予測はチーム確定時に balancer_predictions へ保存済み。テーブル未作成でも try/catch で握りつぶす。
+    try {
+      const blueNames = new Set(results.filter((r: any) => r.team === 'BLUE').map((r: any) => r.name));
+      const redNames = new Set(results.filter((r: any) => r.team === 'RED').map((r: any) => r.name));
+      const setEq = (a: Set<string>, b: string[]) => a.size === b.length && b.every((n) => a.has(n));
+
+      const { data: preds } = await supabase
+        .from('balancer_predictions')
+        .select('*')
+        .is('match_id', null)
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      // 青赤の並びは入れ替わっている可能性があるので両方向で照合する
+      const match = (preds || []).find((p: any) => {
+        const pb: string[] = p.blue_players || [];
+        const pr: string[] = p.red_players || [];
+        const sameOrient = setEq(blueNames, pb) && setEq(redNames, pr);
+        const swapped = setEq(blueNames, pr) && setEq(redNames, pb);
+        return sameOrient || swapped;
+      });
+
+      if (match) {
+        // 予測は「保存時のblue側」基準。実ロスターが入れ替わっていれば勝者側も読み替える。
+        const swapped = !(setEq(blueNames, match.blue_players || []));
+        const actualBlueWon = winningTeam === 'BLUE';
+        // 予測blue勝率を、保存時のblue視点での実勝敗に変換
+        const predictedBlueWon = Number(match.predicted_blue_winprob) >= 0.5;
+        const savedBlueActuallyWon = swapped ? !actualBlueWon : actualBlueWon;
+        const correct = predictedBlueWon === savedBlueActuallyWon;
+
+        await supabase
+          .from('balancer_predictions')
+          .update({
+            match_id: newMatchId,
+            actual_winner: winningTeam,
+            correct,
+          })
+          .eq('id', match.id);
+      }
+    } catch (e) {
+      console.warn('[match/record] 予測突き合わせに失敗（続行）:', e);
+    }
 
     // 5. Discordへ試合結果を速報通知 (非同期で送信して待たないか、待つか。エラーになっても保存は完了させる)
     try {

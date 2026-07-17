@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '../../../../lib/supabaseClient';
+import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 import { fetchMatchDetails } from '../../../../lib/riot';
 import { calculateNewMMR, calculateKdaScore, MmrCalcContext } from '../../../../lib/mmr';
 

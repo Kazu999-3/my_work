@@ -82,8 +82,29 @@ export default function BalancerPage() {
     }
   };
 
+  // バランサー予測勝率の的中率（課題: 予測勝率の検証）
+  const [predStats, setPredStats] = useState<{ total: number; correct: number; accuracy: number; avgConfidence: number } | null>(null);
+  const fetchPredStats = async () => {
+    try {
+      const { data } = await supabase
+        .from('balancer_predictions')
+        .select('predicted_blue_winprob, correct')
+        .not('correct', 'is', null)
+        .order('created_at', { ascending: false })
+        .limit(200);
+      const rows = data || [];
+      if (rows.length === 0) { setPredStats({ total: 0, correct: 0, accuracy: 0, avgConfidence: 0 }); return; }
+      const correct = rows.filter((r: any) => r.correct).length;
+      // 予測の自信度 = 50%からどれだけ離れているか（0=完全拮抗, 50=一方的予測）。低いほどバランサーが拮抗を作れている
+      const avgConfidence = rows.reduce((s: number, r: any) => s + Math.abs(Number(r.predicted_blue_winprob) - 0.5) * 100, 0) / rows.length;
+      setPredStats({ total: rows.length, correct, accuracy: Math.round((correct / rows.length) * 100), avgConfidence: +avgConfidence.toFixed(1) });
+    } catch (e) {
+      console.error('pred stats fetch failed', e);
+    }
+  };
+
   useEffect(() => {
-    if (isAdmin) checkIntegrity();
+    if (isAdmin) { checkIntegrity(); fetchPredStats(); }
   }, [isAdmin]);
 
   const handleRebuildMmr = async () => {
@@ -349,10 +370,10 @@ export default function BalancerPage() {
       const targetPlayers = currentPlayers || players;
       const existingPlayers = targetPlayers.filter(p => p.id);
 
-      // 並列で全プレイヤーをアップデート（高速化）
-      await Promise.all(existingPlayers.map(p =>
-        supabase.from("ktm_players").update({
-          name: p.name,
+      if (isAdmin) {
+        // 管理者は weight 等も含めフル書き込み可能。RLSをバイパスするサーバーAPI経由。
+        const updates = existingPlayers.map(p => ({
+          id: p.id,
           role_preferences: p.role_preferences,
           is_active: p.is_active,
           ng_lane_1: p.ng_lane_1 || null,
@@ -361,9 +382,29 @@ export default function BalancerPage() {
           allow_higher: p.allow_higher,
           pity: p.pity,
           off_role_pity: p.off_role_pity,
-          metadata: p.metadata
-        }).eq('id', p.id)
-      ));
+          metadata: p.metadata,
+        }));
+        const res = await fetch('/api/admin/players/save', {
+          method: 'POST', credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ updates }),
+        });
+        if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || '保存に失敗しました'); }
+      } else {
+        // 一般ユーザーはRLSで許可された非センシティブ列のみ（名前・weightは書き込まない）。
+        await Promise.all(existingPlayers.map(p =>
+          supabase.from("ktm_players").update({
+            role_preferences: p.role_preferences,
+            is_active: p.is_active,
+            ng_lane_1: p.ng_lane_1 || null,
+            ng_lane_2: p.ng_lane_2 || null,
+            allow_higher: p.allow_higher,
+            pity: p.pity,
+            off_role_pity: p.off_role_pity,
+            metadata: p.metadata
+          }).eq('id', p.id)
+        ));
+      }
       setSaving(false);
       setMessage({ type: "success", text: "✅ プレイヤー情報を更新しました。" });
     } catch (err: any) {
@@ -1131,6 +1172,47 @@ export default function BalancerPage() {
                 で行えます。
               </div>
             )}
+
+            {/* バランサー予測の的中率（課題: 予測勝率の検証） */}
+            <div className="border-t border-gray-800 pt-3">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <span className="text-sm font-bold text-white">🎯 バランサー予測の精度</span>
+                <button
+                  onClick={fetchPredStats}
+                  className="flex items-center gap-1.5 bg-gray-800 hover:bg-gray-700 text-gray-200 px-3 py-1.5 rounded-lg font-bold transition text-xs"
+                >
+                  <RefreshCw className="h-3.5 w-3.5" /> 更新
+                </button>
+              </div>
+              {predStats ? (
+                predStats.total === 0 ? (
+                  <p className="text-xs text-gray-500 mt-2">まだ結果と突き合わせ済みの予測がありません（チーム分け→試合結果記録が蓄積されると表示されます）。</p>
+                ) : (
+                  <div className="grid grid-cols-3 gap-2 mt-2">
+                    <div className="bg-gray-950/60 rounded-lg p-2 text-center">
+                      <div className="text-[10px] text-gray-500">予測的中率</div>
+                      <div className="text-lg font-black text-emerald-400">{predStats.accuracy}%</div>
+                      <div className="text-[10px] text-gray-600">{predStats.correct}/{predStats.total}戦</div>
+                    </div>
+                    <div className="bg-gray-950/60 rounded-lg p-2 text-center">
+                      <div className="text-[10px] text-gray-500">平均の偏り</div>
+                      <div className="text-lg font-black text-sky-400">±{predStats.avgConfidence}%</div>
+                      <div className="text-[10px] text-gray-600">低=拮抗</div>
+                    </div>
+                    <div className="bg-gray-950/60 rounded-lg p-2 text-center">
+                      <div className="text-[10px] text-gray-500">サンプル</div>
+                      <div className="text-lg font-black text-white">{predStats.total}</div>
+                      <div className="text-[10px] text-gray-600">直近200戦</div>
+                    </div>
+                  </div>
+                )
+              ) : (
+                <p className="text-xs text-gray-500 mt-2">読み込み中...</p>
+              )}
+              <p className="text-[10px] text-gray-600 mt-2">
+                的中率が50%近い＝実力拮抗、極端に高い＝MMR差が大きいまま組んでいる可能性。平均の偏りが小さいほどバランサーが互角の試合を作れています。
+              </p>
+            </div>
           </div>
         )}
 
@@ -1321,7 +1403,7 @@ export default function BalancerPage() {
                           </div>
                         </td>
                         <td className="px-1.5 py-1.5 text-center">
-                          <select value={p.weight || 2} onChange={e => handleInputChange(p.id,'weight',parseInt(e.target.value))} className="bg-gray-950 border border-gray-700 rounded px-1.5 py-0.5 text-amber-300 font-bold outline-none focus:border-amber-500 w-12 cursor-pointer text-xs">
+                          <select value={p.weight || 2} disabled={!isAdmin} onChange={e => handleInputChange(p.id,'weight',parseInt(e.target.value))} title={isAdmin ? '' : 'こだわり度の変更は管理者のみ可能です'} className="bg-gray-950 border border-gray-700 rounded px-1.5 py-0.5 text-amber-300 font-bold outline-none focus:border-amber-500 w-12 cursor-pointer text-xs disabled:opacity-40 disabled:cursor-not-allowed">
                             {[1,2,3].map(n => <option key={n} value={n}>{n}</option>)}
                           </select>
                         </td>

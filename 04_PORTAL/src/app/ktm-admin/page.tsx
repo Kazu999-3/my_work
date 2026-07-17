@@ -189,12 +189,17 @@ export default function KtmAdminPage() {
   const handleResolveRiotError = async (playerId: number, newIgn: string) => {
     setReSyncingPlayerId(playerId);
     try {
-      const { error: updateErr } = await supabase
-        .from('ktm_players')
-        .update({ ign: newIgn })
-        .eq('id', playerId);
-
-      if (updateErr) throw new Error(`Riot IDの保存に失敗: ${updateErr.message}`);
+      // ign は管理者専用カラム(RLS)のため、直接更新ではなくサーバーAPI経由で保存する。
+      const saveRes = await fetchWithTimeout('/api/admin/players/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ updates: [{ id: playerId, ign: newIgn }] }),
+        timeout: 10000,
+      });
+      if (!saveRes.ok) {
+        const d = await saveRes.json().catch(() => ({}));
+        throw new Error(`Riot IDの保存に失敗: ${d.error || saveRes.status}`);
+      }
 
       const res = await fetchWithTimeout('/api/admin/riot-sync', {
         method: 'POST',
@@ -605,59 +610,55 @@ export default function KtmAdminPage() {
     setMessage({ type: "", text: "" });
     try {
       const targetPlayers = currentPlayers || players;
-      const existingPlayers = targetPlayers.filter(p => p.id);
-      const playersToInsert = targetPlayers.filter(p => !p.id);
+      // ktm_players はRLSで名前・MMR・weight等がanon直書き不可になったため(migration 12)、
+      // 管理者フルカラム書き込みは /api/admin/players/save（サービスロール）に集約する。
+      const updates = targetPlayers.filter(p => p.id).map(p => ({
+        id: p.id,
+        discord_id: p.discord_id,
+        name: p.name,
+        ign: p.ign,
+        mmr: parseInt(p.mmr) || 1000,
+        role_preferences: p.role_preferences,
+        is_active: p.is_active,
+        ng_lane_1: p.ng_lane_1 || null,
+        ng_lane_2: p.ng_lane_2 || null,
+        highest_rank: p.highest_rank || null,
+        mmr_top: parseInt(p.mmr_top) || 1000,
+        mmr_jg: parseInt(p.mmr_jg) || 1000,
+        mmr_mid: parseInt(p.mmr_mid) || 1000,
+        mmr_adc: parseInt(p.mmr_adc) || 1000,
+        mmr_sup: parseInt(p.mmr_sup) || 1000,
+        metadata: p.metadata,
+      }));
+      const inserts = targetPlayers.filter(p => !p.id).map(p => ({
+        discord_id: (p.discord_id && p.discord_id.startsWith('new-')) ? '' : p.discord_id,
+        name: p.name,
+        ign: p.ign,
+        mmr: parseInt(p.mmr) || 1000,
+        role_preferences: p.role_preferences,
+        is_active: p.is_active,
+        ng_lane_1: p.ng_lane_1 || null,
+        ng_lane_2: p.ng_lane_2 || null,
+        highest_rank: p.highest_rank || null,
+        mmr_top: parseInt(p.mmr_top) || 1000,
+        mmr_jg: parseInt(p.mmr_jg) || 1000,
+        mmr_mid: parseInt(p.mmr_mid) || 1000,
+        mmr_adc: parseInt(p.mmr_adc) || 1000,
+        mmr_sup: parseInt(p.mmr_sup) || 1000,
+        metadata: p.metadata || { notes: "" },
+      }));
 
-      // 並列で全プレイヤーをアップデート（シリアルループを廃止して高速化）
-      const updatePromises = existingPlayers.map(p =>
-        supabase.from("ktm_players").update({
-          discord_id: p.discord_id,
-          name: p.name,
-          ign: p.ign,
-          mmr: parseInt(p.mmr) || 1000,
-          role_preferences: p.role_preferences,
-          is_active: p.is_active,
-          ng_lane_1: p.ng_lane_1 || null,
-          ng_lane_2: p.ng_lane_2 || null,
-          highest_rank: p.highest_rank || null,
-          mmr_top: parseInt(p.mmr_top) || 1000,
-          mmr_jg: parseInt(p.mmr_jg) || 1000,
-          mmr_mid: parseInt(p.mmr_mid) || 1000,
-          mmr_adc: parseInt(p.mmr_adc) || 1000,
-          mmr_sup: parseInt(p.mmr_sup) || 1000,
-          metadata: p.metadata
-        }).eq('id', p.id)
-      );
-
-      const results = await Promise.all(updatePromises);
-      const anyError = results.find(r => r.error);
-      if (anyError?.error) throw anyError.error;
-
-      if (playersToInsert.length > 0) {
-        const { error } = await supabase.from("ktm_players").insert(
-          playersToInsert.map(p => ({
-            discord_id: p.discord_id.startsWith('new-') ? '' : p.discord_id,
-            name: p.name,
-            ign: p.ign,
-            mmr: parseInt(p.mmr) || 1000,
-            role_preferences: p.role_preferences,
-            is_active: p.is_active,
-            ng_lane_1: p.ng_lane_1 || null,
-            ng_lane_2: p.ng_lane_2 || null,
-            highest_rank: p.highest_rank || null,
-            mmr_top: parseInt(p.mmr_top) || 1000,
-            mmr_jg: parseInt(p.mmr_jg) || 1000,
-            mmr_mid: parseInt(p.mmr_mid) || 1000,
-            mmr_adc: parseInt(p.mmr_adc) || 1000,
-            mmr_sup: parseInt(p.mmr_sup) || 1000,
-            metadata: p.metadata || { notes: "" }
-          }))
-        );
-        if (error) throw error;
-      }
+      const res = await fetchWithTimeout('/api/admin/players/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ updates, inserts }),
+        timeout: 20000,
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || '保存に失敗しました');
 
       // 自動保存時は全体リロード(fetchPlayers)をせずチラつきを防ぐ
-      checkIntegrity(); 
+      checkIntegrity();
     } catch (err: any) {
       setMessage({ type: "error", text: "❌ 保存エラー: " + err.message });
     } finally {

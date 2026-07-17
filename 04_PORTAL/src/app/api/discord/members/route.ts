@@ -3,7 +3,9 @@ import { createClient } from '@supabase/supabase-js';
 import { verifyAdminSession } from '../../../../lib/adminAuth';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder';
+// ktm_players のRLS導入(migration 12)により、名簿の追加/削除/MMR更新には
+// RLSをバイパスできるサービスロールキーが必要（このAPIは管理者セッション認証済み）。
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 function parseIntroduction(content: string) {
