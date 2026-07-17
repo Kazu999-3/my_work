@@ -41,6 +41,19 @@ export async function GET(req: Request) {
   try {
     const dryRun = new URL(req.url).searchParams.get('dryRun') === '1';
 
+    // DDragonの実在チャンピオンID一覧を取得し、ゴミ/テスト名(qKUaa等)を除外する。
+    // 取得に失敗した場合はフィルタせず全件処理（フォールバック）。
+    let validChampions: Set<string> | null = null;
+    try {
+      const vRes = await fetch('https://ddragon.leagueoflegends.com/api/versions.json');
+      const versions = await vRes.json();
+      const cRes = await fetch(`https://ddragon.leagueoflegends.com/cdn/${versions[0]}/data/en_US/champion.json`);
+      const cData = await cRes.json();
+      validChampions = new Set(Object.keys(cData.data || {})); // 'Heimerdinger' 等のID
+    } catch (e) {
+      console.warn('[dict-migrate] DDragonチャンピオン一覧の取得に失敗、フィルタなしで続行:', e);
+    }
+
     const { data: rows, error } = await supabase.from('matchup_sentinel').select('*');
     if (error) throw error;
 
@@ -56,6 +69,8 @@ export async function GET(req: Request) {
     for (const row of (rows || [])) {
       const champion = row.champion;
       if (!champion || FAKE_CHAMPIONS.has(champion)) continue;
+      // DDragon照合: 実在しないチャンピオン名（qKUaa等のゴミ）はスキップ
+      if (validChampions && !validChampions.has(champion)) continue;
       const enemy = row.enemy;
       if (enemy && SPECIAL_ENEMY.has(enemy)) continue; // 反省ログ等はスキップ
       const rd = row.raw_data || {};
