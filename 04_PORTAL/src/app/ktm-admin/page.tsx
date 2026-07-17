@@ -220,6 +220,8 @@ export default function KtmAdminPage() {
         setRiotSyncErrors(prev => prev.filter(p => p.id !== playerId));
         setMessage({ type: "success", text: `✅ Riot IDを [${newIgn}] に更新し、同期が正常に完了しました！` });
         triggerRowFlash(String(playerId));
+        // #28: ランク更新後の自動Rebuild（ズレ防止）
+        try { await fetchWithTimeout('/api/mmr/rebuild', { method: 'POST', timeout: 30000 }); } catch (e) { console.warn('自動Rebuild失敗:', e); }
       }
 
       fetchPlayers();
@@ -746,8 +748,17 @@ export default function KtmAdminPage() {
         setMessage({ type: "success", text: data.message });
         setRiotSyncErrors([]);
       }
-      
-      fetchPlayers(); 
+
+      // #28: ランク同期でhighest_rankが変わると初期MMRが変わりMMRがズレるため、同期完了後に自動Rebuild。
+      // これまでは手動Rebuild忘れが整合性ズレ(41人問題)の主因だった。
+      try {
+        await fetchWithTimeout('/api/mmr/rebuild', { method: 'POST', timeout: 30000 });
+      } catch (e) {
+        console.warn('同期後の自動Rebuildに失敗（手動Rebuildで復旧可能）:', e);
+      }
+
+      fetchPlayers();
+      checkIntegrity();
     } catch (err: any) {
       setMessage({ type: "error", text: err.message });
     } finally {

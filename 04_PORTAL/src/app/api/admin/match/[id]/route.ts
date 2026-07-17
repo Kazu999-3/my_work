@@ -1,5 +1,7 @@
-import { NextResponse } from 'next/server';
+﻿import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { verifyAdminSession } from '../../../../../lib/adminAuth';
+import { performFullMmrRebuild } from '../../../../../lib/mmr';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder';
@@ -10,6 +12,12 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+  // ===== 管理者セッション確認 =====
+  const authResult = await verifyAdminSession(request);
+  if (!authResult.ok) {
+    return NextResponse.json({ error: authResult.error }, { status: 401 });
+  }
+  // =================================
     const resolvedParams = await params;
     const matchId = resolvedParams.id;
     if (!matchId) {
@@ -57,7 +65,10 @@ export async function PUT(
       }
     }
 
-    return NextResponse.json({ success: true, message: '試合結果を更新しました。' });
+    // #28: 試合内容の編集でMMRがズレるため、編集後に自動Rebuild（保存値＝導出値を維持）
+    await performFullMmrRebuild(supabase);
+
+    return NextResponse.json({ success: true, message: '試合結果を更新し、MMRを再計算しました。' });
   } catch (error: any) {
     console.error('Update Match Error:', error);
     return NextResponse.json({ error: error.message || '試合の更新中にエラーが発生しました。' }, { status: 500 });
@@ -69,6 +80,12 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+  // ===== 管理者セッション確認（PUTにはあったがDELETEに無かったため追加） =====
+  const authResult = await verifyAdminSession(request);
+  if (!authResult.ok) {
+    return NextResponse.json({ error: authResult.error }, { status: 401 });
+  }
+  // =================================
     const resolvedParams = await params;
     const matchId = resolvedParams.id;
     if (!matchId) {
@@ -95,7 +112,10 @@ export async function DELETE(
       throw new Error(`試合レコードの削除に失敗: ${matchError.message}`);
     }
 
-    return NextResponse.json({ success: true, message: '試合レコードを削除しました。' });
+    // #28: 試合削除でMMRがズレるため、削除後に自動Rebuild
+    await performFullMmrRebuild(supabase);
+
+    return NextResponse.json({ success: true, message: '試合レコードを削除し、MMRを再計算しました。' });
   } catch (error: any) {
     console.error('Delete Match Error:', error);
     return NextResponse.json({ error: error.message || '試合の削除中にエラーが発生しました。' }, { status: 500 });
