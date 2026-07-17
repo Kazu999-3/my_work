@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { exec } from 'child_process';
 import { createClient } from '@supabase/supabase-js';
+import { verifyAdminSession } from '../../../../lib/adminAuth';
 
 // サーバーサイド用クライアント（サービスキーを使用）
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
@@ -18,6 +19,12 @@ function extractVideoId(url: string): string | null {
 // 1. キュー一覧の取得
 export async function GET(req: NextRequest) {
   try {
+  // ===== 管理者セッション確認 =====
+  const authResult = await verifyAdminSession(req);
+  if (!authResult.ok) {
+    return NextResponse.json({ error: authResult.error }, { status: 401 });
+  }
+  // =================================
     const { searchParams } = new URL(req.url);
     const sort = searchParams.get('sort') || 'date_added';
 

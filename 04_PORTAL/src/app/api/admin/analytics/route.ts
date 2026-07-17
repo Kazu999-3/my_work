@@ -1,9 +1,16 @@
 import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
+import { verifyAdminSession } from '../../../../lib/adminAuth';
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
+  // ===== 管理者セッション確認 =====
+  const authResult = await verifyAdminSession(req);
+  if (!authResult.ok) {
+    return NextResponse.json({ error: authResult.error }, { status: 401 });
+  }
+  // =================================
     const rootDir = process.cwd(); // Next.jsルート (d:/my_work/04_PORTAL)
     
     // 1. 分析レポートの読み込み

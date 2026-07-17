@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Search as SearchIcon, BookHeart, Brain, Swords, ArrowRight } from 'lucide-react';
+import { EmptyState } from '../../components/Feedback';
 
 const SOURCE_STYLE: Record<string, { color: string; icon: any }> = {
   'チャンピオン辞典': { color: 'text-[#c89b3c] border-[#c89b3c]/40 bg-[#c89b3c]/10', icon: BookHeart },
@@ -108,10 +109,11 @@ function SearchInner() {
       </div>
 
       {searched && !loading && results.length === 0 && !message && (
-        <div className="text-center py-16 text-white/40">
-          <SearchIcon size={40} className="mx-auto mb-3 opacity-40" />
-          <p>該当する情報が見つかりませんでした。</p>
-        </div>
+        <EmptyState
+          icon={<SearchIcon size={26} />}
+          title="該当する情報が見つかりませんでした"
+          message="キーワードを変えるか、辞典・ナレッジにメモを追加すると検索対象が増えます。"
+        />
       )}
     </div>
   );

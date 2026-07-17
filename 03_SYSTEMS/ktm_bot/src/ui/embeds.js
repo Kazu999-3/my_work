@@ -44,40 +44,35 @@ export function renderRoles(data) {
 
 export function createRecruitButtons(metadata) {
   const isFull = metadata.joined.length >= metadata.maxCount;
+  const comps = [];
 
-  // Row 1: 参加メイン
-  const row1 = [];
+  // Row 1: 参加（主動線を大きく1つに）
   if (!isFull) {
-    row1.push({ type: 2, label: "✋ どこでも参加", style: 1, custom_id: `join_any:${metadata.owner}` });
+    comps.push({ type: 1, components: [{ type: 2, label: "✋ 参加する", style: 3, custom_id: `join_any:${metadata.owner}` }] });
   } else {
-    row1.push({ type: 2, label: "✅ 募集完了 (ポータルでチーム分け)", style: 2, custom_id: `recruit_completed`, disabled: true });
+    comps.push({ type: 1, components: [{ type: 2, label: "✅ 募集完了（ポータルでチーム分け）", style: 2, custom_id: `recruit_completed`, disabled: true }] });
   }
 
-  // Row 2: 管理・設定（一括連絡ボタンは削除。募集への返信でメンション可能）
-  const row2 = [
-    { type: 2, label: "⚙️ 募集編集", style: 2, custom_id: `edit_recruit_init:${metadata.owner}` }
-  ];
-  if (!isFull && metadata.mode !== 'カスタム' && metadata.joined.length >= 5) {
-    row2.push({ type: 2, label: "🚀 10人に拡張", style: 1, custom_id: `upgrade_to_10:${metadata.owner}` });
-  }
-
-  // Row 3: システム・終了
-  const row3 = [
-    { type: 2, label: "🚩 募集終了", style: 2, custom_id: `close:${metadata.owner}` },
-    { type: 2, label: "👥 代理追加", style: 2, custom_id: `proxy_add_init:${metadata.owner}` },
-    { type: 2, label: "🗑️ 削除", style: 4, custom_id: `delete_recruit:${metadata.owner}` }
-  ];
-
-  const comps = [
-    { type: 1, components: row1 },
-    { type: 1, components: row2 },
-    { type: 1, components: row3 }
-  ];
-
-  // Row 4: ロール選択 (ノーマル時のみ)
+  // Row 2: ロール選択（ノーマルかつ未満員のみ）
   if (!isFull && metadata.mode === 'ノーマル') {
     comps.push({ type: 1, components: ['Top', 'Jg', 'Mid', 'Adc', 'Sup'].map(r => ({ type: 2, label: r, style: 2, custom_id: `join_role:${r}:${metadata.owner}` })) });
   }
+
+  // Row 3: 募集主メニュー（編集・終了・削除などをセレクト1つに集約してボタンの氾濫を解消）
+  const manageOptions = [
+    { label: "⚙️ 募集を編集", value: "edit", description: "モード/時刻/人数/メモを変更" },
+    { label: "👥 メンバーを代理追加", value: "proxy", description: "他の人を代わりに参加させる" },
+    { label: "🚩 募集を終了", value: "close", description: "締め切ってボタンを閉じる" },
+    { label: "🗑️ 募集を削除", value: "delete", description: "この募集メッセージを消す" },
+  ];
+  if (!isFull && metadata.mode !== 'カスタム' && metadata.joined.length >= 5) {
+    manageOptions.splice(1, 0, { label: "🚀 10人に拡張", value: "upgrade", description: "カスタム10人募集に切り替え" });
+  }
+  comps.push({ type: 1, components: [{
+    type: 3, custom_id: `recruit_manage:${metadata.owner}`,
+    placeholder: "⚙️ 募集主メニュー（編集・終了・削除…）",
+    min_values: 0, max_values: 1, options: manageOptions
+  }] });
 
   return comps;
 }
@@ -92,21 +87,28 @@ export function getPortalEmbed() {
 }
 
 export function getPortalComponents(userId) {
+  // コマンドを打たずに済むよう、主要機能をすべてボタン化して並べる（/stats /lane /ign /memo /help 相当）
   const row1 = [
     { type: 2, label: "⚔️ 募集開始", style: 3, custom_id: "portal_recruit" },
     { type: 2, label: "📊 マイ戦績", style: 1, custom_id: "portal_stats" },
     { type: 2, label: "📍 レーン設定", style: 2, custom_id: "portal_lane" },
     { type: 2, label: "📝 サモナー名登録", style: 2, custom_id: "portal_ign" }
   ];
-  
+
   const row2 = [
-    { type: 2, label: "🔔 募集通知 (ON/OFF)", style: 2, custom_id: "toggle_recruit_notification" },
+    { type: 2, label: "🧠 メモ登録", style: 2, custom_id: "portal_memo" },
+    { type: 2, label: "📖 使い方ガイド", style: 2, custom_id: "portal_help" },
+    { type: 2, label: "🔔 募集通知 (ON/OFF)", style: 2, custom_id: "toggle_recruit_notification" }
+  ];
+
+  const row3 = [
     { type: 2, label: "🌐 Webポータルへアクセス", style: 5, url: `${CONFIG.PORTAL_URL}/leaderboard` }
   ];
-  
+
   return [
     { type: 1, components: row1 },
-    { type: 1, components: row2 }
+    { type: 1, components: row2 },
+    { type: 1, components: row3 }
   ];
 }
 

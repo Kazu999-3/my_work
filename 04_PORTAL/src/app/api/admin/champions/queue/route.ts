@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
+import { verifyAdminSession } from '../../../../../lib/adminAuth';
 
 // ワークスペースのルートを特定する
 const WORKSPACE_DIR = process.env.MY_WORK_DIR
@@ -12,6 +13,12 @@ const LOCK_FILE  = path.join(WORKSPACE_DIR, '03_SYSTEMS/v2_CORE/_LOL/champ_db_bu
 
 export async function GET(req: NextRequest) {
   try {
+  // ===== 管理者セッション確認 =====
+  const authResult = await verifyAdminSession(req);
+  if (!authResult.ok) {
+    return NextResponse.json({ error: authResult.error }, { status: 401 });
+  }
+  // =================================
     if (!fs.existsSync(QUEUE_FILE)) {
       return NextResponse.json({
         initialized: false,

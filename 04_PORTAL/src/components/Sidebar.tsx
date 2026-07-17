@@ -3,9 +3,10 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Shield, LayoutDashboard, Swords, BookOpen, BookHeart, Trophy, Users, HeartHandshake, ScrollText, ListVideo, ChevronLeft, ChevronRight, Coins, Brain, Trees, Sparkles, Search } from 'lucide-react';
+import { Shield, LayoutDashboard, Swords, BookOpen, BookHeart, Trophy, Users, HeartHandshake, ScrollText, ListVideo, ChevronLeft, ChevronRight, Coins, Brain, Trees, Sparkles, Search, MoreHorizontal, X as XIcon } from 'lucide-react';
 import FavoritesPanel from './FavoritesPanel';
 import PushOptIn from './PushOptIn';
+import SystemStatus from './SystemStatus';
 
 // 一般ユーザー用 (管理者エリア外で表示)
 const MENU_ITEMS = [
@@ -39,6 +40,7 @@ export default function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [activeTab, setActiveTab] = useState<'admin' | 'general'>('admin');
   const [mounted, setMounted] = useState(false);
+  const [showMobileMore, setShowMobileMore] = useState(false);
 
   useEffect(() => {
     const saved = localStorage.getItem('sovereign_sidebar_collapsed');
@@ -53,6 +55,9 @@ export default function Sidebar() {
     setIsCollapsed(nextVal);
     localStorage.setItem('sovereign_sidebar_collapsed', String(nextVal));
   };
+
+  // ページ遷移したらモバイルの「その他」シートは閉じる
+  useEffect(() => { setShowMobileMore(false); }, [pathname]);
 
   // 管理者エリアの判定
   const isAdminArea =
@@ -205,37 +210,30 @@ export default function Sidebar() {
           </div>
         )}
 
-        {/* フッター システムステータス */}
+        {/* フッター システムステータス（実データ: /api/health を反映） */}
         <div className={`mt-auto pt-6 border-t border-white/5 flex-shrink-0 w-full`}>
-          <div className={`flex items-center gap-3 bg-black/40 rounded-2xl border border-white/5 ${isCollapsed ? 'justify-center p-3 w-10 h-10 mx-auto' : 'p-4'}`}>
-            <div className="relative flex items-center justify-center shrink-0">
-              <div className="w-2 h-2 rounded-full bg-[var(--color-success)] relative z-10"></div>
-              <div className="absolute w-4 h-4 rounded-full bg-[var(--color-success)] animate-ping opacity-75"></div>
-            </div>
-            {!isCollapsed && (
-              <div>
-                <p className="text-[9px] text-gray-500 font-bold uppercase tracking-widest mb-0.5">Status</p>
-                <p className="text-xs text-[var(--color-success)] font-black">All Systems Go</p>
-              </div>
-            )}
-          </div>
+          <SystemStatus isCollapsed={isCollapsed} />
         </div>
       </aside>
 
-      {/* スマホ用ボトムナビゲーション */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[#0a0b10]/95 backdrop-blur-xl border-t border-white/10 z-50 flex items-center justify-around px-1 py-2 shadow-[0_-4px_24px_rgba(0,0,0,0.5)] pb-[env(safe-area-inset-bottom)] overflow-x-auto custom-scrollbar">
-        {/* 通常アイテムの表示 */}
-        {activeMenuItems.map((item) => {
-          const isActive = pathname === item.href || (item.id === 'leaderboard' && pathname.startsWith('/player'));
+      {/* スマホ用ボトムナビ: 主要4件を固定表示し、残りは「その他」シートに格納して横スクロールでの見切れを解消 */}
+      {(() => {
+        const PRIMARY = 4;
+        const primaryItems = activeMenuItems.slice(0, PRIMARY);
+        const overflowItems = activeMenuItems.slice(PRIMARY);
+        const hasMore = overflowItems.length > 0 || isAdminArea;
 
+        const NavLink = ({ item, onClick }: { item: typeof activeMenuItems[number]; onClick?: () => void }) => {
+          const isActive = pathname === item.href || (item.id === 'leaderboard' && pathname.startsWith('/player'));
           return (
-            <Link 
-              key={`mobile-${item.id}`} 
+            <Link
+              key={`mobile-${item.id}`}
               href={item.href}
               prefetch={false}
+              onClick={onClick}
               className={`flex flex-col items-center justify-center min-w-[3.5rem] p-2 rounded-xl transition-all duration-300 ${
-                isActive 
-                  ? `${item.activeBg} ${item.color} shadow-inner border border-white/5` 
+                isActive
+                  ? `${item.activeBg} ${item.color} shadow-inner border border-white/5`
                   : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'
               }`}
             >
@@ -243,19 +241,55 @@ export default function Sidebar() {
               <span className="text-[9px] font-bold tracking-wider truncate w-full text-center">{item.label}</span>
             </Link>
           );
-        })}
+        };
 
-        {/* 管理者エリアで、項目数が溢れる場合の「一般/管理者」のスマホ切り替えトグルボタン */}
-        {isAdminArea && (
-          <button 
-            onClick={() => setActiveTab(activeTab === 'admin' ? 'general' : 'admin')} 
-            className="flex flex-col items-center justify-center min-w-[3.5rem] p-2 rounded-xl text-amber-400 hover:text-white bg-white/5 border border-white/10 transition-all cursor-pointer"
-          >
-            {activeTab === 'admin' ? <Users size={18} className="mb-1 text-amber-400" /> : <Shield size={18} className="mb-1 text-indigo-400" />}
-            <span className="text-[9px] font-black tracking-wider text-center">{activeTab === 'admin' ? '一般へ' : '管理へ'}</span>
-          </button>
-        )}
-      </nav>
+        return (
+          <>
+            {/* 「その他」シート（オーバーレイ） */}
+            {showMobileMore && (
+              <div className="md:hidden fixed inset-0 z-50" onClick={() => setShowMobileMore(false)}>
+                <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+                <div
+                  className="absolute bottom-[calc(4.5rem+env(safe-area-inset-bottom))] left-3 right-3 rounded-3xl bg-[#0d0f16] border border-white/10 p-4 shadow-2xl"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-xs font-black text-gray-300 tracking-wide">すべての機能</span>
+                    <button onClick={() => setShowMobileMore(false)} className="text-gray-500 hover:text-white p-1"><XIcon size={16} /></button>
+                  </div>
+
+                  {isAdminArea && (
+                    <div className="flex bg-black/50 p-1 rounded-xl border border-white/5 mb-3">
+                      <button onClick={() => setActiveTab('admin')} className={`flex-1 py-2 rounded-lg text-[11px] font-black transition-all ${activeTab === 'admin' ? 'bg-[#c89b3c] text-black' : 'text-gray-400'}`}>管理者機能</button>
+                      <button onClick={() => setActiveTab('general')} className={`flex-1 py-2 rounded-lg text-[11px] font-black transition-all ${activeTab === 'general' ? 'bg-white/10 text-white' : 'text-gray-400'}`}>一般機能</button>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-4 gap-2">
+                    {overflowItems.map((item) => <NavLink key={`sheet-${item.id}`} item={item} onClick={() => setShowMobileMore(false)} />)}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[#0a0b10]/95 backdrop-blur-xl border-t border-white/10 z-50 flex items-center justify-around px-1 py-2 shadow-[0_-4px_24px_rgba(0,0,0,0.5)] pb-[env(safe-area-inset-bottom)]">
+              {primaryItems.map((item) => <NavLink key={`bar-${item.id}`} item={item} />)}
+
+              {hasMore && (
+                <button
+                  onClick={() => setShowMobileMore((v) => !v)}
+                  className={`flex flex-col items-center justify-center min-w-[3.5rem] p-2 rounded-xl transition-all cursor-pointer ${
+                    showMobileMore ? 'bg-white/10 text-white border border-white/10' : 'text-gray-400 hover:text-white border border-transparent'
+                  }`}
+                >
+                  <MoreHorizontal size={18} className="mb-1" />
+                  <span className="text-[9px] font-black tracking-wider text-center">その他</span>
+                </button>
+              )}
+            </nav>
+          </>
+        );
+      })()}
     </>
   );
 }

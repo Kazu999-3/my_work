@@ -1,4 +1,5 @@
 import { NextResponse, NextRequest } from 'next/server';
+import { verifyAdminSession } from '../../../../lib/adminAuth';
 
 const CORE_API_URL = process.env.CORE_API_URL || 'http://localhost:8001';
 const ANTIGRAVITY_API_KEY = process.env.ANTIGRAVITY_API_KEY || 'default_dev_key_2026';
@@ -19,6 +20,12 @@ export async function GET(req: NextRequest) {
   }
 
   try {
+  // ===== 管理者セッション確認 =====
+  const authResult = await verifyAdminSession(req);
+  if (!authResult.ok) {
+    return NextResponse.json({ error: authResult.error }, { status: 401 });
+  }
+  // =================================
     const res = await fetch(targetUrl, {
       method: 'GET',
       headers,

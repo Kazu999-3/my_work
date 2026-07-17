@@ -1,9 +1,16 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '../../../../lib/supabaseClient';
 import { performFullMmrRebuild } from '../../../../lib/mmr';
+import { verifyAdminSession } from '../../../../lib/adminAuth';
 
 export async function POST(req: Request) {
   try {
+  // ===== 管理者セッション確認 =====
+  const authResult = await verifyAdminSession(req);
+  if (!authResult.ok) {
+    return NextResponse.json({ error: authResult.error }, { status: 401 });
+  }
+  // =================================
     const { winner } = await req.json();
     if (winner !== "BLUE" && winner !== "RED") {
       return NextResponse.json({ status: "ERROR", message: "Invalid winner format. Must be BLUE or RED." }, { status: 400 });

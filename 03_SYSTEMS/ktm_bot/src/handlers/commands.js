@@ -60,7 +60,7 @@ export function handleStatsCommand(interaction, env, ctx) {
       const { fetchPortalAPI } = await import('../utils/api.js');
       const data = await fetchPortalAPI(env, "/api/player/stats", { discordId, discordName });
       if (data.status === "NOT_FOUND") {
-         await patchInteractionResponse(appId, token, { content: "⚠️ あなたの Discord ID が登録されていません。" });
+         await patchInteractionResponse(appId, token, { content: "⚠️ あなたの戦績がまだ登録されていません。\n👉 **次の手順で登録できます**\n1. パネルの「📍 レーン設定」で希望レーンを登録\n2. 一度カスタムに参加して対戦する\n3. 「📝 サモナー名登録」でRiot IDを紐付けるとランクも同期されます" });
          return;
       }
       const s = data.stats;

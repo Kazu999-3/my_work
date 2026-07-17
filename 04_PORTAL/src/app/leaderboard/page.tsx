@@ -5,6 +5,7 @@ export const dynamic = 'force-dynamic';
 import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import { getKtmRank } from '../../lib/mmr';
+import { Spinner } from '../../components/Feedback';
 
 // ==========================================
 // Types
@@ -157,7 +158,7 @@ export default function LeaderboardPage() {
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center bg-gray-950">
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent"></div>
+        <Spinner label="リーダーボードを読み込み中..." />
       </div>
     );
   }

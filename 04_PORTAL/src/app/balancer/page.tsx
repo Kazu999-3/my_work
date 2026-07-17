@@ -8,6 +8,7 @@ import { Users, RefreshCw, Swords, X, Activity, Globe, MessageSquare, Info, Crow
 import { getChampIcon } from "../../lib/ddragonClient";
 import ProfileModal from "../ktm-admin/ProfileModal";
 import MatchRecordPanel from "../ktm-admin/MatchRecordPanel";
+import { Spinner } from "../../components/Feedback";
 
 const RoleIcon = ({ role, className = "w-3.5 h-3.5" }: { role: string; className?: string }) => {
   const r = role.toUpperCase();
@@ -720,8 +721,7 @@ export default function BalancerPage() {
   if (loading && players.length === 0) {
     return (
       <div className="flex h-screen items-center justify-center bg-gray-950 text-white">
-        <RefreshCw className="h-8 w-8 animate-spin text-blue-500" />
-        <span className="ml-3">データを読み込み中...</span>
+        <Spinner label="メンバーデータを読み込み中..." />
       </div>
     );
   }

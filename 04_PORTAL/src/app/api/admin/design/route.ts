@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { exec } from 'child_process';
 import { systemDesignDocs } from '../../../design/systemDesignMarkdown';
+import { verifyAdminSession } from '../../../../lib/adminAuth';
 
 const titleMapping: Record<string, string> = {
   '00_overview': '🌟 全体概要・アーキテクチャ',
@@ -20,6 +21,12 @@ const titleMapping: Record<string, string> = {
 
 export async function POST(req: NextRequest) {
   try {
+  // ===== 管理者セッション確認 =====
+  const authResult = await verifyAdminSession(req);
+  if (!authResult.ok) {
+    return NextResponse.json({ error: authResult.error }, { status: 401 });
+  }
+  // =================================
     const { filename, content } = await req.json();
 
     if (!filename || typeof filename !== 'string' || !content || typeof content !== 'string') {
