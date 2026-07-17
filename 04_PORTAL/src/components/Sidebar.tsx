@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Shield, LayoutDashboard, Swords, BookOpen, BookHeart, Trophy, Users, HeartHandshake, ScrollText, ListVideo, ChevronLeft, ChevronRight, Coins, Brain, Trees, Sparkles } from 'lucide-react';
+import { Shield, LayoutDashboard, Swords, BookOpen, BookHeart, Trophy, Users, HeartHandshake, ScrollText, ListVideo, ChevronLeft, ChevronRight, Coins, Brain, Trees, Sparkles, Search } from 'lucide-react';
 import FavoritesPanel from './FavoritesPanel';
 
 // 一般ユーザー用 (管理者エリア外で表示)
@@ -20,6 +20,7 @@ const ADMIN_ONLY_MENU_ITEMS = [
   { id: 'coach', label: 'パーソナルコーチ', icon: Sparkles, href: '/coach', color: 'text-indigo-300', activeBg: 'bg-indigo-500/15' },
   { id: 'matchups',  label: 'バトルサーチ',   icon: Swords,          href: '/matchups', color: 'text-[#00cfef]', activeBg: 'bg-[#00cfef]/15' },
   { id: 'champions', label: 'チャンピオン辞典', icon: BookHeart,     href: '/champions', color: 'text-[#c89b3c]', activeBg: 'bg-[#c89b3c]/15' },
+  { id: 'search',    label: '横断検索',       icon: Search,          href: '/search', color: 'text-[#a78bfa]', activeBg: 'bg-[#a78bfa]/15' },
   { id: 'design',    label: 'システム設計書', icon: ScrollText,      href: '/design', color: 'text-cyan-400', activeBg: 'bg-cyan-400/15' },
   { id: 'knowledge-admin', label: 'ナレッジベース', icon: Brain,       href: '/admin/knowledge', color: 'text-pink-400', activeBg: 'bg-pink-400/15' },
   { id: 'ktm-admin',   label: '⚙️ 管理者専用',     icon: Shield, href: '/ktm-admin', color: 'text-indigo-400', activeBg: 'bg-indigo-400/15' },
