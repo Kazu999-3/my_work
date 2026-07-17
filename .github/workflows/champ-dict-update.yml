@@ -1,0 +1,61 @@
+name: Champion Dictionary Bulk Update
+
+# チャンピオン辞典の一括更新(champ_db_bulk_updater.py)を無料枠のGitHub Actionsで自動実行する(課題#32)。
+# これまで手動 `python champ_db_bulk_updater.py` 運用のみで、更新し忘れが起きやすかった。
+# キューファイル(champion_update_queue.json)をコミットで永続化するため、毎回の実行で
+# 前回の続きから再開し、Geminiクォータの範囲で少しずつ全チャンピオンを更新していく。
+#
+# 【制約】ローカルのOllamaフォールバックはActions上では使えないため、Geminiのみで動作する。
+
+on:
+  schedule:
+    - cron: '0 18 * * 0'   # 毎週月曜 03:00 JST（日曜18:00 UTC）
+  workflow_dispatch:        # 手動実行（初回検証や即時更新用）
+
+permissions:
+  contents: write           # キューの進捗をコミットで永続化するため
+
+jobs:
+  bulk-update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r 03_SYSTEMS/requirements.txt
+
+      - name: Setup d:/my_work path
+        # champ_db_bulk_updater.py は d:/my_work/... のWindows絶対パスをハードコードしている。
+        # Linux上ではこれが相対パス ./d:/my_work/... になるため、リポジトリルートへのシンボリックリンクを張り、
+        # キュー・ログが実際のリポジトリのパスへ書き込まれるようにする（スクリプト本体は無改変）。
+        run: |
+          mkdir -p 'd:'
+          ln -sfn "$GITHUB_WORKSPACE" 'd:/my_work'
+
+      - name: Run champion dictionary bulk updater
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_API_KEY_FREE: ${{ secrets.GEMINI_API_KEY_FREE }}
+          GEMINI_API_KEY_BATCH: ${{ secrets.GEMINI_API_KEY_BATCH }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          PYTHONPATH: 03_SYSTEMS
+        run: |
+          python 03_SYSTEMS/v2_CORE/_LOL/champ_db_bulk_updater.py || true
+
+      - name: Commit queue progress
+        run: |
+          git config --global user.name 'KTM Auto Updater'
+          git config --global user.email 'actions@ktm.local'
+          git add 02_FACTORY/_LOL/champion_update_queue.json || true
+          git commit -m "chore: 辞典一括更新キューの進捗を保存 [skip ci]" || echo "No queue changes"
+          git push || echo "Nothing to push"
