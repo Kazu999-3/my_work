@@ -380,7 +380,26 @@ export function LibraryTabContentInner() {
               .upsert(dictData, { onConflict: 'matchup_id' });
           if (upsertError) throw upsertError;
         }
-        
+
+        // 段階2 dual-write: 構造化テーブル champion_notes にも同じ記事を1行追加する（#29）。
+        // ブラウザ(anon)はRLSで直接書けないためサーバーAPI経由。失敗しても本筋は止めない。
+        try {
+          await fetch('/api/admin/champion-notes/add', {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              champions: validChampions,
+              title: editTitle,
+              body: editContent,
+              source: 'article',
+              source_article_id: selectedArticle.id,
+            }),
+          });
+        } catch (dualErr) {
+          console.warn('champion_notesへのdual-write失敗（辞典統合自体は成功）:', dualErr);
+        }
+
         // ライブラリから削除
         const { error: deleteError } = await supabase
             .from('personal_knowledge')
