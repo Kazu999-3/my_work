@@ -6,18 +6,20 @@ export function createRecruitEmbed(metadata) {
   
   const ownerName = metadata.names[metadata.owner] || "不明";
   const visibleFooter = `モード: ${metadata.mode} | 募集主: ${ownerName}`;
-  
+
   // 透明ピクセルのURLパラメータにメタデータを仕込む (完全に不可視)
   const encodedMetadata = encodeURIComponent(JSON.stringify(metadata));
   const pixelUrl = `https://raw.githubusercontent.com/nikolay-govorov/1x1-transparent-pixel/master/1x1.png?metadata=${encodedMetadata}`;
 
-  return { 
-    title, 
-    description: renderRoles(metadata), 
-    color: isFull ? 0xe74c3c : 0x2ecc71, 
+  return {
+    title,
+    // 募集主を埋め込み上部にも表示（footerだけだと気づきにくいため）
+    author: { name: `👤 募集主: ${ownerName}` },
+    description: renderRoles(metadata),
+    color: isFull ? 0xe74c3c : 0x2ecc71,
     thumbnail: { url: pixelUrl },
-    footer: { text: visibleFooter }, 
-    timestamp: new Date().toISOString() 
+    footer: { text: visibleFooter },
+    timestamp: new Date().toISOString()
   };
 }
 

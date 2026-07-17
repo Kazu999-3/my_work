@@ -16,7 +16,9 @@ export async function handleModalSubmit(interaction, env, ctx) {
     const rawMode = getVal('mode');
     const mode = (rawMode === 'ノーマル' || rawMode === 'カスタム' || rawMode === 'ARAM') ? rawMode : 'ノーマル';
     const maxCount = parseInt(getVal('max')) || (mode === 'カスタム' ? 10 : 5);
-    const metadata = { mode, time: getVal('time'), maxCount, memo: getVal('memo'), owner: userId, joined: [], spectating: [], roles: { Top: null, Jg: null, Mid: null, Adc: null, Sup: null }, names: {} };
+    // 作成者の表示名を names に入れておく。これが無いと募集メッセージが「募集主: 不明」になっていた。
+    const ownerName = interaction.member?.nick || interaction.member?.user?.global_name || interaction.member?.user?.username || "不明";
+    const metadata = { mode, time: getVal('time'), maxCount, memo: getVal('memo'), owner: userId, joined: [], spectating: [], roles: { Top: null, Jg: null, Mid: null, Adc: null, Sup: null }, names: { [userId]: ownerName } };
     ctx.waitUntil((async () => {
       const res = await sendDiscordMessage(`channels/${CONFIG.RECRUIT_CHANNEL_ID}/messages`, env.DISCORD_TOKEN, "POST", { content: createMessageContent(metadata), embeds: [createRecruitEmbed(metadata)], components: createRecruitButtons(metadata) });
       try {
