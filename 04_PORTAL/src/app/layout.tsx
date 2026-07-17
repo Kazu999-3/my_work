@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import Sidebar from "../components/Sidebar";
 import PwaRegister from "../components/PwaRegister";
+import Toaster from "../components/Toaster";
 
 export const metadata: Metadata = {
   title: "Sovereign Command Center",
@@ -23,6 +24,7 @@ export default function RootLayout({
     <html lang="ja">
       <body className="antialiased bg-[#06070a] text-white flex min-h-screen">
         <PwaRegister />
+        <Toaster />
         <Sidebar />
         <div className="flex-1 min-w-0 pb-20 md:pb-0">
           {children}

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { apiJson } from '../../lib/apiClient';
 
 // ============================
 // 型定義
@@ -37,19 +38,14 @@ interface PostResult {
 // 共通フェッチ
 // ============================
 async function callCoachAPI(payload: Record<string, any>) {
-  // 認証はHttpOnly Cookie(admin_session)で自動送信されるため、Discordアクセストークンの
-  // 手動付与は不要（旧Supabase OAuth依存を撤去）。
-  const res = await fetch('/api/coach/analyze', {
+  // #39: 共通fetchラッパー(apiJson)を使用。credentials付与・タイムアウト・401自動リダイレクトを一元化。
+  // 認証はHttpOnly Cookie(admin_session)で自動送信される。
+  return apiJson('/api/coach/analyze', {
     method: 'POST',
-    credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
+    timeout: 60000, // コーチ分析はLLM生成で時間がかかるため長め
   });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error || `API Error ${res.status}`);
-  }
-  return res.json();
 }
 
 // ============================
