@@ -11,6 +11,8 @@ import {
 // （以前はこのファイルにだけローカル定義されており、他の場所で同じマップを
 // 再実装する必要があった）。
 import { getChampionSearchVariations, normalizeChampionName } from '../../../../lib/championNames';
+// 統一知識取得レイヤー（#50 フェーズA）: champion_facts/notes を鮮度・出典順で合成
+import { getChampionKnowledge } from '../../../../lib/championKnowledge';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -96,6 +98,15 @@ async function searchKnowledge(keywords: string[]): Promise<string> {
 // チャンピオン辞典検索（重複クリーンアップ付き）
 // ============================
 async function searchMatchupSentinel(champion: string): Promise<string> {
+  // #50 フェーズA: まず構造化テーブル(champion_facts/notes)を鮮度・出典順で取得。
+  // データがあればそれを使い、無ければ従来の matchup_sentinel 読み取りにフォールバック。
+  try {
+    const knowledge = await getChampionKnowledge(supabase, champion);
+    if (knowledge.hasData) return knowledge.text;
+  } catch (e) {
+    console.warn('[coach] getChampionKnowledge失敗、matchup_sentinelにフォールバック:', e);
+  }
+
   const variations = getChampionSearchVariations(champion);
   const champQueries = variations.map(v => `champion.ilike.%${v}%`).join(',');
 
