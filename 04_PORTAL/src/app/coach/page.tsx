@@ -516,6 +516,134 @@ function TrendsTab() {
 }
 
 // ============================
+// タブ: シーズン目標トラッカー
+// ============================
+function GoalTab() {
+  const TIERS = ['IRON', 'BRONZE', 'SILVER', 'GOLD', 'PLATINUM', 'EMERALD', 'DIAMOND', 'MASTER'];
+  const DIVS = ['IV', 'III', 'II', 'I'];
+  const [tier, setTier] = useState('GOLD');
+  const [division, setDivision] = useState('IV');
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<any>(null);
+  const [error, setError] = useState('');
+
+  const isApex = tier === 'MASTER';
+
+  // 目標をlocalStorageに保持
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('coach_goal');
+      if (saved) { const g = JSON.parse(saved); if (g.tier) setTier(g.tier); if (g.division) setDivision(g.division); }
+    } catch {}
+  }, []);
+
+  const analyze = async () => {
+    setLoading(true); setError(''); setResult(null);
+    try { localStorage.setItem('coach_goal', JSON.stringify({ tier, division })); } catch {}
+    try {
+      const data = await callCoachAPI({ mode: 'goal', targetTier: tier, targetDivision: isApex ? 'I' : division });
+      setResult(data);
+    } catch (e: any) { setError(e.message); }
+    finally { setLoading(false); }
+  };
+
+  const pct = result?.current && result?.target
+    ? Math.max(0, Math.min(100, Math.round((result.current.abs / result.target.abs) * 100)))
+    : 0;
+
+  return (
+    <div className="space-y-4">
+      <p className="text-sm text-white/50">
+        目標ランクを設定すると、これまでのLP推移から到達予測日と必要ペースを算出します。試合前タブを使うほどLP推移が貯まり、予測精度が上がります。
+      </p>
+
+      <div className="flex gap-3 items-end flex-wrap">
+        <div>
+          <label className="mb-1 block text-xs text-white/50">目標ティア</label>
+          <select value={tier} onChange={(e) => setTier(e.target.value)}
+            className="rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white outline-none focus:border-green-400">
+            {TIERS.map((t) => <option key={t} value={t}>{t}</option>)}
+          </select>
+        </div>
+        {!isApex && (
+          <div>
+            <label className="mb-1 block text-xs text-white/50">ディビジョン</label>
+            <select value={division} onChange={(e) => setDivision(e.target.value)}
+              className="rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white outline-none focus:border-green-400">
+              {DIVS.map((d) => <option key={d} value={d}>{d}</option>)}
+            </select>
+          </div>
+        )}
+        <button onClick={analyze} disabled={loading}
+          className="rounded-xl bg-green-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-green-500 disabled:opacity-50">
+          {loading ? '計算中...' : '🎯 目標を計算'}
+        </button>
+      </div>
+
+      {loading && <Spinner />}
+      {error && <p className="text-sm text-red-400">❌ {error}</p>}
+
+      {result && result.ranked === false && (
+        <Card><p className="text-sm text-white/60">{result.message}</p></Card>
+      )}
+
+      {result && result.ranked && (
+        <div className="space-y-3 animate-in fade-in">
+          <Card>
+            <div className="flex items-center justify-between text-sm mb-2">
+              <span className="text-white/60">現在: <strong className="text-white">{result.current.label}</strong></span>
+              <span className="text-white/60">目標: <strong className="text-green-300">{result.target?.label || '—'}</strong></span>
+            </div>
+            <div className="h-3 w-full rounded-full bg-white/10 overflow-hidden">
+              <div className="h-3 rounded-full bg-gradient-to-r from-green-500 to-emerald-400 transition-all" style={{ width: `${pct}%` }} />
+            </div>
+            <div className="text-right text-xs text-white/40 mt-1">{pct}%</div>
+          </Card>
+
+          {result.projection?.reached && (
+            <div className="rounded-xl border border-green-500/40 bg-green-500/10 px-4 py-3 text-sm font-bold text-green-200">
+              🎉 目標達成済みです！次の目標を設定しましょう。
+            </div>
+          )}
+
+          {result.projection && !result.projection.reached && (
+            <div className="grid grid-cols-2 gap-3">
+              <div className="rounded-lg bg-white/5 p-3">
+                <div className="text-xs text-white/40">残りLP</div>
+                <div className="text-lg font-black text-white">{result.gap}</div>
+              </div>
+              <div className="rounded-lg bg-white/5 p-3">
+                <div className="text-xs text-white/40">ペース</div>
+                <div className="text-lg font-black text-white">{result.lpPerDay !== null ? `${result.lpPerDay} LP/日` : '—'}</div>
+              </div>
+              {result.projection.insufficientTrend ? (
+                <div className="col-span-2 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-sm text-amber-200">
+                  到達予測にはLP推移データが不足しています（現在 {result.snapshots} 日分）。試合前タブを数日使うと予測が出ます。
+                  {result.lpPerDay !== null && result.lpPerDay <= 0 && ' 直近はLPが伸びていないため、まずは勝率改善が必要です。'}
+                </div>
+              ) : (
+                <>
+                  <div className="rounded-lg bg-white/5 p-3">
+                    <div className="text-xs text-white/40">到達予測</div>
+                    <div className="text-lg font-black text-green-300">{result.projection.reachDate}</div>
+                    <div className="text-[10px] text-white/40">あと約{result.projection.days}日</div>
+                  </div>
+                  <div className="rounded-lg bg-white/5 p-3">
+                    <div className="text-xs text-white/40">必要試合数の目安</div>
+                    <div className="text-lg font-black text-white">約{result.projection.gamesNeeded}勝分</div>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+          <p className="text-[10px] text-white/40">※ LP推移は「試合前」または「目標」タブを開くたびに1日1回記録されます。データが増えるほど予測が正確になります。</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============================
 // タブ: ティルト診断
 // ============================
 function TiltTab() {
@@ -743,6 +871,7 @@ export default function CoachPage() {
     { id: 'pre', label: '⚡ 試合前', color: 'indigo' },
     { id: 'post', label: '🔍 試合後', color: 'rose' },
     { id: 'trends', label: '📈 傾向', color: 'sky' },
+    { id: 'goal', label: '🎯 目標', color: 'green' },
     { id: 'tilt', label: '🧠 ティルト', color: 'amber' },
     { id: 'matchup', label: '⚔️ マッチアップ', color: 'emerald' },
   ] as const;
@@ -754,6 +883,7 @@ export default function CoachPage() {
     pre: <PreGameTab />,
     post: <PostGameTab />,
     trends: <TrendsTab />,
+    goal: <GoalTab />,
     tilt: <TiltTab />,
     matchup: <MatchupTab />,
   };
@@ -762,6 +892,7 @@ export default function CoachPage() {
     indigo: 'border-indigo-400 text-indigo-300',
     rose: 'border-rose-400 text-rose-300',
     sky: 'border-sky-400 text-sky-300',
+    green: 'border-green-400 text-green-300',
     amber: 'border-amber-400 text-amber-300',
     emerald: 'border-emerald-400 text-emerald-300',
   };
