@@ -19,7 +19,8 @@ export function createRecruitEmbed(metadata) {
     color: isFull ? 0xe74c3c : 0x2ecc71,
     thumbnail: { url: pixelUrl },
     footer: { text: visibleFooter },
-    timestamp: new Date().toISOString()
+    // 投稿時刻を固定表示（再描画で現在時刻に上書きしない）。古い募集はcreatedAt無しなので従来通り現在時刻。
+    timestamp: metadata.createdAt || new Date().toISOString()
   };
 }
 
