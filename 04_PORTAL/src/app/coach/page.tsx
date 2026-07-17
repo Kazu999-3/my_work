@@ -344,14 +344,25 @@ function TrendsTab() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState('');
+  const [menu, setMenu] = useState<any>(null);
+  const [menuLoading, setMenuLoading] = useState(false);
 
   const analyze = async () => {
-    setLoading(true); setError(''); setResult(null);
+    setLoading(true); setError(''); setResult(null); setMenu(null);
     try {
       const data = await callCoachAPI({ mode: 'trends' });
       setResult(data);
     } catch (e: any) { setError(e.message); }
     finally { setLoading(false); }
+  };
+
+  const generateMenu = async () => {
+    setMenuLoading(true);
+    try {
+      const data = await callCoachAPI({ mode: 'practice_menu' });
+      setMenu(data);
+    } catch (e: any) { setError(e.message); }
+    finally { setMenuLoading(false); }
   };
 
   const PhaseBar = ({ phases }: { phases: { 序盤: number; 中盤: number; 終盤: number } }) => {
@@ -460,6 +471,42 @@ function TrendsTab() {
             <div>
               <div className="mb-1 text-sm font-semibold text-sky-300">🎯 今週のフォーカス</div>
               <AdviceBox text={result.summary} />
+            </div>
+          )}
+
+          {/* 今週の練習メニュー生成（構造化） */}
+          {!menu && (
+            <button
+              onClick={generateMenu}
+              disabled={menuLoading}
+              className="w-full rounded-xl border border-sky-500/40 bg-sky-500/10 px-5 py-3 text-sm font-semibold text-sky-200 transition hover:bg-sky-500/20 disabled:opacity-50"
+            >
+              {menuLoading ? '生成中...' : '📝 今週の練習メニューを作成'}
+            </button>
+          )}
+
+          {menu && menu.enough === false && (
+            <Card><p className="text-sm text-white/60">{menu.message}</p></Card>
+          )}
+
+          {menu && menu.menu?.length > 0 && (
+            <div>
+              <div className="mb-2 text-sm font-semibold text-sky-300">📝 今週の練習メニュー</div>
+              <div className="space-y-2">
+                {menu.menu.map((m: any, i: number) => (
+                  <div key={i} className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
+                    <div className="flex items-start gap-2">
+                      <span className="mt-0.5 text-sky-400">✔</span>
+                      <div className="flex-1">
+                        <div className="font-bold text-white text-sm">{m.title}</div>
+                        {m.detail && <div className="text-xs text-white/60 mt-0.5 leading-relaxed">{m.detail}</div>}
+                        {m.target && <div className="inline-block mt-1.5 text-[11px] font-bold text-amber-300 bg-amber-400/10 border border-amber-400/30 rounded px-2 py-0.5">目標: {m.target}</div>}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {menu.note && <p className="text-xs text-white/50 mt-2">💬 {menu.note}</p>}
             </div>
           )}
         </div>

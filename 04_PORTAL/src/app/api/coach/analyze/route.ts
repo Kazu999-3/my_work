@@ -281,6 +281,56 @@ function diagnoseTilt(matches: any[]): {
 }
 
 // ============================
+// coach_analyses の蓄積ログから傾向を集計する共通ヘルパー（trends / practice_menu 両モードで使用）
+// ============================
+interface TrendAggregates {
+  count: number;
+  winRate: number;
+  totalDeaths: number;
+  deathPhases: { 序盤: number; 中盤: number; 終盤: number };
+  topKillers: { champion: string; count: number }[];
+  topWeaknesses: { label: string; count: number }[];
+  csTrend: { recent: number; older: number };
+  visionTrend: { recent: number; older: number };
+}
+
+function computeTrendAggregates(analyses: any[]): TrendAggregates {
+  const deathPhases = { 序盤: 0, 中盤: 0, 終盤: 0 };
+  const killerCount: Record<string, number> = {};
+  let totalDeaths = 0;
+  for (const a of analyses) {
+    for (const ev of (a.death_timeline || []) as { phase: string; killer: string }[]) {
+      if (ev.phase && deathPhases[ev.phase as keyof typeof deathPhases] !== undefined) deathPhases[ev.phase as keyof typeof deathPhases]++;
+      if (ev.killer && ev.killer !== '不明') killerCount[ev.killer] = (killerCount[ev.killer] || 0) + 1;
+      totalDeaths++;
+    }
+  }
+  const topKillers = Object.entries(killerCount).sort((a, b) => b[1] - a[1]).slice(0, 5)
+    .map(([champion, count]) => ({ champion, count }));
+
+  const weaknessCount: Record<string, number> = {};
+  for (const a of analyses) {
+    for (const w of (a.weaknesses || []) as string[]) {
+      const cat = String(w).split(' ')[0].split('(')[0].trim();
+      if (cat) weaknessCount[cat] = (weaknessCount[cat] || 0) + 1;
+    }
+  }
+  const topWeaknesses = Object.entries(weaknessCount).sort((a, b) => b[1] - a[1]).slice(0, 5)
+    .map(([label, count]) => ({ label, count }));
+
+  const avg = (arr: number[]) => arr.length ? arr.reduce((s, v) => s + v, 0) / arr.length : 0;
+  const half = Math.floor(analyses.length / 2);
+  const recent = analyses.slice(0, half || 1);
+  const older = analyses.slice(half || 1);
+  const num = (a: any[], k: string) => a.map((x) => Number(x[k])).filter((v) => !isNaN(v));
+  const csTrend = { recent: +avg(num(recent, 'cs_per_min')).toFixed(1), older: +avg(num(older, 'cs_per_min')).toFixed(1) };
+  const visionTrend = { recent: +avg(num(recent, 'vision_per_min')).toFixed(2), older: +avg(num(older, 'vision_per_min')).toFixed(2) };
+  const winRate = Math.round((analyses.filter((a) => a.win).length / analyses.length) * 100);
+
+  return { count: analyses.length, winRate, totalDeaths, deathPhases, topKillers, topWeaknesses, csTrend, visionTrend };
+}
+
+// ============================
 // メインAPI
 // ============================
 export async function POST(req: NextRequest) {
@@ -327,40 +377,8 @@ export async function POST(req: NextRequest) {
         });
       }
 
-      // デス時間帯の分布
-      const phaseCount = { 序盤: 0, 中盤: 0, 終盤: 0 };
-      const killerCount: Record<string, number> = {};
-      let totalDeaths = 0;
-      for (const a of analyses) {
-        for (const ev of (a.death_timeline || []) as { phase: string; killer: string }[]) {
-          if (ev.phase && phaseCount[ev.phase as keyof typeof phaseCount] !== undefined) phaseCount[ev.phase as keyof typeof phaseCount]++;
-          if (ev.killer && ev.killer !== '不明') killerCount[ev.killer] = (killerCount[ev.killer] || 0) + 1;
-          totalDeaths++;
-        }
-      }
-      const topKillers = Object.entries(killerCount).sort((a, b) => b[1] - a[1]).slice(0, 5)
-        .map(([champ, n]) => ({ champion: champ, count: n }));
-
-      // 弱点の再発集計（先頭トークンでカテゴリ化: CS/min, Vision/min, デス数, KDA など）
-      const weaknessCount: Record<string, number> = {};
-      for (const a of analyses) {
-        for (const w of (a.weaknesses || []) as string[]) {
-          const cat = String(w).split(' ')[0].split('(')[0].trim();
-          if (cat) weaknessCount[cat] = (weaknessCount[cat] || 0) + 1;
-        }
-      }
-      const topWeaknesses = Object.entries(weaknessCount).sort((a, b) => b[1] - a[1]).slice(0, 5)
-        .map(([label, n]) => ({ label, count: n }));
-
-      // CS/Vision/勝率の傾向（新しい順の配列なので、後半=古い / 前半=新しい で改善方向を見る）
-      const avg = (arr: number[]) => arr.length ? arr.reduce((s, v) => s + v, 0) / arr.length : 0;
-      const half = Math.floor(analyses.length / 2);
-      const recent = analyses.slice(0, half || 1);   // 新しい方
-      const older = analyses.slice(half || 1);        // 古い方
-      const num = (a: any[], k: string) => a.map((x) => Number(x[k])).filter((v) => !isNaN(v));
-      const csTrend = { recent: +avg(num(recent, 'cs_per_min')).toFixed(1), older: +avg(num(older, 'cs_per_min')).toFixed(1) };
-      const visionTrend = { recent: +avg(num(recent, 'vision_per_min')).toFixed(2), older: +avg(num(older, 'vision_per_min')).toFixed(2) };
-      const winRate = Math.round((analyses.filter((a) => a.win).length / analyses.length) * 100);
+      const agg = computeTrendAggregates(analyses);
+      const { deathPhases: phaseCount, topKillers, topWeaknesses, csTrend, visionTrend, winRate, totalDeaths } = agg;
 
       // LLMで傾向の要約と今週のフォーカスを1つ提案
       const trendPrompt = `あなたはLoLの成長コーチです。あるプレイヤーの直近${analyses.length}試合の集計データから、繰り返し現れる課題を1つに絞り込み、今週の練習フォーカスを提案してください。
@@ -387,6 +405,67 @@ Vision/min傾向: 直近${visionTrend.recent} ← 以前${visionTrend.older}
         csTrend,
         visionTrend,
         summary,
+      });
+    }
+
+    // ----------------------------
+    // MODE: practice_menu - 蓄積データから今週の練習メニューを構造化生成
+    // ----------------------------
+    if (mode === 'practice_menu') {
+      const limit = Math.min(50, Math.max(5, Number(body.limit) || 20));
+      const { data: rows } = await supabase
+        .from('coach_analyses')
+        .select('*')
+        .eq('puuid', puuid)
+        .order('created_at', { ascending: false })
+        .limit(limit);
+
+      const analyses = rows || [];
+      if (analyses.length < 3) {
+        return NextResponse.json({
+          mode: 'practice_menu',
+          enough: false,
+          count: analyses.length,
+          message: '練習メニュー生成には試合後振り返りの蓄積が3件以上必要です。',
+        });
+      }
+
+      const agg = computeTrendAggregates(analyses);
+      const menuPrompt = `あなたはLoLの成長コーチです。あるプレイヤーの直近${analyses.length}試合の集計から、今週取り組むべき練習メニューを作ってください。
+
+デス時間帯（回数）: 序盤${agg.deathPhases.序盤} / 中盤${agg.deathPhases.中盤} / 終盤${agg.deathPhases.終盤}
+繰り返し狩られている相手: ${agg.topKillers.map((k) => `${k.champion}(${k.count})`).join(', ') || 'なし'}
+再発している弱点: ${agg.topWeaknesses.map((w) => `${w.label}(${w.count})`).join(', ') || 'なし'}
+CS/min: 直近${agg.csTrend.recent} / 以前${agg.csTrend.older}　Vision/min: 直近${agg.visionTrend.recent} / 以前${agg.visionTrend.older}　勝率: ${agg.winRate}%
+
+上記データの弱点に直結する、具体的で実行可能な練習項目を3〜4個作ってください。必ず以下のJSON形式のみを出力（前置き・コードブロック禁止）。各項目は日本語:
+{
+  "menu": [
+    { "title": "<練習の狙い(20字以内)>", "detail": "<具体的な練習内容・意識点(60字以内)>", "target": "<達成目標(例: 3戦, 10分デス0, CS7.0/min など)>" }
+  ],
+  "note": "<全体の一言アドバイス(50字以内)>"
+}`;
+      const raw = await callGemini(menuPrompt, `menu:${puuid}:${analyses.length}`);
+
+      let parsed: any = null;
+      try {
+        let cleaned = raw.trim();
+        if (cleaned.startsWith('```')) cleaned = cleaned.replace(/^```[a-z]*\n?/, '').replace(/```$/, '').trim();
+        const jsonStart = cleaned.indexOf('{');
+        const jsonEnd = cleaned.lastIndexOf('}');
+        if (jsonStart >= 0 && jsonEnd > jsonStart) cleaned = cleaned.slice(jsonStart, jsonEnd + 1);
+        parsed = JSON.parse(cleaned);
+      } catch {
+        // パース失敗時は生テキストを1項目として返す（UI側で表示可能）
+        parsed = { menu: [{ title: '今週の練習', detail: raw.slice(0, 200), target: '' }], note: '' };
+      }
+
+      return NextResponse.json({
+        mode: 'practice_menu',
+        enough: true,
+        count: analyses.length,
+        menu: Array.isArray(parsed.menu) ? parsed.menu : [],
+        note: parsed.note || '',
       });
     }
 
