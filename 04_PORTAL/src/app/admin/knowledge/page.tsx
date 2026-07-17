@@ -6,6 +6,7 @@ import { Brain, Search, Plus, Trash2, Calendar, Link as LinkIcon, RefreshCw, Fil
 import Link from 'next/link';
 import YoutubeQueueManager from '../youtube/YoutubeQueueManager';
 import LibraryTabContent from './LibraryTabContent';
+import DictReviewPanel from './DictReviewPanel';
 import { supabaseBrowser } from '../../../lib/supabaseBrowserClient';
 
 interface KnowledgeItem {
@@ -39,8 +40,8 @@ export default function KnowledgeBase() {
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
-  // ページ内タブ: ナレッジ一覧 or 動画キュー or 攻略ライブラリ
-  const [activeTab, setActiveTab] = useState<'knowledge' | 'video' | 'library'>('knowledge');
+  // ページ内タブ: ナレッジ一覧 or 動画キュー or 攻略ライブラリ or 鮮度レビュー
+  const [activeTab, setActiveTab] = useState<'knowledge' | 'video' | 'library' | 'review'>('knowledge');
 
   // 認証の確認（middleware.tsが/admin/*をCookieでゲート済み。UIローディング制御のみ）
   useEffect(() => {
@@ -312,6 +313,7 @@ export default function KnowledgeBase() {
             { id: 'knowledge', label: '📖 ナレッジ一覧', icon: BookOpen },
             { id: 'video', label: '⏳ 動画解析キュー', icon: Video },
             { id: 'library', label: '🗂️ 攻略ライブラリ', icon: Layers },
+            { id: 'review', label: '🔄 鮮度レビュー', icon: Sparkles },
           ].map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -333,6 +335,7 @@ export default function KnowledgeBase() {
         {/* --- タブ別コンテンツ --- */}
         {activeTab === 'video' && <YoutubeQueueManager />}
         {activeTab === 'library' && <LibraryTabContent />}
+        {activeTab === 'review' && <DictReviewPanel />}
 
         {activeTab === 'knowledge' && (
           <div className="space-y-8 animate-in">
