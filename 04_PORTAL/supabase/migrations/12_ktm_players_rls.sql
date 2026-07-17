@@ -11,13 +11,12 @@
 --   ・新規追加 / 削除 …… 管理者のみ
 -- 管理者の書き込みは /api/admin/players/save（サービスロール＝RLSバイパス）に集約する。
 --
--- 【重要】このマイグレーションはブラウザからの書き込み権限を変更する。適用後は
--- balancer/ktm-admin の保存挙動を必ず動作確認すること。問題があれば末尾のロールバックで戻せる。
+-- ※このスクリプトは冪等（何度でも再実行可）。DROP POLICY IF EXISTS で作り直す。
 -- ============================================================
 
 ALTER TABLE ktm_players ENABLE ROW LEVEL SECURITY;
 
--- 既存の緩いポリシーがあれば掃除（無ければ何もしない）
+-- 既存の緩いポリシーがあれば掃除
 DROP POLICY IF EXISTS "ktm_players select" ON ktm_players;
 DROP POLICY IF EXISTS "ktm_players public update" ON ktm_players;
 
@@ -32,18 +31,16 @@ CREATE POLICY "ktm_players public update" ON ktm_players FOR UPDATE USING (true)
 -- まず anon / authenticated から広い権限を剥がす
 REVOKE INSERT, DELETE, UPDATE ON ktm_players FROM anon, authenticated;
 
--- 非センシティブな列だけ UPDATE を許可（参加・希望・Pity・備考など）
+-- 非センシティブな実在カラムだけ UPDATE を許可する。
+-- ※ is_fixed / is_spectator_fixed はDBカラムではなくフロント側の一時フラグなので含めない。
 GRANT UPDATE (
   is_active,
-  is_spectator_fixed,
-  is_fixed,
   role_preferences,
   ng_lane_1,
   ng_lane_2,
   allow_higher,
   pity,
   off_role_pity,
-  spectator_pity,
   metadata
 ) ON ktm_players TO anon, authenticated;
 
