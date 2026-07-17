@@ -28,7 +28,31 @@ const ALREADY_EXISTS = new Set([
   '42723', // duplicate_function
 ]);
 
-const client = new pg.Client({ connectionString: url, ssl: { rejectUnauthorized: false } });
+// 接続文字列を手動で分解する。パスワードに記号(@ : # ? など)が含まれていると
+// URL標準パーサ(pgのconnectionString)が壊れるため、右側の最後の@で区切って安全に取り出す。
+function parsePgUrl(raw) {
+  const s = raw.trim().replace(/^postgres(?:ql)?:\/\//, '');
+  const at = s.lastIndexOf('@');
+  if (at < 0) throw new Error('接続文字列に @ が見つかりません。形式を確認してください。');
+  const creds = s.slice(0, at);
+  const hostPart = s.slice(at + 1);
+  const ci = creds.indexOf(':');
+  const user = ci >= 0 ? creds.slice(0, ci) : creds;
+  const password = ci >= 0 ? creds.slice(ci + 1) : '';
+  const slash = hostPart.indexOf('/');
+  const hostPort = slash >= 0 ? hostPart.slice(0, slash) : hostPart;
+  let database = slash >= 0 ? hostPart.slice(slash + 1) : 'postgres';
+  const q = database.indexOf('?');
+  if (q >= 0) database = database.slice(0, q);
+  const colon = hostPort.lastIndexOf(':');
+  const host = colon >= 0 ? hostPort.slice(0, colon) : hostPort;
+  const port = colon >= 0 ? parseInt(hostPort.slice(colon + 1), 10) : 5432;
+  return { user, password, host, port, database };
+}
+
+const cfg = parsePgUrl(url);
+console.log(`接続先: host=${cfg.host} port=${cfg.port} db=${cfg.database} user=${cfg.user}`);
+const client = new pg.Client({ ...cfg, ssl: { rejectUnauthorized: false } });
 
 async function main() {
   await client.connect();
