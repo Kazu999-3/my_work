@@ -1,0 +1,32 @@
+name: Supabase Migrations
+
+# マイグレーション(04_PORTAL/supabase/migrations)を追加してpushすると、
+# 自動でSupabaseに適用する。適用済みは _migrations テーブルで管理し、新規分だけ流す。
+# 手動実行(workflow_dispatch)も可能。
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - '04_PORTAL/supabase/migrations/**'
+  workflow_dispatch:
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install pg
+        run: npm install pg@8
+
+      - name: Apply migrations
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: node scripts/migrate.mjs
