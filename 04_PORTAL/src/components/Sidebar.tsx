@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Shield, LayoutDashboard, Swords, BookOpen, BookHeart, Trophy, Users, HeartHandshake, ScrollText, ListVideo, ChevronLeft, ChevronRight, Coins, Brain, Trees, Sparkles, Search } from 'lucide-react';
 import FavoritesPanel from './FavoritesPanel';
+import PushOptIn from './PushOptIn';
 
 // 一般ユーザー用 (管理者エリア外で表示)
 const MENU_ITEMS = [
@@ -184,6 +185,11 @@ export default function Sidebar() {
 
         {/* お気に入りパネル */}
         <FavoritesPanel isCollapsed={isCollapsed} />
+
+        {/* Web Push 通知の有効化（#52） */}
+        <div className="mt-2">
+          <PushOptIn collapsed={isCollapsed} />
+        </div>
 
         {/* 管理者用ログインリンク（一般画面かつ展開時のみ表示） */}
         {!isAdminArea && !isCollapsed && (
