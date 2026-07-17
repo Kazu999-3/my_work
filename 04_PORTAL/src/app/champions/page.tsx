@@ -64,6 +64,8 @@ function ChampionsContent() {
     early_game_score: number; mid_game_score: number; late_game_score: number;
     peak_window: string; summary: string;
   } | null>(null);
+  // KTM実戦成績（#51 辞典vs実戦の可視化）
+  const [ktmStats, setKtmStats] = useState<any>(null);
   const [saving, setSaving] = useState(false);
   const [copied, setCopied] = useState(false);
   const [noteDraftMode, setNoteDraftMode] = useState<'preview' | 'edit'>('preview');
@@ -386,6 +388,13 @@ function ChampionsContent() {
         .eq('champion', champId)
         .maybeSingle();
       setPowerSpikeScores(spikeData || null);
+
+      // KTMカスタムでのそのチャンピオンの実戦成績を取得（#51）
+      setKtmStats(null);
+      fetch(`/api/champion-stats?champion=${encodeURIComponent(champId)}`)
+        .then(r => r.json())
+        .then(d => setKtmStats(d && !d.error ? d : null))
+        .catch(() => setKtmStats(null));
       
       // Storageからの下書きデータ取得連携（削減案①）
       let loadedNoteDraft = rd.note_draft || '';
@@ -811,6 +820,46 @@ function ChampionsContent() {
             </div>
           </div>
         </div>
+
+        {/* KTM実戦データ（#51 辞典vs実戦の可視化）: 辞典の主張と実際のカスタム成績を並べて確認 */}
+        {ktmStats && ktmStats.games > 0 && (
+          <div className="glass-panel rounded-2xl p-5 border-l-4 border-[#00cfef]">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-sm font-black text-[#00cfef]">📊 KTMカスタムでの実戦データ</span>
+              <span className="text-xs text-gray-500">({ktmStats.games}戦)</span>
+              <span className="text-[10px] text-gray-500 ml-auto">※ 辞典の記述とこの実績を見比べて、古い/実態と違う情報に気づけます</span>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="bg-black/30 rounded-xl p-3 text-center">
+                <div className="text-[10px] text-gray-400">勝率</div>
+                <div className={`text-xl font-black ${ktmStats.winRate >= 50 ? 'text-emerald-400' : 'text-rose-400'}`}>{ktmStats.winRate}%</div>
+              </div>
+              <div className="bg-black/30 rounded-xl p-3 text-center">
+                <div className="text-[10px] text-gray-400">平均KDA</div>
+                <div className="text-xl font-black text-white">{ktmStats.avgKda}</div>
+                <div className="text-[9px] text-gray-500">{ktmStats.avgKills}/{ktmStats.avgDeaths}/{ktmStats.avgAssists}</div>
+              </div>
+              <div className="bg-black/30 rounded-xl p-3 text-center">
+                <div className="text-[10px] text-gray-400">平均CS</div>
+                <div className="text-xl font-black text-white">{ktmStats.avgCs ?? '-'}</div>
+              </div>
+              <div className="bg-black/30 rounded-xl p-3 text-center">
+                <div className="text-[10px] text-gray-400">平均視界</div>
+                <div className="text-xl font-black text-white">{ktmStats.avgVision}</div>
+              </div>
+            </div>
+            {ktmStats.topPlayers?.length > 0 && (
+              <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                <span className="text-[10px] text-gray-500">主な使用者:</span>
+                {ktmStats.topPlayers.map((p: any) => (
+                  <span key={p.name} className="text-[10px] bg-white/5 border border-white/10 rounded px-1.5 py-0.5 text-gray-300">
+                    {p.name} ({p.games}戦 {p.winRate}%)
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <TextAreaCard title="強み (Strengths)" icon={Swords} color="text-[var(--color-success)] border-[var(--color-success)] shadow-[var(--color-success)]" value={dataFields.strengths} onChange={v => setField('strengths', v)} />
