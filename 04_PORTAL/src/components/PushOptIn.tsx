@@ -40,7 +40,8 @@ export default function PushOptIn({ collapsed = false }: { collapsed?: boolean }
       const reg = await navigator.serviceWorker.ready;
       const sub = await reg.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(vapid),
+        // 新しいTSのUint8Array型(ArrayBufferLike)がBufferSourceと厳密には非互換になるためキャスト
+        applicationServerKey: urlBase64ToUint8Array(vapid) as unknown as BufferSource,
       });
       const res = await fetch('/api/push/subscribe', {
         method: 'POST',
