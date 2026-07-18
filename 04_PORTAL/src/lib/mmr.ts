@@ -122,28 +122,31 @@ export function calculateInitialMmr(highestRank: string | null, role: string, pr
 }
 
 export interface MmrCalcContext {
+  // --- calculateNewMMR が実際に使う項目 ---
   currentMmr: number;
   opponentMmr: number;
   isWin: boolean;
   kills: number;
   deaths: number;
   assists: number;
-  mainRank: string; // ex. 'GOLD'
-  numGames: number; // そのレーンでの試合数
   matchupCount: number; // 相手との対面回数
   totalWinRate: number; // 全体勝率 (0~100)
-  visionScore: number;
-  cs: number;
-  damageDealt: number;
-  damageTaken: number;
-  objectiveDamage: number;
-  healShield: number;
   role: string;
-  teamTotalKills: number;
-  isDamageMvp: boolean;
-  isObjectiveMvp: boolean;
-  isTankMvp: boolean;
-  isHealMvp: boolean;
+  // --- 以下は現行の計算では未使用（将来のスタッツ加点用に型だけ残す / M1で任意化）。
+  //     未使用の項目を毎試合計算する無駄を避けるため optional にした。 ---
+  mainRank?: string;
+  numGames?: number;
+  visionScore?: number;
+  cs?: number;
+  damageDealt?: number;
+  damageTaken?: number;
+  objectiveDamage?: number;
+  healShield?: number;
+  teamTotalKills?: number;
+  isDamageMvp?: boolean;
+  isObjectiveMvp?: boolean;
+  isTankMvp?: boolean;
+  isHealMvp?: boolean;
   csd15?: number; // 15分時点での対面とのCS差
 }
 
@@ -190,11 +193,13 @@ export function calculateNewMMR(ctx: MmrCalcContext): number {
   const kdaBonus = Math.max(0, Math.min(15, (kdaScore - 2.0) * 5));
 
   // ④ 対面回数補正 (身内戦でのブレ防止)
+  // 以前は 0.8/0.6/0.4 と強く減衰させていたため、全員が頻繁に対面する身内では
+  // MMRがほとんど動かず収束が遅かった(M3)。ブレ防止は残しつつ緩める。
   let matchupDampener = 1.0;
   if (!isPlacement && matchupCount) {
-    if (matchupCount >= 3) matchupDampener = 0.8;
-    if (matchupCount >= 5) matchupDampener = 0.6;
-    if (matchupCount >= 8) matchupDampener = 0.4;
+    if (matchupCount >= 3) matchupDampener = 0.9;
+    if (matchupCount >= 5) matchupDampener = 0.8;
+    if (matchupCount >= 8) matchupDampener = 0.7;
   }
 
   // ボーナスを合算
@@ -205,9 +210,9 @@ export function calculateNewMMR(ctx: MmrCalcContext): number {
   if (isWin) {
     delta = Math.max(0, Math.min(50, delta)); // 最大+50
   } else {
-    // 負けた時は、加点が多くても最終的に「0」で踏みとどまる (プラスにはならない)
-    // 変更: 減少幅の下限を -30 から -40 に拡大し、より実力差を反映しやすくする
-    delta = Math.max(-40, Math.min(0, delta)); // 最小-40
+    // 敗北は必ず最低3ポイント減点する(M2)。以前は高KDA×格上相手だと加点で相殺され
+    // delta が0になり「負けても下がらない」ことがあり、レートの上振れ(インフレ)要因だった。
+    delta = Math.max(-40, Math.min(-3, delta)); // -40 〜 -3
   }
 
   return delta;
@@ -318,26 +323,14 @@ export async function performFullMmrRebuild(supabase: SupabaseClient) {
       }
 
       const isWin = p.team === match.winning_team;
-      const teamParticipants = participants.filter((pt: any) => pt.team === p.team);
-      const teamTotalKills = teamParticipants.reduce((acc: number, curr: any) => acc + (curr.kills || 0), 0);
-      
-      const isDamageMvp = teamParticipants.every((pt: any) => (p.damage_dealt || 0) >= (pt.damage_dealt || 0)) && (p.damage_dealt || 0) > 0;
-      const isObjectiveMvp = teamParticipants.every((pt: any) => (p.objective_damage || 0) >= (pt.objective_damage || 0)) && (p.objective_damage || 0) > 0;
-      const isTankMvp = teamParticipants.every((pt: any) => (p.damage_taken || 0) >= (pt.damage_taken || 0)) && (p.damage_taken || 0) > 0;
-      const isHealMvp = teamParticipants.every((pt: any) => (p.heal_shield || 0) >= (pt.heal_shield || 0)) && (p.heal_shield || 0) > 0;
 
-      const ctx = {
+      // calculateNewMMR が実際に使う項目のみ渡す（未使用スタッツの無駄計算を廃止 M1）
+      const ctx: MmrCalcContext = {
         currentMmr: playerSnapshot[mmrKey] || 1200, opponentMmr, isWin,
         kills: p.kills || 0, deaths: p.deaths || 0, assists: p.assists || 0,
-        mainRank: memPlayer.highest_rank ? memPlayer.highest_rank.split(' ')[0].toUpperCase() : 'UNRANKED',
-        numGames: playerSnapshot.laneGames[role] || 0,
         matchupCount,
         totalWinRate: playerSnapshot.totalGames > 0 ? (playerSnapshot.totalWins / playerSnapshot.totalGames) * 100 : 50,
-        visionScore: p.vision_score || 0, cs: p.cs || 0,
-        damageDealt: p.damage_dealt || 0, damageTaken: p.damage_taken || 0,
-        objectiveDamage: p.objective_damage || 0, healShield: p.heal_shield || 0,
-        role, teamTotalKills, isDamageMvp, isObjectiveMvp, isTankMvp, isHealMvp,
-        csd15: p.csd15
+        role,
       };
 
       const delta = calculateNewMMR(ctx);
@@ -412,7 +405,16 @@ export async function performFullMmrRebuild(supabase: SupabaseClient) {
 
   // プレイヤーテーブルのMMR一括更新 (件数が少ないため、Identity制意エラーを避けるべく個別 update で並列処理)
   const playerUpdates = Array.from(playersMap.values()).map(p => {
-    const avgMmr = Math.round((p.mmr_top + p.mmr_jg + p.mmr_mid + p.mmr_adc + p.mmr_sup) / 5);
+    // 代表MMRは「実際にプレイしたレーンの試合数」で重み付け平均する(M4)。
+    // やらないレーンのランク由来初期値に薄まる問題を解消。試合が無い人だけ従来の単純平均。
+    const lanes: [string, number][] = [
+      ['TOP', p.mmr_top], ['JG', p.mmr_jg], ['MID', p.mmr_mid], ['ADC', p.mmr_adc], ['SUP', p.mmr_sup],
+    ];
+    let wSum = 0, gSum = 0;
+    for (const [lk, m] of lanes) { const g = p.laneGames[lk] || 0; wSum += m * g; gSum += g; }
+    const avgMmr = gSum > 0
+      ? Math.round(wSum / gSum)
+      : Math.round((p.mmr_top + p.mmr_jg + p.mmr_mid + p.mmr_adc + p.mmr_sup) / 5);
     return {
       id: p.id,
       mmr_top: p.mmr_top,

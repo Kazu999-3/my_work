@@ -169,14 +169,18 @@ function runBalanceSearch(players: Player[], ctx: BalanceContext): RawBalanceCan
 
   const HIGH_RANKS = ['PLATINUM', 'EMERALD', 'DIAMOND', 'MASTER', 'GRANDMASTER', 'CHALLENGER'];
 
-  // こだわり度1（絶対）の過剰競合を自動調停
+  // こだわり度1（絶対）の過剰競合を自動調停。
+  // 入力Playerのweightを直接書き換えると呼び出し側に副作用が残るため、実効weightを
+  // ローカルMapで管理する(B3)。以降のペナルティ計算はこのMapを参照する。
+  const effectiveWeight = new Map<Player, number>();
+  players.forEach(p => effectiveWeight.set(p, p.weight));
   ROLES.forEach(role => {
     const strictCandidates = players
-      .filter(p => p.pref1 === role && p.weight === 1 && !p.isFixed)
+      .filter(p => p.pref1 === role && (effectiveWeight.get(p) ?? p.weight) === 1 && !p.isFixed)
       .sort((a, b) => b.pity - a.pity);
     if (strictCandidates.length > 2) {
       for (let i = 2; i < strictCandidates.length; i++) {
-        strictCandidates[i].weight = 2; // 通常に格下げ
+        effectiveWeight.set(strictCandidates[i], 2); // 通常に格下げ（実効値のみ・入力は不変）
       }
     }
   });
@@ -448,26 +452,27 @@ function runBalanceSearch(players: Player[], ctx: BalanceContext): RawBalanceCan
 
           const checkRolePenalty = (p: Player, currentRole: Role) => {
             const isSpecialist = ['JG', 'SUP', 'ADC'].includes(p.pref1);
+            const w = effectiveWeight.get(p) ?? p.weight; // 実効weight(B3)
             let rolePenalty = 0;
             if (currentRole === p.ng1 || currentRole === p.ng2) {
               rolePenalty = 1000000;
-              if (p.weight === 1) rolePenalty *= 10;
-              else if (p.weight === 2) rolePenalty *= 2;
+              if (w === 1) rolePenalty *= 10;
+              else if (w === 2) rolePenalty *= 2;
             } else if (p.isFixed || p.pref1 === 'ALL' || p.pref1 === currentRole) {
               rolePenalty = 0;
             } else if (p.pref2 === currentRole) {
               rolePenalty = 500 + (p.pity * 10000);
               if (p.pity >= 4) rolePenalty += 40000;
               if (isSpecialist) rolePenalty *= 2;
-              if (p.weight === 1) rolePenalty *= 10;   
-              if (p.weight === 3) rolePenalty *= 0.5; 
+              if (w === 1) rolePenalty *= 10;
+              if (w === 3) rolePenalty *= 0.5;
               rolePenalty += p.off_role_pity * 30000;
             } else {
               rolePenalty = 5000 + (p.pity * 20000);
               if (p.pity >= 4) rolePenalty += 60000;
               if (isSpecialist) rolePenalty *= 3;
-              if (p.weight === 1) rolePenalty *= 20;  
-              if (p.weight === 3) rolePenalty *= 0.2;  
+              if (w === 1) rolePenalty *= 20;
+              if (w === 3) rolePenalty *= 0.2;
               rolePenalty += p.off_role_pity * 50000;
             }
             if ((p.isNewbie || p.isOutlierLow) && (currentRole === 'JG' || currentRole === 'MID')) {
@@ -544,15 +549,10 @@ function runBalanceSearch(players: Player[], ctx: BalanceContext): RawBalanceCan
           penalty += 8000;
         }
 
-        const lowestInA = teamAIndices.some(idx => players[idx].name === lowestMMRPlayerName);
         const worstWRInA = teamAIndices.some(idx => players[idx].name === worstWRPlayerName);
 
         let handicap = 0;
-        if (lowestMMRPlayerName) {
-          const baseHandicap = 0;
-          handicap += (lowestInA ? baseHandicap : -baseHandicap);
-        }
-        if (worstWRPlayerName) handicap += (worstWRInA ? 100 : -100);  
+        if (worstWRPlayerName) handicap += (worstWRInA ? 100 : -100);
         
         const newbieCountA = teamAIndices.filter(idx => players[idx].isNewbie).length;
         const newbieCountB = (players.filter(p => p.isNewbie).length) - newbieCountA;
