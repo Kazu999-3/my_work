@@ -1,6 +1,7 @@
 import { CONFIG } from '../config.js';
 import { fetchSupabase } from '../utils/supabase.js';
 import { parseMessageData } from '../utils/helpers.js';
+import { fetchWithRetry } from '../utils/api.js';
 
 export async function handleScheduledEvent(event, env, ctx) {
   console.log("Scheduled event triggered:", JSON.stringify(event));
@@ -88,7 +89,7 @@ async function createWeeklyEvents(env) {
     
     // 1. チャンネル情報から Guild ID を動的に取得
     console.log(`Fetching channel info for channel: ${channelId}`);
-    const channelRes = await fetch(`https://discord.com/api/v10/channels/${channelId}`, {
+    const channelRes = await fetchWithRetry(`https://discord.com/api/v10/channels/${channelId}`, {
       headers: {
         'Authorization': `Bot ${env.DISCORD_TOKEN}`
       }
@@ -258,7 +259,7 @@ async function sendEventUsersNotification(env, options = {}) {
     const channelId = CONFIG.MATCH_CHANNEL_ID || "1487077567939743995";
     
     // 1. チャンネル情報から Guild ID を動的に取得
-    const channelRes = await fetch(`https://discord.com/api/v10/channels/${channelId}`, {
+    const channelRes = await fetchWithRetry(`https://discord.com/api/v10/channels/${channelId}`, {
       headers: {
         'Authorization': `Bot ${env.DISCORD_TOKEN}`
       }
@@ -275,7 +276,7 @@ async function sendEventUsersNotification(env, options = {}) {
     }
 
     // 2. Guild 内の Scheduled Events 一覧を取得
-    const eventsRes = await fetch(`https://discord.com/api/v10/guilds/${guildId}/scheduled-events`, {
+    const eventsRes = await fetchWithRetry(`https://discord.com/api/v10/guilds/${guildId}/scheduled-events`, {
       headers: {
         'Authorization': `Bot ${env.DISCORD_TOKEN}`
       }
@@ -312,7 +313,7 @@ async function sendEventUsersNotification(env, options = {}) {
     const eventDetails = [];
     for (const targetEvent of targetEvents) {
       console.log(`Fetching users for event: ${targetEvent.name} (${targetEvent.id})`);
-      const usersRes = await fetch(`https://discord.com/api/v10/guilds/${guildId}/scheduled-events/${targetEvent.id}/users?limit=100&with_member=true`, {
+      const usersRes = await fetchWithRetry(`https://discord.com/api/v10/guilds/${guildId}/scheduled-events/${targetEvent.id}/users?limit=100&with_member=true`, {
         headers: {
           'Authorization': `Bot ${env.DISCORD_TOKEN}`
         }
@@ -435,7 +436,7 @@ async function sendEventUsersNotification(env, options = {}) {
       messageBody.allowed_mentions = { roles: [roleId] }; // 指定ロールのみ通知（@everyone等の暴発を防ぐ）
     }
 
-    const sendRes = await fetch(`https://discord.com/api/v10/channels/${channelId}/messages`, {
+    const sendRes = await fetchWithRetry(`https://discord.com/api/v10/channels/${channelId}/messages`, {
       method: 'POST',
       headers: {
         'Authorization': `Bot ${env.DISCORD_TOKEN}`,

@@ -1,5 +1,31 @@
 import { CONFIG, getPortalUrl } from '../config.js';
 
+/**
+ * リトライ付き fetch。Discord API の一時的な失敗(429/5xx/ネットワーク)で
+ * 定期通知がまるごとスキップされるのを防ぐ。429は Retry-After を尊重する。
+ */
+export async function fetchWithRetry(url, options = {}, retries = 3, baseDelayMs = 600) {
+  let lastRes = null;
+  for (let attempt = 0; attempt < retries; attempt++) {
+    try {
+      const res = await fetch(url, options);
+      if (res.status === 429 || res.status >= 500) {
+        lastRes = res;
+        const ra = Number(res.headers.get('retry-after'));
+        const wait = ra > 0 ? ra * 1000 : baseDelayMs * (attempt + 1);
+        if (attempt < retries - 1) { await new Promise(r => setTimeout(r, wait)); continue; }
+        return res; // 最終試行はそのまま返す（呼び出し側で判定）
+      }
+      return res; // 成功 or 4xx(リトライ不要)
+    } catch (e) {
+      // ネットワーク例外 → 少し待って再試行
+      if (attempt < retries - 1) { await new Promise(r => setTimeout(r, baseDelayMs * (attempt + 1))); continue; }
+      throw e;
+    }
+  }
+  return lastRes;
+}
+
 /** Discord へのメッセージ送信・更新 (Webhook / PATCH) */
 export async function sendDiscordMessage(endpoint, token, method, bodyJSON) {
   const url = `https://discord.com/api/v10/${endpoint}`;
