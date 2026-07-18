@@ -145,25 +145,34 @@ export async function GET() {
     // もし本文側にもあれば抽出
     extractMentions(targetMsg.content);
 
-    // 抽出したID群から、Discord APIを叩いて最新のユーザー名を取得する
+    // 抽出したID群から最新の表示名を取得する。
+    // 管理ダッシュボード(/api/discord/members)と同じく「サーバーニックネーム優先」で解決し、
+    // 両ページで名前が一致するようにする（ニックネーム → global_name → username）。
+    const guildIdForNames = process.env.DISCORD_GUILD_ID;
     const participantIds = Array.from(activeDiscordIds);
     const participants = await Promise.all(
       participantIds.map(async (id) => {
         try {
+          // まずギルドメンバーとして取得（nick が取れる）
+          if (guildIdForNames) {
+            const memRes = await fetch(`https://discord.com/api/v10/guilds/${guildIdForNames}/members/${id}`, {
+              headers: { Authorization: `Bot ${DISCORD_BOT_TOKEN}` },
+            });
+            if (memRes.ok) {
+              const m = await memRes.json();
+              return { id, name: m.nick || m.user?.global_name || m.user?.username || "Unknown" };
+            }
+          }
+          // フォールバック: グローバルユーザー
           const userRes = await fetch(`https://discord.com/api/v10/users/${id}`, {
-            headers: {
-              Authorization: `Bot ${DISCORD_BOT_TOKEN}`,
-            },
+            headers: { Authorization: `Bot ${DISCORD_BOT_TOKEN}` },
           });
           if (userRes.ok) {
             const userData = await userRes.json();
-            return {
-              id: id,
-              name: userData.global_name || userData.username || "Unknown"
-            };
+            return { id, name: userData.global_name || userData.username || "Unknown" };
           }
         } catch (e) {
-          console.error(`Failed to fetch user ${id}`, e);
+          console.error(`Failed to fetch member/user ${id}`, e);
         }
         return { id: id, name: "Unknown" }; // 取得失敗時のフォールバック
       })
