@@ -81,6 +81,7 @@ export default function LeaderboardPage() {
         .from('ktm_match_participants')
         .select(`
           player_name,
+          discord_id,
           role,
           team,
           ktm_matches ( winning_team )
@@ -90,11 +91,20 @@ export default function LeaderboardPage() {
         console.error('Failed to fetch match stats', mError);
       }
 
-      // 集計用マップ
-      // statsMap[playerName][role] = { games: 0, wins: 0 }
+      // MMRが discord_id 基準で集計されているので、戦績(Games/勝率)も discord_id 基準に揃える。
+      // 名前ベースのままだと、改名した人の表示戦績とMMRが食い違う。
+      const byDiscord = new Map<string, any>();
+      const byName = new Map<string, any>();
+      players.forEach((p: any) => {
+        if (p.discord_id) byDiscord.set(p.discord_id, p);
+        byName.set(p.name, p);
+      });
+      const keyOfPlayer = (p: any) => p.discord_id || p.name;
+
+      // 集計用マップ statsMap[playerKey][role] = { games, wins }
       const statsMap: Record<string, Record<string, { games: number; wins: number }>> = {};
       players.forEach((p: any) => {
-        statsMap[p.name] = {
+        statsMap[keyOfPlayer(p)] = {
           TOP: { games: 0, wins: 0 },
           JG: { games: 0, wins: 0 },
           MID: { games: 0, wins: 0 },
@@ -105,15 +115,16 @@ export default function LeaderboardPage() {
 
       if (matchesData) {
         matchesData.forEach((m: any) => {
-          const pName = m.player_name;
+          // 参加者行を discord_id 優先で解決し、その選手のバケツに集計
+          const resolved = (m.discord_id && byDiscord.get(m.discord_id)) || byName.get(m.player_name);
+          if (!resolved) return;
+          const key = keyOfPlayer(resolved);
           const role = m.role as string;
-          const team = m.team;
           const winningTeam = m.ktm_matches?.winning_team;
-
-          if (statsMap[pName] && statsMap[pName][role]) {
-            statsMap[pName][role].games += 1;
-            if (team === winningTeam) {
-              statsMap[pName][role].wins += 1;
+          if (statsMap[key] && statsMap[key][role]) {
+            statsMap[key][role].games += 1;
+            if (m.team === winningTeam) {
+              statsMap[key][role].wins += 1;
             }
           }
         });
@@ -127,12 +138,12 @@ export default function LeaderboardPage() {
         
         const roleRanking = players
           .filter((p: any) => {
-            const stats = statsMap[p.name]?.[role];
+            const stats = statsMap[keyOfPlayer(p)]?.[role];
             // 仕様: 指定した最小試合数以上の出場実績があるプレイヤーのみ表示
             return stats && stats.games >= minGames;
           })
           .map((p: any) => {
-            const stats = statsMap[p.name][role];
+            const stats = statsMap[keyOfPlayer(p)][role];
             const mmr = Number(p[mmrKey] || 1200);
             const winRate = stats.games > 0 ? ((stats.wins / stats.games) * 100).toFixed(1) : '0.0';
             return {
