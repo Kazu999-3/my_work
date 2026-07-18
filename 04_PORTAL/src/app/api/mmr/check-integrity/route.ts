@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { calculateInitialMmr, calculateNewMMR } from '../../../../lib/mmr';
+import { calculateInitialMmr, calculateNewMMR, computeRepresentativeMmr } from '../../../../lib/mmr';
 import { verifyAdminSession } from '../../../../lib/adminAuth';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
@@ -175,7 +175,12 @@ export async function GET(request: Request) {
 
     const discrepancies = [];
     for (const p of Array.from(playersMap.values())) {
-      const expectedTotal = Math.round((p.expectedTop + p.expectedJg + p.expectedMid + p.expectedAdc + p.expectedSup) / 5);
+      // 代表MMRはリビルド/ライブと同じ「試合数重み付け」で期待値を出す(N1整合)。
+      // 以前は単純平均で比較していたため、重み付け保存後に総合だけ永久にズレて見えていた。
+      const expectedTotal = computeRepresentativeMmr(
+        { TOP: p.expectedTop, JG: p.expectedJg, MID: p.expectedMid, ADC: p.expectedAdc, SUP: p.expectedSup },
+        { TOP: p.laneGames.TOP, JG: p.laneGames.JG, MID: p.laneGames.MID, ADC: p.laneGames.ADC, SUP: p.laneGames.SUP }
+      );
       
       const diffTop = p.expectedTop - p.currentTop;
       const diffJg = p.expectedJg - p.currentJg;
