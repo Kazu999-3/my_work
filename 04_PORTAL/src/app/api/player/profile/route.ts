@@ -43,7 +43,7 @@ export async function GET(request: Request) {
         deaths,
         assists,
         mmr_delta,
-        ktm_matches!inner(created_at, winning_team, ktm_match_participants(role, team, champion_name))
+        ktm_matches!inner(created_at, winning_team, ktm_match_participants(role, team, champion_name, player_name))
       `)
       .eq('player_name', playerName);
 
@@ -172,6 +172,10 @@ export async function GET(request: Request) {
       else if (role === 'ADC') currentAdc -= delta;
       else if (role === 'SUP') currentSup -= delta;
 
+      // 同ロール・別チームの対面相手を特定（ツールチップ表示用）
+      const parts = row.ktm_matches?.ktm_match_participants || [];
+      const opp = parts.find((p: any) => p.role?.toUpperCase() === role && p.team !== row.team);
+
       return {
         matchId: row.match_id,
         date: row.ktm_matches.created_at,
@@ -182,6 +186,8 @@ export async function GET(request: Request) {
         assists: row.assists || 0,
         mmrDelta: delta,
         isWin: row.team === row.ktm_matches.winning_team,
+        opponentChampion: opp?.champion_name || null,
+        opponentName: opp?.player_name || null,
         mmrHistory: matchMmr // 各レーンのMMR推移をマージ
       };
     }).slice(0, 20); // 履歴表示用に直近20件を返す

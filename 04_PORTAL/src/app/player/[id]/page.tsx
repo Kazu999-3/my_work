@@ -93,6 +93,8 @@ export default function PlayerMyPage() {
           : "-",
         mmrDelta: match.mmrDelta || 0,
         role: match.role,
+        opponentChampion: match.opponentChampion || null,
+        opponentName: match.opponentName || null,
         allMmr: historyObj,
         bigSwing: Math.abs(match.mmrDelta || 0) >= 30, // 大勝/大敗の注釈用
       };
@@ -125,6 +127,8 @@ export default function PlayerMyPage() {
             mmr: obj[lane] ?? 1200,
             isWin: m.isWin,
             champion: m.champion || 'Unknown',
+            opponentChampion: m.opponentChampion || null,
+            opponentName: m.opponentName || null,
             mmrDelta: m.mmrDelta || 0,
             date: m.date ? new Date(m.date).toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' }) : '-',
           };
@@ -288,13 +292,6 @@ export default function PlayerMyPage() {
                     <span className="bg-cyan-500/10 border border-cyan-500/20 px-2.5 py-0.5 rounded-full text-xs font-bold text-cyan-300 shadow-[0_0_10px_rgba(6,182,212,0.1)]">
                       総合MMR: <span className="text-white font-black">{player.mmr || 1000}</span>
                     </span>
-                    <Link 
-                      href={`/player/${id}/junglepedia`}
-                      className="bg-[#A63160]/10 border border-[#A63160]/30 hover:bg-[#A63160]/20 px-2.5 py-0.5 rounded-full text-[10px] font-black text-[#E35489] transition-all flex items-center gap-1 shadow-[0_0_8px_rgba(166,49,96,0.1)]"
-                    >
-                      <Activity className="w-3 h-3 text-[#E35489]" />
-                      <span>Junglepedia風分析</span>
-                    </Link>
                   </div>
                 </div>
               </div>
@@ -445,7 +442,10 @@ export default function PlayerMyPage() {
                                           const d = payload[0].payload;
                                           return (
                                             <div className="bg-black/90 border border-white/10 rounded-lg p-2 text-[10px] shadow-xl">
-                                              <div className="font-bold text-white">{d.champion}</div>
+                                              <div className="font-bold text-white">
+                                                {d.champion}{d.opponentChampion ? <span className="text-rose-300"> vs {d.opponentChampion}</span> : ''}
+                                              </div>
+                                              {d.opponentName && <div className="text-gray-500">対面: {d.opponentName}</div>}
                                               <div className={d.isWin ? 'text-emerald-400' : 'text-rose-400'}>{d.isWin ? 'WIN' : 'LOSE'}</div>
                                               <div className="text-gray-300">MMR {d.mmr} <span className={d.mmrDelta >= 0 ? 'text-emerald-400' : 'text-rose-400'}>({d.mmrDelta > 0 ? '+' : ''}{d.mmrDelta})</span></div>
                                               <div className="text-gray-500">{d.date}</div>
@@ -514,7 +514,21 @@ export default function PlayerMyPage() {
                                         onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
                                       />
                                       <span className="font-bold text-white">{d.champion}</span>
+                                      {d.opponentChampion && (
+                                        <>
+                                          <span className="text-[9px] font-black text-gray-500 italic">VS</span>
+                                          <img
+                                            src={getChampIcon(d.opponentChampion)}
+                                            className="w-6 h-6 rounded-full border border-rose-500/40"
+                                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                                          />
+                                          <span className="font-bold text-rose-300">{d.opponentChampion}</span>
+                                        </>
+                                      )}
                                     </div>
+                                    {d.opponentName && (
+                                      <div className="text-[9px] text-gray-500 mb-1">対面: {d.opponentName}</div>
+                                    )}
                                     <div className="flex justify-between items-center mt-1">
                                       <span className={`font-black text-[10px] ${d.isWin ? 'text-emerald-400' : 'text-rose-400'}`}>
                                         {d.isWin ? 'WIN' : 'LOSE'} ({d.role})
