@@ -94,32 +94,11 @@ export async function handleModalSubmit(interaction, env, ctx) {
     const discordName = interaction.member.user.global_name || interaction.member.user.username;
     ctx.waitUntil((async () => {
       try {
-        const { fetchSupabase, upsertPlayer } = await import('../utils/supabase.js');
-        let existingData = await fetchSupabase(env, 'ktm_players', `discord_id=eq.${userId}`);
-        let player = existingData && existingData.length > 0 ? existingData[0] : null;
-        
-        if (!player) {
-          // 名前で既存のプレイヤーを探す
-          const nameEscaped = encodeURIComponent(discordName);
-          const dataByName = await fetchSupabase(env, 'ktm_players', `name=eq.${nameEscaped}`);
-          if (dataByName && dataByName.length > 0) {
-            player = dataByName[0];
-            player.discord_id = userId;
-          }
-        }
-        
-        if (!player) {
-          player = { discord_id: userId, name: discordName, is_active: true };
-        }
-        
-        player.role_preferences = player.role_preferences || {};
-        if (main) player.role_preferences.primary = main;
-        if (sub) player.role_preferences.secondary = sub;
-        if (ng1) player.ng_lane_1 = ng1;
-        if (ng2) player.ng_lane_2 = ng2;
-        if (weight) player.weight = weight;
-        
-        await upsertPlayer(env, player);
+        // ktm_players はRLSでanon直書き不可。サーバーAPI(サービスロール)経由で更新する。
+        const { fetchPortalAPI } = await import('../utils/api.js');
+        await fetchPortalAPI(env, '/api/player/update-lane', {
+          discordId: userId, discordName, main, sub, ng1, ng2, weight,
+        });
       } catch (err) {
         console.error("Modal Lane Update Error:", err);
       }
