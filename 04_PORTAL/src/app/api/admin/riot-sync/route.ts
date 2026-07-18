@@ -2,6 +2,7 @@
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 import { fetchPuuidByRiotId, fetchChampionMasteryByPuuid, fetchRiotIdByPuuid, fetchLeagueByPuuid } from '../../../../lib/riot';
 import { verifyAdminSession } from '../../../../lib/adminAuth';
+import { higherRank } from '../../../../lib/mmr';
 
 export async function POST(request: Request) {
   try {
@@ -72,12 +73,14 @@ export async function POST(request: Request) {
         // (B) ランク同期を復旧。旧実装はby-summonerエンドポイント廃止による403/404を
         // 「APIキーエラー」と誤認し、ランク同期機能自体を丸ごと無効化していた。
         // 正しくはby-puuidエンドポイントに切り替えるだけで解決する。
+        // highest_rank は「これまでの最高」を保持する。現在ランクで上書きして下げないよう、
+        // 既存値と現在ランクの高い方を採用する（未ランク時に既存の実ランクを消さない）。
         let highestRank = player.highest_rank || 'UNRANKED';
         try {
           const leagues = await fetchLeagueByPuuid(puuid, apiKey);
           const soloQ = leagues.find((l: any) => l.queueType === 'RANKED_SOLO_5x5');
           if (soloQ) {
-            highestRank = `${soloQ.tier} ${soloQ.rank}`;
+            highestRank = higherRank(player.highest_rank, `${soloQ.tier} ${soloQ.rank}`);
           }
         } catch (rankErr: any) {
           console.warn(`[Riot Sync] ランク取得に失敗しました (${currentIgn}): ${rankErr.message}`);

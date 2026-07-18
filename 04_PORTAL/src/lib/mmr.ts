@@ -12,6 +12,33 @@ export const RANKS: Record<string, number> = {
   'GRANDMASTER': 2400, 'CHALLENGER': 2600
 };
 
+// ランクの高さ比較用。highest_rank(=これまでの最高ランク)を同期で「下げない」ために使う。
+const TIER_ORDER: Record<string, number> = {
+  UNRANKED: -1, IRON: 0, BRONZE: 1, SILVER: 2, GOLD: 3, PLATINUM: 4,
+  EMERALD: 5, DIAMOND: 6, MASTER: 7, GRANDMASTER: 8, CHALLENGER: 9,
+};
+const DIV_ORDER: Record<string, number> = { IV: 0, III: 1, II: 2, I: 3 };
+
+/** "GOLD II" 等を比較可能な数値に。未ランク/不明は -1。 */
+export function rankScore(rank?: string | null): number {
+  if (!rank) return -1;
+  const parts = rank.trim().toUpperCase().split(/\s+/);
+  const t = TIER_ORDER[parts[0]];
+  if (t === undefined) return -1;
+  const d = DIV_ORDER[parts[1]] ?? 0; // Master以上は division 無し
+  return t * 10 + d;
+}
+
+/**
+ * 2つのランクのうち高い方を返す。Riot同期で「最高ランク」を現在ランクに置き換えて
+ * 下げてしまう / 未ランク時にUNRANKEDで上書きする事故を防ぐための共通関数。
+ */
+export function higherRank(a?: string | null, b?: string | null): string {
+  const sa = rankScore(a), sb = rankScore(b);
+  if (sa < 0 && sb < 0) return 'UNRANKED';
+  return sa >= sb ? (a as string) : (b as string);
+}
+
 export interface KtmTier {
   name: string;
   min: number;
