@@ -6,6 +6,7 @@ import { getChampIcon } from '../../lib/ddragonClient';
 import { Shield, Target, ChevronLeft, ChevronDown, ChevronUp, Swords, Plus, X, Save, Trash2, Activity, Award, Zap, AlertCircle, CheckCircle, ArrowLeftRight, History, RefreshCw } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { motion, AnimatePresence } from 'framer-motion';
+import Link from 'next/link';
 import ChampSelect from '../../components/ChampSelect';
 
 const EMPTY_MEMO = {
@@ -1199,21 +1200,47 @@ export default function MatchupsPage() {
             return (
               <motion.div variants={itemVariants} key={champName} className="glass-panel rounded-2xl overflow-hidden">
                 {/* チャンピオンカード（グループヘッダー） */}
-                <button
-                  onClick={() => setExpandedChamp(isExpanded ? null : champName)}
-                  className="w-full p-5 flex items-center gap-4 hover:bg-white/[0.02] transition-colors cursor-pointer"
-                >
-                  <img src={getChampIcon(champName)} className="w-12 h-12 rounded-full border-2 border-[#c89b3c]/50 shadow-[0_0_12px_rgba(200,155,60,0.3)]" alt={champName} />
-                  <div className="flex-1 text-left">
-                    <div className="flex items-center gap-3">
-                      <span className="font-black text-lg text-[#c89b3c]">{champName}</span>
-                      <span className="text-xs text-gray-400 font-mono">{matchupList.length} マッチアップ</span>
+                {(() => {
+                  const cs = champStats[champName];
+                  return (
+                    <div className="w-full p-5 flex items-center gap-4 hover:bg-white/[0.02] transition-colors">
+                      <button
+                        onClick={() => setExpandedChamp(isExpanded ? null : champName)}
+                        className="flex items-center gap-4 flex-1 text-left cursor-pointer min-w-0"
+                      >
+                        <img src={getChampIcon(champName)} className="w-12 h-12 rounded-full border-2 border-[#c89b3c]/50 shadow-[0_0_12px_rgba(200,155,60,0.3)] shrink-0" alt={champName} />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-black text-lg text-[#c89b3c]">{champName}</span>
+                            <span className="text-xs text-gray-400 font-mono">{matchupList.length} メモ</span>
+                            {cs?.pick_count > 0 && (
+                              <span className={`text-[10px] font-black px-2 py-0.5 rounded-full border ${cs.win_rate >= 50 ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 'bg-rose-500/10 text-rose-400 border-rose-500/30'}`}>
+                                KTM勝率 {cs.win_rate}% ({cs.pick_count}戦)
+                              </span>
+                            )}
+                            {cs?.avg_kda !== undefined && (
+                              <span className="text-[10px] font-bold text-gray-400">平均KDA {cs.avg_kda}</span>
+                            )}
+                          </div>
+                        </div>
+                      </button>
+                      <Link
+                        href={`/champions?select=${encodeURIComponent(champName)}`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="shrink-0 text-[10px] font-black px-3 py-1.5 rounded-lg bg-[#c89b3c]/10 text-[#c89b3c] border border-[#c89b3c]/30 hover:bg-[#c89b3c]/20 transition-all"
+                      >
+                        📖 辞典
+                      </Link>
+                      <button
+                        onClick={() => setExpandedChamp(isExpanded ? null : champName)}
+                        className="text-gray-400 transition-transform duration-300 shrink-0 cursor-pointer"
+                        style={{ transform: isExpanded ? 'rotate(180deg)' : 'rotate(0)' }}
+                      >
+                        <ChevronDown size={20} />
+                      </button>
                     </div>
-                  </div>
-                  <div className="text-gray-400 transition-transform duration-300" style={{ transform: isExpanded ? 'rotate(180deg)' : 'rotate(0)' }}>
-                    <ChevronDown size={20} />
-                  </div>
-                </button>
+                  );
+                })()}
 
                 {/* 対面リスト（アコーディオン展開） */}
                 <AnimatePresence>
