@@ -110,6 +110,30 @@ export default function PlayerMyPage() {
     return chartPeriod > 0 ? withMa.slice(-chartPeriod) : withMa;
   }, [history, activeLane, chartPeriod]);
 
+  // 「全レーン」表示用: 各レーンごとに、そのレーンで実際にプレイした試合だけを抜き出した推移データ。
+  const perLaneChartData = useMemo(() => {
+    const result: Record<'TOP' | 'JG' | 'MID' | 'ADC' | 'SUP', any[]> = { TOP: [], JG: [], MID: [], ADC: [], SUP: [] };
+    if (!history || history.length === 0) return result;
+    const sortedHistory = [...history].reverse(); // 古い順
+    (['TOP', 'JG', 'MID', 'ADC', 'SUP'] as const).forEach(lane => {
+      const pts = sortedHistory
+        .filter(m => (m.role || '').toUpperCase() === lane)
+        .map((m, idx) => {
+          const obj = m.mmrHistory || {};
+          return {
+            game: idx + 1,
+            mmr: obj[lane] ?? 1200,
+            isWin: m.isWin,
+            champion: m.champion || 'Unknown',
+            mmrDelta: m.mmrDelta || 0,
+            date: m.date ? new Date(m.date).toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' }) : '-',
+          };
+        });
+      result[lane] = chartPeriod > 0 ? pts.slice(-chartPeriod) : pts;
+    });
+    return result;
+  }, [history, chartPeriod]);
+
   // グラフに重ねるティア境界（表示中データのMMR範囲に入るティアのみ）
   const visibleTierBounds = useMemo(() => {
     if (mmrChartData.length === 0) return [] as { name: string; min: number }[];
@@ -396,7 +420,62 @@ export default function PlayerMyPage() {
                       </div>
                     </div>
 
-                    {mmrChartData.length > 0 ? (
+                    {activeLane === 'ALL' ? (
+                      // 各レーンごとに別グラフを並べる（レーン別MMR推移）
+                      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+                        {(['TOP', 'JG', 'MID', 'ADC', 'SUP'] as const).map(lane => {
+                          const pts = perLaneChartData[lane];
+                          const cur = player?.[`mmr_${lane.toLowerCase()}`];
+                          return (
+                            <div key={lane} className="bg-black/20 border border-white/5 rounded-2xl p-3">
+                              <div className="flex items-center justify-between mb-1.5">
+                                <span className="text-xs font-black" style={{ color: LANE_COLORS[lane] }}>{lane}</span>
+                                <span className="text-[10px] text-gray-500">{pts.length}戦{cur ? ` / 現在 ${cur}` : ''}</span>
+                              </div>
+                              {pts.length > 0 ? (
+                                <div className="w-full h-36">
+                                  <ResponsiveContainer width="100%" height="100%">
+                                    <ComposedChart data={pts} margin={{ top: 5, right: 8, left: -22, bottom: 0 }}>
+                                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" />
+                                      <XAxis dataKey="game" tick={{ fill: '#6b7280', fontSize: 8 }} tickLine={false} axisLine={{ stroke: 'rgba(255,255,255,0.05)' }} />
+                                      <YAxis tick={{ fill: '#6b7280', fontSize: 8 }} tickLine={false} axisLine={{ stroke: 'rgba(255,255,255,0.05)' }} domain={['dataMin - 20', 'dataMax + 20']} width={40} />
+                                      <Tooltip
+                                        content={({ active, payload }) => {
+                                          if (!active || !payload || payload.length === 0) return null;
+                                          const d = payload[0].payload;
+                                          return (
+                                            <div className="bg-black/90 border border-white/10 rounded-lg p-2 text-[10px] shadow-xl">
+                                              <div className="font-bold text-white">{d.champion}</div>
+                                              <div className={d.isWin ? 'text-emerald-400' : 'text-rose-400'}>{d.isWin ? 'WIN' : 'LOSE'}</div>
+                                              <div className="text-gray-300">MMR {d.mmr} <span className={d.mmrDelta >= 0 ? 'text-emerald-400' : 'text-rose-400'}>({d.mmrDelta > 0 ? '+' : ''}{d.mmrDelta})</span></div>
+                                              <div className="text-gray-500">{d.date}</div>
+                                            </div>
+                                          );
+                                        }}
+                                      />
+                                      <Line
+                                        type="monotone"
+                                        dataKey="mmr"
+                                        stroke={LANE_COLORS[lane]}
+                                        strokeWidth={2}
+                                        dot={(props: any) => {
+                                          const { cx, cy, payload } = props;
+                                          return <circle key={`d-${payload.game}`} cx={cx} cy={cy} r={3} fill={payload.isWin ? '#10b981' : '#f43f5e'} stroke={LANE_COLORS[lane]} strokeWidth={1} />;
+                                        }}
+                                        activeDot={{ r: 4 }}
+                                        isAnimationActive={false}
+                                      />
+                                    </ComposedChart>
+                                  </ResponsiveContainer>
+                                </div>
+                              ) : (
+                                <div className="h-36 flex items-center justify-center text-[10px] text-gray-600">このレーンの試合なし</div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : mmrChartData.length > 0 ? (
                       <div className="w-full h-72">
                         <ResponsiveContainer width="100%" height="100%">
                           <ComposedChart data={mmrChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
@@ -478,104 +557,73 @@ export default function PlayerMyPage() {
                                 label={{ value: t.name, position: 'left', fill: '#a78bfa', fontSize: 8, opacity: 0.6 }}
                               />
                             ))}
-                            {activeLane !== 'ALL' && (
-                              <ReferenceLine
-                                y={currentLaneMmr}
-                                stroke="#06b6d4"
-                                strokeDasharray="6 4"
-                                strokeOpacity={0.5}
-                                label={{ value: `現在 ${currentLaneMmr}`, position: 'right', fill: '#06b6d4', fontSize: 10 }}
-                              />
-                            )}
-                            {activeLane !== 'ALL' && (
-                              <Area
-                                type="monotone"
-                                dataKey="mmr"
-                                stroke="#06b6d4"
-                                strokeWidth={2.5}
-                                fill="url(#mmrGradient)"
-                                dot={(props: any) => {
-                                  const { cx, cy, payload } = props;
-                                  // 大勝/大敗(MMR変動±30以上)は大きめ＆リング付きで強調（#49）
-                                  const big = payload.bigSwing;
-                                  return (
-                                    <circle
-                                      key={`dot-${payload.game}`}
-                                      cx={cx}
-                                      cy={cy}
-                                      r={big ? 6.5 : 4.5}
-                                      fill={payload.isWin ? '#10b981' : '#f43f5e'}
-                                      stroke={big ? '#fff' : (payload.isWin ? '#047857' : '#be123c')}
-                                      strokeWidth={big ? 2 : 1.5}
-                                    />
-                                  );
-                                }}
-                                activeDot={{ r: 6, stroke: '#06b6d4', strokeWidth: 2 }}
-                              />
-                            )}
+                            <ReferenceLine
+                              y={currentLaneMmr}
+                              stroke="#06b6d4"
+                              strokeDasharray="6 4"
+                              strokeOpacity={0.5}
+                              label={{ value: `現在 ${currentLaneMmr}`, position: 'right', fill: '#06b6d4', fontSize: 10 }}
+                            />
+                            <Area
+                              type="monotone"
+                              dataKey="mmr"
+                              stroke="#06b6d4"
+                              strokeWidth={2.5}
+                              fill="url(#mmrGradient)"
+                              dot={(props: any) => {
+                                const { cx, cy, payload } = props;
+                                // 大勝/大敗(MMR変動±30以上)は大きめ＆リング付きで強調（#49）
+                                const big = payload.bigSwing;
+                                return (
+                                  <circle
+                                    key={`dot-${payload.game}`}
+                                    cx={cx}
+                                    cy={cy}
+                                    r={big ? 6.5 : 4.5}
+                                    fill={payload.isWin ? '#10b981' : '#f43f5e'}
+                                    stroke={big ? '#fff' : (payload.isWin ? '#047857' : '#be123c')}
+                                    strokeWidth={big ? 2 : 1.5}
+                                  />
+                                );
+                              }}
+                              activeDot={{ r: 6, stroke: '#06b6d4', strokeWidth: 2 }}
+                            />
                             {/* 5戦移動平均線（#49）: 調子の波を滑らかに可視化 */}
-                            {activeLane !== 'ALL' && (
-                              <Line
-                                type="monotone"
-                                dataKey="ma"
-                                stroke="#f59e0b"
-                                strokeWidth={2}
-                                strokeDasharray="5 3"
-                                dot={false}
-                                activeDot={false}
-                                isAnimationActive={false}
-                              />
-                            )}
-                            {/* 全レーン同時表示: 各レーンを個別の線で描画 */}
-                            {activeLane === 'ALL' && (['TOP', 'JG', 'MID', 'ADC', 'SUP'] as const).map(lane => (
-                              <Line
-                                key={lane}
-                                type="monotone"
-                                dataKey={lane}
-                                stroke={LANE_COLORS[lane]}
-                                strokeWidth={2}
-                                dot={false}
-                                activeDot={{ r: 4, stroke: LANE_COLORS[lane], strokeWidth: 2 }}
-                                isAnimationActive={false}
-                                connectNulls
-                              />
-                            ))}
+                            <Line
+                              type="monotone"
+                              dataKey="ma"
+                              stroke="#f59e0b"
+                              strokeWidth={2}
+                              strokeDasharray="5 3"
+                              dot={false}
+                              activeDot={false}
+                              isAnimationActive={false}
+                            />
                           </ComposedChart>
                         </ResponsiveContainer>
                         {/* 凡例 */}
-                        {activeLane === 'ALL' ? (
-                          <div className="flex items-center justify-center flex-wrap gap-4 mt-3 text-[10px] text-gray-400">
-                            {(['TOP', 'JG', 'MID', 'ADC', 'SUP'] as const).map(lane => (
-                              <div key={lane} className="flex items-center gap-1.5">
-                                <div className="w-5 border-t-2" style={{ borderColor: LANE_COLORS[lane] }}></div>
-                                <span>{lane}</span>
-                              </div>
-                            ))}
+                        <div className="flex items-center justify-center gap-6 mt-3 text-[10px] text-gray-500">
+                          <div className="flex items-center gap-1.5">
+                            <div className="w-2.5 h-2.5 rounded-full bg-emerald-500"></div>
+                            <span>勝利</span>
                           </div>
-                        ) : (
-                          <div className="flex items-center justify-center gap-6 mt-3 text-[10px] text-gray-500">
-                            <div className="flex items-center gap-1.5">
-                              <div className="w-2.5 h-2.5 rounded-full bg-emerald-500"></div>
-                              <span>勝利</span>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                              <div className="w-2.5 h-2.5 rounded-full bg-rose-500"></div>
-                              <span>敗北</span>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                              <div className="w-6 border-t-2 border-dashed border-cyan-400/50"></div>
-                              <span>現在のMMR</span>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                              <div className="w-6 border-t-2 border-dashed border-amber-500"></div>
-                              <span>5戦移動平均</span>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                              <div className="w-2.5 h-2.5 rounded-full bg-white/80 border border-gray-400"></div>
-                              <span>大勝/大敗(±30)</span>
-                            </div>
+                          <div className="flex items-center gap-1.5">
+                            <div className="w-2.5 h-2.5 rounded-full bg-rose-500"></div>
+                            <span>敗北</span>
                           </div>
-                        )}
+                          <div className="flex items-center gap-1.5">
+                            <div className="w-6 border-t-2 border-dashed border-cyan-400/50"></div>
+                            <span>現在のMMR</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <div className="w-6 border-t-2 border-dashed border-amber-500"></div>
+                            <span>5戦移動平均</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <div className="w-2.5 h-2.5 rounded-full bg-white/80 border border-gray-400"></div>
+                            <span>大勝/大敗(±30)</span>
+                          </div>
+                        </div>
                       </div>
                     ) : (
                       <div className="text-center text-gray-500 py-12 border border-dashed border-white/5 rounded-2xl">
