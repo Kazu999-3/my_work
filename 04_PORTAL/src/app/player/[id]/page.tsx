@@ -43,6 +43,11 @@ const roleColors: Record<string, string> = {
   SUP: "from-amber-500/20 to-amber-500/5 border-amber-500/20 text-amber-300"
 };
 
+// 全レーン同時表示の各レーン色（RoleIconの色味に合わせる）
+const LANE_COLORS: Record<'TOP' | 'JG' | 'MID' | 'ADC' | 'SUP', string> = {
+  TOP: '#fb923c', JG: '#4ade80', MID: '#f87171', ADC: '#60a5fa', SUP: '#5eead4',
+};
+
 export default function PlayerMyPage() {
   const { id } = useParams(); // Discord ID
   const [player, setPlayer] = useState<any>(null);
@@ -51,7 +56,7 @@ export default function PlayerMyPage() {
   const [matchups, setMatchups] = useState<any[]>([]);
   const [history, setHistory] = useState<any[]>([]);
   const [riotMasteries, setRiotMasteries] = useState<any[]>([]);
-  const [activeLane, setActiveLane] = useState<'TOTAL' | 'TOP' | 'JG' | 'MID' | 'ADC' | 'SUP'>('TOTAL');
+  const [activeLane, setActiveLane] = useState<'TOTAL' | 'ALL' | 'TOP' | 'JG' | 'MID' | 'ADC' | 'SUP'>('TOTAL');
   const [chemistry, setChemistry] = useState<any[]>([]);
   const [rivals, setRivals] = useState<any[]>([]);
   
@@ -79,6 +84,8 @@ export default function PlayerMyPage() {
       return {
         game: idx + 1,
         mmr: val,
+        // 全レーン同時表示用に各レーンの累積MMRも保持
+        TOP: historyObj.TOP, JG: historyObj.JG, MID: historyObj.MID, ADC: historyObj.ADC, SUP: historyObj.SUP,
         isWin: match.isWin,
         champion: match.champion || "Unknown",
         date: match.date
@@ -371,7 +378,7 @@ export default function PlayerMyPage() {
                         </div>
                         {/* レーン切り替えトグル */}
                         <div className="flex flex-wrap gap-1 bg-black/40 p-1 rounded-xl border border-white/5">
-                          {(['TOTAL', 'TOP', 'JG', 'MID', 'ADC', 'SUP'] as const).map(lane => (
+                          {(['TOTAL', 'ALL', 'TOP', 'JG', 'MID', 'ADC', 'SUP'] as const).map(lane => (
                             <button
                               key={lane}
                               onClick={() => setActiveLane(lane)}
@@ -382,7 +389,7 @@ export default function PlayerMyPage() {
                                   : 'text-gray-400 hover:text-white hover:bg-white/5'
                               }`}
                             >
-                              {lane === 'TOTAL' ? '総合' : lane}
+                              {lane === 'TOTAL' ? '総合' : lane === 'ALL' ? '全レーン' : lane}
                             </button>
                           ))}
                         </div>
@@ -418,7 +425,7 @@ export default function PlayerMyPage() {
                               content={({ active, payload }) => {
                                 if (!active || !payload || payload.length === 0) return null;
                                 const d = payload[0].payload;
-                                const laneLabels: Record<string, string> = { TOTAL: '総合', TOP: 'TOP', JG: 'JG', MID: 'MID', ADC: 'ADC', SUP: 'SUP' };
+                                const laneLabels: Record<string, string> = { TOTAL: '総合', ALL: '全レーン', TOP: 'TOP', JG: 'JG', MID: 'MID', ADC: 'ADC', SUP: 'SUP' };
                                 return (
                                   <div className="bg-black/90 border border-white/10 backdrop-blur-xl rounded-xl p-3 shadow-2xl text-xs min-w-[170px]">
                                     <div className="flex items-center gap-2 mb-1">
@@ -471,73 +478,104 @@ export default function PlayerMyPage() {
                                 label={{ value: t.name, position: 'left', fill: '#a78bfa', fontSize: 8, opacity: 0.6 }}
                               />
                             ))}
-                            <ReferenceLine
-                              y={currentLaneMmr}
-                              stroke="#06b6d4"
-                              strokeDasharray="6 4"
-                              strokeOpacity={0.5}
-                              label={{ value: `現在 ${currentLaneMmr}`, position: 'right', fill: '#06b6d4', fontSize: 10 }}
-                            />
-                            <Area
-                              type="monotone"
-                              dataKey="mmr"
-                              stroke="#06b6d4"
-                              strokeWidth={2.5}
-                              fill="url(#mmrGradient)"
-                              dot={(props: any) => {
-                                const { cx, cy, payload } = props;
-                                // 大勝/大敗(MMR変動±30以上)は大きめ＆リング付きで強調（#49）
-                                const big = payload.bigSwing;
-                                return (
-                                  <circle
-                                    key={`dot-${payload.game}`}
-                                    cx={cx}
-                                    cy={cy}
-                                    r={big ? 6.5 : 4.5}
-                                    fill={payload.isWin ? '#10b981' : '#f43f5e'}
-                                    stroke={big ? '#fff' : (payload.isWin ? '#047857' : '#be123c')}
-                                    strokeWidth={big ? 2 : 1.5}
-                                  />
-                                );
-                              }}
-                              activeDot={{ r: 6, stroke: '#06b6d4', strokeWidth: 2 }}
-                            />
+                            {activeLane !== 'ALL' && (
+                              <ReferenceLine
+                                y={currentLaneMmr}
+                                stroke="#06b6d4"
+                                strokeDasharray="6 4"
+                                strokeOpacity={0.5}
+                                label={{ value: `現在 ${currentLaneMmr}`, position: 'right', fill: '#06b6d4', fontSize: 10 }}
+                              />
+                            )}
+                            {activeLane !== 'ALL' && (
+                              <Area
+                                type="monotone"
+                                dataKey="mmr"
+                                stroke="#06b6d4"
+                                strokeWidth={2.5}
+                                fill="url(#mmrGradient)"
+                                dot={(props: any) => {
+                                  const { cx, cy, payload } = props;
+                                  // 大勝/大敗(MMR変動±30以上)は大きめ＆リング付きで強調（#49）
+                                  const big = payload.bigSwing;
+                                  return (
+                                    <circle
+                                      key={`dot-${payload.game}`}
+                                      cx={cx}
+                                      cy={cy}
+                                      r={big ? 6.5 : 4.5}
+                                      fill={payload.isWin ? '#10b981' : '#f43f5e'}
+                                      stroke={big ? '#fff' : (payload.isWin ? '#047857' : '#be123c')}
+                                      strokeWidth={big ? 2 : 1.5}
+                                    />
+                                  );
+                                }}
+                                activeDot={{ r: 6, stroke: '#06b6d4', strokeWidth: 2 }}
+                              />
+                            )}
                             {/* 5戦移動平均線（#49）: 調子の波を滑らかに可視化 */}
-                            <Line
-                              type="monotone"
-                              dataKey="ma"
-                              stroke="#f59e0b"
-                              strokeWidth={2}
-                              strokeDasharray="5 3"
-                              dot={false}
-                              activeDot={false}
-                              isAnimationActive={false}
-                            />
+                            {activeLane !== 'ALL' && (
+                              <Line
+                                type="monotone"
+                                dataKey="ma"
+                                stroke="#f59e0b"
+                                strokeWidth={2}
+                                strokeDasharray="5 3"
+                                dot={false}
+                                activeDot={false}
+                                isAnimationActive={false}
+                              />
+                            )}
+                            {/* 全レーン同時表示: 各レーンを個別の線で描画 */}
+                            {activeLane === 'ALL' && (['TOP', 'JG', 'MID', 'ADC', 'SUP'] as const).map(lane => (
+                              <Line
+                                key={lane}
+                                type="monotone"
+                                dataKey={lane}
+                                stroke={LANE_COLORS[lane]}
+                                strokeWidth={2}
+                                dot={false}
+                                activeDot={{ r: 4, stroke: LANE_COLORS[lane], strokeWidth: 2 }}
+                                isAnimationActive={false}
+                                connectNulls
+                              />
+                            ))}
                           </ComposedChart>
                         </ResponsiveContainer>
                         {/* 凡例 */}
-                        <div className="flex items-center justify-center gap-6 mt-3 text-[10px] text-gray-500">
-                          <div className="flex items-center gap-1.5">
-                            <div className="w-2.5 h-2.5 rounded-full bg-emerald-500"></div>
-                            <span>勝利</span>
+                        {activeLane === 'ALL' ? (
+                          <div className="flex items-center justify-center flex-wrap gap-4 mt-3 text-[10px] text-gray-400">
+                            {(['TOP', 'JG', 'MID', 'ADC', 'SUP'] as const).map(lane => (
+                              <div key={lane} className="flex items-center gap-1.5">
+                                <div className="w-5 border-t-2" style={{ borderColor: LANE_COLORS[lane] }}></div>
+                                <span>{lane}</span>
+                              </div>
+                            ))}
                           </div>
-                          <div className="flex items-center gap-1.5">
-                            <div className="w-2.5 h-2.5 rounded-full bg-rose-500"></div>
-                            <span>敗北</span>
+                        ) : (
+                          <div className="flex items-center justify-center gap-6 mt-3 text-[10px] text-gray-500">
+                            <div className="flex items-center gap-1.5">
+                              <div className="w-2.5 h-2.5 rounded-full bg-emerald-500"></div>
+                              <span>勝利</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <div className="w-2.5 h-2.5 rounded-full bg-rose-500"></div>
+                              <span>敗北</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <div className="w-6 border-t-2 border-dashed border-cyan-400/50"></div>
+                              <span>現在のMMR</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <div className="w-6 border-t-2 border-dashed border-amber-500"></div>
+                              <span>5戦移動平均</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <div className="w-2.5 h-2.5 rounded-full bg-white/80 border border-gray-400"></div>
+                              <span>大勝/大敗(±30)</span>
+                            </div>
                           </div>
-                          <div className="flex items-center gap-1.5">
-                            <div className="w-6 border-t-2 border-dashed border-cyan-400/50"></div>
-                            <span>現在のMMR</span>
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <div className="w-6 border-t-2 border-dashed border-amber-500"></div>
-                            <span>5戦移動平均</span>
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <div className="w-2.5 h-2.5 rounded-full bg-white/80 border border-gray-400"></div>
-                            <span>大勝/大敗(±30)</span>
-                          </div>
-                        </div>
+                        )}
                       </div>
                     ) : (
                       <div className="text-center text-gray-500 py-12 border border-dashed border-white/5 rounded-2xl">
