@@ -49,6 +49,49 @@ export default function MatchupsPage() {
   const [simError, setSimError] = useState<string | null>(null);
   const [simResult, setSimResult] = useState<any>(null);
   const [simStatus, setSimStatus] = useState('');
+  const [savingSim, setSavingSim] = useState(false);
+  const [shareUrl, setShareUrl] = useState<string | null>(null);
+
+  // シミュレータ結果を保存して共有リンクを生成
+  const saveSimulation = async () => {
+    if (!simResult) return;
+    setSavingSim(true);
+    setSimError(null);
+    try {
+      const res = await fetch('/api/match/simulation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ blue: blueChamps, red: redChamps, result: simResult }),
+      });
+      const d = await res.json();
+      if (!d.success) throw new Error(d.error || '保存に失敗しました。');
+      const url = `${window.location.origin}${window.location.pathname}?sim=${d.id}`;
+      setShareUrl(url);
+      try { await navigator.clipboard.writeText(url); } catch { /* クリップボード不可でもURLは表示する */ }
+    } catch (e: any) {
+      setSimError('保存に失敗: ' + e.message);
+    } finally {
+      setSavingSim(false);
+    }
+  };
+
+  // 共有リンク(?sim=<id>)で開かれたら、その保存結果を読み込む
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const simId = new URLSearchParams(window.location.search).get('sim');
+    if (!simId) return;
+    setViewMode('simulator');
+    fetch(`/api/match/simulation?id=${simId}`)
+      .then(r => r.json())
+      .then(d => {
+        if (d.success) {
+          if (d.blue) setBlueChamps(d.blue);
+          if (d.red) setRedChamps(d.red);
+          if (d.result) setSimResult(d.result);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const fetchData = async () => {
     setLoading(true);
@@ -470,7 +513,28 @@ export default function MatchupsPage() {
         {/* シミュレーション結果表示 */}
         {simResult && (
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col gap-8">
-            
+
+            {/* 保存・共有バー */}
+            <div className="glass-panel rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3">
+              <span className="text-xs text-gray-400 font-bold">この分析結果を保存して共有できます</span>
+              <div className="flex items-center gap-2 flex-wrap">
+                {shareUrl && (
+                  <div className="flex items-center gap-2 bg-black/40 border border-white/10 rounded-lg px-3 py-1.5">
+                    <span className="text-[10px] text-emerald-300 font-mono truncate max-w-[220px]">{shareUrl}</span>
+                    <button onClick={() => { navigator.clipboard.writeText(shareUrl).catch(() => {}); }} className="text-[10px] font-black text-[#00cfef] hover:text-white">コピー</button>
+                  </div>
+                )}
+                <button
+                  onClick={saveSimulation}
+                  disabled={savingSim}
+                  className="px-4 py-2 bg-[#a78bfa]/15 text-[#a78bfa] border border-[#a78bfa]/30 font-black rounded-xl text-xs hover:bg-[#a78bfa]/25 transition-all flex items-center gap-2 disabled:opacity-50"
+                >
+                  {savingSim ? <RefreshCw size={14} className="animate-spin" /> : <Save size={14} />}
+                  {savingSim ? '保存中...' : '💾 保存して共有リンク作成'}
+                </button>
+              </div>
+            </div>
+
             {/* 1. 各レーンの主導権マップ */}
             <div className="glass-panel p-6 md:p-8 rounded-3xl relative">
               <h3 className="text-white font-black text-base mb-6 flex items-center gap-2">
