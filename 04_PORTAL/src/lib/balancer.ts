@@ -28,8 +28,7 @@ export interface Player {
   avgMMR?: number;
   isOutlierLow?: boolean;
   isOutlierHigh?: boolean;
-  adjustedRates?: Record<Role, number>;
-  balanceRates?: Record<Role, number>;
+  effectiveRates?: Record<Role, number>;
   spectator_pity?: number;
 }
 
@@ -203,13 +202,11 @@ function runBalanceSearch(players: Player[], ctx: BalanceContext): RawBalanceCan
     // ※発火が多すぎ/少なすぎと感じたら、この値だけで感度を調整可能。
     p.isOutlierHigh = (avgP > globalAvgMMR + 500);
 
-    // --- MMRの3スケール(B4: どれをどこで使うかの明文化) ---
-    //   rates[role]          : 生のレーンMMR。「レーン格差の実質禁止(差300で50万点)」「チーム内の広がり」「表示」に使用。
-    //   adjustedRates[role]  : 生を全体平均へ50%寄せ、勝率ペナルティを引いた値。「対面レーン差の2乗ペナルティ」「有利レーン数」に使用。
-    //   balanceRates[role]   : 生 − 勝率ペナルティ −(低MMRなら200)。「チーム合計MMR差(最終スコアのMMR差)」に使用。
-    // つまり “チーム合計の均等さ=balance / レーン単位の公平さ=adjusted / 格差の禁止=生” と役割分担している。
-    p.adjustedRates = {} as Record<Role, number>;
-    p.balanceRates = {} as Record<Role, number>;
+    // --- MMRは2スケール(B4: 3種類→2種類に統合) ---
+    //   rates[role]         : 生のレーンMMR。「レーン格差の実質禁止(差300で50万点)」「チーム内の広がり」「表示」に使用。
+    //   effectiveRates[role]: 生を全体平均へ50%寄せ、低勝率ペナルティと低MMR救済(-200)を反映した“実効レート”。
+    //                         「対面レーン差の2乗ペナルティ」「有利レーン数」「チーム合計の均等さ」の全ソフト評価で共通利用。
+    p.effectiveRates = {} as Record<Role, number>;
     let wrPityPenalty = 0;
     if (p.games >= 5) {
       if (p.winRate < 42) {
@@ -222,14 +219,9 @@ function runBalanceSearch(players: Player[], ctx: BalanceContext): RawBalanceCan
     }
     ROLES.forEach(role => {
       const raw = p.rates[role];
-      const adj = Math.round(raw + (globalAvgMMR - raw) * 0.5) - wrPityPenalty;
-      p.adjustedRates![role] = Math.max(100, adj);
-
-      let bRate = raw - wrPityPenalty;
-      if (p.isOutlierLow) {
-        bRate -= 200; // 格差救済補正
-      }
-      p.balanceRates![role] = Math.max(100, bRate);
+      let eff = Math.round(raw + (globalAvgMMR - raw) * 0.5) - wrPityPenalty; // 平均へ50%寄せ + 勝率ペナルティ
+      if (p.isOutlierLow) eff -= 200; // 格差救済補正
+      p.effectiveRates![role] = Math.max(100, eff);
     });
   });
 
@@ -409,10 +401,8 @@ function runBalanceSearch(players: Player[], ctx: BalanceContext): RawBalanceCan
           const pLayerB = teamB[bIdx];
           const mmrA = pLayerA.rates[role];
           const mmrB = pLayerB.rates[role];
-          const adjA = pLayerA.adjustedRates![role];
-          const adjB = pLayerB.adjustedRates![role];
-          const balA = pLayerA.balanceRates![role];
-          const balB = pLayerB.balanceRates![role];
+          const effA = pLayerA.effectiveRates![role];
+          const effB = pLayerB.effectiveRates![role];
 
           // ★ 追加: 対面MMRの格差チェック (シルバー vs プラチナなどの格差対面を強力に抑制)
           const laneMmrDiff = Math.abs(mmrA - mmrB);
@@ -424,14 +414,14 @@ function runBalanceSearch(players: Player[], ctx: BalanceContext): RawBalanceCan
             penalty += 30000;  // 軽微な格差（ソフト抑制）
           }
 
-          penalty += Math.pow(Math.abs(adjA - adjB), 2) / 2.5; // 対面のレーン格差ペナルティをより重視して評価（4から2.5へ）
-          totalA += balA; totalB += balB;
+          penalty += Math.pow(Math.abs(effA - effB), 2) / 2.5; // 対面のレーン格差ペナルティ（実効レートで評価）
+          totalA += effA; totalB += effB; // チーム合計も実効レートで統一（B4）
 
-          laneAdvantageScoreA += Math.max(0, adjA - adjB);
-          laneAdvantageScoreB += Math.max(0, adjB - adjA);
+          laneAdvantageScoreA += Math.max(0, effA - effB);
+          laneAdvantageScoreB += Math.max(0, effB - effA);
 
-          if (adjA > adjB + 150) lanesAdvantagedA++;
-          if (adjB > adjA + 150) lanesAdvantagedB++;
+          if (effA > effB + 150) lanesAdvantagedA++;
+          if (effB > effA + 150) lanesAdvantagedB++;
 
           if (HIGH_RANKS.includes(pLayerA.rank)) highRankCountA++;
           if (HIGH_RANKS.includes(pLayerB.rank)) highRankCountB++;
