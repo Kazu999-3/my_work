@@ -198,9 +198,16 @@ function runBalanceSearch(players: Player[], ctx: BalanceContext): RawBalanceCan
     p.isNewbie = (p.rank === 'UNRANKED' && p.games < 3);
     const avgP = p.avgMMR || 1200;
     p.isOutlierLow = (avgP < globalAvgMMR - 350);
-    p.isOutlierHigh = (avgP > globalAvgMMR + 1000);
+    // B2: 以前は +1000 で事実上発火せず「突出した強者をあえてオフロール/弱い側へ回して均衡させる」
+    // 調整(applyOutlierReliefなど)が死んでいた。実際に効く +500 に是正（弱者側 -350 と概ね対称）。
+    // ※発火が多すぎ/少なすぎと感じたら、この値だけで感度を調整可能。
+    p.isOutlierHigh = (avgP > globalAvgMMR + 500);
 
-    // 平準化・バランス計算用MMR
+    // --- MMRの3スケール(B4: どれをどこで使うかの明文化) ---
+    //   rates[role]          : 生のレーンMMR。「レーン格差の実質禁止(差300で50万点)」「チーム内の広がり」「表示」に使用。
+    //   adjustedRates[role]  : 生を全体平均へ50%寄せ、勝率ペナルティを引いた値。「対面レーン差の2乗ペナルティ」「有利レーン数」に使用。
+    //   balanceRates[role]   : 生 − 勝率ペナルティ −(低MMRなら200)。「チーム合計MMR差(最終スコアのMMR差)」に使用。
+    // つまり “チーム合計の均等さ=balance / レーン単位の公平さ=adjusted / 格差の禁止=生” と役割分担している。
     p.adjustedRates = {} as Record<Role, number>;
     p.balanceRates = {} as Record<Role, number>;
     let wrPityPenalty = 0;
@@ -287,6 +294,9 @@ function runBalanceSearch(players: Player[], ctx: BalanceContext): RawBalanceCan
   // フェーズ1：スクリーニング
   const screenResults: { quickScore: number; teamAIndices: number[]; teamBIndices: number[] }[] = [];
   for (const teamAIndices of combinations) {
+    // ミラー除去(B5): A/B を入れ替えただけの分割はスコアもシグネチャも同一になり無駄。
+    // 「index 0 を必ず A 側に含む」分割だけを処理して探索量を半減（252→126通り）。挙動は不変。
+    if (!teamAIndices.includes(0)) continue;
     const teamBIndices = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].filter(i => !teamAIndices.includes(i));
     const teamA = teamAIndices.map(i => players[i]);
     const teamB = teamBIndices.map(i => players[i]);
