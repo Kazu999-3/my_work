@@ -163,6 +163,7 @@ export async function POST(request: Request) {
     const participantInserts = results.map(r => ({
       match_id: newMatchId,
       player_name: r.name,
+      discord_id: r.dbPlayer?.discord_id || null, // 改名に強い紐付けキー
       team: r.team,
       role: r.role,
       kills: r.kills,

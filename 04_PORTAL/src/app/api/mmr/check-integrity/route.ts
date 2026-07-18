@@ -20,10 +20,11 @@ export async function GET(request: Request) {
     if (pError) throw pError;
 
     const playersMap = new Map();
+    const playersByDiscord = new Map();
     for (const p of allPlayers) {
       const prefs = p.role_preferences || { primary: 'ALL', secondary: '-' };
-      playersMap.set(p.name, {
-        id: p.id, name: p.name, highest_rank: p.highest_rank, role_preferences: prefs,
+      const memObj = {
+        id: p.id, name: p.name, discord_id: p.discord_id || null, highest_rank: p.highest_rank, role_preferences: prefs,
         currentTop: p.mmr_top || 1000,
         currentJg: p.mmr_jg || 1000,
         currentMid: p.mmr_mid || 1000,
@@ -36,8 +37,13 @@ export async function GET(request: Request) {
         expectedAdc: calculateInitialMmr(p.highest_rank, 'ADC', prefs),
         expectedSup: calculateInitialMmr(p.highest_rank, 'SUP', prefs),
         totalGames: 0, totalWins: 0, laneGames: { TOP: 0, JG: 0, MID: 0, ADC: 0, SUP: 0 }
-      });
+      };
+      playersMap.set(p.name, memObj);
+      if (p.discord_id) playersByDiscord.set(p.discord_id, memObj);
     }
+    // rebuild と同じく discord_id 優先で参加者を解決（改名で紐付けが切れない）
+    const resolveMember = (part: any) => (part && part.discord_id && playersByDiscord.get(part.discord_id)) || playersMap.get(part.player_name);
+    const keyOf = (part: any) => part.discord_id || part.player_name;
 
     const { data: allMatches, error: mError } = await supabase.from('ktm_matches').select('id, winning_team').order('created_at', { ascending: true });
     if (mError) throw mError;
@@ -63,9 +69,9 @@ export async function GET(request: Request) {
       // 1. このマッチ開始時点での各プレイヤーのMMRや試合数の状態をスナップショットとして保存
       const snapshotMap = new Map<string, any>();
       for (const p of participants) {
-        const memPlayer = playersMap.get(p.player_name);
+        const memPlayer = resolveMember(p);
         if (!memPlayer) continue;
-        snapshotMap.set(p.player_name, {
+        snapshotMap.set(keyOf(p), {
           expectedTop: memPlayer.expectedTop,
           expectedJg: memPlayer.expectedJg,
           expectedMid: memPlayer.expectedMid,
@@ -79,14 +85,16 @@ export async function GET(request: Request) {
 
       const matchDeltas: {
         playerName: string;
+        discordId: string | null;
+        pkey: string;
         role: string;
         delta: number;
         isWin: boolean;
       }[] = [];
 
       for (const p of participants) {
-        const memPlayer = playersMap.get(p.player_name);
-        const playerSnapshot = snapshotMap.get(p.player_name);
+        const memPlayer = resolveMember(p);
+        const playerSnapshot = snapshotMap.get(keyOf(p));
         if (!memPlayer || !playerSnapshot) continue;
 
         const role = p.role.toUpperCase();
@@ -96,13 +104,13 @@ export async function GET(request: Request) {
         const opponent = opponentList.find((op: any) => op.role.toUpperCase() === role);
         let opponentMmr = 1200;
         if (opponent) {
-          const oppSnapshot = snapshotMap.get(opponent.player_name);
+          const oppSnapshot = snapshotMap.get(keyOf(opponent));
           if (oppSnapshot) {
             opponentMmr = oppSnapshot[expectedMmrKey] || 1200;
           }
         } else {
           opponentMmr = opponentList.reduce((acc: number, op: any) => {
-            const mopSnapshot = snapshotMap.get(op.player_name);
+            const mopSnapshot = snapshotMap.get(keyOf(op));
             if (mopSnapshot) {
               const opRoleUpper = op.role.toUpperCase();
               const oppExpectedKey = `expected${opRoleUpper.charAt(0) + opRoleUpper.slice(1).toLowerCase()}` as 'expectedTop' | 'expectedJg' | 'expectedMid' | 'expectedAdc' | 'expectedSup';
@@ -116,7 +124,7 @@ export async function GET(request: Request) {
         let matchupCount = 0;
         let matchupKey = "";
         if (opponent) {
-          matchupKey = [p.player_name, opponent.player_name].sort().join("<=>") + ":" + role;
+          matchupKey = [keyOf(p), keyOf(opponent)].sort().join("<=>") + ":" + role;
           matchupCount = matchupHistoryMap.get(matchupKey) || 0;
         }
 
@@ -146,6 +154,8 @@ export async function GET(request: Request) {
         const delta = calculateNewMMR(ctx);
         matchDeltas.push({
           playerName: p.player_name,
+          discordId: p.discord_id || null,
+          pkey: keyOf(p),
           role,
           delta,
           isWin
@@ -154,7 +164,7 @@ export async function GET(request: Request) {
 
       // 2. 全員の計算が終わってから MMR 累積値、試合数を一括更新し、対戦数も記録する
       for (const d of matchDeltas) {
-        const memPlayer = playersMap.get(d.playerName);
+        const memPlayer = resolveMember({ discord_id: d.discordId, player_name: d.playerName });
         if (!memPlayer) continue;
 
         const expectedMmrKey = `expected${d.role.charAt(0) + d.role.slice(1).toLowerCase()}` as 'expectedTop' | 'expectedJg' | 'expectedMid' | 'expectedAdc' | 'expectedSup';
@@ -164,9 +174,9 @@ export async function GET(request: Request) {
         if (memPlayer.laneGames[d.role] !== undefined) memPlayer.laneGames[d.role] += 1;
 
         // 対面相手との対戦履歴カウントを更新
-        const opponent = participants.find((op: any) => op.player_name !== d.playerName && op.role.toUpperCase() === d.role);
+        const opponent = participants.find((op: any) => keyOf(op) !== d.pkey && op.role.toUpperCase() === d.role);
         if (opponent) {
-          const matchupKey = [d.playerName, opponent.player_name].sort().join("<=>") + ":" + d.role;
+          const matchupKey = [d.pkey, keyOf(opponent)].sort().join("<=>") + ":" + d.role;
           const currentCount = matchupHistoryMap.get(matchupKey) || 0;
           matchupHistoryMap.set(matchupKey, currentCount + 1);
         }
