@@ -153,6 +153,32 @@ export default function PlayerMyPage() {
     return player[key] || 1000;
   }, [player, activeLane]);
 
+  // 直近の調子サマリー（history は新しい順）
+  const recentForm = useMemo(() => {
+    if (!history || history.length === 0) return null;
+    const last10 = history.slice(0, 10);
+    const wins10 = last10.filter((m: any) => m.isWin).length;
+    const streakWin = history[0]?.isWin;
+    let streak = 0;
+    for (const m of history) { if (m.isWin === streakWin) streak++; else break; }
+    return {
+      last10Games: last10.length,
+      last10Wins: wins10,
+      last10Rate: Math.round((wins10 / last10.length) * 100),
+      streak,
+      streakWin,
+      seq: last10.map((m: any) => !!m.isWin), // 新しい→古い
+    };
+  }, [history]);
+
+  // 対面別の得意/苦手（2戦以上の相手のみ）
+  const matchupExtremes = useMemo(() => {
+    const qualified = (matchups || []).filter((m: any) => m.games >= 2);
+    const best = [...qualified].sort((a, b) => b.winRate - a.winRate || b.games - a.games).slice(0, 3);
+    const worst = [...qualified].sort((a, b) => a.winRate - b.winRate || b.games - a.games).slice(0, 3);
+    return { best, worst };
+  }, [matchups]);
+
   useEffect(() => {
     async function fetchData() {
       if (!id) return;
@@ -364,6 +390,87 @@ export default function PlayerMyPage() {
               {/* 1. 総合分析タブ */}
               {activeTab === 'summary' && (
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  {/* 直近の調子 & 対面の得意/苦手 */}
+                  <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* 直近の調子 */}
+                    <div className="bg-white/[0.02] backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-xl">
+                      <h3 className="text-base font-black flex items-center gap-2 mb-4 border-b border-white/5 pb-3">
+                        <TrendingUp className="w-5 h-5 text-emerald-400" />
+                        <span>直近の調子</span>
+                      </h3>
+                      {recentForm ? (
+                        <div className="flex flex-wrap items-center gap-x-8 gap-y-4">
+                          <div>
+                            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1">現在の連続</p>
+                            <p className={`text-2xl font-black ${recentForm.streakWin ? 'text-emerald-400' : 'text-rose-400'}`}>
+                              {recentForm.streak}{recentForm.streakWin ? '連勝' : '連敗'}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1">直近{recentForm.last10Games}戦</p>
+                            <p className="text-2xl font-black text-white">
+                              {recentForm.last10Wins}<span className="text-sm text-gray-500">勝{recentForm.last10Games - recentForm.last10Wins}敗</span>
+                              <span className={`ml-2 text-base ${recentForm.last10Rate >= 50 ? 'text-emerald-400' : 'text-rose-400'}`}>{recentForm.last10Rate}%</span>
+                            </p>
+                          </div>
+                          <div className="flex-1 min-w-[140px]">
+                            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1.5">最近の流れ（左が最新）</p>
+                            <div className="flex gap-1">
+                              {recentForm.seq.map((w, i) => (
+                                <div key={i} title={w ? '勝ち' : '負け'} className={`w-5 h-5 rounded-md flex items-center justify-center text-[9px] font-black ${w ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'}`}>
+                                  {w ? 'W' : 'L'}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-sm text-gray-500 py-4">まだ試合データがありません</p>
+                      )}
+                    </div>
+
+                    {/* 対面の得意/苦手 */}
+                    <div className="bg-white/[0.02] backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-xl">
+                      <h3 className="text-base font-black flex items-center gap-2 mb-4 border-b border-white/5 pb-3">
+                        <Swords className="w-5 h-5 text-amber-400" />
+                        <span>対面の得意 / 苦手</span>
+                        <span className="text-[9px] text-gray-500 font-medium">(2戦以上)</span>
+                      </h3>
+                      {(matchupExtremes.best.length > 0 || matchupExtremes.worst.length > 0) ? (
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <p className="text-[10px] text-emerald-400 font-black uppercase tracking-widest mb-2">👍 得意</p>
+                            <div className="space-y-1.5">
+                              {matchupExtremes.best.map((m: any) => (
+                                <div key={m.opponentChampion} className="flex items-center gap-2 text-xs">
+                                  <img src={getChampIcon(m.opponentChampion)} className="w-6 h-6 rounded-full border border-white/10" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                                  <span className="text-gray-200 truncate flex-1">{m.opponentChampion}</span>
+                                  <span className="text-emerald-400 font-bold">{m.winRate}%</span>
+                                  <span className="text-[10px] text-gray-600">({m.games})</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                          <div>
+                            <p className="text-[10px] text-rose-400 font-black uppercase tracking-widest mb-2">👎 苦手</p>
+                            <div className="space-y-1.5">
+                              {matchupExtremes.worst.map((m: any) => (
+                                <div key={m.opponentChampion} className="flex items-center gap-2 text-xs">
+                                  <img src={getChampIcon(m.opponentChampion)} className="w-6 h-6 rounded-full border border-white/10" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                                  <span className="text-gray-200 truncate flex-1">{m.opponentChampion}</span>
+                                  <span className="text-rose-400 font-bold">{m.winRate}%</span>
+                                  <span className="text-[10px] text-gray-600">({m.games})</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-sm text-gray-500 py-4">対面データがまだ足りません（各相手2戦以上で表示）</p>
+                      )}
+                    </div>
+                  </div>
+
                   {/* レーダーチャート */}
                   <div className="bg-white/[0.02] backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-xl lg:col-span-1">
                     <h3 className="text-lg font-black flex items-center gap-2 mb-6 border-b border-white/5 pb-3">
