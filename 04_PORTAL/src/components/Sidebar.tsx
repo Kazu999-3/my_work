@@ -8,6 +8,25 @@ import FavoritesPanel from './FavoritesPanel';
 import PushOptIn from './PushOptIn';
 import SystemStatus from './SystemStatus';
 
+// スマホ下ナビの各項目。モジュールスコープに置くことで、Sidebarの再描画のたびに
+// コンポーネントが作り直されて再マウント→タップが効きづらくなる問題を防ぐ。
+function MobileNavItem({ item, active, onClick }: { item: { id: string; label: string; href: string; icon: any; color: string; activeBg: string }; active: boolean; onClick?: () => void }) {
+  const Icon = item.icon;
+  return (
+    <Link
+      href={item.href}
+      prefetch={false}
+      onClick={onClick}
+      className={`flex flex-col items-center justify-center min-w-[3.5rem] px-2 py-1.5 rounded-xl transition-colors ${
+        active ? `${item.activeBg} ${item.color}` : 'text-gray-400 active:bg-white/10'
+      }`}
+    >
+      <Icon size={18} className="mb-1" />
+      <span className="text-[9px] font-bold tracking-wider truncate w-full text-center">{item.label}</span>
+    </Link>
+  );
+}
+
 // 一般ユーザー用 (管理者エリア外で表示)
 const MENU_ITEMS = [
   { id: 'balancer',  label: 'チーム分け', icon: Swords, href: '/balancer', color: 'text-rose-500', activeBg: 'bg-rose-500/15' },
@@ -222,26 +241,8 @@ export default function Sidebar() {
         const primaryItems = activeMenuItems.slice(0, PRIMARY);
         const overflowItems = activeMenuItems.slice(PRIMARY);
         const hasMore = overflowItems.length > 0 || isAdminArea;
-
-        const NavLink = ({ item, onClick }: { item: typeof activeMenuItems[number]; onClick?: () => void }) => {
-          const isActive = pathname === item.href || (item.id === 'leaderboard' && pathname.startsWith('/player'));
-          return (
-            <Link
-              key={`mobile-${item.id}`}
-              href={item.href}
-              prefetch={false}
-              onClick={onClick}
-              className={`flex flex-col items-center justify-center min-w-[3.5rem] p-2 rounded-xl transition-all duration-300 ${
-                isActive
-                  ? `${item.activeBg} ${item.color} shadow-inner border border-white/5`
-                  : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'
-              }`}
-            >
-              <item.icon size={18} className={`mb-1 transition-transform duration-300 ${isActive ? 'scale-110' : ''}`} />
-              <span className="text-[9px] font-bold tracking-wider truncate w-full text-center">{item.label}</span>
-            </Link>
-          );
-        };
+        const isActive = (item: typeof activeMenuItems[number]) =>
+          pathname === item.href || (item.id === 'leaderboard' && pathname.startsWith('/player'));
 
         return (
           <>
@@ -266,20 +267,20 @@ export default function Sidebar() {
                   )}
 
                   <div className="grid grid-cols-4 gap-2">
-                    {overflowItems.map((item) => <NavLink key={`sheet-${item.id}`} item={item} onClick={() => setShowMobileMore(false)} />)}
+                    {overflowItems.map((item) => <MobileNavItem key={`sheet-${item.id}`} item={item} active={isActive(item)} onClick={() => setShowMobileMore(false)} />)}
                   </div>
                 </div>
               </div>
             )}
 
             <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[#0a0b10]/95 backdrop-blur-xl border-t border-white/10 z-50 flex items-center justify-around px-1 py-2 shadow-[0_-4px_24px_rgba(0,0,0,0.5)] pb-[env(safe-area-inset-bottom)]">
-              {primaryItems.map((item) => <NavLink key={`bar-${item.id}`} item={item} />)}
+              {primaryItems.map((item) => <MobileNavItem key={`bar-${item.id}`} item={item} active={isActive(item)} />)}
 
               {hasMore && (
                 <button
                   onClick={() => setShowMobileMore((v) => !v)}
-                  className={`flex flex-col items-center justify-center min-w-[3.5rem] p-2 rounded-xl transition-all cursor-pointer ${
-                    showMobileMore ? 'bg-white/10 text-white border border-white/10' : 'text-gray-400 hover:text-white border border-transparent'
+                  className={`flex flex-col items-center justify-center min-w-[3.5rem] px-2 py-1.5 rounded-xl transition-colors ${
+                    showMobileMore ? 'bg-white/10 text-white' : 'text-gray-400 active:bg-white/10'
                   }`}
                 >
                   <MoreHorizontal size={18} className="mb-1" />
