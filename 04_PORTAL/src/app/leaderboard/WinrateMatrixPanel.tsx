@@ -137,7 +137,7 @@ export default function WinrateMatrixPanel() {
         <table className="w-full min-w-[800px] border-separate border-spacing-y-2">
           <thead>
             <tr>
-              <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 tracking-wider w-48">PLAYER</th>
+              <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 tracking-wider w-48 sticky left-0 z-20 bg-[#0d0f16]">PLAYER</th>
               <th className="px-2 py-3 text-center text-xs font-bold text-gray-500 tracking-wider">TOP</th>
               <th className="px-2 py-3 text-center text-xs font-bold text-gray-500 tracking-wider">JUNGLE</th>
               <th className="px-2 py-3 text-center text-xs font-bold text-gray-500 tracking-wider">MID</th>
@@ -151,7 +151,7 @@ export default function WinrateMatrixPanel() {
               const overallWr = player.totalGames > 0 ? (player.totalWins / player.totalGames) * 100 : 0;
               return (
                 <tr key={player.name} className="group hover:bg-white/[0.02] transition-colors rounded-2xl">
-                  <td className="px-4 py-3 align-middle rounded-l-2xl border-y border-l border-gray-800/30 bg-gray-900/20">
+                  <td className="px-4 py-3 align-middle rounded-l-2xl border-y border-l border-gray-800/30 bg-[#12141b] sticky left-0 z-10">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center text-xs font-bold text-gray-300 border border-gray-700">
                         {idx + 1}

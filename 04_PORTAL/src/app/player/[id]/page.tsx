@@ -363,14 +363,16 @@ export default function PlayerMyPage() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 whitespace-nowrap ${
-                  isActive 
-                    ? 'bg-gradient-to-r from-cyan-500 to-indigo-500 text-black font-black shadow-[0_4px_12px_rgba(6,182,212,0.25)]' 
+                title={tab.name}
+                className={`flex items-center justify-center gap-2 shrink-0 px-3 sm:px-4 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 whitespace-nowrap ${
+                  isActive
+                    ? 'bg-gradient-to-r from-cyan-500 to-indigo-500 text-black font-black shadow-[0_4px_12px_rgba(6,182,212,0.25)]'
                     : 'text-gray-400 hover:text-white hover:bg-white/5'
                 }`}
               >
                 {tab.icon}
-                <span>{tab.name}</span>
+                {/* スマホでは非アクティブはアイコンのみ（全タブが収まるように）、sm以上とアクティブはラベル表示 */}
+                <span className={isActive ? 'inline' : 'hidden sm:inline'}>{tab.name}</span>
               </button>
             );
           })}

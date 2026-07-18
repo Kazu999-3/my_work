@@ -45,6 +45,7 @@ export default function LeaderboardPage() {
   const [activeTab, setActiveTab] = useState<'ranking' | 'winrate'>('ranking');
   const [syncing, setSyncing] = useState(false);
   const [minGames, setMinGames] = useState<number>(3); // 最小試合数フィルター（デフォルト3試合）
+  const [search, setSearch] = useState(''); // プレイヤー名検索(L-03)
 
   const handleSyncDiscordNames = async () => {
     if (!confirm('全プレイヤーのDiscord名を最新のものに一括同期しますか？少し時間がかかります。')) return;
@@ -220,8 +221,8 @@ export default function LeaderboardPage() {
               </div>
             </div>
 
-            {/* 試合数フィルターコントロール */}
-            <div className="flex justify-center mb-8">
+            {/* 試合数フィルター・検索コントロール */}
+            <div className="flex flex-wrap justify-center gap-3 mb-8">
               <div className="flex items-center gap-2 bg-gray-900 border border-gray-800 rounded-xl px-4 py-2">
                 <span className="text-xs text-gray-400 font-bold">表示する最小試合数:</span>
                 <select
@@ -236,12 +237,24 @@ export default function LeaderboardPage() {
                   <option value={10}>10試合以上</option>
                 </select>
               </div>
+              <div className="flex items-center gap-2 bg-gray-900 border border-gray-800 rounded-xl px-4 py-2">
+                <span className="text-xs text-gray-400 font-bold">🔍</span>
+                <input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="プレイヤー名で検索"
+                  className="bg-gray-800 text-white text-xs font-bold rounded-lg border border-gray-700 px-2 py-1 focus:outline-none focus:border-blue-500 w-40"
+                />
+                {search && <button onClick={() => setSearch('')} className="text-gray-500 hover:text-white text-xs">✕</button>}
+              </div>
             </div>
 
             <p className="text-center text-gray-400 mb-6 font-bold">各レーンのMMR TOP 5</p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
-              {ROLES.map(role => (
+              {ROLES.map(role => {
+                const rows = (data[role] || []).filter(p => !search || p.name.toLowerCase().includes(search.toLowerCase()));
+                return (
                 <div key={role} className="bg-gray-900 rounded-2xl shadow-xl border border-gray-800 overflow-hidden">
                   <div className="bg-gray-800 px-4 py-3 border-b border-gray-700">
                     <h2 className="text-lg font-bold text-white text-center flex items-center justify-center gap-2">
@@ -257,12 +270,12 @@ export default function LeaderboardPage() {
                   </div>
                   
                   <div className="divide-y divide-gray-800">
-                    {data[role].length === 0 ? (
+                    {rows.length === 0 ? (
                       <div className="p-8 text-center text-gray-500 text-sm">
-                        データがありません
+                        {search ? '該当なし' : 'データがありません'}
                       </div>
                     ) : (
-                      data[role].map((player, idx) => (
+                      rows.map((player, idx) => (
                         <div key={player.name} className="p-4 hover:bg-gray-800/50 transition-colors flex items-center justify-between">
                           <div className="flex items-center gap-3">
                             <div className={`w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0
@@ -297,7 +310,8 @@ export default function LeaderboardPage() {
                     )}
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           </>
         )}
