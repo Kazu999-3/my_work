@@ -238,6 +238,35 @@ export default function MatchupsPage() {
   }, [matchups, mySearch, isMatch, applyRoleFilter]);
 
   const set = (k: string, v: any) => setMemo((p: any) => ({ ...p, [k]: v }));
+
+  // 対面メモのAI下書き生成（champion/enemy/role から各項目のたたき台を埋める）
+  const [aiDrafting, setAiDrafting] = useState(false);
+  const generateDraft = async () => {
+    if (!memo.champion || !memo.enemy) { alert('自分と相手のチャンピオンを入力してください'); return; }
+    setAiDrafting(true);
+    try {
+      const res = await fetch('/api/matchup/draft', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ champion: memo.champion, enemy: memo.enemy, role: memo.role }),
+      });
+      const d = await res.json();
+      if (!d.success) throw new Error(d.error || '生成に失敗しました');
+      setMemo((p: any) => ({
+        ...p,
+        winCondition: d.draft.winCondition || p.winCondition,
+        earlyGame: d.draft.earlyGame || p.earlyGame,
+        powerSpikes: d.draft.powerSpikes || p.powerSpikes,
+        buildRunes: d.draft.buildRunes || p.buildRunes,
+        counterJg: d.draft.counterJg || p.counterJg,
+      }));
+      setShowDetails(true); // 埋まった詳細が見えるように開く
+    } catch (e: any) {
+      alert('AI下書きに失敗: ' + e.message);
+    } finally {
+      setAiDrafting(false);
+    }
+  };
   
   const saveMemo = async () => {
     if (!memo.champion || !memo.enemy) return alert('チャンピオン名を入力してください');
@@ -999,7 +1028,19 @@ export default function MatchupsPage() {
       {showForm && (
         <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="glass-panel p-6 rounded-2xl border-l-4 border-[#00cfef] relative overflow-hidden">
           <div className="absolute -right-10 -top-10 w-32 h-32 bg-[#00cfef]/10 rounded-full blur-2xl"></div>
-          <h3 className="text-[#00cfef] font-bold mb-4 font-mono relative z-10">新規マッチアップメモ</h3>
+          <div className="flex items-center justify-between gap-3 mb-4 flex-wrap relative z-10">
+            <h3 className="text-[#00cfef] font-bold font-mono">新規マッチアップメモ</h3>
+            <button
+              type="button"
+              onClick={generateDraft}
+              disabled={aiDrafting}
+              title="自分と相手のチャンプから、メモのたたき台をAIが自動生成します"
+              className="px-4 py-2 bg-[#a78bfa]/15 text-[#a78bfa] border border-[#a78bfa]/30 font-black rounded-xl text-xs hover:bg-[#a78bfa]/25 transition-all flex items-center gap-2 disabled:opacity-50"
+            >
+              {aiDrafting ? <RefreshCw size={14} className="animate-spin" /> : <Zap size={14} />}
+              {aiDrafting ? 'AI生成中...' : '🪄 AIで下書き'}
+            </button>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 relative z-10">
             <div>
               <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">自分のチャンプ *</label>
