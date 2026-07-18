@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Trophy, TrendingUp, TrendingDown, Minus, Swords, Activity } from 'lucide-react';
+import { Spinner, ErrorState } from '../../components/Feedback';
 
 interface LaneStats {
   games: number;
@@ -47,18 +48,16 @@ export default function WinrateMatrixPanel() {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center p-12 bg-white/5 backdrop-blur-md rounded-3xl border border-gray-800">
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-emerald-500 border-t-transparent mb-4"></div>
-        <div className="text-gray-400 font-medium">戦績データを集計中...</div>
+      <div className="bg-white/5 backdrop-blur-md rounded-3xl border border-gray-800">
+        <Spinner label="戦績データを集計中..." />
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="p-8 bg-red-900/20 rounded-3xl border border-red-800/50 text-center">
-        <div className="text-red-400 font-bold mb-2">読み込みエラー</div>
-        <div className="text-red-300/70 text-sm">{error}</div>
+      <div className="bg-white/5 rounded-3xl border border-gray-800">
+        <ErrorState title="読み込みエラー" message={error} onRetry={() => window.location.reload()} />
       </div>
     );
   }

@@ -21,16 +21,18 @@ export function canEditRecruitment(userId, recruitment, adminIds) {
   return userId === recruitment.owner_discord_id || adminIds.includes(userId);
 }
 
-/** モーダル送信時などに募集レコードを新規作成する */
-export async function createRecruitment(env, { messageId, channelId, ownerDiscordId, mode, maxCount }) {
-  return fetchSupabase(env, 'recruitments', '', 'POST', {
+/** モーダル送信時などに募集レコードを新規作成する。startAt(ISO)があれば開始リマインド対象になる。 */
+export async function createRecruitment(env, { messageId, channelId, ownerDiscordId, mode, maxCount, startAt = null }) {
+  const row = {
     discord_message_id: messageId,
     discord_channel_id: channelId,
     owner_discord_id: ownerDiscordId,
     mode,
     max_count: maxCount,
     status: 'open',
-  });
+  };
+  if (startAt) row.start_at = startAt;
+  return fetchSupabase(env, 'recruitments', '', 'POST', row);
 }
 
 export async function markRecruitmentStatus(env, messageId, status) {

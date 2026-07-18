@@ -1,7 +1,7 @@
 import { CONFIG, getPortalUrl } from '../config.js';
 import { fetchGAS, sendDiscordMessage } from '../utils/api.js';
 import { createMessageContent, createRecruitButtons, createRecruitEmbed } from '../ui/embeds.js';
-import { parseMessageData } from '../utils/helpers.js';
+import { parseMessageData, parseStartTime } from '../utils/helpers.js';
 import { createRecruitment } from '../utils/recruitPermission.js';
 
 export async function handleModalSubmit(interaction, env, ctx) {
@@ -32,6 +32,7 @@ export async function handleModalSubmit(interaction, env, ctx) {
           ownerDiscordId: userId,
           mode,
           maxCount,
+          startAt: parseStartTime(getVal('time')), // 開始予定時刻を解釈できればリマインド対象に
         });
       } catch (e) {
         console.error("recruitments テーブルへの記録に失敗しました（埋め込みメタデータ側は投稿済み）:", e);

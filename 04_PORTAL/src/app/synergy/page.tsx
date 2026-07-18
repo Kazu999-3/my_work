@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import { RefreshCw, Users, Swords, Crown, Target, HeartHandshake } from 'lucide-react';
+import { Spinner } from '../../components/Feedback';
 
 interface MatchData {
   match_id: number;
@@ -131,8 +132,7 @@ export default function SynergyPage() {
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center bg-gray-950 text-white">
-        <RefreshCw className="h-8 w-8 animate-spin text-fuchsia-500" />
-        <span className="ml-3 font-bold text-fuchsia-400">データを分析中...</span>
+        <Spinner label="相性データを分析中..." />
       </div>
     );
   }

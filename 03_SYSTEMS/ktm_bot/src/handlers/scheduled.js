@@ -1,4 +1,6 @@
 import { CONFIG } from '../config.js';
+import { fetchSupabase } from '../utils/supabase.js';
+import { parseMessageData } from '../utils/helpers.js';
 
 export async function handleScheduledEvent(event, env, ctx) {
   console.log("Scheduled event triggered:", JSON.stringify(event));
@@ -11,9 +13,70 @@ export async function handleScheduledEvent(event, env, ctx) {
   } else if (cronExpression === "0 12 * * 3" || mode === "wednesday") {
     // 毎週水曜 21:00 の事前告知（土曜イベントを7日先まで検索）
     await sendEventUsersNotification(env, { lookaheadHours: 7 * 24 });
+  } else if (cronExpression === "*/10 * * * *" || mode === "recruit_reminder") {
+    // 10分ごと: 開始時刻が近い募集の参加者へリマインド(D1)
+    await sendRecruitmentReminders(env);
   } else {
     // 毎週金・土 20:00 の直前通知（48時間以内）
     await sendEventUsersNotification(env, { lookaheadHours: 48 });
+  }
+}
+
+/** 開始予定時刻が近い(=数分〜15分以内)募集の参加者にメンションでリマインドする(D1) */
+async function sendRecruitmentReminders(env) {
+  try {
+    const now = Date.now();
+    const minIso = new Date(now - 5 * 60 * 1000).toISOString();  // 5分前まで（開始直後の取りこぼし救済）
+    const maxIso = new Date(now + 15 * 60 * 1000).toISOString(); // 15分後まで（10分間隔cronで確実に1回拾う）
+    const q = `status=eq.open&reminded=eq.false&start_at=not.is.null&start_at=gte.${minIso}&start_at=lte.${maxIso}&select=*`;
+    const rows = await fetchSupabase(env, 'recruitments', q);
+    if (!rows || rows.length === 0) return;
+
+    for (const r of rows) {
+      try {
+        // 元の募集メッセージを取得して参加者を復元
+        const msgRes = await fetch(`https://discord.com/api/v10/channels/${r.discord_channel_id}/messages/${r.discord_message_id}`, {
+          headers: { "Authorization": `Bot ${env.DISCORD_TOKEN}` }
+        });
+        if (!msgRes.ok) {
+          // メッセージが削除済み等 → 二度と拾わないよう既送信扱いにする
+          await markReminded(env, r.discord_message_id);
+          continue;
+        }
+        const msg = await msgRes.json();
+        const meta = parseMessageData(msg);
+        const ids = [...new Set([meta.owner, ...(meta.joined || [])])].filter(Boolean);
+        const mentions = ids.map(id => `<@${id}>`).join(' ');
+        const timeText = meta.time ? `（開始予定 ${meta.time}）` : '';
+
+        await fetch(`https://discord.com/api/v10/channels/${r.discord_channel_id}/messages`, {
+          method: "POST",
+          headers: { "Authorization": `Bot ${env.DISCORD_TOKEN}`, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            content: `⏰ **まもなく開始予定です！**${timeText}\n参加者は集合をお願いします 🎮\n${mentions}`.trim(),
+            message_reference: { message_id: r.discord_message_id },
+            allowed_mentions: { users: ids.slice(0, 100) }
+          })
+        });
+
+        await markReminded(env, r.discord_message_id);
+      } catch (e) {
+        console.error(`Recruitment reminder failed (msg ${r.discord_message_id}):`, e);
+      }
+    }
+  } catch (err) {
+    console.error("sendRecruitmentReminders error:", err);
+  }
+}
+
+async function markReminded(env, messageId) {
+  try {
+    await fetchSupabase(env, 'recruitments', `discord_message_id=eq.${messageId}`, 'PATCH', {
+      reminded: true,
+      updated_at: new Date().toISOString(),
+    });
+  } catch (e) {
+    console.error("markReminded failed:", e);
   }
 }
 

@@ -5,6 +5,7 @@ import { supabase } from '../../lib/supabaseClient';
 import { History, RefreshCw, Trophy, Swords, Calendar } from 'lucide-react';
 import Link from 'next/link';
 import { getChampIcon } from '../../lib/ddragonClient';
+import { Spinner } from '../../components/Feedback';
 
 interface MatchData {
   id: number;
@@ -63,8 +64,7 @@ export default function HistoryPage() {
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center bg-gray-950 text-white">
-        <RefreshCw className="h-8 w-8 animate-spin text-blue-500" />
-        <span className="ml-3 font-bold text-blue-400">履歴を読み込み中...</span>
+        <Spinner label="試合履歴を読み込み中..." />
       </div>
     );
   }

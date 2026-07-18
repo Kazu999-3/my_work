@@ -9,6 +9,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getFavorites, toggleFavoriteChampion } from '../../components/FavoritesPanel';
+import { Spinner } from '../../components/Feedback';
 
 function ChampionsContent() {
   const searchParams = useSearchParams();
@@ -288,12 +289,16 @@ function ChampionsContent() {
           searchKey: `${c.id.toLowerCase()} ${c.name}`
         }));
         return Promise.all([
-          supabase.from('matchup_sentinel').select('champion, created_at, strategy, patch_meta:raw_data->patch_meta, jg_style:raw_data->jg_style, is_favorited:raw_data->is_favorited').eq('enemy', 'GLOBAL'),
+          // 一覧では大きい strategy 全文は不要。必要なメタ情報だけ取得（エグレス削減 #53）
+          supabase.from('matchup_sentinel').select('champion, created_at, patch_meta:raw_data->patch_meta, jg_style:raw_data->jg_style, is_favorited:raw_data->is_favorited').eq('enemy', 'GLOBAL'),
           // 一覧グリッド用に全チャンピオン分のパワースパイクを一括取得（詳細表示と同じchampion_power_spikesテーブル）
-          supabase.from('champion_power_spikes').select('champion, early_game_score, mid_game_score, late_game_score')
+          supabase.from('champion_power_spikes').select('champion, early_game_score, mid_game_score, late_game_score'),
+          // strategy全文を転送せず「中身があるchampion名」だけを取得し pending 判定に使う（従来の !strategy と同義）
+          supabase.from('matchup_sentinel').select('champion').eq('enemy', 'GLOBAL').not('strategy', 'is', null).neq('strategy', '')
         ]);
       })
-      .then(([{ data }, { data: spikeRows }]) => {
+      .then(([{ data }, { data: spikeRows }, { data: contentRows }]) => {
+        const hasContent = new Set((contentRows || []).map((r: any) => r.champion));
         const dates: Record<string, string> = {};
         const pending: Record<string, boolean> = {};
         const metas: Record<string, any> = {};
@@ -302,7 +307,7 @@ function ChampionsContent() {
         if (data) {
           data.forEach((row: any) => {
             dates[row.champion] = row.created_at;
-            pending[row.champion] = !row.strategy; // strategyが空・nullならpending
+            pending[row.champion] = !hasContent.has(row.champion); // 中身があれば未pending（従来の !strategy と同じ挙動）
             metas[row.champion] = row.patch_meta || null;
 
             // jg_styleが文字列だった場合でも安全にパースする
@@ -1703,7 +1708,7 @@ function ChampionsContent() {
       </motion.div>
 
       {loading ? (
-        <div className="flex justify-center items-center py-20"><div className="w-8 h-8 border-4 border-[#c89b3c] border-t-transparent rounded-full animate-spin"></div></div>
+        <Spinner label="チャンピオン辞典を読み込み中..." />
       ) : (
         <motion.div variants={containerVariants} initial="hidden" animate="visible" className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-4">
           {filtered.map(c => {

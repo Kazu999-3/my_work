@@ -1,6 +1,36 @@
 import { CONFIG } from '../config.js';
 import { fetchGAS, fetchPortalAPI, sendDiscordMessage, sendInteractionFollowup } from './api.js';
 
+/**
+ * parseStartTime: 募集の「開始予定時刻」テキスト(JST)を解釈してISO(UTC)文字列を返す。
+ * 対応例: "21:00" / "21時" / "21時30分" / "2100" / "21"。全角数字/コロンも許容。
+ * 解釈できない(例: "今夜"/"未定"/空)場合は null を返す＝リマインド対象外。
+ * 指定時刻が現在より過去なら「翌日の同時刻」とみなす。
+ */
+export function parseStartTime(text) {
+  if (!text) return null;
+  const half = String(text).trim().replace(/[０-９：]/g, (c) => {
+    const map = { '０': '0', '１': '1', '２': '2', '３': '3', '４': '4', '５': '5', '６': '6', '７': '7', '８': '8', '９': '9', '：': ':' };
+    return map[c] || c;
+  });
+
+  let hh = null, mm = 0, m;
+  if ((m = half.match(/(\d{1,2}):(\d{2})/))) { hh = +m[1]; mm = +m[2]; }
+  else if ((m = half.match(/(\d{1,2})\s*時\s*(?:(\d{1,2})\s*分?)?/))) { hh = +m[1]; mm = m[2] ? +m[2] : 0; }
+  else if ((m = half.match(/^(\d{2})(\d{2})$/))) { hh = +m[1]; mm = +m[2]; }
+  else if ((m = half.match(/^(\d{1,2})$/))) { hh = +m[1]; mm = 0; }
+  if (hh === null || hh > 23 || mm > 59) return null;
+
+  const now = new Date();
+  // 現在のJST日付を求める（UTC+9）
+  const jstNow = new Date(now.getTime() + 9 * 3600 * 1000);
+  const y = jstNow.getUTCFullYear(), mo = jstNow.getUTCMonth(), d = jstNow.getUTCDate();
+  // JST(y-mo-d HH:MM) を UTC に変換（UTC = JST - 9h。Date.UTCが桁上がりを吸収）
+  let startUtc = Date.UTC(y, mo, d, hh - 9, mm, 0, 0);
+  if (startUtc <= now.getTime()) startUtc += 24 * 3600 * 1000; // 過去なら翌日
+  return new Date(startUtc).toISOString();
+}
+
 /** parseMessageData: 元メッセージから募集のメタデータを復元する */
 export function parseMessageData(message) {
   const content = message.content || "";
