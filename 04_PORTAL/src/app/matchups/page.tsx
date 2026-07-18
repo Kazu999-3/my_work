@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import { getChampIcon } from '../../lib/ddragonClient';
-import { Shield, Target, ChevronLeft, ChevronDown, ChevronUp, Swords, Plus, X, Save, Trash2, Activity, Award, Zap, AlertCircle, CheckCircle, ArrowLeftRight } from 'lucide-react';
+import { Shield, Target, ChevronLeft, ChevronDown, ChevronUp, Swords, Plus, X, Save, Trash2, Activity, Award, Zap, AlertCircle, CheckCircle, ArrowLeftRight, History, RefreshCw } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { motion, AnimatePresence } from 'framer-motion';
 import ChampSelect from '../../components/ChampSelect';
@@ -316,6 +316,48 @@ export default function MatchupsPage() {
     }
   };
 
+  // 直近の試合(ktm_matches)からチーム構成をシミュレータに自動入力する(実戦データ連携)
+  const [loadingRecent, setLoadingRecent] = useState(false);
+  const normSimRole = (r: string): 'TOP' | 'JG' | 'MID' | 'BOT' | 'SUP' | null => {
+    const u = String(r || '').toUpperCase();
+    if (u.startsWith('TOP')) return 'TOP';
+    if (u.startsWith('JG') || u.startsWith('JUNG')) return 'JG';
+    if (u.startsWith('MID')) return 'MID';
+    if (u.startsWith('BOT') || u === 'ADC' || u.startsWith('BOTTOM') || u === 'CARRY') return 'BOT';
+    if (u.startsWith('SUP') || u === 'UTILITY') return 'SUP';
+    return null;
+  };
+  const loadFromRecentMatch = async () => {
+    setLoadingRecent(true);
+    setSimError(null);
+    try {
+      const { data, error } = await supabase
+        .from('ktm_matches')
+        .select('id, created_at, ktm_match_participants ( team, role, champion_name )')
+        .order('created_at', { ascending: false })
+        .limit(1);
+      if (error) throw error;
+      const parts: any[] = (data && data[0]?.ktm_match_participants) || [];
+      if (parts.length === 0) { setSimError('直近の試合データが見つかりませんでした。'); return; }
+      const blue: Record<string, string> = { TOP: '', JG: '', MID: '', BOT: '', SUP: '' };
+      const red: Record<string, string> = { TOP: '', JG: '', MID: '', BOT: '', SUP: '' };
+      let filled = 0;
+      parts.forEach((p) => {
+        const role = normSimRole(p.role);
+        if (!role || !p.champion_name) return;
+        if (p.team === 'BLUE') { blue[role] = p.champion_name; filled++; }
+        else if (p.team === 'RED') { red[role] = p.champion_name; filled++; }
+      });
+      if (filled === 0) { setSimError('直近の試合にチャンピオン情報が無く、読み込めませんでした。'); return; }
+      setBlueChamps(blue);
+      setRedChamps(red);
+    } catch (e: any) {
+      setSimError('直近の試合の読み込みに失敗しました: ' + e.message);
+    } finally {
+      setLoadingRecent(false);
+    }
+  };
+
   // AIシミュレーターのレンダリング
   const renderSimulator = () => {
     const roles = ['TOP', 'JG', 'MID', 'BOT', 'SUP'] as const;
@@ -325,9 +367,19 @@ export default function MatchupsPage() {
         {/* 入力パネル (Blue vs Red) */}
         <div className="glass-panel p-6 md:p-8 rounded-3xl relative overflow-hidden border-t-2 border-[#a78bfa]/20">
           <div className="absolute -right-20 -top-20 w-48 h-48 bg-[#a78bfa]/5 rounded-full blur-3xl"></div>
-          <h3 className="text-[#a78bfa] font-black text-lg mb-6 flex items-center gap-2">
-            <Swords size={20} /> 5v5 チーム構成＆勝利プラン・アナライザー
-          </h3>
+          <div className="flex items-center justify-between gap-3 mb-6 flex-wrap">
+            <h3 className="text-[#a78bfa] font-black text-lg flex items-center gap-2">
+              <Swords size={20} /> 5v5 チーム構成＆勝利プラン・アナライザー
+            </h3>
+            <button
+              onClick={loadFromRecentMatch}
+              disabled={loadingRecent || simLoading}
+              title="直近の試合のチーム構成を読み込む"
+              className="glass-panel glass-panel-hover rounded-xl px-4 py-2 text-xs font-bold text-[#00cfef] flex items-center gap-2 disabled:opacity-50 active:scale-95 transition-transform"
+            >
+              {loadingRecent ? <RefreshCw size={14} className="animate-spin" /> : <History size={14} />} 直近の試合から読み込む
+            </button>
+          </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-9 gap-6 items-center">
             {/* Blue Side */}
