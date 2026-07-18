@@ -225,13 +225,8 @@ function runBalanceSearch(players: Player[], ctx: BalanceContext): RawBalanceCan
     });
   });
 
-  const sortedByWR = [...players].sort((a, b) => b.winRate - a.winRate);
-  const bestWRPlayerName = sortedByWR[0].name;
-  const worstWRPlayerName = sortedByWR[9].name;
-
-  const sortedByMMR = [...players].sort((a, b) => (b.avgMMR || 0) - (a.avgMMR || 0));
-  const highestMMRPlayerName = sortedByMMR[0].name;
-  const lowestMMRPlayerName = sortedByMMR[9].name;
+  // WR最下位は handicap（下記）で使う。最高WR/最高・最低MMRの参照は N2/N4 の撤去で不要になった。
+  const worstWRPlayerName = [...players].sort((a, b) => b.winRate - a.winRate)[9].name;
 
   const combinations = getCombinations([0, 1, 2, 3, 4, 5, 6, 7, 8, 9], 5);
   const perms = getPermutations([0, 1, 2, 3, 4]);
@@ -295,13 +290,16 @@ function runBalanceSearch(players: Player[], ctx: BalanceContext): RawBalanceCan
 
     // 禁止ペアが同じチームに入らないように制限（表記揺れや部分一致対応）。
     // 禁止ペアは ctx.forbiddenPairs（DB設定由来）から渡される。#30でハードコードを廃止。
+    // N3: 以前は部分一致(includes)で判定していたため、短い名前(例「こん」)が別人(「こんた」等)にも
+    // 当たって意図せず引き離す事故があった。完全一致(前後空白は無視)に変更して誤爆を防ぐ。
     const checkSameTeam = (name1: string, name2: string) => {
       const n1 = name1.toLowerCase().trim();
       const n2 = name2.toLowerCase().trim();
-      const hasN1A = teamA.some(p => p.name.toLowerCase().includes(n1) || n1.includes(p.name.toLowerCase()));
-      const hasN2A = teamA.some(p => p.name.toLowerCase().includes(n2) || n2.includes(p.name.toLowerCase()));
-      const hasN1B = teamB.some(p => p.name.toLowerCase().includes(n1) || n1.includes(p.name.toLowerCase()));
-      const hasN2B = teamB.some(p => p.name.toLowerCase().includes(n2) || n2.includes(p.name.toLowerCase()));
+      const eq = (playerName: string, target: string) => playerName.toLowerCase().trim() === target;
+      const hasN1A = teamA.some(p => eq(p.name, n1));
+      const hasN2A = teamA.some(p => eq(p.name, n2));
+      const hasN1B = teamB.some(p => eq(p.name, n1));
+      const hasN2B = teamB.some(p => eq(p.name, n2));
       return (hasN1A && hasN2A) || (hasN1B && hasN2B);
     };
 
@@ -381,12 +379,10 @@ function runBalanceSearch(players: Player[], ctx: BalanceContext): RawBalanceCan
 
         let penalty = compositionPenalty, totalA = 0, totalB = 0;
 
-        // ソフト制限: 最高MMRと最低MMRが同じチームでない場合、ペナルティを加算
-        const highestInAPenalty = teamAIndices.some(idx => players[idx].name === highestMMRPlayerName);
-        const lowestInAPenalty = teamAIndices.some(idx => players[idx].name === lowestMMRPlayerName);
-        if (highestInAPenalty !== lowestInAPenalty && highestMMRPlayerName && lowestMMRPlayerName) {
-          penalty += 30000;
-        }
+        // N2: 以前あった「最高MMRと最低MMRは同じチームに(別チームなら+30000)」は、
+        // 下の calcTeamSpreadPenalty(1チーム内の強弱差が大きいと大ペナルティ)と真っ向から
+        // 矛盾していた(強者と弱者を同居させると spread ペナルティが必ず勝つ)。方針を
+        // 「総合MMR均等 + チーム内格差を避ける」に一本化し、この矛盾ルールは撤去した。
 
         let lanesAdvantagedA = 0, lanesAdvantagedB = 0;
         let highRankCountA = 0, highRankCountB = 0;
@@ -543,11 +539,9 @@ function runBalanceSearch(players: Player[], ctx: BalanceContext): RawBalanceCan
         const totalWRA = teamAIndices.reduce((sum, idx) => sum + (players[idx].winRate - 50.0) * Math.min(1.0, players[idx].games / 10), 0);
         const totalWRB = teamBIndices.reduce((sum, idx) => sum + (players[idx].winRate - 50.0) * Math.min(1.0, players[idx].games / 10), 0);
         
-        penalty += Math.abs(totalWRA - totalWRB) * 400; // 勝率偏りペナルティをマイルドに調整（1500から400へ）
-
-        if (teamAIndices.some(idx => players[idx].name === bestWRPlayerName) !== teamAIndices.some(idx => players[idx].name === worstWRPlayerName)) {
-          penalty += 8000;
-        }
+        // N4: WR偏りは合計差ベースのこのペナルティに一本化。
+        // 以前あった「最高WRと最低WRが別チームなら+8000」は同じ意図の粗い重複だったため撤去。
+        penalty += Math.abs(totalWRA - totalWRB) * 400;
 
         const worstWRInA = teamAIndices.some(idx => players[idx].name === worstWRPlayerName);
 

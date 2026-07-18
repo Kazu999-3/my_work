@@ -153,7 +153,9 @@ export interface MmrCalcContext {
 export function calculateNewMMR(ctx: MmrCalcContext): number {
   const { currentMmr, opponentMmr, isWin, kills, deaths, assists, role, matchupCount } = ctx;
 
-  const isPlacement = false;
+  // プレースメント: そのレーンでの試合数が5未満なら、対面ダンパーを無効化し変動を1.5倍にして
+  // 早く適正レートへ寄せる(N5)。numGamesが渡されない場合は通常扱い。
+  const isPlacement = (ctx.numGames ?? 999) < 5;
 
   // ① 勝敗のベースポイント (スタッツ加点がなくなった分、ベースを少し底上げ)
   let baseDelta = isWin ? 18 : -20;
@@ -172,6 +174,11 @@ export function calculateNewMMR(ctx: MmrCalcContext): number {
 
   if (isWin) {
     baseDelta += eloBonus; // 格上に勝てば爆上がり、格下に勝っても少し上がり幅が減る程度
+    // 高勝率(60%超)プレイヤーは勝ち幅も抑える(N6: M2の対称。インフレをより効かせる)
+    if (ctx.totalWinRate > 60) {
+      const winGainPenalty = Math.min(8, (ctx.totalWinRate - 60) * 0.5);
+      baseDelta -= winGainPenalty;
+    }
   } else {
     // 負けた場合、格上相手ならマイナスが軽減されるが、最低でも -2 は下がるようにする
     baseDelta = Math.min(-2, baseDelta + eloBonus);
@@ -204,18 +211,39 @@ export function calculateNewMMR(ctx: MmrCalcContext): number {
 
   // ボーナスを合算
   let delta = (baseDelta + kdaBonus) * matchupDampener;
+  if (isPlacement) delta *= 1.5; // プレースメント中は変動を増幅(N5)
   delta = Math.round(delta);
 
-  // ⑤ 上限・下限のセーフティ
+  // ⑤ 上限・下限のセーフティ（プレースメント中は上限/下限を広げて早く動かす）
   if (isWin) {
-    delta = Math.max(0, Math.min(50, delta)); // 最大+50
+    delta = Math.max(0, Math.min(isPlacement ? 70 : 50, delta));
   } else {
     // 敗北は必ず最低3ポイント減点する(M2)。以前は高KDA×格上相手だと加点で相殺され
     // delta が0になり「負けても下がらない」ことがあり、レートの上振れ(インフレ)要因だった。
-    delta = Math.max(-40, Math.min(-3, delta)); // -40 〜 -3
+    delta = Math.max(isPlacement ? -60 : -40, Math.min(-3, delta));
   }
 
   return delta;
+}
+
+export interface LaneMmrs { TOP: number; JG: number; MID: number; ADC: number; SUP: number }
+export interface LaneGames { TOP?: number; JG?: number; MID?: number; ADC?: number; SUP?: number }
+
+/**
+ * 代表MMR（ktm_players.mmr）を「実際にプレイしたレーンの試合数」で重み付け平均して算出する。
+ * ライブ更新(match/record)とフルリビルド(performFullMmrRebuild)の両方から呼び、両経路で
+ * 同じ値になるようにするための共通関数(N1)。試合数が全く無い場合のみ従来の単純平均にフォールバック。
+ */
+export function computeRepresentativeMmr(mmrs: LaneMmrs, games?: LaneGames | null): number {
+  const lanes: (keyof LaneMmrs)[] = ['TOP', 'JG', 'MID', 'ADC', 'SUP'];
+  let wSum = 0, gSum = 0;
+  for (const l of lanes) {
+    const g = (games && games[l]) || 0;
+    wSum += mmrs[l] * g;
+    gSum += g;
+  }
+  if (gSum > 0) return Math.round(wSum / gSum);
+  return Math.round((mmrs.TOP + mmrs.JG + mmrs.MID + mmrs.ADC + mmrs.SUP) / 5);
 }
 
 export function calculateKdaScore(kills: number, deaths: number, assists: number): number {
@@ -330,6 +358,7 @@ export async function performFullMmrRebuild(supabase: SupabaseClient) {
         kills: p.kills || 0, deaths: p.deaths || 0, assists: p.assists || 0,
         matchupCount,
         totalWinRate: playerSnapshot.totalGames > 0 ? (playerSnapshot.totalWins / playerSnapshot.totalGames) * 100 : 50,
+        numGames: playerSnapshot.laneGames[role] || 0, // プレースメント判定用(N5)
         role,
       };
 
@@ -405,16 +434,12 @@ export async function performFullMmrRebuild(supabase: SupabaseClient) {
 
   // プレイヤーテーブルのMMR一括更新 (件数が少ないため、Identity制意エラーを避けるべく個別 update で並列処理)
   const playerUpdates = Array.from(playersMap.values()).map(p => {
-    // 代表MMRは「実際にプレイしたレーンの試合数」で重み付け平均する(M4)。
-    // やらないレーンのランク由来初期値に薄まる問題を解消。試合が無い人だけ従来の単純平均。
-    const lanes: [string, number][] = [
-      ['TOP', p.mmr_top], ['JG', p.mmr_jg], ['MID', p.mmr_mid], ['ADC', p.mmr_adc], ['SUP', p.mmr_sup],
-    ];
-    let wSum = 0, gSum = 0;
-    for (const [lk, m] of lanes) { const g = p.laneGames[lk] || 0; wSum += m * g; gSum += g; }
-    const avgMmr = gSum > 0
-      ? Math.round(wSum / gSum)
-      : Math.round((p.mmr_top + p.mmr_jg + p.mmr_mid + p.mmr_adc + p.mmr_sup) / 5);
+    // 代表MMRは共通関数で「実際にプレイしたレーンの試合数」で重み付け(M4/N1)。
+    // レーン別試合数(games_*)も永続化し、ライブ更新側と同じ計算ができるようにする。
+    const avgMmr = computeRepresentativeMmr(
+      { TOP: p.mmr_top, JG: p.mmr_jg, MID: p.mmr_mid, ADC: p.mmr_adc, SUP: p.mmr_sup },
+      { TOP: p.laneGames.TOP, JG: p.laneGames.JG, MID: p.laneGames.MID, ADC: p.laneGames.ADC, SUP: p.laneGames.SUP }
+    );
     return {
       id: p.id,
       mmr_top: p.mmr_top,
@@ -422,6 +447,11 @@ export async function performFullMmrRebuild(supabase: SupabaseClient) {
       mmr_mid: p.mmr_mid,
       mmr_adc: p.mmr_adc,
       mmr_sup: p.mmr_sup,
+      games_top: p.laneGames.TOP,
+      games_jg: p.laneGames.JG,
+      games_mid: p.laneGames.MID,
+      games_adc: p.laneGames.ADC,
+      games_sup: p.laneGames.SUP,
       mmr: avgMmr
     };
   });
@@ -436,6 +466,11 @@ export async function performFullMmrRebuild(supabase: SupabaseClient) {
           mmr_mid: pu.mmr_mid,
           mmr_adc: pu.mmr_adc,
           mmr_sup: pu.mmr_sup,
+          games_top: pu.games_top,
+          games_jg: pu.games_jg,
+          games_mid: pu.games_mid,
+          games_adc: pu.games_adc,
+          games_sup: pu.games_sup,
           mmr: pu.mmr
         })
         .eq('id', pu.id)

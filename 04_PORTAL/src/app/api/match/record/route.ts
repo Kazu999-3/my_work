@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
-import { calculateNewMMR, calculateKdaScore, MmrCalcContext, calculateInitialMmr } from '../../../../lib/mmr';
+import { calculateNewMMR, calculateKdaScore, MmrCalcContext, calculateInitialMmr, computeRepresentativeMmr } from '../../../../lib/mmr';
 
 export async function POST(request: Request) {
   try {
@@ -189,15 +189,24 @@ export async function POST(request: Request) {
     // それぞれのレコードを更新
     for (const r of results) {
       const roleMmrKey = `mmr_${r.role.toLowerCase()}`;
+      const gamesKey = `games_${r.role.toLowerCase()}`;
       const newRoleMmr = r.currentMmr + r.mmrDelta;
-      
-      // 全体MMRは各レーンの平均をとるのがKTMの仕様
+
       const top = r.role === 'TOP' ? newRoleMmr : (r.dbPlayer.mmr_top || 1200);
       const jg = r.role === 'JG' ? newRoleMmr : (r.dbPlayer.mmr_jg || 1200);
       const mid = r.role === 'MID' ? newRoleMmr : (r.dbPlayer.mmr_mid || 1200);
       const adc = r.role === 'ADC' ? newRoleMmr : (r.dbPlayer.mmr_adc || 1200);
       const sup = r.role === 'SUP' ? newRoleMmr : (r.dbPlayer.mmr_sup || 1200);
-      const newTotalMmr = Math.round((top + jg + mid + adc + sup) / 5);
+
+      // レーン別試合数を+1し、代表MMRは共通関数で試合数重み付け(N1・リビルドと同じ計算)
+      const newGames = {
+        TOP: (r.dbPlayer.games_top || 0) + (r.role === 'TOP' ? 1 : 0),
+        JG:  (r.dbPlayer.games_jg  || 0) + (r.role === 'JG'  ? 1 : 0),
+        MID: (r.dbPlayer.games_mid || 0) + (r.role === 'MID' ? 1 : 0),
+        ADC: (r.dbPlayer.games_adc || 0) + (r.role === 'ADC' ? 1 : 0),
+        SUP: (r.dbPlayer.games_sup || 0) + (r.role === 'SUP' ? 1 : 0),
+      };
+      const newTotalMmr = computeRepresentativeMmr({ TOP: top, JG: jg, MID: mid, ADC: adc, SUP: sup }, newGames);
 
       // Pity（通常の選抜漏れ・配置Pity）の計算
       const primary = r.dbPlayer.role_preferences?.primary || 'ALL';
@@ -232,6 +241,7 @@ export async function POST(request: Request) {
 
       const updateData: any = {
         [roleMmrKey]: newRoleMmr,
+        [gamesKey]: (newGames as any)[r.role],
         mmr: newTotalMmr,
         pity: newPity,
         off_role_pity: newOffRolePity
