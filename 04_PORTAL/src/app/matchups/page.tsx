@@ -26,6 +26,8 @@ export default function MatchupsPage() {
   const [memo, setMemo] = useState<any>({ ...EMPTY_MEMO });
   const [saving, setSaving] = useState(false);
   const [roleFilter, setRoleFilter] = useState('ALL');
+  const [resultFilter, setResultFilter] = useState('ALL'); // ALL | Win | Lose
+  const [difficultyFilter, setDifficultyFilter] = useState(0); // 0=ALL, 1..5
   const [champMap, setChampMap] = useState<Record<string, string>>({});
   const [viewMode, setViewMode] = useState<'list' | 'champion' | 'simulator'>('list');
   const [expandedChamp, setExpandedChamp] = useState<string | null>(null);
@@ -162,14 +164,17 @@ export default function MatchupsPage() {
   // 一覧ビュー用のフィルタ結果
   const results = useMemo(() => {
     let filtered = matchups.filter(m => isMatch(m.champion, mySearch) && isMatch(m.enemy, enemySearch));
+    if (resultFilter !== 'ALL') filtered = filtered.filter(m => String(m.raw_data?.result || '').toLowerCase() === resultFilter.toLowerCase());
+    if (difficultyFilter > 0) filtered = filtered.filter(m => (m.raw_data?.difficulty || 0) === difficultyFilter);
     filtered.sort((a, b) => {
       if (sortOrder === 'updated_desc') return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
       if (sortOrder === 'updated_asc') return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
       if (sortOrder === 'difficulty_desc') return (b.raw_data?.difficulty || 0) - (a.raw_data?.difficulty || 0);
+      if (sortOrder === 'difficulty_asc') return (a.raw_data?.difficulty || 0) - (b.raw_data?.difficulty || 0);
       return 0;
     });
     return applyRoleFilter(filtered);
-  }, [mySearch, enemySearch, matchups, isMatch, sortOrder, applyRoleFilter]);
+  }, [mySearch, enemySearch, matchups, isMatch, sortOrder, applyRoleFilter, resultFilter, difficultyFilter]);
 
   // チャンピオン別ビュー用のグループ化
   const championGroups = useMemo(() => {
@@ -1062,6 +1067,21 @@ export default function MatchupsPage() {
           <select value={roleFilter} onChange={e => setRoleFilter(e.target.value)} className="glass-panel rounded-2xl px-6 font-bold text-[#c89b3c] outline-none min-w-[140px] appearance-none cursor-pointer text-center">
             <option value="ALL">ALL ROLES</option>
             <option value="TOP">TOP</option><option value="JUNGLE">JUNGLE</option><option value="MID">MID</option><option value="BOT">BOT</option><option value="SUPPORT">SUPPORT</option>
+          </select>
+          <select value={resultFilter} onChange={e => setResultFilter(e.target.value)} className="glass-panel rounded-2xl px-5 font-bold text-emerald-300 outline-none min-w-[110px] appearance-none cursor-pointer text-center">
+            <option value="ALL">勝敗: 全て</option>
+            <option value="Win">勝ち</option>
+            <option value="Lose">負け</option>
+          </select>
+          <select value={difficultyFilter} onChange={e => setDifficultyFilter(parseInt(e.target.value))} className="glass-panel rounded-2xl px-5 font-bold text-rose-300 outline-none min-w-[120px] appearance-none cursor-pointer text-center">
+            <option value="0">難易度: 全て</option>
+            <option value="1">⭐</option><option value="2">⭐⭐</option><option value="3">⭐⭐⭐</option><option value="4">⭐⭐⭐⭐</option><option value="5">⭐⭐⭐⭐⭐</option>
+          </select>
+          <select value={sortOrder} onChange={e => setSortOrder(e.target.value)} className="glass-panel rounded-2xl px-5 font-bold text-[#00cfef] outline-none min-w-[130px] appearance-none cursor-pointer text-center">
+            <option value="updated_desc">新しい順</option>
+            <option value="updated_asc">古い順</option>
+            <option value="difficulty_desc">難易度が高い順</option>
+            <option value="difficulty_asc">難易度が低い順</option>
           </select>
         </motion.div>
       ) : (
