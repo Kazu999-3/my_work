@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import { getChampIcon } from '../../lib/ddragonClient';
-import { Shield, Target, ChevronLeft, ChevronDown, ChevronUp, Swords, Plus, X, Save, Trash2, Activity, Award, Zap, AlertCircle, CheckCircle } from 'lucide-react';
+import { Shield, Target, ChevronLeft, ChevronDown, ChevronUp, Swords, Plus, X, Save, Trash2, Activity, Award, Zap, AlertCircle, CheckCircle, ArrowLeftRight } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { motion, AnimatePresence } from 'framer-motion';
 import ChampSelect from '../../components/ChampSelect';
@@ -32,6 +32,8 @@ export default function MatchupsPage() {
   const [paramsProcessed, setParamsProcessed] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
   const [champStats, setChampStats] = useState<Record<string, any>>({});
+  // 相手チャンプの辞典データ（弱点・カウンター等）。メモが無くても即座に対策を出すため(即戦力)。
+  const [champFacts, setChampFacts] = useState<Record<string, any>>({});
 
   // 5v5 AIシミュレータ用ステート
   const [blueChamps, setBlueChamps] = useState<Record<string, string>>({
@@ -62,6 +64,18 @@ export default function MatchupsPage() {
         if (data.success) setChampStats(data.stats);
       })
       .catch(console.error);
+
+    // 辞典の弱点・カウンター情報を軽量に取得（相手対策の即時表示用）
+    supabase.from('champion_facts')
+      .select('champion, weaknesses, power_spikes, counter_champions, must_ban_champions')
+      .eq('archived', false)
+      .then(({ data }: { data: any[] | null }) => {
+        if (data) {
+          const fm: Record<string, any> = {};
+          data.forEach((f: any) => { fm[String(f.champion).toLowerCase()] = f; });
+          setChampFacts(fm);
+        }
+      });
 
     fetch('https://ddragon.leagueoflegends.com/api/versions.json')
       .then(r => r.json())
@@ -675,8 +689,8 @@ export default function MatchupsPage() {
                         {/* 2. プレイヤー/ロール別の集計サマリーテーブル */}
                         <div className="space-y-2">
                           <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest block">📊 プレイヤー別の集計サマリー</span>
-                          <div className="overflow-hidden rounded-xl border border-white/5 bg-black/40">
-                            <table className="w-full text-left border-collapse text-[11px]">
+                          <div className="overflow-x-auto rounded-xl border border-white/5 bg-black/40">
+                            <table className="w-full min-w-[480px] text-left border-collapse text-[11px]">
                               <thead>
                                 <tr className="bg-white/5 text-gray-400 font-bold tracking-wider uppercase border-b border-white/5 text-[9px]">
                                   <th className="p-3">プレイヤー</th>
@@ -724,8 +738,8 @@ export default function MatchupsPage() {
                         {/* 4. 対面個別試合履歴 (日付の降順) */}
                         <div className="space-y-2">
                           <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest block">⚔️ 対面個別試合履歴 (日付順)</span>
-                          <div className="overflow-hidden rounded-xl border border-white/5 bg-black/40">
-                            <table className="w-full text-left border-collapse text-[11px]">
+                          <div className="overflow-x-auto rounded-xl border border-white/5 bg-black/40">
+                            <table className="w-full min-w-[480px] text-left border-collapse text-[11px]">
                               <thead>
                                 <tr className="bg-white/5 text-gray-400 font-bold tracking-wider uppercase border-b border-white/5 text-[9px]">
                                   <th className="p-3">試合日</th>
@@ -782,8 +796,26 @@ export default function MatchupsPage() {
                   </div>
                 );
               })()}
+
+              {/* 相手チャンプの辞典対策（メモが無くても即座に弱点/カウンターを提示） */}
+              {(() => {
+                const f = champFacts[String(m.enemy).toLowerCase()];
+                if (!f || (!f.weaknesses && !f.power_spikes && !f.counter_champions && !f.must_ban_champions)) return null;
+                return (
+                  <div className="glass-panel border-l-4 rounded-r-xl p-5 border-[#00cfef] bg-[#00cfef]/5 mt-2 space-y-2">
+                    <h3 className="text-xs font-black uppercase tracking-widest text-[#00cfef] flex items-center gap-2">
+                      <Shield size={16} /> 相手（{m.enemy}）の弱点・対策
+                      <span className="text-[9px] text-gray-500 normal-case tracking-normal">辞典より</span>
+                    </h3>
+                    {f.weaknesses && <p className="text-xs text-gray-200 leading-relaxed"><span className="text-gray-500">弱み: </span>{f.weaknesses}</p>}
+                    {f.power_spikes && <p className="text-xs text-gray-200 leading-relaxed"><span className="text-gray-500">危険な時間帯: </span>{f.power_spikes}</p>}
+                    {f.counter_champions && <p className="text-xs text-gray-200 leading-relaxed"><span className="text-gray-500">刺さるカウンター: </span>{f.counter_champions}</p>}
+                    {f.must_ban_champions && <p className="text-xs text-gray-200 leading-relaxed"><span className="text-gray-500">BAN推奨: </span>{f.must_ban_champions}</p>}
+                  </div>
+                );
+              })()}
             </div>
-            
+
             <div className="mt-8 text-xs text-gray-500 font-mono flex items-center gap-2">
               <Activity size={12} className="text-[#00cfef]" /> 更新: {new Date(m.created_at).toLocaleString('ja-JP')} | ソース: {rd.source || 'unknown'}
             </div>
@@ -964,6 +996,13 @@ export default function MatchupsPage() {
             <Shield className="absolute left-4 top-1/2 -translate-y-1/2 text-[#c89b3c] z-10" size={20} />
             <ChampSelect value={mySearch} onChange={setMySearch} placeholder="自分のチャンプ (例: Yone)" className="pl-12 py-4 border-2 border-transparent focus:border-[#c89b3c]/50 shadow-lg" />
           </div>
+          <button
+            onClick={() => { setMySearch(enemySearch); setEnemySearch(mySearch); }}
+            title="自分と相手を入れ替え"
+            className="glass-panel glass-panel-hover rounded-2xl px-4 flex items-center justify-center text-[#00cfef] shrink-0 active:scale-95 transition-transform"
+          >
+            <ArrowLeftRight size={18} />
+          </button>
           <div className="relative flex-1 min-w-[200px]">
             <Target className="absolute left-4 top-1/2 -translate-y-1/2 text-[#00cfef] z-10" size={20} />
             <ChampSelect value={enemySearch} onChange={setEnemySearch} placeholder="相手のチャンプ (例: Yasuo)" className="pl-12 py-4 border-2 border-transparent focus:border-[#00cfef]/50 shadow-lg" />
