@@ -2,9 +2,10 @@ import { CONFIG, getPortalUrl } from '../config.js';
 import { fetchGAS, patchInteractionResponse, sendDiscordMessage } from '../utils/api.js';
 import { createMessageContent, createRecruitButtons, createRecruitEmbed, getPortalComponents, getPortalEmbed } from '../ui/embeds.js';
 import { getPlayersByNames, fetchSupabase, upsertPlayer } from '../utils/supabase.js';
-import { parseMessageData } from '../utils/helpers.js';
+import { parseMessageData, parseStartTime } from '../utils/helpers.js';
+import { createRecruitment } from '../utils/recruitPermission.js';
 
-export function handleRecruitDirect(interaction) {
+export function handleRecruitDirect(interaction, env, ctx) {
   const options = interaction.data.options || [];
   const getOpt = (name) => options.find(o => o.name === name)?.value;
 
@@ -32,9 +33,35 @@ export function handleRecruitDirect(interaction) {
 
   const metadata = {
     mode, time, maxCount: max, memo,
-    owner: userId, joined: initialJoined, spectating: [], 
+    // createdAt: 投稿時刻を固定保存（モーダル版と同様、再描画で日時が現在時刻に上書きされるのを防ぐ）
+    owner: userId, createdAt: new Date().toISOString(), joined: initialJoined, spectating: [],
     roles: { Top: null, Jg: null, Mid: null, Adc: null, Sup: null }, names: names
   };
+
+  // 応答後にバックグラウンドで @original メッセージIDを取得し、recruitments に記録して
+  // 開始リマインド(D1)の対象にする。/recruit でもモーダル同様に追跡できるようにする。
+  if (env && ctx) {
+    const appId = interaction.application_id;
+    const token = interaction.token;
+    const channelId = interaction.channel_id;
+    const startAt = parseStartTime(time);
+    ctx.waitUntil((async () => {
+      try {
+        let messageId = null;
+        // 投稿直後は @original が未反映のことがあるので軽くリトライ
+        for (let i = 0; i < 4 && !messageId; i++) {
+          await new Promise((r) => setTimeout(r, 700));
+          const res = await fetch(`https://discord.com/api/v10/webhooks/${appId}/${token}/messages/@original`);
+          if (res.ok) { const m = await res.json(); messageId = m.id; }
+        }
+        if (messageId) {
+          await createRecruitment(env, { messageId, channelId, ownerDiscordId: userId, mode, maxCount: max, startAt });
+        }
+      } catch (e) {
+        console.error("recruit(slash) の recruitments 記録に失敗:", e);
+      }
+    })());
+  }
 
   return Response.json({
     type: 4,

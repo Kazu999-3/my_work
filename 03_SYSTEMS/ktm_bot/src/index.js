@@ -96,7 +96,7 @@ export default {
         const name = interaction.data.name;
         const context = { ...env, DISCORD_TOKEN }; // トークンを注入
         if (name === 'ign') return await handleSetIgn(interaction, context, ctx);
-        if (name === 'recruit') return handleRecruitDirect(interaction);
+        if (name === 'recruit') return handleRecruitDirect(interaction, context, ctx);
         if (name === 'stats') return handleStatsCommand(interaction, context, ctx);
         if (name === 'lane') return handleLaneCommand(interaction, context, ctx);
         if (name === 'memo') return await handleMemoCommand(interaction, context, ctx);
