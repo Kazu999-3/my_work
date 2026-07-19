@@ -1,8 +1,12 @@
 import { NextResponse } from 'next/server';
 import fs from 'fs/promises';
 import path from 'path';
+import { verifyAdminSession } from '../../../../lib/adminAuth';
 
-export async function POST() {
+export async function POST(req: Request) {
+  // S-01棚卸し対応: キューのリセットは管理者のみ
+  const auth = await verifyAdminSession(req);
+  if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: 401 });
   const queuePath = 'D:/my_work/02_FACTORY/kirei_queue.json';
   
   try {

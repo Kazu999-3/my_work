@@ -15,7 +15,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ status: "ERROR", message: "Missing parameters." }, { status: 400 });
     }
 
+    // S-02: 入力バリデーション（ロール列挙・MMRの現実的な範囲）で名簿破損を防ぐ
+    if (!['TOP', 'JG', 'MID', 'ADC', 'SUP'].includes(String(role).toUpperCase())) {
+      return NextResponse.json({ status: "ERROR", message: "role は TOP/JG/MID/ADC/SUP のいずれかで指定してください。" }, { status: 400 });
+    }
     const newMmr = parseInt(amount, 10);
+    if (!Number.isNaN(newMmr) && (newMmr < 100 || newMmr > 4000)) {
+      return NextResponse.json({ status: "ERROR", message: "MMRは100〜4000の範囲で指定してください。" }, { status: 400 });
+    }
     if (isNaN(newMmr)) {
       return NextResponse.json({ status: "ERROR", message: "amount must be a valid number." }, { status: 400 });
     }
