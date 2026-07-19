@@ -35,6 +35,14 @@ export async function POST(request: Request) {
     const blueAvgMmr = Math.round(teamBlue.reduce((s: number, p: any) => s + (p.mmr || 1000), 0) / 5);
     const redAvgMmr = Math.round(teamRed.reduce((s: number, p: any) => s + (p.mmr || 1000), 0) / 5);
 
+    // 勝利予想(#79): balancer/pending と同じElo式
+    const pBlue = 1 / (1 + Math.pow(10, (redAvgMmr - blueAvgMmr) / 400));
+    const bluePct = Math.round(pBlue * 100);
+    const redPct = 100 - bluePct;
+    const barLen = 10;
+    const blueBars = Math.round((bluePct / 100) * barLen);
+    const winBar = '🟦'.repeat(blueBars) + '🟥'.repeat(barLen - blueBars);
+
     const payload: any = {
       content: "🔥 **KTM チーム分けが完了しました！** 🔥\n準備ができたらロビーに参加してください。",
       embeds: [
@@ -46,6 +54,11 @@ export async function POST(request: Request) {
             {
               name: `🟦 BLUE (Avg: ${blueAvgMmr})  🆚  🟥 RED (Avg: ${redAvgMmr})`,
               value: matchupsText,
+              inline: false
+            },
+            {
+              name: `🔮 勝利予想: BLUE ${bluePct}% 🆚 RED ${redPct}%`,
+              value: `${winBar}\n※MMRベースのElo予測（50%に近いほど接戦）`,
               inline: false
             }
           ],

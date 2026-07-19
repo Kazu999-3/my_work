@@ -783,6 +783,31 @@ export default function BalancerPage() {
                 </div>
               )}
 
+              {/* 勝利予想（#79）: pending保存時と同じElo式で表示 */}
+              {(() => {
+                const blueAvg = balanceResult.teamBlue.reduce((s: number, p: any) => s + (p.mmr || 1200), 0) / (balanceResult.teamBlue.length || 1);
+                const redAvg = balanceResult.teamRed.reduce((s: number, p: any) => s + (p.mmr || 1200), 0) / (balanceResult.teamRed.length || 1);
+                const pBlue = 1 / (1 + Math.pow(10, (redAvg - blueAvg) / 400));
+                const bluePct = Math.round(pBlue * 100);
+                const redPct = 100 - bluePct;
+                return (
+                  <div className="p-3 rounded-xl border border-gray-800 bg-gray-950/60">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-black text-gray-400">🔮 勝利予想 (MMRベース)</span>
+                      <span className="text-[10px] text-gray-600">50%に近いほど接戦</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm font-black text-blue-400 w-24 text-right">BLUE {bluePct}%</span>
+                      <div className="flex-1 h-3 rounded-full overflow-hidden bg-gray-800 flex">
+                        <div className="bg-blue-500/80" style={{ width: `${bluePct}%` }}></div>
+                        <div className="bg-red-500/80" style={{ width: `${redPct}%` }}></div>
+                      </div>
+                      <span className="text-sm font-black text-red-400 w-24">RED {redPct}%</span>
+                    </div>
+                  </div>
+                );
+              })()}
+
               {/* 案タブ */}
               {proposals.length > 1 && (
                 <div className="flex border-b border-gray-800 gap-2 overflow-x-auto pb-1">
