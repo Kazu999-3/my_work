@@ -363,14 +363,14 @@ export default function BalancerPage() {
         throw new Error("募集メッセージに参加者が見つかりませんでした。");
       }
 
-      // 取得したDiscord IDの配列を使って、プレイヤー一覧の is_active と name を更新
+      // 取得したDiscord IDの配列で is_active のみ更新する。
+      // 【重要】名前はここでは上書きしない。以前はDiscordから取った名前をDBへ自動保存していたが、
+      // ギルド情報の取得に失敗するとグローバル名(旧名)にフォールバックし、改名後の名前が
+      // 定期的に旧名へ巻き戻るバグの原因になっていた。名前の正は管理ダッシュボードの同期に一本化。
       setPlayers(prevPlayers => {
         const nextPlayers = prevPlayers.map(p => {
           if (p.discord_id && data.activeDiscordIds.includes(p.discord_id)) {
-            // APIから取得した最新のDiscord名があれば上書きする
-            const discordInfo = data.participants?.find((dp: any) => dp.id === p.discord_id);
-            const newName = (discordInfo && discordInfo.name && discordInfo.name !== "Unknown") ? discordInfo.name : p.name;
-            return { ...p, is_active: true, name: newName };
+            return { ...p, is_active: true };
           }
           return { ...p, is_active: false };
         });
