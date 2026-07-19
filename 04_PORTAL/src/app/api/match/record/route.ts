@@ -366,12 +366,28 @@ export async function POST(request: Request) {
           const botToken = process.env.DISCORD_BOT_TOKEN;
           const msg = whRes && whRes.ok ? await whRes.json() : null;
           if (msg?.id && msg?.channel_id && botToken) {
-            // webhookはリアクションを付けられないため、botトークンで👍/😐/👎を付与
+            // webhookはリアクションを付けられないため、botトークンで👍/😐/👎を付与。
+            // リアクション追加はレート制限が厳しく、間隔なし連続送信だと2個目以降が429で
+            // 消えていた（→「全部出ない」原因）。各絵文字の間に待機＋429時はRetry-Afterでリトライ。
             for (const emoji of ['👍', '😐', '👎']) {
-              await fetch(`https://discord.com/api/v10/channels/${msg.channel_id}/messages/${msg.id}/reactions/${encodeURIComponent(emoji)}/@me`, {
-                method: 'PUT',
-                headers: { 'Authorization': `Bot ${botToken}` },
-              }).catch(() => {});
+              for (let attempt = 0; attempt < 3; attempt++) {
+                try {
+                  const r = await fetch(`https://discord.com/api/v10/channels/${msg.channel_id}/messages/${msg.id}/reactions/${encodeURIComponent(emoji)}/@me`, {
+                    method: 'PUT',
+                    headers: { 'Authorization': `Bot ${botToken}` },
+                  });
+                  if (r.status === 429) {
+                    const body = await r.json().catch(() => ({} as any));
+                    const waitMs = Math.max(400, Math.ceil(((body as any).retry_after || 0.5) * 1000));
+                    await new Promise(res => setTimeout(res, waitMs));
+                    continue; // リトライ
+                  }
+                  break; // 成功 or 4xx（リトライ不要）
+                } catch {
+                  await new Promise(res => setTimeout(res, 400));
+                }
+              }
+              await new Promise(res => setTimeout(res, 350)); // 次の絵文字までの間隔（レート配慮）
             }
             // 予測行にメッセージIDを紐付け（後で満足度を集計するため）
             await supabase
