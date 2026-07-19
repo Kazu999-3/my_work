@@ -84,7 +84,7 @@ export default function BalancerPage() {
   };
 
   // バランサー予測勝率の的中率（課題: 予測勝率の検証）
-  const [predStats, setPredStats] = useState<{ total: number; correct: number; accuracy: number; avgConfidence: number } | null>(null);
+  const [predStats, setPredStats] = useState<{ total: number; correct: number; accuracy: number; avgConfidence: number; avgCloseness: number; recentCloseness: number[] } | null>(null);
   const fetchPredStats = async () => {
     try {
       const { data } = await supabase
@@ -94,11 +94,15 @@ export default function BalancerPage() {
         .order('created_at', { ascending: false })
         .limit(200);
       const rows = data || [];
-      if (rows.length === 0) { setPredStats({ total: 0, correct: 0, accuracy: 0, avgConfidence: 0 }); return; }
+      if (rows.length === 0) { setPredStats({ total: 0, correct: 0, accuracy: 0, avgConfidence: 0, avgCloseness: 0, recentCloseness: [] }); return; }
       const correct = rows.filter((r: any) => r.correct).length;
       // 予測の自信度 = 50%からどれだけ離れているか（0=完全拮抗, 50=一方的予測）。低いほどバランサーが拮抗を作れている
       const avgConfidence = rows.reduce((s: number, r: any) => s + Math.abs(Number(r.predicted_blue_winprob) - 0.5) * 100, 0) / rows.length;
-      setPredStats({ total: rows.length, correct, accuracy: Math.round((correct / rows.length) * 100), avgConfidence: +avgConfidence.toFixed(1) });
+      // 接戦度(#82): 100=完全拮抗(予測50%)、0=一方的(予測0/100%)。毎試合の「良いチーム分けだったか」採点
+      const closenessOf = (p: number) => Math.round(100 - Math.abs(p - 0.5) * 200);
+      const avgCloseness = rows.reduce((s: number, r: any) => s + closenessOf(Number(r.predicted_blue_winprob)), 0) / rows.length;
+      const recentCloseness = rows.slice(0, 10).map((r: any) => closenessOf(Number(r.predicted_blue_winprob)));
+      setPredStats({ total: rows.length, correct, accuracy: Math.round((correct / rows.length) * 100), avgConfidence: +avgConfidence.toFixed(1), avgCloseness: Math.round(avgCloseness), recentCloseness });
     } catch (e) {
       console.error('pred stats fetch failed', e);
     }
@@ -1229,11 +1233,17 @@ export default function BalancerPage() {
                 predStats.total === 0 ? (
                   <p className="text-xs text-gray-500 mt-2">まだ結果と突き合わせ済みの予測がありません（チーム分け→試合結果記録が蓄積されると表示されます）。</p>
                 ) : (
-                  <div className="grid grid-cols-3 gap-2 mt-2">
+                  <>
+                  <div className="grid grid-cols-4 gap-2 mt-2">
                     <div className="bg-gray-950/60 rounded-lg p-2 text-center">
                       <div className="text-[10px] text-gray-500">予測的中率</div>
                       <div className="text-lg font-black text-emerald-400">{predStats.accuracy}%</div>
                       <div className="text-[10px] text-gray-600">{predStats.correct}/{predStats.total}戦</div>
+                    </div>
+                    <div className="bg-gray-950/60 rounded-lg p-2 text-center">
+                      <div className="text-[10px] text-gray-500">平均接戦度</div>
+                      <div className={`text-lg font-black ${predStats.avgCloseness >= 80 ? 'text-amber-400' : predStats.avgCloseness >= 60 ? 'text-sky-400' : 'text-rose-400'}`}>{predStats.avgCloseness}</div>
+                      <div className="text-[10px] text-gray-600">100=完全拮抗</div>
                     </div>
                     <div className="bg-gray-950/60 rounded-lg p-2 text-center">
                       <div className="text-[10px] text-gray-500">平均の偏り</div>
@@ -1246,6 +1256,20 @@ export default function BalancerPage() {
                       <div className="text-[10px] text-gray-600">直近200戦</div>
                     </div>
                   </div>
+                  {/* 直近10戦の接戦度（#82: 毎試合採点。左が最新） */}
+                  {predStats.recentCloseness.length > 0 && (
+                    <div className="mt-2">
+                      <div className="text-[10px] text-gray-500 mb-1">直近10戦の接戦度（左が最新）</div>
+                      <div className="flex gap-1">
+                        {predStats.recentCloseness.map((c, i) => (
+                          <div key={i} title={`接戦度 ${c}`} className={`flex-1 h-6 rounded flex items-center justify-center text-[9px] font-black ${c >= 80 ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : c >= 60 ? 'bg-sky-500/15 text-sky-300 border border-sky-500/25' : 'bg-rose-500/15 text-rose-300 border border-rose-500/25'}`}>
+                            {c}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  </>
                 )
               ) : (
                 <p className="text-xs text-gray-500 mt-2">読み込み中...</p>
