@@ -512,6 +512,28 @@ export default function BalancerPage() {
     }
   };
 
+  // 4案すべてをDiscordへ投稿(#77)。メンバーはリアクションで希望表明。
+  const [sendingProposals, setSendingProposals] = useState(false);
+  const handleSendProposals = async () => {
+    if (!proposals || proposals.length === 0) return;
+    if (!confirm(`チーム分け候補 ${proposals.length}案 をすべてDiscordへ投稿しますか？（メンバーがリアクションで投票できます）`)) return;
+    setSendingProposals(true);
+    try {
+      const res = await fetch('/api/discord/proposals', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ proposals }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || '投稿に失敗しました');
+      setMessage({ type: 'success', text: `✅ ${proposals.length}案をDiscordに投稿しました！` });
+    } catch (err: any) {
+      setMessage({ type: 'error', text: '❌ ' + err.message });
+    } finally {
+      setSendingProposals(false);
+    }
+  };
+
   const handleSendDiscord = async () => {
     if (!balanceResult) return;
     if (!confirm("チーム分けの結果をDiscordのKTMチャンネルへ通知しますか？")) return;
@@ -770,6 +792,14 @@ export default function BalancerPage() {
                 <span className="hidden md:inline text-xs font-mono text-gray-500 ml-2">MMR差: <span className="text-white font-bold">{balanceResult.mmrDiff}</span></span>
               </h2>
               <div className="flex items-center gap-2">
+                {proposals.length > 1 && (
+                  <button onClick={handleSendProposals} disabled={sendingProposals}
+                    className="flex items-center gap-1.5 bg-amber-600 hover:bg-amber-500 text-white px-3 py-1.5 rounded-lg font-bold transition text-xs md:text-sm"
+                    title="全候補をDiscordに投稿してリアクション投票してもらう">
+                    {sendingProposals ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <>🗳️</>}
+                    <span className="hidden sm:inline">{proposals.length}案を投稿</span>
+                  </button>
+                )}
                 <button onClick={handleSendDiscord} disabled={sendingDiscord}
                   className="flex items-center gap-1.5 bg-[#5865F2] hover:bg-[#4752C4] text-white px-3 py-1.5 rounded-lg font-bold transition text-xs md:text-sm">
                   {sendingDiscord ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <MessageSquare className="h-3.5 w-3.5" />}
