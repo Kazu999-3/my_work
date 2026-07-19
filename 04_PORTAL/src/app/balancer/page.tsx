@@ -485,6 +485,9 @@ export default function BalancerPage() {
     }
   };
 
+  // BL-02: 探索強度（40=速い/100=標準/200=精密）
+  const [searchDepth, setSearchDepth] = useState(100);
+
   const handleBalance = async () => {
     const activePlayers = players.filter((p: any) => p.is_active);
     if (activePlayers.length < 10) {
@@ -520,7 +523,8 @@ export default function BalancerPage() {
               isSpectatorFixed: p.is_spectator_fixed || false,
               fixedRole: (p.is_fixed && pref1 && pref1 !== 'ALL' && pref1 !== '-') ? pref1 : null
             };
-          })
+          }),
+          searchDepth, // BL-02: 探索強度
         })
       });
 
@@ -1255,6 +1259,14 @@ export default function BalancerPage() {
               <span className="text-xs opacity-60">人</span>
             </div>
             <div className="flex items-center gap-2 ml-auto flex-wrap">
+              {/* BL-02: 探索強度 */}
+              <select value={searchDepth} onChange={e => setSearchDepth(Number(e.target.value))}
+                title="精密ほど良い組み合わせを探すが計算が遅くなる"
+                className="bg-gray-900 border border-gray-800 text-gray-300 text-xs font-bold rounded-lg px-2 py-2 outline-none">
+                <option value={40}>⚡ 速い</option>
+                <option value={100}>⚖️ 標準</option>
+                <option value={200}>🔬 精密</option>
+              </select>
               <button onClick={handleFetchDiscordReactions} disabled={fetchingDiscord}
                 className={`flex items-center gap-1.5 px-3 py-2 rounded-lg font-bold transition border text-xs ${
                   fetchingDiscord ? 'bg-[#404eed]/50 border-[#404eed]/50 text-gray-400 cursor-not-allowed' : 'bg-[#5865F2]/20 border-[#5865F2] text-[#5865F2] hover:bg-[#5865F2] hover:text-white'

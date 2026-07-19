@@ -40,6 +40,8 @@ export interface BalanceContext {
   // 同じチームにしない禁止ペア（#30: 従来はコードに直書きされていた「こんぺい/tamias」をDB設定化）。
   // 各要素は [名前1, 名前2]。部分一致（表記揺れ吸収）で判定する。未指定なら制約なし。
   forbiddenPairs?: [string, string][];
+  // BL-02: 精密探索する候補数（40=速い / 100=標準 / 200=精密）。未指定は100。
+  searchDepth?: number;
 }
 
 export interface AssignedPlayer extends Player {
@@ -318,7 +320,8 @@ function runBalanceSearch(players: Player[], ctx: BalanceContext): RawBalanceCan
   }
 
   screenResults.sort((a, b) => a.quickScore - b.quickScore);
-  const topCandidates = screenResults.slice(0, 100);
+  // BL-02: 探索強度（精密探索する分割候補数）。多いほど高精度・低速。ctx.searchDepthで調整可能。
+  const topCandidates = screenResults.slice(0, ctx.searchDepth || 100);
 
   // フェーズ2：精密探索
   const allCandidates: RawBalanceCandidate[] = [];

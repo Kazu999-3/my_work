@@ -320,6 +320,9 @@ export async function POST(request: Request) {
       'D': []
     };
 
+    // BL-02: 探索強度（40=速い/100=標準/200=精密）をリクエストから受け取る
+    ctx.searchDepth = [40, 100, 200].includes(Number(body.searchDepth)) ? Number(body.searchDepth) : 100;
+
     for (const pattern of selectedPatterns) {
       const proposalsForPattern = coreBalanceProposals(pattern.selected, ctx);
       
