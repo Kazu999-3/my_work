@@ -108,6 +108,41 @@ export default function BalancerPage() {
     }
   };
 
+  // 初期MMRの基準レーン（凍結値）編集: 希望レーンを変えても過去の出発点が変わらないよう
+  // initial_prefs を凍結する仕組みに対し、管理者が「本来のメイン/サブ」を手入力できるパネル。
+  const [showInitialPrefs, setShowInitialPrefs] = useState(false);
+  const [initialDraft, setInitialDraft] = useState<Record<string, { primary: string; secondary: string }>>({});
+  const [savingInitial, setSavingInitial] = useState(false);
+  const openInitialPrefs = () => {
+    const draft: Record<string, { primary: string; secondary: string }> = {};
+    players.forEach((p: any) => {
+      const src = p.initial_prefs || p.role_preferences || {};
+      draft[p.id] = { primary: src.primary || 'ALL', secondary: src.secondary || '-' };
+    });
+    setInitialDraft(draft);
+    setShowInitialPrefs(true);
+  };
+  const saveInitialPrefs = async () => {
+    setSavingInitial(true);
+    try {
+      const updates = players.map((p: any) => ({ id: p.id, initial_prefs: initialDraft[p.id] })).filter(u => u.initial_prefs);
+      const res = await fetch('/api/admin/players/save', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ updates }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || '保存に失敗しました');
+      setPlayers(prev => prev.map((p: any) => ({ ...p, initial_prefs: initialDraft[p.id] || p.initial_prefs })));
+      setMessage({ type: 'success', text: `✅ 初期レーン（凍結値）を${updates.length}人分保存しました。反映にはRebuildを実行してください。` });
+      setShowInitialPrefs(false);
+    } catch (e: any) {
+      setMessage({ type: 'error', text: '❌ ' + e.message });
+    } finally {
+      setSavingInitial(false);
+    }
+  };
+
   // サイド偏り検証(#81): Blue/Redの勝率差を集計（headカウントでエグレス最小）
   const [sideStats, setSideStats] = useState<{ total: number; blueWins: number; blueRate: number } | null>(null);
   const fetchSideStats = async () => {
@@ -1366,6 +1401,56 @@ export default function BalancerPage() {
                 </p>
               </div>
             )}
+
+            {/* 初期MMRの基準レーン（凍結値）編集 */}
+            <div className="border-t border-gray-800 pt-3">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <span className="text-sm font-bold text-white">🧊 初期MMRの基準レーン（凍結値）</span>
+                <button
+                  onClick={() => showInitialPrefs ? setShowInitialPrefs(false) : openInitialPrefs()}
+                  className="flex items-center gap-1.5 bg-gray-800 hover:bg-gray-700 text-gray-200 px-3 py-1.5 rounded-lg font-bold transition text-xs"
+                >
+                  {showInitialPrefs ? '閉じる' : '編集する'}
+                </button>
+              </div>
+              <p className="text-[10px] text-gray-600 mt-1.5">
+                初期MMRの計算に使う「本来のメイン/サブレーン」です。希望レーンを後から変えてもここは変わりません（Rebuildの出発点が固定されます）。
+                誤って凍結された人はここで直して、保存後にRebuildしてください。
+              </p>
+              {showInitialPrefs && (
+                <div className="mt-3 space-y-3">
+                  <div className="max-h-80 overflow-y-auto rounded-xl border border-gray-800 divide-y divide-gray-800/60">
+                    {players.map((p: any) => (
+                      <div key={p.id} className="flex items-center gap-2 px-3 py-1.5 bg-gray-950/40">
+                        <span className="flex-1 text-xs font-bold text-white truncate">{p.name}</span>
+                        <select
+                          value={initialDraft[p.id]?.primary || 'ALL'}
+                          onChange={e => setInitialDraft(d => ({ ...d, [p.id]: { ...(d[p.id] || { primary: 'ALL', secondary: '-' }), primary: e.target.value } }))}
+                          className="bg-gray-900 border border-gray-700 text-white text-xs rounded px-1.5 py-1 outline-none w-20"
+                        >
+                          {['TOP', 'JG', 'MID', 'ADC', 'SUP', 'ALL'].map(r => <option key={r} value={r}>{r}</option>)}
+                        </select>
+                        <select
+                          value={initialDraft[p.id]?.secondary || '-'}
+                          onChange={e => setInitialDraft(d => ({ ...d, [p.id]: { ...(d[p.id] || { primary: 'ALL', secondary: '-' }), secondary: e.target.value } }))}
+                          className="bg-gray-900 border border-gray-700 text-gray-300 text-xs rounded px-1.5 py-1 outline-none w-20"
+                        >
+                          {['-', 'TOP', 'JG', 'MID', 'ADC', 'SUP', 'ALL'].map(r => <option key={r} value={r}>{r}</option>)}
+                        </select>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex justify-end gap-2">
+                    <button onClick={() => setShowInitialPrefs(false)} className="px-4 py-2 rounded-lg text-xs font-bold bg-gray-800 text-gray-300 hover:bg-gray-700">キャンセル</button>
+                    <button onClick={saveInitialPrefs} disabled={savingInitial}
+                      className="px-4 py-2 rounded-lg text-xs font-black bg-cyan-600 hover:bg-cyan-500 text-white disabled:opacity-50 flex items-center gap-1.5">
+                      {savingInitial && <RefreshCw className="h-3.5 w-3.5 animate-spin" />}
+                      保存（要Rebuild）
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
 
             {/* バランス満足度(Discord 👍/👎)（課題#42） */}
             <div className="border-t border-gray-800 pt-3">

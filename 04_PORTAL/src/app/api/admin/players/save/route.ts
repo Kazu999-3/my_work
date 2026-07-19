@@ -23,6 +23,7 @@ const FULL_COLUMNS = [
   'ng_lane_1', 'ng_lane_2', 'highest_rank',
   'mmr_top', 'mmr_jg', 'mmr_mid', 'mmr_adc', 'mmr_sup',
   'weight', 'allow_higher', 'pity', 'off_role_pity', 'metadata',
+  'initial_prefs', // 初期MMR計算の凍結レーン（管理者が手修正できるように）
 ];
 
 function pick(obj: any, keys: string[]) {
