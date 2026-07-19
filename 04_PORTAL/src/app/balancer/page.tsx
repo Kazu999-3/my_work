@@ -512,6 +512,28 @@ export default function BalancerPage() {
     }
   };
 
+  // 対戦分析の実データ(#75): 表示中の10人のプレイスタイルを試合履歴から計算
+  const [vsStyles, setVsStyles] = useState<Record<string, any>>({});
+  const fetchVsStyles = async (result: any) => {
+    try {
+      const names = [...(result?.teamBlue || []), ...(result?.teamRed || [])].map((p: any) => p.name).filter(Boolean);
+      if (names.length === 0) return;
+      const res = await fetch('/api/balancer/vs-analytics', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ names }),
+      });
+      const data = await res.json();
+      if (data.success) setVsStyles((prev) => ({ ...prev, ...data.styles }));
+    } catch (e) {
+      console.warn('vs-analytics fetch failed', e);
+    }
+  };
+  useEffect(() => {
+    if (showResultModal && balanceResult) fetchVsStyles(balanceResult);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showResultModal, balanceResult]);
+
   // 4案すべてをDiscordへ投稿(#77)。メンバーはリアクションで希望表明。
   const [sendingProposals, setSendingProposals] = useState(false);
   const handleSendProposals = async () => {
@@ -1027,18 +1049,20 @@ export default function BalancerPage() {
                     const dbB = players.find((p: any) => p.name === pB.name);
                     const dbR = players.find((p: any) => p.name === pR.name);
 
-                    // キャッシュされたプレイスタイル情報 (無ければデフォルト)
-                    const styleB = dbB?.metadata?.playstyle_cache?.custom || {
+                    // 実データ優先(#75): 試合履歴から計算したスタイル → キャッシュ → デフォルト
+                    const defaultStyle = {
                       sliders: { aggressive: 50, farming: 50, supportive: 50 },
                       tags: [{ id: 'balanced', name: 'バランス型', description: '標準的なプレイスタイル。', reason: '' }],
                       diffs: { goldDiff: 0, xpDiff: 0, csDiff: 0 }
                     };
-
-                    const styleR = dbR?.metadata?.playstyle_cache?.custom || {
-                      sliders: { aggressive: 50, farming: 50, supportive: 50 },
-                      tags: [{ id: 'balanced', name: 'バランス型', description: '標準的なプレイスタイル。', reason: '' }],
-                      diffs: { goldDiff: 0, xpDiff: 0, csDiff: 0 }
-                    };
+                    const liveB = vsStyles[pB.name];
+                    const liveR = vsStyles[pR.name];
+                    const styleB = (liveB && liveB.games > 0 && liveB.tags?.length > 0) ? liveB
+                      : (liveB && liveB.games > 0) ? { ...liveB, tags: defaultStyle.tags }
+                      : dbB?.metadata?.playstyle_cache?.custom || defaultStyle;
+                    const styleR = (liveR && liveR.games > 0 && liveR.tags?.length > 0) ? liveR
+                      : (liveR && liveR.games > 0) ? { ...liveR, tags: defaultStyle.tags }
+                      : dbR?.metadata?.playstyle_cache?.custom || defaultStyle;
 
                     const tagB = styleB.tags?.[0] || { id: 'balanced', name: 'バランス型' };
                     const tagR = styleR.tags?.[0] || { id: 'balanced', name: 'バランス型' };

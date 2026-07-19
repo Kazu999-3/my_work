@@ -37,6 +37,11 @@ export async function handleModalSubmit(interaction, env, ctx) {
       } catch (e) {
         console.error("recruitments テーブルへの記録に失敗しました（埋め込みメタデータ側は投稿済み）:", e);
       }
+      // Web Push通知(#54)。失敗しても無視。
+      try {
+        const { fetchPortalAPI } = await import('../utils/api.js');
+        await fetchPortalAPI(env, '/api/push/notify-recruit', { mode, time: getVal('time') });
+      } catch (e) { /* push未設定でもOK */ }
     })());
     return Response.json({ type: 4, data: { content: "✅ **募集を #募集板 に投下しました！**", flags: 64 } });
   }

@@ -385,6 +385,18 @@ export async function POST(request: Request) {
       console.error("Failed to send discord notification", discordErr);
     }
 
+    // Web Push: 試合結果の通知(#54)。失敗しても本処理は成功扱い。
+    try {
+      const { sendPushToAll } = await import('../../push/send/route');
+      await sendPushToAll({
+        title: '🏆 試合結果が記録されました',
+        body: `${winningTeam === 'BLUE' ? '🟦 BLUE' : '🟥 RED'} チームの勝利！詳細はポータルで確認できます。`,
+        url: '/history',
+      });
+    } catch (pushErr: any) {
+      console.warn('[match/record] push skipped:', pushErr?.message);
+    }
+
     return NextResponse.json({ success: true, matchId: newMatchId, updates: results });
 
   } catch (error: any) {

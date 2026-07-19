@@ -19,7 +19,12 @@ interface MatchData {
     kills: number;
     deaths: number;
     assists: number;
+    player_mmr?: number | null;
   }[];
+  prediction?: {
+    predicted_blue_winprob: number;
+    correct: boolean;
+  } | null;
 }
 
 export default function HistoryPage() {
@@ -36,7 +41,7 @@ export default function HistoryPage() {
             created_at,
             winning_team,
             ktm_match_participants (
-              player_name, team, role, champion_name, kills, deaths, assists
+              player_name, team, role, champion_name, kills, deaths, assists, player_mmr
             )
           `)
           .order('created_at', { ascending: false })
@@ -44,12 +49,36 @@ export default function HistoryPage() {
           
         if (error) throw error;
 
+        // 予測勝率データの取得
+        const matchIds = (data as any[]).map(m => m.id);
+        const { data: preds, error: predError } = await supabase
+          .from('balancer_predictions')
+          .select('match_id, predicted_blue_winprob, correct')
+          .in('match_id', matchIds);
+
+        if (predError) {
+          console.warn('Failed to fetch predictions:', predError);
+        }
+
+        const predMap = new Map<number, { predicted_blue_winprob: number; correct: boolean }>();
+        if (preds) {
+          preds.forEach((p: any) => {
+            if (p.match_id) {
+              predMap.set(Number(p.match_id), {
+                predicted_blue_winprob: Number(p.predicted_blue_winprob),
+                correct: p.correct
+              });
+            }
+          });
+        }
+
         // データ整形
         const formatted = (data as any[]).map(m => ({
           id: m.id,
           created_at: new Date(m.created_at).toLocaleString('ja-JP'),
           winning_team: m.winning_team,
-          participants: m.ktm_match_participants
+          participants: m.ktm_match_participants,
+          prediction: predMap.get(Number(m.id)) || null
         }));
         setMatches(formatted);
       } catch (err) {
@@ -98,10 +127,25 @@ export default function HistoryPage() {
 
               return (
                 <div key={match.id} className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden shadow-lg">
-                  <div className="bg-gray-800/50 px-4 py-3 md:px-6 flex flex-col md:flex-row justify-between items-start md:items-center border-b border-gray-800 gap-2 md:gap-0">
-                    <div className="flex items-center gap-2 md:gap-3">
+                  <div className="bg-gray-800/50 px-4 py-3 md:px-6 flex flex-col md:flex-row justify-between items-start md:items-center border-b border-gray-800 gap-2 md:gap-0 flex-wrap">
+                    <div className="flex items-center gap-2 md:gap-3 flex-wrap">
                       <span className="text-gray-400 font-mono text-xs md:text-sm">Match #{match.id}</span>
                       <span className="text-gray-500 flex items-center gap-1 text-xs md:text-sm"><Calendar className="w-3 h-3 md:w-4 md:h-4"/> {match.created_at}</span>
+                      {match.prediction && (
+                        <div className="flex items-center gap-1.5 md:gap-2 text-xs bg-gray-950/60 px-2 py-0.5 md:py-1 rounded border border-gray-800 text-gray-300 ml-0 md:ml-2">
+                          <span>予測勝率:</span>
+                          <span className="text-blue-400 font-mono font-bold">🟦 {Math.round(match.prediction.predicted_blue_winprob * 100)}%</span>
+                          <span className="text-gray-600">/</span>
+                          <span className="text-red-400 font-mono font-bold">🟥 {Math.round((1 - match.prediction.predicted_blue_winprob) * 100)}%</span>
+                          <span className="ml-1">
+                            {match.prediction.correct ? (
+                              <span className="text-emerald-400 font-bold bg-emerald-950/30 px-1.5 py-0.5 rounded border border-emerald-800/60 text-[10px] md:text-xs">🎯 的中</span>
+                            ) : (
+                              <span className="text-red-400 font-bold bg-red-950/30 px-1.5 py-0.5 rounded border border-red-800/60 text-[10px] md:text-xs">💀 不的中</span>
+                            )}
+                          </span>
+                        </div>
+                      )}
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-xs md:text-sm text-gray-400">WINNER:</span>
@@ -159,6 +203,9 @@ function PlayerRow({ p }: { p: any }) {
           <div className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-gray-800 border border-gray-700 flex items-center justify-center text-[10px] md:text-xs text-gray-500 flex-shrink-0">?</div>
         )}
         <span className="font-bold text-gray-200 text-xs md:text-sm truncate mr-2">{p.player_name}</span>
+        <span className="text-[10px] font-mono bg-gray-900 text-gray-400 px-1.5 py-0.5 rounded border border-gray-800/80 mr-2 flex-shrink-0">
+          {p.player_mmr ? `MMR: ${p.player_mmr}` : 'MMR: -'}
+        </span>
       </div>
       <div className="flex items-center flex-shrink-0">
         <span className="font-mono text-xs md:text-sm tracking-tighter bg-gray-900 px-1.5 md:px-2 py-0.5 md:py-1 rounded">

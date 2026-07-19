@@ -1,5 +1,5 @@
 import { CONFIG, getPortalUrl } from '../config.js';
-import { fetchGAS, patchInteractionResponse, sendDiscordMessage } from '../utils/api.js';
+import { fetchGAS, patchInteractionResponse, sendDiscordMessage, fetchPortalAPI } from '../utils/api.js';
 import { createMessageContent, createRecruitButtons, createRecruitEmbed, getPortalComponents, getPortalEmbed } from '../ui/embeds.js';
 import { getPlayersByNames, fetchSupabase, upsertPlayer } from '../utils/supabase.js';
 import { parseMessageData, parseStartTime } from '../utils/helpers.js';
@@ -57,6 +57,8 @@ export function handleRecruitDirect(interaction, env, ctx) {
         if (messageId) {
           await createRecruitment(env, { messageId, channelId, ownerDiscordId: userId, mode, maxCount: max, startAt });
         }
+        // Web Push通知(#54)。失敗しても無視。
+        try { await fetchPortalAPI(env, '/api/push/notify-recruit', { mode, time }); } catch (e) { /* noop */ }
       } catch (e) {
         console.error("recruit(slash) の recruitments 記録に失敗:", e);
       }
