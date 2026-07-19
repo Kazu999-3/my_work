@@ -333,25 +333,26 @@ function CustomRecordPageContent() {
     fetchPlayers();
   }, []);
 
-  useEffect(() => {
-    async function loadChampions() {
-      try {
-        const vRes = await fetch('https://ddragon.leagueoflegends.com/api/versions.json');
-        const versions = await vRes.json();
-        const cRes = await fetch(`https://ddragon.leagueoflegends.com/cdn/${versions[0]}/data/ja_JP/champion.json`);
-        const d = await cRes.json();
-        const list = Object.values(d.data).map((c: any) => ({
-          id: c.id,
-          name: c.name
-        }));
-        list.sort((a, b) => a.name.localeCompare(b.name, 'ja'));
-        setChampionsList(list);
-      } catch (err) {
-        console.error('Failed to load champions from Ddragon:', err);
-      }
+  // チャンピオン一覧の読込。失敗時は静かに空のままにせず、エラー表示＋リトライ可能にする。
+  const loadChampions = async () => {
+    try {
+      const vRes = await fetch('https://ddragon.leagueoflegends.com/api/versions.json');
+      const versions = await vRes.json();
+      const cRes = await fetch(`https://ddragon.leagueoflegends.com/cdn/${versions[0]}/data/ja_JP/champion.json`);
+      const d = await cRes.json();
+      const list = Object.values(d.data).map((c: any) => ({
+        id: c.id,
+        name: c.name
+      }));
+      list.sort((a, b) => a.name.localeCompare(b.name, 'ja'));
+      if (list.length === 0) throw new Error('一覧が空でした');
+      setChampionsList(list);
+    } catch (err: any) {
+      console.error('Failed to load champions from Ddragon:', err);
+      setMessage({ type: 'error', text: `チャンピオン一覧の読み込みに失敗しました（${err.message}）。通信環境を確認して再読み込みしてください。` });
     }
-    loadChampions();
-  }, []);
+  };
+  useEffect(() => { loadChampions(); }, []);
 
   useEffect(() => {
     if (!pendingId) return;
@@ -781,6 +782,16 @@ function CustomRecordPageContent() {
               autoFocus
             />
             
+            {/* 一覧が読み込めていない場合のリトライ導線 */}
+            {championsList.length === 0 && (
+              <div className="text-center py-8">
+                <p className="text-sm text-gray-400 mb-3">チャンピオン一覧が読み込まれていません。</p>
+                <button onClick={loadChampions} type="button"
+                  className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold">
+                  🔄 一覧を再読み込み
+                </button>
+              </div>
+            )}
             <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-3 max-h-[50vh] overflow-y-auto pr-2 custom-scrollbar">
               {championsList
                 .filter(c => 
