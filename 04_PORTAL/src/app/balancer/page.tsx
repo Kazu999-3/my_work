@@ -108,6 +108,22 @@ export default function BalancerPage() {
     }
   };
 
+  // サイド偏り検証(#81): Blue/Redの勝率差を集計（headカウントでエグレス最小）
+  const [sideStats, setSideStats] = useState<{ total: number; blueWins: number; blueRate: number } | null>(null);
+  const fetchSideStats = async () => {
+    try {
+      const [{ count: total }, { count: blueWins }] = await Promise.all([
+        supabase.from('ktm_matches').select('id', { count: 'exact', head: true }),
+        supabase.from('ktm_matches').select('id', { count: 'exact', head: true }).eq('winning_team', 'BLUE'),
+      ]);
+      const t = total || 0;
+      const b = blueWins || 0;
+      setSideStats({ total: t, blueWins: b, blueRate: t > 0 ? Math.round((b / t) * 1000) / 10 : 0 });
+    } catch (e) {
+      console.error('side stats fetch failed', e);
+    }
+  };
+
   // バランス満足度(👍/👎)の集計（課題#42）
   const [satStats, setSatStats] = useState<{ tallied: number; totalUp: number; totalDown: number; satisfactionRate: number | null } | null>(null);
   const [tallyingSat, setTallyingSat] = useState(false);
@@ -125,7 +141,7 @@ export default function BalancerPage() {
   };
 
   useEffect(() => {
-    if (isAdmin) { checkIntegrity(); fetchPredStats(); }
+    if (isAdmin) { checkIntegrity(); fetchPredStats(); fetchSideStats(); }
   }, [isAdmin]);
 
   const handleRebuildMmr = async () => {
@@ -1278,6 +1294,24 @@ export default function BalancerPage() {
                 的中率が50%近い＝実力拮抗、極端に高い＝MMR差が大きいまま組んでいる可能性。平均の偏りが小さいほどバランサーが互角の試合を作れています。
               </p>
             </div>
+
+            {/* サイド偏り検証(#81): Blue/Red勝率 */}
+            {sideStats && sideStats.total > 0 && (
+              <div className="border-t border-gray-800 pt-3">
+                <span className="text-sm font-bold text-white">🎨 サイド偏り（Blue/Red勝率）</span>
+                <div className="flex items-center gap-3 mt-2">
+                  <span className="text-xs font-black text-blue-400 w-28 text-right">BLUE {sideStats.blueRate}%</span>
+                  <div className="flex-1 h-3 rounded-full overflow-hidden bg-gray-800 flex">
+                    <div className="bg-blue-500/80" style={{ width: `${sideStats.blueRate}%` }}></div>
+                    <div className="bg-red-500/80" style={{ width: `${100 - sideStats.blueRate}%` }}></div>
+                  </div>
+                  <span className="text-xs font-black text-red-400 w-28">RED {Math.round((100 - sideStats.blueRate) * 10) / 10}%</span>
+                </div>
+                <p className="text-[10px] text-gray-600 mt-1.5">
+                  全{sideStats.total}戦（Blue {sideStats.blueWins}勝）。50%から大きくズレている場合はサイド有利かサイド公平化ロジックの見直し材料になります。
+                </p>
+              </div>
+            )}
 
             {/* バランス満足度(Discord 👍/👎)（課題#42） */}
             <div className="border-t border-gray-800 pt-3">
