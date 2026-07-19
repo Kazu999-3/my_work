@@ -102,9 +102,11 @@ export function handleStatsCommand(interaction, env, ctx) {
           { name: "🏮 現在の不運度 (Pity)", value: `**${data.pity || 0}** pts`, inline: true },
           { name: "📍 ポジション別 (MMR)", value: Object.entries(s.roles).map(([r, rs]) => {
               const mmr = data.mmrs[r] || 1200;
-              // D-05: MMRをテキストバーで可視化（1000〜2000を10マスにマップ）
-              const filled = Math.max(0, Math.min(10, Math.round((mmr - 1000) / 100)));
-              const bar = '█'.repeat(filled) + '░'.repeat(10 - filled);
+              // D-05改: █░はDiscordで潰れて見にくいため、色付き絵文字ブロック8マスに変更。
+              // 色はティア帯を表現（⬜シルバー以下 / 🟨ゴールド / 🟦プラチナ / 🟩エメラルド以上）
+              const filled = Math.max(1, Math.min(8, Math.round((mmr - 1000) / 125)));
+              const fill = mmr >= 1650 ? '🟩' : mmr >= 1500 ? '🟦' : mmr >= 1350 ? '🟨' : '⬜';
+              const bar = fill.repeat(filled) + '⬛'.repeat(8 - filled);
               return `\`${String(r).padEnd(3)}\` ${bar} **${mmr}** (${rs.g}戦 ${rs.g > 0 ? (rs.w/rs.g*100).toFixed(0) : 0}%)`;
             }).join("\n"), inline: false }
         ],
