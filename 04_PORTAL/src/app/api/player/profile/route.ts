@@ -152,6 +152,19 @@ export async function GET(request: Request) {
     let currentAdc = dbPlayer.mmr_adc || 1200;
     let currentSup = dbPlayer.mmr_sup || 1200;
 
+    // 代表MMR(TOTAL)もリビルド/ライブと同じ「試合数重み付け」で逆算する(P-04)。
+    // 現在のレーン別試合数から新しい試合順に減算しながら、その時点の重み付き平均を出す。
+    const laneG: Record<string, number> = {
+      TOP: dbPlayer.games_top || 0, JG: dbPlayer.games_jg || 0, MID: dbPlayer.games_mid || 0,
+      ADC: dbPlayer.games_adc || 0, SUP: dbPlayer.games_sup || 0,
+    };
+    const weightedTotal = () => {
+      let w = 0, g = 0;
+      const mm: Record<string, number> = { TOP: currentTop, JG: currentJg, MID: currentMid, ADC: currentAdc, SUP: currentSup };
+      for (const l of ['TOP', 'JG', 'MID', 'ADC', 'SUP']) { w += mm[l] * (laneG[l] || 0); g += laneG[l] || 0; }
+      return g > 0 ? Math.round(w / g) : Math.round((currentTop + currentJg + currentMid + currentAdc + currentSup) / 5);
+    };
+
     const formattedHistory = sortedMatches.map((row: any) => {
       // この試合終了時点のMMRを格納
       const matchMmr = {
@@ -160,7 +173,7 @@ export async function GET(request: Request) {
         MID: currentMid,
         ADC: currentAdc,
         SUP: currentSup,
-        TOTAL: Math.round((currentTop + currentJg + currentMid + currentAdc + currentSup) / 5)
+        TOTAL: weightedTotal()
       };
 
       // 次の過去試合（時間を戻す）のために、この試合での変動量を引く
@@ -171,6 +184,7 @@ export async function GET(request: Request) {
       else if (role === 'MID') currentMid -= delta;
       else if (role === 'ADC') currentAdc -= delta;
       else if (role === 'SUP') currentSup -= delta;
+      if (laneG[role] !== undefined && laneG[role] > 0) laneG[role] -= 1; // 過去へ戻るので試合数も減算
 
       // 同ロール・別チームの対面相手を特定（ツールチップ表示用）
       const parts = row.ktm_matches?.ktm_match_participants || [];

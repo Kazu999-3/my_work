@@ -178,6 +178,33 @@ export async function handleButtonInteraction(interaction, env, ctx) {
     }
   }
 
+  // 即募集(D-08): デフォルト設定でその場で募集を投下
+  if (customId.startsWith('quick_recruit:')) {
+    const [, qMode, qMax] = customId.split(':');
+    const ownerName = interaction.member?.nick || interaction.member?.user?.global_name || interaction.member?.user?.username || "不明";
+    const metadata = {
+      mode: qMode, time: '', maxCount: parseInt(qMax) || 10, memo: '',
+      owner: userId, createdAt: new Date().toISOString(), joined: [], spectating: [],
+      roles: { Top: null, Jg: null, Mid: null, Adc: null, Sup: null }, names: { [userId]: ownerName }
+    };
+    ctx.waitUntil((async () => {
+      try {
+        const res = await sendDiscordMessage(`channels/${CONFIG.RECRUIT_CHANNEL_ID}/messages`, botToken, "POST", {
+          content: createMessageContent(metadata), embeds: [createRecruitEmbed(metadata)], components: createRecruitButtons(metadata)
+        });
+        const sentMessage = await res.clone().json();
+        const { createRecruitment } = await import('../utils/recruitPermission.js');
+        await createRecruitment(env, {
+          messageId: sentMessage.id, channelId: CONFIG.RECRUIT_CHANNEL_ID,
+          ownerDiscordId: userId, mode: qMode, maxCount: parseInt(qMax) || 10,
+        });
+        const { fetchPortalAPI } = await import('../utils/api.js');
+        await fetchPortalAPI(env, '/api/push/notify-recruit', { mode: qMode, time: '' }).catch(() => {});
+      } catch (e) { console.error("quick_recruit error:", e); }
+    })());
+    return Response.json({ type: 4, data: { content: `⚡ **${qMode}${qMax}人の募集を #募集板 に投下しました！**（時刻やメモは「⚙️募集編集」で後から設定できます）`, flags: 64 } });
+  }
+
   if (customId === 'portal_menu_cancel') return Response.json({ type: 7, data: { content: "✅ 操作をキャンセルしました。", components: [] } });
 
   if (customId.startsWith('exec_init_mmr:')) {

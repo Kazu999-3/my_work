@@ -21,6 +21,11 @@ export async function GET() {
   return NextResponse.json({
     ok: db,
     db,
+    // A-05: 依存サービスの設定状況（キーの有無のみ。疎通確認はレート消費するため行わない）
+    riotKey: !!process.env.RIOT_API_KEY,
+    geminiKey: !!(process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY_BATCH || process.env.GOOGLE_API_KEY),
+    vapid: !!(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY),
+    discordWebhook: !!process.env.DISCORD_KTM_WEBHOOK_URL,
     ms: Date.now() - started,
     checkedAt: new Date().toISOString(),
   });

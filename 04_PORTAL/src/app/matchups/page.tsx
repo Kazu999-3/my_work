@@ -1141,7 +1141,23 @@ export default function MatchupsPage() {
           </div>
 
           <div className="mb-4 relative z-10">
-            <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">📝 反省メモ / 自由記述</label>
+            <div className="flex items-center justify-between mb-1 flex-wrap gap-1">
+              <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest">📝 反省メモ / 自由記述</label>
+              {/* テンプレ挿入(B-02): ワンタップで定型の書き出しを追記 */}
+              <div className="flex gap-1">
+                {[
+                  ['勝因', '【勝因】\n- \n【次も再現するには】\n- '],
+                  ['敗因', '【敗因】\n- \n【次にやること】\n- '],
+                  ['要注意', '【この対面の要注意ポイント】\n- レベル帯: \n- スキル: \n- 立ち位置: '],
+                ].map(([label, tpl]) => (
+                  <button key={label} type="button"
+                    onClick={() => set('strategy', (memo.strategy ? memo.strategy + '\n\n' : '') + tpl)}
+                    className="text-[10px] font-bold px-2 py-1 rounded bg-white/5 border border-white/10 text-gray-300 hover:bg-white/10">
+                    ＋{label}
+                  </button>
+                ))}
+              </div>
+            </div>
             <textarea value={memo.strategy} onChange={e => set('strategy', e.target.value)} className="w-full bg-[var(--color-surface)] border border-white/5 focus:border-[#00cfef]/50 rounded-xl p-3 text-white outline-none min-h-[100px] transition-colors" placeholder="次回はこうする、今回の敗因など..." />
           </div>
           <div className="text-right relative z-10">

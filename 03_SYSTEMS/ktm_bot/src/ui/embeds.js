@@ -94,6 +94,12 @@ export function getPortalComponents(userId) {
     { type: 2, label: "📝 サモナー名登録", style: 2, custom_id: "portal_ign" }
   ];
 
+  // 即募集(D-08): モーダル入力を飛ばしてデフォルト設定で1タップ募集
+  const rowQuick = [
+    { type: 2, label: "⚡ ノーマル5 即募集", style: 2, custom_id: "quick_recruit:ノーマル:5" },
+    { type: 2, label: "⚡ カスタム10 即募集", style: 2, custom_id: "quick_recruit:カスタム:10" }
+  ];
+
   const row2 = [
     { type: 2, label: "🔔 募集通知 (ON/OFF)", style: 2, custom_id: "toggle_recruit_notification" },
     { type: 2, label: "🌐 Webポータルへアクセス", style: 5, url: `${CONFIG.PORTAL_URL}/leaderboard` }
@@ -101,6 +107,7 @@ export function getPortalComponents(userId) {
 
   return [
     { type: 1, components: row1 },
+    { type: 1, components: rowQuick },
     { type: 1, components: row2 }
   ];
 }

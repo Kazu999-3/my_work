@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 // サイドバー下部の稼働ステータス表示（#58）。
 // 以前は常時「All Systems Go」の飾りだったため、実際に /api/health を叩いて
 // DB接続性を反映し、最終確認時刻も表示する。誤解を招く固定表示を廃止。
-type Health = { ok: boolean; checkedAt: string } | null;
+type Health = { ok: boolean; checkedAt: string; riotKey?: boolean; geminiKey?: boolean; vapid?: boolean; discordWebhook?: boolean } | null;
 
 export default function SystemStatus({ isCollapsed = false }: { isCollapsed?: boolean }) {
   const [health, setHealth] = useState<Health>(null);
@@ -46,12 +46,22 @@ export default function SystemStatus({ isCollapsed = false }: { isCollapsed?: bo
         )}
       </div>
       {!isCollapsed && (
-        <div>
+        <div className="min-w-0">
           <p className="text-[9px] text-gray-500 font-bold uppercase tracking-widest mb-0.5">Status</p>
           <p className="text-xs font-black" style={{ color }}>
             {label}
             {time && !loading && <span className="ml-1 text-[9px] font-medium text-gray-500">({time})</span>}
           </p>
+          {/* A-05: 依存サービスの設定状況（未設定のものだけ警告表示） */}
+          {health && !loading && (
+            <div className="flex gap-1 mt-1 flex-wrap">
+              {([['Riot', health.riotKey], ['AI', health.geminiKey], ['Push', health.vapid], ['Webhook', health.discordWebhook]] as const)
+                .filter(([, okv]) => okv === false)
+                .map(([name]) => (
+                  <span key={name} className="text-[8px] font-bold px-1 py-0.5 rounded bg-amber-500/15 text-amber-400 border border-amber-500/30">{name}未設定</span>
+                ))}
+            </div>
+          )}
         </div>
       )}
     </div>
