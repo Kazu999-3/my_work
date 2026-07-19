@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import { getKtmRank } from '../../lib/mmr';
 import { Spinner } from '../../components/Feedback';
+import { getChampIcon } from '../../lib/ddragonClient';
 
 // ==========================================
 // Types
@@ -42,7 +43,45 @@ export default function LeaderboardPage() {
     TOP: [], JG: [], MID: [], ADC: [], SUP: []
   });
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'ranking' | 'winrate'>('ranking');
+  const [activeTab, setActiveTab] = useState<'ranking' | 'winrate' | 'meta'>('ranking');
+
+  // KTM内メタ統計(#80): チャンピオン別のピック数・勝率・平均KDA
+  const [metaData, setMetaData] = useState<any[] | null>(null);
+  const [metaLoading, setMetaLoading] = useState(false);
+  const [metaMinGames, setMetaMinGames] = useState(2);
+  useEffect(() => {
+    if (activeTab !== 'meta' || metaData !== null || metaLoading) return;
+    (async () => {
+      setMetaLoading(true);
+      try {
+        const { data } = await supabase
+          .from('ktm_match_participants')
+          .select('champion_name, team, kills, deaths, assists, ktm_matches ( winning_team )');
+        const agg: Record<string, { games: number; wins: number; k: number; d: number; a: number }> = {};
+        (data || []).forEach((r: any) => {
+          const c = r.champion_name;
+          if (!c) return;
+          if (!agg[c]) agg[c] = { games: 0, wins: 0, k: 0, d: 0, a: 0 };
+          agg[c].games += 1;
+          if (r.team === r.ktm_matches?.winning_team) agg[c].wins += 1;
+          agg[c].k += r.kills || 0; agg[c].d += r.deaths || 0; agg[c].a += r.assists || 0;
+        });
+        const rows = Object.entries(agg).map(([name, s]) => ({
+          name,
+          games: s.games,
+          wins: s.wins,
+          winRate: Math.round((s.wins / s.games) * 100),
+          avgKda: s.d > 0 ? Math.round(((s.k + s.a) / s.d) * 10) / 10 : (s.k + s.a),
+        })).sort((a, b) => b.games - a.games || b.winRate - a.winRate);
+        setMetaData(rows);
+      } catch (e) {
+        console.error('meta stats fetch failed', e);
+        setMetaData([]);
+      } finally {
+        setMetaLoading(false);
+      }
+    })();
+  }, [activeTab, metaData, metaLoading]);
   const [syncing, setSyncing] = useState(false);
   const [minGames, setMinGames] = useState<number>(3); // 最小試合数フィルター（デフォルト3試合）
   const [search, setSearch] = useState(''); // プレイヤー名検索(L-03)
@@ -217,10 +256,54 @@ export default function LeaderboardPage() {
               <Activity size={16} />
               レーン別勝率
             </button>
+            <button
+              onClick={() => setActiveTab('meta')}
+              className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold transition-all ${
+                activeTab === 'meta'
+                  ? 'bg-amber-600 text-white shadow-lg'
+                  : 'text-gray-400 hover:text-white hover:bg-gray-800'
+              }`}
+            >
+              🏆 メタ統計
+            </button>
           </div>
         </div>
 
-        {activeTab === 'winrate' ? (
+        {activeTab === 'meta' ? (
+          /* KTM内メタ統計(#80) */
+          <div className="max-w-4xl mx-auto">
+            <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
+              <p className="text-sm text-gray-400 font-bold">KTMカスタム内のチャンピオン使用状況（ピック数順）</p>
+              <div className="flex items-center gap-2 bg-gray-900 border border-gray-800 rounded-xl px-3 py-1.5">
+                <span className="text-xs text-gray-400 font-bold">最小試合数:</span>
+                <select value={metaMinGames} onChange={(e) => setMetaMinGames(Number(e.target.value))}
+                  className="bg-gray-800 text-white text-xs font-bold rounded-lg border border-gray-700 px-2 py-1 focus:outline-none">
+                  <option value={1}>1+</option><option value={2}>2+</option><option value={3}>3+</option><option value={5}>5+</option>
+                </select>
+              </div>
+            </div>
+            {metaLoading || metaData === null ? (
+              <Spinner label="メタ統計を集計中..." />
+            ) : (
+              <div className="bg-gray-900 rounded-2xl border border-gray-800 overflow-hidden divide-y divide-gray-800">
+                {metaData.filter(m => m.games >= metaMinGames).map((m, idx) => (
+                  <div key={m.name} className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-800/40">
+                    <span className="w-6 text-center text-xs font-black text-gray-500">{idx + 1}</span>
+                    <img src={getChampIcon(m.name)} alt={m.name} className="w-8 h-8 rounded-full border border-gray-700"
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                    <span className="flex-1 font-bold text-white text-sm truncate">{m.name}</span>
+                    <span className="text-xs text-gray-400 w-16 text-right">{m.games}戦</span>
+                    <span className={`text-sm font-black w-14 text-right ${m.winRate >= 55 ? 'text-emerald-400' : m.winRate <= 45 ? 'text-rose-400' : 'text-gray-200'}`}>{m.winRate}%</span>
+                    <span className="text-xs font-mono text-gray-400 w-20 text-right">KDA {m.avgKda}</span>
+                  </div>
+                ))}
+                {metaData.filter(m => m.games >= metaMinGames).length === 0 && (
+                  <p className="text-center text-gray-500 text-sm py-10">条件に合うチャンピオンがいません</p>
+                )}
+              </div>
+            )}
+          </div>
+        ) : activeTab === 'winrate' ? (
           <WinrateMatrixPanel />
         ) : (
           <>
