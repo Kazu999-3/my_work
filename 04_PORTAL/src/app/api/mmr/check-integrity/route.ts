@@ -22,7 +22,8 @@ export async function GET(request: Request) {
     const playersMap = new Map();
     const playersByDiscord = new Map();
     for (const p of allPlayers) {
-      const prefs = p.role_preferences || { primary: 'ALL', secondary: '-' };
+      // Rebuildと同じく、初期値計算には凍結済みの initial_prefs を優先して使う
+      const prefs = p.initial_prefs || p.role_preferences || { primary: 'ALL', secondary: '-' };
       const memObj = {
         id: p.id, name: p.name, discord_id: p.discord_id || null, highest_rank: p.highest_rank, role_preferences: prefs,
         currentTop: p.mmr_top || 1000,

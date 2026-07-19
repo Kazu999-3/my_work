@@ -285,9 +285,15 @@ export async function performFullMmrRebuild(supabase: SupabaseClient) {
   const playersMap = new Map();
   const playersByDiscord = new Map();
   for (const p of allPlayers) {
-    const prefs = p.role_preferences || { primary: 'ALL', secondary: '-' };
+    // 初期値計算には「初回Rebuild時に凍結した希望レーン(initial_prefs)」を使う。
+    // 無ければ現在の希望を使い、後段でinitial_prefsとして保存する（以後は固定）。
+    // これにより希望レーンを変えてもRebuildで過去の出発点が変わらない。
+    const prefs = p.initial_prefs || p.role_preferences || { primary: 'ALL', secondary: '-' };
     const memObj = {
       id: p.id, name: p.name, discord_id: p.discord_id || null, highest_rank: p.highest_rank, role_preferences: prefs,
+      // 初回のみ initial_prefs を保存するためのフラグ（既に凍結済みなら保存しない）
+      needsInitialPrefs: !p.initial_prefs && !!p.role_preferences,
+      frozenPrefs: prefs,
       mmr_top: calculateInitialMmr(p.highest_rank, 'TOP', prefs),
       mmr_jg: calculateInitialMmr(p.highest_rank, 'JG', prefs),
       mmr_mid: calculateInitialMmr(p.highest_rank, 'MID', prefs),
@@ -490,29 +496,33 @@ export async function performFullMmrRebuild(supabase: SupabaseClient) {
       games_mid: p.laneGames.MID,
       games_adc: p.laneGames.ADC,
       games_sup: p.laneGames.SUP,
-      mmr: avgMmr
+      mmr: avgMmr,
+      // 初回のみ、初期値計算に使った希望レーンを凍結保存（以後のRebuildで固定される）
+      initial_prefs: p.needsInitialPrefs ? p.frozenPrefs : undefined,
     };
   });
 
   if (playerUpdates.length > 0) {
-    const updatePromises = playerUpdates.map(pu =>
-      supabase
+    const updatePromises = playerUpdates.map(pu => {
+      const updateData: any = {
+        mmr_top: pu.mmr_top,
+        mmr_jg: pu.mmr_jg,
+        mmr_mid: pu.mmr_mid,
+        mmr_adc: pu.mmr_adc,
+        mmr_sup: pu.mmr_sup,
+        games_top: pu.games_top,
+        games_jg: pu.games_jg,
+        games_mid: pu.games_mid,
+        games_adc: pu.games_adc,
+        games_sup: pu.games_sup,
+        mmr: pu.mmr
+      };
+      if (pu.initial_prefs) updateData.initial_prefs = pu.initial_prefs;
+      return supabase
         .from('ktm_players')
-        .update({
-          mmr_top: pu.mmr_top,
-          mmr_jg: pu.mmr_jg,
-          mmr_mid: pu.mmr_mid,
-          mmr_adc: pu.mmr_adc,
-          mmr_sup: pu.mmr_sup,
-          games_top: pu.games_top,
-          games_jg: pu.games_jg,
-          games_mid: pu.games_mid,
-          games_adc: pu.games_adc,
-          games_sup: pu.games_sup,
-          mmr: pu.mmr
-        })
-        .eq('id', pu.id)
-    );
+        .update(updateData)
+        .eq('id', pu.id);
+    });
     const results = await Promise.all(updatePromises);
     const firstError = results.find(r => r.error);
     if (firstError) {

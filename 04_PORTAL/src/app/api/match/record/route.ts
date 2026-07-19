@@ -58,9 +58,9 @@ export async function POST(request: Request) {
 
       const roleMmrKey = `mmr_${input.role.toLowerCase()}` as keyof typeof dbP;
       const dbMmr = dbP[roleMmrKey];
-      const currentMmr = (dbMmr !== null && dbMmr !== undefined) 
-        ? Number(dbMmr) 
-        : calculateInitialMmr(dbP.highest_rank, input.role, dbP.role_preferences);
+      const currentMmr = (dbMmr !== null && dbMmr !== undefined)
+        ? Number(dbMmr)
+        : calculateInitialMmr(dbP.highest_rank, input.role, dbP.initial_prefs || dbP.role_preferences);
 
       // 対面相手のMMRを探す
       const opponent = participants.find((p: any) => p.role === input.role && p.team !== input.team);
@@ -177,7 +177,8 @@ export async function POST(request: Request) {
       objective_damage: r.objective_damage || 0,
       heal_shield: r.heal_shield || 0,
       kda_score: r.kdaScore,
-      mmr_delta: r.mmrDelta
+      mmr_delta: r.mmrDelta,
+      player_mmr: r.currentMmr
     }));
 
     const { error: piError } = await supabase
