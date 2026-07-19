@@ -1,0 +1,57 @@
+name: KTM Bot Cron Backup
+
+# Cloudflare Workersのcronはbest-effortで稀に発火が飛ぶ(#85)。
+# 各定期処理の15分後にGitHub Actionsから /trigger-scheduled を冗長キックする。
+# BOT側に二重投稿防止(直近同一通知チェック / recruitments.start_atチェック)があるため、
+# 両方発火しても重複投稿にはならない。
+#
+# 必要なシークレット:
+#   KTM_WORKER_URL  : ワーカーの公開URL (例: https://ktm-os-worker.xxxx.workers.dev)
+#   KTM_TRIGGER_KEY : /trigger-scheduled の key（未設定ならデフォルト値を使用）
+
+on:
+  schedule:
+    - cron: '15 11 * * 5,6'  # 金土 20:15 JST → 直前通知のバックアップ
+    - cron: '15 12 * * 6'    # 土 21:15 JST → イベント作成のバックアップ
+    - cron: '15 12 * * 3'    # 水 21:15 JST → 事前告知のバックアップ
+    - cron: '15 9 * * 6'     # 土 18:15 JST → 定期カスタム募集のバックアップ
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'mode (空=直前通知 / create / wednesday / weekly_recruit)'
+        required: false
+        default: ''
+
+jobs:
+  kick:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger scheduled handler
+        env:
+          WORKER_URL: ${{ secrets.KTM_WORKER_URL }}
+          TRIGGER_KEY: ${{ secrets.KTM_TRIGGER_KEY }}
+        run: |
+          if [ -z "$WORKER_URL" ]; then
+            echo "::error::KTM_WORKER_URL シークレットが未設定です。リポジトリ Settings > Secrets に追加してください。"
+            exit 1
+          fi
+          KEY="${TRIGGER_KEY:-ktm_v3_internal_secret_2026}"
+
+          # 手動実行なら入力modeを使用。スケジュール実行ならUTC曜日・時刻からmodeを判定。
+          MODE="${{ github.event.inputs.mode }}"
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            DOW=$(date -u +%u)   # 1=月 ... 6=土 7=日
+            HOUR=$(date -u +%H)
+            MODE=""
+            if [ "$HOUR" = "12" ] && [ "$DOW" = "6" ]; then MODE="create"; fi
+            if [ "$HOUR" = "12" ] && [ "$DOW" = "3" ]; then MODE="wednesday"; fi
+            if [ "$HOUR" = "09" ]; then MODE="weekly_recruit"; fi
+          fi
+
+          echo "Kicking mode='$MODE'"
+          STATUS=$(curl -s -o /tmp/resp.txt -w "%{http_code}" "$WORKER_URL/trigger-scheduled?key=$KEY&mode=$MODE")
+          cat /tmp/resp.txt
+          if [ "$STATUS" != "200" ]; then
+            echo "::error::trigger-scheduled failed with HTTP $STATUS"
+            exit 1
+          fi

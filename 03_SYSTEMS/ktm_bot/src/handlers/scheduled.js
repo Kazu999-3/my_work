@@ -2,6 +2,8 @@ import { CONFIG } from '../config.js';
 import { fetchSupabase } from '../utils/supabase.js';
 import { parseMessageData } from '../utils/helpers.js';
 import { fetchWithRetry } from '../utils/api.js';
+import { createMessageContent, createRecruitButtons, createRecruitEmbed } from '../ui/embeds.js';
+import { createRecruitment } from '../utils/recruitPermission.js';
 
 export async function handleScheduledEvent(event, env, ctx) {
   console.log("Scheduled event triggered:", JSON.stringify(event));
@@ -17,6 +19,9 @@ export async function handleScheduledEvent(event, env, ctx) {
   } else if (cronExpression === "*/10 * * * *" || mode === "recruit_reminder") {
     // 10分ごと: 開始時刻が近い募集の参加者へリマインド(D1)
     await sendRecruitmentReminders(env);
+  } else if (cronExpression === "0 9 * * 6" || mode === "weekly_recruit") {
+    // 毎週土曜 18:00 JST: 21:00開催の定期カスタム募集を自動投稿(#85)
+    await postWeeklyRecruitment(env);
   } else {
     // 毎週金・土 20:00 の直前通知（48時間以内）
     await sendEventUsersNotification(env, { lookaheadHours: 48 });
@@ -78,6 +83,66 @@ async function markReminded(env, messageId) {
     });
   } catch (e) {
     console.error("markReminded failed:", e);
+  }
+}
+
+/**
+ * 毎週土曜 18:00 JST に、その日21:00開催の定期カスタム募集を#募集板へ自動投稿する(#85)。
+ * 参加予定を事前に表明できるようにする。recruitments.start_at で二重投稿を防止
+ * （同じ開始時刻の募集が既にあればスキップ＝冗長キックにも安全）。
+ */
+async function postWeeklyRecruitment(env) {
+  try {
+    // 今日(JST)の21:00 = UTC 12:00 を開始時刻とする
+    const now = new Date();
+    const jstNow = new Date(now.getTime() + 9 * 3600 * 1000);
+    const startUtcMs = Date.UTC(jstNow.getUTCFullYear(), jstNow.getUTCMonth(), jstNow.getUTCDate(), 12, 0, 0, 0);
+    const startAtIso = new Date(startUtcMs).toISOString();
+
+    // 二重投稿防止: 同じ開始時刻のopen募集が既にあればスキップ
+    const existing = await fetchSupabase(env, 'recruitments', `start_at=eq.${encodeURIComponent(startAtIso)}&status=eq.open&select=id`);
+    if (existing && existing.length > 0) {
+      console.log('[WeeklyRecruit] 同時刻の募集が既に存在するためスキップします。');
+      return;
+    }
+
+    const ownerId = CONFIG.ADMIN_ID;
+    const metadata = {
+      mode: 'カスタム', time: '21:00', maxCount: 10,
+      memo: '毎週土曜の定期カスタムです！参加できる人はボタンで表明お願いします🎮',
+      owner: ownerId, createdAt: new Date().toISOString(),
+      joined: [], spectating: [],
+      roles: { Top: null, Jg: null, Mid: null, Adc: null, Sup: null },
+      names: { [ownerId]: 'KTM定期カスタム' }
+    };
+
+    const res = await fetchWithRetry(`https://discord.com/api/v10/channels/${CONFIG.RECRUIT_CHANNEL_ID}/messages`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        content: createMessageContent(metadata),
+        embeds: [createRecruitEmbed(metadata)],
+        components: createRecruitButtons(metadata)
+      })
+    });
+    if (!res.ok) {
+      console.error(`[WeeklyRecruit] 募集投稿に失敗: ${res.status} ${await res.text()}`);
+      return;
+    }
+    const sent = await res.json();
+
+    // recruitments に記録（開始リマインドD1の対象にもなる）
+    await createRecruitment(env, {
+      messageId: sent.id,
+      channelId: CONFIG.RECRUIT_CHANNEL_ID,
+      ownerDiscordId: ownerId,
+      mode: 'カスタム',
+      maxCount: 10,
+      startAt: startAtIso,
+    });
+    console.log(`[WeeklyRecruit] 定期カスタム募集を投稿しました (msg ${sent.id})`);
+  } catch (err) {
+    console.error('[WeeklyRecruit] error:', err);
   }
 }
 
@@ -426,6 +491,29 @@ async function sendEventUsersNotification(env, options = {}) {
       },
       timestamp: new Date().toISOString()
     };
+
+    // 6.5 二重投稿防止(#85): 冗長キック(GitHub Actions)とCloudflare cronの両方が発火しても
+    // 同じ通知を2回投稿しないよう、直近3時間以内に同タイトルのbot投稿があればスキップする。
+    try {
+      const recentRes = await fetchWithRetry(`https://discord.com/api/v10/channels/${channelId}/messages?limit=10`, {
+        headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}` }
+      });
+      if (recentRes.ok) {
+        const recent = await recentRes.json();
+        const threeHoursAgo = Date.now() - 3 * 60 * 60 * 1000;
+        const dup = recent.find((m) =>
+          m.author?.bot &&
+          m.embeds?.[0]?.title === embed.title &&
+          new Date(m.timestamp).getTime() > threeHoursAgo
+        );
+        if (dup) {
+          console.log(`[Dedupe] 同一通知が直近に投稿済みのためスキップします (msg ${dup.id})`);
+          return;
+        }
+      }
+    } catch (dedupeErr) {
+      console.warn('[Dedupe] 直近メッセージの確認に失敗（送信は続行）:', dedupeErr);
+    }
 
     // 7. メッセージ送信
     // 欠員アラート: 10人に不足している時だけ、通知ロールを能動的に@メンションして呼ぶ。
