@@ -102,7 +102,10 @@ export function handleStatsCommand(interaction, env, ctx) {
           { name: "🏮 現在の不運度 (Pity)", value: `**${data.pity || 0}** pts`, inline: true },
           { name: "📍 ポジション別 (MMR)", value: Object.entries(s.roles).map(([r, rs]) => {
               const mmr = data.mmrs[r] || 1200;
-              return `${r}: **${mmr}** (${rs.g}戦 Win:${rs.g > 0 ? (rs.w/rs.g*100).toFixed(0) : 0}%)`;
+              // D-05: MMRをテキストバーで可視化（1000〜2000を10マスにマップ）
+              const filled = Math.max(0, Math.min(10, Math.round((mmr - 1000) / 100)));
+              const bar = '█'.repeat(filled) + '░'.repeat(10 - filled);
+              return `\`${String(r).padEnd(3)}\` ${bar} **${mmr}** (${rs.g}戦 ${rs.g > 0 ? (rs.w/rs.g*100).toFixed(0) : 0}%)`;
             }).join("\n"), inline: false }
         ],
         color: 0x3498db

@@ -641,15 +641,16 @@ function buildBalanceResult(
   if (subPlayers.length > 0) {
     balanceReport.push(`**調整の背景**:`);
     subPlayers.forEach(p => {
+      // BL-06: 理由に具体的な数値（競合人数・当該レーンMMR）を添えて納得感を高める
       let reason = "全体の戦力バランスを整えるために調整されました。";
       const mainSeekers = allAssigned.filter(other => other.mainLane === p.mainLane && other.name !== p.name);
       if (mainSeekers.length > 0) {
-        reason = `${p.mainLane} 希望者が競合したため、チームの戦力バランスを考慮して ${p.currentRole} へ回っていただきました。`;
+        reason = `${p.mainLane} 希望者が${mainSeekers.length + 1}人競合したため、戦力バランスを考慮して ${p.currentRole} へ（${p.currentRole}時MMR: ${p.mmr}）。`;
       } else if (p.currentRole === p.subLane) {
-        reason = `チーム全体のバランスを最適化するため、第二希望の ${p.currentRole} へ配置されました。`;
+        reason = `チーム全体のバランス最適化のため、第二希望の ${p.currentRole} へ配置（${p.currentRole}時MMR: ${p.mmr}）。`;
       }
       if (p.isOutlierHigh) {
-        reason = `圧倒的なキャリー力を持つため、相手との戦力均衡を図るべく ${p.currentRole} に配置されました。`;
+        reason = `平均を大きく上回るキャリー力（代表MMR ${Math.round(p.avgMMR || p.mmr)}）のため、戦力均衡を図って ${p.currentRole} に配置されました。`;
       }
 
       const roleIcons: Record<string, string> = { TOP: '🪓', JG: '🌲', MID: '🔥', ADC: '🏹', SUP: '🛡️' };
