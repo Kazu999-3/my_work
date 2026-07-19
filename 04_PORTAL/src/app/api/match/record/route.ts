@@ -336,7 +336,7 @@ export async function POST(request: Request) {
         const redTitle = winningTeam === 'RED' ? '🏆 🟥 RED TEAM (WIN)' : '💀 🟥 RED TEAM';
 
         const payload = {
-          content: "📜 **KTM 試合結果が記録されました！** 📜\n各プレイヤーのMMRが更新されました。",
+          content: "📜 **KTM 試合結果が記録されました！** 📜\n各プレイヤーのMMRが更新されました。\n\n🗳️ **今日のチーム分けはどうでしたか？** リアクションで教えてください → 👍 良かった / 😐 普通 / 👎 イマイチ",
           embeds: [
             {
               title: "⚔️ 試合リザルト",
@@ -364,8 +364,8 @@ export async function POST(request: Request) {
           const botToken = process.env.DISCORD_BOT_TOKEN;
           const msg = whRes && whRes.ok ? await whRes.json() : null;
           if (msg?.id && msg?.channel_id && botToken) {
-            // webhookはリアクションを付けられないため、botトークンで👍/👎を付与
-            for (const emoji of ['👍', '👎']) {
+            // webhookはリアクションを付けられないため、botトークンで👍/😐/👎を付与
+            for (const emoji of ['👍', '😐', '👎']) {
               await fetch(`https://discord.com/api/v10/channels/${msg.channel_id}/messages/${msg.id}/reactions/${encodeURIComponent(emoji)}/@me`, {
                 method: 'PUT',
                 headers: { 'Authorization': `Bot ${botToken}` },

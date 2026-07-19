@@ -125,7 +125,7 @@ export default function BalancerPage() {
   };
 
   // バランス満足度(👍/👎)の集計（課題#42）
-  const [satStats, setSatStats] = useState<{ tallied: number; totalUp: number; totalDown: number; satisfactionRate: number | null } | null>(null);
+  const [satStats, setSatStats] = useState<{ tallied: number; totalUp: number; totalDown: number; totalNeutral?: number; recent?: { up: number; down: number; neutral: number }[]; satisfactionRate: number | null } | null>(null);
   const [tallyingSat, setTallyingSat] = useState(false);
   const fetchSatStats = async () => {
     setTallyingSat(true);
@@ -1383,20 +1383,41 @@ export default function BalancerPage() {
                 satStats.tallied === 0 ? (
                   <p className="text-xs text-gray-500 mt-2">まだ投票付きの試合結果がありません（試合を記録するとDiscordの結果メッセージに👍/👎が付きます）。</p>
                 ) : (
+                  <>
                   <div className="grid grid-cols-3 gap-2 mt-2">
                     <div className="bg-gray-950/60 rounded-lg p-2 text-center">
                       <div className="text-[10px] text-gray-500">満足度</div>
                       <div className="text-lg font-black text-emerald-400">{satStats.satisfactionRate !== null ? `${satStats.satisfactionRate}%` : '—'}</div>
                     </div>
                     <div className="bg-gray-950/60 rounded-lg p-2 text-center">
-                      <div className="text-[10px] text-gray-500">👍 / 👎</div>
-                      <div className="text-lg font-black text-white">{satStats.totalUp} / {satStats.totalDown}</div>
+                      <div className="text-[10px] text-gray-500">👍 / 😐 / 👎</div>
+                      <div className="text-lg font-black text-white">{satStats.totalUp} / {satStats.totalNeutral ?? 0} / {satStats.totalDown}</div>
                     </div>
                     <div className="bg-gray-950/60 rounded-lg p-2 text-center">
                       <div className="text-[10px] text-gray-500">集計試合</div>
                       <div className="text-lg font-black text-white">{satStats.tallied}</div>
                     </div>
                   </div>
+                  {/* 直近の試合ごとの内訳（#76: 左が最新） */}
+                  {(satStats.recent && satStats.recent.length > 0) && (
+                    <div className="mt-2">
+                      <div className="text-[10px] text-gray-500 mb-1">直近の試合ごとの投票（左が最新）</div>
+                      <div className="flex gap-1 flex-wrap">
+                        {satStats.recent.map((r, i) => {
+                          const votes = r.up + r.down;
+                          const good = votes > 0 && r.up / votes >= 0.6;
+                          const bad = votes > 0 && r.up / votes <= 0.4;
+                          return (
+                            <div key={i} title={`👍${r.up} 😐${r.neutral} 👎${r.down}`}
+                              className={`px-2 py-1 rounded text-[9px] font-black border ${votes === 0 ? 'bg-gray-800/60 text-gray-500 border-gray-700' : good ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' : bad ? 'bg-rose-500/15 text-rose-300 border-rose-500/30' : 'bg-sky-500/10 text-sky-300 border-sky-500/25'}`}>
+                              {votes === 0 ? '票なし' : `👍${r.up}/👎${r.down}`}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                  </>
                 )
               ) : (
                 <p className="text-xs text-gray-500 mt-2">「集計」を押すと直近の試合結果メッセージの👍/👎を集計します。</p>

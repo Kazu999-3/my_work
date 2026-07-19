@@ -30,7 +30,8 @@ export async function GET(req: Request) {
       .order('created_at', { ascending: false })
       .limit(30);
 
-    let totalUp = 0, totalDown = 0, tallied = 0;
+    let totalUp = 0, totalDown = 0, totalNeutral = 0, tallied = 0;
+    const recent: { up: number; down: number; neutral: number }[] = [];
     for (const r of (rows || [])) {
       try {
         const res = await fetch(`https://discord.com/api/v10/channels/${r.result_channel_id}/messages/${r.result_message_id}`, {
@@ -46,7 +47,9 @@ export async function GET(req: Request) {
         };
         const up = findCount('👍');
         const down = findCount('👎');
-        totalUp += up; totalDown += down; tallied++;
+        const neutral = findCount('😐');
+        totalUp += up; totalDown += down; totalNeutral += neutral; tallied++;
+        if (recent.length < 10) recent.push({ up, down, neutral }); // rowsは新しい順
         await supabase
           .from('balancer_predictions')
           .update({ satisfaction_up: up, satisfaction_down: down, satisfaction_updated_at: new Date().toISOString() })
@@ -56,11 +59,13 @@ export async function GET(req: Request) {
       }
     }
 
-    const totalVotes = totalUp + totalDown;
+    const totalVotes = totalUp + totalDown; // 満足率は👍/👎のみで算出（😐は分母から除外）
     return NextResponse.json({
       tallied,
       totalUp,
       totalDown,
+      totalNeutral,
+      recent,
       satisfactionRate: totalVotes > 0 ? Math.round((totalUp / totalVotes) * 100) : null,
     });
   } catch (err: any) {
