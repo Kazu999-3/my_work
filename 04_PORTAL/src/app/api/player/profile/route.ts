@@ -43,6 +43,7 @@ export async function GET(request: Request) {
         deaths,
         assists,
         mmr_delta,
+        mmr_breakdown,
         ktm_matches!inner(created_at, winning_team, ktm_match_participants(role, team, champion_name, player_name))
       `)
       .eq('player_name', playerName);
@@ -199,6 +200,7 @@ export async function GET(request: Request) {
         deaths: row.deaths || 0,
         assists: row.assists || 0,
         mmrDelta: delta,
+        mmrBreakdown: row.mmr_breakdown || null, // M-03
         isWin: row.team === row.ktm_matches.winning_team,
         opponentChampion: opp?.champion_name || null,
         opponentName: opp?.player_name || null,

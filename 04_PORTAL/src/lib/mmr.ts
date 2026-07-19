@@ -253,6 +253,47 @@ export function calculateNewMMR(ctx: MmrCalcContext): number {
   return delta;
 }
 
+// M-03: MMR変動の内訳。「なぜ+18なのか」をUIで見せるための構造。
+export interface MmrBreakdown {
+  base: number;        // 勝敗ベース(+18/-20)
+  elo: number;         // 格差補正(相手の強さ)
+  wrAdjust: number;    // 高勝率補正(N6/M2)
+  kda: number;         // KDAボーナス
+  dampener: number;    // 対面回数係数(0.7〜1.0)
+  placement: boolean;  // プレースメント(×1.5)適用か
+  final: number;       // クランプ後の最終変動
+}
+
+/** calculateNewMMR と同一ロジックで、最終値に加えて内訳も返す(M-03)。 */
+export function calculateNewMMRDetailed(ctx: MmrCalcContext): { delta: number; breakdown: MmrBreakdown } {
+  const { currentMmr, opponentMmr, kills, deaths, assists, role, matchupCount, isWin } = ctx as any;
+  const placement = (ctx.numGames ?? 999) < 5;
+  const base = ctx.isWin ? 18 : -20;
+  const mmrDiff = ctx.opponentMmr - ctx.currentMmr;
+  let elo = 0;
+  if (mmrDiff > 0) elo = Math.min(15, mmrDiff / 15);
+  else if (mmrDiff < 0) elo = Math.max(-10, mmrDiff / 20);
+  let wrAdjust = 0;
+  if (ctx.totalWinRate > 60) wrAdjust = -Math.min(8, (ctx.totalWinRate - 60) * 0.5);
+  let kdaScore = ctx.deaths === 0 ? (ctx.kills + ctx.assists) * 1.2 : (ctx.kills + ctx.assists) / ctx.deaths;
+  if (ctx.role === 'SUP') kdaScore += 0.8;
+  const kda = Math.max(0, Math.min(15, (kdaScore - 2.0) * 5));
+  let dampener = 1.0;
+  if (!placement && ctx.matchupCount) {
+    if (ctx.matchupCount >= 3) dampener = 0.9;
+    if (ctx.matchupCount >= 5) dampener = 0.8;
+    if (ctx.matchupCount >= 8) dampener = 0.7;
+  }
+  const delta = calculateNewMMR(ctx); // 最終値は本体ロジックで算出（挙動の一貫性を保証）
+  return {
+    delta,
+    breakdown: {
+      base, elo: Math.round(elo * 10) / 10, wrAdjust: Math.round(wrAdjust * 10) / 10,
+      kda: Math.round(kda * 10) / 10, dampener, placement, final: delta,
+    },
+  };
+}
+
 export interface LaneMmrs { TOP: number; JG: number; MID: number; ADC: number; SUP: number }
 export interface LaneGames { TOP?: number; JG?: number; MID?: number; ADC?: number; SUP?: number }
 

@@ -93,6 +93,7 @@ export default function PlayerMyPage() {
           : "-",
         mmrDelta: match.mmrDelta || 0,
         role: match.role,
+        breakdown: match.mmrBreakdown || null, // M-03
         opponentChampion: match.opponentChampion || null,
         opponentName: match.opponentName || null,
         allMmr: historyObj,
@@ -665,6 +666,15 @@ export default function PlayerMyPage() {
                                     </div>
                                     {d.opponentName && (
                                       <div className="text-[9px] text-gray-500 mb-1">対面: {d.opponentName}</div>
+                                    )}
+                                    {/* M-03: MMR変動の内訳 */}
+                                    {d.breakdown && d.role === activeLane && (
+                                      <div className="text-[9px] text-gray-400 mb-1 bg-white/5 rounded px-1.5 py-1">
+                                        内訳: 勝敗{d.breakdown.base > 0 ? '+' : ''}{d.breakdown.base} / 相手{d.breakdown.elo >= 0 ? '+' : ''}{d.breakdown.elo} / KDA+{d.breakdown.kda}
+                                        {d.breakdown.wrAdjust !== 0 && ` / 勝率補正${d.breakdown.wrAdjust}`}
+                                        {d.breakdown.dampener < 1 && ` / ×${d.breakdown.dampener}`}
+                                        {d.breakdown.placement && ' / 🔰×1.5'}
+                                      </div>
                                     )}
                                     <div className="flex justify-between items-center mt-1">
                                       <span className={`font-black text-[10px] ${d.isWin ? 'text-emerald-400' : 'text-rose-400'}`}>

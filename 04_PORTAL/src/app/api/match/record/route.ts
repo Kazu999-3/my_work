@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
-import { calculateNewMMR, calculateKdaScore, MmrCalcContext, calculateInitialMmr, computeRepresentativeMmr } from '../../../../lib/mmr';
+import { calculateNewMMRDetailed, calculateKdaScore, MmrCalcContext, calculateInitialMmr, computeRepresentativeMmr } from '../../../../lib/mmr';
 
 export async function POST(request: Request) {
   try {
@@ -129,13 +129,14 @@ export async function POST(request: Request) {
         csd15: input.csd15
       };
 
-      const mmrDelta = calculateNewMMR(ctx);
+      const { delta: mmrDelta, breakdown: mmrBreakdown } = calculateNewMMRDetailed(ctx); // M-03: 内訳も取得
       const kdaScore = calculateKdaScore(input.kills, input.deaths, input.assists);
 
       results.push({
         ...input,
         currentMmr,
         mmrDelta,
+        mmrBreakdown,
         kdaScore,
         dbPlayer: dbP
       });
@@ -178,6 +179,7 @@ export async function POST(request: Request) {
       heal_shield: r.heal_shield || 0,
       kda_score: r.kdaScore,
       mmr_delta: r.mmrDelta,
+      mmr_breakdown: r.mmrBreakdown || null, // M-03: 変動の内訳
       player_mmr: r.currentMmr
     }));
 
