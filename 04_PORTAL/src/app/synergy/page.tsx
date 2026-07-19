@@ -58,6 +58,8 @@ export default function SynergyPage() {
   // グループ相性(#78): 3/4/5人で同チームだった時の勝率
   const [groupStats, setGroupStats] = useState<Record<number, GroupStat[]>>({ 3: [], 4: [], 5: [] });
   const [groupSize, setGroupSize] = useState<2 | 3 | 4 | 5>(2);
+  // 最強⇔最弱の表示切替
+  const [showWorst, setShowWorst] = useState(false);
 
   useEffect(() => {
     async function fetchData() {
@@ -183,11 +185,12 @@ export default function SynergyPage() {
 
   // フィルタリングとソート
   // 味方は勝率降順、同勝率なら試合数降順
+  // 最強=勝率降順 / 最弱=勝率昇順（同率なら試合数が多い順＝信頼度の高い順）
   const filteredAlly = allyStats
     .filter(a => a.games >= minGames)
     .sort((a, b) => {
       if (b.winRate === a.winRate) return b.games - a.games;
-      return b.winRate - a.winRate;
+      return showWorst ? a.winRate - b.winRate : b.winRate - a.winRate;
     });
 
   // グループ相性(#78): 選択サイズのグループを勝率順に（人数が多いほど同条件が少ないのでminGamesは緩めに適用）
@@ -196,7 +199,7 @@ export default function SynergyPage() {
     .filter(g => g.games >= groupMin)
     .sort((a, b) => {
       if (b.winRate === a.winRate) return b.games - a.games;
-      return b.winRate - a.winRate;
+      return showWorst ? a.winRate - b.winRate : b.winRate - a.winRate;
     })
     .slice(0, 50);
 
@@ -245,17 +248,30 @@ export default function SynergyPage() {
           <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-2xl relative overflow-hidden">
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-400 to-teal-500"></div>
             <div className="flex items-center justify-between flex-wrap gap-3 mb-6">
-              <h2 className="text-2xl font-black text-emerald-400 flex items-center gap-2">
-                <Users className="h-6 w-6" /> 最強のチーム <span className="text-sm text-gray-500 font-normal">(Best Combo)</span>
+              <h2 className={`text-2xl font-black flex items-center gap-2 ${showWorst ? 'text-rose-400' : 'text-emerald-400'}`}>
+                <Users className="h-6 w-6" /> {showWorst ? '最弱のチーム' : '最強のチーム'} <span className="text-sm text-gray-500 font-normal">({showWorst ? 'Worst Combo' : 'Best Combo'})</span>
               </h2>
-              {/* 人数切替(#78) */}
-              <div className="flex gap-1 bg-gray-950 border border-gray-800 rounded-xl p-1">
-                {([2, 3, 4, 5] as const).map(n => (
-                  <button key={n} onClick={() => setGroupSize(n)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all ${groupSize === n ? 'bg-emerald-600 text-white' : 'text-gray-400 hover:text-white'}`}>
-                    {n}人
+              <div className="flex gap-2 items-center flex-wrap">
+                {/* 最強⇔最弱切替 */}
+                <div className="flex gap-1 bg-gray-950 border border-gray-800 rounded-xl p-1">
+                  <button onClick={() => setShowWorst(false)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all ${!showWorst ? 'bg-emerald-600 text-white' : 'text-gray-400 hover:text-white'}`}>
+                    👑 最強
                   </button>
-                ))}
+                  <button onClick={() => setShowWorst(true)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all ${showWorst ? 'bg-rose-600 text-white' : 'text-gray-400 hover:text-white'}`}>
+                    💀 最弱
+                  </button>
+                </div>
+                {/* 人数切替(#78) */}
+                <div className="flex gap-1 bg-gray-950 border border-gray-800 rounded-xl p-1">
+                  {([2, 3, 4, 5] as const).map(n => (
+                    <button key={n} onClick={() => setGroupSize(n)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all ${groupSize === n ? 'bg-emerald-600 text-white' : 'text-gray-400 hover:text-white'}`}>
+                      {n}人
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
             <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
