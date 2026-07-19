@@ -403,14 +403,18 @@ function runBalanceSearch(players: Player[], ctx: BalanceContext): RawBalanceCan
           const effA = pLayerA.effectiveRates![role];
           const effB = pLayerB.effectiveRates![role];
 
-          // ★ 追加: 対面MMRの格差チェック (シルバー vs プラチナなどの格差対面を強力に抑制)
+          // ★ 対面MMRの格差チェック (シルバー vs プラチナなどの格差対面を強力に抑制)
+          // 格上許可(allowHigher)の整合: 弱い側が「格上OK」なら格差抑制を大幅に緩和する。
+          // 以前は格上判定(600超)より先に格差禁止(300)が発動し、この設定が実質無意味だった。
           const laneMmrDiff = Math.abs(mmrA - mmrB);
+          const weakerSide = mmrA < mmrB ? pLayerA : pLayerB;
+          const gapScale = weakerSide.allowHigher ? 0.15 : 1;
           if (laneMmrDiff >= 300) {
-            penalty += 500000; // 超格差（事実上の禁止）
+            penalty += 500000 * gapScale; // 超格差（許可なしは事実上の禁止）
           } else if (laneMmrDiff >= 200) {
-            penalty += 150000; // 中格差（強い抑制）
+            penalty += 150000 * gapScale; // 中格差（強い抑制）
           } else if (laneMmrDiff >= 150) {
-            penalty += 30000;  // 軽微な格差（ソフト抑制）
+            penalty += 30000 * gapScale;  // 軽微な格差（ソフト抑制）
           }
 
           penalty += Math.pow(Math.abs(effA - effB), 2) / 2.5; // 対面のレーン格差ペナルティ（実効レートで評価）
@@ -431,7 +435,8 @@ function runBalanceSearch(players: Player[], ctx: BalanceContext): RawBalanceCan
           const checkOpponent = (p: Player, opp: Player, currentRole: Role) => {
              const oppMmr = opp.rates[currentRole];
              const mmrDiff = oppMmr - p.rates[currentRole];
-             const isHigherOpp = mmrDiff > 600;
+             // 600超は格差禁止(上記)で先に弾かれ実質発動しなかったため、現実的な300超に是正
+             const isHigherOpp = mmrDiff > 300;
              const isMainLane = (currentRole === p.pref1);
              
              if (isHigherOpp) {
