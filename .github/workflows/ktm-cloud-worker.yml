@@ -1,0 +1,54 @@
+name: KTM Cloud Worker
+
+# PC常駐デーモンの代替(#88)。
+#  - youtube: 30分おきに youtube_queue を処理（yt-dlp字幕→Gemini要約→ナレッジ保存）
+#  - dict-sync: 3時間おきにナレッジ→チャンピオン辞典の同期（knowledge/sync をチャンクで回す）
+# 必要シークレット: SUPABASE_URL, SUPABASE_SERVICE_KEY, GEMINI_API_KEY, KTM_CRON_SECRET
+
+on:
+  schedule:
+    - cron: '*/30 * * * *'   # youtube worker
+    - cron: '7 */3 * * *'    # dict-sync
+  workflow_dispatch:
+    inputs:
+      job:
+        description: 'youtube / dict-sync / both'
+        required: false
+        default: 'both'
+
+jobs:
+  youtube:
+    if: github.event_name == 'workflow_dispatch' && (github.event.inputs.job == 'youtube' || github.event.inputs.job == 'both') || (github.event_name == 'schedule' && github.event.schedule == '*/30 * * * *')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - name: Install yt-dlp
+        run: pip install -q yt-dlp
+      - name: Process youtube queue
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: python scripts/youtube_worker.py
+
+  dict-sync:
+    if: github.event_name == 'workflow_dispatch' && (github.event.inputs.job == 'dict-sync' || github.event.inputs.job == 'both') || (github.event_name == 'schedule' && github.event.schedule == '7 */3 * * *')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run knowledge -> dictionary sync (chunked)
+        env:
+          CRON_SECRET: ${{ secrets.KTM_CRON_SECRET }}
+        run: |
+          if [ -z "$CRON_SECRET" ]; then echo "::warning::KTM_CRON_SECRET未設定のためスキップ"; exit 0; fi
+          BASE="https://my-work-8jbd.vercel.app/api/admin/knowledge/sync"
+          OFFSET=0
+          for i in $(seq 1 30); do
+            RES=$(curl -s -X POST "$BASE" -H "Authorization: Bearer $CRON_SECRET" -H "Content-Type: application/json" -d "{\"offset\":$OFFSET,\"limit\":15}")
+            echo "$RES"
+            DONE=$(echo "$RES" | python3 -c "import sys,json;d=json.load(sys.stdin);print(d.get('done',True))" 2>/dev/null || echo True)
+            NEXT=$(echo "$RES" | python3 -c "import sys,json;d=json.load(sys.stdin);print(d.get('nextOffset') or '')" 2>/dev/null || echo '')
+            if [ "$DONE" = "True" ] || [ -z "$NEXT" ]; then echo "同期完了"; break; fi
+            OFFSET=$NEXT
+          done

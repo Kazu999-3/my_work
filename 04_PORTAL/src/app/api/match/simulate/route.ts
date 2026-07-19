@@ -38,9 +38,27 @@ export async function POST(req: NextRequest) {
       try {
         const roles = ['TOP', 'JG', 'MID', 'BOT', 'SUP'];
         const teamStr = (t: any) => roles.map(r => `${r}: ${t[r]}`).join(', ');
+
+        // KTM辞典の知見を注入（一般知識だけでなくコミュニティ蓄積データに基づかせる）
+        let factsText = '';
+        try {
+          const champs = [...Object.values(blue), ...Object.values(red)].filter(Boolean) as string[];
+          const { data: facts } = await supabase
+            .from('champion_facts')
+            .select('champion, strengths, weaknesses, power_spikes')
+            .in('champion', champs)
+            .eq('archived', false);
+          if (facts && facts.length > 0) {
+            factsText = '\n【コミュニティ辞典の知見（最優先で反映すること）】\n' + facts.map((f: any) =>
+              `- ${f.champion}: 強み=${f.strengths || '-'} / 弱み=${f.weaknesses || '-'} / スパイク=${f.power_spikes || '-'}`
+            ).join('\n') + '\n';
+          }
+        } catch { /* 辞典なしでも分析は続行 */ }
+
         const prompt = `あなたはLoLの一流アナリストです。以下の5v5カスタム構成を分析してください。
 BLUE: ${teamStr(blue)}
 RED: ${teamStr(red)}
+${factsText}
 
 必ず以下のJSONのみを出力（コードブロック・前置き禁止、すべて日本語）:
 {
