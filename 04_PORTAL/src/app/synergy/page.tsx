@@ -32,11 +32,32 @@ interface EnemyStat {
   winRateDiff: number; // 0に近いほどライバル（50%）
 }
 
+interface GroupStat {
+  members: string[];
+  games: number;
+  wins: number;
+  winRate: number;
+}
+
+// n個からk個の組み合わせを列挙
+function combosOf<T>(arr: T[], k: number): T[][] {
+  const result: T[][] = [];
+  const walk = (start: number, cur: T[]) => {
+    if (cur.length === k) { result.push([...cur]); return; }
+    for (let i = start; i < arr.length; i++) { cur.push(arr[i]); walk(i + 1, cur); cur.pop(); }
+  };
+  walk(0, []);
+  return result;
+}
+
 export default function SynergyPage() {
   const [loading, setLoading] = useState(true);
   const [allyStats, setAllyStats] = useState<AllyStat[]>([]);
   const [enemyStats, setEnemyStats] = useState<EnemyStat[]>([]);
   const [minGames, setMinGames] = useState(3);
+  // グループ相性(#78): 3/4/5人で同チームだった時の勝率
+  const [groupStats, setGroupStats] = useState<Record<number, GroupStat[]>>({ 3: [], 4: [], 5: [] });
+  const [groupSize, setGroupSize] = useState<2 | 3 | 4 | 5>(2);
 
   useEffect(() => {
     async function fetchData() {
@@ -67,6 +88,8 @@ export default function SynergyPage() {
 
         const allyMap: Record<string, { games: number, wins: number }> = {};
         const enemyMap: Record<string, { games: number, p1Wins: number, p2Wins: number }> = {};
+        // グループ相性(#78): サイズ別の同チーム勝率
+        const groupMaps: Record<number, Record<string, { games: number; wins: number }>> = { 3: {}, 4: {}, 5: {} };
 
         // 集計
         Object.values(matches).forEach(m => {
@@ -79,6 +102,16 @@ export default function SynergyPage() {
                 if (!allyMap[key]) allyMap[key] = { games: 0, wins: 0 };
                 allyMap[key].games++;
                 if (isWin) allyMap[key].wins++;
+              }
+            }
+            // 3/4/5人グループ(#78)
+            for (const k of [3, 4, 5]) {
+              if (teamPlayers.length < k) continue;
+              for (const combo of combosOf(teamPlayers, k)) {
+                const key = [...combo].sort().join('::');
+                if (!groupMaps[k][key]) groupMaps[k][key] = { games: 0, wins: 0 };
+                groupMaps[k][key].games++;
+                if (isWin) groupMaps[k][key].wins++;
               }
             }
           };
@@ -120,6 +153,17 @@ export default function SynergyPage() {
 
         setAllyStats(parsedAlly);
         setEnemyStats(parsedEnemy);
+        // グループ相性を配列化(#78)
+        const parsedGroups: Record<number, GroupStat[]> = { 3: [], 4: [], 5: [] };
+        for (const k of [3, 4, 5]) {
+          parsedGroups[k] = Object.entries(groupMaps[k]).map(([key, s]) => ({
+            members: key.split('::'),
+            games: s.games,
+            wins: s.wins,
+            winRate: s.wins / s.games,
+          }));
+        }
+        setGroupStats(parsedGroups);
       } catch (err) {
         console.error(err);
       } finally {
@@ -145,6 +189,16 @@ export default function SynergyPage() {
       if (b.winRate === a.winRate) return b.games - a.games;
       return b.winRate - a.winRate;
     });
+
+  // グループ相性(#78): 選択サイズのグループを勝率順に（人数が多いほど同条件が少ないのでminGamesは緩めに適用）
+  const groupMin = groupSize >= 4 ? Math.min(minGames, 2) : minGames;
+  const filteredGroups = (groupStats[groupSize] || [])
+    .filter(g => g.games >= groupMin)
+    .sort((a, b) => {
+      if (b.winRate === a.winRate) return b.games - a.games;
+      return b.winRate - a.winRate;
+    })
+    .slice(0, 50);
 
   // 敵は勝率が拮抗している順（winRateDiffが小さい順）、同率なら試合数が多い順
   const filteredEnemy = enemyStats
@@ -190,11 +244,50 @@ export default function SynergyPage() {
           {/* 最強の相棒 */}
           <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-2xl relative overflow-hidden">
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-400 to-teal-500"></div>
-            <h2 className="text-2xl font-black text-emerald-400 mb-6 flex items-center gap-2">
-              <Users className="h-6 w-6" /> 最強の相棒 <span className="text-sm text-gray-500 font-normal">(Best Duo)</span>
-            </h2>
+            <div className="flex items-center justify-between flex-wrap gap-3 mb-6">
+              <h2 className="text-2xl font-black text-emerald-400 flex items-center gap-2">
+                <Users className="h-6 w-6" /> 最強のチーム <span className="text-sm text-gray-500 font-normal">(Best Combo)</span>
+              </h2>
+              {/* 人数切替(#78) */}
+              <div className="flex gap-1 bg-gray-950 border border-gray-800 rounded-xl p-1">
+                {([2, 3, 4, 5] as const).map(n => (
+                  <button key={n} onClick={() => setGroupSize(n)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all ${groupSize === n ? 'bg-emerald-600 text-white' : 'text-gray-400 hover:text-white'}`}>
+                    {n}人
+                  </button>
+                ))}
+              </div>
+            </div>
             <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
-              {filteredAlly.length === 0 ? (
+              {groupSize > 2 ? (
+                /* 3/4/5人グループ表示(#78) */
+                filteredGroups.length === 0 ? (
+                  <div className="text-center text-gray-500 py-8">この人数で{groupMin}戦以上一緒に戦った組み合わせがありません</div>
+                ) : (
+                  filteredGroups.map((g, i) => (
+                    <div key={g.members.join('-')} className="flex items-center gap-4 bg-gray-950/50 hover:bg-gray-800/80 p-4 rounded-xl border border-gray-800 transition">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center font-black shrink-0 ${i < 3 ? 'bg-emerald-500/20 text-emerald-400' : 'bg-gray-800 text-gray-500'}`}>
+                        {i + 1}
+                      </div>
+                      <div className="flex-1 flex items-center justify-between gap-4 min-w-0">
+                        <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+                          {g.members.map((m, idx) => (
+                            <span key={m} className="font-bold text-white text-sm">
+                              {m}{idx < g.members.length - 1 && <span className="text-gray-600 mx-0.5">・</span>}
+                            </span>
+                          ))}
+                        </div>
+                        <div className="text-right flex flex-col items-end shrink-0">
+                          <div className={`text-xl font-black ${g.winRate >= 0.7 ? 'text-emerald-400' : g.winRate >= 0.5 ? 'text-teal-400' : 'text-gray-500'}`}>
+                            {(g.winRate * 100).toFixed(1)}%
+                          </div>
+                          <div className="text-xs text-gray-500 font-bold tracking-wider">{g.games}戦 {g.wins}勝</div>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )
+              ) : filteredAlly.length === 0 ? (
                 <div className="text-center text-gray-500 py-8">データがありません</div>
               ) : (
                 filteredAlly.map((stat, i) => (
