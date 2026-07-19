@@ -394,6 +394,24 @@ export default function MatchupsPage() {
     }
   };
 
+  // B-04: 保存済みシミュレーションの一覧
+  const [savedSims, setSavedSims] = useState<any[] | null>(null);
+  useEffect(() => {
+    if (viewMode !== 'simulator' || savedSims !== null) return;
+    fetch('/api/match/simulation').then(r => r.json()).then(d => setSavedSims(d.success ? d.list : [])).catch(() => setSavedSims([]));
+  }, [viewMode, savedSims]);
+  const loadSavedSim = async (simId: string) => {
+    try {
+      const d = await (await fetch(`/api/match/simulation?id=${simId}`)).json();
+      if (d.success) {
+        if (d.blue) setBlueChamps(d.blue);
+        if (d.red) setRedChamps(d.red);
+        if (d.result) setSimResult(d.result);
+        setSimError(null);
+      }
+    } catch { /* noop */ }
+  };
+
   // 直近の試合(ktm_matches)からチーム構成をシミュレータに自動入力する(実戦データ連携)
   const [loadingRecent, setLoadingRecent] = useState(false);
   const normSimRole = (r: string): 'TOP' | 'JG' | 'MID' | 'BOT' | 'SUP' | null => {
@@ -513,6 +531,21 @@ export default function MatchupsPage() {
             </button>
           </div>
         </div>
+
+        {/* B-04: 保存済みシミュレーション一覧 */}
+        {savedSims && savedSims.length > 0 && (
+          <div className="glass-panel rounded-2xl p-4">
+            <p className="text-xs font-black text-gray-400 mb-2">📚 保存済みの分析（クリックで再表示）</p>
+            <div className="flex flex-wrap gap-2">
+              {savedSims.map((s: any) => (
+                <button key={s.id} onClick={() => loadSavedSim(s.id)}
+                  className="text-[10px] font-bold px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-gray-300 hover:bg-white/10">
+                  {s.blue?.JG || '?'}組 vs {s.red?.JG || '?'}組 ・ {new Date(s.created_at).toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' })}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* エラー表示 */}
         {simError && (

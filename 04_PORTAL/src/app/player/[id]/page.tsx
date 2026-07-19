@@ -189,6 +189,28 @@ export default function PlayerMyPage() {
     };
   }, [history]);
 
+  // チャンピオンプール(P-06): 全レーンの使用チャンプを集約
+  const champPool = useMemo(() => {
+    if (!stats) return [];
+    const agg: Record<string, { games: number; wins: number }> = {};
+    Object.values(stats).forEach((r: any) => {
+      (r?.topChampions || []).forEach((c: any) => {
+        if (!agg[c.name]) agg[c.name] = { games: 0, wins: 0 };
+        agg[c.name].games += c.games; agg[c.name].wins += c.wins;
+      });
+    });
+    return Object.entries(agg)
+      .map(([name, s]) => ({ name, games: s.games, winRate: Math.round((s.wins / s.games) * 100) }))
+      .sort((a, b) => b.games - a.games).slice(0, 8);
+  }, [stats]);
+
+  // 宿敵/カモ(P-07): rivalsは「自分が負けてる順」ソート済み
+  const rivalPair = useMemo(() => {
+    const q = (rivals || []).filter((r: any) => r.games >= 2);
+    if (q.length === 0) return null;
+    return { nemesis: q[0], prey: q[q.length - 1] };
+  }, [rivals]);
+
   // 対面別の得意/苦手（2戦以上の相手のみ）
   const matchupExtremes = useMemo(() => {
     const qualified = (matchups || []).filter((m: any) => m.games >= 2);
@@ -501,6 +523,47 @@ export default function PlayerMyPage() {
                       )}
                     </div>
                   </div>
+
+                  {/* チャンピオンプール & 宿敵/カモ (P-06/P-07) */}
+                  {(champPool.length > 0 || rivalPair) && (
+                    <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {champPool.length > 0 && (
+                        <div className="bg-white/[0.02] backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-xl">
+                          <h3 className="text-base font-black mb-4 border-b border-white/5 pb-3">🎯 チャンピオンプール</h3>
+                          <div className="space-y-2">
+                            {champPool.map(c => (
+                              <div key={c.name} className="flex items-center gap-2 text-xs">
+                                <img src={getChampIcon(c.name)} className="w-6 h-6 rounded-full border border-white/10" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                                <span className="w-24 truncate font-bold text-gray-200">{c.name}</span>
+                                <div className="flex-1 h-2 bg-white/5 rounded-full overflow-hidden">
+                                  <div className={`h-full ${c.winRate >= 50 ? 'bg-emerald-500/70' : 'bg-rose-500/60'}`} style={{ width: `${Math.min(100, c.games * 10)}%` }} />
+                                </div>
+                                <span className="w-10 text-right text-gray-400">{c.games}戦</span>
+                                <span className={`w-10 text-right font-bold ${c.winRate >= 50 ? 'text-emerald-400' : 'text-rose-400'}`}>{c.winRate}%</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {rivalPair && (
+                        <div className="bg-white/[0.02] backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-xl">
+                          <h3 className="text-base font-black mb-4 border-b border-white/5 pb-3">⚔️ 宿敵 & カモ <span className="text-[9px] text-gray-500 font-medium">(対人戦績・2戦以上)</span></h3>
+                          <div className="grid grid-cols-2 gap-4 text-center">
+                            <div className="bg-rose-500/5 border border-rose-500/20 rounded-2xl p-4">
+                              <p className="text-[10px] text-rose-400 font-black mb-1">💀 宿敵（負け越し）</p>
+                              <p className="text-lg font-black text-white truncate">{rivalPair.nemesis.name}</p>
+                              <p className="text-xs text-gray-400">対戦{rivalPair.nemesis.games}回・勝率<span className="text-rose-400 font-bold">{rivalPair.nemesis.winRate}%</span></p>
+                            </div>
+                            <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-2xl p-4">
+                              <p className="text-[10px] text-emerald-400 font-black mb-1">🔥 カモ（勝ち越し）</p>
+                              <p className="text-lg font-black text-white truncate">{rivalPair.prey.name}</p>
+                              <p className="text-xs text-gray-400">対戦{rivalPair.prey.games}回・勝率<span className="text-emerald-400 font-bold">{rivalPair.prey.winRate}%</span></p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   {/* レーダーチャート */}
                   <div className="bg-white/[0.02] backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-xl lg:col-span-1">

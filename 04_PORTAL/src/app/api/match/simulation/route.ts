@@ -26,7 +26,16 @@ export async function POST(req: Request) {
 export async function GET(req: Request) {
   try {
     const id = new URL(req.url).searchParams.get('id');
-    if (!id) return NextResponse.json({ error: 'id が必要です。' }, { status: 400 });
+    if (!id) {
+      // B-04: id無しは保存済み一覧（直近15件・構成のみ＝エグレス配慮でresultは含めない）
+      const { data, error } = await supabase
+        .from('saved_simulations')
+        .select('id, blue, red, created_at')
+        .order('created_at', { ascending: false })
+        .limit(15);
+      if (error) throw error;
+      return NextResponse.json({ success: true, list: data || [] });
+    }
     const { data, error } = await supabase
       .from('saved_simulations')
       .select('blue, red, result, created_at')
