@@ -359,13 +359,40 @@ export async function handleButtonInteraction(interaction, env, ctx) {
   if (metadata.joined.length >= metadata.maxCount && (customId.startsWith('join_any') || customId.startsWith('join_role:'))) {
     ctx.waitUntil((async () => {
       const mentions = [...new Set([metadata.owner, ...metadata.joined])].map(id => `<@${id}>`).join(" ");
-      const players = metadata.joined.map(id => metadata.names[id]).slice(0, 10);
-      const spectators = metadata.spectating.map(id => metadata.names[id]);
-      
-      // SYNC_TO_INPUT は不要になったため削除
-      // try { await fetchGAS({ type: "SYNC_TO_INPUT", players, spectators }); } catch(err) {}
-      
-      await sendInteractionFollowup(appId, token, { content: `⚔️ **メンバー確定！** 対戦準備を開始してください（対戦入力シートへ転送しました）。\n通知: ${mentions}` });
+
+      // 満員時に参加者の希望レーン状況をまとめて投稿（チーム分けの参考に）
+      let laneEmbed = null;
+      try {
+        const { fetchSupabase } = await import('../utils/supabase.js');
+        const ids = [...new Set([metadata.owner, ...metadata.joined])];
+        const idsStr = ids.map((i) => `"${i}"`).join(',');
+        const dbPlayers = await fetchSupabase(env, 'ktm_players', `discord_id=in.(${idsStr})&select=discord_id,name,role_preferences,ng_lane_1,ng_lane_2`);
+        const roleCount = { TOP: 0, JG: 0, MID: 0, ADC: 0, SUP: 0, ALL: 0 };
+        const lines = ids.map((id) => {
+          const p = (dbPlayers || []).find((x) => x.discord_id === id);
+          const nm = metadata.names[id] || p?.name || '不明';
+          if (!p || !p.role_preferences?.primary) return `▫️ **${nm}**: 未設定（/lane か「📍レーン設定」で登録を！）`;
+          const pr = (p.role_preferences.primary || '-').toUpperCase();
+          const sc = (p.role_preferences.secondary || '-').toUpperCase();
+          if (roleCount[pr] !== undefined) roleCount[pr]++;
+          const ng = [p.ng_lane_1, p.ng_lane_2].filter((v) => v && v !== '-').join(',');
+          return `▫️ **${nm}**: ${pr} / ${sc}${ng ? `（NG: ${ng}）` : ''}`;
+        });
+        const countLine = `**第一希望の分布**: TOP:${roleCount.TOP} JG:${roleCount.JG} MID:${roleCount.MID} ADC:${roleCount.ADC} SUP:${roleCount.SUP}${roleCount.ALL ? ` ALL:${roleCount.ALL}` : ''}`;
+        laneEmbed = {
+          title: '📍 参加者の希望レーン状況',
+          description: `${countLine}\n\n${lines.join('\n')}`,
+          color: 0x3498db,
+          footer: { text: '表記: メイン / サブ（NG）。ポータルのチーム分けで自動考慮されます。' }
+        };
+      } catch (e) {
+        console.warn('lane summary failed:', e);
+      }
+
+      await sendInteractionFollowup(appId, token, {
+        content: `⚔️ **メンバー確定！** 対戦準備を開始してください。\n通知: ${mentions}`,
+        ...(laneEmbed ? { embeds: [laneEmbed] } : {})
+      });
     })());
     
     const closingMessage = (metadata.mode === 'ノーマル' || metadata.mode === 'ARAM')

@@ -75,6 +75,11 @@ export async function handleModalSubmit(interaction, env, ctx) {
         }
       } catch (err) {
         console.error("Modal SetIGN Error:", err);
+        // 失敗を握りつぶさずユーザーに通知(D-07)。「⌛処理中」のまま止まる事態を防ぐ。
+        try {
+          const { patchInteractionResponse } = await import('../utils/api.js');
+          await patchInteractionResponse(appId, token, { content: `❌ **IGN登録に失敗しました**: ${err.message}\n👉 時間をおいて再度お試しください。繰り返す場合は管理者へ連絡を。` });
+        } catch (e2) { /* noop */ }
       }
     })());
     

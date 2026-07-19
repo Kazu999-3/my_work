@@ -24,7 +24,7 @@ import {
 } from "lucide-react";
 import { getChampIcon, getChampNameById } from "../../../lib/ddragonClient";
 import { ResponsiveContainer, XAxis, YAxis, Tooltip, ReferenceLine, Area, CartesianGrid, Line, ComposedChart } from "recharts";
-import { KTM_TIERS } from "../../../lib/mmr";
+import { KTM_TIERS, getKtmRank } from "../../../lib/mmr";
 import { motion, AnimatePresence } from "framer-motion";
 
 const roleIcons: Record<string, any> = {
@@ -152,6 +152,23 @@ export default function PlayerMyPage() {
     const key = `mmr_${activeLane.toLowerCase()}`;
     return player[key] || 1000;
   }, [player, activeLane]);
+
+  // 昇降格の演出(L-04): 前回訪問時のティアと比較して変動があればバナー表示
+  const [tierChange, setTierChange] = useState<{ from: string; to: string; up: boolean } | null>(null);
+  useEffect(() => {
+    if (!player || !id) return;
+    try {
+      const currentTier = getKtmRank(player.mmr || 1000).name;
+      const key = `ktm_last_tier_${id}`;
+      const prevTier = localStorage.getItem(key);
+      if (prevTier && prevTier !== currentTier) {
+        const tiers = KTM_TIERS.map(t => t.name);
+        const up = tiers.indexOf(currentTier) < tiers.indexOf(prevTier); // KTM_TIERSは上位が先頭
+        setTierChange({ from: prevTier, to: currentTier, up });
+      }
+      localStorage.setItem(key, currentTier);
+    } catch { /* localStorage不可でも無視 */ }
+  }, [player, id]);
 
   // 直近の調子サマリー（history は新しい順）
   const recentForm = useMemo(() => {
@@ -354,6 +371,17 @@ export default function PlayerMyPage() {
             </div>
           </div>
         </div>
+
+        {/* 昇降格バナー(L-04) */}
+        {tierChange && (
+          <div className={`rounded-2xl border p-4 flex items-center justify-between gap-3 ${tierChange.up ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-rose-500/10 border-rose-500/30'}`}>
+            <p className={`text-sm font-black ${tierChange.up ? 'text-emerald-300' : 'text-rose-300'}`}>
+              {tierChange.up ? '🎉 昇格しました！' : '📉 降格しました…'}
+              <span className="ml-2 text-gray-300 font-bold">{tierChange.from} → {tierChange.to}</span>
+            </p>
+            <button onClick={() => setTierChange(null)} className="text-gray-500 hover:text-white text-xs font-bold shrink-0">✕</button>
+          </div>
+        )}
 
         {/* Tab Controls (横スライド対応、洗練されたグラスデザイン) */}
         <div className="flex gap-1 bg-white/[0.02] backdrop-blur-md p-1.5 rounded-2xl border border-white/5 overflow-x-auto scrollbar-none shadow-lg">

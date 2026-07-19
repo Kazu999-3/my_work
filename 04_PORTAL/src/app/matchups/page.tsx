@@ -837,6 +837,31 @@ export default function MatchupsPage() {
                           </div>
                         </div>
 
+                        {/* 1.5 累積勝率トレンド(B-06): 時系列でこの対面が上向きか下向きか */}
+                        {trendHistory.length >= 2 && (() => {
+                          let w = 0;
+                          const pts = trendHistory.map((h: any, i: number) => {
+                            if (h.is_win) w++;
+                            return Math.round((w / (i + 1)) * 100);
+                          });
+                          const last = pts[pts.length - 1];
+                          const prev = pts.length >= 3 ? pts[pts.length - 3] : pts[0];
+                          const rising = last >= prev;
+                          return (
+                            <div className="space-y-1.5">
+                              <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest block">
+                                📉 累積勝率の推移 <span className={rising ? 'text-emerald-400' : 'text-rose-400'}>（{rising ? '上向き ↗' : '下向き ↘'} 現在{last}%）</span>
+                              </span>
+                              <div className="flex items-end gap-0.5 h-12 bg-black/30 rounded-lg p-1.5 border border-white/5">
+                                {pts.map((p: number, i: number) => (
+                                  <div key={i} title={`${i + 1}戦目時点: ${p}%`} className="flex-1 rounded-sm"
+                                    style={{ height: `${Math.max(8, p)}%`, backgroundColor: p >= 50 ? 'rgba(52,211,153,0.7)' : 'rgba(251,113,133,0.6)' }} />
+                                ))}
+                              </div>
+                            </div>
+                          );
+                        })()}
+
                         {/* 2. プレイヤー/ロール別の集計サマリーテーブル */}
                         <div className="space-y-2">
                           <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest block">📊 プレイヤー別の集計サマリー</span>
