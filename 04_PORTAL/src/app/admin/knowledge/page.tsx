@@ -7,6 +7,7 @@ import Link from 'next/link';
 import YoutubeQueueManager from '../youtube/YoutubeQueueManager';
 import LibraryTabContent from './LibraryTabContent';
 import DictReviewPanel from './DictReviewPanel';
+import DictInsightsPanel from './DictInsightsPanel';
 import { supabaseBrowser } from '../../../lib/supabaseBrowserClient';
 
 interface KnowledgeItem {
@@ -335,7 +336,12 @@ export default function KnowledgeBase() {
         {/* --- タブ別コンテンツ --- */}
         {activeTab === 'video' && <YoutubeQueueManager />}
         {activeTab === 'library' && <LibraryTabContent />}
-        {activeTab === 'review' && <DictReviewPanel />}
+        {activeTab === 'review' && (
+          <div className="space-y-6">
+            <DictReviewPanel />
+            <DictInsightsPanel />
+          </div>
+        )}
 
         {activeTab === 'knowledge' && (
           <div className="space-y-8 animate-in">
