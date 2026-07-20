@@ -276,6 +276,8 @@ export function LibraryTabContentInner() {
       let offset = 0;
       let totalSynced = 0;
       let totalArticles = 0;
+      let totalMoved = 0;  // 辞典へ移動しライブラリから消えた記事数
+      let scanned = 0;     // 実際にスキャンした記事数（移動で件数が減るためoffsetとは別管理）
       // ★ サーバー側はチャンク処理になっているため、完了(done)するまで進捗を表示しながら繰り返し呼び出す
       while (true) {
         const res = await fetch('/api/admin/knowledge/sync', {
@@ -287,14 +289,23 @@ export function LibraryTabContentInner() {
         if (!res.ok) throw new Error(data.error || '同期エラーが発生しました');
 
         totalSynced += data.syncedChampions || 0;
+        totalMoved += data.moved || 0;
         totalArticles = data.totalArticles || totalArticles;
-        offset = offset + (data.processed || 0);
-        setSyncProgress({ processed: Math.min(offset, totalArticles), total: totalArticles, synced: totalSynced });
+        scanned += data.processed || 0;
+        setSyncProgress({ processed: Math.min(scanned, totalArticles), total: totalArticles, synced: totalSynced });
 
         if (data.done || data.nextOffset === null || data.processed === 0) break;
-        offset = data.nextOffset;
+        // 辞典へ移動した記事は対象から外れる（__DELETED__）ため、その分だけ次の開始位置を戻す。
+        // 単純に nextOffset を使うと、詰まってきた分だけ記事を読み飛ばしてしまう。
+        offset = Math.max(0, data.nextOffset - (data.moved || 0));
       }
-      showToast(`✅ 全 ${totalArticles} 記事をスキャンし、延べ ${totalSynced} 件のチャンピオン辞典データを一括同期・振り分け完了しました！`, 'success');
+      showToast(
+        `✅ ${scanned}件をスキャンし、延べ ${totalSynced} 件を辞典へ同期しました`
+        + (totalMoved > 0 ? `（うち ${totalMoved} 件の記事を辞典へ移動し、ライブラリから削除）` : ''),
+        'success'
+      );
+      // 移動でライブラリの中身が変わるので一覧を再取得
+      if (totalMoved > 0) await fetchArticles();
     } catch (err: any) {
       showToast(`❌ 同期失敗: ${err.message}`, 'error');
     } finally {

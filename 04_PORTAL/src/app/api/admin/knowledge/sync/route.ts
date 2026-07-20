@@ -55,7 +55,7 @@ export async function POST(req: Request) {
     // （tagsがNULLの記事まで誤って除外しないよう、is.null との or 条件にしている）
     const { data: articles, error: fetchError, count: totalArticles } = await supabase
       .from('personal_knowledge')
-      .select('title, content, raw_content, champion', { count: 'exact' })
+      .select('id, title, content, raw_content, champion', { count: 'exact' })
       .or('tags.is.null,tags.not.cs.{__DELETED__}')
       .order('id', { ascending: true })
       .range(offset, offset + limit - 1);
@@ -64,6 +64,10 @@ export async function POST(req: Request) {
 
     // チャンピオン単位でグルーピング（同じチャンピオンに複数記事があってもDB往復を1回にまとめるため）
     const byChampion = new Map<string, { title: string; content: string }[]>();
+    // 個別の「辞典へ移動」と同じ後処理（champion_notes追加・ライブラリから削除）を行うため、
+    // 辞典に振り分けられた記事を控えておく。
+    const movedArticles: { id: any; title: string; content: string; champions: string[] }[] = [];
+
     for (const article of (articles || [])) {
       const rawChamp = article.champion || '';
       const editChampions = rawChamp.split(',').map((c: string) => c.trim()).filter((c: string) => c && c.toLowerCase() !== 'unknown');
@@ -72,6 +76,8 @@ export async function POST(req: Request) {
       if (validChampions.length === 0) continue;
       const title = article.title || '';
       const content = article.raw_content || article.content || '';
+
+      movedArticles.push({ id: article.id, title, content, champions: validChampions });
 
       for (const championName of validChampions) {
         const list = byChampion.get(championName) || [];
@@ -125,6 +131,33 @@ export async function POST(req: Request) {
       syncedChampionCount++;
     }));
 
+    // ===== 個別の「辞典へ移動」と同じ後処理 =====
+    // 以前は一括同期だと辞典へのマージだけで、champion_notesへの反映もライブラリからの
+    // 削除も行われず、同じ記事が何度も同期対象になっていた。個別移動と挙動を揃える。
+    let movedCount = 0;
+    if (movedArticles.length > 0) {
+      await Promise.all(movedArticles.map(async (a) => {
+        try {
+          // 1) 構造化テーブル champion_notes へ反映（同記事の重複は source_article_id で排除）
+          await supabase.from('champion_notes').delete().eq('source_article_id', a.id);
+          const rows = a.champions.map((champion) => ({
+            champion,
+            title: a.title || '(無題)',
+            body: a.content,
+            source: 'article',
+            source_article_id: a.id,
+          }));
+          if (rows.length > 0) await supabase.from('champion_notes').insert(rows);
+
+          // 2) ライブラリからは削除扱いにする（__DELETED__ タグ）
+          await supabase.from('personal_knowledge').update({ tags: ['__DELETED__'] }).eq('id', a.id);
+          movedCount++;
+        } catch (moveErr) {
+          console.warn(`[knowledge/sync] 記事${a.id}の移動処理に失敗（辞典マージ自体は成功）:`, moveErr);
+        }
+      }));
+    }
+
     const processedCount = (articles || []).length;
     const nextOffset = offset + processedCount;
     const done = processedCount < limit || nextOffset >= (totalArticles || 0);
@@ -132,6 +165,7 @@ export async function POST(req: Request) {
     return NextResponse.json({
       success: true,
       processed: processedCount,
+      moved: movedCount, // 辞典へ移動（＝ライブラリから削除）した記事数
       syncedChampions: syncedChampionCount,
       totalArticles: totalArticles || 0,
       nextOffset: done ? null : nextOffset,
