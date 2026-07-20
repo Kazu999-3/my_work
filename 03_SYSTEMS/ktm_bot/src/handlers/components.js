@@ -360,9 +360,11 @@ export async function handleButtonInteraction(interaction, env, ctx) {
     ctx.waitUntil((async () => {
       const mentions = [...new Set([metadata.owner, ...metadata.joined])].map(id => `<@${id}>`).join(" ");
 
-      // 満員時に参加者の希望レーン状況をまとめて投稿（チーム分けの参考に）
+      // 満員時に参加者の希望レーン状況をまとめて投稿（チーム分けの参考に）。
+      // ポータルでチーム分けするカスタムのみ対象。ノーマル/ARAMでは不要。
       let laneEmbed = null;
       try {
+        if (metadata.mode !== 'カスタム') throw new Error('skip:not-custom');
         const { fetchSupabase } = await import('../utils/supabase.js');
         const ids = [...new Set([metadata.owner, ...metadata.joined])];
         const idsStr = ids.map((i) => `"${i}"`).join(',');
@@ -378,7 +380,21 @@ export async function handleButtonInteraction(interaction, env, ctx) {
           const ng = [p.ng_lane_1, p.ng_lane_2].filter((v) => v && v !== '-').join(',');
           return `▫️ **${nm}**: ${pr} / ${sc}${ng ? `（NG: ${ng}）` : ''}`;
         });
-        const countLine = `**第一希望の分布**: TOP:${roleCount.TOP} JG:${roleCount.JG} MID:${roleCount.MID} ADC:${roleCount.ADC} SUP:${roleCount.SUP}${roleCount.ALL ? ` ALL:${roleCount.ALL}` : ''}`;
+        // レーン希望を「メイン＋サブ」でカバー人数として集計し、不足レーンを一目で分かるようにする
+        const cover = { TOP: 0, JG: 0, MID: 0, ADC: 0, SUP: 0 };
+        (dbPlayers || []).forEach((p) => {
+          const pr = (p.role_preferences?.primary || '').toUpperCase();
+          const sc = (p.role_preferences?.secondary || '').toUpperCase();
+          ['TOP', 'JG', 'MID', 'ADC', 'SUP'].forEach((r) => {
+            if (pr === r || sc === r || pr === 'ALL' || sc === 'ALL') cover[r]++;
+          });
+        });
+        const bar = (n) => (n === 0 ? '🚨不足' : n === 1 ? '⚠️1人' : `${n}人`);
+        const countLine =
+          `**レーン希望（第一希望 / 対応可能）**\n` +
+          `\`TOP\` ${roleCount.TOP} / ${bar(cover.TOP)}　\`JG \` ${roleCount.JG} / ${bar(cover.JG)}　\`MID\` ${roleCount.MID} / ${bar(cover.MID)}\n` +
+          `\`ADC\` ${roleCount.ADC} / ${bar(cover.ADC)}　\`SUP\` ${roleCount.SUP} / ${bar(cover.SUP)}` +
+          (roleCount.ALL ? `　（ALL希望 ${roleCount.ALL}名）` : '');
 
         // レート帯の内訳（しきい値の上下に何人いるか）
         let tierLine = '';
@@ -392,6 +408,32 @@ export async function handleButtonInteraction(interaction, env, ctx) {
               + `\n最高 ${sorted[0]} / 最低 ${sorted[sorted.length - 1]}（幅 ${sorted[0] - sorted[sorted.length - 1]}）`;
           }
         } catch (e) { /* 集計失敗は無視 */ }
+
+        // Discordロールの人数カウント（@ゴールド帯 など、サーバー側の帯分けを可視化）
+        let discordRoleLine = '';
+        try {
+          const guildId = env.DISCORD_GUILD_ID;
+          if (guildId) {
+            const roleCountMap = {};
+            for (const id of ids) {
+              const mr = await fetchWithRetryLocal(`https://discord.com/api/v10/guilds/${guildId}/members/${id}`, env);
+              if (!mr) continue;
+              (mr.roles || []).forEach((rid) => { roleCountMap[rid] = (roleCountMap[rid] || 0) + 1; });
+            }
+            const rolesRes = await fetchWithRetryLocal(`https://discord.com/api/v10/guilds/${guildId}/roles`, env);
+            if (rolesRes && Array.isArray(rolesRes)) {
+              const named = Object.entries(roleCountMap)
+                .map(([rid, cnt]) => ({ name: rolesRes.find((r) => r.id === rid)?.name, cnt }))
+                .filter((x) => x.name && x.name !== '@everyone' && !/bot/i.test(x.name))
+                .sort((a, b) => b.cnt - a.cnt)
+                .slice(0, 6);
+              if (named.length > 0) {
+                discordRoleLine = `\n**Discordロール**: ` + named.map((x) => `${x.name} ${x.cnt}名`).join(' ／ ');
+              }
+            }
+          }
+        } catch (e) { /* ロール集計失敗は無視 */ }
+        tierLine += discordRoleLine;
         laneEmbed = {
           title: '📍 参加者の希望レーン状況',
           description: `${countLine}${tierLine}\n\n${lines.join('\n')}`,
@@ -399,7 +441,7 @@ export async function handleButtonInteraction(interaction, env, ctx) {
           footer: { text: '表記: メイン / サブ（NG）。ポータルのチーム分けで自動考慮されます。' }
         };
       } catch (e) {
-        console.warn('lane summary failed:', e);
+        if (String(e?.message) !== 'skip:not-custom') console.warn('lane summary failed:', e);
       }
 
       await sendInteractionFollowup(appId, token, {
@@ -418,6 +460,15 @@ export async function handleButtonInteraction(interaction, env, ctx) {
   // 募集メッセージ本体にレート帯の内訳を表示する（参加ボタンを押す時点で構成が分かるように）
   const tierLine = await buildTierLine(env, metadata.joined || []);
   return Response.json({ type: 7, data: { content: createMessageContent(metadata), embeds: [createRecruitEmbed(metadata, tierLine)], components: createRecruitButtons(metadata) } });
+}
+
+/** Discord APIをGETしてJSONを返す小ヘルパー（失敗時はnull） */
+async function fetchWithRetryLocal(url, env) {
+  try {
+    const r = await fetch(url, { headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}` } });
+    if (!r.ok) return null;
+    return await r.json();
+  } catch { return null; }
 }
 
 /** 参加者のdiscord_id配列から「🔼しきい値以上 N名 ／ 🔽未満 N名」の1行を作る */
