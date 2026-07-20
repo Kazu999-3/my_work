@@ -445,7 +445,8 @@ export async function performFullMmrRebuild(supabase: SupabaseClient) {
         role,
       };
 
-      const delta = calculateNewMMR(ctx);
+      // M-03: 内訳も一緒に算出し、過去試合にも遡って保存する
+      const { delta, breakdown } = calculateNewMMRDetailed(ctx);
       const kdaScore = calculateKdaScore(p.kills || 0, p.deaths || 0, p.assists || 0);
 
       matchDeltas.push({
@@ -466,8 +467,9 @@ export async function performFullMmrRebuild(supabase: SupabaseClient) {
         role: p.role,
         team: p.team,
         champion_name: p.champion_name,
-        kda_score: kdaScore, 
-        mmr_delta: delta 
+        kda_score: kdaScore,
+        mmr_delta: delta,
+        mmr_breakdown: breakdown // M-03: リビルドでも内訳を保存
       });
     }
 

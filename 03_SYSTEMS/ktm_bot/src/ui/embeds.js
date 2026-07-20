@@ -1,9 +1,14 @@
 import { CONFIG } from '../config.js';
 
-export function createRecruitEmbed(metadata) {
+/**
+ * @param {object} metadata 募集メタデータ
+ * @param {string} [tierLine] レート帯の内訳（「🔼1350以上 3名 ／ 🔽未満 5名」等）。
+ *   参加ボタンを押す時点で構成が分かるよう、募集メッセージ本体にも常時表示する。
+ */
+export function createRecruitEmbed(metadata, tierLine) {
   const isFull = metadata.joined.length >= metadata.maxCount;
   const title = isFull ? "⚔️ メンバー確定" : `⚔️ KTM メンバー募集 [${metadata.joined.length}/${metadata.maxCount}]`;
-  
+
   const ownerName = metadata.names[metadata.owner] || "不明";
   const visibleFooter = `モード: ${metadata.mode} | 募集主: ${ownerName}`;
 
@@ -15,7 +20,7 @@ export function createRecruitEmbed(metadata) {
     title,
     // 募集主を埋め込み上部にも表示（footerだけだと気づきにくいため）
     author: { name: `👤 募集主: ${ownerName}` },
-    description: renderRoles(metadata),
+    description: renderRoles(metadata) + (tierLine ? `\n\n${tierLine}` : ''),
     color: isFull ? 0xe74c3c : 0x2ecc71,
     thumbnail: { url: pixelUrl },
     footer: { text: visibleFooter },

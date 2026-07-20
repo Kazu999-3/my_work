@@ -415,5 +415,29 @@ export async function handleButtonInteraction(interaction, env, ctx) {
     return Response.json({ type: 7, data: { content: createMessageContent(metadata) + closingMessage, embeds: [createRecruitEmbed(metadata)], components: createRecruitButtons(metadata) } });
   }
 
-  return Response.json({ type: 7, data: { content: createMessageContent(metadata), embeds: [createRecruitEmbed(metadata)], components: createRecruitButtons(metadata) } });
+  // 募集メッセージ本体にレート帯の内訳を表示する（参加ボタンを押す時点で構成が分かるように）
+  const tierLine = await buildTierLine(env, metadata.joined || []);
+  return Response.json({ type: 7, data: { content: createMessageContent(metadata), embeds: [createRecruitEmbed(metadata, tierLine)], components: createRecruitButtons(metadata) } });
+}
+
+/** 参加者のdiscord_id配列から「🔼しきい値以上 N名 ／ 🔽未満 N名」の1行を作る */
+async function buildTierLine(env, joinedIds) {
+  if (!joinedIds || joinedIds.length === 0) return '';
+  try {
+    const { fetchSupabase } = await import('../utils/supabase.js');
+    const th = CONFIG.MMR_TIER_THRESHOLD || 1350;
+    const idsStr = joinedIds.map((i) => `"${i}"`).join(',');
+    const ps = await fetchSupabase(env, 'ktm_players', `discord_id=in.(${idsStr})&select=mmr`);
+    const mmrs = (ps || []).map((p) => p.mmr || 1200);
+    if (mmrs.length === 0) return '';
+    const upper = mmrs.filter((m) => m >= th).length;
+    const lower = mmrs.filter((m) => m < th).length;
+    const unknown = joinedIds.length - mmrs.length;
+    const sorted = [...mmrs].sort((a, b) => b - a);
+    return `**レート帯**（${th}基準）: 🔼${upper}名 ／ 🔽${lower}名`
+      + (unknown > 0 ? ` ／ ❓未登録${unknown}名` : '')
+      + (mmrs.length >= 2 ? `　幅${sorted[0] - sorted[sorted.length - 1]}` : '');
+  } catch (e) {
+    return '';
+  }
 }

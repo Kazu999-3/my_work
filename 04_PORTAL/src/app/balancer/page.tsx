@@ -384,7 +384,21 @@ export default function BalancerPage() {
         return nextPlayers;
       });
 
-      setMessage({ type: "success", text: `✅ Discordからカスタム募集の参加者 ${data.activeDiscordIds.length} 人を自動チェックしました！` });
+      // 名簿未登録の参加者を警告する。未登録だとMMR1200のデフォルト扱いで
+      // チーム分けに混ざり、バランスが崩れる原因になるため。
+      const knownIds = new Set(players.filter((p: any) => p.discord_id).map((p: any) => p.discord_id));
+      const unknown = (data.participants || []).filter((dp: any) => !knownIds.has(dp.id));
+      if (unknown.length > 0) {
+        const names = unknown.map((u: any) => u.name).filter((n: string) => n && n !== 'Unknown');
+        setMessage({
+          type: 'error',
+          text: `⚠️ 参加者 ${data.activeDiscordIds.length} 人を取得しましたが、${unknown.length}名が名簿に未登録です`
+            + (names.length > 0 ? `（${names.join(', ')}）` : '')
+            + '。未登録のままだとMMR未設定でチーム分けに反映されません。管理ダッシュボードで「Discord & Riot同期」を実行してください。',
+        });
+      } else {
+        setMessage({ type: "success", text: `✅ Discordからカスタム募集の参加者 ${data.activeDiscordIds.length} 人を自動チェックしました！` });
+      }
     } catch (err: any) {
       setMessage({ type: "error", text: "❌ " + err.message });
     } finally {
@@ -511,6 +525,11 @@ export default function BalancerPage() {
   // ハンデ参加(オフロール等)の指定。チーム分け結果とDiscord通知に明示する。
   const [handicapIds, setHandicapIds] = useState<any[]>([]);
   const toggleHandicap = (id: any) => setHandicapIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  // チーム分け結果は名前ベースなので、ハンデ対象の「名前」集合に変換して照合する
+  const handicapNames = useMemo(
+    () => new Set(players.filter((p: any) => handicapIds.includes(p.id)).map((p: any) => p.name)),
+    [players, handicapIds]
+  );
 
   // 卓分割: 参加者が20人以上のとき、代表MMR順で「上位卓/下位卓」に自動分割する。
   // 卓分け=代表MMR(ktm_players.mmr)、卓の中のチーム分け=レーン別MMR、という役割分担。
@@ -650,7 +669,8 @@ export default function BalancerPage() {
       const res = await fetch('/api/discord', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(balanceResult)
+        // ハンデ参加者を通知にも明示する
+        body: JSON.stringify({ ...balanceResult, handicaps: Array.from(handicapNames) })
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Discord通知に失敗しました');
@@ -1041,6 +1061,7 @@ export default function BalancerPage() {
                           </button>
                         )}
                         {offB && <span className="text-[9px] bg-red-950/80 border border-red-800 text-red-400 px-1.5 py-0.5 rounded font-black shrink-0">⚠️OFF</span>}
+                        {pB?.name && handicapNames.has(pB.name) && <span className="text-[9px] bg-amber-950/80 border border-amber-700 text-amber-400 px-1.5 py-0.5 rounded font-black shrink-0" title="ハンデ参加（オフロール等の制約付き）">🎗️ハンデ</span>}
                         <span className="font-mono text-xs font-bold text-blue-400 shrink-0 bg-blue-950/40 px-2 py-0.5 rounded border border-blue-900/30">{bMMR}</span>
                       </div>
                       <div className="col-span-1 flex flex-col items-center py-1">
@@ -1051,6 +1072,7 @@ export default function BalancerPage() {
                         className={`col-span-5 flex items-center gap-2 p-2 rounded-xl border transition cursor-grab active:cursor-grabbing ${dragOverSlot===rKey?'border-red-500 bg-red-950/30 border-dashed':'bg-red-950/10 border-red-900/20 hover:bg-red-950/20'} ${swapSource?.name === pR?.name ? 'border-amber-500 bg-amber-950/20 animate-pulse' : ''}`}>
                         <span className="font-mono text-xs font-bold text-red-400 shrink-0 bg-red-950/40 px-2 py-0.5 rounded border border-red-900/30">{rMMR}</span>
                         {offR && <span className="text-[9px] bg-red-950/80 border border-red-800 text-red-400 px-1.5 py-0.5 rounded font-black shrink-0">⚠️OFF</span>}
+                        {pR?.name && handicapNames.has(pR.name) && <span className="text-[9px] bg-amber-950/80 border border-amber-700 text-amber-400 px-1.5 py-0.5 rounded font-black shrink-0" title="ハンデ参加（オフロール等の制約付き）">🎗️ハンデ</span>}
                         {pR?.name && (
                           <button
                             type="button"

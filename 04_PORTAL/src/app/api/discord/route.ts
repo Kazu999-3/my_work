@@ -4,7 +4,8 @@ import { supabase } from '../../../lib/supabaseClient';
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { teamBlue, teamRed, spectators, balanceReport } = body;
+    const { teamBlue, teamRed, spectators, balanceReport, handicaps } = body;
+    const handicapSet = new Set<string>(Array.isArray(handicaps) ? handicaps : []);
 
     if (!teamBlue || !teamRed) {
       return NextResponse.json({ error: 'チームデータが不足しています。' }, { status: 400 });
@@ -22,8 +23,10 @@ export async function POST(request: Request) {
       const pBlue = teamBlue.find((p: any) => p.currentRole === role);
       const pRed = teamRed.find((p: any) => p.currentRole === role);
       
-      const blueName = pBlue ? pBlue.name : "-";
-      const redName = pRed ? pRed.name : "-";
+      // ハンデ参加者には🎗️を付けて、制約付き参加であることを全員に分かるようにする
+      const mark = (n: string) => (handicapSet.has(n) ? `${n} 🎗️` : n);
+      const blueName = pBlue ? mark(pBlue.name) : "-";
+      const redName = pRed ? mark(pRed.name) : "-";
       
       // スマホでも見やすいVS形式: 🛡️ **TOP**: `BluePlayer` 🆚 `RedPlayer`
       return `${icons[role]} **${role}**: \`${blueName}\` 🆚 \`${redName}\``;
@@ -64,6 +67,7 @@ export async function POST(request: Request) {
           ],
           footer: {
             text: `👀 観戦: ${spectators && spectators.length > 0 ? spectators.join(', ') : 'なし'}`
+              + (handicapSet.size > 0 ? `\n🎗️ ハンデ参加(オフロール等の制約付き): ${Array.from(handicapSet).join(', ')}` : '')
           },
           timestamp: new Date().toISOString()
         }
