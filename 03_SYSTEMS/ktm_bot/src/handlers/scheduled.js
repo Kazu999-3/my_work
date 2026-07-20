@@ -189,7 +189,8 @@ async function postWeeklyRecruitment(env) {
       names: { [ownerId]: 'KTM定期カスタム' }
     };
 
-    const res = await fetchWithRetry(`https://discord.com/api/v10/channels/${CONFIG.RECRUIT_CHANNEL_ID}/messages`, {
+    const targetChannelId = CONFIG.PERIODIC_RECRUIT_CHANNEL_ID || CONFIG.RECRUIT_CHANNEL_ID;
+    const res = await fetchWithRetry(`https://discord.com/api/v10/channels/${targetChannelId}/messages`, {
       method: 'POST',
       headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -207,7 +208,7 @@ async function postWeeklyRecruitment(env) {
     // recruitments に記録（開始リマインドD1の対象にもなる）
     await createRecruitment(env, {
       messageId: sent.id,
-      channelId: CONFIG.RECRUIT_CHANNEL_ID,
+      channelId: targetChannelId,
       ownerDiscordId: ownerId,
       mode: 'カスタム',
       maxCount: 10,
