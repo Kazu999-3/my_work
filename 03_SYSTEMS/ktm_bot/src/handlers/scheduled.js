@@ -95,12 +95,14 @@ async function markReminded(env, messageId) {
  */
 async function sendRecruitStatusNotification(env) {
   try {
-    // 開始前〜開始1時間後までのopen募集を対象にする
+    // 対象は「開始1時間前後〜48時間以内」のopen募集。
+    // 定期募集は1週間前に立つため、範囲を絞らないと来週分にも通知してしまう。
     const nowMs = Date.now();
     const fromIso = new Date(nowMs - 60 * 60 * 1000).toISOString();
+    const toIso = new Date(nowMs + 48 * 60 * 60 * 1000).toISOString();
     const rows = await fetchSupabase(
       env, 'recruitments',
-      `status=eq.open&start_at=gte.${encodeURIComponent(fromIso)}&order=start_at.asc&limit=5&select=discord_message_id,discord_channel_id,start_at,max_count`
+      `status=eq.open&start_at=gte.${encodeURIComponent(fromIso)}&start_at=lte.${encodeURIComponent(toIso)}&order=start_at.asc&limit=5&select=discord_message_id,discord_channel_id,start_at,max_count`
     );
     if (!rows || rows.length === 0) {
       console.log('[RecruitStatus] 対象の募集がありません。');
@@ -262,8 +264,12 @@ async function postWeeklyRecruitment(env) {
     // 今日(JST)の21:00 = UTC 12:00 を開始時刻とする
     const now = new Date();
     const jstNow = new Date(now.getTime() + 9 * 3600 * 1000);
-    const startUtcMs = Date.UTC(jstNow.getUTCFullYear(), jstNow.getUTCMonth(), jstNow.getUTCDate(), 12, 0, 0, 0);
+    // 「翌週」土曜21:00 JST(=UTC 12:00) を開催日時にする。
+    // 土21時に投稿→1週間かけて参加者を集める運用のため、+7日する。
+    const startUtcMs = Date.UTC(jstNow.getUTCFullYear(), jstNow.getUTCMonth(), jstNow.getUTCDate() + 7, 12, 0, 0, 0);
     const startAtIso = new Date(startUtcMs).toISOString();
+    const startJstDate = new Date(startUtcMs + 9 * 3600 * 1000); // 表示用(JST)
+    const dateLabel = `${startJstDate.getUTCMonth() + 1}/${startJstDate.getUTCDate()}(土)`;
 
     // 二重投稿防止: 同じ開始時刻のopen募集が既にあればスキップ
     const existing = await fetchSupabase(env, 'recruitments', `start_at=eq.${encodeURIComponent(startAtIso)}&status=eq.open&select=id`);
@@ -274,8 +280,8 @@ async function postWeeklyRecruitment(env) {
 
     const ownerId = CONFIG.ADMIN_ID;
     const metadata = {
-      mode: 'カスタム', time: '21:00', maxCount: 10,
-      memo: '毎週土曜の定期カスタムです！参加できる人はボタンで表明お願いします🎮',
+      mode: 'カスタム', time: `${dateLabel} 21:00`, maxCount: 10,
+      memo: `【定期カスタム】${dateLabel} 21:00 開催予定です！参加できる人はボタンで表明お願いします🎮`,
       owner: ownerId, createdAt: new Date().toISOString(),
       joined: [], spectating: [],
       roles: { Top: null, Jg: null, Mid: null, Adc: null, Sup: null },
