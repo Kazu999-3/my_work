@@ -70,6 +70,8 @@ export default function PlayerMyPage() {
 
   // グラフの表示期間フィルタ（#49）: 直近10 / 30 / 全部
   const [chartPeriod, setChartPeriod] = useState<10 | 30 | 0>(0);
+  // 勝率トレンドをMMRグラフに重ねるか（成長の可視化）
+  const [showWinRate, setShowWinRate] = useState(false);
 
   // MMR推移グラフ用のデータを計算（useMemoで最適化）。移動平均(5戦)も付与する。
   const mmrChartData = useMemo(() => {
@@ -101,13 +103,19 @@ export default function PlayerMyPage() {
       };
     });
 
-    // 5戦移動平均（全系列で計算してから期間で絞る）
+    // 5戦移動平均 ＋ 累積勝率（成長が「勝てるようになったか」でも見えるように）
     const W = 5;
+    let cumWins = 0;
     const withMa = base.map((d, i) => {
       const from = Math.max(0, i - W + 1);
       const slice = base.slice(from, i + 1);
       const ma = Math.round(slice.reduce((s, x) => s + x.mmr, 0) / slice.length);
-      return { ...d, ma };
+      if (d.isWin) cumWins++;
+      const winRate = Math.round((cumWins / (i + 1)) * 100);
+      // 直近10戦の勝率（短期の調子。累積より変化が見えやすい）
+      const recent = base.slice(Math.max(0, i - 9), i + 1);
+      const recentRate = Math.round((recent.filter(x => x.isWin).length / recent.length) * 100);
+      return { ...d, ma, winRate, recentRate };
     });
 
     return chartPeriod > 0 ? withMa.slice(-chartPeriod) : withMa;
@@ -583,6 +591,17 @@ export default function PlayerMyPage() {
                       </h3>
                       
                       <div className="flex flex-wrap gap-2 items-center">
+                        {/* 勝率トレンドの重ね表示（成長が「勝てるようになったか」でも見える） */}
+                        <button
+                          type="button"
+                          onClick={() => setShowWinRate(v => !v)}
+                          className={`px-2.5 py-1.5 rounded-xl text-[10px] font-black transition-all border ${
+                            showWinRate ? 'bg-emerald-500 text-white border-emerald-400' : 'bg-black/40 text-gray-400 border-white/5 hover:text-white'
+                          }`}
+                          title="直近10戦の勝率を重ねて表示します"
+                        >
+                          📈 勝率
+                        </button>
                         {/* 期間フィルタ（#49） */}
                         <div className="flex gap-1 bg-black/40 p-1 rounded-xl border border-white/5">
                           {([[10, '直近10'], [30, '直近30'], [0, '全期間']] as const).map(([v, label]) => (
@@ -825,6 +844,30 @@ export default function PlayerMyPage() {
                             />
                           </ComposedChart>
                         </ResponsiveContainer>
+
+                        {/* 勝率トレンド（成長の可視化）: MMRとは軸が違うので独立グラフにする */}
+                        {showWinRate && mmrChartData.length >= 3 && (
+                          <div className="mt-4 pt-4 border-t border-white/5">
+                            <p className="text-[10px] font-black text-emerald-400 mb-2">📈 勝率の推移（実線=直近10戦 / 点線=通算）</p>
+                            <ResponsiveContainer width="100%" height={140}>
+                              <ComposedChart data={mmrChartData} margin={{ top: 5, right: 10, left: -25, bottom: 0 }}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" />
+                                <XAxis dataKey="game" tick={{ fill: '#6b7280', fontSize: 9 }} axisLine={{ stroke: 'rgba(255,255,255,0.05)' }} tickLine={false} />
+                                <YAxis domain={[0, 100]} ticks={[0, 25, 50, 75, 100]} tick={{ fill: '#6b7280', fontSize: 9 }} axisLine={{ stroke: 'rgba(255,255,255,0.05)' }} tickLine={false} unit="%" />
+                                <Tooltip
+                                  contentStyle={{ background: 'rgba(10,11,16,0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, fontSize: 11 }}
+                                  formatter={((v: any, name: any) => [`${v}%`, name === 'recentRate' ? '直近10戦' : '通算']) as any}
+                                  labelFormatter={(l: any) => `${l}試合目`}
+                                />
+                                <ReferenceLine y={50} stroke="rgba(255,255,255,0.15)" strokeDasharray="4 4" />
+                                <Line type="monotone" dataKey="recentRate" stroke="#34d399" strokeWidth={2} dot={false} />
+                                <Line type="monotone" dataKey="winRate" stroke="#6b7280" strokeWidth={1.5} strokeDasharray="4 4" dot={false} />
+                              </ComposedChart>
+                            </ResponsiveContainer>
+                            <p className="text-[9px] text-gray-600 mt-1">50%より上なら勝ち越し。実線が右肩上がりなら調子が上向きです。</p>
+                          </div>
+                        )}
+
                         {/* 凡例 */}
                         <div className="flex items-center justify-center gap-6 mt-3 text-[10px] text-gray-500">
                           <div className="flex items-center gap-1.5">

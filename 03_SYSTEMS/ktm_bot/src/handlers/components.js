@@ -321,7 +321,11 @@ export async function handleButtonInteraction(interaction, env, ctx) {
       // 二度押しで離脱
       metadata.joined = metadata.joined.filter(id => id !== userId);
     } else if (metadata.joined.length < metadata.maxCount) {
-      if (!metadata.joined.includes(userId)) metadata.joined.push(userId);
+      if (!metadata.joined.includes(userId)) {
+        metadata.joined.push(userId);
+        // 初参加(レーン未設定)ならセットアップ案内をDM
+        ctx.waitUntil(sendOnboardingIfNeeded(env, userId));
+      }
       metadata.names[userId] = userName;
       metadata.spectating = metadata.spectating.filter(id => id !== userId);
       Object.keys(metadata.roles).forEach(r => { if (metadata.roles[r] === userId) metadata.roles[r] = null; });
@@ -434,6 +438,48 @@ export async function handleButtonInteraction(interaction, env, ctx) {
   // 募集メッセージ本体にレート帯の内訳を表示する（参加ボタンを押す時点で構成が分かるように）
   const tierLine = await buildTierLine(env, metadata.joined || []);
   return Response.json({ type: 7, data: { content: createMessageContent(metadata), embeds: [createRecruitEmbed(metadata, tierLine)], components: createRecruitButtons(metadata) } });
+}
+
+/**
+ * 初参加者へのオンボーディングDM。
+ * 名簿にレーン希望が未設定のまま参加すると、チーム分けでMMR未設定扱いになり
+ * バランスが崩れる。参加ボタンを押した時点で本人に案内を送って予防する。
+ */
+async function sendOnboardingIfNeeded(env, userId) {
+  try {
+    const { fetchSupabase } = await import('../utils/supabase.js');
+    const rows = await fetchSupabase(env, 'ktm_players', `discord_id=eq.${userId}&select=role_preferences,ign`);
+    const p = rows && rows[0];
+    // 既にレーン希望が設定済みなら何もしない
+    if (p && p.role_preferences && p.role_preferences.primary) return;
+
+    const missing = [];
+    if (!p) missing.push('・名簿への登録（管理者が「Discord同期」を実行すると自動登録されます）');
+    if (!p || !p.role_preferences?.primary) missing.push('・**希望レーンの設定** → `/lane` コマンド、または募集パネルの「📍レーン設定」ボタン');
+    if (p && !p.ign) missing.push('・Riot IDの登録 → 募集パネルの「🆔 IGN登録」ボタン（任意。ソロQ戦績と連携できます）');
+
+    const dmRes = await fetch('https://discord.com/api/v10/users/@me/channels', {
+      method: 'POST',
+      headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ recipient_id: userId })
+    });
+    if (!dmRes.ok) return;
+    const dm = await dmRes.json();
+    await fetch(`https://discord.com/api/v10/channels/${dm.id}/messages`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        embeds: [{
+          title: '👋 KTMカスタムへの参加ありがとうございます！',
+          description: `より良いチーム分けのために、以下の設定をお願いします：\n\n${missing.join('\n')}\n\n設定しておくと、あなたの希望レーンや「こだわり度」「格上許可」がチーム分けに反映されます。`,
+          color: 0x00cfef,
+          footer: { text: 'この案内は設定が完了すると表示されなくなります' }
+        }]
+      })
+    });
+  } catch (e) {
+    console.warn('[Onboarding] DM送信スキップ:', e?.message);
+  }
 }
 
 /** 参加者のdiscord_id配列から「🔼しきい値以上 N名 ／ 🔽未満 N名」の1行を作る */
