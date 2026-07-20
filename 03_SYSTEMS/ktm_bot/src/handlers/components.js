@@ -379,9 +379,22 @@ export async function handleButtonInteraction(interaction, env, ctx) {
           return `▫️ **${nm}**: ${pr} / ${sc}${ng ? `（NG: ${ng}）` : ''}`;
         });
         const countLine = `**第一希望の分布**: TOP:${roleCount.TOP} JG:${roleCount.JG} MID:${roleCount.MID} ADC:${roleCount.ADC} SUP:${roleCount.SUP}${roleCount.ALL ? ` ALL:${roleCount.ALL}` : ''}`;
+
+        // レート帯の内訳（しきい値の上下に何人いるか）
+        let tierLine = '';
+        try {
+          const th = CONFIG.MMR_TIER_THRESHOLD || 1350;
+          const withMmr = await fetchSupabase(env, 'ktm_players', `discord_id=in.(${idsStr})&select=mmr`);
+          const mmrs = (withMmr || []).map((p) => p.mmr || 1200);
+          if (mmrs.length > 0) {
+            const sorted = [...mmrs].sort((a, b) => b - a);
+            tierLine = `\n**レート帯**（しきい値 ${th}）: 🔼${th}以上 ${mmrs.filter(m => m >= th).length}名 ／ 🔽${th}未満 ${mmrs.filter(m => m < th).length}名`
+              + `\n最高 ${sorted[0]} / 最低 ${sorted[sorted.length - 1]}（幅 ${sorted[0] - sorted[sorted.length - 1]}）`;
+          }
+        } catch (e) { /* 集計失敗は無視 */ }
         laneEmbed = {
           title: '📍 参加者の希望レーン状況',
-          description: `${countLine}\n\n${lines.join('\n')}`,
+          description: `${countLine}${tierLine}\n\n${lines.join('\n')}`,
           color: 0x3498db,
           footer: { text: '表記: メイン / サブ（NG）。ポータルのチーム分けで自動考慮されます。' }
         };

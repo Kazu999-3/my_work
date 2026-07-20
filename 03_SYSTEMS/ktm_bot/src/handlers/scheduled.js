@@ -132,6 +132,28 @@ async function sendRecruitStatusNotification(env) {
         ? joined.map((id, i) => `${String(i + 1).padStart(2, '0')}. <@${id}>`).join('\n')
         : '（まだ参加者がいません）';
 
+      // レート帯の分布: しきい値の上下に何人いるかを出す（卓が成立するかの判断材料）
+      let tierLine = '';
+      if (joined.length > 0) {
+        try {
+          const th = CONFIG.MMR_TIER_THRESHOLD || 1350;
+          const idsStr = joined.map((i) => `"${i}"`).join(',');
+          const ps = await fetchSupabase(env, 'ktm_players', `discord_id=in.(${idsStr})&select=discord_id,mmr`);
+          const mmrs = (ps || []).map((p) => p.mmr || 1200);
+          const unknown = joined.length - mmrs.length; // 名簿未登録
+          const upper = mmrs.filter((m) => m >= th).length;
+          const lower = mmrs.filter((m) => m < th).length;
+          tierLine = `\n\n**レート帯の内訳**（しきい値 ${th}）\n🔼 ${th}以上: **${upper}名** ／ 🔽 ${th}未満: **${lower}名**`
+            + (unknown > 0 ? ` ／ ❓ 未登録: ${unknown}名` : '');
+          if (mmrs.length >= 2) {
+            const sorted = [...mmrs].sort((a, b) => b - a);
+            tierLine += `\n最高 ${sorted[0]} / 最低 ${sorted[sorted.length - 1]}（幅 ${sorted[0] - sorted[sorted.length - 1]}）`;
+          }
+        } catch (e) {
+          console.warn('[RecruitStatus] レート帯集計に失敗:', e);
+        }
+      }
+
       const title = shortage > 0
         ? `⚠️ カスタム募集中 — あと${shortage}名！`
         : `✅ カスタム募集 — メンバー確定（${joined.length}/${max}）`;
@@ -152,7 +174,7 @@ async function sendRecruitStatusNotification(env) {
 
       const embed = {
         title,
-        description: `**開催予定: ${startJst}${startJst ? ' (JST)' : ''}**\n現在の参加者 **${joined.length}/${max}** 名\n\n${nameList}`,
+        description: `**開催予定: ${startJst}${startJst ? ' (JST)' : ''}**\n現在の参加者 **${joined.length}/${max}** 名\n\n${nameList}${tierLine}`,
         color: shortage > 0 ? 0xf1c40f : 0x2ecc71,
         footer: { text: 'KTM Bot | 募集状況のお知らせ' },
         timestamp: new Date().toISOString()
