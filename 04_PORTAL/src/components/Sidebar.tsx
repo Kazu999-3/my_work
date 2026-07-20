@@ -10,18 +10,27 @@ import SystemStatus from './SystemStatus';
 
 // スマホ下ナビの各項目。モジュールスコープに置くことで、Sidebarの再描画のたびに
 // コンポーネントが作り直されて再マウント→タップが効きづらくなる問題を防ぐ。
-function MobileNavItem({ item, active, onClick }: { item: { id: string; label: string; href: string; icon: any; color: string; activeBg: string }; active: boolean; onClick?: () => void }) {
+/**
+ * モバイル下部ナビの項目。
+ * 「反応が悪い」対策として2点入れている:
+ *  1) prefetch を有効化。以前は false でタップ後にページを1から取得しており、
+ *     押しても数秒無反応に見えていた（下部ナビは数件なのでprefetchコストは軽微）。
+ *  2) タップ直後に自前で色を変える(pending)。遷移完了を待たずに反応が返るため、
+ *     「押せていない」と感じて連打されるのを防ぐ。
+ */
+function MobileNavItem({ item, active, pending, onClick }: { item: { id: string; label: string; href: string; icon: any; color: string; activeBg: string }; active: boolean; pending?: boolean; onClick?: () => void }) {
   const Icon = item.icon;
+  const lit = active || pending;
   return (
     <Link
       href={item.href}
-      prefetch={false}
+      prefetch
       onClick={onClick}
-      className={`flex flex-col items-center justify-center min-w-[3.5rem] px-2 py-1.5 rounded-xl transition-colors ${
-        active ? `${item.activeBg} ${item.color}` : 'text-gray-400 active:bg-white/10'
-      }`}
+      className={`flex flex-col items-center justify-center min-w-[3.5rem] px-2 py-1.5 rounded-xl transition-colors duration-100 touch-manipulation select-none ${
+        lit ? `${item.activeBg} ${item.color}` : 'text-gray-400 active:bg-white/20'
+      } ${pending && !active ? 'opacity-70' : ''}`}
     >
-      <Icon size={18} className="mb-1" />
+      <Icon size={18} className={`mb-1 ${pending && !active ? 'animate-pulse' : ''}`} />
       <span className="text-[9px] font-bold tracking-wider truncate w-full text-center">{item.label}</span>
     </Link>
   );
@@ -58,6 +67,9 @@ const ADMIN_GENERAL_MENU_ITEMS = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  // モバイルナビでタップ直後に反応を返すための遷移中フラグ。遷移完了(pathname変化)で解除。
+  const [pendingHref, setPendingHref] = useState<string | null>(null);
+  useEffect(() => { setPendingHref(null); }, [pathname]);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [activeTab, setActiveTab] = useState<'admin' | 'general'>('admin');
   const [mounted, setMounted] = useState(false);
@@ -269,14 +281,39 @@ export default function Sidebar() {
                   )}
 
                   <div className="grid grid-cols-4 gap-2">
-                    {overflowItems.map((item) => <MobileNavItem key={`sheet-${item.id}`} item={item} active={isActive(item)} onClick={() => setShowMobileMore(false)} />)}
+                    {overflowItems.map((item) => (
+                      <MobileNavItem
+                        key={`sheet-${item.id}`}
+                        item={item}
+                        active={isActive(item)}
+                        pending={pendingHref === item.href}
+                        onClick={() => { setPendingHref(item.href); setShowMobileMore(false); }}
+                      />
+                    ))}
                   </div>
                 </div>
               </div>
             )}
 
+            {/* 遷移中インジケータ: 押した直後に画面上部で進行が分かるようにする */}
+            {pendingHref && (
+              <div className="md:hidden fixed top-0 left-0 right-0 h-0.5 z-[60] bg-cyan-400/30 overflow-hidden">
+                <div className="h-full w-1/3 bg-cyan-400 animate-[loading_1s_ease-in-out_infinite]"
+                  style={{ animation: 'ktmLoading 1s ease-in-out infinite' }} />
+                <style>{`@keyframes ktmLoading { 0% { transform: translateX(-100%);} 100% { transform: translateX(400%);} }`}</style>
+              </div>
+            )}
+
             <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[#0a0b10]/95 backdrop-blur-xl border-t border-white/10 z-50 flex items-center justify-around px-1 py-2 shadow-[0_-4px_24px_rgba(0,0,0,0.5)] pb-[env(safe-area-inset-bottom)]">
-              {primaryItems.map((item) => <MobileNavItem key={`bar-${item.id}`} item={item} active={isActive(item)} />)}
+              {primaryItems.map((item) => (
+                <MobileNavItem
+                  key={`bar-${item.id}`}
+                  item={item}
+                  active={isActive(item)}
+                  pending={pendingHref === item.href}
+                  onClick={() => setPendingHref(item.href)}
+                />
+              ))}
 
               {hasMore && (
                 <button
