@@ -29,7 +29,8 @@ jobs:
       - name: Process youtube queue
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          # 既存バッチが使っている SUPABASE_KEY を流用（SUPABASE_SERVICE_KEYがあればそちら優先）
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY != '' && secrets.SUPABASE_SERVICE_KEY || secrets.SUPABASE_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: python scripts/youtube_worker.py
 
