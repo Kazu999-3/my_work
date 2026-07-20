@@ -10,24 +10,23 @@ export async function handleScheduledEvent(event, env, ctx) {
   const cronExpression = event.cron || "";
   const mode = event.mode || "";
 
-  if (cronExpression === "0 12 * * 6" || mode === "create") {
-    // 毎週土曜 21:00 のイベント自動作成処理
+  // 定期実行から外した処理（イベント作成・週間レポート・イベント基準の告知）は、
+  // 必要なときだけ /trigger-scheduled?mode=... で手動実行できるよう残してある。
+  if (mode === "create") {
     await createWeeklyEvents(env);
-  } else if (cronExpression === "0 12 * * 3" || mode === "wednesday") {
-    // 毎週水曜 21:00 の事前告知（土曜イベントを7日先まで検索）
-    await sendEventUsersNotification(env, { lookaheadHours: 7 * 24 });
+  } else if (mode === "weekly_report") {
+    await sendWeeklyReports(env);
+  } else if (mode === "event_notify") {
+    await sendEventUsersNotification(env, { lookaheadHours: 48 });
   } else if (cronExpression === "*/10 * * * *" || mode === "recruit_reminder") {
     // 10分ごと: 開始時刻が近い募集の参加者へリマインド(D1)
     await sendRecruitmentReminders(env);
-  } else if (cronExpression === "0 9 * * 6" || mode === "weekly_recruit") {
-    // 毎週土曜 18:00 JST: 21:00開催の定期カスタム募集を自動投稿(#85)
+  } else if (cronExpression === "0 12 * * 6" || mode === "weekly_recruit") {
+    // 毎週土曜 21:00 JST: その日開催の定期カスタム募集を自動投稿
     await postWeeklyRecruitment(env);
-  } else if (cronExpression === "0 3 * * 1" || mode === "weekly_report") {
-    // 毎週月曜 12:00 JST: 先週プレイした人へ個人週間レポートをDM(#84)
-    await sendWeeklyReports(env);
   } else {
-    // 毎週金・土 20:00 の直前通知（48時間以内）
-    await sendEventUsersNotification(env, { lookaheadHours: 48 });
+    // 直前通知: 進行中の募集の集まり具合を通知し、不足なら欠員アラート
+    await sendRecruitStatusNotification(env);
   }
 }
 
@@ -86,6 +85,100 @@ async function markReminded(env, messageId) {
     });
   } catch (e) {
     console.error("markReminded failed:", e);
+  }
+}
+
+/**
+ * 直前通知（募集ベース）: Discordイベントではなく「実際に立っている募集」を見て、
+ * 現在の参加人数を通知する。10人に足りなければ通知ロールをメンションして欠員アラート。
+ * 二重投稿防止のため、直近3時間に同一タイトルのbot投稿があればスキップする。
+ */
+async function sendRecruitStatusNotification(env) {
+  try {
+    // 開始前〜開始1時間後までのopen募集を対象にする
+    const nowMs = Date.now();
+    const fromIso = new Date(nowMs - 60 * 60 * 1000).toISOString();
+    const rows = await fetchSupabase(
+      env, 'recruitments',
+      `status=eq.open&start_at=gte.${encodeURIComponent(fromIso)}&order=start_at.asc&limit=5&select=discord_message_id,discord_channel_id,start_at,max_count`
+    );
+    if (!rows || rows.length === 0) {
+      console.log('[RecruitStatus] 対象の募集がありません。');
+      return;
+    }
+
+    for (const r of rows) {
+      if (!r.discord_message_id || !r.discord_channel_id) continue;
+      // 募集メッセージを取得して参加者を解析
+      const msgRes = await fetchWithRetry(
+        `https://discord.com/api/v10/channels/${r.discord_channel_id}/messages/${r.discord_message_id}`,
+        { headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}` } }
+      );
+      if (!msgRes.ok) continue;
+      const msg = await msgRes.json();
+      const metadata = parseMessageData(msg);
+      if (!metadata) continue;
+
+      const joined = metadata.joined || [];
+      const max = metadata.maxCount || r.max_count || 10;
+      const shortage = Math.max(0, max - joined.length);
+      const startJst = r.start_at
+        ? new Date(new Date(r.start_at).getTime() + 9 * 3600 * 1000).toISOString().slice(11, 16)
+        : (metadata.time || '');
+
+      const nameList = joined.length > 0
+        ? joined.map((id, i) => `${String(i + 1).padStart(2, '0')}. <@${id}>`).join('\n')
+        : '（まだ参加者がいません）';
+
+      const title = shortage > 0
+        ? `⚠️ カスタム募集中 — あと${shortage}名！`
+        : `✅ カスタム募集 — メンバー確定（${joined.length}/${max}）`;
+
+      // 二重投稿防止
+      const recentRes = await fetchWithRetry(
+        `https://discord.com/api/v10/channels/${r.discord_channel_id}/messages?limit=10`,
+        { headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}` } }
+      );
+      if (recentRes.ok) {
+        const recent = await recentRes.json();
+        const threeHoursAgo = nowMs - 3 * 60 * 60 * 1000;
+        if (recent.find((m) => m.author?.bot && m.embeds?.[0]?.title === title && new Date(m.timestamp).getTime() > threeHoursAgo)) {
+          console.log('[RecruitStatus] 同一通知が直近にあるためスキップ');
+          continue;
+        }
+      }
+
+      const embed = {
+        title,
+        description: `**開催予定: ${startJst}${startJst ? ' (JST)' : ''}**\n現在の参加者 **${joined.length}/${max}** 名\n\n${nameList}`,
+        color: shortage > 0 ? 0xf1c40f : 0x2ecc71,
+        footer: { text: 'KTM Bot | 募集状況のお知らせ' },
+        timestamp: new Date().toISOString()
+      };
+
+      const body = { embeds: [embed] };
+      // 人数不足のときだけ通知ロールをメンションして能動的に呼ぶ
+      if (shortage > 0 && CONFIG.NOTIFICATION_ROLE_ID) {
+        body.content = `<@&${CONFIG.NOTIFICATION_ROLE_ID}> 🔥 **あと${shortage}名でカスタム開催です！** 参加できる方は上の募集メッセージから参加ボタンを押してください！`;
+        body.allowed_mentions = { roles: [CONFIG.NOTIFICATION_ROLE_ID] };
+      }
+
+      const sendRes = await fetchWithRetry(
+        `https://discord.com/api/v10/channels/${r.discord_channel_id}/messages`,
+        {
+          method: 'POST',
+          headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        }
+      );
+      if (!sendRes.ok) {
+        console.error(`[RecruitStatus] 送信失敗: ${sendRes.status} ${await sendRes.text()}`);
+      } else {
+        console.log(`[RecruitStatus] 通知しました（${joined.length}/${max}）`);
+      }
+    }
+  } catch (err) {
+    console.error('[RecruitStatus] error:', err);
   }
 }
 
@@ -160,7 +253,7 @@ async function sendWeeklyReports(env) {
 }
 
 /**
- * 毎週土曜 18:00 JST に、その日21:00開催の定期カスタム募集を#募集板へ自動投稿する(#85)。
+ * 毎週土曜 21:00 JST に、その日21:00開催の定期カスタム募集を専用チャンネルへ自動投稿する(#85)。
  * 参加予定を事前に表明できるようにする。recruitments.start_at で二重投稿を防止
  * （同じ開始時刻の募集が既にあればスキップ＝冗長キックにも安全）。
  */
