@@ -107,13 +107,20 @@ export async function POST(request: Request) {
         off_role_pity: dbPlayer.off_role_pity || 0,
         weight: dbPlayer.weight || 2,
         allowHigher: dbPlayer.allow_higher || false,
-        rates: {
-          TOP: dbPlayer.mmr_top || 1200,
-          JG: dbPlayer.mmr_jg || 1200,
-          MID: dbPlayer.mmr_mid || 1200,
-          ADC: dbPlayer.mmr_adc || 1200,
-          SUP: dbPlayer.mmr_sup || 1200
-        },
+        // ハンデ参加者は計算上のMMRを一律で下げる（DBの実MMR・戦績は一切変更しない）。
+        // 強い人が下位帯に混ざる日に、チーム分け上の格差を緩和するための仕組み。
+        rates: (() => {
+          const pen = input.handicap ? (Number(body.handicapPenalty) || 150) : 0;
+          const adj = (v: number) => Math.max(100, (v || 1200) - pen);
+          return {
+            TOP: adj(dbPlayer.mmr_top),
+            JG: adj(dbPlayer.mmr_jg),
+            MID: adj(dbPlayer.mmr_mid),
+            ADC: adj(dbPlayer.mmr_adc),
+            SUP: adj(dbPlayer.mmr_sup),
+          };
+        })(),
+        isHandicap: !!input.handicap,
         games: pGames,
         winRate: pWinRate,
         isFixed: input.isFixed,

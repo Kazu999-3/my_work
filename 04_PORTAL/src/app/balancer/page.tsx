@@ -523,6 +523,8 @@ export default function BalancerPage() {
   }, [players]);
 
   // ハンデ参加(オフロール等)の指定。チーム分け結果とDiscord通知に明示する。
+  // ハンデ参加時にチーム分けの計算上で差し引くMMR（実際の戦績・MMRは変わらない）
+  const HANDICAP_MMR_PENALTY = 150;
   const [handicapIds, setHandicapIds] = useState<any[]>([]);
   const toggleHandicap = (id: any) => setHandicapIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   // チーム分け結果は名前ベースなので、ハンデ対象の「名前」集合に変換して照合する
@@ -586,10 +588,13 @@ export default function BalancerPage() {
               name: p.name,
               isFixed: p.is_fixed || false,
               isSpectatorFixed: p.is_spectator_fixed || false,
-              fixedRole: (p.is_fixed && pref1 && pref1 !== 'ALL' && pref1 !== '-') ? pref1 : null
+              fixedRole: (p.is_fixed && pref1 && pref1 !== 'ALL' && pref1 !== '-') ? pref1 : null,
+              // ハンデ参加: チーム分けの計算上だけMMRを下げて格差を緩和する（実際の戦績は変えない）
+              handicap: handicapIds.includes(p.id),
             };
           }),
           searchDepth, // BL-02: 探索強度
+          handicapPenalty: HANDICAP_MMR_PENALTY,
         })
       });
 
@@ -1630,7 +1635,7 @@ export default function BalancerPage() {
               ))}
             </div>
             <p className="text-[10px] text-gray-600">
-              観戦に回した人は観戦Pityが溜まり次回は優先出場します。ハンデ参加はオフロール等の制約付き参加として結果とDiscord通知に明示されます。
+              観戦に回した人は観戦Pityが溜まり次回は優先出場します。ハンデ参加は<strong className="text-amber-400">チーム分けの計算上のみMMRを{HANDICAP_MMR_PENALTY}下げて</strong>格差を緩和します（実際のMMR・戦績は変わりません）。結果とDiscord通知にも🎗️で明示されます。
             </p>
           </div>
         )}

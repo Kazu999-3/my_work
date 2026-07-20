@@ -408,32 +408,6 @@ export async function handleButtonInteraction(interaction, env, ctx) {
               + `\n最高 ${sorted[0]} / 最低 ${sorted[sorted.length - 1]}（幅 ${sorted[0] - sorted[sorted.length - 1]}）`;
           }
         } catch (e) { /* 集計失敗は無視 */ }
-
-        // Discordロールの人数カウント（@ゴールド帯 など、サーバー側の帯分けを可視化）
-        let discordRoleLine = '';
-        try {
-          const guildId = env.DISCORD_GUILD_ID;
-          if (guildId) {
-            const roleCountMap = {};
-            for (const id of ids) {
-              const mr = await fetchWithRetryLocal(`https://discord.com/api/v10/guilds/${guildId}/members/${id}`, env);
-              if (!mr) continue;
-              (mr.roles || []).forEach((rid) => { roleCountMap[rid] = (roleCountMap[rid] || 0) + 1; });
-            }
-            const rolesRes = await fetchWithRetryLocal(`https://discord.com/api/v10/guilds/${guildId}/roles`, env);
-            if (rolesRes && Array.isArray(rolesRes)) {
-              const named = Object.entries(roleCountMap)
-                .map(([rid, cnt]) => ({ name: rolesRes.find((r) => r.id === rid)?.name, cnt }))
-                .filter((x) => x.name && x.name !== '@everyone' && !/bot/i.test(x.name))
-                .sort((a, b) => b.cnt - a.cnt)
-                .slice(0, 6);
-              if (named.length > 0) {
-                discordRoleLine = `\n**Discordロール**: ` + named.map((x) => `${x.name} ${x.cnt}名`).join(' ／ ');
-              }
-            }
-          }
-        } catch (e) { /* ロール集計失敗は無視 */ }
-        tierLine += discordRoleLine;
         laneEmbed = {
           title: '📍 参加者の希望レーン状況',
           description: `${countLine}${tierLine}\n\n${lines.join('\n')}`,
@@ -460,15 +434,6 @@ export async function handleButtonInteraction(interaction, env, ctx) {
   // 募集メッセージ本体にレート帯の内訳を表示する（参加ボタンを押す時点で構成が分かるように）
   const tierLine = await buildTierLine(env, metadata.joined || []);
   return Response.json({ type: 7, data: { content: createMessageContent(metadata), embeds: [createRecruitEmbed(metadata, tierLine)], components: createRecruitButtons(metadata) } });
-}
-
-/** Discord APIをGETしてJSONを返す小ヘルパー（失敗時はnull） */
-async function fetchWithRetryLocal(url, env) {
-  try {
-    const r = await fetch(url, { headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}` } });
-    if (!r.ok) return null;
-    return await r.json();
-  } catch { return null; }
 }
 
 /** 参加者のdiscord_id配列から「🔼しきい値以上 N名 ／ 🔽未満 N名」の1行を作る */
