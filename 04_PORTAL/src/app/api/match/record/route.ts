@@ -403,6 +403,32 @@ export async function POST(request: Request) {
       console.error("Failed to send discord notification", discordErr);
     }
 
+    // F: 対面カルテ。各プレイヤーの「対面相手」を記録し、試合後の振り返り導線に使う。
+    try {
+      const logRows: any[] = [];
+      for (const r of results) {
+        const opp = results.find((o: any) => o.role === r.role && o.team !== r.team);
+        if (!opp) continue;
+        logRows.push({
+          match_id: newMatchId,
+          discord_id: r.dbPlayer?.discord_id || null,
+          player_name: r.name,
+          role: r.role,
+          my_champion: r.champion_name || null,
+          enemy_champion: opp.champion_name || null,
+          is_win: r.team === winningTeam,
+          kills: r.kills || 0,
+          deaths: r.deaths || 0,
+          assists: r.assists || 0,
+        });
+      }
+      if (logRows.length > 0) {
+        await supabase.from('matchup_log').insert(logRows);
+      }
+    } catch (logErr: any) {
+      console.warn('[match/record] matchup_log の保存に失敗（続行）:', logErr?.message);
+    }
+
     // Web Push: 試合結果の通知(#54)。失敗しても本処理は成功扱い。
     try {
       const { sendPushToAll } = await import('../../push/send/route');

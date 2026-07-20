@@ -8,6 +8,7 @@ import ReactMarkdown from 'react-markdown';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import ChampSelect from '../../components/ChampSelect';
+import { Spinner } from '../../components/Feedback';
 
 const EMPTY_MEMO = {
   champion: '', enemy: '', role: 'Jungle', title: '',
@@ -392,6 +393,50 @@ export default function MatchupsPage() {
       setSimError(err.message || '通信エラーが発生しました。');
       setSimLoading(false);
     }
+  };
+
+  // ===== バトルサーチ刷新 (A/B/D/E/F) =====
+  // E: 期間フィルタ（0=全期間 / 30=直近1ヶ月 など。古い情報と混ざるのを防ぐ）
+  const [periodDays, setPeriodDays] = useState(0);
+  // A: 選択中ペアのクイックビュー（勝率・KDA・直近戦績）
+  const [pairStats, setPairStats] = useState<any>(null);
+  // D: 苦手対面ランキング
+  const [weakList, setWeakList] = useState<any[] | null>(null);
+  // F: 直近の対面（試合後の振り返り導線）
+  const [recentMatchups, setRecentMatchups] = useState<any[] | null>(null);
+
+  // A: 両方のチャンプが選ばれたらクイックビューを取得
+  useEffect(() => {
+    if (viewMode !== 'list' || !mySearch || !enemySearch) { setPairStats(null); return; }
+    const ctrl = new AbortController();
+    fetch(`/api/matchup/insights?kind=pair&my=${encodeURIComponent(mySearch)}&enemy=${encodeURIComponent(enemySearch)}&days=${periodDays}`, { signal: ctrl.signal })
+      .then(r => r.json()).then(d => { if (d.success) setPairStats(d); }).catch(() => {});
+    return () => ctrl.abort();
+  }, [viewMode, mySearch, enemySearch, periodDays]);
+
+  // D/F: 一覧表示時に苦手対面と直近対面を取得
+  useEffect(() => {
+    if (viewMode !== 'list') return;
+    if (weakList === null) {
+      fetch(`/api/matchup/insights?kind=weak&days=${periodDays}`).then(r => r.json())
+        .then(d => setWeakList(d.success ? d.weak : [])).catch(() => setWeakList([]));
+    }
+    if (recentMatchups === null) {
+      fetch('/api/matchup/insights?kind=recent').then(r => r.json())
+        .then(d => setRecentMatchups(d.success ? d.recent : [])).catch(() => setRecentMatchups([]));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewMode]);
+  // 期間を変えたら苦手ランキングを取り直す
+  useEffect(() => { setWeakList(null); }, [periodDays]);
+
+  // F: 対面カルテから「この対面のメモを書く」導線
+  const startMemoFromLog = (m: any) => {
+    setMySearch(m.my || '');
+    setEnemySearch(m.enemy || '');
+    setMemo({ ...EMPTY_MEMO, champion: m.my || '', enemy: m.enemy || '', role: m.role || 'TOP' });
+    setShowForm(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   // B-04: 保存済みシミュレーションの一覧
@@ -1228,7 +1273,16 @@ export default function MatchupsPage() {
 
       {/* 検索バー（ビューモードで切替） */}
       {viewMode === 'list' ? (
-        <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }} className="flex gap-4 flex-wrap">
+        <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }} className="flex gap-4 flex-wrap items-stretch">
+          {/* E: 期間フィルタ（古いパッチの情報と混ざらないように） */}
+          <select value={periodDays} onChange={e => setPeriodDays(Number(e.target.value))}
+            title="集計する期間"
+            className="glass-panel rounded-2xl px-4 font-bold text-gray-300 outline-none cursor-pointer text-sm">
+            <option value={0}>全期間</option>
+            <option value={90}>直近3ヶ月</option>
+            <option value={30}>直近1ヶ月</option>
+            <option value={14}>直近2週間</option>
+          </select>
           <div className="relative flex-1 min-w-[200px]">
             <Shield className="absolute left-4 top-1/2 -translate-y-1/2 text-[#c89b3c] z-10" size={20} />
             <ChampSelect value={mySearch} onChange={setMySearch} placeholder="自分のチャンプ (例: Yone)" className="pl-12 py-4 border-2 border-transparent focus:border-[#c89b3c]/50 shadow-lg" />
@@ -1263,6 +1317,75 @@ export default function MatchupsPage() {
             <option value="difficulty_desc">難易度が高い順</option>
             <option value="difficulty_asc">難易度が低い順</option>
           </select>
+
+          {/* A: 対面クイックビュー — 2体選ぶだけで実戦データが即わかる */}
+          {pairStats && (
+            <div className="w-full glass-panel rounded-2xl p-4 border-l-4 border-[#00cfef]">
+              <div className="flex items-center gap-4 flex-wrap">
+                <span className="text-sm font-black text-white">⚡ {mySearch} <span className="text-gray-500">vs</span> {enemySearch}</span>
+                {pairStats.games > 0 ? (
+                  <>
+                    <span className="text-xs text-gray-400">{pairStats.games}戦</span>
+                    <span className={`text-xl font-black ${pairStats.winRate >= 50 ? 'text-emerald-400' : 'text-rose-400'}`}>{pairStats.winRate}%</span>
+                    <span className="text-xs font-mono text-gray-400">KDA {pairStats.kda}</span>
+                    <div className="flex gap-1 ml-auto">
+                      {pairStats.history.map((h: any, i: number) => (
+                        <span key={i} title={`${h.kills}/${h.deaths}/${h.assists}`}
+                          className={`w-6 h-6 rounded flex items-center justify-center text-[9px] font-black ${h.isWin ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300'}`}>
+                          {h.isWin ? 'W' : 'L'}
+                        </span>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <span className="text-xs text-gray-500">この対面の実戦データはまだありません（試合を記録すると自動で貯まります）</span>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* D: 苦手対面ランキング ＆ F: 対面カルテ */}
+          {!mySearch && !enemySearch && (
+            <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <div className="glass-panel rounded-2xl p-4">
+                <h3 className="text-xs font-black text-rose-400 mb-3">💀 苦手な対面 <span className="text-gray-600 font-normal">(2戦以上・勝率が低い順)</span></h3>
+                {weakList === null ? <Spinner label="集計中..." /> : weakList.length === 0 ? (
+                  <p className="text-xs text-gray-500">まだデータがありません。</p>
+                ) : (
+                  <div className="space-y-1.5">
+                    {weakList.slice(0, 6).map((w: any) => (
+                      <button key={`${w.my}|${w.enemy}`} onClick={() => { setMySearch(w.my); setEnemySearch(w.enemy); }}
+                        className="w-full flex items-center gap-2 text-xs bg-white/[0.03] hover:bg-white/[0.07] rounded-lg px-2.5 py-1.5 transition text-left">
+                        <span className="font-bold text-gray-200 truncate flex-1">{w.my} <span className="text-gray-600">vs</span> {w.enemy}</span>
+                        <span className="text-gray-500">{w.games}戦</span>
+                        <span className={`font-black w-10 text-right ${w.winRate < 40 ? 'text-rose-400' : 'text-amber-400'}`}>{w.winRate}%</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="glass-panel rounded-2xl p-4">
+                <h3 className="text-xs font-black text-[#00cfef] mb-3">📋 直近の対面 <span className="text-gray-600 font-normal">(クリックでメモ作成)</span></h3>
+                {recentMatchups === null ? <Spinner label="読込中..." /> : recentMatchups.length === 0 ? (
+                  <p className="text-xs text-gray-500">試合を記録すると、ここに対面が自動で並びます。</p>
+                ) : (
+                  <div className="space-y-1.5 max-h-56 overflow-y-auto">
+                    {recentMatchups.slice(0, 8).map((m: any, i: number) => (
+                      <button key={i} onClick={() => startMemoFromLog(m)}
+                        className="w-full flex items-center gap-2 text-xs bg-white/[0.03] hover:bg-white/[0.07] rounded-lg px-2.5 py-1.5 transition text-left">
+                        <span className={`w-4 text-center font-black ${m.isWin ? 'text-emerald-400' : 'text-rose-400'}`}>{m.isWin ? 'W' : 'L'}</span>
+                        <span className="text-gray-500 w-9">{m.role}</span>
+                        <span className="font-bold text-gray-200 truncate flex-1">{m.my} <span className="text-gray-600">vs</span> {m.enemy}</span>
+                        <span className="text-gray-500 font-mono">{m.kills}/{m.deaths}/{m.assists}</span>
+                        <span className="text-[#00cfef] font-black">✏️</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </motion.div>
       ) : (
         <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }} className="flex gap-4 flex-wrap">
