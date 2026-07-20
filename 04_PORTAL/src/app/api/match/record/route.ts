@@ -4,7 +4,7 @@ import { calculateNewMMRDetailed, calculateKdaScore, MmrCalcContext, calculateIn
 
 export async function POST(request: Request) {
   try {
-    const { winningTeam, gameDuration, participants, riotMatchId } = await request.json();
+    const { winningTeam, gameDuration, participants, riotMatchId, balanceSatisfaction } = await request.json();
 
     if (!winningTeam || !participants || participants.length !== 10) {
       return NextResponse.json({ error: '入力データが不正です。10人の参加者と勝利チームが必要です。' }, { status: 400 });
@@ -338,7 +338,7 @@ export async function POST(request: Request) {
         const redTitle = winningTeam === 'RED' ? '🏆 🟥 RED TEAM (WIN)' : '💀 🟥 RED TEAM';
 
         const payload = {
-          content: "📜 **KTM 試合結果が記録されました！** 📜\n各プレイヤーのMMRが更新されました。\n\n🗳️ **今日のチーム分けはどうでしたか？** リアクションで教えてください → 👍 良かった / 😐 普通 / 👎 イマイチ",
+          content: "📜 **KTM 試合結果が記録されました！** 📜\n各プレイヤーのMMRが更新されました。",
           embeds: [
             {
               title: "⚔️ 試合リザルト",
@@ -362,45 +362,39 @@ export async function POST(request: Request) {
           body: JSON.stringify(payload)
         }).catch(err => { console.error("Discord webhook error:", err); return null; });
 
+        // 満足度は管理者が入力時に記録する方式に変更したため、リアクション付与は廃止。
+        // 結果メッセージIDだけは参照用に紐付けておく。
         try {
-          const botToken = process.env.DISCORD_BOT_TOKEN;
           const msg = whRes && whRes.ok ? await whRes.json() : null;
-          if (msg?.id && msg?.channel_id && botToken) {
-            // webhookはリアクションを付けられないため、botトークンで👍/😐/👎を付与。
-            // リアクション追加はレート制限が厳しく、間隔なし連続送信だと2個目以降が429で
-            // 消えていた（→「全部出ない」原因）。各絵文字の間に待機＋429時はRetry-Afterでリトライ。
-            for (const emoji of ['👍', '😐', '👎']) {
-              for (let attempt = 0; attempt < 3; attempt++) {
-                try {
-                  const r = await fetch(`https://discord.com/api/v10/channels/${msg.channel_id}/messages/${msg.id}/reactions/${encodeURIComponent(emoji)}/@me`, {
-                    method: 'PUT',
-                    headers: { 'Authorization': `Bot ${botToken}` },
-                  });
-                  if (r.status === 429) {
-                    const body = await r.json().catch(() => ({} as any));
-                    const waitMs = Math.max(400, Math.ceil(((body as any).retry_after || 0.5) * 1000));
-                    await new Promise(res => setTimeout(res, waitMs));
-                    continue; // リトライ
-                  }
-                  break; // 成功 or 4xx（リトライ不要）
-                } catch {
-                  await new Promise(res => setTimeout(res, 400));
-                }
-              }
-              await new Promise(res => setTimeout(res, 350)); // 次の絵文字までの間隔（レート配慮）
-            }
-            // 予測行にメッセージIDを紐付け（後で満足度を集計するため）
+          if (msg?.id && msg?.channel_id) {
             await supabase
               .from('balancer_predictions')
               .update({ result_message_id: msg.id, result_channel_id: msg.channel_id })
               .eq('match_id', newMatchId);
           }
-        } catch (reactErr) {
-          console.warn('[match/record] 満足度リアクション付与に失敗（続行）:', reactErr);
+        } catch (linkErr) {
+          console.warn('[match/record] 結果メッセージIDの紐付けに失敗（続行）:', linkErr);
         }
       }
     } catch (discordErr) {
       console.error("Failed to send discord notification", discordErr);
+    }
+
+    // チーム分け満足度: 管理者が成績入力時に選んだ値を予測行へ保存する。
+    // 以前はDiscordのリアクションを後から集計していたが、集まりが悪く手間もかかったため入力時記録に変更。
+    if (balanceSatisfaction === 'good' || balanceSatisfaction === 'normal' || balanceSatisfaction === 'bad') {
+      try {
+        await supabase
+          .from('balancer_predictions')
+          .update({
+            satisfaction_up: balanceSatisfaction === 'good' ? 1 : 0,
+            satisfaction_down: balanceSatisfaction === 'bad' ? 1 : 0,
+            satisfaction_updated_at: new Date().toISOString(),
+          })
+          .eq('match_id', newMatchId);
+      } catch (satErr: any) {
+        console.warn('[match/record] 満足度の保存に失敗（続行）:', satErr?.message);
+      }
     }
 
     // F: 対面カルテ。各プレイヤーの「対面相手」を記録し、試合後の振り返り導線に使う。

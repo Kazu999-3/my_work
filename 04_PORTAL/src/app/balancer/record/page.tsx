@@ -36,6 +36,9 @@ function CustomRecordPageContent() {
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error' | '', text: string }>({ type: '', text: '' });
   const [winningTeam, setWinningTeam] = useState<'BLUE' | 'RED' | null>(null);
+  // チーム分けの満足度。Discordのリアクション集計は集まりが悪く手間もかかるため、
+  // 管理者が成績入力時にその場で1タップ記録する方式にした。
+  const [balanceSatisfaction, setBalanceSatisfaction] = useState<'good' | 'normal' | 'bad' | null>(null);
   const [championsList, setChampionsList] = useState<{ id: string, name: string }[]>([]);
   const championsListRef = useRef(championsList);
   championsListRef.current = championsList;
@@ -445,6 +448,7 @@ function CustomRecordPageContent() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           winningTeam,
+          balanceSatisfaction, // チーム分けの満足度（管理者が入力時に記録）
           riotMatchId: null, // 手動入力のため常にnull
           adminPassword: 'ktm', // API側で検証を無効化したため、デフォルト値を設定
           participants: stats.map(s => ({
@@ -722,6 +726,25 @@ function CustomRecordPageContent() {
                   );
                 })}
               </div>
+            </div>
+          </div>
+
+          {/* チーム分けの満足度（管理者が入力時に記録） */}
+          <div className="border-t border-gray-800 pt-6">
+            <div className="flex items-center gap-3 flex-wrap bg-gray-800/50 p-3 rounded-lg border border-gray-700">
+              <span className="font-bold text-gray-400 text-sm">今日のチーム分けは?</span>
+              {([
+                ['good', '👍 良かった', 'bg-emerald-600'],
+                ['normal', '😐 普通', 'bg-sky-600'],
+                ['bad', '👎 イマイチ', 'bg-rose-600'],
+              ] as const).map(([val, label, activeCls]) => (
+                <button key={val} type="button"
+                  onClick={() => setBalanceSatisfaction(balanceSatisfaction === val ? null : val)}
+                  className={`px-4 py-2 rounded-lg text-sm font-black transition ${balanceSatisfaction === val ? `${activeCls} text-white` : 'bg-gray-900 text-gray-400 border border-gray-700 hover:bg-gray-700'}`}>
+                  {label}
+                </button>
+              ))}
+              <span className="text-[10px] text-gray-500">任意。バランサーの精度検証に使われます（未選択でも保存できます）</span>
             </div>
           </div>
 

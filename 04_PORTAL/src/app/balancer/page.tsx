@@ -162,12 +162,29 @@ export default function BalancerPage() {
   // バランス満足度(👍/👎)の集計（課題#42）
   const [satStats, setSatStats] = useState<{ tallied: number; totalUp: number; totalDown: number; totalNeutral?: number; recent?: { up: number; down: number; neutral: number }[]; satisfactionRate: number | null } | null>(null);
   const [tallyingSat, setTallyingSat] = useState(false);
+  // 満足度は成績入力時に記録される方式になったため、Discordを叩かずDBから直接集計する。
   const fetchSatStats = async () => {
     setTallyingSat(true);
     try {
-      const res = await fetch('/api/admin/satisfaction-tally', { credentials: 'include' });
-      const data = await res.json();
-      if (res.ok) setSatStats(data);
+      const { data } = await supabase
+        .from('balancer_predictions')
+        .select('satisfaction_up, satisfaction_down')
+        .not('satisfaction_updated_at', 'is', null)
+        .order('created_at', { ascending: false })
+        .limit(50);
+      const rows = data || [];
+      const totalUp = rows.filter((r: any) => r.satisfaction_up > 0).length;
+      const totalDown = rows.filter((r: any) => r.satisfaction_down > 0).length;
+      const totalNeutral = rows.filter((r: any) => !r.satisfaction_up && !r.satisfaction_down).length;
+      const votes = totalUp + totalDown;
+      setSatStats({
+        tallied: rows.length,
+        totalUp,
+        totalDown,
+        totalNeutral,
+        recent: rows.slice(0, 10).map((r: any) => ({ up: r.satisfaction_up || 0, down: r.satisfaction_down || 0, neutral: (!r.satisfaction_up && !r.satisfaction_down) ? 1 : 0 })),
+        satisfactionRate: votes > 0 ? Math.round((totalUp / votes) * 100) : null,
+      });
     } catch (e) {
       console.error('satisfaction tally failed', e);
     } finally {
@@ -1547,7 +1564,7 @@ export default function BalancerPage() {
             {/* バランス満足度(Discord 👍/👎)（課題#42） */}
             <div className="border-t border-gray-800 pt-3">
               <div className="flex items-center justify-between flex-wrap gap-2">
-                <span className="text-sm font-bold text-white">👍 チーム分け満足度（Discord投票）</span>
+                <span className="text-sm font-bold text-white">👍 チーム分け満足度（成績入力時に記録）</span>
                 <button
                   onClick={fetchSatStats}
                   disabled={tallyingSat}
@@ -1558,7 +1575,7 @@ export default function BalancerPage() {
               </div>
               {satStats ? (
                 satStats.tallied === 0 ? (
-                  <p className="text-xs text-gray-500 mt-2">まだ投票付きの試合結果がありません（試合を記録するとDiscordの結果メッセージに👍/👎が付きます）。</p>
+                  <p className="text-xs text-gray-500 mt-2">まだ記録がありません（試合成績を入力する画面で「今日のチーム分けは?」を選ぶと貯まります）。</p>
                 ) : (
                   <>
                   <div className="grid grid-cols-3 gap-2 mt-2">
@@ -1597,7 +1614,7 @@ export default function BalancerPage() {
                   </>
                 )
               ) : (
-                <p className="text-xs text-gray-500 mt-2">「集計」を押すと直近の試合結果メッセージの👍/👎を集計します。</p>
+                <p className="text-xs text-gray-500 mt-2">「集計」を押すと、成績入力時に記録された満足度を直近50戦ぶん集計します。</p>
               )}
             </div>
           </div>
