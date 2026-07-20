@@ -439,6 +439,25 @@ export function LibraryTabContentInner() {
           console.warn('champion_notesへのdual-write失敗（辞典統合自体は成功）:', dualErr);
         }
 
+        // 構造化項目（強み/弱み/パワースパイク/ビルド）も記事の内容でマージ更新する。
+        // 上書きではなく「既存に無い知見だけ追記」なので、手書きの内容は消えない。
+        let mergedNote = '';
+        try {
+          const mergeRes = await fetch('/api/admin/champion-facts/merge', {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ champions: validChampions, title: editTitle, body: editContent }),
+          });
+          const mergeData = await mergeRes.json();
+          if (mergeRes.ok) {
+            const added = (mergeData.results || []).flatMap((r: any) => r.added || []);
+            if (added.length > 0) mergedNote = `／辞典項目に${added.length}件を追記`;
+          }
+        } catch (mergeErr) {
+          console.warn('champion_factsのマージ更新に失敗（辞典統合自体は成功）:', mergeErr);
+        }
+
         // ライブラリから削除
         const { error: deleteError } = await supabase
             .from('personal_knowledge')
@@ -447,7 +466,7 @@ export function LibraryTabContentInner() {
         if (deleteError) throw deleteError;
         
         const champLabel = validChampions.length > 1 ? `${validChampions.join(', ')} (${validChampions.length}体)` : validChampions[0];
-        showToast(`【統合完了】${champLabel} のチャンピオン辞典にマージし、ライブラリから削除しました！`, 'success');
+        showToast(`【統合完了】${champLabel} のチャンピオン辞典にマージ${mergedNote}し、ライブラリから削除しました！`, 'success');
         setArticles(prev => prev.filter(a => String(a.id) !== String(selectedArticle.id)));
         setSelectedArticle(null);
         setEditing(false);

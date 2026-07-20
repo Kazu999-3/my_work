@@ -4,9 +4,11 @@ import { verifyAdminSession } from '../../../../../lib/adminAuth';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
+export const maxDuration = 60; // 項目マージのAI呼び出しを含むため延長
 
 const FAKE_CHAMPIONS = ["", "Unknown", "その他", "[YouTube]", "YouTube", "Jungle", "jg", "lol", "ARTICLE", "draft", "SYSTEM", "LIVE", "GLOBAL", "test", "sns", "macro"];
-const CHUNK_SIZE = 15; // 1リクエストあたりの処理記事数（Vercelのサーバーレスタイムアウトを避けるため）
+// 1リクエストあたりの処理記事数。項目マージ(AI呼び出し)が入るため小さめにしてタイムアウトを避ける。
+const CHUNK_SIZE = 8;
 
 // ==========================================================================
 // 攻略ライブラリ(personal_knowledge) → チャンピオン辞典(matchup_sentinel) 一括同期
@@ -136,8 +138,12 @@ export async function POST(req: Request) {
     // 削除も行われず、同じ記事が何度も同期対象になっていた。個別移動と挙動を揃える。
     let movedCount = 0;
     const moveErrors: string[] = [];
+    // 項目マージはAI呼び出しを伴うため、1チャンクあたりの実行数を制限する
+    // （全件で回すとサーバーレスのタイムアウトに達する）。溢れた分は次回の同期で処理される。
+    let mergeBudget = 5;
     if (movedArticles.length > 0) {
-      await Promise.all(movedArticles.map(async (a) => {
+      // 項目マージの実行数を正しく制限するため、並列ではなく逐次で処理する
+      for (const a of movedArticles) {
         try {
           // 1) 構造化テーブル champion_notes へ反映（同記事の重複は source_article_id で排除）
           await supabase.from('champion_notes').delete().eq('source_article_id', a.id);
@@ -153,7 +159,27 @@ export async function POST(req: Request) {
             if (insErr) throw new Error(`champion_notes: ${insErr.message}`);
           }
 
-          // 2) ライブラリからは削除扱いにする（__DELETED__ タグ）
+          // 2) 構造化項目（強み/弱み等）も記事内容でマージ更新する（上書きではなく追記）。
+          //    件数が多いと時間がかかるため、本文が十分な長さの記事のみ対象。
+          if (a.content && a.content.length >= 200 && mergeBudget > 0) {
+            mergeBudget--;
+            try {
+              const origin = new URL(req.url).origin;
+              await fetch(`${origin}/api/admin/champion-facts/merge`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  // サーバー間呼び出しのため、受け取ったCookieをそのまま引き継ぐ
+                  cookie: req.headers.get('cookie') || '',
+                },
+                body: JSON.stringify({ champions: a.champions, title: a.title, body: a.content }),
+              });
+            } catch (mergeErr) {
+              console.warn(`[knowledge/sync] 記事${a.id}の項目マージに失敗:`, mergeErr);
+            }
+          }
+
+          // 3) ライブラリからは削除扱いにする（__DELETED__ タグ）
           const { error: delErr } = await supabase
             .from('personal_knowledge').update({ tags: ['__DELETED__'] }).eq('id', a.id);
           if (delErr) throw new Error(`personal_knowledge: ${delErr.message}`);
@@ -163,7 +189,7 @@ export async function POST(req: Request) {
           console.warn(`[knowledge/sync] 記事${a.id}の移動処理に失敗:`, moveErr?.message);
           if (moveErrors.length < 3) moveErrors.push(`記事${a.id}: ${moveErr?.message}`);
         }
-      }));
+      }
     }
 
     const processedCount = (articles || []).length;
