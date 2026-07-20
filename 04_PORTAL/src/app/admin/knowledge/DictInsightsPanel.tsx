@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { RefreshCw, AlertTriangle, Sparkles } from 'lucide-react';
+import { RefreshCw, AlertTriangle, Sparkles, Globe } from 'lucide-react';
 
 /**
  * 辞典のAI支援パネル。
@@ -15,6 +15,27 @@ export default function DictInsightsPanel() {
   const [summary, setSummary] = useState<any>(null);
   const [summarizing, setSummarizing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // 自動リサーチ（OP.GG）
+  const [researchChamp, setResearchChamp] = useState('');
+  const [researchRole, setResearchRole] = useState('JG');
+  const [research, setResearch] = useState<any>(null);
+  const [researching, setResearching] = useState(false);
+
+  const runResearch = async (save: boolean) => {
+    if (!researchChamp.trim()) return;
+    setResearching(true); setError(null);
+    if (!save) setResearch(null);
+    try {
+      const res = await fetch('/api/admin/dict-research', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ champion: researchChamp.trim(), role: researchRole, save }),
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error || 'リサーチに失敗しました');
+      setResearch(d);
+    } catch (e: any) { setError(e.message); } finally { setResearching(false); }
+  };
 
   const call = async (body: any) => {
     const res = await fetch('/api/admin/dict-insights', {
@@ -82,6 +103,58 @@ export default function DictInsightsPanel() {
                 <p className="text-[11px] opacity-90 mt-1">{it.message}</p>
               </div>
             ))}
+          </div>
+        )}
+      </div>
+
+      {/* 自動リサーチ（OP.GG） */}
+      <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5">
+        <h3 className="font-black text-white flex items-center gap-2 mb-3">
+          <Globe size={16} className="text-cyan-400" /> 自動リサーチ（OP.GG統計）
+        </h3>
+        <p className="text-[11px] text-gray-500 mb-3">統計サイトから現パッチの勝率・BAN率・得意/苦手対面・コアビルドを取得し、辞典の下書きを作ります。</p>
+        <div className="flex gap-2 mb-3 flex-wrap">
+          <input value={researchChamp} onChange={e => setResearchChamp(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') runResearch(false); }}
+            placeholder="チャンピオン名（英語ID 例: Graves）"
+            className="flex-1 min-w-[180px] bg-gray-950 border border-gray-800 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-cyan-500" />
+          <select value={researchRole} onChange={e => setResearchRole(e.target.value)}
+            className="bg-gray-950 border border-gray-800 rounded-lg px-3 py-2 text-sm text-gray-300 outline-none">
+            {['TOP', 'JG', 'MID', 'ADC', 'SUP'].map(r => <option key={r} value={r}>{r}</option>)}
+          </select>
+          <button onClick={() => runResearch(false)} disabled={researching || !researchChamp.trim()}
+            className="flex items-center gap-1.5 text-xs font-bold bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 px-4 py-2 rounded-lg hover:bg-cyan-500/25 disabled:opacity-50">
+            {researching ? <RefreshCw size={13} className="animate-spin" /> : <Globe size={13} />} リサーチ
+          </button>
+        </div>
+        {research && (
+          <div className="space-y-2 text-xs bg-cyan-500/5 border border-cyan-500/20 rounded-xl p-4">
+            <div className="flex items-center gap-3 flex-wrap">
+              <span className="text-cyan-300 font-black">🌐 {research.champion}</span>
+              {research.patch && <span className="text-[10px] text-gray-500">Patch {research.patch}</span>}
+              {research.tier && <span className="text-[10px] bg-white/10 px-2 py-0.5 rounded font-bold">{research.tier}</span>}
+            </div>
+            <div className="flex gap-4 flex-wrap text-[11px]">
+              {research.winRate && <span>勝率 <b className="text-emerald-400">{research.winRate}</b></span>}
+              {research.pickRate && <span>ピック率 <b className="text-sky-400">{research.pickRate}</b></span>}
+              {research.banRate && <span>BAN率 <b className="text-rose-400">{research.banRate}</b></span>}
+            </div>
+            {([
+              ['強み', research.strengths], ['弱み', research.weaknesses],
+              ['パワースパイク', research.power_spikes], ['ビルド/ルーン', research.build_runes],
+              ['苦手対面', research.counter_champions], ['得意対面', research.strong_against],
+              ['総評', research.summary],
+            ] as const).filter(([, v]) => v).map(([label, val]) => (
+              <div key={label}><span className="text-gray-500">{label}: </span><span className="text-gray-300">{val}</span></div>
+            ))}
+            <div className="flex items-center gap-2 pt-2 border-t border-white/5">
+              <button onClick={() => runResearch(true)} disabled={researching}
+                className="text-xs font-black bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-1.5 rounded-lg disabled:opacity-50">
+                この内容で辞典に保存
+              </button>
+              {research.saved && <span className="text-emerald-400 text-[11px]">✅ 保存しました</span>}
+              {research.sourceUrl && <a href={research.sourceUrl} target="_blank" rel="noreferrer" className="text-[10px] text-gray-500 hover:text-cyan-400 ml-auto">出典を開く ↗</a>}
+            </div>
           </div>
         )}
       </div>

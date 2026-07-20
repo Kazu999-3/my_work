@@ -94,6 +94,31 @@ export default function DictReviewPanel() {
             </div>
             {c.reason && <p className="text-xs text-gray-400 mt-2">判定理由: {c.reason}</p>}
             {c.note && <p className="text-xs text-amber-300/80 mt-1">要修正点: {c.note}</p>}
+
+            {/* 現在の辞典内容: 中身を見ないと有効/アーカイブの判断ができないため展開できるようにする */}
+            {c.current && (
+              <details className="mt-2 group">
+                <summary className="text-xs text-cyan-400 cursor-pointer hover:text-cyan-300 select-none">
+                  📖 現在の辞典内容を確認する
+                </summary>
+                <div className="mt-2 space-y-1.5 text-xs bg-black/30 border border-white/5 rounded-lg p-3">
+                  {([
+                    ['強み', c.current.strengths],
+                    ['弱み', c.current.weaknesses],
+                    ['パワースパイク', c.current.power_spikes],
+                    ['ビルド/ルーン', c.current.build_runes],
+                    ['戦略', c.current.strategy],
+                  ] as const).map(([label, val]) => (
+                    <div key={label}>
+                      <span className="text-gray-500">{label}: </span>
+                      <span className="text-gray-300 whitespace-pre-wrap">
+                        {val ? String(val).slice(0, 600) : <span className="text-gray-600">（未記入）</span>}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </details>
+            )}
             {c.regenerated && (
               <div className="mt-2 space-y-0.5 text-xs bg-amber-500/5 border border-amber-500/20 rounded-lg p-3">
                 <p className="text-amber-300 font-bold mb-1">🔄 再生成結果（保存済み）</p>

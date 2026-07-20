@@ -63,7 +63,16 @@ export async function GET(req: Request) {
         const s = cleaned.indexOf('{'), e = cleaned.lastIndexOf('}');
         if (s >= 0 && e > s) { const p = JSON.parse(cleaned.slice(s, e + 1)); verdict = p.verdict || 'keep'; reason = p.reason || ''; note = p.note || ''; }
       } catch { reason = 'LLM判定に失敗'; }
-      return { champion: f.champion, patch: f.patch, verdict, reason, note, reviewed_at: f.reviewed_at, review_patch: f.review_patch };
+      // 判断できるよう、現在の辞典の中身もそのまま返す（UIで展開表示する）
+      return {
+        champion: f.champion, patch: f.patch, verdict, reason, note,
+        reviewed_at: f.reviewed_at, review_patch: f.review_patch,
+        current: {
+          strengths: f.strengths, weaknesses: f.weaknesses,
+          power_spikes: f.power_spikes, build_runes: f.build_runes,
+          strategy: f.strategy,
+        },
+      };
     }));
 
     return NextResponse.json({ currentPatch, count: candidates.length, candidates });
