@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef, useCallback, Fragment } from "react";
+import { useEffect, useState, useRef, useCallback, useMemo, Fragment } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "../../lib/supabaseClient";
@@ -488,8 +488,30 @@ export default function BalancerPage() {
   // BL-02: 探索強度（40=速い/100=標準/200=精密）
   const [searchDepth, setSearchDepth] = useState(100);
 
+  // 卓分割: 参加者が20人以上のとき、代表MMR順で「上位卓/下位卓」に自動分割する。
+  // 卓分け=代表MMR(ktm_players.mmr)、卓の中のチーム分け=レーン別MMR、という役割分担。
+  const [selectedTable, setSelectedTable] = useState<{ label: string; ids: any[] } | null>(null);
+  const tableSplit = useMemo(() => {
+    const act = players.filter((p: any) => p.is_active);
+    if (act.length < 20) return null;
+    const sorted = [...act].sort((a: any, b: any) => (b.mmr || 1200) - (a.mmr || 1200));
+    const half = Math.floor(sorted.length / 2);
+    // 10人単位で切り出す（20人なら10/10、24人なら12人ずつではなく上位10/下位10＋残りは待機）
+    const upper = sorted.slice(0, 10);
+    const lower = sorted.slice(half, half + 10);
+    return {
+      upper: { label: '上位卓', members: upper, ids: upper.map((p: any) => p.id) },
+      lower: { label: '下位卓', members: lower, ids: lower.map((p: any) => p.id) },
+      total: act.length,
+    };
+  }, [players]);
+
   const handleBalance = async () => {
-    const activePlayers = players.filter((p: any) => p.is_active);
+    // 卓分割(#B): 20人以上いる場合、選択中の卓のメンバーだけをチーム分け対象にする
+    const allActive = players.filter((p: any) => p.is_active);
+    const activePlayers = selectedTable
+      ? allActive.filter((p: any) => selectedTable.ids.includes(p.id))
+      : allActive;
     if (activePlayers.length < 10) {
       setMessage({ type: "error", text: `チーム分けには最低10人のActiveプレイヤーが必要です。(現在 ${activePlayers.length}人)` });
       return;
@@ -1259,6 +1281,13 @@ export default function BalancerPage() {
               <span className="text-xs opacity-60">人</span>
             </div>
             <div className="flex items-center gap-2 ml-auto flex-wrap">
+              {/* 卓分割の選択状態表示 */}
+              {selectedTable && (
+                <span className="text-xs font-black px-3 py-2 rounded-lg bg-amber-500/15 text-amber-300 border border-amber-500/30 flex items-center gap-1.5">
+                  {selectedTable.label}でチーム分け
+                  <button onClick={() => setSelectedTable(null)} className="text-amber-400/70 hover:text-white">✕</button>
+                </span>
+              )}
               {/* BL-02: 探索強度 */}
               <select value={searchDepth} onChange={e => setSearchDepth(Number(e.target.value))}
                 title="精密ほど良い組み合わせを探すが計算が遅くなる"
@@ -1519,6 +1548,38 @@ export default function BalancerPage() {
               ) : (
                 <p className="text-xs text-gray-500 mt-2">「集計」を押すと直近の試合結果メッセージの👍/👎を集計します。</p>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* 卓分割パネル: 20人以上のとき、代表MMRで2卓に分けて提示 */}
+        {tableSplit && (
+          <div className="bg-gray-900 border border-amber-800/50 rounded-xl p-4 space-y-3">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-sm font-black text-amber-400">🪑 参加者{tableSplit.total}人 — 2卓に分けられます</span>
+              <span className="text-[10px] text-gray-500">代表MMR順に上位卓／下位卓へ自動仕分け（卓を選んでからチーム分けを実行）</span>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {[tableSplit.upper, tableSplit.lower].map((t: any) => (
+                <div key={t.label} className={`rounded-xl border p-3 ${selectedTable?.label === t.label ? 'border-amber-500 bg-amber-500/5' : 'border-gray-800 bg-gray-950/50'}`}>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-black text-white">{t.label}</span>
+                    <button
+                      onClick={() => setSelectedTable({ label: t.label, ids: t.ids })}
+                      className={`text-[10px] font-black px-3 py-1.5 rounded-lg transition ${selectedTable?.label === t.label ? 'bg-amber-600 text-white' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'}`}>
+                      {selectedTable?.label === t.label ? '選択中' : 'この卓を選ぶ'}
+                    </button>
+                  </div>
+                  <div className="text-[10px] text-gray-400 space-y-0.5 max-h-40 overflow-y-auto">
+                    {t.members.map((m: any) => (
+                      <div key={m.id} className="flex justify-between gap-2">
+                        <span className="truncate">{m.name}</span>
+                        <span className="font-mono text-gray-500 shrink-0">{m.mmr || 1200}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         )}
