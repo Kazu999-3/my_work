@@ -101,6 +101,24 @@ export function LibraryTabContentInner() {
     toggleFavoriteArticle(id, title);
   };
 
+  // 辞典へ移動した記事の閲覧・復元。誤って移動しても元に戻せるようにする。
+  const [showMoved, setShowMoved] = useState(false);
+  const [movedCount, setMovedCount] = useState(0);
+
+  /** 移動済み記事をライブラリへ復元する（__DELETED__ タグを外す） */
+  const restoreArticle = async (id: any) => {
+    if (!confirm('この記事をライブラリに戻しますか？')) return;
+    try {
+      const { error } = await supabase.from('personal_knowledge').update({ tags: [] }).eq('id', id);
+      if (error) throw error;
+      showToast('✅ ライブラリに戻しました', 'success');
+      setSelectedArticle(null);
+      await fetchArticles();
+    } catch (e: any) {
+      showToast(`❌ 復元に失敗: ${e.message}`, 'error');
+    }
+  };
+
   const fetchArticles = async () => {
     setLoading(true);
     try {
@@ -115,9 +133,11 @@ export function LibraryTabContentInner() {
         .order('created_at', { ascending: false })
         .limit(2000);
       if (!error && data) {
-        // titleがnullまたは空文字、もしくはtagsに'__DELETED__'が含まれるものを除外する
-        const validData = data.filter((a: any) => a && a.title && (!a.tags || !a.tags.includes('__DELETED__')));
+        const isDeleted = (a: any) => a.tags && a.tags.includes('__DELETED__');
+        // 通常は移動済み(__DELETED__)を除外。「移動済みを表示」時は移動済みのみを出す。
+        const validData = data.filter((a: any) => a && a.title && (showMoved ? isDeleted(a) : !isDeleted(a)));
         setArticles(validData);
+        setMovedCount(data.filter((a: any) => a && a.title && isDeleted(a)).length);
 
         // URLパラメータ ?article=Id の自動選択処理
         const articleId = searchParams ? searchParams.get('article') : null;
@@ -132,7 +152,7 @@ export function LibraryTabContentInner() {
     } catch (e) { console.error(e); } finally { setLoading(false); }
   };
 
-  useEffect(() => { fetchArticles(); }, [searchParams]);
+  useEffect(() => { fetchArticles(); }, [searchParams, showMoved]);
 
 
 
@@ -278,6 +298,7 @@ export function LibraryTabContentInner() {
       let totalArticles = 0;
       let totalMoved = 0;  // 辞典へ移動しライブラリから消えた記事数
       let scanned = 0;     // 実際にスキャンした記事数（移動で件数が減るためoffsetとは別管理）
+      let moveErrorSample: string[] = []; // 移動失敗の理由サンプル
       // ★ サーバー側はチャンク処理になっているため、完了(done)するまで進捗を表示しながら繰り返し呼び出す
       while (true) {
         const res = await fetch('/api/admin/knowledge/sync', {
@@ -290,6 +311,9 @@ export function LibraryTabContentInner() {
 
         totalSynced += data.syncedChampions || 0;
         totalMoved += data.moved || 0;
+        if (Array.isArray(data.moveErrors) && data.moveErrors.length > 0 && moveErrorSample.length === 0) {
+          moveErrorSample = data.moveErrors;
+        }
         totalArticles = data.totalArticles || totalArticles;
         scanned += data.processed || 0;
         setSyncProgress({ processed: Math.min(scanned, totalArticles), total: totalArticles, synced: totalSynced });
@@ -299,11 +323,15 @@ export function LibraryTabContentInner() {
         // 単純に nextOffset を使うと、詰まってきた分だけ記事を読み飛ばしてしまう。
         offset = Math.max(0, data.nextOffset - (data.moved || 0));
       }
-      showToast(
-        `✅ ${scanned}件をスキャンし、延べ ${totalSynced} 件を辞典へ同期しました`
-        + (totalMoved > 0 ? `（うち ${totalMoved} 件の記事を辞典へ移動し、ライブラリから削除）` : ''),
-        'success'
-      );
+      if (moveErrorSample.length > 0) {
+        showToast(`⚠️ 同期は完了しましたが移動に失敗した記事があります: ${moveErrorSample.join(' / ')}`, 'error');
+      } else {
+        showToast(
+          `✅ ${scanned}件をスキャンし、延べ ${totalSynced} 件を辞典へ同期しました`
+          + (totalMoved > 0 ? `（うち ${totalMoved} 件の記事を辞典へ移動し、ライブラリから削除）` : ''),
+          'success'
+        );
+      }
       // 移動でライブラリの中身が変わるので一覧を再取得
       if (totalMoved > 0) await fetchArticles();
     } catch (err: any) {
@@ -547,6 +575,16 @@ export function LibraryTabContentInner() {
               ) : (
                 <div className="flex items-center gap-4 mb-6">
                   <h1 className="text-4xl md:text-5xl font-black leading-tight font-mono text-white flex-1">{selectedArticle.title ? selectedArticle.title.replace(/_/g, ' ') : ''}</h1>
+                  {/* 移動済み表示中は、この記事をライブラリへ戻せるようにする */}
+                  {showMoved && (
+                    <button
+                      onClick={() => restoreArticle(selectedArticle.id)}
+                      className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-black shrink-0 transition"
+                      title="この記事をライブラリに戻します"
+                    >
+                      ↩️ ライブラリに戻す
+                    </button>
+                  )}
                   <button
                     onClick={() => handleToggleFavorite(selectedArticle.id, selectedArticle.title || '')}
                     className={`p-2.5 rounded-xl transition-all border shrink-0 ${
@@ -666,8 +704,20 @@ export function LibraryTabContentInner() {
         </div>
         
         <div className="flex gap-3 flex-wrap">
-          <button 
-            onClick={expandAllGroups} 
+          {/* 辞典へ移動した記事の閲覧・復元（誤移動のリカバリ用） */}
+          <button
+            onClick={() => { setShowMoved(v => !v); setSelectedArticle(null); }}
+            title="辞典へ移動してライブラリから消えた記事を表示し、必要なら元に戻せます"
+            className={`px-4 py-2.5 rounded-2xl text-xs font-bold transition-all border ${
+              showMoved
+                ? 'bg-amber-500 text-black border-amber-400'
+                : 'glass-panel glass-panel-hover text-amber-300 border-transparent'
+            }`}
+          >
+            🗄️ {showMoved ? 'ライブラリに戻る' : `移動済み${movedCount > 0 ? ` (${movedCount})` : ''}`}
+          </button>
+          <button
+            onClick={expandAllGroups}
             className="px-4 py-2.5 glass-panel glass-panel-hover text-xs font-bold text-[#a78bfa] rounded-2xl transition-all"
           >
             すべて展開

@@ -135,6 +135,7 @@ export async function POST(req: Request) {
     // 以前は一括同期だと辞典へのマージだけで、champion_notesへの反映もライブラリからの
     // 削除も行われず、同じ記事が何度も同期対象になっていた。個別移動と挙動を揃える。
     let movedCount = 0;
+    const moveErrors: string[] = [];
     if (movedArticles.length > 0) {
       await Promise.all(movedArticles.map(async (a) => {
         try {
@@ -147,13 +148,20 @@ export async function POST(req: Request) {
             source: 'article',
             source_article_id: a.id,
           }));
-          if (rows.length > 0) await supabase.from('champion_notes').insert(rows);
+          if (rows.length > 0) {
+            const { error: insErr } = await supabase.from('champion_notes').insert(rows);
+            if (insErr) throw new Error(`champion_notes: ${insErr.message}`);
+          }
 
           // 2) ライブラリからは削除扱いにする（__DELETED__ タグ）
-          await supabase.from('personal_knowledge').update({ tags: ['__DELETED__'] }).eq('id', a.id);
+          const { error: delErr } = await supabase
+            .from('personal_knowledge').update({ tags: ['__DELETED__'] }).eq('id', a.id);
+          if (delErr) throw new Error(`personal_knowledge: ${delErr.message}`);
           movedCount++;
-        } catch (moveErr) {
-          console.warn(`[knowledge/sync] 記事${a.id}の移動処理に失敗（辞典マージ自体は成功）:`, moveErr);
+        } catch (moveErr: any) {
+          // 握りつぶすと「なぜ失敗したか」が分からなくなるため、理由を集約して返す
+          console.warn(`[knowledge/sync] 記事${a.id}の移動処理に失敗:`, moveErr?.message);
+          if (moveErrors.length < 3) moveErrors.push(`記事${a.id}: ${moveErr?.message}`);
         }
       }));
     }
@@ -166,6 +174,7 @@ export async function POST(req: Request) {
       success: true,
       processed: processedCount,
       moved: movedCount, // 辞典へ移動（＝ライブラリから削除）した記事数
+      moveErrors,        // 移動に失敗した理由（最大3件。UIで原因を確認できるように）
       syncedChampions: syncedChampionCount,
       totalArticles: totalArticles || 0,
       nextOffset: done ? null : nextOffset,
