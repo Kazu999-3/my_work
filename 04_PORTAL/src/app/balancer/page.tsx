@@ -488,6 +488,30 @@ export default function BalancerPage() {
   // BL-02: 探索強度（40=速い/100=標準/200=精密）
   const [searchDepth, setSearchDepth] = useState(100);
 
+  // 格差診断: 参加者をMMR順に2人ずつペアにし、「近い実力の相手がいない人」を検出する。
+  // チーム全体のMMR幅より「レーン対面の格差」が体験に効くため、対面を組めない外れ値を警告する。
+  const GAP_THRESHOLD = 250;
+  const gapDiagnosis = useMemo(() => {
+    const act = players.filter((p: any) => p.is_active);
+    if (act.length < 10) return null;
+    const sorted = [...act].sort((a: any, b: any) => (b.mmr || 1200) - (a.mmr || 1200));
+    const orphans: { player: any; gap: number; nearest: number }[] = [];
+    for (let i = 0; i < sorted.length; i += 2) {
+      const a = sorted[i], b = sorted[i + 1];
+      if (!b) break; // 奇数余りは観戦候補なのでスキップ
+      const gap = (a.mmr || 1200) - (b.mmr || 1200);
+      if (gap > GAP_THRESHOLD) {
+        // ペアの相手と離れすぎ＝この2人のどちらかが浮いている。上側を外れ値として報告
+        orphans.push({ player: a, gap, nearest: b.mmr || 1200 });
+      }
+    }
+    return orphans.length > 0 ? { orphans, spread: (sorted[0].mmr || 1200) - (sorted[sorted.length - 1].mmr || 1200) } : null;
+  }, [players]);
+
+  // ハンデ参加(オフロール等)の指定。チーム分け結果とDiscord通知に明示する。
+  const [handicapIds, setHandicapIds] = useState<any[]>([]);
+  const toggleHandicap = (id: any) => setHandicapIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+
   // 卓分割: 参加者が20人以上のとき、代表MMR順で「上位卓/下位卓」に自動分割する。
   // 卓分け=代表MMR(ktm_players.mmr)、卓の中のチーム分け=レーン別MMR、という役割分担。
   const [selectedTable, setSelectedTable] = useState<{ label: string; ids: any[] } | null>(null);
@@ -1552,8 +1576,45 @@ export default function BalancerPage() {
           </div>
         )}
 
-        {/* 卓分割パネル: 20人以上のとき、代表MMRで2卓に分けて提示 */}
-        {tableSplit && (
+        {/* 格差診断: 対面が組めない外れ値を警告し、観戦orハンデ参加を選ばせる。
+            個人名を挙げる内容なので主催者(管理者)にだけ表示する。 */}
+        {isAdmin && gapDiagnosis && (
+          <div className="bg-gray-900 border border-rose-800/50 rounded-xl p-4 space-y-3">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-sm font-black text-rose-400">⚠️ レート差の警告</span>
+              <span className="text-[10px] text-gray-500">MMR幅 {gapDiagnosis.spread} — 近い実力の相手がいない人がいます</span>
+            </div>
+            <div className="space-y-2">
+              {gapDiagnosis.orphans.map(({ player: p, gap, nearest }) => (
+                <div key={p.id} className="flex items-center justify-between gap-3 flex-wrap bg-gray-950/60 rounded-lg px-3 py-2 border border-gray-800">
+                  <div className="text-xs text-gray-300 min-w-0">
+                    <span className="font-black text-white">{p.name}</span>
+                    <span className="text-gray-500 font-mono ml-2">{p.mmr || 1200}</span>
+                    <span className="text-rose-400 ml-2">次点 {nearest}（差 {gap}）</span>
+                  </div>
+                  <div className="flex gap-1.5 shrink-0">
+                    <button
+                      onClick={() => handleInputChange(p.id, 'is_spectator_fixed', true)}
+                      className="text-[10px] font-bold px-2.5 py-1.5 rounded-lg bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 hover:bg-indigo-500/25">
+                      観戦に回す
+                    </button>
+                    <button
+                      onClick={() => toggleHandicap(p.id)}
+                      className={`text-[10px] font-bold px-2.5 py-1.5 rounded-lg border ${handicapIds.includes(p.id) ? 'bg-amber-600 text-white border-amber-500' : 'bg-amber-500/15 text-amber-300 border-amber-500/30 hover:bg-amber-500/25'}`}>
+                      {handicapIds.includes(p.id) ? '✓ ハンデ参加' : 'ハンデ参加'}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <p className="text-[10px] text-gray-600">
+              観戦に回した人は観戦Pityが溜まり次回は優先出場します。ハンデ参加はオフロール等の制約付き参加として結果とDiscord通知に明示されます。
+            </p>
+          </div>
+        )}
+
+        {/* 卓分割パネル: 20人以上のとき、代表MMRで2卓に分けて提示（主催者の判断用） */}
+        {isAdmin && tableSplit && (
           <div className="bg-gray-900 border border-amber-800/50 rounded-xl p-4 space-y-3">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-sm font-black text-amber-400">🪑 参加者{tableSplit.total}人 — 2卓に分けられます</span>
