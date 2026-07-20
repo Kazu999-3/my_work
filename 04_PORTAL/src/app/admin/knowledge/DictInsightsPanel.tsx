@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { RefreshCw, AlertTriangle, Sparkles, Globe } from 'lucide-react';
+import { RefreshCw, AlertTriangle, Sparkles, Globe, BookOpen } from 'lucide-react';
 
 /**
  * 辞典のAI支援パネル。
@@ -20,6 +20,23 @@ export default function DictInsightsPanel() {
   const [researchRole, setResearchRole] = useState('JG');
   const [research, setResearch] = useState<any>(null);
   const [researching, setResearching] = useState(false);
+
+  // 汎用原則の生成
+  const [genning, setGenning] = useState<string | null>(null);
+  const [genResult, setGenResult] = useState<any>(null);
+  const genPrinciple = async (theme: string) => {
+    setGenning(theme); setError(null); setGenResult(null);
+    try {
+      const res = await fetch('/api/admin/principles', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ theme }),
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error || '生成に失敗しました');
+      setGenResult(d);
+    } catch (e: any) { setError(e.message); } finally { setGenning(null); }
+  };
 
   const runResearch = async (save: boolean) => {
     if (!researchChamp.trim()) return;
@@ -103,6 +120,35 @@ export default function DictInsightsPanel() {
                 <p className="text-[11px] opacity-90 mt-1">{it.message}</p>
               </div>
             ))}
+          </div>
+        )}
+      </div>
+
+      {/* 汎用原則の生成 */}
+      <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5">
+        <h3 className="font-black text-white flex items-center gap-2 mb-3">
+          <BookOpen size={16} className="text-emerald-400" /> 上達の原則を生成
+        </h3>
+        <p className="text-[11px] text-gray-500 mb-3">
+          辞典・メモから<strong className="text-emerald-300">チャンピオン固有の話を除いた</strong>「判断・マクロ・考え方」だけを抽出し、テーマ別の読み物を作ります。
+          生成結果は <a href="/principles" className="text-emerald-400 hover:underline">上達の原則ページ</a> で全メンバーが読めます。
+        </p>
+        <div className="flex gap-2 flex-wrap">
+          {([
+            ['macro', 'マクロ・試合運び'], ['laning', 'レーン戦'], ['objective', 'オブジェクト/集団戦'],
+            ['vision', '視界とマップ'], ['mindset', '判断力・メンタル'],
+          ] as const).map(([key, label]) => (
+            <button key={key} onClick={() => genPrinciple(key)} disabled={!!genning}
+              className="text-xs font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 px-3 py-2 rounded-lg hover:bg-emerald-500/25 disabled:opacity-50">
+              {genning === key ? '生成中...' : label}
+            </button>
+          ))}
+        </div>
+        {genResult && (
+          <div className="mt-3 text-xs bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-4">
+            <p className="text-emerald-300 font-black mb-1">✅ {genResult.principle?.title}</p>
+            <p className="text-gray-500 text-[10px] mb-2">{genResult.sourceCount}件の素材から生成しました</p>
+            <div className="text-gray-300 whitespace-pre-wrap max-h-60 overflow-y-auto">{genResult.principle?.body}</div>
           </div>
         )}
       </div>
