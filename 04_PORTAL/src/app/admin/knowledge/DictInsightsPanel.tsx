@@ -110,9 +110,9 @@ export default function DictInsightsPanel() {
       {/* 自動リサーチ（OP.GG） */}
       <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5">
         <h3 className="font-black text-white flex items-center gap-2 mb-3">
-          <Globe size={16} className="text-cyan-400" /> 自動リサーチ（OP.GG統計）
+          <Globe size={16} className="text-cyan-400" /> 自動リサーチ（LoLalytics統計）
         </h3>
-        <p className="text-[11px] text-gray-500 mb-3">統計サイトから現パッチの勝率・BAN率・得意/苦手対面・コアビルドを取得し、辞典の下書きを作ります。</p>
+        <p className="text-[11px] text-gray-500 mb-3">現パッチの勝率・ティア順位・得意/苦手対面・コアビルド・オブジェクト傾向を取得し、辞典の下書きを作ります。</p>
         <div className="flex gap-2 mb-3 flex-wrap">
           <input value={researchChamp} onChange={e => setResearchChamp(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') runResearch(false); }}
@@ -133,17 +133,19 @@ export default function DictInsightsPanel() {
               <span className="text-cyan-300 font-black">🌐 {research.champion}</span>
               {research.patch && <span className="text-[10px] text-gray-500">Patch {research.patch}</span>}
               {research.tier && <span className="text-[10px] bg-white/10 px-2 py-0.5 rounded font-bold">{research.tier}</span>}
+              {research.rank && <span className="text-[10px] text-gray-400">順位 {research.rank}</span>}
             </div>
             <div className="flex gap-4 flex-wrap text-[11px]">
               {research.winRate && <span>勝率 <b className="text-emerald-400">{research.winRate}</b></span>}
               {research.pickRate && <span>ピック率 <b className="text-sky-400">{research.pickRate}</b></span>}
               {research.banRate && <span>BAN率 <b className="text-rose-400">{research.banRate}</b></span>}
+              {research.expertWinRate && <span>上位帯 <b className="text-amber-400">{research.expertWinRate}</b></span>}
             </div>
             {([
               ['強み', research.strengths], ['弱み', research.weaknesses],
               ['パワースパイク', research.power_spikes], ['ビルド/ルーン', research.build_runes],
               ['苦手対面', research.counter_champions], ['得意対面', research.strong_against],
-              ['総評', research.summary],
+              ['オブジェクト傾向', research.objectives], ['総評', research.summary],
             ] as const).filter(([, v]) => v).map(([label, val]) => (
               <div key={label}><span className="text-gray-500">{label}: </span><span className="text-gray-300">{val}</span></div>
             ))}
