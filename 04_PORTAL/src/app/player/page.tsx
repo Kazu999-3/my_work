@@ -12,9 +12,10 @@ export default function PlayerIndexPage() {
 
   useEffect(() => {
     async function fetchPlayers() {
+      // エグレス対策(#53): 一覧では name/ign しか使っていないため、metadata等の重い列を落とさない
       const { data, error } = await supabase
         .from("ktm_players")
-        .select("*")
+        .select("id, name, ign, discord_id, is_active, mmr")
         .order("is_active", { ascending: false })
         .order("name", { ascending: true });
 

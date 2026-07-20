@@ -97,7 +97,14 @@ export default function MatchupsPage() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.from('matchup_sentinel').select('*').order('created_at', { ascending: false });
+      // エグレス対策(#53): 全列・全件だと raw_data/strategy(長文JSON)まで毎回落ちてくる。
+      // 一覧に必要な列だけを、直近300件に絞って取得する。
+      const { data, error } = await supabase
+        .from('matchup_sentinel')
+        .select('id, matchup_id, champion, enemy, role, title, strategy, raw_data, created_at')
+        .neq('enemy', 'GLOBAL')
+        .order('created_at', { ascending: false })
+        .limit(300);
       if (error) throw error;
       setMatchups((data || []).filter((m: any) => m.champion && m.enemy && m.enemy !== 'GLOBAL'));
     } catch (err) { console.error(err); } finally { setLoading(false); }
