@@ -1,12 +1,18 @@
 # ============================================================
 # Sovereign OS - Local Services Startup Script (start_all.ps1)
+#
 # 使い方:
-#   start_all.bat       → 全サービス起動
-#   start_all.bat edge  → Edge Worker Daemon のみ起動
+#   start_all.bat                → Edge Worker Daemon のみ起動（通常はこれ）
+#   start_all.ps1 -Mode all      → 旧・全サービス起動（下記の理由により非推奨）
+#
+# ポータルとBotはクラウド(Vercel / Cloudflare Workers)で常時稼働しているため、
+# ローカル版を起動しても二重になるだけ。Ollama も現在は使っていない。
+# YouTube解析も字幕がある動画はクラウド(ktm-cloud-worker.yml)で処理される。
+# PCが必要なのは、字幕なし動画の文字起こしなど Edge Worker が担う処理だけ。
 # ============================================================
 param(
     [ValidateSet("all", "edge")]
-    [string]$Mode = "all"
+    [string]$Mode = "edge"
 )
 
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
@@ -41,6 +47,10 @@ if ($Mode -eq "edge") {
 # 全サービス起動モード (デフォルト)
 # ============================================================
 Write-Host "Starting Sovereign OS local services..." -ForegroundColor Yellow
+Write-Host "------------------------------------------------------------"
+Write-Host "[注意] このモードはポータル/Botのローカル版まで起動します。" -ForegroundColor DarkYellow
+Write-Host "       どちらもクラウドで稼働中のため、通常は不要です。" -ForegroundColor DarkYellow
+Write-Host "       普段は start_all.bat（Edge Workerのみ）を使ってください。" -ForegroundColor DarkYellow
 Write-Host "------------------------------------------------------------"
 
 # Cleanup stale lock file from previous crash
