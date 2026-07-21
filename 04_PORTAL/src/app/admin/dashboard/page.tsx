@@ -488,14 +488,15 @@ export default function Home() {
                     ポータルとBotはクラウドで常時稼働しています。動画解析まわりはPCで起動したときだけ動くため、
                     <strong className="text-gray-300">「未起動」は正常な状態</strong>です。
                   </p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
                     {[
                       // 常時稼働するクラウド側
-                      { id: 'portal', name: 'Next.js Portal', port: null, desc: 'ポータル・管理画面 (Vercel)', local: false },
-                      { id: 'bot', name: 'Discord Bot (KTM)', port: null, desc: '大会運営Bot (Cloudflare Workers)', local: false },
-                      // 動画解析のときだけPCで起動するローカル側
-                      { id: 'youtube_absorber', name: 'YouTube Absorber', port: null, desc: '動画の文字起こし・解析 (ローカル)', local: true },
-                      { id: 'sre', name: 'SRE Daemon', port: null, desc: '解析中の監視・ログ収集 (ローカル)', local: true },
+                      { id: 'portal', name: 'Next.js Portal', desc: 'ポータル・管理画面 (Vercel)', kind: 'cloud' as const },
+                      { id: 'bot', name: 'Discord Bot (KTM)', desc: '大会運営Bot (Cloudflare Workers)', kind: 'cloud' as const },
+                      // PCで起動したときだけ動くローカル側
+                      { id: 'edge_worker', name: 'Edge Worker', desc: 'タスクキューの実行役 (ローカル)', kind: 'worker' as const },
+                      { id: 'youtube_absorber', name: 'YouTube Absorber', desc: '動画の文字起こし・解析 (ローカル)', kind: 'local' as const },
+                      { id: 'sre', name: 'SRE Daemon', desc: '定期タスクの投入・監視 (ローカル)', kind: 'local' as const },
                     ].map((service) => {
                       const status = systemMetrics.services?.[service.id] || {};
                       const metricsTime = systemMetrics.updated_at ? Number(systemMetrics.updated_at) * 1000 : 0;
@@ -508,20 +509,23 @@ export default function Home() {
                       let statusColor = 'text-gray-500 bg-gray-500/10 border-gray-500/20';
                       let indicatorColor = 'bg-gray-600';
 
-                      // クラウド側は常時稼働が前提。ローカル側は動画解析のときだけ起動するので、
+                      // クラウド側は常時稼働。ローカル側は必要なときだけ起動するので、
                       // 止まっていること自体は異常ではない（赤くしない）。
-                      if (!service.local) {
-                        // Portal はこの画面が表示できている時点で動いている。
-                        // Bot はエッジワーカーの死活監視(systemStatus)を見る。
-                        const cloudUp = service.id === 'portal' ? true : systemStatus.worker.active;
-                        if (cloudUp) {
+                      if (service.kind === 'cloud') {
+                        // サーバーレスなので死活監視の対象ではない。この画面が出ている＝配信されている。
+                        statusText = '稼働中';
+                        statusColor = 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20';
+                        indicatorColor = 'bg-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.8)]';
+                      } else if (service.kind === 'worker') {
+                        // Edge Worker は edge_tasks のハートビートで判定する
+                        if (systemStatus.worker.active) {
                           statusText = '稼働中';
-                          statusColor = 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20';
-                          indicatorColor = 'bg-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.8)]';
+                          statusColor = 'text-cyan-400 bg-cyan-500/10 border-cyan-500/20';
+                          indicatorColor = 'bg-cyan-400 animate-pulse shadow-[0_0_8px_rgba(34,211,238,0.8)]';
                         } else {
-                          statusText = '応答なし';
-                          statusColor = 'text-rose-400 bg-rose-500/10 border-rose-500/20';
-                          indicatorColor = 'bg-rose-400 animate-pulse';
+                          statusText = '未起動';
+                          statusColor = 'text-gray-400 bg-white/5 border-white/10';
+                          indicatorColor = 'bg-gray-600';
                         }
                       } else if (isRunning) {
                         if (hasErrors) {
@@ -549,7 +553,7 @@ export default function Home() {
                             <p className="text-[9px] text-gray-500 mb-4">{service.desc}</p>
                           </div>
                           <div className="flex justify-between items-center mt-auto">
-                            <span className="text-[9px] font-mono text-gray-600">{service.local ? '必要時のみ起動' : '常時稼働'}</span>
+                            <span className="text-[9px] font-mono text-gray-600">{service.kind === 'cloud' ? '常時稼働' : '必要時のみ起動'}</span>
                             <span className={`px-2 py-0.5 rounded-full border text-[9px] font-bold ${statusColor}`}>{statusText}</span>
                           </div>
                         </div>
