@@ -8,7 +8,11 @@ import { callGeminiWithRetry } from '../../../../lib/geminiClient';
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
-const CHUNK = 4; // 1リクエストでの変換件数（AI呼び出しが重いため小さめ）
+// 1リクエストでの変換件数。連続でAIを呼ぶとレート制限(429)に当たりやすいため小さく保つ。
+const CHUNK = 2;
+// AI呼び出しの間に置く待機。無料枠は「1分あたりのリクエスト数」で制限されるため、
+// 間隔を空けることで429そのものを避ける（リトライに頼らない）。
+const COOL_DOWN_MS = 4000;
 
 /** 日本語がほとんど含まれない＝英語のままと判定する */
 function isEnglish(text: string): boolean {
@@ -17,6 +21,11 @@ function isEnglish(text: string): boolean {
   const jp = (t.match(/[ぁ-んァ-ヶ一-龠]/g) || []).length;
   return jp / t.length < 0.05; // 日本語文字が5%未満なら英語とみなす
 }
+
+/** レート制限に当たったことを示すエラー（呼び出し側で「中断して途中保存」に使う） */
+class RateLimited extends Error {}
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 async function toJapanese(text: string, kind: string): Promise<string> {
   const prompt = `以下の${kind}を自然な日本語に翻訳してください。
@@ -27,8 +36,16 @@ async function toJapanese(text: string, kind: string): Promise<string> {
 
 原文:
 ${String(text).slice(0, 10000)}`;
-  const out = await callGeminiWithRetry(prompt, { temperature: 0.2, maxOutputTokens: 4096, maxRetries: 2 });
-  return (out || '').trim();
+  try {
+    // 一括翻訳はバッチ処理なので、専用キーがあればそちらを使い対話系の枠を圧迫しない
+    const apiKeyEnv = process.env.GEMINI_API_KEY_BATCH ? 'GEMINI_API_KEY_BATCH' : 'GEMINI_API_KEY';
+    const out = await callGeminiWithRetry(prompt, { temperature: 0.2, maxOutputTokens: 4096, maxRetries: 3, apiKeyEnv });
+    return (out || '').trim();
+  } catch (e: any) {
+    // レート制限は「失敗」ではなく「今は打ち止め」。ここまでの成果を保持して中断する。
+    if (String(e?.message || '').includes('レート制限')) throw new RateLimited();
+    throw e;
+  }
 }
 
 export async function POST(req: Request) {
@@ -39,6 +56,7 @@ export async function POST(req: Request) {
     const { target } = await req.json(); // 'facts' | 'articles' | 'memos'
     let converted = 0;
     let remaining = 0;
+    let rateLimited = false; // 制限に当たって中断したか
     const samples: string[] = [];
 
     // ===== 1. チャンピオン辞典（構造化項目） =====
@@ -54,17 +72,24 @@ export async function POST(req: Request) {
       for (const f of targets.slice(0, CHUNK)) {
         const payload: any = { champion: f.champion, updated_at: new Date().toISOString() };
         let touched = false;
-        for (const k of fields) {
-          if (isEnglish((f as any)[k])) {
-            payload[k] = await toJapanese((f as any)[k], 'チャンピオン攻略情報');
-            touched = true;
+        try {
+          for (const k of fields) {
+            if (isEnglish((f as any)[k])) {
+              payload[k] = await toJapanese((f as any)[k], 'チャンピオン攻略情報');
+              touched = true;
+              await sleep(COOL_DOWN_MS);
+            }
           }
+        } catch (e) {
+          if (e instanceof RateLimited) rateLimited = true; else throw e;
         }
+        // 途中まで翻訳できた分は保存する（次回はその続きから）
         if (touched) {
           await supabase.from('champion_facts').upsert(payload, { onConflict: 'champion' });
           converted++;
           if (samples.length < 3) samples.push(f.champion);
         }
+        if (rateLimited) break;
       }
     }
 
@@ -80,16 +105,23 @@ export async function POST(req: Request) {
       remaining = Math.max(0, targets.length - CHUNK);
 
       for (const a of targets.slice(0, CHUNK)) {
-        const src = a.raw_content || a.content;
-        const jp = await toJapanese(src, '攻略記事');
-        const jpTitle = isEnglish(a.title) ? await toJapanese(a.title, '記事タイトル') : a.title;
-        await supabase.from('personal_knowledge').update({
-          title: jpTitle,
-          raw_content: jp,
-          content: jp.slice(0, 300).replace(/[#*`]/g, ''),
-        }).eq('id', a.id);
-        converted++;
-        if (samples.length < 3) samples.push(a.title || `記事${a.id}`);
+        try {
+          const src = a.raw_content || a.content;
+          const jp = await toJapanese(src, '攻略記事');
+          await sleep(COOL_DOWN_MS);
+          const jpTitle = isEnglish(a.title) ? await toJapanese(a.title, '記事タイトル') : a.title;
+          await supabase.from('personal_knowledge').update({
+            title: jpTitle,
+            raw_content: jp,
+            content: jp.slice(0, 300).replace(/[#*`]/g, ''),
+          }).eq('id', a.id);
+          converted++;
+          if (samples.length < 3) samples.push(a.title || `記事${a.id}`);
+          await sleep(COOL_DOWN_MS);
+        } catch (e) {
+          if (e instanceof RateLimited) { rateLimited = true; break; }
+          throw e;
+        }
       }
     }
 
@@ -105,10 +137,16 @@ export async function POST(req: Request) {
       remaining = Math.max(0, targets.length - CHUNK);
 
       for (const m of targets.slice(0, CHUNK)) {
-        const jp = await toJapanese(m.strategy, '対面攻略メモ');
-        await supabase.from('matchup_sentinel').update({ strategy: jp }).eq('matchup_id', m.matchup_id);
-        converted++;
-        if (samples.length < 3) samples.push(m.matchup_id);
+        try {
+          const jp = await toJapanese(m.strategy, '対面攻略メモ');
+          await supabase.from('matchup_sentinel').update({ strategy: jp }).eq('matchup_id', m.matchup_id);
+          converted++;
+          if (samples.length < 3) samples.push(m.matchup_id);
+          await sleep(COOL_DOWN_MS);
+        } catch (e) {
+          if (e instanceof RateLimited) { rateLimited = true; break; }
+          throw e;
+        }
       }
     }
 
@@ -116,7 +154,9 @@ export async function POST(req: Request) {
       success: true,
       converted,
       remaining,
-      done: remaining === 0,
+      // レート制限で中断した場合は done にしない（クライアント側で待機して再開する）
+      done: remaining === 0 && !rateLimited,
+      rateLimited,
       samples,
     });
   } catch (e: any) {

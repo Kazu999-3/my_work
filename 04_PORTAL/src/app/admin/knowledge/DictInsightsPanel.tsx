@@ -59,7 +59,8 @@ export default function DictInsightsPanel({ mode = 'inspect' }: { mode?: 'mainte
     setTranslating(target); setError(null); setTransResult(null); setTransProgress(0);
     let total = 0;
     try {
-      for (let i = 0; i < 200; i++) { // 無限ループ防止の上限
+      // 1回あたり2件処理＋制限時は60秒待機のため、上限は多めに取る（無限ループ防止）
+      for (let i = 0; i < 500; i++) {
         const res = await fetch('/api/admin/translate-jp', {
           method: 'POST', credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
@@ -69,6 +70,13 @@ export default function DictInsightsPanel({ mode = 'inspect' }: { mode?: 'mainte
         if (!res.ok) throw new Error(d.error || '変換に失敗しました');
         total += d.converted || 0;
         setTransProgress(total);
+
+        // レート制限に当たったら、失敗にせず60秒待ってから同じ続きを再開する
+        if (d.rateLimited) {
+          setTransResult(`⏳ APIの利用制限に達したため60秒待機します…（ここまで${total}件完了）`);
+          await new Promise((r) => setTimeout(r, 60000));
+          continue;
+        }
         if (d.done || d.converted === 0) break;
       }
       setTransResult(total > 0 ? `✅ ${total}件を日本語に変換しました` : '✅ 英語のデータは見つかりませんでした');
