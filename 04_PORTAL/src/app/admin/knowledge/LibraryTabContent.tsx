@@ -110,6 +110,43 @@ export function LibraryTabContentInner() {
   const [showMoved, setShowMoved] = useState(false);
   const [movedCount, setMovedCount] = useState(0);
 
+  // この記事をレーン別ガイドへ送る。レーンは自分で選べる（未選択なら自動判定）。
+  const [sendingLane, setSendingLane] = useState(false);
+  const [laneChoice, setLaneChoice] = useState('auto');
+  const LANE_CHOICES = [
+    { key: 'auto', label: '自動判定' },
+    { key: 'COMMON', label: '全レーン共通（上達の原則）' },
+    { key: 'TOP', label: 'TOP' },
+    { key: 'JG', label: 'JG' },
+    { key: 'MID', label: 'MID' },
+    { key: 'ADC', label: 'ADC' },
+    { key: 'SUP', label: 'SUP' },
+  ];
+  const sendToLaneGuide = async () => {
+    if (!selectedArticle) return;
+    const laneLabel = LANE_CHOICES.find(l => l.key === laneChoice)?.label || laneChoice;
+    if (!confirm(`この記事を「${laneLabel}」のレーン別ガイドへ統合しますか？\n\n統合後、記事はライブラリから「移動済み」へ移ります。`)) return;
+    setSendingLane(true);
+    try {
+      const res = await fetch('/api/admin/lane-guides', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'merge_one',
+          articleId: selectedArticle.id,
+          lane: laneChoice === 'auto' ? undefined : laneChoice,
+        }),
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error || '統合に失敗しました');
+      showToast(`✅ 「${d.laneLabel}」のガイドへ統合しました`, 'success');
+      setSelectedArticle(null);
+      await fetchArticles();
+    } catch (e: any) {
+      showToast(`❌ ${e.message}`, 'error');
+    } finally { setSendingLane(false); }
+  };
+
   /** 移動済み記事をライブラリへ復元する（__DELETED__ タグを外す） */
   const restoreArticle = async (id: any) => {
     if (!confirm('この記事をライブラリに戻しますか？')) return;
@@ -628,6 +665,27 @@ export function LibraryTabContentInner() {
               ) : (
                 <div className="flex items-center gap-4 mb-6">
                   <h1 className="text-4xl md:text-5xl font-black leading-tight font-mono text-white flex-1">{selectedArticle.title ? selectedArticle.title.replace(/_/g, ' ') : ''}</h1>
+                  {/* レーン別ガイドへ送る（チャンピオン記事ではない、マクロ・立ち回り記事向け） */}
+                  {!showMoved && (
+                    <div className="flex items-center gap-2 shrink-0">
+                      <select
+                        value={laneChoice}
+                        onChange={(e) => setLaneChoice(e.target.value)}
+                        title="送り先のレーンを選びます"
+                        className="bg-black/50 border border-amber-500/30 rounded-xl px-2 py-2.5 text-xs text-amber-200 outline-none focus:border-amber-500/60"
+                      >
+                        {LANE_CHOICES.map(l => <option key={l.key} value={l.key}>{l.label}</option>)}
+                      </select>
+                      <button
+                        onClick={sendToLaneGuide}
+                        disabled={sendingLane}
+                        className="px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-sm font-black shrink-0 transition disabled:opacity-50"
+                        title="この記事をレーン別ガイドへ統合します"
+                      >
+                        {sendingLane ? '統合中...' : '🗺️ ガイドへ送る'}
+                      </button>
+                    </div>
+                  )}
                   {/* 移動済み表示中は、この記事をライブラリへ戻せるようにする */}
                   {showMoved && (
                     <button

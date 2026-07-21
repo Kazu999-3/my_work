@@ -43,6 +43,89 @@ function detectLane(article: any): string {
   return best && best[1] > 0 ? best[0] : 'COMMON';
 }
 
+/** AIの利用制限で中断したことを示す。呼び出し側で「続きから再開」に使う。 */
+class RateLimitedError extends Error {}
+
+/**
+ * 記事1本を指定レーンのガイドへ追記マージし、元記事をライブラリから片付ける。
+ * 一括統合と「この記事を送る」の両方から使う。
+ */
+async function mergeArticleIntoLane(a: any, lane: string): Promise<{ title: string }> {
+  const laneLabel = LANES.find((l) => l.key === lane)?.label || lane;
+  const body = a.raw_content || a.content || '';
+
+  const { data: existing } = await supabase
+      .from('lane_guides').select('title, body, source_count').eq('lane', lane).maybeSingle();
+
+  // COMMON（全レーン共通）は、チャンピオン名を伏せて「どのチャンプでも通用する原則」に絞る。
+  // 旧「上達の原則」の役割をここに統合している。
+  const isCommon = lane === 'COMMON';
+  const commonRule = isCommon
+      ? `\n- これは「全レーン共通」のガイドです。特定チャンピオンの性能・スキル・ビルドの話は**一切含めない**でください\n- どのチャンプ・どのレーンを担当していても使える判断基準だけを書いてください\n- 抽象的な精神論ではなく、**具体的な状況と行動**で書いてください（例:「相手ジャングルが上に映ったら、下のオブジェクトを準備する」）`
+      : '';
+
+  const prompt = `「${laneLabel}」のレーン攻略ガイドを、新しい記事の内容で更新します。${commonRule}
+
+【現在のガイド】
+${existing?.body || '（まだ何も書かれていません）'}
+
+【新しい記事: ${a.title || '無題'}】
+${String(body).slice(0, 8000)}
+
+指示:
+- **既存のガイドの内容を残したまま**、記事から読み取れる新しい知見を適切な見出しの下に統合してください
+- 既存と同じ内容は繰り返さず、重複は整理して1つにまとめること
+- 特定チャンピオンの性能の話は含めず、**そのレーンで普遍的に使える立ち回り・判断**に絞ること
+- 「## 見出し」で章立てし、各章は箇条書きで読みやすく
+- 全体で3000字以内に収まるよう、冗長な部分は圧縮すること
+
+必ず以下のJSONのみ出力（コードブロック禁止）:
+{"title":"<ガイドのタイトル。30字以内>","body":"<統合後のMarkdown全文>"}`;
+
+  // レート制限や503で落ちても、ここまでに統合した分は成果として返す（次回は続きから）
+  let raw: string;
+  try {
+      raw = await callGeminiWithRetry(prompt, { temperature: 0.3, maxOutputTokens: 6000, maxRetries: 3 });
+  } catch (aiErr: any) {
+      const msg = String(aiErr?.message || '');
+      if (msg.includes('レート制限') || msg.includes('一時的に利用できません')) {
+        throw new RateLimitedError(msg);
+      }
+      throw aiErr;
+  }
+  let cleaned = (raw || '').trim().replace(/^```[a-z]*\n?/, '').replace(/```$/, '').trim();
+  const s = cleaned.indexOf('{'), e = cleaned.lastIndexOf('}');
+  if (s < 0 || e <= s) throw new Error('AI出力の解析に失敗しました。');
+  const result = JSON.parse(cleaned.slice(s, e + 1));
+  if (!result.body) throw new Error('AIが本文を返しませんでした。');
+
+  // 保存の成否を必ず確認する。
+  // ここを見ていなかったため、テーブル未作成時に「保存に失敗したのに記事だけ消える」事故が起きた。
+  const { error: saveError } = await supabase.from('lane_guides').upsert({
+      lane,
+      title: result.title || laneLabel,
+      body: result.body,
+      source_count: (existing?.source_count || 0) + 1,
+      updated_at: new Date().toISOString(),
+  }, { onConflict: 'lane' });
+  if (saveError) throw new Error(`ガイドの保存に失敗しました: ${saveError.message}`);
+
+  // 何がどの記事で増えたのかを後から辿れるように履歴を残す
+  await recordRevision({
+      targetType: 'lane_guide',
+      targetKey: lane,
+      field: 'body',
+      before: existing?.body,
+      after: result.body,
+      sourceTitle: a.title,
+      sourceId: a.id,
+  });
+
+  // 保存が確定してから、統合済みの記事をライブラリから片付ける（復元は「移動済み」から可能）
+  await supabase.from('personal_knowledge').update({ tags: ['__DELETED__'] }).eq('id', a.id);
+  return { title: result.title || laneLabel };
+}
+
 /** 保存済みガイドの取得（メンバー閲覧用なのでGETは認証不要） */
 export async function GET() {
   try {
@@ -101,6 +184,37 @@ export async function POST(req: Request) {
     }
   }
 
+  // 記事を1本だけ、指定したレーンのガイドへ送る。
+  // 一括統合は自動判定なので、狙ったレーンへ入れたい場合はこちらを使う。
+  if (action === 'merge_one') {
+    try {
+      const { articleId, lane: requestedLane } = await req.clone().json();
+      if (!articleId) return NextResponse.json({ error: 'articleIdが必要です' }, { status: 400 });
+
+      const { data: article } = await supabase
+        .from('personal_knowledge')
+        .select('id, title, content, raw_content, champion')
+        .eq('id', articleId)
+        .maybeSingle();
+      if (!article) return NextResponse.json({ error: '記事が見つかりません' }, { status: 404 });
+
+      // レーン未指定なら自動判定に任せる
+      const lane = requestedLane && LANES.some((l) => l.key === requestedLane)
+        ? requestedLane
+        : detectLane(article);
+
+      const merged = await mergeArticleIntoLane(article, lane);
+      return NextResponse.json({
+        success: true,
+        lane,
+        laneLabel: LANES.find((l) => l.key === lane)?.label || lane,
+        title: merged.title,
+      });
+    } catch (e: any) {
+      return NextResponse.json({ error: e.message }, { status: 500 });
+    }
+  }
+
   try {
     // 1) チャンピオン記事ではない＝レーン/マクロ記事を集める
     const { data: articles } = await supabase
@@ -140,44 +254,11 @@ export async function POST(req: Request) {
     // 2) レーンごとに既存ガイドへ追記マージ
     for (const a of batch) {
       const lane = detectLane(a);
-      const laneLabel = LANES.find((l) => l.key === lane)?.label || lane;
-      const body = a.raw_content || a.content || '';
-
-      const { data: existing } = await supabase
-        .from('lane_guides').select('title, body, source_count').eq('lane', lane).maybeSingle();
-
-      // COMMON（全レーン共通）は、チャンピオン名を伏せて「どのチャンプでも通用する原則」に絞る。
-      // 旧「上達の原則」の役割をここに統合している。
-      const isCommon = lane === 'COMMON';
-      const commonRule = isCommon
-        ? `\n- これは「全レーン共通」のガイドです。特定チャンピオンの性能・スキル・ビルドの話は**一切含めない**でください\n- どのチャンプ・どのレーンを担当していても使える判断基準だけを書いてください\n- 抽象的な精神論ではなく、**具体的な状況と行動**で書いてください（例:「相手ジャングルが上に映ったら、下のオブジェクトを準備する」）`
-        : '';
-
-      const prompt = `「${laneLabel}」のレーン攻略ガイドを、新しい記事の内容で更新します。${commonRule}
-
-【現在のガイド】
-${existing?.body || '（まだ何も書かれていません）'}
-
-【新しい記事: ${a.title || '無題'}】
-${String(body).slice(0, 8000)}
-
-指示:
-- **既存のガイドの内容を残したまま**、記事から読み取れる新しい知見を適切な見出しの下に統合してください
-- 既存と同じ内容は繰り返さず、重複は整理して1つにまとめること
-- 特定チャンピオンの性能の話は含めず、**そのレーンで普遍的に使える立ち回り・判断**に絞ること
-- 「## 見出し」で章立てし、各章は箇条書きで読みやすく
-- 全体で3000字以内に収まるよう、冗長な部分は圧縮すること
-
-必ず以下のJSONのみ出力（コードブロック禁止）:
-{"title":"<ガイドのタイトル。30字以内>","body":"<統合後のMarkdown全文>"}`;
-
-      // レート制限や503で落ちても、ここまでに統合した分は成果として返す（次回は続きから）
-      let raw: string;
       try {
-        raw = await callGeminiWithRetry(prompt, { temperature: 0.3, maxOutputTokens: 6000, maxRetries: 3 });
-      } catch (aiErr: any) {
-        const msg = String(aiErr?.message || '');
-        if (msg.includes('レート制限') || msg.includes('一時的に利用できません')) {
+        await mergeArticleIntoLane(a, lane);
+      } catch (err) {
+        if (err instanceof RateLimitedError) {
+          // ここまでの成果は返し、次回は続きから再開する
           return NextResponse.json({
             success: true,
             merged: mergedLanes.length,
@@ -187,38 +268,8 @@ ${String(body).slice(0, 8000)}
             rateLimited: true,
           });
         }
-        throw aiErr;
+        throw err;
       }
-      let cleaned = (raw || '').trim().replace(/^```[a-z]*\n?/, '').replace(/```$/, '').trim();
-      const s = cleaned.indexOf('{'), e = cleaned.lastIndexOf('}');
-      if (s < 0 || e <= s) continue; // 解析できなければこの記事はスキップ（次回再挑戦）
-      const result = JSON.parse(cleaned.slice(s, e + 1));
-      if (!result.body) continue;
-
-      // 保存の成否を必ず確認する。
-      // ここを見ていなかったため、テーブル未作成時に「保存に失敗したのに記事だけ消える」事故が起きた。
-      const { error: saveError } = await supabase.from('lane_guides').upsert({
-        lane,
-        title: result.title || laneLabel,
-        body: result.body,
-        source_count: (existing?.source_count || 0) + 1,
-        updated_at: new Date().toISOString(),
-      }, { onConflict: 'lane' });
-      if (saveError) throw new Error(`ガイドの保存に失敗しました: ${saveError.message}`);
-
-      // 何がどの記事で増えたのかを後から辿れるように履歴を残す
-      await recordRevision({
-        targetType: 'lane_guide',
-        targetKey: lane,
-        field: 'body',
-        before: existing?.body,
-        after: result.body,
-        sourceTitle: a.title,
-        sourceId: a.id,
-      });
-
-      // 保存が確定してから、統合済みの記事をライブラリから片付ける（復元は「移動済み」から可能）
-      await supabase.from('personal_knowledge').update({ tags: ['__DELETED__'] }).eq('id', a.id);
       mergedLanes.push(lane);
     }
 

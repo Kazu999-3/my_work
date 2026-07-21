@@ -7,25 +7,10 @@ import { supabase } from '../../../lib/supabaseClient';
 import { supabaseBrowser } from '../../../lib/supabaseBrowserClient';
 import Link from 'next/link';
 
-const dummyData = [
-  { name: 'Mon', value: 4000 },
-  { name: 'Tue', value: 3000 },
-  { name: 'Wed', value: 2000 },
-  { name: 'Thu', value: 2780 },
-  { name: 'Fri', value: 1890 },
-  { name: 'Sat', value: 2390 },
-  { name: 'Sun', value: 3490 },
-];
 
 export default function Home() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-  const [totalAssets, setTotalAssets] = useState<number>(0);
-  const [pendingTasks, setPendingTasks] = useState<number>(0);
-  const [pendingTaskList, setPendingTaskList] = useState<any[]>([]);
   const [apiUsage, setApiUsage] = useState<number>(0);
-  const [apiErrors, setApiErrors] = useState<number>(0);
-  const [apiLimit, setApiLimit] = useState<number>(780);
-  const [apiUsageDetails, setApiUsageDetails] = useState<Record<string, { used: number, limit: number }>>({});
   const [systemMetrics, setSystemMetrics] = useState<any>({ queue: { pending: 0, error: 0, completed: 0, error_details: [] }, logs: [] });
   const [recentDictUpdates, setRecentDictUpdates] = useState<any[]>([]);
   const [recentLibraryUpdates, setRecentLibraryUpdates] = useState<any[]>([]);
@@ -117,30 +102,7 @@ export default function Home() {
         setSystemMetrics(metricsData.raw_data);
       }
 
-      // 2. 総データ数の取得
-      const { count: totalCount, error: totalError } = await supabase
-        .from('matchup_sentinel')
-        .select('*', { count: 'exact', head: true });
-      
-      if (!totalError && totalCount !== null) {
-        setTotalAssets(totalCount);
-      }
-
-      // 3. 要確認タスク数の取得 (raw_data内のstrategyが空のものを未処理とみなす)
-      const { data: pendingData, count: pendingCount, error: pendingError } = await supabase
-        .from('matchup_sentinel')
-        .select('matchup_id, champion, enemy, title', { count: 'exact' })
-        .neq('champion', 'SYSTEM')
-        .neq('enemy', 'GLOBAL')
-        .or('raw_data->>strategy.is.null,raw_data->>strategy.eq.')
-        .limit(3);
-
-      if (!pendingError) {
-        if (pendingCount !== null) setPendingTasks(pendingCount);
-        if (pendingData) setPendingTaskList(pendingData);
-      }
-
-      // 4. API使用量の取得
+      // API使用量の取得
       // Gemini APIのリセット時間（太平洋標準時 PST/PDT: 深夜0時）に合わせるため UTC-8 を基準とする
       const ptObj = new Date(Date.now() - 8 * 60 * 60 * 1000);
       const yyyy = ptObj.getUTCFullYear();
@@ -155,43 +117,13 @@ export default function Home() {
         .single();
 
       if (!apiError && apiData && apiData.usage_data) {
-        let totalSuccess = 0;
-        let totalErrors = 0;
-        let totalLimit = 0;
-        const details: Record<string, { used: number, limit: number }> = {};
-        
-        // First pass: extract limits and initialize details
+        // クォータはエラー(429等)も消費に含まれるため、成功・失敗を合算して表示する
+        let total = 0;
         for (const [key, value] of Object.entries(apiData.usage_data)) {
-          if (key.startsWith('__limit_')) {
-            const featureName = key.replace('__limit_', '');
-            totalLimit += Number(value);
-            if (!details[featureName]) details[featureName] = { used: 0, limit: Number(value) };
-            else details[featureName].limit = Number(value);
-          }
+          if (key.startsWith('__limit_')) continue; // 上限値の定義行は使用量ではない
+          total += Number(value);
         }
-        
-        // Second pass: extract usage
-        for (const [key, value] of Object.entries(apiData.usage_data)) {
-          if (key.startsWith('__limit_')) continue;
-          if (key.startsWith('error_')) {
-            totalErrors += Number(value);
-          } else {
-            totalSuccess += Number(value);
-            if (!details[key]) details[key] = { used: Number(value), limit: 0 };
-            else details[key].used = Number(value);
-          }
-        }
-        
-        // クォータ制限（1500回制限等）はエラー（429等）も消費カウントに含まれるため、総数をセット
-        setApiUsage(totalSuccess + totalErrors);
-        setApiErrors(totalErrors);
-        if (totalLimit > 0) setApiLimit(totalLimit);
-        
-        // Filter out features with 0 limit and 0 usage to keep it clean
-        const cleanedDetails = Object.fromEntries(
-          Object.entries(details).filter(([k, v]) => v.limit > 0 || v.used > 0)
-        );
-        setApiUsageDetails(cleanedDetails);
+        setApiUsage(total);
       }
 
       // 5. 辞典更新履歴 (GLOBAL)
