@@ -500,19 +500,41 @@ export function LibraryTabContentInner() {
 
   const deleteArticle = async (id: number | string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!confirm('この記事を削除しますか？\n（サーバー上の元ファイルも完全に削除されます）')) return;
-    
+
+    // 通常のライブラリからは「アーカイブ（移動済みへ退避）」、
+    // 移動済み一覧からは「完全削除」。
+    // 以前は移動済みでも __DELETED__ を付け直すだけで、実際には何も消えていなかった。
+    const message = showMoved
+      ? 'この記事をデータベースから完全に削除しますか？\n\n'
+        + '・この操作は取り消せません\n'
+        + '・チャンピオン辞典やレーン別ガイドへ統合済みの本文は残ります（元記事だけが消えます）\n'
+        + '・コーチAIはアーカイブ記事も参照しているため、参照対象からは外れます'
+      : 'この記事を移動済み（アーカイブ）へ移しますか？\n\n「🗄️ 移動済み」からいつでもライブラリに戻せます。';
+    if (!confirm(message)) return;
+
     if (!supabase) {
       showToast('エラー: Supabase接続が無効なため削除できません。', 'error');
       return;
     }
     try {
-      // ローカルファイルも削除できるよう削除フラグを立てる
-      const { error } = await supabase.from('personal_knowledge').update({ tags: ['__DELETED__'] }).eq('id', id);
+      let error: any = null;
+      if (showMoved) {
+        // 完全削除は RLS を確実に通すためサービスロールのAPI経由で行う
+        const res = await fetch('/api/admin/knowledge/delete', {
+          method: 'POST', credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id }),
+        });
+        const d = await res.json().catch(() => ({}));
+        if (!res.ok) error = { message: d.error || (res.status === 401 ? '管理者セッションが切れています。再ログインしてください。' : '削除に失敗しました') };
+      } else {
+        ({ error } = await supabase.from('personal_knowledge').update({ tags: ['__DELETED__'] }).eq('id', id));
+      }
       if (error) {
         showToast('削除エラー: ' + error.message, 'error');
         console.error("Delete Error:", error);
       } else {
+        showToast(showMoved ? '🗑️ 完全に削除しました' : '🗄️ 移動済みへ移しました', 'success');
         setArticles(prev => prev.filter(a => String(a.id) !== String(id)));
         if (selectedArticle && String(selectedArticle.id) === String(id)) setSelectedArticle(null);
       }
