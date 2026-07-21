@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { supabaseAdmin as supabase } from '../../../../../lib/supabaseAdmin';
 import { verifyAdminSession } from '../../../../../lib/adminAuth';
 
 export const dynamic = 'force-dynamic';
@@ -39,14 +39,9 @@ export async function POST(req: Request) {
     }
   }
   // =================================
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY || '';
-
-  if (!supabaseKey) {
+  if (!supabase) {
     return NextResponse.json({ error: 'Supabase Service Role Key is not configured' }, { status: 500 });
   }
-
-  const supabase = createClient(supabaseUrl, supabaseKey);
 
   try {
     const body = await req.json().catch(() => ({}));

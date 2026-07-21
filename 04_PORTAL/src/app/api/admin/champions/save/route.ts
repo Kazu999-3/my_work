@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { supabaseAdmin as supabase } from '../../../../../lib/supabaseAdmin';
 import { verifyAdminSession } from '../../../../../lib/adminAuth';
 
 export async function POST(req: NextRequest) {
@@ -10,14 +10,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: authResult.error }, { status: 401 });
   }
   // =================================
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-    if (!supabaseUrl || !supabaseKey) {
+    if (!supabase) {
       return NextResponse.json({ error: 'Supabase環境変数が設定されていません。' }, { status: 500 });
     }
-
-    const supabase = createClient(supabaseUrl, supabaseKey);
     const body = await req.json();
     const { matchup_id, champion, enemy, strategy, raw_data } = body;
 

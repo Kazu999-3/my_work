@@ -1,10 +1,7 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 import { callGeminiWithRetry } from '../../../../lib/geminiClient';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder';
-const supabase = createClient(supabaseUrl, supabaseKey);
 
 // 以前はローカルPCのPythonデーモン(edge_worker_daemon.py)がedge_tasksを処理する設計で、
 // デーモンが起動していないと必ずタイムアウトしていた。サーバー(Vercel)上で直接Geminiを

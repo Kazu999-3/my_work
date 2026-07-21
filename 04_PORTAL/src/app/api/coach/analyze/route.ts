@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 import {
   fetchPuuidByRiotId,
   fetchRecentMatchIds,
@@ -14,10 +14,6 @@ import { getChampionSearchVariations, normalizeChampionName } from '../../../../
 // 統一知識取得レイヤー（#50 フェーズA）: champion_facts/notes を鮮度・出典順で合成
 import { getChampionKnowledge } from '../../../../lib/championKnowledge';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
 
 // ============================
 // Gemini APIヘルパー
@@ -199,7 +195,7 @@ async function getPlayerCounterStats(playerName: string, enemyChampion: string):
 
   if (!participations || participations.length === 0) return '';
 
-  const matchIds = participations.map((p) => p.match_id);
+  const matchIds = participations.map((p: any) => p.match_id);
 
   // 2. それらの試合で、敵チームに対面チャンピオン（enemyChampion）がいたレコードを検索
   const { data: enemies } = await supabase
@@ -212,7 +208,7 @@ async function getPlayerCounterStats(playerName: string, enemyChampion: string):
 
   // 試合IDごとに敵チームの色と自分のチャンピオン、勝敗をマッピング
   const enemyMatchMap = new Map<string, string>(); // match_id -> enemy_team
-  enemies.forEach((e) => {
+  enemies.forEach((e: any) => {
     enemyMatchMap.set(e.match_id, e.team);
   });
 

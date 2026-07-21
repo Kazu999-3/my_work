@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { supabaseAdmin as supabase } from '../../../../../lib/supabaseAdmin';
 import { verifyAdminSession } from '../../../../../lib/adminAuth';
 
 // ============================================================
@@ -13,9 +13,6 @@ import { verifyAdminSession } from '../../../../../lib/adminAuth';
 // を管理者セッション認証の上で通す。
 // ============================================================
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder';
-const supabase = createClient(supabaseUrl, supabaseKey);
 
 // 管理者だけが書き換えられるフルカラム集合（このAPIはサービスロールなので全列書ける）
 const FULL_COLUMNS = [

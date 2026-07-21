@@ -1,11 +1,8 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 
 export const revalidate = 300; // 5分間キャッシュしてSupabaseへの負荷を削減
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder';
-const supabase = createClient(supabaseUrl, supabaseKey);
 
 export async function GET() {
   try {
@@ -25,7 +22,7 @@ export async function GET() {
     if (mError) throw mError;
     
     const matchDateMap = new Map();
-    matches.forEach(m => {
+    matches.forEach((m: any) => {
       matchDateMap.set(m.id, { date: m.created_at, winner: m.winning_team });
     });
 

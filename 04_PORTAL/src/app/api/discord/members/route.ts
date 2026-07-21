@@ -1,13 +1,8 @@
 import { NextResponse } from 'next/server';
+import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 import { resolveDisplayName } from '../../../../lib/discordName';
-import { createClient } from '@supabase/supabase-js';
 import { verifyAdminSession } from '../../../../lib/adminAuth';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
-// ktm_players のRLS導入(migration 12)により、名簿の追加/削除/MMR更新には
-// RLSをバイパスできるサービスロールキーが必要（このAPIは管理者セッション認証済み）。
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder';
-const supabase = createClient(supabaseUrl, supabaseKey);
 
 function parseIntroduction(content: string) {
   const lower = content.toLowerCase();
@@ -151,7 +146,7 @@ export async function GET(request: Request) {
     const activeSync: any[] = [];
     
     const dbPlayersMap = new Map();
-    dbPlayers.forEach(p => {
+    dbPlayers.forEach((p: any) => {
       dbPlayersMap.set(p.discord_id || p.name.toLowerCase(), p);
     });
 
@@ -165,7 +160,7 @@ export async function GET(request: Request) {
 
       let dbPlayer = dbPlayersMap.get(discordId);
       if (!dbPlayer) {
-         const byName = dbPlayers.find(p => p.name.toLowerCase() === displayName.toLowerCase());
+         const byName = dbPlayers.find((p: any) => p.name.toLowerCase() === displayName.toLowerCase());
          if (byName) dbPlayer = byName;
       }
 
@@ -241,7 +236,7 @@ export async function GET(request: Request) {
     }
 
     // DBにはいるが、Discordにいない人（Active/Inactive問わず）
-    dbPlayers.forEach(p => {
+    dbPlayers.forEach((p: any) => {
       if (p.discord_id) {
         // IDで判定
         if (!discordIdsFound.has(p.discord_id)) {
@@ -377,7 +372,7 @@ export async function POST(request: Request) {
         .select('id, name, metadata');
 
       const dbPlayerMap = new Map();
-      (dbPlayers || []).forEach(p => dbPlayerMap.set(p.id, p));
+      (dbPlayers || []).forEach((p: any) => dbPlayerMap.set(p.id, p));
 
       const updatePromises = [];
 

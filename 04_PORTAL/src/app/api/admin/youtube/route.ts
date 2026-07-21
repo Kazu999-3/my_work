@@ -1,14 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 import fs from 'fs';
 import path from 'path';
 import { exec } from 'child_process';
-import { createClient } from '@supabase/supabase-js';
 import { verifyAdminSession } from '../../../../lib/adminAuth';
 
 // サーバーサイド用クライアント（サービスキーを使用）
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder';
-const supabase = createClient(supabaseUrl, supabaseKey);
 
 function extractVideoId(url: string): string | null {
   const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
