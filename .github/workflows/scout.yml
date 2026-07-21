@@ -1,9 +1,11 @@
 name: Antigravity Overseas Scout
 
 on:
-  schedule:
+  # schedule:
     # 毎日午前4時(JST) = 19:00(UTC) に自動実行 (1日1回、ランダム3体のみ)
-    - cron: '0 19 * * *'
+    # ⚠️ 定期実行を停止しました（overseas_scout.py が存在せず、実行のたびに失敗していたため）。
+    # 復活させる場合は参照先を見直してください（類似: 03_SYSTEMS/v2_CORE/_LOL/overseas_scout.py）。
+    # - cron: '0 19 * * *'
   workflow_dispatch:
     # 手動実行用
 

@@ -1,7 +1,7 @@
 ﻿name: Antigravity Monetization Loop
 
 on:
-  schedule:
+  # schedule:
     # 豈取律 00:00 (JST 09:00), 06:00 (JST 15:00), 12:00 (JST 21:00) 縺ｫ閾ｪ蜍募ｮ溯｡・    - cron: '0 0,6,12 * * *'
   workflow_dispatch:
     # 謇句虚螳溯｡後・繧ｿ繝ｳ縺ｮ霑ｽ蜉

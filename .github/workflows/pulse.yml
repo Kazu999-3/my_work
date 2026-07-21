@@ -1,9 +1,11 @@
 name: Antigravity Sovereign Pulse
 
 on:
-  schedule:
+  # schedule:
     # 毎時0分に自動実行 (1時間ごと)
-    - cron: '0 * * * *'
+    # ⚠️ 定期実行を停止しました（run_pulse.py が存在せず、実行のたびに失敗していたため）。
+    # 復活させる場合は参照先を見直してください（類似: 03_SYSTEMS/v2_CORE/pulse.py）。
+    # - cron: '0 * * * *'
   workflow_dispatch:
     # 手動実行のボタンを追加
 

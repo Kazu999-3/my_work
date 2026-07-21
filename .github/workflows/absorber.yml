@@ -1,11 +1,15 @@
-name: Antigravity YouTube Absorber
+name: Antigravity YouTube Absorber (旧・停止中)
 
+# ⚠️ 定期実行は停止しました。
+# YouTube解析は ktm-cloud-worker.yml（30分おき / scripts/youtube_worker.py）が担当します。
+# このワークフローは同じ youtube_queue を処理するため、有効にすると同じ動画を二重に
+# 解析して記事が重複します。
+#
+# また中身はローカル前提の旧スクリプト（.venv のパスやブラウザのクッキーを参照）なので、
+# Actions 上では正常に動きません。参照用に残しているだけで、手動実行も推奨しません。
 on:
-  schedule:
-    # 毎日午前5時(JST) = 20:00(UTC) に自動実行 (1日10本)
-    - cron: '0 20 * * *'
   workflow_dispatch:
-    # 手動実行用
+    # 参照・検証用の手動実行のみ
 
 jobs:
   run-absorber:
