@@ -31,7 +31,12 @@ export function LibraryTabContentInner() {
   const [saving, setSaving] = useState(false);
   const [syncingAll, setSyncingAll] = useState(false);
   const [syncProgress, setSyncProgress] = useState<{ processed: number; total: number; synced: number } | null>(null);
+  // ?q=... で検索語を渡せる（動画キューから「記事をタイトルで探す」で飛んでくる）
   const [search, setSearch] = useState('');
+  useEffect(() => {
+    const q = searchParams ? searchParams.get('q') : null;
+    if (q) setSearch(q);
+  }, [searchParams]);
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
   const [groupMode, setGroupMode] = useState<'champion' | 'keyword'>('champion');

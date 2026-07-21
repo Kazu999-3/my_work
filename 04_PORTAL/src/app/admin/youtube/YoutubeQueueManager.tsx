@@ -23,12 +23,18 @@ function ArticleLinks({ item }: { item: QueueItem }) {
   const articles = item.articles || [];
 
   if (articles.length === 0) {
-    // 完了しているのに記事が無い＝解析結果が残っていないので、気付けるようにしておく
+    // 完了しているのに紐づく記事が見つからない場合は、タイトル検索へ逃がす。
+    // （記事側が動画IDを持っていない生成経路もあるため、断定はしない）
     if (item.status === 'completed') {
+      const { title } = parseTitleAndError(item.title);
       return (
-        <span className="text-[10px] text-amber-500/80 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded">
-          記事が見つかりません
-        </span>
+        <a
+          href={`/admin/knowledge?q=${encodeURIComponent(title.slice(0, 40))}`}
+          title="動画IDでの自動紐づけができませんでした。タイトルでライブラリを検索します。"
+          className="text-[10px] text-amber-400/90 bg-amber-500/10 border border-amber-500/25 px-1.5 py-0.5 rounded hover:bg-amber-500/20 transition-colors"
+        >
+          🔍 記事をタイトルで探す
+        </a>
       );
     }
     return null;
