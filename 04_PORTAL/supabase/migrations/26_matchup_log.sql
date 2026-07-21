@@ -3,6 +3,7 @@
 -- バトルサーチの「苦手対面ランキング(D)」や「対面クイックビュー(A)」の集計元にもなる。
 CREATE TABLE IF NOT EXISTS matchup_log (
   id bigserial PRIMARY KEY,
+  -- 型は 27 で ktm_match_participants.match_id に合わせて矯正される（環境により uuid / bigint）
   match_id bigint,
   discord_id text,
   player_name text,

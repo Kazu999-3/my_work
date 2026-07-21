@@ -5,6 +5,35 @@
 
 -- 依存する列が無い環境でも失敗しないよう、念のため保証しておく
 ALTER TABLE ktm_match_participants ADD COLUMN IF NOT EXISTS discord_id text;
+
+-- 26 では match_id を bigint で作ったが、実運用の ktm_matches.id は uuid のため
+-- 「operator does not exist: bigint = uuid」で失敗していた。
+-- 実テーブルの型を正として matchup_log 側を合わせる（この時点では中身が空なので安全）。
+DO $$
+DECLARE
+  target_type text;
+  current_type text;
+BEGIN
+  SELECT data_type INTO target_type
+    FROM information_schema.columns
+   WHERE table_schema = 'public'
+     AND table_name = 'ktm_match_participants'
+     AND column_name = 'match_id';
+
+  SELECT data_type INTO current_type
+    FROM information_schema.columns
+   WHERE table_schema = 'public'
+     AND table_name = 'matchup_log'
+     AND column_name = 'match_id';
+
+  IF target_type IS NOT NULL AND current_type IS DISTINCT FROM target_type THEN
+    EXECUTE format(
+      'ALTER TABLE public.matchup_log ALTER COLUMN match_id TYPE %s USING match_id::text::%s',
+      target_type, target_type
+    );
+  END IF;
+END $$;
+
 INSERT INTO matchup_log (
   match_id, discord_id, player_name, role,
   my_champion, enemy_champion, is_win,
