@@ -1,11 +1,11 @@
 name: Antigravity Sovereign Pulse
 
+# パッチ更新の検知・LoLalytics統計の取得・Discordメンバー同期を定期実行する。
+# pulse.py 本体は常駐前提なので、1回だけ実行する run_pulse_once.py を経由する。
 on:
-  # schedule:
-    # 毎時0分に自動実行 (1時間ごと)
-    # ⚠️ 定期実行を停止しました（run_pulse.py が存在せず、実行のたびに失敗していたため）。
-    # 復活させる場合は参照先を見直してください（類似: 03_SYSTEMS/v2_CORE/pulse.py）。
-    # - cron: '0 * * * *'
+  schedule:
+    # 6時間おき（毎時だとパッチ検知には過剰で、API消費だけが増えるため）
+    - cron: '0 */6 * * *'
   workflow_dispatch:
     # 手動実行のボタンを追加
 
@@ -34,5 +34,7 @@ jobs:
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
           DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          # settings や ai_helper を v2_CORE.* で解決できるようにする
+          PYTHONPATH: 03_SYSTEMS
         run: |
-          python 03_SYSTEMS/v2_CORE/run_pulse.py
+          python 03_SYSTEMS/v2_CORE/run_pulse_once.py

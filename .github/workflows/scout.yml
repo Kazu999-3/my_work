@@ -1,11 +1,11 @@
 name: Antigravity Overseas Scout
 
+# 海外の攻略情報からチャンピオン辞典を更新する。
+# 1回の実行でランダム3体だけを対象にして、API負荷を抑える。
 on:
-  # schedule:
-    # 毎日午前4時(JST) = 19:00(UTC) に自動実行 (1日1回、ランダム3体のみ)
-    # ⚠️ 定期実行を停止しました（overseas_scout.py が存在せず、実行のたびに失敗していたため）。
-    # 復活させる場合は参照先を見直してください（類似: 03_SYSTEMS/v2_CORE/_LOL/overseas_scout.py）。
-    # - cron: '0 19 * * *'
+  schedule:
+    # 毎日午前4時(JST) = 19:00(UTC)
+    - cron: '0 19 * * *'
   workflow_dispatch:
     # 手動実行用
 
@@ -35,5 +35,7 @@ jobs:
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
           DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          # settings や herald を v2_CORE.* で解決できるようにする
+          PYTHONPATH: 03_SYSTEMS
         run: |
-          python 03_SYSTEMS/v2_CORE/overseas_scout.py
+          python 03_SYSTEMS/v2_CORE/_LOL/overseas_scout.py
