@@ -15,6 +15,9 @@ GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
 MAX_ITEMS = int(os.environ.get("MAX_ITEMS", "3"))
 MAX_RETRY = 3
 
+class NoTranscript(RuntimeError):
+    """字幕が取得できなかった。再試行しても回復しないので区別する。"""
+
 def sb(method, path, body=None, prefer=None):
     req = urllib.request.Request(f"{SUPABASE_URL}/rest/v1/{path}", method=method)
     req.add_header("apikey", SUPABASE_KEY)
@@ -71,17 +74,28 @@ def gemini_summarize(title, channel, transcript):
     return json.loads(text[s:e+1])
 
 def main():
-    items = sb("GET", f"youtube_queue?status=eq.pending&order=date_added.asc&limit={MAX_ITEMS}") or []
+    # 優先度の高いものから、次に登録が古いものから処理する。
+    # priority は文字列なのでDB側のソートだと high→low→medium になってしまう。
+    # 候補を多めに取ってから、Python側で正しい優先順に並べ替える。
+    candidates = sb("GET",
+                    "youtube_queue?status=eq.pending"
+                    f"&order=date_added.asc&limit={MAX_ITEMS * 10}") or []
+    rank = {"high": 0, "medium": 1, "low": 2}
+    candidates.sort(key=lambda x: rank.get(x.get("priority") or "medium", 1))
+    items = candidates[:MAX_ITEMS]
     if not items:
         print("キューは空です。"); return
     for it in items:
         vid, url = it["id"], it["url"]
         print(f"▶ 処理開始: {it.get('title')} ({vid})")
-        sb("PATCH", f"youtube_queue?id=eq.{vid}", {"status": "processing"})
+        # 注意: status は CHECK 制約付きで、許可値は
+        #   pending / completed / error_generation / error_no_transcript / failed / on_hold
+        # 'processing' は許可されていないため、着手中フラグは立てない。
+        # （立てようとすると 400 で落ち、しかも try の外だったため全体が停止していた）
         try:
             transcript = fetch_subtitles(url, vid)
             if not transcript:
-                raise RuntimeError("字幕を取得できませんでした（字幕なし or IP制限の可能性）")
+                raise NoTranscript("字幕を取得できませんでした（字幕なし or IP制限の可能性）")
             a = gemini_summarize(it.get("title") or "YouTube Video", it.get("channel_name") or "", transcript)
             sb("POST", "personal_knowledge", [{
                 "title": a.get("title") or it.get("title") or "YouTube攻略メモ",
@@ -96,9 +110,19 @@ def main():
             print(f"✅ 完了: {a.get('title')}")
         except Exception as e:
             retry = (it.get("retry_count") or 0) + 1
-            status = "pending" if retry < MAX_RETRY else "failed"
-            sb("PATCH", f"youtube_queue?id=eq.{vid}",
-               {"status": status, "retry_count": retry, "error_message": str(e)[:500]})
+            if retry < MAX_RETRY:
+                status = "pending"                      # まだ再試行の余地がある
+            elif isinstance(e, NoTranscript):
+                status = "error_no_transcript"          # 字幕が無い動画は再試行しても無駄
+            else:
+                status = "error_generation"
+            # error_message カラムは存在しないため、失敗理由はタイトル末尾に載せる
+            # （画面側の parseTitleAndError が「[エラー: ...]」を拾って表示する）
+            base = re.sub(r"\s*\[エラー:.*?\]\s*$", "", it.get("title") or "")
+            payload = {"status": status, "retry_count": retry}
+            if status != "pending":
+                payload["title"] = f"{base} [エラー: {str(e)[:120]}]"
+            sb("PATCH", f"youtube_queue?id=eq.{vid}", payload)
             print(f"❌ 失敗({retry}/{MAX_RETRY}→{status}): {e}", file=sys.stderr)
 
 if __name__ == "__main__":
