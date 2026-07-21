@@ -1,13 +1,18 @@
 name: Antigravity Overseas Scout
 
 # 海外の攻略情報からチャンピオン辞典を更新する。
-# 1回の実行でランダム3体だけを対象にして、API負荷を抑える。
+# 更新が古いチャンピオンから順に、1回あたり SCOUT_BATCH_SIZE 体を処理する。
+# 1日3回 × 8体 = 24体/日 なので、全170体を約1週間で一巡する。
 on:
   schedule:
-    # 毎日午前4時(JST) = 19:00(UTC)
-    - cron: '0 19 * * *'
+    # 4:00 / 12:00 / 20:00 (JST) = 19:00 / 3:00 / 11:00 (UTC)
+    - cron: '0 19,3,11 * * *'
   workflow_dispatch:
-    # 手動実行用
+    inputs:
+      batch_size:
+        description: '1回で更新するチャンピオン数'
+        required: false
+        default: '8'
 
 jobs:
   run-scout:
@@ -37,5 +42,6 @@ jobs:
           DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
           # settings や herald を v2_CORE.* で解決できるようにする
           PYTHONPATH: 03_SYSTEMS
+          SCOUT_BATCH_SIZE: ${{ github.event.inputs.batch_size || '8' }}
         run: |
           python 03_SYSTEMS/v2_CORE/_LOL/overseas_scout.py

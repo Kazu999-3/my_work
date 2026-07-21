@@ -1408,47 +1408,61 @@ function ChampionsContent() {
                                     </div>
                                   </div>
 
-                                  {/* 3. 個別試合履歴 */}
-                                  <div className="space-y-1">
-                                    <span className="text-[9px] text-gray-500 font-bold uppercase tracking-wider block">⚔️ 個別試合履歴 (日付順)</span>
-                                    <div className="overflow-hidden rounded-lg border border-white/5 bg-black/40">
-                                      <table className="w-full text-left border-collapse text-[10px]">
-                                        <thead>
-                                          <tr className="bg-white/5 text-gray-400 font-bold uppercase border-b border-white/5 text-[8px]">
-                                            <th className="p-2">試合日</th>
-                                            <th className="p-2">プレイヤー</th>
-                                            <th className="p-2 text-center">スコア (KDA)</th>
-                                            <th className="p-2 text-center">勝敗</th>
-                                          </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-white/5 font-medium">
-                                          {history.map((h: any, idx: number) => {
-                                            const parts = String(h.score).split('/').map(Number);
-                                            const kda = parts[1] > 0 ? Math.round(((parts[0] + parts[2]) / parts[1]) * 10) / 10 : (parts[0] + parts[2]);
-                                            return (
-                                              <tr key={idx} className="hover:bg-white/[0.01] transition-colors">
-                                                <td className="p-2 font-mono text-gray-400">
-                                                  {new Date(h.created_at).toLocaleDateString('ja-JP')}
-                                                </td>
-                                                <td className="p-2 font-bold text-white">{h.player_name}</td>
-                                                <td className="p-2 text-center font-mono text-gray-300">
-                                                  <span className="text-green-400">{parts[0]}</span>/
-                                                  <span className="text-red-400">{parts[1]}</span>/
-                                                  <span className="text-yellow-400">{parts[2]}</span>
-                                                  <span className="text-gray-500 ml-1">({kda})</span>
-                                                </td>
-                                                <td className="p-2 text-center">
-                                                  <span className={`px-1.5 py-0.5 rounded text-[9px] font-black ${h.is_win ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}`}>
-                                                    {h.is_win ? 'WIN' : 'LOSE'}
-                                                  </span>
-                                                </td>
-                                              </tr>
-                                            );
-                                          })}
-                                        </tbody>
-                                      </table>
-                                    </div>
-                                  </div>
+                                  {/* 3. 対面の総合サマリ（1試合ずつではなく、まとめた数字を見る） */}
+                                  {(() => {
+                                    const games = history.length;
+                                    const wins = history.filter((h: any) => h.is_win).length;
+                                    let k = 0, d = 0, a = 0;
+                                    for (const h of history) {
+                                      const p = String(h.score).split('/').map(Number);
+                                      k += p[0] || 0; d += p[1] || 0; a += p[2] || 0;
+                                    }
+                                    const winRate = games ? Math.round((wins / games) * 100) : 0;
+                                    const kda = d > 0 ? Math.round(((k + a) / d) * 10) / 10 : (k + a);
+                                    // 直近5戦の勝敗（新しい順）。調子の変化が分かるようにする。
+                                    const recent = [...history]
+                                      .sort((x: any, y: any) => new Date(y.created_at).getTime() - new Date(x.created_at).getTime())
+                                      .slice(0, 5);
+                                    const last = history.length
+                                      ? new Date(Math.max(...history.map((h: any) => new Date(h.created_at).getTime())))
+                                      : null;
+
+                                    const cell = (label: string, value: string, tone = 'text-white') => (
+                                      <div className="bg-black/40 border border-white/5 rounded-lg px-3 py-2">
+                                        <p className="text-[8px] text-gray-500 font-bold uppercase tracking-wider">{label}</p>
+                                        <p className={`text-sm font-black ${tone}`}>{value}</p>
+                                      </div>
+                                    );
+
+                                    return (
+                                      <div className="space-y-2">
+                                        <span className="text-[9px] text-gray-500 font-bold uppercase tracking-wider block">
+                                          ⚔️ この対面の通算成績
+                                        </span>
+                                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                          {cell('試合数', `${games}戦`)}
+                                          {cell('勝率', `${winRate}%`, winRate >= 50 ? 'text-emerald-400' : 'text-rose-400')}
+                                          {cell('戦績', `${wins}勝 ${games - wins}敗`)}
+                                          {cell('平均KDA', `${kda}`, kda >= 3 ? 'text-emerald-400' : 'text-gray-200')}
+                                        </div>
+                                        <div className="flex items-center gap-2 flex-wrap text-[9px] text-gray-500 pt-1">
+                                          <span className="font-bold uppercase tracking-wider">直近</span>
+                                          {recent.map((h: any, i: number) => (
+                                            <span key={i}
+                                              title={`${new Date(h.created_at).toLocaleDateString('ja-JP')} ${h.player_name} ${h.score}`}
+                                              className={`w-5 h-5 rounded flex items-center justify-center font-black text-[9px] ${
+                                                h.is_win ? 'bg-emerald-500/15 text-emerald-400' : 'bg-rose-500/15 text-rose-400'
+                                              }`}>
+                                              {h.is_win ? 'W' : 'L'}
+                                            </span>
+                                          ))}
+                                          {last && (
+                                            <span className="ml-auto">最終: {last.toLocaleDateString('ja-JP')}</span>
+                                          )}
+                                        </div>
+                                      </div>
+                                    );
+                                  })()}
                                 </div>
                               );
                             })()}

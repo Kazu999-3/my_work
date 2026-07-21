@@ -149,6 +149,38 @@ class OverseasScout:
         except Exception as e:
             logger.error(f"Supabase update error: {e}")
 
+    def _pick_stalest(self, champs, batch):
+        """
+        更新が最も古いチャンピオンから順に選ぶ。
+
+        以前は random.sample だったため同じチャンプを何度も引き、
+        全170体を一巡するのに期待324日かかっていた（クーポンコレクター問題）。
+        古い順に選べば 170/batch 日で確実に一巡する。
+        未登録のチャンピオンは最優先で埋める。
+        """
+        try:
+            res = requests.get(
+                f"{self.supabase_url}/rest/v1/champion_facts?select=champion,updated_at",
+                headers=self._get_headers(), timeout=15,
+            )
+            rows = res.json() if res.status_code == 200 else []
+        except Exception as e:
+            logger.warning(f"更新日時の取得に失敗したためランダム選出にフォールバックします: {e}")
+            return random.sample(champs, min(batch, len(champs)))
+
+        updated_at = {}
+        for r in rows:
+            name = str(r.get("champion") or "")
+            if name:
+                updated_at[name.lower()] = r.get("updated_at") or ""
+
+        # 未登録(空文字)が先頭に来るので、そのまま昇順で古い順になる
+        ordered = sorted(champs, key=lambda c: updated_at.get(c.lower(), ""))
+        picked = ordered[:batch]
+        never = [c for c in picked if c.lower() not in updated_at]
+        logger.info(f"🎯 対象 {len(picked)}体 (うち未登録 {len(never)}体): {', '.join(picked)}")
+        return picked
+
     def run_cycle(self, force_targets=None):
         """一度の実行サイクル"""
         logger.info("🌐 Overseas Scout cycle starting...")
@@ -159,8 +191,9 @@ class OverseasScout:
         if force_targets:
             targets = [c for c in force_targets if c in champs]
         else:
-            # 一度のサイクルで3体のチャンピオンを更新 (API負荷軽減)
-            targets = random.sample(champs, 3)
+            # 1サイクルあたりの体数。API負荷とのバランスで調整できるようにする。
+            batch = int(os.getenv("SCOUT_BATCH_SIZE", "8"))
+            targets = self._pick_stalest(champs, batch)
         
         updated_list = []
         for champ in targets:
