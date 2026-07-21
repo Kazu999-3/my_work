@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { RefreshCw, AlertTriangle, Sparkles, Globe, BookOpen, Languages } from 'lucide-react';
+import { RefreshCw, AlertTriangle, Sparkles, Globe, BookOpen, Languages, Map as MapIcon } from 'lucide-react';
 
 /**
  * 辞典のAI支援パネル。
@@ -20,6 +20,30 @@ export default function DictInsightsPanel() {
   const [researchRole, setResearchRole] = useState('JG');
   const [research, setResearch] = useState<any>(null);
   const [researching, setResearching] = useState(false);
+
+  // レーン別ガイドへの統合。完了(done)まで繰り返し呼ぶ。
+  const [laneMerging, setLaneMerging] = useState(false);
+  const [laneProgress, setLaneProgress] = useState(0);
+  const [laneResult, setLaneResult] = useState<string | null>(null);
+  const mergeLaneGuides = async () => {
+    setLaneMerging(true); setError(null); setLaneResult(null); setLaneProgress(0);
+    let total = 0;
+    try {
+      for (let i = 0; i < 200; i++) {
+        const res = await fetch('/api/admin/lane-guides', {
+          method: 'POST', credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({}),
+        });
+        const d = await res.json();
+        if (!res.ok) throw new Error(d.error || '統合に失敗しました');
+        total += d.merged || 0;
+        setLaneProgress(total);
+        if (d.done || d.merged === 0) break;
+      }
+      setLaneResult(total > 0 ? `✅ ${total}本の記事をレーン別ガイドへ統合しました` : '✅ 統合対象の記事はありませんでした');
+    } catch (e: any) { setError(e.message); } finally { setLaneMerging(false); }
+  };
 
   // 既存データの日本語化。サーバー側がチャンク処理なので、完了(done)まで繰り返し呼ぶ。
   const [translating, setTranslating] = useState<string | null>(null);
@@ -146,6 +170,23 @@ export default function DictInsightsPanel() {
             ))}
           </div>
         )}
+      </div>
+
+      {/* レーン別ガイドへの統合 */}
+      <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5">
+        <h3 className="font-black text-white flex items-center gap-2 mb-3">
+          <MapIcon size={16} className="text-amber-400" /> レーン別ガイドへ統合
+        </h3>
+        <p className="text-[11px] text-gray-500 mb-3">
+          ライブラリの<strong className="text-amber-300">チャンピオン記事ではない記事</strong>（レーンのマクロ・立ち回り）を、
+          レーンごとに1本のガイドへ統合します。統合した記事はライブラリから片付きます。
+          結果は <a href="/lane-guides" className="text-amber-400 hover:underline">レーン別ガイド</a> で読めます。
+        </p>
+        <button onClick={mergeLaneGuides} disabled={laneMerging}
+          className="text-xs font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30 px-4 py-2 rounded-lg hover:bg-amber-500/25 disabled:opacity-50">
+          {laneMerging ? `統合中... (${laneProgress}本)` : '🗺️ レーン別ガイドへ統合'}
+        </button>
+        {laneResult && <p className="text-xs text-emerald-400 mt-3">{laneResult}</p>}
       </div>
 
       {/* 既存データの日本語化 */}
