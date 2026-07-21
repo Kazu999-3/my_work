@@ -8,6 +8,7 @@ import YoutubeQueueManager from '../youtube/YoutubeQueueManager';
 import LibraryTabContent from './LibraryTabContent';
 import DictReviewPanel from './DictReviewPanel';
 import DictInsightsPanel from './DictInsightsPanel';
+import RevisionsPanel from './RevisionsPanel';
 import { supabaseBrowser } from '../../../lib/supabaseBrowserClient';
 
 interface KnowledgeItem {
@@ -353,6 +354,7 @@ export default function KnowledgeBase() {
               </p>
             </div>
             <DictInsightsPanel mode="maintenance" />
+            <RevisionsPanel />
           </div>
         )}
 

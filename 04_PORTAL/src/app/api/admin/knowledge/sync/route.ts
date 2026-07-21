@@ -172,7 +172,7 @@ export async function POST(req: Request) {
                   // サーバー間呼び出しのため、受け取ったCookieをそのまま引き継ぐ
                   cookie: req.headers.get('cookie') || '',
                 },
-                body: JSON.stringify({ champions: a.champions, title: a.title, body: a.content }),
+                body: JSON.stringify({ champions: a.champions, title: a.title, body: a.content, articleId: a.id }),
               });
             } catch (mergeErr) {
               console.warn(`[knowledge/sync] 記事${a.id}の項目マージに失敗:`, mergeErr);

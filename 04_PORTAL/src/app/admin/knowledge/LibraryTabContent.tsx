@@ -459,7 +459,7 @@ export function LibraryTabContentInner() {
             method: 'POST',
             credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ champions: validChampions, title: editTitle, body: editContent }),
+            body: JSON.stringify({ champions: validChampions, title: editTitle, body: editContent, articleId: selectedArticle.id }),
           });
           const mergeData = await mergeRes.json();
           if (mergeRes.ok) {

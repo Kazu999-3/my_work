@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../../lib/supabaseAdmin';
 import { verifyAdminSession } from '../../../../../lib/adminAuth';
 import { callGeminiWithRetry } from '../../../../../lib/geminiClient';
+import { recordRevision } from '../../../../../lib/knowledgeRevisions';
 
 // 記事統合時に champion_facts（強み/弱み/パワースパイク/ビルド）も更新する。
 // 重要: 既存を丸ごと上書きせず、「既存に無い知見だけを足す」マージ方式にする。
@@ -21,7 +22,8 @@ export async function POST(req: Request) {
   if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: 401 });
 
   try {
-    const { champions, title, body } = await req.json();
+    // articleId は履歴に「どの記事由来か」を残すためのもの（無くても動く）
+    const { champions, title, body, articleId } = await req.json();
     const list: string[] = Array.isArray(champions) ? champions : (champions ? [champions] : []);
     if (list.length === 0 || !body || String(body).trim().length < 50) {
       return NextResponse.json({ error: 'champions と十分な長さの body が必要です。' }, { status: 400 });
@@ -77,6 +79,20 @@ ${String(body).slice(0, 8000)}
           .from('champion_facts')
           .upsert(payload, { onConflict: 'champion' });
         if (upErr) throw new Error(upErr.message);
+
+        // 項目ごとに履歴を残し、どの記事で何が増えたのかを後から辿れるようにする
+        for (const f of FIELDS) {
+          if (payload[f.key] === undefined) continue;
+          await recordRevision({
+            targetType: 'champion_fact',
+            targetKey: champion,
+            field: f.key,
+            before: (existing as any)?.[f.key],
+            after: payload[f.key],
+            sourceTitle: title,
+            sourceId: articleId,
+          });
+        }
 
         results.push({ champion, ok: true, added: merged.added || [] });
       } catch (err: any) {

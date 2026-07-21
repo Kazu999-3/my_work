@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 import { verifyAdminSession } from '../../../../lib/adminAuth';
 import { callGeminiWithRetry } from '../../../../lib/geminiClient';
+import { recordRevision } from '../../../../lib/knowledgeRevisions';
 
 // レーン別ガイドの統合。
 // 攻略ライブラリのうち「特定チャンピオンの記事ではないもの」＝レーンのマクロ・立ち回りを
@@ -204,6 +205,17 @@ ${String(body).slice(0, 8000)}
         updated_at: new Date().toISOString(),
       }, { onConflict: 'lane' });
       if (saveError) throw new Error(`ガイドの保存に失敗しました: ${saveError.message}`);
+
+      // 何がどの記事で増えたのかを後から辿れるように履歴を残す
+      await recordRevision({
+        targetType: 'lane_guide',
+        targetKey: lane,
+        field: 'body',
+        before: existing?.body,
+        after: result.body,
+        sourceTitle: a.title,
+        sourceId: a.id,
+      });
 
       // 保存が確定してから、統合済みの記事をライブラリから片付ける（復元は「移動済み」から可能）
       await supabase.from('personal_knowledge').update({ tags: ['__DELETED__'] }).eq('id', a.id);

@@ -68,8 +68,17 @@ export default function LaneGuidesPage() {
             {current && (
               <article className="bg-gray-900 border border-gray-800 rounded-2xl p-6 md:p-8">
                 <h2 className="text-2xl font-black text-white mb-1">{current.title}</h2>
-                <p className="text-[11px] text-gray-500 mb-6">
-                  {current.source_count}本の記事を統合 ／ 更新: {new Date(current.updated_at).toLocaleDateString('ja-JP')}
+                <p className="text-[11px] text-gray-500 mb-6 flex items-center gap-2 flex-wrap">
+                  <span>{current.source_count}本の記事を統合 ／ 更新: {new Date(current.updated_at).toLocaleDateString('ja-JP')}</span>
+                  {(() => {
+                    // 直近に更新されたガイドは気付けるようにしておく
+                    const days = (Date.now() - new Date(current.updated_at).getTime()) / 86400000;
+                    return days <= 3 ? (
+                      <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+                        NEW
+                      </span>
+                    ) : null;
+                  })()}
                 </p>
                 <div className="prose prose-invert prose-sm max-w-none prose-headings:text-amber-300 prose-strong:text-white prose-li:text-gray-300">
                   <ReactMarkdown remarkPlugins={[remarkGfm]}>{current.body}</ReactMarkdown>
