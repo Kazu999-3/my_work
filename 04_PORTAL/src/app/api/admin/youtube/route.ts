@@ -47,8 +47,6 @@ export async function GET(req: NextRequest) {
     // 記事がどの形で動画を参照しているかは生成経路によってまちまちなので、
     // URL の形に依存せず「11桁の動画IDが本文・URL・タイトルのどこかに出てくるか」で突き合わせる。
     const rows = data || [];
-    const debug = searchParams.get('debug') === '1';
-    let debugInfo: any = null;
 
     try {
       const { data: articles } = await supabase
@@ -72,9 +70,6 @@ export async function GET(req: NextRequest) {
         byVideoId.set(videoId, list);
       };
 
-      let matchedBySourceUrl = 0;
-      let matchedByBody = 0;
-
       for (const a of articles || []) {
         const src = String(a.source_url || '');
         // source_url に動画IDが含まれていれば最優先で紐づける（URLの形は問わない）
@@ -83,42 +78,24 @@ export async function GET(req: NextRequest) {
         for (const id of srcHits) {
           if (queueIds.has(id)) { attach(id, a); hit = true; }
         }
-        if (hit) { matchedBySourceUrl++; continue; }
+        if (hit) continue;
 
         // source_url が無い/別形式の記事のために、本文・タイトルからも動画IDを拾う
         const body = `${a.title || ''}\n${String(a.content || '').slice(0, 2000)}\n${String(a.raw_content || '').slice(0, 2000)}`;
         const bodyHits = body.match(/[A-Za-z0-9_-]{11}/g) || [];
         for (const id of bodyHits) {
-          if (queueIds.has(id)) { attach(id, a); hit = true; }
+          if (queueIds.has(id)) attach(id, a);
         }
-        if (hit) matchedByBody++;
       }
 
       for (const row of rows as any[]) {
         row.articles = byVideoId.get(String(row.id)) || [];
       }
-
-      if (debug) {
-        // 「なぜ紐づかないのか」を実データで確認するための情報
-        const withSource = (articles || []).filter((a: any) => String(a.source_url || '').trim());
-        debugInfo = {
-          queueCount: rows.length,
-          articleCount: (articles || []).length,
-          articlesWithSourceUrl: withSource.length,
-          matchedBySourceUrl,
-          matchedByBody,
-          linkedVideos: byVideoId.size,
-          sampleSourceUrls: withSource.slice(0, 15).map((a: any) => ({ id: a.id, title: a.title, source_url: a.source_url })),
-          sampleQueueIds: rows.slice(0, 10).map((r: any) => r.id),
-        };
-      }
-    } catch (linkErr: any) {
+    } catch (linkErr) {
       // 紐づけに失敗してもキュー一覧自体は表示できるようにする
       console.warn('[YouTube API] 記事の紐づけに失敗:', linkErr);
-      if (debug) debugInfo = { error: linkErr?.message || String(linkErr) };
     }
 
-    if (debug) return NextResponse.json({ debug: debugInfo, queue: rows });
     return NextResponse.json(rows);
   } catch (err: any) {
     console.error('❌ [YouTube API] GET Error:', err);

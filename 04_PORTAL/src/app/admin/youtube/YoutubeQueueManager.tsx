@@ -121,25 +121,6 @@ export default function YoutubeQueueManager() {
     fetchQueue(false, sortBy);
   }, []);
 
-  // 記事の紐づけ診断。実際の source_url を見て、なぜ結び付かないのかを確認する。
-  const [diagnosing, setDiagnosing] = useState(false);
-  const [diagnosis, setDiagnosis] = useState<any>(null);
-  const runDiagnosis = async () => {
-    setDiagnosing(true);
-    setDiagnosis(null);
-    try {
-      const res = await fetch('/api/admin/youtube?debug=1', { credentials: 'include' });
-      const d = await res.json();
-      if (!res.ok) throw new Error(d.error || `取得に失敗しました (HTTP ${res.status})`);
-      if (!d.debug) throw new Error('診断情報が返りませんでした。デプロイが最新か確認してください。');
-      setDiagnosis(d.debug);
-    } catch (e: any) {
-      setDiagnosis({ error: e.message });
-    } finally {
-      setDiagnosing(false);
-    }
-  };
-
   const handleSortChange = (newSort: 'date_added' | 'published_at') => {
     setSortBy(newSort);
     fetchQueue(true, newSort);
@@ -751,58 +732,6 @@ export default function YoutubeQueueManager() {
                 )}
               </button>
             </form>
-          </div>
-
-          {/* 記事の紐づけ診断 */}
-          <div className="bg-[#0f111a] border border-gray-800/80 rounded-2xl p-4">
-            <div className="flex items-center justify-between gap-3 flex-wrap">
-              <p className="text-xs text-gray-400">
-                解析完了した動画に記事が紐づかない場合は、ここで実際のデータを確認できます。
-              </p>
-              <button type="button" onClick={runDiagnosis} disabled={diagnosing}
-                className="text-xs font-bold bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 px-3 py-1.5 rounded-lg hover:bg-cyan-500/25 disabled:opacity-50 shrink-0">
-                {diagnosing ? '診断中...' : '🔧 紐づけを診断'}
-              </button>
-            </div>
-
-            {diagnosis && (
-              <div className="mt-3 text-[11px]">
-                {diagnosis.error ? (
-                  <p className="text-rose-400 font-bold">❌ {diagnosis.error}</p>
-                ) : (
-                  <div className="space-y-2">
-                    <div className="flex flex-wrap gap-3 text-gray-300 font-mono">
-                      <span>キュー: {diagnosis.queueCount}</span>
-                      <span>記事: {diagnosis.articleCount}</span>
-                      <span>URL有: {diagnosis.articlesWithSourceUrl}</span>
-                      <span className="text-emerald-400">URL一致: {diagnosis.matchedBySourceUrl}</span>
-                      <span className="text-emerald-400">本文一致: {diagnosis.matchedByBody}</span>
-                      <span className="text-amber-400">紐づいた動画: {diagnosis.linkedVideos}</span>
-                    </div>
-                    <div>
-                      <p className="text-gray-500 mb-1">キューの動画ID（先頭10件）:</p>
-                      <p className="font-mono text-gray-400 break-all">{(diagnosis.sampleQueueIds || []).join(', ') || '—'}</p>
-                    </div>
-                    <div>
-                      <p className="text-gray-500 mb-1">記事の source_url（先頭15件）:</p>
-                      {(diagnosis.sampleSourceUrls || []).length === 0 ? (
-                        <p className="text-amber-400 font-bold">
-                          source_url を持つ記事が1件もありません。記事側に動画への参照が保存されていないため、動画IDでの自動紐づけはできません。
-                        </p>
-                      ) : (
-                        <ul className="space-y-0.5 max-h-52 overflow-auto font-mono text-gray-400">
-                          {diagnosis.sampleSourceUrls.map((a: any) => (
-                            <li key={a.id} className="truncate" title={`${a.title} / ${a.source_url}`}>
-                              <span className="text-gray-600">#{a.id}</span> {a.source_url}
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
           </div>
 
           {/* 検索 ＆ フィルターバー */}
