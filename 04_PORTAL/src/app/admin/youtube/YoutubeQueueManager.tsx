@@ -11,6 +11,47 @@ interface QueueItem {
   retry_count: number;
   priority?: 'high' | 'medium' | 'low';
   published_at?: string;
+  /** 解析完了時に生成されたナレッジ記事（source_url の動画IDで突き合わせ） */
+  articles?: { id: number | string; title: string; archived: boolean }[];
+}
+
+/**
+ * 解析完了時に生成されたナレッジ記事へのリンク。
+ * 「この動画はどの記事になったのか」を一覧から辿れるようにする。
+ */
+function ArticleLinks({ item }: { item: QueueItem }) {
+  const articles = item.articles || [];
+
+  if (articles.length === 0) {
+    // 完了しているのに記事が無い＝解析結果が残っていないので、気付けるようにしておく
+    if (item.status === 'completed') {
+      return (
+        <span className="text-[10px] text-amber-500/80 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded">
+          記事が見つかりません
+        </span>
+      );
+    }
+    return null;
+  }
+
+  return (
+    <>
+      {articles.map((a) => (
+        <a
+          key={a.id}
+          href={`/admin/knowledge?article=${a.id}`}
+          title={a.archived ? `${a.title}（辞典/ガイドへ統合済み）` : a.title}
+          className={`text-[10px] font-bold px-1.5 py-0.5 rounded border max-w-[220px] truncate inline-block align-middle transition-colors ${
+            a.archived
+              ? 'text-gray-400 bg-gray-800/60 border-gray-700 hover:text-white'
+              : 'text-emerald-300 bg-emerald-500/10 border-emerald-500/30 hover:bg-emerald-500/20'
+          }`}
+        >
+          📄 {a.archived ? '統合済: ' : ''}{a.title}
+        </a>
+      ))}
+    </>
+  );
 }
 
 function parseTitleAndError(fullTitle: string): { title: string; errorMessage: string | null } {
@@ -34,6 +75,7 @@ export default function YoutubeQueueManager() {
   const [newUrl, setNewUrl] = useState('');
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
   const [filterStatus, setFilterStatus] = useState('all');
+  const [filterChannel, setFilterChannel] = useState('all'); // 'all' | チャンネル名 | '__none__'
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'date_added' | 'published_at'>('date_added');
 
@@ -505,13 +547,32 @@ export default function YoutubeQueueManager() {
     error: queue.filter((i) => i.status.startsWith('error') || i.status === 'failed').length,
   };
 
+  // チャンネル絞り込み用の選択肢（登録件数の多い順）
+  const channelOptions = (() => {
+    const counts = new Map<string, number>();
+    for (const item of queue) {
+      const name = (item.channel_name || '').trim();
+      if (!name) continue;
+      counts.set(name, (counts.get(name) || 0) + 1);
+    }
+    return Array.from(counts.entries()).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'ja'));
+  })();
+  const unknownChannelCount = queue.filter((i) => !(i.channel_name || '').trim()).length;
+
   const filteredQueue = queue.filter((item) => {
     // 1. ステータスでの絞り込み
     if (filterStatus === 'pending' && item.status !== 'pending') return false;
     if (filterStatus === 'completed' && item.status !== 'completed') return false;
     if (filterStatus === 'error' && !(item.status.startsWith('error') || item.status === 'failed')) return false;
 
-    // 2. 検索キーワードでの絞り込み (タイトル or チャンネル名 or ID)
+    // 2. チャンネルでの絞り込み
+    if (filterChannel !== 'all') {
+      const name = (item.channel_name || '').trim();
+      if (filterChannel === '__none__') { if (name) return false; }
+      else if (name !== filterChannel) return false;
+    }
+
+    // 3. 検索キーワードでの絞り込み (タイトル or チャンネル名 or ID)
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       const titleMatch = item.title.toLowerCase().includes(query);
@@ -691,6 +752,26 @@ export default function YoutubeQueueManager() {
 
             {/* 検索 ＆ ソート */}
             <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+              {/* チャンネル絞り込み */}
+              <div className="relative">
+                <select
+                  value={filterChannel}
+                  onChange={(e) => setFilterChannel(e.target.value)}
+                  title="チャンネルで絞り込む"
+                  className="px-3 py-2 bg-[#07080e] border border-gray-800 rounded-xl focus:outline-none focus:border-cyan-500 text-xs text-gray-300 w-full sm:w-auto sm:max-w-[220px] appearance-none pr-8 cursor-pointer font-bold"
+                >
+                  <option value="all">すべてのチャンネル ({queue.length})</option>
+                  {channelOptions.map(([name, count]) => (
+                    <option key={name} value={name}>{name} ({count})</option>
+                  ))}
+                  {unknownChannelCount > 0 && (
+                    <option value="__none__">チャンネル不明 ({unknownChannelCount})</option>
+                  )}
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
+                  <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clipRule="evenodd" /></svg>
+                </div>
+              </div>
               <div className="relative">
                 <select
                   value={sortBy}
@@ -747,11 +828,28 @@ export default function YoutubeQueueManager() {
                 <span className="text-sm text-gray-400">キュー情報を読み込み中...</span>
               </div>
             ) : filteredQueue.length === 0 ? (
-              <div className="py-20 text-center text-gray-500 text-sm">
-                該当する動画がありません。
+              <div className="py-20 text-center text-gray-500 text-sm space-y-3">
+                <p>該当する動画がありません。</p>
+                {filterChannel !== 'all' && (
+                  <button type="button" onClick={() => setFilterChannel('all')}
+                    className="text-xs font-bold text-cyan-400 hover:underline">
+                    チャンネル絞り込みを解除する
+                  </button>
+                )}
               </div>
             ) : (
               <>
+                {filterChannel !== 'all' && (
+                  <div className="px-4 py-2 bg-cyan-500/5 border-b border-cyan-500/20 flex items-center justify-between gap-3 text-xs">
+                    <span className="text-cyan-300 font-bold truncate">
+                      「{filterChannel === '__none__' ? 'チャンネル不明' : filterChannel}」で絞り込み中 — {filteredQueue.length}件
+                    </span>
+                    <button type="button" onClick={() => setFilterChannel('all')}
+                      className="text-gray-400 hover:text-white font-bold shrink-0">
+                      解除 ✕
+                    </button>
+                  </div>
+                )}
                 <div className="block md:hidden divide-y divide-gray-800/40">
                   {filteredQueue.map((item) => (
                     <div key={item.id} className="p-4 space-y-3 hover:bg-[#0c0d15]/40 transition-all flex flex-col">
@@ -791,6 +889,7 @@ export default function YoutubeQueueManager() {
                               投稿: {item.published_at}
                             </span>
                           )}
+                          <ArticleLinks item={item} />
                           <a href={item.url} target="_blank" rel="noreferrer" className="text-cyan-400 hover:underline flex items-center gap-1">
                             <span>{item.id}</span>
                             <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -888,17 +987,23 @@ export default function YoutubeQueueManager() {
                                     </>
                                   );
                                 })()}
-                                <div className="flex items-center gap-2 text-xs">
+                                <div className="flex items-center gap-2 text-xs flex-wrap">
                                   {item.channel_name && (
-                                    <span className="text-gray-400 bg-gray-900/60 px-1.5 py-0.5 rounded border border-gray-800/80">
+                                    <button
+                                      type="button"
+                                      onClick={() => setFilterChannel(item.channel_name || 'all')}
+                                      title="このチャンネルで絞り込む"
+                                      className="text-gray-400 bg-gray-900/60 px-1.5 py-0.5 rounded border border-gray-800/80 hover:text-white hover:border-gray-600 transition-colors"
+                                    >
                                       {item.channel_name}
-                                    </span>
+                                    </button>
                                   )}
                                   {item.published_at && (
                                     <span className="text-gray-500 bg-gray-900/40 px-1.5 py-0.5 rounded border border-gray-800/40 font-medium">
                                       投稿: {item.published_at}
                                     </span>
                                   )}
+                                  <ArticleLinks item={item} />
                                   <a href={item.url} target="_blank" rel="noreferrer" className="text-cyan-400 hover:underline flex items-center gap-1 w-fit">
                                     <span>{item.id}</span>
                                     <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">

@@ -42,7 +42,41 @@ export async function GET(req: NextRequest) {
     const { data, error } = await query;
 
     if (error) throw error;
-    return NextResponse.json(data || []);
+
+    // 解析完了した動画から生成された記事を紐づける。
+    // 記事側は source_url に YouTube の URL を持っているので、動画IDで突き合わせる。
+    const rows = data || [];
+    try {
+      const { data: articles } = await supabase
+        .from('personal_knowledge')
+        .select('id, title, source_url, tags')
+        .not('source_url', 'is', null)
+        .or('source_url.ilike.%youtube.com%,source_url.ilike.%youtu.be%')
+        .limit(2000);
+
+      // 1動画から複数記事が作られることもあるため配列で保持する
+      const byVideoId = new Map<string, any[]>();
+      for (const a of articles || []) {
+        const m = String(a.source_url || '').match(/(?:v=|youtu\.be\/|\/embed\/|\/shorts\/)([A-Za-z0-9_-]{11})/);
+        if (!m) continue;
+        const list = byVideoId.get(m[1]) || [];
+        list.push({
+          id: a.id,
+          title: a.title,
+          archived: Array.isArray(a.tags) && a.tags.includes('__DELETED__'),
+        });
+        byVideoId.set(m[1], list);
+      }
+
+      for (const row of rows as any[]) {
+        row.articles = byVideoId.get(String(row.id)) || [];
+      }
+    } catch (linkErr) {
+      // 紐づけに失敗してもキュー一覧自体は表示できるようにする
+      console.warn('[YouTube API] 記事の紐づけに失敗:', linkErr);
+    }
+
+    return NextResponse.json(rows);
   } catch (err: any) {
     console.error('❌ [YouTube API] GET Error:', err);
     return NextResponse.json({ error: 'キューの読み込みに失敗しました。' }, { status: 500 });
