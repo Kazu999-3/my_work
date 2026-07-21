@@ -17,11 +17,17 @@ on:
   workflow_dispatch:
     inputs:
       job:
-        description: 'youtube / dict-sync / prospect / both'
-        required: false
+        description: '実行するジョブ'
+        required: true
         default: 'both'
+        type: choice
+        options:
+          - both          # youtube + dict-sync
+          - youtube       # キューの動画を解析する
+          - dict-sync     # ナレッジを辞典へ同期する
+          - prospect      # 解説動画を探してキューに積む
       champions:
-        description: 'prospect時に対象を直接指定（カンマ区切り。空なら辞典が古い順）'
+        description: 'prospect用: 対象を直接指定（例: Ahri,Graves。空なら辞典が古い順）'
         required: false
         default: ''
 
