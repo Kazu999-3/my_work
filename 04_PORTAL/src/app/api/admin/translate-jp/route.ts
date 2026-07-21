@@ -17,9 +17,17 @@ const COOL_DOWN_MS = 4000;
 /** 日本語がほとんど含まれない＝英語のままと判定する */
 function isEnglish(text: string): boolean {
   const t = String(text || '').trim();
-  if (t.length < 30) return false; // 短すぎるものは判定しない
+  if (t.length < 20) return false; // 短すぎるものは判定しない
+
+  // 日本語文字の比率で判定する。閾値5%は厳しすぎて、
+  // 「見出しだけ日本語で本文は英語」といった混在データが対象外になっていた。
   const jp = (t.match(/[ぁ-んァ-ヶ一-龠]/g) || []).length;
-  return jp / t.length < 0.05; // 日本語文字が5%未満なら英語とみなす
+  const ratio = jp / t.length;
+  if (ratio >= 0.25) return false; // 十分に日本語 → 対象外
+
+  // 比率が低くても、英単語がほとんど無ければ（記号や数値の羅列）翻訳しない
+  const words = (t.match(/[A-Za-z]{3,}/g) || []).length;
+  return words >= 8;
 }
 
 /** レート制限に当たったことを示すエラー（呼び出し側で「中断して途中保存」に使う） */
@@ -57,17 +65,20 @@ export async function POST(req: Request) {
     let converted = 0;
     let remaining = 0;
     let rateLimited = false; // 制限に当たって中断したか
+    let scanned = 0;         // 判定した総件数（0件変換だった理由の確認用）
     const samples: string[] = [];
 
     // ===== 1. チャンピオン辞典（構造化項目） =====
     if (target === 'facts') {
       const { data } = await supabase
         .from('champion_facts')
-        .select('champion, strengths, weaknesses, power_spikes, build_runes, strategy');
-      const fields = ['strengths', 'weaknesses', 'power_spikes', 'build_runes', 'strategy'] as const;
+        .select('champion, strengths, weaknesses, power_spikes, build_runes, strategy, note_draft, counter_champions, pick_recommendation, jg_description');
+      // 英語で入りうる文章項目をすべて対象にする（一部だけ残ると混在して読みにくいため）
+      const fields = ['strengths', 'weaknesses', 'power_spikes', 'build_runes', 'strategy', 'note_draft', 'pick_recommendation', 'jg_description'] as const;
 
       const targets = (data || []).filter((f: any) => fields.some((k) => isEnglish(f[k])));
       remaining = Math.max(0, targets.length - CHUNK);
+      scanned = (data || []).length; // 判定結果を画面で確認できるようにする
 
       for (const f of targets.slice(0, CHUNK)) {
         const payload: any = { champion: f.champion, updated_at: new Date().toISOString() };
@@ -103,6 +114,7 @@ export async function POST(req: Request) {
 
       const targets = (data || []).filter((a: any) => isEnglish(a.raw_content || a.content));
       remaining = Math.max(0, targets.length - CHUNK);
+      scanned = (data || []).length;
 
       for (const a of targets.slice(0, CHUNK)) {
         try {
@@ -133,15 +145,28 @@ export async function POST(req: Request) {
         .not('strategy', 'is', null)
         .limit(500);
 
-      const targets = (memos || []).filter((m: any) => isEnglish(m.strategy));
-      remaining = Math.max(0, targets.length - CHUNK);
+      // champion_notes（記事から生成されたノート）も英語のまま残るため対象にする
+      const { data: notes } = await supabase
+        .from('champion_notes').select('id, body').not('body', 'is', null).limit(500);
 
-      for (const m of targets.slice(0, CHUNK)) {
+      const memoTargets = (memos || []).filter((m: any) => isEnglish(m.strategy)).map((m: any) => ({ kind: 'memo', ...m }));
+      const noteTargets = (notes || []).filter((n: any) => isEnglish(n.body)).map((n: any) => ({ kind: 'note', ...n }));
+      const targets = [...memoTargets, ...noteTargets];
+      remaining = Math.max(0, targets.length - CHUNK);
+      scanned = (memos || []).length + (notes || []).length;
+
+      for (const t of targets.slice(0, CHUNK)) {
         try {
-          const jp = await toJapanese(m.strategy, '対面攻略メモ');
-          await supabase.from('matchup_sentinel').update({ strategy: jp }).eq('matchup_id', m.matchup_id);
+          if (t.kind === 'memo') {
+            const jp = await toJapanese(t.strategy, '対面攻略メモ');
+            await supabase.from('matchup_sentinel').update({ strategy: jp }).eq('matchup_id', t.matchup_id);
+            if (samples.length < 3) samples.push(t.matchup_id);
+          } else {
+            const jp = await toJapanese(t.body, 'チャンピオン攻略ノート');
+            await supabase.from('champion_notes').update({ body: jp }).eq('id', t.id);
+            if (samples.length < 3) samples.push(`note${t.id}`);
+          }
           converted++;
-          if (samples.length < 3) samples.push(m.matchup_id);
           await sleep(COOL_DOWN_MS);
         } catch (e) {
           if (e instanceof RateLimited) { rateLimited = true; break; }
@@ -157,6 +182,7 @@ export async function POST(req: Request) {
       // レート制限で中断した場合は done にしない（クライアント側で待機して再開する）
       done: remaining === 0 && !rateLimited,
       rateLimited,
+      scanned,
       samples,
     });
   } catch (e: any) {

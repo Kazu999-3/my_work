@@ -34,6 +34,7 @@ export default function DictInsightsPanel({ mode = 'inspect' }: { mode?: 'mainte
   const mergeLaneGuides = async () => {
     setLaneMerging(true); setError(null); setLaneResult(null); setLaneProgress(0);
     let total = 0;
+    let lastMessage = '';
     try {
       for (let i = 0; i < 200; i++) {
         const res = await fetch('/api/admin/lane-guides', {
@@ -43,11 +44,12 @@ export default function DictInsightsPanel({ mode = 'inspect' }: { mode?: 'mainte
         });
         const d = await res.json();
         if (!res.ok) throw new Error(d.error || '統合に失敗しました');
+        if (d.message) lastMessage = d.message;
         total += d.merged || 0;
         setLaneProgress(total);
         if (d.done || d.merged === 0) break;
       }
-      setLaneResult(total > 0 ? `✅ ${total}本の記事をレーン別ガイドへ統合しました` : '✅ 統合対象の記事はありませんでした');
+      setLaneResult(total > 0 ? `✅ ${total}本の記事をレーン別ガイドへ統合しました` : (lastMessage || '✅ 統合対象の記事はありませんでした'));
     } catch (e: any) { setError(e.message); } finally { setLaneMerging(false); }
   };
 
@@ -58,6 +60,7 @@ export default function DictInsightsPanel({ mode = 'inspect' }: { mode?: 'mainte
   const translateAll = async (target: string) => {
     setTranslating(target); setError(null); setTransResult(null); setTransProgress(0);
     let total = 0;
+    let lastScanned = 0;
     try {
       // 1回あたり2件処理＋制限時は60秒待機のため、上限は多めに取る（無限ループ防止）
       for (let i = 0; i < 500; i++) {
@@ -68,6 +71,7 @@ export default function DictInsightsPanel({ mode = 'inspect' }: { mode?: 'mainte
         });
         const d = await res.json();
         if (!res.ok) throw new Error(d.error || '変換に失敗しました');
+        if (typeof d.scanned === 'number') lastScanned = d.scanned;
         total += d.converted || 0;
         setTransProgress(total);
 
@@ -79,7 +83,9 @@ export default function DictInsightsPanel({ mode = 'inspect' }: { mode?: 'mainte
         }
         if (d.done || d.converted === 0) break;
       }
-      setTransResult(total > 0 ? `✅ ${total}件を日本語に変換しました` : '✅ 英語のデータは見つかりませんでした');
+      setTransResult(total > 0
+        ? `✅ ${total}件を日本語に変換しました`
+        : `✅ ${lastScanned}件を確認しましたが、英語と判定されたデータはありませんでした`);
     } catch (e: any) { setError(e.message); } finally { setTranslating(null); }
   };
 

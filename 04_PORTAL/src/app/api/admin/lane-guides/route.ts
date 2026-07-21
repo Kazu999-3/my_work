@@ -80,7 +80,15 @@ export async function POST(req: Request) {
       .filter((a: any) => (a.raw_content || a.content || '').length >= 200);
 
     if (targets.length === 0) {
-      return NextResponse.json({ success: true, merged: 0, remaining: 0, done: true, message: '統合対象のレーン記事はありません。' });
+      // なぜ0件なのかが分からないと詰まるので、内訳を返す
+      const total = (articles || []).length;
+      const champArticles = (articles || []).filter(isChampionArticle).length;
+      const tooShort = (articles || []).filter((a: any) => !isChampionArticle(a) && (a.raw_content || a.content || '').length < 200).length;
+      return NextResponse.json({
+        success: true, merged: 0, remaining: 0, done: true,
+        message: `統合対象のレーン記事はありません（ライブラリ内 ${total}件: チャンピオン記事 ${champArticles}件 / 本文200字未満 ${tooShort}件）。`,
+        debug: { total, champArticles, tooShort },
+      });
     }
 
     const batch = targets.slice(0, CHUNK);
