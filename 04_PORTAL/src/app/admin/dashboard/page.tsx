@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Activity, Zap, TrendingUp, ShieldAlert, Cpu, Network, Gamepad2, Users, RefreshCw, CheckCircle2, X, ChevronRight } from 'lucide-react';
+import { Activity, Zap, TrendingUp, ShieldAlert, Cpu, Network, Gamepad2, Users, RefreshCw, CheckCircle2, X, ChevronRight, Brain } from 'lucide-react';
 import { supabase } from '../../../lib/supabaseClient';
 import { supabaseBrowser } from '../../../lib/supabaseBrowserClient';
 import Link from 'next/link';
@@ -76,6 +76,32 @@ export default function Home() {
   }, [isAuthenticated]);
 
 
+
+  // 知識ベースの整備状況（件数のみ・head:trueでエグレスを抑える）
+  const [kbStats, setKbStats] = useState<{ facts: number | null; library: number | null; laneGuides: number | null; memos: number | null; matchupLog: number | null }>({
+    facts: null, library: null, laneGuides: null, memos: null, matchupLog: null,
+  });
+  const fetchKbStats = async () => {
+    try {
+      const count = async (table: string, build?: (q: any) => any) => {
+        let q = supabase.from(table).select('*', { count: 'exact', head: true });
+        if (build) q = build(q);
+        const { count: c } = await q;
+        return c ?? 0;
+      };
+      const [facts, library, laneGuides, memos, matchupLog] = await Promise.all([
+        count('champion_facts'),
+        // 未整理＝まだ辞典/ガイドへ統合されていない記事
+        count('personal_knowledge', (q: any) => q.or('tags.is.null,tags.not.cs.{__DELETED__}')),
+        count('lane_guides'),
+        count('matchup_sentinel', (q: any) => q.neq('enemy', 'GLOBAL')),
+        count('matchup_log'),
+      ]);
+      setKbStats({ facts, library, laneGuides, memos, matchupLog });
+    } catch (e) {
+      console.warn('知識ベース統計の取得に失敗:', e);
+    }
+  };
 
   const fetchData = async (silent = false) => {
     if (!silent) setIsLoading(true);
@@ -210,6 +236,7 @@ export default function Home() {
   useEffect(() => {
     if (!isAuthenticated) return;
     fetchData();
+    fetchKbStats();
     setLastUpdated(new Date().toLocaleTimeString('ja-JP'));
   }, [isAuthenticated]);
 
@@ -299,7 +326,7 @@ export default function Home() {
           <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 to-purple-600 blur opacity-20"></div>
           <h1 className="relative text-5xl md:text-6xl font-black tracking-tighter mb-2 drop-shadow-2xl">
             <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400">Sovereign OS</span> 
-            <span className="text-white/90 ml-3 font-mono text-3xl opacity-80">v4.0</span>
+            <span className="text-white/90 ml-3 font-mono text-3xl opacity-80">v5.0</span>
           </h1>
           <p className="text-blue-400 font-bold text-sm uppercase tracking-[0.2em] flex items-center gap-2 mt-3">
             <Activity size={16} className="animate-pulse text-blue-500" />
@@ -307,7 +334,16 @@ export default function Home() {
           </p>
         </div>
         
-        <div className="flex flex-col md:flex-row items-end md:items-center gap-4">
+        <div className="flex flex-col md:flex-row items-end md:items-center gap-4 flex-wrap">
+          {/* よく使う運用画面への導線。ダッシュボードから辿れず迷いやすかったため追加 */}
+          <Link href="/admin/knowledge" className="px-4 py-2.5 rounded-2xl bg-pink-500/10 border border-pink-500/30 hover:bg-pink-500/20 text-xs font-bold text-pink-300 transition-all flex items-center gap-2">
+            <Brain size={14} />
+            <span>ナレッジ / データ整備 ➔</span>
+          </Link>
+          <Link href="/ktm-admin" className="px-4 py-2.5 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 hover:bg-indigo-500/20 text-xs font-bold text-indigo-300 transition-all flex items-center gap-2">
+            <Users size={14} />
+            <span>名簿 / 試合管理 ➔</span>
+          </Link>
           <Link href="/admin/prompts" className="px-4 py-2.5 rounded-2xl bg-slate-900 border border-slate-800 hover:bg-slate-800 hover:border-slate-700 text-xs font-bold text-slate-300 transition-all flex items-center gap-2">
             <Cpu size={14} className="text-cyan-400" />
             <span>AI プロンプト設定 ➔</span>
@@ -771,6 +807,38 @@ export default function Home() {
 
         <motion.div variants={itemVariants} className="md:col-span-2 lg:col-span-4 mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
           
+          {/* 知識ベースの整備状況: 各データがどれだけ溜まっているかを一目で把握する */}
+          <div className="glass-panel rounded-3xl p-6 border border-white/5 bg-gradient-to-br from-emerald-500/5 to-transparent lg:col-span-2">
+            <div className="flex justify-between items-center mb-5 flex-wrap gap-2">
+              <h3 className="text-xl font-black text-white flex items-center gap-2">
+                <div className="w-2 h-6 bg-emerald-500 rounded-full shadow-[0_0_10px_rgba(16,185,129,0.6)]"></div>
+                知識ベースの整備状況
+              </h3>
+              <Link href="/admin/knowledge" className="text-xs font-bold text-emerald-400 hover:text-emerald-300 hover:underline">🛠️ データ整備へ →</Link>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+              {[
+                { label: 'チャンピオン辞典', value: kbStats.facts, href: '/champions', color: 'text-blue-400' },
+                { label: '未整理の記事', value: kbStats.library, href: '/admin/knowledge', color: 'text-purple-400' },
+                { label: 'レーン別ガイド', value: kbStats.laneGuides, href: '/lane-guides', color: 'text-amber-400', suffix: '/6' },
+                { label: '対面メモ', value: kbStats.memos, href: '/matchups', color: 'text-cyan-400' },
+                { label: '対面カルテ', value: kbStats.matchupLog, href: '/matchups', color: 'text-rose-400' },
+              ].map((s) => (
+                <Link key={s.label} href={s.href}
+                  className="bg-black/20 rounded-2xl p-4 border border-white/5 hover:bg-white/5 transition-colors text-center">
+                  <div className={`text-2xl font-black ${s.color}`}>
+                    {s.value === null ? '—' : s.value}
+                    {s.suffix && <span className="text-sm text-gray-600">{s.suffix}</span>}
+                  </div>
+                  <div className="text-[10px] text-gray-500 font-bold mt-1">{s.label}</div>
+                </Link>
+              ))}
+            </div>
+            <p className="text-[10px] text-gray-600 mt-3">
+              「未整理の記事」は、まだ辞典やレーンガイドへ統合されていない攻略ライブラリの記事数です。データ整備タブで①→③を実行すると減っていきます。
+            </p>
+          </div>
+
           {/* Dictionary Updates */}
           <div className="glass-panel rounded-3xl p-6 border border-white/5 bg-gradient-to-br from-blue-500/5 to-transparent">
             <div className="flex justify-between items-center mb-6">
@@ -802,7 +870,8 @@ export default function Home() {
                 <div className="w-2 h-6 bg-purple-500 rounded-full shadow-[0_0_10px_rgba(168,85,247,0.6)]"></div>
                 ライブラリ 追加履歴
               </h3>
-              <Link href="/library" className="text-xs font-bold text-purple-400 hover:text-purple-300 hover:underline">すべて見る →</Link>
+              {/* /library は存在しないページだった。実体は管理画面の攻略ライブラリタブ */}
+              <Link href="/admin/knowledge" className="text-xs font-bold text-purple-400 hover:text-purple-300 hover:underline">すべて見る →</Link>
             </div>
             <div className="space-y-3">
               {recentLibraryUpdates.length > 0 ? recentLibraryUpdates.map((item, idx) => (
