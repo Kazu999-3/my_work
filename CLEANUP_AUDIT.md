@@ -4,7 +4,7 @@
 
 > **対応状況（2026-07-21 実施済み）**
 > A / B-1 / B-2 / B-3 / B-4 はすべて対応完了。詳細は末尾の「対応記録」を参照。
-> 未着手は **C（要確認）** のみ。
+> C（要確認）も調査・対応済み。残作業なし。
 
 判定は「参照が1件もないこと」を機械的に確認したうえで、動的import・cron設定・外部からの直接アクセスまで個別に裏取りしている。
 
@@ -66,14 +66,16 @@ process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY || process.env
 
 ---
 
-## C. 要確認（消してよいが、意図を知りたい）
+## C. 要確認 → 調査完了
 
-| 対象 | 状況 |
+**すべて調査・対応済み。結論は下記のとおり。**
+
+| 対象 | 結論 |
 |---|---|
-| `04_PORTAL/src/app/admin/soloq/page.tsx` | どこからもリンクされていない。設計メモには「管理者専用 `/admin/soloq`」と記載があるので、URL直打ち運用の可能性あり |
-| `03_SYSTEMS/v2_CORE/` の7本 | `apply_patch.py` / `archivist.py` / `auditor.py` / `prospector.py` / `resume_publish.py` / `note_analytics_daemon.py` / `x_analyzer.py` はどこからも import されず、CIからも起動されない。note収益化系の旧機能と見られる |
-| `03_SYSTEMS/v2_CORE/test_*.py` 7本 | 通常のテストランナーから外れた手動実行スクリプト。動くかは未検証 |
-| `absorber.yml` / `monetization.yml` | 定期実行は停止済み（手動のみ）。参照先スクリプトが存在しないため、復活させるなら要修正 |
+| `admin/soloq/page.tsx` | **残す。**中身は20行のリダイレクトのみで、「ソロキュー偵察は廃止。ブックマーク・外部リンク対策としてこのページだけ残す」とコメントされていた。意図的な後方互換であり、消すとブックマークが404になる |
+| `v2_CORE/` の7本 | **残す（未使用の注記を追加）。**note収益化系5本・LoL攻略系1本・インフラ保守1本。将来の復活を前提とする方針のため削除せず、ファイル冒頭に「【現在未使用】」の見出しを入れて現役コードと区別できるようにした |
+| `v2_CORE/test_*.py` 7本 | **`v2_CORE/manual_tests/` へ隔離。**本番のSupabase・Gemini・noteに実接続する結合テストで、`test_*.py` という名前のまま置いておくとpytest等が誤って拾い、**本番へ接続してしまう**危険があった。特に `test_note_publish_direct.py` は実行すると実際にnoteへ投稿される。前提条件を書いたREADMEを添付 |
+| `absorber.yml` / `monetization.yml` | **定期実行の停止を維持。**手動実行は残してあるが、参照先スクリプトが存在しないため復活には修正が必要 |
 
 ---
 
