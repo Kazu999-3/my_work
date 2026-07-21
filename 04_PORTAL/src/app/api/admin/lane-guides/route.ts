@@ -12,13 +12,15 @@ export const maxDuration = 60;
 const CHUNK = 3; // 1リクエストで統合する記事数（AI呼び出しが重いため）
 
 // ※route.ts では GET/POST 等以外を export できないため const のままにする
+// COMMON は「どのレーンでも通用する普遍的な判断・マクロ」を集約する枠。
+// 旧「上達の原則」はここに統合した。
 const LANES = [
+  { key: 'COMMON', label: '全レーン共通（上達の原則）' },
   { key: 'TOP', label: 'TOP（トップ）' },
   { key: 'JG', label: 'JG（ジャングル）' },
   { key: 'MID', label: 'MID（ミッド）' },
   { key: 'ADC', label: 'ADC（ボット）' },
   { key: 'SUP', label: 'SUP（サポート）' },
-  { key: 'COMMON', label: '全レーン共通' },
 ];
 
 // 記事がどのレーンの話かを、チャンピオン欄・タイトル・本文の語から判定する
@@ -94,7 +96,14 @@ export async function POST(req: Request) {
       const { data: existing } = await supabase
         .from('lane_guides').select('title, body, source_count').eq('lane', lane).maybeSingle();
 
-      const prompt = `「${laneLabel}」のレーン攻略ガイドを、新しい記事の内容で更新します。
+      // COMMON（全レーン共通）は、チャンピオン名を伏せて「どのチャンプでも通用する原則」に絞る。
+      // 旧「上達の原則」の役割をここに統合している。
+      const isCommon = lane === 'COMMON';
+      const commonRule = isCommon
+        ? `\n- これは「全レーン共通」のガイドです。特定チャンピオンの性能・スキル・ビルドの話は**一切含めない**でください\n- どのチャンプ・どのレーンを担当していても使える判断基準だけを書いてください\n- 抽象的な精神論ではなく、**具体的な状況と行動**で書いてください（例:「相手ジャングルが上に映ったら、下のオブジェクトを準備する」）`
+        : '';
+
+      const prompt = `「${laneLabel}」のレーン攻略ガイドを、新しい記事の内容で更新します。${commonRule}
 
 【現在のガイド】
 ${existing?.body || '（まだ何も書かれていません）'}

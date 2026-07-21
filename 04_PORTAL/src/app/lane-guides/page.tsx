@@ -40,6 +40,7 @@ export default function LaneGuidesPage() {
           </h1>
           <p className="text-gray-400 mt-2 text-sm">
             攻略ライブラリの記事から、<strong className="text-amber-300">レーンごとの立ち回り・マクロ</strong>を1本に統合したガイドです。
+            どのレーンでも通用する判断・考え方は<strong className="text-amber-300">「全レーン共通」</strong>にまとまっています。
           </p>
         </div>
 

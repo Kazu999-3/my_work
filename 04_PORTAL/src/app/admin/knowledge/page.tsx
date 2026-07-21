@@ -343,8 +343,8 @@ export default function KnowledgeBase() {
             <div className="bg-pink-500/5 border border-pink-500/20 rounded-2xl p-5">
               <h2 className="text-base font-black text-white mb-2">🛠️ データ整備の進め方</h2>
               <p className="text-xs text-gray-400 leading-relaxed">
-                知識を「チャンピオン辞典 / レーン別ガイド / 上達の原則」の3層へ整理する一括処理です。
-                <strong className="text-pink-300">①→④の順に実行</strong>すると、翻訳済みのデータをもとに統合できるため品質が上がります。
+                知識を「チャンピオン辞典 / レーン別ガイド」へ整理する一括処理です。
+                <strong className="text-pink-300">①→③の順に実行</strong>すると、翻訳済みのデータをもとに統合できるため品質が上がります。
               </p>
               <p className="text-[11px] text-gray-500 mt-2">
                 ※ ②「チャンピオン辞典へ一括同期」は
