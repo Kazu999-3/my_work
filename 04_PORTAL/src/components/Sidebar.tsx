@@ -233,16 +233,19 @@ export default function Sidebar() {
           <PushOptIn collapsed={isCollapsed} />
         </div>
 
-        {/* 管理者用ログインリンク（一般画面かつ展開時のみ表示） */}
-        {!isAdminArea && !isCollapsed && (
+        {/* 管理者用ログインリンク。折りたたみ時もアイコンだけ残して導線を絶やさない */}
+        {!isAdminArea && (
           <div className="mt-4 text-center flex-shrink-0">
-            <Link 
-              href="/ktm-admin" 
+            <Link
+              href="/ktm-admin"
               prefetch={false}
-              className="inline-flex items-center justify-center gap-2 text-xs text-amber-400 hover:text-white transition-all duration-300 font-black py-2.5 px-4 rounded-xl bg-amber-500/10 hover:bg-amber-500/25 border border-amber-500/20 hover:border-amber-500/50 w-full shadow-lg shadow-amber-950/10"
+              title="管理者ダッシュボード"
+              className={`inline-flex items-center justify-center gap-2 text-xs text-amber-400 hover:text-white transition-all duration-300 font-black rounded-xl bg-amber-500/10 hover:bg-amber-500/25 border border-amber-500/20 hover:border-amber-500/50 w-full shadow-lg shadow-amber-950/10 ${
+                isCollapsed ? 'py-3' : 'py-2.5 px-4'
+              }`}
             >
               <Shield size={14} className="text-amber-400 animate-pulse" />
-              <span>管理者ダッシュボード 🔑</span>
+              {!isCollapsed && <span>管理者ダッシュボード 🔑</span>}
             </Link>
           </div>
         )}
@@ -295,6 +298,20 @@ export default function Sidebar() {
                       />
                     ))}
                   </div>
+
+                  {/* 管理者ダッシュボードへの入口。
+                      PC版はサイドバーに常設されているが、スマホには導線が無く辿り着けなかった。 */}
+                  {!isAdminArea && (
+                    <Link
+                      href="/ktm-admin"
+                      prefetch={false}
+                      onClick={() => setShowMobileMore(false)}
+                      className="mt-3 flex items-center justify-center gap-2 text-xs font-black py-3 px-4 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20 active:bg-amber-500/25"
+                    >
+                      <Shield size={14} />
+                      <span>管理者ダッシュボード 🔑</span>
+                    </Link>
+                  )}
                 </div>
               </div>
             )}
