@@ -1,22 +1,48 @@
 name: KTM Cloud Worker
 
 # PC常駐デーモンの代替(#88)。
+#  - prospect: 1日1回、辞典が古いチャンピオンの解説動画を探してキューに積む
 #  - youtube: 30分おきに youtube_queue を処理（yt-dlp字幕→Gemini要約→ナレッジ保存）
 #  - dict-sync: 3時間おきにナレッジ→チャンピオン辞典の同期（knowledge/sync をチャンクで回す）
+#
+# prospect が動画を見つける → youtube が解析する → dict-sync が辞典へ反映する、
+# という流れで、人手を介さずに辞典が埋まっていく。
 # 必要シークレット: SUPABASE_URL, SUPABASE_SERVICE_KEY, GEMINI_API_KEY, KTM_CRON_SECRET
 
 on:
   schedule:
     - cron: '*/30 * * * *'   # youtube worker
     - cron: '7 */3 * * *'    # dict-sync
+    - cron: '30 18 * * *'    # prospect（毎日 3:30 JST）
   workflow_dispatch:
     inputs:
       job:
-        description: 'youtube / dict-sync / both'
+        description: 'youtube / dict-sync / prospect / both'
         required: false
         default: 'both'
+      champions:
+        description: 'prospect時に対象を直接指定（カンマ区切り。空なら辞典が古い順）'
+        required: false
+        default: ''
 
 jobs:
+  # 解析対象の動画を自動で発掘してキューに積む（v2_CORE/prospector.py の後継）
+  prospect:
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.job == 'prospect' || (github.event_name == 'schedule' && github.event.schedule == '30 18 * * *')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - name: Install yt-dlp
+        run: pip install -q yt-dlp
+      - name: Prospect videos
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY != '' && secrets.SUPABASE_SERVICE_KEY || secrets.SUPABASE_KEY }}
+          PROSPECT_CHAMPIONS: ${{ github.event.inputs.champions }}
+        run: python scripts/prospector.py
+
   youtube:
     if: github.event_name == 'workflow_dispatch' && (github.event.inputs.job == 'youtube' || github.event.inputs.job == 'both') || (github.event_name == 'schedule' && github.event.schedule == '*/30 * * * *')
     runs-on: ubuntu-latest

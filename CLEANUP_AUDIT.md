@@ -73,7 +73,7 @@ process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY || process.env
 | 対象 | 結論 |
 |---|---|
 | `admin/soloq/page.tsx` | **残す。**中身は20行のリダイレクトのみで、「ソロキュー偵察は廃止。ブックマーク・外部リンク対策としてこのページだけ残す」とコメントされていた。意図的な後方互換であり、消すとブックマークが404になる |
-| `v2_CORE/` の7本 | **残す（未使用の注記を追加）。**note収益化系5本・LoL攻略系1本・インフラ保守1本。将来の復活を前提とする方針のため削除せず、ファイル冒頭に「【現在未使用】」の見出しを入れて現役コードと区別できるようにした |
+| `v2_CORE/` の7本 | **残す（未使用の注記を追加）。**note収益化系5本・インフラ保守1本は削除せず、冒頭に「【現在未使用】」の見出しを入れて現役コードと区別できるようにした。**`prospector.py` のみクラウドで復活済み**（下記） |
 | `v2_CORE/test_*.py` 7本 | **`v2_CORE/manual_tests/` へ隔離。**本番のSupabase・Gemini・noteに実接続する結合テストで、`test_*.py` という名前のまま置いておくとpytest等が誤って拾い、**本番へ接続してしまう**危険があった。特に `test_note_publish_direct.py` は実行すると実際にnoteへ投稿される。前提条件を書いたREADMEを添付 |
 | `absorber.yml` / `monetization.yml` | **定期実行の停止を維持。**手動実行は残してあるが、参照先スクリプトが存在しないため復活には修正が必要 |
 
@@ -127,8 +127,26 @@ process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY || process.env
 - 共通クライアントが**画像入力に対応**（`image: { base64, mimeType }`）
 - `resolveDisplayName` は**空文字のニックネームを未設定として扱う**。従来の `||` 連鎖は空文字を真値として扱わないため偶然動いていたが、意図として明示しテストで固定した
 
+### 動画自動発掘（prospector）の復活
+
+`v2_CORE/prospector.py` をクラウドで動く形に作り直した（`scripts/prospector.py`）。
+`ktm-cloud-worker.yml` の **prospect ジョブ**（毎日 3:30 JST）で実行される。
+
+これで **発掘 → 解析 → 辞典反映** が人手なしで繋がる。
+
+| | 旧 `v2_CORE/prospector.py` | 新 `scripts/prospector.py` |
+|---|---|---|
+| 検索方法 | 検索結果HTMLを正規表現で解析 | yt-dlp の検索機能 |
+| HTML構造の変化 | **無言で0件になる** | 影響を受けない |
+| 重複登録 | 防げない | `youtube_queue` と突き合わせて除外 |
+| 動画の尺 | 見ていない（数十秒のクリップも数時間の配信も拾う） | 4〜60分に限定（変更可） |
+| キューへの登録 | **繋がっていない**（URLを返すだけ） | pending で登録し、youtubeジョブが解析 |
+| 対象の選び方 | 呼び出し側が指定 | 辞典の更新が古い順（未登録を最優先） |
+
+旧ファイルは参照用に残し、冒頭に後継の場所と引き継がなかった理由を明記した。
+
 ### 検証
 
 - `tsc --noEmit`: エラー0
-- ユニットテスト: **22件通過**（mmr 17 + discordName 5 ※新規）
+- ユニットテスト: **29件通過**（mmr 17 + discordName 5 + prospector 7 ※後2つは新規）
 - `balancer.test.ts` はサンドボックスの実行時間上限を超えるため未実行。今回の変更対象外（`lib/balancer.ts` は未変更）
