@@ -134,6 +134,20 @@ export async function callGeminiWithRetry(
       throw new Error('Gemini API: レート制限により全リトライが失敗しました。しばらく待ってから再度お試しください。');
     }
 
+    // 503(高負荷) / 500 / 502 / 504 はGemini側の一時的な障害。
+    // 以前は即失敗していたが、少し待てば回復することが多いのでリトライ対象にする。
+    if (res.status === 503 || res.status === 500 || res.status === 502 || res.status === 504) {
+      lastError = new Error(`Gemini API: ${res.status} 一時的に利用できません`);
+      if (attempt < maxRetries) {
+        const waitMs = backoffMs(attempt);
+        console.log(`[geminiClient] ${res.status} Unavailable - ${waitMs}ms 後にリトライ (${attempt + 1}/${maxRetries})`);
+        await sleep(waitMs);
+        continue;
+      }
+      // 呼び出し側が「待って再開」に分岐できるよう、レート制限と同じ扱いのメッセージにする
+      throw new Error('Gemini API: レート制限によりリトライ上限に到達しました（サーバー高負荷）。しばらく待ってから再度お試しください。');
+    }
+
     if (!res.ok) {
       const bodyText = await res.text().catch(() => '');
       throw new Error(`Gemini API Error: ${res.status} ${res.statusText} ${bodyText.slice(0, 300)}`);

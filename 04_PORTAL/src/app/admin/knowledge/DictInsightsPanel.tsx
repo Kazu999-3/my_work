@@ -36,7 +36,8 @@ export default function DictInsightsPanel({ mode = 'inspect' }: { mode?: 'mainte
     let total = 0;
     let lastMessage = '';
     try {
-      for (let i = 0; i < 200; i++) {
+      // 制限時は60秒待機して再開するため、上限は多めに取る（無限ループ防止）
+      for (let i = 0; i < 500; i++) {
         const res = await fetch('/api/admin/lane-guides', {
           method: 'POST', credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
@@ -47,6 +48,13 @@ export default function DictInsightsPanel({ mode = 'inspect' }: { mode?: 'mainte
         if (d.message) lastMessage = d.message;
         total += d.merged || 0;
         setLaneProgress(total);
+
+        // AIの制限・混雑で中断した場合は60秒待って続きから再開する
+        if (d.rateLimited) {
+          setLaneResult(`⏳ AIの利用制限またはサーバー混雑のため60秒待機します…（ここまで${total}本完了）`);
+          await new Promise((r) => setTimeout(r, 60000));
+          continue;
+        }
         if (d.done || d.merged === 0) break;
       }
       setLaneResult(total > 0 ? `✅ ${total}本の記事をレーン別ガイドへ統合しました` : (lastMessage || '✅ 統合対象の記事はありませんでした'));
@@ -77,7 +85,7 @@ export default function DictInsightsPanel({ mode = 'inspect' }: { mode?: 'mainte
 
         // レート制限に当たったら、失敗にせず60秒待ってから同じ続きを再開する
         if (d.rateLimited) {
-          setTransResult(`⏳ APIの利用制限に達したため60秒待機します…（ここまで${total}件完了）`);
+          setTransResult(`⏳ AIの利用制限またはサーバー混雑のため60秒待機します…（ここまで${total}件完了）`);
           await new Promise((r) => setTimeout(r, 60000));
           continue;
         }

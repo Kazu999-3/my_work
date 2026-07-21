@@ -129,7 +129,24 @@ ${String(body).slice(0, 8000)}
 必ず以下のJSONのみ出力（コードブロック禁止）:
 {"title":"<ガイドのタイトル。30字以内>","body":"<統合後のMarkdown全文>"}`;
 
-      const raw = await callGeminiWithRetry(prompt, { temperature: 0.3, maxOutputTokens: 6000, maxRetries: 2 });
+      // レート制限や503で落ちても、ここまでに統合した分は成果として返す（次回は続きから）
+      let raw: string;
+      try {
+        raw = await callGeminiWithRetry(prompt, { temperature: 0.3, maxOutputTokens: 6000, maxRetries: 3 });
+      } catch (aiErr: any) {
+        const msg = String(aiErr?.message || '');
+        if (msg.includes('レート制限') || msg.includes('一時的に利用できません')) {
+          return NextResponse.json({
+            success: true,
+            merged: mergedLanes.length,
+            lanes: mergedLanes,
+            remaining: remaining + (batch.length - mergedLanes.length),
+            done: false,
+            rateLimited: true,
+          });
+        }
+        throw aiErr;
+      }
       let cleaned = (raw || '').trim().replace(/^```[a-z]*\n?/, '').replace(/```$/, '').trim();
       const s = cleaned.indexOf('{'), e = cleaned.lastIndexOf('}');
       if (s < 0 || e <= s) continue; // 解析できなければこの記事はスキップ（次回再挑戦）

@@ -50,8 +50,12 @@ ${String(text).slice(0, 10000)}`;
     const out = await callGeminiWithRetry(prompt, { temperature: 0.2, maxOutputTokens: 4096, maxRetries: 3, apiKeyEnv });
     return (out || '').trim();
   } catch (e: any) {
-    // レート制限は「失敗」ではなく「今は打ち止め」。ここまでの成果を保持して中断する。
-    if (String(e?.message || '').includes('レート制限')) throw new RateLimited();
+    // レート制限・サーバー高負荷(503)は「失敗」ではなく「今は打ち止め」。
+    // ここまでの成果を保持して中断し、呼び出し側が待って再開する。
+    const msg = String(e?.message || '');
+    if (msg.includes('レート制限') || msg.includes('503') || msg.includes('一時的に利用できません')) {
+      throw new RateLimited();
+    }
     throw e;
   }
 }
