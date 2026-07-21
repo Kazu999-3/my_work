@@ -754,6 +754,12 @@ export function LibraryTabContentInner() {
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[#a78bfa]" size={20} />
           <input type="text" placeholder="キーワード、チャンピオン名で検索..." value={search} onChange={(e) => setSearch(e.target.value)}
             className="w-full glass-panel border-2 border-transparent focus:border-[#a78bfa]/50 rounded-2xl py-4 pl-12 pr-4 text-white font-bold outline-none transition-colors shadow-lg" />
+          {search && (
+            <button type="button" onClick={() => setSearch('')} title="検索条件をクリア"
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white text-sm font-black">
+              ✕
+            </button>
+          )}
         </div>
         
         <div className="flex gap-3 flex-wrap">

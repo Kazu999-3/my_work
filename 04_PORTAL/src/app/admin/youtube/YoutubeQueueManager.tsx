@@ -27,14 +27,22 @@ function ArticleLinks({ item }: { item: QueueItem }) {
     // （記事側が動画IDを持っていない生成経路もあるため、断定はしない）
     if (item.status === 'completed') {
       const { title } = parseTitleAndError(item.title);
+      // タイトルをクリップボードへ入れてから遷移する。
+      // 自動検索で当たらなくても、その場で貼り直して探せるようにするため。
+      const handleClick = async (e: React.MouseEvent) => {
+        e.preventDefault();
+        try { await navigator.clipboard.writeText(title); } catch { /* コピー不可でも遷移は続行 */ }
+        window.location.href = `/admin/knowledge?q=${encodeURIComponent(title.slice(0, 40))}`;
+      };
       return (
-        <a
-          href={`/admin/knowledge?q=${encodeURIComponent(title.slice(0, 40))}`}
-          title="動画IDでの自動紐づけができませんでした。タイトルでライブラリを検索します。"
+        <button
+          type="button"
+          onClick={handleClick}
+          title={`タイトルをコピーしてライブラリを検索します:\n${title}`}
           className="text-[10px] text-amber-400/90 bg-amber-500/10 border border-amber-500/25 px-1.5 py-0.5 rounded hover:bg-amber-500/20 transition-colors"
         >
-          🔍 記事をタイトルで探す
-        </a>
+          🔍 タイトルをコピーして探す
+        </button>
       );
     }
     return null;
