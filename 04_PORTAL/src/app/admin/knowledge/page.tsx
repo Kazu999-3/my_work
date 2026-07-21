@@ -42,7 +42,7 @@ export default function KnowledgeBase() {
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
   // ページ内タブ: ナレッジ一覧 or 動画キュー or 攻略ライブラリ or 鮮度レビュー
-  const [activeTab, setActiveTab] = useState<'knowledge' | 'video' | 'library' | 'review'>('knowledge');
+  const [activeTab, setActiveTab] = useState<'knowledge' | 'video' | 'library' | 'maintenance' | 'review'>('knowledge');
 
   // 認証の確認（middleware.tsが/admin/*をCookieでゲート済み。UIローディング制御のみ）
   useEffect(() => {
@@ -314,6 +314,7 @@ export default function KnowledgeBase() {
             { id: 'knowledge', label: '📖 ナレッジ一覧', icon: BookOpen },
             { id: 'video', label: '⏳ 動画解析キュー', icon: Video },
             { id: 'library', label: '🗂️ 攻略ライブラリ', icon: Layers },
+            { id: 'maintenance', label: '🛠️ データ整備', icon: Layers },
             { id: 'review', label: '🔄 鮮度レビュー', icon: Sparkles },
           ].map((tab) => {
             const Icon = tab.icon;
@@ -336,10 +337,30 @@ export default function KnowledgeBase() {
         {/* --- タブ別コンテンツ --- */}
         {activeTab === 'video' && <YoutubeQueueManager />}
         {activeTab === 'library' && <LibraryTabContent />}
+        {/* データ整備: 一括処理を推奨実行順に並べる */}
+        {activeTab === 'maintenance' && (
+          <div className="space-y-6">
+            <div className="bg-pink-500/5 border border-pink-500/20 rounded-2xl p-5">
+              <h2 className="text-base font-black text-white mb-2">🛠️ データ整備の進め方</h2>
+              <p className="text-xs text-gray-400 leading-relaxed">
+                知識を「チャンピオン辞典 / レーン別ガイド / 上達の原則」の3層へ整理する一括処理です。
+                <strong className="text-pink-300">①→④の順に実行</strong>すると、翻訳済みのデータをもとに統合できるため品質が上がります。
+              </p>
+              <p className="text-[11px] text-gray-500 mt-2">
+                ※ ②「チャンピオン辞典へ一括同期」は
+                <button onClick={() => setActiveTab('library' as any)} className="text-pink-400 hover:underline font-bold mx-1">🗂️ 攻略ライブラリ</button>
+                タブの「全チャンプ辞典に一括同期」ボタンから実行します。
+              </p>
+            </div>
+            <DictInsightsPanel mode="maintenance" />
+          </div>
+        )}
+
+        {/* 鮮度レビュー: 古い辞典の判定と、個別の点検ツール */}
         {activeTab === 'review' && (
           <div className="space-y-6">
             <DictReviewPanel />
-            <DictInsightsPanel />
+            <DictInsightsPanel mode="inspect" />
           </div>
         )}
 

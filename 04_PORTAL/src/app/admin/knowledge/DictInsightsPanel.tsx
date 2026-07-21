@@ -8,7 +8,13 @@ import { RefreshCw, AlertTriangle, Sparkles, Globe, BookOpen, Languages, Map as 
  *  - 矛盾検出: 辞典の主張（苦手/BAN推奨）と実戦データ(matchup_log)の食い違いを洗い出す
  *  - メモ要約: 散らばった対面メモを「このチャンプの要点」に集約
  */
-export default function DictInsightsPanel() {
+/**
+ * @param mode
+ *  'maintenance' … 一括処理（日本語化・辞典同期・レーン統合・原則生成）を実行順に並べる
+ *  'inspect'     … 個別の点検ツール（矛盾検出・メモ要約・自動リサーチ）
+ * タブによって出し分けることで「今どの作業をしているか」を分かりやすくする。
+ */
+export default function DictInsightsPanel({ mode = 'inspect' }: { mode?: 'maintenance' | 'inspect' }) {
   const [issues, setIssues] = useState<any[] | null>(null);
   const [checking, setChecking] = useState(false);
   const [champion, setChampion] = useState('');
@@ -141,6 +147,7 @@ export default function DictInsightsPanel() {
       {error && <p className="text-sm text-rose-400 bg-rose-500/10 border border-rose-500/30 rounded-lg px-3 py-2">{error}</p>}
 
       {/* 矛盾検出 */}
+      {mode === 'inspect' && (
       <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5">
         <div className="flex items-center justify-between flex-wrap gap-3 mb-3">
           <h3 className="font-black text-white flex items-center gap-2">
@@ -171,27 +178,13 @@ export default function DictInsightsPanel() {
           </div>
         )}
       </div>
-
-      {/* レーン別ガイドへの統合 */}
-      <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5">
-        <h3 className="font-black text-white flex items-center gap-2 mb-3">
-          <MapIcon size={16} className="text-amber-400" /> レーン別ガイドへ統合
-        </h3>
-        <p className="text-[11px] text-gray-500 mb-3">
-          ライブラリの<strong className="text-amber-300">チャンピオン記事ではない記事</strong>（レーンのマクロ・立ち回り）を、
-          レーンごとに1本のガイドへ統合します。統合した記事はライブラリから片付きます。
-          結果は <a href="/lane-guides" className="text-amber-400 hover:underline">レーン別ガイド</a> で読めます。
-        </p>
-        <button onClick={mergeLaneGuides} disabled={laneMerging}
-          className="text-xs font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30 px-4 py-2 rounded-lg hover:bg-amber-500/25 disabled:opacity-50">
-          {laneMerging ? `統合中... (${laneProgress}本)` : '🗺️ レーン別ガイドへ統合'}
-        </button>
-        {laneResult && <p className="text-xs text-emerald-400 mt-3">{laneResult}</p>}
-      </div>
+      )}
 
       {/* 既存データの日本語化 */}
+      {mode === 'maintenance' && (
       <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5">
         <h3 className="font-black text-white flex items-center gap-2 mb-3">
+          <span className="w-6 h-6 rounded-full bg-orange-500 text-black text-xs flex items-center justify-center font-black shrink-0">1</span>
           <Languages size={16} className="text-orange-400" /> 英語データの日本語化
         </h3>
         <p className="text-[11px] text-gray-500 mb-3">
@@ -210,10 +203,33 @@ export default function DictInsightsPanel() {
         </div>
         {transResult && <p className="text-xs text-emerald-400 mt-3">{transResult}</p>}
       </div>
+      )}
 
-      {/* 汎用原則の生成 */}
+      {/* レーン別ガイドへの統合 */}
+      {mode === 'maintenance' && (
       <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5">
         <h3 className="font-black text-white flex items-center gap-2 mb-3">
+          <span className="w-6 h-6 rounded-full bg-amber-500 text-black text-xs flex items-center justify-center font-black shrink-0">3</span>
+          <MapIcon size={16} className="text-amber-400" /> レーン別ガイドへ統合
+        </h3>
+        <p className="text-[11px] text-gray-500 mb-3">
+          ライブラリの<strong className="text-amber-300">チャンピオン記事ではない記事</strong>（レーンのマクロ・立ち回り）を、
+          レーンごとに1本のガイドへ統合します。統合した記事はライブラリから片付きます。
+          結果は <a href="/lane-guides" className="text-amber-400 hover:underline">レーン別ガイド</a> で読めます。
+        </p>
+        <button onClick={mergeLaneGuides} disabled={laneMerging}
+          className="text-xs font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30 px-4 py-2 rounded-lg hover:bg-amber-500/25 disabled:opacity-50">
+          {laneMerging ? `統合中... (${laneProgress}本)` : '🗺️ レーン別ガイドへ統合'}
+        </button>
+        {laneResult && <p className="text-xs text-emerald-400 mt-3">{laneResult}</p>}
+      </div>
+      )}
+
+      {/* 汎用原則の生成 */}
+      {mode === 'maintenance' && (
+      <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5">
+        <h3 className="font-black text-white flex items-center gap-2 mb-3">
+          <span className="w-6 h-6 rounded-full bg-emerald-500 text-black text-xs flex items-center justify-center font-black shrink-0">4</span>
           <BookOpen size={16} className="text-emerald-400" /> 上達の原則を生成
         </h3>
         <p className="text-[11px] text-gray-500 mb-3">
@@ -239,8 +255,10 @@ export default function DictInsightsPanel() {
           </div>
         )}
       </div>
+      )}
 
-      {/* 自動リサーチ（OP.GG） */}
+      {/* 自動リサーチ（LoLalytics） */}
+      {mode === 'inspect' && (
       <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5">
         <h3 className="font-black text-white flex items-center gap-2 mb-3">
           <Globe size={16} className="text-cyan-400" /> 自動リサーチ（LoLalytics統計）
@@ -293,8 +311,10 @@ export default function DictInsightsPanel() {
           </div>
         )}
       </div>
+      )}
 
       {/* メモの自動要約 */}
+      {mode === 'inspect' && (
       <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5">
         <h3 className="font-black text-white flex items-center gap-2 mb-3">
           <Sparkles size={16} className="text-indigo-400" /> 対面メモの自動要約
@@ -331,6 +351,7 @@ export default function DictInsightsPanel() {
           </div>
         )}
       </div>
+      )}
     </div>
   );
 }
