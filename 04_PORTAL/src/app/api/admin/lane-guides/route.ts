@@ -59,6 +59,47 @@ export async function POST(req: Request) {
   const auth = await verifyAdminSession(req);
   if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: 401 });
 
+  let action = 'merge';
+  try {
+    const body = await req.clone().json();
+    action = body?.action || 'merge';
+  } catch { /* ボディ無しは従来どおり統合 */ }
+
+  // 復旧: 保存されないまま片付けられてしまったレーン記事をライブラリへ戻す。
+  // チャンピオン記事は champion_notes へ正常に移動している可能性があるため対象外にする。
+  if (action === 'restore') {
+    try {
+      const { data: facts } = await supabase.from('champion_facts').select('champion');
+      const realChampions = new Set((facts || []).map((f: any) => String(f.champion).toLowerCase()));
+      const { data: archived } = await supabase
+        .from('personal_knowledge')
+        .select('id, title, champion')
+        .contains('tags', ['__DELETED__'])
+        .limit(1000);
+
+      const restorable = (archived || []).filter((a: any) => {
+        const names = String(a.champion || '').split(',').map((c: string) => c.trim().toLowerCase()).filter(Boolean);
+        return !names.some((n) => realChampions.has(n));
+      });
+
+      if (restorable.length > 0) {
+        const { error } = await supabase
+          .from('personal_knowledge')
+          .update({ tags: [] })
+          .in('id', restorable.map((a: any) => a.id));
+        if (error) throw error;
+      }
+
+      return NextResponse.json({
+        success: true,
+        restored: restorable.length,
+        message: `${restorable.length}件のレーン記事を攻略ライブラリに戻しました。`,
+      });
+    } catch (e: any) {
+      return NextResponse.json({ error: e.message }, { status: 500 });
+    }
+  }
+
   try {
     // 1) チャンピオン記事ではない＝レーン/マクロ記事を集める
     const { data: articles } = await supabase
@@ -153,15 +194,18 @@ ${String(body).slice(0, 8000)}
       const result = JSON.parse(cleaned.slice(s, e + 1));
       if (!result.body) continue;
 
-      await supabase.from('lane_guides').upsert({
+      // 保存の成否を必ず確認する。
+      // ここを見ていなかったため、テーブル未作成時に「保存に失敗したのに記事だけ消える」事故が起きた。
+      const { error: saveError } = await supabase.from('lane_guides').upsert({
         lane,
         title: result.title || laneLabel,
         body: result.body,
         source_count: (existing?.source_count || 0) + 1,
         updated_at: new Date().toISOString(),
       }, { onConflict: 'lane' });
+      if (saveError) throw new Error(`ガイドの保存に失敗しました: ${saveError.message}`);
 
-      // 統合済みの記事はライブラリから片付ける（復元は「移動済み」から可能）
+      // 保存が確定してから、統合済みの記事をライブラリから片付ける（復元は「移動済み」から可能）
       await supabase.from('personal_knowledge').update({ tags: ['__DELETED__'] }).eq('id', a.id);
       mergedLanes.push(lane);
     }

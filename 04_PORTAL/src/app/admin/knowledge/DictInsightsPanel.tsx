@@ -67,6 +67,23 @@ export default function DictInsightsPanel({ mode = 'inspect' }: { mode?: 'mainte
     } catch (e: any) { setError(e.message); } finally { setLaneMerging(false); }
   };
 
+  // 復旧: 保存されないまま片付けられてしまったレーン記事をライブラリへ戻す
+  const [restoring, setRestoring] = useState(false);
+  const restoreLaneArticles = async () => {
+    if (!confirm('統合されずに片付けられたレーン記事を攻略ライブラリへ戻します。よろしいですか？')) return;
+    setRestoring(true); setError(null); setLaneResult(null);
+    try {
+      const res = await fetch('/api/admin/lane-guides', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'restore' }),
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error || '復旧に失敗しました');
+      setLaneResult(`✅ ${d.message}`);
+    } catch (e: any) { setError(e.message); } finally { setRestoring(false); }
+  };
+
   // 既存データの日本語化。サーバー側がチャンク処理なので、完了(done)まで繰り返し呼ぶ。
   const [translating, setTranslating] = useState<string | null>(null);
   const [transProgress, setTransProgress] = useState(0);
@@ -237,10 +254,20 @@ export default function DictInsightsPanel({ mode = 'inspect' }: { mode?: 'mainte
           統合した記事はライブラリから片付き、結果は
           <a href="/lane-guides" className="text-amber-400 hover:underline mx-1">レーン別ガイド</a>で読めます。
         </p>
-        <button onClick={mergeLaneGuides} disabled={laneMerging}
-          className="text-xs font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30 px-4 py-2 rounded-lg hover:bg-amber-500/25 disabled:opacity-50">
-          {laneMerging ? `統合中... (${laneProgress}本)` : '🗺️ レーン別ガイドへ統合'}
-        </button>
+        <div className="flex gap-2 flex-wrap">
+          <button onClick={mergeLaneGuides} disabled={laneMerging || restoring}
+            className="text-xs font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30 px-4 py-2 rounded-lg hover:bg-amber-500/25 disabled:opacity-50">
+            {laneMerging ? `統合中... (${laneProgress}本)` : '🗺️ レーン別ガイドへ統合'}
+          </button>
+          <button onClick={restoreLaneArticles} disabled={laneMerging || restoring}
+            className="text-xs font-bold bg-white/5 text-gray-300 border border-gray-700 px-4 py-2 rounded-lg hover:bg-white/10 disabled:opacity-50">
+            {restoring ? '復旧中...' : '↩️ 消えた記事をライブラリに戻す'}
+          </button>
+        </div>
+        <p className="text-[10px] text-gray-600 mt-2">
+          ※以前、テーブル未作成のまま統合を実行したため「ガイドが保存されないのに記事だけ片付く」不具合がありました。
+          その記事は「戻す」で復元できます（チャンピオン辞典へ正常移動した記事は対象外）。
+        </p>
         {laneResult && <p className="text-xs text-emerald-400 mt-3">{laneResult}</p>}
       </div>
       )}
