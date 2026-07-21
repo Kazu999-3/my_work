@@ -42,7 +42,7 @@ export default function ScoutTab() {
 
     try {
       const res = await fetch('/api/admin/live-match', {
-        method: 'POST',
+        method: 'POST', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ riotId })
       });

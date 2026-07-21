@@ -206,7 +206,7 @@ export default function PromptsAdmin() {
     setAbStatusMsg({ type: null, message: '' });
     try {
       const res = await fetch(`/api/admin/ab-test?id=${id}`, {
-        method: 'PATCH',
+        method: 'PATCH', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           fitness: edits.fitness,
@@ -239,7 +239,7 @@ export default function PromptsAdmin() {
     setAbStatusMsg({ type: null, message: '' });
     try {
       const res = await fetch('/api/admin/ab-test', {
-        method: 'POST',
+        method: 'POST', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           task_type: selectedTaskType,
@@ -273,7 +273,7 @@ export default function PromptsAdmin() {
     setAbStatusMsg({ type: null, message: '' });
     try {
       const res = await fetch('/api/admin/ab-test', {
-        method: 'POST',
+        method: 'POST', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'evolve',

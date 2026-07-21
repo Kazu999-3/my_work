@@ -88,7 +88,7 @@ export default function DesignEditor() {
     setStatus({ type: '', text: '' });
     try {
       const res = await fetch('/api/admin/design', {
-        method: 'POST',
+        method: 'POST', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           key: activeKey,

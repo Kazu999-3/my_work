@@ -110,7 +110,8 @@ export default function MatchHistoryPanel() {
     
     try {
       const res = await fetch(`/api/admin/match/${matchId}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        credentials: 'include', // 管理者Cookieを送らないと401になる
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || '削除に失敗しました');
@@ -130,7 +131,7 @@ export default function MatchHistoryPanel() {
     setActionMessage(null);
     try {
       const res = await fetch(`/api/admin/match/${editingMatch.id}`, {
-        method: 'PUT',
+        method: 'PUT', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           winningTeam: editingMatch.winning_team,

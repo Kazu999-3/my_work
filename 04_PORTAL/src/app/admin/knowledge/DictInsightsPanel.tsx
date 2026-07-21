@@ -44,6 +44,12 @@ export default function DictInsightsPanel({ mode = 'inspect' }: { mode?: 'mainte
           body: JSON.stringify({}),
         });
         const d = await res.json();
+        if (res.status === 401) {
+          throw new Error(
+            `管理者セッションが切れました（ここまで${total}本は保存済みです）。`
+            + '再ログインしてから、もう一度このボタンを押すと続きから再開できます。'
+          );
+        }
         if (!res.ok) throw new Error(d.error || '統合に失敗しました');
         if (d.message) lastMessage = d.message;
         total += d.merged || 0;
@@ -78,6 +84,13 @@ export default function DictInsightsPanel({ mode = 'inspect' }: { mode?: 'mainte
           body: JSON.stringify({ target }),
         });
         const d = await res.json();
+        // 認証切れ: ここまでの成果は保存済みなので、それを伝えて再ログインを促す
+        if (res.status === 401) {
+          throw new Error(
+            `管理者セッションが切れました（ここまで${total}件は保存済みです）。`
+            + '再ログインしてから、もう一度このボタンを押すと続きから再開できます。'
+          );
+        }
         if (!res.ok) throw new Error(d.error || '変換に失敗しました');
         if (typeof d.scanned === 'number') lastScanned = d.scanned;
         total += d.converted || 0;

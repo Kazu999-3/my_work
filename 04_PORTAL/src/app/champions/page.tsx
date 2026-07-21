@@ -190,13 +190,13 @@ function ChampionsContent() {
     try {
       // 一括更新開始した時点で、自動的に古い進捗データを0%（初期状態）にリセットする
       await fetch('/api/admin/champions/queue', {
-        method: 'POST',
+        method: 'POST', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'reset' }),
       });
 
       const res = await fetch('/api/admin/jobs', {
-        method: 'POST',
+        method: 'POST', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ job: 'champion_db_bulk_update' }),
       });
@@ -218,7 +218,7 @@ function ChampionsContent() {
     if (!confirm("一括更新キューの進行状況とロックを完全に初期化しますか？\n（現在のキューファイルは削除され、次回起動時に全チャンピオンが未処理として再構築されます）")) return;
     try {
       const res = await fetch('/api/admin/champions/queue', {
-        method: 'POST',
+        method: 'POST', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'reset' }),
       });
@@ -485,7 +485,7 @@ function ChampionsContent() {
       };
       
       await fetch('/api/admin/champions/save', {
-        method: 'POST',
+        method: 'POST', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
@@ -501,7 +501,7 @@ function ChampionsContent() {
     try {
       const role = roleFilter === 'ALL' ? 'Jungle' : roleFilter;
       const res = await fetch('/api/admin/champions/trend', {
-        method: 'POST',
+        method: 'POST', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ champion: selected.id, role })
       });
@@ -662,7 +662,7 @@ function ChampionsContent() {
     };
     try {
       const res = await fetch('/api/admin/champions/save', {
-        method: 'POST',
+        method: 'POST', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
       });

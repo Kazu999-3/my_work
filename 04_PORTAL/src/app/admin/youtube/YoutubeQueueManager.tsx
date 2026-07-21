@@ -83,7 +83,7 @@ export default function YoutubeQueueManager() {
     setActionLoading('add');
     try {
       const res = await fetch('/api/admin/youtube', {
-        method: 'POST',
+        method: 'POST', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url: newUrl }),
       });
@@ -108,7 +108,7 @@ export default function YoutubeQueueManager() {
     setActionLoading(id);
     try {
       const res = await fetch('/api/admin/youtube', {
-        method: 'PUT',
+        method: 'PUT', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, status: 'pending' }),
       });
@@ -134,7 +134,7 @@ export default function YoutubeQueueManager() {
     setActionLoading('retry_all');
     try {
       const res = await fetch('/api/admin/youtube', {
-        method: 'PATCH',
+        method: 'PATCH', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'retry_all_errors' }),
       });
@@ -160,7 +160,7 @@ export default function YoutubeQueueManager() {
     setActionLoading(id);
     try {
       const res = await fetch('/api/admin/youtube', {
-        method: 'DELETE',
+        method: 'DELETE', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id }),
       });
@@ -187,7 +187,7 @@ export default function YoutubeQueueManager() {
     setActionLoading(id);
     try {
       const res = await fetch('/api/admin/youtube', {
-        method: 'PUT',
+        method: 'PUT', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, priority: nextPriority }),
       });
@@ -213,7 +213,7 @@ export default function YoutubeQueueManager() {
     setActionLoading(id);
     try {
       const res = await fetch('/api/admin/youtube', {
-        method: 'PUT',
+        method: 'PUT', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, status: nextStatus }),
       });
@@ -242,7 +242,7 @@ export default function YoutubeQueueManager() {
     setActionLoading('trigger_dict');
     try {
       const res = await fetch('/api/admin/youtube', {
-        method: 'POST',
+        method: 'POST', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ trigger_task: 'dict_synthesizer' })
       });
@@ -286,7 +286,7 @@ export default function YoutubeQueueManager() {
     setActionLoading('add_playlist');
     try {
       const res = await fetch('/api/admin/youtube/playlists', {
-        method: 'POST',
+        method: 'POST', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url: newPlaylistUrl }),
       });
@@ -312,7 +312,7 @@ export default function YoutubeQueueManager() {
     setActionLoading(id);
     try {
       const res = await fetch('/api/admin/youtube/playlists', {
-        method: 'PATCH',
+        method: 'PATCH', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, active: !currentActive }),
       });
@@ -338,7 +338,7 @@ export default function YoutubeQueueManager() {
     setActionLoading(id);
     try {
       const res = await fetch('/api/admin/youtube/playlists', {
-        method: 'DELETE',
+        method: 'DELETE', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id }),
       });
@@ -383,7 +383,7 @@ export default function YoutubeQueueManager() {
     setActionLoading('add_channel');
     try {
       const res = await fetch('/api/admin/youtube/channels', {
-        method: 'POST',
+        method: 'POST', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url: newChannelUrl }),
       });
@@ -409,7 +409,7 @@ export default function YoutubeQueueManager() {
     setActionLoading(id);
     try {
       const res = await fetch('/api/admin/youtube/channels', {
-        method: 'PATCH',
+        method: 'PATCH', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, active: !currentActive }),
       });
@@ -435,7 +435,7 @@ export default function YoutubeQueueManager() {
     setActionLoading(id);
     try {
       const res = await fetch('/api/admin/youtube/channels', {
-        method: 'DELETE',
+        method: 'DELETE', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id }),
       });

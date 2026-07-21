@@ -279,7 +279,7 @@ export default function KtmAdminPage() {
     setMessage({ type: '', text: '' });
     try {
       const res = await fetch('/api/admin/affiliate', {
-        method: 'POST',
+        method: 'POST', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'save_links',
@@ -325,7 +325,7 @@ export default function KtmAdminPage() {
     setMessage({ type: 'info', text: '🤖 アフィリエイト記事を自律生成中 (Scout & Forge実行中)...' });
     try {
       const res = await fetch('/api/admin/affiliate', {
-        method: 'POST',
+        method: 'POST', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'trigger_forge'
@@ -355,7 +355,7 @@ export default function KtmAdminPage() {
     });
     try {
       const res = await fetch('/api/admin/affiliate', {
-        method: 'POST',
+        method: 'POST', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'trigger_batch',

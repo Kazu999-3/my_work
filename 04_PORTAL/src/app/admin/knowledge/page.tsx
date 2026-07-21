@@ -134,7 +134,7 @@ export default function KnowledgeBase() {
       // YouTube URLの場合は動画キューに送る
       if (inputType === 'url' && isYoutubeUrl(payload.url)) {
         const res = await fetch('/api/admin/youtube', {
-          method: 'POST',
+          method: 'POST', credentials: 'include',
           headers,
           body: JSON.stringify({ url: payload.url })
         });
@@ -149,7 +149,7 @@ export default function KnowledgeBase() {
       } else {
         // 通常ナレッジ追加
         const res = await fetch('/api/admin/knowledge/add', {
-          method: 'POST',
+          method: 'POST', credentials: 'include',
           headers,
           body: JSON.stringify(payload)
         });
@@ -186,7 +186,7 @@ export default function KnowledgeBase() {
       }
 
       const res = await fetch('/api/admin/knowledge', {
-        method: 'DELETE',
+        method: 'DELETE', credentials: 'include',
         headers,
         body: JSON.stringify({ id })
       });

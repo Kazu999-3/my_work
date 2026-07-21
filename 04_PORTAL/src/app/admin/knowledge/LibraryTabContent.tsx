@@ -303,10 +303,17 @@ export function LibraryTabContentInner() {
       while (true) {
         const res = await fetch('/api/admin/knowledge/sync', {
           method: 'POST',
+          credentials: 'include', // 管理者Cookieを送らないと401になる
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ offset })
         });
         const data = await res.json();
+        if (res.status === 401) {
+          throw new Error(
+            `管理者セッションが切れました（ここまでの同期分は保存済みです）。`
+            + '再ログインしてから、もう一度実行すると続きから再開できます。'
+          );
+        }
         if (!res.ok) throw new Error(data.error || '同期エラーが発生しました');
 
         totalSynced += data.syncedChampions || 0;
