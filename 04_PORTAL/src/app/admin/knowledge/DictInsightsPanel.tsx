@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { RefreshCw, AlertTriangle, Sparkles, Globe, BookOpen } from 'lucide-react';
+import { RefreshCw, AlertTriangle, Sparkles, Globe, BookOpen, Languages } from 'lucide-react';
 
 /**
  * 辞典のAI支援パネル。
@@ -20,6 +20,30 @@ export default function DictInsightsPanel() {
   const [researchRole, setResearchRole] = useState('JG');
   const [research, setResearch] = useState<any>(null);
   const [researching, setResearching] = useState(false);
+
+  // 既存データの日本語化。サーバー側がチャンク処理なので、完了(done)まで繰り返し呼ぶ。
+  const [translating, setTranslating] = useState<string | null>(null);
+  const [transProgress, setTransProgress] = useState(0);
+  const [transResult, setTransResult] = useState<string | null>(null);
+  const translateAll = async (target: string) => {
+    setTranslating(target); setError(null); setTransResult(null); setTransProgress(0);
+    let total = 0;
+    try {
+      for (let i = 0; i < 200; i++) { // 無限ループ防止の上限
+        const res = await fetch('/api/admin/translate-jp', {
+          method: 'POST', credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ target }),
+        });
+        const d = await res.json();
+        if (!res.ok) throw new Error(d.error || '変換に失敗しました');
+        total += d.converted || 0;
+        setTransProgress(total);
+        if (d.done || d.converted === 0) break;
+      }
+      setTransResult(total > 0 ? `✅ ${total}件を日本語に変換しました` : '✅ 英語のデータは見つかりませんでした');
+    } catch (e: any) { setError(e.message); } finally { setTranslating(null); }
+  };
 
   // 汎用原則の生成
   const [genning, setGenning] = useState<string | null>(null);
@@ -122,6 +146,28 @@ export default function DictInsightsPanel() {
             ))}
           </div>
         )}
+      </div>
+
+      {/* 既存データの日本語化 */}
+      <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5">
+        <h3 className="font-black text-white flex items-center gap-2 mb-3">
+          <Languages size={16} className="text-orange-400" /> 英語データの日本語化
+        </h3>
+        <p className="text-[11px] text-gray-500 mb-3">
+          英語のまま保存されている辞典・記事・メモを日本語に変換します。完了するまで自動で繰り返し実行されます
+          （チャンピオン名やアイテム名は英語のまま残ります）。
+        </p>
+        <div className="flex gap-2 flex-wrap">
+          {([
+            ['facts', 'チャンピオン辞典'], ['articles', '攻略ライブラリ記事'], ['memos', '対面メモ'],
+          ] as const).map(([key, label]) => (
+            <button key={key} onClick={() => translateAll(key)} disabled={!!translating}
+              className="text-xs font-bold bg-orange-500/15 text-orange-300 border border-orange-500/30 px-3 py-2 rounded-lg hover:bg-orange-500/25 disabled:opacity-50">
+              {translating === key ? `変換中... (${transProgress}件)` : label}
+            </button>
+          ))}
+        </div>
+        {transResult && <p className="text-xs text-emerald-400 mt-3">{transResult}</p>}
       </div>
 
       {/* 汎用原則の生成 */}

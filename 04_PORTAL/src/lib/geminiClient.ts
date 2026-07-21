@@ -84,6 +84,19 @@ export async function callGeminiWithRetry(
   const generationConfig: Record<string, unknown> = { temperature, maxOutputTokens };
   if (responseMimeType) generationConfig.response_mime_type = responseMimeType;
 
+  // 全AI生成で日本語出力を強制する。素材(統計サイト・英語記事)が英語だと、
+  // 個別プロンプトで「日本語で」と書いていても英語のまま返ることがあるため、
+  // 共通クライアント側で最後に必ず指示を付ける。
+  // ※チャンピオン名・アイテム名・ルーン名などの固有名詞は英語のままにする（表記ゆれ防止）。
+  const JP_GUARD = `
+
+【出力言語の絶対条件】
+- 出力は必ず**日本語**で書くこと。英語の文章をそのまま返してはいけない。
+- 素材が英語であっても、必ず日本語に翻訳・要約して出力すること。
+- ただし、チャンピオン名・アイテム名・ルーン名・スキル名などの固有名詞は英語表記のまま残すこと。
+- JSON形式を指定されている場合、キー名は指定どおり英語、値の文章は日本語にすること。`;
+  const finalPrompt = `${prompt}${JP_GUARD}`;
+
   let lastError: unknown = null;
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
@@ -95,7 +108,7 @@ export async function callGeminiWithRetry(
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
+            contents: [{ parts: [{ text: finalPrompt }] }],
             generationConfig,
           }),
         }
