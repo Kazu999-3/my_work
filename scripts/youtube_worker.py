@@ -11,7 +11,9 @@ import urllib.request
 SUPABASE_URL = os.environ["SUPABASE_URL"].rstrip("/")
 SUPABASE_KEY = os.environ["SUPABASE_SERVICE_KEY"]
 GEMINI_KEY = os.environ["GEMINI_API_KEY"]
-GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
+# ポータル側(lib/geminiClient.ts)と同じモデルに揃える。
+# gemini-2.5-flash はこのキーで日次上限を超過した実績があるため使わない。
+GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.1-flash-lite")
 MAX_ITEMS = int(os.environ.get("MAX_ITEMS", "3"))
 MAX_RETRY = 3
 

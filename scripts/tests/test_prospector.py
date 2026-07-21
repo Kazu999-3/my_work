@@ -63,5 +63,46 @@ class TestPickTargets(unittest.TestCase):
         self.assertEqual(got[1], "Graves")  # 次に更新が古い
 
 
+
+
+class TestBacklogGuard(unittest.TestCase):
+    """解析待ちが溜まっている間は発掘を見送る（Gemini日次上限を守るため）"""
+
+    def test_滞留していたら何も登録しない(self):
+        calls = []
+
+        def fake_sb(method, path, *a, **k):
+            calls.append((method, path))
+            if "status=eq.pending" in path:
+                return [{"id": f"v{i}"} for i in range(P.MAX_BACKLOG + 5)]
+            return []
+
+        with patch.object(P, "sb", fake_sb), \
+             patch.object(P, "fetch_champions", lambda: (["Ahri"], "15.14.1")), \
+             patch.object(P, "search_videos", lambda *a: self.fail("発掘してはいけない")):
+            self.assertEqual(P.main(), 0)
+
+        # 登録(POST)が一度も行われていないこと
+        self.assertFalse([c for c in calls if c[0] == "POST"])
+
+    def test_余裕があれば発掘する(self):
+        posted = []
+
+        def fake_sb(method, path, body=None, **k):
+            if "status=eq.pending" in path:
+                return []
+            if method == "POST":
+                posted.append(body)
+            return []
+
+        video = [{"id": "abcdefghijk", "title": "T", "channel": "C", "duration": 600}]
+        with patch.object(P, "sb", fake_sb), \
+             patch.object(P, "fetch_champions", lambda: (["Ahri"], "15.14.1")), \
+             patch.object(P, "search_videos", lambda *a: video):
+            self.assertEqual(P.main(), 0)
+
+        self.assertEqual(len(posted), 1)
+        self.assertEqual(posted[0][0]["id"], "abcdefghijk")
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

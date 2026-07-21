@@ -13,7 +13,10 @@ on:
   schedule:
     - cron: '*/30 * * * *'   # youtube worker
     - cron: '7 */3 * * *'    # dict-sync
-    - cron: '30 18 * * *'    # prospect（毎日 3:30 JST）
+    # prospect は 3:30 / 11:30 / 19:30 JST の1日3回。
+    # 発掘自体はGeminiを使わず、解析待ちが溜まっていれば自動で見送るため、
+    # 頻度を上げてもAPIの消費は youtube ジョブの処理速度で頭打ちになる。
+    - cron: '30 18,2,10 * * *'
   workflow_dispatch:
     inputs:
       job:
@@ -34,7 +37,7 @@ on:
 jobs:
   # 解析対象の動画を自動で発掘してキューに積む（v2_CORE/prospector.py の後継）
   prospect:
-    if: github.event_name == 'workflow_dispatch' && github.event.inputs.job == 'prospect' || (github.event_name == 'schedule' && github.event.schedule == '30 18 * * *')
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.job == 'prospect' || (github.event_name == 'schedule' && github.event.schedule == '30 18,2,10 * * *')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

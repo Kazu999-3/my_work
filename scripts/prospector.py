@@ -28,6 +28,11 @@ SUPABASE_KEY = os.environ["SUPABASE_SERVICE_KEY"]
 LIMIT = int(os.environ.get("PROSPECT_LIMIT", "3"))
 PER_CHAMP = int(os.environ.get("PROSPECT_PER_CHAMP", "1"))
 
+# 解析待ちがこの本数を超えていたら、今回の発掘は見送る。
+# youtube ジョブは30分おきに最大3本（=1日最大144本）しか処理できないため、
+# 積みすぎるとGeminiの日次上限に当たる。
+MAX_BACKLOG = int(os.environ.get("PROSPECT_MAX_BACKLOG", "20"))
+
 # 短すぎるクリップと長すぎる配信アーカイブを避ける（既定: 4分〜60分）
 MIN_SEC = int(os.environ.get("PROSPECT_MIN_SEC", "240"))
 MAX_SEC = int(os.environ.get("PROSPECT_MAX_SEC", "3600"))
@@ -86,6 +91,18 @@ def known_video_ids():
     return {str(r["id"]) for r in rows}
 
 
+def pending_count():
+    """
+    未解析のまま溜まっている本数。
+
+    発掘そのものはGeminiを使わないが、積んだ動画は youtube ジョブが
+    1本につきGemini 1回で解析する。解析が追いつかないまま積み続けると
+    APIの日次上限を圧迫するため、滞留していたら発掘を見送る。
+    """
+    rows = sb("GET", "youtube_queue?select=id&status=eq.pending") or []
+    return len(rows)
+
+
 def search_videos(query, want):
     """
     yt-dlp の検索で動画を探す。
@@ -129,6 +146,14 @@ def main() -> int:
     if not champs:
         print("チャンピオン一覧を取得できませんでした。")
         return 1
+
+    # 解析待ちが溜まっていたら今回は積まない（APIの日次上限を守るため）
+    backlog = pending_count()
+    if backlog >= MAX_BACKLOG:
+        print(f"解析待ちが{backlog}本あるため、今回の発掘は見送ります（上限 {MAX_BACKLOG}本）。")
+        print("youtube ジョブが処理を進めれば、次回から自動的に再開します。")
+        return 0
+    print(f"解析待ち: {backlog}本 / 上限 {MAX_BACKLOG}本")
 
     targets = pick_targets(champs)
     if not targets:
