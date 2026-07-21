@@ -20,3 +20,8 @@ CREATE TABLE IF NOT EXISTS matchup_log (
 CREATE INDEX IF NOT EXISTS idx_matchup_log_player ON matchup_log (discord_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_matchup_log_pair ON matchup_log (my_champion, enemy_champion);
 CREATE INDEX IF NOT EXISTS idx_matchup_log_match ON matchup_log (match_id);
+
+-- 画面(anon)から読めるようにする。書き込みはサーバー(service_role)のみ。
+ALTER TABLE matchup_log ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "matchup_log select" ON matchup_log;
+CREATE POLICY "matchup_log select" ON matchup_log FOR SELECT USING (true);

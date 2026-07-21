@@ -11,4 +11,7 @@ CREATE TABLE IF NOT EXISTS lane_guides (
 );
 
 ALTER TABLE lane_guides ENABLE ROW LEVEL SECURITY;
+
+-- CREATE POLICY は IF NOT EXISTS が使えないため、DROP してから作り直す（再実行しても安全）
+DROP POLICY IF EXISTS "lane_guides select" ON lane_guides;
 CREATE POLICY "lane_guides select" ON lane_guides FOR SELECT USING (true);

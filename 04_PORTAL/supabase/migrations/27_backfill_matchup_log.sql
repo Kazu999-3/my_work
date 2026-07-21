@@ -2,6 +2,9 @@
 -- 同じ match_id・同じ role・違う team の相手を「対面」として結びつける。
 -- created_at は試合日時を入れる（期間フィルタが過去データでも正しく効くように）。
 -- NOT EXISTS で二重登録を防いでいるため、再実行しても安全。
+
+-- 依存する列が無い環境でも失敗しないよう、念のため保証しておく
+ALTER TABLE ktm_match_participants ADD COLUMN IF NOT EXISTS discord_id text;
 INSERT INTO matchup_log (
   match_id, discord_id, player_name, role,
   my_champion, enemy_champion, is_win,
