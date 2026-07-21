@@ -484,14 +484,18 @@ export default function Home() {
               {/* 1. 🛰️ サービス監視 (Nodes Sentinel) */}
               {activeSystemTab === 'nodes' && (
                 <div className="space-y-6">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+                  <p className="text-xs text-gray-400">
+                    ポータルとBotはクラウドで常時稼働しています。動画解析まわりはPCで起動したときだけ動くため、
+                    <strong className="text-gray-300">「未起動」は正常な状態</strong>です。
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     {[
-                      { id: 'ollama', name: 'Ollama (LLM)', port: 11434, desc: 'ローカルAI推論エンジン' },
-                      { id: 'portal', name: 'Next.js Portal', port: 3000, desc: '本管理画面・フロント' },
-                      { id: 'bot', name: 'Discord Bot (KTM)', port: 8787, desc: '大会運営・Discordボット' },
-                      { id: 'api', name: 'Core API', port: 8000, desc: 'Sovereign OS API' },
-                      { id: 'sre', name: 'SRE Daemon', port: null, desc: '自律監視・自己修復デモ' },
-                      { id: 'youtube_absorber', name: 'YouTube Absorber', port: null, desc: '動画音声の文字起こし・解析' }
+                      // 常時稼働するクラウド側
+                      { id: 'portal', name: 'Next.js Portal', port: null, desc: 'ポータル・管理画面 (Vercel)', local: false },
+                      { id: 'bot', name: 'Discord Bot (KTM)', port: null, desc: '大会運営Bot (Cloudflare Workers)', local: false },
+                      // 動画解析のときだけPCで起動するローカル側
+                      { id: 'youtube_absorber', name: 'YouTube Absorber', port: null, desc: '動画の文字起こし・解析 (ローカル)', local: true },
+                      { id: 'sre', name: 'SRE Daemon', port: null, desc: '解析中の監視・ログ収集 (ローカル)', local: true },
                     ].map((service) => {
                       const status = systemMetrics.services?.[service.id] || {};
                       const metricsTime = systemMetrics.updated_at ? Number(systemMetrics.updated_at) * 1000 : 0;
@@ -504,23 +508,34 @@ export default function Home() {
                       let statusColor = 'text-gray-500 bg-gray-500/10 border-gray-500/20';
                       let indicatorColor = 'bg-gray-600';
 
-                      if (isRunning) {
-                        if (service.id === 'youtube_absorber') {
-                          statusText = '解析中';
-                          statusColor = 'text-cyan-400 bg-cyan-500/10 border-cyan-500/20';
-                          indicatorColor = 'bg-cyan-400 animate-pulse shadow-[0_0_8px_rgba(34,211,238,0.8)]';
-                        } else if (hasErrors) {
+                      // クラウド側は常時稼働が前提。ローカル側は動画解析のときだけ起動するので、
+                      // 止まっていること自体は異常ではない（赤くしない）。
+                      if (!service.local) {
+                        // Portal はこの画面が表示できている時点で動いている。
+                        // Bot はエッジワーカーの死活監視(systemStatus)を見る。
+                        const cloudUp = service.id === 'portal' ? true : systemStatus.worker.active;
+                        if (cloudUp) {
+                          statusText = '稼働中';
+                          statusColor = 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20';
+                          indicatorColor = 'bg-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.8)]';
+                        } else {
+                          statusText = '応答なし';
+                          statusColor = 'text-rose-400 bg-rose-500/10 border-rose-500/20';
+                          indicatorColor = 'bg-rose-400 animate-pulse';
+                        }
+                      } else if (isRunning) {
+                        if (hasErrors) {
                           statusText = '警告あり';
                           statusColor = 'text-yellow-400 bg-yellow-500/10 border-yellow-500/20';
                           indicatorColor = 'bg-yellow-400 animate-pulse';
                         } else {
-                          statusText = '稼働中';
-                          statusColor = 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20';
-                          indicatorColor = 'bg-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.8)]';
+                          statusText = service.id === 'youtube_absorber' ? '解析中' : '稼働中';
+                          statusColor = 'text-cyan-400 bg-cyan-500/10 border-cyan-500/20';
+                          indicatorColor = 'bg-cyan-400 animate-pulse shadow-[0_0_8px_rgba(34,211,238,0.8)]';
                         }
-                      } else if (service.id === 'youtube_absorber') {
-                        statusText = '待機中 (アイドル)';
-                        statusColor = 'text-gray-400 bg-white/5 border-white/5';
+                      } else {
+                        statusText = '未起動';
+                        statusColor = 'text-gray-400 bg-white/5 border-white/10';
                         indicatorColor = 'bg-gray-600';
                       }
 
@@ -534,7 +549,7 @@ export default function Home() {
                             <p className="text-[9px] text-gray-500 mb-4">{service.desc}</p>
                           </div>
                           <div className="flex justify-between items-center mt-auto">
-                            <span className="text-[9px] font-mono text-gray-600">{service.port ? `Port: ${service.port}` : 'Background'}</span>
+                            <span className="text-[9px] font-mono text-gray-600">{service.local ? '必要時のみ起動' : '常時稼働'}</span>
                             <span className={`px-2 py-0.5 rounded-full border text-[9px] font-bold ${statusColor}`}>{statusText}</span>
                           </div>
                         </div>
@@ -586,7 +601,7 @@ export default function Home() {
                 <div className="space-y-6">
                   <div className="flex justify-between items-center border-b border-white/5 pb-4 flex-wrap gap-2">
                     <p className="text-xs text-gray-400">
-                      Sovereign OS ローカル環境で実行される全バッチ処理の進行状況です。
+                      Discord Bot（エッジワーカー）のジョブ処理状況です。
                     </p>
                     <div className="flex items-center gap-3">
                       <span className={`text-[10px] font-black border px-2.5 py-0.5 rounded-full flex items-center gap-1.5 transition-all ${
@@ -710,7 +725,7 @@ export default function Home() {
               {activeSystemTab === 'logs' && (
                 <div className="flex flex-col h-[350px] space-y-3">
                   <p className="text-xs text-gray-400">
-                    Sovereign OS デーモン全体の最終ログ（直近15行）です。
+                    動画解析を実行したときに、ローカルのデーモンが残した最終ログ（直近15行）です。解析していない間は更新されません。
                   </p>
                   <div className="flex-1 bg-black/40 rounded-xl border border-white/5 p-4 font-mono text-[9px] md:text-[10px] leading-relaxed text-gray-400 overflow-hidden relative">
                     <div className="absolute top-0 left-0 w-full h-4 bg-gradient-to-b from-black/80 to-transparent z-10"></div>
