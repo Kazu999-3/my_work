@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { callGeminiWithRetry } from '../../../../../lib/geminiClient';
 import { verifyAdminSession } from '../../../../../lib/adminAuth';
 
 // ============================================================
@@ -12,10 +13,6 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 // ============================================================
 // Gemini API キー（Vercel環境変数 or .env から取得）
 // ============================================================
-function getGeminiApiKey(): string | null {
-  return process.env.GEMINI_API_KEY_FREE || process.env.GEMINI_API_KEY || null;
-}
-
 // ============================================================
 // URLからタイトルと本文をスクレイピング（Node.js fetch で実行）
 // ============================================================
@@ -73,11 +70,6 @@ async function analyzeWithGemini(title: string, content: string): Promise<{
   tags: string[];
   champion: string;
 }> {
-  const apiKey = getGeminiApiKey();
-  if (!apiKey) {
-    throw new Error('Gemini APIキーが設定されていません。環境変数 GEMINI_API_KEY を確認してください。');
-  }
-
   const prompt = `以下のインプット情報（Webサイトの内容またはメモ書き）を解析し、以下の処理を行ってください。
 1. 日本語での簡潔な要約（300文字以内、Markdown形式）を作成してください。
 2. 最も適したジャンルを以下のいずれかから選択してください：
@@ -104,31 +96,16 @@ async function analyzeWithGemini(title: string, content: string): Promise<{
 内容:
 ${content}`;
 
-  // Gemini REST API（v1beta / generateContent）
-  // 'gemini-2.0-flash'はこのAPIキーで上限0(常に429)だったため、最も余裕のある'gemini-3.1-flash-lite'に変更
-  const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${apiKey}`;
-
-  const geminiRes = await fetch(geminiUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: {
-        temperature: 0.3,
-        maxOutputTokens: 1024,
-        responseMimeType: "application/json"
-      }
-    }),
-    signal: AbortSignal.timeout(30000)
+  // 呼び出しは共通クライアントに集約する。
+  // 429/5xxのリトライ、複数APIキーのローテーション、日本語出力の強制がここで効く。
+  const responseText = await callGeminiWithRetry(prompt, {
+    model: 'gemini-3.1-flash-lite',
+    temperature: 0.3,
+    maxOutputTokens: 1024,
+    responseMimeType: 'application/json',
+    // 無料枠キーがあればそちらを優先する（従来の getGeminiApiKey と同じ方針）
+    apiKeyEnv: process.env.GEMINI_API_KEY_FREE ? 'GEMINI_API_KEY_FREE' : 'GEMINI_API_KEY',
   });
-
-  if (!geminiRes.ok) {
-    const errorBody = await geminiRes.text();
-    throw new Error(`Gemini API エラー (HTTP ${geminiRes.status}): ${errorBody.slice(0, 200)}`);
-  }
-
-  const geminiData = await geminiRes.json();
-  let responseText = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text || '';
 
   try {
     return JSON.parse(responseText.trim());

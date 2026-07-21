@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { resolveDisplayName } from '../../../../lib/discordName';
 import { supabase } from '../../../../lib/supabaseClient';
 
 export const revalidate = 30; // 30秒間キャッシュしてDiscord APIへのリクエストを削減
@@ -160,7 +161,7 @@ export async function GET() {
             });
             if (memRes.ok) {
               const m = await memRes.json();
-              return { id, name: m.nick || m.user?.global_name || m.user?.username || "Unknown" };
+              return { id, name: resolveDisplayName(m) };
             }
           }
           // フォールバック: グローバルユーザー

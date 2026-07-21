@@ -1,23 +1,15 @@
 import { NextResponse } from 'next/server';
+import { callGeminiWithRetry } from '../../../../lib/geminiClient';
 
 export async function POST(req: Request) {
   try {
-    const { imageBase64, mimeType, champions, testApiKey } = await req.json();
+    const { imageBase64, mimeType, champions } = await req.json();
     if (!imageBase64) {
       return NextResponse.json({ error: '画像データがありません。' }, { status: 400 });
     }
 
-    const apiKeysEnv = testApiKey || process.env.GEMINI_API_KEY;
-    if (!apiKeysEnv) {
-      return NextResponse.json({ error: 'GEMINI_API_KEY が設定されていません。Vercel等の環境変数を確認してください。' }, { status: 500 });
-    }
-
-    const apiKeys = apiKeysEnv.split(',').map((k: string) => k.trim()).filter(Boolean);
-    if (apiKeys.length === 0) {
-      return NextResponse.json({ error: '有効な GEMINI_API_KEY が見つかりません。' }, { status: 500 });
-    }
-
-    // geminiUrl はループ内でキーごとに動的に生成します
+    // APIキーの検証・複数キーのローテーション・429/5xxのリトライは
+    // すべて callGeminiWithRetry 側に集約している。
 
     const championsText = champions && Array.isArray(champions)
       ? champions.map((c: any) => `${c.name} (${c.id})`).join(', ')
@@ -103,88 +95,12 @@ ${championsText}
 }
 `;
 
-    const payload = {
-      contents: [
-        {
-          parts: [
-            { text: prompt },
-            {
-              inlineData: {
-                mimeType: mimeType || 'image/png',
-                data: imageBase64
-              }
-            }
-          ]
-        }
-      ],
-      generationConfig: {
-        responseMimeType: "application/json",
-        temperature: 0.1
-      }
-    };
-
-    let response;
-    let success = false;
-    let lastErrorMsg = '';
-    
-    // 無料枠制限(RPM/TPM)を別枠クォータで回避するため、モデルローテーションも行う
-    // ('gemini-2.5-flash'は日次上限を超過していたため、最も余裕のある'gemini-3.1-flash-lite'に変更)
-    const models = ['gemini-3.1-flash-lite', 'gemini-1.5-flash-latest'];
-    const totalKeys = apiKeys.length;
-    const attempts = Math.max(totalKeys * models.length, 3); // キーとモデルの全探索数、または最低3回
-    let delay = 1000;
-
-    for (let i = 0; i < attempts; i++) {
-      const currentKey = apiKeys[i % totalKeys];
-      const currentModel = models[Math.floor(i / totalKeys) % models.length];
-      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:generateContent?key=${currentKey}`;
-      
-      try {
-        console.log(`Sending image to Gemini (Attempt ${i + 1}/${attempts}, Model: ${currentModel}, Key Index ${i % totalKeys})...`);
-        response = await fetch(geminiUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(payload)
-        });
-
-        if (response.ok) {
-          success = true;
-          break; // 成功
-        }
-
-        const errorText = await response.text();
-        lastErrorMsg = `Status ${response.status} - ${errorText}`;
-        console.warn(`Gemini API Attempt ${i + 1} (${currentModel}) failed: ${lastErrorMsg}`);
-        
-        // 429 または 5xx の場合は次のキー/モデルでリトライ
-        if (response.status === 429 || response.status === 503 || response.status >= 500) {
-          if (i < attempts - 1) {
-            console.log(`Retrying with next configuration in ${delay}ms...`);
-            await new Promise(resolve => setTimeout(resolve, delay));
-            delay = Math.min(delay * 1.5, 5000); // 指数バックオフ
-            continue;
-          }
-        }
-        throw new Error(lastErrorMsg);
-      } catch (fetchErr: any) {
-        lastErrorMsg = fetchErr.message;
-        if (i < attempts - 1) {
-          console.log(`Fetch error on attempt ${i + 1}, retrying with next configuration in ${delay}ms...: ${fetchErr.message}`);
-          await new Promise(resolve => setTimeout(resolve, delay));
-          delay = Math.min(delay * 1.5, 5000);
-          continue;
-        }
-      }
-    }
-
-    if (!success || !response) {
-      throw new Error(`Gemini APIへのすべての試行に失敗しました。最後のエラー: ${lastErrorMsg}`);
-    }
-
-    const result = await response.json();
-    const textOutput = result.candidates?.[0]?.content?.parts?.[0]?.text;
+    const textOutput = await callGeminiWithRetry(prompt, {
+      image: { base64: imageBase64, mimeType: mimeType || 'image/png' },
+      responseMimeType: 'application/json',
+      temperature: 0.1,
+      maxOutputTokens: 4096,
+    });
     if (!textOutput) {
       throw new Error("Gemini からの解析結果が空です。");
     }

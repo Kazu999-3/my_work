@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { resolveDisplayName } from '../../../../lib/discordName';
 import { createClient } from '@supabase/supabase-js';
 import { verifyAdminSession } from '../../../../lib/adminAuth';
 
@@ -159,7 +160,7 @@ export async function GET(request: Request) {
 
     humanMembers.forEach(m => {
       const discordId = m.user.id;
-      const displayName = m.nick || m.user.global_name || m.user.username;
+      const displayName = resolveDisplayName(m);
       discordIdsFound.add(discordId);
 
       let dbPlayer = dbPlayersMap.get(discordId);
@@ -249,7 +250,7 @@ export async function GET(request: Request) {
       } else {
         // IDが未登録の場合は名前で判定
         const found = humanMembers.some(m => {
-          const displayName = m.nick || m.user.global_name || m.user.username;
+          const displayName = resolveDisplayName(m);
           return displayName.toLowerCase() === p.name.toLowerCase();
         });
         if (!found) {

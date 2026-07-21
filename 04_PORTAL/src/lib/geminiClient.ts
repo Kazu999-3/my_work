@@ -16,6 +16,8 @@ export interface GeminiCallOptions {
   responseMimeType?: string;
   cacheKey?: string; // 指定時はDBキャッシュを利用
   cacheTtlMs?: number; // デフォルト24時間
+  /** 画像を添えて解析させる場合に指定する（スコアボードの読み取りなど） */
+  image?: { base64: string; mimeType: string };
 }
 
 // 'gemini-2.0-flash-lite'はこのAPIキーで上限0(常に429)だったため、最も余裕のある
@@ -69,6 +71,7 @@ export async function callGeminiWithRetry(
     responseMimeType,
     cacheKey,
     cacheTtlMs = DEFAULT_TTL_MS,
+    image,
   } = options;
 
   if (cacheKey) {
@@ -76,8 +79,11 @@ export async function callGeminiWithRetry(
     if (cached) return cached;
   }
 
-  const apiKey = process.env[apiKeyEnv];
-  if (!apiKey) {
+  // 環境変数はカンマ区切りで複数キーを持てる。
+  // 1つが日次上限に当たっても別枠のクォータで続行できるよう、リトライごとに切り替える。
+  const apiKeys = String(process.env[apiKeyEnv] || '')
+    .split(',').map((k) => k.trim()).filter(Boolean);
+  if (apiKeys.length === 0) {
     return `※ ${apiKeyEnv}未設定のためAI生成をスキップしました。`;
   }
 
@@ -100,6 +106,9 @@ export async function callGeminiWithRetry(
   let lastError: unknown = null;
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    // 試行ごとにキーを回す（キーが1本なら常に同じ）
+    const apiKey = apiKeys[attempt % apiKeys.length];
+
     let res: Response;
     try {
       res = await fetch(
@@ -108,7 +117,12 @@ export async function callGeminiWithRetry(
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            contents: [{ parts: [{ text: finalPrompt }] }],
+            contents: [{
+              parts: image
+                // 画像を添える場合は「画像→指示」の順にする（Geminiはこの順が安定する）
+                ? [{ inlineData: { mimeType: image.mimeType, data: image.base64 } }, { text: finalPrompt }]
+                : [{ text: finalPrompt }],
+            }],
             generationConfig,
           }),
         }
@@ -125,6 +139,12 @@ export async function callGeminiWithRetry(
     if (res.status === 429) {
       lastError = new Error('Gemini API: Too Many Requests');
       if (attempt < maxRetries) {
+        // 未試行のキーが残っていれば、待たずに次のキーへ回す（別枠のクォータを使うため）
+        const hasUntriedKey = apiKeys.length > 1 && attempt + 1 < apiKeys.length;
+        if (hasUntriedKey) {
+          console.log(`[geminiClient] 429 Rate Limited - 次のAPIキーで再試行 (${attempt + 2}/${apiKeys.length}本目)`);
+          continue;
+        }
         const retryAfterHeader = Number(res.headers.get('retry-after'));
         const waitMs = retryAfterHeader > 0 ? retryAfterHeader * 1000 : backoffMs(attempt);
         console.log(`[geminiClient] 429 Rate Limited - ${waitMs}ms 後にリトライ (${attempt + 1}/${maxRetries})`);
