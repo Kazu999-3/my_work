@@ -1,4 +1,7 @@
-import chromadb
+try:
+    import chromadb
+except ImportError:
+    chromadb = None
 import httpx
 import os
 from pathlib import Path
@@ -12,6 +15,10 @@ class IntelligenceDatabase:
     ChromaDB を用いて知略のベクトル検索、および永続化を行う。
     """
     def __init__(self):
+        if not chromadb:
+            self.client = None
+            self.collection = None
+            return
         # 聖域設定に基づきディレクトリを確保
         settings.CHROMA_DB_DIR.mkdir(parents=True, exist_ok=True)
         
