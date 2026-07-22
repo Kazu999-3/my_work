@@ -1,50 +1,16 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 import { verifyAdminSession } from '../../../../lib/adminAuth';
+import { fetchChampionStats } from '../../../../lib/championStats';
 import { callGeminiWithRetry } from '../../../../lib/geminiClient';
 
-// 自動リサーチ: LoL統計サイト(LoLalytics)から最新のメタ情報を取得し、辞典の下書きを作る。
-// LoLalyticsはティア順位・WR Delta・対面別勝率・オブジェクト勝率まで載っており、
-// 「そのパッチで強いか」「誰に強い/弱いか」の根拠として使いやすい。
-// スクレイピングなのでHTML構造の変化に弱い → 取れた分だけ使い、失敗しても落とさない設計。
+// 自動リサーチ: 辞典の下書きをAIで作る。
+// 参考データは公式 Riot Data Dragon（スキルCD/射程/コスト・レベル別ステータス・公式Tips）。
+// 以前はLoLalyticsのHTMLを読んでいたが、同サイトはJS描画のためサーバー取得では空になり、
+// 勝率等が取れないまま動いていた。確実に取れる公式ソースへ切り替えた。
+// 集計統計(勝率/ティア)は公式データに無いため、その系はAIが確実に分かる場合のみ埋める。
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
-
-const ROLE_PATH: Record<string, string> = {
-  TOP: 'top', JG: 'jungle', JUNGLE: 'jungle', MID: 'middle',
-  ADC: 'bottom', BOT: 'bottom', SUP: 'support', SUPPORT: 'support',
-};
-
-/** LoLalyticsのビルドページから統計テキストを抜き出す */
-async function fetchLolalytics(champion: string, role: string) {
-  const slug = champion.toLowerCase().replace(/[^a-z0-9]/g, '');
-  const lane = ROLE_PATH[String(role).toUpperCase()] || 'jungle';
-  // lane指定はクエリで渡す（未指定だと最も使われるレーンが返る）
-  const url = `https://lolalytics.com/lol/${slug}/build/?lane=${lane}`;
-
-  const res = await fetch(url, {
-    headers: {
-      // 通常のブラウザとして扱ってもらう（弾かれると空HTMLが返るため）
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36',
-      'Accept-Language': 'ja,en;q=0.9',
-    },
-  });
-  if (!res.ok) throw new Error(`LoLalyticsの取得に失敗しました (HTTP ${res.status})`);
-  const html = await res.text();
-
-  // タグを落として本文テキスト化（AIに読ませるため、正確なDOM解析までは不要）
-  const text = html
-    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
-    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/&nbsp;/g, ' ')
-    .replace(/\s{2,}/g, ' ')
-    .trim();
-
-  // パッチ番号（"Patch 16.14" 等）を拾えたら記録に使う
-  const patchMatch = text.match(/[Pp]atch\s*(\d+\.\d+)/);
-  return { url, text: text.slice(0, 18000), patch: patchMatch ? patchMatch[1] : null };
-}
 
 export async function POST(req: Request) {
   const auth = await verifyAdminSession(req);
@@ -54,11 +20,13 @@ export async function POST(req: Request) {
     const { champion, role, save } = await req.json();
     if (!champion) return NextResponse.json({ error: 'champion が必要です。' }, { status: 400 });
 
-    const site = await fetchLolalytics(champion, role || 'JG');
+    const site = await fetchChampionStats(champion);
 
-    const prompt = `以下はLoL統計サイト(LoLalytics)の「${champion}」ビルドページから抽出したテキストです。
-ここから読み取れる**実際の統計データ**をもとに、日本語のチャンピオン辞典を作成してください。
-テキストに無い情報は推測で補わず、読み取れた範囲で簡潔に書いてください。
+    const prompt = `以下は公式(Riot Data Dragon)の「${champion}」の実データ（スキルのCD/射程/コスト、レベル別ステータス、公式Tips）です。
+このキットデータとあなたの最新メタ知識を統合し、日本語のチャンピオン辞典を作成してください。
+※ 勝率・ピック率・ティア等の集計統計はこのデータには含まれません。これらのフィールドは
+  確実に分かる場合のみ記入し、不明なら空にしてください（推測で埋めない）。
+  一方、強み/弱み/パワースパイク/ビルドは、キットデータとメタ知識から具体的に記述してください。
 
 必ず以下のJSONのみ出力（コードブロック禁止）:
 {
@@ -78,8 +46,8 @@ export async function POST(req: Request) {
  "summary":"<総評。今のメタでの立ち位置を100字以内>"
 }
 
-テキスト:
-${site.text}`;
+公式データ:
+${site.ok ? site.text : '（公式データを取得できませんでした。あなたの知識で補ってください）'}`;
 
     const raw = await callGeminiWithRetry(prompt, { temperature: 0.2, maxOutputTokens: 2048, maxRetries: 2 });
     let cleaned = (raw || '').trim().replace(/^```[a-z]*\n?/, '').replace(/```$/, '').trim();
@@ -106,7 +74,7 @@ ${site.text}`;
       success: true,
       champion,
       patch: site.patch,
-      sourceUrl: site.url,
+      sourceUrl: site.ok ? site.source : null,
       saved: !!save,
       ...result,
     });

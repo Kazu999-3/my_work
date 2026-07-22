@@ -143,8 +143,15 @@ export default function DeepResearchPanel({ onSuccess }: DeepResearchPanelProps)
                 <div>・記事タイトル: {resultMsg.details.articleTitle}</div>
                 <div>・本文の文字数: {(resultMsg.details.articleLength || 0).toLocaleString()}字</div>
                 <div>・パッチ情報: {resultMsg.details.patch}</div>
-                <div>・LoLalytics参照: {resultMsg.details.lolalyticsUsed ? '取得成功' : '取得できず（AIの知識のみで生成）'}</div>
+                <div>・公式データ(Data Dragon): {resultMsg.details.lolalyticsUsed ? '取得成功' : '取得できず'}</div>
+                <div>・内部ナレッジ: {resultMsg.details.internalKnowledgeUsed ? '反映済み' : 'まだ無し'}</div>
                 <div>・キュー追加動画: {resultMsg.details.enqueuedVideos}本</div>
+                {!resultMsg.details.lolalyticsUsed && !resultMsg.details.internalKnowledgeUsed && (
+                  <div className="text-amber-400/90 pt-1">
+                    ※ 公式データも内部ナレッジも参照できず、AIの一般知識のみで生成したため内容が浅めです。
+                    このチャンプの記事・メモを溜めると、次回から深くなります。
+                  </div>
+                )}
               </div>
             )}
           </div>

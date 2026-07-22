@@ -2,44 +2,11 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 import { verifyAdminSession } from '../../../../lib/adminAuth';
 import { callGeminiWithRetry } from '../../../../lib/geminiClient';
+import { getChampionKnowledge } from '../../../../lib/championKnowledge';
+import { fetchChampionStats } from '../../../../lib/championStats';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
-
-const ROLE_PATH: Record<string, string> = {
-  TOP: 'top', JG: 'jungle', JUNGLE: 'jungle', MID: 'middle',
-  ADC: 'bottom', BOT: 'bottom', SUP: 'support', SUPPORT: 'support',
-};
-
-/** LoLalyticsのビルドページから統計テキストを取得 */
-async function fetchLolalyticsData(champion: string, role: string) {
-  const slug = champion.toLowerCase().replace(/[^a-z0-9]/g, '');
-  const lane = ROLE_PATH[String(role).toUpperCase()] || 'jungle';
-  const url = `https://lolalytics.com/lol/${slug}/build/?lane=${lane}`;
-
-  try {
-    const res = await fetch(url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36',
-        'Accept-Language': 'ja,en;q=0.9',
-      },
-    });
-    if (!res.ok) return { url, text: '', patch: null };
-    const html = await res.text();
-    const text = html
-      .replace(/<script[\s\S]*?<\/script>/gi, ' ')
-      .replace(/<style[\s\S]*?<\/style>/gi, ' ')
-      .replace(/<[^>]+>/g, ' ')
-      .replace(/&nbsp;/g, ' ')
-      .replace(/\s{2,}/g, ' ')
-      .trim();
-    const patchMatch = text.match(/[Pp]atch\s*(\d+\.\d+)/);
-    return { url, text: text.slice(0, 15000), patch: patchMatch ? patchMatch[1] : null };
-  } catch (e) {
-    console.warn(`[champion-research] LoLalytics取得スキップ: ${e}`);
-    return { url, text: '', patch: null };
-  }
-}
 
 /** YouTube動画の自動発掘 & キュー登録 */
 async function enqueueYoutubeResearchVideos(champion: string) {
@@ -101,32 +68,53 @@ export async function POST(req: Request) {
     }
 
     const champClean = champion.trim();
-    const siteData = await fetchLolalyticsData(champClean, role);
+
+    // 参考データを2系統から集める。
+    // (a) 公式 Data Dragon のチャンピオン実データ（スキルCD・射程・ベースステータス・公式Tips）。
+    //     LoLalytics等はJS描画でサーバー取得できず空になるため、確実に取れる公式ソースに変更。
+    // (b) 自分たちが蓄積した内部知識（手書きメモ・記事・辞典）。実戦の確度が高い。
+    const siteData = await fetchChampionStats(champClean);
+    let internalKnowledge = { hasData: false, text: '' } as { hasData: boolean; text: string };
+    try {
+      const k = await getChampionKnowledge(supabase, champClean, { maxNotes: 8, maxNoteChars: 600 });
+      internalKnowledge = { hasData: k.hasData, text: k.text || '' };
+    } catch (e) {
+      console.warn('[champion-research] 内部知識の取得に失敗:', e);
+    }
 
     // 1. AI によるディープリサーチ & 攻略バイブル生成
-    const prompt = `あなたはLoLの最高峰アナリスト・プロコーチです。
+    const prompt = `あなたはLoLの最高峰アナリスト兼プロコーチです。
 対象チャンピオン: **${champClean}** (メイン想定レーン: ${role})
 
-以下の参考情報（LoLalytics等の最新データ）およびあなたの専門知識を活用し、
-「${champClean}」の**深掘り攻略バイブル(Markdown)** を作成してください。
+以下の2種類の参考情報と、あなたの専門知識を統合して、
+「${champClean}」の**実戦で使える深掘り攻略バイブル(Markdown)** を作成してください。
 
-参考情報:
-${siteData.text ? siteData.text.slice(0, 6000) : '（標準データで構成してください）'}
+【参考情報A: 公式データ(Riot Data Dragon) — スキルのCD/射程/コスト、レベル別ステータス、公式Tips】
+${siteData.ok ? siteData.text.slice(0, 6000) : '（今回は公式データを取得できませんでした。あなたの知識で補ってください）'}
 
-【出力要件】
-1. **概要とメタでの立ち位置**: 現在の強み、弱み、おすすめの展開
-2. **おすすめビルド・ルーン**: コアアイテムと対面ごとの選択肢
-3. **序盤のレーン戦/ファームルート**: レベル1〜6の具体的な動き
-4. **集団戦・マクロの立ち回り**: ドラゴン/バロン戦、サイドプッシュの判断基準
-5. **主要マッチアップ相性**: 得意な相手、苦手な相手とその対策
+【参考情報B: このコミュニティが蓄積した内部ナレッジ（手書きメモ・攻略記事・辞典）】
+${internalKnowledge.hasData ? internalKnowledge.text.slice(0, 6000) : '（内部ナレッジはまだありません）'}
+
+【深さの要求 — 重要】
+- 抽象論を避け、**具体的な数字・タイミング・操作**を必ず含めること（例:「6レベルでコアの1つ目が完成し、そこがパワースパイク」「3:30前後でフルクリア後に上ガンク」）。
+- 「状況→とるべき行動→理由」の形で、判断基準まで書くこと。
+- 参考情報Bに具体的な記述があれば、それを最優先で取り込むこと。
+
+【出力構成（各セクションを厚めに）】
+1. **概要とメタでの立ち位置**: 強み・弱み・このパッチでの評価
+2. **ビルド・ルーン**: コア/状況別アイテム、ルーンの選択理由
+3. **序盤(Lv1-6)**: リーシュ/ファームルート、パワースパイク、最初のプレイメイク
+4. **中盤以降のマクロ**: オブジェクトの寄り方、サイドプッシュ、ウェーブ管理の判断
+5. **集団戦での役割**: 誰を狙うか、スキルの当て方、ポジショニング
+6. **主要マッチアップ**: 得意・苦手それぞれ3体ずつ、具体的な対策込み
 
 【出力形式】
-見出し (#, ##), 箇条書きを含む完全な Markdown 形式で回答してください。
-チャンピオン名・アイテム名・スキル名は英語表記のまま残し、説明文章は必ず日本語で出力してください。`;
+見出し(#, ##)と箇条書きを使った完全なMarkdown。
+チャンピオン名・アイテム名・スキル名は英語のまま、説明文は必ず日本語で。`;
 
     const markdownArticle = await callGeminiWithRetry(prompt, {
-      temperature: 0.3,
-      maxOutputTokens: 3500,
+      temperature: 0.35,
+      maxOutputTokens: 8000,   // 3500では浅く途切れがち。深掘り用に増やす。
       maxRetries: 2,
     });
 
@@ -157,7 +145,7 @@ ${siteData.text ? siteData.text.slice(0, 6000) : '（標準データで構成し
       champion: champClean,
       genre: 'ディープリサーチ',
       tags: [champClean, 'ディープリサーチ', '総合バイブル', role],
-      source_url: siteData.url || undefined,
+      source_url: siteData.ok ? siteData.source : undefined,
     };
 
     let savedArticleId: any = existingArticle?.id ?? null;
@@ -218,8 +206,9 @@ ${siteData.text ? siteData.text.slice(0, 6000) : '（標準データで構成し
       article: aiText,             // 生成本文（その場で表示するため返す）
       articleId: savedArticleId,   // ライブラリで開くためのID
       articleLength: aiText.length,
-      sourceUrl: siteData.url || null,
-      lolalyticsUsed: !!siteData.text,  // 参考データを実際に取得できたか
+      statsSource: siteData.ok ? siteData.source : null,
+      lolalyticsUsed: siteData.ok,  // 公式データを実際に取得できたか（旧名はUI互換のため維持）
+      internalKnowledgeUsed: internalKnowledge.hasData,  // 内部ナレッジを材料にできたか
       enqueuedVideos,
       patch: siteData.patch || 'Latest',
       summary: `「${champClean}」のディープリサーチを完了し、攻略バイブル(${aiText.length.toLocaleString()}字)の生成、チャンピオン辞典の更新、および高優先度解説動画(${enqueuedVideos}本)のキュー登録を行いました。`,
