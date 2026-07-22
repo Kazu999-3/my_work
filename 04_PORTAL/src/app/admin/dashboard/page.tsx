@@ -359,7 +359,7 @@ export default function Home() {
               </a>
               <button
                 onClick={() => {
-                  navigator.clipboard.writeText("python d:/my_work/03_SYSTEMS/v2_CORE/edge_worker_daemon.py");
+                  navigator.clipboard.writeText("d:/my_work/.venv/Scripts/python.exe d:/my_work/03_SYSTEMS/v2_CORE/edge_worker_daemon.py");
                   alert("📋 起動コマンドをクリップボードにコピーしました！\nPowerShell等で実行してください。");
                 }}
                 className="px-4 py-3 glass-panel glass-panel-hover text-gray-300 hover:text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5"

@@ -2,9 +2,9 @@ services:
   - type: web
     name: antigravity-api
     env: python
-    region: singapore # または oregon
-    buildCommand: "pip install -r requirements.txt"
-    startCommand: "uvicorn v2_CORE.api:app --host 0.0.0.0 --port $PORT"
+    region: singapore
+    buildCommand: "pip install -r 03_SYSTEMS/requirements.txt"
+    startCommand: "PYTHONPATH=03_SYSTEMS uvicorn 03_SYSTEMS.v2_CORE.api:app --host 0.0.0.0 --port $PORT"
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.0
