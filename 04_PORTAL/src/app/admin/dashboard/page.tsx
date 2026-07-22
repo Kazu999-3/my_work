@@ -322,6 +322,83 @@ export default function Home() {
         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
       >
         
+        {/* エッジワーカー依存機能 & 起動コントロールカード */}
+        <motion.div variants={itemVariants} className="md:col-span-2 lg:col-span-4 glass-panel rounded-3xl p-6 relative overflow-hidden border border-white/10 bg-gradient-to-r from-blue-950/30 via-slate-900/40 to-purple-950/30">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-6">
+            <div>
+              <div className="flex items-center gap-3 mb-2">
+                <div className={`p-2.5 rounded-xl border ${systemStatus.worker.active ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-rose-500/10 border-rose-500/30 text-rose-400'}`}>
+                  <Cpu size={22} className={systemStatus.worker.active ? '' : 'animate-pulse'} />
+                </div>
+                <div>
+                  <h3 className="text-lg font-black text-white flex items-center gap-2 flex-wrap">
+                    エッジワーカー（ローカルDaemon）ステータス
+                    <span className={`text-xs font-black px-2.5 py-0.5 rounded-full border ${
+                      systemStatus.worker.active
+                        ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+                        : 'bg-rose-500/10 border-rose-500/30 text-rose-400 animate-pulse'
+                    }`}>
+                      {systemStatus.worker.active ? '🟢 稼働中 (待機中)' : '🔴 停止中（起動を推奨）'}
+                    </span>
+                  </h3>
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    以下の重いAI・データ収集処理を実行するには、PC上でのエッジワーカー起動が必要です。
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* 起動アクションボタン */}
+            <div className="flex items-center gap-3 shrink-0 flex-wrap">
+              <a
+                href="sovereign-worker://start"
+                className="px-5 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-400 hover:to-indigo-500 text-white font-black text-xs rounded-xl shadow-[0_0_15px_rgba(99,102,241,0.3)] transition-all flex items-center gap-2 cursor-pointer"
+                title="ブラウザから「Sovereign Worker を開きますか？」ポップアップを表示してローカルワーカーを起動"
+              >
+                <Zap size={16} /> 🚀 エッジワーカーを起動 (ポップアップ)
+              </a>
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText("python d:/my_work/03_SYSTEMS/v2_CORE/edge_worker_daemon.py");
+                  alert("📋 起動コマンドをクリップボードにコピーしました！\nPowerShell等で実行してください。");
+                }}
+                className="px-4 py-3 glass-panel glass-panel-hover text-gray-300 hover:text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5"
+              >
+                📋 コマンドをコピー
+              </button>
+            </div>
+          </div>
+
+          {/* 必要機能 ＆ クラウド完結機能の一覧比較 */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-white/5 pt-4">
+            <div className="space-y-2 bg-black/30 p-4 rounded-2xl border border-white/5">
+              <span className="text-xs font-black text-amber-400 flex items-center gap-1.5 mb-2">
+                <ShieldAlert size={14} /> ⚡ エッジワーカー起動が必要な機能
+              </span>
+              <ul className="space-y-1.5 text-xs text-gray-300">
+                <li className="flex items-center gap-2">🎬 <strong>YouTube動画解析</strong> <span className="text-[10px] text-gray-500">(Whisper GPU 文字起こし & 戦術マージ)</span></li>
+                <li className="flex items-center gap-2">📚 <strong>チャンピオン辞典の一括AI更新</strong> <span className="text-[10px] text-gray-500">(全チャンプGemini一括リサーチ)</span></li>
+                <li className="flex items-center gap-2">📊 <strong>トレンドデータ自動収集</strong> <span className="text-[10px] text-gray-500">(u.gg / Lolalytics 統計取得)</span></li>
+                <li className="flex items-center gap-2">📈 <strong>プロビルド追跡</strong> <span className="text-[10px] text-gray-500">(Oner/Canyon等の最新ビルド分析)</span></li>
+                <li className="flex items-center gap-2">🛠️ <strong>戦績スマート補完</strong> <span className="text-[10px] text-gray-500">(Riot API経由のPUUID・ロール自動補完)</span></li>
+              </ul>
+            </div>
+
+            <div className="space-y-2 bg-black/30 p-4 rounded-2xl border border-white/5">
+              <span className="text-xs font-black text-emerald-400 flex items-center gap-1.5 mb-2">
+                <CheckCircle2 size={14} /> 🌐 クラウド単体で常時動く機能 (ワーカー不要)
+              </span>
+              <ul className="space-y-1.5 text-xs text-gray-300">
+                <li className="flex items-center gap-2">📖 <strong>チャンピオン辞典 ＆ 対面メモの閲覧</strong></li>
+                <li className="flex items-center gap-2">⚔️ <strong>5v5 AIチームシミュレータ分析</strong></li>
+                <li className="flex items-center gap-2">✨ <strong>パーソナルコーチ AI 相談</strong></li>
+                <li className="flex items-center gap-2">🔍 <strong>全コンテンツの横断検索</strong></li>
+                <li className="flex items-center gap-2">🏆 <strong>KTM リーダーボード ＆ 過去試合履歴</strong></li>
+              </ul>
+            </div>
+          </div>
+        </motion.div>
+
         {/* QUOTA Card (Simplified & Full-width) */}
         <motion.div variants={itemVariants} className="md:col-span-2 lg:col-span-4 glass-panel glass-panel-hover rounded-3xl p-6 relative overflow-hidden border border-white/5 bg-gradient-to-b from-white/[0.05] to-transparent">
           <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/20 rounded-full blur-[50px] -mr-10 -mt-10 pointer-events-none"></div>

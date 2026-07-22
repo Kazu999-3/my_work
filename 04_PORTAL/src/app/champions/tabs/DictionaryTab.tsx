@@ -79,6 +79,11 @@ function ChampionsContent() {
   const [champStats, setChampStats] = useState<Record<string, any>>({});
   const [pastInterrogations, setPastInterrogations] = useState<any[]>([]);
 
+  // 詳細モーダル内の折りたたみアコーディオン制御状態（デフォルト非表示・折りたたみ）
+  const [isStrategyCollapsed, setIsStrategyCollapsed] = useState(true);
+  const [isDraftsCollapsed, setIsDraftsCollapsed] = useState(true);
+  const [isMatchupsCollapsed, setIsMatchupsCollapsed] = useState(true);
+
 
   // 描画用のソート済みマッチアップリストの作成（勝率の降順）
   const sortedMatchups = useMemo(() => {
@@ -691,48 +696,7 @@ function ChampionsContent() {
           </div>
         </div>
 
-        {/* 全体的な立ち回り・トレンドメモ（最上部にデカいサイズで表示） */}
-        <div className="glass-panel rounded-3xl p-6 md:p-8 border-l-4 border-[#c89b3c] bg-[#c89b3c]/5 shadow-[0_0_30px_rgba(200,155,60,0.1)] space-y-4">
-          <div className="flex items-center justify-between gap-3 flex-wrap border-b border-white/10 pb-4">
-            <h2 className="text-xl md:text-2xl font-black text-white flex items-center gap-3">
-              <BookOpen className="text-[#c89b3c] h-7 w-7" />
-              <span className="text-gradient text-gradient-gold">全体的な立ち回り・統合トレンドメモ</span>
-            </h2>
-            <span className="text-xs text-[#c89b3c] font-bold bg-[#c89b3c]/15 px-3 py-1 rounded-full border border-[#c89b3c]/30">
-              各バイブル・教訓統合ノート
-            </span>
-          </div>
 
-          <div className="prose prose-invert max-w-none text-sm md:text-base leading-relaxed text-gray-200">
-            {editingStrategy ? (
-              <div className="space-y-3">
-                <textarea
-                  value={dataFields.strategy}
-                  onChange={(e) => setField('strategy', e.target.value)}
-                  className="w-full min-h-[160px] p-4 bg-black/60 border border-[#c89b3c]/40 rounded-2xl text-sm font-mono text-white outline-none focus:border-[#c89b3c]"
-                  placeholder="全体的な立ち回り・マクロ判断・反省から得られた鬼コーチの教訓メモ..."
-                />
-                <div className="flex justify-end gap-2">
-                  <button onClick={() => setEditingStrategy(false)} className="px-4 py-2 bg-white/10 text-gray-300 rounded-xl text-xs font-bold">完了</button>
-                </div>
-              </div>
-            ) : (
-              <div className="group relative">
-                {dataFields.strategy ? (
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{dataFields.strategy}</ReactMarkdown>
-                ) : (
-                  <p className="text-gray-500 italic text-sm">全体的な立ち回り・統合トレンドメモはまだ記載されていません。「編集する」ボタンまたは「最新トレンド取得」を実行してください。</p>
-                )}
-                <button
-                  onClick={() => setEditingStrategy(true)}
-                  className="mt-4 px-4 py-2 bg-[#c89b3c]/20 hover:bg-[#c89b3c]/40 text-[#c89b3c] border border-[#c89b3c]/30 font-bold text-xs rounded-xl transition-all flex items-center gap-1.5"
-                >
-                  <Edit2 size={14} /> メモを直感編集
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <TextAreaCard title="強み (Strengths)" icon={Swords} color="text-[var(--color-success)] border-[var(--color-success)] shadow-[var(--color-success)]" value={dataFields.strengths} onChange={v => setField('strengths', v)} />
@@ -955,8 +919,6 @@ function ChampionsContent() {
             ) : (
               <p className="text-gray-500 italic text-xs py-4">このチャンピオン対面での過去の敗北・反省点（教訓）はありません。良好な状態です！</p>
             )}
-          </div>
-
           {/* 🏆 プロ推奨ルーン・ビルド (自動収集) */}
           <div className="glass-panel border-t-2 border-amber-400 p-5 rounded-2xl group transition-all hover:shadow-[0_4px_20px_rgba(0,0,0,0.3)] shadow-amber-400/20 relative col-span-1 md:col-span-2">
             <h3 className="text-sm font-black mb-4 flex items-center gap-2 text-amber-400">
@@ -1014,30 +976,119 @@ function ChampionsContent() {
               <p className="text-gray-500 italic text-xs py-4">プロの採用ビルドデータは未収集です。上の「最新トレンド取得」ボタンを押してロードしてください。</p>
             )}
           </div>
-          
-          {Object.entries(dataFields.customFields || {}).map(([key, val]) => (
-            <div key={key} className="glass-panel border-t-2 border-pink-400 p-5 rounded-2xl group transition-all hover:shadow-[0_4px_20px_rgba(0,0,0,0.3)] shadow-pink-400/20 relative">
-              <button onClick={() => removeCustomField(key)} className="absolute top-4 right-4 text-gray-500 hover:text-red-400 transition-colors"><Trash size={14}/></button>
-              <h3 className="text-sm font-black mb-4 flex items-center gap-2 text-pink-400"><FileText size={16} /> {key}</h3>
-              <textarea value={val as string} onChange={e => updateCustomField(key, e.target.value)} className="w-full h-28 bg-black/30 border border-white/5 rounded-xl p-3 text-sm text-gray-200 outline-none focus:border-white/20 resize-y shadow-inner transition-colors" placeholder={`${key}を記録...`} />
-            </div>
-          ))}
-          
-          <button onClick={addCustomField} className="glass-panel border-2 border-dashed border-[#c89b3c]/30 hover:border-[#c89b3c] hover:bg-[#c89b3c]/10 text-[#c89b3c] p-5 rounded-2xl flex flex-col items-center justify-center gap-2 transition-all min-h-[160px]">
-            <Plus size={24} />
-            <span className="font-bold text-sm">新しい項目を追加</span>
-          </button>
         </div>
 
-        {/* ⚔️ 対面マッチアップ履歴 (バトルサーチ連携) */}
-        <div className="glass-panel border-t-4 border-[#00cfef] rounded-2xl p-6 relative overflow-hidden group">
-          <div className="absolute -right-20 -top-20 w-64 h-64 bg-[#00cfef]/5 rounded-full blur-3xl group-hover:bg-[#00cfef]/10 transition-colors"></div>
-          <h3 className="text-lg font-black font-mono mb-6 flex items-center gap-2 text-white"><Swords className="text-[#00cfef]" size={20} /> ⚔️ 対面マッチアップ履歴 (バトルサーチ連携)</h3>
-          
-          {matchupsList.length === 0 ? (
-            <p className="text-gray-500 italic text-sm">バトルサーチにこのチャンピオンのマッチアップ記録はありません。</p>
-          ) : (
-            <div className="flex flex-col gap-3 relative z-10">
+          {/* 📖 全体的な立ち回り・統合トレンドメモ (折りたたみアコーディオン) */}
+          <div className="glass-panel rounded-2xl border-l-4 border-[#c89b3c] bg-[#c89b3c]/5 overflow-hidden col-span-1 md:col-span-2">
+            <button
+              onClick={() => setIsStrategyCollapsed(!isStrategyCollapsed)}
+              className="w-full p-5 flex items-center justify-between text-left hover:bg-white/5 transition-colors cursor-pointer"
+            >
+              <div className="flex items-center gap-3">
+                <BookOpen className="text-[#c89b3c]" size={20} />
+                <h3 className="text-base font-black text-white">全体的な立ち回り・統合トレンドメモ</h3>
+                {dataFields.strategy && <span className="text-[10px] bg-[#c89b3c]/20 text-[#c89b3c] px-2.5 py-0.5 rounded-full font-bold">記載あり</span>}
+              </div>
+              <span className="text-xs text-gray-400 font-bold flex items-center gap-1">
+                {isStrategyCollapsed ? '▼ 開く' : '▲ 閉じる'}
+              </span>
+            </button>
+
+            {!isStrategyCollapsed && (
+              <div className="p-6 border-t border-white/10 prose prose-invert max-w-none text-sm leading-relaxed text-gray-200">
+                {editingStrategy ? (
+                  <div className="space-y-3">
+                    <textarea
+                      value={dataFields.strategy}
+                      onChange={(e) => setField('strategy', e.target.value)}
+                      className="w-full min-h-[160px] p-4 bg-black/60 border border-[#c89b3c]/40 rounded-2xl text-sm font-mono text-white outline-none focus:border-[#c89b3c]"
+                      placeholder="全体的な立ち回り・マクロ判断・反省から得られた教訓メモ..."
+                    />
+                    <div className="flex justify-end gap-2">
+                      <button onClick={() => setEditingStrategy(false)} className="px-4 py-2 bg-white/10 text-gray-300 rounded-xl text-xs font-bold">完了</button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="group relative">
+                    {dataFields.strategy ? (
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{dataFields.strategy}</ReactMarkdown>
+                    ) : (
+                      <p className="text-gray-500 italic text-xs">全体的な立ち回り・統合トレンドメモはまだ記載されていません。「直感編集」ボタンを押して追加してください。</p>
+                    )}
+                    <button
+                      onClick={() => setEditingStrategy(true)}
+                      className="mt-4 px-4 py-2 bg-[#c89b3c]/20 hover:bg-[#c89b3c]/40 text-[#c89b3c] border border-[#c89b3c]/30 font-bold text-xs rounded-xl transition-all flex items-center gap-1.5"
+                    >
+                      <Edit2 size={14} /> メモを直感編集
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* 📄 AI生成ドラフト・追加メモ項目 (折りたたみアコーディオン) */}
+          <div className="glass-panel rounded-2xl border-l-4 border-pink-400 bg-pink-400/5 overflow-hidden col-span-1 md:col-span-2">
+            <button
+              onClick={() => setIsDraftsCollapsed(!isDraftsCollapsed)}
+              className="w-full p-5 flex items-center justify-between text-left hover:bg-white/5 transition-colors cursor-pointer"
+            >
+              <div className="flex items-center gap-3">
+                <FileText className="text-pink-400" size={20} />
+                <h3 className="text-base font-black text-white">AI生成ドラフト ＆ カスタム追加メモ一覧</h3>
+                <span className="text-xs bg-pink-500/20 text-pink-300 px-2.5 py-0.5 rounded-full font-bold">
+                  {Object.keys(dataFields.customFields || {}).length} 件
+                </span>
+              </div>
+              <span className="text-xs text-gray-400 font-bold flex items-center gap-1">
+                {isDraftsCollapsed ? '▼ 開く' : '▲ 閉じる'}
+              </span>
+            </button>
+
+            {!isDraftsCollapsed && (
+              <div className="p-6 border-t border-white/10 space-y-4">
+                {Object.entries(dataFields.customFields || {}).length === 0 ? (
+                  <p className="text-gray-500 italic text-xs">追加のカスタムメモやAIドラフト項目はありません。</p>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {Object.entries(dataFields.customFields || {}).map(([key, val]) => (
+                      <div key={key} className="glass-panel border-t-2 border-pink-400 p-5 rounded-2xl group transition-all hover:shadow-[0_4px_20px_rgba(0,0,0,0.3)] shadow-pink-400/20 relative">
+                        <button onClick={() => removeCustomField(key)} className="absolute top-4 right-4 text-gray-500 hover:text-red-400 transition-colors"><Trash size={14}/></button>
+                        <h3 className="text-sm font-black mb-4 flex items-center gap-2 text-pink-400"><FileText size={16} /> {key}</h3>
+                        <textarea value={val as string} onChange={e => updateCustomField(key, e.target.value)} className="w-full h-28 bg-black/30 border border-white/5 rounded-xl p-3 text-sm text-gray-200 outline-none focus:border-white/20 resize-y shadow-inner transition-colors" placeholder={`${key}を記録...`} />
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <button onClick={addCustomField} className="glass-panel border-2 border-dashed border-[#c89b3c]/30 hover:border-[#c89b3c] hover:bg-[#c89b3c]/10 text-[#c89b3c] p-4 rounded-xl flex items-center justify-center gap-2 transition-all w-full text-xs font-bold mt-2">
+                  <Plus size={18} /> 新しい項目を追加
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* ⚔️ 対面マッチアップ履歴 (折りたたみアコーディオン) */}
+        <div className="glass-panel border-t-4 border-[#00cfef] rounded-2xl overflow-hidden group">
+          <button
+            onClick={() => setIsMatchupsCollapsed(!isMatchupsCollapsed)}
+            className="w-full p-5 flex items-center justify-between text-left hover:bg-white/5 transition-colors cursor-pointer"
+          >
+            <div className="flex items-center gap-3">
+              <Swords className="text-[#00cfef]" size={20} />
+              <h3 className="text-base font-black text-white">⚔️ 対面マッチアップ履歴 (ランク戦データ連携)</h3>
+              <span className="text-xs bg-[#00cfef]/20 text-[#00cfef] px-2.5 py-0.5 rounded-full font-bold">
+                {matchupsList.length} 件
+              </span>
+            </div>
+            <span className="text-xs text-gray-400 font-bold flex items-center gap-1">
+              {isMatchupsCollapsed ? '▼ 開く' : '▲ 閉じる'}
+            </span>
+          </button>
+
+          {!isMatchupsCollapsed && (
+            <div className="p-6 border-t border-white/10 relative">
               {sortedMatchups.map((m) => {
                 const isExpanded = expandedMatchupId === m.matchup_id;
                 const rd = m.raw_data || {};
