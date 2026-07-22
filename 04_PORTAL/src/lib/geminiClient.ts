@@ -44,6 +44,37 @@ async function readCache(cacheKey: string, ttlMs: number): Promise<string | null
   }
 }
 
+async function trackApiUsage() {
+  if (!supabase) return;
+  try {
+    const ptObj = new Date(Date.now() - 8 * 60 * 60 * 1000);
+    const yyyy = ptObj.getUTCFullYear();
+    const mm = String(ptObj.getUTCMonth() + 1).padStart(2, '0');
+    const dd = String(ptObj.getUTCDate()).padStart(2, '0');
+    const todayFormatted = `${yyyy}-${mm}-${dd}`;
+
+    const { data: existing } = await supabase
+      .from('api_usage_logs')
+      .select('usage_data')
+      .eq('date', todayFormatted)
+      .maybeSingle();
+
+    const currentData = existing?.usage_data || {};
+    const currentCount = Number(currentData.portal_ai_calls || 0);
+
+    const updatedData = {
+      ...currentData,
+      portal_ai_calls: currentCount + 1,
+    };
+
+    await supabase
+      .from('api_usage_logs')
+      .upsert({ date: todayFormatted, usage_data: updatedData }, { onConflict: 'date' });
+  } catch (e) {
+    console.warn('[geminiClient] Failed to track API usage:', e);
+  }
+}
+
 async function writeCache(cacheKey: string, response: string) {
   if (!supabase) return;
   try {
@@ -234,4 +265,33 @@ function backoffMs(attempt: number): number {
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * 批判的ファクトチェックAI（Critic Engine）を噛ませて高精度・高信憑性文章を生成する二段階関数。
+ * 1次生成後に「否定的な批判AI」が間違い・AI臭さ・抽象表現を徹底排除して再校正する。
+ */
+export async function callGeminiWithCritic(
+  prompt: string,
+  options: GeminiCallOptions = {}
+): Promise<string> {
+  // 1次生成
+  const draft = await callGeminiWithRetry(prompt, options);
+
+  // 2次生成（批判的AIによる厳格な修正）
+  const criticPrompt = `
+あなたはLoLの極めて批判的なプロアナリスト＆ファクトチェッカーです。
+以下のAI生成文を厳しく査読し、根拠のない推測、抽象的で中身のないAI臭い表現、矛盾、英語の直訳口調を徹底的に排除・修正してください。
+
+【生成された草案】
+${draft}
+
+【修正命令】
+- 不確実な情報や根拠のない言い切りは削除するか、事実に即した具体例に置き換える。
+- 「素晴らしいでしょう」「〜を意識しましょう」といった無意味なAIの挨拶やまとめはすべて全カットする。
+- 日本語として自然で、プレイヤーが実戦ですぐ使える具体的な戦術メモへブラッシュアップすること。
+- 修正後の最終本文のみを出力すること。
+`;
+
+  return await callGeminiWithRetry(criticPrompt, { ...options, cacheKey: undefined });
 }

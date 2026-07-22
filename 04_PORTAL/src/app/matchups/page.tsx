@@ -1451,13 +1451,13 @@ export default function MatchupsPage() {
             </motion.div>
           ))}
           
-          {results.length === 0 && (
-            <motion.div variants={itemVariants} className="col-span-full py-20 text-center glass-panel rounded-2xl flex flex-col items-center justify-center">
+          {results.length === 0 && (mySearch || enemySearch || roleFilter !== 'ALL' || resultFilter !== 'ALL' || difficultyFilter > 0) && (
+            <motion.div variants={itemVariants} className="col-span-full py-16 text-center glass-panel rounded-2xl flex flex-col items-center justify-center">
               <div className="w-16 h-16 bg-[#00cfef]/10 rounded-full flex items-center justify-center mb-4">
                 <Shield size={32} className="text-[#00cfef]" />
               </div>
-              <h3 className="text-xl font-bold text-white mb-2">マッチアップが見つかりません</h3>
-              <p className="text-sm text-gray-400">条件を変えるか、新しいメモを追加してください</p>
+              <h3 className="text-xl font-bold text-white mb-2">条件に一致する対面メモが見つかりません</h3>
+              <p className="text-sm text-gray-400">検索フィルター条件を変えるか、新しい対面メモを作成してください</p>
             </motion.div>
           )}
         </motion.div>

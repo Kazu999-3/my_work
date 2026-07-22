@@ -267,11 +267,6 @@ export default function Home() {
         </div>
         
         <div className="flex flex-col md:flex-row items-end md:items-center gap-4 flex-wrap">
-          {/* よく使う運用画面への導線。ダッシュボードから辿れず迷いやすかったため追加 */}
-          <Link href="/admin/knowledge?tab=research" className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 border border-purple-500/30 text-xs font-bold text-white transition-all shadow-[0_0_15px_rgba(168,85,247,0.4)] flex items-center gap-2">
-            <Sparkles size={14} />
-            <span>🎯 チャンプ深掘り ➔</span>
-          </Link>
           <Link href="/admin/knowledge" className="px-4 py-2.5 rounded-2xl bg-pink-500/10 border border-pink-500/30 hover:bg-pink-500/20 text-xs font-bold text-pink-300 transition-all flex items-center gap-2">
             <Brain size={14} />
             <span>ナレッジ / データ整備 ➔</span>

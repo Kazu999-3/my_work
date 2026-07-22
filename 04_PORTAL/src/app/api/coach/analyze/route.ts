@@ -894,12 +894,16 @@ ${advice}`;
 
         const mergedContent = await callGemini(mergePrompt);
         
+        // ソロキュー振り返りのナレッジへの自動追加はユーザー要望により停止
+        /*
         await supabase
           .from('personal_knowledge')
           .update({ content: mergedContent })
           .eq('id', existingData.id);
+        */
       } else {
-        // 新規登録 (genre: 'LoL攻略' を明示付与)
+        // ソロキュー振り返りのナレッジへの自動追加はユーザー要望により停止
+        /*
         await supabase.from('personal_knowledge').insert({
           title: saveTitle,
           content: `## 試合データ\n- KDA: ${me.kills}/${me.deaths}/${me.assists}\n- CS/min: ${csPerMin}\n- Vision/min: ${visionPerMin}\n- 結果: ${me.win ? '勝利' : '敗北'}\n\n## AIコーチアドバイス\n${advice}`,
@@ -907,6 +911,7 @@ ${advice}`;
           tags: ['coach', 'review', me.championName],
           champion: me.championName,
         });
+        */
       }
 
       // 構造化ログを coach_analyses に保存（トレンド集計用）。

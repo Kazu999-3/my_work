@@ -344,14 +344,13 @@ function KnowledgeBaseContent() {
         <div className="flex gap-2 border-b border-gray-900 pb-4 mb-8 overflow-x-auto">
           {[
             { id: 'knowledge', label: '📖 ナレッジ一覧', icon: BookOpen },
-            { id: 'research', label: '🎯 チャンプ深掘り', icon: Target },
             { id: 'video', label: '⏳ 動画解析キュー', icon: Video },
             { id: 'library', label: '🗂️ 攻略ライブラリ', icon: Layers },
-            { id: 'maintenance', label: '🛠️ データ整備', icon: Layers },
-            { id: 'review', label: '🔄 鮮度レビュー', icon: Sparkles },
+            { id: 'research', label: '🎯 チャンプ深掘り', icon: Target },
+            { id: 'maintenance', label: '🛠️ データ整備 ＆ 鮮度レビュー', icon: Layers },
           ].map((tab) => {
             const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
+            const isActive = activeTab === tab.id || (tab.id === 'maintenance' && activeTab === 'review');
             return (
               <button
                 key={tab.id}
@@ -377,31 +376,39 @@ function KnowledgeBaseContent() {
         )}
         {activeTab === 'video' && <YoutubeQueueManager />}
         {activeTab === 'library' && <LibraryTabContent />}
-        {/* データ整備: 一括処理を推奨実行順に並べる */}
-        {activeTab === 'maintenance' && (
-          <div className="space-y-6">
-            <div className="bg-pink-500/5 border border-pink-500/20 rounded-2xl p-5">
-              <h2 className="text-base font-black text-white mb-2">🛠️ データ整備の進め方</h2>
-              <p className="text-xs text-gray-400 leading-relaxed">
-                知識を「チャンピオン辞典 / レーン別ガイド」へ整理する一括処理です。
-                <strong className="text-pink-300">①→③の順に実行</strong>すると、翻訳済みのデータをもとに統合できるため品質が上がります。
-              </p>
-              <p className="text-[11px] text-gray-500 mt-2">
-                ※ ②「チャンピオン辞典へ一括同期」は
-                <button onClick={() => setActiveTab('library' as any)} className="text-pink-400 hover:underline font-bold mx-1">🗂️ 攻略ライブラリ</button>
-                タブの「全チャンプ辞典に一括同期」ボタンから実行します。
-              </p>
+        {/* データ整備 ＆ 鮮度レビュー: データ整理・一括処理と古いデータの検知 */}
+        {(activeTab === 'maintenance' || activeTab === 'review') && (
+          <div className="space-y-8">
+            <div className="space-y-6">
+              <div className="bg-pink-500/5 border border-pink-500/20 rounded-2xl p-5">
+                <h2 className="text-base font-black text-white mb-2">🛠️ データ整備の進め方</h2>
+                <p className="text-xs text-gray-400 leading-relaxed">
+                  知識を「チャンピオン辞典 / レーン別ガイド」へ整理する一括処理です。
+                  <strong className="text-pink-300">①→③の順に実行</strong>すると、翻訳済みのデータをもとに統合できるため品質が上がります。
+                </p>
+                <p className="text-[11px] text-gray-500 mt-2">
+                  ※ ②「チャンピオン辞典へ一括同期」は
+                  <button onClick={() => setActiveTab('library' as any)} className="text-pink-400 hover:underline font-bold mx-1">🗂️ 攻略ライブラリ</button>
+                  タブの「全チャンプ辞典に一括同期」ボタンから実行します。
+                </p>
+              </div>
+              <DictInsightsPanel mode="maintenance" />
             </div>
-            <DictInsightsPanel mode="maintenance" />
-            <RevisionsPanel />
-          </div>
-        )}
 
-        {/* 鮮度レビュー: 古い辞典の判定と、個別の点検ツール */}
-        {activeTab === 'review' && (
-          <div className="space-y-6">
-            <DictReviewPanel />
-            <DictInsightsPanel mode="inspect" />
+            {/* 鮮度レビュー: 古い辞典の判定と、個別の点検ツール */}
+            <div className="space-y-6 pt-6 border-t border-gray-800">
+              <h2 className="text-lg font-black text-white flex items-center gap-2">
+                <Sparkles className="text-[#00cfef]" size={20} />
+                🔄 鮮度レビュー ＆ データ点検
+              </h2>
+              <DictReviewPanel />
+              <DictInsightsPanel mode="inspect" />
+            </div>
+
+            {/* 変更履歴 */}
+            <div className="pt-6 border-t border-gray-800">
+              <RevisionsPanel />
+            </div>
           </div>
         )}
 

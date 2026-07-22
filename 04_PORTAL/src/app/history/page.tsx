@@ -113,6 +113,13 @@ export default function HistoryPage() {
               KTMで記録された過去のカスタムマッチの履歴と詳細を確認できます。
             </p>
           </div>
+          <Link
+            href="/balancer/record"
+            className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2.5 rounded-xl font-bold transition text-xs shadow-lg shadow-emerald-950/40"
+          >
+            <Trophy className="h-4 w-4" />
+            戦績の手動記録 🏆
+          </Link>
         </div>
 
         <div className="space-y-6">

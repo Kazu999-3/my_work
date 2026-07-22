@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { supabase } from '../../lib/supabaseClient';
 import { getChampIcon, getChampSplash } from '../../lib/ddragonClient';
 import { ChevronLeft, Search, Save, BookOpen, RefreshCw, Zap, ShieldAlert, Swords, Shield, Copy, Check, FileText, Eye, Edit2, Activity, Plus, Trash, Filter, Star as StarIcon, Award, Sparkles } from 'lucide-react';
@@ -65,8 +66,7 @@ function ChampionsContent() {
     early_game_score: number; mid_game_score: number; late_game_score: number;
     peak_window: string; summary: string;
   } | null>(null);
-  // KTM実戦成績（#51 辞典vs実戦の可視化）
-  const [ktmStats, setKtmStats] = useState<any>(null);
+  const [editingStrategy, setEditingStrategy] = useState(false);
   const [saving, setSaving] = useState(false);
   const [copied, setCopied] = useState(false);
   const [noteDraftMode, setNoteDraftMode] = useState<'preview' | 'edit'>('preview');
@@ -74,6 +74,7 @@ function ChampionsContent() {
   const [favoriteChamps, setFavoriteChamps] = useState<string[]>([]);
   const [matchupsList, setMatchupsList] = useState<any[]>([]);
   const [expandedMatchupId, setExpandedMatchupId] = useState<string | null>(null);
+  const [isMatchupSectionCollapsed, setIsMatchupSectionCollapsed] = useState(true);
   const [fetchingTrend, setFetchingTrend] = useState(false);
   const [champStats, setChampStats] = useState<Record<string, any>>({});
   const [pastInterrogations, setPastInterrogations] = useState<any[]>([]);
@@ -394,13 +395,6 @@ function ChampionsContent() {
         .maybeSingle();
       setPowerSpikeScores(spikeData || null);
 
-      // KTMカスタムでのそのチャンピオンの実戦成績を取得（#51）
-      setKtmStats(null);
-      fetch(`/api/champion-stats?champion=${encodeURIComponent(champId)}`)
-        .then(r => r.json())
-        .then(d => setKtmStats(d && !d.error ? d : null))
-        .catch(() => setKtmStats(null));
-      
       // Storageからの下書きデータ取得連携（削減案①）
       let loadedNoteDraft = rd.note_draft || '';
       if (rd.note_draft_url) {
@@ -804,7 +798,7 @@ function ChampionsContent() {
               </div>
             </div>
             
-            <div className="ml-auto flex gap-4 items-center">
+            <div className="ml-auto flex gap-3 items-center flex-wrap">
               <button 
                 onClick={handleFetchTrend} 
                 disabled={fetchingTrend}
@@ -813,6 +807,14 @@ function ChampionsContent() {
                 <RefreshCw size={16} className={fetchingTrend ? "animate-spin" : ""} />
                 {fetchingTrend ? "取得中..." : "最新トレンド取得"}
               </button>
+              
+              <Link
+                href="/admin/knowledge?tab=maintenance"
+                className="px-4 py-3 bg-white/5 hover:bg-white/10 border border-white/15 text-pink-300 font-bold rounded-xl transition-all flex items-center gap-2 text-sm"
+                title="全チャンピオンの更新履歴・変更リビジョンパネルへ移動"
+              >
+                📜 変更履歴パネルへ ➔
+              </Link>
               
               <div className="glass-panel px-6 py-3 rounded-2xl text-center">
                 <p className="text-xs text-gray-400 font-bold mb-1 uppercase tracking-widest">Win Rate</p>
@@ -826,45 +828,48 @@ function ChampionsContent() {
           </div>
         </div>
 
-        {/* KTM実戦データ（#51 辞典vs実戦の可視化）: 辞典の主張と実際のカスタム成績を並べて確認 */}
-        {ktmStats && ktmStats.games > 0 && (
-          <div className="glass-panel rounded-2xl p-5 border-l-4 border-[#00cfef]">
-            <div className="flex items-center gap-2 mb-3">
-              <span className="text-sm font-black text-[#00cfef]">📊 KTMカスタムでの実戦データ</span>
-              <span className="text-xs text-gray-500">({ktmStats.games}戦)</span>
-              <span className="text-[10px] text-gray-500 ml-auto">※ 辞典の記述とこの実績を見比べて、古い/実態と違う情報に気づけます</span>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="bg-black/30 rounded-xl p-3 text-center">
-                <div className="text-[10px] text-gray-400">勝率</div>
-                <div className={`text-xl font-black ${ktmStats.winRate >= 50 ? 'text-emerald-400' : 'text-rose-400'}`}>{ktmStats.winRate}%</div>
+        {/* 全体的な立ち回り・トレンドメモ（最上部にデカいサイズで表示） */}
+        <div className="glass-panel rounded-3xl p-6 md:p-8 border-l-4 border-[#c89b3c] bg-[#c89b3c]/5 shadow-[0_0_30px_rgba(200,155,60,0.1)] space-y-4">
+          <div className="flex items-center justify-between gap-3 flex-wrap border-b border-white/10 pb-4">
+            <h2 className="text-xl md:text-2xl font-black text-white flex items-center gap-3">
+              <BookOpen className="text-[#c89b3c] h-7 w-7" />
+              <span className="text-gradient text-gradient-gold">全体的な立ち回り・統合トレンドメモ</span>
+            </h2>
+            <span className="text-xs text-[#c89b3c] font-bold bg-[#c89b3c]/15 px-3 py-1 rounded-full border border-[#c89b3c]/30">
+              各バイブル・教訓統合ノート
+            </span>
+          </div>
+
+          <div className="prose prose-invert max-w-none text-sm md:text-base leading-relaxed text-gray-200">
+            {editingStrategy ? (
+              <div className="space-y-3">
+                <textarea
+                  value={dataFields.strategy}
+                  onChange={(e) => setField('strategy', e.target.value)}
+                  className="w-full min-h-[160px] p-4 bg-black/60 border border-[#c89b3c]/40 rounded-2xl text-sm font-mono text-white outline-none focus:border-[#c89b3c]"
+                  placeholder="全体的な立ち回り・マクロ判断・反省から得られた鬼コーチの教訓メモ..."
+                />
+                <div className="flex justify-end gap-2">
+                  <button onClick={() => setEditingStrategy(false)} className="px-4 py-2 bg-white/10 text-gray-300 rounded-xl text-xs font-bold">完了</button>
+                </div>
               </div>
-              <div className="bg-black/30 rounded-xl p-3 text-center">
-                <div className="text-[10px] text-gray-400">平均KDA</div>
-                <div className="text-xl font-black text-white">{ktmStats.avgKda}</div>
-                <div className="text-[9px] text-gray-500">{ktmStats.avgKills}/{ktmStats.avgDeaths}/{ktmStats.avgAssists}</div>
-              </div>
-              <div className="bg-black/30 rounded-xl p-3 text-center">
-                <div className="text-[10px] text-gray-400">平均CS</div>
-                <div className="text-xl font-black text-white">{ktmStats.avgCs ?? '-'}</div>
-              </div>
-              <div className="bg-black/30 rounded-xl p-3 text-center">
-                <div className="text-[10px] text-gray-400">平均視界</div>
-                <div className="text-xl font-black text-white">{ktmStats.avgVision}</div>
-              </div>
-            </div>
-            {ktmStats.topPlayers?.length > 0 && (
-              <div className="mt-3 flex flex-wrap items-center gap-1.5">
-                <span className="text-[10px] text-gray-500">主な使用者:</span>
-                {ktmStats.topPlayers.map((p: any) => (
-                  <span key={p.name} className="text-[10px] bg-white/5 border border-white/10 rounded px-1.5 py-0.5 text-gray-300">
-                    {p.name} ({p.games}戦 {p.winRate}%)
-                  </span>
-                ))}
+            ) : (
+              <div className="group relative">
+                {dataFields.strategy ? (
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{dataFields.strategy}</ReactMarkdown>
+                ) : (
+                  <p className="text-gray-500 italic text-sm">全体的な立ち回り・統合トレンドメモはまだ記載されていません。「編集する」ボタンまたは「最新トレンド取得」を実行してください。</p>
+                )}
+                <button
+                  onClick={() => setEditingStrategy(true)}
+                  className="mt-4 px-4 py-2 bg-[#c89b3c]/20 hover:bg-[#c89b3c]/40 text-[#c89b3c] border border-[#c89b3c]/30 font-bold text-xs rounded-xl transition-all flex items-center gap-1.5"
+                >
+                  <Edit2 size={14} /> メモを直感編集
+                </button>
               </div>
             )}
           </div>
-        )}
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <TextAreaCard title="強み (Strengths)" icon={Swords} color="text-[var(--color-success)] border-[var(--color-success)] shadow-[var(--color-success)]" value={dataFields.strengths} onChange={v => setField('strengths', v)} />
@@ -1502,15 +1507,10 @@ function ChampionsContent() {
           </div>
         </div>
 
-        <div className="glass-panel border-t-4 border-[#00cfef] rounded-2xl p-6 relative overflow-hidden group">
-          <div className="absolute -left-20 -bottom-20 w-64 h-64 bg-[#00cfef]/5 rounded-full blur-3xl group-hover:bg-[#00cfef]/10 transition-colors"></div>
-          <h3 className="text-lg font-black font-mono mb-4 flex items-center gap-2 text-white relative z-10"><BookOpen className="text-[#00cfef]" size={20} /> 全体的な立ち回り・トレンドメモ</h3>
-          <textarea value={dataFields.strategy} onChange={e => setField('strategy', e.target.value)} className="relative z-10 w-full h-40 p-4 bg-black/50 border border-[#00cfef]/30 rounded-xl text-sm leading-relaxed outline-none focus:border-[#00cfef]/60 mb-6 shadow-inner text-gray-200" placeholder="動画で見たコンボ、メタの立ち回りなどを記録..." />
-          <div className="flex justify-end relative z-10">
-            <button onClick={saveMemo} disabled={saving} className="px-8 py-3 bg-white text-black font-black rounded-xl hover:shadow-[0_0_20px_rgba(255,255,255,0.4)] hover:-translate-y-0.5 transition-all flex items-center gap-2">
-              {saving ? <RefreshCw size={18} className="animate-spin" /> : <Save size={18} />} 情報を保存する
-            </button>
-          </div>
+        <div className="flex justify-end relative z-10 pt-4">
+          <button onClick={saveMemo} disabled={saving} className="px-8 py-3 bg-gradient-to-r from-amber-400 to-amber-500 text-black font-black rounded-xl hover:shadow-[0_0_20px_rgba(251,191,36,0.4)] hover:-translate-y-0.5 transition-all flex items-center gap-2 text-sm">
+            {saving ? <RefreshCw size={18} className="animate-spin" /> : <Save size={18} />} チャンピオン辞典の変更を保存する
+          </button>
         </div>
       </motion.div>
     );

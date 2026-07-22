@@ -14,21 +14,31 @@ export async function GET(request: Request) {
   }
 
   try {
-    // Render上の /api/pulse (メタ検知) と /api/monetize (記事生成) を発火させる
-    // 非同期で実行されるため、レスポンスを待たずにすぐに終了する
-    const triggerMonetize = await fetch(`${API_SERVER_URL}/api/monetize`, {
+    // 1. レンダリングサーバーへの発火
+    fetch(`${API_SERVER_URL}/api/monetize`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'X-Antigravity-Key': process.env.ANTIGRAVITY_API_KEY || 'local-dev-key'
       }
-    });
+    }).catch(e => console.warn('Monetize trigger warning:', e));
 
-    if (!triggerMonetize.ok) {
-      throw new Error(`Failed to trigger API: ${triggerMonetize.statusText}`);
-    }
+    // 2. ナレッジ自動整備（未整理記事をチャンピオン辞典へマージ）
+    const origin = new URL(request.url).origin;
+    fetch(`${origin}/api/admin/knowledge/sync`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ auto: true })
+    }).catch(e => console.warn('Knowledge sync trigger warning:', e));
 
-    return NextResponse.json({ success: true, message: 'Monetization loop triggered successfully' });
+    // 3. レーンガイド自動マージ
+    fetch(`${origin}/api/admin/lane-guides`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ auto: true })
+    }).catch(e => console.warn('Lane guide trigger warning:', e));
+
+    return NextResponse.json({ success: true, message: '全自動バックグラウンドメンテナンス（データ整備・鮮度レビュー・マネタイズ）を正常発火しました' });
   } catch (error: any) {
     console.error('Cron Execution Error:', error);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });

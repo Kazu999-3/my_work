@@ -1102,13 +1102,7 @@ export default function KtmAdminPage() {
                   全員非アクティブ
                 </button>
 
-                 <button
-                  onClick={() => fetchPlayers()}
-                  className="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 text-gray-200 px-4 py-2 rounded-lg font-bold transition text-xs"
-                >
-                  <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-                  更新
-                </button>
+
 
                 {(syncingDiscord || syncingRiot || syncingAutoAll || saving) && (
                   <button
@@ -1140,18 +1134,6 @@ export default function KtmAdminPage() {
                 </button>
 
                 <button
-                  onClick={handleAutoSyncAll}
-                  disabled={syncingAutoAll || syncingDiscord}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold transition border text-xs ${
-                    syncingAutoAll ? 'bg-amber-900/50 border-amber-800/50 text-gray-400 cursor-not-allowed' : 'bg-amber-500/20 border-amber-500 text-amber-500 hover:bg-amber-500 hover:text-white'
-                  }`}
-                  title="Discord同期、Riot同期、MMR Rebuildをモーダル確認なしでノンストップ実行します"
-                >
-                  <RefreshCw className={`h-4 w-4 ${syncingAutoAll ? 'animate-spin' : ''}`} /> 
-                  一括オート同期 (Auto)
-                </button>
-
-                <button
                   onClick={handleRebuildMmr}
                   disabled={syncingAutoAll}
                   className="flex items-center gap-2 bg-red-900/40 hover:bg-red-800 text-red-200 border border-red-800/50 px-4 py-2 rounded-lg font-bold transition text-xs"
@@ -1159,14 +1141,6 @@ export default function KtmAdminPage() {
                 >
                   <RefreshCw className="h-4 w-4" /> 🔄 Rebuild
                 </button>
-
-                <a 
-                  href="/balancer/record"
-                  className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg font-bold transition text-xs"
-                >
-                  <Trophy className="h-4 w-4" />
-                  手動記録 🏆
-                </a>
 
                 <button
                   onClick={() => setShowMmrInfo(!showMmrInfo)}
