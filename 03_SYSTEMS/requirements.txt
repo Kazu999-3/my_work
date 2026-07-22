@@ -8,6 +8,8 @@ beautifulsoup4>=4.12.3
 selenium>=4.21.0
 webdriver-manager>=4.0.1
 langgraph>=0.0.60
+langgraph-checkpoint>=2.0.0
+langgraph-checkpoint-sqlite>=2.0.0
 langchain-core>=0.2.0
 langchain-google-genai>=1.0.5
 

@@ -3,7 +3,16 @@ import os
 from pathlib import Path
 import dotenv
 from langgraph.graph import StateGraph, START, END
-from langgraph.checkpoint.sqlite import SqliteSaver
+try:
+    from langgraph.checkpoint.sqlite import SqliteSaver
+except ImportError:
+    try:
+        from langgraph_checkpoint_sqlite import SqliteSaver
+    except ImportError:
+        try:
+            from langgraph.checkpoint.memory import MemorySaver as SqliteSaver
+        except ImportError:
+            SqliteSaver = None
 import sqlite3
 
 # --- Load Environment ---

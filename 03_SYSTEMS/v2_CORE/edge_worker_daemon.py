@@ -94,13 +94,13 @@ class EdgeWorkerDaemon:
                                 task_time = task_time.replace(tzinfo=timezone.utc)
                             
                             diff = now - task_time
-                            if diff.total_seconds() > 10800:  # 3時間
+                            if diff.total_seconds() > 1800:  # 30分（クラッシュ・スタックタスクの自律解放）
                                 is_timeout = True
                         except Exception as pe:
                             logger.error(f"⚠️ タスク時刻パースエラー ({time_str}): {pe}")
                     
                     if is_timeout:
-                        logger.warning(f"⏰ 実行時間が3時間を超過したゾンビタスクを自動解除します: {r_task['task_type']} (ID: {r_task['id']})")
+                        logger.warning(f"⏰ 実行時間が30分を超過したゾンビタスクを自動解放します: {r_task['task_type']} (ID: {r_task['id']})")
                         self.update_task_status(
                             r_task["id"], 
                             "failed", 

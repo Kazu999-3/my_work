@@ -110,13 +110,13 @@ export default function Home() {
       const dd = String(ptObj.getUTCDate()).padStart(2, '0');
       const todayFormatted = `${yyyy}-${mm}-${dd}`;
 
-      const { data: apiData, error: apiError } = await supabase
+      const { data: apiData } = await supabase
         .from('api_usage_logs')
         .select('usage_data')
         .eq('date', todayFormatted)
-        .single();
+        .maybeSingle();
 
-      if (!apiError && apiData && apiData.usage_data) {
+      if (apiData && apiData.usage_data) {
         // クォータはエラー(429等)も消費に含まれるため、成功・失敗を合算して表示する
         let total = 0;
         for (const [key, value] of Object.entries(apiData.usage_data)) {
@@ -124,6 +124,14 @@ export default function Home() {
           total += Number(value);
         }
         setApiUsage(total);
+      } else {
+        // 本日分ログがまだない場合は本日実行された edge_tasks の件数を消費概算として集計
+        const todayStart = new Date(new Date().setHours(0, 0, 0, 0)).toISOString();
+        const { count } = await supabase
+          .from('edge_tasks')
+          .select('id', { count: 'exact', head: true })
+          .gt('created_at', todayStart);
+        if (count) setApiUsage(count);
       }
 
       // 5. 辞典更新履歴 (GLOBAL)
