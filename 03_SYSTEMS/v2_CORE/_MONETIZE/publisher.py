@@ -3,7 +3,10 @@ import json
 import time
 import logging
 from pathlib import Path
-from playwright.sync_api import sync_playwright
+try:
+    from playwright.sync_api import sync_playwright
+except ImportError:
+    sync_playwright = None
 import dotenv
 from google import genai
 
