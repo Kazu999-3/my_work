@@ -45,18 +45,18 @@ const MENU_ITEMS = [
   { id: 'changelog', label: '更新情報', icon: ScrollText, href: '/changelog', color: 'text-cyan-400', activeBg: 'bg-cyan-400/15' },
 ];
 
-// 管理者ログイン時：管理者機能タブ用 (過去の試合履歴を除外)
+// 管理者ログイン時：管理者機能タブ用
+// セクション分けで見通し向上。section プロパティでグループ区切りを表現。
 const ADMIN_ONLY_MENU_ITEMS = [
-  { id: 'dashboard', label: 'ダッシュボード', icon: LayoutDashboard, href: '/admin/dashboard', color: 'text-white', activeBg: 'bg-white/10' },
-  { id: 'knowledge-admin', label: '🗂️ ナレッジベース', icon: Brain, href: '/admin/knowledge', color: 'text-pink-400', activeBg: 'bg-pink-400/15' },
-  { id: 'champions', label: 'チャンピオン辞典', icon: BookHeart, href: '/champions', color: 'text-[#c89b3c]', activeBg: 'bg-[#c89b3c]/15' },
-  { id: 'coach', label: 'パーソナルコーチ', icon: Sparkles, href: '/coach', color: 'text-indigo-300', activeBg: 'bg-indigo-500/15' },
-  { id: 'lane-guides', label: 'レーン別ガイド', icon: BookHeart, href: '/lane-guides', color: 'text-amber-400', activeBg: 'bg-amber-400/15' },
-  { id: 'champion-research', label: '🎯 チャンプ深掘り', icon: Sparkles, href: '/admin/knowledge?tab=research', color: 'text-purple-400', activeBg: 'bg-purple-500/15' },
-  { id: 'search', label: '横断検索', icon: Search, href: '/search', color: 'text-[#a78bfa]', activeBg: 'bg-[#a78bfa]/15' },
-  { id: 'matchups', label: 'バトルサーチ', icon: Swords, href: '/matchups', color: 'text-[#00cfef]', activeBg: 'bg-[#00cfef]/15' },
+  // ── 📊 大会運営 ──
+  { id: 'dashboard', label: 'ダッシュボード', icon: LayoutDashboard, href: '/admin/dashboard', color: 'text-white', activeBg: 'bg-white/10', section: '大会運営' },
   { id: 'ktm-admin', label: '⚙️ 管理者専用', icon: Shield, href: '/ktm-admin', color: 'text-indigo-400', activeBg: 'bg-indigo-400/15' },
-  { id: 'design', label: 'システム設計書', icon: ScrollText, href: '/design', color: 'text-cyan-400', activeBg: 'bg-cyan-400/15' },
+  // ── 📖 攻略ハブ ──
+  { id: 'champions', label: 'チャンピオン辞典', icon: BookHeart, href: '/champions', color: 'text-[#c89b3c]', activeBg: 'bg-[#c89b3c]/15', section: '攻略ハブ' },
+  { id: 'coach', label: 'パーソナルコーチ', icon: Sparkles, href: '/coach', color: 'text-indigo-300', activeBg: 'bg-indigo-500/15' },
+  { id: 'search', label: '横断検索', icon: Search, href: '/search', color: 'text-[#a78bfa]', activeBg: 'bg-[#a78bfa]/15' },
+  // ── ⚙️ コンテンツ管理 ──
+  { id: 'knowledge-admin', label: '🗂️ ナレッジベース', icon: Brain, href: '/admin/knowledge', color: 'text-pink-400', activeBg: 'bg-pink-400/15', section: 'コンテンツ管理' },
 ];
 
 // 管理者ログイン時：一般機能タブ用 (過去の試合履歴を除外)
@@ -95,6 +95,8 @@ export default function Sidebar() {
   useEffect(() => { setShowMobileMore(false); }, [pathname]);
 
   // 管理者エリアの判定
+  // Note: /lane-guides, /design, /matchups はサイドバーメニューから除外済みだが、
+  // ページ自体は独立で存在するためナビ表示の切り替え判定には含める。
   const isAdminArea =
     pathname === '/' ||
     pathname.startsWith('/ktm-admin') ||
@@ -193,33 +195,44 @@ export default function Sidebar() {
           </div>
         )}
 
-        {/* ナビゲーション */}
-        <nav className="flex flex-col gap-2 flex-shrink-0">
-          {activeMenuItems.map((item) => {
+        {/* ナビゲーション（セクション区切り対応） */}
+        <nav className="flex flex-col gap-1 flex-shrink-0">
+          {activeMenuItems.map((item, idx) => {
             const isActive = pathname === item.href || (item.id === 'leaderboard' && pathname.startsWith('/player'));
+            // セクション見出し: section プロパティが定義されている項目の手前に区切りを表示
+            const sectionLabel = (item as any).section as string | undefined;
 
             return (
-              <Link 
-                key={item.id} 
-                href={item.href}
-                prefetch={false}
-                className={`flex items-center gap-3 py-3 rounded-xl font-bold text-sm transition-all duration-300 relative overflow-hidden group ${
-                  isCollapsed ? 'justify-center px-0' : 'px-4'
-                } ${
-                  isActive 
-                    ? `${item.activeBg} ${item.color} shadow-inner border border-white/5` 
-                    : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'
-                }`}
-                title={isCollapsed ? item.label : undefined}
-              >
-                {isActive && !isCollapsed && (
-                  <div className={`absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 rounded-r-full ${item.activeBg.replace('/15', '')} bg-current`}></div>
+              <div key={item.id}>
+                {sectionLabel && !isCollapsed && (
+                  <div className={`flex items-center gap-2 ${idx > 0 ? 'mt-4 pt-3 border-t border-white/5' : ''} mb-1 px-2`}>
+                    <span className="text-[10px] font-black text-gray-500 tracking-widest uppercase">{sectionLabel}</span>
+                  </div>
                 )}
-                <item.icon size={18} className={`transition-transform duration-300 shrink-0 ${isActive ? 'scale-110' : 'group-hover:scale-110'}`} />
-                <span className={`tracking-wide transition-all duration-300 ${
-                  isCollapsed ? 'w-0 opacity-0 hidden' : 'w-auto opacity-100 block'
-                }`}>{item.label}</span>
-              </Link>
+                {sectionLabel && isCollapsed && idx > 0 && (
+                  <div className="my-2 mx-2 border-t border-white/5" />
+                )}
+                <Link 
+                  href={item.href}
+                  prefetch={false}
+                  className={`flex items-center gap-3 py-3 rounded-xl font-bold text-sm transition-all duration-300 relative overflow-hidden group ${
+                    isCollapsed ? 'justify-center px-0' : 'px-4'
+                  } ${
+                    isActive 
+                      ? `${item.activeBg} ${item.color} shadow-inner border border-white/5` 
+                      : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'
+                  }`}
+                  title={isCollapsed ? item.label : undefined}
+                >
+                  {isActive && !isCollapsed && (
+                    <div className={`absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 rounded-r-full ${item.activeBg.replace('/15', '')} bg-current`}></div>
+                  )}
+                  <item.icon size={18} className={`transition-transform duration-300 shrink-0 ${isActive ? 'scale-110' : 'group-hover:scale-110'}`} />
+                  <span className={`tracking-wide transition-all duration-300 ${
+                    isCollapsed ? 'w-0 opacity-0 hidden' : 'w-auto opacity-100 block'
+                  }`}>{item.label}</span>
+                </Link>
+              </div>
             );
           })}
         </nav>
