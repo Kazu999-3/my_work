@@ -31,6 +31,9 @@ scratch/
 !package-lock.json
 !**/MatchupMemo/*.json
 !**/vercel.json
+# src/shared/ 配下はソースコードが import するデータファイル（例: ktm_tiers.json）。
+# これを無視すると手元では動くのにVercel/Botのクリーンビルドで Module not found になる。
+!**/src/shared/*.json
 03_factory/vods/
 99_ARCHIVE/
 03_FACTORY/INFRA/outbox/
