@@ -68,14 +68,17 @@ async function enqueueYoutubeResearchVideos(champion: string) {
         .maybeSingle();
 
       if (!existing) {
+        // 注: youtube_queue に champion カラムは無い。入れると列不明でinsertが失敗し、
+        // 動画登録が丸ごと0本になる。チャンプ名はタイトルに含めて識別する。
         await supabase.from('youtube_queue').insert({
           id: vid,
           url: videoUrl,
           title: `[ディープリサーチ] ${champion} 解説動画 (${vid})`,
-          champion: champion,
+          channel_name: 'DeepResearch',
           status: 'pending',
           priority: 'high',
-          date_added: new Date().toISOString(),
+          // date_added はUNIX秒(bigint)。ISO文字列を入れると型エラーで登録に失敗する。
+          date_added: Math.floor(Date.now() / 1000),
         });
         addedCount++;
       }
@@ -127,6 +130,18 @@ ${siteData.text ? siteData.text.slice(0, 6000) : '（標準データで構成し
       maxRetries: 2,
     });
 
+    // AIが実際に中身を生成できたか検証する。
+    // キー未設定だと「※ ...スキップしました」、失敗すると「生成失敗」等の短い文字列が返る。
+    // これをそのまま保存すると「一瞬で完了したのに中身が空」の事故になるため、ここで弾く。
+    const aiText = String(markdownArticle || '').trim();
+    const aiFailed = aiText.length < 200 || aiText.startsWith('※') || aiText === '生成失敗';
+    if (aiFailed) {
+      return NextResponse.json({
+        error: 'AIが有効な攻略記事を生成できませんでした。GEMINI_API_KEYの設定、またはレート制限を確認してください。',
+        aiRaw: aiText.slice(0, 300),
+      }, { status: 502 });
+    }
+
     // 2. personal_knowledge (攻略ライブラリ/ナレッジ) に保存/更新
     const articleTitle = `[深掘りリサーチ] ${champClean} 総合攻略バイブル`;
     const { data: existingArticle } = await supabase
@@ -145,13 +160,19 @@ ${siteData.text ? siteData.text.slice(0, 6000) : '（標準データで構成し
       source_url: siteData.url || undefined,
     };
 
+    let savedArticleId: any = existingArticle?.id ?? null;
     if (existingArticle) {
       await supabase
         .from('personal_knowledge')
         .update(knowledgePayload)
         .eq('id', existingArticle.id);
     } else {
-      await supabase.from('personal_knowledge').insert(knowledgePayload);
+      const { data: inserted } = await supabase
+        .from('personal_knowledge')
+        .insert(knowledgePayload)
+        .select('id')
+        .single();
+      savedArticleId = inserted?.id ?? null;
     }
 
     // 3. matchup_sentinel (チャンピオン辞典) へ戦術データを反映
@@ -194,9 +215,14 @@ ${siteData.text ? siteData.text.slice(0, 6000) : '（標準データで構成し
       success: true,
       champion: champClean,
       articleTitle,
+      article: aiText,             // 生成本文（その場で表示するため返す）
+      articleId: savedArticleId,   // ライブラリで開くためのID
+      articleLength: aiText.length,
+      sourceUrl: siteData.url || null,
+      lolalyticsUsed: !!siteData.text,  // 参考データを実際に取得できたか
       enqueuedVideos,
       patch: siteData.patch || 'Latest',
-      summary: `「${champClean}」のディープリサーチを完了し、攻略バイブルの生成、チャンピオン辞典の更新、および高優先度解説動画(${enqueuedVideos}本)のキュー登録を行いました。`,
+      summary: `「${champClean}」のディープリサーチを完了し、攻略バイブル(${aiText.length.toLocaleString()}字)の生成、チャンピオン辞典の更新、および高優先度解説動画(${enqueuedVideos}本)のキュー登録を行いました。`,
     });
   } catch (e: any) {
     console.error(`[champion-research] エラー:`, e);

@@ -1,7 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Sparkles, Target, Loader2, CheckCircle2, AlertCircle, Search, Layers, Video } from 'lucide-react';
+import { Sparkles, Target, Loader2, CheckCircle2, AlertCircle, Search, Layers, Video, ExternalLink } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface DeepResearchPanelProps {
   onSuccess?: () => void;
@@ -139,10 +141,34 @@ export default function DeepResearchPanel({ onSuccess }: DeepResearchPanelProps)
             {resultMsg.details && (
               <div className="pt-2 border-t border-emerald-500/20 text-[11px] text-emerald-400/90 font-mono space-y-1">
                 <div>・記事タイトル: {resultMsg.details.articleTitle}</div>
+                <div>・本文の文字数: {(resultMsg.details.articleLength || 0).toLocaleString()}字</div>
                 <div>・パッチ情報: {resultMsg.details.patch}</div>
+                <div>・LoLalytics参照: {resultMsg.details.lolalyticsUsed ? '取得成功' : '取得できず（AIの知識のみで生成）'}</div>
                 <div>・キュー追加動画: {resultMsg.details.enqueuedVideos}本</div>
               </div>
             )}
+          </div>
+        )}
+
+        {/* 生成された攻略バイブルをその場で表示（本当に中身があるか確認できるように） */}
+        {resultMsg?.type === 'success' && resultMsg.details?.article && (
+          <div className="bg-slate-950/70 border border-slate-800 rounded-2xl overflow-hidden">
+            <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-slate-800 bg-slate-900/60">
+              <span className="text-xs font-black text-slate-200 flex items-center gap-1.5">
+                <Sparkles size={14} className="text-purple-400" /> 生成された攻略バイブル（プレビュー）
+              </span>
+              {resultMsg.details.articleId && (
+                <a
+                  href={`/admin/knowledge?tab=library&article=${resultMsg.details.articleId}`}
+                  className="text-[11px] font-bold text-purple-300 hover:text-purple-200 flex items-center gap-1 shrink-0"
+                >
+                  ライブラリで開く <ExternalLink size={12} />
+                </a>
+              )}
+            </div>
+            <div className="max-h-[480px] overflow-auto p-5 prose prose-invert prose-sm max-w-none prose-headings:text-purple-300 prose-strong:text-white prose-li:text-slate-300 prose-p:text-slate-300">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>{resultMsg.details.article}</ReactMarkdown>
+            </div>
           </div>
         )}
 
