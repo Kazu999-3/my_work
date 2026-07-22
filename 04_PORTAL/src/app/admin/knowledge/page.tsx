@@ -1,14 +1,17 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Brain, Search, Plus, Trash2, Calendar, Link as LinkIcon, RefreshCw, FileText, ChevronDown, ChevronUp, BookOpen, Layers, Sparkles, Tag, Video } from 'lucide-react';
+import { Brain, Search, Plus, Trash2, Calendar, Link as LinkIcon, RefreshCw, FileText, ChevronDown, ChevronUp, BookOpen, Layers, Sparkles, Tag, Video, Target } from 'lucide-react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import YoutubeQueueManager from '../youtube/YoutubeQueueManager';
 import LibraryTabContent from './LibraryTabContent';
 import DictReviewPanel from './DictReviewPanel';
 import DictInsightsPanel from './DictInsightsPanel';
 import RevisionsPanel from './RevisionsPanel';
+import DeepResearchModal from './DeepResearchModal';
+import DeepResearchPanel from './DeepResearchPanel';
 import { supabaseBrowser } from '../../../lib/supabaseBrowserClient';
 
 interface KnowledgeItem {
@@ -22,7 +25,7 @@ interface KnowledgeItem {
   tags?: string[];
 }
 
-export default function KnowledgeBase() {
+function KnowledgeBaseContent() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [knowledgeList, setKnowledgeList] = useState<KnowledgeItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -42,8 +45,19 @@ export default function KnowledgeBase() {
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
-  // ページ内タブ: ナレッジ一覧 or 動画キュー or 攻略ライブラリ or 鮮度レビュー
-  const [activeTab, setActiveTab] = useState<'knowledge' | 'video' | 'library' | 'maintenance' | 'review'>('knowledge');
+  // ページ内タブ: ナレッジ一覧 or チャンプ深掘り or 動画キュー or 攻略ライブラリ or 鮮度レビュー
+  const [activeTab, setActiveTab] = useState<'knowledge' | 'research' | 'video' | 'library' | 'maintenance' | 'review'>('knowledge');
+  const [isResearchModalOpen, setIsResearchModalOpen] = useState(false);
+
+  const searchParams = useSearchParams();
+
+  // URLパラメータ (?tab=research等) の自動反映
+  useEffect(() => {
+    const tabParam = searchParams?.get('tab');
+    if (tabParam && ['knowledge', 'research', 'video', 'library', 'maintenance', 'review'].includes(tabParam)) {
+      setActiveTab(tabParam as any);
+    }
+  }, [searchParams]);
 
   // 認証の確認（middleware.tsが/admin/*をCookieでゲート済み。UIローディング制御のみ）
   useEffect(() => {
@@ -301,18 +315,36 @@ export default function KnowledgeBase() {
               インテリジェンスとLoL戦術を蓄積する自律型要約ナレッジベース
             </p>
           </div>
-          <Link
-            href="/leaderboard"
-            className="text-xs font-semibold px-4 py-2.5 bg-gray-900 hover:bg-gray-800 text-gray-300 rounded-xl border border-gray-800 transition-all flex items-center gap-1 shrink-0"
-          >
-            Leaderboardに戻る
-          </Link>
+          <div className="flex items-center gap-3 shrink-0">
+            <button
+              onClick={() => setIsResearchModalOpen(true)}
+              className="text-xs font-bold px-4 py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white rounded-xl shadow-lg shadow-purple-600/20 transition-all flex items-center gap-1.5"
+            >
+              <Sparkles size={14} />
+              特定チャンプを深掘り
+            </button>
+            <Link
+              href="/leaderboard"
+              className="text-xs font-semibold px-4 py-2.5 bg-gray-900 hover:bg-gray-800 text-gray-300 rounded-xl border border-gray-800 transition-all flex items-center gap-1"
+            >
+              Leaderboardに戻る
+            </Link>
+          </div>
         </div>
+
+        <DeepResearchModal
+          isOpen={isResearchModalOpen}
+          onClose={() => setIsResearchModalOpen(false)}
+          onSuccess={() => {
+            fetchKnowledge(true);
+          }}
+        />
 
         {/* タブ切り替え */}
         <div className="flex gap-2 border-b border-gray-900 pb-4 mb-8 overflow-x-auto">
           {[
             { id: 'knowledge', label: '📖 ナレッジ一覧', icon: BookOpen },
+            { id: 'research', label: '🎯 チャンプ深掘り', icon: Target },
             { id: 'video', label: '⏳ 動画解析キュー', icon: Video },
             { id: 'library', label: '🗂️ 攻略ライブラリ', icon: Layers },
             { id: 'maintenance', label: '🛠️ データ整備', icon: Layers },
@@ -325,7 +357,7 @@ export default function KnowledgeBase() {
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
                 className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold transition-all shrink-0 ${
-                  isActive ? 'bg-pink-500 text-white shadow-lg' : 'text-gray-400 hover:text-gray-200 hover:bg-gray-900'
+                  isActive ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30' : 'text-gray-400 hover:text-gray-200 hover:bg-gray-900'
                 }`}
               >
                 <Icon size={14} />
@@ -336,6 +368,13 @@ export default function KnowledgeBase() {
         </div>
 
         {/* --- タブ別コンテンツ --- */}
+        {activeTab === 'research' && (
+          <DeepResearchPanel
+            onSuccess={() => {
+              fetchKnowledge(true);
+            }}
+          />
+        )}
         {activeTab === 'video' && <YoutubeQueueManager />}
         {activeTab === 'library' && <LibraryTabContent />}
         {/* データ整備: 一括処理を推奨実行順に並べる */}
@@ -579,5 +618,13 @@ export default function KnowledgeBase() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function KnowledgeBase() {
+  return (
+    <Suspense fallback={<div style={{ minHeight: '100vh', background: '#07080e' }} className="flex items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-4 border-white/20 border-t-pink-500" /></div>}>
+      <KnowledgeBaseContent />
+    </Suspense>
   );
 }

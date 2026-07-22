@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Activity, Zap, TrendingUp, ShieldAlert, Cpu, Network, Gamepad2, Users, RefreshCw, CheckCircle2, X, ChevronRight, Brain } from 'lucide-react';
+import { Activity, Zap, TrendingUp, ShieldAlert, Cpu, Network, Gamepad2, Users, RefreshCw, CheckCircle2, X, ChevronRight, Brain, Sparkles } from 'lucide-react';
 import { supabase } from '../../../lib/supabaseClient';
 import { supabaseBrowser } from '../../../lib/supabaseBrowserClient';
 import Link from 'next/link';
@@ -268,6 +268,10 @@ export default function Home() {
         
         <div className="flex flex-col md:flex-row items-end md:items-center gap-4 flex-wrap">
           {/* よく使う運用画面への導線。ダッシュボードから辿れず迷いやすかったため追加 */}
+          <Link href="/admin/knowledge?tab=research" className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 border border-purple-500/30 text-xs font-bold text-white transition-all shadow-[0_0_15px_rgba(168,85,247,0.4)] flex items-center gap-2">
+            <Sparkles size={14} />
+            <span>🎯 チャンプ深掘り ➔</span>
+          </Link>
           <Link href="/admin/knowledge" className="px-4 py-2.5 rounded-2xl bg-pink-500/10 border border-pink-500/30 hover:bg-pink-500/20 text-xs font-bold text-pink-300 transition-all flex items-center gap-2">
             <Brain size={14} />
             <span>ナレッジ / データ整備 ➔</span>
@@ -597,6 +601,45 @@ export default function Home() {
                       );
                     })}
                   </div>
+
+                  {/* ☁️ クラウドワーカー (GitHub Actions) の最終実行ログ */}
+                  {systemMetrics.cloud_workers && Object.keys(systemMetrics.cloud_workers).length > 0 && (
+                    <div className="pt-6 border-t border-white/5">
+                      <h4 className="text-xs font-bold text-gray-300 mb-3 flex items-center gap-2">
+                        <span>☁️</span> GitHub Actions ワーカー実行ステータス
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {Object.entries(systemMetrics.cloud_workers).map(([workerKey, log]: [string, any]) => {
+                          const isOk = log.status === 'ok';
+                          const isWarn = log.status === 'warn';
+                          const statusBg = isOk ? 'border-emerald-500/20 bg-emerald-500/5' : isWarn ? 'border-amber-500/20 bg-amber-500/5' : 'border-rose-500/20 bg-rose-500/5';
+                          const badgeColor = isOk ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' : isWarn ? 'text-amber-400 bg-amber-500/10 border-amber-500/20' : 'text-rose-400 bg-rose-500/10 border-rose-500/20';
+
+                          const updatedTime = log.updated_at ? new Date(log.updated_at).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }) : '時刻不明';
+
+                          return (
+                            <div key={workerKey} className={`p-4 rounded-2xl border text-xs bg-black/20 ${statusBg}`}>
+                              <div className="flex justify-between items-center mb-2">
+                                <span className="font-bold text-white uppercase">{workerKey}</span>
+                                <span className={`px-2 py-0.5 rounded-full border text-[9px] font-bold ${badgeColor}`}>
+                                  {isOk ? '正常完了' : isWarn ? '一部失敗/警告' : 'エラー'}
+                                </span>
+                              </div>
+                              <p className="text-[11px] text-gray-300 mb-2 font-medium">{log.summary}</p>
+                              {log.details && log.details.length > 0 && (
+                                <div className="space-y-1 mb-2 bg-black/40 p-2 rounded-lg text-[10px] text-gray-400 font-mono">
+                                  {log.details.slice(0, 3).map((detail: string, i: number) => (
+                                    <div key={i} className="truncate">• {detail}</div>
+                                  ))}
+                                </div>
+                              )}
+                              <div className="text-[9px] text-gray-500 text-right">最終実行: {updatedTime}</div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 

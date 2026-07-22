@@ -65,12 +65,12 @@ class YouTubeAbsorber:
         self.queue_file = os.path.join(settings.ROOT_DIR, "02_FACTORY", "kirei_queue.json")
         self.bible_dir = os.path.join(settings.ROOT_DIR, "02_FACTORY", "bible", "kirei_bible")
         os.makedirs(self.bible_dir, exist_ok=True)  # 出力先ディレクトリが存在しない場合は自動作成
-        if platform.system() == "Windows":
-            self.yt_dlp = str(settings.ROOT_DIR / ".venv" / "Scripts" / "yt-dlp.exe")
+        yt_bin = shutil.which("yt-dlp") or shutil.which("yt-dlp.exe") or str(settings.ROOT_DIR / ".venv" / "Scripts" / "yt-dlp.exe")
+        if not os.path.exists(yt_bin) and not shutil.which(yt_bin):
+            self.yt_dlp_cmd = [sys.executable, "-m", "yt_dlp"]
         else:
-            self.yt_dlp = "yt-dlp"
-        # yt-dlp 2025+: YouTubeのn-challenge解決にJSランタイムが必須（nodeまたはdenoのいずれかが使えればよい）
-        self.yt_dlp_base = [self.yt_dlp, "--js-runtimes", "node,deno"]
+            self.yt_dlp_cmd = [yt_bin]
+        self.yt_dlp_base = self.yt_dlp_cmd + ["--js-runtimes", "node,deno"]
         # ボット検知回避用のクッキー設定がある場合は追加
         cookies_from = os.getenv("YT_DLP_COOKIES_FROM")
         if cookies_from:

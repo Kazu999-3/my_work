@@ -1,22 +1,20 @@
-// KTM内MMR → ランク表記の変換。
-// Portal側 (04_PORTAL/src/lib/mmr.ts の KTM_TIERS) と必ず同じ閾値にすること。
-// 片方だけ変えると、募集通知とサイトでランクが食い違う。
+import rawKtmTiers from '../../../../04_PORTAL/src/shared/ktm_tiers.json';
 
-// 大分類だけを持つ（募集通知は "GOLD III" まで出すと細かすぎるので大枠で見せる）。
-// min は各ティアの下限MMR。降順に並べる。
-const KTM_TIERS = [
-  { name: 'CHALLENGER',  short: 'Chall',   min: 2000 },
-  { name: 'GRANDMASTER', short: 'GM',      min: 1900 },
-  { name: 'MASTER',      short: 'Master',  min: 1850 },
-  { name: 'DIAMOND',     short: 'Dia',     min: 1800 },
-  { name: 'EMERALD',     short: 'Eme',     min: 1650 },
-  { name: 'PLATINUM',    short: 'Plat',    min: 1500 },
-  { name: 'GOLD',        short: 'Gold',    min: 1350 },
-  { name: 'SILVER',      short: 'Silver',  min: 1200 },
-  { name: 'BRONZE',      short: 'Bronze',  min: 1050 },
-  { name: 'IRON',        short: 'Iron',    min: 900 },
-  { name: 'UNRANKED',    short: 'Unrank',  min: 0 },
-];
+// shared/ktm_tiers.json から大分類 (CHALLENGER 〜 UNRANKED) を自動構築
+const tierMap = new Map();
+for (const item of rawKtmTiers) {
+  const mainName = item.name.split(' ')[0];
+  const shortName = item.short ? item.short.split(' ')[0] : mainName;
+  if (!tierMap.has(mainName)) {
+    tierMap.set(mainName, { name: mainName, short: shortName, min: item.min });
+  } else {
+    const current = tierMap.get(mainName);
+    if (item.min < current.min) {
+      current.min = item.min;
+    }
+  }
+}
+const KTM_TIERS = Array.from(tierMap.values());
 
 /** MMR値をKTMランク（大分類）に変換する */
 export function getKtmRank(mmr) {

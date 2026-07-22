@@ -18,6 +18,8 @@ export interface GeminiCallOptions {
   cacheTtlMs?: number; // デフォルト24時間
   /** 画像を添えて解析させる場合に指定する（スコアボードの読み取りなど） */
   image?: { base64: string; mimeType: string };
+  /** レスポンス本文の構造化検証関数（検証失敗時はリトライ） */
+  validator?: (text: string) => boolean | Promise<boolean>;
 }
 
 // 'gemini-2.0-flash-lite'はこのAPIキーで上限0(常に429)だったため、最も余裕のある
@@ -176,11 +178,53 @@ export async function callGeminiWithRetry(
     const data = await res.json();
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '生成失敗';
 
+    if (options.validator) {
+      try {
+        const isValid = await options.validator(text);
+        if (!isValid) {
+          console.warn(`[geminiClient] レスポンス検証失敗 (${attempt + 1}/${maxRetries})`);
+          if (attempt < maxRetries) {
+            await sleep(backoffMs(attempt));
+            continue;
+          }
+        }
+      } catch (valErr) {
+        console.warn(`[geminiClient] バリデーションエラー (${attempt + 1}/${maxRetries}):`, valErr);
+        if (attempt < maxRetries) {
+          await sleep(backoffMs(attempt));
+          continue;
+        }
+      }
+    }
+
     if (cacheKey) await writeCache(cacheKey, text);
     return text;
   }
 
   throw lastError instanceof Error ? lastError : new Error('Gemini API: 不明なエラー');
+}
+
+/**
+ * JSON構造化レスポンスを型安全にパース・検証するヘルパー関数
+ */
+export async function callGeminiStructured<T>(
+  prompt: string,
+  schema: { parse: (parsed: any) => T },
+  options: GeminiCallOptions = {}
+): Promise<T> {
+  const jsonOptions: GeminiCallOptions = {
+    ...options,
+    responseMimeType: 'application/json',
+    validator: async (text: string) => {
+      const cleanJson = text.replace(/```json\n?|\n?```/g, '').trim();
+      const parsed = JSON.parse(cleanJson);
+      schema.parse(parsed);
+      return true;
+    },
+  };
+  const rawText = await callGeminiWithRetry(prompt, jsonOptions);
+  const cleanJson = rawText.replace(/```json\n?|\n?```/g, '').trim();
+  return schema.parse(JSON.parse(cleanJson));
 }
 
 function backoffMs(attempt: number): number {

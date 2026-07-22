@@ -58,12 +58,14 @@ def supabase_request(path, method="GET", payload=None):
     except Exception as e:
         return None, str(e)
 
-def get_real_title(video_id: str, yt_dlp_path: str) -> str | None:
+import shutil
+
+def get_real_title(video_id: str, yt_dlp_cmd: list) -> str | None:
     """yt-dlp を使って実際の動画タイトルを取得する"""
     url = f"https://www.youtube.com/watch?v={video_id}"
     try:
         result = subprocess.run(
-            [yt_dlp_path, "--print", "%(title)s", "--no-warnings", url],
+            yt_dlp_cmd + ["--print", "%(title)s", "--no-warnings", url],
             capture_output=True, text=True, timeout=20
         )
         title = result.stdout.strip()
@@ -106,7 +108,8 @@ def update_personal_knowledge(old_title: str, new_title: str):
 
 
 def main():
-    yt_dlp = str(VENV_YT_DLP) if VENV_YT_DLP.exists() else "yt-dlp"
+    yt_bin = shutil.which("yt-dlp") or shutil.which("yt-dlp.exe") or (str(VENV_YT_DLP) if VENV_YT_DLP.exists() else None)
+    yt_dlp_cmd = [yt_bin] if (yt_bin and os.path.exists(yt_bin)) else [sys.executable, "-m", "yt_dlp"]
     
     # YouTube Video タイトルのファイルを検索
     problem_files = []
@@ -126,7 +129,7 @@ def main():
         print(f"\n▶ 処理中: {video_id}")
         
         # yt-dlp で実タイトル取得
-        real_title = get_real_title(video_id, yt_dlp)
+        real_title = get_real_title(video_id, yt_dlp_cmd)
         if not real_title:
             print(f"  ❌ タイトル取得失敗。スキップします。")
             failed += 1

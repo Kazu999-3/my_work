@@ -37,14 +37,13 @@ logging.basicConfig(
 
 logger = logging.getLogger("YTMonitor")
 
-# yt-dlpのパス解決
-if platform_sys := sys.platform:
-    if platform_sys.startswith("win"):
-        YT_DLP = str(settings.ROOT_DIR / ".venv" / "Scripts" / "yt-dlp.exe")
-    else:
-        YT_DLP = "yt-dlp"
+import shutil
+
+yt_bin = shutil.which("yt-dlp") or shutil.which("yt-dlp.exe") or str(settings.ROOT_DIR / ".venv" / "Scripts" / "yt-dlp.exe")
+if not os.path.exists(yt_bin) and not shutil.which(yt_bin):
+    YT_DLP_CMD = [sys.executable, "-m", "yt_dlp"]
 else:
-    YT_DLP = "yt-dlp"
+    YT_DLP_CMD = [yt_bin]
 
 def _supabase_request(path, method='GET', payload=None):
     if not settings.SUPABASE_URL or not settings.SUPABASE_KEY:
@@ -89,8 +88,7 @@ def resolve_and_register_channel(channel_url: str) -> bool:
         # yt-dlp で channel_id と channel 名を取得する
         # 出力をJSONでパースしやすくするために --dump-json オプション等を使うことも可能だが、
         # --print オプションで改行区切りで取るのが最もシンプル
-        cmd = [
-            YT_DLP,
+        cmd = YT_DLP_CMD + [
             "--extractor-args", "youtube:client=android",
             "--playlist-items", "1", # 1番目の動画情報を取得（チャンネル解決が安定する）
             "--print", "%(channel_id)s\n%(channel)s",
@@ -162,8 +160,7 @@ def resolve_and_register_playlist(playlist_url: str) -> bool:
         playlist_id = pl_id_match.group(1)
         
         # yt-dlp を使ってプレイリストのタイトルを取得
-        cmd = [
-            YT_DLP,
+        cmd = YT_DLP_CMD + [
             "--extractor-args", "youtube:client=android",
             "--playlist-items", "1",
             "--print", "playlist_title",
@@ -350,8 +347,7 @@ def monitor_playlists():
         logger.info(f"📡 プレイリスト巡回中: {pl_name} (ID: {pl_id})")
         
         try:
-            cmd = [
-                YT_DLP,
+            cmd = YT_DLP_CMD + [
                 "--extractor-args", "youtube:client=android",
                 "--flat-playlist",
                 "--dump-json",

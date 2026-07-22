@@ -5,7 +5,7 @@
 #   → personal_knowledge へ保存 → queueをcompletedに更新
 # 必要な環境変数: SUPABASE_URL, SUPABASE_SERVICE_KEY, GEMINI_API_KEY
 # ============================================================
-import os, re, json, glob, subprocess, sys
+import os, re, json, glob, subprocess, sys, time
 import urllib.request, urllib.error
 
 from notify import notify, COLOR_OK, COLOR_WARN
@@ -54,22 +54,26 @@ def sb(method, path, body=None, prefer=None):
             )
         raise
 
+import tempfile, shutil
+
 def fetch_subtitles(url, vid):
-    # ja優先→en。自動生成字幕も許可。--skip-download で映像は落とさない。
-    out = f"/tmp/{vid}"
-    cmd = ["yt-dlp", "--skip-download", "--write-subs", "--write-auto-subs",
-           "--sub-langs", "ja,ja-orig,en", "--sub-format", "vtt",
-           "-o", out, url]
+    tmp_dir = tempfile.gettempdir()
+    out = os.path.join(tmp_dir, f"yt_{vid}")
+
+    yt_bin = shutil.which("yt-dlp") or shutil.which("yt-dlp.exe")
+    cmd = [yt_bin] if yt_bin else [sys.executable, "-m", "yt_dlp"]
+
+    cmd.extend([
+        "--skip-download", "--write-subs", "--write-auto-subs",
+        "--sub-langs", "ja,ja-orig,en", "--sub-format", "vtt",
+        "-o", out, url
+    ])
     res = subprocess.run(cmd, capture_output=True, text=True, timeout=180)
     files = sorted(glob.glob(f"{out}*.vtt"), key=lambda f: (0 if ".ja" in f else 1))
     if not files:
-        # 字幕が取れなかった理由をログに残す。
-        # 以前は capture_output で握りつぶしていたため、IP制限なのか字幕なしなのか
-        # 全く分からなかった。stderr の末尾を残して切り分けられるようにする。
         err = (res.stderr or "").strip()
         tail = err.splitlines()[-1] if err else "(yt-dlpの出力なし)"
         print(f"  [字幕なし] {vid}: {tail}", file=sys.stderr)
-        # YouTubeがbot判定した場合の典型的な文言。IP制限の可能性が高い。
         if "Sign in to confirm" in err or "bot" in err.lower() or "429" in err:
             print(f"  ⚠️ IP制限の疑い（YouTubeがbot判定）: {vid}", file=sys.stderr)
         return None
@@ -80,7 +84,20 @@ def fetch_subtitles(url, vid):
         line = re.sub(r"<[^>]+>", "", line)
         if line and line not in seen:
             seen.add(line); text_lines.append(line)
+    for f in glob.glob(f"{out}*"):
+        try: os.remove(f)
+        except Exception: pass
     return "\n".join(text_lines)[:30000] or None
+
+def validate_article_json(data):
+    if not isinstance(data, dict):
+        return False
+    for k in ["title", "summary", "genre", "tags", "champion"]:
+        if k not in data or not data[k]:
+            return False
+    if not isinstance(data.get("tags"), list):
+        return False
+    return True
 
 def gemini_summarize(title, channel, transcript):
     prompt = f"""あなたはLoLの攻略ライターです。以下のYouTube動画の字幕から、日本語の攻略バイブル(Markdown)を作成してください。
@@ -96,16 +113,30 @@ def gemini_summarize(title, channel, transcript):
 {transcript}"""
     body = {"contents": [{"parts": [{"text": prompt}]}],
             "generationConfig": {"temperature": 0.3, "maxOutputTokens": 4096}}
-    req = urllib.request.Request(
-        f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent?key={GEMINI_KEY}",
-        data=json.dumps(body).encode(), method="POST")
-    req.add_header("Content-Type", "application/json")
-    with urllib.request.urlopen(req, timeout=120) as r:
-        res = json.loads(r.read().decode())
-    text = res["candidates"][0]["content"]["parts"][0]["text"].strip()
-    text = re.sub(r"^```[a-z]*\n?|```$", "", text).strip()
-    s, e = text.find("{"), text.rfind("}")
-    return json.loads(text[s:e+1])
+
+    last_err = None
+    for attempt in range(3):
+        try:
+            req = urllib.request.Request(
+                f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent?key={GEMINI_KEY}",
+                data=json.dumps(body).encode(), method="POST")
+            req.add_header("Content-Type", "application/json")
+            with urllib.request.urlopen(req, timeout=120) as r:
+                res = json.loads(r.read().decode())
+            text = res["candidates"][0]["content"]["parts"][0]["text"].strip()
+            text = re.sub(r"^```[a-z]*\n?|```$", "", text).strip()
+            s, e = text.find("{"), text.rfind("}")
+            parsed = json.loads(text[s:e+1])
+            if validate_article_json(parsed):
+                return parsed
+            else:
+                print(f"[gemini_summarize] キー欠落または形式不整合。再試行 ({attempt+1}/3)")
+        except Exception as err:
+            last_err = err
+            print(f"[gemini_summarize] JSONパース失敗/エラー: {err} ({attempt+1}/3)")
+            time.sleep(2)
+
+    raise RuntimeError(f"Gemini出力の構造化バリデーションに失敗しました: {last_err}")
 
 def main():
     # 優先度の高いものから、次に登録が古いものから処理する。
@@ -149,15 +180,14 @@ def main():
             print(f"✅ 完了: {title}")
         except Exception as e:
             retry = (it.get("retry_count") or 0) + 1
-            if retry < MAX_RETRY:
+            if isinstance(e, NoTranscript):
+                status = "error_no_transcript"          # 字幕が無い動画は再試行しても無駄なので即時決定
+            elif retry < MAX_RETRY:
                 status = "pending"                      # まだ再試行の余地がある
-            elif isinstance(e, NoTranscript):
-                status = "error_no_transcript"          # 字幕が無い動画は再試行しても無駄
             else:
                 status = "error_generation"
-            # error_message カラムは存在しないため、失敗理由はタイトル末尾に載せる
-            # （画面側の parseTitleAndError が「[エラー: ...]」を拾って表示する）
-            base = re.sub(r"\s*\[エラー:.*?\]\s*$", "", it.get("title") or "")
+
+            base = re.sub(r"\s*\[エラー:.*\]", "", it.get("title") or "").strip()
             payload = {"status": status, "retry_count": retry}
             if status != "pending":
                 payload["title"] = f"{base} [エラー: {str(e)[:120]}]"
@@ -178,7 +208,8 @@ def main():
                 label = "字幕なし" if st == "error_no_transcript" else "生成失敗" if st == "error_generation" else "再試行待ち"
                 lines.append(f"・{t}（{label}）")
         color = COLOR_WARN if failed else COLOR_OK
-        notify("🎬 YouTube解析ワーカー", lines, color=color)
+        status = "warn" if failed else "ok"
+        notify("🎬 YouTube解析ワーカー", lines, color=color, worker_name="youtube_worker", status=status)
 
     # 全滅かつ全て字幕なし＝データセンターIPがブロックされている疑いが濃い
     if failed and not done and all(st == "error_no_transcript" for _, st, _ in failed):

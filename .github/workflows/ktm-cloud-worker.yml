@@ -45,6 +45,13 @@ jobs:
         with: { python-version: '3.12' }
       - name: Install yt-dlp
         run: pip install -q yt-dlp
+      - name: Check Environment
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || secrets.SUPABASE_SERVICE_KEY || secrets.SUPABASE_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        run: python scripts/check_env.py
       - name: Prospect videos
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
@@ -60,8 +67,15 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: { python-version: '3.12' }
-      - name: Install yt-dlp
-        run: pip install -q yt-dlp
+      - name: Install dependencies
+        run: pip install -q yt-dlp google-genai
+      - name: Check Environment
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || secrets.SUPABASE_SERVICE_KEY || secrets.SUPABASE_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        run: python scripts/check_env.py
       - name: Process youtube queue
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}

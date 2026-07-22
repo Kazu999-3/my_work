@@ -47,6 +47,7 @@ const MENU_ITEMS = [
 
 // 管理者ログイン時：管理者機能タブ用 (過去の試合履歴を除外)
 const ADMIN_ONLY_MENU_ITEMS = [
+  { id: 'champion-research', label: '🎯 チャンプ深掘り', icon: Sparkles, href: '/admin/knowledge?tab=research', color: 'text-purple-400', activeBg: 'bg-purple-500/15' },
   { id: 'lane-guides', label: 'レーン別ガイド', icon: BookHeart, href: '/lane-guides', color: 'text-amber-400', activeBg: 'bg-amber-400/15' },
   { id: 'dashboard', label: 'ダッシュボード', icon: LayoutDashboard, href: '/admin/dashboard', color: 'text-white', activeBg: 'bg-white/10' },
   { id: 'coach', label: 'パーソナルコーチ', icon: Sparkles, href: '/coach', color: 'text-indigo-300', activeBg: 'bg-indigo-500/15' },

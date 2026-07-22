@@ -118,6 +118,14 @@ def pending_count():
     return len(rows)
 
 
+import shutil
+
+def get_yt_dlp_cmd():
+    yt_bin = shutil.which("yt-dlp") or shutil.which("yt-dlp.exe")
+    if yt_bin:
+        return [yt_bin]
+    return [sys.executable, "-m", "yt_dlp"]
+
 def search_videos(query, want):
     """
     yt-dlp の検索で動画を探す。
@@ -126,8 +134,8 @@ def search_videos(query, want):
     """
     # 尺で弾く分を見越して多めに取得する
     n = max(want * 5, 10)
-    cmd = [
-        "yt-dlp", f"ytsearch{n}:{query}",
+    cmd = get_yt_dlp_cmd() + [
+        f"ytsearch{n}:{query}",
         "--flat-playlist", "--skip-download",
         "--print", "%(id)s\t%(title)s\t%(channel)s\t%(duration)s",
     ]
@@ -219,13 +227,16 @@ def main() -> int:
 
     print(f"\n合計 {added}本をキューに追加しました。解析は youtube ジョブが順次進めます。")
 
-    # 積んだ動画があればDiscordへ通知する
-    if registered:
-        notify(
-            "🔭 動画の自動発掘",
-            [f"**{added}本**をキューに追加しました。順次解析されます。", ""] + [f"・{r}" for r in registered],
-            color=COLOR_INFO,
-        )
+    # ログ・Discordへ通知する
+    summary = f"🔭 動画自動発掘 (追加: {added}本)"
+    lines = [f"**{added}本**をキューに追加しました。"] + [f"・{r}" for r in registered] if registered else ["新規追加動画なし"]
+    notify(
+        summary,
+        lines,
+        color=COLOR_INFO if added > 0 else COLOR_INFO,
+        worker_name="prospector",
+        status="ok"
+    )
     return 0
 
 
