@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
-import { fetchPuuidByRiotId, fetchRecentMatchIds, fetchMatchDetails } from '../../../../lib/riot';
+import { fetchPuuidByRiotId, fetchRankedSoloMatchIds, fetchMatchDetails } from '../../../../lib/riot';
 import { callGeminiWithRetry } from '../../../../lib/geminiClient';
 
 // ============================================================
@@ -38,7 +38,8 @@ export async function GET(req: Request) {
     if (!apiKey || !gameName || !tagLine) return NextResponse.json({ error: 'Riot環境変数が未設定' }, { status: 500 });
 
     const puuid = await fetchPuuidByRiotId(gameName, tagLine, apiKey);
-    const matchIds = await fetchRecentMatchIds(puuid, apiKey, 1, 420).catch(() => fetchRecentMatchIds(puuid, apiKey, 1));
+    // ランクソロのみ（ノーマルの結果でコーチDMを送らない）
+    const matchIds = await fetchRankedSoloMatchIds(puuid, apiKey, 1);
     if (!matchIds.length) return NextResponse.json({ noGame: true });
 
     const latest = matchIds[0];

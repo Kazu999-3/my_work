@@ -76,6 +76,18 @@ export async function fetchRecentMatchIds(puuid: string, apiKey: string, count: 
   return await res.json();
 }
 
+// ランクソロ(queue=420)の試合だけを取得する。
+// パーソナルコーチはランク戦を前提に助言するため、ノーマル/ARAM等を混ぜない。
+// 以前は「420で取得 → 失敗したらキュー無指定で再取得」というフォールバックがあり、
+// ランク戦が無い人にはノーマルの試合が紛れ込んでいた。ここでは失敗時も空を返す。
+export async function fetchRankedSoloMatchIds(puuid: string, apiKey: string, count: number = 20): Promise<string[]> {
+  try {
+    return await fetchRecentMatchIds(puuid, apiKey, count, 420);
+  } catch {
+    return [];
+  }
+}
+
 export async function fetchMatchDetails(matchId: string, apiKey: string): Promise<MatchResult> {
   const url = `${RIOT_API_BASE_ASIA}/lol/match/v5/matches/${matchId}?api_key=${apiKey}`;
   const res = await fetch(url, { cache: 'no-store' });

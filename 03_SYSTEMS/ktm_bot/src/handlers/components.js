@@ -4,6 +4,7 @@ import { handleLaneCommand, handleStatsCommand } from './commands.js';
 import { createMessageContent, createRecruitButtons, createRecruitEmbed, extractPlayersFromEmbed, getPortalComponents, getPortalEmbed, handleHelpPage, splitMessage } from '../ui/embeds.js';
 import { parseMessageData, handleAutoMatchEnd } from '../utils/helpers.js';
 import { getAdminDiscordIds, markRecruitmentStatus } from '../utils/recruitPermission.js';
+import { getKtmRank, formatRankDistribution } from '../utils/ktmRank.js';
 
 export async function handleButtonInteraction(interaction, env, ctx) {
   let customId = interaction.data.custom_id;
@@ -400,16 +401,17 @@ export async function handleButtonInteraction(interaction, env, ctx) {
           `\`ADC\` ${roleCount.ADC} / ${bar(cover.ADC)}　\`SUP\` ${roleCount.SUP} / ${bar(cover.SUP)}` +
           (roleCount.ALL ? `　（ALL希望 ${roleCount.ALL}名）` : '');
 
-        // レート帯の内訳（しきい値の上下に何人いるか）
+        // 参加者のランク内訳（KTM内ランクで表示）
         let tierLine = '';
         try {
-          const th = CONFIG.MMR_TIER_THRESHOLD || 1350;
           const withMmr = await fetchSupabase(env, 'ktm_players', `discord_id=in.(${idsStr})&select=mmr`);
           const mmrs = (withMmr || []).map((p) => p.mmr || 1200);
           if (mmrs.length > 0) {
-            const sorted = [...mmrs].sort((a, b) => b - a);
-            tierLine = `\n**レート帯**（しきい値 ${th}）: 🔼${th}以上 ${mmrs.filter(m => m >= th).length}名 ／ 🔽${th}未満 ${mmrs.filter(m => m < th).length}名`
-              + `\n最高 ${sorted[0]} / 最低 ${sorted[sorted.length - 1]}（幅 ${sorted[0] - sorted[sorted.length - 1]}）`;
+            const dist = formatRankDistribution(mmrs, 0);
+            tierLine = `\n**参加者のランク内訳**: ${dist}`;
+            const hi = getKtmRank(Math.max(...mmrs));
+            const lo = getKtmRank(Math.min(...mmrs));
+            if (hi.name !== lo.name) tierLine += `\n幅: ${lo.short} 〜 ${hi.short}`;
           }
         } catch (e) { /* 集計失敗は無視 */ }
         laneEmbed = {
@@ -482,23 +484,23 @@ async function sendOnboardingIfNeeded(env, userId) {
   }
 }
 
-/** 参加者のdiscord_id配列から「🔼しきい値以上 N名 ／ 🔽未満 N名」の1行を作る */
+/** 参加者のdiscord_id配列から、KTMランクの人数分布の1行を作る */
 async function buildTierLine(env, joinedIds) {
   if (!joinedIds || joinedIds.length === 0) return '';
   try {
     const { fetchSupabase } = await import('../utils/supabase.js');
-    const th = CONFIG.MMR_TIER_THRESHOLD || 1350;
     const idsStr = joinedIds.map((i) => `"${i}"`).join(',');
     const ps = await fetchSupabase(env, 'ktm_players', `discord_id=in.(${idsStr})&select=mmr`);
     const mmrs = (ps || []).map((p) => p.mmr || 1200);
     if (mmrs.length === 0) return '';
-    const upper = mmrs.filter((m) => m >= th).length;
-    const lower = mmrs.filter((m) => m < th).length;
     const unknown = joinedIds.length - mmrs.length;
-    const sorted = [...mmrs].sort((a, b) => b - a);
-    return `**レート帯**（${th}基準）: 🔼${upper}名 ／ 🔽${lower}名`
-      + (unknown > 0 ? ` ／ ❓未登録${unknown}名` : '')
-      + (mmrs.length >= 2 ? `　幅${sorted[0] - sorted[sorted.length - 1]}` : '');
+    let line = `**ランク内訳**: ${formatRankDistribution(mmrs, unknown)}`;
+    if (mmrs.length >= 2) {
+      const hi = getKtmRank(Math.max(...mmrs));
+      const lo = getKtmRank(Math.min(...mmrs));
+      if (hi.name !== lo.name) line += `　幅 ${lo.short}〜${hi.short}`;
+    }
+    return line;
   } catch (e) {
     return '';
   }

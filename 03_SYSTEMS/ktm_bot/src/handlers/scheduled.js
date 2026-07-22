@@ -4,6 +4,7 @@ import { parseMessageData } from '../utils/helpers.js';
 import { fetchWithRetry } from '../utils/api.js';
 import { createMessageContent, createRecruitButtons, createRecruitEmbed } from '../ui/embeds.js';
 import { createRecruitment } from '../utils/recruitPermission.js';
+import { getKtmRank, formatRankDistribution, formatMmrWithRank } from '../utils/ktmRank.js';
 
 export async function handleScheduledEvent(event, env, ctx) {
   console.log("Scheduled event triggered:", JSON.stringify(event));
@@ -128,29 +129,42 @@ async function sendRecruitStatusNotification(env) {
         ? new Date(new Date(r.start_at).getTime() + 9 * 3600 * 1000).toISOString().slice(11, 16)
         : (metadata.time || '');
 
-      const nameList = joined.length > 0
-        ? joined.map((id, i) => `${String(i + 1).padStart(2, '0')}. <@${id}>`).join('\n')
-        : '（まだ参加者がいません）';
-
-      // レート帯の分布: しきい値の上下に何人いるかを出す（卓が成立するかの判断材料）
-      let tierLine = '';
+      // 参加者ごとのMMRを引いて、名前一覧にランクを併記しつつ分布も出す
+      const mmrById = new Map();
       if (joined.length > 0) {
         try {
-          const th = CONFIG.MMR_TIER_THRESHOLD || 1350;
           const idsStr = joined.map((i) => `"${i}"`).join(',');
           const ps = await fetchSupabase(env, 'ktm_players', `discord_id=in.(${idsStr})&select=discord_id,mmr`);
-          const mmrs = (ps || []).map((p) => p.mmr || 1200);
-          const unknown = joined.length - mmrs.length; // 名簿未登録
-          const upper = mmrs.filter((m) => m >= th).length;
-          const lower = mmrs.filter((m) => m < th).length;
-          tierLine = `\n\n**レート帯の内訳**（しきい値 ${th}）\n🔼 ${th}以上: **${upper}名** ／ 🔽 ${th}未満: **${lower}名**`
-            + (unknown > 0 ? ` ／ ❓ 未登録: ${unknown}名` : '');
-          if (mmrs.length >= 2) {
-            const sorted = [...mmrs].sort((a, b) => b - a);
-            tierLine += `\n最高 ${sorted[0]} / 最低 ${sorted[sorted.length - 1]}（幅 ${sorted[0] - sorted[sorted.length - 1]}）`;
+          for (const p of (ps || [])) {
+            if (p.mmr != null) mmrById.set(String(p.discord_id), p.mmr);
           }
         } catch (e) {
-          console.warn('[RecruitStatus] レート帯集計に失敗:', e);
+          console.warn('[RecruitStatus] MMR取得に失敗:', e);
+        }
+      }
+
+      const nameList = joined.length > 0
+        ? joined.map((id, i) => {
+            const idx = String(i + 1).padStart(2, '0');
+            const mmr = mmrById.get(String(id));
+            // 例: 01. @かず — 1450（ゴールド相当）
+            return `${idx}. <@${id}> — ${formatMmrWithRank(mmr)}`;
+          }).join('\n')
+        : '（まだ参加者がいません）';
+
+      // 参加者のランク分布（サッと構成を掴む用）
+      let tierLine = '';
+      if (mmrById.size > 0) {
+        const mmrs = [...mmrById.values()];
+        const unknown = joined.length - mmrs.length; // 名簿未登録
+        const dist = formatRankDistribution(mmrs, unknown);
+        if (dist) {
+          tierLine = `\n\n**ランク内訳**: ${dist}`;
+          if (mmrs.length >= 2) {
+            const hi = getKtmRank(Math.max(...mmrs));
+            const lo = getKtmRank(Math.min(...mmrs));
+            if (hi.name !== lo.name) tierLine += `　幅: ${lo.short}〜${hi.short}`;
+          }
         }
       }
 
