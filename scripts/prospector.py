@@ -19,12 +19,20 @@ import re
 import subprocess
 import sys
 import time
-import urllib.request
+import urllib.request, urllib.error
 
 from notify import notify, COLOR_INFO
 
 SUPABASE_URL = os.environ["SUPABASE_URL"].rstrip("/")
-SUPABASE_KEY = os.environ["SUPABASE_SERVICE_KEY"]
+# シークレット名は環境によって揺れるため、候補を順に拾う
+SUPABASE_KEY = (
+    os.environ.get("SUPABASE_SERVICE_KEY")
+    or os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
+    or os.environ.get("SUPABASE_KEY")
+    or ""
+).strip()
+if not SUPABASE_KEY:
+    sys.exit("❌ Supabaseのキーが未設定です。GitHubのSecretsを確認してください。")
 
 # 1回の実行で扱うチャンピオン数と、1体あたりに登録する動画数
 LIMIT = int(os.environ.get("PROSPECT_LIMIT", "3"))
@@ -51,9 +59,14 @@ def sb(method, path, body=None, prefer=None):
     if prefer:
         req.add_header("Prefer", prefer)
     data = json.dumps(body).encode() if body is not None else None
-    with urllib.request.urlopen(req, data=data, timeout=60) as r:
-        t = r.read().decode()
-        return json.loads(t) if t else None
+    try:
+        with urllib.request.urlopen(req, data=data, timeout=60) as r:
+            t = r.read().decode()
+            return json.loads(t) if t else None
+    except urllib.error.HTTPError as e:
+        if e.code == 401:
+            sys.exit("❌ Supabaseに認証拒否されました (401)。GitHubのSecretのキーを確認してください。")
+        raise
 
 
 def fetch_champions():

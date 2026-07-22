@@ -6,12 +6,24 @@
 # 必要な環境変数: SUPABASE_URL, SUPABASE_SERVICE_KEY, GEMINI_API_KEY
 # ============================================================
 import os, re, json, glob, subprocess, sys
-import urllib.request
+import urllib.request, urllib.error
 
 from notify import notify, COLOR_OK, COLOR_WARN
 
 SUPABASE_URL = os.environ["SUPABASE_URL"].rstrip("/")
-SUPABASE_KEY = os.environ["SUPABASE_SERVICE_KEY"]
+# シークレット名は環境によって揺れる（Vercelは SUPABASE_SERVICE_ROLE_KEY、
+# 旧バッチは SUPABASE_KEY 等）。どれでも拾えるようにする。
+SUPABASE_KEY = (
+    os.environ.get("SUPABASE_SERVICE_KEY")
+    or os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
+    or os.environ.get("SUPABASE_KEY")
+    or ""
+).strip()
+if not SUPABASE_KEY:
+    sys.exit(
+        "❌ Supabaseのキーが未設定です。GitHubのSecretsに "
+        "SUPABASE_SERVICE_ROLE_KEY（推奨）または SUPABASE_KEY を登録してください。"
+    )
 GEMINI_KEY = os.environ["GEMINI_API_KEY"]
 # ポータル側(lib/geminiClient.ts)と同じモデルに揃える。
 # gemini-2.5-flash はこのキーで日次上限を超過した実績があるため使わない。
@@ -29,9 +41,18 @@ def sb(method, path, body=None, prefer=None):
     req.add_header("Content-Type", "application/json")
     if prefer: req.add_header("Prefer", prefer)
     data = json.dumps(body).encode() if body is not None else None
-    with urllib.request.urlopen(req, data=data, timeout=60) as r:
-        t = r.read().decode()
-        return json.loads(t) if t else None
+    try:
+        with urllib.request.urlopen(req, data=data, timeout=60) as r:
+            t = r.read().decode()
+            return json.loads(t) if t else None
+    except urllib.error.HTTPError as e:
+        if e.code == 401:
+            # キーが空・別プロジェクトのキー・失効のいずれか。原因を明示して即終了する。
+            sys.exit(
+                "❌ Supabaseに認証拒否されました (401)。GitHubのSecretのキーが正しいか、"
+                "対象プロジェクトのものか確認してください。"
+            )
+        raise
 
 def fetch_subtitles(url, vid):
     # ja優先→en。自動生成字幕も許可。--skip-download で映像は落とさない。
