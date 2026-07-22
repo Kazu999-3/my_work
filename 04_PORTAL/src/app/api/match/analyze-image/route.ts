@@ -95,14 +95,30 @@ ${championsText}
 }
 `;
 
-    const textOutput = await callGeminiWithRetry(prompt, {
-      image: { base64: imageBase64, mimeType: mimeType || 'image/png' },
-      responseMimeType: 'application/json',
-      temperature: 0.1,
-      maxOutputTokens: 4096,
-    });
-    if (!textOutput) {
-      throw new Error("Gemini からの解析結果が空です。");
+    // 画像解析はモデルによって可否・クォータが分かれる。
+    // 1つ目がダメでも代替の画像対応モデルへ切り替えられるよう、複数モデルを順に試す。
+    // （共通クライアント化した際にこのフォールバックが失われ、画像解析が落ちやすくなっていた）
+    const visionModels = ['gemini-2.0-flash', 'gemini-1.5-flash-latest', 'gemini-3.1-flash-lite'];
+    let textOutput = '';
+    let lastErr: any = null;
+    for (const model of visionModels) {
+      try {
+        textOutput = await callGeminiWithRetry(prompt, {
+          model,
+          image: { base64: imageBase64, mimeType: mimeType || 'image/png' },
+          responseMimeType: 'application/json',
+          temperature: 0.1,
+          maxOutputTokens: 4096,
+          maxRetries: 1,
+        });
+        if (textOutput && !textOutput.startsWith('※')) break;
+      } catch (e) {
+        lastErr = e;
+        // 次のモデルへ
+      }
+    }
+    if (!textOutput || textOutput.startsWith('※')) {
+      throw lastErr || new Error('Gemini からの解析結果が空です（画像対応モデルで生成できませんでした）。');
     }
 
     let cleanText = textOutput.trim();
