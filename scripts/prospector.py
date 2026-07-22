@@ -21,6 +21,8 @@ import sys
 import time
 import urllib.request
 
+from notify import notify, COLOR_INFO
+
 SUPABASE_URL = os.environ["SUPABASE_URL"].rstrip("/")
 SUPABASE_KEY = os.environ["SUPABASE_SERVICE_KEY"]
 
@@ -163,6 +165,7 @@ def main() -> int:
     print(f"対象 {len(targets)}体 (パッチ {patch}): {', '.join(targets)}")
     known = known_video_ids()
     added = 0
+    registered = []  # 通知用
 
     for champ in targets:
         # パッチ番号は "15.14.1" のような形式なので、検索語には上2桁までを使う
@@ -195,12 +198,21 @@ def main() -> int:
             known.add(v["id"])
             picked += 1
             added += 1
+            registered.append(f"{champ}: {v['title'][:50]}（{v['duration'] // 60}分）")
             print(f"  ✅ 登録: {v['title'][:60]} ({v['duration'] // 60}分)")
 
         if picked == 0:
             print("  条件に合う新しい動画は見つかりませんでした。")
 
     print(f"\n合計 {added}本をキューに追加しました。解析は youtube ジョブが順次進めます。")
+
+    # 積んだ動画があればDiscordへ通知する
+    if registered:
+        notify(
+            "🔭 動画の自動発掘",
+            [f"**{added}本**をキューに追加しました。順次解析されます。", ""] + [f"・{r}" for r in registered],
+            color=COLOR_INFO,
+        )
     return 0
 
 

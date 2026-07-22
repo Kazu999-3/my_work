@@ -8,6 +8,8 @@
 import os, re, json, glob, subprocess, sys
 import urllib.request
 
+from notify import notify, COLOR_OK, COLOR_WARN
+
 SUPABASE_URL = os.environ["SUPABASE_URL"].rstrip("/")
 SUPABASE_KEY = os.environ["SUPABASE_SERVICE_KEY"]
 GEMINI_KEY = os.environ["GEMINI_API_KEY"]
@@ -37,9 +39,18 @@ def fetch_subtitles(url, vid):
     cmd = ["yt-dlp", "--skip-download", "--write-subs", "--write-auto-subs",
            "--sub-langs", "ja,ja-orig,en", "--sub-format", "vtt",
            "-o", out, url]
-    subprocess.run(cmd, capture_output=True, timeout=180)
+    res = subprocess.run(cmd, capture_output=True, text=True, timeout=180)
     files = sorted(glob.glob(f"{out}*.vtt"), key=lambda f: (0 if ".ja" in f else 1))
     if not files:
+        # 字幕が取れなかった理由をログに残す。
+        # 以前は capture_output で握りつぶしていたため、IP制限なのか字幕なしなのか
+        # 全く分からなかった。stderr の末尾を残して切り分けられるようにする。
+        err = (res.stderr or "").strip()
+        tail = err.splitlines()[-1] if err else "(yt-dlpの出力なし)"
+        print(f"  [字幕なし] {vid}: {tail}", file=sys.stderr)
+        # YouTubeがbot判定した場合の典型的な文言。IP制限の可能性が高い。
+        if "Sign in to confirm" in err or "bot" in err.lower() or "429" in err:
+            print(f"  ⚠️ IP制限の疑い（YouTubeがbot判定）: {vid}", file=sys.stderr)
         return None
     text_lines, seen = [], set()
     for line in open(files[0], encoding="utf-8", errors="ignore"):
@@ -86,7 +97,10 @@ def main():
     candidates.sort(key=lambda x: rank.get(x.get("priority") or "medium", 1))
     items = candidates[:MAX_ITEMS]
     if not items:
-        print("キューは空です。"); return
+        print("キューは空です。")
+        return
+
+    done, failed = [], []   # 通知用の結果集計
     for it in items:
         vid, url = it["id"], it["url"]
         print(f"▶ 処理開始: {it.get('title')} ({vid})")
@@ -109,7 +123,9 @@ def main():
                 "champion": a.get("champion") or "Unknown",
             }], prefer="return=minimal")
             sb("PATCH", f"youtube_queue?id=eq.{vid}", {"status": "completed"})
-            print(f"✅ 完了: {a.get('title')}")
+            title = a.get("title") or it.get("title") or "(無題)"
+            done.append(title)
+            print(f"✅ 完了: {title}")
         except Exception as e:
             retry = (it.get("retry_count") or 0) + 1
             if retry < MAX_RETRY:
@@ -125,7 +141,28 @@ def main():
             if status != "pending":
                 payload["title"] = f"{base} [エラー: {str(e)[:120]}]"
             sb("PATCH", f"youtube_queue?id=eq.{vid}", payload)
+            failed.append((it.get("title") or vid, status, str(e)[:80]))
             print(f"❌ 失敗({retry}/{MAX_RETRY}→{status}): {e}", file=sys.stderr)
+
+    # 結果をDiscordへ通知する（完了か失敗があったときだけ）
+    if done or failed:
+        lines = []
+        if done:
+            lines.append(f"**✅ 解析完了: {len(done)}本**")
+            lines += [f"・{t}" for t in done]
+        if failed:
+            lines.append(f"\n**❌ 失敗: {len(failed)}本**")
+            # 字幕なしが多い＝IP制限の可能性があるので、理由も添える
+            for t, st, reason in failed:
+                label = "字幕なし" if st == "error_no_transcript" else "生成失敗" if st == "error_generation" else "再試行待ち"
+                lines.append(f"・{t}（{label}）")
+        color = COLOR_WARN if failed else COLOR_OK
+        notify("🎬 YouTube解析ワーカー", lines, color=color)
+
+    # 全滅かつ全て字幕なし＝データセンターIPがブロックされている疑いが濃い
+    if failed and not done and all(st == "error_no_transcript" for _, st, _ in failed):
+        print("⚠️ 全件が字幕取得に失敗。yt-dlpのIP制限の可能性があります。", file=sys.stderr)
+
 
 if __name__ == "__main__":
     main()
