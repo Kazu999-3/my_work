@@ -53,6 +53,37 @@ export function LibraryTabContentInner() {
   
 
 
+  const [reAnalyzeId, setReAnalyzeId] = useState<number | string | null>(null);
+  const handleReAnalyzeArticle = async (article: any, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!article.source_url) {
+      showToast('この記事には元URLが設定されていません。', 'info');
+      return;
+    }
+    if (!confirm(`「${article.title}」のURLから画像・動画を含めてAI再解析・更新しますか？`)) return;
+
+    setReAnalyzeId(article.id);
+    try {
+      const res = await fetch('/api/admin/knowledge/re-analyze', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: article.id })
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        showToast(data.message || '画像・動画AI再解析・更新が完了しました！', 'success');
+        fetchArticles();
+      } else {
+        showToast(data.error || '再解析に失敗しました。', 'error');
+      }
+    } catch (err) {
+      showToast('通信エラーが発生しました。', 'error');
+    } finally {
+      setReAnalyzeId(null);
+    }
+  };
+
   // 検索条件やモード変更時に表示グループ数をリセット
   useEffect(() => {
     setVisibleGroupsCount(20);
@@ -622,6 +653,26 @@ export function LibraryTabContentInner() {
               <>
                 <button onClick={cancelEditing} className="px-4 py-2 glass-panel text-gray-400 hover:text-white rounded-xl text-sm font-bold flex items-center gap-2"><X size={14} /> キャンセル</button>
                 <button onClick={saveArticle} disabled={saving} className="px-4 py-2 bg-white text-black hover:-translate-y-0.5 shadow-lg shadow-white/20 rounded-xl text-sm font-black flex items-center gap-2 transition-all"><Save size={14} /> {saving ? '保存中...' : '保存する'}</button>
+                {!showMoved && (
+                  <div className="flex items-center gap-1.5 glass-panel p-1 rounded-xl border border-amber-500/30 bg-amber-500/10">
+                    <select
+                      value={laneChoice}
+                      onChange={(e) => setLaneChoice(e.target.value)}
+                      title="送り先のレーンを選びます"
+                      className="bg-black/60 border border-amber-500/40 rounded-lg px-2 py-1 text-xs text-amber-200 outline-none"
+                    >
+                      {LANE_CHOICES.map(l => <option key={l.key} value={l.key}>{l.label}</option>)}
+                    </select>
+                    <button
+                      onClick={sendToLaneGuide}
+                      disabled={sendingLane}
+                      className="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-black text-xs font-black transition disabled:opacity-50"
+                      title="この内容でレーン別ガイドへ統合します"
+                    >
+                      {sendingLane ? '送信中...' : '🗺️ ガイドへ送る'}
+                    </button>
+                  </div>
+                )}
               </>
             )}
             <button onClick={() => copyPublishCommand(selectedArticle.champion || selectedArticle.title?.split(' ')[0] || '')} className="px-4 py-2 glass-panel glass-panel-hover text-[#00cfef] rounded-xl text-sm font-bold flex items-center gap-2"><Terminal size={14} /> 投稿コマンドをコピー</button>
