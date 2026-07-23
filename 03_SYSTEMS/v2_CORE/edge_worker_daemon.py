@@ -217,14 +217,16 @@ class EdgeWorkerDaemon:
             raise RuntimeError(f"プロセス実行エラー (Exit code: {res.returncode})\nStderr: {res.stderr[-1000:]}")
 
     def send_heartbeat(self):
-        """Supabase の edge_tasks に対し、固定IDで生存シグナル（ハートビート）を PATCH (UPDATE) する"""
+        """Supabase の edge_tasks に対し、固定IDで生存シグナル（ハートビート）を UPSERT 送信する"""
         heartbeat_id = "00000000-0000-0000-0000-000000000000"
-        url = f"{self.supabase_url}/rest/v1/edge_tasks?id=eq.{heartbeat_id}"
+        url = f"{self.supabase_url}/rest/v1/edge_tasks"
         now_str = datetime.now(timezone.utc).isoformat()
         
         headers = self.headers.copy()
+        headers["Prefer"] = "resolution=merge-duplicates"
         
         payload = {
+            "id": heartbeat_id,
             "task_type": "worker_heartbeat",
             "status": "completed",
             "payload": {
@@ -236,9 +238,9 @@ class EdgeWorkerDaemon:
         }
         
         try:
-            res = httpx.patch(url, headers=headers, json=payload, timeout=5)
-            if res.status_code not in (200, 204):
-                logger.error(f"❌ ハートビート送信(PATCH)失敗: {res.status_code} {res.text}")
+            res = httpx.post(url, headers=headers, json=payload, timeout=5)
+            if res.status_code not in (200, 201, 204):
+                logger.error(f"❌ ハートビート送信(UPSERT)失敗: {res.status_code} {res.text}")
         except Exception as e:
             logger.error(f"❌ ハートビート送信中に通信エラーが発生しました: {e}")
 

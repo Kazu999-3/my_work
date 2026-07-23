@@ -66,104 +66,24 @@ export default function Home() {
   const [kbStats, setKbStats] = useState<{ facts: number | null; library: number | null; laneGuides: number | null; memos: number | null; matchupLog: number | null }>({
     facts: null, library: null, laneGuides: null, memos: null, matchupLog: null,
   });
-  const fetchKbStats = async () => {
-    try {
-      const count = async (table: string, build?: (q: any) => any) => {
-        let q = supabase.from(table).select('*', { count: 'exact', head: true });
-        if (build) q = build(q);
-        const { count: c } = await q;
-        return c ?? 0;
-      };
-      const [facts, library, laneGuides, memos, matchupLog] = await Promise.all([
-        count('champion_facts'),
-        // 未整理＝まだ辞典/ガイドへ統合されていない記事
-        count('personal_knowledge', (q: any) => q.or('tags.is.null,tags.not.cs.{__DELETED__}')),
-        count('lane_guides'),
-        count('matchup_sentinel', (q: any) => q.neq('enemy', 'GLOBAL')),
-        count('matchup_log'),
-      ]);
-      setKbStats({ facts, library, laneGuides, memos, matchupLog });
-    } catch (e) {
-      console.warn('知識ベース統計の取得に失敗:', e);
-    }
-  };
 
   const fetchData = async (silent = false) => {
     if (!silent) setIsLoading(true);
     else setIsRefreshing(true);
     try {
-      // 1. SYSTEM_METRICS の取得
-      const { data: metricsData } = await supabase
-        .from('matchup_sentinel')
-        .select('raw_data')
-        .eq('matchup_id', 'SYSTEM_METRICS')
-        .maybeSingle();
-      if (metricsData && metricsData.raw_data) {
-        setSystemMetrics(metricsData.raw_data);
+      const res = await fetch('/api/admin/dashboard-stats', { credentials: 'include' });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.worker) setSystemStatus({ worker: data.worker, queue: data.queue || [], history: data.history || [] });
+        if (data.kbStats) setKbStats(data.kbStats);
+        if (data.systemMetrics) setSystemMetrics(data.systemMetrics);
+        if (data.apiUsage !== undefined) setApiUsage(data.apiUsage);
+        if (data.recentYoutubeQueue) setRecentYoutubeQueue(data.recentYoutubeQueue);
+        if (data.recentDictUpdates) setRecentDictUpdates(data.recentDictUpdates);
+        if (data.recentLibraryUpdates) setRecentLibraryUpdates(data.recentLibraryUpdates);
       }
-
-      // API使用量の取得
-      // Gemini APIのリセット時間（太平洋標準時 PST/PDT: 深夜0時）に合わせるため UTC-8 を基準とする
-      const ptObj = new Date(Date.now() - 8 * 60 * 60 * 1000);
-      const yyyy = ptObj.getUTCFullYear();
-      const mm = String(ptObj.getUTCMonth() + 1).padStart(2, '0');
-      const dd = String(ptObj.getUTCDate()).padStart(2, '0');
-      const todayFormatted = `${yyyy}-${mm}-${dd}`;
-
-      const { data: apiData } = await supabase
-        .from('api_usage_logs')
-        .select('usage_data')
-        .eq('date', todayFormatted)
-        .maybeSingle();
-
-      if (apiData && apiData.usage_data) {
-        // クォータはエラー(429等)も消費に含まれるため、成功・失敗を合算して表示する
-        let total = 0;
-        for (const [key, value] of Object.entries(apiData.usage_data)) {
-          if (key.startsWith('__limit_')) continue; // 上限値の定義行は使用量ではない
-          total += Number(value);
-        }
-        setApiUsage(total);
-      } else {
-        // 本日分ログがまだない場合は本日実行された edge_tasks の件数を消費概算として集計
-        const todayStart = new Date(new Date().setHours(0, 0, 0, 0)).toISOString();
-        const { count } = await supabase
-          .from('edge_tasks')
-          .select('id', { count: 'exact', head: true })
-          .gt('created_at', todayStart);
-        if (count) setApiUsage(count);
-      }
-
-      // 5. 辞典更新履歴 (GLOBAL)
-      const { data: dictData, error: dictError } = await supabase
-        .from('matchup_sentinel')
-        .select('matchup_id, champion, title, created_at')
-        .eq('enemy', 'GLOBAL')
-        .order('created_at', { ascending: false })
-        .limit(5);
-      if (!dictError && dictData) setRecentDictUpdates(dictData);
-
-      // 6. ライブラリ更新履歴
-      const { data: libData, error: libError } = await supabase
-        .from('personal_knowledge')
-        .select('id, title, champion, created_at')
-        .order('created_at', { ascending: false })
-        .limit(5);
-      if (!libError && libData) setRecentLibraryUpdates(libData);
-
-
-
-      // 8. 最新のYouTubeキュー取得
-      const { data: ytQueueData, error: ytQueueError } = await supabase
-        .from('youtube_queue')
-        .select('id, title, status, channel_name, updated_at')
-        .order('updated_at', { ascending: false })
-        .limit(3);
-      if (!ytQueueError && ytQueueData) setRecentYoutubeQueue(ytQueueData);
-
-
     } catch (err) {
-      console.error('Error fetching data:', err);
+      console.error('Error fetching dashboard stats:', err);
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -176,7 +96,6 @@ export default function Home() {
   useEffect(() => {
     if (!isAuthenticated) return;
     fetchData();
-    fetchKbStats();
     setLastUpdated(new Date().toLocaleTimeString('ja-JP'));
   }, [isAuthenticated]);
 
