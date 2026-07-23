@@ -67,37 +67,44 @@ export async function GET(req: NextRequest) {
           const cData = await res.json();
           if (!cData.challenges) return;
 
-          let bestChallenge: any = null;
+          const playerChallenges: any[] = [];
           for (const item of cData.challenges) {
             const p = item.percentile;
-            if (p > 0 && p <= 0.3 && item.level !== 'NONE') {
-              if (!bestChallenge || p < bestChallenge.percentile) {
-                const meta = challengeMeta[item.challengeId] || {};
-                // position (順位) が存在すればそれを使い、無ければパーセンタイル(上位%)と想定アクティブ数(約10万人)から概算順位を算出
-                const explicitRank = item.position || (item.rank ? item.rank : null);
-                const estimatedRank = Math.max(1, Math.round(p * 120000));
-                const nationalRank = explicitRank || estimatedRank;
+            if (p > 0 && p <= 0.35 && item.level !== 'NONE') {
+              const meta = challengeMeta[item.challengeId] || {};
+              const explicitRank = item.position || (item.rank ? item.rank : null);
+              const estimatedRank = Math.max(1, Math.round(p * 120000));
+              const nationalRank = explicitRank || estimatedRank;
 
-                bestChallenge = {
-                  challengeId: item.challengeId,
-                  name: meta.name || '激レア実績',
-                  description: meta.shortDescription || meta.description || '特別な実績を達成しました',
-                  percentile: p,
-                  top_percent_display: `上位 ${(p * 100).toFixed(2)}%`,
-                  level: item.level,
-                  value: item.value,
-                  national_rank: nationalRank,
-                  national_rank_display: explicitRank ? `全国 ${explicitRank} 位` : `全国 約 ${nationalRank} 位`
-                };
-              }
+              playerChallenges.push({
+                challengeId: item.challengeId,
+                name: meta.name || '激レア実績',
+                description: meta.shortDescription || meta.description || '特別な実績を達成しました',
+                percentile: p,
+                top_percent_display: `上位 ${(p * 100).toFixed(2)}%`,
+                level: item.level,
+                value: item.value,
+                national_rank: nationalRank,
+                national_rank_display: explicitRank ? `全国 ${explicitRank} 位` : `全国 約 ${nationalRank} 位`
+              });
             }
           }
 
-          if (bestChallenge) {
-            rankingResults.push({
-              player_name: player.name || player.riot_id,
-              discord_id: player.discord_id,
-              identity: bestChallenge
+          if (playerChallenges.length > 0) {
+            // パーセンタイル順（激レア順）にソート
+            playerChallenges.sort((a, b) => a.percentile - b.percentile);
+
+            // トップ5件まで取得
+            const top5 = playerChallenges.slice(0, 5);
+            
+            // 全体フラットランキングに追加
+            top5.forEach(ch => {
+              rankingResults.push({
+                player_name: player.name || player.riot_id,
+                discord_id: player.discord_id,
+                identity: ch,
+                all_identities: top5
+              });
             });
           }
         } catch (err) {
@@ -106,7 +113,7 @@ export async function GET(req: NextRequest) {
       })
     );
 
-    // パーセンタイルが小さい順（全日本上位%が高い順）にソート
+    // パーセンタイルが小さい順（全日本上位%が高い順）に全体ソート
     rankingResults.sort((a, b) => a.identity.percentile - b.identity.percentile);
 
     const formattedRanking = rankingResults.map((item, index) => ({
@@ -121,7 +128,8 @@ export async function GET(req: NextRequest) {
       value: item.identity.value,
       value_display: typeof item.identity.value === 'number' ? item.identity.value.toLocaleString('ja-JP') : item.identity.value,
       national_rank: item.identity.national_rank,
-      national_rank_display: item.identity.national_rank_display
+      national_rank_display: item.identity.national_rank_display,
+      sub_identities: item.all_identities.filter((sub: any) => sub.challengeId !== item.identity.challengeId)
     }));
 
     return NextResponse.json({

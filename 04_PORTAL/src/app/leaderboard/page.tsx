@@ -369,6 +369,25 @@ export default function LeaderboardPage() {
                             <span className="text-gray-500">| {item.national_rank_display}</span>
                           )}
                         </div>
+
+                        {/* 所持しているその他の激レア称号（サブバッジ一覧） */}
+                        {item.sub_identities && item.sub_identities.length > 0 && (
+                          <div className="pt-2 border-t border-white/5 mt-2">
+                            <span className="text-[10px] text-gray-400 font-bold block mb-1">🎖️ このプレイヤーの他の激レア実績:</span>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              {item.sub_identities.map((sub: any, subIdx: number) => (
+                                <span
+                                  key={subIdx}
+                                  className="text-[10px] px-2 py-0.5 rounded bg-gray-800/80 border border-gray-700 text-gray-300 font-medium flex items-center gap-1"
+                                  title={`${sub.description} (${sub.national_rank_display})`}
+                                >
+                                  <span className="text-amber-400 font-bold">・{sub.name}</span>
+                                  <span className="text-gray-400 text-[9px]">({sub.top_percent_display})</span>
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   );
