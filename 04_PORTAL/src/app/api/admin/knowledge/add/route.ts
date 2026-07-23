@@ -4,21 +4,105 @@ import { callGeminiWithRetry } from '../../../../../lib/geminiClient';
 import { verifyAdminSession } from '../../../../../lib/adminAuth';
 
 // ============================================================
-// Supabase クライアント
+// X (Twitter) 投稿から添付画像を取得し Node.js 上で Gemini Vision 解析
 // ============================================================
+async function analyzeXPostImagesWithGemini(photos: any[], tweetText: string): Promise<string> {
+  if (!photos || photos.length === 0) return '';
 
-// ============================================================
-// Gemini API キー（Vercel環境変数 or .env から取得）
-// ============================================================
-// ============================================================
-// URLからタイトルと本文をスクレイピング（Node.js fetch で実行）
-// ============================================================
+  const apiKey = process.env.GEMINI_API_KEY_FREE || process.env.GEMINI_API_KEY;
+  if (!apiKey) return '';
+
+  let combinedAnalysis = [];
+
+  for (let idx = 0; idx < Math.min(photos.length, 3); idx++) {
+    const photoUrl = photos[idx].url;
+    if (!photoUrl) continue;
+
+    try {
+      // 1. 画像のバイナリデータを取得
+      const imgRes = await fetch(photoUrl, { signal: AbortSignal.timeout(10000) });
+      if (!imgRes.ok) continue;
+
+      const arrayBuffer = await imgRes.arrayBuffer();
+      const base64Image = Buffer.from(arrayBuffer).toString('base64');
+      const contentType = imgRes.headers.get('content-type') || 'image/jpeg';
+
+      // 2. Gemini REST API に Base64 画像を直接送信してマルチモーダル視覚解析
+      const prompt = `あなたはLoL(League of Legends)戦略・ビルド・戦術解読の超一流AIアナリストです。
+添付されたX(Twitter)投稿の画像 #${idx + 1} を詳細に視覚解析してください。
+
+【投稿本文】: ${tweetText}
+
+【指示事項】:
+1. 画像に映っているLoLのチャンピオン名、アイテム構成、ルーン、スキル順、KDA、ゴールド、画面内テキストの全読み取り
+2. この画像から読み取れるゲーム内戦術・メタの要点・立ち回り解説
+3. 今後の攻略記事や学習にそのまま使える詳細なMarkdown解説文を作成してください。`;
+
+      const reqBody = {
+        contents: [
+          {
+            parts: [
+              {
+                inline_data: {
+                  mime_type: contentType,
+                  data: base64Image
+                }
+              },
+              {
+                text: prompt
+              }
+            ]
+          }
+        ],
+        generationConfig: {
+          temperature: 0.3,
+          maxOutputTokens: 1500
+        }
+      };
+
+      // 確実なモデル (gemini-2.0-flash / gemini-1.5-flash) で呼び出し
+      const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(reqBody),
+        signal: AbortSignal.timeout(20000)
+      });
+
+      if (geminiRes.ok) {
+        const resData = await geminiRes.json();
+        const text = resData.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (text) {
+          combinedAnalysis.push(`### 🖼️ 添付画像 #${idx + 1} のAI詳細解析\n${text}`);
+        }
+      } else {
+        // フォールバック (gemini-1.5-flash)
+        const fallbackRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(reqBody),
+          signal: AbortSignal.timeout(20000)
+        });
+        if (fallbackRes.ok) {
+          const fallbackData = await fallbackRes.json();
+          const text = fallbackData.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (text) {
+            combinedAnalysis.push(`### 🖼️ 添付画像 #${idx + 1} のAI詳細解析\n${text}`);
+          }
+        }
+      }
+    } catch (err: any) {
+      console.warn(`Gemini Vision analysis error for image #${idx + 1}:`, err.message);
+    }
+  }
+
+  return combinedAnalysis.join('\n\n');
+}
+
 // ============================================================
 // URLからタイトルと本文（X投稿の場合は画像・動画メディアを含む）をスクレイピング
 // ============================================================
 async function extractUrlContent(url: string): Promise<{ title: string; textContent: string }> {
   try {
-    // X (Twitter) 投稿URLの判定
     const isXPost = /x\.com|twitter\.com/i.test(url) && /status\/\d+/i.test(url);
 
     if (isXPost) {
@@ -42,31 +126,22 @@ async function extractUrlContent(url: string): Promise<{ title: string; textCont
               const photos = tweet.media?.photos || [];
               const videos = tweet.media?.videos || [];
 
-              let aiVisualAnalysis = "";
-
-              // Python x_media_analyzer.py をバックグラウンド実行して画面/画像のマルチモーダルAI解析を取得
-              try {
-                const { execSync } = require('child_process');
-                const pyCmd = `d:\\my_work\\.venv\\Scripts\\python.exe d:\\my_work\\03_SYSTEMS\\v2_CORE\\_LOL\\x_media_analyzer.py "${url}"`;
-                const pyOutput = execSync(pyCmd, { encoding: 'utf-8', timeout: 35000 });
-                if (pyOutput && pyOutput.length > 50) {
-                  aiVisualAnalysis = pyOutput;
-                }
-              } catch (pyErr: any) {
-                console.warn(`x_media_analyzer.py execution error: ${pyErr.message}`);
-              }
+              // Node.js 上で画像データを Base64 取得し Gemini Multimodal Vision 解析
+              let aiVisualAnalysis = await analyzeXPostImagesWithGemini(photos, tweetText);
 
               let mediaDesc = [];
               if (photos.length > 0) mediaDesc.push(`添付画像 ${photos.length} 枚`);
               if (videos.length > 0) mediaDesc.push(`添付動画 ${videos.length} 本`);
-
               const mediaString = mediaDesc.length > 0 ? ` [メディア: ${mediaDesc.join(', ')}]` : '';
 
-              const fullContent = `【X (Twitter) マルチモーダルAI解析ナレッジ】\n投稿者: ${author}\n本文: ${tweetText}${mediaString}\n投稿リンク: ${url}\n\n` +
-                (aiVisualAnalysis ? `【AIビジュアル＆画像解析詳細】\n${aiVisualAnalysis}` : `※添付画像/動画メディアと投稿本文を統合した高度なAIナレッジです。`);
+              const fullContent = `【X (Twitter) マルチモーダルAI解析ナレッジ】\n` +
+                `投稿者: ${author}\n` +
+                `投稿本文: ${tweetText}${mediaString}\n` +
+                `投稿リンク: ${url}\n\n` +
+                (aiVisualAnalysis ? `【AIビジュアル＆添付画像解析詳細】\n${aiVisualAnalysis}` : `※添付画像/動画メディアと投稿本文を統合した高度なAIナレッジです。`);
 
               return {
-                title: `X解析 (${author}): ${tweetText.slice(0, 30)}...`,
+                title: `X要約 (${author}): ${tweetText.slice(0, 30)}...`,
                 textContent: fullContent
               };
             }
@@ -88,7 +163,6 @@ async function extractUrlContent(url: string): Promise<{ title: string; textCont
 
     const html = await res.text();
 
-    // 簡易HTMLパーサー（<script>,<style>,<nav>,<footer>,<header>を除去）
     let cleaned = html
       .replace(/<script[\s\S]*?<\/script>/gi, '')
       .replace(/<style[\s\S]*?<\/style>/gi, '')
@@ -96,11 +170,9 @@ async function extractUrlContent(url: string): Promise<{ title: string; textCont
       .replace(/<footer[\s\S]*?<\/footer>/gi, '')
       .replace(/<header[\s\S]*?<\/header>/gi, '');
 
-    // タイトル抽出
     const titleMatch = cleaned.match(/<title[^>]*>(.*?)<\/title>/i);
     const title = titleMatch ? titleMatch[1].trim() : 'No Title';
 
-    // HTMLタグを除去してテキスト化
     const textContent = cleaned
       .replace(/<[^>]+>/g, ' ')
       .replace(/&nbsp;/g, ' ')
@@ -110,7 +182,7 @@ async function extractUrlContent(url: string): Promise<{ title: string; textCont
       .replace(/&quot;/g, '"')
       .replace(/\s+/g, ' ')
       .trim()
-      .slice(0, 10000);  // 最大10000文字
+      .slice(0, 10000);
 
     return { title, textContent };
   } catch (e: any) {
@@ -129,8 +201,8 @@ async function analyzeWithGemini(title: string, content: string): Promise<{
   tags: string[];
   champion: string;
 }> {
-  const prompt = `以下のインプット情報（Webサイトの内容またはメモ書き）を解析し、以下の処理を行ってください。
-1. 日本語での簡潔な要約（300文字以内、Markdown形式）を作成してください。
+  const prompt = `以下のインプット情報（Webサイトの内容、X投稿のマルチモーダル画像解析結果、またはメモ書き）を解析し、以下の処理を行ってください。
+1. 画像に描かれたビルド/ルーン/戦術および本文の情報を含む高密度な日本語要約（800文字以内、Markdown形式）を作成してください。
 2. 最も適したジャンルを以下のいずれかから選択してください：
    - 'LoL攻略'
    - 'AIツール'
@@ -144,7 +216,7 @@ async function analyzeWithGemini(title: string, content: string): Promise<{
 
 {
   "title": "決定したタイトル",
-  "summary": "要約されたコンテンツ",
+  "summary": "要約されたコンテンツ（画像解析結果や戦術ポイントを含む高密度なMarkdown）",
   "genre": "選択したジャンル",
   "tags": ["タグ1", "タグ2"],
   "champion": "特定したチャンピオン名（例: Graves、無い場合は 'Unknown'）"
@@ -155,14 +227,11 @@ async function analyzeWithGemini(title: string, content: string): Promise<{
 内容:
 ${content}`;
 
-  // 呼び出しは共通クライアントに集約する。
-  // 429/5xxのリトライ、複数APIキーのローテーション、日本語出力の強制がここで効く。
   const responseText = await callGeminiWithRetry(prompt, {
     model: 'gemini-3.1-flash-lite',
     temperature: 0.3,
-    maxOutputTokens: 1024,
+    maxOutputTokens: 2048,
     responseMimeType: 'application/json',
-    // 無料枠キーがあればそちらを優先する（従来の getGeminiApiKey と同じ方針）
     apiKeyEnv: process.env.GEMINI_API_KEY_FREE ? 'GEMINI_API_KEY_FREE' : 'GEMINI_API_KEY',
   });
 
@@ -179,19 +248,17 @@ ${content}`;
 // ============================================================
 export async function POST(req: NextRequest) {
   try {
-  // ===== 管理者セッション確認 =====
-  const authResult = await verifyAdminSession(req);
-  if (!authResult.ok) {
-    return NextResponse.json({ error: authResult.error }, { status: 401 });
-  }
-  // =================================
+    const authResult = await verifyAdminSession(req);
+    if (!authResult.ok) {
+      return NextResponse.json({ error: authResult.error }, { status: 401 });
+    }
+
     const { url, text } = await req.json();
 
     if (!url && !text) {
       return NextResponse.json({ error: 'URLまたはメモテキストを入力してください。' }, { status: 400 });
     }
 
-    // 1. コンテンツの取得
     let title = '手書きメモ';
     let rawContent = '';
 
@@ -208,16 +275,14 @@ export async function POST(req: NextRequest) {
       if (text.length > 50) title += '...';
     }
 
-    // 2. Gemini でAI要約・分類
     const analyzed = await analyzeWithGemini(title, rawContent);
 
-    // 3. Supabase に保存
     const { data, error } = await supabase
       .from('personal_knowledge')
       .insert([{
         title: analyzed.title,
         content: analyzed.summary,
-        raw_content: rawContent.slice(0, 8000),
+        raw_content: rawContent.slice(0, 10000),
         source_url: url || '',
         genre: analyzed.genre,
         tags: analyzed.tags,
