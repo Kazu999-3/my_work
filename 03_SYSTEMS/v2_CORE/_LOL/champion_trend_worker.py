@@ -108,7 +108,7 @@ League of Legendsの最新パッチにおける、チャンピオン「{champion
         res_text = generate_content_safe(
             client,
             prompt,
-            model_id="gemini-2.5-flash",
+            model_id="gemini-1.5-flash",
             config=config,
             feature_name="oracle"
         )

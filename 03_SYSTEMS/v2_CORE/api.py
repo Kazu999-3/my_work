@@ -266,12 +266,12 @@ async def generate_agent_response(request: GenerateRequest, api_key: str = Depen
     
     system_prompt = ""
     user_prompt = ""
-    default_model = "gemini-2.5-flash"
+    default_model = "gemini-1.5-flash"
     fallback_model = settings.OLLAMA_MODEL
     
     if request.raw_prompt:
         system_prompt = request.system_prompt or ""
-        default_model = request.model or "gemini-2.5-flash"
+        default_model = request.model or "gemini-1.5-flash"
         if request.variables:
             try:
                 user_prompt = request.raw_prompt.format(**request.variables)
@@ -298,7 +298,7 @@ async def generate_agent_response(request: GenerateRequest, api_key: str = Depen
             
         system_prompt = prompt_data.get("system_prompt") or ""
         user_prompt_template = prompt_data.get("user_prompt_template")
-        default_model = prompt_data.get("default_model") or "gemini-2.5-flash"
+        default_model = prompt_data.get("default_model") or "gemini-1.5-flash"
         fallback_model = prompt_data.get("fallback_model")
         temperature = prompt_data.get("temperature") or 0.2
         

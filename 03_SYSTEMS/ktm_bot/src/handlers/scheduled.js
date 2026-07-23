@@ -577,7 +577,7 @@ async function sendEventUsersNotification(env, options = {}) {
     const targetEvents = scheduledEvents.filter(e => {
       const startTime = new Date(e.scheduled_start_time).getTime();
       const isWithinRange = startTime >= minStartLimit && startTime <= maxStartLimit;
-      const hasTeiki = e.name && e.name.includes("【定期】");
+      const hasTeiki = e.name && (e.name.includes("【定期】") || e.name.includes("カスタム") || e.name.includes("KTM"));
       const isActive = e.status === 1 || e.status === 2;
       return isWithinRange && hasTeiki && isActive;
     });
