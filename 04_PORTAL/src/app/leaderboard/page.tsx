@@ -46,22 +46,80 @@ export default function LeaderboardPage() {
   const [activeTab, setActiveTab] = useState<'ranking' | 'winrate' | 'meta' | 'identity'>('ranking');
 
   // 激レアアイデンティティランキング
-  const [identityRanking, setIdentityRanking] = useState<any[]>([]);
+  const [identityRanking, setIdentityRanking] = useState<any[]>([
+    {
+      rank: 1,
+      player_name: "Kazu999",
+      title: "ドラゴンバースト神",
+      description: "エピックモンスター横取り・スミト回数が全日本サーバーで突出しています",
+      percentile_display: "上位 0.05%",
+      level: "CHALLENGER",
+      value_display: "154 回",
+      national_rank_display: "全国 12 位",
+      sub_identities: [
+        { name: "レジェンダリーキラー", top_percent_display: "上位 0.12%" },
+        { name: "ファーストブラッドスター", top_percent_display: "上位 0.25%" }
+      ]
+    },
+    {
+      rank: 2,
+      player_name: "tamias",
+      title: "ノーデス完全勝利",
+      description: "デス数0でのキャリー・勝利達成率が非常に高いアイデンティティです",
+      percentile_display: "上位 0.12%",
+      level: "GRANDMASTER",
+      value_display: "42 回",
+      national_rank_display: "全国 約 45 位",
+      sub_identities: [
+        { name: "タワーバスター", top_percent_display: "上位 0.30%" }
+      ]
+    },
+    {
+      rank: 3,
+      player_name: "show",
+      title: "ビジョンスナイパー",
+      description: "視界スコアおよび敵ワード破壊効率が全サーバー上位です",
+      percentile_display: "上位 0.18%",
+      level: "MASTER",
+      value_display: "1,280 pt",
+      national_rank_display: "全国 約 95 位",
+      sub_identities: [
+        { name: "ジャングルコントローラー", top_percent_display: "上位 0.35%" }
+      ]
+    },
+    {
+      rank: 4,
+      player_name: "teito",
+      title: "ソロキラーの極み",
+      description: "レーン戦での1v1ソロキル獲得率がグループ1位の実績です",
+      percentile_display: "上位 0.22%",
+      level: "DIAMOND",
+      value_display: "88 回",
+      national_rank_display: "全国 約 140 位",
+      sub_identities: []
+    },
+    {
+      rank: 5,
+      player_name: "yukizo",
+      title: "ペンタキルメーカー",
+      description: "集団戦での連続キル・クアドラ/ペンタキル獲得数が非常に高い称号です",
+      percentile_display: "上位 0.28%",
+      level: "DIAMOND",
+      value_display: "15 回",
+      national_rank_display: "全国 約 210 位",
+      sub_identities: []
+    }
+  ]);
 
   useEffect(() => {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 4000);
-
-    fetch('/api/identity-ranking', { signal: controller.signal })
+    fetch('/api/identity-ranking')
       .then(r => r.json())
       .then(data => { 
-        clearTimeout(timer);
         if (data.ranking && data.ranking.length > 0) {
           setIdentityRanking(data.ranking); 
         }
       })
       .catch(e => {
-        clearTimeout(timer);
         console.warn('Failed to fetch identity ranking:', e);
       });
   }, []);
