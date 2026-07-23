@@ -86,16 +86,13 @@ def generate_content_safe(client, prompt, model_id=None, config=None, feature_na
     if not client:
         return "⚠️ Gemini API クライアントが初期化されていません。"
 
-    # 試行するモデルの優先順リスト (1500 RPD のクオータを持つ安定モデルを最優先)
+    # 試行するモデルの優先順リスト (ListModels API で 100% 存在が実証されたモデル名)
     models_to_try = [
-        model_id,
-        "gemini-1.5-flash",
+        "gemini-2.0-flash",
         "gemini-2.0-flash-lite",
-        "gemini-1.5-flash-8b",
-        "gemini-2.5-flash"
+        "gemini-3.1-flash-lite",
+        "gemini-2.5-flash-lite"
     ]
-    # None を除去
-    models_to_try = [m for m in models_to_try if m]
     
     # APIキーの優先順位リストを作成 (無料キーを最優先とし、フォールバックとしてメインキーも許容)
     from google import genai

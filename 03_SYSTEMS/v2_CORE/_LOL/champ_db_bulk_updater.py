@@ -205,11 +205,13 @@ def run_bulk_update():
     logging.info(f"🔄 未処理または失敗済みのチャンピオン数: {total_targets} 件 (全体: {len(queue)} 件)")
     
     if total_targets == 0:
-        logging.info("✅ すべてのチャンピオンの更新が完了しています。")
-        queue_data["status"] = "completed"
-        queue_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+        logging.info("🔄 すべて完了済みのため、全チャンピオンを未処理(pending)として再キューイングし、最新データへの一括再更新を開始します！")
+        for champ_id, info in queue.items():
+            info["status"] = "pending"
+            info["error"] = None
         save_queue(queue_data)
-        return
+        target_champs = list(queue.keys())
+        total_targets = len(target_champs)
 
     processed_count = 0
     consecutive_db_failures = 0
