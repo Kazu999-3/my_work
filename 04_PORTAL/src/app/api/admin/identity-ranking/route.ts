@@ -73,6 +73,11 @@ export async function GET(req: NextRequest) {
             if (p > 0 && p <= 0.3 && item.level !== 'NONE') {
               if (!bestChallenge || p < bestChallenge.percentile) {
                 const meta = challengeMeta[item.challengeId] || {};
+                // position (順位) が存在すればそれを使い、無ければパーセンタイル(上位%)と想定アクティブ数(約10万人)から概算順位を算出
+                const explicitRank = item.position || (item.rank ? item.rank : null);
+                const estimatedRank = Math.max(1, Math.round(p * 120000));
+                const nationalRank = explicitRank || estimatedRank;
+
                 bestChallenge = {
                   challengeId: item.challengeId,
                   name: meta.name || '激レア実績',
@@ -80,7 +85,9 @@ export async function GET(req: NextRequest) {
                   percentile: p,
                   top_percent_display: `上位 ${(p * 100).toFixed(2)}%`,
                   level: item.level,
-                  value: item.value
+                  value: item.value,
+                  national_rank: nationalRank,
+                  national_rank_display: explicitRank ? `全国 ${explicitRank} 位` : `全国 約 ${nationalRank} 位`
                 };
               }
             }
@@ -110,7 +117,11 @@ export async function GET(req: NextRequest) {
       description: item.identity.description,
       percentile_display: item.identity.top_percent_display,
       level: item.identity.level,
-      raw_percentile: item.identity.percentile
+      raw_percentile: item.identity.percentile,
+      value: item.identity.value,
+      value_display: typeof item.identity.value === 'number' ? item.identity.value.toLocaleString('ja-JP') : item.identity.value,
+      national_rank: item.identity.national_rank,
+      national_rank_display: item.identity.national_rank_display
     }));
 
     return NextResponse.json({

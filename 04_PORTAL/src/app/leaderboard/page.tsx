@@ -43,7 +43,7 @@ export default function LeaderboardPage() {
     TOP: [], JG: [], MID: [], ADC: [], SUP: []
   });
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'ranking' | 'winrate' | 'meta'>('ranking');
+  const [activeTab, setActiveTab] = useState<'ranking' | 'winrate' | 'meta' | 'identity'>('ranking');
 
   // 激レアアイデンティティランキング
   const [identityRanking, setIdentityRanking] = useState<any[]>([]);
@@ -267,60 +267,120 @@ export default function LeaderboardPage() {
               レーン別勝率
             </button>
             <button
-              onClick={() => setActiveTab('meta')}
+              onClick={() => setActiveTab('identity')}
               className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold transition-all ${
-                activeTab === 'meta'
-                  ? 'bg-amber-600 text-white shadow-lg'
+                activeTab === 'identity'
+                  ? 'bg-purple-600 text-white shadow-lg'
                   : 'text-gray-400 hover:text-white hover:bg-gray-800'
               }`}
             >
-              🏆 メタ統計
+              <Award size={16} />
+              🎖️ 激レア称号
             </button>
           </div>
         </div>
 
-        {/* 🏆 グループ内・激レアアイデンティティ 1位紹介ウィジェット */}
-        <div className="max-w-4xl mx-auto mb-8 p-6 rounded-2xl border border-amber-500/30 bg-gradient-to-br from-amber-500/10 via-gray-900 to-cyan-500/10 shadow-2xl relative overflow-hidden">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-bold text-amber-400 flex items-center gap-2">
-              <Award size={22} className="text-amber-400 animate-pulse" />
-              🏆 グループ内・激レアアイデンティティ 1位
-            </h3>
-            <span className="text-xs px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 font-bold">
-              Riot Challengers API 連動
-            </span>
-          </div>
-
-          {identityRanking && identityRanking.length > 0 ? (
-            <div className="flex flex-col md:flex-row items-center gap-6 p-5 rounded-xl bg-black/60 border border-amber-500/20">
-              <div className="flex flex-col items-center justify-center p-4 bg-amber-500/15 rounded-xl border border-amber-500/40 text-center min-w-[150px]">
-                <span className="text-4xl mb-1">🥇</span>
-                <span className="text-lg font-black text-amber-300">{identityRanking[0].player_name}</span>
-                <span className="text-xs text-amber-400 font-bold mt-1 px-2 py-0.5 rounded bg-amber-500/20">{identityRanking[0].percentile_display}</span>
-              </div>
-              <div className="flex-1 space-y-2 text-left">
-                <div className="flex items-center gap-2.5 flex-wrap">
-                  <span className="text-xl font-extrabold text-white tracking-wide">{identityRanking[0].title}</span>
-                  <span className="text-xs px-2.5 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30 font-black">
-                    {identityRanking[0].level}
-                  </span>
-                </div>
-                <p className="text-sm text-gray-300 leading-relaxed font-medium">
-                  {identityRanking[0].description}
+        {activeTab === 'identity' ? (
+          /* 🏆 激レア称号 (アイデンティティ) ランキングタブ */
+          <div className="max-w-4xl mx-auto space-y-6">
+            <div className="flex items-center justify-between flex-wrap gap-3 mb-2">
+              <div>
+                <h2 className="text-xl font-black text-amber-400 flex items-center gap-2">
+                  <Award size={24} className="text-amber-400" /> メンバー別・激レアアイデンティティ ランキング
+                </h2>
+                <p className="text-xs text-gray-400 mt-1">
+                  Riot Games 公式 Challengers API から、全日本サーバーにおけるパーセンタイル（上位%）が最も高い激レア称号・実績を順位付けしています。
                 </p>
-                <div className="text-xs text-gray-400 font-mono">
-                  全サーバー上位 {identityRanking[0].percentile_display} に相当する超激レアな実績・アイデンティティを保持しています！
-                </div>
               </div>
+              <span className="text-xs px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 font-bold">
+                Riot API リアルタイム連動
+              </span>
             </div>
-          ) : (
-            <div className="text-center py-6 text-sm text-gray-400 font-bold">
-              激レアアイデンティティを解析中... (Riot APIからメンバーの全チャレンジデータをフェッチ中)
-            </div>
-          )}
-        </div>
 
-        {activeTab === 'meta' ? (
+            {identityRanking && identityRanking.length > 0 ? (
+              <div className="space-y-4">
+                {identityRanking.map((item: any, idx: number) => {
+                  const rank = idx + 1;
+                  const isGold = rank === 1;
+                  const isSilver = rank === 2;
+                  const isBronze = rank === 3;
+
+                  return (
+                    <div
+                      key={idx}
+                      className={`p-5 rounded-2xl border transition-all flex flex-col md:flex-row items-center gap-6 ${
+                        isGold
+                          ? 'bg-gradient-to-r from-amber-500/20 via-black/80 to-amber-950/30 border-amber-500/50 shadow-[0_0_30px_rgba(245,158,11,0.2)] scale-[1.02]'
+                          : isSilver
+                          ? 'bg-gradient-to-r from-slate-400/15 via-black/80 to-slate-900/30 border-slate-400/40 shadow-lg'
+                          : isBronze
+                          ? 'bg-gradient-to-r from-amber-700/15 via-black/80 to-amber-950/20 border-amber-700/40 shadow-md'
+                          : 'bg-gray-900/90 border-gray-800 hover:border-gray-700'
+                      }`}
+                    >
+                      {/* 順位バッジ ＆ プレイヤー名 */}
+                      <div className="flex flex-col items-center justify-center p-3 rounded-xl min-w-[130px] text-center bg-black/40 border border-white/5">
+                        <span className="text-3xl font-black mb-0.5">
+                          {isGold ? '🥇 1位' : isSilver ? '🥈 2位' : isBronze ? '🥉 3位' : `${rank}位`}
+                        </span>
+                        <span className={`text-base font-extrabold ${isGold ? 'text-amber-300' : isSilver ? 'text-slate-200' : isBronze ? 'text-amber-600' : 'text-white'}`}>
+                          {item.player_name}
+                        </span>
+                        <span className="text-[10px] font-bold text-amber-400/90 mt-1 px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/20">
+                          {item.percentile_display}
+                        </span>
+                      </div>
+
+                      {/* 称号＆詳細説明 */}
+                      <div className="flex-1 space-y-2 text-left">
+                        <div className="flex items-center gap-2.5 flex-wrap">
+                          <span className="text-xl font-black text-white tracking-wide">{item.title}</span>
+                          <span className={`text-[10px] px-2.5 py-0.5 rounded font-black border ${
+                            item.level === 'CHALLENGER' ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' :
+                            item.level === 'GRANDMASTER' ? 'bg-rose-500/20 text-rose-300 border-rose-500/40' :
+                            item.level === 'MASTER' ? 'bg-purple-500/20 text-purple-300 border-purple-500/40' :
+                            'bg-cyan-500/20 text-cyan-300 border-cyan-500/40'
+                          }`}>
+                            {item.level}
+                          </span>
+
+                          {/* 🎖️ 全国順位バッジ */}
+                          {item.national_rank_display && (
+                            <span className="text-xs px-3 py-0.5 rounded-full bg-gradient-to-r from-red-500/20 to-amber-500/20 text-amber-300 border border-amber-500/40 font-black flex items-center gap-1 shadow-sm">
+                              🎯 {item.national_rank_display}
+                            </span>
+                          )}
+
+                          {/* 📊 達成数値/スコアバッジ */}
+                          {item.value_display !== undefined && item.value_display !== null && (
+                            <span className="text-xs px-2.5 py-0.5 rounded-full bg-cyan-500/10 text-cyan-300 border border-cyan-500/30 font-bold">
+                              記録: {item.value_display}
+                            </span>
+                          )}
+                        </div>
+
+                        <p className="text-xs text-gray-300 leading-relaxed font-medium">
+                          {item.description}
+                        </p>
+
+                        <div className="flex items-center gap-3 text-[11px] text-gray-400 font-mono pt-0.5">
+                          <span>全日本サーバー上位 <strong className="text-amber-400 font-extrabold">{item.percentile_display}</strong></span>
+                          {item.national_rank_display && (
+                            <span className="text-gray-500">| {item.national_rank_display}</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="bg-gray-900 border border-gray-800 rounded-2xl p-12 text-center text-gray-400">
+                <Spinner label="激レアアイデンティティを取得中..." />
+              </div>
+            )}
+          </div>
+        ) : activeTab === 'meta' ? (
           /* KTM内メタ統計(#80) */
           <div className="max-w-4xl mx-auto">
             <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
