@@ -36,7 +36,7 @@ function getRankBadge(mmr: number) {
 }
 
 import WinrateMatrixPanel from './WinrateMatrixPanel';
-import { Trophy, Activity, Info, RefreshCw } from 'lucide-react';
+import { Trophy, Activity, Info, RefreshCw, Award } from 'lucide-react';
 
 export default function LeaderboardPage() {
   const [data, setData] = useState<LeaderboardData>({
@@ -44,6 +44,16 @@ export default function LeaderboardPage() {
   });
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'ranking' | 'winrate' | 'meta'>('ranking');
+
+  // 激レアアイデンティティランキング
+  const [identityRanking, setIdentityRanking] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetch('/api/admin/identity-ranking')
+      .then(r => r.json())
+      .then(data => { if (data.ranking) setIdentityRanking(data.ranking); })
+      .catch(e => console.warn('Failed to fetch identity ranking:', e));
+  }, []);
 
   // KTM内メタ統計(#80): チャンピオン別のピック数・勝率・平均KDA
   const [metaData, setMetaData] = useState<any[] | null>(null);
@@ -267,6 +277,47 @@ export default function LeaderboardPage() {
               🏆 メタ統計
             </button>
           </div>
+        </div>
+
+        {/* 🏆 グループ内・激レアアイデンティティ 1位紹介ウィジェット */}
+        <div className="max-w-4xl mx-auto mb-8 p-6 rounded-2xl border border-amber-500/30 bg-gradient-to-br from-amber-500/10 via-gray-900 to-cyan-500/10 shadow-2xl relative overflow-hidden">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-bold text-amber-400 flex items-center gap-2">
+              <Award size={22} className="text-amber-400 animate-pulse" />
+              🏆 グループ内・激レアアイデンティティ 1位
+            </h3>
+            <span className="text-xs px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 font-bold">
+              Riot Challengers API 連動
+            </span>
+          </div>
+
+          {identityRanking && identityRanking.length > 0 ? (
+            <div className="flex flex-col md:flex-row items-center gap-6 p-5 rounded-xl bg-black/60 border border-amber-500/20">
+              <div className="flex flex-col items-center justify-center p-4 bg-amber-500/15 rounded-xl border border-amber-500/40 text-center min-w-[150px]">
+                <span className="text-4xl mb-1">🥇</span>
+                <span className="text-lg font-black text-amber-300">{identityRanking[0].player_name}</span>
+                <span className="text-xs text-amber-400 font-bold mt-1 px-2 py-0.5 rounded bg-amber-500/20">{identityRanking[0].percentile_display}</span>
+              </div>
+              <div className="flex-1 space-y-2 text-left">
+                <div className="flex items-center gap-2.5 flex-wrap">
+                  <span className="text-xl font-extrabold text-white tracking-wide">{identityRanking[0].title}</span>
+                  <span className="text-xs px-2.5 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30 font-black">
+                    {identityRanking[0].level}
+                  </span>
+                </div>
+                <p className="text-sm text-gray-300 leading-relaxed font-medium">
+                  {identityRanking[0].description}
+                </p>
+                <div className="text-xs text-gray-400 font-mono">
+                  全サーバー上位 {identityRanking[0].percentile_display} に相当する超激レアな実績・アイデンティティを保持しています！
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-6 text-sm text-gray-400 font-bold">
+              激レアアイデンティティを解析中... (Riot APIからメンバーの全チャレンジデータをフェッチ中)
+            </div>
+          )}
         </div>
 
         {activeTab === 'meta' ? (
