@@ -7,34 +7,13 @@ export async function GET(req: NextRequest) {
   try {
     const apiKey = process.env.RIOT_API_KEY;
     
-    // Supabaseの全プレイヤー情報を取得
+    // Supabaseの全KTMプレイヤー情報を取得
     const { data: players, error } = await supabase
-      .from('players')
-      .select('id, name, riot_id, discord_id, puuid')
-      .not('puuid', 'is', null);
+      .from('ktm_players')
+      .select('id, name, discord_id, puuid, riot_id, opgg_url');
 
     if (error || !players || players.length === 0) {
-      // フォールバック用サンプルデータ
-      return NextResponse.json({
-        ranking: [
-          {
-            rank: 1,
-            player_name: "Kazu999",
-            title: "ドラゴンバースト神",
-            description: "エピックモンスター横取り回数が日本上位 0.05%",
-            percentile_display: "上位 0.05%",
-            level: "CHALLENGER"
-          },
-          {
-            rank: 2,
-            player_name: "MemberB",
-            title: "ノーデス完全勝利",
-            description: "デス数0での勝利達成率が上位 0.12%",
-            percentile_display: "上位 0.12%",
-            level: "GRANDMASTER"
-          }
-        ]
-      });
+      return NextResponse.json({ ranking: [] });
     }
 
     // 各プレイヤーの Riot Challenges API データを並列取得
@@ -57,9 +36,32 @@ export async function GET(req: NextRequest) {
 
     await Promise.all(
       players.map(async (player: any) => {
-        if (!player.puuid || !apiKey) return;
+        if (!apiKey) return;
+        let puuid = player.puuid;
+
+        // PUUIDが未設定の場合は riot_id または name から自動取得を試みる
+        if (!puuid) {
+          const rawId = player.riot_id || player.name || '';
+          if (rawId.includes('#')) {
+            const [gName, tLine] = rawId.split('#');
+            try {
+              const accRes = await fetch(`https://asia.api.riotgames.com/riot/account/v1/accounts/by-riot-id/${encodeURIComponent(gName)}/${encodeURIComponent(tLine)}`, {
+                headers: { 'X-Riot-Token': apiKey }
+              });
+              if (accRes.ok) {
+                const accData = await accRes.json();
+                puuid = accData.puuid;
+              }
+            } catch (e) {
+              // ignore
+            }
+          }
+        }
+
+        if (!puuid) return;
+
         try {
-          const res = await fetch(`https://jp1.api.riotgames.com/lol/challenge/v1/player-data/${player.puuid}`, {
+          const res = await fetch(`https://jp1.api.riotgames.com/lol/challenge/v1/player-data/${puuid}`, {
             headers: { 'X-Riot-Token': apiKey },
             next: { revalidate: 3600 }
           });
