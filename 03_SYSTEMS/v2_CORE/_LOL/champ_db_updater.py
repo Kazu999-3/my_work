@@ -1,6 +1,8 @@
 import os
 import json
 import logging
+import time
+from datetime import datetime, timezone
 from pathlib import Path
 import requests
 from google import genai
@@ -197,12 +199,14 @@ def update_champion_db(champ_id: str, champ_name: str, new_text: str, patch_vers
     }
 
     # Upsertデータ構築
+    now_iso = datetime.now(timezone.utc).isoformat()
     upsert_data = {
         "matchup_id": f"champ_{champ_id}_global",
         "champion": champ_id,
         "enemy": "GLOBAL",
         "title": f"{champ_name} 基本戦略・トレンド",
         "strategy": merged_json.get("strategy", ""),
+        "updated_at": now_iso,
         "raw_data": {
             "source": "champ_db",
             "role": "GLOBAL",

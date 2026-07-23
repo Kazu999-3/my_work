@@ -158,8 +158,8 @@ function ChampionsContent() {
           searchKey: `${c.id.toLowerCase()} ${c.name}`
         }));
         return Promise.all([
-          // 一覧では大きい strategy 全文は不要。必要なメタ情報だけ取得（エグレス削減 #53）
-          supabase.from('matchup_sentinel').select('champion, created_at, patch_meta:raw_data->patch_meta, jg_style:raw_data->jg_style, is_favorited:raw_data->is_favorited').eq('enemy', 'GLOBAL'),
+          // 一覧では大きい strategy 全文は不要。必要なメタ情報と最新更新日時を取得
+          supabase.from('matchup_sentinel').select('champion, created_at, updated_at, patch_meta:raw_data->patch_meta, jg_style:raw_data->jg_style, is_favorited:raw_data->is_favorited').eq('enemy', 'GLOBAL'),
           // 一覧グリッド用に全チャンピオン分のパワースパイクを一括取得（詳細表示と同じchampion_power_spikesテーブル）
           supabase.from('champion_power_spikes').select('champion, early_game_score, mid_game_score, late_game_score'),
           // strategy全文を転送せず「中身があるchampion名」だけを取得し pending 判定に使う（従来の !strategy と同義）
@@ -175,9 +175,15 @@ function ChampionsContent() {
         const dbFavorites: string[] = [];
         if (data) {
           data.forEach((row: any) => {
-            dates[row.champion] = row.created_at;
-            pending[row.champion] = !hasContent.has(row.champion); // 中身があれば未pending（従来の !strategy と同じ挙動）
-            metas[row.champion] = row.patch_meta || null;
+            const rawUpdatedAt = row.updated_at || row.created_at;
+            dates[row.champion] = rawUpdatedAt;
+            pending[row.champion] = !hasContent.has(row.champion);
+            
+            let patchMetaObj = row.patch_meta ? { ...row.patch_meta } : {};
+            if (!patchMetaObj.updated_at && rawUpdatedAt) {
+              patchMetaObj.updated_at = Math.floor(new Date(rawUpdatedAt).getTime() / 1000);
+            }
+            metas[row.champion] = patchMetaObj;
 
             // jg_styleが文字列だった場合でも安全にパースする
             let parsedJgStyle = null;
@@ -850,9 +856,13 @@ function ChampionsContent() {
                   <span className="px-3 py-1 bg-white/5 border border-white/10 text-white rounded-lg font-bold text-xs">
                     ピック {dataFields.patch_meta.pick_rate ? `${dataFields.patch_meta.pick_rate}%` : '-'}
                   </span>
-                  {dataFields.patch_meta.updated_at && (
+                  {(dataFields.patch_meta?.updated_at || dataFields.updated_at || dataFields.created_at) && (
                     <span className="px-3 py-1 bg-white/5 border border-white/10 text-gray-400 rounded-lg font-bold text-xs ml-auto">
-                      最終更新: {new Date(dataFields.patch_meta.updated_at * 1000).toLocaleString('ja-JP', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                      最終更新: {(() => {
+                        const val = dataFields.patch_meta?.updated_at || dataFields.updated_at || dataFields.created_at;
+                        const d = typeof val === 'number' ? new Date(val * 1000) : new Date(val);
+                        return isNaN(d.getTime()) ? '本日' : d.toLocaleString('ja-JP', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+                      })()}
                     </span>
                   )}
                 </div>
