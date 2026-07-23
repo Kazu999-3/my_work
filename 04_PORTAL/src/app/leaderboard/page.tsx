@@ -49,7 +49,7 @@ export default function LeaderboardPage() {
   const [identityRanking, setIdentityRanking] = useState<any[]>([]);
 
   useEffect(() => {
-    fetch('/api/admin/identity-ranking')
+    fetch('/api/identity-ranking')
       .then(r => r.json())
       .then(data => { if (data.ranking) setIdentityRanking(data.ranking); })
       .catch(e => console.warn('Failed to fetch identity ranking:', e));
