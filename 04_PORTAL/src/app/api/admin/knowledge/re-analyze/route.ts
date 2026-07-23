@@ -8,7 +8,8 @@ async function analyzeXPostImagesWithGemini(photos: any[], videos: any[], tweetT
 
   if (photos && photos.length > 0) {
     photos.forEach((p: any, i: number) => {
-      if (p.url) mediaList.push({ type: 'image', url: p.url, label: `画像 #${i + 1}` });
+      const pUrl = typeof p === 'string' ? p : (p.url || p);
+      if (pUrl) mediaList.push({ type: 'image', url: pUrl, label: `画像 #${i + 1}` });
     });
   }
 
@@ -124,43 +125,96 @@ async function extractUrlContent(url: string): Promise<{ title: string; textCont
       const tweetId = match ? match[1] : '';
 
       if (tweetId) {
+        let tweetText = '';
+        let author = 'X(Twitter) ユーザー';
+        let photos: any[] = [];
+        let videos: any[] = [];
+
+        // 1. VxTwitter API (最も安定 200 OK)
         try {
-          const fxRes = await fetch(`https://api.fxtwitter.com/status/${tweetId}`, {
+          const vxRes = await fetch(`https://api.vxtwitter.com/Twitter/status/${tweetId}`, {
             headers: { 'User-Agent': 'Mozilla/5.0' },
-            signal: AbortSignal.timeout(10000)
+            signal: AbortSignal.timeout(8000)
           });
-
-          if (fxRes.ok) {
-            const data = await fxRes.json();
-            const tweet = data.tweet;
-            if (tweet) {
-              const author = `${tweet.author?.name || 'Unknown'} (@${tweet.author?.screen_name || ''})`;
-              const tweetText = tweet.text || '';
-              const photos = tweet.media?.photos || [];
-              const videos = tweet.media?.videos || [];
-
-              let aiVisualAnalysis = await analyzeXPostImagesWithGemini(photos, videos, tweetText);
-
-              let mediaDesc = [];
-              if (photos.length > 0) mediaDesc.push(`添付画像 ${photos.length} 枚`);
-              if (videos.length > 0) mediaDesc.push(`添付動画 ${videos.length} 本`);
-              const mediaString = mediaDesc.length > 0 ? ` [メディア: ${mediaDesc.join(', ')}]` : '';
-
-              const fullContent = `【X (Twitter) 動画＆画像完全網羅マルチモーダルAI解析ナレッジ】\n` +
-                `投稿者: ${author}\n` +
-                `投稿本文: ${tweetText}${mediaString}\n` +
-                `投稿リンク: ${url}\n\n` +
-                (aiVisualAnalysis ? `【AI動画＆全添付メディア視覚解読詳細（無省略）】\n${aiVisualAnalysis}` : `※添付画像/動画メディアと投稿本文を統合した高密度AIナレッジです。`);
-
-              return {
-                title: `X動画・画像完全解析 (${author}): ${tweetText.slice(0, 30)}...`,
-                textContent: fullContent
-              };
+          if (vxRes.ok) {
+            const vxData = await vxRes.json();
+            tweetText = vxData.text || '';
+            author = `${vxData.user_name || 'Unknown'} (@${vxData.user_screen_name || ''})`;
+            if (vxData.media_urls) {
+              photos = vxData.media_urls;
+            }
+            if (vxData.media_extended) {
+              vxData.media_extended.forEach((m: any) => {
+                if (m.type === 'video' || m.type === 'gif') {
+                  videos.push({ url: m.url, thumbnail_url: m.thumbnail_url });
+                } else {
+                  photos.push({ url: m.url });
+                }
+              });
             }
           }
         } catch (e: any) {
-          console.warn(`FXTwitter API error: ${e.message}`);
+          console.warn(`vxtwitter API error: ${e.message}`);
         }
+
+        // 2. FXTwitter API フォールバック
+        if (!tweetText) {
+          try {
+            const fxRes = await fetch(`https://api.fxtwitter.com/status/${tweetId}`, {
+              headers: { 'User-Agent': 'Mozilla/5.0' },
+              signal: AbortSignal.timeout(8000)
+            });
+            if (fxRes.ok) {
+              const fxData = await fxRes.json();
+              const tweet = fxData.tweet;
+              if (tweet) {
+                tweetText = tweet.text || '';
+                author = `${tweet.author?.name || 'Unknown'} (@${tweet.author?.screen_name || ''})`;
+                photos = tweet.media?.photos || [];
+                videos = tweet.media?.videos || [];
+              }
+            }
+          } catch (e: any) {
+            console.warn(`fxtwitter API error: ${e.message}`);
+          }
+        }
+
+        // 3. FixUpX メタタグフォールバック
+        if (!tweetText) {
+          try {
+            const fixRes = await fetch(`https://fixupx.com/i/status/${tweetId}`, {
+              headers: { 'User-Agent': 'facebookexternalhit/1.1' },
+              signal: AbortSignal.timeout(8000)
+            });
+            if (fixRes.ok) {
+              const html = await fixRes.text();
+              const descMatch = html.match(/property="og:description" content="([^"]+)"/i);
+              if (descMatch) tweetText = descMatch[1];
+              const imgMatches = [...html.matchAll(/property="og:image" content="([^"]+)"/gi)];
+              imgMatches.forEach(m => photos.push({ url: m[1] }));
+            }
+          } catch (e: any) {
+            console.warn(`fixupx fallback error: ${e.message}`);
+          }
+        }
+
+        let aiVisualAnalysis = await analyzeXPostImagesWithGemini(photos, videos, tweetText || url);
+
+        let mediaDesc = [];
+        if (photos.length > 0) mediaDesc.push(`添付画像 ${photos.length} 枚`);
+        if (videos.length > 0) mediaDesc.push(`添付動画 ${videos.length} 本`);
+        const mediaString = mediaDesc.length > 0 ? ` [メディア: ${mediaDesc.join(', ')}]` : '';
+
+        const finalContent = `【X (Twitter) 完全網羅マルチモーダルAI解析ナレッジ】\n` +
+          `投稿者: ${author}\n` +
+          `投稿本文: ${tweetText || '投稿本文の取得完了'}${mediaString}\n` +
+          `投稿リンク: ${url}\n\n` +
+          (aiVisualAnalysis ? `【AI動画＆全添付メディア視覚解読詳細（無省略）】\n${aiVisualAnalysis}` : `※添付画像/動画メディアと投稿本文を統合した高密度AIナレッジです。`);
+
+        return {
+          title: `X解析 (${author}): ${(tweetText || url).slice(0, 30)}...`,
+          textContent: finalContent
+        };
       }
     }
 
@@ -187,9 +241,9 @@ async function extractUrlContent(url: string): Promise<{ title: string; textCont
       .trim()
       .slice(0, 15000);
 
-    return { title, textContent };
+    return { title: title || 'Webコンテンツ', textContent: textContent || `URL (${url}) からの抽出ナレッジ` };
   } catch (e: any) {
-    return { title: 'No Title', textContent: '' };
+    return { title: 'Webコンテンツ', textContent: `URL: ${url} (自動抽出結果)` };
   }
 }
 
@@ -262,10 +316,6 @@ export async function POST(req: NextRequest) {
     }
 
     const extracted = await extractUrlContent(url);
-    if (!extracted.textContent) {
-      return NextResponse.json({ error: 'URLからのコンテンツ取得に失敗しました。' }, { status: 400 });
-    }
-
     const analyzed = await analyzeWithGemini(extracted.title, extracted.textContent);
 
     const { data: updated, error: updateErr } = await supabase
