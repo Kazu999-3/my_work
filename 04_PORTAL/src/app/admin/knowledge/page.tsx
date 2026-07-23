@@ -445,13 +445,13 @@ function KnowledgeBaseContent() {
                   <div className="space-y-1">
                     <input
                       type="url"
-                      placeholder="https://example.com/article  または  YouTube動画URL..."
+                      placeholder="https://x.com/username/status/12345... または Web記事 / YouTube URL..."
                       value={inputUrl}
                       onChange={(e) => setInputUrl(e.target.value)}
-                      className="w-full px-4 py-3 bg-[#07080e] border border-gray-800 rounded-xl focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500 text-xs text-gray-200 placeholder-gray-600"
+                      className="w-full px-4 py-3 bg-[#07080e] border border-gray-800 rounded-xl focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500 text-xs text-gray-200 placeholder-gray-600 font-mono"
                     />
-                    <p className="text-[10px] text-gray-500 pl-1">
-                      ※ YouTubeリンクを入力すると自動的に動画解析キューに追加されます
+                    <p className="text-[10px] text-gray-400 pl-1 flex items-center gap-1.5 pt-0.5">
+                      <span className="text-pink-400 font-bold">✨ X(Twitter)投稿対応:</span> 画像・動画・添付メディアをAIがマルチモーダル視覚解析して要約保存します。（※ YouTubeは動画キューへ送信）
                     </p>
                   </div>
                 ) : (

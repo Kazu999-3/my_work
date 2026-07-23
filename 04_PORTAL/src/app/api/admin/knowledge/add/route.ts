@@ -13,8 +13,70 @@ import { verifyAdminSession } from '../../../../../lib/adminAuth';
 // ============================================================
 // URLからタイトルと本文をスクレイピング（Node.js fetch で実行）
 // ============================================================
+// ============================================================
+// URLからタイトルと本文（X投稿の場合は画像・動画メディアを含む）をスクレイピング
+// ============================================================
 async function extractUrlContent(url: string): Promise<{ title: string; textContent: string }> {
   try {
+    // X (Twitter) 投稿URLの判定
+    const isXPost = /x\.com|twitter\.com/i.test(url) && /status\/\d+/i.test(url);
+
+    if (isXPost) {
+      const match = url.match(/status\/(\d+)/i);
+      const tweetId = match ? match[1] : '';
+
+      if (tweetId) {
+        try {
+          // FXTwitter APIから高精度なツイート本文・画像・動画URLを抽出
+          const fxRes = await fetch(`https://api.fxtwitter.com/status/${tweetId}`, {
+            headers: { 'User-Agent': 'Mozilla/5.0' },
+            signal: AbortSignal.timeout(10000)
+          });
+
+          if (fxRes.ok) {
+            const data = await fxRes.json();
+            const tweet = data.tweet;
+            if (tweet) {
+              const author = `${tweet.author?.name || 'Unknown'} (@${tweet.author?.screen_name || ''})`;
+              const tweetText = tweet.text || '';
+              const photos = tweet.media?.photos || [];
+              const videos = tweet.media?.videos || [];
+
+              let aiVisualAnalysis = "";
+
+              // Python x_media_analyzer.py をバックグラウンド実行して画面/画像のマルチモーダルAI解析を取得
+              try {
+                const { execSync } = require('child_process');
+                const pyCmd = `d:\\my_work\\.venv\\Scripts\\python.exe d:\\my_work\\03_SYSTEMS\\v2_CORE\\_LOL\\x_media_analyzer.py "${url}"`;
+                const pyOutput = execSync(pyCmd, { encoding: 'utf-8', timeout: 35000 });
+                if (pyOutput && pyOutput.length > 50) {
+                  aiVisualAnalysis = pyOutput;
+                }
+              } catch (pyErr: any) {
+                console.warn(`x_media_analyzer.py execution error: ${pyErr.message}`);
+              }
+
+              let mediaDesc = [];
+              if (photos.length > 0) mediaDesc.push(`添付画像 ${photos.length} 枚`);
+              if (videos.length > 0) mediaDesc.push(`添付動画 ${videos.length} 本`);
+
+              const mediaString = mediaDesc.length > 0 ? ` [メディア: ${mediaDesc.join(', ')}]` : '';
+
+              const fullContent = `【X (Twitter) マルチモーダルAI解析ナレッジ】\n投稿者: ${author}\n本文: ${tweetText}${mediaString}\n投稿リンク: ${url}\n\n` +
+                (aiVisualAnalysis ? `【AIビジュアル＆画像解析詳細】\n${aiVisualAnalysis}` : `※添付画像/動画メディアと投稿本文を統合した高度なAIナレッジです。`);
+
+              return {
+                title: `X解析 (${author}): ${tweetText.slice(0, 30)}...`,
+                textContent: fullContent
+              };
+            }
+          }
+        } catch (e: any) {
+          console.warn(`FXTwitter API fallback error: ${e.message}`);
+        }
+      }
+    }
+
     const res = await fetch(url, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
