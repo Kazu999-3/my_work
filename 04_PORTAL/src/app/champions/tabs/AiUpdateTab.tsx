@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { supabase } from '../../../lib/supabaseClient';
-import { Sparkles, RefreshCw, Activity, Award } from 'lucide-react';
+import { Sparkles, RefreshCw, Activity } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export default function AiUpdateTab() {
@@ -12,15 +12,8 @@ export default function AiUpdateTab() {
 
   // パイプラインステータス（自動化ジョブの鮮度監視）
   const [pipelineStatus, setPipelineStatus] = useState<any[]>([]);
-  // 激レアアイデンティティランキング
-  const [identityRanking, setIdentityRanking] = useState<any[]>([]);
 
   useEffect(() => {
-    // 激レアアイデンティティのフェッチ
-    fetch('/api/admin/identity-ranking')
-      .then(r => r.json())
-      .then(data => { if (data.ranking) setIdentityRanking(data.ranking); })
-      .catch(e => console.warn('Failed to fetch identity ranking:', e));
     let fetchedChampions: any[] = [];
     fetch('https://ddragon.leagueoflegends.com/api/versions.json')
       .then(r => r.json())

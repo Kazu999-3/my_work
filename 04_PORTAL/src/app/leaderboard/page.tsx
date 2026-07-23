@@ -36,93 +36,14 @@ function getRankBadge(mmr: number) {
 }
 
 import WinrateMatrixPanel from './WinrateMatrixPanel';
-import { Trophy, Activity, Info, RefreshCw, Award } from 'lucide-react';
+import { Trophy, Activity, Info, RefreshCw } from 'lucide-react';
 
 export default function LeaderboardPage() {
   const [data, setData] = useState<LeaderboardData>({
     TOP: [], JG: [], MID: [], ADC: [], SUP: []
   });
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'ranking' | 'winrate' | 'meta' | 'identity'>('ranking');
-
-  // 激レアアイデンティティランキング
-  const [identityRanking, setIdentityRanking] = useState<any[]>([
-    {
-      rank: 1,
-      player_name: "Kazu999",
-      title: "ドラゴンバースト神",
-      description: "エピックモンスター横取り・スミト回数が全日本サーバーで突出しています",
-      percentile_display: "上位 0.05%",
-      level: "CHALLENGER",
-      value_display: "154 回",
-      national_rank_display: "全国 12 位",
-      sub_identities: [
-        { name: "レジェンダリーキラー", top_percent_display: "上位 0.12%" },
-        { name: "ファーストブラッドスター", top_percent_display: "上位 0.25%" }
-      ]
-    },
-    {
-      rank: 2,
-      player_name: "tamias",
-      title: "ノーデス完全勝利",
-      description: "デス数0でのキャリー・勝利達成率が非常に高いアイデンティティです",
-      percentile_display: "上位 0.12%",
-      level: "GRANDMASTER",
-      value_display: "42 回",
-      national_rank_display: "全国 約 45 位",
-      sub_identities: [
-        { name: "タワーバスター", top_percent_display: "上位 0.30%" }
-      ]
-    },
-    {
-      rank: 3,
-      player_name: "show",
-      title: "ビジョンスナイパー",
-      description: "視界スコアおよび敵ワード破壊効率が全サーバー上位です",
-      percentile_display: "上位 0.18%",
-      level: "MASTER",
-      value_display: "1,280 pt",
-      national_rank_display: "全国 約 95 位",
-      sub_identities: [
-        { name: "ジャングルコントローラー", top_percent_display: "上位 0.35%" }
-      ]
-    },
-    {
-      rank: 4,
-      player_name: "teito",
-      title: "ソロキラーの極み",
-      description: "レーン戦での1v1ソロキル獲得率がグループ1位の実績です",
-      percentile_display: "上位 0.22%",
-      level: "DIAMOND",
-      value_display: "88 回",
-      national_rank_display: "全国 約 140 位",
-      sub_identities: []
-    },
-    {
-      rank: 5,
-      player_name: "yukizo",
-      title: "ペンタキルメーカー",
-      description: "集団戦での連続キル・クアドラ/ペンタキル獲得数が非常に高い称号です",
-      percentile_display: "上位 0.28%",
-      level: "DIAMOND",
-      value_display: "15 回",
-      national_rank_display: "全国 約 210 位",
-      sub_identities: []
-    }
-  ]);
-
-  useEffect(() => {
-    fetch('/api/identity-ranking')
-      .then(r => r.json())
-      .then(data => { 
-        if (data.ranking && data.ranking.length > 0) {
-          setIdentityRanking(data.ranking); 
-        }
-      })
-      .catch(e => {
-        console.warn('Failed to fetch identity ranking:', e);
-      });
-  }, []);
+  const [activeTab, setActiveTab] = useState<'ranking' | 'winrate' | 'meta'>('ranking');
 
   // KTM内メタ統計(#80): チャンピオン別のピック数・勝率・平均KDA
   const [metaData, setMetaData] = useState<any[] | null>(null);
@@ -336,139 +257,19 @@ export default function LeaderboardPage() {
               レーン別勝率
             </button>
             <button
-              onClick={() => setActiveTab('identity')}
+              onClick={() => setActiveTab('meta')}
               className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold transition-all ${
-                activeTab === 'identity'
-                  ? 'bg-purple-600 text-white shadow-lg'
+                activeTab === 'meta'
+                  ? 'bg-amber-600 text-white shadow-lg'
                   : 'text-gray-400 hover:text-white hover:bg-gray-800'
               }`}
             >
-              <Award size={16} />
-              🎖️ 激レア称号
+              🏆 メタ統計
             </button>
           </div>
         </div>
 
-        {activeTab === 'identity' ? (
-          /* 🏆 激レア称号 (アイデンティティ) ランキングタブ */
-          <div className="max-w-4xl mx-auto space-y-6">
-            <div className="flex items-center justify-between flex-wrap gap-3 mb-2">
-              <div>
-                <h2 className="text-xl font-black text-amber-400 flex items-center gap-2">
-                  <Award size={24} className="text-amber-400" /> メンバー別・激レアアイデンティティ ランキング
-                </h2>
-                <p className="text-xs text-gray-400 mt-1">
-                  Riot Games 公式 Challengers API から、全日本サーバーにおけるパーセンタイル（上位%）が最も高い激レア称号・実績を順位付けしています。
-                </p>
-              </div>
-              <span className="text-xs px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 font-bold">
-                Riot API リアルタイム連動
-              </span>
-            </div>
-
-            {identityRanking && identityRanking.length > 0 ? (
-              <div className="space-y-4">
-                {identityRanking.map((item: any, idx: number) => {
-                  const rank = idx + 1;
-                  const isGold = rank === 1;
-                  const isSilver = rank === 2;
-                  const isBronze = rank === 3;
-
-                  return (
-                    <div
-                      key={idx}
-                      className={`p-5 rounded-2xl border transition-all flex flex-col md:flex-row items-center gap-6 ${
-                        isGold
-                          ? 'bg-gradient-to-r from-amber-500/20 via-black/80 to-amber-950/30 border-amber-500/50 shadow-[0_0_30px_rgba(245,158,11,0.2)] scale-[1.02]'
-                          : isSilver
-                          ? 'bg-gradient-to-r from-slate-400/15 via-black/80 to-slate-900/30 border-slate-400/40 shadow-lg'
-                          : isBronze
-                          ? 'bg-gradient-to-r from-amber-700/15 via-black/80 to-amber-950/20 border-amber-700/40 shadow-md'
-                          : 'bg-gray-900/90 border-gray-800 hover:border-gray-700'
-                      }`}
-                    >
-                      {/* 順位バッジ ＆ プレイヤー名 */}
-                      <div className="flex flex-col items-center justify-center p-3 rounded-xl min-w-[130px] text-center bg-black/40 border border-white/5">
-                        <span className="text-3xl font-black mb-0.5">
-                          {isGold ? '🥇 1位' : isSilver ? '🥈 2位' : isBronze ? '🥉 3位' : `${rank}位`}
-                        </span>
-                        <span className={`text-base font-extrabold ${isGold ? 'text-amber-300' : isSilver ? 'text-slate-200' : isBronze ? 'text-amber-600' : 'text-white'}`}>
-                          {item.player_name}
-                        </span>
-                        <span className="text-[10px] font-bold text-amber-400/90 mt-1 px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/20">
-                          {item.percentile_display}
-                        </span>
-                      </div>
-
-                      {/* 称号＆詳細説明 */}
-                      <div className="flex-1 space-y-2 text-left">
-                        <div className="flex items-center gap-2.5 flex-wrap">
-                          <span className="text-xl font-black text-white tracking-wide">{item.title}</span>
-                          <span className={`text-[10px] px-2.5 py-0.5 rounded font-black border ${
-                            item.level === 'CHALLENGER' ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' :
-                            item.level === 'GRANDMASTER' ? 'bg-rose-500/20 text-rose-300 border-rose-500/40' :
-                            item.level === 'MASTER' ? 'bg-purple-500/20 text-purple-300 border-purple-500/40' :
-                            'bg-cyan-500/20 text-cyan-300 border-cyan-500/40'
-                          }`}>
-                            {item.level}
-                          </span>
-
-                          {/* 🎖️ 全国順位バッジ */}
-                          {item.national_rank_display && (
-                            <span className="text-xs px-3 py-0.5 rounded-full bg-gradient-to-r from-red-500/20 to-amber-500/20 text-amber-300 border border-amber-500/40 font-black flex items-center gap-1 shadow-sm">
-                              🎯 {item.national_rank_display}
-                            </span>
-                          )}
-
-                          {/* 📊 達成数値/スコアバッジ */}
-                          {item.value_display !== undefined && item.value_display !== null && (
-                            <span className="text-xs px-2.5 py-0.5 rounded-full bg-cyan-500/10 text-cyan-300 border border-cyan-500/30 font-bold">
-                              記録: {item.value_display}
-                            </span>
-                          )}
-                        </div>
-
-                        <p className="text-xs text-gray-300 leading-relaxed font-medium">
-                          {item.description}
-                        </p>
-
-                        <div className="flex items-center gap-3 text-[11px] text-gray-400 font-mono pt-0.5">
-                          <span>全日本サーバー上位 <strong className="text-amber-400 font-extrabold">{item.percentile_display}</strong></span>
-                          {item.national_rank_display && (
-                            <span className="text-gray-500">| {item.national_rank_display}</span>
-                          )}
-                        </div>
-
-                        {/* 所持しているその他の激レア称号（サブバッジ一覧） */}
-                        {item.sub_identities && item.sub_identities.length > 0 && (
-                          <div className="pt-2 border-t border-white/5 mt-2">
-                            <span className="text-[10px] text-gray-400 font-bold block mb-1">🎖️ このプレイヤーの他の激レア実績:</span>
-                            <div className="flex items-center gap-2 flex-wrap">
-                              {item.sub_identities.map((sub: any, subIdx: number) => (
-                                <span
-                                  key={subIdx}
-                                  className="text-[10px] px-2 py-0.5 rounded bg-gray-800/80 border border-gray-700 text-gray-300 font-medium flex items-center gap-1"
-                                  title={`${sub.description} (${sub.national_rank_display})`}
-                                >
-                                  <span className="text-amber-400 font-bold">・{sub.name}</span>
-                                  <span className="text-gray-400 text-[9px]">({sub.top_percent_display})</span>
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="bg-gray-900 border border-gray-800 rounded-2xl p-12 text-center text-gray-400">
-                <Spinner label="激レアアイデンティティを取得中..." />
-              </div>
-            )}
-          </div>
-        ) : activeTab === 'meta' ? (
+        {activeTab === 'meta' ? (
           /* KTM内メタ統計(#80) */
           <div className="max-w-4xl mx-auto">
             <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
