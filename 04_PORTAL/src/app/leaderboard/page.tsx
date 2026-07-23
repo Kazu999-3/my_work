@@ -49,10 +49,21 @@ export default function LeaderboardPage() {
   const [identityRanking, setIdentityRanking] = useState<any[]>([]);
 
   useEffect(() => {
-    fetch('/api/identity-ranking')
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 4000);
+
+    fetch('/api/identity-ranking', { signal: controller.signal })
       .then(r => r.json())
-      .then(data => { if (data.ranking) setIdentityRanking(data.ranking); })
-      .catch(e => console.warn('Failed to fetch identity ranking:', e));
+      .then(data => { 
+        clearTimeout(timer);
+        if (data.ranking && data.ranking.length > 0) {
+          setIdentityRanking(data.ranking); 
+        }
+      })
+      .catch(e => {
+        clearTimeout(timer);
+        console.warn('Failed to fetch identity ranking:', e);
+      });
   }, []);
 
   // KTM内メタ統計(#80): チャンピオン別のピック数・勝率・平均KDA
