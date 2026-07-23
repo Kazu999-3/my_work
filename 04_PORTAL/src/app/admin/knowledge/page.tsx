@@ -219,6 +219,38 @@ function KnowledgeBaseContent() {
     }
   };
 
+  // 2.5. 既存ナレッジの画像込み再解析
+  const [reAnalyzeLoading, setReAnalyzeLoading] = useState<number | null>(null);
+  const handleReAnalyzeKnowledge = async (id: number, title: string) => {
+    if (!confirm(`「${title}」のURLから画像を含めて再解析・要約更新しますか？`)) return;
+    setReAnalyzeLoading(id);
+    try {
+      const { data: sessionData } = await supabaseBrowser.auth.getSession();
+      const token = sessionData?.session?.access_token;
+      
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
+      const res = await fetch('/api/admin/knowledge/re-analyze', {
+        method: 'POST', credentials: 'include',
+        headers,
+        body: JSON.stringify({ id })
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        showFeedback(data.message || '画像込みで再解析・更新しました！', 'success');
+        fetchKnowledge(true);
+      } else {
+        showFeedback(data.error || '再解析に失敗しました。', 'error');
+      }
+    } catch (err) {
+      showFeedback('通信エラーが発生しました。', 'error');
+    } finally {
+      setReAnalyzeLoading(null);
+    }
+  };
+
   const toggleExpand = (id: number) => {
     setExpandedId(expandedId === id ? null : id);
   };
@@ -560,6 +592,20 @@ function KnowledgeBaseContent() {
                         </div>
 
                         <div className="flex items-center gap-2 shrink-0">
+                          {item.source_url && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleReAnalyzeKnowledge(item.id, formatTitle(item));
+                              }}
+                              disabled={reAnalyzeLoading === item.id}
+                              className="px-2.5 py-1 hover:bg-purple-500/10 rounded-xl text-purple-400 border border-purple-500/20 text-xs font-bold transition-all flex items-center gap-1"
+                              title="画像込みで再解析・更新"
+                            >
+                              <RefreshCw size={12} className={reAnalyzeLoading === item.id ? "animate-spin" : ""} />
+                              {reAnalyzeLoading === item.id ? "解析中..." : "画像再解析"}
+                            </button>
+                          )}
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
