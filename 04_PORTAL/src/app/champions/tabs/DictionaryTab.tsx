@@ -159,7 +159,7 @@ function ChampionsContent() {
         }));
         return Promise.all([
           // 一覧では大きい strategy 全文は不要。必要なメタ情報と最新更新日時を取得
-          supabase.from('matchup_sentinel').select('champion, created_at, updated_at, patch_meta:raw_data->patch_meta, jg_style:raw_data->jg_style, is_favorited:raw_data->is_favorited').eq('enemy', 'GLOBAL'),
+          supabase.from('matchup_sentinel').select('champion, created_at, patch_meta:raw_data->patch_meta, jg_style:raw_data->jg_style, is_favorited:raw_data->is_favorited').eq('enemy', 'GLOBAL'),
           // 一覧グリッド用に全チャンピオン分のパワースパイクを一括取得（詳細表示と同じchampion_power_spikesテーブル）
           supabase.from('champion_power_spikes').select('champion, early_game_score, mid_game_score, late_game_score'),
           // strategy全文を転送せず「中身があるchampion名」だけを取得し pending 判定に使う（従来の !strategy と同義）
@@ -167,6 +167,11 @@ function ChampionsContent() {
         ]);
       })
       .then(([{ data }, { data: spikeRows }, { data: contentRows }]) => {
+        const normalizeKey = (str: string) => String(str || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+        const ALIAS_MAP: Record<string, string> = {
+          kisante: 'ksante', qkuaa: 'qiyana', naitina: 'nilah', silas: 'sylas', zilian: 'zilean', viper: 'viego'
+        };
+
         const hasContent = new Set((contentRows || []).map((r: any) => r.champion));
         const dates: Record<string, string> = {};
         const pending: Record<string, boolean> = {};
@@ -175,15 +180,26 @@ function ChampionsContent() {
         const dbFavorites: string[] = [];
         if (data) {
           data.forEach((row: any) => {
-            const rawUpdatedAt = row.updated_at || row.created_at;
+            const rawUpdatedAt = row.created_at;
+            const normKey = normalizeKey(row.champion);
+            const aliasKey = ALIAS_MAP[normKey] || normKey;
+
             dates[row.champion] = rawUpdatedAt;
-            pending[row.champion] = !hasContent.has(row.champion);
+            dates[normKey] = rawUpdatedAt;
+            dates[aliasKey] = rawUpdatedAt;
+
+            const isPending = !hasContent.has(row.champion);
+            pending[row.champion] = isPending;
+            pending[normKey] = isPending;
+            pending[aliasKey] = isPending;
             
             let patchMetaObj = row.patch_meta ? { ...row.patch_meta } : {};
             if (!patchMetaObj.updated_at && rawUpdatedAt) {
               patchMetaObj.updated_at = Math.floor(new Date(rawUpdatedAt).getTime() / 1000);
             }
             metas[row.champion] = patchMetaObj;
+            metas[normKey] = patchMetaObj;
+            metas[aliasKey] = patchMetaObj;
 
             // jg_styleが文字列だった場合でも安全にパースする
             let parsedJgStyle = null;
@@ -191,6 +207,8 @@ function ChampionsContent() {
               parsedJgStyle = typeof row.jg_style === 'string' ? JSON.parse(row.jg_style) : row.jg_style;
             }
             jgStyles[row.champion] = parsedJgStyle || null;
+            jgStyles[normKey] = parsedJgStyle || null;
+            jgStyles[aliasKey] = parsedJgStyle || null;
 
             if (row.is_favorited === true) {
               dbFavorites.push(row.champion);
@@ -1592,7 +1610,9 @@ function ChampionsContent() {
       ) : (
         <motion.div variants={containerVariants} initial="hidden" animate="visible" className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-4">
           {filtered.map(c => {
-            const hasNote = !!champDates[c.id];
+            const normId = c.id.toLowerCase().replace(/[^a-z0-9]/g, '');
+            const hasNote = !!(champDates[c.id] || champDates[normId]);
+            const isPending = champPending[c.id] !== undefined ? champPending[c.id] : champPending[normId];
             const isFav = favoriteChamps.includes(c.id);
             return (
               <motion.div variants={itemVariants} key={c.id} onClick={() => setSelected(c)} 
@@ -1604,11 +1624,11 @@ function ChampionsContent() {
                 )}
                 <div className="relative">
                   <img src={getChampIcon(c.id)} alt={c.name} className={`w-14 h-14 rounded-full border-2 transition-colors ${hasNote ? 'border-[#c89b3c]' : 'border-white/10 group-hover:border-white/30'}`} />
-                  {hasNote && <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-[#0a0b10] ${champPending[c.id] ? 'bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.8)]' : 'bg-[#c89b3c]'}`}></div>}
+                  {hasNote && <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-[#0a0b10] ${isPending ? 'bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.8)]' : 'bg-[#c89b3c]'}`}></div>}
                 </div>
                 <span className={`text-xs font-bold text-center leading-tight transition-colors ${hasNote ? 'text-[#c89b3c]' : 'text-gray-400 group-hover:text-white'}`}>{c.name}</span>
                 {(() => {
-                  const patchMeta = champPatchMetas[c.id];
+                  const patchMeta = champPatchMetas[c.id] || champPatchMetas[normId];
                   const patchName = patchMeta?.patch ? `P${patchMeta.patch}` : 'P??';
                   
                   // 更新から3日以上経っている場合は少し古いトレンドと判定 (259200秒)
@@ -1632,7 +1652,7 @@ function ChampionsContent() {
                   );
                 })()}
                 {(() => {
-                  const jgStyle = champJgStyles[c.id];
+                  const jgStyle = champJgStyles[c.id] || champJgStyles[normId];
                   if (!jgStyle || (jgStyle.blind_pickable === undefined && jgStyle.counter_pickable === undefined && !jgStyle.type)) return null;
                   
                   return (

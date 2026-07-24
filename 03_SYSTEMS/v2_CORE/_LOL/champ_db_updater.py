@@ -9,6 +9,7 @@ from google import genai
 from google.genai import types
 import dotenv
 from v2_CORE._LOL.herald import herald
+from v2_CORE._LOL.champ_id_normalizer import normalize_champion_id
 
 dotenv.load_dotenv(Path("D:/my_work/.env"))
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [ChampDB] %(levelname)s: %(message)s")
@@ -21,6 +22,7 @@ GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY_BATCH") or os.environ.get("GEMIN
 
 def fetch_existing_champ_data(champ_id: str) -> dict:
     """Supabaseから既存のGLOBALデータを取得する"""
+    champ_id = normalize_champion_id(champ_id)
     if not SUPABASE_URL or not SUPABASE_KEY:
         logging.error("Supabase credentials not found in .env")
         return {}
@@ -171,6 +173,7 @@ def merge_and_extract_intel(champ_name: str, new_text: str, existing_data: dict)
 
 def update_champion_db(champ_id: str, champ_name: str, new_text: str, patch_version: str = "16.11"):
     """メイン関数：既存データを取得、マージ、SupabaseへUpsert"""
+    champ_id = normalize_champion_id(champ_id)
     logging.info(f"[{champ_id}] Auto-updating Champion DB...")
     
     existing_data = fetch_existing_champ_data(champ_id)
