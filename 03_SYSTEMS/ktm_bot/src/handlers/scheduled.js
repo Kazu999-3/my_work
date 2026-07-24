@@ -22,9 +22,6 @@ export async function handleScheduledEvent(event, env, ctx) {
   } else if (cronExpression === "*/10 * * * *" || mode === "recruit_reminder") {
     // 10分ごと: 開始時刻が近い募集の参加者へリマインド(D1)
     await sendRecruitmentReminders(env);
-  } else if (cronExpression === "0 12 * * 6" || mode === "weekly_recruit") {
-    // 毎週土曜 21:00 JST: その日開催の定期カスタム募集を自動投稿
-    await postWeeklyRecruitment(env);
   } else {
     // 直前通知: 進行中の募集の集まり具合を通知し、不足なら欠員アラート
     await sendRecruitStatusNotification(env);

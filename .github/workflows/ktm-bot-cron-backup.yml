@@ -12,11 +12,10 @@ name: KTM Bot Cron Backup
 on:
   schedule:
     - cron: '15 11 * * 5,6'  # 金土 20:15 JST → 直前通知のバックアップ
-    - cron: '10 12 * * 6'    # 土 21:10 JST → 定期カスタム募集のバックアップ
   workflow_dispatch:
     inputs:
       mode:
-        description: 'mode (空=直前通知 / weekly_recruit=定期募集)'
+        description: 'mode (空=直前通知)'
         required: false
         default: ''
 
@@ -35,13 +34,8 @@ jobs:
           fi
           KEY="${TRIGGER_KEY:-ktm_v3_internal_secret_2026}"
 
-          # 手動実行なら入力modeを使用。スケジュール実行ならUTC曜日・時刻からmodeを判定。
+          # 手動実行なら入力modeを使用。スケジュール実行なら直前通知(mode="")
           MODE="${{ github.event.inputs.mode }}"
-          if [ "${{ github.event_name }}" = "schedule" ]; then
-            HOUR=$(date -u +%H)
-            # UTC12時台=土21時JSTの定期募集、それ以外(UTC11時台)=直前通知
-            if [ "$HOUR" = "12" ]; then MODE="weekly_recruit"; else MODE=""; fi
-          fi
 
           echo "Kicking mode='$MODE'"
           STATUS=$(curl -s -o /tmp/resp.txt -w "%{http_code}" "$WORKER_URL/trigger-scheduled?key=$KEY&mode=$MODE")
