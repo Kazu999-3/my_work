@@ -72,8 +72,8 @@ export async function POST(request: Request) {
               inline: false
             },
             {
-              name: "📊 平均内部レート",
-              value: `**${avgMmr} MMR** (基準: Gold=1500, Silver=1350)`,
+              name: "📊 平均KTM内部レート（KTM内戦ランク）",
+              value: `**${avgMmr} KTM-MMR**\n*(※SoloQ公式ランクではなくKTMカスタム内戦の戦績基準: Gold=1500, Silver=1350)*`,
               inline: true
             },
             {

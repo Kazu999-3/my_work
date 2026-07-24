@@ -974,10 +974,11 @@ export default function BalancerPage() {
                   </div>
                   <p className="text-xs leading-relaxed">{analysis.message}</p>
                   <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-400">
-                    <span>平均: <strong className="text-white font-mono">{analysis.averageMMR}</strong></span>
+                    <span>KTM平均MMR: <strong className="text-white font-mono">{analysis.averageMMR}</strong></span>
                     <span>最低: <strong className="text-white font-mono">{analysis.minMMR}</strong></span>
                     <span>最高: <strong className="text-white font-mono">{analysis.maxMMR}</strong></span>
                     <span>差: <strong className={`font-mono ${analysis.level === 'HIGH_DIFFERENCE' ? 'text-amber-400' : 'text-white'}`}>{analysis.mmrRange}</strong></span>
+                    <span className="text-[10px] text-gray-500 font-normal">※SoloQではなくKTM内戦独自のランクMMR基準です</span>
                   </div>
                 </div>
               )}
@@ -1778,8 +1779,8 @@ export default function BalancerPage() {
                   <th className="px-2 py-3 font-medium text-center w-28">参加設定</th>
                   <SortableHeader label="No." sortKey="no" className="w-10 text-center" />
                   <SortableHeader label="プレイヤー名" sortKey="name" className="px-2" />
-                  <SortableHeader label="ランク" sortKey="highest_rank" className="px-2" />
-                  <SortableHeader label="総合MMR" sortKey="mmr" className="px-2" />
+                  <SortableHeader label="SoloQランク" sortKey="highest_rank" className="px-2" />
+                  <SortableHeader label="KTM内戦MMR" sortKey="mmr" className="px-2" />
                   <th className="px-2 py-3 font-medium text-center">第1希望</th>
                   <th className="px-2 py-3 font-medium text-center">第2希望</th>
                   <th className="px-1.5 py-3 font-medium text-center text-red-400">NG 1</th>

@@ -37,6 +37,12 @@ export function LibraryTabContentInner() {
     const q = searchParams ? searchParams.get('q') : null;
     if (q) setSearch(q);
   }, [searchParams]);
+
+  useEffect(() => {
+    if (selectedArticle) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [selectedArticle]);
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
   const [groupMode, setGroupMode] = useState<'champion' | 'keyword'>('champion');
@@ -675,6 +681,17 @@ export function LibraryTabContentInner() {
                 )}
               </>
             )}
+            {selectedArticle?.source_url && !editing && (
+              <button
+                onClick={(e) => handleReAnalyzeArticle(selectedArticle, e)}
+                disabled={reAnalyzeId === selectedArticle.id}
+                className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white rounded-xl text-sm font-bold flex items-center gap-2 transition-all shadow-md shadow-purple-500/20 disabled:opacity-50"
+                title="元URLから画像・動画を含めて最新AI再解析します"
+              >
+                <RefreshCw size={14} className={reAnalyzeId === selectedArticle.id ? "animate-spin" : ""} />
+                {reAnalyzeId === selectedArticle.id ? "AI再解析中..." : "✨ 画像・動画AI再解析"}
+              </button>
+            )}
             <button onClick={() => copyPublishCommand(selectedArticle.champion || selectedArticle.title?.split(' ')[0] || '')} className="px-4 py-2 glass-panel glass-panel-hover text-[#00cfef] rounded-xl text-sm font-bold flex items-center gap-2"><Terminal size={14} /> 投稿コマンドをコピー</button>
             <button onClick={(e) => deleteArticle(selectedArticle.id, e)} className="px-4 py-2 glass-panel glass-panel-hover text-red-400 rounded-xl text-sm font-bold flex items-center gap-2"><Trash2 size={14} /> 削除</button>
           </div>
@@ -727,55 +744,67 @@ export function LibraryTabContentInner() {
                   </div>
                 </div>
               ) : (
-                <div className="flex items-center gap-4 mb-6">
-                  <h1 className="text-4xl md:text-5xl font-black leading-tight font-mono text-white flex-1">{selectedArticle.title ? selectedArticle.title.replace(/_/g, ' ') : ''}</h1>
-                  {/* レーン別ガイドへ送る（チャンピオン記事ではない、マクロ・立ち回り記事向け） */}
-                  {!showMoved && (
-                    <div className="flex items-center gap-2 shrink-0">
-                      <select
-                        value={laneChoice}
-                        onChange={(e) => setLaneChoice(e.target.value)}
-                        title="送り先のレーンを選びます"
-                        className="bg-black/50 border border-amber-500/30 rounded-xl px-2 py-2.5 text-xs text-amber-200 outline-none focus:border-amber-500/60"
-                      >
-                        {LANE_CHOICES.map(l => <option key={l.key} value={l.key}>{l.label}</option>)}
-                      </select>
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+                  <h1 className="text-2xl sm:text-4xl md:text-5xl font-black leading-tight font-mono text-white flex-1 break-words max-w-full">{selectedArticle.title ? selectedArticle.title.replace(/_/g, ' ') : ''}</h1>
+                  <div className="flex items-center gap-2 flex-wrap shrink-0">
+                    {/* レーン別ガイドへ送る（チャンピオン記事ではない、マクロ・立ち回り記事向け） */}
+                    {!showMoved && (
+                      <div className="flex items-center gap-2 shrink-0">
+                        <select
+                          value={laneChoice}
+                          onChange={(e) => setLaneChoice(e.target.value)}
+                          title="送り先のレーンを選びます"
+                          className="bg-black/50 border border-amber-500/30 rounded-xl px-2 py-2.5 text-xs text-amber-200 outline-none focus:border-amber-500/60"
+                        >
+                          {LANE_CHOICES.map(l => <option key={l.key} value={l.key}>{l.label}</option>)}
+                        </select>
+                        <button
+                          onClick={sendToLaneGuide}
+                          disabled={sendingLane}
+                          className="px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-sm font-black shrink-0 transition disabled:opacity-50"
+                          title="この記事をレーン別ガイドへ統合します"
+                        >
+                          {sendingLane ? '統合中...' : '🗺️ ガイドへ送る'}
+                        </button>
+                      </div>
+                    )}
+                    {/* 移動済み表示中は、この記事をライブラリへ戻せるようにする */}
+                    {showMoved && (
                       <button
-                        onClick={sendToLaneGuide}
-                        disabled={sendingLane}
-                        className="px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-sm font-black shrink-0 transition disabled:opacity-50"
-                        title="この記事をレーン別ガイドへ統合します"
+                        onClick={() => restoreArticle(selectedArticle.id)}
+                        className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-black shrink-0 transition"
+                        title="この記事をライブラリに戻します"
                       >
-                        {sendingLane ? '統合中...' : '🗺️ ガイドへ送る'}
+                        ↩️ ライブラリに戻す
                       </button>
-                    </div>
-                  )}
-                  {/* 移動済み表示中は、この記事をライブラリへ戻せるようにする */}
-                  {showMoved && (
+                    )}
                     <button
-                      onClick={() => restoreArticle(selectedArticle.id)}
-                      className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-black shrink-0 transition"
-                      title="この記事をライブラリに戻します"
+                      onClick={() => handleToggleFavorite(selectedArticle.id, selectedArticle.title || '')}
+                      className={`p-2.5 rounded-xl transition-all border shrink-0 ${
+                        favoriteArticles.includes(selectedArticle.id)
+                          ? 'bg-amber-400/20 border-amber-400 text-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.3)]'
+                          : 'bg-white/5 border-white/10 text-gray-400 hover:text-white hover:bg-white/10'
+                      }`}
+                      title={favoriteArticles.includes(selectedArticle.id) ? "お気に入り解除" : "お気に入り登録"}
                     >
-                      ↩️ ライブラリに戻す
+                      <StarIcon size={20} fill={favoriteArticles.includes(selectedArticle.id) ? "currentColor" : "none"} />
                     </button>
-                  )}
-                  <button
-                    onClick={() => handleToggleFavorite(selectedArticle.id, selectedArticle.title || '')}
-                    className={`p-2.5 rounded-xl transition-all border shrink-0 ${
-                      favoriteArticles.includes(selectedArticle.id)
-                        ? 'bg-amber-400/20 border-amber-400 text-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.3)]'
-                        : 'bg-white/5 border-white/10 text-gray-400 hover:text-white hover:bg-white/10'
-                    }`}
-                    title={favoriteArticles.includes(selectedArticle.id) ? "お気に入り解除" : "お気に入り登録"}
-                  >
-                    <StarIcon size={20} fill={favoriteArticles.includes(selectedArticle.id) ? "currentColor" : "none"} />
-                  </button>
+                  </div>
                 </div>
               )}
-              <div className="flex flex-wrap gap-4 text-xs text-gray-400">
-                <span className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-full font-bold uppercase tracking-widest border border-white/5"><User size={14} className="text-[#a78bfa]" /> AI AGENT</span>
-                <span className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-full font-bold uppercase tracking-widest border border-white/5"><Clock size={14} className="text-[#a78bfa]" /> {isMounted && selectedArticle.created_at ? new Date(selectedArticle.created_at).toLocaleString('ja-JP') : '日付不明'}</span>
+              <div className="flex flex-wrap gap-2 text-xs text-gray-400 items-center">
+                <span className="flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-full font-bold uppercase tracking-widest border border-white/5"><User size={14} className="text-[#a78bfa]" /> AI AGENT</span>
+                <span className="flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-full font-bold uppercase tracking-widest border border-white/5"><Clock size={14} className="text-[#a78bfa]" /> {isMounted && selectedArticle.created_at ? new Date(selectedArticle.created_at).toLocaleString('ja-JP') : '日付不明'}</span>
+                {selectedArticle.champion && (
+                  <span className="flex items-center gap-1.5 bg-[#a78bfa]/10 text-[#a78bfa] border border-[#a78bfa]/20 px-3 py-1.5 rounded-full font-bold">
+                    🏆 {selectedArticle.champion}
+                  </span>
+                )}
+                {selectedArticle.tags && Array.isArray(selectedArticle.tags) && selectedArticle.tags.map((t: string, i: number) => (
+                  <span key={i} className="text-[11px] text-gray-400 bg-black/40 border border-white/10 px-2.5 py-1 rounded-lg font-mono">
+                    #{t}
+                  </span>
+                ))}
               </div>
             </header>
 
@@ -788,7 +817,7 @@ export function LibraryTabContentInner() {
                 </div>
               </div>
             ) : (
-              <div className="prose prose-invert prose-purple max-w-none text-[15px] leading-loose text-gray-300">
+              <div className="prose prose-invert prose-purple max-w-none text-[15px] leading-loose text-gray-300 break-words overflow-x-auto [&_table]:w-full [&_table]:table-auto [&_table]:my-4 [&_table]:border-collapse [&_th]:border [&_th]:border-white/10 [&_th]:bg-white/5 [&_th]:p-2 text-left [&_td]:border [&_td]:border-white/10 [&_td]:p-2 [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-xl [&_pre]:overflow-x-auto [&_pre]:max-w-full [&_code]:break-all">
                 {typeof (selectedArticle.raw_content || selectedArticle.content) === 'string' ? (
                   <ReactMarkdown remarkPlugins={[remarkGfm]}>{selectedArticle.raw_content || selectedArticle.content}</ReactMarkdown>
                 ) : (
@@ -1041,6 +1070,17 @@ export function LibraryTabContentInner() {
                                   >
                                     <Terminal size={14} /> 投稿コマンド
                                   </button>
+                                  {article.source_url && (
+                                    <button
+                                      onClick={(e) => handleReAnalyzeArticle(article, e)}
+                                      disabled={reAnalyzeId === article.id}
+                                      className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white rounded-xl text-sm font-bold flex items-center gap-2 transition-all shadow-md shadow-purple-500/20 disabled:opacity-50"
+                                      title="元URLから画像・動画を含めて最新AI再解析します"
+                                    >
+                                      <RefreshCw size={14} className={reAnalyzeId === article.id ? "animate-spin" : ""} />
+                                      {reAnalyzeId === article.id ? "再解析中..." : "✨ AI再解析"}
+                                    </button>
+                                  )}
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation();

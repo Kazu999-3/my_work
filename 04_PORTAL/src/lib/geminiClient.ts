@@ -22,9 +22,10 @@ export interface GeminiCallOptions {
   validator?: (text: string) => boolean | Promise<boolean>;
 }
 
-// 'gemini-2.0-flash-lite'はこのAPIキーで上限0(常に429)だったため、最も余裕のある
-// 'gemini-3.1-flash-lite'（15 RPM / 500 RPD）に変更。model未指定の呼び出し元はここに従う。
-const DEFAULT_MODEL = 'gemini-3.1-flash-lite';
+// Google AI Studioの最新クォータ実績に基づき、最大容量 (500 RPD / 15 RPM) を誇る
+// 'gemini-3.5-flash-lite' をデフォルトとし、429制限時は 'gemini-3.1-flash-lite', 'gemini-3.6-flash' へフォールバックします。
+const DEFAULT_MODEL = 'gemini-3.5-flash-lite';
+const FALLBACK_MODELS = ['gemini-3.5-flash-lite', 'gemini-3.1-flash-lite', 'gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-2.5-flash'];
 const DEFAULT_TTL_MS = 24 * 60 * 60 * 1000;
 
 async function readCache(cacheKey: string, ttlMs: number): Promise<string | null> {
@@ -139,13 +140,17 @@ export async function callGeminiWithRetry(
   let lastError: unknown = null;
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
-    // 試行ごとにキーを回す（キーが1本なら常に同じ）
+    // 試行ごとにキーとモデルを最適ローテーション（429発生時は次モデルへ回避）
     const apiKey = apiKeys[attempt % apiKeys.length];
+    const preferredModel = options.model || DEFAULT_MODEL;
+    const fallbackIdx = FALLBACK_MODELS.indexOf(preferredModel);
+    const startIdx = fallbackIdx >= 0 ? fallbackIdx : 0;
+    const activeModel = attempt === 0 ? preferredModel : FALLBACK_MODELS[(startIdx + attempt) % FALLBACK_MODELS.length];
 
     let res: Response;
     try {
       res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/${activeModel}:generateContent?key=${apiKey}`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

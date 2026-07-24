@@ -106,13 +106,13 @@ def research_champion(champ_name: str, champ_id: str, patch_version: str) -> str
             【重要】アイテム名・チャンピオン名・ルーン名などの固有名詞を除き、本文は必ず日本語で記述してください。英単語や英文をそのまま出力しないでください。
             """
 
-            # generate_content_safe は内部で APIGateway を介してレート制限をハンドリングする
+            # generate_content_safe は内部で APIGateway および自動モデルローテーションを介してレート制限をハンドリングする
             response_text = generate_content_safe(
                 client, 
                 prompt, 
-                model_id=settings.DEFAULT_MODEL,
+                model_id="gemini-3.5-flash-lite",
                 feature_name="oracle",
-                sleep_on_rate_limit=False  # クォータ回避のためスリープはしない
+                sleep_on_rate_limit=True  # 429発生時は自動スリープおよび他モデルへのフォールバックを実施
             )
             # 正常に取得できたら返す
             if response_text and not response_text.startswith("❌") and not response_text.startswith("⚠️") and "本日の利用上限に達しました" not in response_text:

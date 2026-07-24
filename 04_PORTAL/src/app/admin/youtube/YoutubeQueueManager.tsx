@@ -534,23 +534,41 @@ export default function YoutubeQueueManager() {
     return <span className={classes}>{label}</span>;
   };
 
-  // ステータスバッジのスタイル定義
+  // ステータスバッジのスタイル＆分かりやすい日本語理由定義
   const getStatusBadge = (status: string) => {
-    let classes = 'px-3 py-1 text-xs font-semibold rounded-full border ';
+    let classes = 'px-2.5 py-1 text-[11px] font-bold rounded-md border inline-flex items-center gap-1 cursor-help ';
+    let label = status;
+    let hint = '';
+
     if (status === 'completed') {
-      classes += 'bg-green-950/40 text-green-400 border-green-800/60';
+      classes += 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30';
+      label = '✅ 解析完了';
+      hint = '文字起こし・Gemini要約が正常に完了し、ライブラリへ保存されました。';
     } else if (status === 'on_hold') {
-      classes += 'bg-yellow-950/40 text-yellow-400 border-yellow-800/60';
+      classes += 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30';
+      label = '⏸️ 保留中';
+      hint = '処理が一時停止されています。解除すると次回巡回時に解析されます。';
     } else if (status === 'pending') {
-      classes += 'bg-cyan-950/40 text-cyan-400 border-cyan-800/60 animate-pulse';
+      classes += 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30 animate-pulse';
+      label = '⏳ 解析待ち';
+      hint = 'ローカルPC / SREデーモンが順次巡回して要約・文字起こしを行います。';
+    } else if (status === 'error_generation') {
+      classes += 'bg-amber-500/15 text-amber-400 border-amber-500/30';
+      label = '⚠️ AI要約制限 (再試行可)';
+      hint = 'Gemini APIのレート制限（無料枠制限等）で一時失敗しました。「再試行」ボタンで復旧可能です。';
+    } else if (status === 'error_no_transcript') {
+      classes += 'bg-rose-500/15 text-rose-300 border-rose-500/30';
+      label = '🎙️ 字幕/音声不可';
+      hint = '公式字幕がなくWhisper文字起こしも失敗しました。手動でテキストを入力してナレッジ追加できます。';
     } else if (status === 'failed') {
-      classes += 'bg-red-950/40 text-red-400 border-red-800/60';
-    } else if (status.startsWith('error')) {
-      classes += 'bg-orange-950/40 text-orange-400 border-orange-800/60';
+      classes += 'bg-red-500/15 text-red-400 border-red-500/30';
+      label = '❌ 解析不可 (削除/非公開)';
+      hint = '動画が削除・非公開・地域制限の可能性があります。キューからの削除を推奨します。';
     } else {
-      classes += 'bg-gray-950/40 text-gray-400 border-gray-800/60';
+      classes += 'bg-gray-800 text-gray-400 border-gray-700';
     }
-    return <span className={classes}>{status === 'on_hold' ? 'on hold (保留)' : status}</span>;
+
+    return <span className={classes} title={hint}>{label}</span>;
   };
 
   // 統計の計算
@@ -913,7 +931,7 @@ export default function YoutubeQueueManager() {
                         </div>
                       </div>
                       <div className="flex items-center justify-between gap-2 bg-[#07080e] p-2 rounded-lg border border-gray-800/40 text-[10px] font-bold">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           {getStatusBadge(item.status)}
                           {item.retry_count > 0 && item.status !== 'completed' && (
                             <span className="text-gray-500">({item.retry_count}/5)</span>
@@ -928,6 +946,26 @@ export default function YoutubeQueueManager() {
                           {getPriorityBadge(item.priority)}
                         </button>
                       </div>
+
+                      {/* 解析失敗時の理由 ＆ 解決アクションヒント */}
+                      {item.status === 'error_generation' && (
+                        <div className="text-[11px] p-2 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-300 space-y-1">
+                          <p className="font-bold flex items-center gap-1">💡 理由: AI API制限中</p>
+                          <p className="text-amber-400/80 text-[10px]">Geminiの無料枠リクエスト数上限による一時失敗です。時間をおいて下の「再試行」を押してください。</p>
+                        </div>
+                      )}
+                      {item.status === 'error_no_transcript' && (
+                        <div className="text-[11px] p-2 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-300 space-y-1">
+                          <p className="font-bold flex items-center gap-1">🎙️ 理由: 字幕・音声未検出</p>
+                          <p className="text-rose-400/80 text-[10px]">字幕がなくWhisper文字起こしも失敗しました。必要に応じてナレッジ画面から直接テキストを入力してください。</p>
+                        </div>
+                      )}
+                      {item.status === 'failed' && (
+                        <div className="text-[11px] p-2 rounded-lg bg-red-500/10 border border-red-500/20 text-red-300 space-y-1">
+                          <p className="font-bold flex items-center gap-1">❌ 理由: 動画閲覧不能</p>
+                          <p className="text-red-400/80 text-[10px]">YouTube上で削除・非公開になっている可能性があります。キューからの削除をおすすめします。</p>
+                        </div>
+                      )}
                       <div className="flex gap-2 pt-1">
                         {item.status !== 'completed' && (
                           <button

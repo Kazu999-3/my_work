@@ -64,7 +64,7 @@ class SovereignSettings(BaseSettings):
         "kingdom_cycle": 50,   # 記事作成、リライト、SNSフック等の合計 (制限)
         "draft_analyzer": 20,  # ライブドラフトの分析 (制限)
         "news_scout": 20,      # 海外ニュースの翻訳・要約 (制限)
-        "oracle": 400,         # 隠れメタの調査/チャンピオン辞典 (最優先・枠最大化)
+        "oracle": 2000,        # 隠れメタの調査/チャンピオン辞典 (実質無制限・全チャンピオン完走)
         "video_forge": 200,    # 動画台本の作成 (制限)
         "bounty_hunter": 10,   # 競合noteのハンティング (制限)
         "magazine_forge": 10,  # マガジン生成 (制限)

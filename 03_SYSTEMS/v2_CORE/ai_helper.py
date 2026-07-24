@@ -54,7 +54,7 @@ def generate_content_safe(client, prompt, model_id=None, config=None, feature_na
                     logger.info(f"[AIHelper] 🌐 API Gateway (Port 8000) is online. Routing generation request...")
                     payload = {
                         "raw_prompt": prompt,
-                        "model": model_id or "gemini-2.5-flash",
+                        "model": model_id or "gemini-3.5-flash-lite",
                         "priority": "normal"
                     }
                     headers = {
@@ -86,13 +86,22 @@ def generate_content_safe(client, prompt, model_id=None, config=None, feature_na
     if not client:
         return "⚠️ Gemini API クライアントが初期化されていません。"
 
-    # 試行するモデルの優先順リスト (ListModels API で 100% 存在が実証されたモデル名)
-    models_to_try = [
-        "gemini-2.0-flash",
-        "gemini-2.0-flash-lite",
+    # 試行するモデルの優先順リスト (クォータ枠と実績に基づき最適化: 3.5 Flash Lite [500 RPD] 優先)
+    base_models = [
+        "gemini-3.5-flash-lite",
         "gemini-3.1-flash-lite",
-        "gemini-2.5-flash-lite"
+        "gemini-3.6-flash",
+        "gemini-3.5-flash",
+        "gemini-3-flash",
+        "gemini-2.5-flash-lite",
+        "gemini-2.5-flash"
     ]
+    if model_id and model_id in base_models:
+        models_to_try = [model_id] + [m for m in base_models if m != model_id]
+    elif model_id:
+        models_to_try = [model_id] + base_models
+    else:
+        models_to_try = base_models
     
     # APIキーの優先順位リストを作成 (無料キーを最優先とし、フォールバックとしてメインキーも許容)
     from google import genai

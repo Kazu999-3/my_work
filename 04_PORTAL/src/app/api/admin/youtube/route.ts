@@ -153,12 +153,25 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'この動画はすでにキューに登録されています。' }, { status: 400 });
     }
 
-    // yt-dlp によるタイトル・チャンネル名・投稿日取得の試行 (ローカル用)
+    // 1. YouTube oEmbed API による高速・確実なタイトル・チャンネル名取得 (APIキー不要)
     let title = 'YouTube Video';
     let channelName = 'Unknown';
     let publishedAt: string | null = null;
-    const ytDlpPath = path.join(process.cwd(), '../.venv/Scripts/yt-dlp.exe');
 
+    try {
+      const oembedUrl = `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`;
+      const res = await fetch(oembedUrl, { cache: 'no-store' });
+      if (res.ok) {
+        const oembedData = await res.json();
+        if (oembedData.title) title = oembedData.title;
+        if (oembedData.author_name) channelName = oembedData.author_name;
+      }
+    } catch (err) {
+      console.warn('⚠️ [YouTube API] oEmbed Fetch failed:', err);
+    }
+
+    // 2. oEmbedでタイトルが取れなかった場合のみ yt-dlp にフォールバック (投稿日取得含む)
+    const ytDlpPath = path.join(process.cwd(), '../.venv/Scripts/yt-dlp.exe');
     if (fs.existsSync(ytDlpPath)) {
       try {
         const getInfoCmd = `"${ytDlpPath}" --print "%(title)s" --print "%(uploader)s" --print "%(upload_date)s" "${url}"`;
@@ -170,8 +183,8 @@ export async function POST(req: NextRequest) {
         });
         if (stdout) {
           const lines = stdout.split('\n');
-          if (lines[0]) title = lines[0].trim();
-          if (lines[1]) channelName = lines[1].trim();
+          if (lines[0] && title === 'YouTube Video') title = lines[0].trim();
+          if (lines[1] && channelName === 'Unknown') channelName = lines[1].trim();
           if (lines[2]) {
             const rawDate = lines[2].trim(); // YYYYMMDD
             if (rawDate.length === 8 && /^\d+$/.test(rawDate)) {
@@ -180,7 +193,7 @@ export async function POST(req: NextRequest) {
           }
         }
       } catch (err) {
-        console.warn('⚠️ [YouTube API] yt-dlp によるタイトル・チャンネル名・投稿日取得に失敗しました。フォールバックします:', err);
+        console.warn('⚠️ [YouTube API] yt-dlp による情報取得に失敗しました:', err);
       }
     }
 

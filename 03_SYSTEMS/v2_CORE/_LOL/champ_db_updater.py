@@ -109,12 +109,17 @@ def merge_and_extract_intel(champ_name: str, new_text: str, existing_data: dict)
                 temperature=0.2, # データ抽出なので温度をさらに下げる
                 response_mime_type="application/json"
             ),
-            model_id=settings.DEFAULT_MODEL,
+            model_id="gemini-3.5-flash-lite",
             feature_name="oracle",
-            sleep_on_rate_limit=False  # クォータ回避のためスリープはしない
+            sleep_on_rate_limit=True  # 429発生時は自動スリープおよび他モデルへのフォールバックを実施
         )
         if response_text and not response_text.startswith("❌") and not response_text.startswith("⚠️") and "本日の利用上限に達しました" not in response_text:
-            result_json = json.loads(response_text.strip())
+            cleaned = response_text.strip()
+            if cleaned.startswith("```"):
+                lines = cleaned.split("\n")
+                if len(lines) >= 2 and (lines[0].startswith("```json") or lines[0].startswith("```")):
+                    cleaned = "\n".join(lines[1:-1]).strip()
+            result_json = json.loads(cleaned)
             result_json["note_draft"] = new_text
             return result_json
     except Exception as e:
@@ -199,14 +204,12 @@ def update_champion_db(champ_id: str, champ_name: str, new_text: str, patch_vers
     }
 
     # Upsertデータ構築
-    now_iso = datetime.now(timezone.utc).isoformat()
     upsert_data = {
         "matchup_id": f"champ_{champ_id}_global",
         "champion": champ_id,
         "enemy": "GLOBAL",
         "title": f"{champ_name} 基本戦略・トレンド",
         "strategy": merged_json.get("strategy", ""),
-        "updated_at": now_iso,
         "raw_data": {
             "source": "champ_db",
             "role": "GLOBAL",
