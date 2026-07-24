@@ -12,7 +12,7 @@ name: KTM Bot Cron Backup
 on:
   schedule:
     - cron: '15 11 * * 5,6'  # 金土 20:15 JST → 直前通知のバックアップ
-    - cron: '15 9 * * 6'     # 土 18:15 JST → 定期カスタム募集投稿のバックアップ
+    - cron: '10 12 * * 6'    # 土 21:10 JST → 翌週定期カスタム募集投稿のバックアップ
   workflow_dispatch:
     inputs:
       mode:
@@ -39,7 +39,7 @@ jobs:
           MODE="${{ github.event.inputs.mode }}"
           if [ "${{ github.event_name }}" = "schedule" ]; then
             HOUR=$(date -u +%H)
-            if [ "$HOUR" = "09" ]; then MODE="weekly_recruit"; else MODE=""; fi
+            if [ "$HOUR" = "12" ]; then MODE="weekly_recruit"; else MODE=""; fi
           fi
 
           echo "Kicking mode='$MODE'"

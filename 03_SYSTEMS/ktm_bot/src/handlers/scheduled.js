@@ -22,8 +22,8 @@ export async function handleScheduledEvent(event, env, ctx) {
   } else if (cronExpression === "*/10 * * * *" || mode === "recruit_reminder") {
     // 10分ごと: 開始時刻が近い募集の参加者へリマインド(D1)
     await sendRecruitmentReminders(env);
-  } else if (cronExpression === "0 9 * * 6" || mode === "weekly_recruit") {
-    // 毎週土曜 18:00 JST (UTC 09:00): その日の夜開催の定期カスタム募集を自動投稿
+  } else if (cronExpression === "0 12 * * 6" || mode === "weekly_recruit") {
+    // 毎週土曜 21:00 JST (UTC 12:00): 翌週土曜21:00開催の定期カスタム募集を自動投稿
     await postWeeklyRecruitment(env);
   } else {
     // 直前通知: 進行中の募集の集まり具合を通知し、不足なら欠員アラート
@@ -297,18 +297,16 @@ async function sendWeeklyReports(env) {
  */
 async function postWeeklyRecruitment(env) {
   try {
-    // 直近/当日の土曜21:00 JST(=UTC 12:00) を開催日時に算定する
+    // 毎週土曜21:00 JST(=UTC 12:00)に投稿し、1週間後の「翌週土曜21:00 JST」を開催日時とする
     const now = new Date();
     const jstNow = new Date(now.getTime() + 9 * 3600 * 1000);
     const currentDay = jstNow.getUTCDay(); // 0(日)〜6(土)
     let diffToSaturday = 6 - currentDay;
     if (diffToSaturday < 0) diffToSaturday += 7;
 
-    let startUtcMs = Date.UTC(jstNow.getUTCFullYear(), jstNow.getUTCMonth(), jstNow.getUTCDate() + diffToSaturday, 12, 0, 0, 0);
-    // 既に土曜21:00 JSTを過ぎている場合は翌週土曜へ自動繰越
-    if (startUtcMs <= now.getTime()) {
-      startUtcMs += 7 * 24 * 3600 * 1000;
-    }
+    // 「翌週」の土曜21:00 JST(=UTC 12:00) とする（+7日）
+    const targetDate = jstNow.getUTCDate() + diffToSaturday + 7;
+    const startUtcMs = Date.UTC(jstNow.getUTCFullYear(), jstNow.getUTCMonth(), targetDate, 12, 0, 0, 0);
 
     const startAtIso = new Date(startUtcMs).toISOString();
     const startJstDate = new Date(startUtcMs + 9 * 3600 * 1000); // 表示用(JST)
