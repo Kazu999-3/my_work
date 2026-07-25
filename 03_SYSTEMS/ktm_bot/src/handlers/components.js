@@ -112,17 +112,24 @@ export async function handleButtonInteraction(interaction, env, ctx) {
         let newLines = currentText.split('\n').filter(l => !l.includes('▫ 参加者: なし'));
 
         // 名簿(ktm_players)からユーザーの希望レーンを取得
-        let lanePrefStr = " 【希望: 未設定】";
+        let lanePrefStr = "";
         try {
           const { fetchSupabase } = await import('../utils/api.js');
           const ps = await fetchSupabase(env, 'ktm_players', `discord_id=eq.${userId}&select=role_preferences`);
           if (ps && ps.length > 0 && ps[0].role_preferences) {
-            const pref = ps[0].role_preferences;
-            const p1 = pref.primary || "指定なし";
-            const p2 = pref.secondary || "指定なし";
-            lanePrefStr = ` 【第1: ${p1} / 第2: ${p2}】`;
+            let pref = ps[0].role_preferences;
+            if (typeof pref === 'string') {
+              try { pref = JSON.parse(pref); } catch (e) {}
+            }
+            if (pref && (pref.primary || pref.secondary)) {
+              const p1 = pref.primary || "指定なし";
+              const p2 = pref.secondary || "指定なし";
+              lanePrefStr = ` 【第1: ${p1} / 第2: ${p2}】`;
+            }
           }
-        } catch (e) {}
+        } catch (e) {
+          console.warn("fetch role_preferences error:", e);
+        }
 
         if (isJoined) {
           // 解除

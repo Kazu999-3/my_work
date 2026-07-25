@@ -600,14 +600,20 @@ async function sendEventUsersNotification(env, options = {}) {
 
         if (allUserIds.size > 0) {
           const idsArr = Array.from(allUserIds);
-          const ps = await fetchSupabase(env, 'ktm_players', `discord_id=in.("${idsArr.join('","')}")&select=discord_id,role_preferences`);
+          const ps = await fetchSupabase(env, 'ktm_players', `discord_id=in.(${idsArr.join(',')})&select=discord_id,role_preferences`);
           const prefMap = new Map();
           if (ps && ps.length > 0) {
             ps.forEach(p => {
               if (p.role_preferences) {
-                const p1 = p.role_preferences.primary || "指定なし";
-                const p2 = p.role_preferences.secondary || "指定なし";
-                prefMap.set(String(p.discord_id), `【第1: ${p1} / 第2: ${p2}】`);
+                let pref = p.role_preferences;
+                if (typeof pref === 'string') {
+                  try { pref = JSON.parse(pref); } catch (e) {}
+                }
+                if (pref && (pref.primary || pref.secondary)) {
+                  const p1 = pref.primary || "指定なし";
+                  const p2 = pref.secondary || "指定なし";
+                  prefMap.set(String(p.discord_id), `【第1: ${p1} / 第2: ${p2}】`);
+                }
               }
             });
           }
