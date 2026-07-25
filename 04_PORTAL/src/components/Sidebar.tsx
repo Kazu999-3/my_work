@@ -93,13 +93,32 @@ export default function Sidebar() {
     localStorage.setItem('sovereign_sidebar_collapsed', String(nextVal));
   };
 
+  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
+
+  useEffect(() => {
+    // クッキーまたはローカル認証状態から管理者ログイン状態を検出
+    const hasAdminCookie = typeof document !== 'undefined' && document.cookie.includes('admin_session=');
+    if (hasAdminCookie) {
+      setIsAdminLoggedIn(true);
+    } else {
+      // API検証
+      fetch('/api/auth/verify', { credentials: 'include' })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.authenticated) {
+            setIsAdminLoggedIn(true);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [pathname]);
+
   // ページ遷移したらモバイルの「その他」シートは閉じる
   useEffect(() => { setShowMobileMore(false); }, [pathname]);
 
-  // 管理者エリアの判定
-  // Note: /lane-guides, /design, /matchups はサイドバーメニューから除外済みだが、
-  // ページ自体は独立で存在するためナビ表示の切り替え判定には含める。
+  // 管理者エリアまたは管理者ログイン中かを判定
   const isAdminArea =
+    isAdminLoggedIn ||
     pathname === '/' ||
     pathname.startsWith('/ktm-admin') ||
     pathname.startsWith('/coach') ||
@@ -108,19 +127,6 @@ export default function Sidebar() {
     pathname.startsWith('/design') ||
     pathname.startsWith('/lane-guides') ||
     pathname.startsWith('/admin');
-
-  // activeTabはページ遷移をまたいで保持される（Sidebarがルート跨ぎで再マウントされないため）。
-  // そのため、一般ページ経由で「一般機能」タブに切り替えた状態のまま別の管理者ページに
-  // 来ると、そのページ本来の管理者メニューではなく一般メニューが表示され続けるバグがあった。
-  // 「管理者エリア外→管理者エリア」に入った瞬間だけ 'admin' に戻すことで、
-  // タブ切り替え自体の利便性は残しつつ古い状態の持ち越しを防ぐ。
-  const wasAdminArea = useRef(isAdminArea);
-  useEffect(() => {
-    if (isAdminArea && !wasAdminArea.current) {
-      setActiveTab('admin');
-    }
-    wasAdminArea.current = isAdminArea;
-  }, [isAdminArea]);
 
   // 表示するメニュー項目の決定
   const activeMenuItems = isAdminArea 
