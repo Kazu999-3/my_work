@@ -111,12 +111,25 @@ export async function handleButtonInteraction(interaction, env, ctx) {
         let isJoined = currentText.includes(userMention);
         let newLines = currentText.split('\n').filter(l => !l.includes('▫ 参加者: なし'));
 
+        // 名簿(ktm_players)からユーザーの希望レーンを取得
+        let lanePrefStr = "";
+        try {
+          const { fetchSupabase } = await import('../utils/api.js');
+          const ps = await fetchSupabase(env, 'ktm_players', `discord_id=eq.${userId}&select=role_preferences`);
+          if (ps && ps.length > 0 && ps[0].role_preferences) {
+            const pref = ps[0].role_preferences;
+            const p1 = pref.primary || "ALL";
+            const p2 = pref.secondary || "ALL";
+            lanePrefStr = ` *(希望: ${p1}/${p2})*`;
+          }
+        } catch (e) {}
+
         if (isJoined) {
           // 解除
           newLines = newLines.filter(l => !l.includes(userMention));
         } else {
           // 追加
-          newLines.push(`- ${userMention}`);
+          newLines.push(`- ${userMention}${lanePrefStr}`);
         }
 
         const count = newLines.filter(l => l.startsWith('- ')).length;

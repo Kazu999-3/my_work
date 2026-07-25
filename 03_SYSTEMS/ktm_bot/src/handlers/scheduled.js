@@ -373,7 +373,7 @@ async function postWeeklyRecruitment(env) {
     // 2部屋統合 Embed
     const embed = {
       title: `⚔️ KTM 定期カスタム開催告知 [${dateLabel} 21:00]`,
-      description: `毎週末恒例の定期カスタム戦です！\n下記の部門ボタンを押して参加エントリーをお願いします。`,
+      description: `毎週末恒例の定期カスタム戦です！\n下記の部門ボタンを押して参加エントリーをお願いします。\n\n💡 **希望レーンに変更がある方は、ポータルの「マイページ」より変更をお願いします！**`,
       color: 0xc89b3c, // 琥珀色
       fields: [
         {
@@ -628,9 +628,10 @@ async function sendEventUsersNotification(env, options = {}) {
     }
 
     const recruitLink = targetMessageId ? `\n\n👉 [元の募集メッセージを開く](https://discord.com/channels/${guildId}/${channelId}/${targetMessageId})` : '';
+    const laneNote = `\n\n💡 **希望レーンに変更がある方は、ポータルの「マイページ」より事前に変更をお願いします！**`;
     const statusMessage = effectiveTotalCount >= 10
-      ? `🔥 **開催確定！** 現在 **${effectiveTotalCount}名** エントリー済みです！このまま開催します。${recruitLink}`
-      : `⚠️ **メンバー募集中！** 現在 **${effectiveTotalCount}名** です。カスタム開催（10人）まであと **${shortfall}名** 不足しています。下のボタンからエントリーしてください！${recruitLink}`;
+      ? `🔥 **開催確定！** 現在 **${effectiveTotalCount}名** エントリー済みです！このまま開催します。${laneNote}${recruitLink}`
+      : `⚠️ **メンバー募集中！** 現在 **${effectiveTotalCount}名** です。カスタム開催（10人）まであと **${shortfall}名** 不足しています。下のボタンからエントリーしてください！${laneNote}${recruitLink}`;
     const embedColor = effectiveTotalCount >= 10 ? 0x2ecc71 : 0xe74c3c;
 
     const embed = {
