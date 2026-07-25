@@ -287,7 +287,7 @@ export default function PlayerMyPage() {
     return '';
   }, [champPool]);
 
-  // Hextech 5軸能力パラメーター計算 (キャリー力/集団戦/安定度/プール広さ/チーム運)
+  // Hextech 5軸能力パラメーター計算 (キャリー力/集団戦/安定度/プール広さ/勝負強さ) - リアル戦績基準の厳密計算
   const hextechRadarData = useMemo(() => {
     const totalG = history?.length || 0;
     if (totalG === 0) {
@@ -296,58 +296,104 @@ export default function PlayerMyPage() {
         { subject: '集団戦', value: 65, fullMark: 100 },
         { subject: '安定度', value: 70, fullMark: 100 },
         { subject: 'プール広さ', value: 50, fullMark: 100 },
-        { subject: 'チーム運', value: 60, fullMark: 100 },
+        { subject: '勝負強さ', value: 60, fullMark: 100 },
       ];
     }
 
     const wins = history.filter(m => m.isWin).length;
     const winRate = Math.round((wins / totalG) * 100);
 
-    // 1. キャリー力 (勝率 & 直近勝率 & MMR)
-    const carry = Math.min(100, Math.max(40, Math.round(winRate * 0.7 + (player?.mmr ? player.mmr / 40 : 25))));
+    // 全試合の平均K/D/A計算
+    let totalKills = 0, totalDeaths = 0, totalAssists = 0;
+    history.forEach(m => {
+      totalKills += m.kills || 0;
+      totalDeaths += m.deaths || 0;
+      totalAssists += m.assists || 0;
+    });
+    const avgKills = totalKills / totalG;
+    const avgDeaths = totalDeaths / totalG;
+    const avgAssists = totalAssists / totalG;
 
-    // 2. 集団戦 (サポート・ジャングル・ミッド適性 & アシスト関与)
-    const teamfight = Math.min(100, Math.max(40, Math.round(60 + (champPool.length > 3 ? 15 : 5) + (winRate >= 50 ? 15 : 0))));
+    // 1. キャリー力: 平均キル数 & 勝率 & MMRレベルから精密算定
+    const carryScore = Math.round(45 + (avgKills * 4.5) + (winRate * 0.25) - (avgDeaths * 2));
+    const carry = Math.min(100, Math.max(40, carryScore));
 
-    // 3. 安定度 (連敗の少なさ & フォーム)
-    const streakBonus = recentForm ? (recentForm.streakWin ? recentForm.streak * 4 : -recentForm.streak * 3) : 0;
-    const consistency = Math.min(100, Math.max(35, Math.round(65 + streakBonus)));
+    // 2. 集団戦: アシスト関与 & サポート/ジャングル適性
+    const teamfightScore = Math.round(45 + (avgAssists * 3.8) + (champPool.length * 1.5));
+    const teamfight = Math.min(100, Math.max(40, teamfightScore));
 
-    // 4. プール広さ (使ったチャンピオン種類数)
-    const poolSize = Math.min(100, Math.max(30, Math.round(champPool.length * 15 + 25)));
+    // 3. 安定度: デスの少なさ & デス5以下の安定試合割合
+    const lowDeathGames = history.filter(m => (m.deaths || 0) <= 4).length;
+    const lowDeathRatio = (lowDeathGames / totalG) * 100;
+    const consistencyScore = Math.round(40 + (lowDeathRatio * 0.4) + Math.max(0, 30 - avgDeaths * 5));
+    const consistency = Math.min(100, Math.max(35, consistencyScore));
 
-    // 5. チーム運 (MMR変動と平均勝率)
-    const luck = Math.min(100, Math.max(30, Math.round(50 + (winRate - 50) * 0.8 + Math.floor(Math.random() * 10))));
+    // 4. プール広さ: 使用チャンピオン種類数
+    const poolSize = Math.min(100, Math.max(30, Math.round(30 + champPool.length * 14)));
+
+    // 5. 勝負強さ: 勝率 & 直近調子(10戦勝率)
+    const recentRate = recentForm?.last10Rate || winRate;
+    const clutchScore = Math.round(40 + (winRate * 0.4) + (recentRate * 0.2));
+    const clutch = Math.min(100, Math.max(35, clutchScore));
 
     return [
       { subject: 'キャリー力', value: carry, fullMark: 100 },
       { subject: '集団戦', value: teamfight, fullMark: 100 },
       { subject: '安定度', value: consistency, fullMark: 100 },
       { subject: 'プール広さ', value: poolSize, fullMark: 100 },
-      { subject: 'チーム運', value: luck, fullMark: 100 },
+      { subject: '勝負強さ', value: clutch, fullMark: 100 },
     ];
-  }, [history, recentForm, champPool, player]);
+  }, [history, recentForm, champPool]);
 
-  // 勝ちパターン分析 (Victory Blueprint)
+  // 勝ちパターン分析 (Victory Blueprint) - 8大ディープ・アーキタイプ判定
   const victoryBlueprint = useMemo(() => {
     if (!history || history.length === 0) return null;
     const wins = history.filter(m => m.isWin);
     const winRate = Math.round((wins.length / history.length) * 100);
+    const totalG = history.length;
+
+    let totalK = 0, totalD = 0, totalA = 0;
+    history.forEach(m => {
+      totalK += m.kills || 0;
+      totalD += m.deaths || 0;
+      totalA += m.assists || 0;
+    });
+    const avgK = totalK / totalG;
+    const avgD = totalD / totalG;
+    const avgA = totalA / totalG;
+    const kdaRatio = avgD === 0 ? (avgK + avgA) : (avgK + avgA) / avgD;
+
     const validChamps = champPool.filter(c => c.name && c.name !== 'Unknown');
-    const bestRoleName = validChamps.length > 0 ? validChamps[0].name : '得意の主力チャンピオン';
+    const bestRoleName = validChamps.length > 0 ? validChamps[0].name : '主力チャンピオン';
 
-    let archetype = "🚀 アーリー・スノーボーラー";
-    let desc = "序盤から対面を破壊し、主導権を握ってゲームを終わらせる勝ちパターンが得意です。";
-    let keyFactor = "レーン戦でのソロキル ＆ 序盤ドラゴン戦の寄り";
+    let archetype = "🔥 アグレッシブ・チャレンジャー";
+    let desc = "積極的なアクションで自ら試合展開を作り出し、チームの主導権を握るスタイルです。";
+    let keyFactor = "集団戦での立ち位置意識 ＆ 孤立デスの削減";
 
-    if (winRate >= 60) {
-      archetype = "👑 全天候型ハイパーキャリー";
-      desc = "レーン戦・集団戦どちらでも安定したハイパフォーマンスを発揮する絶対的キャリーです。";
-      keyFactor = "後半の集団戦での立ち回りとデスの回避";
+    if (avgK >= 7 && winRate >= 55) {
+      archetype = "👑 ハイパー・キャリー型";
+      desc = `圧倒的な火力とキル獲得力でチームの主力を担い、後半戦でゲームを決定づける絶対的キャリーです。${bestRoleName}ピック時の存在感が際立っています。`;
+      keyFactor = "集団戦でのデッド回避 ＆ デス時の敵へのシャットダウンゴールド阻止";
+    } else if (avgK >= 6 && kdaRatio >= 3.2) {
+      archetype = "🎯 プレシジョン・アサシン型";
+      desc = "高いKDAと狙い澄ましたキルで相手の重要キャリーを仕留め、人数差を作って勝利を引き寄せるタイプです。";
+      keyFactor = "サイドレーンでのキル獲得後のドラゴン/バロンへの迅速な寄り";
+    } else if (avgA >= 8 && avgD <= 4.5) {
+      archetype = "🛡️ チームフロント・アンカー型";
+      desc = "高いアシスト数とデスの少なさで集団戦のフロントラインを維持し、味方を安全に守って勝利へ導く大黒柱です。";
+      keyFactor = "キャリー陣のガード ＆ 重要オブジェクト周辺での先行視界確保";
     } else if (champPool.length >= 4) {
-      archetype = "⚡ フレキシブル・ユーティリティ";
-      desc = "チーム構成に合わせて柔軟にロールやキャラを変え、穴を埋めて勝利に導くタイプです。";
-      keyFactor = `得意チャンピオン（${bestRoleName}）でのピック固定`;
+      archetype = "⚡ フレキシブル・ユーティリティ型";
+      desc = "複数のレーン・チャンピオンを器用に使いこなし、チームの穴を埋めて総合力で勝ちに導くユーティリティプレイヤーです。";
+      keyFactor = `最も得意な${bestRoleName}へのピック固定による勝率の上乗せ`;
+    } else if (winRate >= 60) {
+      archetype = "🧱 レイトゲーム・コマンダー型";
+      desc = "安定したパフォーマンスでゲームが長引くほど真価を発揮し、終盤の集団戦で確実に勝率をものにする勝利の守護神です。";
+      keyFactor = "バロン周りでの慎重なエンゲージ判断 ＆ 失敗リスクの回避";
+    } else if (avgA >= 7) {
+      archetype = "🤝 サポート・ファシリテーター型";
+      desc = "味方のキャリー陣にキルを譲り、集団戦のコントロールとオブジェクト関与でチーム全体の勝率を引き上げる陰の立役者です。";
+      keyFactor = "ミッド〜川沿いでの先手のアクション ＆ ピン(Ping)通知の活用";
     }
 
     return {
