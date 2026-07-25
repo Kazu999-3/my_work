@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabaseClient';
-import { RefreshCw, Users, HeartHandshake, Award, Sparkles, TrendingUp, AlertTriangle } from 'lucide-react';
+import { Users, HeartHandshake, Crown, Skull, Sparkles } from 'lucide-react';
 import { Spinner } from '../../components/Feedback';
 
 interface AllyStat {
@@ -137,14 +137,13 @@ export default function SynergyPage() {
     );
   }
 
-  // フィルタリングとソート
-  // 1. 最強コンビ (勝率降順)
+  // 1. 最強のコンビ (勝率降順)
   const bestAlly = allyStats
     .filter(a => a.games >= minGames)
     .sort((a, b) => b.winRate === a.winRate ? b.games - a.games : b.winRate - a.winRate);
 
-  // 2. 伸びしろコンビ (勝率昇順 = 改善の余地があるペア)
-  const growthAlly = allyStats
+  // 2. 最弱のコンビ (勝率昇順)
+  const worstAlly = allyStats
     .filter(a => a.games >= minGames)
     .sort((a, b) => a.winRate === b.winRate ? b.games - a.games : a.winRate - b.winRate);
 
@@ -154,7 +153,7 @@ export default function SynergyPage() {
     .sort((a, b) => b.winRate === a.winRate ? b.games - a.games : b.winRate - a.winRate)
     .slice(0, 50);
 
-  const filteredGroupsGrowth = (groupStats[groupSize] || [])
+  const filteredGroupsWorst = (groupStats[groupSize] || [])
     .filter(g => g.games >= groupMin)
     .sort((a, b) => a.winRate === b.winRate ? b.games - a.games : a.winRate - b.winRate)
     .slice(0, 50);
@@ -168,11 +167,11 @@ export default function SynergyPage() {
           <div>
             <h1 className="text-3xl font-extrabold text-white flex items-center gap-3">
               <HeartHandshake className="h-8 w-8 text-fuchsia-400" />
-              チームシナジー ＆ 相性分析
+              チームシナジー分析
             </h1>
             <p className="text-gray-400 mt-2 text-sm">
-              KTMの全試合データから算出された「味方時の勝率」と「チーム連携力」をクリアに可視化。<br/>
-              最高の相棒コンビと、これから更なる成長が期待できる伸びしろパートナーを分析します。
+              KTMの全試合データから算出された「味方時の勝率」を分析。<br/>
+              最強のコンビと最弱のコンビを2〜5人の人数別で一覧化します。
             </p>
           </div>
           
@@ -191,7 +190,7 @@ export default function SynergyPage() {
           </div>
         </div>
 
-        {/* 人数切替タブ */}
+        {/* 人数切替タブ (2〜5人選択) */}
         <div className="flex items-center justify-between flex-wrap gap-4 bg-gray-900 border border-gray-800 p-3 rounded-2xl">
           <div className="flex items-center gap-2">
             <Users className="text-fuchsia-400" size={20} />
@@ -200,22 +199,22 @@ export default function SynergyPage() {
           <div className="flex gap-2">
             {([2, 3, 4, 5] as const).map(n => (
               <button key={n} onClick={() => setGroupSize(n)}
-                className={`px-4 py-2 rounded-xl text-xs font-black transition-all ${groupSize === n ? 'bg-gradient-to-r from-fuchsia-600 to-pink-600 text-white shadow-lg shadow-fuchsia-500/20' : 'bg-gray-950 text-gray-400 hover:text-white border border-gray-800'}`}>
+                className={`px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${groupSize === n ? 'bg-gradient-to-r from-fuchsia-600 to-pink-600 text-white shadow-lg shadow-fuchsia-500/20' : 'bg-gray-950 text-gray-400 hover:text-white border border-gray-800'}`}>
                 {n}人コンビ / チーム
               </button>
             ))}
           </div>
         </div>
 
-        {/* メイン 2大カード */}
+        {/* メイン: 左右に「最強のコンビ」と「最弱のコンビ」を配置 */}
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
           
-          {/* 1. 最強のシナジー */}
+          {/* 左カード: 最強のコンビ */}
           <div className="bg-gray-900 border border-gray-800 rounded-3xl p-6 shadow-2xl relative overflow-hidden">
             <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-500"></div>
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-black text-emerald-400 flex items-center gap-2">
-                <Sparkles className="h-6 w-6" /> 👑 最高のチームシナジー <span className="text-xs text-gray-500 font-normal">(Best Synergy)</span>
+                <Crown className="h-6 w-6" /> 最強のコンビ <span className="text-xs text-gray-500 font-normal">(Best Combo)</span>
               </h2>
             </div>
             
@@ -258,7 +257,7 @@ export default function SynergyPage() {
                     <div className="flex-1 flex items-center justify-between gap-4">
                       <div className="flex items-center gap-3">
                         <span className="font-bold text-white text-base">{stat.p1}</span>
-                        <span className="text-fuchsia-400 text-xs font-black">🤝</span>
+                        <span className="text-emerald-400 text-xs font-black">🤝</span>
                         <span className="font-bold text-white text-base">{stat.p2}</span>
                       </div>
                       <div className="text-right flex flex-col items-end">
@@ -276,23 +275,23 @@ export default function SynergyPage() {
             </div>
           </div>
 
-          {/* 2. 伸びしろコンビ */}
+          {/* 右カード: 最弱のコンビ */}
           <div className="bg-gray-900 border border-gray-800 rounded-3xl p-6 shadow-2xl relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-amber-400 via-orange-400 to-yellow-500"></div>
+            <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-rose-500 via-red-500 to-pink-600"></div>
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-black text-amber-400 flex items-center gap-2">
-                <AlertTriangle className="h-6 w-6" /> ⚠️ 伸びしろパートナー <span className="text-xs text-gray-500 font-normal">(Growth Potential)</span>
+              <h2 className="text-2xl font-black text-rose-400 flex items-center gap-2">
+                <Skull className="h-6 w-6" /> 最弱のコンビ <span className="text-xs text-gray-500 font-normal">(Worst Combo)</span>
               </h2>
             </div>
 
             <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
               {groupSize > 2 ? (
-                filteredGroupsGrowth.length === 0 ? (
+                filteredGroupsWorst.length === 0 ? (
                   <div className="text-center text-gray-500 py-12">この条件で一緒に戦った組み合わせがありません</div>
                 ) : (
-                  filteredGroupsGrowth.map((g, i) => (
+                  filteredGroupsWorst.map((g, i) => (
                     <div key={g.members.join('-')} className="flex items-center gap-4 bg-gray-950/60 hover:bg-gray-800/80 p-4 rounded-2xl border border-gray-800/80 transition">
-                      <div className="w-8 h-8 rounded-xl flex items-center justify-center font-black shrink-0 bg-gray-800 text-amber-400 border border-amber-500/20">
+                      <div className="w-8 h-8 rounded-xl flex items-center justify-center font-black shrink-0 bg-rose-500/10 text-rose-400 border border-rose-500/20">
                         {i + 1}
                       </div>
                       <div className="flex-1 flex items-center justify-between gap-4 min-w-0">
@@ -304,7 +303,7 @@ export default function SynergyPage() {
                           ))}
                         </div>
                         <div className="text-right flex flex-col items-end shrink-0">
-                          <div className="text-xl font-black text-amber-400">
+                          <div className="text-xl font-black text-rose-400">
                             {(g.winRate * 100).toFixed(1)}%
                           </div>
                           <div className="text-xs text-gray-500 font-bold">{g.games}戦 {g.wins}勝</div>
@@ -313,22 +312,22 @@ export default function SynergyPage() {
                     </div>
                   ))
                 )
-              ) : growthAlly.length === 0 ? (
+              ) : worstAlly.length === 0 ? (
                 <div className="text-center text-gray-500 py-12">該当するデータがありません</div>
               ) : (
-                growthAlly.map((stat, i) => (
+                worstAlly.map((stat, i) => (
                   <div key={`${stat.p1}-${stat.p2}`} className="flex items-center gap-4 bg-gray-950/60 hover:bg-gray-800/80 p-4 rounded-2xl border border-gray-800/80 transition">
-                    <div className="w-8 h-8 rounded-xl flex items-center justify-center font-black bg-gray-800 text-amber-400 border border-amber-500/20">
+                    <div className="w-8 h-8 rounded-xl flex items-center justify-center font-black bg-rose-500/10 text-rose-400 border border-rose-500/20">
                       {i + 1}
                     </div>
                     <div className="flex-1 flex items-center justify-between gap-4">
                       <div className="flex items-center gap-3">
                         <span className="font-bold text-white text-base">{stat.p1}</span>
-                        <span className="text-amber-400 text-xs font-black">🤝</span>
+                        <span className="text-rose-400 text-xs font-black">🤝</span>
                         <span className="font-bold text-white text-base">{stat.p2}</span>
                       </div>
                       <div className="text-right flex flex-col items-end">
-                        <div className="text-2xl font-black text-amber-400">
+                        <div className="text-2xl font-black text-rose-400">
                           {(stat.winRate * 100).toFixed(1)}%
                         </div>
                         <div className="text-xs text-gray-500 font-bold">
