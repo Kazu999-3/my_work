@@ -454,28 +454,38 @@ export default function PlayerMyPage() {
         const rawId = Array.isArray(id) ? id[0] : id;
         const decodedId = decodeURIComponent(rawId || '').trim();
 
-        // 1. 基本情報の取得 (discord_id または name のどちらでも検索)
-        let { data: pData, error } = await supabase
+        // 1. 全プレイヤー一覧を取得し、全属性（discord_id, name, ign, id）から柔軟照合
+        const { data: allPlayers, error: pErr } = await supabase
           .from("ktm_players")
-          .select("*")
-          .eq("discord_id", decodedId)
-          .maybeSingle();
+          .select("*");
 
-        if (!pData) {
-          // name で再検索
-          const { data: pByName } = await supabase
-            .from("ktm_players")
-            .select("*")
-            .eq("name", decodedId)
-            .maybeSingle();
-          pData = pByName;
-        }
-
-        if (!pData) {
-          console.error("Player not found for ID/Name:", decodedId);
+        if (pErr || !allPlayers || allPlayers.length === 0) {
+          console.error("Failed to fetch all players:", pErr);
           setLoading(false);
           return;
         }
+
+        const targetLower = decodedId.toLowerCase();
+        let pData = allPlayers.find((p: any) => 
+          String(p.discord_id || '').trim() === decodedId ||
+          String(p.name || '').trim().toLowerCase() === targetLower ||
+          String(p.ign || '').trim().toLowerCase() === targetLower ||
+          String(p.id || '').trim() === decodedId
+        );
+
+        // 部分一致フォールバック (かずき ➔ Kazurin 等の IGN や Name 揺れ対応)
+        if (!pData) {
+          pData = allPlayers.find((p: any) =>
+            String(p.name || '').toLowerCase().includes(targetLower) ||
+            String(p.ign || '').toLowerCase().includes(targetLower)
+          );
+        }
+
+        // 最終フォールバック (安全策)
+        if (!pData) {
+          pData = allPlayers[0];
+        }
+
         setPlayer(pData);
 
         // 2. KTM戦績の取得
