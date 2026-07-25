@@ -162,6 +162,33 @@ export default function PlayerMyPage() {
     return player[key] || 1000;
   }, [player, activeLane]);
 
+  // レーン別戦績のソートキー (勝率順/試合数順/KDA順/デフォルト)
+  const [laneSortKey, setLaneSortKey] = useState<'winRate' | 'games' | 'kda' | 'default'>('winRate');
+
+  const sortedLaneRoles = useMemo(() => {
+    const defaultRoles = ['TOP', 'JG', 'MID', 'ADC', 'SUP'];
+    if (!stats || laneSortKey === 'default') return defaultRoles;
+
+    return [...defaultRoles].sort((a, b) => {
+      const sa = stats[a];
+      const sb = stats[b];
+      if (!sa && !sb) return 0;
+      if (!sa) return 1;
+      if (!sb) return -1;
+
+      if (laneSortKey === 'winRate') {
+        return (sb.winRate || 0) - (sa.winRate || 0) || (sb.totalGames || 0) - (sa.totalGames || 0);
+      } else if (laneSortKey === 'games') {
+        return (sb.totalGames || 0) - (sa.totalGames || 0) || (sb.winRate || 0) - (sa.winRate || 0);
+      } else if (laneSortKey === 'kda') {
+        const kdaA = sa.avgDeaths === 0 ? (sa.avgKills + sa.avgAssists) * 1.2 : (sa.avgKills + sa.avgAssists) / sa.avgDeaths;
+        const kdaB = sb.avgDeaths === 0 ? (sb.avgKills + sb.avgAssists) * 1.2 : (sb.avgKills + sb.avgAssists) / sb.avgDeaths;
+        return kdaB - kdaA;
+      }
+      return 0;
+    });
+  }, [stats, laneSortKey]);
+
   // 昇降格の演出(L-04): 前回訪問時のティアと比較して変動があればバナー表示
   const [tierChange, setTierChange] = useState<{ from: string; to: string; up: boolean } | null>(null);
   useEffect(() => {
@@ -306,7 +333,8 @@ export default function PlayerMyPage() {
     if (!history || history.length === 0) return null;
     const wins = history.filter(m => m.isWin);
     const winRate = Math.round((wins.length / history.length) * 100);
-    const bestRoleName = champPool[0]?.name || '主力キャラ';
+    const validChamps = champPool.filter(c => c.name && c.name !== 'Unknown');
+    const bestRoleName = validChamps.length > 0 ? validChamps[0].name : '得意の主力チャンピオン';
 
     let archetype = "🚀 アーリー・スノーボーラー";
     let desc = "序盤から対面を破壊し、主導権を握ってゲームを終わらせる勝ちパターンが得意です。";
@@ -319,7 +347,7 @@ export default function PlayerMyPage() {
     } else if (champPool.length >= 4) {
       archetype = "⚡ フレキシブル・ユーティリティ";
       desc = "チーム構成に合わせて柔軟にロールやキャラを変え、穴を埋めて勝利に導くタイプです。";
-      keyFactor = "得意チャンピオン（" + bestRoleName + "）でのピック固定";
+      keyFactor = `得意チャンピオン（${bestRoleName}）でのピック固定`;
     }
 
     return {
@@ -1102,14 +1130,40 @@ export default function PlayerMyPage() {
               {/* 2. レーン別戦績タブ */}
               {activeTab === 'lanes' && (
                 <div className="bg-white/[0.02] backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-xl">
-                  <h3 className="text-lg font-black flex items-center gap-2 mb-6 border-b border-white/5 pb-3">
-                    <Swords className="w-5 h-5 text-emerald-400" />
-                    <span>KTM レーン別戦績詳細</span>
-                  </h3>
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 border-b border-white/5 pb-3">
+                    <h3 className="text-lg font-black flex items-center gap-2">
+                      <Swords className="w-5 h-5 text-emerald-400" />
+                      <span>KTM レーン別戦績詳細</span>
+                    </h3>
+
+                    {/* ソート切り替えボタン */}
+                    <div className="flex items-center gap-1.5 bg-black/40 p-1.5 rounded-2xl border border-white/10 text-xs">
+                      <span className="text-[10px] text-gray-500 font-bold px-1.5">並び替え:</span>
+                      {([
+                        ['winRate', '勝率順'],
+                        ['games', '試合数順'],
+                        ['kda', 'KDA順'],
+                        ['default', 'デフォルト']
+                      ] as const).map(([k, label]) => (
+                        <button
+                          key={k}
+                          type="button"
+                          onClick={() => setLaneSortKey(k)}
+                          className={`px-3 py-1 rounded-xl text-xs font-black transition-all ${
+                            laneSortKey === k
+                              ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-black shadow-md shadow-emerald-500/20'
+                              : 'text-gray-400 hover:text-white hover:bg-white/5'
+                          }`}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                   
                   {stats && Object.keys(stats).some(k => stats[k] !== null) ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {['TOP', 'JG', 'MID', 'ADC', 'SUP'].map(role => {
+                      {sortedLaneRoles.map(role => {
                         const s = stats[role];
                         if (!s) return null;
                         
