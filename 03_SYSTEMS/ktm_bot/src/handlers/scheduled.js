@@ -22,8 +22,8 @@ export async function handleScheduledEvent(event, env, ctx) {
   } else if (cronExpression === "*/10 * * * *" || mode === "recruit_reminder") {
     // 10分ごと: 開始時刻が近い募集の参加者へリマインド(D1)
     await sendRecruitmentReminders(env);
-  } else if (cronExpression === "0 12 * * 6" || mode === "weekly_recruit") {
-    // 毎週土曜 21:00 JST (UTC 12:00): 翌週土曜21:00開催の定期カスタム募集を自動投稿
+  } else if (cronExpression === "0 15 * * 6" || mode === "weekly_recruit") {
+    // 毎週日曜 0:00 JST (土曜 UTC 15:00): 前回の募集を締め切り、同週土曜21:00開催の定期募集を自動投稿
     await postWeeklyRecruitment(env);
   } else {
     // 直前通知: 進行中の募集の集まり具合を通知し、不足なら欠員アラート
@@ -297,19 +297,64 @@ async function sendWeeklyReports(env) {
  */
 async function postWeeklyRecruitment(env) {
   try {
-    // 毎週土曜21:00 JST(=UTC 12:00)に投稿し、1週間後の「翌週土曜21:00 JST」を開催日時とする
+    const targetChannelId = CONFIG.PERIODIC_RECRUIT_CHANNEL_ID || CONFIG.RECRUIT_CHANNEL_ID || "1528646515533287497";
+
+    // 1. 前回のオープンな募集を DB および Discord 上で締め切る (status = 'closed')
+    try {
+      const activeRecruits = await fetchSupabase(env, 'recruitments', 'status=eq.open&select=*');
+      if (activeRecruits && activeRecruits.length > 0) {
+        for (const oldRecruit of activeRecruits) {
+          // DB のステータスを closed に変更
+          await updateRecruitment(env, oldRecruit.id, { status: 'closed' }).catch(() => {});
+
+          // Discord 上の旧メッセージのボタンを無効化し、タイトルに [受付終了] を追加
+          try {
+            const oldMsgRes = await fetch(`https://discord.com/api/v10/channels/${oldRecruit.discord_channel_id}/messages/${oldRecruit.discord_message_id}`, {
+              headers: { "Authorization": `Bot ${env.DISCORD_TOKEN}` }
+            });
+            if (oldMsgRes.ok) {
+              const oldMsg = await oldMsgRes.json();
+              if (oldMsg.embeds && oldMsg.embeds.length > 0) {
+                const closedEmbed = { ...oldMsg.embeds[0] };
+                closedEmbed.title = closedEmbed.title.replace("開催告知", "[受付終了]");
+                closedEmbed.color = 0x7f8c8d; // グレーアウト
+
+                const disabledComponents = oldMsg.components ? oldMsg.components.map(row => ({
+                  ...row,
+                  components: row.components.map(btn => ({ ...btn, disabled: true }))
+                })) : [];
+
+                await fetch(`https://discord.com/api/v10/channels/${oldRecruit.discord_channel_id}/messages/${oldRecruit.discord_message_id}`, {
+                  method: 'PATCH',
+                  headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}`, 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ embeds: [closedEmbed], components: disabledComponents })
+                }).catch(() => {});
+              }
+            }
+          } catch (e) {}
+        }
+      }
+    } catch (closeErr) {
+      console.warn('[WeeklyRecruit] 前回の募集締め切り処理のエラー:', closeErr);
+    }
+
+    // 2. 毎週日曜 0:00 JST 投稿時 ➔ 直近の「土曜日 21:00 JST (=UTC 12:00)」を開催日時とする
     const now = new Date();
     const jstNow = new Date(now.getTime() + 9 * 3600 * 1000);
     const currentDay = jstNow.getUTCDay(); // 0(日)〜6(土)
-    let diffToSaturday = 6 - currentDay;
-    if (diffToSaturday < 0) diffToSaturday += 7;
+    
+    // 直近の土曜日までの日数（日曜日の場合 6日後）
+    let diffToSaturday = (6 - currentDay + 7) % 7;
+    if (diffToSaturday === 0 && jstNow.getUTCHours() >= 21) {
+      diffToSaturday = 7; // すでに土曜21時を過ぎている場合は来週
+    }
 
-    // 「翌週」の土曜21:00 JST(=UTC 12:00) とする（+7日）
-    const targetDate = jstNow.getUTCDate() + diffToSaturday + 7;
+    const targetDate = jstNow.getUTCDate() + diffToSaturday;
     const startUtcMs = Date.UTC(jstNow.getUTCFullYear(), jstNow.getUTCMonth(), targetDate, 12, 0, 0, 0);
 
     const startAtIso = new Date(startUtcMs).toISOString();
     const startJstDate = new Date(startUtcMs + 9 * 3600 * 1000);
+    const dateLabel = `${startJstDate.getUTCMonth() + 1}/${startJstDate.getUTCDate()}(土)`;
     const ownerId = CONFIG.ADMIN_ID;
     
     // 2部屋統合用メタデータ
