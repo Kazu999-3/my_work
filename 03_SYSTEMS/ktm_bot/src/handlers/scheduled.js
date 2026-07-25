@@ -562,50 +562,23 @@ async function sendEventUsersNotification(env, options = {}) {
         if (recruitMsg) {
           activeEmbed = recruitMsg.embeds[0];
           targetMessageId = recruitMsg.id;
-          if (activeEmbed.fields) {
-            activeEmbed.fields.forEach(f => {
-              const matches = (f.value || "").match(/- <@\d+>/g);
-              if (matches) totalJoinedCount += matches.length;
-            });
-          }
+    let silverCount = 0;
+    let goldCount = 0;
+
+    if (activeEmbed && activeEmbed.fields) {
+      activeEmbed.fields.forEach(f => {
+        const matches = (f.value || "").match(/- <@\d+>/g) || [];
+        if (f.name.includes("シルバー")) {
+          silverCount = matches.length;
+        } else if (f.name.includes("ゴルプラ")) {
+          goldCount = matches.length;
         }
-      }
-    } catch (dbErr) {
-      console.warn("Recruitment fetch warning:", dbErr);
-    }
-
-    // 3. Guild 内の Scheduled Events からも抽出
-    const eventsRes = await fetchWithRetry(`https://discord.com/api/v10/guilds/${guildId}/scheduled-events`, {
-      headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}` }
-    });
-
-    const scheduledEvents = eventsRes.ok ? await eventsRes.json() : [];
-    const now = Date.now();
-    const minStartLimit = now - 3 * 60 * 60 * 1000;
-    const maxStartLimit = now + lookaheadHours * 60 * 60 * 1000;
-
-    const targetEvents = scheduledEvents.filter(e => {
-      const startTime = new Date(e.scheduled_start_time).getTime();
-      const isWithinRange = startTime >= minStartLimit && startTime <= maxStartLimit;
-      const hasTeiki = e.name && (e.name.includes("【定期】") || e.name.includes("カスタム") || e.name.includes("KTM"));
-      const isActive = e.status === 1 || e.status === 2;
-      return isWithinRange && hasTeiki && isActive;
-    });
-
-    const eventDetails = [];
-    for (const targetEvent of targetEvents) {
-      const usersRes = await fetchWithRetry(`https://discord.com/api/v10/guilds/${guildId}/scheduled-events/${targetEvent.id}/users?limit=100&with_member=true`, {
-        headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}` }
       });
-      if (usersRes.ok) {
-        const eventUsers = await usersRes.json();
-        eventDetails.push({ event: targetEvent, users: eventUsers });
-      }
     }
 
-    const eventUsersCount = eventDetails[0]?.users.length || 0;
-    const effectiveTotalCount = Math.max(eventUsersCount, totalJoinedCount);
-    let shortfall = effectiveTotalCount < 10 ? 10 - effectiveTotalCount : 0;
+    const silverShortfall = Math.max(0, 10 - silverCount);
+    const goldShortfall = Math.max(0, 10 - goldCount);
+    const totalJoined = silverCount + goldCount;
 
     // 4. アナウンス Embed の作成（募集カードを完全同期 ＆ 引用リンク添付）
     let syncFields = activeEmbed ? activeEmbed.fields : [];
@@ -629,10 +602,12 @@ async function sendEventUsersNotification(env, options = {}) {
 
     const recruitLink = targetMessageId ? `\n\n👉 [元の募集メッセージを開く](https://discord.com/channels/${guildId}/${channelId}/${targetMessageId})` : '';
     const laneNote = `\n\n💡 **希望レーンに変更がある方は、ポータルの「マイページ」より事前に変更をお願いします！**`;
-    const statusMessage = effectiveTotalCount >= 10
-      ? `🔥 **開催確定！** 現在 **${effectiveTotalCount}名** エントリー済みです！このまま開催します。${laneNote}${recruitLink}`
-      : `⚠️ **メンバー募集中！** 現在 **${effectiveTotalCount}名** です。カスタム開催（10人）まであと **${shortfall}名** 不足しています。下のボタンからエントリーしてください！${laneNote}${recruitLink}`;
-    const embedColor = effectiveTotalCount >= 10 ? 0x2ecc71 : 0xe74c3c;
+
+    const isConfirmed = silverCount >= 10 || goldCount >= 10;
+    const statusMessage = isConfirmed
+      ? `🔥 **開催確定！** 現在 **シルバー: ${silverCount}名 / ゴルプラ: ${goldCount}名** (合計${totalJoined}名) エントリー済みです！このまま開催します。${laneNote}${recruitLink}`
+      : `⚠️ **メンバー募集中！** 現在 **シルバー: ${silverCount}名 / ゴルプラ: ${goldCount}名** (合計${totalJoined}名) です。\n▫ シルバー以下: あと **${silverShortfall}名**\n▫ ゴルプラ: あと **${goldShortfall}名**\n下のボタンからエントリーしてください！${laneNote}${recruitLink}`;
+    const embedColor = isConfirmed ? 0x2ecc71 : 0xe74c3c;
 
     const embed = {
       title: activeEmbed ? activeEmbed.title : (isAdvanceNotice ? `📅 【定期】イベント 事前告知 🔔` : `📅 【定期】カスタム戦 参加メンバー状況`),
@@ -643,7 +618,7 @@ async function sendEventUsersNotification(env, options = {}) {
       timestamp: new Date().toISOString()
     };
 
-    // 7. メッセージ ＆ ワンタップ「参加する」ボタン（シルバー以下＆ゴルプラ）の作成
+    // 5. メッセージ ＆ ワンタップ「参加する」ボタンの作成
     const roleId = CONFIG.NOTIFICATION_ROLE_ID;
     const messageBody = {
       embeds: [embed],
@@ -668,8 +643,11 @@ async function sendEventUsersNotification(env, options = {}) {
       ]
     };
 
-    if (shortfall > 0 && roleId) {
-      messageBody.content = `<@&${roleId}> 🚨 **あと${shortfall}名でカスタム開催です！** 参加できる方は上のボタンまたはイベントから「参加する / 興味あり」を押してください！`;
+    if (!isConfirmed && roleId) {
+      let shortText = [];
+      if (silverShortfall > 0) shortText.push(`シルバー以下 あと${silverShortfall}名`);
+      if (goldShortfall > 0) shortText.push(`ゴルプラ あと${goldShortfall}名`);
+      messageBody.content = `<@&${roleId}> 🚨 **【${shortText.join(' / ')}】でカスタム開催です！** 参加できる方は下のボタンからエントリーをお願いします！`;
       messageBody.allowed_mentions = { roles: [roleId] };
     }
 
