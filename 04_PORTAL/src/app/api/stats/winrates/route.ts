@@ -8,23 +8,23 @@ export async function GET() {
     // 1. 全てのプレイヤー一覧を取得
     const { data: players, error: pError } = await supabase
       .from('ktm_players')
-      .select('name, is_active, mmr_top, mmr_jg, mmr_mid, mmr_adc, mmr_sup, mmr');
+      .select('name, discord_id, is_active, mmr_top, mmr_jg, mmr_mid, mmr_adc, mmr_sup, mmr');
 
     if (pError || !players) {
       throw new Error("Failed to fetch players");
     }
 
-    // 2. 過去の全試合の参加者と勝敗情報を取得 (リレーションシップエラー回避のため独立クエリ化)
+    // 2. 過去の全試合の参加者を取得
     const { data: participants, error: hError } = await supabase
       .from('ktm_match_participants')
-      .select('player_name, role, team, match_id');
+      .select('player_name, discord_id, role, team, match_id');
 
     if (hError || !participants) {
       console.error("Failed to fetch match participants:", hError);
       throw new Error("Failed to fetch match history participants");
     }
 
-    // 試合の勝敗情報を取得
+    // 3. 試合の勝敗情報を取得
     const { data: matches, error: mError } = await supabase
       .from('ktm_matches')
       .select('id, winning_team');
@@ -34,16 +34,24 @@ export async function GET() {
       throw new Error("Failed to fetch matches");
     }
 
-    const matchWinMap: Record<string, string> = {};
+    const matchWinMap = new Map<number, string>();
     matches.forEach((m: any) => {
-      matchWinMap[m.id] = m.winning_team;
+      matchWinMap.set(Number(m.id), m.winning_team);
     });
 
-    // 3. データ集計用の初期化
+    // 4. データ集計用のマッピング準備 (discord_id と name の両方で引けるようにする)
+    const byDiscord = new Map<string, any>();
+    const byName = new Map<string, any>();
+    players.forEach((p: any) => {
+      if (p.discord_id) byDiscord.set(p.discord_id, p);
+      byName.set(p.name, p);
+    });
+
     const statsMap: Record<string, any> = {};
     players.forEach((p: any) => {
       statsMap[p.name] = {
         name: p.name,
+        discordId: p.discord_id,
         totalGames: 0,
         totalWins: 0,
         overallMmr: p.mmr || 1200,
@@ -57,15 +65,22 @@ export async function GET() {
       };
     });
 
-    // 4. 勝敗の集計
+    // 5. 勝敗の集計
     participants.forEach((row: any) => {
-      const pName = row.player_name;
+      const resolved = (row.discord_id && byDiscord.get(row.discord_id)) || byName.get(row.player_name);
+      if (!resolved) return;
+
+      const pName = resolved.name;
       if (!statsMap[pName]) return;
 
-      const winningTeam = matchWinMap[row.match_id];
+      const winningTeam = matchWinMap.get(Number(row.match_id));
       if (!winningTeam) return;
 
-      const role = (row.role || '').toUpperCase();
+      let role = (row.role || '').toUpperCase();
+      if (role === 'JUG' || role === 'JUNGLE') role = 'JG';
+      if (role === 'BOT' || role === 'UTILITY') role = 'ADC';
+      if (role === 'SUPPORT') role = 'SUP';
+
       const isWin = row.team === winningTeam;
 
       statsMap[pName].totalGames += 1;
@@ -77,7 +92,7 @@ export async function GET() {
       }
     });
 
-    // 5. 配列に変換し、総試合数が多い順（同数の場合は勝率順）にソート
+    // 6. 配列に変換し、総試合数が多い順にソート
     const results = Object.values(statsMap).sort((a, b) => {
       if (b.totalGames !== a.totalGames) {
         return b.totalGames - a.totalGames;

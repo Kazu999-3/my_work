@@ -52,18 +52,22 @@ export default function LeaderboardPage() {
     (async () => {
       setMetaLoading(true);
       try {
-        const { data } = await supabase
+        const { data: partData } = await supabase
           .from('ktm_match_participants')
-          .select('champion_name, team, kills, deaths, assists, ktm_matches ( winning_team )');
+          .select('match_id, champion_name, team, kills, deaths, assists');
+        const { data: matchWins } = await supabase
+          .from('ktm_matches')
+          .select('id, winning_team');
+        const winMap: Record<number, string> = {};
+        (matchWins || []).forEach((m: any) => { winMap[m.id] = m.winning_team; });
+
         const agg: Record<string, { games: number; wins: number; k: number; d: number; a: number }> = {};
-        (data || []).forEach((r: any) => {
+        (partData || []).forEach((r: any) => {
           const c = r.champion_name;
           if (!c) return;
           if (!agg[c]) agg[c] = { games: 0, wins: 0, k: 0, d: 0, a: 0 };
           agg[c].games += 1;
-          const winningTeam = Array.isArray(r.ktm_matches)
-            ? (r.ktm_matches[0] as any)?.winning_team
-            : (r.ktm_matches as any)?.winning_team;
+          const winningTeam = winMap[r.match_id];
           if (r.team === winningTeam) agg[c].wins += 1;
           agg[c].k += r.kills || 0; agg[c].d += r.deaths || 0; agg[c].a += r.assists || 0;
         });
