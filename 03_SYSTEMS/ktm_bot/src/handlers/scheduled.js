@@ -312,15 +312,6 @@ async function postWeeklyRecruitment(env) {
     const startJstDate = new Date(startUtcMs + 9 * 3600 * 1000);
     const dateLabel = `${startJstDate.getUTCMonth() + 1}/${startJstDate.getUTCDate()}(土)`;
 
-    // 二重投稿防止: 同じ開始時刻のopen募集が既にあればスキップ
-    const existing = await fetchSupabase(env, 'recruitments', `start_at=eq.${encodeURIComponent(startAtIso)}&status=eq.open&select=id`);
-    if (existing && existing.length > 0) {
-      console.log('[WeeklyRecruit] 同時刻の募集が既に存在するためスキップします。');
-      return;
-    }
-
-    const ownerId = CONFIG.ADMIN_ID;
-    
     // 2部屋統合用メタデータ
     const metadata = {
       mode: '定期カスタム',
@@ -348,7 +339,7 @@ async function postWeeklyRecruitment(env) {
           inline: false
         },
         {
-          name: `👑 【ゴルプラ以下部門】 (0/10名)`,
+          name: `👑 【ゴルプラ部門】 (0/10名)`,
           value: `▫ 参加者: なし\n※対象: ゴールド〜プラチナレベル`,
           inline: false
         }
@@ -357,7 +348,7 @@ async function postWeeklyRecruitment(env) {
       timestamp: new Date().toISOString()
     };
 
-    // 2部屋それぞれの参加ボタン
+    // 2部屋それぞれの参加ボタン（通知ボタンは完全削除）
     const components = [
       {
         type: 1, // Action Row
@@ -370,15 +361,9 @@ async function postWeeklyRecruitment(env) {
           },
           {
             type: 2,
-            label: "👑 ゴルプラ以下に参加",
+            label: "👑 ゴルプラに参加",
             style: 1, // Primary (Blue)
             custom_id: "join_periodic:gold"
-          },
-          {
-            type: 2,
-            label: "🔔 通知設定",
-            style: 2, // Gray
-            custom_id: "toggle_recruit_notification"
           }
         ]
       }
@@ -494,6 +479,12 @@ async function createWeeklyEvents(env) {
         name: "【定期】ゴルプラ以下カスタム",
         description: "毎週定期開催のゴルプラ以下対象カスタム戦です。参加希望の方は「興味あり」を押してください！",
       }
+    ];
+  } catch (err) {
+    console.error("Error in createWeeklyEvents:", err);
+  }
+}
+
 /** イベントおよび定期募集の「参加者・興味あり」メンバーを同期抽出して送信する */
 async function sendEventUsersNotification(env, options = {}) {
   const lookaheadHours = options.lookaheadHours || 48;
@@ -575,30 +566,26 @@ async function sendEventUsersNotification(env, options = {}) {
     }
 
     const eventUsersCount = eventDetails[0]?.users.length || 0;
-      const userListText = eventUsers.map((eu, index) => {
-        if (!eu || !eu.user) return `\`${String(index + 1).padStart(2, '0')}.\` 不明なユーザー`;
-        const displayName = eu.member?.nick || eu.user.global_name || eu.user.username || "不明";
-        return `\`${String(index + 1).padStart(2, '0')}.\` <@${eu.user.id}> (${displayName})`;
-      }).join('\n') || "「興味あり」を押しているプレイヤーはいません。";
+    const effectiveTotalCount = Math.max(eventUsersCount, totalJoinedCount);
+    let shortfall = effectiveTotalCount < 10 ? 10 - effectiveTotalCount : 0;
 
-      const eventDate = new Date(targetEvent.scheduled_start_time);
-      const formattedDate = eventDate.toLocaleString('ja-JP', {
-        timeZone: 'Asia/Tokyo', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', weekday: 'short'
-      });
+    // 4. アナウンス Embed の作成（募集カードを完全同期 ＆ 引用リンク添付）
+    let syncFields = activeEmbed ? activeEmbed.fields : [];
+    
+    if (!syncFields || syncFields.length === 0) {
+      syncFields = eventDetails.map((ed) => {
+        const { event: targetEvent, users: eventUsers } = ed;
+        const userListText = eventUsers.map((eu, index) => {
+          if (!eu || !eu.user) return `\`${String(index + 1).padStart(2, '0')}.\` 不明なユーザー`;
+          const displayName = eu.member?.nick || eu.user.global_name || eu.user.username || "不明";
+          return `\`${String(index + 1).padStart(2, '0')}.\` <@${eu.user.id}> (${displayName})`;
+        }).join('\n') || "「興味あり」を押しているプレイヤーはいません。";
 
-      return {
-        name: `📝 ${targetEvent.name} (${Math.max(eventUsers.length, dbRecruitCount)}名)`,
-        value: `**開催予定**: ${formattedDate} (JST)\n\n${userListText}`,
-        inline: false
-      };
-    });
-
-    // イベントが空の場合でもDB募集があればフォールバック表示
-    if (embedFields.length === 0 && dbRecruitCount > 0) {
-      embedFields.push({
-        name: `⚔️ KTM 定期・カスタム募集 (${dbRecruitCount}名)`,
-        value: `現在の募集参加者: ${dbRecruitCount}名`,
-        inline: false
+        return {
+          name: `📝 ${targetEvent.name} (${eventUsers.length}名)`,
+          value: userListText,
+          inline: false
+        };
       });
     }
 
@@ -611,27 +598,7 @@ async function sendEventUsersNotification(env, options = {}) {
       timestamp: new Date().toISOString()
     };
 
-    // 二重投稿防止: 直近3時間以内に同一タイトルの通知があればスキップ
-    try {
-      const recentRes = await fetchWithRetry(`https://discord.com/api/v10/channels/${channelId}/messages?limit=10`, {
-        headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}` }
-      });
-      if (recentRes.ok) {
-        const recent = await recentRes.json();
-        const threeHoursAgo = Date.now() - 3 * 60 * 60 * 1000;
-        const dup = recent.find((m) =>
-          m.author?.bot &&
-          m.embeds?.[0]?.title === embed.title &&
-          new Date(m.timestamp).getTime() > threeHoursAgo
-        );
-        if (dup) {
-          console.log(`[Dedupe] 同一通知が直近に投稿済みのためスキップします`);
-          return;
-        }
-      }
-    } catch (dedupeErr) {}
-
-    // 7. メッセージ ＆ ワンタップ「参加する」ボタン（シルバー以下＆ゴルプラ以下）の作成
+    // 7. メッセージ ＆ ワンタップ「参加する」ボタン（シルバー以下＆ゴルプラ）の作成
     const roleId = CONFIG.NOTIFICATION_ROLE_ID;
     const messageBody = {
       embeds: [embed],
@@ -647,15 +614,9 @@ async function sendEventUsersNotification(env, options = {}) {
             },
             {
               type: 2,
-              label: "👑 ゴルプラ以下に参加",
+              label: "👑 ゴルプラに参加",
               style: 1, // Primary (Blue)
               custom_id: "join_periodic:gold"
-            },
-            {
-              type: 2,
-              label: "🔔 通知設定",
-              style: 2, // Secondary (Gray)
-              custom_id: "toggle_recruit_notification"
             }
           ]
         }
