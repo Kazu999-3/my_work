@@ -9,7 +9,12 @@ export async function GET(request: Request) {
   
   // 認証キー（Cronからのリクエストであることを証明する）
   const authHeader = request.headers.get('authorization');
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  const userAgent = request.headers.get('user-agent') || '';
+  const isVercelCron = userAgent.includes('vercel-cron');
+  const cronSecret = process.env.CRON_SECRET;
+  
+  // CRON_SECRET 設定時は Bearer または Vercel Cron ヘッダーを検証
+  if (cronSecret && authHeader !== `Bearer ${cronSecret}` && !isVercelCron) {
     return new NextResponse('Unauthorized', { status: 401 });
   }
 

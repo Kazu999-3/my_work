@@ -122,14 +122,8 @@ export default function Sidebar() {
   // ページ遷移したらモバイルの「その他」シートは閉じる
   useEffect(() => { setShowMobileMore(false); }, [pathname]);
 
-  // 管理者ログイン済みの場合のみ管理者メニュー＆切り替えタブを表示
-  // 未ログインの場合は常に一般メニュー(MENU_ITEMS)のみ
-  const isAdminArea = isAdminLoggedIn;
-
-  // 表示するメニュー項目の決定
-  const activeMenuItems = isAdminArea 
-    ? (activeTab === 'admin' ? ADMIN_ONLY_MENU_ITEMS : ADMIN_GENERAL_MENU_ITEMS) 
-    : MENU_ITEMS;
+  // 管理者機能タブ・一般機能タブの表示切り替え（ログイン状態に関わらずデザイン形式を統一）
+  const activeMenuItems = activeTab === 'admin' ? ADMIN_ONLY_MENU_ITEMS : ADMIN_GENERAL_MENU_ITEMS;
 
   return (
     <>
@@ -163,43 +157,41 @@ export default function Sidebar() {
           {/* 通知ベル (非表示化) */}
         </div>
 
-        {/* 管理者ログイン時のタブ切り替えUI */}
-        {isAdminArea && (
-          <div className="flex-shrink-0">
-            {!isCollapsed ? (
-              <div className="flex bg-black/50 p-1 rounded-xl border border-white/5 mb-6">
-                <button 
-                  onClick={() => setActiveTab('admin')} 
-                  className={`flex-1 text-center py-2 rounded-lg text-[11px] font-black transition-all ${
-                    activeTab === 'admin' 
-                      ? 'bg-[#c89b3c] text-black shadow' 
-                      : 'text-gray-400 hover:text-white'
-                  }`}
-                >
-                  管理者機能
-                </button>
-                <button 
-                  onClick={() => setActiveTab('general')} 
-                  className={`flex-1 text-center py-2 rounded-lg text-[11px] font-black transition-all ${
-                    activeTab === 'general' 
-                      ? 'bg-white/10 text-white' 
-                      : 'text-gray-400 hover:text-white'
-                  }`}
-                >
-                  一般機能
-                </button>
-              </div>
-            ) : (
+        {/* 管理者/一般 機能タブ切り替えUI（常に統一表示） */}
+        <div className="flex-shrink-0">
+          {!isCollapsed ? (
+            <div className="flex bg-black/50 p-1 rounded-xl border border-white/5 mb-6">
               <button 
-                onClick={() => setActiveTab(activeTab === 'admin' ? 'general' : 'admin')} 
-                className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 border border-white/10 text-[#c89b3c] hover:text-white transition-all mb-6 mx-auto cursor-pointer"
-                title={activeTab === 'admin' ? "管理者機能表示中 (クリックで一般へ)" : "一般機能表示中 (クリックで管理者へ)"}
+                onClick={() => setActiveTab('admin')} 
+                className={`flex-1 text-center py-2 rounded-lg text-[11px] font-black transition-all ${
+                  activeTab === 'admin' 
+                    ? 'bg-[#c89b3c] text-black shadow' 
+                    : 'text-gray-400 hover:text-white'
+                }`}
               >
-                {activeTab === 'admin' ? <Shield size={18} /> : <Users size={18} />}
+                管理者機能
               </button>
-            )}
-          </div>
-        )}
+              <button 
+                onClick={() => setActiveTab('general')} 
+                className={`flex-1 text-center py-2 rounded-lg text-[11px] font-black transition-all ${
+                  activeTab === 'general' 
+                    ? 'bg-white/10 text-white' 
+                    : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                一般機能
+              </button>
+            </div>
+          ) : (
+            <button 
+              onClick={() => setActiveTab(activeTab === 'admin' ? 'general' : 'admin')} 
+              className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 border border-white/10 text-[#c89b3c] hover:text-white transition-all mb-6 mx-auto cursor-pointer"
+              title={activeTab === 'admin' ? "管理者機能表示中 (クリックで一般へ)" : "一般機能表示中 (クリックで管理者へ)"}
+            >
+              {activeTab === 'admin' ? <Shield size={18} /> : <Users size={18} />}
+            </button>
+          )}
+        </div>
 
         {/* ナビゲーション（セクション区切り対応） */}
         <nav className="flex flex-col gap-1 flex-shrink-0">
@@ -251,23 +243,6 @@ export default function Sidebar() {
           <PushOptIn collapsed={isCollapsed} />
         </div>
 
-        {/* 管理者用ログインリンク。折りたたみ時もアイコンだけ残して導線を絶やさない */}
-        {!isAdminArea && (
-          <div className="mt-4 text-center flex-shrink-0">
-            <Link
-              href="/ktm-admin"
-              prefetch={false}
-              title="管理者ダッシュボード"
-              className={`inline-flex items-center justify-center gap-2 text-xs text-amber-400 hover:text-white transition-all duration-300 font-black rounded-xl bg-amber-500/10 hover:bg-amber-500/25 border border-amber-500/20 hover:border-amber-500/50 w-full shadow-lg shadow-amber-950/10 ${
-                isCollapsed ? 'py-3' : 'py-2.5 px-4'
-              }`}
-            >
-              <Shield size={14} className="text-amber-400 animate-pulse" />
-              {!isCollapsed && <span>管理者ダッシュボード 🔑</span>}
-            </Link>
-          </div>
-        )}
-
         {/* フッター システムステータス（実データ: /api/health を反映） */}
         <div className={`mt-auto pt-6 border-t border-white/5 flex-shrink-0 w-full`}>
           <SystemStatus isCollapsed={isCollapsed} />
@@ -276,11 +251,11 @@ export default function Sidebar() {
 
       {/* スマホ用ボトムナビ: 主要項目を固定表示し、残りは「その他」シートに格納 */}
       {(() => {
-        // 管理者メニューは項目が多いため5枠、一般は4枠
-        const PRIMARY = isAdminArea ? 5 : 4;
+        // 管理者タブは5枠、一般タブは4枠
+        const PRIMARY = activeTab === 'admin' ? 5 : 4;
         const primaryItems = activeMenuItems.slice(0, PRIMARY);
         const overflowItems = activeMenuItems.slice(PRIMARY);
-        const hasMore = overflowItems.length > 0 || isAdminArea;
+        const hasMore = overflowItems.length > 0;
         const isActive = (item: typeof activeMenuItems[number]) =>
           pathname === item.href || (item.id === 'leaderboard' && pathname.startsWith('/player'));
 
@@ -299,12 +274,11 @@ export default function Sidebar() {
                     <button onClick={() => setShowMobileMore(false)} className="text-gray-500 hover:text-white p-1"><XIcon size={16} /></button>
                   </div>
 
-                  {isAdminArea && (
-                    <div className="flex bg-black/50 p-1 rounded-xl border border-white/5 mb-3">
-                      <button onClick={() => setActiveTab('admin')} className={`flex-1 py-2 rounded-lg text-[11px] font-black transition-all ${activeTab === 'admin' ? 'bg-[#c89b3c] text-black' : 'text-gray-400'}`}>管理者機能</button>
-                      <button onClick={() => setActiveTab('general')} className={`flex-1 py-2 rounded-lg text-[11px] font-black transition-all ${activeTab === 'general' ? 'bg-white/10 text-white' : 'text-gray-400'}`}>一般機能</button>
-                    </div>
-                  )}
+                  {/* モバイル用 タブ切り替えUI */}
+                  <div className="flex bg-black/50 p-1 rounded-xl border border-white/5 mb-3">
+                    <button onClick={() => setActiveTab('admin')} className={`flex-1 py-2 rounded-lg text-[11px] font-black transition-all ${activeTab === 'admin' ? 'bg-[#c89b3c] text-black' : 'text-gray-400'}`}>管理者機能</button>
+                    <button onClick={() => setActiveTab('general')} className={`flex-1 py-2 rounded-lg text-[11px] font-black transition-all ${activeTab === 'general' ? 'bg-white/10 text-white' : 'text-gray-400'}`}>一般機能</button>
+                  </div>
 
                   <div className="grid grid-cols-4 gap-2">
                     {overflowItems.map((item) => (
@@ -317,20 +291,6 @@ export default function Sidebar() {
                       />
                     ))}
                   </div>
-
-                  {/* 管理者ダッシュボードへの入口。
-                      PC版はサイドバーに常設されているが、スマホには導線が無く辿り着けなかった。 */}
-                  {!isAdminArea && (
-                    <Link
-                      href="/ktm-admin"
-                      prefetch={false}
-                      onClick={() => setShowMobileMore(false)}
-                      className="mt-3 flex items-center justify-center gap-2 text-xs font-black py-3 px-4 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20 active:bg-amber-500/25"
-                    >
-                      <Shield size={14} />
-                      <span>管理者ダッシュボード 🔑</span>
-                    </Link>
-                  )}
                 </div>
               </div>
             )}

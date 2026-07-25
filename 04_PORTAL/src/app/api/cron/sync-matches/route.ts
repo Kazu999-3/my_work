@@ -9,13 +9,15 @@ export async function GET(request: Request) {
   
   // 認証チェック (cronジョブからのリクエストを想定)
   const authHeader = request.headers.get('authorization');
+  const userAgent = request.headers.get('user-agent') || '';
+  const isVercelCron = userAgent.includes('vercel-cron');
   const cronSecret = process.env.CRON_SECRET; // Vercel の CRON_SECRET 等を設定
   
   // 手動テスト用にローカルまたは特定のクエリがあれば通す
   const url = new URL(request.url);
   const isTest = url.searchParams.get('test') === 'true';
 
-  if (!isTest && cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+  if (!isTest && cronSecret && authHeader !== `Bearer ${cronSecret}` && !isVercelCron) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
