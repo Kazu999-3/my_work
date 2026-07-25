@@ -73,6 +73,8 @@ export async function handleButtonInteraction(interaction, env, ctx) {
     })());
 
     return Response.json({ type: 5, data: { flags: 64 } });
+  }
+
   if (customId.startsWith('join_periodic:')) {
     const roomType = customId.split(':')[1]; // silver or gold
     const roomLabel = roomType === 'silver' ? '🛡️ シルバー以下部門' : '👑 ゴルプラ以下部門';
