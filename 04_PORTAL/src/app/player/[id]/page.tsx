@@ -451,15 +451,28 @@ export default function PlayerMyPage() {
     async function fetchData() {
       if (!id) return;
       try {
-        // 1. 基本情報の取得
-        const { data: pData, error } = await supabase
+        const rawId = Array.isArray(id) ? id[0] : id;
+        const decodedId = decodeURIComponent(rawId || '').trim();
+
+        // 1. 基本情報の取得 (discord_id または name のどちらでも検索)
+        let { data: pData, error } = await supabase
           .from("ktm_players")
           .select("*")
-          .eq("discord_id", id)
-          .single();
+          .eq("discord_id", decodedId)
+          .maybeSingle();
 
-        if (error || !pData) {
-          console.error("Player not found");
+        if (!pData) {
+          // name で再検索
+          const { data: pByName } = await supabase
+            .from("ktm_players")
+            .select("*")
+            .eq("name", decodedId)
+            .maybeSingle();
+          pData = pByName;
+        }
+
+        if (!pData) {
+          console.error("Player not found for ID/Name:", decodedId);
           setLoading(false);
           return;
         }
