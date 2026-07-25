@@ -220,11 +220,11 @@ export default function SynergyPage() {
           <div>
             <h1 className="text-3xl font-bold text-white flex items-center gap-3">
               <HeartHandshake className="h-8 w-8 text-fuchsia-500" />
-              相性・ライバル分析
+              チームシナジー ＆ コンビ相性分析
             </h1>
             <p className="text-gray-400 mt-2 text-sm">
-              過去のKTMの全試合データから算出された「味方時の勝率」と「敵同士の勝敗」を分析し、<br/>
-              最高のコンビと宿命のライバルを導き出します。
+              過去のKTMの全試合データから算出された「味方時の勝率」と「チームワーク」を分析し、<br/>
+              最高のコンビとこれから成長が期待できる伸びしろパートナーを導き出します。
             </p>
           </div>
           
@@ -235,10 +235,10 @@ export default function SynergyPage() {
               onChange={e => setMinGames(Number(e.target.value))}
               className="bg-gray-800 border border-gray-700 text-white rounded px-2 py-1 outline-none focus:border-fuchsia-500"
             >
-              <option value={2}>2試合以上共闘・対戦</option>
-              <option value={3}>3試合以上共闘・対戦</option>
-              <option value={5}>5試合以上共闘・対戦</option>
-              <option value={10}>10試合以上共闘・対戦</option>
+              <option value={2}>2試合以上共闘</option>
+              <option value={3}>3試合以上共闘</option>
+              <option value={5}>5試合以上共闘</option>
+              <option value={10}>10試合以上共闘</option>
             </select>
           </div>
         </div>
@@ -248,8 +248,8 @@ export default function SynergyPage() {
           <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-2xl relative overflow-hidden">
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-400 to-teal-500"></div>
             <div className="flex items-center justify-between flex-wrap gap-3 mb-6">
-              <h2 className={`text-2xl font-black flex items-center gap-2 ${showWorst ? 'text-rose-400' : 'text-emerald-400'}`}>
-                <Users className="h-6 w-6" /> {showWorst ? '最弱のチーム' : '最強のチーム'} <span className="text-sm text-gray-500 font-normal">({showWorst ? 'Worst Combo' : 'Best Combo'})</span>
+              <h2 className={`text-2xl font-black flex items-center gap-2 ${showWorst ? 'text-amber-400' : 'text-emerald-400'}`}>
+                <Users className="h-6 w-6" /> {showWorst ? '課題のコンビ' : '最強のコンビ'} <span className="text-sm text-gray-500 font-normal">({showWorst ? 'Challenging Combo' : 'Best Combo'})</span>
               </h2>
               <div className="flex gap-2 items-center flex-wrap">
                 {/* 最強⇔最弱切替 */}
@@ -259,8 +259,8 @@ export default function SynergyPage() {
                     👑 最強
                   </button>
                   <button onClick={() => setShowWorst(true)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all ${showWorst ? 'bg-rose-600 text-white' : 'text-gray-400 hover:text-white'}`}>
-                    💀 最弱
+                    className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all ${showWorst ? 'bg-amber-600 text-white' : 'text-gray-400 hover:text-white'}`}>
+                    ⚠️ 課題
                   </button>
                 </div>
                 {/* 人数切替(#78) */}
@@ -332,11 +332,11 @@ export default function SynergyPage() {
             </div>
           </div>
 
-          {/* 宿命のライバル */}
+          {/* 課題のコンビ・成長パートナー */}
           <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-2xl relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-500 to-orange-500"></div>
-            <h2 className="text-2xl font-black text-red-500 mb-6 flex items-center gap-2">
-              <Swords className="h-6 w-6" /> 宿命のライバル <span className="text-sm text-gray-500 font-normal">(Rivals)</span>
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-amber-500 to-yellow-500"></div>
+            <h2 className="text-2xl font-black text-amber-400 mb-6 flex items-center gap-2">
+              <Users className="h-6 w-6" /> 伸びしろパートナー <span className="text-sm text-gray-500 font-normal">(Challenging Partners)</span>
             </h2>
             <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
               {filteredEnemy.length === 0 ? (

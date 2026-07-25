@@ -42,7 +42,7 @@ const MENU_ITEMS = [
   { id: 'leaderboard', label: '順位表',         icon: Trophy,         href: '/leaderboard',      color: 'text-yellow-400',  activeBg: 'bg-yellow-400/15' },
   { id: 'champions',   label: '辞典',           icon: BookHeart,      href: '/champions',        color: 'text-[#c89b3c]',   activeBg: 'bg-[#c89b3c]/15' },
   { id: 'knowledge',   label: 'ナレッジ',       icon: Brain,          href: '/admin/knowledge',  color: 'text-pink-400',    activeBg: 'bg-pink-400/15' },
-  { id: 'synergy',     label: '相性・対面',     icon: HeartHandshake, href: '/synergy',          color: 'text-fuchsia-400', activeBg: 'bg-fuchsia-400/15' },
+  { id: 'synergy',     label: 'チームシナジー',     icon: HeartHandshake, href: '/synergy',          color: 'text-fuchsia-400', activeBg: 'bg-fuchsia-400/15' },
   { id: 'history',     label: '試合履歴',       icon: Swords,         href: '/history',          color: 'text-orange-400',  activeBg: 'bg-orange-400/15' },
   { id: 'changelog',   label: '更新情報',       icon: ScrollText,     href: '/changelog',        color: 'text-cyan-400',    activeBg: 'bg-cyan-400/15' },
 ];
@@ -67,7 +67,7 @@ const ADMIN_ONLY_MENU_ITEMS = [
 const ADMIN_GENERAL_MENU_ITEMS = [
   { id: 'balancer',  label: 'チーム分け', icon: Swords, href: '/balancer', color: 'text-rose-500', activeBg: 'bg-rose-500/15' },
   { id: 'leaderboard', label: 'リーダーボード', icon: Trophy, href: '/leaderboard', color: 'text-yellow-400', activeBg: 'bg-yellow-400/15' },
-  { id: 'synergy',   label: '相性・ライバル', icon: HeartHandshake, href: '/synergy', color: 'text-fuchsia-400', activeBg: 'bg-fuchsia-400/15' },
+  { id: 'synergy',   label: 'チームシナジー', icon: HeartHandshake, href: '/synergy', color: 'text-fuchsia-400', activeBg: 'bg-fuchsia-400/15' },
   { id: 'changelog', label: '更新情報', icon: ScrollText, href: '/changelog', color: 'text-cyan-400', activeBg: 'bg-cyan-400/15' },
 ];
 
