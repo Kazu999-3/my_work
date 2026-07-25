@@ -212,16 +212,37 @@ export default function PlayerMyPage() {
       .sort((a, b) => b.games - a.games).slice(0, 8);
   }, [stats]);
 
+  // 味方プレイヤー別の勝率集計 (シナジー計算用)
+  const teammatesList = useMemo(() => {
+    if (!history || history.length === 0) return [];
+    const agg: Record<string, { games: number; wins: number }> = {};
+    history.forEach((m: any) => {
+      const myTeam = m.team;
+      (m.ktm_match_participants || []).forEach((p: any) => {
+        if (p.team === myTeam && p.player_name !== player?.name) {
+          if (!agg[p.player_name]) agg[p.player_name] = { games: 0, wins: 0 };
+          agg[p.player_name].games += 1;
+          if (m.isWin) agg[p.player_name].wins += 1;
+        }
+      });
+    });
+    return Object.entries(agg).map(([name, s]) => ({
+      name,
+      games: s.games,
+      winRate: Math.round((s.wins / s.games) * 100)
+    }));
+  }, [history, player]);
+
   // チームシナジー分析 (最強のチーム相性 vs 課題のあるチーム相性)
   const synergyPair = useMemo(() => {
-    const q = (teammates || []).filter((t: any) => t.games >= 2);
+    const q = (teammatesList || []).filter((t: any) => t.games >= 2);
     if (q.length === 0) return null;
     const sorted = [...q].sort((a, b) => b.winRate - a.winRate || b.games - a.games);
     return {
       best: sorted[0], // 勝率が最も高い最強チーム相性
       challenging: sorted[sorted.length - 1] // 課題のあるチーム相性
     };
-  }, [teammates]);
+  }, [teammatesList]);
 
   // 対面別の得意/苦手（2戦以上の相手のみ）
   const matchupExtremes = useMemo(() => {
@@ -638,8 +659,8 @@ export default function PlayerMyPage() {
                     </div>
                   </div>
 
-                  {/* チャンピオンプール & 宿敵/カモ (P-06/P-07) */}
-                  {(champPool.length > 0 || rivalPair) && (
+                  {/* チャンピオンプール & チームシナジー (P-06/P-07) */}
+                  {(champPool.length > 0 || synergyPair) && (
                     <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-6">
                       {champPool.length > 0 && (
                         <div className="bg-white/[0.02] backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-xl">
