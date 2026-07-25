@@ -8,23 +8,22 @@ import { getKtmRank, formatRankDistribution, formatMmrWithRank } from '../utils/
 
 export async function handleScheduledEvent(event, env, ctx) {
   console.log("Scheduled event triggered:", JSON.stringify(event));
-  const cronExpression = event.cron || "";
+  const cronExpression = (event.cron || "").trim();
   const mode = event.mode || "";
 
-  // 定期実行から外した処理（イベント作成・週間レポート・イベント基準の告知）は、
-  // 必要なときだけ /trigger-scheduled?mode=... で手動実行できるよう残してある。
-  if (mode === "create") {
+  // 毎週日曜 0:00 JST (土曜 UTC 15:00): 最優先で判定
+  if (cronExpression.includes("0 15 * * 6") || mode === "weekly_recruit") {
+    console.log("[Scheduled] Executing weekly recruitment posting...");
+    await postWeeklyRecruitment(env);
+  } else if (mode === "create") {
     await createWeeklyEvents(env);
   } else if (mode === "weekly_report") {
     await sendWeeklyReports(env);
-  } else if (mode === "event_notify") {
+  } else if (mode === "event_notify" || cronExpression.includes("0 11 * *")) {
     await sendEventUsersNotification(env, { lookaheadHours: 48 });
-  } else if (cronExpression === "*/10 * * * *" || mode === "recruit_reminder") {
+  } else if (cronExpression.includes("*/10 * * * *") || mode === "recruit_reminder") {
     // 10分ごと: 開始時刻が近い募集の参加者へリマインド(D1)
     await sendRecruitmentReminders(env);
-  } else if (cronExpression === "0 15 * * 6" || mode === "weekly_recruit") {
-    // 毎週日曜 0:00 JST (土曜 UTC 15:00): 前回の募集を締め切り、同週土曜21:00開催の定期募集を自動投稿
-    await postWeeklyRecruitment(env);
   } else {
     // 直前通知: 進行中の募集の集まり具合を通知し、不足なら欠員アラート
     await sendRecruitStatusNotification(env);
