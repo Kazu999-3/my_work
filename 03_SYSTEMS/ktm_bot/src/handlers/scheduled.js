@@ -310,8 +310,8 @@ async function postWeeklyRecruitment(env) {
 
     const startAtIso = new Date(startUtcMs).toISOString();
     const startJstDate = new Date(startUtcMs + 9 * 3600 * 1000);
-    const dateLabel = `${startJstDate.getUTCMonth() + 1}/${startJstDate.getUTCDate()}(土)`;
-
+    const ownerId = CONFIG.ADMIN_ID;
+    
     // 2部屋統合用メタデータ
     const metadata = {
       mode: '定期カスタム',
