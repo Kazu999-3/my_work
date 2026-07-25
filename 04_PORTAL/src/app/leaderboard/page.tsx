@@ -106,104 +106,110 @@ export default function LeaderboardPage() {
 
   useEffect(() => {
     async function fetchLeaderboard() {
-      // 1. ktm_playersから全プレイヤーの現在のMMRとdiscord_idを取得
-      const { data: players, error: pError } = await supabase
-        .from('ktm_players')
-        .select('name, discord_id, mmr_top, mmr_jg, mmr_mid, mmr_adc, mmr_sup');
+      setLoading(true);
+      try {
+        // 1. ktm_playersから全プレイヤーの現在のMMRとdiscord_idを取得
+        const { data: players, error: pError } = await supabase
+          .from('ktm_players')
+          .select('name, discord_id, mmr_top, mmr_jg, mmr_mid, mmr_adc, mmr_sup');
 
-      if (pError || !players) {
-        console.error('Failed to fetch players', pError);
-        setLoading(false);
-        return;
-      }
+        if (pError || !players) {
+          console.error('Failed to fetch players', pError);
+          return;
+        }
 
-      // 2. ktm_match_participantsから勝敗と試合数を集計
-      // 試合結果を ktm_matches と JOIN して取得する
-      const { data: matchesData, error: mError } = await supabase
-        .from('ktm_match_participants')
-        .select(`
-          player_name,
-          discord_id,
-          role,
-          team,
-          ktm_matches ( winning_team )
-        `);
+        // 2. ktm_match_participantsから勝敗と試合数を集計
+        const { data: matchesData, error: mError } = await supabase
+          .from('ktm_match_participants')
+          .select(`
+            player_name,
+            discord_id,
+            role,
+            team,
+            ktm_matches ( winning_team )
+          `);
 
-      if (mError) {
-        console.error('Failed to fetch match stats', mError);
-      }
+        if (mError) {
+          console.error('Failed to fetch match stats', mError);
+        }
 
-      // MMRが discord_id 基準で集計されているので、戦績(Games/勝率)も discord_id 基準に揃える。
-      // 名前ベースのままだと、改名した人の表示戦績とMMRが食い違う。
-      const byDiscord = new Map<string, any>();
-      const byName = new Map<string, any>();
-      players.forEach((p: any) => {
-        if (p.discord_id) byDiscord.set(p.discord_id, p);
-        byName.set(p.name, p);
-      });
-      const keyOfPlayer = (p: any) => p.discord_id || p.name;
-
-      // 集計用マップ statsMap[playerKey][role] = { games, wins }
-      const statsMap: Record<string, Record<string, { games: number; wins: number }>> = {};
-      players.forEach((p: any) => {
-        statsMap[keyOfPlayer(p)] = {
-          TOP: { games: 0, wins: 0 },
-          JG: { games: 0, wins: 0 },
-          MID: { games: 0, wins: 0 },
-          ADC: { games: 0, wins: 0 },
-          SUP: { games: 0, wins: 0 }
-        };
-      });
-
-      if (matchesData) {
-        matchesData.forEach((m: any) => {
-          // 参加者行を discord_id 優先で解決し、その選手のバケツに集計
-          const resolved = (m.discord_id && byDiscord.get(m.discord_id)) || byName.get(m.player_name);
-          if (!resolved) return;
-          const key = keyOfPlayer(resolved);
-          const role = m.role as string;
-          const winningTeam = m.ktm_matches?.winning_team;
-          if (statsMap[key] && statsMap[key][role]) {
-            statsMap[key][role].games += 1;
-            if (m.team === winningTeam) {
-              statsMap[key][role].wins += 1;
-            }
-          }
+        const byDiscord = new Map<string, any>();
+        const byName = new Map<string, any>();
+        players.forEach((p: any) => {
+          if (p.discord_id) byDiscord.set(p.discord_id, p);
+          byName.set(p.name, p);
         });
+        const keyOfPlayer = (p: any) => p.discord_id || p.name;
+
+        // 集計用マップ statsMap[playerKey][role] = { games, wins }
+        const statsMap: Record<string, Record<string, { games: number; wins: number }>> = {};
+        players.forEach((p: any) => {
+          statsMap[keyOfPlayer(p)] = {
+            TOP: { games: 0, wins: 0 },
+            JG: { games: 0, wins: 0 },
+            MID: { games: 0, wins: 0 },
+            ADC: { games: 0, wins: 0 },
+            SUP: { games: 0, wins: 0 }
+          };
+        });
+
+        if (matchesData) {
+          matchesData.forEach((m: any) => {
+            const resolved = (m.discord_id && byDiscord.get(m.discord_id)) || byName.get(m.player_name);
+            if (!resolved) return;
+            const key = keyOfPlayer(resolved);
+            const role = (m.role || '').toUpperCase();
+
+            // ktm_matches が配列かオブジェクトかを安全に判定
+            const winningTeam = Array.isArray(m.ktm_matches)
+              ? (m.ktm_matches[0] as any)?.winning_team
+              : (m.ktm_matches as any)?.winning_team;
+
+            if (statsMap[key] && statsMap[key][role]) {
+              statsMap[key][role].games += 1;
+              if (m.team === winningTeam) {
+                statsMap[key][role].wins += 1;
+              }
+            }
+          });
+        }
+
+        // 3. レーンごとにソートしてTOP5を抽出
+        const newLeaderboard: LeaderboardData = { TOP: [], JG: [], MID: [], ADC: [], SUP: [] };
+
+        ROLES.forEach(role => {
+          const mmrKey = `mmr_${role.toLowerCase()}` as keyof typeof players[0];
+          
+          const roleRanking = players
+            .filter((p: any) => {
+              const stats = statsMap[keyOfPlayer(p)]?.[role];
+              return stats && stats.games >= minGames;
+            })
+            .map((p: any) => {
+              const stats = statsMap[keyOfPlayer(p)][role];
+              const mmr = Number(p[mmrKey] || 1200);
+              const winRate = stats.games > 0 ? ((stats.wins / stats.games) * 100).toFixed(1) : '0.0';
+              return {
+                name: p.name,
+                discordId: p.discord_id,
+                mmr,
+                games: stats.games,
+                winRate,
+                rankBadge: getRankBadge(mmr)
+              };
+            })
+            .sort((a: any, b: any) => b.mmr - a.mmr)
+            .slice(0, 5);
+
+          newLeaderboard[role] = roleRanking;
+        });
+
+        setData(newLeaderboard);
+      } catch (e) {
+        console.error("fetchLeaderboard Error:", e);
+      } finally {
+        setLoading(false);
       }
-
-      // 3. レーンごとにソートしてTOP5を抽出
-      const newLeaderboard: LeaderboardData = { TOP: [], JG: [], MID: [], ADC: [], SUP: [] };
-
-      ROLES.forEach(role => {
-        const mmrKey = `mmr_${role.toLowerCase()}` as keyof typeof players[0];
-        
-        const roleRanking = players
-          .filter((p: any) => {
-            const stats = statsMap[keyOfPlayer(p)]?.[role];
-            // 仕様: 指定した最小試合数以上の出場実績があるプレイヤーのみ表示
-            return stats && stats.games >= minGames;
-          })
-          .map((p: any) => {
-            const stats = statsMap[keyOfPlayer(p)][role];
-            const mmr = Number(p[mmrKey] || 1200);
-            const winRate = stats.games > 0 ? ((stats.wins / stats.games) * 100).toFixed(1) : '0.0';
-            return {
-              name: p.name,
-              discordId: p.discord_id,
-              mmr,
-              games: stats.games,
-              winRate,
-              rankBadge: getRankBadge(mmr)
-            };
-          })
-          .sort((a: any, b: any) => b.mmr - a.mmr); // MMR降順
-
-        newLeaderboard[role] = roleRanking;
-      });
-
-      setData(newLeaderboard);
-      setLoading(false);
     }
 
     fetchLeaderboard();

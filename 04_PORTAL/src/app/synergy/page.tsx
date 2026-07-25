@@ -65,10 +65,18 @@ export default function SynergyPage() {
 
   useEffect(() => {
     async function fetchData() {
+      setLoading(true);
       try {
         const { data, error } = await supabase
           .from('ktm_match_participants')
-          .select('match_id, player_name, team, role, ktm_matches!inner(winning_team)');
+          .select('match_id, player_name, team, role');
+
+        const { data: matchWins } = await supabase
+          .from('ktm_matches')
+          .select('id, winning_team');
+
+        const winMap: Record<number, 'BLUE' | 'RED'> = {};
+        (matchWins || []).forEach((m: any) => { winMap[m.id] = m.winning_team; });
 
         const { data: activePlayersData } = await supabase
           .from('ktm_players')
@@ -76,16 +84,17 @@ export default function SynergyPage() {
         
         const activePlayerNames = new Set(activePlayersData?.map((p: any) => p.name) || []);
 
-        if (error) throw error;
+        if (error || !data) throw error || new Error('No data');
         
         // 試合ごとにグループ化
         const matches: Record<number, { BLUE: string[], RED: string[], winner: 'BLUE' | 'RED' }> = {};
         data.forEach((row: any) => {
-          // 現在居ないプレイヤーは集計から除外
           if (!activePlayerNames.has(row.player_name)) return;
+          const winner = winMap[row.match_id];
+          if (!winner) return;
 
           if (!matches[row.match_id]) {
-            matches[row.match_id] = { BLUE: [], RED: [], winner: row.ktm_matches.winning_team };
+            matches[row.match_id] = { BLUE: [], RED: [], winner };
           }
           matches[row.match_id][row.team as 'BLUE'|'RED'].push(row.player_name);
         });
