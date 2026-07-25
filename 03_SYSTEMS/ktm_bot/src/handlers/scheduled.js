@@ -624,9 +624,14 @@ async function sendEventUsersNotification(env, options = {}) {
               const uMatch = line.match(/<@(\d+)>/);
               if (uMatch) {
                 const uId = uMatch[1];
-                const prefStr = prefMap.get(uId) || "【希望: 未設定】";
-                if (!line.includes("【第1:")) {
-                  return `- <@${uId}> ${prefStr}`;
+                const prefStr = prefMap.get(uId);
+                if (prefStr && !line.includes("【第1:")) {
+                  // すでに余分な【希望: 未設定】などの文字列が入っていれば除去してから付与
+                  const cleanLine = line.replace(/【希望: [^】]+】/g, '').replace(/\*\(希望: [^\)]+\)\*/g, '').trim();
+                  return `${cleanLine} ${prefStr}`;
+                } else if (!prefStr) {
+                  // 名簿に未登録のユーザーの場合は余計な未設定ラベルを消去
+                  return line.replace(/【希望: [^】]+】/g, '').replace(/\*\(希望: [^\)]+\)\*/g, '').trim();
                 }
               }
               return line;
