@@ -368,10 +368,6 @@ async function postWeeklyRecruitment(env) {
       silverJoined: [],
       goldJoined: [],
       names: { [ownerId]: 'KTM定期カスタム' }
-    };
-
-    const targetChannelId = CONFIG.PERIODIC_RECRUIT_CHANNEL_ID || CONFIG.RECRUIT_CHANNEL_ID;
-
     // 2部屋統合 Embed
     const embed = {
       title: `⚔️ KTM 定期カスタム開催告知 [${dateLabel} 21:00]`,
