@@ -101,10 +101,11 @@ ${String(body).slice(0, 8000)}
 
   // 保存の成否を必ず確認する。
   // ここを見ていなかったため、テーブル未作成時に「保存に失敗したのに記事だけ消える」事故が起きた。
+  const cleanBody = (result.body || '').replace(/\{\{champion\}\}/gi, a.champion || '対象チャンピオン').replace(/\{\{role\}\}/gi, lane || '全レーン');
   const { error: saveError } = await supabase.from('lane_guides').upsert({
       lane,
       title: result.title || laneLabel,
-      body: result.body,
+      body: cleanBody,
       source_count: (existing?.source_count || 0) + 1,
       updated_at: new Date().toISOString(),
   }, { onConflict: 'lane' });

@@ -5,7 +5,7 @@ export async function initLatestPatch() {
     const res = await fetch("https://ddragon.leagueoflegends.com/api/versions.json");
     if (res.ok) {
       const versions = await res.json();
-      if (versions && versions.length > 0) {
+      if (Array.isArray(versions) && versions.length > 0 && versions[0]) {
         cachedLatestPatch = versions[0];
       }
     }
@@ -19,14 +19,50 @@ if (typeof window !== "undefined") {
   initLatestPatch().catch(console.error);
 }
 
+// DDragon の特殊ID・表記揺れ変換マッピングテーブル
+const ID_CORRECTION_MAP: Record<string, string> = {
+  "wukong": "MonkeyKing",
+  "ksante": "KSante",
+  "k'sante": "KSante",
+  "belveth": "Belveth",
+  "bel'veth": "Belveth",
+  "kaisa": "Kaisa",
+  "kai'sa": "Kaisa",
+  "chogath": "Chogath",
+  "cho'gath": "Chogath",
+  "khazix": "Khazix",
+  "kha'zix": "Khazix",
+  "velkoz": "Velkoz",
+  "vel'koz": "Velkoz",
+  "renata": "Renata",
+  "renata glasc": "Renata",
+  "renataglasc": "Renata",
+  "nunu": "Nunu",
+  "nunu & willump": "Nunu",
+  "nunuwillump": "Nunu",
+  "drmundo": "DrMundo",
+  "dr. mundo": "DrMundo",
+  "doctormundo": "DrMundo",
+  "leblanc": "Leblanc",
+  "le blanc": "Leblanc"
+};
+
+function formatChampId(champId: string): string {
+  if (!champId) return "";
+  const key = champId.trim().toLowerCase();
+  if (ID_CORRECTION_MAP[key]) {
+    return ID_CORRECTION_MAP[key];
+  }
+  // 先頭大文字変換
+  return champId.charAt(0).toUpperCase() + champId.slice(1);
+}
+
 /**
- * チャンピオンIDからアイコン画像のURLを取得します
+ * チャンピオンIDからアイコン画像のURLを取得します (404 割れ対策完了版)
  */
 export function getChampIcon(champId: string): string {
   if (!champId) return "";
-  let formattedId = champId;
-  if (formattedId.toLowerCase() === "wukong") formattedId = "MonkeyKing";
-  // 基本は先頭大文字、以降小文字（Nunu等例外あり）
+  const formattedId = formatChampId(champId);
   return `https://ddragon.leagueoflegends.com/cdn/${cachedLatestPatch}/img/champion/${formattedId}.png`;
 }
 
@@ -35,8 +71,7 @@ export function getChampIcon(champId: string): string {
  */
 export function getChampSplash(champId: string): string {
   if (!champId) return "";
-  let formattedId = champId;
-  if (formattedId.toLowerCase() === "wukong") formattedId = "MonkeyKing";
+  const formattedId = formatChampId(champId);
   return `https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${formattedId}_0.jpg`;
 }
 

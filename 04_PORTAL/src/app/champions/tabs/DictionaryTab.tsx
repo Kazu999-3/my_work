@@ -117,7 +117,7 @@ function ChampionsContent() {
   }, [matchupsList, champStats]);
 
 
-  // お気に入りデータのロードとイベント購読
+  // 初期データの並列同時ロード (Promise.all でウォーターフォール通信を完全排除)
   useEffect(() => {
     setFavoriteChamps(getFavorites().champions);
 
@@ -130,43 +130,31 @@ function ChampionsContent() {
     window.addEventListener("favorites-updated", handleFavUpdated);
     window.addEventListener("storage", handleFavUpdated);
 
-    // KTMの戦績データをロード
-    fetch('/api/champions/stats')
-      .then(res => res.json())
-      .then(data => {
-        if (data.success && data.stats) {
-          setChampStats(data.stats);
-        }
-      })
-      .catch(console.error);
+    let isMounted = true;
 
-    return () => {
-      window.removeEventListener("favorites-updated", handleFavUpdated);
-      window.removeEventListener("storage", handleFavUpdated);
-    };
-  }, []);
+    // 全初期APIを Promise.all で並列一元取得
+    Promise.all([
+      fetch('/api/champions/stats').then(res => res.json()).catch(() => null),
+      fetch('https://ddragon.leagueoflegends.com/api/versions.json')
+        .then(r => r.json())
+        .then(versions => fetch(`https://ddragon.leagueoflegends.com/cdn/${versions[0]}/data/ja_JP/champion.json`).then(r => r.json()))
+        .catch(() => null),
+      supabase.from('matchup_sentinel').select('champion, created_at, patch_meta:raw_data->patch_meta, jg_style:raw_data->jg_style, is_favorited:raw_data->is_favorited').eq('enemy', 'GLOBAL'),
+      supabase.from('champion_power_spikes').select('champion, early_game_score, mid_game_score, late_game_score'),
+      supabase.from('matchup_sentinel').select('champion').eq('enemy', 'GLOBAL').not('strategy', 'is', null).neq('strategy', '')
+    ]).then(([statsData, ddragonData, { data }, { data: spikeRows }, { data: contentRows }]) => {
+      if (!isMounted) return;
 
-  useEffect(() => {
-    let fetchedChampions: any[] = [];
-    fetch('https://ddragon.leagueoflegends.com/api/versions.json')
-      .then(r => r.json())
-      .then(versions => fetch(`https://ddragon.leagueoflegends.com/cdn/${versions[0]}/data/ja_JP/champion.json`))
-      .then(r => r.json())
-      .then(d => {
-        fetchedChampions = Object.values(d.data).map((c: any) => ({
-          id: c.id, key: c.key, name: c.name, title: c.title, tags: c.tags,
-          searchKey: `${c.id.toLowerCase()} ${c.name}`
-        }));
-        return Promise.all([
-          // 一覧では大きい strategy 全文は不要。必要なメタ情報と最新更新日時を取得
-          supabase.from('matchup_sentinel').select('champion, created_at, patch_meta:raw_data->patch_meta, jg_style:raw_data->jg_style, is_favorited:raw_data->is_favorited').eq('enemy', 'GLOBAL'),
-          // 一覧グリッド用に全チャンピオン分のパワースパイクを一括取得（詳細表示と同じchampion_power_spikesテーブル）
-          supabase.from('champion_power_spikes').select('champion, early_game_score, mid_game_score, late_game_score'),
-          // strategy全文を転送せず「中身があるchampion名」だけを取得し pending 判定に使う（従来の !strategy と同義）
-          supabase.from('matchup_sentinel').select('champion').eq('enemy', 'GLOBAL').not('strategy', 'is', null).neq('strategy', '')
-        ]);
-      })
-      .then(([{ data }, { data: spikeRows }, { data: contentRows }]) => {
+      if (statsData && statsData.success && statsData.stats) {
+        setChampStats(statsData.stats);
+      }
+
+      if (!ddragonData || !ddragonData.data) return;
+
+      const fetchedChampions = Object.values(ddragonData.data).map((c: any) => ({
+        id: c.id, key: c.key, name: c.name, title: c.title, tags: c.tags,
+        searchKey: `${c.id.toLowerCase()} ${c.name}`
+      }));
         const normalizeKey = (str: string) => String(str || '').toLowerCase().replace(/[^a-z0-9]/g, '');
         const ALIAS_MAP: Record<string, string> = {
           kisante: 'ksante', qkuaa: 'qiyana', naitina: 'nilah', silas: 'sylas', zilian: 'zilean', viper: 'viego'
@@ -257,7 +245,7 @@ function ChampionsContent() {
 
     const loadChampionData = async (champId: string) => {
       // 対面マッチアップ履歴の表示に必要な詳細フィールド（id, matchup_id, champion, enemy, title, strategy, raw_data）を取得
-      const { data: mData } = await supabase.from('matchup_sentinel').select('id, matchup_id, champion, enemy, title, strategy, raw_data').eq('champion', champId).neq('enemy', 'GLOBAL');
+      const { data: mData } = await supabase.from('matchup_sentinel').select('id, matchup_id, champion, enemy, title, strategy, raw_data').ilike('champion', champId).neq('enemy', 'GLOBAL');
       if (mData && mData.length > 0) {
         setMatchupsList(mData);
         let wins = 0; let k = 0; let d = 0; let a = 0;

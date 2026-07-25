@@ -54,6 +54,7 @@ export async function POST(req: Request) {
       .from('personal_knowledge')
       .select('id, title, content, raw_content, champion', { count: 'exact' })
       .or('tags.is.null,tags.not.cs.{__DELETED__}')
+      .not('tags', 'cs', '{__MERGED__}')
       .order('id', { ascending: true })
       .range(offset, offset + limit - 1);
 

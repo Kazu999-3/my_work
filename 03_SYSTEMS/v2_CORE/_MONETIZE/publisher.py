@@ -28,7 +28,7 @@ import requests
 X_EMAIL = os.environ.get("X_EMAIL")
 X_PASSWORD = os.environ.get("X_PASSWORD")
 USER_DATA_DIR = settings.ROOT_DIR / ".agent/playwright_data/x_profile"
-PUBLISH_DISABLED = os.environ.get("PUBLISH_DISABLED", "False").lower() in ("true", "1")
+PUBLISH_DISABLED = os.environ.get("PUBLISH_DISABLED", "True").lower() in ("true", "1")
 
 class XPublisher:
     def __init__(self, headless=True):
@@ -85,10 +85,23 @@ class XPublisher:
         return True
         
     def post_thread(self, tweets: list):
-        """JSON配列（リスト）を受け取り、Xでスレッドとして連投する"""
+        """JSON配列（リスト）を受け取り、Xでスレッドとして連投する（外部リンクのインプレッション減少防止のため2段階化）"""
         if not tweets or len(tweets) == 0:
             logger.error("No tweets provided.")
             return False
+
+        # 単一ツイート内に note などの外部リンクが含まれる場合、Xアルゴリズム回避のために親ポスト(ノウハウ)と子ポスト(リンク)に自動分解
+        if len(tweets) == 1 and ("note.com" in tweets[0] or "http" in tweets[0]):
+            full_text = tweets[0]
+            lines = full_text.splitlines()
+            main_lines = [l for l in lines if not ("note.com" in l or "http" in l or "👇" in l)]
+            link_lines = [l for l in lines if ("note.com" in l or "http" in l or "👇" in l)]
+            
+            if main_lines and link_lines:
+                main_tweet = "\n".join(main_lines).strip()
+                link_tweet = "📖 詳細・フルレポートはこちら👇\n" + "\n".join(link_lines).strip()
+                tweets = [main_tweet, link_tweet]
+                logger.info("💡 外部リンク付きポストを2段階スレッド（ノウハウ＋リプライ導線）へ自動分解しました。")
 
         if PUBLISH_DISABLED:
             logger.warning("[Publisher] X自動投稿は現在一時停止されています（Dry Runとしてログ出力のみ）。")

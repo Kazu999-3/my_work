@@ -15,40 +15,55 @@ class SovereignHerald:
     def __init__(self):
         self.webhook_url = settings.DISCORD_WEBHOOK
 
+    def _clamp_payload(self, payload):
+        if isinstance(payload, dict):
+            if "content" in payload and isinstance(payload["content"], str) and len(payload["content"]) > 1950:
+                payload["content"] = payload["content"][:1940] + "...\n(省略)"
+            if "embeds" in payload and isinstance(payload["embeds"], list):
+                for emb in payload["embeds"]:
+                    if isinstance(emb, dict) and "description" in emb and len(str(emb["description"])) > 1950:
+                        emb["description"] = str(emb["description"])[:1940] + "...\n(省略)"
+        return payload
+
     def _send_webhook_safe(self, payload, timeout=15) -> bool:
-        """Discord Webhook へ安全に送信する（429 レートリミット時の自動リトライ機能付き）"""
+        """Discord Webhook へ安全に送信する（httpx を使用しメインスレッドのブロッキングを緩和）"""
         if not self.webhook_url:
             return False
 
-        import time
-        max_retries = 3
-        for attempt in range(max_retries):
-            try:
-                res = requests.post(self.webhook_url, json=payload, timeout=timeout)
-                
-                # 429 レートリミット判定
-                if res.status_code == 429:
-                    retry_after = 5.0
-                    try:
-                        retry_after_ms = res.json().get("retry_after", 0)
-                        if retry_after_ms > 0:
-                            retry_after = (retry_after_ms / 1000.0)
-                        else:
-                            retry_after = float(res.headers.get("Retry-After", 5))
-                    except:
-                        pass
-                    
-                    logger.warning(f"⚠️ [Herald] Discord Webhook 429 Rate Limit. Waiting {retry_after:.2f}s before retry... (Attempt {attempt + 1}/{max_retries})")
-                    time.sleep(retry_after)
-                    continue
+        payload = self._clamp_payload(payload)
 
-                res.raise_for_status()
-                return True
-            except Exception as e:
-                logger.error(f"❌ [Herald] Webhook 送信エラー (試行 {attempt + 1}/{max_retries}): {e}")
-                if attempt == max_retries - 1:
-                    return False
-                time.sleep(2.0)
+        import time
+        import httpx
+        max_retries = 3
+        
+        with httpx.Client(timeout=timeout) as client:
+            for attempt in range(max_retries):
+                try:
+                    res = client.post(self.webhook_url, json=payload)
+                    
+                    # 429 レートリミット判定
+                    if res.status_code == 429:
+                        retry_after = 5.0
+                        try:
+                            retry_after_ms = res.json().get("retry_after", 0)
+                            if retry_after_ms > 0:
+                                retry_after = (retry_after_ms / 1000.0)
+                            else:
+                                retry_after = float(res.headers.get("Retry-After", 5))
+                        except:
+                            pass
+                        
+                        logger.warning(f"⚠️ [Herald] Discord Webhook 429 Rate Limit. Waiting {retry_after:.2f}s before retry... (Attempt {attempt + 1}/{max_retries})")
+                        time.sleep(retry_after)
+                        continue
+
+                    res.raise_for_status()
+                    return True
+                except Exception as e:
+                    logger.error(f"❌ [Herald] Webhook 送信エラー (試行 {attempt + 1}/{max_retries}): {e}")
+                    if attempt == max_retries - 1:
+                        return False
+                    time.sleep(2.0)
         return False
 
     def announce_article(self, champion, patch, draft_path, promo_hooks, image_prompt=None):

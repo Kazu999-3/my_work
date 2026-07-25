@@ -40,6 +40,15 @@ function SearchInner() {
     if (q) { setQuery(q); runSearch(q); }
   }, [params, runSearch]);
 
+  // 入力時の 300ms デバウンス自動検索
+  useEffect(() => {
+    if (!query || query.trim().length < 2) return;
+    const timer = setTimeout(() => {
+      runSearch(query);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [query, runSearch]);
+
   const onSubmit = (e: React.FormEvent) => { e.preventDefault(); runSearch(query); };
 
   const grouped = results.reduce((acc: Record<string, any[]>, r) => {

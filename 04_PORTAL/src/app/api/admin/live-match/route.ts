@@ -443,14 +443,16 @@ export async function POST(req: Request) {
               fbRate = 40 + (losses * 10);
             }
           } catch {
-            winRate = 48 + Math.floor(Math.random() * 5);
+            winRate = 50;
+            pIsTilted = false;
+            isVulnerable = false;
+            fbRate = 20;
           }
         } else if (isEnemy) {
-          // モック用のデフォルト
-          winRate = p.puuid === enemyJg.puuid ? 45 : 30 + Math.floor(Math.random() * 30);
-          pIsTilted = winRate < 45;
-          isVulnerable = winRate < 40;
-          fbRate = isVulnerable ? 60 : 20;
+          winRate = 50;
+          pIsTilted = false;
+          isVulnerable = false;
+          fbRate = 20;
         }
 
         return {

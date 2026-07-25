@@ -26,7 +26,18 @@ export function getFavorites(): FavoritesData {
 }
 
 export function saveFavorites(data: FavoritesData) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  } catch (e) {
+    console.warn("localStorage capacity exceeded, trimming favorites", e);
+    const trimmed = {
+      champions: data.champions.slice(-30),
+      articles: data.articles.slice(-30)
+    };
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(trimmed));
+    } catch {}
+  }
   // カスタムイベントで他コンポーネントに通知
   window.dispatchEvent(new CustomEvent("favorites-updated", { detail: data }));
 }

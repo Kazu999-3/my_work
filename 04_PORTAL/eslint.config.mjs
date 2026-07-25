@@ -12,7 +12,18 @@ const eslintConfig = defineConfig([
       "@typescript-eslint/no-unused-vars": "off",
       "@next/next/no-img-element": "off",
       "react-hooks/set-state-in-effect": "off",
-      "react-hooks/immutability": "off"
+      "react-hooks/immutability": "off",
+      "no-restricted-imports": [
+        "error",
+        {
+          "patterns": [
+            {
+              "group": ["@/*"],
+              "message": "Vercelデプロイ時の module-not-found エラー防止のため、@/ 絶対パスエイリアスは禁止です。相対パス (../../等) を使用してください。"
+            }
+          ]
+        }
+      ]
     }
   },
   // Override default ignores of eslint-config-next.

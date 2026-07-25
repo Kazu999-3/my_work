@@ -142,13 +142,13 @@ export default function SynergyPage() {
         // 配列化してソート
         const parsedAlly = Object.entries(allyMap).map(([key, stat]) => {
           const [p1, p2] = key.split('::');
-          return { p1, p2, games: stat.games, wins: stat.wins, winRate: stat.wins / stat.games };
+          return { p1, p2, games: stat.games, wins: stat.wins, winRate: stat.games > 0 ? stat.wins / stat.games : 0 };
         });
 
         const parsedEnemy = Object.entries(enemyMap).map(([key, stat]) => {
           const [p1, p2] = key.split('::');
           // 勝率差の絶対値 (50%の時0になるように計算) -> 0 に近いほど拮抗している
-          const p1Rate = stat.p1Wins / stat.games;
+          const p1Rate = stat.games > 0 ? stat.p1Wins / stat.games : 0.5;
           const winRateDiff = Math.abs(0.5 - p1Rate);
           return { p1, p2, games: stat.games, p1Wins: stat.p1Wins, p2Wins: stat.p2Wins, winRateDiff };
         });
@@ -162,7 +162,7 @@ export default function SynergyPage() {
             members: key.split('::'),
             games: s.games,
             wins: s.wins,
-            winRate: s.wins / s.games,
+            winRate: s.games > 0 ? s.wins / s.games : 0,
           }));
         }
         setGroupStats(parsedGroups);

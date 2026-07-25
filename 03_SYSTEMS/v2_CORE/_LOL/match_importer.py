@@ -22,16 +22,20 @@ SUPABASE_KEY = os.getenv("SUPABASE_KEY", "")
 REGION = "asia"  # アジアリージョン
 PLATFORM = "jp1"  # 日本サーバー
 
-def riot_get(url, max_retries=3):
-    """Riot API GET (429 Rate Limit 対応)"""
+def riot_get(url, max_retries=5):
+    """Riot API GET (429 Rate Limit 耐性強化版)"""
     for attempt in range(max_retries):
         r = httpx.get(url, headers={"X-Riot-Token": RIOT_KEY}, timeout=15)
         if r.status_code == 200: 
             return r.json()
         elif r.status_code == 429:
-            # 制限に引っかかった時だけ待機するスマートな処理
-            wait_time = int(r.headers.get("Retry-After", 2 ** attempt))
-            log.warning(f"Riot API Rate Limit (429). Waiting for {wait_time}s...")
+            # Retry-After ヘッダーの厳密取得、または指数バックオフ (2^attempt + 1)
+            retry_after = r.headers.get("Retry-After")
+            if retry_after and retry_after.isdigit():
+                wait_time = int(retry_after) + 1
+            else:
+                wait_time = (2 ** attempt) + 1
+            log.warning(f"⏳ Riot API Rate Limit (429). {wait_time}秒間待機します... (試行 {attempt + 1}/{max_retries})")
             time.sleep(wait_time)
             continue
         elif r.status_code == 403:
@@ -89,9 +93,12 @@ def extract_jg_matchup(match_data, puuid):
             me = p; break
     if not me: return None
 
-    # 自分のチームID
-    my_team = me.get("teamId")
-    my_role = me.get("teamPosition", "").upper()
+    # 許可するキュー: 400 (Normal Draft), 420 (Ranked Solo), 440 (Ranked Flex)
+    ALLOWED_QUEUES = {400, 420, 440}
+    queue_id = info.get("queueId")
+    if queue_id not in ALLOWED_QUEUES:
+        log.info(f"⏭️ Queue ID {queue_id} は対象外（ARAM/Arena/AI等）のためスキップします。")
+        return None
 
     # JGじゃなければスキップ（JGの試合のみを対象とする）
     if my_role != "JUNGLE": return None
@@ -136,6 +143,9 @@ def extract_jg_matchup(match_data, puuid):
 
 def import_matches():
     """メインの取り込みロジック"""
+    dotenv.load_dotenv(Path("d:/my_work/.env"), override=True)
+    global RIOT_KEY
+    RIOT_KEY = os.getenv("RIOT_API_KEY", "")
     if not RIOT_KEY or not SUPABASE_URL:
         log.error("RIOT_API_KEY または SUPABASE 環境変数が未設定")
         return

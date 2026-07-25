@@ -30,6 +30,7 @@ export interface Player {
   isOutlierHigh?: boolean;
   effectiveRates?: Record<Role, number>;
   spectator_pity?: number;
+  isHandicap?: boolean;
 }
 
 export interface BalanceContext {
@@ -410,11 +411,11 @@ function runBalanceSearch(players: Player[], ctx: BalanceContext): RawBalanceCan
           const weakerSide = mmrA < mmrB ? pLayerA : pLayerB;
           const gapScale = weakerSide.allowHigher ? 0.15 : 1;
           if (laneMmrDiff >= 300) {
-            penalty += 500000 * gapScale; // 超格差（許可なしは事実上の禁止）
+            penalty += 60000 * gapScale; // 超格差（許可なしは強い抑制）
           } else if (laneMmrDiff >= 200) {
-            penalty += 150000 * gapScale; // 中格差（強い抑制）
+            penalty += 25000 * gapScale; // 中格差（抑止）
           } else if (laneMmrDiff >= 150) {
-            penalty += 30000 * gapScale;  // 軽微な格差（ソフト抑制）
+            penalty += 8000 * gapScale;  // 軽微な格差（ソフト抑制）
           }
 
           penalty += Math.pow(Math.abs(effA - effB), 2) / 2.5; // 対面のレーン格差ペナルティ（実効レートで評価）
@@ -816,6 +817,39 @@ export function coreBalanceProposals(players: Player[], ctx: BalanceContext): Pr
     teamBlueMMR: mmrBlueD,
     teamRedMMR: mmrRedD,
     mmrDiff: Math.abs(mmrBlueD - mmrRedD)
+  });
+  usedSignatures.add(bestD.signature);
+
+  // 5. ハンデ調整 -> 案E
+  const handicapPlayers = players.filter(p => p.isHandicap);
+  const calcHandicapBalanceScore = (c: RawBalanceCandidate): number => {
+    let score = c.score;
+    if (handicapPlayers.length > 0) {
+      c.teamAIndices.forEach((idx) => {
+        if (players[idx].isHandicap) score -= 4000;
+      });
+    }
+    return score;
+  };
+
+  const listE = [...candidates].sort((a, b) => {
+    const scoreA = calcHandicapBalanceScore(a);
+    const scoreB = calcHandicapBalanceScore(b);
+    return scoreA - scoreB || a.mmrDiffVal - b.mmrDiffVal;
+  });
+
+  const bestE = listE.find(c => !usedSignatures.has(c.signature)) || listE[0];
+  const resE = buildBalanceResult(bestE, players, ctx);
+  resE.balanceReport.unshift("💡 **【コンセプト：ハンデ調整（格差補正）】**\nハンデ指定されたプレイヤーの計算上MMRを割引補正（ハンデペナルティ適用）した実効レートで再アサインしたバランス案です。\n**こんな時におすすめ**：実力差が大きい参加者が混ざっている日や、ハンデ設定付きのチーム分け時。");
+  const mmrBlueE = resE.teamBlue.reduce((s, p) => s + p.mmr, 0);
+  const mmrRedE = resE.teamRed.reduce((s, p) => s + p.mmr, 0);
+  proposals.push({
+    ...resE,
+    id: 'E',
+    title: '案E：ハンデ調整',
+    teamBlueMMR: mmrBlueE,
+    teamRedMMR: mmrRedE,
+    mmrDiff: Math.abs(mmrBlueE - mmrRedE)
   });
 
   // 切り替え時に綺麗に表示されるように、インデックス順にソートして返却

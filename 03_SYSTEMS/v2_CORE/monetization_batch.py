@@ -43,6 +43,28 @@ except ImportError:
 
 logger = setup_sovereign_logging("MonetizationBatch")
 
+def clean_ai_smell_text(text: str) -> str:
+    """生成された記事から AI 臭いテンプレ表現・解説文を自動削除・修正する"""
+    import re
+    if not text:
+        return text
+    
+    ng_patterns = [
+        r"^[#\s]*まとめ[\s\S]*?(いかがでしたでしょうか|いかがだったでしょうか)[？\?]*",
+        r"いかがでしたでしょうか[？\?]*",
+        r"いかがだったでしょうか[？\?]*",
+        r"〜について解説します[。]*",
+        r"について詳しく見ていきましょう[。]*",
+        r"今回は、.*?について解説していきました[。]*",
+        r"本記事では.*?について解説しました[。]*",
+        r"AIアシスタント",
+        r" Antigravity "
+    ]
+    cleaned = text
+    for pattern in ng_patterns:
+        cleaned = re.sub(pattern, "", cleaned, flags=re.MULTILINE)
+    return cleaned.strip()
+
 class MonetizationBatch:
     def __init__(self, headless=True):
         self.headless = headless

@@ -3,6 +3,7 @@ import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
+export const maxDuration = 30;
 
 export async function GET() {
   const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN;
@@ -24,40 +25,44 @@ export async function GET() {
       return NextResponse.json({ message: 'No players with discord_id found.' });
     }
 
-    // 2. Discord APIを叩いて最新のユーザー名を取得
-    const updatedPlayers = [];
-    for (const player of players) {
-      try {
-        const userRes = await fetch(`https://discord.com/api/v10/users/${player.discord_id}`, {
-          headers: {
-            Authorization: `Bot ${DISCORD_BOT_TOKEN}`,
-          },
-        });
-        
-        if (userRes.ok) {
-          const userData = await userRes.json();
-          const latestName = userData.global_name || userData.username || player.name;
-          if (latestName !== player.name) {
-            updatedPlayers.push({ id: player.id, name: latestName, oldName: player.name });
-            // 3. Supabaseに更新を反映
-            await supabase
-              .from('ktm_players')
-              .update({ name: latestName })
-              .eq('id', player.id);
+    // 2. 5件ずつのバッチ並列処理でタイムアウトを回避
+    const updatedPlayers: any[] = [];
+    const chunkSize = 5;
 
-            // ★ 連動更新: 過去の試合ログのプレイヤー名も新しい名前に更新
-            const { error: matchesUpdateError } = await supabase
-              .from('ktm_match_participants')
-              .update({ player_name: latestName })
-              .eq('player_name', player.name);
-            if (matchesUpdateError) {
-              console.error(`Failed to update matches for ${player.name} -> ${latestName}:`, matchesUpdateError);
+    for (let i = 0; i < players.length; i += chunkSize) {
+      const chunk = players.slice(i, i + chunkSize);
+      await Promise.all(
+        chunk.map(async (player: any) => {
+          try {
+            const userRes = await fetch(`https://discord.com/api/v10/users/${player.discord_id}`, {
+              headers: {
+                Authorization: `Bot ${DISCORD_BOT_TOKEN}`,
+              },
+            });
+
+            if (userRes.ok) {
+              const userData = await userRes.json();
+              const latestName = userData.global_name || userData.username || player.name;
+              if (latestName !== player.name) {
+                updatedPlayers.push({ id: player.id, name: latestName, oldName: player.name });
+                // 3. Supabaseに更新を反映
+                await supabase
+                  .from('ktm_players')
+                  .update({ name: latestName })
+                  .eq('id', player.id);
+
+                // 連動更新
+                await supabase
+                  .from('ktm_match_participants')
+                  .update({ player_name: latestName })
+                  .eq('player_name', player.name);
+              }
             }
+          } catch (e) {
+            console.error(`Failed to sync discord_id: ${player.discord_id}`, e);
           }
-        }
-      } catch (e) {
-        console.error(`Failed to sync discord_id: ${player.discord_id}`, e);
-      }
+        })
+      );
     }
 
     return NextResponse.json({ 

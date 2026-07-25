@@ -4,10 +4,12 @@
   --color-background: #0f1115;
   --color-foreground: #ededed;
   
-  /* Sovereign Cyberpunk Theme */
+  /* Sovereign Cyberpunk & Hextech Theme */
   --color-primary: #3b82f6; /* Blue */
   --color-primary-glow: rgba(59, 130, 246, 0.5);
   --color-accent: #8b5cf6; /* Violet */
+  --color-gold: #c89b3c; /* Hextech Gold */
+  --color-gold-glow: rgba(200, 155, 60, 0.4);
   --color-success: #10b981; /* Emerald */
   --color-danger: #ef4444; /* Red */
   --color-surface: rgba(255, 255, 255, 0.03);
@@ -65,6 +67,13 @@
   .text-glow {
     text-shadow: 0 0 10px var(--color-primary-glow);
   }
+
+  .text-gradient-gold {
+    background: linear-gradient(to right, #f3e7e8, #e5c07b, #c89b3c);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
   
   .text-gradient {
     background: linear-gradient(to right, #60a5fa, #c084fc);
@@ -73,11 +82,37 @@
     background-clip: text;
   }
 
+  /* モバイルテーブルの横スクロール破綻を防止するユーティリティ */
+  .table-responsive {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
   .no-scrollbar::-webkit-scrollbar {
     display: none;
   }
   .no-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
+  }
+
+  /* キーボードアクセス（a11y）フォーカスリング */
+  :focus-visible {
+    outline: 2px solid #c89b3c !important;
+    outline-offset: 2px !important;
+  }
+
+  /* 紙 / PDF 印刷用スタイル */
+  @media print {
+    body {
+      background: #ffffff !important;
+      color: #000000 !important;
+    }
+    .glass-panel {
+      background: #ffffff !important;
+      border: 1px solid #cccccc !important;
+      color: #000000 !important;
+    }
   }
 }

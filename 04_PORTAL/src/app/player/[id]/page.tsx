@@ -321,8 +321,15 @@ export default function PlayerMyPage() {
 
   if (!player) {
     return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center text-xl font-bold">
-        プレイヤーが見つかりませんでした。(Discord ID: {id})
+      <div className="flex-1 min-h-screen bg-[#06070a] flex flex-col items-center justify-center p-4">
+        <div className="glass-panel border border-red-500/20 p-8 rounded-3xl max-w-md w-full text-center space-y-6">
+          <div className="text-5xl text-red-500 flex justify-center"><Shield className="w-12 h-12" /></div>
+          <h1 className="text-xl font-extrabold text-white">プレイヤーが見つかりません</h1>
+          <p className="text-gray-400 text-xs">指定された Discord ID ({id}) の名簿登録が存在しないか削除されました。</p>
+          <Link href="/leaderboard" className="px-6 py-2.5 bg-gray-900 border border-white/10 text-white rounded-xl hover:bg-[#c89b3c] hover:text-black font-bold transition-all text-xs inline-block">
+            リーダーボードに戻る
+          </Link>
+        </div>
       </div>
     );
   }

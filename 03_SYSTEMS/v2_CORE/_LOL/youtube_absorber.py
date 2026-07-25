@@ -66,6 +66,16 @@ class YouTubeAbsorber:
         self.queue_file = os.path.join(settings.ROOT_DIR, "02_FACTORY", "kirei_queue.json")
         self.bible_dir = os.path.join(settings.ROOT_DIR, "02_FACTORY", "bible", "kirei_bible")
         os.makedirs(self.bible_dir, exist_ok=True)  # 出力先ディレクトリが存在しない場合は自動作成
+
+    @staticmethod
+    def clean_subtitle_text(raw_text: str) -> str:
+        """VTT字幕のタイムスタンプやタグをクリーン除去"""
+        if not raw_text: return ""
+        import re
+        cleaned = re.sub(r"\d{2}:\d{2}:\d{2}\.\d{3}\s*-->\s*\d{2}:\d{2}:\d{2}\.\d{3}.*", "", raw_text)
+        cleaned = re.sub(r"WEBVTT|Kind:|Language:", "", cleaned)
+        cleaned = re.sub(r"<\/?c[^>]*>|<\d{2}:\d{2}:\d{2}\.\d{3}>", "", cleaned)
+        return "\n".join([l.strip() for l in cleaned.splitlines() if l.strip()])
         yt_bin = shutil.which("yt-dlp") or shutil.which("yt-dlp.exe") or str(settings.ROOT_DIR / ".venv" / "Scripts" / "yt-dlp.exe")
         if not os.path.exists(yt_bin) and not shutil.which(yt_bin):
             self.yt_dlp_cmd = [sys.executable, "-m", "yt_dlp"]

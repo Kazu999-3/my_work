@@ -3,7 +3,7 @@
 import { useEffect, useState, use } from 'react';
 import { supabase } from '../../../lib/supabaseClient';
 import Link from 'next/link';
-import { Trophy, Swords, Zap, Activity, ShieldAlert, Award, Compass, RefreshCw, ChevronLeft } from 'lucide-react';
+import { Trophy, Swords, Zap, Activity, ShieldAlert, Award, Compass, RefreshCw, ChevronLeft, Sparkles } from 'lucide-react';
 import { getChampIcon } from '../../../lib/ddragonClient';
 
 // ==========================================
@@ -160,7 +160,7 @@ export default function PlayerStatsPage({ params }: PageProps) {
               championName: champ,
               games: stat.games,
               losses: stat.losses,
-              winRate: Math.round(((stat.games - stat.losses) / stat.games) * 100)
+              winRate: stat.games > 0 ? Math.round(((stat.games - stat.losses) / stat.games) * 100) : 0
             }))
             .filter(n => n.losses > 0) // 1回以上負けた相手に限定
             .sort((a, b) => b.losses - a.losses || a.winRate - b.winRate) // 敗北数降順 ➔ 勝率昇順
@@ -311,13 +311,23 @@ export default function PlayerStatsPage({ params }: PageProps) {
 
         {/* ヘッダー・プロフィール */}
         <div className="glass-panel border border-white/10 rounded-3xl overflow-hidden relative shadow-[0_4px_30px_rgba(0,0,0,0.5)]">
-          <div className="h-28 bg-gradient-to-r from-blue-600/20 via-[#c89b3c]/15 to-purple-600/20 relative">
-            <div className="absolute inset-0 bg-black/40"></div>
+          {/* 🎨 機能 5: モストチャンプのスプラッシュ背景ヘッダー */}
+          <div 
+            className="h-36 relative bg-cover bg-center border-b border-white/10"
+            style={{
+              backgroundImage: sortedMostPlayed[0] ? `url(https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${sortedMostPlayed[0].championName}_0.jpg)` : undefined
+            }}
+          >
+            <div className="absolute inset-0 bg-gradient-to-t from-[#0d0f16] via-black/60 to-black/30"></div>
           </div>
           <div className="px-6 sm:px-10 pb-8 relative">
-            <div className="flex flex-col sm:flex-row items-center sm:items-end -mt-12 sm:-mt-10 gap-6 mb-6">
-              <div className="w-24 h-24 bg-[#161922] p-1 rounded-2xl border border-white/10 shadow-lg flex-shrink-0 flex items-center justify-center text-4xl">
-                👤
+            <div className="flex flex-col sm:flex-row items-center sm:items-end -mt-14 sm:-mt-12 gap-6 mb-6">
+              <div className="w-24 h-24 bg-[#161922] p-1 rounded-2xl border-2 border-[#c89b3c] shadow-[0_0_20px_rgba(200,155,60,0.3)] flex-shrink-0 flex items-center justify-center text-4xl overflow-hidden relative group">
+                {sortedMostPlayed[0] ? (
+                  <img src={getChampIcon(sortedMostPlayed[0].championName)} alt={sortedMostPlayed[0].championName} className="w-full h-full object-cover rounded-xl" />
+                ) : (
+                  <span>👤</span>
+                )}
               </div>
               <div className="text-center sm:text-left flex-grow space-y-1">
                 <h1 className="text-3xl font-extrabold text-white flex items-center justify-center sm:justify-start gap-2">
@@ -333,6 +343,14 @@ export default function PlayerStatsPage({ params }: PageProps) {
                     <span className="text-[10px] font-black text-gray-400 bg-white/5 px-2.5 py-0.5 rounded border border-white/10 uppercase tracking-widest">Inactive</span>
                   )}
                 </div>
+
+                {/* 🤖 機能 3: 週刊 AI アナリストプロファイル (7日間キャッシュ) */}
+                <div className="bg-[#c89b3c]/10 border border-[#c89b3c]/30 p-3 rounded-xl mt-3 flex items-start gap-2 max-w-xl">
+                  <Sparkles className="text-[#c89b3c] shrink-0 mt-0.5" size={14} />
+                  <div className="text-xs text-amber-200 font-medium leading-relaxed text-left">
+                    {(player as any)?.metadata?.ai_profile || `『${player.name} の直近戦績からプレイスタイルを分析中... 次回の定期アナリティクスで週刊プロファイルが生成されます！』`}
+                  </div>
+                </div>
               </div>
               <div className="flex gap-3">
                 <div className="bg-black/40 px-4 py-2 rounded-2xl border border-white/5 text-center">
@@ -347,6 +365,93 @@ export default function PlayerStatsPage({ params }: PageProps) {
                   <div className="text-[10px] text-orange-400 font-bold mb-1 uppercase tracking-wider">不運度 PITY</div>
                   <div className="font-bold text-orange-400 text-sm">{player.pity}</div>
                 </div>
+              </div>
+            </div>
+
+            {/* 🎮 機能 2 & 📊 勝ちパターン分析 & Hextech 5軸レーダーチャート */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
+              {/* 勝ちパターン分析 (2列) */}
+              <div className="lg:col-span-2 bg-black/40 border border-[#c89b3c]/30 p-5 rounded-2xl relative overflow-hidden shadow-[0_0_20px_rgba(200,155,60,0.1)]">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-xs font-black text-[#c89b3c] flex items-center gap-1.5 uppercase tracking-wider">
+                    <Award size={16} /> 📊 勝ちパターン分析 (Victory Blueprint)
+                  </h3>
+                  <span className="text-[9px] font-mono text-gray-400 bg-white/5 px-2 py-0.5 rounded border border-white/5">AIアナリティクス</span>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div className="bg-black/50 border border-white/5 p-3 rounded-xl flex items-center gap-3">
+                    {sortedMostPlayed[0] ? (
+                      <>
+                        <img src={getChampIcon(sortedMostPlayed[0].championName)} alt={sortedMostPlayed[0].championName} className="w-10 h-10 rounded-xl border border-[#c89b3c] shrink-0" />
+                        <div className="min-w-0">
+                          <div className="text-[9px] text-gray-400 font-bold uppercase truncate">👑 勝負チャンプ</div>
+                          <div className="text-xs font-black text-white truncate">{sortedMostPlayed[0].championName}</div>
+                          <div className="text-[10px] font-mono text-[#c89b3c]">勝率 {Math.round((sortedMostPlayed[0].wins / sortedMostPlayed[0].games) * 100)}% ({sortedMostPlayed[0].games}戦)</div>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-xs text-gray-400">データ蓄積中...</div>
+                    )}
+                  </div>
+                  <div className="bg-black/50 border border-white/5 p-3 rounded-xl flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center text-lg shrink-0">🎯</div>
+                    <div className="min-w-0">
+                      <div className="text-[9px] text-gray-400 font-bold uppercase truncate">🎯 最高適性レーン</div>
+                      <div className="text-xs font-black text-white truncate">{player.main_lane}</div>
+                      <div className="text-[10px] font-mono text-indigo-400">期待勝率 {winRate}% ({totalGames}戦)</div>
+                    </div>
+                  </div>
+                  <div className="bg-black/50 border border-white/5 p-3 rounded-xl flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-lg shrink-0">🔥</div>
+                    <div className="min-w-0">
+                      <div className="text-[9px] text-gray-400 font-bold uppercase truncate">⚡ 貢献スタイル</div>
+                      <div className="text-xs font-black text-white truncate">{Number(avgKda) >= 3.0 ? '高KDAキャリー' : Number(avgAssists) >= 8.0 ? '集団戦エンゲージャー' : '主力ファイター'}</div>
+                      <div className="text-[10px] font-mono text-emerald-400">KDA {avgKda} ({avgKills}/{avgDeaths}/{avgAssists})</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 🎮 機能 2: Hextech 5軸レーダーチャート (1列) */}
+              <div className="bg-black/40 border border-indigo-500/30 p-4 rounded-2xl flex flex-col items-center justify-center relative overflow-hidden">
+                <div className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1 flex items-center gap-1">
+                  <Activity size={12} /> Hextech 能力パラメーター
+                </div>
+                {/* 5軸ステータス可視化プログラミング SVG */}
+                {(() => {
+                  const carry = Math.min(100, Math.round(Number(avgKills) * 10 + winRate * 0.5));
+                  const teamfight = Math.min(100, Math.round(Number(avgAssists) * 9 + Number(avgKda) * 8));
+                  const stability = Math.max(10, Math.min(100, Math.round(100 - Number(avgDeaths) * 12)));
+                  const pool = Math.min(100, Math.round((sortedMostPlayed.length || 1) * 20));
+                  const luck = Math.min(100, Math.round(player.pity * 20 + 30));
+
+                  return (
+                    <div className="w-full h-32 flex items-center justify-center relative">
+                      <svg viewBox="0 0 100 100" className="w-28 h-28 overflow-visible">
+                        <polygon points="50,10 90,38 75,82 25,82 10,38" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="1" />
+                        <polygon points="50,25 75,44 67,70 33,70 25,44" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="0.5" />
+                        {/* データポリゴン */}
+                        <polygon 
+                          points={`
+                            ${50},${50 - (carry * 0.4)}, 
+                            ${50 + (teamfight * 0.4)},${50 - (teamfight * 0.12)}, 
+                            ${50 + (stability * 0.25)},${50 + (stability * 0.32)}, 
+                            ${50 - (pool * 0.25)},${50 + (pool * 0.32)}, 
+                            ${50 - (luck * 0.4)},${50 - (luck * 0.12)}
+                          `} 
+                          fill="rgba(99, 102, 241, 0.3)" 
+                          stroke="#6366f1" 
+                          strokeWidth="1.5" 
+                        />
+                      </svg>
+                      <span className="absolute top-0 text-[8px] font-mono text-gray-400">キャリー ({carry})</span>
+                      <span className="absolute right-0 top-6 text-[8px] font-mono text-gray-400">集団戦 ({teamfight})</span>
+                      <span className="absolute right-2 bottom-1 text-[8px] font-mono text-gray-400">安定度 ({stability})</span>
+                      <span className="absolute left-2 bottom-1 text-[8px] font-mono text-gray-400">プール ({pool})</span>
+                      <span className="absolute left-0 top-6 text-[8px] font-mono text-gray-400">運 ({luck})</span>
+                    </div>
+                  );
+                })()}
               </div>
             </div>
 

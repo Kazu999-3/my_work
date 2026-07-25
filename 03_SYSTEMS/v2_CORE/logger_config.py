@@ -48,5 +48,10 @@ def setup_sovereign_logging(name="SovereignOS"):
     
     return logger
 
-# デフォルトのグローバルロガーを作成（各モジュールでインポートして使用）
-# logger = setup_sovereign_logging()
+def get_rotating_file_handler(file_path, max_bytes=10*1024*1024, backup_count=5):
+    """個別ログファイル用ローテーティングハンドラ作成ヘルパー"""
+    handler = RotatingFileHandler(
+        file_path, maxBytes=max_bytes, backupCount=backup_count, encoding="utf-8"
+    )
+    handler.setFormatter(logging.Formatter('%(asctime)s [%(name)s] %(levelname)s: %(message)s'))
+    return handler

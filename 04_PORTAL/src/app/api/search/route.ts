@@ -27,12 +27,14 @@ export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
     const q = (searchParams.get('q') || '').trim();
-    if (q.length < 2) {
-      return NextResponse.json({ results: [], message: '2文字以上で検索してください。' });
+    // 検索クエリの特殊記号を安全サニタイズ
+    const safeQ = q.replace(/[%_*()']/g, '');
+    if (safeQ.length < 2) {
+      return NextResponse.json({ results: [], message: '2文字以上のキーワードで検索してください。' });
     }
 
     // チャンピオン名の表記揺れを展開（Graves/グレイブス 等）
-    const variations = Array.from(new Set([q, ...getChampionSearchVariations(q)]));
+    const variations = Array.from(new Set([safeQ, ...getChampionSearchVariations(safeQ)]));
     const like = (col: string) => variations.map((v) => `${col}.ilike.%${v}%`).join(',');
 
     const [knowledgeRes, sentinelRes] = await Promise.all([

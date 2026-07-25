@@ -21,6 +21,20 @@ if not logger.handlers:
     handler.setFormatter(logging.Formatter("%(asctime)s [%(name)s] %(message)s"))
     logger.addHandler(handler)
 
+import signal
+import atexit
+
+TASK_TIMEOUT_SECONDS = 1800  # 30分（クラッシュ・スタックタスクの自律解放）
+
+def _cleanup_daemon():
+    try:
+        ctypes.windll.kernel32.SetThreadExecutionState(0x80000000) # ES_CONTINUOUS
+        logger.info("👋 [EdgeWorkerDaemon] スリープ防止を解除し正常終了しました。")
+    except Exception:
+        pass
+
+atexit.register(_cleanup_daemon)
+
 class EdgeWorkerDaemon:
     """Sovereign OS v5.0: クラウドのタスクキューを監視し、ローカル環境で処理を実行するエッジワーカー"""
     
@@ -94,17 +108,17 @@ class EdgeWorkerDaemon:
                                 task_time = task_time.replace(tzinfo=timezone.utc)
                             
                             diff = now - task_time
-                            if diff.total_seconds() > 1800:  # 30分（クラッシュ・スタックタスクの自律解放）
+                            if diff.total_seconds() > TASK_TIMEOUT_SECONDS:
                                 is_timeout = True
                         except Exception as pe:
                             logger.error(f"⚠️ タスク時刻パースエラー ({time_str}): {pe}")
                     
                     if is_timeout:
-                        logger.warning(f"⏰ 実行時間が30分を超過したゾンビタスクを自動解放します: {r_task['task_type']} (ID: {r_task['id']})")
+                        logger.warning(f"⏰ 実行時間が {TASK_TIMEOUT_SECONDS // 60} 分を超過したゾンビタスクを自動解放します: {r_task['task_type']} (ID: {r_task['id']})")
                         self.update_task_status(
                             r_task["id"], 
                             "failed", 
-                            error_message="Task automatically timed out after running for over 3 hours."
+                            error_message=f"Task automatically timed out after running for over {TASK_TIMEOUT_SECONDS // 60} minutes."
                         )
                     else:
                         active_running_tasks.append(r_task)
@@ -141,11 +155,13 @@ class EdgeWorkerDaemon:
                     }
                     
                     up_res = httpx.patch(update_url, headers=self.headers, json=update_payload, timeout=10)
-                    if up_res.status_code == 200 and up_res.json():
-                        logger.info(f"🔒 タスクのロックを確保しました: {task_type} (ID: {task_id})")
-                        return task
-                    else:
-                        logger.warning(f"⚠️ タスクロックの確保に競合が発生しました: ID: {task_id}")
+                    if up_res.status_code in (200, 204):
+                        # レスポンス本文の有無（200 representation または 204 no content）を確認
+                        updated_records = up_res.json() if (up_res.status_code == 200 and up_res.content) else [task]
+                        if updated_records:
+                            logger.info(f"🔒 タスクのロックを確保しました: {task_type} (ID: {task_id})")
+                            return task
+                    logger.warning(f"⚠️ タスクロックの確保に競合が発生しました: ID: {task_id}")
             return None
         except Exception as e:
             logger.error(f"❌ タスク取得中に通信エラーが発生しました: {e}")

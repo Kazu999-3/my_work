@@ -45,14 +45,21 @@ export async function POST(request: Request) {
       playerStatsMap[name.toLowerCase()] = { games: 0, wins: 0 };
     });
 
+    // 高速照合用の Map インデックスを事前生成 (O(1) ルックアップ)
+    const nameLookupMap = new Map<string, string>();
+    names.forEach(n => nameLookupMap.set(n.toLowerCase(), n));
+
     if (participantsStats && !statsError) {
       participantsStats.forEach((row: any) => {
         const rowNameLower = row.player_name.toLowerCase();
-        // 表記揺れ（大文字小文字の違い、改名等による部分一致）を吸収して紐付ける
-        const matchedName = names.find(n => {
-          const nLower = n.toLowerCase();
-          return nLower === rowNameLower || rowNameLower.includes(nLower) || nLower.includes(rowNameLower);
-        });
+        // 完全一致を優先して O(1) で取得し、失敗時のみ部分一致フォールバック
+        let matchedName = nameLookupMap.get(rowNameLower);
+        if (!matchedName) {
+          matchedName = names.find(n => {
+            const nLower = n.toLowerCase();
+            return rowNameLower.includes(nLower) || nLower.includes(rowNameLower);
+          });
+        }
         
         if (matchedName) {
           const key = matchedName.toLowerCase();
@@ -305,8 +312,8 @@ export async function POST(request: Request) {
                     ctx.teammateHistory.set(key2, (ctx.teammateHistory.get(key2) || 0) + 1);
                   } else {
                     if (p1.role === p2.role) {
-                      ctx.history.add(`${p1Name}<=>${p2Name}:${p1.role}`);
-                      ctx.history.add(`${p2Name}<=>${p1Name}:${p1.role}`);
+                      const matchupHistKey = [p1Name, p2Name].sort().join("<=>") + ":" + p1.role;
+                      ctx.history.add(matchupHistKey);
                     }
                   }
                 }
@@ -324,7 +331,8 @@ export async function POST(request: Request) {
       'A': [],
       'B': [],
       'C': [],
-      'D': []
+      'D': [],
+      'E': []
     };
 
     // BL-02: 探索強度（40=速い/100=標準/200=精密）をリクエストから受け取る
@@ -342,7 +350,7 @@ export async function POST(request: Request) {
       });
     }
 
-    // 6. 各コンセプト（A, B, C, D）ごとに最も良い提案を1つずつ抽出
+    // 6. 各コンセプト（A, B, C, D, E）ごとに最も良い提案を1つずつ抽出
     const finalProposals: any[] = [];
     const seenSignatures = new Set<string>();
 
@@ -364,7 +372,7 @@ export async function POST(request: Request) {
       });
     };
 
-    const conceptIds = ['A', 'B', 'C', 'D'];
+    const conceptIds = ['A', 'B', 'C', 'D', 'E'];
     conceptIds.forEach(id => {
       const group = proposalsGrouped[id] || [];
       sortProposals(group);
@@ -383,11 +391,10 @@ export async function POST(request: Request) {
       }
     });
 
-    // ID順にソート（A, B, C, Dの順）
+    // ID順にソート（A, B, C, D, Eの順）
     finalProposals.sort((a, b) => a.id.localeCompare(b.id));
 
-    // 7. レート格差判定（環境分析）
-    // 最初のパターン（最も優先される10名）のMMRを利用して計算
+    // 7. レート格差判定（環境分析のシビア化）
     let analysisData = null;
     if (selectedPatterns.length > 0 && selectedPatterns[0].selected.length === 10) {
       const selectedPlayers = selectedPatterns[0].selected;
@@ -405,14 +412,14 @@ export async function POST(request: Request) {
       const range = max - min;
       
       let level = 'STANDARD';
-      let message = 'ℹ️ 本日のレート差は標準的な範囲に収まっています。全体のバランスが最も良い「案A（バランス）」の採用がおすすめです。';
+      let message = 'ℹ️ 本日のレート差は標準的な範囲に収まっています。「案A（バランス）」または「案C（希望優先）」の採用がおすすめです。';
       
-      if (range >= 800) {
+      if (range >= 500) {
         level = 'HIGH_DIFFERENCE';
-        message = '⚠️ 本日は実力差（レート差）が非常に大きい日です。初心者や低レートの方が得意ロールでプレイできる「案D（低MMR優先）」や、対面の戦力を平準化する「案B（戦力均等）」の採用を強く推奨します。';
-      } else if (range < 400) {
+        message = `⚠️ 本日は実力差（最大MMR差: ${range}）が大きく格差が発生しやすい環境です。対面戦力を平準化する「案B」、低レート層を優遇する「案D」、またはハンデを加味した「案E（ハンデ調整）」の採用を強く推奨します。`;
+      } else if (range < 250) {
         level = 'CLOSE';
-        message = '✨ 本日は実力差が小さく、非常に拮抗した好カードが期待できる日です。お好みのコンセプト（希望優先など）で自由に楽しめます！';
+        message = `✨ 本日は実力差が非常に小さく（最大MMR差: ${range}）、白熱した接戦カードが期待できる日です。お好みのコンセプト案で自由に楽しめます！`;
       }
       
       analysisData = {

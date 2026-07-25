@@ -161,6 +161,12 @@ def generate_content_safe(client, prompt, model_id=None, config=None, feature_na
                         logger.info(f"[AIHelper] 🌟 モデル {model} ({key_name}) での生成に成功しました。")
                         quota_manager.consume_quota(feature_name)
                         return response.text
+                    elif response and hasattr(response, 'candidates') and response.candidates:
+                        reason = str(getattr(response.candidates[0], 'finish_reason', ''))
+                        if "SAFETY" in reason:
+                            logger.warning(f"⚠️ [AIHelper] 安全フィルター発火 ({model}): {reason}")
+                            return "⚠️ 安全フィルターにより内容生成が制限されました。"
+                        raise Exception("APIからの応答が空、または不正なオブジェクトです。")
                     else:
                         raise Exception("APIからの応答が空、または不正なオブジェクトです。")
                         

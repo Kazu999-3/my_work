@@ -348,9 +348,33 @@ class SovereignSync:
         except Exception as e:
             logger.error(f"❌ マッチアップ同期エラー: {e}")
 
+    def flush_offline_queue(self, batch_size=50):
+        """オフライン待避キューを 50 件ずつの安全バッチに分割して全送信"""
+        queue_path = Path("d:/my_work/02_FACTORY/offline_queue.json")
+        if not queue_path.exists() or not self.ready: return
+        try:
+            items = json.loads(queue_path.read_text(encoding="utf-8"))
+            if not items: return
+            logger.info(f"🔄 オフライン待避データ {len(items)} 件を {batch_size} 件バッチでクラウド送信中...")
+            remaining = []
+            for i in range(0, len(items), batch_size):
+                batch = items[i:i + batch_size]
+                try:
+                    res = httpx.post(self._api("sovereign_tasks"), headers=self._headers(), json=batch, timeout=20)
+                    if res.status_code not in (200, 201, 204): remaining.extend(batch)
+                except Exception:
+                    remaining.extend(batch)
+            if remaining:
+                queue_path.write_text(json.dumps(remaining), encoding="utf-8")
+            else:
+                queue_path.unlink(missing_ok=True)
+        except Exception as e:
+            logger.error(f"❌ オフラインキュー同期エラー: {e}")
+
     def run_sync(self):
         """全同期の実行"""
         logger.info("🚀 Sovereign Cloud Sync 開始...")
+        self.flush_offline_queue()
         self.sync_articles()
         self.sync_matchups()
         logger.info("🏁 クラウド同期 完了。")

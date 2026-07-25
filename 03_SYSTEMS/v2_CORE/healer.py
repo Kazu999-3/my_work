@@ -40,6 +40,19 @@ class AutoHealer:
         except Exception as e:
             logger.error(f"❌ 試行履歴の保存失敗: {e}")
 
+    def _trigger_sos_alert(self, file_path: Path, count: int):
+        """修復上限超過時に人間へ重大アラート(SOS)を発行する"""
+        msg = f"🚨 [SOS Alert] 自動修復エンジンが上限({count}回)に達したため停止しました: {file_path.name}"
+        logger.error(msg)
+        # エスカレーション用ログファイルへの書き出し
+        try:
+            sos_log = settings.LOGS_DIR / "sos_alerts.log"
+            sos_log.parent.mkdir(parents=True, exist_ok=True)
+            with open(sos_log, "a", encoding="utf-8") as f:
+                f.write(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] {msg}\n")
+        except Exception as e:
+            logger.error(f"Failed to write SOS log: {e}")
+
     def _check_limit(self, file_path: Path) -> bool:
         """同一ファイルに対する修復制限(1日3回)を超えていないかチェック"""
         attempts = self._get_attempts()
@@ -48,17 +61,26 @@ class AutoHealer:
         today = time.strftime("%Y-%m-%d")
         record = attempts.get(path_str, {"date": today, "count": 0})
         
-        if record["date"] != today:
+        if record.get("date") != today:
             record = {"date": today, "count": 0}
             
-        if record["count"] >= 3:
+        if record.get("count", 0) >= 3:
             logger.warning(f"⚠️ ファイル '{file_path.name}' に対する本日の自己修復試行回数が上限(3回)に達しています。")
+            self._trigger_sos_alert(file_path, record.get("count", 0))
             return False
-            
-        record["count"] += 1
+        return True
+
+    def _increment_limit(self, file_path: Path):
+        """修復試行失敗時にカウントをインクリメント"""
+        attempts = self._get_attempts()
+        path_str = str(file_path.resolve())
+        today = time.strftime("%Y-%m-%d")
+        record = attempts.get(path_str, {"date": today, "count": 0})
+        if record.get("date") != today:
+            record = {"date": today, "count": 0}
+        record["count"] = record.get("count", 0) + 1
         attempts[path_str] = record
         self._save_attempts(attempts)
-        return True
 
     def find_error_file(self, error_text: str) -> tuple[Path | None, int]:
         """スタックトレースからd:/my_work配下のエラー発生ファイルパスと行番号を特定"""
@@ -96,18 +118,16 @@ class AutoHealer:
         ext = file_path.suffix.lower()
         
         if ext == ".py":
-            # Pythonの構文チェック
+            # Pythonの AST 構文チェック
             try:
-                res = subprocess.run(
-                    [r".venv\Scripts\python.exe", "-m", "py_compile", str(file_path)],
-                    capture_output=True,
-                    text=True,
-                    check=False
-                )
-                if res.returncode != 0:
-                    logger.error(f"❌ Python構文チェックエラー: {res.stderr}")
-                    return False
+                import ast
+                with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
+                    code_content = f.read()
+                ast.parse(code_content)
                 return True
+            except SyntaxError as se:
+                logger.error(f"❌ Python AST 構文エラーを検出 (修復コード却下): {se}")
+                return False
             except Exception as e:
                 logger.error(f"❌ Python構文検証失敗: {e}")
                 return False

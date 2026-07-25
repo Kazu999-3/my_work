@@ -59,8 +59,11 @@ API_KEY_NAME = "X-Antigravity-Key"
 api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=True)
 
 def get_api_key(api_key_header: str = Security(api_key_header)):
-    # .env等に設定されたマスターキーと照合
-    expected_key = os.environ.get("ANTIGRAVITY_API_KEY", "default_dev_key_2026")
+    # .env等に設定されたマスターキーと照合（未設定時は開発環境でもランダム生成等の安全なチェック）
+    expected_key = os.environ.get("ANTIGRAVITY_API_KEY")
+    if not expected_key:
+        logger.error("🚨 ANTIGRAVITY_API_KEY environment variable is missing. Rejecting request.")
+        raise HTTPException(status_code=500, detail="Server API key configuration missing.")
     if api_key_header != expected_key:
         raise HTTPException(status_code=403, detail="Could not validate credentials")
     return api_key_header
@@ -194,17 +197,18 @@ class QuotaShaper:
     def __init__(self):
         self.cooldowns = {} # key -> cooldown_until_timestamp
         
+    def are_all_cooling(self, api_keys: list) -> bool:
+        """指定された全キーが冷却中（cooldown）であるかを判定する"""
+        now = time.time()
+        return all(self.cooldowns.get(k, 0) >= now for k in api_keys)
+
     def get_valid_key(self, api_keys: list) -> str:
-        """冷却期間中でない、現在有効なキーを1つ選択して返す。すべて冷却中の場合は最も冷却が早く終わるキーを返す"""
+        """冷却期間中でない、現在有効なキーを1つ選択して返す。すべて冷却中の場合は None を返す"""
         now = time.time()
         available_keys = [k for k in api_keys if self.cooldowns.get(k, 0) < now]
         if available_keys:
             return available_keys[0]
-            
-        # すべて冷却中の場合は、最も冷却が早く終わるキーを選択
-        logger.warning("⚠️ すべての API キーが冷却期間中です。最も冷却が早く終わるキーを割り当てます。")
-        sorted_keys = sorted(api_keys, key=lambda k: self.cooldowns.get(k, 0))
-        return sorted_keys[0]
+        return None
 
     def set_cooldown(self, api_key: str, duration: int = 60):
         """指定したキーを 429 冷却状態に設定する（デフォルト60秒）"""
@@ -335,6 +339,10 @@ async def generate_agent_response(request: GenerateRequest, api_key: str = Depen
             logger.error("No GEMINI_API_KEY configured. Falling back to Ollama...")
             use_local_ollama = True
             model_used = fallback_model or settings.OLLAMA_MODEL
+        elif quota_shaper.are_all_cooling(api_keys):
+            logger.warning("⚠️ すべての Gemini API キーが現在 429 冷却期間中です。即座にローカル/フォールバックモデルへ移行します。")
+            use_local_ollama = True
+            model_used = fallback_model or settings.OLLAMA_MODEL
             fallback_occurred = True
         else:
             # 優先度（priority）に応じたクォータ調整スリープ
@@ -347,6 +355,9 @@ async def generate_agent_response(request: GenerateRequest, api_key: str = Depen
             # 登録キーの数だけリトライ試行
             for attempt in range(len(api_keys)):
                 active_key = quota_shaper.get_valid_key(api_keys)
+                if not active_key:
+                    logger.warning("No active API key available (all cooling down). Breaking to fallback...")
+                    break
                 logger.info(f"Attempt {attempt + 1}: Using API Key ({active_key[:10]}...)")
                 
                 try:
@@ -579,4 +590,22 @@ def update_champion_trend(request: ChampionTrendRequest, api_key: str = Depends(
     except Exception as e:
         logger.error(f"Error in update_champion_trend: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+def find_free_port(start_port=8000, max_port=8010):
+    import socket
+    for port in range(start_port, max_port + 1):
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            if s.connect_ex(('127.0.0.1', port)) != 0:
+                return port
+    return start_port
+
+if __name__ == "__main__":
+    import uvicorn
+    target_port = find_free_port(8000)
+    logger.info(f"🚀 API Gateway starting on port {target_port}...")
+    uvicorn.run(app, host="0.0.0.0", port=target_port)
+
+    target_port = find_free_port(8000)
+    logger.info(f"🚀 API Gateway starting on port {target_port}...")
+    uvicorn.run(app, host="0.0.0.0", port=target_port)
 

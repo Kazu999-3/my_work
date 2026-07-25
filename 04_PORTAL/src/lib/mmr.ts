@@ -37,6 +37,8 @@ export function rankScore(rank?: string | null): number {
 export function higherRank(a?: string | null, b?: string | null): string {
   const sa = rankScore(a), sb = rankScore(b);
   if (sa < 0 && sb < 0) return 'UNRANKED';
+  if (sa < 0) return b as string;
+  if (sb < 0) return a as string;
   return sa >= sb ? (a as string) : (b as string);
 }
 
@@ -151,7 +153,7 @@ export function calculateNewMMR(ctx: MmrCalcContext): number {
 
   // プレースメント: そのレーンでの試合数が5未満なら、対面ダンパーを無効化し変動を1.5倍にして
   // 早く適正レートへ寄せる(N5)。numGamesが渡されない場合は通常扱い。
-  const isPlacement = (ctx.numGames ?? 999) < 5;
+  const isPlacement = (ctx.numGames ?? 0) < 5;
 
   // ① 勝敗のベースポイント (スタッツ加点がなくなった分、ベースを少し底上げ)
   let baseDelta = isWin ? 18 : -20;

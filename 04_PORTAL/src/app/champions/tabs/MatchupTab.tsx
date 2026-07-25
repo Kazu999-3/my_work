@@ -210,6 +210,9 @@ export default function MatchupTab() {
   
   const saveMemo = async () => {
     if (!memo.champion || !memo.enemy) return alert('チャンピオン名を入力してください');
+    if (memo.champion.trim().toLowerCase() === memo.enemy.trim().toLowerCase()) {
+      return alert('自分と相手に同じチャンピオンを指定することはできません（対戦メモの不整合防止）。');
+    }
     setSaving(true);
     
     const mergedRawData = memo.original_raw_data ? { ...memo.original_raw_data, ...memo } : { source: 'manual', ...memo };

@@ -5,14 +5,29 @@ import PwaRegister from "../components/PwaRegister";
 import Toaster from "../components/Toaster";
 
 export const metadata: Metadata = {
-  title: "Sovereign Command Center",
-  description: "Advanced analytics and automation portal",
+  title: {
+    default: "KTM ポータル | LoL対戦バランサー＆攻略辞典・パーソナルコーチ",
+    template: "%s | KTM ポータル",
+  },
+  description: "KTMカスタム対戦の公平なチーム分けバランサー、最新パッチ対面攻略辞典、MMR個人分析・パーソナルコーチングポータル。",
   manifest: "/manifest.webmanifest",
   appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "KTM" },
+  openGraph: {
+    title: "KTM ポータル | LoL対戦バランサー＆攻略辞典",
+    description: "KTMカスタム対戦のチーム分けバランサー、最新パッチ攻略辞典、個人分析ポータル。",
+    siteName: "KTM ポータル",
+    locale: "ja_JP",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "KTM ポータル | LoL対戦バランサー＆攻略辞典",
+    description: "KTMカスタム対戦のチーム分けバランサー、最新パッチ攻略辞典、個人分析ポータル。",
+  },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0e0e1a",
+  themeColor: "#06070a",
 };
 
 export default function RootLayout({

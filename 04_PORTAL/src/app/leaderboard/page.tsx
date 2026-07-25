@@ -63,7 +63,10 @@ export default function LeaderboardPage() {
           if (!c) return;
           if (!agg[c]) agg[c] = { games: 0, wins: 0, k: 0, d: 0, a: 0 };
           agg[c].games += 1;
-          if (r.team === r.ktm_matches?.winning_team) agg[c].wins += 1;
+          const winningTeam = Array.isArray(r.ktm_matches)
+            ? (r.ktm_matches[0] as any)?.winning_team
+            : (r.ktm_matches as any)?.winning_team;
+          if (r.team === winningTeam) agg[c].wins += 1;
           agg[c].k += r.kills || 0; agg[c].d += r.deaths || 0; agg[c].a += r.assists || 0;
         });
         const rows = Object.entries(agg).map(([name, s]) => ({
@@ -71,7 +74,7 @@ export default function LeaderboardPage() {
           games: s.games,
           wins: s.wins,
           winRate: Math.round((s.wins / s.games) * 100),
-          avgKda: s.d > 0 ? Math.round(((s.k + s.a) / s.d) * 10) / 10 : (s.k + s.a),
+          avgKda: s.d > 0 ? Math.round(((s.k + s.a) / s.d) * 10) / 10 : Math.round((s.k + s.a) * 10) / 10,
         })).sort((a, b) => b.games - a.games || b.winRate - a.winRate);
         setMetaData(rows);
       } catch (e) {

@@ -10,16 +10,25 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: authResult.error }, { status: 401 });
   }
   // =================================
-    const { isOverwriteAll } = await req.json();
+    const { isOverwriteAll, customValue } = await req.json();
+
+    let targetMMR = 1200;
+    if (customValue !== undefined && customValue !== null) {
+      const parsed = parseInt(customValue, 10);
+      if (isNaN(parsed) || parsed < 100 || parsed > 4000) {
+        return NextResponse.json({ status: "ERROR", message: "MMRは100〜4000の範囲内で入力してください。" }, { status: 400 });
+      }
+      targetMMR = parsed;
+    }
 
     // 更新用のベースデータ（全ロールを初期値に戻す）
     const initialData = {
-      mmr: 1200,
-      mmr_top: 1200,
-      mmr_jg: 1200,
-      mmr_mid: 1200,
-      mmr_adc: 1200,
-      mmr_sup: 1200
+      mmr: targetMMR,
+      mmr_top: targetMMR,
+      mmr_jg: targetMMR,
+      mmr_mid: targetMMR,
+      mmr_adc: targetMMR,
+      mmr_sup: targetMMR
     };
 
     if (isOverwriteAll) {
