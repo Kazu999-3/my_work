@@ -1,5 +1,6 @@
 import { CONFIG } from '../config.js';
 import { fetchGAS, patchInteractionResponse, sendDiscordMessage, sendInteractionFollowup } from '../utils/api.js';
+import { fetchSupabase } from '../utils/supabase.js';
 import { handleLaneCommand, handleStatsCommand } from './commands.js';
 import { createMessageContent, createRecruitButtons, createRecruitEmbed, extractPlayersFromEmbed, getPortalComponents, getPortalEmbed, handleHelpPage, splitMessage } from '../ui/embeds.js';
 import { parseMessageData, handleAutoMatchEnd } from '../utils/helpers.js';
@@ -123,11 +124,10 @@ export async function handleButtonInteraction(interaction, env, ctx) {
           // 名簿(ktm_players)からユーザーの希望レーンを頑丈に取得
           let lanePrefStr = "";
           try {
-            const { fetchSupabase } = await import('../utils/api.js');
             // discord_id でクエリ (文字列/数値両対応)
             let ps = await fetchSupabase(env, 'ktm_players', `discord_id=eq.${userId}&select=role_preferences,name`);
             if (!ps || ps.length === 0) {
-              // バックアップ: discord_id=eq."userId" または 全件からマッチ
+              // バックアップ: 全件からマッチ
               ps = await fetchSupabase(env, 'ktm_players', `select=discord_id,role_preferences,name`);
               if (ps && ps.length > 0) {
                 ps = ps.filter(p => String(p.discord_id) === String(userId));
