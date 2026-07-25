@@ -96,17 +96,17 @@ async function markReminded(env, messageId) {
  */
 async function sendRecruitStatusNotification(env) {
   try {
-    // 対象は「開始1時間前後〜48時間以内」のopen募集。
-    // 定期募集は1週間前に立つため、範囲を絞らないと来週分にも通知してしまう。
+    // 対象は「これから開始する未来の募集（現在時刻〜24時間以内）」のopen募集。
+    // すでに開始時刻を過ぎた古い募集に対する10分間隔Cronの誤爆通知を完全に防止。
     const nowMs = Date.now();
-    const fromIso = new Date(nowMs - 60 * 60 * 1000).toISOString();
-    const toIso = new Date(nowMs + 48 * 60 * 60 * 1000).toISOString();
+    const fromIso = new Date(nowMs).toISOString(); // 現在時刻以降のみ
+    const toIso = new Date(nowMs + 24 * 60 * 60 * 1000).toISOString();
     const rows = await fetchSupabase(
       env, 'recruitments',
       `status=eq.open&start_at=gte.${encodeURIComponent(fromIso)}&start_at=lte.${encodeURIComponent(toIso)}&order=start_at.asc&limit=5&select=discord_message_id,discord_channel_id,start_at,max_count`
     );
     if (!rows || rows.length === 0) {
-      console.log('[RecruitStatus] 対象の募集がありません。');
+      console.log('[RecruitStatus] 直近（未来24時間以内）のオープンな募集がないため通知をスキップします。');
       return;
     }
 
