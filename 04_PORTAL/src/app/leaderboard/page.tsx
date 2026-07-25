@@ -1,8 +1,5 @@
 'use client';
 
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
-
 import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import { getKtmRank } from '../../lib/mmr';
