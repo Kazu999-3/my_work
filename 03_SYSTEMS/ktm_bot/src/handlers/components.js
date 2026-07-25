@@ -77,7 +77,7 @@ export async function handleButtonInteraction(interaction, env, ctx) {
 
   if (customId.startsWith('join_periodic:')) {
     const roomType = customId.split(':')[1]; // silver or gold
-    const roomLabel = roomType === 'silver' ? '🛡️ シルバー以下部門' : '👑 ゴルプラ以下部門';
+    const roomLabel = roomType === 'silver' ? '🛡️ シルバー以下部門' : '👑 ゴルプラ部門';
     const userMention = `<@${userId}>`;
 
     ctx.waitUntil((async () => {
@@ -98,7 +98,7 @@ export async function handleButtonInteraction(interaction, env, ctx) {
         const targetEmbed = { ...embeds[0] };
         targetEmbed.fields = targetEmbed.fields ? [...targetEmbed.fields] : [];
 
-        // フィールド1: シルバー以下, フィールド2: ゴルプラ以下
+        // フィールド1: シルバー以下, フィールド2: ゴルプラ
         const fieldIdx = roomType === 'silver' ? 0 : 1;
         if (!targetEmbed.fields[fieldIdx]) {
           targetEmbed.fields[fieldIdx] = { name: roomLabel, value: "▫ 参加者: なし", inline: false };
@@ -120,7 +120,7 @@ export async function handleButtonInteraction(interaction, env, ctx) {
         }
 
         const count = newLines.filter(l => l.startsWith('- ')).length;
-        field.name = `${roomType === 'silver' ? '🛡️ 【シルバー以下部門】' : '👑 【ゴルプラ以下部門】'} (${count}/10名)`;
+        field.name = `${roomType === 'silver' ? '🛡️ 【シルバー以下部門】' : '👑 【ゴルプラ部門】'} (${count}/10名)`;
         field.value = newLines.length > 0 ? newLines.join('\n') : "▫ 参加者: なし";
         targetEmbed.fields[fieldIdx] = field;
 

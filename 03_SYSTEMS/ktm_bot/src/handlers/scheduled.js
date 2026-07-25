@@ -494,103 +494,7 @@ async function createWeeklyEvents(env) {
         name: "【定期】ゴルプラ以下カスタム",
         description: "毎週定期開催のゴルプラ以下対象カスタム戦です。参加希望の方は「興味あり」を押してください！",
       }
-    ];
-
-    const createdEvents = [];
-    const skippedEventNames = [];
-
-    for (const template of eventTemplates) {
-      // 重複チェック: 同じ名前かつ同じ開始予定日時のアクティブなイベントがあるか
-      const isDuplicate = existingEvents.some(e => {
-        const sameName = e.name === template.name;
-        const sameTime = new Date(e.scheduled_start_time).getTime() === scheduledStart.getTime();
-        const notCanceled = e.status !== 4; // 4=CANCELED
-        return sameName && sameTime && notCanceled;
-      });
-
-      if (isDuplicate) {
-        console.log(`Event "${template.name}" already exists for ${startTimeISO}. Skipping creation.`);
-        skippedEventNames.push(template.name);
-        
-        // 既存の該当イベントを告知用に回収
-        const dupEvent = existingEvents.find(e => 
-          e.name === template.name && 
-          new Date(e.scheduled_start_time).getTime() === scheduledStart.getTime() &&
-          e.status !== 4
-        );
-        if (dupEvent) {
-          createdEvents.push(dupEvent);
-        }
-        continue;
-      }
-
-      console.log(`Creating scheduled event: ${template.name}`);
-      const res = await fetch(`https://discord.com/api/v10/guilds/${guildId}/scheduled-events`, {
-        method: "POST",
-        headers: {
-          'Authorization': `Bot ${env.DISCORD_TOKEN}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          name: template.name,
-          privacy_level: 2, // GUILD_ONLY
-          scheduled_start_time: startTimeISO,
-          scheduled_end_time: endTimeISO,
-          description: template.description,
-          entity_type: 3, // EXTERNAL
-          entity_metadata: {
-            location: "オンライン"
-          }
-        })
-      });
-
-      if (!res.ok) {
-        console.error(`Failed to create event ${template.name}: ${res.status} ${await res.text()}`);
-      } else {
-        const createdEvent = await res.json();
-        console.log(`Successfully created event ${template.name} with ID: ${createdEvent.id}`);
-        createdEvents.push(createdEvent);
-      }
-    }
-
-    // 4. 新規作成されたイベントがある場合のみ、全体メンションを投げてリンク付きで告知する
-    const newCreatedCount = eventTemplates.length - skippedEventNames.length;
-    
-    if (newCreatedCount > 0 && createdEvents.length > 0) {
-      console.log("Sending announcement message with event links...");
-      
-      const eventLinks = createdEvents.map(e => {
-        return `🔹 **${e.name}**\n👉 https://discord.com/events/${guildId}/${e.id}`;
-      }).join('\n\n');
-
-      const messageContent = `📅 **来週の【定期】カスタムイベントを作成しました！**\n参加予定の方は、以下のリンクから「興味あり」を押してください！\n\n${eventLinks}\n\n@everyone`;
-
-      const announceRes = await fetch(`https://discord.com/api/v10/channels/${channelId}/messages`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bot ${env.DISCORD_TOKEN}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          content: messageContent
-        })
-      });
-
-      if (!announceRes.ok) {
-        console.error(`Failed to send announcement message: ${announceRes.status} ${await announceRes.text()}`);
-      } else {
-        console.log("Announcement message sent successfully!");
-      }
-    } else {
-      console.log("No new events created (all were duplicates). Skipping announcement to prevent double notifications.");
-    }
-
-  } catch (err) {
-    console.error("Error in createWeeklyEvents:", err);
-  }
-}
-
-/** イベントおよび定期募集の「参加者・興味あり」メンバーを統合カウントして送信する */
+/** イベントおよび定期募集の「参加者・興味あり」メンバーを同期抽出して送信する */
 async function sendEventUsersNotification(env, options = {}) {
   const lookaheadHours = options.lookaheadHours || 48;
   const isAdvanceNotice = lookaheadHours > 48;
@@ -609,25 +513,31 @@ async function sendEventUsersNotification(env, options = {}) {
     const guildId = channelInfo.guild_id;
     if (!guildId) throw new Error("Guild ID not found in channel response.");
 
-    // 2. DB (recruitments) から現在進行中の定期・カスタム募集を取得
-    let dbRecruitCount = 0;
-    let targetRecruitOwnerId = null;
+    // 2. DB (recruitments) からアクティブな最新の募集メッセージを取得して同期
+    let activeEmbed = null;
+    let targetMessageId = null;
+    let totalJoinedCount = 0;
     try {
       const activeRecruits = await fetchSupabase(env, 'recruitments', 'status=eq.open&select=*');
       if (activeRecruits && activeRecruits.length > 0) {
-        // 最も新しい募集の参加者数
         const latestRecruit = activeRecruits[0];
-        targetRecruitOwnerId = latestRecruit.owner_discord_id;
+        targetMessageId = latestRecruit.discord_message_id;
         
-        // 募集メッセージから参加者数を取り込む
-        const msgRes = await fetch(`https://discord.com/api/v10/channels/${latestRecruit.discord_channel_id}/messages/${latestRecruit.discord_message_id}`, {
+        // 募集メッセージの実物を取得して完璧に同期
+        const msgRes = await fetch(`https://discord.com/api/v10/channels/${latestRecruit.discord_channel_id}/messages/${targetMessageId}`, {
           headers: { "Authorization": `Bot ${env.DISCORD_TOKEN}` }
         });
         if (msgRes.ok) {
           const msg = await msgRes.json();
-          const meta = parseMessageData(msg);
-          if (meta && meta.joined) {
-            dbRecruitCount = meta.joined.length;
+          if (msg.embeds && msg.embeds.length > 0) {
+            activeEmbed = msg.embeds[0];
+            // 参加者人数をカウント
+            if (activeEmbed.fields) {
+              activeEmbed.fields.forEach(f => {
+                const matches = (f.value || "").match(/- <@\d+>/g);
+                if (matches) totalJoinedCount += matches.length;
+              });
+            }
           }
         }
       }
@@ -635,14 +545,12 @@ async function sendEventUsersNotification(env, options = {}) {
       console.warn("Recruitment DB fetch warning:", dbErr);
     }
 
-    // 3. Guild 内の Scheduled Events 一覧を取得
+    // 3. Guild 内の Scheduled Events からも抽出
     const eventsRes = await fetchWithRetry(`https://discord.com/api/v10/guilds/${guildId}/scheduled-events`, {
       headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}` }
     });
 
-    if (!eventsRes.ok) throw new Error(`Failed to fetch scheduled events: ${eventsRes.status}`);
-
-    const scheduledEvents = await eventsRes.json();
+    const scheduledEvents = eventsRes.ok ? await eventsRes.json() : [];
     const now = Date.now();
     const minStartLimit = now - 3 * 60 * 60 * 1000;
     const maxStartLimit = now + lookaheadHours * 60 * 60 * 1000;
@@ -655,7 +563,6 @@ async function sendEventUsersNotification(env, options = {}) {
       return isWithinRange && hasTeiki && isActive;
     });
 
-    // 4. 各イベントの「興味あり」ユーザー情報を取得
     const eventDetails = [];
     for (const targetEvent of targetEvents) {
       const usersRes = await fetchWithRetry(`https://discord.com/api/v10/guilds/${guildId}/scheduled-events/${targetEvent.id}/users?limit=100&with_member=true`, {
@@ -667,27 +574,7 @@ async function sendEventUsersNotification(env, options = {}) {
       }
     }
 
-    // イベント参加数とDB募集参加数の最大値・合計を統合
     const eventUsersCount = eventDetails[0]?.users.length || 0;
-    const effectiveTotalCount = Math.max(eventUsersCount, dbRecruitCount);
-
-    // 5. 人数状況と不足人数の判定
-    let statusMessage = "";
-    let embedColor = 0x3498db;
-    let shortfall = 0;
-
-    if (effectiveTotalCount >= 10) {
-      statusMessage = `🔥 **開催確定！**\n現在 **${effectiveTotalCount}名** が参加表明済みです！このまま開催します。`;
-      embedColor = 0x2ecc71; // グリーン
-    } else {
-      shortfall = 10 - effectiveTotalCount;
-      statusMessage = `⚠️ **メンバー募集中！**\n現在の参加予定者は **${effectiveTotalCount}名** です。カスタム開催（10人）まであと **${shortfall}名** 不足しています。下のボタンから「参加する」または「興味あり」を押してください！`;
-      embedColor = 0xe74c3c; // レッド
-    }
-
-    // 6. Embed の作成
-    const embedFields = eventDetails.map((ed) => {
-      const { event: targetEvent, users: eventUsers } = ed;
       const userListText = eventUsers.map((eu, index) => {
         if (!eu || !eu.user) return `\`${String(index + 1).padStart(2, '0')}.\` 不明なユーザー`;
         const displayName = eu.member?.nick || eu.user.global_name || eu.user.username || "不明";
