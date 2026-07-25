@@ -740,9 +740,16 @@ export default function PlayerMyPage() {
                         <div className="bg-white/[0.02] backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-xl">
                           <h3 className="text-base font-black mb-4 border-b border-white/5 pb-3">🎯 チャンピオンプール</h3>
                           <div className="space-y-2">
-                            {champPool.map(c => (
+                            {champPool.filter(c => c.name && c.name !== 'Unknown').map(c => (
                               <div key={c.name} className="flex items-center gap-2 text-xs">
-                                <img src={getChampIcon(c.name)} className="w-6 h-6 rounded-full border border-white/10" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                                <img
+                                  src={getChampIcon(c.name)}
+                                  alt={c.name}
+                                  className="w-6 h-6 rounded-full border border-white/10 shrink-0 bg-black/40 object-cover"
+                                  onError={(e) => {
+                                    (e.target as HTMLImageElement).src = "https://ddragon.leagueoflegends.com/cdn/14.24.1/img/profileicon/29.png";
+                                  }}
+                                />
                                 <span className="w-24 truncate font-bold text-gray-200">{c.name}</span>
                                 <div className="flex-1 h-2 bg-white/5 rounded-full overflow-hidden">
                                   <div className={`h-full ${c.winRate >= 50 ? 'bg-emerald-500/70' : 'bg-rose-500/60'}`} style={{ width: `${Math.min(100, c.games * 10)}%` }} />

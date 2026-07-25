@@ -1,4 +1,4 @@
-let cachedLatestPatch = "16.13.1"; // デフォルトのフォールバックパッチ
+let cachedLatestPatch = "14.24.1"; // 確実に実在するDDragon安定パッチバージョン
 
 export async function initLatestPatch() {
   try {
@@ -19,7 +19,7 @@ if (typeof window !== "undefined") {
   initLatestPatch().catch(console.error);
 }
 
-// DDragon の特殊ID・表記揺れ変換マッピングテーブル
+// DDragon の特殊ID・表記揺れ・スペース削除マッピングテーブル
 const ID_CORRECTION_MAP: Record<string, string> = {
   "wukong": "MonkeyKing",
   "ksante": "KSante",
@@ -44,24 +44,45 @@ const ID_CORRECTION_MAP: Record<string, string> = {
   "dr. mundo": "DrMundo",
   "doctormundo": "DrMundo",
   "leblanc": "Leblanc",
-  "le blanc": "Leblanc"
+  "le blanc": "Leblanc",
+  "jarvan iv": "JarvanIV",
+  "jarvaniv": "JarvanIV",
+  "master yi": "MasterYi",
+  "masteryi": "MasterYi",
+  "miss fortune": "MissFortune",
+  "missfortune": "MissFortune",
+  "tahm kench": "TahmKench",
+  "tahmkench": "TahmKench",
+  "twisted fate": "TwistedFate",
+  "twistedfate": "TwistedFate",
+  "xin zhao": "XinZhao",
+  "xinzhao": "XinZhao",
+  "aurelion sol": "AurelionSol",
+  "aurelionsol": "AurelionSol",
+  "kog'maw": "KogMaw",
+  "kogmaw": "KogMaw",
+  "rek'sai": "RekSai",
+  "reksai": "RekSai"
 };
 
 function formatChampId(champId: string): string {
-  if (!champId) return "";
-  const key = champId.trim().toLowerCase();
+  if (!champId) return "Aatrox";
+  const cleanId = champId.trim();
+  const key = cleanId.toLowerCase();
   if (ID_CORRECTION_MAP[key]) {
     return ID_CORRECTION_MAP[key];
   }
-  // 先頭大文字変換
-  return champId.charAt(0).toUpperCase() + champId.slice(1);
+  // スペースやクォートを取り除き、単語の頭文字を大文字化
+  return cleanId
+    .replace(/['.\s]/g, '')
+    .replace(/^(.)/, match => match.toUpperCase());
 }
 
 /**
  * チャンピオンIDからアイコン画像のURLを取得します (404 割れ対策完了版)
  */
 export function getChampIcon(champId: string): string {
-  if (!champId) return "";
+  if (!champId || champId === "Unknown") return "https://ddragon.leagueoflegends.com/cdn/14.24.1/img/profileicon/29.png";
   const formattedId = formatChampId(champId);
   return `https://ddragon.leagueoflegends.com/cdn/${cachedLatestPatch}/img/champion/${formattedId}.png`;
 }
