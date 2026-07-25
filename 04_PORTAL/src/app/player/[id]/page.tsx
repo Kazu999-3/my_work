@@ -279,13 +279,26 @@ export default function PlayerMyPage() {
     return { best, worst };
   }, [matchups]);
 
-  // 得意チャンピオンの公式スプラッシュアートURL
+  // 得意チャンピオンの公式スプラッシュアートURL (Unknown除外)
   const topChampSplash = useMemo(() => {
-    if (champPool && champPool.length > 0 && champPool[0].name !== 'Unknown') {
-      return getChampSplash(champPool[0].name);
+    const validChamps = champPool.filter(c => c.name && c.name !== 'Unknown');
+    if (validChamps.length > 0) {
+      return getChampSplash(validChamps[0].name);
     }
     return '';
   }, [champPool]);
+
+  // ヘッダー表示用メインタグ (Unknownを回避し、得意キャラ名 or 主力ロール名)
+  const mainDisplayTag = useMemo(() => {
+    const validChamps = champPool.filter(c => c.name && c.name !== 'Unknown');
+    if (validChamps.length > 0) {
+      return validChamps[0].name;
+    }
+    if (player?.role_preferences?.primary && player.role_preferences.primary !== 'ALL') {
+      return player.role_preferences.primary;
+    }
+    return 'FLEX';
+  }, [champPool, player]);
 
   // Hextech 5軸能力パラメーター計算 (キャリー力/集団戦/安定度/プール広さ/勝負強さ) - リアル戦績基準の厳密計算
   const hextechRadarData = useMemo(() => {
@@ -552,9 +565,9 @@ export default function PlayerMyPage() {
                   <h1 className="text-3xl md:text-4xl font-black tracking-tight bg-gradient-to-r from-white via-gray-100 to-gray-300 bg-clip-text text-transparent">
                     {player.name}
                   </h1>
-                  {champPool.length > 0 && (
-                    <span className="bg-cyan-500/20 border border-cyan-500/30 text-cyan-300 text-[10px] font-black px-2 py-0.5 rounded-full backdrop-blur-md">
-                      Main: {champPool[0].name}
+                  {mainDisplayTag && (
+                    <span className="bg-cyan-500/20 border border-cyan-500/30 text-cyan-300 text-[10px] font-black px-2.5 py-0.5 rounded-full backdrop-blur-md">
+                      Main: {mainDisplayTag}
                     </span>
                   )}
                 </div>
