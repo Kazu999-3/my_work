@@ -368,6 +368,8 @@ async function postWeeklyRecruitment(env) {
       silverJoined: [],
       goldJoined: [],
       names: { [ownerId]: 'KTM定期カスタム' }
+    };
+
     // 2部屋統合 Embed
     const embed = {
       title: `⚔️ KTM 定期カスタム開催告知 [${dateLabel} 21:00]`,
