@@ -212,12 +212,16 @@ export default function PlayerMyPage() {
       .sort((a, b) => b.games - a.games).slice(0, 8);
   }, [stats]);
 
-  // 宿敵/カモ(P-07): rivalsは「自分が負けてる順」ソート済み
-  const rivalPair = useMemo(() => {
-    const q = (rivals || []).filter((r: any) => r.games >= 2);
+  // チームシナジー分析 (最強のチーム相性 vs 課題のあるチーム相性)
+  const synergyPair = useMemo(() => {
+    const q = (teammates || []).filter((t: any) => t.games >= 2);
     if (q.length === 0) return null;
-    return { nemesis: q[0], prey: q[q.length - 1] };
-  }, [rivals]);
+    const sorted = [...q].sort((a, b) => b.winRate - a.winRate || b.games - a.games);
+    return {
+      best: sorted[0], // 勝率が最も高い最強チーム相性
+      challenging: sorted[sorted.length - 1] // 課題のあるチーム相性
+    };
+  }, [teammates]);
 
   // 対面別の得意/苦手（2戦以上の相手のみ）
   const matchupExtremes = useMemo(() => {
@@ -655,19 +659,25 @@ export default function PlayerMyPage() {
                           </div>
                         </div>
                       )}
-                      {rivalPair && (
+                      {synergyPair && (
                         <div className="bg-white/[0.02] backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-xl">
-                          <h3 className="text-base font-black mb-4 border-b border-white/5 pb-3">⚔️ 宿敵 & カモ <span className="text-[9px] text-gray-500 font-medium">(対人戦績・2戦以上)</span></h3>
+                          <h3 className="text-base font-black mb-4 border-b border-white/5 pb-3 flex items-center justify-between">
+                            <span className="flex items-center gap-2">
+                              <Users className="w-5 h-5 text-indigo-400" />
+                              <span>チーム相性 ＆ シナジー分析</span>
+                            </span>
+                            <span className="text-[9px] text-gray-500 font-medium">(味方同チーム・2戦以上)</span>
+                          </h3>
                           <div className="grid grid-cols-2 gap-4 text-center">
-                            <div className="bg-rose-500/5 border border-rose-500/20 rounded-2xl p-4">
-                              <p className="text-[10px] text-rose-400 font-black mb-1">💀 宿敵（負け越し）</p>
-                              <p className="text-lg font-black text-white truncate">{rivalPair.nemesis.name}</p>
-                              <p className="text-xs text-gray-400">対戦{rivalPair.nemesis.games}回・勝率<span className="text-rose-400 font-bold">{rivalPair.nemesis.winRate}%</span></p>
+                            <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-4">
+                              <p className="text-[10px] text-emerald-400 font-black mb-1">🏆 最強のシナジー (高勝率)</p>
+                              <p className="text-lg font-black text-white truncate">{synergyPair.best.name}</p>
+                              <p className="text-xs text-gray-400">同チーム{synergyPair.best.games}戦・勝率<span className="text-emerald-400 font-bold ml-1">{synergyPair.best.winRate}%</span></p>
                             </div>
-                            <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-2xl p-4">
-                              <p className="text-[10px] text-emerald-400 font-black mb-1">🔥 カモ（勝ち越し）</p>
-                              <p className="text-lg font-black text-white truncate">{rivalPair.prey.name}</p>
-                              <p className="text-xs text-gray-400">対戦{rivalPair.prey.games}回・勝率<span className="text-emerald-400 font-bold">{rivalPair.prey.winRate}%</span></p>
+                            <div className="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-4">
+                              <p className="text-[10px] text-amber-400 font-black mb-1">⚠️ 課題のシナジー (伸びしろ)</p>
+                              <p className="text-lg font-black text-white truncate">{synergyPair.challenging.name}</p>
+                              <p className="text-xs text-gray-400">同チーム{synergyPair.challenging.games}戦・勝率<span className="text-amber-400 font-bold ml-1">{synergyPair.challenging.winRate}%</span></p>
                             </div>
                           </div>
                         </div>
