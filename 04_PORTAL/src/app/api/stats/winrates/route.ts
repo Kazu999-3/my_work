@@ -14,16 +14,30 @@ export async function GET() {
       throw new Error("Failed to fetch players");
     }
 
-    // 2. 過去の全試合の参加者と勝敗情報を取得
-    const { data: historyData, error: hError } = await supabase
+    // 2. 過去の全試合の参加者と勝敗情報を取得 (リレーションシップエラー回避のため独立クエリ化)
+    const { data: participants, error: hError } = await supabase
       .from('ktm_match_participants')
-      .select(`
-        player_name, role, team, ktm_matches!inner(winning_team)
-      `);
+      .select('player_name, role, team, match_id');
 
-    if (hError) {
-      throw new Error("Failed to fetch match history");
+    if (hError || !participants) {
+      console.error("Failed to fetch match participants:", hError);
+      throw new Error("Failed to fetch match history participants");
     }
+
+    // 試合の勝敗情報を取得
+    const { data: matches, error: mError } = await supabase
+      .from('ktm_matches')
+      .select('id, winning_team');
+
+    if (mError || !matches) {
+      console.error("Failed to fetch matches:", mError);
+      throw new Error("Failed to fetch matches");
+    }
+
+    const matchWinMap: Record<string, string> = {};
+    matches.forEach((m: any) => {
+      matchWinMap[m.id] = m.winning_team;
+    });
 
     // 3. データ集計用の初期化
     const statsMap: Record<string, any> = {};
@@ -44,24 +58,24 @@ export async function GET() {
     });
 
     // 4. 勝敗の集計
-    if (historyData) {
-      historyData.forEach((row: any) => {
-        const pName = row.player_name;
-        // 退会済みや非アクティブなユーザーの履歴はスキップ
-        if (!statsMap[pName]) return;
+    participants.forEach((row: any) => {
+      const pName = row.player_name;
+      if (!statsMap[pName]) return;
 
-        const role = row.role?.toUpperCase() || 'UNKNOWN';
-        const isWin = row.team === row.ktm_matches?.winning_team;
+      const winningTeam = matchWinMap[row.match_id];
+      if (!winningTeam) return;
 
-        statsMap[pName].totalGames += 1;
-        if (isWin) statsMap[pName].totalWins += 1;
+      const role = (row.role || '').toUpperCase();
+      const isWin = row.team === winningTeam;
 
-        if (statsMap[pName].lanes[role]) {
-          statsMap[pName].lanes[role].games += 1;
-          if (isWin) statsMap[pName].lanes[role].wins += 1;
-        }
-      });
-    }
+      statsMap[pName].totalGames += 1;
+      if (isWin) statsMap[pName].totalWins += 1;
+
+      if (statsMap[pName].lanes[role]) {
+        statsMap[pName].lanes[role].games += 1;
+        if (isWin) statsMap[pName].lanes[role].wins += 1;
+      }
+    });
 
     // 5. 配列に変換し、総試合数が多い順（同数の場合は勝率順）にソート
     const results = Object.values(statsMap).sort((a, b) => {
