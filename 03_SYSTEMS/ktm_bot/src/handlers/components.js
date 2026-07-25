@@ -98,51 +98,67 @@ export async function handleButtonInteraction(interaction, env, ctx) {
         const targetEmbed = { ...embeds[0] };
         targetEmbed.fields = targetEmbed.fields ? [...targetEmbed.fields] : [];
 
-        // フィールド1: シルバー以下, フィールド2: ゴルプラ
-        const fieldIdx = roomType === 'silver' ? 0 : 1;
-        if (!targetEmbed.fields[fieldIdx]) {
-          targetEmbed.fields[fieldIdx] = { name: roomLabel, value: "▫ 参加者: なし", inline: false };
-        }
+        // フィールド0: シルバー以下, フィールド1: ゴルプラ
+        if (!targetEmbed.fields[0]) targetEmbed.fields[0] = { name: "🛡️ 【シルバー以下部門】 (0/10名)", value: "▫ 参加者: なし", inline: false };
+        if (!targetEmbed.fields[1]) targetEmbed.fields[1] = { name: "👑 【ゴルプラ部門】 (0/10名)", value: "▫ 参加者: なし", inline: false };
 
-        const field = { ...targetEmbed.fields[fieldIdx] };
-        let currentText = field.value || "";
+        const targetFieldIdx = roomType === 'silver' ? 0 : 1;
+        const targetText = targetEmbed.fields[targetFieldIdx].value || "";
 
-        // すでに参加しているか判定（トグル処理）
-        let isJoined = currentText.includes(userMention);
-        let newLines = currentText.split('\n').filter(l => !l.includes('▫ 参加者: なし'));
+        // 押されたボタンの部屋にすでに参加しているか？（トグル判定）
+        const isAlreadyInTarget = targetText.includes(userMention);
 
-        // 名簿(ktm_players)からユーザーの希望レーンを取得
-        let lanePrefStr = "";
-        try {
-          const { fetchSupabase } = await import('../utils/api.js');
-          const ps = await fetchSupabase(env, 'ktm_players', `discord_id=eq.${userId}&select=role_preferences`);
-          if (ps && ps.length > 0 && ps[0].role_preferences) {
-            let pref = ps[0].role_preferences;
-            if (typeof pref === 'string') {
-              try { pref = JSON.parse(pref); } catch (e) {}
+        // 1. まず両方の部屋からユーザーの既存行を全削除（重複・二重エントリーの完全防止）
+        [0, 1].forEach(idx => {
+          let fLines = (targetEmbed.fields[idx].value || "").split('\n');
+          fLines = fLines.filter(l => !l.includes(userMention) && !l.includes('▫ 参加者: なし'));
+          const count = fLines.filter(l => l.startsWith('- ')).length;
+          const rName = idx === 0 ? '🛡️ 【シルバー以下部門】' : '👑 【ゴルプラ部門】';
+          targetEmbed.fields[idx].name = `${rName} (${count}/10名)`;
+          targetEmbed.fields[idx].value = fLines.length > 0 ? fLines.join('\n') : "▫ 参加者: なし";
+        });
+
+        // 2. もし元の部屋に未参加だった場合は、押された部屋に追加
+        if (!isAlreadyInTarget) {
+          // 名簿(ktm_players)からユーザーの希望レーンを頑丈に取得
+          let lanePrefStr = "";
+          try {
+            const { fetchSupabase } = await import('../utils/api.js');
+            // discord_id でクエリ (文字列/数値両対応)
+            let ps = await fetchSupabase(env, 'ktm_players', `discord_id=eq.${userId}&select=role_preferences,name`);
+            if (!ps || ps.length === 0) {
+              // バックアップ: discord_id=eq."userId" または 全件からマッチ
+              ps = await fetchSupabase(env, 'ktm_players', `select=discord_id,role_preferences,name`);
+              if (ps && ps.length > 0) {
+                ps = ps.filter(p => String(p.discord_id) === String(userId));
+              }
             }
-            if (pref && (pref.primary || pref.secondary)) {
-              const p1 = pref.primary || "指定なし";
-              const p2 = pref.secondary || "指定なし";
-              lanePrefStr = ` 【第1: ${p1} / 第2: ${p2}】`;
+
+            if (ps && ps.length > 0 && ps[0].role_preferences) {
+              let pref = ps[0].role_preferences;
+              if (typeof pref === 'string') {
+                try { pref = JSON.parse(pref); } catch (e) {}
+              }
+              if (pref && (pref.primary || pref.secondary)) {
+                const p1 = pref.primary || "指定なし";
+                const p2 = pref.secondary || "指定なし";
+                lanePrefStr = ` 【第1: ${p1} / 第2: ${p2}】`;
+              }
             }
+          } catch (e) {
+            console.warn("fetch role_preferences error:", e);
           }
-        } catch (e) {
-          console.warn("fetch role_preferences error:", e);
-        }
 
-        if (isJoined) {
-          // 解除
-          newLines = newLines.filter(l => !l.includes(userMention));
-        } else {
-          // 追加
-          newLines.push(`- ${userMention}${lanePrefStr}`);
-        }
+          let fLines = targetEmbed.fields[targetFieldIdx].value === "▫ 参加者: なし"
+            ? []
+            : targetEmbed.fields[targetFieldIdx].value.split('\n');
 
-        const count = newLines.filter(l => l.startsWith('- ')).length;
-        field.name = `${roomType === 'silver' ? '🛡️ 【シルバー以下部門】' : '👑 【ゴルプラ部門】'} (${count}/10名)`;
-        field.value = newLines.length > 0 ? newLines.join('\n') : "▫ 参加者: なし";
-        targetEmbed.fields[fieldIdx] = field;
+          fLines.push(`- ${userMention}${lanePrefStr}`);
+          const count = fLines.filter(l => l.startsWith('- ')).length;
+          const rName = targetFieldIdx === 0 ? '🛡️ 【シルバー以下部門】' : '👑 【ゴルプラ部門】';
+          targetEmbed.fields[targetFieldIdx].name = `${rName} (${count}/10名)`;
+          targetEmbed.fields[targetFieldIdx].value = fLines.join('\n');
+        }
 
         // 押されたメッセージ自体の更新
         await sendDiscordMessage(`channels/${channelId}/messages/${msgId}`, botToken, "PATCH", {
