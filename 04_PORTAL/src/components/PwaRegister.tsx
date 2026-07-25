@@ -22,11 +22,29 @@ export default function PwaRegister() {
   const [showBanner, setShowBanner] = useState(false);
   const [showGuide, setShowGuide] = useState(false);
 
+  // ✕ で閉じた場合、7日間バナーを非表示にする
+  const DISMISS_KEY = 'ktm_pwa_dismissed_at';
+  const DISMISS_DAYS = 7;
+
+  const dismissBanner = useCallback(() => {
+    try { localStorage.setItem(DISMISS_KEY, String(Date.now())); } catch {}
+    setShowBanner(false);
+  }, []);
+
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
     // 既にスタンドアロンで動作中ならバナー不要
     if (window.matchMedia('(display-mode: standalone)').matches) return;
+
+    // 過去7日以内に ✕ で閉じた場合は表示しない
+    try {
+      const dismissed = localStorage.getItem(DISMISS_KEY);
+      if (dismissed) {
+        const elapsed = Date.now() - Number(dismissed);
+        if (elapsed < DISMISS_DAYS * 24 * 60 * 60 * 1000) return;
+      }
+    } catch {}
 
     // Service Worker 登録
     if ('serviceWorker' in navigator) {
@@ -39,9 +57,12 @@ export default function PwaRegister() {
       window.__pwaPrompt = e;
     };
     window.addEventListener('beforeinstallprompt', handler);
-    window.addEventListener('appinstalled', () => setShowBanner(false));
+    window.addEventListener('appinstalled', () => {
+      try { localStorage.setItem(DISMISS_KEY, 'installed'); } catch {}
+      setShowBanner(false);
+    });
 
-    // バナーを表示（prompt有無に関わらず。ガイド誘導もできるため）
+    // バナーを表示
     setShowBanner(true);
 
     return () => window.removeEventListener('beforeinstallprompt', handler);
@@ -102,10 +123,10 @@ export default function PwaRegister() {
           </button>
           <button
             type="button"
-            onClick={() => setShowBanner(false)}
+            onClick={dismissBanner}
             style={{ pointerEvents: 'auto' }}
             className="p-1 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
-            title="閉じる"
+            title="7日間非表示"
           >
             <X size={16} />
           </button>
