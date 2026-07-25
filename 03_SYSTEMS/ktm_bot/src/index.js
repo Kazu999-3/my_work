@@ -64,14 +64,13 @@ export default {
 
       const mode = url.searchParams.get('mode') || "";
 
-      ctx.waitUntil((async () => {
-        try {
-          await handleScheduledEvent({ cron: "manual", mode }, { ...env, DISCORD_TOKEN }, ctx);
-        } catch (e) {
-          console.error("Manual trigger error:", e);
-        }
-      })());
-      return new Response('Scheduled event triggered successfully', { status: 200 });
+      try {
+        await handleScheduledEvent({ cron: "manual", mode }, { ...env, DISCORD_TOKEN }, ctx);
+        return new Response(`Scheduled event triggered successfully (mode: ${mode})`, { status: 200 });
+      } catch (e) {
+        console.error("Manual trigger error:", e);
+        return new Response(`Manual trigger error: ${e.message}`, { status: 500 });
+      }
     }
 
     if (request.method !== 'POST') return new Response('Method Not Allowed', { status: 405 });
