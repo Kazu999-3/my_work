@@ -116,20 +116,21 @@ export default function LeaderboardPage() {
           return;
         }
 
-        // 2. ktm_match_participantsから勝敗と試合数を集計
+        // 2. ktm_match_participants と ktm_matches から勝敗と試合数を安全に集計
         const { data: matchesData, error: mError } = await supabase
           .from('ktm_match_participants')
-          .select(`
-            player_name,
-            discord_id,
-            role,
-            team,
-            ktm_matches ( winning_team )
-          `);
+          .select('player_name, discord_id, role, team, match_id');
 
-        if (mError) {
-          console.error('Failed to fetch match stats', mError);
+        const { data: rawMatches, error: rawmError } = await supabase
+          .from('ktm_matches')
+          .select('id, winning_team');
+
+        if (mError || rawmError) {
+          console.error('Failed to fetch match stats:', mError || rawmError);
         }
+
+        const matchWinMap = new Map<number, string>();
+        (rawMatches || []).forEach((m: any) => matchWinMap.set(m.id, m.winning_team));
 
         const byDiscord = new Map<string, any>();
         const byName = new Map<string, any>();
@@ -158,10 +159,7 @@ export default function LeaderboardPage() {
             const key = keyOfPlayer(resolved);
             const role = (m.role || '').toUpperCase();
 
-            // ktm_matches が配列かオブジェクトかを安全に判定
-            const winningTeam = Array.isArray(m.ktm_matches)
-              ? (m.ktm_matches[0] as any)?.winning_team
-              : (m.ktm_matches as any)?.winning_team;
+            const winningTeam = matchWinMap.get(m.match_id);
 
             if (statsMap[key] && statsMap[key][role]) {
               statsMap[key][role].games += 1;
