@@ -256,6 +256,7 @@ export default function PlayerMyPage() {
     return Object.entries(agg).map(([name, s]) => ({
       name,
       games: s.games,
+      wins: s.wins,
       winRate: Math.round((s.wins / s.games) * 100)
     }));
   }, [history, player]);
@@ -269,6 +270,14 @@ export default function PlayerMyPage() {
       best: sorted[0], // 勝率が最も高い最強チーム相性
       challenging: sorted[sorted.length - 1] // 課題のあるチーム相性
     };
+  }, [teammatesList]);
+
+  // 伸びしろのある味方相性リスト (課題のシナジー)
+  const challengingTeammates = useMemo(() => {
+    return (teammatesList || [])
+      .filter((t: any) => t.games >= 2)
+      .sort((a, b) => a.winRate - b.winRate || b.games - a.games)
+      .slice(0, 5);
   }, [teammatesList]);
 
   // 対面別の得意/苦手（2戦以上の相手のみ）
@@ -1368,26 +1377,26 @@ export default function PlayerMyPage() {
                       </div>
                     </div>
 
-                    {/* 宿敵ライバル (Rivals) */}
+                    {/* 課題の相性 (Challenging Synergies) */}
                     <div className="space-y-4">
-                      <h4 className="text-xs font-black text-rose-400 uppercase tracking-wider border-b border-white/5 pb-2 flex items-center gap-1.5">
-                        <Flame className="w-4 h-4 text-rose-400" />
-                        <span>🔥 宿敵・好敵手 (敵対時の敗率が高い)</span>
+                      <h4 className="text-xs font-black text-amber-400 uppercase tracking-wider border-b border-white/5 pb-2 flex items-center gap-1.5">
+                        <Flame className="w-4 h-4 text-amber-400" />
+                        <span>⚠️ 課題の相性 (味方時の勝率が低め・伸びしろ)</span>
                       </h4>
                       <div className="space-y-2.5 max-h-96 overflow-y-auto pr-1">
-                        {rivals.length > 0 ? (
-                          rivals.slice(0, 5).map((r, idx) => (
+                        {challengingTeammates.length > 0 ? (
+                          challengingTeammates.map((c, idx) => (
                             <div key={idx} className="flex justify-between items-center bg-black/40 p-3.5 rounded-2xl border border-white/5 hover:border-white/10 transition-colors">
-                              <span className="font-bold text-gray-200 text-sm">{r.name}</span>
+                              <span className="font-bold text-gray-200 text-sm">{c.name}</span>
                               <div className="text-right">
-                                <span className="text-rose-400 font-black text-sm">{100 - r.winRate}%</span>
-                                <span className="text-[10px] text-gray-500 block font-medium mt-0.5">対面敗率 (相手の勝率: {r.winRate}%)</span>
+                                <span className="text-amber-400 font-black text-sm">{c.winRate}%</span>
+                                <span className="text-[10px] text-gray-500 block font-medium mt-0.5">{c.wins}勝 - {c.games - c.wins}敗</span>
                               </div>
                             </div>
                           ))
                         ) : (
                           <div className="text-gray-500 text-xs py-8 text-center border border-dashed border-white/5 rounded-2xl">
-                            まだ十分な敵対データがありません
+                            まだ十分なデータがありません
                           </div>
                         )}
                       </div>
