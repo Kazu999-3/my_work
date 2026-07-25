@@ -535,7 +535,7 @@ async function createWeeklyEvents(env) {
   }
 }
 
-/** イベントの「興味あり」メンバーを自動抽出して送信する */
+/** イベントおよび定期募集の「参加者・興味あり」メンバーを統合カウントして送信する */
 async function sendEventUsersNotification(env, options = {}) {
   const lookaheadHours = options.lookaheadHours || 48;
   const isAdvanceNotice = lookaheadHours > 48;
@@ -545,38 +545,51 @@ async function sendEventUsersNotification(env, options = {}) {
     
     // 1. チャンネル情報から Guild ID を動的に取得
     const channelRes = await fetchWithRetry(`https://discord.com/api/v10/channels/${channelId}`, {
-      headers: {
-        'Authorization': `Bot ${env.DISCORD_TOKEN}`
-      }
+      headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}` }
     });
 
-    if (!channelRes.ok) {
-      throw new Error(`Failed to fetch channel info: ${channelRes.status} ${await channelRes.text()}`);
-    }
+    if (!channelRes.ok) throw new Error(`Failed to fetch channel info: ${channelRes.status}`);
 
     const channelInfo = await channelRes.json();
     const guildId = channelInfo.guild_id;
-    if (!guildId) {
-      throw new Error("Guild ID not found in channel response.");
+    if (!guildId) throw new Error("Guild ID not found in channel response.");
+
+    // 2. DB (recruitments) から現在進行中の定期・カスタム募集を取得
+    let dbRecruitCount = 0;
+    let targetRecruitOwnerId = null;
+    try {
+      const activeRecruits = await fetchSupabase(env, 'recruitments', 'status=eq.open&select=*');
+      if (activeRecruits && activeRecruits.length > 0) {
+        // 最も新しい募集の参加者数
+        const latestRecruit = activeRecruits[0];
+        targetRecruitOwnerId = latestRecruit.owner_discord_id;
+        
+        // 募集メッセージから参加者数を取り込む
+        const msgRes = await fetch(`https://discord.com/api/v10/channels/${latestRecruit.discord_channel_id}/messages/${latestRecruit.discord_message_id}`, {
+          headers: { "Authorization": `Bot ${env.DISCORD_TOKEN}` }
+        });
+        if (msgRes.ok) {
+          const msg = await msgRes.json();
+          const meta = parseMessageData(msg);
+          if (meta && meta.joined) {
+            dbRecruitCount = meta.joined.length;
+          }
+        }
+      }
+    } catch (dbErr) {
+      console.warn("Recruitment DB fetch warning:", dbErr);
     }
 
-    // 2. Guild 内の Scheduled Events 一覧を取得
+    // 3. Guild 内の Scheduled Events 一覧を取得
     const eventsRes = await fetchWithRetry(`https://discord.com/api/v10/guilds/${guildId}/scheduled-events`, {
-      headers: {
-        'Authorization': `Bot ${env.DISCORD_TOKEN}`
-      }
+      headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}` }
     });
 
-    if (!eventsRes.ok) {
-      throw new Error(`Failed to fetch scheduled events: ${eventsRes.status} ${await eventsRes.text()}`);
-    }
+    if (!eventsRes.ok) throw new Error(`Failed to fetch scheduled events: ${eventsRes.status}`);
 
     const scheduledEvents = await eventsRes.json();
-    console.log(`Fetched ${scheduledEvents.length} events from guild.`);
-
-    // 3. lookaheadHours以内の「【定期】」が含まれるアクティブなイベントをフィルタ
     const now = Date.now();
-    const minStartLimit = now - 3 * 60 * 60 * 1000; // Allow events started up to 3 hours ago (timezone buffer)
+    const minStartLimit = now - 3 * 60 * 60 * 1000;
     const maxStartLimit = now + lookaheadHours * 60 * 60 * 1000;
 
     const targetEvents = scheduledEvents.filter(e => {
@@ -587,92 +600,39 @@ async function sendEventUsersNotification(env, options = {}) {
       return isWithinRange && hasTeiki && isActive;
     });
 
-    console.log(`Found ${targetEvents.length} target events matching criteria.`);
-
-    if (targetEvents.length === 0) {
-      console.log(`No matching scheduled events found within ${lookaheadHours}h containing '【定期】'. Skipping notification.`);
-      return;
-    }
-
     // 4. 各イベントの「興味あり」ユーザー情報を取得
     const eventDetails = [];
     for (const targetEvent of targetEvents) {
-      console.log(`Fetching users for event: ${targetEvent.name} (${targetEvent.id})`);
       const usersRes = await fetchWithRetry(`https://discord.com/api/v10/guilds/${guildId}/scheduled-events/${targetEvent.id}/users?limit=100&with_member=true`, {
-        headers: {
-          'Authorization': `Bot ${env.DISCORD_TOKEN}`
-        }
+        headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}` }
       });
-
-      if (!usersRes.ok) {
-        console.error(`Failed to fetch users for event ${targetEvent.id}: ${usersRes.status} ${await usersRes.text()}`);
-        continue;
+      if (usersRes.ok) {
+        const eventUsers = await usersRes.json();
+        eventDetails.push({ event: targetEvent, users: eventUsers });
       }
-
-      const eventUsers = await usersRes.json();
-      eventDetails.push({
-        event: targetEvent,
-        users: eventUsers
-      });
     }
 
-    if (eventDetails.length === 0) {
-      console.log("No user details retrieved. Skipping notification.");
-      return;
-    }
+    // イベント参加数とDB募集参加数の最大値・合計を統合
+    const eventUsersCount = eventDetails[0]?.users.length || 0;
+    const effectiveTotalCount = Math.max(eventUsersCount, dbRecruitCount);
 
-    // 5. 人数状況（3パターン）の判定
+    // 5. 人数状況と不足人数の判定
     let statusMessage = "";
-    let embedColor = 0x3498db; // デフォルト：ブルー
-    // 欠員アラート(課題#41): 10人に満たない場合だけ、通知ロールを能動的に@メンションして呼ぶ。
-    // 通知ロールはオプトイン制なのでスパムにならない。不足人数もメッセージに出す。
-    let shortfall = 0; // 開催(10人)まで不足している人数（0なら充足）
+    let embedColor = 0x3498db;
+    let shortfall = 0;
 
-    const eventCount = eventDetails.length;
-    const count0 = eventDetails[0]?.users.length || 0;
-    const name0 = eventDetails[0]?.event.name || "";
-    
-    if (eventCount === 1) {
-      // イベントが1つの場合
-      if (count0 >= 10) {
-        statusMessage = `🔥 **開催確定！**\n「${name0}」が単体で10人以上に達しています！このまま開催します。`;
-        embedColor = 0x2ecc71; // グリーン
-      } else {
-        statusMessage = `⚠️ **メンバー募集中！**\n現在の参加予定者は **${count0}名** です。カスタム開催（10人）まであと **${10 - count0}名** 不足しています。参加できる方は「興味あり」を押してください！`;
-        embedColor = 0xe74c3c; // レッド
-        shortfall = 10 - count0;
-      }
+    if (effectiveTotalCount >= 10) {
+      statusMessage = `🔥 **開催確定！**\n現在 **${effectiveTotalCount}名** が参加表明済みです！このまま開催します。`;
+      embedColor = 0x2ecc71; // グリーン
     } else {
-      // イベントが2つ以上ある場合（基本2つの想定）
-      const count1 = eventDetails[1]?.users.length || 0;
-      const name1 = eventDetails[1]?.event.name || "";
-      const totalCount = count0 + count1;
-
-      if (count0 >= 10 || count1 >= 10) {
-        // パターン①：片方（または両方）が10人以上
-        if (count0 >= 10 && count1 >= 10) {
-          statusMessage = `🔥 **ダブル開催確定！**\n「${name0}」と「${name1}」がそれぞれ単体で10人以上に達しています！両方の部屋で開催します。`;
-        } else {
-          const reachedName = count0 >= 10 ? name0 : name1;
-          statusMessage = `🔥 **開催確定！**\n「${reachedName}」が単体で10人以上に達しています！このまま開催します。`;
-        }
-        embedColor = 0x2ecc71; // グリーン
-      } else if (totalCount >= 10) {
-        // パターン②：それぞれは10人未満だが、足して10人以上
-        statusMessage = `📢 **合同開催見込み！**\n単体では10人未満ですが、足すと合計 **${totalCount}名** に達しているため、合同カスタムが開催可能です！`;
-        embedColor = 0xf1c40f; // イエロー
-      } else {
-        // パターン③：足しても10人未満
-        statusMessage = `⚠️ **メンバー募集中！**\n現在の合計参加予定者は **${totalCount}名** です。カスタム開催（10人）まであと **${10 - totalCount}名** 不足しています。参加できる方は「興味あり」を押してください！`;
-        embedColor = 0xe74c3c; // レッド
-        shortfall = 10 - totalCount;
-      }
+      shortfall = 10 - effectiveTotalCount;
+      statusMessage = `⚠️ **メンバー募集中！**\n現在の参加予定者は **${effectiveTotalCount}名** です。カスタム開催（10人）まであと **${shortfall}名** 不足しています。下のボタンから「参加する」または「興味あり」を押してください！`;
+      embedColor = 0xe74c3c; // レッド
     }
 
-    // 6. 統合した Embed の作成
+    // 6. Embed の作成
     const embedFields = eventDetails.map((ed) => {
       const { event: targetEvent, users: eventUsers } = ed;
-      
       const userListText = eventUsers.map((eu, index) => {
         if (!eu || !eu.user) return `\`${String(index + 1).padStart(2, '0')}.\` 不明なユーザー`;
         const displayName = eu.member?.nick || eu.user.global_name || eu.user.username || "不明";
@@ -681,39 +641,35 @@ async function sendEventUsersNotification(env, options = {}) {
 
       const eventDate = new Date(targetEvent.scheduled_start_time);
       const formattedDate = eventDate.toLocaleString('ja-JP', {
-        timeZone: 'Asia/Tokyo',
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        weekday: 'short'
+        timeZone: 'Asia/Tokyo', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', weekday: 'short'
       });
 
       return {
-        name: `📝 ${targetEvent.name} (${eventUsers.length}名)`,
+        name: `📝 ${targetEvent.name} (${Math.max(eventUsers.length, dbRecruitCount)}名)`,
         value: `**開催予定**: ${formattedDate} (JST)\n\n${userListText}`,
         inline: false
       };
     });
 
+    // イベントが空の場合でもDB募集があればフォールバック表示
+    if (embedFields.length === 0 && dbRecruitCount > 0) {
+      embedFields.push({
+        name: `⚔️ KTM 定期・カスタム募集 (${dbRecruitCount}名)`,
+        value: `現在の募集参加者: ${dbRecruitCount}名`,
+        inline: false
+      });
+    }
+
     const embed = {
-      title: isAdvanceNotice
-        ? `📅 【定期】イベント 今週土曜の事前告知 🔔`
-        : `📅 【定期】イベント「興味あり」表明メンバー状況`,
-      description: isAdvanceNotice
-        ? `⚠️ **今週土曜のカスタム戦まで残り約3日です！**\n\n${statusMessage}\n\n参加予定の方はイベントから「興味あり」を押してください！`
-        : statusMessage,
+      title: isAdvanceNotice ? `📅 【定期】イベント 今週の事前告知 🔔` : `📅 【定期】カスタム戦 参加メンバー状況`,
+      description: statusMessage,
       color: embedColor,
       fields: embedFields,
-      footer: {
-        text: "KTM Bot | 定期通知システム"
-      },
+      footer: { text: "KTM Bot | 定期通知＆自動アナウンス" },
       timestamp: new Date().toISOString()
     };
 
-    // 6.5 二重投稿防止(#85): 冗長キック(GitHub Actions)とCloudflare cronの両方が発火しても
-    // 同じ通知を2回投稿しないよう、直近3時間以内に同タイトルのbot投稿があればスキップする。
+    // 二重投稿防止: 直近3時間以内に同一タイトルの通知があればスキップ
     try {
       const recentRes = await fetchWithRetry(`https://discord.com/api/v10/channels/${channelId}/messages?limit=10`, {
         headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}` }
@@ -727,21 +683,40 @@ async function sendEventUsersNotification(env, options = {}) {
           new Date(m.timestamp).getTime() > threeHoursAgo
         );
         if (dup) {
-          console.log(`[Dedupe] 同一通知が直近に投稿済みのためスキップします (msg ${dup.id})`);
+          console.log(`[Dedupe] 同一通知が直近に投稿済みのためスキップします`);
           return;
         }
       }
-    } catch (dedupeErr) {
-      console.warn('[Dedupe] 直近メッセージの確認に失敗（送信は続行）:', dedupeErr);
-    }
+    } catch (dedupeErr) {}
 
-    // 7. メッセージ送信
-    // 欠員アラート: 10人に不足している時だけ、通知ロールを能動的に@メンションして呼ぶ。
-    const messageBody = { embeds: [embed] };
+    // 7. メッセージ ＆ ワンタップ「参加する」ボタンの作成
     const roleId = CONFIG.NOTIFICATION_ROLE_ID;
+    const messageBody = {
+      embeds: [embed],
+      components: [
+        {
+          type: 1, // Action Row
+          components: [
+            {
+              type: 2, // Button
+              label: "⚔️ 募集に参加する",
+              style: 3, // Success (Green)
+              custom_id: targetRecruitOwnerId ? `join_any:${targetRecruitOwnerId}` : `quick_recruit:カスタム:10`
+            },
+            {
+              type: 2, // Button
+              label: "🔔 通知受け取り設定",
+              style: 2, // Secondary (Gray)
+              custom_id: "toggle_recruit_notification"
+            }
+          ]
+        }
+      ]
+    };
+
     if (shortfall > 0 && roleId) {
-      messageBody.content = `<@&${roleId}> 🚨 **あと${shortfall}名でカスタム開催です！** 参加できる方は上のイベントから「興味あり」を押してください！`;
-      messageBody.allowed_mentions = { roles: [roleId] }; // 指定ロールのみ通知（@everyone等の暴発を防ぐ）
+      messageBody.content = `<@&${roleId}> 🚨 **あと${shortfall}名でカスタム開催です！** 参加できる方は上のボタンまたはイベントから「参加する / 興味あり」を押してください！`;
+      messageBody.allowed_mentions = { roles: [roleId] };
     }
 
     const sendRes = await fetchWithRetry(`https://discord.com/api/v10/channels/${channelId}/messages`, {
@@ -754,9 +729,9 @@ async function sendEventUsersNotification(env, options = {}) {
     });
 
     if (!sendRes.ok) {
-      console.error(`Failed to send message to channel ${channelId}: ${sendRes.status} ${await sendRes.text()}`);
+      console.error(`Failed to send message: ${sendRes.status} ${await sendRes.text()}`);
     } else {
-      console.log(`Integrated notification sent successfully.`);
+      console.log(`Integrated notification with action buttons sent successfully.`);
     }
 
   } catch (err) {
