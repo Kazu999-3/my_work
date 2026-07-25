@@ -550,7 +550,6 @@ async function sendEventUsersNotification(env, options = {}) {
     // 2. DBおよびチャンネル直近メッセージからアクティブな最新の募集カードを取得して完全同期
     let activeEmbed = null;
     let targetMessageId = null;
-    let totalJoinedCount = 0;
     try {
       // チャンネルの直近メッセージから最新の募集カードを探す
       const channelMsgsRes = await fetch(`https://discord.com/api/v10/channels/${channelId}/messages?limit=20`, {
@@ -562,6 +561,11 @@ async function sendEventUsersNotification(env, options = {}) {
         if (recruitMsg) {
           activeEmbed = recruitMsg.embeds[0];
           targetMessageId = recruitMsg.id;
+        }
+      }
+    } catch (dbErr) {
+      console.warn("Recruitment fetch warning:", dbErr);
+    }
     let silverCount = 0;
     let goldCount = 0;
 
@@ -580,8 +584,54 @@ async function sendEventUsersNotification(env, options = {}) {
     const goldShortfall = Math.max(0, 10 - goldCount);
     const totalJoined = silverCount + goldCount;
 
-    // 4. アナウンス Embed の作成（募集カードを完全同期 ＆ 引用リンク添付）
+    // 4. アナウンス Embed の作成（募集カードを完全同期 ＆ 参加者の希望レーンを自動付与）
     let syncFields = activeEmbed ? activeEmbed.fields : [];
+
+    // 参加ユーザー全員の希望レーンを全件一括ルックアップして補完
+    if (syncFields && syncFields.length > 0) {
+      try {
+        const allUserIds = new Set();
+        syncFields.forEach(f => {
+          const matches = (f.value || "").match(/<@(\d+)>/g);
+          if (matches) {
+            matches.forEach(m => allUserIds.add(m.replace(/<@|>/g, '')));
+          }
+        });
+
+        if (allUserIds.size > 0) {
+          const idsArr = Array.from(allUserIds);
+          const ps = await fetchSupabase(env, 'ktm_players', `discord_id=in.("${idsArr.join('","')}")&select=discord_id,role_preferences`);
+          const prefMap = new Map();
+          if (ps && ps.length > 0) {
+            ps.forEach(p => {
+              if (p.role_preferences) {
+                const p1 = p.role_preferences.primary || "指定なし";
+                const p2 = p.role_preferences.secondary || "指定なし";
+                prefMap.set(String(p.discord_id), `【第1: ${p1} / 第2: ${p2}】`);
+              }
+            });
+          }
+
+          syncFields = syncFields.map(f => {
+            let lines = (f.value || "").split('\n');
+            let updatedLines = lines.map(line => {
+              const uMatch = line.match(/<@(\d+)>/);
+              if (uMatch) {
+                const uId = uMatch[1];
+                const prefStr = prefMap.get(uId) || "【希望: 未設定】";
+                if (!line.includes("【第1:")) {
+                  return `- <@${uId}> ${prefStr}`;
+                }
+              }
+              return line;
+            });
+            return { ...f, value: updatedLines.join('\n') };
+          });
+        }
+      } catch (prefErr) {
+        console.warn("Role pref sync warning:", prefErr);
+      }
+    }
     
     if (!syncFields || syncFields.length === 0) {
       syncFields = eventDetails.map((ed) => {
