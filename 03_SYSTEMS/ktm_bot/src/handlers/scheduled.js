@@ -589,12 +589,18 @@ async function sendEventUsersNotification(env, options = {}) {
       });
     }
 
+    const recruitLink = targetMessageId ? `\n\n👉 [元の募集メッセージを開く](https://discord.com/channels/${guildId}/${channelId}/${targetMessageId})` : '';
+    const statusMessage = effectiveTotalCount >= 10
+      ? `🔥 **開催確定！** 現在 **${effectiveTotalCount}名** エントリー済みです！このまま開催します。${recruitLink}`
+      : `⚠️ **メンバー募集中！** 現在 **${effectiveTotalCount}名** です。カスタム開催（10人）まであと **${shortfall}名** 不足しています。下のボタンからエントリーしてください！${recruitLink}`;
+    const embedColor = effectiveTotalCount >= 10 ? 0x2ecc71 : 0xe74c3c;
+
     const embed = {
-      title: isAdvanceNotice ? `📅 【定期】イベント 今週の事前告知 🔔` : `📅 【定期】カスタム戦 参加メンバー状況`,
+      title: activeEmbed ? activeEmbed.title : (isAdvanceNotice ? `📅 【定期】イベント 事前告知 🔔` : `📅 【定期】カスタム戦 参加メンバー状況`),
       description: statusMessage,
       color: embedColor,
-      fields: embedFields,
-      footer: { text: "KTM Bot | 定期通知＆自動アナウンス" },
+      fields: syncFields,
+      footer: { text: "KTM Bot | 募集カード同期アナウンス" },
       timestamp: new Date().toISOString()
     };
 
