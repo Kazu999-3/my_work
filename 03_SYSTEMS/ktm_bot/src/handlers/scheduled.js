@@ -504,36 +504,31 @@ async function sendEventUsersNotification(env, options = {}) {
     const guildId = channelInfo.guild_id;
     if (!guildId) throw new Error("Guild ID not found in channel response.");
 
-    // 2. DB (recruitments) からアクティブな最新の募集メッセージを取得して同期
+    // 2. DBおよびチャンネル直近メッセージからアクティブな最新の募集カードを取得して完全同期
     let activeEmbed = null;
     let targetMessageId = null;
     let totalJoinedCount = 0;
     try {
-      const activeRecruits = await fetchSupabase(env, 'recruitments', 'status=eq.open&select=*');
-      if (activeRecruits && activeRecruits.length > 0) {
-        const latestRecruit = activeRecruits[0];
-        targetMessageId = latestRecruit.discord_message_id;
-        
-        // 募集メッセージの実物を取得して完璧に同期
-        const msgRes = await fetch(`https://discord.com/api/v10/channels/${latestRecruit.discord_channel_id}/messages/${targetMessageId}`, {
-          headers: { "Authorization": `Bot ${env.DISCORD_TOKEN}` }
-        });
-        if (msgRes.ok) {
-          const msg = await msgRes.json();
-          if (msg.embeds && msg.embeds.length > 0) {
-            activeEmbed = msg.embeds[0];
-            // 参加者人数をカウント
-            if (activeEmbed.fields) {
-              activeEmbed.fields.forEach(f => {
-                const matches = (f.value || "").match(/- <@\d+>/g);
-                if (matches) totalJoinedCount += matches.length;
-              });
-            }
+      // チャンネルの直近メッセージから最新の募集カードを探す
+      const channelMsgsRes = await fetch(`https://discord.com/api/v10/channels/${channelId}/messages?limit=20`, {
+        headers: { "Authorization": `Bot ${env.DISCORD_TOKEN}` }
+      });
+      if (channelMsgsRes.ok) {
+        const channelMsgs = await channelMsgsRes.json();
+        const recruitMsg = channelMsgs.find(m => m.author?.bot && m.embeds?.[0]?.title && m.embeds[0].title.includes("定期カスタム"));
+        if (recruitMsg) {
+          activeEmbed = recruitMsg.embeds[0];
+          targetMessageId = recruitMsg.id;
+          if (activeEmbed.fields) {
+            activeEmbed.fields.forEach(f => {
+              const matches = (f.value || "").match(/- <@\d+>/g);
+              if (matches) totalJoinedCount += matches.length;
+            });
           }
         }
       }
     } catch (dbErr) {
-      console.warn("Recruitment DB fetch warning:", dbErr);
+      console.warn("Recruitment fetch warning:", dbErr);
     }
 
     // 3. Guild 内の Scheduled Events からも抽出

@@ -124,25 +124,46 @@ export async function handleButtonInteraction(interaction, env, ctx) {
         field.value = newLines.length > 0 ? newLines.join('\n') : "▫ 参加者: なし";
         targetEmbed.fields[fieldIdx] = field;
 
-        // メッセージ本体の更新
+        // 押されたメッセージ自体の更新
         await sendDiscordMessage(`channels/${channelId}/messages/${msgId}`, botToken, "PATCH", {
           embeds: [targetEmbed],
           components: interaction.message.components
         });
 
-        const statusText = isJoined ? "キャンセル（辞退）" : "エントリー参加";
-        await patchInteractionResponse(appId, token, {
-          content: `✅ ${userMention} **${roomLabel}** への${statusText}を更新しました！`
-        });
+        // チャンネル内の直近メッセージから「募集カード」と「アナウンス通知」の両方を検索して完全同期
+        try {
+          const channelMsgsRes = await fetch(`https://discord.com/api/v10/channels/${channelId}/messages?limit=15`, {
+            headers: { "Authorization": `Bot ${botToken}` }
+          });
+          if (channelMsgsRes.ok) {
+            const channelMsgs = await channelMsgsRes.json();
+            const relatedMsgs = channelMsgs.filter(m => 
+              m.id !== msgId && 
+              m.author?.bot && 
+              m.embeds?.[0]?.title && 
+              (m.embeds[0].title.includes("定期カスタム") || m.embeds[0].title.includes("事前告知") || m.embeds[0].title.includes("メンバー状況"))
+            );
+
+            for (const relMsg of relatedMsgs) {
+              const relEmbed = { ...relMsg.embeds[0] };
+              relEmbed.fields = targetEmbed.fields; // フィールドを完全同期
+              await sendDiscordMessage(`channels/${channelId}/messages/${relMsg.id}`, botToken, "PATCH", {
+                embeds: [relEmbed],
+                components: relMsg.components
+              }).catch(() => {});
+            }
+          }
+        } catch (syncErr) {
+          console.warn("Dual card sync warning:", syncErr);
+        }
+
       } catch (err) {
         console.error("join_periodic error:", err);
-        try {
-          await patchInteractionResponse(appId, token, { content: `❌ **エラー**: ${err.message}` });
-        } catch (e) {}
       }
     })());
 
-    return Response.json({ type: 5, data: { flags: 64 } });
+    // 自分にだけ見えるメッセージを出さず、静かにコンポーネントのみリアルタイム更新
+    return Response.json({ type: 6 });
   }
 
   if (customId.startsWith('proxy_add_init:')) {
