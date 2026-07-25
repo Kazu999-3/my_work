@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Trophy, TrendingUp, TrendingDown, Minus, Swords, Activity } from 'lucide-react';
 import { Spinner, ErrorState } from '../../components/Feedback';
 
@@ -120,16 +120,100 @@ export default function WinrateMatrixPanel() {
     );
   };
 
+  const [sortKey, setSortKey] = useState<'overall' | 'TOP' | 'JG' | 'MID' | 'ADC' | 'SUP' | 'games' | 'mmr' | 'name'>('overall');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+
+  const handleHeaderClick = (key: typeof sortKey) => {
+    if (sortKey === key) {
+      setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc');
+    } else {
+      setSortKey(key);
+      setSortOrder('desc');
+    }
+  };
+
+  const sortedData = useMemo(() => {
+    return [...data].sort((a, b) => {
+      let valA = 0;
+      let valB = 0;
+      let gamesA = 0;
+      let gamesB = 0;
+
+      if (sortKey === 'name') {
+        return sortOrder === 'desc' ? b.name.localeCompare(a.name) : a.name.localeCompare(b.name);
+      } else if (sortKey === 'games') {
+        valA = a.totalGames;
+        valB = b.totalGames;
+      } else if (sortKey === 'mmr') {
+        valA = a.overallMmr;
+        valB = b.overallMmr;
+      } else if (sortKey === 'overall') {
+        valA = a.totalGames > 0 ? (a.totalWins / a.totalGames) * 100 : -1;
+        valB = b.totalGames > 0 ? (b.totalWins / b.totalGames) * 100 : -1;
+        gamesA = a.totalGames;
+        gamesB = b.totalGames;
+      } else {
+        // TOP, JG, MID, ADC, SUP レーン勝率ソート
+        const statsA = a.lanes[sortKey];
+        const statsB = b.lanes[sortKey];
+        valA = statsA && statsA.games > 0 ? (statsA.wins / statsA.games) * 100 : -1;
+        valB = statsB && statsB.games > 0 ? (statsB.wins / statsB.games) * 100 : -1;
+        gamesA = statsA ? statsA.games : 0;
+        gamesB = statsB ? statsB.games : 0;
+      }
+
+      if (valA === valB) {
+        return sortOrder === 'desc' ? gamesB - gamesA : gamesA - gamesB;
+      }
+
+      return sortOrder === 'desc' ? valB - valA : valA - valB;
+    });
+  }, [data, sortKey, sortOrder]);
+
+  const renderSortIndicator = (key: typeof sortKey) => {
+    if (sortKey !== key) return null;
+    return <span className="ml-1 inline-block text-cyan-400 font-black">{sortOrder === 'desc' ? '▼' : '▲'}</span>;
+  };
+
   return (
     <div className="bg-gradient-to-br from-gray-900 via-[#111827] to-gray-900 rounded-3xl p-6 md:p-8 shadow-2xl border border-gray-800/50">
       
-      <div className="flex items-center gap-3 mb-8 pb-4 border-b border-gray-800/50">
-        <div className="bg-indigo-500/20 p-3 rounded-2xl">
-          <Swords className="text-indigo-400" size={24} />
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 pb-4 border-b border-gray-800/50">
+        <div className="flex items-center gap-3">
+          <div className="bg-indigo-500/20 p-3 rounded-2xl">
+            <Swords className="text-indigo-400" size={24} />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-white tracking-tight">レーン別 勝率マトリックス</h2>
+            <p className="text-sm text-gray-400 mt-1">ヘッダーのレーン名や勝率をクリックして、自由自在にランキングをソートできます！</p>
+          </div>
         </div>
-        <div>
-          <h2 className="text-xl font-bold text-white tracking-tight">レーン別 勝率マトリックス</h2>
-          <p className="text-sm text-gray-400 mt-1">全メンバーの各レーンごとの勝率と試合数を比較できます（3戦以上で色付け）</p>
+
+        {/* クイックソートボタン */}
+        <div className="flex flex-wrap items-center gap-1.5 bg-black/40 p-1.5 rounded-2xl border border-white/10 text-xs">
+          <span className="text-[10px] text-gray-500 font-bold px-1.5">並び替え:</span>
+          {([
+            ['overall', '総合勝率'],
+            ['TOP', 'TOP勝率'],
+            ['JG', 'JG勝率'],
+            ['MID', 'MID勝率'],
+            ['ADC', 'ADC勝率'],
+            ['SUP', 'SUP勝率'],
+            ['mmr', 'MMR順']
+          ] as const).map(([k, label]) => (
+            <button
+              key={k}
+              type="button"
+              onClick={() => handleHeaderClick(k as any)}
+              className={`px-2.5 py-1 rounded-xl text-xs font-black transition-all ${
+                sortKey === k
+                  ? 'bg-gradient-to-r from-indigo-500 to-cyan-500 text-black shadow-md shadow-indigo-500/20'
+                  : 'text-gray-400 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              {label} {renderSortIndicator(k as any)}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -137,17 +221,35 @@ export default function WinrateMatrixPanel() {
         <table className="w-full min-w-[800px] border-separate border-spacing-y-2">
           <thead>
             <tr>
-              <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 tracking-wider w-48 sticky left-0 z-20 bg-[#0d0f16]">PLAYER</th>
-              <th className="px-2 py-3 text-center text-xs font-bold text-gray-500 tracking-wider">TOP</th>
-              <th className="px-2 py-3 text-center text-xs font-bold text-gray-500 tracking-wider">JUNGLE</th>
-              <th className="px-2 py-3 text-center text-xs font-bold text-gray-500 tracking-wider">MID</th>
-              <th className="px-2 py-3 text-center text-xs font-bold text-gray-500 tracking-wider">ADC</th>
-              <th className="px-2 py-3 text-center text-xs font-bold text-gray-500 tracking-wider">SUPPORT</th>
-              <th className="px-4 py-3 text-right text-xs font-bold text-gray-500 tracking-wider border-l border-gray-800/50">OVERALL</th>
+              <th 
+                onClick={() => handleHeaderClick('name')}
+                className="px-4 py-3 text-left text-xs font-bold text-gray-400 hover:text-white cursor-pointer tracking-wider w-48 sticky left-0 z-20 bg-[#0d0f16]"
+              >
+                PLAYER {renderSortIndicator('name')}
+              </th>
+              {(['TOP', 'JG', 'MID', 'ADC', 'SUP'] as const).map(role => (
+                <th 
+                  key={role}
+                  onClick={() => handleHeaderClick(role)}
+                  className={`px-2 py-3 text-center text-xs font-bold cursor-pointer transition-colors ${
+                    sortKey === role ? 'text-cyan-300 font-black bg-cyan-500/10 rounded-t-xl' : 'text-gray-400 hover:text-white'
+                  }`}
+                >
+                  {role} {renderSortIndicator(role)}
+                </th>
+              ))}
+              <th 
+                onClick={() => handleHeaderClick('overall')}
+                className={`px-4 py-3 text-right text-xs font-bold cursor-pointer transition-colors border-l border-gray-800/50 ${
+                  sortKey === 'overall' ? 'text-indigo-300 font-black bg-indigo-500/10 rounded-t-xl' : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                OVERALL {renderSortIndicator('overall')}
+              </th>
             </tr>
           </thead>
           <tbody>
-            {data.map((player, idx) => {
+            {sortedData.map((player, idx) => {
               const overallWr = player.totalGames > 0 ? (player.totalWins / player.totalGames) * 100 : 0;
               return (
                 <tr key={player.name} className="group hover:bg-white/[0.02] transition-colors rounded-2xl">
@@ -159,22 +261,22 @@ export default function WinrateMatrixPanel() {
                       <div className="font-bold text-gray-200">{player.name}</div>
                     </div>
                   </td>
-                  <td className="px-1 py-2 align-middle border-y border-gray-800/30 bg-gray-900/20">
+                  <td className={`px-1 py-2 align-middle border-y border-gray-800/30 ${sortKey === 'TOP' ? 'bg-cyan-500/5' : 'bg-gray-900/20'}`}>
                     {renderCell(player.lanes.TOP)}
                   </td>
-                  <td className="px-1 py-2 align-middle border-y border-gray-800/30 bg-gray-900/20">
+                  <td className={`px-1 py-2 align-middle border-y border-gray-800/30 ${sortKey === 'JG' ? 'bg-cyan-500/5' : 'bg-gray-900/20'}`}>
                     {renderCell(player.lanes.JG)}
                   </td>
-                  <td className="px-1 py-2 align-middle border-y border-gray-800/30 bg-gray-900/20">
+                  <td className={`px-1 py-2 align-middle border-y border-gray-800/30 ${sortKey === 'MID' ? 'bg-cyan-500/5' : 'bg-gray-900/20'}`}>
                     {renderCell(player.lanes.MID)}
                   </td>
-                  <td className="px-1 py-2 align-middle border-y border-gray-800/30 bg-gray-900/20">
+                  <td className={`px-1 py-2 align-middle border-y border-gray-800/30 ${sortKey === 'ADC' ? 'bg-cyan-500/5' : 'bg-gray-900/20'}`}>
                     {renderCell(player.lanes.ADC)}
                   </td>
-                  <td className="px-1 py-2 align-middle border-y border-gray-800/30 bg-gray-900/20">
+                  <td className={`px-1 py-2 align-middle border-y border-gray-800/30 ${sortKey === 'SUP' ? 'bg-cyan-500/5' : 'bg-gray-900/20'}`}>
                     {renderCell(player.lanes.SUP)}
                   </td>
-                  <td className="px-4 py-3 align-middle text-right rounded-r-2xl border-y border-r border-gray-800/30 bg-gray-900/20 border-l border-l-gray-800/50">
+                  <td className={`px-4 py-3 align-middle text-right rounded-r-2xl border-y border-r border-gray-800/30 border-l border-l-gray-800/50 ${sortKey === 'overall' ? 'bg-indigo-500/5' : 'bg-gray-900/20'}`}>
                     <div className="flex flex-col items-end">
                       <div className={`text-lg font-black ${overallWr >= 55 ? 'text-blue-400' : overallWr < 45 && player.totalGames > 0 ? 'text-red-400' : 'text-gray-200'}`}>
                         {player.totalGames > 0 ? `${overallWr.toFixed(1)}%` : '-'}
