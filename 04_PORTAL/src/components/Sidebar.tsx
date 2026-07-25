@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Shield, LayoutDashboard, Swords, BookOpen, BookHeart, Trophy, Users, HeartHandshake, ScrollText, ListVideo, ChevronLeft, ChevronRight, Coins, Brain, Trees, Sparkles, Search, MoreHorizontal, X as XIcon } from 'lucide-react';
@@ -96,22 +96,26 @@ export default function Sidebar() {
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
 
   useEffect(() => {
-    // クッキーまたはローカル認証状態から管理者ログイン状態を検出
+    // クッキーの存在で即時判定（HttpOnlyでない場合のショートカット）
     const hasAdminCookie = typeof document !== 'undefined' && document.cookie.includes('admin_session=');
     if (hasAdminCookie) {
       setIsAdminLoggedIn(true);
-    } else {
-      // API検証
-      fetch('/api/auth/verify', { credentials: 'include' })
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.authenticated) {
-            setIsAdminLoggedIn(true);
-          }
-        })
-        .catch(() => {});
     }
-  }, [pathname]);
+    // HttpOnly Cookie は JS から見えないので、API で正確に検証する
+    fetch('/api/auth/verify', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({}),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.valid) {
+          setIsAdminLoggedIn(true);
+        }
+      })
+      .catch(() => {});
+  }, []); // 初回マウント時のみ検証（pathname変更ごとにAPIを叩く必要はない）
 
   // ページ遷移したらモバイルの「その他」シートは閉じる
   useEffect(() => { setShowMobileMore(false); }, [pathname]);
