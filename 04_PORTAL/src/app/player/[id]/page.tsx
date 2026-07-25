@@ -288,17 +288,37 @@ export default function PlayerMyPage() {
     return '';
   }, [champPool]);
 
-  // ヘッダー表示用メインタグ (Unknownを回避し、得意キャラ名 or 主力ロール名)
+  // ヘッダー表示用メインタグ (history & champPool から Unknown を100%排除して得意キャラ名 or 主力ロール名を表示)
   const mainDisplayTag = useMemo(() => {
-    const validChamps = champPool.filter(c => c.name && c.name !== 'Unknown');
+    // 1. history から直接有効なチャンピオンをカウント
+    if (history && history.length > 0) {
+      const counts: Record<string, number> = {};
+      history.forEach((m: any) => {
+        const c = m.champion;
+        if (c && c !== 'Unknown' && c !== 'unknown' && c !== 'null' && c !== 'undefined') {
+          counts[c] = (counts[c] || 0) + 1;
+        }
+      });
+      const sortedByHistory = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+      if (sortedByHistory.length > 0) {
+        return sortedByHistory[0][0];
+      }
+    }
+
+    // 2. champPool から有効なチャンピオンを取得
+    const validChamps = champPool.filter(c => c.name && c.name !== 'Unknown' && c.name !== 'unknown');
     if (validChamps.length > 0) {
       return validChamps[0].name;
     }
+
+    // 3. 希望レーン
     if (player?.role_preferences?.primary && player.role_preferences.primary !== 'ALL') {
       return player.role_preferences.primary;
     }
+
+    // 4. フォールバック
     return 'FLEX';
-  }, [champPool, player]);
+  }, [history, champPool, player]);
 
   // Hextech 5軸能力パラメーター計算 (キャリー力/集団戦/安定度/プール広さ/勝負強さ) - リアル戦績基準の厳密計算
   const hextechRadarData = useMemo(() => {
@@ -565,7 +585,7 @@ export default function PlayerMyPage() {
                   <h1 className="text-3xl md:text-4xl font-black tracking-tight bg-gradient-to-r from-white via-gray-100 to-gray-300 bg-clip-text text-transparent">
                     {player.name}
                   </h1>
-                  {mainDisplayTag && (
+                  {mainDisplayTag && mainDisplayTag !== 'Unknown' && mainDisplayTag !== 'unknown' && (
                     <span className="bg-cyan-500/20 border border-cyan-500/30 text-cyan-300 text-[10px] font-black px-2.5 py-0.5 rounded-full backdrop-blur-md">
                       Main: {mainDisplayTag}
                     </span>
