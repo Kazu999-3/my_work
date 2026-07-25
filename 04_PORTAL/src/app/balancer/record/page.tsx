@@ -173,35 +173,41 @@ function CustomRecordPageContent() {
             const data = resData.data;
             
             // スタッツ＆勝敗の反映
-            // サイド(BLUE/RED)はスクショの見た目ではなく「チーム分け時に決めたサイド」を正とする。
-            // 解析結果は『勝者ブロック/敗者ブロック』として扱い、名前照合でどちらのサイドが勝ったかを判定する。
+            // スクショの上5行＝勝利チーム(VICTORY BLOCK)
+            // 勝利ブロックのプレイヤー名と、名簿(stats)のBLUE/REDチーム名を照合して勝者を確定する。
             if (data.players && Array.isArray(data.players)) {
-              let bluePlayers = data.players.filter((p: any) => p.team === 'BLUE');
-              let redPlayers = data.players.filter((p: any) => p.team === 'RED');
-              let resolvedWinner: 'BLUE' | 'RED' | null =
-                (data.winningTeam === 'BLUE' || data.winningTeam === 'RED') ? data.winningTeam : null;
+              const winnerBlock = data.players.slice(0, 5);
+              const loserBlock = data.players.slice(5, 10);
 
-              // 事前入力済みのチーム名簿（バランサーのサイド割当＝真実）と照合
+              // 事前入力済みの名簿（バランサーのサイド割当＝真実）と照合
               const knownBlue = new Set(stats.filter(s => s.team === 'BLUE' && s.name).map(s => s.name));
               const knownRed = new Set(stats.filter(s => s.team === 'RED' && s.name).map(s => s.name));
-              if (knownBlue.size >= 3 && knownRed.size >= 3 && resolvedWinner) {
-                const winnerBlock = data.players.filter((p: any) => p.team === data.winningTeam);
-                const loserBlock = data.players.filter((p: any) => p.team !== data.winningTeam);
-                let winInBlue = 0, winInRed = 0;
-                winnerBlock.forEach((p: any) => {
-                  const m = matchPlayer(p.name, playersPool);
-                  if (m && knownBlue.has(m)) winInBlue++;
-                  if (m && knownRed.has(m)) winInRed++;
-                });
-                if (winInBlue !== winInRed) {
-                  // 名簿と照合した結果でサイドを確定（スクショのラベルより優先）
-                  resolvedWinner = winInBlue > winInRed ? 'BLUE' : 'RED';
-                  bluePlayers = resolvedWinner === 'BLUE' ? winnerBlock : loserBlock;
-                  redPlayers = resolvedWinner === 'RED' ? winnerBlock : loserBlock;
+
+              let winInBlue = 0;
+              let winInRed = 0;
+
+              winnerBlock.forEach((p: any) => {
+                const m = matchPlayer(p.name, playersPool);
+                if (m) {
+                  if (knownBlue.has(m)) winInBlue++;
+                  if (knownRed.has(m)) winInRed++;
                 }
+              });
+
+              // 照合結果から勝者を判定。照合できない場合は AI の winningTeam 判定を使用。
+              let resolvedWinner: 'BLUE' | 'RED' = 'BLUE';
+              if (winInRed > winInBlue) {
+                resolvedWinner = 'RED';
+              } else if (winInBlue > winInRed) {
+                resolvedWinner = 'BLUE';
+              } else if (data.winningTeam === 'RED' || data.winningTeam === 'BLUE') {
+                resolvedWinner = data.winningTeam;
               }
 
-              if (resolvedWinner) setWinningTeam(resolvedWinner);
+              setWinningTeam(resolvedWinner);
+
+              const bluePlayers = resolvedWinner === 'BLUE' ? winnerBlock : loserBlock;
+              const redPlayers = resolvedWinner === 'RED' ? winnerBlock : loserBlock;
 
               setStats(prev => {
                 return prev.map((currentStat, idx) => {
