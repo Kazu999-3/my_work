@@ -122,17 +122,9 @@ export default function Sidebar() {
   // ページ遷移したらモバイルの「その他」シートは閉じる
   useEffect(() => { setShowMobileMore(false); }, [pathname]);
 
-  // 管理者エリアまたは管理者ログイン中かを判定
-  const isAdminArea =
-    isAdminLoggedIn ||
-    pathname === '/' ||
-    pathname.startsWith('/ktm-admin') ||
-    pathname.startsWith('/coach') ||
-    pathname.startsWith('/matchups') ||
-    pathname.startsWith('/champions') ||
-    pathname.startsWith('/design') ||
-    pathname.startsWith('/lane-guides') ||
-    pathname.startsWith('/admin');
+  // 管理者ログイン済みの場合のみ管理者メニュー＆切り替えタブを表示
+  // 未ログインの場合は常に一般メニュー(MENU_ITEMS)のみ
+  const isAdminArea = isAdminLoggedIn;
 
   // 表示するメニュー項目の決定
   const activeMenuItems = isAdminArea 
