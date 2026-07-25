@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import Script from "next/script";
 import "./globals.css";
 import Sidebar from "../components/Sidebar";
 import PwaRegister from "../components/PwaRegister";
@@ -37,6 +38,20 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ja">
+      <head>
+        {/* 
+          beforeinstallprompt を React hydration 前にグローバルキャッチ。
+          Chrome はページ読み込み直後（React マウント前）にこのイベントを発火するため、
+          useEffect 内のリスナーでは取りこぼす。ここでグローバル変数に退避しておく。
+        */}
+        <Script id="pwa-early-catch" strategy="beforeInteractive">{`
+          window.__pwaPrompt = null;
+          window.addEventListener('beforeinstallprompt', function(e) {
+            e.preventDefault();
+            window.__pwaPrompt = e;
+          });
+        `}</Script>
+      </head>
       <body className="antialiased bg-[#06070a] text-white flex min-h-screen">
         <PwaRegister />
         <Toaster />

@@ -49,16 +49,18 @@ const MENU_ITEMS = [
 
 // 管理者ログイン時：管理者機能タブ用
 // セクション分けで見通し向上。section プロパティでグループ区切りを表現。
+// ※ スマホ下部ナビではPRIMARY枠（先頭5件）が常設表示されるため、
+//   ナレッジを5番目以内に配置する。
 const ADMIN_ONLY_MENU_ITEMS = [
   // ── 📊 大会運営 ──
   { id: 'dashboard', label: 'ダッシュボード', icon: LayoutDashboard, href: '/admin/dashboard', color: 'text-white', activeBg: 'bg-white/10', section: '大会運営' },
   { id: 'ktm-admin', label: '⚙️ 管理者専用', icon: Shield, href: '/ktm-admin', color: 'text-indigo-400', activeBg: 'bg-indigo-400/15' },
   // ── 📖 攻略ハブ ──
-  { id: 'champions', label: 'チャンピオン辞典', icon: BookHeart, href: '/champions', color: 'text-[#c89b3c]', activeBg: 'bg-[#c89b3c]/15', section: '攻略ハブ' },
-  { id: 'coach', label: 'パーソナルコーチ', icon: Sparkles, href: '/coach', color: 'text-indigo-300', activeBg: 'bg-indigo-500/15' },
+  { id: 'champions', label: '辞典', icon: BookHeart, href: '/champions', color: 'text-[#c89b3c]', activeBg: 'bg-[#c89b3c]/15', section: '攻略ハブ' },
+  { id: 'knowledge-admin', label: 'ナレッジ', icon: Brain, href: '/admin/knowledge', color: 'text-pink-400', activeBg: 'bg-pink-400/15' },
+  // ── 🔍 分析 ──
+  { id: 'coach', label: 'コーチ', icon: Sparkles, href: '/coach', color: 'text-indigo-300', activeBg: 'bg-indigo-500/15', section: '分析・検索' },
   { id: 'search', label: '横断検索', icon: Search, href: '/search', color: 'text-[#a78bfa]', activeBg: 'bg-[#a78bfa]/15' },
-  // ── ⚙️ コンテンツ管理 ──
-  { id: 'knowledge-admin', label: '🗂️ ナレッジベース', icon: Brain, href: '/admin/knowledge', color: 'text-pink-400', activeBg: 'bg-pink-400/15', section: 'コンテンツ管理' },
 ];
 
 // 管理者ログイン時：一般機能タブ用 (過去の試合履歴を除外)
@@ -280,9 +282,10 @@ export default function Sidebar() {
         </div>
       </aside>
 
-      {/* スマホ用ボトムナビ: 主要4件を固定表示し、残りは「その他」シートに格納して横スクロールでの見切れを解消 */}
+      {/* スマホ用ボトムナビ: 主要項目を固定表示し、残りは「その他」シートに格納 */}
       {(() => {
-        const PRIMARY = 4;
+        // 管理者メニューは項目が多いため5枠、一般は4枠
+        const PRIMARY = isAdminArea ? 5 : 4;
         const primaryItems = activeMenuItems.slice(0, PRIMARY);
         const overflowItems = activeMenuItems.slice(PRIMARY);
         const hasMore = overflowItems.length > 0 || isAdminArea;

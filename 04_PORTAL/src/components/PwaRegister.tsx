@@ -3,9 +3,17 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { Download, X, HelpCircle } from 'lucide-react';
 
+// TypeScript 用: グローバル window に __pwaPrompt を定義
+declare global {
+  interface Window {
+    __pwaPrompt: any;
+  }
+}
+
 // Chrome PWA インストール対応コンポーネント
-// - beforeinstallprompt を useRef で保持（staleクロージャ防止）
-// - prompt が呼べない場合は手動インストールガイドを表示
+// - layout.tsx の beforeInteractive スクリプトで早期キャッチした window.__pwaPrompt を使用
+// - useRef で保持してstaleクロージャを回避
+// - prompt が呼べないブラウザでは手動ガイドモーダルを表示
 export default function PwaRegister() {
   const promptRef = useRef<any>(null);
   const [showInstallBanner, setShowInstallBanner] = useState(false);
@@ -35,18 +43,25 @@ export default function PwaRegister() {
       }
     }
 
-    // Chrome PWA インストールイベントのキャッチ
+    // layout.tsx の早期キャッチスクリプトが既に beforeinstallprompt を捕捉済みか確認
+    if (window.__pwaPrompt) {
+      promptRef.current = window.__pwaPrompt;
+      setShowInstallBanner(true);
+    }
+
+    // 今後の発火に備えたリスナー（SPA遷移後に再発火するケースに対応）
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
-      promptRef.current = e; // useRef で保持（staleクロージャ回避）
+      promptRef.current = e;
+      window.__pwaPrompt = e; // グローバルにも同期
       setShowInstallBanner(true);
     };
-
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
     // インストール完了
     const handleInstalled = () => {
       promptRef.current = null;
+      window.__pwaPrompt = null;
       setIsInstalled(true);
       setShowInstallBanner(false);
     };
@@ -62,17 +77,19 @@ export default function PwaRegister() {
   }, []);
 
   const handleInstallClick = useCallback(async () => {
-    const prompt = promptRef.current;
+    // まず useRef、次にグローバル変数をチェック
+    const prompt = promptRef.current || window?.__pwaPrompt;
     if (prompt) {
       try {
         await prompt.prompt();
         const choice = await prompt.userChoice;
         if (choice.outcome === 'accepted') {
           promptRef.current = null;
+          window.__pwaPrompt = null;
           setShowInstallBanner(false);
           return;
         }
-        // ユーザーがキャンセルした場合 → ガイドは出さずそのまま
+        // ユーザーがキャンセル → バナーはそのまま
         return;
       } catch (err) {
         console.error('PWA prompt error:', err);
