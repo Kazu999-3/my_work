@@ -18,14 +18,10 @@ export async function GET(request: Request) {
       return NextResponse.json(cached.data);
     }
 
-    // 1. 指定したプレイヤーの全試合データを取得（winning_teamも取得）
+    // 1. 指定したプレイヤーの全試合参加データを取得
     const { data: myMatches, error: myError } = await supabase
       .from('ktm_match_participants')
-      .select(`
-        match_id,
-        team,
-        ktm_matches!inner(winning_team)
-      `)
+      .select('match_id, team')
       .eq('player_name', playerName);
 
     if (myError) throw myError;
@@ -33,26 +29,32 @@ export async function GET(request: Request) {
       return NextResponse.json({ success: true, chemistry: [], rivals: [] });
     }
 
-    // match_id リストを作成
-    const matchIds = myMatches.map((m: any) => m.match_id);
+    const matchIds = Array.from(new Set(myMatches.map((m: any) => m.match_id)));
+
+    // 試合勝敗を一括取得
+    const { data: matches, error: mErr } = await supabase
+      .from('ktm_matches')
+      .select('id, winning_team')
+      .in('id', matchIds);
+
+    if (mErr) throw mErr;
+
+    const winMap = new Map<number, string>();
+    (matches || []).forEach((m: any) => winMap.set(m.id, m.winning_team));
 
     // 2. それらの試合に同席した全員のデータを一括取得
     const { data: allParticipants, error: allError } = await supabase
       .from('ktm_match_participants')
       .select('match_id, player_name, team')
       .in('match_id', matchIds)
-      .neq('player_name', playerName); // 自分自身は除く
+      .neq('player_name', playerName);
 
     if (allError) throw allError;
 
-    // 3. マップ化して集計を容易にする
-    // myMatchesMap[match_id] = { team, isWin }
+    // 3. マップ化
     const myMatchesMap: Record<number, { team: string, isWin: boolean }> = {};
     myMatches.forEach((m: any) => {
-      const winningTeam = Array.isArray(m.ktm_matches) 
-        ? (m.ktm_matches[0] as any)?.winning_team 
-        : (m.ktm_matches as any)?.winning_team;
-
+      const winningTeam = winMap.get(m.match_id);
       myMatchesMap[m.match_id] = {
         team: m.team,
         isWin: m.team === winningTeam

@@ -481,9 +481,10 @@ export default function PlayerMyPage() {
           );
         }
 
-        // 最終フォールバック (安全策)
         if (!pData) {
-          pData = allPlayers[0];
+          console.error("Player not found for:", decodedId);
+          setLoading(false);
+          return;
         }
 
         setPlayer(pData);

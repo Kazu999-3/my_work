@@ -19,42 +19,54 @@ export async function GET(request: Request) {
       return NextResponse.json(cached.data);
     }
 
-    // プレイヤーの現在MMR等の情報を取得
+    // 1. プレイヤー情報を取得
     const { data: dbPlayer, error: pError } = await supabase
       .from('ktm_players')
       .select('*')
       .eq('name', playerName)
-      .single();
+      .maybeSingle();
 
     if (pError || !dbPlayer) {
-      // プレイヤーがいない場合は空データを返す
       return NextResponse.json({ stats: {}, matchupStats: {}, history: [] });
     }
 
-    // KTMの試合履歴を取得 (勝敗判定のために ktm_matches の winning_team も取得)
-    const { data: playerMatches, error } = await supabase
+    // 2. KTMの参加試合履歴を取得
+    const { data: playerMatches, error: pmErr } = await supabase
       .from('ktm_match_participants')
-      .select(`
-        match_id,
-        role,
-        champion_name,
-        team,
-        kills,
-        deaths,
-        assists,
-        mmr_delta,
-        mmr_breakdown,
-        ktm_matches!inner(created_at, winning_team, ktm_match_participants(role, team, champion_name, player_name))
-      `)
+      .select('match_id, role, champion_name, team, kills, deaths, assists, mmr_delta, mmr_breakdown')
       .eq('player_name', playerName);
 
-    if (error) {
-      throw error;
-    }
+    if (pmErr) throw pmErr;
 
     if (!playerMatches || playerMatches.length === 0) {
-      return NextResponse.json({ stats: {}, matchupStats: {} }); // まだ試合データがない場合
+      return NextResponse.json({ stats: {}, matchupStats: {}, history: [] });
     }
+
+    const matchIds = Array.from(new Set(playerMatches.map((m: any) => m.match_id)));
+
+    // 3. 該当試合の情報と参加者を一括取得
+    const { data: matches, error: mErr } = await supabase
+      .from('ktm_matches')
+      .select('id, created_at, winning_team')
+      .in('id', matchIds);
+
+    if (mErr) throw mErr;
+
+    const { data: allParts, error: apErr } = await supabase
+      .from('ktm_match_participants')
+      .select('match_id, role, team, champion_name, player_name')
+      .in('match_id', matchIds);
+
+    if (apErr) throw apErr;
+
+    const matchMap = new Map<number, any>();
+    (matches || []).forEach((m: any) => matchMap.set(m.id, m));
+
+    const partsMap = new Map<number, any[]>();
+    (allParts || []).forEach((p: any) => {
+      if (!partsMap.has(p.match_id)) partsMap.set(p.match_id, []);
+      partsMap.get(p.match_id)!.push(p);
+    });
 
     // 集計用オブジェクトの準備
     const laneStats: Record<string, { totalGames: number, totalWins: number, champions: Record<string, { games: number, wins: number }> }> = {};
@@ -70,7 +82,10 @@ export async function GET(request: Request) {
       const role = row.role?.toUpperCase();
       if (!validRoles.includes(role)) return;
 
-      const isWin = row.team === row.ktm_matches.winning_team;
+      const match = matchMap.get(row.match_id);
+      if (!match) return;
+
+      const isWin = row.team === match.winning_team;
       const champ = row.champion_name || 'Unknown';
 
       // 1. レーン別・チャンピオン別の集計
@@ -84,13 +99,11 @@ export async function GET(request: Request) {
       if (isWin) laneStats[role].champions[champ].wins += 1;
 
       // 2. 対面（マッチアップ）の集計
-      // 同じ試合の全参加者から、同じロールで別チームのプレイヤーを探す
-      const allParticipants = row.ktm_matches.ktm_match_participants || [];
+      const allParticipants = partsMap.get(row.match_id) || [];
       const opponent = allParticipants.find((p: any) => p.role?.toUpperCase() === role && p.team !== row.team);
       
       if (opponent && opponent.champion_name) {
         const oppChamp = opponent.champion_name;
-        const matchupKey = `${champ} vs ${oppChamp}`; // "MyChamp vs OppChamp"
         
         if (!matchupStats[oppChamp]) {
             matchupStats[oppChamp] = { games: 0, wins: 0 };
@@ -141,23 +154,21 @@ export async function GET(request: Request) {
     // 逆算を行うために、すべてのマッチを新しい順にソート
     const sortedMatches = [...playerMatches]
       .sort((a: any, b: any) => {
-         const dateA = new Date(a.ktm_matches.created_at || 0).getTime();
-         const dateB = new Date(b.ktm_matches.created_at || 0).getTime();
+         const dateA = new Date(matchMap.get(a.match_id)?.created_at || 0).getTime();
+         const dateB = new Date(matchMap.get(b.match_id)?.created_at || 0).getTime();
          return dateB - dateA; // 降順（新しい順）
       });
 
     // 現在のMMR値から逆算を開始
-    let currentTop = dbPlayer.mmr_top || 1200;
-    let currentJg = dbPlayer.mmr_jg || 1200;
-    let currentMid = dbPlayer.mmr_mid || 1200;
-    let currentAdc = dbPlayer.mmr_adc || 1200;
-    let currentSup = dbPlayer.mmr_sup || 1200;
+    let currentTop = dbPlayer?.mmr_top || 1200;
+    let currentJg = dbPlayer?.mmr_jg || 1200;
+    let currentMid = dbPlayer?.mmr_mid || 1200;
+    let currentAdc = dbPlayer?.mmr_adc || 1200;
+    let currentSup = dbPlayer?.mmr_sup || 1200;
 
-    // 代表MMR(TOTAL)もリビルド/ライブと同じ「試合数重み付け」で逆算する(P-04)。
-    // 現在のレーン別試合数から新しい試合順に減算しながら、その時点の重み付き平均を出す。
     const laneG: Record<string, number> = {
-      TOP: dbPlayer.games_top || 0, JG: dbPlayer.games_jg || 0, MID: dbPlayer.games_mid || 0,
-      ADC: dbPlayer.games_adc || 0, SUP: dbPlayer.games_sup || 0,
+      TOP: dbPlayer?.games_top || 0, JG: dbPlayer?.games_jg || 0, MID: dbPlayer?.games_mid || 0,
+      ADC: dbPlayer?.games_adc || 0, SUP: dbPlayer?.games_sup || 0,
     };
     const weightedTotal = () => {
       let w = 0, g = 0;
@@ -167,7 +178,8 @@ export async function GET(request: Request) {
     };
 
     const formattedHistory = sortedMatches.map((row: any) => {
-      // この試合終了時点のMMRを格納
+      const match = matchMap.get(row.match_id);
+
       const matchMmr = {
         TOP: currentTop,
         JG: currentJg,
@@ -177,7 +189,6 @@ export async function GET(request: Request) {
         TOTAL: weightedTotal()
       };
 
-      // 次の過去試合（時間を戻す）のために、この試合での変動量を引く
       const role = row.role?.toUpperCase();
       const delta = row.mmr_delta || 0;
       if (role === 'TOP') currentTop -= delta;
@@ -185,26 +196,25 @@ export async function GET(request: Request) {
       else if (role === 'MID') currentMid -= delta;
       else if (role === 'ADC') currentAdc -= delta;
       else if (role === 'SUP') currentSup -= delta;
-      if (laneG[role] !== undefined && laneG[role] > 0) laneG[role] -= 1; // 過去へ戻るので試合数も減算
+      if (laneG[role] !== undefined && laneG[role] > 0) laneG[role] -= 1;
 
-      // 同ロール・別チームの対面相手を特定（ツールチップ表示用）
-      const parts = row.ktm_matches?.ktm_match_participants || [];
+      const parts = partsMap.get(row.match_id) || [];
       const opp = parts.find((p: any) => p.role?.toUpperCase() === role && p.team !== row.team);
 
       return {
         matchId: row.match_id,
-        date: row.ktm_matches.created_at,
+        date: match?.created_at || null,
         role: row.role,
         champion: row.champion_name || 'Unknown',
         kills: row.kills || 0,
         deaths: row.deaths || 0,
         assists: row.assists || 0,
         mmrDelta: delta,
-        mmrBreakdown: row.mmr_breakdown || null, // M-03
-        isWin: row.team === row.ktm_matches.winning_team,
+        mmrBreakdown: row.mmr_breakdown || null,
+        isWin: match ? row.team === match.winning_team : false,
         opponentChampion: opp?.champion_name || null,
         opponentName: opp?.player_name || null,
-        mmrHistory: matchMmr // 各レーンのMMR推移をマージ
+        mmrHistory: matchMmr
       };
     }).slice(0, 20); // 履歴表示用に直近20件を返す
 
