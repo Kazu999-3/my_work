@@ -7,7 +7,7 @@ export const CONFIG = {
   // レート帯のしきい値(代表MMR)。募集通知で「この線の上下に何人いるか」を出す。
   // 1350 = GOLD IV の下限（＝これ未満はシルバー以下）
   MMR_TIER_THRESHOLD: 1350,
-  MATCH_CHANNEL_ID: "1487077567939743995",
+  MATCH_CHANNEL_ID: "1528646515533287497",
   STATS_CHANNEL_ID: "1489910822368186468",
   NOTIFICATION_ROLE_ID: "1513531261950492833",
   // ポータルURLのフォールバック値。以前は複数ファイルにバラバラの値

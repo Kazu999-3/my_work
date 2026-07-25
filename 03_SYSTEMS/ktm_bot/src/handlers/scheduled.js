@@ -541,7 +541,7 @@ async function sendEventUsersNotification(env, options = {}) {
   const isAdvanceNotice = lookaheadHours > 48;
   console.log(`Starting event users extraction notification... (lookahead: ${lookaheadHours}h)`);
   try {
-    const channelId = CONFIG.MATCH_CHANNEL_ID || "1487077567939743995";
+    const channelId = CONFIG.MATCH_CHANNEL_ID || CONFIG.PERIODIC_RECRUIT_CHANNEL_ID || "1528646515533287497";
     
     // 1. チャンネル情報から Guild ID を動的に取得
     const channelRes = await fetchWithRetry(`https://discord.com/api/v10/channels/${channelId}`, {
