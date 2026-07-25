@@ -73,6 +73,74 @@ export async function handleButtonInteraction(interaction, env, ctx) {
     })());
 
     return Response.json({ type: 5, data: { flags: 64 } });
+  if (customId.startsWith('join_periodic:')) {
+    const roomType = customId.split(':')[1]; // silver or gold
+    const roomLabel = roomType === 'silver' ? '🛡️ シルバー以下部門' : '👑 ゴルプラ以下部門';
+    const userMention = `<@${userId}>`;
+
+    ctx.waitUntil((async () => {
+      try {
+        const msgId = interaction.message.id;
+        const channelId = interaction.channel_id;
+
+        // 元メッセージの取得
+        const msgRes = await fetch(`https://discord.com/api/v10/channels/${channelId}/messages/${msgId}`, {
+          headers: { "Authorization": `Bot ${botToken}` }
+        });
+        if (!msgRes.ok) throw new Error("メッセージ取得失敗");
+
+        const msg = await msgRes.json();
+        const embeds = msg.embeds || [];
+        if (embeds.length === 0) throw new Error("Embedが見つかりません");
+
+        const targetEmbed = { ...embeds[0] };
+        targetEmbed.fields = targetEmbed.fields ? [...targetEmbed.fields] : [];
+
+        // フィールド1: シルバー以下, フィールド2: ゴルプラ以下
+        const fieldIdx = roomType === 'silver' ? 0 : 1;
+        if (!targetEmbed.fields[fieldIdx]) {
+          targetEmbed.fields[fieldIdx] = { name: roomLabel, value: "▫ 参加者: なし", inline: false };
+        }
+
+        const field = { ...targetEmbed.fields[fieldIdx] };
+        let currentText = field.value || "";
+
+        // すでに参加しているか判定（トグル処理）
+        let isJoined = currentText.includes(userMention);
+        let newLines = currentText.split('\n').filter(l => !l.includes('▫ 参加者: なし'));
+
+        if (isJoined) {
+          // 解除
+          newLines = newLines.filter(l => !l.includes(userMention));
+        } else {
+          // 追加
+          newLines.push(`- ${userMention}`);
+        }
+
+        const count = newLines.filter(l => l.startsWith('- ')).length;
+        field.name = `${roomType === 'silver' ? '🛡️ 【シルバー以下部門】' : '👑 【ゴルプラ以下部門】'} (${count}/10名)`;
+        field.value = newLines.length > 0 ? newLines.join('\n') : "▫ 参加者: なし";
+        targetEmbed.fields[fieldIdx] = field;
+
+        // メッセージ本体の更新
+        await sendDiscordMessage(`channels/${channelId}/messages/${msgId}`, botToken, "PATCH", {
+          embeds: [targetEmbed],
+          components: interaction.message.components
+        });
+
+        const statusText = isJoined ? "キャンセル（辞退）" : "エントリー参加";
+        await patchInteractionResponse(appId, token, {
+          content: `✅ ${userMention} **${roomLabel}** への${statusText}を更新しました！`
+        });
+      } catch (err) {
+        console.error("join_periodic error:", err);
+        try {
+          await patchInteractionResponse(appId, token, { content: `❌ **エラー**: ${err.message}` });
+        } catch (e) {}
+      }
+    })());
+
+    return Response.json({ type: 5, data: { flags: 64 } });
   }
 
   if (customId.startsWith('proxy_add_init:')) {

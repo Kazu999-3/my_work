@@ -309,7 +309,7 @@ async function postWeeklyRecruitment(env) {
     const startUtcMs = Date.UTC(jstNow.getUTCFullYear(), jstNow.getUTCMonth(), targetDate, 12, 0, 0, 0);
 
     const startAtIso = new Date(startUtcMs).toISOString();
-    const startJstDate = new Date(startUtcMs + 9 * 3600 * 1000); // 表示用(JST)
+    const startJstDate = new Date(startUtcMs + 9 * 3600 * 1000);
     const dateLabel = `${startJstDate.getUTCMonth() + 1}/${startJstDate.getUTCDate()}(土)`;
 
     // 二重投稿防止: 同じ開始時刻のopen募集が既にあればスキップ
@@ -320,47 +320,102 @@ async function postWeeklyRecruitment(env) {
     }
 
     const ownerId = CONFIG.ADMIN_ID;
+    
+    // 2部屋統合用メタデータ
     const metadata = {
-      mode: 'カスタム', time: `${dateLabel} 21:00`, maxCount: 10,
-      memo: `【定期カスタム】${dateLabel} 21:00 開催予定です！参加できる人はボタンで表明お願いします🎮`,
-      owner: ownerId, createdAt: new Date().toISOString(),
-      joined: [], spectating: [],
-      roles: { Top: null, Jg: null, Mid: null, Adc: null, Sup: null },
+      mode: '定期カスタム',
+      time: `${dateLabel} 21:00`,
+      maxCount: 20,
+      memo: `【定期カスタム】${dateLabel} 21:00 開催予定！下のボタンからご希望の部門に参加してください🎮`,
+      owner: ownerId,
+      createdAt: new Date().toISOString(),
+      silverJoined: [],
+      goldJoined: [],
       names: { [ownerId]: 'KTM定期カスタム' }
     };
 
     const targetChannelId = CONFIG.PERIODIC_RECRUIT_CHANNEL_ID || CONFIG.RECRUIT_CHANNEL_ID;
+
+    // 2部屋統合 Embed
+    const embed = {
+      title: `⚔️ KTM 定期カスタム開催告知 [${dateLabel} 21:00]`,
+      description: `毎週末恒例の定期カスタム戦です！\n下記の部門ボタンを押して参加エントリーをお願いします。`,
+      color: 0xc89b3c, // 琥珀色
+      fields: [
+        {
+          name: `🛡️ 【シルバー以下部門】 (0/10名)`,
+          value: `▫ 参加者: なし\n※対象: 初心者〜シルバーレベル`,
+          inline: false
+        },
+        {
+          name: `👑 【ゴルプラ以下部門】 (0/10名)`,
+          value: `▫ 参加者: なし\n※対象: ゴールド〜プラチナレベル`,
+          inline: false
+        }
+      ],
+      footer: { text: `日時: ${dateLabel} 21:00〜 | 主催: KTM運営` },
+      timestamp: new Date().toISOString()
+    };
+
+    // 2部屋それぞれの参加ボタン
+    const components = [
+      {
+        type: 1, // Action Row
+        components: [
+          {
+            type: 2,
+            label: "🛡️ シルバー以下に参加",
+            style: 3, // Green
+            custom_id: "join_periodic:silver"
+          },
+          {
+            type: 2,
+            label: "👑 ゴルプラ以下に参加",
+            style: 1, // Primary (Blue)
+            custom_id: "join_periodic:gold"
+          },
+          {
+            type: 2,
+            label: "🔔 通知設定",
+            style: 2, // Gray
+            custom_id: "toggle_recruit_notification"
+          }
+        ]
+      }
+    ];
+
     const res = await fetchWithRetry(`https://discord.com/api/v10/channels/${targetChannelId}/messages`, {
       method: 'POST',
       headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        content: createMessageContent(metadata),
-        embeds: [createRecruitEmbed(metadata)],
-        components: createRecruitButtons(metadata)
+        content: `📢 **【定期カスタム募集】${dateLabel} 21:00 開催！** <@&${CONFIG.NOTIFICATION_ROLE_ID}>`,
+        embeds: [embed],
+        components: components,
+        allowed_mentions: { roles: [CONFIG.NOTIFICATION_ROLE_ID] }
       })
     });
+
     if (!res.ok) {
       console.error(`[WeeklyRecruit] 募集投稿に失敗: ${res.status} ${await res.text()}`);
       return;
     }
     const sent = await res.json();
 
-    // recruitments に記録（開始リマインドD1の対象にもなる）
+    // recruitments DB に記録
     await createRecruitment(env, {
       messageId: sent.id,
       channelId: targetChannelId,
       ownerDiscordId: ownerId,
-      mode: 'カスタム',
-      maxCount: 10,
+      mode: '定期カスタム',
+      maxCount: 20,
       startAt: startAtIso,
     });
-    console.log(`[WeeklyRecruit] 定期カスタム募集を投稿しました (msg ${sent.id})`);
+    console.log(`[WeeklyRecruit] 2部屋統合定期カスタム募集を投稿しました (msg ${sent.id})`);
 
-    // Web Push通知(#54)。失敗しても無視。
     try {
       const { fetchPortalAPI } = await import('../utils/api.js');
-      await fetchPortalAPI(env, '/api/push/notify-recruit', { mode: 'カスタム', time: '21:00' });
-    } catch (e) { /* noop */ }
+      await fetchPortalAPI(env, '/api/push/notify-recruit', { mode: '定期カスタム', time: `${dateLabel} 21:00` }).catch(() => {});
+    } catch (e) {}
   } catch (err) {
     console.error('[WeeklyRecruit] error:', err);
   }
@@ -689,7 +744,7 @@ async function sendEventUsersNotification(env, options = {}) {
       }
     } catch (dedupeErr) {}
 
-    // 7. メッセージ ＆ ワンタップ「参加する」ボタンの作成
+    // 7. メッセージ ＆ ワンタップ「参加する」ボタン（シルバー以下＆ゴルプラ以下）の作成
     const roleId = CONFIG.NOTIFICATION_ROLE_ID;
     const messageBody = {
       embeds: [embed],
@@ -698,14 +753,20 @@ async function sendEventUsersNotification(env, options = {}) {
           type: 1, // Action Row
           components: [
             {
-              type: 2, // Button
-              label: "⚔️ 募集に参加する",
-              style: 3, // Success (Green)
-              custom_id: targetRecruitOwnerId ? `join_any:${targetRecruitOwnerId}` : `quick_recruit:カスタム:10`
+              type: 2,
+              label: "🛡️ シルバー以下に参加",
+              style: 3, // Green
+              custom_id: "join_periodic:silver"
             },
             {
-              type: 2, // Button
-              label: "🔔 通知受け取り設定",
+              type: 2,
+              label: "👑 ゴルプラ以下に参加",
+              style: 1, // Primary (Blue)
+              custom_id: "join_periodic:gold"
+            },
+            {
+              type: 2,
+              label: "🔔 通知設定",
               style: 2, // Secondary (Gray)
               custom_id: "toggle_recruit_notification"
             }
