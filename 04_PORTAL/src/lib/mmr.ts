@@ -197,15 +197,9 @@ export function calculateNewMMR(ctx: MmrCalcContext): number {
   // 基準KDA 2.0から加点 (最大+15点のボーナス)
   const kdaBonus = Math.max(0, Math.min(15, (kdaScore - 2.0) * 5));
 
-  // ④ 対面回数補正 (身内戦でのブレ防止)
-  // 以前は 0.8/0.6/0.4 と強く減衰させていたため、全員が頻繁に対面する身内では
-  // MMRがほとんど動かず収束が遅かった(M3)。ブレ防止は残しつつ緩める。
-  let matchupDampener = 1.0;
-  if (!isPlacement && matchupCount) {
-    if (matchupCount >= 3) matchupDampener = 0.9;
-    if (matchupCount >= 5) matchupDampener = 0.8;
-    if (matchupCount >= 8) matchupDampener = 0.7;
-  }
+  // ④ 対面回数補正 (案A: 完全撤廃)
+  // 身内カスタムでの勝利の達成感・手応えを最大化するため、対面回数による減衰(0.9~0.7倍)は完全廃止(1.0倍固定)。
+  const matchupDampener = 1.0;
 
   // ボーナスを合算
   let delta = (baseDelta + kdaBonus) * matchupDampener;
@@ -249,12 +243,7 @@ export function calculateNewMMRDetailed(ctx: MmrCalcContext): { delta: number; b
   let kdaScore = ctx.deaths === 0 ? (ctx.kills + ctx.assists) * 1.2 : (ctx.kills + ctx.assists) / ctx.deaths;
   if (ctx.role === 'SUP') kdaScore += 0.8;
   const kda = Math.max(0, Math.min(15, (kdaScore - 2.0) * 5));
-  let dampener = 1.0;
-  if (!placement && ctx.matchupCount) {
-    if (ctx.matchupCount >= 3) dampener = 0.9;
-    if (ctx.matchupCount >= 5) dampener = 0.8;
-    if (ctx.matchupCount >= 8) dampener = 0.7;
-  }
+  const dampener = 1.0;
   const delta = calculateNewMMR(ctx); // 最終値は本体ロジックで算出（挙動の一貫性を保証）
   return {
     delta,
