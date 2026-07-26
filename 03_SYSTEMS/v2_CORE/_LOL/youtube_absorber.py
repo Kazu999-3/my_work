@@ -719,7 +719,8 @@ if __name__ == "__main__":
     try:
         absorber = YouTubeAbsorber()
         # 429 Too Many Requests エラーを回避するため、1回の実行上限を 1 本に制限し、
-        # sre_daemon.py 経由で定期的に少しずつ消化する方針に変更
+        # edge_worker_daemon.py の youtube_absorb_scheduler_loop 経由で
+        # 15分おきに少しずつ消化する方針
         absorber.run_cycle(limit=1)
     finally:
         lock.release()

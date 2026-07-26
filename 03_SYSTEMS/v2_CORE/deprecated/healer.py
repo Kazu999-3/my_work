@@ -1,3 +1,13 @@
+# ============================================================
+# 【現在未使用】自己修復エンジン
+# ローカル常駐前提だった sre_daemon.py 専用の自動修復ロジック。
+#
+# sre_daemon.py はGatewayをバイパスする問題とクラウド側との重複巡回タスクを
+# 抱えていたため2026-07-26に廃止（-Mode all ごと廃止、youtube_absorb の
+# 巡回起票ロジックだけ edge_worker_daemon.py に移設）。唯一の呼び出し元が
+# 無くなったため本ファイルも未使用。将来ローカル監視を復活させる場合に
+# 参考として残しているだけなので、現役のコードとして参照しないこと。
+# ============================================================
 import os
 import re
 import shutil
@@ -7,7 +17,7 @@ import json
 import time
 from pathlib import Path
 from google import genai
-from .settings import settings
+from v2_CORE.settings import settings
 
 logger = logging.getLogger("AutoHealer")
 

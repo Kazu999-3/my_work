@@ -418,6 +418,37 @@ class EdgeWorkerDaemon:
             self.current_task_id = None
             self.send_heartbeat()
 
+    def youtube_absorb_scheduler_loop(self):
+        """
+        字幕なし動画のローカルwhisper文字起こし(youtube_absorb)を15分おきに自動起票する。
+        以前は sre_daemon.py がこの役目を担っていたが、Gatewayをバイパスする問題や
+        クラウド側と重複する巡回タスクを抱えていたため廃止し、この起票ロジックだけを
+        Edge Worker Daemon自身に統合した（他にこのタスクを自発的に起票する仕組みが
+        無いため、これが無いと字幕なし動画の自動処理が完全に止まる）。
+        """
+        time.sleep(600)  # 起動直後のAPI競合を避けるため10分待機
+        while getattr(self, "_heartbeat_active", True):
+            try:
+                # 既に pending/running の youtube_absorb があれば重複起票しない
+                check_url = f"{self.supabase_url}/rest/v1/edge_tasks?task_type=eq.youtube_absorb&status=in.(pending,running)&select=id&limit=1"
+                res = httpx.get(check_url, headers=self.headers, timeout=10)
+                if res.status_code == 200 and res.json():
+                    logger.info("🔧 [YoutubeAbsorbScheduler] 既に未処理のyoutube_absorbタスクがあるためスキップします。")
+                else:
+                    post_res = httpx.post(
+                        f"{self.supabase_url}/rest/v1/edge_tasks",
+                        headers=self.headers,
+                        json={"task_type": "youtube_absorb", "payload": {}, "status": "pending"},
+                        timeout=10
+                    )
+                    if post_res.status_code in (200, 201):
+                        logger.info("🔧 [YoutubeAbsorbScheduler] youtube_absorbタスクをキューイングしました。")
+                    else:
+                        logger.error(f"❌ [YoutubeAbsorbScheduler] キューイング失敗: {post_res.status_code} {post_res.text}")
+            except Exception as e:
+                logger.error(f"❌ [YoutubeAbsorbScheduler] エラー: {e}")
+            time.sleep(900)  # 15分おき
+
     def heartbeat_loop(self):
         """別スレッドで5秒おきにハートビートを送信し続ける"""
         logger.info("📡 バックグラウンド・ハートビート監視スレッドを開始しました。")
@@ -441,6 +472,10 @@ class EdgeWorkerDaemon:
         import threading
         self.heartbeat_thread = threading.Thread(target=self.heartbeat_loop, daemon=True)
         self.heartbeat_thread.start()
+
+        # バックグラウンドでYouTube Absorber(字幕なし動画)の自動起票スレッドを起動
+        self.youtube_absorb_scheduler_thread = threading.Thread(target=self.youtube_absorb_scheduler_loop, daemon=True)
+        self.youtube_absorb_scheduler_thread.start()
         
         # スリープ防止の開始
         self.prevent_sleep()
