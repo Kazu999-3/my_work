@@ -13,11 +13,9 @@ export async function GET(request: Request) {
   const isVercelCron = userAgent.includes('vercel-cron');
   const cronSecret = process.env.CRON_SECRET; // Vercel の CRON_SECRET 等を設定
   
-  // 手動テスト用にローカルまたは特定のクエリがあれば通す
-  const url = new URL(request.url);
-  const isTest = url.searchParams.get('test') === 'true';
-
-  if (!isTest && cronSecret && authHeader !== `Bearer ${cronSecret}` && !isVercelCron) {
+  // 以前は ?test=true を付けるだけでこの認証チェック自体を丸ごとスキップできてしまっていた
+  // （!isTest && ... という条件式のため、isTestがtrueだと式全体がfalseになり401を返さなかった）。
+  if (cronSecret && authHeader !== `Bearer ${cronSecret}` && !isVercelCron) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
