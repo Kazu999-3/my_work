@@ -131,6 +131,15 @@ def gemini_summarize(title, channel, transcript):
                 return parsed
             else:
                 print(f"[gemini_summarize] キー欠落または形式不整合。再試行 ({attempt+1}/3)")
+        except urllib.error.HTTPError as err:
+            last_err = err
+            if err.code == 429:
+                wait_sec = 20 * (attempt + 1)
+                print(f"[gemini_summarize] 429 (レート制限)。{wait_sec}秒待機して再試行 ({attempt+1}/3)")
+                time.sleep(wait_sec)
+            else:
+                print(f"[gemini_summarize] HTTPエラー: {err} ({attempt+1}/3)")
+                time.sleep(2)
         except Exception as err:
             last_err = err
             print(f"[gemini_summarize] JSONパース失敗/エラー: {err} ({attempt+1}/3)")
