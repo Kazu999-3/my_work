@@ -73,7 +73,6 @@ class EdgeWorkerDaemon:
         # 競合排他グループの定義
         conflict_groups = [
             {"youtube_absorb", "dict_synthesizer", "champion_trend"},  # DB/辞書書き換え競合
-            {"monetization_batch", "note_magazine_import"}  # note操作（Playwright）競合
         ]
         
         # 自タスクが含まれる競合グループを特定
@@ -307,19 +306,9 @@ class EdgeWorkerDaemon:
                 }
                 self.update_task_status(task_id, "completed", result=result)
                 
-            elif task_type == "note_magazine_import":
-                logger.info("📰 [note_magazine_import] noteマガジン巡回・要約インポートを開始...")
-                result = self._run_subprocess_task("03_SYSTEMS/v2_CORE/_MONETIZE/note_magazine_importer.py", timeout=900)
-                self.update_task_status(task_id, "completed", result=result)
-                
             elif task_type == "youtube_absorb":
                 logger.info("🎥 [youtube_absorb] YouTube自動解析（Whisper GPU）を実行...")
                 result = self._run_subprocess_task("03_SYSTEMS/v2_CORE/_LOL/youtube_absorber.py", timeout=1800)
-                self.update_task_status(task_id, "completed", result=result)
-                
-            elif task_type == "monetization_batch":
-                logger.info("💰 [monetization_batch] 自動収益化バッチ（Playwright自動投稿含む）を実行...")
-                result = self._run_subprocess_task("03_SYSTEMS/v2_CORE/monetization_batch.py", timeout=900)
                 self.update_task_status(task_id, "completed", result=result)
                 
             elif task_type == "reddit_scout":
@@ -330,11 +319,6 @@ class EdgeWorkerDaemon:
             elif task_type == "lol_trend_collect":
                 logger.info("⚡ [lol_trend_collect] LoL最新トレンド情報の収集を実行...")
                 result = self._run_subprocess_task("03_SYSTEMS/v2_CORE/_LOL/lol_trend_collector.py", timeout=600)
-                self.update_task_status(task_id, "completed", result=result)
-                
-            elif task_type == "note_analytics":
-                logger.info("📊 [note_analytics] noteアクセス分析・自己進化ループを実行...")
-                result = self._run_subprocess_task("03_SYSTEMS/v2_CORE/_MONETIZE/note_analytics.py", timeout=600)
                 self.update_task_status(task_id, "completed", result=result)
                 
             elif task_type == "dict_synthesizer":

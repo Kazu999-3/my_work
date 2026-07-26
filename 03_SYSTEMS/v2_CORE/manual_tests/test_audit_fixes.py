@@ -9,7 +9,6 @@ sys.path.append(str(ROOT_DIR / "03_SYSTEMS"))
 
 from v2_CORE.api import QuotaShaper
 from v2_CORE.edge_worker_daemon import TASK_TIMEOUT_SECONDS
-from v2_CORE.monetization_batch import clean_ai_smell_text
 
 class TestAuditFixes(unittest.TestCase):
     def test_quota_shaper_all_cooling(self):
@@ -29,12 +28,6 @@ class TestAuditFixes(unittest.TestCase):
 
     def test_task_timeout_constant(self):
         self.assertEqual(TASK_TIMEOUT_SECONDS, 1800)
-
-    def test_clean_ai_smell_text(self):
-        raw_text = "今回の記事はいかがでしたでしょうか？〜について解説します。"
-        cleaned = clean_ai_smell_text(raw_text)
-        self.assertNotIn("いかがでしたでしょうか", cleaned)
-        self.assertNotIn("〜について解説します", cleaned)
 
 if __name__ == "__main__":
     unittest.main()

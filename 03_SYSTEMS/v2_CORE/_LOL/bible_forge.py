@@ -11,7 +11,6 @@ import requests
 from datetime import datetime
 import dotenv
 from v2_CORE.database import db
-from v2_CORE._MONETIZE.evolution import evolution_engine
 from v2_CORE.ai_helper import generate_content_safe
 from v2_CORE.settings import settings
 
@@ -138,10 +137,6 @@ class BibleForge:
         if not final_content:
             logging.error(f"Abandoning forge for {champion_name} due to failure.")
             return None
-        
-        # --- 自己進化（マーケティング部によるレビューと再構築） ---
-        logging.info("--- 🧬 Initiating Auto-Evolution Phase ---")
-        final_content = evolution_engine.evolve_draft(final_content)
         
         output_file = Path(f"d:/my_work/02_FACTORY/PRODUCTS/ARTICLES/ARTICLE_{champion_name}_16.8.1.md")
         output_file.parent.mkdir(parents=True, exist_ok=True)
