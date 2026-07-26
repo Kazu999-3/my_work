@@ -34,14 +34,9 @@ scratch/
 # src/shared/ 配下はソースコードが import するデータファイル（例: ktm_tiers.json）。
 # これを無視すると手元では動くのにVercel/Botのクリーンビルドで Module not found になる。
 !**/src/shared/*.json
-03_factory/vods/
 99_ARCHIVE/
-03_FACTORY/INFRA/outbox/
-03_FACTORY/PRODUCTS/
-03_FACTORY/cache/
-03_FACTORY/note_drafts/
-03_FACTORY/sns_assets/
-03_FACTORY/sns_promotions/
+02_FACTORY/INFRA/outbox/
+02_FACTORY/INFRA/cache/
 
 .agent/playwright_data/
 .vercel
@@ -63,3 +58,10 @@ scratch/
 
 # Cloudflare Wrangler local variables
 **/.dev.vars
+
+# ローカルSQLiteの実行時DB（頻繁に更新されGit肥大化の原因になるため追跡しない）
+*.db
+
+# PyInstallerのビルド成果物（SovereignMind.spec から再生成可能）
+03_SYSTEMS/v2_CORE/_LOL/mental_checker/build/
+03_SYSTEMS/v2_CORE/_LOL/mental_checker/dist/
