@@ -1190,10 +1190,10 @@ export default function BalancerPage() {
                     const dbR = players.find((p: any) => p.name === pR.name);
 
                     // 実データ優先(#75): 試合履歴から計算したスタイル → キャッシュ → デフォルト
+                    // KTMカスタム戦はCS・ファーストブラッドを取得できないため、farming/diffsは持たない
                     const defaultStyle = {
-                      sliders: { aggressive: 50, farming: 50, supportive: 50 },
-                      tags: [{ id: 'balanced', name: 'バランス型', description: '標準的なプレイスタイル。', reason: '' }],
-                      diffs: { goldDiff: 0, xpDiff: 0, csDiff: 0 }
+                      sliders: { aggressive: 50, supportive: 50 },
+                      tags: [{ id: 'balanced', name: 'バランス型', description: '標準的なプレイスタイル。', reason: '' }]
                     };
                     const liveB = vsStyles[pB.name];
                     const liveR = vsStyles[pR.name];
@@ -1208,14 +1208,6 @@ export default function BalancerPage() {
                     const tagR = styleR.tags?.[0] || { id: 'balanced', name: 'バランス型' };
                     const tip = generateMatchupTip(tagB, tagR, role);
 
-                    const goldDiffB = styleB.diffs?.goldDiff || 0;
-                    const goldDiffR = styleR.diffs?.goldDiff || 0;
-                    const csDiffB = styleB.diffs?.csDiff || 0;
-                    const csDiffR = styleR.diffs?.csDiff || 0;
-                    
-                    const goldDiff = goldDiffB - goldDiffR;
-                    const csDiff = csDiffB - csDiffR;
-
                     return (
                       <div key={role} className="bg-gray-950 p-4 rounded-2xl border border-gray-800 space-y-4">
                         {/* ロールヘッダー */}
@@ -1229,47 +1221,26 @@ export default function BalancerPage() {
                           <span className="text-[10px] text-gray-500 font-mono">MMR差: {pB.mmr - pR.mmr > 0 ? `+${pB.mmr - pR.mmr}` : pB.mmr - pR.mmr}</span>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-11 gap-4 items-center">
+                        <div className="grid grid-cols-2 gap-4 items-center">
                           {/* BLUE側 */}
-                          <div className="col-span-4 space-y-1.5">
+                          <div className="space-y-1.5">
                             <div className="flex items-center gap-2">
                               <span className="text-xs font-black text-blue-400">{pB.name}</span>
                               <span className="text-[9px] bg-blue-500/10 text-blue-400 px-1.5 py-0.5 rounded border border-blue-500/20 font-black">{tagB.name}</span>
                             </div>
                             <div className="space-y-1 text-[10px] text-gray-400">
                               <div className="flex justify-between"><span>Aggressive:</span> <span className="font-bold text-white">{styleB.sliders?.aggressive || 50}%</span></div>
-                              <div className="flex justify-between"><span>Farming:</span> <span className="font-bold text-white">{styleB.sliders?.farming || 50}%</span></div>
-                            </div>
-                          </div>
-
-                          {/* VS (差分比較) */}
-                          <div className="col-span-3 flex flex-col items-center justify-center space-y-2">
-                            <span className="text-[10px] text-gray-500 font-black">9分スタッツ差 (B - R)</span>
-                            <div className="space-y-1 w-full text-[9px] font-mono text-center">
-                              <div className="flex justify-between px-2 bg-black/40 py-1 rounded border border-white/5">
-                                <span className="text-gray-500">ゴールド:</span>
-                                <span className={goldDiff >= 0 ? 'text-amber-400 font-bold' : 'text-rose-500 font-bold'}>
-                                  {goldDiff >= 0 ? `+${goldDiff}` : goldDiff} G
-                                </span>
-                              </div>
-                              <div className="flex justify-between px-2 bg-black/40 py-1 rounded border border-white/5">
-                                <span className="text-gray-500">CS:</span>
-                                <span className={csDiff >= 0 ? 'text-emerald-400 font-bold' : 'text-rose-500 font-bold'}>
-                                  {csDiff >= 0 ? `+${csDiff.toFixed(1)}` : csDiff.toFixed(1)}
-                                </span>
-                              </div>
                             </div>
                           </div>
 
                           {/* RED側 */}
-                          <div className="col-span-4 space-y-1.5 text-right">
+                          <div className="space-y-1.5 text-right">
                             <div className="flex items-center gap-2 justify-end">
                               <span className="text-[9px] bg-red-500/10 text-red-400 px-1.5 py-0.5 rounded border border-red-500/20 font-black">{tagR.name}</span>
                               <span className="text-xs font-black text-red-400">{pR.name}</span>
                             </div>
                             <div className="space-y-1 text-[10px] text-gray-400">
                               <div className="flex justify-between"><span>Aggressive:</span> <span className="font-bold text-white">{styleR.sliders?.aggressive || 50}%</span></div>
-                              <div className="flex justify-between"><span>Farming:</span> <span className="font-bold text-white">{styleR.sliders?.farming || 50}%</span></div>
                             </div>
                           </div>
                         </div>

@@ -31,7 +31,8 @@ export async function POST(req: Request) {
 
     const styles: Record<string, any> = {};
     for (const name of names) {
-      styles[name] = calculatePlaystyle(byPlayer[name] || []);
+      // KTMカスタム戦はCS・ファーストブラッドを取得できないため、それらに依存する指標は算出しない
+      styles[name] = calculatePlaystyle(byPlayer[name] || [], { reliableCsAndFb: false });
       styles[name].games = (byPlayer[name] || []).length; // 表示用に試合数も添付
     }
 

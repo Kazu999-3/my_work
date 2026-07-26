@@ -225,7 +225,8 @@ export async function GET(request: Request) {
       };
     }).slice(0, 20); // 履歴表示用に直近20件を返す
 
-    const customPlaystyle = calculatePlaystyle(playerMatches);
+    // KTMカスタム戦はCS・ファーストブラッドを取得できないため、それらに依存する指標は算出しない
+    const customPlaystyle = calculatePlaystyle(playerMatches, { reliableCsAndFb: false });
     const savedPlaystyle = (dbPlayer.metadata as any)?.playstyle_cache || {};
 
     const playstyle = {

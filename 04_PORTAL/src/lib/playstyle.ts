@@ -1,7 +1,7 @@
 export interface PlaystyleSliders {
-  aggressive: number; // 0 - 100
-  farming: number;    // 0 - 100
-  supportive: number; // 0 - 100
+  aggressive: number;   // 0 - 100
+  farming?: number;     // 0 - 100 (CSが信頼できるデータソースの場合のみ)
+  supportive: number;   // 0 - 100
 }
 
 export interface PlaystyleTag {
@@ -20,8 +20,15 @@ export interface PlaystyleDiffs {
 export interface PlaystyleData {
   sliders: PlaystyleSliders;
   tags: PlaystyleTag[];
-  diffs: PlaystyleDiffs;
+  diffs?: PlaystyleDiffs;
   lastUpdated: string;
+}
+
+export interface CalculatePlaystyleOptions {
+  // KTMカスタム戦はCS・ファーストブラッドを取得できないため、これらに依存する
+  // 指標(Farming, 9分スタッツ差, ファーストブラッド関与率)を一切算出しない。
+  // ソロQ側(sync-soloq)は既定のtrue（従来通り）のまま。
+  reliableCsAndFb?: boolean;
 }
 
 /**
@@ -29,12 +36,14 @@ export interface PlaystyleData {
  * @param matches プレイヤーの対戦詳細レコードの配列
  * @returns プレイスタイル分析結果
  */
-export function calculatePlaystyle(matches: any[]): PlaystyleData {
+export function calculatePlaystyle(matches: any[], opts?: CalculatePlaystyleOptions): PlaystyleData {
+  const reliableCsAndFb = opts?.reliableCsAndFb !== false;
+
   if (!matches || matches.length === 0) {
     return {
-      sliders: { aggressive: 50, farming: 50, supportive: 50 },
+      sliders: { aggressive: 50, ...(reliableCsAndFb ? { farming: 50 } : {}), supportive: 50 },
       tags: [],
-      diffs: { goldDiff: 0, xpDiff: 0, csDiff: 0 },
+      ...(reliableCsAndFb ? { diffs: { goldDiff: 0, xpDiff: 0, csDiff: 0 } } : {}),
       lastUpdated: new Date().toISOString()
     };
   }
@@ -58,7 +67,7 @@ export function calculatePlaystyle(matches: any[]): PlaystyleData {
     const deaths = Number(m.deaths) || 0;
     const assists = Number(m.assists) || 0;
     const dpm = Number(m.damage_dealt || m.damageDealtToChampions || m.damageDealt) || 0;
-    const cs = Number(m.cs || m.totalMinionsKilled || 0) + Number(m.neutralMinionsKilled || 0);
+    const cs = reliableCsAndFb ? (Number(m.cs || m.totalMinionsKilled || 0) + Number(m.neutralMinionsKilled || 0)) : 0;
     const vision = Number(m.vision_score || m.visionScore || m.vision || 0);
     const duration = Number(m.game_duration || (m.ktm_matches?.game_duration) || 1800); // デフォルト30分
     const isWin = m.win !== undefined ? m.win : (m.team === m.ktm_matches?.winning_team);
@@ -70,12 +79,14 @@ export function calculatePlaystyle(matches: any[]): PlaystyleData {
     totalCs += cs;
     totalVisionScore += vision;
     totalDurationSec += duration;
-    
+
     if (isWin) winsCount++;
-    
-    // ファーストブラッド判定
-    const isFB = m.first_blood || m.firstBlood || (kills > 0 && Math.random() < 0.15); // ダミー確率
-    if (isFB) firstBloodCount++;
+
+    // ファーストブラッド判定（CS/FBが信頼できるデータソースの場合のみ）
+    if (reliableCsAndFb) {
+      const isFB = m.first_blood || m.firstBlood || (kills > 0 && Math.random() < 0.15); // ダミー確率
+      if (isFB) firstBloodCount++;
+    }
   });
 
   const durationMin = totalDurationSec / 60;
@@ -88,22 +99,25 @@ export function calculatePlaystyle(matches: any[]): PlaystyleData {
     ? (totalDpm / durationMin) // 与ダメージ総量だった場合はDPMに変換
     : (totalDpm / totalGames); // 最初からDPMだった場合
 
-  const csPerMin = durationMin > 0 ? (totalCs / durationMin) : 0;
+  const csPerMin = reliableCsAndFb && durationMin > 0 ? (totalCs / durationMin) : 0;
   const vsPerMin = durationMin > 0 ? (totalVisionScore / durationMin) : 0;
-  const fbRate = firstBloodCount / totalGames;
+  const fbRate = reliableCsAndFb ? firstBloodCount / totalGames : 0;
   const winRate = winsCount / totalGames;
 
   // 2. スライダー値の算出 (0 - 100)
 
   // (A) Aggressive (攻撃性)
+  // CS/FBが信頼できない場合はファーストブラッド要素を除き、キル関与とDPMだけで正規化する
   const killsAssistsFactor = Math.min(100, (avgKills + avgAssists) * 8);
   const dpmFactor = Math.min(100, (avgDpm / 600) * 100);
   const fbFactor = Math.min(100, fbRate * 250);
-  const aggressive = Math.round(killsAssistsFactor * 0.3 + dpmFactor * 0.5 + fbFactor * 0.2);
+  const aggressive = reliableCsAndFb
+    ? Math.round(killsAssistsFactor * 0.3 + dpmFactor * 0.5 + fbFactor * 0.2)
+    : Math.round(killsAssistsFactor * 0.375 + dpmFactor * 0.625); // 0.3 / 0.5 の比率を維持して再正規化
 
-  // (B) Farming (ファーム重視度 - 0がガンク、100がファーム)
+  // (B) Farming (ファーム重視度 - 0がガンク、100がファーム)。CSが信頼できる場合のみ算出する
   const farmingBase = (csPerMin - 4.5) * 25; // 4.5 ➜ 0, 8.5 ➜ 100
-  const farming = Math.max(0, Math.min(100, Math.round(farmingBase)));
+  const farming = reliableCsAndFb ? Math.max(0, Math.min(100, Math.round(farmingBase))) : undefined;
 
   // (C) Supportive (献身度 - 0が自己キャリー、100がサポート)
   const assistRatio = (avgKills + avgAssists) > 0 ? (avgAssists / (avgKills + avgAssists)) * 100 : 50;
@@ -114,17 +128,19 @@ export function calculatePlaystyle(matches: any[]): PlaystyleData {
   const tags: PlaystyleTag[] = [];
 
   // (1) Early Brawler
-  if (fbRate >= 0.25 || avgKills >= 6.0) {
+  if ((reliableCsAndFb && fbRate >= 0.25) || avgKills >= 6.0) {
     tags.push({
       id: 'early-brawler',
       name: '序盤の戦闘狂 (Early Brawler)',
       description: 'ゲーム序盤の小規模戦やインベイドを好み、ファーストブラッド関与率が高いプレイヤー。',
-      reason: `ファーストブラッド関与率 ${Math.round(fbRate * 100)}%、平均 ${avgKills.toFixed(1)} キルを記録。`
+      reason: reliableCsAndFb
+        ? `ファーストブラッド関与率 ${Math.round(fbRate * 100)}%、平均 ${avgKills.toFixed(1)} キルを記録。`
+        : `平均 ${avgKills.toFixed(1)} キルを記録。`
     });
   }
 
   // (2) Speed Demon (Farming Machine)
-  if (csPerMin >= 6.8) {
+  if (reliableCsAndFb && csPerMin >= 6.8) {
     tags.push({
       id: 'speed-demon',
       name: '神速の周回魔 (Speed Demon)',
@@ -179,53 +195,62 @@ export function calculatePlaystyle(matches: any[]): PlaystyleData {
       id: 'balanced-player',
       name: 'バランス型 (All-Rounder)',
       description: 'ファーム、ガンク、視界管理のバランスが取れており、状況に応じてプレイを変えられる万能型。',
-      reason: `攻撃性 ${aggressive}%、ファーム重視 ${farming}% の均整の取れたスタッツ。`
+      reason: reliableCsAndFb
+        ? `攻撃性 ${aggressive}%、ファーム重視 ${farming}% の均整の取れたスタッツ。`
+        : `攻撃性 ${aggressive}% の均整の取れたスタッツ。`
     });
   }
 
-  // 4. 対面スタッツ差分の推定・計算
-  let totalGoldDiff = 0;
-  let totalXpDiff = 0;
-  let totalCsDiff = 0;
-  let diffsCount = 0;
+  // 4. 対面スタッツ差分の推定・計算（CSが信頼できるデータソースの場合のみ。
+  //    KTMカスタム戦は実測の9分タイムラインを持たず、CS前提の推定式に頼らざるを
+  //    得なかったため、CSが取得できない場合はこの項目自体を算出しない）
+  let diffs: PlaystyleDiffs | undefined;
+  if (reliableCsAndFb) {
+    let totalGoldDiff = 0;
+    let totalXpDiff = 0;
+    let totalCsDiff = 0;
+    let diffsCount = 0;
 
-  matches.forEach(m => {
-    if (m.gold_diff_9 !== undefined && m.xp_diff_9 !== undefined && m.cs_diff_9 !== undefined) {
-      totalGoldDiff += Number(m.gold_diff_9) || 0;
-      totalXpDiff += Number(m.xp_diff_9) || 0;
-      totalCsDiff += Number(m.cs_diff_9) || 0;
-      diffsCount++;
-    } else {
-      // 試合全体のスタッツから 9分時点の差分を推定 (Estimation)
-      const duration = Number(m.game_duration || m.ktm_matches?.game_duration || 1800);
-      const durationMin = duration / 60;
-      if (durationMin > 0) {
-        const myCs = Number(m.cs || m.totalMinionsKilled || 0) + Number(m.neutralMinionsKilled || 0);
-        const myCsPerMin = myCs / durationMin;
-        
-        // 勝敗で対面のCS/minとKDAを補正・推定
-        const oppKills = m.win ? 2 : 4;
-        const oppCsPerMin = myCsPerMin * (m.win ? 0.88 : 1.12);
-        
-        const csDiffEstimated = (myCsPerMin - oppCsPerMin) * 9 * 0.85;
-        const myKdaDiff = (Number(m.kills) || 0) - (Number(m.deaths) || 0) - (oppKills - (Number(m.kills) || 0));
-        
-        totalGoldDiff += csDiffEstimated * 19 + myKdaDiff * 130;
-        totalXpDiff += csDiffEstimated * 60 + myKdaDiff * 90;
-        totalCsDiff += csDiffEstimated;
+    matches.forEach(m => {
+      if (m.gold_diff_9 !== undefined && m.xp_diff_9 !== undefined && m.cs_diff_9 !== undefined) {
+        totalGoldDiff += Number(m.gold_diff_9) || 0;
+        totalXpDiff += Number(m.xp_diff_9) || 0;
+        totalCsDiff += Number(m.cs_diff_9) || 0;
         diffsCount++;
-      }
-    }
-  });
+      } else {
+        // 試合全体のスタッツから 9分時点の差分を推定 (Estimation)
+        const duration = Number(m.game_duration || m.ktm_matches?.game_duration || 1800);
+        const durationMin = duration / 60;
+        if (durationMin > 0) {
+          const myCs = Number(m.cs || m.totalMinionsKilled || 0) + Number(m.neutralMinionsKilled || 0);
+          const myCsPerMin = myCs / durationMin;
 
-  const goldDiff = diffsCount > 0 ? Math.round(totalGoldDiff / diffsCount) : 0;
-  const xpDiff = diffsCount > 0 ? Math.round(totalXpDiff / diffsCount) : 0;
-  const csDiff = diffsCount > 0 ? Number((totalCsDiff / diffsCount).toFixed(1)) : 0;
+          // 勝敗で対面のCS/minとKDAを補正・推定
+          const oppKills = m.win ? 2 : 4;
+          const oppCsPerMin = myCsPerMin * (m.win ? 0.88 : 1.12);
+
+          const csDiffEstimated = (myCsPerMin - oppCsPerMin) * 9 * 0.85;
+          const myKdaDiff = (Number(m.kills) || 0) - (Number(m.deaths) || 0) - (oppKills - (Number(m.kills) || 0));
+
+          totalGoldDiff += csDiffEstimated * 19 + myKdaDiff * 130;
+          totalXpDiff += csDiffEstimated * 60 + myKdaDiff * 90;
+          totalCsDiff += csDiffEstimated;
+          diffsCount++;
+        }
+      }
+    });
+
+    diffs = {
+      goldDiff: diffsCount > 0 ? Math.round(totalGoldDiff / diffsCount) : 0,
+      xpDiff: diffsCount > 0 ? Math.round(totalXpDiff / diffsCount) : 0,
+      csDiff: diffsCount > 0 ? Number((totalCsDiff / diffsCount).toFixed(1)) : 0
+    };
+  }
 
   return {
-    sliders: { aggressive, farming, supportive },
+    sliders: { aggressive, ...(farming !== undefined ? { farming } : {}), supportive },
     tags,
-    diffs: { goldDiff, xpDiff, csDiff },
+    ...(diffs ? { diffs } : {}),
     lastUpdated: new Date().toISOString()
   };
 }
