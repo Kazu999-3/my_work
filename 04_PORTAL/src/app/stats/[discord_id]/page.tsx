@@ -16,11 +16,11 @@ interface PlayerInfo {
   main_lane: string;
   sub_lane: string;
   pity: number;
-  top_mmr: number;
-  jg_mmr: number;
-  mid_mmr: number;
-  adc_mmr: number;
-  sup_mmr: number;
+  top_mmr: number | null;
+  jg_mmr: number | null;
+  mid_mmr: number | null;
+  adc_mmr: number | null;
+  sup_mmr: number | null;
   is_active: boolean;
 }
 
@@ -468,7 +468,7 @@ export default function PlayerStatsPage({ params }: PageProps) {
                   <div className="text-xs font-bold text-gray-400 mb-1 flex justify-center items-center gap-1.5">
                     <span>{r.icon}</span> {r.role}
                   </div>
-                  <div className="text-2xl font-black text-white">{r.mmr.toLocaleString()}</div>
+                  <div className="text-2xl font-black text-white">{(r.mmr ?? 1200).toLocaleString()}</div>
                   {roleStats[r.role].games > 0 && (
                     <div className="text-[10px] text-gray-500 font-mono">
                       {roleStats[r.role].games}戦 Win:{Math.round((roleStats[r.role].wins / roleStats[r.role].games) * 100)}%

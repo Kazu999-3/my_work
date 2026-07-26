@@ -396,6 +396,9 @@ export default function KtmAdminPage() {
   };
 
   useEffect(() => {
+    // 管理者セッション確認が終わり、実際に管理者と判定されるまではデータ取得しない
+    if (authLoading || !isAdmin) return;
+
     fetchPlayers();
     checkIntegrity();
 
@@ -416,7 +419,7 @@ export default function KtmAdminPage() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [authLoading, isAdmin]);
 
   const fetchPlayers = async () => {
     setLoading(true);

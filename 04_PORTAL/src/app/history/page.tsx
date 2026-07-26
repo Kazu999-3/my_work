@@ -30,10 +30,12 @@ interface MatchData {
 export default function HistoryPage() {
   const [matches, setMatches] = useState<MatchData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchHistory() {
       try {
+        setFetchError(null);
         const { data, error } = await supabase
           .from('ktm_matches')
           .select(`
@@ -81,8 +83,9 @@ export default function HistoryPage() {
           prediction: predMap.get(Number(m.id)) || null
         }));
         setMatches(formatted);
-      } catch (err) {
+      } catch (err: any) {
         console.error('Failed to fetch history:', err);
+        setFetchError(err?.message || '試合履歴の取得に失敗しました。');
       } finally {
         setLoading(false);
       }
@@ -123,7 +126,11 @@ export default function HistoryPage() {
         </div>
 
         <div className="space-y-6">
-          {matches.length === 0 ? (
+          {fetchError ? (
+            <div className="bg-red-950/30 border border-red-800/60 text-red-400 rounded-xl p-8 text-center">
+              試合履歴の取得中にエラーが発生しました: {fetchError}
+            </div>
+          ) : matches.length === 0 ? (
             <div className="bg-gray-900 border border-gray-800 rounded-xl p-8 text-center text-gray-500">
               まだ記録された試合がありません。
             </div>

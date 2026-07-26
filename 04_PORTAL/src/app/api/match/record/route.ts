@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 import { calculateNewMMRDetailed, calculateKdaScore, MmrCalcContext, calculateInitialMmr, computeRepresentativeMmr } from '../../../../lib/mmr';
+import { fetchAllRows } from '../../../../lib/fetchAll';
 
 export async function POST(request: Request) {
   try {
@@ -23,12 +24,20 @@ export async function POST(request: Request) {
 
     // 2. 過去の勝率・試合数を取得 (Supabaseのktm_match_participants等から)
     // 簡易的に全試合履歴をフェッチして集計（パフォーマンス問題があれば後日Viewや集計テーブルに移行）
-    const { data: historyData, error: hError } = await supabase
-      .from('ktm_match_participants')
-      .select(`
-        match_id, player_name, role, team, ktm_matches!inner(winning_team)
-      `)
-      .in('player_name', names);
+    // 1000件超に備えページネーションで全件取得（欠落するとMMR計算のnumGames/勝率が不正確になる）
+    const { data: historyData, error: hError } = await fetchAllRows((from, to) =>
+      supabase
+        .from('ktm_match_participants')
+        .select(`
+          match_id, player_name, role, team, ktm_matches!inner(winning_team)
+        `)
+        .in('player_name', names)
+        .range(from, to)
+    );
+
+    if (hError) {
+      return NextResponse.json({ error: `過去の試合履歴の取得に失敗しました: ${hError.message}` }, { status: 500 });
+    }
 
     const statsMap: Record<string, { roleGames: Record<string, number>, totalGames: number, totalWins: number }> = {};
     names.forEach((name: string) => {

@@ -253,7 +253,7 @@ export default function MatchHistoryPanel() {
       </div>
 
       {actionMessage && (
-        <div className={`p-4 rounded-lg flex items-center gap-3 ${actionMessage.type === 'error' ? 'bg-red-900/30 text-red-400 border border-red-800' : 'bg-green-900/30 text-green-400 border border-green-800'}`}>
+        <div className={`p-4 rounded-lg flex items-center gap-3 ${actionMessage.type === 'error' ? 'bg-red-900/30 text-red-400 border border-red-800' : 'bg-emerald-950/30 text-emerald-400 border-emerald-800/60'}`}>
           <AlertCircle className="h-5 w-5 flex-shrink-0" />
           <p className="text-sm font-medium whitespace-pre-wrap">{actionMessage.text}</p>
         </div>
