@@ -289,6 +289,9 @@ export default function BalancerPage() {
   };
 
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  // 保存待ち（デバウンス中〜保存完了前）のプレイヤーID。Realtime購読からの更新が
+  // 未保存のローカル編集を丸ごと上書きしてしまうのを防ぐためのガード。
+  const dirtyPlayerIdsRef = useRef<Set<any>>(new Set());
 
   const [fetchingDiscord, setFetchingDiscord] = useState(false);
 
@@ -312,6 +315,10 @@ export default function BalancerPage() {
           const updatedPlayer = payload.new;
           setPlayers(prev => prev.map(p => {
             if (p.id === updatedPlayer.id) {
+              // このプレイヤーに未保存のローカル編集がある場合、DB由来のスナップショットで
+              // 丸ごと上書きすると入力中のデータが消えてしまうためスキップする
+              if (dirtyPlayerIdsRef.current.has(p.id)) return p;
+
               const oldPref = p.role_preferences || {};
               const newPref = updatedPlayer.role_preferences || {};
               if (oldPref.primary !== newPref.primary || oldPref.secondary !== newPref.secondary) {
@@ -456,6 +463,7 @@ export default function BalancerPage() {
 
       // is_fixed の変更はDBに保存しない一時フラグなので保存トリガーを引かない
       if (field !== "is_fixed") {
+        dirtyPlayerIdsRef.current.add(uid);
         if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
         saveTimeoutRef.current = setTimeout(() => {
           handleSave(nextPlayers);
@@ -508,6 +516,8 @@ export default function BalancerPage() {
           }).eq('id', p.id)
         ));
       }
+      // 保存が成功したので、これらのプレイヤーはもうRealtime更新を受け取っても安全
+      existingPlayers.forEach(p => dirtyPlayerIdsRef.current.delete(p.id));
       setSaving(false);
       setMessage({ type: "success", text: "✅ プレイヤー情報を更新しました。" });
     } catch (err: any) {

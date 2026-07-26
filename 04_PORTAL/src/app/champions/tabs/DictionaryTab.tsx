@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo, Suspense } from 'react';
+import { useEffect, useState, useMemo, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '../../../lib/supabaseClient';
@@ -31,6 +31,10 @@ function ChampionsContent() {
   const showPendingOnly = false;
   const setShowPendingOnly = (val: boolean) => {};
   const [selected, setSelected] = useState<any>(null);
+  // handleFetchTrend のポーリングはクロージャで selected を捕まえてしまうため、
+  // 完了時点の「本当に今選択中のチャンピオン」を判定するための参照
+  const selectedRef = useRef<any>(null);
+  useEffect(() => { selectedRef.current = selected; }, [selected]);
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const [loading, setLoading] = useState(true);
   const [champDates, setChampDates] = useState<Record<string, string>>({});
@@ -242,10 +246,12 @@ function ChampionsContent() {
   useEffect(() => {
     if (!selected) return;
     setExpandedMatchupId(null); // 選択したチャンピオンが変わったときにアコーディオンをリセット
+    let cancelled = false; // 読み込み中に別チャンピオンへ切り替えた場合、古い結果で上書きしないためのガード
 
     const loadChampionData = async (champId: string) => {
       // 対面マッチアップ履歴の表示に必要な詳細フィールド（id, matchup_id, champion, enemy, title, strategy, raw_data）を取得
       const { data: mData } = await supabase.from('matchup_sentinel').select('id, matchup_id, champion, enemy, title, strategy, raw_data').ilike('champion', champId).neq('enemy', 'GLOBAL');
+      if (cancelled) return;
       if (mData && mData.length > 0) {
         setMatchupsList(mData);
         let wins = 0; let k = 0; let d = 0; let a = 0;
@@ -264,6 +270,7 @@ function ChampionsContent() {
       }
 
       const { data: noteData } = await supabase.from('matchup_sentinel').select('strategy, raw_data').eq('champion', champId).eq('enemy', 'GLOBAL').single();
+      if (cancelled) return;
       const rd = noteData?.raw_data || {};
 
       // 時間帯別の強さ（パワースパイク・構造化データ）。champion_power_spikes は
@@ -273,6 +280,7 @@ function ChampionsContent() {
         .select('early_game_score, mid_game_score, late_game_score, peak_window, summary')
         .eq('champion', champId)
         .maybeSingle();
+      if (cancelled) return;
       setPowerSpikeScores(spikeData || null);
 
       // Storageからの下書きデータ取得連携（削減案①）
@@ -287,6 +295,7 @@ function ChampionsContent() {
           console.error("❌ Failed to fetch note_draft from storage URL:", rd.note_draft_url, fetchErr);
         }
       }
+      if (cancelled) return;
 
       setDataFields({
         strengths: rd.strengths || '', weaknesses: rd.weaknesses || '',
@@ -306,7 +315,8 @@ function ChampionsContent() {
           .from('matchup_sentinel')
           .select('strategy, raw_data, created_at')
           .eq('enemy', 'PROCESS_INTERROGATION');
-          
+        if (cancelled) return;
+
         if (interrogationData && !iError) {
           const filtered = interrogationData.filter((r: any) => {
             const target = r.raw_data?.target_enemy || "";
@@ -322,6 +332,8 @@ function ChampionsContent() {
       }
     };
     loadChampionData(selected.id);
+
+    return () => { cancelled = true; };
   }, [selected]);
 
   const handleToggleFavorite = async () => {
@@ -371,6 +383,7 @@ function ChampionsContent() {
 
   const handleFetchTrend = async () => {
     if (!selected) return;
+    const champIdAtStart = selected.id; // ポーリング完了時に選択が変わっていないか確認するために保持
     setFetchingTrend(true);
     try {
       const role = roleFilter === 'ALL' ? 'Jungle' : roleFilter;
@@ -412,11 +425,16 @@ function ChampionsContent() {
         }
         
         if (task.status === 'completed') {
+          setFetchingTrend(false);
+          // ポーリング中に別のチャンピオンへ切り替えていたら、今の画面には反映しない
+          // （データ自体はDBに保存済みなので、そのチャンピオンを開き直せば見える）
+          if (selectedRef.current?.id !== champIdAtStart) return;
+
           // 完了したため、最新データ（updated_atも更新されている）をフェッチして状態を更新
           const { data: noteData } = await supabase
             .from('matchup_sentinel')
             .select('strategy, raw_data, created_at')
-            .eq('champion', selected.id)
+            .eq('champion', champIdAtStart)
             .eq('enemy', 'GLOBAL')
             .single();
             
@@ -452,20 +470,19 @@ function ChampionsContent() {
           });
           setChampPatchMetas((p: any) => ({
             ...p,
-            [selected.id]: rd.patch_meta || null
+            [champIdAtStart]: rd.patch_meta || null
           }));
           setChampJgStyles((p: any) => ({
             ...p,
-            [selected.id]: rd.jg_style || null
+            [champIdAtStart]: rd.jg_style || null
           }));
           if (noteData?.created_at) {
             setChampDates(p => ({
               ...p,
-              [selected.id]: noteData.created_at
+              [champIdAtStart]: noteData.created_at
             }));
           }
-          
-          setFetchingTrend(false);
+
           alert('最新のトレンド情報を更新しました！');
         } else if (task.status === 'failed') {
           setFetchingTrend(false);
