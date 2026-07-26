@@ -186,5 +186,5 @@ export async function handleModalSubmit(interaction, env, ctx) {
     });
   }
 
-  return Response.json({ type: 1 });
+  return Response.json({ type: 4, data: { content: "⚠️ 不明な操作です。パネルを開き直してもう一度お試しください。", flags: 64 } });
 }

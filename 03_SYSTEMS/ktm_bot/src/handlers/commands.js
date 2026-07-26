@@ -4,6 +4,7 @@ import { createMessageContent, createRecruitButtons, createRecruitEmbed, getPort
 import { getPlayersByNames, fetchSupabase, upsertPlayer } from '../utils/supabase.js';
 import { parseMessageData, parseStartTime } from '../utils/helpers.js';
 import { createRecruitment } from '../utils/recruitPermission.js';
+import { getTierEmoji } from '../utils/ktmRank.js';
 
 export function handleRecruitDirect(interaction, env, ctx) {
   const options = interaction.data.options || [];
@@ -97,7 +98,7 @@ export function handleStatsCommand(interaction, env, ctx) {
       const embed = {
         title: `📊 戦績板: ${data.player}`,
         fields: [
-          { name: "🏆 総合", value: `${s.total.g}戦 ${s.total.w}勝 勝率${(s.total.w/s.total.g*100).toFixed(1)}%`, inline: true },
+          { name: "🏆 総合", value: `${s.total.g}戦 ${s.total.w}勝 勝率${s.total.g > 0 ? (s.total.w/s.total.g*100).toFixed(1) : "0.0"}%`, inline: true },
           { name: "🕒 直近5試合", value: recentIcons || "データなし", inline: true },
           { name: "🏮 現在の不運度 (Pity)", value: `**${data.pity || 0}** pts`, inline: true },
           { name: "📍 ポジション別 (MMR)", value: Object.entries(s.roles).map(([r, rs]) => {
@@ -105,7 +106,7 @@ export function handleStatsCommand(interaction, env, ctx) {
               // D-05改: █░はDiscordで潰れて見にくいため、色付き絵文字ブロック8マスに変更。
               // 色はティア帯を表現（⬜シルバー以下 / 🟨ゴールド / 🟦プラチナ / 🟩エメラルド以上）
               const filled = Math.max(1, Math.min(8, Math.round((mmr - 1000) / 125)));
-              const fill = mmr >= 1650 ? '🟩' : mmr >= 1500 ? '🟦' : mmr >= 1350 ? '🟨' : '⬜';
+              const fill = getTierEmoji(mmr);
               const bar = fill.repeat(filled) + '⬛'.repeat(8 - filled);
               return `\`${String(r).padEnd(3)}\` ${bar} **${mmr}** (${rs.g}戦 ${rs.g > 0 ? (rs.w/rs.g*100).toFixed(0) : 0}%)`;
             }).join("\n"), inline: false }

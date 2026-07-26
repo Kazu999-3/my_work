@@ -12,7 +12,11 @@ export default {
     // GAS からのプロキシ通知リクエストを処理
     if (url.pathname === '/announce-match' && request.method === 'POST') {
       const gasSecret = request.headers.get('x-gas-secret');
-      const expectedSecret = env.INTERNAL_GAS_SECRET || "ktm_v3_internal_secret_2026";
+      const expectedSecret = env.INTERNAL_GAS_SECRET;
+      if (!expectedSecret) {
+        console.error("INTERNAL_GAS_SECRET is not configured; rejecting request.");
+        return new Response('Unauthorized', { status: 401 });
+      }
       
       if (gasSecret !== expectedSecret) {
         console.error(`Unauthorized GAS request: received=${gasSecret}, expected=${expectedSecret}`);
@@ -25,7 +29,11 @@ export default {
     // GAS からのリザルトレポート制作用エンドポイント
     if (url.pathname === '/post-report' && request.method === 'POST') {
       const gasSecret = request.headers.get('x-gas-secret');
-      const expectedSecret = env.INTERNAL_GAS_SECRET || "ktm_v3_internal_secret_2026";
+      const expectedSecret = env.INTERNAL_GAS_SECRET;
+      if (!expectedSecret) {
+        console.error("INTERNAL_GAS_SECRET is not configured; rejecting request.");
+        return new Response('Unauthorized', { status: 401 });
+      }
       
       if (gasSecret !== expectedSecret) {
         return new Response('Unauthorized', { status: 401 });
@@ -55,7 +63,11 @@ export default {
     // 手動で Scheduled Event をキックする管理者用エンドポイント
     if (url.pathname === '/trigger-scheduled' && request.method === 'GET') {
       const authKey = url.searchParams.get('key');
-      const expectedSecret = env.INTERNAL_GAS_SECRET || "ktm_v3_internal_secret_2026";
+      const expectedSecret = env.INTERNAL_GAS_SECRET;
+      if (!expectedSecret) {
+        console.error("INTERNAL_GAS_SECRET is not configured; rejecting request.");
+        return new Response('Unauthorized', { status: 401 });
+      }
       
       if (authKey !== expectedSecret) {
         console.error(`Unauthorized trigger attempt: key=${authKey}`);
@@ -126,7 +138,10 @@ export default {
       return new Response(errBody, { headers: { 'Content-Type': 'application/json' } });
     }
 
-    return new Response(JSON.stringify({ type: 1 }), { headers: { 'Content-Type': 'application/json' } });
+    return new Response(JSON.stringify({
+      type: 4,
+      data: { content: "⚠️ 不明なコマンドです。パネルを開き直してもう一度お試しください。", flags: 64 }
+    }), { headers: { 'Content-Type': 'application/json' } });
   },
 
   async scheduled(event, env, ctx) {

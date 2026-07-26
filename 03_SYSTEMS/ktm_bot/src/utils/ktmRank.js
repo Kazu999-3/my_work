@@ -64,4 +64,19 @@ export function formatRankDistribution(mmrs, unknown = 0) {
   return parts.join(' / ');
 }
 
+// 大分類ランク名 → 表示用の色付き絵文字（戦績板のMMRバー等で使用）。
+// ⬜シルバー以下 / 🟨ゴールド / 🟦プラチナ / 🟩エメラルド以上
+const TIER_EMOJI = {
+  CHALLENGER: '🟩', GRANDMASTER: '🟩', MASTER: '🟩', DIAMOND: '🟩', EMERALD: '🟩',
+  PLATINUM: '🟦',
+  GOLD: '🟨',
+  SILVER: '⬜', BRONZE: '⬜', IRON: '⬜', UNRANKED: '⬜',
+};
+
+/** MMR値を、そのランク帯を表す色付き絵文字1つに変換する（ktm_tiers.json追従） */
+export function getTierEmoji(mmr) {
+  const tier = getKtmRank(mmr);
+  return TIER_EMOJI[tier.name] || '⬜';
+}
+
 export { KTM_TIERS };

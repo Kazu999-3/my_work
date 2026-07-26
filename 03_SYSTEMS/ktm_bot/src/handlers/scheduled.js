@@ -644,20 +644,11 @@ async function sendEventUsersNotification(env, options = {}) {
     }
     
     if (!syncFields || syncFields.length === 0) {
-      syncFields = eventDetails.map((ed) => {
-        const { event: targetEvent, users: eventUsers } = ed;
-        const userListText = eventUsers.map((eu, index) => {
-          if (!eu || !eu.user) return `\`${String(index + 1).padStart(2, '0')}.\` 不明なユーザー`;
-          const displayName = eu.member?.nick || eu.user.global_name || eu.user.username || "不明";
-          return `\`${String(index + 1).padStart(2, '0')}.\` <@${eu.user.id}> (${displayName})`;
-        }).join('\n') || "「興味あり」を押しているプレイヤーはいません。";
-
-        return {
-          name: `📝 ${targetEvent.name} (${eventUsers.length}名)`,
-          value: userListText,
-          inline: false
-        };
-      });
+      // 同期元となる既存の募集カードが見つからない場合（新規募集サイクルの初回等）の初期状態。
+      syncFields = [
+        { name: "📝 シルバー以下 (0名)", value: "「興味あり」を押しているプレイヤーはいません。", inline: false },
+        { name: "📝 ゴルプラ (0名)", value: "「興味あり」を押しているプレイヤーはいません。", inline: false }
+      ];
     }
 
     const recruitLink = targetMessageId ? `\n\n👉 [元の募集メッセージを開く](https://discord.com/channels/${guildId}/${channelId}/${targetMessageId})` : '';
