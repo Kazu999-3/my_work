@@ -40,7 +40,7 @@ def generate_content_safe(client, prompt, model_id=None, config=None, feature_na
     # 1. API Gateway (FastAPI) 経由でのプロキシ実行を最優先で試行
     gateway_success = False
     gateway_text = ""
-    api_key = os.environ.get("ANTIGRAVITY_API_KEY", "default_dev_key_2026")
+    api_key = os.environ.get("ANTIGRAVITY_API_KEY", "")
     
     # 自身が Gateway プロセスである場合は、無限再帰デッドロックを防ぐためルーティングをスキップする
     is_gateway_process = os.environ.get("IS_GATEWAY_PROCESS") == "true"

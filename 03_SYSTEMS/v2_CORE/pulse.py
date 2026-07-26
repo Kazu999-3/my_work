@@ -364,7 +364,8 @@ class SovereignPulse:
             guild = client.get_guild(target_guild_id)
             if guild:
                 members_data = [{"name": getattr(m, 'global_name', None) or m.name, "id": str(m.id)} for m in guild.members if not m.bot]
-                self._sync_members_to_supabase(members_data)
+                # requests.post はブロッキングのため、イベントループを止めないようスレッドへ逃がす
+                await asyncio.to_thread(self._sync_members_to_supabase, members_data)
             else:
                 logger.error(f"[Pulse-Sub] Guild {target_guild_id} not found.")
 
@@ -372,7 +373,7 @@ class SovereignPulse:
         async def on_member_join(member):
             if member.bot: return
             logger.info(f"[Pulse-Sub] New member joined: {member.name} (ID: {member.id})")
-            self._sync_members_to_supabase([{"name": member.nick or member.name, "id": str(member.id)}])
+            await asyncio.to_thread(self._sync_members_to_supabase, [{"name": member.nick or member.name, "id": str(member.id)}])
             self.send_discord_notification("新星の到来", f"新しいメンバー `{member.name}` が王国に加わりました。名簿への自動登録を執行しました。")
 
         try:

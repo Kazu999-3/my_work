@@ -1,5 +1,10 @@
-const SUPABASE_URL = "https://bhohvjlksezkyujroiow.supabase.co";
-const SUPABASE_KEY = "sb_publishable_zK4-ZkkBDqbsCjsvKC4iWQ_r64dCIw_";
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_KEY = process.env.SUPABASE_KEY;
+
+if (!SUPABASE_URL || !SUPABASE_KEY) {
+  console.error("SUPABASE_URL / SUPABASE_KEY を環境変数に設定してから実行してください。");
+  process.exit(1);
+}
 
 async function testInQuery() {
   const ids = ["835163333551325225", "405935282068914176"];
