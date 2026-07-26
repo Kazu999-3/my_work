@@ -21,6 +21,7 @@ SUPABASE_URL = os.getenv("SUPABASE_URL", "")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY", "")
 REGION = "asia"  # アジアリージョン
 PLATFORM = "jp1"  # 日本サーバー
+ALLOWED_QUEUES = {400, 420, 440}  # Normal Draft / Ranked Solo / Ranked Flex のみ対象
 
 def riot_get(url, max_retries=5):
     """Riot API GET (429 Rate Limit 耐性強化版)"""
@@ -94,7 +95,6 @@ def extract_jg_matchup(match_data, puuid):
     if not me: return None
 
     # 許可するキュー: 400 (Normal Draft), 420 (Ranked Solo), 440 (Ranked Flex)
-    ALLOWED_QUEUES = {400, 420, 440}
     queue_id = info.get("queueId")
     if queue_id not in ALLOWED_QUEUES:
         log.info(f"⏭️ Queue ID {queue_id} は対象外（ARAM/Arena/AI等）のためスキップします。")
