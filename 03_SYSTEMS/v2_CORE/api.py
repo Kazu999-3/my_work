@@ -207,18 +207,6 @@ def notify_worker(api_key: str = Depends(get_api_key)):
     task_id = SovereignQueue().enqueue("youtube_absorb")
     return {"status": "success", "message": f"youtube_absorb enqueued (Task ID: {task_id})."}
 
-@app.get("/api/v1/queue/status")
-def get_queue_status(limit: int = 20, api_key: str = Depends(get_api_key)):
-    """SQLiteタスクキューの現在の状態と履歴を返す"""
-    queue = SovereignQueue()
-    active_task = queue.get_active_task()
-    history = queue.get_all_tasks(limit=limit)
-    return {
-        "status": "success",
-        "active_task": active_task,
-        "history": history
-    }
-
 class GenerateRequest(BaseModel):
     prompt_id: str = None
     variables: dict = {}
