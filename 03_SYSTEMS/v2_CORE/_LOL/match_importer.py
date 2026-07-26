@@ -100,6 +100,9 @@ def extract_jg_matchup(match_data, puuid):
         log.info(f"⏭️ Queue ID {queue_id} は対象外（ARAM/Arena/AI等）のためスキップします。")
         return None
 
+    my_team = me.get("teamId")
+    my_role = me.get("teamPosition", "").upper()
+
     # JGじゃなければスキップ（JGの試合のみを対象とする）
     if my_role != "JUNGLE": return None
 
