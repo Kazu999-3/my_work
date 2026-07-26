@@ -1,5 +1,6 @@
 import { CONFIG } from '../config.js';
 import { fetchGAS, fetchPortalAPI, sendDiscordMessage, sendInteractionFollowup } from './api.js';
+import { fetchSupabase } from './supabase.js';
 
 /**
  * parseStartTime: 募集の「開始予定時刻」テキスト(JST)を解釈してISO(UTC)文字列を返す。
@@ -154,17 +155,19 @@ export async function handleAutoMatchEnd(interaction, players, winnerTeam, env, 
       };
 
       const resultData = await fetchPortalAPI(env, '/api/match/record', payload);
-      
-      // 3分後に match-sync を実行
+
+      // 3分後の match-sync 実行を予約する。ctx.waitUntil+setTimeoutはワーカーの
+      // 生存期間を延ばさず実行保証がないため、10分おきcron(scheduled.js)が拾う
+      // 永続キューに積む。
       if (resultData && resultData.matchId) {
-        setTimeout(async () => {
-          try {
-            console.log(`Triggering match-sync for matchId: ${resultData.matchId}`);
-            await fetchPortalAPI(env, '/api/riot/match-sync', { matchId: resultData.matchId });
-          } catch (err) {
-            console.error("Match Sync Delayed Error:", err);
-          }
-        }, 180000);
+        try {
+          await fetchSupabase(env, 'pending_match_sync', '', 'POST', {
+            match_id: resultData.matchId,
+            run_after: new Date(Date.now() + 180000).toISOString(),
+          });
+        } catch (err) {
+          console.error("Failed to schedule pending match-sync:", err);
+        }
       }
     } catch (err) { 
       console.error("AutoLog Error:", err); 

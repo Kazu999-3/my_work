@@ -447,10 +447,27 @@ export async function handleButtonInteraction(interaction, env, ctx) {
     });
   }
 
+  // join_any/join_role は同時押しされやすく、interaction.message は「押した瞬間」の
+  // スナップショットで古くなりがちなので、直前にメッセージを取り直して競合の窓を狭める
+  // （完全な排他制御ではないが、join_periodicと同じ緩和策）。
+  const refreshJoinMetadata = async () => {
+    try {
+      const freshRes = await fetch(`https://discord.com/api/v10/channels/${interaction.channel_id}/messages/${interaction.message.id}`, {
+        headers: { "Authorization": `Bot ${botToken}` }
+      });
+      if (freshRes.ok) {
+        Object.assign(metadata, parseMessageData(await freshRes.json()));
+      }
+    } catch (e) {
+      console.warn("join: 最新状態の再取得に失敗、インタラクションのスナップショットで続行:", e);
+    }
+  };
+
   if (customId.startsWith('upgrade_to_10')) {
     if (!canManageRecruitment) return Response.json({ type: 4, data: { content: "⚠️ 募集主または管理者のみ拡張可能です。", flags: 64 } });
     metadata.mode = 'カスタム'; metadata.maxCount = 10;
   } else if (customId.startsWith('join_any')) {
+    await refreshJoinMetadata();
     if (metadata.joined.includes(userId) && !Object.values(metadata.roles).includes(userId)) {
       // 二度押しで離脱
       metadata.joined = metadata.joined.filter(id => id !== userId);
@@ -466,6 +483,7 @@ export async function handleButtonInteraction(interaction, env, ctx) {
     }
   } else if (customId.startsWith('join_role:')) {
     const role = customId.split(':')[1];
+    await refreshJoinMetadata();
     if (metadata.roles[role] === userId) {
       // 二度押しで離脱
       metadata.roles[role] = null;

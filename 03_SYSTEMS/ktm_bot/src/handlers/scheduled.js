@@ -1,7 +1,7 @@
 import { CONFIG } from '../config.js';
 import { fetchSupabase } from '../utils/supabase.js';
 import { parseMessageData } from '../utils/helpers.js';
-import { fetchWithRetry } from '../utils/api.js';
+import { fetchWithRetry, fetchPortalAPI } from '../utils/api.js';
 import { createMessageContent, createRecruitButtons, createRecruitEmbed } from '../ui/embeds.js';
 import { createRecruitment } from '../utils/recruitPermission.js';
 import { getKtmRank, formatRankDistribution, formatMmrWithRank } from '../utils/ktmRank.js';
@@ -24,6 +24,8 @@ export async function handleScheduledEvent(event, env, ctx) {
   } else if (cronExpression.includes("*/10 * * * *") || mode === "recruit_reminder") {
     // 10分ごと: 開始時刻が近い募集の参加者へリマインド(D1)
     await sendRecruitmentReminders(env);
+    // 同じ10分おきcronで、試合終了3分後に予約されたリザルト自動取得も処理する
+    await processPendingMatchSyncs(env);
   } else {
     // 直前通知: 進行中の募集の集まり具合を通知し、不足なら欠員アラート
     await sendRecruitStatusNotification(env);
@@ -85,6 +87,33 @@ async function markReminded(env, messageId) {
     });
   } catch (e) {
     console.error("markReminded failed:", e);
+  }
+}
+
+/**
+ * handleAutoMatchEnd が試合終了3分後に予約した /api/riot/match-sync 呼び出しを処理する。
+ * 以前は ctx.waitUntil 内の setTimeout(fn, 180000) に頼っていたが、外側の async関数が
+ * setTimeoutを待たずに即resolveするため waitUntil の延命が効かず、Cloudflare Workers が
+ * インスタンスを回収すると3分後の呼び出しが実行される保証がなかった。10分おきcronで
+ * 拾う永続キュー(pending_match_sync)に置き換え、確実に（多少遅れても）実行されるようにする。
+ */
+async function processPendingMatchSyncs(env) {
+  try {
+    const nowIso = new Date().toISOString();
+    const rows = await fetchSupabase(env, 'pending_match_sync', `done=eq.false&run_after=lte.${nowIso}&select=id,match_id`);
+    if (!rows || rows.length === 0) return;
+
+    for (const row of rows) {
+      try {
+        await fetchPortalAPI(env, '/api/riot/match-sync', { matchId: row.match_id });
+      } catch (e) {
+        console.error(`match-sync failed for matchId ${row.match_id}:`, e);
+        // 失敗時も done にする（無限リトライで同じ試合を何度も突くのを防ぐ。手動再実行は可能）
+      }
+      await fetchSupabase(env, 'pending_match_sync', `id=eq.${row.id}`, 'PATCH', { done: true });
+    }
+  } catch (err) {
+    console.error("processPendingMatchSyncs error:", err);
   }
 }
 
