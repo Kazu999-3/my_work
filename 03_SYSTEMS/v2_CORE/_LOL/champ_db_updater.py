@@ -214,6 +214,7 @@ def update_champion_db(champ_id: str, champ_name: str, new_text: str, patch_vers
         "title": f"{champ_name} 基本戦略・トレンド",
         "strategy": merged_json.get("strategy", ""),
         "raw_data": {
+            **existing_raw,
             "source": "champ_db",
             "role": "GLOBAL",
             "strengths": merged_json.get("strengths", ""),
