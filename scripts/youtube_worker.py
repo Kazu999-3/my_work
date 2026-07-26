@@ -161,6 +161,18 @@ def main():
         # 'processing' は許可されていないため、着手中フラグは立てない。
         # （立てようとすると 400 で落ち、しかも try の外だったため全体が停止していた）
         try:
+            # 前回の実行で要約の保存(POST)自体は成功したが、直後の
+            # youtube_queue へのPATCH(completed)だけがネットワーク障害等で失敗していた
+            # 場合の救済。無条件に再生成すると Gemini呼び出しの二重コストと
+            # personal_knowledge の重複行を生むため、既存の有無を先に確認する。
+            existing = sb("GET", f"personal_knowledge?source_url=eq.{url}&select=id,title")
+            if existing:
+                sb("PATCH", f"youtube_queue?id=eq.{vid}", {"status": "completed"})
+                title = existing[0].get("title") or it.get("title") or "(無題)"
+                done.append(title)
+                print(f"✅ 完了（既存の要約を検出、再生成をスキップ）: {title}")
+                continue
+
             transcript = fetch_subtitles(url, vid)
             if not transcript:
                 raise NoTranscript("字幕を取得できませんでした（字幕なし or IP制限の可能性）")
