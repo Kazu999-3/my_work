@@ -13,6 +13,7 @@ import json
 import os
 import re
 import sys
+import time
 import urllib.parse
 import urllib.request
 from datetime import datetime, timezone
@@ -78,18 +79,23 @@ def enqueue_videos(champion):
         for vid in vids:
             # 重複チェック
             existing = sb_request("GET", f"youtube_queue?id=eq.{vid}&select=id")
-            if not existing:
+            if existing:
+                continue
+            try:
                 sb_request("POST", "youtube_queue", [{
                     "id": vid,
                     "url": f"https://www.youtube.com/watch?v={vid}",
                     "title": f"[ディープリサーチ] {champion} 解説動画 ({vid})",
-                    "champion": champion,
+                    "channel_name": "Unknown",
                     "status": "pending",
                     "priority": "high",
-                    "date_added": datetime.now(timezone.utc).isoformat()
-                }])
-                added += 1
-                print(f"  ✅ キュー登録(高優先度): https://www.youtube.com/watch?v={vid}")
+                    "date_added": int(time.time())
+                }], prefer="return=minimal")
+            except Exception as e:
+                print(f"  ⚠️ キュー登録失敗 ({vid}): {e}")
+                continue
+            added += 1
+            print(f"  ✅ キュー登録(高優先度): https://www.youtube.com/watch?v={vid}")
         return added
     except Exception as e:
         print(f"  ⚠️ YouTube動画検索エラー: {e}")
