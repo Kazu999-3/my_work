@@ -21,7 +21,7 @@ import sys
 import time
 import urllib.request, urllib.error
 
-from notify import notify, COLOR_INFO
+from notify import notify, COLOR_INFO, COLOR_OK
 
 SUPABASE_URL = os.environ["SUPABASE_URL"].rstrip("/")
 # シークレット名は環境によって揺れるため、候補を順に拾う
@@ -233,7 +233,7 @@ def main() -> int:
     notify(
         summary,
         lines,
-        color=COLOR_INFO if added > 0 else COLOR_INFO,
+        color=COLOR_OK if added > 0 else COLOR_INFO,
         worker_name="prospector",
         status="ok"
     )
