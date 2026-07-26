@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { supabase } from '../../../lib/supabaseClient';
-import { Book, ChevronLeft, ChevronDown, ChevronUp, Clock, User, Sparkles, Pencil, Save, X, Trash2, Search, Terminal, Activity, Eye, Edit2, Star as StarIcon, RefreshCw } from 'lucide-react';
+import { Book, ChevronLeft, ChevronDown, ChevronUp, Clock, User, Sparkles, Pencil, Save, X, Trash2, Search, Activity, Eye, Edit2, Star as StarIcon, RefreshCw } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -636,12 +636,6 @@ export function LibraryTabContentInner() {
     }
   };
 
-  const copyPublishCommand = (championName: string) => {
-    const cmd = `py d:\\my_work\\03_SYSTEMS\\TOOLS\\publish_local_article.py "${championName}"`;
-    navigator.clipboard.writeText(cmd);
-    showToast('コマンドをコピーしました！', 'success');
-  };
-
   const containerVariants = { hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.1 } } };
   const itemVariants = { hidden: { y: 20, opacity: 0 }, visible: { y: 0, opacity: 1 } };
 
@@ -692,7 +686,6 @@ export function LibraryTabContentInner() {
                 {reAnalyzeId === selectedArticle.id ? "AI再解析中..." : "✨ 画像・動画AI再解析"}
               </button>
             )}
-            <button onClick={() => copyPublishCommand(selectedArticle.champion || selectedArticle.title?.split(' ')[0] || '')} className="px-4 py-2 glass-panel glass-panel-hover text-[#00cfef] rounded-xl text-sm font-bold flex items-center gap-2"><Terminal size={14} /> 投稿コマンドをコピー</button>
             <button onClick={(e) => deleteArticle(selectedArticle.id, e)} className="px-4 py-2 glass-panel glass-panel-hover text-red-400 rounded-xl text-sm font-bold flex items-center gap-2"><Trash2 size={14} /> 削除</button>
           </div>
         </div>
@@ -1060,15 +1053,6 @@ export function LibraryTabContentInner() {
                                     className="px-4 py-2 glass-panel glass-panel-hover text-[#c89b3c] rounded-xl text-sm font-bold flex items-center gap-2 transition-colors"
                                   >
                                     <Edit2 size={14} /> 編集する
-                                  </button>
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      copyPublishCommand(article.champion || article.title?.split(' ')[0] || '');
-                                    }}
-                                    className="px-4 py-2 glass-panel glass-panel-hover text-[#00cfef] rounded-xl text-sm font-bold flex items-center gap-2 transition-colors"
-                                  >
-                                    <Terminal size={14} /> 投稿コマンド
                                   </button>
                                   {article.source_url && (
                                     <button

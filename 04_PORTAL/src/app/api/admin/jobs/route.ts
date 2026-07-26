@@ -49,30 +49,6 @@ const JOBS: Record<string, JobConfig> = {
     log:    '00_LOGS/dict_synthesizer_run.log',
     name:   '総合辞典マージ'
   },
-  research_scout: {
-    script: '03_SYSTEMS/v2_CORE/_MONETIZE/research_scout.py',
-    lock:   '03_SYSTEMS/v2_CORE/_MONETIZE/research_scout.lock',
-    log:    '00_LOGS/research_scout_run.log',
-    name:   'トレンド自動リサーチ'
-  },
-  idea_generator: {
-    script: '03_SYSTEMS/v2_CORE/_MONETIZE/idea_generator.py',
-    lock:   '03_SYSTEMS/v2_CORE/_MONETIZE/idea_generator.lock',
-    log:    '00_LOGS/idea_generator_run.log',
-    name:   '記事ネタ自動提案'
-  },
-  evolution: {
-    script: '03_SYSTEMS/v2_CORE/_MONETIZE/evolution.py',
-    lock:   '03_SYSTEMS/v2_CORE/_MONETIZE/evolution.lock',
-    log:    '00_LOGS/evolution_run.log',
-    name:   'AI自己進化プロンプト更新'
-  },
-  monetization_batch: {
-    script: '03_SYSTEMS/v2_CORE/monetization_batch.py',
-    lock:   '03_SYSTEMS/v2_CORE/monetization_batch.lock',
-    log:    '00_LOGS/monetization_batch_run.log',
-    name:   'アフィリエイト一気通貫バッチ'
-  },
   champion_db_bulk_update: {
     script: '03_SYSTEMS/v2_CORE/_LOL/champ_db_bulk_updater.py',
     lock:   '03_SYSTEMS/v2_CORE/_LOL/champ_db_bulk_updater.lock',
