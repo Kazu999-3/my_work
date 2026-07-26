@@ -9,7 +9,7 @@
 import logging
 from google import genai
 from google.genai import types
-from .settings import settings
+from v2_CORE.settings import settings
 from v2_CORE.ai_helper import generate_content_safe
 import re
 

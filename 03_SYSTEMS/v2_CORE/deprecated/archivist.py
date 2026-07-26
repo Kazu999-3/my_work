@@ -11,7 +11,7 @@ import json
 import logging
 from pathlib import Path
 from datetime import datetime
-from .settings import settings
+from v2_CORE.settings import settings
 
 logger = logging.getLogger("Archivist")
 

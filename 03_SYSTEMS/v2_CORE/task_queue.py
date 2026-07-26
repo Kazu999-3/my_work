@@ -101,7 +101,7 @@ class SovereignQueue:
                     "id": item["id"],
                     "task_type": item["task_type"],
                     "payload": item["payload"] or {},
-                    "status": "pending"  # 外部（task_worker.py）との互換性のために pending とマッピング
+                    "status": "pending"  # 呼び出し元との互換性のため todo ではなく pending の表記を返す
                 }
         except Exception as e:
             print(f"[Queue] Supabase get_next_pending error: {e}")
