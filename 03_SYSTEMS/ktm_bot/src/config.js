@@ -1,4 +1,10 @@
 export const CONFIG = {
+  // 意図的な二段階権限（バグではない）:
+  //   - CONFIG.ADMIN_ID（この単一ID）: 試合結果の書き換え・MMR手動調整・ランク一括同期など
+  //     「危険な操作」専用。オーナー本人だけに絞るための固定値。
+  //   - env.ADMIN_DISCORD_IDS（utils/recruitPermission.js の getAdminDiscordIds）: 募集の
+  //     編集・削除など「日常運用」用。複数のモデレーターに任せられるようカンマ区切りで複数人設定可能。
+  // 統合すると、モデレーターに危険な操作の権限まで渡ってしまうため統合しないこと。
   ADMIN_ID: "697220229964759130",
   GAS_URL: "https://script.google.com/macros/s/AKfycbwpSuT-cSMkTHz2iUConeLDjdCE9mAHy0SeGOp_krX5OVjHJumpXq7LxIZ3eXFPuZAv/exec",
   RECRUIT_CHANNEL_ID: "1485995531434987541",
