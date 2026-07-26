@@ -1,7 +1,7 @@
 import { CONFIG, getPortalUrl } from '../config.js';
 import { fetchGAS, patchInteractionResponse, sendDiscordMessage, fetchPortalAPI } from '../utils/api.js';
 import { createMessageContent, createRecruitButtons, createRecruitEmbed, getPortalComponents, getPortalEmbed } from '../ui/embeds.js';
-import { getPlayersByNames, fetchSupabase, upsertPlayer } from '../utils/supabase.js';
+import { getPlayersByNames, fetchSupabase } from '../utils/supabase.js';
 import { parseMessageData, parseStartTime } from '../utils/helpers.js';
 import { createRecruitment } from '../utils/recruitPermission.js';
 import { getTierEmoji } from '../utils/ktmRank.js';

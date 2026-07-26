@@ -2,7 +2,7 @@ import { CONFIG } from '../config.js';
 import { fetchGAS, patchInteractionResponse, sendDiscordMessage, sendInteractionFollowup } from '../utils/api.js';
 import { fetchSupabase } from '../utils/supabase.js';
 import { handleLaneCommand, handleStatsCommand } from './commands.js';
-import { createMessageContent, createRecruitButtons, createRecruitEmbed, extractPlayersFromEmbed, getPortalComponents, getPortalEmbed, handleHelpPage, splitMessage } from '../ui/embeds.js';
+import { createMessageContent, createRecruitButtons, createRecruitEmbed, extractPlayersFromEmbed, getPortalComponents, getPortalEmbed, handleHelpPage } from '../ui/embeds.js';
 import { parseMessageData, handleAutoMatchEnd } from '../utils/helpers.js';
 import { getAdminDiscordIds, markRecruitmentStatus } from '../utils/recruitPermission.js';
 import { getKtmRank, formatRankDistribution } from '../utils/ktmRank.js';

@@ -1,24 +1,14 @@
 /**
- * 募集(recruitments)の編集・削除権限チェック共通ロジック。
- * 募集主本人、またはシステム管理者(ADMIN_DISCORD_IDS)は常に許可する。
- * ktm_bot(components.js)とPortal(src/lib/recruitPermission.ts)の両方で
- * 同じ判定基準を使うこと。
+ * 募集(recruitments)テーブルへの記録・状態更新と、システム管理者(ADMIN_DISCORD_IDS)の解決。
+ * 編集・削除の可否そのものは components.js 側で募集メッセージのメタデータ(owner)を
+ * 基準に判定している（DBの recruitments 行はベストエフォート作成のため、
+ * これに依存すると作成失敗時に募集主本人が編集できなくなる恐れがある）。
  */
 import { fetchSupabase } from './supabase.js';
 
 export function getAdminDiscordIds(env) {
   const idsStr = env.ADMIN_DISCORD_IDS || '';
   return idsStr.split(',').map((id) => id.trim()).filter(Boolean);
-}
-
-export async function getRecruitmentByMessageId(env, messageId) {
-  const rows = await fetchSupabase(env, 'recruitments', `discord_message_id=eq.${messageId}&select=*`);
-  return rows && rows.length > 0 ? rows[0] : null;
-}
-
-export function canEditRecruitment(userId, recruitment, adminIds) {
-  if (!recruitment) return false;
-  return userId === recruitment.owner_discord_id || adminIds.includes(userId);
 }
 
 /** モーダル送信時などに募集レコードを新規作成する。startAt(ISO)があれば開始リマインド対象になる。 */

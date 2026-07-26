@@ -159,18 +159,3 @@ export function extractPlayersFromEmbed(embed) {
   if (teamBField) teamBField.value.split('\n').forEach(l => { const p = parseLine(l, 'RED'); if (p) players.push(p); });
   return players;
 }
-
-/** 文字数分割 */
-export function splitMessage(text, limit = 1800) {
-  const chunks = [];
-  let current = "";
-  text.split('\n').forEach(line => {
-    if ((current.length + line.length + 1) > limit) {
-      if (current) chunks.push(current);
-      current = "";
-    }
-    current += line + "\n";
-  });
-  if (current) chunks.push(current);
-  return chunks;
-}
