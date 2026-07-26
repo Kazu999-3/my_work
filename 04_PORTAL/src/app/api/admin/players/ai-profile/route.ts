@@ -7,6 +7,12 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
   try {
+  // ===== 管理者セッション確認 =====
+  const authResult = await verifyAdminSession(req);
+  if (!authResult.ok) {
+    return NextResponse.json({ error: authResult.error }, { status: 401 });
+  }
+  // =================================
     const { playerId, playerName, stats } = await req.json();
 
     if (!playerId || !playerName) {

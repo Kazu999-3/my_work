@@ -104,8 +104,14 @@ export async function GET(req: NextRequest) {
 // 2. 新規動画の追加 または タスク起動
 export async function POST(req: NextRequest) {
   try {
+  // ===== 管理者セッション確認 =====
+  const authResult = await verifyAdminSession(req);
+  if (!authResult.ok) {
+    return NextResponse.json({ error: authResult.error }, { status: 401 });
+  }
+  // =================================
     const body = await req.json();
-    
+
     // 手動タスク起動の処理
     if (body.trigger_task) {
       const { trigger_task } = body;
@@ -231,6 +237,12 @@ export async function POST(req: NextRequest) {
 // 3. 動画ステータス・優先度の更新（再試行、保留、優先度変更等）
 export async function PUT(req: NextRequest) {
   try {
+  // ===== 管理者セッション確認 =====
+  const authResult = await verifyAdminSession(req);
+  if (!authResult.ok) {
+    return NextResponse.json({ error: authResult.error }, { status: 401 });
+  }
+  // =================================
     const { id, status, priority } = await req.json();
 
     if (!id) {
@@ -272,6 +284,12 @@ export async function PUT(req: NextRequest) {
 // 4. 動画の削除
 export async function DELETE(req: NextRequest) {
   try {
+  // ===== 管理者セッション確認 =====
+  const authResult = await verifyAdminSession(req);
+  if (!authResult.ok) {
+    return NextResponse.json({ error: authResult.error }, { status: 401 });
+  }
+  // =================================
     const { id } = await req.json();
 
     if (!id) {
@@ -304,6 +322,12 @@ export async function DELETE(req: NextRequest) {
 // 5. エラー動画の一括再試行
 export async function PATCH(req: NextRequest) {
   try {
+  // ===== 管理者セッション確認 =====
+  const authResult = await verifyAdminSession(req);
+  if (!authResult.ok) {
+    return NextResponse.json({ error: authResult.error }, { status: 401 });
+  }
+  // =================================
     const { action } = await req.json();
 
     if (action !== 'retry_all_errors') {

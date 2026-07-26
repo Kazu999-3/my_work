@@ -23,7 +23,10 @@ export async function GET(req: NextRequest) {
     }
 
     if (queryStr && queryStr.trim() !== '' && queryStr !== 'null' && queryStr !== 'undefined') {
-      dbQuery = dbQuery.or(`title.ilike.%${queryStr}%,content.ilike.%${queryStr}%,raw_content.ilike.%${queryStr}%`);
+      // PostgRESTの or() はカンマ・括弧をフィルタ区切りとして解釈するため、
+      // 検索語にこれらが含まれるとフィルタ構文が壊れる。無害な文字に置き換えて防ぐ。
+      const safeQuery = queryStr.replace(/[,()]/g, ' ');
+      dbQuery = dbQuery.or(`title.ilike.%${safeQuery}%,content.ilike.%${safeQuery}%,raw_content.ilike.%${safeQuery}%`);
     }
 
     // 最新順 (上限100件に制限してメモリと描画負荷を低減)
@@ -43,6 +46,12 @@ export async function GET(req: NextRequest) {
 // 2. ナレッジの削除
 export async function DELETE(req: NextRequest) {
   try {
+  // ===== 管理者セッション確認 =====
+  const authResult = await verifyAdminSession(req);
+  if (!authResult.ok) {
+    return NextResponse.json({ error: authResult.error }, { status: 401 });
+  }
+  // =================================
     const { id } = await req.json();
 
     if (!id) {
