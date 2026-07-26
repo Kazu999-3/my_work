@@ -65,6 +65,7 @@ ${memoText.slice(0, 12000)}`;
       const { data: logs } = await supabase
         .from('matchup_log')
         .select('my_champion, enemy_champion, is_win')
+        .order('created_at', { ascending: false })
         .limit(3000);
 
       if (!facts || facts.length === 0) {

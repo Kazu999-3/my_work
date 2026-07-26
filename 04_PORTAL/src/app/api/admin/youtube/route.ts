@@ -4,6 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import { exec } from 'child_process';
 import { verifyAdminSession } from '../../../../lib/adminAuth';
+import { fetchAllRows } from '../../../../lib/fetchAll';
 
 // サーバーサイド用クライアント（サービスキーを使用）
 
@@ -46,10 +47,12 @@ export async function GET(req: NextRequest) {
     const rows = data || [];
 
     try {
-      const { data: articles } = await supabase
-        .from('personal_knowledge')
-        .select('id, title, source_url, content, raw_content, tags')
-        .limit(3000);
+      const { data: articles } = await fetchAllRows((from, to) =>
+        supabase
+          .from('personal_knowledge')
+          .select('id, title, source_url, content, raw_content, tags')
+          .range(from, to)
+      );
 
       const queueIds = new Set(rows.map((r: any) => String(r.id)));
 

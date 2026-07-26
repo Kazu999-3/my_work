@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '../../../../lib/supabaseClient';
+import { fetchAllRows } from '../../../../lib/fetchAll';
 
 // バトルサーチ刷新用の集計API。
 //  - recent : 直近の自分の対面（F: 対面カルテ／振り返り導線）
@@ -19,13 +20,18 @@ export async function GET(req: Request) {
     const enemy = url.searchParams.get('enemy');         // 相手のチャンプ
     const days = Number(url.searchParams.get('days') || 0); // E: 期間フィルタ(0=全期間)
 
-    let q = supabase
-      .from('matchup_log')
-      .select('player_name, role, my_champion, enemy_champion, is_win, kills, deaths, assists, created_at')
-      .order('created_at', { ascending: false });
-
-    if (player) q = q.eq('player_name', player);
-    if (days > 0) q = q.gte('created_at', new Date(Date.now() - days * 86400000).toISOString());
+    // player/days フィルタを適用したベースクエリを毎回新しく組み立てるヘルパー
+    // (fetchAllRows は同じクエリビルダーを使い回すのではなく、ページごとに新規発行する前提)
+    const buildQuery = () => {
+      let query = supabase
+        .from('matchup_log')
+        .select('player_name, role, my_champion, enemy_champion, is_win, kills, deaths, assists, created_at')
+        .order('created_at', { ascending: false });
+      if (player) query = query.eq('player_name', player);
+      if (days > 0) query = query.gte('created_at', new Date(Date.now() - days * 86400000).toISOString());
+      return query;
+    };
+    const q = buildQuery();
 
     if (kind === 'pair') {
       if (!my || !enemy) return NextResponse.json({ error: 'my と enemy が必要です。' }, { status: 400 });
@@ -48,7 +54,12 @@ export async function GET(req: Request) {
       });
     }
 
-    const { data, error } = await q.limit(kind === 'weak' ? 800 : 20);
+    // weak(苦手対面ランキング)は集計の正確性のため全件必要（固定800件だと既に
+    // matchup_log全体(1000件超)を下回り無言で切り捨てていた）。recentは表示件数が
+    // 少なくて済むため従来通り limit(20) のまま。
+    const { data, error } = kind === 'weak'
+      ? await fetchAllRows((from, to) => buildQuery().range(from, to))
+      : await q.limit(20);
     if (error) throw error;
     const rows = data || [];
 
