@@ -11,8 +11,10 @@ export default function SystemStatus({ isCollapsed = false }: { isCollapsed?: bo
   const [health, setHealth] = useState<Health>(null);
   const [loading, setLoading] = useState(true);
 
-  const check = async () => {
-    setLoading(true);
+  const check = async (isInitial = false) => {
+    // 初回のみ「確認中...」を表示する。60秒ごとの再確認では現在表示中のステータスを
+    // 維持したまま裏で確認し、正常稼働中でも毎分ちらつくのを防ぐ。
+    if (isInitial) setLoading(true);
     try {
       const res = await fetch('/api/health', { cache: 'no-store' });
       const data = await res.json();
@@ -25,8 +27,8 @@ export default function SystemStatus({ isCollapsed = false }: { isCollapsed?: bo
   };
 
   useEffect(() => {
-    check();
-    const id = setInterval(check, 60_000); // 1分ごとに再確認
+    check(true);
+    const id = setInterval(() => check(false), 60_000); // 1分ごとに再確認
     return () => clearInterval(id);
   }, []);
 

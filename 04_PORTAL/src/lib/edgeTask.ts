@@ -24,19 +24,22 @@ export async function enqueueEdgeTask(taskType: string, payload: any = {}) {
     throw error;
   }
 
-  const gatewayUrl = 'http://127.0.0.1:8000/api/v1/worker/notify';
-  const apiKey = process.env.ANTIGRAVITY_API_KEY || 'default_dev_key_2026';
-
-  // バックグラウンドで即時トリガー通知を送信（エラーは無視）
-  fetch(gatewayUrl, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Antigravity-Key': apiKey
-    }
-  }).catch(() => {
-    // ローカル環境未起動またはVercel本番からの呼び出し失敗時は自動で60秒の通常ポーリングへ委ねる
-  });
+  // ANTIGRAVITY_API_KEY未設定時はGateway側がどのみち拒否するため、
+  // 既知の共有デフォルト値へフォールバックせずリクエスト自体を送らない。
+  const apiKey = process.env.ANTIGRAVITY_API_KEY;
+  if (apiKey) {
+    const gatewayUrl = 'http://127.0.0.1:8000/api/v1/worker/notify';
+    // バックグラウンドで即時トリガー通知を送信（エラーは無視）
+    fetch(gatewayUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Antigravity-Key': apiKey
+      }
+    }).catch(() => {
+      // ローカル環境未起動またはVercel本番からの呼び出し失敗時は自動で60秒の通常ポーリングへ委ねる
+    });
+  }
 
   return data ? data[0] : null;
 }

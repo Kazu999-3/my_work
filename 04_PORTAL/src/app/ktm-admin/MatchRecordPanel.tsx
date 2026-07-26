@@ -59,6 +59,7 @@ export default function MatchRecordPanel({ balanceResult, onComplete }: MatchRec
 
       // 10人のKTMメンバーと、Riot参加者を自動マッピング
       let matchCount = 0;
+      const winningTeamsSeen = new Set<string>();
       const updatedStats = stats.map(p => {
         const pNameLower = p.name.toLowerCase();
         // Riot参加者リストから名前の完全一致（#TAGを除外したGameName）で照合
@@ -73,7 +74,7 @@ export default function MatchRecordPanel({ balanceResult, onComplete }: MatchRec
           // 勝利チームの自動検知
           // rp.win === true かつ 該当プレイヤーがBLUEチームならBLUE WIN、REDならRED WIN
           if (rp.win) {
-            setWinningTeam(p.team);
+            winningTeamsSeen.add(p.team);
           }
 
           return {
@@ -94,7 +95,13 @@ export default function MatchRecordPanel({ balanceResult, onComplete }: MatchRec
       });
 
       setStats(updatedStats);
-      setMessage(`✅ Riot APIからデータを読み込みました！(10人中 ${matchCount} 人をマッピング完了、勝利チームを自動検知しました)`);
+      if (winningTeamsSeen.size === 1) {
+        setWinningTeam([...winningTeamsSeen][0] as 'BLUE' | 'RED');
+        setMessage(`✅ Riot APIからデータを読み込みました！(10人中 ${matchCount} 人をマッピング完了、勝利チームを自動検知しました)`);
+      } else {
+        // Riotデータが両チームにwin:trueを返す等、不整合な場合は自動判定せず手動選択に委ねる
+        setMessage(`⚠️ Riot APIからデータを読み込みましたが、勝利チームを自動検知できませんでした（手動で選択してください）。(10人中 ${matchCount} 人をマッピング完了)`);
+      }
     } catch (err: any) {
       setMessage(`⚠️ 自動読込エラー: ${err.message}`);
     } finally {
