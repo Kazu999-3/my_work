@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '../../../../lib/supabaseClient';
+import { fetchAllRows } from '../../../../lib/fetchAll';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,10 +15,13 @@ export async function GET() {
       throw new Error("Failed to fetch players");
     }
 
-    // 2. 過去の全試合の参加者を取得
-    const { data: participants, error: hError } = await supabase
-      .from('ktm_match_participants')
-      .select('player_name, discord_id, role, team, match_id');
+    // 2. 過去の全試合の参加者を取得（1000件超に備えページネーション）
+    const { data: participants, error: hError } = await fetchAllRows((from, to) =>
+      supabase
+        .from('ktm_match_participants')
+        .select('player_name, discord_id, role, team, match_id')
+        .range(from, to)
+    );
 
     if (hError || !participants) {
       console.error("Failed to fetch match participants:", hError);

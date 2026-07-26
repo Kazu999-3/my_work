@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { supabaseAdmin } from '../../../../lib/supabaseAdmin';
+import { verifyAdminSession } from '../../../../lib/adminAuth';
 
 // 監視対象のジョブタイプ一覧
 const PIPELINE_JOBS = [
@@ -9,11 +10,15 @@ const PIPELINE_JOBS = [
   { id: 'pro-build', label: 'プロビルド', pattern: 'pro_build%' },
 ];
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+  // ===== 管理者セッション確認 =====
+  const authResult = await verifyAdminSession(req);
+  if (!authResult.ok) {
+    return NextResponse.json({ error: authResult.error }, { status: 401 });
+  }
+  // =================================
+    const supabase = supabaseAdmin;
 
     const results = await Promise.all(
       PIPELINE_JOBS.map(async (job) => {

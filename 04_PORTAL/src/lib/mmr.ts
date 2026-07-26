@@ -5,6 +5,7 @@
 import type { Role } from './balancer';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import rawKtmTiers from '../shared/ktm_tiers.json';
+import { fetchAllRows } from './fetchAll';
 
 
 export const RANKS: Record<string, number> = {
@@ -314,7 +315,10 @@ export async function performFullMmrRebuild(supabase: SupabaseClient) {
   if (mError || !allMatches) throw mError;
 
   // すべての参加者データを一括ロードして match_id ごとにマッピング (N+1問題の解消)
-  const { data: allParticipants, error: pErr } = await supabase.from('ktm_match_participants').select('*');
+  // 1000件超に備えページネーションで全件取得（欠落するとMMR再計算が不正確になる）
+  const { data: allParticipants, error: pErr } = await fetchAllRows((from, to) =>
+    supabase.from('ktm_match_participants').select('*').range(from, to)
+  );
   if (pErr) throw pErr;
 
   const participantsByMatch = new Map<string, any[]>();

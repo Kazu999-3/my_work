@@ -1,17 +1,24 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
+import { fetchAllRows } from '../../../../lib/fetchAll';
 
 export const revalidate = 300; // 5分間キャッシュしてSupabaseへの負荷を削減
 
 
 export async function GET() {
   try {
-    // 1. 全参加者レコードを取得
-    const { data: participants, error: pError } = await supabase
-      .from('ktm_match_participants')
-      .select('match_id, player_name, champion_name, kills, deaths, assists, team, role');
-      
-    if (pError) throw pError;
+    // 1. 全参加者レコードを取得（1000件超に備えページネーション）
+    const { data: participants, error: pError } = await fetchAllRows((from, to) =>
+      supabase
+        .from('ktm_match_participants')
+        .select('match_id, player_name, champion_name, kills, deaths, assists, team, role')
+        .range(from, to)
+    );
+
+    if (pError || !participants) {
+      console.error('Failed to fetch match participants:', pError);
+      throw new Error('Failed to fetch match participants');
+    }
 
     // 2. 試合作成日時および勝敗情報を取得
     const { data: matches, error: mError } = await supabase
@@ -19,7 +26,10 @@ export async function GET() {
       .select('id, created_at, winning_team')
       .order('created_at', { ascending: false });
 
-    if (mError) throw mError;
+    if (mError || !matches) {
+      console.error('Failed to fetch matches:', mError);
+      throw new Error('Failed to fetch matches');
+    }
     
     const matchDateMap = new Map();
     matches.forEach((m: any) => {

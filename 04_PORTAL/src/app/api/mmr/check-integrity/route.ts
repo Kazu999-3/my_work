@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 import { calculateInitialMmr, calculateNewMMR, computeRepresentativeMmr } from '../../../../lib/mmr';
 import { verifyAdminSession } from '../../../../lib/adminAuth';
+import { fetchAllRows } from '../../../../lib/fetchAll';
 
 
 export async function GET(request: Request) {
@@ -49,7 +50,10 @@ export async function GET(request: Request) {
     const matchupHistoryMap = new Map<string, number>(); // "PlayerA<=>PlayerB:ROLE" -> count
 
     // 全参加者を一括ロードして match_id ごとにマッピング（N+1問題の解消。rebuild側と同じ方式）
-    const { data: allParticipants, error: apError } = await supabase.from('ktm_match_participants').select('*');
+    // 1000件超に備えページネーションで全件取得
+    const { data: allParticipants, error: apError } = await fetchAllRows((from, to) =>
+      supabase.from('ktm_match_participants').select('*').range(from, to)
+    );
     if (apError) throw apError;
     const participantsByMatch = new Map<string, any[]>();
     for (const part of (allParticipants || [])) {

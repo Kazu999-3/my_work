@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabaseClient';
+import { fetchAllRows } from '../../lib/fetchAll';
 import { getKtmRank } from '../../lib/mmr';
 import { Spinner } from '../../components/Feedback';
 import { getChampIcon } from '../../lib/ddragonClient';
@@ -52,9 +53,12 @@ export default function LeaderboardPage() {
     (async () => {
       setMetaLoading(true);
       try {
-        const { data: partData } = await supabase
-          .from('ktm_match_participants')
-          .select('match_id, champion_name, team, kills, deaths, assists');
+        const { data: partData } = await fetchAllRows((from, to) =>
+          supabase
+            .from('ktm_match_participants')
+            .select('match_id, champion_name, team, kills, deaths, assists')
+            .range(from, to)
+        );
         const { data: matchWins } = await supabase
           .from('ktm_matches')
           .select('id, winning_team');
@@ -121,9 +125,12 @@ export default function LeaderboardPage() {
         }
 
         // 2. ktm_match_participants と ktm_matches から勝敗と試合数を安全に集計
-        const { data: matchesData, error: mError } = await supabase
-          .from('ktm_match_participants')
-          .select('player_name, discord_id, role, team, match_id');
+        const { data: matchesData, error: mError } = await fetchAllRows((from, to) =>
+          supabase
+            .from('ktm_match_participants')
+            .select('player_name, discord_id, role, team, match_id')
+            .range(from, to)
+        );
 
         const { data: rawMatches, error: rawmError } = await supabase
           .from('ktm_matches')

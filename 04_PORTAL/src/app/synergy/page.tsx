@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabaseClient';
+import { fetchAllRows } from '../../lib/fetchAll';
 import { Users, HeartHandshake, Crown, Skull, Sparkles } from 'lucide-react';
 import { Spinner } from '../../components/Feedback';
 
@@ -42,21 +43,34 @@ export default function SynergyPage() {
     async function fetchData() {
       setLoading(true);
       try {
-        const { data, error } = await supabase
-          .from('ktm_match_participants')
-          .select('match_id, player_name, team, role');
+        const { data, error } = await fetchAllRows((from, to) =>
+          supabase
+            .from('ktm_match_participants')
+            .select('match_id, player_name, team, role')
+            .range(from, to)
+        );
 
-        const { data: matchWins } = await supabase
+        const { data: matchWins, error: matchWinsError } = await supabase
           .from('ktm_matches')
           .select('id, winning_team');
+
+        if (matchWinsError) {
+          console.error('Failed to fetch match results:', matchWinsError);
+          throw matchWinsError;
+        }
 
         const winMap: Record<number, 'BLUE' | 'RED'> = {};
         (matchWins || []).forEach((m: any) => { winMap[m.id] = m.winning_team; });
 
-        const { data: activePlayersData } = await supabase
+        const { data: activePlayersData, error: activePlayersError } = await supabase
           .from('ktm_players')
           .select('name');
-        
+
+        if (activePlayersError) {
+          console.error('Failed to fetch active players:', activePlayersError);
+          throw activePlayersError;
+        }
+
         const activePlayerNames = new Set(activePlayersData?.map((p: any) => p.name) || []);
 
         if (error || !data) throw error || new Error('No data');
