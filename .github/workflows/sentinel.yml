@@ -1,0 +1,33 @@
+name: Sovereign Sentinel
+
+# リポジトリ全体のセキュリティ・健全性を定期監査する。
+#  - APIキー/Botトークン/秘密鍵のハードコード検知（誤コミット対策）
+#  - 基幹ディレクトリの構成チェック
+#  - 全 Python ファイルの構文チェック
+# 標準ライブラリのみで完結するため、依存パッケージのインストールは不要。
+on:
+  schedule:
+    # 毎日 午前3時(UTC) = 正午(JST)
+    - cron: '0 3 * * *'
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+    # 手動実行のボタンを追加
+
+jobs:
+  run-sentinel:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Run Sovereign Sentinel
+        run: |
+          python 03_SYSTEMS/INFRA/sentinel.py

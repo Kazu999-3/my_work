@@ -15,7 +15,6 @@ try:
     from .database import db
     from .forge import forge
     from .promoter import promoter
-    from .sentinel import sentinel
     from .scout import scout
     from .recycler import recycler
     from .sovereign_sync import SovereignSync
@@ -27,7 +26,6 @@ except ImportError:
     from v2_CORE.database import db
     from v2_CORE.forge import forge
     from v2_CORE._MONETIZE.promoter import promoter
-    from v2_CORE._LOL.sentinel import sentinel
     from v2_CORE.scout import scout
     from v2_CORE.recycler import recycler
     from v2_CORE.sovereign_sync import SovereignSync

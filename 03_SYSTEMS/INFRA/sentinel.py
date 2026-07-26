@@ -6,8 +6,11 @@ import logging
 from pathlib import Path
 
 # Windows環境での絵文字出力エラー対策
+# (StreamHandler は既定で stderr を使うため、stdout だけ reconfigure しても文字化けする)
 if sys.stdout.encoding.lower() != 'utf-8':
     sys.stdout.reconfigure(encoding='utf-8')
+if sys.stderr.encoding.lower() != 'utf-8':
+    sys.stderr.reconfigure(encoding='utf-8')
 
 logging.basicConfig(
     level=logging.INFO,
@@ -16,8 +19,9 @@ logging.basicConfig(
 )
 logger = logging.getLogger("Sentinel")
 
-# プロジェクトのルート（03_SYSTEMSの一つ上）
-ROOT_DIR = Path("d:/my_work")
+# プロジェクトのルート（03_SYSTEMS/INFRA の2つ上）。GitHub Actions等、
+# ローカル(d:/my_work)以外のチェックアウト先でも動くように相対解決する。
+ROOT_DIR = Path(__file__).resolve().parent.parent.parent
 
 class SovereignSentinel:
     """
@@ -34,8 +38,9 @@ class SovereignSentinel:
             ROOT_DIR / "scratch"
         ]
         
-        # スキャンから除外するディレクトリ
-        self.ignore_dirs = {".venv", ".git", "99_ARCHIVE", "node_modules", ".agent"}
+        # スキャンから除外するディレクトリ（.gitignoreで追跡外にしているものと同じ扱い。
+        # CIのチェックアウトには元々含まれないが、ローカル実行時のノイズを減らすため明示的に除外する）
+        self.ignore_dirs = {".venv", ".git", "99_ARCHIVE", "node_modules", ".agent", "00_LOGS", "scratch", ".gemini"}
 
         # 検知対象の秘密情報パターン (正規表現)
         self.secret_patterns = {
@@ -141,4 +146,8 @@ class SovereignSentinel:
 
 if __name__ == "__main__":
     sentinel = SovereignSentinel()
-    sentinel.run_daily_audit()
+    report = sentinel.run_daily_audit()
+    # 秘密情報の漏洩・構文エラーはCI上で見逃さないよう、検知時はビルドを失敗させる
+    # (ディレクトリ欠損はその場で自己修復されるため、失敗対象には含めない)
+    if report["leaks"] or report["syntax_errors"]:
+        sys.exit(1)
