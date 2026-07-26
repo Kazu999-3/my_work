@@ -88,16 +88,25 @@ KNOWN_ALIASES: Dict[str, str] = {
 
 _ddragon_id_map: Optional[Dict[str, str]] = None
 
+def get_latest_ddragon_version(timeout: int = 5) -> Optional[str]:
+    """DDragonの最新パッチバージョン文字列を取得する（例: '16.11.1'）"""
+    try:
+        ver_res = requests.get("https://ddragon.leagueoflegends.com/api/versions.json", timeout=timeout)
+        if ver_res.status_code == 200:
+            return ver_res.json()[0]
+    except Exception as e:
+        logging.warning(f"⚠️ DDragonからの最新バージョン取得に失敗しました: {e}")
+    return None
+
 def load_ddragon_mapping() -> Dict[str, str]:
     global _ddragon_id_map
     if _ddragon_id_map is not None:
         return _ddragon_id_map
-    
+
     mapping: Dict[str, str] = {}
     try:
-        ver_res = requests.get("https://ddragon.leagueoflegends.com/api/versions.json", timeout=5)
-        if ver_res.status_code == 200:
-            latest_ver = ver_res.json()[0]
+        latest_ver = get_latest_ddragon_version()
+        if latest_ver:
             champ_res = requests.get(f"https://ddragon.leagueoflegends.com/cdn/{latest_ver}/data/ja_JP/champion.json", timeout=5)
             if champ_res.status_code == 200:
                 data = champ_res.json().get("data", {})

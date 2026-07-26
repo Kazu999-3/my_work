@@ -14,6 +14,7 @@ try:
     from v2_CORE.ai_helper import generate_content_safe
     from v2_CORE._LOL.champ_db_updater import update_champion_db
     from v2_CORE._LOL.power_spike_generator import generate_power_spike
+    from v2_CORE._LOL.champ_id_normalizer import get_latest_ddragon_version
     from v2_CORE._LOL.herald import herald
 except ImportError:
     sys.path.append(str(Path(__file__).resolve().parent.parent.parent))
@@ -21,6 +22,7 @@ except ImportError:
     from v2_CORE.ai_helper import generate_content_safe
     from v2_CORE._LOL.champ_db_updater import update_champion_db
     from v2_CORE._LOL.power_spike_generator import generate_power_spike
+    from v2_CORE._LOL.champ_id_normalizer import get_latest_ddragon_version
     from v2_CORE._LOL.herald import herald
 
 dotenv.load_dotenv(Path("d:/my_work/.env"))
@@ -43,13 +45,9 @@ GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY_BATCH") or os.environ.get("GEMIN
 QUEUE_FILE = Path("d:/my_work/02_FACTORY/_LOL/champion_update_queue.json")
 
 def get_latest_patch() -> str:
-    url = "https://ddragon.leagueoflegends.com/api/versions.json"
-    try:
-        r = requests.get(url, timeout=10)
-        if r.status_code == 200:
-            return r.json()[0]
-    except Exception as e:
-        logging.error(f"Failed to fetch patch version from Ddragon: {e}")
+    version = get_latest_ddragon_version(timeout=10)
+    if version:
+        return version
     raise RuntimeError(
         "最新パッチバージョンの取得に失敗しました。古いパッチのまま同期を継続すると"
         "誤ったデータで辞典を上書きするため、同期を中断します。DDragonの疎通を確認してください。"

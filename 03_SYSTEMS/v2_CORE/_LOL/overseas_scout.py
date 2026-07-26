@@ -8,6 +8,7 @@ from google import genai
 from v2_CORE.settings import settings
 from v2_CORE.ai_helper import generate_content_safe
 from v2_CORE._LOL.herald import herald
+from v2_CORE._LOL.champ_id_normalizer import get_latest_ddragon_version
 
 logger = logging.getLogger("OverseasScout")
 
@@ -37,9 +38,8 @@ class OverseasScout:
     def fetch_champions(self):
         """DDragon から最新のチャンピオンリストを取得"""
         try:
-            v_res = requests.get('https://ddragon.leagueoflegends.com/api/versions.json')
-            if v_res.status_code == 200:
-                latest = v_res.json()[0]
+            latest = get_latest_ddragon_version()
+            if latest:
                 r = requests.get(f'https://ddragon.leagueoflegends.com/cdn/{latest}/data/ja_JP/champion.json')
                 if r.status_code == 200:
                     data = r.json().get('data', {})
