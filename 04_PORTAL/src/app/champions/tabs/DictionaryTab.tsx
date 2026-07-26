@@ -1467,34 +1467,8 @@ function ChampionsContent() {
           </Link>
         </div>
 
-        {/* 保存ボタン・note記事生成ボタン */}
+        {/* 保存ボタン */}
         <div className="flex justify-end items-center gap-3 relative z-10 pt-4 flex-wrap">
-          {/* note記事生成ボタン */}
-          <button
-            onClick={async () => {
-              if (!confirm(`${selected.name} の攻略note記事ドラフトをAIで自動生成しますか？`)) return;
-              try {
-                const res = await fetch('/api/admin/jobs', {
-                  method: 'POST',
-                  credentials: 'include',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ job: 'generate_note_draft', champion: selected.id }),
-                });
-                const data = await res.json();
-                if (res.ok) {
-                  alert(`📝 ${selected.name} のnote記事ドラフト生成をバックグラウンドで開始しました。`);
-                } else {
-                  alert(data.error || 'ジョブの起動に失敗しました。');
-                }
-              } catch {
-                alert('通信エラーが発生しました。');
-              }
-            }}
-            className="px-6 py-3 bg-gradient-to-r from-pink-500 to-rose-500 text-white font-black rounded-xl hover:shadow-[0_0_20px_rgba(236,72,153,0.4)] hover:-translate-y-0.5 transition-all flex items-center gap-2 text-sm"
-          >
-            <FileText size={18} /> note記事を生成
-          </button>
-
           <button onClick={saveMemo} disabled={saving} className="px-8 py-3 bg-gradient-to-r from-amber-400 to-amber-500 text-black font-black rounded-xl hover:shadow-[0_0_20px_rgba(251,191,36,0.4)] hover:-translate-y-0.5 transition-all flex items-center gap-2 text-sm">
             {saving ? <RefreshCw size={18} className="animate-spin" /> : <Save size={18} />} チャンピオン辞典の変更を保存する
           </button>
