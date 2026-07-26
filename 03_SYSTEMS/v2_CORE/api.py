@@ -159,20 +159,6 @@ async def sync_players(request: SyncPlayersRequest, api_key: str = Depends(get_a
                 
     return {"status": "success", "message": f"Sync completed. Added {len(request.add)}, deleted {len(request.deactivate)}."}
 
-@app.post("/api/pulse", response_model=TriggerResponse)
-def trigger_pulse(api_key: str = Depends(get_api_key)):
-    """システムの死活監視と、最新パッチ/メタの検知（Pulse）をキューに登録する"""
-    logger.info("Received request to trigger System Pulse.")
-    task_id = SovereignQueue().enqueue("pulse")
-    return {"status": "accepted", "message": f"System pulse enqueued (Task ID: {task_id})."}
-
-@app.post("/api/match-import", response_model=TriggerResponse)
-def trigger_match_import(api_key: str = Depends(get_api_key)):
-    """KTMプレイヤーの最新のソロキュー戦績自動取り込みをキューに登録する"""
-    logger.info("Received request to trigger Match Importer.")
-    task_id = SovereignQueue().enqueue("match_import")
-    return {"status": "accepted", "message": f"Match import enqueued (Task ID: {task_id})."}
-
 # ============================================================
 # AI Agent Gateway: プロンプトDB管理・ルーティング・レートリミット
 # ============================================================
