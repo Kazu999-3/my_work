@@ -31,14 +31,14 @@ if ($Mode -eq "edge") {
         Write-Host "[Cleanup] Removed stale orchestrator.lock" -ForegroundColor DarkGray
     }
 
-    $workerProc = Get-CimInstance Win32_Process -Filter "CommandLine LIKE '%task_worker%'" -ErrorAction SilentlyContinue
+    $workerProc = Get-CimInstance Win32_Process -Filter "CommandLine LIKE '%edge_worker_daemon%'" -ErrorAction SilentlyContinue
     if ($workerProc) {
-        Write-Host "[Task Worker] Already running. PID: $($workerProc.ProcessId)" -ForegroundColor Green
+        Write-Host "[Edge Worker Daemon] Already running. PID: $($workerProc.ProcessId)" -ForegroundColor Green
     } else {
-        Write-Host "[Task Worker] Starting (foreground)..." -ForegroundColor Cyan
+        Write-Host "[Edge Worker Daemon] Starting (foreground)..." -ForegroundColor Cyan
         Set-Location "d:\my_work\03_SYSTEMS"
         $env:PYTHONPATH = "d:\my_work\03_SYSTEMS"
-        & "d:\my_work\.venv\Scripts\python.exe" -m v2_CORE.task_worker
+        & "d:\my_work\.venv\Scripts\python.exe" -m v2_CORE.edge_worker_daemon
     }
     exit
 }
@@ -117,20 +117,7 @@ if (-not $sreProc) {
     } | Out-Null
 }
 
-# 6. Task Worker (Sovereign Task Queue Monitor)
-$workerProc = Get-CimInstance Win32_Process -Filter "CommandLine LIKE '%task_worker%'" -ErrorAction SilentlyContinue
-if (-not $workerProc) {
-    Write-Host "[Task Worker] Starting..." -ForegroundColor Cyan
-    Start-Job -Name "TaskWorker" -ScriptBlock {
-        Set-Location "d:\my_work\03_SYSTEMS"
-        $env:PYTHONPATH = "d:\my_work\03_SYSTEMS"
-        & "d:\my_work\.venv\Scripts\python.exe" -m v2_CORE.task_worker 2>&1 | Out-File "d:\my_work\00_LOGS\task_worker_startup.log"
-    } | Out-Null
-} else {
-    Write-Host "[Task Worker] Already running." -ForegroundColor Green
-}
-
-# 7. Edge Worker Daemon (Cloud/Vercel Task Receiver)
+# 6. Edge Worker Daemon (Cloud/Vercel Task Receiver)
 $edgeProc = Get-CimInstance Win32_Process -Filter "CommandLine LIKE '%edge_worker_daemon%'" -ErrorAction SilentlyContinue
 if (-not $edgeProc) {
     Write-Host "[Edge Worker Daemon] Starting..." -ForegroundColor Cyan

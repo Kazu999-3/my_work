@@ -219,10 +219,10 @@ quota_shaper = QuotaShaper()
 
 @app.post("/api/v1/worker/notify")
 def notify_worker(api_key: str = Depends(get_api_key)):
-    """ポータルから新規タスクが追加されたことを通知され、SQLiteキューに youtube_absorber を追加する"""
-    logger.info("🔔 Received worker notification from portal. Enqueueing youtube_absorber task...")
-    task_id = SovereignQueue().enqueue("youtube_absorber")
-    return {"status": "success", "message": f"youtube_absorber enqueued (Task ID: {task_id})."}
+    """ポータルから新規タスクが追加されたことを通知され、edge_worker_daemon が認識する youtube_absorb を追加する"""
+    logger.info("🔔 Received worker notification from portal. Enqueueing youtube_absorb task...")
+    task_id = SovereignQueue().enqueue("youtube_absorb")
+    return {"status": "success", "message": f"youtube_absorb enqueued (Task ID: {task_id})."}
 
 @app.get("/api/v1/queue/status")
 def get_queue_status(limit: int = 20, api_key: str = Depends(get_api_key)):
