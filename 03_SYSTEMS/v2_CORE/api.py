@@ -1,4 +1,5 @@
 import os
+import secrets
 import logging
 import asyncio
 import httpx
@@ -31,10 +32,12 @@ app = FastAPI(
 )
 
 # CORS (Cross-Origin Resource Sharing) の設定を追加してポータルUIからの fetch 通信を許可
+# 認証は Cookie ではなく X-Antigravity-Key ヘッダーで行うため allow_credentials は不要。
+# (allow_origins="*" と allow_credentials=True の同時指定はブラウザ仕様上矛盾し無効化される)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -64,7 +67,7 @@ def get_api_key(api_key_header: str = Security(api_key_header)):
     if not expected_key:
         logger.error("🚨 ANTIGRAVITY_API_KEY environment variable is missing. Rejecting request.")
         raise HTTPException(status_code=500, detail="Server API key configuration missing.")
-    if api_key_header != expected_key:
+    if not secrets.compare_digest(api_key_header, expected_key):
         raise HTTPException(status_code=403, detail="Could not validate credentials")
     return api_key_header
 
@@ -196,18 +199,21 @@ class QuotaShaper:
     """APIキーのクォータ（429制限）状況と冷却期間をインメモリで管理する"""
     def __init__(self):
         self.cooldowns = {} # key -> cooldown_until_timestamp
-        
+        self._rotation_index = 0  # ラウンドロビン用のカーソル
+
     def are_all_cooling(self, api_keys: list) -> bool:
         """指定された全キーが冷却中（cooldown）であるかを判定する"""
         now = time.time()
         return all(self.cooldowns.get(k, 0) >= now for k in api_keys)
 
     def get_valid_key(self, api_keys: list) -> str:
-        """冷却期間中でない、現在有効なキーを1つ選択して返す。すべて冷却中の場合は None を返す"""
+        """冷却期間中でない、現在有効なキーをラウンドロビンで1つ選択して返す。すべて冷却中の場合は None を返す"""
         now = time.time()
         available_keys = [k for k in api_keys if self.cooldowns.get(k, 0) < now]
         if available_keys:
-            return available_keys[0]
+            key = available_keys[self._rotation_index % len(available_keys)]
+            self._rotation_index += 1
+            return key
         return None
 
     def set_cooldown(self, api_key: str, duration: int = 60):
@@ -391,6 +397,9 @@ async def generate_agent_response(request: GenerateRequest, api_key: str = Depen
                         continue
                     logger.error(f"Execution error on key {active_key[:10]}: {e}")
                     error_msg = err_str
+                    # 429以外のエラーでも短時間の冷却を入れないと get_valid_key が
+                    # 同じキーを返し続け、複数キー分のリトライを1本のキーで浪費してしまう
+                    quota_shaper.set_cooldown(active_key, duration=10)
                     continue
                     
             if not success:

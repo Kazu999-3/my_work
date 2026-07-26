@@ -46,7 +46,7 @@ class AutoHealer:
         logger.error(msg)
         # エスカレーション用ログファイルへの書き出し
         try:
-            sos_log = settings.LOGS_DIR / "sos_alerts.log"
+            sos_log = settings.LOG_DIR / "sos_alerts.log"
             sos_log.parent.mkdir(parents=True, exist_ok=True)
             with open(sos_log, "a", encoding="utf-8") as f:
                 f.write(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] {msg}\n")
