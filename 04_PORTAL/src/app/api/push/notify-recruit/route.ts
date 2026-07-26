@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { sendPushToAll } from '../send/route';
+import { verifyBotSecret } from '../../../../lib/botAuth';
 
 // 新規募集が立った時のWeb Push通知(#54)。BOTから呼ばれる。
 // 本文は固定テンプレート＋短い埋め込みのみ（任意文言は受け付けない＝乱用対策）。
@@ -7,6 +8,12 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
   try {
+  // ===== Bot共有シークレット確認 (未設定の間はfail-open) =====
+  const authResult = verifyBotSecret(req);
+  if (!authResult.ok) {
+    return NextResponse.json({ success: false, message: authResult.error }, { status: 401 });
+  }
+  // =================================
     const { mode, time } = await req.json().catch(() => ({}));
     const safeMode = ['ノーマル', 'カスタム', 'ARAM'].includes(mode) ? mode : 'カスタム';
     const safeTime = typeof time === 'string' ? time.slice(0, 20) : '';

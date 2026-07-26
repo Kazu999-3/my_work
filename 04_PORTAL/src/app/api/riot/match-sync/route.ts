@@ -2,9 +2,16 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 import { fetchMatchDetails } from '../../../../lib/riot';
 import { calculateNewMMR, calculateKdaScore, MmrCalcContext } from '../../../../lib/mmr';
+import { verifyBotSecret } from '../../../../lib/botAuth';
 
 export async function POST(req: Request) {
   try {
+  // ===== Bot共有シークレット確認 (未設定の間はfail-open) =====
+  const authResult = verifyBotSecret(req);
+  if (!authResult.ok) {
+    return NextResponse.json({ error: authResult.error }, { status: 401 });
+  }
+  // =================================
     const { matchId } = await req.json(); // ktm_matches の ID
 
     if (!matchId) {

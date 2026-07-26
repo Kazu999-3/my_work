@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
+import { verifyBotSecret } from '../../../../lib/botAuth';
 
 // レーン希望・NG・こだわり度・格上許可の更新。ktm_players は RLS(migration 12)で
 // anon直書き不可なため、BOTからはこのサーバーAPI(サービスロール)経由で更新する。
@@ -7,6 +8,12 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
   try {
+  // ===== Bot共有シークレット確認 (未設定の間はfail-open) =====
+  const authResult = verifyBotSecret(req);
+  if (!authResult.ok) {
+    return NextResponse.json({ status: 'ERROR', message: authResult.error }, { status: 401 });
+  }
+  // =================================
     const { discordId, discordName, main, sub, ng1, ng2, weight, allowHigher } = await req.json();
     if (!discordId) {
       return NextResponse.json({ status: 'ERROR', message: 'discordId が必要です。' }, { status: 400 });

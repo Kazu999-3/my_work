@@ -1,9 +1,16 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 import { fetchPuuidByRiotId } from '../../../../lib/riot';
+import { verifyBotSecret } from '../../../../lib/botAuth';
 
 export async function POST(req: Request) {
   try {
+  // ===== Bot共有シークレット確認 (未設定の間はfail-open) =====
+  const authResult = verifyBotSecret(req);
+  if (!authResult.ok) {
+    return NextResponse.json({ status: 'ERROR', message: authResult.error }, { status: 401 });
+  }
+  // =================================
     const { discordId, ign } = await req.json();
 
     if (!discordId || !ign) {

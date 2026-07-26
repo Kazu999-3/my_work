@@ -96,11 +96,15 @@ export async function fetchGAS(payload) {
 export async function fetchPortalAPI(env, endpointPath, payload, method = "POST") {
   const baseUrl = getPortalUrl(env);
   const url = `${baseUrl}${endpointPath}`;
-  
-  const options = {
-    method,
-    headers: { "Content-Type": "application/json" }
-  };
+
+  const headers = { "Content-Type": "application/json" };
+  // env.PORTAL_BOT_SECRET と ポータル側 PORTAL_BOT_SECRET が両方設定されて初めて有効になる
+  // （どちらかが未設定の間はポータル側がfail-openなので付けても付けなくても動く）
+  if (env && env.PORTAL_BOT_SECRET) {
+    headers["X-Bot-Secret"] = env.PORTAL_BOT_SECRET;
+  }
+
+  const options = { method, headers };
   
   if (payload && (method === "POST" || method === "PUT" || method === "PATCH")) {
     options.body = JSON.stringify(payload);
