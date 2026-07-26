@@ -1,7 +1,7 @@
 import * as dotenv from 'dotenv';
 import path from 'path';
 
-dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
 
 const apiKey = process.env.RIOT_API_KEY;
 const puuid = "GB16QNxuvRNmrNG296JTxUTE7GSignV4i9smTfp3tMbnhwigRue1vh44L6p96wDBa_Pz7dZB1dInCA";

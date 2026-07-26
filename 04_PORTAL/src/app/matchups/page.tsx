@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, Suspense } from 'react';
+import { useEffect, useRef, useState, Suspense } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import { getChampIcon } from '../../lib/ddragonClient';
 import { Swords, Zap, AlertCircle, RefreshCw, History, Save, Activity, Target, Award } from 'lucide-react';
@@ -24,6 +24,14 @@ function MatchupsSimulatorContent() {
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [savedSims, setSavedSims] = useState<any[] | null>(null);
   const [loadingRecent, setLoadingRecent] = useState(false);
+  const simIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // アンマウント時にポーリングを止め、離脱後もSupabaseへ問い合わせ続けるのを防ぐ
+  useEffect(() => {
+    return () => {
+      if (simIntervalRef.current) clearInterval(simIntervalRef.current);
+    };
+  }, []);
 
   // シミュレータ結果を保存して共有リンクを生成
   const saveSimulation = async () => {
@@ -155,6 +163,8 @@ function MatchupsSimulatorContent() {
       
       let attempts = 0;
       const interval = setInterval(async () => {
+        // アンマウント後にこのタイマーが生き残っていた場合は何もしない
+        if (simIntervalRef.current !== interval) return;
         attempts++;
         if (attempts > 50) {
           clearInterval(interval);
@@ -190,6 +200,7 @@ function MatchupsSimulatorContent() {
           setSimLoading(false);
         }
       }, 1500);
+      simIntervalRef.current = interval;
 
     } catch (err: any) {
       setSimError(err.message || '通信エラーが発生しました。');
