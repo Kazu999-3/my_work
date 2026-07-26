@@ -2,8 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
 import { exec } from 'child_process';
+import { promisify } from 'util';
 import { systemDesignDocs } from '../../../design/systemDesignMarkdown';
 import { verifyAdminSession } from '../../../../lib/adminAuth';
+
+const execAsync = promisify(exec);
 
 const titleMapping: Record<string, string> = {
   '00_overview': '🌟 全体概要・アーキテクチャ',
@@ -45,23 +48,27 @@ export async function POST(req: NextRequest) {
     console.log(`📝 [Design API] Updated individual doc: ${filename}`);
 
     // 2. copy_design.js を動かして portal 内の TS モジュールおよびコピーを同期・ビルド
-    // 3. 非同期で Git Commit & Push を実行 (本番Vercelデプロイフック)
+    // 3. Git Commit & Push を実行 (本番Vercelデプロイフック)。以前はここをfire-and-forgetで
+    //    実行しており、push失敗（コンフリクト・認証切れ等）が起きてもクライアントには
+    //    先に success:true を返してしまっていた。結果を待ってから応答する。
     const gitCommand = 'node copy_design.js && git add src/app/design/ && git commit -m "docs: update design document ' + filename + ' via portal" && git push origin master';
-    
-    exec(gitCommand, { cwd: process.cwd() }, (error, stdout, stderr) => {
-      if (error) {
-        console.error(`❌ [Design API] Git deployment failed: ${error.message}`);
-        return;
-      }
+
+    try {
+      const { stdout, stderr } = await execAsync(gitCommand, { cwd: process.cwd() });
       console.log(`✅ [Design API] Git deployment successful:\n${stdout}`);
       if (stderr) {
         console.warn(`⚠️ [Design API] Git warnings:\n${stderr}`);
       }
-    });
+    } catch (gitErr: any) {
+      console.error(`❌ [Design API] Git deployment failed: ${gitErr.message}`);
+      return NextResponse.json({
+        error: `設計書ファイルへの保存は完了しましたが、Gitへのコミット・デプロイに失敗しました: ${gitErr.message}`
+      }, { status: 500 });
+    }
 
-    return NextResponse.json({ 
-      success: true, 
-      message: '設計書を保存しました。バックグラウンドで自動デプロイを開始しました。' 
+    return NextResponse.json({
+      success: true,
+      message: '設計書を保存し、Gitへのコミット・デプロイまで完了しました。'
     });
 
   } catch (err: any) {
