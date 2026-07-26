@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '../../../../lib/supabaseClient';
+import { fetchAllRows } from '../../../../lib/fetchAll';
 
 const cache = new Map<string, { data: any; expiry: number }>();
 const CACHE_TTL_MS = 30000; // 30 seconds TTL
@@ -18,11 +19,14 @@ export async function GET(request: Request) {
       return NextResponse.json(cached.data);
     }
 
-    // 1. 指定したプレイヤーの全試合参加データを取得
-    const { data: myMatches, error: myError } = await supabase
-      .from('ktm_match_participants')
-      .select('match_id, team')
-      .eq('player_name', playerName);
+    // 1. 指定したプレイヤーの全試合参加データを取得（1000件超に備えページネーション）
+    const { data: myMatches, error: myError } = await fetchAllRows((from, to) =>
+      supabase
+        .from('ktm_match_participants')
+        .select('match_id, team')
+        .eq('player_name', playerName)
+        .range(from, to)
+    );
 
     if (myError) throw myError;
     if (!myMatches || myMatches.length === 0) {
@@ -42,14 +46,18 @@ export async function GET(request: Request) {
     const winMap = new Map<number, string>();
     (matches || []).forEach((m: any) => winMap.set(m.id, m.winning_team));
 
-    // 2. それらの試合に同席した全員のデータを一括取得
-    const { data: allParticipants, error: allError } = await supabase
-      .from('ktm_match_participants')
-      .select('match_id, player_name, team')
-      .in('match_id', matchIds)
-      .neq('player_name', playerName);
+    // 2. それらの試合に同席した全員のデータを一括取得（1000件超に備えページネーション）
+    const { data: allParticipants, error: allError } = await fetchAllRows((from, to) =>
+      supabase
+        .from('ktm_match_participants')
+        .select('match_id, player_name, team')
+        .in('match_id', matchIds)
+        .neq('player_name', playerName)
+        .range(from, to)
+    );
 
     if (allError) throw allError;
+    if (!allParticipants) throw new Error('同席プレイヤーのデータ取得に失敗しました。');
 
     // 3. マップ化
     const myMatchesMap: Record<number, { team: string, isWin: boolean }> = {};

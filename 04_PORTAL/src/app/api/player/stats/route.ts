@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '../../../../lib/supabaseClient';
+import { fetchAllRows } from '../../../../lib/fetchAll';
 
 export async function POST(req: Request) {
   try {
@@ -21,12 +22,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ status: "NOT_FOUND" });
     }
 
-    // 2. 直近の試合参加記録を取得
-    const { data: participants, error: partError } = await supabase
-      .from('ktm_match_participants')
-      .select('*, ktm_matches(*)')
-      .eq('player_name', player.name)
-      .order('created_at', { ascending: false });
+    // 2. 直近の試合参加記録を取得（1000件超に備えページネーション）
+    const { data: participants, error: partError } = await fetchAllRows((from, to) =>
+      supabase
+        .from('ktm_match_participants')
+        .select('*, ktm_matches(*)')
+        .eq('player_name', player.name)
+        .order('created_at', { ascending: false })
+        .range(from, to)
+    );
 
     if (partError) {
       throw new Error(partError.message);

@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '../../../lib/supabaseClient';
-import { 
-  Player, 
-  Role, 
-  BalanceContext, 
-  selectPlayersWithPity, 
-  coreBalanceProposals 
+import {
+  Player,
+  Role,
+  BalanceContext,
+  selectPlayersWithPity,
+  coreBalanceProposals
 } from '../../../lib/balancer';
+import { fetchAllRows } from '../../../lib/fetchAll';
 
 export async function POST(request: Request) {
   try {
@@ -34,10 +35,13 @@ export async function POST(request: Request) {
       ...names.map(n => n.toLowerCase()),
       ...names.map(n => n.toUpperCase())
     ]));
-    const { data: participantsStats, error: statsError } = await supabase
-      .from('ktm_match_participants')
-      .select('player_name, team, ktm_matches!inner(winning_team)')
-      .in('player_name', namesQuery);
+    const { data: participantsStats, error: statsError } = await fetchAllRows((from, to) =>
+      supabase
+        .from('ktm_match_participants')
+        .select('player_name, team, ktm_matches!inner(winning_team)')
+        .in('player_name', namesQuery)
+        .range(from, to)
+    );
 
     // プレイヤー名ごとに 試合数 (games) と 勝利数 (wins) をマップ (すべて小文字で比較保持)
     const playerStatsMap: Record<string, { games: number; wins: number }> = {};

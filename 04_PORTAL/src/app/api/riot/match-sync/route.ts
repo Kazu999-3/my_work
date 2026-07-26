@@ -3,6 +3,7 @@ import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 import { fetchMatchDetails } from '../../../../lib/riot';
 import { calculateNewMMR, calculateKdaScore, MmrCalcContext } from '../../../../lib/mmr';
 import { verifyBotSecret } from '../../../../lib/botAuth';
+import { fetchAllRows } from '../../../../lib/fetchAll';
 
 export async function POST(req: Request) {
   try {
@@ -50,11 +51,14 @@ export async function POST(req: Request) {
     const names = participants.map((p: any) => p.player_name);
     const { data: dbPlayers } = await supabase.from('ktm_players').select('*').in('name', names);
     
-    // 過去の勝率・試合数を取得
-    const { data: historyData } = await supabase
-      .from('ktm_match_participants')
-      .select('match_id, player_name, role, team, ktm_matches!inner(winning_team)')
-      .in('player_name', names);
+    // 過去の勝率・試合数を取得（1000件超に備えページネーション）
+    const { data: historyData } = await fetchAllRows((from, to) =>
+      supabase
+        .from('ktm_match_participants')
+        .select('match_id, player_name, role, team, ktm_matches!inner(winning_team)')
+        .in('player_name', names)
+        .range(from, to)
+    );
 
     const statsMap: Record<string, { roleGames: Record<string, number>, totalGames: number, totalWins: number }> = {};
     names.forEach((name: string) => {

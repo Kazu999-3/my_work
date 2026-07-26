@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '../../../../lib/supabaseClient';
 import { calculatePlaystyle } from '../../../../lib/playstyle';
+import { fetchAllRows } from '../../../../lib/fetchAll';
 
 const cache = new Map<string, { data: any; expiry: number }>();
 const CACHE_TTL_MS = 30000; // 30 seconds TTL
@@ -30,11 +31,14 @@ export async function GET(request: Request) {
       return NextResponse.json({ stats: {}, matchupStats: {}, history: [] });
     }
 
-    // 2. KTMの参加試合履歴を取得
-    const { data: playerMatches, error: pmErr } = await supabase
-      .from('ktm_match_participants')
-      .select('match_id, role, champion_name, team, kills, deaths, assists, mmr_delta, mmr_breakdown')
-      .eq('player_name', playerName);
+    // 2. KTMの参加試合履歴を取得（1000件超に備えページネーション）
+    const { data: playerMatches, error: pmErr } = await fetchAllRows((from, to) =>
+      supabase
+        .from('ktm_match_participants')
+        .select('match_id, role, champion_name, team, kills, deaths, assists, mmr_delta, mmr_breakdown')
+        .eq('player_name', playerName)
+        .range(from, to)
+    );
 
     if (pmErr) throw pmErr;
 
@@ -52,10 +56,13 @@ export async function GET(request: Request) {
 
     if (mErr) throw mErr;
 
-    const { data: allParts, error: apErr } = await supabase
-      .from('ktm_match_participants')
-      .select('match_id, role, team, champion_name, player_name')
-      .in('match_id', matchIds);
+    const { data: allParts, error: apErr } = await fetchAllRows((from, to) =>
+      supabase
+        .from('ktm_match_participants')
+        .select('match_id, role, team, champion_name, player_name')
+        .in('match_id', matchIds)
+        .range(from, to)
+    );
 
     if (apErr) throw apErr;
 

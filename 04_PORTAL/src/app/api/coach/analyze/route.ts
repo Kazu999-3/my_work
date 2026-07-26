@@ -13,6 +13,7 @@ import {
 import { getChampionSearchVariations, normalizeChampionName } from '../../../../lib/championNames';
 // 統一知識取得レイヤー（#50 フェーズA）: champion_facts/notes を鮮度・出典順で合成
 import { getChampionKnowledge } from '../../../../lib/championKnowledge';
+import { verifyAdminSession } from '../../../../lib/adminAuth';
 
 
 // ============================
@@ -371,6 +372,15 @@ function absLpToLabel(abs: number): string {
 // ============================
 export async function POST(req: NextRequest) {
   try {
+  // ===== 管理者セッション確認 =====
+  // env固定の単一アカウント(RIOT_GAME_NAME/RIOT_TAG_LINE)を分析する個人用機能で、
+  // ページ(coach/page.tsx)自体は既に管理者ログイン必須だが、APIルート単体には
+  // チェックが無く誰でも叩けてGemini/Riot APIのクォータを消費できてしまっていた。
+  const authResult = await verifyAdminSession(req);
+  if (!authResult.ok) {
+    return NextResponse.json({ error: authResult.error }, { status: 401 });
+  }
+  // =================================
     const body = await req.json();
     const mode: 'pre' | 'post' | 'matchup' | 'tilt' | 'trends' | 'practice_menu' | 'goal' = body.mode || 'pre';
     const championInput: string = body.champion || '';

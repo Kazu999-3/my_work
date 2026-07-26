@@ -1,8 +1,17 @@
 import { NextResponse } from 'next/server';
 import { fetchPuuidByRiotId, fetchRecentMatchIds, fetchMatchDetails } from '../../../../lib/riot';
+import { verifyAdminSession } from '../../../../lib/adminAuth';
 
 export async function POST(request: Request) {
   try {
+  // ===== 管理者セッション確認 =====
+  // ktm-admin/MatchRecordPanel.tsx(管理者ログイン必須のページ)専用の機能だが、
+  // APIルート単体には認証が無く、共有のRIOT_API_KEYのレート枠を誰でも消費できた。
+  const authResult = await verifyAdminSession(request);
+  if (!authResult.ok) {
+    return NextResponse.json({ error: authResult.error }, { status: 401 });
+  }
+  // =================================
     const { ign } = await request.json(); // e.g. "Name#TAG"
 
     if (!ign || !ign.includes('#')) {
