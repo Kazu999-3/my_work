@@ -10,6 +10,7 @@ from google import genai
 from v2_CORE.settings import settings
 from v2_CORE.ai_helper import generate_with_routing, generate_content_safe
 from v2_CORE.logger_config import setup_sovereign_logging
+from v2_CORE.knowledge_revisions import record_matchup_sentinel_revision
 
 logger = setup_sovereign_logging("LolTrendCollector")
 
@@ -287,7 +288,9 @@ class LolTrendCollector:
 
     def save_champ_trends(self, champion: str, role: str, trend_data: dict) -> bool:
         """収集したトレンド・プロビルドデータをSupabaseのmatchup_sentinel（GLOBALレコード）にマージする"""
-        matchup_id = f"champ_{champion.lower()}_global"
+        # 他の全書き込み経路(champion_trend_worker.py等)と同じ大文字小文字で matchup_id を
+        # 作る（.lower()していると同じチャンピオンなのに別レコードとして重複作成されてしまう）
+        matchup_id = f"champ_{champion}_global"
         
         # 1. 既存のレコードを取得
         status, body = self._supabase_request(f"matchup_sentinel?matchup_id=eq.{matchup_id}", method='GET')
@@ -336,6 +339,11 @@ class LolTrendCollector:
         
         if status in (200, 201, 204):
             logger.info(f"✅ Supabase matchup_sentinel to {matchup_id} upsert success.")
+            record_matchup_sentinel_revision(
+                matchup_id, existing_record, payload,
+                source_title="最新パッチトレンド＆プロビルド収集（AI自動収集）",
+                supabase_url=settings.SUPABASE_URL, supabase_key=settings.SUPABASE_KEY
+            )
             return True
         else:
             logger.error(f"❌ Failed to upsert matchup_sentinel: {status} - {res_body}")

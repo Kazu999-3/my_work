@@ -517,6 +517,19 @@ export function LibraryTabContentInner() {
               .from('matchup_sentinel')
               .upsert(dictData, { onConflict: 'matchup_id' });
           if (upsertError) throw upsertError;
+
+          // 履歴記録（ブラウザからは service role を使えないためサーバー経由）
+          fetch('/api/admin/knowledge/revisions/record-matchup', {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              matchupId,
+              before: existingData ? { title: existingData.title, strategy: existingData.strategy, raw_data: existingData.raw_data } : null,
+              after: { title: dictData.title, strategy: dictData.strategy, raw_data: dictData.raw_data },
+              sourceTitle: editTitle,
+            }),
+          }).catch((e) => console.warn('[LibraryTabContent] 履歴記録に失敗:', e));
         }
 
         // 段階2 dual-write: 構造化テーブル champion_notes にも同じ記事を1行追加する（#29）。

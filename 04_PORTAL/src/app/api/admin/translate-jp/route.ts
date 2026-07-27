@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 import { verifyAdminSession } from '../../../../lib/adminAuth';
 import { callGeminiWithRetry } from '../../../../lib/geminiClient';
+import { recordMatchupSentinelRevision } from '../../../../lib/matchupSentinelRevisions';
 
 // 既存データの日本語化。英語のまま保存されている辞典・記事を日本語へ変換する。
 // チャンク処理にして、クライアントから完了まで繰り返し呼ぶ（同期処理と同じ方式）。
@@ -164,6 +165,12 @@ export async function POST(req: Request) {
           if (t.kind === 'memo') {
             const jp = await toJapanese(t.strategy, '対面攻略メモ');
             await supabase.from('matchup_sentinel').update({ strategy: jp }).eq('matchup_id', t.matchup_id);
+            await recordMatchupSentinelRevision(
+              t.matchup_id,
+              { strategy: t.strategy },
+              { strategy: jp },
+              '英語→日本語 自動翻訳'
+            );
             if (samples.length < 3) samples.push(t.matchup_id);
           } else {
             const jp = await toJapanese(t.body, 'チャンピオン攻略ノート');

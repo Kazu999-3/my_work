@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../../lib/supabaseAdmin';
 import { verifyAdminSession } from '../../../../../lib/adminAuth';
+import { recordMatchupSentinelRevision } from '../../../../../lib/matchupSentinelRevisions';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -91,7 +92,7 @@ export async function POST(req: Request) {
 
       const { data: existingData } = await supabase
         .from('matchup_sentinel')
-        .select('raw_data, strategy')
+        .select('title, raw_data, strategy')
         .eq('matchup_id', matchupId)
         .maybeSingle();
 
@@ -113,20 +114,29 @@ export async function POST(req: Request) {
         }
       }
 
+      const newRawData = {
+        ...rawData,
+        source: 'champ_db',
+        role: 'GLOBAL'
+      };
+
       const { error: upsertError } = await supabase.from('matchup_sentinel').upsert({
         matchup_id: matchupId,
         champion: championName,
         enemy: 'GLOBAL',
         strategy: newStrategy,
-        raw_data: {
-          ...rawData,
-          source: 'champ_db',
-          role: 'GLOBAL'
-        }
+        raw_data: newRawData
       }, { onConflict: 'matchup_id' });
 
       if (upsertError) throw upsertError;
       syncedChampionCount++;
+
+      await recordMatchupSentinelRevision(
+        matchupId,
+        existingData,
+        { strategy: newStrategy, raw_data: newRawData },
+        `攻略ライブラリ一括同期（${items.length}件の記事）`
+      );
     }));
 
     // ===== 個別の「辞典へ移動」と同じ後処理 =====

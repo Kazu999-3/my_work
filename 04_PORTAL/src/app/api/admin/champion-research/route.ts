@@ -4,6 +4,7 @@ import { verifyAdminSession } from '../../../../lib/adminAuth';
 import { callGeminiWithRetry } from '../../../../lib/geminiClient';
 import { getChampionKnowledge } from '../../../../lib/championKnowledge';
 import { fetchChampionStats } from '../../../../lib/championStats';
+import { recordMatchupSentinelRevision } from '../../../../lib/matchupSentinelRevisions';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -164,10 +165,13 @@ ${internalKnowledge.hasData ? internalKnowledge.text.slice(0, 6000) : '（内部
     }
 
     // 3. matchup_sentinel (チャンピオン辞典) へ戦術データを反映
-    const matchupId = `${champClean.toUpperCase()}_GLOBAL`;
+    // matchup_idは他の全書き込み経路と同じ `champ_${champion}_global` 形式に統一する。
+    // 以前は `${champClean.toUpperCase()}_GLOBAL` という別形式だったため、同じチャンピオンでも
+    // 別レコードとして重複作成され、辞典の表示内容がズレる原因になっていた。
+    const matchupId = `champ_${champClean}_global`;
     const { data: existingSentinel } = await supabase
       .from('matchup_sentinel')
-      .select('id, raw_data')
+      .select('id, title, strategy, raw_data')
       .eq('matchup_id', matchupId)
       .maybeSingle();
 
@@ -193,6 +197,13 @@ ${internalKnowledge.hasData ? internalKnowledge.text.slice(0, 6000) : '（内部
       await supabase.from('matchup_sentinel').insert(sentinelPayload);
     }
 
+    await recordMatchupSentinelRevision(
+      matchupId,
+      existingSentinel,
+      { title: sentinelPayload.title, strategy: sentinelPayload.strategy, raw_data: sentinelPayload.raw_data },
+      articleTitle
+    );
+
     // 4. 高優先度解説動画の発掘 & キュー登録
     let enqueuedVideos = 0;
     if (fetchVideos) {
@@ -207,6 +218,7 @@ ${internalKnowledge.hasData ? internalKnowledge.text.slice(0, 6000) : '（内部
       articleId: savedArticleId,   // ライブラリで開くためのID
       articleLength: aiText.length,
       statsSource: siteData.ok ? siteData.source : null,
+      statsFailureReason: siteData.ok ? null : siteData.failureReason,  // 公式データ取得に失敗した理由（握りつぶさず画面へ表示する）
       lolalyticsUsed: siteData.ok,  // 公式データを実際に取得できたか（旧名はUI互換のため維持）
       internalKnowledgeUsed: internalKnowledge.hasData,  // 内部ナレッジを材料にできたか
       enqueuedVideos,

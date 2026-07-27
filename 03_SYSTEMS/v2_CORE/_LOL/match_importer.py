@@ -10,6 +10,7 @@ ROOT_DIR = Path(__file__).resolve().parent.parent.parent.parent
 sys.path.append(str(ROOT_DIR / "03_SYSTEMS"))
 
 dotenv.load_dotenv(Path("d:/my_work/.env"))
+from v2_CORE.knowledge_revisions import record_matchup_sentinel_revision
 log = logging.getLogger("MatchImporter")
 log.setLevel(logging.INFO)
 if not log.handlers:
@@ -236,6 +237,11 @@ def import_matches():
                 total_imported += 1
                 processed_match_ids.add(mid)  # 成功したらキャッシュに追加
                 log.info(f"  ✅ {matchup['champion']} vs {matchup['enemy']} ({matchup['result']}) - {matchup['my_kda']}")
+                record_matchup_sentinel_revision(
+                    data["matchup_id"], None, data,
+                    source_title=f"Riot API自動取り込み（{matchup['result']}）",
+                    supabase_url=SUPABASE_URL, supabase_key=SUPABASE_KEY
+                )
                 
                 # --- AI 鬼コーチ反省会 トリガー (ユーザー要望により停止中) ---
                 # try:

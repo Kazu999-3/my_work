@@ -98,6 +98,32 @@ export async function POST(req: Request) {
         .update({ [rev.field]: rev.before_text, updated_at: new Date().toISOString() })
         .eq('champion', rev.target_key);
       if (e2) throw e2;
+    } else if (rev.target_type === 'matchup_sentinel') {
+      if (rev.field === 'title' || rev.field === 'strategy') {
+        const { error: e2 } = await supabase
+          .from('matchup_sentinel')
+          .update({ [rev.field]: rev.before_text, updated_at: new Date().toISOString() })
+          .eq('matchup_id', rev.target_key);
+        if (e2) throw e2;
+      } else {
+        // raw_data(JSONB)内のフィールドは読み取り→該当キーだけ差し替え→書き戻す
+        const { data: row, error: e2 } = await supabase
+          .from('matchup_sentinel')
+          .select('raw_data')
+          .eq('matchup_id', rev.target_key)
+          .maybeSingle();
+        if (e2) throw e2;
+        if (!row) return NextResponse.json({ error: '対象の辞典データが見つかりません' }, { status: 404 });
+
+        let restored: any = rev.before_text;
+        try { restored = JSON.parse(rev.before_text); } catch { /* 文字列のまま使う（元々テキスト項目） */ }
+
+        const { error: e3 } = await supabase
+          .from('matchup_sentinel')
+          .update({ raw_data: { ...(row.raw_data || {}), [rev.field]: restored }, updated_at: new Date().toISOString() })
+          .eq('matchup_id', rev.target_key);
+        if (e3) throw e3;
+      }
     } else {
       return NextResponse.json({ error: `未対応の種別です: ${rev.target_type}` }, { status: 400 });
     }

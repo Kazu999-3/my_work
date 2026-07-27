@@ -12,11 +12,29 @@ const FIELD_LABELS: Record<string, string> = {
   weaknesses: '弱み',
   power_spikes: 'パワースパイク',
   build_runes: 'ビルド/ルーン',
+  powerSpikes: 'パワースパイク',
+  buildRunes: 'ビルド/ルーン',
+  fullClearTime: '周回クリアルート',
+  counterChampions: '対面の有利・不利',
+  mustBanChampions: '必須BAN',
+  pickRecommendation: 'ピック推奨',
+  note_draft: 'note下書き',
+  jg_style: 'プレイスタイル分類',
+  patch_meta: 'パッチトレンド',
+  pro_builds: 'プロビルド',
+  customFields: 'カスタム項目',
+  winCondition: '勝ち筋',
+  earlyGame: '序盤の立ち回り',
+  firstClear: 'ファストクリア',
+  counterJg: 'カウンタージャングル対策',
+  title: 'タイトル',
+  strategy: '基本戦略',
 };
 
 const TYPE_LABELS: Record<string, string> = {
   lane_guide: 'レーン別ガイド',
-  champion_fact: 'チャンピオン辞典',
+  champion_fact: 'チャンピオン辞典（対面タブ）',
+  matchup_sentinel: 'チャンピオン辞典',
 };
 
 export default function RevisionsPanel() {
@@ -80,7 +98,8 @@ export default function RevisionsPanel() {
           <select value={filterType} onChange={e => setFilterType(e.target.value)}
             className="bg-gray-950 border border-gray-800 rounded-lg px-2 py-1.5 text-xs text-gray-300 outline-none focus:border-indigo-500">
             <option value="all">すべて</option>
-            <option value="champion_fact">チャンピオン辞典</option>
+            <option value="matchup_sentinel">チャンピオン辞典</option>
+            <option value="champion_fact">チャンピオン辞典（対面タブ）</option>
             <option value="lane_guide">レーン別ガイド</option>
           </select>
           <button onClick={load} disabled={loading}

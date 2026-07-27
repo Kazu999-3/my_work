@@ -12,6 +12,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), "..", ".."))
 from v2_CORE.settings import settings
 from v2_CORE.ai_helper import generate_content_safe
 from v2_CORE.logger_config import setup_sovereign_logging
+from v2_CORE.knowledge_revisions import record_matchup_sentinel_revision
 
 logger = setup_sovereign_logging("ChampionTrendWorker")
 
@@ -224,7 +225,13 @@ League of Legendsの最新パッチにおける、チャンピオン「{champion
     except Exception as e:
         logger.error(f"Exception during upsert: {e}")
         sys.exit(5)
-        
+
+    record_matchup_sentinel_revision(
+        matchup_id, existing or None, payload,
+        source_title="最新トレンド取得（AI自動収集）",
+        supabase_url=supabase_url, supabase_key=supabase_key
+    )
+
     # 成功終了情報を出力
     print(json.dumps({"success": True, "message": f"Updated {champion} trend", "matchup_id": matchup_id}))
 

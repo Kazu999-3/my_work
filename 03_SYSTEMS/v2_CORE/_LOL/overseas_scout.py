@@ -9,6 +9,7 @@ from v2_CORE.settings import settings
 from v2_CORE.ai_helper import generate_content_safe
 from v2_CORE._LOL.herald import herald
 from v2_CORE._LOL.champ_id_normalizer import get_latest_ddragon_version
+from v2_CORE.knowledge_revisions import record_matchup_sentinel_revision
 
 logger = logging.getLogger("OverseasScout")
 
@@ -123,9 +124,20 @@ class OverseasScout:
 
     def update_champion_dictionary(self, champ_id, data):
         """Supabase のマッチアップ辞典 (GLOBAL) を更新"""
+        matchup_id = f"champ_{champ_id}_global"
         url = f"{self.supabase_url}/rest/v1/matchup_sentinel?on_conflict=matchup_id"
+
+        existing_record = None
+        try:
+            get_url = f"{self.supabase_url}/rest/v1/matchup_sentinel?matchup_id=eq.{matchup_id}&select=title,strategy,raw_data"
+            get_r = requests.get(get_url, headers=self._get_headers(), timeout=10)
+            if get_r.ok and get_r.json():
+                existing_record = get_r.json()[0]
+        except Exception as e:
+            logger.warning(f"既存データの取得に失敗（新規作成として続行）: {e}")
+
         payload = {
-            "matchup_id": f"champ_{champ_id}_global",
+            "matchup_id": matchup_id,
             "champion": champ_id,
             "enemy": "GLOBAL",
             "title": f"{champ_id} 基本戦略・トレンド (AI Auto)",
@@ -144,6 +156,11 @@ class OverseasScout:
             r = requests.post(url, headers=self._get_headers(), json=payload)
             if r.ok:
                 logger.info(f"✅ Updated dictionary for {champ_id}")
+                record_matchup_sentinel_revision(
+                    matchup_id, existing_record, payload,
+                    source_title="海外情報スカウト（AI自動収集）",
+                    supabase_url=self.supabase_url, supabase_key=self.supabase_key
+                )
             else:
                 logger.error(f"Failed to update Supabase for {champ_id}: {r.text}")
         except Exception as e:

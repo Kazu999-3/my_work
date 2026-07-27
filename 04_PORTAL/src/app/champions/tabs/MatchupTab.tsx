@@ -10,6 +10,20 @@ import Link from 'next/link';
 import ChampSelect from '../../../components/ChampSelect';
 import { Spinner } from '../../../components/Feedback';
 
+// 履歴記録（ブラウザからは service role を使えないためサーバー経由）
+async function recordMatchupRevision(matchupId: string, before: any, after: any, sourceTitle?: string) {
+  try {
+    await fetch('/api/admin/knowledge/revisions/record-matchup', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ matchupId, before, after, sourceTitle }),
+    });
+  } catch (e) {
+    console.warn('[MatchupTab] 履歴記録に失敗:', e);
+  }
+}
+
 const EMPTY_MEMO = {
   champion: '', enemy: '', role: 'Jungle', title: '',
   difficulty: 3, winCondition: '', earlyGame: '', powerSpikes: '',
@@ -217,6 +231,8 @@ export default function MatchupTab() {
     
     const mergedRawData = memo.original_raw_data ? { ...memo.original_raw_data, ...memo } : { source: 'manual', ...memo };
     delete mergedRawData.original_raw_data;
+    delete mergedRawData.original_title;
+    delete mergedRawData.original_strategy;
     delete mergedRawData.id;
     delete mergedRawData.matchup_id;
     delete mergedRawData.created_at;
@@ -228,17 +244,32 @@ export default function MatchupTab() {
       matchup_id: memo.matchup_id || `manual_${Date.now()}`,
       created_at: new Date().toISOString(),
     };
-  
+
     const { error } = await supabase.from('matchup_sentinel').upsert(data, { onConflict: 'matchup_id' });
-    if (!error) { fetchData(); setMemo({ ...EMPTY_MEMO }); setShowForm(false); setShowDetails(false); } 
+    if (!error) {
+      recordMatchupRevision(
+        data.matchup_id,
+        memo.original_raw_data ? { title: memo.original_title, strategy: memo.original_strategy, raw_data: memo.original_raw_data } : null,
+        { title: data.title, strategy: data.strategy, raw_data: data.raw_data }
+      );
+      fetchData(); setMemo({ ...EMPTY_MEMO }); setShowForm(false); setShowDetails(false);
+    }
     else alert('保存失敗: ' + error.message);
     setSaving(false);
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (m: any) => {
     if (!window.confirm('このマッチアップメモを完全に削除しますか？')) return;
-    const { error } = await supabase.from('matchup_sentinel').delete().eq('id', id);
-    if (!error) { setMatchups(prev => prev.filter(m => m.id !== id)); setSelected(null); }
+    const { error } = await supabase.from('matchup_sentinel').delete().eq('id', m.id);
+    if (!error) {
+      recordMatchupRevision(
+        m.matchup_id,
+        { title: m.title, strategy: m.strategy, raw_data: m.raw_data },
+        { title: '', strategy: '', raw_data: {} },
+        '🗑️ マッチアップメモを削除'
+      );
+      setMatchups(prev => prev.filter(x => x.id !== m.id)); setSelected(null);
+    }
   };
 
   const handleEdit = (m: any) => {
@@ -249,6 +280,7 @@ export default function MatchupTab() {
 
     setMemo({
       id: m.id, matchup_id: m.matchup_id, original_raw_data: rd,
+      original_title: m.title, original_strategy: m.strategy,
       champion: m.champion, enemy: m.enemy, role: rl, title: m.title, difficulty: rd.difficulty || 3,
       winCondition: rd.winCondition || '', earlyGame: rd.earlyGame || '',
       firstClear: rd.firstClear || '', counterJg: rd.counterJg || '', powerSpikes: rd.powerSpikes || '',
@@ -425,7 +457,7 @@ export default function MatchupTab() {
                 </div>
                 <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button onClick={() => handleEdit(m)} className="p-1.5 rounded-lg bg-white/5 text-gray-400 hover:text-white"><Shield size={14} /></button>
-                  <button onClick={() => handleDelete(m.id)} className="p-1.5 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20"><Trash2 size={14} /></button>
+                  <button onClick={() => handleDelete(m)} className="p-1.5 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20"><Trash2 size={14} /></button>
                 </div>
               </div>
 

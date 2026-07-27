@@ -3,7 +3,7 @@ import { supabaseAdmin } from './supabaseAdmin';
 // チャンピオン辞典・レーン別ガイドの更新履歴。
 // 統合はAIが本文ごと書き直すので、直前の本文を残しておかないと差分が復元できない。
 
-export type RevisionTarget = 'lane_guide' | 'champion_fact';
+export type RevisionTarget = 'lane_guide' | 'champion_fact' | 'matchup_sentinel';
 
 export interface RevisionInput {
   targetType: RevisionTarget;

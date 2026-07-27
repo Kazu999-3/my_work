@@ -18,6 +18,7 @@ except ImportError:
     logger = setup_sovereign_logging("DictSynthesizer")
 
 from v2_CORE.ai_helper import generate_content_safe, generate_with_routing
+from v2_CORE.knowledge_revisions import record_matchup_sentinel_revision
 from v2_CORE._LOL.herald import herald
 from google import genai
 
@@ -241,6 +242,13 @@ class DictSynthesizer:
             if res.status_code in (200, 201, 204):
                 logger.info(f"✅ {champion_name} の辞典巡回チェックが完了しました。 (データ更新: {changed})")
                 if changed:
+                    record_matchup_sentinel_revision(
+                        champ_data["matchup_id"],
+                        {"raw_data": raw_data},
+                        {"raw_data": updated_raw_data},
+                        source_title="辞典巡回整理（AI自動クリーンアップ）",
+                        supabase_url=self.url, supabase_key=self.key
+                    )
                     processed_count += 1
                     processed_champions.append(champion_name)
             else:

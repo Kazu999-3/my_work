@@ -10,6 +10,7 @@ from google.genai import types
 import dotenv
 from v2_CORE._LOL.herald import herald
 from v2_CORE._LOL.champ_id_normalizer import normalize_champion_id
+from v2_CORE.knowledge_revisions import record_matchup_sentinel_revision
 
 dotenv.load_dotenv(Path("D:/my_work/.env"))
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [ChampDB] %(levelname)s: %(message)s")
@@ -247,6 +248,11 @@ def update_champion_db(champ_id: str, champ_name: str, new_text: str, patch_vers
             r = requests.post(url, headers=headers, json=upsert_data, timeout=15)
             if r.status_code in (200, 201):
                 logging.info(f"✅ [{champ_id}] Champion DB successfully updated & merged!")
+                record_matchup_sentinel_revision(
+                    upsert_data["matchup_id"], existing_data, upsert_data,
+                    source_title="辞典自動ブラッシュアップ（champ_db_updater）",
+                    supabase_url=SUPABASE_URL, supabase_key=SUPABASE_KEY
+                )
                 herald.notify_progress(f"📖 **【辞典更新完了】** {champ_name} のデータとnoteドラフトが自動ブラッシュアップされました！", portal_link=True, page="champdb")
                 return True
             elif r.status_code in (429, 500, 502, 503, 504) and attempt < max_retries - 1:

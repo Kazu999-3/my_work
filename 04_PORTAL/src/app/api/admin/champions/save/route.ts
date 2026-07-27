@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../../lib/supabaseAdmin';
 import { verifyAdminSession } from '../../../../../lib/adminAuth';
+import { recordMatchupSentinelRevision } from '../../../../../lib/matchupSentinelRevisions';
 
 export async function POST(req: NextRequest) {
   try {
@@ -19,6 +20,13 @@ export async function POST(req: NextRequest) {
     if (!matchup_id || !champion || !enemy) {
       return NextResponse.json({ error: '必須パラメータが不足しています。' }, { status: 400 });
     }
+
+    // 履歴記録用に更新前の状態を取得しておく
+    const { data: beforeRow } = await supabase
+      .from('matchup_sentinel')
+      .select('title, strategy, raw_data')
+      .eq('matchup_id', matchup_id)
+      .maybeSingle();
 
     // 容量削減対策①：note_draftをSupabase Storageへ退避させる
     let updatedRawData = { ...(raw_data || {}) };
@@ -71,6 +79,13 @@ export async function POST(req: NextRequest) {
     if (error) {
       throw error;
     }
+
+    // 履歴記録（note_draftはStorage退避前の実文で差分を残す）
+    await recordMatchupSentinelRevision(
+      matchup_id,
+      beforeRow,
+      { strategy: data.strategy, raw_data: { ...(raw_data || {}) } }
+    );
 
     return NextResponse.json({
       success: true,

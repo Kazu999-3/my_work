@@ -9,6 +9,10 @@ import logging
 import httpx
 from pathlib import Path
 import dotenv
+import sys
+
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+from v2_CORE.knowledge_revisions import record_matchup_sentinel_revision
 
 dotenv.load_dotenv(Path("d:/my_work/.env"))
 logger = logging.getLogger("SovereignSync")
@@ -139,6 +143,11 @@ class SovereignSync:
         )
         
         if res.status_code in (200, 201, 204):
+            record_matchup_sentinel_revision(
+                matchup_id, existing or None, data,
+                source_title=f"記事同期: {title}",
+                supabase_url=self.url, supabase_key=self.key
+            )
             return True
         else:
             logger.error(f"❌ 辞典同期失敗 ({champion}): {res.status_code} {res.text[:200]}")
@@ -325,14 +334,27 @@ class SovereignSync:
 
             synced = 0
             for m in matchups:
+                matchup_id = str(m.get("id", ""))
                 data = {
-                    "matchup_id": str(m.get("id", "")),
+                    "matchup_id": matchup_id,
                     "title": m.get("title", ""),
                     "champion": m.get("champion", ""),
                     "enemy": m.get("enemy", ""),
                     "strategy": m.get("strategy", ""),
                     "raw_data": m
                 }
+
+                existing = {}
+                try:
+                    get_res = httpx.get(
+                        f"{self._api('matchup_sentinel')}?matchup_id=eq.{matchup_id}&select=title,strategy,raw_data",
+                        headers={"apikey": self.key, "Authorization": f"Bearer {self.key}"},
+                        timeout=10
+                    )
+                    if get_res.status_code == 200 and get_res.json():
+                        existing = get_res.json()[0]
+                except Exception:
+                    pass
 
                 res = httpx.post(
                     self._api("matchup_sentinel"),
@@ -343,6 +365,11 @@ class SovereignSync:
 
                 if res.status_code in (200, 201):
                     synced += 1
+                    record_matchup_sentinel_revision(
+                        matchup_id, existing or None, data,
+                        source_title="ローカルマッチアップメモ同期",
+                        supabase_url=self.url, supabase_key=self.key
+                    )
 
             logger.info(f"✅ マッチアップ同期完了: {synced}/{len(matchups)} 件")
         except Exception as e:
