@@ -348,44 +348,21 @@ function ChampionsContent() {
 
   const handleToggleFavorite = async () => {
     if (!selected) return;
-    
+
     // 1. localStorage をトグル
     const isNowFav = toggleFavoriteChampion(selected.id);
-    
-    // 2. Supabase への非同期同期保存
+
+    // 2. Supabase への同期保存。
+    // 以前は管理者専用の /api/admin/champions/save を経由していたため、管理者ログインして
+    // いないスマホ閲覧時はここが401で失敗し、お気に入りがlocalStorageだけに残って
+    // PCと同期しなかった。お気に入りは誰でも安全にトグルできる個人設定なので、
+    // 認証不要の専用エンドポイントを使う（raw_data全体の再構築・上書きもしない）。
     try {
-      const jgStyle = champJgStyles[selected.id] || {};
-      const currentStrategy = dataFields.strategy || '';
-      
-      const raw = {
-        source: 'champ_db',
-        role: 'GLOBAL',
-        strengths: dataFields.strengths,
-        weaknesses: dataFields.weaknesses,
-        powerSpikes: dataFields.powerSpikes,
-        buildRunes: dataFields.buildRunes,
-        fullClearTime: dataFields.fullClearTime,
-        pickRecommendation: dataFields.pickRecommendation,
-        counterChampions: dataFields.counterChampions,
-        jg_style: dataFields.jg_style || jgStyle,
-        patch_meta: champPatchMetas[selected.id] || null,
-        is_favorited: isNowFav
-      };
-      
-      const payload = {
-        matchup_id: `champ_${selected.id}_global`,
-        champion: selected.id,
-        enemy: 'GLOBAL',
-        strategy: currentStrategy,
-        raw_data: raw
-      };
-      
-      await fetch('/api/admin/champions/save', {
-        method: 'POST', credentials: 'include',
+      await fetch('/api/champions/favorite', {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        body: JSON.stringify({ champion: selected.id, is_favorited: isNowFav })
       });
-      
     } catch (err) {
       console.error('❌ Failed to sync favorite to Supabase:', err);
     }
