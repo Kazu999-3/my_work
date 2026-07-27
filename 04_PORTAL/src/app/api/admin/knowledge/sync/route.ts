@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../../lib/supabaseAdmin';
 import { verifyAdminSession } from '../../../../../lib/adminAuth';
 import { recordMatchupSentinelRevision } from '../../../../../lib/matchupSentinelRevisions';
+import { normalizeChampionName } from '../../../../../lib/championNames';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -70,7 +71,9 @@ export async function POST(req: Request) {
     for (const article of (articles || [])) {
       const rawChamp = article.champion || '';
       const editChampions = rawChamp.split(',').map((c: string) => c.trim()).filter((c: string) => c && c.toLowerCase() !== 'unknown');
-      const validChampions = editChampions.filter((c: string) => c && !FAKE_CHAMPIONS.includes(c) && !FAKE_CHAMPIONS.includes(c.toLowerCase()));
+      const fakeFiltered = editChampions.filter((c: string) => c && !FAKE_CHAMPIONS.includes(c) && !FAKE_CHAMPIONS.includes(c.toLowerCase()));
+      // 表記ゆれのまま matchup_id を作ると既存GLOBALレコードと別物として重複作成されるため正規化する
+      const validChampions = fakeFiltered.map((c: string) => normalizeChampionName(c));
 
       if (validChampions.length === 0) continue;
       const title = article.title || '';

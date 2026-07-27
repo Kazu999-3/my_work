@@ -13,6 +13,7 @@ from v2_CORE.settings import settings
 from v2_CORE.ai_helper import generate_content_safe
 from v2_CORE.logger_config import setup_sovereign_logging
 from v2_CORE.knowledge_revisions import record_matchup_sentinel_revision
+from v2_CORE._LOL.champ_id_normalizer import normalize_champion_id
 
 logger = setup_sovereign_logging("ChampionTrendWorker")
 
@@ -20,8 +21,9 @@ def main():
     if len(sys.argv) < 3:
         logger.error("Usage: python champion_trend_worker.py <champion> <role>")
         sys.exit(1)
-        
-    champion = sys.argv[1]
+
+    # 表記ゆれのまま matchup_id を作ると既存GLOBALレコードと別物として重複作成されるため正規化する
+    champion = normalize_champion_id(sys.argv[1])
     role = sys.argv[2]
     
     logger.info(f"Starting trend collection for {champion} ({role})")

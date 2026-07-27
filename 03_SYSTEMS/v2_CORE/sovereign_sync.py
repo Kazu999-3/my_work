@@ -13,6 +13,7 @@ import sys
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from v2_CORE.knowledge_revisions import record_matchup_sentinel_revision
+from v2_CORE._LOL.champ_id_normalizer import normalize_champion_id
 
 dotenv.load_dotenv(Path("d:/my_work/.env"))
 logger = logging.getLogger("SovereignSync")
@@ -65,6 +66,8 @@ class SovereignSync:
         if not champion or champion == "Unknown":
             return False
 
+        # 他の全書き込み経路と同じ正規化済みIDで matchup_id を作る（重複レコード防止）
+        champion = normalize_champion_id(champion)
         matchup_id = f"champ_{champion}_global"
         
         # 1. 既存のレコードを取得

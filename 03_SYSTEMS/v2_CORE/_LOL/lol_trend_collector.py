@@ -11,6 +11,7 @@ from v2_CORE.settings import settings
 from v2_CORE.ai_helper import generate_with_routing, generate_content_safe
 from v2_CORE.logger_config import setup_sovereign_logging
 from v2_CORE.knowledge_revisions import record_matchup_sentinel_revision
+from v2_CORE._LOL.champ_id_normalizer import normalize_champion_id
 
 logger = setup_sovereign_logging("LolTrendCollector")
 
@@ -288,8 +289,9 @@ class LolTrendCollector:
 
     def save_champ_trends(self, champion: str, role: str, trend_data: dict) -> bool:
         """収集したトレンド・プロビルドデータをSupabaseのmatchup_sentinel（GLOBALレコード）にマージする"""
-        # 他の全書き込み経路(champion_trend_worker.py等)と同じ大文字小文字で matchup_id を
-        # 作る（.lower()していると同じチャンピオンなのに別レコードとして重複作成されてしまう）
+        # 他の全書き込み経路と同じ正規化済みIDで matchup_id を作る
+        # （表記ゆれ・大文字小文字違いがあると別レコードとして重複作成されてしまう）
+        champion = normalize_champion_id(champion)
         matchup_id = f"champ_{champion}_global"
         
         # 1. 既存のレコードを取得

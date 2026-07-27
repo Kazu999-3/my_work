@@ -10,6 +10,7 @@ from v2_CORE.ai_helper import generate_content_safe
 from v2_CORE._LOL.herald import herald
 from v2_CORE._LOL.champ_id_normalizer import get_latest_ddragon_version
 from v2_CORE.knowledge_revisions import record_matchup_sentinel_revision
+from v2_CORE._LOL.champ_id_normalizer import normalize_champion_id
 
 logger = logging.getLogger("OverseasScout")
 
@@ -124,6 +125,8 @@ class OverseasScout:
 
     def update_champion_dictionary(self, champ_id, data):
         """Supabase のマッチアップ辞典 (GLOBAL) を更新"""
+        # 他の全書き込み経路と同じ正規化済みIDで matchup_id を作る（重複レコード防止）
+        champ_id = normalize_champion_id(champ_id)
         matchup_id = f"champ_{champ_id}_global"
         url = f"{self.supabase_url}/rest/v1/matchup_sentinel?on_conflict=matchup_id"
 

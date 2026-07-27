@@ -10,6 +10,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 import ChampSelect from '../../../components/ChampSelect';
 import { getFavorites, toggleFavoriteArticle } from '../../../components/FavoritesPanel';
+import { normalizeChampionName } from '../../../lib/championNames';
 const parseDate = (dStr: any) => {
   if (!dStr) return 0;
   const t = new Date(dStr).getTime();
@@ -462,7 +463,10 @@ export function LibraryTabContentInner() {
 
     // --- チャンピオン辞典統合ロジック（複数チャンピオン対応）---
     const fakeChampions = ["", "Unknown", "その他", "[YouTube]", "YouTube", "Jungle", "jg", "lol", "ARTICLE", "draft", "SYSTEM", "LIVE", "GLOBAL", "test", "sns", "macro"];
-    const validChampions = editChampions.filter(c => c.trim() && !fakeChampions.includes(c.trim()) && !fakeChampions.includes(c.trim().toLowerCase()));
+    // 表記ゆれのまま matchup_id を作ると既存GLOBALレコードと別物として重複作成されるため正規化する
+    const validChampions = editChampions
+      .filter(c => c.trim() && !fakeChampions.includes(c.trim()) && !fakeChampions.includes(c.trim().toLowerCase()))
+      .map(c => normalizeChampionName(c.trim()));
 
     if (validChampions.length > 0) {
       try {
