@@ -79,8 +79,30 @@ function ChampionsContent() {
   const [expandedMatchupId, setExpandedMatchupId] = useState<string | null>(null);
   const [isMatchupSectionCollapsed, setIsMatchupSectionCollapsed] = useState(true);
   const [fetchingTrend, setFetchingTrend] = useState(false);
+  // 「取得中...」から状況が分からないという指摘を受け、キュー待ち/AI生成中/完了などの
+  // 実際のフェーズをリアルタイムで表示するための状態。
+  const [trendPhase, setTrendPhase] = useState<'idle' | 'queuing' | 'pending' | 'running' | 'completed' | 'failed' | 'offline' | 'timeout' | 'error'>('idle');
+  const [trendMessage, setTrendMessage] = useState('');
+  const [trendStartedAt, setTrendStartedAt] = useState<number | null>(null);
+  const [trendElapsedSec, setTrendElapsedSec] = useState(0);
   const [champStats, setChampStats] = useState<Record<string, any>>({});
   const [pastInterrogations, setPastInterrogations] = useState<any[]>([]);
+
+  // トレンド取得中の経過秒数を1秒ごとに更新（「本当に動いているか」を見えるようにする）
+  useEffect(() => {
+    if (!trendStartedAt || !fetchingTrend) return;
+    const timer = setInterval(() => {
+      setTrendElapsedSec(Math.floor((Date.now() - trendStartedAt) / 1000));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [trendStartedAt, fetchingTrend]);
+
+  // 完了メッセージはしばらく表示してから自動的に消す
+  useEffect(() => {
+    if (trendPhase !== 'completed') return;
+    const t = setTimeout(() => { setTrendPhase('idle'); setTrendMessage(''); }, 6000);
+    return () => clearTimeout(t);
+  }, [trendPhase]);
 
   // 詳細モーダル内の折りたたみアコーディオン制御状態（デフォルト非表示・折りたたみ）
   const [isStrategyCollapsed, setIsStrategyCollapsed] = useState(true);
@@ -373,6 +395,10 @@ function ChampionsContent() {
     if (!selected) return;
     const champIdAtStart = selected.id; // ポーリング完了時に選択が変わっていないか確認するために保持
     setFetchingTrend(true);
+    setTrendPhase('queuing');
+    setTrendMessage('タスクをキューに登録中...');
+    setTrendStartedAt(Date.now());
+    setTrendElapsedSec(0);
     try {
       const role = roleFilter === 'ALL' ? 'Jungle' : roleFilter;
       const res = await fetch('/api/admin/champions/trend', {
@@ -380,7 +406,7 @@ function ChampionsContent() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ champion: selected.id, role })
       });
-      
+
       const result = await res.json();
       if (!result.success || !result.task_id) {
         throw new Error(result.error || 'タスクのキュー登録に失敗しました。');
@@ -400,12 +426,16 @@ function ChampionsContent() {
         const diffSec = heartbeat ? (Date.now() - new Date(heartbeat.updated_at).getTime()) / 1000 : Infinity;
         if (diffSec > 60) {
           setFetchingTrend(false);
-          alert('ローカルPCのEdge Worker Daemonが起動していないようです。\n\nタスク自体はキューに登録済みなので、PCで start_all.ps1 を実行してデーモンを起動すれば自動的に処理されます（もう一度ボタンを押す必要はありません）。');
+          setTrendPhase('offline');
+          setTrendMessage('ローカルPCのEdge Worker Daemonが起動していないようです。タスク自体はキューに登録済みなので、PCで start_all.ps1 を実行すれば自動的に処理されます（もう一度ボタンを押す必要はありません）。');
           return;
         }
       } catch (hbErr) {
         console.warn('ハートビート確認に失敗（そのままポーリングを続行）:', hbErr);
       }
+
+      setTrendPhase('pending');
+      setTrendMessage('キューで順番待ち中...（他のチャンピオン更新やYouTube解析タスクが先にある場合があります）');
 
       // ポーリング開始
       // バックエンド(champion_trend_worker.py)は最大600秒(10分)処理にかかりうる上、
@@ -413,29 +443,40 @@ function ChampionsContent() {
       // 余裕を持って900秒(15分)まで待つ。
       let attempts = 0;
       const maxAttempts = 300; // 3秒 × 300回 = 900秒 (15分)
-      
+
       const poll = async () => {
         if (attempts >= maxAttempts) {
           setFetchingTrend(false);
-          alert('トレンド取得タスクがタイムアウトしました。バックグラウンドで処理が継続している可能性があります。');
+          setTrendPhase('timeout');
+          setTrendMessage('タイムアウトしました。バックグラウンドで処理が継続している可能性があります。');
           return;
         }
-        
+
         attempts++;
         const { data: task, error } = await supabase
           .from('edge_tasks')
           .select('status, error_message')
           .eq('id', taskId)
           .single();
-          
+
         if (error) {
           console.error('Task fetch error:', error);
           setTimeout(poll, 3000);
           return;
         }
-        
+
+        if (task.status === 'running') {
+          setTrendPhase('running');
+          setTrendMessage('AIがトレンド情報を生成中...');
+        } else if (task.status === 'pending') {
+          setTrendPhase('pending');
+          setTrendMessage('キューで順番待ち中...（他のチャンピオン更新やYouTube解析タスクが先にある場合があります）');
+        }
+
         if (task.status === 'completed') {
           setFetchingTrend(false);
+          setTrendPhase('completed');
+          setTrendMessage('最新のトレンド情報を更新しました！');
           // ポーリング中に別のチャンピオンへ切り替えていたら、今の画面には反映しない
           // （データ自体はDBに保存済みなので、そのチャンピオンを開き直せば見える）
           if (selectedRef.current?.id !== champIdAtStart) return;
@@ -492,22 +533,22 @@ function ChampionsContent() {
               [champIdAtStart]: noteData.created_at
             }));
           }
-
-          alert('最新のトレンド情報を更新しました！');
         } else if (task.status === 'failed') {
           setFetchingTrend(false);
-          alert(`更新に失敗しました: ${task.error_message || 'タスク実行エラー'}`);
+          setTrendPhase('failed');
+          setTrendMessage(`更新に失敗しました: ${task.error_message || 'タスク実行エラー'}`);
         } else {
-          // pending or running
+          // pending or running（フェーズ表示は上で更新済み）
           setTimeout(poll, 3000);
         }
       };
-      
+
       setTimeout(poll, 3000);
-      
+
     } catch (err: any) {
-      alert(`通信エラー: ${err.message}`);
       setFetchingTrend(false);
+      setTrendPhase('error');
+      setTrendMessage(`通信エラー: ${err.message}`);
     }
   };
 
@@ -713,7 +754,7 @@ function ChampionsContent() {
                 className="px-4 py-3 bg-[#c89b3c] hover:bg-[#c89b3c]/80 text-black font-black rounded-xl transition-all flex items-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_15px_rgba(200,155,60,0.3)] hover:shadow-[0_0_25px_rgba(200,155,60,0.5)]"
               >
                 <RefreshCw size={16} className={fetchingTrend ? "animate-spin" : ""} />
-                {fetchingTrend ? "取得中..." : "最新トレンド取得"}
+                {trendPhase === 'running' ? "AI生成中..." : trendPhase === 'pending' ? "順番待ち中..." : fetchingTrend ? "登録中..." : "最新トレンド取得"}
               </button>
 
               <Link
@@ -724,6 +765,27 @@ function ChampionsContent() {
                 📜 変更履歴パネルへ ➔
               </Link>
             </div>
+
+            {/* トレンド取得の進行状況（「取得中から変わらない」という不透明さの指摘を受けて追加） */}
+            {trendPhase !== 'idle' && (
+              <div className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold border ${
+                trendPhase === 'completed' ? 'bg-emerald-950/30 text-emerald-400 border-emerald-800/60' :
+                trendPhase === 'failed' || trendPhase === 'error' ? 'bg-red-950/30 text-red-400 border-red-800/60' :
+                trendPhase === 'offline' || trendPhase === 'timeout' ? 'bg-amber-950/30 text-amber-400 border-amber-800/60' :
+                'bg-cyan-950/30 text-cyan-300 border-cyan-800/60'
+              }`}>
+                {trendPhase === 'running' && <RefreshCw size={14} className="animate-spin shrink-0" />}
+                {(trendPhase === 'pending' || trendPhase === 'queuing') && <Activity size={14} className="shrink-0 animate-pulse" />}
+                {trendPhase === 'completed' && <Check size={14} className="shrink-0" />}
+                {(trendPhase === 'failed' || trendPhase === 'error' || trendPhase === 'offline' || trendPhase === 'timeout') && <ShieldAlert size={14} className="shrink-0" />}
+                <span>{trendMessage}</span>
+                {(trendPhase === 'pending' || trendPhase === 'running' || trendPhase === 'queuing') && (
+                  <span className="ml-auto font-mono opacity-70 shrink-0">
+                    経過 {Math.floor(trendElapsedSec / 60)}:{String(trendElapsedSec % 60).padStart(2, '0')}
+                  </span>
+                )}
+              </div>
+            )}
           </div>
         </div>
 

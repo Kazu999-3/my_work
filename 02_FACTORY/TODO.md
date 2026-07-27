@@ -11,6 +11,9 @@
 - [ ] **収益化パイプライン再実装の周辺整備**
   - [ ] `PORTAL_BOT_SECRET` の有効化（Vercel と Cloudflare 双方に設定してから bot⇔ポータル認証を有効化。コード自体は実装済み。外部ダッシュボード操作が要るためClaudeでは完結しない）
   - [ ] Whisper のクラウド移行の設計検討（無料・高精度が条件、実装自体は保留のまま設計だけ詰める）
+- [ ] **`champion_trend`タスクのクラウド移行検討**
+  - [ ] 現状、辞典の「最新トレンド取得」ボタン（単体1体でも）は`champion_trend`タスクをキューに積むだけで、実行はローカルのEdge Worker Daemon起動時のみ。`champion_trend_worker.py`はGemini呼び出しのみでGPU不要（Whisperと違いローカルPCである必然性がない）ため、GitHub Actions等クラウド側への移設可否を検討する
+  - [ ] 移設できれば「辞典更新のたびにPCで`start_all.ps1`を起動する」運用不要になり、Whisper専用（GPU必須）の用途にEdge Worker Daemonを純化できる
 - [ ] **リポジトリ運用の意思決定**
   - [ ] `02_FACTORY/PRODUCTS/` を Git 管理するかどうかの方針決定（セッション最初期から未決定のまま）
 ## ✅ 2026-07-28 追加セッションで対応済み
