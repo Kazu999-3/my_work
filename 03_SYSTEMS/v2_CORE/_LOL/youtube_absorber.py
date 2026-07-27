@@ -507,6 +507,7 @@ class YouTubeAbsorber:
             system_prompt = prompt_data.get("system_prompt") or ""
             user_prompt_template = prompt_data.get("user_prompt_template")
             model_id = prompt_data.get("default_model") or "gemini-2.5-flash"
+            fallback_model = prompt_data.get("fallback_model") or ""
 
             user_prompt = user_prompt_template.format(**variables)
             final_prompt = f"【指示・ペルソナ】\n{system_prompt}\n\n【本文】\n{user_prompt}" if system_prompt else user_prompt
@@ -517,6 +518,20 @@ class YouTubeAbsorber:
             if result_text and not result_text.startswith("⚠️") and not result_text.startswith("❌"):
                 logger.info("✅ 要約生成に成功しました。")
                 return result_text
+
+            # Gemini側が全滅（クォータ切れ等）した場合、他スクリプト(champion_trend_worker.py等)と
+            # 同様にプロンプト定義済みの fallback_model（ローカルOllama）へ最後のフォールバックを試みる。
+            logger.warning(f"⚠️ Gemini API失敗: {result_text}. ローカルOllama ({fallback_model}) へフォールバックします...")
+            if fallback_model.startswith("ollama/"):
+                try:
+                    from v2_CORE.ai_helper import _generate_with_ollama
+                    ollama_text = _generate_with_ollama(final_prompt, model=fallback_model.replace("ollama/", "", 1))
+                    if ollama_text:
+                        logger.info("✅ Ollamaフォールバックでの生成に成功しました。")
+                        return ollama_text
+                except Exception as ollama_e:
+                    logger.error(f"❌ Ollamaフォールバックも失敗しました: {ollama_e}")
+
             logger.error(f"❌ 要約生成に失敗しました: {result_text}")
             return None
         except Exception as e:
