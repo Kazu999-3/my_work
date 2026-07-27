@@ -90,6 +90,25 @@ class YouTubeAbsorber:
         cleaned = re.sub(r"<\/?c[^>]*>|<\d{2}:\d{2}:\d{2}\.\d{3}>", "", cleaned)
         return "\n".join([l.strip() for l in cleaned.splitlines() if l.strip()])
 
+    @staticmethod
+    def strip_error_tags(title: str) -> str:
+        """
+        失敗時に付与される末尾の "[エラー: ...]" タグを取り除く。
+        このタグはリトライごとに現在のtitleへ追記される実装だったため、
+        取り除かずに次のタグを追記すると "[エラー: A] [エラー: B]" のように
+        積み重なり、成功後もエラータグ付きのタイトルが残ってしまう。
+        """
+        if not title:
+            return title
+        import re
+        cleaned = title
+        while True:
+            new_cleaned = re.sub(r"\s*\[エラー:[^\]]*\]\s*$", "", cleaned).strip()
+            if new_cleaned == cleaned:
+                break
+            cleaned = new_cleaned
+        return cleaned
+
     def _run_ytdlp(self, args, capture_output=True, text=True, timeout=None):
         """yt-dlpコマンドを実行し、DPAPIなどのクッキーエラーが起きた場合にクッキー引数を除外して自動リトライする"""
         import subprocess
@@ -661,7 +680,7 @@ class YouTubeAbsorber:
                 logger.warning(f"No valid transcript found for {item['id']}")
                 self.update_video(item["id"], {
                     "status": "error_no_transcript",
-                    "title": f"{item['title']} [エラー: 日本語/英語字幕が動画に見つかりません]"
+                    "title": f"{self.strip_error_tags(item['title'])} [エラー: 日本語/英語字幕が動画に見つかりません]"
                 })
                 continue
 
@@ -682,10 +701,15 @@ class YouTubeAbsorber:
                 with open(file_path, "w", encoding="utf-8") as f:
                     f.write(bible_text)
                     
-                self.update_video(item["id"], {"status": "completed"})
+                # 過去のリトライで付いた [エラー: ...] タグを、成功したこの時点で綺麗にする
+                clean_title = self.strip_error_tags(item['title'])
+                self.update_video(item["id"], {"status": "completed", "title": clean_title})
                 success_count += 1
-                dur_min = (item.get('duration_sec') or 0) // 60
-                processed_details.append(f"- {item['title']} (Champion: **{extracted_champ}**, {dur_min}分)")
+                dur = item.get('duration_sec')
+                # DURATION_UNKNOWN(取得不能のフォールバック値)がそのまま「1666分」のように
+                # 表示され、実際の動画の長さと無関係な数字が出ていた
+                dur_label = "不明" if (not dur or dur == DURATION_UNKNOWN) else f"{dur // 60}分"
+                processed_details.append(f"- {clean_title} (Champion: **{extracted_champ}**, {dur_label})")
                 
                 # ログに保存先を明記
                 logger.info(f"✅ Created bible for {item['id']} at {file_path} (Champion: {extracted_champ})")
@@ -694,11 +718,11 @@ class YouTubeAbsorber:
                 updates = {"retry_count": retry_count}
                 if retry_count >= 5:
                     updates["status"] = "failed"
-                    updates["title"] = f"{item['title']} [エラー: 5回リトライしましたが要約を生成できませんでした]"
+                    updates["title"] = f"{self.strip_error_tags(item['title'])} [エラー: 5回リトライしましたが要約を生成できませんでした]"
                     logger.warning(f"❌ Video {item['id']} has failed after 5 retries. Marked as failed.")
                 else:
                     updates["status"] = "error_generation"
-                    updates["title"] = f"{item['title']} [エラー: AI要約生成に失敗しました (リトライ {retry_count}回目)]"
+                    updates["title"] = f"{self.strip_error_tags(item['title'])} [エラー: AI要約生成に失敗しました (リトライ {retry_count}回目)]"
                 self.update_video(item["id"], updates)
                 
 
