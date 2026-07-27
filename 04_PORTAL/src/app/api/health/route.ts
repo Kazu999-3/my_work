@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../lib/supabaseAdmin';
 
 // 軽量ヘルスチェック。サイドバー下部のステータス表示（#58）が実際の稼働状態を
@@ -29,4 +29,18 @@ export async function GET() {
     ms: Date.now() - started,
     checkedAt: new Date().toISOString(),
   });
+}
+
+// app/error.tsx がクラッシュ時にここへ報告を送るが、以前はPOSTハンドラが無く
+// 405で毎回黙って握りつぶされていた(呼び出し側もcatchで無視)ため、実際に
+// フロントでクラッシュが起きてもVercelのログに何も残らなかった。
+// 最低限ログには残すようにする（永続化までは不要）。
+export async function POST(req: NextRequest) {
+  try {
+    const body = await req.json();
+    console.error('[portal_boundary_error]', body);
+  } catch {
+    // 本文が読めなくても報告自体は失敗させない
+  }
+  return NextResponse.json({ ok: true });
 }

@@ -46,6 +46,61 @@ export default function WinrateMatrixPanel() {
     fetchData();
   }, []);
 
+  // 注意: この2つ(useState/useMemo)は元々ローディング/エラー時のearly returnより
+  // 下にあった。フックはレンダーごとに同じ回数・同じ順番で呼ばれなければならないため、
+  // 「読み込み中は3個、読み込み完了後は6個」のようにフック呼び出し数が変わった瞬間
+  // Reactが例外を投げ、開くたびに問題が発生していました(#error.tsxの境界が捕捉)。
+  // 早期returnより前に移動して、常に同じ回数呼ばれるようにする。
+  const [sortKey, setSortKey] = useState<'overall' | 'TOP' | 'JG' | 'MID' | 'ADC' | 'SUP' | 'games' | 'mmr' | 'name'>('overall');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+
+  const sortedData = useMemo(() => {
+    return [...data].sort((a, b) => {
+      let valA = 0;
+      let valB = 0;
+      let gamesA = 0;
+      let gamesB = 0;
+
+      if (sortKey === 'name') {
+        return sortOrder === 'desc' ? b.name.localeCompare(a.name) : a.name.localeCompare(b.name);
+      } else if (sortKey === 'games') {
+        valA = a.totalGames;
+        valB = b.totalGames;
+      } else if (sortKey === 'mmr') {
+        valA = a.overallMmr;
+        valB = b.overallMmr;
+      } else if (sortKey === 'overall') {
+        valA = a.totalGames > 0 ? (a.totalWins / a.totalGames) * 100 : -1;
+        valB = b.totalGames > 0 ? (b.totalWins / b.totalGames) * 100 : -1;
+        gamesA = a.totalGames;
+        gamesB = b.totalGames;
+      } else {
+        // TOP, JG, MID, ADC, SUP レーン勝率ソート
+        const statsA = a.lanes[sortKey];
+        const statsB = b.lanes[sortKey];
+        valA = statsA && statsA.games > 0 ? (statsA.wins / statsA.games) * 100 : -1;
+        valB = statsB && statsB.games > 0 ? (statsB.wins / statsB.games) * 100 : -1;
+        gamesA = statsA ? statsA.games : 0;
+        gamesB = statsB ? statsB.games : 0;
+      }
+
+      if (valA === valB) {
+        return sortOrder === 'desc' ? gamesB - gamesA : gamesA - gamesB;
+      }
+
+      return sortOrder === 'desc' ? valB - valA : valA - valB;
+    });
+  }, [data, sortKey, sortOrder]);
+
+  const handleHeaderClick = (key: typeof sortKey) => {
+    if (sortKey === key) {
+      setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc');
+    } else {
+      setSortKey(key);
+      setSortOrder('desc');
+    }
+  };
+
   if (loading) {
     return (
       <div className="bg-white/5 backdrop-blur-md rounded-3xl border border-gray-800">
@@ -119,56 +174,6 @@ export default function WinrateMatrixPanel() {
       </div>
     );
   };
-
-  const [sortKey, setSortKey] = useState<'overall' | 'TOP' | 'JG' | 'MID' | 'ADC' | 'SUP' | 'games' | 'mmr' | 'name'>('overall');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-
-  const handleHeaderClick = (key: typeof sortKey) => {
-    if (sortKey === key) {
-      setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc');
-    } else {
-      setSortKey(key);
-      setSortOrder('desc');
-    }
-  };
-
-  const sortedData = useMemo(() => {
-    return [...data].sort((a, b) => {
-      let valA = 0;
-      let valB = 0;
-      let gamesA = 0;
-      let gamesB = 0;
-
-      if (sortKey === 'name') {
-        return sortOrder === 'desc' ? b.name.localeCompare(a.name) : a.name.localeCompare(b.name);
-      } else if (sortKey === 'games') {
-        valA = a.totalGames;
-        valB = b.totalGames;
-      } else if (sortKey === 'mmr') {
-        valA = a.overallMmr;
-        valB = b.overallMmr;
-      } else if (sortKey === 'overall') {
-        valA = a.totalGames > 0 ? (a.totalWins / a.totalGames) * 100 : -1;
-        valB = b.totalGames > 0 ? (b.totalWins / b.totalGames) * 100 : -1;
-        gamesA = a.totalGames;
-        gamesB = b.totalGames;
-      } else {
-        // TOP, JG, MID, ADC, SUP レーン勝率ソート
-        const statsA = a.lanes[sortKey];
-        const statsB = b.lanes[sortKey];
-        valA = statsA && statsA.games > 0 ? (statsA.wins / statsA.games) * 100 : -1;
-        valB = statsB && statsB.games > 0 ? (statsB.wins / statsB.games) * 100 : -1;
-        gamesA = statsA ? statsA.games : 0;
-        gamesB = statsB ? statsB.games : 0;
-      }
-
-      if (valA === valB) {
-        return sortOrder === 'desc' ? gamesB - gamesA : gamesA - gamesB;
-      }
-
-      return sortOrder === 'desc' ? valB - valA : valA - valB;
-    });
-  }, [data, sortKey, sortOrder]);
 
   const renderSortIndicator = (key: typeof sortKey) => {
     if (sortKey !== key) return null;
