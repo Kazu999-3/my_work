@@ -111,10 +111,8 @@ function CounterStatsBox({ text }: { text: string }) {
 // ============================
 // タブ: 試合前コーチング
 // ============================
-function PreGameTab() {
+function PreGameTab({ champion, enemyChampion, triggerSignal }: { champion: string; enemyChampion: string; triggerSignal?: number }) {
   const [loading, setLoading] = useState(false);
-  const [champion, setChampion] = useState('');
-  const [enemyChampion, setEnemyChampion] = useState('');
   const [focus, setFocus] = useState('');
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState('');
@@ -137,32 +135,18 @@ function PreGameTab() {
     finally { setLoading(false); }
   };
 
+  // 「今日のチェック」からの一括起動シグナル。0/undefinedは初回マウント時なので無視する。
+  useEffect(() => {
+    if (triggerSignal) analyze();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [triggerSignal]);
+
   return (
     <div className="space-y-4">
       <p className="text-sm text-white/50">
         現在のランク・直近の試合・過去の対敵勝率・ナレッジDBを元に「今日何をすべきか」をGeminiが提案します。
+        チャンピオンは上部の共通入力欄と連動しています。
       </p>
-
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className="mb-1 block text-xs text-white/50">今日使いたいチャンピオン</label>
-          <input
-            value={champion}
-            onChange={(e) => setChampion(e.target.value)}
-            placeholder="例: Graves"
-            className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder-white/30 outline-none focus:border-indigo-400"
-          />
-        </div>
-        <div>
-          <label className="mb-1 block text-xs text-white/50">対面の敵チャンピオン（過去勝率算出用）</label>
-          <input
-            value={enemyChampion}
-            onChange={(e) => setEnemyChampion(e.target.value)}
-            placeholder="例: Lee Sin"
-            className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder-white/30 outline-none focus:border-indigo-400"
-          />
-        </div>
-      </div>
 
       <div>
         <label className="mb-1 block text-xs text-white/50">🎯 今日の焦点（この1試合で意識すること・任意）</label>
@@ -515,7 +499,7 @@ function TrendsTab() {
 // ============================
 // タブ: シーズン目標トラッカー
 // ============================
-function GoalTab() {
+function GoalTab({ triggerSignal }: { triggerSignal?: number }) {
   const TIERS = ['IRON', 'BRONZE', 'SILVER', 'GOLD', 'PLATINUM', 'EMERALD', 'DIAMOND', 'MASTER'];
   const DIVS = ['IV', 'III', 'II', 'I'];
   const [tier, setTier] = useState('GOLD');
@@ -543,6 +527,11 @@ function GoalTab() {
     } catch (e: any) { setError(e.message); }
     finally { setLoading(false); }
   };
+
+  useEffect(() => {
+    if (triggerSignal) analyze();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [triggerSignal]);
 
   const pct = result?.current && result?.target
     ? Math.max(0, Math.min(100, Math.round((result.current.abs / result.target.abs) * 100)))
@@ -643,7 +632,7 @@ function GoalTab() {
 // ============================
 // タブ: ティルト診断
 // ============================
-function TiltTab() {
+function TiltTab({ triggerSignal }: { triggerSignal?: number }) {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState('');
@@ -656,6 +645,11 @@ function TiltTab() {
     } catch (e: any) { setError(e.message); }
     finally { setLoading(false); }
   };
+
+  useEffect(() => {
+    if (triggerSignal) analyze();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [triggerSignal]);
 
   const tilt: TiltResult | null = result?.tilt ?? null;
   const tiltColors: Record<TiltLevel, string> = {
@@ -768,49 +762,32 @@ function TiltTab() {
 // ============================
 // タブ: マッチアップ分析
 // ============================
-function MatchupTab() {
+function MatchupTab({ champion, enemyChampion, triggerSignal }: { champion: string; enemyChampion: string; triggerSignal?: number }) {
   const [loading, setLoading] = useState(false);
-  const [myChamp, setMyChamp] = useState('');
-  const [enemy, setEnemy] = useState('');
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState('');
 
   const analyze = async () => {
-    if (!myChamp || !enemy) { setError('両方入力してください。'); return; }
+    if (!champion || !enemyChampion) { setError('上部の共通入力欄に両方入力してください。'); return; }
     setLoading(true); setError(''); setResult(null);
     try {
-      const data = await callCoachAPI({ mode: 'matchup', champion: myChamp, enemyChampion: enemy });
+      const data = await callCoachAPI({ mode: 'matchup', champion, enemyChampion });
       setResult(data);
     } catch (e: any) { setError(e.message); }
     finally { setLoading(false); }
   };
 
+  useEffect(() => {
+    if (triggerSignal) analyze();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [triggerSignal]);
+
   return (
     <div className="space-y-4">
       <p className="text-sm text-white/50">
         ナレッジDB（アーカイブ含む）とチャンピオン辞典の記述をAIが要約・重複クリーンアップした上でアドバイスを提示します。
+        チャンピオンは上部の共通入力欄と連動しています。
       </p>
-
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className="mb-1 block text-xs text-white/50">自分のチャンピオン</label>
-          <input
-            value={myChamp}
-            onChange={(e) => setMyChamp(e.target.value)}
-            placeholder="例: Graves"
-            className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder-white/30 outline-none focus:border-indigo-400"
-          />
-        </div>
-        <div>
-          <label className="mb-1 block text-xs text-white/50">対面の敵チャンピオン</label>
-          <input
-            value={enemy}
-            onChange={(e) => setEnemy(e.target.value)}
-            placeholder="例: Lee Sin"
-            className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder-white/30 outline-none focus:border-indigo-400"
-          />
-        </div>
-      </div>
 
       <button
         id="matchup-analyze-btn"
@@ -864,56 +841,44 @@ export default function CoachPage() {
       });
   }, []);
 
-  // 6タブは機能が近いもの同士で3グループに統合（使いにくいという指摘を受けての再編）。
-  // グループ内に複数機能がある場合のみサブタブを表示する。
-  const GROUPS = [
-    {
-      id: 'pregame',
-      label: '⚡ 試合前',
-      color: 'indigo',
-      subTabs: [
-        { id: 'pre', label: '事前分析', content: <PreGameTab /> },
-        { id: 'matchup', label: '⚔️ マッチアップ', content: <MatchupTab /> },
-        { id: 'scout', label: '🧭 偵察', content: <ScoutTab /> },
-      ],
-    },
-    {
-      id: 'postgame',
-      label: '🔍 試合後',
-      color: 'rose',
-      subTabs: [
-        { id: 'post', label: '振り返り', content: <PostGameTab /> },
-        { id: 'trends', label: '📈 傾向', content: <TrendsTab /> },
-      ],
-    },
-    {
-      id: 'mental',
-      label: '🎯 メンタル',
-      color: 'amber',
-      subTabs: [
-        { id: 'goal', label: '目標', content: <GoalTab /> },
-        { id: 'tilt', label: '🧠 ティルト', content: <TiltTab /> },
-      ],
-    },
-  ] as const;
+  // 「事前分析」と「マッチアップ」で同じチャンピオン名を二度入力させていたのを統合。
+  // ここで一度入力すれば両方の分析に使われる。
+  const [sharedChampion, setSharedChampion] = useState('');
+  const [sharedEnemyChampion, setSharedEnemyChampion] = useState('');
 
-  type GroupId = typeof GROUPS[number]['id'];
-  const [activeGroup, setActiveGroup] = useState<GroupId>('pregame');
-  const [activeSubTabByGroup, setActiveSubTabByGroup] = useState<Record<GroupId, string>>({
-    pregame: 'pre',
-    postgame: 'post',
-    mental: 'goal',
-  });
-
-  const groupActiveColors: Record<string, string> = {
-    indigo: 'border-indigo-400 text-indigo-300',
-    rose: 'border-rose-400 text-rose-300',
-    amber: 'border-amber-400 text-amber-300',
+  // 「今日のチェック」ボタン。試合を始める前に見る3項目(事前分析・目標・ティルト)を
+  // まとめて起動する。値をインクリメントするたびに各タブのuseEffectが反応する。
+  const [dailyCheckTrigger, setDailyCheckTrigger] = useState(0);
+  const runDailyCheck = () => {
+    setDailyCheckTrigger(Date.now());
+    setOpenIds((prev) => new Set([...prev, 'pre', 'goal', 'tilt']));
   };
 
-  const currentGroup = GROUPS.find((g) => g.id === activeGroup)!;
-  const currentSubTabId = activeSubTabByGroup[activeGroup];
-  const currentSubTab = currentGroup.subTabs.find((t) => t.id === currentSubTabId) || currentGroup.subTabs[0];
+  // タブ→グループ+サブタブの2階層にしても「画面が分割されている」感覚は変わらない
+  // という指摘を受け、ナビゲーション自体を無くして1ページの折りたたみ(アコーディオン)
+  // に統合。グループ見出しは分類の目印として残すが、クリックでの切り替えは発生しない。
+  const SECTIONS = [
+    { id: 'pre', group: 'pregame', groupLabel: '⚡ 試合前', label: '事前分析', content: <PreGameTab champion={sharedChampion} enemyChampion={sharedEnemyChampion} triggerSignal={dailyCheckTrigger} /> },
+    { id: 'matchup', group: 'pregame', groupLabel: '⚡ 試合前', label: '⚔️ マッチアップ', content: <MatchupTab champion={sharedChampion} enemyChampion={sharedEnemyChampion} /> },
+    { id: 'scout', group: 'pregame', groupLabel: '⚡ 試合前', label: '🧭 偵察', content: <ScoutTab /> },
+    { id: 'post', group: 'postgame', groupLabel: '🔍 試合後', label: '振り返り', content: <PostGameTab /> },
+    { id: 'trends', group: 'postgame', groupLabel: '🔍 試合後', label: '📈 傾向', content: <TrendsTab /> },
+    { id: 'goal', group: 'mental', groupLabel: '🎯 メンタル', label: '目標', content: <GoalTab triggerSignal={dailyCheckTrigger} /> },
+    { id: 'tilt', group: 'mental', groupLabel: '🎯 メンタル', label: '🧠 ティルト', content: <TiltTab triggerSignal={dailyCheckTrigger} /> },
+  ] as const;
+
+  // 最初の項目だけ開いた状態にし、あとはユーザーが必要な分だけ開く。
+  // 複数同時に開けるので、以前のタブ切り替えと違い前の結果を消さずに見比べられる。
+  const [openIds, setOpenIds] = useState<Set<string>>(new Set(['pre']));
+  const toggleSection = (id: string) => {
+    setOpenIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const groupOrder = ['pregame', 'postgame', 'mental'] as const;
 
   if (isAuthenticated === null) {
     return (
@@ -968,52 +933,76 @@ export default function CoachPage() {
           </p>
         </div>
 
-        {/* グループタブ */}
-        <div className="mb-3 flex gap-1 rounded-2xl border border-white/10 bg-white/5 p-1">
-          {GROUPS.map((group) => {
-            const isActive = activeGroup === group.id;
-            return (
-              <button
-                key={group.id}
-                id={`tab-${group.id}`}
-                onClick={() => setActiveGroup(group.id)}
-                className={`flex-1 rounded-xl border py-2.5 text-xs font-semibold transition-all ${
-                  isActive
-                    ? `${groupActiveColors[group.color]} bg-white/5`
-                    : 'border-transparent text-white/40 hover:text-white/70'
-                }`}
-              >
-                {group.label}
-              </button>
-            );
-          })}
+        {/* 共通入力欄: 事前分析とマッチアップで別々に入力させていたのを統合 */}
+        <div className="mb-6 rounded-2xl border border-white/10 bg-white/5 p-5">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="mb-1 block text-xs text-white/50">今日使うチャンピオン</label>
+              <input
+                value={sharedChampion}
+                onChange={(e) => setSharedChampion(e.target.value)}
+                placeholder="例: Graves"
+                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder-white/30 outline-none focus:border-indigo-400"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs text-white/50">対面の敵チャンピオン</label>
+              <input
+                value={sharedEnemyChampion}
+                onChange={(e) => setSharedEnemyChampion(e.target.value)}
+                placeholder="例: Lee Sin"
+                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder-white/30 outline-none focus:border-indigo-400"
+              />
+            </div>
+          </div>
+          <p className="mt-2 text-[11px] text-white/30">「事前分析」「マッチアップ」で共通して使われます。</p>
+
+          <button
+            onClick={runDailyCheck}
+            className="mt-4 w-full rounded-xl border border-sky-500/40 bg-sky-500/10 px-5 py-3 text-sm font-bold text-sky-200 transition hover:bg-sky-500/20"
+          >
+            🎯 今日のチェック（事前分析・目標・ティルトを一括実行）
+          </button>
         </div>
 
-        {/* サブタブ（グループ内に複数機能がある場合のみ表示） */}
-        {currentGroup.subTabs.length > 1 && (
-          <div className="mb-6 flex flex-wrap gap-2">
-            {currentGroup.subTabs.map((tab) => {
-              const isActive = currentSubTabId === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveSubTabByGroup((prev) => ({ ...prev, [activeGroup]: tab.id }))}
-                  className={`rounded-lg border px-3 py-1.5 text-xs font-bold transition-all ${
-                    isActive
-                      ? 'border-white/20 bg-white/10 text-white'
-                      : 'border-transparent text-white/40 hover:text-white/70'
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              );
-            })}
-          </div>
-        )}
-
-        {/* コンテンツ */}
-        <div key={`${activeGroup}-${currentSubTabId}`} className="animate-in">
-          {currentSubTab.content}
+        {/* 1ページ・折りたたみ形式。グループ見出しは分類の目印のみでクリック不要。 */}
+        <div className="space-y-8">
+          {groupOrder.map((groupId) => {
+            const groupSections = SECTIONS.filter((s) => s.group === groupId);
+            return (
+              <div key={groupId}>
+                <h2 className="mb-3 px-1 text-xs font-bold uppercase tracking-wider text-white/40">
+                  {groupSections[0].groupLabel}
+                </h2>
+                <div className="space-y-3">
+                  {groupSections.map((sec) => {
+                    const isOpen = openIds.has(sec.id);
+                    return (
+                      <div
+                        key={sec.id}
+                        className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03]"
+                      >
+                        <button
+                          onClick={() => toggleSection(sec.id)}
+                          className="flex w-full items-center justify-between px-5 py-3.5 text-left text-sm font-semibold text-white/80 transition-colors hover:text-white"
+                        >
+                          <span>{sec.label}</span>
+                          <span className={`text-white/40 transition-transform ${isOpen ? 'rotate-180' : ''}`}>▾</span>
+                        </button>
+                        {/* display切り替えのみでアンマウントしない: 折りたたんでも各タブの分析結果を保持する */}
+                        <div
+                          style={{ display: isOpen ? 'block' : 'none' }}
+                          className="animate-in border-t border-white/5 px-5 pb-5 pt-4"
+                        >
+                          {sec.content}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
         </div>
 
         {/* フッター */}
