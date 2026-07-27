@@ -42,6 +42,8 @@ jobs:
           ln -sfn "$GITHUB_WORKSPACE" 'd:/my_work'
 
       - name: Run champion dictionary bulk updater
+        id: bulk_update
+        continue-on-error: true
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GEMINI_API_KEY_FREE: ${{ secrets.GEMINI_API_KEY_FREE }}
@@ -50,7 +52,26 @@ jobs:
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
           PYTHONPATH: 03_SYSTEMS
         run: |
-          python 03_SYSTEMS/v2_CORE/_LOL/champ_db_bulk_updater.py || true
+          python 03_SYSTEMS/v2_CORE/_LOL/champ_db_bulk_updater.py
+
+      # ポータルの「自動化パイプラインステータス」パネルは edge_tasks の task_type を見て
+      # 鮮度判定している。このワークフローは元々 edge_tasks に一切書き込んでいなかったため、
+      # 実際は毎週正常に走っていてもパネル上は常に「古い/要更新」表示になっていた。
+      # 実行後に1件だけ完了レコードを残し、既存のパネルロジックに正しく反映させる。
+      - name: Report run to portal pipeline status
+        if: always()
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        run: |
+          STATUS="completed"
+          if [ "${{ steps.bulk_update.outcome }}" != "success" ]; then STATUS="failed"; fi
+          curl -sf -X POST "$SUPABASE_URL/rest/v1/edge_tasks" \
+            -H "apikey: $SUPABASE_KEY" \
+            -H "Authorization: Bearer $SUPABASE_KEY" \
+            -H "Content-Type: application/json" \
+            -d "{\"task_type\":\"champion_db_bulk_update\",\"status\":\"$STATUS\",\"payload\":{\"source\":\"github_actions\"}}" \
+            || echo "⚠️ pipeline-status への完了報告に失敗しましたが、辞典更新自体には影響ありません"
 
       - name: Commit queue progress
         run: |
