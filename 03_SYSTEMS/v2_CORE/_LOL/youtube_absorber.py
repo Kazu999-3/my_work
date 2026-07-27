@@ -459,15 +459,6 @@ class YouTubeAbsorber:
             transcript = "\n\n".join(summarized_parts)
             logger.info(f"📉 中間要約により、字幕長が {total_len:,}文字 ➜ {len(transcript):,}文字 に圧縮されました。")
             
-        import httpx
-        
-        api_key = os.environ.get("ANTIGRAVITY_API_KEY", "default_dev_key_2026")
-        url = "http://localhost:8000/api/v1/agent/generate"
-        headers = {
-            "X-Antigravity-Key": api_key,
-            "Content-Type": "application/json"
-        }
-        
         # 動画タイトルからチャンピオン名を推定し、関連ナレッジを取得
         knowledge_context = ""
         try:
@@ -481,33 +472,55 @@ class YouTubeAbsorber:
                     logger.info(f"📚 攻略ライブラリから {len(pk_entries)} 件のナレッジを注入します")
         except Exception as ke:
             logger.warning(f"⚠️ ナレッジ取得をスキップ: {ke}")
-        
-        payload = {
-            "prompt_id": "youtube_bible_forge",
-            "variables": {
-                "title": video_data["title"],
-                "url": video_data["url"],
-                "transcript": transcript,
-                "knowledge_context": knowledge_context
-            }
+
+        variables = {
+            "title": video_data["title"],
+            "url": video_data["url"],
+            "transcript": transcript,
+            "knowledge_context": knowledge_context
         }
-        
+
+        # 以前はローカルの AI Agent Gateway (localhost:8000) 経由でのみ生成しており、
+        # start_all.ps1 が Edge Worker Daemon 単独起動に一本化された際にGatewayが
+        # 常時起動されなくなったため、接続拒否で64%の動画がAI要約生成に失敗していた
+        # （edge_tasksの実行ログで確認）。
+        # Gatewayの中身は「Supabaseからプロンプトテンプレートを取得→変数を埋め込み→
+        # ai_helper.generate_content_safe()を呼ぶ」だけなので、同じことをここで直接行い、
+        # 他の全スクリプト（champ_db_updater.py等）と同様にGateway不要で動くようにする。
+        if not self.client:
+            logger.error("❌ Gemini Client が初期化されていません。")
+            return None
+
         try:
-            logger.info("📡 AI Agent Gateway (Port 8000) へ要約生成リクエストを送信中...")
-            res = httpx.post(url, headers=headers, json=payload, timeout=240)
-            if res.status_code == 200:
-                data = res.json()
-                if data.get("success"):
-                    logger.info(f"✅ AI Agent Gateway経由での生成成功 (モデル: {data.get('model_used')}, フォールバック: {data.get('fallback_occurred')})")
-                    return data.get("text")
-                else:
-                    logger.error(f"❌ AI Agent Gatewayがエラーを返しました: {data.get('error_message')}")
-                    return None
-            else:
-                logger.error(f"❌ AI Agent Gateway接続失敗 (HTTP {res.status_code}): {res.text[:200]}")
+            import httpx
+            prompt_url = f"{settings.SUPABASE_URL}/rest/v1/agent_prompts?prompt_id=eq.youtube_bible_forge"
+            headers = {
+                "apikey": settings.SUPABASE_KEY,
+                "Authorization": f"Bearer {settings.SUPABASE_KEY}",
+            }
+            res = httpx.get(prompt_url, headers=headers, timeout=10)
+            if res.status_code != 200 or not res.json():
+                logger.error(f"❌ プロンプト 'youtube_bible_forge' の取得に失敗しました (HTTP {res.status_code})")
                 return None
+            prompt_data = res.json()[0]
+
+            system_prompt = prompt_data.get("system_prompt") or ""
+            user_prompt_template = prompt_data.get("user_prompt_template")
+            model_id = prompt_data.get("default_model") or "gemini-2.5-flash"
+
+            user_prompt = user_prompt_template.format(**variables)
+            final_prompt = f"【指示・ペルソナ】\n{system_prompt}\n\n【本文】\n{user_prompt}" if system_prompt else user_prompt
+
+            result_text = generate_content_safe(
+                self.client, final_prompt, model_id=model_id, feature_name="youtube_bible_forge"
+            )
+            if result_text and not result_text.startswith("⚠️") and not result_text.startswith("❌"):
+                logger.info("✅ 要約生成に成功しました。")
+                return result_text
+            logger.error(f"❌ 要約生成に失敗しました: {result_text}")
+            return None
         except Exception as e:
-            logger.error(f"❌ AI Agent Gatewayとの通信で例外が発生しました: {e}")
+            logger.error(f"❌ 要約生成中に例外が発生しました: {e}")
             return None
 
     def run_cycle(self, limit=10):
