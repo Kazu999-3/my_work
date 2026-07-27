@@ -69,17 +69,18 @@ function ArticleLinks({ item }: { item: QueueItem }) {
 }
 
 function parseTitleAndError(fullTitle: string): { title: string; errorMessage: string | null } {
-  const match = fullTitle.match(/(.*)\s*\[エラー:\s*(.*?)\]\s*$/);
-  if (match) {
-    return {
-      title: match[1].trim(),
-      errorMessage: match[2].trim()
-    };
+  // 過去の二重処理(クラウド/ローカルの競合)で複数の[エラー: ...]タグが積み重なった
+  // タイトルが残っている場合、末尾から1つだけ剥がすと残りが本文に混ざって表示が崩れる。
+  // 末尾のタグが無くなるまでループで全て剥がし、最後に見つかったものだけを表示用に使う。
+  let title = fullTitle || '';
+  let lastError: string | null = null;
+  while (true) {
+    const match = title.match(/^(.*?)\s*\[エラー:([^\]]*)\]\s*$/);
+    if (!match) break;
+    title = match[1];
+    lastError = match[2].trim();
   }
-  return {
-    title: fullTitle,
-    errorMessage: null
-  };
+  return { title, errorMessage: lastError };
 }
 
 export default function YoutubeQueueManager() {

@@ -185,8 +185,20 @@ class YouTubeAbsorber:
             return None, str(e), None
 
     def get_pending_videos(self):
-        """status=pending の動画一覧を取得する"""
-        status, body, _ = self._supabase_request("youtube_queue?status=eq.pending", method='GET')
+        """
+        ローカルWhisper担当分（status=error_no_transcript）の動画一覧を取得する。
+
+        注意: 以前はここで status=eq.pending を取得しており、クラウド側の
+        scripts/youtube_worker.py（GitHub Actions, 30分おき）と全く同じ
+        pending プールを奪い合っていた。エラーメッセージの文言が違う両者が
+        同じ行を独立に処理・上書きするため、タイトルに両方のエラータグが
+        混在して積み重なる不具合の直接原因になっていた。
+        ローカル側の役目は「クラウド側が字幕なしと判定した動画をWhisperで
+        救済する」ことなので、対象を error_no_transcript に限定する。
+        """
+        status, body, _ = self._supabase_request(
+            "youtube_queue?status=eq.error_no_transcript&retry_count=lt.3", method='GET'
+        )
         if status in (200, 201):
             return json.loads(body)
         return []
@@ -204,9 +216,9 @@ class YouTubeAbsorber:
         return status in (200, 201, 204)
 
     def get_pending_count(self):
-        """残りの pending 件数を取得する"""
+        """このワーカーが対象とする残り件数（status=error_no_transcript）を取得する"""
         headers = {'Prefer': 'count=exact'}
-        status, body, r = self._supabase_request("youtube_queue?status=eq.pending&select=id&limit=1", method='GET', headers=headers)
+        status, body, r = self._supabase_request("youtube_queue?status=eq.error_no_transcript&select=id&limit=1", method='GET', headers=headers)
         if r:
             content_range = r.headers.get('Content-Range', '')
             if '/' in content_range:
@@ -678,10 +690,22 @@ class YouTubeAbsorber:
                 
             if not transcript or len(transcript) < 100:
                 logger.warning(f"No valid transcript found for {item['id']}")
-                self.update_video(item["id"], {
-                    "status": "error_no_transcript",
-                    "title": f"{self.strip_error_tags(item['title'])} [エラー: 日本語/英語字幕が動画に見つかりません]"
-                })
+                retry_count = item.get("retry_count", 0) + 1
+                # ここに来る動画は既に error_no_transcript（=クラウド側が字幕なしと判定済み）
+                # のものだけなので、Whisperでも規定回数救済できなければ諦めて failed にする。
+                # そうしないと毎回同じ error_no_transcript に戻り、15分おきに永久に再試行し続ける。
+                if retry_count >= 3:
+                    self.update_video(item["id"], {
+                        "status": "failed",
+                        "retry_count": retry_count,
+                        "title": f"{self.strip_error_tags(item['title'])} [エラー: 字幕・Whisper文字起こしともに失敗しました]"
+                    })
+                else:
+                    self.update_video(item["id"], {
+                        "status": "error_no_transcript",
+                        "retry_count": retry_count,
+                        "title": f"{self.strip_error_tags(item['title'])} [エラー: 日本語/英語字幕が動画に見つかりません]"
+                    })
                 continue
 
             # 実際の字幕長をログに記録
