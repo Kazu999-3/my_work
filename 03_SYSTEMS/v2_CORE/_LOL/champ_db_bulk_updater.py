@@ -44,6 +44,52 @@ logging.basicConfig(
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY_BATCH") or os.environ.get("GEMINI_API_KEY_FREE") or os.environ.get("GEMINI_API_KEY")
 QUEUE_FILE = Path("d:/my_work/02_FACTORY/_LOL/champion_update_queue.json")
 
+# ポータル(Vercel上)からは、このスクリプトが動いているローカルPCの
+# champion_update_queue.json を直接読むことができない（共有ファイルシステムが無いため）。
+# ハートビートと同じ「固定IDでedge_tasksにUPSERTする」パターンで、進捗をSupabase経由で
+# 見えるようにする。ポータル側の /api/admin/champions/queue はこの行を見る。
+BULK_STATUS_ID = "00000000-0000-0000-0000-000000000002"
+
+def report_bulk_status(queue_data: dict):
+    """一括更新の進捗をSupabaseへ報告する（ポータルの進捗バー用）。失敗しても本処理は継続する。"""
+    if not settings.SUPABASE_URL or not settings.SUPABASE_KEY:
+        return
+    queue = queue_data.get("queue", {})
+    total = len(queue)
+    completed = sum(1 for v in queue.values() if v.get("status") == "completed")
+    running_items = [v for v in queue.values() if v.get("status") == "running"]
+    failed = sum(1 for v in queue.values() if v.get("status") == "failed")
+    pending = max(0, total - completed - len(running_items) - failed)
+
+    payload = {
+        "id": BULK_STATUS_ID,
+        # 注意: task_type を "champion_db" 始まりにすると、pipeline-status.ts の
+        # 「辞典更新」監視パターン(ilike 'champion_db%')に誤ってマッチしてしまうため、
+        # 意図的に別のprefixにしている。
+        "task_type": "champdb_bulk_progress",
+        "status": queue_data.get("status", "running"),
+        "payload": {
+            "patch_version": queue_data.get("patch_version"),
+            "total": total,
+            "completed": completed,
+            "running": len(running_items),
+            "failed": failed,
+            "pending": pending,
+            "current_champ": running_items[0]["name"] if running_items else None,
+        },
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    headers = {
+        "apikey": settings.SUPABASE_KEY,
+        "Authorization": f"Bearer {settings.SUPABASE_KEY}",
+        "Content-Type": "application/json",
+        "Prefer": "resolution=merge-duplicates"
+    }
+    try:
+        requests.post(f"{settings.SUPABASE_URL}/rest/v1/edge_tasks", headers=headers, json=payload, timeout=10)
+    except Exception as e:
+        logging.warning(f"⚠️ 進捗レポートの送信に失敗しました（処理は続行）: {e}")
+
 def get_latest_patch() -> str:
     version = get_latest_ddragon_version(timeout=10)
     if version:
@@ -79,6 +125,7 @@ def save_queue(data: dict):
             json.dump(data, f, ensure_ascii=False, indent=2)
     except Exception as e:
         logging.error(f"Failed to save queue file: {e}")
+    report_bulk_status(data)
 
 def research_champion(champ_name: str, champ_id: str, patch_version: str) -> str:
     # 1. まず Gemini API での生成を試みる

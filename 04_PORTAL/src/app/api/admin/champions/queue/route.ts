@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
 import { verifyAdminSession } from '../../../../../lib/adminAuth';
+import { supabaseAdmin } from '../../../../../lib/supabaseAdmin';
 
 // ワークスペースのルートを特定する
 const WORKSPACE_DIR = process.env.MY_WORK_DIR
@@ -11,6 +12,11 @@ const WORKSPACE_DIR = process.env.MY_WORK_DIR
 const QUEUE_FILE = path.join(WORKSPACE_DIR, '02_FACTORY/_LOL/champion_update_queue.json');
 const LOCK_FILE  = path.join(WORKSPACE_DIR, '03_SYSTEMS/v2_CORE/_LOL/champ_db_bulk_updater.lock');
 
+// champ_db_bulk_updater.py が save_queue() のたびに書き込む固定ID行（ハートビートと同じ方式）。
+// ローカルの champion_update_queue.json はデーモンが動いているPCにしか存在せず、
+// Vercel上のポータルからは絶対に見えないため、Supabase経由の進捗報告を優先して読む。
+const BULK_STATUS_ID = '00000000-0000-0000-0000-000000000002';
+
 export async function GET(req: NextRequest) {
   try {
   // ===== 管理者セッション確認 =====
@@ -19,6 +25,35 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: authResult.error }, { status: 401 });
   }
   // =================================
+
+    // 1. まずSupabase経由の進捗報告を確認する（どこからアクセスしても見える）
+    const { data: statusRow } = await supabaseAdmin
+      .from('edge_tasks')
+      .select('status, payload, updated_at')
+      .eq('id', BULK_STATUS_ID)
+      .maybeSingle();
+
+    if (statusRow?.payload) {
+      const p = statusRow.payload as any;
+      // 10分以上更新が無ければ、デーモンが停止している(=読み込み専用の古い状態)とみなす。
+      const staleMs = statusRow.updated_at ? Date.now() - new Date(statusRow.updated_at).getTime() : Infinity;
+      const isStale = staleMs > 10 * 60 * 1000;
+
+      return NextResponse.json({
+        initialized: true,
+        patch_version: p.patch_version,
+        updated_at: statusRow.updated_at,
+        status: isStale && statusRow.status === 'running' ? 'suspended' : statusRow.status,
+        total: p.total || 0,
+        completed: p.completed || 0,
+        running: p.running || 0,
+        failed: p.failed || 0,
+        pending: p.pending || 0,
+        current_champ: p.current_champ || null,
+      });
+    }
+
+    // 2. フォールバック: ローカル実行時（Supabaseにまだ一度も報告されていない場合）
     if (!fs.existsSync(QUEUE_FILE)) {
       return NextResponse.json({
         initialized: false,
@@ -37,7 +72,7 @@ export async function GET(req: NextRequest) {
 
     const queue = queueData.queue || {};
     const total = Object.keys(queue).length;
-    
+
     let completed = 0;
     let running = 0;
     let failed = 0;

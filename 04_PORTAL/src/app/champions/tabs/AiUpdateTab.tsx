@@ -112,12 +112,9 @@ export default function AiUpdateTab() {
   const handleStartBulkUpdate = async () => {
     if (!confirm("全チャンピオンの辞典データをGemini APIを用いて一括更新しますか？\n（API制限が発生した場合は安全に自動停止し、次回続きから再開できます）")) return;
     try {
-      await fetch('/api/admin/champions/queue', {
-        method: 'POST', credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'reset' }),
-      });
-
+      // 注意: ここでキューをresetしてはいけない。resetすると一時停止中の進捗
+      // (完了済みチャンピオン)も丸ごと消え、「更新を再開」のはずが毎回ゼロから
+      // やり直しになってしまう。キューの初期化は「キュー初期化」ボタン専用。
       const res = await fetch('/api/admin/jobs', {
         method: 'POST', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
