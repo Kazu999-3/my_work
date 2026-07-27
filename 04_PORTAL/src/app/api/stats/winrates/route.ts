@@ -38,9 +38,11 @@ export async function GET() {
       throw new Error("Failed to fetch matches");
     }
 
-    const matchWinMap = new Map<number, string>();
+    // ktm_matches.id は uuid なので Number() に通すと全件 NaN になり、Mapのキーが
+    // 事実上1つに潰れて全参加者が同じ1試合の勝敗と比較されてしまっていた。文字列のまま使う。
+    const matchWinMap = new Map<string, string>();
     matches.forEach((m: any) => {
-      matchWinMap.set(Number(m.id), m.winning_team);
+      matchWinMap.set(String(m.id), m.winning_team);
     });
 
     // 4. データ集計用のマッピング準備 (discord_id と name の両方で引けるようにする)
@@ -77,7 +79,7 @@ export async function GET() {
       const pName = resolved.name;
       if (!statsMap[pName]) return;
 
-      const winningTeam = matchWinMap.get(Number(row.match_id));
+      const winningTeam = matchWinMap.get(String(row.match_id));
       if (!winningTeam) return;
 
       let role = (row.role || '').toUpperCase();

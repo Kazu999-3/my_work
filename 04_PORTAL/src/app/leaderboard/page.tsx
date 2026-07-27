@@ -248,11 +248,11 @@ export default function LeaderboardPage() {
         </div>
         
         {/* タブナビゲーション */}
-        <div className="flex justify-center mb-10">
-          <div className="inline-flex bg-gray-900 rounded-xl p-1 border border-gray-800">
+        <div className="flex justify-center mb-10 px-2">
+          <div className="inline-flex flex-wrap justify-center gap-1 bg-gray-900 rounded-xl p-1 border border-gray-800 max-w-full">
             <button
               onClick={() => setActiveTab('ranking')}
-              className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold transition-all ${
+              className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-6 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-bold transition-all whitespace-nowrap ${
                 activeTab === 'ranking'
                   ? 'bg-blue-600 text-white shadow-lg'
                   : 'text-gray-400 hover:text-white hover:bg-gray-800'
@@ -263,7 +263,7 @@ export default function LeaderboardPage() {
             </button>
             <button
               onClick={() => setActiveTab('winrate')}
-              className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold transition-all ${
+              className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-6 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-bold transition-all whitespace-nowrap ${
                 activeTab === 'winrate'
                   ? 'bg-emerald-600 text-white shadow-lg'
                   : 'text-gray-400 hover:text-white hover:bg-gray-800'
@@ -274,7 +274,7 @@ export default function LeaderboardPage() {
             </button>
             <button
               onClick={() => setActiveTab('meta')}
-              className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold transition-all ${
+              className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-6 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-bold transition-all whitespace-nowrap ${
                 activeTab === 'meta'
                   ? 'bg-amber-600 text-white shadow-lg'
                   : 'text-gray-400 hover:text-white hover:bg-gray-800'
