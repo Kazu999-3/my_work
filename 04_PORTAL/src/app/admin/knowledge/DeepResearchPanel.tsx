@@ -144,6 +144,9 @@ export default function DeepResearchPanel({ onSuccess }: DeepResearchPanelProps)
                 <div>・本文の文字数: {(resultMsg.details.articleLength || 0).toLocaleString()}字</div>
                 <div>・パッチ情報: {resultMsg.details.patch}</div>
                 <div>・公式データ(Data Dragon): {resultMsg.details.lolalyticsUsed ? '取得成功' : '取得できず'}</div>
+                {!resultMsg.details.lolalyticsUsed && resultMsg.details.statsFailureReason && (
+                  <div className="text-amber-400/90">　└ 理由: {resultMsg.details.statsFailureReason}</div>
+                )}
                 <div>・内部ナレッジ: {resultMsg.details.internalKnowledgeUsed ? '反映済み' : 'まだ無し'}</div>
                 <div>・キュー追加動画: {resultMsg.details.enqueuedVideos}本</div>
                 {!resultMsg.details.lolalyticsUsed && !resultMsg.details.internalKnowledgeUsed && (

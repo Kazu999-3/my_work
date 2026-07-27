@@ -15,6 +15,7 @@ export interface ChampionStatsResult {
   source: string;       // 取得できたソース名（'DataDragon' など）
   patch: string | null; // データのパッチ
   text: string;         // AIに渡す整形済みテキスト
+  failureReason?: string; // ok:false の場合になぜ失敗したか（画面で握りつぶさず表示するため）
 }
 
 const DD_BASE = 'https://ddragon.leagueoflegends.com';
@@ -65,18 +66,22 @@ function stripTags(s: string): string {
  * 取得できなければ ok:false を返す（呼び出し側はAIの一般知識にフォールバック）。
  */
 export async function fetchChampionStats(championInput: string): Promise<ChampionStatsResult> {
-  const fail: ChampionStatsResult = { ok: false, source: '', patch: null, text: '' };
+  const fail = (reason: string): ChampionStatsResult => {
+    console.warn(`[championStats] ${championInput} の取得に失敗: ${reason}`);
+    return { ok: false, source: '', patch: null, text: '', failureReason: reason };
+  };
+
   const version = await getLatestVersion();
-  if (!version) return fail;
+  if (!version) return fail('DataDragonのバージョン一覧を取得できませんでした（ネットワーク不調の可能性）');
 
   const id = await resolveChampionId(version, championInput);
-  if (!id) return fail;
+  if (!id) return fail(`チャンピオンID「${championInput}」をDataDragon一覧から解決できませんでした（表記ゆれの可能性）`);
 
   try {
     const res = await fetch(`${DD_BASE}/cdn/${version}/data/en_US/champion/${id}.json`, { cache: 'no-store' });
-    if (!res.ok) return fail;
+    if (!res.ok) return fail(`DataDragonの個別データ取得がHTTP ${res.status}で失敗しました`);
     const champ = (await res.json())?.data?.[id];
-    if (!champ) return fail;
+    if (!champ) return fail(`DataDragonのレスポンスに「${id}」のデータが含まれていませんでした`);
 
     const s = champ.stats || {};
     // レベル1と16の主要ステータスを出す（成長を具体値で示すため）
@@ -122,7 +127,7 @@ export async function fetchChampionStats(championInput: string): Promise<Champio
     ].filter(Boolean).join('\n');
 
     return { ok: true, source: 'DataDragon(公式)', patch: version, text };
-  } catch {
-    return fail;
+  } catch (e: any) {
+    return fail(`例外が発生しました: ${e?.message || e}`);
   }
 }

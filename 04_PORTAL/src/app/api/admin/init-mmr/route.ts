@@ -41,23 +41,25 @@ export async function POST(req: Request) {
       if (error) throw new Error(error.message);
       return NextResponse.json({ status: "SUCCESS", message: "All players MMR have been initialized to 1200." });
     } else {
-      // is_active だが MMR がない（nullなど）ユーザーのみ初期化したい場合
-      // 現在の実装ではシンプルに全件のうち一部を処理するか、新規だけを処理するかですが、
-      // Supabaseのupdateでnull条件を使うのが難しいため、一旦取得してから更新します。
+      // MMR が未設定（null）のユーザーのみ初期化する。
+      // 以前は全件取得してから1人ずつawaitでupdateしていたため、人数分の往復が発生していた。
+      // DB側の絞り込み(.or)＋1回の一括update(.in)に変えて往復を2回に減らす。
       const { data: players, error: fetchError } = await supabase
         .from('ktm_players')
-        .select('id, mmr, mmr_top');
+        .select('id')
+        .or('mmr.is.null,mmr_top.is.null');
 
       if (fetchError) throw new Error(fetchError.message);
 
-      let updatedCount = 0;
-      for (const p of players || []) {
-        if (p.mmr === null || p.mmr_top === null) {
-          await supabase.from('ktm_players').update(initialData).eq('id', p.id);
-          updatedCount++;
-        }
+      const targetIds = (players || []).map((p: { id: any }) => p.id);
+      if (targetIds.length > 0) {
+        const { error: updateError } = await supabase
+          .from('ktm_players')
+          .update(initialData)
+          .in('id', targetIds);
+        if (updateError) throw new Error(updateError.message);
       }
-      return NextResponse.json({ status: "SUCCESS", message: `Initialized MMR for ${updatedCount} players.` });
+      return NextResponse.json({ status: "SUCCESS", message: `Initialized MMR for ${targetIds.length} players.` });
     }
   } catch (err: any) {
     return NextResponse.json({ status: "ERROR", message: err.message }, { status: 500 });

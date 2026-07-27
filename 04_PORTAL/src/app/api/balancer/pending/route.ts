@@ -1,39 +1,37 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
-import crypto from 'crypto';
 
-// メモリ上に一時保存用の Map を定義 (Next.js の同一プロセスで共有)
-const pendingMatches = new Map<string, { balanceResult: any; createdAt: number }>();
-
-// 定期的なクリーンアップ (1時間以上古い pending データを自動削除)
-const CLEANUP_INTERVAL = 60 * 60 * 1000; // 1 hour
-let lastCleanup = Date.now();
-
-function cleanupExpired() {
-  const now = Date.now();
-  if (now - lastCleanup > CLEANUP_INTERVAL) {
-    for (const [id, value] of pendingMatches.entries()) {
-      if (now - value.createdAt > 3 * 60 * 60 * 1000) { // 3時間有効
-        pendingMatches.delete(id);
-      }
-    }
-    lastCleanup = now;
-  }
-}
+// 以前はプロセス内メモリ(Map)に保存していたが、Vercelはリクエストごとに別インスタンス
+// (別プロセス)で実行されうるため、POSTしたインスタンスとGETしたインスタンスが異なると
+// 「チーム分けデータが見つからない」という不整合が起きていた。
+// 既存の汎用タスクテーブル edge_tasks (task_type/payload/status) をそのまま流用し、
+// 全インスタンスから見える永続ストアに保存することで解消する。
+const TASK_TYPE = 'balancer_pending';
+const EXPIRE_MS = 3 * 60 * 60 * 1000; // 3時間有効（以前のインメモリ版と同じ）
 
 export async function POST(request: Request) {
   try {
-    cleanupExpired();
     const { balanceResult } = await request.json();
     if (!balanceResult) {
       return NextResponse.json({ error: 'チーム分け結果がありません。' }, { status: 400 });
     }
 
-    const pendingId = crypto.randomUUID();
-    pendingMatches.set(pendingId, {
-      balanceResult,
-      createdAt: Date.now()
-    });
+    // 期限切れの古いpendingデータを間引く（テーブル肥大化防止、失敗しても本筋は止めない）
+    supabase
+      .from('edge_tasks')
+      .delete()
+      .eq('task_type', TASK_TYPE)
+      .lt('created_at', new Date(Date.now() - EXPIRE_MS).toISOString())
+      .then(({ error }: { error: any }) => { if (error) console.warn('[balancer/pending] 期限切れデータの削除に失敗:', error); });
+
+    const { data: inserted, error: insertError } = await supabase
+      .from('edge_tasks')
+      .insert({ task_type: TASK_TYPE, payload: { balanceResult }, status: 'pending' })
+      .select('id')
+      .single();
+    if (insertError) throw insertError;
+
+    const pendingId = inserted.id;
 
     // ★ バランサー予測勝率の記録（課題: 予測勝率の検証）
     // チーム確定の瞬間に、MMR差から青チームの勝率をEloロジスティックで算出して保存する。
@@ -69,7 +67,7 @@ export async function POST(request: Request) {
           .select('pity')
           .eq('name', name)
           .single();
-        
+
         const nextPity = (Number(pData?.pity) || 0) + 10;
         await supabase
           .from('ktm_players')
@@ -87,7 +85,6 @@ export async function POST(request: Request) {
 
 export async function GET(request: Request) {
   try {
-    cleanupExpired();
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
 
@@ -95,12 +92,20 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'IDが指定されていません。' }, { status: 400 });
     }
 
-    const match = pendingMatches.get(id);
-    if (!match) {
+    const { data: task, error } = await supabase
+      .from('edge_tasks')
+      .select('payload, created_at')
+      .eq('id', id)
+      .eq('task_type', TASK_TYPE)
+      .maybeSingle();
+    if (error) throw error;
+
+    const expired = task && Date.now() - new Date(task.created_at).getTime() > EXPIRE_MS;
+    if (!task || expired) {
       return NextResponse.json({ error: '指定されたチーム分けデータが見つからないか、期限切れです。' }, { status: 404 });
     }
 
-    return NextResponse.json({ success: true, balanceResult: match.balanceResult });
+    return NextResponse.json({ success: true, balanceResult: task.payload?.balanceResult });
   } catch (error: any) {
     console.error('Pending Match Fetch Error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -113,7 +118,7 @@ export async function DELETE(request: Request) {
     const id = searchParams.get('id');
 
     if (id) {
-      pendingMatches.delete(id);
+      await supabase.from('edge_tasks').delete().eq('id', id).eq('task_type', TASK_TYPE);
     }
 
     return NextResponse.json({ success: true });
