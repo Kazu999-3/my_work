@@ -11,6 +11,10 @@
     {
       "path": "/api/cron/sync-matches",
       "schedule": "0 0 * * *"
+    },
+    {
+      "path": "/api/cron/soloq-trends",
+      "schedule": "0 22 * * 0"
     }
   ]
 }

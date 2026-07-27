@@ -337,12 +337,17 @@ export async function POST(req: Request) {
       console.warn("敵ジャングラーの過去戦績分析に失敗しました:", err);
     }
 
+    // 敵の過去戦績が取得できなかった場合のプレースホルダー。以前はこの固定値を
+    // 本物のように表示していたため、何人スカウトしても同じ数値になる「ダミーデータ
+    // っぽさ」の主因になっていた。dataInsufficient フラグを立てて、フロント側で
+    // 「推定値」であることを明示できるようにする。
     if (!enemyPlaystyle) {
       enemyPlaystyle = {
         sliders: { aggressive: 55, farming: 45, supportive: 40 },
         tags: [{ id: 'balanced-player', name: 'バランス型', description: '標準的なプレイスタイル。', reason: 'データ制限のため' }],
         diffs: { goldDiff: 50, xpDiff: 20, csDiff: 0.8 },
-        lastUpdated: new Date().toISOString()
+        lastUpdated: new Date().toISOString(),
+        dataInsufficient: true,
       };
     }
 
@@ -389,7 +394,10 @@ export async function POST(req: Request) {
         let pIsTilted = false;
         let isVulnerable = false;
         let fbRate = 10;
-        
+        // 実データが1件も取れずwinRate/fbRateが固定値のままの場合に立てる。
+        // 以前はこの状態でも「勝率50%」「特記事項なし」を本物のように表示していた。
+        let dataInsufficient = false;
+
         if (isEnemy && apiKey) {
           try {
             // 直近5戦のみ取得してAPI負荷と速度を最適化
@@ -428,31 +436,38 @@ export async function POST(req: Request) {
             });
             
             const total = wins + losses;
-            winRate = total > 0 ? Math.round((wins / total) * 100) : 50;
-            pConsecutiveLosses = recentLosses;
-            pIsTilted = pConsecutiveLosses >= 2;
-            
-            const topCh = Object.entries(chCounts).sort((a, b) => b[1] - a[1])[0];
-            if (topCh && topCh[1] >= 3) {
-              pIsOtp = true;
-              pOtpChamp = topCh[0];
-            }
-            
-            if (losses >= 3 || winRate <= 40) {
-              isVulnerable = true;
-              fbRate = 40 + (losses * 10);
+            if (total > 0) {
+              winRate = Math.round((wins / total) * 100);
+              pConsecutiveLosses = recentLosses;
+              pIsTilted = pConsecutiveLosses >= 2;
+
+              const topCh = Object.entries(chCounts).sort((a, b) => b[1] - a[1])[0];
+              if (topCh && topCh[1] >= 3) {
+                pIsOtp = true;
+                pOtpChamp = topCh[0];
+              }
+
+              if (losses >= 3 || winRate <= 40) {
+                isVulnerable = true;
+                fbRate = 40 + (losses * 10);
+              }
+            } else {
+              // 直近5戦の詳細が1件も取れなかった（新規アカウント・API制限等）
+              dataInsufficient = true;
             }
           } catch {
             winRate = 50;
             pIsTilted = false;
             isVulnerable = false;
             fbRate = 20;
+            dataInsufficient = true;
           }
         } else if (isEnemy) {
           winRate = 50;
           pIsTilted = false;
           isVulnerable = false;
           fbRate = 20;
+          dataInsufficient = true;
         }
 
         return {
@@ -467,7 +482,8 @@ export async function POST(req: Request) {
           consecutiveLosses: pConsecutiveLosses,
           isTilted: pIsTilted,
           isVulnerable,
-          fbRate
+          fbRate,
+          dataInsufficient
         };
       })
     );
@@ -718,65 +734,4 @@ function generateLiveAnalysis(champ: string, tag: any) {
   }
 
   return { startBuff, firstGank, tips };
-}
-
-function generateMockLiveGame(name: string) {
-  const mockPlaystyle = {
-    sliders: { aggressive: 78, farming: 35, supportive: 42 },
-    tags: [{
-      id: 'early-brawler',
-      name: '序盤の戦闘狂 (Early Brawler) [デモ]',
-      description: 'ゲーム序盤からキル関与やインベイドを好み、積極的仕掛けをするプレイヤー。',
-      reason: 'モックデータ判定 (FB率 35%, 平均キル 7.5)'
-    }],
-    diffs: { goldDiff: 180, xpDiff: 60, csDiff: 1.2 },
-    lastUpdated: new Date().toISOString()
-  };
-
-  const mockAdvice = [
-    {
-      title: "1. 3分前後のLV3インベイドを絶対防御せよ",
-      detail: "相手は攻撃的なLee Sin使いです。自陣バフへの侵入ルートに早期ワードを置き、衝突が起きたら味方ミッドを即座に寄らせてカウンターキルを狙いなさい。"
-    },
-    {
-      title: "2. サイドレーンの無駄なプッシュは厳禁だ",
-      detail: "相手は戦闘関与率が高いです。ガンクを受けやすい状況を自ら作らず、ウェーブコントロールを徹底してタワー下で安全に受け流しなさい。"
-    },
-    {
-      title: "3. ドラゴン周辺の視界確保を怠るな",
-      detail: "中盤以降のオブジェクト戦への移行スピードが早いです。最初のドラゴン出現前にリバーの支配権を必ず確保し、相手に先手を取らせないようにしなさい。"
-    }
-  ];
-
-  const mockCounters = [
-    { championName: "Graves", winRate: 53.5, reason: "Lee Sin の射程外から高火力の物理バーストを出せ、序盤の機動力勝負で有利を取れます。" },
-    { championName: "Jax", winRate: 52.8, reason: "スキル『反撃の風暴』で Lee Sin のQの追加ダメージや通常攻撃を完全に無効化でき、インベイドへの強力な抑止力になります。" }
-  ];
-
-  return {
-    isGameActive: true,
-    gameLength: 540,
-    mapId: 11,
-    championName: 'LeeSin',
-    enemyJgName: 'EnemyDemon#KR1',
-    playstyle: mockPlaystyle,
-    startBuffPrediction: '青バフ (バフ3キャンプ速攻) スタート予測 [デモ]',
-    firstGankTarget: 'トップまたはミッドへのLV3早期Gank [デモ]',
-    tips: '【デモアドバイス】敵ジャングラーは戦闘狂 Lee Sin です。開始3分前後にインベイドまたはトップへのLV3ガンクを行う可能性が80%以上あります。リバーに視界を置き、敵の位置を特定してからアクションを起こしましょう。',
-    isOtp: true,
-    otpChampion: 'LeeSin',
-    isTilted: true,
-    consecutiveLosses: 4,
-    coachAdvice: mockAdvice,
-    counters: mockCounters,
-    allParticipants: [
-      { name: "AllyJg (あなた)", championId: 64, teamId: 100, isEnemy: false, role: "JG", winRate: 54, isOtp: false, consecutiveLosses: 0, isTilted: false, isVulnerable: false, fbRate: 10 },
-      { name: "AllyTop", championId: 24, teamId: 100, isEnemy: false, role: "LANER", winRate: 50, isOtp: false, consecutiveLosses: 0, isTilted: false, isVulnerable: false, fbRate: 15 },
-      { name: "EnemyDemon", championId: 64, teamId: 200, isEnemy: true, role: "JG", winRate: 45, isOtp: true, otpChampion: "LeeSin", consecutiveLosses: 4, isTilted: true, isVulnerable: false, fbRate: 10 },
-      { name: "EnemyTop", championId: 77, teamId: 200, isEnemy: true, role: "LANER", winRate: 30, isOtp: false, consecutiveLosses: 5, isTilted: true, isVulnerable: true, fbRate: 70 },
-      { name: "EnemyMid", championId: 103, teamId: 200, isEnemy: true, role: "LANER", winRate: 55, isOtp: true, otpChampion: "Ahri", consecutiveLosses: 0, isTilted: false, isVulnerable: false, fbRate: 20 },
-      { name: "EnemyAdc", championId: 81, teamId: 200, isEnemy: true, role: "LANER", winRate: 60, isOtp: false, consecutiveLosses: 0, isTilted: false, isVulnerable: false, fbRate: 10 },
-      { name: "EnemySup", championId: 201, teamId: 200, isEnemy: true, role: "LANER", winRate: 48, isOtp: false, consecutiveLosses: 1, isTilted: false, isVulnerable: false, fbRate: 30 }
-    ]
-  };
 }

@@ -310,7 +310,7 @@ function PostGameTab() {
           <AdviceBox text={result.advice} />
 
           {result.saved && (
-            <p className="text-xs text-white/30">💾 ナレッジDBに自動マージ保存されました: {result.saved}</p>
+            <p className="text-xs text-white/30">💾 傾向分析用データとして記録しました（「📈 傾向」タブに反映されます）</p>
           )}
         </div>
       )}

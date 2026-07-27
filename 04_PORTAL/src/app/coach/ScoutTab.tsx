@@ -170,6 +170,11 @@ export default function ScoutTab() {
 
                     <div className="space-y-5">
                       <h4 className="text-xs font-black text-gray-400 uppercase tracking-wider">{result.isPreMatch ? "あなたのプレイスタイル・スライダー" : "敵のプレイスタイル・スライダー"} (Playstyle Sliders)</h4>
+                      {result.playstyle.dataInsufficient && (
+                        <div className="text-[10px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded-xl px-3 py-2">
+                          ⚠️ 過去の対戦データが取得できなかったため、以下は実測値ではなく暫定的な推定値です。
+                        </div>
+                      )}
                       <div className="space-y-4">
                         <div className="space-y-1.5">
                           <div className="flex justify-between text-xs font-bold">
@@ -425,11 +430,15 @@ export default function ScoutTab() {
                                       {p.role}
                                     </td>
                                     <td className="py-3 text-center">
-                                      <span className={`font-mono font-black ${
-                                        p.winRate >= 55 ? 'text-emerald-400' : p.winRate <= 40 ? 'text-rose-400 animate-pulse' : 'text-amber-400'
-                                      }`}>
-                                        {p.winRate}%
-                                      </span>
+                                      {p.dataInsufficient ? (
+                                        <span className="text-[10px] text-gray-500 font-bold">データ不足</span>
+                                      ) : (
+                                        <span className={`font-mono font-black ${
+                                          p.winRate >= 55 ? 'text-emerald-400' : p.winRate <= 40 ? 'text-rose-400 animate-pulse' : 'text-amber-400'
+                                        }`}>
+                                          {p.winRate}%
+                                        </span>
+                                      )}
                                     </td>
                                     <td className="py-3 text-right space-y-1">
                                       {p.isOtp && (
@@ -447,7 +456,10 @@ export default function ScoutTab() {
                                           🎯 集中Gank推奨 (被FB: {p.fbRate}%)
                                         </span>
                                       )}
-                                      {!p.isOtp && !p.isTilted && !p.isVulnerable && (
+                                      {p.dataInsufficient && !p.isOtp && !p.isTilted && !p.isVulnerable && (
+                                        <span className="text-[10px] text-gray-500 font-bold">戦績データなし</span>
+                                      )}
+                                      {!p.dataInsufficient && !p.isOtp && !p.isTilted && !p.isVulnerable && (
                                         <span className="text-[10px] text-gray-500 font-bold">特記事項なし</span>
                                       )}
                                     </td>
