@@ -385,11 +385,26 @@ class EdgeWorkerDaemon:
                 
             elif task_type == "champion_db_bulk_update":
                 logger.info("📚 [champion_db_bulk_update] チャンピオン辞典一括更新を実行...")
-                result = self._run_subprocess_task(
-                    "03_SYSTEMS/v2_CORE/_LOL/champ_db_bulk_updater.py",
-                    timeout=3600
-                )
-                self.update_task_status(task_id, "completed", result=result)
+                try:
+                    result = self._run_subprocess_task(
+                        "03_SYSTEMS/v2_CORE/_LOL/champ_db_bulk_updater.py",
+                        timeout=3600
+                    )
+                    self.update_task_status(task_id, "completed", result=result)
+                except TimeoutError as te:
+                    # 全チャンピオン(約170体)を1時間では処理しきれず、ここでよく打ち切られる。
+                    # champ_db_bulk_updater.py はキューファイル(champion_update_queue.json)への
+                    # 進捗保存で再開可能な設計になっているため、ユーザーがボタンを押し直さなくても
+                    # 続きが自動で処理されるよう、同じタスクを即座に再キューする。
+                    logger.warning(f"⏰ 一括更新が時間制限で中断されました。残りを自動的に再キューします: {te}")
+                    try:
+                        from v2_CORE.task_queue import SovereignQueue
+                        SovereignQueue().enqueue("champion_db_bulk_update", {})
+                        error_message = f"{te}（残りのチャンピオンは自動的に再キューされ、次回のワーカー巡回で継続処理されます）"
+                    except Exception as re_err:
+                        logger.error(f"❌ 再キューに失敗しました: {re_err}")
+                        error_message = f"{te}（再キューにも失敗したため、手動で「一括更新を開始」を押し直してください）"
+                    self.update_task_status(task_id, "failed", error_message=error_message)
                 
             else:
                 raise NotImplementedError(f"未サポートのタスクタイプです: {task_type}")
