@@ -254,7 +254,11 @@ export default function Sidebar() {
         const PRIMARY = activeTab === 'admin' ? 5 : 4;
         const primaryItems = activeMenuItems.slice(0, PRIMARY);
         const overflowItems = activeMenuItems.slice(PRIMARY);
-        const hasMore = overflowItems.length > 0;
+        // ADMIN_GENERAL_MENU_ITEMS はちょうど4件でオーバーフローが発生しないため、
+        // 「その他」ボタン(＝管理者⇔一般切替への唯一の入口)が消えてしまい、
+        // 一般タブへ切り替えた後モバイルから二度と管理者タブへ戻れなくなっていた。
+        // 一般タブの間は常に「その他」を出し、切替スイッチへ到達できるようにする。
+        const hasMore = overflowItems.length > 0 || activeTab === 'general';
         const isActive = (item: typeof activeMenuItems[number]) =>
           pathname === item.href || (item.id === 'leaderboard' && pathname.startsWith('/player'));
 
@@ -279,6 +283,9 @@ export default function Sidebar() {
                     <button onClick={() => setActiveTab('general')} className={`flex-1 py-2 rounded-lg text-[11px] font-black transition-all ${activeTab === 'general' ? 'bg-white/10 text-white' : 'text-gray-400'}`}>一般機能</button>
                   </div>
 
+                  {overflowItems.length === 0 && (
+                    <p className="text-[11px] text-gray-500 text-center py-2">残りの機能は下部メニューに表示されています</p>
+                  )}
                   <div className="grid grid-cols-4 gap-2">
                     {overflowItems.map((item) => (
                       <MobileNavItem
