@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
       { data: heartbeat },
       { data: queueTasks },
       { data: historyTasks },
-      { count: factsCount },
+      { count: dictCount },
       { count: libraryCount },
       { count: laneGuidesCount },
       { count: memosCount },
@@ -36,7 +36,9 @@ export async function GET(req: NextRequest) {
       // 直近完了・失敗履歴
       supabase.from('edge_tasks').select('*').neq('id', heartbeatId).in('status', ['completed', 'failed']).order('updated_at', { ascending: false }).limit(5),
       // 知識ベース統計
-      supabase.from('champion_facts').select('champion', { count: 'exact', head: true }),
+      // 「チャンピオン辞典」件数は実際に辞典画面が表示する matchup_sentinel(enemy=GLOBAL)を正とする。
+      // champion_facts は対面タブ専用の別テーブルで、辞典本体の件数とは一致しないため使わない。
+      supabase.from('matchup_sentinel').select('champion', { count: 'exact', head: true }).eq('enemy', 'GLOBAL').not('strategy', 'is', null).neq('strategy', ''),
       supabase.from('personal_knowledge').select('id', { count: 'exact', head: true }).or('tags.is.null,tags.not.cs.{__DELETED__}'),
       supabase.from('lane_guides').select('id', { count: 'exact', head: true }),
       supabase.from('matchup_sentinel').select('matchup_id', { count: 'exact', head: true }).neq('enemy', 'GLOBAL'),
@@ -76,7 +78,7 @@ export async function GET(req: NextRequest) {
       queue: queueTasks || [],
       history: historyTasks || [],
       kbStats: {
-        facts: factsCount ?? 0,
+        facts: dictCount ?? 0,
         library: libraryCount ?? 0,
         laneGuides: laneGuidesCount ?? 0,
         memos: memosCount ?? 0,

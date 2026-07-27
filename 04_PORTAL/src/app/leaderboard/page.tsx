@@ -303,14 +303,14 @@ export default function LeaderboardPage() {
             ) : (
               <div className="bg-gray-900 rounded-2xl border border-gray-800 overflow-hidden divide-y divide-gray-800">
                 {metaData.filter(m => m.games >= metaMinGames).map((m, idx) => (
-                  <div key={m.name} className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-800/40">
-                    <span className="w-6 text-center text-xs font-black text-gray-500">{idx + 1}</span>
-                    <img src={getChampIcon(m.name)} alt={m.name} className="w-8 h-8 rounded-full border border-gray-700"
+                  <div key={m.name} className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 hover:bg-gray-800/40">
+                    <span className="w-5 sm:w-6 text-center text-xs font-black text-gray-500 shrink-0">{idx + 1}</span>
+                    <img src={getChampIcon(m.name)} alt={m.name} className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-gray-700 shrink-0"
                       onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                    <span className="flex-1 font-bold text-white text-sm truncate">{m.name}</span>
-                    <span className="text-xs text-gray-400 w-16 text-right">{m.games}戦</span>
-                    <span className={`text-sm font-black w-14 text-right ${m.winRate >= 55 ? 'text-emerald-400' : m.winRate <= 45 ? 'text-rose-400' : 'text-gray-200'}`}>{m.winRate}%</span>
-                    <span className="text-xs font-mono text-gray-400 w-20 text-right">KDA {m.avgKda}</span>
+                    <span className="flex-1 min-w-0 font-bold text-white text-sm truncate">{m.name}</span>
+                    <span className="text-xs text-gray-400 w-9 sm:w-16 text-right shrink-0">{m.games}戦</span>
+                    <span className={`text-sm font-black w-10 sm:w-14 text-right shrink-0 ${m.winRate >= 55 ? 'text-emerald-400' : m.winRate <= 45 ? 'text-rose-400' : 'text-gray-200'}`}>{m.winRate}%</span>
+                    <span className="hidden sm:block text-xs font-mono text-gray-400 w-20 text-right shrink-0">KDA {m.avgKda}</span>
                   </div>
                 ))}
                 {metaData.filter(m => m.games >= metaMinGames).length === 0 && (

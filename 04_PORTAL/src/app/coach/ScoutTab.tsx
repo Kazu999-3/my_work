@@ -58,8 +58,7 @@ export default function ScoutTab() {
   };
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-gray-900 via-slate-950 to-black text-white p-4 md:p-8 font-sans">
-      <div className="max-w-4xl mx-auto space-y-8">
+    <div className="space-y-8">
 
         {/* ヘッダー */}
         <div className="text-center space-y-2">
@@ -547,7 +546,6 @@ export default function ScoutTab() {
           </div>
         )}
 
-      </div>
     </div>
   );
 }

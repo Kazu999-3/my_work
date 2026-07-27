@@ -9,7 +9,7 @@
 import { createHmac, timingSafeEqual } from 'crypto';
 
 const COOKIE_NAME = 'admin_session';
-const SESSION_TTL_MS = 12 * 60 * 60 * 1000; // 12時間
+const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7日間（モバイルでの操作頻度が低く12時間だと頻繁に切れていたため延長）
 
 function getSecret(): string {
   const secret = process.env.ADMIN_SESSION_SECRET || process.env.ADMIN_PASSWORD;

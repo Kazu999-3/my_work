@@ -74,7 +74,6 @@ function ChampionsContent() {
   const [saving, setSaving] = useState(false);
   const [copied, setCopied] = useState(false);
   const [noteDraftMode, setNoteDraftMode] = useState<'preview' | 'edit'>('preview');
-  const [stats, setStats] = useState({ matches: 0, wins: 0, kda: '0.00' });
   const [favoriteChamps, setFavoriteChamps] = useState<string[]>([]);
   const [matchupsList, setMatchupsList] = useState<any[]>([]);
   const [expandedMatchupId, setExpandedMatchupId] = useState<string | null>(null);
@@ -254,19 +253,8 @@ function ChampionsContent() {
       if (cancelled) return;
       if (mData && mData.length > 0) {
         setMatchupsList(mData);
-        let wins = 0; let k = 0; let d = 0; let a = 0;
-        mData.forEach((row: any) => {
-          const rd = row.raw_data || {};
-          if (rd.result === 'Win') wins++;
-          if (rd.my_kda) {
-            const parts = rd.my_kda.split('/');
-            if (parts.length === 3) { k += parseInt(parts[0] || '0'); d += parseInt(parts[1] || '0'); a += parseInt(parts[2] || '0'); }
-          }
-        });
-        setStats({ matches: mData.length, wins, kda: d === 0 ? (k + a).toFixed(2) : ((k + a) / d).toFixed(2) });
-      } else { 
+      } else {
         setMatchupsList([]);
-        setStats({ matches: 0, wins: 0, kda: '0.00' }); 
       }
 
       const { data: noteData } = await supabase.from('matchup_sentinel').select('strategy, raw_data').eq('champion', champId).eq('enemy', 'GLOBAL').single();
@@ -401,8 +389,11 @@ function ChampionsContent() {
       const taskId = result.task_id;
       
       // ポーリング開始
+      // バックエンド(champion_trend_worker.py)は最大600秒(10分)処理にかかりうる上、
+      // youtube_absorb/dict_synthesizerタスクとの排他待ちも発生するため、
+      // 余裕を持って900秒(15分)まで待つ。
       let attempts = 0;
-      const maxAttempts = 60; // 3秒 × 60回 = 180秒 (3分)
+      const maxAttempts = 300; // 3秒 × 300回 = 900秒 (15分)
       
       const poll = async () => {
         if (attempts >= maxAttempts) {
@@ -664,47 +655,48 @@ function ChampionsContent() {
   const itemVariants = { hidden: { scale: 0.9, opacity: 0 }, visible: { scale: 1, opacity: 1 } };
 
   if (selected) {
-    const winRate = stats.matches > 0 ? Math.round((stats.wins / stats.matches) * 100) : 0;
     return (
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="min-h-screen p-6 md:p-12 max-w-7xl mx-auto flex flex-col gap-8">
         <button onClick={() => setSelected(null)} className="flex items-center gap-2 text-[#c89b3c] font-bold w-fit hover:text-white transition-colors">
           <ChevronLeft size={18} /> 辞典トップに戻る
         </button>
-        
-        <div className="relative h-64 md:h-80 rounded-3xl overflow-hidden shadow-2xl flex items-end p-8 border border-white/10 group bg-[#0a0b10]">
+
+        <div className="relative rounded-3xl overflow-hidden shadow-2xl border border-white/10 group bg-[#0a0b10]">
           <div className="absolute inset-0 bg-cover bg-[center_20%] opacity-60 group-hover:opacity-80 transition-opacity duration-1000" style={{ backgroundImage: `url(${getChampSplash(selected.id)})` }}></div>
           <div className="absolute inset-0 bg-gradient-to-t from-[#06070a] via-[#06070a]/60 to-transparent"></div>
-          
-          <div className="relative z-10 flex items-center gap-6 w-full flex-wrap">
-            <img src={getChampIcon(selected.id)} alt={selected.name} className="w-24 h-24 rounded-full border-4 border-[#c89b3c] shadow-[0_0_30px_rgba(200,155,60,0.5)]" />
-            <div>
-              <p className="text-[#c89b3c] text-sm font-bold uppercase tracking-[0.2em] mb-1 text-glow">{selected.title}</p>
-              <div className="flex items-center gap-3">
-                <h1 className="text-4xl md:text-5xl font-black font-mono tracking-tight text-white">{selected.name}</h1>
-                <button
-                  onClick={handleToggleFavorite}
-                  className={`p-2 rounded-xl transition-all border ${
-                    isFavorited
-                      ? 'bg-amber-400/20 border-amber-400 text-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.3)]'
-                      : 'bg-white/5 border-white/10 text-gray-400 hover:text-white hover:bg-white/10'
-                  }`}
-                  title={isFavorited ? "お気に入り解除" : "お気に入り登録"}
-                >
-                  <StarIcon size={20} fill={isFavorited ? "currentColor" : "none"} />
-                </button>
+
+          <div className="relative z-10 flex flex-col gap-5 w-full p-6 md:p-8">
+            <div className="flex items-center gap-6 flex-wrap">
+              <img src={getChampIcon(selected.id)} alt={selected.name} className="w-24 h-24 rounded-full border-4 border-[#c89b3c] shadow-[0_0_30px_rgba(200,155,60,0.5)]" />
+              <div>
+                <p className="text-[#c89b3c] text-sm font-bold uppercase tracking-[0.2em] mb-1 text-glow">{selected.title}</p>
+                <div className="flex items-center gap-3">
+                  <h1 className="text-4xl md:text-5xl font-black font-mono tracking-tight text-white">{selected.name}</h1>
+                  <button
+                    onClick={handleToggleFavorite}
+                    className={`p-2 rounded-xl transition-all border ${
+                      isFavorited
+                        ? 'bg-amber-400/20 border-amber-400 text-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.3)]'
+                        : 'bg-white/5 border-white/10 text-gray-400 hover:text-white hover:bg-white/10'
+                    }`}
+                    title={isFavorited ? "お気に入り解除" : "お気に入り登録"}
+                  >
+                    <StarIcon size={20} fill={isFavorited ? "currentColor" : "none"} />
+                  </button>
+                </div>
               </div>
             </div>
-            
-            <div className="ml-auto flex gap-3 items-center flex-wrap">
-              <button 
-                onClick={handleFetchTrend} 
+
+            <div className="flex gap-3 items-center flex-wrap">
+              <button
+                onClick={handleFetchTrend}
                 disabled={fetchingTrend}
                 className="px-4 py-3 bg-[#c89b3c] hover:bg-[#c89b3c]/80 text-black font-black rounded-xl transition-all flex items-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_15px_rgba(200,155,60,0.3)] hover:shadow-[0_0_25px_rgba(200,155,60,0.5)]"
               >
                 <RefreshCw size={16} className={fetchingTrend ? "animate-spin" : ""} />
                 {fetchingTrend ? "取得中..." : "最新トレンド取得"}
               </button>
-              
+
               <Link
                 href="/admin/knowledge?tab=maintenance"
                 className="px-4 py-3 bg-white/5 hover:bg-white/10 border border-white/15 text-pink-300 font-bold rounded-xl transition-all flex items-center gap-2 text-sm"
@@ -712,15 +704,6 @@ function ChampionsContent() {
               >
                 📜 変更履歴パネルへ ➔
               </Link>
-              
-              <div className="glass-panel px-6 py-3 rounded-2xl text-center">
-                <p className="text-xs text-gray-400 font-bold mb-1 uppercase tracking-widest">Win Rate</p>
-                <p className={`text-2xl font-black ${winRate >= 50 ? 'text-[var(--color-success)]' : 'text-[var(--color-danger)]'}`}>{stats.matches > 0 ? `${winRate}%` : '-'}</p>
-              </div>
-              <div className="glass-panel px-6 py-3 rounded-2xl text-center">
-                <p className="text-xs text-gray-400 font-bold mb-1 uppercase tracking-widest">Matches / KDA</p>
-                <p className="text-lg font-black text-white">{stats.matches}戦 <span className="text-[#00cfef] text-sm ml-2">{stats.kda}</span></p>
-              </div>
             </div>
           </div>
         </div>

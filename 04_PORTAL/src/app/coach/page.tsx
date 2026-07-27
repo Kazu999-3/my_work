@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { apiJson } from '../../lib/apiClient';
+import ScoutTab from './ScoutTab';
 
 // ============================
 // 型定義
@@ -863,35 +864,56 @@ export default function CoachPage() {
       });
   }, []);
 
-  const tabs = [
-    { id: 'pre', label: '⚡ 試合前', color: 'indigo' },
-    { id: 'post', label: '🔍 試合後', color: 'rose' },
-    { id: 'trends', label: '📈 傾向', color: 'sky' },
-    { id: 'goal', label: '🎯 目標', color: 'green' },
-    { id: 'tilt', label: '🧠 ティルト', color: 'amber' },
-    { id: 'matchup', label: '⚔️ マッチアップ', color: 'emerald' },
+  // 6タブは機能が近いもの同士で3グループに統合（使いにくいという指摘を受けての再編）。
+  // グループ内に複数機能がある場合のみサブタブを表示する。
+  const GROUPS = [
+    {
+      id: 'pregame',
+      label: '⚡ 試合前',
+      color: 'indigo',
+      subTabs: [
+        { id: 'pre', label: '事前分析', content: <PreGameTab /> },
+        { id: 'matchup', label: '⚔️ マッチアップ', content: <MatchupTab /> },
+        { id: 'scout', label: '🧭 偵察', content: <ScoutTab /> },
+      ],
+    },
+    {
+      id: 'postgame',
+      label: '🔍 試合後',
+      color: 'rose',
+      subTabs: [
+        { id: 'post', label: '振り返り', content: <PostGameTab /> },
+        { id: 'trends', label: '📈 傾向', content: <TrendsTab /> },
+      ],
+    },
+    {
+      id: 'mental',
+      label: '🎯 メンタル',
+      color: 'amber',
+      subTabs: [
+        { id: 'goal', label: '目標', content: <GoalTab /> },
+        { id: 'tilt', label: '🧠 ティルト', content: <TiltTab /> },
+      ],
+    },
   ] as const;
 
-  type TabId = typeof tabs[number]['id'];
-  const [activeTab, setActiveTab] = useState<TabId>('pre');
+  type GroupId = typeof GROUPS[number]['id'];
+  const [activeGroup, setActiveGroup] = useState<GroupId>('pregame');
+  const [activeSubTabByGroup, setActiveSubTabByGroup] = useState<Record<GroupId, string>>({
+    pregame: 'pre',
+    postgame: 'post',
+    mental: 'goal',
+  });
 
-  const tabContent: Record<TabId, React.ReactNode> = {
-    pre: <PreGameTab />,
-    post: <PostGameTab />,
-    trends: <TrendsTab />,
-    goal: <GoalTab />,
-    tilt: <TiltTab />,
-    matchup: <MatchupTab />,
-  };
-
-  const tabActiveColors: Record<string, string> = {
+  const groupActiveColors: Record<string, string> = {
     indigo: 'border-indigo-400 text-indigo-300',
     rose: 'border-rose-400 text-rose-300',
-    sky: 'border-sky-400 text-sky-300',
-    green: 'border-green-400 text-green-300',
     amber: 'border-amber-400 text-amber-300',
-    emerald: 'border-emerald-400 text-emerald-300',
   };
+
+  const currentGroup = GROUPS.find((g) => g.id === activeGroup)!;
+  const currentSubTabId = activeSubTabByGroup[activeGroup];
+  const currentSubTab = currentGroup.subTabs.find((t) => t.id === currentSubTabId) || currentGroup.subTabs[0];
 
   if (isAuthenticated === null) {
     return (
@@ -936,7 +958,7 @@ export default function CoachPage() {
         .animate-in { animation: fade-in 0.35s ease forwards; }
       `}</style>
 
-      <div className="mx-auto max-w-2xl">
+      <div className="mx-auto max-w-4xl">
         {/* ヘッダー */}
         <div className="mb-8 text-center">
           <div className="mb-2 text-4xl">🏆</div>
@@ -946,30 +968,52 @@ export default function CoachPage() {
           </p>
         </div>
 
-        {/* タブ */}
-        <div className="mb-6 flex gap-1 rounded-2xl border border-white/10 bg-white/5 p-1">
-          {tabs.map((tab) => {
-            const isActive = activeTab === tab.id;
+        {/* グループタブ */}
+        <div className="mb-3 flex gap-1 rounded-2xl border border-white/10 bg-white/5 p-1">
+          {GROUPS.map((group) => {
+            const isActive = activeGroup === group.id;
             return (
               <button
-                key={tab.id}
-                id={`tab-${tab.id}`}
-                onClick={() => setActiveTab(tab.id)}
+                key={group.id}
+                id={`tab-${group.id}`}
+                onClick={() => setActiveGroup(group.id)}
                 className={`flex-1 rounded-xl border py-2.5 text-xs font-semibold transition-all ${
                   isActive
-                    ? `${tabActiveColors[tab.color]} bg-white/5`
+                    ? `${groupActiveColors[group.color]} bg-white/5`
                     : 'border-transparent text-white/40 hover:text-white/70'
                 }`}
               >
-                {tab.label}
+                {group.label}
               </button>
             );
           })}
         </div>
 
+        {/* サブタブ（グループ内に複数機能がある場合のみ表示） */}
+        {currentGroup.subTabs.length > 1 && (
+          <div className="mb-6 flex flex-wrap gap-2">
+            {currentGroup.subTabs.map((tab) => {
+              const isActive = currentSubTabId === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveSubTabByGroup((prev) => ({ ...prev, [activeGroup]: tab.id }))}
+                  className={`rounded-lg border px-3 py-1.5 text-xs font-bold transition-all ${
+                    isActive
+                      ? 'border-white/20 bg-white/10 text-white'
+                      : 'border-transparent text-white/40 hover:text-white/70'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
         {/* コンテンツ */}
-        <div key={activeTab} className="animate-in">
-          {tabContent[activeTab]}
+        <div key={`${activeGroup}-${currentSubTabId}`} className="animate-in">
+          {currentSubTab.content}
         </div>
 
         {/* フッター */}

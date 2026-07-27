@@ -15,16 +15,20 @@ import SystemStatus from './SystemStatus';
  * 「反応が悪い」対策として2点入れている:
  *  1) prefetch を有効化。以前は false でタップ後にページを1から取得しており、
  *     押しても数秒無反応に見えていた（下部ナビは数件なのでprefetchコストは軽微）。
+ *     ただし /admin/* は認証ゲートを通るため、prefetch時点の認証結果が
+ *     ルーターキャッシュに残り、実際にタップした時点でセッションが有効でも
+ *     古い未認証判定が再利用されて弾かれる不具合があったため対象外にする。
  *  2) タップ直後に自前で色を変える(pending)。遷移完了を待たずに反応が返るため、
  *     「押せていない」と感じて連打されるのを防ぐ。
  */
 function MobileNavItem({ item, active, pending, onClick }: { item: { id: string; label: string; href: string; icon: any; color: string; activeBg: string }; active: boolean; pending?: boolean; onClick?: () => void }) {
   const Icon = item.icon;
   const lit = active || pending;
+  const isAdminGated = item.href.startsWith('/admin');
   return (
     <Link
       href={item.href}
-      prefetch
+      prefetch={isAdminGated ? false : true}
       onClick={onClick}
       className={`flex flex-col items-center justify-center min-w-[3.5rem] px-2 py-1.5 rounded-xl transition-colors duration-100 touch-manipulation select-none ${
         lit ? `${item.activeBg} ${item.color}` : 'text-gray-400 active:bg-white/20'
@@ -98,12 +102,7 @@ export default function Sidebar() {
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
 
   useEffect(() => {
-    // クッキーの存在で即時判定（HttpOnlyでない場合のショートカット）
-    const hasAdminCookie = typeof document !== 'undefined' && document.cookie.includes('admin_session=');
-    if (hasAdminCookie) {
-      setIsAdminLoggedIn(true);
-    }
-    // HttpOnly Cookie は JS から見えないので、API で正確に検証する
+    // admin_session は HttpOnly Cookie で JS から直接読めないため、API で検証する
     fetch('/api/auth/verify', {
       method: 'POST',
       credentials: 'include',
