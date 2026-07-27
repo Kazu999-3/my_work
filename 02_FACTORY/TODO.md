@@ -5,20 +5,39 @@
 
 ---
 
-## 📅 次回の注力タスク（2026-07-28 実行予定）
-> 2026-07-27 のクリーンアップセッション（収益化パイプライン削除、孤立ファイル整理、CS/ファーストブラッドのフェイクデータ削除等）で洗い出したまま未着手の項目。SNS素材フォルダの統合（231ファイル・5箇所）のみ、規模が大きいため対象外。
+## 📅 次回の注力タスク（2026-07-29 実行予定）
+> 2026-07-28 のポータル不具合修正セッションでほぼ解消。残るのは外部ダッシュボード操作や意思決定が必要なものだけ。SNS素材フォルダの統合（231ファイル・5箇所）のみ、規模が大きいため引き続き対象外。
 
 - [ ] **収益化パイプライン再実装の周辺整備**
-  - [ ] `PORTAL_BOT_SECRET` の有効化（Vercel と Cloudflare 双方に設定してから bot⇔ポータル認証を有効化。コード自体は実装済み）
+  - [ ] `PORTAL_BOT_SECRET` の有効化（Vercel と Cloudflare 双方に設定してから bot⇔ポータル認証を有効化。コード自体は実装済み。外部ダッシュボード操作が要るためClaudeでは完結しない）
   - [ ] Whisper のクラウド移行の設計検討（無料・高精度が条件、実装自体は保留のまま設計だけ詰める）
-- [ ] **バランサー／コーチ機能の技術的負債**
-  - [ ] `balancer/pending` のインメモリキャッシュが Vercel のマルチインスタンス構成で不整合を起こす可能性の調査・対策
-  - [ ] `admin/init-mmr` の逐次 await（直列処理）によるパフォーマンス改善
-  - [ ] `admin/champion-research` がスクレイピング失敗を握りつぶしている問題の修正
 - [ ] **リポジトリ運用の意思決定**
   - [ ] `02_FACTORY/PRODUCTS/` を Git 管理するかどうかの方針決定（セッション最初期から未決定のまま）
-- [ ] **ドキュメント整合性**
-  - [ ] `ANTIGRAVITY.md`・`SYSTEM_DESIGN_BY_FUNCTION.md`・`02_FACTORY/03_ASSETS/affiliate_knowledge.md` に残る旧収益化パイプラインの記述を更新（`HANDOVER_CLAUDE.md` は対応済み）
+## ✅ 2026-07-28 追加セッションで対応済み
+- [x] `04_PORTAL/scripts/archive/` の削除（`rm -rf`で完了。git上は未コミットの削除状態）
+- [x] `PORTAL_BOT_SECRET`: 安全な値を生成し、Vercel/Cloudflare両ダッシュボードへの設定手順を案内済み。実際の入力はユーザー側で対応待ち
+- [x] **新規発覚・修正: `youtube_absorber.py`のAI要約生成が64%失敗していた問題**
+  - 直近188件の`youtube_absorb`タスクを調査 → 120件（64%）が「AI Agent Gateway (localhost:8000) に接続拒否」で要約生成に失敗（字幕/Whisperでの文字起こし自体は成功していた）
+  - 原因: 2026-07-26の`start_all.ps1`簡素化でGateway(`api.py`)が起動されなくなったが、`youtube_absorber.py`だけがGateway直呼び出し(フォールバックなし)のままだった。他の全スクリプト(`champ_db_updater.py`等)は`ai_helper.generate_content_safe()`経由でGateway不通時も自動で直接Gemini呼び出しにフォールバックする設計になっており、ここだけ取り残されていた
+  - 修正: `generate_bible()`をGateway直叩きから、`agent_prompts`テーブルからプロンプトテンプレートを取得→`generate_content_safe()`を直接呼ぶ方式に変更（Gatewayの内部処理をそのまま踏襲、他スクリプトと同じパターンに統一）
+  - 未検証: コード上は他スクリプトと同一パターンで健全だが、実際のAPIキー・DBを使った動作確認は次回のedge_worker_daemon実行時に確認が必要
+- [ ] Whisperのクラウド移行の設計検討は上記調査により実処理量が判明（週45件≒月190件）。Gateway修正の効果を見てから再開
+
+## ✅ 2026-07-28 ポータル不具合修正セッションで対応済み
+- [x] チャンピオン辞典の更新ボタンがスマホで見えない問題（ヒーロー領域のレイアウト崩れ）
+- [x] スマホでナレッジを開くと管理者専用に飛ばされる認証バグ（下部ナビのprefetchが認証ゲートと衝突）
+- [x] 伸びしろパートナーの集計バグ（存在しないフィールド参照、`/api/player/chemistry`の実装に統一）
+- [x] メタ統計のスマホ表示でチャンピオン名が見切れる問題
+- [x] パーソナルコーチの6タブを3グループに再編（試合前+マッチアップ+偵察／試合後+傾向／目標+ティルト）。孤立していたScoutTab（偵察機能）を復活統合
+- [x] 辞典からWin Rate/Matches/KDA表示を削除
+- [x] 更新ボタンのトレンド取得タイムアウト（フロント待機180秒→900秒に延長）
+- [x] 辞典データ(`matchup_sentinel`)への更新に履歴記録機能を後付け（TS7経路+Python9経路、全16実経路）。更新履歴パネルと辞典本文の不整合を解消
+- [x] **新規発覚**: `matchup_id`の命名規則が書き込み経路ごとにバラバラで、同じチャンピオンが別レコードとして重複しうるバグを発見・修正（`champion-research/route.ts`, `lol_trend_collector.py`）。本番DBで実際にズレていた`Talon`の1件も修正済み（Supabase MCP経由で確認・修正）
+- [x] `admin/champion-research` がスクレイピング失敗を握りつぶしている問題の修正（`championStats.ts`に失敗理由を追加し`DeepResearchPanel.tsx`に表示）
+- [x] `balancer/pending` のインメモリキャッシュ不整合を解消（`edge_tasks`テーブルを使った永続ストアに切り替え）
+- [x] `admin/init-mmr` の逐次awaitパフォーマンス改善（N+1往復→2往復に削減）
+- [x] `04_PORTAL/scripts/` 重複スクリプトの整理（archive/内の参照ゼロを確認、削除コマンドのみ権限ブロックで保留）
+- [x] `ANTIGRAVITY.md`・`SYSTEM_DESIGN_BY_FUNCTION.md`・`affiliate_knowledge.md` に残る旧収益化パイプラインの記述を更新
 
 ## ✅ 完了済み（アーカイブ）
 - [x] **Sovereign OS v7.0 移行計画の推進**
@@ -50,5 +69,5 @@
 - [x] タスクキュー2系統の統合（SQLite時代の sovereign_tasks 読み出し経路を削除し、edge_tasks に一本化。2026-07-27対応済み）
 - [ ] edge_worker の Gateway バイパス解消 → QuotaShaper 経由に統一
 - [ ] エージェントスキル出力の DB 自動投入パイプライン設計（ローカルMD → Supabase）
-- [ ] `04_PORTAL/scripts/` 重複スクリプトの整理（smart_backfill に統一、旧スクリプト削除）
+- [x] `04_PORTAL/scripts/` 重複スクリプトの整理（2026-07-28: 参照ゼロを確認しsmart_backfillに統一。archive/の物理削除のみ権限ブロックで保留、上記タスク参照）
 - [ ] Supabase 直接アクセスの API 経由化 → v8.0 APIファースト化として推進

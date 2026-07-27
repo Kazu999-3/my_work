@@ -220,19 +220,26 @@ LoL カスタムマッチ（内戦）の運営、メンバー管理、プレイ�
 Pythonで記述され、ローカル環境で常時または定期起動されるバックグラウンド自律処理スクリプト群。
 * **ソースパス**: `03_SYSTEMS/v2_CORE`
 
-### 4-1. AI Healer / SRE 常駐デーモン (`sre_daemon.py` / `healer.py`)
+> ⚠️ **稼働実態の補足**: 以下4-1・4-3・4-5は既に廃止/削除済みで、実際には稼働していません。詳細は `HANDOVER_CLAUDE.md` を参照してください。
+> - **4-1 (sre_daemon.py/healer.py)**: Gatewayバイパス問題とクラウド側との重複巡回タスクを抱えていたため2026-07-26に削除。`healer.py`は`deprecated/`へ移動。
+> - **4-3 (monetization_batch.py等)**: 収益化パイプライン全体を2026-07-26に削除（設計を見直した上で再実装予定、現存するのは`promoter.py`のみ）。
+> - **4-5 (note_analytics_daemon.py)**: 4-3と同じ収益化パイプライン削除に伴い削除済み。
+>
+> 4-2・4-4は現役（4-4は実際にはNotionではなく`02_FACTORY`のローカル記事・マッチアップメモをSupabaseへ同期する処理）。
+
+### 4-1. ~~AI Healer / SRE 常駐デーモン (`sre_daemon.py` / `healer.py`)~~ 【削除済み】
 * **概要**: システムのエラーログやビルド失敗を検知すると、AIが自動でコード（TypeScript等）を修復し、Git Commit & Push で本番サーバーへ自動リリースする。
 
 ### 4-2. YouTube攻略動画要約エンジン (`youtube_absorber.py` / `dict_synthesizer.py`)
 * **概要**: 指定したLoL攻略YouTubeチャンネルの新規動画を巡回し、`yt-dlp` で字幕抽出 ➔ Geminiで戦術要約 ➔ チャンピオン事前マニュアル（`matchup_sentinel`）にマージ。
 
-### 4-3. note自動執筆・投稿バッチ (`monetization_batch.py` / `publisher.py`)
+### 4-3. ~~note自動執筆・投稿バッチ (`monetization_batch.py` / `publisher.py`)~~ 【削除済み】
 * **概要**: メタ情報や副業トレンドからアフィリエイト記事をAIが自動執筆。Playwrightで note.com の下書きへ保存し、X(Twitter)への連続宣伝スレッドを自動投稿。
 
-### 4-4. Notion同期バッチ (`sovereign_sync.py`)
-* **概要**: Notionの「LoL反省ノート」や「大会メモ」を Supabase の `personal_knowledge` テーブルへ自動同期。
+### 4-4. ローカル記事・マッチアップメモ同期バッチ (`sovereign_sync.py`)
+* **概要**: `02_FACTORY`配下のローカル記事ファイルやマッチアップメモを Supabase の `personal_knowledge` / `matchup_sentinel` テーブルへ自動同期。
 
-### 4-5. noteアクセス推移収集デーモン (`note_analytics_daemon.py`)
+### 4-5. ~~noteアクセス推移収集デーモン (`note_analytics_daemon.py`)~~ 【削除済み】
 * **概要**: 投稿したnote記事のPV数、購入数を定期的にスクレイピング取得し、Supabase の `note_pv_history` に保存。
 
 ---
