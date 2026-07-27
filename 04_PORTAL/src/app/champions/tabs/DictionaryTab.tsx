@@ -387,7 +387,26 @@ function ChampionsContent() {
       }
 
       const taskId = result.task_id;
-      
+
+      // デーモン(edge_worker_daemon.py)が起動していないと、タスクはキューに入ったまま
+      // 誰にも処理されず、900秒待っても必ずタイムアウトする。先にハートビートを見て、
+      // 動いていなければ「待っても無駄」であることをすぐに伝える。
+      try {
+        const { data: heartbeat } = await supabase
+          .from('edge_tasks')
+          .select('updated_at')
+          .eq('id', '00000000-0000-0000-0000-000000000000')
+          .maybeSingle();
+        const diffSec = heartbeat ? (Date.now() - new Date(heartbeat.updated_at).getTime()) / 1000 : Infinity;
+        if (diffSec > 60) {
+          setFetchingTrend(false);
+          alert('ローカルPCのEdge Worker Daemonが起動していないようです。\n\nタスク自体はキューに登録済みなので、PCで start_all.ps1 を実行してデーモンを起動すれば自動的に処理されます（もう一度ボタンを押す必要はありません）。');
+          return;
+        }
+      } catch (hbErr) {
+        console.warn('ハートビート確認に失敗（そのままポーリングを続行）:', hbErr);
+      }
+
       // ポーリング開始
       // バックエンド(champion_trend_worker.py)は最大600秒(10分)処理にかかりうる上、
       // youtube_absorb/dict_synthesizerタスクとの排他待ちも発生するため、
