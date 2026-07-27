@@ -61,13 +61,16 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // matchup_sentinel には updated_at カラムが存在しない。以前は無いカラムを送っていたため
+    // 保存内容自体は反映されても、辞典一覧が使う created_at が更新されず「保存したのに
+    // 更新日が変わらない」状態になっていた。
     const data = {
       matchup_id,
       champion,
       enemy,
       strategy: strategy || '',
       raw_data: updatedRawData,
-      updated_at: new Date().toISOString()
+      created_at: new Date().toISOString()
     };
 
     const { data: result, error } = await supabase

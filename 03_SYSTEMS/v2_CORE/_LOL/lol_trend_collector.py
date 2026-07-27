@@ -6,6 +6,7 @@ import logging
 import subprocess
 import urllib.request
 import urllib.error
+from datetime import datetime, timezone
 from google import genai
 from v2_CORE.settings import settings
 from v2_CORE.ai_helper import generate_with_routing, generate_content_safe
@@ -326,15 +327,17 @@ class LolTrendCollector:
         }
         raw_data["pro_builds"] = trend_data.get("pro_builds", [])
         
+        # 辞典一覧の「更新日」は created_at を見ているため、更新時も明示的に現在時刻を入れる
         payload = {
             "matchup_id": matchup_id,
             "champion": champion,
             "enemy": "GLOBAL",
             "title": title,
+            "created_at": datetime.now(timezone.utc).isoformat(),
             "strategy": strategy,
             "raw_data": raw_data
         }
-        
+
         # 3. upsertを実行
         headers = {"Prefer": "resolution=merge-duplicates"}
         status, res_body = self._supabase_request("matchup_sentinel?on_conflict=matchup_id", method='POST', payload=payload, headers=headers)

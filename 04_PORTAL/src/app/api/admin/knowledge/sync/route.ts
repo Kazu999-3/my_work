@@ -123,12 +123,14 @@ export async function POST(req: Request) {
         role: 'GLOBAL'
       };
 
+      // 辞典一覧の「更新日」は created_at を見ているため、更新時も明示的に現在時刻を入れる
       const { error: upsertError } = await supabase.from('matchup_sentinel').upsert({
         matchup_id: matchupId,
         champion: championName,
         enemy: 'GLOBAL',
         strategy: newStrategy,
-        raw_data: newRawData
+        raw_data: newRawData,
+        created_at: new Date().toISOString()
       }, { onConflict: 'matchup_id' });
 
       if (upsertError) throw upsertError;

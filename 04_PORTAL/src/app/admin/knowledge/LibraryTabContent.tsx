@@ -508,13 +508,15 @@ export function LibraryTabContentInner() {
           rawData.source = "champ_db";
           rawData.role = "GLOBAL";
           
+          // 辞典一覧の「更新日」は created_at を見ているため、更新時も明示的に現在時刻を入れる
           const dictData = {
               matchup_id: matchupId,
               champion: championName,
               enemy: "GLOBAL",
               title: existingData?.title || `${championName} 基本戦略・トレンド`,
               strategy: existingData?.strategy || "",
-              raw_data: rawData
+              raw_data: rawData,
+              created_at: new Date().toISOString()
           };
           
           const { error: upsertError } = await supabase

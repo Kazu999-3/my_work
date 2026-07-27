@@ -208,11 +208,14 @@ def update_champion_db(champ_id: str, champ_name: str, new_text: str, patch_vers
     }
 
     # Upsertデータ構築
+    # 辞典一覧の「更新日」は created_at を見ているため、更新時も明示的に現在時刻を入れる
+    # （入れないとUPSERTで既存行の created_at がそのまま残り、更新したのに一覧に反映されない）
     upsert_data = {
         "matchup_id": f"champ_{champ_id}_global",
         "champion": champ_id,
         "enemy": "GLOBAL",
         "title": f"{champ_name} 基本戦略・トレンド",
+        "created_at": datetime.now(timezone.utc).isoformat(),
         "strategy": merged_json.get("strategy", ""),
         "raw_data": {
             **existing_raw,

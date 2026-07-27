@@ -4,6 +4,7 @@ import logging
 import requests
 import json
 import random
+from datetime import datetime, timezone
 from google import genai
 from v2_CORE.settings import settings
 from v2_CORE.ai_helper import generate_content_safe
@@ -139,11 +140,13 @@ class OverseasScout:
         except Exception as e:
             logger.warning(f"既存データの取得に失敗（新規作成として続行）: {e}")
 
+        # 辞典一覧の「更新日」は created_at を見ているため、更新時も明示的に現在時刻を入れる
         payload = {
             "matchup_id": matchup_id,
             "champion": champ_id,
             "enemy": "GLOBAL",
             "title": f"{champ_id} 基本戦略・トレンド (AI Auto)",
+            "created_at": datetime.now(timezone.utc).isoformat(),
             "strategy": data.get("strategy", ""),
             "raw_data": {
                 "source": "overseas_scout",

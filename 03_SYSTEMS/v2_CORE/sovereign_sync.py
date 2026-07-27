@@ -8,6 +8,7 @@ import json
 import logging
 import httpx
 from pathlib import Path
+from datetime import datetime, timezone
 import dotenv
 import sys
 
@@ -128,15 +129,17 @@ class SovereignSync:
         raw_data["source"] = "champ_db"
         raw_data["role"] = "GLOBAL"
         
+        # 辞典一覧の「更新日」は created_at を見ているため、更新時も明示的に現在時刻を入れる
         data = {
             "matchup_id": matchup_id,
             "champion": champion,
             "enemy": "GLOBAL",
             "title": existing.get("title", f"{champion} 基本戦略・トレンド"),
+            "created_at": datetime.now(timezone.utc).isoformat(),
             "strategy": existing.get("strategy", ""),
             "raw_data": raw_data
         }
-        
+
         # UPSERT
         res = httpx.post(
             self._api("matchup_sentinel") + "?on_conflict=matchup_id",
@@ -338,13 +341,16 @@ class SovereignSync:
             synced = 0
             for m in matchups:
                 matchup_id = str(m.get("id", ""))
+                # 辞典/対面メモ一覧の「更新日」は created_at を見ているため、更新時も
+                # 明示的に現在時刻を入れる（同じmatchup_idを繰り返し同期するケースがある）
                 data = {
                     "matchup_id": matchup_id,
                     "title": m.get("title", ""),
                     "champion": m.get("champion", ""),
                     "enemy": m.get("enemy", ""),
                     "strategy": m.get("strategy", ""),
-                    "raw_data": m
+                    "raw_data": m,
+                    "created_at": datetime.now(timezone.utc).isoformat()
                 }
 
                 existing = {}

@@ -3,6 +3,7 @@ import json
 import logging
 import httpx
 from pathlib import Path
+from datetime import datetime, timezone
 import dotenv
 
 # パス追加（v2_COREモジュール解決のため）
@@ -227,9 +228,11 @@ class DictSynthesizer:
             updated_raw_data["dict_synthesized_at"] = int(time.time())
             
             # データベースの更新
+            # 辞典一覧の「更新日」は created_at を見ているため、更新時も明示的に現在時刻を入れる
             update_payload = {
                 "matchup_id": champ_data["matchup_id"],
-                "raw_data": updated_raw_data
+                "raw_data": updated_raw_data,
+                "created_at": datetime.now(timezone.utc).isoformat()
             }
             
             res = httpx.post(

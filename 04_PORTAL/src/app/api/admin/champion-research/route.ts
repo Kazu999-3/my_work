@@ -184,6 +184,9 @@ ${internalKnowledge.hasData ? internalKnowledge.text.slice(0, 6000) : '（内部
       champion: champClean,
       enemy: 'GLOBAL',
       strategy: markdownArticle.slice(0, 3000), // 要点保存
+      // 辞典一覧の「更新日」は created_at を見ているため、更新時も明示的に現在時刻を入れる
+      // （入れないとUPSERTで既存行の created_at がそのまま残り、更新したのに一覧に反映されない）
+      created_at: new Date().toISOString(),
       raw_data: {
         ...(existingSentinel?.raw_data || {}),
         deep_researched_at: new Date().toISOString(),
