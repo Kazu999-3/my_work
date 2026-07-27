@@ -3,11 +3,12 @@ import { supabaseAdmin } from '../../../../lib/supabaseAdmin';
 import { verifyAdminSession } from '../../../../lib/adminAuth';
 
 // 監視対象のジョブタイプ一覧
+// 「データ収集」(lol_trend_collect) と「プロビルド」(pro_build%) は、そもそも
+// edge_tasks に起票する仕組みが実装されたことがない（プロビルドはtask_type自体が
+// 非存在）ため、常に古い/未実行のまま変わらず表示が実態と乖離していた。削除する。
 const PIPELINE_JOBS = [
-  { id: 'data-collection', label: 'データ収集', pattern: 'lol_trend%' },
   { id: 'youtube-analysis', label: 'YouTube解析', pattern: 'youtube%' },
   { id: 'dict-synthesis', label: '辞典更新', pattern: 'champion_db%' },
-  { id: 'pro-build', label: 'プロビルド', pattern: 'pro_build%' },
 ];
 
 export async function GET(req: Request) {
