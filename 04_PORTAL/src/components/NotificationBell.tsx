@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Bell } from 'lucide-react';
 
 interface AdminNotification {
@@ -29,7 +30,9 @@ export default function NotificationBell({ collapsed = false, align = 'left' }: 
   const [notifications, setNotifications] = useState<AdminNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [open, setOpen] = useState(false);
+  const [coords, setCoords] = useState<{ top: number; left?: number; right?: number } | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const fetchNotifications = async () => {
     try {
@@ -61,11 +64,38 @@ export default function NotificationBell({ collapsed = false, align = 'left' }: 
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) setOpen(false);
+      const target = e.target as Node;
+      // ドロップダウンは document.body へ Portal 描画しているため、
+      // containerRef だけでなく dropdownRef 内のクリックも「外側」判定から除外する。
+      if (
+        containerRef.current && !containerRef.current.contains(target) &&
+        dropdownRef.current && !dropdownRef.current.contains(target)
+      ) {
+        setOpen(false);
+      }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // サイドバーの <aside> は overflow-y-auto (スクロール領域) なので、absolute位置指定の
+  // ドロップダウンだとサイドバー幅で見切れて中身が切れてしまっていた。
+  // ボタンの画面上の位置を測って document.body へ Portal 描画し、position: fixed で
+  // 出すことでサイドバーのoverflowに影響されないようにする。
+  const toggleOpen = () => {
+    setOpen((v) => {
+      const next = !v;
+      if (next && containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        setCoords(
+          align === 'right'
+            ? { top: rect.bottom + 8, right: window.innerWidth - rect.right }
+            : { top: rect.bottom + 8, left: rect.left }
+        );
+      }
+      return next;
+    });
+  };
 
   const markAllRead = async () => {
     setUnreadCount(0);
@@ -98,7 +128,7 @@ export default function NotificationBell({ collapsed = false, align = 'left' }: 
   return (
     <div ref={containerRef} className={`relative ${collapsed ? '' : 'w-full'}`}>
       <button
-        onClick={() => setOpen((v) => !v)}
+        onClick={toggleOpen}
         title="通知"
         className={`flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-bold transition-all hover:bg-white/5 hover:text-white text-gray-400 relative ${
           collapsed ? 'justify-center' : 'w-full'
@@ -115,8 +145,12 @@ export default function NotificationBell({ collapsed = false, align = 'left' }: 
         {!collapsed && <span>通知{unreadCount > 0 ? ` (${unreadCount})` : ''}</span>}
       </button>
 
-      {open && (
-        <div className={`absolute top-full z-50 mt-2 w-80 max-w-[85vw] max-h-96 overflow-y-auto rounded-2xl border border-white/10 bg-[#0d0f16] shadow-2xl ${align === 'right' ? 'right-0' : 'left-0'}`}>
+      {open && coords && typeof document !== 'undefined' && createPortal(
+        <div
+          ref={dropdownRef}
+          style={{ top: coords.top, left: coords.left, right: coords.right }}
+          className="fixed z-50 w-80 max-w-[85vw] max-h-96 overflow-y-auto rounded-2xl border border-white/10 bg-[#0d0f16] shadow-2xl"
+        >
           <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
             <span className="text-xs font-black text-gray-300">通知</span>
             {unreadCount > 0 && (
@@ -147,7 +181,8 @@ export default function NotificationBell({ collapsed = false, align = 'left' }: 
               ))}
             </div>
           )}
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
