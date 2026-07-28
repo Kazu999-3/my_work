@@ -32,6 +32,20 @@ if not SUPABASE_KEY:
 MAX_TASKS_PER_RUN = int(os.environ.get("MAX_TASKS_PER_RUN", "3"))
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+PORTAL_URL = os.environ.get("PORTAL_URL", "").rstrip("/")
+PORTAL_BOT_SECRET = os.environ.get("PORTAL_BOT_SECRET", "")
+
+TASK_LABELS = {
+    "champion_trend": ("チャンピオントレンド更新", "/champions"),
+    "matchup_simulation_5v5": ("5v5構成シミュレーション", "/matchups"),
+    "resolve_youtube_channel": ("YouTubeチャンネル登録", "/admin/youtube"),
+    "resolve_youtube_playlist": ("YouTubeプレイリスト登録", "/admin/youtube"),
+    "youtube_channel_monitor": ("YouTubeチャンネル監視", "/admin/youtube"),
+    "reddit_scout": ("Redditスカウト", "/champions"),
+    "lol_trend_collect": ("LoLトレンド収集", "/champions"),
+    "dict_synthesizer": ("辞典シンセサイザー", "/champions"),
+}
+
 
 def sb(method, path, body=None, extra_headers=None):
     req = urllib.request.Request(f"{SUPABASE_URL}/rest/v1/{path}", method=method)
@@ -115,6 +129,33 @@ def complete_task(task_id, status, result=None, error_message=None):
     })
 
 
+def notify_portal(task_type, payload, success, detail=""):
+    """完了/失敗をポータルの管理者通知(通知ベル/プッシュ)へ流す。
+    PORTAL_URL未設定や送信失敗は握りつぶす(タスク自体の成否には影響させない)。"""
+    if not PORTAL_URL:
+        return
+    label, url_path = TASK_LABELS.get(task_type, (task_type, "/"))
+    if task_type == "champion_trend":
+        label += f"（{payload.get('champion', '')}/{payload.get('role', '')}）"
+    title = f"{'✅' if success else '❌'} {label}{'完了' if success else '失敗'}"
+    body = (detail or "")[:400] or None
+
+    req_body = json.dumps({
+        "type": "edge_task",
+        "title": title,
+        "body": body,
+        "url": url_path,
+    }).encode()
+    req = urllib.request.Request(f"{PORTAL_URL}/api/push/notify-admin", data=req_body, method="POST")
+    req.add_header("Content-Type", "application/json")
+    if PORTAL_BOT_SECRET:
+        req.add_header("x-bot-secret", PORTAL_BOT_SECRET)
+    try:
+        urllib.request.urlopen(req, timeout=10)
+    except Exception as e:
+        print(f"  [通知送信失敗] {e}", file=sys.stderr)
+
+
 def run_script(rel_path, args, timeout):
     env = os.environ.copy()
     env["PYTHONPATH"] = os.path.join(REPO_ROOT, "03_SYSTEMS")
@@ -149,26 +190,33 @@ def main():
                 err = f"Exit code {res.returncode}\n{res.stderr[-1500:]}"
                 print(f"❌ 失敗: {task_type} — {err}", file=sys.stderr)
                 complete_task(task_id, "failed", error_message=err[:2000])
+                notify_portal(task_type, payload, False, detail=err)
                 continue
 
             if task_type == "matchup_simulation_5v5":
                 try:
                     result = json.loads(res.stdout)
                 except Exception as je:
-                    complete_task(task_id, "failed", error_message=f"シミュレーション結果のJSON解析に失敗: {je}")
+                    err = f"シミュレーション結果のJSON解析に失敗: {je}"
+                    complete_task(task_id, "failed", error_message=err)
+                    notify_portal(task_type, payload, False, detail=err)
                     print(f"❌ JSON解析失敗: {task_type} ({task_id})", file=sys.stderr)
                     continue
             else:
                 result = {"success": True, "stdout": res.stdout[-20000:], "stderr": res.stderr[-5000:]}
 
             complete_task(task_id, "completed", result=result)
+            notify_portal(task_type, payload, True)
             print(f"✅ 完了: {task_type} ({task_id})")
 
         except subprocess.TimeoutExpired:
-            complete_task(task_id, "failed", error_message=f"タイムアウト({timeout}秒)")
+            err = f"タイムアウト({timeout}秒)"
+            complete_task(task_id, "failed", error_message=err)
+            notify_portal(task_type, payload, False, detail=err)
             print(f"❌ タイムアウト: {task_type} ({task_id})", file=sys.stderr)
         except Exception as e:
             complete_task(task_id, "failed", error_message=str(e)[:2000])
+            notify_portal(task_type, payload, False, detail=str(e))
             print(f"❌ 例外: {task_type} ({task_id}) — {e}", file=sys.stderr)
 
 
