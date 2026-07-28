@@ -66,6 +66,9 @@ def fetch_subtitles(url, vid):
     cmd.extend([
         "--skip-download", "--write-subs", "--write-auto-subs",
         "--sub-langs", "ja,ja-orig,en", "--sub-format", "vtt",
+        # GitHub Actionsの共有IPは "Sign in to confirm you're not a bot" でブロックされやすいため、
+        # ボットチェックの対象になりにくい android クライアントを装う（失敗時は web にフォールバック）
+        "--extractor-args", "youtube:player_client=android,web",
         "-o", out, url
     ])
     res = subprocess.run(cmd, capture_output=True, text=True, timeout=180)

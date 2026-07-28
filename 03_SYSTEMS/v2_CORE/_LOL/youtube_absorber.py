@@ -45,7 +45,12 @@ class YouTubeAbsorber:
             self.yt_dlp_cmd = [sys.executable, "-m", "yt_dlp"]
         else:
             self.yt_dlp_cmd = [yt_bin]
-        self.yt_dlp_base = self.yt_dlp_cmd + ["--js-runtimes", "node,deno"]
+        # GitHub Actions等の共有IPは "Sign in to confirm you're not a bot" でブロックされやすいため、
+        # ボットチェックの対象になりにくい android クライアントを装う（失敗時は web にフォールバック）
+        self.yt_dlp_base = self.yt_dlp_cmd + [
+            "--js-runtimes", "node,deno",
+            "--extractor-args", "youtube:player_client=android,web",
+        ]
         # ボット検知回避用のクッキー設定がある場合は追加
         cookies_from = os.getenv("YT_DLP_COOKIES_FROM")
         if cookies_from:
