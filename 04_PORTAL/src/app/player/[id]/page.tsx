@@ -22,6 +22,7 @@ import {
   Flame,
   Award
 } from "lucide-react";
+import Image from "next/image";
 import { getChampIcon, getChampNameById, getChampSplash } from "../../../lib/ddragonClient";
 import { ResponsiveContainer, XAxis, YAxis, Tooltip, ReferenceLine, Area, CartesianGrid, Line, ComposedChart, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from "recharts";
 import { KTM_TIERS, getKtmRank } from "../../../lib/mmr";
@@ -754,7 +755,7 @@ export default function PlayerMyPage() {
                             <div className="space-y-1.5">
                               {matchupExtremes.best.map((m: any) => (
                                 <div key={m.opponentChampion} className="flex items-center gap-2 text-xs">
-                                  <img src={getChampIcon(m.opponentChampion)} className="w-6 h-6 rounded-full border border-white/10" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                                  <Image src={getChampIcon(m.opponentChampion)} alt={m.opponentChampion} width={24} height={24} className="w-6 h-6 rounded-full border border-white/10" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                                   <span className="text-gray-200 truncate flex-1">{m.opponentChampion}</span>
                                   <span className="text-emerald-400 font-bold">{m.winRate}%</span>
                                   <span className="text-[10px] text-gray-600">({m.games})</span>
@@ -767,7 +768,7 @@ export default function PlayerMyPage() {
                             <div className="space-y-1.5">
                               {matchupExtremes.worst.map((m: any) => (
                                 <div key={m.opponentChampion} className="flex items-center gap-2 text-xs">
-                                  <img src={getChampIcon(m.opponentChampion)} className="w-6 h-6 rounded-full border border-white/10" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                                  <Image src={getChampIcon(m.opponentChampion)} alt={m.opponentChampion} width={24} height={24} className="w-6 h-6 rounded-full border border-white/10" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                                   <span className="text-gray-200 truncate flex-1">{m.opponentChampion}</span>
                                   <span className="text-rose-400 font-bold">{m.winRate}%</span>
                                   <span className="text-[10px] text-gray-600">({m.games})</span>
@@ -791,9 +792,11 @@ export default function PlayerMyPage() {
                           <div className="space-y-2">
                             {champPool.filter(c => c.name && c.name !== 'Unknown').map(c => (
                               <div key={c.name} className="flex items-center gap-2 text-xs">
-                                <img
+                                <Image
                                   src={getChampIcon(c.name)}
                                   alt={c.name}
+                                  width={24}
+                                  height={24}
                                   className="w-6 h-6 rounded-full border border-white/10 shrink-0 bg-black/40 object-cover"
                                   onError={(e) => {
                                     (e.target as HTMLImageElement).src = "https://ddragon.leagueoflegends.com/cdn/14.24.1/img/profileicon/29.png";
@@ -1054,8 +1057,11 @@ export default function PlayerMyPage() {
                                 return (
                                   <div className="bg-black/90 border border-white/10 backdrop-blur-xl rounded-xl p-3 shadow-2xl text-xs min-w-[170px]">
                                     <div className="flex items-center gap-2 mb-1">
-                                      <img
+                                      <Image
                                         src={getChampIcon(d.champion)}
+                                        alt={d.champion}
+                                        width={24}
+                                        height={24}
                                         className="w-6 h-6 rounded-full"
                                         onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
                                       />
@@ -1063,8 +1069,11 @@ export default function PlayerMyPage() {
                                       {d.opponentChampion && (
                                         <>
                                           <span className="text-[9px] font-black text-gray-500 italic">VS</span>
-                                          <img
+                                          <Image
                                             src={getChampIcon(d.opponentChampion)}
+                                            alt={d.opponentChampion}
+                                            width={24}
+                                            height={24}
                                             className="w-6 h-6 rounded-full border border-rose-500/40"
                                             onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
                                           />
@@ -1323,8 +1332,11 @@ export default function PlayerMyPage() {
                                 }
                                 return (
                                   <div key={cIdx} className="flex items-center gap-3 bg-black/25 p-2 rounded-xl border border-white/5 hover:border-white/10 transition-colors">
-                                    <img 
-                                      src={getChampIcon(champ.name)} 
+                                    <Image
+                                      src={getChampIcon(champ.name)}
+                                      alt={champ.name}
+                                      width={32}
+                                      height={32}
                                       className="w-8 h-8 rounded-full border border-white/10 shadow-sm"
                                       onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
                                     />
@@ -1424,8 +1436,11 @@ export default function PlayerMyPage() {
                     <div className="space-y-3">
                       {riotMasteries.length > 0 ? riotMasteries.map((m, idx) => (
                         <div key={idx} className="flex items-center gap-4 bg-black/40 p-3.5 rounded-2xl border border-white/5 hover:border-white/10 transition-colors">
-                          <img 
-                            src={m.iconUrl} 
+                          <Image
+                            src={m.iconUrl}
+                            alt={m.name}
+                            width={48}
+                            height={48}
                             className="w-12 h-12 rounded-full border border-white/10 shadow-md"
                             onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
                           />
@@ -1454,8 +1469,11 @@ export default function PlayerMyPage() {
                       {matchups.length > 0 ? matchups.map((m, idx) => (
                         <div key={idx} className="flex items-center justify-between bg-black/40 p-3 rounded-2xl border border-white/5 hover:border-white/10 transition-colors">
                           <div className="flex items-center gap-3">
-                            <img 
-                              src={getChampIcon(m.opponentChampion)} 
+                            <Image
+                              src={getChampIcon(m.opponentChampion)}
+                              alt={m.opponentChampion}
+                              width={36}
+                              height={36}
                               className="w-9 h-9 rounded-full border border-white/10 shadow-sm"
                               onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
                             />
@@ -1501,8 +1519,11 @@ export default function PlayerMyPage() {
                           <div className={`w-[3px] h-12 rounded-full ${match.isWin ? 'bg-emerald-500' : 'bg-rose-500'}`}></div>
                           <div className="flex items-center gap-4">
                             <div className="relative">
-                              <img 
-                                src={getChampIcon(match.champion)} 
+                              <Image
+                                src={getChampIcon(match.champion)}
+                                alt={match.champion}
+                                width={48}
+                                height={48}
                                 className="w-12 h-12 rounded-full shadow-md border border-white/10"
                                 onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
                               />

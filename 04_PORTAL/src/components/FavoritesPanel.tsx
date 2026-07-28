@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { Star, BookOpen, X } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { getChampIcon } from "../lib/ddragonClient";
 
 // お気に入りデータの型
@@ -134,9 +135,11 @@ export default function FavoritesPanel({ isCollapsed = false }: { isCollapsed?: 
               className="relative group flex justify-center"
               title={champId}
             >
-              <img
+              <Image
                 src={getChampIcon(champId)}
                 alt={champId}
+                width={32}
+                height={32}
                 className="w-8 h-8 rounded-full border border-amber-400/30 hover:border-amber-400 transition-all hover:scale-110 hover:shadow-[0_0_10px_rgba(200,155,60,0.3)]"
               />
               <button

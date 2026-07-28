@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import { History, RefreshCw, Trophy, Swords, Calendar } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { getChampIcon } from '../../lib/ddragonClient';
 import { Spinner } from '../../components/Feedback';
 
@@ -206,10 +207,12 @@ function PlayerRow({ p }: { p: any }) {
       <div className="flex items-center gap-2 md:gap-3 flex-1 min-w-0">
         <span className="text-[10px] md:text-xs font-black text-gray-500 w-6 md:w-8 text-center">{p.role}</span>
         {p.champion_name ? (
-          <img 
-            src={getChampIcon(p.champion_name)} 
+          <Image
+            src={getChampIcon(p.champion_name)}
             alt={p.champion_name}
             title={p.champion_name}
+            width={32}
+            height={32}
             className="w-6 h-6 md:w-8 md:h-8 rounded-full border border-gray-700 shadow-sm flex-shrink-0"
             onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
           />

@@ -4,6 +4,7 @@ import { useEffect, useState, use } from 'react';
 import { supabase } from '../../../lib/supabaseClient';
 import Link from 'next/link';
 import { Trophy, Swords, Zap, Activity, ShieldAlert, Award, Compass, RefreshCw, ChevronLeft, Sparkles } from 'lucide-react';
+import Image from 'next/image';
 import { getChampIcon } from '../../../lib/ddragonClient';
 
 // ==========================================
@@ -324,7 +325,7 @@ export default function PlayerStatsPage({ params }: PageProps) {
             <div className="flex flex-col sm:flex-row items-center sm:items-end -mt-14 sm:-mt-12 gap-6 mb-6">
               <div className="w-24 h-24 bg-[#161922] p-1 rounded-2xl border-2 border-[#c89b3c] shadow-[0_0_20px_rgba(200,155,60,0.3)] flex-shrink-0 flex items-center justify-center text-4xl overflow-hidden relative group">
                 {sortedMostPlayed[0] ? (
-                  <img src={getChampIcon(sortedMostPlayed[0].championName)} alt={sortedMostPlayed[0].championName} className="w-full h-full object-cover rounded-xl" />
+                  <Image src={getChampIcon(sortedMostPlayed[0].championName)} alt={sortedMostPlayed[0].championName} fill className="object-cover rounded-xl" />
                 ) : (
                   <span>👤</span>
                 )}
@@ -382,7 +383,7 @@ export default function PlayerStatsPage({ params }: PageProps) {
                   <div className="bg-black/50 border border-white/5 p-3 rounded-xl flex items-center gap-3">
                     {sortedMostPlayed[0] ? (
                       <>
-                        <img src={getChampIcon(sortedMostPlayed[0].championName)} alt={sortedMostPlayed[0].championName} className="w-10 h-10 rounded-xl border border-[#c89b3c] shrink-0" />
+                        <Image src={getChampIcon(sortedMostPlayed[0].championName)} alt={sortedMostPlayed[0].championName} width={40} height={40} className="w-10 h-10 rounded-xl border border-[#c89b3c] shrink-0" />
                         <div className="min-w-0">
                           <div className="text-[9px] text-gray-400 font-bold uppercase truncate">👑 勝負チャンプ</div>
                           <div className="text-xs font-black text-white truncate">{sortedMostPlayed[0].championName}</div>
@@ -590,9 +591,11 @@ export default function PlayerStatsPage({ params }: PageProps) {
                       return (
                         <div key={c.championName} className="flex items-center gap-3 bg-black/40 border border-white/5 rounded-2xl p-3 relative overflow-hidden group">
                           {/* チャンピオンアイコン */}
-                          <img 
-                            src={getChampIcon(c.championName)} 
+                          <Image
+                            src={getChampIcon(c.championName)}
                             alt={c.championName}
+                            width={40}
+                            height={40}
                             className="w-10 h-10 rounded-xl border border-white/10 shrink-0"
                           />
                           <div className="space-y-1 flex-grow">
@@ -635,9 +638,11 @@ export default function PlayerStatsPage({ params }: PageProps) {
                         </div>
 
                         {/* チャンピオンアイコン */}
-                        <img 
-                          src={getChampIcon(n.championName)} 
+                        <Image
+                          src={getChampIcon(n.championName)}
                           alt={n.championName}
+                          width={40}
+                          height={40}
                           className="w-10 h-10 rounded-xl border border-white/10 shrink-0"
                         />
 
@@ -691,9 +696,11 @@ export default function PlayerStatsPage({ params }: PageProps) {
 
                         {/* Champion & Role & Opponent */}
                         <div className="flex-grow flex items-center gap-3.5 min-w-0">
-                          <img 
-                            src={getChampIcon(h.champion_name)} 
+                          <Image
+                            src={getChampIcon(h.champion_name)}
                             alt={h.champion_name}
+                            width={40}
+                            height={40}
                             className="w-10 h-10 rounded-xl border border-white/5 shrink-0 hidden sm:block shadow-md"
                           />
                           <div className="min-w-0">

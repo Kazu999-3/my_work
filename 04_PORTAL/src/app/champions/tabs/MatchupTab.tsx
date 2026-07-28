@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { supabase } from '../../../lib/supabaseClient';
+import Image from 'next/image';
 import { getChampIcon } from '../../../lib/ddragonClient';
 import { Shield, Target, ChevronLeft, ChevronDown, ChevronUp, Swords, Plus, X, Save, Trash2, Activity, Award, Zap, AlertCircle, CheckCircle, ArrowLeftRight, History, RefreshCw } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
@@ -447,9 +448,9 @@ export default function MatchupTab() {
             <div key={m.id} className="glass-panel glass-panel-hover p-5 rounded-2xl flex flex-col justify-between gap-4 relative group border-t-2 border-white/5">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
-                  <img src={getChampIcon(m.champion)} alt={m.champion} className="w-10 h-10 rounded-full border border-[#00cfef]" />
+                  <Image src={getChampIcon(m.champion)} alt={m.champion} width={40} height={40} className="w-10 h-10 rounded-full border border-[#00cfef]" />
                   <span className="text-xs font-black text-gray-500">VS</span>
-                  <img src={getChampIcon(m.enemy)} alt={m.enemy} className="w-10 h-10 rounded-full border border-rose-500" />
+                  <Image src={getChampIcon(m.enemy)} alt={m.enemy} width={40} height={40} className="w-10 h-10 rounded-full border border-rose-500" />
                   <div>
                     <h4 className="text-sm font-bold text-white">{m.champion} vs {m.enemy}</h4>
                     <span className="text-[10px] text-gray-500 font-mono">{m.role}</span>
@@ -475,14 +476,14 @@ export default function MatchupTab() {
           {championGroups.map(([champName, list]) => (
             <div key={champName} className="glass-panel p-5 rounded-2xl">
               <div className="flex items-center gap-3 mb-3">
-                <img src={getChampIcon(champName)} alt={champName} className="w-10 h-10 rounded-full border border-[#00cfef]" />
+                <Image src={getChampIcon(champName)} alt={champName} width={40} height={40} className="w-10 h-10 rounded-full border border-[#00cfef]" />
                 <h3 className="text-base font-bold text-white">{champName} <span className="text-xs text-gray-400">({list.length}件の対面)</span></h3>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                 {list.map((m: any) => (
                   <div key={m.id} onClick={() => handleEdit(m)} className="p-3 rounded-xl bg-black/30 border border-white/5 hover:border-[#00cfef]/30 cursor-pointer flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <img src={getChampIcon(m.enemy)} alt={m.enemy} className="w-8 h-8 rounded-full border border-rose-500/40" />
+                      <Image src={getChampIcon(m.enemy)} alt={m.enemy} width={32} height={32} className="w-8 h-8 rounded-full border border-rose-500/40" />
                       <span className="text-xs font-bold text-gray-200">vs {m.enemy}</span>
                     </div>
                     <span className="text-[10px] text-gray-500">{new Date(m.created_at).toLocaleDateString('ja-JP')}</span>

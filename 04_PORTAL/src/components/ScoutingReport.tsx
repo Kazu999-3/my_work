@@ -1,6 +1,7 @@
 "use client";
 
 import { AlertTriangle, Crosshair, Target, ShieldAlert, Activity } from "lucide-react";
+import Image from "next/image";
 import { getChampIcon } from "../lib/ddragonClient";
 
 interface ScoutingReportProps {
@@ -99,8 +100,11 @@ export default function ScoutingReport({ stats, mmr }: ScoutingReportProps) {
             <div className="flex-1">
               <div className="text-xs font-bold text-gray-500 mb-1">TARGET BAN</div>
               <div className="flex items-center gap-2 bg-gray-950 p-2 rounded border border-gray-800/50 mb-2">
-                <img 
-                  src={getChampIcon(warningChamp.name)} 
+                <Image
+                  src={getChampIcon(warningChamp.name)}
+                  alt={warningChamp.name}
+                  width={32}
+                  height={32}
                   className="w-8 h-8 rounded-full shadow-sm border border-amber-900/50"
                   onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
                 />

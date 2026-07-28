@@ -5,6 +5,7 @@ import { supabase } from '../../lib/supabaseClient';
 import { fetchAllRows } from '../../lib/fetchAll';
 import { getKtmRank } from '../../lib/mmr';
 import { Spinner } from '../../components/Feedback';
+import Image from 'next/image';
 import { getChampIcon } from '../../lib/ddragonClient';
 
 // ==========================================
@@ -305,7 +306,7 @@ export default function LeaderboardPage() {
                 {metaData.filter(m => m.games >= metaMinGames).map((m, idx) => (
                   <div key={m.name} className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 hover:bg-gray-800/40">
                     <span className="w-5 sm:w-6 text-center text-xs font-black text-gray-500 shrink-0">{idx + 1}</span>
-                    <img src={getChampIcon(m.name)} alt={m.name} className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-gray-700 shrink-0"
+                    <Image src={getChampIcon(m.name)} alt={m.name} width={32} height={32} className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-gray-700 shrink-0"
                       onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                     <span className="flex-1 min-w-0 font-bold text-white text-sm truncate">{m.name}</span>
                     <span className="text-xs text-gray-400 w-9 sm:w-16 text-right shrink-0">{m.games}戦</span>

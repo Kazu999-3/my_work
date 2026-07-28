@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, Suspense } from 'react';
 import { supabase } from '../../lib/supabaseClient';
+import Image from 'next/image';
 import { getChampIcon } from '../../lib/ddragonClient';
 import { Swords, Zap, AlertCircle, RefreshCw, History, Save, Activity, Target, Award } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -397,16 +398,20 @@ function MatchupsSimulatorContent() {
                     <div className="flex items-center gap-3 w-full md:w-[240px] shrink-0">
                       <span className="w-10 text-xs font-black text-gray-400 font-mono tracking-wider">{role}</span>
                       <div className="flex items-center gap-1.5">
-                        <img 
-                          src={getChampIcon(blueChamps[role])} 
-                          className="w-8 h-8 rounded-full border border-blue-500/30" 
-                          alt={blueChamps[role]} 
+                        <Image
+                          src={getChampIcon(blueChamps[role])}
+                          width={32}
+                          height={32}
+                          className="w-8 h-8 rounded-full border border-blue-500/30"
+                          alt={blueChamps[role]}
                         />
                         <span className="text-[10px] text-gray-500 font-black italic">VS</span>
-                        <img 
-                          src={getChampIcon(redChamps[role])} 
-                          className="w-8 h-8 rounded-full border border-red-500/30" 
-                          alt={redChamps[role]} 
+                        <Image
+                          src={getChampIcon(redChamps[role])}
+                          width={32}
+                          height={32}
+                          className="w-8 h-8 rounded-full border border-red-500/30"
+                          alt={redChamps[role]}
                         />
                       </div>
                     </div>

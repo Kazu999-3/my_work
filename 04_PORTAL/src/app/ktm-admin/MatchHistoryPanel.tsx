@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import { History, Swords, Trophy, Calendar, RefreshCw, Edit, Trash2, Search, AlertCircle, X, Target, GripVertical } from 'lucide-react';
+import Image from 'next/image';
 import { getChampIcon } from '../../lib/ddragonClient';
 
 interface Match {
@@ -320,9 +321,11 @@ export default function MatchHistoryPanel() {
                         <div key={p.player_name} className="flex items-center gap-3 bg-gray-800/40 p-2 rounded hover:bg-gray-800 transition">
                           <div className="w-8 text-center text-xs font-bold text-gray-500 flex-shrink-0">{p.role}</div>
                           {p.champion_name ? (
-                            <img 
-                              src={getChampIcon(p.champion_name)} 
+                            <Image
+                              src={getChampIcon(p.champion_name)}
                               alt={p.champion_name}
+                              width={40}
+                              height={40}
                               className="w-10 h-10 rounded-full border border-gray-700 flex-shrink-0 object-cover"
                               onError={(e) => { e.currentTarget.style.display = 'none'; }}
                             />
@@ -366,9 +369,11 @@ export default function MatchHistoryPanel() {
                         <div key={p.player_name} className="flex items-center gap-3 bg-gray-800/40 p-2 rounded hover:bg-gray-800 transition">
                           <div className="w-8 text-center text-xs font-bold text-gray-500 flex-shrink-0">{p.role}</div>
                           {p.champion_name ? (
-                            <img 
-                              src={getChampIcon(p.champion_name)} 
+                            <Image
+                              src={getChampIcon(p.champion_name)}
                               alt={p.champion_name}
+                              width={40}
+                              height={40}
                               className="w-10 h-10 rounded-full border border-gray-700 flex-shrink-0 object-cover"
                               onError={(e) => { e.currentTarget.style.display = 'none'; }}
                             />
@@ -475,9 +480,11 @@ export default function MatchHistoryPanel() {
                             {p.champion_name ? (championsList.find(c => c.id === p.champion_name)?.name || 'チャンプ') : '選択'}
                           </span>
                           {p.champion_name && (
-                            <img 
-                              src={getChampIcon(p.champion_name)} 
-                              className="w-4 h-4 rounded-full border border-gray-600 shrink-0 object-cover" 
+                            <Image
+                              src={getChampIcon(p.champion_name)}
+                              width={16}
+                              height={16}
+                              className="w-4 h-4 rounded-full border border-gray-600 shrink-0 object-cover"
                               alt={p.champion_name}
                               onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
                             />
@@ -543,9 +550,11 @@ export default function MatchHistoryPanel() {
                             {p.champion_name ? (championsList.find(c => c.id === p.champion_name)?.name || 'チャンプ') : '選択'}
                           </span>
                           {p.champion_name && (
-                            <img 
-                              src={getChampIcon(p.champion_name)} 
-                              className="w-4 h-4 rounded-full border border-gray-600 shrink-0 object-cover" 
+                            <Image
+                              src={getChampIcon(p.champion_name)}
+                              width={16}
+                              height={16}
+                              className="w-4 h-4 rounded-full border border-gray-600 shrink-0 object-cover"
                               alt={p.champion_name}
                               onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
                             />
@@ -652,10 +661,12 @@ export default function MatchHistoryPanel() {
                     type="button"
                     className="flex flex-col items-center gap-1.5 p-2 rounded-xl hover:bg-gray-800 transition group"
                   >
-                    <img 
-                      src={getChampIcon(c.id)} 
-                      className="w-12 h-12 rounded-xl border border-gray-800 group-hover:border-emerald-500 transition object-cover" 
-                      alt={c.name} 
+                    <Image
+                      src={getChampIcon(c.id)}
+                      width={48}
+                      height={48}
+                      className="w-12 h-12 rounded-xl border border-gray-800 group-hover:border-emerald-500 transition object-cover"
+                      alt={c.name}
                     />
                     <span className="text-[10px] text-gray-400 truncate w-14 text-center group-hover:text-white transition">
                       {c.name}

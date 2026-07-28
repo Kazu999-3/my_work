@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 
 interface QueueItem {
   id: string;
@@ -887,10 +888,12 @@ export default function YoutubeQueueManager() {
                   {filteredQueue.map((item) => (
                     <div key={item.id} className="p-4 space-y-3 hover:bg-[#0c0d15]/40 transition-all flex flex-col">
                       <div className="flex gap-3 items-start">
-                        <img 
-                          src={`https://img.youtube.com/vi/${item.id}/mqdefault.jpg`} 
-                          className="w-20 h-12 object-cover rounded border border-gray-800 shrink-0 shadow-sm" 
-                          alt="thumbnail" 
+                        <Image
+                          src={`https://img.youtube.com/vi/${item.id}/mqdefault.jpg`}
+                          width={80}
+                          height={48}
+                          className="w-20 h-12 object-cover rounded border border-gray-800 shrink-0 shadow-sm"
+                          alt="thumbnail"
                         />
                         <div className="flex-1 min-w-0">
                           {(() => {
@@ -1019,9 +1022,11 @@ export default function YoutubeQueueManager() {
                         <tr key={item.id} className="hover:bg-[#0c0d15]/60 transition-all duration-150">
                           <td className="px-6 py-4 max-w-lg">
                             <div className="flex gap-3 items-center">
-                              <img 
-                                src={`https://img.youtube.com/vi/${item.id}/mqdefault.jpg`} 
-                                className="w-16 h-10 object-cover rounded border border-gray-800 shrink-0 shadow-sm" 
+                              <Image
+                                src={`https://img.youtube.com/vi/${item.id}/mqdefault.jpg`}
+                                width={64}
+                                height={40}
+                                className="w-16 h-10 object-cover rounded border border-gray-800 shrink-0 shadow-sm"
                                 alt="thumbnail" 
                               />
                               <div className="flex flex-col space-y-1 min-w-0">

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { X, RefreshCw, Swords, Shield, Star, Crosshair, Zap, Activity, Info } from "lucide-react";
+import Image from "next/image";
 import { getChampIcon, getChampNameById } from "../../lib/ddragonClient";
 import ScoutingReport from "../../components/ScoutingReport";
 
@@ -105,9 +106,11 @@ export default function ProfileModal({ player, onClose }: ProfileModalProps) {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {riotMasteries.map((m, idx) => (
                   <div key={idx} className="bg-gray-800/50 border border-gray-700/50 rounded-lg p-4 flex items-center gap-4">
-                    <img 
-                      src={m.iconUrl} 
-                      alt={m.name} 
+                    <Image
+                      src={m.iconUrl}
+                      alt={m.name}
+                      width={56}
+                      height={56}
                       className="w-14 h-14 rounded-full border-2 border-yellow-500/50 object-cover"
                       onError={(e) => { (e.target as HTMLImageElement).src = 'https://ddragon.leagueoflegends.com/cdn/14.1.1/img/profileicon/29.png' }}
                     />
@@ -218,9 +221,11 @@ export default function ProfileModal({ player, onClose }: ProfileModalProps) {
                           }
                           return (
                             <div key={cIdx} className="flex items-center gap-2 bg-gray-900/50 p-1.5 rounded">
-                              <img 
-                                src={getChampIcon(champ.name)} 
-                                alt={champ.name} 
+                              <Image
+                                src={getChampIcon(champ.name)}
+                                alt={champ.name}
+                                width={24}
+                                height={24}
                                 className="w-6 h-6 rounded-full bg-gray-800"
                                 onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
                               />

@@ -16,6 +16,7 @@ import {
   ChevronLeft,
   ChevronRight
 } from "lucide-react";
+import Image from "next/image";
 import { getChampIcon } from "../../lib/ddragonClient";
 
 export default function ScoutTab() {
@@ -138,9 +139,11 @@ export default function ScoutTab() {
                   {/* 敵ジャングラープロフィール */}
                   <div className="bg-white/[0.02] border border-white/10 rounded-3xl p-6 shadow-xl space-y-4">
                     <div className="flex items-center gap-4 border-b border-white/5 pb-4">
-                      <img 
-                        src={getChampIcon(result.championName)} 
-                        alt={result.championName} 
+                      <Image
+                        src={getChampIcon(result.championName)}
+                        alt={result.championName}
+                        width={64}
+                        height={64}
                         className="w-16 h-16 rounded-2xl border border-white/10 shadow-lg"
                       />
                       <div className="space-y-1 flex-1">
@@ -416,9 +419,11 @@ export default function ScoutTab() {
                                 return (
                                   <tr key={idx} className="hover:bg-white/[0.02] transition-colors">
                                     <td className="py-3 flex items-center gap-2.5">
-                                      <img 
-                                        src={getChampIcon(champName)} 
-                                        alt={champName} 
+                                      <Image
+                                        src={getChampIcon(champName)}
+                                        alt={champName}
+                                        width={32}
+                                        height={32}
                                         className="w-8 h-8 rounded-lg border border-white/10 shadow"
                                       />
                                       <div>
@@ -507,9 +512,11 @@ export default function ScoutTab() {
                             <div key={idx} className="bg-black/40 p-4 rounded-2xl border border-amber-500/10 space-y-2">
                               <div className="flex justify-between items-center">
                                 <div className="flex items-center gap-2">
-                                  <img 
-                                    src={getChampIcon(c.championName)} 
-                                    alt={c.championName} 
+                                  <Image
+                                    src={getChampIcon(c.championName)}
+                                    alt={c.championName}
+                                    width={28}
+                                    height={28}
                                     className="w-7 h-7 rounded-lg border border-white/10"
                                   />
                                   <span className="text-xs font-black text-amber-300">{c.championName}</span>

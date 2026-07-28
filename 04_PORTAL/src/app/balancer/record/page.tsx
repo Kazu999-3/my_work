@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { supabase } from '../../../lib/supabaseClient';
 import { RefreshCw, Trophy, Target, Search, ArrowLeft, Settings } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { getChampIcon } from '../../../lib/ddragonClient';
 
 type Role = 'TOP' | 'JG' | 'MID' | 'ADC' | 'SUP';
@@ -133,7 +134,7 @@ function CustomRecordPageContent() {
     try {
       const reader = new FileReader();
       reader.onload = (e) => {
-        const img = new Image();
+        const img = new window.Image();
         img.onload = async () => {
           try {
             // 429制限(TPM/RPM)を劇的に防ぐため、送信前にCanvasで最大幅1280pxにリサイズ＆圧縮
@@ -596,9 +597,11 @@ function CustomRecordPageContent() {
                             {s.champion_name ? (championsList.find(c => c.id === s.champion_name)?.name || 'チャンプ') : 'チャンプ選択'}
                           </span>
                           {s.champion_name && (
-                            <img 
-                              src={getChampIcon(s.champion_name)} 
-                              className="w-5 h-5 rounded-full border border-gray-600 shrink-0 object-cover" 
+                            <Image
+                              src={getChampIcon(s.champion_name)}
+                              width={20}
+                              height={20}
+                              className="w-5 h-5 rounded-full border border-gray-600 shrink-0 object-cover"
                               alt={s.champion_name}
                               onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
                             />
@@ -682,9 +685,11 @@ function CustomRecordPageContent() {
                             {s.champion_name ? (championsList.find(c => c.id === s.champion_name)?.name || 'チャンプ') : 'チャンプ選択'}
                           </span>
                           {s.champion_name && (
-                            <img 
-                              src={getChampIcon(s.champion_name)} 
-                              className="w-5 h-5 rounded-full border border-gray-600 shrink-0 object-cover" 
+                            <Image
+                              src={getChampIcon(s.champion_name)}
+                              width={20}
+                              height={20}
+                              className="w-5 h-5 rounded-full border border-gray-600 shrink-0 object-cover"
                               alt={s.champion_name}
                               onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
                             />
@@ -838,10 +843,12 @@ function CustomRecordPageContent() {
                     type="button"
                     className="flex flex-col items-center gap-1.5 p-2 rounded-xl hover:bg-gray-800 transition group"
                   >
-                    <img 
-                      src={getChampIcon(c.id)} 
-                      className="w-12 h-12 rounded-xl border border-gray-800 group-hover:border-emerald-500 transition object-cover" 
-                      alt={c.name} 
+                    <Image
+                      src={getChampIcon(c.id)}
+                      width={48}
+                      height={48}
+                      className="w-12 h-12 rounded-xl border border-gray-800 group-hover:border-emerald-500 transition object-cover"
+                      alt={c.name}
                     />
                     <span className="text-[10px] text-gray-400 truncate w-14 text-center group-hover:text-white transition">
                       {c.name}
