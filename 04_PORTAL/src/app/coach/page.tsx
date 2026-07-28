@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { apiJson } from '../../lib/apiClient';
 import ScoutTab from './ScoutTab';
+import PushOptIn from '../../components/PushOptIn';
 
 // ============================
 // 型定義
@@ -931,6 +932,9 @@ export default function CoachPage() {
           <p className="mt-1 text-sm text-white/40">
             Riot API × ナレッジDB × Gemini AI があなたの勝率を上げる
           </p>
+          <div className="mt-3">
+            <PushOptIn scope="admin" label="ポータル通知" inline />
+          </div>
         </div>
 
         {/* 共通入力欄: 事前分析とマッチアップで別々に入力させていたのを統合 */}

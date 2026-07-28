@@ -14,7 +14,7 @@ function urlBase64ToUint8Array(base64: string): Uint8Array {
   return arr;
 }
 
-export default function PushOptIn({ collapsed = false }: { collapsed?: boolean }) {
+export default function PushOptIn({ collapsed = false, scope = 'general', label, inline = false }: { collapsed?: boolean; scope?: string; label?: string; inline?: boolean }) {
   const [supported, setSupported] = useState(false);
   const [subscribed, setSubscribed] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -46,7 +46,7 @@ export default function PushOptIn({ collapsed = false }: { collapsed?: boolean }
       const res = await fetch('/api/push/subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ subscription: sub, userAgent: navigator.userAgent }),
+        body: JSON.stringify({ subscription: sub, userAgent: navigator.userAgent, scope }),
       });
       if (!res.ok) throw new Error('購読の保存に失敗しました');
       setSubscribed(true);
@@ -74,17 +74,23 @@ export default function PushOptIn({ collapsed = false }: { collapsed?: boolean }
 
   if (!supported) return null;
 
+  const onLabel = label || '通知ON';
+  const offLabel = label ? `${label}を有効化` : '通知を有効化';
+  // Web Pushはブラウザごとに購読が1本のため、解除するとこのブラウザの全種類の通知が止まる。
+  // scope別の個別解除はできないので、その旨だけツールチップで明示する。
+  const unsubTitle = scope === 'general' ? '通知を無効化' : 'このブラウザの通知をすべて無効化（他の通知も含む）';
+
   return (
     <button
       onClick={subscribed ? unsubscribe : subscribe}
       disabled={busy}
-      title={subscribed ? '通知を無効化' : '通知を有効化'}
-      className={`flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-bold transition-all disabled:opacity-50 ${
-        subscribed ? 'text-emerald-400 hover:bg-emerald-500/10' : 'text-gray-400 hover:bg-white/5 hover:text-white'
-      } ${collapsed ? 'justify-center' : 'w-full'}`}
+      title={subscribed ? unsubTitle : '通知を有効化'}
+      className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-bold transition-all disabled:opacity-50 border ${
+        subscribed ? 'text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/10' : 'text-gray-400 border-white/10 hover:bg-white/5 hover:text-white'
+      } ${collapsed ? 'justify-center' : inline ? 'w-auto' : 'w-full'}`}
     >
       {subscribed ? <Bell size={16} /> : <BellOff size={16} />}
-      {!collapsed && <span>{subscribed ? '通知ON' : '通知を有効化'}</span>}
+      {!collapsed && <span>{subscribed ? onLabel : offLabel}</span>}
     </button>
   );
 }

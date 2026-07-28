@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 import { fetchPuuidByRiotId, fetchRankedSoloMatchIds } from '../../../../lib/riot';
 import { runPostGameReview } from '../../../../lib/coachPostGame';
+import { createAdminNotification } from '../../../../lib/notify';
 
 // ============================================================
 // ソロQ試合後の自動分析DM (課題#47)
@@ -101,6 +102,22 @@ export async function GET(req: Request) {
           } catch (e) {
             console.warn('[soloq-coach] DM送信失敗:', e);
           }
+        }
+
+        // ポータル通知（履歴保存＋"admin" scope購読者へのプッシュ）。
+        // createAdminNotification経由にすることで、コーチのベル通知一覧にも残る。
+        try {
+          const weaknessLine2 = weaknesses.length > 0 ? `⚠️ ${weaknesses.join(' / ')}\n\n` : '';
+          await createAdminNotification({
+            type: 'coach_review',
+            title: `${result.win ? '🏆' : '💀'} ソロQ振り返り (${result.champion})`,
+            body: `KDA ${result.kda} (${result.kdaRatio}) / CS ${result.csPerMin}\n${weaknessLine2}${advice}`.slice(0, 500),
+            url: '/coach',
+            icon: `https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${result.champion}_0.jpg`,
+            data: { matchId: targetMatchId, champion: result.champion, win: result.win },
+          });
+        } catch (e) {
+          console.warn('[soloq-coach] ポータル通知の送信に失敗:', e);
         }
 
         await setSetting('soloq_last_analyzed_match', targetMatchId);

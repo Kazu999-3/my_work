@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { Shield, LayoutDashboard, Swords, BookOpen, BookHeart, Trophy, Users, HeartHandshake, ScrollText, ListVideo, ChevronLeft, ChevronRight, Coins, Brain, Trees, Sparkles, Search, MoreHorizontal, X as XIcon } from 'lucide-react';
 import FavoritesPanel from './FavoritesPanel';
 import PushOptIn from './PushOptIn';
+import NotificationBell from './NotificationBell';
 import SystemStatus from './SystemStatus';
 
 // スマホ下ナビの各項目。モジュールスコープに置くことで、Sidebarの再描画のたびに
@@ -153,7 +154,7 @@ export default function Sidebar() {
               SOVEREIGN
             </span>
           </Link>
-          {/* 通知ベル (非表示化) */}
+          {isAdminLoggedIn && <NotificationBell collapsed />}
         </div>
 
         {/* 管理者/一般 機能タブ切り替えUI（常に統一表示） */}

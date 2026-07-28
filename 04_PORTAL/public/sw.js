@@ -32,7 +32,7 @@ self.addEventListener('push', (event) => {
   const title = data.title || 'KTM ポータル';
   const options = {
     body: data.body || '',
-    icon: '/icons/icon-192.png',
+    icon: data.icon || '/icons/icon-192.png',
     badge: '/icons/icon-192.png',
     data: { url: data.url || '/' },
   };

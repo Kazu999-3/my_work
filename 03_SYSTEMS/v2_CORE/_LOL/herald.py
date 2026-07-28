@@ -176,15 +176,45 @@ class SovereignHerald:
         }
         self._send_webhook_safe(payload, timeout=5)
 
+    def _notify_portal(self, title: str, page: str = None):
+        """ポータルの通知ベル＋プッシュ通知(管理者専用)へも同じ内容を流す。
+        Discordだけだと見逃しやすい上、ポータル側に履歴が一切残らなかったため、
+        portal_link=Trueで送っている（=ユーザーに見てほしいと判断した）通知は
+        まとめてポータル側にも複製する。PORTAL_BOT_SECRETが未設定でも
+        (verifyBotSecretがfail-openのため)動作する。
+        """
+        portal_url = os.environ.get("PORTAL_URL", "http://localhost:5173").rstrip("/")
+        bot_secret = os.environ.get("PORTAL_BOT_SECRET", "")
+        path_mapping = {
+            "champdb": "champions", "drafts": "library", "publish": "library",
+            "dashboard": "", "sns": "", "logs": "", "analysis": "",
+        }
+        target_path = path_mapping.get(page, page) if page else ""
+        url = f"/{target_path}".rstrip("/") or "/"
+        try:
+            headers = {"Content-Type": "application/json"}
+            if bot_secret:
+                headers["x-bot-secret"] = bot_secret
+            requests.post(
+                f"{portal_url}/api/push/notify-admin",
+                headers=headers,
+                json={"type": "system_progress", "title": title[:200], "url": url},
+                timeout=5,
+            )
+        except Exception as e:
+            logger.warning(f"⚠️ [Herald] ポータル通知の送信に失敗しました（Discordのみ継続）: {e}")
+
     def notify_progress(self, msg, portal_link=False, page: str = None):
         """システム進捗を王へ報告する
-        
+
         Args:
             msg (str): 進捗メッセージ本文
             portal_link (bool): ポータルへのリンクを追加するか
             page (str): ポータルの具体的なページパス（例: 'drafts', 'publish', 'sns', 'logs'）
                         指定しない場合はトップページ
         """
+        if portal_link:
+            self._notify_portal(msg, page)
         if not self.webhook_url: return
 
         # ページ名の日本語対応テーブル

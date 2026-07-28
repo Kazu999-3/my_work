@@ -6,18 +6,32 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
   try {
-    const { subscription, userAgent } = await req.json();
+    const { subscription, userAgent, scope } = await req.json();
     if (!subscription?.endpoint || !subscription?.keys?.p256dh || !subscription?.keys?.auth) {
       return NextResponse.json({ error: '購読情報が不正です。' }, { status: 400 });
     }
+    const requestedScope = scope || 'general';
+
+    // ブラウザごとにWeb Push購読は1本しか持てない。異なるscope(例: coach)から
+    // 同じブラウザで購読すると、既存のscopesを上書きせず追加(和集合)する。
+    // そうしないと、コーチ通知を有効化した瞬間に既存の一般通知(募集アラート等)が
+    // 消えてしまう。
+    const { data: existing } = await supabase
+      .from('push_subscriptions')
+      .select('scopes')
+      .eq('endpoint', subscription.endpoint)
+      .maybeSingle();
+    const mergedScopes = Array.from(new Set([...(existing?.scopes || []), requestedScope]));
+
     const { error } = await supabase.from('push_subscriptions').upsert({
       endpoint: subscription.endpoint,
       p256dh: subscription.keys.p256dh,
       auth: subscription.keys.auth,
       user_agent: userAgent || null,
+      scopes: mergedScopes,
     }, { onConflict: 'endpoint' });
     if (error) throw error;
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, scopes: mergedScopes });
   } catch (err: any) {
     console.error('[push/subscribe] error:', err);
     return NextResponse.json({ error: err.message }, { status: 500 });

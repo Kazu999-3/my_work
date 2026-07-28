@@ -16,9 +16,10 @@ function configureVapid(): boolean {
   return true;
 }
 
-export async function sendPushToAll(payload: { title: string; body?: string; url?: string }): Promise<{ sent: number; removed: number }> {
+export interface PushPayload { title: string; body?: string; url?: string; icon?: string }
+
+async function deliverToSubscriptions(subs: any[], payload: PushPayload): Promise<{ sent: number; removed: number }> {
   if (!configureVapid()) throw new Error('VAPID鍵(NEXT_PUBLIC_VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY)が未設定です。');
-  const { data: subs } = await supabase.from('push_subscriptions').select('*');
   let sent = 0, removed = 0;
   const body = JSON.stringify(payload);
   await Promise.all((subs || []).map(async (s: any) => {
@@ -34,6 +35,20 @@ export async function sendPushToAll(payload: { title: string; body?: string; url
     }
   }));
   return { sent, removed };
+}
+
+export async function sendPushToAll(payload: PushPayload): Promise<{ sent: number; removed: number }> {
+  const { data: subs } = await supabase.from('push_subscriptions').select('*');
+  return deliverToSubscriptions(subs || [], payload);
+}
+
+// 管理者専用機能(コーチの振り返り、辞典更新完了など)向けの通知。管理者専用ページ
+// (/coach)でのみ "admin" scopeの購読ボタンを出しているため、このscopeを持つ購読
+// =管理者、という前提で成立する。sendPushToAllとは別に、scopesに指定のscopeを
+// 含む購読だけへ配信する。
+export async function sendPushToScope(scope: string, payload: PushPayload): Promise<{ sent: number; removed: number }> {
+  const { data: subs } = await supabase.from('push_subscriptions').select('*').contains('scopes', [scope]);
+  return deliverToSubscriptions(subs || [], payload);
 }
 
 export async function POST(req: Request) {
