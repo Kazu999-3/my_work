@@ -6,7 +6,7 @@
     },
     {
       "path": "/api/cron/soloq-coach",
-      "schedule": "*/15 * * * *"
+      "schedule": "0 22 * * *"
     },
     {
       "path": "/api/cron/sync-matches",
