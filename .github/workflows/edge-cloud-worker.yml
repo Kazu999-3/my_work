@@ -40,6 +40,8 @@ jobs:
           pip install -q yt-dlp
 
       - name: Process edge_tasks queue
+        id: worker
+        continue-on-error: true
         env:
           PYTHONPATH: 03_SYSTEMS
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
@@ -51,3 +53,24 @@ jobs:
           PORTAL_URL: https://my-work-8jbd.vercel.app
           PORTAL_BOT_SECRET: ${{ secrets.PORTAL_BOT_SECRET }}
         run: python scripts/edge_cloud_worker.py
+
+      # ポータルの「自動化パイプラインステータス」パネル用に、ポーラー自体が生きている
+      # ことを示すハートビートを残す(個々のタスクの成否ではなく、5分おきの巡回自体が
+      # 動いているかを示す)。edge_worker_daemon.py の send_heartbeat() と全く同じ
+      # 固定ID(00000000-0000-0000-0000-000000000000)にUPSERTすることで、ローカルdaemonと
+      # このクラウドポーラーのどちらか新しい方の生存が1行に反映されるようにする。
+      - name: Report heartbeat to portal pipeline status
+        if: always()
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || secrets.SUPABASE_SERVICE_KEY || secrets.SUPABASE_KEY }}
+        run: |
+          STATUS="completed"
+          if [ "${{ steps.worker.outcome }}" != "success" ]; then STATUS="failed"; fi
+          curl -sf -X POST "$SUPABASE_URL/rest/v1/edge_tasks" \
+            -H "apikey: $SUPABASE_KEY" \
+            -H "Authorization: Bearer $SUPABASE_KEY" \
+            -H "Content-Type: application/json" \
+            -H "Prefer: resolution=merge-duplicates" \
+            -d "{\"id\":\"00000000-0000-0000-0000-000000000000\",\"task_type\":\"worker_heartbeat\",\"status\":\"$STATUS\",\"payload\":{\"source\":\"github_actions\"}}" \
+            || echo "⚠️ pipeline-status への完了報告に失敗しましたが、処理自体には影響ありません"

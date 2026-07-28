@@ -9,6 +9,9 @@ import { verifyAdminSession } from '../../../../lib/adminAuth';
 const PIPELINE_JOBS = [
   { id: 'youtube-analysis', label: 'YouTube解析', pattern: 'youtube%' },
   { id: 'dict-synthesis', label: '辞典更新', pattern: 'champion_db%' },
+  // edge_worker_daemon.py(ローカル)と edge-cloud-worker.yml(クラウド)の両方が
+  // 同じ固定IDにUPSERTする生存ハートビート。どちらか新しい方の稼働状況を示す。
+  { id: 'edge-worker', label: 'オンデマンド処理(トレンド/シミュレーション等)', pattern: 'worker_heartbeat' },
 ];
 
 export async function GET(req: Request) {

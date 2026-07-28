@@ -41,6 +41,8 @@ jobs:
           pip install -q yt-dlp
 
       - name: Run YouTube Absorber (Whisper rescue)
+        id: absorb
+        continue-on-error: true
         env:
           PYTHONPATH: 03_SYSTEMS
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
@@ -55,9 +57,29 @@ jobs:
         run: python 03_SYSTEMS/v2_CORE/_LOL/youtube_absorber.py
 
       - name: Commit updated bible
+        if: always()
         run: |
           git config --global user.name 'Antigravity Auditor'
           git config --global user.email 'auditor@antigravity.local'
           git add 02_FACTORY/bible/kirei_bible/
           git commit -m "chore: update KireiLoL bible via Whisper rescue [skip ci]" || echo "No changes to commit"
           git push
+
+      # ポータルの「自動化パイプラインステータス」パネルは edge_tasks の task_type を見て
+      # 鮮度判定している。以前(faster-whisper時代)は edge_worker_daemon.py がSupabase経由で
+      # 起票していたため自然に反映されていたが、このワークフローは edge_tasks を一切
+      # 経由しないため、champ-dict-update.yml と同様に完了レコードを明示的に残す。
+      - name: Report run to portal pipeline status
+        if: always()
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || secrets.SUPABASE_SERVICE_KEY || secrets.SUPABASE_KEY }}
+        run: |
+          STATUS="completed"
+          if [ "${{ steps.absorb.outcome }}" != "success" ]; then STATUS="failed"; fi
+          curl -sf -X POST "$SUPABASE_URL/rest/v1/edge_tasks" \
+            -H "apikey: $SUPABASE_KEY" \
+            -H "Authorization: Bearer $SUPABASE_KEY" \
+            -H "Content-Type: application/json" \
+            -d "{\"task_type\":\"youtube_absorb\",\"status\":\"$STATUS\",\"payload\":{\"source\":\"github_actions\"}}" \
+            || echo "⚠️ pipeline-status への完了報告に失敗しましたが、処理自体には影響ありません"
