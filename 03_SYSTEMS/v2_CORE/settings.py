@@ -35,6 +35,7 @@ class SovereignSettings(BaseSettings):
     DISCORD_WEBHOOK: Optional[str] = None
     GEMINI_API_KEY: Optional[str] = None
     GEMINI_API_KEY_FREE: Optional[str] = None
+    GROQ_API_KEY: Optional[str] = None
     DISCORD_BOT_TOKEN: Optional[str] = None
     KTM_GUILD_ID: str = "1485636149379858567"
     # 統治者 (ユーザー) 設定

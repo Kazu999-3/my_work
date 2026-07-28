@@ -11,6 +11,7 @@ import shutil
 import urllib.request
 import urllib.error
 import urllib
+import requests
 from google import genai
 from v2_CORE.settings import settings
 from v2_CORE.ai_helper import generate_content_safe, generate_with_routing
@@ -27,34 +28,6 @@ logger = setup_sovereign_logging("YouTubeAbsorber")
 CYCLE_CHAR_BUDGET = 150000  # 1サイクルで消費する字幕文字数の合計上限
 MAX_VIDEOS_PER_CYCLE = 10   # 1サイクルで処理する動画の最大本数（安全弁）
 DURATION_UNKNOWN = 99999    # 秒数不明の場合は後回し（大きな値にする）
-
-def setup_cuda_dll_path():
-    """ctranslate2用のCUDA DLLパスをDLL検索パスに追加する"""
-    import os
-    import sys
-    import platform
-    if platform.system() != "Windows":
-        return
-
-    # site-packages内のnvidiaパッケージのbinディレクトリを探す
-    venv_dir = os.path.dirname(os.path.dirname(sys.executable))
-    site_packages = os.path.join(venv_dir, "Lib", "site-packages")
-    
-    # 探索対象のパッケージ名
-    nvidia_dirs = [
-        os.path.join(site_packages, "nvidia", "cublas", "bin"),
-        os.path.join(site_packages, "nvidia", "cudnn", "bin"),
-        os.path.join(site_packages, "nvidia", "cuda_nvrtc", "bin"),
-    ]
-    
-    for d in nvidia_dirs:
-        if os.path.isdir(d):
-            try:
-                os.add_dll_directory(d)
-                logger.info(f"Added DLL directory: {d}")
-            except Exception as e:
-                logger.warning(f"Failed to add DLL directory {d}: {e}")
-
 
 class YouTubeAbsorber:
     def __init__(self):
@@ -78,7 +51,6 @@ class YouTubeAbsorber:
         if cookies_from:
             logger.info(f"🍪 yt-dlp にブラウザ '{cookies_from}' からのクッキーを適用します")
             self.yt_dlp_base.extend(["--cookies-from-browser", cookies_from])
-        self._whisper_model = None
 
     @staticmethod
     def clean_subtitle_text(raw_text: str) -> str:
@@ -357,63 +329,40 @@ class YouTubeAbsorber:
             return ""
         return valid_audio_files[0]
 
-    def get_whisper_model(self):
-        if hasattr(self, "_whisper_model") and self._whisper_model is not None:
-            return self._whisper_model
-            
-        setup_cuda_dll_path()
-        try:
-            from faster_whisper import WhisperModel
-        except ImportError:
-            logger.error("faster-whisper is not installed in the environment.")
-            return None
-            
-        # VRAMの削減のため、デフォルトは "medium" にする (large-v3 はローカル環境で重すぎるため)
-        model_size = os.getenv("WHISPER_MODEL_SIZE", "medium")
-        logger.info(f"Initializing WhisperModel ({model_size}, device=cuda, compute_type=float16)...")
-        try:
-            self._whisper_model = WhisperModel(
-                model_size_or_path=model_size,
-                device="cuda",
-                compute_type="float16"
-            )
-        except Exception as e:
-            logger.warning(f"CUDA initialization failed ({e}). Falling back to CPU...")
-            try:
-                self._whisper_model = WhisperModel(
-                    model_size_or_path=model_size,
-                    device="cpu",
-                    compute_type="int8"
-                )
-            except Exception as e2:
-                logger.error(f"CPU initialization failed: {e2}")
-                self._whisper_model = None
-                
-        return self._whisper_model
-
-    def transcribe_audio_local(self, audio_path):
+    def transcribe_audio_groq(self, audio_path):
+        """Groq の Whisper API (クラウド) で音声を文字起こしする。
+        ローカルGPU(faster-whisper/CUDA)は撤去し、こちらに一本化した。"""
         if not audio_path or not os.path.exists(audio_path):
             return ""
-            
-        model = self.get_whisper_model()
-        if not model:
-            logger.error("WhisperModel could not be initialized.")
+
+        api_key = settings.GROQ_API_KEY
+        if not api_key:
+            logger.error("GROQ_API_KEY が .env に設定されていません。")
             return ""
-            
-        logger.info(f"Transcribing audio file: {audio_path}")
+
+        model = os.getenv("GROQ_WHISPER_MODEL", "whisper-large-v3-turbo")
+        logger.info(f"Transcribing audio file via Groq ({model}): {audio_path}")
         start_time = time.time()
-        
-        segments, info = model.transcribe(audio_path, beam_size=5, language="en")
-        logger.info(f"Detected language '{info.language}' with probability {info.language_probability:.2f}")
-        
-        lines = []
-        for segment in segments:
-            lines.append(segment.text)
-            
+
+        try:
+            with open(audio_path, "rb") as f:
+                resp = requests.post(
+                    "https://api.groq.com/openai/v1/audio/transcriptions",
+                    headers={"Authorization": f"Bearer {api_key}"},
+                    files={"file": (os.path.basename(audio_path), f)},
+                    data={"model": model, "language": "en"},
+                    timeout=300,
+                )
+            resp.raise_for_status()
+            text = resp.json().get("text", "")
+        except Exception as e:
+            logger.error(f"Groq transcription failed: {e}")
+            return ""
+
         elapsed = time.time() - start_time
-        logger.info(f"Transcription completed in {elapsed:.1f} seconds. Text length: {len(lines)} segments.")
-        
-        return " ".join(lines)
+        logger.info(f"Transcription completed in {elapsed:.1f} seconds. Text length: {len(text):,} chars.")
+
+        return text
 
     def summarize_chunk(self, chunk_idx, total_chunks, chunk_text, title):
         """巨大な字幕の1チャンクをGeminiで攻略要点（日本語）に中間要約する (Mapフェーズ)"""
@@ -670,14 +619,14 @@ class YouTubeAbsorber:
             if transcript and len(transcript) >= 100:
                 logger.info(f"✅ Successfully retrieved subtitles from YouTube: {len(transcript):,} chars")
             else:
-                logger.info(f"⚠️ Subtitles not available on YouTube. Falling back to local Whisper processing: {item['title']}")
-                # フォールバック: ローカルの Whisper で音声認識を実行
+                logger.info(f"⚠️ Subtitles not available on YouTube. Falling back to Groq Whisper processing: {item['title']}")
+                # フォールバック: Groq の Whisper API で音声認識を実行
                 logger.info(f"Downloading audio for Whisper processing: {item['title']}")
                 audio_path = self.download_audio(item["url"], item["id"])
                 transcript = ""
                 if audio_path:
                     try:
-                        transcript = self.transcribe_audio_local(audio_path)
+                        transcript = self.transcribe_audio_groq(audio_path)
                     except Exception as e:
                         logger.error(f"Whisper transcription failed: {e}")
                     finally:
