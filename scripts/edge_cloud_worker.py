@@ -97,8 +97,12 @@ def build_no_args(_p):
 
 # task_type -> (スクリプトパス, 引数ビルダー, タイムアウト秒)
 TASK_MAP = {
-    "champion_trend": ("03_SYSTEMS/v2_CORE/_LOL/champion_trend_worker.py", build_champion_trend_args, 280),
-    "matchup_simulation_5v5": ("03_SYSTEMS/v2_CORE/_LOL/matchup_simulator_5v5_worker.py", build_5v5_args, 280),
+    # champion_trend は google_search グラウンディング付きのGemini呼び出しを行うため、
+    # 実測で280秒を超えてタイムアウトすることがあった(Ahri/Akali/Akshan/Ambessaで発生)。
+    # ジョブ全体のタイムアウトには余裕がある(GitHub Actionsのデフォルト360分)ため、
+    # 500秒に伸ばす。
+    "champion_trend": ("03_SYSTEMS/v2_CORE/_LOL/champion_trend_worker.py", build_champion_trend_args, 500),
+    "matchup_simulation_5v5": ("03_SYSTEMS/v2_CORE/_LOL/matchup_simulator_5v5_worker.py", build_5v5_args, 500),
     "resolve_youtube_channel": ("03_SYSTEMS/v2_CORE/_LOL/youtube_monitor.py", build_resolve_channel_args, 100),
     "resolve_youtube_playlist": ("03_SYSTEMS/v2_CORE/_LOL/youtube_monitor.py", build_resolve_playlist_args, 100),
     "youtube_channel_monitor": ("03_SYSTEMS/v2_CORE/_LOL/youtube_monitor.py", build_monitor_args, 280),
