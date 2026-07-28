@@ -43,7 +43,6 @@ scratch/
 **/.env.bak
 
 # Generated products & temporary assets
-02_FACTORY/bible/kirei_bible/
 02_FACTORY/note_drafts/
 02_FACTORY/sns_assets/
 02_FACTORY/sns_promotions/

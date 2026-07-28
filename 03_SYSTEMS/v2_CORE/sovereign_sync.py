@@ -15,8 +15,9 @@ import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from v2_CORE.knowledge_revisions import record_matchup_sentinel_revision
 from v2_CORE._LOL.champ_id_normalizer import normalize_champion_id
+from v2_CORE.settings import settings
 
-dotenv.load_dotenv(Path("d:/my_work/.env"))
+dotenv.load_dotenv(settings.ROOT_DIR / ".env")
 logger = logging.getLogger("SovereignSync")
 logger.setLevel(logging.INFO)
 if not logger.handlers:
@@ -165,9 +166,9 @@ class SovereignSync:
             return
 
         article_dirs = [
-            Path("d:/my_work/02_FACTORY/PRODUCTS/ARTICLES"),
-            Path("d:/my_work/02_FACTORY/bible/kirei_bible"),
-            Path("d:/my_work/01_INTEL/tactics")
+            settings.ROOT_DIR / "02_FACTORY/PRODUCTS/ARTICLES",
+            settings.ROOT_DIR / "02_FACTORY/bible/kirei_bible",
+            settings.ROOT_DIR / "01_INTEL/tactics"
         ]
         
         md_files = []
@@ -325,7 +326,7 @@ class SovereignSync:
         if not self.ready:
             return
 
-        sync_js = Path("d:/my_work/01_INTEL/matchup_memo/auto_sync.js")
+        sync_js = settings.ROOT_DIR / "01_INTEL/matchup_memo/auto_sync.js"
         if not sync_js.exists():
             logger.info("ℹ️ マッチアップ同期ファイルなし。スキップ。")
             return
@@ -386,7 +387,7 @@ class SovereignSync:
 
     def flush_offline_queue(self, batch_size=50):
         """オフライン待避キューを 50 件ずつの安全バッチに分割して全送信"""
-        queue_path = Path("d:/my_work/02_FACTORY/offline_queue.json")
+        queue_path = settings.ROOT_DIR / "02_FACTORY/offline_queue.json"
         if not queue_path.exists() or not self.ready: return
         try:
             items = json.loads(queue_path.read_text(encoding="utf-8"))
