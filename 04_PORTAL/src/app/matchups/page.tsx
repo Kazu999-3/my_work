@@ -288,13 +288,24 @@ function MatchupsSimulatorContent() {
         </div>
 
         <div className="text-right mt-8 border-t border-white/5 pt-6">
-          <button
-            onClick={startSimulation}
-            disabled={simLoading || Object.values(blueChamps).some(v => !v) || Object.values(redChamps).some(v => !v)}
-            className="px-8 py-4 bg-gradient-to-r from-[#a78bfa] to-[#818cf8] text-black font-black rounded-xl hover:shadow-[0_0_25px_rgba(167,139,250,0.4)] transition-all flex items-center gap-3 ml-auto disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
-          >
-            <Zap size={18} /> 構成相性 ＆ 勝利プランを分析
-          </button>
+          {(() => {
+            const missingCount = [...Object.values(blueChamps), ...Object.values(redChamps)].filter(v => !v).length;
+            return (
+              <>
+                {missingCount > 0 && (
+                  <p className="text-[11px] text-gray-500 mb-2">あと{missingCount}人のチャンピオンを選択してください</p>
+                )}
+                <button
+                  onClick={startSimulation}
+                  disabled={simLoading || missingCount > 0}
+                  title={missingCount > 0 ? `あと${missingCount}人のチャンピオンを選択してください` : undefined}
+                  className="px-8 py-4 bg-gradient-to-r from-[#a78bfa] to-[#818cf8] text-black font-black rounded-xl hover:shadow-[0_0_25px_rgba(167,139,250,0.4)] transition-all flex items-center gap-3 ml-auto disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                >
+                  <Zap size={18} /> 構成相性 ＆ 勝利プランを分析
+                </button>
+              </>
+            );
+          })()}
         </div>
       </div>
 

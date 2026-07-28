@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { supabase } from '../../../lib/supabaseClient';
 import { getChampIcon, getChampSplash } from '../../../lib/ddragonClient';
 import { ChevronLeft, Search, Save, BookOpen, RefreshCw, Zap, ShieldAlert, Swords, Shield, Copy, Check, FileText, Eye, Edit2, Activity, Plus, Trash, Filter, Star as StarIcon, Award, Sparkles } from 'lucide-react';
@@ -704,7 +705,7 @@ function ChampionsContent() {
 
           <div className="relative z-10 flex flex-col gap-5 w-full p-6 md:p-8">
             <div className="flex items-center gap-6 flex-wrap">
-              <img src={getChampIcon(selected.id)} alt={selected.name} className="w-24 h-24 rounded-full border-4 border-[#c89b3c] shadow-[0_0_30px_rgba(200,155,60,0.5)]" />
+              <Image src={getChampIcon(selected.id)} alt={selected.name} width={96} height={96} className="w-24 h-24 rounded-full border-4 border-[#c89b3c] shadow-[0_0_30px_rgba(200,155,60,0.5)]" />
               <div>
                 <p className="text-[#c89b3c] text-sm font-bold uppercase tracking-[0.2em] mb-1 text-glow">{selected.title}</p>
                 <div className="flex items-center gap-3">
@@ -1200,7 +1201,7 @@ function ChampionsContent() {
                       className="p-4 flex items-center justify-between cursor-pointer select-none flex-wrap gap-4"
                     >
                       <div className="flex items-center gap-3">
-                        <img src={getChampIcon(m.enemy)} alt={m.enemy} className="w-10 h-10 rounded-full border border-white/10" />
+                        <Image src={getChampIcon(m.enemy)} alt={m.enemy} width={40} height={40} className="w-10 h-10 rounded-full border border-white/10" />
                         <div>
                           <p className="text-sm font-bold text-white flex items-center gap-2 flex-wrap">
                             vs {m.enemy} 
@@ -1643,7 +1644,7 @@ function ChampionsContent() {
                   </div>
                 )}
                 <div className="relative">
-                  <img src={getChampIcon(c.id)} alt={c.name} className={`w-14 h-14 rounded-full border-2 transition-colors ${hasNote ? 'border-[#c89b3c]' : 'border-white/10 group-hover:border-white/30'}`} />
+                  <Image src={getChampIcon(c.id)} alt={c.name} width={56} height={56} className={`w-14 h-14 rounded-full border-2 transition-colors ${hasNote ? 'border-[#c89b3c]' : 'border-white/10 group-hover:border-white/30'}`} />
                   {hasNote && <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-[#0a0b10] ${isPending ? 'bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.8)]' : 'bg-[#c89b3c]'}`}></div>}
                 </div>
                 <span className={`text-xs font-bold text-center leading-tight transition-colors ${hasNote ? 'text-[#c89b3c]' : 'text-gray-400 group-hover:text-white'}`}>{c.name}</span>

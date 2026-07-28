@@ -122,8 +122,13 @@ export default function Sidebar() {
   // ページ遷移したらモバイルの「その他」シートは閉じる
   useEffect(() => { setShowMobileMore(false); }, [pathname]);
 
-  // 管理者機能タブ・一般機能タブの表示切り替え（ログイン状態に関わらずデザイン形式を統一）
-  const activeMenuItems = activeTab === 'admin' ? ADMIN_ONLY_MENU_ITEMS : ADMIN_GENERAL_MENU_ITEMS;
+  // 管理者機能タブ・一般機能タブの表示切り替え。
+  // 未ログイン(一般訪問者)には常に MENU_ITEMS を表示する。以前は isAdminLoggedIn に
+  // 関わらず activeTab の初期値が 'admin' 固定だったため、一般訪問者が最初に開いた
+  // 瞬間に管理者専用メニュー(ほとんどが認証で弾かれる)を見せてしまっていた。
+  const activeMenuItems = !isAdminLoggedIn
+    ? MENU_ITEMS
+    : (activeTab === 'admin' ? ADMIN_ONLY_MENU_ITEMS : ADMIN_GENERAL_MENU_ITEMS);
 
   return (
     <>
@@ -157,7 +162,9 @@ export default function Sidebar() {
           {isAdminLoggedIn && <NotificationBell collapsed />}
         </div>
 
-        {/* 管理者/一般 機能タブ切り替えUI（常に統一表示） */}
+        {/* 管理者/一般 機能タブ切り替えUI（管理者ログイン時のみ表示。一般訪問者には
+            切り替える意味のあるタブが無いため出さない） */}
+        {isAdminLoggedIn && (
         <div className="flex-shrink-0">
           {!isCollapsed ? (
             <div className="flex bg-black/50 p-1 rounded-xl border border-white/5 mb-6">
@@ -192,6 +199,7 @@ export default function Sidebar() {
             </button>
           )}
         </div>
+        )}
 
         {/* ナビゲーション（セクション区切り対応） */}
         <nav className="flex flex-col gap-1 flex-shrink-0">
@@ -260,14 +268,15 @@ export default function Sidebar() {
       {/* スマホ用ボトムナビ: 主要項目を固定表示し、残りは「その他」シートに格納 */}
       {(() => {
         // 管理者タブは5枠、一般タブは4枠
-        const PRIMARY = activeTab === 'admin' ? 5 : 4;
+        const PRIMARY = !isAdminLoggedIn ? 4 : (activeTab === 'admin' ? 5 : 4);
         const primaryItems = activeMenuItems.slice(0, PRIMARY);
         const overflowItems = activeMenuItems.slice(PRIMARY);
         // ADMIN_GENERAL_MENU_ITEMS はちょうど4件でオーバーフローが発生しないため、
         // 「その他」ボタン(＝管理者⇔一般切替への唯一の入口)が消えてしまい、
         // 一般タブへ切り替えた後モバイルから二度と管理者タブへ戻れなくなっていた。
-        // 一般タブの間は常に「その他」を出し、切替スイッチへ到達できるようにする。
-        const hasMore = overflowItems.length > 0 || activeTab === 'general';
+        // 一般タブの間は常に「その他」を出し、切替スイッチへ到達できるようにする
+        // (未ログインの一般訪問者にはそもそも切替が無いので対象外)。
+        const hasMore = overflowItems.length > 0 || (isAdminLoggedIn && activeTab === 'general');
         const isActive = (item: typeof activeMenuItems[number]) =>
           pathname === item.href || (item.id === 'leaderboard' && pathname.startsWith('/player'));
 
@@ -286,11 +295,13 @@ export default function Sidebar() {
                     <button onClick={() => setShowMobileMore(false)} className="text-gray-500 hover:text-white p-1"><XIcon size={16} /></button>
                   </div>
 
-                  {/* モバイル用 タブ切り替えUI */}
-                  <div className="flex bg-black/50 p-1 rounded-xl border border-white/5 mb-3">
-                    <button onClick={() => setActiveTab('admin')} className={`flex-1 py-2 rounded-lg text-[11px] font-black transition-all ${activeTab === 'admin' ? 'bg-[#c89b3c] text-black' : 'text-gray-400'}`}>管理者機能</button>
-                    <button onClick={() => setActiveTab('general')} className={`flex-1 py-2 rounded-lg text-[11px] font-black transition-all ${activeTab === 'general' ? 'bg-white/10 text-white' : 'text-gray-400'}`}>一般機能</button>
-                  </div>
+                  {/* モバイル用 タブ切り替えUI（管理者ログイン時のみ） */}
+                  {isAdminLoggedIn && (
+                    <div className="flex bg-black/50 p-1 rounded-xl border border-white/5 mb-3">
+                      <button onClick={() => setActiveTab('admin')} className={`flex-1 py-2 rounded-lg text-[11px] font-black transition-all ${activeTab === 'admin' ? 'bg-[#c89b3c] text-black' : 'text-gray-400'}`}>管理者機能</button>
+                      <button onClick={() => setActiveTab('general')} className={`flex-1 py-2 rounded-lg text-[11px] font-black transition-all ${activeTab === 'general' ? 'bg-white/10 text-white' : 'text-gray-400'}`}>一般機能</button>
+                    </div>
+                  )}
 
                   {overflowItems.length === 0 && (
                     <p className="text-[11px] text-gray-500 text-center py-2">残りの機能は下部メニューに表示されています</p>
