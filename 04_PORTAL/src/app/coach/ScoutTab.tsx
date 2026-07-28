@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Users, 
   Search, 
@@ -29,12 +29,21 @@ export default function ScoutTab() {
   const [adviceIndex, setAdviceIndex] = useState(0);
   const [activeTab, setActiveTab] = useState("advice");
 
+  // 常に「自身のRiot ID」を入力する運用のため、毎回入力させず前回値を記憶する。
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('scout_own_riot_id');
+      if (saved) setRiotId(saved);
+    } catch {}
+  }, []);
+
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!riotId || !riotId.includes('#')) {
       setError("Riot IDは「名前#タグ」の形式で入力してください (例: Koike#JP1)。");
       return;
     }
+    try { localStorage.setItem('scout_own_riot_id', riotId); } catch {}
 
     setLoading(true);
     setError("");

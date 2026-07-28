@@ -32,8 +32,8 @@ interface PostResult {
   kdaRatio: string;
   csPerMin: string;
   visionPerMin: string;
-  damage: number;
-  gameDuration: string;
+  damage?: number;
+  gameDuration?: string;
 }
 
 // ============================
@@ -210,70 +210,57 @@ function PreGameTab({ champion, enemyChampion, triggerSignal }: { champion: stri
 // タブ: 試合後振り返り
 // ============================
 function PostGameTab() {
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState('');
-  const [focus, setFocus] = useState('');
 
-  // 試合前タブで設定した「今日の焦点」を読み込み、達成度判定のためAPIへ渡す（課題C）
+  // 振り返りは日次Cronが新しいランクソロ試合ごとに自動生成するようになったため、
+  // ここでは手動で分析し直すボタンは持たず、最後に自動生成された結果をそのまま表示する。
   useEffect(() => {
-    try { setFocus(localStorage.getItem('coach_focus') || ''); } catch {}
+    (async () => {
+      setLoading(true); setError('');
+      try {
+        const data = await callCoachAPI({ mode: 'post_latest' });
+        setResult(data);
+      } catch (e: any) { setError(e.message); }
+      finally { setLoading(false); }
+    })();
   }, []);
-
-  const analyze = async () => {
-    setLoading(true); setError(''); setResult(null);
-    try {
-      const data = await callCoachAPI({ mode: 'post', focus: focus || undefined });
-      setResult(data);
-    } catch (e: any) { setError(e.message); }
-    finally { setLoading(false); }
-  };
 
   const r: PostResult | null = result?.result ?? null;
 
   return (
     <div className="space-y-4">
       <p className="text-sm text-white/50">
-        直近1試合のデータを取得し、レーンごとの弱点と改善アドバイスを表示します。同一日の同じチャンピオンの振り返りは自動的に統合マージしてナレッジDBへ保存されます。
+        ランクソロの新しい試合が終わるたびに自動で振り返りを生成します（日次Cron）。ここには最後に生成された結果が表示されます。
       </p>
-
-      {focus && (
-        <div className="rounded-xl border border-sky-500/30 bg-sky-500/5 px-4 py-2.5 text-sm text-sky-200">
-          🎯 今日の焦点: <span className="font-semibold">{focus}</span>
-          <span className="block text-xs text-white/40 mt-0.5">この試合で達成できたかを分析に含めます</span>
-        </div>
-      )}
-
-      <button
-        id="post-analyze-btn"
-        onClick={analyze}
-        disabled={loading}
-        className="w-full rounded-xl bg-rose-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-rose-500 disabled:opacity-50"
-      >
-        {loading ? '分析中...' : '🔍 最新試合を振り返る'}
-      </button>
 
       {loading && <Spinner />}
       {error && <p className="text-sm text-red-400">❌ {error}</p>}
 
+      {!loading && result && result.found === false && (
+        <p className="text-sm text-white/40">まだ振り返りデータがありません。ランクソロの試合が完了すると翌日の自動巡回で生成されます。</p>
+      )}
+
       {result && r && (
         <div className="space-y-3 animate-in fade-in">
+          {result.createdAt && (
+            <p className="text-xs text-white/30">最終更新: {new Date(result.createdAt).toLocaleString('ja-JP')}</p>
+          )}
           <Card>
             <div className="mb-3 flex items-center gap-3">
               <span className="text-2xl">{r.win ? '✅' : '❌'}</span>
               <div>
                 <div className="font-bold text-white">{r.champion}</div>
-                <div className="text-xs text-white/50">{r.gameDuration}</div>
               </div>
               <Tag color={r.win ? 'green' : 'red'}>{r.win ? '勝利' : '敗北'}</Tag>
             </div>
 
-            <div className="grid grid-cols-4 gap-3 text-center">
+            <div className="grid grid-cols-3 gap-3 text-center">
               {[
                 { label: 'KDA', value: r.kda, sub: `× ${r.kdaRatio}` },
                 { label: 'CS/min', value: r.csPerMin, sub: 'レーン別基準' },
                 { label: 'Vision/m', value: r.visionPerMin, sub: 'レーン別基準' },
-                { label: 'Damage', value: (r.damage / 1000).toFixed(1) + 'k', sub: '' },
               ].map(({ label, value, sub }) => (
                 <div key={label} className="rounded-lg bg-white/5 p-2">
                   <div className="text-xs text-white/40">{label}</div>
@@ -309,10 +296,6 @@ function PostGameTab() {
           )}
 
           <AdviceBox text={result.advice} />
-
-          {result.saved && (
-            <p className="text-xs text-white/30">💾 傾向分析用データとして記録しました（「📈 傾向」タブに反映されます）</p>
-          )}
         </div>
       )}
     </div>
@@ -323,20 +306,25 @@ function PostGameTab() {
 // タブ: 傾向分析（直近の試合後ログを集計）
 // ============================
 function TrendsTab() {
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState('');
   const [menu, setMenu] = useState<any>(null);
   const [menuLoading, setMenuLoading] = useState(false);
 
-  const analyze = async () => {
-    setLoading(true); setError(''); setResult(null); setMenu(null);
-    try {
-      const data = await callCoachAPI({ mode: 'trends' });
-      setResult(data);
-    } catch (e: any) { setError(e.message); }
-    finally { setLoading(false); }
-  };
+  // 週次Cron(soloq-trends)がDiscordへ自動でダイジェストを送るようになったため、
+  // ここでも手動ボタンではなく、開いたタイミングで自動集計する（同じ件数ならAPI側の
+  // Geminiキャッシュが効くので、ボタン運用より呼び出し回数が増えることはない）。
+  useEffect(() => {
+    (async () => {
+      setLoading(true); setError(''); setResult(null); setMenu(null);
+      try {
+        const data = await callCoachAPI({ mode: 'trends' });
+        setResult(data);
+      } catch (e: any) { setError(e.message); }
+      finally { setLoading(false); }
+    })();
+  }, []);
 
   const generateMenu = async () => {
     setMenuLoading(true);
@@ -388,14 +376,6 @@ function TrendsTab() {
       <p className="text-sm text-white/50">
         「🔍 試合後」で蓄積した直近の振り返りを集計し、繰り返し現れる課題（デスの時間帯・苦手な相手・再発する弱点）と今週のフォーカスを提示します。
       </p>
-
-      <button
-        onClick={analyze}
-        disabled={loading}
-        className="w-full rounded-xl bg-sky-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-sky-500 disabled:opacity-50"
-      >
-        {loading ? '集計中...' : '📈 直近の傾向を分析'}
-      </button>
 
       {loading && <Spinner />}
       {error && <p className="text-sm text-red-400">❌ {error}</p>}

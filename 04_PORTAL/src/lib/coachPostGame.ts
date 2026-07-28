@@ -318,6 +318,7 @@ ${focus ? `\n=== この試合で意識すると宣言した「今日の焦点」
         weaknesses,
         focus: focus || null,
         focus_achieved: focusAchieved,
+        advice,
       }, { onConflict: 'puuid,match_id' });
   } catch (e) {
     console.warn('[coachPostGame] coach_analysesへの構造化保存に失敗（続行）:', e);

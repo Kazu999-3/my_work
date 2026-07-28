@@ -383,7 +383,7 @@ export async function POST(req: NextRequest) {
   }
   // =================================
     const body = await req.json();
-    const mode: 'pre' | 'post' | 'matchup' | 'tilt' | 'trends' | 'practice_menu' | 'goal' = body.mode || 'pre';
+    const mode: 'pre' | 'post' | 'post_latest' | 'matchup' | 'tilt' | 'trends' | 'practice_menu' | 'goal' = body.mode || 'pre';
     const championInput: string = body.champion || '';
     const enemyChampionInput: string = body.enemyChampion || '';
 
@@ -731,6 +731,43 @@ ${sentinelCtx || '（辞典データなし）'}`;
         counterStats: counterStats || '過去の対戦データなし',
         knowledgeSources: knowledgeCtx ? '✅ ナレッジDB参照済み' : '⚠️ 関連記事なし',
         sentinelSources: sentinelCtx ? '✅ チャンピオン辞典参照済み' : '⚠️ 辞典データなし',
+      });
+    }
+
+    // ----------------------------
+    // MODE: post_latest - 「試合後」タブ用。手動ボタンを廃止し、日次Cronが
+    // 既に自動生成・保存済みの最新の振り返りをそのまま返す（Gemini/Riot API呼び出し無し）。
+    // ----------------------------
+    if (mode === 'post_latest') {
+      const { data: latest } = await supabase
+        .from('coach_analyses')
+        .select('*')
+        .eq('puuid', puuid)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (!latest) {
+        return NextResponse.json({ mode: 'post_latest', found: false });
+      }
+
+      return NextResponse.json({
+        mode: 'post_latest',
+        found: true,
+        result: {
+          win: latest.win,
+          champion: latest.champion,
+          kda: `${latest.kills}/${latest.deaths}/${latest.assists}`,
+          kdaRatio: latest.kda_ratio === null ? 'Perfect' : String(latest.kda_ratio),
+          csPerMin: String(latest.cs_per_min),
+          visionPerMin: String(latest.vision_per_min),
+        },
+        weaknesses: latest.weaknesses || [],
+        advice: latest.advice || '',
+        focus: latest.focus,
+        focusAchieved: latest.focus_achieved,
+        createdAt: latest.created_at,
+        saved: true,
       });
     }
 

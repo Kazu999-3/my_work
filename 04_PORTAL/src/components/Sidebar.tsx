@@ -42,6 +42,9 @@ function MobileNavItem({ item, active, pending, onClick }: { item: { id: string;
 }
 
 // 一般ユーザー用 (管理者エリア外で表示)
+// 末尾の login は、未ログイン判定時(一般訪問者 or 認証確認待ちの管理者自身)でも
+// 管理者ページへ戻る入り口を必ず残すためのもの。以前は管理者/一般タブの切替UI自体が
+// この入り口を兼ねていたが、非管理者にタブを見せない変更をした際に道連れで消えていた。
 const MENU_ITEMS = [
   { id: 'balancer',    label: 'チーム分け',     icon: Swords,         href: '/balancer',         color: 'text-rose-500',    activeBg: 'bg-rose-500/15' },
   { id: 'leaderboard', label: '順位表',         icon: Trophy,         href: '/leaderboard',      color: 'text-yellow-400',  activeBg: 'bg-yellow-400/15' },
@@ -50,6 +53,7 @@ const MENU_ITEMS = [
   { id: 'synergy',     label: 'チームシナジー',     icon: HeartHandshake, href: '/synergy',          color: 'text-fuchsia-400', activeBg: 'bg-fuchsia-400/15' },
   { id: 'history',     label: '試合履歴',       icon: Swords,         href: '/history',          color: 'text-orange-400',  activeBg: 'bg-orange-400/15' },
   { id: 'changelog',   label: '更新情報',       icon: ScrollText,     href: '/changelog',        color: 'text-cyan-400',    activeBg: 'bg-cyan-400/15' },
+  { id: 'login',       label: 'ログイン',       icon: Shield,         href: '/login',            color: 'text-indigo-400',  activeBg: 'bg-indigo-400/15' },
 ];
 
 // 管理者ログイン時：管理者機能タブ用
