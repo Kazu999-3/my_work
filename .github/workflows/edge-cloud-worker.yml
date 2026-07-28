@@ -1,0 +1,53 @@
+name: Edge Cloud Worker
+
+# ポータルの各種ボタン（チャンピオン個別トレンド取得・5v5構成シミュレーション・
+# YouTubeチャンネル/プレイリスト登録・監視・Redditスカウト・LoLトレンド収集・
+# 辞典シンセサイザー手動実行）は、これまで edge_tasks(Supabase) にキューを積むだけで、
+# ローカルPCで edge_worker_daemon.py が起動していないと誰も処理しなかった。
+# このワークフローが数分おきに代わりにキューを消化することで、PCの電源に
+# 依存せず動くようにする（scripts/edge_cloud_worker.py 本体を参照）。
+#
+# youtube_absorb / champion_db_bulk_update は専用の定期ワークフローが別途
+# 担当しているため、ここでは扱わない。
+#
+# 必要シークレット: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY(またはSUPABASE_KEY),
+#                   GEMINI_API_KEY
+# 任意: GEMINI_API_KEY_FREE, DISCORD_WEBHOOK, DISCORD_BOT_TOKEN, PORTAL_BOT_SECRET
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+    # 参照・検証用の手動実行
+
+jobs:
+  run-worker:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -q -r 03_SYSTEMS/requirements.txt
+          pip install -q yt-dlp
+
+      - name: Process edge_tasks queue
+        env:
+          PYTHONPATH: 03_SYSTEMS
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || secrets.SUPABASE_SERVICE_KEY || secrets.SUPABASE_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_API_KEY_FREE: ${{ secrets.GEMINI_API_KEY_FREE }}
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          PORTAL_URL: https://my-work-8jbd.vercel.app
+          PORTAL_BOT_SECRET: ${{ secrets.PORTAL_BOT_SECRET }}
+        run: python scripts/edge_cloud_worker.py
