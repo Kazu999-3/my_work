@@ -1,52 +1,60 @@
-name: Antigravity YouTube Absorber (旧・停止中)
+name: YouTube Absorber (Whisper Rescue)
 
-# ⚠️ 定期実行は停止しました。
-# YouTube解析は ktm-cloud-worker.yml（30分おき / scripts/youtube_worker.py）が担当します。
-# このワークフローは同じ youtube_queue を処理するため、有効にすると同じ動画を二重に
-# 解析して記事が重複します。
+# クラウド側 ktm-cloud-worker.yml（youtube job）が字幕なしと判定した動画
+# （youtube_queue: status=error_no_transcript）を、Groq Whisper API で文字起こし
+# して救済し、KireiLoL攻略バイブル(02_FACTORY/bible/kirei_bible/)を生成する。
 #
-# また中身はローカル前提の旧スクリプト（.venv のパスやブラウザのクッキーを参照）なので、
-# Actions 上では正常に動きません。参照用に残しているだけで、手動実行も推奨しません。
+# 以前はローカルGPU(faster-whisper/CUDA)前提だったため無効化していたが、
+# 文字起こしをGroqのクラウドAPIに移行したことでActions上でも動くようになった。
+# 対象は status=error_no_transcript のみに限定しているため、pending を奪い合う
+# youtube job とは競合しない。
+#
+# 必要シークレット: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY(またはSUPABASE_KEY),
+#                   GEMINI_API_KEY, GROQ_API_KEY
+# 任意: GEMINI_API_KEY_FREE, DISCORD_WEBHOOK, DISCORD_BOT_TOKEN, PORTAL_BOT_SECRET
 on:
+  schedule:
+    - cron: '20 * * * *'   # 1時間おき（字幕なし動画は稀なので高頻度は不要）
   workflow_dispatch:
-    # 参照・検証用の手動実行のみ
+    # 参照・検証用の手動実行
 
 jobs:
   run-absorber:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
-          
+          python-version: '3.12'
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r 03_SYSTEMS/requirements.txt
-          pip install yt-dlp
-          
-      - name: Run YouTube Absorber
+          pip install -q -r 03_SYSTEMS/requirements.txt
+          pip install -q yt-dlp
+
+      - name: Run YouTube Absorber (Whisper rescue)
         env:
+          PYTHONPATH: 03_SYSTEMS
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || secrets.SUPABASE_SERVICE_KEY || secrets.SUPABASE_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GEMINI_API_KEY_FREE: ${{ secrets.GEMINI_API_KEY_FREE }}
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
           DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
-          PYTHONPATH: 03_SYSTEMS
-        run: |
-          python 03_SYSTEMS/v2_CORE/youtube_crawler.py
-          python 03_SYSTEMS/v2_CORE/youtube_absorber.py
-          
-      - name: Commit updated queue and bible
+          PORTAL_URL: https://my-work-8jbd.vercel.app
+          PORTAL_BOT_SECRET: ${{ secrets.PORTAL_BOT_SECRET }}
+        run: python 03_SYSTEMS/v2_CORE/_LOL/youtube_absorber.py
+
+      - name: Commit updated bible
         run: |
           git config --global user.name 'Antigravity Auditor'
           git config --global user.email 'auditor@antigravity.local'
-          git add 02_FACTORY/kirei_queue.json 02_FACTORY/bible/kirei_bible/
-          git commit -m "chore: update KireiLoL bible and queue [skip ci]" || echo "No changes to commit"
+          git add 02_FACTORY/bible/kirei_bible/
+          git commit -m "chore: update KireiLoL bible via Whisper rescue [skip ci]" || echo "No changes to commit"
           git push
