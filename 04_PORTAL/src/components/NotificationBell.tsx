@@ -25,7 +25,7 @@ function timeAgo(iso: string): string {
 
 // 管理者専用の通知ベル(#63)。ブラウザのプッシュ通知は見逃すと消えるため、
 // ポータル内でも履歴を後から見返せるようにする。管理者ログイン中のみ表示。
-export default function NotificationBell({ collapsed = false }: { collapsed?: boolean }) {
+export default function NotificationBell({ collapsed = false, align = 'left' }: { collapsed?: boolean; align?: 'left' | 'right' }) {
   const [notifications, setNotifications] = useState<AdminNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [open, setOpen] = useState(false);
@@ -116,7 +116,7 @@ export default function NotificationBell({ collapsed = false }: { collapsed?: bo
       </button>
 
       {open && (
-        <div className="absolute left-0 top-full z-50 mt-2 w-80 max-h-96 overflow-y-auto rounded-2xl border border-white/10 bg-[#0d0f16] shadow-2xl">
+        <div className={`absolute top-full z-50 mt-2 w-80 max-w-[85vw] max-h-96 overflow-y-auto rounded-2xl border border-white/10 bg-[#0d0f16] shadow-2xl ${align === 'right' ? 'right-0' : 'left-0'}`}>
           <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
             <span className="text-xs font-black text-gray-300">通知</span>
             {unreadCount > 0 && (

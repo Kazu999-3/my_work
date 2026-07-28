@@ -249,6 +249,14 @@ export default function Sidebar() {
         </div>
       </aside>
 
+      {/* スマホ用の通知ベル: 下部ナビは枠数が固定でロジックが繊細なため、
+          そこに組み込まず画面右上に浮かせて常時アクセスできるようにする。 */}
+      {isAdminLoggedIn && (
+        <div className="md:hidden fixed top-3 right-3 z-40">
+          <NotificationBell collapsed align="right" />
+        </div>
+      )}
+
       {/* スマホ用ボトムナビ: 主要項目を固定表示し、残りは「その他」シートに格納 */}
       {(() => {
         // 管理者タブは5枠、一般タブは4枠

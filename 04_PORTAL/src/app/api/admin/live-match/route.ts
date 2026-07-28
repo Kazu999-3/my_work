@@ -382,8 +382,14 @@ export async function POST(req: Request) {
     }
 
     // 敵チーム全員の簡易分析 (勝率・OTP・ガンク耐性)
-    const analyzedParticipants = await Promise.all(
-      activeGame.participants.map(async (p: any) => {
+    // 以前は全参加者(最大10人)を Promise.all で同時分析しており、敵5人分だと
+    // 1人あたり最大6リクエスト(直近5戦ID取得+試合詳細5件)×5人=最大30リクエストが
+    // 一瞬で飛んでいた。個人用APIキーの秒間制限(概ね20req/1s)を簡単に超え、
+    // 「データ不足」表示が頻発する主因になっていたため、1人ずつ順番に処理し、
+    // 敵プレイヤーの間だけ小休止を挟んでバーストを分散させる。
+    const analyzedParticipants: any[] = [];
+    for (const p of activeGame.participants) {
+      const result = await (async () => {
         const isEnemy = p.teamId !== myTeamId;
         const role = p.puuid === enemyJg.puuid ? 'JG' : (p.teamId === myTeamId ? (p.puuid === myPuuid ? 'JG' : 'LANER') : 'LANER');
         
@@ -485,8 +491,13 @@ export async function POST(req: Request) {
           fbRate,
           dataInsufficient
         };
-      })
-    );
+      })();
+      analyzedParticipants.push(result);
+      // 敵プレイヤー分析の直後だけ小休止を挟み、次の敵の6リクエストと衝突させない。
+      if (result.isEnemy) {
+        await new Promise((res) => setTimeout(res, 150));
+      }
+    }
 
     // 敵チャンピオンの GLOBAL ナレッジと過去の反省点を Supabase から取得
     let knowledgeData = {
