@@ -18,6 +18,9 @@ on:
   workflow_dispatch:
     # 参照・検証用の手動実行
 
+permissions:
+  contents: write   # バイブル(02_FACTORY/bible/kirei_bible/)をコミットで永続化するため
+
 jobs:
   run-absorber:
     runs-on: ubuntu-latest
