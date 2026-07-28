@@ -76,13 +76,29 @@ export async function handleButtonInteraction(interaction, env, ctx) {
     return Response.json({ type: 5, data: { flags: 64 } });
   }
 
-  if (customId.startsWith('join_periodic:')) {
-    const roomType = customId.split(':')[1]; // silver or gold
-    const roomLabel = roomType === 'silver' ? '🛡️ シルバー以下部門' : '👑 ゴルプラ部門';
+  if (customId.startsWith('join_periodic:') || customId === 'join_periodic_auto') {
+    // join_periodic_auto: 部門をユーザーに選ばせず、名簿(ktm_players)の代表MMRから
+    // 自動でシルバー以下/ゴルプラを振り分ける(#①)。join_periodic:silver|gold は、
+    // この変更より前に投稿済みのメッセージに残っているボタンとの後方互換のために維持する。
+    const isAutoMode = customId === 'join_periodic_auto';
     const userMention = `<@${userId}>`;
 
     ctx.waitUntil((async () => {
       try {
+        let roomType = isAutoMode ? null : customId.split(':')[1]; // silver or gold
+        if (isAutoMode) {
+          let mmr = null;
+          try {
+            const ps = await fetchSupabase(env, 'ktm_players', `discord_id=eq.${userId}&select=mmr`);
+            if (ps && ps.length > 0 && ps[0].mmr != null) mmr = Number(ps[0].mmr);
+          } catch (e) {
+            console.warn('join_periodic_auto: mmr lookup failed:', e);
+          }
+          // 名簿未登録(mmr不明)の場合は初心者想定でシルバー以下側に受け入れる
+          const tier = getKtmRank(mmr ?? 0);
+          roomType = tier.min >= 1350 ? 'gold' : 'silver';
+        }
+
         const msgId = interaction.message.id;
         const channelId = interaction.channel_id;
 

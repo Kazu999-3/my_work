@@ -401,7 +401,7 @@ async function postWeeklyRecruitment(env) {
     // 2部屋統合 Embed
     const embed = {
       title: `⚔️ KTM 定期カスタム開催告知 [${dateLabel} 21:00]`,
-      description: `毎週末恒例の定期カスタム戦です！\n下記の部門ボタンを押して参加エントリーをお願いします。\n\n💡 **希望レーンに変更がある方は、ポータルの「マイページ」より変更をお願いします！**`,
+      description: `毎週末恒例の定期カスタム戦です！\n下のボタンを押すだけで参加エントリーできます（部門は名簿の代表MMRから自動振り分けされます）。\n\n💡 **希望レーンに変更がある方は、ポータルの「マイページ」より変更をお願いします！**`,
       color: 0xc89b3c, // 琥珀色
       fields: [
         {
@@ -419,22 +419,17 @@ async function postWeeklyRecruitment(env) {
       timestamp: new Date().toISOString()
     };
 
-    // 2部屋それぞれの参加ボタン（通知ボタンは完全削除）
+    // 参加ボタンは1つに統合。どちらの部門になるかは代表MMRから自動判定する
+    // （以前はシルバー以下/ゴルプラをユーザー自身に選ばせていた）。
     const components = [
       {
         type: 1, // Action Row
         components: [
           {
             type: 2,
-            label: "🛡️ シルバー以下に参加",
-            style: 3, // Green
-            custom_id: "join_periodic:silver"
-          },
-          {
-            type: 2,
-            label: "👑 ゴルプラに参加",
+            label: "🎮 参加する",
             style: 1, // Primary (Blue)
-            custom_id: "join_periodic:gold"
+            custom_id: "join_periodic_auto"
           }
         ]
       }
@@ -708,15 +703,9 @@ async function sendEventUsersNotification(env, options = {}) {
           components: [
             {
               type: 2,
-              label: "🛡️ シルバー以下に参加",
-              style: 3, // Green
-              custom_id: "join_periodic:silver"
-            },
-            {
-              type: 2,
-              label: "👑 ゴルプラに参加",
+              label: "🎮 参加する",
               style: 1, // Primary (Blue)
-              custom_id: "join_periodic:gold"
+              custom_id: "join_periodic_auto"
             }
           ]
         }
