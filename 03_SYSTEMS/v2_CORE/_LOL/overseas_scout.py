@@ -141,6 +141,15 @@ class OverseasScout:
             logger.warning(f"既存データの取得に失敗（新規作成として続行）: {e}")
 
         # 辞典一覧の「更新日」は created_at を見ているため、更新時も明示的に現在時刻を入れる
+        #
+        # raw_data は champion_trend_worker.py（「最新トレンド取得」）が書き込む
+        # patch_meta/jg_style/pro_builds 等と共有のJSONカラムなので、既存分を維持したまま
+        # このスカウトが持つ項目だけを上書きする。以前は raw_data を丸ごと新規オブジェクトで
+        # 置き換えていたため、スカウトが3回/日で巡回するたびに他機能が入れたトレンド情報が
+        # 毎回消えてしまっていた。
+        existing_raw_data = (existing_record or {}).get("raw_data") or {}
+        if not isinstance(existing_raw_data, dict):
+            existing_raw_data = {}
         payload = {
             "matchup_id": matchup_id,
             "champion": champ_id,
@@ -149,6 +158,7 @@ class OverseasScout:
             "created_at": datetime.now(timezone.utc).isoformat(),
             "strategy": data.get("strategy", ""),
             "raw_data": {
+                **existing_raw_data,
                 "source": "overseas_scout",
                 "role": "GLOBAL",
                 "strengths": data.get("strengths", ""),
