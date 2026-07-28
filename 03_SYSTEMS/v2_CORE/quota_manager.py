@@ -25,7 +25,7 @@ class QuotaManager:
 
     def _init(self):
         # 環境変数 ANTIGRAVITY_DATA_DIR があればそこを使い、なければ既存のローカルパスをフォールバックする
-        data_dir_str = os.environ.get("ANTIGRAVITY_DATA_DIR", "D:/my_work/03_SYSTEMS/v2_CORE")
+        data_dir_str = os.environ.get("ANTIGRAVITY_DATA_DIR", str(settings.ROOT_DIR / "03_SYSTEMS" / "v2_CORE"))
         self.data_file = Path(data_dir_str) / "quota_usage.json"
         self.file_lock = threading.Lock()
 
@@ -86,7 +86,7 @@ class QuotaManager:
             try:
                 import httpx
                 import dotenv
-                dotenv.load_dotenv(Path("D:/my_work/.env"))
+                dotenv.load_dotenv(settings.ROOT_DIR / ".env")
                 
                 supabase_url = os.environ.get("SUPABASE_URL")
                 supabase_key = os.environ.get("SUPABASE_KEY")
