@@ -35,11 +35,14 @@ jobs:
           fi
           KEY="${TRIGGER_KEY:-ktm_v3_internal_secret_2026}"
 
-          # 手動実行なら入力modeを使用。スケジュール実行ならUTC時刻からmodeを判定。
+          # 手動実行なら入力modeを使用。スケジュール実行なら「実際にマッチしたcron式」
+          # (github.event.schedule)で判定する。以前は実行時の現在時刻(UTC時)が12時かどうか
+          # だけで判定していたため、GitHub Actionsのスケジュール実行が大きく遅延して
+          # 金曜20:15 JST用のcronがUTC12時台にずれ込むと、誤って土曜用のweekly_recruitモードで
+          # 発火してしまうバグがあった（定期カスタム募集が火曜に届いた原因）。
           MODE="${{ github.event.inputs.mode }}"
           if [ "${{ github.event_name }}" = "schedule" ]; then
-            HOUR=$(date -u +%H)
-            if [ "$HOUR" = "12" ]; then MODE="weekly_recruit"; else MODE=""; fi
+            if [ "${{ github.event.schedule }}" = "10 12 * * 6" ]; then MODE="weekly_recruit"; else MODE=""; fi
           fi
 
           echo "Kicking mode='$MODE'"
