@@ -36,12 +36,26 @@ export async function createAdminNotification(input: AdminNotificationInput) {
     console.error('[notify] admin_notifications への保存に失敗:', error);
   }
 
+  // タスクバー/DockアイコンのバッジをService Worker側で更新できるよう、
+  // 現時点の未読件数もプッシュ本文に含める。
+  let badgeCount: number | undefined;
+  try {
+    const { count } = await supabase
+      .from('admin_notifications')
+      .select('id', { count: 'exact', head: true })
+      .eq('read', false);
+    badgeCount = count ?? undefined;
+  } catch (e) {
+    console.warn('[notify] 未読件数の取得に失敗（バッジ更新なしで続行）:', e);
+  }
+
   try {
     await sendPushToScope('admin', {
       title: input.title,
       body: input.body || '',
       url: input.url || '/coach',
       icon: input.icon,
+      badgeCount,
     });
   } catch (e) {
     console.warn('[notify] Push通知送信に失敗（履歴には記録済み）:', e);

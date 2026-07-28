@@ -36,6 +36,19 @@ self.addEventListener('push', (event) => {
     badge: '/icons/icon-192.png',
     data: { url: data.url || '/' },
   };
+
+  // タスクバー/Dockアイコンへの未読バッジ(Badging API)。PWAとしてインストール
+  // 済みのChromium系ブラウザでのみ効く。未対応環境やインストールしていない
+  // 場合は 'setAppBadge' が存在しないので、その時は何もしない(無害)。
+  const badgeCount = typeof data.badgeCount === 'number' ? data.badgeCount : null;
+  if (badgeCount !== null && 'setAppBadge' in navigator) {
+    if (badgeCount > 0) {
+      navigator.setAppBadge(badgeCount).catch(() => {});
+    } else {
+      navigator.clearAppBadge().catch(() => {});
+    }
+  }
+
   event.waitUntil(self.registration.showNotification(title, options));
 });
 

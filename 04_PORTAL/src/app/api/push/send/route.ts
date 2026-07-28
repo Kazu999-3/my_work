@@ -16,7 +16,7 @@ function configureVapid(): boolean {
   return true;
 }
 
-export interface PushPayload { title: string; body?: string; url?: string; icon?: string }
+export interface PushPayload { title: string; body?: string; url?: string; icon?: string; badgeCount?: number }
 
 async function deliverToSubscriptions(subs: any[], payload: PushPayload): Promise<{ sent: number; removed: number }> {
   if (!configureVapid()) throw new Error('VAPID鍵(NEXT_PUBLIC_VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY)が未設定です。');

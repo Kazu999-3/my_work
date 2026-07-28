@@ -47,6 +47,18 @@ export default function NotificationBell({ collapsed = false }: { collapsed?: bo
     return () => clearInterval(interval);
   }, []);
 
+  // タスクバー/DockのバッジをService Worker側(push受信時)だけでなく、
+  // ページを開いて既読にした時点でも同期する(#63)。未対応ブラウザ/
+  // 未インストール環境では 'setAppBadge' が無いので何もしない。
+  useEffect(() => {
+    if (!('setAppBadge' in navigator)) return;
+    if (unreadCount > 0) {
+      (navigator as any).setAppBadge(unreadCount).catch(() => {});
+    } else {
+      (navigator as any).clearAppBadge().catch(() => {});
+    }
+  }, [unreadCount]);
+
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) setOpen(false);
