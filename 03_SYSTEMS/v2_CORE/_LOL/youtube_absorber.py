@@ -265,6 +265,15 @@ class YouTubeAbsorber:
             logger.error(f"VTT extraction error: {e}")
             return ""
 
+    @staticmethod
+    def _is_bot_blocked(res) -> bool:
+        """YouTube側のクラウドIPに対するbot判定でブロックされたかどうかを判定する。
+        字幕・音声どちらの取得でも、本当に対象が存在しない失敗と区別するために使う。"""
+        err = res.stderr
+        if isinstance(err, bytes):
+            err = err.decode("utf-8", errors="replace")
+        return "Sign in to confirm you" in (err or "")
+
     def download_subtitle(self, url, video_id):
         # 先に temp フォルダを作成
         temp_dir = os.path.join(settings.ROOT_DIR, "scratch", "subs")
@@ -273,8 +282,8 @@ class YouTubeAbsorber:
         for f in glob.glob(f"{temp_dir}/*.vtt"):
             try: os.remove(f)
             except: pass
-            
-        self._run_ytdlp([
+
+        res = self._run_ytdlp([
             "--write-auto-subs",
             "--write-subs",
             "--sub-lang", "en",
@@ -282,12 +291,13 @@ class YouTubeAbsorber:
             "-o", f"{temp_dir}/{video_id}.%(ext)s",
             url
         ], capture_output=True, text=False)
-        
+        blocked = self._is_bot_blocked(res)
+
         # vttファイルを探す
         vtt_files = glob.glob(f"{temp_dir}/{video_id}.*.vtt")
         if not vtt_files:
-            return ""
-        return self.extract_text_from_vtt(vtt_files[0])
+            return "", blocked
+        return self.extract_text_from_vtt(vtt_files[0]), blocked
 
     def download_audio(self, url, video_id):
         # 先に temp フォルダを作成
@@ -304,11 +314,11 @@ class YouTubeAbsorber:
             # 1MB以上であれば正常なオーディオファイルとみなして再利用
             if os.path.exists(existing_file) and os.path.getsize(existing_file) > 1024 * 1024:
                 logger.info(f"♻️ [Resume] Download skipped. Found existing audio file: {existing_file} ({os.path.getsize(existing_file) // 1024} KB)")
-                return existing_file
+                return existing_file, False
             else:
                 try: os.remove(existing_file)
                 except: pass
-            
+
         logger.info(f"Downloading audio for Whisper: {url}")
         res = self._run_ytdlp([
             "-f", "ba",  # ffmpeg がない環境でもポストプロセスを走らせずにベストオーディオをそのままダウンロード
@@ -316,7 +326,8 @@ class YouTubeAbsorber:
             "--no-playlist",
             url
         ], capture_output=True, text=True)
-        
+        blocked = self._is_bot_blocked(res)
+
         if res.returncode != 0:
             logger.error(f"Failed to download audio: {res.stderr}")
             # ダウンロードエラーが発生した場合、部分的にダウンロードされた一時ファイル (.part 等) を確実に削除する
@@ -326,13 +337,13 @@ class YouTubeAbsorber:
                     logger.info(f"🗑️ [Cleanup] Removed partial download artifact: {f}")
                 except:
                     pass
-            return ""
-            
+            return "", blocked
+
         audio_files = glob.glob(f"{temp_dir}/{video_id}.*")
         valid_audio_files = [f for f in audio_files if not f.endswith(('.part', '.ytdl', '.temp'))]
         if not valid_audio_files:
-            return ""
-        return valid_audio_files[0]
+            return "", blocked
+        return valid_audio_files[0], blocked
 
     def transcribe_audio_groq(self, audio_path):
         """Groq の Whisper API (クラウド) で音声を文字起こしする。
@@ -619,15 +630,16 @@ class YouTubeAbsorber:
             logger.info(f"Processing: {item['title']}")
             
             logger.info(f"Attempting to download YouTube subtitles/auto-subtitles for: {item['title']}")
-            transcript = self.download_subtitle(item["url"], item["id"])
-            
+            transcript, ip_blocked = self.download_subtitle(item["url"], item["id"])
+
             if transcript and len(transcript) >= 100:
                 logger.info(f"✅ Successfully retrieved subtitles from YouTube: {len(transcript):,} chars")
             else:
                 logger.info(f"⚠️ Subtitles not available on YouTube. Falling back to Groq Whisper processing: {item['title']}")
                 # フォールバック: Groq の Whisper API で音声認識を実行
                 logger.info(f"Downloading audio for Whisper processing: {item['title']}")
-                audio_path = self.download_audio(item["url"], item["id"])
+                audio_path, audio_blocked = self.download_audio(item["url"], item["id"])
+                ip_blocked = ip_blocked or audio_blocked
                 transcript = ""
                 if audio_path:
                     try:
@@ -641,8 +653,15 @@ class YouTubeAbsorber:
                                 logger.info(f"Cleaned up audio file: {audio_path}")
                             except Exception as ce:
                                 logger.warning(f"Failed to clean up audio file: {ce}")
-                
+
             if not transcript or len(transcript) < 100:
+                if ip_blocked:
+                    # YouTube側がクラウドIPをbot判定してブロックしただけで、動画に本当に
+                    # 字幕/音声が無いと確定したわけではない。ここでretry_countを消費すると
+                    # 運悪くブロックされ続けただけの動画が不当にfailed行きになるため、
+                    # 状態・リトライ回数を変えずに次回の巡回に賭ける。
+                    logger.warning(f"🚫 IP制限の疑いのためリトライ回数を消費せず見送ります: {item['id']}")
+                    continue
                 logger.warning(f"No valid transcript found for {item['id']}")
                 retry_count = item.get("retry_count", 0) + 1
                 # ここに来る動画は既に error_no_transcript（=クラウド側が字幕なしと判定済み）
