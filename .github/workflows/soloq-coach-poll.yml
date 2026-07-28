@@ -1,0 +1,24 @@
+name: SoloQ Coach Poll
+
+# Vercel HobbyプランはCronジョブを1日1回までしか許可していないため、
+# 試合終了を早めに検知したい /api/cron/soloq-coach の高頻度呼び出しは
+# こちらのGitHub Actionsで代替する。実際の分析ロジック(振り返り生成・
+# coach_analysesへの保存・ポータル通知)は全てVercel側にあるので、
+# ここでは15分おきにそのURLを叩くだけの薄いポーラー。
+# 必要シークレット: VERCEL_CRON_SECRET (Vercelの環境変数 CRON_SECRET と同じ値)
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+
+jobs:
+  poll:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger soloq-coach review check
+        env:
+          CRON_SECRET: ${{ secrets.VERCEL_CRON_SECRET }}
+        run: |
+          if [ -z "$CRON_SECRET" ]; then echo "::warning::VERCEL_CRON_SECRET未設定のためスキップ"; exit 0; fi
+          curl -s -o /dev/null -w "status=%{http_code}\n" -X GET "https://my-work-8jbd.vercel.app/api/cron/soloq-coach" -H "Authorization: Bearer $CRON_SECRET"
