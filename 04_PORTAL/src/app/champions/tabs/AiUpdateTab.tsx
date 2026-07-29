@@ -1,17 +1,23 @@
 "use client";
 
 import { useEffect, useState, useMemo } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { supabase } from '../../../lib/supabaseClient';
-import { Sparkles, RefreshCw, Activity } from 'lucide-react';
+import { Sparkles, RefreshCw, Activity, AlertTriangle } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export default function AiUpdateTab() {
+  const searchParams = useSearchParams();
+  const highlightTaskId = searchParams?.get('failed_task') || null;
+
   const [champions, setChampions] = useState<any[]>([]);
   const [champDates, setChampDates] = useState<Record<string, string>>({});
   const [champPending, setChampPending] = useState<Record<string, boolean>>({});
 
   // パイプラインステータス（自動化ジョブの鮮度監視）
   const [pipelineStatus, setPipelineStatus] = useState<any[]>([]);
+  const [failedTasks, setFailedTasks] = useState<any[]>([]);
+  const [retryingId, setRetryingId] = useState<string | null>(null);
 
   useEffect(() => {
     let fetchedChampions: any[] = [];
@@ -167,22 +173,48 @@ export default function AiUpdateTab() {
   }, []);
 
   // パイプラインステータスを30秒ごとにポーリング取得
-  useEffect(() => {
-    const fetchPipeline = async () => {
-      try {
-        const res = await fetch('/api/admin/pipeline-status');
-        if (res.ok) {
-          const data = await res.json();
-          setPipelineStatus(data.pipelines || []);
-        }
-      } catch (err) {
-        console.error('パイプラインステータス取得エラー:', err);
+  const fetchPipeline = async () => {
+    try {
+      const res = await fetch('/api/admin/pipeline-status');
+      if (res.ok) {
+        const data = await res.json();
+        setPipelineStatus(data.pipelines || []);
+        setFailedTasks(data.failedTasks || []);
       }
-    };
+    } catch (err) {
+      console.error('パイプラインステータス取得エラー:', err);
+    }
+  };
+
+  useEffect(() => {
     fetchPipeline();
     const interval = setInterval(fetchPipeline, 30000);
     return () => clearInterval(interval);
   }, []);
+
+  const handleRetryFailedTask = async (task: any) => {
+    const champion = task.payload?.champion;
+    const role = task.payload?.role || 'Jungle';
+    if (!champion) return;
+    setRetryingId(task.id);
+    try {
+      const res = await fetch('/api/admin/champions/trend', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ champion, role }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setFailedTasks((prev) => prev.filter((t) => t.id !== task.id));
+      } else {
+        alert(data.error || '再実行の登録に失敗しました。');
+      }
+    } catch (err) {
+      alert('再実行の登録中に通信エラーが発生しました。');
+    } finally {
+      setRetryingId(null);
+    }
+  };
 
   return (
     <>
@@ -294,6 +326,7 @@ export default function AiUpdateTab() {
                 <span className="text-sm font-bold text-white">{p.label}</span>
                 <div className="text-xs text-gray-500 mt-0.5">
                   {p.lastRun ? `最終: ${new Date(p.lastRun).toLocaleString('ja-JP')}` : '未実行'}
+                  {p.executor && ` （${p.executor === 'cloud' ? 'クラウド実行' : 'ローカルPC実行'}）`}
                 </div>
               </div>
               <span className={`text-xs font-black px-2.5 py-1 rounded-full border ${
@@ -302,12 +335,67 @@ export default function AiUpdateTab() {
                 p.freshness === 'old' ? 'bg-rose-500/10 border-rose-500/30 text-rose-400' :
                 'bg-gray-500/10 border-gray-500/30 text-gray-500'
               }`}>
-                {p.freshness === 'fresh' ? '✅ 正常' : 
-                 p.freshness === 'stale' ? '⚠️ 要更新' : 
+                {p.freshness === 'fresh' ? '✅ 正常' :
+                 p.freshness === 'stale' ? '⚠️ 要更新' :
                  p.freshness === 'old' ? '🔴 古い' : '➖ 未実行'}
               </span>
             </div>
           ))}
+        </div>
+      </motion.div>
+    )}
+
+    {/* チャンピオントレンド 失敗タスク一覧 + 再実行 */}
+    {failedTasks.length > 0 && (
+      <motion.div
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.25 }}
+        className="glass-panel p-6 rounded-2xl border-t-2 border-rose-500/40"
+      >
+        <h3 className="text-lg font-bold text-white flex items-center gap-2 mb-4">
+          <AlertTriangle size={20} className="text-rose-400" />
+          チャンピオントレンド更新の失敗タスク（{failedTasks.length}件）
+        </h3>
+        <div className="space-y-2">
+          {failedTasks.map((task) => {
+            const champion = task.payload?.champion || '(不明)';
+            const role = task.payload?.role || '';
+            const isHighlighted = highlightTaskId && task.id === highlightTaskId;
+            return (
+              <div
+                key={task.id}
+                className={`flex items-center justify-between gap-3 p-3 rounded-xl bg-black/30 border ${
+                  isHighlighted ? 'border-rose-400/70 ring-1 ring-rose-400/40' : 'border-white/5'
+                }`}
+              >
+                <div className="min-w-0">
+                  <div className="text-sm font-bold text-white">
+                    {champion} <span className="text-gray-500 font-normal">/ {role}</span>
+                    {task.executor && (
+                      <span className="ml-2 text-[10px] text-gray-500 font-normal">
+                        ({task.executor === 'cloud' ? 'クラウド実行' : 'ローカルPC実行'})
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-xs text-gray-500 mt-0.5 truncate" title={task.error_message || ''}>
+                    {(task.error_message || '').slice(0, 120) || '(エラー詳細なし)'}
+                  </div>
+                  <div className="text-[10px] text-gray-600 mt-0.5">
+                    {task.updated_at && new Date(task.updated_at).toLocaleString('ja-JP')}
+                  </div>
+                </div>
+                <button
+                  onClick={() => handleRetryFailedTask(task)}
+                  disabled={retryingId === task.id}
+                  className="shrink-0 px-4 py-2 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-300 font-bold text-xs rounded-lg transition-all disabled:opacity-50 flex items-center gap-1.5"
+                >
+                  <RefreshCw size={14} className={retryingId === task.id ? 'animate-spin' : ''} />
+                  再実行
+                </button>
+              </div>
+            );
+          })}
         </div>
       </motion.div>
     )}

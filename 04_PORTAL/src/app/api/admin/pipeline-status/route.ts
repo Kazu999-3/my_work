@@ -37,7 +37,7 @@ export async function GET(req: Request) {
 
         const lastRun = data?.updated_at || data?.created_at || null;
         const status = data?.status || 'never';
-        
+
         // 鮮度判定: 24時間以内=fresh, 72時間以内=stale, それ以上=old
         let freshness: 'fresh' | 'stale' | 'old' | 'never' = 'never';
         if (lastRun) {
@@ -51,11 +51,21 @@ export async function GET(req: Request) {
           lastRun,
           status,
           freshness,
+          executor: data?.executor || null,
         };
       })
     );
 
-    return NextResponse.json({ pipelines: results });
+    // champion_trend の直近の失敗タスク一覧（通知から再実行導線を辿れるように）
+    const { data: failedTrendTasks } = await supabase
+      .from('edge_tasks')
+      .select('id, payload, error_message, updated_at, executor')
+      .eq('task_type', 'champion_trend')
+      .eq('status', 'failed')
+      .order('updated_at', { ascending: false })
+      .limit(10);
+
+    return NextResponse.json({ pipelines: results, failedTasks: failedTrendTasks || [] });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

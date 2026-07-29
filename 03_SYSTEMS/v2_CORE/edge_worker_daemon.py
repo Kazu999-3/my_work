@@ -174,7 +174,8 @@ class EdgeWorkerDaemon:
             "status": status,
             "updated_at": now_str,
             "result": result or {},
-            "error_message": error_message
+            "error_message": error_message,
+            "executor": "local"
         }
         try:
             res = httpx.patch(url, headers=self.headers, json=payload, timeout=10)

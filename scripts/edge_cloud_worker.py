@@ -37,7 +37,7 @@ PORTAL_BOT_SECRET = os.environ.get("PORTAL_BOT_SECRET", "")
 
 TASK_LABELS = {
     "champion_trend": ("チャンピオントレンド更新", "/champions"),
-    "matchup_simulation_5v5": ("5v5構成シミュレーション", "/matchups"),
+    "matchup_simulation_5v5": ("5v5構成シミュレーション", "/coach"),
     "resolve_youtube_channel": ("YouTubeチャンネル登録", "/admin/youtube"),
     "resolve_youtube_playlist": ("YouTubeプレイリスト登録", "/admin/youtube"),
     "youtube_channel_monitor": ("YouTubeチャンネル監視", "/admin/youtube"),
@@ -130,17 +130,26 @@ def complete_task(task_id, status, result=None, error_message=None):
         "updated_at": now_iso(),
         "result": result or {},
         "error_message": error_message,
+        "executor": "cloud",
     })
 
 
-def notify_portal(task_type, payload, success, detail=""):
+def notify_portal(task_type, payload, success, detail="", task_id=None):
     """完了/失敗をポータルの管理者通知(通知ベル/プッシュ)へ流す。
     PORTAL_URL未設定や送信失敗は握りつぶす(タスク自体の成否には影響させない)。"""
     if not PORTAL_URL:
         return
     label, url_path = TASK_LABELS.get(task_type, (task_type, "/"))
     if task_type == "champion_trend":
-        label += f"（{payload.get('champion', '')}/{payload.get('role', '')}）"
+        champion = payload.get("champion", "")
+        role = payload.get("role", "")
+        label += f"（{champion}/{role}）"
+        # 失敗通知をクリックした際に、辞典のAI更新タブで該当チャンピオン/ロールを
+        # 直接開いて再実行できるよう、クエリパラメータで引き継ぐ。
+        if not success:
+            from urllib.parse import urlencode
+            qs = urlencode({"tab": "ai-update", "champion": champion, "role": role, "failed_task": task_id or ""})
+            url_path = f"{url_path}?{qs}"
     title = f"{'✅' if success else '❌'} {label}{'完了' if success else '失敗'}"
     body = (detail or "")[:400] or None
 
@@ -194,7 +203,7 @@ def main():
                 err = f"Exit code {res.returncode}\n{res.stderr[-1500:]}"
                 print(f"❌ 失敗: {task_type} — {err}", file=sys.stderr)
                 complete_task(task_id, "failed", error_message=err[:2000])
-                notify_portal(task_type, payload, False, detail=err)
+                notify_portal(task_type, payload, False, detail=err, task_id=task_id)
                 continue
 
             if task_type == "matchup_simulation_5v5":
@@ -203,24 +212,24 @@ def main():
                 except Exception as je:
                     err = f"シミュレーション結果のJSON解析に失敗: {je}"
                     complete_task(task_id, "failed", error_message=err)
-                    notify_portal(task_type, payload, False, detail=err)
+                    notify_portal(task_type, payload, False, detail=err, task_id=task_id)
                     print(f"❌ JSON解析失敗: {task_type} ({task_id})", file=sys.stderr)
                     continue
             else:
                 result = {"success": True, "stdout": res.stdout[-20000:], "stderr": res.stderr[-5000:]}
 
             complete_task(task_id, "completed", result=result)
-            notify_portal(task_type, payload, True)
+            notify_portal(task_type, payload, True, task_id=task_id)
             print(f"✅ 完了: {task_type} ({task_id})")
 
         except subprocess.TimeoutExpired:
             err = f"タイムアウト({timeout}秒)"
             complete_task(task_id, "failed", error_message=err)
-            notify_portal(task_type, payload, False, detail=err)
+            notify_portal(task_type, payload, False, detail=err, task_id=task_id)
             print(f"❌ タイムアウト: {task_type} ({task_id})", file=sys.stderr)
         except Exception as e:
             complete_task(task_id, "failed", error_message=str(e)[:2000])
-            notify_portal(task_type, payload, False, detail=str(e))
+            notify_portal(task_type, payload, False, detail=str(e), task_id=task_id)
             print(f"❌ 例外: {task_type} ({task_id}) — {e}", file=sys.stderr)
 
 
