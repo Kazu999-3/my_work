@@ -21,6 +21,9 @@ declare global {
 export default function PwaRegister() {
   const [showBanner, setShowBanner] = useState(false);
   const [showGuide, setShowGuide] = useState(false);
+  // PCのChromeでは常時ボックス表示だと画面右下に居座って邪魔になるという指摘を受け、
+  // 既定は小さいアイコンのみにし、クリックしたときだけインストール/✕を含むカードを開く。
+  const [minimized, setMinimized] = useState(true);
 
   // ✕ で閉じた場合、7日間バナーを非表示にする
   const DISMISS_KEY = 'ktm_pwa_dismissed_at';
@@ -34,8 +37,17 @@ export default function PwaRegister() {
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    // 既にスタンドアロンで動作中ならバナー不要
-    if (window.matchMedia('(display-mode: standalone)').matches) return;
+    // 既にスタンドアロンで動作中ならバナー不要。
+    // iOS Safariの「ホーム画面に追加」はbeforeinstallprompt/appinstalledが一切発火せず、
+    // display-modeのmatchMediaも機種・iOSバージョンによって拾えないことがあるため、
+    // レガシーな navigator.standalone も合わせて見る（iOSでインストール後もバナーが
+    // 消えなかった問題の対策）。
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches
+      || (window.navigator as any).standalone === true;
+    if (isStandalone) {
+      try { localStorage.setItem(DISMISS_KEY, 'installed'); } catch {}
+      return;
+    }
 
     // 過去7日以内に ✕ で閉じた場合は表示しない
     try {
@@ -100,52 +112,73 @@ export default function PwaRegister() {
 
   return (
     <>
-      {/* 📲 PWA インストール誘導バナー */}
-      <div
-        style={{ position: 'fixed', bottom: '5rem', right: '1rem', zIndex: 99999 }}
-        className="bg-[#161922] border border-[#c89b3c]/50 text-white p-4 rounded-2xl shadow-[0_0_25px_rgba(200,155,60,0.4)] flex items-center gap-4 max-w-sm md:bottom-6"
-      >
-        <div className="w-10 h-10 rounded-xl bg-[#c89b3c]/20 border border-[#c89b3c]/60 flex items-center justify-center shrink-0">
-          <Download className="text-[#c89b3c]" size={20} />
+      {minimized ? (
+        /* 📲 最小化アイコン: 通常はこれだけを表示し、必要な人だけクリックで展開する */
+        <button
+          type="button"
+          onClick={() => setMinimized(false)}
+          title="ホーム画面にアプリ化"
+          style={{ position: 'fixed', bottom: '5rem', right: '1rem', zIndex: 99999 }}
+          className="w-10 h-10 rounded-full bg-[#161922]/90 border border-[#c89b3c]/40 text-[#c89b3c] flex items-center justify-center shadow-md hover:bg-[#1c1f2b] transition-colors cursor-pointer md:bottom-6"
+        >
+          <Download size={16} />
+        </button>
+      ) : (
+        /* 📲 PWA インストール誘導カード（クリックで展開時のみ） */
+        <div
+          style={{ position: 'fixed', bottom: '5rem', right: '1rem', zIndex: 99999 }}
+          className="bg-[#161922] border border-[#c89b3c]/30 text-white p-3 rounded-xl shadow-md flex items-center gap-3 max-w-xs md:bottom-6"
+        >
+          <div className="w-8 h-8 rounded-lg bg-[#c89b3c]/15 border border-[#c89b3c]/40 flex items-center justify-center shrink-0">
+            <Download className="text-[#c89b3c]" size={16} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[11px] text-gray-300 font-bold leading-snug">ホーム画面にアプリ化</p>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={onInstall}
+              style={{ pointerEvents: 'auto', position: 'relative', zIndex: 100000 }}
+              className="px-2.5 py-1 rounded-lg bg-[#c89b3c] text-black text-[11px] font-black hover:bg-yellow-400 active:scale-95 transition-all cursor-pointer whitespace-nowrap"
+            >
+              インストール
+            </button>
+            <button
+              type="button"
+              onClick={() => setMinimized(true)}
+              style={{ pointerEvents: 'auto' }}
+              className="p-1 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+              title="小さくする"
+            >
+              <X size={14} />
+            </button>
+            <button
+              type="button"
+              onClick={dismissBanner}
+              style={{ pointerEvents: 'auto' }}
+              className="text-[9px] text-gray-500 hover:text-gray-300 underline whitespace-nowrap"
+              title="7日間表示しない"
+            >
+              7日間非表示
+            </button>
+          </div>
         </div>
-        <div className="flex-1 min-w-0">
-          <h4 className="text-xs font-black text-[#c89b3c]">KTM ポータル</h4>
-          <p className="text-[11px] text-gray-300 font-bold leading-snug">ホーム画面にアプリ化</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={onInstall}
-            style={{ pointerEvents: 'auto', position: 'relative', zIndex: 100000 }}
-            className="px-3 py-1.5 rounded-xl bg-[#c89b3c] text-black text-xs font-black hover:bg-yellow-400 active:scale-95 transition-all shadow cursor-pointer whitespace-nowrap"
-          >
-            インストール
-          </button>
-          <button
-            type="button"
-            onClick={dismissBanner}
-            style={{ pointerEvents: 'auto' }}
-            className="p-1 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
-            title="7日間非表示"
-          >
-            <X size={16} />
-          </button>
-        </div>
-      </div>
+      )}
 
       {/* 📖 手動インストール手順モーダルガイド */}
       {showGuide && (
         <div
           style={{ position: 'fixed', inset: 0, zIndex: 100001 }}
           className="bg-black/80 backdrop-blur-md flex items-center justify-center p-4"
-          onClick={() => setShowGuide(false)}
+          onClick={() => { setShowGuide(false); dismissBanner(); }}
         >
           <div
             className="bg-[#12141d] border border-[#c89b3c]/50 rounded-3xl p-6 max-w-md w-full shadow-2xl relative"
             onClick={(e) => e.stopPropagation()}
           >
             <button
-              onClick={() => setShowGuide(false)}
+              onClick={() => { setShowGuide(false); dismissBanner(); }}
               className="absolute top-4 right-4 text-gray-400 hover:text-white p-1 cursor-pointer"
             >
               <X size={20} />
@@ -186,7 +219,7 @@ export default function PwaRegister() {
             </div>
 
             <button
-              onClick={() => setShowGuide(false)}
+              onClick={() => { setShowGuide(false); dismissBanner(); }}
               className="w-full mt-5 py-2.5 rounded-xl bg-[#c89b3c] text-black font-black text-xs hover:bg-yellow-400 transition cursor-pointer"
             >
               了解しました
