@@ -5,7 +5,7 @@ import { handleLaneCommand, handleStatsCommand } from './commands.js';
 import { createMessageContent, createRecruitButtons, createRecruitEmbed, extractPlayersFromEmbed, getPortalComponents, getPortalEmbed, handleHelpPage } from '../ui/embeds.js';
 import { parseMessageData, handleAutoMatchEnd } from '../utils/helpers.js';
 import { getAdminDiscordIds, markRecruitmentStatus } from '../utils/recruitPermission.js';
-import { getKtmRank, formatRankDistribution } from '../utils/ktmRank.js';
+import { getKtmRank } from '../utils/ktmRank.js';
 
 export async function handleButtonInteraction(interaction, env, ctx) {
   let customId = interaction.data.custom_id;
@@ -580,22 +580,10 @@ export async function handleButtonInteraction(interaction, env, ctx) {
           `\`ADC\` ${roleCount.ADC} / ${bar(cover.ADC)}　\`SUP\` ${roleCount.SUP} / ${bar(cover.SUP)}` +
           (roleCount.ALL ? `　（ALL希望 ${roleCount.ALL}名）` : '');
 
-        // 参加者のランク内訳（KTM内ランクで表示）
-        let tierLine = '';
-        try {
-          const withMmr = await fetchSupabase(env, 'ktm_players', `discord_id=in.(${idsStr})&select=mmr`);
-          const mmrs = (withMmr || []).map((p) => p.mmr || 1200);
-          if (mmrs.length > 0) {
-            const dist = formatRankDistribution(mmrs, 0);
-            tierLine = `\n**参加者のランク内訳**: ${dist}`;
-            const hi = getKtmRank(Math.max(...mmrs));
-            const lo = getKtmRank(Math.min(...mmrs));
-            if (hi.name !== lo.name) tierLine += `\n幅: ${lo.short} 〜 ${hi.short}`;
-          }
-        } catch (e) { /* 集計失敗は無視 */ }
+        // ランク内訳の表示は定期募集(定期カスタム)のみに限定し、都度募集(この募集パネル)には出さない(#③)
         laneEmbed = {
           title: '📍 参加者の希望レーン状況',
-          description: `${countLine}${tierLine}\n\n${lines.join('\n')}`,
+          description: `${countLine}\n\n${lines.join('\n')}`,
           color: 0x3498db,
           footer: { text: '表記: メイン / サブ（NG）。ポータルのチーム分けで自動考慮されます。' }
         };
@@ -616,9 +604,8 @@ export async function handleButtonInteraction(interaction, env, ctx) {
     return Response.json({ type: 7, data: { content: createMessageContent(metadata) + closingMessage, embeds: [createRecruitEmbed(metadata)], components: createRecruitButtons(metadata) } });
   }
 
-  // 募集メッセージ本体にレート帯の内訳を表示する（参加ボタンを押す時点で構成が分かるように）
-  const tierLine = await buildTierLine(env, metadata.joined || []);
-  return Response.json({ type: 7, data: { content: createMessageContent(metadata), embeds: [createRecruitEmbed(metadata, tierLine)], components: createRecruitButtons(metadata) } });
+  // ランク帯の内訳表示は定期募集のみに限定するため、都度募集のここでは付与しない(#③)
+  return Response.json({ type: 7, data: { content: createMessageContent(metadata), embeds: [createRecruitEmbed(metadata)], components: createRecruitButtons(metadata) } });
 }
 
 /**
@@ -663,24 +650,3 @@ async function sendOnboardingIfNeeded(env, userId) {
   }
 }
 
-/** 参加者のdiscord_id配列から、KTMランクの人数分布の1行を作る */
-async function buildTierLine(env, joinedIds) {
-  if (!joinedIds || joinedIds.length === 0) return '';
-  try {
-    const { fetchSupabase } = await import('../utils/supabase.js');
-    const idsStr = joinedIds.map((i) => `"${i}"`).join(',');
-    const ps = await fetchSupabase(env, 'ktm_players', `discord_id=in.(${idsStr})&select=mmr`);
-    const mmrs = (ps || []).map((p) => p.mmr || 1200);
-    if (mmrs.length === 0) return '';
-    const unknown = joinedIds.length - mmrs.length;
-    let line = `**ランク内訳**: ${formatRankDistribution(mmrs, unknown)}`;
-    if (mmrs.length >= 2) {
-      const hi = getKtmRank(Math.max(...mmrs));
-      const lo = getKtmRank(Math.min(...mmrs));
-      if (hi.name !== lo.name) line += `　幅 ${lo.short}〜${hi.short}`;
-    }
-    return line;
-  } catch (e) {
-    return '';
-  }
-}
