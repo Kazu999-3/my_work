@@ -19,7 +19,7 @@ import {
 import Image from "next/image";
 import { getChampIcon } from "../../lib/ddragonClient";
 
-export default function ScoutTab() {
+export default function ScoutTab({ onLiveMatchDetected }: { onLiveMatchDetected?: (myChampion: string, enemyChampion: string) => void }) {
   const [riotId, setRiotId] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
@@ -60,6 +60,13 @@ export default function ScoutTab() {
       if (!res.ok) throw new Error(data.error || '検索エラーが発生しました。');
 
       setResult(data);
+
+      // 実際に進行中のライブゲームで自分・対面の両チャンピオンが判明した場合のみ、
+      // コーチページのマッチアップ分析を自動起動する(#① 手動タブ廃止に伴う自動化)。
+      // プレマッチ(推定表示)時は本当の対面が存在しないため対象外。
+      if (data.isGameActive && data.myChampionName && data.championName && onLiveMatchDetected) {
+        onLiveMatchDetected(data.myChampionName, data.championName);
+      }
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -424,7 +431,10 @@ export default function ScoutTab() {
                             {result.allParticipants
                               .filter((p: any) => p.isEnemy)
                               .map((p: any, idx: number) => {
-                                const champName = getChampNameFromId(p.championId);
+                                // championNameはバックエンドがDDragonで正式に名前解決した値。
+                                // 以前はここで19体だけのハードコードマップを使っており、
+                                // それ以外のチャンピオンは全部LeeSin表示になっていた(#②)。
+                                const champName = p.championName || 'Unknown';
                                 return (
                                   <tr key={idx} className="hover:bg-white/[0.02] transition-colors">
                                     <td className="py-3 flex items-center gap-2.5">
@@ -509,8 +519,22 @@ export default function ScoutTab() {
                       </div>
                     </div>
 
-                    {/* 対JG推奨カウンター & 解説 */}
-                    {result.counters && result.counters.length > 0 && (
+                    {/* 対JG推奨カウンター & 解説。辞典に実データ(counterChampions)がある場合は
+                        そちらをそのまま表示する。無い場合のみ下の汎用フォールバックを使う
+                        （以前は数体だけの手書きデータで、それ以外は毎回同じ結果になっていた）。 */}
+                    {result.hasRealCounterData && result.knowledge?.counterChampions && (
+                      <div className="space-y-2 pt-3 border-t border-white/5">
+                        <h4 className="text-[10px] text-gray-500 font-black tracking-wider uppercase flex items-center gap-1.5">
+                          <Zap className="w-3.5 h-3.5 text-amber-400" />
+                          <span>対面カウンター情報（辞典データ）</span>
+                        </h4>
+                        <div className="bg-black/40 p-4 rounded-2xl border border-amber-500/10">
+                          <p className="text-[11px] text-gray-300 leading-relaxed whitespace-pre-wrap">{result.knowledge.counterChampions}</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {!result.hasRealCounterData && result.counters && result.counters.length > 0 && (
                       <div className="space-y-3 pt-3 border-t border-white/5">
                         <h4 className="text-[10px] text-gray-500 font-black tracking-wider uppercase flex items-center gap-1.5">
                           <Zap className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
@@ -576,14 +600,4 @@ export default function ScoutTab() {
 
     </div>
   );
-}
-
-function getChampNameFromId(id: number): string {
-  const mapping: Record<number, string> = {
-    64: 'LeeSin', 121: 'Khazix', 76: 'Nidalee', 20: 'Nunu', 59: 'JarvanIV',
-    35: 'Shaco', 24: 'Jax', 104: 'Graves', 254: 'Vi', 11: 'MasterYi',
-    56: 'Nocturne', 113: 'Sejuani', 77: 'Udyr', 200: 'Belveth', 555: 'Pyke',
-    240: 'Kled', 103: 'Ahri', 81: 'Ezreal', 201: 'Braum'
-  };
-  return mapping[id] || 'LeeSin';
 }

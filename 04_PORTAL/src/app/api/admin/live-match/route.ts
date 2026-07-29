@@ -4,6 +4,7 @@ import { calculatePlaystyle } from '../../../../lib/playstyle';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 import { verifyAdminSession } from '../../../../lib/adminAuth';
 import { callGeminiWithRetry } from '../../../../lib/geminiClient';
+import { getChampNameById as getChampionNameById } from '../../../../lib/ddragonClient';
 
 export async function POST(req: Request) {
   try {
@@ -267,31 +268,44 @@ export async function POST(req: Request) {
     const enemyName = enemyJg.riotIdGameName || enemyJg.summonerName || 'Unknown';
     const enemyTag = enemyJg.riotIdTagline || '';
     const enemyChampName = await getChampionNameById(enemyJg.championId);
+    // 偵察結果から自動でマッチアップ分析(自分 vs 対面)を走らせられるよう、自分の
+    // チャンピオンも解決しておく(#① マッチアップタブ廃止に伴う自動化)。
+    const myChampName = await getChampionNameById(myParticipant.championId);
 
     // 4. 敵ジャングラーの過去ソロキュー履歴を取得してプレイスタイルを分析 (直近10試合)
+    // ランクソロ(420)を優先するが、直近にランクを打っていない相手（ノーマル/フレックス中心
+    // 等）だと0件になり、以前は問答無用でダミー推定値行きになっていた。自分自身の事前分析
+    // パス(51-61行目)と同じく、ランクが空なら全ゲームモードで再取得するフォールバックを足す。
     let enemyPlaystyle = null;
     let enemyMatches: any[] = [];
     try {
-      const enemyMatchIds = await fetchRecentMatchIds(enemyJg.puuid, apiKey, 10, 420); // Solo/Duo
-      
+      let enemyMatchIds = await fetchRecentMatchIds(enemyJg.puuid, apiKey, 10, 420); // Solo/Duo
+      if (!enemyMatchIds || enemyMatchIds.length === 0) {
+        try {
+          enemyMatchIds = await fetchRecentMatchIds(enemyJg.puuid, apiKey, 10);
+        } catch { enemyMatchIds = []; }
+      }
+
       const batchSize = 3;
       for (let i = 0; i < enemyMatchIds.length; i += batchSize) {
         const batchIds = enemyMatchIds.slice(i, i + batchSize);
         const promises = batchIds.map(async (id) => {
           try {
             const detail = await fetchMatchDetails(id, apiKey);
-            const detailMe = detail.participants.find(p => 
-              (p.riotIdName && p.riotIdName.toLowerCase() === enemyName.toLowerCase()) || 
-              p.championName === enemyChampName
-            );
-            
+            // 以前はriotIdName(表記ゆれ・大文字小文字・改名で簡単に不一致になる)や
+            // championNameでの一致判定だったため、一致に失敗した試合は黙って
+            // スキップされ続けていた。この試合ID自体が enemyJg.puuid で取得した
+            // ものなので、puuidで直接突き合わせるのが確実（#② ランクを打っていても
+            // 取得できない問題の根本原因）。
+            const detailMe = detail.participants.find(p => p.puuid === enemyJg.puuid);
+
             let gold_diff_9 = 0, xp_diff_9 = 0, cs_diff_9 = 0;
             if (i === 0) {
               try {
                 const timeline = await fetchMatchTimeline(id, apiKey);
                 const frame = timeline.info?.frames?.[9];
                 if (frame && detailMe) {
-                  const myPartIdx = detail.participants.findIndex(p => p.riotIdName?.toLowerCase() === detailMe.riotIdName?.toLowerCase());
+                  const myPartIdx = detail.participants.findIndex(p => p.puuid === enemyJg.puuid);
                   const myPartId = myPartIdx !== -1 ? myPartIdx + 1 : -1;
                   const oppPartIdx = detail.participants.findIndex(p => p.lane === detailMe.lane && p.teamId !== detailMe.teamId);
                   const oppPartId = oppPartIdx !== -1 ? oppPartIdx + 1 : -1;
@@ -406,8 +420,14 @@ export async function POST(req: Request) {
 
         if (isEnemy && apiKey) {
           try {
-            // 直近5戦のみ取得してAPI負荷と速度を最適化
-            const matchIds = await fetchRecentMatchIds(p.puuid, apiKey, 5, 420);
+            // 直近5戦のみ取得してAPI負荷と速度を最適化。ランクソロが無い相手向けに
+            // 全ゲームモードへのフォールバックも行う(#② ダミーデータ化対策)。
+            let matchIds = await fetchRecentMatchIds(p.puuid, apiKey, 5, 420);
+            if (!matchIds || matchIds.length === 0) {
+              try {
+                matchIds = await fetchRecentMatchIds(p.puuid, apiKey, 5);
+              } catch { matchIds = []; }
+            }
             let wins = 0;
             let losses = 0;
             let recentLosses = 0;
@@ -479,6 +499,10 @@ export async function POST(req: Request) {
         return {
           name: p.riotIdGameName || p.summonerName,
           championId: p.championId,
+          // フロント側(ScoutTab.tsx)が独自の19体だけのハードコードマップでchampionIdを
+          // 名前へ変換しており、それ以外のチャンピオンは全部LeeSin表示になっていた。
+          // ここでDDragon正式実装(getChampionNameById)により名前解決して渡す(#②)。
+          championName: await getChampionNameById(p.championId),
           teamId: p.teamId,
           isEnemy,
           role,
@@ -507,6 +531,8 @@ export async function POST(req: Request) {
       buildRunes: "",
       fullClearTime: "",
       strategy: "",
+      counterChampions: "",
+      jgStyle: null as null | { type?: string; description?: string; blind_pickable?: number; counter_pickable?: number },
       pastInterrogation: [] as string[]
     };
 
@@ -518,7 +544,7 @@ export async function POST(req: Request) {
         .eq('champion', enemyChampName)
         .eq('enemy', 'GLOBAL')
         .maybeSingle(); // 1件もない場合でもクラッシュしないように maybeSingle を利用
-        
+
       if (globalMatchup && !gError) {
         const raw = globalMatchup.raw_data || {};
         knowledgeData.strengths = raw.strengths || "";
@@ -527,6 +553,10 @@ export async function POST(req: Request) {
         knowledgeData.buildRunes = raw.buildRunes || "";
         knowledgeData.fullClearTime = raw.fullClearTime || "";
         knowledgeData.strategy = globalMatchup.strategy || "";
+        // 推奨カウンター/Tipsのハードコード(数体のみ対応・それ以外は毎回同じ汎用文言)を
+        // やめ、辞典が既に持っている実データ(弱点・カウンター・ジャングルスタイル)を使う。
+        knowledgeData.counterChampions = raw.counterChampions || "";
+        knowledgeData.jgStyle = raw.jg_style || null;
       }
 
       // 2. 過去の反省点 (INTERROGATION) の取得 (enemy=PROCESS_INTERROGATION のレコード)
@@ -564,25 +594,37 @@ export async function POST(req: Request) {
       coachAdvice = generateMockCoachAdvice(enemyChampName, enemyPlaystyleTag);
     }
 
+    // startBuff/firstGankはそもそも「試合前に確定させようのない予測」なので
+    // アーキタイプ(jg_style)ベースの推測のまま残すが、実データがあればそちらを優先する。
     const analysis = generateLiveAnalysis(enemyChampName, enemyPlaystyleTag);
-    const counters = generateCountersForJg(enemyChampName);
+    const realJgTypeText = knowledgeData.jgStyle?.type ? `辞典データ上のスタイル: ${knowledgeData.jgStyle.type}。${knowledgeData.jgStyle.description || ''}` : '';
+    const tips = realJgTypeText || analysis.tips;
+
+    // 推奨カウンターは以前 Lee Sin/Khazix/Graves 等ごく数体だけの手書き分岐で、
+    // それ以外の150体以上は全員同じ「Graves/LeeSin」固定表示になっていた(#①)。
+    // 辞典の実データ(counterChampions)があればそちらを使い、無い場合のみ
+    // 汎用フォールバックに留める(スカウト対象は毎回変わるので偽の個別感を出さない)。
+    const hasRealCounterData = !!knowledgeData.counterChampions;
+    const counters = hasRealCounterData ? [] : generateCountersForJg(enemyChampName);
 
     return NextResponse.json({
       isGameActive: true,
       gameLength: activeGame.gameLength,
       mapId: activeGame.mapId,
       championName: enemyChampName,
+      myChampionName: myChampName,
       enemyJgName: `${enemyName}#${enemyTag}`,
       playstyle: enemyPlaystyle,
       startBuffPrediction: analysis.startBuff,
       firstGankTarget: analysis.firstGank,
-      tips: analysis.tips,
+      tips,
       isOtp,
       otpChampion,
       isTilted,
       consecutiveLosses,
       coachAdvice,
       counters,
+      hasRealCounterData,
       allParticipants: analyzedParticipants,
       knowledge: knowledgeData
     });
@@ -591,15 +633,6 @@ export async function POST(req: Request) {
     console.error('Live Match API Error:', error);
     return NextResponse.json({ error: error.message || 'ライブゲームのロードに失敗しました。' }, { status: 500 });
   }
-}
-
-async function getChampionNameById(id: number): Promise<string> {
-  const mapping: Record<number, string> = {
-    64: 'LeeSin', 121: 'Khazix', 76: 'Nidalee', 20: 'Nunu', 59: 'JarvanIV',
-    35: 'Shaco', 24: 'Jax', 104: 'Graves', 254: 'Vi', 11: 'MasterYi',
-    56: 'Nocturne', 113: 'Sejuani', 77: 'Udyr', 200: 'Belveth', 555: 'Pyke'
-  };
-  return mapping[id] || 'LeeSin';
 }
 
 async function generateCoachAdviceWithGemini(
