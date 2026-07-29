@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
       { count: todayTasksCount },
       { data: dictData },
       { data: libData },
-      { data: failedTaskData },
+      { data: recentTaskData },
       { count: youtubeErrorCount },
       { count: openRecruitCount },
       { data: recentRecruitData },
@@ -55,21 +55,25 @@ export async function GET(req: NextRequest) {
       // 直近の更新
       supabase.from('matchup_sentinel').select('matchup_id, champion, title, created_at').eq('enemy', 'GLOBAL').order('created_at', { ascending: false }).limit(5),
       supabase.from('personal_knowledge').select('id, title, champion, created_at').order('created_at', { ascending: false }).limit(5),
-      // 「要対応」パネル用: 直近の失敗タスク。youtube_absorbは動画ごとの状態が
-      // youtube_queueテーブル(下のyoutubeErrorCount)に集約されており、ここに混ぜると
-      // 大量の重複ノイズになるため除外する。task_typeも既知の(=ポータル側で遷移先を
-      // 用意できる)種別だけに絞り、廃止済みタスク種別(削除済み収益化パイプライン等)の
-      // 「対応不可能な要対応」が永遠に残り続けるのを防ぐ。
+      // 「要対応」パネル用: 直近の失敗/完了タスク（同一(task_type, payload)キーの中で
+      // 最新の状態だけを見て「今も本当に失敗中か」を判定するため、failed単独ではなく
+      // completedも一緒に広めに取得する。再実行は新規タスクを積むだけで古い失敗行を
+      // 消さないため、単純に status=failed だけを見ると「再実行して成功した後も
+      // 古い失敗がずっとカウントされ続ける」バグになっていた。
+      // youtube_absorbは動画ごとの状態がyoutube_queueテーブル(下のyoutubeErrorCount)に
+      // 集約されており、ここに混ぜると大量の重複ノイズになるため除外する。task_typeも
+      // 既知の(=ポータル側で遷移先を用意できる)種別だけに絞り、廃止済みタスク種別
+      // (削除済み収益化パイプライン等)の「対応不可能な要対応」が残り続けるのを防ぐ。
       supabase.from('edge_tasks')
-        .select('id, task_type, payload, error_message, updated_at, executor')
-        .eq('status', 'failed')
+        .select('id, task_type, payload, status, error_message, updated_at, executor')
+        .in('status', ['failed', 'completed'])
         .in('task_type', [
           'champion_trend', 'matchup_simulation_5v5', 'resolve_youtube_channel',
           'resolve_youtube_playlist', 'youtube_channel_monitor', 'reddit_scout',
           'lol_trend_collect', 'dict_synthesizer', 'champion_db_bulk_update',
         ])
         .order('updated_at', { ascending: false })
-        .limit(10),
+        .limit(200),
       // 「要対応」パネル用: 手動対応が必要な動画キューのエラー件数
       supabase.from('youtube_queue').select('id', { count: 'exact', head: true }).in('status', ['error_generation', 'error_no_transcript', 'failed']),
       // 募集アクティビティ: 現在募集中の件数
@@ -81,6 +85,17 @@ export async function GET(req: NextRequest) {
       // 「サービス監視」タブはこれまでこの行を一度もクエリしておらず、常に空のまま表示されていた。
       supabase.from('matchup_sentinel').select('raw_data').eq('matchup_id', 'SYSTEM_METRICS').maybeSingle(),
     ]);
+
+    // (task_type, payload)ごとに最新の1件だけを残し、それが failed のものだけを
+    // 「まだ未解決の要対応」として抽出する（再実行後に成功していれば自動的に消える）。
+    const latestByKey = new Map<string, any>();
+    for (const t of (recentTaskData || [])) {
+      const key = `${t.task_type}|${JSON.stringify(t.payload || {})}`;
+      if (!latestByKey.has(key)) latestByKey.set(key, t); // 降順取得済みなので最初の1件が最新
+    }
+    const failedTaskData = Array.from(latestByKey.values())
+      .filter((t) => t.status === 'failed')
+      .slice(0, 10);
 
     // 直近募集の募集主名をktm_playersから解決（discord_idで突き合わせ）
     let recruitOwnerNames: Record<string, string> = {};
@@ -139,7 +154,7 @@ export async function GET(req: NextRequest) {
       recentDictUpdates: dictData || [],
       recentLibraryUpdates: libData || [],
       needsAttention: {
-        failedTasks: failedTaskData || [],
+        failedTasks: failedTaskData,
         youtubeErrorCount: youtubeErrorCount ?? 0,
       },
       recruitActivity: {
