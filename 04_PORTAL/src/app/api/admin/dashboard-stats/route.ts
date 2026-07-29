@@ -55,9 +55,21 @@ export async function GET(req: NextRequest) {
       // 直近の更新
       supabase.from('matchup_sentinel').select('matchup_id, champion, title, created_at').eq('enemy', 'GLOBAL').order('created_at', { ascending: false }).limit(5),
       supabase.from('personal_knowledge').select('id, title, champion, created_at').order('created_at', { ascending: false }).limit(5),
-      // 「要対応」パネル用: 種別を問わず直近の失敗タスク（champion_trend/5v5シミュレータ/
-      // YouTube監視/reddit_scout/トレンド収集/辞典シンセサイザー/辞典一括更新 等すべて含む）
-      supabase.from('edge_tasks').select('id, task_type, payload, error_message, updated_at, executor').neq('id', heartbeatId).eq('status', 'failed').order('updated_at', { ascending: false }).limit(10),
+      // 「要対応」パネル用: 直近の失敗タスク。youtube_absorbは動画ごとの状態が
+      // youtube_queueテーブル(下のyoutubeErrorCount)に集約されており、ここに混ぜると
+      // 大量の重複ノイズになるため除外する。task_typeも既知の(=ポータル側で遷移先を
+      // 用意できる)種別だけに絞り、廃止済みタスク種別(削除済み収益化パイプライン等)の
+      // 「対応不可能な要対応」が永遠に残り続けるのを防ぐ。
+      supabase.from('edge_tasks')
+        .select('id, task_type, payload, error_message, updated_at, executor')
+        .eq('status', 'failed')
+        .in('task_type', [
+          'champion_trend', 'matchup_simulation_5v5', 'resolve_youtube_channel',
+          'resolve_youtube_playlist', 'youtube_channel_monitor', 'reddit_scout',
+          'lol_trend_collect', 'dict_synthesizer', 'champion_db_bulk_update',
+        ])
+        .order('updated_at', { ascending: false })
+        .limit(10),
       // 「要対応」パネル用: 手動対応が必要な動画キューのエラー件数
       supabase.from('youtube_queue').select('id', { count: 'exact', head: true }).in('status', ['error_generation', 'error_no_transcript', 'failed']),
       // 募集アクティビティ: 現在募集中の件数

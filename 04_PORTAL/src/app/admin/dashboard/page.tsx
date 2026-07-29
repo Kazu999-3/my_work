@@ -109,6 +109,19 @@ export default function Home() {
     youtube_absorb: 'YouTube動画解析',
   };
 
+  // 「詳細へ」の遷移先をtask_typeごとに正しく振り分ける（以前は全種別が一律/admin/youtubeに
+  // 飛んでいて、辞典一括更新等の失敗がYouTube管理画面を開いても何も解決できなかった）
+  const TASK_LINKS: Record<string, string> = {
+    matchup_simulation_5v5: '/coach',
+    resolve_youtube_channel: '/admin/youtube',
+    resolve_youtube_playlist: '/admin/youtube',
+    youtube_channel_monitor: '/admin/youtube',
+    reddit_scout: '/champions?tab=ai-update',
+    lol_trend_collect: '/champions?tab=ai-update',
+    dict_synthesizer: '/champions?tab=ai-update',
+    champion_db_bulk_update: '/champions?tab=ai-update',
+  };
+
   const handleRetryFailedTask = async (task: any) => {
     if (task.task_type !== 'champion_trend') return;
     setRetryingTaskId(task.id);
@@ -330,7 +343,7 @@ export default function Home() {
                     <RefreshCw size={12} className={retryingTaskId === task.id ? 'animate-spin' : ''} /> 再実行
                   </button>
                 ) : (
-                  <Link href="/admin/youtube" className="shrink-0 text-xs font-bold text-gray-400 hover:text-white underline">詳細へ</Link>
+                  <Link href={TASK_LINKS[task.task_type] || '/admin/dashboard'} className="shrink-0 text-xs font-bold text-gray-400 hover:text-white underline">詳細へ</Link>
                 )}
               </div>
             ))}
