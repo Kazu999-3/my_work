@@ -8,14 +8,23 @@
 ## 📅 次回の注力タスク（2026-07-29 実行予定）
 > 2026-07-28 のポータル不具合修正セッションでほぼ解消。残るのは外部ダッシュボード操作や意思決定が必要なものだけ。SNS素材フォルダの統合（231ファイル・5箇所）のみ、規模が大きいため引き続き対象外。
 
+- [ ] **カスタム募集の「前回の募集を引き継ぐ」機能**（2026-07-29追加）
+  - ボタン統合自体は対応済み（下記完了セッション参照）。引き継ぎ機能は今回スコープ外として分離。
+  - 実装メモ: `recruitments`テーブル（`discord_message_id`/`owner_discord_id`/`status`等）が既に存在し、募集ごとの履歴を持っている。これを使い、新規募集作成時に同一ownerの直近`closed`レコードから`discord_message_id`を取得→Discordメッセージを取得→`parseMessageData()`で参加者リストを復元→新規募集にコピー、という流れで実装できる見込み（新規テーブル不要）。
 - [ ] **収益化パイプライン再実装の周辺整備**
   - [ ] `PORTAL_BOT_SECRET` の有効化（Vercel と Cloudflare 双方に設定してから bot⇔ポータル認証を有効化。コード自体は実装済み。外部ダッシュボード操作が要るためClaudeでは完結しない）
   - [ ] Whisper のクラウド移行の設計検討（無料・高精度が条件、実装自体は保留のまま設計だけ詰める）
-- [ ] **`champion_trend`タスクのクラウド移行検討**
-  - [ ] 現状、辞典の「最新トレンド取得」ボタン（単体1体でも）は`champion_trend`タスクをキューに積むだけで、実行はローカルのEdge Worker Daemon起動時のみ。`champion_trend_worker.py`はGemini呼び出しのみでGPU不要（Whisperと違いローカルPCである必然性がない）ため、GitHub Actions等クラウド側への移設可否を検討する
-  - [ ] 移設できれば「辞典更新のたびにPCで`start_all.ps1`を起動する」運用不要になり、Whisper専用（GPU必須）の用途にEdge Worker Daemonを純化できる
+- [x] **`champion_trend`タスクのクラウド移行検討** → 2026-07-29確認: 既に`edge-cloud-worker.yml`/`scripts/edge_cloud_worker.py`の`TASK_MAP`に`champion_trend`が組み込まれ、クラウド実行済みだった（この項目自体が古い記述のまま残っていたstaleなTODO）。ダッシュボードが実行元(ローカル/クラウド)を区別できていなかった点は今回の`pipeline-status` API改修で表示に対応済み。
 - [ ] **リポジトリ運用の意思決定**
   - [ ] `02_FACTORY/PRODUCTS/` を Git 管理するかどうかの方針決定（セッション最初期から未決定のまま）
+## ✅ 2026-07-29 追加セッションで対応済み
+- [x] カスタム募集（都度募集）のロール選択ボタン(Top/Jg/Mid/Adc/Sup 5個)をセレクトメニュー1つに統合（`embeds.js`/`components.js`）。定期募集側は変更なし
+- [x] チャンピオントレンド更新失敗の通知から再実行できるように改善: 通知URLに`champion`/`role`/`failed_task`を付与し、辞典AI更新タブに失敗タスク一覧＋再実行ボタン＋実行元(ローカル/クラウド)表示を追加（`edge_cloud_worker.py`, `pipeline-status/route.ts`, `AiUpdateTab.tsx`）。`edge_tasks`に`executor`列を追加
+- [x] 動画キュー一覧にチェックボックス複数選択を追加。字幕なし動画(`error_no_transcript`)を「手動対応要」と明示し、選択分をまとめてDiscordへ送信してキューからクローズする機能を追加（`YoutubeQueueManager.tsx`, `api/admin/youtube/route.ts`）
+- [x] 辞典の「対面」タブを削除し、手動での対面メモ入力機能をコーチページの「🔍試合後」グループへ移設（`MatchupMemoTab.tsx`）。5v5シミュレータも独立ページ(`/matchups`)からコーチページの「⚡試合前」グループへ移動（`FiveVFiveSimTab.tsx`）。**注意: `/matchups`は元々一般公開ページだったが、コーチページ自体が管理者ログイン必須のため、この移動で5v5シミュレータが管理者限定機能になった**
+- [x] スマホ通知(champion_trend等)クリック時の遷移先デフォルトを`/coach`から`/admin/dashboard`に変更（個別の遷移先指定は必要な箇所のみ据え置き）
+- [x] PCサイドバーの管理者「一般機能」タブに辞典が抜けていたメニュー不整合を修正。一般公開メニューから管理者専用の`/admin/knowledge`リンクを削除（`Sidebar.tsx`）
+
 ## ✅ 2026-07-28 追加セッションで対応済み
 - [x] `04_PORTAL/scripts/archive/` の削除（`rm -rf`で完了。git上は未コミットの削除状態）
 - [x] `PORTAL_BOT_SECRET`: 安全な値を生成し、Vercel/Cloudflare両ダッシュボードへの設定手順を案内済み。実際の入力はユーザー側で対応待ち
