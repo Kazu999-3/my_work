@@ -80,7 +80,7 @@ export function isFavoriteArticle(id: number): boolean {
 }
 
 // サイドバーに表示するお気に入りパネル
-export default function FavoritesPanel({ isCollapsed = false }: { isCollapsed?: boolean }) {
+export default function FavoritesPanel({ isCollapsed = false, isAdmin = false }: { isCollapsed?: boolean; isAdmin?: boolean }) {
   const [favs, setFavs] = useState<FavoritesData>({ champions: [], articles: [] });
 
   const loadFavorites = useCallback(() => {
@@ -99,8 +99,13 @@ export default function FavoritesPanel({ isCollapsed = false }: { isCollapsed?: 
     };
   }, [loadFavorites]);
 
+  // チャンピオン辞典(/champions)・ナレッジ記事(/admin/knowledge)はともに管理者専用のため、
+  // 一般訪問者にはお気に入りパネル自体を表示しない（リンク先がログイン画面になるため）(#④)。
+  const showChampions = isAdmin && favs.champions.length > 0;
+  const showArticles = isAdmin && favs.articles.length > 0;
+
   // お気に入りが空なら何も表示しない (最小化時はチャンピオンが空なら非表示)
-  if (favs.champions.length === 0 && (isCollapsed || favs.articles.length === 0)) return null;
+  if (!showChampions && (isCollapsed || !showArticles)) return null;
 
   const removeChamp = (id: string) => {
     toggleFavoriteChampion(id);
@@ -124,8 +129,8 @@ export default function FavoritesPanel({ isCollapsed = false }: { isCollapsed?: 
         </div>
       )}
 
-      {/* チャンピオン一覧 */}
-      {favs.champions.length > 0 && (
+      {/* チャンピオン一覧（管理者のみ。/champions が管理者専用のため） */}
+      {showChampions && (
         <div className={isCollapsed ? "flex flex-col items-center gap-2 mb-2 w-full" : "flex flex-wrap gap-1.5 mb-3 px-2"}>
           {favs.champions.map((champId) => (
             <Link
@@ -157,8 +162,8 @@ export default function FavoritesPanel({ isCollapsed = false }: { isCollapsed?: 
         </div>
       )}
 
-      {/* 記事一覧 (最小化時は非表示) */}
-      {!isCollapsed && favs.articles.length > 0 && (
+      {/* 記事一覧（管理者のみ・最小化時は非表示） */}
+      {!isCollapsed && showArticles && (
         <div className="space-y-1 px-1">
           {favs.articles.slice(0, 5).map((article) => (
             <div key={article.id} className="flex items-center gap-2 group">

@@ -13,7 +13,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { getFavorites, toggleFavoriteChampion } from '../../../components/FavoritesPanel';
 import { Spinner } from '../../../components/Feedback';
 
-function ChampionsContent() {
+function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
   const searchParams = useSearchParams();
   const [champions, setChampions] = useState<any[]>([]);
   const [search, setSearch] = useState('');
@@ -725,6 +725,7 @@ function ChampionsContent() {
               </div>
             </div>
 
+            {isAdmin && (
             <div className="flex gap-3 items-center flex-wrap">
               <button
                 onClick={handleFetchTrend}
@@ -743,6 +744,7 @@ function ChampionsContent() {
                 📜 変更履歴パネルへ ➔
               </Link>
             </div>
+            )}
 
             {/* トレンド取得の進行状況（「取得中から変わらない」という不透明さの指摘を受けて追加） */}
             {trendPhase !== 'idle' && (
@@ -1088,14 +1090,16 @@ function ChampionsContent() {
                     {dataFields.strategy ? (
                       <ReactMarkdown remarkPlugins={[remarkGfm]}>{dataFields.strategy}</ReactMarkdown>
                     ) : (
-                      <p className="text-gray-500 italic text-xs">全体的な立ち回り・統合トレンドメモはまだ記載されていません。「直感編集」ボタンを押して追加してください。</p>
+                      <p className="text-gray-500 italic text-xs">全体的な立ち回り・統合トレンドメモはまだ記載されていません。{isAdmin && '「直感編集」ボタンを押して追加してください。'}</p>
                     )}
-                    <button
-                      onClick={() => setEditingStrategy(true)}
-                      className="mt-4 px-4 py-2 bg-[#c89b3c]/20 hover:bg-[#c89b3c]/40 text-[#c89b3c] border border-[#c89b3c]/30 font-bold text-xs rounded-xl transition-all flex items-center gap-1.5"
-                    >
-                      <Edit2 size={14} /> メモを直感編集
-                    </button>
+                    {isAdmin && (
+                      <button
+                        onClick={() => setEditingStrategy(true)}
+                        className="mt-4 px-4 py-2 bg-[#c89b3c]/20 hover:bg-[#c89b3c]/40 text-[#c89b3c] border border-[#c89b3c]/30 font-bold text-xs rounded-xl transition-all flex items-center gap-1.5"
+                      >
+                        <Edit2 size={14} /> メモを直感編集
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
@@ -1478,7 +1482,9 @@ function ChampionsContent() {
             <div className="flex gap-2">
               <div className="flex bg-[var(--color-surface)] p-1 rounded-xl border border-white/5">
                 <button onClick={() => setNoteDraftMode('preview')} className={`px-4 py-1.5 rounded-lg text-xs font-bold flex items-center gap-2 transition-colors ${noteDraftMode === 'preview' ? 'bg-pink-500 text-white shadow-lg' : 'text-gray-400 hover:text-white'}`}><Eye size={14} /> プレビュー</button>
-                <button onClick={() => setNoteDraftMode('edit')} className={`px-4 py-1.5 rounded-lg text-xs font-bold flex items-center gap-2 transition-colors ${noteDraftMode === 'edit' ? 'bg-pink-500 text-white shadow-lg' : 'text-gray-400 hover:text-white'}`}><Edit2 size={14} /> 編集</button>
+                {isAdmin && (
+                  <button onClick={() => setNoteDraftMode('edit')} className={`px-4 py-1.5 rounded-lg text-xs font-bold flex items-center gap-2 transition-colors ${noteDraftMode === 'edit' ? 'bg-pink-500 text-white shadow-lg' : 'text-gray-400 hover:text-white'}`}><Edit2 size={14} /> 編集</button>
+                )}
               </div>
               <button onClick={() => { navigator.clipboard.writeText(dataFields.note_draft); setCopied(true); setTimeout(() => setCopied(false), 2000); }} className="px-4 py-2 bg-[var(--color-surface)] hover:bg-[var(--color-surface-hover)] border border-white/10 rounded-xl text-sm font-bold flex items-center gap-2 transition-colors text-white">
                 {copied ? <span className="text-[var(--color-success)] flex items-center gap-2"><Check size={16} /> コピー完了</span> : <><Copy size={16} /> Markdownをコピー</>}
@@ -1509,12 +1515,14 @@ function ChampionsContent() {
           </Link>
         </div>
 
-        {/* 保存ボタン */}
+        {/* 保存ボタン（辞典編集は管理者専用。一般訪問者には表示しない） */}
+        {isAdmin && (
         <div className="flex justify-end items-center gap-3 relative z-10 pt-4 flex-wrap">
           <button onClick={saveMemo} disabled={saving} className="px-8 py-3 bg-gradient-to-r from-amber-400 to-amber-500 text-black font-black rounded-xl hover:shadow-[0_0_20px_rgba(251,191,36,0.4)] hover:-translate-y-0.5 transition-all flex items-center gap-2 text-sm">
             {saving ? <RefreshCw size={18} className="animate-spin" /> : <Save size={18} />} チャンピオン辞典の変更を保存する
           </button>
         </div>
+        )}
       </motion.div>
     );
   }
@@ -1742,6 +1750,6 @@ const TextAreaCard = ({ title, icon: Icon, color, value, onChange }: { title: st
   );
 };
 
-export default function DictionaryTab() {
-  return <ChampionsContent />;
+export default function DictionaryTab({ isAdmin = false }: { isAdmin?: boolean }) {
+  return <ChampionsContent isAdmin={isAdmin} />;
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, Suspense } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { BookOpen, Activity, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -25,6 +25,43 @@ function ChampionsShell() {
   const searchParams = useSearchParams();
   const initialTab = (searchParams.get('tab') as TabId) || 'dictionary';
   const [activeTab, setActiveTab] = useState<TabId>(initialTab);
+
+  // チャンピオン辞典は管理者専用（閲覧含め一般訪問者はアクセス不可）(#④)。
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  useEffect(() => {
+    fetch('/api/auth/verify', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) })
+      .then((res) => res.json())
+      .then((data) => setIsAuthenticated(!!data.valid))
+      .catch(() => setIsAuthenticated(false));
+  }, []);
+
+  if (isAuthenticated === null) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-[#c89b3c] border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (isAuthenticated === false) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="text-center max-w-sm rounded-2xl border border-white/10 bg-white/5 p-8 backdrop-blur">
+          <div className="text-4xl mb-4">🔑</div>
+          <h2 className="text-lg font-bold mb-2 text-white">認証が必要です</h2>
+          <p className="text-sm text-white/50 mb-6 leading-relaxed">
+            チャンピオン辞典は管理者専用です。管理者パスコードでログインしてから再度アクセスしてください。
+          </p>
+          <a
+            href="/login?next=/champions"
+            className="inline-block w-full rounded-xl bg-[#c89b3c] px-5 py-3 text-sm font-semibold text-black transition hover:bg-yellow-400"
+          >
+            ログインページへ
+          </a>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen p-6 md:p-12 max-w-7xl mx-auto flex flex-col gap-8">
@@ -60,8 +97,8 @@ function ChampionsShell() {
         })}
       </div>
 
-      {/* タブコンテンツ */}
-      {activeTab === 'dictionary' && <DictionaryTab />}
+      {/* タブコンテンツ（この画面自体が管理者専用のため、DictionaryTabの編集機能も常に有効） */}
+      {activeTab === 'dictionary' && <DictionaryTab isAdmin={true} />}
       {activeTab === 'ai-update' && <AiUpdateTab />}
     </div>
   );
