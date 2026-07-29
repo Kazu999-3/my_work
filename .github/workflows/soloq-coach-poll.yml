@@ -21,4 +21,16 @@ jobs:
           CRON_SECRET: ${{ secrets.VERCEL_CRON_SECRET }}
         run: |
           if [ -z "$CRON_SECRET" ]; then echo "::warning::VERCEL_CRON_SECRET未設定のためスキップ"; exit 0; fi
-          curl -s -o /dev/null -w "status=%{http_code}\n" -X GET "https://my-work-8jbd.vercel.app/api/cron/soloq-coach" -H "Authorization: Bearer $CRON_SECRET"
+          # 以前はcurlの終了コードだけを見ており、curl自体は通信できてさえいれば
+          # 401/500等のエラー応答でも「success」扱いになっていた。そのため
+          # コーチの振り返り/傾向が何日も更新されなくても、このワークフロー自体は
+          # ずっと緑のまま気付けなかった。レスポンス本文とHTTPステータスを検査し、
+          # 200以外なら明示的に失敗させる。
+          RESPONSE=$(curl -s -w "\n%{http_code}" -X GET "https://my-work-8jbd.vercel.app/api/cron/soloq-coach" -H "Authorization: Bearer $CRON_SECRET")
+          BODY=$(echo "$RESPONSE" | head -n -1)
+          STATUS=$(echo "$RESPONSE" | tail -n 1)
+          echo "status=$STATUS body=$BODY"
+          if [ "$STATUS" != "200" ]; then
+            echo "::error::soloq-coach check failed with HTTP $STATUS: $BODY"
+            exit 1
+          fi
