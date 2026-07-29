@@ -20,7 +20,7 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: 'mode (空=直前通知 / weekly_recruit=定期募集)'
+        description: 'mode (event_notify=人数集計アナウンス / weekly_recruit=定期募集 / 空=直前通知)'
         required: false
         default: ''
 
@@ -44,9 +44,21 @@ jobs:
           # だけで判定していたため、GitHub Actionsのスケジュール実行が大きく遅延して
           # 金曜20:15 JST用のcronがUTC12時台にずれ込むと、誤って土曜用のweekly_recruitモードで
           # 発火してしまうバグがあった（定期カスタム募集が火曜に届いた原因）。
+          #
+          # 水・金・土20:15 JSTのバックアップ("15 11 * * 3,5,6")は、mode未設定のままだと
+          # handleScheduledEventのデフォルト分岐(sendRecruitStatusNotification=開始24時間以内
+          # の募集専用の直前リマインド)に落ちてしまい、土曜開催(24時間以上先)には常に無反応で
+          # 沈黙していた。本来ここで呼びたいのは人数集計アナウンス(sendEventUsersNotification)
+          # なので、専用の"event_notify"モードを明示的に渡す。
           MODE="${{ github.event.inputs.mode }}"
           if [ "${{ github.event_name }}" = "schedule" ]; then
-            if [ "${{ github.event.schedule }}" = "10 12 * * 6" ]; then MODE="weekly_recruit"; else MODE=""; fi
+            if [ "${{ github.event.schedule }}" = "10 12 * * 6" ]; then
+              MODE="weekly_recruit"
+            elif [ "${{ github.event.schedule }}" = "15 11 * * 3,5,6" ]; then
+              MODE="event_notify"
+            else
+              MODE=""
+            fi
           fi
 
           echo "Kicking mode='$MODE'"
