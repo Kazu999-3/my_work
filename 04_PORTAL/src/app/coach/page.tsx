@@ -57,7 +57,7 @@ async function callCoachAPI(payload: Record<string, any>) {
 // ============================
 function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={`rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur ${className}`}>
+    <div className={`rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur ${className}`}>
       {children}
     </div>
   );
@@ -845,12 +845,11 @@ export default function CoachPage() {
   const [dailyCheckTrigger, setDailyCheckTrigger] = useState(0);
   const runDailyCheck = () => {
     setDailyCheckTrigger(Date.now());
-    setOpenIds((prev) => new Set([...prev, 'pre', 'goal', 'tilt']));
   };
 
   // タブ→グループ+サブタブの2階層にしても「画面が分割されている」感覚は変わらない
-  // という指摘を受け、ナビゲーション自体を無くして1ページの折りたたみ(アコーディオン)
-  // に統合。グループ見出しは分類の目印として残すが、クリックでの切り替えは発生しない。
+  // という指摘を受けアコーディオンにしていたが、開閉の手間が面倒という声を受け、
+  // 全セクション常時展開＋余白を詰めたコンパクト表示に変更した。
   const SECTIONS = [
     { id: 'pre', group: 'pregame', groupLabel: '⚡ 試合前', label: '事前分析', content: <PreGameTab champion={sharedChampion} enemyChampion={sharedEnemyChampion} triggerSignal={dailyCheckTrigger} /> },
     // 「マッチアップ」は独立タブを廃止。偵察でライブゲームの自分・対面チャンピオンが
@@ -877,26 +876,16 @@ export default function CoachPage() {
     { id: 'tilt', group: 'mental', groupLabel: '🎯 メンタル', label: '🧠 ティルト', content: <TiltTab triggerSignal={dailyCheckTrigger} /> },
   ] as const;
 
-  // 最初の項目だけ開いた状態にし、あとはユーザーが必要な分だけ開く。
-  // 複数同時に開けるので、以前のタブ切り替えと違い前の結果を消さずに見比べられる。
-  const [openIds, setOpenIds] = useState<Set<string>>(new Set(['pre']));
-
   // 辞典側から `?champion=X&enemy=Y` で対面メモの編集リンクを踏んできた場合、
-  // 「試合後」グループの対面メモを自動的に開く（旧: 辞典の「対面」タブへの直リンク）。
+  // 全セクション常時展開になったので開閉の代わりに「対面メモ」までスクロールする
+  // （旧: 辞典の「対面」タブへの直リンク）。
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const params = new URLSearchParams(window.location.search);
     if (params.get('champion') || params.get('enemy') || params.get('tab') === 'matchup-memo') {
-      setOpenIds((prev) => new Set([...prev, 'matchup-memo']));
+      document.getElementById('section-matchup-memo')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   }, []);
-  const toggleSection = (id: string) => {
-    setOpenIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
-      return next;
-    });
-  };
 
   const groupOrder = ['pregame', 'postgame', 'mental'] as const;
 
@@ -988,40 +977,22 @@ export default function CoachPage() {
           </button>
         </div>
 
-        {/* 1ページ・折りたたみ形式。グループ見出しは分類の目印のみでクリック不要。 */}
-        <div className="space-y-8">
+        {/* 全セクション常時展開。グループごとに1つの枠にまとめ、余白を詰めてコンパクトに表示。 */}
+        <div className="space-y-5">
           {groupOrder.map((groupId) => {
             const groupSections = SECTIONS.filter((s) => s.group === groupId);
             return (
               <div key={groupId}>
-                <h2 className="mb-3 px-1 text-xs font-bold uppercase tracking-wider text-white/40">
+                <h2 className="mb-2 px-1 text-xs font-bold uppercase tracking-wider text-white/40">
                   {groupSections[0].groupLabel}
                 </h2>
-                <div className="space-y-3">
-                  {groupSections.map((sec) => {
-                    const isOpen = openIds.has(sec.id);
-                    return (
-                      <div
-                        key={sec.id}
-                        className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03]"
-                      >
-                        <button
-                          onClick={() => toggleSection(sec.id)}
-                          className="flex w-full items-center justify-between px-5 py-3.5 text-left text-sm font-semibold text-white/80 transition-colors hover:text-white"
-                        >
-                          <span>{sec.label}</span>
-                          <span className={`text-white/40 transition-transform ${isOpen ? 'rotate-180' : ''}`}>▾</span>
-                        </button>
-                        {/* display切り替えのみでアンマウントしない: 折りたたんでも各タブの分析結果を保持する */}
-                        <div
-                          style={{ display: isOpen ? 'block' : 'none' }}
-                          className="animate-in border-t border-white/5 px-5 pb-5 pt-4"
-                        >
-                          {sec.content}
-                        </div>
-                      </div>
-                    );
-                  })}
+                <div className="divide-y divide-white/5 overflow-hidden rounded-2xl border border-white/10 bg-white/3">
+                  {groupSections.map((sec) => (
+                    <div key={sec.id} id={`section-${sec.id}`} className="px-5 py-4">
+                      <h3 className="mb-3 text-sm font-semibold text-white/80">{sec.label}</h3>
+                      {sec.content}
+                    </div>
+                  ))}
                 </div>
               </div>
             );
