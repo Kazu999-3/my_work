@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 import json
 import time
@@ -16,6 +17,29 @@ from v2_CORE.knowledge_revisions import record_matchup_sentinel_revision
 from v2_CORE._LOL.champ_id_normalizer import normalize_champion_id
 
 logger = setup_sovereign_logging("ChampionTrendWorker")
+
+
+def extract_json_object(text: str) -> str:
+    """AI応答からJSONオブジェクト部分だけを堅牢に取り出す。
+
+    google_search グラウンディングを有効にすると、「JSONのみ出力」の指示を無視して
+    JSONの前後に説明文（「検索結果に基づき以下にまとめました:」等）が付くことがある。
+    従来は応答の先頭が```かどうかしか見ておらず、先頭に説明文が付いた瞬間に
+    fence抽出が素通りしてjson.loadsへ生文章ごと渡され、
+    "Expecting value: line 1 column 1 (char 0)" で毎回失敗し続けていた（再試行しても
+    同じ応答パターンを繰り返すため直らない）。フェンスを応答中のどこからでも検出し、
+    無ければ最初の '{' 〜 最後の '}' を取り出すことで、前後の説明文を許容する。
+    """
+    text = text.strip()
+    fence_match = re.search(r"```(?:json)?\s*\n?(.*?)```", text, re.DOTALL)
+    if fence_match and fence_match.group(1).strip():
+        return fence_match.group(1).strip()
+    start = text.find("{")
+    end = text.rfind("}")
+    if start != -1 and end != -1 and end > start:
+        return text[start:end + 1]
+    return text
+
 
 def main():
     if len(sys.argv) < 3:
@@ -120,30 +144,20 @@ League of Legendsの最新パッチにおける、チャンピオン「{champion
         
         if not res_text or res_text.startswith("⚠️") or res_text.startswith("❌"):
             raise RuntimeError(f"Gemini API returned error: {res_text}")
-            
+
         # JSON部分の抽出
-        res_text = res_text.strip()
-        if res_text.startswith("```"):
-            files_lines = res_text.split("\n")
-            if files_lines[0].startswith("```json") or files_lines[0].startswith("```"):
-                res_text = "\n".join(files_lines[1:-1])
-        res_text = res_text.strip()
-        
+        res_text = extract_json_object(res_text)
+
         trend_data = json.loads(res_text)
     except Exception as e:
         logger.warning(f"⚠️ Gemini API failed: {e}. Falling back to local Ollama (gemma3:12b)...")
         try:
             from v2_CORE.ai_helper import _generate_with_ollama
             res_text = _generate_with_ollama(prompt, model="gemma3:12b")
-            
+
             # JSON部分の抽出
-            res_text = res_text.strip()
-            if res_text.startswith("```"):
-                files_lines = res_text.split("\n")
-                if files_lines[0].startswith("```json") or files_lines[0].startswith("```"):
-                    res_text = "\n".join(files_lines[1:-1])
-            res_text = res_text.strip()
-            
+            res_text = extract_json_object(res_text)
+
             trend_data = json.loads(res_text)
             logger.info("✅ Successfully generated trend data using local Ollama model fallback.")
         except Exception as ollama_e:
