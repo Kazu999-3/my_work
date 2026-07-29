@@ -767,19 +767,21 @@ function MatchupTab({ champion, enemyChampion, triggerSignal }: { champion: stri
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-white/50">
-        ナレッジDB（アーカイブ含む）とチャンピオン辞典の記述をAIが要約・重複クリーンアップした上でアドバイスを提示します。
-        チャンピオンは上部の共通入力欄と連動しています。
-      </p>
-
-      <button
-        id="matchup-analyze-btn"
-        onClick={analyze}
-        disabled={loading}
-        className="w-full rounded-xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-500 disabled:opacity-50"
-      >
-        {loading ? '検索中...' : '⚔️ マッチアップを分析'}
-      </button>
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-sm text-white/50">
+          偵察でライブゲームの自分・対面チャンピオンが判明すると自動的に分析します
+          （ナレッジDBとチャンピオン辞典の記述をAIが要約）。
+        </p>
+        <button
+          id="matchup-analyze-btn"
+          onClick={analyze}
+          disabled={loading || !champion || !enemyChampion}
+          title="上部の共通入力欄の内容で手動再分析"
+          className="shrink-0 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-emerald-500 disabled:opacity-50"
+        >
+          {loading ? '分析中...' : '🔄 再分析'}
+        </button>
+      </div>
 
       {loading && <Spinner />}
       {error && <p className="text-sm text-red-400">❌ {error}</p>}
@@ -829,6 +831,15 @@ export default function CoachPage() {
   const [sharedChampion, setSharedChampion] = useState('');
   const [sharedEnemyChampion, setSharedEnemyChampion] = useState('');
 
+  // 「マッチアップ」タブを廃止し、偵察(ScoutTab)がライブゲームから自分・対面の
+  // チャンピオンを検知した瞬間に自動でマッチアップ分析を走らせる(#①)。
+  const [scoutMatchupTrigger, setScoutMatchupTrigger] = useState(0);
+  const handleLiveMatchDetected = (myChampion: string, enemyChampion: string) => {
+    setSharedChampion(myChampion);
+    setSharedEnemyChampion(enemyChampion);
+    setScoutMatchupTrigger(Date.now());
+  };
+
   // 「今日のチェック」ボタン。試合を始める前に見る3項目(事前分析・目標・ティルト)を
   // まとめて起動する。値をインクリメントするたびに各タブのuseEffectが反応する。
   const [dailyCheckTrigger, setDailyCheckTrigger] = useState(0);
@@ -842,8 +853,22 @@ export default function CoachPage() {
   // に統合。グループ見出しは分類の目印として残すが、クリックでの切り替えは発生しない。
   const SECTIONS = [
     { id: 'pre', group: 'pregame', groupLabel: '⚡ 試合前', label: '事前分析', content: <PreGameTab champion={sharedChampion} enemyChampion={sharedEnemyChampion} triggerSignal={dailyCheckTrigger} /> },
-    { id: 'matchup', group: 'pregame', groupLabel: '⚡ 試合前', label: '⚔️ マッチアップ', content: <MatchupTab champion={sharedChampion} enemyChampion={sharedEnemyChampion} /> },
-    { id: 'scout', group: 'pregame', groupLabel: '⚡ 試合前', label: '🧭 偵察', content: <ScoutTab /> },
+    // 「マッチアップ」は独立タブを廃止。偵察でライブゲームの自分・対面チャンピオンが
+    // 判明した瞬間に自動で分析するようにし、結果は偵察セクション内に表示する(#①)。
+    {
+      id: 'scout', group: 'pregame', groupLabel: '⚡ 試合前', label: '🧭 偵察',
+      content: (
+        <div className="space-y-8">
+          <ScoutTab onLiveMatchDetected={handleLiveMatchDetected} />
+          {(sharedChampion && sharedEnemyChampion) && (
+            <div className="border-t border-white/10 pt-8">
+              <h3 className="mb-4 text-sm font-bold text-white/70">⚔️ マッチアップ分析（偵察結果から自動生成）</h3>
+              <MatchupTab champion={sharedChampion} enemyChampion={sharedEnemyChampion} triggerSignal={scoutMatchupTrigger} />
+            </div>
+          )}
+        </div>
+      ),
+    },
     { id: 'sim5v5', group: 'pregame', groupLabel: '⚡ 試合前', label: '🎮 5v5シミュレータ', content: <FiveVFiveSimTab /> },
     { id: 'post', group: 'postgame', groupLabel: '🔍 試合後', label: '振り返り', content: <PostGameTab /> },
     { id: 'trends', group: 'postgame', groupLabel: '🔍 試合後', label: '📈 傾向', content: <TrendsTab /> },
@@ -953,7 +978,7 @@ export default function CoachPage() {
               />
             </div>
           </div>
-          <p className="mt-2 text-[11px] text-white/30">「事前分析」「マッチアップ」で共通して使われます。</p>
+          <p className="mt-2 text-[11px] text-white/30">「事前分析」「マッチアップ」で共通して使われます（偵察でライブゲームを検知すると自動入力されます）。</p>
 
           <button
             onClick={runDailyCheck}
