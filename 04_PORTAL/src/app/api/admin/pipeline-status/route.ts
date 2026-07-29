@@ -6,12 +6,16 @@ import { verifyAdminSession } from '../../../../lib/adminAuth';
 // 「データ収集」(lol_trend_collect) と「プロビルド」(pro_build%) は、そもそも
 // edge_tasks に起票する仕組みが実装されたことがない（プロビルドはtask_type自体が
 // 非存在）ため、常に古い/未実行のまま変わらず表示が実態と乖離していた。削除する。
-const PIPELINE_JOBS = [
-  { id: 'youtube-analysis', label: 'YouTube解析', pattern: 'youtube%' },
-  { id: 'dict-synthesis', label: '辞典更新', pattern: 'champion_db%' },
+//
+// dict-synthesisは以前 champion_db% (=champion_db_bulk_update、週次バッチのみ)しか
+// 見ておらず、実際に高頻度で辞典更新を行っている dict_synthesizer タスクの活動が
+// 一切反映されず「全く更新されてない」ように見えていた。両方をtypesで監視する。
+const PIPELINE_JOBS: { id: string; label: string; types: string[] }[] = [
+  { id: 'youtube-analysis', label: 'YouTube解析', types: ['youtube_absorb', 'youtube_channel_monitor', 'resolve_youtube_channel', 'resolve_youtube_playlist'] },
+  { id: 'dict-synthesis', label: '辞典更新', types: ['champion_db_bulk_update', 'dict_synthesizer'] },
   // edge_worker_daemon.py(ローカル)と edge-cloud-worker.yml(クラウド)の両方が
   // 同じ固定IDにUPSERTする生存ハートビート。どちらか新しい方の稼働状況を示す。
-  { id: 'edge-worker', label: 'オンデマンド処理(トレンド/シミュレーション等)', pattern: 'worker_heartbeat' },
+  { id: 'edge-worker', label: 'オンデマンド処理(トレンド/シミュレーション等)', types: ['worker_heartbeat'] },
 ];
 
 export async function GET(req: Request) {
@@ -29,9 +33,9 @@ export async function GET(req: Request) {
         // 各ジョブタイプの最新タスクを取得
         const { data } = await supabase
           .from('edge_tasks')
-          .select('status, created_at, updated_at, task_type')
-          .ilike('task_type', job.pattern)
-          .order('created_at', { ascending: false })
+          .select('status, created_at, updated_at, task_type, executor')
+          .in('task_type', job.types)
+          .order('updated_at', { ascending: false })
           .limit(1)
           .maybeSingle();
 
@@ -56,16 +60,28 @@ export async function GET(req: Request) {
       })
     );
 
-    // champion_trend の直近の失敗タスク一覧（通知から再実行導線を辿れるように）
-    const { data: failedTrendTasks } = await supabase
+    // champion_trend の直近の失敗タスク一覧（通知から再実行導線を辿れるように）。
+    // 再実行は新規タスクを積むだけで古い失敗行を消さないため、status=failedだけを
+    // 見ると「再実行して成功した後も古い失敗がずっと表示され続ける」バグになる
+    // (ダッシュボードの要対応パネルと同じ問題)。(champion, role)ごとに最新の状態だけを見る。
+    const { data: recentTrendTasks } = await supabase
       .from('edge_tasks')
-      .select('id, payload, error_message, updated_at, executor')
+      .select('id, payload, status, error_message, updated_at, executor')
       .eq('task_type', 'champion_trend')
-      .eq('status', 'failed')
+      .in('status', ['failed', 'completed'])
       .order('updated_at', { ascending: false })
-      .limit(10);
+      .limit(100);
 
-    return NextResponse.json({ pipelines: results, failedTasks: failedTrendTasks || [] });
+    const latestByPayload = new Map<string, any>();
+    for (const t of (recentTrendTasks || [])) {
+      const key = JSON.stringify(t.payload || {});
+      if (!latestByPayload.has(key)) latestByPayload.set(key, t); // 降順取得済みなので最初の1件が最新
+    }
+    const failedTrendTasks = Array.from(latestByPayload.values())
+      .filter((t) => t.status === 'failed')
+      .slice(0, 10);
+
+    return NextResponse.json({ pipelines: results, failedTasks: failedTrendTasks });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
