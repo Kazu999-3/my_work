@@ -177,19 +177,33 @@ League of Legendsの最新パッチにおける、チャンピオン「{champion
         raw_data = {}
         
     # トレンドデータのマージ
+    # Gemini応答が特定フィールド(tier/trend_itemsなど)を欠くことがあるため、
+    # 単純上書きだと既存の正常な値まで消してしまう。既存値をフォールバックにして
+    # 「取得できたものだけ更新、取れなかったものは前回値を維持」する(#⑤)。
+    existing_patch_meta = raw_data.get("patch_meta") if isinstance(raw_data.get("patch_meta"), dict) else {}
     raw_data["patch_meta"] = {
-        "win_rate": trend_data.get("win_rate"),
-        "pick_rate": trend_data.get("pick_rate"),
-        "ban_rate": trend_data.get("ban_rate"),
-        "tier": trend_data.get("tier"),
-        "trend_items": trend_data.get("trend_items", []),
-        "trend_runes": trend_data.get("trend_runes", {}),
-        "patch": trend_data.get("patch"),
+        "win_rate": trend_data.get("win_rate") if trend_data.get("win_rate") is not None else existing_patch_meta.get("win_rate"),
+        "pick_rate": trend_data.get("pick_rate") if trend_data.get("pick_rate") is not None else existing_patch_meta.get("pick_rate"),
+        "ban_rate": trend_data.get("ban_rate") if trend_data.get("ban_rate") is not None else existing_patch_meta.get("ban_rate"),
+        "tier": trend_data.get("tier") or existing_patch_meta.get("tier"),
+        "trend_items": trend_data.get("trend_items") or existing_patch_meta.get("trend_items", []),
+        "trend_runes": trend_data.get("trend_runes") or existing_patch_meta.get("trend_runes", {}),
+        "patch": trend_data.get("patch") or existing_patch_meta.get("patch"),
         "updated_at": int(time.time())
     }
-    raw_data["pro_builds"] = trend_data.get("pro_builds", [])
-    if "jg_style" in trend_data:
-        raw_data["jg_style"] = trend_data.get("jg_style")
+    raw_data["pro_builds"] = trend_data.get("pro_builds") or raw_data.get("pro_builds", [])
+
+    # jg_styleも同様に、応答に含まれるサブフィールドだけを反映し、欠けている
+    # サブフィールド(type/blind_pickable/counter_pickable/description)は既存値を維持する。
+    new_jg_style = trend_data.get("jg_style") if isinstance(trend_data.get("jg_style"), dict) else None
+    if new_jg_style:
+        existing_jg_style = raw_data.get("jg_style") if isinstance(raw_data.get("jg_style"), dict) else {}
+        raw_data["jg_style"] = {
+            "type": new_jg_style.get("type") or existing_jg_style.get("type"),
+            "description": new_jg_style.get("description") or existing_jg_style.get("description"),
+            "blind_pickable": new_jg_style.get("blind_pickable") if new_jg_style.get("blind_pickable") is not None else existing_jg_style.get("blind_pickable"),
+            "counter_pickable": new_jg_style.get("counter_pickable") if new_jg_style.get("counter_pickable") is not None else existing_jg_style.get("counter_pickable"),
+        }
     
     # 攻略情報の上書き
     raw_data["strengths"] = trend_data.get("strengths") or raw_data.get("strengths") or ""

@@ -315,17 +315,20 @@ class LolTrendCollector:
             title = existing_record.get("title") or title
             
         # raw_data 内のメタデータを更新
+        # AI応答が一部フィールドを欠くことがあるため、既存値をフォールバックにして
+        # 取れなかったフィールドで前回値を消さないようにする(#⑤ 他の書き込み経路と同じ修正)
+        existing_patch_meta = raw_data.get("patch_meta") if isinstance(raw_data.get("patch_meta"), dict) else {}
         raw_data["patch_meta"] = {
-            "win_rate": trend_data.get("win_rate"),
-            "pick_rate": trend_data.get("pick_rate"),
-            "ban_rate": trend_data.get("ban_rate"),
-            "tier": trend_data.get("tier"),
-            "trend_items": trend_data.get("trend_items", []),
-            "trend_runes": trend_data.get("trend_runes", {}),
-            "patch": trend_data.get("patch"),
+            "win_rate": trend_data.get("win_rate") if trend_data.get("win_rate") is not None else existing_patch_meta.get("win_rate"),
+            "pick_rate": trend_data.get("pick_rate") if trend_data.get("pick_rate") is not None else existing_patch_meta.get("pick_rate"),
+            "ban_rate": trend_data.get("ban_rate") if trend_data.get("ban_rate") is not None else existing_patch_meta.get("ban_rate"),
+            "tier": trend_data.get("tier") or existing_patch_meta.get("tier"),
+            "trend_items": trend_data.get("trend_items") or existing_patch_meta.get("trend_items", []),
+            "trend_runes": trend_data.get("trend_runes") or existing_patch_meta.get("trend_runes", {}),
+            "patch": trend_data.get("patch") or existing_patch_meta.get("patch"),
             "updated_at": int(time.time())
         }
-        raw_data["pro_builds"] = trend_data.get("pro_builds", [])
+        raw_data["pro_builds"] = trend_data.get("pro_builds") or raw_data.get("pro_builds", [])
         
         # 辞典一覧の「更新日」は created_at を見ているため、更新時も明示的に現在時刻を入れる
         payload = {

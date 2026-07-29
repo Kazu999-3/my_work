@@ -169,17 +169,20 @@ class DictSynthesizer:
                     role = updated_raw_data.get("role") or "Jungle"
                     trend_data = collector.collect_champ_trends(champion_name, role)
                     if trend_data:
+                        # AI応答が一部フィールド(tier/trend_items等)を欠くことがあるため、
+                        # 単純上書きにせず既存値をフォールバックにする(#⑤ champion_trend_workerと同じ修正)
+                        existing_patch_meta = patch_meta if isinstance(patch_meta, dict) else {}
                         updated_raw_data["patch_meta"] = {
-                            "win_rate": trend_data.get("win_rate"),
-                            "pick_rate": trend_data.get("pick_rate"),
-                            "ban_rate": trend_data.get("ban_rate"),
-                            "tier": trend_data.get("tier"),
-                            "trend_items": trend_data.get("trend_items", []),
-                            "trend_runes": trend_data.get("trend_runes", {}),
-                            "patch": trend_data.get("patch"),
+                            "win_rate": trend_data.get("win_rate") if trend_data.get("win_rate") is not None else existing_patch_meta.get("win_rate"),
+                            "pick_rate": trend_data.get("pick_rate") if trend_data.get("pick_rate") is not None else existing_patch_meta.get("pick_rate"),
+                            "ban_rate": trend_data.get("ban_rate") if trend_data.get("ban_rate") is not None else existing_patch_meta.get("ban_rate"),
+                            "tier": trend_data.get("tier") or existing_patch_meta.get("tier"),
+                            "trend_items": trend_data.get("trend_items") or existing_patch_meta.get("trend_items", []),
+                            "trend_runes": trend_data.get("trend_runes") or existing_patch_meta.get("trend_runes", {}),
+                            "patch": trend_data.get("patch") or existing_patch_meta.get("patch"),
                             "updated_at": now_ts
                         }
-                        updated_raw_data["pro_builds"] = trend_data.get("pro_builds", [])
+                        updated_raw_data["pro_builds"] = trend_data.get("pro_builds") or updated_raw_data.get("pro_builds", [])
                         changed = True
                 except Exception as te:
                     logger.error(f"⚠️ {champion_name} の自動トレンド更新に失敗: {te}")
