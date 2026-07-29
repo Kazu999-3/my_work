@@ -58,9 +58,15 @@ export function createRecruitButtons(metadata) {
     comps.push({ type: 1, components: [{ type: 2, label: "✅ 募集完了（ポータルでチーム分け）", style: 2, custom_id: `recruit_completed`, disabled: true }] });
   }
 
-  // Row 2: ロール選択（ノーマルかつ未満員のみ）
+  // Row 2: ロール選択（ノーマルかつ未満員のみ）。5個の個別ボタンは氾濫するため、
+  // 募集主メニュー(Row 3)と同じ「セレクト1つに集約」方式に統一する(#①)。
   if (!isFull && metadata.mode === 'ノーマル') {
-    comps.push({ type: 1, components: ['Top', 'Jg', 'Mid', 'Adc', 'Sup'].map(r => ({ type: 2, label: r, style: 2, custom_id: `join_role:${r}:${metadata.owner}` })) });
+    comps.push({ type: 1, components: [{
+      type: 3, custom_id: `join_role_select:${metadata.owner}`,
+      placeholder: '⚔️ ロールを選んで参加（任意・プールのままでもOK）',
+      min_values: 0, max_values: 1,
+      options: ['Top', 'Jg', 'Mid', 'Adc', 'Sup'].map(r => ({ label: r, value: r }))
+    }] });
   }
 
   // Row 3: 募集主メニュー（編集・終了・削除などをセレクト1つに集約してボタンの氾濫を解消）

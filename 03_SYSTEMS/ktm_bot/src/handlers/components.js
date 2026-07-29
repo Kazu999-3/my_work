@@ -23,6 +23,18 @@ export async function handleButtonInteraction(interaction, env, ctx) {
     const metadata = parseMessageData(interaction.message);
     return Response.json({ type: 7, data: { content: createMessageContent(metadata), embeds: [createRecruitEmbed(metadata)], components: createRecruitButtons(metadata) } });
   }
+
+  // ロール選択セレクト（旧: Top/Jg/Mid/Adc/Sup の5ボタン）を、既存の join_role:role:owner
+  // 用のIDに読み替えて以降の処理をそのまま再利用する(#①)。
+  if (customId.startsWith('join_role_select:') && Array.isArray(interaction.data.values) && interaction.data.values.length > 0) {
+    const owner = customId.split(':')[1];
+    const role = interaction.data.values[0];
+    customId = `join_role:${role}:${owner}`;
+  } else if (customId.startsWith('join_role_select:')) {
+    // 何も選ばれずに閉じられた場合は募集メッセージをそのまま維持
+    const metadata = parseMessageData(interaction.message);
+    return Response.json({ type: 7, data: { content: createMessageContent(metadata), embeds: [createRecruitEmbed(metadata)], components: createRecruitButtons(metadata) } });
+  }
   const appId = interaction.application_id;
   const token = interaction.token;
   const botToken = env.DISCORD_TOKEN;
