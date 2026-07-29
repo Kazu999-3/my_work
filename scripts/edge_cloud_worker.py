@@ -1,13 +1,16 @@
 # ============================================================
 # Edge Cloud Worker
 # ローカル edge_worker_daemon.py が居ないと一切処理されなかった
-# オンデマンド系タスク（チャンピオン個別トレンド取得・5v5シミュレーション・
+# オンデマンド系タスク（チャンピオン個別トレンド取得・
 # YouTubeチャンネル監視/登録・Redditスカウト・LoLトレンド収集・辞典シンセサイザー）を、
 # edge_tasks(Supabase)から拾って代わりに実行する。
 #
 # 常駐デーモンではなく、GitHub Actionsから数分おきに1回だけ起動される想定。
 # youtube_absorb / champion_db_bulk_update は専用の定期ワークフロー
 # (absorber.yml / champ-dict-update.yml)が別途担当しているため、ここでは扱わない。
+# matchup_simulation_5v5 は /api/match/simulate (Vercel) が同期的に完結するため、
+# ここ／ローカルデーモンのどちらでも横取りしない（横取りするとGeminiクォータを
+# 無駄に消費し、Vercel側の正常な結果を後から上書きすることがあった）。
 #
 # 必要な環境変数: SUPABASE_URL, SUPABASE_KEY（またはSUPABASE_SERVICE_ROLE_KEY等の別名）
 # ============================================================
@@ -37,7 +40,6 @@ PORTAL_BOT_SECRET = os.environ.get("PORTAL_BOT_SECRET", "")
 
 TASK_LABELS = {
     "champion_trend": ("チャンピオントレンド更新", "/champions"),
-    "matchup_simulation_5v5": ("5v5構成シミュレーション", "/coach"),
     "resolve_youtube_channel": ("YouTubeチャンネル登録", "/admin/youtube"),
     "resolve_youtube_playlist": ("YouTubeプレイリスト登録", "/admin/youtube"),
     "youtube_channel_monitor": ("YouTubeチャンネル監視", "/admin/youtube"),
@@ -75,10 +77,6 @@ def build_champion_trend_args(p):
     return [p.get("champion", ""), p.get("role") or "Jungle"]
 
 
-def build_5v5_args(p):
-    return [json.dumps(p.get("blue")), json.dumps(p.get("red"))]
-
-
 def build_resolve_channel_args(p):
     return ["--resolve", p.get("url", "")]
 
@@ -102,7 +100,6 @@ TASK_MAP = {
     # ジョブ全体のタイムアウトには余裕がある(GitHub Actionsのデフォルト360分)ため、
     # 500秒に伸ばす。
     "champion_trend": ("03_SYSTEMS/v2_CORE/_LOL/champion_trend_worker.py", build_champion_trend_args, 500),
-    "matchup_simulation_5v5": ("03_SYSTEMS/v2_CORE/_LOL/matchup_simulator_5v5_worker.py", build_5v5_args, 500),
     "resolve_youtube_channel": ("03_SYSTEMS/v2_CORE/_LOL/youtube_monitor.py", build_resolve_channel_args, 100),
     "resolve_youtube_playlist": ("03_SYSTEMS/v2_CORE/_LOL/youtube_monitor.py", build_resolve_playlist_args, 100),
     "youtube_channel_monitor": ("03_SYSTEMS/v2_CORE/_LOL/youtube_monitor.py", build_monitor_args, 280),
@@ -206,17 +203,7 @@ def main():
                 notify_portal(task_type, payload, False, detail=err, task_id=task_id)
                 continue
 
-            if task_type == "matchup_simulation_5v5":
-                try:
-                    result = json.loads(res.stdout)
-                except Exception as je:
-                    err = f"シミュレーション結果のJSON解析に失敗: {je}"
-                    complete_task(task_id, "failed", error_message=err)
-                    notify_portal(task_type, payload, False, detail=err, task_id=task_id)
-                    print(f"❌ JSON解析失敗: {task_type} ({task_id})", file=sys.stderr)
-                    continue
-            else:
-                result = {"success": True, "stdout": res.stdout[-20000:], "stderr": res.stderr[-5000:]}
+            result = {"success": True, "stdout": res.stdout[-20000:], "stderr": res.stderr[-5000:]}
 
             complete_task(task_id, "completed", result=result)
             notify_portal(task_type, payload, True, task_id=task_id)

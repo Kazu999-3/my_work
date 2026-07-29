@@ -131,7 +131,10 @@ class EdgeWorkerDaemon:
 
     def fetch_pending_task(self):
         """status=pending のタスクを複数件取得し、競合チェックを行って最初に実行可能なタスクを running にロックして返す"""
-        url = f"{self.supabase_url}/rest/v1/edge_tasks?status=eq.pending&order=created_at.asc&limit=10"
+        # matchup_simulation_5v5 は Vercel側(/api/match/simulate)で同期的に完結するようになったため、
+        # このデーモンが横取りしないよう明示的に除外する（横取りするとGeminiクォータを無駄に消費し、
+        # Vercel側の正常な結果を後から上書きしてしまうことがあった）。
+        url = f"{self.supabase_url}/rest/v1/edge_tasks?status=eq.pending&task_type=neq.matchup_simulation_5v5&order=created_at.asc&limit=10"
         try:
             res = httpx.get(url, headers=self.headers, timeout=10)
             if res.status_code == 200 and res.json():
@@ -337,23 +340,6 @@ class EdgeWorkerDaemon:
                     timeout=600
                 )
                 self.update_task_status(task_id, "completed", result=result)
-                
-            elif task_type == "matchup_simulation_5v5":
-                import json
-                blue = payload.get("blue")
-                red = payload.get("red")
-                logger.info(f"⚔️ [matchup_simulation_5v5] 5v5対戦構成シミュレーションを実行...")
-                result = self._run_subprocess_task(
-                    "03_SYSTEMS/v2_CORE/_LOL/matchup_simulator_5v5_worker.py",
-                    args=[json.dumps(blue), json.dumps(red)],
-                    timeout=300
-                )
-                try:
-                    stdout_json = json.loads(result.get("stdout", "{}"))
-                    self.update_task_status(task_id, "completed", result=stdout_json)
-                except Exception as je:
-                    logger.error(f"Failed to parse 5v5 simulator stdout JSON: {je}")
-                    self.update_task_status(task_id, "failed", error_message=f"Failed to parse simulator output JSON: {je}")
                 
             elif task_type == "resolve_youtube_channel":
                 channel_url = payload.get("url")
