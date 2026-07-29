@@ -326,6 +326,67 @@ export default function MatchupMemoTab() {
 
   return (
     <div className="flex flex-col gap-6">
+      {/* 対面カルテ（自動記録・matchup_logベース）: 試合結果から自動集計される苦手対面・直近の対面。
+          データ取得ロジックは既存だったが描画に一度も繋がっておらず、ダッシュボードの「対面カルテ」
+          タイルが実質どこにも表示されない状態だったため復元する。 */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="glass-panel p-4 rounded-2xl">
+          <h4 className="text-sm font-bold text-rose-400 flex items-center gap-2 mb-3">💀 苦手な対面ランキング（自動集計）</h4>
+          {weakList === null ? (
+            <Spinner label="集計中..." />
+          ) : weakList.length === 0 ? (
+            <p className="text-xs text-gray-500 py-3">まだ十分な試合数がありません（1対面あたり2戦以上で集計対象）。</p>
+          ) : (
+            <div className="space-y-1.5 max-h-64 overflow-y-auto pr-1">
+              {weakList.map((w: any, idx: number) => (
+                <button
+                  key={`${w.my}-${w.enemy}-${idx}`}
+                  onClick={() => startMemoFromLog({ my: w.my, enemy: w.enemy })}
+                  className="w-full flex items-center justify-between gap-2 p-2 rounded-xl bg-black/20 border border-white/5 hover:border-rose-500/30 transition-colors text-left"
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Image src={getChampIcon(w.my)} alt={w.my} width={24} height={24} className="w-6 h-6 rounded-full border border-white/10 shrink-0" />
+                    <span className="text-xs text-gray-500 shrink-0">vs</span>
+                    <Image src={getChampIcon(w.enemy)} alt={w.enemy} width={24} height={24} className="w-6 h-6 rounded-full border border-rose-500/30 shrink-0" />
+                    <span className="text-xs font-bold text-gray-200 truncate">{w.my} vs {w.enemy}</span>
+                  </div>
+                  <span className="text-[10px] font-black text-rose-400 shrink-0">勝率{w.winRate}%（{w.games}戦）</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="glass-panel p-4 rounded-2xl">
+          <h4 className="text-sm font-bold text-cyan-400 flex items-center gap-2 mb-3"><History size={16} /> 直近の対面</h4>
+          {recentMatchups === null ? (
+            <Spinner label="読み込み中..." />
+          ) : recentMatchups.length === 0 ? (
+            <p className="text-xs text-gray-500 py-3">まだ試合記録がありません。</p>
+          ) : (
+            <div className="space-y-1.5 max-h-64 overflow-y-auto pr-1">
+              {recentMatchups.map((r: any, idx: number) => (
+                <button
+                  key={idx}
+                  onClick={() => startMemoFromLog({ my: r.my, enemy: r.enemy, role: r.role })}
+                  className="w-full flex items-center justify-between gap-2 p-2 rounded-xl bg-black/20 border border-white/5 hover:border-cyan-500/30 transition-colors text-left"
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Image src={getChampIcon(r.my)} alt={r.my} width={24} height={24} className="w-6 h-6 rounded-full border border-white/10 shrink-0" />
+                    <span className="text-xs text-gray-500 shrink-0">vs</span>
+                    <Image src={getChampIcon(r.enemy)} alt={r.enemy} width={24} height={24} className="w-6 h-6 rounded-full border border-cyan-500/30 shrink-0" />
+                    <span className="text-xs font-bold text-gray-200 truncate">{r.my} vs {r.enemy}</span>
+                  </div>
+                  <span className={`text-[10px] font-black shrink-0 ${r.isWin ? 'text-emerald-400' : 'text-rose-400'}`}>
+                    {r.isWin ? '勝ち' : '負け'} {new Date(r.date).toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' })}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* ビュー切替 */}
       <div className="flex items-center justify-between flex-wrap gap-4 glass-panel p-4 rounded-2xl">
         <div className="flex items-center gap-2">
