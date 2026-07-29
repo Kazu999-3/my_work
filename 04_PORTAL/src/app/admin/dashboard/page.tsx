@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Activity, Zap, TrendingUp, ShieldAlert, Cpu, Network, Gamepad2, Users, RefreshCw, CheckCircle2, X, ChevronRight, Brain, Sparkles } from 'lucide-react';
+import { Activity, Zap, ShieldAlert, Cpu, Network, Gamepad2, Users, RefreshCw, CheckCircle2, X, ChevronRight, Brain, Sparkles } from 'lucide-react';
 import { supabase } from '../../../lib/supabaseClient';
 import { supabaseBrowser } from '../../../lib/supabaseBrowserClient';
 import Link from 'next/link';
@@ -11,17 +11,21 @@ import Link from 'next/link';
 export default function Home() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [apiUsage, setApiUsage] = useState<number>(0);
-  const [systemMetrics, setSystemMetrics] = useState<any>({ queue: { pending: 0, error: 0, completed: 0, error_details: [] }, logs: [] });
+  const [systemMetrics, setSystemMetrics] = useState<any>({ queue: { pending: 0, completed: 0 }, cloud_workers: {} });
   const [recentDictUpdates, setRecentDictUpdates] = useState<any[]>([]);
   const [recentLibraryUpdates, setRecentLibraryUpdates] = useState<any[]>([]);
   const [recentYoutubeQueue, setRecentYoutubeQueue] = useState<any[]>([]);
+  const [needsAttention, setNeedsAttention] = useState<{ failedTasks: any[]; youtubeErrorCount: number }>({ failedTasks: [], youtubeErrorCount: 0 });
+  const [retryingTaskId, setRetryingTaskId] = useState<string | null>(null);
+  const [recruitActivity, setRecruitActivity] = useState<{ openCount: number; recent: any[] }>({ openCount: 0, recent: [] });
+  const [setupChecks, setSetupChecks] = useState<Record<string, boolean> | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<string>('');
 
   const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
-  const [activeSystemTab, setActiveSystemTab] = useState<'nodes' | 'queue' | 'logs'>('nodes');
+  const [activeSystemTab, setActiveSystemTab] = useState<'nodes' | 'queue'>('nodes');
 
   // システムの稼働状況とジョブキューの状況を監視する状態
   const [systemStatus, setSystemStatus] = useState<{
@@ -81,12 +85,49 @@ export default function Home() {
         if (data.recentYoutubeQueue) setRecentYoutubeQueue(data.recentYoutubeQueue);
         if (data.recentDictUpdates) setRecentDictUpdates(data.recentDictUpdates);
         if (data.recentLibraryUpdates) setRecentLibraryUpdates(data.recentLibraryUpdates);
+        if (data.needsAttention) setNeedsAttention(data.needsAttention);
+        if (data.recruitActivity) setRecruitActivity(data.recruitActivity);
       }
     } catch (err) {
       console.error('Error fetching dashboard stats:', err);
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
+    }
+  };
+
+  const TASK_LABELS: Record<string, string> = {
+    champion_trend: 'チャンピオントレンド更新',
+    matchup_simulation_5v5: '5v5構成シミュレーション',
+    resolve_youtube_channel: 'YouTubeチャンネル登録',
+    resolve_youtube_playlist: 'YouTubeプレイリスト登録',
+    youtube_channel_monitor: 'YouTubeチャンネル監視',
+    reddit_scout: 'Redditスカウト',
+    lol_trend_collect: 'LoLトレンド収集',
+    dict_synthesizer: '辞典シンセサイザー',
+    champion_db_bulk_update: 'チャンピオン辞典一括更新',
+    youtube_absorb: 'YouTube動画解析',
+  };
+
+  const handleRetryFailedTask = async (task: any) => {
+    if (task.task_type !== 'champion_trend') return;
+    setRetryingTaskId(task.id);
+    try {
+      const res = await fetch('/api/admin/champions/trend', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ champion: task.payload?.champion, role: task.payload?.role || 'Jungle' }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setNeedsAttention((prev) => ({ ...prev, failedTasks: prev.failedTasks.filter((t) => t.id !== task.id) }));
+      } else {
+        alert(data.error || '再実行の登録に失敗しました。');
+      }
+    } catch {
+      alert('再実行の登録中に通信エラーが発生しました。');
+    } finally {
+      setRetryingTaskId(null);
     }
   };
 
@@ -97,6 +138,22 @@ export default function Home() {
     if (!isAuthenticated) return;
     fetchData();
     setLastUpdated(new Date().toLocaleTimeString('ja-JP'));
+  }, [isAuthenticated]);
+
+  // セットアップ未完了チェックリスト（環境変数の設定有無のみ。値は取得しない）
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    fetch('/api/health')
+      .then((res) => res.json())
+      .then((data) => setSetupChecks({
+        db: !!data.db,
+        riotKey: !!data.riotKey,
+        geminiKey: !!data.geminiKey,
+        vapid: !!data.vapid,
+        discordWebhook: !!data.discordWebhook,
+        portalBotSecret: !!data.portalBotSecret,
+      }))
+      .catch(() => {});
   }, [isAuthenticated]);
 
   const handleResetQueue = async () => {
@@ -206,10 +263,9 @@ export default function Home() {
             <Cpu size={14} className="text-cyan-400" />
             <span>AI プロンプト設定 ➔</span>
           </Link>
-          <Link href="/admin/analytics" className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 border border-indigo-500/20 hover:from-indigo-500 hover:to-purple-500 hover:border-indigo-400/30 text-xs font-bold text-white transition-all shadow-[0_0_20px_rgba(99,102,241,0.3)] flex items-center gap-2">
-            <TrendingUp size={14} />
-            <span>note 分析 ➔</span>
-          </Link>
+          {/* note分析(/admin/analytics)は2026-07-26の収益化パイプライン削除で参照元データが
+              止まっており(analyticsは1ヶ月以上前の1件のみ、note_draftsは空)、現状は死んだ導線
+              のためナビから外す。パイプライン再実装時に復活させる。 */}
           <button
             type="button"
             onClick={async () => {
@@ -241,8 +297,58 @@ export default function Home() {
 
 
 
+      {/* 要対応パネル: champion_trend等の失敗タスクとYouTubeキューのエラーを1箇所に集約。
+          何も無ければ表示しない（平時は場所を取らない）。 */}
+      {(needsAttention.failedTasks.length > 0 || needsAttention.youtubeErrorCount > 0) && (
+        <motion.div
+          initial={{ y: -10, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          className="glass-panel rounded-3xl p-6 border border-rose-500/30 bg-rose-500/5"
+        >
+          <h3 className="text-lg font-black text-rose-300 flex items-center gap-2 mb-4">
+            <ShieldAlert size={20} /> ⚠️ 要対応（{needsAttention.failedTasks.length + (needsAttention.youtubeErrorCount > 0 ? 1 : 0)}件）
+          </h3>
+          <div className="space-y-2">
+            {needsAttention.failedTasks.map((task) => (
+              <div key={task.id} className="flex items-center justify-between gap-3 p-3 rounded-xl bg-black/30 border border-white/5">
+                <div className="min-w-0">
+                  <div className="text-sm font-bold text-white">
+                    {TASK_LABELS[task.task_type] || task.task_type}
+                    {task.payload?.champion && <span className="text-gray-400 font-normal"> （{task.payload.champion}/{task.payload.role || ''}）</span>}
+                    {task.executor && <span className="ml-2 text-[10px] text-gray-500 font-normal">({task.executor === 'cloud' ? 'クラウド実行' : 'ローカルPC実行'})</span>}
+                  </div>
+                  <div className="text-xs text-gray-500 mt-0.5 truncate" title={task.error_message || ''}>
+                    {(task.error_message || '').slice(0, 100) || '(エラー詳細なし)'}
+                  </div>
+                </div>
+                {task.task_type === 'champion_trend' ? (
+                  <button
+                    onClick={() => handleRetryFailedTask(task)}
+                    disabled={retryingTaskId === task.id}
+                    className="shrink-0 px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-300 font-bold text-xs rounded-lg transition-all disabled:opacity-50 flex items-center gap-1.5"
+                  >
+                    <RefreshCw size={12} className={retryingTaskId === task.id ? 'animate-spin' : ''} /> 再実行
+                  </button>
+                ) : (
+                  <Link href="/admin/youtube" className="shrink-0 text-xs font-bold text-gray-400 hover:text-white underline">詳細へ</Link>
+                )}
+              </div>
+            ))}
+            {needsAttention.youtubeErrorCount > 0 && (
+              <Link
+                href="/admin/youtube"
+                className="flex items-center justify-between gap-3 p-3 rounded-xl bg-black/30 border border-white/5 hover:border-rose-500/30 transition-colors"
+              >
+                <span className="text-sm font-bold text-white">YouTube動画キューのエラー・手動対応要 {needsAttention.youtubeErrorCount}件</span>
+                <span className="text-xs font-bold text-rose-300">管理画面へ →</span>
+              </Link>
+            )}
+          </div>
+        </motion.div>
+      )}
+
       {/* Main Content */}
-      <motion.main 
+      <motion.main
         variants={containerVariants}
         initial="hidden"
         animate="visible"
@@ -296,31 +402,35 @@ export default function Home() {
             </div>
           </div>
 
-          {/* 必要機能 ＆ クラウド完結機能の一覧比較 */}
+          {/* 必要機能 ＆ クラウド完結機能の一覧比較
+              2026-07-29時点: champion_trend/matchup_simulation_5v5/YouTubeチャンネル監視/
+              reddit_scout/lol_trend_collect/dict_synthesizer は edge_cloud_worker.py
+              (GitHub Actions, 数分おき) が既に代行しており、辞典一括更新も champ-dict-update.yml
+              (毎週月曜)、戦績補完も api/cron/sync-matches (Vercel Cron) でクラウド完結している。
+              以前の表示はこの移行前のままで「PCを起動しないと止まる」という誤った危機感を
+              与えていたため、実態に合わせて書き換える。 */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-white/5 pt-4">
             <div className="space-y-2 bg-black/30 p-4 rounded-2xl border border-white/5">
               <span className="text-xs font-black text-amber-400 flex items-center gap-1.5 mb-2">
-                <ShieldAlert size={14} /> ⚡ エッジワーカー起動が必要な機能
+                <ShieldAlert size={14} /> ⚡ PC起動が今も意味を持つ場面
               </span>
               <ul className="space-y-1.5 text-xs text-gray-300">
-                <li className="flex items-center gap-2">🎬 <strong>YouTube動画解析</strong> <span className="text-[10px] text-gray-500">(Whisper GPU 文字起こし & 戦術マージ)</span></li>
-                <li className="flex items-center gap-2">📚 <strong>チャンピオン辞典の一括AI更新</strong> <span className="text-[10px] text-gray-500">(全チャンプGemini一括リサーチ)</span></li>
-                <li className="flex items-center gap-2">📊 <strong>トレンドデータ自動収集</strong> <span className="text-[10px] text-gray-500">(u.gg / Lolalytics 統計取得)</span></li>
-                <li className="flex items-center gap-2">📈 <strong>プロビルド追跡</strong> <span className="text-[10px] text-gray-500">(Oner/Canyon等の最新ビルド分析)</span></li>
-                <li className="flex items-center gap-2">🛠️ <strong>戦績スマート補完</strong> <span className="text-[10px] text-gray-500">(Riot API経由のPUUID・ロール自動補完)</span></li>
+                <li className="flex items-center gap-2">🚀 <strong>クラウド巡回を待たず即座に処理したい時</strong> <span className="text-[10px] text-gray-500">(GitHub Actionsは数分〜週次の巡回間隔)</span></li>
+                <li className="flex items-center gap-2">🔑 <strong>クラウド側のAPIキー無料枠を使い切った時の代替実行</strong></li>
               </ul>
+              <p className="text-[10px] text-gray-500 pt-1">※ 上記以外は起動しなくても自動的に処理されます。</p>
             </div>
 
             <div className="space-y-2 bg-black/30 p-4 rounded-2xl border border-white/5">
               <span className="text-xs font-black text-emerald-400 flex items-center gap-1.5 mb-2">
-                <CheckCircle2 size={14} /> 🌐 クラウド単体で常時動く機能 (ワーカー不要)
+                <CheckCircle2 size={14} /> 🌐 クラウドだけで自動的に動く機能 (PC起動不要)
               </span>
               <ul className="space-y-1.5 text-xs text-gray-300">
-                <li className="flex items-center gap-2">📖 <strong>チャンピオン辞典 ＆ 対面メモの閲覧</strong></li>
-                <li className="flex items-center gap-2">⚔️ <strong>5v5 AIチームシミュレータ分析</strong></li>
-                <li className="flex items-center gap-2">✨ <strong>パーソナルコーチ AI 相談</strong></li>
-                <li className="flex items-center gap-2">🔍 <strong>全コンテンツの横断検索</strong></li>
-                <li className="flex items-center gap-2">🏆 <strong>KTM リーダーボード ＆ 過去試合履歴</strong></li>
+                <li className="flex items-center gap-2">📚 <strong>チャンピオン辞典の一括AI更新</strong> <span className="text-[10px] text-gray-500">(champ-dict-update.yml・毎週月曜)</span></li>
+                <li className="flex items-center gap-2">📊 <strong>個別トレンド取得・プロビルド追跡・5v5シミュレータ</strong> <span className="text-[10px] text-gray-500">(edge_cloud_worker.py・数分おき)</span></li>
+                <li className="flex items-center gap-2">🎬 <strong>YouTube動画解析</strong> <span className="text-[10px] text-gray-500">(Groq Whisper API・absorber.yml)</span></li>
+                <li className="flex items-center gap-2">🛠️ <strong>戦績スマート補完</strong> <span className="text-[10px] text-gray-500">(Vercel Cron・sync-matches)</span></li>
+                <li className="flex items-center gap-2">✨ <strong>パーソナルコーチ AI 相談 ＆ 対面メモ</strong></li>
               </ul>
             </div>
           </div>
@@ -448,6 +558,69 @@ export default function Home() {
             )}
           </div>
 
+          {/* Panel C: 募集アクティビティ ＆ セットアップチェックリスト */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="glass-panel rounded-3xl p-6 border border-white/5 bg-gradient-to-br from-rose-500/5 to-transparent">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-black text-white flex items-center gap-2">
+                  <div className="w-2 h-6 bg-rose-500 rounded-full shadow-[0_0_10px_rgba(244,63,94,0.6)]"></div>
+                  募集アクティビティ
+                </h3>
+                <span className="text-xs font-black text-rose-300 bg-rose-500/10 border border-rose-500/20 px-2.5 py-1 rounded-full">
+                  現在募集中 {recruitActivity.openCount}件
+                </span>
+              </div>
+              <div className="space-y-2">
+                {recruitActivity.recent.length > 0 ? recruitActivity.recent.map((r) => (
+                  <div key={r.id} className="flex justify-between items-center bg-black/20 p-2.5 rounded-xl border border-white/5 text-xs">
+                    <div className="flex flex-col min-w-0">
+                      <span className="font-bold text-gray-200">{r.mode}（{r.max_count}人）</span>
+                      <span className="text-[10px] text-gray-500">募集主: {r.owner_name || '不明'}</span>
+                    </div>
+                    <span className={`px-2 py-0.5 rounded-full border text-[10px] font-bold shrink-0 ${
+                      r.status === 'open' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' :
+                      r.status === 'closed' ? 'bg-gray-500/10 border-gray-500/20 text-gray-400' :
+                      'bg-rose-500/10 border-rose-500/20 text-rose-400'
+                    }`}>
+                      {r.status === 'open' ? '募集中' : r.status === 'closed' ? '終了' : '削除済'}
+                    </span>
+                  </div>
+                )) : (
+                  <p className="text-sm text-gray-500 text-center py-4">直近の募集はありません</p>
+                )}
+              </div>
+              <p className="text-[10px] text-gray-600 mt-3">参加人数はDiscordメッセージ側で管理されているため、ここでは開催状況のみ表示しています。</p>
+            </div>
+
+            <div className="glass-panel rounded-3xl p-6 border border-white/5 bg-gradient-to-br from-amber-500/5 to-transparent">
+              <h3 className="text-lg font-black text-white flex items-center gap-2 mb-4">
+                <div className="w-2 h-6 bg-amber-500 rounded-full shadow-[0_0_10px_rgba(245,158,11,0.6)]"></div>
+                セットアップ状況
+              </h3>
+              {setupChecks ? (
+                <div className="grid grid-cols-1 gap-1.5">
+                  {[
+                    { key: 'db', label: 'Supabase 接続' },
+                    { key: 'riotKey', label: 'Riot API キー' },
+                    { key: 'geminiKey', label: 'Gemini API キー' },
+                    { key: 'vapid', label: 'Web Push (VAPID) キー' },
+                    { key: 'discordWebhook', label: 'Discord Webhook' },
+                    { key: 'portalBotSecret', label: 'PORTAL_BOT_SECRET' },
+                  ].map((c) => (
+                    <div key={c.key} className="flex items-center justify-between px-3 py-2 rounded-xl bg-black/20 border border-white/5 text-xs">
+                      <span className="text-gray-300">{c.label}</span>
+                      <span className={`font-bold flex items-center gap-1 ${setupChecks[c.key] ? 'text-emerald-400' : 'text-amber-400'}`}>
+                        {setupChecks[c.key] ? <><CheckCircle2 size={12} /> 設定済み</> : <><ShieldAlert size={12} /> 未設定</>}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500 text-center py-4">確認中...</p>
+              )}
+            </div>
+          </div>
+
         </motion.div>
 
         {/* 🛠️ システムコクピット (System Cockpit) */}
@@ -464,7 +637,6 @@ export default function Home() {
                 {[
                   { id: 'nodes', label: '🛰️ サービス監視' },
                   { id: 'queue', label: '⚡ ジョブ実行キュー' },
-                  { id: 'logs', label: '📋 リアルタイムログ' }
                 ].map((tab) => (
                   <button
                     key={tab.id}
@@ -491,7 +663,7 @@ export default function Home() {
                     ポータルとBotはクラウドで常時稼働しています。動画解析まわりはPCで起動したときだけ動くため、
                     <strong className="text-gray-300">「未起動」は正常な状態</strong>です。
                   </p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                     {[
                       // 常時稼働するクラウド側
                       { id: 'portal', name: 'Next.js Portal', desc: 'ポータル・管理画面 (Vercel)', kind: 'cloud' as const },
@@ -499,14 +671,11 @@ export default function Home() {
                       // PCで起動したときだけ動くローカル側
                       { id: 'edge_worker', name: 'Edge Worker', desc: 'タスクキューの実行役 (ローカル)', kind: 'worker' as const },
                       { id: 'youtube_absorber', name: 'YouTube Absorber', desc: '動画の文字起こし・解析 (ローカル)', kind: 'local' as const },
-                      { id: 'sre', name: 'SRE Daemon', desc: '定期タスクの投入・監視 (ローカル)', kind: 'local' as const },
                     ].map((service) => {
                       const status = systemMetrics.services?.[service.id] || {};
                       const metricsTime = systemMetrics.updated_at ? Number(systemMetrics.updated_at) * 1000 : 0;
                       const isDaemonOffline = !metricsTime || (Date.now() - metricsTime > 60000);
                       const isRunning = isDaemonOffline ? false : status.running;
-                      const log = systemMetrics.logs_status?.[service.id] || {};
-                      const hasErrors = log.error_count > 0;
 
                       let statusText = '停止中';
                       let statusColor = 'text-gray-500 bg-gray-500/10 border-gray-500/20';
@@ -531,15 +700,9 @@ export default function Home() {
                           indicatorColor = 'bg-gray-600';
                         }
                       } else if (isRunning) {
-                        if (hasErrors) {
-                          statusText = '警告あり';
-                          statusColor = 'text-yellow-400 bg-yellow-500/10 border-yellow-500/20';
-                          indicatorColor = 'bg-yellow-400 animate-pulse';
-                        } else {
-                          statusText = service.id === 'youtube_absorber' ? '解析中' : '稼働中';
-                          statusColor = 'text-cyan-400 bg-cyan-500/10 border-cyan-500/20';
-                          indicatorColor = 'bg-cyan-400 animate-pulse shadow-[0_0_8px_rgba(34,211,238,0.8)]';
-                        }
+                        statusText = service.id === 'youtube_absorber' ? '解析中' : '稼働中';
+                        statusColor = 'text-cyan-400 bg-cyan-500/10 border-cyan-500/20';
+                        indicatorColor = 'bg-cyan-400 animate-pulse shadow-[0_0_8px_rgba(34,211,238,0.8)]';
                       } else {
                         statusText = '未起動';
                         statusColor = 'text-gray-400 bg-white/5 border-white/10';
@@ -559,43 +722,6 @@ export default function Home() {
                             <span className="text-[9px] font-mono text-gray-600">{service.kind === 'cloud' ? '常時稼働' : '必要時のみ起動'}</span>
                             <span className={`px-2 py-0.5 rounded-full border text-[9px] font-bold ${statusColor}`}>{statusText}</span>
                           </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  <div className="pt-6 border-t border-white/5 grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {Object.entries(systemMetrics.logs_status || {}).map(([key, val]: [string, any]) => {
-                      if (!val) return null;
-                      const nameMap: Record<string, string> = {
-                        portal: 'Next.js Portal ログ',
-                        bot: 'Discord Bot ログ',
-                        api: 'Core API ログ',
-                        sre: 'SRE Daemon ログ'
-                      };
-                      const hasErrors = (val.error_count || 0) > 0;
-                      const recentErrors = val.recent_errors || [];
-                      
-                      return (
-                        <div key={key} className={`p-4 rounded-2xl border text-xs bg-black/20 ${hasErrors ? 'border-rose-500/20 bg-rose-500/5' : 'border-white/5'}`}>
-                          <div className="flex justify-between items-center mb-2">
-                            <span className={`font-bold ${hasErrors ? 'text-rose-400' : 'text-gray-300'}`}>{nameMap[key] || key}</span>
-                            <span className="text-[9px] text-gray-500">
-                              最終更新: {val.last_updated ? new Date(val.last_updated).toLocaleTimeString('ja-JP') : '不明'}
-                            </span>
-                          </div>
-                          {hasErrors ? (
-                            <div className="space-y-1.5 mt-2">
-                              <span className="text-[9px] font-bold text-rose-400/80 block">⚠️ 直近のエラーログ:</span>
-                              {recentErrors.slice(0, 2).map((err: string, i: number) => (
-                                <p key={i} className="font-mono text-[9px] text-rose-300/90 truncate bg-black/40 p-1.5 rounded border border-rose-500/10" title={err}>{err}</p>
-                              ))}
-                            </div>
-                          ) : (
-                            <p className="text-[9px] text-emerald-400/80 mt-1 flex items-center gap-1">
-                              <CheckCircle2 size={10} /> エラーは検知されていません
-                            </p>
-                          )}
                         </div>
                       );
                     })}
@@ -767,33 +893,6 @@ export default function Home() {
                 </div>
               )}
 
-              {/* 3. 📋 リアルタイムログ (System Logs) */}
-              {activeSystemTab === 'logs' && (
-                <div className="flex flex-col h-[350px] space-y-3">
-                  <p className="text-xs text-gray-400">
-                    動画解析を実行したときに、ローカルのデーモンが残した最終ログ（直近15行）です。解析していない間は更新されません。
-                  </p>
-                  <div className="flex-1 bg-black/40 rounded-xl border border-white/5 p-4 font-mono text-[9px] md:text-[10px] leading-relaxed text-gray-400 overflow-hidden relative">
-                    <div className="absolute top-0 left-0 w-full h-4 bg-gradient-to-b from-black/80 to-transparent z-10"></div>
-                    <div className="flex flex-col justify-end h-full space-y-1 z-0 relative pt-2 overflow-y-auto max-h-[280px]">
-                      {systemMetrics.logs && systemMetrics.logs.length > 0 ? (
-                        systemMetrics.logs.slice(-15).map((log: string, idx: number) => {
-                          const isError = log.includes('[ERROR]');
-                          const isWarn = log.includes('[WARNING]');
-                          const cleanLog = log.replace(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3} /, '');
-                          return (
-                            <div key={idx} className={`truncate ${isError ? 'text-rose-400' : isWarn ? 'text-yellow-400' : 'text-emerald-400/80'}`}>
-                              {cleanLog}
-                            </div>
-                          );
-                        })
-                      ) : (
-                        <div className="text-gray-500 flex items-center justify-center h-full">Waiting for logs...</div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         </motion.div>

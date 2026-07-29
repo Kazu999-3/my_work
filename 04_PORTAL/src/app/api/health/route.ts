@@ -26,6 +26,7 @@ export async function GET() {
     geminiKey: !!(process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY_BATCH || process.env.GOOGLE_API_KEY),
     vapid: !!(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY),
     discordWebhook: !!process.env.DISCORD_KTM_WEBHOOK_URL,
+    portalBotSecret: !!process.env.PORTAL_BOT_SECRET,
     ms: Date.now() - started,
     checkedAt: new Date().toISOString(),
   });

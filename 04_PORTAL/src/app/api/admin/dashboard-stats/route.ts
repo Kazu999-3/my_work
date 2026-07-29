@@ -27,7 +27,12 @@ export async function GET(req: NextRequest) {
       { data: ytQueueData },
       { count: todayTasksCount },
       { data: dictData },
-      { data: libData }
+      { data: libData },
+      { data: failedTaskData },
+      { count: youtubeErrorCount },
+      { count: openRecruitCount },
+      { data: recentRecruitData },
+      { data: systemMetricsRow },
     ] = await Promise.all([
       // ワーカーハートビート
       supabase.from('edge_tasks').select('*').eq('id', heartbeatId).maybeSingle(),
@@ -50,7 +55,28 @@ export async function GET(req: NextRequest) {
       // 直近の更新
       supabase.from('matchup_sentinel').select('matchup_id, champion, title, created_at').eq('enemy', 'GLOBAL').order('created_at', { ascending: false }).limit(5),
       supabase.from('personal_knowledge').select('id, title, champion, created_at').order('created_at', { ascending: false }).limit(5),
+      // 「要対応」パネル用: 種別を問わず直近の失敗タスク（champion_trend/5v5シミュレータ/
+      // YouTube監視/reddit_scout/トレンド収集/辞典シンセサイザー/辞典一括更新 等すべて含む）
+      supabase.from('edge_tasks').select('id, task_type, payload, error_message, updated_at, executor').neq('id', heartbeatId).eq('status', 'failed').order('updated_at', { ascending: false }).limit(10),
+      // 「要対応」パネル用: 手動対応が必要な動画キューのエラー件数
+      supabase.from('youtube_queue').select('id', { count: 'exact', head: true }).in('status', ['error_generation', 'error_no_transcript', 'failed']),
+      // 募集アクティビティ: 現在募集中の件数
+      supabase.from('recruitments').select('id', { count: 'exact', head: true }).eq('status', 'open'),
+      // 募集アクティビティ: 直近の募集一覧
+      supabase.from('recruitments').select('id, owner_discord_id, mode, max_count, status, created_at').order('created_at', { ascending: false }).limit(5),
+      // クラウドワーカー(youtube_worker/prospector/champion_researcher等)の最終実行ログ。
+      // scripts/notify.py の record_worker_log() がここに書き込んでいるが、システムコクピットの
+      // 「サービス監視」タブはこれまでこの行を一度もクエリしておらず、常に空のまま表示されていた。
+      supabase.from('matchup_sentinel').select('raw_data').eq('matchup_id', 'SYSTEM_METRICS').maybeSingle(),
     ]);
+
+    // 直近募集の募集主名をktm_playersから解決（discord_idで突き合わせ）
+    let recruitOwnerNames: Record<string, string> = {};
+    const ownerIds = [...new Set((recentRecruitData || []).map((r: any) => r.owner_discord_id).filter(Boolean))];
+    if (ownerIds.length > 0) {
+      const { data: ownerPlayers } = await supabase.from('ktm_players').select('discord_id, name').in('discord_id', ownerIds);
+      recruitOwnerNames = Object.fromEntries((ownerPlayers || []).map((p: any) => [p.discord_id, p.name]));
+    }
 
     // ワーカー判定
     let workerActive = false;
@@ -93,12 +119,24 @@ export async function GET(req: NextRequest) {
           pending: pendingTasks.length,
           running: runningTasks.length,
           completed: 0
-        }
+        },
+        cloud_workers: (systemMetricsRow?.raw_data as any)?.cloud_workers || {},
       },
       apiUsage: todayTasksCount ?? 0,
       recentYoutubeQueue: ytQueueData || [],
       recentDictUpdates: dictData || [],
-      recentLibraryUpdates: libData || []
+      recentLibraryUpdates: libData || [],
+      needsAttention: {
+        failedTasks: failedTaskData || [],
+        youtubeErrorCount: youtubeErrorCount ?? 0,
+      },
+      recruitActivity: {
+        openCount: openRecruitCount ?? 0,
+        recent: (recentRecruitData || []).map((r: any) => ({
+          ...r,
+          owner_name: recruitOwnerNames[r.owner_discord_id] || null,
+        })),
+      }
     });
 
   } catch (err: any) {
