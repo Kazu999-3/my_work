@@ -331,7 +331,54 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: authResult.error }, { status: 401 });
   }
   // =================================
-    const { action } = await req.json();
+    const body = await req.json();
+    const { action } = body;
+
+    if (action === 'close_to_discord') {
+      const ids: string[] = Array.isArray(body.ids) ? body.ids : [];
+      if (ids.length === 0) {
+        return NextResponse.json({ error: '対象の動画が指定されていません。' }, { status: 400 });
+      }
+
+      const { data: items, error: fetchError } = await supabase
+        .from('youtube_queue')
+        .select('id, title, url')
+        .in('id', ids);
+
+      if (fetchError) throw fetchError;
+      if (!items || items.length === 0) {
+        return NextResponse.json({ error: '対象の動画が見つかりません。' }, { status: 404 });
+      }
+
+      const webhookUrl = process.env.DISCORD_KTM_WEBHOOK_URL;
+      if (webhookUrl) {
+        const lines = items.map((i: any) => `・${i.title || i.id}\n${i.url}`).join('\n\n');
+        const payload = {
+          content: `🎙️ **手動対応が必要な動画（字幕/Whisper解析不可）— ${items.length}件をキューからクローズしました**\n\n${lines}`.slice(0, 1900),
+        };
+        const res = await fetch(webhookUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        if (!res.ok) {
+          console.warn('⚠️ [YouTube API] Discord通知の送信に失敗:', await res.text());
+        }
+      }
+
+      const { error: deleteError } = await supabase
+        .from('youtube_queue')
+        .delete()
+        .in('id', ids);
+
+      if (deleteError) throw deleteError;
+
+      return NextResponse.json({
+        success: true,
+        message: `${items.length} 件をDiscordへ通知し、キューからクローズしました。${webhookUrl ? '' : '（Discord Webhook未設定のため通知はスキップされました）'}`,
+        count: items.length,
+      });
+    }
 
     if (action !== 'retry_all_errors') {
       return NextResponse.json({ error: '無効なアクションです。' }, { status: 400 });

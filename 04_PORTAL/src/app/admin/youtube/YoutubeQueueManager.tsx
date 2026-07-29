@@ -94,6 +94,8 @@ export default function YoutubeQueueManager() {
   const [filterChannel, setFilterChannel] = useState('all'); // 'all' | チャンネル名 | '__none__'
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'date_added' | 'published_at'>('date_added');
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [closingToDiscord, setClosingToDiscord] = useState(false);
 
   // チャンネル監視用の状態
   const [activeTab, setActiveTab] = useState<'queue' | 'channels' | 'playlists'>('queue');
@@ -208,6 +210,50 @@ export default function YoutubeQueueManager() {
       showFeedback('リクエストに失敗しました。', 'error');
     } finally {
       setActionLoading(null);
+    }
+  };
+
+  // チェックボックスの選択トグル
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAllVisible = () => {
+    setSelectedIds((prev) => {
+      const allSelected = filteredQueue.length > 0 && filteredQueue.every((i) => prev.has(i.id));
+      if (allSelected) return new Set();
+      return new Set(filteredQueue.map((i) => i.id));
+    });
+  };
+
+  // 選択した動画（主に字幕/Whisper解析不可の手動対応要動画）をまとめてDiscordへ通知しクローズする
+  const handleCloseSelectedToDiscord = async () => {
+    if (selectedIds.size === 0) return;
+    if (!confirm(`選択した${selectedIds.size}件の動画URLをDiscordへ送信し、キューからクローズします。よろしいですか？`)) return;
+
+    setClosingToDiscord(true);
+    try {
+      const res = await fetch('/api/admin/youtube', {
+        method: 'PATCH', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'close_to_discord', ids: Array.from(selectedIds) }),
+      });
+      const result = await res.json();
+      if (res.ok) {
+        showFeedback(result.message || 'Discordへ通知しクローズしました。', 'success');
+        setSelectedIds(new Set());
+        fetchQueue(true, sortBy);
+      } else {
+        showFeedback(result.error || 'クローズ処理に失敗しました。', 'error');
+      }
+    } catch (err) {
+      showFeedback('リクエストに失敗しました。', 'error');
+    } finally {
+      setClosingToDiscord(false);
     }
   };
 
@@ -559,9 +605,9 @@ export default function YoutubeQueueManager() {
       label = '⚠️ AI要約制限 (再試行可)';
       hint = 'Gemini APIのレート制限（無料枠制限等）で一時失敗しました。「再試行」ボタンで復旧可能です。';
     } else if (status === 'error_no_transcript') {
-      classes += 'bg-rose-500/15 text-rose-300 border-rose-500/30';
-      label = '🎙️ 字幕/音声不可';
-      hint = '公式字幕がなくWhisper文字起こしも失敗しました。手動でテキストを入力してナレッジ追加できます。';
+      classes += 'bg-rose-500/15 text-rose-300 border-rose-500/30 animate-pulse';
+      label = '🎙️ 手動対応要（字幕/音声不可）';
+      hint = '公式字幕がなくWhisper文字起こしも失敗しました。自動処理では解析できないため、手動でテキストを入力するか、チェックボックスで選択してDiscordへ送信・クローズしてください。';
     } else if (status === 'failed') {
       classes += 'bg-red-500/15 text-red-400 border-red-500/30';
       label = '❌ 解析不可 (削除/非公開)';
@@ -663,6 +709,15 @@ export default function YoutubeQueueManager() {
         </div>
 
         <div className="flex items-center gap-2">
+          {activeTab === 'queue' && selectedIds.size > 0 && (
+            <button
+              onClick={handleCloseSelectedToDiscord}
+              disabled={closingToDiscord}
+              className="px-4 py-2.5 rounded-xl bg-indigo-950/40 hover:bg-indigo-900/60 border border-indigo-800/60 hover:border-indigo-700/60 text-indigo-300 text-xs font-bold shadow-[0_0_15px_rgba(99,102,241,0.1)] disabled:opacity-40 disabled:pointer-events-none transition-all duration-300 flex items-center gap-1.5 shrink-0"
+            >
+              💬 選択{selectedIds.size}件をDiscordへ送信してクローズ
+            </button>
+          )}
           {activeTab === 'queue' && stats.error > 0 && (
             <button
               onClick={handleRetryAllErrors}
@@ -888,6 +943,12 @@ export default function YoutubeQueueManager() {
                   {filteredQueue.map((item) => (
                     <div key={item.id} className="p-4 space-y-3 hover:bg-[#0c0d15]/40 transition-all flex flex-col">
                       <div className="flex gap-3 items-start">
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.has(item.id)}
+                          onChange={() => toggleSelect(item.id)}
+                          className="w-4 h-4 mt-1 accent-amber-500 cursor-pointer shrink-0"
+                        />
                         <Image
                           src={`https://img.youtube.com/vi/${item.id}/mqdefault.jpg`}
                           width={80}
@@ -960,8 +1021,8 @@ export default function YoutubeQueueManager() {
                       )}
                       {item.status === 'error_no_transcript' && (
                         <div className="text-[11px] p-2 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-300 space-y-1">
-                          <p className="font-bold flex items-center gap-1">🎙️ 理由: 字幕・音声未検出</p>
-                          <p className="text-rose-400/80 text-[10px]">字幕がなくWhisper文字起こしも失敗しました。必要に応じてナレッジ画面から直接テキストを入力してください。</p>
+                          <p className="font-bold flex items-center gap-1">🎙️ 理由: 字幕・音声未検出（手動対応要）</p>
+                          <p className="text-rose-400/80 text-[10px]">字幕がなくWhisper文字起こしも失敗しました。ナレッジ画面から直接テキストを入力するか、チェックボックスで選択して上部の「Discordへ送信してクローズ」からまとめて処理してください。</p>
                         </div>
                       )}
                       {item.status === 'failed' && (
@@ -1012,6 +1073,15 @@ export default function YoutubeQueueManager() {
                   <table className="w-full text-left border-collapse">
                     <thead>
                       <tr className="border-b border-gray-800/60 text-xs text-gray-400 uppercase bg-[#08090f]">
+                        <th className="px-4 py-4 font-semibold w-8">
+                          <input
+                            type="checkbox"
+                            checked={filteredQueue.length > 0 && filteredQueue.every((i) => selectedIds.has(i.id))}
+                            onChange={toggleSelectAllVisible}
+                            className="w-4 h-4 accent-amber-500 cursor-pointer"
+                            title="表示中の全てを選択/解除"
+                          />
+                        </th>
                         <th className="px-6 py-4 font-semibold">動画情報</th>
                         <th className="px-6 py-4 font-semibold">ステータス / 優先度</th>
                         <th className="px-6 py-4 font-semibold text-right">アクション</th>
@@ -1020,6 +1090,14 @@ export default function YoutubeQueueManager() {
                     <tbody className="divide-y divide-gray-800/40 text-sm text-gray-300">
                       {filteredQueue.map((item) => (
                         <tr key={item.id} className="hover:bg-[#0c0d15]/60 transition-all duration-150">
+                          <td className="px-4 py-4">
+                            <input
+                              type="checkbox"
+                              checked={selectedIds.has(item.id)}
+                              onChange={() => toggleSelect(item.id)}
+                              className="w-4 h-4 accent-amber-500 cursor-pointer"
+                            />
+                          </td>
                           <td className="px-6 py-4 max-w-lg">
                             <div className="flex gap-3 items-center">
                               <Image
