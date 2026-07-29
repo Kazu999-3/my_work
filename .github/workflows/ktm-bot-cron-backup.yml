@@ -11,7 +11,11 @@ name: KTM Bot Cron Backup
 
 on:
   schedule:
-    - cron: '15 11 * * 5,6'  # 金土 20:15 JST → 直前通知のバックアップ
+    # 水・金・土 20:15 JST → 直前通知のバックアップ。
+    # wrangler.toml本体のスケジュール(0 11 * * 3,5,6)は水・金・土を同格で扱っているのに、
+    # このバックアップは金・土しか対象にしておらず、Cloudflare側のネイティブcronが
+    # best-effortで飛んだ場合に水曜日だけ拾う保険が無かった（水曜アナウンス欠落の原因）。
+    - cron: '15 11 * * 3,5,6'
     - cron: '10 12 * * 6'    # 土 21:10 JST → 翌週定期カスタム募集投稿のバックアップ
   workflow_dispatch:
     inputs:
