@@ -814,8 +814,8 @@ export default function Home() {
                 { label: 'チャンピオン辞典', value: kbStats.facts, href: '/champions', color: 'text-blue-400' },
                 { label: '未整理の記事', value: kbStats.library, href: '/admin/knowledge', color: 'text-purple-400' },
                 { label: 'レーン別ガイド', value: kbStats.laneGuides, href: '/lane-guides', color: 'text-amber-400', suffix: '/6' },
-                { label: '対面メモ', value: kbStats.memos, href: '/matchups', color: 'text-cyan-400' },
-                { label: '対面カルテ', value: kbStats.matchupLog, href: '/matchups', color: 'text-rose-400' },
+                { label: '対面メモ', value: kbStats.memos, href: '/coach?tab=matchup-memo', color: 'text-cyan-400' },
+                { label: '対面カルテ', value: kbStats.matchupLog, href: '/coach?tab=matchup-memo', color: 'text-rose-400' },
               ].map((s) => (
                 <Link key={s.label} href={s.href}
                   className="bg-black/20 rounded-2xl p-4 border border-white/5 hover:bg-white/5 transition-colors text-center">

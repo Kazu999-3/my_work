@@ -1,15 +1,14 @@
 "use client";
 
 import { useEffect, useState, useMemo, useCallback } from 'react';
-import { supabase } from '../../../lib/supabaseClient';
+import { supabase } from '../../lib/supabaseClient';
 import Image from 'next/image';
-import { getChampIcon } from '../../../lib/ddragonClient';
+import { getChampIcon } from '../../lib/ddragonClient';
 import { Shield, Target, ChevronLeft, ChevronDown, ChevronUp, Swords, Plus, X, Save, Trash2, Activity, Award, Zap, AlertCircle, CheckCircle, ArrowLeftRight, History, RefreshCw } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { motion, AnimatePresence } from 'framer-motion';
-import Link from 'next/link';
-import ChampSelect from '../../../components/ChampSelect';
-import { Spinner } from '../../../components/Feedback';
+import ChampSelect from '../../components/ChampSelect';
+import { Spinner } from '../../components/Feedback';
 
 // 履歴記録（ブラウザからは service role を使えないためサーバー経由）
 async function recordMatchupRevision(matchupId: string, before: any, after: any, sourceTitle?: string) {
@@ -21,7 +20,7 @@ async function recordMatchupRevision(matchupId: string, before: any, after: any,
       body: JSON.stringify({ matchupId, before, after, sourceTitle }),
     });
   } catch (e) {
-    console.warn('[MatchupTab] 履歴記録に失敗:', e);
+    console.warn('[MatchupMemoTab] 履歴記録に失敗:', e);
   }
 }
 
@@ -32,7 +31,7 @@ const EMPTY_MEMO = {
   strategy: '', csd15: 0,
 };
 
-export default function MatchupTab() {
+export default function MatchupMemoTab() {
   const [matchups, setMatchups] = useState<any[]>([]);
   const [mySearch, setMySearch] = useState('');
   const [enemySearch, setEnemySearch] = useState('');
@@ -327,7 +326,7 @@ export default function MatchupTab() {
 
   return (
     <div className="flex flex-col gap-6">
-      {/* ビュー切替 & 5v5シミュレータ案内リンク */}
+      {/* ビュー切替 */}
       <div className="flex items-center justify-between flex-wrap gap-4 glass-panel p-4 rounded-2xl">
         <div className="flex items-center gap-2">
           <button
@@ -343,9 +342,7 @@ export default function MatchupTab() {
             チャンピオン別
           </button>
         </div>
-        <Link href="/matchups" className="text-sm font-bold text-[#a78bfa] hover:text-white transition-colors flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#a78bfa]/10 border border-[#a78bfa]/20">
-          <Zap size={16} /> 5v5 AIシミュレータへ →
-        </Link>
+        <span className="text-xs text-gray-500">5v5 AIシミュレータは「⚡ 試合前」グループにあります</span>
       </div>
 
       {/* 検索・フィルター領域 */}

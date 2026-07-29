@@ -11,7 +11,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     '/lane-guides',
     '/search',
     '/changelog',
-    '/matchups',
     '/synergy',
     '/stats',
     '/design',

@@ -1,15 +1,14 @@
 "use client";
 
-import { useEffect, useRef, useState, Suspense } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import Image from 'next/image';
 import { getChampIcon } from '../../lib/ddragonClient';
 import { Swords, Zap, AlertCircle, RefreshCw, History, Save, Activity, Target, Award } from 'lucide-react';
 import { motion } from 'framer-motion';
-import Link from 'next/link';
 import ChampSelect from '../../components/ChampSelect';
 
-function MatchupsSimulatorContent() {
+export default function FiveVFiveSimTab() {
   // 5v5 AIシミュレータ用ステート
   const [blueChamps, setBlueChamps] = useState<Record<string, string>>({
     TOP: '', JG: '', MID: '', BOT: '', SUP: ''
@@ -139,7 +138,7 @@ function MatchupsSimulatorContent() {
     const roles = ['TOP', 'JG', 'MID', 'BOT', 'SUP'] as const;
     const blueMissing = roles.filter(r => !blueChamps[r]);
     const redMissing = roles.filter(r => !redChamps[r]);
-    
+
     if (blueMissing.length > 0 || redMissing.length > 0) {
       alert('すべてのポジション（味方5名、敵5名）のチャンピオンを選択してください。');
       return;
@@ -161,7 +160,7 @@ function MatchupsSimulatorContent() {
 
       const taskId = data.task_id;
       setSimStatus('10名のスキル・相性データを集計中...');
-      
+
       let attempts = 0;
       const interval = setInterval(async () => {
         // アンマウント後にこのタイマーが生き残っていた場合は何もしない
@@ -212,19 +211,16 @@ function MatchupsSimulatorContent() {
   const roles = ['TOP', 'JG', 'MID', 'BOT', 'SUP'] as const;
 
   return (
-    <div className="min-h-screen p-6 md:p-12 max-w-6xl mx-auto flex flex-col gap-8">
+    <div className="flex flex-col gap-8">
       <motion.header initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-white/10 pb-6">
         <div>
-          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight mb-2 flex items-center gap-3">
-            <Swords className="text-[#00cfef]" size={32} /> 5v5 AIチームシミュレータ
+          <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight mb-2 flex items-center gap-3">
+            <Swords className="text-[#00cfef]" size={28} /> 5v5 AIチームシミュレータ
           </h1>
           <p className="text-gray-400 font-medium text-xs">
             両チームの5対5構成から相性・主導権・ゲームプランをAIが総合診断
           </p>
         </div>
-        <Link href="/champions?tab=matchup" className="px-4 py-2 bg-[#c89b3c]/10 border border-[#c89b3c]/20 text-[#c89b3c] hover:bg-[#c89b3c]/20 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0">
-          ← 対面メモはチャンピオン辞典へ
-        </Link>
       </motion.header>
 
       {/* 入力パネル (Blue vs Red) */}
@@ -253,11 +249,11 @@ function MatchupsSimulatorContent() {
             {roles.map(role => (
               <div key={role} className="flex flex-col gap-1">
                 <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{role}</label>
-                <ChampSelect 
-                  value={blueChamps[role]} 
-                  onChange={(val) => setBlueChamps(prev => ({ ...prev, [role]: val }))} 
-                  placeholder="チャンピオンを選択" 
-                  className="border-blue-500/20 focus:border-blue-500/50" 
+                <ChampSelect
+                  value={blueChamps[role]}
+                  onChange={(val) => setBlueChamps(prev => ({ ...prev, [role]: val }))}
+                  placeholder="チャンピオンを選択"
+                  className="border-blue-500/20 focus:border-blue-500/50"
                 />
               </div>
             ))}
@@ -277,11 +273,11 @@ function MatchupsSimulatorContent() {
             {roles.map(role => (
               <div key={role} className="flex flex-col gap-1">
                 <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{role}</label>
-                <ChampSelect 
-                  value={redChamps[role]} 
-                  onChange={(val) => setRedChamps(prev => ({ ...prev, [role]: val }))} 
-                  placeholder="チャンピオンを選択" 
-                  className="border-red-500/20 focus:border-red-500/50" 
+                <ChampSelect
+                  value={redChamps[role]}
+                  onChange={(val) => setRedChamps(prev => ({ ...prev, [role]: val }))}
+                  placeholder="チャンピオンを選択"
+                  className="border-red-500/20 focus:border-red-500/50"
                 />
               </div>
             ))}
@@ -378,7 +374,7 @@ function MatchupsSimulatorContent() {
             <h3 className="text-white font-black text-base mb-6 flex items-center gap-2">
               <Activity className="text-[#00cfef]" size={20} /> ⚖️ 各レーン主導権分析 (Lane Priority Map)
             </h3>
-            
+
             <div className="divide-y divide-white/5 space-y-4">
               {roles.map(role => {
                 const laneData = simResult.lanes[role] || { priority: 'EVEN', reason: '' };
@@ -479,7 +475,7 @@ function MatchupsSimulatorContent() {
             <h3 className="text-white font-black text-base mb-6 flex items-center gap-2">
               <Target className="text-[#a78bfa]" size={20} /> 🗺️ 勝利へのロードマップ (Game Plan)
             </h3>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="glass-panel p-5 rounded-2xl border-t-2 border-amber-500/30 flex flex-col gap-2">
                 <span className="text-xs font-black text-amber-400">序盤 (〜Lv6 / オブジェクト戦準備)</span>
@@ -515,13 +511,5 @@ function MatchupsSimulatorContent() {
         </motion.div>
       )}
     </div>
-  );
-}
-
-export default function MatchupsPage() {
-  return (
-    <Suspense fallback={<div className="flex justify-center py-20"><div className="w-8 h-8 border-4 border-[#a78bfa] border-t-transparent rounded-full animate-spin"></div></div>}>
-      <MatchupsSimulatorContent />
-    </Suspense>
   );
 }

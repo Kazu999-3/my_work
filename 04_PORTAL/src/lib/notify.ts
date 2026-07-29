@@ -53,7 +53,7 @@ export async function createAdminNotification(input: AdminNotificationInput) {
     await sendPushToScope('admin', {
       title: input.title,
       body: input.body || '',
-      url: input.url || '/coach',
+      url: input.url || '/admin/dashboard',
       icon: input.icon,
       badgeCount,
     });

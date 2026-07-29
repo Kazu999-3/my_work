@@ -2,15 +2,12 @@
 
 import { useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { BookOpen, Activity, Swords, Sparkles } from 'lucide-react';
+import { BookOpen, Activity, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 // タブコンポーネントの遅延読み込み
 import dynamic from 'next/dynamic';
-const DictionaryTab = dynamic(() => import('./tabs/DictionaryTab'), { 
-  loading: () => <div className="flex justify-center py-20"><div className="w-8 h-8 border-4 border-[#c89b3c] border-t-transparent rounded-full animate-spin"></div></div>
-});
-const MatchupTab = dynamic(() => import('./tabs/MatchupTab'), {
+const DictionaryTab = dynamic(() => import('./tabs/DictionaryTab'), {
   loading: () => <div className="flex justify-center py-20"><div className="w-8 h-8 border-4 border-[#c89b3c] border-t-transparent rounded-full animate-spin"></div></div>
 });
 const AiUpdateTab = dynamic(() => import('./tabs/AiUpdateTab'), {
@@ -19,7 +16,6 @@ const AiUpdateTab = dynamic(() => import('./tabs/AiUpdateTab'), {
 
 const TABS = [
   { id: 'dictionary', label: '辞典', icon: BookOpen, color: 'text-[#c89b3c]' },
-  { id: 'matchup', label: '対面', icon: Swords, color: 'text-[#00cfef]' },
   { id: 'ai-update', label: 'AI更新', icon: Sparkles, color: 'text-amber-400' },
 ] as const;
 
@@ -66,7 +62,6 @@ function ChampionsShell() {
 
       {/* タブコンテンツ */}
       {activeTab === 'dictionary' && <DictionaryTab />}
-      {activeTab === 'matchup' && <MatchupTab />}
       {activeTab === 'ai-update' && <AiUpdateTab />}
     </div>
   );

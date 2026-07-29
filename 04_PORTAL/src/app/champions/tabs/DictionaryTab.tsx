@@ -1274,7 +1274,7 @@ function ChampionsContent() {
                         
                         {/* バトルサーチの該当マッチアップへ直接ジャンプするリンク */}
                         <a 
-                          href={`/matchups?champion=${m.champion}&enemy=${m.enemy}`}
+                          href={`/coach?champion=${m.champion}&enemy=${m.enemy}`}
                           onClick={(e) => e.stopPropagation()} // 親アコーディオンのクリック伝播を防止
                           className="px-3 py-1 bg-white/5 hover:bg-[#c89b3c]/20 hover:text-[#c89b3c] border border-white/10 rounded-lg text-xs font-bold transition-all flex items-center gap-1 text-gray-300"
                         >

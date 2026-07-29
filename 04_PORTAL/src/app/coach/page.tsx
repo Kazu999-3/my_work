@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { apiJson } from '../../lib/apiClient';
 import ScoutTab from './ScoutTab';
 import PushOptIn from '../../components/PushOptIn';
+import FiveVFiveSimTab from './FiveVFiveSimTab';
+import MatchupMemoTab from './MatchupMemoTab';
 
 // ============================
 // 型定義
@@ -842,8 +844,10 @@ export default function CoachPage() {
     { id: 'pre', group: 'pregame', groupLabel: '⚡ 試合前', label: '事前分析', content: <PreGameTab champion={sharedChampion} enemyChampion={sharedEnemyChampion} triggerSignal={dailyCheckTrigger} /> },
     { id: 'matchup', group: 'pregame', groupLabel: '⚡ 試合前', label: '⚔️ マッチアップ', content: <MatchupTab champion={sharedChampion} enemyChampion={sharedEnemyChampion} /> },
     { id: 'scout', group: 'pregame', groupLabel: '⚡ 試合前', label: '🧭 偵察', content: <ScoutTab /> },
+    { id: 'sim5v5', group: 'pregame', groupLabel: '⚡ 試合前', label: '🎮 5v5シミュレータ', content: <FiveVFiveSimTab /> },
     { id: 'post', group: 'postgame', groupLabel: '🔍 試合後', label: '振り返り', content: <PostGameTab /> },
     { id: 'trends', group: 'postgame', groupLabel: '🔍 試合後', label: '📈 傾向', content: <TrendsTab /> },
+    { id: 'matchup-memo', group: 'postgame', groupLabel: '🔍 試合後', label: '📝 対面メモ', content: <MatchupMemoTab /> },
     { id: 'goal', group: 'mental', groupLabel: '🎯 メンタル', label: '目標', content: <GoalTab triggerSignal={dailyCheckTrigger} /> },
     { id: 'tilt', group: 'mental', groupLabel: '🎯 メンタル', label: '🧠 ティルト', content: <TiltTab triggerSignal={dailyCheckTrigger} /> },
   ] as const;
@@ -851,6 +855,16 @@ export default function CoachPage() {
   // 最初の項目だけ開いた状態にし、あとはユーザーが必要な分だけ開く。
   // 複数同時に開けるので、以前のタブ切り替えと違い前の結果を消さずに見比べられる。
   const [openIds, setOpenIds] = useState<Set<string>>(new Set(['pre']));
+
+  // 辞典側から `?champion=X&enemy=Y` で対面メモの編集リンクを踏んできた場合、
+  // 「試合後」グループの対面メモを自動的に開く（旧: 辞典の「対面」タブへの直リンク）。
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('champion') || params.get('enemy') || params.get('tab') === 'matchup-memo') {
+      setOpenIds((prev) => new Set([...prev, 'matchup-memo']));
+    }
+  }, []);
   const toggleSection = (id: string) => {
     setOpenIds((prev) => {
       const next = new Set(prev);
