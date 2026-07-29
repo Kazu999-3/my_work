@@ -106,7 +106,11 @@ export default function Sidebar() {
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
 
   useEffect(() => {
-    // admin_session は HttpOnly Cookie で JS から直接読めないため、API で検証する
+    // admin_session は HttpOnly Cookie で JS から直接読めないため、API で検証する。
+    // Sidebarはレイアウト直下でマウントされたまま維持される(App Routerのクライアント遷移では
+    // 再マウントしない)ため、初回マウント時のみの検証だと「/loginでログイン→router.replaceで
+    // 別ページへ遷移」しても isAdminLoggedIn が false のまま更新されず、PCでメニューが
+    // 管理者用に切り替わらない不具合があった。pathname変更のたびに再検証する。
     fetch('/api/auth/verify', {
       method: 'POST',
       credentials: 'include',
@@ -115,12 +119,10 @@ export default function Sidebar() {
     })
       .then((res) => res.json())
       .then((data) => {
-        if (data.valid) {
-          setIsAdminLoggedIn(true);
-        }
+        setIsAdminLoggedIn(!!data.valid);
       })
       .catch(() => {});
-  }, []); // 初回マウント時のみ検証（pathname変更ごとにAPIを叩く必要はない）
+  }, [pathname]);
 
   // ページ遷移したらモバイルの「その他」シートは閉じる
   useEffect(() => { setShowMobileMore(false); }, [pathname]);
