@@ -96,6 +96,7 @@ export default function YoutubeQueueManager() {
   const [sortBy, setSortBy] = useState<'date_added' | 'published_at'>('date_added');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [closingToDiscord, setClosingToDiscord] = useState(false);
+  const [closingSelected, setClosingSelected] = useState(false);
 
   // チャンネル監視用の状態
   const [activeTab, setActiveTab] = useState<'queue' | 'channels' | 'playlists'>('queue');
@@ -257,9 +258,9 @@ export default function YoutubeQueueManager() {
     }
   };
 
-  // 4. 動画の削除
-  const handleDeleteVideo = async (id: string) => {
-    if (!confirm('この動画をキューから削除しますか？')) return;
+  // 4. 動画のクローズ（実削除はせず manually_closed にする）
+  const handleCloseVideo = async (id: string) => {
+    if (!confirm('この動画をキューからクローズしますか？')) return;
 
     setActionLoading(id);
     try {
@@ -271,15 +272,42 @@ export default function YoutubeQueueManager() {
 
       const result = await res.json();
       if (res.ok) {
-        showFeedback('動画をキューから削除しました。', 'success');
+        showFeedback('動画をキューからクローズしました。', 'success');
         fetchQueue(true, sortBy);
       } else {
-        showFeedback(result.error || '削除に失敗しました。', 'error');
+        showFeedback(result.error || 'クローズに失敗しました。', 'error');
       }
     } catch (err) {
       showFeedback('リクエストに失敗しました。', 'error');
     } finally {
       setActionLoading(null);
+    }
+  };
+
+  // 選択した動画をまとめてクローズする（Discordへは送らない）
+  const handleCloseSelected = async () => {
+    if (selectedIds.size === 0) return;
+    if (!confirm(`選択した${selectedIds.size}件の動画をキューからクローズします。よろしいですか？`)) return;
+
+    setClosingSelected(true);
+    try {
+      const res = await fetch('/api/admin/youtube', {
+        method: 'DELETE', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: Array.from(selectedIds) }),
+      });
+      const result = await res.json();
+      if (res.ok) {
+        showFeedback(result.message || '選択した動画をクローズしました。', 'success');
+        setSelectedIds(new Set());
+        fetchQueue(true, sortBy);
+      } else {
+        showFeedback(result.error || 'クローズに失敗しました。', 'error');
+      }
+    } catch (err) {
+      showFeedback('リクエストに失敗しました。', 'error');
+    } finally {
+      setClosingSelected(false);
     }
   };
 
@@ -611,7 +639,11 @@ export default function YoutubeQueueManager() {
     } else if (status === 'failed') {
       classes += 'bg-red-500/15 text-red-400 border-red-500/30';
       label = '❌ 解析不可 (削除/非公開)';
-      hint = '動画が削除・非公開・地域制限の可能性があります。キューからの削除を推奨します。';
+      hint = '動画が削除・非公開・地域制限の可能性があります。キューからのクローズを推奨します。';
+    } else if (status === 'manually_closed') {
+      classes += 'bg-gray-700/30 text-gray-400 border-gray-600/50';
+      label = '🔒 手動クローズ済み';
+      hint = '対応不可と判断してクローズした動画です。チャンネル/プレイリスト監視が再検出しても、この記録が残っているため再度キューには積まれません。';
     } else {
       classes += 'bg-gray-800 text-gray-400 border-gray-700';
     }
@@ -619,12 +651,15 @@ export default function YoutubeQueueManager() {
     return <span className={classes} title={hint}>{label}</span>;
   };
 
-  // 統計の計算
+  // 統計の計算。手動クローズ済みは「もう対応しない」と決めた記録なので、
+  // アクティブな作業量を表す総登録本数には含めない（別枠でclosedとして数える）。
+  const closedCount = queue.filter((i) => i.status === 'manually_closed').length;
   const stats = {
-    total: queue.length,
+    total: queue.length - closedCount,
     pending: queue.filter((i) => i.status === 'pending').length,
     completed: queue.filter((i) => i.status === 'completed').length,
     error: queue.filter((i) => i.status.startsWith('error') || i.status === 'failed').length,
+    closed: closedCount,
   };
 
   // チャンネル絞り込み用の選択肢（登録件数の多い順）
@@ -644,6 +679,9 @@ export default function YoutubeQueueManager() {
     if (filterStatus === 'pending' && item.status !== 'pending') return false;
     if (filterStatus === 'completed' && item.status !== 'completed') return false;
     if (filterStatus === 'error' && !(item.status.startsWith('error') || item.status === 'failed')) return false;
+    if (filterStatus === 'closed' && item.status !== 'manually_closed') return false;
+    // 「すべて」は総登録本数(stats.total)と揃え、手動クローズ済みは専用タブでのみ表示する
+    if (filterStatus === 'all' && item.status === 'manually_closed') return false;
 
     // 2. チャンネルでの絞り込み
     if (filterChannel !== 'all') {
@@ -712,10 +750,19 @@ export default function YoutubeQueueManager() {
           {activeTab === 'queue' && selectedIds.size > 0 && (
             <button
               onClick={handleCloseSelectedToDiscord}
-              disabled={closingToDiscord}
+              disabled={closingToDiscord || closingSelected}
               className="px-4 py-2.5 rounded-xl bg-indigo-950/40 hover:bg-indigo-900/60 border border-indigo-800/60 hover:border-indigo-700/60 text-indigo-300 text-xs font-bold shadow-[0_0_15px_rgba(99,102,241,0.1)] disabled:opacity-40 disabled:pointer-events-none transition-all duration-300 flex items-center gap-1.5 shrink-0"
             >
               💬 選択{selectedIds.size}件をDiscordへ送信してクローズ
+            </button>
+          )}
+          {activeTab === 'queue' && selectedIds.size > 0 && (
+            <button
+              onClick={handleCloseSelected}
+              disabled={closingToDiscord || closingSelected}
+              className="px-4 py-2.5 rounded-xl bg-gray-800/40 hover:bg-gray-700/60 border border-gray-700/60 hover:border-gray-600/60 text-gray-300 text-xs font-bold shadow-[0_0_15px_rgba(107,114,128,0.1)] disabled:opacity-40 disabled:pointer-events-none transition-all duration-300 flex items-center gap-1.5 shrink-0"
+            >
+              🔒 選択{selectedIds.size}件をクローズ
             </button>
           )}
           {activeTab === 'queue' && stats.error > 0 && (
@@ -817,7 +864,8 @@ export default function YoutubeQueueManager() {
                 { id: 'all', label: 'すべて', count: stats.total },
                 { id: 'pending', label: '解析待ち', count: stats.pending, color: 'text-cyan-400' },
                 { id: 'completed', label: '完了', count: stats.completed, color: 'text-green-400' },
-                { id: 'error', label: 'エラー/失敗', count: stats.error, color: 'text-red-400' }
+                { id: 'error', label: 'エラー/失敗', count: stats.error, color: 'text-red-400' },
+                { id: 'closed', label: '手動クローズ済み', count: stats.closed, color: 'text-gray-400' }
               ].map((tab) => (
                 <button
                   key={tab.id}
@@ -1028,7 +1076,7 @@ export default function YoutubeQueueManager() {
                       {item.status === 'failed' && (
                         <div className="text-[11px] p-2 rounded-lg bg-red-500/10 border border-red-500/20 text-red-300 space-y-1">
                           <p className="font-bold flex items-center gap-1">❌ 理由: 動画閲覧不能</p>
-                          <p className="text-red-400/80 text-[10px]">YouTube上で削除・非公開になっている可能性があります。キューからの削除をおすすめします。</p>
+                          <p className="text-red-400/80 text-[10px]">YouTube上で削除・非公開になっている可能性があります。キューからのクローズをおすすめします。</p>
                         </div>
                       )}
                       <div className="flex gap-2 pt-1">
@@ -1057,12 +1105,12 @@ export default function YoutubeQueueManager() {
                           </button>
                         )}
                         <button
-                          onClick={() => handleDeleteVideo(item.id)}
+                          onClick={() => handleCloseVideo(item.id)}
                           disabled={actionLoading !== null}
                           type="button"
                           className="flex-1 py-2 bg-red-950/20 hover:bg-red-950/50 border border-red-900/40 text-red-400 text-xs font-semibold rounded-lg disabled:opacity-40 transition-all text-center"
                         >
-                          削除
+                          🔒 クローズ
                         </button>
                       </div>
                     </div>
@@ -1191,12 +1239,12 @@ export default function YoutubeQueueManager() {
                                 </button>
                               )}
                               <button
-                                onClick={() => handleDeleteVideo(item.id)}
+                                onClick={() => handleCloseVideo(item.id)}
                                 disabled={actionLoading !== null}
                                 type="button"
                                 className="px-3 py-1.5 bg-red-950/20 hover:bg-red-950/50 border border-red-900/40 hover:border-red-800/60 text-red-400 text-xs font-semibold rounded-lg disabled:opacity-40 disabled:pointer-events-none transition-all flex items-center gap-1"
                               >
-                                削除
+                                🔒 クローズ
                               </button>
                             </div>
                           </td>

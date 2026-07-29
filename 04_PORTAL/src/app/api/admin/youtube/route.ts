@@ -284,7 +284,7 @@ export async function PUT(req: NextRequest) {
   }
 }
 
-// 4. 動画の削除
+// 4. 動画のクローズ（単一 id または複数 ids に対応。実データは削除せず manually_closed にする）
 export async function DELETE(req: NextRequest) {
   try {
   // ===== 管理者セッション確認 =====
@@ -293,32 +293,36 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: authResult.error }, { status: 401 });
   }
   // =================================
-    const { id } = await req.json();
+    const body = await req.json();
+    const ids: string[] = Array.isArray(body.ids) ? body.ids : (body.id ? [body.id] : []);
 
-    if (!id) {
+    if (ids.length === 0) {
       return NextResponse.json({ error: 'IDを指定してください。' }, { status: 400 });
     }
 
+    // 行を削除すると重複チェック(id一致)が効かなくなり、チャンネル/プレイリスト監視が
+    // 再度この動画を見つけた際にまたpendingとしてキューに戻ってきてしまうため、
+    // 実削除はせずステータスのみ manually_closed に変更する。
     const { data, error } = await supabase
       .from('youtube_queue')
-      .delete()
-      .eq('id', id)
-      .select()
-      .maybeSingle();
+      .update({ status: 'manually_closed' })
+      .in('id', ids)
+      .select();
 
     if (error) throw error;
-    if (!data) {
+    if (!data || data.length === 0) {
       return NextResponse.json({ error: '指定された動画が見つかりません。' }, { status: 404 });
     }
 
     return NextResponse.json({
       success: true,
-      message: '動画をキューから削除しました。'
+      message: `${data.length} 件をキューからクローズしました。`,
+      count: data.length,
     });
 
   } catch (err: any) {
     console.error('❌ [YouTube API] DELETE Error:', err);
-    return NextResponse.json({ error: '削除に失敗しました。' }, { status: 500 });
+    return NextResponse.json({ error: 'クローズに失敗しました。' }, { status: 500 });
   }
 }
 
@@ -350,32 +354,62 @@ export async function PATCH(req: NextRequest) {
         return NextResponse.json({ error: '対象の動画が見つかりません。' }, { status: 404 });
       }
 
-      const webhookUrl = process.env.DISCORD_KTM_WEBHOOK_URL;
-      if (webhookUrl) {
-        const lines = items.map((i: any) => `・${i.title || i.id}\n${i.url}`).join('\n\n');
-        const payload = {
-          content: `🎙️ **手動対応が必要な動画（字幕/Whisper解析不可）— ${items.length}件をキューからクローズしました**\n\n${lines}`.slice(0, 1900),
-        };
-        const res = await fetch(webhookUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
-        if (!res.ok) {
-          console.warn('⚠️ [YouTube API] Discord通知の送信に失敗:', await res.text());
+      // 以前はKTM募集チャンネルのWebhookに投稿しており、一般メンバー向けチャンネルに
+      // 管理者向けの内部運用連絡が誤送信されてしまっていた。オーナー本人へのDMに変更する
+      // （soloq-coachの日次DM送信と同じ経路: ktm_settingsのowner_discord_id + Botトークン）。
+      let dmSent = false;
+      const botToken = process.env.DISCORD_BOT_TOKEN;
+      if (botToken) {
+        try {
+          const { data: ownerSetting } = await supabase
+            .from('ktm_settings')
+            .select('value')
+            .eq('key', 'owner_discord_id')
+            .maybeSingle();
+          const ownerId = ownerSetting?.value;
+
+          if (ownerId) {
+            const dmChannelRes = await fetch('https://discord.com/api/v10/users/@me/channels', {
+              method: 'POST',
+              headers: { 'Authorization': `Bot ${botToken}`, 'Content-Type': 'application/json' },
+              body: JSON.stringify({ recipient_id: ownerId }),
+            });
+            const dmChannel = await dmChannelRes.json();
+
+            if (dmChannel?.id) {
+              const lines = items.map((i: any) => `・${i.title || i.id}\n${i.url}`).join('\n\n');
+              const content = `🎙️ **手動対応が必要な動画（字幕/Whisper解析不可）— ${items.length}件をキューからクローズしました**\n\n${lines}`.slice(0, 1900);
+              const sendRes = await fetch(`https://discord.com/api/v10/channels/${dmChannel.id}/messages`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bot ${botToken}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ content }),
+              });
+              dmSent = sendRes.ok;
+              if (!sendRes.ok) {
+                console.warn('⚠️ [YouTube API] DiscordへのDM送信に失敗:', await sendRes.text());
+              }
+            }
+          } else {
+            console.warn('⚠️ [YouTube API] ktm_settingsにowner_discord_idが未設定のためDM送信をスキップしました。');
+          }
+        } catch (dmErr) {
+          console.warn('⚠️ [YouTube API] DiscordへのDM送信中にエラー:', dmErr);
         }
       }
 
-      const { error: deleteError } = await supabase
+      // 行を削除すると重複チェック(id一致)が効かなくなり、チャンネル/プレイリスト監視が
+      // 再度この動画を見つけた際にまたpendingとしてキューに戻ってきてしまう。
+      // ステータスだけ 'manually_closed' に変えて「対応不可と判断済み」の記録を残す。
+      const { error: closeError } = await supabase
         .from('youtube_queue')
-        .delete()
+        .update({ status: 'manually_closed' })
         .in('id', ids);
 
-      if (deleteError) throw deleteError;
+      if (closeError) throw closeError;
 
       return NextResponse.json({
         success: true,
-        message: `${items.length} 件をDiscordへ通知し、キューからクローズしました。${webhookUrl ? '' : '（Discord Webhook未設定のため通知はスキップされました）'}`,
+        message: `${items.length} 件をクローズ済みにしました。${dmSent ? '（DiscordへDM送信済み）' : '（DiscordへのDM送信はスキップ/失敗しました）'}`,
         count: items.length,
       });
     }
