@@ -49,17 +49,19 @@ export async function createAdminNotification(input: AdminNotificationInput) {
     console.warn('[notify] 未読件数の取得に失敗（バッジ更新なしで続行）:', e);
   }
 
+  let pushResult: Awaited<ReturnType<typeof sendPushToScope>> | { error: string } = { sent: 0, removed: 0, failed: [] };
   try {
-    await sendPushToScope('admin', {
+    pushResult = await sendPushToScope('admin', {
       title: input.title,
       body: input.body || '',
       url: input.url || '/admin/dashboard',
       icon: input.icon,
       badgeCount,
     });
-  } catch (e) {
+  } catch (e: any) {
     console.warn('[notify] Push通知送信に失敗（履歴には記録済み）:', e);
+    pushResult = { error: e?.message || String(e) };
   }
 
-  return row;
+  return { ...(row || {}), _pushResult: pushResult };
 }

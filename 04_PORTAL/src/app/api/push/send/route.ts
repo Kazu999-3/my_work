@@ -18,26 +18,31 @@ function configureVapid(): boolean {
 
 export interface PushPayload { title: string; body?: string; url?: string; icon?: string; badgeCount?: number }
 
-async function deliverToSubscriptions(subs: any[], payload: PushPayload): Promise<{ sent: number; removed: number }> {
+async function deliverToSubscriptions(subs: any[], payload: PushPayload): Promise<{ sent: number; removed: number; failed: { endpoint: string; statusCode?: number; message: string }[] }> {
   if (!configureVapid()) throw new Error('VAPID鍵(NEXT_PUBLIC_VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY)が未設定です。');
   let sent = 0, removed = 0;
+  const failed: { endpoint: string; statusCode?: number; message: string }[] = [];
   const body = JSON.stringify(payload);
   await Promise.all((subs || []).map(async (s: any) => {
     try {
       await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, body);
       sent++;
     } catch (e: any) {
-      // 410/404 は購読切れ → 削除
+      // 410/404 は購読切れ → 削除。それ以外は原因が分かるようログ・呼び出し元へ返す
+      // （以前は410/404以外を握りつぶしており、Apple側の拒否理由等が一切見えなかった）
       if (e?.statusCode === 410 || e?.statusCode === 404) {
         await supabase.from('push_subscriptions').delete().eq('endpoint', s.endpoint);
         removed++;
+      } else {
+        console.error(`[push/send] 配信失敗 (${s.endpoint.slice(0, 60)}...): ${e?.statusCode} ${e?.body || e?.message}`);
+        failed.push({ endpoint: s.endpoint, statusCode: e?.statusCode, message: e?.body || e?.message || String(e) });
       }
     }
   }));
-  return { sent, removed };
+  return { sent, removed, failed };
 }
 
-export async function sendPushToAll(payload: PushPayload): Promise<{ sent: number; removed: number }> {
+export async function sendPushToAll(payload: PushPayload): Promise<{ sent: number; removed: number; failed: { endpoint: string; statusCode?: number; message: string }[] }> {
   const { data: subs } = await supabase.from('push_subscriptions').select('*');
   return deliverToSubscriptions(subs || [], payload);
 }
@@ -46,7 +51,7 @@ export async function sendPushToAll(payload: PushPayload): Promise<{ sent: numbe
 // (/coach)でのみ "admin" scopeの購読ボタンを出しているため、このscopeを持つ購読
 // =管理者、という前提で成立する。sendPushToAllとは別に、scopesに指定のscopeを
 // 含む購読だけへ配信する。
-export async function sendPushToScope(scope: string, payload: PushPayload): Promise<{ sent: number; removed: number }> {
+export async function sendPushToScope(scope: string, payload: PushPayload): Promise<{ sent: number; removed: number; failed: { endpoint: string; statusCode?: number; message: string }[] }> {
   const { data: subs } = await supabase.from('push_subscriptions').select('*').contains('scopes', [scope]);
   return deliverToSubscriptions(subs || [], payload);
 }
