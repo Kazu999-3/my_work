@@ -79,7 +79,7 @@
 
 ## 🚧 技術的負債バックログ（継続追跡）
 - [x] タスクキュー2系統の統合（SQLite時代の sovereign_tasks 読み出し経路を削除し、edge_tasks に一本化。2026-07-27対応済み）
-- [ ] edge_worker の Gateway バイパス解消 → QuotaShaper 経由に統一
+- [x] edge_worker の Gateway バイパス解消 → 2026-07-30対応: 想定と実態が違っていた。Gateway(`api.py`)は2026-07-26以降ずっと未起動で、フォールバック側には既にGatewayの`QuotaShaper`(インメモリ・プロセス限定)より堅牢な`quota_manager`(日次上限・永続)と`APIGateway.wait_if_needed()`(Redis/SQLite・プロセス横断)が揃っていた。`ai_helper.generate_content_safe()`から無駄になっていたGatewayヘルスチェック(毎呼び出し1.5秒)を削除し、直接生成に一本化（`api.py`自体は手動起動用に残置）
 - [ ] エージェントスキル出力の DB 自動投入パイプライン設計（ローカルMD → Supabase）
 - [x] `04_PORTAL/scripts/` 重複スクリプトの整理（2026-07-28: 参照ゼロを確認しsmart_backfillに統一。archive/の物理削除のみ権限ブロックで保留、上記タスク参照）
 - [ ] Supabase 直接アクセスの API 経由化 → v8.0 APIファースト化として推進

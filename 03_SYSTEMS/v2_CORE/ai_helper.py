@@ -37,48 +37,13 @@ def generate_content_safe(client, prompt, model_id=None, config=None, feature_na
     自動的に指数バックオフでリトライし、必要に応じて別モデルへフォールバックする堅牢なテキスト生成関数。
     クロスプロセスロックにより複数スクリプト同時起動時も頻度超過を防ぐ。
     """
-    # 1. API Gateway (FastAPI) 経由でのプロキシ実行を最優先で試行
-    gateway_success = False
-    gateway_text = ""
-    api_key = os.environ.get("ANTIGRAVITY_API_KEY", "")
-    
-    # 自身が Gateway プロセスである場合は、無限再帰デッドロックを防ぐためルーティングをスキップする
-    is_gateway_process = os.environ.get("IS_GATEWAY_PROCESS") == "true"
-    
-    if not is_gateway_process:
-        try:
-            import httpx
-            with httpx.Client(timeout=90.0) as client_http:
-                res = client_http.get("http://localhost:8000/", timeout=1.5)
-                if res.status_code == 200 and res.json().get("status") == "online":
-                    logger.info(f"[AIHelper] 🌐 API Gateway (Port 8000) is online. Routing generation request...")
-                    payload = {
-                        "raw_prompt": prompt,
-                        "model": model_id or "gemini-3.5-flash-lite",
-                        "priority": "normal"
-                    }
-                    headers = {
-                        "Content-Type": "application/json",
-                        "X-Antigravity-Key": api_key
-                    }
-                    gen_res = client_http.post("http://localhost:8000/api/v1/agent/generate", json=payload, headers=headers)
-                    if gen_res.status_code == 200:
-                        data = gen_res.json()
-                        if data.get("success"):
-                            gateway_text = data.get("text", "")
-                            gateway_success = True
-                            logger.info(f"[AIHelper] 🌐 Generation via API Gateway succeeded. (Model: {data.get('model_used')})")
-                        else:
-                            logger.warning(f"⚠️ [AIHelper] API Gateway generation reported failure: {data.get('error_message')}")
-                    else:
-                        logger.warning(f"⚠️ [AIHelper] API Gateway returned status code {gen_res.status_code}")
-        except Exception as e:
-            logger.debug(f"[AIHelper] API Gateway unreachable ({e}). Falling back to direct execution.")
-
-    if gateway_success:
-        return gateway_text
-
-    # 2. ローカル直接生成（Gatewayオフライン時のフォールバック）
+    # ローカル直接生成。以前はここでFastAPI Gateway(api.py, port 8000)へまず
+    # ヘルスチェック(1.5秒)を試みていたが、Gatewayは2026-07-26のstart_all.ps1簡素化
+    # 以降ずっと起動されておらず、GitHub Actions上ではそもそも到達不可能なため、
+    # 呼び出しのたびに無条件で1.5秒を無駄にしていた。フォールバック側の
+    # quota_manager(日次利用上限の永続管理)とAPIGateway.wait_if_needed()
+    # (Redis/SQLiteによる分間レート制限、プロセスをまたいで共有)で必要な制御は
+    # 既にGateway無しでも揃っているため、直接生成に一本化する。
     if not quota_manager.check_quota(feature_name):
         logger.warning(f"⚠️ [AIHelper] 機能 '{feature_name}' は本日のAPI利用上限に達したためスキップされました。")
         return "⚠️ 本日の利用上限に達しました。"
