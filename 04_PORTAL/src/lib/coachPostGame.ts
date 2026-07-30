@@ -141,6 +141,8 @@ export interface PostGameReviewResult {
   result: {
     win: boolean;
     champion: string;
+    enemyChampion: string | null;
+    role: string;
     kda: string;
     kdaRatio: string;
     csPerMin: string;
@@ -328,6 +330,8 @@ ${focus ? `\n=== この試合で意識すると宣言した「今日の焦点」
     result: {
       win: me.win,
       champion: me.championName,
+      enemyChampion: enemyLaner ? enemyLaner.championName : null,
+      role: lane,
       kda: `${me.kills}/${me.deaths}/${me.assists}`,
       kdaRatio: kda,
       csPerMin,

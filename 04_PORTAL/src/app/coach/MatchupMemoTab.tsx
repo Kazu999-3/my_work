@@ -29,6 +29,7 @@ const EMPTY_MEMO = {
   difficulty: 3, winCondition: '', earlyGame: '', powerSpikes: '',
   buildRunes: '', firstClear: '', counterJg: '', result: '',
   strategy: '', csd15: 0,
+  matchLogId: null as number | string | null, matchDate: null as string | null, kda: '',
 };
 
 export default function MatchupMemoTab() {
@@ -104,6 +105,20 @@ export default function MatchupMemoTab() {
       const params = new URLSearchParams(window.location.search);
       const champParam = params.get('champion');
       const enemyParam = params.get('enemy');
+      // ソロQ試合終了ごとの自動通知（coach_analyses連携）からの深リンク用。
+      // 対面が判明した実際の試合結果・KDA・試合IDを引き継ぎ、新規メモに自動プリフィルする。
+      const roleParam = params.get('role');
+      const resultParam = params.get('result');
+      const kdaParam = params.get('kda');
+      const matchIdParam = params.get('matchId');
+      const normalizeRole = (r: string | null): string => {
+        if (!r) return 'Jungle';
+        const rl = r.toUpperCase();
+        if (rl === 'UTILITY' || rl === 'SUPPORT') return 'Support';
+        if (rl === 'BOTTOM' || rl === 'ADC') return 'Bot';
+        if (rl === 'MIDDLE') return 'Mid';
+        return rl.charAt(0) + rl.slice(1).toLowerCase();
+      };
 
       if (champParam || enemyParam) {
         setParamsProcessed(true);
@@ -119,12 +134,13 @@ export default function MatchupMemoTab() {
         if (found) {
           handleEdit(found);
         } else {
+          const role = normalizeRole(roleParam);
           setMemo({
             ...EMPTY_MEMO,
             champion: champParam || '',
             enemy: enemyParam || '',
-            role: 'Jungle',
-            title: `${champParam || ''} vs ${enemyParam || ''} (Jungle)`,
+            role,
+            title: `${champParam || ''} vs ${enemyParam || ''} (${role})`,
             difficulty: 3,
             winCondition: '',
             earlyGame: '',
@@ -132,7 +148,9 @@ export default function MatchupMemoTab() {
             buildRunes: '',
             firstClear: '',
             counterJg: '',
-            result: '',
+            result: resultParam || '',
+            kda: kdaParam || '',
+            matchLogId: matchIdParam || null,
             strategy: '',
           });
           setShowForm(true);
@@ -285,7 +303,8 @@ export default function MatchupMemoTab() {
       winCondition: rd.winCondition || '', earlyGame: rd.earlyGame || '',
       firstClear: rd.firstClear || '', counterJg: rd.counterJg || '', powerSpikes: rd.powerSpikes || '',
       buildRunes: rd.buildRunes || '', result: rd.result || '', strategy: m.strategy || '',
-      csd15: rd.csd15 !== undefined ? rd.csd15 : 0
+      csd15: rd.csd15 !== undefined ? rd.csd15 : 0,
+      matchLogId: rd.matchLogId ?? null, matchDate: rd.matchDate ?? null, kda: rd.kda || '',
     });
     setShowForm(true); setSelected(null);
   };
@@ -316,10 +335,20 @@ export default function MatchupMemoTab() {
 
   useEffect(() => { setWeakList(null); }, [periodDays]);
 
+  // 「直近の対面」から開いた場合は、その試合の勝敗・KDA・日付・元のmatchup_log行IDを
+  // メモに引き継ぎ、実際の試合と紐づける（苦手対面ランキングは複数戦の集計なので
+  // 単一試合には紐づけられず、champion/enemy/roleのみ引き継ぐ）。
   const startMemoFromLog = (m: any) => {
     setMySearch(m.my || '');
     setEnemySearch(m.enemy || '');
-    setMemo({ ...EMPTY_MEMO, champion: m.my || '', enemy: m.enemy || '', role: m.role || 'TOP' });
+    setMemo({
+      ...EMPTY_MEMO,
+      champion: m.my || '', enemy: m.enemy || '', role: m.role || 'TOP',
+      result: m.isWin === true ? '勝ち' : m.isWin === false ? '負け' : '',
+      kda: m.kills !== undefined ? `${m.kills}/${m.deaths}/${m.assists}` : '',
+      matchLogId: m.matchLogId ?? null,
+      matchDate: m.date ?? null,
+    });
     setShowForm(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -368,7 +397,7 @@ export default function MatchupMemoTab() {
               {recentMatchups.map((r: any, idx: number) => (
                 <button
                   key={idx}
-                  onClick={() => startMemoFromLog({ my: r.my, enemy: r.enemy, role: r.role })}
+                  onClick={() => startMemoFromLog(r)}
                   className="w-full flex items-center justify-between gap-2 p-2 rounded-xl bg-black/20 border border-white/5 hover:border-cyan-500/30 transition-colors text-left"
                 >
                   <div className="flex items-center gap-2 min-w-0">
@@ -445,6 +474,16 @@ export default function MatchupMemoTab() {
               <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-white"><X size={20} /></button>
             </div>
 
+            {memo.matchLogId && (
+              <div className="flex items-center gap-2 text-xs text-emerald-300 bg-emerald-950/30 border border-emerald-800/60 rounded-xl px-3 py-2">
+                <Activity size={14} />
+                <span>
+                  🔗 実際の試合と紐づいています：{memo.matchDate ? new Date(memo.matchDate).toLocaleDateString('ja-JP') : ''}
+                  {memo.result ? ` ・ ${memo.result}` : ''}{memo.kda ? ` ・ KDA ${memo.kda}` : ''}
+                </span>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="text-xs font-bold text-gray-400 block mb-1">自分のチャンピオン</label>
@@ -512,6 +551,9 @@ export default function MatchupMemoTab() {
                   <div>
                     <h4 className="text-sm font-bold text-white">{m.champion} vs {m.enemy}</h4>
                     <span className="text-[10px] text-gray-500 font-mono">{m.role}</span>
+                    {m.raw_data?.matchLogId && (
+                      <span className="ml-1 text-[10px] text-emerald-400">🔗 試合紐づけ済み</span>
+                    )}
                   </div>
                 </div>
                 <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">

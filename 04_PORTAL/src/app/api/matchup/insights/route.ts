@@ -25,7 +25,7 @@ export async function GET(req: Request) {
     const buildQuery = () => {
       let query = supabase
         .from('matchup_log')
-        .select('player_name, role, my_champion, enemy_champion, is_win, kills, deaths, assists, created_at')
+        .select('id, player_name, role, my_champion, enemy_champion, is_win, kills, deaths, assists, created_at')
         .order('created_at', { ascending: false });
       if (player) query = query.eq('player_name', player);
       if (days > 0) query = query.gte('created_at', new Date(Date.now() - days * 86400000).toISOString());
@@ -86,7 +86,7 @@ export async function GET(req: Request) {
     return NextResponse.json({
       success: true,
       recent: rows.map((r: any) => ({
-        playerName: r.player_name, role: r.role,
+        matchLogId: r.id, playerName: r.player_name, role: r.role,
         my: r.my_champion, enemy: r.enemy_champion,
         isWin: r.is_win, kills: r.kills, deaths: r.deaths, assists: r.assists, date: r.created_at,
       })),

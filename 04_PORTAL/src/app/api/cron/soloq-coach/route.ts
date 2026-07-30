@@ -75,6 +75,14 @@ export async function GET(req: Request) {
         const review = await runPostGameReview({ matchId: targetMatchId });
         const { result, weaknesses, advice } = review;
 
+        // 試合終了ごとに対面メモを書いてもらうための深リンク。対面(enemyChampion)が
+        // 特定できた場合のみ、対面メモの新規作成フォームへ試合結果・KDA・試合IDを
+        // 引き継いで自動プリフィルする（MatchupMemoTabのURLパラメータ処理を再利用）。
+        const matchupMemoPath = result.enemyChampion
+          ? `/coach?tab=matchup-memo&champion=${encodeURIComponent(result.champion)}&enemy=${encodeURIComponent(result.enemyChampion)}&role=${encodeURIComponent(result.role)}&result=${encodeURIComponent(result.win ? '勝ち' : '負け')}&kda=${encodeURIComponent(result.kda)}&matchId=${encodeURIComponent(targetMatchId)}`
+          : '/coach?tab=matchup-memo';
+        const siteBaseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://my-work-8jbd.vercel.app';
+
         // オーナーへDM送信
         if (botToken && ownerId) {
           try {
@@ -86,14 +94,16 @@ export async function GET(req: Request) {
             const dm = await dmRes.json();
             if (dm?.id) {
               const weaknessLine = weaknesses.length > 0 ? `\n⚠️ ${weaknesses.join(' / ')}` : '';
+              const matchupLine = result.enemyChampion ? `\n\n📝 [対面メモを書く (vs ${result.enemyChampion})](${siteBaseUrl}${matchupMemoPath})` : '';
               await fetch(`https://discord.com/api/v10/channels/${dm.id}/messages`, {
                 method: 'POST',
                 headers: { 'Authorization': `Bot ${botToken}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                   embeds: [{
                     title: `${result.win ? '🏆' : '💀'} ソロQ振り返り (${result.champion})`,
+                    url: `${siteBaseUrl}${matchupMemoPath}`,
                     color: result.win ? 3447003 : 15158332,
-                    description: `**KDA** ${result.kda} (${result.kdaRatio})　**CS/min** ${result.csPerMin}${weaknessLine}\n\n💡 ${advice}`.slice(0, 4000),
+                    description: `**KDA** ${result.kda} (${result.kdaRatio})　**CS/min** ${result.csPerMin}${weaknessLine}\n\n💡 ${advice}${matchupLine}`.slice(0, 4000),
                     footer: { text: `KTM パーソナルコーチ | Match ${targetMatchId}` },
                   }],
                 }),
@@ -106,15 +116,17 @@ export async function GET(req: Request) {
 
         // ポータル通知（履歴保存＋"admin" scope購読者へのプッシュ）。
         // createAdminNotification経由にすることで、コーチのベル通知一覧にも残る。
+        // クリック先を対面メモの深リンクにすることで、試合終了のたびにその対面の
+        // メモをその場で書けるようにする。
         try {
           const weaknessLine2 = weaknesses.length > 0 ? `⚠️ ${weaknesses.join(' / ')}\n\n` : '';
           await createAdminNotification({
             type: 'coach_review',
             title: `${result.win ? '🏆' : '💀'} ソロQ振り返り (${result.champion})`,
             body: `KDA ${result.kda} (${result.kdaRatio}) / CS ${result.csPerMin}\n${weaknessLine2}${advice}`.slice(0, 500),
-            url: '/coach',
+            url: matchupMemoPath,
             icon: `https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${result.champion}_0.jpg`,
-            data: { matchId: targetMatchId, champion: result.champion, win: result.win },
+            data: { matchId: targetMatchId, champion: result.champion, enemyChampion: result.enemyChampion, win: result.win },
           });
         } catch (e) {
           console.warn('[soloq-coach] ポータル通知の送信に失敗:', e);
