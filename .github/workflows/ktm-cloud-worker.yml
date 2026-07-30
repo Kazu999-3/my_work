@@ -67,6 +67,12 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: { python-version: '3.12' }
+      # cookie認証時、yt-dlpはwebクライアントにフォールバックしYouTubeの"n challenge"署名解決に
+      # JSランタイムを要求する。ランナー内蔵のNodeはActions自体の実行専用でPATHに出ていないため明示的に用意する。
+      - name: Set up Node.js (for yt-dlp's n-challenge JS solver)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
       - name: Install dependencies
         run: pip install -q yt-dlp google-genai
       - name: Check Environment

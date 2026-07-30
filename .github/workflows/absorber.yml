@@ -38,6 +38,14 @@ jobs:
         with:
           python-version: '3.12'
 
+      # cookie認証時、yt-dlpは(androidクライアントがcookieを扱えないため)webクライアントに
+      # フォールバックし、YouTubeの"n challenge"署名解決にJSランタイムを要求する。
+      # ランナー内蔵のNodeはActions自体の実行専用でPATHに出ていないため、明示的に用意する。
+      - name: Set up Node.js (for yt-dlp's n-challenge JS solver)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
