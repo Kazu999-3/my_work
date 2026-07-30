@@ -732,7 +732,8 @@ class YouTubeAbsorber:
                 f"{details_str}\n\n"
                 f"📁 `02_FACTORY/bible/kirei_bible/`\n"
                 f"📊 残りキュー: **{pending_remaining}件**\n"
-                f"*(※ この後、Dict Synthesizerによってチャンピオン辞典へ自動でマージされます)*"
+                f"*(※ この後、Dict Synthesizerによってチャンピオン辞典へ自動でマージされます)*",
+                portal_link=True, page='youtube'
             )
             
             # 自動同期（Sovereign Sync）を実行してクラウドへ同期し、Discordへ通知を送る

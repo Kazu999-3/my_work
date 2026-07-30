@@ -187,7 +187,7 @@ class SovereignHerald:
         bot_secret = os.environ.get("PORTAL_BOT_SECRET", "")
         path_mapping = {
             "champdb": "champions", "drafts": "library", "publish": "library",
-            "dashboard": "", "sns": "", "logs": "", "analysis": "",
+            "dashboard": "", "sns": "", "logs": "", "analysis": "", "youtube": "admin/youtube",
         }
         target_path = path_mapping.get(page, page) if page else ""
         url = f"/{target_path}".rstrip("/") or "/"
@@ -226,8 +226,9 @@ class SovereignHerald:
             "dashboard":"🏠 ダッシュボード",
             "analysis": "📊 分析レポート",
             "champdb":  "📖 チャンピオン辞典",
+            "youtube":  "📺 YouTube Absorber",
         }
-        
+
         # 実際のポータルのURLパスへのマッピング
         path_mapping = {
             "champdb": "champions",
@@ -236,7 +237,8 @@ class SovereignHerald:
             "dashboard": "",
             "sns": "",
             "logs": "",
-            "analysis": ""
+            "analysis": "",
+            "youtube": "admin/youtube"
         }
 
         content = f"📡 **{msg}**"

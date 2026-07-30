@@ -324,6 +324,15 @@ export default function Sidebar() {
                       />
                     ))}
                   </div>
+
+                  {/* Web Push 通知の有効化。PC版サイドバーにしか出ておらず、スマホから
+                      有効化する手段が/coachページの奥にしか無く分かりにくかったため、
+                      「その他」シートにも同じボタンを出す。 */}
+                  {isAdminLoggedIn && (
+                    <div className="mt-3 pt-3 border-t border-white/5">
+                      <PushOptIn scope="admin" label="ポータル通知" inline />
+                    </div>
+                  )}
                 </div>
               </div>
             )}
