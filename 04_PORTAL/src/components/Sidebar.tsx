@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Shield, LayoutDashboard, Swords, BookOpen, BookHeart, Trophy, Users, HeartHandshake, ScrollText, ListVideo, ChevronLeft, ChevronRight, Coins, Brain, Trees, Sparkles, Search, MoreHorizontal, X as XIcon } from 'lucide-react';
+import { Shield, LayoutDashboard, Swords, BookOpen, BookHeart, Trophy, Users, HeartHandshake, ScrollText, ListVideo, ChevronLeft, ChevronRight, Coins, Brain, Trees, Sparkles, Search, MoreHorizontal, X as XIcon, TrendingUp } from 'lucide-react';
 import FavoritesPanel from './FavoritesPanel';
 import PushOptIn from './PushOptIn';
 import NotificationBell from './NotificationBell';
@@ -62,6 +62,7 @@ const ADMIN_ONLY_MENU_ITEMS = [
   // ── 📊 大会運営 ──
   { id: 'dashboard', label: 'ダッシュボード', icon: LayoutDashboard, href: '/admin/dashboard', color: 'text-white', activeBg: 'bg-white/10', section: '大会運営' },
   { id: 'ktm-admin', label: '⚙️ 管理者専用', icon: Shield, href: '/ktm-admin', color: 'text-indigo-400', activeBg: 'bg-indigo-400/15' },
+  { id: 'analytics', label: 'note分析', icon: TrendingUp, href: '/admin/analytics', color: 'text-teal-400', activeBg: 'bg-teal-400/15' },
   // ── 📖 攻略ハブ ──
   { id: 'champions', label: '辞典', icon: BookHeart, href: '/champions', color: 'text-[#c89b3c]', activeBg: 'bg-[#c89b3c]/15', section: '攻略ハブ' },
   { id: 'knowledge-admin', label: 'ナレッジ', icon: Brain, href: '/admin/knowledge', color: 'text-pink-400', activeBg: 'bg-pink-400/15' },
