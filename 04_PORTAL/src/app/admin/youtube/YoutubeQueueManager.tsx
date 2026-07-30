@@ -231,21 +231,21 @@ export default function YoutubeQueueManager() {
     });
   };
 
-  // 選択した動画（主に字幕/Whisper解析不可の手動対応要動画）をまとめてDiscordへ通知しクローズする
-  const handleCloseSelectedToDiscord = async () => {
+  // 選択した動画（主に字幕/Whisper解析不可の手動対応要動画）をまとめてYouTubeプレイリストへ追加しクローズする
+  const handleCloseSelectedToPlaylist = async () => {
     if (selectedIds.size === 0) return;
-    if (!confirm(`選択した${selectedIds.size}件の動画URLをDiscordへ送信し、キューからクローズします。よろしいですか？`)) return;
+    if (!confirm(`選択した${selectedIds.size}件の動画をYouTubeプレイリストへ追加し、キューからクローズします。よろしいですか？`)) return;
 
     setClosingToDiscord(true);
     try {
       const res = await fetch('/api/admin/youtube', {
         method: 'PATCH', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'close_to_discord', ids: Array.from(selectedIds) }),
+        body: JSON.stringify({ action: 'close_to_playlist', ids: Array.from(selectedIds) }),
       });
       const result = await res.json();
       if (res.ok) {
-        showFeedback(result.message || 'Discordへ通知しクローズしました。', 'success');
+        showFeedback(result.message || 'プレイリストへ追加しクローズしました。', 'success');
         setSelectedIds(new Set());
         fetchQueue(true, sortBy);
       } else {
@@ -749,11 +749,11 @@ export default function YoutubeQueueManager() {
         <div className="flex items-center gap-2">
           {activeTab === 'queue' && selectedIds.size > 0 && (
             <button
-              onClick={handleCloseSelectedToDiscord}
+              onClick={handleCloseSelectedToPlaylist}
               disabled={closingToDiscord || closingSelected}
               className="px-4 py-2.5 rounded-xl bg-indigo-950/40 hover:bg-indigo-900/60 border border-indigo-800/60 hover:border-indigo-700/60 text-indigo-300 text-xs font-bold shadow-[0_0_15px_rgba(99,102,241,0.1)] disabled:opacity-40 disabled:pointer-events-none transition-all duration-300 flex items-center gap-1.5 shrink-0"
             >
-              💬 選択{selectedIds.size}件をDiscordへ送信してクローズ
+              📺 選択{selectedIds.size}件をプレイリストへ追加してクローズ
             </button>
           )}
           {activeTab === 'queue' && selectedIds.size > 0 && (
@@ -1070,7 +1070,7 @@ export default function YoutubeQueueManager() {
                       {item.status === 'error_no_transcript' && (
                         <div className="text-[11px] p-2 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-300 space-y-1">
                           <p className="font-bold flex items-center gap-1">🎙️ 理由: 字幕・音声未検出（手動対応要）</p>
-                          <p className="text-rose-400/80 text-[10px]">字幕がなくWhisper文字起こしも失敗しました。ナレッジ画面から直接テキストを入力するか、チェックボックスで選択して上部の「Discordへ送信してクローズ」からまとめて処理してください。</p>
+                          <p className="text-rose-400/80 text-[10px]">字幕がなくWhisper文字起こしも失敗しました。ナレッジ画面から直接テキストを入力するか、チェックボックスで選択して上部の「プレイリストへ追加してクローズ」からまとめて処理してください。</p>
                         </div>
                       )}
                       {item.status === 'failed' && (

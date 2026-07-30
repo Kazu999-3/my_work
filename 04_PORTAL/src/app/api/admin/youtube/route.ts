@@ -14,6 +14,37 @@ function extractVideoId(url: string): string | null {
   return (match && match[2].length === 11) ? match[2] : null;
 }
 
+// YouTube Data API(プレイリスト書き込み)用のアクセストークンを、保存済みの
+// リフレッシュトークンから都度発行する（アクセストークン自体は1時間程度で失効するため）。
+async function getYoutubeAccessToken(): Promise<string | null> {
+  const clientId = process.env.YOUTUBE_OAUTH_CLIENT_ID;
+  const clientSecret = process.env.YOUTUBE_OAUTH_CLIENT_SECRET;
+  const refreshToken = process.env.YOUTUBE_OAUTH_REFRESH_TOKEN;
+  if (!clientId || !clientSecret || !refreshToken) return null;
+
+  try {
+    const res = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        client_id: clientId,
+        client_secret: clientSecret,
+        refresh_token: refreshToken,
+        grant_type: 'refresh_token',
+      }),
+    });
+    if (!res.ok) {
+      console.warn('⚠️ [YouTube API] アクセストークンの更新に失敗:', await res.text());
+      return null;
+    }
+    const data = await res.json();
+    return data.access_token || null;
+  } catch (err) {
+    console.warn('⚠️ [YouTube API] アクセストークン更新中にエラー:', err);
+    return null;
+  }
+}
+
 // 1. キュー一覧の取得
 export async function GET(req: NextRequest) {
   try {
@@ -338,7 +369,7 @@ export async function PATCH(req: NextRequest) {
     const body = await req.json();
     const { action } = body;
 
-    if (action === 'close_to_discord') {
+    if (action === 'close_to_playlist') {
       const ids: string[] = Array.isArray(body.ids) ? body.ids : [];
       if (ids.length === 0) {
         return NextResponse.json({ error: '対象の動画が指定されていません。' }, { status: 400 });
@@ -355,46 +386,45 @@ export async function PATCH(req: NextRequest) {
       }
 
       // 以前はKTM募集チャンネルのWebhookに投稿しており、一般メンバー向けチャンネルに
-      // 管理者向けの内部運用連絡が誤送信されてしまっていた。オーナー本人へのDMに変更する
-      // （soloq-coachの日次DM送信と同じ経路: ktm_settingsのowner_discord_id + Botトークン）。
-      let dmSent = false;
-      const botToken = process.env.DISCORD_BOT_TOKEN;
-      if (botToken) {
-        try {
-          const { data: ownerSetting } = await supabase
-            .from('ktm_settings')
-            .select('value')
-            .eq('key', 'owner_discord_id')
-            .maybeSingle();
-          const ownerId = ownerSetting?.value;
-
-          if (ownerId) {
-            const dmChannelRes = await fetch('https://discord.com/api/v10/users/@me/channels', {
-              method: 'POST',
-              headers: { 'Authorization': `Bot ${botToken}`, 'Content-Type': 'application/json' },
-              body: JSON.stringify({ recipient_id: ownerId }),
-            });
-            const dmChannel = await dmChannelRes.json();
-
-            if (dmChannel?.id) {
-              const lines = items.map((i: any) => `・${i.title || i.id}\n${i.url}`).join('\n\n');
-              const content = `🎙️ **手動対応が必要な動画（字幕/Whisper解析不可）— ${items.length}件をキューからクローズしました**\n\n${lines}`.slice(0, 1900);
-              const sendRes = await fetch(`https://discord.com/api/v10/channels/${dmChannel.id}/messages`, {
-                method: 'POST',
-                headers: { 'Authorization': `Bot ${botToken}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ content }),
-              });
-              dmSent = sendRes.ok;
-              if (!sendRes.ok) {
-                console.warn('⚠️ [YouTube API] DiscordへのDM送信に失敗:', await sendRes.text());
+      // 管理者向けの内部運用連絡が誤送信されてしまっていた。その後DiscordのDM送信に
+      // 変更したが、最終的には「後で手動確認する」という目的に一番合う、既存の
+      // YouTubeプレイリストへの追加に変更した（OAuthのリフレッシュトークン経由）。
+      let addedToPlaylist = 0;
+      const playlistId = process.env.YOUTUBE_MANUAL_REVIEW_PLAYLIST_ID;
+      try {
+        const accessToken = await getYoutubeAccessToken();
+        if (accessToken && playlistId) {
+          for (const item of items) {
+            try {
+              const insertRes = await fetch(
+                'https://www.googleapis.com/youtube/v3/playlistItems?part=snippet',
+                {
+                  method: 'POST',
+                  headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    snippet: {
+                      playlistId,
+                      resourceId: { kind: 'youtube#video', videoId: item.id },
+                    },
+                  }),
+                }
+              );
+              if (insertRes.ok) {
+                addedToPlaylist++;
+              } else {
+                console.warn(`⚠️ [YouTube API] プレイリスト追加に失敗 (${item.id}):`, await insertRes.text());
               }
+            } catch (itemErr) {
+              console.warn(`⚠️ [YouTube API] プレイリスト追加中にエラー (${item.id}):`, itemErr);
             }
-          } else {
-            console.warn('⚠️ [YouTube API] ktm_settingsにowner_discord_idが未設定のためDM送信をスキップしました。');
           }
-        } catch (dmErr) {
-          console.warn('⚠️ [YouTube API] DiscordへのDM送信中にエラー:', dmErr);
+        } else if (!playlistId) {
+          console.warn('⚠️ [YouTube API] YOUTUBE_MANUAL_REVIEW_PLAYLIST_IDが未設定のためプレイリスト追加をスキップしました。');
+        } else {
+          console.warn('⚠️ [YouTube API] YouTube OAuthアクセストークンの取得に失敗したためプレイリスト追加をスキップしました。');
         }
+      } catch (playlistErr) {
+        console.warn('⚠️ [YouTube API] プレイリスト追加処理中にエラー:', playlistErr);
       }
 
       // 行を削除すると重複チェック(id一致)が効かなくなり、チャンネル/プレイリスト監視が
@@ -409,8 +439,9 @@ export async function PATCH(req: NextRequest) {
 
       return NextResponse.json({
         success: true,
-        message: `${items.length} 件をクローズ済みにしました。${dmSent ? '（DiscordへDM送信済み）' : '（DiscordへのDM送信はスキップ/失敗しました）'}`,
+        message: `${items.length} 件をクローズ済みにしました。（プレイリストへ${addedToPlaylist}/${items.length}件追加${addedToPlaylist < items.length ? '・一部失敗またはスキップ' : ''}）`,
         count: items.length,
+        addedToPlaylist,
       });
     }
 

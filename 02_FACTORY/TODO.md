@@ -8,24 +8,18 @@
 ## 📅 次回の注力タスク（2026-07-29 実行予定）
 > 2026-07-28 のポータル不具合修正セッションでほぼ解消。残るのは外部ダッシュボード操作や意思決定が必要なものだけ。SNS素材フォルダの統合（231ファイル・5箇所）のみ、規模が大きいため引き続き対象外。
 
-- [ ] **VAPID鍵の不一致を修正（Web Push配信が届かない件）**（2026-07-30追加、ユーザー側のVercel操作待ち）
-  - 症状: 「通知を有効化」しても実機に何も届かない。`/api/push/notify-admin`のテスト送信で`_pushResult.failed`に`statusCode:403, reason:"BadJwtToken"`（Apple側がVAPID JWTを拒否）を確認済み。`NEXT_PUBLIC_VAPID_PUBLIC_KEY`と`VAPID_PRIVATE_KEY`のペアが一致していないのが原因とみられる
-  - ブロッカー: Vercelダッシュボードでの環境変数更新（この会話中に新しい鍵ペアを生成済み・ユーザーへ提示済み。ここには秘密鍵は書かない）＋再デプロイがユーザー側の作業として必要
-  - 完了後の手順: 再デプロイ後、スマホ側で一度「通知を無効化」→再度「通知を有効化」して新しい公開鍵で購読し直す（旧鍵の購読は無効なため）。その後`/api/push/notify-admin`へテストPOSTして`_pushResult.sent`が1以上になることを確認する
-  - 副次修正（実装済み・デプロイ済み）: `deliverToSubscriptions`が410/404以外の配信失敗を握りつぶしていたのを修正し、失敗理由が見えるようにした（`04_PORTAL/src/app/api/push/send/route.ts`, `04_PORTAL/src/lib/notify.ts`）
-- [ ] **動画キューの「Discordへ送信してクローズ」をYouTubeプレイリスト追加に変更**（2026-07-30追加、ユーザー都合で保留）
-  - 対応不可判定した動画をDiscord DM送信ではなく、既存のYouTubeプレイリストへ`playlistItems.insert`で追加する形に変更したい
-  - ブロッカー: 対象プレイリストのURL/ID未確定 ＋ Google Cloud Console側のOAuth準備（プロジェクト作成→YouTube Data API v3有効化→OAuth同意画面→OAuthクライアント作成、無料枠で足りる）がユーザー側で未着手
-  - 実装メモ: `04_PORTAL/src/app/api/admin/youtube/route.ts`の`close_to_discord`アクション内のDiscord DM送信部分を置き換え。一度だけ使うOAuth認可ルート（Google認可画面へリダイレクト→コールバックでリフレッシュトークン取得・表示）を新設し、`YOUTUBE_OAUTH_CLIENT_ID`/`_SECRET`/`_REFRESH_TOKEN`/対象プレイリストIDをVercel環境変数に追加する想定。ステータスは引き続き`manually_closed`のまま流用でよい
-- [ ] **カスタム募集の「前回の募集を引き継ぐ」機能**（2026-07-29追加）
-  - ボタン統合自体は対応済み（下記完了セッション参照）。引き継ぎ機能は今回スコープ外として分離。
-  - 実装メモ: `recruitments`テーブル（`discord_message_id`/`owner_discord_id`/`status`等）が既に存在し、募集ごとの履歴を持っている。これを使い、新規募集作成時に同一ownerの直近`closed`レコードから`discord_message_id`を取得→Discordメッセージを取得→`parseMessageData()`で参加者リストを復元→新規募集にコピー、という流れで実装できる見込み（新規テーブル不要）。
-- [ ] **収益化パイプライン再実装の周辺整備**
-  - [ ] `PORTAL_BOT_SECRET` の有効化（Vercel と Cloudflare 双方に設定してから bot⇔ポータル認証を有効化。コード自体は実装済み。外部ダッシュボード操作が要るためClaudeでは完結しない）
-  - [ ] Whisper のクラウド移行の設計検討（無料・高精度が条件、実装自体は保留のまま設計だけ詰める）
+- [ ] **動画キューの「クローズ」をYouTubeプレイリスト追加に変更**（2026-07-30着手、最終仕上げ待ち）
+  - コード実装済み・デプロイ済み（`close_to_playlist`アクション、`04_PORTAL/src/app/api/admin/youtube/oauth/`にOAuth認可ルート新設）。Google Cloud Console側のOAuthクライアント（ウェブアプリケーション種別）・スコープ・テストユーザー・`YOUTUBE_OAUTH_CLIENT_ID`/`_SECRET`/`YOUTUBE_MANUAL_REVIEW_PLAYLIST_ID`のVercel環境変数もすべて設定済み
+  - 残作業: `https://my-work-8jbd.vercel.app/api/admin/youtube/oauth`を管理者ログイン状態で開いてリフレッシュトークンを取得し、`YOUTUBE_OAUTH_REFRESH_TOKEN`としてVercelに設定→再デプロイ
+- [ ] Whisper のクラウド移行の設計検討（無料・高精度が条件、実装自体は保留のまま設計だけ詰める）
 - [x] **`champion_trend`タスクのクラウド移行検討** → 2026-07-29確認: 既に`edge-cloud-worker.yml`/`scripts/edge_cloud_worker.py`の`TASK_MAP`に`champion_trend`が組み込まれ、クラウド実行済みだった（この項目自体が古い記述のまま残っていたstaleなTODO）。ダッシュボードが実行元(ローカル/クラウド)を区別できていなかった点は今回の`pipeline-status` API改修で表示に対応済み。
 - [ ] **リポジトリ運用の意思決定**
   - [ ] `02_FACTORY/PRODUCTS/` を Git 管理するかどうかの方針決定（セッション最初期から未決定のまま）
+## ✅ 2026-07-30 追加セッションで対応済み
+- [x] Web Push配信が届かない問題を解消。原因は鍵の不一致ではなく`VAPID_SUBJECT`未設定時のフォールバック値`mailto:admin@ktm.local`（実在しないドメイン）で、Appleの配信サーバーだけがこれを`BadJwtToken`として拒否していた。`VAPID_SUBJECT`に実在のメールアドレスを設定して解消（鍵ペア自体は複数回再生成したが原因ではなかった）
+- [x] `deliverToSubscriptions`が410/404以外の配信失敗を握りつぶしていたのを修正し、失敗理由が見えるようにした（`04_PORTAL/src/app/api/push/send/route.ts`, `04_PORTAL/src/lib/notify.ts`）
+- [x] `PORTAL_BOT_SECRET`をVercel・Cloudflare双方に設定し有効化。以前は`/api/player/update-puuid`・`update-lane`・`/api/riot/match-sync`等がdiscordIdさえ分かれば誰でも叩ける状態だった（fail-open設計）が、bot⇔ポータル間の認証が必須になった
+
 ## ✅ 2026-07-29 追加セッションで対応済み
 - [x] カスタム募集（都度募集）のロール選択ボタン(Top/Jg/Mid/Adc/Sup 5個)をセレクトメニュー1つに統合（`embeds.js`/`components.js`）。定期募集側は変更なし
 - [x] チャンピオントレンド更新失敗の通知から再実行できるように改善: 通知URLに`champion`/`role`/`failed_task`を付与し、辞典AI更新タブに失敗タスク一覧＋再実行ボタン＋実行元(ローカル/クラウド)表示を追加（`edge_cloud_worker.py`, `pipeline-status/route.ts`, `AiUpdateTab.tsx`）。`edge_tasks`に`executor`列を追加
