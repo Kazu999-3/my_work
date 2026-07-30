@@ -8,6 +8,11 @@
 ## 📅 次回の注力タスク（2026-07-29 実行予定）
 > 2026-07-28 のポータル不具合修正セッションでほぼ解消。残るのは外部ダッシュボード操作や意思決定が必要なものだけ。SNS素材フォルダの統合（231ファイル・5箇所）のみ、規模が大きいため引き続き対象外。
 
+- [ ] **VAPID鍵の不一致を修正（Web Push配信が届かない件）**（2026-07-30追加、ユーザー側のVercel操作待ち）
+  - 症状: 「通知を有効化」しても実機に何も届かない。`/api/push/notify-admin`のテスト送信で`_pushResult.failed`に`statusCode:403, reason:"BadJwtToken"`（Apple側がVAPID JWTを拒否）を確認済み。`NEXT_PUBLIC_VAPID_PUBLIC_KEY`と`VAPID_PRIVATE_KEY`のペアが一致していないのが原因とみられる
+  - ブロッカー: Vercelダッシュボードでの環境変数更新（この会話中に新しい鍵ペアを生成済み・ユーザーへ提示済み。ここには秘密鍵は書かない）＋再デプロイがユーザー側の作業として必要
+  - 完了後の手順: 再デプロイ後、スマホ側で一度「通知を無効化」→再度「通知を有効化」して新しい公開鍵で購読し直す（旧鍵の購読は無効なため）。その後`/api/push/notify-admin`へテストPOSTして`_pushResult.sent`が1以上になることを確認する
+  - 副次修正（実装済み・デプロイ済み）: `deliverToSubscriptions`が410/404以外の配信失敗を握りつぶしていたのを修正し、失敗理由が見えるようにした（`04_PORTAL/src/app/api/push/send/route.ts`, `04_PORTAL/src/lib/notify.ts`）
 - [ ] **動画キューの「Discordへ送信してクローズ」をYouTubeプレイリスト追加に変更**（2026-07-30追加、ユーザー都合で保留）
   - 対応不可判定した動画をDiscord DM送信ではなく、既存のYouTubeプレイリストへ`playlistItems.insert`で追加する形に変更したい
   - ブロッカー: 対象プレイリストのURL/ID未確定 ＋ Google Cloud Console側のOAuth準備（プロジェクト作成→YouTube Data API v3有効化→OAuth同意画面→OAuthクライアント作成、無料枠で足りる）がユーザー側で未着手
