@@ -12,9 +12,16 @@ interface Report {
 }
 
 interface Draft {
-  name: string;
-  fileName: string;
-  content: string;
+  id: number;
+  title: string;
+  champion: string | null;
+  patch: string | null;
+  content_free: string | null;
+  content_paid: string | null;
+  promo_text: string | null;
+  status: string;
+  source_skill: string | null;
+  created_at: string;
 }
 
 export default function NoteAnalytics() {
@@ -95,8 +102,8 @@ export default function NoteAnalytics() {
     }
   };
 
-  const handleDraftChange = (name: string) => {
-    const draft = drafts.find(d => d.name === name);
+  const handleDraftChange = (id: string) => {
+    const draft = drafts.find(d => String(d.id) === id);
     if (draft) {
       setSelectedDraft(draft);
     }
@@ -273,13 +280,13 @@ export default function NoteAnalytics() {
             {activeTab === 'drafts' && drafts.length > 0 && (
               <div className="flex items-center gap-2">
                 <span className="text-xs text-gray-500 font-bold">下書き一覧:</span>
-                <select 
+                <select
                   onChange={(e) => handleDraftChange(e.target.value)}
-                  value={selectedDraft?.name || ''}
-                  className="bg-slate-900/80 border border-white/10 text-gray-200 text-xs rounded-xl px-3 py-2 outline-none focus:border-indigo-500/50 transition-colors cursor-pointer font-mono"
+                  value={selectedDraft ? String(selectedDraft.id) : ''}
+                  className="bg-slate-900/80 border border-white/10 text-gray-200 text-xs rounded-xl px-3 py-2 outline-none focus:border-indigo-500/50 transition-colors cursor-pointer font-mono max-w-xs"
                 >
                   {drafts.map(d => (
-                    <option key={d.name} value={d.name}>{d.name}</option>
+                    <option key={d.id} value={d.id}>{d.title}</option>
                   ))}
                 </select>
               </div>
@@ -410,11 +417,11 @@ export default function NoteAnalytics() {
               <AlertCircle size={48} className="text-yellow-500 mx-auto mb-4 animate-bounce" />
               <h3 className="text-xl font-black text-white mb-2">下書き原稿が見つかりません</h3>
               <p className="text-xs text-gray-400 leading-relaxed mb-6">
-                `02_FACTORY/note_drafts/` ディレクトリ配下に Markdown の下書き原稿が存在しません。
+                `note_articles` テーブルにまだ記事が投入されていません。sovereign-factory等のスキルでnote記事を書くと、ここに自動で表示されます。
               </p>
             </div>
           ) : (
-            <motion.div 
+            <motion.div
               variants={containerVariants}
               initial="hidden"
               animate="show"
@@ -425,17 +432,22 @@ export default function NoteAnalytics() {
                   <div className="flex items-center gap-3">
                     <FileText className="text-indigo-400 bg-indigo-500/10 p-2 rounded-xl border border-indigo-500/20" size={36} />
                     <div>
-                      <h3 className="text-lg font-black text-white">✍️ 記事下書きプレビュー: {selectedDraft?.name}</h3>
-                      <p className="text-[10px] text-gray-500 font-bold">{selectedDraft?.fileName}</p>
+                      <h3 className="text-lg font-black text-white">✍️ {selectedDraft?.title}</h3>
+                      <p className="text-[10px] text-gray-500 font-bold flex items-center gap-2">
+                        {selectedDraft?.champion && <span>{selectedDraft.champion}</span>}
+                        {selectedDraft?.patch && <span>Patch {selectedDraft.patch}</span>}
+                        <span className="px-2 py-0.5 rounded-full bg-white/5 border border-white/10">{selectedDraft?.status}</span>
+                        {selectedDraft?.source_skill && <span>via {selectedDraft.source_skill}</span>}
+                      </p>
                     </div>
                   </div>
-                  
+
                   {selectedDraft && (
                     <button
-                      onClick={() => copyToClipboard(selectedDraft.content)}
+                      onClick={() => copyToClipboard(`${selectedDraft.content_free || ''}\n\n---\n✂️ ここから有料 ✂️\n---\n\n${selectedDraft.content_paid || ''}`)}
                       className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border border-white/5 hover:border-white/10 transition-all text-xs font-bold ${
-                        isCopied 
-                          ? 'bg-emerald-600/20 border-emerald-500/30 text-emerald-400' 
+                        isCopied
+                          ? 'bg-emerald-600/20 border-emerald-500/30 text-emerald-400'
                           : 'bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white'
                       }`}
                     >
@@ -445,10 +457,26 @@ export default function NoteAnalytics() {
                   )}
                 </div>
 
-                {/* Markdownプレビュー表示 */}
-                <div className="prose prose-invert max-w-none text-sm leading-relaxed text-gray-300 space-y-6">
-                  {selectedDraft && renderMarkdown(selectedDraft.content)}
-                </div>
+                {/* Markdownプレビュー表示（無料/有料を分けて表示） */}
+                {selectedDraft && (
+                  <div className="prose prose-invert max-w-none text-sm leading-relaxed text-gray-300 space-y-6">
+                    {renderMarkdown(selectedDraft.content_free || '')}
+                    {selectedDraft.content_paid && (
+                      <>
+                        <div className="my-6 text-center text-[10px] font-bold text-amber-400 tracking-widest border-t border-b border-amber-500/20 py-2">
+                          ✂️ ここから有料部分 ✂️
+                        </div>
+                        {renderMarkdown(selectedDraft.content_paid)}
+                      </>
+                    )}
+                    {selectedDraft.promo_text && (
+                      <div className="mt-8 glass-panel rounded-2xl p-4 border border-white/5 bg-black/20">
+                        <h4 className="text-xs font-black text-gray-400 mb-2">📱 X投稿用</h4>
+                        <p className="text-xs text-gray-400 whitespace-pre-wrap font-mono">{selectedDraft.promo_text}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
               </motion.div>
             </motion.div>
           )

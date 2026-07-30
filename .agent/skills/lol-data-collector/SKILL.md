@@ -10,7 +10,7 @@ description: Lolalytics / u.gg / op.gg などから最新パッチのチャン�
 
 ## 使用タイミング
 - `/lol-tactics-production` ワークフローのStep 1として自動起動
-- 軍師エージェント(Strategist)からの呼び出し
+- Strategistエージェントからの呼び出し
 - ユーザーが「〇〇の最新データを集めて」と依頼した時
 
 ## 入力パラメータ

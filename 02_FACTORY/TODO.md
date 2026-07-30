@@ -80,6 +80,6 @@
 ## 🚧 技術的負債バックログ（継続追跡）
 - [x] タスクキュー2系統の統合（SQLite時代の sovereign_tasks 読み出し経路を削除し、edge_tasks に一本化。2026-07-27対応済み）
 - [x] edge_worker の Gateway バイパス解消 → 2026-07-30対応: 想定と実態が違っていた。Gateway(`api.py`)は2026-07-26以降ずっと未起動で、フォールバック側には既にGatewayの`QuotaShaper`(インメモリ・プロセス限定)より堅牢な`quota_manager`(日次上限・永続)と`APIGateway.wait_if_needed()`(Redis/SQLite・プロセス横断)が揃っていた。`ai_helper.generate_content_safe()`から無駄になっていたGatewayヘルスチェック(毎呼び出し1.5秒)を削除し、直接生成に一本化（`api.py`自体は手動起動用に残置）
-- [ ] エージェントスキル出力の DB 自動投入パイプライン設計（ローカルMD → Supabase）
+- [x] エージェントスキル出力の DB 自動投入パイプライン → 2026-07-30実装: 新規`note_articles`テーブルを作成し、`sovereign-factory`/`note_article_drafter`のSKILL.mdに執筆完了時のupsertステップを追加。`/admin/analytics`「記事下書きプレビュー」タブは元々`02_FACTORY/note_drafts`をファイルシステム経由で読む設計だったが、同ディレクトリは`.gitignore`対象でVercel本番には一切デプロイされず常に空になる作りだったと判明、DBから読む方式に差し替え。今日書いたZyra記事を実データとして投入・表示確認済み。あわせて`sovereign-factory`等の複数スキルファイルに残っていた「軍師」「王」呼称・比喩表現をCLAUDE.md表現規約に合わせて削除
 - [x] `04_PORTAL/scripts/` 重複スクリプトの整理（2026-07-28: 参照ゼロを確認しsmart_backfillに統一。archive/の物理削除のみ権限ブロックで保留、上記タスク参照）
 - [ ] Supabase 直接アクセスの API 経由化 → v8.0 APIファースト化として推進

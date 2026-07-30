@@ -70,7 +70,14 @@ description: LoLディープリサーチ結果（勝率、ミクロ、メタ対�
 
 ---
 
+### Step 3: Supabaseへの投入（DB自動投入パイプライン）
+記事ドラフトが完成したら、ローカルファイル(`02_FACTORY/note_drafts/`)に保存するだけでなく、Supabaseの`note_articles`テーブルにも必ずupsertすること。
+`02_FACTORY/note_drafts/`は`.gitignore`対象でVercel本番には一切デプロイされないため、ローカルファイルだけではポータルの`/admin/analytics`「記事下書きプレビュー」タブに表示されない。
+- 列: `title`, `champion`（任意）, `patch`（任意）, `content_free`（無料部分の本文）, `content_paid`（有料部分の本文）, `promo_text`（X投稿文一式）, `file_path`（ローカルファイルへの相対パス）, `status`（作成直後は`'draft'`）, `source_skill`（`'note_article_drafter'`固定）
+- Supabase MCPツール（`execute_sql`/`apply_migration`）または既存の管理者API経由で投入する。
+
 ## ⚠️ 注意点（Constraints）
-- 文章のトンマナは「親しみやすくも、ロジカルで分かりやすい専門家（軍師）」を意識すること。
+- 文章のトンマナは「親しみやすくも、ロジカルで分かりやすい専門家」を意識すること。CLAUDE.mdの表現規約により「軍師」「王」等のポエミーな比喩表現は禁止。
 - X投稿文は、絶対に140文字（日本語）を超えないこと。
 - 情報の出し惜しみはしないが、**「なぜそうなるのか（理屈）」は無料部分**に、**「具体的にどう操作するのか（HOWの詳細）」は有料部分**に配置する感覚で分割すること。
+- 記事ドラフト完成時は必ずStep 3のSupabase投入まで行うこと（ローカルファイル保存だけで終わらせない）。

@@ -13,7 +13,7 @@
 - **[03_PromotionEngine_Pro.md](./03_promotion_automation/03_PromotionEngine_Pro.md)**
   - このスキルは、既存の「X運用オートメーター」「毎週収益最大化」「ファネル構築」「画像プロンプト錬成」「動画台本作成」「Python自動化」の全機能を統合し、コンテンツを市場に認知・拡散させ、収益を刈り
 - **[04_UltimateLoLCoach_Pro.md](./04_lol_coach/04_UltimateLoLCoach_Pro.md)**
-  - このスキルは、既存の「ソロキューコーチ」「対面分析」「リスク管理」「動画翻訳」「MBTIメンタルコーチ」の全機能を統合し、チャレンジャー帯の視点であなたの勝率を物理的に引き上げる「究極のAI軍師」です
+  - このスキルは、既存の「ソロキューコーチ」「対面分析」「リスク管理」「動画翻訳」「MBTIメンタルコーチ」の全機能を統合し、チャレンジャー帯の視点であなたの勝率を物理的に引き上げる統合コーチです
 - **[05_UltimateAIArchitect_Pro.md](./05_system_architect/05_UltimateAIArchitect_Pro.md)**
   - このスキルは、既存の「エージェントオーケストレーター設計」「プロンプト最適化」「深津式分析」の全機能を統合し、AIエージェントの性能を100%引き出すための最高峰の設計・最適化エンジンです。
 - **[MBTIPositiveMentalCoach.md](./06_personal_coach/MBTIPositiveMentalCoach.md)**

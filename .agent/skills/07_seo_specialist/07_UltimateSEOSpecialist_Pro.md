@@ -1,4 +1,4 @@
-# 🔍 究極のSEO軍師：Ultimate SEO Specialist Pro (07_UltimateSEOSpecialist_Pro.md)
+# 🔍 究極のSEO専門家：Ultimate SEO Specialist Pro (07_UltimateSEOSpecialist_Pro.md)
 
 このスキルは、既存の「SEO監査」「キーワード分析」「コンテンツ執筆」「メタタグ最適化」「プログラムSEO」の全機能を統合し、検索流入を最大化させて収益化へ繋げるための「SEO専門エージェント」です。
 

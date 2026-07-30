@@ -10,7 +10,7 @@ description: プロプレイヤー（Oner, Canyon, Kanavi等）の最新ビル�
 
 ## 使用タイミング
 - `/lol-tactics-production` ワークフローのStep 2として自動起動
-- 軍師エージェント(Strategist)からの呼び出し
+- Strategistエージェントからの呼び出し
 - ユーザーが「プロの最新ビルドを調べて」と依頼した時
 
 ## 入力パラメータ
