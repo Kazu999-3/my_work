@@ -301,7 +301,7 @@ function KnowledgeBaseContent() {
             この管理機能は管理者専用です。Discordアカウントでログインしてから再度アクセスしてください。
           </p>
           <a
-            href="/login?next=/admin/knowledge"
+            href="/login"
             className="inline-block w-full rounded-xl bg-pink-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-pink-600"
           >
             ログインページへ

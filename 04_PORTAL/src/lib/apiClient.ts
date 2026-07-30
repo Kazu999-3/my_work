@@ -3,8 +3,9 @@
 //
 // ・credentials:'include' を自動付与（管理者Cookieセッション）
 // ・タイムアウト（既定20秒。AbortControllerで中断）
-// ・401（認証切れ）を検知したら /login?next=現在URL へ自動リダイレクト
+// ・401（認証切れ）を検知したら /login へ自動リダイレクト
 //   → これまで各ページで「401でエラー表示のまま固まる」体験だったのを解消する
+//   （ログイン後は常にダッシュボードへ統一する方針のため、遷移元は引き継がない）
 //
 // 既存の生fetchを段階的にこれへ置き換えていく。非破壊（新規追加）。
 // ============================================================
@@ -26,8 +27,7 @@ export async function apiFetch(input: string, init: ApiFetchInit = {}): Promise<
       ...rest,
     });
     if (res.status === 401 && redirectOn401 && typeof window !== 'undefined') {
-      const next = encodeURIComponent(window.location.pathname + window.location.search);
-      window.location.href = `/login?next=${next}`;
+      window.location.href = '/login';
       throw new Error('認証セッションが切れました。ログインページへ移動します。');
     }
     return res;

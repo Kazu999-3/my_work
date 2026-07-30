@@ -910,7 +910,7 @@ export default function CoachPage() {
             このコーチング機能は管理者専用です。管理者パスコードでログインしてから再度アクセスしてください。
           </p>
           <a
-            href="/login?next=/coach"
+            href="/login"
             className="inline-block w-full rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-indigo-500"
           >
             ログインページへ

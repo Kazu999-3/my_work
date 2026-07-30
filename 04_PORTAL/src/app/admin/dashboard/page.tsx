@@ -223,7 +223,7 @@ export default function Home() {
             この管理版コントロールセンターは管理者専用です。Discordアカウントでログインしてからアクセスしてください。
           </p>
           <a
-            href="/login?next=/admin/dashboard"
+            href="/login"
             className="inline-block w-full rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-500 shadow-lg hover:shadow-blue-500/20"
           >
             ログインページへ

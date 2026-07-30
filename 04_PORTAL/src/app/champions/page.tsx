@@ -53,7 +53,7 @@ function ChampionsShell() {
             チャンピオン辞典は管理者専用です。管理者パスコードでログインしてから再度アクセスしてください。
           </p>
           <a
-            href="/login?next=/champions"
+            href="/login"
             className="inline-block w-full rounded-xl bg-[#c89b3c] px-5 py-3 text-sm font-semibold text-black transition hover:bg-yellow-400"
           >
             ログインページへ

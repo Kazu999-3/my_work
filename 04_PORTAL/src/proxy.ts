@@ -79,8 +79,8 @@ export async function proxy(req: NextRequest) {
   if (path.startsWith('/api/')) {
     return NextResponse.json({ error: '認証が必要です。' }, { status: 401 });
   }
+  // ログイン後は常にダッシュボードへ統一する方針のため、遷移元パスは引き継がない
   const loginUrl = new URL('/login', req.url);
-  loginUrl.searchParams.set('redirect', path);
   return NextResponse.redirect(loginUrl);
 }
 

@@ -1,10 +1,9 @@
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 function LoginContent() {
-  const searchParams = useSearchParams();
   const router = useRouter();
   const [password, setPassword] = useState("");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -18,14 +17,13 @@ function LoginContent() {
     fetch("/api/auth/verify", { method: "POST", credentials: "include" })
       .then((res) => {
         if (res.ok) {
-          const next = searchParams.get("next") || "/ktm-admin";
-          router.replace(next);
+          router.replace("/admin/dashboard");
         } else {
           setChecking(false);
         }
       })
       .catch(() => setChecking(false));
-  }, [searchParams, router]);
+  }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,8 +44,10 @@ function LoginContent() {
 
       if (res.ok && data.success) {
         // サーバーがHttpOnly Cookieをセット済み。localStorageは使わない。
-        const next = searchParams.get("next") || "/ktm-admin";
-        router.replace(next);
+        // 通知経由でどのページからログインに来ても、ログイン後は常にダッシュボードへ
+        // 統一する（以前は元のページに戻していたが、通知の多くが/coach等の個別ページに
+        // リンクしていたため「ログインしたら毎回コーチ画面」という体感になっていた）。
+        router.replace("/admin/dashboard");
       } else {
         setErrorMsg(data.error || "パスワードが正しくありません。");
         setIsLoading(false);

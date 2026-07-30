@@ -119,7 +119,7 @@ export default function KtmAdminPage() {
   }, []);
 
   const handleLogin = () => {
-    window.location.href = "/login?next=/ktm-admin";
+    window.location.href = "/login";
   };
 
   const handleLogout = async () => {
