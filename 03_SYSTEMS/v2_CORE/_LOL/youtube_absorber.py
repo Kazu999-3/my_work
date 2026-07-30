@@ -51,8 +51,12 @@ class YouTubeAbsorber:
         # "node,deno"のような単一引数では解決できず、実際には常に無視されていた
         # （2026-07-30実測: "Ignoring unsupported JavaScript runtime(s): node,deno"）。
         # denoはyt-dlp側で標準有効なので、追加で使えるようnodeだけ明示的に渡す。
+        # --js-runtimesはJS実行エンジンの指定にすぎず、challenge解決スクリプト自体は
+        # --remote-components ejs:github でGitHubから取得する必要がある（無いと
+        # "Remote component challenge solver script (node) was skipped"で結局解決失敗する）。
         self.yt_dlp_base = self.yt_dlp_cmd + [
             "--js-runtimes", "node",
+            "--remote-components", "ejs:github",
             "--extractor-args", "youtube:player_client=android,web",
         ]
         # ボット検知回避用のクッキー設定がある場合は追加。
