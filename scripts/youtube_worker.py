@@ -71,6 +71,15 @@ def fetch_subtitles(url, vid):
         "--extractor-args", "youtube:player_client=android,web",
         "-o", out, url
     ])
+    # クライアント偽装だけでは防ぎきれないため、Netscape形式のcookies.txtの中身を
+    # シークレット(YOUTUBE_COOKIES_TXT)経由で渡せる場合は一時ファイル化して読ませる。
+    # 2026-07実測: これが無いとGitHub Actions上の字幕取得は実質100%失敗する。
+    cookies_content = os.environ.get("YOUTUBE_COOKIES_TXT")
+    if cookies_content:
+        cookies_path = os.path.join(tmp_dir, "yt_dlp_cookies.txt")
+        with open(cookies_path, "w", encoding="utf-8") as f:
+            f.write(cookies_content)
+        cmd.extend(["--cookies", cookies_path])
     res = subprocess.run(cmd, capture_output=True, text=True, timeout=180)
     files = sorted(glob.glob(f"{out}*.vtt"), key=lambda f: (0 if ".ja" in f else 1))
     if not files:

@@ -10,7 +10,11 @@ name: YouTube Absorber (Whisper Rescue)
 # youtube job とは競合しない。
 #
 # 必要シークレット: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY(またはSUPABASE_KEY),
-#                   GEMINI_API_KEY, GROQ_API_KEY
+#                   GEMINI_API_KEY, GROQ_API_KEY, YOUTUBE_COOKIES_TXT
+#                   （YOUTUBE_COOKIES_TXT: ブラウザ拡張機能等でエクスポートしたNetscape形式の
+#                     cookies.txtの中身をそのまま貼る。無いとGitHub Actionsの共有IPが
+#                     YouTube側に"Sign in to confirm you're not a bot"でブロックされ、
+#                     音声ダウンロードが100%失敗し続ける）
 # 任意: GEMINI_API_KEY_FREE, DISCORD_WEBHOOK, DISCORD_BOT_TOKEN, PORTAL_BOT_SECRET
 on:
   schedule:
@@ -54,6 +58,7 @@ jobs:
           DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
           PORTAL_URL: https://my-work-8jbd.vercel.app
           PORTAL_BOT_SECRET: ${{ secrets.PORTAL_BOT_SECRET }}
+          YOUTUBE_COOKIES_TXT: ${{ secrets.YOUTUBE_COOKIES_TXT }}
         run: python 03_SYSTEMS/v2_CORE/_LOL/youtube_absorber.py
 
       - name: Commit updated bible

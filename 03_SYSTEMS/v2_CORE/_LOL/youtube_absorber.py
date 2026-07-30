@@ -51,9 +51,22 @@ class YouTubeAbsorber:
             "--js-runtimes", "node,deno",
             "--extractor-args", "youtube:player_client=android,web",
         ]
-        # ボット検知回避用のクッキー設定がある場合は追加
+        # ボット検知回避用のクッキー設定がある場合は追加。
+        # ローカル実行時はブラウザから直接読む(YT_DLP_COOKIES_FROM)、
+        # GitHub Actions等ブラウザの無い環境ではNetscape形式のcookies.txtの中身を
+        # シークレット(YOUTUBE_COOKIES_TXT)で渡し、一時ファイルに書き出して読ませる。
+        # これが無いとGitHub Actionsの共有IPは"Sign in to confirm you're not a bot"で
+        # 音声ダウンロードそのものがブロックされ続ける（2026-07実測で全リクエスト失敗）。
+        cookies_content = os.getenv("YOUTUBE_COOKIES_TXT")
         cookies_from = os.getenv("YT_DLP_COOKIES_FROM")
-        if cookies_from:
+        if cookies_content:
+            import tempfile
+            cookies_path = os.path.join(tempfile.gettempdir(), "yt_dlp_cookies.txt")
+            with open(cookies_path, "w", encoding="utf-8") as f:
+                f.write(cookies_content)
+            logger.info("🍪 yt-dlp にファイルから復元したクッキーを適用します")
+            self.yt_dlp_base.extend(["--cookies", cookies_path])
+        elif cookies_from:
             logger.info(f"🍪 yt-dlp にブラウザ '{cookies_from}' からのクッキーを適用します")
             self.yt_dlp_base.extend(["--cookies-from-browser", cookies_from])
 
