@@ -47,8 +47,12 @@ class YouTubeAbsorber:
             self.yt_dlp_cmd = [yt_bin]
         # GitHub Actions等の共有IPは "Sign in to confirm you're not a bot" でブロックされやすいため、
         # ボットチェックの対象になりにくい android クライアントを装う（失敗時は web にフォールバック）
+        # --js-runtimesはカンマ区切り文字列を1つのランタイム名として扱うため
+        # "node,deno"のような単一引数では解決できず、実際には常に無視されていた
+        # （2026-07-30実測: "Ignoring unsupported JavaScript runtime(s): node,deno"）。
+        # denoはyt-dlp側で標準有効なので、追加で使えるようnodeだけ明示的に渡す。
         self.yt_dlp_base = self.yt_dlp_cmd + [
-            "--js-runtimes", "node,deno",
+            "--js-runtimes", "node",
             "--extractor-args", "youtube:player_client=android,web",
         ]
         # ボット検知回避用のクッキー設定がある場合は追加。
