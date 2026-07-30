@@ -8,6 +8,10 @@
 ## 📅 次回の注力タスク（2026-07-29 実行予定）
 > 2026-07-28 のポータル不具合修正セッションでほぼ解消。残るのは外部ダッシュボード操作や意思決定が必要なものだけ。SNS素材フォルダの統合（231ファイル・5箇所）のみ、規模が大きいため引き続き対象外。
 
+- [ ] **動画キューの「Discordへ送信してクローズ」をYouTubeプレイリスト追加に変更**（2026-07-30追加、ユーザー都合で保留）
+  - 対応不可判定した動画をDiscord DM送信ではなく、既存のYouTubeプレイリストへ`playlistItems.insert`で追加する形に変更したい
+  - ブロッカー: 対象プレイリストのURL/ID未確定 ＋ Google Cloud Console側のOAuth準備（プロジェクト作成→YouTube Data API v3有効化→OAuth同意画面→OAuthクライアント作成、無料枠で足りる）がユーザー側で未着手
+  - 実装メモ: `04_PORTAL/src/app/api/admin/youtube/route.ts`の`close_to_discord`アクション内のDiscord DM送信部分を置き換え。一度だけ使うOAuth認可ルート（Google認可画面へリダイレクト→コールバックでリフレッシュトークン取得・表示）を新設し、`YOUTUBE_OAUTH_CLIENT_ID`/`_SECRET`/`_REFRESH_TOKEN`/対象プレイリストIDをVercel環境変数に追加する想定。ステータスは引き続き`manually_closed`のまま流用でよい
 - [ ] **カスタム募集の「前回の募集を引き継ぐ」機能**（2026-07-29追加）
   - ボタン統合自体は対応済み（下記完了セッション参照）。引き継ぎ機能は今回スコープ外として分離。
   - 実装メモ: `recruitments`テーブル（`discord_message_id`/`owner_discord_id`/`status`等）が既に存在し、募集ごとの履歴を持っている。これを使い、新規募集作成時に同一ownerの直近`closed`レコードから`discord_message_id`を取得→Discordメッセージを取得→`parseMessageData()`で参加者リストを復元→新規募集にコピー、という流れで実装できる見込み（新規テーブル不要）。
