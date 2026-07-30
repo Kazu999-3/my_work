@@ -66,9 +66,9 @@ def fetch_subtitles(url, vid):
     cmd.extend([
         "--skip-download", "--write-subs", "--write-auto-subs",
         "--sub-langs", "ja,ja-orig,en", "--sub-format", "vtt",
-        # GitHub Actionsの共有IPは "Sign in to confirm you're not a bot" でブロックされやすいため、
-        # ボットチェックの対象になりにくい android クライアントを装う（失敗時は web にフォールバック）
-        "--extractor-args", "youtube:player_client=android,web",
+        # android_vr は署名済み直リンクを返すためcookie併用時にも弾かれにくい。
+        # android/webは非cookie時の保険として残す（2026-07-31実測でandroid_vrが最も安定）。
+        "--extractor-args", "youtube:player_client=android_vr,android,web",
         "-o", out, url
     ])
     # クライアント偽装だけでは防ぎきれないため、Netscape形式のcookies.txtの中身を

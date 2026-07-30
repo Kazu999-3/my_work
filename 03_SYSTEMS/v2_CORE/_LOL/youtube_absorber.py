@@ -45,19 +45,15 @@ class YouTubeAbsorber:
             self.yt_dlp_cmd = [sys.executable, "-m", "yt_dlp"]
         else:
             self.yt_dlp_cmd = [yt_bin]
-        # GitHub Actions等の共有IPは "Sign in to confirm you're not a bot" でブロックされやすいため、
-        # ボットチェックの対象になりにくい android クライアントを装う（失敗時は web にフォールバック）
-        # --js-runtimesはカンマ区切り文字列を1つのランタイム名として扱うため
-        # "node,deno"のような単一引数では解決できず、実際には常に無視されていた
-        # （2026-07-30実測: "Ignoring unsupported JavaScript runtime(s): node,deno"）。
-        # denoはyt-dlp側で標準有効なので、追加で使えるようnodeだけ明示的に渡す。
-        # --js-runtimesはJS実行エンジンの指定にすぎず、challenge解決スクリプト自体は
-        # --remote-components ejs:github でGitHubから取得する必要がある（無いと
-        # "Remote component challenge solver script (node) was skipped"で結局解決失敗する）。
+        # android_vr クライアントは署名済み直リンクを返すため n challenge (JS実行) 自体が
+        # 不要で、cookie併用時にも弾かれない。2026-07-31実測: android/webはcookie併用時に
+        # androidがスキップされwebにフォールバックし、webはPoToken無しでは画像専用フォーマット
+        # しか返さない（--js-runtimes/--remote-componentsでn challenge自体は解決できても
+        # 解決しない）。android_vrを先頭にし、android/webは非cookie時の保険として残す。
         self.yt_dlp_base = self.yt_dlp_cmd + [
             "--js-runtimes", "node",
             "--remote-components", "ejs:github",
-            "--extractor-args", "youtube:player_client=android,web",
+            "--extractor-args", "youtube:player_client=android_vr,android,web",
         ]
         # ボット検知回避用のクッキー設定がある場合は追加。
         # ローカル実行時はブラウザから直接読む(YT_DLP_COOKIES_FROM)、
