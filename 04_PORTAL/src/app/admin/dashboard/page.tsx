@@ -98,7 +98,6 @@ export default function Home() {
 
   const TASK_LABELS: Record<string, string> = {
     champion_trend: 'チャンピオントレンド更新',
-    matchup_simulation_5v5: '5v5構成シミュレーション',
     resolve_youtube_channel: 'YouTubeチャンネル登録',
     resolve_youtube_playlist: 'YouTubeプレイリスト登録',
     youtube_channel_monitor: 'YouTubeチャンネル監視',
@@ -112,7 +111,6 @@ export default function Home() {
   // 「詳細へ」の遷移先をtask_typeごとに正しく振り分ける（以前は全種別が一律/admin/youtubeに
   // 飛んでいて、辞典一括更新等の失敗がYouTube管理画面を開いても何も解決できなかった）
   const TASK_LINKS: Record<string, string> = {
-    matchup_simulation_5v5: '/coach',
     resolve_youtube_channel: '/admin/youtube',
     resolve_youtube_playlist: '/admin/youtube',
     youtube_channel_monitor: '/admin/youtube',

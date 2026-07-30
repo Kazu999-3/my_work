@@ -64,11 +64,15 @@ export async function GET(req: NextRequest) {
       // 集約されており、ここに混ぜると大量の重複ノイズになるため除外する。task_typeも
       // 既知の(=ポータル側で遷移先を用意できる)種別だけに絞り、廃止済みタスク種別
       // (削除済み収益化パイプライン等)の「対応不可能な要対応」が残り続けるのを防ぐ。
+      // matchup_simulation_5v5は10人分のチャンピオン構成そのものがpayloadになるため、
+      // 全く同じ組み合わせで再実行されない限り(task_type,payload)デデュープが効かず、
+      // 古い失敗が消えずに残り続けてしまう。またダッシュボードから再試行する導線も無い
+      // ため、そもそもこのパネルの対象から除外する(結果はコーチページその場で見るもの)。
       supabase.from('edge_tasks')
         .select('id, task_type, payload, status, error_message, updated_at, executor')
         .in('status', ['failed', 'completed'])
         .in('task_type', [
-          'champion_trend', 'matchup_simulation_5v5', 'resolve_youtube_channel',
+          'champion_trend', 'resolve_youtube_channel',
           'resolve_youtube_playlist', 'youtube_channel_monitor', 'reddit_scout',
           'lol_trend_collect', 'dict_synthesizer', 'champion_db_bulk_update',
         ])

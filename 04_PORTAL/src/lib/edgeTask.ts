@@ -10,7 +10,7 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 // champion_db_bulk_update)は専用の定期ワークフローが別途担当しているため、
 // ここから即時起動しても意味が無い。
 const EDGE_CLOUD_WORKER_TASK_TYPES = new Set([
-  'champion_trend', 'matchup_simulation_5v5', 'resolve_youtube_channel',
+  'champion_trend', 'resolve_youtube_channel',
   'resolve_youtube_playlist', 'youtube_channel_monitor', 'reddit_scout',
   'lol_trend_collect', 'dict_synthesizer',
 ]);
