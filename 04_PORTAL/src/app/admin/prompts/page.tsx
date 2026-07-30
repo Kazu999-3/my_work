@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { supabase } from '../../../lib/supabaseClient';
 import {
   Cpu, Save, RefreshCw, CheckCircle, AlertTriangle,
   ArrowLeft, Terminal, Edit3, Settings
@@ -39,15 +38,13 @@ export default function PromptsAdmin() {
   const fetchPrompts = async () => {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('agent_prompts')
-        .select('*')
-        .order('prompt_id', { ascending: true });
+      const res = await fetch('/api/admin/prompts', { credentials: 'include' });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'プロンプトの取得に失敗しました');
+      const data: AgentPrompt[] = json.prompts || [];
+      setPrompts(data);
 
-      if (error) throw error;
-      setPrompts(data || []);
-
-      if (data && data.length > 0 && !selectedPrompt) {
+      if (data.length > 0 && !selectedPrompt) {
         handleSelectPrompt(data[0]);
       } else if (selectedPrompt) {
         const updatedSelected = data.find((p: any) => p.prompt_id === selectedPrompt.prompt_id);
@@ -85,20 +82,21 @@ export default function PromptsAdmin() {
         temperature: temperature,
         system_prompt: systemPrompt || null,
         user_prompt_template: userPromptTemplate,
-        updated_at: new Date().toISOString()
       };
 
-      const { error } = await supabase
-        .from('agent_prompts')
-        .update(updates)
-        .eq('prompt_id', selectedPrompt.prompt_id);
-
-      if (error) throw error;
+      const res = await fetch('/api/admin/prompts', {
+        method: 'PATCH',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt_id: selectedPrompt.prompt_id, ...updates }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || '更新に失敗しました');
 
       setSaveStatus({ type: 'success', message: `プロンプト '${selectedPrompt.prompt_id}' を正常に更新しました。` });
 
       setPrompts(prev => prev.map(p =>
-        p.prompt_id === selectedPrompt.prompt_id ? { ...p, ...updates } : p
+        p.prompt_id === selectedPrompt.prompt_id ? { ...p, ...updates, updated_at: new Date().toISOString() } : p
       ));
     } catch (err: any) {
       console.error('Failed to save prompt:', err);
