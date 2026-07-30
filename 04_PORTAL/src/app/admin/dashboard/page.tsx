@@ -219,7 +219,7 @@ export default function Home() {
         <div className="text-center max-w-sm rounded-3xl border border-gray-800 bg-[#0f111a] p-8 shadow-2xl">
           <div className="text-4xl mb-4">🔑</div>
           <h2 className="text-lg font-bold mb-2">認証が必要です</h2>
-          <p className="text-sm text-gray-400 mb-6 leading-relaxed">
+          <p className="text-sm text-gray-400 mb-4 leading-relaxed">
             この管理版コントロールセンターは管理者専用です。Discordアカウントでログインしてからアクセスしてください。
           </p>
           <a
@@ -234,7 +234,7 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen p-6 md:p-12 max-w-7xl mx-auto flex flex-col gap-10 relative overflow-hidden">
+    <div className="min-h-screen p-4 md:p-6 max-w-7xl mx-auto flex flex-col gap-6 relative overflow-hidden">
       
       {/* Background Decorative Orbs */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
@@ -247,11 +247,11 @@ export default function Home() {
         initial={{ y: -30, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.6, type: 'spring' }}
-        className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6"
+        className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4"
       >
         <div className="relative">
           <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 to-purple-600 blur opacity-20"></div>
-          <h1 className="relative text-5xl md:text-6xl font-black tracking-tighter mb-2 drop-shadow-2xl">
+          <h1 className="relative text-3xl md:text-4xl font-black tracking-tighter mb-2 drop-shadow-2xl">
             <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400">Sovereign OS</span> 
             <span className="text-white/90 ml-3 font-mono text-3xl opacity-80">v5.0</span>
           </h1>
@@ -314,7 +314,7 @@ export default function Home() {
         <motion.div
           initial={{ y: -10, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          className="glass-panel rounded-3xl p-6 border border-rose-500/30 bg-rose-500/5"
+          className="glass-panel rounded-3xl p-4 border border-rose-500/30 bg-rose-500/5"
         >
           <h3 className="text-lg font-black text-rose-300 flex items-center gap-2 mb-4">
             <ShieldAlert size={20} /> ⚠️ 要対応（{needsAttention.failedTasks.length + (needsAttention.youtubeErrorCount > 0 ? 1 : 0)}件）
@@ -363,12 +363,12 @@ export default function Home() {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
       >
         
         {/* エッジワーカー依存機能 & 起動コントロールカード */}
-        <motion.div variants={itemVariants} className="md:col-span-2 lg:col-span-4 glass-panel rounded-3xl p-6 relative overflow-hidden border border-white/10 bg-gradient-to-r from-blue-950/30 via-slate-900/40 to-purple-950/30">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-6">
+        <motion.div variants={itemVariants} className="md:col-span-2 lg:col-span-4 glass-panel rounded-3xl p-4 relative overflow-hidden border border-white/10 bg-gradient-to-r from-blue-950/30 via-slate-900/40 to-purple-950/30">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
             <div>
               <div className="flex items-center gap-3 mb-2">
                 <div className={`p-2.5 rounded-xl border ${systemStatus.worker.active ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-rose-500/10 border-rose-500/30 text-rose-400'}`}>
@@ -448,9 +448,9 @@ export default function Home() {
         </motion.div>
 
         {/* QUOTA Card (Simplified & Full-width) */}
-        <motion.div variants={itemVariants} className="md:col-span-2 lg:col-span-4 glass-panel glass-panel-hover rounded-3xl p-6 relative overflow-hidden border border-white/5 bg-gradient-to-b from-white/[0.05] to-transparent">
+        <motion.div variants={itemVariants} className="md:col-span-2 lg:col-span-4 glass-panel glass-panel-hover rounded-3xl p-4 relative overflow-hidden border border-white/5 bg-gradient-to-b from-white/[0.05] to-transparent">
           <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/20 rounded-full blur-[50px] -mr-10 -mt-10 pointer-events-none"></div>
-          <div className="flex justify-between items-start mb-6">
+          <div className="flex justify-between items-start mb-4">
             <div className="flex items-center gap-3">
               <div className="p-3 bg-purple-500/10 border border-purple-500/20 rounded-xl text-purple-400">
                 <Zap size={22} />
@@ -489,12 +489,12 @@ export default function Home() {
         </motion.div>
 
         {/* New Dashboard Widgets */}
-        <motion.div variants={itemVariants} className="md:col-span-2 lg:col-span-4 mt-4 grid grid-cols-1 gap-6">
+        <motion.div variants={itemVariants} className="md:col-span-2 lg:col-span-4 mt-4 grid grid-cols-1 gap-4">
 
           {/* Panel B: YouTube Absorber Queue */}
-          <div className="glass-panel rounded-3xl p-6 border border-white/5 bg-gradient-to-br from-blue-500/5 to-transparent flex flex-col h-full justify-between">
+          <div className="glass-panel rounded-3xl p-4 border border-white/5 bg-gradient-to-br from-blue-500/5 to-transparent flex flex-col h-full justify-between">
             <div>
-              <div className="flex justify-between items-center mb-6">
+              <div className="flex justify-between items-center mb-4">
                 <div className="flex items-center gap-3">
                   <h3 className="text-xl font-black text-white flex items-center gap-2">
                     <div className="w-2 h-6 bg-blue-500 rounded-full shadow-[0_0_10px_rgba(59,130,246,0.6)]"></div>
@@ -570,8 +570,8 @@ export default function Home() {
           </div>
 
           {/* Panel C: 募集アクティビティ ＆ セットアップチェックリスト */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="glass-panel rounded-3xl p-6 border border-white/5 bg-gradient-to-br from-rose-500/5 to-transparent">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="glass-panel rounded-3xl p-4 border border-white/5 bg-gradient-to-br from-rose-500/5 to-transparent">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-black text-white flex items-center gap-2">
                   <div className="w-2 h-6 bg-rose-500 rounded-full shadow-[0_0_10px_rgba(244,63,94,0.6)]"></div>
@@ -603,7 +603,7 @@ export default function Home() {
               <p className="text-[10px] text-gray-600 mt-3">参加人数はDiscordメッセージ側で管理されているため、ここでは開催状況のみ表示しています。</p>
             </div>
 
-            <div className="glass-panel rounded-3xl p-6 border border-white/5 bg-gradient-to-br from-amber-500/5 to-transparent">
+            <div className="glass-panel rounded-3xl p-4 border border-white/5 bg-gradient-to-br from-amber-500/5 to-transparent">
               <h3 className="text-lg font-black text-white flex items-center gap-2 mb-4">
                 <div className="w-2 h-6 bg-amber-500 rounded-full shadow-[0_0_10px_rgba(245,158,11,0.6)]"></div>
                 セットアップ状況
@@ -635,8 +635,8 @@ export default function Home() {
         </motion.div>
 
         {/* 🛠️ システムコクピット (System Cockpit) */}
-        <motion.div variants={itemVariants} className="md:col-span-2 lg:col-span-4 mt-8">
-          <div className="glass-panel rounded-3xl p-6 border border-white/5 bg-[#07080e]/60 space-y-6">
+        <motion.div variants={itemVariants} className="md:col-span-2 lg:col-span-4 mt-5">
+          <div className="glass-panel rounded-3xl p-4 border border-white/5 bg-[#07080e]/60 space-y-4">
             
             {/* タブナビゲーション */}
             <div className="flex justify-between items-center border-b border-white/5 pb-4 flex-wrap gap-4">
@@ -669,7 +669,7 @@ export default function Home() {
             <div className="mt-4">
               {/* 1. 🛰️ サービス監視 (Nodes Sentinel) */}
               {activeSystemTab === 'nodes' && (
-                <div className="space-y-6">
+                <div className="space-y-4">
                   <p className="text-xs text-gray-400">
                     ポータルとBotはクラウドで常時稼働しています。動画解析まわりはPCで起動したときだけ動くため、
                     <strong className="text-gray-300">「未起動」は正常な状態</strong>です。
@@ -781,7 +781,7 @@ export default function Home() {
 
               {/* 2. ⚡ ジョブ実行キュー (Job Queue) */}
               {activeSystemTab === 'queue' && (
-                <div className="space-y-6">
+                <div className="space-y-4">
                   <div className="flex justify-between items-center border-b border-white/5 pb-4 flex-wrap gap-2">
                     <p className="text-xs text-gray-400">
                       Discord Bot（エッジワーカー）のジョブ処理状況です。
@@ -801,14 +801,14 @@ export default function Home() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                     {/* 現在実行中のタスク */}
                     <div className="space-y-3">
                       <h4 className="text-xs font-bold uppercase tracking-wider text-cyan-400 flex items-center gap-1.5">
                         <span>●</span> 現在実行中のタスク
                       </h4>
                       {systemStatus.queue.filter(t => t.status === 'running').length === 0 ? (
-                        <div className="text-xs text-gray-500 py-6 text-center rounded-2xl border border-white/5 bg-black/20">
+                        <div className="text-xs text-gray-500 py-4 text-center rounded-2xl border border-white/5 bg-black/20">
                           現在実行中のタスクはありません（待機中）
                         </div>
                       ) : (
@@ -838,7 +838,7 @@ export default function Home() {
                         <span>●</span> 待機中のタスク列 ({systemStatus.queue.filter(t => t.status === 'pending').length})
                       </h4>
                       {systemStatus.queue.filter(t => t.status === 'pending').length === 0 ? (
-                        <div className="text-xs text-gray-500 py-6 text-center rounded-2xl border border-white/5 bg-black/20">
+                        <div className="text-xs text-gray-500 py-4 text-center rounded-2xl border border-white/5 bg-black/20">
                           待機中のタスクはありません
                         </div>
                       ) : (
@@ -866,7 +866,7 @@ export default function Home() {
                         <span>●</span> 直近の実行履歴 (直近5件)
                       </h4>
                       {systemStatus.history.length === 0 ? (
-                        <div className="text-xs text-gray-500 py-6 text-center rounded-2xl border border-white/5 bg-black/20">
+                        <div className="text-xs text-gray-500 py-4 text-center rounded-2xl border border-white/5 bg-black/20">
                           履歴はありません
                         </div>
                       ) : (
@@ -908,10 +908,10 @@ export default function Home() {
           </div>
         </motion.div>
 
-        <motion.div variants={itemVariants} className="md:col-span-2 lg:col-span-4 mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+        <motion.div variants={itemVariants} className="md:col-span-2 lg:col-span-4 mt-5 grid grid-cols-1 md:grid-cols-2 gap-4">
           
           {/* 知識ベースの整備状況: 各データがどれだけ溜まっているかを一目で把握する */}
-          <div className="glass-panel rounded-3xl p-6 border border-white/5 bg-gradient-to-br from-emerald-500/5 to-transparent lg:col-span-2">
+          <div className="glass-panel rounded-3xl p-4 border border-white/5 bg-gradient-to-br from-emerald-500/5 to-transparent lg:col-span-2">
             <div className="flex justify-between items-center mb-5 flex-wrap gap-2">
               <h3 className="text-xl font-black text-white flex items-center gap-2">
                 <div className="w-2 h-6 bg-emerald-500 rounded-full shadow-[0_0_10px_rgba(16,185,129,0.6)]"></div>
@@ -943,8 +943,8 @@ export default function Home() {
           </div>
 
           {/* Dictionary Updates */}
-          <div className="glass-panel rounded-3xl p-6 border border-white/5 bg-gradient-to-br from-blue-500/5 to-transparent">
-            <div className="flex justify-between items-center mb-6">
+          <div className="glass-panel rounded-3xl p-4 border border-white/5 bg-gradient-to-br from-blue-500/5 to-transparent">
+            <div className="flex justify-between items-center mb-4">
               <h3 className="text-xl font-black text-white flex items-center gap-2">
                 <div className="w-2 h-6 bg-blue-500 rounded-full shadow-[0_0_10px_rgba(59,130,246,0.6)]"></div>
                 チャンピオン辞典 更新履歴
@@ -967,8 +967,8 @@ export default function Home() {
           </div>
 
           {/* Library Updates */}
-          <div className="glass-panel rounded-3xl p-6 border border-white/5 bg-gradient-to-br from-purple-500/5 to-transparent">
-            <div className="flex justify-between items-center mb-6">
+          <div className="glass-panel rounded-3xl p-4 border border-white/5 bg-gradient-to-br from-purple-500/5 to-transparent">
+            <div className="flex justify-between items-center mb-4">
               <h3 className="text-xl font-black text-white flex items-center gap-2">
                 <div className="w-2 h-6 bg-purple-500 rounded-full shadow-[0_0_10px_rgba(168,85,247,0.6)]"></div>
                 ライブラリ 追加履歴
