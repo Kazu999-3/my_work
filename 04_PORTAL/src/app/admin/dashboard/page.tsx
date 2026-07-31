@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Activity, Zap, ShieldAlert, Cpu, Network, Gamepad2, Users, RefreshCw, CheckCircle2, X, ChevronRight, Brain, Sparkles } from 'lucide-react';
+import { Activity, Zap, ShieldAlert, Cpu, Network, Gamepad2, RefreshCw, CheckCircle2, X, ChevronRight, Sparkles } from 'lucide-react';
 import { supabase } from '../../../lib/supabaseClient';
 import { supabaseBrowser } from '../../../lib/supabaseBrowserClient';
 import Link from 'next/link';
@@ -20,7 +20,6 @@ export default function Home() {
   const [recruitActivity, setRecruitActivity] = useState<{ openCount: number; recent: any[] }>({ openCount: 0, recent: [] });
   const [setupChecks, setSetupChecks] = useState<Record<string, boolean> | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<string>('');
 
   const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
@@ -73,7 +72,6 @@ export default function Home() {
 
   const fetchData = async (silent = false) => {
     if (!silent) setIsLoading(true);
-    else setIsRefreshing(true);
     try {
       const res = await fetch('/api/admin/dashboard-stats', { credentials: 'include' });
       if (res.ok) {
@@ -92,7 +90,6 @@ export default function Home() {
       console.error('Error fetching dashboard stats:', err);
     } finally {
       setIsLoading(false);
-      setIsRefreshing(false);
     }
   };
 
@@ -262,44 +259,13 @@ export default function Home() {
         </div>
         
         <div className="flex flex-col md:flex-row items-end md:items-center gap-4 flex-wrap">
-          <Link href="/admin/knowledge" className="px-4 py-2.5 rounded-2xl bg-pink-500/10 border border-pink-500/30 hover:bg-pink-500/20 text-xs font-bold text-pink-300 transition-all flex items-center gap-2">
-            <Brain size={14} />
-            <span>ナレッジ / データ整備 ➔</span>
-          </Link>
-          <Link href="/ktm-admin" className="px-4 py-2.5 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 hover:bg-indigo-500/20 text-xs font-bold text-indigo-300 transition-all flex items-center gap-2">
-            <Users size={14} />
-            <span>名簿 / 試合管理 ➔</span>
-          </Link>
+          {/* ナレッジ/データ整備・名簿/試合管理は既にサイドバーの管理者メニューと重複するため
+              2026-07-31に削除。手動同期ボタンもブラウザ更新で同じ結果になるため削除し、
+              最終更新時刻の表示だけ残す。 */}
           <Link href="/admin/prompts" className="px-4 py-2.5 rounded-2xl bg-slate-900 border border-slate-800 hover:bg-slate-800 hover:border-slate-700 text-xs font-bold text-slate-300 transition-all flex items-center gap-2">
             <Cpu size={14} className="text-cyan-400" />
             <span>AI プロンプト設定 ➔</span>
           </Link>
-          {/* note分析(/admin/analytics)は2026-07-26の収益化パイプライン削除で参照元データが
-              止まっており(analyticsは1ヶ月以上前の1件のみ、note_draftsは空)、現状は死んだ導線
-              のためナビから外す。パイプライン再実装時に復活させる。 */}
-          <button
-            type="button"
-            onClick={async () => {
-              setIsRefreshing(true);
-              await fetchData(true);
-              try {
-                const res = await fetch('/api/admin/system/status');
-                if (res.ok) {
-                  const data = await res.json();
-                  setSystemStatus(data);
-                }
-              } catch (err) {
-                console.error(err);
-              }
-              setLastUpdated(new Date().toLocaleTimeString('ja-JP'));
-              setIsRefreshing(false);
-            }}
-            disabled={isRefreshing}
-            className="px-4 py-2.5 rounded-2xl bg-slate-900 border border-slate-800 hover:bg-slate-800 hover:border-slate-700 text-xs font-bold text-slate-300 transition-all flex items-center gap-2"
-          >
-            <RefreshCw size={14} className={isRefreshing ? 'animate-spin text-blue-400' : 'text-blue-400'} />
-            <span>最新情報を取得（手動同期）</span>
-          </button>
           {lastUpdated && (
             <span className="text-xs text-gray-500 font-mono">最終更新: {lastUpdated}</span>
           )}
