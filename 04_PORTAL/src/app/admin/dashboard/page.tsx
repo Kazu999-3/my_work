@@ -15,7 +15,7 @@ export default function Home() {
   const [recentDictUpdates, setRecentDictUpdates] = useState<any[]>([]);
   const [recentLibraryUpdates, setRecentLibraryUpdates] = useState<any[]>([]);
   const [recentYoutubeQueue, setRecentYoutubeQueue] = useState<any[]>([]);
-  const [needsAttention, setNeedsAttention] = useState<{ failedTasks: any[]; youtubeErrorCount: number }>({ failedTasks: [], youtubeErrorCount: 0 });
+  const [needsAttention, setNeedsAttention] = useState<{ failedTasks: any[]; youtubeErrorCount: number; dictReviewCount: number }>({ failedTasks: [], youtubeErrorCount: 0, dictReviewCount: 0 });
   const [retryingTaskId, setRetryingTaskId] = useState<string | null>(null);
   const [recruitActivity, setRecruitActivity] = useState<{ openCount: number; recent: any[] }>({ openCount: 0, recent: [] });
   const [setupChecks, setSetupChecks] = useState<Record<string, boolean> | null>(null);
@@ -310,14 +310,14 @@ export default function Home() {
 
       {/* 要対応パネル: champion_trend等の失敗タスクとYouTubeキューのエラーを1箇所に集約。
           何も無ければ表示しない（平時は場所を取らない）。 */}
-      {(needsAttention.failedTasks.length > 0 || needsAttention.youtubeErrorCount > 0) && (
+      {(needsAttention.failedTasks.length > 0 || needsAttention.youtubeErrorCount > 0 || needsAttention.dictReviewCount > 0) && (
         <motion.div
           initial={{ y: -10, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           className="glass-panel rounded-3xl p-4 border border-rose-500/30 bg-rose-500/5"
         >
           <h3 className="text-lg font-black text-rose-300 flex items-center gap-2 mb-4">
-            <ShieldAlert size={20} /> ⚠️ 要対応（{needsAttention.failedTasks.length + (needsAttention.youtubeErrorCount > 0 ? 1 : 0)}件）
+            <ShieldAlert size={20} /> ⚠️ 要対応（{needsAttention.failedTasks.length + (needsAttention.youtubeErrorCount > 0 ? 1 : 0) + (needsAttention.dictReviewCount > 0 ? 1 : 0)}件）
           </h3>
           <div className="space-y-2">
             {needsAttention.failedTasks.map((task) => (
@@ -352,6 +352,15 @@ export default function Home() {
               >
                 <span className="text-sm font-bold text-white">YouTube動画キューのエラー・手動対応要 {needsAttention.youtubeErrorCount}件</span>
                 <span className="text-xs font-bold text-rose-300">管理画面へ →</span>
+              </Link>
+            )}
+            {needsAttention.dictReviewCount > 0 && (
+              <Link
+                href="/admin/knowledge?tab=maintenance"
+                className="flex items-center justify-between gap-3 p-3 rounded-xl bg-black/30 border border-white/5 hover:border-rose-500/30 transition-colors"
+              >
+                <span className="text-sm font-bold text-white">辞典の鮮度レビューで要対応 {needsAttention.dictReviewCount}件（週次自動検知）</span>
+                <span className="text-xs font-bold text-rose-300">データ整備へ →</span>
               </Link>
             )}
           </div>
@@ -419,13 +428,26 @@ export default function Home() {
               (GitHub Actions, 数分おき) が既に代行しており、辞典一括更新も champ-dict-update.yml
               (毎週月曜)、戦績補完も api/cron/sync-matches (Vercel Cron) でクラウド完結している。
               以前の表示はこの移行前のままで「PCを起動しないと止まる」という誤った危機感を
-              与えていたため、実態に合わせて書き換える。 */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-white/5 pt-4">
+              与えていたため、実態に合わせて書き換える。
+              2026-07-31: YouTube動画解析はクラウド完結には含めない。GitHub Actionsの共有IPが
+              YouTube側から低信用と判定され動画によって取得に失敗し続けるため定期実行を停止した
+              (absorber.yml/ktm-cloud-worker.ymlのyoutubeジョブ)。文字起こし自体はGroq API任せの
+              ままだが、動画のダウンロード元IPだけはPC(自宅IP)である必要があるため「PC起動が
+              今も意味を持つ場面」側に移す。 */}
+          {/* クラウド移行が進み、ほぼ全機能が自動化された今、この比較表を常時全開表示する
+              優先度は下がったため、詳細はdetailsに畳んでバナーの既定の高さを抑える。 */}
+          <details className="group border-t border-white/5 pt-3">
+            <summary className="text-xs font-bold text-gray-400 hover:text-gray-200 cursor-pointer select-none list-none flex items-center gap-1.5">
+              <ChevronRight size={14} className="transition-transform group-open:rotate-90" />
+              PC起動が必要な機能 / クラウド完結機能の内訳を見る
+            </summary>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
             <div className="space-y-2 bg-black/30 p-4 rounded-2xl border border-white/5">
               <span className="text-xs font-black text-amber-400 flex items-center gap-1.5 mb-2">
                 <ShieldAlert size={14} /> ⚡ PC起動が今も意味を持つ場面
               </span>
               <ul className="space-y-1.5 text-xs text-gray-300">
+                <li className="flex items-center gap-2">🎬 <strong>YouTube動画解析</strong> <span className="text-[10px] text-gray-500">(クラウドの定期実行はYouTube側のIP制限により停止中。現状はこれが唯一の実行経路)</span></li>
                 <li className="flex items-center gap-2">🚀 <strong>クラウド巡回を待たず即座に処理したい時</strong> <span className="text-[10px] text-gray-500">(GitHub Actionsは数分〜週次の巡回間隔)</span></li>
                 <li className="flex items-center gap-2">🔑 <strong>クラウド側のAPIキー無料枠を使い切った時の代替実行</strong></li>
               </ul>
@@ -439,12 +461,13 @@ export default function Home() {
               <ul className="space-y-1.5 text-xs text-gray-300">
                 <li className="flex items-center gap-2">📚 <strong>チャンピオン辞典の一括AI更新</strong> <span className="text-[10px] text-gray-500">(champ-dict-update.yml・毎週月曜)</span></li>
                 <li className="flex items-center gap-2">📊 <strong>個別トレンド取得・プロビルド追跡・5v5シミュレータ</strong> <span className="text-[10px] text-gray-500">(edge_cloud_worker.py・数分おき)</span></li>
-                <li className="flex items-center gap-2">🎬 <strong>YouTube動画解析</strong> <span className="text-[10px] text-gray-500">(Groq Whisper API・absorber.yml)</span></li>
+                <li className="flex items-center gap-2">🔄 <strong>辞典の鮮度レビュー自動検知</strong> <span className="text-[10px] text-gray-500">(dict-review-check・毎週水)</span></li>
                 <li className="flex items-center gap-2">🛠️ <strong>戦績スマート補完</strong> <span className="text-[10px] text-gray-500">(Vercel Cron・sync-matches)</span></li>
                 <li className="flex items-center gap-2">✨ <strong>パーソナルコーチ AI 相談 ＆ 対面メモ</strong></li>
               </ul>
             </div>
           </div>
+          </details>
         </motion.div>
 
         {/* QUOTA Card (Simplified & Full-width) */}

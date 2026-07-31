@@ -30,22 +30,42 @@ export async function GET(request: Request) {
       }
     }).catch(e => console.warn('Monetize trigger warning:', e));
 
-    // 2. ナレッジ自動整備（未整理記事をチャンピオン辞典へマージ）
+    // 以下、ナレッジ整備系のfire-and-forget呼び出し。
+    // 2026-07-31発覚: これまでAuthorizationヘッダーを一切付けずに叩いていたため、
+    // 呼び出し先が要求するCRON_SECRET/管理者セッション認証に全て401で弾かれ、
+    // 「自動発火した」と表示されつつ実際には10日以上何も実行されていなかった。
+    // 各ルート側もCRON_SECRET Bearerを受け付けるよう修正した上で、ここで正しく付与する。
     const origin = new URL(request.url).origin;
+    const cronHeaders = {
+      'Content-Type': 'application/json',
+      ...(cronSecret ? { Authorization: `Bearer ${cronSecret}` } : {}),
+    };
+
+    // 2. ナレッジ自動整備（未整理記事をチャンピオン辞典へマージ）
     fetch(`${origin}/api/admin/knowledge/sync`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: cronHeaders,
       body: JSON.stringify({ auto: true })
     }).catch(e => console.warn('Knowledge sync trigger warning:', e));
 
     // 3. レーンガイド自動マージ
     fetch(`${origin}/api/admin/lane-guides`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: cronHeaders,
       body: JSON.stringify({ auto: true })
     }).catch(e => console.warn('Lane guide trigger warning:', e));
 
-    return NextResponse.json({ success: true, message: '全自動バックグラウンドメンテナンス（データ整備・鮮度レビュー・マネタイズ）を正常発火しました' });
+    // 4. 既存データの英語→日本語 自動変換（辞典本体・攻略ライブラリ・対面メモ/ノート）。
+    // 以前は/admin/knowledgeの「データ整備」タブを開いてボタンを押さない限り動かなかった。
+    for (const target of ['facts', 'articles', 'memos']) {
+      fetch(`${origin}/api/admin/translate-jp`, {
+        method: 'POST',
+        headers: cronHeaders,
+        body: JSON.stringify({ target })
+      }).catch(e => console.warn(`Translate-jp(${target}) trigger warning:`, e));
+    }
+
+    return NextResponse.json({ success: true, message: '全自動バックグラウンドメンテナンス（データ整備・日本語化・マネタイズ）を正常発火しました' });
   } catch (error: any) {
     console.error('Cron Execution Error:', error);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });

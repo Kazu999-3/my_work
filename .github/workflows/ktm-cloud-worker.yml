@@ -2,16 +2,19 @@ name: KTM Cloud Worker
 
 # PC常駐デーモンの代替(#88)。
 #  - prospect: 1日1回、辞典が古いチャンピオンの解説動画を探してキューに積む
-#  - youtube: 30分おきに youtube_queue を処理（yt-dlp字幕→Gemini要約→ナレッジ保存）
+#  - youtube: youtube_queue を処理（yt-dlp字幕→Gemini要約→ナレッジ保存）。
+#             2026-07-31: 定期実行を停止した。cookie/クライアント周りを直しても
+#             GitHub Actionsの共有IP自体がYouTube側から低信用と判定され、動画に
+#             よって取得に失敗し続ける（同じ動画を別IPから叩くと成功する）。
+#             クラウドで安定しないため、workflow_dispatchでの手動実行のみ残す。
 #  - dict-sync: 3時間おきにナレッジ→チャンピオン辞典の同期（knowledge/sync をチャンクで回す）
 #
-# prospect が動画を見つける → youtube が解析する → dict-sync が辞典へ反映する、
-# という流れで、人手を介さずに辞典が埋まっていく。
+# 元々は prospect が動画を見つける → youtube が解析する → dict-sync が辞典へ反映する、
+# という流れだったが、youtubeジョブの定期実行停止により現在は手動実行が必要。
 # 必要シークレット: SUPABASE_URL, SUPABASE_SERVICE_KEY, GEMINI_API_KEY, KTM_CRON_SECRET
 
 on:
   schedule:
-    - cron: '*/30 * * * *'   # youtube worker
     - cron: '7 */3 * * *'    # dict-sync
     # prospect は 3:30 / 11:30 / 19:30 JST の1日3回。
     # 発掘自体はGeminiを使わず、解析待ちが溜まっていれば自動で見送るため、
@@ -61,7 +64,8 @@ jobs:
         run: python scripts/prospector.py
 
   youtube:
-    if: github.event_name == 'workflow_dispatch' && (github.event.inputs.job == 'youtube' || github.event.inputs.job == 'both') || (github.event_name == 'schedule' && github.event.schedule == '*/30 * * * *')
+    # 定期cronは停止済み(2026-07-31)。workflow_dispatchでの手動実行のみ。
+    if: github.event_name == 'workflow_dispatch' && (github.event.inputs.job == 'youtube' || github.event.inputs.job == 'both')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

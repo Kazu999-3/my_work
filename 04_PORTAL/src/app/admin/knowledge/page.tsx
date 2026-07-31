@@ -423,6 +423,10 @@ function KnowledgeBaseContent() {
                   <button onClick={() => setActiveTab('library' as any)} className="text-pink-400 hover:underline font-bold mx-1">🗂️ 攻略ライブラリ</button>
                   タブの「全チャンプ辞典に一括同期」ボタンから実行します。
                 </p>
+                <p className="text-[11px] text-emerald-400/80 mt-2">
+                  ✅ 2026-07-31から①〜③は毎日自動実行されるようになりました（1回あたり少量ずつ処理）。
+                  ここのボタンは今すぐまとめて進めたい時だけ使えばOKです。
+                </p>
               </div>
               <DictInsightsPanel mode="maintenance" />
             </div>

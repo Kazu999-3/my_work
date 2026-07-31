@@ -12,15 +12,16 @@ name: YouTube Absorber (Whisper Rescue)
 # 必要シークレット: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY(またはSUPABASE_KEY),
 #                   GEMINI_API_KEY, GROQ_API_KEY, YOUTUBE_COOKIES_TXT
 #                   （YOUTUBE_COOKIES_TXT: ブラウザ拡張機能等でエクスポートしたNetscape形式の
-#                     cookies.txtの中身をそのまま貼る。無いとGitHub Actionsの共有IPが
-#                     YouTube側に"Sign in to confirm you're not a bot"でブロックされ、
-#                     音声ダウンロードが100%失敗し続ける）
-# 任意: GEMINI_API_KEY_FREE, DISCORD_WEBHOOK, DISCORD_BOT_TOKEN, PORTAL_BOT_SECRET
+#                     cookies.txtの中身をそのまま貼る）
+#
+# 2026-07-31: 定期実行を停止した。cookie認証・yt-dlpの--js-runtimes/--remote-components
+# 修正・android_vrクライアント化まで行っても、GitHub Actionsの共有IP自体がYouTube側から
+# 低信用と判定され、動画によって "Sign in to confirm you're not a bot" や
+# "Requested format is not available" が再発する（同じ動画を別IPから叩くと成功する）。
+# クラウドで安定しないと判断し、workflow_dispatchでの手動実行のみ残す。
 on:
-  schedule:
-    - cron: '20 * * * *'   # 1時間おき（字幕なし動画は稀なので高頻度は不要）
   workflow_dispatch:
-    # 参照・検証用の手動実行
+    # 参照・検証用の手動実行（定期cronは2026-07-31に停止。上記コメント参照）
 
 permissions:
   contents: write   # バイブル(02_FACTORY/bible/kirei_bible/)をコミットで永続化するため

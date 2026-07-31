@@ -100,7 +100,6 @@ export default function DictInsightsPanel({ mode = 'inspect' }: { mode?: 'mainte
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ target }),
         });
-        const d = await res.json();
         // 認証切れ: ここまでの成果は保存済みなので、それを伝えて再ログインを促す
         if (res.status === 401) {
           throw new Error(
@@ -108,7 +107,14 @@ export default function DictInsightsPanel({ mode = 'inspect' }: { mode?: 'mainte
             + '再ログインしてから、もう一度このボタンを押すと続きから再開できます。'
           );
         }
-        if (!res.ok) throw new Error(d.error || '変換に失敗しました');
+        // Vercelの関数タイムアウト等でJSON以外(プレーンテキスト)が返ることがあり、
+        // res.json()がres.ok判定より先だと"Unexpected token..."という分かりにくい
+        // エラーになっていた。ステータス確認とJSONパースを分離し、原因を明示する。
+        if (!res.ok) {
+          const bodyText = await res.text().catch(() => '');
+          throw new Error(`変換に失敗しました（HTTP ${res.status}）: ${bodyText.slice(0, 200) || '応答なし'}`);
+        }
+        const d = await res.json();
         if (typeof d.scanned === 'number') lastScanned = d.scanned;
         total += d.converted || 0;
         setTransProgress(total);

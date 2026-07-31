@@ -7,7 +7,10 @@ import { recordMatchupSentinelRevision } from '../../../../lib/matchupSentinelRe
 // 既存データの日本語化。英語のまま保存されている辞典・記事を日本語へ変換する。
 // チャンク処理にして、クライアントから完了まで繰り返し呼ぶ（同期処理と同じ方式）。
 export const dynamic = 'force-dynamic';
-export const maxDuration = 60;
+// CHUNK=2件 × 最大8フィールド × (Gemini呼び出し + 4秒クールダウン)は60秒を超えうるため、
+// Vercelのタイムアウトでプラットフォーム側のプレーンテキストエラーページが返って
+// クライアントのres.json()が"Unexpected token 'A'..."で落ちていた。余裕を持って延長する。
+export const maxDuration = 280;
 
 // 1リクエストでの変換件数。連続でAIを呼ぶとレート制限(429)に当たりやすいため小さく保つ。
 const CHUNK = 2;
@@ -62,8 +65,12 @@ ${String(text).slice(0, 10000)}`;
 }
 
 export async function POST(req: Request) {
-  const auth = await verifyAdminSession(req);
-  if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: 401 });
+  // ===== 管理者セッション or CRON_SECRET(日次自動整備用) =====
+  const cronOk = !!process.env.CRON_SECRET && req.headers.get('authorization') === `Bearer ${process.env.CRON_SECRET}`;
+  if (!cronOk) {
+    const auth = await verifyAdminSession(req);
+    if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: 401 });
+  }
 
   try {
     const { target } = await req.json(); // 'facts' | 'articles' | 'memos'

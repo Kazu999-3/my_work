@@ -33,6 +33,7 @@ export async function GET(req: NextRequest) {
       { count: openRecruitCount },
       { data: recentRecruitData },
       { data: systemMetricsRow },
+      { data: dictReviewNotif },
     ] = await Promise.all([
       // ワーカーハートビート
       supabase.from('edge_tasks').select('*').eq('id', heartbeatId).maybeSingle(),
@@ -88,6 +89,16 @@ export async function GET(req: NextRequest) {
       // scripts/notify.py の record_worker_log() がここに書き込んでいるが、システムコクピットの
       // 「サービス監視」タブはこれまでこの行を一度もクエリしておらず、常に空のまま表示されていた。
       supabase.from('matchup_sentinel').select('raw_data').eq('matchup_id', 'SYSTEM_METRICS').maybeSingle(),
+      // 「要対応」パネル用: 辞典の鮮度レビュー(週次自動検知)の直近結果。
+      // AI判定を毎回このAPIで回すとコストが高いため、/api/cron/dict-review-check が
+      // 書き込んだ通知履歴を読むだけにする（8日以内＝直近の週次実行分のみ有効扱い）。
+      supabase.from('admin_notifications')
+        .select('data, created_at')
+        .eq('type', 'dict_review')
+        .gt('created_at', new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString())
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle(),
     ]);
 
     // (task_type, payload)ごとに最新の1件だけを残し、それが failed のものだけを
@@ -160,6 +171,7 @@ export async function GET(req: NextRequest) {
       needsAttention: {
         failedTasks: failedTaskData,
         youtubeErrorCount: youtubeErrorCount ?? 0,
+        dictReviewCount: (dictReviewNotif?.data as any)?.needsAttention ?? 0,
       },
       recruitActivity: {
         openCount: openRecruitCount ?? 0,

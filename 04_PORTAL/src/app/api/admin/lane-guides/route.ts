@@ -141,8 +141,12 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  const auth = await verifyAdminSession(req);
-  if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: 401 });
+  // ===== 管理者セッション or CRON_SECRET(日次自動整備用) =====
+  const cronOk = !!process.env.CRON_SECRET && req.headers.get('authorization') === `Bearer ${process.env.CRON_SECRET}`;
+  if (!cronOk) {
+    const auth = await verifyAdminSession(req);
+    if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: 401 });
+  }
 
   let action = 'merge';
   try {

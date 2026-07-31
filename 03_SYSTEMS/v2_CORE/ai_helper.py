@@ -114,7 +114,17 @@ def generate_content_safe(client, prompt, model_id=None, config=None, feature_na
                     # 2026年コンテキストの動的付与
                     import datetime
                     now_str = datetime.datetime.now().strftime("%Y年%m月%d日")
-                    context_prompt = f"【システムコンテキスト：現在の年は2026年です（本日は {now_str}）。この日時を基準に、未来や過去の出来事を正しく判定し、文脈を構築してください。】\n\n{prompt}"
+                    # ハルシネーション対策。個別プロンプトごとに書き分けるのは漏れが出るため、
+                    # 全AI生成を通るこの共通関数側で必ず付ける（TS側のcallGeminiWithRetryと対で運用）。
+                    hallucination_guard = (
+                        "\n\n【事実性の絶対条件】"
+                        "\n- 与えられた情報・データに実際に含まれる内容のみを根拠にすること。"
+                        "与えられていない具体的な数値・アイテム名・スキル名・URL・試合結果を創作しないこと。"
+                        "\n- 判断に足る情報が無い場合は、断定せず「情報不足のため判断できません」等と明記すること。"
+                        "もっともらしい推測で埋めないこと。"
+                        "\n- 不確かな内容は断定的な言い切りを避け、確信度に応じた表現(「〜の可能性がある」等)を使うこと。"
+                    )
+                    context_prompt = f"【システムコンテキスト：現在の年は2026年です（本日は {now_str}）。この日時を基準に、未来や過去の出来事を正しく判定し、文脈を構築してください。】\n\n{prompt}{hallucination_guard}"
                     
                     response = current_client.models.generate_content(
                         model=model,

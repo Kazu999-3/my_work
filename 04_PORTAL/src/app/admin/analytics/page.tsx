@@ -22,6 +22,23 @@ interface Draft {
   status: string;
   source_skill: string | null;
   created_at: string;
+  note_url: string | null;
+  published_at: string | null;
+  scheduled_at: string | null;
+  views: number | null;
+  likes: number | null;
+  sales_count: number | null;
+  sales_amount: number | null;
+  metrics_updated_at: string | null;
+}
+
+interface NoteStats {
+  publishedCount: number;
+  totalViews: number;
+  totalLikes: number;
+  totalSalesCount: number;
+  totalSalesAmount: number;
+  topByViews: { id: number; title: string; champion: string | null; views: number | null; likes: number | null; note_url: string | null }[];
 }
 
 export default function NoteAnalytics() {
@@ -31,7 +48,7 @@ export default function NoteAnalytics() {
   const [selectedDraft, setSelectedDraft] = useState<Draft | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [metrics, setMetrics] = useState({ pv: '0', likes: '0', cvr: '0.0', articles: '0' });
+  const [noteStats, setNoteStats] = useState<NoteStats | null>(null);
   const [actionPlan, setActionPlan] = useState('');
   const [mainContent, setMainContent] = useState('');
   const [activeTab, setActiveTab] = useState<'analytics' | 'drafts'>('analytics');
@@ -55,6 +72,7 @@ export default function NoteAnalytics() {
         // デフォルトで最新の下書きを選択
         setSelectedDraft(data.drafts[0]);
       }
+      if (data.noteStats) setNoteStats(data.noteStats);
     } catch (err) {
       console.error('Failed to fetch reports:', err);
     } finally {
@@ -64,19 +82,6 @@ export default function NoteAnalytics() {
   };
 
   const parseReportData = (content: string) => {
-    // 主要メトリクスの抽出
-    const pvMatch = content.match(/(?:合計PV数|合計PV|PV数)\s*:\s*\*?([\d,]+)\*?/i);
-    const likesMatch = content.match(/(?:合計スキ数|合計スキ|スキ数)\s*:\s*\*?([\d,]+)\*?/i);
-    const cvrMatch = content.match(/(?:平均CVR|CVR)\s*:\s*\*?([\d.]+)\s*%?\*?/i);
-    const articlesMatch = content.match(/(?:総記事数|記事数)\s*:\s*\*?(\d+)\*?/i);
-
-    setMetrics({
-      pv: pvMatch ? pvMatch[1] : '0',
-      likes: likesMatch ? likesMatch[1] : '0',
-      cvr: cvrMatch ? cvrMatch[1] : '0.0',
-      articles: articlesMatch ? articlesMatch[1] : '0'
-    });
-
     // 🎯 次のAI改善アクションプラン の抽出
     const parts = content.split(/## 🎯\s*次のAI改善アクションプラン/i);
     if (parts.length > 1) {
@@ -107,6 +112,88 @@ export default function NoteAnalytics() {
     if (draft) {
       setSelectedDraft(draft);
     }
+  };
+
+  // 公開管理・成績の手入力(課題#54)。noteに公式APIが無く、過去の自動スクレイピング
+  // (note_analytics_daemon.py)も不安定で廃止済みのため、手入力方式にしている。
+  const [noteUrlInput, setNoteUrlInput] = useState('');
+  const [scheduledInput, setScheduledInput] = useState('');
+  const [savingSchedule, setSavingSchedule] = useState(false);
+  const [metricsInput, setMetricsInput] = useState({ views: '', likes: '', sales_count: '', sales_amount: '' });
+  const [savingPublish, setSavingPublish] = useState(false);
+  const [savingMetrics, setSavingMetrics] = useState(false);
+  const [publishMsg, setPublishMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    setNoteUrlInput(selectedDraft?.note_url || '');
+    setScheduledInput(selectedDraft?.scheduled_at ? selectedDraft.scheduled_at.slice(0, 10) : '');
+    setMetricsInput({
+      views: selectedDraft?.views != null ? String(selectedDraft.views) : '',
+      likes: selectedDraft?.likes != null ? String(selectedDraft.likes) : '',
+      sales_count: selectedDraft?.sales_count != null ? String(selectedDraft.sales_count) : '',
+      sales_amount: selectedDraft?.sales_amount != null ? String(selectedDraft.sales_amount) : '',
+    });
+    setPublishMsg(null);
+  }, [selectedDraft?.id]);
+
+  const applyDraftPatch = (id: number, patch: Partial<Draft>) => {
+    setDrafts(prev => prev.map(d => d.id === id ? { ...d, ...patch } : d));
+    setSelectedDraft(prev => prev && prev.id === id ? { ...prev, ...patch } : prev);
+  };
+
+  const markPublished = async () => {
+    if (!selectedDraft || !noteUrlInput.trim()) return;
+    setSavingPublish(true); setPublishMsg(null);
+    try {
+      const res = await fetch(`/api/admin/note-articles/${selectedDraft.id}`, {
+        method: 'PATCH', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ note_url: noteUrlInput.trim() }),
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error || '更新に失敗しました');
+      applyDraftPatch(selectedDraft.id, d.article);
+      setPublishMsg('✅ 公開済みにしました');
+    } catch (e: any) { setPublishMsg('❌ ' + e.message); }
+    finally { setSavingPublish(false); }
+  };
+
+  const saveSchedule = async () => {
+    if (!selectedDraft) return;
+    setSavingSchedule(true); setPublishMsg(null);
+    try {
+      const res = await fetch(`/api/admin/note-articles/${selectedDraft.id}`, {
+        method: 'PATCH', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ scheduled_at: scheduledInput || null }),
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error || '更新に失敗しました');
+      applyDraftPatch(selectedDraft.id, d.article);
+      setPublishMsg(scheduledInput ? '✅ 配信予定日を設定しました' : '✅ 配信予定日を解除しました');
+    } catch (e: any) { setPublishMsg('❌ ' + e.message); }
+    finally { setSavingSchedule(false); }
+  };
+
+  const saveMetrics = async () => {
+    if (!selectedDraft) return;
+    setSavingMetrics(true); setPublishMsg(null);
+    try {
+      const body: Record<string, any> = {};
+      (['views', 'likes', 'sales_count', 'sales_amount'] as const).forEach((k) => {
+        if (metricsInput[k] !== '') body[k] = Number(metricsInput[k]);
+      });
+      const res = await fetch(`/api/admin/note-articles/${selectedDraft.id}`, {
+        method: 'PATCH', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error || '更新に失敗しました');
+      applyDraftPatch(selectedDraft.id, d.article);
+      setPublishMsg('✅ 成績を更新しました');
+    } catch (e: any) { setPublishMsg('❌ ' + e.message); }
+    finally { setSavingMetrics(false); }
   };
 
   const copyToClipboard = async (text: string) => {
@@ -286,7 +373,7 @@ export default function NoteAnalytics() {
                   className="bg-slate-900/80 border border-white/10 text-gray-200 text-xs rounded-xl px-3 py-2 outline-none focus:border-indigo-500/50 transition-colors cursor-pointer font-mono max-w-xs"
                 >
                   {drafts.map(d => (
-                    <option key={d.id} value={d.id}>{d.title}</option>
+                    <option key={d.id} value={d.id}>{d.status === 'published' ? '✅' : '📝'} {d.title}</option>
                   ))}
                 </select>
               </div>
@@ -337,79 +424,99 @@ export default function NoteAnalytics() {
             <p className="text-sm text-gray-500 font-bold font-mono">Loading note stats data...</p>
           </div>
         ) : activeTab === 'analytics' ? (
-          // === 分析レポート表示エリア ===
-          reports.length === 0 ? (
-            <div className="glass-panel rounded-3xl p-12 border border-white/5 text-center bg-black/20 max-w-xl mx-auto mt-16">
-              <AlertCircle size={48} className="text-yellow-500 mx-auto mb-4 animate-bounce" />
-              <h3 className="text-xl font-black text-white mb-2">レポートデータが見つかりません</h3>
-              <p className="text-xs text-gray-400 leading-relaxed mb-6">
-                `note_analytics_daemon.py` がまだ実行されていないか、レポートファイルが出力されていません。SRE Daemon経由の定期稼働、または手動実行してください。
-              </p>
-              <Link href="/admin/dashboard" className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-bold transition-all shadow-[0_0_15px_rgba(99,102,241,0.4)] inline-block">
-                ダッシュボードへ戻る
-              </Link>
-            </div>
-          ) : (
-            <motion.div 
-              variants={containerVariants}
-              initial="hidden"
-              animate="show"
-              className="space-y-6"
-            >
-              {/* メトリクスカードグリッド */}
-              <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {[
-                  { name: '合計PV数', value: metrics.pv, icon: TrendingUp, color: 'text-indigo-400', bg: 'from-indigo-500/10' },
-                  { name: '合計スキ数', value: metrics.likes, icon: Heart, color: 'text-rose-400', bg: 'from-rose-500/10' },
-                  { name: '平均反応率 (CVR)', value: `${metrics.cvr}%`, icon: Users, color: 'text-emerald-400', bg: 'from-emerald-500/10' },
-                  { name: '集計記事数', value: `${metrics.articles}本`, icon: Layers, color: 'text-blue-400', bg: 'from-blue-500/10' }
-                ].map((m, idx) => (
-                  <div key={idx} className="glass-panel rounded-3xl p-6 border border-white/5 bg-gradient-to-br to-transparent relative overflow-hidden group hover:border-white/10 transition-colors">
-                    <div className={`absolute top-0 left-0 w-24 h-24 bg-gradient-to-br ${m.bg} to-transparent rounded-full blur-2xl pointer-events-none group-hover:scale-125 transition-transform`}></div>
-                    <div className="flex justify-between items-center mb-4 relative z-10">
-                      <span className="text-xs text-gray-500 font-bold">{m.name}</span>
-                      <m.icon className={`${m.color} bg-white/5 p-2 rounded-xl border border-white/5`} size={36} />
-                    </div>
-                    <div className="relative z-10">
-                      <h3 className="text-3xl font-black text-white tracking-tight font-mono">{m.value}</h3>
-                    </div>
+          // === 分析エリア: 手入力の実データ(noteStats)を主指標にする。
+          // 旧`note_analytics_daemon.py`のスクレイピングは構造変化に弱く廃止済みで、
+          // レポートファイルは6週間以上前のものが1本残っているだけの死んだ経路だった。 ===
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            animate="show"
+            className="space-y-6"
+          >
+            {/* メトリクスカードグリッド（手入力の実データ集計） */}
+            <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {[
+                { name: '合計PV数', value: noteStats ? String(noteStats.totalViews) : '—', icon: TrendingUp, color: 'text-indigo-400', bg: 'from-indigo-500/10' },
+                { name: '合計スキ数', value: noteStats ? String(noteStats.totalLikes) : '—', icon: Heart, color: 'text-rose-400', bg: 'from-rose-500/10' },
+                { name: '合計売上', value: noteStats ? `¥${noteStats.totalSalesAmount.toLocaleString()}` : '—', icon: Users, color: 'text-emerald-400', bg: 'from-emerald-500/10' },
+                { name: '公開済み記事数', value: noteStats ? `${noteStats.publishedCount}本` : '—', icon: Layers, color: 'text-blue-400', bg: 'from-blue-500/10' }
+              ].map((m, idx) => (
+                <div key={idx} className="glass-panel rounded-3xl p-6 border border-white/5 bg-gradient-to-br to-transparent relative overflow-hidden group hover:border-white/10 transition-colors">
+                  <div className={`absolute top-0 left-0 w-24 h-24 bg-gradient-to-br ${m.bg} to-transparent rounded-full blur-2xl pointer-events-none group-hover:scale-125 transition-transform`}></div>
+                  <div className="flex justify-between items-center mb-4 relative z-10">
+                    <span className="text-xs text-gray-500 font-bold">{m.name}</span>
+                    <m.icon className={`${m.color} bg-white/5 p-2 rounded-xl border border-white/5`} size={36} />
                   </div>
-                ))}
-              </motion.div>
+                  <div className="relative z-10">
+                    <h3 className="text-3xl font-black text-white tracking-tight font-mono">{m.value}</h3>
+                  </div>
+                </div>
+              ))}
+            </motion.div>
+            <p className="text-[10px] text-gray-500 -mt-2">
+              ※ noteに公式APIが無いため、上記は「✍️ 記事下書きプレビュー」タブで公開済み記事に手入力した閲覧数・スキ・売上の合計です。
+            </p>
 
-              {/* AI改善アクションプラン */}
-              {actionPlan && (
-                <motion.div variants={itemVariants} className="glass-panel rounded-3xl p-6 border border-rose-500/10 bg-gradient-to-br from-rose-500/5 via-indigo-500/5 to-transparent relative overflow-hidden">
-                  <div className="flex items-center gap-3 mb-4">
-                    <Lightbulb className="text-yellow-400 bg-yellow-500/10 p-2 rounded-xl border border-yellow-500/20" size={36} />
-                    <div>
-                      <h3 className="text-lg font-black text-white">🎯 次のAI改善アクションプラン</h3>
-                      <p className="text-[10px] text-gray-500 font-bold">データから導き出された最も効果的な打ち手</p>
+            {/* 反応の良い記事 TOP5（今後の執筆の参考にする） */}
+            <motion.div variants={itemVariants} className="glass-panel rounded-3xl p-6 border border-white/5 bg-black/10">
+              <div className="flex items-center gap-3 mb-4 pb-4 border-b border-white/5">
+                <Heart className="text-rose-400 bg-rose-500/10 p-2 rounded-xl border border-rose-500/20" size={36} />
+                <div>
+                  <h3 className="text-lg font-black text-white">🏆 反応の良い記事 TOP5</h3>
+                  <p className="text-[10px] text-gray-500 font-bold">閲覧数が多い記事。傾向を次の記事の参考にする</p>
+                </div>
+              </div>
+              {!noteStats || noteStats.topByViews.length === 0 ? (
+                <p className="text-sm text-gray-500 text-center py-6">公開済みで閲覧数を入力した記事がまだありません。</p>
+              ) : (
+                <div className="space-y-2">
+                  {noteStats.topByViews.map((a, idx) => (
+                    <div key={a.id} className="flex items-center justify-between gap-3 bg-black/20 p-3 rounded-xl border border-white/5">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <span className="text-xs font-black text-gray-500 w-5 shrink-0">#{idx + 1}</span>
+                        <div className="min-w-0">
+                          {a.note_url ? (
+                            <a href={a.note_url} target="_blank" rel="noopener noreferrer" className="text-sm font-bold text-gray-200 hover:text-indigo-300 hover:underline truncate block">{a.title}</a>
+                          ) : (
+                            <span className="text-sm font-bold text-gray-200 truncate block">{a.title}</span>
+                          )}
+                          {a.champion && <span className="text-[10px] text-gray-500">{a.champion}</span>}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3 text-xs text-gray-400 shrink-0 font-mono">
+                        <span>👁️ {a.views ?? 0}</span>
+                        <span>❤️ {a.likes ?? 0}</span>
+                      </div>
                     </div>
-                  </div>
-                  
-                  <div className="bg-black/40 rounded-2xl border border-white/5 p-4 text-sm leading-relaxed text-gray-300 whitespace-pre-wrap font-sans">
-                    {actionPlan}
-                  </div>
-                </motion.div>
+                  ))}
+                </div>
               )}
+            </motion.div>
 
-              {/* 分析詳細レポート */}
+            {/* 旧レポート(note_analytics_daemon.py出力)。廃止済みのため参考程度に残すのみ */}
+            {reports.length > 0 && (
               <motion.div variants={itemVariants} className="glass-panel rounded-3xl p-6 border border-white/5 bg-black/10">
                 <div className="flex items-center gap-3 mb-6 pb-4 border-b border-white/5">
                   <FileText className="text-indigo-400 bg-indigo-500/10 p-2 rounded-xl border border-indigo-500/20" size={36} />
                   <div>
-                    <h3 className="text-lg font-black text-white">📋 分析詳細レポート ({selectedReport?.date})</h3>
-                    <p className="text-[10px] text-gray-500 font-bold">{selectedReport?.fileName}</p>
+                    <h3 className="text-lg font-black text-white">📋 過去のレポート ({selectedReport?.date})</h3>
+                    <p className="text-[10px] text-gray-500 font-bold">{selectedReport?.fileName}（旧スクレイピング方式・廃止済み。参考用に表示のみ）</p>
                   </div>
                 </div>
+
+                {actionPlan && (
+                  <div className="bg-black/40 rounded-2xl border border-white/5 p-4 text-sm leading-relaxed text-gray-300 whitespace-pre-wrap font-sans mb-6 flex items-start gap-3">
+                    <Lightbulb className="text-yellow-400 shrink-0 mt-0.5" size={18} />
+                    <div>{actionPlan}</div>
+                  </div>
+                )}
 
                 <div className="prose prose-invert max-w-none text-sm leading-relaxed text-gray-300 space-y-6">
                   {renderMarkdown(mainContent)}
                 </div>
               </motion.div>
-            </motion.div>
-          )
+            )}
+          </motion.div>
         ) : (
           // === 記事下書きプレビュー表示エリア ===
           drafts.length === 0 ? (
@@ -427,6 +534,28 @@ export default function NoteAnalytics() {
               animate="show"
               className="space-y-6"
             >
+              {/* 配信スケジュール: 予定日が入っている下書きを直近順に一覧表示 */}
+              {drafts.some(d => d.scheduled_at) && (
+                <motion.div variants={itemVariants} className="glass-panel rounded-3xl p-4 border border-white/5 bg-black/10">
+                  <h3 className="text-sm font-black text-white mb-3 flex items-center gap-2">📅 配信スケジュール</h3>
+                  <div className="space-y-1.5">
+                    {[...drafts]
+                      .filter(d => d.scheduled_at)
+                      .sort((a, b) => new Date(a.scheduled_at!).getTime() - new Date(b.scheduled_at!).getTime())
+                      .map(d => (
+                        <button
+                          key={d.id}
+                          onClick={() => setSelectedDraft(d)}
+                          className="w-full flex items-center justify-between gap-3 bg-black/20 hover:bg-white/5 p-2.5 rounded-xl border border-white/5 text-left transition-colors"
+                        >
+                          <span className="text-xs font-bold text-gray-200 truncate">{d.title}</span>
+                          <span className="text-xs font-mono text-indigo-300 shrink-0">{new Date(d.scheduled_at!).toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric', weekday: 'short' })}</span>
+                        </button>
+                      ))}
+                  </div>
+                </motion.div>
+              )}
+
               <motion.div variants={itemVariants} className="glass-panel rounded-3xl p-6 border border-white/5 bg-black/10">
                 <div className="flex justify-between items-center mb-6 pb-4 border-b border-white/5">
                   <div className="flex items-center gap-3">
@@ -456,6 +585,96 @@ export default function NoteAnalytics() {
                     </button>
                   )}
                 </div>
+
+                {/* 公開管理・成績（手入力）。noteに公式APIが無いため手入力方式。 */}
+                {selectedDraft && (
+                  <div className="mb-6 glass-panel rounded-2xl p-4 border border-white/5 bg-black/20 space-y-4">
+                    {selectedDraft.status === 'published' ? (
+                      <>
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div className="flex items-center gap-2 text-xs">
+                            <span className="px-2 py-0.5 rounded-full bg-emerald-950/30 text-emerald-400 border border-emerald-800/60 font-bold">公開済み</span>
+                            {selectedDraft.note_url && (
+                              <a href={selectedDraft.note_url} target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:underline truncate max-w-xs">
+                                {selectedDraft.note_url}
+                              </a>
+                            )}
+                            {selectedDraft.published_at && (
+                              <span className="text-gray-500">公開日: {new Date(selectedDraft.published_at).toLocaleDateString('ja-JP')}</span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                          {([
+                            ['views', '閲覧数'],
+                            ['likes', 'スキ'],
+                            ['sales_count', '販売数'],
+                            ['sales_amount', '売上(円)'],
+                          ] as const).map(([key, label]) => (
+                            <div key={key}>
+                              <label className="text-[10px] text-gray-500 block mb-1">{label}</label>
+                              <input
+                                type="number"
+                                value={metricsInput[key]}
+                                onChange={(e) => setMetricsInput((p) => ({ ...p, [key]: e.target.value }))}
+                                className="w-full bg-black/40 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white outline-none focus:border-indigo-500/50"
+                              />
+                            </div>
+                          ))}
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <button
+                            onClick={saveMetrics}
+                            disabled={savingMetrics}
+                            className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition-all disabled:opacity-50"
+                          >
+                            {savingMetrics ? '更新中...' : '成績を更新'}
+                          </button>
+                          {selectedDraft.metrics_updated_at && (
+                            <span className="text-[10px] text-gray-500">最終更新: {new Date(selectedDraft.metrics_updated_at).toLocaleString('ja-JP')}</span>
+                          )}
+                        </div>
+                      </>
+                    ) : (
+                      <div className="space-y-3">
+                      <div className="flex flex-wrap items-center gap-3">
+                        <span className="text-xs text-gray-400 font-bold shrink-0">配信予定日:</span>
+                        <input
+                          type="date"
+                          value={scheduledInput}
+                          onChange={(e) => setScheduledInput(e.target.value)}
+                          className="bg-black/40 border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white outline-none focus:border-indigo-500/50"
+                        />
+                        <button
+                          onClick={saveSchedule}
+                          disabled={savingSchedule}
+                          className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 hover:text-white text-xs font-bold transition-all disabled:opacity-50 shrink-0"
+                        >
+                          {savingSchedule ? '保存中...' : '予定日を保存'}
+                        </button>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-3">
+                        <span className="text-xs text-gray-400 font-bold shrink-0">noteに公開したら記録:</span>
+                        <input
+                          type="url"
+                          placeholder="https://note.com/..."
+                          value={noteUrlInput}
+                          onChange={(e) => setNoteUrlInput(e.target.value)}
+                          className="flex-1 min-w-[200px] bg-black/40 border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white outline-none focus:border-indigo-500/50"
+                        />
+                        <button
+                          onClick={markPublished}
+                          disabled={savingPublish || !noteUrlInput.trim()}
+                          className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all disabled:opacity-50 shrink-0"
+                        >
+                          {savingPublish ? '登録中...' : '公開済みにする'}
+                        </button>
+                      </div>
+                      </div>
+                    )}
+                    {publishMsg && <p className="text-xs">{publishMsg}</p>}
+                  </div>
+                )}
 
                 {/* Markdownプレビュー表示（無料/有料を分けて表示） */}
                 {selectedDraft && (

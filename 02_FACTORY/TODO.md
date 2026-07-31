@@ -11,6 +11,19 @@
 - [x] **Whisperのクラウド移行** → 2026-07-30確認: 既に完了済みだった（`youtube_absorber.py`のコメントに「ローカルGPU(faster-whisper/CUDA)は撤去し、Groq Whisper APIに一本化した」と明記。`03_SYSTEMS`全体でfaster-whisperの実利用箇所はゼロ。これも`champion_trend`と同じ、対応済みなのにTODOに残っていたstale項目）
 - [x] **`champion_trend`タスクのクラウド移行検討** → 2026-07-29確認: 既に`edge-cloud-worker.yml`/`scripts/edge_cloud_worker.py`の`TASK_MAP`に`champion_trend`が組み込まれ、クラウド実行済みだった（この項目自体が古い記述のまま残っていたstaleなTODO）。ダッシュボードが実行元(ローカル/クラウド)を区別できていなかった点は今回の`pipeline-status` API改修で表示に対応済み。
 - [x] **リポジトリ運用の意思決定** → `02_FACTORY/PRODUCTS/`を`.gitignore`対象に決定（`note_drafts`等と同じ扱い。公開リポジトリのため下書き/生成物は非公開のまま。既存84ファイルは`git rm --cached`で追跡解除、ローカルには残置）
+
+## ✅ 2026-07-31 追加セッションで対応済み
+- [x] AI生成全体のハルシネーション対策 → 個別プロンプトごとに書き分けると漏れが出るため、全AI生成が通る共通クライアント2箇所（`geminiClient.ts`のJP_GUARD隣、`ai_helper.py`の日付コンテキスト注入部分）に「与えられていない事実を創作しない」「情報不足なら断定しない」という条件を追加。既存の日本語強制と同じ仕組みで一括適用
+- [x] ソロQ振り返りのDiscord DM通知を廃止（`soloq-coach/route.ts`）。ポータル通知(ベル+プッシュ)のみに一本化。DMは不要とのユーザー判断
+- [x] チャンピオン辞典の一括日本語化(`translate-jp`)でJSON解析エラー → 原因はVercel関数のタイムアウト(60秒)。CHUNK=2件×最大8項目×4秒クールダウンで超過しうるため、タイムアウト時のプレーンテキスト応答を`res.json()`しようとして「Unexpected token 'A'...」で落ちていた。`maxDuration`を280秒に延長し、クライアント側も`res.ok`確認をJSONパースより先に行うよう修正
+- [x] クラウドでのYouTube動画解析を停止 → `absorber.yml`/`ktm-cloud-worker.yml`(youtubeジョブ)の定期cronを削除し`workflow_dispatch`の手動実行のみに変更。cookie認証・yt-dlpクライアント周りを直してもGitHub ActionsのIP自体がYouTube側から低信用と判定され安定しないと判断（詳細は下記の技術的負債バックログ参照）
+- [x] 辞典の鮮度レビューを週次で自動検知するように → 反映(keep/archive/regenerate)は辞典本体を直接書き換えるため引き続き手動承認制のままだが、「そもそも見に行かない」問題を解消するため`/api/cron/dict-review-check`(毎週水23:00 UTC)を新設。要対応(update/archive判定)が1件でもあればポータル通知で知らせる。ロジックは`/api/admin/dict-review`と共通化(`lib/dictReview.ts`)
+- [x] ダッシュボードの3点改善 → ①YouTube動画解析を「クラウド完結機能」欄から「PC起動が今も意味を持つ場面」欄へ移動（クラウド定期実行停止に合わせて実態と一致させる）、②「要対応」パネルに辞典鮮度レビューの検知結果も集約表示、③エッジワーカーの機能比較表を折りたたみ表示にしてバナーの既定の高さを縮小
+- [x] **新規発覚・修正**: `/api/cron`(日次)が「ナレッジ自動整備」「レーンガイド自動マージ」を自動発火している“はず”だったが、呼び出し時にAuthorizationヘッダーを一切付けておらず、呼び出し先の認証チェックで毎回401で握りつぶされ10日以上何も実行されていなかった（`lane_guides`の更新日時が単一セッション内の数分間に固まっていたことから発覚）。`lane-guides`・`translate-jp`の両ルートにCRON_SECRET Bearer認証を追加し、`/api/cron`側も正しくヘッダーを付けて呼ぶよう修正。あわせて`translate-jp`(辞典・ライブラリ・対面メモの英語→日本語一括変換)も同じ日次cronに組み込み、これまで手動ボタン頼みだった一括処理3つ（日本語化・辞典同期・レーンガイド統合）が実際に毎日自動実行されるようになった
+- [x] note記事の「公開管理」機能を新設(課題#54・note収益化まわりの拡充) → 調査の結果、noteには公式APIが無く、過去の自動スクレイピング(`note_analytics_daemon.py`)も構造変化に弱く既に廃止済みと判明。公開状態(URL/公開日)と成績(閲覧数/スキ/販売数/売上)は手入力方式で記録することにした。`note_articles`に列追加(`note_url`/`published_at`/`views`/`likes`/`sales_count`/`sales_amount`/`metrics_updated_at`)、`/api/admin/note-articles/[id]`(PATCH)を新設、`/admin/analytics`の下書きプレビューに「公開済みにする」フォームと成績入力欄を追加
+- [x] note分析ページの拡充・投稿スケジュール・反応データ活用 → `note_articles`に`scheduled_at`列を追加し、下書きに配信予定日を設定できるように（`/admin/analytics`に「📅配信スケジュール」一覧を追加）。分析タブは6週間前の静的ファイル1本を表示し続ける死んだ経路(`note_analytics_daemon.py`由来)から、手入力の実データ集計(合計PV/スキ/売上/公開済み記事数)を主指標にする方式へ全面的に置き換え。「🏆反応の良い記事TOP5」を新設し、閲覧数の多い記事を一覧表示（旧レポートは参考程度に残置）
+- [x] note記事のSEO/検索流入強化 → `07_seo_specialist`スキルは記事生成フローに未接続の使われていないプロンプトだったため、`note_article_drafter.md`/`sovereign-factory/SKILL.md`の両方に「Step 2.5/3.5: 検索流入を意識したタイトル調整＆過去の反応データ参照」を追加。タイトルに検索されやすい語を含めることと、執筆前に過去の反応の良い記事(TOP5)の傾向を参考にすることを明文化
+
 ## ✅ 2026-07-30 追加セッションで対応済み
 - [x] Web Push配信が届かない問題を解消。原因は鍵の不一致ではなく`VAPID_SUBJECT`未設定時のフォールバック値`mailto:admin@ktm.local`（実在しないドメイン）で、Appleの配信サーバーだけがこれを`BadJwtToken`として拒否していた。`VAPID_SUBJECT`に実在のメールアドレスを設定して解消（鍵ペア自体は複数回再生成したが原因ではなかった）
 - [x] `deliverToSubscriptions`が410/404以外の配信失敗を握りつぶしていたのを修正し、失敗理由が見えるようにした（`04_PORTAL/src/app/api/push/send/route.ts`, `04_PORTAL/src/lib/notify.ts`）
@@ -86,4 +99,7 @@
 - [ ] Supabase 直接アクセスの API 経由化 → v8.0 APIファースト化として推進
 - [ ] 対面メモ（`MatchupMemoTab.tsx`）を新規作成しても保存されない不具合の調査・修正 → 2026-07-30調査: DB/RLS側の問題ではないと確認済み（`matchup_sentinel`は書き込みポリシーが公開のままで、同じupsertペイロードをcurlで直接叩くと201で成功する）。フロント側（`saveMemo()`関数、`ChampSelect`の値反映、または保存後の状態遷移）に原因があるはず。次回はブラウザの実機で再現し、コンソールのエラー・Networkタブのレスポンスを確認するところから着手
 - [ ] ソロキューを振り返る導線の強化 → 対面メモ・試合後振り返り・傾向分析がバラバラなタブに散らばっており、1試合ごとの振り返りサイクルとして繋がっていない。上記の保存不具合修正とあわせて、ソロQ1試合を終えた後に「振り返り→対面メモ記録」がスムーズに回る導線を設計し直す
-- [ ] **緊急・要ユーザー対応**: YouTube動画解析パイプラインがGitHub Actions上で実質100%失敗していた問題 → 2026-07-31発覚: ダッシュボードは「completed」を返し続けていたが実態は`youtube_worker.py`（字幕取得）・`youtube_absorber.py`（Whisper救済）とも毎回`Sign in to confirm you're not a bot`でブロックされ、07-27 12:36以降4日間1件も処理成功していなかった（リトライを消費しないロジックのため失敗がダッシュボードに出ず、ユーザーが手動で30件以上クローズして初めて発覚）。両スクリプトにNetscape形式cookies.txtを読む`YOUTUBE_COOKIES_TXT`対応を追加し、`absorber.yml`/`ktm-cloud-worker.yml`にシークレット渡しも追加済み。**あとはユーザーがブラウザ拡張(「Get cookies.txt LOCALLY」等)でYouTubeログイン済みのcookies.txtをエクスポートし、GitHub Secretsに`YOUTUBE_COOKIES_TXT`として登録するだけ**（cookie失効時は再エクスポートが必要になる想定。次回失敗が再発したら真っ先に疑うこと）
+- [ ] **未解決・継続調査**: YouTube動画解析パイプラインがGitHub Actions上でほぼ機能していない問題 → 2026-07-31発覚: ダッシュボードは「completed」を返し続けていたが実態は`youtube_worker.py`（字幕取得）・`youtube_absorber.py`（Whisper救済）とも`Sign in to confirm you're not a bot`でブロックされ、07-27 12:36以降4日間1件も処理成功していなかった（リトライを消費しないロジックのため失敗がダッシュボードに出ず、ユーザーが手動で30件以上クローズして初めて発覚）。
+  - 同日中に4つの実バグを発見・修正済み: ①cookie認証が無かった(`YOUTUBE_COOKIES_TXT`をユーザーがGitHub Secretsに登録し解消)、②`--js-runtimes node,deno`がカンマ区切りとして解釈されず常に無視されていた、③`--remote-components ejs:github`が無くchallenge解決スクリプト自体が取得されていなかった、④GH Actionsランナーに実行可能なNode.jsが無かった（`actions/setup-node`追加）。あわせて`android`/`web`より安定する`android_vr`クライアントを優先するよう変更。
+  - **しかしこれでも解決しなかった**: 上記4点を全て直した状態でもGitHub Actions上では動画によって`Sign in to confirm you're not a bot`や`Requested format is not available`が再発する。同じ動画・同じコマンドをブロックされていない別IP(ローカル)から実行すると問題なく取得できるため、**GitHub ActionsのIP自体がYouTube側から低信用と判定されており、クライアント/cookieの組み合わせだけでは解決しきれない**可能性が高い。
+  - 次にやるなら: `edge_worker_daemon.py`に既にある`youtube_absorb_scheduler_loop`（ローカルPCから自宅IPで実行する経路）を使って、自宅IPなら安定するか検証するところから。もしくは住宅IPプロキシサービスの導入（有料）。cookie自体は無駄にはなっていない（GH Actions側の成功率は多少上がったので残しておく）
