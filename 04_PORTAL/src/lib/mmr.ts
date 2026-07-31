@@ -15,21 +15,12 @@ export const RANKS: Record<string, number> = {
 };
 
 // highest_rankの選択肢一覧（管理画面のセレクトボックス用）。
-// 以前は「UNRANKED,IRON,BRONZE,...」とディビジョンを含まないティア名だけの配列だったため、
-// Riot同期が書き込む実際の値（例: "GOLD II"）とどのoptionのvalueも一致せず、
-// controlled selectがどのoptionにも一致しない時に先頭の"UNRANKED"を表示してしまい、
-// ディビジョン付きの選手が管理画面上で軒並み「アンランク」に見えるバグの原因になっていた。
-// →ディビジョン込みの選択肢に直したが、実際のDBには("GOLD"等)ディビジョン無しの値で
-// 保存されている選手も少なくなく(過去の手動入力・別経路の書き込みが原因)、今度は
-// それらが同じ理由で「アンランク」に見えてしまっていた。ディビジョン無しの素のティア名も
-// 選択肢として残し、どちらの形式で保存されていても一致するようにする。
-const DIVISION_TIERS = ['IRON', 'BRONZE', 'SILVER', 'GOLD', 'PLATINUM', 'EMERALD', 'DIAMOND'];
-const APEX_TIERS = ['MASTER', 'GRANDMASTER', 'CHALLENGER'];
-const DIVISIONS = ['IV', 'III', 'II', 'I'];
+// ディビジョン(I/II/III/IV)は不要とのユーザー判断のため、ティア名のみを選択肢にする。
+// calculateInitialMmr()もhighestRank.split(' ')[0]でティア部分しか見ておらず、
+// ディビジョンはMMR計算にも一切使われていなかった（表示上の情報でしかなかった）。
 export const HIGHEST_RANK_OPTIONS: string[] = [
-  'UNRANKED',
-  ...DIVISION_TIERS.flatMap((t) => [t, ...DIVISIONS.map((d) => `${t} ${d}`)]),
-  ...APEX_TIERS,
+  'UNRANKED', 'IRON', 'BRONZE', 'SILVER', 'GOLD', 'PLATINUM', 'EMERALD', 'DIAMOND',
+  'MASTER', 'GRANDMASTER', 'CHALLENGER',
 ];
 
 // ランクの高さ比較用。highest_rank(=これまでの最高ランク)を同期で「下げない」ために使う。

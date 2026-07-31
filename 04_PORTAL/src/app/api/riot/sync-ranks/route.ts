@@ -31,8 +31,9 @@ export async function POST(req: Request) {
     const leagues = await fetchLeagueByPuuid(puuid, apiKey);
 
     // Solo Queue のランクを探す。今季未ランクでも既存の最高ランクを消さない（UNRANKED上書き防止）。
+    // ディビジョン(I/II/III/IV)は不要とのユーザー判断のため、ティア名のみ保存する。
     const soloQ = leagues.find(l => l.queueType === 'RANKED_SOLO_5x5');
-    const currentRank = soloQ ? `${soloQ.tier} ${soloQ.rank}` : null;
+    const currentRank = soloQ ? soloQ.tier : null;
     // 既存(highest)と現在ランクの高い方を保持する。現在未ランクなら既存をそのまま維持。
     const rankStr = higherRank(player.highest_rank, currentRank);
 

@@ -75,12 +75,13 @@ export async function POST(request: Request) {
         // 正しくはby-puuidエンドポイントに切り替えるだけで解決する。
         // highest_rank は「これまでの最高」を保持する。現在ランクで上書きして下げないよう、
         // 既存値と現在ランクの高い方を採用する（未ランク時に既存の実ランクを消さない）。
+        // ディビジョン(I/II/III/IV)は不要とのユーザー判断のため、ティア名のみ保存する。
         let highestRank = player.highest_rank || 'UNRANKED';
         try {
           const leagues = await fetchLeagueByPuuid(puuid, apiKey);
           const soloQ = leagues.find((l: any) => l.queueType === 'RANKED_SOLO_5x5');
           if (soloQ) {
-            highestRank = higherRank(player.highest_rank, `${soloQ.tier} ${soloQ.rank}`);
+            highestRank = higherRank(player.highest_rank, soloQ.tier);
           }
         } catch (rankErr: any) {
           console.warn(`[Riot Sync] ランク取得に失敗しました (${currentIgn}): ${rankErr.message}`);
