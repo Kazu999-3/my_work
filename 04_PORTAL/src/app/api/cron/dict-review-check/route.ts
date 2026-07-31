@@ -12,6 +12,9 @@ import { createAdminNotification } from '../../../../lib/notify';
 // 引き続き人の承認を必須にするが、「そもそも見に行かない」問題を解消する
 // ため、検知だけをこのCronで自動化し、要対応がある時だけ通知する。
 // Vercel Cron は Authorization: Bearer CRON_SECRET を付与する。
+// vercel.jsonのschedule("0 23 * * 2")はUTC基準。+9時間するとJST水曜8:00に着地する
+// （UTC火曜23:00 → JST水曜8:00）。曜日をそのまま"3"(水)にすると木曜8:00 JSTに
+// ズレるので注意（2026-08-01に実際にこのズレで発覚・修正した）。
 // ============================================================
 
 export const dynamic = 'force-dynamic';
