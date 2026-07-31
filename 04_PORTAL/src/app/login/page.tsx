@@ -65,7 +65,7 @@ function LoginContent() {
         alignItems: "center",
         justifyContent: "center",
         minHeight: "100vh",
-        background: "#06070a"
+        background: "#2b2620"
       }}>
         <div className="spinner" />
         <style>{`
@@ -73,7 +73,7 @@ function LoginContent() {
             width: 40px;
             height: 40px;
             border: 3px solid rgba(255,255,255,0.05);
-            border-top-color: #3b82f6;
+            border-top-color: #d97706;
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
           }
@@ -94,7 +94,7 @@ function LoginContent() {
           justify-content: center;
           min-height: 100vh;
           width: 100%;
-          background: radial-gradient(circle at 50% 50%, #0c0f17 0%, #06070a 100%);
+          background: radial-gradient(circle at 50% 50%, #332c24 0%, #2b2620 100%);
           color: white;
           padding: 20px;
           font-family: 'Outfit', sans-serif;
@@ -108,7 +108,7 @@ function LoginContent() {
           width: 400px;
           height: 400px;
           border-radius: 50%;
-          background: radial-gradient(circle, rgba(59, 130, 246, 0.08) 0%, rgba(0,0,0,0) 70%);
+          background: radial-gradient(circle, rgba(217, 119, 6, 0.08) 0%, rgba(0,0,0,0) 70%);
           top: -100px;
           right: -100px;
           filter: blur(80px);
@@ -119,7 +119,7 @@ function LoginContent() {
           width: 500px;
           height: 500px;
           border-radius: 50%;
-          background: radial-gradient(circle, rgba(168, 85, 247, 0.05) 0%, rgba(0,0,0,0) 70%);
+          background: radial-gradient(circle, rgba(234, 88, 12, 0.05) 0%, rgba(0,0,0,0) 70%);
           bottom: -150px;
           left: -150px;
           filter: blur(100px);
@@ -154,14 +154,14 @@ function LoginContent() {
         .login-logo {
           font-size: 48px;
           margin-bottom: 24px;
-          filter: drop-shadow(0 10px 15px rgba(59, 130, 246, 0.3));
+          filter: drop-shadow(0 10px 15px rgba(217, 119, 6, 0.3));
         }
 
         .login-title {
           font-size: 28px;
           font-weight: 800;
           letter-spacing: -0.04em;
-          background: linear-gradient(135deg, #ffffff 30%, #a5b4fc 100%);
+          background: linear-gradient(135deg, #ffffff 30%, #f5c99b 100%);
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
           margin-bottom: 12px;
@@ -196,8 +196,8 @@ function LoginContent() {
         .input-field:focus {
           outline: none;
           background: rgba(255, 255, 255, 0.05);
-          border-color: #3b82f6;
-          box-shadow: 0 0 20px rgba(59, 130, 246, 0.15);
+          border-color: #d97706;
+          box-shadow: 0 0 20px rgba(217, 119, 6, 0.15);
         }
 
         .input-field::placeholder {
@@ -227,7 +227,7 @@ function LoginContent() {
         .submit-btn {
           width: 100%;
           padding: 16px 28px;
-          background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+          background: linear-gradient(135deg, #d97706 0%, #c2410c 100%);
           color: white;
           border: none;
           border-radius: 16px;
@@ -235,7 +235,7 @@ function LoginContent() {
           font-weight: 600;
           cursor: pointer;
           transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-          box-shadow: 0 4px 20px rgba(29, 78, 216, 0.3);
+          box-shadow: 0 4px 20px rgba(194, 65, 12, 0.3);
           display: flex;
           align-items: center;
           justify-content: center;
@@ -244,7 +244,7 @@ function LoginContent() {
 
         .submit-btn:hover:not(:disabled) {
           transform: translateY(-2px);
-          box-shadow: 0 8px 30px rgba(59, 130, 246, 0.4);
+          box-shadow: 0 8px 30px rgba(217, 119, 6, 0.4);
         }
 
         .submit-btn:active:not(:disabled) {
@@ -316,8 +316,8 @@ function LoginContent() {
 export default function LoginPage() {
   return (
     <Suspense fallback={
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh", background: "#06070a" }}>
-        <div style={{ width: 40, height: 40, border: "3px solid rgba(255,255,255,0.05)", borderTopColor: "#3b82f6", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh", background: "#2b2620" }}>
+        <div style={{ width: 40, height: 40, border: "3px solid rgba(255,255,255,0.05)", borderTopColor: "#d97706", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
       </div>
     }>
       <LoginContent />

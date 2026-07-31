@@ -96,24 +96,24 @@ export default function HistoryPage() {
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-gray-950 text-white">
+      <div className="flex h-screen items-center justify-center bg-stone-950 text-white">
         <Spinner label="試合履歴を読み込み中..." />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 text-gray-200 p-4 md:p-8">
+    <div className="min-h-screen bg-stone-950 text-stone-200 p-4 md:p-8">
       <div className="max-w-[1400px] mx-auto space-y-8">
         
         {/* ヘッダー */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-gray-800 pb-6 gap-4">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-stone-800 pb-6 gap-4">
           <div>
             <h1 className="text-3xl font-bold text-white flex items-center gap-3">
-              <History className="h-8 w-8 text-blue-500" />
+              <History className="h-8 w-8 text-amber-500" />
               過去の試合履歴
             </h1>
-            <p className="text-gray-400 mt-2 text-sm">
+            <p className="text-stone-400 mt-2 text-sm">
               KTMで記録された過去のカスタムマッチの履歴と詳細を確認できます。
             </p>
           </div>
@@ -132,7 +132,7 @@ export default function HistoryPage() {
               試合履歴の取得中にエラーが発生しました: {fetchError}
             </div>
           ) : matches.length === 0 ? (
-            <div className="bg-gray-900 border border-gray-800 rounded-xl p-8 text-center text-gray-500">
+            <div className="bg-stone-900 border border-stone-800 rounded-xl p-8 text-center text-stone-500">
               まだ記録された試合がありません。
             </div>
           ) : (
@@ -141,16 +141,16 @@ export default function HistoryPage() {
               const redTeam = match.participants.filter(p => p.team === 'RED').sort((a, b) => getRoleWeight(a.role) - getRoleWeight(b.role));
 
               return (
-                <div key={match.id} className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden shadow-lg">
-                  <div className="bg-gray-800/50 px-4 py-3 md:px-6 flex flex-col md:flex-row justify-between items-start md:items-center border-b border-gray-800 gap-2 md:gap-0 flex-wrap">
+                <div key={match.id} className="bg-stone-900 border border-stone-800 rounded-xl overflow-hidden shadow-lg">
+                  <div className="bg-stone-800/50 px-4 py-3 md:px-6 flex flex-col md:flex-row justify-between items-start md:items-center border-b border-stone-800 gap-2 md:gap-0 flex-wrap">
                     <div className="flex items-center gap-2 md:gap-3 flex-wrap">
-                      <span className="text-gray-400 font-mono text-xs md:text-sm">Match #{match.id}</span>
-                      <span className="text-gray-500 flex items-center gap-1 text-xs md:text-sm"><Calendar className="w-3 h-3 md:w-4 md:h-4"/> {match.created_at}</span>
+                      <span className="text-stone-400 font-mono text-xs md:text-sm">Match #{match.id}</span>
+                      <span className="text-stone-500 flex items-center gap-1 text-xs md:text-sm"><Calendar className="w-3 h-3 md:w-4 md:h-4"/> {match.created_at}</span>
                       {match.prediction && (
-                        <div className="flex items-center gap-1.5 md:gap-2 text-xs bg-gray-950/60 px-2 py-0.5 md:py-1 rounded border border-gray-800 text-gray-300 ml-0 md:ml-2">
+                        <div className="flex items-center gap-1.5 md:gap-2 text-xs bg-stone-950/60 px-2 py-0.5 md:py-1 rounded border border-stone-800 text-stone-300 ml-0 md:ml-2">
                           <span>予測勝率:</span>
                           <span className="text-blue-400 font-mono font-bold">🟦 {Math.round(match.prediction.predicted_blue_winprob * 100)}%</span>
-                          <span className="text-gray-600">/</span>
+                          <span className="text-stone-600">/</span>
                           <span className="text-red-400 font-mono font-bold">🟥 {Math.round((1 - match.prediction.predicted_blue_winprob) * 100)}%</span>
                           <span className="ml-1">
                             {match.prediction.correct ? (
@@ -163,7 +163,7 @@ export default function HistoryPage() {
                       )}
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-xs md:text-sm text-gray-400">WINNER:</span>
+                      <span className="text-xs md:text-sm text-stone-400">WINNER:</span>
                       <span className={`font-black px-2 py-0.5 md:px-3 md:py-1 rounded text-xs md:text-sm ${match.winning_team === 'BLUE' ? 'bg-blue-900/50 text-blue-400 border border-blue-800' : 'bg-red-900/50 text-red-400 border border-red-800'}`}>
                         {match.winning_team === 'BLUE' ? '🟦 BLUE TEAM' : '🟥 RED TEAM'}
                       </span>
@@ -181,7 +181,7 @@ export default function HistoryPage() {
                       </div>
                     </div>
                     {/* RED TEAM */}
-                    <div className={`p-4 border-t md:border-t-0 md:border-l border-gray-800 ${match.winning_team === 'RED' ? 'bg-red-950/20' : ''}`}>
+                    <div className={`p-4 border-t md:border-t-0 md:border-l border-stone-800 ${match.winning_team === 'RED' ? 'bg-red-950/20' : ''}`}>
                       <h3 className="font-bold text-red-400 mb-3 text-center tracking-widest">RED TEAM</h3>
                       <div className="space-y-2">
                         {redTeam.map(p => (
@@ -203,9 +203,9 @@ export default function HistoryPage() {
 
 function PlayerRow({ p }: { p: any }) {
   return (
-    <div className="flex items-center justify-between bg-gray-950/50 p-2 rounded-lg border border-gray-800/50 hover:bg-gray-800/80 transition">
+    <div className="flex items-center justify-between bg-stone-950/50 p-2 rounded-lg border border-stone-800/50 hover:bg-stone-800/80 transition">
       <div className="flex items-center gap-2 md:gap-3 flex-1 min-w-0">
-        <span className="text-[10px] md:text-xs font-black text-gray-500 w-6 md:w-8 text-center">{p.role}</span>
+        <span className="text-[10px] md:text-xs font-black text-stone-500 w-6 md:w-8 text-center">{p.role}</span>
         {p.champion_name ? (
           <Image
             src={getChampIcon(p.champion_name)}
@@ -213,24 +213,24 @@ function PlayerRow({ p }: { p: any }) {
             title={p.champion_name}
             width={32}
             height={32}
-            className="w-6 h-6 md:w-8 md:h-8 rounded-full border border-gray-700 shadow-sm flex-shrink-0"
+            className="w-6 h-6 md:w-8 md:h-8 rounded-full border border-stone-700 shadow-sm flex-shrink-0"
             onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
           />
         ) : (
-          <div className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-gray-800 border border-gray-700 flex items-center justify-center text-[10px] md:text-xs text-gray-500 flex-shrink-0">?</div>
+          <div className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-stone-800 border border-stone-700 flex items-center justify-center text-[10px] md:text-xs text-stone-500 flex-shrink-0">?</div>
         )}
-        <span className="font-bold text-gray-200 text-xs md:text-sm truncate mr-2">{p.player_name}</span>
-        <span className="text-[10px] font-mono bg-gray-900 text-gray-400 px-1.5 py-0.5 rounded border border-gray-800/80 mr-2 flex-shrink-0">
+        <span className="font-bold text-stone-200 text-xs md:text-sm truncate mr-2">{p.player_name}</span>
+        <span className="text-[10px] font-mono bg-stone-900 text-stone-400 px-1.5 py-0.5 rounded border border-stone-800/80 mr-2 flex-shrink-0">
           {p.player_mmr ? `MMR: ${p.player_mmr}` : 'MMR: -'}
         </span>
       </div>
       <div className="flex items-center flex-shrink-0">
-        <span className="font-mono text-xs md:text-sm tracking-tighter bg-gray-900 px-1.5 md:px-2 py-0.5 md:py-1 rounded">
+        <span className="font-mono text-xs md:text-sm tracking-tighter bg-stone-900 px-1.5 md:px-2 py-0.5 md:py-1 rounded">
           <span className="text-emerald-400 font-bold">{p.kills}</span>
-          <span className="text-gray-600 px-0.5">/</span>
+          <span className="text-stone-600 px-0.5">/</span>
           <span className="text-red-400 font-bold">{p.deaths}</span>
-          <span className="text-gray-600 px-0.5">/</span>
-          <span className="text-blue-400 font-bold">{p.assists}</span>
+          <span className="text-stone-600 px-0.5">/</span>
+          <span className="text-amber-400 font-bold">{p.assists}</span>
         </span>
       </div>
     </div>

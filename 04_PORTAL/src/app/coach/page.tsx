@@ -65,11 +65,11 @@ function Card({ children, className = '' }: { children: React.ReactNode; classNa
 
 function Tag({ children, color = 'blue' }: { children: React.ReactNode; color?: string }) {
   const colors: Record<string, string> = {
-    blue: 'bg-blue-500/20 text-blue-300 border-blue-500/30',
+    blue: 'bg-amber-500/20 text-amber-300 border-amber-500/30',
     green: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
     red: 'bg-red-500/20 text-red-300 border-red-500/30',
     yellow: 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30',
-    purple: 'bg-purple-500/20 text-purple-300 border-purple-500/30',
+    purple: 'bg-orange-500/20 text-orange-300 border-orange-500/30',
   };
   return (
     <span className={`inline-block rounded-full border px-2 py-0.5 text-xs font-medium ${colors[color] || colors.blue}`}>
@@ -81,7 +81,7 @@ function Tag({ children, color = 'blue' }: { children: React.ReactNode; color?: 
 function Spinner() {
   return (
     <div className="flex items-center justify-center gap-2 text-white/50">
-      <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/20 border-t-indigo-400" />
+      <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/20 border-t-orange-400" />
       <span className="text-sm">AIコーチが分析中...</span>
     </div>
   );
@@ -89,8 +89,8 @@ function Spinner() {
 
 function AdviceBox({ text }: { text: string }) {
   return (
-    <div className="mt-4 rounded-xl border border-indigo-500/30 bg-indigo-500/10 p-4">
-      <div className="mb-1 flex items-center gap-2 text-xs font-semibold text-indigo-300">
+    <div className="mt-4 rounded-xl border border-orange-500/30 bg-orange-500/10 p-4">
+      <div className="mb-1 flex items-center gap-2 text-xs font-semibold text-orange-300">
         <span>🤖</span> AIコーチアドバイス
       </div>
       <p className="whitespace-pre-wrap text-sm leading-relaxed text-white/80">{text}</p>
@@ -157,7 +157,7 @@ function PreGameTab({ champion, enemyChampion, triggerSignal }: { champion: stri
           value={focus}
           onChange={(e) => saveFocus(e.target.value)}
           placeholder="例: 序盤の無理なオールインを控える / 10分までにデスしない"
-          className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder-white/30 outline-none focus:border-sky-400"
+          className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder-white/30 outline-none focus:border-amber-400"
         />
         <p className="mt-1 text-xs text-white/30">設定すると「🔍 試合後」で達成できたかを自動で振り返ります。</p>
       </div>
@@ -166,7 +166,7 @@ function PreGameTab({ champion, enemyChampion, triggerSignal }: { champion: stri
         id="pre-analyze-btn"
         onClick={analyze}
         disabled={loading}
-        className="w-full rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-indigo-500 disabled:opacity-50"
+        className="w-full rounded-xl bg-orange-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-orange-500 disabled:opacity-50"
       >
         {loading ? '分析中' : '⚡ 分析開始'}
       </button>
@@ -433,7 +433,7 @@ function TrendsTab() {
 
           {result.summary && (
             <div>
-              <div className="mb-1 text-sm font-semibold text-sky-300">🎯 今週のフォーカス</div>
+              <div className="mb-1 text-sm font-semibold text-amber-300">🎯 今週のフォーカス</div>
               <AdviceBox text={result.summary} />
             </div>
           )}
@@ -443,7 +443,7 @@ function TrendsTab() {
             <button
               onClick={generateMenu}
               disabled={menuLoading}
-              className="w-full rounded-xl border border-sky-500/40 bg-sky-500/10 px-5 py-3 text-sm font-semibold text-sky-200 transition hover:bg-sky-500/20 disabled:opacity-50"
+              className="w-full rounded-xl border border-amber-500/40 bg-amber-500/10 px-5 py-3 text-sm font-semibold text-amber-200 transition hover:bg-amber-500/20 disabled:opacity-50"
             >
               {menuLoading ? '生成中...' : '📝 今週の練習メニューを作成'}
             </button>
@@ -455,12 +455,12 @@ function TrendsTab() {
 
           {menu && menu.menu?.length > 0 && (
             <div>
-              <div className="mb-2 text-sm font-semibold text-sky-300">📝 今週の練習メニュー</div>
+              <div className="mb-2 text-sm font-semibold text-amber-300">📝 今週の練習メニュー</div>
               <div className="space-y-2">
                 {menu.menu.map((m: any, i: number) => (
                   <div key={i} className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
                     <div className="flex items-start gap-2">
-                      <span className="mt-0.5 text-sky-400">✔</span>
+                      <span className="mt-0.5 text-amber-400">✔</span>
                       <div className="flex-1">
                         <div className="font-bold text-white text-sm">{m.title}</div>
                         {m.detail && <div className="text-xs text-white/60 mt-0.5 leading-relaxed">{m.detail}</div>}
@@ -891,8 +891,8 @@ export default function CoachPage() {
 
   if (isAuthenticated === null) {
     return (
-      <div style={{ minHeight: '100vh', background: '#0a0a14' }} className="flex items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-white/20 border-t-indigo-400" />
+      <div style={{ minHeight: '100vh', background: '#2b2620' }} className="flex items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-white/20 border-t-orange-400" />
       </div>
     );
   }
@@ -900,7 +900,7 @@ export default function CoachPage() {
   if (isAuthenticated === false) {
     return (
       <div
-        style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #0a0a14 0%, #111827 60%, #0a0a14 100%)' }}
+        style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #2b2620 0%, #3d3428 60%, #2b2620 100%)' }}
         className="flex items-center justify-center p-4 font-sans text-white"
       >
         <div className="text-center max-w-sm rounded-2xl border border-white/10 bg-white/5 p-8 backdrop-blur">
@@ -911,7 +911,7 @@ export default function CoachPage() {
           </p>
           <a
             href="/login"
-            className="inline-block w-full rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-indigo-500"
+            className="inline-block w-full rounded-xl bg-orange-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-orange-500"
           >
             ログインページへ
           </a>
@@ -922,7 +922,7 @@ export default function CoachPage() {
 
   return (
     <div
-      style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #0a0a14 0%, #111827 60%, #0a0a14 100%)' }}
+      style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #2b2620 0%, #3d3428 60%, #2b2620 100%)' }}
       className="px-4 py-8 font-sans text-white"
     >
       <style>{`
@@ -954,7 +954,7 @@ export default function CoachPage() {
                 value={sharedChampion}
                 onChange={(e) => setSharedChampion(e.target.value)}
                 placeholder="例: Graves"
-                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder-white/30 outline-none focus:border-indigo-400"
+                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder-white/30 outline-none focus:border-orange-400"
               />
             </div>
             <div>
@@ -963,7 +963,7 @@ export default function CoachPage() {
                 value={sharedEnemyChampion}
                 onChange={(e) => setSharedEnemyChampion(e.target.value)}
                 placeholder="例: Lee Sin"
-                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder-white/30 outline-none focus:border-indigo-400"
+                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder-white/30 outline-none focus:border-orange-400"
               />
             </div>
           </div>
@@ -971,7 +971,7 @@ export default function CoachPage() {
 
           <button
             onClick={runDailyCheck}
-            className="mt-4 w-full rounded-xl border border-sky-500/40 bg-sky-500/10 px-5 py-3 text-sm font-bold text-sky-200 transition hover:bg-sky-500/20"
+            className="mt-4 w-full rounded-xl border border-amber-500/40 bg-amber-500/10 px-5 py-3 text-sm font-bold text-amber-200 transition hover:bg-amber-500/20"
           >
             🎯 今日のチェック（事前分析・目標・ティルトを一括実行）
           </button>

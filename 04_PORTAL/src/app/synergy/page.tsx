@@ -145,7 +145,7 @@ export default function SynergyPage() {
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-gray-950 text-white">
+      <div className="flex h-screen items-center justify-center bg-stone-950 text-white">
         <Spinner label="チームシナジーデータを分析中..." />
       </div>
     );
@@ -173,28 +173,28 @@ export default function SynergyPage() {
     .slice(0, 50);
 
   return (
-    <div className="min-h-screen bg-gray-950 text-gray-200 p-4 md:p-8">
+    <div className="min-h-screen bg-stone-950 text-stone-200 p-4 md:p-8">
       <div className="max-w-[1400px] mx-auto space-y-8">
         
         {/* ヘッダー */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-gray-800 pb-6 gap-4">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-stone-800 pb-6 gap-4">
           <div>
             <h1 className="text-3xl font-extrabold text-white flex items-center gap-3">
               <HeartHandshake className="h-8 w-8 text-fuchsia-400" />
               チームシナジー分析
             </h1>
-            <p className="text-gray-400 mt-2 text-sm">
+            <p className="text-stone-400 mt-2 text-sm">
               KTMの全試合データから算出された「味方時の勝率」を分析。<br/>
               最強のコンビと最弱のコンビを2〜5人の人数別で一覧化します。
             </p>
           </div>
           
-          <div className="flex items-center gap-3 bg-gray-900 border border-gray-800 rounded-xl px-4 py-2">
-            <span className="text-sm font-bold text-gray-400">最小共闘数:</span>
+          <div className="flex items-center gap-3 bg-stone-900 border border-stone-800 rounded-xl px-4 py-2">
+            <span className="text-sm font-bold text-stone-400">最小共闘数:</span>
             <select 
               value={minGames} 
               onChange={e => setMinGames(Number(e.target.value))}
-              className="bg-gray-800 border border-gray-700 text-white rounded px-2 py-1 outline-none focus:border-fuchsia-500 font-bold"
+              className="bg-stone-800 border border-stone-700 text-white rounded px-2 py-1 outline-none focus:border-fuchsia-500 font-bold"
             >
               <option value={2}>2試合以上共闘</option>
               <option value={3}>3試合以上共闘</option>
@@ -205,7 +205,7 @@ export default function SynergyPage() {
         </div>
 
         {/* 人数切替タブ (2〜5人選択) */}
-        <div className="flex items-center justify-between flex-wrap gap-4 bg-gray-900 border border-gray-800 p-3 rounded-2xl">
+        <div className="flex items-center justify-between flex-wrap gap-4 bg-stone-900 border border-stone-800 p-3 rounded-2xl">
           <div className="flex items-center gap-2">
             <Users className="text-fuchsia-400" size={20} />
             <span className="text-sm font-black text-white">対象人数:</span>
@@ -213,7 +213,7 @@ export default function SynergyPage() {
           <div className="flex gap-2">
             {([2, 3, 4, 5] as const).map(n => (
               <button key={n} onClick={() => setGroupSize(n)}
-                className={`px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${groupSize === n ? 'bg-gradient-to-r from-fuchsia-600 to-pink-600 text-white shadow-lg shadow-fuchsia-500/20' : 'bg-gray-950 text-gray-400 hover:text-white border border-gray-800'}`}>
+                className={`px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${groupSize === n ? 'bg-gradient-to-r from-fuchsia-600 to-pink-600 text-white shadow-lg shadow-fuchsia-500/20' : 'bg-stone-950 text-stone-400 hover:text-white border border-stone-800'}`}>
                 {n}人コンビ / チーム
               </button>
             ))}
@@ -224,29 +224,29 @@ export default function SynergyPage() {
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
           
           {/* 左カード: 最強のコンビ */}
-          <div className="bg-gray-900 border border-gray-800 rounded-3xl p-6 shadow-2xl relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-500"></div>
+          <div className="bg-stone-900 border border-stone-800 rounded-3xl p-6 shadow-2xl relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-emerald-400 via-teal-400 to-amber-500"></div>
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-black text-emerald-400 flex items-center gap-2">
-                <Crown className="h-6 w-6" /> 最強のコンビ <span className="text-xs text-gray-500 font-normal">(Best Combo)</span>
+                <Crown className="h-6 w-6" /> 最強のコンビ <span className="text-xs text-stone-500 font-normal">(Best Combo)</span>
               </h2>
             </div>
             
             <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
               {groupSize > 2 ? (
                 filteredGroupsBest.length === 0 ? (
-                  <div className="text-center text-gray-500 py-12">この条件で一緒に戦った組み合わせがありません</div>
+                  <div className="text-center text-stone-500 py-12">この条件で一緒に戦った組み合わせがありません</div>
                 ) : (
                   filteredGroupsBest.map((g, i) => (
-                    <div key={g.members.join('-')} className="flex items-center gap-4 bg-gray-950/60 hover:bg-gray-800/80 p-4 rounded-2xl border border-gray-800/80 transition">
-                      <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-black shrink-0 ${i < 3 ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-gray-800 text-gray-500'}`}>
+                    <div key={g.members.join('-')} className="flex items-center gap-4 bg-stone-950/60 hover:bg-stone-800/80 p-4 rounded-2xl border border-stone-800/80 transition">
+                      <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-black shrink-0 ${i < 3 ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-stone-800 text-stone-500'}`}>
                         {i + 1}
                       </div>
                       <div className="flex-1 flex items-center justify-between gap-4 min-w-0">
                         <div className="flex items-center gap-1.5 flex-wrap min-w-0">
                           {g.members.map((m, idx) => (
                             <span key={m} className="font-bold text-white text-sm">
-                              {m}{idx < g.members.length - 1 && <span className="text-gray-600 mx-1">・</span>}
+                              {m}{idx < g.members.length - 1 && <span className="text-stone-600 mx-1">・</span>}
                             </span>
                           ))}
                         </div>
@@ -254,18 +254,18 @@ export default function SynergyPage() {
                           <div className="text-xl font-black text-emerald-400">
                             {(g.winRate * 100).toFixed(1)}%
                           </div>
-                          <div className="text-xs text-gray-500 font-bold">{g.games}戦 {g.wins}勝</div>
+                          <div className="text-xs text-stone-500 font-bold">{g.games}戦 {g.wins}勝</div>
                         </div>
                       </div>
                     </div>
                   ))
                 )
               ) : bestAlly.length === 0 ? (
-                <div className="text-center text-gray-500 py-12">該当するデータがありません</div>
+                <div className="text-center text-stone-500 py-12">該当するデータがありません</div>
               ) : (
                 bestAlly.map((stat, i) => (
-                  <div key={`${stat.p1}-${stat.p2}`} className="flex items-center gap-4 bg-gray-950/60 hover:bg-gray-800/80 p-4 rounded-2xl border border-gray-800/80 transition">
-                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-black ${i < 3 ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-gray-800 text-gray-500'}`}>
+                  <div key={`${stat.p1}-${stat.p2}`} className="flex items-center gap-4 bg-stone-950/60 hover:bg-stone-800/80 p-4 rounded-2xl border border-stone-800/80 transition">
+                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-black ${i < 3 ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-stone-800 text-stone-500'}`}>
                       {i + 1}
                     </div>
                     <div className="flex-1 flex items-center justify-between gap-4">
@@ -278,7 +278,7 @@ export default function SynergyPage() {
                         <div className="text-2xl font-black text-emerald-400">
                           {(stat.winRate * 100).toFixed(1)}%
                         </div>
-                        <div className="text-xs text-gray-500 font-bold">
+                        <div className="text-xs text-stone-500 font-bold">
                           {stat.games}戦 {stat.wins}勝
                         </div>
                       </div>
@@ -290,21 +290,21 @@ export default function SynergyPage() {
           </div>
 
           {/* 右カード: 最弱のコンビ */}
-          <div className="bg-gray-900 border border-gray-800 rounded-3xl p-6 shadow-2xl relative overflow-hidden">
+          <div className="bg-stone-900 border border-stone-800 rounded-3xl p-6 shadow-2xl relative overflow-hidden">
             <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-rose-500 via-red-500 to-pink-600"></div>
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-black text-rose-400 flex items-center gap-2">
-                <Skull className="h-6 w-6" /> 最弱のコンビ <span className="text-xs text-gray-500 font-normal">(Worst Combo)</span>
+                <Skull className="h-6 w-6" /> 最弱のコンビ <span className="text-xs text-stone-500 font-normal">(Worst Combo)</span>
               </h2>
             </div>
 
             <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
               {groupSize > 2 ? (
                 filteredGroupsWorst.length === 0 ? (
-                  <div className="text-center text-gray-500 py-12">この条件で一緒に戦った組み合わせがありません</div>
+                  <div className="text-center text-stone-500 py-12">この条件で一緒に戦った組み合わせがありません</div>
                 ) : (
                   filteredGroupsWorst.map((g, i) => (
-                    <div key={g.members.join('-')} className="flex items-center gap-4 bg-gray-950/60 hover:bg-gray-800/80 p-4 rounded-2xl border border-gray-800/80 transition">
+                    <div key={g.members.join('-')} className="flex items-center gap-4 bg-stone-950/60 hover:bg-stone-800/80 p-4 rounded-2xl border border-stone-800/80 transition">
                       <div className="w-8 h-8 rounded-xl flex items-center justify-center font-black shrink-0 bg-rose-500/10 text-rose-400 border border-rose-500/20">
                         {i + 1}
                       </div>
@@ -312,7 +312,7 @@ export default function SynergyPage() {
                         <div className="flex items-center gap-1.5 flex-wrap min-w-0">
                           {g.members.map((m, idx) => (
                             <span key={m} className="font-bold text-white text-sm">
-                              {m}{idx < g.members.length - 1 && <span className="text-gray-600 mx-1">・</span>}
+                              {m}{idx < g.members.length - 1 && <span className="text-stone-600 mx-1">・</span>}
                             </span>
                           ))}
                         </div>
@@ -320,17 +320,17 @@ export default function SynergyPage() {
                           <div className="text-xl font-black text-rose-400">
                             {(g.winRate * 100).toFixed(1)}%
                           </div>
-                          <div className="text-xs text-gray-500 font-bold">{g.games}戦 {g.wins}勝</div>
+                          <div className="text-xs text-stone-500 font-bold">{g.games}戦 {g.wins}勝</div>
                         </div>
                       </div>
                     </div>
                   ))
                 )
               ) : worstAlly.length === 0 ? (
-                <div className="text-center text-gray-500 py-12">該当するデータがありません</div>
+                <div className="text-center text-stone-500 py-12">該当するデータがありません</div>
               ) : (
                 worstAlly.map((stat, i) => (
-                  <div key={`${stat.p1}-${stat.p2}`} className="flex items-center gap-4 bg-gray-950/60 hover:bg-gray-800/80 p-4 rounded-2xl border border-gray-800/80 transition">
+                  <div key={`${stat.p1}-${stat.p2}`} className="flex items-center gap-4 bg-stone-950/60 hover:bg-stone-800/80 p-4 rounded-2xl border border-stone-800/80 transition">
                     <div className="w-8 h-8 rounded-xl flex items-center justify-center font-black bg-rose-500/10 text-rose-400 border border-rose-500/20">
                       {i + 1}
                     </div>
@@ -344,7 +344,7 @@ export default function SynergyPage() {
                         <div className="text-2xl font-black text-rose-400">
                           {(stat.winRate * 100).toFixed(1)}%
                         </div>
-                        <div className="text-xs text-gray-500 font-bold">
+                        <div className="text-xs text-stone-500 font-bold">
                           {stat.games}戦 {stat.wins}勝
                         </div>
                       </div>

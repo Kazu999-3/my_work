@@ -199,7 +199,7 @@ export default function Home() {
 
   if (isAuthenticated === null) {
     return (
-      <div style={{ minHeight: '100vh' }} className="flex-1 flex items-center justify-center bg-[#1c1917]">
+      <div style={{ minHeight: '100vh' }} className="flex-1 flex items-center justify-center bg-[#2b2620]">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-white/20 border-t-amber-500" />
       </div>
     );
@@ -208,10 +208,10 @@ export default function Home() {
   if (isAuthenticated === false) {
     return (
       <div
-        style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #211d1a 0%, #2a2521 60%, #211d1a 100%)' }}
+        style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #332c24 0%, #3d3428 60%, #332c24 100%)' }}
         className="flex-1 flex items-center justify-center p-4 font-sans text-white"
       >
-        <div className="text-center max-w-sm rounded-3xl border border-stone-800 bg-[#2a2521] p-8 shadow-2xl">
+        <div className="text-center max-w-sm rounded-3xl border border-stone-800 bg-[#3d3428] p-8 shadow-2xl">
           <div className="text-4xl mb-4">🔑</div>
           <h2 className="text-lg font-bold mb-2">認証が必要です</h2>
           <p className="text-sm text-stone-400 mb-4 leading-relaxed">
@@ -229,7 +229,7 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen w-full bg-[#1c1917]">
+    <div className="min-h-screen w-full bg-[#2b2620]">
     <div className="min-h-screen p-4 md:p-6 max-w-7xl mx-auto flex flex-col gap-6 relative overflow-hidden">
 
       {/* Background Decorative Orbs */}
@@ -593,7 +593,7 @@ export default function Home() {
 
         {/* 🛠️ システムコクピット (System Cockpit) */}
         <motion.div variants={itemVariants} className="md:col-span-2 lg:col-span-4 mt-5">
-          <div className="glass-panel rounded-3xl p-4 border border-white/5 bg-[#211d1a]/60 space-y-4">
+          <div className="glass-panel rounded-3xl p-4 border border-white/5 bg-[#332c24]/60 space-y-4">
             
             {/* タブナビゲーション */}
             <div className="flex justify-between items-center border-b border-white/5 pb-4 flex-wrap gap-4">

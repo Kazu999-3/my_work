@@ -30,6 +30,7 @@
 - [x] youtube_absorbスケジューラが永久に起票スキップし続けるバグを修正 → `edge_tasks`に2026-07-27から4日間`running`のまま更新が止まったゴースト行が残っており、`youtube_absorb_scheduler_loop`の重複起票防止チェックが「pending/runningが1件でもあれば無条件スキップ」だったため、クラウド動画解析を止めた今、ローカルのエッジワーカーが動画解析の唯一の実行経路であるにも関わらず永久にタスクが積まれない状態だった。該当ゴースト行を`failed`にクローズし、チェック側にも「2時間以上更新が無いpending/runningは無視する」という鮮度フィルタを追加して再発を防止
 - [x] デザイン方向転換「サイバーパンク→やわらかいダーク」を`/admin/dashboard`でパイロット実施 → `globals.css`の共通テーマは変更せず、このページ単体のTailwindクラス・rgba値のみを置換（寒色系のblue/indigo/purple/cyanをamber/orange系に、gray/slateをstone系に統一、背景の黒を暖色寄りに、ネオングローの発光強度を大幅減）。emerald(成功)・rose(警告)の意味的な色は維持。ユーザー確認待ちで、OKなら他ページへ展開
 - [x] note記事のSEO/検索流入強化 → `07_seo_specialist`スキルは記事生成フローに未接続の使われていないプロンプトだったため、`note_article_drafter.md`/`sovereign-factory/SKILL.md`の両方に「Step 2.5/3.5: 検索流入を意識したタイトル調整＆過去の反応データ参照」を追加。タイトルに検索されやすい語を含めることと、執筆前に過去の反応の良い記事(TOP5)の傾向を参考にすることを明文化
+- [x] デザイン方向転換「サイバーパンク→やわらかいダーク」を全ページへ展開 → `globals.css`共通テーマ＋`login`・`coach`・`ktm-admin`(本体/ProfileModal/MatchHistoryPanel)・`balancer`・`history`・`synergy`・`leaderboard`・`champions`(元々ゴールド基調で変更不要)まで完了。LoLの実際のBLUE/REDチーム色（`balancer`のチーム分け表示・`history`や`MatchHistoryPanel`の試合結果表示）とDiscord公式ブランドカラー(`#5865F2`)は意味を持つため維持し、周辺の装飾色だけ暖色化。ユーザーフィードバックを受け背景の暗さを`#1c1917`系→`#2b2620`系（より明るい暖色ダーク）に再調整。残る`admin/analytics`等の管理系サブページは未着手
 
 ## ✅ 2026-07-30 追加セッションで対応済み
 - [x] Web Push配信が届かない問題を解消。原因は鍵の不一致ではなく`VAPID_SUBJECT`未設定時のフォールバック値`mailto:admin@ktm.local`（実在しないドメイン）で、Appleの配信サーバーだけがこれを`BadJwtToken`として拒否していた。`VAPID_SUBJECT`に実在のメールアドレスを設定して解消（鍵ペア自体は複数回再生成したが原因ではなかった）
