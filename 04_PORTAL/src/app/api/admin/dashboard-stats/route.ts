@@ -30,8 +30,6 @@ export async function GET(req: NextRequest) {
       { data: libData },
       { data: recentTaskData },
       { count: youtubeErrorCount },
-      { count: openRecruitCount },
-      { data: recentRecruitData },
       { data: systemMetricsRow },
       { data: dictReviewNotif },
     ] = await Promise.all([
@@ -81,10 +79,6 @@ export async function GET(req: NextRequest) {
         .limit(200),
       // 「要対応」パネル用: 手動対応が必要な動画キューのエラー件数
       supabase.from('youtube_queue').select('id', { count: 'exact', head: true }).in('status', ['error_generation', 'error_no_transcript', 'failed']),
-      // 募集アクティビティ: 現在募集中の件数
-      supabase.from('recruitments').select('id', { count: 'exact', head: true }).eq('status', 'open'),
-      // 募集アクティビティ: 直近の募集一覧
-      supabase.from('recruitments').select('id, owner_discord_id, mode, max_count, status, created_at').order('created_at', { ascending: false }).limit(5),
       // クラウドワーカー(youtube_worker/prospector/champion_researcher等)の最終実行ログ。
       // scripts/notify.py の record_worker_log() がここに書き込んでいるが、システムコクピットの
       // 「サービス監視」タブはこれまでこの行を一度もクエリしておらず、常に空のまま表示されていた。
@@ -111,14 +105,6 @@ export async function GET(req: NextRequest) {
     const failedTaskData = Array.from(latestByKey.values())
       .filter((t) => t.status === 'failed')
       .slice(0, 10);
-
-    // 直近募集の募集主名をktm_playersから解決（discord_idで突き合わせ）
-    let recruitOwnerNames: Record<string, string> = {};
-    const ownerIds = [...new Set((recentRecruitData || []).map((r: any) => r.owner_discord_id).filter(Boolean))];
-    if (ownerIds.length > 0) {
-      const { data: ownerPlayers } = await supabase.from('ktm_players').select('discord_id, name').in('discord_id', ownerIds);
-      recruitOwnerNames = Object.fromEntries((ownerPlayers || []).map((p: any) => [p.discord_id, p.name]));
-    }
 
     // ワーカー判定
     let workerActive = false;
@@ -173,13 +159,6 @@ export async function GET(req: NextRequest) {
         youtubeErrorCount: youtubeErrorCount ?? 0,
         dictReviewCount: (dictReviewNotif?.data as any)?.needsAttention ?? 0,
       },
-      recruitActivity: {
-        openCount: openRecruitCount ?? 0,
-        recent: (recentRecruitData || []).map((r: any) => ({
-          ...r,
-          owner_name: recruitOwnerNames[r.owner_discord_id] || null,
-        })),
-      }
     });
 
   } catch (err: any) {

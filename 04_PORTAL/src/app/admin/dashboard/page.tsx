@@ -17,7 +17,6 @@ export default function Home() {
   const [recentYoutubeQueue, setRecentYoutubeQueue] = useState<any[]>([]);
   const [needsAttention, setNeedsAttention] = useState<{ failedTasks: any[]; youtubeErrorCount: number; dictReviewCount: number }>({ failedTasks: [], youtubeErrorCount: 0, dictReviewCount: 0 });
   const [retryingTaskId, setRetryingTaskId] = useState<string | null>(null);
-  const [recruitActivity, setRecruitActivity] = useState<{ openCount: number; recent: any[] }>({ openCount: 0, recent: [] });
   const [setupChecks, setSetupChecks] = useState<Record<string, boolean> | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<string>('');
@@ -84,7 +83,6 @@ export default function Home() {
         if (data.recentDictUpdates) setRecentDictUpdates(data.recentDictUpdates);
         if (data.recentLibraryUpdates) setRecentLibraryUpdates(data.recentLibraryUpdates);
         if (data.needsAttention) setNeedsAttention(data.needsAttention);
-        if (data.recruitActivity) setRecruitActivity(data.recruitActivity);
       }
     } catch (err) {
       console.error('Error fetching dashboard stats:', err);
@@ -558,40 +556,9 @@ export default function Home() {
             )}
           </div>
 
-          {/* Panel C: 募集アクティビティ ＆ セットアップチェックリスト */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="glass-panel rounded-3xl p-4 border border-white/5 bg-gradient-to-br from-rose-500/5 to-transparent">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-black text-white flex items-center gap-2">
-                  <div className="w-2 h-6 bg-rose-500 rounded-full shadow-[0_0_10px_rgba(244,63,94,0.6)]"></div>
-                  募集アクティビティ
-                </h3>
-                <span className="text-xs font-black text-rose-300 bg-rose-500/10 border border-rose-500/20 px-2.5 py-1 rounded-full">
-                  現在募集中 {recruitActivity.openCount}件
-                </span>
-              </div>
-              <div className="space-y-2">
-                {recruitActivity.recent.length > 0 ? recruitActivity.recent.map((r) => (
-                  <div key={r.id} className="flex justify-between items-center bg-black/20 p-2.5 rounded-xl border border-white/5 text-xs">
-                    <div className="flex flex-col min-w-0">
-                      <span className="font-bold text-gray-200">{r.mode}（{r.max_count}人）</span>
-                      <span className="text-[10px] text-gray-500">募集主: {r.owner_name || '不明'}</span>
-                    </div>
-                    <span className={`px-2 py-0.5 rounded-full border text-[10px] font-bold shrink-0 ${
-                      r.status === 'open' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' :
-                      r.status === 'closed' ? 'bg-gray-500/10 border-gray-500/20 text-gray-400' :
-                      'bg-rose-500/10 border-rose-500/20 text-rose-400'
-                    }`}>
-                      {r.status === 'open' ? '募集中' : r.status === 'closed' ? '終了' : '削除済'}
-                    </span>
-                  </div>
-                )) : (
-                  <p className="text-sm text-gray-500 text-center py-4">直近の募集はありません</p>
-                )}
-              </div>
-              <p className="text-[10px] text-gray-600 mt-3">参加人数はDiscordメッセージ側で管理されているため、ここでは開催状況のみ表示しています。</p>
-            </div>
-
+          {/* Panel C: セットアップチェックリスト
+              （募集アクティビティは機能していなかったため2026-07-31に削除） */}
+          <div className="grid grid-cols-1 gap-4">
             <div className="glass-panel rounded-3xl p-4 border border-white/5 bg-gradient-to-br from-amber-500/5 to-transparent">
               <h3 className="text-lg font-black text-white flex items-center gap-2 mb-4">
                 <div className="w-2 h-6 bg-amber-500 rounded-full shadow-[0_0_10px_rgba(245,158,11,0.6)]"></div>

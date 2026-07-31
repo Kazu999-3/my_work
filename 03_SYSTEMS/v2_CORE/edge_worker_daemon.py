@@ -3,7 +3,7 @@ import time
 import logging
 import httpx
 import ctypes
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 import dotenv
 
@@ -415,8 +415,16 @@ class EdgeWorkerDaemon:
         time.sleep(600)  # 起動直後のAPI競合を避けるため10分待機
         while getattr(self, "_heartbeat_active", True):
             try:
-                # 既に pending/running の youtube_absorb があれば重複起票しない
-                check_url = f"{self.supabase_url}/rest/v1/edge_tasks?task_type=eq.youtube_absorb&status=in.(pending,running)&select=id&limit=1"
+                # 既に pending/running の youtube_absorb があれば重複起票しない。
+                # ただし「running」のまま更新が止まったゴースト行（デーモンの異常終了等で
+                # 誰も完了/失敗にマークしないまま残った行）は無視する。実測で1動画あたり
+                # 数分〜十数分程度のため、2時間更新が無ければ死んでいるとみなして良い。
+                # URLに直接埋め込むため、"+00:00"ではなく(エンコード不要な)"Z"サフィックスにする
+                stale_cutoff = (datetime.now(timezone.utc) - timedelta(hours=2)).isoformat().replace("+00:00", "Z")
+                check_url = (
+                    f"{self.supabase_url}/rest/v1/edge_tasks?task_type=eq.youtube_absorb"
+                    f"&status=in.(pending,running)&updated_at=gt.{stale_cutoff}&select=id&limit=1"
+                )
                 res = httpx.get(check_url, headers=self.headers, timeout=10)
                 if res.status_code == 200 and res.json():
                     logger.info("🔧 [YoutubeAbsorbScheduler] 既に未処理のyoutube_absorbタスクがあるためスキップします。")
