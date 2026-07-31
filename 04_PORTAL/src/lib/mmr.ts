@@ -19,12 +19,16 @@ export const RANKS: Record<string, number> = {
 // Riot同期が書き込む実際の値（例: "GOLD II"）とどのoptionのvalueも一致せず、
 // controlled selectがどのoptionにも一致しない時に先頭の"UNRANKED"を表示してしまい、
 // ディビジョン付きの選手が管理画面上で軒並み「アンランク」に見えるバグの原因になっていた。
+// →ディビジョン込みの選択肢に直したが、実際のDBには("GOLD"等)ディビジョン無しの値で
+// 保存されている選手も少なくなく(過去の手動入力・別経路の書き込みが原因)、今度は
+// それらが同じ理由で「アンランク」に見えてしまっていた。ディビジョン無しの素のティア名も
+// 選択肢として残し、どちらの形式で保存されていても一致するようにする。
 const DIVISION_TIERS = ['IRON', 'BRONZE', 'SILVER', 'GOLD', 'PLATINUM', 'EMERALD', 'DIAMOND'];
 const APEX_TIERS = ['MASTER', 'GRANDMASTER', 'CHALLENGER'];
 const DIVISIONS = ['IV', 'III', 'II', 'I'];
 export const HIGHEST_RANK_OPTIONS: string[] = [
   'UNRANKED',
-  ...DIVISION_TIERS.flatMap((t) => DIVISIONS.map((d) => `${t} ${d}`)),
+  ...DIVISION_TIERS.flatMap((t) => [t, ...DIVISIONS.map((d) => `${t} ${d}`)]),
   ...APEX_TIERS,
 ];
 
