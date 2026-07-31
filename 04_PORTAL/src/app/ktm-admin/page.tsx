@@ -5,7 +5,7 @@ import { supabase } from "../../lib/supabaseClient";
 import MatchHistoryPanel from "./MatchHistoryPanel";
 import ProfileModal from "./ProfileModal";
 import { Info, Users, RefreshCw, Save, Trophy, Filter, Plus, AlertCircle, X, History, Globe, ChevronDown, Shield, Trees, Zap, Target, Heart, Sparkles, Settings, AlertTriangle } from "lucide-react";
-import { getKtmRank, RANKS, calculateInitialMmr } from "../../lib/mmr";
+import { getKtmRank, RANKS, calculateInitialMmr, HIGHEST_RANK_OPTIONS } from "../../lib/mmr";
 
 async function fetchWithTimeout(resource: RequestInfo, options: RequestInit & { timeout?: number } = {}) {
   const { timeout = 15000 } = options; // デフォルト15秒でタイムアウト
@@ -1211,7 +1211,7 @@ export default function KtmAdminPage() {
                                     }}
                                     className="bg-gray-900 border border-gray-700 text-white rounded px-2 py-1 outline-none focus:border-green-500 cursor-pointer"
                                   >
-                                    {["UNRANKED", "IRON", "BRONZE", "SILVER", "GOLD", "PLATINUM", "EMERALD", "DIAMOND", "MASTER", "GRANDMASTER", "CHALLENGER"].map(r => (
+                                    {HIGHEST_RANK_OPTIONS.map(r => (
                                       <option key={r} value={r}>{r}</option>
                                     ))}
                                   </select>
@@ -1627,7 +1627,7 @@ export default function KtmAdminPage() {
                         <span className="text-gray-500">最高Rank</span>
                         <select value={p.highest_rank || "UNRANKED"} onChange={(e) => handleInputSave(uid, "highest_rank", e.target.value)}
                           className={`bg-gray-800 border border-gray-700 rounded px-2 py-1.5 outline-none focus:border-blue-500 ${getColorFromRankName(p.highest_rank)}`}>
-                          {["UNRANKED","IRON","BRONZE","SILVER","GOLD","PLATINUM","EMERALD","DIAMOND","MASTER","GRANDMASTER","CHALLENGER"].map(r => <option key={r} value={r}>{r}</option>)}
+                          {HIGHEST_RANK_OPTIONS.map(r => <option key={r} value={r}>{r}</option>)}
                         </select>
                       </label>
                       <label className="flex flex-col gap-1">
@@ -1720,7 +1720,7 @@ export default function KtmAdminPage() {
                             onChange={(e) => handleInputSave(uid, "highest_rank", e.target.value)}
                             className={`bg-gray-800 border border-gray-700 rounded px-1 py-0.5 outline-none focus:border-blue-500 w-24 text-xs ${getColorFromRankName(p.highest_rank)}`}
                           >
-                            {["UNRANKED", "IRON", "BRONZE", "SILVER", "GOLD", "PLATINUM", "EMERALD", "DIAMOND", "MASTER", "GRANDMASTER", "CHALLENGER"].map(r => (
+                            {HIGHEST_RANK_OPTIONS.map(r => (
                               <option key={r} value={r}>{r}</option>
                             ))}
                           </select>

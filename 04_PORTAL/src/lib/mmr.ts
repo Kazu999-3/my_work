@@ -10,9 +10,23 @@ import { fetchAllRows } from './fetchAll';
 
 export const RANKS: Record<string, number> = {
   'UNRANKED': 1200, 'IRON': 1100, 'BRONZE': 1200, 'SILVER': 1350, 'GOLD': 1500,
-  'PLATINUM': 1650, 'EMERALD': 1800, 'DIAMOND': 2000, 'MASTER': 2200, 
+  'PLATINUM': 1650, 'EMERALD': 1800, 'DIAMOND': 2000, 'MASTER': 2200,
   'GRANDMASTER': 2400, 'CHALLENGER': 2600
 };
+
+// highest_rankの選択肢一覧（管理画面のセレクトボックス用）。
+// 以前は「UNRANKED,IRON,BRONZE,...」とディビジョンを含まないティア名だけの配列だったため、
+// Riot同期が書き込む実際の値（例: "GOLD II"）とどのoptionのvalueも一致せず、
+// controlled selectがどのoptionにも一致しない時に先頭の"UNRANKED"を表示してしまい、
+// ディビジョン付きの選手が管理画面上で軒並み「アンランク」に見えるバグの原因になっていた。
+const DIVISION_TIERS = ['IRON', 'BRONZE', 'SILVER', 'GOLD', 'PLATINUM', 'EMERALD', 'DIAMOND'];
+const APEX_TIERS = ['MASTER', 'GRANDMASTER', 'CHALLENGER'];
+const DIVISIONS = ['IV', 'III', 'II', 'I'];
+export const HIGHEST_RANK_OPTIONS: string[] = [
+  'UNRANKED',
+  ...DIVISION_TIERS.flatMap((t) => DIVISIONS.map((d) => `${t} ${d}`)),
+  ...APEX_TIERS,
+];
 
 // ランクの高さ比較用。highest_rank(=これまでの最高ランク)を同期で「下げない」ために使う。
 const TIER_ORDER: Record<string, number> = {
