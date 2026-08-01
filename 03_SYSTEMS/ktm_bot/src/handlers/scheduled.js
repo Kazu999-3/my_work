@@ -11,9 +11,9 @@ export async function handleScheduledEvent(event, env, ctx) {
   const cronExpression = (event.cron || "").trim();
   const mode = event.mode || "";
 
-  // 毎週月曜 0:00 JST (日曜 UTC 15:00): 最優先で判定
-  // 2026-08-01: 曜日を1つ後ろにずらした(wrangler.tomlのコメント参照)。
-  if (cronExpression.includes("0 15 * * 0") || mode === "weekly_recruit") {
+  // 毎週日曜 0:00 JST (土曜 UTC 15:00): 最優先で判定
+  // 2026-08-01: Cloudflareの曜日番号は1=日〜7=土(wrangler.tomlのコメント参照)。
+  if (cronExpression.includes("0 15 * * 7") || mode === "weekly_recruit") {
     console.log("[Scheduled] Executing weekly recruitment posting...");
     await postWeeklyRecruitment(env);
   } else if (mode === "create") {
