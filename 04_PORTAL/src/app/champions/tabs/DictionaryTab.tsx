@@ -1271,7 +1271,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                             <StarIcon 
                               key={idx} 
                               size={14} 
-                              className={idx < difficulty ? "text-amber-400 fill-amber-400" : "text-gray-500"}
+                              className={idx < difficulty ? "text-amber-600 fill-amber-600" : "text-stone-300"}
                             />
                           ))}
                         </div>
@@ -1386,7 +1386,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                                             const winRate = Math.round((pa.wins / pa.games) * 100);
                                             const kda = pa.deaths > 0 ? Math.round(((pa.kills + pa.assists) / pa.deaths) * 10) / 10 : (pa.kills + pa.assists);
                                             return (
-                                              <tr key={name} className="hover:bg-white/[0.01] transition-colors">
+                                              <tr key={name} className="hover:bg-black/2 transition-colors">
                                                 <td className="p-2 font-bold text-stone-900">{name}</td>
                                                 <td className="p-2 text-center font-mono text-gray-500">{pa.role}</td>
                                                 <td className="p-2 text-center text-stone-700 font-bold">{pa.games}</td>

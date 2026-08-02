@@ -32,7 +32,7 @@ function MobileNavItem({ item, active, pending, onClick }: { item: { id: string;
       prefetch={isAdminGated ? false : true}
       onClick={onClick}
       className={`flex flex-col items-center justify-center min-w-[3.5rem] px-2 py-1.5 rounded-xl transition-colors duration-100 touch-manipulation select-none ${
-        lit ? `${item.activeBg} ${item.color}` : 'text-gray-400 active:bg-white/20'
+        lit ? `${item.activeBg} ${item.color}` : 'text-stone-500 active:bg-black/10'
       } ${pending && !active ? 'opacity-70' : ''}`}
     >
       <Icon size={18} className={`mb-1 ${pending && !active ? 'animate-pulse' : ''}`} />
@@ -346,7 +346,7 @@ export default function Sidebar() {
               </div>
             )}
 
-            <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[#0a0b10]/95 backdrop-blur-xl border-t border-white/10 z-50 flex items-center justify-around px-1 py-2 shadow-[0_-4px_24px_rgba(0,0,0,0.5)] pb-[env(safe-area-inset-bottom)]">
+            <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-xl border-t border-black/10 z-50 flex items-center justify-around px-1 py-2 shadow-[0_-4px_24px_rgba(32,28,43,0.1)] pb-[env(safe-area-inset-bottom)]">
               {primaryItems.map((item) => (
                 <MobileNavItem
                   key={`bar-${item.id}`}
@@ -361,7 +361,7 @@ export default function Sidebar() {
                 <button
                   onClick={() => setShowMobileMore((v) => !v)}
                   className={`flex flex-col items-center justify-center min-w-[3.5rem] px-2 py-1.5 rounded-xl transition-colors ${
-                    showMobileMore ? 'bg-white/10 text-white' : 'text-gray-400 active:bg-white/10'
+                    showMobileMore ? 'bg-black/10 text-stone-900' : 'text-stone-500 active:bg-black/10'
                   }`}
                 >
                   <MoreHorizontal size={18} className="mb-1" />

@@ -323,7 +323,7 @@ export default function PlayerStatsPage({ params }: PageProps) {
           </div>
           <div className="px-6 sm:px-10 pb-8 relative">
             <div className="flex flex-col sm:flex-row items-center sm:items-end -mt-14 sm:-mt-12 gap-6 mb-6">
-              <div className="w-24 h-24 bg-[#161922] p-1 rounded-2xl border-2 border-[#c89b3c] shadow-[0_0_20px_rgba(200,155,60,0.3)] flex-shrink-0 flex items-center justify-center text-4xl overflow-hidden relative group">
+              <div className="w-24 h-24 bg-white p-1 rounded-2xl border-2 border-[#c89b3c] shadow-[0_0_20px_rgba(200,155,60,0.3)] flex-shrink-0 flex items-center justify-center text-4xl overflow-hidden relative group">
                 {sortedMostPlayed[0] ? (
                   <Image src={getChampIcon(sortedMostPlayed[0].championName)} alt={sortedMostPlayed[0].championName} fill className="object-cover rounded-xl" />
                 ) : (
@@ -360,7 +360,7 @@ export default function PlayerStatsPage({ params }: PageProps) {
                 </div>
                 <div className="bg-black/5 px-4 py-2 rounded-2xl border border-black/10 text-center">
                   <div className="text-[10px] text-gray-400 font-bold mb-1 uppercase tracking-wider">サブ希望</div>
-                  <div className="font-bold text-gray-300 text-sm">{player.sub_lane || '-'}</div>
+                  <div className="font-bold text-stone-700 text-sm">{player.sub_lane || '-'}</div>
                 </div>
                 <div className="bg-orange-500/10 px-4 py-2 rounded-2xl border border-orange-500/20 text-center">
                   <div className="text-[10px] text-orange-600 font-bold mb-1 uppercase tracking-wider">不運度 PITY</div>
@@ -722,7 +722,7 @@ export default function PlayerStatsPage({ params }: PageProps) {
 
                         {/* KDA */}
                         <div className="text-center px-4 border-l border-r border-black/10 min-w-[110px] shrink-0">
-                          <div className="text-xs font-mono text-gray-300 font-bold mb-0.5 tracking-wide">
+                          <div className="text-xs font-mono text-stone-700 font-bold mb-0.5 tracking-wide">
                             {h.kills} / <span className="text-red-600">{h.deaths}</span> / {h.assists}
                           </div>
                           <div className={`text-[9px] font-mono font-black ${getKdaColor(gameKda)}`}>

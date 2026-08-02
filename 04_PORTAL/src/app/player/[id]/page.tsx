@@ -756,7 +756,7 @@ export default function PlayerMyPage() {
                               {matchupExtremes.best.map((m: any) => (
                                 <div key={m.opponentChampion} className="flex items-center gap-2 text-xs">
                                   <Image src={getChampIcon(m.opponentChampion)} alt={m.opponentChampion} width={24} height={24} className="w-6 h-6 rounded-full border border-black/10" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                                  <span className="text-gray-200 truncate flex-1">{m.opponentChampion}</span>
+                                  <span className="text-stone-800 truncate flex-1">{m.opponentChampion}</span>
                                   <span className="text-emerald-600 font-bold">{m.winRate}%</span>
                                   <span className="text-[10px] text-gray-600">({m.games})</span>
                                 </div>
@@ -769,7 +769,7 @@ export default function PlayerMyPage() {
                               {matchupExtremes.worst.map((m: any) => (
                                 <div key={m.opponentChampion} className="flex items-center gap-2 text-xs">
                                   <Image src={getChampIcon(m.opponentChampion)} alt={m.opponentChampion} width={24} height={24} className="w-6 h-6 rounded-full border border-black/10" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                                  <span className="text-gray-200 truncate flex-1">{m.opponentChampion}</span>
+                                  <span className="text-stone-800 truncate flex-1">{m.opponentChampion}</span>
                                   <span className="text-rose-600 font-bold">{m.winRate}%</span>
                                   <span className="text-[10px] text-gray-600">({m.games})</span>
                                 </div>
@@ -802,7 +802,7 @@ export default function PlayerMyPage() {
                                     (e.target as HTMLImageElement).src = "https://ddragon.leagueoflegends.com/cdn/14.24.1/img/profileicon/29.png";
                                   }}
                                 />
-                                <span className="w-24 truncate font-bold text-gray-200">{c.name}</span>
+                                <span className="w-24 truncate font-bold text-stone-800">{c.name}</span>
                                 <div className="flex-1 h-2 bg-black/5 rounded-full overflow-hidden">
                                   <div className={`h-full ${c.winRate >= 50 ? 'bg-emerald-500/70' : 'bg-rose-500/60'}`} style={{ width: `${Math.min(100, c.games * 10)}%` }} />
                                 </div>
@@ -1291,7 +1291,7 @@ export default function PlayerMyPage() {
                                 <div className="p-1.5 bg-black/5 rounded-lg">
                                   {roleIcons[role]}
                                 </div>
-                                <span className="font-black text-lg tracking-wider text-gray-200">{role}</span>
+                                <span className="font-black text-lg tracking-wider text-stone-800">{role}</span>
                               </div>
                               <span className="text-[10px] text-cyan-700 font-bold bg-cyan-100 border border-cyan-200 px-2 py-0.5 rounded-full">
                                 MMR {player[`mmr_${role.toLowerCase()}`] || 1000}
@@ -1381,7 +1381,7 @@ export default function PlayerMyPage() {
                         {chemistry.length > 0 ? (
                           chemistry.slice(0, 5).map((c, idx) => (
                             <div key={idx} className="flex justify-between items-center bg-black/5 p-3.5 rounded-2xl border border-black/10 hover:border-black/10 transition-colors">
-                              <span className="font-bold text-gray-200 text-sm">{c.name}</span>
+                              <span className="font-bold text-stone-800 text-sm">{c.name}</span>
                               <div className="text-right">
                                 <span className="text-emerald-600 font-black text-sm">{c.winRate}%</span>
                                 <span className="text-[10px] text-gray-500 block font-medium mt-0.5">{c.wins}勝 - {c.games - c.wins}敗</span>
@@ -1406,7 +1406,7 @@ export default function PlayerMyPage() {
                         {challengingTeammates.length > 0 ? (
                           challengingTeammates.map((c, idx) => (
                             <div key={idx} className="flex justify-between items-center bg-black/5 p-3.5 rounded-2xl border border-black/10 hover:border-black/10 transition-colors">
-                              <span className="font-bold text-gray-200 text-sm">{c.name}</span>
+                              <span className="font-bold text-stone-800 text-sm">{c.name}</span>
                               <div className="text-right">
                                 <span className="text-amber-600 font-black text-sm">{c.winRate}%</span>
                                 <span className="text-[10px] text-gray-500 block font-medium mt-0.5">{c.wins}勝 - {c.games - c.wins}敗</span>
@@ -1545,7 +1545,7 @@ export default function PlayerMyPage() {
                         <div className="flex items-center gap-8 mt-4 sm:mt-0 w-full sm:w-auto justify-between sm:justify-end">
                           <div className="text-center sm:text-left">
                             <div className="text-[9px] text-gray-500 font-black uppercase tracking-wider mb-1">K / D / A</div>
-                            <div className="font-bold text-sm text-gray-200">
+                            <div className="font-bold text-sm text-stone-800">
                               <span>{match.kills}</span>
                               <span className="text-gray-600 mx-1">/</span>
                               <span className="text-rose-600">{match.deaths}</span>

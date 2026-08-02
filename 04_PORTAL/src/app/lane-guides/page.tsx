@@ -23,7 +23,7 @@ export default function LaneGuidesPage() {
   }, []);
 
   if (!data) {
-    return <div className="min-h-screen bg-gray-950 flex items-center justify-center"><Spinner label="読み込み中..." /></div>;
+    return <div className="min-h-screen bg-background flex items-center justify-center"><Spinner label="読み込み中..." /></div>;
   }
 
   const guides = data.guides || [];

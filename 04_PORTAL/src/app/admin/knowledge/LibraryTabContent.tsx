@@ -933,7 +933,7 @@ export function LibraryTabContentInner() {
             className={`px-3 sm:px-4 py-2.5 rounded-2xl text-xs font-bold transition-all border flex-1 sm:flex-none text-center ${
               showMoved
                 ? 'bg-amber-500 text-black border-amber-400'
-                : 'glass-panel glass-panel-hover text-amber-300 border-transparent'
+                : 'glass-panel glass-panel-hover text-amber-700 border-transparent'
             }`}
           >
             🗄️ {showMoved ? 'ライブラリに戻る' : `移動済み${movedCount > 0 ? ` (${movedCount})` : ''}`}
@@ -961,7 +961,7 @@ export function LibraryTabContentInner() {
               : "全チャンプ辞典に一括同期"}
           </button>
           {syncingAll && syncProgress && syncProgress.total > 0 && (
-            <div className="w-full basis-full h-1.5 bg-white/5 rounded-full overflow-hidden mt-1">
+            <div className="w-full basis-full h-1.5 bg-black/5 rounded-full overflow-hidden mt-1">
               <div
                 className="h-full bg-gradient-to-r from-pink-500 to-indigo-500 transition-all duration-300"
                 style={{ width: `${Math.min(100, Math.round((syncProgress.processed / syncProgress.total) * 100))}%` }}
@@ -988,7 +988,7 @@ export function LibraryTabContentInner() {
             const isCollapsed = collapsedGroups[groupName] === undefined ? false : collapsedGroups[groupName];
             return (
               <div key={groupName} className="glass-panel rounded-2xl overflow-hidden group">
-                <button onClick={() => toggleGroup(groupName)} className="w-full flex items-center gap-3 p-4 sm:p-5 bg-white/[0.02] hover:bg-white/[0.05] transition-colors text-left border-b border-white/5 flex-wrap sm:flex-nowrap">
+                <button onClick={() => toggleGroup(groupName)} className="w-full flex items-center gap-3 p-4 sm:p-5 bg-black/2 hover:bg-black/5 transition-colors text-left border-b border-black/10 flex-wrap sm:flex-nowrap">
                   <span className="text-violet-700 transition-transform duration-300 shrink-0" style={{ transform: isCollapsed ? 'rotate(-90deg)' : 'rotate(0)' }}><ChevronDown size={20} /></span>
                   <span className="bg-violet-100 text-violet-700 border border-violet-300 px-3 sm:px-4 py-1.5 rounded-lg font-black font-mono tracking-wider shadow-[0_0_10px_rgba(167,139,250,0.1)] text-xs sm:text-sm break-all">{groupName}</span>
                   <span className="text-gray-500 text-xs sm:text-sm font-bold ml-auto sm:ml-0">({items.length} 記事)</span>
@@ -1010,27 +1010,27 @@ export function LibraryTabContentInner() {
                             {/* 記事ヘッダー（クリックでアコーディオン展開） */}
                             <div
                               onClick={() => setExpandedId(isExpanded ? null : article.id)}
-                              className="p-4 sm:p-5 hover:bg-white/[0.03] cursor-pointer flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 group/item"
+                              className="p-4 sm:p-5 hover:bg-black/2 cursor-pointer flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 group/item"
                             >
                               <div className="flex flex-col gap-2 min-w-0 flex-1">
                                 <div className="flex items-start sm:items-center gap-2">
                                   <span className={`text-violet-700 transition-transform duration-300 shrink-0 mt-0.5 sm:mt-0 ${isExpanded ? 'rotate-90' : 'rotate-0'}`}>
                                     <ChevronDown size={16} />
                                   </span>
-                                  <h3 className={`font-bold transition-colors flex items-start sm:items-center gap-2 min-w-0 text-sm sm:text-base ${isExpanded ? 'text-violet-700' : 'text-gray-200 group-hover/item:text-violet-700'}`}>
-                                    {favoriteArticles.includes(article.id) && <StarIcon size={14} className="text-amber-400 shrink-0 mt-0.5 sm:mt-0" fill="currentColor" />}
+                                  <h3 className={`font-bold transition-colors flex items-start sm:items-center gap-2 min-w-0 text-sm sm:text-base ${isExpanded ? 'text-violet-700' : 'text-stone-800 group-hover/item:text-violet-700'}`}>
+                                    {favoriteArticles.includes(article.id) && <StarIcon size={14} className="text-amber-600 shrink-0 mt-0.5 sm:mt-0" fill="currentColor" />}
                                     <span className="break-all">{article.title ? article.title.replace(/_/g, ' ') : ''}</span>
                                   </h3>
                                 </div>
                                 <div className="flex gap-1.5 flex-wrap pl-6">
                                   {article.tags && Array.isArray(article.tags) && article.tags.map((kw: string, kidx: number) => (
-                                    <span key={kidx} className="text-[10px] text-gray-400 bg-black/40 border border-white/5 px-2 py-0.5 rounded-md break-all">{kw}</span>
+                                    <span key={kidx} className="text-[10px] text-stone-500 bg-black/5 border border-black/10 px-2 py-0.5 rounded-md break-all">{kw}</span>
                                   ))}
                                 </div>
                               </div>
-                              <div className="flex items-center justify-between sm:justify-end gap-4 pl-6 sm:pl-0 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-white/5">
+                              <div className="flex items-center justify-between sm:justify-end gap-4 pl-6 sm:pl-0 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-black/10">
                                 <div className="text-xs text-gray-500 font-mono flex items-center gap-2"><Clock size={14} className="text-violet-700/50" /> {isMounted && article.created_at ? new Date(article.created_at).toLocaleDateString('ja-JP') : '日付不明'}</div>
-                                <button onClick={(e) => deleteArticle(article.id, e)} className="text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition-all p-2 rounded-lg" title="削除"><Trash2 size={16} /></button>
+                                <button onClick={(e) => deleteArticle(article.id, e)} className="text-stone-500 hover:text-red-600 hover:bg-red-100 transition-all p-2 rounded-lg" title="削除"><Trash2 size={16} /></button>
                               </div>
                             </div>
                             {/* アコーディオン展開エリア（プレビュー + 操作ボタン） */}
@@ -1041,7 +1041,7 @@ export function LibraryTabContentInner() {
                               {isExpanded && (
                                 <div className="px-3 sm:px-5 pb-5 ml-2 sm:ml-6 border-l-2 border-violet-200">
                                   {/* Markdownプレビュー */}
-                                  <div className="prose prose-invert prose-purple prose-sm max-w-none max-h-[400px] overflow-y-auto p-4 bg-black/30 border border-white/5 rounded-xl text-sm leading-relaxed mb-4 scrollbar-thin">
+                                  <div className="prose prose-purple prose-sm max-w-none max-h-[400px] overflow-y-auto p-4 bg-black/5 border border-black/10 rounded-xl text-sm leading-relaxed mb-4 scrollbar-thin">
                                     {typeof (article.raw_content || article.content) === 'string' ? (
                                       <ReactMarkdown remarkPlugins={[remarkGfm]}>{article.raw_content || article.content}</ReactMarkdown>
                                   ) : (
@@ -1091,8 +1091,8 @@ export function LibraryTabContentInner() {
                                     }}
                                     className={`px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-all border ${
                                       favoriteArticles.includes(article.id)
-                                        ? 'bg-amber-400/20 border-amber-400 text-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.2)]'
-                                        : 'glass-panel text-gray-400 hover:text-white border-transparent'
+                                        ? 'bg-amber-100 border-amber-300 text-amber-700'
+                                        : 'glass-panel text-stone-500 hover:text-stone-900 border-transparent'
                                     }`}
                                   >
                                     <StarIcon size={14} fill={favoriteArticles.includes(article.id) ? "currentColor" : "none"} />
@@ -1128,7 +1128,7 @@ export function LibraryTabContentInner() {
           <div className="w-16 h-16 bg-violet-100 rounded-full flex items-center justify-center mb-4">
             <Book size={32} className="text-violet-700" />
           </div>
-          <h3 className="text-xl font-bold text-white mb-2">{search ? `「${search}」に一致する記事なし` : 'まだ記事がありません'}</h3>
+          <h3 className="text-xl font-bold text-stone-900 mb-2">{search ? `「${search}」に一致する記事なし` : 'まだ記事がありません'}</h3>
         </div>
       )}
       {/* トースト通知 */}
@@ -1136,7 +1136,7 @@ export function LibraryTabContentInner() {
         <div className="fixed bottom-6 right-6 z-50 animate-fade-in-up">
           <div className={`glass-panel p-4 rounded-2xl border flex items-center gap-3 shadow-[0_10px_30px_rgba(0,0,0,0.5)] ${
             toast.type === 'success' ? 'border-cyan-300 text-cyan-600 bg-cyan-100' :
-            toast.type === 'error' ? 'border-red-500/50 text-red-400 bg-red-500/10' : 'border-violet-400 text-violet-700 bg-violet-100'
+            toast.type === 'error' ? 'border-red-300 text-red-700 bg-red-100' : 'border-violet-400 text-violet-700 bg-violet-100'
           }`}>
             <span className="font-bold text-sm">{toast.message}</span>
           </div>
