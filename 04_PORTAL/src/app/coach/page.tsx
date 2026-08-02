@@ -5,7 +5,7 @@ import { apiJson } from '../../lib/apiClient';
 import ScoutTab from './ScoutTab';
 import PushOptIn from '../../components/PushOptIn';
 import FiveVFiveSimTab from './FiveVFiveSimTab';
-import MatchupMemoTab from './MatchupMemoTab';
+import SoloQReflectionModal from './SoloQReflectionModal';
 
 // ============================
 // 型定義
@@ -209,95 +209,118 @@ function PreGameTab({ champion, enemyChampion, triggerSignal }: { champion: stri
 }
 
 // ============================
-// タブ: 試合後振り返り
+// タブ: 試合後振り返り (過去数戦のログ表示対応)
 // ============================
-function PostGameTab() {
+function PostGameTab({ onOpenReflectionModal }: { onOpenReflectionModal: () => void }) {
+  const [reflections, setReflections] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [result, setResult] = useState<any>(null);
-  const [error, setError] = useState('');
 
-  // 振り返りは日次Cronが新しいランクソロ試合ごとに自動生成するようになったため、
-  // ここでは手動で分析し直すボタンは持たず、最後に自動生成された結果をそのまま表示する。
+  const fetchReflections = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/soloq/reflections');
+      const data = await res.json();
+      setReflections(data.reflections || (data.reflection ? [data.reflection] : []));
+    } catch {
+      setReflections([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    (async () => {
-      setLoading(true); setError('');
-      try {
-        const data = await callCoachAPI({ mode: 'post_latest' });
-        setResult(data);
-      } catch (e: any) { setError(e.message); }
-      finally { setLoading(false); }
-    })();
+    fetchReflections();
   }, []);
-
-  const r: PostResult | null = result?.result ?? null;
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-foreground/50">
-        ランクソロの新しい試合が終わるたびに自動で振り返りを生成します（日次Cron）。ここには最後に生成された結果が表示されます。
-      </p>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-amber-50/80 border border-amber-200 rounded-xl p-4">
+        <div>
+          <h4 className="font-bold text-amber-900 text-sm flex items-center gap-1.5">
+            <span>⚡</span> 1分ソロQ振り返り
+          </h4>
+          <p className="text-xs text-stone-600 mt-0.5">
+            試合終了直後に Riot API から直近の戦績を自動読込し、メンタル度・勝因敗因・対面メモ・次回テーマを1〜2分で一括記録します。
+          </p>
+        </div>
+        <button
+          onClick={onOpenReflectionModal}
+          className="shrink-0 px-4 py-2.5 bg-amber-700 hover:bg-amber-800 text-white font-bold text-xs rounded-lg shadow transition-colors flex items-center gap-1"
+        >
+          <span>📝</span> 振り返りを記録する
+        </button>
+      </div>
 
       {loading && <Spinner />}
-      {error && <p className="text-sm text-red-600">❌ {error}</p>}
 
-      {!loading && result && result.found === false && (
-        <p className="text-sm text-foreground/40">まだ振り返りデータがありません。ランクソロの試合が完了すると翌日の自動巡回で生成されます。</p>
+      {!loading && reflections.length === 0 && (
+        <p className="text-xs text-stone-500 text-center py-4">まだ振り返り記録がありません。上記のボタンから最初の振り返りを記録してみましょう！</p>
       )}
 
-      {result && r && (
+      {!loading && reflections.length > 0 && (
         <div className="space-y-3 animate-in fade-in">
-          {result.createdAt && (
-            <p className="text-xs text-foreground/30">最終更新: {new Date(result.createdAt).toLocaleString('ja-JP')}</p>
-          )}
-          <Card>
-            <div className="mb-3 flex items-center gap-3">
-              <span className="text-2xl">{r.win ? '✅' : '❌'}</span>
-              <div>
-                <div className="font-bold text-stone-900">{r.champion}</div>
-              </div>
-              <Tag color={r.win ? 'green' : 'red'}>{r.win ? '勝利' : '敗北'}</Tag>
-            </div>
+          <div className="flex items-center justify-between">
+            <h5 className="text-xs font-bold text-foreground/60 uppercase tracking-wider">過去のソロQ振り返り履歴 ({reflections.length}件)</h5>
+          </div>
 
-            <div className="grid grid-cols-3 gap-3 text-center">
-              {[
-                { label: 'KDA', value: r.kda, sub: `× ${r.kdaRatio}` },
-                { label: 'CS/min', value: r.csPerMin, sub: 'レーン別基準' },
-                { label: 'Vision/m', value: r.visionPerMin, sub: 'レーン別基準' },
-              ].map(({ label, value, sub }) => (
-                <div key={label} className="rounded-lg bg-black/5 p-2">
-                  <div className="text-xs text-foreground/40">{label}</div>
-                  <div className="font-bold text-stone-900">{value}</div>
-                  <div className="text-xs text-foreground/50">{sub}</div>
+          <div className="space-y-3 max-h-[500px] overflow-y-auto pr-1">
+            {reflections.map((ref, idx) => (
+              <Card key={ref.id || idx} className={idx === 0 ? 'ring-2 ring-amber-500/30' : ''}>
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-black/5 pb-2.5 mb-2.5">
+                  <div className="flex items-center gap-2">
+                    <Tag color={ref.win ? 'green' : 'red'}>{ref.win ? 'VICTORY' : 'DEFEAT'}</Tag>
+                    <span className="font-bold text-stone-900 text-sm">{ref.champion}</span>
+                    <span className="text-xs text-stone-400">vs</span>
+                    <span className="font-bold text-stone-700 text-sm">{ref.enemy_champion || 'Unknown'}</span>
+                    {idx === 0 && <span className="text-[10px] bg-amber-600 text-white font-bold px-1.5 py-0.5 rounded">最新</span>}
+                  </div>
+                  <div className="text-xs text-stone-500">
+                    {new Date(ref.created_at).toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                  </div>
                 </div>
-              ))}
-            </div>
 
-            {result.weaknesses?.length > 0 && (
-              <div className="mt-3">
-                <div className="mb-1 text-xs font-semibold text-orange-700">⚠️ 改善ポイント</div>
-                <div className="flex flex-col gap-1">
-                  {result.weaknesses.map((w: string, i: number) => (
-                    <span key={i} className="text-xs text-yellow-700">・{w}</span>
-                  ))}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-xs mb-3">
+                  <div className="bg-black/5 rounded-lg p-2">
+                    <div className="text-foreground/40">KDA</div>
+                    <div className="font-bold text-stone-800">{ref.kda || '-'}</div>
+                  </div>
+                  <div className="bg-black/5 rounded-lg p-2">
+                    <div className="text-foreground/40">CS</div>
+                    <div className="font-bold text-stone-800">{ref.cs ?? '-'}</div>
+                  </div>
+                  <div className="bg-black/5 rounded-lg p-2">
+                    <div className="text-foreground/40">メンタル評価</div>
+                    <div className="font-bold text-amber-800">{ref.mental_rating ? `${ref.mental_rating} / 5` : '-'}</div>
+                  </div>
+                  <div className="bg-black/5 rounded-lg p-2">
+                    <div className="text-foreground/40">次回テーマ</div>
+                    <div className="font-bold text-emerald-800 truncate">{ref.next_focus_point || '未設定'}</div>
+                  </div>
                 </div>
-              </div>
-            )}
-          </Card>
 
-          {result.focus && (
-            <div className={`rounded-xl border px-4 py-3 text-sm ${
-              result.focusAchieved === true ? 'border-emerald-200 bg-emerald-100 text-emerald-700'
-              : result.focusAchieved === false ? 'border-rose-200 bg-rose-100 text-rose-700'
-              : 'border-black/10 bg-black/5 text-foreground/70'
-            }`}>
-              <span className="font-semibold">
-                {result.focusAchieved === true ? '✅ 今日の焦点: 達成' : result.focusAchieved === false ? '❌ 今日の焦点: 未達成' : '🎯 今日の焦点'}
-              </span>
-              <span className="block text-xs mt-0.5 opacity-80">{result.focus}</span>
-            </div>
-          )}
+                {ref.win_lose_reason_tags && ref.win_lose_reason_tags.length > 0 && (
+                  <div className="mb-2 flex flex-wrap gap-1">
+                    {ref.win_lose_reason_tags.map((t: string, i: number) => (
+                      <Tag key={i} color="blue">{t}</Tag>
+                    ))}
+                  </div>
+                )}
 
-          <AdviceBox text={result.advice} />
+                {ref.reflection_note && (
+                  <div className="mt-2 text-xs bg-white/60 rounded border border-black/5 p-2 text-stone-700">
+                    <span className="font-bold text-stone-900 block mb-0.5">💬 反省メモ:</span>
+                    {ref.reflection_note}
+                  </div>
+                )}
+                {ref.matchup_memo && (
+                  <div className="mt-2 text-xs bg-amber-50/80 rounded border border-amber-200/60 p-2 text-stone-800">
+                    <span className="font-bold text-amber-900 block mb-0.5">🎯 対面メモ (matchup_sentinel同期済み):</span>
+                    {ref.matchup_memo}
+                  </div>
+                )}
+              </Card>
+            ))}
+          </div>
         </div>
       )}
     </div>
@@ -814,6 +837,20 @@ function MatchupTab({ champion, enemyChampion, triggerSignal }: { champion: stri
 // ============================
 export default function CoachPage() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [isReflectionModalOpen, setIsReflectionModalOpen] = useState(false);
+  const [lastFocusPoint, setLastFocusPoint] = useState<string | null>(null);
+
+  const fetchLastReflection = async () => {
+    try {
+      const res = await fetch('/api/soloq/reflections');
+      const data = await res.json();
+      if (data.reflection?.next_focus_point) {
+        setLastFocusPoint(data.reflection.next_focus_point);
+      }
+    } catch (err) {
+      console.error('Failed to fetch last reflection focus point:', err);
+    }
+  };
 
   useEffect(() => {
     // HttpOnly Cookie(admin_session)ベースの検証（Discordログイン非依存）
@@ -824,6 +861,8 @@ export default function CoachPage() {
       .catch(() => {
         setIsAuthenticated(false);
       });
+    
+    fetchLastReflection();
   }, []);
 
   // 「事前分析」と「マッチアップ」で同じチャンピオン名を二度入力させていたのを統合。
@@ -852,8 +891,6 @@ export default function CoachPage() {
   // 全セクション常時展開＋余白を詰めたコンパクト表示に変更した。
   const SECTIONS = [
     { id: 'pre', group: 'pregame', groupLabel: '⚡ 試合前', label: '事前分析', content: <PreGameTab champion={sharedChampion} enemyChampion={sharedEnemyChampion} triggerSignal={dailyCheckTrigger} /> },
-    // 「マッチアップ」は独立タブを廃止。偵察でライブゲームの自分・対面チャンピオンが
-    // 判明した瞬間に自動で分析するようにし、結果は偵察セクション内に表示する(#①)。
     {
       id: 'scout', group: 'pregame', groupLabel: '⚡ 試合前', label: '🧭 偵察',
       content: (
@@ -869,25 +906,13 @@ export default function CoachPage() {
       ),
     },
     { id: 'sim5v5', group: 'pregame', groupLabel: '⚡ 試合前', label: '🎮 5v5シミュレータ', content: <FiveVFiveSimTab /> },
-    { id: 'post', group: 'postgame', groupLabel: '🔍 試合後', label: '振り返り', content: <PostGameTab /> },
-    { id: 'trends', group: 'postgame', groupLabel: '🔍 試合後', label: '📈 傾向', content: <TrendsTab /> },
-    { id: 'matchup-memo', group: 'postgame', groupLabel: '🔍 試合後', label: '📝 対面メモ', content: <MatchupMemoTab /> },
-    { id: 'goal', group: 'mental', groupLabel: '🎯 メンタル', label: '目標', content: <GoalTab triggerSignal={dailyCheckTrigger} /> },
-    { id: 'tilt', group: 'mental', groupLabel: '🎯 メンタル', label: '🧠 ティルト', content: <TiltTab triggerSignal={dailyCheckTrigger} /> },
+    { id: 'post', group: 'postgame', groupLabel: '🔍 試合後', label: '⚡ 1分ソロQ振り返り ＆ 実績', content: <PostGameTab onOpenReflectionModal={() => setIsReflectionModalOpen(true)} /> },
+    { id: 'trends', group: 'postgame', groupLabel: '🔍 試合後', label: '📈 傾向分析', content: <TrendsTab /> },
+    { id: 'goal', group: 'postgame', groupLabel: '🔍 試合後', label: '🎯 目標管理', content: <GoalTab triggerSignal={dailyCheckTrigger} /> },
+    { id: 'tilt', group: 'postgame', groupLabel: '🔍 試合後', label: '🧠 ティルト判定', content: <TiltTab triggerSignal={dailyCheckTrigger} /> },
   ] as const;
 
-  // 辞典側から `?champion=X&enemy=Y` で対面メモの編集リンクを踏んできた場合、
-  // 全セクション常時展開になったので開閉の代わりに「対面メモ」までスクロールする
-  // （旧: 辞典の「対面」タブへの直リンク）。
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('champion') || params.get('enemy') || params.get('tab') === 'matchup-memo') {
-      document.getElementById('section-matchup-memo')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  }, []);
-
-  const groupOrder = ['pregame', 'postgame', 'mental'] as const;
+  const groupOrder = ['pregame', 'postgame'] as const;
 
   if (isAuthenticated === null) {
     return (
@@ -938,9 +963,25 @@ export default function CoachPage() {
           <p className="mt-1 text-sm text-foreground/40">
             Riot API × ナレッジDB × Gemini AI があなたの勝率を上げる
           </p>
-          <div className="mt-3">
+          <div className="mt-3 flex items-center justify-center gap-3">
             <PushOptIn scope="admin" label="ポータル通知" inline />
+            <button
+              onClick={() => setIsReflectionModalOpen(true)}
+              className="px-4 py-2 bg-gradient-to-r from-amber-700 to-amber-800 hover:from-amber-800 hover:to-amber-900 text-white font-bold text-xs rounded-xl shadow-md transition-all hover:scale-105 flex items-center gap-1.5"
+            >
+              <span>⚡</span> 1分ソロQ振り返り
+            </button>
           </div>
+
+          {lastFocusPoint && (
+            <div className="mt-4 mx-auto max-w-md bg-amber-50 border border-amber-300 rounded-xl p-3 text-left shadow-sm flex items-start gap-2.5">
+              <span className="text-base">🔥</span>
+              <div>
+                <span className="text-[11px] font-bold text-amber-900 block">前回の試合で設定した意識テーマ</span>
+                <p className="text-xs text-stone-800 font-medium leading-relaxed">{lastFocusPoint}</p>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* 共通入力欄: 事前分析とマッチアップで別々に入力させていたのを統合 */}
@@ -1002,6 +1043,12 @@ export default function CoachPage() {
           生成結果はナレッジDBに蓄積され、次回の精度向上に活用されます
         </div>
       </div>
+
+      <SoloQReflectionModal
+        isOpen={isReflectionModalOpen}
+        onClose={() => setIsReflectionModalOpen(false)}
+        onSaved={fetchLastReflection}
+      />
     </div>
   );
 }
