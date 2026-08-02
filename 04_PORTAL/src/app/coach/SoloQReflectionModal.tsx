@@ -1,6 +1,17 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+
+interface MatchInfo {
+  matchId: string;
+  champion: string;
+  enemyChampion: string;
+  win: boolean;
+  kda: string;
+  cs: number;
+  gameDuration: number;
+  lane: string;
+}
 
 interface SoloQReflectionModalProps {
   isOpen: boolean;
@@ -8,36 +19,37 @@ interface SoloQReflectionModalProps {
   onSaved?: () => void;
 }
 
-const PRESET_TAGS = [
+// 勝敗に合わせたプリセットタグ
+const WIN_TAGS = [
   'CSアドバンテージ',
   '視界コントロール',
-  'レーンソロキル',
   '集団戦のフォーカス',
   'オブジェクト関与',
-  'レーン戦ミス',
+  'レーンソロキル',
+  'マクロ判断が成功',
+  'カウンタービルド',
+];
+
+const LOSE_TAGS = [
+  'レーン戦のミス',
   '無理なローム',
+  '視界管理不足',
   'ティルト・集中力低下',
-  'ビルド選択',
-  'マップ警戒不足',
+  '連戦疲労',
+  'キャッチされた',
+  '集団戦のフォーカスミス',
 ];
 
 export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQReflectionModalProps) {
   const [ign, setIgn] = useState('');
-  const [loadingMatch, setLoadingMatch] = useState(false);
+  const [loadingMatches, setLoadingMatches] = useState(false);
   const [matchError, setMatchError] = useState('');
   
-  // Match stats
-  const [matchData, setMatchData] = useState<{
-    matchId: string;
-    champion: string;
-    enemyChampion: string;
-    win: boolean;
-    kda: string;
-    cs: number;
-    gameDuration: number;
-  } | null>(null);
+  // マッチ一覧と選択インデックス
+  const [matches, setMatches] = useState<MatchInfo[]>([]);
+  const [selectedIndex, setSelectedIndex] = useState<number>(0);
 
-  // Form states
+  // フォーム状態
   const [mentalRating, setMentalRating] = useState<number>(3);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [reflectionNote, setReflectionNote] = useState('');
@@ -47,33 +59,61 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
 
+  // 1. 初回マウント時・モーダルオープン時に localStorage から Riot ID を自動ロード
+  useEffect(() => {
+    if (isOpen) {
+      const savedIgn = localStorage.getItem('soloq_riot_id') || '';
+      if (savedIgn) {
+        setIgn(savedIgn);
+        fetchMatches(savedIgn);
+      }
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
-  const handleFetchLatest = async () => {
-    if (!ign || !ign.includes('#')) {
+  const fetchMatches = async (targetIgn: string) => {
+    if (!targetIgn || !targetIgn.includes('#')) {
       setMatchError('Riot ID (例: 名前#JP1) を正しく入力してください。');
       return;
     }
-    setLoadingMatch(true);
+
+    setLoadingMatches(true);
     setMatchError('');
 
     try {
-      const res = await fetch('/api/soloq/latest', {
+      // localStorage に記憶
+      localStorage.setItem('soloq_riot_id', targetIgn);
+
+      const res = await fetch('/api/soloq/recent-matches', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ign }),
+        body: JSON.stringify({ ign: targetIgn }),
       });
       const data = await res.json();
+
       if (!res.ok) {
-        throw new Error(data.error || '試合データの取得に失敗しました。');
+        throw new Error(data.error || '直近試合データの取得に失敗しました。');
       }
-      setMatchData(data);
+
+      setMatches(data.matches || []);
+      setSelectedIndex(0);
+      setSelectedTags([]); // マッチ切替時タグ初期化
     } catch (err: any) {
       setMatchError(err.message);
     } finally {
-      setLoadingMatch(false);
+      setLoadingMatches(false);
     }
   };
+
+  const handleManualFetch = (e: React.FormEvent) => {
+    e.preventDefault();
+    fetchMatches(ign);
+  };
+
+  const currentMatch = matches[selectedIndex] || null;
+  const isWin = currentMatch ? currentMatch.win : true;
+  const availableTags = isWin ? WIN_TAGS : LOSE_TAGS;
 
   const toggleTag = (tag: string) => {
     if (selectedTags.includes(tag)) {
@@ -85,17 +125,22 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!currentMatch) {
+      alert('振り返る対象の試合データを選択してください。');
+      return;
+    }
+
     setSaving(true);
 
     try {
       const payload = {
-        matchId: matchData?.matchId || null,
-        champion: matchData?.champion || 'Unknown',
-        enemyChampion: matchData?.enemyChampion || 'Unknown',
-        win: matchData ? matchData.win : true,
-        kda: matchData?.kda || '',
-        cs: matchData?.cs || 0,
-        gameDuration: matchData?.gameDuration || 0,
+        matchId: currentMatch.matchId,
+        champion: currentMatch.champion,
+        enemyChampion: currentMatch.enemyChampion,
+        win: currentMatch.win,
+        kda: currentMatch.kda,
+        cs: currentMatch.cs,
+        gameDuration: currentMatch.gameDuration,
         mentalRating,
         winLoseReasonTags: selectedTags,
         reflectionNote,
@@ -130,77 +175,109 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/60 backdrop-blur-sm p-4 overflow-y-auto">
-      <div className="bg-stone-50 border border-stone-300 rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden my-8">
+      <div className="bg-stone-50 border border-stone-300 rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden my-6">
         {/* Header */}
-        <div className="bg-amber-900/90 text-amber-50 px-6 py-4 flex items-center justify-between">
+        <div className="bg-amber-900 text-amber-50 px-6 py-3.5 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-xl">⚡</span>
             <h2 className="text-lg font-bold">1分ソロQ振り返り</h2>
           </div>
           <button
             onClick={onClose}
-            className="text-amber-200 hover:text-white text-xl font-bold px-2 py-0.5 rounded hover:bg-amber-800/50 transition-colors"
+            className="text-amber-200 hover:text-white text-xl font-bold px-2 py-0.5 rounded hover:bg-amber-800 transition-colors"
           >
             ✕
           </button>
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-6 text-stone-800 text-sm max-h-[80vh] overflow-y-auto">
+        <form onSubmit={handleSubmit} className="p-5 space-y-5 text-stone-800 text-sm max-h-[82vh] overflow-y-auto">
           {saveSuccess && (
-            <div className="p-4 rounded-lg bg-emerald-100 border border-emerald-300 text-emerald-800 font-medium flex items-center gap-2 animate-fade-in">
+            <div className="p-3.5 rounded-lg bg-emerald-100 border border-emerald-300 text-emerald-800 font-medium flex items-center gap-2 animate-fade-in">
               <span>✅</span> 振り返りを保存し、対面メモを更新しました！
             </div>
           )}
 
-          {/* 1. Riot API 連携 */}
+          {/* 1. Riot ID 設定 & 直近5試合選択 */}
           <div className="bg-white border border-stone-200 rounded-lg p-4 space-y-3 shadow-sm">
-            <label className="font-bold text-stone-700 block">1. 直近の試合データを取得 (Riot API)</label>
+            <div className="flex items-center justify-between">
+              <label className="font-bold text-stone-800 text-xs flex items-center gap-1">
+                <span>🎯</span> 1. 振り返る試合を選択 (直近5試合)
+              </label>
+              <span className="text-[11px] text-amber-700 font-medium">※ IDは自動記憶されます</span>
+            </div>
+
+            {/* ID入力欄 */}
             <div className="flex gap-2">
               <input
                 type="text"
                 placeholder="Riot ID (例: 名前#JP1)"
                 value={ign}
                 onChange={(e) => setIgn(e.target.value)}
-                className="flex-1 px-3 py-2 border border-stone-300 rounded-md bg-stone-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/50 text-stone-900 placeholder:text-stone-400"
+                className="flex-1 px-3 py-1.5 border border-stone-300 rounded-md bg-stone-50 text-xs text-stone-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-amber-500"
               />
               <button
                 type="button"
-                onClick={handleFetchLatest}
-                disabled={loadingMatch}
-                className="px-4 py-2 bg-amber-700 hover:bg-amber-800 text-white font-medium rounded-md shadow transition-colors disabled:opacity-50"
+                onClick={handleManualFetch}
+                disabled={loadingMatches}
+                className="px-3.5 py-1.5 bg-amber-700 hover:bg-amber-800 text-white font-bold text-xs rounded shadow transition-colors disabled:opacity-50"
               >
-                {loadingMatch ? '取得中...' : '自動ロード'}
+                {loadingMatches ? '更新中...' : '試合再取得'}
               </button>
             </div>
-            {matchError && <p className="text-xs text-rose-600">{matchError}</p>}
+            {matchError && <p className="text-xs text-rose-600 font-medium">{matchError}</p>}
 
-            {matchData && (
-              <div className="mt-3 p-3 bg-stone-100 rounded-md border border-stone-200 flex flex-wrap items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <span className={`px-2 py-0.5 text-xs font-bold rounded ${matchData.win ? 'bg-emerald-600 text-white' : 'bg-rose-600 text-white'}`}>
-                    {matchData.win ? 'VICTORY' : 'DEFEAT'}
-                  </span>
-                  <span className="font-bold text-stone-900">{matchData.champion}</span>
-                  <span className="text-stone-500">vs</span>
-                  <span className="font-bold text-stone-700">{matchData.enemyChampion}</span>
-                </div>
-                <div className="text-xs text-stone-600 flex items-center gap-3">
-                  <span>KDA: <strong className="text-stone-800">{matchData.kda}</strong></span>
-                  <span>CS: <strong className="text-stone-800">{matchData.cs}</strong></span>
-                </div>
+            {/* 直近5試合の選択カード */}
+            {loadingMatches ? (
+              <div className="py-6 text-center text-xs text-stone-500 flex items-center justify-center gap-2">
+                <div className="w-4 h-4 border-2 border-amber-600 border-t-transparent rounded-full animate-spin" />
+                直近のソロQ対戦データを取得中...
               </div>
+            ) : matches.length > 0 ? (
+              <div className="space-y-1.5 mt-2">
+                {matches.map((m, idx) => {
+                  const isSelected = selectedIndex === idx;
+                  return (
+                    <button
+                      type="button"
+                      key={m.matchId || idx}
+                      onClick={() => setSelectedIndex(idx)}
+                      className={`w-full p-2.5 rounded-lg border text-left flex items-center justify-between transition-all ${
+                        isSelected
+                          ? 'border-amber-500 bg-amber-50/90 ring-2 ring-amber-500/40 shadow-sm'
+                          : 'border-stone-200 bg-stone-50 hover:bg-stone-100'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 text-xs">
+                        <span className={`px-2 py-0.5 font-bold text-[10px] rounded ${m.win ? 'bg-emerald-600 text-white' : 'bg-rose-600 text-white'}`}>
+                          {m.win ? 'WIN' : 'LOSE'}
+                        </span>
+                        <span className="font-bold text-stone-900">{m.champion}</span>
+                        <span className="text-stone-400">vs</span>
+                        <span className="font-bold text-stone-700">{m.enemyChampion}</span>
+                      </div>
+                      <div className="text-[11px] text-stone-600 flex items-center gap-3">
+                        <span>KDA: <strong className="text-stone-800">{m.kda}</strong></span>
+                        <span>CS: <strong className="text-stone-800">{m.cs}</strong></span>
+                        {isSelected && <span className="text-amber-800 font-bold text-xs">✓ 選択中</span>}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="text-xs text-stone-400 italic">Riot ID を入力して「試合再取得」を押してください。</p>
             )}
           </div>
 
           {/* 2. メンタル度評価 */}
-          <div className="bg-white border border-stone-200 rounded-lg p-4 space-y-2 shadow-sm">
-            <label className="font-bold text-stone-700 block">2. 集中度・メンタル評価 (1〜5)</label>
+          <div className="bg-white border border-stone-200 rounded-lg p-3.5 space-y-2 shadow-sm">
+            <label className="font-bold text-stone-800 text-xs block">2. 集中度・メンタル評価 (1〜5)</label>
             <div className="grid grid-cols-5 gap-2">
               {[
-                { rating: 1, label: '1 (絶望/ティルト)', color: 'border-rose-300 bg-rose-50 text-rose-800' },
-                { rating: 2, label: '2 (不調/焦り)', color: 'border-orange-300 bg-orange-50 text-orange-800' },
-                { rating: 3, label: '3 (普通)', color: 'border-stone-300 bg-stone-50 text-stone-800' },
+                { rating: 1, label: '1 (絶望/ティルト)', color: 'border-rose-300 bg-rose-50 text-rose-900' },
+                { rating: 2, label: '2 (不調/焦り)', color: 'border-orange-300 bg-orange-50 text-orange-900' },
+                { rating: 3, label: '3 (普通)', color: 'border-stone-300 bg-stone-50 text-stone-900' },
                 { rating: 4, label: '4 (集中)', color: 'border-amber-300 bg-amber-50 text-amber-900' },
                 { rating: 5, label: '5 (ゾーン/好調)', color: 'border-emerald-300 bg-emerald-50 text-emerald-900' },
               ].map((item) => (
@@ -208,7 +285,7 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
                   type="button"
                   key={item.rating}
                   onClick={() => setMentalRating(item.rating)}
-                  className={`py-2 px-1 text-xs font-bold rounded-lg border transition-all text-center ${
+                  className={`py-2 px-1 text-[11px] font-bold rounded-lg border transition-all text-center ${
                     mentalRating === item.rating
                       ? `${item.color} ring-2 ring-amber-500 shadow-sm scale-105`
                       : 'border-stone-200 bg-stone-50 text-stone-600 hover:bg-stone-100'
@@ -220,21 +297,28 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
             </div>
           </div>
 
-          {/* 3. 勝因・敗因タグ & 反省ノート */}
-          <div className="bg-white border border-stone-200 rounded-lg p-4 space-y-3 shadow-sm">
-            <label className="font-bold text-stone-700 block">3. 勝因・敗因タグ ＆ 反省メモ</label>
+          {/* 3. 勝因・敗因ワンタップタグ ＆ 反省メモ */}
+          <div className="bg-white border border-stone-200 rounded-lg p-3.5 space-y-2.5 shadow-sm">
+            <label className="font-bold text-stone-800 text-xs block flex items-center justify-between">
+              <span>3. {isWin ? '🏆 勝因タグ' : '⚠️ 敗因タグ'}（ワンタップ選定）</span>
+              <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${isWin ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}`}>
+                {isWin ? '勝利理由' : '敗北理由'}
+              </span>
+            </label>
             <div className="flex flex-wrap gap-1.5">
-              {PRESET_TAGS.map((tag) => {
+              {availableTags.map((tag) => {
                 const active = selectedTags.includes(tag);
                 return (
                   <button
                     type="button"
                     key={tag}
                     onClick={() => toggleTag(tag)}
-                    className={`px-2.5 py-1 text-xs rounded-full border transition-colors ${
+                    className={`px-2.5 py-1 text-xs rounded-full border transition-all ${
                       active
-                        ? 'bg-amber-600 text-white border-amber-600 font-medium'
-                        : 'bg-stone-100 text-stone-600 border-stone-200 hover:bg-stone-200'
+                        ? isWin
+                          ? 'bg-emerald-700 text-white border-emerald-700 font-bold shadow-sm'
+                          : 'bg-rose-700 text-white border-rose-700 font-bold shadow-sm'
+                        : 'bg-stone-100 text-stone-700 border-stone-200 hover:bg-stone-200'
                     }`}
                   >
                     {active ? '✓ ' : ''}{tag}
@@ -244,43 +328,43 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
             </div>
             <textarea
               rows={2}
-              placeholder="反省メモや勝敗を分けたポイント（任意）"
+              placeholder="反省メモや勝敗を分けたプレイ（例: 14分ドラゴン戦での寄りが遅れた / 相手JGの位置把握）"
               value={reflectionNote}
               onChange={(e) => setReflectionNote(e.target.value)}
-              className="w-full px-3 py-2 border border-stone-300 rounded-md bg-stone-50 focus:bg-white focus:outline-none text-stone-900 placeholder:text-stone-400 text-xs"
+              className="w-full px-3 py-2 border border-stone-300 rounded-md bg-stone-50 text-stone-900 focus:bg-white focus:outline-none text-xs placeholder:text-stone-400"
             />
           </div>
 
-          {/* 4. 対面メモ（自動同期） */}
-          <div className="bg-white border border-stone-200 rounded-lg p-4 space-y-2 shadow-sm">
-            <label className="font-bold text-stone-700 block">
-              4. 対面チャンピオンメモ <span className="text-xs text-amber-700 font-normal">（対面DBへ自動連携されます）</span>
+          {/* 4. 対面メモ（対面DBへ自動連携） */}
+          <div className="bg-white border border-stone-200 rounded-lg p-3.5 space-y-2 shadow-sm">
+            <label className="font-bold text-stone-800 text-xs block">
+              4. 対面チャンピオンメモ <span className="text-[11px] text-amber-800 font-normal">（対面DB `matchup_sentinel` へ自動蓄積）</span>
             </label>
             <textarea
               rows={2}
-              placeholder="対面の動き、ビルド対策、やりづらかった点など（例: Level 2で無理に交易しない）"
+              placeholder={`対面 ${currentMatch ? currentMatch.enemyChampion : ''} への次回対策・やりづらかった点（例: Lv2トレード注意 / スペル落ちたタイミングでローム）`}
               value={matchupMemo}
               onChange={(e) => setMatchupMemo(e.target.value)}
-              className="w-full px-3 py-2 border border-stone-300 rounded-md bg-stone-50 focus:bg-white focus:outline-none text-stone-900 placeholder:text-stone-400 text-xs"
+              className="w-full px-3 py-2 border border-stone-300 rounded-md bg-stone-50 text-stone-900 focus:bg-white focus:outline-none text-xs placeholder:text-stone-400"
             />
           </div>
 
-          {/* 5. 次の試合の「1つの意識項目」 */}
-          <div className="bg-amber-50/60 border border-amber-200 rounded-lg p-4 space-y-2 shadow-sm">
-            <label className="font-bold text-amber-900 block flex items-center gap-1.5">
+          {/* 5. 次の1試合で意識すること */}
+          <div className="bg-amber-50/80 border border-amber-300 rounded-lg p-3.5 space-y-2 shadow-sm">
+            <label className="font-bold text-amber-950 text-xs block flex items-center gap-1.5">
               <span>🔥</span> 5. 次の1試合で意識すること（次回テーマ）
             </label>
             <input
               type="text"
-              placeholder="例: 8分ヘラルド前に必ず視界ワードを指す / Lv6前にウェーブを押し切る"
+              placeholder="例: 8分ヘラルド前に必ずコントロールワードを指す / レーン戦で死なない"
               value={nextFocusPoint}
               onChange={(e) => setNextFocusPoint(e.target.value)}
-              className="w-full px-3 py-2 border border-amber-300 rounded-md bg-white text-stone-900 focus:outline-none focus:ring-2 focus:ring-amber-500/50 placeholder:text-stone-400 text-xs"
+              className="w-full px-3 py-2 border border-amber-300 rounded-md bg-white text-stone-900 focus:outline-none focus:ring-2 focus:ring-amber-500 text-xs placeholder:text-stone-400 font-medium"
             />
           </div>
 
-          {/* Footer Submit */}
-          <div className="flex justify-end gap-3 pt-2">
+          {/* Footer */}
+          <div className="flex justify-end gap-3 pt-2 border-t border-stone-200">
             <button
               type="button"
               onClick={onClose}
@@ -290,7 +374,7 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
             </button>
             <button
               type="submit"
-              disabled={saving}
+              disabled={saving || !currentMatch}
               className="px-6 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-md text-xs font-bold shadow transition-colors disabled:opacity-50"
             >
               {saving ? '保存中...' : '振り返りを保存'}
