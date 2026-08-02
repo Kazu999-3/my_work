@@ -243,89 +243,83 @@ export default function Home() {
         initial={{ y: -30, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.6, type: 'spring' }}
-        className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4"
+        className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 mb-2"
       >
         <div className="relative">
           <div className="absolute -inset-1 bg-gradient-to-r from-amber-500 to-orange-600 blur opacity-10"></div>
-          <h1 className="relative text-3xl md:text-4xl font-black tracking-tighter mb-2">
+          <h1 className="relative text-2xl md:text-3xl font-black tracking-tighter mb-1">
             <span className="bg-clip-text text-transparent bg-gradient-to-r from-amber-700 via-orange-700 to-rose-700">Sovereign OS</span>
-            <span className="text-stone-500 ml-3 font-mono text-3xl opacity-80">v5.0</span>
+            <span className="text-stone-500 ml-2 font-mono text-2xl opacity-80">v5.0</span>
           </h1>
-          <p className="text-amber-700 font-bold text-sm uppercase tracking-[0.2em] flex items-center gap-2 mt-3">
-            <Activity size={16} className="animate-pulse text-amber-600" />
+          <p className="text-amber-700 font-bold text-xs uppercase tracking-[0.2em] flex items-center gap-1.5 mt-1">
+            <Activity size={14} className="animate-pulse text-amber-600" />
             <span>Advanced Agentic Control Center</span>
           </p>
         </div>
 
-        <div className="flex flex-col md:flex-row items-end md:items-center gap-4 flex-wrap">
-          {/* ナレッジ/データ整備・名簿/試合管理は既にサイドバーの管理者メニューと重複するため
-              2026-07-31に削除。手動同期ボタンもブラウザ更新で同じ結果になるため削除し、
-              最終更新時刻の表示だけ残す。 */}
-          <Link href="/admin/prompts" className="px-4 py-2.5 rounded-2xl bg-white border border-stone-200 hover:bg-stone-50 hover:border-stone-300 text-xs font-bold text-stone-600 transition-all flex items-center gap-2 shadow-sm">
-            <Cpu size={14} className="text-amber-600" />
+        <div className="flex flex-col md:flex-row items-end md:items-center gap-3 flex-wrap">
+          <Link href="/admin/prompts" className="px-3 py-2 rounded-xl bg-white border border-stone-200 hover:bg-stone-50 hover:border-stone-300 text-xs font-bold text-stone-600 transition-all flex items-center gap-1.5 shadow-sm">
+            <Cpu size={13} className="text-amber-600" />
             <span>AI プロンプト設定 ➔</span>
           </Link>
           {lastUpdated && (
-            <span className="text-xs text-stone-500 font-mono">最終更新: {lastUpdated}</span>
+            <span className="text-[11px] text-stone-500 font-mono">最終更新: {lastUpdated}</span>
           )}
         </div>
       </motion.header>
 
-
-
-      {/* 要対応パネル: champion_trend等の失敗タスクとYouTubeキューのエラーを1箇所に集約。
-          何も無ければ表示しない（平時は場所を取らない）。 */}
+      {/* 要対応パネル: 失敗タスクとエラーをスリム表示 */}
       {(needsAttention.failedTasks.length > 0 || needsAttention.youtubeErrorCount > 0 || needsAttention.dictReviewCount > 0) && (
         <motion.div
           initial={{ y: -10, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          className="glass-panel rounded-3xl p-4 border border-rose-300 bg-rose-50/70"
+          className="glass-panel rounded-2xl p-3 border border-rose-300 bg-rose-50/70"
         >
-          <h3 className="text-lg font-black text-rose-700 flex items-center gap-2 mb-4">
-            <ShieldAlert size={20} /> ⚠️ 要対応（{needsAttention.failedTasks.length + (needsAttention.youtubeErrorCount > 0 ? 1 : 0) + (needsAttention.dictReviewCount > 0 ? 1 : 0)}件）
+          <h3 className="text-base font-black text-rose-700 flex items-center gap-2 mb-2.5">
+            <ShieldAlert size={18} /> ⚠️ 要対応（{needsAttention.failedTasks.length + (needsAttention.youtubeErrorCount > 0 ? 1 : 0) + (needsAttention.dictReviewCount > 0 ? 1 : 0)}件）
           </h3>
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             {needsAttention.failedTasks.map((task) => (
-              <div key={task.id} className="flex items-center justify-between gap-3 p-3 rounded-xl bg-white border border-black/5">
+              <div key={task.id} className="flex items-center justify-between gap-2.5 p-2.5 rounded-xl bg-white border border-black/5">
                 <div className="min-w-0">
-                  <div className="text-sm font-bold text-stone-900">
+                  <div className="text-xs font-bold text-stone-900">
                     {TASK_LABELS[task.task_type] || task.task_type}
                     {task.payload?.champion && <span className="text-stone-500 font-normal"> （{task.payload.champion}/{task.payload.role || ''}）</span>}
-                    {task.executor && <span className="ml-2 text-[10px] text-stone-500 font-normal">({task.executor === 'cloud' ? 'クラウド実行' : 'ローカルPC実行'})</span>}
+                    {task.executor && <span className="ml-1.5 text-[9px] text-stone-500 font-normal">({task.executor === 'cloud' ? 'クラウド' : 'ローカル'})</span>}
                   </div>
-                  <div className="text-xs text-stone-500 mt-0.5 truncate" title={task.error_message || ''}>
-                    {(task.error_message || '').slice(0, 100) || '(エラー詳細なし)'}
+                  <div className="text-[11px] text-stone-500 mt-0.5 truncate" title={task.error_message || ''}>
+                    {(task.error_message || '').slice(0, 80) || '(エラー詳細なし)'}
                   </div>
                 </div>
                 {task.task_type === 'champion_trend' ? (
                   <button
                     onClick={() => handleRetryFailedTask(task)}
                     disabled={retryingTaskId === task.id}
-                    className="shrink-0 px-3 py-1.5 bg-rose-100 hover:bg-rose-200 border border-rose-300 text-rose-700 font-bold text-xs rounded-lg transition-all disabled:opacity-50 flex items-center gap-1.5"
+                    className="shrink-0 px-2.5 py-1 bg-rose-100 hover:bg-rose-200 border border-rose-300 text-rose-700 font-bold text-[11px] rounded-lg transition-all disabled:opacity-50 flex items-center gap-1"
                   >
-                    <RefreshCw size={12} className={retryingTaskId === task.id ? 'animate-spin' : ''} /> 再実行
+                    <RefreshCw size={11} className={retryingTaskId === task.id ? 'animate-spin' : ''} /> 再実行
                   </button>
                 ) : (
-                  <Link href={TASK_LINKS[task.task_type] || '/admin/dashboard'} className="shrink-0 text-xs font-bold text-stone-500 hover:text-stone-900 underline">詳細へ</Link>
+                  <Link href={TASK_LINKS[task.task_type] || '/admin/dashboard'} className="shrink-0 text-[11px] font-bold text-stone-500 hover:text-stone-900 underline">詳細へ</Link>
                 )}
               </div>
             ))}
             {needsAttention.youtubeErrorCount > 0 && (
               <Link
                 href="/admin/youtube"
-                className="flex items-center justify-between gap-3 p-3 rounded-xl bg-white border border-black/5 hover:border-rose-300 transition-colors"
+                className="flex items-center justify-between gap-2.5 p-2.5 rounded-xl bg-white border border-black/5 hover:border-rose-300 transition-colors"
               >
-                <span className="text-sm font-bold text-stone-900">YouTube動画キューのエラー・手動対応要 {needsAttention.youtubeErrorCount}件</span>
-                <span className="text-xs font-bold text-rose-700">管理画面へ →</span>
+                <span className="text-xs font-bold text-stone-900">YouTube動画キューのエラー・手動対応要 {needsAttention.youtubeErrorCount}件</span>
+                <span className="text-[11px] font-bold text-rose-700">管理画面へ →</span>
               </Link>
             )}
             {needsAttention.dictReviewCount > 0 && (
               <Link
                 href="/admin/knowledge?tab=maintenance"
-                className="flex items-center justify-between gap-3 p-3 rounded-xl bg-white border border-black/5 hover:border-rose-300 transition-colors"
+                className="flex items-center justify-between gap-2.5 p-2.5 rounded-xl bg-white border border-black/5 hover:border-rose-300 transition-colors"
               >
-                <span className="text-sm font-bold text-stone-900">辞典の鮮度レビューで要対応 {needsAttention.dictReviewCount}件（週次自動検知）</span>
-                <span className="text-xs font-bold text-rose-700">データ整備へ →</span>
+                <span className="text-xs font-bold text-stone-900">辞典の鮮度レビューで要対応 {needsAttention.dictReviewCount}件（週次自動検知）</span>
+                <span className="text-[11px] font-bold text-rose-700">データ整備へ →</span>
               </Link>
             )}
           </div>
@@ -337,188 +331,147 @@ export default function Home() {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3.5"
       >
 
-        {/* エッジワーカー依存機能 & 起動コントロールカード */}
-        <motion.div variants={itemVariants} className="md:col-span-2 lg:col-span-4 glass-panel rounded-3xl p-4 relative overflow-hidden border border-black/5 bg-gradient-to-r from-amber-50/60 via-white/40 to-orange-50/60">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
-            <div>
-              <div className="flex items-center gap-3 mb-2">
-                <div className={`p-2.5 rounded-xl border ${systemStatus.worker.active ? 'bg-emerald-100 border-emerald-300 text-emerald-700' : 'bg-rose-100 border-rose-300 text-rose-700'}`}>
-                  <Cpu size={22} className={systemStatus.worker.active ? '' : 'animate-pulse'} />
+        {/* エッジワーカー依存機能 & 起動コントロールカード (2カラム化) */}
+        <motion.div variants={itemVariants} className="md:col-span-2 lg:col-span-2 glass-panel rounded-2xl p-3.5 relative overflow-hidden border border-black/5 bg-gradient-to-r from-amber-50/60 via-white/40 to-orange-50/60 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between gap-2 mb-2">
+              <div className="flex items-center gap-2">
+                <div className={`p-2 rounded-xl border ${systemStatus.worker.active ? 'bg-emerald-100 border-emerald-300 text-emerald-700' : 'bg-rose-100 border-rose-300 text-rose-700'}`}>
+                  <Cpu size={18} className={systemStatus.worker.active ? '' : 'animate-pulse'} />
                 </div>
                 <div>
-                  <h3 className="text-lg font-black text-stone-900 flex items-center gap-2 flex-wrap">
-                    エッジワーカー（ローカルDaemon）ステータス
-                    <span className={`text-xs font-black px-2.5 py-0.5 rounded-full border ${
+                  <h3 className="text-base font-black text-stone-900 flex items-center gap-1.5 flex-wrap">
+                    エッジワーカー
+                    <span className={`text-[10px] font-black px-2 py-0.5 rounded-full border ${
                       systemStatus.worker.active
                         ? 'bg-emerald-100 border-emerald-300 text-emerald-700'
                         : 'bg-rose-100 border-rose-300 text-rose-700 animate-pulse'
                     }`}>
-                      {systemStatus.worker.active ? '🟢 稼働中 (待機中)' : '🔴 停止中（起動を推奨）'}
+                      {systemStatus.worker.active ? '🟢 稼働中' : '🔴 停止中'}
                     </span>
                   </h3>
-                  <p className="text-xs text-stone-500 mt-0.5">
-                    以下の重いAI・データ収集処理を実行するには、PC上でのエッジワーカー起動が必要です。
-                  </p>
                 </div>
               </div>
             </div>
+            <p className="text-[11px] text-stone-500 mb-3">
+              YouTube解析等、PC上でのWorker実行が必要なタスク用ステータスです。
+            </p>
+          </div>
 
-            {/* 起動アクションボタン */}
-            <div className="flex items-center gap-3 shrink-0 flex-wrap">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <a
                 href="sovereign-worker://start"
-                className="px-5 py-3 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-white font-black text-xs rounded-xl shadow-[0_4px_15px_rgba(234,88,12,0.25)] transition-all flex items-center gap-2 cursor-pointer"
-                title="ブラウザから「Sovereign Worker を開きますか？」ポップアップを表示してローカルワーカーを起動"
+                className="px-3.5 py-2 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-white font-black text-[11px] rounded-xl shadow transition-all flex items-center gap-1.5 cursor-pointer"
+                title="ローカルワーカーを起動"
               >
-                <Zap size={16} /> 🚀 エッジワーカーを起動 (ポップアップ)
+                <Zap size={14} /> 🚀 ワーカー起動
               </a>
               <button
                 onClick={() => {
                   navigator.clipboard.writeText("d:/my_work/.venv/Scripts/python.exe d:/my_work/03_SYSTEMS/v2_CORE/edge_worker_daemon.py");
                   alert("📋 起動コマンドをクリップボードにコピーしました！\nPowerShell等で実行してください。");
                 }}
-                className="px-4 py-3 glass-panel glass-panel-hover text-stone-600 hover:text-stone-900 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5"
+                className="px-3 py-2 glass-panel glass-panel-hover text-stone-600 hover:text-stone-900 rounded-xl text-[11px] font-bold transition-all flex items-center gap-1"
               >
-                📋 コマンドをコピー
+                📋 コピー
               </button>
             </div>
-          </div>
 
-          {/* 必要機能 ＆ クラウド完結機能の一覧比較
-              2026-07-29時点: champion_trend/matchup_simulation_5v5/YouTubeチャンネル監視/
-              reddit_scout/lol_trend_collect/dict_synthesizer は edge_cloud_worker.py
-              (GitHub Actions, 数分おき) が既に代行しており、辞典一括更新も champ-dict-update.yml
-              (毎週月曜)、戦績補完も api/cron/sync-matches (Vercel Cron) でクラウド完結している。
-              以前の表示はこの移行前のままで「PCを起動しないと止まる」という誤った危機感を
-              与えていたため、実態に合わせて書き換える。
-              2026-07-31: YouTube動画解析はクラウド完結には含めない。GitHub Actionsの共有IPが
-              YouTube側から低信用と判定され動画によって取得に失敗し続けるため定期実行を停止した
-              (absorber.yml/ktm-cloud-worker.ymlのyoutubeジョブ)。文字起こし自体はGroq API任せの
-              ままだが、動画のダウンロード元IPだけはPC(自宅IP)である必要があるため「PC起動が
-              今も意味を持つ場面」側に移す。 */}
-          {/* クラウド移行が進み、ほぼ全機能が自動化された今、この比較表を常時全開表示する
-              優先度は下がったため、詳細はdetailsに畳んでバナーの既定の高さを抑える。 */}
-          <details className="group border-t border-black/5 pt-3">
-            <summary className="text-xs font-bold text-stone-500 hover:text-stone-700 cursor-pointer select-none list-none flex items-center gap-1.5">
-              <ChevronRight size={14} className="transition-transform group-open:rotate-90" />
-              PC起動が必要な機能 / クラウド完結機能の内訳を見る
-            </summary>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
-            <div className="space-y-2 bg-black/[0.03] p-4 rounded-2xl border border-black/5">
-              <span className="text-xs font-black text-amber-700 flex items-center gap-1.5 mb-2">
-                <ShieldAlert size={14} /> ⚡ PC起動が今も意味を持つ場面
-              </span>
-              <ul className="space-y-1.5 text-xs text-stone-700">
-                <li className="flex items-center gap-2">🎬 <strong>YouTube動画解析</strong> <span className="text-[10px] text-stone-500">(クラウドの定期実行はYouTube側のIP制限により停止中。現状はこれが唯一の実行経路)</span></li>
-                <li className="flex items-center gap-2">🚀 <strong>クラウド巡回を待たず即座に処理したい時</strong> <span className="text-[10px] text-stone-500">(GitHub Actionsは数分〜週次の巡回間隔)</span></li>
-                <li className="flex items-center gap-2">🔑 <strong>クラウド側のAPIキー無料枠を使い切った時の代替実行</strong></li>
-              </ul>
-              <p className="text-[10px] text-stone-500 pt-1">※ 上記以外は起動しなくても自動的に処理されます。</p>
-            </div>
-
-            <div className="space-y-2 bg-black/[0.03] p-4 rounded-2xl border border-black/5">
-              <span className="text-xs font-black text-emerald-700 flex items-center gap-1.5 mb-2">
-                <CheckCircle2 size={14} /> 🌐 クラウドだけで自動的に動く機能 (PC起動不要)
-              </span>
-              <ul className="space-y-1.5 text-xs text-stone-700">
-                <li className="flex items-center gap-2">📚 <strong>チャンピオン辞典の一括AI更新</strong> <span className="text-[10px] text-stone-500">(champ-dict-update.yml・毎週月曜)</span></li>
-                <li className="flex items-center gap-2">📊 <strong>個別トレンド取得・プロビルド追跡・5v5シミュレータ</strong> <span className="text-[10px] text-stone-500">(edge_cloud_worker.py・数分おき)</span></li>
-                <li className="flex items-center gap-2">🔄 <strong>辞典の鮮度レビュー自動検知</strong> <span className="text-[10px] text-stone-500">(dict-review-check・毎週水)</span></li>
-                <li className="flex items-center gap-2">🛠️ <strong>戦績スマート補完</strong> <span className="text-[10px] text-stone-500">(Vercel Cron・sync-matches)</span></li>
-                <li className="flex items-center gap-2">✨ <strong>パーソナルコーチ AI 相談 ＆ 対面メモ</strong></li>
-              </ul>
-            </div>
+            <details className="group border-t border-black/5 pt-2">
+              <summary className="text-[10px] font-bold text-stone-500 hover:text-stone-700 cursor-pointer select-none list-none flex items-center gap-1">
+                <ChevronRight size={12} className="transition-transform group-open:rotate-90" />
+                内訳詳細
+              </summary>
+              <div className="pt-2 text-[10px] text-stone-600 space-y-1">
+                <div>⚡ <strong>PC起動必須:</strong> YouTube動画解析</div>
+                <div>🌐 <strong>クラウド自動:</strong> 辞典更新/プロビルド/5v5/戦績同期</div>
+              </div>
+            </details>
           </div>
-          </details>
         </motion.div>
 
-        {/* QUOTA Card (Simplified & Full-width) */}
-        <motion.div variants={itemVariants} className="md:col-span-2 lg:col-span-4 glass-panel glass-panel-hover rounded-3xl p-4 relative overflow-hidden border border-black/5 bg-gradient-to-b from-black/[0.02] to-transparent">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-orange-400/15 rounded-full blur-[50px] -mr-10 -mt-10 pointer-events-none"></div>
-          <div className="flex justify-between items-start mb-4">
-            <div className="flex items-center gap-3">
-              <div className="p-3 bg-orange-100 border border-orange-200 rounded-xl text-orange-700">
-                <Zap size={22} />
+        {/* QUOTA Card (2カラム化・コンパクト) */}
+        <motion.div variants={itemVariants} className="md:col-span-2 lg:col-span-2 glass-panel glass-panel-hover rounded-2xl p-3.5 relative overflow-hidden border border-black/5 bg-gradient-to-b from-black/[0.02] to-transparent flex flex-col justify-between">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-orange-400/15 rounded-full blur-[40px] -mr-8 -mt-8 pointer-events-none"></div>
+          <div className="flex justify-between items-center mb-2">
+            <div className="flex items-center gap-2">
+              <div className="p-2 bg-orange-100 border border-orange-200 rounded-xl text-orange-700">
+                <Zap size={18} />
               </div>
-              <h3 className="text-base md:text-xl font-black text-stone-900 tracking-tight">API Quota (1500回/日)</h3>
+              <h3 className="text-base font-black text-stone-900 tracking-tight">API Quota (1500回/日)</h3>
             </div>
           </div>
 
-          <div className="space-y-4">
-            <div className="flex flex-col gap-2">
-              <div className="flex justify-between items-end gap-2">
-                <div className="flex items-baseline gap-1 md:gap-2">
-                  <span className="text-3xl md:text-5xl font-black text-stone-900 tracking-tight">{apiUsage}</span>
-                  <span className="text-xs md:text-lg text-stone-500 font-medium">/ 1500 消費</span>
-                </div>
-                <div className="text-right">
-                  <span className="text-[10px] md:text-sm text-stone-500 block">残り</span>
-                  <span className="text-xl md:text-2xl font-bold text-emerald-700">{Math.max(0, 1500 - apiUsage)}</span>
-                </div>
+          <div className="space-y-2">
+            <div className="flex justify-between items-end gap-2">
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-2xl md:text-4xl font-black text-stone-900 tracking-tight">{apiUsage}</span>
+                <span className="text-xs text-stone-500 font-medium">/ 1500 消費</span>
               </div>
+              <div className="text-right">
+                <span className="text-[10px] text-stone-500 block">残り</span>
+                <span className="text-lg font-bold text-emerald-700">{Math.max(0, 1500 - apiUsage)}</span>
+              </div>
+            </div>
 
-              <div className="w-full bg-black/[0.05] rounded-full h-3 overflow-hidden border border-black/5 mt-2">
-                <div
-                  className={`h-full rounded-full transition-all duration-1000 ${apiUsage >= 1500 ? 'bg-rose-500 shadow-[0_0_10px_rgba(225,29,72,0.35)]' : apiUsage > 1200 ? 'bg-gradient-to-r from-orange-400 to-rose-500' : 'bg-gradient-to-r from-amber-400 to-orange-500 shadow-[0_0_10px_rgba(217,119,6,0.25)]'}`}
-                  style={{ width: `${Math.min((apiUsage / 1500) * 100, 100)}%` }}
-                ></div>
-              </div>
+            <div className="w-full bg-black/[0.05] rounded-full h-2.5 overflow-hidden border border-black/5">
+              <div
+                className={`h-full rounded-full transition-all duration-1000 ${apiUsage >= 1500 ? 'bg-rose-500' : apiUsage > 1200 ? 'bg-gradient-to-r from-orange-400 to-rose-500' : 'bg-gradient-to-r from-amber-400 to-orange-500'}`}
+                style={{ width: `${Math.min((apiUsage / 1500) * 100, 100)}%` }}
+              ></div>
+            </div>
 
-              <div className="flex justify-between text-[10px] md:text-xs text-stone-500 mt-1 font-medium">
-                <span>0%</span>
-                <span>リセット時間: 日本時間 16:00 (または17:00)</span>
-                <span>100%</span>
-              </div>
+            <div className="flex justify-between text-[9px] text-stone-500 font-medium">
+              <span>0%</span>
+              <span>リセット: 16:00 (JST)</span>
+              <span>100%</span>
             </div>
           </div>
         </motion.div>
 
         {/* New Dashboard Widgets */}
-        <motion.div variants={itemVariants} className="md:col-span-2 lg:col-span-4 mt-4 grid grid-cols-1 gap-4">
+        <motion.div variants={itemVariants} className="md:col-span-2 lg:col-span-4 mt-2 grid grid-cols-1 md:grid-cols-2 gap-3.5">
 
           {/* Panel B: YouTube Absorber Queue */}
-          <div className="glass-panel rounded-3xl p-4 border border-black/5 bg-gradient-to-br from-amber-50/70 to-transparent flex flex-col h-full justify-between">
+          <div className="glass-panel rounded-2xl p-3.5 border border-black/5 bg-gradient-to-br from-amber-50/70 to-transparent flex flex-col justify-between">
             <div>
-              <div className="flex justify-between items-center mb-4">
-                <div className="flex items-center gap-3">
-                  <h3 className="text-xl font-black text-stone-900 flex items-center gap-2">
-                    <div className="w-2 h-6 bg-amber-500 rounded-full shadow-[0_0_10px_rgba(217,119,6,0.35)]"></div>
+              <div className="flex justify-between items-center mb-3">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-base font-black text-stone-900 flex items-center gap-1.5">
+                    <div className="w-1.5 h-5 bg-amber-500 rounded-full"></div>
                     YouTube 吸収キュー
                   </h3>
                   {systemMetrics.services?.youtube_absorber?.running && (
-                    <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-amber-100 border border-amber-200 text-[9px] font-black text-amber-700 animate-pulse tracking-wider">
-                      <span className="relative flex h-1.5 w-1.5">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-amber-500"></span>
-                      </span>
+                    <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 border border-amber-200 text-[9px] font-black text-amber-700 animate-pulse tracking-wider">
                       RUNNING
                     </span>
                   )}
                 </div>
-                <Link href="/admin/youtube" className="text-xs font-bold text-amber-700 hover:text-amber-800 hover:underline flex items-center gap-1">
+                <Link href="/admin/youtube" className="text-xs font-bold text-amber-700 hover:text-amber-800 hover:underline flex items-center gap-0.5">
                   管理画面へ →
                 </Link>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-black/[0.03] p-4 rounded-xl border border-black/5 flex flex-col items-center justify-center">
-                  <span className="text-3xl font-black text-stone-900 mb-1">{systemMetrics.queue?.pending || 0}</span>
-                  <span className="text-xs text-stone-500 font-bold">待機中 (Pending)</span>
+              <div className="grid grid-cols-2 gap-2.5">
+                <div className="bg-black/[0.03] p-2.5 rounded-xl border border-black/5 flex flex-col items-center justify-center">
+                  <span className="text-2xl font-black text-stone-900 mb-0.5">{systemMetrics.queue?.pending || 0}</span>
+                  <span className="text-[11px] text-stone-500 font-bold">待機中 (Pending)</span>
                 </div>
-                <div className="bg-black/[0.03] p-4 rounded-xl border border-black/5 flex flex-col items-center justify-center">
-                  <span className="text-3xl font-black text-stone-900 mb-1">{systemMetrics.queue?.completed || 0}</span>
-                  <span className="text-xs text-stone-500 font-bold">完了 (Completed)</span>
+                <div className="bg-black/[0.03] p-2.5 rounded-xl border border-black/5 flex flex-col items-center justify-center">
+                  <span className="text-2xl font-black text-stone-900 mb-0.5">{systemMetrics.queue?.completed || 0}</span>
+                  <span className="text-[11px] text-stone-500 font-bold">完了 (Completed)</span>
                 </div>
               </div>
             </div>
 
             {recentYoutubeQueue.length > 0 && (
-              <div className="space-y-2.5 mt-4 pt-4 border-t border-black/5">
-                <p className="text-[10px] font-bold text-stone-500 uppercase tracking-wider mb-1">直近の解析状況</p>
-                {recentYoutubeQueue.map((item, idx) => {
+              <div className="space-y-2 mt-3 pt-3 border-t border-black/5">
+                <p className="text-[9px] font-bold text-stone-500 uppercase tracking-wider mb-0.5">直近の解析状況</p>
+                {recentYoutubeQueue.slice(0, 3).map((item, idx) => {
                   let statusColor = 'text-stone-600';
                   let statusBg = 'bg-stone-100 border-stone-200';
                   let statusText = item.status;
@@ -538,16 +491,13 @@ export default function Home() {
                   }
 
                   return (
-                    <div key={idx} className="flex justify-between items-center gap-3 bg-black/[0.03] p-2.5 rounded-xl border border-black/5 text-xs">
+                    <div key={idx} className="flex justify-between items-center gap-2 bg-black/[0.03] p-2 rounded-xl border border-black/5 text-xs">
                       <div className="flex flex-col min-w-0">
-                        <span className="font-bold text-stone-800 truncate" title={item.title}>
+                        <span className="font-bold text-stone-800 text-[11px] truncate" title={item.title}>
                           {item.title}
                         </span>
-                        {item.channel_name && (
-                          <span className="text-[10px] text-stone-500 mt-0.5">{item.channel_name}</span>
-                        )}
                       </div>
-                      <span className={`px-2 py-0.5 rounded-full border text-[10px] font-bold shrink-0 ${statusBg} ${statusColor}`}>
+                      <span className={`px-2 py-0.5 rounded-full border text-[9px] font-bold shrink-0 ${statusBg} ${statusColor}`}>
                         {statusText}
                       </span>
                     </div>
@@ -557,12 +507,11 @@ export default function Home() {
             )}
           </div>
 
-          {/* Panel C: セットアップチェックリスト
-              （募集アクティビティは機能していなかったため2026-07-31に削除） */}
-          <div className="grid grid-cols-1 gap-4">
-            <div className="glass-panel rounded-3xl p-4 border border-black/5 bg-gradient-to-br from-amber-50/70 to-transparent">
-              <h3 className="text-lg font-black text-stone-900 flex items-center gap-2 mb-4">
-                <div className="w-2 h-6 bg-amber-500 rounded-full shadow-[0_0_10px_rgba(245,158,11,0.3)]"></div>
+          {/* Panel C: セットアップ状況 */}
+          <div className="glass-panel rounded-2xl p-3.5 border border-black/5 bg-gradient-to-br from-amber-50/70 to-transparent flex flex-col justify-between">
+            <div>
+              <h3 className="text-base font-black text-stone-900 flex items-center gap-1.5 mb-3">
+                <div className="w-1.5 h-5 bg-amber-500 rounded-full"></div>
                 セットアップ状況
               </h3>
               {setupChecks ? (
@@ -575,16 +524,16 @@ export default function Home() {
                     { key: 'discordWebhook', label: 'Discord Webhook' },
                     { key: 'portalBotSecret', label: 'PORTAL_BOT_SECRET' },
                   ].map((c) => (
-                    <div key={c.key} className="flex items-center justify-between px-3 py-2 rounded-xl bg-black/[0.03] border border-black/5 text-xs">
-                      <span className="text-stone-700">{c.label}</span>
-                      <span className={`font-bold flex items-center gap-1 ${setupChecks[c.key] ? 'text-emerald-700' : 'text-amber-700'}`}>
-                        {setupChecks[c.key] ? <><CheckCircle2 size={12} /> 設定済み</> : <><ShieldAlert size={12} /> 未設定</>}
+                    <div key={c.key} className="flex items-center justify-between px-2.5 py-1.5 rounded-xl bg-black/[0.03] border border-black/5 text-xs">
+                      <span className="text-stone-700 text-[11px]">{c.label}</span>
+                      <span className={`font-bold flex items-center gap-1 text-[11px] ${setupChecks[c.key] ? 'text-emerald-700' : 'text-amber-700'}`}>
+                        {setupChecks[c.key] ? <><CheckCircle2 size={11} /> 設定済み</> : <><ShieldAlert size={11} /> 未設定</>}
                       </span>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-stone-500 text-center py-4">確認中...</p>
+                <p className="text-xs text-stone-500 text-center py-3">確認中...</p>
               )}
             </div>
           </div>
@@ -592,16 +541,16 @@ export default function Home() {
         </motion.div>
 
         {/* 🛠️ システムコクピット (System Cockpit) */}
-        <motion.div variants={itemVariants} className="md:col-span-2 lg:col-span-4 mt-5">
-          <div className="glass-panel rounded-3xl p-4 border border-black/5 bg-white/50 space-y-4">
+        <motion.div variants={itemVariants} className="md:col-span-2 lg:col-span-4 mt-2">
+          <div className="glass-panel rounded-2xl p-3.5 border border-black/5 bg-white/50 space-y-3">
 
             {/* タブナビゲーション */}
-            <div className="flex justify-between items-center border-b border-black/5 pb-4 flex-wrap gap-4">
-              <div className="flex items-center gap-3">
-                <div className="w-2 h-6 bg-gradient-to-b from-orange-400 via-amber-400 to-rose-500 rounded-full shadow-[0_0_10px_rgba(234,88,12,0.3)]"></div>
-                <h3 className="text-xl font-black text-stone-900">🛠️ システムコクピット</h3>
+            <div className="flex justify-between items-center border-b border-black/5 pb-2.5 flex-wrap gap-2">
+              <div className="flex items-center gap-2">
+                <div className="w-1.5 h-5 bg-gradient-to-b from-orange-400 via-amber-400 to-rose-500 rounded-full"></div>
+                <h3 className="text-base font-black text-stone-900">🛠️ システムコクピット</h3>
               </div>
-              <div className="flex glass-panel p-1 rounded-xl items-center border border-black/5 bg-black/[0.03]">
+              <div className="flex glass-panel p-0.5 rounded-lg items-center border border-black/5 bg-black/[0.03]">
                 {[
                   { id: 'nodes', label: '🛰️ サービス監視' },
                   { id: 'queue', label: '⚡ ジョブ実行キュー' },
@@ -610,7 +559,7 @@ export default function Home() {
                     key={tab.id}
                     type="button"
                     onClick={() => setActiveSystemTab(tab.id as any)}
-                    className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+                    className={`px-3 py-1.5 rounded-md text-[11px] font-bold transition-all ${
                       activeSystemTab === tab.id
                         ? 'bg-white text-stone-900 shadow-sm border border-black/5'
                         : 'text-stone-500 hover:text-stone-800'
@@ -623,22 +572,19 @@ export default function Home() {
             </div>
 
             {/* タブコンテンツ */}
-            <div className="mt-4">
+            <div className="mt-3">
               {/* 1. 🛰️ サービス監視 (Nodes Sentinel) */}
               {activeSystemTab === 'nodes' && (
-                <div className="space-y-4">
-                  <p className="text-xs text-stone-500">
-                    ポータルとBotはクラウドで常時稼働しています。動画解析まわりはPCで起動したときだけ動くため、
-                    <strong className="text-stone-700">「未起動」は正常な状態</strong>です。
+                <div className="space-y-3">
+                  <p className="text-[11px] text-stone-500">
+                    ポータルとBotはクラウドで常時稼働しています。動画解析まわりはPC起動時のみ動くため、<strong className="text-stone-700">「未起動」は正常な状態</strong>です。
                   </p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
                     {[
-                      // 常時稼働するクラウド側
-                      { id: 'portal', name: 'Next.js Portal', desc: 'ポータル・管理画面 (Vercel)', kind: 'cloud' as const },
-                      { id: 'bot', name: 'Discord Bot (KTM)', desc: '大会運営Bot (Cloudflare Workers)', kind: 'cloud' as const },
-                      // PCで起動したときだけ動くローカル側
-                      { id: 'edge_worker', name: 'Edge Worker', desc: 'タスクキューの実行役 (ローカル)', kind: 'worker' as const },
-                      { id: 'youtube_absorber', name: 'YouTube Absorber', desc: '動画の文字起こし・解析 (ローカル)', kind: 'local' as const },
+                      { id: 'portal', name: 'Next.js Portal', desc: 'ポータル (Vercel)', kind: 'cloud' as const },
+                      { id: 'bot', name: 'Discord Bot (KTM)', desc: 'Bot (Workers)', kind: 'cloud' as const },
+                      { id: 'edge_worker', name: 'Edge Worker', desc: 'タスク実行 (ローカル)', kind: 'worker' as const },
+                      { id: 'youtube_absorber', name: 'YouTube Absorber', desc: '動画解析 (ローカル)', kind: 'local' as const },
                     ].map((service) => {
                       const status = systemMetrics.services?.[service.id] || {};
                       const metricsTime = systemMetrics.updated_at ? Number(systemMetrics.updated_at) * 1000 : 0;
@@ -649,19 +595,15 @@ export default function Home() {
                       let statusColor = 'text-stone-500 bg-stone-100 border-stone-200';
                       let indicatorColor = 'bg-stone-400';
 
-                      // クラウド側は常時稼働。ローカル側は必要なときだけ起動するので、
-                      // 止まっていること自体は異常ではない（赤くしない）。
                       if (service.kind === 'cloud') {
-                        // サーバーレスなので死活監視の対象ではない。この画面が出ている＝配信されている。
                         statusText = '稼働中';
                         statusColor = 'text-emerald-700 bg-emerald-100 border-emerald-200';
-                        indicatorColor = 'bg-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.35)]';
+                        indicatorColor = 'bg-emerald-400';
                       } else if (service.kind === 'worker') {
-                        // Edge Worker は edge_tasks のハートビートで判定する
                         if (systemStatus.worker.active) {
                           statusText = '稼働中';
                           statusColor = 'text-amber-700 bg-amber-100 border-amber-200';
-                          indicatorColor = 'bg-amber-400 animate-pulse shadow-[0_0_8px_rgba(245,158,11,0.4)]';
+                          indicatorColor = 'bg-amber-400 animate-pulse';
                         } else {
                           statusText = '未起動';
                           statusColor = 'text-stone-500 bg-black/[0.03] border-black/10';
@@ -670,7 +612,7 @@ export default function Home() {
                       } else if (isRunning) {
                         statusText = service.id === 'youtube_absorber' ? '解析中' : '稼働中';
                         statusColor = 'text-amber-700 bg-amber-100 border-amber-200';
-                        indicatorColor = 'bg-amber-400 animate-pulse shadow-[0_0_8px_rgba(245,158,11,0.4)]';
+                        indicatorColor = 'bg-amber-400 animate-pulse';
                       } else {
                         statusText = '未起動';
                         statusColor = 'text-stone-500 bg-black/[0.03] border-black/10';
@@ -678,16 +620,16 @@ export default function Home() {
                       }
 
                       return (
-                        <div key={service.id} className="bg-black/[0.03] p-4 rounded-2xl border border-black/5 flex flex-col justify-between hover:border-black/10 transition-colors">
+                        <div key={service.id} className="bg-black/[0.03] p-3 rounded-xl border border-black/5 flex flex-col justify-between hover:border-black/10 transition-colors">
                           <div>
-                            <div className="flex justify-between items-center mb-2">
+                            <div className="flex justify-between items-center mb-1">
                               <span className="text-xs font-bold text-stone-800">{service.name}</span>
                               <span className={`w-2 h-2 rounded-full ${indicatorColor}`}></span>
                             </div>
-                            <p className="text-[9px] text-stone-500 mb-4">{service.desc}</p>
+                            <p className="text-[9px] text-stone-500 mb-2">{service.desc}</p>
                           </div>
                           <div className="flex justify-between items-center mt-auto">
-                            <span className="text-[9px] font-mono text-stone-400">{service.kind === 'cloud' ? '常時稼働' : '必要時のみ起動'}</span>
+                            <span className="text-[9px] font-mono text-stone-400">{service.kind === 'cloud' ? '常時' : '必要時'}</span>
                             <span className={`px-2 py-0.5 rounded-full border text-[9px] font-bold ${statusColor}`}>{statusText}</span>
                           </div>
                         </div>
@@ -865,18 +807,18 @@ export default function Home() {
           </div>
         </motion.div>
 
-        <motion.div variants={itemVariants} className="md:col-span-2 lg:col-span-4 mt-5 grid grid-cols-1 md:grid-cols-2 gap-4">
+        <motion.div variants={itemVariants} className="md:col-span-2 lg:col-span-4 mt-2 grid grid-cols-1 md:grid-cols-2 gap-3.5">
 
-          {/* 知識ベースの整備状況: 各データがどれだけ溜まっているかを一目で把握する */}
-          <div className="glass-panel rounded-3xl p-4 border border-black/5 bg-gradient-to-br from-emerald-50/70 to-transparent lg:col-span-2">
-            <div className="flex justify-between items-center mb-5 flex-wrap gap-2">
-              <h3 className="text-xl font-black text-stone-900 flex items-center gap-2">
-                <div className="w-2 h-6 bg-emerald-500 rounded-full shadow-[0_0_10px_rgba(16,185,129,0.3)]"></div>
+          {/* 知識ベースの整備状況 */}
+          <div className="glass-panel rounded-2xl p-3.5 border border-black/5 bg-gradient-to-br from-emerald-50/70 to-transparent lg:col-span-2">
+            <div className="flex justify-between items-center mb-3 flex-wrap gap-2">
+              <h3 className="text-base font-black text-stone-900 flex items-center gap-1.5">
+                <div className="w-1.5 h-5 bg-emerald-500 rounded-full"></div>
                 知識ベースの整備状況
               </h3>
               <Link href="/admin/knowledge" className="text-xs font-bold text-emerald-700 hover:text-emerald-800 hover:underline">🛠️ データ整備へ →</Link>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
               {[
                 { label: 'チャンピオン辞典', value: kbStats.facts, href: '/champions', color: 'text-amber-700' },
                 { label: '未整理の記事', value: kbStats.library, href: '/admin/knowledge', color: 'text-orange-700' },
@@ -885,65 +827,61 @@ export default function Home() {
                 { label: '対面カルテ', value: kbStats.matchupLog, href: '/coach?tab=matchup-memo', color: 'text-rose-700' },
               ].map((s) => (
                 <Link key={s.label} href={s.href}
-                  className="bg-black/[0.03] rounded-2xl p-4 border border-black/5 hover:bg-black/5 transition-colors text-center">
-                  <div className={`text-2xl font-black ${s.color}`}>
+                  className="bg-black/[0.03] rounded-xl p-2.5 border border-black/5 hover:bg-black/5 transition-colors text-center">
+                  <div className={`text-xl font-black ${s.color}`}>
                     {s.value === null ? '—' : s.value}
-                    {s.suffix && <span className="text-sm text-stone-400">{s.suffix}</span>}
+                    {s.suffix && <span className="text-xs text-stone-400">{s.suffix}</span>}
                   </div>
-                  <div className="text-[10px] text-stone-500 font-bold mt-1">{s.label}</div>
+                  <div className="text-[10px] text-stone-500 font-bold mt-0.5">{s.label}</div>
                 </Link>
               ))}
             </div>
-            <p className="text-[10px] text-stone-400 mt-3">
-              「未整理の記事」は、まだ辞典やレーンガイドへ統合されていない攻略ライブラリの記事数です。データ整備タブで①→③を実行すると減っていきます。
-            </p>
           </div>
 
           {/* Dictionary Updates */}
-          <div className="glass-panel rounded-3xl p-4 border border-black/5 bg-gradient-to-br from-amber-50/70 to-transparent">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-black text-stone-900 flex items-center gap-2">
-                <div className="w-2 h-6 bg-amber-500 rounded-full shadow-[0_0_10px_rgba(217,119,6,0.35)]"></div>
+          <div className="glass-panel rounded-2xl p-3.5 border border-black/5 bg-gradient-to-br from-amber-50/70 to-transparent">
+            <div className="flex justify-between items-center mb-3">
+              <h3 className="text-base font-black text-stone-900 flex items-center gap-1.5">
+                <div className="w-1.5 h-5 bg-amber-500 rounded-full"></div>
                 チャンピオン辞典 更新履歴
               </h3>
               <Link href="/champions" className="text-xs font-bold text-amber-700 hover:text-amber-800 hover:underline">すべて見る →</Link>
             </div>
-            <div className="space-y-3">
-              {recentDictUpdates.length > 0 ? recentDictUpdates.map((item, idx) => (
-                <div key={idx} className="flex justify-between items-center bg-black/[0.03] p-3 rounded-xl border border-black/5 hover:bg-black/5 transition-colors group">
-                  <div className="flex flex-col">
-                    <span className="text-sm font-bold text-stone-700 group-hover:text-stone-900 transition-colors">{item.champion}</span>
-                    <span className="text-xs text-stone-500 truncate max-w-[200px]">{item.title}</span>
+            <div className="space-y-2">
+              {recentDictUpdates.length > 0 ? recentDictUpdates.slice(0, 3).map((item, idx) => (
+                <div key={idx} className="flex justify-between items-center bg-black/[0.03] p-2.5 rounded-xl border border-black/5 hover:bg-black/5 transition-colors group">
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-xs font-bold text-stone-700 group-hover:text-stone-900 transition-colors truncate">{item.champion}</span>
+                    <span className="text-[11px] text-stone-500 truncate max-w-[180px]">{item.title}</span>
                   </div>
-                  <span className="text-xs font-mono text-stone-500 px-2 py-1 bg-black/5 rounded-md">{new Date(item.created_at).toLocaleDateString('ja-JP')}</span>
+                  <span className="text-[10px] font-mono text-stone-500 px-1.5 py-0.5 bg-black/5 rounded">{new Date(item.created_at).toLocaleDateString('ja-JP')}</span>
                 </div>
               )) : (
-                <p className="text-sm text-stone-500 text-center py-4">データがありません</p>
+                <p className="text-xs text-stone-500 text-center py-3">データがありません</p>
               )}
             </div>
           </div>
 
           {/* Library Updates */}
-          <div className="glass-panel rounded-3xl p-4 border border-black/5 bg-gradient-to-br from-orange-50/70 to-transparent">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-black text-stone-900 flex items-center gap-2">
-                <div className="w-2 h-6 bg-orange-500 rounded-full shadow-[0_0_10px_rgba(234,88,12,0.3)]"></div>
+          <div className="glass-panel rounded-2xl p-3.5 border border-black/5 bg-gradient-to-br from-orange-50/70 to-transparent">
+            <div className="flex justify-between items-center mb-3">
+              <h3 className="text-base font-black text-stone-900 flex items-center gap-1.5">
+                <div className="w-1.5 h-5 bg-orange-500 rounded-full"></div>
                 ライブラリ 追加履歴
               </h3>
-              {/* /library は存在しないページだった。実体は管理画面の攻略ライブラリタブ */}
               <Link href="/admin/knowledge" className="text-xs font-bold text-orange-700 hover:text-orange-800 hover:underline">すべて見る →</Link>
             </div>
-            <div className="space-y-3">
-              {recentLibraryUpdates.length > 0 ? recentLibraryUpdates.map((item, idx) => (
-                <div key={idx} className="flex justify-between items-center bg-black/[0.03] p-3 rounded-xl border border-black/5 hover:bg-black/5 transition-colors group">
-                  <div className="flex flex-col">
-                    <span className="text-sm font-bold text-stone-700 truncate max-w-[200px] group-hover:text-stone-900 transition-colors" title={item.title}>{item.title}</span>
-                    {item.champion && <span className="text-xs text-orange-700 mt-0.5">Champion: {item.champion}</span>}
+            <div className="space-y-2">
+              {recentLibraryUpdates.length > 0 ? recentLibraryUpdates.slice(0, 3).map((item, idx) => (
+                <div key={idx} className="flex justify-between items-center bg-black/[0.03] p-2.5 rounded-xl border border-black/5 hover:bg-black/5 transition-colors group">
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-xs font-bold text-stone-700 truncate max-w-[180px] group-hover:text-stone-900 transition-colors" title={item.title}>{item.title}</span>
+                    {item.champion && <span className="text-[10px] text-orange-700 mt-0.5">Champion: {item.champion}</span>}
                   </div>
-                  <span className="text-xs font-mono text-stone-500 px-2 py-1 bg-black/5 rounded-md">{new Date(item.created_at).toLocaleDateString('ja-JP')}</span>
+                  <span className="text-[10px] font-mono text-stone-500 px-1.5 py-0.5 bg-black/5 rounded">{new Date(item.created_at).toLocaleDateString('ja-JP')}</span>
                 </div>
               )) : (
-                <p className="text-sm text-stone-500 text-center py-4">データがありません</p>
+                <p className="text-xs text-stone-500 text-center py-3">データがありません</p>
               )}
             </div>
           </div>
