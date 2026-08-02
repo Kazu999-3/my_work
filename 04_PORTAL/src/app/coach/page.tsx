@@ -6,6 +6,9 @@ import ScoutTab from './ScoutTab';
 import PushOptIn from '../../components/PushOptIn';
 import FiveVFiveSimTab from './FiveVFiveSimTab';
 import SoloQReflectionModal from './SoloQReflectionModal';
+import PickRecommendationTab from './PickRecommendationTab';
+import MatchupWarningCard from './MatchupWarningCard';
+import LanePrioritySimulator from './LanePrioritySimulator';
 
 // ============================
 // 型定義
@@ -839,6 +842,7 @@ export default function CoachPage() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [isReflectionModalOpen, setIsReflectionModalOpen] = useState(false);
   const [lastFocusPoint, setLastFocusPoint] = useState<string | null>(null);
+  const [lastKnownMatchId, setLastKnownMatchId] = useState<string>('');
 
   const fetchLastReflection = async () => {
     try {
@@ -846,6 +850,9 @@ export default function CoachPage() {
       const data = await res.json();
       if (data.reflection?.next_focus_point) {
         setLastFocusPoint(data.reflection.next_focus_point);
+      }
+      if (data.reflection?.match_id) {
+        setLastKnownMatchId(data.reflection.match_id);
       }
     } catch (err) {
       console.error('Failed to fetch last reflection focus point:', err);
@@ -863,7 +870,31 @@ export default function CoachPage() {
       });
     
     fetchLastReflection();
-  }, []);
+
+    // 試合終了の自動監視（45秒おきにチェック）
+    const interval = setInterval(async () => {
+      try {
+        const savedIgn = localStorage.getItem('soloq_riot_id') || '';
+        if (!savedIgn) return;
+
+        const res = await fetch('/api/soloq/check-finished', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ign: savedIgn, lastKnownMatchId }),
+        });
+        const data = await res.json();
+
+        if (data.isNewMatch) {
+          setLastKnownMatchId(data.latestMatchId);
+          setIsReflectionModalOpen(true); // 自動ポップアップ！！
+        }
+      } catch (err) {
+        // サイレントエラー
+      }
+    }, 45000);
+
+    return () => clearInterval(interval);
+  }, [lastKnownMatchId]);
 
   // 「事前分析」と「マッチアップ」で同じチャンピオン名を二度入力させていたのを統合。
   // ここで一度入力すれば両方の分析に使われる。
@@ -890,6 +921,8 @@ export default function CoachPage() {
   // という指摘を受けアコーディオンにしていたが、開閉の手間が面倒という声を受け、
   // 全セクション常時展開＋余白を詰めたコンパクト表示に変更した。
   const SECTIONS = [
+    { id: 'pick-rec', group: 'pregame', groupLabel: '⚡ 試合前', label: '🎯 BAN/PICK推奨ナビゲーター', content: <PickRecommendationTab /> },
+    { id: 'lane-pri', group: 'pregame', groupLabel: '⚡ 試合前', label: '📊 5レーン主導権 ＆ 展開シミュレーター', content: <LanePrioritySimulator /> },
     { id: 'pre', group: 'pregame', groupLabel: '⚡ 試合前', label: '事前分析', content: <PreGameTab champion={sharedChampion} enemyChampion={sharedEnemyChampion} triggerSignal={dailyCheckTrigger} /> },
     {
       id: 'scout', group: 'pregame', groupLabel: '⚡ 試合前', label: '🧭 偵察',
@@ -1015,6 +1048,9 @@ export default function CoachPage() {
             🎯 今日のチェック（事前分析・目標・ティルトを一括実行）
           </button>
         </div>
+
+        {/* 過去の自分からの対面警戒メモ（対面チャンプ決定時に即座にハイライト表示） */}
+        <MatchupWarningCard champion={sharedChampion} enemyChampion={sharedEnemyChampion} />
 
         {/* 全セクション常時展開。グループごとに1つの枠にまとめ、余白を詰めてコンパクトに表示。 */}
         <div className="space-y-5">
