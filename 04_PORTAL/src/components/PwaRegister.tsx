@@ -119,7 +119,7 @@ export default function PwaRegister() {
           onClick={() => setMinimized(false)}
           title="ホーム画面にアプリ化"
           style={{ position: 'fixed', bottom: '5rem', right: '1rem', zIndex: 99999 }}
-          className="w-10 h-10 rounded-full bg-[#161922]/90 border border-[#c89b3c]/40 text-[#c89b3c] flex items-center justify-center shadow-md hover:bg-[#1c1f2b] transition-colors cursor-pointer md:bottom-6"
+          className="w-10 h-10 rounded-full bg-white/90 border border-[#c89b3c]/40 text-[#c89b3c] flex items-center justify-center shadow-md hover:bg-white transition-colors cursor-pointer md:bottom-6"
         >
           <Download size={16} />
         </button>
@@ -127,13 +127,13 @@ export default function PwaRegister() {
         /* 📲 PWA インストール誘導カード（クリックで展開時のみ） */
         <div
           style={{ position: 'fixed', bottom: '5rem', right: '1rem', zIndex: 99999 }}
-          className="bg-[#161922] border border-[#c89b3c]/30 text-white p-3 rounded-xl shadow-md flex items-center gap-3 max-w-xs md:bottom-6"
+          className="bg-white border border-[#c89b3c]/30 text-stone-900 p-3 rounded-xl shadow-md flex items-center gap-3 max-w-xs md:bottom-6"
         >
           <div className="w-8 h-8 rounded-lg bg-[#c89b3c]/15 border border-[#c89b3c]/40 flex items-center justify-center shrink-0">
             <Download className="text-[#c89b3c]" size={16} />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-[11px] text-gray-300 font-bold leading-snug">ホーム画面にアプリ化</p>
+            <p className="text-[11px] text-gray-700 font-bold leading-snug">ホーム画面にアプリ化</p>
           </div>
           <div className="flex items-center gap-1.5">
             <button
@@ -148,7 +148,7 @@ export default function PwaRegister() {
               type="button"
               onClick={() => setMinimized(true)}
               style={{ pointerEvents: 'auto' }}
-              className="p-1 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+              className="p-1 rounded-lg text-gray-400 hover:text-stone-900 hover:bg-black/5 transition-colors cursor-pointer"
               title="小さくする"
             >
               <X size={14} />
@@ -157,7 +157,7 @@ export default function PwaRegister() {
               type="button"
               onClick={dismissBanner}
               style={{ pointerEvents: 'auto' }}
-              className="text-[9px] text-gray-500 hover:text-gray-300 underline whitespace-nowrap"
+              className="text-[9px] text-gray-500 hover:text-gray-700 underline whitespace-nowrap"
               title="7日間表示しない"
             >
               7日間非表示
@@ -174,44 +174,44 @@ export default function PwaRegister() {
           onClick={() => { setShowGuide(false); dismissBanner(); }}
         >
           <div
-            className="bg-[#12141d] border border-[#c89b3c]/50 rounded-3xl p-6 max-w-md w-full shadow-2xl relative"
+            className="bg-white border border-[#c89b3c]/50 rounded-3xl p-6 max-w-md w-full shadow-2xl relative"
             onClick={(e) => e.stopPropagation()}
           >
             <button
               onClick={() => { setShowGuide(false); dismissBanner(); }}
-              className="absolute top-4 right-4 text-gray-400 hover:text-white p-1 cursor-pointer"
+              className="absolute top-4 right-4 text-gray-400 hover:text-stone-900 p-1 cursor-pointer"
             >
               <X size={20} />
             </button>
 
             <div className="flex items-center gap-3 mb-4 text-[#c89b3c]">
               <HelpCircle size={24} />
-              <h3 className="text-base font-black text-white">アプリのインストール方法</h3>
+              <h3 className="text-base font-black text-stone-900">アプリのインストール方法</h3>
             </div>
 
-            <div className="space-y-4 text-xs text-gray-300">
-              <div className="bg-white/5 p-3 rounded-xl border border-white/10">
-                <div className="font-bold text-white mb-1.5 flex items-center gap-2">
+            <div className="space-y-4 text-xs text-gray-700">
+              <div className="bg-black/3 p-3 rounded-xl border border-black/10">
+                <div className="font-bold text-stone-900 mb-1.5 flex items-center gap-2">
                   <span className="text-base">🌐</span> Chrome / Edge (PC・スマホ)
                 </div>
-                <ol className="list-decimal list-inside space-y-1 text-gray-300 leading-relaxed">
-                  <li>アドレスバー右端の <span className="inline-flex items-center bg-white/10 px-1.5 py-0.5 rounded text-amber-300 font-mono text-[10px]">⊕</span> アイコンをクリック</li>
-                  <li>または右上の <span className="font-mono text-amber-300">⋮</span> → 「<span className="text-white font-bold">アプリをインストール</span>」</li>
+                <ol className="list-decimal list-inside space-y-1 text-gray-700 leading-relaxed">
+                  <li>アドレスバー右端の <span className="inline-flex items-center bg-black/5 px-1.5 py-0.5 rounded text-amber-700 font-mono text-[10px]">⊕</span> アイコンをクリック</li>
+                  <li>または右上の <span className="font-mono text-amber-700">⋮</span> → 「<span className="text-stone-900 font-bold">アプリをインストール</span>」</li>
                 </ol>
               </div>
 
-              <div className="bg-white/5 p-3 rounded-xl border border-white/10">
-                <div className="font-bold text-white mb-1.5 flex items-center gap-2">
+              <div className="bg-black/3 p-3 rounded-xl border border-black/10">
+                <div className="font-bold text-stone-900 mb-1.5 flex items-center gap-2">
                   <span className="text-base">📱</span> Safari (iOS)
                 </div>
-                <ol className="list-decimal list-inside space-y-1 text-gray-300 leading-relaxed">
-                  <li>画面下部の共有アイコン <span className="font-mono text-amber-300">⬆</span> をタップ</li>
-                  <li>「<span className="text-white font-bold">ホーム画面に追加</span>」を選択</li>
+                <ol className="list-decimal list-inside space-y-1 text-gray-700 leading-relaxed">
+                  <li>画面下部の共有アイコン <span className="font-mono text-amber-700">⬆</span> をタップ</li>
+                  <li>「<span className="text-stone-900 font-bold">ホーム画面に追加</span>」を選択</li>
                 </ol>
               </div>
 
-              <div className="bg-amber-500/10 p-3 rounded-xl border border-amber-500/20">
-                <p className="text-amber-300 text-[11px] font-bold">
+              <div className="bg-amber-100 p-3 rounded-xl border border-amber-200">
+                <p className="text-amber-700 text-[11px] font-bold">
                   💡 Chrome で以前インストール画面を「キャンセル」した場合、しばらくの間ブラウザが自動プロンプトを表示しません。
                   上記の手動手順でインストールできます。
                 </p>

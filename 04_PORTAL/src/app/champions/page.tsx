@@ -16,7 +16,7 @@ const AiUpdateTab = dynamic(() => import('./tabs/AiUpdateTab'), {
 
 const TABS = [
   { id: 'dictionary', label: '辞典', icon: BookOpen, color: 'text-[#c89b3c]' },
-  { id: 'ai-update', label: 'AI更新', icon: Sparkles, color: 'text-amber-400' },
+  { id: 'ai-update', label: 'AI更新', icon: Sparkles, color: 'text-amber-700' },
 ] as const;
 
 type TabId = typeof TABS[number]['id'];
@@ -46,10 +46,10 @@ function ChampionsShell() {
   if (isAuthenticated === false) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="text-center max-w-sm rounded-2xl border border-white/10 bg-white/5 p-8 backdrop-blur">
+        <div className="text-center max-w-sm rounded-2xl border border-black/10 bg-black/[0.03] p-8 backdrop-blur">
           <div className="text-4xl mb-4">🔑</div>
-          <h2 className="text-lg font-bold mb-2 text-white">認証が必要です</h2>
-          <p className="text-sm text-white/50 mb-6 leading-relaxed">
+          <h2 className="text-lg font-bold mb-2 text-stone-900">認証が必要です</h2>
+          <p className="text-sm text-stone-500 mb-6 leading-relaxed">
             チャンピオン辞典は管理者専用です。管理者パスコードでログインしてから再度アクセスしてください。
           </p>
           <a
@@ -86,8 +86,8 @@ function ChampionsShell() {
               onClick={() => setActiveTab(tab.id)}
               className={`flex items-center gap-2 px-5 py-3 rounded-lg text-sm font-black tracking-wider transition-all ${
                 isActive
-                  ? `bg-white/10 ${tab.color} shadow-lg`
-                  : 'text-gray-400 hover:text-white hover:bg-white/5'
+                  ? `bg-black/5 ${tab.color} shadow-lg`
+                  : 'text-gray-400 hover:text-stone-900 hover:bg-black/[0.03]'
               }`}
             >
               <Icon size={16} />

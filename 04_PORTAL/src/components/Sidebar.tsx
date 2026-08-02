@@ -60,7 +60,7 @@ const MENU_ITEMS = [
 //   ナレッジを5番目以内に配置する。
 const ADMIN_ONLY_MENU_ITEMS = [
   // ── 📊 大会運営 ──
-  { id: 'dashboard', label: 'ダッシュボード', icon: LayoutDashboard, href: '/admin/dashboard', color: 'text-white', activeBg: 'bg-white/10', section: '大会運営' },
+  { id: 'dashboard', label: 'ダッシュボード', icon: LayoutDashboard, href: '/admin/dashboard', color: 'text-stone-900', activeBg: 'bg-black/10', section: '大会運営' },
   { id: 'ktm-admin', label: '⚙️ 管理者専用', icon: Shield, href: '/ktm-admin', color: 'text-indigo-400', activeBg: 'bg-indigo-400/15' },
   { id: 'analytics', label: 'note分析', icon: TrendingUp, href: '/admin/analytics', color: 'text-teal-400', activeBg: 'bg-teal-400/15' },
   // ── 📖 攻略ハブ ──
@@ -75,7 +75,6 @@ const ADMIN_ONLY_MENU_ITEMS = [
 const ADMIN_GENERAL_MENU_ITEMS = [
   { id: 'balancer',  label: 'チーム分け', icon: Swords, href: '/balancer', color: 'text-rose-500', activeBg: 'bg-rose-500/15' },
   { id: 'leaderboard', label: 'リーダーボード', icon: Trophy, href: '/leaderboard', color: 'text-yellow-400', activeBg: 'bg-yellow-400/15' },
-  { id: 'champions', label: '辞典', icon: BookHeart, href: '/champions', color: 'text-[#c89b3c]', activeBg: 'bg-[#c89b3c]/15' },
   { id: 'synergy',   label: 'チームシナジー', icon: HeartHandshake, href: '/synergy', color: 'text-fuchsia-400', activeBg: 'bg-fuchsia-400/15' },
   { id: 'changelog', label: '更新情報', icon: ScrollText, href: '/changelog', color: 'text-cyan-400', activeBg: 'bg-cyan-400/15' },
 ];
@@ -139,14 +138,14 @@ export default function Sidebar() {
   return (
     <>
       {/* PC用サイドバー */}
-      <aside className={`hidden md:flex flex-col h-screen sticky top-0 bg-[#0a0b10]/60 backdrop-blur-2xl border-r border-white/10 shadow-[4px_0_24px_rgba(0,0,0,0.5)] z-50 overflow-y-auto no-scrollbar transition-all duration-300 relative ${
+      <aside className={`hidden md:flex flex-col h-screen sticky top-0 bg-white/70 backdrop-blur-2xl border-r border-black/10 shadow-[4px_0_24px_rgba(32,28,43,0.06)] z-50 overflow-y-auto no-scrollbar transition-all duration-300 relative ${
         isCollapsed ? 'w-20 px-3 py-6' : 'w-64 p-8'
       }`}>
-        
+
         {/* トグルボタン */}
-        <button 
+        <button
           onClick={toggleCollapse}
-          className="absolute top-8 -right-3 w-6 h-6 rounded-full bg-[#161922] border border-white/15 hover:border-amber-400/50 text-gray-400 hover:text-white flex items-center justify-center transition-all z-50 shadow-md cursor-pointer"
+          className="absolute top-8 -right-3 w-6 h-6 rounded-full bg-white border border-black/15 hover:border-primary/50 text-stone-500 hover:text-stone-900 flex items-center justify-center transition-all z-50 shadow-md cursor-pointer"
           title={isCollapsed ? "サイドバーを展開" : "サイドバーを最小化"}
         >
           {isCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
@@ -156,10 +155,10 @@ export default function Sidebar() {
         <div className={`flex items-center justify-between mb-8 flex-shrink-0 ${isCollapsed ? 'flex-col gap-4' : 'flex-row'}`}>
           <Link href="/balancer" prefetch={false} className="flex items-center gap-3 group cursor-pointer">
             <div className="relative shrink-0">
-              <div className="absolute inset-0 bg-[#c89b3c] blur-lg opacity-50 rounded-full group-hover:opacity-80 transition-opacity"></div>
-              <Shield className="text-[#c89b3c] relative z-10 group-hover:scale-110 transition-transform" size={26} />
+              <div className="absolute inset-0 bg-[#c89b3c] blur-lg opacity-30 rounded-full group-hover:opacity-50 transition-opacity"></div>
+              <Shield className="text-gold relative z-10 group-hover:scale-110 transition-transform" size={26} />
             </div>
-            <span className={`text-lg font-black text-transparent bg-clip-text bg-gradient-to-r from-[#c89b3c] to-yellow-200 font-mono tracking-tight transition-all duration-300 overflow-hidden ${
+            <span className={`text-lg font-black text-transparent bg-clip-text bg-gradient-to-r from-gold to-primary font-mono tracking-tight transition-all duration-300 overflow-hidden ${
               isCollapsed ? 'w-0 opacity-0 pointer-events-none' : 'w-auto opacity-100'
             }`}>
               SOVEREIGN
@@ -173,32 +172,32 @@ export default function Sidebar() {
         {isAdminLoggedIn && (
         <div className="flex-shrink-0">
           {!isCollapsed ? (
-            <div className="flex bg-black/50 p-1 rounded-xl border border-white/5 mb-6">
-              <button 
-                onClick={() => setActiveTab('admin')} 
+            <div className="flex bg-black/5 p-1 rounded-xl border border-black/5 mb-6">
+              <button
+                onClick={() => setActiveTab('admin')}
                 className={`flex-1 text-center py-2 rounded-lg text-[11px] font-black transition-all ${
-                  activeTab === 'admin' 
-                    ? 'bg-[#c89b3c] text-black shadow' 
-                    : 'text-gray-400 hover:text-white'
+                  activeTab === 'admin'
+                    ? 'bg-[#c89b3c] text-black shadow'
+                    : 'text-stone-500 hover:text-stone-900'
                 }`}
               >
                 管理者機能
               </button>
-              <button 
-                onClick={() => setActiveTab('general')} 
+              <button
+                onClick={() => setActiveTab('general')}
                 className={`flex-1 text-center py-2 rounded-lg text-[11px] font-black transition-all ${
-                  activeTab === 'general' 
-                    ? 'bg-white/10 text-white' 
-                    : 'text-gray-400 hover:text-white'
+                  activeTab === 'general'
+                    ? 'bg-white text-stone-900 shadow'
+                    : 'text-stone-500 hover:text-stone-900'
                 }`}
               >
                 一般機能
               </button>
             </div>
           ) : (
-            <button 
-              onClick={() => setActiveTab(activeTab === 'admin' ? 'general' : 'admin')} 
-              className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 border border-white/10 text-[#c89b3c] hover:text-white transition-all mb-6 mx-auto cursor-pointer"
+            <button
+              onClick={() => setActiveTab(activeTab === 'admin' ? 'general' : 'admin')}
+              className="w-10 h-10 flex items-center justify-center rounded-xl bg-black/5 border border-black/10 text-gold hover:text-stone-900 transition-all mb-6 mx-auto cursor-pointer"
               title={activeTab === 'admin' ? "管理者機能表示中 (クリックで一般へ)" : "一般機能表示中 (クリックで管理者へ)"}
             >
               {activeTab === 'admin' ? <Shield size={18} /> : <Users size={18} />}
@@ -217,22 +216,22 @@ export default function Sidebar() {
             return (
               <div key={item.id}>
                 {sectionLabel && !isCollapsed && (
-                  <div className={`flex items-center gap-2 ${idx > 0 ? 'mt-4 pt-3 border-t border-white/5' : ''} mb-1 px-2`}>
-                    <span className="text-[10px] font-black text-gray-500 tracking-widest uppercase">{sectionLabel}</span>
+                  <div className={`flex items-center gap-2 ${idx > 0 ? 'mt-4 pt-3 border-t border-black/5' : ''} mb-1 px-2`}>
+                    <span className="text-[10px] font-black text-stone-500 tracking-widest uppercase">{sectionLabel}</span>
                   </div>
                 )}
                 {sectionLabel && isCollapsed && idx > 0 && (
-                  <div className="my-2 mx-2 border-t border-white/5" />
+                  <div className="my-2 mx-2 border-t border-black/5" />
                 )}
-                <Link 
+                <Link
                   href={item.href}
                   prefetch={false}
                   className={`flex items-center gap-3 py-3 rounded-xl font-bold text-sm transition-all duration-300 relative overflow-hidden group ${
                     isCollapsed ? 'justify-center px-0' : 'px-4'
                   } ${
-                    isActive 
-                      ? `${item.activeBg} ${item.color} shadow-inner border border-white/5` 
-                      : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'
+                    isActive
+                      ? `${item.activeBg} ${item.color} shadow-inner border border-black/5`
+                      : 'text-stone-500 hover:text-stone-900 hover:bg-black/5 border border-transparent'
                   }`}
                   title={isCollapsed ? item.label : undefined}
                 >
@@ -260,7 +259,7 @@ export default function Sidebar() {
         )}
 
         {/* フッター システムステータス（実データ: /api/health を反映） */}
-        <div className={`mt-auto pt-6 border-t border-white/5 flex-shrink-0 w-full`}>
+        <div className={`mt-auto pt-6 border-t border-black/5 flex-shrink-0 w-full`}>
           <SystemStatus isCollapsed={isCollapsed} />
         </div>
       </aside>
@@ -293,26 +292,26 @@ export default function Sidebar() {
             {/* 「その他」シート（オーバーレイ） */}
             {showMobileMore && (
               <div className="md:hidden fixed inset-0 z-50" onClick={() => setShowMobileMore(false)}>
-                <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+                <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
                 <div
-                  className="absolute bottom-[calc(4.5rem+env(safe-area-inset-bottom))] left-3 right-3 rounded-3xl bg-[#0d0f16] border border-white/10 p-4 shadow-2xl"
+                  className="absolute bottom-[calc(4.5rem+env(safe-area-inset-bottom))] left-3 right-3 rounded-3xl bg-white border border-black/10 p-4 shadow-2xl"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <div className="flex items-center justify-between mb-3">
-                    <span className="text-xs font-black text-gray-300 tracking-wide">すべての機能</span>
-                    <button onClick={() => setShowMobileMore(false)} className="text-gray-500 hover:text-white p-1"><XIcon size={16} /></button>
+                    <span className="text-xs font-black text-stone-500 tracking-wide">すべての機能</span>
+                    <button onClick={() => setShowMobileMore(false)} className="text-stone-500 hover:text-stone-900 p-1"><XIcon size={16} /></button>
                   </div>
 
                   {/* モバイル用 タブ切り替えUI（管理者ログイン時のみ） */}
                   {isAdminLoggedIn && (
-                    <div className="flex bg-black/50 p-1 rounded-xl border border-white/5 mb-3">
-                      <button onClick={() => setActiveTab('admin')} className={`flex-1 py-2 rounded-lg text-[11px] font-black transition-all ${activeTab === 'admin' ? 'bg-[#c89b3c] text-black' : 'text-gray-400'}`}>管理者機能</button>
-                      <button onClick={() => setActiveTab('general')} className={`flex-1 py-2 rounded-lg text-[11px] font-black transition-all ${activeTab === 'general' ? 'bg-white/10 text-white' : 'text-gray-400'}`}>一般機能</button>
+                    <div className="flex bg-black/5 p-1 rounded-xl border border-black/5 mb-3">
+                      <button onClick={() => setActiveTab('admin')} className={`flex-1 py-2 rounded-lg text-[11px] font-black transition-all ${activeTab === 'admin' ? 'bg-[#c89b3c] text-black' : 'text-stone-500'}`}>管理者機能</button>
+                      <button onClick={() => setActiveTab('general')} className={`flex-1 py-2 rounded-lg text-[11px] font-black transition-all ${activeTab === 'general' ? 'bg-black/10 text-stone-900' : 'text-stone-500'}`}>一般機能</button>
                     </div>
                   )}
 
                   {overflowItems.length === 0 && (
-                    <p className="text-[11px] text-gray-500 text-center py-2">残りの機能は下部メニューに表示されています</p>
+                    <p className="text-[11px] text-stone-500 text-center py-2">残りの機能は下部メニューに表示されています</p>
                   )}
                   <div className="grid grid-cols-4 gap-2">
                     {overflowItems.map((item) => (
@@ -330,7 +329,7 @@ export default function Sidebar() {
                       有効化する手段が/coachページの奥にしか無く分かりにくかったため、
                       「その他」シートにも同じボタンを出す。 */}
                   {isAdminLoggedIn && (
-                    <div className="mt-3 pt-3 border-t border-white/5">
+                    <div className="mt-3 pt-3 border-t border-black/5">
                       <PushOptIn scope="admin" label="ポータル通知" inline />
                     </div>
                   )}

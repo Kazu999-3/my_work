@@ -5,7 +5,7 @@ import { handleLaneCommand, handleStatsCommand } from './commands.js';
 import { createMessageContent, createRecruitButtons, createRecruitEmbed, extractPlayersFromEmbed, getPortalComponents, getPortalEmbed, handleHelpPage } from '../ui/embeds.js';
 import { parseMessageData, handleAutoMatchEnd } from '../utils/helpers.js';
 import { getAdminDiscordIds, markRecruitmentStatus } from '../utils/recruitPermission.js';
-import { getKtmRank } from '../utils/ktmRank.js';
+import { getKtmRank, getHighestLaneMmr } from '../utils/ktmRank.js';
 
 export async function handleButtonInteraction(interaction, env, ctx) {
   let customId = interaction.data.custom_id;
@@ -89,7 +89,7 @@ export async function handleButtonInteraction(interaction, env, ctx) {
   }
 
   if (customId.startsWith('join_periodic:') || customId === 'join_periodic_auto') {
-    // join_periodic_auto: 部門をユーザーに選ばせず、名簿(ktm_players)の代表MMRから
+    // join_periodic_auto: 部門をユーザーに選ばせず、名簿(ktm_players)の最高レーンMMRから
     // 自動でシルバー以下/ゴルプラを振り分ける(#①)。join_periodic:silver|gold は、
     // この変更より前に投稿済みのメッセージに残っているボタンとの後方互換のために維持する。
     const isAutoMode = customId === 'join_periodic_auto';
@@ -101,8 +101,8 @@ export async function handleButtonInteraction(interaction, env, ctx) {
         if (isAutoMode) {
           let mmr = null;
           try {
-            const ps = await fetchSupabase(env, 'ktm_players', `discord_id=eq.${userId}&select=mmr`);
-            if (ps && ps.length > 0 && ps[0].mmr != null) mmr = Number(ps[0].mmr);
+            const ps = await fetchSupabase(env, 'ktm_players', `discord_id=eq.${userId}&select=mmr,mmr_top,mmr_jg,mmr_mid,mmr_adc,mmr_sup`);
+            if (ps && ps.length > 0) mmr = getHighestLaneMmr(ps[0]);
           } catch (e) {
             console.warn('join_periodic_auto: mmr lookup failed:', e);
           }

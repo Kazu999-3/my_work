@@ -57,7 +57,7 @@ async function callCoachAPI(payload: Record<string, any>) {
 // ============================
 function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={`rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur ${className}`}>
+    <div className={`rounded-2xl border border-black/10 bg-black/5 p-4 backdrop-blur ${className}`}>
       {children}
     </div>
   );
@@ -65,11 +65,11 @@ function Card({ children, className = '' }: { children: React.ReactNode; classNa
 
 function Tag({ children, color = 'blue' }: { children: React.ReactNode; color?: string }) {
   const colors: Record<string, string> = {
-    blue: 'bg-amber-500/20 text-amber-300 border-amber-500/30',
-    green: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
-    red: 'bg-red-500/20 text-red-300 border-red-500/30',
-    yellow: 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30',
-    purple: 'bg-orange-500/20 text-orange-300 border-orange-500/30',
+    blue: 'bg-amber-100 text-amber-700 border-amber-200',
+    green: 'bg-emerald-100 text-emerald-700 border-emerald-200',
+    red: 'bg-red-100 text-red-700 border-red-200',
+    yellow: 'bg-yellow-100 text-yellow-700 border-yellow-200',
+    purple: 'bg-orange-100 text-orange-700 border-orange-200',
   };
   return (
     <span className={`inline-block rounded-full border px-2 py-0.5 text-xs font-medium ${colors[color] || colors.blue}`}>
@@ -80,8 +80,8 @@ function Tag({ children, color = 'blue' }: { children: React.ReactNode; color?: 
 
 function Spinner() {
   return (
-    <div className="flex items-center justify-center gap-2 text-white/50">
-      <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/20 border-t-orange-400" />
+    <div className="flex items-center justify-center gap-2 text-foreground/50">
+      <div className="h-5 w-5 animate-spin rounded-full border-2 border-black/15 border-t-orange-400" />
       <span className="text-sm">AIコーチが分析中...</span>
     </div>
   );
@@ -89,11 +89,11 @@ function Spinner() {
 
 function AdviceBox({ text }: { text: string }) {
   return (
-    <div className="mt-4 rounded-xl border border-orange-500/30 bg-orange-500/10 p-4">
-      <div className="mb-1 flex items-center gap-2 text-xs font-semibold text-orange-300">
+    <div className="mt-4 rounded-xl border border-orange-200 bg-orange-100 p-4">
+      <div className="mb-1 flex items-center gap-2 text-xs font-semibold text-orange-700">
         <span>🤖</span> AIコーチアドバイス
       </div>
-      <p className="whitespace-pre-wrap text-sm leading-relaxed text-white/80">{text}</p>
+      <p className="whitespace-pre-wrap text-sm leading-relaxed text-stone-800">{text}</p>
     </div>
   );
 }
@@ -102,11 +102,11 @@ function AdviceBox({ text }: { text: string }) {
 function CounterStatsBox({ text }: { text: string }) {
   if (!text) return null;
   return (
-    <div className="mt-3 rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-4 text-xs">
-      <div className="mb-2 font-bold text-emerald-300 flex items-center gap-1">
+    <div className="mt-3 rounded-xl border border-emerald-200 bg-emerald-100/60 p-4 text-xs">
+      <div className="mb-2 font-bold text-emerald-700 flex items-center gap-1">
         📊 過去の対面実績データ (KTM Match Log)
       </div>
-      <pre className="whitespace-pre-wrap font-sans text-white/70 leading-relaxed">{text}</pre>
+      <pre className="whitespace-pre-wrap font-sans text-stone-700 leading-relaxed">{text}</pre>
     </div>
   );
 }
@@ -146,20 +146,20 @@ function PreGameTab({ champion, enemyChampion, triggerSignal }: { champion: stri
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-white/50">
+      <p className="text-sm text-foreground/50">
         現在のランク・直近の試合・過去の対敵勝率・ナレッジDBを元に「今日何をすべきか」をGeminiが提案します。
         チャンピオンは上部の共通入力欄と連動しています。
       </p>
 
       <div>
-        <label className="mb-1 block text-xs text-white/50">🎯 今日の焦点（この1試合で意識すること・任意）</label>
+        <label className="mb-1 block text-xs text-foreground/50">🎯 今日の焦点（この1試合で意識すること・任意）</label>
         <input
           value={focus}
           onChange={(e) => saveFocus(e.target.value)}
           placeholder="例: 序盤の無理なオールインを控える / 10分までにデスしない"
-          className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder-white/30 outline-none focus:border-amber-400"
+          className="w-full rounded-xl border border-black/10 bg-black/5 px-4 py-2.5 text-sm text-stone-900 placeholder-foreground/30 outline-none focus:border-amber-400"
         />
-        <p className="mt-1 text-xs text-white/30">設定すると「🔍 試合後」で達成できたかを自動で振り返ります。</p>
+        <p className="mt-1 text-xs text-foreground/30">設定すると「🔍 試合後」で達成できたかを自動で振り返ります。</p>
       </div>
 
       <button
@@ -172,7 +172,7 @@ function PreGameTab({ champion, enemyChampion, triggerSignal }: { champion: stri
       </button>
 
       {loading && <Spinner />}
-      {error && <p className="text-sm text-red-400">❌ {error}</p>}
+      {error && <p className="text-sm text-red-600">❌ {error}</p>}
 
       {result && (
         <div className="space-y-3 animate-in fade-in">
@@ -187,7 +187,7 @@ function PreGameTab({ champion, enemyChampion, triggerSignal }: { champion: stri
             </div>
             <div className="flex flex-wrap gap-2">
               {result.recentResults?.map((r: string, i: number) => (
-                <span key={i} className={`text-lg ${r === 'win' ? 'text-emerald-400' : 'text-red-400'}`}>
+                <span key={i} className={`text-lg ${r === 'win' ? 'text-emerald-600' : 'text-red-600'}`}>
                   {r === 'win' ? '✅' : '❌'}
                 </span>
               ))}
@@ -233,27 +233,27 @@ function PostGameTab() {
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-white/50">
+      <p className="text-sm text-foreground/50">
         ランクソロの新しい試合が終わるたびに自動で振り返りを生成します（日次Cron）。ここには最後に生成された結果が表示されます。
       </p>
 
       {loading && <Spinner />}
-      {error && <p className="text-sm text-red-400">❌ {error}</p>}
+      {error && <p className="text-sm text-red-600">❌ {error}</p>}
 
       {!loading && result && result.found === false && (
-        <p className="text-sm text-white/40">まだ振り返りデータがありません。ランクソロの試合が完了すると翌日の自動巡回で生成されます。</p>
+        <p className="text-sm text-foreground/40">まだ振り返りデータがありません。ランクソロの試合が完了すると翌日の自動巡回で生成されます。</p>
       )}
 
       {result && r && (
         <div className="space-y-3 animate-in fade-in">
           {result.createdAt && (
-            <p className="text-xs text-white/30">最終更新: {new Date(result.createdAt).toLocaleString('ja-JP')}</p>
+            <p className="text-xs text-foreground/30">最終更新: {new Date(result.createdAt).toLocaleString('ja-JP')}</p>
           )}
           <Card>
             <div className="mb-3 flex items-center gap-3">
               <span className="text-2xl">{r.win ? '✅' : '❌'}</span>
               <div>
-                <div className="font-bold text-white">{r.champion}</div>
+                <div className="font-bold text-stone-900">{r.champion}</div>
               </div>
               <Tag color={r.win ? 'green' : 'red'}>{r.win ? '勝利' : '敗北'}</Tag>
             </div>
@@ -264,20 +264,20 @@ function PostGameTab() {
                 { label: 'CS/min', value: r.csPerMin, sub: 'レーン別基準' },
                 { label: 'Vision/m', value: r.visionPerMin, sub: 'レーン別基準' },
               ].map(({ label, value, sub }) => (
-                <div key={label} className="rounded-lg bg-white/5 p-2">
-                  <div className="text-xs text-white/40">{label}</div>
-                  <div className="font-bold text-white">{value}</div>
-                  <div className="text-xs text-white/50">{sub}</div>
+                <div key={label} className="rounded-lg bg-black/5 p-2">
+                  <div className="text-xs text-foreground/40">{label}</div>
+                  <div className="font-bold text-stone-900">{value}</div>
+                  <div className="text-xs text-foreground/50">{sub}</div>
                 </div>
               ))}
             </div>
 
             {result.weaknesses?.length > 0 && (
               <div className="mt-3">
-                <div className="mb-1 text-xs font-semibold text-orange-300">⚠️ 改善ポイント</div>
+                <div className="mb-1 text-xs font-semibold text-orange-700">⚠️ 改善ポイント</div>
                 <div className="flex flex-col gap-1">
                   {result.weaknesses.map((w: string, i: number) => (
-                    <span key={i} className="text-xs text-yellow-300/80">・{w}</span>
+                    <span key={i} className="text-xs text-yellow-700">・{w}</span>
                   ))}
                 </div>
               </div>
@@ -286,9 +286,9 @@ function PostGameTab() {
 
           {result.focus && (
             <div className={`rounded-xl border px-4 py-3 text-sm ${
-              result.focusAchieved === true ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-200'
-              : result.focusAchieved === false ? 'border-rose-500/40 bg-rose-500/10 text-rose-200'
-              : 'border-white/10 bg-white/5 text-white/70'
+              result.focusAchieved === true ? 'border-emerald-200 bg-emerald-100 text-emerald-700'
+              : result.focusAchieved === false ? 'border-rose-200 bg-rose-100 text-rose-700'
+              : 'border-black/10 bg-black/5 text-foreground/70'
             }`}>
               <span className="font-semibold">
                 {result.focusAchieved === true ? '✅ 今日の焦点: 達成' : result.focusAchieved === false ? '❌ 今日の焦点: 未達成' : '🎯 今日の焦点'}
@@ -351,7 +351,7 @@ function TrendsTab() {
             <div key={s.label} className={s.cls} style={{ width: `${(s.v / total) * 100}%` }} title={`${s.label}: ${s.v}回`} />
           ))}
         </div>
-        <div className="mt-1 flex justify-between text-xs text-white/50">
+        <div className="mt-1 flex justify-between text-xs text-foreground/50">
           {seg.map((s) => <span key={s.label}>{s.label} {s.v}</span>)}
         </div>
       </div>
@@ -361,11 +361,11 @@ function TrendsTab() {
   const Trend = ({ label, recent, older, unit = '' }: { label: string; recent: number; older: number; unit?: string }) => {
     const up = recent >= older;
     return (
-      <div className="rounded-lg bg-white/5 p-3">
-        <div className="text-xs text-white/40">{label}</div>
+      <div className="rounded-lg bg-black/5 p-3">
+        <div className="text-xs text-foreground/40">{label}</div>
         <div className="flex items-baseline gap-2">
-          <span className="text-lg font-bold text-white">{recent}{unit}</span>
-          <span className={`text-xs ${up ? 'text-emerald-300' : 'text-rose-300'}`}>
+          <span className="text-lg font-bold text-stone-900">{recent}{unit}</span>
+          <span className={`text-xs ${up ? 'text-emerald-600' : 'text-rose-600'}`}>
             {up ? '▲' : '▼'} 以前 {older}{unit}
           </span>
         </div>
@@ -375,32 +375,32 @@ function TrendsTab() {
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-white/50">
+      <p className="text-sm text-foreground/50">
         「🔍 試合後」で蓄積した直近の振り返りを集計し、繰り返し現れる課題（デスの時間帯・苦手な相手・再発する弱点）と今週のフォーカスを提示します。
       </p>
 
       {loading && <Spinner />}
-      {error && <p className="text-sm text-red-400">❌ {error}</p>}
+      {error && <p className="text-sm text-red-600">❌ {error}</p>}
 
       {result && !result.enough && (
-        <Card><p className="text-sm text-white/60">{result.message}（現在 {result.count} 件）</p></Card>
+        <Card><p className="text-sm text-foreground/60">{result.message}（現在 {result.count} 件）</p></Card>
       )}
 
       {result && result.enough && (
         <div className="space-y-3 animate-in fade-in">
           <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-lg bg-white/5 p-3">
-              <div className="text-xs text-white/40">集計対象</div>
-              <div className="text-lg font-bold text-white">{result.count} 試合</div>
+            <div className="rounded-lg bg-black/5 p-3">
+              <div className="text-xs text-foreground/40">集計対象</div>
+              <div className="text-lg font-bold text-stone-900">{result.count} 試合</div>
             </div>
-            <div className="rounded-lg bg-white/5 p-3">
-              <div className="text-xs text-white/40">勝率</div>
-              <div className="text-lg font-bold text-white">{result.winRate}%</div>
+            <div className="rounded-lg bg-black/5 p-3">
+              <div className="text-xs text-foreground/40">勝率</div>
+              <div className="text-lg font-bold text-stone-900">{result.winRate}%</div>
             </div>
           </div>
 
           <Card>
-            <div className="mb-2 text-sm font-semibold text-white/80">💀 デスの時間帯分布（計 {result.totalDeaths} 回）</div>
+            <div className="mb-2 text-sm font-semibold text-foreground/80">💀 デスの時間帯分布（計 {result.totalDeaths} 回）</div>
             <PhaseBar phases={result.deathPhases} />
           </Card>
 
@@ -411,7 +411,7 @@ function TrendsTab() {
 
           {result.topKillers?.length > 0 && (
             <Card>
-              <div className="mb-2 text-sm font-semibold text-white/80">☠️ 繰り返し狩られている相手</div>
+              <div className="mb-2 text-sm font-semibold text-foreground/80">☠️ 繰り返し狩られている相手</div>
               <div className="flex flex-wrap gap-2">
                 {result.topKillers.map((k: any) => (
                   <Tag key={k.champion} color="red">{k.champion} ×{k.count}</Tag>
@@ -422,7 +422,7 @@ function TrendsTab() {
 
           {result.topWeaknesses?.length > 0 && (
             <Card>
-              <div className="mb-2 text-sm font-semibold text-white/80">🔁 再発している弱点</div>
+              <div className="mb-2 text-sm font-semibold text-foreground/80">🔁 再発している弱点</div>
               <div className="flex flex-wrap gap-2">
                 {result.topWeaknesses.map((w: any) => (
                   <Tag key={w.label} color="yellow">{w.label} ×{w.count}</Tag>
@@ -433,7 +433,7 @@ function TrendsTab() {
 
           {result.summary && (
             <div>
-              <div className="mb-1 text-sm font-semibold text-amber-300">🎯 今週のフォーカス</div>
+              <div className="mb-1 text-sm font-semibold text-amber-700">🎯 今週のフォーカス</div>
               <AdviceBox text={result.summary} />
             </div>
           )}
@@ -443,34 +443,34 @@ function TrendsTab() {
             <button
               onClick={generateMenu}
               disabled={menuLoading}
-              className="w-full rounded-xl border border-amber-500/40 bg-amber-500/10 px-5 py-3 text-sm font-semibold text-amber-200 transition hover:bg-amber-500/20 disabled:opacity-50"
+              className="w-full rounded-xl border border-amber-200 bg-amber-100 px-5 py-3 text-sm font-semibold text-amber-700 transition hover:bg-amber-200 disabled:opacity-50"
             >
               {menuLoading ? '生成中...' : '📝 今週の練習メニューを作成'}
             </button>
           )}
 
           {menu && menu.enough === false && (
-            <Card><p className="text-sm text-white/60">{menu.message}</p></Card>
+            <Card><p className="text-sm text-foreground/60">{menu.message}</p></Card>
           )}
 
           {menu && menu.menu?.length > 0 && (
             <div>
-              <div className="mb-2 text-sm font-semibold text-amber-300">📝 今週の練習メニュー</div>
+              <div className="mb-2 text-sm font-semibold text-amber-700">📝 今週の練習メニュー</div>
               <div className="space-y-2">
                 {menu.menu.map((m: any, i: number) => (
-                  <div key={i} className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
+                  <div key={i} className="rounded-xl border border-black/10 bg-black/3 p-3">
                     <div className="flex items-start gap-2">
-                      <span className="mt-0.5 text-amber-400">✔</span>
+                      <span className="mt-0.5 text-amber-600">✔</span>
                       <div className="flex-1">
-                        <div className="font-bold text-white text-sm">{m.title}</div>
-                        {m.detail && <div className="text-xs text-white/60 mt-0.5 leading-relaxed">{m.detail}</div>}
-                        {m.target && <div className="inline-block mt-1.5 text-[11px] font-bold text-amber-300 bg-amber-400/10 border border-amber-400/30 rounded px-2 py-0.5">目標: {m.target}</div>}
+                        <div className="font-bold text-stone-900 text-sm">{m.title}</div>
+                        {m.detail && <div className="text-xs text-foreground/60 mt-0.5 leading-relaxed">{m.detail}</div>}
+                        {m.target && <div className="inline-block mt-1.5 text-[11px] font-bold text-amber-700 bg-amber-100 border border-amber-200 rounded px-2 py-0.5">目標: {m.target}</div>}
                       </div>
                     </div>
                   </div>
                 ))}
               </div>
-              {menu.note && <p className="text-xs text-white/50 mt-2">💬 {menu.note}</p>}
+              {menu.note && <p className="text-xs text-foreground/50 mt-2">💬 {menu.note}</p>}
             </div>
           )}
         </div>
@@ -522,23 +522,23 @@ function GoalTab({ triggerSignal }: { triggerSignal?: number }) {
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-white/50">
+      <p className="text-sm text-foreground/50">
         目標ランクを設定すると、これまでのLP推移から到達予測日と必要ペースを算出します。試合前タブを使うほどLP推移が貯まり、予測精度が上がります。
       </p>
 
       <div className="flex gap-3 items-end flex-wrap">
         <div>
-          <label className="mb-1 block text-xs text-white/50">目標ティア</label>
+          <label className="mb-1 block text-xs text-foreground/50">目標ティア</label>
           <select value={tier} onChange={(e) => setTier(e.target.value)}
-            className="rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white outline-none focus:border-green-400">
+            className="rounded-xl border border-black/10 bg-black/5 px-4 py-2.5 text-sm text-stone-900 outline-none focus:border-green-400">
             {TIERS.map((t) => <option key={t} value={t}>{t}</option>)}
           </select>
         </div>
         {!isApex && (
           <div>
-            <label className="mb-1 block text-xs text-white/50">ディビジョン</label>
+            <label className="mb-1 block text-xs text-foreground/50">ディビジョン</label>
             <select value={division} onChange={(e) => setDivision(e.target.value)}
-              className="rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white outline-none focus:border-green-400">
+              className="rounded-xl border border-black/10 bg-black/5 px-4 py-2.5 text-sm text-stone-900 outline-none focus:border-green-400">
               {DIVS.map((d) => <option key={d} value={d}>{d}</option>)}
             </select>
           </div>
@@ -550,62 +550,62 @@ function GoalTab({ triggerSignal }: { triggerSignal?: number }) {
       </div>
 
       {loading && <Spinner />}
-      {error && <p className="text-sm text-red-400">❌ {error}</p>}
+      {error && <p className="text-sm text-red-600">❌ {error}</p>}
 
       {result && result.ranked === false && (
-        <Card><p className="text-sm text-white/60">{result.message}</p></Card>
+        <Card><p className="text-sm text-foreground/60">{result.message}</p></Card>
       )}
 
       {result && result.ranked && (
         <div className="space-y-3 animate-in fade-in">
           <Card>
             <div className="flex items-center justify-between text-sm mb-2">
-              <span className="text-white/60">現在: <strong className="text-white">{result.current.label}</strong></span>
-              <span className="text-white/60">目標: <strong className="text-green-300">{result.target?.label || '—'}</strong></span>
+              <span className="text-foreground/60">現在: <strong className="text-stone-900">{result.current.label}</strong></span>
+              <span className="text-foreground/60">目標: <strong className="text-green-700">{result.target?.label || '—'}</strong></span>
             </div>
-            <div className="h-3 w-full rounded-full bg-white/10 overflow-hidden">
+            <div className="h-3 w-full rounded-full bg-black/5 overflow-hidden">
               <div className="h-3 rounded-full bg-gradient-to-r from-green-500 to-emerald-400 transition-all" style={{ width: `${pct}%` }} />
             </div>
-            <div className="text-right text-xs text-white/40 mt-1">{pct}%</div>
+            <div className="text-right text-xs text-foreground/40 mt-1">{pct}%</div>
           </Card>
 
           {result.projection?.reached && (
-            <div className="rounded-xl border border-green-500/40 bg-green-500/10 px-4 py-3 text-sm font-bold text-green-200">
+            <div className="rounded-xl border border-green-200 bg-green-100 px-4 py-3 text-sm font-bold text-green-700">
               🎉 目標達成済みです！次の目標を設定しましょう。
             </div>
           )}
 
           {result.projection && !result.projection.reached && (
             <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-lg bg-white/5 p-3">
-                <div className="text-xs text-white/40">残りLP</div>
-                <div className="text-lg font-black text-white">{result.gap}</div>
+              <div className="rounded-lg bg-black/5 p-3">
+                <div className="text-xs text-foreground/40">残りLP</div>
+                <div className="text-lg font-black text-stone-900">{result.gap}</div>
               </div>
-              <div className="rounded-lg bg-white/5 p-3">
-                <div className="text-xs text-white/40">ペース</div>
-                <div className="text-lg font-black text-white">{result.lpPerDay !== null ? `${result.lpPerDay} LP/日` : '—'}</div>
+              <div className="rounded-lg bg-black/5 p-3">
+                <div className="text-xs text-foreground/40">ペース</div>
+                <div className="text-lg font-black text-stone-900">{result.lpPerDay !== null ? `${result.lpPerDay} LP/日` : '—'}</div>
               </div>
               {result.projection.insufficientTrend ? (
-                <div className="col-span-2 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-sm text-amber-200">
+                <div className="col-span-2 rounded-lg border border-amber-200 bg-amber-100 p-3 text-sm text-amber-700">
                   到達予測にはLP推移データが不足しています（現在 {result.snapshots} 日分）。試合前タブを数日使うと予測が出ます。
                   {result.lpPerDay !== null && result.lpPerDay <= 0 && ' 直近はLPが伸びていないため、まずは勝率改善が必要です。'}
                 </div>
               ) : (
                 <>
-                  <div className="rounded-lg bg-white/5 p-3">
-                    <div className="text-xs text-white/40">到達予測</div>
-                    <div className="text-lg font-black text-green-300">{result.projection.reachDate}</div>
-                    <div className="text-[10px] text-white/40">あと約{result.projection.days}日</div>
+                  <div className="rounded-lg bg-black/5 p-3">
+                    <div className="text-xs text-foreground/40">到達予測</div>
+                    <div className="text-lg font-black text-green-700">{result.projection.reachDate}</div>
+                    <div className="text-[10px] text-foreground/40">あと約{result.projection.days}日</div>
                   </div>
-                  <div className="rounded-lg bg-white/5 p-3">
-                    <div className="text-xs text-white/40">必要試合数の目安</div>
-                    <div className="text-lg font-black text-white">約{result.projection.gamesNeeded}勝分</div>
+                  <div className="rounded-lg bg-black/5 p-3">
+                    <div className="text-xs text-foreground/40">必要試合数の目安</div>
+                    <div className="text-lg font-black text-stone-900">約{result.projection.gamesNeeded}勝分</div>
                   </div>
                 </>
               )}
             </div>
           )}
-          <p className="text-[10px] text-white/40">※ LP推移は「試合前」または「目標」タブを開くたびに1日1回記録されます。データが増えるほど予測が正確になります。</p>
+          <p className="text-[10px] text-foreground/40">※ LP推移は「試合前」または「目標」タブを開くたびに1日1回記録されます。データが増えるほど予測が正確になります。</p>
         </div>
       )}
     </div>
@@ -636,9 +636,9 @@ function TiltTab({ triggerSignal }: { triggerSignal?: number }) {
 
   const tilt: TiltResult | null = result?.tilt ?? null;
   const tiltColors: Record<TiltLevel, string> = {
-    green: 'border-emerald-500/50 bg-emerald-500/10',
-    yellow: 'border-yellow-500/50 bg-yellow-500/10',
-    red: 'border-red-500/50 bg-red-500/10',
+    green: 'border-emerald-200 bg-emerald-100',
+    yellow: 'border-yellow-200 bg-yellow-100',
+    red: 'border-red-200 bg-red-100',
   };
   const meterColors: Record<TiltLevel, string> = {
     green: 'bg-emerald-500',
@@ -648,7 +648,7 @@ function TiltTab({ triggerSignal }: { triggerSignal?: number }) {
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-white/50">
+      <p className="text-sm text-foreground/50">
         直近10試合の連敗・デス数・KDAを分析し、今ランクを続けるべきか診断します。
       </p>
 
@@ -662,17 +662,17 @@ function TiltTab({ triggerSignal }: { triggerSignal?: number }) {
       </button>
 
       {loading && <Spinner />}
-      {error && <p className="text-sm text-red-400">❌ {error}</p>}
+      {error && <p className="text-sm text-red-600">❌ {error}</p>}
 
       {result && tilt && (
         <div className="space-y-3 animate-in fade-in">
           <div className={`rounded-2xl border p-5 ${tiltColors[tilt.level]}`}>
-            <div className="mb-2 text-lg font-bold text-white">{tilt.label}</div>
+            <div className="mb-2 text-lg font-bold text-stone-900">{tilt.label}</div>
             <div className="mb-3">
-              <div className="mb-1 flex justify-between text-xs text-white/50">
+              <div className="mb-1 flex justify-between text-xs text-foreground/50">
                 <span>ティルトスコア</span><span>{tilt.score} / 100</span>
               </div>
-              <div className="h-2 w-full rounded-full bg-white/10">
+              <div className="h-2 w-full rounded-full bg-black/5">
                 <div
                   className={`h-2 rounded-full transition-all ${meterColors[tilt.level]}`}
                   style={{ width: `${Math.min(tilt.score, 100)}%` }}
@@ -689,29 +689,29 @@ function TiltTab({ triggerSignal }: { triggerSignal?: number }) {
           {/* 連敗相関トラッカー */}
           {result.streakAnalysis && (
             <Card>
-              <div className="mb-2 text-xs font-semibold text-white/50">📉 連敗相関</div>
+              <div className="mb-2 text-xs font-semibold text-foreground/50">📉 連敗相関</div>
               <div className="grid grid-cols-3 gap-2 text-center">
-                <div className="rounded-lg bg-white/5 p-2">
-                  <div className="text-[10px] text-white/40">現在</div>
-                  <div className={`text-lg font-black ${result.streakAnalysis.streakType === 'loss' ? 'text-rose-400' : 'text-emerald-400'}`}>
+                <div className="rounded-lg bg-black/5 p-2">
+                  <div className="text-[10px] text-foreground/40">現在</div>
+                  <div className={`text-lg font-black ${result.streakAnalysis.streakType === 'loss' ? 'text-rose-600' : 'text-emerald-600'}`}>
                     {result.streakAnalysis.currentStreak}{result.streakAnalysis.streakType === 'loss' ? '連敗' : '連勝'}
                   </div>
                 </div>
-                <div className="rounded-lg bg-white/5 p-2">
-                  <div className="text-[10px] text-white/40">全体勝率</div>
-                  <div className="text-lg font-black text-white">{result.streakAnalysis.overallWinRate}%</div>
+                <div className="rounded-lg bg-black/5 p-2">
+                  <div className="text-[10px] text-foreground/40">全体勝率</div>
+                  <div className="text-lg font-black text-stone-900">{result.streakAnalysis.overallWinRate}%</div>
                 </div>
-                <div className="rounded-lg bg-white/5 p-2">
-                  <div className="text-[10px] text-white/40">負け直後の勝率</div>
+                <div className="rounded-lg bg-black/5 p-2">
+                  <div className="text-[10px] text-foreground/40">負け直後の勝率</div>
                   <div className={`text-lg font-black ${
-                    result.streakAnalysis.afterLossWinRate !== null && result.streakAnalysis.afterLossWinRate < result.streakAnalysis.overallWinRate ? 'text-rose-400' : 'text-white'
+                    result.streakAnalysis.afterLossWinRate !== null && result.streakAnalysis.afterLossWinRate < result.streakAnalysis.overallWinRate ? 'text-rose-600' : 'text-stone-900'
                   }`}>
                     {result.streakAnalysis.afterLossWinRate !== null ? `${result.streakAnalysis.afterLossWinRate}%` : '—'}
                   </div>
                 </div>
               </div>
               {result.streakAnalysis.stopRecommended && (
-                <div className="mt-3 rounded-lg border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm font-bold text-rose-200">
+                <div className="mt-3 rounded-lg border border-rose-200 bg-rose-100 px-3 py-2 text-sm font-bold text-rose-700">
                   🛑 やめどきサイン: {result.streakAnalysis.currentStreak}連敗中です
                   {result.streakAnalysis.afterLossWinRate !== null && result.streakAnalysis.afterLossWinRate < result.streakAnalysis.overallWinRate &&
                     `（あなたは連敗後の勝率が${result.streakAnalysis.overallWinRate - result.streakAnalysis.afterLossWinRate}pt下がる傾向）`}。一度離れる方が期待値が高いかもしれません。
@@ -722,13 +722,13 @@ function TiltTab({ triggerSignal }: { triggerSignal?: number }) {
 
           {result.recentMatches?.length > 0 && (
             <Card>
-              <div className="mb-2 text-xs font-semibold text-white/50">直近の試合</div>
+              <div className="mb-2 text-xs font-semibold text-foreground/50">直近の試合</div>
               <div className="space-y-1.5">
                 {result.recentMatches.map((m: MatchRecord, i: number) => (
                   <div key={i} className="flex items-center gap-2 text-sm">
                     <span>{m.win ? '✅' : '❌'}</span>
-                    <span className="w-20 font-medium text-white/80">{m.champion}</span>
-                    <span className="text-white/50">{m.kills}/{m.deaths}/{m.assists}</span>
+                    <span className="w-20 font-medium text-foreground/80">{m.champion}</span>
+                    <span className="text-foreground/50">{m.kills}/{m.deaths}/{m.assists}</span>
                   </div>
                 ))}
               </div>
@@ -768,7 +768,7 @@ function MatchupTab({ champion, enemyChampion, triggerSignal }: { champion: stri
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3">
-        <p className="text-sm text-white/50">
+        <p className="text-sm text-foreground/50">
           偵察でライブゲームの自分・対面チャンピオンが判明すると自動的に分析します
           （ナレッジDBとチャンピオン辞典の記述をAIが要約）。
         </p>
@@ -784,19 +784,19 @@ function MatchupTab({ champion, enemyChampion, triggerSignal }: { champion: stri
       </div>
 
       {loading && <Spinner />}
-      {error && <p className="text-sm text-red-400">❌ {error}</p>}
+      {error && <p className="text-sm text-red-600">❌ {error}</p>}
 
       {result && (
         <div className="space-y-3 animate-in fade-in">
           <Card>
             <div className="flex items-center gap-3 text-sm">
               <Tag color="blue">{result.myChampion}</Tag>
-              <span className="text-white/30">vs</span>
+              <span className="text-foreground/30">vs</span>
               <Tag color="red">{result.enemyChampion}</Tag>
             </div>
             <div className="mt-2 flex gap-2 text-xs">
-              <span className="text-white/40">{result.knowledgeSources}</span>
-              <span className="text-white/40">{result.sentinelSources}</span>
+              <span className="text-foreground/40">{result.knowledgeSources}</span>
+              <span className="text-foreground/40">{result.sentinelSources}</span>
             </div>
           </Card>
 
@@ -860,8 +860,8 @@ export default function CoachPage() {
         <div className="space-y-8">
           <ScoutTab onLiveMatchDetected={handleLiveMatchDetected} />
           {(sharedChampion && sharedEnemyChampion) && (
-            <div className="border-t border-white/10 pt-8">
-              <h3 className="mb-4 text-sm font-bold text-white/70">⚔️ マッチアップ分析（偵察結果から自動生成）</h3>
+            <div className="border-t border-black/10 pt-8">
+              <h3 className="mb-4 text-sm font-bold text-foreground/70">⚔️ マッチアップ分析（偵察結果から自動生成）</h3>
               <MatchupTab champion={sharedChampion} enemyChampion={sharedEnemyChampion} triggerSignal={scoutMatchupTrigger} />
             </div>
           )}
@@ -891,8 +891,8 @@ export default function CoachPage() {
 
   if (isAuthenticated === null) {
     return (
-      <div style={{ minHeight: '100vh', background: '#2b2620' }} className="flex items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-white/20 border-t-orange-400" />
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-black/15 border-t-orange-400" />
       </div>
     );
   }
@@ -900,13 +900,12 @@ export default function CoachPage() {
   if (isAuthenticated === false) {
     return (
       <div
-        style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #2b2620 0%, #3d3428 60%, #2b2620 100%)' }}
-        className="flex items-center justify-center p-4 font-sans text-white"
+        className="min-h-screen flex items-center justify-center p-4 font-sans text-foreground bg-background"
       >
-        <div className="text-center max-w-sm rounded-2xl border border-white/10 bg-white/5 p-8 backdrop-blur">
+        <div className="text-center max-w-sm rounded-2xl border border-black/10 bg-white p-8 backdrop-blur shadow-lg">
           <div className="text-4xl mb-4">🔑</div>
           <h2 className="text-lg font-bold mb-2">認証が必要です</h2>
-          <p className="text-sm text-white/50 mb-6 leading-relaxed">
+          <p className="text-sm text-foreground/50 mb-6 leading-relaxed">
             このコーチング機能は管理者専用です。管理者パスコードでログインしてから再度アクセスしてください。
           </p>
           <a
@@ -922,8 +921,7 @@ export default function CoachPage() {
 
   return (
     <div
-      style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #2b2620 0%, #3d3428 60%, #2b2620 100%)' }}
-      className="px-4 py-8 font-sans text-white"
+      className="min-h-screen px-4 py-8 font-sans text-foreground bg-background"
     >
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
@@ -937,7 +935,7 @@ export default function CoachPage() {
         <div className="mb-8 text-center">
           <div className="mb-2 text-4xl">🏆</div>
           <h1 className="text-2xl font-bold tracking-tight">パーソナルコーチ</h1>
-          <p className="mt-1 text-sm text-white/40">
+          <p className="mt-1 text-sm text-foreground/40">
             Riot API × ナレッジDB × Gemini AI があなたの勝率を上げる
           </p>
           <div className="mt-3">
@@ -946,32 +944,32 @@ export default function CoachPage() {
         </div>
 
         {/* 共通入力欄: 事前分析とマッチアップで別々に入力させていたのを統合 */}
-        <div className="mb-6 rounded-2xl border border-white/10 bg-white/5 p-5">
+        <div className="mb-6 rounded-2xl border border-black/10 bg-black/5 p-5">
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="mb-1 block text-xs text-white/50">今日使うチャンピオン</label>
+              <label className="mb-1 block text-xs text-foreground/50">今日使うチャンピオン</label>
               <input
                 value={sharedChampion}
                 onChange={(e) => setSharedChampion(e.target.value)}
                 placeholder="例: Graves"
-                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder-white/30 outline-none focus:border-orange-400"
+                className="w-full rounded-xl border border-black/10 bg-black/5 px-4 py-2.5 text-sm text-stone-900 placeholder-foreground/30 outline-none focus:border-orange-400"
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs text-white/50">対面の敵チャンピオン</label>
+              <label className="mb-1 block text-xs text-foreground/50">対面の敵チャンピオン</label>
               <input
                 value={sharedEnemyChampion}
                 onChange={(e) => setSharedEnemyChampion(e.target.value)}
                 placeholder="例: Lee Sin"
-                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder-white/30 outline-none focus:border-orange-400"
+                className="w-full rounded-xl border border-black/10 bg-black/5 px-4 py-2.5 text-sm text-stone-900 placeholder-foreground/30 outline-none focus:border-orange-400"
               />
             </div>
           </div>
-          <p className="mt-2 text-[11px] text-white/30">「事前分析」「マッチアップ」で共通して使われます（偵察でライブゲームを検知すると自動入力されます）。</p>
+          <p className="mt-2 text-[11px] text-foreground/30">「事前分析」「マッチアップ」で共通して使われます（偵察でライブゲームを検知すると自動入力されます）。</p>
 
           <button
             onClick={runDailyCheck}
-            className="mt-4 w-full rounded-xl border border-amber-500/40 bg-amber-500/10 px-5 py-3 text-sm font-bold text-amber-200 transition hover:bg-amber-500/20"
+            className="mt-4 w-full rounded-xl border border-amber-200 bg-amber-100 px-5 py-3 text-sm font-bold text-amber-700 transition hover:bg-amber-200"
           >
             🎯 今日のチェック（事前分析・目標・ティルトを一括実行）
           </button>
@@ -983,13 +981,13 @@ export default function CoachPage() {
             const groupSections = SECTIONS.filter((s) => s.group === groupId);
             return (
               <div key={groupId}>
-                <h2 className="mb-2 px-1 text-xs font-bold uppercase tracking-wider text-white/40">
+                <h2 className="mb-2 px-1 text-xs font-bold uppercase tracking-wider text-foreground/40">
                   {groupSections[0].groupLabel}
                 </h2>
-                <div className="divide-y divide-white/5 overflow-hidden rounded-2xl border border-white/10 bg-white/3">
+                <div className="divide-y divide-black/10 overflow-hidden rounded-2xl border border-black/10 bg-black/3">
                   {groupSections.map((sec) => (
                     <div key={sec.id} id={`section-${sec.id}`} className="px-5 py-4">
-                      <h3 className="mb-3 text-sm font-semibold text-white/80">{sec.label}</h3>
+                      <h3 className="mb-3 text-sm font-semibold text-foreground/80">{sec.label}</h3>
                       {sec.content}
                     </div>
                   ))}
@@ -1000,7 +998,7 @@ export default function CoachPage() {
         </div>
 
         {/* フッター */}
-        <div className="mt-10 text-center text-xs text-white/20">
+        <div className="mt-10 text-center text-xs text-foreground/20">
           生成結果はナレッジDBに蓄積され、次回の精度向上に活用されます
         </div>
       </div>

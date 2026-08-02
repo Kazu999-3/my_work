@@ -7,9 +7,9 @@ import { Search as SearchIcon, BookHeart, Brain, Swords, ArrowRight } from 'luci
 import { EmptyState } from '../../components/Feedback';
 
 const SOURCE_STYLE: Record<string, { color: string; icon: any }> = {
-  'チャンピオン辞典': { color: 'text-[#c89b3c] border-[#c89b3c]/40 bg-[#c89b3c]/10', icon: BookHeart },
-  'マッチアップメモ': { color: 'text-[#00cfef] border-[#00cfef]/40 bg-[#00cfef]/10', icon: Swords },
-  'ナレッジ': { color: 'text-pink-400 border-pink-400/40 bg-pink-400/10', icon: Brain },
+  'チャンピオン辞典': { color: 'text-gold border-[#c89b3c]/40 bg-[#c89b3c]/10', icon: BookHeart },
+  'マッチアップメモ': { color: 'text-cyan-700 border-cyan-200 bg-cyan-100', icon: Swords },
+  'ナレッジ': { color: 'text-pink-700 border-pink-200 bg-pink-100', icon: Brain },
 };
 
 function SearchInner() {
@@ -58,11 +58,11 @@ function SearchInner() {
   const order = ['チャンピオン辞典', 'マッチアップメモ', 'ナレッジ'];
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8 text-white">
+    <div className="max-w-4xl mx-auto px-4 py-8 text-stone-900">
       <h1 className="text-3xl md:text-4xl font-extrabold mb-2 flex items-center gap-3">
         <SearchIcon className="text-[#a78bfa]" size={32} /> 横断検索
       </h1>
-      <p className="text-white/40 text-sm mb-6">チャンピオン辞典・マッチアップメモ・攻略ライブラリをまとめて検索します。</p>
+      <p className="text-stone-500 text-sm mb-6">チャンピオン辞典・マッチアップメモ・攻略ライブラリをまとめて検索します。</p>
 
       <form onSubmit={onSubmit} className="relative mb-6">
         <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-[#a78bfa]" size={20} />
@@ -71,7 +71,7 @@ function SearchInner() {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="チャンピオン名・キーワードで検索（例: Lillia, ガンク, ドラゴン）"
-          className="w-full rounded-2xl border-2 border-white/10 bg-white/5 py-4 pl-12 pr-28 text-white placeholder-white/30 outline-none focus:border-[#a78bfa]/50 transition"
+          className="w-full rounded-2xl border-2 border-black/10 bg-white py-4 pl-12 pr-28 text-stone-900 placeholder-stone-400 outline-none focus:border-[#a78bfa]/50 transition"
         />
         <button type="submit" disabled={loading}
           className="absolute right-2 top-1/2 -translate-y-1/2 rounded-xl bg-[#a78bfa] text-black font-bold px-4 py-2 text-sm hover:opacity-90 disabled:opacity-50">
@@ -79,10 +79,10 @@ function SearchInner() {
         </button>
       </form>
 
-      {message && <p className="text-sm text-white/50 mb-4">{message}</p>}
+      {message && <p className="text-sm text-stone-500 mb-4">{message}</p>}
 
       {searched && !loading && (
-        <p className="text-xs text-white/40 mb-4">{results.length} 件ヒット</p>
+        <p className="text-xs text-stone-500 mb-4">{results.length} 件ヒット</p>
       )}
 
       <div className="space-y-6">
@@ -97,18 +97,18 @@ function SearchInner() {
               <div className="space-y-2">
                 {grouped[source].map((r: any, i: number) => (
                   <Link key={i} href={r.url}
-                    className="block rounded-xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] hover:border-white/20 transition p-4 group">
+                    className="block rounded-xl border border-black/10 bg-white/60 hover:bg-white hover:border-black/20 transition p-4 group">
                     <div className="flex items-center justify-between gap-3">
-                      <h3 className="font-bold text-white group-hover:text-[#a78bfa] transition truncate">
+                      <h3 className="font-bold text-stone-900 group-hover:text-[#a78bfa] transition truncate">
                         {(r.title || '').replace(/_/g, ' ')}
                       </h3>
-                      <ArrowRight size={16} className="text-white/30 group-hover:text-[#a78bfa] shrink-0" />
+                      <ArrowRight size={16} className="text-stone-400 group-hover:text-[#a78bfa] shrink-0" />
                     </div>
                     <div className="flex flex-wrap gap-1.5 mt-1">
-                      {r.champion && <span className="text-[10px] text-white/50 bg-white/5 border border-white/10 rounded px-1.5 py-0.5">{r.champion}</span>}
-                      {r.enemy && <span className="text-[10px] text-white/50 bg-white/5 border border-white/10 rounded px-1.5 py-0.5">vs {r.enemy}</span>}
+                      {r.champion && <span className="text-[10px] text-stone-500 bg-black/5 border border-black/10 rounded px-1.5 py-0.5">{r.champion}</span>}
+                      {r.enemy && <span className="text-[10px] text-stone-500 bg-black/5 border border-black/10 rounded px-1.5 py-0.5">vs {r.enemy}</span>}
                     </div>
-                    {r.snippet && <p className="text-sm text-white/50 mt-2 leading-relaxed line-clamp-2">{r.snippet}</p>}
+                    {r.snippet && <p className="text-sm text-stone-500 mt-2 leading-relaxed line-clamp-2">{r.snippet}</p>}
                   </Link>
                 ))}
               </div>

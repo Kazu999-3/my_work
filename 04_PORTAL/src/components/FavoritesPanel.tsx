@@ -118,7 +118,7 @@ export default function FavoritesPanel({ isCollapsed = false, isAdmin = false }:
   };
 
   return (
-    <div className={`pt-4 border-t border-white/5 ${isCollapsed ? 'flex flex-col items-center w-full px-0' : ''}`}>
+    <div className={`pt-4 border-t border-black/5 ${isCollapsed ? 'flex flex-col items-center w-full px-0' : ''}`}>
       {!isCollapsed ? (
         <h4 className="flex items-center gap-2 text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mb-3 px-2">
           <Star size={12} className="text-amber-400" /> お気に入り
@@ -170,21 +170,21 @@ export default function FavoritesPanel({ isCollapsed = false, isAdmin = false }:
               <Link
                 href={`/library?article=${article.id}`}
                 prefetch={false}
-                className="flex-1 flex items-center gap-2 px-2 py-1.5 rounded-lg text-[11px] text-gray-400 hover:text-[#a78bfa] hover:bg-white/5 transition-all truncate"
+                className="flex-1 flex items-center gap-2 px-2 py-1.5 rounded-lg text-[11px] text-gray-400 hover:text-[#a78bfa] hover:bg-black/3 transition-all truncate"
               >
                 <BookOpen size={12} className="shrink-0 text-[#a78bfa]/50" />
                 <span className="truncate">{article.title.replace(/_/g, " ")}</span>
               </Link>
               <button
                 onClick={() => removeArticle(article.id)}
-                className="text-gray-600 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100 p-1"
+                className="text-gray-500 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100 p-1"
               >
                 <X size={10} />
               </button>
             </div>
           ))}
           {favs.articles.length > 5 && (
-            <p className="text-[10px] text-gray-600 px-2">+{favs.articles.length - 5} more</p>
+            <p className="text-[10px] text-gray-500 px-2">+{favs.articles.length - 5} more</p>
           )}
         </div>
       )}

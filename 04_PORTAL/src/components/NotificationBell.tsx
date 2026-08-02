@@ -130,7 +130,7 @@ export default function NotificationBell({ collapsed = false, align = 'left' }: 
       <button
         onClick={toggleOpen}
         title="通知"
-        className={`flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-bold transition-all hover:bg-white/5 hover:text-white text-gray-400 relative ${
+        className={`flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-bold transition-all hover:bg-black/5 hover:text-stone-900 text-gray-400 relative ${
           collapsed ? 'justify-center' : 'w-full'
         }`}
       >
@@ -149,12 +149,12 @@ export default function NotificationBell({ collapsed = false, align = 'left' }: 
         <div
           ref={dropdownRef}
           style={{ top: coords.top, left: coords.left, right: coords.right }}
-          className="fixed z-50 w-80 max-w-[85vw] max-h-96 overflow-y-auto rounded-2xl border border-white/10 bg-[#0d0f16] shadow-2xl"
+          className="fixed z-50 w-80 max-w-[85vw] max-h-96 overflow-y-auto rounded-2xl border border-black/10 bg-white shadow-2xl"
         >
-          <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
-            <span className="text-xs font-black text-gray-300">通知</span>
+          <div className="flex items-center justify-between border-b border-black/10 px-4 py-3">
+            <span className="text-xs font-black text-gray-700">通知</span>
             {unreadCount > 0 && (
-              <button onClick={markAllRead} className="text-[10px] font-bold text-cyan-400 hover:text-cyan-300">
+              <button onClick={markAllRead} className="text-[10px] font-bold text-cyan-700 hover:text-cyan-800">
                 すべて既読にする
               </button>
             )}
@@ -162,19 +162,19 @@ export default function NotificationBell({ collapsed = false, align = 'left' }: 
           {notifications.length === 0 ? (
             <div className="px-4 py-8 text-center text-xs text-gray-500">通知はありません</div>
           ) : (
-            <div className="divide-y divide-white/5">
+            <div className="divide-y divide-black/5">
               {notifications.map((n) => (
                 <button
                   key={n.id}
                   onClick={() => handleClickItem(n)}
-                  className={`block w-full px-4 py-3 text-left transition-colors hover:bg-white/5 ${!n.read ? 'bg-cyan-500/5' : ''}`}
+                  className={`block w-full px-4 py-3 text-left transition-colors hover:bg-black/5 ${!n.read ? 'bg-cyan-50' : ''}`}
                 >
                   <div className="flex items-start gap-2">
                     {!n.read && <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-cyan-400" />}
                     <div className="min-w-0 flex-1">
-                      <div className="text-xs font-bold text-gray-200 line-clamp-2">{n.title}</div>
+                      <div className="text-xs font-bold text-gray-800 line-clamp-2">{n.title}</div>
                       {n.body && <div className="mt-0.5 text-[10px] text-gray-500 line-clamp-2 whitespace-pre-wrap">{n.body}</div>}
-                      <div className="mt-1 text-[9px] text-gray-600">{timeAgo(n.created_at)}</div>
+                      <div className="mt-1 text-[9px] text-gray-500">{timeAgo(n.created_at)}</div>
                     </div>
                   </div>
                 </button>

@@ -28,7 +28,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#06070a",
+  themeColor: "#eae4d4",
 };
 
 export default function RootLayout({
@@ -52,7 +52,7 @@ export default function RootLayout({
           });
         `}</Script>
       </head>
-      <body className="antialiased bg-[#06070a] text-white flex min-h-screen">
+      <body className="antialiased bg-background text-foreground flex min-h-screen">
         <PwaRegister />
         <Toaster />
         <Sidebar />

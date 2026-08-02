@@ -40,7 +40,7 @@ export default function SystemStatus({ isCollapsed = false }: { isCollapsed?: bo
     : '';
 
   return (
-    <div className={`flex items-center gap-3 bg-black/40 rounded-2xl border border-white/5 ${isCollapsed ? 'justify-center p-3 w-10 h-10 mx-auto' : 'p-4'}`}>
+    <div className={`flex items-center gap-3 bg-black/5 rounded-2xl border border-black/5 ${isCollapsed ? 'justify-center p-3 w-10 h-10 mx-auto' : 'p-4'}`}>
       <div className="relative flex items-center justify-center shrink-0">
         <div className="w-2 h-2 rounded-full relative z-10" style={{ backgroundColor: color }}></div>
         {ok && !loading && (
@@ -60,7 +60,7 @@ export default function SystemStatus({ isCollapsed = false }: { isCollapsed?: bo
               {([['Riot', health.riotKey], ['AI', health.geminiKey], ['Push', health.vapid], ['Webhook', health.discordWebhook]] as const)
                 .filter(([, okv]) => okv === false)
                 .map(([name]) => (
-                  <span key={name} className="text-[8px] font-bold px-1 py-0.5 rounded bg-amber-500/15 text-amber-400 border border-amber-500/30">{name}未設定</span>
+                  <span key={name} className="text-[8px] font-bold px-1 py-0.5 rounded bg-amber-100 text-amber-700 border border-amber-200">{name}未設定</span>
                 ))}
             </div>
           )}

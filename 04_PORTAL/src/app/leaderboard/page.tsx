@@ -225,23 +225,23 @@ export default function LeaderboardPage() {
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-stone-950">
+      <div className="flex h-screen items-center justify-center bg-background">
         <Spinner label="リーダーボードを読み込み中..." />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-stone-950 py-10 px-4 sm:px-6 lg:px-8 text-stone-200">
+    <div className="min-h-screen bg-background py-10 px-4 sm:px-6 lg:px-8 text-stone-800">
       <div className="max-w-7xl mx-auto">
         <div className="relative mb-6">
-          <h1 className="text-3xl font-extrabold text-white text-center tracking-tight flex items-center justify-center gap-3">
+          <h1 className="text-3xl font-extrabold text-stone-900 text-center tracking-tight flex items-center justify-center gap-3">
             <span className="text-amber-500">🏆</span> KTM LEADERBOARD
           </h1>
           <button
             onClick={handleSyncDiscordNames}
             disabled={syncing}
-            className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center gap-2 bg-orange-600 hover:bg-orange-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition disabled:opacity-50"
+            className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center gap-2 bg-orange-600 hover:bg-orange-500 text-stone-900 px-3 py-1.5 rounded-lg text-xs font-bold transition disabled:opacity-50"
           >
             <RefreshCw className={`w-3 h-3 ${syncing ? 'animate-spin' : ''}`} />
             <span className="hidden sm:inline">{syncing ? '同期中...' : '名前の一括同期'}</span>
@@ -250,13 +250,13 @@ export default function LeaderboardPage() {
         
         {/* タブナビゲーション */}
         <div className="flex justify-center mb-10 px-2">
-          <div className="inline-flex flex-wrap justify-center gap-1 bg-stone-900 rounded-xl p-1 border border-stone-800 max-w-full">
+          <div className="inline-flex flex-wrap justify-center gap-1 bg-surface rounded-xl p-1 border border-border max-w-full">
             <button
               onClick={() => setActiveTab('ranking')}
               className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-6 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-bold transition-all whitespace-nowrap ${
                 activeTab === 'ranking'
-                  ? 'bg-amber-600 text-white shadow-lg'
-                  : 'text-stone-400 hover:text-white hover:bg-stone-800'
+                  ? 'bg-amber-600 text-stone-900 shadow-lg'
+                  : 'text-stone-400 hover:text-stone-900 hover:bg-black/5'
               }`}
             >
               <Trophy size={16} />
@@ -266,8 +266,8 @@ export default function LeaderboardPage() {
               onClick={() => setActiveTab('winrate')}
               className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-6 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-bold transition-all whitespace-nowrap ${
                 activeTab === 'winrate'
-                  ? 'bg-emerald-600 text-white shadow-lg'
-                  : 'text-stone-400 hover:text-white hover:bg-stone-800'
+                  ? 'bg-emerald-600 text-stone-900 shadow-lg'
+                  : 'text-stone-400 hover:text-stone-900 hover:bg-black/5'
               }`}
             >
               <Activity size={16} />
@@ -277,8 +277,8 @@ export default function LeaderboardPage() {
               onClick={() => setActiveTab('meta')}
               className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-6 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-bold transition-all whitespace-nowrap ${
                 activeTab === 'meta'
-                  ? 'bg-amber-600 text-white shadow-lg'
-                  : 'text-stone-400 hover:text-white hover:bg-stone-800'
+                  ? 'bg-amber-600 text-stone-900 shadow-lg'
+                  : 'text-stone-400 hover:text-stone-900 hover:bg-black/5'
               }`}
             >
               🏆 メタ統計
@@ -291,10 +291,10 @@ export default function LeaderboardPage() {
           <div className="max-w-4xl mx-auto">
             <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
               <p className="text-sm text-stone-400 font-bold">KTMカスタム内のチャンピオン使用状況（ピック数順）</p>
-              <div className="flex items-center gap-2 bg-stone-900 border border-stone-800 rounded-xl px-3 py-1.5">
+              <div className="flex items-center gap-2 bg-surface border border-border rounded-xl px-3 py-1.5">
                 <span className="text-xs text-stone-400 font-bold">最小試合数:</span>
                 <select value={metaMinGames} onChange={(e) => setMetaMinGames(Number(e.target.value))}
-                  className="bg-stone-800 text-white text-xs font-bold rounded-lg border border-stone-700 px-2 py-1 focus:outline-none">
+                  className="bg-black/5 text-stone-900 text-xs font-bold rounded-lg border border-border px-2 py-1 focus:outline-none">
                   <option value={1}>1+</option><option value={2}>2+</option><option value={3}>3+</option><option value={5}>5+</option>
                 </select>
               </div>
@@ -302,15 +302,15 @@ export default function LeaderboardPage() {
             {metaLoading || metaData === null ? (
               <Spinner label="メタ統計を集計中..." />
             ) : (
-              <div className="bg-stone-900 rounded-2xl border border-stone-800 overflow-hidden divide-y divide-stone-800">
+              <div className="bg-surface rounded-2xl border border-border overflow-hidden divide-y divide-stone-800">
                 {metaData.filter(m => m.games >= metaMinGames).map((m, idx) => (
-                  <div key={m.name} className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 hover:bg-stone-800/40">
+                  <div key={m.name} className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 hover:bg-black/5">
                     <span className="w-5 sm:w-6 text-center text-xs font-black text-stone-500 shrink-0">{idx + 1}</span>
-                    <Image src={getChampIcon(m.name)} alt={m.name} width={32} height={32} className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-stone-700 shrink-0"
+                    <Image src={getChampIcon(m.name)} alt={m.name} width={32} height={32} className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-border shrink-0"
                       onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                    <span className="flex-1 min-w-0 font-bold text-white text-sm truncate">{m.name}</span>
+                    <span className="flex-1 min-w-0 font-bold text-stone-900 text-sm truncate">{m.name}</span>
                     <span className="text-xs text-stone-400 w-9 sm:w-16 text-right shrink-0">{m.games}戦</span>
-                    <span className={`text-sm font-black w-10 sm:w-14 text-right shrink-0 ${m.winRate >= 55 ? 'text-emerald-400' : m.winRate <= 45 ? 'text-rose-400' : 'text-stone-200'}`}>{m.winRate}%</span>
+                    <span className={`text-sm font-black w-10 sm:w-14 text-right shrink-0 ${m.winRate >= 55 ? 'text-emerald-700' : m.winRate <= 45 ? 'text-rose-700' : 'text-stone-800'}`}>{m.winRate}%</span>
                     <span className="hidden sm:block text-xs font-mono text-stone-400 w-20 text-right shrink-0">KDA {m.avgKda}</span>
                   </div>
                 ))}
@@ -324,22 +324,22 @@ export default function LeaderboardPage() {
           <WinrateMatrixPanel />
         ) : (
           <>
-            <div className="bg-amber-900/30 border border-amber-500/50 rounded-lg p-4 mb-8 flex items-start gap-3 max-w-3xl mx-auto">
-              <Info className="h-5 w-5 text-amber-400 flex-shrink-0 mt-0.5" />
-              <div className="text-sm text-amber-200">
-                <p className="font-bold text-amber-300 mb-1">ランキングの集計仕様について</p>
+            <div className="bg-amber-100 border border-amber-300 rounded-lg p-4 mb-8 flex items-start gap-3 max-w-3xl mx-auto">
+              <Info className="h-5 w-5 text-amber-700 flex-shrink-0 mt-0.5" />
+              <div className="text-sm text-amber-700">
+                <p className="font-bold text-amber-700 mb-1">ランキングの集計仕様について</p>
                 <p>このリーダーボードは現在の「希望レーン」ではなく、<strong>過去の試合でそのレーンを担当した実績</strong>に基づいて自動集計されています。試合数フィルターを使用することで、未出場者や出場回数の少ないプレイヤーを除外できます。</p>
               </div>
             </div>
 
             {/* 試合数フィルター・検索コントロール */}
             <div className="flex flex-wrap justify-center gap-3 mb-8">
-              <div className="flex items-center gap-2 bg-stone-900 border border-stone-800 rounded-xl px-4 py-2">
+              <div className="flex items-center gap-2 bg-surface border border-border rounded-xl px-4 py-2">
                 <span className="text-xs text-stone-400 font-bold">表示する最小試合数:</span>
                 <select
                   value={minGames}
                   onChange={(e) => setMinGames(Number(e.target.value))}
-                  className="bg-stone-800 text-white text-xs font-bold rounded-lg border border-stone-700 px-2 py-1 focus:outline-none focus:border-amber-500"
+                  className="bg-black/5 text-stone-900 text-xs font-bold rounded-lg border border-border px-2 py-1 focus:outline-none focus:border-amber-500"
                 >
                   <option value={0}>制限なし (全登録者)</option>
                   <option value={1}>1試合以上</option>
@@ -348,15 +348,15 @@ export default function LeaderboardPage() {
                   <option value={10}>10試合以上</option>
                 </select>
               </div>
-              <div className="flex items-center gap-2 bg-stone-900 border border-stone-800 rounded-xl px-4 py-2">
+              <div className="flex items-center gap-2 bg-surface border border-border rounded-xl px-4 py-2">
                 <span className="text-xs text-stone-400 font-bold">🔍</span>
                 <input
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="プレイヤー名で検索"
-                  className="bg-stone-800 text-white text-xs font-bold rounded-lg border border-stone-700 px-2 py-1 focus:outline-none focus:border-amber-500 w-40"
+                  className="bg-black/5 text-stone-900 text-xs font-bold rounded-lg border border-border px-2 py-1 focus:outline-none focus:border-amber-500 w-40"
                 />
-                {search && <button onClick={() => setSearch('')} className="text-stone-500 hover:text-white text-xs">✕</button>}
+                {search && <button onClick={() => setSearch('')} className="text-stone-500 hover:text-stone-900 text-xs">✕</button>}
               </div>
             </div>
 
@@ -366,9 +366,9 @@ export default function LeaderboardPage() {
               {ROLES.map(role => {
                 const rows = (data[role] || []).filter(p => !search || p.name.toLowerCase().includes(search.toLowerCase()));
                 return (
-                <div key={role} className="bg-stone-900 rounded-2xl shadow-xl border border-stone-800 overflow-hidden">
-                  <div className="bg-stone-800 px-4 py-3 border-b border-stone-700">
-                    <h2 className="text-lg font-bold text-white text-center flex items-center justify-center gap-2">
+                <div key={role} className="bg-surface rounded-2xl shadow-xl border border-border overflow-hidden">
+                  <div className="bg-black/5 px-4 py-3 border-b border-border">
+                    <h2 className="text-lg font-bold text-stone-900 text-center flex items-center justify-center gap-2">
                       <span className="text-xl">
                         {role === 'TOP' && '🪓'}
                         {role === 'JG' && '🌲'}
@@ -387,17 +387,17 @@ export default function LeaderboardPage() {
                       </div>
                     ) : (
                       rows.map((player, idx) => (
-                        <div key={player.name} className="p-4 hover:bg-stone-800/50 transition-colors flex items-center justify-between">
+                        <div key={player.name} className="p-4 hover:bg-black/5 transition-colors flex items-center justify-between">
                           <div className="flex items-center gap-3">
                             <div className={`w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0
                               ${idx === 0 ? 'bg-yellow-400 text-yellow-900' : 
                                 idx === 1 ? 'bg-stone-300 text-stone-800' : 
                                 idx === 2 ? 'bg-amber-600 text-amber-50' : 
-                                'bg-stone-800 text-stone-400'}`}>
+                                'bg-black/5 text-stone-400'}`}>
                               {idx + 1}
                             </div>
                             <div className="min-w-0 flex-1">
-                              <a href={`/player/${player.discordId}`} className="font-bold text-white hover:text-amber-400 truncate block transition" title={`${player.name} の詳細を見る`}>
+                              <a href={`/player/${player.discordId}`} className="font-bold text-stone-900 hover:text-amber-700 truncate block transition" title={`${player.name} の詳細を見る`}>
                                 {player.name}
                               </a>
                               <div className="text-[10px] text-stone-400">
@@ -412,7 +412,7 @@ export default function LeaderboardPage() {
                             >
                               {player.rankBadge.name}
                             </div>
-                            <div className="text-sm font-bold text-stone-200">
+                            <div className="text-sm font-bold text-stone-800">
                               {player.mmr.toLocaleString()} <span className="text-[10px] font-normal text-stone-500">MMR</span>
                             </div>
                           </div>

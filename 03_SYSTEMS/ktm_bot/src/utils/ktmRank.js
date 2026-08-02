@@ -79,4 +79,23 @@ export function getTierEmoji(mmr) {
   return TIER_EMOJI[tier.name] || '⬜';
 }
 
+/** プレイヤーレコードから一番高いレーンのMMR（最高レーンMMR）を取得する */
+export function getHighestLaneMmr(player) {
+  if (!player) return 0;
+  const laneMmrs = [
+    player.mmr_top,
+    player.mmr_jg,
+    player.mmr_mid,
+    player.mmr_adc,
+    player.mmr_sup,
+  ].map((v) => (v != null ? Number(v) : null)).filter((v) => v !== null && !isNaN(v));
+
+  if (laneMmrs.length > 0) {
+    return Math.max(...laneMmrs);
+  }
+  // 全レーンMMRが未設定の場合は代表MMR(mmr)、それも無ければ0
+  return player.mmr != null ? Number(player.mmr) : 0;
+}
+
 export { KTM_TIERS };
+

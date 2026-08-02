@@ -188,7 +188,7 @@ export default function MatchRecordPanel({ balanceResult, onComplete }: MatchRec
       <div className="mt-4 text-center">
         <button 
           onClick={() => setIsOpen(true)}
-          className="bg-gray-800 hover:bg-gray-700 border border-gray-600 text-white px-6 py-2 rounded-lg font-bold transition flex items-center gap-2 mx-auto"
+          className="bg-black/5 hover:bg-black/8 border border-border text-stone-900 px-6 py-2 rounded-lg font-bold transition flex items-center gap-2 mx-auto"
         >
           <Target className="h-4 w-4" /> 試合結果を入力してMMRを更新する
         </button>
@@ -197,13 +197,13 @@ export default function MatchRecordPanel({ balanceResult, onComplete }: MatchRec
   }
 
   return (
-    <div className="mt-6 bg-gray-950 border border-gray-700 rounded-xl p-6 shadow-2xl">
-      <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+    <div className="mt-6 bg-background border border-border rounded-xl p-6 shadow-2xl">
+      <h3 className="text-xl font-bold text-stone-900 mb-4 flex items-center gap-2">
         <Target className="h-5 w-5 text-blue-400" /> 試合結果入力
       </h3>
 
       {/* Riot APIから自動入力 */}
-      <div className="mb-6 p-4 bg-gray-900/50 border border-gray-800 rounded-xl flex flex-col md:flex-row items-center justify-between gap-4">
+      <div className="mb-6 p-4 bg-white/60 border border-border rounded-xl flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="flex-1 w-full">
           <label className="block text-xs font-bold text-gray-500 mb-1">🎮 Riot ID から直近のカスタム試合スタッツを自動読込</label>
           <div className="flex gap-2">
@@ -212,13 +212,13 @@ export default function MatchRecordPanel({ balanceResult, onComplete }: MatchRec
               placeholder="参加者の Riot ID#TAG (例: Kazurin#4036)" 
               value={riotIdInput}
               onChange={e => setRiotIdInput(e.target.value)}
-              className="flex-1 bg-gray-950 border border-gray-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500"
+              className="flex-1 bg-background border border-border rounded-lg px-3 py-2 text-sm text-stone-900 focus:outline-none focus:border-blue-500"
             />
             <button
               onClick={handleFetchRiotStats}
               disabled={fetchingRiot || !riotIdInput}
               type="button"
-              className="bg-blue-600 hover:bg-blue-500 disabled:bg-gray-800 disabled:text-gray-500 text-white font-bold px-4 py-2 rounded-lg text-sm transition flex items-center gap-1.5 shrink-0 cursor-pointer"
+              className="bg-blue-600 hover:bg-blue-500 disabled:bg-black/5 disabled:text-gray-500 text-white font-bold px-4 py-2 rounded-lg text-sm transition flex items-center gap-1.5 shrink-0 cursor-pointer"
             >
               {fetchingRiot ? <RefreshCw className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
               自動読込
@@ -231,7 +231,7 @@ export default function MatchRecordPanel({ balanceResult, onComplete }: MatchRec
       </div>
 
       {message && (
-        <div className="mb-6 p-3 bg-gray-800/80 border border-gray-700 text-gray-200 rounded-lg text-sm font-bold">
+        <div className="mb-6 p-3 bg-black/5 border border-border text-stone-800 rounded-lg text-sm font-bold">
           {message}
         </div>
       )}
@@ -242,13 +242,13 @@ export default function MatchRecordPanel({ balanceResult, onComplete }: MatchRec
           <h4 className="font-bold text-blue-400 mb-2">🟦 BLUE TEAM</h4>
           <div className="space-y-2">
             {stats.filter(s => s.team === 'BLUE').map(s => (
-              <div key={s.name} className="flex items-center gap-2 bg-gray-900 p-2 rounded border border-gray-800">
+              <div key={s.name} className="flex items-center gap-2 bg-surface p-2 rounded border border-border">
                 <div className="w-8 text-center font-bold text-gray-500 text-xs">{s.currentRole}</div>
-                <div className="w-20 truncate font-bold text-sm text-gray-300" title={s.name}>{s.name}</div>
+                <div className="w-20 truncate font-bold text-sm text-stone-700" title={s.name}>{s.name}</div>
                 <button
                   onClick={() => setActiveChampSelectorPlayer(s.name)}
                   type="button"
-                  className="w-28 bg-gray-850 border border-gray-700 hover:border-blue-500 rounded px-1.5 py-1 text-gray-300 hover:text-white text-xs flex items-center justify-between gap-1 transition shrink-0"
+                  className="w-28 bg-white border border-border hover:border-blue-500 rounded px-1.5 py-1 text-stone-700 hover:text-stone-900 text-xs flex items-center justify-between gap-1 transition shrink-0"
                 >
                   <span className="truncate">
                     {s.champion_name ? (championsList.find(c => c.id === s.champion_name)?.name || 'チャンプ') : '選択'}
@@ -258,18 +258,18 @@ export default function MatchRecordPanel({ balanceResult, onComplete }: MatchRec
                       src={getChampIcon(s.champion_name)}
                       width={16}
                       height={16}
-                      className="w-4 h-4 rounded-full border border-gray-600 shrink-0 object-cover"
+                      className="w-4 h-4 rounded-full border border-border shrink-0 object-cover"
                       alt={s.champion_name}
                       onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
                     />
                   )}
                 </button>
                 <div className="flex-1 flex gap-1 justify-end">
-                  <input type="number" value={s.kills} onChange={e => handleStatChange(s.name, 'kills', e.target.value)} className="w-10 bg-gray-850 border border-gray-700 text-white text-center rounded text-xs py-0.5" placeholder="K" />
+                  <input type="number" value={s.kills} onChange={e => handleStatChange(s.name, 'kills', e.target.value)} className="w-10 bg-white border border-border text-stone-900 text-center rounded text-xs py-0.5" placeholder="K" />
                   <span className="text-gray-500 text-xs self-center">/</span>
-                  <input type="number" value={s.deaths} onChange={e => handleStatChange(s.name, 'deaths', e.target.value)} className="w-10 bg-gray-855 border border-red-900 text-red-200 text-center rounded text-xs py-0.5" placeholder="D" />
+                  <input type="number" value={s.deaths} onChange={e => handleStatChange(s.name, 'deaths', e.target.value)} className="w-10 bg-white border border-red-200 text-red-700 text-center rounded text-xs py-0.5" placeholder="D" />
                   <span className="text-gray-500 text-xs self-center">/</span>
-                  <input type="number" value={s.assists} onChange={e => handleStatChange(s.name, 'assists', e.target.value)} className="w-10 bg-gray-850 border border-gray-700 text-white text-center rounded text-xs py-0.5" placeholder="A" />
+                  <input type="number" value={s.assists} onChange={e => handleStatChange(s.name, 'assists', e.target.value)} className="w-10 bg-white border border-border text-stone-900 text-center rounded text-xs py-0.5" placeholder="A" />
                 </div>
               </div>
             ))}
@@ -281,13 +281,13 @@ export default function MatchRecordPanel({ balanceResult, onComplete }: MatchRec
           <h4 className="font-bold text-red-400 mb-2">🟥 RED TEAM</h4>
           <div className="space-y-2">
             {stats.filter(s => s.team === 'RED').map(s => (
-              <div key={s.name} className="flex items-center gap-2 bg-gray-900 p-2 rounded border border-gray-800">
+              <div key={s.name} className="flex items-center gap-2 bg-surface p-2 rounded border border-border">
                 <div className="w-8 text-center font-bold text-gray-500 text-xs">{s.currentRole}</div>
-                <div className="w-20 truncate font-bold text-sm text-gray-300" title={s.name}>{s.name}</div>
+                <div className="w-20 truncate font-bold text-sm text-stone-700" title={s.name}>{s.name}</div>
                 <button
                   onClick={() => setActiveChampSelectorPlayer(s.name)}
                   type="button"
-                  className="w-28 bg-gray-855 border border-gray-700 hover:border-red-500 rounded px-1.5 py-1 text-gray-300 hover:text-white text-xs flex items-center justify-between gap-1 transition shrink-0"
+                  className="w-28 bg-white border border-border hover:border-red-500 rounded px-1.5 py-1 text-stone-700 hover:text-stone-900 text-xs flex items-center justify-between gap-1 transition shrink-0"
                 >
                   <span className="truncate">
                     {s.champion_name ? (championsList.find(c => c.id === s.champion_name)?.name || 'チャンプ') : '選択'}
@@ -297,18 +297,18 @@ export default function MatchRecordPanel({ balanceResult, onComplete }: MatchRec
                       src={getChampIcon(s.champion_name)}
                       width={16}
                       height={16}
-                      className="w-4 h-4 rounded-full border border-gray-600 shrink-0 object-cover"
+                      className="w-4 h-4 rounded-full border border-border shrink-0 object-cover"
                       alt={s.champion_name}
                       onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
                     />
                   )}
                 </button>
                 <div className="flex-1 flex gap-1 justify-end">
-                  <input type="number" value={s.kills} onChange={e => handleStatChange(s.name, 'kills', e.target.value)} className="w-10 bg-gray-855 border border-gray-700 text-white text-center rounded text-xs py-0.5" placeholder="K" />
+                  <input type="number" value={s.kills} onChange={e => handleStatChange(s.name, 'kills', e.target.value)} className="w-10 bg-white border border-border text-stone-900 text-center rounded text-xs py-0.5" placeholder="K" />
                   <span className="text-gray-500 text-xs self-center">/</span>
-                  <input type="number" value={s.deaths} onChange={e => handleStatChange(s.name, 'deaths', e.target.value)} className="w-10 bg-gray-855 border border-red-900 text-red-200 text-center rounded text-xs py-0.5" placeholder="D" />
+                  <input type="number" value={s.deaths} onChange={e => handleStatChange(s.name, 'deaths', e.target.value)} className="w-10 bg-white border border-red-200 text-red-700 text-center rounded text-xs py-0.5" placeholder="D" />
                   <span className="text-gray-500 text-xs self-center">/</span>
-                  <input type="number" value={s.assists} onChange={e => handleStatChange(s.name, 'assists', e.target.value)} className="w-10 bg-gray-855 border border-gray-700 text-white text-center rounded text-xs py-0.5" placeholder="A" />
+                  <input type="number" value={s.assists} onChange={e => handleStatChange(s.name, 'assists', e.target.value)} className="w-10 bg-white border border-border text-stone-900 text-center rounded text-xs py-0.5" placeholder="A" />
                 </div>
               </div>
             ))}
@@ -317,18 +317,18 @@ export default function MatchRecordPanel({ balanceResult, onComplete }: MatchRec
       </div>
 
       {/* 勝敗選択と保存 */}
-      <div className="border-t border-gray-800 pt-6 flex flex-col md:flex-row items-center justify-between gap-4">
+      <div className="border-t border-border pt-6 flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <span className="font-bold text-gray-400">勝利チーム:</span>
+          <span className="font-bold text-stone-500">勝利チーム:</span>
           <button 
             onClick={() => setWinningTeam('BLUE')}
-            className={`px-6 py-2 rounded-lg font-bold transition ${winningTeam === 'BLUE' ? 'bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.5)]' : 'bg-gray-800 text-gray-400 border border-gray-700 hover:bg-gray-700'}`}
+            className={`px-6 py-2 rounded-lg font-bold transition ${winningTeam === 'BLUE' ? 'bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.5)]' : 'bg-black/5 text-stone-500 border border-border hover:bg-black/8'}`}
           >
             BLUE WIN
           </button>
           <button 
             onClick={() => setWinningTeam('RED')}
-            className={`px-6 py-2 rounded-lg font-bold transition ${winningTeam === 'RED' ? 'bg-red-600 text-white shadow-[0_0_15px_rgba(220,38,38,0.5)]' : 'bg-gray-800 text-gray-400 border border-gray-700 hover:bg-gray-700'}`}
+            className={`px-6 py-2 rounded-lg font-bold transition ${winningTeam === 'RED' ? 'bg-red-600 text-white shadow-[0_0_15px_rgba(220,38,38,0.5)]' : 'bg-black/5 text-stone-500 border border-border hover:bg-black/8'}`}
           >
             RED WIN
           </button>
@@ -338,7 +338,7 @@ export default function MatchRecordPanel({ balanceResult, onComplete }: MatchRec
           onClick={handleSubmit}
           disabled={submitting || !winningTeam}
           className={`px-8 py-3 rounded-lg font-black text-lg transition flex items-center gap-2 ${
-            submitting || !winningTeam ? 'bg-gray-800 text-gray-500 cursor-not-allowed' : 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white hover:from-emerald-400 hover:to-teal-500 shadow-xl shadow-emerald-900/30'
+            submitting || !winningTeam ? 'bg-black/5 text-gray-500 cursor-not-allowed' : 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white hover:from-emerald-400 hover:to-teal-500 shadow-xl shadow-emerald-900/30'
           }`}
         >
           {submitting ? <RefreshCw className="h-5 w-5 animate-spin" /> : <Trophy className="h-5 w-5" />}
@@ -349,26 +349,26 @@ export default function MatchRecordPanel({ balanceResult, onComplete }: MatchRec
       {/* チャンピオン選択モーダル */}
       {activeChampSelectorPlayer && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl w-full max-w-2xl p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+          <div className="bg-surface border border-border rounded-2xl w-full max-w-2xl p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-extrabold text-white flex items-center gap-2">
-                <Target className="h-5 w-5 text-emerald-400" />
+              <h3 className="text-lg font-extrabold text-stone-900 flex items-center gap-2">
+                <Target className="h-5 w-5 text-emerald-700" />
                 チャンピオン選択 ({activeChampSelectorPlayer})
               </h3>
-              <button 
+              <button
                 onClick={() => { setActiveChampSelectorPlayer(null); setChampSearchQuery(''); }}
-                className="text-gray-400 hover:text-white text-sm bg-gray-800 px-3 py-1.5 rounded-lg border border-gray-700 transition"
+                className="text-stone-500 hover:text-stone-900 text-sm bg-black/5 px-3 py-1.5 rounded-lg border border-border transition"
               >
                 閉じる
               </button>
             </div>
-            
-            <input 
-              type="text" 
-              placeholder="チャンピオン名で検索 (ひらがな・カタカナ・英語名)..." 
+
+            <input
+              type="text"
+              placeholder="チャンピオン名で検索 (ひらがな・カタカナ・英語名)..."
               value={champSearchQuery}
               onChange={e => setChampSearchQuery(e.target.value)}
-              className="w-full bg-gray-950 border border-gray-800 rounded-lg px-4 py-2.5 text-white mb-4 outline-none focus:border-emerald-500 text-sm"
+              className="w-full bg-background border border-border rounded-lg px-4 py-2.5 text-stone-900 mb-4 outline-none focus:border-emerald-500 text-sm"
               autoFocus
             />
             
@@ -387,16 +387,16 @@ export default function MatchRecordPanel({ balanceResult, onComplete }: MatchRec
                       setChampSearchQuery('');
                     }}
                     type="button"
-                    className="flex flex-col items-center gap-1.5 p-2 rounded-xl hover:bg-gray-800 transition group"
+                    className="flex flex-col items-center gap-1.5 p-2 rounded-xl hover:bg-black/5 transition group"
                   >
                     <Image
                       src={getChampIcon(c.id)}
                       width={48}
                       height={48}
-                      className="w-12 h-12 rounded-xl border border-gray-800 group-hover:border-emerald-500 transition object-cover"
+                      className="w-12 h-12 rounded-xl border border-border group-hover:border-emerald-500 transition object-cover"
                       alt={c.name}
                     />
-                    <span className="text-[10px] text-gray-400 truncate w-14 text-center group-hover:text-white transition">
+                    <span className="text-[10px] text-stone-500 truncate w-14 text-center group-hover:text-stone-900 transition">
                       {c.name}
                     </span>
                   </button>

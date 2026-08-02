@@ -65,15 +65,15 @@ function LoginContent() {
         alignItems: "center",
         justifyContent: "center",
         minHeight: "100vh",
-        background: "#2b2620"
+        background: "#eae4d4"
       }}>
         <div className="spinner" />
         <style>{`
           .spinner {
             width: 40px;
             height: 40px;
-            border: 3px solid rgba(255,255,255,0.05);
-            border-top-color: #d97706;
+            border: 3px solid rgba(32,28,43,0.08);
+            border-top-color: #c2650f;
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
           }
@@ -94,8 +94,8 @@ function LoginContent() {
           justify-content: center;
           min-height: 100vh;
           width: 100%;
-          background: radial-gradient(circle at 50% 50%, #332c24 0%, #2b2620 100%);
-          color: white;
+          background: radial-gradient(circle at 50% 50%, #f5f1e6 0%, #eae4d4 100%);
+          color: #201c2b;
           padding: 20px;
           font-family: 'Outfit', sans-serif;
           position: relative;
@@ -108,7 +108,7 @@ function LoginContent() {
           width: 400px;
           height: 400px;
           border-radius: 50%;
-          background: radial-gradient(circle, rgba(217, 119, 6, 0.08) 0%, rgba(0,0,0,0) 70%);
+          background: radial-gradient(circle, rgba(194, 101, 15, 0.10) 0%, rgba(234,228,212,0) 70%);
           top: -100px;
           right: -100px;
           filter: blur(80px);
@@ -119,7 +119,7 @@ function LoginContent() {
           width: 500px;
           height: 500px;
           border-radius: 50%;
-          background: radial-gradient(circle, rgba(234, 88, 12, 0.05) 0%, rgba(0,0,0,0) 70%);
+          background: radial-gradient(circle, rgba(181, 65, 10, 0.07) 0%, rgba(234,228,212,0) 70%);
           bottom: -150px;
           left: -150px;
           filter: blur(100px);
@@ -133,15 +133,15 @@ function LoginContent() {
 
         .login-card {
           position: relative;
-          background: rgba(255, 255, 255, 0.02);
-          border: 1px solid rgba(255, 255, 255, 0.06);
+          background: rgba(255, 255, 255, 0.72);
+          border: 1px solid rgba(32, 28, 43, 0.1);
           backdrop-filter: blur(24px);
           border-radius: 28px;
           padding: 56px 48px;
           width: 100%;
           max-width: 420px;
-          box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6), 
-                      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+          box-shadow: 0 30px 60px rgba(32, 28, 43, 0.15),
+                      inset 0 1px 0 rgba(255, 255, 255, 0.6);
           text-align: center;
           animation: cardAppear 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
@@ -154,14 +154,14 @@ function LoginContent() {
         .login-logo {
           font-size: 48px;
           margin-bottom: 24px;
-          filter: drop-shadow(0 10px 15px rgba(217, 119, 6, 0.3));
+          filter: drop-shadow(0 10px 15px rgba(194, 101, 15, 0.3));
         }
 
         .login-title {
           font-size: 28px;
           font-weight: 800;
           letter-spacing: -0.04em;
-          background: linear-gradient(135deg, #ffffff 30%, #f5c99b 100%);
+          background: linear-gradient(135deg, #201c2b 30%, #a9760f 100%);
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
           margin-bottom: 12px;
@@ -169,7 +169,7 @@ function LoginContent() {
 
         .login-subtitle {
           font-size: 14px;
-          color: rgba(255, 255, 255, 0.4);
+          color: rgba(32, 28, 43, 0.55);
           line-height: 1.6;
           margin-bottom: 40px;
         }
@@ -182,11 +182,11 @@ function LoginContent() {
         .input-field {
           width: 100%;
           padding: 16px 20px;
-          background: rgba(255, 255, 255, 0.03);
-          border: 1px solid rgba(255, 255, 255, 0.08);
+          background: rgba(255, 255, 255, 0.6);
+          border: 1px solid rgba(32, 28, 43, 0.12);
           border-radius: 16px;
           font-size: 16px;
-          color: white;
+          color: #201c2b;
           font-family: 'JetBrains Mono', monospace;
           text-align: center;
           letter-spacing: 0.1em;
@@ -195,22 +195,22 @@ function LoginContent() {
 
         .input-field:focus {
           outline: none;
-          background: rgba(255, 255, 255, 0.05);
-          border-color: #d97706;
-          box-shadow: 0 0 20px rgba(217, 119, 6, 0.15);
+          background: rgba(255, 255, 255, 0.85);
+          border-color: #c2650f;
+          box-shadow: 0 0 20px rgba(194, 101, 15, 0.15);
         }
 
         .input-field::placeholder {
           font-family: 'Outfit', sans-serif;
           letter-spacing: normal;
-          color: rgba(255, 255, 255, 0.25);
+          color: rgba(32, 28, 43, 0.35);
         }
 
         .error-message {
           font-size: 13px;
-          color: #f87171;
-          background: rgba(248, 113, 113, 0.06);
-          border: 1px solid rgba(248, 113, 113, 0.15);
+          color: #b91c1c;
+          background: rgba(213, 55, 47, 0.08);
+          border: 1px solid rgba(213, 55, 47, 0.25);
           border-radius: 12px;
           padding: 12px 16px;
           margin-bottom: 24px;
@@ -227,7 +227,7 @@ function LoginContent() {
         .submit-btn {
           width: 100%;
           padding: 16px 28px;
-          background: linear-gradient(135deg, #d97706 0%, #c2410c 100%);
+          background: linear-gradient(135deg, #c2650f 0%, #b5410a 100%);
           color: white;
           border: none;
           border-radius: 16px;
@@ -235,7 +235,7 @@ function LoginContent() {
           font-weight: 600;
           cursor: pointer;
           transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-          box-shadow: 0 4px 20px rgba(194, 65, 12, 0.3);
+          box-shadow: 0 4px 20px rgba(181, 65, 10, 0.3);
           display: flex;
           align-items: center;
           justify-content: center;
@@ -244,7 +244,7 @@ function LoginContent() {
 
         .submit-btn:hover:not(:disabled) {
           transform: translateY(-2px);
-          box-shadow: 0 8px 30px rgba(217, 119, 6, 0.4);
+          box-shadow: 0 8px 30px rgba(194, 101, 15, 0.4);
         }
 
         .submit-btn:active:not(:disabled) {
@@ -316,8 +316,8 @@ function LoginContent() {
 export default function LoginPage() {
   return (
     <Suspense fallback={
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh", background: "#2b2620" }}>
-        <div style={{ width: 40, height: 40, border: "3px solid rgba(255,255,255,0.05)", borderTopColor: "#d97706", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh", background: "#eae4d4" }}>
+        <div style={{ width: 40, height: 40, border: "3px solid rgba(32,28,43,0.08)", borderTopColor: "#c2650f", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
       </div>
     }>
       <LoginContent />

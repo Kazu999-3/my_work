@@ -89,85 +89,85 @@ export default function RevisionsPanel() {
   };
 
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5 space-y-4">
+    <div className="bg-white border border-stone-200 rounded-2xl p-5 space-y-4">
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        <h3 className="font-black text-white flex items-center gap-2">
-          <History size={16} className="text-indigo-400" /> 更新履歴・差分
+        <h3 className="font-black text-stone-900 flex items-center gap-2">
+          <History size={16} className="text-indigo-600" /> 更新履歴・差分
         </h3>
         <div className="flex gap-2 items-center">
           <select value={filterType} onChange={e => setFilterType(e.target.value)}
-            className="bg-gray-950 border border-gray-800 rounded-lg px-2 py-1.5 text-xs text-gray-300 outline-none focus:border-indigo-500">
+            className="bg-stone-50 border border-stone-200 rounded-lg px-2 py-1.5 text-xs text-stone-700 outline-none focus:border-indigo-500">
             <option value="all">すべて</option>
             <option value="matchup_sentinel">チャンピオン辞典</option>
             <option value="champion_fact">チャンピオン辞典（対面タブ）</option>
             <option value="lane_guide">レーン別ガイド</option>
           </select>
           <button onClick={load} disabled={loading}
-            className="text-xs font-bold bg-white/5 text-gray-300 border border-gray-700 px-3 py-1.5 rounded-lg hover:bg-white/10 disabled:opacity-50">
+            className="text-xs font-bold bg-black/5 text-stone-700 border border-stone-300 px-3 py-1.5 rounded-lg hover:bg-black/10 disabled:opacity-50">
             更新
           </button>
         </div>
       </div>
 
-      <p className="text-[11px] text-gray-500">
-        AIが記事を統合したときの<strong className="text-indigo-300">増えた行（緑）・減った行（赤）</strong>を確認できます。
+      <p className="text-[11px] text-stone-500">
+        AIが記事を統合したときの<strong className="text-indigo-700">増えた行（緑）・減った行（赤）</strong>を確認できます。
         意図しない書き換えがあれば、その場で元に戻せます。
       </p>
 
-      {error && <p className="text-xs text-rose-400 font-bold">❌ {error}</p>}
+      {error && <p className="text-xs text-rose-700 font-bold">❌ {error}</p>}
 
       {loading ? (
-        <p className="text-xs text-gray-500 py-6 text-center">読み込み中...</p>
+        <p className="text-xs text-stone-500 py-6 text-center">読み込み中...</p>
       ) : revisions.length === 0 ? (
-        <p className="text-xs text-gray-500 py-6 text-center">
+        <p className="text-xs text-stone-500 py-6 text-center">
           まだ履歴がありません。次に統合を実行したときから記録されます。
         </p>
       ) : (
         <div className="space-y-1.5">
           {revisions.map((r) => (
-            <div key={r.id} className="border border-gray-800 rounded-xl overflow-hidden">
+            <div key={r.id} className="border border-stone-200 rounded-xl overflow-hidden">
               <button onClick={() => openDetail(r.id)}
-                className="w-full text-left px-3 py-2.5 hover:bg-white/5 transition-colors flex items-center gap-2 flex-wrap">
-                <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-indigo-500/15 text-indigo-300 border border-indigo-500/30">
+                className="w-full text-left px-3 py-2.5 hover:bg-black/5 transition-colors flex items-center gap-2 flex-wrap">
+                <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-700 border border-indigo-200">
                   {TYPE_LABELS[r.target_type] || r.target_type}
                 </span>
-                <span className="text-sm font-bold text-white">{r.target_key}</span>
+                <span className="text-sm font-bold text-stone-900">{r.target_key}</span>
                 {r.field !== 'body' && (
-                  <span className="text-[10px] text-gray-400 bg-gray-800 px-1.5 py-0.5 rounded">
+                  <span className="text-[10px] text-stone-600 bg-stone-100 px-1.5 py-0.5 rounded">
                     {FIELD_LABELS[r.field] || r.field}
                   </span>
                 )}
                 {r.isNew ? (
-                  <span className="text-[10px] font-black text-cyan-400">新規作成</span>
+                  <span className="text-[10px] font-black text-cyan-700">新規作成</span>
                 ) : (
                   <span className="text-[10px] font-mono">
-                    <span className="text-emerald-400">+{r.added}</span>{' '}
-                    <span className="text-rose-400">-{r.removed}</span>
+                    <span className="text-emerald-700">+{r.added}</span>{' '}
+                    <span className="text-rose-700">-{r.removed}</span>
                   </span>
                 )}
-                <span className="text-[10px] text-gray-500 ml-auto shrink-0">
+                <span className="text-[10px] text-stone-500 ml-auto shrink-0">
                   {new Date(r.created_at).toLocaleString('ja-JP')}
                 </span>
               </button>
 
               {r.source_title && (
-                <p className="px-3 pb-2 text-[10px] text-gray-500 truncate" title={r.source_title}>
+                <p className="px-3 pb-2 text-[10px] text-stone-500 truncate" title={r.source_title}>
                   出典: {r.source_title}
                 </p>
               )}
 
               {openId === r.id && (
-                <div className="border-t border-gray-800 bg-gray-950/60 p-3">
+                <div className="border-t border-stone-200 bg-stone-50 p-3">
                   {detailLoading ? (
-                    <p className="text-xs text-gray-500">差分を読み込み中...</p>
+                    <p className="text-xs text-stone-500">差分を読み込み中...</p>
                   ) : detail ? (
                     <>
-                      <div className="max-h-80 overflow-auto font-mono text-[11px] leading-relaxed rounded-lg border border-gray-800">
+                      <div className="max-h-80 overflow-auto font-mono text-[11px] leading-relaxed rounded-lg border border-stone-200">
                         {(detail.diff || []).map((line: any, i: number) => (
                           <div key={i} className={
-                            line.op === 'added' ? 'bg-emerald-500/10 text-emerald-300 px-2'
-                            : line.op === 'removed' ? 'bg-rose-500/10 text-rose-300/80 px-2 line-through decoration-rose-500/40'
-                            : 'text-gray-500 px-2'
+                            line.op === 'added' ? 'bg-emerald-100 text-emerald-700 px-2'
+                            : line.op === 'removed' ? 'bg-rose-100 text-rose-700/80 px-2 line-through decoration-rose-400'
+                            : 'text-stone-500 px-2'
                           }>
                             <span className="select-none opacity-40 mr-2">
                               {line.op === 'added' ? '+' : line.op === 'removed' ? '-' : ' '}
@@ -178,7 +178,7 @@ export default function RevisionsPanel() {
                       </div>
                       {!r.isNew && (
                         <button onClick={() => revert(r.id)} disabled={reverting}
-                          className="mt-3 text-xs font-bold bg-rose-500/15 text-rose-300 border border-rose-500/30 px-3 py-1.5 rounded-lg hover:bg-rose-500/25 disabled:opacity-50 flex items-center gap-1.5">
+                          className="mt-3 text-xs font-bold bg-rose-100 text-rose-700 border border-rose-200 px-3 py-1.5 rounded-lg hover:bg-rose-200 disabled:opacity-50 flex items-center gap-1.5">
                           <RotateCcw size={13} /> {reverting ? '戻しています...' : 'この更新を取り消す'}
                         </button>
                       )}

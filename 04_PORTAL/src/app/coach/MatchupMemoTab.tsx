@@ -360,7 +360,7 @@ export default function MatchupMemoTab() {
           タイルが実質どこにも表示されない状態だったため復元する。 */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="glass-panel p-4 rounded-2xl">
-          <h4 className="text-sm font-bold text-rose-400 flex items-center gap-2 mb-3">💀 苦手な対面ランキング（自動集計）</h4>
+          <h4 className="text-sm font-bold text-rose-600 flex items-center gap-2 mb-3">💀 苦手な対面ランキング（自動集計）</h4>
           {weakList === null ? (
             <Spinner label="集計中..." />
           ) : weakList.length === 0 ? (
@@ -371,15 +371,15 @@ export default function MatchupMemoTab() {
                 <button
                   key={`${w.my}-${w.enemy}-${idx}`}
                   onClick={() => startMemoFromLog({ my: w.my, enemy: w.enemy })}
-                  className="w-full flex items-center justify-between gap-2 p-2 rounded-xl bg-black/20 border border-white/5 hover:border-rose-500/30 transition-colors text-left"
+                  className="w-full flex items-center justify-between gap-2 p-2 rounded-xl bg-black/3 border border-black/10 hover:border-rose-500/30 transition-colors text-left"
                 >
                   <div className="flex items-center gap-2 min-w-0">
-                    <Image src={getChampIcon(w.my)} alt={w.my} width={24} height={24} className="w-6 h-6 rounded-full border border-white/10 shrink-0" />
+                    <Image src={getChampIcon(w.my)} alt={w.my} width={24} height={24} className="w-6 h-6 rounded-full border border-black/10 shrink-0" />
                     <span className="text-xs text-gray-500 shrink-0">vs</span>
                     <Image src={getChampIcon(w.enemy)} alt={w.enemy} width={24} height={24} className="w-6 h-6 rounded-full border border-rose-500/30 shrink-0" />
-                    <span className="text-xs font-bold text-gray-200 truncate">{w.my} vs {w.enemy}</span>
+                    <span className="text-xs font-bold text-stone-800 truncate">{w.my} vs {w.enemy}</span>
                   </div>
-                  <span className="text-[10px] font-black text-rose-400 shrink-0">勝率{w.winRate}%（{w.games}戦）</span>
+                  <span className="text-[10px] font-black text-rose-600 shrink-0">勝率{w.winRate}%（{w.games}戦）</span>
                 </button>
               ))}
             </div>
@@ -387,7 +387,7 @@ export default function MatchupMemoTab() {
         </div>
 
         <div className="glass-panel p-4 rounded-2xl">
-          <h4 className="text-sm font-bold text-cyan-400 flex items-center gap-2 mb-3"><History size={16} /> 直近の対面</h4>
+          <h4 className="text-sm font-bold text-cyan-600 flex items-center gap-2 mb-3"><History size={16} /> 直近の対面</h4>
           {recentMatchups === null ? (
             <Spinner label="読み込み中..." />
           ) : recentMatchups.length === 0 ? (
@@ -398,15 +398,15 @@ export default function MatchupMemoTab() {
                 <button
                   key={idx}
                   onClick={() => startMemoFromLog(r)}
-                  className="w-full flex items-center justify-between gap-2 p-2 rounded-xl bg-black/20 border border-white/5 hover:border-cyan-500/30 transition-colors text-left"
+                  className="w-full flex items-center justify-between gap-2 p-2 rounded-xl bg-black/3 border border-black/10 hover:border-cyan-500/30 transition-colors text-left"
                 >
                   <div className="flex items-center gap-2 min-w-0">
-                    <Image src={getChampIcon(r.my)} alt={r.my} width={24} height={24} className="w-6 h-6 rounded-full border border-white/10 shrink-0" />
+                    <Image src={getChampIcon(r.my)} alt={r.my} width={24} height={24} className="w-6 h-6 rounded-full border border-black/10 shrink-0" />
                     <span className="text-xs text-gray-500 shrink-0">vs</span>
                     <Image src={getChampIcon(r.enemy)} alt={r.enemy} width={24} height={24} className="w-6 h-6 rounded-full border border-cyan-500/30 shrink-0" />
-                    <span className="text-xs font-bold text-gray-200 truncate">{r.my} vs {r.enemy}</span>
+                    <span className="text-xs font-bold text-stone-800 truncate">{r.my} vs {r.enemy}</span>
                   </div>
-                  <span className={`text-[10px] font-black shrink-0 ${r.isWin ? 'text-emerald-400' : 'text-rose-400'}`}>
+                  <span className={`text-[10px] font-black shrink-0 ${r.isWin ? 'text-emerald-600' : 'text-rose-600'}`}>
                     {r.isWin ? '勝ち' : '負け'} {new Date(r.date).toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' })}
                   </span>
                 </button>
@@ -421,13 +421,13 @@ export default function MatchupMemoTab() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => setViewMode('list')}
-            className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${viewMode === 'list' ? 'bg-[#00cfef] text-black shadow-lg' : 'text-gray-400 hover:text-white'}`}
+            className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${viewMode === 'list' ? 'bg-[#00cfef] text-black shadow-lg' : 'text-gray-400 hover:text-stone-900'}`}
           >
             対面メモ一覧 ({matchups.length})
           </button>
           <button
             onClick={() => setViewMode('champion')}
-            className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${viewMode === 'champion' ? 'bg-[#00cfef] text-black shadow-lg' : 'text-gray-400 hover:text-white'}`}
+            className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${viewMode === 'champion' ? 'bg-[#00cfef] text-black shadow-lg' : 'text-gray-400 hover:text-stone-900'}`}
           >
             チャンピオン別
           </button>
@@ -467,15 +467,15 @@ export default function MatchupMemoTab() {
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md overflow-y-auto">
           <div className="glass-panel p-6 md:p-8 rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto space-y-6">
-            <div className="flex justify-between items-center border-b border-white/10 pb-4">
-              <h3 className="text-xl font-bold text-white flex items-center gap-2">
+            <div className="flex justify-between items-center border-b border-black/10 pb-4">
+              <h3 className="text-xl font-bold text-stone-900 flex items-center gap-2">
                 <Swords className="text-[#00cfef]" /> {memo.id ? 'マッチアップメモを編集' : '新規マッチアップメモ作成'}
               </h3>
-              <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-white"><X size={20} /></button>
+              <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-stone-900"><X size={20} /></button>
             </div>
 
             {memo.matchLogId && (
-              <div className="flex items-center gap-2 text-xs text-emerald-300 bg-emerald-950/30 border border-emerald-800/60 rounded-xl px-3 py-2">
+              <div className="flex items-center gap-2 text-xs text-emerald-700 bg-emerald-100 border border-emerald-200 rounded-xl px-3 py-2">
                 <Activity size={14} />
                 <span>
                   🔗 実際の試合と紐づいています：{memo.matchDate ? new Date(memo.matchDate).toLocaleDateString('ja-JP') : ''}
@@ -503,31 +503,31 @@ export default function MatchupMemoTab() {
               >
                 {aiDrafting ? <RefreshCw size={14} className="animate-spin" /> : <Zap size={14} />} AI下書きを自動生成
               </button>
-              <button onClick={() => setShowDetails(!showDetails)} className="text-xs text-gray-400 hover:text-white underline">
+              <button onClick={() => setShowDetails(!showDetails)} className="text-xs text-gray-400 hover:text-stone-900 underline">
                 {showDetails ? '詳細入力をたたむ' : '詳細入力項目を開く'}
               </button>
             </div>
 
             {showDetails && (
-              <div className="space-y-4 pt-2 border-t border-white/5">
+              <div className="space-y-4 pt-2 border-t border-black/10">
                 <div>
                   <label className="text-xs font-bold text-gray-400 block mb-1">勝利条件 (Win Condition)</label>
-                  <textarea value={memo.winCondition} onChange={e => set('winCondition', e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-sm text-white outline-none h-20" placeholder="序盤のウェーブ管理とLv6でのオールイン..." />
+                  <textarea value={memo.winCondition} onChange={e => set('winCondition', e.target.value)} className="w-full bg-black/5 border border-black/10 rounded-xl p-3 text-sm text-stone-900 outline-none h-20" placeholder="序盤のウェーブ管理とLv6でのオールイン..." />
                 </div>
                 <div>
                   <label className="text-xs font-bold text-gray-400 block mb-1">序盤の立ち回り (Early Game)</label>
-                  <textarea value={memo.earlyGame} onChange={e => set('earlyGame', e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-sm text-white outline-none h-20" placeholder="Lv3トレードでのスキル回し..." />
+                  <textarea value={memo.earlyGame} onChange={e => set('earlyGame', e.target.value)} className="w-full bg-black/5 border border-black/10 rounded-xl p-3 text-sm text-stone-900 outline-none h-20" placeholder="Lv3トレードでのスキル回し..." />
                 </div>
               </div>
             )}
 
             <div>
               <label className="text-xs font-bold text-gray-400 block mb-1">立ち回り・フリーメモ (Markdown)</label>
-              <textarea value={memo.strategy} onChange={e => set('strategy', e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-sm text-white outline-none h-32" placeholder="詳細な攻略メモ..." />
+              <textarea value={memo.strategy} onChange={e => set('strategy', e.target.value)} className="w-full bg-black/5 border border-black/10 rounded-xl p-3 text-sm text-stone-900 outline-none h-32" placeholder="詳細な攻略メモ..." />
             </div>
 
-            <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
-              <button onClick={() => setShowForm(false)} className="px-5 py-2.5 rounded-xl glass-panel text-gray-400 hover:text-white text-sm font-bold">キャンセル</button>
+            <div className="flex justify-end gap-3 pt-4 border-t border-black/10">
+              <button onClick={() => setShowForm(false)} className="px-5 py-2.5 rounded-xl glass-panel text-gray-400 hover:text-stone-900 text-sm font-bold">キャンセル</button>
               <button onClick={saveMemo} disabled={saving} className="px-6 py-2.5 rounded-xl bg-[#00cfef] text-black font-black text-sm hover:shadow-[0_0_15px_rgba(0,207,239,0.4)] flex items-center gap-2">
                 {saving ? <RefreshCw size={16} className="animate-spin" /> : <Save size={16} />} 保存する
               </button>
@@ -542,28 +542,28 @@ export default function MatchupMemoTab() {
       ) : viewMode === 'list' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {results.map((m: any) => (
-            <div key={m.id} className="glass-panel glass-panel-hover p-5 rounded-2xl flex flex-col justify-between gap-4 relative group border-t-2 border-white/5">
+            <div key={m.id} className="glass-panel glass-panel-hover p-5 rounded-2xl flex flex-col justify-between gap-4 relative group border-t-2 border-black/10">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
                   <Image src={getChampIcon(m.champion)} alt={m.champion} width={40} height={40} className="w-10 h-10 rounded-full border border-[#00cfef]" />
                   <span className="text-xs font-black text-gray-500">VS</span>
                   <Image src={getChampIcon(m.enemy)} alt={m.enemy} width={40} height={40} className="w-10 h-10 rounded-full border border-rose-500" />
                   <div>
-                    <h4 className="text-sm font-bold text-white">{m.champion} vs {m.enemy}</h4>
+                    <h4 className="text-sm font-bold text-stone-900">{m.champion} vs {m.enemy}</h4>
                     <span className="text-[10px] text-gray-500 font-mono">{m.role}</span>
                     {m.raw_data?.matchLogId && (
-                      <span className="ml-1 text-[10px] text-emerald-400">🔗 試合紐づけ済み</span>
+                      <span className="ml-1 text-[10px] text-emerald-600">🔗 試合紐づけ済み</span>
                     )}
                   </div>
                 </div>
                 <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button onClick={() => handleEdit(m)} className="p-1.5 rounded-lg bg-white/5 text-gray-400 hover:text-white"><Shield size={14} /></button>
-                  <button onClick={() => handleDelete(m)} className="p-1.5 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20"><Trash2 size={14} /></button>
+                  <button onClick={() => handleEdit(m)} className="p-1.5 rounded-lg bg-black/5 text-gray-400 hover:text-stone-900"><Shield size={14} /></button>
+                  <button onClick={() => handleDelete(m)} className="p-1.5 rounded-lg bg-red-100 text-red-700 hover:bg-red-200"><Trash2 size={14} /></button>
                 </div>
               </div>
 
               {m.strategy && (
-                <div className="text-xs text-gray-300 line-clamp-3 bg-black/20 p-3 rounded-xl border border-white/5">
+                <div className="text-xs text-stone-700 line-clamp-3 bg-black/3 p-3 rounded-xl border border-black/10">
                   <ReactMarkdown>{m.strategy}</ReactMarkdown>
                 </div>
               )}
@@ -577,14 +577,14 @@ export default function MatchupMemoTab() {
             <div key={champName} className="glass-panel p-5 rounded-2xl">
               <div className="flex items-center gap-3 mb-3">
                 <Image src={getChampIcon(champName)} alt={champName} width={40} height={40} className="w-10 h-10 rounded-full border border-[#00cfef]" />
-                <h3 className="text-base font-bold text-white">{champName} <span className="text-xs text-gray-400">({list.length}件の対面)</span></h3>
+                <h3 className="text-base font-bold text-stone-900">{champName} <span className="text-xs text-gray-400">({list.length}件の対面)</span></h3>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                 {list.map((m: any) => (
-                  <div key={m.id} onClick={() => handleEdit(m)} className="p-3 rounded-xl bg-black/30 border border-white/5 hover:border-[#00cfef]/30 cursor-pointer flex items-center justify-between">
+                  <div key={m.id} onClick={() => handleEdit(m)} className="p-3 rounded-xl bg-black/3 border border-black/10 hover:border-[#00cfef]/30 cursor-pointer flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Image src={getChampIcon(m.enemy)} alt={m.enemy} width={32} height={32} className="w-8 h-8 rounded-full border border-rose-500/40" />
-                      <span className="text-xs font-bold text-gray-200">vs {m.enemy}</span>
+                      <span className="text-xs font-bold text-stone-800">vs {m.enemy}</span>
                     </div>
                     <span className="text-[10px] text-gray-500">{new Date(m.created_at).toLocaleDateString('ja-JP')}</span>
                   </div>

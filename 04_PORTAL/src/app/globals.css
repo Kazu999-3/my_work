@@ -1,80 +1,81 @@
 @import "tailwindcss";
 
 @theme {
-  --color-background: #2b2620;
-  --color-foreground: #f0ebe3;
+  --color-background: #eae4d4;
+  --color-foreground: #201c2b;
 
-  /* Sovereign Warm Hextech Theme（2026-08-01: 寒色ネオンのサイバーパンクから、
-     暖色寄りの落ち着いたダークへ変更。emerald(成功)/danger(警告)の意味的な色は維持） */
-  --color-primary: #d97706;
-  --color-primary-glow: rgba(217, 119, 6, 0.35);
-  --color-accent: #ea580c;
-  --color-gold: #c89b3c;
-  --color-gold-glow: rgba(200, 155, 60, 0.4);
-  --color-success: #10b981;
-  --color-danger: #ef4444;
-  --color-surface: rgba(255, 247, 238, 0.03);
-  --color-surface-hover: rgba(255, 247, 238, 0.08);
-  --color-border: rgba(255, 247, 238, 0.1);
+  /* Sovereign Parchment Theme（2026-08-01: 暖色ダークから、junglepedia.lol系の
+     クリーム/羊皮紙調ライトテーマへ全面切り替え。success/dangerの意味的な色は維持） */
+  --color-primary: #c2650f;
+  --color-primary-glow: rgba(194, 101, 15, 0.25);
+  --color-accent: #b5410a;
+  --color-gold: #a9760f;
+  --color-gold-glow: rgba(169, 118, 15, 0.3);
+  --color-success: #0f9d6a;
+  --color-danger: #d5372f;
+  --color-surface: #fdfcf9;
+  --color-surface-hover: #f5f1e6;
+  --color-border: #ddd6c2;
+  --color-muted: #6f6a5a;
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
 body {
-  background-color: #2b2620;
-  color: #f0ebe3;
+  background-color: #eae4d4;
+  color: #201c2b;
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background-image:
-    radial-gradient(circle at 15% 50%, rgba(217, 119, 6, 0.06) 0%, transparent 50%),
-    radial-gradient(circle at 85% 30%, rgba(234, 88, 12, 0.06) 0%, transparent 50%);
+    radial-gradient(circle at 15% 50%, rgba(194, 101, 15, 0.05) 0%, transparent 50%),
+    radial-gradient(circle at 85% 30%, rgba(169, 118, 15, 0.05) 0%, transparent 50%);
   background-attachment: fixed;
 }
 
 @layer utilities {
   .glass-panel {
-    background: rgba(255, 255, 255, 0.03);
+    background: rgba(255, 255, 255, 0.72);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(32, 28, 43, 0.1);
+    box-shadow: 0 4px 20px rgba(32, 28, 43, 0.06);
   }
-  
+
   @media (max-width: 768px) {
     .glass-panel {
       backdrop-filter: none !important;
       -webkit-backdrop-filter: none !important;
-      background: linear-gradient(135deg, rgba(38, 34, 30, 0.95) 0%, rgba(26, 23, 20, 0.98) 100%) !important;
-      border: 1px solid rgba(217, 119, 6, 0.15) !important;
-      box-shadow: inset 0 0 12px rgba(217, 119, 6, 0.05), 0 4px 20px rgba(0, 0, 0, 0.5) !important;
+      background: linear-gradient(135deg, rgba(253, 252, 249, 0.98) 0%, rgba(245, 241, 230, 0.98) 100%) !important;
+      border: 1px solid rgba(194, 101, 15, 0.15) !important;
+      box-shadow: inset 0 0 12px rgba(194, 101, 15, 0.04), 0 4px 16px rgba(32, 28, 43, 0.08) !important;
     }
   }
-  
+
   .glass-panel-hover {
     transition: all 0.3s ease;
   }
   .glass-panel-hover:hover {
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(200, 155, 60, 0.3);
-    box-shadow: 0 0 20px rgba(200, 155, 60, 0.2);
+    background: rgba(255, 255, 255, 0.92);
+    border-color: rgba(169, 118, 15, 0.35);
+    box-shadow: 0 4px 20px rgba(169, 118, 15, 0.15);
   }
 
   .gold-gradient-text {
-    background: linear-gradient(135deg, #f3e7e8 0%, #e3c07b 50%, #c89b3c 100%);
+    background: linear-gradient(135deg, #8a5a10 0%, #a9760f 50%, #7a4e0c 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
   }
 
   .gold-border-glow {
-    border-color: rgba(200, 155, 60, 0.5);
-    box-shadow: 0 0 15px rgba(200, 155, 60, 0.3);
+    border-color: rgba(169, 118, 15, 0.4);
+    box-shadow: 0 0 12px rgba(169, 118, 15, 0.2);
   }
-  
+
   .cyber-grid {
     background-size: 40px 40px;
-    background-image: 
-      linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-      linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    background-image:
+      linear-gradient(to right, rgba(32, 28, 43, 0.03) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(32, 28, 43, 0.03) 1px, transparent 1px);
   }
 
   @keyframes bounceShort {

@@ -7,7 +7,7 @@ export const metadata = {
 
 export default function YoutubeAdminPage() {
   return (
-    <div className="min-h-screen bg-[#06070a] text-gray-100 p-6 md:p-12 overflow-y-auto">
+    <div className="min-h-screen bg-background text-stone-900 p-6 md:p-12 overflow-y-auto">
       <YoutubeQueueManager />
     </div>
   );

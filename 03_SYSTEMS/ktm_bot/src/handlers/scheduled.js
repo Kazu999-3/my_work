@@ -4,7 +4,7 @@ import { parseMessageData } from '../utils/helpers.js';
 import { fetchWithRetry, fetchPortalAPI } from '../utils/api.js';
 import { createMessageContent, createRecruitButtons, createRecruitEmbed } from '../ui/embeds.js';
 import { createRecruitment } from '../utils/recruitPermission.js';
-import { getKtmRank, formatRankDistribution, formatMmrWithRank } from '../utils/ktmRank.js';
+import { getKtmRank, formatRankDistribution, formatMmrWithRank, getHighestLaneMmr } from '../utils/ktmRank.js';
 
 export async function handleScheduledEvent(event, env, ctx) {
   console.log("Scheduled event triggered:", JSON.stringify(event));
@@ -163,9 +163,10 @@ async function sendRecruitStatusNotification(env) {
       if (joined.length > 0) {
         try {
           const idsStr = joined.map((i) => `"${i}"`).join(',');
-          const ps = await fetchSupabase(env, 'ktm_players', `discord_id=in.(${idsStr})&select=discord_id,mmr`);
+          const ps = await fetchSupabase(env, 'ktm_players', `discord_id=in.(${idsStr})&select=discord_id,mmr,mmr_top,mmr_jg,mmr_mid,mmr_adc,mmr_sup`);
           for (const p of (ps || [])) {
-            if (p.mmr != null) mmrById.set(String(p.discord_id), p.mmr);
+            const hMmr = getHighestLaneMmr(p);
+            if (hMmr > 0) mmrById.set(String(p.discord_id), hMmr);
           }
         } catch (e) {
           console.warn('[RecruitStatus] MMR取得に失敗:', e);

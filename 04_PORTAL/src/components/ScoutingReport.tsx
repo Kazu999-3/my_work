@@ -12,7 +12,7 @@ interface ScoutingReportProps {
 export default function ScoutingReport({ stats, mmr }: ScoutingReportProps) {
   if (!stats || Object.keys(stats).length === 0 || !Object.values(stats).some(s => s !== null)) {
     return (
-      <div className="w-full h-full bg-gray-900/50 rounded-lg p-6 flex flex-col items-center justify-center border border-gray-800 text-gray-500 text-sm">
+      <div className="w-full h-full bg-white rounded-lg p-6 flex flex-col items-center justify-center border border-black/10 text-gray-500 text-sm">
         試合データが不足しているため、スカウティングレポートを生成できません。
       </div>
     );
@@ -70,8 +70,8 @@ export default function ScoutingReport({ stats, mmr }: ScoutingReportProps) {
 
   // 2. レポートの構築
   return (
-    <div className="w-full bg-gray-900/50 rounded-lg p-5 border border-gray-800 relative overflow-hidden">
-      <div className="flex items-center gap-2 mb-4 text-emerald-400 font-bold tracking-widest text-sm border-b border-gray-800 pb-2">
+    <div className="w-full bg-white rounded-lg p-5 border border-black/10 relative overflow-hidden">
+      <div className="flex items-center gap-2 mb-4 text-emerald-700 font-bold tracking-widest text-sm border-b border-black/10 pb-2">
         <Activity className="w-4 h-4" />
         SCOUTING REPORT
       </div>
@@ -80,12 +80,12 @@ export default function ScoutingReport({ stats, mmr }: ScoutingReportProps) {
         {/* メインロールの傾向 */}
         {mostPlayedRole.games > 0 && (
           <div className="flex gap-3 items-start">
-            <div className="mt-0.5"><Target className="w-5 h-5 text-blue-400" /></div>
+            <div className="mt-0.5"><Target className="w-5 h-5 text-blue-600" /></div>
             <div>
               <div className="text-xs font-bold text-gray-500 mb-1">MAIN ROLE & WINRATE</div>
-              <p className="text-sm text-gray-300">
-                主に <span className="font-bold text-blue-300">{mostPlayedRole.role}</span> をプレイ ({mostPlayedRole.games}戦)。
-                勝率は <span className={`font-bold ${overallWinRate >= 55 ? 'text-emerald-400' : overallWinRate <= 45 ? 'text-red-400' : 'text-gray-300'}`}>{overallWinRate}%</span>。
+              <p className="text-sm text-gray-700">
+                主に <span className="font-bold text-blue-700">{mostPlayedRole.role}</span> をプレイ ({mostPlayedRole.games}戦)。
+                勝率は <span className={`font-bold ${overallWinRate >= 55 ? 'text-emerald-700' : overallWinRate <= 45 ? 'text-red-700' : 'text-gray-700'}`}>{overallWinRate}%</span>。
                 {overallWinRate >= 60 ? " チームの核となるキャリープレイヤーのため徹底マークが必要。" : 
                  overallWinRate >= 50 ? " 安定したパフォーマンスを発揮する。" : " 現在苦戦傾向にある。"}
               </p>
@@ -96,10 +96,10 @@ export default function ScoutingReport({ stats, mmr }: ScoutingReportProps) {
         {/* 警戒すべきチャンピオン */}
         {warningChamp && warningChamp.name !== 'Unknown' && (
           <div className="flex gap-3 items-start">
-            <div className="mt-0.5"><AlertTriangle className="w-5 h-5 text-amber-500" /></div>
+            <div className="mt-0.5"><AlertTriangle className="w-5 h-5 text-amber-600" /></div>
             <div className="flex-1">
               <div className="text-xs font-bold text-gray-500 mb-1">TARGET BAN</div>
-              <div className="flex items-center gap-2 bg-gray-950 p-2 rounded border border-gray-800/50 mb-2">
+              <div className="flex items-center gap-2 bg-black/5 p-2 rounded border border-black/10 mb-2">
                 <Image
                   src={getChampIcon(warningChamp.name)}
                   alt={warningChamp.name}
@@ -109,11 +109,11 @@ export default function ScoutingReport({ stats, mmr }: ScoutingReportProps) {
                   onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
                 />
                 <div>
-                  <div className="text-sm font-bold text-amber-400">{warningChamp.name}</div>
+                  <div className="text-sm font-bold text-amber-700">{warningChamp.name}</div>
                   <div className="text-xs text-gray-500">{warningChamp.games}戦 勝率{warningChamp.winRate}%</div>
                 </div>
               </div>
-              <p className="text-sm text-gray-300">
+              <p className="text-sm text-gray-700">
                 使用頻度・勝率ともに高く、最も警戒すべきピック。可能であればBANを強く推奨。
               </p>
             </div>
@@ -123,11 +123,11 @@ export default function ScoutingReport({ stats, mmr }: ScoutingReportProps) {
         {/* 弱点 */}
         {worstRole.games >= 2 && worstRole.winRate <= 40 && worstRole.role !== mostPlayedRole.role && (
           <div className="flex gap-3 items-start">
-            <div className="mt-0.5"><Crosshair className="w-5 h-5 text-red-500" /></div>
+            <div className="mt-0.5"><Crosshair className="w-5 h-5 text-red-600" /></div>
             <div>
               <div className="text-xs font-bold text-gray-500 mb-1">WEAKNESS</div>
-              <p className="text-sm text-gray-300">
-                <span className="font-bold text-red-400">{worstRole.role}</span> に回された際の勝率が非常に低い ({worstRole.winRate}%)。
+              <p className="text-sm text-gray-700">
+                <span className="font-bold text-red-700">{worstRole.role}</span> に回された際の勝率が非常に低い ({worstRole.winRate}%)。
                 オートフィル時は明確な穴になりやすいため、序盤から積極的に狙うべき。
               </p>
             </div>

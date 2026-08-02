@@ -240,21 +240,21 @@ export default function MatchHistoryPanel() {
   }
 
   if (error) {
-    return <div className="p-8 text-red-500 font-bold bg-red-900/20 rounded-xl border border-red-900/50">Error: {error}</div>;
+    return <div className="p-8 text-red-700 font-bold bg-red-100 rounded-xl border border-red-200">Error: {error}</div>;
   }  return (
     <div className="space-y-6">
       <div className="flex items-center gap-3 mb-6">
-        <div className="p-3 bg-emerald-500/10 rounded-xl">
-          <History className="h-6 w-6 text-emerald-400" />
+        <div className="p-3 bg-emerald-100 rounded-xl">
+          <History className="h-6 w-6 text-emerald-700" />
         </div>
         <div>
-          <h2 className="text-2xl font-extrabold text-white">直近の試合履歴</h2>
+          <h2 className="text-2xl font-extrabold text-stone-900">直近の試合履歴</h2>
           <p className="text-stone-400 font-medium text-sm">最新30件の試合結果とMMR変動履歴</p>
         </div>
       </div>
 
       {actionMessage && (
-        <div className={`p-4 rounded-lg flex items-center gap-3 ${actionMessage.type === 'error' ? 'bg-red-900/30 text-red-400 border border-red-800' : 'bg-emerald-950/30 text-emerald-400 border-emerald-800/60'}`}>
+        <div className={`p-4 rounded-lg flex items-center gap-3 ${actionMessage.type === 'error' ? 'bg-red-100 text-red-700 border border-red-200' : 'bg-emerald-100 text-emerald-700 border-emerald-200'}`}>
           <AlertCircle className="h-5 w-5 flex-shrink-0" />
           <p className="text-sm font-medium whitespace-pre-wrap">{actionMessage.text}</p>
         </div>
@@ -274,7 +274,7 @@ export default function MatchHistoryPanel() {
           const dateStr = `${dateObj.getFullYear()}/${String(dateObj.getMonth()+1).padStart(2, '0')}/${String(dateObj.getDate()).padStart(2, '0')} ${String(dateObj.getHours()).padStart(2, '0')}:${String(dateObj.getMinutes()).padStart(2, '0')}`;
 
           return (
-            <div key={match.id} className="bg-stone-900 border border-stone-800 rounded-xl overflow-hidden shadow-xl">
+            <div key={match.id} className="bg-surface border border-border rounded-xl overflow-hidden shadow-xl">
               {/* Header */}
               <div className={`p-4 flex items-center justify-between border-b ${
                 match.winning_team === 'BLUE' ? 'bg-blue-900/20 border-blue-900/50' : 'bg-red-900/20 border-red-900/50'
@@ -293,14 +293,14 @@ export default function MatchHistoryPanel() {
                   <div className="flex items-center gap-1.5">
                     <button
                       onClick={() => setEditingMatch(JSON.parse(JSON.stringify(match)))}
-                      className="p-1.5 bg-stone-800 hover:bg-stone-700 border border-stone-700 text-orange-400 hover:text-white rounded transition"
+                      className="p-1.5 bg-black/5 hover:bg-black/8 border border-border text-orange-700 hover:text-stone-900 rounded transition"
                       title="試合履歴を編集"
                     >
                       <Edit className="h-4 w-4" />
                     </button>
                     <button
                       onClick={() => handleDeleteMatch(match.id)}
-                      className="p-1.5 bg-stone-800 hover:bg-red-950/60 border border-stone-700 text-red-400 hover:text-white rounded transition"
+                      className="p-1.5 bg-black/5 hover:bg-red-100 border border-border text-red-700 hover:text-stone-900 rounded transition"
                       title="試合履歴を削除"
                     >
                       <Trash2 className="h-4 w-4" />
@@ -310,15 +310,15 @@ export default function MatchHistoryPanel() {
               </div>
 
               {/* Body */}
-              <div className="flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x divide-stone-800">
+              <div className="flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x divide-border">
                 {/* BLUE TEAM */}
-                <div className="flex-1 p-4 bg-stone-900/50">
+                <div className="flex-1 p-4 bg-black/3">
                   <div className="space-y-3">
                     {blueSorted.map(p => {
                       const maxDmg = Math.max(...blueSorted.map(x => x.damage_dealt || 0));
                       const dmgPercent = maxDmg > 0 ? ((p.damage_dealt || 0) / maxDmg) * 100 : 0;
                       return (
-                        <div key={p.player_name} className="flex items-center gap-3 bg-stone-800/40 p-2 rounded hover:bg-stone-800 transition">
+                        <div key={p.player_name} className="flex items-center gap-3 bg-white/70 p-2 rounded hover:bg-black/5 transition">
                           <div className="w-8 text-center text-xs font-bold text-stone-500 flex-shrink-0">{p.role}</div>
                           {p.champion_name ? (
                             <Image
@@ -326,14 +326,14 @@ export default function MatchHistoryPanel() {
                               alt={p.champion_name}
                               width={40}
                               height={40}
-                              className="w-10 h-10 rounded-full border border-stone-700 flex-shrink-0 object-cover"
+                              className="w-10 h-10 rounded-full border border-border flex-shrink-0 object-cover"
                               onError={(e) => { e.currentTarget.style.display = 'none'; }}
                             />
                           ) : (
-                            <div className="w-10 h-10 rounded-full bg-stone-700 flex-shrink-0 border border-stone-600 flex items-center justify-center text-[10px] text-stone-500">?</div>
+                            <div className="w-10 h-10 rounded-full bg-black/5 flex-shrink-0 border border-border flex items-center justify-center text-[10px] text-stone-500">?</div>
                           )}
                           <div className="flex-1 min-w-0">
-                            <div className="font-bold text-stone-200 truncate text-sm">{p.player_name}</div>
+                            <div className="font-bold text-stone-800 truncate text-sm">{p.player_name}</div>
                             <div className="text-xs text-stone-500 mt-0.5 flex gap-2">
                               <span>CS {p.cs || 0}</span>
                               <span title="Vision Score">VS {p.vision_score || 0}</span>
@@ -341,16 +341,16 @@ export default function MatchHistoryPanel() {
                           </div>
                           
                           <div className="flex flex-col items-end gap-1 flex-shrink-0 w-24">
-                            <div className="text-xs font-bold text-stone-300">
-                              {p.kills} / <span className="text-red-400">{p.deaths}</span> / {p.assists}
+                            <div className="text-xs font-bold text-stone-700">
+                              {p.kills} / <span className="text-red-700">{p.deaths}</span> / {p.assists}
                             </div>
-                            <div className="w-full h-1.5 bg-stone-700 rounded-full overflow-hidden mt-0.5">
+                            <div className="w-full h-1.5 bg-black/10 rounded-full overflow-hidden mt-0.5">
                               <div className="h-full bg-amber-500 rounded-full" style={{ width: `${dmgPercent}%` }}></div>
                             </div>
                             <div className="text-[10px] text-stone-500">{p.damage_dealt ? p.damage_dealt.toLocaleString() : '0'} DMG</div>
                           </div>
 
-                          <div className={`w-12 text-right font-black text-sm flex-shrink-0 ${p.mmr_delta > 0 ? 'text-emerald-400' : p.mmr_delta < 0 ? 'text-red-400' : 'text-stone-500'}`}>
+                          <div className={`w-12 text-right font-black text-sm flex-shrink-0 ${p.mmr_delta > 0 ? 'text-emerald-700' : p.mmr_delta < 0 ? 'text-red-700' : 'text-stone-500'}`}>
                             {p.mmr_delta > 0 ? '+' : ''}{p.mmr_delta}
                           </div>
                         </div>
@@ -360,13 +360,13 @@ export default function MatchHistoryPanel() {
                 </div>
 
                 {/* RED TEAM */}
-                <div className="flex-1 p-4 bg-stone-900/50">
+                <div className="flex-1 p-4 bg-black/3">
                   <div className="space-y-3">
                     {redSorted.map(p => {
                       const maxDmg = Math.max(...redSorted.map(x => x.damage_dealt || 0));
                       const dmgPercent = maxDmg > 0 ? ((p.damage_dealt || 0) / maxDmg) * 100 : 0;
                       return (
-                        <div key={p.player_name} className="flex items-center gap-3 bg-stone-800/40 p-2 rounded hover:bg-stone-800 transition">
+                        <div key={p.player_name} className="flex items-center gap-3 bg-white/70 p-2 rounded hover:bg-black/5 transition">
                           <div className="w-8 text-center text-xs font-bold text-stone-500 flex-shrink-0">{p.role}</div>
                           {p.champion_name ? (
                             <Image
@@ -374,14 +374,14 @@ export default function MatchHistoryPanel() {
                               alt={p.champion_name}
                               width={40}
                               height={40}
-                              className="w-10 h-10 rounded-full border border-stone-700 flex-shrink-0 object-cover"
+                              className="w-10 h-10 rounded-full border border-border flex-shrink-0 object-cover"
                               onError={(e) => { e.currentTarget.style.display = 'none'; }}
                             />
                           ) : (
-                            <div className="w-10 h-10 rounded-full bg-stone-700 flex-shrink-0 border border-stone-600 flex items-center justify-center text-[10px] text-stone-500">?</div>
+                            <div className="w-10 h-10 rounded-full bg-black/5 flex-shrink-0 border border-border flex items-center justify-center text-[10px] text-stone-500">?</div>
                           )}
                           <div className="flex-1 min-w-0">
-                            <div className="font-bold text-stone-200 truncate text-sm">{p.player_name}</div>
+                            <div className="font-bold text-stone-800 truncate text-sm">{p.player_name}</div>
                             <div className="text-xs text-stone-500 mt-0.5 flex gap-2">
                               <span>CS {p.cs || 0}</span>
                               <span title="Vision Score">VS {p.vision_score || 0}</span>
@@ -389,16 +389,16 @@ export default function MatchHistoryPanel() {
                           </div>
                           
                           <div className="flex flex-col items-end gap-1 flex-shrink-0 w-24">
-                            <div className="text-xs font-bold text-stone-300">
-                              {p.kills} / <span className="text-red-400">{p.deaths}</span> / {p.assists}
+                            <div className="text-xs font-bold text-stone-700">
+                              {p.kills} / <span className="text-red-700">{p.deaths}</span> / {p.assists}
                             </div>
-                            <div className="w-full h-1.5 bg-stone-700 rounded-full overflow-hidden mt-0.5">
+                            <div className="w-full h-1.5 bg-black/10 rounded-full overflow-hidden mt-0.5">
                               <div className="h-full bg-red-500 rounded-full" style={{ width: `${dmgPercent}%` }}></div>
                             </div>
                             <div className="text-[10px] text-stone-500">{p.damage_dealt ? p.damage_dealt.toLocaleString() : '0'} DMG</div>
                           </div>
 
-                          <div className={`w-12 text-right font-black text-sm flex-shrink-0 ${p.mmr_delta > 0 ? 'text-emerald-400' : p.mmr_delta < 0 ? 'text-red-400' : 'text-stone-500'}`}>
+                          <div className={`w-12 text-right font-black text-sm flex-shrink-0 ${p.mmr_delta > 0 ? 'text-emerald-700' : p.mmr_delta < 0 ? 'text-red-700' : 'text-stone-500'}`}>
                             {p.mmr_delta > 0 ? '+' : ''}{p.mmr_delta}
                           </div>
                         </div>
@@ -411,22 +411,22 @@ export default function MatchHistoryPanel() {
           );
         })}
         {matches.length === 0 && (
-          <div className="text-center p-12 text-stone-500 font-bold border border-stone-800 border-dashed rounded-xl">試合履歴がありません</div>
+          <div className="text-center p-12 text-stone-500 font-bold border border-border border-dashed rounded-xl">試合履歴がありません</div>
         )}
       </div>
 
       {/* 試合編集モーダル */}
       {editingMatch && (
         <div className="fixed inset-0 z-40 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm overflow-y-auto">
-          <div className="bg-stone-900 border border-stone-800 rounded-2xl w-full max-w-4xl p-6 shadow-2xl my-8 animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between border-b border-stone-800 pb-4 mb-6">
-              <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                <Edit className="h-5 w-5 text-orange-400" />
+          <div className="bg-surface border border-border rounded-2xl w-full max-w-4xl p-6 shadow-2xl my-8 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between border-b border-border pb-4 mb-6">
+              <h3 className="text-xl font-bold text-stone-900 flex items-center gap-2">
+                <Edit className="h-5 w-5 text-orange-700" />
                 試合履歴の編集 (Match #{editingMatch.id})
               </h3>
               <button 
                 onClick={() => setEditingMatch(null)}
-                className="text-stone-400 hover:text-white bg-stone-800 px-3 py-1.5 rounded-lg border border-stone-700 transition text-sm"
+                className="text-stone-400 hover:text-stone-900 bg-black/5 px-3 py-1.5 rounded-lg border border-border transition text-sm"
               >
                 キャンセル
               </button>
@@ -450,19 +450,19 @@ export default function MatchHistoryPanel() {
                         onDragOver={handleDragOver}
                         onDrop={(e) => handleDrop(e, idx)}
                         onDragEnd={() => setDraggedParticipantIndex(null)}
-                        className={`flex items-center gap-2 bg-stone-800/80 p-3 rounded-lg border border-stone-750 cursor-grab active:cursor-grabbing hover:bg-stone-750 hover:border-stone-700 transition-all ${
-                          isDragging ? 'opacity-40 border-dashed border-orange-500 bg-stone-900' : ''
+                        className={`flex items-center gap-2 bg-black/5 p-3 rounded-lg border border-border cursor-grab active:cursor-grabbing hover:bg-black/8 hover:border-border transition-all ${
+                          isDragging ? 'opacity-40 border-dashed border-orange-500 bg-surface' : ''
                         }`}
                       >
-                        <div className="text-stone-500 hover:text-stone-300 transition cursor-grab shrink-0">
+                        <div className="text-stone-500 hover:text-stone-700 transition cursor-grab shrink-0">
                           <GripVertical className="h-4 w-4" />
                         </div>
                         <div className="w-8 text-center font-bold text-stone-500 text-xs">{role}</div>
-                        <select 
+                        <select
                           value={p.player_name}
                           onChange={e => handleEditingParticipantChange(idx, 'player_name', e.target.value)}
                           onDragStart={e => e.stopPropagation()}
-                          className="w-28 bg-stone-900 border border-stone-700 rounded px-2 py-1 text-white outline-none focus:border-blue-500 text-xs"
+                          className="w-28 bg-surface border border-border rounded px-2 py-1 text-stone-900 outline-none focus:border-blue-500 text-xs"
                         >
                           <option value="">選択...</option>
                           {p.player_name && !playersPool.some(pl => pl.name === p.player_name) && (
@@ -474,7 +474,7 @@ export default function MatchHistoryPanel() {
                           onClick={() => setActiveChampSelectorPlayer(idx.toString())}
                           onDragStart={e => e.stopPropagation()}
                           type="button"
-                          className="w-28 bg-stone-900 border border-stone-700 hover:border-blue-500 rounded px-1.5 py-1 text-stone-300 hover:text-white text-xs flex items-center justify-between gap-1 transition shrink-0"
+                          className="w-28 bg-surface border border-border hover:border-blue-500 rounded px-1.5 py-1 text-stone-700 hover:text-stone-900 text-xs flex items-center justify-between gap-1 transition shrink-0"
                         >
                           <span className="truncate">
                             {p.champion_name ? (championsList.find(c => c.id === p.champion_name)?.name || 'チャンプ') : '選択'}
@@ -484,18 +484,18 @@ export default function MatchHistoryPanel() {
                               src={getChampIcon(p.champion_name)}
                               width={16}
                               height={16}
-                              className="w-4 h-4 rounded-full border border-stone-600 shrink-0 object-cover"
+                              className="w-4 h-4 rounded-full border border-border shrink-0 object-cover"
                               alt={p.champion_name}
                               onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
                             />
                           )}
                         </button>
                         <div className="flex-1 flex gap-1 justify-end" onDragStart={e => e.stopPropagation()}>
-                          <input type="number" value={p.kills} onChange={e => handleEditingParticipantChange(idx, 'kills', e.target.value)} className="w-10 bg-stone-900 border border-stone-700 text-white text-center rounded text-xs py-0.5" placeholder="K" />
+                          <input type="number" value={p.kills} onChange={e => handleEditingParticipantChange(idx, 'kills', e.target.value)} className="w-10 bg-surface border border-border text-stone-900 text-center rounded text-xs py-0.5" placeholder="K" />
                           <span className="text-stone-500 text-xs self-center">/</span>
-                          <input type="number" value={p.deaths} onChange={e => handleEditingParticipantChange(idx, 'deaths', e.target.value)} className="w-10 bg-stone-900 border border-red-900/50 text-red-200 text-center rounded text-xs py-0.5" placeholder="D" />
+                          <input type="number" value={p.deaths} onChange={e => handleEditingParticipantChange(idx, 'deaths', e.target.value)} className="w-10 bg-surface border border-red-200 text-red-700 text-center rounded text-xs py-0.5" placeholder="D" />
                           <span className="text-stone-500 text-xs self-center">/</span>
-                          <input type="number" value={p.assists} onChange={e => handleEditingParticipantChange(idx, 'assists', e.target.value)} className="w-10 bg-stone-900 border border-stone-700 text-white text-center rounded text-xs py-0.5" placeholder="A" />
+                          <input type="number" value={p.assists} onChange={e => handleEditingParticipantChange(idx, 'assists', e.target.value)} className="w-10 bg-surface border border-border text-stone-900 text-center rounded text-xs py-0.5" placeholder="A" />
                         </div>
                       </div>
                     );
@@ -520,19 +520,19 @@ export default function MatchHistoryPanel() {
                         onDragOver={handleDragOver}
                         onDrop={(e) => handleDrop(e, idx)}
                         onDragEnd={() => setDraggedParticipantIndex(null)}
-                        className={`flex items-center gap-2 bg-stone-800/80 p-3 rounded-lg border border-stone-750 cursor-grab active:cursor-grabbing hover:bg-stone-750 hover:border-stone-700 transition-all ${
-                          isDragging ? 'opacity-40 border-dashed border-red-500 bg-stone-900' : ''
+                        className={`flex items-center gap-2 bg-black/5 p-3 rounded-lg border border-border cursor-grab active:cursor-grabbing hover:bg-black/8 hover:border-border transition-all ${
+                          isDragging ? 'opacity-40 border-dashed border-red-500 bg-surface' : ''
                         }`}
                       >
-                        <div className="text-stone-500 hover:text-stone-300 transition cursor-grab shrink-0">
+                        <div className="text-stone-500 hover:text-stone-700 transition cursor-grab shrink-0">
                           <GripVertical className="h-4 w-4" />
                         </div>
                         <div className="w-8 text-center font-bold text-stone-500 text-xs">{role}</div>
-                        <select 
+                        <select
                           value={p.player_name}
                           onChange={e => handleEditingParticipantChange(idx, 'player_name', e.target.value)}
                           onDragStart={e => e.stopPropagation()}
-                          className="w-28 bg-stone-900 border border-stone-700 rounded px-2 py-1 text-white outline-none focus:border-red-500 text-xs"
+                          className="w-28 bg-surface border border-border rounded px-2 py-1 text-stone-900 outline-none focus:border-red-500 text-xs"
                         >
                           <option value="">選択...</option>
                           {p.player_name && !playersPool.some(pl => pl.name === p.player_name) && (
@@ -544,7 +544,7 @@ export default function MatchHistoryPanel() {
                           onClick={() => setActiveChampSelectorPlayer(idx.toString())}
                           onDragStart={e => e.stopPropagation()}
                           type="button"
-                          className="w-28 bg-stone-900 border border-stone-700 hover:border-red-500 rounded px-1.5 py-1 text-stone-300 hover:text-white text-xs flex items-center justify-between gap-1 transition shrink-0"
+                          className="w-28 bg-surface border border-border hover:border-red-500 rounded px-1.5 py-1 text-stone-700 hover:text-stone-900 text-xs flex items-center justify-between gap-1 transition shrink-0"
                         >
                           <span className="truncate">
                             {p.champion_name ? (championsList.find(c => c.id === p.champion_name)?.name || 'チャンプ') : '選択'}
@@ -554,18 +554,18 @@ export default function MatchHistoryPanel() {
                               src={getChampIcon(p.champion_name)}
                               width={16}
                               height={16}
-                              className="w-4 h-4 rounded-full border border-stone-600 shrink-0 object-cover"
+                              className="w-4 h-4 rounded-full border border-border shrink-0 object-cover"
                               alt={p.champion_name}
                               onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
                             />
                           )}
                         </button>
                         <div className="flex-1 flex gap-1 justify-end" onDragStart={e => e.stopPropagation()}>
-                          <input type="number" value={p.kills} onChange={e => handleEditingParticipantChange(idx, 'kills', e.target.value)} className="w-10 bg-stone-900 border border-stone-700 text-white text-center rounded text-xs py-0.5" placeholder="K" />
+                          <input type="number" value={p.kills} onChange={e => handleEditingParticipantChange(idx, 'kills', e.target.value)} className="w-10 bg-surface border border-border text-stone-900 text-center rounded text-xs py-0.5" placeholder="K" />
                           <span className="text-stone-500 text-xs self-center">/</span>
-                          <input type="number" value={p.deaths} onChange={e => handleEditingParticipantChange(idx, 'deaths', e.target.value)} className="w-10 bg-stone-900 border border-red-900/50 text-red-200 text-center rounded text-xs py-0.5" placeholder="D" />
+                          <input type="number" value={p.deaths} onChange={e => handleEditingParticipantChange(idx, 'deaths', e.target.value)} className="w-10 bg-surface border border-red-200 text-red-700 text-center rounded text-xs py-0.5" placeholder="D" />
                           <span className="text-stone-500 text-xs self-center">/</span>
-                          <input type="number" value={p.assists} onChange={e => handleEditingParticipantChange(idx, 'assists', e.target.value)} className="w-10 bg-stone-900 border border-stone-700 text-white text-center rounded text-xs py-0.5" placeholder="A" />
+                          <input type="number" value={p.assists} onChange={e => handleEditingParticipantChange(idx, 'assists', e.target.value)} className="w-10 bg-surface border border-border text-stone-900 text-center rounded text-xs py-0.5" placeholder="A" />
                         </div>
                       </div>
                     );
@@ -575,30 +575,30 @@ export default function MatchHistoryPanel() {
             </div>
 
             {/* 勝敗選択と保存 */}
-            <div className="border-t border-stone-800 pt-6 flex flex-col md:flex-row items-center justify-between gap-4">
-              <div className="flex items-center gap-4 bg-stone-800/40 p-2 rounded-lg border border-stone-750">
-                <span className="font-bold text-stone-400 px-2 text-sm">勝利チーム:</span>
-                <button 
+            <div className="border-t border-border pt-6 flex flex-col md:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-4 bg-black/5 p-2 rounded-lg border border-border">
+                <span className="font-bold text-stone-500 px-2 text-sm">勝利チーム:</span>
+                <button
                   onClick={() => setEditingMatch(prev => prev ? { ...prev, winning_team: 'BLUE' } : null)}
                   type="button"
-                  className={`px-6 py-2 rounded-lg font-bold transition text-xs ${editingMatch.winning_team === 'BLUE' ? 'bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.4)]' : 'bg-stone-950 text-stone-400 border border-stone-700 hover:bg-stone-850'}`}
+                  className={`px-6 py-2 rounded-lg font-bold transition text-xs ${editingMatch.winning_team === 'BLUE' ? 'bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.4)]' : 'bg-white text-stone-500 border border-border hover:bg-black/5'}`}
                 >
                   BLUE WIN
                 </button>
-                <button 
+                <button
                   onClick={() => setEditingMatch(prev => prev ? { ...prev, winning_team: 'RED' } : null)}
                   type="button"
-                  className={`px-6 py-2 rounded-lg font-bold transition text-xs ${editingMatch.winning_team === 'RED' ? 'bg-red-600 text-white shadow-[0_0_15px_rgba(220,38,38,0.4)]' : 'bg-stone-950 text-stone-400 border border-stone-700 hover:bg-stone-850'}`}
+                  className={`px-6 py-2 rounded-lg font-bold transition text-xs ${editingMatch.winning_team === 'RED' ? 'bg-red-600 text-white shadow-[0_0_15px_rgba(220,38,38,0.4)]' : 'bg-white text-stone-500 border border-border hover:bg-black/5'}`}
                 >
                   RED WIN
                 </button>
               </div>
 
               <div className="flex gap-3">
-                <button 
+                <button
                   onClick={() => setEditingMatch(null)}
                   type="button"
-                  className="px-6 py-2.5 rounded-xl font-bold bg-stone-800 hover:bg-stone-750 border border-stone-750 text-stone-300 transition text-sm"
+                  className="px-6 py-2.5 rounded-xl font-bold bg-black/5 hover:bg-black/8 border border-border text-stone-700 transition text-sm"
                 >
                   キャンセル
                 </button>
@@ -620,15 +620,15 @@ export default function MatchHistoryPanel() {
       {/* チャンピオン選択アイコンモーダル (編集モーダル用) */}
       {activeChampSelectorPlayer && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="bg-stone-900 border border-stone-800 rounded-2xl w-full max-w-2xl p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+          <div className="bg-surface border border-border rounded-2xl w-full max-w-2xl p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-extrabold text-white flex items-center gap-2">
-                <Target className="h-5 w-5 text-emerald-400" />
+              <h3 className="text-lg font-extrabold text-stone-900 flex items-center gap-2">
+                <Target className="h-5 w-5 text-emerald-700" />
                 チャンピオン選択
               </h3>
               <button 
                 onClick={() => { setActiveChampSelectorPlayer(null); setChampSearchQuery(''); }}
-                className="text-stone-400 hover:text-white text-sm bg-stone-800 px-3 py-1.5 rounded-lg border border-stone-700 transition"
+                className="text-stone-400 hover:text-stone-900 text-sm bg-black/5 px-3 py-1.5 rounded-lg border border-border transition"
               >
                 閉じる
               </button>
@@ -639,7 +639,7 @@ export default function MatchHistoryPanel() {
               placeholder="チャンピオン名で検索 (ひらがな・カタカナ・英語名)..." 
               value={champSearchQuery}
               onChange={e => setChampSearchQuery(e.target.value)}
-              className="w-full bg-stone-950 border border-stone-800 rounded-lg px-4 py-2.5 text-white mb-4 outline-none focus:border-emerald-500 text-sm"
+              className="w-full bg-background border border-border rounded-lg px-4 py-2.5 text-stone-900 mb-4 outline-none focus:border-emerald-500 text-sm"
               autoFocus
             />
             
@@ -659,16 +659,16 @@ export default function MatchHistoryPanel() {
                       setChampSearchQuery('');
                     }}
                     type="button"
-                    className="flex flex-col items-center gap-1.5 p-2 rounded-xl hover:bg-stone-800 transition group"
+                    className="flex flex-col items-center gap-1.5 p-2 rounded-xl hover:bg-black/5 transition group"
                   >
                     <Image
                       src={getChampIcon(c.id)}
                       width={48}
                       height={48}
-                      className="w-12 h-12 rounded-xl border border-stone-800 group-hover:border-emerald-500 transition object-cover"
+                      className="w-12 h-12 rounded-xl border border-border group-hover:border-emerald-500 transition object-cover"
                       alt={c.name}
                     />
-                    <span className="text-[10px] text-stone-400 truncate w-14 text-center group-hover:text-white transition">
+                    <span className="text-[10px] text-stone-400 truncate w-14 text-center group-hover:text-stone-900 transition">
                       {c.name}
                     </span>
                   </button>

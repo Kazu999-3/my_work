@@ -59,27 +59,27 @@ export default function DeepResearchModal({ isOpen, onClose, onSuccess }: DeepRe
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-      <div className="bg-slate-900 border border-slate-700/80 rounded-2xl max-w-lg w-full p-6 text-white shadow-2xl relative">
+      <div className="bg-white border border-stone-200 rounded-2xl max-w-lg w-full p-6 text-stone-900 shadow-2xl relative">
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors"
+          className="absolute top-4 right-4 text-stone-500 hover:text-stone-900 transition-colors"
         >
           <X size={20} />
         </button>
 
         <div className="flex items-center gap-2 mb-4">
-          <div className="p-2.5 rounded-xl bg-purple-500/20 text-purple-400 border border-purple-500/30">
+          <div className="p-2.5 rounded-xl bg-purple-100 text-purple-700 border border-purple-200">
             <Target size={22} />
           </div>
           <div>
-            <h3 className="font-bold text-lg text-white">特定チャンプ ディープリサーチ</h3>
-            <p className="text-xs text-slate-400">対象チャンピオンの最新メタ・動画発掘・攻略バイブル作成を一発実行</p>
+            <h3 className="font-bold text-lg text-stone-900">特定チャンプ ディープリサーチ</h3>
+            <p className="text-xs text-stone-500">対象チャンピオンの最新メタ・動画発掘・攻略バイブル作成を一発実行</p>
           </div>
         </div>
 
         <form onSubmit={handleResearch} className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">
+            <label className="block text-xs font-semibold text-stone-700 mb-1">
               対象チャンピオン名 (英語名)
             </label>
             <input
@@ -87,19 +87,19 @@ export default function DeepResearchModal({ isOpen, onClose, onSuccess }: DeepRe
               placeholder="例: Ahri, Riven, Aatrox, LeeSin"
               value={champion}
               onChange={(e) => setChampion(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:border-purple-500"
+              className="w-full px-3 py-2 bg-white border border-stone-300 rounded-xl text-sm text-stone-900 focus:outline-none focus:border-purple-500"
               required
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">
+            <label className="block text-xs font-semibold text-stone-700 mb-1">
               想定メインレーン
             </label>
             <select
               value={role}
               onChange={(e) => setRole(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:border-purple-500"
+              className="w-full px-3 py-2 bg-white border border-stone-300 rounded-xl text-sm text-stone-900 focus:outline-none focus:border-purple-500"
             >
               <option value="TOP">TOP (トップ)</option>
               <option value="JG">JUNGLE (ジャングル)</option>
@@ -115,9 +115,9 @@ export default function DeepResearchModal({ isOpen, onClose, onSuccess }: DeepRe
               id="fetchVideos"
               checked={fetchVideos}
               onChange={(e) => setFetchVideos(e.target.checked)}
-              className="rounded bg-slate-800 border-slate-700 text-purple-500 focus:ring-purple-500"
+              className="rounded bg-white border-stone-300 text-purple-600 focus:ring-purple-500"
             />
-            <label htmlFor="fetchVideos" className="text-xs text-slate-300 cursor-pointer">
+            <label htmlFor="fetchVideos" className="text-xs text-stone-700 cursor-pointer">
               YouTubeから高レート最新解説動画を自動検索しキュー登録する
             </label>
           </div>
@@ -126,8 +126,8 @@ export default function DeepResearchModal({ isOpen, onClose, onSuccess }: DeepRe
             <div
               className={`p-3 rounded-xl text-xs flex items-start gap-2 border ${
                 resultMsg.type === 'success'
-                  ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
-                  : 'bg-rose-500/10 border-rose-500/30 text-rose-300'
+                  ? 'bg-emerald-100 border-emerald-200 text-emerald-700'
+                  : 'bg-rose-100 border-rose-200 text-rose-700'
               }`}
             >
               {resultMsg.type === 'success' ? <CheckCircle2 size={16} className="mt-0.5 shrink-0" /> : <AlertCircle size={16} className="mt-0.5 shrink-0" />}
@@ -139,7 +139,7 @@ export default function DeepResearchModal({ isOpen, onClose, onSuccess }: DeepRe
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-xs font-semibold text-slate-400 hover:text-white transition-colors"
+              className="px-4 py-2 text-xs font-semibold text-stone-500 hover:text-stone-900 transition-colors"
             >
               キャンセル
             </button>

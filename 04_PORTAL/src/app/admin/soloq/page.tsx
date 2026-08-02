@@ -13,7 +13,7 @@ export default function SoloqScoutRedirect() {
   }, [router]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-black text-white text-sm">
+    <div className="min-h-screen flex items-center justify-center bg-background text-stone-900 text-sm">
       この機能は廃止されました。管理者ダッシュボードへ移動中...
     </div>
   );

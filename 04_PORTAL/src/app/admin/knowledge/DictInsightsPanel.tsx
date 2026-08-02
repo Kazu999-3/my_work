@@ -178,36 +178,36 @@ export default function DictInsightsPanel({ mode = 'inspect' }: { mode?: 'mainte
   };
 
   const typeLabel: Record<string, { label: string; cls: string }> = {
-    counter_but_winning: { label: '苦手と書いてあるが勝ってる', cls: 'bg-amber-500/10 text-amber-300 border-amber-500/30' },
-    ban_but_dominating: { label: 'BAN推奨だが圧倒してる', cls: 'bg-sky-500/10 text-sky-300 border-sky-500/30' },
-    losing_but_unlisted: { label: '苦戦してるが辞典に記載なし', cls: 'bg-rose-500/10 text-rose-300 border-rose-500/30' },
+    counter_but_winning: { label: '苦手と書いてあるが勝ってる', cls: 'bg-amber-100 text-amber-700 border-amber-200' },
+    ban_but_dominating: { label: 'BAN推奨だが圧倒してる', cls: 'bg-sky-100 text-sky-700 border-sky-200' },
+    losing_but_unlisted: { label: '苦戦してるが辞典に記載なし', cls: 'bg-rose-100 text-rose-700 border-rose-200' },
   };
 
   return (
     <div className="space-y-6">
-      {error && <p className="text-sm text-rose-400 bg-rose-500/10 border border-rose-500/30 rounded-lg px-3 py-2">{error}</p>}
+      {error && <p className="text-sm text-rose-700 bg-rose-100 border border-rose-200 rounded-lg px-3 py-2">{error}</p>}
 
       {/* 矛盾検出 */}
       {mode === 'inspect' && (
-      <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5">
+      <div className="bg-white border border-stone-200 rounded-2xl p-5">
         <div className="flex items-center justify-between flex-wrap gap-3 mb-3">
-          <h3 className="font-black text-white flex items-center gap-2">
-            <AlertTriangle size={16} className="text-amber-400" /> 辞典の矛盾検出
+          <h3 className="font-black text-stone-900 flex items-center gap-2">
+            <AlertTriangle size={16} className="text-amber-600" /> 辞典の矛盾検出
           </h3>
           <button onClick={checkContradiction} disabled={checking}
-            className="flex items-center gap-1.5 text-xs font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30 px-3 py-1.5 rounded-lg hover:bg-amber-500/25 disabled:opacity-50">
+            className="flex items-center gap-1.5 text-xs font-bold bg-amber-100 text-amber-700 border border-amber-200 px-3 py-1.5 rounded-lg hover:bg-amber-200 disabled:opacity-50">
             {checking ? <RefreshCw size={13} className="animate-spin" /> : <AlertTriangle size={13} />} 検出実行
           </button>
         </div>
-        <p className="text-[11px] text-gray-500 mb-3">辞典の「苦手対面」「BAN推奨」と、実際のカスタム戦績を突き合わせて食い違いを探します（3戦以上のみ対象）。</p>
+        <p className="text-[11px] text-stone-500 mb-3">辞典の「苦手対面」「BAN推奨」と、実際のカスタム戦績を突き合わせて食い違いを探します（3戦以上のみ対象）。</p>
         {issues === null ? (
-          <p className="text-xs text-gray-600">「検出実行」を押すと結果が出ます。</p>
+          <p className="text-xs text-stone-500">「検出実行」を押すと結果が出ます。</p>
         ) : issues.length === 0 ? (
-          <p className="text-xs text-emerald-400">✅ 矛盾は見つかりませんでした。</p>
+          <p className="text-xs text-emerald-700">✅ 矛盾は見つかりませんでした。</p>
         ) : (
           <div className="space-y-2">
             {issues.map((it, i) => (
-              <div key={i} className={`rounded-xl border px-3 py-2 ${typeLabel[it.type]?.cls || 'bg-gray-800 text-gray-300 border-gray-700'}`}>
+              <div key={i} className={`rounded-xl border px-3 py-2 ${typeLabel[it.type]?.cls || 'bg-stone-100 text-stone-700 border-stone-200'}`}>
                 <div className="flex items-center gap-2 flex-wrap text-xs">
                   <span className="font-black">{it.champion} vs {it.enemy}</span>
                   <span className="text-[10px] opacity-70">{typeLabel[it.type]?.label}</span>
@@ -223,12 +223,12 @@ export default function DictInsightsPanel({ mode = 'inspect' }: { mode?: 'mainte
 
       {/* 既存データの日本語化 */}
       {mode === 'maintenance' && (
-      <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5">
-        <h3 className="font-black text-white flex items-center gap-2 mb-3">
+      <div className="bg-white border border-stone-200 rounded-2xl p-5">
+        <h3 className="font-black text-stone-900 flex items-center gap-2 mb-3">
           <span className="w-6 h-6 rounded-full bg-orange-500 text-black text-xs flex items-center justify-center font-black shrink-0">1</span>
-          <Languages size={16} className="text-orange-400" /> 英語データの日本語化
+          <Languages size={16} className="text-orange-600" /> 英語データの日本語化
         </h3>
-        <p className="text-[11px] text-gray-500 mb-3">
+        <p className="text-[11px] text-stone-500 mb-3">
           英語のまま保存されている辞典・記事・メモを日本語に変換します。完了するまで自動で繰り返し実行されます
           （チャンピオン名やアイテム名は英語のまま残ります）。
         </p>
@@ -237,82 +237,82 @@ export default function DictInsightsPanel({ mode = 'inspect' }: { mode?: 'mainte
             ['facts', 'チャンピオン辞典'], ['articles', '攻略ライブラリ記事'], ['memos', '対面メモ'],
           ] as const).map(([key, label]) => (
             <button key={key} onClick={() => translateAll(key)} disabled={!!translating}
-              className="text-xs font-bold bg-orange-500/15 text-orange-300 border border-orange-500/30 px-3 py-2 rounded-lg hover:bg-orange-500/25 disabled:opacity-50">
+              className="text-xs font-bold bg-orange-100 text-orange-700 border border-orange-200 px-3 py-2 rounded-lg hover:bg-orange-200 disabled:opacity-50">
               {translating === key ? `変換中... (${transProgress}件)` : label}
             </button>
           ))}
         </div>
-        {transResult && <p className="text-xs text-emerald-400 mt-3">{transResult}</p>}
+        {transResult && <p className="text-xs text-emerald-700 mt-3">{transResult}</p>}
       </div>
       )}
 
       {/* レーン別ガイドへの統合 */}
       {mode === 'maintenance' && (
-      <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5">
-        <h3 className="font-black text-white flex items-center gap-2 mb-3">
+      <div className="bg-white border border-stone-200 rounded-2xl p-5">
+        <h3 className="font-black text-stone-900 flex items-center gap-2 mb-3">
           <span className="w-6 h-6 rounded-full bg-amber-500 text-black text-xs flex items-center justify-center font-black shrink-0">3</span>
-          <MapIcon size={16} className="text-amber-400" /> レーン別ガイドへ統合
+          <MapIcon size={16} className="text-amber-600" /> レーン別ガイドへ統合
         </h3>
-        <p className="text-[11px] text-gray-500 mb-3">
-          ライブラリの<strong className="text-amber-300">チャンピオン記事ではない記事</strong>（レーンのマクロ・立ち回り）を、
+        <p className="text-[11px] text-stone-500 mb-3">
+          ライブラリの<strong className="text-amber-700">チャンピオン記事ではない記事</strong>（レーンのマクロ・立ち回り）を、
           レーンごとに1本のガイドへ統合します。どのレーンにも当てはまらない普遍的な内容は
-          <strong className="text-amber-300">「全レーン共通（上達の原則）」</strong>へまとめられます。
+          <strong className="text-amber-700">「全レーン共通（上達の原則）」</strong>へまとめられます。
           統合した記事はライブラリから片付き、結果は
-          <a href="/lane-guides" className="text-amber-400 hover:underline mx-1">レーン別ガイド</a>で読めます。
+          <a href="/lane-guides" className="text-amber-700 hover:underline mx-1">レーン別ガイド</a>で読めます。
         </p>
         <div className="flex gap-2 flex-wrap">
           <button onClick={mergeLaneGuides} disabled={laneMerging || restoring}
-            className="text-xs font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30 px-4 py-2 rounded-lg hover:bg-amber-500/25 disabled:opacity-50">
+            className="text-xs font-bold bg-amber-100 text-amber-700 border border-amber-200 px-4 py-2 rounded-lg hover:bg-amber-200 disabled:opacity-50">
             {laneMerging ? `統合中... (${laneProgress}本)` : '🗺️ レーン別ガイドへ統合'}
           </button>
           <button onClick={restoreLaneArticles} disabled={laneMerging || restoring}
-            className="text-xs font-bold bg-white/5 text-gray-300 border border-gray-700 px-4 py-2 rounded-lg hover:bg-white/10 disabled:opacity-50">
+            className="text-xs font-bold bg-black/5 text-stone-700 border border-stone-300 px-4 py-2 rounded-lg hover:bg-black/10 disabled:opacity-50">
             {restoring ? '復旧中...' : '↩️ 消えた記事をライブラリに戻す'}
           </button>
         </div>
-        <p className="text-[10px] text-gray-600 mt-2">
+        <p className="text-[10px] text-stone-500 mt-2">
           ※以前、テーブル未作成のまま統合を実行したため「ガイドが保存されないのに記事だけ片付く」不具合がありました。
           その記事は「戻す」で復元できます（チャンピオン辞典へ正常移動した記事は対象外）。
         </p>
-        {laneResult && <p className="text-xs text-emerald-400 mt-3">{laneResult}</p>}
+        {laneResult && <p className="text-xs text-emerald-700 mt-3">{laneResult}</p>}
       </div>
       )}
 
 
       {/* 自動リサーチ（LoLalytics） */}
       {mode === 'inspect' && (
-      <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5">
-        <h3 className="font-black text-white flex items-center gap-2 mb-3">
-          <Globe size={16} className="text-cyan-400" /> 自動リサーチ（LoLalytics統計）
+      <div className="bg-white border border-stone-200 rounded-2xl p-5">
+        <h3 className="font-black text-stone-900 flex items-center gap-2 mb-3">
+          <Globe size={16} className="text-cyan-600" /> 自動リサーチ（LoLalytics統計）
         </h3>
-        <p className="text-[11px] text-gray-500 mb-3">現パッチの勝率・ティア順位・得意/苦手対面・コアビルド・オブジェクト傾向を取得し、辞典の下書きを作ります。</p>
+        <p className="text-[11px] text-stone-500 mb-3">現パッチの勝率・ティア順位・得意/苦手対面・コアビルド・オブジェクト傾向を取得し、辞典の下書きを作ります。</p>
         <div className="flex gap-2 mb-3 flex-wrap">
           <input value={researchChamp} onChange={e => setResearchChamp(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') runResearch(false); }}
             placeholder="チャンピオン名（英語ID 例: Graves）"
-            className="flex-1 min-w-[180px] bg-gray-950 border border-gray-800 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-cyan-500" />
+            className="flex-1 min-w-[180px] bg-stone-50 border border-stone-200 rounded-lg px-3 py-2 text-sm text-stone-900 outline-none focus:border-cyan-500" />
           <select value={researchRole} onChange={e => setResearchRole(e.target.value)}
-            className="bg-gray-950 border border-gray-800 rounded-lg px-3 py-2 text-sm text-gray-300 outline-none">
+            className="bg-stone-50 border border-stone-200 rounded-lg px-3 py-2 text-sm text-stone-700 outline-none">
             {['TOP', 'JG', 'MID', 'ADC', 'SUP'].map(r => <option key={r} value={r}>{r}</option>)}
           </select>
           <button onClick={() => runResearch(false)} disabled={researching || !researchChamp.trim()}
-            className="flex items-center gap-1.5 text-xs font-bold bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 px-4 py-2 rounded-lg hover:bg-cyan-500/25 disabled:opacity-50">
+            className="flex items-center gap-1.5 text-xs font-bold bg-cyan-100 text-cyan-700 border border-cyan-200 px-4 py-2 rounded-lg hover:bg-cyan-200 disabled:opacity-50">
             {researching ? <RefreshCw size={13} className="animate-spin" /> : <Globe size={13} />} リサーチ
           </button>
         </div>
         {research && (
-          <div className="space-y-2 text-xs bg-cyan-500/5 border border-cyan-500/20 rounded-xl p-4">
+          <div className="space-y-2 text-xs bg-cyan-50 border border-cyan-200 rounded-xl p-4">
             <div className="flex items-center gap-3 flex-wrap">
-              <span className="text-cyan-300 font-black">🌐 {research.champion}</span>
-              {research.patch && <span className="text-[10px] text-gray-500">Patch {research.patch}</span>}
-              {research.tier && <span className="text-[10px] bg-white/10 px-2 py-0.5 rounded font-bold">{research.tier}</span>}
-              {research.rank && <span className="text-[10px] text-gray-400">順位 {research.rank}</span>}
+              <span className="text-cyan-700 font-black">🌐 {research.champion}</span>
+              {research.patch && <span className="text-[10px] text-stone-500">Patch {research.patch}</span>}
+              {research.tier && <span className="text-[10px] bg-black/5 px-2 py-0.5 rounded font-bold">{research.tier}</span>}
+              {research.rank && <span className="text-[10px] text-stone-500">順位 {research.rank}</span>}
             </div>
             <div className="flex gap-4 flex-wrap text-[11px]">
-              {research.winRate && <span>勝率 <b className="text-emerald-400">{research.winRate}</b></span>}
-              {research.pickRate && <span>ピック率 <b className="text-sky-400">{research.pickRate}</b></span>}
-              {research.banRate && <span>BAN率 <b className="text-rose-400">{research.banRate}</b></span>}
-              {research.expertWinRate && <span>上位帯 <b className="text-amber-400">{research.expertWinRate}</b></span>}
+              {research.winRate && <span>勝率 <b className="text-emerald-700">{research.winRate}</b></span>}
+              {research.pickRate && <span>ピック率 <b className="text-sky-700">{research.pickRate}</b></span>}
+              {research.banRate && <span>BAN率 <b className="text-rose-700">{research.banRate}</b></span>}
+              {research.expertWinRate && <span>上位帯 <b className="text-amber-700">{research.expertWinRate}</b></span>}
             </div>
             {([
               ['強み', research.strengths], ['弱み', research.weaknesses],
@@ -320,15 +320,15 @@ export default function DictInsightsPanel({ mode = 'inspect' }: { mode?: 'mainte
               ['苦手対面', research.counter_champions], ['得意対面', research.strong_against],
               ['オブジェクト傾向', research.objectives], ['総評', research.summary],
             ] as const).filter(([, v]) => v).map(([label, val]) => (
-              <div key={label}><span className="text-gray-500">{label}: </span><span className="text-gray-300">{val}</span></div>
+              <div key={label}><span className="text-stone-500">{label}: </span><span className="text-stone-700">{val}</span></div>
             ))}
-            <div className="flex items-center gap-2 pt-2 border-t border-white/5">
+            <div className="flex items-center gap-2 pt-2 border-t border-black/5">
               <button onClick={() => runResearch(true)} disabled={researching}
                 className="text-xs font-black bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-1.5 rounded-lg disabled:opacity-50">
                 この内容で辞典に保存
               </button>
-              {research.saved && <span className="text-emerald-400 text-[11px]">✅ 保存しました</span>}
-              {research.sourceUrl && <a href={research.sourceUrl} target="_blank" rel="noreferrer" className="text-[10px] text-gray-500 hover:text-cyan-400 ml-auto">出典を開く ↗</a>}
+              {research.saved && <span className="text-emerald-700 text-[11px]">✅ 保存しました</span>}
+              {research.sourceUrl && <a href={research.sourceUrl} target="_blank" rel="noreferrer" className="text-[10px] text-stone-500 hover:text-cyan-700 ml-auto">出典を開く ↗</a>}
             </div>
           </div>
         )}
@@ -337,35 +337,35 @@ export default function DictInsightsPanel({ mode = 'inspect' }: { mode?: 'mainte
 
       {/* メモの自動要約 */}
       {mode === 'inspect' && (
-      <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5">
-        <h3 className="font-black text-white flex items-center gap-2 mb-3">
-          <Sparkles size={16} className="text-indigo-400" /> 対面メモの自動要約
+      <div className="bg-white border border-stone-200 rounded-2xl p-5">
+        <h3 className="font-black text-stone-900 flex items-center gap-2 mb-3">
+          <Sparkles size={16} className="text-indigo-600" /> 対面メモの自動要約
         </h3>
-        <p className="text-[11px] text-gray-500 mb-3">そのチャンピオンの対面メモをまとめて読み込み、共通する要点・繰り返す失敗パターンを抽出します。</p>
+        <p className="text-[11px] text-stone-500 mb-3">そのチャンピオンの対面メモをまとめて読み込み、共通する要点・繰り返す失敗パターンを抽出します。</p>
         <div className="flex gap-2 mb-3">
           <input value={champion} onChange={e => setChampion(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') runSummarize(); }}
             placeholder="チャンピオン名（英語ID 例: Graves）"
-            className="flex-1 bg-gray-950 border border-gray-800 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-indigo-500" />
+            className="flex-1 bg-stone-50 border border-stone-200 rounded-lg px-3 py-2 text-sm text-stone-900 outline-none focus:border-indigo-500" />
           <button onClick={runSummarize} disabled={summarizing || !champion.trim()}
-            className="flex items-center gap-1.5 text-xs font-bold bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 px-4 py-2 rounded-lg hover:bg-indigo-500/25 disabled:opacity-50">
+            className="flex items-center gap-1.5 text-xs font-bold bg-indigo-100 text-indigo-700 border border-indigo-200 px-4 py-2 rounded-lg hover:bg-indigo-200 disabled:opacity-50">
             {summarizing ? <RefreshCw size={13} className="animate-spin" /> : <Sparkles size={13} />} 要約
           </button>
         </div>
         {summary && (
-          <div className="space-y-3 text-xs bg-indigo-500/5 border border-indigo-500/20 rounded-xl p-4">
-            <p className="text-indigo-300 font-black">📝 {summary.champion} の要点（メモ{summary.memoCount}件から集約）</p>
-            {summary.summary && <div className="text-gray-300 whitespace-pre-wrap leading-relaxed">{summary.summary}</div>}
+          <div className="space-y-3 text-xs bg-indigo-50 border border-indigo-200 rounded-xl p-4">
+            <p className="text-indigo-700 font-black">📝 {summary.champion} の要点（メモ{summary.memoCount}件から集約）</p>
+            {summary.summary && <div className="text-stone-700 whitespace-pre-wrap leading-relaxed">{summary.summary}</div>}
             {summary.commonMistakes && (
-              <div className="border-t border-white/5 pt-2">
-                <span className="text-rose-300 font-bold">⚠️ 繰り返す失敗: </span>
-                <span className="text-gray-300">{summary.commonMistakes}</span>
+              <div className="border-t border-black/5 pt-2">
+                <span className="text-rose-700 font-bold">⚠️ 繰り返す失敗: </span>
+                <span className="text-stone-700">{summary.commonMistakes}</span>
               </div>
             )}
             {Array.isArray(summary.keyTips) && summary.keyTips.length > 0 && (
-              <div className="border-t border-white/5 pt-2">
-                <p className="text-emerald-300 font-bold mb-1">✨ 重要な指針</p>
-                <ul className="list-disc list-inside space-y-0.5 text-gray-300">
+              <div className="border-t border-black/5 pt-2">
+                <p className="text-emerald-700 font-bold mb-1">✨ 重要な指針</p>
+                <ul className="list-disc list-inside space-y-0.5 text-stone-700">
                   {summary.keyTips.map((t: string, i: number) => <li key={i}>{t}</li>)}
                 </ul>
               </div>

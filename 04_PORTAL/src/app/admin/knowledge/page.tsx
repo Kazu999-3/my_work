@@ -256,12 +256,12 @@ function KnowledgeBaseContent() {
   };
 
   const getGenreBadge = (genre: string) => {
-    const defaultStyle = 'bg-gray-800 text-gray-400 border border-gray-700';
+    const defaultStyle = 'bg-gray-100 text-gray-500 border border-gray-200';
     const styles: Record<string, string> = {
-      'LoL攻略': 'bg-blue-500/10 text-blue-400 border border-blue-500/20',
-      'AIツール': 'bg-purple-500/10 text-purple-400 border border-purple-500/20',
-      '副業ノウハウ': 'bg-green-500/10 text-green-400 border border-green-500/20',
-      'その他': 'bg-gray-800 text-gray-400 border border-gray-700',
+      'LoL攻略': 'bg-blue-100 text-blue-700 border border-blue-200',
+      'AIツール': 'bg-purple-100 text-purple-700 border border-purple-200',
+      '副業ノウハウ': 'bg-green-100 text-green-700 border border-green-200',
+      'その他': 'bg-gray-100 text-gray-500 border border-gray-200',
     };
     return (
       <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wide ${styles[genre] || defaultStyle}`}>
@@ -282,8 +282,8 @@ function KnowledgeBaseContent() {
 
   if (isAuthenticated === null) {
     return (
-      <div style={{ minHeight: '100vh', background: '#07080e' }} className="flex items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-white/20 border-t-pink-500" />
+      <div style={{ minHeight: '100vh' }} className="flex items-center justify-center bg-background">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-black/10 border-t-pink-500" />
       </div>
     );
   }
@@ -291,13 +291,13 @@ function KnowledgeBaseContent() {
   if (isAuthenticated === false) {
     return (
       <div
-        style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #07080e 0%, #0f111a 60%, #07080e 100%)' }}
-        className="flex items-center justify-center p-4 font-sans text-white"
+        style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #f5f1e6 0%, #fdfcf9 60%, #f5f1e6 100%)' }}
+        className="flex items-center justify-center p-4 font-sans text-gray-900"
       >
-        <div className="text-center max-w-sm rounded-3xl border border-gray-800 bg-[#0f111a] p-8">
+        <div className="text-center max-w-sm rounded-3xl border border-gray-200 bg-white p-8 shadow-2xl">
           <div className="text-4xl mb-4">🔑</div>
           <h2 className="text-lg font-bold mb-2">認証が必要です</h2>
-          <p className="text-sm text-gray-400 mb-6 leading-relaxed">
+          <p className="text-sm text-gray-500 mb-6 leading-relaxed">
             この管理機能は管理者専用です。Discordアカウントでログインしてから再度アクセスしてください。
           </p>
           <a
@@ -312,7 +312,7 @@ function KnowledgeBaseContent() {
   }
 
   return (
-    <div className="min-h-screen bg-[#07080e] font-sans text-gray-200 antialiased selection:bg-pink-500/30 pb-20">
+    <div className="min-h-screen bg-background font-sans text-gray-900 antialiased selection:bg-pink-500/30 pb-20">
       {/* 共通のCSSインポート */}
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=Noto+Sans+JP:wght@400;700&display=swap');
@@ -327,7 +327,7 @@ function KnowledgeBaseContent() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -50 }}
             className={`fixed top-5 left-1/2 -translate-x-1/2 z-50 px-6 py-3.5 rounded-2xl shadow-2xl border text-xs font-semibold flex items-center gap-2 ${
-              message.type === 'success' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-red-500/10 text-red-400 border-red-500/20'
+              message.type === 'success' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-red-100 text-red-700 border-red-200'
             }`}
           >
             {message.type === 'success' ? '✅' : '❌'} {message.text}
@@ -337,9 +337,9 @@ function KnowledgeBaseContent() {
 
       <div className="max-w-4xl mx-auto px-4 pt-10">
         {/* ヘッダー */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10 border-b border-gray-900 pb-8">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10 border-b border-gray-200 pb-8">
           <div className="space-y-1">
-            <h1 className="text-3xl font-extrabold tracking-tight text-white flex items-center gap-2">
+            <h1 className="text-3xl font-extrabold tracking-tight text-gray-900 flex items-center gap-2">
               <Brain className="text-pink-500" />
               Sovereign Knowledge
             </h1>
@@ -357,7 +357,7 @@ function KnowledgeBaseContent() {
             </button>
             <Link
               href="/leaderboard"
-              className="text-xs font-semibold px-4 py-2.5 bg-gray-900 hover:bg-gray-800 text-gray-300 rounded-xl border border-gray-800 transition-all flex items-center gap-1"
+              className="text-xs font-semibold px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl border border-gray-200 transition-all flex items-center gap-1"
             >
               Leaderboardに戻る
             </Link>
@@ -373,7 +373,7 @@ function KnowledgeBaseContent() {
         />
 
         {/* タブ切り替え */}
-        <div className="flex gap-2 border-b border-gray-900 pb-4 mb-8 overflow-x-auto">
+        <div className="flex gap-2 border-b border-gray-200 pb-4 mb-8 overflow-x-auto">
           {[
             { id: 'knowledge', label: '📖 ナレッジ一覧', icon: BookOpen },
             { id: 'video', label: '⏳ 動画解析キュー', icon: Video },
@@ -388,7 +388,7 @@ function KnowledgeBaseContent() {
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
                 className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold transition-all shrink-0 ${
-                  isActive ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30' : 'text-gray-400 hover:text-gray-200 hover:bg-gray-900'
+                  isActive ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30' : 'text-gray-500 hover:text-gray-800 hover:bg-gray-100'
                 }`}
               >
                 <Icon size={14} />
@@ -412,18 +412,18 @@ function KnowledgeBaseContent() {
         {(activeTab === 'maintenance' || activeTab === 'review') && (
           <div className="space-y-8">
             <div className="space-y-6">
-              <div className="bg-pink-500/5 border border-pink-500/20 rounded-2xl p-5">
-                <h2 className="text-base font-black text-white mb-2">🛠️ データ整備の進め方</h2>
+              <div className="bg-pink-50 border border-pink-200 rounded-2xl p-5">
+                <h2 className="text-base font-black text-gray-900 mb-2">🛠️ データ整備の進め方</h2>
                 <p className="text-xs text-gray-400 leading-relaxed">
                   知識を「チャンピオン辞典 / レーン別ガイド」へ整理する一括処理です。
-                  <strong className="text-pink-300">①→③の順に実行</strong>すると、翻訳済みのデータをもとに統合できるため品質が上がります。
+                  <strong className="text-pink-700">①→③の順に実行</strong>すると、翻訳済みのデータをもとに統合できるため品質が上がります。
                 </p>
                 <p className="text-[11px] text-gray-500 mt-2">
                   ※ ②「チャンピオン辞典へ一括同期」は
-                  <button onClick={() => setActiveTab('library' as any)} className="text-pink-400 hover:underline font-bold mx-1">🗂️ 攻略ライブラリ</button>
+                  <button onClick={() => setActiveTab('library' as any)} className="text-pink-600 hover:underline font-bold mx-1">🗂️ 攻略ライブラリ</button>
                   タブの「全チャンプ辞典に一括同期」ボタンから実行します。
                 </p>
-                <p className="text-[11px] text-emerald-400/80 mt-2">
+                <p className="text-[11px] text-emerald-700 mt-2">
                   ✅ 2026-07-31から①〜③は毎日自動実行されるようになりました（1回あたり少量ずつ処理）。
                   ここのボタンは今すぐまとめて進めたい時だけ使えばOKです。
                 </p>
@@ -432,9 +432,9 @@ function KnowledgeBaseContent() {
             </div>
 
             {/* 鮮度レビュー: 古い辞典の判定と、個別の点検ツール */}
-            <div className="space-y-6 pt-6 border-t border-gray-800">
-              <h2 className="text-lg font-black text-white flex items-center gap-2">
-                <Sparkles className="text-[#00cfef]" size={20} />
+            <div className="space-y-6 pt-6 border-t border-gray-200">
+              <h2 className="text-lg font-black text-gray-900 flex items-center gap-2">
+                <Sparkles className="text-cyan-600" size={20} />
                 🔄 鮮度レビュー ＆ データ点検
               </h2>
               <DictReviewPanel />
@@ -442,7 +442,7 @@ function KnowledgeBaseContent() {
             </div>
 
             {/* 変更履歴 */}
-            <div className="pt-6 border-t border-gray-800">
+            <div className="pt-6 border-t border-gray-200">
               <RevisionsPanel />
             </div>
           </div>
@@ -451,17 +451,17 @@ function KnowledgeBaseContent() {
         {activeTab === 'knowledge' && (
           <div className="space-y-8 animate-in">
             {/* 登録セクション */}
-            <div className="bg-[#0f111a] border border-gray-800/60 rounded-3xl p-6 shadow-xl">
-              <h2 className="text-base font-bold text-white mb-4 flex items-center gap-1.5">
+            <div className="bg-white border border-gray-200 rounded-3xl p-6 shadow-xl">
+              <h2 className="text-base font-bold text-gray-900 mb-4 flex items-center gap-1.5">
                 <Plus size={18} className="text-pink-400" />
                 新しい戦術・ノウハウを追加する
               </h2>
 
-              <div className="flex gap-1 mb-5 bg-[#07080e] p-1 rounded-xl w-fit">
+              <div className="flex gap-1 mb-5 bg-gray-100 p-1 rounded-xl w-fit">
                 <button
                   onClick={() => setInputType('url')}
                   className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all ${
-                    inputType === 'url' ? 'bg-gray-800 text-white shadow' : 'text-gray-500 hover:text-gray-300'
+                    inputType === 'url' ? 'bg-white text-gray-900 shadow' : 'text-gray-500 hover:text-gray-700'
                   }`}
                 >
                   🌐 URLから追加 (自動要約)
@@ -469,7 +469,7 @@ function KnowledgeBaseContent() {
                 <button
                   onClick={() => setInputType('memo')}
                   className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all ${
-                    inputType === 'memo' ? 'bg-gray-800 text-white shadow' : 'text-gray-500 hover:text-gray-300'
+                    inputType === 'memo' ? 'bg-white text-gray-900 shadow' : 'text-gray-500 hover:text-gray-700'
                   }`}
                 >
                   📝 メモから追加 (AI分類)
@@ -484,10 +484,10 @@ function KnowledgeBaseContent() {
                       placeholder="https://x.com/username/status/12345... または Web記事 / YouTube URL..."
                       value={inputUrl}
                       onChange={(e) => setInputUrl(e.target.value)}
-                      className="w-full px-4 py-3 bg-[#07080e] border border-gray-800 rounded-xl focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500 text-xs text-gray-200 placeholder-gray-600 font-mono"
+                      className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500 text-xs text-gray-900 placeholder-gray-400 font-mono"
                     />
                     <p className="text-[10px] text-gray-400 pl-1 flex items-center gap-1.5 pt-0.5">
-                      <span className="text-pink-400 font-bold">✨ X(Twitter)投稿対応:</span> 画像・動画・添付メディアをAIがマルチモーダル視覚解析して要約保存します。（※ YouTubeは動画キューへ送信）
+                      <span className="text-pink-600 font-bold">✨ X(Twitter)投稿対応:</span> 画像・動画・添付メディアをAIがマルチモーダル視覚解析して要約保存します。（※ YouTubeは動画キューへ送信）
                     </p>
                   </div>
                 ) : (
@@ -496,7 +496,7 @@ function KnowledgeBaseContent() {
                     placeholder="戦術メモ、分析の気付き、アフィリエイトの学びなどを記入..."
                     value={inputMemo}
                     onChange={(e) => setInputMemo(e.target.value)}
-                    className="w-full px-4 py-3 bg-[#07080e] border border-gray-800 rounded-xl focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500 text-xs text-gray-200 placeholder-gray-600 resize-none leading-relaxed"
+                    className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500 text-xs text-gray-900 placeholder-gray-400 resize-none leading-relaxed"
                   />
                 )}
 
@@ -512,7 +512,7 @@ function KnowledgeBaseContent() {
             </div>
 
             {/* フィルター＆検索ヘッダー */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-[#0f111a] border border-gray-800/60 rounded-3xl p-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white border border-gray-200 rounded-3xl p-4">
               {/* ジャンルタブ */}
               <div className="flex flex-wrap gap-1">
                 {[
@@ -528,7 +528,7 @@ function KnowledgeBaseContent() {
                       key={tab.id}
                       onClick={() => setFilterGenre(tab.id)}
                       className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-                        isActive ? 'bg-pink-500 text-white shadow-md' : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/40'
+                        isActive ? 'bg-pink-500 text-white shadow-md' : 'text-gray-500 hover:text-gray-800 hover:bg-gray-100'
                       }`}
                     >
                       {tab.label}
@@ -544,9 +544,9 @@ function KnowledgeBaseContent() {
                   placeholder="ナレッジを検索..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2.5 bg-[#07080e] border border-gray-800 rounded-xl focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500 text-xs text-gray-200"
+                  className="w-full pl-9 pr-4 py-2.5 bg-white border border-gray-300 rounded-xl focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500 text-xs text-gray-900"
                 />
-                <button type="submit" className="absolute left-3 top-3 text-gray-600 hover:text-pink-400 transition-colors">
+                <button type="submit" className="absolute left-3 top-3 text-gray-500 hover:text-pink-600 transition-colors">
                   <Search size={14} />
                 </button>
               </form>
@@ -555,12 +555,12 @@ function KnowledgeBaseContent() {
             {/* ナレッジ一覧リスト */}
             <div className="space-y-4">
               {loading ? (
-                <div className="flex flex-col items-center justify-center py-20 space-y-4 bg-[#0f111a] border border-gray-800/60 rounded-3xl">
-                  <RefreshCw className="animate-spin h-8 w-8 text-pink-400" />
+                <div className="flex flex-col items-center justify-center py-20 space-y-4 bg-white border border-gray-200 rounded-3xl">
+                  <RefreshCw className="animate-spin h-8 w-8 text-pink-600" />
                   <span className="text-sm text-gray-400">知識資産をロード中...</span>
                 </div>
               ) : knowledgeList.length === 0 ? (
-                <div className="py-20 text-center text-gray-500 text-sm bg-[#0f111a] border border-gray-800/60 rounded-3xl">
+                <div className="py-20 text-center text-gray-500 text-sm bg-white border border-gray-200 rounded-3xl">
                   ナレッジが見つかりません。新しいURLやメモを登録してみましょう！
                 </div>
               ) : (
@@ -569,7 +569,7 @@ function KnowledgeBaseContent() {
                   return (
                     <div
                       key={item.id}
-                      className="bg-[#0f111a] border border-gray-800/60 rounded-3xl p-5 hover:border-gray-700/60 transition-all duration-300 relative overflow-hidden"
+                      className="bg-white border border-gray-200 rounded-3xl p-5 hover:border-gray-300 transition-all duration-300 relative overflow-hidden"
                     >
                       {/* カードヘッダー */}
                       <div className="flex justify-between items-start gap-4 cursor-pointer" onClick={() => toggleExpand(item.id)}>
@@ -586,13 +586,13 @@ function KnowledgeBaseContent() {
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 onClick={(e) => e.stopPropagation()}
-                                className="text-pink-400 hover:text-pink-300 text-[10px] flex items-center gap-0.5 shrink-0"
+                                className="text-pink-600 hover:text-pink-700 text-[10px] flex items-center gap-0.5 shrink-0"
                               >
                                 <LinkIcon size={10} /> URLリンク
                               </a>
                             )}
                           </div>
-                          <h2 className="text-lg font-bold text-gray-100 line-clamp-1">{formatTitle(item)}</h2>
+                          <h2 className="text-lg font-bold text-gray-900 line-clamp-1">{formatTitle(item)}</h2>
                         </div>
 
                         <div className="flex items-center gap-2 shrink-0">
@@ -603,7 +603,7 @@ function KnowledgeBaseContent() {
                                 handleReAnalyzeKnowledge(item.id, formatTitle(item));
                               }}
                               disabled={reAnalyzeLoading === item.id}
-                              className="px-2.5 py-1 hover:bg-purple-500/10 rounded-xl text-purple-400 border border-purple-500/20 text-xs font-bold transition-all flex items-center gap-1"
+                              className="px-2.5 py-1 hover:bg-purple-100 rounded-xl text-purple-700 border border-purple-200 text-xs font-bold transition-all flex items-center gap-1"
                               title="画像込みで再解析・更新"
                             >
                               <RefreshCw size={12} className={reAnalyzeLoading === item.id ? "animate-spin" : ""} />
@@ -616,12 +616,12 @@ function KnowledgeBaseContent() {
                               handleDeleteKnowledge(item.id, formatTitle(item));
                             }}
                             disabled={deleteLoading === item.id}
-                            className="p-2 hover:bg-red-500/10 rounded-xl text-gray-500 hover:text-red-400 transition-all"
+                            className="p-2 hover:bg-red-100 rounded-xl text-gray-500 hover:text-red-600 transition-all"
                             title="ナレッジ削除"
                           >
                             {deleteLoading === item.id ? <RefreshCw size={14} className="animate-spin" /> : <Trash2 size={14} />}
                           </button>
-                          <button className="text-gray-500 hover:text-pink-400 p-2">
+                          <button className="text-gray-500 hover:text-pink-600 p-2">
                             {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                           </button>
                         </div>
@@ -629,7 +629,7 @@ function KnowledgeBaseContent() {
 
                       {/* 短縮要約（展開されていない時に少し見せる） */}
                       {!isExpanded && (
-                        <p className="text-xs text-gray-400 mt-3 line-clamp-2 leading-relaxed bg-[#07080e]/40 p-3 rounded-xl border border-gray-900/60">
+                        <p className="text-xs text-gray-400 mt-3 line-clamp-2 leading-relaxed bg-gray-50 p-3 rounded-xl border border-gray-200">
                           {(item.content || '').replace(/[#*`]/g, '')}
                         </p>
                       )}
@@ -644,20 +644,20 @@ function KnowledgeBaseContent() {
                             transition={{ duration: 0.3 }}
                             className="overflow-hidden"
                           >
-                            <div className="mt-4 pt-4 border-t border-gray-900 space-y-4">
+                            <div className="mt-4 pt-4 border-t border-gray-200 space-y-4">
                               {/* 要約テキスト */}
-                              <div className="bg-[#07080e] p-5 rounded-2xl border border-gray-900 leading-relaxed text-sm text-gray-300 whitespace-pre-wrap">
+                              <div className="bg-gray-50 p-5 rounded-2xl border border-gray-200 leading-relaxed text-sm text-gray-700 whitespace-pre-wrap">
                                 {item.content}
                               </div>
 
                               {/* 生テキスト（メタデータ）の表示がある場合 */}
                               {item.raw_content && (
                                 <details className="group">
-                                  <summary className="text-xs text-gray-500 hover:text-gray-400 cursor-pointer list-none flex items-center gap-1 outline-none">
+                                  <summary className="text-xs text-gray-500 hover:text-gray-700 cursor-pointer list-none flex items-center gap-1 outline-none">
                                     <FileText size={12} />
                                     <span>生データ（インテリジェンス）を表示</span>
                                   </summary>
-                                  <div className="mt-2 p-4 bg-[#07080e]/50 border border-gray-900 rounded-2xl text-[10px] text-gray-500 max-h-48 overflow-y-auto whitespace-pre-wrap leading-normal font-mono select-all">
+                                  <div className="mt-2 p-4 bg-gray-50 border border-gray-200 rounded-2xl text-[10px] text-gray-500 max-h-48 overflow-y-auto whitespace-pre-wrap leading-normal font-mono select-all">
                                     {item.raw_content}
                                   </div>
                                 </details>
@@ -680,7 +680,7 @@ function KnowledgeBaseContent() {
 
 export default function KnowledgeBase() {
   return (
-    <Suspense fallback={<div style={{ minHeight: '100vh', background: '#07080e' }} className="flex items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-4 border-white/20 border-t-pink-500" /></div>}>
+    <Suspense fallback={<div style={{ minHeight: '100vh' }} className="flex items-center justify-center bg-background"><div className="h-8 w-8 animate-spin rounded-full border-4 border-black/10 border-t-pink-500" /></div>}>
       <KnowledgeBaseContent />
     </Suspense>
   );
