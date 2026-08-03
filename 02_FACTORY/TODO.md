@@ -5,6 +5,13 @@
 
 ---
 
+## ✅ 2026-08-04 依存パッケージ棚卸しで対応済み
+- [x] **Dependabot PR 17件の放置を解消** → `.github/dependabot.yml`設定後、1件もレビューされず溜まっていたPRを全件精査。GitHub Actions(checkout/setup-node/setup-python/upload-artifact)をv7系に統一、Python(03_SYSTEMS)requirement floor 5件・ktm_bot内のfast-uri/hono patchをマージ、未使用のnode-fetchは依存自体を削除。next(重複PR)はクローズ。
+- [x] **新規発覚・修正: `04_PORTAL/tsconfig.json`が一度もgit管理されていなかった** → `.gitignore`の`*.json`包括ルールに巻き込まれ、新規clone/CI/Vercelのクリーンチェックアウトには常に存在しなかった。今回追加した`ci.yml`の型チェックステップがこのため常に(help表示→exit 1で)失敗していた真因と判明。`!04_PORTAL/tsconfig.json`の除外を追加してコミット。
+- [x] **メジャーバンプ3件は実機検証の上でクローズ/保留** → TypeScript 7.0.2は`tsc --noEmit`単体は通るがNext.js内蔵の型チェッカーが非対応で本番ビルドが失敗(要`experimental.useTypeScriptCli`)、ESLint 10.8.0は`eslint-config-next`同梱の`eslint-plugin-react`が内部API変更でクラッシュ、と実際にビルド・lintを回して確認しクローズ。wrangler 3→4とLangChain/LangGraphエコシステム5件(pydantic/langchain-core/chromadb/langgraph/langgraph-checkpoint-sqlite)は自動検証手段(テストスイート)が無いため保留コメントを付けて残置（手動での動作確認後にマージ判断）。
+- [x] **新規発覚・修正: `03_SYSTEMS/ktm_bot`がDependabotのnpm監視対象から漏れていた** → 独自の`package-lock.json`を持つのに`dependabot.yml`に未登録で29件のセキュリティアラートが放置されていた。npmエコシステムを追加。
+- 結果: セキュリティアラートは37件→18件に削減（残りは上記の保留中メジャーバンプ関連）。
+
 ## 🔧 未対応（個人のClaude Code環境設定）
 - [x] **RTKのPreToolUseフックを手動登録** → 2026-08-04対応完了: ユーザーが手動で`settings.json`にフックを追加（一度JSONが二重化けして壊れたが修正済み）。`rtk gain`で実際にBashコマンドが自動書き換えされ、トークン削減が記録されていることを確認済み。手順は以下（参考として残す）：
   ```json
