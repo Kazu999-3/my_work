@@ -38,6 +38,29 @@ def _sanitize_rate(value, field_name: str, champion: str):
     return v
 
 
+def _sanitize_pro_builds(pro_builds, champion: str) -> list:
+    """実在プロ選手に関する事実主張のため、根拠(source_hint)が無い/構造が壊れている
+    項目は創作の疑いが強いとみなして丸ごと落とす(記事の「引用義務化」の考え方を適用)。"""
+    if not isinstance(pro_builds, list):
+        return []
+    valid = []
+    for entry in pro_builds:
+        if not isinstance(entry, dict):
+            continue
+        player = str(entry.get("player") or "").strip()
+        team = str(entry.get("team") or "").strip()
+        build = entry.get("build")
+        source_hint = str(entry.get("source_hint") or "").strip()
+        if not player or not team or not isinstance(build, list) or not build:
+            logger.warning(f"⚠️ [{champion}] pro_buildsの項目が不完全なため破棄します: {entry!r}")
+            continue
+        if not source_hint:
+            logger.warning(f"⚠️ [{champion}] pro_builds({player})に根拠(source_hint)が無いため破棄します。")
+            continue
+        valid.append(entry)
+    return valid
+
+
 def sanitize_trend_data(trend_data: dict, champion: str) -> dict:
     """collect_champ_trends()の生成結果を辞典へ書き込む前に検証する。"""
     sanitized = dict(trend_data or {})
@@ -49,6 +72,9 @@ def sanitize_trend_data(trend_data: dict, champion: str) -> dict:
     if tier and str(tier).strip().upper() not in VALID_TIERS:
         logger.warning(f"⚠️ [{champion}] tierが未知の値({tier!r})です。破棄してフォールバックします。")
         sanitized["tier"] = None
+
+    if "pro_builds" in sanitized:
+        sanitized["pro_builds"] = _sanitize_pro_builds(sanitized.get("pro_builds"), champion)
 
     return sanitized
 
@@ -287,10 +313,15 @@ class LolTrendCollector:
               "win_lose": "直近の勝敗 (例: 3勝1敗, 4W-1Lなど)",
               "build": ["1stコア", "2ndコア", "3rdコア"],
               "runes": ["キーストーン名", "主要ルーン"],
-              "description": "このビルドの特徴や狙いに関する短い日本語の解説（1文。AI臭い比喩は禁止し、'バースト重視'や'序盤のトレード強化'など簡潔に）"
+              "description": "このビルドの特徴や狙いに関する短い日本語の解説（1文。AI臭い比喩は禁止し、'バースト重視'や'序盤のトレード強化'など簡潔に）",
+              "source_hint": "検索で実際に確認した根拠(大会名/対戦カード/おおよその時期など)。1つも確認できない場合はそのpro_builds項目自体を出力しないこと"
             }}
           ]
         }}
+
+        【pro_buildsに関する重要な注意】
+        実在するプロ選手名を扱うため、検索結果で実際に裏付けが取れたものだけを記載すること。
+        該当する情報が検索で見つからない場合は、それらしい選手名やビルドを創作せず、pro_buildsを空配列 [] にすること。
         """
 
         config = {
