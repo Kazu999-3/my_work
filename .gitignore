@@ -35,6 +35,9 @@ scratch/
 # src/shared/ 配下はソースコードが import するデータファイル（例: ktm_tiers.json）。
 # これを無視すると手元では動くのにVercel/Botのクリーンビルドで Module not found になる。
 !**/src/shared/*.json
+# Supabase Edge Functions (memory-encoder/stats-collector)のimport map。tsconfig.jsonと同じ理由
+# (2026-08-04発覚)でこれも*.jsonに巻き込まれ未追跡だった。本番デプロイ済み関数が参照する設定のため必須。
+!supabase/functions/*/deno.json
 99_ARCHIVE/
 02_FACTORY/INFRA/outbox/
 02_FACTORY/INFRA/cache/
