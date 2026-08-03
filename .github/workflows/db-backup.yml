@@ -47,7 +47,7 @@ jobs:
           fi
 
       - name: Upload backup as private artifact (gitへは絶対にコミットしない)
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: supabase-backup-${{ github.run_id }}
           path: backup.dump
