@@ -31,6 +31,7 @@ scratch/
 !package-lock.json
 !**/MatchupMemo/*.json
 !**/vercel.json
+!04_PORTAL/tsconfig.json
 # src/shared/ 配下はソースコードが import するデータファイル（例: ktm_tiers.json）。
 # これを無視すると手元では動くのにVercel/Botのクリーンビルドで Module not found になる。
 !**/src/shared/*.json
