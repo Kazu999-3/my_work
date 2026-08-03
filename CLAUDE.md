@@ -27,22 +27,13 @@
 
 ---
 
-## 🛠️ 1. 自律スキル ＆ ワークフロー参照インデックス (Skills & Workflows)
+## 🛠️ 1. 自律スキル (Skills)
 
-タスクの内容に応じて、以下のスキル定義（`SKILL.md`）およびワークフロー指示書を自発的に読み込み、その手順・制約に従って実行してください。
+`.claude/skills/`（プロジェクト直下）と `04_PORTAL/.claude/skills/`（ポータル固有）配下のスキルはネイティブのSkill機構で自動検出されるため、ここで手動リストアップする必要はありません。タスク内容に応じて自発的に該当スキルを読み込み、その手順・制約に従ってください。
 
-### 🎨 自律スキル (`d:/my_work/.agent/skills/`)
-- **[Ghost Writer (ゴースト・ライター)](file:///d:/my_work/.agent/skills/ghost-writer/SKILL.md)** : AI臭さを徹底排除し、人間味のある生きた言葉に変換する校正スキル。
-- **[Ghost Tactics (戦術自動抽出)](file:///d:/my_work/.agent/skills/ghost-tactics/SKILL.md)** : YouTube動画URLから戦術を自動抽出しチャンピオン辞典へマージするスキル。
-- **[LoL Data Collector (統計収集)](file:///d:/my_work/.agent/skills/lol-data-collector/SKILL.md)** : 最新パッチの勝率・ピック率・ルーンデータを収集するスキル。
-- **[Sovereign Factory (資産量産)](file:///d:/my_work/.agent/skills/sovereign-factory/SKILL.md)** : パッチ毎の戦術バイブル、SNSスレッド、画像プロンプトを量産するスキル。
-- **[Lexicon Editor (辞典編纂)](file:///d:/my_work/.agent/skills/lexicon-editor/SKILL.md)** : チャンピオン辞典の不要情報を削ぎ落とし要点整理するスキル。
+現存する主なスキル: `ghost-writer`（AI臭さ排除の校正）、`ghost-tactics`（YouTube動画からの戦術自動抽出）、`lol-data-collector`（統計収集）、`sovereign-factory`（戦術バイブル/SNS/画像プロンプト量産）、`lexicon-editor`（辞典編纂）、`style-auditor`（文章のAI臭さ監査）、`note-article-drafter`（note記事ドラフト生成）、`note-production`（note量産の一気通貫フロー）、`ktm-admin`（KTM大会運営・MMR計算・チーム分け）、`supabase-table-security`（04_PORTAL固有、新規テーブル/APIルートのセキュリティチェックリスト）。
 
-### 🔄 自動化ワークフロー (`d:/my_work/.agent/workflows/`)
-- **[note-production](file:///d:/my_work/.agent/workflows/note-production.md)** : トレンド収集から note 500円モデル記事を自動生成するフロー。
-- **[monetization-flow](file:///d:/my_work/.agent/workflows/monetization-flow.md)** : 記事生成・極限レビュー・SNS拡散計画の一気通貫フロー。
-- **[auto-healer](file:///d:/my_work/.agent/workflows/auto-healer.md)** : システムエラー発生時のログ解析と自律修正・再実行フロー。
-- **[ktm-admin](file:///d:/my_work/.agent/workflows/ktm-admin.md)** : KTM大会運営・MMR計算・チーム分け管理の自律フロー。
+`d:/my_work/.agent/` 配下にはまだ未整理の旧スキル・ワークフローが残っている（2026-08-03時点で棚卸し中）。参照する際は中身が現行システムと整合しているか確認すること。
 
 ---
 

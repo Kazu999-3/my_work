@@ -5,6 +5,17 @@
 
 ---
 
+## 🔧 未対応（個人のClaude Code環境設定）
+- [ ] **RTKのPreToolUseフックを手動登録** → 2026-08-03: `rtk.exe`は`~/.local/bin`にインストール・`rtk init -g`まで実行済みだが、`C:\Users\PC_User\.claude\settings.json`へのフック追加だけは権限フィルタでブロックされ自動化できなかった（自己の実行環境を書き換える操作のため）。ユーザーが手動で以下を追加し、Claude Code再起動が必要：
+  ```json
+  "hooks": {
+    "PreToolUse": [
+      { "matcher": "Bash", "hooks": [{ "type": "command", "command": "rtk hook claude" }] }
+    ]
+  }
+  ```
+- [ ] **`.agent/skills/`・`.agent/workflows/`の孤立ファイル約34件の棚卸し** → 2026-08-03: スキル体系を`.agent/skills/`(旧Antigravity方式、CLAUDE.mdから手動リンクで参照)から`.claude/skills/`(ネイティブSkill機構、自動検出)へ移行開始。実際に使われていた9件(ghost-writer/ghost-tactics/lexicon-editor/lol-data-collector/sovereign-factory/style-auditor/note-article-drafter/note-production/ktm-admin)は移行済み。壊れていた`auto-healer.md`(削除済みSRE daemon前提)・`monetization-flow.md`(参照先スキルが軒並み現存しない)は削除済み。残り約34ファイル(`00_monetization_commander.md`等の巨大な「Pro統合版」メガプロンプト群、`lol-tactics-production.md`等)はCLAUDE.mdからもSKILL_LIST.md(2026-03更新停止)からも参照されておらず、中身が現行システムと整合しているか未確認のまま放置されている。`lol-tactics-production.md`は文字コード破損も確認済み。1件ずつ「まだ使うか」を判定してから移行/削除する必要があり、まとめて機械的に移行するのは危険（収益化パイプライン削除の影響で中身が古い可能性が高いため）。
+
 ## 📅 次回の注力タスク（2026-07-29 実行予定）
 > 2026-07-28 のポータル不具合修正セッションでほぼ解消。残るのは外部ダッシュボード操作や意思決定が必要なものだけ。SNS素材フォルダの統合（231ファイル・5箇所）のみ、規模が大きいため引き続き対象外。
 
