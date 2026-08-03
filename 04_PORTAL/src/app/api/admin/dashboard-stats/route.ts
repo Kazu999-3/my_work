@@ -111,13 +111,20 @@ export async function GET(req: NextRequest) {
       .filter((t) => t.status === 'failed')
       .slice(0, 10);
 
-    // ワーカー判定
+    // ワーカー判定 (DBのupdated_at と payload.last_active の双方からタイムスタンプをパース)
     let workerActive = false;
     let diffSec = 9999;
-    if (heartbeat && heartbeat.updated_at) {
-      const updatedAt = new Date(heartbeat.updated_at);
-      diffSec = Math.floor((Date.now() - updatedAt.getTime()) / 1000);
-      workerActive = diffSec <= 30;
+    
+    const rawTime = heartbeat?.updated_at || (heartbeat?.payload as any)?.last_active;
+    if (rawTime) {
+      const updatedAt = new Date(rawTime);
+      const nowMs = Date.now();
+      const updatedMs = updatedAt.getTime();
+      if (!isNaN(updatedMs)) {
+        diffSec = Math.max(0, Math.floor((nowMs - updatedMs) / 1000));
+        // ワーカーのハートビート間隔(5秒〜30秒)＋クロック差・遅延を考慮し90秒以内なら稼働中と判定
+        workerActive = diffSec <= 90;
+      }
     }
 
     // 正しい edge_tasks のリアルタイム集計をシステムコクピットデータとしてマッピング

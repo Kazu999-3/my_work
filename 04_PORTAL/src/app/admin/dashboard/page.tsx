@@ -577,8 +577,12 @@ export default function Home() {
                           statusColor = 'text-stone-500 bg-black/[0.03] border-black/10';
                           indicatorColor = 'bg-stone-400';
                         }
+                      } else if (service.id === 'youtube_absorber' && systemStatus.worker.active) {
+                        statusText = isRunning ? '解析中' : '待機中 (稼働中)';
+                        statusColor = 'text-emerald-700 bg-emerald-100 border-emerald-200';
+                        indicatorColor = 'bg-emerald-400 animate-pulse';
                       } else if (isRunning) {
-                        statusText = service.id === 'youtube_absorber' ? '解析中' : '稼働中';
+                        statusText = '稼働中';
                         statusColor = 'text-amber-700 bg-amber-100 border-amber-200';
                         indicatorColor = 'bg-amber-400 animate-pulse';
                       } else {
