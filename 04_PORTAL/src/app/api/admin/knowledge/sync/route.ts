@@ -3,6 +3,8 @@ import { supabaseAdmin as supabase } from '../../../../../lib/supabaseAdmin';
 import { verifyAdminSession } from '../../../../../lib/adminAuth';
 import { recordMatchupSentinelRevision } from '../../../../../lib/matchupSentinelRevisions';
 import { normalizeChampionName } from '../../../../../lib/championNames';
+import { checkOneMatchupContradiction } from '../../../../../lib/dictReview';
+import { createAdminNotification } from '../../../../../lib/notify';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -142,6 +144,24 @@ export async function POST(req: Request) {
         { strategy: newStrategy, raw_data: newRawData },
         `攻略ライブラリ一括同期（${items.length}件の記事）`
       );
+
+      // 週次の矛盾検出cronを待たず、追記した直後にその場でこの1件だけ即座にチェックする
+      // (2026-08-04追加、案①)。ここは正規表現の単純追記のみでAIによる矛盾解消をしていない
+      // ため、その日のうちに気づけるようにする軽量な安全網。失敗しても同期自体は止めない。
+      try {
+        const found = await checkOneMatchupContradiction(supabase, matchupId);
+        if (found) {
+          await createAdminNotification({
+            type: 'dict_review',
+            title: `⚠️ 辞典の矛盾疑いを検知: ${championName}`,
+            body: `${found.summary}\n（攻略ライブラリ同期直後の即時チェックで検知）`,
+            url: '/admin/knowledge?tab=maintenance',
+            data: { staleCount: 1 },
+          });
+        }
+      } catch (e) {
+        console.warn(`[knowledge/sync] ${championName} の即時矛盾チェックに失敗:`, e);
+      }
     }));
 
     // ===== 個別の「辞典へ移動」と同じ後処理 =====

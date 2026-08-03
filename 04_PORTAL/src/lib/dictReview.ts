@@ -111,6 +111,36 @@ function countAppends(strategy: string): number {
   return Math.max(...APPEND_MARKERS.map((m) => strategy.split(m).length - 1));
 }
 
+/** 1件分の矛盾判定。バッチ版(reviewMatchupContradictions)と即時チェック版(checkOneMatchupContradiction)で共有する。 */
+async function judgeContradiction(row: { matchup_id: string; champion: string; enemy: string; strategy: string }): Promise<MatchupContradictionCandidate | null> {
+  const noteCount = countAppends(row.strategy || '');
+  if (noteCount < 2) return null;
+
+  const subject = row.enemy === 'GLOBAL' ? `「${row.champion}」の辞典本体` : `「${row.champion} vs ${row.enemy}」の対面メモ`;
+  const prompt = `以下はLoLの${subject}です。複数回にわたって追記された内容が含まれています。
+時期の異なる記述同士で結論が矛盾していないか判定してください（例:「序盤有利」と「序盤不利」が両方書かれている等。パッチ変更を踏まえた自然な評価の変化は矛盾に含めない）。
+
+${row.strategy}
+
+必ず以下のJSONのみ出力（前置き・コードブロック禁止）:
+{"hasContradiction":true|false,"summary":"<矛盾の内容。40字以内。無ければ空文字>"}`;
+  try {
+    const raw = await callGeminiWithRetry(prompt, { model: 'gemini-3.1-flash-lite', temperature: 0.2, maxOutputTokens: 200, maxRetries: 2, cacheKey: `matchupcontradiction:${row.matchup_id}:${noteCount}` });
+    let cleaned = (raw || '').trim();
+    if (cleaned.startsWith('```')) cleaned = cleaned.replace(/^```[a-z]*\n?/, '').replace(/```$/, '').trim();
+    const s = cleaned.indexOf('{'), e = cleaned.lastIndexOf('}');
+    if (s >= 0 && e > s) {
+      const p = JSON.parse(cleaned.slice(s, e + 1));
+      if (p.hasContradiction) {
+        return { matchupId: row.matchup_id, champion: row.champion, enemy: row.enemy, noteCount, summary: p.summary || '' };
+      }
+    }
+  } catch {
+    // 判定失敗時はフラグを立てない(誤検知よりスキップを優先)
+  }
+  return null;
+}
+
 export async function reviewMatchupContradictions(supabase: any, limit: number): Promise<MatchupContradictionCandidate[]> {
   const { data: rows } = await supabase
     .from('matchup_sentinel')
@@ -124,28 +154,27 @@ export async function reviewMatchupContradictions(supabase: any, limit: number):
 
   const results: MatchupContradictionCandidate[] = [];
   for (const c of candidates) {
-    const subject = c.enemy === 'GLOBAL' ? `「${c.champion}」の辞典本体` : `「${c.champion} vs ${c.enemy}」の対面メモ`;
-    const prompt = `以下はLoLの${subject}です。複数回にわたって追記された内容が含まれています。
-時期の異なる記述同士で結論が矛盾していないか判定してください（例:「序盤有利」と「序盤不利」が両方書かれている等。パッチ変更を踏まえた自然な評価の変化は矛盾に含めない）。
-
-${c.strategy}
-
-必ず以下のJSONのみ出力（前置き・コードブロック禁止）:
-{"hasContradiction":true|false,"summary":"<矛盾の内容。40字以内。無ければ空文字>"}`;
-    try {
-      const raw = await callGeminiWithRetry(prompt, { model: 'gemini-3.1-flash-lite', temperature: 0.2, maxOutputTokens: 200, maxRetries: 2, cacheKey: `matchupcontradiction:${c.matchup_id}:${c.noteCount}` });
-      let cleaned = (raw || '').trim();
-      if (cleaned.startsWith('```')) cleaned = cleaned.replace(/^```[a-z]*\n?/, '').replace(/```$/, '').trim();
-      const s = cleaned.indexOf('{'), e = cleaned.lastIndexOf('}');
-      if (s >= 0 && e > s) {
-        const p = JSON.parse(cleaned.slice(s, e + 1));
-        if (p.hasContradiction) {
-          results.push({ matchupId: c.matchup_id, champion: c.champion, enemy: c.enemy, noteCount: c.noteCount, summary: p.summary || '' });
-        }
-      }
-    } catch {
-      // 判定失敗時はフラグを立てない(誤検知よりスキップを優先)
-    }
+    const found = await judgeContradiction(c);
+    if (found) results.push(found);
   }
   return results;
+}
+
+/**
+ * 1件（1チャンピオンのGLOBAL辞典本体、または1対面）だけを即座にチェックする軽量版。
+ * /api/admin/knowledge/sync が記事をmatchup_sentinelへマージした直後に呼び、週次cronを
+ * 待たずその日のうちに矛盾へ気づけるようにする(2026-08-04追加、案①)。
+ * 見つかった場合は自前で通知は出さない(呼び出し側の責務)。
+ */
+export async function checkOneMatchupContradiction(
+  supabase: any,
+  matchupId: string
+): Promise<MatchupContradictionCandidate | null> {
+  const { data: row } = await supabase
+    .from('matchup_sentinel')
+    .select('matchup_id, champion, enemy, strategy')
+    .eq('matchup_id', matchupId)
+    .maybeSingle();
+  if (!row || !row.strategy) return null;
+  return judgeContradiction(row);
 }
