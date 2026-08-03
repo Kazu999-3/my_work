@@ -65,6 +65,15 @@ export async function GET(request: Request) {
       }).catch(e => console.warn(`Translate-jp(${target}) trigger warning:`, e));
     }
 
+    // 5. champion_facts をmatchup_sentinelへ追従させる構造化バックフィル。
+    // これが無いと /api/cron/dict-review-check(週次の鮮度レビュー)が
+    // 日々更新されるmatchup_sentinelとズレた古いスナップショットを見続けてしまう
+    // (2026-08-03発覚: 2026-07-30以降1週間近く同期されていなかった)。
+    fetch(`${origin}/api/admin/dict-migrate`, {
+      method: 'GET',
+      headers: cronHeaders,
+    }).catch(e => console.warn('Dict-migrate trigger warning:', e));
+
     return NextResponse.json({ success: true, message: '全自動バックグラウンドメンテナンス（データ整備・日本語化・マネタイズ）を正常発火しました' });
   } catch (error: any) {
     console.error('Cron Execution Error:', error);

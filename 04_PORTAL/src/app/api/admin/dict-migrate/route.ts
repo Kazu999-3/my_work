@@ -9,12 +9,21 @@ import { verifyAdminSession } from '../../../../lib/adminAuth';
 // 非破壊: matchup_sentinel は一切変更しない。何度でも再実行可能（対象チャンピオンの
 // champion_notes を毎回作り直す）。
 //
-// 呼び出し（管理者ログイン状態）:
+// 呼び出し（管理者ログイン状態、またはCRON_SECRET）:
 //   確認のみ:   GET /api/admin/dict-migrate?dryRun=1
 //   実行:       GET /api/admin/dict-migrate
+//
+// 2026-08-03発覚: この一括コピーは元々「課題#29 段階1」の一度きりの手動バックフィル
+// として作られ、以後どこからも自動で呼ばれていなかった。一方 /api/cron/dict-review-check
+// (週次の鮮度レビュー)はchampion_factsの方を見て判定するため、matchup_sentinelに
+// 日々ingestされる新しい知見がchampion_factsへ一切反映されず、レビューが実際に
+// 表示されている辞典内容とズレたスナップショットを見続ける状態になっていた。
+// /api/cron (日次) から毎日呼び出すことで、champion_factsをmatchup_sentinelに
+// 追従させ続けるようにした。
 // ============================================================
 
 export const dynamic = 'force-dynamic';
+export const maxDuration = 60;
 
 // 辞典対象として扱わない特殊 enemy / champion 値
 const SPECIAL_ENEMY = new Set(['PROCESS_INTERROGATION', 'SYSTEM', 'LIVE', 'PROCESS']);
@@ -35,8 +44,12 @@ function splitArticles(strategy: string): { title: string; body: string }[] {
 }
 
 export async function GET(req: Request) {
-  const authResult = await verifyAdminSession(req);
-  if (!authResult.ok) return NextResponse.json({ error: authResult.error }, { status: 401 });
+  // ===== 管理者セッション or CRON_SECRET(日次自動同期用) =====
+  const cronOk = !!process.env.CRON_SECRET && req.headers.get('authorization') === `Bearer ${process.env.CRON_SECRET}`;
+  if (!cronOk) {
+    const authResult = await verifyAdminSession(req);
+    if (!authResult.ok) return NextResponse.json({ error: authResult.error }, { status: 401 });
+  }
 
   try {
     const dryRun = new URL(req.url).searchParams.get('dryRun') === '1';

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
-import { reviewChampionFacts } from '../../../../lib/dictReview';
+import { reviewChampionFacts, reviewMatchupContradictions } from '../../../../lib/dictReview';
 import { createAdminNotification } from '../../../../lib/notify';
 
 // ============================================================
@@ -29,16 +29,26 @@ export async function GET(req: Request) {
   try {
     const { currentPatch, candidates } = await reviewChampionFacts(supabase, 15);
     const needsAttention = candidates.filter((c) => c.verdict !== 'keep');
+    const contradictions = await reviewMatchupContradictions(supabase, 15);
 
-    if (needsAttention.length > 0) {
+    if (needsAttention.length > 0 || contradictions.length > 0) {
       const updateCount = needsAttention.filter((c) => c.verdict === 'update').length;
       const archiveCount = needsAttention.filter((c) => c.verdict === 'archive').length;
+      const bodyParts: string[] = [];
+      if (needsAttention.length > 0) {
+        bodyParts.push(`要更新 ${updateCount}件 / アーカイブ推奨 ${archiveCount}件（現パッチ ${currentPatch || '不明'}）`);
+        bodyParts.push(...needsAttention.slice(0, 5).map((c) => `・${c.champion}: ${c.reason}`));
+      }
+      if (contradictions.length > 0) {
+        bodyParts.push(`⚠️ 対面メモの矛盾疑い ${contradictions.length}件`);
+        bodyParts.push(...contradictions.slice(0, 5).map((c) => `・${c.champion} vs ${c.enemy}: ${c.summary}`));
+      }
       await createAdminNotification({
         type: 'dict_review',
-        title: `🔄 辞典鮮度レビュー: ${needsAttention.length}件が要対応`,
-        body: `要更新 ${updateCount}件 / アーカイブ推奨 ${archiveCount}件（現パッチ ${currentPatch || '不明'}）\n${needsAttention.slice(0, 5).map((c) => `・${c.champion}: ${c.reason}`).join('\n')}`,
+        title: `🔄 辞典鮮度レビュー: ${needsAttention.length + contradictions.length}件が要対応`,
+        body: bodyParts.join('\n'),
         url: '/admin/knowledge?tab=maintenance',
-        data: { needsAttention: needsAttention.length, updateCount, archiveCount },
+        data: { needsAttention: needsAttention.length + contradictions.length, updateCount, archiveCount, contradictionCount: contradictions.length },
       });
     }
 
@@ -46,6 +56,7 @@ export async function GET(req: Request) {
       success: true,
       scanned: candidates.length,
       needsAttention: needsAttention.length,
+      contradictionsScanned: contradictions.length,
       currentPatch,
     });
   } catch (err: any) {

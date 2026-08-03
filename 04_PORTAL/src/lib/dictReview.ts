@@ -80,3 +80,62 @@ export async function reviewChampionFacts(supabase: any, limit: number): Promise
 
   return { currentPatch, candidates };
 }
+
+// ============================================================
+// 対面メモの矛盾検出 (2026-08-03 追加)
+//
+// ソロQ振り返り機能(/api/soloq/reflections)が matchup_sentinel.strategy に
+// 「【ソロQ振り返りメモ (日付)】」形式で追記し続ける設計のため、同じ対面に
+// 時期の異なる矛盾したメモ（例: パッチ変更前後で真逆の結論）が蓄積される
+// リスクがある。追記が2回以上ある対面だけを対象に、内容の矛盾をLLMで
+// 判定する。書き込みはせず、判定結果を返すだけ。
+// ============================================================
+
+const APPEND_MARKER = '【ソロQ振り返りメモ';
+
+export interface MatchupContradictionCandidate {
+  matchupId: string;
+  champion: string;
+  enemy: string;
+  noteCount: number;
+  summary: string;
+}
+
+export async function reviewMatchupContradictions(supabase: any, limit: number): Promise<MatchupContradictionCandidate[]> {
+  const { data: rows } = await supabase
+    .from('matchup_sentinel')
+    .select('matchup_id, champion, enemy, strategy')
+    .neq('enemy', 'GLOBAL')
+    .not('strategy', 'is', null);
+
+  const candidates = (rows || [])
+    .map((r: any) => ({ ...r, noteCount: ((r.strategy || '').split(APPEND_MARKER).length - 1) }))
+    .filter((r: any) => r.noteCount >= 2)
+    .slice(0, limit);
+
+  const results: MatchupContradictionCandidate[] = [];
+  for (const c of candidates) {
+    const prompt = `以下は「${c.champion} vs ${c.enemy}」のLoL対面メモです。複数回にわたって追記されたソロQ振り返りメモが含まれています。
+時期の異なるメモ同士で結論が矛盾していないか判定してください（例:「序盤有利」と「序盤不利」が両方書かれている等。パッチ変更を踏まえた自然な評価の変化は矛盾に含めない）。
+
+${c.strategy}
+
+必ず以下のJSONのみ出力（前置き・コードブロック禁止）:
+{"hasContradiction":true|false,"summary":"<矛盾の内容。40字以内。無ければ空文字>"}`;
+    try {
+      const raw = await callGeminiWithRetry(prompt, { model: 'gemini-3.1-flash-lite', temperature: 0.2, maxOutputTokens: 200, maxRetries: 2, cacheKey: `matchupcontradiction:${c.matchup_id}:${c.noteCount}` });
+      let cleaned = (raw || '').trim();
+      if (cleaned.startsWith('```')) cleaned = cleaned.replace(/^```[a-z]*\n?/, '').replace(/```$/, '').trim();
+      const s = cleaned.indexOf('{'), e = cleaned.lastIndexOf('}');
+      if (s >= 0 && e > s) {
+        const p = JSON.parse(cleaned.slice(s, e + 1));
+        if (p.hasContradiction) {
+          results.push({ matchupId: c.matchup_id, champion: c.champion, enemy: c.enemy, noteCount: c.noteCount, summary: p.summary || '' });
+        }
+      }
+    } catch {
+      // 判定失敗時はフラグを立てない(誤検知よりスキップを優先)
+    }
+  }
+  return results;
+}
