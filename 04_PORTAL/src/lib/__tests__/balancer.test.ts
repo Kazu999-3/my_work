@@ -90,11 +90,11 @@ test('coreBalanceTeams: 10人未満は例外を投げる', () => {
   assert.throws(() => coreBalanceTeams(players, emptyCtx()));
 });
 
-test('coreBalanceProposals: 4案(A/B/C/D)をすべて有効な編成で返す', () => {
+test('coreBalanceProposals: 5案(A/B/C/D/E)をすべて有効な編成で返す', () => {
   const players = tenPlayers();
   const proposals = coreBalanceProposals(players, emptyCtx());
-  assert.equal(proposals.length, 4);
-  assert.deepEqual(proposals.map(p => p.id), ['A', 'B', 'C', 'D']);
+  assert.equal(proposals.length, 5);
+  assert.deepEqual(proposals.map(p => p.id), ['A', 'B', 'C', 'D', 'E']);
   for (const prop of proposals) {
     assertValidResult(prop, players.map(p => p.name));
     assert.ok(prop.mmrDiff >= 0, 'mmrDiffは非負');

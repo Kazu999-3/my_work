@@ -1,0 +1,28 @@
+version: 2
+updates:
+  # 04_PORTAL (Next.js / npm)
+  - package-ecosystem: "npm"
+    directory: "/04_PORTAL"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    groups:
+      minor-and-patch:
+        update-types: ["minor", "patch"]
+
+  # 03_SYSTEMS (Python / pip)
+  - package-ecosystem: "pip"
+    directory: "/03_SYSTEMS"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    groups:
+      minor-and-patch:
+        update-types: ["minor", "patch"]
+
+  # GitHub Actions workflows自体のバージョン更新（低頻度でよい）
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    open-pull-requests-limit: 5

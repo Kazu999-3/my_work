@@ -1,0 +1,29 @@
+name: CI (04_PORTAL)
+
+# 個人開発でCIが無かったため、pushするまで壊れているかどうか誰も気づけなかった
+# (実際に2件のテストが仕様変更に追従できておらず失敗したまま放置されていた)。
+# 最低限、型チェックとユニットテストだけは自動で回す。
+
+on:
+  push:
+    branches: [master]
+    paths: ['04_PORTAL/**']
+  pull_request:
+    paths: ['04_PORTAL/**']
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: 04_PORTAL
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: 04_PORTAL/package-lock.json
+      - run: npm ci
+      - run: npx tsc --noEmit
+      - run: npm test

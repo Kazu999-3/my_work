@@ -124,10 +124,12 @@ test('calculateNewMMR: 格上に勝つと格下に勝つより上がり幅が大
   assert.ok(vsHigher > vsLower, `格上撃破の方が高いはず: higher=${vsHigher}, lower=${vsLower}`);
 });
 
-test('calculateNewMMR: 対面回数が多いとダンパーで変動が縮む', () => {
+test('calculateNewMMR: 対面回数ダンパーは案Aで廃止済み(matchupCountに関わらず同じ変動)', () => {
+  // mmr.ts:210-212 のコメント通り、身内カスタムの達成感を最大化するため
+  // 対面回数による減衰は完全廃止(1.0倍固定)されている。この仕様を固定する。
   const fresh = calculateNewMMR(baseCtx({ isWin: true, matchupCount: 0, kills: 8, deaths: 2, assists: 6 }));
   const repeated = calculateNewMMR(baseCtx({ isWin: true, matchupCount: 8, kills: 8, deaths: 2, assists: 6 }));
-  assert.ok(repeated < fresh, `対面多数の方が変動が小さいはず: fresh=${fresh}, repeated=${repeated}`);
+  assert.equal(repeated, fresh, `対面回数ダンパーは廃止済みのため変動は同じはず: fresh=${fresh}, repeated=${repeated}`);
 });
 
 // ============ getKtmRank ============

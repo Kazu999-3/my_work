@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../lib/supabaseAdmin';
+import { createAdminNotification } from '../../../lib/notify';
 
 // 軽量ヘルスチェック。サイドバー下部のステータス表示（#58）が実際の稼働状態を
 // 反映できるようにするための公開エンドポイント。DBへの最小クエリで接続性のみ確認する。
@@ -35,11 +36,34 @@ export async function GET() {
 // app/error.tsx がクラッシュ時にここへ報告を送るが、以前はPOSTハンドラが無く
 // 405で毎回黙って握りつぶされていた(呼び出し側もcatchで無視)ため、実際に
 // フロントでクラッシュが起きてもVercelのログに何も残らなかった。
-// 最低限ログには残すようにする（永続化までは不要）。
+// console.error だけに直した時期もあったが、Vercelの関数ログは誰も能動的に
+// 見ないため実質気づけないままだった(2026-08-04発覚)。管理者通知(ベル+プッシュ)
+// に流すことで、フロントのクラッシュに実際に気づけるようにする。
+// 同じエラーの連投で通知が埋もれないよう、直近15分以内に同じmessageの通知が
+// あればスキップする。
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
+    const message = String(body?.message || 'Unknown UI Error').slice(0, 200);
     console.error('[portal_boundary_error]', body);
+
+    const since = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+    const { data: recent } = await supabaseAdmin
+      .from('admin_notifications')
+      .select('id')
+      .eq('type', 'portal_boundary_error')
+      .ilike('title', `%${message.slice(0, 60)}%`)
+      .gt('created_at', since)
+      .limit(1);
+
+    if (!recent || recent.length === 0) {
+      await createAdminNotification({
+        type: 'portal_boundary_error',
+        title: `💥 フロントエラー: ${message}`,
+        body: body?.stack ? String(body.stack).slice(0, 400) : undefined,
+        data: { digest: body?.digest },
+      });
+    }
   } catch {
     // 本文が読めなくても報告自体は失敗させない
   }
