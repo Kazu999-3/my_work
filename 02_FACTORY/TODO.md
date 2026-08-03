@@ -14,6 +14,7 @@
     ]
   }
   ```
+- [ ] **Supabaseのバックアップ/PITR設定を確認** → 2026-08-04: 障害復旧の観点で、無料/Proプランによってリテンション期間が変わるバックアップ設定をAPI経由では確認できなかった。Supabaseダッシュボードで直接確認が必要。
 - [ ] **`.agent/skills/`・`.agent/workflows/`の孤立ファイル約34件の棚卸し** → 2026-08-03: スキル体系を`.agent/skills/`(旧Antigravity方式、CLAUDE.mdから手動リンクで参照)から`.claude/skills/`(ネイティブSkill機構、自動検出)へ移行開始。実際に使われていた9件(ghost-writer/ghost-tactics/lexicon-editor/lol-data-collector/sovereign-factory/style-auditor/note-article-drafter/note-production/ktm-admin)は移行済み。壊れていた`auto-healer.md`(削除済みSRE daemon前提)・`monetization-flow.md`(参照先スキルが軒並み現存しない)は削除済み。残り約34ファイル(`00_monetization_commander.md`等の巨大な「Pro統合版」メガプロンプト群、`lol-tactics-production.md`等)はCLAUDE.mdからもSKILL_LIST.md(2026-03更新停止)からも参照されておらず、中身が現行システムと整合しているか未確認のまま放置されている。`lol-tactics-production.md`は文字コード破損も確認済み。1件ずつ「まだ使うか」を判定してから移行/削除する必要があり、まとめて機械的に移行するのは危険（収益化パイプライン削除の影響で中身が古い可能性が高いため）。
 
 ## 📅 次回の注力タスク（2026-07-29 実行予定）
@@ -65,7 +66,7 @@
   - 原因: 2026-07-26の`start_all.ps1`簡素化でGateway(`api.py`)が起動されなくなったが、`youtube_absorber.py`だけがGateway直呼び出し(フォールバックなし)のままだった。他の全スクリプト(`champ_db_updater.py`等)は`ai_helper.generate_content_safe()`経由でGateway不通時も自動で直接Gemini呼び出しにフォールバックする設計になっており、ここだけ取り残されていた
   - 修正: `generate_bible()`をGateway直叩きから、`agent_prompts`テーブルからプロンプトテンプレートを取得→`generate_content_safe()`を直接呼ぶ方式に変更（Gatewayの内部処理をそのまま踏襲、他スクリプトと同じパターンに統一）
   - 未検証: コード上は他スクリプトと同一パターンで健全だが、実際のAPIキー・DBを使った動作確認は次回のedge_worker_daemon実行時に確認が必要
-- [ ] Whisperのクラウド移行の設計検討は上記調査により実処理量が判明（週45件≒月190件）。Gateway修正の効果を見てから再開
+- [x] ~~Whisperのクラウド移行の設計検討~~ → 2026-08-04整理: このTODOがstaleなまま残っていた。実際は2026-07-30時点で既に「完了済み」と確認済み（本ファイル冒頭の「次回の注力タスク」セクション参照。`youtube_absorber.py`はGroq Whisper APIに一本化済みでローカルGPU実装は撤去済み）。矛盾していたため削除。
 
 ## ✅ 2026-07-28 ポータル不具合修正セッションで対応済み
 - [x] チャンピオン辞典の更新ボタンがスマホで見えない問題（ヒーロー領域のレイアウト崩れ）
@@ -116,7 +117,7 @@
 - [x] `04_PORTAL/scripts/` 重複スクリプトの整理（2026-07-28: 参照ゼロを確認しsmart_backfillに統一。archive/の物理削除のみ権限ブロックで保留、上記タスク参照）
 - [x] Supabase RLSセキュリティ監査（実施中）→ 2026-07-30/31対応: `get_advisors`で発覚した「常時許可(qual/with_check=true)」ポリシーをリスクの高い順に修正。① `ktm_players`/`ktm_matches`/`ktm_match_participants`: 誰でもMMR書き換え・偽の試合結果INSERTが可能だった書き込みポリシーを削除（読み取りは公開のまま維持、書き込みはservice role経由のAPIルートに限定。クライアント側17ファイルを確認し直接書き込みが無いことを確認済み）。② `agent_prompts`: ポリシーは`authenticated`ロール限定で、このポータルはSupabase Authを使わない(anonキーのみ)ため実害はゼロと判明したが、`/admin/prompts`の保存機能自体が同じanonキー直叩きに依存しており実は保存が失敗する状態だったため、`/api/admin/prompts`（service role経由）を新設しRLSごと完全に閉じて保存機能も併せて修復。今回から`04_PORTAL/supabase/migrations/`の番号付きファイル（37〜39）として記録する運用に統一（それまでの2件はMCP経由の直接適用のみでファイル化されていなかったため遡って追加）。残る対象: `edge_tasks`(4件)、`matchup_sentinel`(3件)、`youtube_channels`/`youtube_playlists`/`youtube_queue`(各3件)、他多数
 - [ ] Supabase 直接アクセスの API 経由化 → v8.0 APIファースト化として推進
-- [ ] 対面メモ（`MatchupMemoTab.tsx`）を新規作成しても保存されない不具合の調査・修正 → 2026-07-30調査: DB/RLS側の問題ではないと確認済み（`matchup_sentinel`は書き込みポリシーが公開のままで、同じupsertペイロードをcurlで直接叩くと201で成功する）。フロント側（`saveMemo()`関数、`ChampSelect`の値反映、または保存後の状態遷移）に原因があるはず。次回はブラウザの実機で再現し、コンソールのエラー・Networkタブのレスポンスを確認するところから着手
+- [x] ~~対面メモ（`MatchupMemoTab.tsx`）を新規作成しても保存されない不具合~~ → 2026-08-04整理: 2026-08-03のソロQ振り返り機能構築時に`MatchupMemoTab.tsx`自体が削除され(コーチページの対面メモ入力機能に統合済み)、対面メモの保存経路は`/api/soloq/reflections`のDB自動同期に置き換わった。バグ報告対象のコンポーネントが現存しないため、この項目はクローズする。
 - [x] **ソロキューを振り返る導線の強化** → 2026-08-03対応: PCメインで1〜2分で完結する「ソロQ 1分振り返り統合導線（SoloQ Reflection Flow）」を新規構築。Riot APIからの最新試合ワンクリック自動読込、メンタル1〜5評価、勝因敗因タグ選択、対面メモの対面DB(`matchup_sentinel`)自動同期、および次回テーマの画面上部リマインダー機能を統合完了 (`SoloQReflectionModal.tsx`, `/api/soloq/latest`, `/api/soloq/reflections`, `40_soloq_reflections.sql`)
 - [ ] **未解決・継続調査**: YouTube動画解析パイプラインがGitHub Actions上でほぼ機能していない問題 → 2026-07-31発覚: ダッシュボードは「completed」を返し続けていたが実態は`youtube_worker.py`（字幕取得）・`youtube_absorber.py`（Whisper救済）とも`Sign in to confirm you're not a bot`でブロックされ、07-27 12:36以降4日間1件も処理成功していなかった（リトライを消費しないロジックのため失敗がダッシュボードに出ず、ユーザーが手動で30件以上クローズして初めて発覚）。
   - 同日中に4つの実バグを発見・修正済み: ①cookie認証が無かった(`YOUTUBE_COOKIES_TXT`をユーザーがGitHub Secretsに登録し解消)、②`--js-runtimes node,deno`がカンマ区切りとして解釈されず常に無視されていた、③`--remote-components ejs:github`が無くchallenge解決スクリプト自体が取得されていなかった、④GH Actionsランナーに実行可能なNode.jsが無かった（`actions/setup-node`追加）。あわせて`android`/`web`より安定する`android_vr`クライアントを優先するよう変更。
