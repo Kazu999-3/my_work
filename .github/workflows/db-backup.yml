@@ -32,7 +32,10 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
-          pg_dump "$DATABASE_URL" --no-owner --no-privileges --format=custom --file=backup.dump
+          # PGDGパッケージはバージョン別ディレクトリに入り、素の`pg_dump`はOS標準の
+          # 古いバージョン(16系)を指したままになる既知の挙動があるため、
+          # インストールしたv17のバイナリをフルパスで明示する。
+          /usr/lib/postgresql/17/bin/pg_dump "$DATABASE_URL" --no-owner --no-privileges --format=custom --file=backup.dump
 
       - name: Verify dump is non-empty (silent失敗の検知)
         run: |
