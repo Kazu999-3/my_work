@@ -74,7 +74,7 @@ jobs:
       # cookie認証時、yt-dlpはwebクライアントにフォールバックしYouTubeの"n challenge"署名解決に
       # JSランタイムを要求する。ランナー内蔵のNodeはActions自体の実行専用でPATHに出ていないため明示的に用意する。
       - name: Set up Node.js (for yt-dlp's n-challenge JS solver)
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: '22'
       - name: Install dependencies
