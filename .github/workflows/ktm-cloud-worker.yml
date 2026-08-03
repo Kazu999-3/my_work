@@ -44,7 +44,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with: { python-version: '3.12' }
       - name: Install yt-dlp
         run: pip install -q yt-dlp
@@ -69,7 +69,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with: { python-version: '3.12' }
       # cookie認証時、yt-dlpはwebクライアントにフォールバックしYouTubeの"n challenge"署名解決に
       # JSランタイムを要求する。ランナー内蔵のNodeはActions自体の実行専用でPATHに出ていないため明示的に用意する。
