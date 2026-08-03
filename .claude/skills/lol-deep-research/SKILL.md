@@ -1,5 +1,6 @@
 ---
-description: LoL（ League of Legends）の特定チャンピオンとロールに関する、深い次元（勝率ブレイクポイント、ミクロテクニック、メタ対策）でのリサーチを自動化・標準化するスキル。
+name: lol-deep-research
+description: LoL（League of Legends）の特定チャンピオンとロールに関する、深い次元（勝率ブレイクポイント、ミクロテクニック、メタ対策）でのリサーチを自動化・標準化するスキル。note-article-drafterから参照される。
 ---
 
 # 🎮 LoL ディープリサーチ・スキル (lol_deep_research)

@@ -1,5 +1,5 @@
 ---
-name: Notification Designer (通知デザイナー)
+name: notification-designer
 description: DiscordやWebフック経由での通知メッセージを錬成する際、情報を見やすく構造化し、システム用語を隠蔽し、ユーザーがワンクリックでアクセスできる直リンクを必ず付与するためのUXライティング・スキル。
 ---
 

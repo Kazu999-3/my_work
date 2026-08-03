@@ -31,9 +31,9 @@
 
 `.claude/skills/`（プロジェクト直下）と `04_PORTAL/.claude/skills/`（ポータル固有）配下のスキルはネイティブのSkill機構で自動検出されるため、ここで手動リストアップする必要はありません。タスク内容に応じて自発的に該当スキルを読み込み、その手順・制約に従ってください。
 
-現存する主なスキル: `ghost-writer`（AI臭さ排除の校正）、`ghost-tactics`（YouTube動画からの戦術自動抽出）、`lol-data-collector`（統計収集）、`sovereign-factory`（戦術バイブル/SNS/画像プロンプト量産）、`lexicon-editor`（辞典編纂）、`style-auditor`（文章のAI臭さ監査）、`note-article-drafter`（note記事ドラフト生成）、`note-production`（note量産の一気通貫フロー）、`ktm-admin`（KTM大会運営・MMR計算・チーム分け）、`supabase-table-security`（04_PORTAL固有、新規テーブル/APIルートのセキュリティチェックリスト）。
+現存する主なスキル: `ghost-writer`（AI臭さ排除の校正）、`ghost-tactics`（YouTube動画からの戦術自動抽出）、`lol-data-collector`（統計収集）、`lol-deep-research`（チャンピオン深掘りリサーチ）、`pro-build-tracker`（プロビルド追跡）、`sovereign-factory`（戦術バイブル/SNS/画像プロンプト量産）、`lexicon-editor`（辞典編纂）、`style-auditor`（文章のAI臭さ監査）、`article-review`（note記事の6観点レビュー＆改善ループ）、`note-article-drafter`（note記事ドラフト生成）、`note-production`（note量産の一気通貫フロー、Worker/Reviewerループ内蔵）、`notification-designer`（Discord/Web通知のUXライティング）、`find-skills`（外部スキルエコシステムの発見）、`ktm-admin`（KTM大会運営・MMR計算・チーム分け）、`skill-creator`（スキルの新規作成・検証）、`canvas-design`（画像/ポスター生成）、`supabase-table-security`（04_PORTAL固有、新規テーブル/APIルートのセキュリティチェックリスト）。
 
-`d:/my_work/.agent/` 配下にはまだ未整理の旧スキル・ワークフローが残っている（2026-08-03時点で棚卸し中）。参照する際は中身が現行システムと整合しているか確認すること。
+`d:/my_work/.agent/skills/`・`.agent/workflows/` の旧スキル・ワークフローは2026-08-04に棚卸し完了。実際に使われている/価値のあるものは全て`.claude/skills/`へ移行済みで、残りは削除済み（`.agent/agents`・`.agent/rules`等の他ディレクトリは対象外・未調査）。
 
 **スキルの継続的な改善**: あるスキルの実行中に実害のある失敗（依存先の削除、規約違反、誤ったデータ書き込み等）を発見・修正した場合は、そのスキル自身のSKILL.md末尾に「## 既知の落とし穴 (Known Pitfalls)」として日付付きで記録すること（`sovereign-factory/SKILL.md`参照）。次にそのスキルを使う際に同じ轍を踏まないための経験メモとして機能する。新しいスキルを作る/大きく直す際は`skill-creator`スキル（`.claude/skills/skill-creator/scripts/quick_validate.py`でフォーマット検証可能）を使うこと。
 
