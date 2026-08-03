@@ -2,16 +2,11 @@
 
 import React, { useState, useEffect, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Brain, Search, Plus, Trash2, Calendar, Link as LinkIcon, RefreshCw, FileText, ChevronDown, ChevronUp, BookOpen, Layers, Sparkles, Tag, Video, Target } from 'lucide-react';
+import { Brain, Search, Plus, Trash2, Calendar, Link as LinkIcon, RefreshCw, FileText, ChevronDown, ChevronUp, BookOpen, Layers, Sparkles, Video } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import YoutubeQueueManager from '../youtube/YoutubeQueueManager';
 import LibraryTabContent from './LibraryTabContent';
-import DictReviewPanel from './DictReviewPanel';
-import DictInsightsPanel from './DictInsightsPanel';
-import RevisionsPanel from './RevisionsPanel';
-import DeepResearchModal from './DeepResearchModal';
-import DeepResearchPanel from './DeepResearchPanel';
 import { supabaseBrowser } from '../../../lib/supabaseBrowserClient';
 
 interface KnowledgeItem {
@@ -348,13 +343,13 @@ function KnowledgeBaseContent() {
             </p>
           </div>
           <div className="flex items-center gap-3 shrink-0">
-            <button
-              onClick={() => setIsResearchModalOpen(true)}
-              className="text-xs font-bold px-4 py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white rounded-xl shadow-lg shadow-purple-600/20 transition-all flex items-center gap-1.5"
+            <Link
+              href="/coach"
+              className="text-xs font-bold px-4 py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl shadow-lg transition-all flex items-center gap-1.5 hover:opacity-90"
             >
               <Sparkles size={14} />
-              特定チャンプを深掘り
-            </button>
+              コーチ・深掘りへ移動
+            </Link>
             <Link
               href="/leaderboard"
               className="text-xs font-semibold px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl border border-gray-200 transition-all flex items-center gap-1"
@@ -364,25 +359,15 @@ function KnowledgeBaseContent() {
           </div>
         </div>
 
-        <DeepResearchModal
-          isOpen={isResearchModalOpen}
-          onClose={() => setIsResearchModalOpen(false)}
-          onSuccess={() => {
-            fetchKnowledge(true);
-          }}
-        />
-
         {/* タブ切り替え */}
         <div className="flex gap-2 border-b border-gray-200 pb-4 mb-8 overflow-x-auto">
           {[
             { id: 'knowledge', label: '📖 ナレッジ一覧', icon: BookOpen },
             { id: 'video', label: '⏳ 動画解析キュー', icon: Video },
             { id: 'library', label: '🗂️ 攻略ライブラリ', icon: Layers },
-            { id: 'research', label: '🎯 チャンプ深掘り', icon: Target },
-            { id: 'maintenance', label: '🛠️ データ整備 ＆ 鮮度レビュー', icon: Layers },
           ].map((tab) => {
             const Icon = tab.icon;
-            const isActive = activeTab === tab.id || (tab.id === 'maintenance' && activeTab === 'review');
+            const isActive = activeTab === tab.id;
             return (
               <button
                 key={tab.id}
@@ -399,54 +384,8 @@ function KnowledgeBaseContent() {
         </div>
 
         {/* --- タブ別コンテンツ --- */}
-        {activeTab === 'research' && (
-          <DeepResearchPanel
-            onSuccess={() => {
-              fetchKnowledge(true);
-            }}
-          />
-        )}
         {activeTab === 'video' && <YoutubeQueueManager />}
         {activeTab === 'library' && <LibraryTabContent />}
-        {/* データ整備 ＆ 鮮度レビュー: データ整理・一括処理と古いデータの検知 */}
-        {(activeTab === 'maintenance' || activeTab === 'review') && (
-          <div className="space-y-8">
-            <div className="space-y-6">
-              <div className="bg-pink-50 border border-pink-200 rounded-2xl p-5">
-                <h2 className="text-base font-black text-gray-900 mb-2">🛠️ データ整備の進め方</h2>
-                <p className="text-xs text-gray-400 leading-relaxed">
-                  知識を「チャンピオン辞典 / レーン別ガイド」へ整理する一括処理です。
-                  <strong className="text-pink-700">①→③の順に実行</strong>すると、翻訳済みのデータをもとに統合できるため品質が上がります。
-                </p>
-                <p className="text-[11px] text-gray-500 mt-2">
-                  ※ ②「チャンピオン辞典へ一括同期」は
-                  <button onClick={() => setActiveTab('library' as any)} className="text-pink-600 hover:underline font-bold mx-1">🗂️ 攻略ライブラリ</button>
-                  タブの「全チャンプ辞典に一括同期」ボタンから実行します。
-                </p>
-                <p className="text-[11px] text-emerald-700 mt-2">
-                  ✅ 2026-07-31から①〜③は毎日自動実行されるようになりました（1回あたり少量ずつ処理）。
-                  ここのボタンは今すぐまとめて進めたい時だけ使えばOKです。
-                </p>
-              </div>
-              <DictInsightsPanel mode="maintenance" />
-            </div>
-
-            {/* 鮮度レビュー: 古い辞典の判定と、個別の点検ツール */}
-            <div className="space-y-6 pt-6 border-t border-gray-200">
-              <h2 className="text-lg font-black text-gray-900 flex items-center gap-2">
-                <Sparkles className="text-cyan-600" size={20} />
-                🔄 鮮度レビュー ＆ データ点検
-              </h2>
-              <DictReviewPanel />
-              <DictInsightsPanel mode="inspect" />
-            </div>
-
-            {/* 変更履歴 */}
-            <div className="pt-6 border-t border-gray-200">
-              <RevisionsPanel />
-            </div>
-          </div>
-        )}
 
         {activeTab === 'knowledge' && (
           <div className="space-y-8 animate-in">

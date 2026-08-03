@@ -48,6 +48,7 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
   // マッチ一覧と選択インデックス
   const [matches, setMatches] = useState<MatchInfo[]>([]);
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
+  const [savedMatchIds, setSavedMatchIds] = useState<Set<string>>(new Set());
 
   // フォーム状態
   const [mentalRating, setMentalRating] = useState<number>(3);
@@ -59,9 +60,25 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
 
+  // 保存済みマッチIDのフェッチ
+  const fetchSavedMatchIds = async () => {
+    try {
+      const res = await fetch('/api/soloq/reflections');
+      const data = await res.json();
+      const ids = new Set<string>();
+      if (data.reflections) {
+        data.reflections.forEach((r: any) => { if (r.match_id) ids.add(r.match_id); });
+      } else if (data.reflection?.match_id) {
+        ids.add(data.reflection.match_id);
+      }
+      setSavedMatchIds(ids);
+    } catch {}
+  };
+
   // 1. 初回マウント時・モーダルオープン時に localStorage から Riot ID を自動ロード
   useEffect(() => {
     if (isOpen) {
+      fetchSavedMatchIds();
       const savedIgn = localStorage.getItem('soloq_riot_id') || '';
       if (savedIgn) {
         setIgn(savedIgn);
@@ -237,6 +254,7 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
               <div className="space-y-1.5 mt-2">
                 {matches.map((m, idx) => {
                   const isSelected = selectedIndex === idx;
+                  const isDone = savedMatchIds.has(m.matchId);
                   return (
                     <button
                       type="button"
@@ -255,6 +273,15 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
                         <span className="font-bold text-stone-900">{m.champion}</span>
                         <span className="text-stone-400">vs</span>
                         <span className="font-bold text-stone-700">{m.enemyChampion}</span>
+                        {isDone ? (
+                          <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-1.5 py-0.5 rounded border border-emerald-300">
+                            ✅ 振り返り完了
+                          </span>
+                        ) : (
+                          <span className="text-[10px] bg-amber-100 text-amber-900 font-bold px-1.5 py-0.5 rounded border border-amber-300">
+                            ⚠️ 未振り返り
+                          </span>
+                        )}
                       </div>
                       <div className="text-[11px] text-stone-600 flex items-center gap-3">
                         <span>KDA: <strong className="text-stone-800">{m.kda}</strong></span>

@@ -9,6 +9,8 @@ import SoloQReflectionModal from './SoloQReflectionModal';
 import PickRecommendationTab from './PickRecommendationTab';
 import MatchupWarningCard from './MatchupWarningCard';
 import LanePrioritySimulator from './LanePrioritySimulator';
+import MySoloQDashboard from './MySoloQDashboard';
+import DeepResearchPanel from '../admin/knowledge/DeepResearchPanel';
 
 // ============================
 // 型定義
@@ -917,35 +919,15 @@ export default function CoachPage() {
     setDailyCheckTrigger(Date.now());
   };
 
-  // タブ→グループ+サブタブの2階層にしても「画面が分割されている」感覚は変わらない
-  // という指摘を受けアコーディオンにしていたが、開閉の手間が面倒という声を受け、
-  // 全セクション常時展開＋余白を詰めたコンパクト表示に変更した。
-  const SECTIONS = [
-    { id: 'pick-rec', group: 'pregame', groupLabel: '⚡ 試合前', label: '🎯 BAN/PICK推奨ナビゲーター', content: <PickRecommendationTab /> },
-    { id: 'lane-pri', group: 'pregame', groupLabel: '⚡ 試合前', label: '📊 5レーン主導権 ＆ 展開シミュレーター', content: <LanePrioritySimulator /> },
-    { id: 'pre', group: 'pregame', groupLabel: '⚡ 試合前', label: '事前分析', content: <PreGameTab champion={sharedChampion} enemyChampion={sharedEnemyChampion} triggerSignal={dailyCheckTrigger} /> },
-    {
-      id: 'scout', group: 'pregame', groupLabel: '⚡ 試合前', label: '🧭 偵察',
-      content: (
-        <div className="space-y-8">
-          <ScoutTab onLiveMatchDetected={handleLiveMatchDetected} />
-          {(sharedChampion && sharedEnemyChampion) && (
-            <div className="border-t border-black/10 pt-8">
-              <h3 className="mb-4 text-sm font-bold text-foreground/70">⚔️ マッチアップ分析（偵察結果から自動生成）</h3>
-              <MatchupTab champion={sharedChampion} enemyChampion={sharedEnemyChampion} triggerSignal={scoutMatchupTrigger} />
-            </div>
-          )}
-        </div>
-      ),
-    },
-    { id: 'sim5v5', group: 'pregame', groupLabel: '⚡ 試合前', label: '🎮 5v5シミュレータ', content: <FiveVFiveSimTab /> },
-    { id: 'post', group: 'postgame', groupLabel: '🔍 試合後', label: '⚡ 1分ソロQ振り返り ＆ 実績', content: <PostGameTab onOpenReflectionModal={() => setIsReflectionModalOpen(true)} /> },
-    { id: 'trends', group: 'postgame', groupLabel: '🔍 試合後', label: '📈 傾向分析', content: <TrendsTab /> },
-    { id: 'goal', group: 'postgame', groupLabel: '🔍 試合後', label: '🎯 目標管理', content: <GoalTab triggerSignal={dailyCheckTrigger} /> },
-    { id: 'tilt', group: 'postgame', groupLabel: '🔍 試合後', label: '🧠 ティルト判定', content: <TiltTab triggerSignal={dailyCheckTrigger} /> },
-  ] as const;
+  // 4ステップ統合タブ構造
+  const [activeStepTab, setActiveStepTab] = useState<'banpick' | 'pregame' | 'postgame' | 'research'>('banpick');
 
-  const groupOrder = ['pregame', 'postgame'] as const;
+  const STEP_TABS = [
+    { id: 'banpick', label: '1. BAN/PICK中', icon: '🎯' },
+    { id: 'pregame', label: '2. 試合直前 (ロード)', icon: '⚡' },
+    { id: 'postgame', label: '3. 試合後振り返り', icon: '🔍' },
+    { id: 'research', label: '4. 辞典 & バトルリサーチ', icon: '🎯' },
+  ] as const;
 
   if (isAuthenticated === null) {
     return (
@@ -1052,27 +1034,113 @@ export default function CoachPage() {
         {/* 過去の自分からの対面警戒メモ（対面チャンプ決定時に即座にハイライト表示） */}
         <MatchupWarningCard champion={sharedChampion} enemyChampion={sharedEnemyChampion} />
 
-        {/* 全セクション常時展開。グループごとに1つの枠にまとめ、余白を詰めてコンパクトに表示。 */}
-        <div className="space-y-5">
-          {groupOrder.map((groupId) => {
-            const groupSections = SECTIONS.filter((s) => s.group === groupId);
+        {/* 4ステップ切り替えナビゲーションバー */}
+        <div className="mb-6 flex gap-2 border-b border-black/10 pb-3 overflow-x-auto">
+          {STEP_TABS.map((tab) => {
+            const isActive = activeStepTab === tab.id;
             return (
-              <div key={groupId}>
-                <h2 className="mb-2 px-1 text-xs font-bold uppercase tracking-wider text-foreground/40">
-                  {groupSections[0].groupLabel}
-                </h2>
-                <div className="divide-y divide-black/10 overflow-hidden rounded-2xl border border-black/10 bg-black/3">
-                  {groupSections.map((sec) => (
-                    <div key={sec.id} id={`section-${sec.id}`} className="px-5 py-4">
-                      <h3 className="mb-3 text-sm font-semibold text-foreground/80">{sec.label}</h3>
-                      {sec.content}
-                    </div>
-                  ))}
-                </div>
-              </div>
+              <button
+                key={tab.id}
+                onClick={() => setActiveStepTab(tab.id as any)}
+                className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold transition-all shrink-0 ${
+                  isActive
+                    ? 'bg-gradient-to-r from-amber-700 to-amber-800 text-white shadow-md'
+                    : 'bg-black/5 text-stone-600 hover:bg-black/10'
+                }`}
+              >
+                <span>{tab.icon}</span>
+                <span>{tab.label}</span>
+              </button>
             );
           })}
         </div>
+
+        {/* --- 4ステップ別メインコンテンツ --- */}
+        {activeStepTab === 'banpick' && (
+          <div className="space-y-6 animate-in">
+            <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-sm space-y-3">
+              <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5">
+                <span>🎯</span> BAN/PICK推奨ナビゲーター (シナジー ＆ カウンターTop3)
+              </h3>
+              <PickRecommendationTab />
+            </div>
+          </div>
+        )}
+
+        {activeStepTab === 'pregame' && (
+          <div className="space-y-6 animate-in">
+            <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-sm space-y-3">
+              <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5">
+                <span>📊</span> 5レーン主導権 ＆ 試合展開シミュレーター
+              </h3>
+              <LanePrioritySimulator />
+            </div>
+            <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-sm space-y-3">
+              <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5">
+                <span>⚡</span> 事前分析 (対面対策ナレッジ)
+              </h3>
+              <PreGameTab champion={sharedChampion} enemyChampion={sharedEnemyChampion} triggerSignal={dailyCheckTrigger} />
+            </div>
+            <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-sm space-y-3">
+              <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5">
+                <span>🧭</span> リアルタイム偵察 ＆ 5v5シミュレータ
+              </h3>
+              <ScoutTab onLiveMatchDetected={handleLiveMatchDetected} />
+              {(sharedChampion && sharedEnemyChampion) && (
+                <div className="border-t border-stone-200 pt-5">
+                  <h4 className="mb-3 text-xs font-bold text-stone-700">⚔️ マッチアップ分析（自動生成）</h4>
+                  <MatchupTab champion={sharedChampion} enemyChampion={sharedEnemyChampion} triggerSignal={scoutMatchupTrigger} />
+                </div>
+              )}
+              <div className="border-t border-stone-200 pt-5">
+                <FiveVFiveSimTab />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeStepTab === 'postgame' && (
+          <div className="space-y-6 animate-in">
+            <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-sm space-y-3">
+              <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5">
+                <span>📊</span> マイソロQダッシュボード (過去全ログ ＆ 成績一覧)
+              </h3>
+              <MySoloQDashboard />
+            </div>
+            <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-sm space-y-3">
+              <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5">
+                <span>⚡</span> 直近のソロQ振り返り ＆ 実績
+              </h3>
+              <PostGameTab onOpenReflectionModal={() => setIsReflectionModalOpen(true)} />
+            </div>
+            <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-sm space-y-3">
+              <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5">
+                <span>📈</span> 傾向分析・目標管理・ティルト判定
+              </h3>
+              <TrendsTab />
+              <div className="border-t border-stone-200 pt-4">
+                <GoalTab triggerSignal={dailyCheckTrigger} />
+              </div>
+              <div className="border-t border-stone-200 pt-4">
+                <TiltTab triggerSignal={dailyCheckTrigger} />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeStepTab === 'research' && (
+          <div className="space-y-6 animate-in">
+            <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-sm space-y-3">
+              <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5">
+                <span>🎯</span> バトルリサーチ (特定チャンピオンのAIディープリサーチ)
+              </h3>
+              <p className="text-xs text-stone-500">
+                チャンピオンを指定してAI＋YouTube最新動画から戦術・立ち回りを深掘り検索します。結果は「チャンピオン辞典」へ直接自動蓄積・同期されます。
+              </p>
+              <DeepResearchPanel />
+            </div>
+          </div>
+        )}
 
         {/* フッター */}
         <div className="mt-10 text-center text-xs text-foreground/20">
