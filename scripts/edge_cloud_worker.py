@@ -18,7 +18,7 @@ import os
 import sys
 import json
 import subprocess
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import urllib.request
 import urllib.error
 
@@ -173,7 +173,34 @@ def run_script(rel_path, args, timeout):
     return subprocess.run(cmd, cwd=REPO_ROOT, env=env, capture_output=True, text=True, timeout=timeout)
 
 
+def ensure_channel_monitor_scheduled():
+    """
+    登録済みYouTubeチャンネルの新着動画チェック(youtube_channel_monitor)を
+    3時間おきに自動起票する。
+    旧sre_daemon.pyのrun_youtube_channel_monitor_loop()が担っていたが、
+    2026-07-26のsre_daemon.py削除時に「youtube_absorbの15分おき起票」だけが
+    edge_worker_daemon.pyへ移植され、こちらのスケジューリングはどこにも
+    引き継がれないまま消えていた（実行経路自体(このスクリプトのTASK_MAP)は
+    生きていたため、誰も気づかないまま登録チャンネルの巡回が完全に止まっていた）。
+    """
+    cutoff = (datetime.now(timezone.utc) - timedelta(hours=3)).isoformat()
+    status, existing = sb(
+        "GET",
+        f"edge_tasks?task_type=eq.youtube_channel_monitor&created_at=gt.{cutoff}&select=id&limit=1",
+    )
+    if status == 200 and existing:
+        print("🔧 [ChannelMonitorScheduler] 直近3時間以内に起票済みのためスキップします。")
+        return
+    status, _ = sb("POST", "edge_tasks", {"task_type": "youtube_channel_monitor", "payload": {}, "status": "pending"})
+    if status in (200, 201):
+        print("🔧 [ChannelMonitorScheduler] youtube_channel_monitorタスクをキューイングしました。")
+    else:
+        print(f"❌ [ChannelMonitorScheduler] キューイング失敗: {status}", file=sys.stderr)
+
+
 def main():
+    ensure_channel_monitor_scheduled()
+
     types_str = ",".join(TASK_MAP.keys())
     status, tasks = sb(
         "GET",
