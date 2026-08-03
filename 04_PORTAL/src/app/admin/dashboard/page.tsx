@@ -619,8 +619,24 @@ export default function Home() {
                         {Object.entries(systemMetrics.cloud_workers).map(([workerKey, log]: [string, any]) => {
                           const isOk = log.status === 'ok';
                           const isWarn = log.status === 'warn';
-                          const statusBg = isOk ? 'border-emerald-200 bg-emerald-50' : isWarn ? 'border-amber-200 bg-amber-50' : 'border-rose-200 bg-rose-50';
-                          const badgeColor = isOk ? 'text-emerald-700 bg-emerald-100 border-emerald-200' : isWarn ? 'text-amber-700 bg-amber-100 border-amber-200' : 'text-rose-700 bg-rose-100 border-rose-200';
+
+                          // updated_at が古い(24時間以上前)ログは「今も警告/エラーが続いている」のか
+                          // 「単に長期間実行されておらず古い結果が残っているだけ」なのか区別が付かず、
+                          // 定期cronを止めたジョブ(youtube等)で数日前の失敗がずっと現在進行形の
+                          // 警告のように見え続けていた。経過時間を見て、古い場合は中立色の
+                          // 「古い情報」表示に切り替え、再実行して初めて解消したかどうかが
+                          // 一目で分かるようにする(新しく実行された結果は通常通り緑/黄/赤で出る)。
+                          const updatedAtMs = log.updated_at ? new Date(log.updated_at).getTime() : NaN;
+                          const ageHours = Number.isFinite(updatedAtMs) ? (Date.now() - updatedAtMs) / (1000 * 60 * 60) : Infinity;
+                          const isStale = ageHours > 24;
+
+                          const statusBg = isStale ? 'border-stone-200 bg-stone-50' : isOk ? 'border-emerald-200 bg-emerald-50' : isWarn ? 'border-amber-200 bg-amber-50' : 'border-rose-200 bg-rose-50';
+                          const badgeColor = isStale ? 'text-stone-600 bg-stone-100 border-stone-300' : isOk ? 'text-emerald-700 bg-emerald-100 border-emerald-200' : isWarn ? 'text-amber-700 bg-amber-100 border-amber-200' : 'text-rose-700 bg-rose-100 border-rose-200';
+                          const lastResultLabel = isOk ? '正常完了' : isWarn ? '一部失敗/警告' : 'エラー';
+                          const ageLabel = Number.isFinite(ageHours)
+                            ? ageHours < 24 ? `${Math.max(1, Math.round(ageHours))}時間前` : `${Math.round(ageHours / 24)}日前`
+                            : '';
+                          const badgeLabel = isStale ? `古い情報(前回:${lastResultLabel})` : lastResultLabel;
 
                           const updatedTime = log.updated_at ? new Date(log.updated_at).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }) : '時刻不明';
 
@@ -629,7 +645,7 @@ export default function Home() {
                               <div className="flex justify-between items-center mb-2">
                                 <span className="font-bold text-stone-900 uppercase">{workerKey}</span>
                                 <span className={`px-2 py-0.5 rounded-full border text-[9px] font-bold ${badgeColor}`}>
-                                  {isOk ? '正常完了' : isWarn ? '一部失敗/警告' : 'エラー'}
+                                  {badgeLabel}
                                 </span>
                               </div>
                               <p className="text-[11px] text-stone-700 mb-2 font-medium">{log.summary}</p>
@@ -640,7 +656,7 @@ export default function Home() {
                                   ))}
                                 </div>
                               )}
-                              <div className="text-[9px] text-stone-500 text-right">最終実行: {updatedTime}</div>
+                              <div className="text-[9px] text-stone-500 text-right">最終実行: {updatedTime}{ageLabel && ` (${ageLabel})`}</div>
                             </div>
                           );
                         })}
