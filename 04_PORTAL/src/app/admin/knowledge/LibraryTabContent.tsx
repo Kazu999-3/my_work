@@ -10,7 +10,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 import ChampSelect from '../../../components/ChampSelect';
 import { getFavorites, toggleFavoriteArticle } from '../../../components/FavoritesPanel';
-import { normalizeChampionName } from '../../../lib/championNames';
 const parseDate = (dStr: any) => {
   if (!dStr) return 0;
   const t = new Date(dStr).getTime();
@@ -189,8 +188,13 @@ export function LibraryTabContentInner() {
   const restoreArticle = async (id: any) => {
     if (!confirm('この記事をライブラリに戻しますか？')) return;
     try {
-      const { error } = await supabase.from('personal_knowledge').update({ tags: [] }).eq('id', id);
-      if (error) throw error;
+      const res = await fetch('/api/admin/knowledge/update', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, updateData: { tags: [] } }),
+      });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(d.error || '復元に失敗しました');
       showToast('✅ ライブラリに戻しました', 'success');
       setSelectedArticle(null);
       await fetchArticles();
@@ -381,7 +385,6 @@ export function LibraryTabContentInner() {
   };
 
   const handleSyncAllArticles = async () => {
-    if (!supabase) return;
     if (!confirm("既存のすべての攻略ライブラリ記事をスキャンし、指定されている複数チャンピオンの各辞典（matchup_sentinel）へ情報を一括マージ・同期しますか？")) return;
     setSyncingAll(true);
     setSyncProgress({ processed: 0, total: 0, synced: 0 });
@@ -443,154 +446,49 @@ export function LibraryTabContentInner() {
   };
 
   const saveArticle = async () => {
-    if (!supabase) {
-      showToast('エラー: Supabase接続が無効なため保存できません。', 'error');
-      return;
-    }
     setSaving(true);
     const now = new Date().toISOString();
     const keywordsArray = editKeywords.split(',').map(k => k.trim()).filter(k => k);
     // 複数チャンピオンをカンマ区切りで保存
     const championsStr = editChampions.join(', ');
-    const updateData = { 
+    const updateData = {
       title: editTitle,
       champion: championsStr || null,
       tags: keywordsArray,
-      content: editContent.slice(0, 300).replace(/[#*`]/g, ''), 
+      content: editContent.slice(0, 300).replace(/[#*`]/g, ''),
       raw_content: editContent,
-      created_at: now 
+      created_at: now
     };
 
     // --- チャンピオン辞典統合ロジック（複数チャンピオン対応）---
-    const fakeChampions = ["", "Unknown", "その他", "[YouTube]", "YouTube", "Jungle", "jg", "lol", "ARTICLE", "draft", "SYSTEM", "LIVE", "GLOBAL", "test", "sns", "macro"];
-    // 表記ゆれのまま matchup_id を作ると既存GLOBALレコードと別物として重複作成されるため正規化する
-    const validChampions = editChampions
-      .filter(c => c.trim() && !fakeChampions.includes(c.trim()) && !fakeChampions.includes(c.trim().toLowerCase()))
-      .map(c => normalizeChampionName(c.trim()));
-
-    if (validChampions.length > 0) {
+    // チャンピオンが1体以上指定されている場合は、辞典(matchup_sentinel)へのマージと
+    // ライブラリからの削除(__DELETED__化)をまとめてサーバー側(service role)で行う。
+    if (editChampions.some(c => c.trim())) {
       try {
-        // マージヘルパー
-        const mergeContent = (existingText: string, newText: string, title: string) => {
-            const ext = existingText || "";
-            if (!ext.trim()) return newText;
-            if (newText.trim() === ext.trim()) return ext;
-            const header = `## 【記事】${title}`;
-            if (ext.includes(header)) {
-                const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                const pattern = new RegExp(`## 【記事】${escapeRegExp(title)}\\s*\\n[\\s\\S]*?(?=\\n---|$)`);
-                const newContent = ext.replace(pattern, `${header}\n\n${newText}`);
-                if (newContent !== ext) return newContent;
-            }
-            if (ext.includes(newText)) return ext;
-            return `${ext}\n\n---\n\n${header}\n\n${newText}`;
-        };
+        const res = await fetch('/api/admin/knowledge/merge-article', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            articleId: selectedArticle.id,
+            title: editTitle,
+            content: editContent,
+            editChampions,
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || '辞典への統合に失敗しました');
 
-        // 全チャンピオンに対してループ統合
-        for (const championName of validChampions) {
-          const matchupId = `champ_${championName}_global`;
-          const { data: existingData } = await supabase
-            .from('matchup_sentinel')
-            .select('*')
-            .eq('matchup_id', matchupId)
-            .maybeSingle();
-            
-          let rawData = existingData?.raw_data || {};
-          let customFields = rawData.customFields || {};
-          
-          if (editTitle.includes("HONKI_BIBLE") || editTitle.includes("ARTICLE")) {
-              rawData.note_draft = mergeContent(rawData.note_draft || "", editContent, editTitle);
-          } else {
-              const fieldName = editTitle.replace(`${championName}_`, "").replace(`_${championName}`, "");
-              customFields[fieldName] = mergeContent(customFields[fieldName] || "", editContent, editTitle);
-          }
-          rawData.customFields = customFields;
-          rawData.source = "champ_db";
-          rawData.role = "GLOBAL";
-          
-          // 辞典一覧の「更新日」は created_at を見ているため、更新時も明示的に現在時刻を入れる
-          const dictData = {
-              matchup_id: matchupId,
-              champion: championName,
-              enemy: "GLOBAL",
-              title: existingData?.title || `${championName} 基本戦略・トレンド`,
-              strategy: existingData?.strategy || "",
-              raw_data: rawData,
-              created_at: new Date().toISOString()
-          };
-          
-          const { error: upsertError } = await supabase
-              .from('matchup_sentinel')
-              .upsert(dictData, { onConflict: 'matchup_id' });
-          if (upsertError) throw upsertError;
-
-          // 履歴記録（ブラウザからは service role を使えないためサーバー経由）
-          fetch('/api/admin/knowledge/revisions/record-matchup', {
-            method: 'POST',
-            credentials: 'include',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              matchupId,
-              before: existingData ? { title: existingData.title, strategy: existingData.strategy, raw_data: existingData.raw_data } : null,
-              after: { title: dictData.title, strategy: dictData.strategy, raw_data: dictData.raw_data },
-              sourceTitle: editTitle,
-            }),
-          }).catch((e) => console.warn('[LibraryTabContent] 履歴記録に失敗:', e));
+        if (data.merged) {
+          const champLabel = data.champions.length > 1 ? `${data.champions.join(', ')} (${data.champions.length}体)` : data.champions[0];
+          showToast(`【統合完了】${champLabel} のチャンピオン辞典にマージ${data.mergedNote || ''}し、ライブラリから削除しました！`, 'success');
+          setArticles(prev => prev.filter(a => String(a.id) !== String(selectedArticle.id)));
+          setSelectedArticle(null);
+          setEditing(false);
+          setSaving(false);
+          return;
         }
-
-        // 段階2 dual-write: 構造化テーブル champion_notes にも同じ記事を1行追加する（#29）。
-        // ブラウザ(anon)はRLSで直接書けないためサーバーAPI経由。失敗しても本筋は止めない。
-        try {
-          await fetch('/api/admin/champion-notes/add', {
-            method: 'POST',
-            credentials: 'include',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              champions: validChampions,
-              title: editTitle,
-              body: editContent,
-              source: 'article',
-              source_article_id: selectedArticle.id,
-            }),
-          });
-        } catch (dualErr) {
-          console.warn('champion_notesへのdual-write失敗（辞典統合自体は成功）:', dualErr);
-        }
-
-        // 構造化項目（強み/弱み/パワースパイク/ビルド）も記事の内容でマージ更新する。
-        // 上書きではなく「既存に無い知見だけ追記」なので、手書きの内容は消えない。
-        let mergedNote = '';
-        try {
-          const mergeRes = await fetch('/api/admin/champion-facts/merge', {
-            method: 'POST',
-            credentials: 'include',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ champions: validChampions, title: editTitle, body: editContent, articleId: selectedArticle.id }),
-          });
-          const mergeData = await mergeRes.json();
-          if (mergeRes.ok) {
-            const added = (mergeData.results || []).flatMap((r: any) => r.added || []);
-            if (added.length > 0) mergedNote = `／辞典項目に${added.length}件を追記`;
-          }
-        } catch (mergeErr) {
-          console.warn('champion_factsのマージ更新に失敗（辞典統合自体は成功）:', mergeErr);
-        }
-
-        // ライブラリから削除
-        const { error: deleteError } = await supabase
-            .from('personal_knowledge')
-            .update({ tags: ['__DELETED__'] })
-            .eq('id', selectedArticle.id);
-        if (deleteError) throw deleteError;
-        
-        const champLabel = validChampions.length > 1 ? `${validChampions.join(', ')} (${validChampions.length}体)` : validChampions[0];
-        showToast(`【統合完了】${champLabel} のチャンピオン辞典にマージ${mergedNote}し、ライブラリから削除しました！`, 'success');
-        setArticles(prev => prev.filter(a => String(a.id) !== String(selectedArticle.id)));
-        setSelectedArticle(null);
-        setEditing(false);
-        setSaving(false);
-        return;
-        
+        // merged: false（有効なチャンピオンが無かった）の場合は下の汎用保存にフォールスルー
       } catch (err: any) {
         showToast('辞典への統合中にエラーが発生しました: ' + err.message, 'error');
         setSaving(false);
@@ -599,13 +497,25 @@ export function LibraryTabContentInner() {
     }
 
     // --- 汎用記事として保存（チャンピオン指定なし）---
-    const { error } = await supabase.from('personal_knowledge').update(updateData).eq('id', selectedArticle.id);
-    if (!error) {
-      const updated = { ...selectedArticle, ...updateData };
-      setSelectedArticle(updated);
-      setArticles(prev => prev.map(a => a.id === selectedArticle.id ? updated : a));
-      setEditing(false);
-    } else { showToast('保存失敗: ' + error.message, 'error'); }
+    try {
+      const res = await fetch('/api/admin/knowledge/update', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: selectedArticle.id, updateData }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        const updated = { ...selectedArticle, ...updateData };
+        setSelectedArticle(updated);
+        setArticles(prev => prev.map(a => a.id === selectedArticle.id ? updated : a));
+        setEditing(false);
+      } else {
+        showToast('保存失敗: ' + (data.error || ''), 'error');
+      }
+    } catch (err: any) {
+      showToast('保存失敗: ' + err.message, 'error');
+    }
     setSaving(false);
   };
 
@@ -623,10 +533,6 @@ export function LibraryTabContentInner() {
       : 'この記事を移動済み（アーカイブ）へ移しますか？\n\n「🗄️ 移動済み」からいつでもライブラリに戻せます。';
     if (!confirm(message)) return;
 
-    if (!supabase) {
-      showToast('エラー: Supabase接続が無効なため削除できません。', 'error');
-      return;
-    }
     try {
       let error: any = null;
       if (showMoved) {
@@ -639,7 +545,13 @@ export function LibraryTabContentInner() {
         const d = await res.json().catch(() => ({}));
         if (!res.ok) error = { message: d.error || (res.status === 401 ? '管理者セッションが切れています。再ログインしてください。' : '削除に失敗しました') };
       } else {
-        ({ error } = await supabase.from('personal_knowledge').update({ tags: ['__DELETED__'] }).eq('id', id));
+        const res = await fetch('/api/admin/knowledge/update', {
+          method: 'POST', credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, updateData: { tags: ['__DELETED__'] } }),
+        });
+        const d = await res.json().catch(() => ({}));
+        if (!res.ok) error = { message: d.error || '削除に失敗しました' };
       }
       if (error) {
         showToast('削除エラー: ' + error.message, 'error');

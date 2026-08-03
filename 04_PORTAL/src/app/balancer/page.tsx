@@ -502,19 +502,24 @@ export default function BalancerPage() {
         });
         if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || '保存に失敗しました'); }
       } else {
-        // 一般ユーザーはRLSで許可された非センシティブ列のみ（名前・weightは書き込まない）。
-        await Promise.all(existingPlayers.map(p =>
-          supabase.from("ktm_players").update({
-            role_preferences: p.role_preferences,
-            is_active: p.is_active,
-            ng_lane_1: p.ng_lane_1 || null,
-            ng_lane_2: p.ng_lane_2 || null,
-            allow_higher: p.allow_higher,
-            pity: p.pity,
-            off_role_pity: p.off_role_pity,
-            metadata: p.metadata
-          }).eq('id', p.id)
-        ));
+        // 一般ユーザーは非センシティブ列のみ（名前・weightは書き込まない）。サーバーAPI経由。
+        const updates = existingPlayers.map(p => ({
+          id: p.id,
+          role_preferences: p.role_preferences,
+          is_active: p.is_active,
+          ng_lane_1: p.ng_lane_1 || null,
+          ng_lane_2: p.ng_lane_2 || null,
+          allow_higher: p.allow_higher,
+          pity: p.pity,
+          off_role_pity: p.off_role_pity,
+          metadata: p.metadata,
+        }));
+        const res = await fetch('/api/players/save', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ updates }),
+        });
+        if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || '保存に失敗しました'); }
       }
       // 保存が成功したので、これらのプレイヤーはもうRealtime更新を受け取っても安全
       existingPlayers.forEach(p => dirtyPlayerIdsRef.current.delete(p.id));

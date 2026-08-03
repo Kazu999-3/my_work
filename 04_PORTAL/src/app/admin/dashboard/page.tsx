@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Activity, Zap, ShieldAlert, Cpu, Network, Gamepad2, RefreshCw, CheckCircle2, X, ChevronRight, Sparkles } from 'lucide-react';
-import { supabase } from '../../../lib/supabaseClient';
 import { supabaseBrowser } from '../../../lib/supabaseBrowserClient';
 import Link from 'next/link';
 
