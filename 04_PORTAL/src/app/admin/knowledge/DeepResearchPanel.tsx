@@ -80,11 +80,11 @@ export default function DeepResearchPanel({ onSuccess }: DeepResearchPanelProps)
           <div>
             <label className="block text-xs font-bold text-stone-700 mb-1.5 flex items-center gap-1">
               <Search size={14} className="text-purple-600" />
-              対象チャンピオン名 (英語名)
+              対象チャンピオン名 (日本語名・英語名OK)
             </label>
             <input
               type="text"
-              placeholder="例: Ahri, Riven, Aatrox, LeeSin, Viego"
+              placeholder="例: アーリ, リー・シン, Ahri, LeeSin, Viego"
               value={champion}
               onChange={(e) => setChampion(e.target.value)}
               className="w-full px-4 py-3 bg-stone-50 border border-stone-200 rounded-2xl text-sm text-stone-900 placeholder-stone-400 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all font-mono"
@@ -167,14 +167,24 @@ export default function DeepResearchPanel({ onSuccess }: DeepResearchPanelProps)
               <span className="text-xs font-black text-stone-700 flex items-center gap-1.5">
                 <Sparkles size={14} className="text-purple-600" /> 生成された攻略バイブル（プレビュー）
               </span>
-              {resultMsg.details.articleId && (
+              <div className="flex items-center gap-3 shrink-0">
                 <a
-                  href={`/admin/knowledge?tab=library&article=${resultMsg.details.articleId}`}
-                  className="text-[11px] font-bold text-purple-700 hover:text-purple-800 flex items-center gap-1 shrink-0"
+                  href={`/champions?champ=${encodeURIComponent(resultMsg.details.champion || champion)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[11px] font-bold text-amber-700 hover:text-amber-800 flex items-center gap-1"
                 >
-                  ライブラリで開く <ExternalLink size={12} />
+                  📖 チャンピオン辞典で開く <ExternalLink size={12} />
                 </a>
-              )}
+                {resultMsg.details.articleId && (
+                  <a
+                    href={`/admin/knowledge?tab=library&article=${resultMsg.details.articleId}`}
+                    className="text-[11px] font-bold text-purple-700 hover:text-purple-800 flex items-center gap-1"
+                  >
+                    ライブラリで開く <ExternalLink size={12} />
+                  </a>
+                )}
+              </div>
             </div>
             <div className="max-h-[480px] overflow-auto p-5 prose prose-sm max-w-none prose-headings:text-purple-700 prose-strong:text-stone-900 prose-li:text-stone-700 prose-p:text-stone-700">
               <ReactMarkdown remarkPlugins={[remarkGfm]}>{resultMsg.details.article}</ReactMarkdown>

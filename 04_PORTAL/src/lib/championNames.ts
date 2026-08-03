@@ -5,6 +5,7 @@
  * 同じマップを再実装するリスクがあった。共通化してここに一本化する。
  */
 export const CHAMPION_NAME_MAP: Record<string, string> = {
+  // 英語表記ゆれ
   'khazix': 'KhaZix',
   'kha\'zix': 'KhaZix',
   'kha zix': 'KhaZix',
@@ -28,6 +29,47 @@ export const CHAMPION_NAME_MAP: Record<string, string> = {
   'twisted fate': 'TwistedFate',
   'twistedfate': 'TwistedFate',
   'tf': 'TwistedFate',
+
+  // カタカナ・ひらがな日本語名
+  'アーリ': 'Ahri', 'あーり': 'Ahri',
+  'エイトロックス': 'Aatrox', 'えいとろっくす': 'Aatrox',
+  'リーシン': 'LeeSin', 'リー・シン': 'LeeSin', 'りーしん': 'LeeSin',
+  'ヤスオ': 'Yasuo', 'やすお': 'Yasuo',
+  'ヨネ': 'Yone', 'よね': 'Yone',
+  'グレイブス': 'Graves', 'ぐれいぶす': 'Graves',
+  'ヴィエゴ': 'Viego', 'びえご': 'Viego',
+  'ゼド': 'Zed', 'ぜど': 'Zed',
+  'ダリウス': 'Darius', 'だりうす': 'Darius',
+  'ガレン': 'Garen', 'がれん': 'Garen',
+  'ラックス': 'Lux', 'らっくす': 'Lux',
+  'カイサ': 'Kaisa', 'かいさ': 'Kaisa',
+  'ジンクス': 'Jinx', 'じんくす': 'Jinx',
+  'ノーチラス': 'Nautilus', 'のーちらす': 'Nautilus',
+  'スレッシュ': 'Thresh', 'すれっしゅ': 'Thresh',
+  'ルル': 'Lulu', 'るる': 'Lulu',
+  'レオナ': 'Leona', 'れおな': 'Leona',
+  'カタリナ': 'Katarina', 'かたりな': 'Katarina',
+  'アカリ': 'Akali', 'あかり': 'Akali',
+  'サイラス': 'Sylas', 'さいらす': 'Sylas',
+  'オリアナ': 'Orianna', 'おりあな': 'Orianna',
+  'シンドラ': 'Syndra', 'しんどら': 'Syndra',
+  'ビクター': 'Viktor', 'びくたー': 'Viktor',
+  'エズリアル': 'Ezreal', 'えずりある': 'Ezreal',
+  'ヴェイン': 'Vayne', 'ゔぇいん': 'Vayne',
+  'ルシアン': 'Lucian', 'るしあん': 'Lucian',
+  'ケイン': 'Kayn', 'けいん': 'Kayn',
+  'キンドレッド': 'Kindred', 'きんどれっど': 'Kindred',
+  'シャコ': 'Shaco', 'しゃこ': 'Shaco',
+  'マスターイー': 'MasterYi', 'マスター・イー': 'MasterYi', 'ますたーいー': 'MasterYi',
+  'ニダリー': 'Nidalee', 'にだりー': 'Nidalee',
+  'エリス': 'Elise', 'えりす': 'Elise',
+  'レ렉サイ': 'RekSai', 'レックサイ': 'RekSai', 'れっくさい': 'RekSai',
+  'フィドルスティックス': 'Fiddlesticks', 'ふぃどる': 'Fiddlesticks',
+  'ヘカリム': 'Hecarim', 'へかりむ': 'Hecarim',
+  'カーサス': 'Karthus', 'かーさす': 'Karthus',
+  'リリア': 'Lillia', 'りりあ': 'Lillia',
+  'ブライアー': 'Briar', 'ぶらいあー': 'Briar',
+  'ベルヴェス': 'Belveth', 'べるゔぇす': 'Belveth',
 };
 
 export function normalizeChampionName(name: string): string {
