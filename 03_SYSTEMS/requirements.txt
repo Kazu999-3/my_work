@@ -1,6 +1,6 @@
 fastapi>=0.111.0
 uvicorn>=0.30.0
-pydantic>=2.7.0
+pydantic>=2.13.4
 google-genai>=2.16.0
 requests>=2.31.0
 python-dotenv>=1.0.1
