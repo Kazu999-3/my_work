@@ -131,6 +131,7 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
   const currentMatch = matches[selectedIndex] || null;
   const isWin = currentMatch ? currentMatch.win : true;
   const availableTags = isWin ? WIN_TAGS : LOSE_TAGS;
+  const isAlreadyReflected = !!currentMatch && savedMatchIds.has(currentMatch.matchId);
 
   const toggleTag = (tag: string) => {
     if (selectedTags.includes(tag)) {
@@ -144,6 +145,10 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
     e.preventDefault();
     if (!currentMatch) {
       alert('振り返る対象の試合データを選択してください。');
+      return;
+    }
+    if (savedMatchIds.has(currentMatch.matchId)) {
+      alert('この試合は既に振り返り済みです。');
       return;
     }
 
@@ -391,7 +396,10 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
           </div>
 
           {/* Footer */}
-          <div className="flex justify-end gap-3 pt-2 border-t border-stone-200">
+          <div className="flex justify-end items-center gap-3 pt-2 border-t border-stone-200">
+            {isAlreadyReflected && (
+              <span className="text-[11px] text-emerald-700 font-bold mr-auto">✅ この試合は振り返り済みです</span>
+            )}
             <button
               type="button"
               onClick={onClose}
@@ -401,10 +409,10 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
             </button>
             <button
               type="submit"
-              disabled={saving || !currentMatch}
+              disabled={saving || !currentMatch || isAlreadyReflected}
               className="px-6 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-md text-xs font-bold shadow transition-colors disabled:opacity-50"
             >
-              {saving ? '保存中...' : '振り返りを保存'}
+              {saving ? '保存中...' : isAlreadyReflected ? '振り返り済み' : '振り返りを保存'}
             </button>
           </div>
         </form>

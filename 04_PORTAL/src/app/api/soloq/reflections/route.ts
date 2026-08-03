@@ -1,8 +1,14 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../../lib/supabaseAdmin';
 import { verifyAdminSession } from '../../../../lib/adminAuth';
 
-export async function GET(request: Request) {
+// 「前回の次回テーマ」「保存済みマッチ判定」等の軽量呼び出しは既定の10件で十分だが、
+// 「過去ログ」ダッシュボード(MySoloQDashboard)が全件集計・全文検索に使うため、
+// ?limit=クエリで取得件数を指定できるようにする(既定は互換のため10のまま)。
+const DEFAULT_LIMIT = 10;
+const MAX_LIMIT = 500;
+
+export async function GET(request: NextRequest) {
   try {
     const authResult = await verifyAdminSession(request);
     if (!authResult.ok) {
@@ -13,11 +19,16 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Supabase admin client not initialized' }, { status: 500 });
     }
 
+    const limitParam = Number(request.nextUrl.searchParams.get('limit'));
+    const limit = Number.isFinite(limitParam) && limitParam > 0
+      ? Math.min(limitParam, MAX_LIMIT)
+      : DEFAULT_LIMIT;
+
     const { data, error } = await supabaseAdmin
       .from('soloq_reflections')
       .select('*')
       .order('created_at', { ascending: false })
-      .limit(10);
+      .limit(limit);
 
     if (error) {
       console.error('Error fetching reflections:', error);

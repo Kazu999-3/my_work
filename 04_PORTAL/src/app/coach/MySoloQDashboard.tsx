@@ -26,7 +26,7 @@ export default function MySoloQDashboard() {
   const fetchAllReflections = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/soloq/reflections');
+      const res = await fetch('/api/soloq/reflections?limit=200');
       const data = await res.json();
       setReflections(data.reflections || (data.reflection ? [data.reflection] : []));
     } catch {
