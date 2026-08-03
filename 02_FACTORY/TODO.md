@@ -6,7 +6,7 @@
 ---
 
 ## 🔧 未対応（個人のClaude Code環境設定）
-- [ ] **RTKのPreToolUseフックを手動登録** → 2026-08-03: `rtk.exe`は`~/.local/bin`にインストール・`rtk init -g`まで実行済みだが、`C:\Users\PC_User\.claude\settings.json`へのフック追加だけは権限フィルタでブロックされ自動化できなかった（自己の実行環境を書き換える操作のため）。ユーザーが手動で以下を追加し、Claude Code再起動が必要：
+- [x] **RTKのPreToolUseフックを手動登録** → 2026-08-04対応完了: ユーザーが手動で`settings.json`にフックを追加（一度JSONが二重化けして壊れたが修正済み）。`rtk gain`で実際にBashコマンドが自動書き換えされ、トークン削減が記録されていることを確認済み。手順は以下（参考として残す）：
   ```json
   "hooks": {
     "PreToolUse": [
