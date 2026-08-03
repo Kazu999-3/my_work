@@ -49,7 +49,7 @@ jobs:
           GEMINI_API_KEY_FREE: ${{ secrets.GEMINI_API_KEY_FREE }}
           GEMINI_API_KEY_BATCH: ${{ secrets.GEMINI_API_KEY_BATCH }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || secrets.SUPABASE_SERVICE_KEY || secrets.SUPABASE_KEY }}
           PYTHONPATH: 03_SYSTEMS
         run: |
           python 03_SYSTEMS/v2_CORE/_LOL/champ_db_bulk_updater.py
@@ -62,7 +62,7 @@ jobs:
         if: always()
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || secrets.SUPABASE_SERVICE_KEY || secrets.SUPABASE_KEY }}
         run: |
           STATUS="completed"
           if [ "${{ steps.bulk_update.outcome }}" != "success" ]; then STATUS="failed"; fi
