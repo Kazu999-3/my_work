@@ -195,7 +195,7 @@ class EdgeWorkerDaemon:
         import sys
         
         env = os.environ.copy()
-        env["PYTHONPATH"] = "d:/my_work/03_SYSTEMS"
+        env["PYTHONPATH"] = "d:/my_work/03_SYSTEMS;" + env.get("PYTHONPATH", "")
         
         cmd = [sys.executable, script_path]
         if args:
@@ -407,12 +407,8 @@ class EdgeWorkerDaemon:
     def youtube_absorb_scheduler_loop(self):
         """
         字幕なし動画のローカルwhisper文字起こし(youtube_absorb)を15分おきに自動起票する。
-        以前は sre_daemon.py がこの役目を担っていたが、Gatewayをバイパスする問題や
-        クラウド側と重複する巡回タスクを抱えていたため廃止し、この起票ロジックだけを
-        Edge Worker Daemon自身に統合した（他にこのタスクを自発的に起票する仕組みが
-        無いため、これが無いと字幕なし動画の自動処理が完全に止まる）。
         """
-        time.sleep(600)  # 起動直後のAPI競合を避けるため10分待機
+        time.sleep(10)  # 起動直後に速やかにタスク状態をチェックして起票開始
         while getattr(self, "_heartbeat_active", True):
             try:
                 # 既に pending/running の youtube_absorb があれば重複起票しない。

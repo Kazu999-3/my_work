@@ -1,5 +1,12 @@
 import os
 import sys
+from pathlib import Path
+
+# 03_SYSTEMS ディレクトリを sys.path の先頭に追加 (v2_CORE モジュール参照を担保)
+sys_dir = str(Path(__file__).resolve().parents[2])
+if sys_dir not in sys.path:
+    sys.path.insert(0, sys_dir)
+
 import json
 import time
 import logging
