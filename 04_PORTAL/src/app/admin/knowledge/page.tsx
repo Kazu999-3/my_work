@@ -7,6 +7,10 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import YoutubeQueueManager from '../youtube/YoutubeQueueManager';
 import LibraryTabContent from './LibraryTabContent';
+import DictReviewPanel from './DictReviewPanel';
+import DictInsightsPanel from './DictInsightsPanel';
+import RevisionsPanel from './RevisionsPanel';
+import FreshnessPanel from './FreshnessPanel';
 import { supabaseBrowser } from '../../../lib/supabaseBrowserClient';
 
 interface KnowledgeItem {
@@ -365,6 +369,8 @@ function KnowledgeBaseContent() {
             { id: 'knowledge', label: '📖 ナレッジ一覧', icon: BookOpen },
             { id: 'video', label: '⏳ 動画解析キュー', icon: Video },
             { id: 'library', label: '🗂️ 攻略ライブラリ', icon: Layers },
+            { id: 'maintenance', label: '🔧 メンテナンス・鮮度レビュー', icon: RefreshCw },
+            { id: 'review', label: '🔍 点検・履歴', icon: Search },
           ].map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -386,6 +392,21 @@ function KnowledgeBaseContent() {
         {/* --- タブ別コンテンツ --- */}
         {activeTab === 'video' && <YoutubeQueueManager />}
         {activeTab === 'library' && <LibraryTabContent />}
+
+        {activeTab === 'maintenance' && (
+          <div className="space-y-8 animate-in">
+            <FreshnessPanel />
+            <DictReviewPanel />
+            <DictInsightsPanel mode="maintenance" />
+          </div>
+        )}
+
+        {activeTab === 'review' && (
+          <div className="space-y-8 animate-in">
+            <DictInsightsPanel mode="inspect" />
+            <RevisionsPanel />
+          </div>
+        )}
 
         {activeTab === 'knowledge' && (
           <div className="space-y-8 animate-in">
