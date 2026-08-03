@@ -1074,20 +1074,31 @@ export default function CoachPage() {
           </div>
         )}
 
+        {/*
+          「🎯 今日のチェック」ボタン(runDailyCheck)はPreGameTab/GoalTab/TiltTabに
+          triggerSignalを渡して一括起動する設計だが、これらは元々activeStepTabに応じて
+          JSXごとマウント/アンマウントされていたため、ボタンを押した時点でその子が
+          マウントされていないタブでは useEffect(triggerSignal) が発火せず「反応しない」
+          バグになっていた(2026-08-04発覚)。LanePrioritySimulator/PreGameTabは
+          副作用のあるポーリングを持たないため、常時マウントしCSSで表示切替する。
+        */}
+        <div className={activeStepTab === 'pregame' ? 'space-y-6 animate-in' : 'hidden'}>
+          <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-sm space-y-3">
+            <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5">
+              <span>📊</span> 5レーン主導権 ＆ 試合展開シミュレーター
+            </h3>
+            <LanePrioritySimulator />
+          </div>
+          <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-sm space-y-3">
+            <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5">
+              <span>⚡</span> 事前分析 (対面対策ナレッジ)
+            </h3>
+            <PreGameTab champion={sharedChampion} enemyChampion={sharedEnemyChampion} triggerSignal={dailyCheckTrigger} />
+          </div>
+        </div>
+
         {activeStepTab === 'pregame' && (
-          <div className="space-y-6 animate-in">
-            <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-sm space-y-3">
-              <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5">
-                <span>📊</span> 5レーン主導権 ＆ 試合展開シミュレーター
-              </h3>
-              <LanePrioritySimulator />
-            </div>
-            <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-sm space-y-3">
-              <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5">
-                <span>⚡</span> 事前分析 (対面対策ナレッジ)
-              </h3>
-              <PreGameTab champion={sharedChampion} enemyChampion={sharedEnemyChampion} triggerSignal={dailyCheckTrigger} />
-            </div>
+          <div className="space-y-6 animate-in mt-6">
             <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-sm space-y-3">
               <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5">
                 <span>🧭</span> リアルタイム偵察 ＆ 5v5シミュレータ
@@ -1106,8 +1117,9 @@ export default function CoachPage() {
           </div>
         )}
 
-        {activeStepTab === 'postgame' && (
-          <div className="space-y-6 animate-in">
+        {/* MySoloQDashboard/PostGameTab/TrendsTab/GoalTab/TiltTabはいずれもマウント時に
+            一度きりのfetchのみ(継続ポーリング無し)のため、常時マウントしてCSSで表示切替する。 */}
+        <div className={activeStepTab === 'postgame' ? 'space-y-6 animate-in' : 'hidden'}>
             <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-sm space-y-3">
               <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5">
                 <span>📊</span> マイソロQダッシュボード (過去全ログ ＆ 成績一覧)
@@ -1132,8 +1144,7 @@ export default function CoachPage() {
                 <TiltTab triggerSignal={dailyCheckTrigger} />
               </div>
             </div>
-          </div>
-        )}
+        </div>
 
         {activeStepTab === 'research' && (
           <div className="space-y-6 animate-in">
