@@ -29,6 +29,7 @@ interface ParticipantStats {
 interface MatchResult {
   matchId: string;
   gameDuration: number; // seconds
+  gameStartTimestamp: number; // epoch ms (UTC)
   participants: ParticipantStats[];
   queueId?: number;
   gameType?: string;
@@ -62,8 +63,8 @@ export async function fetchRecentCustomMatchId(puuid: string, apiKey: string): P
   return data[0]; // 最新の試合ID
 }
 
-export async function fetchRecentMatchIds(puuid: string, apiKey: string, count: number = 20, queue?: number): Promise<string[]> {
-  let url = `${RIOT_API_BASE_ASIA}/lol/match/v5/matches/by-puuid/${puuid}/ids?start=0&count=${count}&api_key=${apiKey}`;
+export async function fetchRecentMatchIds(puuid: string, apiKey: string, count: number = 20, queue?: number, start: number = 0): Promise<string[]> {
+  let url = `${RIOT_API_BASE_ASIA}/lol/match/v5/matches/by-puuid/${puuid}/ids?start=${start}&count=${count}&api_key=${apiKey}`;
   if (queue !== undefined) {
     url += `&queue=${queue}`;
   }
@@ -80,9 +81,9 @@ export async function fetchRecentMatchIds(puuid: string, apiKey: string, count: 
 // パーソナルコーチはランク戦を前提に助言するため、ノーマル/ARAM等を混ぜない。
 // 以前は「420で取得 → 失敗したらキュー無指定で再取得」というフォールバックがあり、
 // ランク戦が無い人にはノーマルの試合が紛れ込んでいた。ここでは失敗時も空を返す。
-export async function fetchRankedSoloMatchIds(puuid: string, apiKey: string, count: number = 20): Promise<string[]> {
+export async function fetchRankedSoloMatchIds(puuid: string, apiKey: string, count: number = 20, start: number = 0): Promise<string[]> {
   try {
-    return await fetchRecentMatchIds(puuid, apiKey, count, 420);
+    return await fetchRecentMatchIds(puuid, apiKey, count, 420, start);
   } catch {
     return [];
   }
@@ -97,7 +98,8 @@ export async function fetchMatchDetails(matchId: string, apiKey: string): Promis
   const data = await res.json();
   
   const gameDuration = data.info.gameDuration;
-  
+  const gameStartTimestamp = data.info.gameStartTimestamp || data.info.gameCreation;
+
   const participants: ParticipantStats[] = data.info.participants.map((p: any) => ({
     puuid: p.puuid,
     riotIdName: p.riotIdGameName || p.summonerName,
@@ -122,6 +124,7 @@ export async function fetchMatchDetails(matchId: string, apiKey: string): Promis
   return {
     matchId,
     gameDuration,
+    gameStartTimestamp,
     participants,
     queueId: data.info.queueId,
     gameType: data.info.gameType
