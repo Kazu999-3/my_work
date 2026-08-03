@@ -18,6 +18,8 @@ export async function GET(req: NextRequest) {
     const [
       { data: heartbeat },
       { data: queueTasks },
+      { count: ytPendingCount },
+      { count: ytCompletedCount },
       { data: historyTasks },
       { count: dictCount },
       { count: libraryCount },
@@ -37,6 +39,9 @@ export async function GET(req: NextRequest) {
       supabase.from('edge_tasks').select('*').eq('id', heartbeatId).maybeSingle(),
       // 実行中・待機中タスク一覧
       supabase.from('edge_tasks').select('*').neq('id', heartbeatId).in('status', ['running', 'pending']),
+      // YouTube 吸収キュー件数
+      supabase.from('youtube_queue').select('id', { count: 'exact', head: true }).in('status', ['pending', 'downloading', 'transcribing']),
+      supabase.from('youtube_queue').select('id', { count: 'exact', head: true }).in('status', ['completed', 'processed']),
       // 直近完了・失敗履歴
       supabase.from('edge_tasks').select('*').neq('id', heartbeatId).in('status', ['completed', 'failed']).order('updated_at', { ascending: false }).limit(5),
       // 知識ベース統計
@@ -144,9 +149,9 @@ export async function GET(req: NextRequest) {
           dict_synthesizer: { running: dictRunning }
         },
         queue: {
-          pending: pendingTasks.length,
+          pending: ytPendingCount ?? 0,
           running: runningTasks.length,
-          completed: 0
+          completed: ytCompletedCount ?? 0
         },
         cloud_workers: (systemMetricsRow?.raw_data as any)?.cloud_workers || {},
       },

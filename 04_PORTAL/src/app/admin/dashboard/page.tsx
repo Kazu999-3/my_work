@@ -436,8 +436,8 @@ export default function Home() {
         {/* New Dashboard Widgets */}
         <motion.div variants={itemVariants} className="md:col-span-2 lg:col-span-4 mt-2 grid grid-cols-1 md:grid-cols-2 gap-3.5">
 
-          {/* Panel B: YouTube Absorber Queue */}
-          <div className="glass-panel rounded-2xl p-3.5 border border-black/5 bg-gradient-to-br from-amber-50/70 to-transparent flex flex-col justify-between">
+          {/* Panel B: YouTube Absorber Queue (全幅表示) */}
+          <div className="md:col-span-2 lg:col-span-4 glass-panel rounded-2xl p-3.5 border border-black/5 bg-gradient-to-br from-amber-50/70 to-transparent flex flex-col justify-between">
             <div>
               <div className="flex justify-between items-center mb-3">
                 <div className="flex items-center gap-2">
@@ -506,38 +506,6 @@ export default function Home() {
               </div>
             )}
           </div>
-
-          {/* Panel C: セットアップ状況 */}
-          <div className="glass-panel rounded-2xl p-3.5 border border-black/5 bg-gradient-to-br from-amber-50/70 to-transparent flex flex-col justify-between">
-            <div>
-              <h3 className="text-base font-black text-stone-900 flex items-center gap-1.5 mb-3">
-                <div className="w-1.5 h-5 bg-amber-500 rounded-full"></div>
-                セットアップ状況
-              </h3>
-              {setupChecks ? (
-                <div className="grid grid-cols-1 gap-1.5">
-                  {[
-                    { key: 'db', label: 'Supabase 接続' },
-                    { key: 'riotKey', label: 'Riot API キー' },
-                    { key: 'geminiKey', label: 'Gemini API キー' },
-                    { key: 'vapid', label: 'Web Push (VAPID) キー' },
-                    { key: 'discordWebhook', label: 'Discord Webhook' },
-                    { key: 'portalBotSecret', label: 'PORTAL_BOT_SECRET' },
-                  ].map((c) => (
-                    <div key={c.key} className="flex items-center justify-between px-2.5 py-1.5 rounded-xl bg-black/[0.03] border border-black/5 text-xs">
-                      <span className="text-stone-700 text-[11px]">{c.label}</span>
-                      <span className={`font-bold flex items-center gap-1 text-[11px] ${setupChecks[c.key] ? 'text-emerald-700' : 'text-amber-700'}`}>
-                        {setupChecks[c.key] ? <><CheckCircle2 size={11} /> 設定済み</> : <><ShieldAlert size={11} /> 未設定</>}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-xs text-stone-500 text-center py-3">確認中...</p>
-              )}
-            </div>
-          </div>
-
         </motion.div>
 
         {/* 🛠️ システムコクピット (System Cockpit) */}
