@@ -15,6 +15,7 @@ from v2_CORE.ai_helper import generate_content_safe
 from v2_CORE.logger_config import setup_sovereign_logging
 from v2_CORE.knowledge_revisions import record_matchup_sentinel_revision
 from v2_CORE._LOL.champ_id_normalizer import normalize_champion_id
+from v2_CORE._LOL.lol_trend_collector import sanitize_trend_data
 
 logger = setup_sovereign_logging("ChampionTrendWorker")
 
@@ -189,7 +190,10 @@ League of Legendsの最新パッチにおける、チャンピオン「{champion
     raw_data = existing.get("raw_data") or {}
     if not isinstance(raw_data, dict):
         raw_data = {}
-        
+
+    # Gemini(google_search grounding)によるハルシネーション対策: 異常値を捨てる
+    trend_data = sanitize_trend_data(trend_data, champion)
+
     # トレンドデータのマージ
     # Gemini応答が特定フィールド(tier/trend_itemsなど)を欠くことがあるため、
     # 単純上書きだと既存の正常な値まで消してしまう。既存値をフォールバックにして

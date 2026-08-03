@@ -164,11 +164,13 @@ class DictSynthesizer:
             if not last_updated or (now_ts - last_updated > 259200):
                 logger.info(f"🔄 {champion_name} のパッチトレンドが古い、または存在しないため自動更新します...")
                 try:
-                    from v2_CORE._LOL.lol_trend_collector import LolTrendCollector
+                    from v2_CORE._LOL.lol_trend_collector import LolTrendCollector, sanitize_trend_data
                     collector = LolTrendCollector()
                     role = updated_raw_data.get("role") or "Jungle"
                     trend_data = collector.collect_champ_trends(champion_name, role)
                     if trend_data:
+                        # Gemini(google_search grounding)によるハルシネーション対策: 異常値を捨てる
+                        trend_data = sanitize_trend_data(trend_data, champion_name)
                         # AI応答が一部フィールド(tier/trend_items等)を欠くことがあるため、
                         # 単純上書きにせず既存値をフォールバックにする(#⑤ champion_trend_workerと同じ修正)
                         existing_patch_meta = patch_meta if isinstance(patch_meta, dict) else {}

@@ -16,6 +16,43 @@ from v2_CORE._LOL.champ_id_normalizer import normalize_champion_id
 
 logger = setup_sovereign_logging("LolTrendCollector")
 
+# Geminiのgoogle_search groundingによる生成結果は、直接APIを叩くスクレイピングと違い
+# ハルシネーションのリスクがある(実在しない値や範囲外の値を「それらしく」生成しうる)。
+# 辞典(matchup_sentinel)へ書き込む前に軽く妥当性を検証し、異常値は捨てて既存値への
+# フォールバックに任せる(2026-08-03追加)。
+VALID_TIERS = {"S+", "S", "A+", "A", "A-", "B+", "B", "B-", "C+", "C", "C-", "D", "D+", "D-"}
+
+
+def _sanitize_rate(value, field_name: str, champion: str):
+    """0〜100%の範囲に収まる数値だけを通す。それ以外はNone(フォールバック)にする。"""
+    if value is None:
+        return None
+    try:
+        v = float(value)
+    except (TypeError, ValueError):
+        logger.warning(f"⚠️ [{champion}] {field_name}が数値ではありません({value!r})。破棄してフォールバックします。")
+        return None
+    if not (0 <= v <= 100):
+        logger.warning(f"⚠️ [{champion}] {field_name}が異常値({v})です。破棄してフォールバックします。")
+        return None
+    return v
+
+
+def sanitize_trend_data(trend_data: dict, champion: str) -> dict:
+    """collect_champ_trends()の生成結果を辞典へ書き込む前に検証する。"""
+    sanitized = dict(trend_data or {})
+    for field in ("win_rate", "pick_rate", "ban_rate"):
+        if field in sanitized:
+            sanitized[field] = _sanitize_rate(sanitized.get(field), field, champion)
+
+    tier = sanitized.get("tier")
+    if tier and str(tier).strip().upper() not in VALID_TIERS:
+        logger.warning(f"⚠️ [{champion}] tierが未知の値({tier!r})です。破棄してフォールバックします。")
+        sanitized["tier"] = None
+
+    return sanitized
+
+
 class LolTrendCollector:
     def __init__(self):
         self.api_key = settings.GEMINI_API_KEY_FREE or settings.GEMINI_API_KEY
@@ -294,6 +331,9 @@ class LolTrendCollector:
         # （表記ゆれ・大文字小文字違いがあると別レコードとして重複作成されてしまう）
         champion = normalize_champion_id(champion)
         matchup_id = f"champ_{champion}_global"
+
+        # Gemini(google_search grounding)によるハルシネーション対策: 異常値を捨てる
+        trend_data = sanitize_trend_data(trend_data, champion)
         
         # 1. 既存のレコードを取得
         status, body = self._supabase_request(f"matchup_sentinel?matchup_id=eq.{matchup_id}", method='GET')
