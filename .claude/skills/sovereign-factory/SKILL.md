@@ -73,4 +73,11 @@ description: 各パッチにおける高密度・高拡散なLoL戦略資産（�
 - [ ] Discord通知にポータルのWeb直リンクが正しく設定されているか。
 
 ---
+
+## 既知の落とし穴 (Known Pitfalls)
+
+- **2026-07-30**: このスキルファイル自体に「軍師」「王」等のポエミーな比喩表現が残っており、CLAUDE.mdの表現規約(§3③)に違反していた状態で運用されていたことが発覚し削除した。生成物だけでなく、スキル定義文そのものにもトンマナ規約が及ぶことを忘れないこと。
+- **2026-07-26**: `00_monetization_commander.md`等の旧収益化パイプライン（`_MONETIZE/`, `agents/`）は設計見直しのため削除済み。このスキルが依存する`note_article_drafter`/`style-auditor`は現存するが、それ以外の「上位スキル」参照が本文に残っていないか、実行前に必ず現存確認すること。
+
+---
 **Antigravity OS - Strategy Intelligence Division.**

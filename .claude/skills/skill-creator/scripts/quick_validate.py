@@ -19,7 +19,9 @@ def validate_skill(skill_path):
         return False, "SKILL.md not found"
 
     # Read and validate frontmatter
-    content = skill_md.read_text()
+    # Windows(日本語ロケール)ではPath.read_text()が既定でcp932を使い、UTF-8で
+    # 書かれたSKILL.md(日本語含む)が軒並みUnicodeDecodeErrorで落ちるため明示する。
+    content = skill_md.read_text(encoding='utf-8')
     if not content.startswith('---'):
         return False, "No YAML frontmatter found"
 

@@ -1,7 +1,6 @@
 ---
 name: supabase-table-security
-description: Checklist for securing a new Supabase table and its Next.js API routes in 04_PORTAL. Use when creating a new table/migration, or a new /api/** route that reads or writes Supabase data.
-when_to_use: Use before or right after writing a new Supabase migration, or when adding/reviewing an API route under 04_PORTAL/src/app/api/**.
+description: Checklist for securing a new Supabase table and its Next.js API routes in 04_PORTAL. Use before or right after writing a new Supabase migration, or when adding/reviewing an API route under 04_PORTAL/src/app/api/** that reads or writes Supabase data.
 ---
 
 # Supabase テーブル & APIルート セキュリティチェックリスト
