@@ -40,8 +40,10 @@ export async function GET(req: Request) {
         bodyParts.push(...needsAttention.slice(0, 5).map((c) => `・${c.champion}: ${c.reason}`));
       }
       if (contradictions.length > 0) {
-        bodyParts.push(`⚠️ 対面メモの矛盾疑い ${contradictions.length}件`);
-        bodyParts.push(...contradictions.slice(0, 5).map((c) => `・${c.champion} vs ${c.enemy}: ${c.summary}`));
+        bodyParts.push(`⚠️ 辞典内容の矛盾疑い ${contradictions.length}件`);
+        bodyParts.push(...contradictions.slice(0, 5).map((c) =>
+          `・${c.enemy === 'GLOBAL' ? c.champion : `${c.champion} vs ${c.enemy}`}: ${c.summary}`
+        ));
       }
       await createAdminNotification({
         type: 'dict_review',

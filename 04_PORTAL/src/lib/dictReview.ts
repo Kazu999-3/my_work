@@ -82,16 +82,22 @@ export async function reviewChampionFacts(supabase: any, limit: number): Promise
 }
 
 // ============================================================
-// 対面メモの矛盾検出 (2026-08-03 追加)
+// 辞典本文の矛盾検出 (2026-08-03 追加、08-03 GLOBAL本体まで対象拡大)
 //
-// ソロQ振り返り機能(/api/soloq/reflections)が matchup_sentinel.strategy に
-// 「【ソロQ振り返りメモ (日付)】」形式で追記し続ける設計のため、同じ対面に
-// 時期の異なる矛盾したメモ（例: パッチ変更前後で真逆の結論）が蓄積される
-// リスクがある。追記が2回以上ある対面だけを対象に、内容の矛盾をLLMで
-// 判定する。書き込みはせず、判定結果を返すだけ。
+// matchup_sentinel.strategy へ追記し続ける書き込み経路が複数ある:
+//  - ソロQ振り返り(/api/soloq/reflections): 対面メモ(enemy≠GLOBAL)に
+//    「【ソロQ振り返りメモ (日付)】」形式で追記
+//  - 攻略ライブラリ一括同期(/api/admin/knowledge/sync): 辞典本体(enemy=GLOBAL)に
+//    「## 【記事】タイトル」形式で記事を追記（正規表現によるセクション単位の
+//    追記/置換のみで、AIによる矛盾解消は行われない。champion_facts側への
+//    マージ(/api/admin/champion-facts/merge)は「矛盾する場合はより具体的な方を
+//    採用」とAIが判断しているのに、実際に表示される辞典本体側は素通しだった）
+// どちらも「同じ場所に時期の異なる記述が蓄積され、古い情報と新しい情報が
+// 矛盾したまま残る」リスクを持つため、追記が2回以上ある対面/本体だけを
+// 対象に、内容の矛盾をLLMで判定する。書き込みはせず、判定結果を返すだけ。
 // ============================================================
 
-const APPEND_MARKER = '【ソロQ振り返りメモ';
+const APPEND_MARKERS = ['【ソロQ振り返りメモ', '## 【記事】'];
 
 export interface MatchupContradictionCandidate {
   matchupId: string;
@@ -101,22 +107,26 @@ export interface MatchupContradictionCandidate {
   summary: string;
 }
 
+function countAppends(strategy: string): number {
+  return Math.max(...APPEND_MARKERS.map((m) => strategy.split(m).length - 1));
+}
+
 export async function reviewMatchupContradictions(supabase: any, limit: number): Promise<MatchupContradictionCandidate[]> {
   const { data: rows } = await supabase
     .from('matchup_sentinel')
     .select('matchup_id, champion, enemy, strategy')
-    .neq('enemy', 'GLOBAL')
     .not('strategy', 'is', null);
 
   const candidates = (rows || [])
-    .map((r: any) => ({ ...r, noteCount: ((r.strategy || '').split(APPEND_MARKER).length - 1) }))
+    .map((r: any) => ({ ...r, noteCount: countAppends(r.strategy || '') }))
     .filter((r: any) => r.noteCount >= 2)
     .slice(0, limit);
 
   const results: MatchupContradictionCandidate[] = [];
   for (const c of candidates) {
-    const prompt = `以下は「${c.champion} vs ${c.enemy}」のLoL対面メモです。複数回にわたって追記されたソロQ振り返りメモが含まれています。
-時期の異なるメモ同士で結論が矛盾していないか判定してください（例:「序盤有利」と「序盤不利」が両方書かれている等。パッチ変更を踏まえた自然な評価の変化は矛盾に含めない）。
+    const subject = c.enemy === 'GLOBAL' ? `「${c.champion}」の辞典本体` : `「${c.champion} vs ${c.enemy}」の対面メモ`;
+    const prompt = `以下はLoLの${subject}です。複数回にわたって追記された内容が含まれています。
+時期の異なる記述同士で結論が矛盾していないか判定してください（例:「序盤有利」と「序盤不利」が両方書かれている等。パッチ変更を踏まえた自然な評価の変化は矛盾に含めない）。
 
 ${c.strategy}
 
