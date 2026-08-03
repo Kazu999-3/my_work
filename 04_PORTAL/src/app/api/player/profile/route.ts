@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '../../../../lib/supabaseClient';
+import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 import { calculatePlaystyle } from '../../../../lib/playstyle';
 import { fetchAllRows } from '../../../../lib/fetchAll';
 

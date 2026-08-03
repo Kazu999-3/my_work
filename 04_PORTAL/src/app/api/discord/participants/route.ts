@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { resolveDisplayName } from '../../../../lib/discordName';
-import { supabase } from '../../../../lib/supabaseClient';
+import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 
 export const revalidate = 30; // 30秒間キャッシュしてDiscord APIへのリクエストを削減
 
