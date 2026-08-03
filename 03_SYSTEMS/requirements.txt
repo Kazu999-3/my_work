@@ -20,4 +20,4 @@ pydantic-settings>=2.2.0
 # pulse.py の Discord メンバー同期で使う
 discord.py>=2.3.2
 # ai_helper.py のレート制限ロック処理で使う
-filelock>=3.13.0
+filelock>=3.32.2
