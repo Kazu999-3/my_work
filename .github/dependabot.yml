@@ -10,6 +10,19 @@ updates:
       minor-and-patch:
         update-types: ["minor", "patch"]
 
+  # 03_SYSTEMS/ktm_bot (Cloudflare Workers / npm)
+  # 2026-08-04発覚: 独自のpackage-lock.jsonを持つのにnpmエコシステムの監視対象から漏れており、
+  # 29件のセキュリティアラートが放置状態だった(実害はwrangler/@google/clasp経由の開発ツール
+  # 依存が大半で低いが、監視自体はすべきもの)。
+  - package-ecosystem: "npm"
+    directory: "/03_SYSTEMS/ktm_bot"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    groups:
+      minor-and-patch:
+        update-types: ["minor", "patch"]
+
   # 03_SYSTEMS (Python / pip)
   - package-ecosystem: "pip"
     directory: "/03_SYSTEMS"
