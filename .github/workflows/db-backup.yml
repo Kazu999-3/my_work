@@ -1,0 +1,51 @@
+name: Database Backup
+
+# 個人開発かつSupabase無料プランのためPITR(Point-in-Time Recovery)が使えず、
+# 障害・誤操作時にDBを復旧する手段が無かった(2026-08-04発覚)。
+# 無料でできる代替策として、毎日論理バックアップ(pg_dump)を取得し、
+# GitHub Actionsの非公開Artifactとして保持する。
+#
+# 【重要】このリポジトリは公開リポジトリのため、バックアップファイルは
+# 絶対にgitへコミットしない。actions/upload-artifactのみで保存し、
+# 30日で自動失効させる。
+#
+# 復元したい場合: このワークフローの実行結果ページからArtifactをダウンロードし、
+#   pg_restore --clean --if-exists -d "$DATABASE_URL" backup.dump
+
+on:
+  schedule:
+    - cron: '0 18 * * *'  # 毎日 UTC18:00 = JST 03:00
+  workflow_dispatch:
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install PostgreSQL 17 client tools (Supabase側と同一メジャーバージョン)
+        run: |
+          curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo gpg --dearmor -o /usr/share/keyrings/postgresql-keyring.gpg
+          echo "deb [signed-by=/usr/share/keyrings/postgresql-keyring.gpg] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client-17
+
+      - name: Dump database
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          pg_dump "$DATABASE_URL" --no-owner --no-privileges --format=custom --file=backup.dump
+
+      - name: Verify dump is non-empty (silent失敗の検知)
+        run: |
+          size=$(stat -c%s backup.dump)
+          echo "Dump size: ${size} bytes"
+          if [ "$size" -lt 1000 ]; then
+            echo "::error::バックアップのサイズが異常に小さい(${size} bytes)。失敗している疑いがあります。"
+            exit 1
+          fi
+
+      - name: Upload backup as private artifact (gitへは絶対にコミットしない)
+        uses: actions/upload-artifact@v4
+        with:
+          name: supabase-backup-${{ github.run_id }}
+          path: backup.dump
+          retention-days: 30

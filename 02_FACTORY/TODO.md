@@ -14,7 +14,7 @@
     ]
   }
   ```
-- [ ] **Supabaseのバックアップ/PITR設定を確認** → 2026-08-04: 障害復旧の観点で、無料/Proプランによってリテンション期間が変わるバックアップ設定をAPI経由では確認できなかった。Supabaseダッシュボードで直接確認が必要。
+- [x] **Supabaseのバックアップ/PITR設定** → 2026-08-04対応: 無料プランのためSupabase側の自動バックアップ・PITRは利用不可と判明。代替策として`.github/workflows/db-backup.yml`を新設し、毎日`pg_dump`で論理バックアップを取得。公開リポジトリのためgitにはコミットせず、GitHub Actionsの非公開Artifact(30日保持)にのみ保存。ダンプが異常に小さい場合はジョブを失敗させて検知する。
 - [x] **`.agent/skills/`・`.agent/workflows/`の孤立ファイル約34件の棚卸し** → 2026-08-04完了: 残り32ファイルを1件ずつ内容確認。
   - **移行(4件)**: `lol-deep-research`(note-article-drafterから参照されており必須)、`find-skills`(スキルエコシステム発見)、`notification-designer`(通知UXライティング、name欄をkebab-caseに修正)、`pro-build-tracker`(今日追加したpro_builds引用義務化と直結する設計)
   - **削除(28件)**: 大半は2026-07-26に削除済みの収益化パイプライン("00-09"番号の「Pro統合版」メガプロンプト群、`forge-monetize.md`/`sales-funnel.md`等)を前提にしたもの、または既に現行の実装(coach/page.tsx、Claude SEOプラグイン、skill-creator、FreshnessPanel等)に機能が置き換わって久しいもの。`insight-extractor.md`は「君」呼びの師弟関係トーンでCLAUDE.mdの表現規約(ポエミーな比喩禁止)に直接抵触していたため削除。`ktm-architect`/`note-analytics`/`x-analytics`/`forge-monetize`/`ktm-deploy`/`ole-analyze-batch`/`sentinel-patrol`/`lol-tactics-production`は文字コード破損（cp932/UTF-8の二重化け、単純な変換では復元不可）も確認。
