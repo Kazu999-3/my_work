@@ -16,7 +16,7 @@ langchain-core>=0.2.0
 langchain-google-genai>=1.0.5
 
 # settings.py が BaseSettings を使うため必須。未記載で ImportError になっていた。
-pydantic-settings>=2.2.0
+pydantic-settings>=2.14.2
 # pulse.py の Discord メンバー同期で使う
 discord.py>=2.3.2
 # ai_helper.py のレート制限ロック処理で使う
