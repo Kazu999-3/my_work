@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { supabase } from '../../lib/supabaseClient';
 import { History, Swords, Trophy, Calendar, RefreshCw, Edit, Trash2, Search, AlertCircle, X, Target, GripVertical } from 'lucide-react';
 import Image from 'next/image';
 import { getChampIcon } from '../../lib/ddragonClient';
@@ -45,28 +44,11 @@ export default function MatchHistoryPanel() {
 
   const fetchMatches = async () => {
     try {
-      const { data, error } = await supabase
-        .from('ktm_matches')
-        .select(`
-          id, created_at, winning_team,
-          ktm_match_participants (
-            player_name, team, role, kills, deaths, assists, kda_score, mmr_delta,
-            champion_name, cs, damage_dealt, vision_score
-          )
-        `)
-        .order('created_at', { ascending: false })
-        .limit(30);
+      const res = await fetch('/api/match/history?limit=30');
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || '取得に失敗しました');
 
-      if (error) throw error;
-      
-      const formatted = data.map((m: any) => ({
-        id: m.id,
-        created_at: m.created_at,
-        winning_team: m.winning_team,
-        participants: m.ktm_match_participants || []
-      }));
-      
-      setMatches(formatted);
+      setMatches(data.matches);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -81,12 +63,10 @@ export default function MatchHistoryPanel() {
   useEffect(() => {
     async function loadPlayersAndChamps() {
       try {
-        const { data: pData, error: pError } = await supabase
-          .from('ktm_players')
-          .select('name')
-          .order('name', { ascending: true });
-        if (!pError && pData) {
-          setPlayersPool(pData);
+        const pRes = await fetch('/api/players/list');
+        const pJson = await pRes.json();
+        if (pRes.ok && pJson.players) {
+          setPlayersPool(pJson.players);
         }
 
         const vRes = await fetch('https://ddragon.leagueoflegends.com/api/versions.json');

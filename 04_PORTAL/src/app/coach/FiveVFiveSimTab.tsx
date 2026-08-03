@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from 'react';
-import { supabase } from '../../lib/supabaseClient';
 import Image from 'next/image';
 import { getChampIcon } from '../../lib/ddragonClient';
 import { Swords, Zap, AlertCircle, RefreshCw, History, Save, Activity, Target, Award } from 'lucide-react';
@@ -107,13 +106,10 @@ export default function FiveVFiveSimTab() {
     setLoadingRecent(true);
     setSimError(null);
     try {
-      const { data, error } = await supabase
-        .from('ktm_matches')
-        .select('id, created_at, ktm_match_participants ( team, role, champion_name )')
-        .order('created_at', { ascending: false })
-        .limit(1);
-      if (error) throw error;
-      const parts: any[] = (data && data[0]?.ktm_match_participants) || [];
+      const res = await fetch('/api/match/history?limit=1');
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || '取得に失敗しました');
+      const parts: any[] = (data.matches && data.matches[0]?.participants) || [];
       if (parts.length === 0) { setSimError('直近の試合データが見つかりませんでした。'); return; }
       const blue: Record<string, string> = { TOP: '', JG: '', MID: '', BOT: '', SUP: '' };
       const red: Record<string, string> = { TOP: '', JG: '', MID: '', BOT: '', SUP: '' };
@@ -177,15 +173,13 @@ export default function FiveVFiveSimTab() {
         if (attempts === 12) setSimStatus('チーム構成スタイルとシナジーを分析中...');
         if (attempts === 20) setSimStatus('勝利条件と時間帯別ゲームプランを構築中...');
 
-        const { data: task, error } = await supabase
-          .from('edge_tasks')
-          .select('status, result, error_message')
-          .eq('id', taskId)
-          .single();
+        const statusRes = await fetch(`/api/tasks/status?id=${taskId}`);
+        const statusData = await statusRes.json();
+        const task = statusData.task;
 
-        if (error) {
+        if (!statusRes.ok || !task) {
           clearInterval(interval);
-          setSimError(`タスク監視エラー: ${error.message}`);
+          setSimError(`タスク監視エラー: ${statusData.error || 'タスクが見つかりません'}`);
           setSimLoading(false);
           return;
         }

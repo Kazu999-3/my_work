@@ -1,9 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { supabase } from '../../lib/supabaseClient';
-import { fetchAllRows } from '../../lib/fetchAll';
-import { getKtmRank } from '../../lib/mmr';
 import { Spinner } from '../../components/Feedback';
 import Image from 'next/image';
 import { getChampIcon } from '../../lib/ddragonClient';
@@ -31,10 +28,6 @@ interface LeaderboardData {
   SUP: PlayerStats[];
 }
 
-function getRankBadge(mmr: number) {
-  return getKtmRank(mmr);
-}
-
 import WinrateMatrixPanel from './WinrateMatrixPanel';
 import { Trophy, Activity, Info, RefreshCw } from 'lucide-react';
 
@@ -54,36 +47,10 @@ export default function LeaderboardPage() {
     (async () => {
       setMetaLoading(true);
       try {
-        const { data: partData } = await fetchAllRows((from, to) =>
-          supabase
-            .from('ktm_match_participants')
-            .select('match_id, champion_name, team, kills, deaths, assists')
-            .range(from, to)
-        );
-        const { data: matchWins } = await supabase
-          .from('ktm_matches')
-          .select('id, winning_team');
-        const winMap: Record<number, string> = {};
-        (matchWins || []).forEach((m: any) => { winMap[m.id] = m.winning_team; });
-
-        const agg: Record<string, { games: number; wins: number; k: number; d: number; a: number }> = {};
-        (partData || []).forEach((r: any) => {
-          const c = r.champion_name;
-          if (!c) return;
-          if (!agg[c]) agg[c] = { games: 0, wins: 0, k: 0, d: 0, a: 0 };
-          agg[c].games += 1;
-          const winningTeam = winMap[r.match_id];
-          if (r.team === winningTeam) agg[c].wins += 1;
-          agg[c].k += r.kills || 0; agg[c].d += r.deaths || 0; agg[c].a += r.assists || 0;
-        });
-        const rows = Object.entries(agg).map(([name, s]) => ({
-          name,
-          games: s.games,
-          wins: s.wins,
-          winRate: Math.round((s.wins / s.games) * 100),
-          avgKda: s.d > 0 ? Math.round(((s.k + s.a) / s.d) * 10) / 10 : Math.round((s.k + s.a) * 10) / 10,
-        })).sort((a, b) => b.games - a.games || b.winRate - a.winRate);
-        setMetaData(rows);
+        const res = await fetch('/api/leaderboard/meta');
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || '取得に失敗しました');
+        setMetaData(data.rows || []);
       } catch (e) {
         console.error('meta stats fetch failed', e);
         setMetaData([]);
@@ -115,103 +82,9 @@ export default function LeaderboardPage() {
     async function fetchLeaderboard() {
       setLoading(true);
       try {
-        // 1. ktm_playersから全プレイヤーの現在のMMRとdiscord_idを取得
-        const { data: players, error: pError } = await supabase
-          .from('ktm_players')
-          .select('name, discord_id, mmr_top, mmr_jg, mmr_mid, mmr_adc, mmr_sup');
-
-        if (pError || !players) {
-          console.error('Failed to fetch players', pError);
-          return;
-        }
-
-        // 2. ktm_match_participants と ktm_matches から勝敗と試合数を安全に集計
-        const { data: matchesData, error: mError } = await fetchAllRows((from, to) =>
-          supabase
-            .from('ktm_match_participants')
-            .select('player_name, discord_id, role, team, match_id')
-            .range(from, to)
-        );
-
-        const { data: rawMatches, error: rawmError } = await supabase
-          .from('ktm_matches')
-          .select('id, winning_team');
-
-        if (mError || rawmError) {
-          console.error('Failed to fetch match stats:', mError || rawmError);
-        }
-
-        const matchWinMap = new Map<number, string>();
-        (rawMatches || []).forEach((m: any) => matchWinMap.set(m.id, m.winning_team));
-
-        const byDiscord = new Map<string, any>();
-        const byName = new Map<string, any>();
-        players.forEach((p: any) => {
-          if (p.discord_id) byDiscord.set(p.discord_id, p);
-          byName.set(p.name, p);
-        });
-        const keyOfPlayer = (p: any) => p.discord_id || p.name;
-
-        // 集計用マップ statsMap[playerKey][role] = { games, wins }
-        const statsMap: Record<string, Record<string, { games: number; wins: number }>> = {};
-        players.forEach((p: any) => {
-          statsMap[keyOfPlayer(p)] = {
-            TOP: { games: 0, wins: 0 },
-            JG: { games: 0, wins: 0 },
-            MID: { games: 0, wins: 0 },
-            ADC: { games: 0, wins: 0 },
-            SUP: { games: 0, wins: 0 }
-          };
-        });
-
-        if (matchesData) {
-          matchesData.forEach((m: any) => {
-            const resolved = (m.discord_id && byDiscord.get(m.discord_id)) || byName.get(m.player_name);
-            if (!resolved) return;
-            const key = keyOfPlayer(resolved);
-            const role = (m.role || '').toUpperCase();
-
-            const winningTeam = matchWinMap.get(m.match_id);
-
-            if (statsMap[key] && statsMap[key][role]) {
-              statsMap[key][role].games += 1;
-              if (m.team === winningTeam) {
-                statsMap[key][role].wins += 1;
-              }
-            }
-          });
-        }
-
-        // 3. レーンごとにソートしてTOP5を抽出
-        const newLeaderboard: LeaderboardData = { TOP: [], JG: [], MID: [], ADC: [], SUP: [] };
-
-        ROLES.forEach(role => {
-          const mmrKey = `mmr_${role.toLowerCase()}` as keyof typeof players[0];
-          
-          const roleRanking = players
-            .filter((p: any) => {
-              const stats = statsMap[keyOfPlayer(p)]?.[role];
-              return stats && stats.games >= minGames;
-            })
-            .map((p: any) => {
-              const stats = statsMap[keyOfPlayer(p)][role];
-              const mmr = Number(p[mmrKey] || 1200);
-              const winRate = stats.games > 0 ? ((stats.wins / stats.games) * 100).toFixed(1) : '0.0';
-              return {
-                name: p.name,
-                discordId: p.discord_id,
-                mmr,
-                games: stats.games,
-                winRate,
-                rankBadge: getRankBadge(mmr)
-              };
-            })
-            .sort((a: any, b: any) => b.mmr - a.mmr)
-            .slice(0, 5);
-
-          newLeaderboard[role] = roleRanking;
-        });
-
+        const res = await fetch(`/api/leaderboard?minGames=${minGames}`);
+        const newLeaderboard = await res.json();
+        if (!res.ok) throw new Error(newLeaderboard.error || '取得に失敗しました');
         setData(newLeaderboard);
       } catch (e) {
         console.error("fetchLeaderboard Error:", e);

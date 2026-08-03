@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState, use } from 'react';
-import { supabase } from '../../../lib/supabaseClient';
 import Link from 'next/link';
 import { Trophy, Swords, Zap, Activity, ShieldAlert, Award, Compass, RefreshCw, ChevronLeft, Sparkles } from 'lucide-react';
 import Image from 'next/image';
@@ -69,109 +68,18 @@ export default function PlayerStatsPage({ params }: PageProps) {
     async function fetchStats() {
       if (!discordId) return;
 
-      // 1. プレイヤー情報の取得
-      const { data: pData, error: pError } = await supabase
-        .from('ktm_players')
-        .select('*')
-        .eq('discord_id', discordId)
-        .single();
+      const res = await fetch(`/api/stats/discord?id=${encodeURIComponent(discordId)}`);
+      const data = await res.json();
 
-      if (pError || !pData) {
+      if (!res.ok || !data.player) {
         setError('プレイヤーが見つかりませんでした。');
         setLoading(false);
         return;
       }
 
-      setPlayer(pData);
-
-      // 2. 試合履歴の取得 (直近20試合)
-      const { data: hData, error: hError } = await supabase
-        .from('ktm_match_participants')
-        .select(`
-          id, match_id, role, team, kills, deaths, assists, kda_score, mmr_delta, created_at, champion_name,
-          ktm_matches ( winning_team, game_duration )
-        `)
-        .eq('player_name', pData.name)
-        .order('created_at', { ascending: false })
-        .limit(20);
-
-      if (hError || !hData) {
-        setLoading(false);
-        return;
-      }
-
-      // map mapping
-      const mappedHistory: MatchHistory[] = hData.map((item: any) => ({
-        id: item.id,
-        match_id: item.match_id,
-        role: item.role,
-        team: item.team,
-        kills: item.kills,
-        deaths: item.deaths,
-        assists: item.assists,
-        kda_score: item.kda_score,
-        mmr_delta: item.mmr_delta,
-        created_at: item.created_at,
-        champion_name: item.champion_name || 'Unknown',
-        matches: {
-          winning_team: item.ktm_matches?.winning_team || '',
-          game_duration: item.ktm_matches?.game_duration || 0
-        }
-      }));
-
-      // 3. 対面チャンピオンの紐付け＆集計
-      const matchIds = mappedHistory.map(h => h.match_id);
-      if (matchIds.length > 0) {
-        const { data: oppData, error: oppError } = await supabase
-          .from('ktm_match_participants')
-          .select('match_id, role, team, champion_name')
-          .in('match_id', matchIds);
-
-        if (!oppError && oppData) {
-          // 各対戦履歴行に対面相手のチャンピオンを紐付ける
-          mappedHistory.forEach(h => {
-            const oppRecord = oppData.find((o: any) => 
-              o.match_id === h.match_id && 
-              o.role === h.role && 
-              o.team !== h.team
-            );
-            if (oppRecord) {
-              h.opponent_champion = oppRecord.champion_name;
-            }
-          });
-
-          // 苦手対面チャンピオンの集計
-          const nemesisMap: Record<string, { games: number; losses: number }> = {};
-          mappedHistory.forEach(h => {
-            if (!h.opponent_champion || h.opponent_champion === 'Unknown') return;
-            const isWin = h.team === h.matches.winning_team;
-            
-            if (!nemesisMap[h.opponent_champion]) {
-              nemesisMap[h.opponent_champion] = { games: 0, losses: 0 };
-            }
-            nemesisMap[h.opponent_champion].games += 1;
-            if (!isWin) {
-              nemesisMap[h.opponent_champion].losses += 1;
-            }
-          });
-
-          // 敗北数が多く、かつ対戦が1回以上あるものを苦手順にソート
-          const sortedNemesis: NemesisStat[] = Object.entries(nemesisMap)
-            .map(([champ, stat]) => ({
-              championName: champ,
-              games: stat.games,
-              losses: stat.losses,
-              winRate: stat.games > 0 ? Math.round(((stat.games - stat.losses) / stat.games) * 100) : 0
-            }))
-            .filter(n => n.losses > 0) // 1回以上負けた相手に限定
-            .sort((a, b) => b.losses - a.losses || a.winRate - b.winRate) // 敗北数降順 ➔ 勝率昇順
-            .slice(0, 3); // ワースト3
-
-          setNemesisList(sortedNemesis);
-        }
-      }
-
-      setHistory(mappedHistory);
+      setPlayer(data.player);
+      setHistory(data.history || []);
+      setNemesisList(data.nemesisList || []);
       setLoading(false);
     }
 

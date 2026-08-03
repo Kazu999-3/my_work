@@ -424,13 +424,10 @@ export default function KtmAdminPage() {
   const fetchPlayers = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from("ktm_players")
-        .select("*")
-        .order("name", { ascending: true });
-
-      if (error) throw error;
-      setPlayers(data || []);
+      const res = await fetch('/api/admin/players/list', { credentials: 'include' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || '取得に失敗しました');
+      setPlayers(data.players || []);
       // 名簿リフレッシュ時に整合性も再確認
       checkIntegrity();
     } catch (err: any) {
@@ -851,7 +848,8 @@ export default function KtmAdminPage() {
       // 3. 複合機能：Riot同期も自動で連続実行（新規追加・Riot情報未取得プレイヤーのみに絞り、タイムアウトを防止）
       const addedDiscordIds = syncData.toAdd.map((p: any) => p.discord_id).filter(Boolean);
       
-      const { data: latestPlayers } = await supabase.from('ktm_players').select('id, discord_id, puuid');
+      const latestPlayersRes = await fetch('/api/admin/players/list', { credentials: 'include' });
+      const { players: latestPlayers } = await latestPlayersRes.json();
       
       const targetPlayerIds = (latestPlayers || [])
         .filter((p: any) => addedDiscordIds.includes(p.discord_id) || !p.puuid)

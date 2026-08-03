@@ -3,7 +3,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { supabase } from "../../../lib/supabaseClient";
 import ScoutingReport from "../../../components/ScoutingReport";
 import { 
   Activity, 
@@ -438,32 +437,10 @@ export default function PlayerMyPage() {
         const rawId = Array.isArray(id) ? id[0] : id;
         const decodedId = decodeURIComponent(rawId || '').trim();
 
-        // 1. 全プレイヤー一覧を取得し、全属性（discord_id, name, ign, id）から柔軟照合
-        const { data: allPlayers, error: pErr } = await supabase
-          .from("ktm_players")
-          .select("*");
-
-        if (pErr || !allPlayers || allPlayers.length === 0) {
-          console.error("Failed to fetch all players:", pErr);
-          setLoading(false);
-          return;
-        }
-
-        const targetLower = decodedId.toLowerCase();
-        let pData = allPlayers.find((p: any) => 
-          String(p.discord_id || '').trim() === decodedId ||
-          String(p.name || '').trim().toLowerCase() === targetLower ||
-          String(p.ign || '').trim().toLowerCase() === targetLower ||
-          String(p.id || '').trim() === decodedId
-        );
-
-        // 部分一致フォールバック (かずき ➔ Kazurin 等の IGN や Name 揺れ対応)
-        if (!pData) {
-          pData = allPlayers.find((p: any) =>
-            String(p.name || '').toLowerCase().includes(targetLower) ||
-            String(p.ign || '').toLowerCase().includes(targetLower)
-          );
-        }
+        // 1. discord_id/name/ign/idのいずれかで柔軟照合してプレイヤーを取得
+        const lookupRes = await fetch(`/api/player/lookup?id=${encodeURIComponent(decodedId)}`);
+        const lookupData = await lookupRes.json();
+        const pData = lookupData.player;
 
         if (!pData) {
           console.error("Player not found for:", decodedId);

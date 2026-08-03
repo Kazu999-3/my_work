@@ -1,8 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { supabase } from '../../lib/supabaseClient';
-import { fetchAllRows } from '../../lib/fetchAll';
 import { Users, HeartHandshake, Crown, Skull, Sparkles } from 'lucide-react';
 import { Spinner } from '../../components/Feedback';
 
@@ -21,17 +19,6 @@ interface GroupStat {
   winRate: number;
 }
 
-// n個からk個の組み合わせを列挙
-function combosOf<T>(arr: T[], k: number): T[][] {
-  const result: T[][] = [];
-  const walk = (start: number, cur: T[]) => {
-    if (cur.length === k) { result.push([...cur]); return; }
-    for (let i = start; i < arr.length; i++) { cur.push(arr[i]); walk(i + 1, cur); cur.pop(); }
-  };
-  walk(0, []);
-  return result;
-}
-
 export default function SynergyPage() {
   const [loading, setLoading] = useState(true);
   const [allyStats, setAllyStats] = useState<AllyStat[]>([]);
@@ -43,97 +30,11 @@ export default function SynergyPage() {
     async function fetchData() {
       setLoading(true);
       try {
-        const { data, error } = await fetchAllRows((from, to) =>
-          supabase
-            .from('ktm_match_participants')
-            .select('match_id, player_name, team, role')
-            .range(from, to)
-        );
-
-        const { data: matchWins, error: matchWinsError } = await supabase
-          .from('ktm_matches')
-          .select('id, winning_team');
-
-        if (matchWinsError) {
-          console.error('Failed to fetch match results:', matchWinsError);
-          throw matchWinsError;
-        }
-
-        const winMap: Record<number, 'BLUE' | 'RED'> = {};
-        (matchWins || []).forEach((m: any) => { winMap[m.id] = m.winning_team; });
-
-        const { data: activePlayersData, error: activePlayersError } = await supabase
-          .from('ktm_players')
-          .select('name');
-
-        if (activePlayersError) {
-          console.error('Failed to fetch active players:', activePlayersError);
-          throw activePlayersError;
-        }
-
-        const activePlayerNames = new Set(activePlayersData?.map((p: any) => p.name) || []);
-
-        if (error || !data) throw error || new Error('No data');
-        
-        const matches: Record<number, { BLUE: string[], RED: string[], winner: 'BLUE' | 'RED' }> = {};
-        data.forEach((row: any) => {
-          if (!activePlayerNames.has(row.player_name)) return;
-          const winner = winMap[row.match_id];
-          if (!winner) return;
-
-          if (!matches[row.match_id]) {
-            matches[row.match_id] = { BLUE: [], RED: [], winner };
-          }
-          matches[row.match_id][row.team as 'BLUE'|'RED'].push(row.player_name);
-        });
-
-        const allyMap: Record<string, { games: number, wins: number }> = {};
-        const groupMaps: Record<number, Record<string, { games: number; wins: number }>> = { 3: {}, 4: {}, 5: {} };
-
-        Object.values(matches).forEach(m => {
-          const processTeam = (teamPlayers: string[], isWin: boolean) => {
-            // 2人コンビ
-            for (let i = 0; i < teamPlayers.length; i++) {
-              for (let j = i + 1; j < teamPlayers.length; j++) {
-                const pair = [teamPlayers[i], teamPlayers[j]].sort();
-                const key = `${pair[0]}::${pair[1]}`;
-                if (!allyMap[key]) allyMap[key] = { games: 0, wins: 0 };
-                allyMap[key].games++;
-                if (isWin) allyMap[key].wins++;
-              }
-            }
-            // 3/4/5人グループ
-            for (const k of [3, 4, 5]) {
-              if (teamPlayers.length < k) continue;
-              for (const combo of combosOf(teamPlayers, k)) {
-                const key = [...combo].sort().join('::');
-                if (!groupMaps[k][key]) groupMaps[k][key] = { games: 0, wins: 0 };
-                groupMaps[k][key].games++;
-                if (isWin) groupMaps[k][key].wins++;
-              }
-            }
-          };
-          processTeam(m.BLUE, m.winner === 'BLUE');
-          processTeam(m.RED, m.winner === 'RED');
-        });
-
-        const allyList: AllyStat[] = Object.entries(allyMap).map(([key, stat]) => {
-          const [p1, p2] = key.split('::');
-          return { p1, p2, games: stat.games, wins: stat.wins, winRate: stat.wins / stat.games };
-        });
-
-        const groupListRes: Record<number, GroupStat[]> = { 3: [], 4: [], 5: [] };
-        [3, 4, 5].forEach(k => {
-          groupListRes[k] = Object.entries(groupMaps[k]).map(([key, stat]) => ({
-            members: key.split('::'),
-            games: stat.games,
-            wins: stat.wins,
-            winRate: stat.wins / stat.games
-          }));
-        });
-
-        setAllyStats(allyList);
-        setGroupStats(groupListRes);
+        const res = await fetch('/api/synergy');
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || '取得に失敗しました');
+        setAllyStats(data.allyStats || []);
+        setGroupStats(data.groupStats || { 3: [], 4: [], 5: [] });
       } catch (err) {
         console.error("Synergy fetchData Error:", err);
       } finally {

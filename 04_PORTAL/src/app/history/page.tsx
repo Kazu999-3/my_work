@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { supabase } from '../../lib/supabaseClient';
 import { History, RefreshCw, Trophy, Swords, Calendar } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -37,51 +36,17 @@ export default function HistoryPage() {
     async function fetchHistory() {
       try {
         setFetchError(null);
-        const { data, error } = await supabase
-          .from('ktm_matches')
-          .select(`
-            id,
-            created_at,
-            winning_team,
-            ktm_match_participants (
-              player_name, team, role, champion_name, kills, deaths, assists, player_mmr
-            )
-          `)
-          .order('created_at', { ascending: false })
-          .limit(50); // 直近50件
-          
-        if (error) throw error;
-
-        // 予測勝率データの取得
-        const matchIds = (data as any[]).map(m => m.id);
-        const { data: preds, error: predError } = await supabase
-          .from('balancer_predictions')
-          .select('match_id, predicted_blue_winprob, correct')
-          .in('match_id', matchIds);
-
-        if (predError) {
-          console.warn('Failed to fetch predictions:', predError);
-        }
-
-        const predMap = new Map<number, { predicted_blue_winprob: number; correct: boolean }>();
-        if (preds) {
-          preds.forEach((p: any) => {
-            if (p.match_id) {
-              predMap.set(Number(p.match_id), {
-                predicted_blue_winprob: Number(p.predicted_blue_winprob),
-                correct: p.correct
-              });
-            }
-          });
-        }
+        const res = await fetch('/api/match/history?limit=50&withPredictions=true');
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || '試合履歴の取得に失敗しました。');
 
         // データ整形
-        const formatted = (data as any[]).map(m => ({
+        const formatted = (data.matches as any[]).map(m => ({
           id: m.id,
           created_at: new Date(m.created_at).toLocaleString('ja-JP'),
           winning_team: m.winning_team,
-          participants: m.ktm_match_participants,
-          prediction: predMap.get(Number(m.id)) || null
+          participants: m.participants,
+          prediction: m.prediction
         }));
         setMatches(formatted);
       } catch (err: any) {

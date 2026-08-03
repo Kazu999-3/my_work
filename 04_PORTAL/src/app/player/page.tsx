@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase } from "../../lib/supabaseClient";
 import Link from "next/link";
 import { Search, User, Trophy, Activity } from "lucide-react";
 
@@ -12,15 +11,14 @@ export default function PlayerIndexPage() {
 
   useEffect(() => {
     async function fetchPlayers() {
-      // エグレス対策(#53): 一覧では name/ign しか使っていないため、metadata等の重い列を落とさない
-      const { data, error } = await supabase
-        .from("ktm_players")
-        .select("id, name, ign, discord_id, is_active, mmr")
-        .order("is_active", { ascending: false })
-        .order("name", { ascending: true });
-
-      if (!error && data) {
-        setPlayers(data);
+      try {
+        const res = await fetch('/api/players/list');
+        const data = await res.json();
+        if (res.ok && data.players) {
+          setPlayers(data.players);
+        }
+      } catch (err) {
+        console.error(err);
       }
       setLoading(false);
     }

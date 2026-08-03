@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useRef, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { supabase } from '../../../lib/supabaseClient';
 import { RefreshCw, Trophy, Target, Search, ArrowLeft, Settings } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -331,12 +330,14 @@ function CustomRecordPageContent() {
 
   useEffect(() => {
     async function fetchPlayers() {
-      const { data, error } = await supabase
-        .from('ktm_players')
-        .select('name, ign')
-        .order('name', { ascending: true });
-      if (!error && data) {
-        setPlayersPool(data);
+      try {
+        const res = await fetch('/api/players/list');
+        const data = await res.json();
+        if (res.ok && data.players) {
+          setPlayersPool(data.players);
+        }
+      } catch (err) {
+        console.error(err);
       }
       setLoading(false);
     }

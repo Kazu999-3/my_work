@@ -4,7 +4,6 @@ import { useEffect, useState, useMemo, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { supabase } from '../../../lib/supabaseClient';
 import { getChampIcon, getChampSplash } from '../../../lib/ddragonClient';
 import { ChevronLeft, Search, Save, BookOpen, RefreshCw, Zap, ShieldAlert, Swords, Shield, Copy, Check, FileText, Eye, Edit2, Activity, Plus, Trash, Filter, Star as StarIcon, Award, Sparkles } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
@@ -165,10 +164,8 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
         .then(r => r.json())
         .then(versions => fetch(`https://ddragon.leagueoflegends.com/cdn/${versions[0]}/data/ja_JP/champion.json`).then(r => r.json()))
         .catch(() => null),
-      supabase.from('matchup_sentinel').select('champion, created_at, patch_meta:raw_data->patch_meta, jg_style:raw_data->jg_style, is_favorited:raw_data->is_favorited').eq('enemy', 'GLOBAL'),
-      supabase.from('champion_power_spikes').select('champion, early_game_score, mid_game_score, late_game_score'),
-      supabase.from('matchup_sentinel').select('champion').eq('enemy', 'GLOBAL').not('strategy', 'is', null).neq('strategy', '')
-    ]).then(([statsData, ddragonData, { data }, { data: spikeRows }, { data: contentRows }]) => {
+      fetch('/api/champions/dictionary-overview').then(res => res.json()).catch(() => null),
+    ]).then(([statsData, ddragonData, overview]) => {
       if (!isMounted) return;
 
       if (statsData && statsData.success && statsData.stats) {
@@ -181,74 +178,17 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
         id: c.id, key: c.key, name: c.name, title: c.title, tags: c.tags,
         searchKey: `${c.id.toLowerCase()} ${c.name}`
       }));
-        const normalizeKey = (str: string) => String(str || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-        const ALIAS_MAP: Record<string, string> = {
-          kisante: 'ksante', qkuaa: 'qiyana', naitina: 'nilah', silas: 'sylas', zilian: 'zilean', viper: 'viego'
-        };
 
-        const hasContent = new Set((contentRows || []).map((r: any) => r.champion));
-        const dates: Record<string, string> = {};
-        const pending: Record<string, boolean> = {};
-        const metas: Record<string, any> = {};
-        const jgStyles: Record<string, any> = {};
-        const dbFavorites: string[] = [];
-        if (data) {
-          data.forEach((row: any) => {
-            const rawUpdatedAt = row.created_at;
-            const normKey = normalizeKey(row.champion);
-            const aliasKey = ALIAS_MAP[normKey] || normKey;
-
-            dates[row.champion] = rawUpdatedAt;
-            dates[normKey] = rawUpdatedAt;
-            dates[aliasKey] = rawUpdatedAt;
-
-            const isPending = !hasContent.has(row.champion);
-            pending[row.champion] = isPending;
-            pending[normKey] = isPending;
-            pending[aliasKey] = isPending;
-            
-            let patchMetaObj = row.patch_meta ? { ...row.patch_meta } : {};
-            if (!patchMetaObj.updated_at && rawUpdatedAt) {
-              patchMetaObj.updated_at = Math.floor(new Date(rawUpdatedAt).getTime() / 1000);
-            }
-            metas[row.champion] = patchMetaObj;
-            metas[normKey] = patchMetaObj;
-            metas[aliasKey] = patchMetaObj;
-
-            // jg_styleが文字列だった場合でも安全にパースする
-            let parsedJgStyle = null;
-            if (row.jg_style) {
-              parsedJgStyle = typeof row.jg_style === 'string' ? JSON.parse(row.jg_style) : row.jg_style;
-            }
-            jgStyles[row.champion] = parsedJgStyle || null;
-            jgStyles[normKey] = parsedJgStyle || null;
-            jgStyles[aliasKey] = parsedJgStyle || null;
-
-            if (row.is_favorited === true) {
-              dbFavorites.push(row.champion);
-            }
-          });
-        }
-        const spikes: Record<string, any> = {};
-        if (spikeRows) {
-          spikeRows.forEach((row: any) => {
-            spikes[row.champion] = {
-              early_game_score: row.early_game_score,
-              mid_game_score: row.mid_game_score,
-              late_game_score: row.late_game_score
-            };
-          });
-        }
-        setChampPowerSpikes(spikes);
-        setChampDates(dates);
-        setChampPending(pending);
-        setChampPatchMetas(metas);
-        setChampJgStyles(jgStyles);
+        setChampPowerSpikes(overview?.powerSpikes || {});
+        setChampDates(overview?.dates || {});
+        setChampPending(overview?.pending || {});
+        setChampPatchMetas(overview?.patchMetas || {});
+        setChampJgStyles(overview?.jgStyles || {});
         setChampions(fetchedChampions);
 
         // localStorage と Supabase のお気に入りをマージしてセット
         const localFavs = getFavorites().champions;
-        const mergedFavs = Array.from(new Set([...localFavs, ...dbFavorites]));
+        const mergedFavs = Array.from(new Set([...localFavs, ...(overview?.dbFavorites || [])]));
         setFavoriteChamps(mergedFavs);
 
         // URLパラメータ ?select=ChampId の自動選択処理
@@ -271,74 +211,21 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
     let cancelled = false; // 読み込み中に別チャンピオンへ切り替えた場合、古い結果で上書きしないためのガード
 
     const loadChampionData = async (champId: string) => {
-      // 対面マッチアップ履歴の表示に必要な詳細フィールド（id, matchup_id, champion, enemy, title, strategy, raw_data）を取得
-      const { data: mData } = await supabase.from('matchup_sentinel').select('id, matchup_id, champion, enemy, title, strategy, raw_data').ilike('champion', champId).neq('enemy', 'GLOBAL');
-      if (cancelled) return;
-      if (mData && mData.length > 0) {
-        setMatchupsList(mData);
-      } else {
-        setMatchupsList([]);
-      }
-
-      const { data: noteData } = await supabase.from('matchup_sentinel').select('strategy, raw_data').eq('champion', champId).eq('enemy', 'GLOBAL').single();
-      if (cancelled) return;
-      const rd = noteData?.raw_data || {};
-
-      // 時間帯別の強さ（パワースパイク・構造化データ）。champion_power_spikes は
-      // power_spike_generator.py が自動生成するテーブル（課題⑥）。
-      const { data: spikeData } = await supabase
-        .from('champion_power_spikes')
-        .select('early_game_score, mid_game_score, late_game_score, peak_window, summary')
-        .eq('champion', champId)
-        .maybeSingle();
-      if (cancelled) return;
-      setPowerSpikeScores(spikeData || null);
-
-      // Storageからの下書きデータ取得連携（削減案①）
-      let loadedNoteDraft = rd.note_draft || '';
-      if (rd.note_draft_url) {
-        try {
-          const res = await fetch(rd.note_draft_url);
-          if (res.ok) {
-            loadedNoteDraft = await res.text();
-          }
-        } catch (fetchErr) {
-          console.error("❌ Failed to fetch note_draft from storage URL:", rd.note_draft_url, fetchErr);
-        }
-      }
-      if (cancelled) return;
-
-      setDataFields({
-        strengths: rd.strengths || '', weaknesses: rd.weaknesses || '',
-        powerSpikes: rd.powerSpikes || '', buildRunes: rd.buildRunes || '',
-        fullClearTime: rd.fullClearTime || '', counterChampions: rd.counterChampions || '',
-        mustBanChampions: rd.mustBanChampions || '', pickRecommendation: rd.pickRecommendation || '',
-        strategy: noteData?.strategy || '', note_draft: loadedNoteDraft,
-        customFields: rd.customFields || {},
-        patch_meta: rd.patch_meta || null,
-        pro_builds: rd.pro_builds || [],
-        jg_style: rd.jg_style || null
-      });
-
-      // 過去の反省点 (INTERROGATION) の取得 (enemy=PROCESS_INTERROGATION)
       try {
-        const { data: interrogationData, error: iError } = await supabase
-          .from('matchup_sentinel')
-          .select('strategy, raw_data, created_at')
-          .eq('enemy', 'PROCESS_INTERROGATION');
+        const res = await fetch(`/api/champions/detail?champion=${encodeURIComponent(champId)}`);
+        const detail = await res.json();
         if (cancelled) return;
+        if (!res.ok) throw new Error(detail.error || '取得に失敗しました');
 
-        if (interrogationData && !iError) {
-          const filtered = interrogationData.filter((r: any) => {
-            const target = r.raw_data?.target_enemy || "";
-            return target.toLowerCase() === champId.toLowerCase();
-          });
-          setPastInterrogations(filtered);
-        } else {
-          setPastInterrogations([]);
-        }
-      } catch (iErr) {
-        console.warn("⚠️ 過去の反省データのロードに失敗しました:", iErr);
+        setMatchupsList(detail.matchupsList || []);
+        setPowerSpikeScores(detail.powerSpikeScores || null);
+        setDataFields(detail.dataFields);
+        setPastInterrogations(detail.pastInterrogations || []);
+      } catch (err) {
+        console.warn('⚠️ チャンピオン詳細データのロードに失敗しました:', err);
+        if (cancelled) return;
+        setMatchupsList([]);
+        setPowerSpikeScores(null);
         setPastInterrogations([]);
       }
     };
@@ -396,11 +283,9 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
       // 誰にも処理されず、900秒待っても必ずタイムアウトする。先にハートビートを見て、
       // 動いていなければ「待っても無駄」であることをすぐに伝える。
       try {
-        const { data: heartbeat } = await supabase
-          .from('edge_tasks')
-          .select('updated_at')
-          .eq('id', '00000000-0000-0000-0000-000000000000')
-          .maybeSingle();
+        const hbRes = await fetch('/api/tasks/status?id=00000000-0000-0000-0000-000000000000');
+        const hbData = await hbRes.json();
+        const heartbeat = hbData.task;
         const diffSec = heartbeat ? (Date.now() - new Date(heartbeat.updated_at).getTime()) / 1000 : Infinity;
         if (diffSec > 60) {
           setFetchingTrend(false);
@@ -431,14 +316,12 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
         }
 
         attempts++;
-        const { data: task, error } = await supabase
-          .from('edge_tasks')
-          .select('status, error_message')
-          .eq('id', taskId)
-          .single();
+        const taskRes = await fetch(`/api/tasks/status?id=${taskId}`);
+        const taskData = await taskRes.json();
+        const task = taskData.task;
 
-        if (error) {
-          console.error('Task fetch error:', error);
+        if (!taskRes.ok || !task) {
+          console.error('Task fetch error:', taskData.error);
           setTimeout(poll, 3000);
           return;
         }
@@ -460,55 +343,23 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
           if (selectedRef.current?.id !== champIdAtStart) return;
 
           // 完了したため、最新データ（updated_atも更新されている）をフェッチして状態を更新
-          const { data: noteData } = await supabase
-            .from('matchup_sentinel')
-            .select('strategy, raw_data, created_at')
-            .eq('champion', champIdAtStart)
-            .eq('enemy', 'GLOBAL')
-            .single();
-            
-          const rd = noteData?.raw_data || {};
-          
-          let loadedNoteDraft = rd.note_draft || '';
-          if (rd.note_draft_url) {
-            try {
-              const res = await fetch(rd.note_draft_url);
-              if (res.ok) {
-                loadedNoteDraft = await res.text();
-              }
-            } catch (fetchErr) {
-              console.error("❌ Failed to fetch note_draft from storage URL:", rd.note_draft_url, fetchErr);
-            }
-          }
+          const detailRes = await fetch(`/api/champions/detail?champion=${encodeURIComponent(champIdAtStart)}`);
+          const detail = await detailRes.json();
+          if (!detailRes.ok) throw new Error(detail.error || '最新データの取得に失敗しました');
 
-          setDataFields({
-            strengths: rd.strengths || '',
-            weaknesses: rd.weaknesses || '',
-            powerSpikes: rd.powerSpikes || '',
-            buildRunes: rd.buildRunes || '',
-            fullClearTime: rd.fullClearTime || '',
-            counterChampions: rd.counterChampions || '',
-            mustBanChampions: rd.mustBanChampions || '',
-            pickRecommendation: rd.pickRecommendation || '',
-            strategy: noteData?.strategy || '',
-            note_draft: loadedNoteDraft,
-            customFields: rd.customFields || {},
-            patch_meta: rd.patch_meta || null,
-            pro_builds: rd.pro_builds || [],
-            jg_style: rd.jg_style || null
-          });
+          setDataFields(detail.dataFields);
           setChampPatchMetas((p: any) => ({
             ...p,
-            [champIdAtStart]: rd.patch_meta || null
+            [champIdAtStart]: detail.dataFields.patch_meta || null
           }));
           setChampJgStyles((p: any) => ({
             ...p,
-            [champIdAtStart]: rd.jg_style || null
+            [champIdAtStart]: detail.dataFields.jg_style || null
           }));
-          if (noteData?.created_at) {
+          if (detail.dictCreatedAt) {
             setChampDates(p => ({
               ...p,
-              [champIdAtStart]: noteData.created_at
+              [champIdAtStart]: detail.dictCreatedAt
             }));
           }
         } else if (task.status === 'failed') {

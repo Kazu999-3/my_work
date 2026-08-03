@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { supabase } from '../../../lib/supabaseClient';
 import { Sparkles, RefreshCw, Activity, AlertTriangle } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -29,23 +28,11 @@ export default function AiUpdateTab() {
         fetchedChampions = Object.values(d.data).map((c: any) => ({
           id: c.id, key: c.key, name: c.name
         }));
-        return Promise.all([
-          supabase.from('matchup_sentinel').select('champion, created_at').eq('enemy', 'GLOBAL'),
-          supabase.from('matchup_sentinel').select('champion').eq('enemy', 'GLOBAL').not('strategy', 'is', null).neq('strategy', '')
-        ]);
+        return fetch('/api/champions/dict-status').then(r => r.json());
       })
-      .then(([{ data }, { data: contentRows }]) => {
-        const hasContent = new Set((contentRows || []).map((r: any) => r.champion));
-        const dates: Record<string, string> = {};
-        const pending: Record<string, boolean> = {};
-        if (data) {
-          data.forEach((row: any) => {
-            dates[row.champion] = row.created_at;
-            pending[row.champion] = !hasContent.has(row.champion);
-          });
-        }
-        setChampDates(dates);
-        setChampPending(pending);
+      .then((statusData) => {
+        setChampDates(statusData.dates || {});
+        setChampPending(statusData.pending || {});
         setChampions(fetchedChampions);
       })
       .catch(console.error);
