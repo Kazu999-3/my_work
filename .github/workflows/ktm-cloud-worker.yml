@@ -43,7 +43,7 @@ jobs:
     if: github.event_name == 'workflow_dispatch' && github.event.inputs.job == 'prospect' || (github.event_name == 'schedule' && github.event.schedule == '30 18,2,10 * * *')
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v5
         with: { python-version: '3.12' }
       - name: Install yt-dlp
@@ -68,7 +68,7 @@ jobs:
     if: github.event_name == 'workflow_dispatch' && (github.event.inputs.job == 'youtube' || github.event.inputs.job == 'both')
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v5
         with: { python-version: '3.12' }
       # cookie認証時、yt-dlpはwebクライアントにフォールバックしYouTubeの"n challenge"署名解決に
