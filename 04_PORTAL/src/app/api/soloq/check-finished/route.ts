@@ -1,8 +1,14 @@
 import { NextResponse } from 'next/server';
 import { fetchPuuidByRiotId, fetchRecentMatchIds } from '../../../../lib/riot';
+import { verifyAdminSession } from '../../../../lib/adminAuth';
 
 export async function POST(request: Request) {
   try {
+    const authResult = await verifyAdminSession(request);
+    if (!authResult.ok) {
+      return NextResponse.json({ isNewMatch: false });
+    }
+
     const body = await request.json().catch(() => ({}));
     const { ign = '', lastKnownMatchId = '' } = body;
 

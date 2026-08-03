@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { verifyAdminSession } from '../../../../lib/adminAuth';
 
 interface LanePriority {
   lane: string;
@@ -11,6 +12,11 @@ interface LanePriority {
 
 export async function POST(request: Request) {
   try {
+    const authResult = await verifyAdminSession(request);
+    if (!authResult.ok) {
+      return NextResponse.json({ error: authResult.error }, { status: 401 });
+    }
+
     const body = await request.json().catch(() => ({}));
     const {
       topMy = 'Aatrox', topEnemy = 'Darius',

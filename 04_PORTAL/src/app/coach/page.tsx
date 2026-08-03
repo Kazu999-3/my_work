@@ -870,7 +870,14 @@ export default function CoachPage() {
       .catch(() => {
         setIsAuthenticated(false);
       });
-    
+  }, []);
+
+  useEffect(() => {
+    // 未認証（未確認含む）の間はAPIを一切叩かない。「認証が必要です」画面表示中も
+    // コンポーネント自体はアンマウントされないため、ここでガードしないと
+    // ログアウト後の端末でもRiot APIポーリングが裏で動き続けてしまう。
+    if (isAuthenticated !== true) return;
+
     fetchLastReflection();
 
     // 試合終了の自動監視（45秒おきにチェック）
@@ -896,7 +903,7 @@ export default function CoachPage() {
     }, 45000);
 
     return () => clearInterval(interval);
-  }, [lastKnownMatchId]);
+  }, [isAuthenticated, lastKnownMatchId]);
 
   // 「事前分析」と「マッチアップ」で同じチャンピオン名を二度入力させていたのを統合。
   // ここで一度入力すれば両方の分析に使われる。

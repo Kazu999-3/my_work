@@ -38,9 +38,12 @@ export default function PickRecommendationTab() {
 
   return (
     <div className="space-y-4">
-      <p className="text-xs text-foreground/50">
-        BAN/PICK中、指定したレーンで「味方との相性」と「相手へのカウンター度」が最も高い推奨ピック Top3 をデータ表示します。
-      </p>
+      <div className="flex items-center gap-2">
+        <span className="px-2 py-0.5 rounded-full bg-amber-100 border border-amber-200 text-[10px] font-black text-amber-700 shrink-0">準備中</span>
+        <p className="text-xs text-foreground/50">
+          BAN/PICK中、指定したレーンで「味方との相性」と「相手へのカウンター度」が最も高い推奨ピック Top3 を表示する機能です。現在はサンプル表示のみで、入力した相手ピックには連動しません。実データ分析は今後対応予定です。
+        </p>
+      </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-black/5 p-3.5 rounded-xl border border-black/10">
         <div>

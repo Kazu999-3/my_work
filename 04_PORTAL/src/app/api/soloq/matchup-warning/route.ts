@@ -1,8 +1,14 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../../lib/supabaseAdmin';
+import { verifyAdminSession } from '../../../../lib/adminAuth';
 
 export async function POST(request: Request) {
   try {
+    const authResult = await verifyAdminSession(request);
+    if (!authResult.ok) {
+      return NextResponse.json({ warning: null });
+    }
+
     const body = await request.json().catch(() => ({}));
     const { champion = '', enemyChampion = '' } = body;
 

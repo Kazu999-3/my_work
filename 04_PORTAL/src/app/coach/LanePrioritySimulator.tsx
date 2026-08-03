@@ -36,10 +36,13 @@ export default function LanePrioritySimulator() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <p className="text-xs text-foreground/50">
-          5v5のチーム構成から各レーンの序盤ウェーブ主導権（プッシュ優先権）と中盤の展開を予測します。
-        </p>
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <span className="px-2 py-0.5 rounded-full bg-amber-100 border border-amber-200 text-[10px] font-black text-amber-700 shrink-0">準備中</span>
+          <p className="text-xs text-foreground/50">
+            5v5のチーム構成から各レーンの序盤ウェーブ主導権（プッシュ優先権）と中盤の展開を予測する機能です。現在はサンプル表示のみで、実際のチーム構成には未連動です。実データ分析は今後対応予定です。
+          </p>
+        </div>
         <button
           type="button"
           onClick={simulate}

@@ -1,8 +1,14 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../../lib/supabaseAdmin';
+import { verifyAdminSession } from '../../../../lib/adminAuth';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const authResult = await verifyAdminSession(request);
+    if (!authResult.ok) {
+      return NextResponse.json({ error: authResult.error }, { status: 401 });
+    }
+
     if (!supabaseAdmin) {
       return NextResponse.json({ error: 'Supabase admin client not initialized' }, { status: 500 });
     }
@@ -32,6 +38,11 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const authResult = await verifyAdminSession(request);
+    if (!authResult.ok) {
+      return NextResponse.json({ error: authResult.error }, { status: 401 });
+    }
+
     if (!supabaseAdmin) {
       return NextResponse.json({ error: 'Supabase admin client not initialized' }, { status: 500 });
     }

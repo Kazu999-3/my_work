@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { verifyAdminSession } from '../../../../lib/adminAuth';
 
 interface ChampionRecommend {
   champion: string;
@@ -10,6 +11,11 @@ interface ChampionRecommend {
 
 export async function POST(request: Request) {
   try {
+    const authResult = await verifyAdminSession(request);
+    if (!authResult.ok) {
+      return NextResponse.json({ error: authResult.error }, { status: 401 });
+    }
+
     const body = await request.json().catch(() => ({}));
     const { myTeam = [], enemyTeam = [], role = 'MID' } = body;
 
@@ -47,7 +53,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       role,
       recommendations: recommends,
-      analysisSummary: `敵構成 (${enemyTeam.join(', ') || '未特定'}) に対し、${role} で最も有利に戦える推奨ピックです。`,
+      analysisSummary: `【サンプル表示】入力された敵構成 (${enemyTeam.join(', ') || '未特定'}) には未連動の固定サンプルです。`,
     });
   } catch (err: any) {
     return NextResponse.json({ error: err.message || 'Pick recommendation failed' }, { status: 500 });
