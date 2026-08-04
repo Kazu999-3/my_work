@@ -33,7 +33,47 @@ export async function GET(req: Request) {
     const targetType = searchParams.get('type');   // lane_guide / champion_fact
     const targetKey = searchParams.get('key');     // TOP / Graves など
     const sourceId = searchParams.get('sourceId'); // personal_knowledge記事のid（この記事由来の履歴だけに絞る）
+    const champion = searchParams.get('champion'); // チャンピオン辞典ページ内で、そのチャンピオンに関わる全履歴を横断表示する用
     const limit = Math.min(Number(searchParams.get('limit') || 50), 200);
+
+    // champion_fact は target_key=champion名で直接引けるが、matchup_sentinel は
+    // target_key=matchup_id（生成元により "champ_X_global" / "X_vs_Y" 等表記がバラバラ）、
+    // champion_notes は target_key=行id で、どちらもtarget_keyだけではチャンピオン名を
+    // 引けない。該当チャンピオンの実際の行を先に引いてから、そのキー群で履歴を絞り込む。
+    if (champion) {
+      const selectCols = 'id, target_type, target_key, field, before_text, after_text, source_title, source_id, created_at';
+      const [factRes, sentinelRes, noteRes] = await Promise.all([
+        supabase.from('knowledge_revisions').select(selectCols).eq('target_type', 'champion_fact').eq('target_key', champion),
+        supabase.from('matchup_sentinel').select('matchup_id').eq('champion', champion),
+        supabase.from('champion_notes').select('id').eq('champion', champion),
+      ]);
+      const matchupIds = ((sentinelRes.data || []) as any[]).map((r) => r.matchup_id).filter(Boolean);
+      const noteIds = ((noteRes.data || []) as any[]).map((r) => String(r.id));
+
+      const [matchupRevRes, noteRevRes] = await Promise.all([
+        matchupIds.length > 0
+          ? supabase.from('knowledge_revisions').select(selectCols).eq('target_type', 'matchup_sentinel').in('target_key', matchupIds)
+          : Promise.resolve({ data: [] as any[] }),
+        noteIds.length > 0
+          ? supabase.from('knowledge_revisions').select(selectCols).eq('target_type', 'champion_notes').in('target_key', noteIds)
+          : Promise.resolve({ data: [] as any[] }),
+      ]);
+
+      const merged = ([...(factRes.data || []), ...(matchupRevRes.data || []), ...(noteRevRes.data || [])] as any[])
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        .slice(0, limit);
+
+      const revisions = merged.map((r: any) => {
+        const { added, removed } = diffSummary(r.before_text || '', r.after_text || '');
+        return {
+          id: r.id, target_type: r.target_type, target_key: r.target_key, field: r.field,
+          source_title: r.source_title, source_id: r.source_id, created_at: r.created_at,
+          added, removed, isNew: !r.before_text,
+        };
+      });
+
+      return NextResponse.json({ success: true, revisions });
+    }
 
     let query = supabase
       .from('knowledge_revisions')
@@ -126,6 +166,12 @@ export async function POST(req: Request) {
           .eq('matchup_id', rev.target_key);
         if (e3) throw e3;
       }
+    } else if (rev.target_type === 'champion_notes') {
+      const { error: e2 } = await supabase
+        .from('champion_notes')
+        .update({ [rev.field]: rev.before_text })
+        .eq('id', rev.target_key);
+      if (e2) throw e2;
     } else {
       return NextResponse.json({ error: `未対応の種別です: ${rev.target_type}` }, { status: 400 });
     }

@@ -5,12 +5,14 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { getChampIcon, getChampSplash } from '../../../lib/ddragonClient';
-import { ChevronLeft, Search, Save, BookOpen, RefreshCw, Zap, ShieldAlert, Swords, Shield, Copy, Check, FileText, Eye, Edit2, Activity, Plus, Trash, Filter, Star as StarIcon, Award, Sparkles } from 'lucide-react';
+import { ChevronLeft, Search, Save, BookOpen, RefreshCw, Zap, ShieldAlert, Swords, Shield, Copy, Check, FileText, Eye, Edit2, Activity, Plus, Trash, Filter, Star as StarIcon, Award, Sparkles, History } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getFavorites, toggleFavoriteChampion } from '../../../components/FavoritesPanel';
 import { Spinner } from '../../../components/Feedback';
+import ChampionFactCheckPanel from '../ChampionFactCheckPanel';
+import ChampionRevisionHistory from '../ChampionRevisionHistory';
 
 function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
   const searchParams = useSearchParams();
@@ -997,6 +999,19 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
               </div>
             )}
           </div>
+
+          {isAdmin && (
+            <>
+              <ChampionFactCheckPanel champion={selected.id} />
+
+              <div className="glass-panel rounded-2xl border-l-4 border-amber-400 bg-amber-400/5 overflow-hidden col-span-1 md:col-span-2 p-5">
+                <h3 className="text-sm font-black flex items-center gap-2 text-amber-600">
+                  <History size={16} /> 変更履歴
+                </h3>
+                <ChampionRevisionHistory champion={selected.id} />
+              </div>
+            </>
+          )}
         </div>
 
         {/* ⚔️ 対面マッチアップ履歴 (折りたたみアコーディオン) */}

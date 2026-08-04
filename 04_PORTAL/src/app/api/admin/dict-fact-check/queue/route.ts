@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../../lib/supabaseAdmin';
 import { verifyAdminSession } from '../../../../../lib/adminAuth';
-import { resolveChampionId, getNoChampionMarker, getChampionPreviewText } from '../../../../../lib/dictFactCheck';
+import { resolveChampionId, getNoChampionMarker, getChampionBundle, buildEditableBlocks } from '../../../../../lib/dictFactCheck';
 import { getAllChampionIds } from '../../../../../lib/ddragonClient';
 
 // dict_fact_check_queue の閲覧・人間による最終判断の反映。
@@ -63,24 +63,27 @@ async function attachSourcePreviews(items: any[]): Promise<any[]> {
 // 「チャンピオン単位で複数ソースを横断した結果」なので、AIが実際に読んだ
 // 辞典本体・対面メモ・コーチAI知識層メモ・ナレッジをそのまま人間にも見せる
 // （でないとsummary(40字程度)だけでは何が根拠なのか検証できない）。
+// 単に読ませるだけでなく、その場で該当ブロックを直接編集・削除できるように
+// 構造化したブロック単位（championBlocks）で返す。
 async function attachChampionPreviews(items: any[]): Promise<any[]> {
   const targets = items.filter((it) => it.issue_type !== 'invalid_champion_tag' && it.champion);
   if (targets.length === 0) return items;
 
   const champions = Array.from(new Set(targets.map((it) => it.champion)));
-  const previewByChampion = new Map<string, string>();
+  const blocksByChampion = new Map<string, { editable: any[]; linked: any[] }>();
   for (const champion of champions) {
     try {
-      previewByChampion.set(champion, await getChampionPreviewText(supabase, champion));
+      const bundle = await getChampionBundle(supabase, champion);
+      blocksByChampion.set(champion, buildEditableBlocks(bundle));
     } catch (e) {
-      console.warn(`[dict-fact-check/queue] ${champion} のプレビュー取得に失敗:`, e);
+      console.warn(`[dict-fact-check/queue] ${champion} の元データ取得に失敗:`, e);
     }
   }
 
   return items.map((it) => {
     if (it.issue_type === 'invalid_champion_tag' || !it.champion) return it;
-    const preview = previewByChampion.get(it.champion);
-    return preview ? { ...it, championPreview: preview } : it;
+    const blocks = blocksByChampion.get(it.champion);
+    return blocks ? { ...it, championBlocks: blocks } : it;
   });
 }
 
@@ -91,9 +94,11 @@ export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
     const status = searchParams.get('status') || 'pending';
+    const champion = searchParams.get('champion'); // チャンピオン辞典ページ内の単体パネル用の絞り込み
 
     let query = supabase.from('dict_fact_check_queue').select('*').order('created_at', { ascending: false }).limit(300);
     if (status !== 'all') query = query.eq('status', status);
+    if (champion) query = query.eq('champion', champion);
 
     const { data, error } = await query;
     if (error) throw error;

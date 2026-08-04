@@ -133,7 +133,7 @@ export async function scanInvalidChampionTags(supabase: any): Promise<InvalidTag
 // ------------------------------------------------------------
 // ステップ2: チャンピオン単位で全ソースをグルーピングし、横断ファクトチェック
 // ------------------------------------------------------------
-interface ChampionSourceBundle {
+export interface ChampionSourceBundle {
   champion: string;
   matchupGlobal?: { id: number; strategy: string };
   matchupEnemies: { id: number; enemy: string; strategy: string }[];
@@ -250,6 +250,83 @@ export async function getChampionPreviewText(supabase: any, champion: string): P
   const bundle = await getChampionBundle(supabase, champion);
   const parts = buildSourceParts(bundle);
   return parts.length > 0 ? parts.join('\n\n---\n\n') : '（この項目に紐づく辞典/コーチAI知識層/ナレッジのデータが見つかりませんでした）';
+}
+
+export interface EditableSourceBlock {
+  key: string;
+  table: 'matchup_sentinel' | 'champion_notes' | 'champion_facts';
+  id?: number;
+  champion?: string;
+  field: string;
+  label: string;
+  value: string;
+  deletable: boolean;
+}
+
+export interface LinkedSourceBlock {
+  key: string;
+  table: 'personal_knowledge';
+  id: number;
+  label: string;
+  value: string;
+  url: string;
+}
+
+const FACT_FIELD_LABELS: Record<string, string> = {
+  strengths: '強み', weaknesses: '弱み', power_spikes: 'パワースパイク', build_runes: 'ビルド/ルーン',
+  strategy: '戦略', counter_champions: '苦手対面', must_ban_champions: '必須BAN',
+};
+
+/**
+ * レビューUIから「実際にどのレコードのどの項目が根拠か」を個別に編集・削除できるように、
+ * チャンピオン単位のバンドルを1ブロック=1編集単位のリストへ分解する。
+ * 訂正を記録するだけでは元の誤った文章そのものは書き変わらず残り続けるため、
+ * 矛盾・事実誤りをその場で直接直せるようにするのが目的。
+ * personal_knowledgeは既存の攻略ライブラリ編集画面があるため、ここでは編集対象にせず
+ * リンクだけを返す。
+ */
+export function buildEditableBlocks(bundle: ChampionSourceBundle): { editable: EditableSourceBlock[]; linked: LinkedSourceBlock[] } {
+  const editable: EditableSourceBlock[] = [];
+  const linked: LinkedSourceBlock[] = [];
+
+  if (bundle.matchupGlobal?.strategy) {
+    editable.push({
+      key: `matchup_sentinel:${bundle.matchupGlobal.id}`, table: 'matchup_sentinel', id: bundle.matchupGlobal.id,
+      field: 'strategy', label: '辞典本体（全体的な立ち回り）', value: bundle.matchupGlobal.strategy, deletable: false,
+    });
+  }
+  bundle.matchupEnemies.forEach((m) => {
+    editable.push({
+      key: `matchup_sentinel:${m.id}`, table: 'matchup_sentinel', id: m.id,
+      field: 'strategy', label: `対面メモ vs ${m.enemy}`, value: m.strategy, deletable: true,
+    });
+  });
+  if (bundle.facts) {
+    const f = bundle.facts as any;
+    Object.keys(FACT_FIELD_LABELS).forEach((field) => {
+      const value = f[field];
+      if (value) {
+        editable.push({
+          key: `champion_facts:${bundle.champion}:${field}`, table: 'champion_facts', champion: bundle.champion,
+          field, label: `コーチAI知識層: ${FACT_FIELD_LABELS[field]}`, value, deletable: false,
+        });
+      }
+    });
+  }
+  bundle.notes.forEach((n) => {
+    editable.push({
+      key: `champion_notes:${n.id}`, table: 'champion_notes', id: n.id,
+      field: 'body', label: `コーチAIノート: ${n.title || '(無題)'}`, value: n.body, deletable: true,
+    });
+  });
+  bundle.knowledge.forEach((k) => {
+    linked.push({
+      key: `personal_knowledge:${k.id}`, table: 'personal_knowledge', id: k.id,
+      label: `ナレッジ: ${k.title || '(無題)'}`, value: k.content, url: `/admin/knowledge?tab=library&article=${k.id}`,
+    });
+  });
+
+  return { editable, linked };
 }
 
 async function factCheckChampion(supabase: any, bundle: ChampionSourceBundle): Promise<FactCheckResult[]> {
@@ -380,4 +457,23 @@ export async function runFactCheckBatch(supabase: any, offset: number, limit: nu
     done: !rateLimited && nextOffset >= total,
     rateLimited,
   };
+}
+
+/** チャンピオン辞典ページから、そのチャンピオン1体だけを即時ファクトチェックする。 */
+export async function runFactCheckForChampion(supabase: any, champion: string): Promise<{ flagged: number }> {
+  const bundle = await getChampionBundle(supabase, champion);
+  const issues = await factCheckChampion(supabase, bundle);
+  if (issues.length === 0) return { flagged: 0 };
+
+  const sourceTables = sourceTablesOf(bundle);
+  const rows = issues.map((i) => ({
+    champion,
+    issue_type: i.issue_type,
+    summary: i.summary,
+    source_refs: sourceTables,
+    status: 'pending',
+  }));
+  const { error } = await supabase.from('dict_fact_check_queue').insert(rows);
+  if (error) throw error;
+  return { flagged: rows.length };
 }
