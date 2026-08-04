@@ -193,7 +193,7 @@ export default function DictFactCheckPanel() {
                       <input
                         value={fixInputs[it.id] || ''}
                         onChange={(e) => setFixInputs((prev) => ({ ...prev, [it.id]: e.target.value }))}
-                        placeholder="正しいチャンピオン名（例: Graves）"
+                        placeholder="正しいチャンピオン名を英語表記で（例: Graves）"
                         className="text-xs px-2.5 py-1.5 border border-stone-300 rounded-lg bg-white text-stone-900 w-56"
                       />
                       <button onClick={() => act(it.id, 'fix_champion_tag')} disabled={acting === it.id || !fixInputs[it.id]?.trim()}

@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../../lib/supabaseAdmin';
 import { verifyAdminSession } from '../../../../../lib/adminAuth';
+import { resolveChampionId } from '../../../../../lib/dictFactCheck';
+import { getAllChampionIds } from '../../../../../lib/ddragonClient';
 
 // dict_fact_check_queue の閲覧・人間による最終判断の反映。
 // 反映は「対応済みにする」「不正タグを修正する」のみで、辞典本体の
@@ -58,23 +60,33 @@ export async function PATCH(req: Request) {
       if (item.issue_type !== 'invalid_champion_tag') {
         return NextResponse.json({ error: 'このアクションはinvalid_champion_tagのみ対応しています。' }, { status: 400 });
       }
-      const fixedChampion = String(body.fixedChampion || '').trim();
-      if (!fixedChampion) return NextResponse.json({ error: '修正後のチャンピオン名を指定してください。' }, { status: 400 });
+      const rawInput = String(body.fixedChampion || '').trim();
+      if (!rawInput) return NextResponse.json({ error: '修正後のチャンピオン名を指定してください。' }, { status: 400 });
+
+      // 日本語名(「グレイブス」等)や表記ゆれで入力されても、DataDragon準拠の英語IDに
+      // 正規化してから保存する。ここで正規化しないと、修正したつもりが別の形の
+      // 不正タグを新しく作ってしまう(グルーピング・他機能からの検索が壊れる)。
+      const resolved = resolveChampionId(rawInput);
+      const roster = await getAllChampionIds();
+      const canonical = Array.from(roster).find((r) => r.toLowerCase() === resolved?.toLowerCase());
+      if (!canonical) {
+        return NextResponse.json({ error: `「${rawInput}」を実在チャンピオン名として認識できませんでした。英語表記(例: Graves)で入力してください。` }, { status: 400 });
+      }
 
       const ref = Array.isArray(item.source_refs) ? item.source_refs[0] : null;
       if (!ref?.table || !ref?.id || !FIXABLE_TABLES.has(ref.table)) {
         return NextResponse.json({ error: '修正対象のレコードを特定できませんでした。' }, { status: 400 });
       }
 
-      const { error: updateErr } = await supabase.from(ref.table).update({ champion: fixedChampion }).eq('id', ref.id);
+      const { error: updateErr } = await supabase.from(ref.table).update({ champion: canonical }).eq('id', ref.id);
       if (updateErr) throw updateErr;
 
       const { error } = await supabase
         .from('dict_fact_check_queue')
-        .update({ status: 'fixed', reviewed_at: new Date().toISOString(), detail: { ...(item.detail || {}), fixedChampion } })
+        .update({ status: 'fixed', reviewed_at: new Date().toISOString(), detail: { ...(item.detail || {}), fixedChampion: canonical } })
         .eq('id', id);
       if (error) throw error;
-      return NextResponse.json({ success: true, fixedChampion });
+      return NextResponse.json({ success: true, fixedChampion: canonical });
     }
 
     if (action === 'record_correction') {
