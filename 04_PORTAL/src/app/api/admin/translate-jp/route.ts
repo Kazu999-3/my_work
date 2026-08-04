@@ -124,24 +124,31 @@ export async function POST(req: Request) {
         .or('tags.is.null,tags.not.cs.{__DELETED__}')
         .limit(500);
 
-      const targets = (data || []).filter((a: any) => isEnglish(a.raw_content || a.content));
+      // 本文(raw_content/content)だけを判定基準にしていたため、YouTube動画取り込みAIが
+      // 本文は既に日本語で生成する一方、タイトルだけ英語のまま(例: "[YouTube] Coaching
+      // Jungle Fundamentals - How to climb in League of Legends")残っているレコードが
+      // 対象から漏れ続けていた(2026-08-04発覚)。タイトル単体の英語も対象に含める。
+      const targets = (data || []).filter((a: any) => isEnglish(a.raw_content || a.content) || isEnglish(a.title));
       remaining = Math.max(0, targets.length - CHUNK);
       scanned = (data || []).length;
 
       for (const a of targets.slice(0, CHUNK)) {
         try {
           const src = a.raw_content || a.content;
-          const jp = await toJapanese(src, '攻略記事');
-          await sleep(COOL_DOWN_MS);
+          const bodyNeedsTranslation = isEnglish(src);
           const jpTitle = isEnglish(a.title) ? await toJapanese(a.title, '記事タイトル') : a.title;
-          await supabase.from('personal_knowledge').update({
-            title: jpTitle,
-            raw_content: jp,
-            content: jp.slice(0, 300).replace(/[#*`]/g, ''),
-          }).eq('id', a.id);
+          if (isEnglish(a.title)) await sleep(COOL_DOWN_MS);
+
+          const updatePayload: Record<string, any> = { title: jpTitle };
+          if (bodyNeedsTranslation) {
+            const jp = await toJapanese(src, '攻略記事');
+            updatePayload.raw_content = jp;
+            updatePayload.content = jp.slice(0, 300).replace(/[#*`]/g, '');
+            await sleep(COOL_DOWN_MS);
+          }
+          await supabase.from('personal_knowledge').update(updatePayload).eq('id', a.id);
           converted++;
           if (samples.length < 3) samples.push(a.title || `記事${a.id}`);
-          await sleep(COOL_DOWN_MS);
         } catch (e) {
           if (e instanceof RateLimited) { rateLimited = true; break; }
           throw e;
@@ -153,39 +160,51 @@ export async function POST(req: Request) {
     if (target === 'memos') {
       const { data: memos } = await supabase
         .from('matchup_sentinel')
-        .select('matchup_id, strategy')
+        .select('matchup_id, title, strategy')
         .not('strategy', 'is', null)
         .limit(500);
 
       // champion_notes（記事から生成されたノート）も英語のまま残るため対象にする
       const { data: notes } = await supabase
-        .from('champion_notes').select('id, body').not('body', 'is', null).limit(500);
+        .from('champion_notes').select('id, title, body').not('body', 'is', null).limit(500);
 
-      const memoTargets = (memos || []).filter((m: any) => isEnglish(m.strategy)).map((m: any) => ({ kind: 'memo', ...m }));
-      const noteTargets = (notes || []).filter((n: any) => isEnglish(n.body)).map((n: any) => ({ kind: 'note', ...n }));
+      // 本文だけでなくtitle単体が英語のまま残るケースも対象に含める(articlesと同じ根本原因)
+      const memoTargets = (memos || []).filter((m: any) => isEnglish(m.strategy) || isEnglish(m.title)).map((m: any) => ({ kind: 'memo', ...m }));
+      const noteTargets = (notes || []).filter((n: any) => isEnglish(n.body) || isEnglish(n.title)).map((n: any) => ({ kind: 'note', ...n }));
       const targets = [...memoTargets, ...noteTargets];
       remaining = Math.max(0, targets.length - CHUNK);
       scanned = (memos || []).length + (notes || []).length;
 
       for (const t of targets.slice(0, CHUNK)) {
         try {
+          const bodyField = t.kind === 'memo' ? t.strategy : t.body;
+          const bodyNeedsTranslation = isEnglish(bodyField);
+          const titleNeedsTranslation = isEnglish(t.title);
+          const jpTitle = titleNeedsTranslation ? await toJapanese(t.title, t.kind === 'memo' ? '対面攻略メモのタイトル' : 'チャンピオン攻略ノートのタイトル') : t.title;
+          if (titleNeedsTranslation) await sleep(COOL_DOWN_MS);
+          const jpBody = bodyNeedsTranslation ? await toJapanese(bodyField, t.kind === 'memo' ? '対面攻略メモ' : 'チャンピオン攻略ノート') : bodyField;
+          if (bodyNeedsTranslation) await sleep(COOL_DOWN_MS);
+
           if (t.kind === 'memo') {
-            const jp = await toJapanese(t.strategy, '対面攻略メモ');
-            await supabase.from('matchup_sentinel').update({ strategy: jp }).eq('matchup_id', t.matchup_id);
-            await recordMatchupSentinelRevision(
-              t.matchup_id,
-              { strategy: t.strategy },
-              { strategy: jp },
-              '英語→日本語 自動翻訳'
-            );
+            const updatePayload: Record<string, any> = { title: jpTitle };
+            if (bodyNeedsTranslation) updatePayload.strategy = jpBody;
+            await supabase.from('matchup_sentinel').update(updatePayload).eq('matchup_id', t.matchup_id);
+            if (bodyNeedsTranslation) {
+              await recordMatchupSentinelRevision(
+                t.matchup_id,
+                { strategy: t.strategy },
+                { strategy: jpBody },
+                '英語→日本語 自動翻訳'
+              );
+            }
             if (samples.length < 3) samples.push(t.matchup_id);
           } else {
-            const jp = await toJapanese(t.body, 'チャンピオン攻略ノート');
-            await supabase.from('champion_notes').update({ body: jp }).eq('id', t.id);
+            const updatePayload: Record<string, any> = { title: jpTitle };
+            if (bodyNeedsTranslation) updatePayload.body = jpBody;
+            await supabase.from('champion_notes').update(updatePayload).eq('id', t.id);
             if (samples.length < 3) samples.push(`note${t.id}`);
           }
           converted++;
-          await sleep(COOL_DOWN_MS);
         } catch (e) {
           if (e instanceof RateLimited) { rateLimited = true; break; }
           throw e;
