@@ -88,7 +88,7 @@ export async function PATCH(req: Request) {
   try {
     const body = await req.json().catch(() => ({}));
     const id = Number(body.id);
-    const action: 'dismiss' | 'acknowledge' | 'fix_champion_tag' | 'record_correction' | 'mark_no_champion' = body.action;
+    const action: 'dismiss' | 'acknowledge' | 'fix_champion_tag' | 'record_correction' | 'mark_no_champion' | 'delete_article' = body.action;
     if (!id || !action) return NextResponse.json({ error: 'idとactionを指定してください。' }, { status: 400 });
 
     const { data: item, error: fetchErr } = await supabase
@@ -102,6 +102,27 @@ export async function PATCH(req: Request) {
         .update({ status: action === 'dismiss' ? 'dismissed' : 'acknowledged', reviewed_at: new Date().toISOString() })
         .eq('id', id);
       if (error) throw error;
+      return NextResponse.json({ success: true });
+    }
+
+    if (action === 'delete_article') {
+      if (item.issue_type !== 'invalid_champion_tag') {
+        return NextResponse.json({ error: 'このアクションはinvalid_champion_tagのみ対応しています。' }, { status: 400 });
+      }
+      const ref = Array.isArray(item.source_refs) ? item.source_refs[0] : null;
+      if (!ref?.table || !ref?.id || !FIXABLE_TABLES.has(ref.table)) {
+        return NextResponse.json({ error: '対象レコードを特定できませんでした。' }, { status: 400 });
+      }
+
+      // 明示的な人間の操作(1件ずつ・確認ダイアログ経由)のみを想定した削除。
+      // 元データがゴミ/価値のない記事だった場合の最終手段として、
+      // 参照元レコード本体とこのキュー項目の両方を削除する（元に戻せない）。
+      const { error: deleteSourceErr } = await supabase.from(ref.table).delete().eq('id', ref.id);
+      if (deleteSourceErr) throw deleteSourceErr;
+
+      const { error: deleteQueueErr } = await supabase.from('dict_fact_check_queue').delete().eq('id', id);
+      if (deleteQueueErr) throw deleteQueueErr;
+
       return NextResponse.json({ success: true });
     }
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { RefreshCw, ShieldCheck, Tag, ExternalLink, Check, X, Ban } from 'lucide-react';
+import { RefreshCw, ShieldCheck, Tag, ExternalLink, Check, X, Ban, Trash2 } from 'lucide-react';
 
 interface QueueItem {
   id: number;
@@ -100,7 +100,8 @@ export default function DictFactCheckPanel() {
     } catch (e: any) { setError(e.message); } finally { setRunning(false); }
   };
 
-  const act = async (id: number, action: 'dismiss' | 'acknowledge' | 'fix_champion_tag' | 'record_correction' | 'mark_no_champion') => {
+  const act = async (id: number, action: 'dismiss' | 'acknowledge' | 'fix_champion_tag' | 'record_correction' | 'mark_no_champion' | 'delete_article') => {
+    if (action === 'delete_article' && !confirm('元の記事データ自体を完全に削除します。この操作は取り消せません。よろしいですか？')) return;
     setActing(id); setError('');
     try {
       const body: any = { id, action };
@@ -240,6 +241,11 @@ export default function DictFactCheckPanel() {
                         title="特定のチャンピオンに関する記事ではない場合（メタ記事・マクロ解説など）"
                         className="flex items-center gap-1 text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200 px-3 py-1.5 rounded-lg hover:bg-slate-200 disabled:opacity-50">
                         <Ban size={12} /> チャンピオンなし（対象外にする）
+                      </button>
+                      <button onClick={() => act(it.id, 'delete_article')} disabled={acting === it.id}
+                        title="ゴミ記事・不要な英語記事などを元データごと完全に削除します（取り消せません）"
+                        className="flex items-center gap-1 text-xs font-bold bg-rose-100 text-rose-700 border border-rose-200 px-3 py-1.5 rounded-lg hover:bg-rose-200 disabled:opacity-50">
+                        <Trash2 size={12} /> 記事を削除
                       </button>
                     </>
                   ) : (
