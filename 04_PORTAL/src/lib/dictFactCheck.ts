@@ -54,6 +54,22 @@ export interface QueuedIssue {
   source_refs?: any;
 }
 
+/**
+ * 未処理(pending)のレビュー件数がこれを超えたら、新規スキャンでの積み増しを止める。
+ * 「溜まった未処理を"資産"と錯覚せず、まず今あるものを片付けてから次を積む」という
+ * 運用側の在庫制限（Loop Engineeringの知見）。既に検出済みの項目のレビュー自体は
+ * 妨げず、あくまで「新しく検出を増やす」動作だけを一時停止する。
+ */
+const PENDING_QUEUE_CAP = 50;
+
+async function getPendingQueueCount(supabase: any): Promise<number> {
+  const { count } = await supabase
+    .from('dict_fact_check_queue')
+    .select('id', { count: 'exact', head: true })
+    .eq('status', 'pending');
+  return count || 0;
+}
+
 // ------------------------------------------------------------
 // ステップ1: champion列の不正タグ検出（LLM不要・無料）
 // ------------------------------------------------------------
@@ -66,6 +82,7 @@ const INVALID_TAG_TARGETS: { table: 'matchup_sentinel' | 'champion_notes' | 'per
 export interface InvalidTagScanResult {
   inserted: number;
   autoResolved: number;
+  capped: boolean;
 }
 
 export async function scanInvalidChampionTags(supabase: any): Promise<InvalidTagScanResult> {
@@ -104,10 +121,18 @@ export async function scanInvalidChampionTags(supabase: any): Promise<InvalidTag
     if (!queueErr) { autoResolved++; already.delete(key); }
   }
 
+  const pendingCount = await getPendingQueueCount(supabase);
+  if (pendingCount >= PENDING_QUEUE_CAP) {
+    return { inserted: 0, autoResolved, capped: true };
+  }
+
   let inserted = 0;
+  outer:
   for (const target of INVALID_TAG_TARGETS) {
     const { data: rows } = await supabase.from(target.table).select('id, champion').not('champion', 'is', null);
     for (const row of rows || []) {
+      if (pendingCount + inserted >= PENDING_QUEUE_CAP) break outer;
+
       const raw = String(row.champion || '').trim();
       if (!raw || target.skip.includes(raw.toUpperCase())) continue;
 
@@ -127,7 +152,7 @@ export async function scanInvalidChampionTags(supabase: any): Promise<InvalidTag
       if (!error) inserted++;
     }
   }
-  return { inserted, autoResolved };
+  return { inserted, autoResolved, capped: pendingCount + inserted >= PENDING_QUEUE_CAP };
 }
 
 // ------------------------------------------------------------
@@ -408,6 +433,7 @@ export interface FactCheckBatchResult {
   nextOffset: number;
   done: boolean;
   rateLimited: boolean;
+  capped: boolean;
 }
 
 /** offsetからlimit件のチャンピオンだけを処理する（Vercelのタイムアウト回避のためのチャンク実行）。 */
@@ -417,11 +443,21 @@ export async function runFactCheckBatch(supabase: any, offset: number, limit: nu
   const total = champions.length;
   const slice = champions.slice(offset, offset + limit);
 
+  // 未処理レビューが上限に達している間は、AI呼び出しのコストをかけてまで
+  // 新しい指摘を積み増さない。先にキューを片付けてから再開する運用にする。
+  const pendingCount = await getPendingQueueCount(supabase);
+  if (pendingCount >= PENDING_QUEUE_CAP) {
+    return { processed: 0, flagged: 0, totalChampions: total, nextOffset: offset, done: true, rateLimited: false, capped: true };
+  }
+
   let flagged = 0;
   let processed = 0;
   let rateLimited = false;
+  let capped = false;
 
   for (const champ of slice) {
+    if (pendingCount + flagged >= PENDING_QUEUE_CAP) { capped = true; break; }
+
     const bundle = grouped.get(champ)!;
     try {
       const issues = await factCheckChampion(supabase, bundle);
@@ -454,16 +490,22 @@ export async function runFactCheckBatch(supabase: any, offset: number, limit: nu
     flagged,
     totalChampions: total,
     nextOffset,
-    done: !rateLimited && nextOffset >= total,
+    done: capped || (!rateLimited && nextOffset >= total),
     rateLimited,
+    capped,
   };
 }
 
 /** チャンピオン辞典ページから、そのチャンピオン1体だけを即時ファクトチェックする。 */
-export async function runFactCheckForChampion(supabase: any, champion: string): Promise<{ flagged: number }> {
+export async function runFactCheckForChampion(supabase: any, champion: string): Promise<{ flagged: number; capped: boolean }> {
+  const pendingCount = await getPendingQueueCount(supabase);
+  if (pendingCount >= PENDING_QUEUE_CAP) {
+    return { flagged: 0, capped: true };
+  }
+
   const bundle = await getChampionBundle(supabase, champion);
   const issues = await factCheckChampion(supabase, bundle);
-  if (issues.length === 0) return { flagged: 0 };
+  if (issues.length === 0) return { flagged: 0, capped: false };
 
   const sourceTables = sourceTablesOf(bundle);
   const rows = issues.map((i) => ({
@@ -475,5 +517,5 @@ export async function runFactCheckForChampion(supabase: any, champion: string): 
   }));
   const { error } = await supabase.from('dict_fact_check_queue').insert(rows);
   if (error) throw error;
-  return { flagged: rows.length };
+  return { flagged: rows.length, capped: false };
 }

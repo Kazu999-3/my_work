@@ -19,7 +19,7 @@ export async function POST(req: Request) {
     if (!champion) return NextResponse.json({ error: 'championを指定してください。' }, { status: 400 });
 
     const result = await runFactCheckForChampion(supabase, champion);
-    return NextResponse.json({ success: true, flagged: result.flagged });
+    return NextResponse.json({ success: true, flagged: result.flagged, capped: result.capped });
   } catch (err: any) {
     console.error('[dict-fact-check/champion] POST error:', err);
     return NextResponse.json({ error: err.message }, { status: 500 });

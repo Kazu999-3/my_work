@@ -37,7 +37,11 @@ export default function ChampionFactCheckPanel({ champion }: { champion: string 
       });
       const d = await res.json();
       if (!res.ok) throw new Error(d.error || 'ファクトチェックに失敗しました');
-      setMsg(d.flagged > 0 ? `✅ ${d.flagged}件の要レビュー項目を検出しました` : '✅ 問題は見つかりませんでした');
+      if (d.capped) {
+        setMsg('⚠️ 未処理レビューが上限(50件)に達しているため、新規チェックを一時停止しています。先に管理画面のレビューキューを処理してください。');
+      } else {
+        setMsg(d.flagged > 0 ? `✅ ${d.flagged}件の要レビュー項目を検出しました` : '✅ 問題は見つかりませんでした');
+      }
       await load();
     } catch (e: any) { setError(e.message); } finally { setRunning(false); }
   };

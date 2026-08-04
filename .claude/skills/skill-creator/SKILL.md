@@ -138,6 +138,8 @@ Output: feat(auth): implement JWT-based authentication
 
 Try to explain to the model why things are important in lieu of heavy-handed musty MUSTs. Use theory of mind and try to make the skill general and not super-narrow to specific examples. Start by writing a draft and then look at it with fresh eyes and improve it.
 
+**Rules only work once they're mechanized.** A prose rule written from a vague impression ("be more careful about X") tends to sit inert — it gets read once, nodded at, and then ignored the next ten times the skill runs, because there's nothing concrete to check against. A rule tied to a specific observed failure, with the failure counted or measured, is far more likely to actually change behavior — especially once it's turned into something checkable (a script, an assertion, a lint rule, a required file) rather than left as a sentence to remember. When you or the user notice a real failure while using a skill (this is exactly what the "Known Pitfalls" pattern at the end of a SKILL.md is for), write down the concrete failure case and, if you can, how to detect it mechanically — not just the abstract lesson. If a "Known Pitfalls" entry has sat there for a while without ever being turned into a check, that's a sign it isn't actually preventing the mistake.
+
 ### Test Cases
 
 After writing the skill draft, come up with 2-3 realistic test prompts — the kind of thing a real user would actually say. Share them with the user: [you don't have to use this exact language] "Here are a few test cases I'd like to try. Do these look right, or do you want to add more?" Then run them.

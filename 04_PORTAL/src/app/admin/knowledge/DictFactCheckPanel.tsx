@@ -43,6 +43,7 @@ export default function DictFactCheckPanel() {
       const parts: string[] = [];
       if (d.autoResolved > 0) parts.push(`表記ゆれ対応表の更新で${d.autoResolved}件を自動解決しました`);
       if (d.inserted > 0) parts.push(`新たに${d.inserted}件検出しました`);
+      if (d.capped) parts.push('未処理レビューが上限(50件)に達しているため、これ以上の新規検出は一時停止しています。先に下のリストを処理してください');
       setScanMsg(parts.length > 0 ? `✅ ${parts.join('、')}` : '✅ 不正なタグは見つかりませんでした');
       await loadQueue();
     } catch (e: any) { setError(e.message); } finally { setScanning(false); }
@@ -52,6 +53,7 @@ export default function DictFactCheckPanel() {
     setRunning(true); setRunMsg(''); setError(''); setProgress(null);
     let offset = 0;
     let totalFlagged = 0;
+    let stoppedByCap = false;
     try {
       for (let i = 0; i < 200; i++) {
         const res = await fetch('/api/admin/dict-fact-check', {
@@ -72,9 +74,14 @@ export default function DictFactCheckPanel() {
           await new Promise((r) => setTimeout(r, 60000));
           continue;
         }
+        if (d.capped) {
+          stoppedByCap = true;
+          setRunMsg(`⚠️ 未処理レビューが上限(50件)に達したため中断しました（ここまで${totalFlagged}件検出）。先に下のリストを処理してから再実行してください。`);
+          break;
+        }
         if (d.done) break;
       }
-      setRunMsg(`✅ 完了しました。${totalFlagged}件の要レビュー項目を検出しました。`);
+      if (!stoppedByCap) setRunMsg(`✅ 完了しました。${totalFlagged}件の要レビュー項目を検出しました。`);
       await loadQueue();
     } catch (e: any) { setError(e.message); } finally { setRunning(false); }
   };
