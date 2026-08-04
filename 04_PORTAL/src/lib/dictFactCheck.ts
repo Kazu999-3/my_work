@@ -162,7 +162,17 @@ interface FactCheckResult {
   summary: string;
 }
 
-async function factCheckChampion(bundle: ChampionSourceBundle): Promise<FactCheckResult[]> {
+async function factCheckChampion(supabase: any, bundle: ChampionSourceBundle): Promise<FactCheckResult[]> {
+  // 過去に人間が確定した訂正情報。これを「既に解決済み」として扱わせることで、
+  // 同じ指摘を再度キューに積み続ける(再発)のを防ぐ。
+  const { data: corrections } = await supabase
+    .from('dict_known_corrections')
+    .select('wrong_claim, correct_info')
+    .eq('champion', bundle.champion)
+    .order('created_at', { ascending: false })
+    .limit(10);
+  const knownCorrections: { wrong_claim: string; correct_info: string }[] = corrections || [];
+
   const parts: string[] = [];
   if (bundle.matchupGlobal?.strategy) parts.push(`【辞典本体(matchup_sentinel)】\n${bundle.matchupGlobal.strategy.slice(0, 1200)}`);
   bundle.matchupEnemies.forEach((m) => parts.push(`【辞典 対面メモ vs ${m.enemy}】\n${m.strategy.slice(0, 500)}`));
@@ -179,21 +189,27 @@ async function factCheckChampion(bundle: ChampionSourceBundle): Promise<FactChec
 
   const abilities = await getChampionAbilityNames(bundle.champion).catch(() => []);
   const abilityBlock = abilities.length > 0 ? `\n【公式スキル情報(Data Dragon、これが正）】\n${abilities.join(' / ')}\n` : '';
+  const correctionsBlock = knownCorrections.length > 0
+    ? `\n【過去に人間が確定した訂正（既に解決済み。同じ内容を再度指摘しないこと）】\n${knownCorrections.map((c) => `- 誤り: ${c.wrong_claim} → 正しくは: ${c.correct_info}`).join('\n')}\n`
+    : '';
 
   const prompt = `あなたはLoLの厳格なファクトチェッカーです。以下は「${bundle.champion}」について複数の場所（辞典/コーチAI知識層/ナレッジ）に保存されている記述です。
 これらはYouTube動画の自動文字起こし→AI要約→AI統合という無検証の経路で生成されたものが多く含まれ、誤りが混入している可能性があります。
-${abilityBlock}
+${abilityBlock}${correctionsBlock}
 ${parts.join('\n\n---\n\n')}
 
 以下の3種類を判定してください:
 1. 矛盾(contradiction): 異なる出典間で結論が明確に矛盾している記述（例: 一方は「対面有利」、他方は「対面不利」）。パッチ変化による自然な評価の変化は矛盾に含めない。
 2. 未確証(unconfirmed_source): 1つの出典にしか出てこない、具体的すぎる断定（例: 特定の秒数・数値の言い切り）で、他の出典で裏取りできないもの。一般的な内容や複数出典で一致している内容は含めない。
 3. 事実誤りの疑い(fact_error): 公式スキル情報と矛盾する記述、または実在しないスキル名・効果への言及。
+上記の「過去に確定した訂正」に既に対応済みの内容（正しい情報の方に沿っている記述）は問題として指摘しないこと。逆に、訂正後もまだ誤った内容(「誤り」欄の内容)がどこかに残っている場合は事実誤りの疑いとして指摘すること。
 
 必ず以下のJSON形式のみ出力（前置き・コードブロック禁止、該当が無い項目は空配列）:
 {"contradictions":[{"summary":"<40字以内>"}],"unconfirmed":[{"summary":"<40字以内>"}],"factErrors":[{"summary":"<40字以内>"}]}`;
 
-  const contentHash = createHash('sha1').update(parts.join('|')).digest('hex').slice(0, 16);
+  const contentHash = createHash('sha1')
+    .update(parts.join('|') + '||' + knownCorrections.map((c) => c.wrong_claim + c.correct_info).join('|'))
+    .digest('hex').slice(0, 16);
   const raw = await callGeminiWithRetry(prompt, {
     model: 'gemini-3.1-flash-lite',
     temperature: 0.2,
@@ -251,7 +267,7 @@ export async function runFactCheckBatch(supabase: any, offset: number, limit: nu
   for (const champ of slice) {
     const bundle = grouped.get(champ)!;
     try {
-      const issues = await factCheckChampion(bundle);
+      const issues = await factCheckChampion(supabase, bundle);
       if (issues.length > 0) {
         const sourceTables = sourceTablesOf(bundle);
         const rows = issues.map((i) => ({

@@ -37,7 +37,7 @@ export async function PATCH(req: Request) {
   try {
     const body = await req.json().catch(() => ({}));
     const id = Number(body.id);
-    const action: 'dismiss' | 'acknowledge' | 'fix_champion_tag' = body.action;
+    const action: 'dismiss' | 'acknowledge' | 'fix_champion_tag' | 'record_correction' = body.action;
     if (!id || !action) return NextResponse.json({ error: 'idとactionを指定してください。' }, { status: 400 });
 
     const { data: item, error: fetchErr } = await supabase
@@ -75,6 +75,33 @@ export async function PATCH(req: Request) {
         .eq('id', id);
       if (error) throw error;
       return NextResponse.json({ success: true, fixedChampion });
+    }
+
+    if (action === 'record_correction') {
+      if (item.issue_type === 'invalid_champion_tag') {
+        return NextResponse.json({ error: 'このアクションはinvalid_champion_tag以外で使用してください。' }, { status: 400 });
+      }
+      const correctInfo = String(body.correctInfo || '').trim();
+      if (!correctInfo) return NextResponse.json({ error: '正しい内容を入力してください。' }, { status: 400 });
+
+      // 一斉ファクトチェックの再生成プロンプト・コーチAI・辞典再生成すべてが読む
+      // 共通知識レイヤー(lib/championKnowledge.ts)がこのテーブルを参照するため、
+      // ここに記録するだけで以降の全AI生成に「再発防止」として効く。
+      const { error: insertErr } = await supabase.from('dict_known_corrections').insert({
+        champion: item.champion,
+        wrong_claim: item.summary,
+        correct_info: correctInfo,
+        issue_type: item.issue_type,
+        source_queue_id: item.id,
+      });
+      if (insertErr) throw insertErr;
+
+      const { error } = await supabase
+        .from('dict_fact_check_queue')
+        .update({ status: 'fixed', reviewed_at: new Date().toISOString(), detail: { ...(item.detail || {}), correctInfo } })
+        .eq('id', id);
+      if (error) throw error;
+      return NextResponse.json({ success: true });
     }
 
     return NextResponse.json({ error: `不明なaction: ${action}` }, { status: 400 });

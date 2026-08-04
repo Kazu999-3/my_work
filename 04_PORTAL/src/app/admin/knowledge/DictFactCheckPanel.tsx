@@ -95,11 +95,12 @@ export default function DictFactCheckPanel() {
     } catch (e: any) { setError(e.message); } finally { setRunning(false); }
   };
 
-  const act = async (id: number, action: 'dismiss' | 'acknowledge' | 'fix_champion_tag') => {
+  const act = async (id: number, action: 'dismiss' | 'acknowledge' | 'fix_champion_tag' | 'record_correction') => {
     setActing(id); setError('');
     try {
       const body: any = { id, action };
       if (action === 'fix_champion_tag') body.fixedChampion = fixInputs[id]?.trim();
+      if (action === 'record_correction') body.correctInfo = fixInputs[id]?.trim();
       const res = await fetch('/api/admin/dict-fact-check/queue', {
         method: 'PATCH', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
@@ -120,6 +121,7 @@ export default function DictFactCheckPanel() {
         辞典(matchup_sentinel)・コーチAI知識層(champion_facts/champion_notes)・ナレッジ(personal_knowledge)を横断し、
         表記ゆれ・矛盾・単一ソースのみの未確証な記述・公式データとの食い違いを検出します。
         <strong className="text-stone-700">自動修正・自動削除は一切行わず</strong>、検出結果は下のリストに積まれ、人間が個別に判断します。
+        「訂正を記録」した内容は<strong className="text-stone-700">コーチAI・辞典再生成など今後の全AI生成の共通入口</strong>に反映され、同じ誤りの再発を防ぎます。
       </p>
 
       {error && <p className="text-sm text-rose-700 bg-rose-100 border border-rose-200 rounded-lg px-3 py-2">{error}</p>}
@@ -200,10 +202,23 @@ export default function DictFactCheckPanel() {
                       </button>
                     </>
                   ) : (
-                    <button onClick={() => act(it.id, 'acknowledge')} disabled={acting === it.id}
-                      className="flex items-center gap-1 text-xs font-bold bg-emerald-100 text-emerald-700 border border-emerald-200 px-3 py-1.5 rounded-lg hover:bg-emerald-200 disabled:opacity-50">
-                      <Check size={12} /> 把握した（対応済み）
-                    </button>
+                    <>
+                      <input
+                        value={fixInputs[it.id] || ''}
+                        onChange={(e) => setFixInputs((prev) => ({ ...prev, [it.id]: e.target.value }))}
+                        placeholder="正しい内容を記録（任意・入力すると再発防止に使われます）"
+                        className="text-xs px-2.5 py-1.5 border border-stone-300 rounded-lg bg-white text-stone-900 w-72"
+                      />
+                      <button onClick={() => act(it.id, 'record_correction')} disabled={acting === it.id || !fixInputs[it.id]?.trim()}
+                        title="今後のAI生成すべてに『これが正しい』として反映されます"
+                        className="flex items-center gap-1 text-xs font-bold bg-indigo-100 text-indigo-700 border border-indigo-200 px-3 py-1.5 rounded-lg hover:bg-indigo-200 disabled:opacity-50">
+                        <Check size={12} /> 訂正を記録（再発防止）
+                      </button>
+                      <button onClick={() => act(it.id, 'acknowledge')} disabled={acting === it.id}
+                        className="flex items-center gap-1 text-xs font-bold bg-emerald-100 text-emerald-700 border border-emerald-200 px-3 py-1.5 rounded-lg hover:bg-emerald-200 disabled:opacity-50">
+                        <Check size={12} /> 把握した（記録なし）
+                      </button>
+                    </>
                   )}
                   <button onClick={() => act(it.id, 'dismiss')} disabled={acting === it.id}
                     className="flex items-center gap-1 text-xs font-bold bg-stone-200 text-stone-600 border border-stone-300 px-3 py-1.5 rounded-lg hover:bg-stone-300 disabled:opacity-50">

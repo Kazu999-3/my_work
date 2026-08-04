@@ -38,15 +38,20 @@ export async function getChampionKnowledge(
   const variations = getChampionSearchVariations(champion);
   const orQuery = variations.map((v) => `champion.ilike.%${v}%`).join(',');
 
-  const [{ data: facts }, { data: notes }] = await Promise.all([
+  const [{ data: facts }, { data: notes }, { data: corrections }] = await Promise.all([
     supabase.from('champion_facts').select('*').or(orQuery).limit(1),
     supabase.from('champion_notes').select('*').or(orQuery).limit(40),
+    // 一斉ファクトチェックで人間が確定させた訂正情報。ここに差し込むことで
+    // 再生成・コーチ助言・マッチアップ分析など全AI生成の共通入口で
+    // 同じ誤りを繰り返さないようにする(再発防止)。
+    supabase.from('dict_known_corrections').select('wrong_claim, correct_info').or(orQuery).order('created_at', { ascending: false }).limit(10),
   ]);
 
   const fact = facts && facts.length > 0 ? facts[0] : null;
   const noteRows: any[] = notes || [];
+  const correctionRows: any[] = corrections || [];
 
-  if (!fact && noteRows.length === 0) return empty;
+  if (!fact && noteRows.length === 0 && correctionRows.length === 0) return empty;
 
   // ノートを「鮮度(patch降順) → 出典優先度 → 作成日降順」でランキング
   const rankedNotes = [...noteRows].sort((a, b) => {
@@ -63,6 +68,16 @@ export async function getChampionKnowledge(
 
   // テキスト合成
   const lines: string[] = [];
+
+  // 確定済み訂正は最優先で提示し、他の記述と矛盾する場合はこちらを正とするよう明示する
+  if (correctionRows.length > 0) {
+    lines.push('【⚠️ 過去に人間が確定した訂正情報（必ずこれを正とし、以下の誤りを繰り返さないこと）】');
+    for (const c of correctionRows) {
+      lines.push(`- 誤り: ${c.wrong_claim} → 正しくは: ${c.correct_info}`);
+    }
+    lines.push('');
+  }
+
   if (fact) {
     lines.push(`【${fact.champion} 基本情報${fact.patch ? `（パッチ${fact.patch}）` : ''}】`);
     if (fact.strengths) lines.push(`強み: ${fact.strengths}`);
