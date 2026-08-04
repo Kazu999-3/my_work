@@ -32,6 +32,7 @@ export async function GET(req: Request) {
     // --- 一覧 ---
     const targetType = searchParams.get('type');   // lane_guide / champion_fact
     const targetKey = searchParams.get('key');     // TOP / Graves など
+    const sourceId = searchParams.get('sourceId'); // personal_knowledge記事のid（この記事由来の履歴だけに絞る）
     const limit = Math.min(Number(searchParams.get('limit') || 50), 200);
 
     let query = supabase
@@ -42,6 +43,7 @@ export async function GET(req: Request) {
 
     if (targetType) query = query.eq('target_type', targetType);
     if (targetKey) query = query.eq('target_key', targetKey);
+    if (sourceId) query = query.eq('source_id', String(sourceId));
 
     const { data, error } = await query;
     if (error) throw error;

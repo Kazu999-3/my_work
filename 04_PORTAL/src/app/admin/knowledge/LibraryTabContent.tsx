@@ -10,6 +10,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 import ChampSelect from '../../../components/ChampSelect';
 import { getFavorites, toggleFavoriteArticle } from '../../../components/FavoritesPanel';
+import ArticleRevisionHistory from './ArticleRevisionHistory';
 const parseDate = (dStr: any) => {
   if (!dStr) return 0;
   const t = new Date(dStr).getTime();
@@ -749,6 +750,8 @@ export function LibraryTabContentInner() {
                 )}
               </div>
             )}
+
+            {!editing && <ArticleRevisionHistory articleId={selectedArticle.id} />}
           </div>
         </div>
       </motion.div>
@@ -1011,6 +1014,9 @@ export function LibraryTabContentInner() {
                                     {favoriteArticles.includes(article.id) ? 'お気に入り解除' : 'お気に入り'}
                                   </button>
                                 </div>
+
+                                {/* この記事がレーン別ガイド・辞典へ統合された変化履歴 */}
+                                <ArticleRevisionHistory articleId={article.id} />
                               </div>
                             )}
                           </div>
