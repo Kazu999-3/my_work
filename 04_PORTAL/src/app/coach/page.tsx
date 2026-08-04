@@ -221,6 +221,12 @@ function PostGameTab({ onOpenReflectionModal }: { onOpenReflectionModal: () => v
   const [reflections, setReflections] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // AI自動分析(coach_analyses)ログ。日次Cron・「1分ソロQ振り返り」内の手動生成
+  // いずれで作られた分析も、通知(ベル)を見返さずここで1試合ずつ確認できるようにする。
+  const [analysisHistory, setAnalysisHistory] = useState<any[]>([]);
+  const [analysisHistoryLoading, setAnalysisHistoryLoading] = useState(true);
+  const [expandedAnalysisId, setExpandedAnalysisId] = useState<string | null>(null);
+
   const fetchReflections = async () => {
     setLoading(true);
     try {
@@ -234,8 +240,21 @@ function PostGameTab({ onOpenReflectionModal }: { onOpenReflectionModal: () => v
     }
   };
 
+  const fetchAnalysisHistory = async () => {
+    setAnalysisHistoryLoading(true);
+    try {
+      const data = await callCoachAPI({ mode: 'history', limit: 20 });
+      setAnalysisHistory(data.analyses || []);
+    } catch {
+      setAnalysisHistory([]);
+    } finally {
+      setAnalysisHistoryLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchReflections();
+    fetchAnalysisHistory();
   }, []);
 
   return (
@@ -329,6 +348,94 @@ function PostGameTab({ onOpenReflectionModal }: { onOpenReflectionModal: () => v
           </div>
         </div>
       )}
+
+      {/* AI自動分析ログ(coach_analyses)。日次Cronの通知(ベル)で流れるKDA/Vision等の
+          内容は、これまで見返す画面が無く2行に省略された通知履歴でしか確認できなかった。
+          「1分ソロQ振り返り」内の手動生成分も含め、ここで1試合ずつ見返せるようにする。 */}
+      <div className="space-y-3 animate-in fade-in">
+        <div className="flex items-center justify-between">
+          <h5 className="text-xs font-bold text-foreground/60 uppercase tracking-wider">
+            🤖 AI自動分析ログ {analysisHistory.length > 0 && `(${analysisHistory.length}件)`}
+          </h5>
+        </div>
+
+        {analysisHistoryLoading ? (
+          <Spinner />
+        ) : analysisHistory.length === 0 ? (
+          <p className="text-xs text-stone-500 text-center py-4">まだAI分析の記録がありません。日次Cron、または「1分ソロQ振り返り」内の「AI分析を生成する」ボタンで作成されます。</p>
+        ) : (
+          <div className="space-y-2 max-h-[500px] overflow-y-auto pr-1">
+            {analysisHistory.map((a, idx) => {
+              const isExpanded = expandedAnalysisId === (a.matchId || String(idx));
+              return (
+                <Card key={a.matchId || idx} className={idx === 0 ? 'ring-2 ring-indigo-500/30' : ''}>
+                  <button
+                    type="button"
+                    onClick={() => setExpandedAnalysisId(isExpanded ? null : (a.matchId || String(idx)))}
+                    className="w-full text-left"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <Tag color={a.win ? 'green' : 'red'}>{a.win ? 'VICTORY' : 'DEFEAT'}</Tag>
+                        <span className="font-bold text-stone-900 text-sm">{a.champion}</span>
+                        <span className="text-xs text-stone-400">vs</span>
+                        <span className="font-bold text-stone-700 text-sm">{a.enemyChampion || 'Unknown'}</span>
+                        {idx === 0 && <span className="text-[10px] bg-indigo-600 text-white font-bold px-1.5 py-0.5 rounded">最新</span>}
+                      </div>
+                      <div className="text-xs text-stone-500 flex items-center gap-2">
+                        {new Date(a.createdAt).toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                        <span className="text-indigo-700 font-bold">{isExpanded ? '閉じる ▲' : '詳細 ▼'}</span>
+                      </div>
+                    </div>
+                  </button>
+
+                  {isExpanded && (
+                    <div className="mt-2.5 pt-2.5 border-t border-black/5 space-y-2.5">
+                      <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                        <div className="bg-black/5 rounded-lg p-2">
+                          <div className="text-foreground/40">KDA</div>
+                          <div className="font-bold text-stone-800">{a.kda} ({a.kdaRatio})</div>
+                        </div>
+                        <div className="bg-black/5 rounded-lg p-2">
+                          <div className="text-foreground/40">CS/min</div>
+                          <div className="font-bold text-stone-800">{a.csPerMin}</div>
+                        </div>
+                        <div className="bg-black/5 rounded-lg p-2">
+                          <div className="text-foreground/40">Vision/min</div>
+                          <div className="font-bold text-stone-800">{a.visionPerMin}</div>
+                        </div>
+                      </div>
+
+                      {a.weaknesses?.length > 0 && (
+                        <div className="flex flex-wrap gap-1">
+                          {a.weaknesses.map((w: string, i: number) => (
+                            <span key={i} className="text-[10px] bg-rose-100 text-rose-800 font-bold px-2 py-0.5 rounded-full border border-rose-200">⚠️ {w}</span>
+                          ))}
+                        </div>
+                      )}
+
+                      {a.focus && (
+                        <div className="text-xs">
+                          <span className="font-bold text-emerald-800">🔥 焦点「{a.focus}」: </span>
+                          <span className={a.focusAchieved === true ? 'text-emerald-700 font-bold' : a.focusAchieved === false ? 'text-rose-700 font-bold' : 'text-stone-500'}>
+                            {a.focusAchieved === true ? '達成' : a.focusAchieved === false ? '未達成' : '判定なし'}
+                          </span>
+                        </div>
+                      )}
+
+                      {a.advice && (
+                        <div className="text-xs bg-white/60 rounded border border-black/5 p-2 text-stone-700 whitespace-pre-wrap leading-relaxed">
+                          {a.advice}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </Card>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

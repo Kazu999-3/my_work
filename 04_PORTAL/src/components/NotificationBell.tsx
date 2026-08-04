@@ -30,6 +30,9 @@ export default function NotificationBell({ collapsed = false, align = 'left' }: 
   const [notifications, setNotifications] = useState<AdminNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [open, setOpen] = useState(false);
+  // 通知本文はline-clampで2行に省略されるため、KDA/Vision等を含む長い本文
+  // (例: ソロQ振り返り通知)を全文読むための開閉状態。
+  const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
   const [coords, setCoords] = useState<{ top: number; left?: number; right?: number } | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -109,20 +112,29 @@ export default function NotificationBell({ collapsed = false, align = 'left' }: 
     } catch {}
   };
 
-  const handleClickItem = async (n: AdminNotification) => {
-    if (!n.read) {
-      setNotifications((prev) => prev.map((x) => (x.id === n.id ? { ...x, read: true } : x)));
-      setUnreadCount((c) => Math.max(0, c - 1));
-      try {
-        await fetch('/api/admin/notifications/read', {
-          method: 'POST', credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: n.id }),
-        });
-      } catch {}
-    }
-    if (n.url) window.location.href = n.url;
-    setOpen(false);
+  const markRead = async (n: AdminNotification) => {
+    if (n.read) return;
+    setNotifications((prev) => prev.map((x) => (x.id === n.id ? { ...x, read: true } : x)));
+    setUnreadCount((c) => Math.max(0, c - 1));
+    try {
+      await fetch('/api/admin/notifications/read', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: n.id }),
+      });
+    } catch {}
+  };
+
+  // 本文をタップした時は既読化＋開閉のみ行い、遷移はしない
+  // （2行省略された本文を全文読みたいだけで、対面メモ画面へ飛びたいとは限らないため）。
+  // 実際のページ遷移は下の明示的な「開く」リンクに分離する。
+  const toggleExpand = (n: AdminNotification) => {
+    markRead(n);
+    setExpandedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(n.id)) next.delete(n.id); else next.add(n.id);
+      return next;
+    });
   };
 
   return (
@@ -163,22 +175,45 @@ export default function NotificationBell({ collapsed = false, align = 'left' }: 
             <div className="px-4 py-8 text-center text-xs text-gray-500">通知はありません</div>
           ) : (
             <div className="divide-y divide-black/5">
-              {notifications.map((n) => (
-                <button
-                  key={n.id}
-                  onClick={() => handleClickItem(n)}
-                  className={`block w-full px-4 py-3 text-left transition-colors hover:bg-black/5 ${!n.read ? 'bg-cyan-50' : ''}`}
-                >
-                  <div className="flex items-start gap-2">
-                    {!n.read && <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-cyan-400" />}
-                    <div className="min-w-0 flex-1">
-                      <div className="text-xs font-bold text-gray-800 line-clamp-2">{n.title}</div>
-                      {n.body && <div className="mt-0.5 text-[10px] text-gray-500 line-clamp-2 whitespace-pre-wrap">{n.body}</div>}
-                      <div className="mt-1 text-[9px] text-gray-500">{timeAgo(n.created_at)}</div>
-                    </div>
+              {notifications.map((n) => {
+                const isExpanded = expandedIds.has(n.id);
+                const isLong = !!n.body && n.body.length > 50;
+                return (
+                  <div key={n.id} className={`px-4 py-3 ${!n.read ? 'bg-cyan-50' : ''}`}>
+                    <button
+                      onClick={() => toggleExpand(n)}
+                      className="block w-full text-left"
+                    >
+                      <div className="flex items-start gap-2">
+                        {!n.read && <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-cyan-400" />}
+                        <div className="min-w-0 flex-1">
+                          <div className="text-xs font-bold text-gray-800">{n.title}</div>
+                          {n.body && (
+                            <div className={`mt-0.5 text-[10px] text-gray-500 whitespace-pre-wrap ${isExpanded ? '' : 'line-clamp-2'}`}>
+                              {n.body}
+                            </div>
+                          )}
+                          <div className="mt-1 flex items-center gap-2">
+                            <span className="text-[9px] text-gray-500">{timeAgo(n.created_at)}</span>
+                            {isLong && (
+                              <span className="text-[9px] font-bold text-cyan-700">{isExpanded ? '閉じる' : 'もっと見る'}</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </button>
+                    {n.url && (
+                      <a
+                        href={n.url}
+                        onClick={() => markRead(n)}
+                        className="mt-1.5 ml-3.5 inline-block text-[10px] font-bold text-cyan-700 hover:underline"
+                      >
+                        関連ページを開く →
+                      </a>
+                    )}
                   </div>
-                </button>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>,

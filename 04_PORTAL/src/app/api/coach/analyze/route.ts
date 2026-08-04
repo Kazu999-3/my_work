@@ -384,7 +384,7 @@ export async function POST(req: NextRequest) {
   }
   // =================================
     const body = await req.json();
-    const mode: 'pre' | 'post' | 'post_latest' | 'matchup' | 'tilt' | 'trends' | 'practice_menu' | 'goal' = body.mode || 'pre';
+    const mode: 'pre' | 'post' | 'post_latest' | 'post_lookup' | 'history' | 'matchup' | 'tilt' | 'trends' | 'practice_menu' | 'goal' = body.mode || 'pre';
     const championInput: string = body.champion || '';
     const enemyChampionInput: string = body.enemyChampion || '';
 
@@ -780,13 +780,85 @@ ${sentinelCtx || '（辞典データなし）'}`;
     }
 
     // ----------------------------
-    // MODE: post - 試合後振り返り
+    // MODE: post_lookup - 「1分ソロQ振り返り」モーダルで、選択した特定の試合について
+    // 既にAI分析済み(coach_analyses)かどうかを安価に確認する（Gemini/Riot追加呼び出し無し）。
+    // 日次Cronがまだその試合を処理していない場合はfound:falseを返すので、
+    // フロント側は見つからなければ「post」モードで明示的に生成をトリガーする。
+    // ----------------------------
+    if (mode === 'post_lookup') {
+      const matchId: string = body.matchId || '';
+      if (!matchId) return NextResponse.json({ error: 'matchIdを指定してください。' }, { status: 400 });
+
+      const { data: row } = await supabase
+        .from('coach_analyses')
+        .select('*')
+        .eq('puuid', puuid)
+        .eq('match_id', matchId)
+        .maybeSingle();
+
+      if (!row) return NextResponse.json({ mode: 'post_lookup', found: false });
+
+      return NextResponse.json({
+        mode: 'post_lookup',
+        found: true,
+        result: {
+          win: row.win,
+          champion: row.champion,
+          kda: `${row.kills}/${row.deaths}/${row.assists}`,
+          kdaRatio: row.kda_ratio === null ? 'Perfect' : String(row.kda_ratio),
+          csPerMin: String(row.cs_per_min),
+          visionPerMin: String(row.vision_per_min),
+        },
+        weaknesses: row.weaknesses || [],
+        advice: row.advice || '',
+        focus: row.focus,
+        focusAchieved: row.focus_achieved,
+        createdAt: row.created_at,
+      });
+    }
+
+    // ----------------------------
+    // MODE: history - AI自動分析ログ(coach_analyses)の一覧。「3. 試合後振り返り」
+    // タブで、日次Cron・手動生成いずれで作られた分析も1試合ずつ見返せるようにする。
+    // ----------------------------
+    if (mode === 'history') {
+      const limit = Math.min(50, Math.max(1, Number(body.limit) || 20));
+      const { data: rows } = await supabase
+        .from('coach_analyses')
+        .select('*')
+        .eq('puuid', puuid)
+        .order('created_at', { ascending: false })
+        .limit(limit);
+
+      return NextResponse.json({
+        mode: 'history',
+        analyses: (rows || []).map((row: any) => ({
+          matchId: row.match_id,
+          win: row.win,
+          champion: row.champion,
+          enemyChampion: row.enemy_champion,
+          role: row.role,
+          kda: `${row.kills}/${row.deaths}/${row.assists}`,
+          kdaRatio: row.kda_ratio === null ? 'Perfect' : String(row.kda_ratio),
+          csPerMin: String(row.cs_per_min),
+          visionPerMin: String(row.vision_per_min),
+          weaknesses: row.weaknesses || [],
+          advice: row.advice || '',
+          focus: row.focus,
+          focusAchieved: row.focus_achieved,
+          createdAt: row.created_at,
+        })),
+      });
+    }
+
+    // ----------------------------
+    // MODE: post - 試合後振り返り（matchId省略時は最新のランクソロ試合が対象）
     // ----------------------------
     if (mode === 'post') {
       // 中身は lib/coachPostGame.ts に切り出し済み（日次Cronからも同じロジックで
       // 呼べるようにするため）。ここは薄い委譲のみ。
       try {
-        const review = await runPostGameReview({ focus: body.focus });
+        const review = await runPostGameReview({ matchId: body.matchId, focus: body.focus });
         return NextResponse.json({ mode: 'post', ...review, saved: true });
       } catch (e: any) {
         return NextResponse.json({ error: e.message || '振り返り分析に失敗しました。' }, { status: 404 });

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { apiJson } from '../../lib/apiClient';
 
 interface MatchInfo {
   matchId: string;
@@ -60,6 +61,14 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
 
+  // AI自動分析(coach_analyses)の結果キャッシュ。試合(matchId)ごとに1回だけ確認し、
+  // タブ切替のたびに再取得しないようにする。見つからない場合は明示的なボタンで
+  // 生成する（開くたびに自動でGeminiを叩くとクォータを無駄に消費するため）。
+  const [analysisCache, setAnalysisCache] = useState<Record<string, any>>({});
+  const [analysisLoading, setAnalysisLoading] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [analysisError, setAnalysisError] = useState('');
+
   // 保存済みマッチIDのフェッチ
   const fetchSavedMatchIds = async () => {
     try {
@@ -86,6 +95,30 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
       }
     }
   }, [isOpen]);
+
+  // 選択中の試合について、AI自動分析(coach_analyses)が既にあるか安価に確認する。
+  // Gemini呼び出しを伴わない読み取りのみなので、選択が変わるたびに自動実行してよい。
+  // 見つからなかった場合の「生成」ボタン(generateAnalysis)だけがコストのかかる呼び出し。
+  useEffect(() => {
+    const m = matches[selectedIndex];
+    if (!m?.matchId || analysisCache[m.matchId] !== undefined) return;
+    let cancelled = false;
+    setAnalysisLoading(true);
+    setAnalysisError('');
+    apiJson('/api/coach/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mode: 'post_lookup', matchId: m.matchId }),
+    })
+      .then((data: any) => {
+        if (cancelled) return;
+        setAnalysisCache((prev) => ({ ...prev, [m.matchId]: data.found ? data : { found: false } }));
+      })
+      .catch((e: any) => { if (!cancelled) setAnalysisError(e.message); })
+      .finally(() => { if (!cancelled) setAnalysisLoading(false); });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [matches, selectedIndex]);
 
   if (!isOpen) return null;
 
@@ -129,6 +162,29 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
   };
 
   const currentMatch = matches[selectedIndex] || null;
+  const currentAnalysis = currentMatch ? analysisCache[currentMatch.matchId] : undefined;
+
+  const generateAnalysis = async () => {
+    if (!currentMatch) return;
+    setGenerating(true);
+    setAnalysisError('');
+    try {
+      const data: any = await apiJson('/api/coach/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: 'post', matchId: currentMatch.matchId }),
+        timeout: 60000, // Gemini生成込みのため長め
+      });
+      setAnalysisCache((prev) => ({
+        ...prev,
+        [currentMatch.matchId]: { found: true, result: data.result, weaknesses: data.weaknesses, advice: data.advice, focus: data.focus, focusAchieved: data.focusAchieved },
+      }));
+    } catch (e: any) {
+      setAnalysisError(e.message || 'AI分析の生成に失敗しました。');
+    } finally {
+      setGenerating(false);
+    }
+  };
   const isWin = currentMatch ? currentMatch.win : true;
   const availableTags = isWin ? WIN_TAGS : LOSE_TAGS;
   const isAlreadyReflected = !!currentMatch && savedMatchIds.has(currentMatch.matchId);
@@ -301,6 +357,65 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
               <p className="text-xs text-stone-400 italic">Riot ID を入力して「試合再取得」を押してください。</p>
             )}
           </div>
+
+          {/* AI自動分析(coach_analyses)。KDA/CS/Vision・弱点・アドバイスを、振り返りを
+              書く前にその場で確認できるようにする。通知(ベル)に流れる内容と同じもの。 */}
+          {currentMatch && (
+            <div className="bg-indigo-50/70 border border-indigo-200 rounded-lg p-3.5 space-y-2 shadow-sm">
+              <label className="font-bold text-indigo-950 text-xs block flex items-center gap-1.5">
+                <span>🤖</span> AI自動分析（KDA / CS / Vision・弱点・アドバイス）
+              </label>
+
+              {analysisLoading ? (
+                <p className="text-xs text-stone-500 flex items-center gap-2">
+                  <span className="w-3.5 h-3.5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+                  確認中...
+                </p>
+              ) : currentAnalysis?.found ? (
+                <div className="space-y-2.5">
+                  <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                    <div className="bg-white rounded-lg p-2 border border-indigo-100">
+                      <div className="text-stone-400">KDA</div>
+                      <div className="font-bold text-stone-800">{currentAnalysis.result.kda} ({currentAnalysis.result.kdaRatio})</div>
+                    </div>
+                    <div className="bg-white rounded-lg p-2 border border-indigo-100">
+                      <div className="text-stone-400">CS/min</div>
+                      <div className="font-bold text-stone-800">{currentAnalysis.result.csPerMin}</div>
+                    </div>
+                    <div className="bg-white rounded-lg p-2 border border-indigo-100">
+                      <div className="text-stone-400">Vision/min</div>
+                      <div className="font-bold text-stone-800">{currentAnalysis.result.visionPerMin}</div>
+                    </div>
+                  </div>
+                  {currentAnalysis.weaknesses?.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {currentAnalysis.weaknesses.map((w: string, i: number) => (
+                        <span key={i} className="text-[10px] bg-rose-100 text-rose-800 font-bold px-2 py-0.5 rounded-full border border-rose-200">⚠️ {w}</span>
+                      ))}
+                    </div>
+                  )}
+                  {currentAnalysis.advice && (
+                    <p className="text-xs text-stone-700 bg-white/70 rounded border border-indigo-100 p-2 whitespace-pre-wrap leading-relaxed">
+                      {currentAnalysis.advice}
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-xs text-stone-500">この試合はまだAI分析されていません。</p>
+                  <button
+                    type="button"
+                    onClick={generateAnalysis}
+                    disabled={generating}
+                    className="shrink-0 px-3 py-1.5 bg-indigo-700 hover:bg-indigo-800 text-white font-bold text-xs rounded-lg shadow transition-colors disabled:opacity-50"
+                  >
+                    {generating ? '生成中...(最大1分)' : 'AI分析を生成する'}
+                  </button>
+                </div>
+              )}
+              {analysisError && <p className="text-xs text-rose-600 font-medium">{analysisError}</p>}
+            </div>
+          )}
 
           {/* 2. メンタル度評価 */}
           <div className="bg-white border border-stone-200 rounded-lg p-3.5 space-y-2 shadow-sm">
