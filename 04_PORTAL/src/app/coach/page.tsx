@@ -816,6 +816,12 @@ function TimingHeatmapTab() {
   const [syncing, setSyncing] = useState(false);
   const [syncProgress, setSyncProgress] = useState<{ processed: number; synced: number } | null>(null);
 
+  // ブラウザネイティブのtitle属性ツールチップは表示までのディレイが長く、
+  // overflow-x-autoのテーブル内では途切れる/出ないことがあり、スマホのタップでは
+  // そもそも発火しない。カーソルを合わせる(またはタップする)と即座に見える
+  // 専用の詳細表示に置き換える。
+  const [activeCell, setActiveCell] = useState<{ day: number; hour: number } | null>(null);
+
   const fetchHeatmap = async () => {
     setLoading(true); setError('');
     try {
@@ -927,8 +933,29 @@ function TimingHeatmapTab() {
             </div>
           )}
 
+          {/* カーソルを合わせた(またはタップした)マスの詳細。テーブル内のtitle属性だと
+              表示が遅い/出ないことがあり、スマホのタップでは発火しないための代替表示。 */}
+          <div className="min-h-[2rem] rounded-xl border border-black/10 bg-black/[0.02] px-3 py-2 text-xs">
+            {activeCell ? (() => {
+              const c = cellMap.get(`${activeCell.day}-${activeCell.hour}`);
+              const games = c?.games || 0;
+              return (
+                <span className="font-bold text-stone-900">
+                  {HEATMAP_DAYS[activeCell.day]}曜 {activeCell.hour}時台:{' '}
+                  {games > 0 ? (
+                    <span className="font-normal text-stone-600">{c!.winRate}% ({c!.wins}/{games}勝)</span>
+                  ) : (
+                    <span className="font-normal text-stone-400">データなし</span>
+                  )}
+                </span>
+              );
+            })() : (
+              <span className="text-stone-400">マスにカーソルを合わせる（スマホはタップ）と詳細がここに表示されます</span>
+            )}
+          </div>
+
           <div className="overflow-x-auto">
-            <table className="border-collapse text-[10px]">
+            <table className="border-collapse text-[10px]" onMouseLeave={() => setActiveCell(null)}>
               <thead>
                 <tr>
                   <th className="w-8"></th>
@@ -947,11 +974,15 @@ function TimingHeatmapTab() {
                       const c = cellMap.get(`${day}-${hour}`);
                       const games = c?.games || 0;
                       const winRate = c?.winRate ?? 0;
+                      const isActive = activeCell?.day === day && activeCell?.hour === hour;
                       return (
                         <td key={hour} className="p-0.5">
                           <div
-                            className={`h-4 w-4 rounded-sm ${cellColor(winRate, games)}`}
-                            title={games > 0 ? `${dayLabel}曜 ${hour}時台: ${winRate}% (${c!.wins}/${games}勝)` : `${dayLabel}曜 ${hour}時台: データなし`}
+                            onMouseEnter={() => setActiveCell({ day, hour })}
+                            onClick={() => setActiveCell(isActive ? null : { day, hour })}
+                            className={`h-4 w-4 rounded-sm cursor-pointer transition-all ${cellColor(winRate, games)} ${
+                              isActive ? 'ring-2 ring-offset-1 ring-indigo-500 scale-110' : ''
+                            }`}
                           />
                         </td>
                       );
@@ -961,7 +992,7 @@ function TimingHeatmapTab() {
               </tbody>
             </table>
           </div>
-          <p className="text-[10px] text-foreground/30">※ グレーは3試合未満のためサンプル不足のセル。マスにカーソルを合わせると詳細を表示します。</p>
+          <p className="text-[10px] text-foreground/30">※ グレーは3試合未満のためサンプル不足のセル。マスにカーソルを合わせる（スマホはタップ）と上に詳細を表示します。</p>
         </div>
       )}
     </div>
