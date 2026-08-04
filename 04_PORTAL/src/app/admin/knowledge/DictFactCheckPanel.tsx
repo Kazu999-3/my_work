@@ -11,6 +11,7 @@ interface QueueItem {
   source_refs: any;
   status: string;
   created_at: string;
+  sourcePreview?: { title: string; body: string; url?: string };
 }
 
 const ISSUE_LABEL: Record<string, { label: string; cls: string }> = {
@@ -187,12 +188,31 @@ export default function DictFactCheckPanel() {
                       <span className="text-[10px] text-stone-400">出典: {it.source_refs.map((s: any) => (typeof s === 'string' ? s : s.table)).join(', ')}</span>
                     )}
                   </div>
-                  <a href={`/champions?select=${encodeURIComponent(it.champion)}`} target="_blank" rel="noreferrer"
-                    className="text-[10px] text-sky-700 hover:underline flex items-center gap-0.5 shrink-0">
-                    辞典で確認 <ExternalLink size={10} />
-                  </a>
+                  {it.issue_type !== 'invalid_champion_tag' && (
+                    <a href={`/champions?select=${encodeURIComponent(it.champion)}`} target="_blank" rel="noreferrer"
+                      className="text-[10px] text-sky-700 hover:underline flex items-center gap-0.5 shrink-0">
+                      辞典で確認 <ExternalLink size={10} />
+                    </a>
+                  )}
                 </div>
                 <p className="text-xs text-stone-700 mt-1.5">{it.summary}</p>
+
+                {/* invalid_champion_tagはchampion列自体がゴミ値のことが多く、辞典リンクが
+                    意味を持たないため、参照元レコードの中身をここに直接プレビュー表示する */}
+                {it.issue_type === 'invalid_champion_tag' && it.sourcePreview && (
+                  <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50/70 p-2.5 text-xs">
+                    <div className="font-bold text-amber-900">📄 {it.sourcePreview.title || '(タイトルなし)'}</div>
+                    {it.sourcePreview.body && (
+                      <p className="text-stone-600 mt-1 whitespace-pre-wrap leading-relaxed">{it.sourcePreview.body}{it.sourcePreview.body.length >= 300 ? '…' : ''}</p>
+                    )}
+                    {it.sourcePreview.url && (
+                      <a href={it.sourcePreview.url} target="_blank" rel="noreferrer"
+                        className="text-sky-700 hover:underline flex items-center gap-0.5 mt-1 w-fit">
+                        元記事を開く <ExternalLink size={10} />
+                      </a>
+                    )}
+                  </div>
+                )}
 
                 <div className="flex items-center gap-2 mt-2.5 flex-wrap">
                   {it.issue_type === 'invalid_champion_tag' ? (

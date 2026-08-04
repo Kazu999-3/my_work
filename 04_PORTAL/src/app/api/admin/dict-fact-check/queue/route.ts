@@ -14,6 +14,51 @@ const FIXABLE_TABLES = new Set(['matchup_sentinel', 'champion_notes', 'personal_
 // enemy列を持つテーブルだけは「対面」として2体目を書き込める。
 const TABLES_WITH_ENEMY = new Set(['matchup_sentinel', 'champion_notes']);
 
+// invalid_champion_tagは champion 列自体がゴミ値(記号・単発文字等)のことが多く、
+// 「辞典で確認」リンク(champion名から引く辞典ページ)が意味を持たない。
+// 代わりに、参照元レコードの本文を直接プレビュー表示できるよう、テーブルごとの
+// タイトル/本文カラムを定義しておく（人間が「元々何のチャンピオンの話だったか」を
+// 判断するために必要）。
+const PREVIEW_COLUMNS: Record<string, { title: string; body: string; url?: string }> = {
+  matchup_sentinel: { title: 'title', body: 'strategy' },
+  champion_notes: { title: 'title', body: 'body' },
+  personal_knowledge: { title: 'title', body: 'content', url: 'source_url' },
+};
+
+async function attachSourcePreviews(items: any[]): Promise<any[]> {
+  const targets = items.filter((it) => it.issue_type === 'invalid_champion_tag' && it.source_refs?.[0]?.table && it.source_refs?.[0]?.id);
+  if (targets.length === 0) return items;
+
+  const idsByTable = new Map<string, number[]>();
+  for (const it of targets) {
+    const { table, id } = it.source_refs[0];
+    if (!PREVIEW_COLUMNS[table]) continue;
+    if (!idsByTable.has(table)) idsByTable.set(table, []);
+    idsByTable.get(table)!.push(id);
+  }
+
+  const previewByKey = new Map<string, { title: string; body: string; url?: string }>();
+  for (const [table, ids] of idsByTable) {
+    const cols = PREVIEW_COLUMNS[table];
+    const selectCols = ['id', cols.title, cols.body, cols.url].filter(Boolean).join(', ');
+    const { data } = await supabase.from(table).select(selectCols).in('id', ids);
+    for (const row of (data || []) as any[]) {
+      previewByKey.set(`${table}:${row.id}`, {
+        title: row[cols.title] || '',
+        body: (row[cols.body] || '').toString().slice(0, 300),
+        url: cols.url ? row[cols.url] : undefined,
+      });
+    }
+  }
+
+  return items.map((it) => {
+    if (it.issue_type !== 'invalid_champion_tag' || !it.source_refs?.[0]) return it;
+    const { table, id } = it.source_refs[0];
+    const preview = previewByKey.get(`${table}:${id}`);
+    return preview ? { ...it, sourcePreview: preview } : it;
+  });
+}
+
 export async function GET(req: Request) {
   const auth = await verifyAdminSession(req);
   if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: 401 });
@@ -28,7 +73,8 @@ export async function GET(req: Request) {
     const { data, error } = await query;
     if (error) throw error;
 
-    return NextResponse.json({ items: data || [] });
+    const items = await attachSourcePreviews(data || []);
+    return NextResponse.json({ items });
   } catch (err: any) {
     console.error('[dict-fact-check/queue] GET error:', err);
     return NextResponse.json({ error: err.message }, { status: 500 });
