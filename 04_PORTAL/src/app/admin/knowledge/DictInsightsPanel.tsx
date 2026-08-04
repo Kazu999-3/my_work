@@ -231,10 +231,12 @@ export default function DictInsightsPanel({ mode = 'inspect' }: { mode?: 'mainte
         <p className="text-[11px] text-stone-500 mb-3">
           英語のまま保存されている辞典・記事・メモを日本語に変換します。完了するまで自動で繰り返し実行されます
           （チャンピオン名やアイテム名は英語のまま残ります）。
+          「攻略ライブラリ記事」＝ナレッジ(personal_knowledge)、「対面メモ・チャンピオンノート」＝
+          対面メモ(matchup_sentinel)とコーチAI知識層メモ(champion_notes)の両方が対象です。
         </p>
         <div className="flex gap-2 flex-wrap">
           {([
-            ['facts', 'チャンピオン辞典'], ['articles', '攻略ライブラリ記事'], ['memos', '対面メモ'],
+            ['facts', 'チャンピオン辞典'], ['articles', '攻略ライブラリ記事'], ['memos', '対面メモ・チャンピオンノート'],
           ] as const).map(([key, label]) => (
             <button key={key} onClick={() => translateAll(key)} disabled={!!translating}
               className="text-xs font-bold bg-orange-100 text-orange-700 border border-orange-200 px-3 py-2 rounded-lg hover:bg-orange-200 disabled:opacity-50">
