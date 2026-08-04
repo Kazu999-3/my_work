@@ -35,6 +35,7 @@ export default function DictFactCheckPanel() {
   const [runMsg, setRunMsg] = useState('');
 
   const [fixInputs, setFixInputs] = useState<Record<number, string>>({});
+  const [enemyInputs, setEnemyInputs] = useState<Record<number, string>>({});
   const [acting, setActing] = useState<number | null>(null);
 
   const loadQueue = async () => {
@@ -102,7 +103,10 @@ export default function DictFactCheckPanel() {
     setActing(id); setError('');
     try {
       const body: any = { id, action };
-      if (action === 'fix_champion_tag') body.fixedChampion = fixInputs[id]?.trim();
+      if (action === 'fix_champion_tag') {
+        body.fixedChampion = fixInputs[id]?.trim();
+        if (enemyInputs[id]?.trim()) body.fixedEnemy = enemyInputs[id].trim();
+      }
       if (action === 'record_correction') body.correctInfo = fixInputs[id]?.trim();
       const res = await fetch('/api/admin/dict-fact-check/queue', {
         method: 'PATCH', credentials: 'include',
@@ -199,6 +203,15 @@ export default function DictFactCheckPanel() {
                         placeholder="正しいチャンピオン名を英語表記で（例: Graves）"
                         className="text-xs px-2.5 py-1.5 border border-stone-300 rounded-lg bg-white text-stone-900 w-56"
                       />
+                      {['matchup_sentinel', 'champion_notes'].includes(it.source_refs?.[0]?.table) && (
+                        <input
+                          value={enemyInputs[it.id] || ''}
+                          onChange={(e) => setEnemyInputs((prev) => ({ ...prev, [it.id]: e.target.value }))}
+                          placeholder="対面がいれば入力（任意・例: Fizz）"
+                          title="元の値に2チャンピオン分(例: 「Rek'Sai & Fizz」)が紛れていた場合、2体目をここに"
+                          className="text-xs px-2.5 py-1.5 border border-stone-300 rounded-lg bg-white text-stone-900 w-48"
+                        />
+                      )}
                       <button onClick={() => act(it.id, 'fix_champion_tag')} disabled={acting === it.id || !fixInputs[it.id]?.trim()}
                         className="flex items-center gap-1 text-xs font-bold bg-emerald-100 text-emerald-700 border border-emerald-200 px-3 py-1.5 rounded-lg hover:bg-emerald-200 disabled:opacity-50">
                         <Check size={12} /> この名前に修正

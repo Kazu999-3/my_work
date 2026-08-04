@@ -10,6 +10,9 @@ import { getAllChampionIds } from '../../../../../lib/ddragonClient';
 export const dynamic = 'force-dynamic';
 
 const FIXABLE_TABLES = new Set(['matchup_sentinel', 'champion_notes', 'personal_knowledge']);
+// champion列に「Rek'Sai & Fizz」のように2チャンピオン分が紛れ込んでいた場合、
+// enemy列を持つテーブルだけは「対面」として2体目を書き込める。
+const TABLES_WITH_ENEMY = new Set(['matchup_sentinel', 'champion_notes']);
 
 export async function GET(req: Request) {
   const auth = await verifyAdminSession(req);
@@ -66,9 +69,14 @@ export async function PATCH(req: Request) {
       // 日本語名(「グレイブス」等)や表記ゆれで入力されても、DataDragon準拠の英語IDに
       // 正規化してから保存する。ここで正規化しないと、修正したつもりが別の形の
       // 不正タグを新しく作ってしまう(グルーピング・他機能からの検索が壊れる)。
-      const resolved = resolveChampionId(rawInput);
       const roster = await getAllChampionIds();
-      const canonical = Array.from(roster).find((r) => r.toLowerCase() === resolved?.toLowerCase());
+      const rosterArr = Array.from(roster);
+      const resolveOrError = (raw: string): string | null => {
+        const resolved = resolveChampionId(raw);
+        return rosterArr.find((r) => r.toLowerCase() === resolved?.toLowerCase()) || null;
+      };
+
+      const canonical = resolveOrError(rawInput);
       if (!canonical) {
         return NextResponse.json({ error: `「${rawInput}」を実在チャンピオン名として認識できませんでした。英語表記(例: Graves)で入力してください。` }, { status: 400 });
       }
@@ -78,15 +86,33 @@ export async function PATCH(req: Request) {
         return NextResponse.json({ error: '修正対象のレコードを特定できませんでした。' }, { status: 400 });
       }
 
-      const { error: updateErr } = await supabase.from(ref.table).update({ champion: canonical }).eq('id', ref.id);
+      // 「Rek'Sai & Fizz」のように元の値に2チャンピオン分が紛れている場合、
+      // 2体目を「対面」としてenemy列に書き込めるようにする(enemy列を持つ
+      // テーブルのみ対応。personal_knowledgeはenemy概念が無いため非対応)。
+      const rawEnemyInput = String(body.fixedEnemy || '').trim();
+      let canonicalEnemy: string | null = null;
+      if (rawEnemyInput) {
+        if (!TABLES_WITH_ENEMY.has(ref.table)) {
+          return NextResponse.json({ error: `${ref.table}には対面(enemy)の概念がないため、この項目では指定できません。` }, { status: 400 });
+        }
+        canonicalEnemy = resolveOrError(rawEnemyInput);
+        if (!canonicalEnemy) {
+          return NextResponse.json({ error: `対面「${rawEnemyInput}」を実在チャンピオン名として認識できませんでした。` }, { status: 400 });
+        }
+      }
+
+      const updatePayload: Record<string, string> = { champion: canonical };
+      if (canonicalEnemy) updatePayload.enemy = canonicalEnemy;
+
+      const { error: updateErr } = await supabase.from(ref.table).update(updatePayload).eq('id', ref.id);
       if (updateErr) throw updateErr;
 
       const { error } = await supabase
         .from('dict_fact_check_queue')
-        .update({ status: 'fixed', reviewed_at: new Date().toISOString(), detail: { ...(item.detail || {}), fixedChampion: canonical } })
+        .update({ status: 'fixed', reviewed_at: new Date().toISOString(), detail: { ...(item.detail || {}), fixedChampion: canonical, fixedEnemy: canonicalEnemy } })
         .eq('id', id);
       if (error) throw error;
-      return NextResponse.json({ success: true, fixedChampion: canonical });
+      return NextResponse.json({ success: true, fixedChampion: canonical, fixedEnemy: canonicalEnemy });
     }
 
     if (action === 'record_correction') {

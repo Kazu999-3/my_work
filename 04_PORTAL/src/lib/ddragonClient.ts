@@ -1,4 +1,4 @@
-let cachedLatestPatch = "14.24.1"; // 確実に実在するDDragon安定パッチバージョン
+let cachedLatestPatch = "14.24.1"; // 確実に実在するDDragon安定パッチバージョン（フェッチ失敗時のフォールバック）
 
 export async function initLatestPatch() {
   try {
@@ -14,9 +14,19 @@ export async function initLatestPatch() {
   }
 }
 
-// 起動時に非同期で実行
+// 起動時に非同期で実行（ブラウザ限定）。
 if (typeof window !== "undefined") {
   initLatestPatch().catch(console.error);
+}
+
+// サーバー側(APIルート等)は上記の起動時フックが効かず、Zaahen/Yunara/Locke等の
+// 新チャンピオンがずっと未追加の14.24.1データのまま扱われ続けるバグがあった
+// (2026-08-04発覚)。getAllChampionIds/getChampionAbilityNamesの初回呼び出し時に
+// 一度だけ最新パッチを取得するようにする(以降はモジュールキャッシュを再利用)。
+let patchInitPromise: Promise<void> | null = null;
+async function ensureLatestPatch(): Promise<void> {
+  if (!patchInitPromise) patchInitPromise = initLatestPatch();
+  await patchInitPromise;
 }
 
 // DDragon の特殊ID・表記揺れ・スペース削除マッピングテーブル
@@ -105,6 +115,7 @@ let champDataCache: Record<string, string> | null = null;
 export async function getChampNameById(id: number): Promise<string> {
   if (!champDataCache) {
     try {
+      await ensureLatestPatch();
       const res = await fetch(`https://ddragon.leagueoflegends.com/cdn/${cachedLatestPatch}/data/en_US/champion.json`);
       if (res.ok) {
         const data = await res.json();
@@ -133,6 +144,7 @@ let championIdSetCache: Set<string> | null = null;
 export async function getAllChampionIds(): Promise<Set<string>> {
   if (championIdSetCache) return championIdSetCache;
   try {
+    await ensureLatestPatch();
     const res = await fetch(`https://ddragon.leagueoflegends.com/cdn/${cachedLatestPatch}/data/en_US/champion.json`);
     if (res.ok) {
       const data = await res.json();
@@ -151,6 +163,7 @@ export async function getChampionAbilityNames(champId: string): Promise<string[]
   const formatted = formatChampId(champId);
   if (abilityNameCache.has(formatted)) return abilityNameCache.get(formatted)!;
   try {
+    await ensureLatestPatch();
     const res = await fetch(`https://ddragon.leagueoflegends.com/cdn/${cachedLatestPatch}/data/en_US/champion/${formatted}.json`);
     if (res.ok) {
       const data = await res.json();
