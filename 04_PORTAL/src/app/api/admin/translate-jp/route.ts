@@ -18,6 +18,16 @@ const CHUNK = 2;
 // 間隔を空けることで429そのものを避ける（リトライに頼らない）。
 const COOL_DOWN_MS = 4000;
 
+// 動詞（の語幹）を含むかどうか。アイテム名・ルーン名だけの羅列（例:
+// "Arcane Boots, Scythe of Vyse, Locket of the Iron Solari"）は、翻訳指示上
+// 固有名詞を英語のまま残すため、AIに何度渡しても内容が変化しない。
+// それにも関わらずisEnglish()が「まだ英語」と判定し続け、champion_facts の
+// power_spikes/build_runes 等で同じ十数件を無限に再翻訳し続け、変換件数だけが
+// 際限なく積み上がる不具合があった(2026-08-04、"日本語化500件超え"として発覚)。
+// 固有名詞の羅列には動詞がほぼ出現しないため、動詞の有無で「本当に翻訳が
+// 必要な英文か」と「翻訳不要な固有名詞リスト」を切り分ける。
+const PROSE_VERB_RE = /\b(is|are|was|were|has|have|excel|lack|provid|allow|requir|need|deal|struggl|reli|domina|focus|help|make|giv|offer|becom|remain|contain|includ|featur|utiliz|maxim|secur|priorit|understand|analyz|adapt|anticipat|gain|build|scal|engag|push|initiat|control|manag|counter|synerg|position)\w*\b/i;
+
 /** 日本語がほとんど含まれない＝英語のままと判定する */
 function isEnglish(text: string): boolean {
   const t = String(text || '').trim();
@@ -31,7 +41,10 @@ function isEnglish(text: string): boolean {
 
   // 比率が低くても、英単語がほとんど無ければ（記号や数値の羅列）翻訳しない
   const words = (t.match(/[A-Za-z]{3,}/g) || []).length;
-  return words >= 8;
+  if (words < 8) return false;
+
+  // 動詞が無ければアイテム名等の固有名詞リストの可能性が高いため対象外にする
+  return PROSE_VERB_RE.test(t);
 }
 
 /** レート制限に当たったことを示すエラー（呼び出し側で「中断して途中保存」に使う） */
