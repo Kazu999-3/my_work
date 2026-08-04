@@ -53,21 +53,46 @@ const INVALID_TAG_TARGETS: { table: 'matchup_sentinel' | 'champion_notes' | 'per
   { table: 'personal_knowledge', skip: ['UNKNOWN'] },
 ];
 
-export async function scanInvalidChampionTags(supabase: any): Promise<number> {
+export interface InvalidTagScanResult {
+  inserted: number;
+  autoResolved: number;
+}
+
+export async function scanInvalidChampionTags(supabase: any): Promise<InvalidTagScanResult> {
   const roster = await getAllChampionIds();
-  const rosterLower = new Set(Array.from(roster).map((s) => s.toLowerCase()));
+  const rosterLower = new Map(Array.from(roster).map((r) => [r.toLowerCase(), r]));
 
   const { data: existingPending } = await supabase
     .from('dict_fact_check_queue')
-    .select('source_refs')
+    .select('id, champion, source_refs')
     .eq('issue_type', 'invalid_champion_tag')
     .eq('status', 'pending');
-  const already = new Set(
-    (existingPending || []).map((r: any) => {
-      const ref = Array.isArray(r.source_refs) ? r.source_refs[0] : null;
-      return ref ? `${ref.table}:${ref.id}` : '';
-    })
-  );
+
+  // 既にキューにある項目を、現在の正規化ロジックで再判定する。
+  // 表記ゆれ対応表(championNames.ts)を拡充した後も、一度キューに積まれた項目は
+  // 「既にある」という理由でずっとスキップされ続け、直したはずの表記が
+  // 「未解決」のまま残り続けるバグがあった(2026-08-04発覚)。
+  // これは人間の判断が要らない決定的な正規化なので、解決可能になった項目は
+  // その場で自動修正して良い(手動の「この名前に修正」ボタンと同じロジック)。
+  let autoResolved = 0;
+  const already = new Set<string>();
+  for (const item of existingPending || []) {
+    const ref = Array.isArray(item.source_refs) ? item.source_refs[0] : null;
+    const key = ref ? `${ref.table}:${ref.id}` : '';
+    if (key) already.add(key);
+
+    const resolved = resolveChampionId(item.champion);
+    const canonical = resolved ? rosterLower.get(resolved.toLowerCase()) : undefined;
+    if (!canonical || !ref?.table || !ref?.id || !INVALID_TAG_TARGETS.some((t) => t.table === ref.table)) continue;
+
+    const { error: updateErr } = await supabase.from(ref.table).update({ champion: canonical }).eq('id', ref.id);
+    if (updateErr) continue;
+    const { error: queueErr } = await supabase
+      .from('dict_fact_check_queue')
+      .update({ status: 'fixed', reviewed_at: new Date().toISOString(), detail: { fixedChampion: canonical, autoResolved: true } })
+      .eq('id', item.id);
+    if (!queueErr) { autoResolved++; already.delete(key); }
+  }
 
   let inserted = 0;
   for (const target of INVALID_TAG_TARGETS) {
@@ -92,7 +117,7 @@ export async function scanInvalidChampionTags(supabase: any): Promise<number> {
       if (!error) inserted++;
     }
   }
-  return inserted;
+  return { inserted, autoResolved };
 }
 
 // ------------------------------------------------------------

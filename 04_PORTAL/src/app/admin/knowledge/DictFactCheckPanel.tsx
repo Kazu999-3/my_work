@@ -59,7 +59,10 @@ export default function DictFactCheckPanel() {
       });
       const d = await res.json();
       if (!res.ok) throw new Error(d.error || 'スキャンに失敗しました');
-      setScanMsg(d.inserted > 0 ? `✅ 不正タグを${d.inserted}件検出しました（下のリストに追加されました）` : '✅ 不正なタグは見つかりませんでした');
+      const parts: string[] = [];
+      if (d.autoResolved > 0) parts.push(`表記ゆれ対応表の更新で${d.autoResolved}件を自動解決しました`);
+      if (d.inserted > 0) parts.push(`新たに${d.inserted}件検出しました`);
+      setScanMsg(parts.length > 0 ? `✅ ${parts.join('、')}` : '✅ 不正なタグは見つかりませんでした');
       await loadQueue();
     } catch (e: any) { setError(e.message); } finally { setScanning(false); }
   };

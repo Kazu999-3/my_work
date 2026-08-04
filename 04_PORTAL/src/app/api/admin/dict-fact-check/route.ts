@@ -18,8 +18,8 @@ export async function POST(req: Request) {
     const mode = body.mode || 'batch';
 
     if (mode === 'scan_tags') {
-      const inserted = await scanInvalidChampionTags(supabase);
-      return NextResponse.json({ mode: 'scan_tags', inserted });
+      const result = await scanInvalidChampionTags(supabase);
+      return NextResponse.json({ mode: 'scan_tags', ...result });
     }
 
     if (mode === 'batch') {
