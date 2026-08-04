@@ -15,6 +15,7 @@ import { getChampionSearchVariations, normalizeChampionName } from '../../../../
 import { getChampionKnowledge } from '../../../../lib/championKnowledge';
 import { verifyAdminSession } from '../../../../lib/adminAuth';
 import { runPostGameReview } from '../../../../lib/coachPostGame';
+import { getTimingContext, buildPlayRecommendation } from '../../../../lib/soloqTiming';
 
 
 // ============================
@@ -662,6 +663,11 @@ CS/min: 直近${agg.csTrend.recent} / 以前${agg.csTrend.older}　Vision/min: �
         stopRecommended: streakType === 'loss' && currentStreak >= 2,
       };
 
+      // 曜日×時間帯の過去勝率も加味して「次の試合に行くべきか」を判定する(#①)
+      const timing = await getTimingContext(supabase, puuid);
+      const playRecommendation = buildPlayRecommendation(tilt, timing);
+      const timingLabel = timing.scope === 'hour' ? `${timing.dayLabel}曜${timing.hour}時台` : `${timing.dayLabel}曜全体`;
+
       const knowledgeCtx = tilt.level !== 'green'
         ? await searchKnowledge(['メンタル', 'ティルト', '連敗', '休憩'])
         : '';
@@ -675,15 +681,17 @@ ${myMatches.map((m, i) => `${i + 1}. ${m.champion} ${m.win ? '✅勝' : '❌負'
 
 連敗相関: 現在${streakAnalysis.currentStreak}${streakAnalysis.streakType === 'loss' ? '連敗中' : '連勝中'} / 全体勝率${streakAnalysis.overallWinRate}%${streakAnalysis.afterLossWinRate !== null ? ` / 負けた次の試合の勝率${streakAnalysis.afterLossWinRate}%` : ''}${streakAnalysis.afterLossStreakWinRate !== null ? ` / 2連敗以上の直後の勝率${streakAnalysis.afterLossStreakWinRate}%` : ''}
 
+曜日×時間帯の過去勝率: ${timing.winRate !== null ? `${timingLabel} ${timing.winRate}%(${timing.wins}/${timing.games}勝)` : `${timingLabel}はサンプル不足のため不明`}
+
 ${knowledgeCtx ? `参考ナレッジ:\n${knowledgeCtx}\n` : ''}
 
-上記を踏まえて、今の状態への率直なメンタルアドバイスを日本語で200字以内で書いてください。負けた後の勝率が全体勝率より明確に低い場合は、その数字を根拠に「連敗時は一旦離れる方が期待値が高い」ことを具体的に伝えてください。
-${tilt.level === 'red' || streakAnalysis.stopRecommended ? '休憩を強く勧める内容にしてください。' : ''}
-${tilt.level === 'green' ? 'ポジティブに背中を押す内容にしてください。' : ''}`;
+上記を踏まえて、今の状態への率直なメンタルアドバイスを日本語で200字以内で書いてください。負けた後の勝率が全体勝率より明確に低い場合は、その数字を根拠に「連敗時は一旦離れる方が期待値が高い」ことを具体的に伝えてください。曜日×時間帯の過去勝率が明確に低い場合は、その数字も根拠に「この時間帯は一旦避けた方がいい」ことを具体的に伝えてください。
+${playRecommendation.level === 'red' ? '休憩を強く勧める内容にしてください。' : ''}
+${playRecommendation.level === 'green' ? 'ポジティブに背中を押す内容にしてください。' : ''}`;
 
       const advice = await callGemini(prompt);
 
-      return NextResponse.json({ mode: 'tilt', tilt, streakAnalysis, recentMatches: myMatches, advice });
+      return NextResponse.json({ mode: 'tilt', tilt, streakAnalysis, timing, playRecommendation, recentMatches: myMatches, advice });
     }
 
     // ----------------------------

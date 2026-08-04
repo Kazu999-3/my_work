@@ -1,0 +1,105 @@
+// ============================================================
+// ソロQ試合履歴(soloq_match_history)から、指定時刻(既定は現在)の
+// 曜日×時間帯における過去勝率を算出する。ティルト診断の「次の試合に
+// 行くべきか」判定に、曜日・時間帯の勝率も加味するために追加。
+//
+// 該当時間帯ピンポイントのサンプルが少なすぎる場合は同じ曜日全体に
+// フォールバックし、それでも足りなければ「データ不足」を返す。
+// ============================================================
+
+const DAY_LABELS = ['日', '月', '火', '水', '木', '金', '土'];
+
+export interface TimingContext {
+  day: number; // 0=日〜6=土 (JST)
+  hour: number; // 0-23 (JST)
+  dayLabel: string;
+  games: number;
+  wins: number;
+  winRate: number | null;
+  scope: 'hour' | 'day' | 'none';
+}
+
+const MIN_HOUR_SAMPLES = 3;
+const MIN_DAY_SAMPLES = 5;
+
+export async function getTimingContext(supabase: any, puuid: string, at: Date = new Date()): Promise<TimingContext> {
+  const jst = new Date(at.getTime() + 9 * 3600 * 1000);
+  const day = jst.getUTCDay();
+  const hour = jst.getUTCHours();
+  const dayLabel = DAY_LABELS[day];
+
+  const { data } = await supabase
+    .from('soloq_match_history')
+    .select('game_start_timestamp, win')
+    .eq('puuid', puuid);
+  const rows = data || [];
+
+  const tally = (targetHour: number | null) => {
+    let games = 0;
+    let wins = 0;
+    for (const row of rows) {
+      const rowJst = new Date(new Date(row.game_start_timestamp).getTime() + 9 * 3600 * 1000);
+      if (rowJst.getUTCDay() !== day) continue;
+      if (targetHour !== null && rowJst.getUTCHours() !== targetHour) continue;
+      games++;
+      if (row.win) wins++;
+    }
+    return { games, wins };
+  };
+
+  const hourStats = tally(hour);
+  if (hourStats.games >= MIN_HOUR_SAMPLES) {
+    return { day, hour, dayLabel, games: hourStats.games, wins: hourStats.wins, winRate: Math.round((hourStats.wins / hourStats.games) * 100), scope: 'hour' };
+  }
+
+  const dayStats = tally(null);
+  if (dayStats.games >= MIN_DAY_SAMPLES) {
+    return { day, hour, dayLabel, games: dayStats.games, wins: dayStats.wins, winRate: Math.round((dayStats.wins / dayStats.games) * 100), scope: 'day' };
+  }
+
+  return { day, hour, dayLabel, games: hourStats.games, wins: hourStats.wins, winRate: null, scope: 'none' };
+}
+
+export interface PlayRecommendation {
+  level: 'green' | 'yellow' | 'red';
+  label: string;
+  reasons: string[];
+}
+
+/** ティルト診断＋時間帯勝率を踏まえた「次の試合に行くべきか」の統合判定。 */
+export function buildPlayRecommendation(
+  tilt: { level: 'green' | 'yellow' | 'red' },
+  timing: TimingContext
+): PlayRecommendation {
+  const reasons: string[] = [];
+  let level: 'green' | 'yellow' | 'red' = 'green';
+
+  const timingLabel = timing.scope === 'hour' ? `${timing.dayLabel}曜${timing.hour}時台` : `${timing.dayLabel}曜全体`;
+
+  if (tilt.level === 'red') {
+    level = 'red';
+    reasons.push('ティルトスコアが高い');
+  }
+  if (timing.winRate !== null && timing.winRate < 40) {
+    level = 'red';
+    reasons.push(`${timingLabel}の過去勝率が${timing.winRate}%と低い`);
+  }
+
+  if (level !== 'red') {
+    if (tilt.level === 'yellow') {
+      level = 'yellow';
+      reasons.push('やや調子が落ちている');
+    }
+    if (timing.winRate !== null && timing.winRate < 50) {
+      level = 'yellow';
+      reasons.push(`${timingLabel}の過去勝率がやや低め(${timing.winRate}%)`);
+    }
+  }
+
+  const label =
+    level === 'red' ? '🛑 今は一旦離れた方がよさそう' :
+    level === 'yellow' ? '⚠️ 注意しつつ続けるならOK' :
+    '✅ このまま続けてOK';
+
+  return { level, label, reasons };
+}

@@ -6,6 +6,7 @@ import ScoutTab from './ScoutTab';
 import PushOptIn from '../../components/PushOptIn';
 import FiveVFiveSimTab from './FiveVFiveSimTab';
 import SoloQReflectionModal from './SoloQReflectionModal';
+import TiltDiagnosisPopup from './TiltDiagnosisPopup';
 import PickRecommendationTab from './PickRecommendationTab';
 import MatchupWarningCard from './MatchupWarningCard';
 import LanePrioritySimulator from './LanePrioritySimulator';
@@ -714,6 +715,37 @@ function TiltTab({ triggerSignal }: { triggerSignal?: number }) {
             )}
           </div>
 
+          {/* 曜日×時間帯の過去勝率を加味した「次の試合に行くべきか」の統合判定 */}
+          {result.playRecommendation && (
+            <div className={`rounded-2xl px-4 py-3.5 text-white font-bold text-sm shadow ${
+              result.playRecommendation.level === 'red' ? 'bg-rose-700' :
+              result.playRecommendation.level === 'yellow' ? 'bg-amber-600' : 'bg-emerald-700'
+            }`}>
+              {result.playRecommendation.label}
+              {result.playRecommendation.reasons?.length > 0 && (
+                <ul className="mt-1.5 text-xs font-normal opacity-90 list-disc list-inside space-y-0.5">
+                  {result.playRecommendation.reasons.map((r: string, i: number) => <li key={i}>{r}</li>)}
+                </ul>
+              )}
+            </div>
+          )}
+
+          {/* 曜日×時間帯の過去勝率 */}
+          {result.timing && (
+            <Card>
+              <div className="mb-1 text-xs font-semibold text-foreground/50">🗓️ この時間帯の過去成績</div>
+              {result.timing.winRate !== null ? (
+                <p className="text-sm text-stone-700">
+                  {result.timing.dayLabel}曜{result.timing.scope === 'hour' ? `${result.timing.hour}時台` : '全体'}の勝率:{' '}
+                  <strong className={result.timing.winRate < 45 ? 'text-rose-600' : 'text-emerald-700'}>{result.timing.winRate}%</strong>
+                  {' '}({result.timing.wins}/{result.timing.games}勝)
+                </p>
+              ) : (
+                <p className="text-xs text-foreground/40">この時間帯のサンプルがまだ不足しています。</p>
+              )}
+            </Card>
+          )}
+
           {/* 連敗相関トラッカー */}
           {result.streakAnalysis && (
             <Card>
@@ -1009,6 +1041,7 @@ function MatchupTab({ champion, enemyChampion, triggerSignal }: { champion: stri
 export default function CoachPage() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [isReflectionModalOpen, setIsReflectionModalOpen] = useState(false);
+  const [isTiltPopupOpen, setIsTiltPopupOpen] = useState(false);
   const [lastFocusPoint, setLastFocusPoint] = useState<string | null>(null);
   const [lastKnownMatchId, setLastKnownMatchId] = useState<string>('');
 
@@ -1061,7 +1094,8 @@ export default function CoachPage() {
 
         if (data.isNewMatch) {
           setLastKnownMatchId(data.latestMatchId);
-          setIsReflectionModalOpen(true); // 自動ポップアップ！！
+          // 自動ポップアップ！！ まずティルト診断を出し、そこから振り返りへ進めるようにする(#①)
+          setIsTiltPopupOpen(true);
         }
       } catch (err) {
         // サイレントエラー
@@ -1337,6 +1371,15 @@ export default function CoachPage() {
           生成結果はナレッジDBに蓄積され、次回の精度向上に活用されます
         </div>
       </div>
+
+      <TiltDiagnosisPopup
+        isOpen={isTiltPopupOpen}
+        onClose={() => setIsTiltPopupOpen(false)}
+        onProceedToReflection={() => {
+          setIsTiltPopupOpen(false);
+          setIsReflectionModalOpen(true);
+        }}
+      />
 
       <SoloQReflectionModal
         isOpen={isReflectionModalOpen}

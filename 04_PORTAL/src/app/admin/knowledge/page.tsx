@@ -9,6 +9,7 @@ import YoutubeQueueManager from '../youtube/YoutubeQueueManager';
 import LibraryTabContent from './LibraryTabContent';
 import DictReviewPanel from './DictReviewPanel';
 import DictInsightsPanel from './DictInsightsPanel';
+import DictFactCheckPanel from './DictFactCheckPanel';
 import RevisionsPanel from './RevisionsPanel';
 import FreshnessPanel from './FreshnessPanel';
 import { supabaseBrowser } from '../../../lib/supabaseBrowserClient';
@@ -396,6 +397,7 @@ function KnowledgeBaseContent() {
         {activeTab === 'maintenance' && (
           <div className="space-y-8 animate-in">
             <FreshnessPanel />
+            <DictFactCheckPanel />
             <DictReviewPanel />
             <DictInsightsPanel mode="maintenance" />
           </div>

@@ -65,7 +65,7 @@ const ID_CORRECTION_MAP: Record<string, string> = {
   "reksai": "RekSai"
 };
 
-function formatChampId(champId: string): string {
+export function formatChampId(champId: string): string {
   if (!champId) return "Aatrox";
   const cleanId = champId.trim();
   const key = cleanId.toLowerCase();
@@ -125,4 +125,48 @@ export async function getChampNameById(id: number): Promise<string> {
     return champDataCache[id.toString()];
   }
   return "Unknown";
+}
+
+// 実在するチャンピオンIDの全件セット（表記揺れ・ゴミ値の検出用）
+let championIdSetCache: Set<string> | null = null;
+
+export async function getAllChampionIds(): Promise<Set<string>> {
+  if (championIdSetCache) return championIdSetCache;
+  try {
+    const res = await fetch(`https://ddragon.leagueoflegends.com/cdn/${cachedLatestPatch}/data/en_US/champion.json`);
+    if (res.ok) {
+      const data = await res.json();
+      championIdSetCache = new Set(Object.keys(data.data || {}));
+    }
+  } catch (e) {
+    console.error("Failed to fetch DDragon champion id list", e);
+  }
+  return championIdSetCache || new Set();
+}
+
+// チャンピオンのスキル名一覧（パッシブ＋QWER）。ファクトチェックでAIに公式情報として渡す。
+const abilityNameCache = new Map<string, string[]>();
+
+export async function getChampionAbilityNames(champId: string): Promise<string[]> {
+  const formatted = formatChampId(champId);
+  if (abilityNameCache.has(formatted)) return abilityNameCache.get(formatted)!;
+  try {
+    const res = await fetch(`https://ddragon.leagueoflegends.com/cdn/${cachedLatestPatch}/data/en_US/champion/${formatted}.json`);
+    if (res.ok) {
+      const data = await res.json();
+      const champ = data.data?.[formatted];
+      const names: string[] = [];
+      if (champ?.passive?.name) names.push(`Passive: ${champ.passive.name}`);
+      const keys = ['Q', 'W', 'E', 'R'];
+      (champ?.spells || []).forEach((s: any, i: number) => {
+        if (s?.name) names.push(`${keys[i] || '?'}: ${s.name}`);
+      });
+      abilityNameCache.set(formatted, names);
+      return names;
+    }
+  } catch (e) {
+    console.error(`Failed to fetch DDragon ability names for ${formatted}`, e);
+  }
+  abilityNameCache.set(formatted, []);
+  return [];
 }
