@@ -1577,8 +1577,10 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                 })()}
                 {(() => {
                   // 時間帯別の強さ（パワースパイク）を一覧グリッドでもひと目で確認できるようにするミニ表示
-                  const spike = champPowerSpikes[c.id];
-                  if (!spike) return null;
+                  const normKey = String(c.id || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+                  const spike = champPowerSpikes[c.id] || champPowerSpikes[normKey];
+                  if (!spike || typeof spike.early_game_score !== 'number' || typeof spike.mid_game_score !== 'number' || typeof spike.late_game_score !== 'number') return null;
+                  
                   const phases: { label: string; score: number }[] = [
                     { label: '序', score: spike.early_game_score },
                     { label: '中', score: spike.mid_game_score },

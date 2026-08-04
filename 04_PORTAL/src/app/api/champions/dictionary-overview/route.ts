@@ -63,11 +63,16 @@ export async function GET() {
 
     const powerSpikes: Record<string, any> = {};
     (spikeRows || []).forEach((row: any) => {
-      powerSpikes[row.champion] = {
+      const normKey = normalizeKey(row.champion);
+      const aliasKey = ALIAS_MAP[normKey] || normKey;
+      const spikeObj = {
         early_game_score: row.early_game_score,
         mid_game_score: row.mid_game_score,
         late_game_score: row.late_game_score,
       };
+      powerSpikes[row.champion] = spikeObj;
+      powerSpikes[normKey] = spikeObj;
+      powerSpikes[aliasKey] = spikeObj;
     });
 
     return NextResponse.json({ dates, pending, patchMetas, jgStyles, powerSpikes, dbFavorites });

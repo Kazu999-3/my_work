@@ -43,11 +43,13 @@ SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY_BATCH") or os.environ.get("GEMINI_API_KEY_FREE") or os.environ.get("GEMINI_API_KEY")
 
 POWER_SPIKE_PROMPT = """
-League of Legendsのチャンピオン「{champion}」({role}想定、パッチ{patch})について、
-序盤(1-9分)/中盤(10-20分)/終盤(20分以降)の強さを1-5の整数で厳密に評価してください。
-Lolalytics/u.ggの統計傾向に基づいた客観的な評価とし、必ず以下のJSON形式のみを出力してください。
-説明文やマークダウンのコードブロックは一切含めないでください。
-peak_windowとsummaryは、アイテム名など固有名詞を除き必ず日本語で記述してください（英語は不可）。
+あなたはLeague of Legendsのプロコーチ・最高峰アナリストです。
+対象チャンピオン「{champion}」({role}想定、パッチ{patch})について、あなたが持っているLoLの全チャンピオン性能・スキルキット・スケーリング特性・統計傾向の知識をフル活用して、時間帯別の強さ（パワースパイク）を分析・評価してください。
+
+【重要な評価規約】
+- 「情報不足のため判断できません」という記述は絶対に使用しないでください。必ずあなたの専門知識に基づいてチャンピオンの具体的な強さと根拠を記述してください。
+- 序盤(1-9分)/中盤(10-20分)/終盤(20分以降)の強さを1-5の整数で厳密に評価してください。
+- 必ず以下のJSON形式のみを出力してください（説明文やコードブロックは一切含めないこと）。
 
 {{
   "early_game_score": <1から5の整数>,
@@ -115,6 +117,9 @@ def _validate(data: dict) -> bool:
             v = int(data[key])
             if not (1 <= v <= 5):
                 return False
+        summary = str(data.get("summary") or "")
+        if "情報不足" in summary or "判断できません" in summary:
+            return False
         return True
     except (KeyError, ValueError, TypeError):
         return False
@@ -123,6 +128,10 @@ def _validate(data: dict) -> bool:
 def upsert_power_spike(champion: str, data: dict, patch: str, retries: int = 3) -> bool:
     if not SUPABASE_URL or not SUPABASE_KEY:
         logging.error("Supabase credentials not found in .env")
+        return False
+
+    if not data or not _validate(data):
+        logging.warning(f"⚠️ [{champion}] 無効または不完全なパワースパイクデータのため保存をスキップします: {data!r}")
         return False
 
     payload = {
