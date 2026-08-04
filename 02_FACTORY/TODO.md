@@ -5,6 +5,22 @@
 
 ---
 
+## ✅ 2026-08-04 Claude Codeセッションで対応済み（Antigravityへの作業引き継ぎ用）
+
+> ユーザーがClaude CodeからAntigravity中心の運用に戻るための区切り。このセッションで実装した内容の要約。
+
+- [x] **①ティルト診断の自動ポップアップ化＋曜日×時間帯勝率ヒートマップ** → 試合終了検知(`coach/page.tsx`の`check-finished`ポーリング)時に`TiltDiagnosisPopup.tsx`を自動表示し、そのまま振り返り記録へ導線接続。診断には新設`lib/soloqTiming.ts`（`soloq_match_history`から曜日×時間帯の過去勝率を算出、`getTimingContext`/`buildPlayRecommendation`）を組み込み「次の試合に行くべきか」を統合判定。`TimingHeatmapTab`（曜日×時間帯7×24グリッド）は当初ブラウザ標準`title`属性のツールチップ頼りでマス詳細が表示されない不具合があり、カーソルオーバー/タップで即座に表示される専用詳細パネルへ後日修正。
+- [x] **②チャンピオン辞典の一斉ファクトチェック機能を新設・拡張** → `dict_fact_check_queue`テーブル(migration 45)を新設し、以下を実装:
+  - **ステップ1（無料・即時）**: `matchup_sentinel`/`champion_notes`/`personal_knowledge`のchampion列の表記ゆれ・ゴミ値を検出(`scanInvalidChampionTags`)。DataDragon公式データから日本語名対応表を全173体に拡充、既存pending項目の再判定・自動解決ロジックも追加。
+  - **ステップ2（AI・チャンピオン単位横断照合）**: 辞典本体・対面メモ・コーチAI知識層(`champion_facts`/`champion_notes`)・ナレッジを横断し、矛盾/単一ソースのみの未確証claim/事実誤りをGeminiで検出(`runFactCheckBatch`)。検出結果は人間が個別に「訂正を記録(再発防止・`dict_known_corrections`テーブル経由で今後の全AI生成に反映)」「把握した」「誤検知」で判断する運用。
+  - **元データの直接編集・削除機能**: 当初は訂正記録のみで元の誤った文章自体は残り続ける問題があったため、`api/admin/dict-fact-check/source`を新設し、キューカードから対面メモ・コーチAIノート・構造化ファクトを直接編集/削除できるように拡張(`FactCheckSourceBlock.tsx`)。
+  - **チャンピオン単体チェックボタン**: `/champions`ページの各チャンピオン詳細に「このチャンピオンのみファクトチェック」ボタンを追加(`ChampionFactCheckPanel.tsx`、`api/admin/dict-fact-check/champion`)。全体一斉チェック(170体前後・数分)を待たずにその場で完結。
+  - **辞典内インライン変更履歴**: 辞典ページ内に「別ページへ移動しないと見られない」問題を解消し、`ChampionRevisionHistory.tsx`でそのチャンピオンの変更履歴を直接表示(`api/admin/knowledge/revisions`に`champion`パラメータ追加)。
+  - **未処理レビュー上限(50件)**: note記事(ao_midoro2299氏)の「承認待ちキューの在庫制限」の知見を反映し、pending件数が50件を超えている間はStep1/Step2/単体チェックいずれも新規の指摘追加を一時停止するガードを追加(`PENDING_QUEUE_CAP`)。
+- [x] **日本語化バッチの拡充・複数バグ修正** → アイテム名・チャンピオン名もカタカナ表記に翻訳するオプション(`translateProperNouns`)を追加。`.limit(500)`が実件数を下回りレコードが永久にスキャン対象から漏れるバグ、アイテム名列挙への無限再翻訳ループバグ、タイトル単体が英語のケースの見逃しバグをそれぞれ修正。
+- [x] サイドバーの「note分析」メニューを最後尾に移動
+- [x] skill-creatorのSKILL.mdに「ルールは失敗が具体的に数値化・機械化されて初めて機能する」という原則を追記(Known Pitfalls運用の質向上のため)
+
 ## ✅ 2026-08-04 依存パッケージ棚卸しで対応済み
 - [x] **Dependabot PR 17件の放置を解消** → `.github/dependabot.yml`設定後、1件もレビューされず溜まっていたPRを全件精査。GitHub Actions(checkout/setup-node/setup-python/upload-artifact)をv7系に統一、Python(03_SYSTEMS)requirement floor 5件・ktm_bot内のfast-uri/hono patchをマージ、未使用のnode-fetchは依存自体を削除。next(重複PR)はクローズ。
 - [x] **新規発覚・修正: `04_PORTAL/tsconfig.json`が一度もgit管理されていなかった** → `.gitignore`の`*.json`包括ルールに巻き込まれ、新規clone/CI/Vercelのクリーンチェックアウトには常に存在しなかった。今回追加した`ci.yml`の型チェックステップがこのため常に(help表示→exit 1で)失敗していた真因と判明。`!04_PORTAL/tsconfig.json`の除外を追加してコミット。
