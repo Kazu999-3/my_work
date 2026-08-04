@@ -53,9 +53,12 @@ class RateLimited extends Error {}
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 async function toJapanese(text: string, kind: string): Promise<string> {
+  // この一括翻訳機能に限り、文章中のチャンピオン名・アイテム名も日本語版クライアント
+  // 準拠のカタカナ表記に翻訳する(ユーザー要望、2026-08-04)。ただしこれは表示用の
+  // 文章(strengths/weaknesses等)にのみ適用し、champion列(検索キー)には一切使わない。
   const prompt = `以下の${kind}を自然な日本語に翻訳してください。
 - 内容を省略・要約せず、意味をそのまま日本語にすること
-- チャンピオン名・アイテム名・ルーン名・スキル名は英語表記のまま残すこと
+- チャンピオン名・アイテム名・ルーン名・スキル名も、日本語版クライアントで使われる自然なカタカナ表記に翻訳すること（例: Infinity Edge→インフィニティエッジ、Trinity Force→トリニティフォース、Graves→グレイブス）
 - Markdownの記法（見出し・箇条書き）はそのまま維持すること
 - 翻訳結果の本文のみを出力し、前置きや説明は書かないこと
 
@@ -64,7 +67,7 @@ ${String(text).slice(0, 10000)}`;
   try {
     // 一括翻訳はバッチ処理なので、専用キーがあればそちらを使い対話系の枠を圧迫しない
     const apiKeyEnv = process.env.GEMINI_API_KEY_BATCH ? 'GEMINI_API_KEY_BATCH' : 'GEMINI_API_KEY';
-    const out = await callGeminiWithRetry(prompt, { temperature: 0.2, maxOutputTokens: 4096, maxRetries: 3, apiKeyEnv });
+    const out = await callGeminiWithRetry(prompt, { temperature: 0.2, maxOutputTokens: 4096, maxRetries: 3, apiKeyEnv, translateProperNouns: true });
     return (out || '').trim();
   } catch (e: any) {
     // レート制限・サーバー高負荷(503)は「失敗」ではなく「今は打ち止め」。

@@ -20,6 +20,14 @@ export interface GeminiCallOptions {
   image?: { base64: string; mimeType: string };
   /** レスポンス本文の構造化検証関数（検証失敗時はリトライ） */
   validator?: (text: string) => boolean | Promise<boolean>;
+  /**
+   * true にすると、チャンピオン名・アイテム名・ルーン名・スキル名も自然な日本語
+   * （カタカナ表記）に翻訳させる。既定はfalse(英語表記のまま)。
+   * champion列など検索キーとして使われる場所には絶対に使わないこと
+   * （辞典検索・不正タグ検出・コーチAIの知識検索が英語表記を前提にしている）。
+   * 攻略ライブラリ/辞典/対面メモの日本語化(翻訳)専用の一括変換でのみ使う想定。
+   */
+  translateProperNouns?: boolean;
 }
 
 // Google AI Studioの最新クォータ実績に基づき、最大容量 (500 RPD / 15 RPM) を誇る
@@ -106,6 +114,7 @@ export async function callGeminiWithRetry(
     cacheKey,
     cacheTtlMs = DEFAULT_TTL_MS,
     image,
+    translateProperNouns = false,
   } = options;
 
   if (cacheKey) {
@@ -127,13 +136,19 @@ export async function callGeminiWithRetry(
   // 全AI生成で日本語出力を強制する。素材(統計サイト・英語記事)が英語だと、
   // 個別プロンプトで「日本語で」と書いていても英語のまま返ることがあるため、
   // 共通クライアント側で最後に必ず指示を付ける。
-  // ※チャンピオン名・アイテム名・ルーン名などの固有名詞は英語のままにする（表記ゆれ防止）。
+  // ※チャンピオン名・アイテム名・ルーン名などの固有名詞は既定では英語のままにする
+  // （表記ゆれ防止・辞典検索や不正タグ検出が英語表記に依存しているため）。
+  // translateProperNouns:true の場合のみ、日本語版クライアント準拠のカタカナ表記に
+  // 翻訳させる（攻略ライブラリ等の文章を読みやすくする一括翻訳専用）。
+  const properNounRule = translateProperNouns
+    ? '- チャンピオン名・アイテム名・ルーン名・スキル名も、日本語版クライアントで使われる自然なカタカナ表記に翻訳すること（例: Infinity Edge→インフィニティエッジ、Trinity Force→トリニティフォース）。'
+    : '- ただし、チャンピオン名・アイテム名・ルーン名・スキル名などの固有名詞は英語表記のまま残すこと。';
   const JP_GUARD = `
 
 【出力言語の絶対条件】
 - 出力は必ず**日本語**で書くこと。英語の文章をそのまま返してはいけない。
 - 素材が英語であっても、必ず日本語に翻訳・要約して出力すること。
-- ただし、チャンピオン名・アイテム名・ルーン名・スキル名などの固有名詞は英語表記のまま残すこと。
+${properNounRule}
 - JSON形式を指定されている場合、キー名は指定どおり英語、値の文章は日本語にすること。`;
 
   // ハルシネーション対策。個別プロンプトごとに書き分けるのは漏れが出るため、

@@ -230,7 +230,8 @@ export default function DictInsightsPanel({ mode = 'inspect' }: { mode?: 'mainte
         </h3>
         <p className="text-[11px] text-stone-500 mb-3">
           英語のまま保存されている辞典・記事・メモを日本語に変換します。完了するまで自動で繰り返し実行されます
-          （チャンピオン名やアイテム名は英語のまま残ります）。
+          （文章中のチャンピオン名・アイテム名も日本語版クライアント準拠のカタカナ表記に翻訳されます。
+          ただし辞典検索等で使うchampion列(キー)自体は変わりません）。
           「攻略ライブラリ記事」＝ナレッジ(personal_knowledge)、「対面メモ・チャンピオンノート」＝
           対面メモ(matchup_sentinel)とコーチAI知識層メモ(champion_notes)の両方が対象です。
         </p>
