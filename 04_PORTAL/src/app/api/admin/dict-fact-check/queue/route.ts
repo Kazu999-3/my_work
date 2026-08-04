@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../../lib/supabaseAdmin';
 import { verifyAdminSession } from '../../../../../lib/adminAuth';
-import { resolveChampionId, getNoChampionMarker } from '../../../../../lib/dictFactCheck';
+import { resolveChampionId, getNoChampionMarker, getChampionPreviewText } from '../../../../../lib/dictFactCheck';
 import { getAllChampionIds } from '../../../../../lib/ddragonClient';
 
 // dict_fact_check_queue の閲覧・人間による最終判断の反映。
@@ -59,6 +59,31 @@ async function attachSourcePreviews(items: any[]): Promise<any[]> {
   });
 }
 
+// contradiction/unconfirmed_source/possible_fact_errorは特定の1行ではなく
+// 「チャンピオン単位で複数ソースを横断した結果」なので、AIが実際に読んだ
+// 辞典本体・対面メモ・コーチAI知識層メモ・ナレッジをそのまま人間にも見せる
+// （でないとsummary(40字程度)だけでは何が根拠なのか検証できない）。
+async function attachChampionPreviews(items: any[]): Promise<any[]> {
+  const targets = items.filter((it) => it.issue_type !== 'invalid_champion_tag' && it.champion);
+  if (targets.length === 0) return items;
+
+  const champions = Array.from(new Set(targets.map((it) => it.champion)));
+  const previewByChampion = new Map<string, string>();
+  for (const champion of champions) {
+    try {
+      previewByChampion.set(champion, await getChampionPreviewText(supabase, champion));
+    } catch (e) {
+      console.warn(`[dict-fact-check/queue] ${champion} のプレビュー取得に失敗:`, e);
+    }
+  }
+
+  return items.map((it) => {
+    if (it.issue_type === 'invalid_champion_tag' || !it.champion) return it;
+    const preview = previewByChampion.get(it.champion);
+    return preview ? { ...it, championPreview: preview } : it;
+  });
+}
+
 export async function GET(req: Request) {
   const auth = await verifyAdminSession(req);
   if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: 401 });
@@ -73,7 +98,8 @@ export async function GET(req: Request) {
     const { data, error } = await query;
     if (error) throw error;
 
-    const items = await attachSourcePreviews(data || []);
+    const withInvalidTagPreviews = await attachSourcePreviews(data || []);
+    const items = await attachChampionPreviews(withInvalidTagPreviews);
     return NextResponse.json({ items });
   } catch (err: any) {
     console.error('[dict-fact-check/queue] GET error:', err);

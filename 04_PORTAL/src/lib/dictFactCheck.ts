@@ -197,17 +197,12 @@ interface FactCheckResult {
   summary: string;
 }
 
-async function factCheckChampion(supabase: any, bundle: ChampionSourceBundle): Promise<FactCheckResult[]> {
-  // 過去に人間が確定した訂正情報。これを「既に解決済み」として扱わせることで、
-  // 同じ指摘を再度キューに積み続ける(再発)のを防ぐ。
-  const { data: corrections } = await supabase
-    .from('dict_known_corrections')
-    .select('wrong_claim, correct_info')
-    .eq('champion', bundle.champion)
-    .order('created_at', { ascending: false })
-    .limit(10);
-  const knownCorrections: { wrong_claim: string; correct_info: string }[] = corrections || [];
-
+/**
+ * チャンピオン単位の全ソースを、AIプロンプトにも人間向けプレビューにも使える
+ * 共通のテキストブロック配列に変換する。ここを共有することで「AIが実際に何を見て
+ * 判定したか」と「人間が確認できる内容」が常に完全一致する。
+ */
+function buildSourceParts(bundle: ChampionSourceBundle): string[] {
   const parts: string[] = [];
   if (bundle.matchupGlobal?.strategy) parts.push(`【辞典本体(matchup_sentinel)】\n${bundle.matchupGlobal.strategy.slice(0, 1200)}`);
   bundle.matchupEnemies.forEach((m) => parts.push(`【辞典 対面メモ vs ${m.enemy}】\n${m.strategy.slice(0, 500)}`));
@@ -219,6 +214,56 @@ async function factCheckChampion(supabase: any, bundle: ChampionSourceBundle): P
   }
   bundle.notes.forEach((n) => parts.push(`【コーチAI知識層メモ(champion_notes) ${n.title}】\n${n.body}`));
   bundle.knowledge.forEach((k) => parts.push(`【ナレッジ(personal_knowledge) ${k.title}】\n${k.content}`));
+  return parts;
+}
+
+/** 1チャンピオン分だけをピンポイントで取得する（レビューUIのプレビュー表示用）。 */
+export async function getChampionBundle(supabase: any, champion: string): Promise<ChampionSourceBundle> {
+  const bundle: ChampionSourceBundle = { champion, matchupEnemies: [], notes: [], knowledge: [] };
+
+  const { data: sentinelRows } = await supabase
+    .from('matchup_sentinel').select('id, enemy, strategy').eq('champion', champion).not('strategy', 'is', null);
+  (sentinelRows || []).forEach((r: any) => {
+    if (r.enemy === 'GLOBAL') bundle.matchupGlobal = { id: r.id, strategy: r.strategy || '' };
+    else if (bundle.matchupEnemies.length < 5) bundle.matchupEnemies.push({ id: r.id, enemy: r.enemy, strategy: r.strategy || '' });
+  });
+
+  const { data: factsRow } = await supabase
+    .from('champion_facts')
+    .select('champion, strengths, weaknesses, power_spikes, build_runes, strategy, counter_champions, must_ban_champions')
+    .eq('champion', champion).eq('archived', false).maybeSingle();
+  if (factsRow) bundle.facts = factsRow;
+
+  const { data: notesRows } = await supabase
+    .from('champion_notes').select('id, title, body').eq('champion', champion).order('created_at', { ascending: false }).limit(8);
+  (notesRows || []).forEach((r: any) => bundle.notes.push({ id: r.id, title: r.title || '', body: (r.body || '').slice(0, 400) }));
+
+  const { data: knowledgeRows } = await supabase
+    .from('personal_knowledge').select('id, title, content').eq('champion', champion).limit(5);
+  (knowledgeRows || []).forEach((r: any) => bundle.knowledge.push({ id: r.id, title: r.title || '', content: (r.content || '').slice(0, 400) }));
+
+  return bundle;
+}
+
+/** レビューUIで「AIが実際に見た内容」をそのまま表示するためのプレビューテキスト。 */
+export async function getChampionPreviewText(supabase: any, champion: string): Promise<string> {
+  const bundle = await getChampionBundle(supabase, champion);
+  const parts = buildSourceParts(bundle);
+  return parts.length > 0 ? parts.join('\n\n---\n\n') : '（この項目に紐づく辞典/コーチAI知識層/ナレッジのデータが見つかりませんでした）';
+}
+
+async function factCheckChampion(supabase: any, bundle: ChampionSourceBundle): Promise<FactCheckResult[]> {
+  // 過去に人間が確定した訂正情報。これを「既に解決済み」として扱わせることで、
+  // 同じ指摘を再度キューに積み続ける(再発)のを防ぐ。
+  const { data: corrections } = await supabase
+    .from('dict_known_corrections')
+    .select('wrong_claim, correct_info')
+    .eq('champion', bundle.champion)
+    .order('created_at', { ascending: false })
+    .limit(10);
+  const knownCorrections: { wrong_claim: string; correct_info: string }[] = corrections || [];
+
+  const parts = buildSourceParts(bundle);
 
   if (parts.length === 0) return [];
 

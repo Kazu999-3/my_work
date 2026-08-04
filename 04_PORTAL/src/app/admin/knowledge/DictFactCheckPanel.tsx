@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { RefreshCw, ShieldCheck, Tag, ExternalLink, Check, X, Ban, Trash2 } from 'lucide-react';
+import { RefreshCw, ShieldCheck, Tag, ExternalLink, Check, X, Ban, Trash2, FileText, ChevronDown, ChevronUp } from 'lucide-react';
 
 interface QueueItem {
   id: number;
@@ -12,6 +12,7 @@ interface QueueItem {
   status: string;
   created_at: string;
   sourcePreview?: { title: string; body: string; url?: string };
+  championPreview?: string;
 }
 
 const ISSUE_LABEL: Record<string, { label: string; cls: string }> = {
@@ -38,6 +39,7 @@ export default function DictFactCheckPanel() {
   const [fixInputs, setFixInputs] = useState<Record<number, string>>({});
   const [enemyInputs, setEnemyInputs] = useState<Record<number, string>>({});
   const [acting, setActing] = useState<number | null>(null);
+  const [expandedPreviewId, setExpandedPreviewId] = useState<number | null>(null);
 
   const loadQueue = async () => {
     setLoadingQueue(true);
@@ -211,6 +213,27 @@ export default function DictFactCheckPanel() {
                         className="text-sky-700 hover:underline flex items-center gap-0.5 mt-1 w-fit">
                         元記事を開く <ExternalLink size={10} />
                       </a>
+                    )}
+                  </div>
+                )}
+
+                {/* contradiction/unconfirmed_source/possible_fact_errorはチャンピオン単位で
+                    複数ソースを横断した判定のため、summary(40字程度)だけでは根拠を検証できない。
+                    AIが実際に読んだ辞典本体・対面メモ・コーチAI知識層メモ・ナレッジをそのまま見せる */}
+                {it.issue_type !== 'invalid_champion_tag' && it.championPreview && (
+                  <div className="mt-2">
+                    <button
+                      onClick={() => setExpandedPreviewId(expandedPreviewId === it.id ? null : it.id)}
+                      className="flex items-center gap-1 text-[11px] text-sky-700 hover:underline"
+                    >
+                      <FileText size={11} />
+                      {expandedPreviewId === it.id ? 'AIが見た内容を閉じる' : 'AIが見た内容を確認する'}
+                      {expandedPreviewId === it.id ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
+                    </button>
+                    {expandedPreviewId === it.id && (
+                      <div className="mt-1.5 rounded-lg border border-sky-200 bg-sky-50/60 p-2.5 text-[11px] text-stone-700 whitespace-pre-wrap leading-relaxed max-h-96 overflow-y-auto">
+                        {it.championPreview}
+                      </div>
                     )}
                   </div>
                 )}
