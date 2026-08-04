@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { RefreshCw, ShieldCheck, Tag, ExternalLink, Check, X } from 'lucide-react';
+import { RefreshCw, ShieldCheck, Tag, ExternalLink, Check, X, Ban } from 'lucide-react';
 
 interface QueueItem {
   id: number;
@@ -100,7 +100,7 @@ export default function DictFactCheckPanel() {
     } catch (e: any) { setError(e.message); } finally { setRunning(false); }
   };
 
-  const act = async (id: number, action: 'dismiss' | 'acknowledge' | 'fix_champion_tag' | 'record_correction') => {
+  const act = async (id: number, action: 'dismiss' | 'acknowledge' | 'fix_champion_tag' | 'record_correction' | 'mark_no_champion') => {
     setActing(id); setError('');
     try {
       const body: any = { id, action };
@@ -235,6 +235,11 @@ export default function DictFactCheckPanel() {
                       <button onClick={() => act(it.id, 'fix_champion_tag')} disabled={acting === it.id || !fixInputs[it.id]?.trim()}
                         className="flex items-center gap-1 text-xs font-bold bg-emerald-100 text-emerald-700 border border-emerald-200 px-3 py-1.5 rounded-lg hover:bg-emerald-200 disabled:opacity-50">
                         <Check size={12} /> この名前に修正
+                      </button>
+                      <button onClick={() => act(it.id, 'mark_no_champion')} disabled={acting === it.id}
+                        title="特定のチャンピオンに関する記事ではない場合（メタ記事・マクロ解説など）"
+                        className="flex items-center gap-1 text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200 px-3 py-1.5 rounded-lg hover:bg-slate-200 disabled:opacity-50">
+                        <Ban size={12} /> チャンピオンなし（対象外にする）
                       </button>
                     </>
                   ) : (

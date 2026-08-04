@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../../lib/supabaseAdmin';
 import { verifyAdminSession } from '../../../../../lib/adminAuth';
-import { resolveChampionId } from '../../../../../lib/dictFactCheck';
+import { resolveChampionId, getNoChampionMarker } from '../../../../../lib/dictFactCheck';
 import { getAllChampionIds } from '../../../../../lib/ddragonClient';
 
 // dict_fact_check_queue の閲覧・人間による最終判断の反映。
@@ -88,7 +88,7 @@ export async function PATCH(req: Request) {
   try {
     const body = await req.json().catch(() => ({}));
     const id = Number(body.id);
-    const action: 'dismiss' | 'acknowledge' | 'fix_champion_tag' | 'record_correction' = body.action;
+    const action: 'dismiss' | 'acknowledge' | 'fix_champion_tag' | 'record_correction' | 'mark_no_champion' = body.action;
     if (!id || !action) return NextResponse.json({ error: 'idとactionを指定してください。' }, { status: 400 });
 
     const { data: item, error: fetchErr } = await supabase
@@ -103,6 +103,30 @@ export async function PATCH(req: Request) {
         .eq('id', id);
       if (error) throw error;
       return NextResponse.json({ success: true });
+    }
+
+    if (action === 'mark_no_champion') {
+      if (item.issue_type !== 'invalid_champion_tag') {
+        return NextResponse.json({ error: 'このアクションはinvalid_champion_tagのみ対応しています。' }, { status: 400 });
+      }
+      const ref = Array.isArray(item.source_refs) ? item.source_refs[0] : null;
+      if (!ref?.table || !ref?.id || !FIXABLE_TABLES.has(ref.table)) {
+        return NextResponse.json({ error: '対象レコードを特定できませんでした。' }, { status: 400 });
+      }
+
+      // 特定のチャンピオンに関する記事ではないと人間が判断した場合の専用マーカー。
+      // 空文字や適当な値を書くと次のスキャンでまた不正タグとして検出されてしまう
+      // ため、各テーブルの「チャンピオン無し」慣習値を書き込む。
+      const marker = getNoChampionMarker(ref.table);
+      const { error: updateErr } = await supabase.from(ref.table).update({ champion: marker }).eq('id', ref.id);
+      if (updateErr) throw updateErr;
+
+      const { error } = await supabase
+        .from('dict_fact_check_queue')
+        .update({ status: 'fixed', reviewed_at: new Date().toISOString(), detail: { ...(item.detail || {}), markedNoChampion: true, marker } })
+        .eq('id', id);
+      if (error) throw error;
+      return NextResponse.json({ success: true, marker });
     }
 
     if (action === 'fix_champion_tag') {

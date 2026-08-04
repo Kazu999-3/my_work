@@ -19,7 +19,17 @@ import { formatChampId, getAllChampionIds, getChampionAbilityNames } from './ddr
 // 積んで人間が最終判断する（辞典データを機械的に消すリスクを避けるため）。
 // ============================================================
 
-const NON_CHAMPION_MARKERS = new Set(['GLOBAL', 'SYSTEM', 'UNKNOWN']);
+const NON_CHAMPION_MARKERS = new Set(['GLOBAL', 'SYSTEM', 'UNKNOWN', 'GENERAL']);
+
+/**
+ * 「特定のチャンピオンに関する記事ではない」ことを明示する際に書き込むマーカー値。
+ * personal_knowledgeは既存の慣習(他機能が`.neq('champion','Unknown')`で除外している)に
+ * 合わせて'Unknown'を踏襲。champion_notes/matchup_sentinelは'SYSTEM'が別の意味
+ * (システム用の内部レコード)で既に使われているため、混同を避けて'GENERAL'を使う。
+ */
+export function getNoChampionMarker(table: string): string {
+  return table === 'personal_knowledge' ? 'Unknown' : 'GENERAL';
+}
 
 /**
  * 表記揺れを実際のDataDragon ID相当まで正規化する。
@@ -48,8 +58,8 @@ export interface QueuedIssue {
 // ステップ1: champion列の不正タグ検出（LLM不要・無料）
 // ------------------------------------------------------------
 const INVALID_TAG_TARGETS: { table: 'matchup_sentinel' | 'champion_notes' | 'personal_knowledge'; skip: string[] }[] = [
-  { table: 'matchup_sentinel', skip: ['SYSTEM'] },
-  { table: 'champion_notes', skip: ['SYSTEM'] },
+  { table: 'matchup_sentinel', skip: ['SYSTEM', 'GENERAL'] },
+  { table: 'champion_notes', skip: ['SYSTEM', 'GENERAL'] },
   { table: 'personal_knowledge', skip: ['UNKNOWN'] },
 ];
 
