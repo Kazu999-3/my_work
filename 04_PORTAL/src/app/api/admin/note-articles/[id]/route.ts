@@ -21,6 +21,14 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     const body = await req.json();
     const update: Record<string, any> = {};
 
+    // 公開の取り消し。打ち間違えたまま公開登録してしまった場合等、以前はUIから
+    // 訂正・取り消す手段が無くDBを直接触るしかなかった(2026-08-05発覚)。
+    if (body.unpublish === true) {
+      update.note_url = null;
+      update.status = 'draft';
+      update.published_at = null;
+    }
+
     // 公開登録: URLが渡されたら公開済み扱いにする（未指定ならpublished_atは現在時刻）
     const willPublish = typeof body.note_url === 'string' && !!body.note_url.trim();
     if (typeof body.note_url === 'string') {
@@ -45,12 +53,19 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       update.scheduled_at = null;
     }
 
-    // 成績の手入力（渡された項目だけ更新）
+    // 成績の手入力（渡された項目だけ更新）。
+    // body[key]===null は「入力済みの値を空欄に戻して明示的にクリアしたい」という意図
+    // (admin/analytics/page.tsx参照)。Number(null)は0になってしまうため、nullは
+    // nullのまま扱う必要がある（そうしないと「クリアしたつもりが0になる」事故になる）。
     let touchedMetrics = false;
     for (const key of ['views', 'likes', 'sales_count', 'sales_amount'] as const) {
       if (body[key] !== undefined) {
-        const n = Number(body[key]);
-        update[key] = Number.isFinite(n) ? n : null;
+        if (body[key] === null) {
+          update[key] = null;
+        } else {
+          const n = Number(body[key]);
+          update[key] = Number.isFinite(n) ? n : null;
+        }
         touchedMetrics = true;
       }
     }

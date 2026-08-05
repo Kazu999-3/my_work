@@ -48,12 +48,21 @@ export async function POST(request: Request) {
       ],
     };
 
-    const recommends = samplePool[role.toUpperCase()] || samplePool.MID;
+    // 相性・カウンターの統計データベースが未整備のため、AIによる本格分析はまだ提供できない。
+    // ただし固定サンプルを完全に無視して返すのは「敵構成を入力しても何も変わらない」
+    // 誤解を招くため、少なくとも「敵が既にピックしたチャンピオンは推奨候補から外す」という
+    // 事実に基づく最低限のフィルタだけは実データ入力に連動させる(2026-08-05発覚)。
+    const enemyLower = new Set(enemyTeam.map((c: string) => String(c).toLowerCase().trim()));
+    const pool = samplePool[role.toUpperCase()] || samplePool.MID;
+    const recommends = pool.filter((r) => !enemyLower.has(r.champion.toLowerCase()));
 
     return NextResponse.json({
       role,
       recommendations: recommends,
-      analysisSummary: `【サンプル表示】入力された敵構成 (${enemyTeam.join(', ') || '未特定'}) には未連動の固定サンプルです。`,
+      isSample: true,
+      analysisSummary: enemyTeam.length > 0
+        ? `⚠️ 相性・カウンター統計データベース未整備のため、以下はサンプル値です（実際のプレイスタイル分析とは連動していません）。敵構成 (${enemyTeam.join(', ')}) が既にピックしたチャンピオンは候補から除外しています。`
+        : '⚠️ 相性・カウンター統計データベース未整備のため、以下はサンプル値です（実際のプレイスタイル分析とは連動していません）。',
     });
   } catch (err: any) {
     return NextResponse.json({ error: err.message || 'Pick recommendation failed' }, { status: 500 });

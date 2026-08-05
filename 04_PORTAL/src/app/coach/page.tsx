@@ -949,13 +949,22 @@ function TimingHeatmapTab() {
 
   useEffect(() => { fetchHeatmap(); }, []);
 
+  // 同期の進捗(offset)をlocalStorageに永続化する。以前はブラウザのローカル変数のみで
+  // 保持しており、途中でタブを閉じる/離脱すると次回は300件のID一覧取得を毎回最初から
+  // やり直し、Riot API呼び出しが無駄になっていた(2026-08-05発覚)。
+  const SYNC_OFFSET_KEY = 'soloq_history_sync_offset';
+
   const runSync = async () => {
-    if (!confirm('直近300試合のソロQ履歴をRiot APIから取得して同期しますか？(試合数によっては数分かかります)')) return;
+    const savedOffset = Number(localStorage.getItem(SYNC_OFFSET_KEY) || 0) || 0;
+    const confirmMsg = savedOffset > 0
+      ? `前回の続き(${savedOffset}件目)からソロQ履歴の同期を再開しますか？(試合数によっては数分かかります)`
+      : '直近300試合のソロQ履歴をRiot APIから取得して同期しますか？(試合数によっては数分かかります)';
+    if (!confirm(confirmMsg)) return;
     setSyncing(true);
-    setSyncProgress({ processed: 0, synced: 0 });
+    setSyncProgress({ processed: savedOffset, synced: 0 });
     try {
-      let offset = 0;
-      let totalProcessed = 0;
+      let offset = savedOffset;
+      let totalProcessed = savedOffset;
       let totalSynced = 0;
       while (true) {
         const res = await fetch('/api/soloq/history-sync', {
@@ -970,14 +979,21 @@ function TimingHeatmapTab() {
         totalSynced += data.synced || 0;
         setSyncProgress({ processed: totalProcessed, synced: totalSynced });
 
-        if (data.done || data.nextOffset === null) break;
+        if (data.done || data.nextOffset === null) {
+          localStorage.removeItem(SYNC_OFFSET_KEY);
+          break;
+        }
         offset = data.nextOffset;
+        // 完走前でも直近の到達点を都度保存しておく。ここで保存しないと、この後の
+        // チャンクが失敗/中断した場合に今回分の進捗ごと失われてしまう。
+        localStorage.setItem(SYNC_OFFSET_KEY, String(offset));
         // レート制限で中断した直後は即リトライしても再度弾かれやすいため、少し待ってから再開する。
         if (data.rateLimited) await new Promise((r) => setTimeout(r, 3000));
       }
       await fetchHeatmap();
     } catch (e: any) {
-      setError('同期失敗: ' + e.message);
+      // 進捗(localStorage)はここでは消さない。次回起動時に続きから再開できるように残す。
+      setError('同期失敗: ' + e.message + '（次回は続きから再開します）');
     } finally {
       setSyncing(false);
       setSyncProgress(null);
@@ -1190,6 +1206,10 @@ export default function CoachPage() {
   // 振り返り保存完了のたびにインクリメントし、常時マウントのMySoloQDashboard/PostGameTabへ
   // 再fetchのトリガーとして渡す(保存後に一覧タブが更新されない問題の修正)。
   const [reflectionRefreshSignal, setReflectionRefreshSignal] = useState(0);
+  // 試合終了自動検知が連続して失敗している場合に気づけるようにする(2026-08-05発覚:
+  // 以前はcatchが完全にサイレントで、Riot APIキー失効等が起きても自動ポップアップが
+  // 永遠に出なくなるだけで、ユーザーには何も表示されなかった)。
+  const [matchDetectFailCount, setMatchDetectFailCount] = useState(0);
 
   const fetchLastReflection = async () => {
     try {
@@ -1238,13 +1258,19 @@ export default function CoachPage() {
         });
         const data = await res.json();
 
+        if (data.error) {
+          setMatchDetectFailCount((c) => c + 1);
+        } else {
+          setMatchDetectFailCount(0);
+        }
+
         if (data.isNewMatch) {
           setLastKnownMatchId(data.latestMatchId);
           // 自動ポップアップ！！ まずティルト診断を出し、そこから振り返りへ進めるようにする(#①)
           setIsTiltPopupOpen(true);
         }
       } catch (err) {
-        // サイレントエラー
+        setMatchDetectFailCount((c) => c + 1);
       }
     }, 45000);
 
@@ -1386,6 +1412,12 @@ export default function CoachPage() {
 
         {/* 過去の自分からの対面警戒メモ（対面チャンプ決定時に即座にハイライト表示） */}
         <MatchupWarningCard champion={sharedChampion} enemyChampion={sharedEnemyChampion} />
+
+        {matchDetectFailCount >= 3 && (
+          <div className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-xs text-rose-700">
+            ⚠️ 試合終了の自動検知が{matchDetectFailCount}回連続で失敗しています。Riot IDの設定やRiot APIキーの有効期限を確認してください（自動ポップアップが出ない間も、下の「振り返りを記録する」から手動で記録できます）。
+          </div>
+        )}
 
         {/* 4ステップ切り替えナビゲーションバー */}
         <div className="mb-6 flex gap-2 border-b border-black/10 pb-3 overflow-x-auto">

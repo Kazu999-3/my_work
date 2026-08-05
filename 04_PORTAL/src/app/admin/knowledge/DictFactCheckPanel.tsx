@@ -30,6 +30,16 @@ export default function DictFactCheckPanel() {
 
   useEffect(() => { loadQueue(); }, []);
 
+  // 170体前後×5体/回で数分〜十数分かかるクライアント駆動ループのため、実行中にタブを
+  // 閉じる/リロードすると中断される。注意書きだけでは見落とされるため、離脱時に
+  // 確認ダイアログを出す(2026-08-05発覚)。
+  useEffect(() => {
+    if (!running) return;
+    const handler = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = ''; };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [running]);
+
   const runScan = async () => {
     setScanning(true); setScanMsg(''); setError('');
     try {
@@ -124,6 +134,7 @@ export default function DictFactCheckPanel() {
           {running ? <RefreshCw size={13} className="animate-spin" /> : <ShieldCheck size={13} />}
           {running ? `実行中... (${progress?.processed ?? 0}/${progress?.total ?? '?'}体・${progress?.flagged ?? 0}件検出)` : '一斉ファクトチェックを実行'}
         </button>
+        {running && !runMsg && <p className="text-[11px] text-amber-700 mt-2">⚠️ 実行中にタブを閉じる・リロードすると中断されます。完走まで開いたままにしてください。</p>}
         {runMsg && <p className="text-xs text-emerald-700 mt-2">{runMsg}</p>}
       </div>
 

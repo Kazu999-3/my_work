@@ -93,8 +93,10 @@ export default function PickRecommendationTab() {
                 <span className="text-xs font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded">
                   第 {idx + 1} 推奨
                 </span>
-                <span className="text-[11px] font-bold text-emerald-700">
-                  カウンター度: {rec.counterScore}%
+                {/* 実データ分析ではない旨がカード単体でも分かるよう、数値ではなく明示ラベルにする
+                    （数値化された「◯%」は実分析と見分けがつかず誤認しやすいため）。 */}
+                <span className="text-[10px] font-bold text-stone-400 bg-stone-100 px-2 py-0.5 rounded border border-stone-200">
+                  参考値（サンプル）
                 </span>
               </div>
               <h4 className="text-base font-extrabold text-stone-900">{rec.champion}</h4>

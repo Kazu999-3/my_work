@@ -14,14 +14,24 @@ export default function ChampionFactCheckPanel({ champion }: { champion: string 
   const [running, setRunning] = useState(false);
   const [msg, setMsg] = useState('');
   const [error, setError] = useState('');
+  // 単体版と全体版が同じdict_fact_check_queueを共有しているのに、「未対応の検出項目は
+  // ありません」が「検証済みで綺麗」なのか「全体スキャンをまだ一度も走らせていない
+  // だけ」なのか区別できなかった(2026-08-05発覚)。全ステータス込みで1件でも
+  // 履歴があれば「チェック済み」とみなす。
+  const [everChecked, setEverChecked] = useState<boolean | null>(null);
 
   const load = async () => {
     setLoading(true); setError('');
     try {
-      const res = await fetch(`/api/admin/dict-fact-check/queue?status=pending&champion=${encodeURIComponent(champion)}`, { credentials: 'include' });
-      const d = await res.json();
-      if (!res.ok) throw new Error(d.error || '取得に失敗しました');
+      const [pendingRes, allRes] = await Promise.all([
+        fetch(`/api/admin/dict-fact-check/queue?status=pending&champion=${encodeURIComponent(champion)}`, { credentials: 'include' }),
+        fetch(`/api/admin/dict-fact-check/queue?status=all&champion=${encodeURIComponent(champion)}`, { credentials: 'include' }),
+      ]);
+      const d = await pendingRes.json();
+      if (!pendingRes.ok) throw new Error(d.error || '取得に失敗しました');
       setItems(d.items || []);
+      const allD = await allRes.json();
+      setEverChecked(allRes.ok ? (allD.items || []).length > 0 : null);
     } catch (e: any) { setError(e.message); } finally { setLoading(false); }
   };
 
@@ -62,7 +72,11 @@ export default function ChampionFactCheckPanel({ champion }: { champion: string 
       {loading ? (
         <p className="text-xs text-stone-500 py-2">読み込み中...</p>
       ) : items.length === 0 ? (
-        <p className="text-xs text-stone-500 py-2">未対応の検出項目はありません。</p>
+        <p className="text-xs text-stone-500 py-2">
+          {everChecked
+            ? '✅ チェック済み・未対応の検出項目はありません。'
+            : 'まだこのチャンピオンのファクトチェックは実行されていません（上のボタンから実行できます）。'}
+        </p>
       ) : (
         <div className="space-y-2">
           {items.map((it) => (

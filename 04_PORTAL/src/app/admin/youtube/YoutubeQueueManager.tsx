@@ -104,6 +104,47 @@ export default function YoutubeQueueManager() {
   const [channelsLoading, setChannelsLoading] = useState(false);
   const [newChannelUrl, setNewChannelUrl] = useState('');
 
+  // ローカルタスク実行キュー(edge_tasks)の稼働状況。エッジワーカーが起動していない
+  // (PC起動時のみ稼働が正式運用)場合、チャンネル/プレイリスト登録が「送信しました」の
+  // メッセージだけ残り実際には永遠に処理されないことがあった。ここで可視化する。
+  const [systemStatus, setSystemStatus] = useState<{ worker: any; queue: any[]; history: any[] } | null>(null);
+  const fetchSystemStatus = async () => {
+    try {
+      const res = await fetch('/api/admin/system/status', { credentials: 'include' });
+      if (res.ok) setSystemStatus(await res.json());
+    } catch { /* サイレントに無視（補助パネルのため） */ }
+  };
+  useEffect(() => {
+    fetchSystemStatus();
+    const interval = setInterval(fetchSystemStatus, 8000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // 登録要求(edge_tasksへの起票)が実際に処理完了したかを、taskIdでポーリングして確認する。
+  // 以前は「送信しました」の成功メッセージだけを表示し、実際に処理されたかは
+  // 4秒後の一覧再取得に頼り切っていたため、ワーカーが動いていないと待機中と失敗の
+  // 見分けがつかなかった(2026-08-05発覚)。
+  const pollTaskResult = async (taskId: string, kind: 'チャンネル' | 'プレイリスト') => {
+    for (let i = 0; i < 30; i++) {
+      await new Promise((r) => setTimeout(r, 2000));
+      try {
+        const res = await fetch(`/api/tasks/status?id=${encodeURIComponent(taskId)}`, { credentials: 'include' });
+        if (!res.ok) continue;
+        const { task } = await res.json();
+        if (!task) continue;
+        if (task.status === 'completed') {
+          showFeedback(`✅ ${kind}の登録が完了しました。`, 'success');
+          return;
+        }
+        if (task.status === 'failed') {
+          showFeedback(`❌ ${kind}の登録に失敗しました: ${task.error_message || '不明なエラー'}`, 'error');
+          return;
+        }
+      } catch { /* 1回の失敗ではポーリングを止めない */ }
+    }
+    showFeedback(`⏳ ${kind}の登録がまだ処理されていません。下の「ローカルタスク実行キュー状況」でワーカーの稼働状況を確認してください。`, 'error');
+  };
+
   // 1. キューデータの取得
   const fetchQueue = async (silent = false, currentSort = sortBy) => {
     try {
@@ -425,10 +466,15 @@ export default function YoutubeQueueManager() {
 
       const result = await res.json();
       if (res.ok) {
-        showFeedback(result.message || 'プレイリスト登録解決要求を送信しました。', 'success');
+        showFeedback('⏳ プレイリスト登録要求を送信しました。処理結果を確認しています…', 'success');
         setNewPlaylistUrl('');
-        // エッジワーカーで非同期登録されるため、数秒後に自動更新
-        setTimeout(() => fetchPlaylists(true), 4000);
+        fetchSystemStatus();
+        const taskId = result.task?.id;
+        if (taskId) {
+          pollTaskResult(taskId, 'プレイリスト').then(() => fetchPlaylists(true));
+        } else {
+          setTimeout(() => fetchPlaylists(true), 4000);
+        }
       } else {
         showFeedback(result.error || 'プレイリスト登録に失敗しました。', 'error');
       }
@@ -522,10 +568,15 @@ export default function YoutubeQueueManager() {
 
       const result = await res.json();
       if (res.ok) {
-        showFeedback(result.message || 'チャンネル登録解決要求を送信しました。', 'success');
+        showFeedback('⏳ チャンネル登録要求を送信しました。処理結果を確認しています…', 'success');
         setNewChannelUrl('');
-        // エッジワーカーで非同期登録されるため、数秒後に自動更新
-        setTimeout(() => fetchChannels(true), 4000);
+        fetchSystemStatus();
+        const taskId = result.task?.id;
+        if (taskId) {
+          pollTaskResult(taskId, 'チャンネル').then(() => fetchChannels(true));
+        } else {
+          setTimeout(() => fetchChannels(true), 4000);
+        }
       } else {
         showFeedback(result.error || 'チャンネル登録に失敗しました。', 'error');
       }
@@ -1563,6 +1614,55 @@ export default function YoutubeQueueManager() {
       )}
 
       {/* ⚡ ローカルタスク実行キュー状況パネル */}
+      <div className="mt-6 bg-white rounded-2xl border border-gray-200 p-4">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+            <span
+              className={`w-2 h-2 rounded-full ${systemStatus?.worker?.active ? 'bg-green-500' : 'bg-red-500'}`}
+            />
+            ローカルタスク実行キュー状況
+          </h3>
+          <button
+            type="button"
+            onClick={fetchSystemStatus}
+            className="text-[11px] text-gray-500 hover:text-gray-800"
+          >
+            🔄 更新
+          </button>
+        </div>
+        {!systemStatus ? (
+          <p className="text-xs text-gray-400">読み込み中...</p>
+        ) : (
+          <div className="space-y-2 text-xs">
+            <p className={systemStatus.worker?.active ? 'text-green-700' : 'text-red-700'}>
+              {systemStatus.worker?.active
+                ? `✅ エッジワーカー稼働中（最終応答 ${systemStatus.worker.diff_seconds}秒前）`
+                : 'エッジワーカー停止中（PCが起動していないと、チャンネル/プレイリスト登録・動画解析は処理されません）'}
+            </p>
+            <p className="text-gray-500">
+              待機中/処理中のタスク: {systemStatus.queue.length}件
+            </p>
+            {systemStatus.history.length > 0 && (
+              <div>
+                <p className="text-gray-500 mb-1">直近の完了・失敗:</p>
+                <ul className="space-y-1">
+                  {systemStatus.history.slice(0, 5).map((t: any) => (
+                    <li key={t.id} className="flex items-center gap-1.5 text-[11px]">
+                      <span className={t.status === 'completed' ? 'text-green-600' : 'text-red-600'}>
+                        {t.status === 'completed' ? '✅' : '❌'}
+                      </span>
+                      <span className="text-gray-600 truncate">{t.task_type}</span>
+                      <span className="text-gray-400">
+                        {new Date(t.updated_at).toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
       </div>
   );
 }

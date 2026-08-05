@@ -120,6 +120,9 @@ export default function NoteAnalytics() {
   const [scheduledInput, setScheduledInput] = useState('');
   const [savingSchedule, setSavingSchedule] = useState(false);
   const [metricsInput, setMetricsInput] = useState({ views: '', likes: '', sales_count: '', sales_amount: '' });
+  // 選択時点の元の値。空欄化して保存した際に「未入力（触っていない）」と「入力済みの値を
+  // 消した（nullに戻したい）」を区別するために保持する(2026-08-05発覚)。
+  const [metricsOriginal, setMetricsOriginal] = useState({ views: '', likes: '', sales_count: '', sales_amount: '' });
   const [savingPublish, setSavingPublish] = useState(false);
   const [savingMetrics, setSavingMetrics] = useState(false);
   const [publishMsg, setPublishMsg] = useState<string | null>(null);
@@ -127,12 +130,14 @@ export default function NoteAnalytics() {
   useEffect(() => {
     setNoteUrlInput(selectedDraft?.note_url || '');
     setScheduledInput(selectedDraft?.scheduled_at ? selectedDraft.scheduled_at.slice(0, 10) : '');
-    setMetricsInput({
+    const seeded = {
       views: selectedDraft?.views != null ? String(selectedDraft.views) : '',
       likes: selectedDraft?.likes != null ? String(selectedDraft.likes) : '',
       sales_count: selectedDraft?.sales_count != null ? String(selectedDraft.sales_count) : '',
       sales_amount: selectedDraft?.sales_amount != null ? String(selectedDraft.sales_amount) : '',
-    });
+    };
+    setMetricsInput(seeded);
+    setMetricsOriginal(seeded);
     setPublishMsg(null);
   }, [selectedDraft?.id]);
 
@@ -158,6 +163,45 @@ export default function NoteAnalytics() {
     finally { setSavingPublish(false); }
   };
 
+  // 公開済み記事のURLを打ち間違えた場合の訂正。以前はDBを直接触るしか手段が無かった
+  // (2026-08-05発覚)。
+  const [editingPublishedUrl, setEditingPublishedUrl] = useState(false);
+  const correctPublishedUrl = async () => {
+    if (!selectedDraft || !noteUrlInput.trim()) return;
+    setSavingPublish(true); setPublishMsg(null);
+    try {
+      const res = await fetch(`/api/admin/note-articles/${selectedDraft.id}`, {
+        method: 'PATCH', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ note_url: noteUrlInput.trim() }),
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error || '更新に失敗しました');
+      applyDraftPatch(selectedDraft.id, d.article);
+      setEditingPublishedUrl(false);
+      setPublishMsg('✅ URLを訂正しました');
+    } catch (e: any) { setPublishMsg('❌ ' + e.message); }
+    finally { setSavingPublish(false); }
+  };
+
+  const unpublishArticle = async () => {
+    if (!selectedDraft) return;
+    if (!confirm('公開登録状態を取り消し、下書きに戻しますか？（成績データは消えません）')) return;
+    setSavingPublish(true); setPublishMsg(null);
+    try {
+      const res = await fetch(`/api/admin/note-articles/${selectedDraft.id}`, {
+        method: 'PATCH', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ unpublish: true }),
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error || '更新に失敗しました');
+      applyDraftPatch(selectedDraft.id, d.article);
+      setPublishMsg('✅ 公開を取り消し、下書きに戻しました');
+    } catch (e: any) { setPublishMsg('❌ ' + e.message); }
+    finally { setSavingPublish(false); }
+  };
+
   const saveSchedule = async () => {
     if (!selectedDraft) return;
     setSavingSchedule(true); setPublishMsg(null);
@@ -177,12 +221,28 @@ export default function NoteAnalytics() {
 
   const saveMetrics = async () => {
     if (!selectedDraft) return;
-    setSavingMetrics(true); setPublishMsg(null);
+    setPublishMsg(null);
+    const body: Record<string, any> = {};
+    (['views', 'likes', 'sales_count', 'sales_amount'] as const).forEach((k) => {
+      if (metricsInput[k] !== '') {
+        // 入力あり: 数値として更新
+        body[k] = Number(metricsInput[k]);
+      } else if (metricsOriginal[k] !== '') {
+        // 元々値があったのに空欄に戻された = 明示的にnullへ戻す意図とみなす
+        // (以前は空欄=「触っていない」としてスキップしていたため、一度入力した値を
+        // 空欄に戻しても更新対象から除外されnullに戻せなかった。2026-08-05発覚)
+        body[k] = null;
+      }
+      // 元々空欄で、今も空欄のまま = 未入力なので何もしない
+    });
+    if (Object.keys(body).length === 0) {
+      // 何も変更が無い状態で送信すると、ボタンがdisabledにならないまま400エラーに
+      // なっていた(2026-08-05発覚)。API送信前にガードし、分かりやすい案内を出す。
+      setPublishMsg('変更がありません（入力欄の値を変更してから保存してください）');
+      return;
+    }
+    setSavingMetrics(true);
     try {
-      const body: Record<string, any> = {};
-      (['views', 'likes', 'sales_count', 'sales_amount'] as const).forEach((k) => {
-        if (metricsInput[k] !== '') body[k] = Number(metricsInput[k]);
-      });
       const res = await fetch(`/api/admin/note-articles/${selectedDraft.id}`, {
         method: 'PATCH', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
@@ -191,6 +251,7 @@ export default function NoteAnalytics() {
       const d = await res.json();
       if (!res.ok) throw new Error(d.error || '更新に失敗しました');
       applyDraftPatch(selectedDraft.id, d.article);
+      setMetricsOriginal(metricsInput);
       setPublishMsg('✅ 成績を更新しました');
     } catch (e: any) { setPublishMsg('❌ ' + e.message); }
     finally { setSavingMetrics(false); }
@@ -592,9 +653,9 @@ export default function NoteAnalytics() {
                     {selectedDraft.status === 'published' ? (
                       <>
                         <div className="flex flex-wrap items-center justify-between gap-2">
-                          <div className="flex items-center gap-2 text-xs">
+                          <div className="flex items-center gap-2 text-xs flex-wrap">
                             <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200 font-bold">公開済み</span>
-                            {selectedDraft.note_url && (
+                            {!editingPublishedUrl && selectedDraft.note_url && (
                               <a href={selectedDraft.note_url} target="_blank" rel="noopener noreferrer" className="text-indigo-700 hover:underline truncate max-w-xs">
                                 {selectedDraft.note_url}
                               </a>
@@ -603,7 +664,48 @@ export default function NoteAnalytics() {
                               <span className="text-stone-500">公開日: {new Date(selectedDraft.published_at).toLocaleDateString('ja-JP')}</span>
                             )}
                           </div>
+                          {!editingPublishedUrl && (
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => { setNoteUrlInput(selectedDraft.note_url || ''); setEditingPublishedUrl(true); setPublishMsg(null); }}
+                                className="text-[11px] text-stone-600 hover:text-stone-900 underline"
+                              >
+                                URLを訂正
+                              </button>
+                              <button
+                                onClick={unpublishArticle}
+                                disabled={savingPublish}
+                                className="text-[11px] text-rose-600 hover:text-rose-800 underline disabled:opacity-50"
+                              >
+                                公開を取り消す
+                              </button>
+                            </div>
+                          )}
                         </div>
+                        {editingPublishedUrl && (
+                          <div className="flex flex-wrap items-center gap-3">
+                            <input
+                              type="url"
+                              placeholder="https://note.com/..."
+                              value={noteUrlInput}
+                              onChange={(e) => setNoteUrlInput(e.target.value)}
+                              className="flex-1 min-w-[200px] bg-white border border-black/10 rounded-lg px-3 py-1.5 text-xs text-stone-800 outline-none focus:border-indigo-500/50"
+                            />
+                            <button
+                              onClick={correctPublishedUrl}
+                              disabled={savingPublish || !noteUrlInput.trim()}
+                              className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition-all disabled:opacity-50 shrink-0"
+                            >
+                              {savingPublish ? '更新中...' : 'URLを更新'}
+                            </button>
+                            <button
+                              onClick={() => setEditingPublishedUrl(false)}
+                              className="text-[11px] text-stone-500 hover:text-stone-800"
+                            >
+                              キャンセル
+                            </button>
+                          </div>
+                        )}
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                           {([
                             ['views', '閲覧数'],
@@ -625,7 +727,7 @@ export default function NoteAnalytics() {
                         <div className="flex items-center gap-3">
                           <button
                             onClick={saveMetrics}
-                            disabled={savingMetrics}
+                            disabled={savingMetrics || (['views', 'likes', 'sales_count', 'sales_amount'] as const).every((k) => metricsInput[k] === metricsOriginal[k])}
                             className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition-all disabled:opacity-50"
                           >
                             {savingMetrics ? '更新中...' : '成績を更新'}

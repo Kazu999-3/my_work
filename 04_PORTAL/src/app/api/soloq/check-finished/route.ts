@@ -37,6 +37,10 @@ export async function POST(request: Request) {
       latestMatchId,
     });
   } catch (err: any) {
-    return NextResponse.json({ isNewMatch: false });
+    // 「新しい試合は無い」のか「取得自体に失敗した」のかを区別できないと、Riot APIキー
+    // 失効やDB障害が起きても自動ポップアップが永遠に出なくなるだけで気づけなかった
+    // (2026-08-05発覚)。呼び出し元(coach/page.tsx)が連続失敗を検知できるようerrorを含める。
+    console.warn('[soloq/check-finished] error:', err);
+    return NextResponse.json({ isNewMatch: false, error: err.message || '取得に失敗しました' });
   }
 }

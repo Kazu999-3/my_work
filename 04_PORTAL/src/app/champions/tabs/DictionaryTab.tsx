@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo, useRef, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { getChampIcon, getChampSplash } from '../../../lib/ddragonClient';
@@ -16,10 +16,15 @@ import ChampionRevisionHistory from '../ChampionRevisionHistory';
 
 function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
   const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
   const [champions, setChampions] = useState<any[]>([]);
-  const [search, setSearch] = useState('');
-  const [sortOrder, setSortOrder] = useState('updated_desc');
-  const [roleFilter, setRoleFilter] = useState<string>('ALL');
+  // フィルタ・ソート状態はuseStateのみで管理していたためリロードで消えていた
+  // (2026-08-05発覚)。多数のフィルタを設定した後に別チャンピオン詳細を見て戻る、
+  // という操作を頻繁に行う画面のため、URLクエリに保持して復元できるようにする。
+  const [search, setSearch] = useState(() => searchParams.get('q') || '');
+  const [sortOrder, setSortOrder] = useState(() => searchParams.get('sort') || 'updated_desc');
+  const [roleFilter, setRoleFilter] = useState<string>(() => searchParams.get('role') || 'ALL');
 
   // DDragonのtags → ロールへのマッピングテーブル
   const ROLE_MAP: Record<string, string[]> = {
@@ -37,7 +42,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
   // 完了時点の「本当に今選択中のチャンピオン」を判定するための参照
   const selectedRef = useRef<any>(null);
   useEffect(() => { selectedRef.current = selected; }, [selected]);
-  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState(() => searchParams.get('fav') === '1');
   const [loading, setLoading] = useState(true);
   const [champDates, setChampDates] = useState<Record<string, string>>({});
   const [champPending, setChampPending] = useState<Record<string, boolean>>({});
@@ -45,9 +50,25 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
   const [champJgStyles, setChampJgStyles] = useState<Record<string, any>>({});
   // 一覧グリッドでも「いつ頃強いか」がひと目でわかるように、全チャンピオン分を一括取得する
   const [champPowerSpikes, setChampPowerSpikes] = useState<Record<string, { early_game_score: number; mid_game_score: number; late_game_score: number }>>({});
-  const [typeFilter, setTypeFilter] = useState<'ALL' | 'FARM' | 'GANK' | 'INVASION' | 'TANK'>('ALL');
+  const [typeFilter, setTypeFilter] = useState<'ALL' | 'FARM' | 'GANK' | 'INVASION' | 'TANK'>(() => (searchParams.get('type') as any) || 'ALL');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [pickFilter, setPickFilter] = useState<'ALL' | 'BLIND' | 'COUNTER'>('ALL');
+  const [pickFilter, setPickFilter] = useState<'ALL' | 'BLIND' | 'COUNTER'>(() => (searchParams.get('pick') as any) || 'ALL');
+
+  // 現在のフィルタ・ソート状態をURLクエリへ反映する。チャンピオン詳細を開いている
+  // 間(selected有り)は一覧側のクエリを書き換えない。
+  useEffect(() => {
+    if (selected) return;
+    const params = new URLSearchParams();
+    if (search) params.set('q', search);
+    if (sortOrder !== 'updated_desc') params.set('sort', sortOrder);
+    if (roleFilter !== 'ALL') params.set('role', roleFilter);
+    if (typeFilter !== 'ALL') params.set('type', typeFilter);
+    if (pickFilter !== 'ALL') params.set('pick', pickFilter);
+    if (showFavoritesOnly) params.set('fav', '1');
+    const qs = params.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search, sortOrder, roleFilter, typeFilter, pickFilter, showFavoritesOnly, selected]);
 
   // 相対時間フォーマット関数
   const getRelativeTimeString = (timestampSec?: number) => {
@@ -74,6 +95,9 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
   } | null>(null);
   const [editingStrategy, setEditingStrategy] = useState(false);
   const [saving, setSaving] = useState(false);
+  // 成功時はsaving状態がfalseに戻るだけで明示表示が無く、保存されたか確信が持てなかった
+  // (2026-08-05発覚)。保存成功を数秒間だけ明示するトースト用フラグ。
+  const [saveSuccess, setSaveSuccess] = useState(false);
   const [copied, setCopied] = useState(false);
   const [noteDraftMode, setNoteDraftMode] = useState<'preview' | 'edit'>('preview');
   const [favoriteChamps, setFavoriteChamps] = useState<string[]>([]);
@@ -445,6 +469,8 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
       setChampDates(prev => ({ ...prev, [selected.id]: now }));
       setChampPending(prev => ({ ...prev, [selected.id]: !dataFields.strategy }));
       setChampJgStyles(prev => ({ ...prev, [selected.id]: dataFields.jg_style }));
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
     } catch (err: any) {
       alert('保存失敗: ' + err.message);
     }
@@ -1385,6 +1411,11 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
         {/* 保存ボタン（辞典編集は管理者専用。一般訪問者には表示しない） */}
         {isAdmin && (
         <div className="flex justify-end items-center gap-3 relative z-10 pt-4 flex-wrap">
+          {saveSuccess && (
+            <span className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-950/30 text-emerald-400 border border-emerald-800/60 text-xs font-bold animate-in fade-in">
+              <Check size={14} /> 保存しました
+            </span>
+          )}
           <button onClick={saveMemo} disabled={saving} className="px-8 py-3 bg-gradient-to-r from-amber-400 to-amber-500 text-black font-black rounded-xl hover:shadow-[0_0_20px_rgba(251,191,36,0.4)] hover:-translate-y-0.5 transition-all flex items-center gap-2 text-sm">
             {saving ? <RefreshCw size={18} className="animate-spin" /> : <Save size={18} />} チャンピオン辞典の変更を保存する
           </button>
