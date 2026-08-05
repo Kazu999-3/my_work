@@ -97,27 +97,31 @@ export async function handleButtonInteraction(interaction, env, ctx) {
 
     ctx.waitUntil((async () => {
       try {
+        const msgId = interaction.message.id;
+        const channelId = interaction.channel_id;
+
+        // 「参加する」ボタンを押してから反映されるまでが遅い、という指摘への対応
+        // (2026-08-05発覚)。元メッセージの取得(Discord API)と名簿(ktm_players)の
+        // 取得(Supabase)は互いに依存しない独立した呼び出しなのに直列実行していたため、
+        // ここをPromise.allで並列化して往復1回分を短縮する。MMR判定と希望レーン取得は
+        // 同じ行を見るので、以前は別々だった2回のSupabaseクエリも1回にまとめた。
+        const [msgRes, playerRow] = await Promise.all([
+          fetch(`https://discord.com/api/v10/channels/${channelId}/messages/${msgId}`, {
+            headers: { "Authorization": `Bot ${botToken}` }
+          }),
+          fetchSupabase(env, 'ktm_players', `discord_id=eq.${userId}&select=mmr,mmr_top,mmr_jg,mmr_mid,mmr_adc,mmr_sup,role_preferences,name`)
+            .then((rows) => (rows && rows.length > 0 ? rows[0] : null))
+            .catch((e) => { console.warn('join_periodic_auto: 名簿取得に失敗:', e); return null; }),
+        ]);
+
         let roomType = isAutoMode ? null : customId.split(':')[1]; // silver or gold
         if (isAutoMode) {
-          let mmr = null;
-          try {
-            const ps = await fetchSupabase(env, 'ktm_players', `discord_id=eq.${userId}&select=mmr,mmr_top,mmr_jg,mmr_mid,mmr_adc,mmr_sup`);
-            if (ps && ps.length > 0) mmr = getHighestLaneMmr(ps[0]);
-          } catch (e) {
-            console.warn('join_periodic_auto: mmr lookup failed:', e);
-          }
           // 名簿未登録(mmr不明)の場合は初心者想定でシルバー以下側に受け入れる
+          const mmr = playerRow ? getHighestLaneMmr(playerRow) : null;
           const tier = getKtmRank(mmr ?? 0);
           roomType = tier.min >= 1350 ? 'gold' : 'silver';
         }
 
-        const msgId = interaction.message.id;
-        const channelId = interaction.channel_id;
-
-        // 元メッセージの取得
-        const msgRes = await fetch(`https://discord.com/api/v10/channels/${channelId}/messages/${msgId}`, {
-          headers: { "Authorization": `Bot ${botToken}` }
-        });
         if (!msgRes.ok) throw new Error("メッセージ取得失敗");
 
         const msg = await msgRes.json();
@@ -149,32 +153,33 @@ export async function handleButtonInteraction(interaction, env, ctx) {
 
         // 2. もし元の部屋に未参加だった場合は、押された部屋に追加
         if (!isAlreadyInTarget) {
-          // 名簿(ktm_players)からユーザーの希望レーンを頑丈に取得
+          // 名簿(ktm_players)からユーザーの希望レーンを頑丈に取得。冒頭で並列取得済みの
+          // playerRowを使い回す(通常はここで追加のSupabase呼び出しは発生しない)。
+          // discord_idの型不一致等でeqクエリが取りこぼした場合のみ、フォールバックとして
+          // 全件取得→JS側で突き合わせる（遅いが稀なパスなので許容）。
+          let lookupRow = playerRow;
+          if (!lookupRow) {
+            try {
+              const all = await fetchSupabase(env, 'ktm_players', `select=discord_id,role_preferences,name`);
+              lookupRow = (all || []).find((p) => String(p.discord_id) === String(userId)) || null;
+            } catch (e) {
+              console.warn("fetch role_preferences fallback error:", e);
+            }
+          }
+
           let lanePrefStr = "";
           try {
-            // discord_id でクエリ (文字列/数値両対応)
-            let ps = await fetchSupabase(env, 'ktm_players', `discord_id=eq.${userId}&select=role_preferences,name`);
-            if (!ps || ps.length === 0) {
-              // バックアップ: 全件からマッチ
-              ps = await fetchSupabase(env, 'ktm_players', `select=discord_id,role_preferences,name`);
-              if (ps && ps.length > 0) {
-                ps = ps.filter(p => String(p.discord_id) === String(userId));
-              }
+            let pref = lookupRow?.role_preferences;
+            if (typeof pref === 'string') {
+              try { pref = JSON.parse(pref); } catch (e) {}
             }
-
-            if (ps && ps.length > 0 && ps[0].role_preferences) {
-              let pref = ps[0].role_preferences;
-              if (typeof pref === 'string') {
-                try { pref = JSON.parse(pref); } catch (e) {}
-              }
-              if (pref && (pref.primary || pref.secondary)) {
-                const p1 = pref.primary || "指定なし";
-                const p2 = pref.secondary || "指定なし";
-                lanePrefStr = ` 【第1: ${p1} / 第2: ${p2}】`;
-              }
+            if (pref && (pref.primary || pref.secondary)) {
+              const p1 = pref.primary || "指定なし";
+              const p2 = pref.secondary || "指定なし";
+              lanePrefStr = ` 【第1: ${p1} / 第2: ${p2}】`;
             }
           } catch (e) {
-            console.warn("fetch role_preferences error:", e);
+            console.warn("role_preferences parse error:", e);
           }
 
           let fLines = targetEmbed.fields[targetFieldIdx].value === "▫ 参加者: なし"
@@ -188,18 +193,21 @@ export async function handleButtonInteraction(interaction, env, ctx) {
           targetEmbed.fields[targetFieldIdx].value = fLines.join('\n');
         }
 
-        // 押されたメッセージ自体の更新
-        await sendDiscordMessage(`channels/${channelId}/messages/${msgId}`, botToken, "PATCH", {
-          embeds: [targetEmbed],
-          components: interaction.message.components
-        });
+        // 押されたメッセージ自体の更新と、同期対象を探すための直近メッセージ一覧取得は
+        // 互いに依存しないため並列実行する(2026-08-05発覚)。
+        const [, channelMsgsRes] = await Promise.all([
+          sendDiscordMessage(`channels/${channelId}/messages/${msgId}`, botToken, "PATCH", {
+            embeds: [targetEmbed],
+            components: interaction.message.components
+          }),
+          fetch(`https://discord.com/api/v10/channels/${channelId}/messages?limit=15`, {
+            headers: { "Authorization": `Bot ${botToken}` }
+          }).catch(() => null),
+        ]);
 
         // チャンネル内の直近メッセージから「募集カード」と「アナウンス通知」の両方を検索して完全同期
         try {
-          const channelMsgsRes = await fetch(`https://discord.com/api/v10/channels/${channelId}/messages?limit=15`, {
-            headers: { "Authorization": `Bot ${botToken}` }
-          });
-          if (channelMsgsRes.ok) {
+          if (channelMsgsRes && channelMsgsRes.ok) {
             const channelMsgs = await channelMsgsRes.json();
             const relatedMsgs = channelMsgs.filter(m => 
               m.id !== msgId && 
@@ -208,14 +216,16 @@ export async function handleButtonInteraction(interaction, env, ctx) {
               (m.embeds[0].title.includes("定期カスタム") || m.embeds[0].title.includes("事前告知") || m.embeds[0].title.includes("メンバー状況"))
             );
 
-            for (const relMsg of relatedMsgs) {
+            // 各メッセージは独立した書き込み先なので、直列awaitではなく並列実行して
+            // 反映までの待ち時間を短縮する(2026-08-05発覚)。
+            await Promise.all(relatedMsgs.map((relMsg) => {
               const relEmbed = { ...relMsg.embeds[0] };
               relEmbed.fields = targetEmbed.fields; // フィールドを完全同期
-              await sendDiscordMessage(`channels/${channelId}/messages/${relMsg.id}`, botToken, "PATCH", {
+              return sendDiscordMessage(`channels/${channelId}/messages/${relMsg.id}`, botToken, "PATCH", {
                 embeds: [relEmbed],
                 components: relMsg.components
               }).catch(() => {});
-            }
+            }));
           }
         } catch (syncErr) {
           console.warn("Dual card sync warning:", syncErr);
