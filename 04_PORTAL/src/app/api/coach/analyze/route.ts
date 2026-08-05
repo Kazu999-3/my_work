@@ -694,7 +694,11 @@ ${knowledgeCtx ? `参考ナレッジ:\n${knowledgeCtx}\n` : ''}
 ${playRecommendation.level === 'red' ? '休憩を強く勧める内容にしてください。' : ''}
 ${playRecommendation.level === 'green' ? 'ポジティブに背中を押す内容にしてください。' : ''}`;
 
-      const advice = await callGemini(prompt);
+      // 他モード(matchup/trends/practice_menu)は全てcacheKey付きだが、tiltモードだけ
+      // 無く、自動ポップアップ・手動再診断ボタン・タブでの再表示のたびにGemini呼び出しが
+      // 重複していた(2026-08-05発覚)。直近試合IDが変わらない限り(=新しい試合をまだ
+      // プレイしていない限り)同じ助言を24hキャッシュから返す。
+      const advice = await callGemini(prompt, `tilt:${puuid}:${matchIds[0] || 'none'}`);
 
       return NextResponse.json({ mode: 'tilt', tilt, streakAnalysis, timing, playRecommendation, recentMatches: myMatches, advice });
     }

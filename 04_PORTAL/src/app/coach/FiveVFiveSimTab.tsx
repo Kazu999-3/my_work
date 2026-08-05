@@ -147,7 +147,7 @@ export default function FiveVFiveSimTab() {
 
     try {
       const res = await fetch('/api/match/simulate', {
-        method: 'POST',
+        method: 'POST', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ blue: blueChamps, red: redChamps })
       });

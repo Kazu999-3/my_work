@@ -23,6 +23,21 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'プレイヤー情報がDBに見つかりません。' }, { status: 404 });
     }
 
+    // このエンドポイントは認証なしで全訪問者に公開されたセルフサービス機能
+    // (player/[id]/page.tsxの「ソロキュー同期」ボタン)のため、連打でRiot APIの
+    // レート制限/クォータを消耗させられる恐れがあった(2026-08-05発覚)。
+    // 認証を要求すると自己サービス機能自体が壊れるため、代わりにプレイヤー単位の
+    // クールダウンで乱用を防ぐ。
+    const SYNC_COOLDOWN_MS = 10 * 60 * 1000;
+    const lastUpdated = (dbPlayer.metadata as any)?.playstyle_cache?.soloq?.lastUpdated;
+    if (lastUpdated) {
+      const elapsedMs = Date.now() - new Date(lastUpdated).getTime();
+      if (elapsedMs < SYNC_COOLDOWN_MS) {
+        const waitSec = Math.ceil((SYNC_COOLDOWN_MS - elapsedMs) / 1000);
+        return NextResponse.json({ error: `前回の同期から間もないため、あと約${waitSec}秒待ってから再試行してください。` }, { status: 429 });
+      }
+    }
+
     const apiKey = process.env.RIOT_API_KEY;
     if (!apiKey) {
       // APIキーがない場合は、テスト・動作確認用にダミーデータを生成してキャッシュに保存する（開発用フォールバック）

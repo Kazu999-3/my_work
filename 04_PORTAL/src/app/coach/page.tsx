@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { apiJson } from '../../lib/apiClient';
 import ScoutTab from './ScoutTab';
 import PushOptIn from '../../components/PushOptIn';
@@ -169,7 +169,6 @@ function PreGameTab({ champion, enemyChampion, triggerSignal }: { champion: stri
       </div>
 
       <button
-        id="pre-analyze-btn"
         onClick={analyze}
         disabled={loading}
         className="w-full rounded-xl bg-orange-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-orange-500 disabled:opacity-50"
@@ -446,17 +445,23 @@ function PostGameTab({ onOpenReflectionModal, refreshSignal }: { onOpenReflectio
 // ============================
 // タブ: 傾向分析（直近の試合後ログを集計）
 // ============================
-function TrendsTab() {
+function TrendsTab({ active }: { active: boolean }) {
   const [loading, setLoading] = useState(true);
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState('');
   const [menu, setMenu] = useState<any>(null);
   const [menuLoading, setMenuLoading] = useState(false);
+  // postgameセクション全体が常時マウントのため、単純にmount時fetchするとユーザーが
+  // このタブを一度も見なくてもページを開いた瞬間にGemini呼び出しが走っていた
+  // (2026-08-05発覚)。activeになった最初の1回だけ取得する。
+  const fetchedRef = useRef(false);
 
   // 週次Cron(soloq-trends)がDiscordへ自動でダイジェストを送るようになったため、
   // ここでも手動ボタンではなく、開いたタイミングで自動集計する（同じ件数ならAPI側の
   // Geminiキャッシュが効くので、ボタン運用より呼び出し回数が増えることはない）。
   useEffect(() => {
+    if (!active || fetchedRef.current) return;
+    fetchedRef.current = true;
     (async () => {
       setLoading(true); setError(''); setResult(null); setMenu(null);
       try {
@@ -465,7 +470,7 @@ function TrendsTab() {
       } catch (e: any) { setError(e.message); }
       finally { setLoading(false); }
     })();
-  }, []);
+  }, [active]);
 
   const generateMenu = async () => {
     setMenuLoading(true);
@@ -792,7 +797,6 @@ function TiltTab({ triggerSignal }: { triggerSignal?: number }) {
       </p>
 
       <button
-        id="tilt-analyze-btn"
         onClick={analyze}
         disabled={loading}
         className="w-full rounded-xl bg-amber-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-amber-500 disabled:opacity-50"
@@ -1158,7 +1162,6 @@ function MatchupTab({ champion, enemyChampion, triggerSignal }: { champion: stri
           （ナレッジDBとチャンピオン辞典の記述をAIが要約）。
         </p>
         <button
-          id="matchup-analyze-btn"
           onClick={analyze}
           disabled={loading || !champion || !enemyChampion}
           title="上部の共通入力欄の内容で手動再分析"
@@ -1245,9 +1248,14 @@ export default function CoachPage() {
 
     fetchLastReflection();
 
-    // 試合終了の自動監視（45秒おきにチェック）
+    // 試合終了の自動監視（45秒おきにチェック）。
+    // 複数タブ・複数端末で同時に開いていると個人用Riot APIキーの消費が線形に増える
+    // 問題があった(2026-08-05発覚)。バックグラウンドタブでは意味のあるポーリングにならない
+    // (ユーザーが見ていないので自動ポップアップも気づけない)ため、Page Visibility APIで
+    // 非表示中は完全にスキップする。
     const interval = setInterval(async () => {
       try {
+        if (document.hidden) return;
         const savedIgn = localStorage.getItem('soloq_riot_id') || '';
         if (!savedIgn) return;
 
@@ -1514,7 +1522,7 @@ export default function CoachPage() {
               <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5">
                 <span>📈</span> 傾向分析・目標管理・ティルト判定
               </h3>
-              <TrendsTab />
+              <TrendsTab active={activeStepTab === 'postgame'} />
               <div className="border-t border-stone-200 pt-4">
                 <GoalTab triggerSignal={dailyCheckTrigger} />
               </div>

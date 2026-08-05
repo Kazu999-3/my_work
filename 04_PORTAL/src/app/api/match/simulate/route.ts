@@ -1,6 +1,7 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 import { callGeminiWithRetry } from '../../../../lib/geminiClient';
+import { verifyAdminSession } from '../../../../lib/adminAuth';
 
 
 // 以前はローカルPCのPythonデーモン(edge_worker_daemon.py)がedge_tasksを処理する設計で、
@@ -10,6 +11,14 @@ export const maxDuration = 60; // Gemini応答待ちのためタイムアウト�
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
+  // 呼び出し元(coach/FiveVFiveSimTab.tsx)はcoachページ配下で既にログイン必須だが、
+  // API自体には認証チェックが無く、直叩きでGemini APIを無制限に消費できていた
+  // (2026-08-05発覚)。
+  const authResult = await verifyAdminSession(req);
+  if (!authResult.ok) {
+    return NextResponse.json({ success: false, error: authResult.error }, { status: 401 });
+  }
+
   try {
     const body = await req.json();
     const { blue, red } = body;
