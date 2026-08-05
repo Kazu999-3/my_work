@@ -1288,6 +1288,7 @@ export default function BalancerPage() {
               {isAdmin && (
                 <button
                   onClick={() => setShowAdminPanel(v => !v)}
+                  title="管理者専用操作"
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold transition text-xs border ${
                     integrityData?.hasDiscrepancy
                       ? 'bg-rose-100 hover:bg-rose-100 border-rose-200 text-rose-700'

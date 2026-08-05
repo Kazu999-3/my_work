@@ -355,12 +355,6 @@ function KnowledgeBaseContent() {
               <Sparkles size={14} />
               コーチ・深掘りへ移動
             </Link>
-            <Link
-              href="/leaderboard"
-              className="text-xs font-semibold px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl border border-gray-200 transition-all flex items-center gap-1"
-            >
-              Leaderboardに戻る
-            </Link>
           </div>
         </div>
 

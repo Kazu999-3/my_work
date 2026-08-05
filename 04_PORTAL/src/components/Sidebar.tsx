@@ -58,10 +58,13 @@ const MENU_ITEMS = [
 // セクション分けで見通し向上。section プロパティでグループ区切りを表現。
 // ※ スマホ下部ナビではPRIMARY枠（先頭5件）が常設表示されるため、
 //   ナレッジを5番目以内に配置する。
+// ラベルは各ページの実際の見出しに合わせた(2026-08-06発覚: 「ダッシュボード」と
+// 「⚙️ 管理者専用」がどちらも中身を表さない曖昧な名前で、しかもセクション名「大会運営」
+// の中に大会運営(ktm-admin)とシステム運用(admin/dashboard)が混在しており、
+// どちらがどちらか名前から判別できなかった)。
 const ADMIN_ONLY_MENU_ITEMS = [
   // ── 📊 大会運営 ──
-  { id: 'dashboard', label: 'ダッシュボード', icon: LayoutDashboard, href: '/admin/dashboard', color: 'text-stone-900', activeBg: 'bg-black/10', section: '大会運営' },
-  { id: 'ktm-admin', label: '⚙️ 管理者専用', icon: Shield, href: '/ktm-admin', color: 'text-indigo-400', activeBg: 'bg-indigo-400/15' },
+  { id: 'ktm-admin', label: 'KTM大会管理', icon: Shield, href: '/ktm-admin', color: 'text-indigo-400', activeBg: 'bg-indigo-400/15', section: '大会運営' },
   // ── 📖 攻略ハブ ──
   { id: 'champions', label: '辞典', icon: BookHeart, href: '/champions', color: 'text-[#c89b3c]', activeBg: 'bg-[#c89b3c]/15', section: '攻略ハブ' },
   { id: 'knowledge-admin', label: 'ナレッジ', icon: Brain, href: '/admin/knowledge', color: 'text-pink-400', activeBg: 'bg-pink-400/15' },
@@ -69,6 +72,8 @@ const ADMIN_ONLY_MENU_ITEMS = [
   { id: 'coach', label: 'コーチ', icon: Sparkles, href: '/coach', color: 'text-indigo-300', activeBg: 'bg-indigo-500/15', section: '分析・検索' },
   { id: 'search', label: '横断検索', icon: Search, href: '/search', color: 'text-[#a78bfa]', activeBg: 'bg-[#a78bfa]/15' },
   { id: 'analytics', label: 'note分析', icon: TrendingUp, href: '/admin/analytics', color: 'text-teal-400', activeBg: 'bg-teal-400/15' },
+  // ── ⚙️ システム運用 ── (admin/dashboard = ナレッジ同期・YouTube自動処理等のエージェント運用ハブ。KTM大会管理とは別物)
+  { id: 'dashboard', label: 'システム運用', icon: LayoutDashboard, href: '/admin/dashboard', color: 'text-stone-900', activeBg: 'bg-black/10', section: 'システム運用' },
 ];
 
 // 管理者ログイン時：一般機能タブ用 (過去の試合履歴を除外)

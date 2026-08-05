@@ -4,9 +4,8 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Cpu, Save, RefreshCw, CheckCircle, AlertTriangle,
-  ArrowLeft, Terminal, Edit3, Settings
+  Terminal, Edit3, Settings
 } from 'lucide-react';
-import Link from 'next/link';
 
 interface AgentPrompt {
   prompt_id: string;
@@ -117,9 +116,6 @@ export default function PromptsAdmin() {
       {/* ヘッダー部 */}
       <div className="max-w-7xl mx-auto mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <Link href="/admin/dashboard" className="inline-flex items-center text-sm text-cyan-700 hover:text-cyan-800 gap-1 mb-2 transition-colors">
-            <ArrowLeft size={16} /> ダッシュボードへ戻る
-          </Link>
           <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-cyan-600 to-indigo-600 bg-clip-text text-transparent flex items-center gap-2">
             <Settings className="animate-spin-slow" /> AI Agent Gateway 設定室
           </h1>

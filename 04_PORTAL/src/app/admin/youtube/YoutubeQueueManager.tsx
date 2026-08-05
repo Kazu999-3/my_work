@@ -999,7 +999,7 @@ export default function YoutubeQueueManager() {
                 onClick={() => fetchQueue(false)}
                 disabled={loading}
                 className="p-2 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-gray-800 transition-all"
-                title="リフレッシュ"
+                title="更新"
               >
                 <svg className={`h-5 w-5 ${loading ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.253 8H18v3" />
@@ -1363,7 +1363,7 @@ export default function YoutubeQueueManager() {
                 onClick={() => fetchChannels(false)}
                 disabled={channelsLoading}
                 className="p-2 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-gray-800 transition-all"
-                title="リフレッシュ"
+                title="更新"
               >
                 <svg className={`h-5 w-5 ${channelsLoading ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.253 8H18v3" />
@@ -1513,7 +1513,7 @@ export default function YoutubeQueueManager() {
                 onClick={() => fetchPlaylists(false)}
                 disabled={playlistsLoading}
                 className="p-2 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-gray-800 transition-all"
-                title="リフレッシュ"
+                title="更新"
               >
                 <svg className={`h-5 w-5 ${playlistsLoading ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.253 8H18v3" />

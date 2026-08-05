@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { TrendingUp, Users, Heart, Layers, ArrowLeft, RefreshCw, AlertCircle, FileText, CheckCircle, Lightbulb, Copy } from 'lucide-react';
-import Link from 'next/link';
+import { TrendingUp, Users, Heart, Layers, RefreshCw, AlertCircle, FileText, CheckCircle, Lightbulb, Copy } from 'lucide-react';
 
 interface Report {
   date: string;
@@ -398,9 +397,6 @@ export default function NoteAnalytics() {
       <header className="border-b border-black/5 bg-white/70 backdrop-blur-md sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 h-20 flex justify-between items-center relative z-10">
           <div className="flex items-center gap-4">
-            <Link href="/admin/dashboard" className="p-2.5 rounded-xl bg-black/[0.03] border border-black/5 hover:bg-black/5 hover:border-black/10 transition-all text-stone-500 hover:text-stone-900 flex items-center justify-center">
-              <ArrowLeft size={16} />
-            </Link>
             <div>
               <h1 className="text-2xl font-black bg-gradient-to-r from-stone-800 via-indigo-600 to-indigo-700 bg-clip-text text-transparent tracking-tight flex items-center gap-2">
                 Note Analytics

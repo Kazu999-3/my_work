@@ -29,7 +29,7 @@ interface LeaderboardData {
 }
 
 import WinrateMatrixPanel from './WinrateMatrixPanel';
-import { Trophy, Activity, Info, RefreshCw } from 'lucide-react';
+import { Trophy, Activity, Info, RefreshCw, Lock } from 'lucide-react';
 
 export default function LeaderboardPage() {
   const [data, setData] = useState<LeaderboardData>({
@@ -126,8 +126,12 @@ export default function LeaderboardPage() {
             <button
               onClick={handleSyncDiscordNames}
               disabled={syncing}
+              title="管理者専用操作"
               className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center gap-2 bg-orange-600 hover:bg-orange-500 text-stone-900 px-3 py-1.5 rounded-lg text-xs font-bold transition disabled:opacity-50"
             >
+              {/* 色(オレンジ)だけでは管理者専用操作だと伝わりにくかったため、鍵アイコンで明示
+                  (2026-08-06発覚)。 */}
+              <Lock className="w-3 h-3 shrink-0" />
               <RefreshCw className={`w-3 h-3 ${syncing ? 'animate-spin' : ''}`} />
               <span className="hidden sm:inline">{syncing ? '同期中...' : '名前の一括同期'}</span>
             </button>

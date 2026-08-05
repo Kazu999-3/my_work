@@ -2,8 +2,7 @@
 
 import { useEffect, useState, useRef, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { RefreshCw, Trophy, Target, Search, ArrowLeft, Settings } from 'lucide-react';
-import Link from 'next/link';
+import { RefreshCw, Trophy, Target, Search, Settings } from 'lucide-react';
 import Image from 'next/image';
 import { getChampIcon } from '../../../lib/ddragonClient';
 
@@ -499,14 +498,11 @@ function CustomRecordPageContent() {
   return (
     <div className="min-h-screen bg-background text-stone-800 p-4 md:p-8">
       <div className="max-w-6xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
+        <div className="mb-8">
           <h1 className="text-3xl font-extrabold text-stone-900 flex items-center gap-3">
             <Trophy className="h-8 w-8 text-emerald-600" />
             カスタム試合を手動記録
           </h1>
-          <Link href="/balancer" className="flex items-center gap-2 text-stone-500 hover:text-stone-900 transition">
-            <ArrowLeft className="h-4 w-4" /> チーム分け画面へ戻る
-          </Link>
         </div>
 
         <div className="bg-surface border border-border rounded-xl p-6 shadow-2xl">
