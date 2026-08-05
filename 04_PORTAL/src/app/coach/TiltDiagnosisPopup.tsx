@@ -9,11 +9,15 @@ interface Props {
   isOpen: boolean;
   onClose: () => void;
   onProceedToReflection: () => void;
+  /** 「このセッションは自動表示しない」を選んだ時に呼ばれる。次の試合をすぐ始めたい
+   * ユーザーが、試合終了のたびに強制表示される全画面モーダルを一時的に止められるように
+   * する(2026-08-05発覚: スヌーズ・非表示オプションが無かった)。 */
+  onSnooze: () => void;
 }
 
 // 試合終了を検知した直後に自動でティルト診断を実行し、結果をポップアップ表示する。
 // 「今すぐ振り返りへ進む」導線を用意し、診断→振り返りの流れを1本化する(#①)。
-export default function TiltDiagnosisPopup({ isOpen, onClose, onProceedToReflection }: Props) {
+export default function TiltDiagnosisPopup({ isOpen, onClose, onProceedToReflection, onSnooze }: Props) {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState('');
@@ -137,19 +141,28 @@ export default function TiltDiagnosisPopup({ isOpen, onClose, onProceedToReflect
             </div>
           )}
 
-          <div className="flex justify-end gap-2 pt-2 border-t border-stone-200">
+          <div className="flex items-center justify-between gap-2 pt-2 border-t border-stone-200">
             <button
-              onClick={onClose}
-              className="px-4 py-2 border border-stone-300 rounded-md text-stone-600 hover:bg-stone-100 text-xs font-medium transition-colors"
+              onClick={onSnooze}
+              className="px-3 py-2 text-stone-400 hover:text-stone-600 text-[11px] font-medium transition-colors"
+              title="次にキューを入れる前に自動ポップアップを止めます。手動での振り返り記録は引き続き可能です。"
             >
-              閉じる
+              🔕 このセッションは自動表示しない
             </button>
-            <button
-              onClick={onProceedToReflection}
-              className="px-5 py-2 bg-amber-700 hover:bg-amber-800 text-white rounded-md text-xs font-bold shadow transition-colors"
-            >
-              📝 振り返りを記録する
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={onClose}
+                className="px-4 py-2 border border-stone-300 rounded-md text-stone-600 hover:bg-stone-100 text-xs font-medium transition-colors"
+              >
+                閉じる
+              </button>
+              <button
+                onClick={onProceedToReflection}
+                className="px-5 py-2 bg-amber-700 hover:bg-amber-800 text-white rounded-md text-xs font-bold shadow transition-colors"
+              >
+                📝 振り返りを記録する
+              </button>
+            </div>
           </div>
         </div>
       </div>

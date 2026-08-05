@@ -1206,6 +1206,15 @@ export default function CoachPage() {
   const [isTiltPopupOpen, setIsTiltPopupOpen] = useState(false);
   const [lastFocusPoint, setLastFocusPoint] = useState<string | null>(null);
   const [lastKnownMatchId, setLastKnownMatchId] = useState<string>('');
+  // ポーリングのuseEffectをisAuthenticatedだけに依存させたまま(pollのたびにintervalが
+  // 再生成される二重fetchを避けるため)最新のlastKnownMatchIdを参照できるようにするref。
+  // stateだけをdepsに入れるとuseEffectがpollのたびに再生成され、そのままだと
+  // 「初回は即時実行」ロジックが毎回のpollで発火して二重fetchになってしまう。
+  const lastKnownMatchIdRef = useRef('');
+  const updateLastKnownMatchId = (id: string) => {
+    lastKnownMatchIdRef.current = id;
+    setLastKnownMatchId(id);
+  };
   // 振り返り保存完了のたびにインクリメントし、常時マウントのMySoloQDashboard/PostGameTabへ
   // 再fetchのトリガーとして渡す(保存後に一覧タブが更新されない問題の修正)。
   const [reflectionRefreshSignal, setReflectionRefreshSignal] = useState(0);
@@ -1222,7 +1231,7 @@ export default function CoachPage() {
         setLastFocusPoint(data.reflection.next_focus_point);
       }
       if (data.reflection?.match_id) {
-        setLastKnownMatchId(data.reflection.match_id);
+        updateLastKnownMatchId(data.reflection.match_id);
       }
     } catch (err) {
       console.error('Failed to fetch last reflection focus point:', err);
@@ -1246,14 +1255,12 @@ export default function CoachPage() {
     // ログアウト後の端末でもRiot APIポーリングが裏で動き続けてしまう。
     if (isAuthenticated !== true) return;
 
-    fetchLastReflection();
-
     // 試合終了の自動監視（45秒おきにチェック）。
     // 複数タブ・複数端末で同時に開いていると個人用Riot APIキーの消費が線形に増える
     // 問題があった(2026-08-05発覚)。バックグラウンドタブでは意味のあるポーリングにならない
     // (ユーザーが見ていないので自動ポップアップも気づけない)ため、Page Visibility APIで
     // 非表示中は完全にスキップする。
-    const interval = setInterval(async () => {
+    const checkFinished = async () => {
       try {
         if (document.hidden) return;
         const savedIgn = localStorage.getItem('soloq_riot_id') || '';
@@ -1262,7 +1269,7 @@ export default function CoachPage() {
         const res = await fetch('/api/soloq/check-finished', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ign: savedIgn, lastKnownMatchId }),
+          body: JSON.stringify({ ign: savedIgn, lastKnownMatchId: lastKnownMatchIdRef.current }),
         });
         const data = await res.json();
 
@@ -1272,18 +1279,36 @@ export default function CoachPage() {
           setMatchDetectFailCount(0);
         }
 
-        if (data.isNewMatch) {
-          setLastKnownMatchId(data.latestMatchId);
+        if (data.isNewMatch && !sessionStorage.getItem('tilt_popup_snoozed')) {
           // 自動ポップアップ！！ まずティルト診断を出し、そこから振り返りへ進めるようにする(#①)
           setIsTiltPopupOpen(true);
+        }
+        // isNewMatchの真偽に関わらず、返ってきたlatestMatchIdを常に基準として更新する。
+        // 以前はisNewMatch===trueの時だけ更新していたため、一度も振り返りを保存した
+        // ことがないアカウントはlastKnownMatchIdが永久に空文字のままとなり、
+        // (!!lastKnownMatchId && ...)の判定が常にfalseになって自動ポップアップが
+        // 絶対に発火しなかった(2026-08-05発覚)。ここで毎回基準を同期させることで、
+        // 初回ポーリングで「現在地」を記録し、以降の本当に新しい試合を正しく検知できる。
+        if (data.latestMatchId) {
+          updateLastKnownMatchId(data.latestMatchId);
         }
       } catch (err) {
         setMatchDetectFailCount((c) => c + 1);
       }
-    }, 45000);
+    };
 
-    return () => clearInterval(interval);
-  }, [isAuthenticated, lastKnownMatchId]);
+    // 既存の振り返り履歴があればそのmatch_idを基準として優先する(既に振り返り済みの
+    // 試合を「新着」と誤検知しないため)。無い場合(初回利用アカウント)はcheckFinished内で
+    // 現在のライブ最新試合IDが基準としてセットされる。45秒待たずに即座に確立する。
+    let cancelled = false;
+    (async () => {
+      await fetchLastReflection();
+      if (!cancelled) checkFinished();
+    })();
+    const interval = setInterval(checkFinished, 45000);
+
+    return () => { cancelled = true; clearInterval(interval); };
+  }, [isAuthenticated]);
 
   // 「事前分析」と「マッチアップ」で同じチャンピオン名を二度入力させていたのを統合。
   // ここで一度入力すれば両方の分析に使われる。
@@ -1564,6 +1589,10 @@ export default function CoachPage() {
         onProceedToReflection={() => {
           setIsTiltPopupOpen(false);
           setIsReflectionModalOpen(true);
+        }}
+        onSnooze={() => {
+          sessionStorage.setItem('tilt_popup_snoozed', '1');
+          setIsTiltPopupOpen(false);
         }}
       />
 
