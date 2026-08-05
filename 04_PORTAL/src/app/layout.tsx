@@ -4,6 +4,7 @@ import "./globals.css";
 import Sidebar from "../components/Sidebar";
 import PwaRegister from "../components/PwaRegister";
 import Toaster from "../components/Toaster";
+import BackButton from "../components/BackButton";
 
 export const metadata: Metadata = {
   title: {
@@ -57,6 +58,7 @@ export default function RootLayout({
         <Toaster />
         <Sidebar />
         <div className="flex-1 min-w-0 pb-20 md:pb-0">
+          <BackButton />
           {children}
         </div>
       </body>
