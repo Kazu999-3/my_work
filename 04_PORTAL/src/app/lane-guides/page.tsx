@@ -6,21 +6,56 @@ import remarkGfm from 'remark-gfm';
 import { Map as MapIcon } from 'lucide-react';
 import { Spinner, EmptyState } from '../../components/Feedback';
 
-// レーン別ガイドの閲覧ページ（メンバー向け）。
+// レーン別ガイドの閲覧ページ（管理者専用）。
 // 攻略ライブラリのマクロ記事をレーンごとに1本へ統合したものを読む場所。
+// 元データ(personal_knowledge・matchup_sentinel等)は辞典と同様に管理者専用のため、
+// このページも同じ扱いに揃える(2026-08-05)。
 export default function LaneGuidesPage() {
   const [data, setData] = useState<any>(null);
   const [active, setActive] = useState<string | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
   useEffect(() => {
-    fetch('/api/admin/lane-guides')
+    fetch('/api/auth/verify', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) })
+      .then((res) => res.json())
+      .then((d) => setIsAuthenticated(!!d.valid))
+      .catch(() => setIsAuthenticated(false));
+  }, []);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    fetch('/api/admin/lane-guides', { credentials: 'include' })
       .then(r => r.json())
       .then(d => {
         setData(d);
         if (d.guides?.length > 0) setActive(d.guides[0].lane);
       })
       .catch(() => setData({ guides: [], lanes: [] }));
-  }, []);
+  }, [isAuthenticated]);
+
+  if (isAuthenticated === null) {
+    return <div className="min-h-screen bg-background flex items-center justify-center"><Spinner label="読み込み中..." /></div>;
+  }
+
+  if (isAuthenticated === false) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="text-center max-w-sm rounded-2xl border border-black/10 bg-black/[0.03] p-8 backdrop-blur">
+          <div className="text-4xl mb-4">🔑</div>
+          <h2 className="text-lg font-bold mb-2 text-stone-900">認証が必要です</h2>
+          <p className="text-sm text-stone-500 mb-6 leading-relaxed">
+            レーン別ガイドは管理者専用です。管理者パスコードでログインしてから再度アクセスしてください。
+          </p>
+          <a
+            href="/login"
+            className="inline-block w-full rounded-xl bg-amber-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-amber-500"
+          >
+            ログインページへ
+          </a>
+        </div>
+      </div>
+    );
+  }
 
   if (!data) {
     return <div className="min-h-screen bg-background flex items-center justify-center"><Spinner label="読み込み中..." /></div>;

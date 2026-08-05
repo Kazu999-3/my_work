@@ -17,6 +17,11 @@ import { verifyAdminSession } from '../../../../lib/adminAuth';
 import { runPostGameReview } from '../../../../lib/coachPostGame';
 import { getTimingContext, buildPlayRecommendation } from '../../../../lib/soloqTiming';
 
+// tilt/pre診断はRiot APIの複数回fetch(最大10並列)+Gemini呼び出し(429時最大3リトライで
+// 最大14秒消費)を直列実行するため、Vercelのデフォルト関数タイムアウトに抵触しうる。
+// フロント側は60秒待つ設計(coach/page.tsx)のため、それを上回る余裕を明示する。
+export const dynamic = 'force-dynamic';
+export const maxDuration = 90;
 
 // ============================
 // Gemini APIヘルパー

@@ -4,6 +4,23 @@ import path from 'path';
 import { verifyAdminSession } from '../../../../lib/adminAuth';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 
+// note_articlesの集計(noteStats)が.limit(50)で頭打ちになっており、50件を超えた時点で
+// 古い公開記事の実績が合計から静かに欠落していた(2026-08-05発覚)。translate-jp/route.tsの
+// fetchAllRowsと同じ、.range()でページングしながら全件取得する構造に置き換える。
+async function fetchAllRows(build: () => any, pageSize = 1000): Promise<any[]> {
+  let all: any[] = [];
+  let from = 0;
+  while (true) {
+    const { data, error } = await build().range(from, from + pageSize - 1);
+    if (error) throw error;
+    const rows = data || [];
+    all = all.concat(rows);
+    if (rows.length < pageSize) break;
+    from += pageSize;
+  }
+  return all;
+}
+
 export async function GET(req: Request) {
   try {
   // ===== 管理者セッション確認 =====
@@ -41,13 +58,18 @@ export async function GET(req: Request) {
     // 本番では常にファイルが見つからず空になる作りだった。
     // エージェントスキル(sovereign-factory等)がnote記事を書く際に、
     // note_articlesテーブルへも記録するようにして、そちらから読む。
-    const { data: draftRows, error: draftErr } = await supabase
-      .from('note_articles')
-      .select('id, title, champion, patch, content_free, content_paid, promo_text, status, source_skill, created_at, note_url, published_at, scheduled_at, views, likes, sales_count, sales_amount, metrics_updated_at')
-      .order('created_at', { ascending: false })
-      .limit(50);
-    if (draftErr) console.warn('[analytics] note_articles取得に失敗:', draftErr.message);
-    const drafts = draftRows || [];
+    let drafts: any[] = [];
+    try {
+      drafts = await fetchAllRows(() =>
+        supabase
+          .from('note_articles')
+          .select('id, title, champion, patch, content_free, content_paid, promo_text, status, source_skill, created_at, note_url, published_at, scheduled_at, views, likes, sales_count, sales_amount, metrics_updated_at')
+          .order('created_at', { ascending: false })
+          .order('id', { ascending: false })
+      );
+    } catch (draftErr: any) {
+      console.warn('[analytics] note_articles取得に失敗:', draftErr.message);
+    }
 
     // 3. 実データ集計（手入力の閲覧数/スキ/売上から算出）。
     // 旧レポート(note_analytics_daemon.py出力)は廃止済みのスクレイパーが

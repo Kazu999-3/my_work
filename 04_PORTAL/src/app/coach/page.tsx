@@ -217,7 +217,7 @@ function PreGameTab({ champion, enemyChampion, triggerSignal }: { champion: stri
 // ============================
 // タブ: 試合後振り返り (過去数戦のログ表示対応)
 // ============================
-function PostGameTab({ onOpenReflectionModal }: { onOpenReflectionModal: () => void }) {
+function PostGameTab({ onOpenReflectionModal, refreshSignal }: { onOpenReflectionModal: () => void; refreshSignal?: number }) {
   const [reflections, setReflections] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -255,7 +255,10 @@ function PostGameTab({ onOpenReflectionModal }: { onOpenReflectionModal: () => v
   useEffect(() => {
     fetchReflections();
     fetchAnalysisHistory();
-  }, []);
+    // refreshSignalは診断ポップアップ・振り返りモーダル経由の保存完了時にインクリメントされる。
+    // このタブは常時マウントのため保存後も再fetchが発火せず「保存したのに反映されない」
+    // 状態になっていた(2026-08-05発覚)。
+  }, [refreshSignal]);
 
   return (
     <div className="space-y-4">
@@ -969,6 +972,8 @@ function TimingHeatmapTab() {
 
         if (data.done || data.nextOffset === null) break;
         offset = data.nextOffset;
+        // レート制限で中断した直後は即リトライしても再度弾かれやすいため、少し待ってから再開する。
+        if (data.rateLimited) await new Promise((r) => setTimeout(r, 3000));
       }
       await fetchHeatmap();
     } catch (e: any) {
@@ -1182,6 +1187,9 @@ export default function CoachPage() {
   const [isTiltPopupOpen, setIsTiltPopupOpen] = useState(false);
   const [lastFocusPoint, setLastFocusPoint] = useState<string | null>(null);
   const [lastKnownMatchId, setLastKnownMatchId] = useState<string>('');
+  // 振り返り保存完了のたびにインクリメントし、常時マウントのMySoloQDashboard/PostGameTabへ
+  // 再fetchのトリガーとして渡す(保存後に一覧タブが更新されない問題の修正)。
+  const [reflectionRefreshSignal, setReflectionRefreshSignal] = useState(0);
 
   const fetchLastReflection = async () => {
     try {
@@ -1462,13 +1470,13 @@ export default function CoachPage() {
               <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5">
                 <span>📊</span> マイソロQダッシュボード (過去全ログ ＆ 成績一覧)
               </h3>
-              <MySoloQDashboard />
+              <MySoloQDashboard refreshSignal={reflectionRefreshSignal} />
             </div>
             <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-sm space-y-3">
               <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5">
                 <span>⚡</span> 直近のソロQ振り返り ＆ 実績
               </h3>
-              <PostGameTab onOpenReflectionModal={() => setIsReflectionModalOpen(true)} />
+              <PostGameTab onOpenReflectionModal={() => setIsReflectionModalOpen(true)} refreshSignal={reflectionRefreshSignal} />
             </div>
             <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-sm space-y-3">
               <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5">
@@ -1522,7 +1530,7 @@ export default function CoachPage() {
       <SoloQReflectionModal
         isOpen={isReflectionModalOpen}
         onClose={() => setIsReflectionModalOpen(false)}
-        onSaved={fetchLastReflection}
+        onSaved={() => { fetchLastReflection(); setReflectionRefreshSignal((s) => s + 1); }}
       />
     </div>
   );

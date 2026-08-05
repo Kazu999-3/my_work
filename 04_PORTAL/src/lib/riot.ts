@@ -5,6 +5,17 @@
 
 const RIOT_API_BASE_ASIA = "https://asia.api.riotgames.com";
 
+// 429を他のエラーと区別できないと、呼び出し側は「1件失敗」として黙って握りつぶし、
+// レート制限に当たった試合が二度と再試行されないまま欠落する(soloq/history-sync等)。
+export class RiotRateLimitError extends Error {
+  retryAfterSec: number | null;
+  constructor(message: string, retryAfterSec: number | null = null) {
+    super(message);
+    this.name = 'RiotRateLimitError';
+    this.retryAfterSec = retryAfterSec;
+  }
+}
+
 interface ParticipantStats {
   puuid: string;
   riotIdName: string;
@@ -92,6 +103,10 @@ export async function fetchRankedSoloMatchIds(puuid: string, apiKey: string, cou
 export async function fetchMatchDetails(matchId: string, apiKey: string): Promise<MatchResult> {
   const url = `${RIOT_API_BASE_ASIA}/lol/match/v5/matches/${matchId}?api_key=${apiKey}`;
   const res = await fetch(url, { cache: 'no-store' });
+  if (res.status === 429) {
+    const retryAfter = Number(res.headers.get('retry-after'));
+    throw new RiotRateLimitError(`Riot APIレート制限 (${matchId})`, Number.isFinite(retryAfter) ? retryAfter : null);
+  }
   if (!res.ok) {
     throw new Error(`試合詳細の取得に失敗しました (${matchId}): ${res.statusText}`);
   }

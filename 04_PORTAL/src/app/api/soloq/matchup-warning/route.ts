@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../../lib/supabaseAdmin';
 import { verifyAdminSession } from '../../../../lib/adminAuth';
+import { normalizeChampionName } from '../../../../lib/championNames';
 
 export async function POST(request: Request) {
   try {
@@ -10,11 +11,16 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json().catch(() => ({}));
-    const { champion = '', enemyChampion = '' } = body;
+    const { champion: championInput = '', enemyChampion: enemyChampionInput = '' } = body;
 
-    if (!champion || !enemyChampion) {
+    if (!championInput || !enemyChampionInput) {
       return NextResponse.json({ warning: null });
     }
+
+    // 自由記述の入力欄からの値は大文字小文字・アポストロフィがDB表記と食い違うことがあり、
+    // 完全一致検索では無警告のまま何も見つからなくなる(coach/analyzeのmatchupモードと同じ正規化)。
+    const champion = normalizeChampionName(championInput);
+    const enemyChampion = normalizeChampionName(enemyChampionInput);
 
     if (!supabaseAdmin) {
       return NextResponse.json({ warning: null });

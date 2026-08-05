@@ -22,9 +22,10 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     const update: Record<string, any> = {};
 
     // 公開登録: URLが渡されたら公開済み扱いにする（未指定ならpublished_atは現在時刻）
+    const willPublish = typeof body.note_url === 'string' && !!body.note_url.trim();
     if (typeof body.note_url === 'string') {
       update.note_url = body.note_url.trim() || null;
-      if (update.note_url) {
+      if (willPublish) {
         update.status = 'published';
         update.published_at = body.published_at ? new Date(body.published_at).toISOString() : new Date().toISOString();
       }
@@ -36,6 +37,12 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     // 配信予定日（公開前の下書きに設定する）
     if (body.scheduled_at !== undefined) {
       update.scheduled_at = body.scheduled_at ? new Date(body.scheduled_at).toISOString() : null;
+    }
+    // 「配信スケジュール」パネルはscheduled_atの有無だけで表示対象を判定しているため、
+    // 公開登録時にクリアしないと公開済み記事がいつまでも予定リストに残り続けていた
+    // (2026-08-05発覚)。scheduled_atが明示指定されていても、公開登録を優先してnullにする。
+    if (willPublish) {
+      update.scheduled_at = null;
     }
 
     // 成績の手入力（渡された項目だけ更新）
@@ -60,6 +67,12 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       .select()
       .maybeSingle();
     if (error) throw error;
+    // maybeSingle()は該当0件でもerrorを出さないため、存在しないidを指定しても
+    // 従来は{success:true, article:null}が返り、フロントは成功メッセージを表示していた
+    // (2026-08-05発覚)。
+    if (!data) {
+      return NextResponse.json({ error: '指定された記事が見つかりません。' }, { status: 404 });
+    }
 
     return NextResponse.json({ success: true, article: data });
   } catch (err: any) {

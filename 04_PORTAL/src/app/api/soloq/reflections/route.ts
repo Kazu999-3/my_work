@@ -78,6 +78,20 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: '使用チャンピオンは必須です。' }, { status: 400 });
     }
 
+    // クライアント側はsavedMatchIdsによるボタン無効化のみで重複を防いでおり、複数タブや
+    // 素早い二重送信をすり抜けると同一試合が重複挿入される(2026-08-05発覚)。一意制約が
+    // 無いため、insert前にサーバー側で同一match_idの既存レコードを確認する。
+    if (matchId) {
+      const { data: dup } = await supabaseAdmin
+        .from('soloq_reflections')
+        .select('id')
+        .eq('match_id', matchId)
+        .maybeSingle();
+      if (dup) {
+        return NextResponse.json({ error: 'この試合は既に振り返り記録済みです。' }, { status: 409 });
+      }
+    }
+
     // 1. Insert into soloq_reflections
     const { data: reflectionData, error: insertError } = await supabaseAdmin
       .from('soloq_reflections')

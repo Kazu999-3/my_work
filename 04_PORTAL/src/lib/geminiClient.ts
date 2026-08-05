@@ -127,7 +127,11 @@ export async function callGeminiWithRetry(
   const apiKeys = String(process.env[apiKeyEnv] || '')
     .split(',').map((k) => k.trim()).filter(Boolean);
   if (apiKeys.length === 0) {
-    return `※ ${apiKeyEnv}未設定のためAI生成をスキップしました。`;
+    // 以前はこの文言を正常な文字列として返しており、呼び出し元がAIの実際の出力と
+    // 区別せずAdviceBox等にそのまま「アドバイス」として表示してしまっていた
+    // (2026-08-05発覚)。設定不備は例外として投げ、呼び出し元のtry/catchで
+    // エラーとして扱わせる。
+    throw new Error(`${apiKeyEnv}未設定のためAI生成をスキップしました。`);
   }
 
   const generationConfig: Record<string, unknown> = { temperature, maxOutputTokens };

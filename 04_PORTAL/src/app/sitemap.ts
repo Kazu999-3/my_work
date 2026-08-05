@@ -8,7 +8,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     '/balancer',
     '/champions',
     '/leaderboard',
-    '/lane-guides',
     '/search',
     '/changelog',
     '/synergy',

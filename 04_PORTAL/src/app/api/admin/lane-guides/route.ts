@@ -127,8 +127,19 @@ ${String(body).slice(0, 8000)}
   return { title: result.title || laneLabel };
 }
 
-/** 保存済みガイドの取得（メンバー閲覧用なのでGETは認証不要） */
-export async function GET() {
+/**
+ * 保存済みガイドの取得。
+ * 以前は「メンバー閲覧用」としてGET認証不要のつもりだったが、パスが/api/admin/配下の
+ * ためproxy.tsのグローバルCookieゲートに巻き込まれ、実際には未ログイン者は問答無用で
+ * 401になっていた。呼び出し元(app/lane-guides/page.tsx)もHTTPステータスを見ずに
+ * data.guidesを読むため、401時はguides=[]となり「まだガイドが作成されていません」と
+ * 誤表示していた(2026-08-05発覚)。実態と意図が食い違っていたため、ここでは
+ * 「管理者専用」の設計に寄せて明示的な認証チェックを追加し、ページ側も認証状態に
+ * 応じたガードを行うように変更する。
+ */
+export async function GET(req: Request) {
+  const auth = await verifyAdminSession(req);
+  if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: 401 });
   try {
     const { data, error } = await supabase
       .from('lane_guides')

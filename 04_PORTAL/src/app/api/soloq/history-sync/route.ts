@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 import { verifyAdminSession } from '../../../../lib/adminAuth';
-import { fetchPuuidByRiotId, fetchRankedSoloMatchIds, fetchMatchDetails } from '../../../../lib/riot';
+import { fetchPuuidByRiotId, fetchRankedSoloMatchIds, fetchMatchDetails, RiotRateLimitError } from '../../../../lib/riot';
 
 // ============================================================
 // ソロQ試合履歴(曜日×時間帯の勝率分析用)の遡及バックフィル。
@@ -46,7 +46,10 @@ export async function POST(req: Request) {
     const existingIds = new Set((existing || []).map((r: any) => r.match_id));
 
     let synced = 0;
-    for (const matchId of ids) {
+    let rateLimited = false;
+    let stoppedAtIndex = ids.length; // レート制限で中断しなければ全件処理したことにする
+    for (let i = 0; i < ids.length; i++) {
+      const matchId = ids[i];
       if (existingIds.has(matchId)) continue;
       try {
         const detail = await fetchMatchDetails(matchId, apiKey);
@@ -66,19 +69,29 @@ export async function POST(req: Request) {
         }, { onConflict: 'puuid,match_id' });
         if (!error) synced++;
       } catch (e) {
+        // 429は「そのうち回復する一時的な失敗」であり、他のエラーのように握りつぶして
+        // 次へ進めると、この試合が二度と再試行されないまま欠落する(2026-08-05発覚)。
+        // ここで中断し、nextOffsetをこの試合の手前に据えて次回呼び出しで再試行させる。
+        if (e instanceof RiotRateLimitError) {
+          console.warn(`[soloq/history-sync] レート制限のため中断 (${matchId}、retryAfter=${e.retryAfterSec ?? '不明'}秒):`, e.message);
+          rateLimited = true;
+          stoppedAtIndex = i;
+          break;
+        }
         console.warn(`[soloq/history-sync] 試合${matchId}の取得に失敗:`, e);
       }
     }
 
-    const processedCount = ids.length;
+    const processedCount = stoppedAtIndex;
     const nextOffset = offset + processedCount;
-    const done = processedCount < CHUNK || nextOffset >= TOTAL_TARGET;
+    const done = !rateLimited && (processedCount < CHUNK || nextOffset >= TOTAL_TARGET);
 
     return NextResponse.json({
       processed: processedCount,
       synced,
       nextOffset: done ? null : nextOffset,
       done,
+      rateLimited,
       totalTarget: TOTAL_TARGET,
     });
   } catch (err: any) {

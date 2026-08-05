@@ -69,10 +69,13 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
   const [generating, setGenerating] = useState(false);
   const [analysisError, setAnalysisError] = useState('');
 
-  // 保存済みマッチIDのフェッチ
+  // 保存済みマッチIDのフェッチ。
+  // 既定のlimit(10件)だけで判定すると、古い試合を遡って記録しようとした際に
+  // 「済み」判定が効かず重複記録を誘発していた(2026-08-05発覚)。MySoloQDashboardと
+  // 同じ200件まで見て判定する。
   const fetchSavedMatchIds = async () => {
     try {
-      const res = await fetch('/api/soloq/reflections');
+      const res = await fetch('/api/soloq/reflections?limit=200');
       const data = await res.json();
       const ids = new Set<string>();
       if (data.reflections) {

@@ -1047,7 +1047,11 @@ export default function YoutubeQueueManager() {
                         <div className="flex items-center gap-2 flex-wrap">
                           {getStatusBadge(item.status)}
                           {item.retry_count > 0 && item.status !== 'completed' && (
-                            <span className="text-gray-500">({item.retry_count}/5)</span>
+                            // youtube_absorber.pyの実際の上限はステータスにより異なる
+                            // (error_no_transcript=3回、error_generation等=5回)。全ステータス
+                            // 共通で/5と表示していたため、字幕なし系(実際は3回上限)が「2/5」
+                            // のように実は上限直前なのに余裕があると誤認させていた(2026-08-05発覚)。
+                            <span className="text-gray-500">({item.retry_count}/{item.status === 'error_no_transcript' ? 3 : 5})</span>
                           )}
                         </div>
                         <button

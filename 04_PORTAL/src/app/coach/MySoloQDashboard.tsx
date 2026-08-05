@@ -18,7 +18,7 @@ interface SoloQReflection {
   next_focus_point: string;
 }
 
-export default function MySoloQDashboard() {
+export default function MySoloQDashboard({ refreshSignal }: { refreshSignal?: number } = {}) {
   const [reflections, setReflections] = useState<SoloQReflection[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -38,7 +38,10 @@ export default function MySoloQDashboard() {
 
   useEffect(() => {
     fetchAllReflections();
-  }, []);
+    // refreshSignalは振り返り保存完了時にインクリメントされる。このダッシュボードは
+    // 常時マウントのため、保存後も再fetchせず「保存したのに一覧が更新されない」状態に
+    // なっていた(2026-08-05発覚)。
+  }, [refreshSignal]);
 
   const filtered = reflections.filter((r) => {
     if (!searchQuery) return true;
