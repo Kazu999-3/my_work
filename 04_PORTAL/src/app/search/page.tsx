@@ -19,12 +19,21 @@ function SearchInner() {
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
   const [message, setMessage] = useState('');
+  // 辞典本体・ナレッジ本文は閲覧含め管理者専用。Sidebarのメニュー表示だけでは
+  // URL直叩きを防げないため、champions/pageと同じ認証ガードを追加する(2026-08-05発覚)。
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  useEffect(() => {
+    fetch('/api/auth/verify', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) })
+      .then((res) => res.json())
+      .then((data) => setIsAuthenticated(!!data.valid))
+      .catch(() => setIsAuthenticated(false));
+  }, []);
 
   const runSearch = useCallback(async (q: string) => {
     if (q.trim().length < 2) { setMessage('2文字以上で検索してください。'); setResults([]); setSearched(true); return; }
     setLoading(true); setMessage('');
     try {
-      const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
+      const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`, { credentials: 'include' });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || '検索に失敗しました');
       setResults(data.results || []);
@@ -36,18 +45,20 @@ function SearchInner() {
 
   // URL ?q= があれば初回検索
   useEffect(() => {
+    if (isAuthenticated !== true) return;
     const q = params.get('q');
     if (q) { setQuery(q); runSearch(q); }
-  }, [params, runSearch]);
+  }, [params, runSearch, isAuthenticated]);
 
   // 入力時の 300ms デバウンス自動検索
   useEffect(() => {
+    if (isAuthenticated !== true) return;
     if (!query || query.trim().length < 2) return;
     const timer = setTimeout(() => {
       runSearch(query);
     }, 300);
     return () => clearTimeout(timer);
-  }, [query, runSearch]);
+  }, [query, runSearch, isAuthenticated]);
 
   const onSubmit = (e: React.FormEvent) => { e.preventDefault(); runSearch(query); };
 
@@ -56,6 +67,20 @@ function SearchInner() {
     return acc;
   }, {});
   const order = ['チャンピオン辞典', 'マッチアップメモ', 'ナレッジ'];
+
+  if (isAuthenticated === null) {
+    return <div className="flex justify-center py-20"><div className="w-8 h-8 border-4 border-[#a78bfa] border-t-transparent rounded-full animate-spin" /></div>;
+  }
+  if (isAuthenticated === false) {
+    return (
+      <div className="max-w-sm mx-auto mt-20 text-center rounded-2xl border border-black/10 bg-black/[0.03] p-8 backdrop-blur">
+        <div className="text-4xl mb-4">🔑</div>
+        <h2 className="text-lg font-bold mb-2 text-stone-900">認証が必要です</h2>
+        <p className="text-sm text-stone-500 mb-6 leading-relaxed">横断検索は辞典・ナレッジ本文を含むため管理者専用です。管理者パスコードでログインしてから再度アクセスしてください。</p>
+        <a href="/login" className="inline-block w-full rounded-xl bg-[#a78bfa] px-5 py-3 text-sm font-semibold text-black transition hover:opacity-90">ログインページへ</a>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8 text-stone-900">

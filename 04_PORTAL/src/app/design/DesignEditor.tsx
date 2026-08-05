@@ -15,6 +15,16 @@ export default function DesignEditor() {
   const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(true);
   const [docs, setDocs] = useState<Record<string, DesignDoc>>({});
+  // 内部システム設計書は管理者専用(#③)。保存側APIは既に守られているが、GETに認証チェックが
+  // 無くUIも誰にでも編集画面を見せていたため、champions/pageと同じ認証ガードを追加する
+  // (2026-08-05発覚)。
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  useEffect(() => {
+    fetch('/api/auth/verify', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) })
+      .then((res) => res.json())
+      .then((data) => setIsAuthenticated(!!data.valid))
+      .catch(() => setIsAuthenticated(false));
+  }, []);
   const [isEditing, setIsEditing] = useState(false);
   const [activeKey, setActiveKey] = useState<string>('overview');
   const [saving, setSaving] = useState(false);
@@ -32,9 +42,10 @@ export default function DesignEditor() {
 
   // マウント時に API から設計書データをフェッチして初期化
   useEffect(() => {
+    if (isAuthenticated !== true) return;
     const loadDocs = async () => {
       try {
-        const res = await fetch('/api/design');
+        const res = await fetch('/api/design', { credentials: 'include' });
         if (res.ok) {
           const data = await res.json();
           if (data.docs && Object.keys(data.docs).length > 0) {
@@ -54,7 +65,7 @@ export default function DesignEditor() {
       }
     };
     loadDocs();
-  }, []);
+  }, [isAuthenticated]);
 
   // 選択ドキュメントが変化した際にエディタバッファを自動同期
   useEffect(() => {
@@ -62,6 +73,25 @@ export default function DesignEditor() {
     setEditTitle(activeDoc.title);
     setEditContent(activeDoc.content);
   }, [activeDoc, mounted]);
+
+  if (isAuthenticated === null) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[50vh] bg-white/60 backdrop-blur-md rounded-3xl border border-black/10 p-12 max-w-7xl mx-auto shadow-2xl">
+        <RefreshCw className="w-8 h-8 animate-spin text-[#c89b3c] mb-4" />
+      </div>
+    );
+  }
+
+  if (isAuthenticated === false) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[50vh] bg-white/60 backdrop-blur-md rounded-3xl border border-black/10 p-12 max-w-7xl mx-auto shadow-2xl text-center max-w-sm">
+        <div className="text-4xl mb-4">🔑</div>
+        <h2 className="text-lg font-bold mb-2 text-stone-900">認証が必要です</h2>
+        <p className="text-sm text-stone-500 mb-6 leading-relaxed">システム設計書は管理者専用です。管理者パスコードでログインしてから再度アクセスしてください。</p>
+        <a href="/login" className="inline-block w-full rounded-xl bg-[#c89b3c] px-5 py-3 text-sm font-semibold text-black transition hover:bg-yellow-400">ログインページへ</a>
+      </div>
+    );
+  }
 
   if (!mounted || loading) {
     return (

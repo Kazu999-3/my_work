@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 
 export async function POST(request: Request) {
   try {
@@ -11,6 +12,19 @@ export async function POST(request: Request) {
 
     if (!players || !Array.isArray(players) || players.length === 0) {
       return NextResponse.json({ error: 'プレイヤーリストが空です。' }, { status: 400 });
+    }
+
+    // 意図的な公開API(api/players/saveと同じ方針)。本番Discordチャンネルへの投稿内容が
+    // 完全にクライアント任せだったため、実在の登録プレイヤー名かどうかだけは検証する
+    // (2026-08-05発覚)。
+    const allNames = players.map((p: any) => p.name).filter(Boolean);
+    if (allNames.length > 0) {
+      const { data: knownPlayers } = await supabase.from('ktm_players').select('name').in('name', allNames);
+      const knownSet = new Set((knownPlayers || []).map((p: any) => p.name));
+      const unknown = allNames.filter((n: string) => !knownSet.has(n));
+      if (unknown.length > 0) {
+        return NextResponse.json({ error: `登録されていないプレイヤー名が含まれています: ${Array.from(new Set(unknown)).join(', ')}` }, { status: 400 });
+      }
     }
 
     // 1. アクティブ（参加者）の集計

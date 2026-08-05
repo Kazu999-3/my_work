@@ -28,7 +28,7 @@ export default function AiUpdateTab() {
         fetchedChampions = Object.values(d.data).map((c: any) => ({
           id: c.id, key: c.key, name: c.name
         }));
-        return fetch('/api/champions/dict-status').then(r => r.json());
+        return fetch('/api/champions/dict-status', { credentials: 'include' }).then(r => r.json());
       })
       .then((statusData) => {
         setChampDates(statusData.dates || {});

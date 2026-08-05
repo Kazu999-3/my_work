@@ -11,8 +11,38 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: '入力データが不正です。10人の参加者と勝利チームが必要です。' }, { status: 400 });
     }
 
-    // 1. データベースから全参加者の最新ステータスを取得
+    // このエンドポイントは仲間内メンバーが自分でも操作する運用のため認証は掛けない設計
+    // (api/players/saveと同じ意図的な公開API)。ただし荒唐無稽な数値の入力・誤操作で
+    // MMR/戦績データが壊れることを防ぐため、最低限の値域チェックだけは行う(2026-08-05発覚)。
+    if (winningTeam !== 'BLUE' && winningTeam !== 'RED') {
+      return NextResponse.json({ error: 'winningTeamはBLUEかREDのいずれかを指定してください。' }, { status: 400 });
+    }
     const names = participants.map((p: any) => p.name);
+    if (new Set(names).size !== 10) {
+      return NextResponse.json({ error: '10人の参加者名が重複しています。' }, { status: 400 });
+    }
+    for (const p of participants) {
+      if (p.team !== 'BLUE' && p.team !== 'RED') {
+        return NextResponse.json({ error: `不正なteam値です: ${p.name}` }, { status: 400 });
+      }
+      if (!['TOP', 'JG', 'MID', 'ADC', 'SUP'].includes(p.role)) {
+        return NextResponse.json({ error: `不正なrole値です: ${p.name}` }, { status: 400 });
+      }
+      for (const key of ['kills', 'deaths', 'assists'] as const) {
+        const v = Number(p[key]);
+        if (!Number.isFinite(v) || v < 0 || v > 100) {
+          return NextResponse.json({ error: `${p.name}の${key}が不正な値です。` }, { status: 400 });
+        }
+      }
+    }
+    if (gameDuration !== undefined && gameDuration !== null) {
+      const gd = Number(gameDuration);
+      if (!Number.isFinite(gd) || gd < 0 || gd > 3 * 60 * 60) {
+        return NextResponse.json({ error: 'gameDurationが不正な値です。' }, { status: 400 });
+      }
+    }
+
+    // 1. データベースから全参加者の最新ステータスを取得
     const { data: dbPlayers, error: pError } = await supabase
       .from('ktm_players')
       .select('*')

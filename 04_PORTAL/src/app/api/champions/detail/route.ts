@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
+import { verifyAdminSession } from '../../../../lib/adminAuth';
 
 // champions/tabs/DictionaryTab.tsx の詳細モーダル（対面メモ一覧・辞典本文・パワースパイク・
 // 過去の反省点）用に4つのmatchup_sentinel/champion_power_spikesクエリを1つにまとめた
@@ -7,6 +8,11 @@ import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: Request) {
+  // 辞典は閲覧含め管理者専用(champions/page.tsx)。ページ側は/api/auth/verifyで
+  // ガードしているが、このAPI自体には認証チェックが無く直叩きで閲覧できていた
+  // (2026-08-05発覚)。
+  const auth = await verifyAdminSession(req);
+  if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: 401 });
   try {
     const { searchParams } = new URL(req.url);
     const champId = searchParams.get('champion');

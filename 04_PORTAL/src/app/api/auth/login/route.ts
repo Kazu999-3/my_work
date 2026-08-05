@@ -1,5 +1,20 @@
 import { NextResponse } from 'next/server';
+import { createHash, timingSafeEqual } from 'crypto';
 import { createSessionToken, ADMIN_SESSION_COOKIE } from '../../../../lib/adminSession';
+import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
+
+// 単純な password !== adminPassword は文字列比較の早期リターンにより理論上タイミング
+// 攻撃(処理時間差からパスワードを1文字ずつ推測)の対象になりうる。署名検証側
+// (lib/adminSession.ts)は既にtimingSafeEqualを使っているのと対照的だった(2026-08-05発覚)。
+// SHA-256ダイジェスト同士を比較することで長さも揃い、定数時間比較になる。
+function safeEquals(a: string, b: string): boolean {
+  const ha = createHash('sha256').update(a).digest();
+  const hb = createHash('sha256').update(b).digest();
+  return timingSafeEqual(ha, hb);
+}
+
+const MAX_ATTEMPTS = 10;
+const WINDOW_MS = 15 * 60 * 1000;
 
 export async function POST(req: Request) {
   try {
@@ -13,7 +28,25 @@ export async function POST(req: Request) {
       );
     }
 
-    if (password !== adminPassword) {
+    // ブルートフォース対策: IPごとに直近15分の失敗回数を数え、上限を超えたら
+    // パスワードの正誤に関わらず拒否する(2026-08-05発覚: 試行回数の制限が無かった)。
+    const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim() || req.headers.get('x-real-ip') || 'unknown';
+    const since = new Date(Date.now() - WINDOW_MS).toISOString();
+    const { count: recentFailures } = await supabase
+      .from('edge_tasks')
+      .select('id', { count: 'exact', head: true })
+      .eq('task_type', 'login_failure')
+      .contains('payload', { ip })
+      .gt('created_at', since);
+    if ((recentFailures || 0) >= MAX_ATTEMPTS) {
+      return NextResponse.json(
+        { success: false, error: '試行回数が多すぎます。15分ほど待ってから再試行してください。' },
+        { status: 429 }
+      );
+    }
+
+    if (!safeEquals(password || '', adminPassword)) {
+      await supabase.from('edge_tasks').insert({ task_type: 'login_failure', status: 'completed', payload: { ip } });
       return NextResponse.json(
         { success: false, error: 'パスワードが正しくありません。' },
         { status: 401 }

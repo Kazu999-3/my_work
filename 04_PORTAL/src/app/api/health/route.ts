@@ -56,7 +56,18 @@ export async function POST(req: NextRequest) {
       .gt('created_at', since)
       .limit(1);
 
-    if (!recent || recent.length === 0) {
+    // 上の重複抑止はmessage文字列の一致判定のみのため、文言を少し変えるだけで
+    // すり抜けられてしまっていた(2026-08-05発覚)。内容に関わらず、直近5分間の
+    // 総件数が多すぎる場合は個別のメッセージ内容を問わず追加通知をスキップする
+    // (通知の埋没・プッシュのスパム化を防ぐグローバルな上限)。
+    const burstSince = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+    const { count: burstCount } = await supabaseAdmin
+      .from('admin_notifications')
+      .select('id', { count: 'exact', head: true })
+      .eq('type', 'portal_boundary_error')
+      .gt('created_at', burstSince);
+
+    if ((!recent || recent.length === 0) && (burstCount || 0) < 10) {
       await createAdminNotification({
         type: 'portal_boundary_error',
         title: `💥 フロントエラー: ${message}`,

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../lib/supabaseAdmin';
 import { getChampionSearchVariations } from '../../../lib/championNames';
+import { verifyAdminSession } from '../../../lib/adminAuth';
 
 // ============================================================
 // 横断検索 (課題: 辞典 + 攻略ライブラリ + マッチアップメモ を1つの検索窓で)
@@ -24,6 +25,11 @@ function snippet(text: string | null, q: string, len = 160): string {
 }
 
 export async function GET(req: Request) {
+  // 辞典本体・ナレッジ本文は閲覧含め管理者専用(champions/page.tsx)。Sidebarでは
+  // 管理者ログイン時のみメニュー表示だがUI上の目隠しに過ぎず、このAPI自体には
+  // 認証チェックが無くURL直叩きで誰でも読めていた(2026-08-05発覚)。
+  const auth = await verifyAdminSession(req);
+  if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: 401 });
   try {
     const { searchParams } = new URL(req.url);
     const q = (searchParams.get('q') || '').trim();

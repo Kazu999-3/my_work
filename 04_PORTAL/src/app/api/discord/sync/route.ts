@@ -13,6 +13,26 @@ export async function GET() {
   }
 
   try {
+    // 意図的な公開API(api/players/saveと同じ方針)。ただしDiscord Bot Tokenを使って
+    // 登録プレイヤー全員分のAPI呼び出しを行う重い処理のため、連打でDiscord APIレート
+    // 制限に当たったりBot Tokenを消耗させたりしないよう簡易クールダウンを設ける
+    // (2026-08-05発覚)。
+    const COOLDOWN_MS = 60 * 1000;
+    const { data: lastRun } = await supabase
+      .from('edge_tasks')
+      .select('created_at')
+      .eq('task_type', 'discord_sync_cooldown')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (lastRun) {
+      const elapsed = Date.now() - new Date(lastRun.created_at).getTime();
+      if (elapsed < COOLDOWN_MS) {
+        return NextResponse.json({ error: `同期は${Math.ceil((COOLDOWN_MS - elapsed) / 1000)}秒後に再試行してください。` }, { status: 429 });
+      }
+    }
+    await supabase.from('edge_tasks').insert({ task_type: 'discord_sync_cooldown', status: 'completed', payload: {} });
+
     // 1. ktm_players から discord_id が設定されている全プレイヤーを取得
     const { data: players, error: fetchError } = await supabase
       .from('ktm_players')

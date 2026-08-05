@@ -6,10 +6,23 @@ import { verifyAdminSession } from '../../../../../../lib/adminAuth';
 // 手動でコピーする運用。ここに保存はしない（一度きりの確認用）。
 export const dynamic = 'force-dynamic';
 
+const STATE_COOKIE = 'youtube_oauth_state';
+
 export async function GET(req: NextRequest) {
   const authResult = await verifyAdminSession(req);
   if (!authResult.ok) {
     return NextResponse.json({ error: authResult.error }, { status: 401 });
+  }
+
+  // oauth/route.tsが発行したstateとCookieを突き合わせる(2026-08-05発覚: state検証が
+  // 無かった)。不一致・欠落なら攻撃者が仕込んだ認可コードを混入させるCSRFの恐れがある。
+  const stateParam = req.nextUrl.searchParams.get('state');
+  const stateCookie = req.cookies.get(STATE_COOKIE)?.value;
+  if (!stateParam || !stateCookie || stateParam !== stateCookie) {
+    return new NextResponse('<pre>state検証に失敗しました。/api/admin/youtube/oauth からやり直してください。</pre>', {
+      status: 400,
+      headers: { 'Content-Type': 'text/html; charset=utf-8' },
+    });
   }
 
   const code = req.nextUrl.searchParams.get('code');

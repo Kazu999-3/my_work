@@ -2,8 +2,15 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 import { fetchPuuidByRiotId, fetchLeagueByPuuid } from '../../../../lib/riot';
 import { higherRank } from '../../../../lib/mmr';
+import { verifyBotSecret } from '../../../../lib/botAuth';
 
 export async function POST(req: Request) {
+  // ktm_bot(components.js)のみが呼ぶ経路。兄弟エンドポイント(riot/match-sync,
+  // player/update-lane等)と同じくverifyBotSecretを追加(2026-08-05発覚)。
+  const botAuth = verifyBotSecret(req);
+  if (!botAuth.ok) {
+    return NextResponse.json({ status: 'ERROR', message: botAuth.error }, { status: 401 });
+  }
   try {
     const { discordName } = await req.json();
     if (!discordName) return NextResponse.json({ status: "ERROR", message: "Missing discordName" }, { status: 400 });

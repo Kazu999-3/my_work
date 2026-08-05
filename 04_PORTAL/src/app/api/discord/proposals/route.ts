@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 
 // チーム分け4案(A/B/C/D)をまとめてDiscordへ投稿する(#77)。
 // メンバーは🇦🇧🇨🇩リアクションで希望を表明→管理者がポータルで採用案を確定して「Discord通知」する運用。
@@ -7,6 +8,19 @@ export async function POST(request: Request) {
     const { proposals } = await request.json();
     if (!Array.isArray(proposals) || proposals.length === 0) {
       return NextResponse.json({ error: '案データがありません。' }, { status: 400 });
+    }
+
+    // 意図的な公開API(api/players/saveと同じ方針)。本番Discordチャンネルへの投稿内容が
+    // 完全にクライアント任せだったため、実在の登録プレイヤー名かどうかだけは検証する
+    // (2026-08-05発覚)。
+    const allNames = proposals.flatMap((p: any) => [...(p.teamBlue || []), ...(p.teamRed || [])].map((x: any) => x.name)).filter(Boolean);
+    if (allNames.length > 0) {
+      const { data: knownPlayers } = await supabase.from('ktm_players').select('name').in('name', allNames);
+      const knownSet = new Set((knownPlayers || []).map((p: any) => p.name));
+      const unknown = allNames.filter((n: string) => !knownSet.has(n));
+      if (unknown.length > 0) {
+        return NextResponse.json({ error: `登録されていないプレイヤー名が含まれています: ${Array.from(new Set(unknown)).join(', ')}` }, { status: 400 });
+      }
     }
 
     const webhookUrl = process.env.DISCORD_KTM_WEBHOOK_URL;

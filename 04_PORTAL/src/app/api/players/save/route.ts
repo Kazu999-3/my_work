@@ -38,8 +38,20 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'updates(id付き)が必要です' }, { status: 400 });
     }
 
+    // metadataは他機能のキャッシュ(playstyle_cache等)も同居する汎用JSONB列のため、
+    // フルスナップショットで丸ごと上書きすると、クライアント側の古いスナップショットが
+    // サーバー側で後から更新された値(sync-soloq等)を消してしまう事故が起きていた
+    // (2026-08-05発覚)。metadataが含まれる場合は、現在のDB値の上に浅くマージしてから
+    // 書き込む(呼び出し元は編集対象のキーだけを送る運用に変更済み)。
     const results = await Promise.all(
-      targets.map((p) => supabase.from('ktm_players').update(pick(p, ALLOWED_FIELDS)).eq('id', p.id))
+      targets.map(async (p) => {
+        const payload = pick(p, ALLOWED_FIELDS);
+        if (payload.metadata !== undefined && payload.metadata !== null) {
+          const { data: current } = await supabase.from('ktm_players').select('metadata').eq('id', p.id).maybeSingle();
+          payload.metadata = { ...(current?.metadata || {}), ...payload.metadata };
+        }
+        return supabase.from('ktm_players').update(payload).eq('id', p.id);
+      })
     );
     const failed = results.find((r) => r.error);
     if (failed?.error) throw new Error(failed.error.message);

@@ -107,6 +107,10 @@ export async function GET(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+  // idはedge_tasks.id(UUID)であり、Supabase上でdata_type=uuidであることを確認済み。
+  // シーケンシャルな連番ではなく総当たりで推測できないため、「idさえ分かれば」という
+  // 前提自体が成立しない(事実上のアクセストークンとして機能する)。認証なしのままでも
+  // 実害は無いと判断し、この点についてはコード変更なし(2026-08-05確認)。
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');

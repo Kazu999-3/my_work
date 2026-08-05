@@ -173,7 +173,7 @@ export default function FiveVFiveSimTab() {
         if (attempts === 12) setSimStatus('チーム構成スタイルとシナジーを分析中...');
         if (attempts === 20) setSimStatus('勝利条件と時間帯別ゲームプランを構築中...');
 
-        const statusRes = await fetch(`/api/tasks/status?id=${taskId}`);
+        const statusRes = await fetch(`/api/tasks/status?id=${taskId}`, { credentials: 'include' });
         const statusData = await statusRes.json();
         const task = statusData.task;
 

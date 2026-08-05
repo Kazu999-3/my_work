@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
+import { verifyAdminSession } from '../../../../lib/adminAuth';
 
 // champions/tabs/DictionaryTab.tsx の一覧グリッド用データを1つにまとめた読み取り専用API。
 // 従来はブラウザから matchup_sentinel / champion_power_spikes に3回直接アクセスしていた。
@@ -10,7 +11,12 @@ const ALIAS_MAP: Record<string, string> = {
 };
 const normalizeKey = (str: string) => String(str || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 
-export async function GET() {
+export async function GET(req: Request) {
+  // 辞典は閲覧含め管理者専用(champions/page.tsx)。ページ側は/api/auth/verifyで
+  // ガードしているが、このAPI自体には認証チェックが無く直叩きで閲覧できていた
+  // (2026-08-05発覚)。
+  const auth = await verifyAdminSession(req);
+  if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: 401 });
   try {
     const [{ data, error }, { data: spikeRows, error: spikeError }, { data: contentRows, error: contentError }] = await Promise.all([
       supabase.from('matchup_sentinel').select('champion, created_at, patch_meta:raw_data->patch_meta, jg_style:raw_data->jg_style, is_favorited:raw_data->is_favorited').eq('enemy', 'GLOBAL'),

@@ -503,6 +503,10 @@ export default function BalancerPage() {
         if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || '保存に失敗しました'); }
       } else {
         // 一般ユーザーは非センシティブ列のみ（名前・weightは書き込まない）。サーバーAPI経由。
+        // metadataは他機能のキャッシュ(playstyle_cache等)も同居する汎用列のため、
+        // フルスナップショットをそのまま送ると、ページ読み込み後にサーバー側で更新された
+        // playstyle_cache等を古い値で上書き消去してしまう(2026-08-05発覚)。
+        // このUIが実際に編集させるnotesフィールドだけを送り、サーバー側でマージさせる。
         const updates = existingPlayers.map(p => ({
           id: p.id,
           role_preferences: p.role_preferences,
@@ -512,7 +516,7 @@ export default function BalancerPage() {
           allow_higher: p.allow_higher,
           pity: p.pity,
           off_role_pity: p.off_role_pity,
-          metadata: p.metadata,
+          metadata: { notes: p.metadata?.notes },
         }));
         const res = await fetch('/api/players/save', {
           method: 'POST',

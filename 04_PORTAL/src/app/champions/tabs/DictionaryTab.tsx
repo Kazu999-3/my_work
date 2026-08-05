@@ -190,7 +190,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
         .then(r => r.json())
         .then(versions => fetch(`https://ddragon.leagueoflegends.com/cdn/${versions[0]}/data/ja_JP/champion.json`).then(r => r.json()))
         .catch(() => null),
-      fetch('/api/champions/dictionary-overview').then(res => res.json()).catch(() => null),
+      fetch('/api/champions/dictionary-overview', { credentials: 'include' }).then(res => res.json()).catch(() => null),
     ]).then(([statsData, ddragonData, overview]) => {
       if (!isMounted) return;
 
@@ -238,7 +238,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
 
     const loadChampionData = async (champId: string) => {
       try {
-        const res = await fetch(`/api/champions/detail?champion=${encodeURIComponent(champId)}`);
+        const res = await fetch(`/api/champions/detail?champion=${encodeURIComponent(champId)}`, { credentials: 'include' });
         const detail = await res.json();
         if (cancelled) return;
         if (!res.ok) throw new Error(detail.error || '取得に失敗しました');
@@ -309,7 +309,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
       // 誰にも処理されず、900秒待っても必ずタイムアウトする。先にハートビートを見て、
       // 動いていなければ「待っても無駄」であることをすぐに伝える。
       try {
-        const hbRes = await fetch('/api/tasks/status?id=00000000-0000-0000-0000-000000000000');
+        const hbRes = await fetch('/api/tasks/status?id=00000000-0000-0000-0000-000000000000', { credentials: 'include' });
         const hbData = await hbRes.json();
         const heartbeat = hbData.task;
         const diffSec = heartbeat ? (Date.now() - new Date(heartbeat.updated_at).getTime()) / 1000 : Infinity;
@@ -342,7 +342,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
         }
 
         attempts++;
-        const taskRes = await fetch(`/api/tasks/status?id=${taskId}`);
+        const taskRes = await fetch(`/api/tasks/status?id=${taskId}`, { credentials: 'include' });
         const taskData = await taskRes.json();
         const task = taskData.task;
 
@@ -369,7 +369,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
           if (selectedRef.current?.id !== champIdAtStart) return;
 
           // 完了したため、最新データ（updated_atも更新されている）をフェッチして状態を更新
-          const detailRes = await fetch(`/api/champions/detail?champion=${encodeURIComponent(champIdAtStart)}`);
+          const detailRes = await fetch(`/api/champions/detail?champion=${encodeURIComponent(champIdAtStart)}`, { credentials: 'include' });
           const detail = await detailRes.json();
           if (!detailRes.ok) throw new Error(detail.error || '最新データの取得に失敗しました');
 

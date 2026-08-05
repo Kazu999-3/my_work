@@ -11,6 +11,20 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'チームデータが不足しています。' }, { status: 400 });
     }
 
+    // このエンドポイントは仲間内メンバーが自分でも操作する運用のため認証は掛けない設計
+    // (api/players/saveと同じ意図的な公開API)。ただし本番Discordチャンネルへの投稿内容が
+    // 完全にクライアント任せで、実在しない名前でも自由記述で投稿できてしまっていたため、
+    // 実在の登録プレイヤー名かどうかだけは検証する(2026-08-05発覚)。
+    const allNames = [...teamBlue, ...teamRed, ...(spectators || [])].map((p: any) => typeof p === 'string' ? p : p.name).filter(Boolean);
+    if (allNames.length > 0) {
+      const { data: knownPlayers } = await supabase.from('ktm_players').select('name').in('name', allNames);
+      const knownSet = new Set((knownPlayers || []).map((p: any) => p.name));
+      const unknown = allNames.filter((n) => !knownSet.has(n));
+      if (unknown.length > 0) {
+        return NextResponse.json({ error: `登録されていないプレイヤー名が含まれています: ${unknown.join(', ')}` }, { status: 400 });
+      }
+    }
+
     const webhookUrl = process.env.DISCORD_KTM_WEBHOOK_URL;
     if (!webhookUrl) {
       return NextResponse.json({ error: 'サーバーにWebhook URLが設定されていません。(.env.local を確認してください)' }, { status: 500 });

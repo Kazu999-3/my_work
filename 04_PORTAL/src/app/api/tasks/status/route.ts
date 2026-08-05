@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
+import { verifyAdminSession } from '../../../../lib/adminAuth';
 
 // edge_tasks の状態を1件だけ返す汎用ポーリングAPI。
 // champions/tabs/DictionaryTab.tsx, coach/FiveVFiveSimTab.tsx が
@@ -7,6 +8,11 @@ import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: Request) {
+  // 呼び出し元は全て管理者ログイン必須のページ配下(admin/youtube, coach, champions)だが、
+  // このAPI自体には認証チェックが無く、idさえ分かれば内部処理結果・エラーメッセージを
+  // 誰でも読めていた(2026-08-05発覚)。
+  const auth = await verifyAdminSession(req);
+  if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: 401 });
   try {
     const { searchParams } = new URL(req.url);
     const id = searchParams.get('id');
