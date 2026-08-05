@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 import { fetchMatchDetails } from '../../../../lib/riot';
-import { calculateNewMMR, calculateKdaScore, MmrCalcContext } from '../../../../lib/mmr';
+import { calculateNewMMR, calculateKdaScore, MmrCalcContext, computeRepresentativeMmr } from '../../../../lib/mmr';
 import { verifyBotSecret } from '../../../../lib/botAuth';
 import { fetchAllRows } from '../../../../lib/fetchAll';
 
@@ -222,7 +222,11 @@ export async function POST(req: Request) {
       const mid = p.role === 'MID' ? newRoleMmr : (dbP.mmr_mid || 1200);
       const adc = p.role === 'ADC' ? newRoleMmr : (dbP.mmr_adc || 1200);
       const sup = p.role === 'SUP' ? newRoleMmr : (dbP.mmr_sup || 1200);
-      const newTotalMmr = Math.round((top + jg + mid + adc + sup) / 5);
+      // match/record・performFullMmrRebuildと同じ試合数加重平均に統一(2026-08-05発覚)。
+      // 以前はここだけ単純平均だったため、手動記録とbot自動同期のどちらが最後に
+      // 触ったかで代表MMRの値が食い違い、後日のMMR再計算で無説明に変動して見えていた。
+      const games = { TOP: dbP.games_top || 0, JG: dbP.games_jg || 0, MID: dbP.games_mid || 0, ADC: dbP.games_adc || 0, SUP: dbP.games_sup || 0 };
+      const newTotalMmr = computeRepresentativeMmr({ TOP: top, JG: jg, MID: mid, ADC: adc, SUP: sup }, games);
 
       const playerUpdateData: any = {
         [roleMmrKey]: newRoleMmr,

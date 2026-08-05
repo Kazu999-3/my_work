@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../lib/supabaseAdmin';
 import { createAdminNotification } from '../../../lib/notify';
+import { verifyAdminSession } from '../../../lib/adminAuth';
 
 // 軽量ヘルスチェック。サイドバー下部のステータス表示（#58）が実際の稼働状態を
 // 反映できるようにするための公開エンドポイント。DBへの最小クエリで接続性のみ確認する。
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const started = Date.now();
   let db = false;
   try {
@@ -19,6 +20,12 @@ export async function GET() {
   } catch {
     db = false;
   }
+  // portalBotSecretの設定有無は、無認証で開示するとfail-open経路(PORTAL_BOT_SECRET
+  // 未設定時に認証がスキップされる既知の許容リスク)が「今まさに有効かどうか」を
+  // 外部から無認証で事前偵察できてしまう(2026-08-05発覚)。このフィールドだけ
+  // 管理者セッションがある場合のみ含める。
+  const isAdmin = (await verifyAdminSession(req)).ok;
+
   return NextResponse.json({
     ok: db,
     db,
@@ -27,7 +34,7 @@ export async function GET() {
     geminiKey: !!(process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY_BATCH || process.env.GOOGLE_API_KEY),
     vapid: !!(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY),
     discordWebhook: !!process.env.DISCORD_KTM_WEBHOOK_URL,
-    portalBotSecret: !!process.env.PORTAL_BOT_SECRET,
+    ...(isAdmin ? { portalBotSecret: !!process.env.PORTAL_BOT_SECRET } : {}),
     ms: Date.now() - started,
     checkedAt: new Date().toISOString(),
   });

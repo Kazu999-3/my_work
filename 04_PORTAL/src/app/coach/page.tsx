@@ -1280,9 +1280,17 @@ export default function CoachPage() {
           setMatchDetectFailCount(0);
         }
 
-        if (data.isNewMatch && !sessionStorage.getItem('tilt_popup_snoozed')) {
-          // 自動ポップアップ！！ まずティルト診断を出し、そこから振り返りへ進めるようにする(#①)
-          setIsTiltPopupOpen(true);
+        if (data.isNewMatch) {
+          if (sessionStorage.getItem('tilt_popup_snoozed')) {
+            // スヌーズは「次の1試合だけ」抑制する意図(TiltDiagnosisPopup.tsxのUI文言)。
+            // フラグを消さないままだとタブを閉じるまで恒久的に沈黙してしまっていた
+            // (2026-08-05発覚)。今回の1件を消費したら解除し、次の新規試合検知では
+            // 通常どおりポップアップする。
+            sessionStorage.removeItem('tilt_popup_snoozed');
+          } else {
+            // 自動ポップアップ！！ まずティルト診断を出し、そこから振り返りへ進めるようにする(#①)
+            setIsTiltPopupOpen(true);
+          }
         }
         // isNewMatchの真偽に関わらず、返ってきたlatestMatchIdを常に基準として更新する。
         // 以前はisNewMatch===trueの時だけ更新していたため、一度も振り返りを保存した

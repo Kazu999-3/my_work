@@ -26,6 +26,19 @@ async function hmacSha256Hex(secret: string, payload: string): Promise<string> {
     .join('');
 }
 
+// adminSession.ts(Node crypto.timingSafeEqual)と同じ非タイミング攻撃の意図だが、
+// Edge RuntimeにはNodeのtimingSafeEqual相当が無いため、早期リターンしない定数時間の
+// XOR比較を自前実装する。以前は`signature !== expected`という通常の文字列比較のままで、
+// 一次認証ゲート側だけタイミング安全性の対策が漏れていた(2026-08-05発覚)。
+function timingSafeEqualHex(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) {
+    diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  return diff === 0;
+}
+
 async function isValidAdminSession(token: string | undefined, secret: string): Promise<boolean> {
   if (!token) return false;
   const lastDot = token.lastIndexOf('.');
@@ -34,7 +47,7 @@ async function isValidAdminSession(token: string | undefined, secret: string): P
   const payload = token.slice(0, lastDot);
   const signature = token.slice(lastDot + 1);
   const expected = await hmacSha256Hex(secret, payload);
-  if (signature.length !== expected.length || signature !== expected) return false;
+  if (!timingSafeEqualHex(signature, expected)) return false;
 
   const match = payload.match(/^admin:(\d+)$/);
   if (!match) return false;

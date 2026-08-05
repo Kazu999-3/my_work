@@ -1,22 +1,25 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
+import { verifyAdminSession } from '../../../../lib/adminAuth';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 export const maxDuration = 30;
 
-export async function GET() {
+export async function GET(req: Request) {
   const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN;
 
   if (!DISCORD_BOT_TOKEN) {
     return NextResponse.json({ error: 'Discord BOT Token is not configured' }, { status: 500 });
   }
 
+  // 全登録プレイヤー分のDiscord API呼び出しを行う管理運用向け操作。balancer/match-record
+  // のような「個々のメンバーが自分のために使う」機能ではないため、姉妹APIのdiscord/members
+  // と同じく管理者認証を必須にする(2026-08-05発覚: 無認証かつUI上も誰でも押せる状態だった)。
+  const auth = await verifyAdminSession(req);
+  if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: 401 });
+
   try {
-    // 意図的な公開API(api/players/saveと同じ方針)。ただしDiscord Bot Tokenを使って
-    // 登録プレイヤー全員分のAPI呼び出しを行う重い処理のため、連打でDiscord APIレート
-    // 制限に当たったりBot Tokenを消耗させたりしないよう簡易クールダウンを設ける
-    // (2026-08-05発覚)。
     const COOLDOWN_MS = 60 * 1000;
     const { data: lastRun } = await supabase
       .from('edge_tasks')

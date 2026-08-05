@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, ReactNode } from 'react';
+import { useState, useRef, ReactNode } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 
 // 長い一覧(全ログ・AI分析ログ等)をデフォルトで折りたたみ、必要な時だけ開けるようにする
@@ -15,6 +15,14 @@ export default function Collapsible({
   children: ReactNode;
 }) {
   const [open, setOpen] = useState(defaultOpen);
+  // 初回に開かれるまでは子要素をマウントしない(未使用時の不要なfetchを避ける狙いは維持)。
+  // ただし一度開いたら以降はアンマウントせずCSSで表示切替のみに変える。以前はopenの
+  // 真偽で子要素ごと条件レンダーしていたため、閉じるたびに内部state(検索キーワード等)が
+  // 破棄され、再度開くたびにMySoloQDashboard等が再マウント→一覧を再取得していた
+  // (2026-08-05発覚)。
+  const hasOpenedRef = useRef(defaultOpen);
+  if (open) hasOpenedRef.current = true;
+
   return (
     <div>
       <button
@@ -29,7 +37,7 @@ export default function Collapsible({
           <ChevronDown className="w-4 h-4 text-stone-400 shrink-0" />
         )}
       </button>
-      {open && <div className="mt-3">{children}</div>}
+      {hasOpenedRef.current && <div className={open ? 'mt-3' : 'hidden'}>{children}</div>}
     </div>
   );
 }

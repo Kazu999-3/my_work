@@ -121,6 +121,21 @@ export interface InvalidTagScanResult {
   capped: boolean;
 }
 
+/**
+ * personal_knowledgeだけはUI(LibraryTabContent.tsx)がカンマ区切りで複数チャンピオンを
+ * 1行に紐付けられる設計だが、この関数のresolveChampionIdは単一チャンピオン文字列専用の
+ * ため、"Graves, Jax"のような正当な複数紐付けが恒久的にinvalid_champion_tagとして
+ * 検出され続けていた(2026-08-05発覚)。カンマ区切りの断片を1つずつ判定し、実在する
+ * チャンピオンが1つでも含まれていれば正常な行として扱う。
+ */
+function isChampionListValid(raw: string, rosterLower: Map<string, string>): boolean {
+  const parts = raw.split(',').map((s) => s.trim()).filter(Boolean);
+  return parts.some((part) => {
+    const resolved = resolveChampionId(part);
+    return !!(resolved && rosterLower.has(resolved.toLowerCase()));
+  });
+}
+
 export async function scanInvalidChampionTags(supabase: any): Promise<InvalidTagScanResult> {
   const roster = await getAllChampionIds();
   const rosterLower = new Map(Array.from(roster).map((r) => [r.toLowerCase(), r]));
@@ -143,10 +158,23 @@ export async function scanInvalidChampionTags(supabase: any): Promise<InvalidTag
     const ref = Array.isArray(item.source_refs) ? item.source_refs[0] : null;
     const key = ref ? `${ref.table}:${ref.id}` : '';
     if (key) already.add(key);
+    if (!ref?.table || !ref?.id || !INVALID_TAG_TARGETS.some((t) => t.table === ref.table)) continue;
+
+    // personal_knowledgeの複数チャンピオン紐付け(カンマ区切り)は、既存の正当な行として
+    // そのまま解消する(champion列は書き換えない)。
+    const raw = String(item.champion || '');
+    if (ref.table === 'personal_knowledge' && raw.includes(',') && isChampionListValid(raw, rosterLower)) {
+      const { error: queueErr } = await supabase
+        .from('dict_fact_check_queue')
+        .update({ status: 'fixed', reviewed_at: new Date().toISOString(), detail: { autoResolved: true, note: '複数チャンピオン紐付けとして正常' } })
+        .eq('id', item.id);
+      if (!queueErr) { autoResolved++; already.delete(key); }
+      continue;
+    }
 
     const resolved = resolveChampionId(item.champion);
     const canonical = resolved ? rosterLower.get(resolved.toLowerCase()) : undefined;
-    if (!canonical || !ref?.table || !ref?.id || !INVALID_TAG_TARGETS.some((t) => t.table === ref.table)) continue;
+    if (!canonical) continue;
 
     const { error: updateErr } = await supabase.from(ref.table).update({ champion: canonical }).eq('id', ref.id);
     if (updateErr) continue;
@@ -172,8 +200,12 @@ export async function scanInvalidChampionTags(supabase: any): Promise<InvalidTag
       const raw = String(row.champion || '').trim();
       if (!raw || target.skip.includes(raw.toUpperCase())) continue;
 
-      const resolved = resolveChampionId(raw);
-      if (resolved && rosterLower.has(resolved.toLowerCase())) continue; // 正常
+      if (target.table === 'personal_knowledge' && raw.includes(',')) {
+        if (isChampionListValid(raw, rosterLower)) continue; // 複数チャンピオン紐付けとして正常
+      } else {
+        const resolved = resolveChampionId(raw);
+        if (resolved && rosterLower.has(resolved.toLowerCase())) continue; // 正常
+      }
 
       const key = `${target.table}:${row.id}`;
       if (already.has(key)) continue;
@@ -246,8 +278,16 @@ export async function groupSourcesByChampion(supabase: any): Promise<Map<string,
   const { data: knowledgeRows } = await supabase
     .from('personal_knowledge').select('id, champion, title, content').not('champion', 'is', null).neq('champion', 'Unknown');
   (knowledgeRows || []).forEach((r: any) => {
-    const b = ensure(r.champion);
-    if (b && b.knowledge.length < 5) b.knowledge.push({ id: r.id, title: r.title || '', content: (r.content || '').slice(0, 400) });
+    // personal_knowledgeはカンマ区切りで複数チャンピオンに紐付く記事をサポートしている。
+    // 以前はensure()に生の"Graves, Jax"をそのまま渡しており単一チャンピオン解決に
+    // 失敗して両チャンピオンのバンドルから丸ごと漏れていた(2026-08-05発覚)。
+    // カンマ区切りを分解し、解決できた各チャンピオンのバンドルに個別に紐付ける。
+    const raw = String(r.champion || '');
+    const champs = raw.includes(',') ? raw.split(',').map((s: string) => s.trim()).filter(Boolean) : [raw];
+    for (const c of champs) {
+      const b = ensure(c);
+      if (b && b.knowledge.length < 5) b.knowledge.push({ id: r.id, title: r.title || '', content: (r.content || '').slice(0, 400) });
+    }
   });
 
   return map;

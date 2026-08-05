@@ -45,38 +45,49 @@ export async function GET(request: Request) {
       ...(cronSecret ? { Authorization: `Bearer ${cronSecret}` } : {}),
     };
 
+    // fire-and-forgetの各呼び出しは.catch()のみでレスポンスの.okを見ていなかったため、
+    // 呼び出し先が401/500等のHTTPエラーを返しても(fetch自体は例外を投げない)一切気づけない
+    // 構造が残っていた(2026-08-05発覚)。まさにこのファイルが原因で「10日以上何も実行
+    // されていなかった」既往障害の根本原因(結果を検証しない設計)。.okを確認しログに残す
+    // ヘルパーに統一する。
+    const fireAndForget = (label: string, url: string, init: RequestInit) => {
+      fetch(url, init)
+        .then((res) => { if (!res.ok) console.warn(`${label} failed: ${res.status}`); })
+        .catch((e) => console.warn(`${label} trigger warning:`, e));
+    };
+
     // 2. ナレッジ自動整備（未整理記事をチャンピオン辞典へマージ）
-    fetch(`${origin}/api/admin/knowledge/sync`, {
+    fireAndForget('Knowledge sync', `${origin}/api/admin/knowledge/sync`, {
       method: 'POST',
       headers: cronHeaders,
       body: JSON.stringify({ auto: true })
-    }).catch(e => console.warn('Knowledge sync trigger warning:', e));
+    });
 
     // 3. レーンガイド自動マージ
-    fetch(`${origin}/api/admin/lane-guides`, {
+    fireAndForget('Lane guide', `${origin}/api/admin/lane-guides`, {
       method: 'POST',
       headers: cronHeaders,
       body: JSON.stringify({ auto: true })
-    }).catch(e => console.warn('Lane guide trigger warning:', e));
+    });
 
     // 4. 既存データの英語→日本語 自動変換（辞典本体・攻略ライブラリ・対面メモ/ノート）。
     // 以前は/admin/knowledgeの「データ整備」タブを開いてボタンを押さない限り動かなかった。
     for (const target of ['facts', 'articles', 'memos']) {
-      fetch(`${origin}/api/admin/translate-jp`, {
+      fireAndForget(`Translate-jp(${target})`, `${origin}/api/admin/translate-jp`, {
         method: 'POST',
         headers: cronHeaders,
         body: JSON.stringify({ target })
-      }).catch(e => console.warn(`Translate-jp(${target}) trigger warning:`, e));
+      });
     }
 
     // 5. champion_facts をmatchup_sentinelへ追従させる構造化バックフィル。
     // これが無いと /api/cron/dict-review-check(週次の鮮度レビュー)が
     // 日々更新されるmatchup_sentinelとズレた古いスナップショットを見続けてしまう
     // (2026-08-03発覚: 2026-07-30以降1週間近く同期されていなかった)。
-    fetch(`${origin}/api/admin/dict-migrate`, {
+    fireAndForget('Dict-migrate', `${origin}/api/admin/dict-migrate`, {
       method: 'GET',
       headers: cronHeaders,
-    }).catch(e => console.warn('Dict-migrate trigger warning:', e));
+    });
 
     return NextResponse.json({ success: true, message: '全自動バックグラウンドメンテナンス（データ整備・日本語化・マネタイズ）を正常発火しました' });
   } catch (error: any) {

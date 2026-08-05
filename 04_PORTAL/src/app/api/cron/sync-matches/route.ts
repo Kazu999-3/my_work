@@ -15,7 +15,11 @@ export async function GET(request: Request) {
   
   // 以前は ?test=true を付けるだけでこの認証チェック自体を丸ごとスキップできてしまっていた
   // （!isTest && ... という条件式のため、isTestがtrueだと式全体がfalseになり401を返さなかった）。
-  if (cronSecret && authHeader !== `Bearer ${cronSecret}` && !isVercelCron) {
+  // さらに `cronSecret && ...` の短絡により、CRON_SECRET未設定時はチェック自体が
+  // 丸ごと無効化(fail-open)される、api/cron/route.tsで既に修正済みの構造も残っていた
+  // (2026-08-05発覚)。Bearer側の真偽を先に確定させ、fail-closedに統一する。
+  const bearerOk = !!cronSecret && authHeader === `Bearer ${cronSecret}`;
+  if (!bearerOk && !isVercelCron) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 

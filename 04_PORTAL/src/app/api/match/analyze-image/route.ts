@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { callGeminiWithRetry } from '../../../../lib/geminiClient';
+import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 
 export async function POST(req: Request) {
   try {
@@ -7,6 +8,26 @@ export async function POST(req: Request) {
     if (!imageBase64) {
       return NextResponse.json({ error: '画像データがありません。' }, { status: 400 });
     }
+
+    // 意図的な公開API(balancer/record/page.tsxから友人メンバーが自分で使う運用)。
+    // ただし最大3モデルへ順次フォールバックする画像解析はコードベース中で最もコストが
+    // 高いGemini呼び出しにもかかわらず、乱用対策が一切無かった(2026-08-05発覚)。
+    // discord/sync等と同じedge_tasksベースのクールダウンで連打を防ぐ。
+    const COOLDOWN_MS = 30 * 1000;
+    const { data: lastRun } = await supabase
+      .from('edge_tasks')
+      .select('created_at')
+      .eq('task_type', 'match_analyze_image_cooldown')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (lastRun) {
+      const elapsed = Date.now() - new Date(lastRun.created_at).getTime();
+      if (elapsed < COOLDOWN_MS) {
+        return NextResponse.json({ error: `画像解析は${Math.ceil((COOLDOWN_MS - elapsed) / 1000)}秒後に再試行してください。` }, { status: 429 });
+      }
+    }
+    await supabase.from('edge_tasks').insert({ task_type: 'match_analyze_image_cooldown', status: 'completed', payload: {} });
 
     // APIキーの検証・複数キーのローテーション・429/5xxのリトライは
     // すべて callGeminiWithRetry 側に集約している。

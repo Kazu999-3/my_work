@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 interface MatchupWarningCardProps {
   champion: string;
@@ -15,14 +15,21 @@ export default function MatchupWarningCard({ champion, enemyChampion }: MatchupW
     lastUpdatedAt?: string;
   } | null>(null);
   const [loading, setLoading] = useState(false);
+  // 入力欄の共有stateがonChangeのたびに更新されるため、1文字打つごとにAPIを叩いており、
+  // デバウンスも無ければレスポンス順序保証も無かった(2026-08-05発覚)。高速入力時に
+  // 古いレスポンスが新しい入力の結果を上書きし、一瞬誤った警戒メモが出ることがあった。
+  // 400msデバウンス + リクエスト世代カウンタで、最新の入力に対する結果だけを反映する。
+  const requestIdRef = useRef(0);
 
   useEffect(() => {
     if (!champion || !enemyChampion) {
+      requestIdRef.current += 1;
       setWarning(null);
       return;
     }
 
-    (async () => {
+    const myRequestId = ++requestIdRef.current;
+    const timer = setTimeout(async () => {
       setLoading(true);
       try {
         const res = await fetch('/api/soloq/matchup-warning', {
@@ -31,13 +38,16 @@ export default function MatchupWarningCard({ champion, enemyChampion }: MatchupW
           body: JSON.stringify({ champion, enemyChampion }),
         });
         const data = await res.json();
+        if (requestIdRef.current !== myRequestId) return; // 途中で新しい入力に上書きされていたら破棄
         setWarning(data.warning || null);
       } catch {
-        setWarning(null);
+        if (requestIdRef.current === myRequestId) setWarning(null);
       } finally {
-        setLoading(false);
+        if (requestIdRef.current === myRequestId) setLoading(false);
       }
-    })();
+    }, 400);
+
+    return () => clearTimeout(timer);
   }, [champion, enemyChampion]);
 
   if (!warning || !warning.memo) return null;

@@ -62,12 +62,23 @@ export default function LeaderboardPage() {
   const [syncing, setSyncing] = useState(false);
   const [minGames, setMinGames] = useState<number>(3); // 最小試合数フィルター（デフォルト3試合）
   const [search, setSearch] = useState(''); // プレイヤー名検索(L-03)
+  // 「名前の一括同期」は全登録プレイヤー分のDiscord API呼び出しを伴う管理運用向けの
+  // 操作で、balancer/match-recordのような個々のメンバーが自分のために使う機能とは
+  // 性質が異なる。姉妹APIのdiscord/membersが管理者専用なのに、この公開ページには
+  // isAdmin判定が無く誰にでもボタンが見えていた(2026-08-05発覚)。
+  const [isAdmin, setIsAdmin] = useState(false);
+  useEffect(() => {
+    fetch('/api/auth/verify', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) })
+      .then((res) => res.json())
+      .then((data) => setIsAdmin(!!data.valid))
+      .catch(() => {});
+  }, []);
 
   const handleSyncDiscordNames = async () => {
     if (!confirm('全プレイヤーのDiscord名を最新のものに一括同期しますか？少し時間がかかります。')) return;
     setSyncing(true);
     try {
-      const res = await fetch(`/api/discord/sync?_t=${Date.now()}`, { cache: 'no-store' });
+      const res = await fetch(`/api/discord/sync?_t=${Date.now()}`, { cache: 'no-store', credentials: 'include' });
       const result = await res.json();
       if (!res.ok) throw new Error(result.error || '同期に失敗しました');
       alert(`✅ ${result.syncedCount}人の名前を最新のDiscord名に更新しました！\nページを再読み込みして反映します。`);
@@ -111,14 +122,16 @@ export default function LeaderboardPage() {
           <h1 className="text-3xl font-extrabold text-stone-900 text-center tracking-tight flex items-center justify-center gap-3">
             <span className="text-amber-500">🏆</span> KTM LEADERBOARD
           </h1>
-          <button
-            onClick={handleSyncDiscordNames}
-            disabled={syncing}
-            className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center gap-2 bg-orange-600 hover:bg-orange-500 text-stone-900 px-3 py-1.5 rounded-lg text-xs font-bold transition disabled:opacity-50"
-          >
-            <RefreshCw className={`w-3 h-3 ${syncing ? 'animate-spin' : ''}`} />
-            <span className="hidden sm:inline">{syncing ? '同期中...' : '名前の一括同期'}</span>
-          </button>
+          {isAdmin && (
+            <button
+              onClick={handleSyncDiscordNames}
+              disabled={syncing}
+              className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center gap-2 bg-orange-600 hover:bg-orange-500 text-stone-900 px-3 py-1.5 rounded-lg text-xs font-bold transition disabled:opacity-50"
+            >
+              <RefreshCw className={`w-3 h-3 ${syncing ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline">{syncing ? '同期中...' : '名前の一括同期'}</span>
+            </button>
+          )}
         </div>
         
         {/* タブナビゲーション */}

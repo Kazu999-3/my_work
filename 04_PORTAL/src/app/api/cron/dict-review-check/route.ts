@@ -21,8 +21,14 @@ export const dynamic = 'force-dynamic';
 export const maxDuration = 120;
 
 export async function GET(req: Request) {
+  // CRON_SECRET未設定時に `process.env.CRON_SECRET &&` の短絡でチェック自体が丸ごと
+  // 無効化(fail-open)される、api/cron/route.tsで既に修正済みのパターンがこのルートには
+  // 未適用のまま残っていた(2026-08-05発覚)。同じfail-closed方式に統一する。
   const auth = req.headers.get('authorization') || '';
-  if (process.env.CRON_SECRET && auth !== `Bearer ${process.env.CRON_SECRET}`) {
+  const cronSecret = process.env.CRON_SECRET;
+  const isVercelCron = (req.headers.get('user-agent') || '').includes('vercel-cron');
+  const bearerOk = !!cronSecret && auth === `Bearer ${cronSecret}`;
+  if (!bearerOk && !isVercelCron) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 

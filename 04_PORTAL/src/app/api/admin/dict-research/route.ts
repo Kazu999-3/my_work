@@ -3,6 +3,7 @@ import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 import { verifyAdminSession } from '../../../../lib/adminAuth';
 import { fetchChampionStats } from '../../../../lib/championStats';
 import { callGeminiWithRetry } from '../../../../lib/geminiClient';
+import { resolveToRosterChampion } from '../../../../lib/dictFactCheck';
 
 // 自動リサーチ: 辞典の下書きをAIで作る。
 // 参考データは公式 Riot Data Dragon（スキルCD/射程/コスト・レベル別ステータス・公式Tips）。
@@ -17,8 +18,17 @@ export async function POST(req: Request) {
   if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: 401 });
 
   try {
-    const { champion, role, save } = await req.json();
-    if (!champion) return NextResponse.json({ error: 'champion が必要です。' }, { status: 400 });
+    const { champion: rawChampion, role, save } = await req.json();
+    if (!rawChampion) return NextResponse.json({ error: 'champion が必要です。' }, { status: 400 });
+
+    // dict-migrate/champion-research/knowledge/add等の他の書き込み経路は全て
+    // resolveToRosterChampionで正規化しているが、このルートだけ生のまま
+    // champion_factsへupsertしており、管理者の手打ち欄(DictInsightsPanel)の
+    // 表記ゆれで重複レコードを生む温床になっていた(2026-08-05発覚)。
+    const champion = await resolveToRosterChampion(rawChampion);
+    if (!champion) {
+      return NextResponse.json({ error: `「${rawChampion}」を実在チャンピオン名として認識できませんでした。英語表記(例: Graves)で入力してください。` }, { status: 400 });
+    }
 
     const site = await fetchChampionStats(champion);
 

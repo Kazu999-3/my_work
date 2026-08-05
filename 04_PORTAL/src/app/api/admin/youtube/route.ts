@@ -9,7 +9,9 @@ import { fetchAllRows } from '../../../../lib/fetchAll';
 // サーバーサイド用クライアント（サービスキーを使用）
 
 function extractVideoId(url: string): string | null {
-  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+  // /shorts/VIDEO_ID 形式が元の正規表現に含まれておらず、Shorts動画のURLを貼ると
+  // 常に「無効なYouTube URLです」で弾かれていた(2026-08-05発覚)。
+  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|shorts\/|watch\?v=|\&v=)([^#\&\?]*).*/;
   const match = url.match(regExp);
   return (match && match[2].length === 11) ? match[2] : null;
 }

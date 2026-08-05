@@ -30,7 +30,13 @@ export async function POST(req: Request) {
 
     // ブルートフォース対策: IPごとに直近15分の失敗回数を数え、上限を超えたら
     // パスワードの正誤に関わらず拒否する(2026-08-05発覚: 試行回数の制限が無かった)。
-    const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim() || req.headers.get('x-real-ip') || 'unknown';
+    // x-forwarded-forの先頭要素はクライアントが自由に送信できる値であり、Vercelは
+    // 自身が観測した実IPをチェーンの末尾に追記する。先頭を採用すると、攻撃者が
+    // 毎回異なる偽IPを先頭に付けるだけでこのロックアウトを回避できてしまっていた
+    // (2026-08-05再発覚)。Vercelが上書き設定する(クライアントから偽装不可能な)
+    // x-real-ipを優先し、無い場合のみx-forwarded-forの末尾(=Vercelが追記した値)を使う。
+    const xffChain = (req.headers.get('x-forwarded-for') || '').split(',').map((s) => s.trim()).filter(Boolean);
+    const ip = req.headers.get('x-real-ip') || xffChain[xffChain.length - 1] || 'unknown';
     const since = new Date(Date.now() - WINDOW_MS).toISOString();
     const { count: recentFailures } = await supabase
       .from('edge_tasks')

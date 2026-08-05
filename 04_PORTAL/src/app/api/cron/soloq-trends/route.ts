@@ -55,8 +55,13 @@ function computeTrendAggregates(analyses: any[]) {
 }
 
 export async function GET(req: Request) {
+  // CRON_SECRET未設定時fail-openパターンの修正(2026-08-05発覚、api/cron/route.tsと同じ修正)。
+  // Gemini呼び出しを伴うため、外部から連打されるとクォータ枯渇に直結する。
   const auth = req.headers.get('authorization') || '';
-  if (process.env.CRON_SECRET && auth !== `Bearer ${process.env.CRON_SECRET}`) {
+  const cronSecret = process.env.CRON_SECRET;
+  const isVercelCron = (req.headers.get('user-agent') || '').includes('vercel-cron');
+  const bearerOk = !!cronSecret && auth === `Bearer ${cronSecret}`;
+  if (!bearerOk && !isVercelCron) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 

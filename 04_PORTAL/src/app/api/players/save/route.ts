@@ -29,6 +29,22 @@ function pick(obj: any, keys: readonly string[]) {
   return out;
 }
 
+// balancer.ts はこのpity/off_role_pityを選出ペナルティの乗数に直接使う
+// (pity*10000〜20000、spectator_pity>=10で強制選出扱い等)。無認証の公開APIで
+// 数値検証が無かったため、devtools等から巨大値を送るだけで毎回の優先選出を
+// 恒久的に有利化できてしまっていた(2026-08-05発覚)。通常運用では数回に1度
+// 増える程度の小さい整数のため、余裕を持って0〜50の整数のみ許可する。
+function validatePityFields(payload: any): string | null {
+  for (const key of ['pity', 'off_role_pity'] as const) {
+    if (payload[key] === undefined) continue;
+    const v = payload[key];
+    if (typeof v !== 'number' || !Number.isInteger(v) || v < 0 || v > 50) {
+      return `${key}は0〜50の整数で指定してください`;
+    }
+  }
+  return null;
+}
+
 export async function POST(req: Request) {
   try {
     const body = await req.json();
@@ -43,6 +59,11 @@ export async function POST(req: Request) {
     // サーバー側で後から更新された値(sync-soloq等)を消してしまう事故が起きていた
     // (2026-08-05発覚)。metadataが含まれる場合は、現在のDB値の上に浅くマージしてから
     // 書き込む(呼び出し元は編集対象のキーだけを送る運用に変更済み)。
+    for (const p of targets) {
+      const err = validatePityFields(pick(p, ALLOWED_FIELDS));
+      if (err) return NextResponse.json({ error: err }, { status: 400 });
+    }
+
     const results = await Promise.all(
       targets.map(async (p) => {
         const payload = pick(p, ALLOWED_FIELDS);

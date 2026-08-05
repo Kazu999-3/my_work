@@ -35,6 +35,17 @@ export async function POST(request: Request) {
         }
       }
     }
+    // 各チーム5ロールが重複なく揃っているかの検証(2026-08-05発覚)。以前は無かったため、
+    // 同ロールが片チームに重複投稿されると対面特定(line 105のfind)が失敗してopponentMmrが
+    // 黙って1200にフォールバックし、MMR計算・Discord速報・対面カルテが静かに歪んでいた。
+    for (const team of ['BLUE', 'RED'] as const) {
+      const roles = participants.filter((p: any) => p.team === team).map((p: any) => p.role);
+      const uniqueRoles = new Set(roles);
+      if (roles.length !== 5 || uniqueRoles.size !== 5) {
+        return NextResponse.json({ error: `${team}チームのロール構成が不正です（TOP/JG/MID/ADC/SUPが重複なく5人必要です）。` }, { status: 400 });
+      }
+    }
+
     if (gameDuration !== undefined && gameDuration !== null) {
       const gd = Number(gameDuration);
       if (!Number.isFinite(gd) || gd < 0 || gd > 3 * 60 * 60) {
