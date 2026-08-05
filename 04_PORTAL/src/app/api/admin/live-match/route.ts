@@ -6,6 +6,11 @@ import { verifyAdminSession } from '../../../../lib/adminAuth';
 import { callGeminiWithRetry } from '../../../../lib/geminiClient';
 import { getChampNameById as getChampionNameById } from '../../../../lib/ddragonClient';
 
+// 敵最大5人の順次分析(1人あたり複数回のRiot API呼び出し)＋各人の直近試合詳細・タイムライン
+// 取得を意図的に直列化しているため、実行時間がVercelのデフォルト関数タイムアウトに
+// 抵触するリスクがある。同じくGemini/Riot APIを多用するmatch/simulate(60s)より重いため長めに確保。
+export const maxDuration = 120;
+
 export async function POST(req: Request) {
   try {
   // ===== 管理者セッション確認 =====
@@ -145,7 +150,9 @@ export async function POST(req: Request) {
             if (bData && bData.strategy) {
               matchupBible = bData.strategy;
             }
-          } catch (dbErr) {}
+          } catch (dbErr) {
+            console.warn('[live-match] GLOBALマニュアルの取得に失敗（続行）:', dbErr);
+          }
 
           // 過去の教訓メモのロード
           let personalMemo = "";
@@ -158,7 +165,9 @@ export async function POST(req: Request) {
             if (mData && mData.length > 0) {
               personalMemo = mData.map((m: any) => `- ${m.content}`).join("\n");
             }
-          } catch (dbErr) {}
+          } catch (dbErr) {
+            console.warn('[live-match] 過去の教訓メモの取得に失敗（続行）:', dbErr);
+          }
 
           // Gemini 対策3箇条の生成
           let coachAdvice: any[] = [];

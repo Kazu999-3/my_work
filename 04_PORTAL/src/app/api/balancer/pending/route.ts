@@ -59,21 +59,15 @@ export async function POST(request: Request) {
     }
 
     // ★ 修正: 待機プレイヤー（spectators）のPityを一括更新 (+10)
-    // チーム確定（結果入力ページへの遷移）の瞬間に即時付与することで、次のゲームの選出で優先される
+    // チーム確定（結果入力ページへの遷移）の瞬間に即時付与することで、次のゲームの選出で優先される。
+    // 以前はSELECT→計算→UPDATEの非アトミック処理で、同時リクエスト時に加算が
+    // 失われる競合状態があったため、DB側で加算するRPC(increment_ktm_pity)に置き換えた。
     if (balanceResult.spectators && balanceResult.spectators.length > 0) {
-      for (const name of balanceResult.spectators) {
-        const { data: pData } = await supabase
-          .from('ktm_players')
-          .select('pity')
-          .eq('name', name)
-          .single();
-
-        const nextPity = (Number(pData?.pity) || 0) + 10;
-        await supabase
-          .from('ktm_players')
-          .update({ pity: nextPity })
-          .eq('name', name);
-      }
+      const { error: pityError } = await supabase.rpc('increment_ktm_pity', {
+        p_names: balanceResult.spectators,
+        p_amount: 10,
+      });
+      if (pityError) console.warn('[balancer/pending] pity加算に失敗（続行）:', pityError);
     }
 
     return NextResponse.json({ success: true, pendingId });

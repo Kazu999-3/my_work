@@ -103,21 +103,15 @@ export async function POST(request: Request) {
           .in('name', playingNames);
       }
 
-      // 2. 観戦者の spectator_pity を +1
+      // 2. 観戦者の spectator_pity を +10
+      // 以前はSELECT→計算→UPDATEの非アトミック処理で、同時リクエスト時に加算が
+      // 失われる競合状態があったため、DB側で加算するRPC(increment_ktm_spectator_pity)に置き換えた。
       if (spectators && spectators.length > 0) {
-        const { data: specData } = await supabase
-          .from('ktm_players')
-          .select('id, name, spectator_pity')
-          .in('name', spectators);
-
-        if (specData) {
-          for (const spec of specData) {
-            await supabase
-              .from('ktm_players')
-              .update({ spectator_pity: (spec.spectator_pity || 0) + 10 })
-              .eq('id', spec.id);
-          }
-        }
+        const { error: pityError } = await supabase.rpc('increment_ktm_spectator_pity', {
+          p_names: spectators,
+          p_amount: 10,
+        });
+        if (pityError) console.warn('[discord] spectator_pity加算に失敗（続行）:', pityError);
       }
     } catch (dbError) {
       console.error('Spectator Pity Update Error:', dbError);

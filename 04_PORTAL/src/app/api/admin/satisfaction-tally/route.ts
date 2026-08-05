@@ -37,7 +37,12 @@ export async function GET(req: Request) {
         const res = await fetch(`https://discord.com/api/v10/channels/${r.result_channel_id}/messages/${r.result_message_id}`, {
           headers: { 'Authorization': `Bot ${botToken}` },
         });
-        if (!res.ok) continue;
+        if (!res.ok) {
+          // Bot Tokenの失効(401)等、個別メッセージのスキップでは済まない異常もここに
+          // 含まれうるため、握りつぶさずログに残す（以前はtallied:0が返るだけで気づけなかった）。
+          console.warn(`[satisfaction-tally] prediction#${r.id} のメッセージ取得に失敗 (status=${res.status}):`, await res.text().catch(() => ''));
+          continue;
+        }
         const msg = await res.json();
         const reactions: any[] = msg.reactions || [];
         const findCount = (name: string) => {
@@ -54,8 +59,8 @@ export async function GET(req: Request) {
           .from('balancer_predictions')
           .update({ satisfaction_up: up, satisfaction_down: down, satisfaction_updated_at: new Date().toISOString() })
           .eq('id', r.id);
-      } catch {
-        // 個別失敗はスキップ
+      } catch (e) {
+        console.warn(`[satisfaction-tally] prediction#${r.id} の集計に失敗（スキップして続行）:`, e);
       }
     }
 

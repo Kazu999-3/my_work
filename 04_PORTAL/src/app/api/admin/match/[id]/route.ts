@@ -38,28 +38,31 @@ export async function PUT(
     }
 
     // 2. ktm_match_participants の更新
-    for (const p of participants) {
-      const { error: partError } = await supabase
-        .from('ktm_match_participants')
-        .update({
-          player_name: p.player_name,
-          kills: Number(p.kills) || 0,
-          deaths: Number(p.deaths) || 0,
-          assists: Number(p.assists) || 0,
-          champion_name: p.champion_name || null,
-          kda_score: Number(p.deaths) === 0 ? (Number(p.kills) + Number(p.assists)) * 1.2 : Number(((Number(p.kills) + Number(p.assists)) / Number(p.deaths)).toFixed(2)),
-          cs: p.cs !== undefined ? Number(p.cs) : null,
-          damage_dealt: p.damage_dealt !== undefined ? Number(p.damage_dealt) : null,
-          vision_score: p.vision_score !== undefined ? Number(p.vision_score) : null,
-          mmr_delta: p.mmr_delta !== undefined ? Number(p.mmr_delta) : 0
-        })
-        .eq('match_id', matchId)
-        .eq('role', p.role)
-        .eq('team', p.team);
+    // 以前は10人分をforループで1件ずつ逐次UPDATE(N+1)していたが、
+    // update_match_participants_batch(RPC)でmatch_id×role×teamを突き合わせた
+    // 単一のUPDATE文にまとめる(migration 49)。値の計算自体はここで行い、
+    // 計算済みの配列をそのままDB側へ渡す。
+    const participantRows = participants.map((p: any) => ({
+      role: p.role,
+      team: p.team,
+      player_name: p.player_name,
+      kills: Number(p.kills) || 0,
+      deaths: Number(p.deaths) || 0,
+      assists: Number(p.assists) || 0,
+      champion_name: p.champion_name || null,
+      kda_score: Number(p.deaths) === 0 ? (Number(p.kills) + Number(p.assists)) * 1.2 : Number(((Number(p.kills) + Number(p.assists)) / Number(p.deaths)).toFixed(2)),
+      cs: p.cs !== undefined ? Number(p.cs) : null,
+      damage_dealt: p.damage_dealt !== undefined ? Number(p.damage_dealt) : null,
+      vision_score: p.vision_score !== undefined ? Number(p.vision_score) : null,
+      mmr_delta: p.mmr_delta !== undefined ? Number(p.mmr_delta) : 0,
+    }));
 
-      if (partError) {
-        throw new Error(`参加者 ${p.player_name} (${p.role}) の更新に失敗: ${partError.message}`);
-      }
+    const { error: partError } = await supabase.rpc('update_match_participants_batch', {
+      p_match_id: matchId,
+      p_participants: participantRows,
+    });
+    if (partError) {
+      throw new Error(`参加者データの更新に失敗: ${partError.message}`);
     }
 
     // #28: 試合内容の編集でMMRがズレるため、編集後に自動Rebuild（保存値＝導出値を維持）

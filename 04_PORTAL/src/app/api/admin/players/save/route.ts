@@ -42,27 +42,16 @@ export async function POST(req: Request) {
     const inserts: any[] = Array.isArray(body.inserts) ? body.inserts : [];
     const deletes: (number | string)[] = Array.isArray(body.deletes) ? body.deletes : [];
 
-    // 更新（id指定・並列）
-    const updateResults = await Promise.all(
-      updates.filter((p) => p.id).map((p) =>
-        supabase.from('ktm_players').update(pick(p, FULL_COLUMNS)).eq('id', p.id)
-      )
-    );
-    const updErr = updateResults.find((r) => r.error);
-    if (updErr?.error) throw new Error(`更新エラー: ${updErr.error.message}`);
-
-    // 新規追加
-    if (inserts.length > 0) {
-      const rows = inserts.map((p) => pick(p, FULL_COLUMNS));
-      const { error } = await supabase.from('ktm_players').insert(rows);
-      if (error) throw new Error(`追加エラー: ${error.message}`);
-    }
-
-    // 削除
-    if (deletes.length > 0) {
-      const { error } = await supabase.from('ktm_players').delete().in('id', deletes as any);
-      if (error) throw new Error(`削除エラー: ${error.message}`);
-    }
+    // 以前はupdate/insert/deleteをそれぞれ独立したPromise.all/個別クエリで実行しており、
+    // 一部だけ失敗してもロールバックされず、どの行が失敗したかも分からなかった。
+    // save_ktm_players_batch(RPC)で1つのDBトランザクションにまとめ、
+    // 途中で失敗したら全体が自動的にロールバックされるようにする(migration 48)。
+    const { error } = await supabase.rpc('save_ktm_players_batch', {
+      p_updates: updates.filter((p) => p.id != null).map((p) => ({ ...pick(p, FULL_COLUMNS), id: p.id })),
+      p_inserts: inserts.map((p) => pick(p, FULL_COLUMNS)),
+      p_deletes: deletes.map((d) => Number(d)),
+    });
+    if (error) throw new Error(`保存エラー: ${error.message}`);
 
     return NextResponse.json({ success: true, updated: updates.length, inserted: inserts.length, deleted: deletes.length });
   } catch (err: any) {
