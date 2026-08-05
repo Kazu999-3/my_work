@@ -12,6 +12,7 @@ import MatchupWarningCard from './MatchupWarningCard';
 import LanePrioritySimulator from './LanePrioritySimulator';
 import MySoloQDashboard from './MySoloQDashboard';
 import DeepResearchPanel from '../admin/knowledge/DeepResearchPanel';
+import Collapsible from '../../components/Collapsible';
 
 // ============================
 // 型定義
@@ -354,13 +355,13 @@ function PostGameTab({ onOpenReflectionModal, refreshSignal }: { onOpenReflectio
       {/* AI自動分析ログ(coach_analyses)。日次Cronの通知(ベル)で流れるKDA/Vision等の
           内容は、これまで見返す画面が無く2行に省略された通知履歴でしか確認できなかった。
           「1分ソロQ振り返り」内の手動生成分も含め、ここで1試合ずつ見返せるようにする。 */}
-      <div className="space-y-3 animate-in fade-in">
-        <div className="flex items-center justify-between">
+      <Collapsible
+        title={
           <h5 className="text-xs font-bold text-foreground/60 uppercase tracking-wider">
             🤖 AI自動分析ログ {analysisHistory.length > 0 && `(${analysisHistory.length}件)`}
           </h5>
-        </div>
-
+        }
+      >
         {analysisHistoryLoading ? (
           <Spinner />
         ) : analysisHistory.length === 0 ? (
@@ -437,7 +438,7 @@ function PostGameTab({ onOpenReflectionModal, refreshSignal }: { onOpenReflectio
             })}
           </div>
         )}
-      </div>
+      </Collapsible>
     </div>
   );
 }
@@ -1531,11 +1532,16 @@ export default function CoachPage() {
         {/* MySoloQDashboard/PostGameTab/TrendsTab/GoalTab/TiltTabはいずれもマウント時に
             一度きりのfetchのみ(継続ポーリング無し)のため、常時マウントしてCSSで表示切替する。 */}
         <div className={activeStepTab === 'postgame' ? 'space-y-6 animate-in' : 'hidden'}>
-            <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-sm space-y-3">
-              <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5">
-                <span>📊</span> マイソロQダッシュボード (過去全ログ ＆ 成績一覧)
-              </h3>
-              <MySoloQDashboard refreshSignal={reflectionRefreshSignal} />
+            <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-sm">
+              <Collapsible
+                title={
+                  <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5">
+                    <span>📊</span> マイソロQダッシュボード (過去全ログ ＆ 成績一覧)
+                  </h3>
+                }
+              >
+                <MySoloQDashboard refreshSignal={reflectionRefreshSignal} />
+              </Collapsible>
             </div>
             <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-sm space-y-3">
               <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5">

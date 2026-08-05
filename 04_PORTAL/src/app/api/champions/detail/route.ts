@@ -25,7 +25,11 @@ export async function GET(req: Request) {
       // 逆に2件以上ヒットする異常（表記ゆれで同一チャンピオンのGLOBAL行が重複した場合等）
       // だけを本来のエラーとして検知できる。
       supabase.from('matchup_sentinel').select('strategy, raw_data, created_at').eq('champion', champId).eq('enemy', 'GLOBAL').maybeSingle(),
-      supabase.from('champion_power_spikes').select('early_game_score, mid_game_score, late_game_score, peak_window, summary').eq('champion', champId).maybeSingle(),
+      // champion_power_spikesはpower_spike_generator.py(別プロセス)が独自に書き込むため、
+      // 辞典側のchampion表記(例: KhaZix)と大文字小文字が食い違うことがある(例: Khazix)。
+      // 完全一致(eq)だとこの食い違いで無言でヒットせず「時間帯別の強さ」が表示されない
+      // 問題があった(2026-08-05発覚)。同ファイル内の他クエリと同じくilikeに統一。
+      supabase.from('champion_power_spikes').select('early_game_score, mid_game_score, late_game_score, peak_window, summary').ilike('champion', champId).maybeSingle(),
       supabase.from('matchup_sentinel').select('strategy, raw_data, created_at').eq('enemy', 'PROCESS_INTERROGATION'),
     ]);
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Edit2, Trash2, Save, X } from 'lucide-react';
+import { Edit2, Trash2, Save, X, CheckCircle2 } from 'lucide-react';
 
 export interface EditableSourceBlock {
   key: string;
@@ -18,7 +18,18 @@ export interface EditableSourceBlock {
 // その場で該当の元データ(対面メモ/コーチAIノート/構造化ファクト)を直接
 // 書き換え・削除できるようにする。「訂正を記録」だけでは既存の誤った
 // 文章そのものは残り続けてしまうため。
-export default function FactCheckSourceBlock({ block, onChanged }: { block: EditableSourceBlock; onChanged?: () => void }) {
+export default function FactCheckSourceBlock({
+  block,
+  onChanged,
+  onPickAsCorrect,
+}: {
+  block: EditableSourceBlock;
+  onChanged?: () => void;
+  /** 矛盾(contradiction)のレビューで「この情報源の内容が正しい」と選んだ時に呼ばれる。
+   *  A/Bどちらが正しいかをその場でワンクリックで選べるようにする(2026-08-05発覚:
+   *  従来は毎回自由入力欄に手打ちする必要があった)。 */
+  onPickAsCorrect?: (label: string, value: string) => void;
+}) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(block.value);
   const [value, setValue] = useState(block.value);
@@ -66,6 +77,11 @@ export default function FactCheckSourceBlock({ block, onChanged }: { block: Edit
         <span className="font-bold text-sky-900">{block.label}</span>
         {!editing && (
           <div className="flex items-center gap-2 shrink-0">
+            {onPickAsCorrect && (
+              <button onClick={() => onPickAsCorrect(block.label, value)} className="text-emerald-700 hover:text-emerald-900 font-bold flex items-center gap-0.5">
+                <CheckCircle2 size={11} /> これが正しい
+              </button>
+            )}
             <button onClick={() => { setDraft(value); setEditing(true); }} className="text-stone-500 hover:text-sky-700 flex items-center gap-0.5">
               <Edit2 size={11} /> 編集
             </button>

@@ -27,13 +27,20 @@ const ISSUE_LABEL: Record<string, { label: string; cls: string }> = {
 // チャンピオン辞典ページ内の単体パネル(このチャンピオンだけ)の両方で使い回す。
 export default function FactCheckQueueCard({ item, onActed }: { item: QueueItem; onActed: (id: number) => void }) {
   const it = item;
+  const isContradiction = it.issue_type === 'contradiction';
   const [fixInput, setFixInput] = useState('');
   const [enemyInput, setEnemyInput] = useState('');
   const [acting, setActing] = useState(false);
-  const [showBlocks, setShowBlocks] = useState(false);
+  // 矛盾(contradiction)はAIが読んだ複数の情報源のうちどちらが正しいかを比較しないと
+  // 判断できないため、デフォルトで元データを開いておく(2026-08-05発覚: 従来は毎回
+  // 「元データを確認・編集する」を手動で開く必要があった)。
+  const [showBlocks, setShowBlocks] = useState(isContradiction);
   const [error, setError] = useState('');
 
-  const act = async (action: 'dismiss' | 'acknowledge' | 'fix_champion_tag' | 'record_correction' | 'mark_no_champion' | 'delete_article') => {
+  const act = async (
+    action: 'dismiss' | 'acknowledge' | 'fix_champion_tag' | 'record_correction' | 'mark_no_champion' | 'delete_article',
+    overrideCorrectInfo?: string,
+  ) => {
     if (action === 'delete_article' && !confirm('元の記事データ自体を完全に削除します。この操作は取り消せません。よろしいですか？')) return;
     setActing(true); setError('');
     try {
@@ -42,7 +49,7 @@ export default function FactCheckQueueCard({ item, onActed }: { item: QueueItem;
         body.fixedChampion = fixInput.trim();
         if (enemyInput.trim()) body.fixedEnemy = enemyInput.trim();
       }
-      if (action === 'record_correction') body.correctInfo = fixInput.trim();
+      if (action === 'record_correction') body.correctInfo = (overrideCorrectInfo ?? fixInput).trim();
       const res = await fetch('/api/admin/dict-fact-check/queue', {
         method: 'PATCH', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
@@ -52,6 +59,13 @@ export default function FactCheckQueueCard({ item, onActed }: { item: QueueItem;
       if (!res.ok) throw new Error(d.error || '反映に失敗しました');
       onActed(it.id);
     } catch (e: any) { setError(e.message); } finally { setActing(false); }
+  };
+
+  // 矛盾レビューで「Aが正しい」「Bが正しい」のようにワンクリックで選べるようにする。
+  // record_correctionにそのままthenブロックの内容を渡し、自由入力欄への手打ちを不要にする。
+  const pickCorrect = (label: string, value: string) => {
+    if (!confirm(`「${label}」の内容を正しい情報として記録します。よろしいですか？\n\n${value.slice(0, 200)}${value.length > 200 ? '…' : ''}`)) return;
+    act('record_correction', `[${label}] ${value}`);
   };
 
   return (
@@ -99,17 +113,31 @@ export default function FactCheckQueueCard({ item, onActed }: { item: QueueItem;
         <div className="mt-2">
           <button onClick={() => setShowBlocks(!showBlocks)} className="flex items-center gap-1 text-[11px] text-sky-700 hover:underline">
             <FileText size={11} />
-            {showBlocks ? '元データを閉じる' : '元データを確認・編集する'}
+            {isContradiction
+              ? (showBlocks ? '情報源の比較を閉じる' : '矛盾している情報源を比較する')
+              : (showBlocks ? '元データを閉じる' : '元データを確認・編集する')}
             {showBlocks ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
           </button>
+          {isContradiction && showBlocks && (
+            <p className="text-[11px] text-stone-500 mt-1">
+              下の情報源を見比べて、正しい方の「✅ これが正しい」を押してください。どちらも不正確な場合は下の自由入力欄を使ってください。
+            </p>
+          )}
           {showBlocks && (
             <div className="mt-1.5 space-y-1.5 max-h-96 overflow-y-auto pr-1">
               {it.championBlocks.editable.map((b) => (
-                <FactCheckSourceBlock key={b.key} block={b} />
+                <FactCheckSourceBlock key={b.key} block={b} onPickAsCorrect={isContradiction ? pickCorrect : undefined} />
               ))}
               {it.championBlocks.linked.map((b) => (
                 <div key={b.key} className="rounded-lg border border-violet-200 bg-violet-50/60 p-2.5 text-[11px]">
-                  <div className="font-bold text-violet-900 mb-1">{b.label}</div>
+                  <div className="flex items-center justify-between gap-2 mb-1">
+                    <span className="font-bold text-violet-900">{b.label}</span>
+                    {isContradiction && (
+                      <button onClick={() => pickCorrect(b.label, b.value)} className="text-emerald-700 hover:text-emerald-900 font-bold flex items-center gap-0.5 shrink-0">
+                        <Check size={11} /> これが正しい
+                      </button>
+                    )}
+                  </div>
                   <p className="text-stone-700 whitespace-pre-wrap leading-relaxed">{b.value.slice(0, 300)}{b.value.length >= 300 ? '…' : ''}</p>
                   <a href={b.url} target="_blank" rel="noreferrer" className="text-sky-700 hover:underline flex items-center gap-0.5 mt-1 w-fit">
                     ナレッジ記事を編集する <ExternalLink size={10} />
@@ -161,7 +189,7 @@ export default function FactCheckQueueCard({ item, onActed }: { item: QueueItem;
             <input
               value={fixInput}
               onChange={(e) => setFixInput(e.target.value)}
-              placeholder="正しい内容を記録（任意・入力すると再発防止に使われます）"
+              placeholder={isContradiction ? '上記のどちらも不正確な場合のみ、正しい内容を自分で入力' : '正しい内容を記録（任意・入力すると再発防止に使われます）'}
               className="text-xs px-2.5 py-1.5 border border-stone-300 rounded-lg bg-white text-stone-900 w-72"
             />
             <button onClick={() => act('record_correction')} disabled={acting || !fixInput.trim()}
@@ -170,14 +198,16 @@ export default function FactCheckQueueCard({ item, onActed }: { item: QueueItem;
               <Check size={12} /> 訂正を記録（再発防止）
             </button>
             <button onClick={() => act('acknowledge')} disabled={acting}
+              title="指摘の内容は事実として認めるが、『正しい情報』の記録はしない（後で自分で書き直す場合など）。今後のAI生成には反映されない"
               className="flex items-center gap-1 text-xs font-bold bg-emerald-100 text-emerald-700 border border-emerald-200 px-3 py-1.5 rounded-lg hover:bg-emerald-200 disabled:opacity-50">
-              <Check size={12} /> 把握した（記録なし）
+              <Check size={12} /> 事実として把握（訂正は記録しない）
             </button>
           </>
         )}
         <button onClick={() => act('dismiss')} disabled={acting}
-          className="flex items-center gap-1 text-xs font-bold bg-stone-200 text-stone-600 border border-stone-300 px-3 py-1.5 rounded-lg hover:bg-stone-300 disabled:opacity-50">
-          <X size={12} /> 誤検知（却下）
+          title="AIの誤判定。実際には矛盾・誤り・未確証ではない。このキュー項目を却下して消す"
+          className="flex items-center gap-1 text-xs font-bold bg-amber-100 text-amber-700 border border-amber-200 px-3 py-1.5 rounded-lg hover:bg-amber-200 disabled:opacity-50">
+          <X size={12} /> AIの誤検知（この指摘自体が間違い）
         </button>
       </div>
     </div>
