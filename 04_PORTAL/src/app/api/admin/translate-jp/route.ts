@@ -50,6 +50,27 @@ function isEnglish(text: string): boolean {
 /** レート制限に当たったことを示すエラー（呼び出し側で「中断して途中保存」に使う） */
 class RateLimited extends Error {}
 
+/**
+ * 固定の.limit(N)だけに頼ると、件数がNを超えた時点でORDER BY未指定の場合と同じ
+ * 「高いid側のレコードが恒常的にスキャン対象から漏れる」構造的な問題が再発する
+ * (2026-08-04にid=908/918の取りこぼしとして発覚し、.limit(500)→.limit(3000)への
+ * 引き上げで一時しのぎしたが、根本的な構造は変わっていなかった)。
+ * idの昇順にページングして全件を確実に取得する。
+ */
+async function fetchAllRows(build: () => any, pageSize = 1000): Promise<any[]> {
+  let all: any[] = [];
+  let from = 0;
+  while (true) {
+    const { data, error } = await build().range(from, from + pageSize - 1);
+    if (error) throw error;
+    const rows = data || [];
+    all = all.concat(rows);
+    if (rows.length < pageSize) break;
+    from += pageSize;
+  }
+  return all;
+}
+
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 async function toJapanese(text: string, kind: string): Promise<string> {
@@ -134,11 +155,13 @@ export async function POST(req: Request) {
 
     // ===== 2. 攻略ライブラリの記事 =====
     if (target === 'articles') {
-      const { data } = await supabase
-        .from('personal_knowledge')
-        .select('id, title, content, raw_content')
-        .or('tags.is.null,tags.not.cs.{__DELETED__}')
-        .limit(3000);
+      const data = await fetchAllRows(() =>
+        supabase
+          .from('personal_knowledge')
+          .select('id, title, content, raw_content')
+          .or('tags.is.null,tags.not.cs.{__DELETED__}')
+          .order('id', { ascending: true })
+      );
 
       // 本文(raw_content/content)だけを判定基準にしていたため、YouTube動画取り込みAIが
       // 本文は既に日本語で生成する一方、タイトルだけ英語のまま(例: "[YouTube] Coaching
@@ -174,19 +197,25 @@ export async function POST(req: Request) {
 
     // ===== 3. 対面メモ・チャンピオンノート =====
     if (target === 'memos') {
-      // matchup_sentinel(515件)・champion_notes(1043件)とも既に.limit(500)を超えており、
-      // ORDER BY未指定のクエリでは高いid側のレコードが毎回スキャン対象から漏れ、
-      // 何度実行しても永久に検出されないレコードが存在していた
-      // (ユーザー報告により発覚: id=908/918が何度実行しても英語のまま残り続けた)。
-      const { data: memos } = await supabase
-        .from('matchup_sentinel')
-        .select('matchup_id, title, strategy')
-        .not('strategy', 'is', null)
-        .limit(3000);
+      // matchup_sentinel(515件)・champion_notes(1043件)とも固定limitでは同じ取りこぼしが
+      // 再発しうるため、fetchAllRowsでidの昇順にページングして全件取得する
+      // (2026-08-04発覚: id=908/918が何度実行しても英語のまま残り続けたバグの根本修正)。
+      const memos = await fetchAllRows(() =>
+        supabase
+          .from('matchup_sentinel')
+          .select('matchup_id, title, strategy')
+          .not('strategy', 'is', null)
+          .order('id', { ascending: true })
+      );
 
       // champion_notes（記事から生成されたノート）も英語のまま残るため対象にする
-      const { data: notes } = await supabase
-        .from('champion_notes').select('id, title, body').not('body', 'is', null).limit(3000);
+      const notes = await fetchAllRows(() =>
+        supabase
+          .from('champion_notes')
+          .select('id, title, body')
+          .not('body', 'is', null)
+          .order('id', { ascending: true })
+      );
 
       // 本文だけでなくtitle単体が英語のまま残るケースも対象に含める(articlesと同じ根本原因)
       const memoTargets = (memos || []).filter((m: any) => isEnglish(m.strategy) || isEnglish(m.title)).map((m: any) => ({ kind: 'memo', ...m }));

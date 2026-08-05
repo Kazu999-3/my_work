@@ -590,7 +590,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
               </button>
 
               <Link
-                href="/admin/knowledge?tab=maintenance"
+                href="/admin/knowledge?tab=review"
                 className="px-4 py-3 bg-white/5 hover:bg-white/10 border border-white/15 text-pink-300 font-bold rounded-xl transition-all flex items-center gap-2 text-sm"
                 title="全チャンピオンの更新履歴・変更リビジョンパネルへ移動"
               >
@@ -849,6 +849,8 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
             ) : (
               <p className="text-gray-500 italic text-xs py-4">このチャンピオン対面での過去の敗北・反省点（教訓）はありません。良好な状態です！</p>
             )}
+          </div>
+
           {/* 🏆 プロ推奨ルーン・ビルド (自動収集) */}
           <div className="glass-panel border-t-2 border-amber-400 p-5 rounded-2xl group transition-all hover:shadow-[0_4px_20px_rgba(0,0,0,0.3)] shadow-amber-400/20 relative col-span-1 md:col-span-2">
             <h3 className="text-sm font-black mb-4 flex items-center gap-2 text-amber-600">
@@ -906,7 +908,6 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
               <p className="text-gray-500 italic text-xs py-4">プロの採用ビルドデータは未収集です。上の「最新トレンド取得」ボタンを押してロードしてください。</p>
             )}
           </div>
-        </div>
 
           {/* 📖 全体的な立ち回り・統合トレンドメモ (折りたたみアコーディオン) */}
           <div className="glass-panel rounded-2xl border-l-4 border-[#c89b3c] bg-[#c89b3c]/5 overflow-hidden col-span-1 md:col-span-2">

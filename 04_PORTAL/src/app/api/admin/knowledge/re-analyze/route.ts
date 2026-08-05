@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../../lib/supabaseAdmin';
 import { callGeminiWithRetry } from '../../../../../lib/geminiClient';
 import { verifyAdminSession } from '../../../../../lib/adminAuth';
+import { resolveToRosterChampion, getNoChampionMarker } from '../../../../../lib/dictFactCheck';
 
 async function analyzeXPostImagesWithGemini(photos: any[], videos: any[], tweetText: string): Promise<string> {
   const mediaList: any[] = [];
@@ -317,6 +318,9 @@ export async function POST(req: NextRequest) {
 
     const extracted = await extractUrlContent(url);
     const analyzed = await analyzeWithGemini(extracted.title, extracted.textContent);
+    // AIが返す自由記述のチャンピオン名をそのまま書き込むと表記ゆれ・誤字が混入するため、
+    // 実在チャンピオンへ正規化する(knowledge/addと同じ理由・同じ処理)。
+    const resolvedChampion = await resolveToRosterChampion(analyzed.champion);
 
     const { data: updated, error: updateErr } = await supabase
       .from('personal_knowledge')
@@ -326,7 +330,7 @@ export async function POST(req: NextRequest) {
         raw_content: extracted.textContent.slice(0, 15000),
         genre: analyzed.genre,
         tags: analyzed.tags,
-        champion: analyzed.champion || 'Unknown'
+        champion: resolvedChampion || getNoChampionMarker('personal_knowledge')
       })
       .eq('id', id)
       .select()

@@ -14,10 +14,10 @@ export async function initLatestPatch() {
   }
 }
 
-// 起動時に非同期で実行（ブラウザ限定）。
-if (typeof window !== "undefined") {
-  initLatestPatch().catch(console.error);
-}
+// 起動時に非同期で実行。以前はブラウザ限定のガードがあり、サーバー側(SSR/APIルート)の
+// warm instanceではgetChampIcon()等の同期関数が更新前のcachedLatestPatch(フォールバック値)
+// を参照し続けていた。initLatestPatch()はfetchのみで安全なため、環境を問わず起動時に開始する。
+initLatestPatch().catch(console.error);
 
 // サーバー側(APIルート等)は上記の起動時フックが効かず、Zaahen/Yunara/Locke等の
 // 新チャンピオンがずっと未追加の14.24.1データのまま扱われ続けるバグがあった

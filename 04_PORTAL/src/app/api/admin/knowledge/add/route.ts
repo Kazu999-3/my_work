@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../../lib/supabaseAdmin';
 import { callGeminiWithRetry } from '../../../../../lib/geminiClient';
 import { verifyAdminSession } from '../../../../../lib/adminAuth';
+import { resolveToRosterChampion, getNoChampionMarker } from '../../../../../lib/dictFactCheck';
 
 // ============================================================
 // X (Twitter) 投稿の画像および「動画メディア(MP4/サムネイル)」を全自動動画・画像AI解析
@@ -353,6 +354,10 @@ export async function POST(req: NextRequest) {
     }
 
     const analyzed = await analyzeWithGemini(title, rawContent);
+    // AIが返す自由記述のチャンピオン名をそのまま書き込むと、表記ゆれ・誤字が
+    // そのままDBに混入し正規のページから漏れる（辞典の表記ゆれ汚染の主要な発生源だった）。
+    // 実在チャンピオンへ正規化し、解決できなければ既存の「対象外」慣習値にフォールバックする。
+    const resolvedChampion = await resolveToRosterChampion(analyzed.champion);
 
     const { data, error } = await supabase
       .from('personal_knowledge')
@@ -363,7 +368,7 @@ export async function POST(req: NextRequest) {
         source_url: url || '',
         genre: analyzed.genre,
         tags: analyzed.tags,
-        champion: analyzed.champion || 'Unknown'
+        champion: resolvedChampion || getNoChampionMarker('personal_knowledge')
       }])
       .select()
       .single();

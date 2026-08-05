@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../../lib/supabaseAdmin';
 import { verifyAdminSession } from '../../../../../lib/adminAuth';
-import { normalizeChampionName } from '../../../../../lib/championNames';
 import { recordMatchupSentinelRevision } from '../../../../../lib/matchupSentinelRevisions';
+import { resolveToRosterChampion } from '../../../../../lib/dictFactCheck';
 
 // ============================================================
 // 攻略ライブラリ(personal_knowledge)の1記事を、選択されたチャンピオンの
@@ -14,8 +14,6 @@ import { recordMatchupSentinelRevision } from '../../../../../lib/matchupSentine
 // ============================================================
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60; // champion-facts/mergeのAI呼び出しを含むため延長
-
-const FAKE_CHAMPIONS = ["", "Unknown", "その他", "[YouTube]", "YouTube", "Jungle", "jg", "lol", "ARTICLE", "draft", "SYSTEM", "LIVE", "GLOBAL", "test", "sns", "macro"];
 
 function mergeContent(existingText: string, newText: string, title: string): string {
   const ext = existingText || "";
@@ -43,10 +41,11 @@ export async function POST(req: Request) {
     }
     const rawList: string[] = Array.isArray(editChampions) ? editChampions : [];
 
-    // 表記ゆれのまま matchup_id を作ると既存GLOBALレコードと別物として重複作成されるため正規化する
-    const validChampions = rawList
-      .filter((c) => c && c.trim() && !FAKE_CHAMPIONS.includes(c.trim()) && !FAKE_CHAMPIONS.includes(c.trim().toLowerCase()))
-      .map((c) => normalizeChampionName(c.trim()));
+    // 「実在チャンピオンかどうか」だけを判定基準にする(resolveToRosterChampion)。
+    // 手作りの除外リスト(FAKE_CHAMPIONS)は他の書き込み経路と食い違いやすく、
+    // 正規化もnormalizeChampionNameだけでは表記ゆれが正規IDまで揃わなかったため統一する。
+    const resolvedList = await Promise.all(rawList.map((c) => resolveToRosterChampion((c || '').trim())));
+    const validChampions = Array.from(new Set(resolvedList.filter((c): c is string => !!c)));
 
     if (validChampions.length === 0) {
       return NextResponse.json({ success: true, merged: false, champions: [] });

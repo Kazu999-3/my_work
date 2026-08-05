@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 import { verifyAdminSession } from '../../../../lib/adminAuth';
+import { resolveToRosterChampion } from '../../../../lib/dictFactCheck';
 
 // ============================================================
 // チャンピオン辞典 構造化バックフィル (課題#29 / 段階1)
@@ -25,9 +26,8 @@ import { verifyAdminSession } from '../../../../lib/adminAuth';
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
-// 辞典対象として扱わない特殊 enemy / champion 値
+// 辞典対象として扱わない特殊 enemy 値（反省ログ等の内部用レコード）
 const SPECIAL_ENEMY = new Set(['PROCESS_INTERROGATION', 'SYSTEM', 'LIVE', 'PROCESS']);
-const FAKE_CHAMPIONS = new Set(['', 'Unknown', 'その他', 'SYSTEM', 'LIVE', 'GLOBAL', 'test']);
 
 // strategy 内の「## 【記事】タイトル」区切りを個別ノートに分解する
 function splitArticles(strategy: string): { title: string; body: string }[] {
@@ -54,19 +54,6 @@ export async function GET(req: Request) {
   try {
     const dryRun = new URL(req.url).searchParams.get('dryRun') === '1';
 
-    // DDragonの実在チャンピオンID一覧を取得し、ゴミ/テスト名(qKUaa等)を除外する。
-    // 取得に失敗した場合はフィルタせず全件処理（フォールバック）。
-    let validChampions: Set<string> | null = null;
-    try {
-      const vRes = await fetch('https://ddragon.leagueoflegends.com/api/versions.json');
-      const versions = await vRes.json();
-      const cRes = await fetch(`https://ddragon.leagueoflegends.com/cdn/${versions[0]}/data/en_US/champion.json`);
-      const cData = await cRes.json();
-      validChampions = new Set(Object.keys(cData.data || {})); // 'Heimerdinger' 等のID
-    } catch (e) {
-      console.warn('[dict-migrate] DDragonチャンピオン一覧の取得に失敗、フィルタなしで続行:', e);
-    }
-
     const { data: rows, error } = await supabase.from('matchup_sentinel').select('*');
     if (error) throw error;
 
@@ -80,14 +67,19 @@ export async function GET(req: Request) {
     const hasFactContent = (f: any) => FACT_CONTENT_KEYS.some((k) => f[k] !== null && f[k] !== undefined && String(f[k]).trim() !== '');
 
     for (const row of (rows || [])) {
-      const champion = row.champion;
-      if (!champion || FAKE_CHAMPIONS.has(champion)) continue;
-      // DDragon照合: 実在しないチャンピオン名（qKUaa等のゴミ）はスキップ
-      if (validChampions && !validChampions.has(champion)) continue;
-      const enemy = row.enemy;
-      if (enemy && SPECIAL_ENEMY.has(enemy)) continue; // 反省ログ等はスキップ
+      const rawEnemy = row.enemy;
+      if (rawEnemy && SPECIAL_ENEMY.has(rawEnemy)) continue; // 反省ログ等はスキップ
+      // 「実在チャンピオンかどうか」だけを判定基準にする(resolveToRosterChampion)。
+      // 以前は手作りのFAKE_CHAMPIONS除外リストとDDragon照合を併用していたが、
+      // 除外リストが他の書き込み経路(knowledge/sync等)と食い違い、プレースホルダー値
+      // ("Jungle"/"[YouTube]"等)が漏れて毎日のcronで入り続けるバグがあった。
+      const champion = await resolveToRosterChampion(row.champion);
+      if (!champion) continue;
+      const isGlobal = rawEnemy === 'GLOBAL' || (row.matchup_id || '').includes('GLOBAL');
+      // GLOBAL行以外の対面別メモは、enemy列も同じ基準で実在チャンピオンへ正規化する
+      // （以前はFAKE_CHAMPIONSの文字列一致チェックのみで、DDragon照合が無かった）。
+      const enemy = isGlobal ? null : (rawEnemy ? await resolveToRosterChampion(rawEnemy) : null);
       const rd = row.raw_data || {};
-      const isGlobal = enemy === 'GLOBAL' || (row.matchup_id || '').includes('GLOBAL');
 
       if (isGlobal) {
         // --- 型付きの辞典本体 ---
@@ -132,7 +124,7 @@ export async function GET(req: Request) {
           }
         }
         notesByChampion.set(champion, list);
-      } else if (enemy && !FAKE_CHAMPIONS.has(enemy)) {
+      } else if (enemy) {
         // --- 対面別マッチアップメモ ---
         const body = (row.strategy || '').trim();
         if (body) {
@@ -169,16 +161,19 @@ export async function GET(req: Request) {
         if (fErr) throw new Error(`champion_facts upsert失敗: ${fErr.message}`);
       }
     }
-    // notes は再実行可能にするため、対象チャンピオンぶんを一度消してから入れ直す
+    // notesは再実行可能にするため、対象チャンピオンぶんを一度消してから入れ直す。
+    // 以前は削除と投入が別々のクエリ(delete→100件ずつinsert)で、投入側が途中で
+    // 失敗するとそのチャンピオンのノートが削除されたまま復元されない事故があった。
+    // rebuild_champion_notes_batch(RPC)でdelete+insertを1トランザクションにまとめ、
+    // 失敗時は削除も含めて全体がロールバックされるようにする(migration 50)。
     const champions = Array.from(notesByChampion.keys());
-    for (const champ of champions) {
-      await supabase.from('champion_notes').delete().eq('champion', champ);
-    }
     const allNotes = Array.from(notesByChampion.values()).flat();
-    for (let i = 0; i < allNotes.length; i += 100) {
-      const chunk = allNotes.slice(i, i + 100);
-      const { error: nErr } = await supabase.from('champion_notes').insert(chunk);
-      if (nErr) throw new Error(`champion_notes insert失敗: ${nErr.message}`);
+    if (champions.length > 0) {
+      const { error: rebuildErr } = await supabase.rpc('rebuild_champion_notes_batch', {
+        p_champions: champions,
+        p_notes: allNotes,
+      });
+      if (rebuildErr) throw new Error(`champion_notes再構築失敗: ${rebuildErr.message}`);
     }
 
     return NextResponse.json({

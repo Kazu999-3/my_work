@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../../lib/supabaseAdmin';
 import { verifyAdminSession } from '../../../../../lib/adminAuth';
 import { recordMatchupSentinelRevision } from '../../../../../lib/matchupSentinelRevisions';
-import { normalizeChampionName } from '../../../../../lib/championNames';
+import { resolveChampionListString } from '../../../../../lib/dictFactCheck';
 import { checkOneMatchupContradiction } from '../../../../../lib/dictReview';
 import { createAdminNotification } from '../../../../../lib/notify';
 
@@ -10,7 +10,6 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 export const maxDuration = 60; // 項目マージのAI呼び出しを含むため延長
 
-const FAKE_CHAMPIONS = ["", "Unknown", "その他", "[YouTube]", "YouTube", "Jungle", "jg", "lol", "ARTICLE", "draft", "SYSTEM", "LIVE", "GLOBAL", "test", "sns", "macro"];
 // 1リクエストあたりの処理記事数。項目マージ(AI呼び出し)が入るため小さめにしてタイムアウトを避ける。
 const CHUNK_SIZE = 8;
 
@@ -71,11 +70,12 @@ export async function POST(req: Request) {
     const movedArticles: { id: any; title: string; content: string; champions: string[] }[] = [];
 
     for (const article of (articles || [])) {
-      const rawChamp = article.champion || '';
-      const editChampions = rawChamp.split(',').map((c: string) => c.trim()).filter((c: string) => c && c.toLowerCase() !== 'unknown');
-      const fakeFiltered = editChampions.filter((c: string) => c && !FAKE_CHAMPIONS.includes(c) && !FAKE_CHAMPIONS.includes(c.toLowerCase()));
-      // 表記ゆれのまま matchup_id を作ると既存GLOBALレコードと別物として重複作成されるため正規化する
-      const validChampions = fakeFiltered.map((c: string) => normalizeChampionName(c));
+      // 「実在チャンピオンかどうか」を唯一の判定基準にする(resolveChampionListString)。
+      // 以前はFAKE_CHAMPIONSという手作りの除外リスト＋normalizeChampionNameのみだったため、
+      // (a) 除外リストが書き込み経路ごとに食い違ってプレースホルダー値が混入する、
+      // (b) 表記ゆれ(Kai'Sa等)が正規IDまで揃わず別レコードとして孤立する、
+      // という2種類のバグが起きていた。
+      const validChampions = await resolveChampionListString(article.champion || '');
 
       if (validChampions.length === 0) continue;
       const title = article.title || '';

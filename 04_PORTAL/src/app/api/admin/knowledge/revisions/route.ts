@@ -141,10 +141,13 @@ export async function POST(req: Request) {
         .eq('champion', rev.target_key);
       if (e2) throw e2;
     } else if (rev.target_type === 'matchup_sentinel') {
+      // matchup_sentinelにはupdated_at列が存在しない(champions/save/route.tsのコメント通り)。
+      // 以前はここでupdated_atを含めてupdateしており、存在しない列としてPostgRESTが
+      // エラーを返すため「更新を取り消す」ボタンが常に失敗していた。
       if (rev.field === 'title' || rev.field === 'strategy') {
         const { error: e2 } = await supabase
           .from('matchup_sentinel')
-          .update({ [rev.field]: rev.before_text, updated_at: new Date().toISOString() })
+          .update({ [rev.field]: rev.before_text })
           .eq('matchup_id', rev.target_key);
         if (e2) throw e2;
       } else {
@@ -162,7 +165,7 @@ export async function POST(req: Request) {
 
         const { error: e3 } = await supabase
           .from('matchup_sentinel')
-          .update({ raw_data: { ...(row.raw_data || {}), [rev.field]: restored }, updated_at: new Date().toISOString() })
+          .update({ raw_data: { ...(row.raw_data || {}), [rev.field]: restored } })
           .eq('matchup_id', rev.target_key);
         if (e3) throw e3;
       }

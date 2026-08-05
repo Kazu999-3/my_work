@@ -5,7 +5,7 @@ import { callGeminiWithRetry } from '../../../../lib/geminiClient';
 import { getChampionKnowledge } from '../../../../lib/championKnowledge';
 import { fetchChampionStats } from '../../../../lib/championStats';
 import { recordMatchupSentinelRevision } from '../../../../lib/matchupSentinelRevisions';
-import { normalizeChampionName } from '../../../../lib/championNames';
+import { resolveToRosterChampion } from '../../../../lib/dictFactCheck';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -70,8 +70,13 @@ export async function POST(req: Request) {
     }
 
     // 表記ゆれ(小文字入力等)のまま matchup_id を作ると、既存GLOBALレコードと別物として
-    // 重複作成されてしまうため、他の書き込み経路と同じ正規化を通す。
-    const champClean = normalizeChampionName(champion.trim());
+    // 重複作成されてしまうため、実在チャンピオンへ正規化する（resolveToRosterChampion）。
+    // normalizeChampionNameだけでは表記ゆれ(Kai'Sa等)が正規IDまで揃わず、別レコードとして
+    // 孤立する既知のバグパターンだったため。
+    const champClean = await resolveToRosterChampion(champion.trim());
+    if (!champClean) {
+      return NextResponse.json({ error: `「${champion}」を実在チャンピオン名として認識できませんでした。英語表記(例: Graves)で入力してください。` }, { status: 400 });
+    }
 
     // 参考データを2系統から集める。
     // (a) 公式 Data Dragon のチャンピオン実データ（スキルCD・射程・ベースステータス・公式Tips）。

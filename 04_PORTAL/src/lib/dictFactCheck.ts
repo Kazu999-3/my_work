@@ -46,6 +46,42 @@ export function resolveChampionId(raw: string | null | undefined): string | null
   return formatChampId(normalizeChampionName(trimmed));
 }
 
+/**
+ * resolveChampionId()で正規化した上で、DataDragonの実在チャンピオン一覧と照合し、
+ * 実在するチャンピオンIDだけを返す（存在しなければnull）。
+ *
+ * 辞典まわりの書き込み経路は、これまでファイルごとに「normalizeChampionNameだけ」
+ * 「resolveChampionIdまで」「独自のFAKE_CHAMPIONS除外リスト」とバラバラの正規化しか
+ * 行っておらず、これが表記ゆれによる孤立レコード（champ_Kai'sa_global等）や、
+ * 手作りの除外リストが経路ごとに食い違ってゴミ値が混入し続ける根本原因になっていた。
+ * 「実在チャンピオンかどうか」を唯一の判定基準にすることで、除外リストの保守漏れ
+ * そのものを構造的に無くす。実在チャンピオンへ正規化する必要がある書き込み経路は
+ * すべてこの関数に統一すること。
+ */
+export async function resolveToRosterChampion(raw: string | null | undefined): Promise<string | null> {
+  const resolved = resolveChampionId(raw);
+  if (!resolved) return null;
+  const roster = await getAllChampionIds();
+  const rosterArr = Array.from(roster);
+  return rosterArr.find((r) => r.toLowerCase() === resolved.toLowerCase()) || null;
+}
+
+/**
+ * カンマ区切りの複数チャンピオン文字列(例: "Ahri, Zed, Jungle")を、実在チャンピオンだけの
+ * 配列に正規化する。解決できない断片（ゴミ値・プレースホルダー）は黙って除外され、
+ * 重複は取り除かれる。
+ */
+export async function resolveChampionListString(raw: string | null | undefined): Promise<string[]> {
+  if (!raw) return [];
+  const parts = raw.split(',').map((s) => s.trim()).filter(Boolean);
+  const resolved: string[] = [];
+  for (const part of parts) {
+    const champ = await resolveToRosterChampion(part);
+    if (champ && !resolved.includes(champ)) resolved.push(champ);
+  }
+  return resolved;
+}
+
 export interface QueuedIssue {
   champion: string;
   issue_type: 'contradiction' | 'unconfirmed_source' | 'possible_fact_error' | 'invalid_champion_tag';
@@ -417,6 +453,26 @@ ${parts.join('\n\n---\n\n')}
   }
 }
 
+/**
+ * 一斉ファクトチェックの進捗はサーバー側に永続化されないため、タブを閉じる・エラー等で
+ * 中断した後に再実行すると、常にoffset=0から再スキャンされる。invalid_champion_tagは
+ * source_refsのキーで重複排除していたが、contradiction/unconfirmed_source/
+ * possible_fact_errorには同種のチェックが無く、既にレビュー済み手前のチャンピオンが
+ * 再スキャンされるたびに同一内容がキューへ重複して積まれ、AI呼び出しコストも
+ * 二重にかかっていた。同じ内容(issue_type+summary)が既にpendingで存在する場合は
+ * 挿入対象から除外する。
+ */
+async function filterAlreadyPendingIssues(supabase: any, champion: string, issues: FactCheckResult[]): Promise<FactCheckResult[]> {
+  if (issues.length === 0) return issues;
+  const { data: existing } = await supabase
+    .from('dict_fact_check_queue')
+    .select('issue_type, summary')
+    .eq('champion', champion)
+    .eq('status', 'pending');
+  const existingKeys = new Set((existing || []).map((r: any) => `${r.issue_type}::${r.summary}`));
+  return issues.filter((i) => !existingKeys.has(`${i.issue_type}::${i.summary}`));
+}
+
 function sourceTablesOf(bundle: ChampionSourceBundle): string[] {
   return [
     bundle.matchupGlobal || bundle.matchupEnemies.length > 0 ? 'matchup_sentinel' : null,
@@ -460,7 +516,8 @@ export async function runFactCheckBatch(supabase: any, offset: number, limit: nu
 
     const bundle = grouped.get(champ)!;
     try {
-      const issues = await factCheckChampion(supabase, bundle);
+      const rawIssues = await factCheckChampion(supabase, bundle);
+      const issues = await filterAlreadyPendingIssues(supabase, champ, rawIssues);
       if (issues.length > 0) {
         const sourceTables = sourceTablesOf(bundle);
         const rows = issues.map((i) => ({
@@ -504,7 +561,8 @@ export async function runFactCheckForChampion(supabase: any, champion: string): 
   }
 
   const bundle = await getChampionBundle(supabase, champion);
-  const issues = await factCheckChampion(supabase, bundle);
+  const rawIssues = await factCheckChampion(supabase, bundle);
+  const issues = await filterAlreadyPendingIssues(supabase, champion, rawIssues);
   if (issues.length === 0) return { flagged: 0, capped: false };
 
   const sourceTables = sourceTablesOf(bundle);

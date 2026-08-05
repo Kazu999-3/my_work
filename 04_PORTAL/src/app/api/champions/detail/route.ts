@@ -14,10 +14,21 @@ export async function GET(req: Request) {
 
     const [matchupsRes, noteRes, spikeRes, interrogationRes] = await Promise.all([
       supabase.from('matchup_sentinel').select('id, matchup_id, champion, enemy, title, strategy, raw_data').ilike('champion', champId).neq('enemy', 'GLOBAL'),
-      supabase.from('matchup_sentinel').select('strategy, raw_data, created_at').eq('champion', champId).eq('enemy', 'GLOBAL').single(),
+      // .single()は0件でもエラーを返すため、GLOBAL行がまだ無い（=よくある正常な状態）
+      // 場合まで例外にしてしまっていた。.maybeSingle()なら0件はnullで返り、
+      // 逆に2件以上ヒットする異常（表記ゆれで同一チャンピオンのGLOBAL行が重複した場合等）
+      // だけを本来のエラーとして検知できる。
+      supabase.from('matchup_sentinel').select('strategy, raw_data, created_at').eq('champion', champId).eq('enemy', 'GLOBAL').maybeSingle(),
       supabase.from('champion_power_spikes').select('early_game_score, mid_game_score, late_game_score, peak_window, summary').eq('champion', champId).maybeSingle(),
       supabase.from('matchup_sentinel').select('strategy, raw_data, created_at').eq('enemy', 'PROCESS_INTERROGATION'),
     ]);
+
+    if (noteRes.error) {
+      // 握りつぶすと「辞典データが空に見える」原因が分からなくなるため必ずログに残す。
+      // 典型例: 表記ゆれで同一チャンピオンのGLOBAL行が複数存在し、maybeSingle()が
+      // 「2件以上ヒット」エラーを返しているケース。
+      console.warn(`[champions/detail] ${champId}のGLOBAL行取得でエラー（重複行の可能性）:`, noteRes.error);
+    }
 
     const matchupsList = matchupsRes.data && matchupsRes.data.length > 0 ? matchupsRes.data : [];
 
