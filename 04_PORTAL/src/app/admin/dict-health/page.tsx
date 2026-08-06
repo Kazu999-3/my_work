@@ -3,9 +3,12 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Activity, CheckCircle2, AlertTriangle, RefreshCw, Search, ShieldCheck, Sparkles, Filter, ExternalLink, Play, Layers, HelpCircle } from 'lucide-react';
+import { Activity, CheckCircle2, AlertTriangle, RefreshCw, Search, ShieldCheck, Sparkles, Filter, ExternalLink, Play, Layers, HelpCircle, History, FileCheck } from 'lucide-react';
 import { getChampIcon } from '../../../lib/ddragonClient';
 import Collapsible from '../../../components/Collapsible';
+import DictFactCheckPanel from '../knowledge/DictFactCheckPanel';
+import RevisionsPanel from '../knowledge/RevisionsPanel';
+import DictReviewPanel from '../knowledge/DictReviewPanel';
 
 interface ChampHealth {
   champion: string;
@@ -30,6 +33,7 @@ export default function DictHealthDashboard() {
   } | null>(null);
 
   const [loading, setLoading] = useState(true);
+  const [hubTab, setHubTab] = useState<'health' | 'factcheck' | 'revisions' | 'auto_update'>('health');
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'verified' | 'ai_generated' | 'stale'>('ALL');
   const [roleFilter, setRoleFilter] = useState<'ALL' | 'TOP' | 'JG' | 'MID' | 'ADC' | 'SUP'>('ALL');
@@ -177,7 +181,53 @@ export default function DictHealthDashboard() {
       </AnimatePresence>
 
       <div className="max-w-6xl mx-auto px-4 pt-10">
-        {/* 使い方ガイド (折りたたみ可能) */}
+        {/* 統合コントロールハブ タブナビゲーション */}
+        <div className="flex items-center gap-2 border-b border-stone-200 mb-6 pb-2 overflow-x-auto">
+          <button
+            onClick={() => setHubTab('health')}
+            className={`px-4 py-2.5 rounded-xl font-black text-xs transition flex items-center gap-1.5 shrink-0 ${
+              hubTab === 'health' ? 'bg-amber-600 text-white shadow-md shadow-amber-600/20' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+            }`}
+          >
+            <Activity size={16} />
+            🩺 チャンピオン鮮度・ヘルス診断
+          </button>
+
+          <button
+            onClick={() => setHubTab('factcheck')}
+            className={`px-4 py-2.5 rounded-xl font-black text-xs transition flex items-center gap-1.5 shrink-0 ${
+              hubTab === 'factcheck' ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+            }`}
+          >
+            <FileCheck size={16} />
+            🕵️‍♂️ AIファクトチェック＆誤り検知
+          </button>
+
+          <button
+            onClick={() => setHubTab('revisions')}
+            className={`px-4 py-2.5 rounded-xl font-black text-xs transition flex items-center gap-1.5 shrink-0 ${
+              hubTab === 'revisions' ? 'bg-pink-600 text-white shadow-md shadow-pink-600/20' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+            }`}
+          >
+            <History size={16} />
+            📜 変更リビジョン履歴
+          </button>
+
+          <button
+            onClick={() => setHubTab('auto_update')}
+            className={`px-4 py-2.5 rounded-xl font-black text-xs transition flex items-center gap-1.5 shrink-0 ${
+              hubTab === 'auto_update' ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/20' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+            }`}
+          >
+            <Sparkles size={16} />
+            🤖 AI自動更新・実行ログ
+          </button>
+        </div>
+
+        {/* 1. 🩺 ヘルス診断タブ表示 */}
+        {hubTab === 'health' && (
+          <div>
+            {/* 使い方ガイド (折りたたみ可能) */}
         <div className="bg-white rounded-2xl border border-stone-200 p-4 mb-8 shadow-sm">
           <Collapsible
             defaultOpen={false}
@@ -536,6 +586,47 @@ export default function DictHealthDashboard() {
         {filteredList.length === 0 && (
           <div className="text-center py-16 bg-white rounded-2xl border border-stone-200">
             <p className="text-sm font-bold text-stone-500">条件に一致するチャンピオンが見つかりませんでした</p>
+          </div>
+        )}
+          </div>
+        )}
+
+        {/* 2. 🕵️‍♂️ AIファクトチェック＆誤り検知 タブ表示 */}
+        {hubTab === 'factcheck' && (
+          <div className="bg-white rounded-3xl border border-stone-200 p-6 shadow-sm">
+            <h2 className="text-lg font-black text-stone-900 mb-2 flex items-center gap-2">
+              <FileCheck className="text-indigo-600" /> 🕵️‍♂️ AIファクトチェック＆不正確表現の誤り自動検知
+            </h2>
+            <p className="text-xs text-stone-500 mb-6">
+              全170+体のチャンピオン辞典から、パッチ数値の相違や古い記述・誤った解説をAIがスキャンしキューとして表示します。
+            </p>
+            <DictFactCheckPanel />
+          </div>
+        )}
+
+        {/* 3. 📜 変更リビジョン履歴 タブ表示 */}
+        {hubTab === 'revisions' && (
+          <div className="bg-white rounded-3xl border border-stone-200 p-6 shadow-sm">
+            <h2 className="text-lg font-black text-stone-900 mb-2 flex items-center gap-2">
+              <History className="text-pink-600" /> 📜 チャンピオン知識層の変更リビジョン＆全更新ログ
+            </h2>
+            <p className="text-xs text-stone-500 mb-6">
+              過去にいつ・誰が（手動またはAI）・何を変更したかの全差分ログを閲覧し、必要に応じて以前の状態へ巻き戻せます。
+            </p>
+            <RevisionsPanel />
+          </div>
+        )}
+
+        {/* 4. 🤖 AI自動更新・実行ログ タブ表示 */}
+        {hubTab === 'auto_update' && (
+          <div className="bg-white rounded-3xl border border-stone-200 p-6 shadow-sm">
+            <h2 className="text-lg font-black text-stone-900 mb-2 flex items-center gap-2">
+              <Sparkles className="text-emerald-600" /> 🤖 AI最新トレンド自動取得・Cron実行ログ
+            </h2>
+            <p className="text-xs text-stone-500 mb-6">
+              パッチ自動検知 Cron や一括自動更新タスクの進行状況・直近の更新結果ログを表示します。
+            </p>
+            <DictReviewPanel />
           </div>
         )}
       </div>
