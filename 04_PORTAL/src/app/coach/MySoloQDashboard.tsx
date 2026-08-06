@@ -120,8 +120,40 @@ export default function MySoloQDashboard({ refreshSignal }: { refreshSignal?: nu
                 <div className="text-xl font-black text-emerald-700">{highWinRate}% <span className="text-xs font-normal text-stone-500">({highMental.length}試合)</span></div>
               </div>
               <div className="bg-white p-3 rounded-xl border border-rose-200 shadow-sm">
-                <div className="text-rose-800 font-bold text-[11px] mb-0.5">🔴 イライラ・ティルト時 (1〜2)</div>
+                <div className="text-rose-800 font-bold text-[11px] mb-0.5">🔴 焦り・イライラ時 (メンタル1〜2)</div>
                 <div className="text-xl font-black text-rose-700">{lowWinRate}% <span className="text-xs font-normal text-stone-500">({lowMental.length}試合)</span></div>
+              </div>
+            </div>
+
+            {/* 直近10試合のメンタルスコア×勝敗の視覚的トレンドミニグラフ */}
+            <div className="mt-3 bg-white p-3 rounded-xl border border-stone-200 shadow-sm">
+              <span className="text-[10px] font-bold text-stone-500 block mb-2 uppercase">📈 直近10試合のメンタル ⇄ 勝敗トレンド</span>
+              <div className="flex items-end justify-between gap-1.5 h-16 pt-2 px-1">
+                {reflections.slice(0, 10).reverse().map((r, idx) => {
+                  const rating = r.mental_rating || 3;
+                  const heightPct = (rating / 5) * 100;
+                  return (
+                    <div key={r.id || idx} className="flex-1 flex flex-col items-center gap-1 group relative">
+                      {/* ホバーツールチップ */}
+                      <div className="opacity-0 group-hover:opacity-100 absolute -top-7 bg-stone-900 text-white text-[9px] font-bold px-1.5 py-0.5 rounded pointer-events-none transition whitespace-nowrap z-20">
+                        {r.champion || 'Champ'} ({r.win ? 'WIN' : 'LOSE'}) / メンタル{rating}
+                      </div>
+                      <div className="w-full bg-stone-100 rounded-t h-full flex items-end overflow-hidden">
+                        <div
+                          className={`w-full transition-all duration-300 ${
+                            r.win
+                              ? 'bg-gradient-to-t from-emerald-500 to-emerald-400'
+                              : 'bg-gradient-to-t from-rose-500 to-rose-400'
+                          }`}
+                          style={{ height: `${heightPct}%` }}
+                        />
+                      </div>
+                      <span className={`text-[9px] font-black ${r.win ? 'text-emerald-700' : 'text-rose-700'}`}>
+                        {r.win ? 'W' : 'L'}
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>
