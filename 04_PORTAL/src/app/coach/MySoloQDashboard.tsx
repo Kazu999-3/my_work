@@ -101,6 +101,33 @@ export default function MySoloQDashboard({ refreshSignal }: { refreshSignal?: nu
         <div className="text-center py-8 text-xs text-stone-500 italic">該当する振り返りログが見つかりません。</div>
       )}
 
+      {/* 🧠 メンタル評価と勝率の相関サマリー */}
+      {!loading && reflections.length > 0 && (() => {
+        const highMental = reflections.filter((r) => r.mental_rating >= 4);
+        const lowMental = reflections.filter((r) => r.mental_rating <= 2);
+        const highWinRate = highMental.length ? Math.round((highMental.filter((r) => r.win).length / highMental.length) * 100) : 0;
+        const lowWinRate = lowMental.length ? Math.round((lowMental.filter((r) => r.win).length / lowMental.length) * 100) : 0;
+
+        return (
+          <div className="bg-gradient-to-r from-amber-500/10 to-emerald-500/10 border border-amber-300/40 rounded-2xl p-4 mb-4 shadow-sm">
+            <div className="text-xs font-black text-amber-900 mb-2 flex items-center justify-between">
+              <span>🧠 メンタル状態 × 勝率の可視化分析</span>
+              <span className="text-[10px] text-amber-700 font-normal">過去{reflections.length}戦のデータ</span>
+            </div>
+            <div className="grid grid-cols-2 gap-3 text-xs">
+              <div className="bg-white p-3 rounded-xl border border-emerald-200 shadow-sm">
+                <div className="text-emerald-800 font-bold text-[11px] mb-0.5">🟢 冷静・安定時 (メンタル4〜5)</div>
+                <div className="text-xl font-black text-emerald-700">{highWinRate}% <span className="text-xs font-normal text-stone-500">({highMental.length}試合)</span></div>
+              </div>
+              <div className="bg-white p-3 rounded-xl border border-rose-200 shadow-sm">
+                <div className="text-rose-800 font-bold text-[11px] mb-0.5">🔴 イライラ・ティルト時 (1〜2)</div>
+                <div className="text-xl font-black text-rose-700">{lowWinRate}% <span className="text-xs font-normal text-stone-500">({lowMental.length}試合)</span></div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
       {!loading && filtered.length > 0 && (
         <div className="space-y-3">
           {filtered.map((ref) => (

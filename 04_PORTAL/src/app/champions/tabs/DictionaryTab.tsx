@@ -607,6 +607,33 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
             {isAdmin && (
             <div className="flex gap-3 items-center flex-wrap">
               <button
+                onClick={async () => {
+                  try {
+                    const res = await fetch('/api/admin/dict-health/verify', {
+                      method: 'POST', credentials: 'include',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ champion: selected.id, action: 'verify' }),
+                    });
+                    if (res.ok) {
+                      setSaveSuccess(true);
+                      setTimeout(() => setSaveSuccess(false), 3000);
+                      alert(`✅ ${selected.name || selected.id} を「人間確認済み」に設定しました！`);
+                    } else {
+                      const errJson = await res.json();
+                      alert(`❌ 確認状態の更新失敗: ${errJson.error}`);
+                    }
+                  } catch (e: any) {
+                    alert(`❌ 通信エラー: ${e.message}`);
+                  }
+                }}
+                className="px-4 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl transition-all flex items-center gap-2 text-sm shadow-md shadow-emerald-600/20"
+                title="このチャンピオンの情報を人間が確認完了した状態にマークします"
+              >
+                <Check size={16} />
+                ✅ 確認済みに設定
+              </button>
+
+              <button
                 onClick={handleFetchTrend}
                 disabled={fetchingTrend}
                 className="px-4 py-3 bg-[#c89b3c] hover:bg-[#c89b3c]/80 text-black font-black rounded-xl transition-all flex items-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_15px_rgba(200,155,60,0.3)] hover:shadow-[0_0_25px_rgba(200,155,60,0.5)]"

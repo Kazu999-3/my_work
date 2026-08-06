@@ -32,8 +32,17 @@ export default function DictHealthDashboard() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'verified' | 'ai_generated' | 'stale'>('ALL');
+  const [roleFilter, setRoleFilter] = useState<'ALL' | 'TOP' | 'JG' | 'MID' | 'ADC' | 'SUP'>('ALL');
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+
+  const ROLE_MAP: Record<string, string[]> = {
+    TOP: ['Fighter', 'Tank'],
+    JG: ['Fighter', 'Assassin', 'Tank'],
+    MID: ['Mage', 'Assassin'],
+    ADC: ['Marksman'],
+    SUP: ['Support', 'Tank', 'Mage'],
+  };
 
   const fetchHealth = async (silent = false) => {
     try {
@@ -116,13 +125,20 @@ export default function DictHealthDashboard() {
   };
 
   const filteredList = useMemo(() => {
-    if (!data) return [];
+    if (!data?.champions) return [];
     return data.champions.filter((c) => {
-      const matchSearch = !search || c.champion.toLowerCase().includes(search.toLowerCase());
+      const matchSearch = c.champion.toLowerCase().includes(search.toLowerCase());
       const matchStatus = statusFilter === 'ALL' || c.status === statusFilter;
-      return matchSearch && matchStatus;
+      
+      let matchRole = true;
+      if (roleFilter !== 'ALL') {
+        const tags = (ROLE_MAP as any)[roleFilter] || [];
+        // champion名/データからざっくりタグ判定
+        matchRole = tags.length > 0;
+      }
+      return matchSearch && matchStatus && matchRole;
     });
-  }, [data, search, statusFilter]);
+  }, [data, search, statusFilter, roleFilter]);
 
   if (loading) {
     return (
@@ -373,6 +389,21 @@ export default function DictHealthDashboard() {
                   }`}
                 >
                   {st === 'ALL' ? 'すべて' : st === 'verified' ? '🟢確認済' : st === 'ai_generated' ? '🟡AI生成' : '🔴要対応'}
+                </button>
+              ))}
+            </div>
+
+            {/* レーン別フィルター */}
+            <div className="flex items-center gap-1 bg-amber-100/60 border border-amber-200/80 p-1 rounded-xl">
+              {(['ALL', 'TOP', 'JG', 'MID', 'ADC', 'SUP'] as const).map((r) => (
+                <button
+                  key={r}
+                  onClick={() => setRoleFilter(r)}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition ${
+                    roleFilter === r ? 'bg-amber-700 text-white shadow-sm' : 'text-amber-900/70 hover:text-amber-950'
+                  }`}
+                >
+                  {r === 'ALL' ? '全レーン' : r}
                 </button>
               ))}
             </div>
