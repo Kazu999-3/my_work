@@ -181,45 +181,50 @@ export default function DictHealthDashboard() {
       </AnimatePresence>
 
       <div className="max-w-6xl mx-auto px-4 pt-10">
-        {/* 統合コントロールハブ タブナビゲーション */}
-        <div className="flex items-center gap-2 border-b border-stone-200 mb-6 pb-2 overflow-x-auto">
+        {/* ナビゲーションタブ（役割明記） */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none mb-6 border-b border-stone-200">
           <button
             onClick={() => setHubTab('health')}
-            className={`px-4 py-2.5 rounded-xl font-black text-xs transition flex items-center gap-1.5 shrink-0 ${
+            className={`px-4 py-3 rounded-xl font-black text-xs transition flex flex-col items-start gap-0.5 shrink-0 ${
               hubTab === 'health' ? 'bg-amber-600 text-white shadow-md shadow-amber-600/20' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
             }`}
           >
-            <Activity size={16} />
-            🩺 チャンピオン鮮度・ヘルス診断
+            <div className="flex items-center gap-1.5 font-bold">
+              <Activity size={16} /> 🩺 チャンピオンヘルス診断
+            </div>
+            <span className="text-[9px] opacity-80 font-normal">パッチ遅れ・データ不足のチェック & 一括更新</span>
           </button>
 
           <button
             onClick={() => setHubTab('factcheck')}
-            className={`px-4 py-2.5 rounded-xl font-black text-xs transition flex items-center gap-1.5 shrink-0 ${
-              hubTab === 'factcheck' ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+            className={`px-4 py-3 rounded-xl font-black text-xs transition flex flex-col items-start gap-0.5 shrink-0 ${
+              hubTab === 'factcheck' ? 'bg-cyan-600 text-white shadow-md shadow-cyan-600/20' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
             }`}
           >
-            <FileCheck size={16} />
-            🕵️‍♂️ AIファクトチェック＆誤り検知
+            <div className="flex items-center gap-1.5 font-bold">
+              <FileCheck size={16} /> 🕵️‍♂️ AIファクトチェック & 誤り検知
+            </div>
+            <span className="text-[9px] opacity-80 font-normal">AI記述の矛盾・誤数値の自動検出</span>
           </button>
 
           <button
             onClick={() => setHubTab('revisions')}
-            className={`px-4 py-2.5 rounded-xl font-black text-xs transition flex items-center gap-1.5 shrink-0 ${
+            className={`px-4 py-3 rounded-xl font-black text-xs transition flex flex-col items-start gap-0.5 shrink-0 ${
               hubTab === 'revisions' ? 'bg-pink-600 text-white shadow-md shadow-pink-600/20' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
             }`}
           >
-            <History size={16} />
-            📜 変更リビジョン履歴
+            <div className="flex items-center gap-1.5 font-bold">
+              <History size={16} /> 📜 変更履歴 & ワンタップ復元
+            </div>
+            <span className="text-[9px] opacity-80 font-normal">誰が何を更新したかのDiff & 0秒巻き戻し</span>
           </button>
 
           <button
             onClick={() => setHubTab('auto_update')}
-            className={`px-4 py-2.5 rounded-xl font-black text-xs transition flex items-center gap-1.5 shrink-0 ${
+            className={`px-4 py-3 rounded-xl font-black text-xs transition flex flex-col items-start gap-0.5 shrink-0 ${
               hubTab === 'auto_update' ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/20' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
             }`}
           >
-            <Sparkles size={16} />
             🤖 AI自動更新・実行ログ
           </button>
         </div>
@@ -425,22 +430,31 @@ export default function DictHealthDashboard() {
               {data.priorityChampions.map((c: any) => (
                 <div
                   key={c.champion}
-                  className="shrink-0 bg-white border border-amber-200 rounded-xl p-2.5 flex items-center gap-2 shadow-sm min-w-[140px]"
+                  className="shrink-0 bg-white border border-amber-200 rounded-xl p-2.5 flex items-center gap-2.5 shadow-sm min-w-[170px]"
                 >
                   <img
                     src={getChampIcon(c.champion)}
                     alt={c.champion}
-                    className="w-8 h-8 rounded-lg border border-stone-200 object-cover"
+                    className="w-9 h-9 rounded-lg border border-stone-200 object-cover"
                     onError={(e) => { (e.target as any).src = '/favicon.ico'; }}
                   />
-                  <div className="flex-1 min-w-0">
-                    <div className="text-xs font-bold text-stone-900 truncate">{c.champion}</div>
-                    <button
-                      onClick={() => handleVerify(c.champion, 'verify')}
-                      className="mt-1 text-[9px] font-bold px-1.5 py-0.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded transition block w-full text-center"
-                    >
-                      ✅ 確認完了
-                    </button>
+                  <div className="flex-1 min-w-0 space-y-1">
+                    <div className="text-xs font-black text-stone-900 truncate">{c.champion}</div>
+                    <div className="flex items-center gap-1">
+                      <Link
+                        href={`/champions?select=${encodeURIComponent(c.champion)}`}
+                        className="text-[9px] font-bold px-2 py-0.5 bg-amber-600 hover:bg-amber-700 text-white rounded transition shrink-0"
+                        title="このチャンピオンの辞典を開き内容を確認・編集します"
+                      >
+                        ✏️ 編集
+                      </Link>
+                      <button
+                        onClick={() => handleVerify(c.champion, 'verify')}
+                        className="text-[9px] font-bold px-2 py-0.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded transition flex-1 text-center truncate"
+                      >
+                        ✅ 完了
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
