@@ -48,14 +48,18 @@ const MENU_ITEMS: MenuItem[] = [
 ];
 
 const ADMIN_ONLY_MENU_ITEMS: MenuItem[] = [
-  { id: 'ktm-admin', label: 'KTM大会管理', icon: Shield, href: '/ktm-admin', color: 'text-indigo-400', activeBg: 'bg-indigo-400/15', section: '大会運営' },
+  // ── ⚙️ システム運用 ──
+  { id: 'dashboard', label: 'システム運用', icon: LayoutDashboard, href: '/admin/dashboard', color: 'text-stone-900', activeBg: 'bg-black/10', section: 'システム運用' },
+  // ── 📖 攻略ハブ ──
   { id: 'champions', label: '辞典', icon: BookHeart, href: '/champions', color: 'text-[#c89b3c]', activeBg: 'bg-[#c89b3c]/15', section: '攻略ハブ' },
   { id: 'dict-health', label: 'ヘルス診断', icon: Activity, href: '/admin/dict-health', color: 'text-amber-500', activeBg: 'bg-amber-500/15' },
   { id: 'knowledge-admin', label: 'ナレッジ', icon: Brain, href: '/admin/knowledge', color: 'text-pink-400', activeBg: 'bg-pink-400/15' },
+  // ── 🔍 分析 ──
   { id: 'coach', label: 'コーチ', icon: Sparkles, href: '/coach', color: 'text-indigo-300', activeBg: 'bg-indigo-500/15', section: '分析・検索' },
   { id: 'search', label: '横断検索', icon: Search, href: '/search', color: 'text-[#a78bfa]', activeBg: 'bg-[#a78bfa]/15' },
   { id: 'analytics', label: 'note分析', icon: TrendingUp, href: '/admin/analytics', color: 'text-teal-400', activeBg: 'bg-teal-400/15' },
-  { id: 'dashboard', label: 'システム運用', icon: LayoutDashboard, href: '/admin/dashboard', color: 'text-stone-900', activeBg: 'bg-black/10', section: 'システム運用' },
+  // ── 📊 大会運営 ──
+  { id: 'ktm-admin', label: 'KTM大会管理', icon: Shield, href: '/ktm-admin', color: 'text-indigo-400', activeBg: 'bg-indigo-400/15', section: '大会運営' },
 ];
 
 const ADMIN_GENERAL_MENU_ITEMS: MenuItem[] = [
