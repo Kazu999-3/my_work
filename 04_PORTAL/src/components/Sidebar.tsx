@@ -204,6 +204,28 @@ export default function Sidebar() {
                 <XIcon size={18} />
               </button>
             </div>
+
+            {/* スマホ用 管理者 / 一般 切り替えタブ */}
+            {(isAdminGatedPage || activeTab === 'admin' || activeTab === 'general') && (
+              <div className="flex bg-stone-200/60 p-1 rounded-xl mb-4">
+                <button
+                  onClick={() => setActiveTab('admin')}
+                  className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition ${
+                    activeTab === 'admin' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-600 hover:text-stone-900'
+                  }`}
+                >
+                  管理者
+                </button>
+                <button
+                  onClick={() => setActiveTab('general')}
+                  className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition ${
+                    activeTab === 'general' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-600 hover:text-stone-900'
+                  }`}
+                >
+                  一般
+                </button>
+              </div>
+            )}
             <div className="grid grid-cols-3 gap-3">
               {overflowMobileItems.map((item) => {
                 const Icon = item.icon;
