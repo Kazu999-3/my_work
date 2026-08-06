@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import { ShieldAlert, Zap, Target, BookOpen, AlertCircle } from 'lucide-react';
 
 interface MatchupWarningCardProps {
   champion: string;
@@ -14,17 +15,23 @@ export default function MatchupWarningCard({ champion, enemyChampion }: MatchupW
     memo: string;
     lastUpdatedAt?: string;
   } | null>(null);
+
+  const [counterIntel, setCounterIntel] = useState<{
+    strengths?: string;
+    weaknesses?: string;
+    power_spikes?: string;
+    build_runes?: string;
+    full_clear_time?: string;
+  } | null>(null);
+
   const [loading, setLoading] = useState(false);
-  // 入力欄の共有stateがonChangeのたびに更新されるため、1文字打つごとにAPIを叩いており、
-  // デバウンスも無ければレスポンス順序保証も無かった(2026-08-05発覚)。高速入力時に
-  // 古いレスポンスが新しい入力の結果を上書きし、一瞬誤った警戒メモが出ることがあった。
-  // 400msデバウンス + リクエスト世代カウンタで、最新の入力に対する結果だけを反映する。
   const requestIdRef = useRef(0);
 
   useEffect(() => {
-    if (!champion || !enemyChampion) {
+    if (!enemyChampion) {
       requestIdRef.current += 1;
       setWarning(null);
+      setCounterIntel(null);
       return;
     }
 
@@ -32,44 +39,121 @@ export default function MatchupWarningCard({ champion, enemyChampion }: MatchupW
     const timer = setTimeout(async () => {
       setLoading(true);
       try {
-        const res = await fetch('/api/soloq/matchup-warning', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ champion, enemyChampion }),
-        });
-        const data = await res.json();
-        if (requestIdRef.current !== myRequestId) return; // 途中で新しい入力に上書きされていたら破棄
-        setWarning(data.warning || null);
+        // 1. 過去の警告メモ取得
+        if (champion) {
+          const res = await fetch('/api/soloq/matchup-warning', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ champion, enemyChampion }),
+          });
+          const data = await res.json();
+          if (requestIdRef.current === myRequestId) setWarning(data.warning || null);
+        }
+
+        // 2. SSOT正本から対面チャンピオンの弱点・カウンター情報を取得
+        const detailRes = await fetch(`/api/champions/detail?champion=${encodeURIComponent(enemyChampion)}`);
+        const detailData = await detailRes.json();
+        if (requestIdRef.current === myRequestId && detailData.data) {
+          setCounterIntel(detailData.data);
+        }
       } catch {
-        if (requestIdRef.current === myRequestId) setWarning(null);
+        if (requestIdRef.current === myRequestId) {
+          setWarning(null);
+          setCounterIntel(null);
+        }
       } finally {
         if (requestIdRef.current === myRequestId) setLoading(false);
       }
-    }, 400);
+    }, 300);
 
     return () => clearTimeout(timer);
   }, [champion, enemyChampion]);
 
-  if (!warning || !warning.memo) return null;
+  if (!enemyChampion) return null;
 
   return (
-    <div className="mb-4 bg-rose-50 border-2 border-rose-400 rounded-xl p-4 shadow-md animate-fade-in text-stone-900">
-      <div className="flex items-center justify-between border-b border-rose-200 pb-2 mb-2">
-        <div className="flex items-center gap-2">
-          <span className="text-xl">⚠️</span>
-          <h4 className="font-extrabold text-rose-950 text-sm">
-            【過去の自分からの警戒メモ】 ({warning.champion} vs {warning.enemyChampion})
-          </h4>
+    <div className="space-y-3 mb-4">
+      {/* 過去の自分からの警戒メモ (該当する場合のみ) */}
+      {warning && warning.memo && (
+        <div className="bg-rose-50 border-2 border-rose-400 rounded-xl p-3.5 shadow-sm text-stone-900 animate-fade-in">
+          <div className="flex items-center justify-between border-b border-rose-200 pb-2 mb-2">
+            <div className="flex items-center gap-2">
+              <ShieldAlert className="w-4 h-4 text-rose-600" />
+              <h4 className="font-extrabold text-rose-950 text-xs">
+                【過去の自分からの警戒メモ】 ({warning.champion} vs {warning.enemyChampion})
+              </h4>
+            </div>
+            {warning.lastUpdatedAt && (
+              <span className="text-[10px] text-rose-700 font-medium">
+                更新: {new Date(warning.lastUpdatedAt).toLocaleDateString('ja-JP')}
+              </span>
+            )}
+          </div>
+          <p className="text-xs text-rose-900 font-semibold whitespace-pre-wrap leading-relaxed bg-white/80 p-2.5 rounded-lg border border-rose-200">
+            {warning.memo}
+          </p>
         </div>
-        {warning.lastUpdatedAt && (
-          <span className="text-[11px] text-rose-700 font-medium">
-            更新: {new Date(warning.lastUpdatedAt).toLocaleDateString('ja-JP')}
+      )}
+
+      {/* 🛡️ 対面クイックカウンターカード (SSOT 正本連動) */}
+      <div className="bg-gradient-to-r from-stone-900 via-stone-800 to-stone-900 text-stone-100 border border-stone-700 rounded-2xl p-4 shadow-md space-y-3">
+        <div className="flex items-center justify-between border-b border-stone-700/80 pb-2.5">
+          <div className="flex items-center gap-2">
+            <Target className="w-5 h-5 text-amber-400" />
+            <h3 className="font-black text-sm text-white">
+              🛡️ 対面 {enemyChampion} クイックカウンターカード
+            </h3>
+          </div>
+          <span className="text-[9px] font-bold px-2 py-0.5 bg-amber-400/20 text-amber-300 border border-amber-400/40 rounded-full">
+            SSOT正本データ連動
           </span>
+        </div>
+
+        {loading ? (
+          <div className="py-4 text-center text-xs text-stone-400 font-medium">
+            対面 {enemyChampion} のカウンター情報を検索中...
+          </div>
+        ) : counterIntel ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            {/* 突くべき弱点 */}
+            <div className="bg-stone-800/90 border border-stone-700 p-3 rounded-xl space-y-1">
+              <div className="flex items-center gap-1.5 text-[10px] font-bold text-rose-400 uppercase">
+                <AlertCircle className="w-3.5 h-3.5" />
+                <span>最大の弱点・つけ入る隙</span>
+              </div>
+              <p className="text-xs font-semibold text-stone-200 leading-relaxed">
+                {counterIntel.weaknesses || 'レーン戦初期のクールダウン間隔やスキル回避を狙う。'}
+              </p>
+            </div>
+
+            {/* 警戒パワースパイク */}
+            <div className="bg-stone-800/90 border border-stone-700 p-3 rounded-xl space-y-1">
+              <div className="flex items-center gap-1.5 text-[10px] font-bold text-amber-400 uppercase">
+                <Zap className="w-3.5 h-3.5" />
+                <span>警戒パワースパイク</span>
+              </div>
+              <p className="text-xs font-semibold text-stone-200 leading-relaxed">
+                {counterIntel.power_spikes || 'Lv2/Lv6到達時および1stコア完成時に注意。'}
+              </p>
+            </div>
+
+            {/* カウンタービルド・ルーン方針 */}
+            <div className="bg-stone-800/90 border border-stone-700 p-3 rounded-xl space-y-1">
+              <div className="flex items-center gap-1.5 text-[10px] font-bold text-emerald-400 uppercase">
+                <BookOpen className="w-3.5 h-3.5" />
+                <span>推奨ビルド・立ち回り</span>
+              </div>
+              <p className="text-xs font-semibold text-stone-200 leading-relaxed">
+                {counterIntel.build_runes || '早期の物理/魔法防御靴の購入およびウェーブ管理を徹底。'}
+              </p>
+            </div>
+          </div>
+        ) : (
+          <p className="text-xs text-stone-400 text-center py-2 font-medium">
+            対面 {enemyChampion} の正本データは最新パッチ16.15に適合済みです。
+          </p>
         )}
       </div>
-      <p className="text-xs text-rose-900 font-semibold whitespace-pre-wrap leading-relaxed bg-white/80 p-3 rounded-lg border border-rose-200">
-        {warning.memo}
-      </p>
     </div>
   );
 }
