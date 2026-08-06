@@ -180,58 +180,7 @@ export default function DictHealthDashboard() {
         )}
       </AnimatePresence>
 
-      <div className="max-w-6xl mx-auto px-4 pt-10">
-        {/* ナビゲーションタブ（役割明記） */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none mb-6 border-b border-stone-200">
-          <button
-            onClick={() => setHubTab('health')}
-            className={`px-4 py-3 rounded-xl font-black text-xs transition flex flex-col items-start gap-0.5 shrink-0 ${
-              hubTab === 'health' ? 'bg-amber-600 text-white shadow-md shadow-amber-600/20' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
-            }`}
-          >
-            <div className="flex items-center gap-1.5 font-bold">
-              <Activity size={16} /> 🩺 チャンピオンヘルス診断
-            </div>
-            <span className="text-[9px] opacity-80 font-normal">パッチ遅れ・データ不足のチェック & 一括更新</span>
-          </button>
-
-          <button
-            onClick={() => setHubTab('factcheck')}
-            className={`px-4 py-3 rounded-xl font-black text-xs transition flex flex-col items-start gap-0.5 shrink-0 ${
-              hubTab === 'factcheck' ? 'bg-cyan-600 text-white shadow-md shadow-cyan-600/20' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
-            }`}
-          >
-            <div className="flex items-center gap-1.5 font-bold">
-              <FileCheck size={16} /> 🕵️‍♂️ AIファクトチェック & 誤り検知
-            </div>
-            <span className="text-[9px] opacity-80 font-normal">AI記述の矛盾・誤数値の自動検出</span>
-          </button>
-
-          <button
-            onClick={() => setHubTab('revisions')}
-            className={`px-4 py-3 rounded-xl font-black text-xs transition flex flex-col items-start gap-0.5 shrink-0 ${
-              hubTab === 'revisions' ? 'bg-pink-600 text-white shadow-md shadow-pink-600/20' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
-            }`}
-          >
-            <div className="flex items-center gap-1.5 font-bold">
-              <History size={16} /> 📜 変更履歴 & ワンタップ復元
-            </div>
-            <span className="text-[9px] opacity-80 font-normal">誰が何を更新したかのDiff & 0秒巻き戻し</span>
-          </button>
-
-          <button
-            onClick={() => setHubTab('auto_update')}
-            className={`px-4 py-3 rounded-xl font-black text-xs transition flex flex-col items-start gap-0.5 shrink-0 ${
-              hubTab === 'auto_update' ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/20' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
-            }`}
-          >
-            🤖 AI自動更新・実行ログ
-          </button>
-        </div>
-
-        {/* 1. 🩺 ヘルス診断タブ表示 */}
-        {hubTab === 'health' && (
-          <div>
+      <div className="max-w-6xl mx-auto px-4 pt-8 space-y-8">
             {/* 使い方ガイド (折りたたみ可能) */}
         <div className="bg-white rounded-2xl border border-stone-200 p-4 mb-8 shadow-sm">
           <Collapsible
@@ -643,47 +592,66 @@ export default function DictHealthDashboard() {
             <p className="text-sm font-bold text-stone-500">条件に一致するチャンピオンが見つかりませんでした</p>
           </div>
         )}
-          </div>
-        )}
 
-        {/* 2. 🕵️‍♂️ AIファクトチェック＆誤り検知 タブ表示 */}
-        {hubTab === 'factcheck' && (
-          <div className="bg-white rounded-3xl border border-stone-200 p-6 shadow-sm">
-            <h2 className="text-lg font-black text-stone-900 mb-2 flex items-center gap-2">
-              <FileCheck className="text-indigo-600" /> 🕵️‍♂️ AIファクトチェック＆不正確表現の誤り自動検知
-            </h2>
-            <p className="text-xs text-stone-500 mb-6">
-              全170+体のチャンピオン辞典から、パッチ数値の相違や古い記述・誤った解説をAIがスキャンしキューとして表示します。
-            </p>
-            <DictFactCheckPanel />
-          </div>
-        )}
+        {/* 統合パネル1: 🕵️‍♂️ AIファクトチェック＆不正確表現の誤り自動検知 */}
+        <div className="bg-white rounded-3xl border border-stone-200 p-6 shadow-sm">
+          <Collapsible
+            defaultOpen={false}
+            title={
+              <div className="flex items-center gap-2 text-stone-900">
+                <FileCheck className="text-cyan-600 w-5 h-5" />
+                <span className="text-sm font-extrabold">🕵️‍♂️ AIファクトチェック & 誤記述の自動検知キュー</span>
+              </div>
+            }
+          >
+            <div className="pt-4 border-t border-stone-100 mt-3">
+              <p className="text-xs text-stone-500 mb-4">
+                全170+体のチャンピオン辞典から、パッチ数値の相違や古い記述・誤った解説をAIがスキャンしキューとして表示します。
+              </p>
+              <DictFactCheckPanel />
+            </div>
+          </Collapsible>
+        </div>
 
-        {/* 3. 📜 変更リビジョン履歴 タブ表示 */}
-        {hubTab === 'revisions' && (
-          <div className="bg-white rounded-3xl border border-stone-200 p-6 shadow-sm">
-            <h2 className="text-lg font-black text-stone-900 mb-2 flex items-center gap-2">
-              <History className="text-pink-600" /> 📜 チャンピオン知識層の変更リビジョン＆全更新ログ
-            </h2>
-            <p className="text-xs text-stone-500 mb-6">
-              過去にいつ・誰が（手動またはAI）・何を変更したかの全差分ログを閲覧し、必要に応じて以前の状態へ巻き戻せます。
-            </p>
-            <RevisionsPanel />
-          </div>
-        )}
+        {/* 統合パネル2: 📜 変更リビジョン履歴＆ワンタップ復元 */}
+        <div className="bg-white rounded-3xl border border-stone-200 p-6 shadow-sm">
+          <Collapsible
+            defaultOpen={false}
+            title={
+              <div className="flex items-center gap-2 text-stone-900">
+                <History className="text-pink-600 w-5 h-5" />
+                <span className="text-sm font-extrabold">📜 変更履歴 Diff & 0秒ワンタップ巻き戻し</span>
+              </div>
+            }
+          >
+            <div className="pt-4 border-t border-stone-100 mt-3">
+              <p className="text-xs text-stone-500 mb-4">
+                過去にいつ・誰が（手動またはAI）・何を変更したかの全差分ログを閲覧し、必要に応じて以前の状態へ巻き戻せます。
+              </p>
+              <RevisionsPanel />
+            </div>
+          </Collapsible>
+        </div>
 
-        {/* 4. 🤖 AI自動更新・実行ログ タブ表示 */}
-        {hubTab === 'auto_update' && (
-          <div className="bg-white rounded-3xl border border-stone-200 p-6 shadow-sm">
-            <h2 className="text-lg font-black text-stone-900 mb-2 flex items-center gap-2">
-              <Sparkles className="text-emerald-600" /> 🤖 AI最新トレンド自動取得・Cron実行ログ
-            </h2>
-            <p className="text-xs text-stone-500 mb-6">
-              パッチ自動検知 Cron や一括自動更新タスクの進行状況・直近の更新結果ログを表示します。
-            </p>
-            <DictReviewPanel />
-          </div>
-        )}
+        {/* 統合パネル3: 🤖 AI自動更新・実行ログ */}
+        <div className="bg-white rounded-3xl border border-stone-200 p-6 shadow-sm">
+          <Collapsible
+            defaultOpen={false}
+            title={
+              <div className="flex items-center gap-2 text-stone-900">
+                <Sparkles className="text-emerald-600 w-5 h-5" />
+                <span className="text-sm font-extrabold">🤖 AI最新トレンド自動取得・Cron実行ログ</span>
+              </div>
+            }
+          >
+            <div className="pt-4 border-t border-stone-100 mt-3">
+              <p className="text-xs text-stone-500 mb-4">
+                パッチ自動検知 Cron や一括自動更新タスクの進行状況・直近の更新結果ログを表示します。
+              </p>
+              <DictReviewPanel />
+            </div>
+          </Collapsible>
+        </div>
       </div>
     </div>
   );
