@@ -1408,9 +1408,26 @@ export default function CoachPage() {
   }, [isAuthenticated]);
 
   // 「事前分析」と「マッチアップ」で同じチャンピオン名を二度入力させていたのを統合。
-  // ここで一度入力すれば両方の分析に使われる。
-  const [sharedChampion, setSharedChampion] = useState('');
-  const [sharedEnemyChampion, setSharedEnemyChampion] = useState('');
+  // localStorage と同期し、ページ再読み込み・タブ切り替えでも再入力の手間を完全にゼロ化。
+  const [sharedChampion, setSharedChampionState] = useState('');
+  const [sharedEnemyChampion, setSharedEnemyChampionState] = useState('');
+
+  useEffect(() => {
+    const savedMy = localStorage.getItem('coach_my_champ') || '';
+    const savedEnemy = localStorage.getItem('coach_enemy_champ') || '';
+    if (savedMy) setSharedChampionState(savedMy);
+    if (savedEnemy) setSharedEnemyChampionState(savedEnemy);
+  }, []);
+
+  const setSharedChampion = (val: string) => {
+    setSharedChampionState(val);
+    localStorage.setItem('coach_my_champ', val);
+  };
+
+  const setSharedEnemyChampion = (val: string) => {
+    setSharedEnemyChampionState(val);
+    localStorage.setItem('coach_enemy_champ', val);
+  };
 
   // 「マッチアップ」タブを廃止し、偵察(ScoutTab)がライブゲームから自分・対面の
   // チャンピオンを検知した瞬間に自動でマッチアップ分析を走らせる(#①)。

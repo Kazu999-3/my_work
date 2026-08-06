@@ -414,7 +414,15 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
     }
   };
 
-  const setField = (key: string, val: string | object) => setDataFields((p: any) => ({ ...p, [key]: val }));
+  const setField = (key: string, val: string | object) => {
+    setDataFields((p: any) => {
+      const next = { ...p, [key]: val };
+      if (selected?.id) {
+        try { localStorage.setItem(`champ_draft_${selected.id}`, JSON.stringify(next)); } catch {}
+      }
+      return next;
+    });
+  };
 
   const setJgStyleField = (subKey: string, val: any) => {
     setDataFields((p: any) => {
@@ -476,6 +484,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
       setChampDates(prev => ({ ...prev, [selected.id]: now }));
       setChampPending(prev => ({ ...prev, [selected.id]: !dataFields.strategy }));
       setChampJgStyles(prev => ({ ...prev, [selected.id]: dataFields.jg_style }));
+      try { localStorage.removeItem(`champ_draft_${selected.id}`); } catch {}
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
     } catch (err: any) {
