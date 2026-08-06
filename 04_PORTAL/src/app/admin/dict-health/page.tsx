@@ -280,26 +280,27 @@ export default function DictHealthDashboard() {
 
           <div className="flex items-center gap-3 flex-wrap">
             <button
-              onClick={handleBulkEnqueueStale}
-              disabled={!!actionLoading}
-              className="px-5 py-3 rounded-xl bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 active:scale-95 text-white text-xs font-black transition flex items-center gap-2 shadow-lg disabled:opacity-50"
-              title="データが古い・不足しているチャンピオンのみをAIで一括最新化します"
+              onClick={() => fetchHealth()}
+              className="px-4 py-3 rounded-xl border border-amber-400 bg-amber-100 hover:bg-amber-200 text-amber-950 transition flex items-center gap-2 text-xs font-black shadow-sm"
+              title="【ステップ1】Riot公式の最新パッチとデータベースを比較・照合します"
             >
-              <RefreshCw className={`w-4 h-4 ${actionLoading ? 'animate-spin' : ''}`} />
-              ⚡ 古いデータ({data?.summary.stale || 0}件)を一括AI最新化
+              <RefreshCw className="w-4 h-4 text-amber-700" />
+              ① 🔄 パッチ自動照合 (最新チェック)
             </button>
 
             <button
-              onClick={() => fetchHealth()}
-              className="px-4 py-3 rounded-xl border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-900 transition flex items-center gap-2 text-xs font-bold shadow-sm"
-              title="Riot公式の最新パッチとデータベースを比較・照合して最新状態に更新します"
+              onClick={handleBulkEnqueueStale}
+              disabled={!!actionLoading}
+              className="px-5 py-3 rounded-xl bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 active:scale-95 text-white text-xs font-black transition flex items-center gap-2 shadow-lg disabled:opacity-50"
+              title="【ステップ2】データが古い・不足しているチャンピオンのみをAIで一括最新化します"
             >
-              <RefreshCw className="w-4 h-4 text-amber-700" />
-              🔄 パッチ自動照合 (最新チェック)
+              <RefreshCw className={`w-4 h-4 ${actionLoading ? 'animate-spin' : ''}`} />
+              ② ⚡ 古いデータ({data?.summary.stale || 0}件)を一括AI最新化
             </button>
+
             <Link
               href="/champions"
-              className="px-4 py-3 rounded-xl bg-stone-800 hover:bg-stone-900 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-md"
+              className="px-4 py-3 rounded-xl bg-stone-800 hover:bg-stone-900 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-md ml-auto"
             >
               <Layers className="w-4 h-4" />
               📚 チャンピオン辞典へ
