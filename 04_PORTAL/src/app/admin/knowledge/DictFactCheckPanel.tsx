@@ -110,32 +110,36 @@ export default function DictFactCheckPanel() {
 
       {error && <p className="text-sm text-rose-700 bg-rose-100 border border-rose-200 rounded-lg px-3 py-2">{error}</p>}
 
-      {/* ステップ1 */}
-      <div className="rounded-2xl border border-sky-200 bg-sky-50/60 p-4">
-        <h3 className="text-sm font-bold text-sky-900 flex items-center gap-1.5 mb-1">
-          <Tag size={15} /> ステップ1: 表記ゆれ・不正タグの検出（無料・即時）
+      {/* 統合全自動ファクトチェックボタン */}
+      <div className="rounded-2xl border border-cyan-300 bg-gradient-to-r from-cyan-500/10 via-indigo-500/5 to-transparent p-5 shadow-sm">
+        <h3 className="text-sm font-extrabold text-cyan-950 flex items-center gap-2 mb-1.5">
+          <ShieldCheck className="w-5 h-5 text-cyan-600" />
+          全自動一斉ファクトチェック (表記ゆれスキャン ＋ 全170+体AI判定完走)
         </h3>
-        <p className="text-[11px] text-stone-500 mb-2">champion列がスキン名混入やゴミ値で実在チャンピオン名に一致していない行を検出します。</p>
-        <button onClick={runScan} disabled={scanning}
-          className="flex items-center gap-1.5 text-xs font-bold bg-sky-600 hover:bg-sky-700 text-white px-4 py-2 rounded-lg disabled:opacity-50">
-          {scanning ? <RefreshCw size={13} className="animate-spin" /> : <Tag size={13} />} {scanning ? 'スキャン中...' : '不正タグをスキャン'}
+        <p className="text-xs text-stone-600 mb-3 leading-relaxed">
+          ボタン1つで「表記ゆれ・タグ異常の即時検知」と「全チャンピオン全データと公式データのAI整合性チェック」を全自動で完走させます。
+        </p>
+        <button
+          onClick={async () => {
+            await runScan();
+            await runFactCheck();
+          }}
+          disabled={scanning || running}
+          className="flex items-center gap-2 text-xs font-black bg-gradient-to-r from-cyan-600 to-indigo-600 hover:from-cyan-700 hover:to-indigo-700 active:scale-95 text-white px-6 py-3 rounded-xl shadow-md transition disabled:opacity-50"
+        >
+          <RefreshCw className={`w-4 h-4 ${(scanning || running) ? 'animate-spin' : ''}`} />
+          {(scanning || running)
+            ? `AI全自動一斉ファクトチェック実行中... (${progress?.processed ?? 0}/${progress?.total ?? '?'}体完了・${progress?.flagged ?? 0}件検出)`
+            : '🛡️ 辞典・ナレッジ全自動一斉ファクトチェックを実行'}
         </button>
-        {scanMsg && <p className="text-xs text-emerald-700 mt-2">{scanMsg}</p>}
-      </div>
 
-      {/* ステップ2 */}
-      <div className="rounded-2xl border border-indigo-200 bg-indigo-50/60 p-4">
-        <h3 className="text-sm font-bold text-indigo-900 flex items-center gap-1.5 mb-1">
-          <ShieldCheck size={15} /> ステップ2: チャンピオン横断ファクトチェック（AI・完走まで自動継続）
-        </h3>
-        <p className="text-[11px] text-stone-500 mb-2">チャンピオン単位で全ソースをまとめてAIに横断照合させます。レート制限時は60秒待って自動再開します。</p>
-        <button onClick={runFactCheck} disabled={running}
-          className="flex items-center gap-1.5 text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg disabled:opacity-50">
-          {running ? <RefreshCw size={13} className="animate-spin" /> : <ShieldCheck size={13} />}
-          {running ? `実行中... (${progress?.processed ?? 0}/${progress?.total ?? '?'}体・${progress?.flagged ?? 0}件検出)` : '一斉ファクトチェックを実行'}
-        </button>
-        {running && !runMsg && <p className="text-[11px] text-amber-700 mt-2">⚠️ 実行中にタブを閉じる・リロードすると中断されます。完走まで開いたままにしてください。</p>}
-        {runMsg && <p className="text-xs text-emerald-700 mt-2">{runMsg}</p>}
+        {(scanning || running) && (
+          <p className="text-xs text-amber-700 font-bold mt-2">
+            ⚠️ 実行中にタブを閉じる・リロードすると中断されます。完走まで開いたままにしていただくか、完了をお待ちください。
+          </p>
+        )}
+        {scanMsg && <p className="text-xs text-emerald-700 font-bold mt-2">{scanMsg}</p>}
+        {runMsg && <p className="text-xs text-emerald-700 font-bold mt-2">{runMsg}</p>}
       </div>
 
       {/* レビューキュー */}
