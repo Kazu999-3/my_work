@@ -569,19 +569,12 @@ export default function DictHealthDashboard() {
                   <button
                     onClick={() => handleVerify(champ.champion, 'enqueue_update')}
                     disabled={actionLoading === champ.champion + '_enqueue_update'}
-                    title="このチャンピオンのみAI自動更新キューに積む"
-                    className="p-1.5 bg-stone-100 hover:bg-stone-200 text-stone-700 rounded-lg transition disabled:opacity-50"
+                    title="このチャンピオンのSSOTデータをAIで単体再生成・最新化します"
+                    className="py-1.5 px-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white rounded-lg text-[11px] font-bold transition flex items-center justify-center gap-1 shadow-xs disabled:opacity-50"
                   >
-                    <RefreshCw className="w-3.5 h-3.5" />
+                    <Sparkles className={`w-3.5 h-3.5 ${actionLoading === champ.champion + '_enqueue_update' ? 'animate-spin' : ''}`} />
+                    ⚡ AI再生成
                   </button>
-
-                  <Link
-                    href={`/champions?select=${champ.champion}`}
-                    title="辞典で詳細を開く"
-                    className="p-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-lg transition"
-                  >
-                    <ExternalLink className="w-3.5 h-3.5" />
-                  </Link>
                 </div>
               </div>
             );
@@ -630,26 +623,6 @@ export default function DictHealthDashboard() {
                 過去にいつ・誰が（手動またはAI）・何を変更したかの全差分ログを閲覧し、必要に応じて以前の状態へ巻き戻せます。
               </p>
               <RevisionsPanel />
-            </div>
-          </Collapsible>
-        </div>
-
-        {/* 統合パネル3: 🤖 AI詳細判定 ＆ 個別再生成レビュー */}
-        <div className="bg-white rounded-3xl border border-stone-200 p-6 shadow-sm">
-          <Collapsible
-            defaultOpen={false}
-            title={
-              <div className="flex items-center gap-2 text-stone-900">
-                <Sparkles className="text-emerald-600 w-5 h-5" />
-                <span className="text-sm font-extrabold">🤖 AI詳細判定 ＆ 個別再生成レビュー</span>
-              </div>
-            }
-          >
-            <div className="pt-4 border-t border-stone-100 mt-3">
-              <p className="text-xs text-stone-500 mb-4">
-                特定のチャンピオンを指定し、AIが「現パッチでも有効か」を1体ずつ深掘り診断・個別にAI文章を再生成テストするパネルです。
-              </p>
-              <DictReviewPanel />
             </div>
           </Collapsible>
         </div>
