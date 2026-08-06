@@ -3,8 +3,9 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Activity, CheckCircle2, AlertTriangle, RefreshCw, Search, ShieldCheck, Sparkles, Filter, ExternalLink, Play, Layers } from 'lucide-react';
+import { Activity, CheckCircle2, AlertTriangle, RefreshCw, Search, ShieldCheck, Sparkles, Filter, ExternalLink, Play, Layers, HelpCircle } from 'lucide-react';
 import { getChampIcon } from '../../../lib/ddragonClient';
+import Collapsible from '../../../components/Collapsible';
 
 interface ChampHealth {
   champion: string;
@@ -160,7 +161,65 @@ export default function DictHealthDashboard() {
       </AnimatePresence>
 
       <div className="max-w-6xl mx-auto px-4 pt-10">
-        {/* ヘッダー */}
+        {/* 使い方ガイド (折りたたみ可能) */}
+        <div className="bg-white rounded-2xl border border-stone-200 p-4 mb-8 shadow-sm">
+          <Collapsible
+            defaultOpen={false}
+            title={
+              <div className="flex items-center gap-2 text-stone-800">
+                <HelpCircle className="w-5 h-5 text-amber-600 shrink-0" />
+                <span className="text-xs font-black">📖 辞典ヘルス診断の使い方ガイド（ここをクリックで開閉）</span>
+                <span className="text-[10px] bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded-full ml-auto">
+                  ヘルプ
+                </span>
+              </div>
+            }
+          >
+            <div className="pt-3 border-t border-stone-100 text-xs text-stone-700 space-y-3 leading-relaxed">
+              <p className="font-semibold text-stone-800">
+                このページは、チャンピオン辞典（全170+体）の情報が「最新かつ信頼できる状態か」を一目で監視・メンテするための管理画面です。
+              </p>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                <div className="bg-emerald-50 border border-emerald-200 p-3 rounded-xl">
+                  <div className="font-bold text-emerald-900 mb-1 flex items-center gap-1">
+                    🟢 確認済み (Verified)
+                  </div>
+                  <p className="text-[11px] text-emerald-800/80 leading-normal">
+                    管理者が内容を確認・手動保存した高品質データ。手動保存すると自動でこの状態になります。
+                  </p>
+                </div>
+
+                <div className="bg-amber-50 border border-amber-200 p-3 rounded-xl">
+                  <div className="font-bold text-amber-900 mb-1 flex items-center gap-1">
+                    🟡 AI生成 (AI Updated)
+                  </div>
+                  <p className="text-[11px] text-amber-800/80 leading-normal">
+                    現行パッチでAIが自動収集・更新したデータ。内容は最新ですが人間による確認が未完了の状態です。
+                  </p>
+                </div>
+
+                <div className="bg-red-50 border border-red-200 p-3 rounded-xl">
+                  <div className="font-bold text-red-900 mb-1 flex items-center gap-1">
+                    🔴 要対応 (Stale / Outdated)
+                  </div>
+                  <p className="text-[11px] text-red-800/80 leading-normal">
+                    パッチが古い、またはデータが空の状態。「🔴 一括自動更新」ボタンでAIが自動的に最新化します。
+                  </p>
+                </div>
+              </div>
+
+              <div className="bg-stone-50 p-3 rounded-xl border border-stone-200 text-[11px] space-y-1.5">
+                <div className="font-bold text-stone-800">💡 おすすめのメンテナンス手順：</div>
+                <ul className="list-disc list-inside space-y-1 text-stone-600">
+                  <li><strong>手順1:</strong> パッチ更新後は「🔴 要対応の全チャンピオンを一括自動更新」を押してAIに一括最新化させます。</li>
+                  <li><strong>手順2:</strong> 画面中央の「🔥 今パッチ最優先確認チャンピオン (Top 10)」から主要チャンピオンの内容をチェックし「✅ 確認完了」を押します。</li>
+                  <li><strong>手順3:</strong> 個別に内容を編集したい場合はカード右下の外部リンクアイコンから辞典本文へ移動して直接編集・保存できます。</li>
+                </ul>
+              </div>
+            </div>
+          </Collapsible>
+        </div>
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8 border-b border-stone-200 pb-6">
           <div>
             <div className="flex items-center gap-2.5">
