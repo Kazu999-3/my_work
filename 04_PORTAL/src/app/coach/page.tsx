@@ -1516,12 +1516,26 @@ export default function CoachPage() {
           </div>
 
           {lastFocusPoint && (
-            <div className="mt-4 mx-auto max-w-md bg-amber-50 border border-amber-300 rounded-xl p-3 text-left shadow-sm flex items-start gap-2.5">
-              <span className="text-base">🔥</span>
-              <div>
-                <span className="text-[11px] font-bold text-amber-900 block">前回の試合で設定した意識テーマ</span>
-                <p className="text-xs text-stone-800 font-medium leading-relaxed">{lastFocusPoint}</p>
+            <div className="mt-4 mx-auto max-w-md bg-amber-50 border border-amber-300 rounded-xl p-3 text-left shadow-sm flex items-center justify-between gap-2.5">
+              <div className="flex items-start gap-2.5">
+                <span className="text-base">🔥</span>
+                <div>
+                  <span className="text-[11px] font-bold text-amber-900 block">前回の試合で設定した意識テーマ</span>
+                  <p className="text-xs text-stone-800 font-medium leading-relaxed">{lastFocusPoint}</p>
+                </div>
               </div>
+              <button
+                type="button"
+                onClick={() => {
+                  alert('🎉 意識テーマの達成おめでとうございます！モチベーションを維持して次の戦いへ！');
+                  localStorage.removeItem('soloq_last_focus_point');
+                  window.location.reload();
+                }}
+                className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-black shrink-0 transition shadow active:scale-95"
+                title="この目標を達成できたらタップ！"
+              >
+                ✅ 達成！
+              </button>
             </div>
           )}
         </div>

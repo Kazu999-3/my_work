@@ -60,8 +60,17 @@ export default function LeaderboardPage() {
     })();
   }, [activeTab, metaData, metaLoading]);
   const [syncing, setSyncing] = useState(false);
-  const [minGames, setMinGames] = useState<number>(3); // 最小試合数フィルター（デフォルト3試合）
+  const [minGames, setMinGames] = useState<number>(3);
   const [search, setSearch] = useState(''); // プレイヤー名検索(L-03)
+  const [sortMetric, setSortMetric] = useState<'mmr' | 'winRate' | 'games'>('mmr');
+
+  const getSortedRows = (rows: PlayerStats[]) => {
+    return [...rows].sort((a, b) => {
+      if (sortMetric === 'winRate') return parseFloat(b.winRate) - parseFloat(a.winRate);
+      if (sortMetric === 'games') return b.games - a.games;
+      return b.mmr - a.mmr;
+    });
+  };
   // 「名前の一括同期」は全登録プレイヤー分のDiscord API呼び出しを伴う管理運用向けの
   // 操作で、balancer/match-recordのような個々のメンバーが自分のために使う機能とは
   // 性質が異なる。姉妹APIのdiscord/membersが管理者専用なのに、この公開ページには
@@ -269,18 +278,39 @@ export default function LeaderboardPage() {
                 <input
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder="プレイヤー名で検索"
+                  placeholder="プレイヤー名で検索..."
                   className="bg-black/5 text-stone-900 text-xs font-bold rounded-lg border border-border px-2 py-1 focus:outline-none focus:border-amber-500 w-40"
                 />
                 {search && <button onClick={() => setSearch('')} className="text-stone-500 hover:text-stone-900 text-xs">✕</button>}
               </div>
-            </div>
 
-            <p className="text-center text-stone-400 mb-6 font-bold">各レーンのMMR TOP 5</p>
+              {/* 並び替えソートボタン群 */}
+              <div className="flex items-center gap-1 bg-surface border border-border rounded-xl px-3 py-1.5 text-xs font-bold">
+                <span className="text-stone-400 mr-1">並び替え:</span>
+                {[
+                  { id: 'mmr', label: '🏆 MMR' },
+                  { id: 'winRate', label: '📈 勝率' },
+                  { id: 'games', label: '⚔️ 試合数' },
+                ].map((s) => (
+                  <button
+                    key={s.id}
+                    onClick={() => setSortMetric(s.id as any)}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition ${
+                      sortMetric === s.id
+                        ? 'bg-amber-600 text-stone-900 shadow'
+                        : 'text-stone-400 hover:text-stone-900 hover:bg-black/5'
+                    }`}
+                  >
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
               {ROLES.map(role => {
                 const rows = (data[role] || []).filter(p => !search || p.name.toLowerCase().includes(search.toLowerCase()));
+                const sortedRows = getSortedRows(rows);
                 return (
                 <div key={role} className="bg-surface rounded-2xl shadow-xl border border-border overflow-hidden">
                   <div className="bg-black/5 px-4 py-3 border-b border-border">
@@ -297,12 +327,12 @@ export default function LeaderboardPage() {
                   </div>
                   
                   <div className="divide-y divide-stone-800">
-                    {rows.length === 0 ? (
+                    {sortedRows.length === 0 ? (
                       <div className="p-8 text-center text-stone-500 text-sm">
                         {search ? '該当なし' : 'データがありません'}
                       </div>
                     ) : (
-                      rows.map((player, idx) => (
+                      sortedRows.map((player, idx) => (
                         <div key={player.name} className="p-4 hover:bg-black/5 transition-colors flex items-center justify-between">
                           <div className="flex items-center gap-3">
                             <div className={`w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0

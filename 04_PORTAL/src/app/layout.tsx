@@ -34,6 +34,8 @@ export const viewport: Viewport = {
 
 import BackToTop from "../components/BackToTop";
 
+import OfflineNotifier from "../components/OfflineNotifier";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -58,6 +60,7 @@ export default function RootLayout({
       <body className="antialiased bg-background text-foreground flex min-h-screen">
         <PwaRegister />
         <Toaster />
+        <OfflineNotifier />
         <Sidebar />
         <div className="flex-1 min-w-0 pb-20 md:pb-0">
           <BackButton />
