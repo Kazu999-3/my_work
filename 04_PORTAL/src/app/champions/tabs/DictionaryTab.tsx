@@ -611,6 +611,16 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
               </div>
             </div>
 
+            {/* シームレス導線: 辞典 ➔ AIコーチへ即座に繋ぐボタン */}
+            <div className="flex gap-3 items-center flex-wrap pt-2">
+              <Link
+                href={`/coach?champion=${encodeURIComponent(selected.id)}`}
+                className="px-5 py-2.5 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white font-black rounded-xl transition-all shadow-lg flex items-center gap-2 text-xs"
+              >
+                <Zap size={16} /> 🎯 このチャンピオンでAIコーチを起動する (/coach)
+              </Link>
+            </div>
+
             {isAdmin && (
             <div className="flex gap-3 items-center flex-wrap">
               <button

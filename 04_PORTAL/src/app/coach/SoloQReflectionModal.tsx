@@ -274,8 +274,17 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="p-5 space-y-5 text-stone-800 text-sm max-h-[82vh] overflow-y-auto">
           {saveSuccess && (
-            <div className="p-3.5 rounded-lg bg-emerald-100 border border-emerald-300 text-emerald-800 font-medium flex items-center gap-2 animate-fade-in">
-              <span>✅</span> 振り返りを保存し、対面メモを更新しました！
+            <div className="p-3.5 rounded-xl bg-emerald-100 border border-emerald-300 text-emerald-900 font-bold flex items-center justify-between gap-2 animate-fade-in shadow-md">
+              <div className="flex items-center gap-2 text-xs">
+                <span>✅</span> 振り返りを保存し、対面メモをDBへ更新しました！
+              </div>
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-black transition shadow"
+              >
+                ⚡ 次の試合のBAN/PICKへ
+              </button>
             </div>
           )}
 

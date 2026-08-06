@@ -994,6 +994,14 @@ export default function BalancerPage() {
                     <span className="hidden sm:inline">{proposals.length}案を投稿</span>
                   </button>
                 )}
+                <Link
+                  href="/coach"
+                  className="flex items-center gap-1.5 bg-gradient-to-r from-amber-700 to-amber-800 hover:from-amber-800 hover:to-amber-900 text-white px-3 py-1.5 rounded-lg font-black transition text-xs md:text-sm shadow-sm"
+                  title="チーム分け結果のメンバー構成で相性や勝率期待値をAI診断します"
+                >
+                  <Zap className="h-3.5 w-3.5 text-amber-300" />
+                  🎯 チーム相性を診断 (/coach)
+                </Link>
                 <button onClick={handleSendDiscord} disabled={sendingDiscord}
                   className="flex items-center gap-1.5 bg-[#5865F2] hover:bg-[#4752C4] text-white px-3 py-1.5 rounded-lg font-bold transition text-xs md:text-sm">
                   {sendingDiscord ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <MessageSquare className="h-3.5 w-3.5" />}
