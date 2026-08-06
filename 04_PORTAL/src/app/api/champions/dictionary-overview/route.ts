@@ -2,8 +2,9 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 import { verifyAdminSession } from '../../../../lib/adminAuth';
 
-// champions/tabs/DictionaryTab.tsx の一覧グリッド用データを1つにまとめた読み取り専用API。
-// 従来はブラウザから matchup_sentinel / champion_power_spikes に3回直接アクセスしていた。
+// champions/tabs/DictionaryTab.tsx の一覧グリッド用データ。
+// フェーズ1 SSOT化: champion_factsを正本として、日付・パッチ・JGスタイル・
+// confidence（信頼度）を返す。matchup_sentinelからの読み取りを廃止。
 export const dynamic = 'force-dynamic';
 
 const ALIAS_MAP: Record<string, string> = {
@@ -12,42 +13,44 @@ const ALIAS_MAP: Record<string, string> = {
 const normalizeKey = (str: string) => String(str || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 
 export async function GET(req: Request) {
-  // 辞典は閲覧含め管理者専用(champions/page.tsx)。ページ側は/api/auth/verifyで
-  // ガードしているが、このAPI自体には認証チェックが無く直叩きで閲覧できていた
-  // (2026-08-05発覚)。
   const auth = await verifyAdminSession(req);
   if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: 401 });
   try {
-    const [{ data, error }, { data: spikeRows, error: spikeError }, { data: contentRows, error: contentError }] = await Promise.all([
-      supabase.from('matchup_sentinel').select('champion, created_at, patch_meta:raw_data->patch_meta, jg_style:raw_data->jg_style, is_favorited:raw_data->is_favorited').eq('enemy', 'GLOBAL'),
+    const [{ data: factsData, error: factsError }, { data: spikeRows, error: spikeError }] = await Promise.all([
+      // champion_facts (SSOT) から一覧用データを取得
+      supabase.from('champion_facts')
+        .select('champion, updated_at, patch, patch_meta, jg_type, jg_description, jg_blind_pickable, jg_counter_pickable, strengths, confidence, auto_updated_at, last_verified_at')
+        .eq('archived', false),
       supabase.from('champion_power_spikes').select('champion, early_game_score, mid_game_score, late_game_score'),
-      supabase.from('matchup_sentinel').select('champion').eq('enemy', 'GLOBAL').not('strategy', 'is', null).neq('strategy', ''),
     ]);
-    if (error) throw error;
+    if (factsError) throw factsError;
     if (spikeError) throw spikeError;
-    if (contentError) throw contentError;
 
-    const hasContent = new Set((contentRows || []).map((r: any) => r.champion));
     const dates: Record<string, string> = {};
     const pending: Record<string, boolean> = {};
     const patchMetas: Record<string, any> = {};
     const jgStyles: Record<string, any> = {};
+    // SSOT: 各チャンピオンの信頼度・最終確認日をUIに返す
+    const confidences: Record<string, string> = {};
     const dbFavorites: string[] = [];
 
-    (data || []).forEach((row: any) => {
-      const rawUpdatedAt = row.created_at;
+    (factsData || []).forEach((row: any) => {
       const normKey = normalizeKey(row.champion);
       const aliasKey = ALIAS_MAP[normKey] || normKey;
 
+      // updated_at を日付として使う
+      const rawUpdatedAt = row.updated_at;
       dates[row.champion] = rawUpdatedAt;
       dates[normKey] = rawUpdatedAt;
       dates[aliasKey] = rawUpdatedAt;
 
-      const isPending = !hasContent.has(row.champion);
+      // 内容が空の行は pending 扱い
+      const isPending = !row.strengths;
       pending[row.champion] = isPending;
       pending[normKey] = isPending;
       pending[aliasKey] = isPending;
 
+      // patch_meta（JSONBカラムから直接取得）
       let patchMetaObj = row.patch_meta ? { ...row.patch_meta } : {};
       if (!patchMetaObj.updated_at && rawUpdatedAt) {
         patchMetaObj.updated_at = Math.floor(new Date(rawUpdatedAt).getTime() / 1000);
@@ -56,15 +59,22 @@ export async function GET(req: Request) {
       patchMetas[normKey] = patchMetaObj;
       patchMetas[aliasKey] = patchMetaObj;
 
-      let parsedJgStyle = null;
-      if (row.jg_style) {
-        parsedJgStyle = typeof row.jg_style === 'string' ? JSON.parse(row.jg_style) : row.jg_style;
-      }
-      jgStyles[row.champion] = parsedJgStyle || null;
-      jgStyles[normKey] = parsedJgStyle || null;
-      jgStyles[aliasKey] = parsedJgStyle || null;
+      // JGスタイル（構造化カラムから直接構成）
+      const parsedJgStyle = row.jg_type ? {
+        type: row.jg_type,
+        description: row.jg_description || '',
+        blind_pickable: row.jg_blind_pickable,
+        counter_pickable: row.jg_counter_pickable,
+      } : null;
+      jgStyles[row.champion] = parsedJgStyle;
+      jgStyles[normKey] = parsedJgStyle;
+      jgStyles[aliasKey] = parsedJgStyle;
 
-      if (row.is_favorited === true) dbFavorites.push(row.champion);
+      // SSOT: confidence
+      const conf = row.confidence || 'ai_generated';
+      confidences[row.champion] = conf;
+      confidences[normKey] = conf;
+      confidences[aliasKey] = conf;
     });
 
     const powerSpikes: Record<string, any> = {};
@@ -81,7 +91,7 @@ export async function GET(req: Request) {
       powerSpikes[aliasKey] = spikeObj;
     });
 
-    return NextResponse.json({ dates, pending, patchMetas, jgStyles, powerSpikes, dbFavorites });
+    return NextResponse.json({ dates, pending, patchMetas, jgStyles, powerSpikes, dbFavorites, confidences });
   } catch (err: any) {
     console.error('[champions/dictionary-overview] error:', err);
     return NextResponse.json({ error: err.message }, { status: 500 });

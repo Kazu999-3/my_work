@@ -677,30 +677,71 @@ CS/min: 直近${agg.csTrend.recent} / 以前${agg.csTrend.older}　Vision/min: �
         ? await searchKnowledge(['メンタル', 'ティルト', '連敗', '休憩'])
         : '';
 
-      const prompt = `あなたはLoLのメンタルコーチです。
+      const userText: string = body.text || '';
+      const quickChoice = body.quickChoice as import('../../../../lib/tiltBlameDetector').QuickChoiceOption | undefined;
+
+      const prompt = `あなたはLoLのメンタルコーチおよび言語感情分析アナリストです。
 プレイヤーの直近${myMatches.length}試合のデータ:
 ${myMatches.map((m, i) => `${i + 1}. ${m.champion} ${m.win ? '✅勝' : '❌負'} KDA: ${m.kills}/${m.deaths}/${m.assists}`).join('\n')}
 
 ティルト判定: ${tilt.label} (スコア: ${tilt.score})
 理由: ${tilt.reasons.join('、') || 'なし'}
+ユーザーの振り返りテキスト・コメント: ${userText ? `"${userText}"` : '（なし）'}
 
-連敗相関: 現在${streakAnalysis.currentStreak}${streakAnalysis.streakType === 'loss' ? '連敗中' : '連勝中'} / 全体勝率${streakAnalysis.overallWinRate}%${streakAnalysis.afterLossWinRate !== null ? ` / 負けた次の試合の勝率${streakAnalysis.afterLossWinRate}%` : ''}${streakAnalysis.afterLossStreakWinRate !== null ? ` / 2連敗以上の直後の勝率${streakAnalysis.afterLossStreakWinRate}%` : ''}
+【出力フォーマット要求】
+1. メンタルアドバイス文 (日本語で150字程度。負けた後の勝率や時間帯勝率が低い場合は具体的に根拠を数値で示してください。)
+2. 文章の感情トーン解析結果を以下のJSON形式で末尾に付与してください:
+\`\`\`json
+{
+  "aiBlameScore": 0から100の数値 (味方への愚痴・攻撃的表現・責任転嫁の強さ),
+  "aiCalmScore": 0から100の数値 (自責・客観的理由・前向きな課題意識の強さ),
+  "sentimentAnalysis": "他罰感情優位" | "冷静な事実分析" | "中立"
+}
+\`\`\``;
 
-曜日×時間帯の過去勝率: ${timing.winRate !== null ? `${timingLabel} ${timing.winRate}%(${timing.wins}/${timing.games}勝)` : `${timingLabel}はサンプル不足のため不明`}
+      const rawResponse = await callGemini(prompt, `tilt:${puuid}:${matchIds[0] || 'none'}:${userText ? userText.slice(0, 30) : 'none'}`);
 
-${knowledgeCtx ? `参考ナレッジ:\n${knowledgeCtx}\n` : ''}
+      let advice = rawResponse;
+      let aiBlameScore = 0;
+      let aiCalmScore = 50;
+      let sentimentAnalysis = '中立';
 
-上記を踏まえて、今の状態への率直なメンタルアドバイスを日本語で200字以内で書いてください。負けた後の勝率が全体勝率より明確に低い場合は、その数字を根拠に「連敗時は一旦離れる方が期待値が高い」ことを具体的に伝えてください。曜日×時間帯の過去勝率が明確に低い場合は、その数字も根拠に「この時間帯は一旦避けた方がいい」ことを具体的に伝えてください。
-${playRecommendation.level === 'red' ? '休憩を強く勧める内容にしてください。' : ''}
-${playRecommendation.level === 'green' ? 'ポジティブに背中を押す内容にしてください。' : ''}`;
+      try {
+        const jsonMatch = rawResponse.match(/```json\s*([\s\S]*?)\s*```/) || rawResponse.match(/\{[\s\S]*"aiBlameScore"[\s\S]*\}/);
+        if (jsonMatch) {
+          const parsed = JSON.parse(jsonMatch[1] || jsonMatch[0]);
+          aiBlameScore = typeof parsed.aiBlameScore === 'number' ? parsed.aiBlameScore : 0;
+          aiCalmScore = typeof parsed.aiCalmScore === 'number' ? parsed.aiCalmScore : 50;
+          sentimentAnalysis = parsed.sentimentAnalysis || '中立';
+          advice = rawResponse.replace(/```json[\s\S]*```/, '').trim();
+        }
+      } catch (e) {
+        console.warn('[coach/analyze tilt] JSON parsing fallback:', e);
+      }
 
-      // 他モード(matchup/trends/practice_menu)は全てcacheKey付きだが、tiltモードだけ
-      // 無く、自動ポップアップ・手動再診断ボタン・タブでの再表示のたびにGemini呼び出しが
-      // 重複していた(2026-08-05発覚)。直近試合IDが変わらない限り(=新しい試合をまだ
-      // プレイしていない限り)同じ助言を24hキャッシュから返す。
-      const advice = await callGemini(prompt, `tilt:${puuid}:${matchIds[0] || 'none'}`);
+      // 統合スコア計算 (1秒チェック 30% + 戦績 30% + AIトーン 40%)
+      const { calculateIntegratedTiltScore } = await import('../../../../lib/tiltBlameDetector');
+      const integratedResult = calculateIntegratedTiltScore({
+        quickChoice,
+        aiBlameScore,
+        aiCalmScore,
+        lossStreak: streakAnalysis.currentStreak,
+        text: userText,
+      });
 
-      return NextResponse.json({ mode: 'tilt', tilt, streakAnalysis, timing, playRecommendation, recentMatches: myMatches, advice });
+      return NextResponse.json({
+        mode: 'tilt',
+        tilt,
+        streakAnalysis,
+        timing,
+        playRecommendation,
+        recentMatches: myMatches,
+        advice,
+        aiBlameScore,
+        aiCalmScore,
+        sentimentAnalysis,
+        integratedResult,
+      });
     }
 
     // ----------------------------

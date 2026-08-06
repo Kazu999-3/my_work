@@ -3,6 +3,9 @@ import { supabaseAdmin as supabase } from '../../../../../lib/supabaseAdmin';
 import { verifyAdminSession } from '../../../../../lib/adminAuth';
 import { recordMatchupSentinelRevision } from '../../../../../lib/matchupSentinelRevisions';
 
+// フェーズ1 SSOT化: 辞典の手動保存先を champion_facts に変更。
+// 移行期間中は matchup_sentinel GLOBAL行への二重書きも維持する。
+
 export async function POST(req: NextRequest) {
   try {
   // ===== 管理者セッション確認 =====
@@ -28,14 +31,59 @@ export async function POST(req: NextRequest) {
       .eq('matchup_id', matchup_id)
       .maybeSingle();
 
+    // =============================================
+    // A. champion_facts (SSOT) への書き込み
+    // =============================================
+    const rd = raw_data || {};
+    const jg = rd.jg_style || {};
+    const factsUpsert: Record<string, any> = {
+      champion,
+      strengths: rd.strengths || null,
+      weaknesses: rd.weaknesses || null,
+      power_spikes: rd.powerSpikes || null,
+      build_runes: rd.buildRunes || null,
+      full_clear_time: rd.fullClearTime || null,
+      strategy: strategy || null,
+      counter_champions: rd.counterChampions || null,
+      must_ban_champions: rd.mustBanChampions || null,
+      pick_recommendation: rd.pickRecommendation || null,
+      note_draft: rd.note_draft || null,
+      jg_type: jg.type || null,
+      jg_description: jg.description || null,
+      jg_blind_pickable: typeof jg.blind_pickable === 'number' ? jg.blind_pickable : null,
+      jg_counter_pickable: typeof jg.counter_pickable === 'number' ? jg.counter_pickable : null,
+      patch: rd.patch_meta?.patch || null,
+      source: 'manual',
+      custom_fields: rd.customFields || {},
+      patch_meta: rd.patch_meta || null,
+      pro_builds: rd.pro_builds || [],
+      // 手動保存 = 人間が確認した内容なので verified
+      confidence: 'verified',
+      last_verified_at: new Date().toISOString(),
+      last_verified_by: 'admin',
+      source_summary: '管理者による手動保存',
+      updated_at: new Date().toISOString(),
+    };
+
+    const { error: factsError } = await supabase
+      .from('champion_facts')
+      .upsert(factsUpsert, { onConflict: 'champion' });
+
+    if (factsError) {
+      console.error('❌ [Champion Save API] champion_facts upsert error:', factsError);
+      // champion_facts への書き込みが失敗してもmatchup_sentinelへの書き込みは試みる（移行期間中の安全措置）
+    }
+
+    // =============================================
+    // B. matchup_sentinel への二重書き（移行期間中のみ維持）
+    // =============================================
     // 容量削減対策①：note_draftをSupabase Storageへ退避させる
-    let updatedRawData = { ...(raw_data || {}) };
+    let updatedRawData = { ...(rd) };
     if (updatedRawData.note_draft) {
       try {
         const draftContent = updatedRawData.note_draft;
         const fileName = `${champion}_draft.txt`;
         
-        // drafts バケットへアップロード（upsert: true で上書き）
         const { error: uploadError } = await supabase
           .storage
           .from('drafts')
@@ -47,7 +95,6 @@ export async function POST(req: NextRequest) {
         if (uploadError) {
           console.error('❌ [Champion Save API] Storage Upload Error:', uploadError);
         } else {
-          // アップロード成功時、URLを記録して、元データは削除して容量を節約
           const { data: urlData } = supabase
             .storage
             .from('drafts')
@@ -61,9 +108,6 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // matchup_sentinel には updated_at カラムが存在しない。以前は無いカラムを送っていたため
-    // 保存内容自体は反映されても、辞典一覧が使う created_at が更新されず「保存したのに
-    // 更新日が変わらない」状態になっていた。
     const data = {
       matchup_id,
       champion,

@@ -1,28 +1,25 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Shield, LayoutDashboard, Swords, BookOpen, BookHeart, Trophy, Users, HeartHandshake, ScrollText, ListVideo, ChevronLeft, ChevronRight, Coins, Brain, Trees, Sparkles, Search, MoreHorizontal, X as XIcon, TrendingUp } from 'lucide-react';
+import { Shield, LayoutDashboard, Swords, BookOpen, BookHeart, Trophy, Users, HeartHandshake, ScrollText, ListVideo, ChevronLeft, ChevronRight, Coins, Brain, Trees, Sparkles, Search, MoreHorizontal, X as XIcon, TrendingUp, Activity } from 'lucide-react';
 import FavoritesPanel from './FavoritesPanel';
 import PushOptIn from './PushOptIn';
 import NotificationBell from './NotificationBell';
 import SystemStatus from './SystemStatus';
 
-// スマホ下ナビの各項目。モジュールスコープに置くことで、Sidebarの再描画のたびに
-// コンポーネントが作り直されて再マウント→タップが効きづらくなる問題を防ぐ。
-/**
- * モバイル下部ナビの項目。
- * 「反応が悪い」対策として2点入れている:
- *  1) prefetch を有効化。以前は false でタップ後にページを1から取得しており、
- *     押しても数秒無反応に見えていた（下部ナビは数件なのでprefetchコストは軽微）。
- *     ただし /admin/* は認証ゲートを通るため、prefetch時点の認証結果が
- *     ルーターキャッシュに残り、実際にタップした時点でセッションが有効でも
- *     古い未認証判定が再利用されて弾かれる不具合があったため対象外にする。
- *  2) タップ直後に自前で色を変える(pending)。遷移完了を待たずに反応が返るため、
- *     「押せていない」と感じて連打されるのを防ぐ。
- */
-function MobileNavItem({ item, active, pending, onClick }: { item: { id: string; label: string; href: string; icon: any; color: string; activeBg: string }; active: boolean; pending?: boolean; onClick?: () => void }) {
+interface MenuItem {
+  id: string;
+  label: string;
+  icon: any;
+  href: string;
+  color: string;
+  activeBg: string;
+  section?: string;
+}
+
+function MobileNavItem({ item, active, pending, onClick }: { item: MenuItem; active: boolean; pending?: boolean; onClick?: () => void }) {
   const Icon = item.icon;
   const lit = active || pending;
   const isAdminGated = item.href.startsWith('/admin');
@@ -41,11 +38,7 @@ function MobileNavItem({ item, active, pending, onClick }: { item: { id: string;
   );
 }
 
-// 一般ユーザー用 (管理者エリア外で表示)
-// 末尾の login は、未ログイン判定時(一般訪問者 or 認証確認待ちの管理者自身)でも
-// 管理者ページへ戻る入り口を必ず残すためのもの。以前は管理者/一般タブの切替UI自体が
-// この入り口を兼ねていたが、非管理者にタブを見せない変更をした際に道連れで消えていた。
-const MENU_ITEMS = [
+const MENU_ITEMS: MenuItem[] = [
   { id: 'balancer',    label: 'チーム分け',     icon: Swords,         href: '/balancer',         color: 'text-rose-500',    activeBg: 'bg-rose-500/15' },
   { id: 'leaderboard', label: '順位表',         icon: Trophy,         href: '/leaderboard',      color: 'text-yellow-400',  activeBg: 'bg-yellow-400/15' },
   { id: 'synergy',     label: 'チームシナジー',     icon: HeartHandshake, href: '/synergy',          color: 'text-fuchsia-400', activeBg: 'bg-fuchsia-400/15' },
@@ -54,30 +47,18 @@ const MENU_ITEMS = [
   { id: 'login',       label: 'ログイン',       icon: Shield,         href: '/login',            color: 'text-indigo-400',  activeBg: 'bg-indigo-400/15' },
 ];
 
-// 管理者ログイン時：管理者機能タブ用
-// セクション分けで見通し向上。section プロパティでグループ区切りを表現。
-// ※ スマホ下部ナビではPRIMARY枠（先頭5件）が常設表示されるため、
-//   ナレッジを5番目以内に配置する。
-// ラベルは各ページの実際の見出しに合わせた(2026-08-06発覚: 「ダッシュボード」と
-// 「⚙️ 管理者専用」がどちらも中身を表さない曖昧な名前で、しかもセクション名「大会運営」
-// の中に大会運営(ktm-admin)とシステム運用(admin/dashboard)が混在しており、
-// どちらがどちらか名前から判別できなかった)。
-const ADMIN_ONLY_MENU_ITEMS = [
-  // ── 📊 大会運営 ──
+const ADMIN_ONLY_MENU_ITEMS: MenuItem[] = [
   { id: 'ktm-admin', label: 'KTM大会管理', icon: Shield, href: '/ktm-admin', color: 'text-indigo-400', activeBg: 'bg-indigo-400/15', section: '大会運営' },
-  // ── 📖 攻略ハブ ──
   { id: 'champions', label: '辞典', icon: BookHeart, href: '/champions', color: 'text-[#c89b3c]', activeBg: 'bg-[#c89b3c]/15', section: '攻略ハブ' },
+  { id: 'dict-health', label: 'ヘルス診断', icon: Activity, href: '/admin/dict-health', color: 'text-amber-500', activeBg: 'bg-amber-500/15' },
   { id: 'knowledge-admin', label: 'ナレッジ', icon: Brain, href: '/admin/knowledge', color: 'text-pink-400', activeBg: 'bg-pink-400/15' },
-  // ── 🔍 分析 ──
   { id: 'coach', label: 'コーチ', icon: Sparkles, href: '/coach', color: 'text-indigo-300', activeBg: 'bg-indigo-500/15', section: '分析・検索' },
   { id: 'search', label: '横断検索', icon: Search, href: '/search', color: 'text-[#a78bfa]', activeBg: 'bg-[#a78bfa]/15' },
   { id: 'analytics', label: 'note分析', icon: TrendingUp, href: '/admin/analytics', color: 'text-teal-400', activeBg: 'bg-teal-400/15' },
-  // ── ⚙️ システム運用 ── (admin/dashboard = ナレッジ同期・YouTube自動処理等のエージェント運用ハブ。KTM大会管理とは別物)
   { id: 'dashboard', label: 'システム運用', icon: LayoutDashboard, href: '/admin/dashboard', color: 'text-stone-900', activeBg: 'bg-black/10', section: 'システム運用' },
 ];
 
-// 管理者ログイン時：一般機能タブ用 (過去の試合履歴を除外)
-const ADMIN_GENERAL_MENU_ITEMS = [
+const ADMIN_GENERAL_MENU_ITEMS: MenuItem[] = [
   { id: 'balancer',  label: 'チーム分け', icon: Swords, href: '/balancer', color: 'text-rose-500', activeBg: 'bg-rose-500/15' },
   { id: 'leaderboard', label: 'リーダーボード', icon: Trophy, href: '/leaderboard', color: 'text-yellow-400', activeBg: 'bg-yellow-400/15' },
   { id: 'synergy',   label: 'チームシナジー', icon: HeartHandshake, href: '/synergy', color: 'text-fuchsia-400', activeBg: 'bg-fuchsia-400/15' },
@@ -86,7 +67,6 @@ const ADMIN_GENERAL_MENU_ITEMS = [
 
 export default function Sidebar() {
   const pathname = usePathname();
-  // モバイルナビでタップ直後に反応を返すための遷移中フラグ。遷移完了(pathname変化)で解除。
   const [pendingHref, setPendingHref] = useState<string | null>(null);
   useEffect(() => { setPendingHref(null); }, [pathname]);
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -102,281 +82,151 @@ export default function Sidebar() {
     setMounted(true);
   }, []);
 
-  const toggleCollapse = () => {
-    const nextVal = !isCollapsed;
-    setIsCollapsed(nextVal);
-    localStorage.setItem('sovereign_sidebar_collapsed', String(nextVal));
+  const toggleSidebar = () => {
+    const nextState = !isCollapsed;
+    setIsCollapsed(nextState);
+    localStorage.setItem('sovereign_sidebar_collapsed', String(nextState));
   };
 
-  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
+  const isAdminGatedPage = pathname.startsWith('/admin') || ['/ktm-admin', '/champions', '/coach', '/search'].some(p => pathname.startsWith(p));
 
-  useEffect(() => {
-    // admin_session は HttpOnly Cookie で JS から直接読めないため、API で検証する。
-    // Sidebarはレイアウト直下でマウントされたまま維持される(App Routerのクライアント遷移では
-    // 再マウントしない)ため、初回マウント時のみの検証だと「/loginでログイン→router.replaceで
-    // 別ページへ遷移」しても isAdminLoggedIn が false のまま更新されず、PCでメニューが
-    // 管理者用に切り替わらない不具合があった。pathname変更のたびに再検証する。
-    fetch('/api/auth/verify', {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({}),
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        setIsAdminLoggedIn(!!data.valid);
-      })
-      .catch(() => {});
-  }, [pathname]);
+  const items = isAdminGatedPage
+    ? (activeTab === 'admin' ? ADMIN_ONLY_MENU_ITEMS : ADMIN_GENERAL_MENU_ITEMS)
+    : MENU_ITEMS;
 
-  // ページ遷移したらモバイルの「その他」シートは閉じる
-  useEffect(() => { setShowMobileMore(false); }, [pathname]);
-
-  // 管理者機能タブ・一般機能タブの表示切り替え。
-  // 未ログイン(一般訪問者)には常に MENU_ITEMS を表示する。以前は isAdminLoggedIn に
-  // 関わらず activeTab の初期値が 'admin' 固定だったため、一般訪問者が最初に開いた
-  // 瞬間に管理者専用メニュー(ほとんどが認証で弾かれる)を見せてしまっていた。
-  const activeMenuItems = !isAdminLoggedIn
-    ? MENU_ITEMS
-    : (activeTab === 'admin' ? ADMIN_ONLY_MENU_ITEMS : ADMIN_GENERAL_MENU_ITEMS);
+  const primaryMobileItems = items.slice(0, 5);
+  const overflowMobileItems = items.slice(5);
 
   return (
     <>
-      {/* PC用サイドバー */}
-      <aside className={`hidden md:flex flex-col h-screen sticky top-0 bg-white/70 backdrop-blur-2xl border-r border-black/10 shadow-[4px_0_24px_rgba(32,28,43,0.06)] z-50 overflow-y-auto no-scrollbar transition-all duration-300 relative ${
-        isCollapsed ? 'w-20 px-3 py-6' : 'w-64 p-8'
-      }`}>
-
-        {/* トグルボタン */}
-        <button
-          onClick={toggleCollapse}
-          className="absolute top-8 -right-3 w-6 h-6 rounded-full bg-white border border-black/15 hover:border-primary/50 text-stone-500 hover:text-stone-900 flex items-center justify-center transition-all z-50 shadow-md cursor-pointer"
-          title={isCollapsed ? "サイドバーを展開" : "サイドバーを最小化"}
-        >
-          {isCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
-        </button>
-
-        {/* ロゴと通知ベル */}
-        <div className={`flex items-center justify-between mb-8 flex-shrink-0 ${isCollapsed ? 'flex-col gap-4' : 'flex-row'}`}>
-          <Link href="/balancer" prefetch={false} className="flex items-center gap-3 group cursor-pointer">
-            <div className="relative shrink-0">
-              <div className="absolute inset-0 bg-[#c89b3c] blur-lg opacity-30 rounded-full group-hover:opacity-50 transition-opacity"></div>
-              <Shield className="text-gold relative z-10 group-hover:scale-110 transition-transform" size={26} />
-            </div>
-            <span className={`text-lg font-black text-transparent bg-clip-text bg-gradient-to-r from-gold to-primary font-mono tracking-tight transition-all duration-300 overflow-hidden ${
-              isCollapsed ? 'w-0 opacity-0 pointer-events-none' : 'w-auto opacity-100'
-            }`}>
-              SOVEREIGN
-            </span>
-          </Link>
-          {isAdminLoggedIn && <NotificationBell collapsed />}
+      <aside
+        className={`hidden md:flex flex-col h-screen sticky top-0 bg-[#f7f5f0] border-r border-stone-200/80 transition-all duration-300 z-30 ${
+          isCollapsed ? 'w-20' : 'w-64'
+        }`}
+      >
+        <div className="flex items-center justify-between p-4 border-b border-stone-200/80">
+          {!isCollapsed && (
+            <Link href="/" className="flex items-center gap-2">
+              <span className="font-extrabold text-lg text-stone-900 tracking-tight">SOVEREIGN</span>
+            </Link>
+          )}
+          <button
+            onClick={toggleSidebar}
+            className="p-2 rounded-xl hover:bg-stone-200/60 text-stone-600 transition"
+          >
+            {isCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
+          </button>
         </div>
 
-        {/* 管理者/一般 機能タブ切り替えUI（管理者ログイン時のみ表示。一般訪問者には
-            切り替える意味のあるタブが無いため出さない） */}
-        {isAdminLoggedIn && (
-        <div className="flex-shrink-0">
-          {!isCollapsed ? (
-            <div className="flex bg-black/5 p-1 rounded-xl border border-black/5 mb-6">
+        {isAdminGatedPage && !isCollapsed && (
+          <div className="p-3 border-b border-stone-200/80">
+            <div className="flex bg-stone-200/60 p-1 rounded-xl">
               <button
                 onClick={() => setActiveTab('admin')}
-                className={`flex-1 text-center py-2 rounded-lg text-[11px] font-black transition-all ${
-                  activeTab === 'admin'
-                    ? 'bg-[#c89b3c] text-black shadow'
-                    : 'text-stone-500 hover:text-stone-900'
+                className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition ${
+                  activeTab === 'admin' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-600 hover:text-stone-900'
                 }`}
               >
-                管理者機能
+                管理者
               </button>
               <button
                 onClick={() => setActiveTab('general')}
-                className={`flex-1 text-center py-2 rounded-lg text-[11px] font-black transition-all ${
-                  activeTab === 'general'
-                    ? 'bg-white text-stone-900 shadow'
-                    : 'text-stone-500 hover:text-stone-900'
+                className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition ${
+                  activeTab === 'general' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-600 hover:text-stone-900'
                 }`}
               >
-                一般機能
+                一般
               </button>
             </div>
-          ) : (
-            <button
-              onClick={() => setActiveTab(activeTab === 'admin' ? 'general' : 'admin')}
-              className="w-10 h-10 flex items-center justify-center rounded-xl bg-black/5 border border-black/10 text-gold hover:text-stone-900 transition-all mb-6 mx-auto cursor-pointer"
-              title={activeTab === 'admin' ? "管理者機能表示中 (クリックで一般へ)" : "一般機能表示中 (クリックで管理者へ)"}
-            >
-              {activeTab === 'admin' ? <Shield size={18} /> : <Users size={18} />}
-            </button>
-          )}
-        </div>
-        )}
-
-        {/* ナビゲーション（セクション区切り対応） */}
-        <nav className="flex flex-col gap-1 flex-shrink-0">
-          {activeMenuItems.map((item, idx) => {
-            const isActive = pathname === item.href || (item.id === 'leaderboard' && pathname.startsWith('/player'));
-            // セクション見出し: section プロパティが定義されている項目の手前に区切りを表示
-            const sectionLabel = (item as any).section as string | undefined;
-
-            return (
-              <div key={item.id}>
-                {sectionLabel && !isCollapsed && (
-                  <div className={`flex items-center gap-2 ${idx > 0 ? 'mt-4 pt-3 border-t border-black/5' : ''} mb-1 px-2`}>
-                    <span className="text-[10px] font-black text-stone-500 tracking-widest uppercase">{sectionLabel}</span>
-                  </div>
-                )}
-                {sectionLabel && isCollapsed && idx > 0 && (
-                  <div className="my-2 mx-2 border-t border-black/5" />
-                )}
-                <Link
-                  href={item.href}
-                  prefetch={false}
-                  className={`flex items-center gap-3 py-3 rounded-xl font-bold text-sm transition-all duration-300 relative overflow-hidden group ${
-                    isCollapsed ? 'justify-center px-0' : 'px-4'
-                  } ${
-                    isActive
-                      ? `${item.activeBg} ${item.color} shadow-inner border border-black/5`
-                      : 'text-stone-500 hover:text-stone-900 hover:bg-black/5 border border-transparent'
-                  }`}
-                  title={isCollapsed ? item.label : undefined}
-                >
-                  {isActive && !isCollapsed && (
-                    <div className={`absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 rounded-r-full ${item.activeBg.replace('/15', '')} bg-current`}></div>
-                  )}
-                  <item.icon size={18} className={`transition-transform duration-300 shrink-0 ${isActive ? 'scale-110' : 'group-hover:scale-110'}`} />
-                  <span className={`tracking-wide transition-all duration-300 ${
-                    isCollapsed ? 'w-0 opacity-0 hidden' : 'w-auto opacity-100 block'
-                  }`}>{item.label}</span>
-                </Link>
-              </div>
-            );
-          })}
-        </nav>
-
-        {/* お気に入りパネル */}
-        <FavoritesPanel isCollapsed={isCollapsed} isAdmin={isAdminLoggedIn} />
-
-        {/* Web Push 通知の有効化（#52）。管理者専用（一般メンバーの募集通知はDiscordロールで対応済み） */}
-        {isAdminLoggedIn && (
-          <div className="mt-2">
-            <PushOptIn collapsed={isCollapsed} scope="admin" />
           </div>
         )}
 
-        {/* フッター システムステータス（実データ: /api/health を反映） */}
-        <div className={`mt-auto pt-6 border-t border-black/5 flex-shrink-0 w-full`}>
-          <SystemStatus isCollapsed={isCollapsed} />
+        <div className="flex-1 overflow-y-auto p-3 space-y-1">
+          {items.map((item: any, idx) => {
+            const Icon = item.icon;
+            const isActive = pathname.startsWith(item.href);
+            const showSection = !isCollapsed && item.section && (idx === 0 || items[idx - 1]?.section !== item.section);
+
+            return (
+              <React.Fragment key={item.id}>
+                {showSection && (
+                  <div className="px-3 pt-4 pb-1 text-[10px] font-extrabold uppercase tracking-wider text-stone-400">
+                    {item.section}
+                  </div>
+                )}
+                <Link
+                  href={item.href}
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition ${
+                    isActive ? `${item.activeBg} ${item.color}` : 'text-stone-600 hover:bg-stone-200/50 hover:text-stone-900'
+                  }`}
+                  title={isCollapsed ? item.label : undefined}
+                >
+                  <Icon size={18} className="shrink-0" />
+                  {!isCollapsed && <span className="truncate">{item.label}</span>}
+                </Link>
+              </React.Fragment>
+            );
+          })}
+        </div>
+
+        <div className="p-3 border-t border-stone-200/80 space-y-2">
+          <FavoritesPanel isCollapsed={isCollapsed} />
+          <PushOptIn collapsed={isCollapsed} />
         </div>
       </aside>
 
-      {/* スマホ用の通知ベル: 下部ナビは枠数が固定でロジックが繊細なため、
-          そこに組み込まず画面右上に浮かせて常時アクセスできるようにする。 */}
-      {isAdminLoggedIn && (
-        <div className="md:hidden fixed top-3 right-3 z-40">
-          <NotificationBell collapsed align="right" />
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[#f7f5f0]/95 backdrop-blur-md border-t border-stone-200 z-40 px-2 py-1.5 flex items-center justify-around">
+        {primaryMobileItems.map((item) => (
+          <MobileNavItem
+            key={item.id}
+            item={item}
+            active={pathname.startsWith(item.href)}
+            pending={pendingHref === item.href}
+            onClick={() => setPendingHref(item.href)}
+          />
+        ))}
+        {overflowMobileItems.length > 0 && (
+          <button
+            onClick={() => setShowMobileMore(true)}
+            className="flex flex-col items-center justify-center min-w-[3.5rem] px-2 py-1.5 rounded-xl text-stone-500 active:bg-black/10 touch-manipulation select-none"
+          >
+            <MoreHorizontal size={18} className="mb-1" />
+            <span className="text-[9px] font-bold tracking-wider truncate w-full text-center">その他</span>
+          </button>
+        )}
+      </nav>
+
+      {showMobileMore && (
+        <div className="md:hidden fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex flex-col justify-end">
+          <div className="bg-[#f7f5f0] rounded-t-3xl p-5 border-t border-stone-200 max-h-[80vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4 pb-2 border-b border-stone-200">
+              <h3 className="font-extrabold text-sm text-stone-900">メニュー</h3>
+              <button onClick={() => setShowMobileMore(false)} className="p-1.5 rounded-full hover:bg-stone-200">
+                <XIcon size={18} />
+              </button>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              {overflowMobileItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = pathname.startsWith(item.href);
+                return (
+                  <Link
+                    key={item.id}
+                    href={item.href}
+                    onClick={() => setShowMobileMore(false)}
+                    className={`flex flex-col items-center p-3 rounded-2xl border text-center transition ${
+                      isActive ? `${item.activeBg} ${item.color} border-current` : 'bg-white border-stone-200 text-stone-700'
+                    }`}
+                  >
+                    <Icon size={20} className="mb-1.5" />
+                    <span className="text-[10px] font-bold truncate w-full">{item.label}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
         </div>
       )}
-
-      {/* スマホ用ボトムナビ: 主要項目を固定表示し、残りは「その他」シートに格納 */}
-      {(() => {
-        // 管理者タブは5枠、一般タブは4枠
-        const PRIMARY = !isAdminLoggedIn ? 4 : (activeTab === 'admin' ? 5 : 4);
-        const primaryItems = activeMenuItems.slice(0, PRIMARY);
-        const overflowItems = activeMenuItems.slice(PRIMARY);
-        // ADMIN_GENERAL_MENU_ITEMS はちょうど4件でオーバーフローが発生しないため、
-        // 「その他」ボタン(＝管理者⇔一般切替への唯一の入口)が消えてしまい、
-        // 一般タブへ切り替えた後モバイルから二度と管理者タブへ戻れなくなっていた。
-        // 一般タブの間は常に「その他」を出し、切替スイッチへ到達できるようにする
-        // (未ログインの一般訪問者にはそもそも切替が無いので対象外)。
-        const hasMore = overflowItems.length > 0 || (isAdminLoggedIn && activeTab === 'general');
-        const isActive = (item: typeof activeMenuItems[number]) =>
-          pathname === item.href || (item.id === 'leaderboard' && pathname.startsWith('/player'));
-
-        return (
-          <>
-            {/* 「その他」シート（オーバーレイ） */}
-            {showMobileMore && (
-              <div className="md:hidden fixed inset-0 z-50" onClick={() => setShowMobileMore(false)}>
-                <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
-                <div
-                  className="absolute bottom-[calc(4.5rem+env(safe-area-inset-bottom))] left-3 right-3 rounded-3xl bg-white border border-black/10 p-4 shadow-2xl"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-xs font-black text-stone-500 tracking-wide">すべての機能</span>
-                    <button onClick={() => setShowMobileMore(false)} className="text-stone-500 hover:text-stone-900 p-1"><XIcon size={16} /></button>
-                  </div>
-
-                  {/* モバイル用 タブ切り替えUI（管理者ログイン時のみ） */}
-                  {isAdminLoggedIn && (
-                    <div className="flex bg-black/5 p-1 rounded-xl border border-black/5 mb-3">
-                      <button onClick={() => setActiveTab('admin')} className={`flex-1 py-2 rounded-lg text-[11px] font-black transition-all ${activeTab === 'admin' ? 'bg-[#c89b3c] text-black' : 'text-stone-500'}`}>管理者機能</button>
-                      <button onClick={() => setActiveTab('general')} className={`flex-1 py-2 rounded-lg text-[11px] font-black transition-all ${activeTab === 'general' ? 'bg-black/10 text-stone-900' : 'text-stone-500'}`}>一般機能</button>
-                    </div>
-                  )}
-
-                  {overflowItems.length === 0 && (
-                    <p className="text-[11px] text-stone-500 text-center py-2">残りの機能は下部メニューに表示されています</p>
-                  )}
-                  <div className="grid grid-cols-4 gap-2">
-                    {overflowItems.map((item) => (
-                      <MobileNavItem
-                        key={`sheet-${item.id}`}
-                        item={item}
-                        active={isActive(item)}
-                        pending={pendingHref === item.href}
-                        onClick={() => { setPendingHref(item.href); setShowMobileMore(false); }}
-                      />
-                    ))}
-                  </div>
-
-                  {/* Web Push 通知の有効化。PC版サイドバーにしか出ておらず、スマホから
-                      有効化する手段が/coachページの奥にしか無く分かりにくかったため、
-                      「その他」シートにも同じボタンを出す。 */}
-                  {isAdminLoggedIn && (
-                    <div className="mt-3 pt-3 border-t border-black/5">
-                      <PushOptIn scope="admin" label="ポータル通知" inline />
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* 遷移中インジケータ: 押した直後に画面上部で進行が分かるようにする */}
-            {pendingHref && (
-              <div className="md:hidden fixed top-0 left-0 right-0 h-0.5 z-[60] bg-cyan-400/30 overflow-hidden">
-                <div className="h-full w-1/3 bg-cyan-400 animate-[loading_1s_ease-in-out_infinite]"
-                  style={{ animation: 'ktmLoading 1s ease-in-out infinite' }} />
-                <style>{`@keyframes ktmLoading { 0% { transform: translateX(-100%);} 100% { transform: translateX(400%);} }`}</style>
-              </div>
-            )}
-
-            <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-xl border-t border-black/10 z-50 flex items-center justify-around px-1 py-2 shadow-[0_-4px_24px_rgba(32,28,43,0.1)] pb-[env(safe-area-inset-bottom)]">
-              {primaryItems.map((item) => (
-                <MobileNavItem
-                  key={`bar-${item.id}`}
-                  item={item}
-                  active={isActive(item)}
-                  pending={pendingHref === item.href}
-                  onClick={() => setPendingHref(item.href)}
-                />
-              ))}
-
-              {hasMore && (
-                <button
-                  onClick={() => setShowMobileMore((v) => !v)}
-                  className={`flex flex-col items-center justify-center min-w-[3.5rem] px-2 py-1.5 rounded-xl transition-colors ${
-                    showMobileMore ? 'bg-black/10 text-stone-900' : 'text-stone-500 active:bg-black/10'
-                  }`}
-                >
-                  <MoreHorizontal size={18} className="mb-1" />
-                  <span className="text-[9px] font-black tracking-wider text-center">その他</span>
-                </button>
-              )}
-            </nav>
-          </>
-        );
-      })()}
     </>
   );
 }

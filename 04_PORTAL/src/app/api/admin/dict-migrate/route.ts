@@ -84,7 +84,7 @@ export async function GET(req: Request) {
       if (isGlobal) {
         // --- 型付きの辞典本体 ---
         const jg = rd.jg_style || {};
-        const fact = {
+        const fact: Record<string, any> = {
           champion,
           strengths: rd.strengths || null,
           weaknesses: rd.weaknesses || null,
@@ -102,6 +102,15 @@ export async function GET(req: Request) {
           jg_counter_pickable: typeof jg.counter_pickable === 'number' ? jg.counter_pickable : null,
           patch: rd.patch_meta?.patch || null,
           source: rd.source || 'champ_db',
+          // --- SSOT新カラム (51_champion_facts_as_ssot.sql) ---
+          custom_fields: rd.customFields || {},
+          patch_meta: rd.patch_meta || null,
+          pro_builds: rd.pro_builds || [],
+          // 日次cronからの同期なのでAI生成扱い。人間が確認済みにしたconfidenceは上書きしない。
+          confidence: 'ai_generated',
+          auto_updated_at: new Date().toISOString(),
+          source_summary: `matchup_sentinel GLOBAL行から同期 (${new Date().toISOString().slice(0, 10)})`,
+          migrated_from_sentinel: true,
         };
         // 中身が全部空のGLOBAL行（ゴミ/テストデータ）は facts に書き込まない
         if (hasFactContent(fact)) facts.push(fact);
@@ -154,9 +163,27 @@ export async function GET(req: Request) {
 
     // --- 実書き込み ---
     // facts は upsert（champion PK）
+    // ただし、人間が 'verified' に設定した confidence を上書きしないよう、
+    // 既存行の confidence/last_verified_at/last_verified_by を先に取得してマージする。
     if (facts.length > 0) {
+      const { data: existingFacts } = await supabase
+        .from('champion_facts')
+        .select('champion, confidence, last_verified_at, last_verified_by')
+        .in('champion', facts.map((f) => f.champion));
+      const existingMap = new Map<string, { confidence?: string; last_verified_at?: string; last_verified_by?: string }>((existingFacts || []).map((e: any) => [e.champion, e]));
+
       for (let i = 0; i < facts.length; i += 100) {
-        const chunk = facts.slice(i, i + 100).map((f) => ({ ...f, updated_at: new Date().toISOString() }));
+        const chunk = facts.slice(i, i + 100).map((f) => {
+          const existing = existingMap.get(f.champion);
+          return {
+            ...f,
+            updated_at: new Date().toISOString(),
+            // 既に verified なら confidence を上書きしない
+            confidence: existing?.confidence === 'verified' ? 'verified' : f.confidence,
+            last_verified_at: existing?.last_verified_at || null,
+            last_verified_by: existing?.last_verified_by || null,
+          };
+        });
         const { error: fErr } = await supabase.from('champion_facts').upsert(chunk, { onConflict: 'champion' });
         if (fErr) throw new Error(`champion_facts upsert失敗: ${fErr.message}`);
       }

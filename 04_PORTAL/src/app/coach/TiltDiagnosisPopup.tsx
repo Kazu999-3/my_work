@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { apiJson } from '../../lib/apiClient';
+import AngerDetoxModal from './AngerDetoxModal';
+import { QuickChoiceOption, BlameCheckResult } from '../../lib/tiltBlameDetector';
 
 type Level = 'green' | 'yellow' | 'red';
 
@@ -9,163 +11,259 @@ interface Props {
   isOpen: boolean;
   onClose: () => void;
   onProceedToReflection: () => void;
-  /** 「このセッションは自動表示しない」を選んだ時に呼ばれる。次の試合をすぐ始めたい
-   * ユーザーが、試合終了のたびに強制表示される全画面モーダルを一時的に止められるように
-   * する(2026-08-05発覚: スヌーズ・非表示オプションが無かった)。 */
   onSnooze: () => void;
 }
 
-// 試合終了を検知した直後に自動でティルト診断を実行し、結果をポップアップ表示する。
-// 「今すぐ振り返りへ進む」導線を用意し、診断→振り返りの流れを1本化する(#①)。
 export default function TiltDiagnosisPopup({ isOpen, onClose, onProceedToReflection, onSnooze }: Props) {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState('');
+  const [isDetoxOpen, setIsDetoxOpen] = useState(false);
+
+  // 1秒直感チェックの状態
+  const [quickChoice, setQuickChoice] = useState<QuickChoiceOption | null>(null);
+
+  const runAnalysis = async (choice?: QuickChoiceOption) => {
+    setLoading(true);
+    setError('');
+    try {
+      const data = await apiJson('/api/coach/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: 'tilt', quickChoice: choice || quickChoice }),
+        timeout: 60000,
+        redirectOn401: false,
+      });
+      setResult(data);
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (!isOpen) return;
-    setLoading(true); setError(''); setResult(null);
-    apiJson('/api/coach/analyze', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ mode: 'tilt' }),
-      timeout: 60000,
-      redirectOn401: false,
-    })
-      .then(setResult)
-      .catch((e: any) => setError(e.message))
-      .finally(() => setLoading(false));
+    setQuickChoice(null);
+    setResult(null);
+    runAnalysis();
   }, [isOpen]);
+
+  const handleSelectChoice = (choice: QuickChoiceOption) => {
+    setQuickChoice(choice);
+    runAnalysis(choice);
+  };
 
   if (!isOpen) return null;
 
   const tilt = result?.tilt;
   const timing = result?.timing;
   const rec = result?.playRecommendation;
+  const integrated: BlameCheckResult | undefined = result?.integratedResult;
+
+  const blameScore = integrated?.blameScore ?? 0;
+  const calmScore = integrated?.calmScore ?? 50;
+  const isHighBlame = blameScore >= 70;
 
   const tiltColors: Record<Level, string> = {
     green: 'border-emerald-300 bg-emerald-50',
     yellow: 'border-yellow-300 bg-yellow-50',
     red: 'border-red-300 bg-red-50',
   };
-  const meterColors: Record<Level, string> = {
-    green: 'bg-emerald-500',
-    yellow: 'bg-yellow-500',
-    red: 'bg-red-500',
-  };
-  const recColors: Record<Level, string> = {
-    green: 'bg-emerald-700',
-    yellow: 'bg-amber-600',
-    red: 'bg-rose-700',
-  };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/60 backdrop-blur-sm p-4 overflow-y-auto">
-      <div className="bg-stone-50 border border-stone-300 rounded-xl shadow-2xl w-full max-w-md overflow-hidden my-6">
-        <div className="bg-amber-900 text-amber-50 px-5 py-3.5 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-xl">🧠</span>
-            <h2 className="text-base font-bold">試合終了：ティルト診断</h2>
-          </div>
-          <button
-            onClick={onClose}
-            className="text-amber-200 hover:text-white text-xl font-bold px-2 py-0.5 rounded hover:bg-amber-800 transition-colors"
-          >
-            ✕
-          </button>
-        </div>
-
-        <div className="p-5 space-y-4 text-sm text-stone-800 max-h-[75vh] overflow-y-auto">
-          {loading && (
-            <div className="flex items-center justify-center gap-2 py-8 text-foreground/50">
-              <div className="h-5 w-5 animate-spin rounded-full border-2 border-black/15 border-t-amber-600" />
-              <span className="text-sm">直近の試合を分析中...</span>
+    <>
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/60 backdrop-blur-sm p-4 overflow-y-auto">
+        <div className="bg-stone-50 border border-stone-300 rounded-xl shadow-2xl w-full max-w-md overflow-hidden my-6">
+          {/* ヘッダー */}
+          <div className="bg-amber-900 text-amber-50 px-5 py-3.5 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-xl">🧠</span>
+              <h2 className="text-base font-bold">試合終了：メンタル＆ティルト高精度診断</h2>
             </div>
-          )}
-          {error && <p className="text-sm text-rose-600">❌ {error}</p>}
+            <button
+              onClick={onClose}
+              className="text-amber-200 hover:text-white text-xl font-bold px-2 py-0.5 rounded hover:bg-amber-800 transition-colors"
+            >
+              ✕
+            </button>
+          </div>
 
-          {tilt && (
-            <div className={`rounded-xl border p-4 ${tiltColors[tilt.level as Level]}`}>
-              <div className="font-bold text-stone-900 mb-2">{tilt.label}</div>
-              <div className="mb-2.5">
-                <div className="flex justify-between text-xs text-stone-500 mb-1">
-                  <span>ティルトスコア</span><span>{tilt.score} / 100</span>
+          <div className="p-5 space-y-5 text-sm text-stone-800 max-h-[75vh] overflow-y-auto">
+            {/* Step 1: 1秒直感チェック */}
+            <div className="bg-white p-4 rounded-xl border border-stone-200 shadow-sm">
+              <h3 className="font-extrabold text-xs text-stone-700 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
+                <span>⚡ Step 1: 1秒直感チェック</span>
+                <span className="text-[10px] text-stone-400 font-normal">（直感で選択）</span>
+              </h3>
+              <p className="text-xs text-stone-600 mb-3 font-semibold">今の試合で一番大きな敗因・問題と感じるのは？</p>
+              
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => handleSelectChoice('ally_fault')}
+                  className={`p-2.5 rounded-lg border text-xs font-bold text-left transition ${
+                    quickChoice === 'ally_fault'
+                      ? 'bg-red-500 text-white border-red-600 shadow-sm'
+                      : 'bg-stone-50 hover:bg-red-50 text-stone-800 border-stone-200'
+                  }`}
+                >
+                  🔴 味方のミス・判断
+                </button>
+                <button
+                  onClick={() => handleSelectChoice('self_fault')}
+                  className={`p-2.5 rounded-lg border text-xs font-bold text-left transition ${
+                    quickChoice === 'self_fault'
+                      ? 'bg-emerald-600 text-white border-emerald-700 shadow-sm'
+                      : 'bg-stone-50 hover:bg-emerald-50 text-stone-800 border-stone-200'
+                  }`}
+                >
+                  🟢 自分のミス・判断
+                </button>
+                <button
+                  onClick={() => handleSelectChoice('comp_fault')}
+                  className={`p-2.5 rounded-lg border text-xs font-bold text-left transition ${
+                    quickChoice === 'comp_fault'
+                      ? 'bg-blue-600 text-white border-blue-700 shadow-sm'
+                      : 'bg-stone-50 hover:bg-blue-50 text-stone-800 border-stone-200'
+                  }`}
+                >
+                  🔵 構成・不可抗力
+                </button>
+                <button
+                  onClick={() => handleSelectChoice('unknown')}
+                  className={`p-2.5 rounded-lg border text-xs font-bold text-left transition ${
+                    quickChoice === 'unknown'
+                      ? 'bg-stone-700 text-white border-stone-800 shadow-sm'
+                      : 'bg-stone-50 hover:bg-stone-200 text-stone-800 border-stone-200'
+                  }`}
+                >
+                  ⚪ まだ分からない
+                </button>
+              </div>
+            </div>
+
+            {loading && (
+              <div className="flex items-center justify-center gap-2 py-6 text-stone-500">
+                <div className="h-5 w-5 animate-spin rounded-full border-2 border-stone-300 border-t-amber-600" />
+                <span className="text-xs font-semibold">思考トーン＆戦績を分析中...</span>
+              </div>
+            )}
+
+            {error && <p className="text-xs text-rose-600 font-bold">❌ {error}</p>}
+
+            {/* Wメーター表示: イラつき度 vs 冷静度 */}
+            {result && (
+              <div className="bg-white p-4 rounded-xl border border-stone-200 shadow-sm space-y-3">
+                <h3 className="font-extrabold text-xs text-stone-700 uppercase tracking-wider flex items-center justify-between">
+                  <span>📊 感情＆冷静度 Wメーター</span>
+                  {result.sentimentAnalysis && (
+                    <span className="text-[10px] bg-stone-100 border border-stone-200 px-2 py-0.5 rounded-full font-bold text-stone-700">
+                      トーン: {result.sentimentAnalysis}
+                    </span>
+                  )}
+                </h3>
+
+                {/* 他罰イラつき度メーター */}
+                <div>
+                  <div className="flex justify-between text-xs font-bold mb-1">
+                    <span className="text-red-700 flex items-center gap-1">🔥 味方へのイラつき度</span>
+                    <span className="text-red-800 font-black">{blameScore}%</span>
+                  </div>
+                  <div className="h-3 w-full bg-stone-100 rounded-full overflow-hidden border border-stone-200">
+                    <div
+                      className="h-full bg-gradient-to-r from-amber-500 to-red-600 transition-all duration-500"
+                      style={{ width: `${blameScore}%` }}
+                    />
+                  </div>
                 </div>
-                <div className="h-2 w-full rounded-full bg-black/5">
-                  <div
-                    className={`h-2 rounded-full transition-all ${meterColors[tilt.level as Level]}`}
-                    style={{ width: `${Math.min(tilt.score, 100)}%` }}
-                  />
+
+                {/* 冷静・客観度メーター */}
+                <div>
+                  <div className="flex justify-between text-xs font-bold mb-1">
+                    <span className="text-emerald-700 flex items-center gap-1">❄️ 冷静・客観分析度</span>
+                    <span className="text-emerald-800 font-black">{calmScore}%</span>
+                  </div>
+                  <div className="h-3 w-full bg-stone-100 rounded-full overflow-hidden border border-stone-200">
+                    <div
+                      className="h-full bg-gradient-to-r from-teal-500 to-emerald-600 transition-all duration-500"
+                      style={{ width: `${calmScore}%` }}
+                    />
+                  </div>
                 </div>
               </div>
-              {tilt.reasons?.length > 0 && (
-                <div className="flex flex-wrap gap-1">
-                  {tilt.reasons.map((r: string, i: number) => (
-                    <span key={i} className="text-[11px] rounded-full border border-yellow-300 bg-yellow-100 text-yellow-800 px-2 py-0.5">{r}</span>
-                  ))}
+            )}
+
+            {/* 基本ティルト結果 */}
+            {tilt && (
+              <div className={`rounded-xl border p-4 ${tiltColors[tilt.level as Level]}`}>
+                <div className="font-bold text-stone-900 mb-1">{tilt.label}</div>
+                {integrated?.reasons && integrated.reasons.length > 0 && (
+                  <ul className="text-xs text-stone-700 space-y-1 list-disc list-inside">
+                    {integrated.reasons.map((r, idx) => (
+                      <li key={idx}>{r}</li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
+
+            {/* AIアドバイス */}
+            {result?.advice && (
+              <div className="bg-amber-50/60 border border-amber-200/80 rounded-xl p-3.5 text-xs leading-relaxed text-stone-800">
+                <div className="font-bold text-amber-900 mb-1 flex items-center gap-1">
+                  <span>💡 メンタルコーチのアドバイス</span>
                 </div>
+                {result.advice}
+              </div>
+            )}
+
+            {/* アクションボタン */}
+            <div className="space-y-2 pt-2">
+              {isHighBlame && (
+                <button
+                  onClick={() => setIsDetoxOpen(true)}
+                  className="w-full py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-extrabold text-xs transition flex items-center justify-center gap-1.5 shadow-md shadow-red-600/20"
+                >
+                  🔥 他罰イライラ高 (70%+) ➔ 怒りを書き出して吐き出す (アンガーデトックス)
+                </button>
               )}
-            </div>
-          )}
 
-          {timing && (
-            <div className="rounded-xl border border-stone-200 bg-white p-3.5">
-              <div className="text-xs font-bold text-stone-700 mb-1">🗓️ この時間帯の過去成績</div>
-              {timing.winRate !== null ? (
-                <p className="text-xs text-stone-600">
-                  {timing.dayLabel}曜{timing.scope === 'hour' ? `${timing.hour}時台` : '全体'}の勝率:{' '}
-                  <strong className={timing.winRate < 45 ? 'text-rose-600' : 'text-emerald-700'}>{timing.winRate}%</strong>
-                  {' '}({timing.wins}/{timing.games}勝)
-                </p>
-              ) : (
-                <p className="text-xs text-stone-400">この時間帯のサンプルがまだ不足しています。</p>
-              )}
-            </div>
-          )}
-
-          {rec && (
-            <div className={`rounded-xl px-4 py-3 text-white font-bold text-sm ${recColors[rec.level as Level]}`}>
-              {rec.label}
-              {rec.reasons?.length > 0 && (
-                <ul className="mt-1.5 text-xs font-normal opacity-90 list-disc list-inside space-y-0.5">
-                  {rec.reasons.map((r: string, i: number) => <li key={i}>{r}</li>)}
-                </ul>
-              )}
-            </div>
-          )}
-
-          {result?.advice && (
-            <div className="rounded-xl border border-orange-200 bg-orange-50 p-3.5">
-              <div className="text-xs font-bold text-orange-700 mb-1">🤖 AIコーチアドバイス</div>
-              <p className="text-xs text-stone-700 whitespace-pre-wrap leading-relaxed">{result.advice}</p>
-            </div>
-          )}
-
-          <div className="flex items-center justify-between gap-2 pt-2 border-t border-stone-200">
-            <button
-              onClick={onSnooze}
-              className="px-3 py-2 text-stone-400 hover:text-stone-600 text-[11px] font-medium transition-colors"
-              title="次にキューを入れる前に自動ポップアップを止めます。手動での振り返り記録は引き続き可能です。"
-            >
-              🔕 このセッションは自動表示しない
-            </button>
-            <div className="flex gap-2">
-              <button
-                onClick={onClose}
-                className="px-4 py-2 border border-stone-300 rounded-md text-stone-600 hover:bg-stone-100 text-xs font-medium transition-colors"
-              >
-                閉じる
-              </button>
               <button
                 onClick={onProceedToReflection}
-                className="px-5 py-2 bg-amber-700 hover:bg-amber-800 text-white rounded-md text-xs font-bold shadow transition-colors"
+                className="w-full py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-extrabold text-xs transition flex items-center justify-center gap-1 shadow-md shadow-amber-600/20"
               >
-                📝 振り返りを記録する
+                📝 今すぐ試合の振り返りを記録する ➔
               </button>
+
+              <div className="flex gap-2">
+                <button
+                  onClick={onSnooze}
+                  className="flex-1 py-2 bg-stone-200 hover:bg-stone-300 text-stone-700 rounded-xl text-xs font-bold transition"
+                >
+                  💤 今セッションは自動表示しない
+                </button>
+                <button
+                  onClick={onClose}
+                  className="flex-1 py-2 bg-stone-100 hover:bg-stone-200 text-stone-600 rounded-xl text-xs font-bold transition"
+                >
+                  閉じる
+                </button>
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+
+      {/* アンガーデトックス モーダル */}
+      {isDetoxOpen && (
+        <AngerDetoxModal
+          isOpen={isDetoxOpen}
+          onClose={() => setIsDetoxOpen(false)}
+          onComplete={(focusText: string) => {
+            setIsDetoxOpen(false);
+          }}
+        />
+      )}
+    </>
   );
 }

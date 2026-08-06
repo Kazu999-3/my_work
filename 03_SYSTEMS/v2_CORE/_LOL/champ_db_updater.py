@@ -45,16 +45,38 @@ def fetch_existing_champ_data(champ_id: str) -> dict:
         logging.error(f"Failed to fetch existing data for {champ_id}: {e}")
     return {}
 
+def fetch_champion_notes(champ_id: str) -> str:
+    """Supabaseのchampion_notesから最新の攻略ノート・記事を取得する"""
+    champ_id = normalize_champion_id(champ_id)
+    if not SUPABASE_URL or not SUPABASE_KEY: return ""
+    url = f"{SUPABASE_URL}/rest/v1/champion_notes?champion=ilike.{champ_id}&order=created_at.desc&limit=5"
+    headers = {"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}"}
+    try:
+        r = requests.get(url, headers=headers, timeout=10)
+        if r.status_code == 200:
+            notes = r.json()
+            if notes:
+                lines = ["【攻略ライブラリ・関連ノートの知見（最新5件）】"]
+                for n in notes:
+                    title = n.get("title") or "無題"
+                    body = (n.get("body") or "").strip()[:300]
+                    lines.append(f"- 【{title}】 {body}")
+                return "\n".join(lines)
+    except Exception as e:
+        logging.warning(f"Failed to fetch champion_notes for {champ_id}: {e}")
+    return ""
+
 def merge_and_extract_intel(champ_name: str, new_text: str, existing_data: dict) -> dict:
-    """Geminiを使用して既存のメモと新しいトレンド記事を賢くマージし、JSONを出力する"""
+    """Geminiを使用して既存のメモ、関連ノート、新しいトレンド記事を賢くマージし、JSONを出力する"""
     if not GEMINI_API_KEY:
         logging.error("GEMINI_API_KEY not found in .env")
         return None
 
     client = genai.Client(api_key=GEMINI_API_KEY)
     
-    # 既存のデータを文字列化
+    # 既存のデータおよび関連ノートを取得・文字列化
     old_raw = existing_data.get("raw_data", {})
+    notes_text = fetch_champion_notes(champ_name)
     existing_text = f"""
     【既存のユーザー手書きメモ（絶対に保護し、失わないこと！）】
     - 強み: {old_raw.get('strengths', '')}
@@ -63,6 +85,8 @@ def merge_and_extract_intel(champ_name: str, new_text: str, existing_data: dict)
     - ビルド/ルーン: {old_raw.get('buildRunes', '')}
     - フルクリア時間: {old_raw.get('fullClearTime', '')}
     - 立ち回り: {existing_data.get('strategy', '')}
+
+    {notes_text}
     """
     
     prompt = f"""
@@ -257,6 +281,49 @@ def update_champion_db(champ_id: str, champ_name: str, new_text: str, patch_vers
                     supabase_url=SUPABASE_URL, supabase_key=SUPABASE_KEY
                 )
                 herald.notify_progress(f"📖 **【辞典更新完了】** {champ_name} のデータとnoteドラフトが自動ブラッシュアップされました！", portal_link=True, page="champdb")
+
+                # --- SSOT: champion_facts にも並行書き込み ---
+                now_iso = datetime.now(timezone.utc).isoformat()
+                facts_payload = {
+                    "champion": champ_id,
+                    "strengths": merged_json.get("strengths") or None,
+                    "weaknesses": merged_json.get("weaknesses") or None,
+                    "power_spikes": merged_json.get("powerSpikes") or None,
+                    "build_runes": merged_json.get("buildRunes") or None,
+                    "full_clear_time": merged_json.get("fullClearTime") or None,
+                    "strategy": merged_json.get("strategy") or None,
+                    "counter_champions": existing_raw.get("counterChampions") or None,
+                    "pick_recommendation": existing_raw.get("pickRecommendation") or None,
+                    "jg_type": jg_style_type,
+                    "jg_description": jg_style_desc,
+                    "jg_blind_pickable": int(jg_style_blind),
+                    "jg_counter_pickable": int(jg_style_counter),
+                    "patch": patch_meta.get("patch") or None,
+                    "patch_meta": patch_meta,
+                    "pro_builds": existing_raw.get("pro_builds", []),
+                    "source": "champ_db_updater",
+                    "confidence": "ai_generated",
+                    "auto_updated_at": now_iso,
+                    "source_summary": f"辞典自動ブラッシュアップ ({now_iso[:10]})",
+                    "updated_at": now_iso,
+                    "migrated_from_sentinel": True,
+                }
+                try:
+                    facts_url = f"{SUPABASE_URL}/rest/v1/champion_facts?on_conflict=champion"
+                    facts_headers = {
+                        "apikey": SUPABASE_KEY,
+                        "Authorization": f"Bearer {SUPABASE_KEY}",
+                        "Content-Type": "application/json",
+                        "Prefer": "resolution=merge-duplicates"
+                    }
+                    facts_r = requests.post(facts_url, headers=facts_headers, json=facts_payload, timeout=15)
+                    if facts_r.status_code in (200, 201):
+                        logging.info(f"✅ [{champ_id}] champion_facts (SSOT) も更新しました")
+                    else:
+                        logging.warning(f"⚠️ [{champ_id}] champion_facts upsert失敗: {facts_r.status_code}")
+                except Exception as fe:
+                    logging.warning(f"⚠️ [{champ_id}] champion_facts 書き込み例外: {fe}")
+
                 return True
             elif r.status_code in (429, 500, 502, 503, 504) and attempt < max_retries - 1:
                 wait = 2 ** attempt

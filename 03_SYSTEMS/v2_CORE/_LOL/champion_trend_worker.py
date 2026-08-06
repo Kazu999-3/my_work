@@ -42,12 +42,33 @@ def extract_json_object(text: str) -> str:
     return text
 
 
+def fetch_champion_notes(champ_id: str, supabase_url: str, supabase_key: str) -> str:
+    """Supabaseのchampion_notesから最新の攻略ノート・記事を取得する"""
+    champ_id = normalize_champion_id(champ_id)
+    if not supabase_url or not supabase_key: return ""
+    url = f"{supabase_url}/rest/v1/champion_notes?champion=ilike.{champ_id}&order=created_at.desc&limit=5"
+    headers = {"apikey": supabase_key, "Authorization": f"Bearer {supabase_key}"}
+    try:
+        r = httpx.get(url, headers=headers, timeout=10)
+        if r.status_code == 200:
+            notes = r.json()
+            if notes:
+                lines = ["【攻略ライブラリ・関連ノートの知見（最新5件）】"]
+                for n in notes:
+                    title = n.get("title") or "無題"
+                    body = (n.get("body") or "").strip()[:300]
+                    lines.append(f"- 【{title}】 {body}")
+                return "\n".join(lines)
+    except Exception as e:
+        logger.warning(f"Failed to fetch champion_notes for {champ_id}: {e}")
+    return ""
+
+
 def main():
     if len(sys.argv) < 3:
         logger.error("Usage: python champion_trend_worker.py <champion> <role>")
         sys.exit(1)
 
-    # 表記ゆれのまま matchup_id を作ると既存GLOBALレコードと別物として重複作成されるため正規化する
     champion = normalize_champion_id(sys.argv[1])
     role = sys.argv[2]
     
@@ -60,10 +81,9 @@ def main():
         
     client = genai.Client(api_key=api_key)
     
-    # 2026年コンテキストの付与
     now_str = datetime.now(timezone.utc).strftime("%Y/%m/%d")
+    notes_context = fetch_champion_notes(champion, settings.SUPABASE_URL, settings.SUPABASE_KEY)
     
-    # ジャングルロール時の分類指示の組み立て
     jg_instructions = ""
     jg_json_schema = ""
     if role.lower() == "jungle":
@@ -88,6 +108,8 @@ def main():
   }"""
 
     prompt = f"""【システムコンテキスト：現在の年は2026年です（本日は {now_str}）。この日時を基準に、未来や過去の出来事を正しく判定し、文脈を構築してください。】
+
+{notes_context}
 
 League of Legendsの最新パッチにおける、チャンピオン「{champion}」のロール「{role}」の統計データおよびプロプレイヤーの最新ビルド情報をリサーチしてください。
 - ※ 同キャラ対決（ミラーマッチ）の試合データは勝率が50%に強制固定されるため必ず除外して、異対面における純粋な対戦勝率・ピック率・BAN率のみを集計してください。
@@ -265,6 +287,45 @@ League of Legendsの最新パッチにおける、チャンピオン「{champion
         source_title="最新トレンド取得（AI自動収集）",
         supabase_url=supabase_url, supabase_key=supabase_key
     )
+
+    # --- SSOT: champion_facts にも並行書き込み ---
+    # 日次の dict-migrate cron を待たず、トレンド取得直後に champion_facts を最新化する。
+    jg_style_data = raw_data.get("jg_style") if isinstance(raw_data.get("jg_style"), dict) else {}
+    patch_meta_data = raw_data.get("patch_meta") if isinstance(raw_data.get("patch_meta"), dict) else {}
+    facts_payload = {
+        "champion": champion,
+        "strengths": raw_data.get("strengths") or None,
+        "weaknesses": raw_data.get("weaknesses") or None,
+        "power_spikes": raw_data.get("powerSpikes") or None,
+        "build_runes": raw_data.get("buildRunes") or None,
+        "full_clear_time": raw_data.get("fullClearTime") or None,
+        "counter_champions": raw_data.get("counterChampions") or None,
+        "pick_recommendation": raw_data.get("pickRecommendation") or None,
+        "jg_type": jg_style_data.get("type") or None,
+        "jg_description": jg_style_data.get("description") or None,
+        "jg_blind_pickable": jg_style_data.get("blind_pickable"),
+        "jg_counter_pickable": jg_style_data.get("counter_pickable"),
+        "patch": patch_meta_data.get("patch") or None,
+        "patch_meta": patch_meta_data or None,
+        "pro_builds": raw_data.get("pro_builds") or [],
+        "source": "champion_trend_worker",
+        "confidence": "ai_generated",
+        "auto_updated_at": now_iso,
+        "source_summary": f"AI自動トレンド収集 ({now_iso[:10]})",
+        "updated_at": now_iso,
+        "migrated_from_sentinel": True,
+    }
+    try:
+        facts_url = f"{supabase_url}/rest/v1/champion_facts?on_conflict=champion"
+        facts_headers = headers.copy()
+        facts_headers["Prefer"] = "resolution=merge-duplicates"
+        facts_res = httpx.post(facts_url, headers=facts_headers, json=facts_payload, timeout=15)
+        if facts_res.status_code in (200, 201, 204):
+            logger.info(f"✅ [{champion}] champion_facts (SSOT) も更新しました")
+        else:
+            logger.warning(f"⚠️ [{champion}] champion_facts upsert失敗 (sentinel側は成功): {facts_res.status_code} - {facts_res.text}")
+    except Exception as fe:
+        logger.warning(f"⚠️ [{champion}] champion_facts 書き込み例外 (sentinel側は成功): {fe}")
 
     # 成功終了情報を出力
     print(json.dumps({"success": True, "message": f"Updated {champion} trend", "matchup_id": matchup_id}))
