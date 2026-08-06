@@ -476,6 +476,28 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
                 );
               })}
             </div>
+            <div className="flex flex-wrap gap-1 pt-1 pb-1">
+              <span className="text-[10px] text-stone-400 font-bold block w-full">⚡ タップでメモに即座追加:</span>
+              {[
+                '序盤の寄りが遅れた',
+                '相手JG位置が見えていなかった',
+                '無理なオールインで倒された',
+                'オブジェクト意識が高く勝利',
+                '視界管理でキャッチを防止できた',
+                '次からは引いてファーム優先',
+              ].map((snippet) => (
+                <button
+                  type="button"
+                  key={snippet}
+                  onClick={() => {
+                    setReflectionNote((prev) => (prev ? `${prev} / ${snippet}` : snippet));
+                  }}
+                  className="px-2 py-0.5 text-[10px] bg-stone-100 hover:bg-amber-100 text-stone-700 hover:text-amber-900 border border-stone-200 rounded font-semibold transition"
+                >
+                  + {snippet}
+                </button>
+              ))}
+            </div>
             <textarea
               rows={2}
               placeholder="反省メモや勝敗を分けたプレイ（例: 14分ドラゴン戦での寄りが遅れた / 相手JGの位置把握）"

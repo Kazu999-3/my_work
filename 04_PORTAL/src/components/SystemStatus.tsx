@@ -40,20 +40,29 @@ export default function SystemStatus({ isCollapsed = false }: { isCollapsed?: bo
     : '';
 
   return (
-    <div className={`flex items-center gap-3 bg-black/5 rounded-2xl border border-black/5 ${isCollapsed ? 'justify-center p-3 w-10 h-10 mx-auto' : 'p-4'}`}>
-      <div className="relative flex items-center justify-center shrink-0">
-        <div className="w-2 h-2 rounded-full relative z-10" style={{ backgroundColor: color }}></div>
-        {ok && !loading && (
-          <div className="absolute w-4 h-4 rounded-full animate-ping opacity-75" style={{ backgroundColor: color }}></div>
+    <div className={`flex flex-col gap-1.5 bg-black/5 rounded-2xl border border-black/5 ${isCollapsed ? 'justify-center p-2.5 w-10 mx-auto' : 'p-3'}`}>
+      <div className="flex items-center gap-2.5">
+        <div className="relative flex items-center justify-center shrink-0">
+          <div className="w-2 h-2 rounded-full relative z-10" style={{ backgroundColor: color }}></div>
+          {ok && !loading && (
+            <div className="absolute w-4 h-4 rounded-full animate-ping opacity-75" style={{ backgroundColor: color }}></div>
+          )}
+        </div>
+        {!isCollapsed && (
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center justify-between">
+              <span className="text-[9px] text-gray-500 font-bold uppercase tracking-widest">Status</span>
+              <span className="text-[9px] bg-amber-100/80 text-amber-900 font-black px-1.5 py-0.2 rounded border border-amber-300">
+                パッチ 16.15
+              </span>
+            </div>
+            <p className="text-xs font-black" style={{ color }}>
+              {label}
+              {time && !loading && <span className="ml-1 text-[9px] font-medium text-gray-500">({time})</span>}
+            </p>
+          </div>
         )}
       </div>
-      {!isCollapsed && (
-        <div className="min-w-0">
-          <p className="text-[9px] text-gray-500 font-bold uppercase tracking-widest mb-0.5">Status</p>
-          <p className="text-xs font-black" style={{ color }}>
-            {label}
-            {time && !loading && <span className="ml-1 text-[9px] font-medium text-gray-500">({time})</span>}
-          </p>
           {/* A-05: 依存サービスの設定状況（未設定のものだけ警告表示） */}
           {health && !loading && (
             <div className="flex gap-1 mt-1 flex-wrap">
@@ -64,8 +73,6 @@ export default function SystemStatus({ isCollapsed = false }: { isCollapsed?: bo
                 ))}
             </div>
           )}
-        </div>
-      )}
     </div>
   );
 }
