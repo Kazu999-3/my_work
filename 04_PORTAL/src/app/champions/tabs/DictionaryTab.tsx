@@ -769,15 +769,20 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
           <TextAreaCard title="強み (Strengths)" icon={Swords} color="text-[var(--color-success)] border-[var(--color-success)] shadow-[var(--color-success)]" value={dataFields.strengths} onChange={v => setField('strengths', v)} />
           <TextAreaCard title="弱み (Weaknesses)" icon={ShieldAlert} color="text-[var(--color-danger)] border-[var(--color-danger)] shadow-[var(--color-danger)]" value={dataFields.weaknesses} onChange={v => setField('weaknesses', v)} />
           <div>
-            {powerSpikeScores && (
-              <div className="mb-2 flex items-center gap-3 rounded-lg border border-[#c89b3c] px-3 py-2 text-sm">
-                <span className="font-bold text-[#c89b3c]">時間帯別の強さ:</span>
-                <span>序盤 {'★'.repeat(powerSpikeScores.early_game_score)}{'☆'.repeat(5 - powerSpikeScores.early_game_score)}</span>
-                <span>中盤 {'★'.repeat(powerSpikeScores.mid_game_score)}{'☆'.repeat(5 - powerSpikeScores.mid_game_score)}</span>
-                <span>終盤 {'★'.repeat(powerSpikeScores.late_game_score)}{'☆'.repeat(5 - powerSpikeScores.late_game_score)}</span>
-                {powerSpikeScores.summary && <span className="text-xs opacity-80">{powerSpikeScores.summary}</span>}
-              </div>
-            )}
+            {powerSpikeScores && (() => {
+              const early = Math.max(0, Math.min(5, Number(powerSpikeScores.early_game_score) || 0));
+              const mid = Math.max(0, Math.min(5, Number(powerSpikeScores.mid_game_score) || 0));
+              const late = Math.max(0, Math.min(5, Number(powerSpikeScores.late_game_score) || 0));
+              return (
+                <div className="mb-2 flex items-center gap-3 rounded-lg border border-[#c89b3c] px-3 py-2 text-sm flex-wrap">
+                  <span className="font-bold text-[#c89b3c]">時間帯別の強さ:</span>
+                  <span>序盤 {'★'.repeat(early)}{'☆'.repeat(5 - early)}</span>
+                  <span>中盤 {'★'.repeat(mid)}{'☆'.repeat(5 - mid)}</span>
+                  <span>終盤 {'★'.repeat(late)}{'☆'.repeat(5 - late)}</span>
+                  {powerSpikeScores.summary && <span className="text-xs opacity-80">{powerSpikeScores.summary}</span>}
+                </div>
+              );
+            })()}
             <TextAreaCard title="パワースパイク" icon={Zap} color="text-[#c89b3c] border-[#c89b3c] shadow-[#c89b3c]" value={dataFields.powerSpikes} onChange={v => setField('powerSpikes', v)} />
           </div>
           <TextAreaCard title="コアビルド / ルーン" icon={Shield} color="text-purple-600 border-purple-500 shadow-purple-500" value={dataFields.buildRunes} onChange={v => setField('buildRunes', v)} />
@@ -928,7 +933,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                   )}
                 </div>
                 
-                {dataFields.patch_meta.trend_items && dataFields.patch_meta.trend_items.length > 0 && (
+                {dataFields.patch_meta?.trend_items && dataFields.patch_meta.trend_items.length > 0 && (
                   <div>
                     <h4 className="text-xs font-bold text-gray-400 mb-2">🔥 コアアイテムビルド</h4>
                     <div className="flex items-center gap-2 flex-wrap">
@@ -1350,7 +1355,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                                 const a = playerAgg[name];
                                 a.games += 1;
                                 if (h.is_win) a.wins += 1;
-                                const parts = String(h.score).split('/').map(Number);
+                                const parts = String(h.score || '').split('/').map(Number);
                                 a.kills += parts[0] || 0;
                                 a.deaths += parts[1] || 0;
                                 a.assists += parts[2] || 0;
