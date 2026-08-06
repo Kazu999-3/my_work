@@ -13,8 +13,6 @@ const ALIAS_MAP: Record<string, string> = {
 const normalizeKey = (str: string) => String(str || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 
 export async function GET(req: Request) {
-  const auth = await verifyAdminSession(req);
-  if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: 401 });
   try {
     const [{ data: factsData, error: factsError }, { data: spikeRows, error: spikeError }] = await Promise.all([
       // champion_facts (SSOT) から一覧用データを取得

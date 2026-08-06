@@ -8,8 +8,6 @@ import { verifyAdminSession } from '../../../../lib/adminAuth';
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: Request) {
-  const auth = await verifyAdminSession(req);
-  if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: 401 });
   try {
     const { searchParams } = new URL(req.url);
     const champId = searchParams.get('champion');
