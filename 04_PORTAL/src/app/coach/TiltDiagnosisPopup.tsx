@@ -57,6 +57,19 @@ export default function TiltDiagnosisPopup({ isOpen, onClose, onProceedToReflect
 
   const handleSelectChoice = (choice: QuickChoiceOption) => {
     setQuickChoice(choice);
+    // AI応答待機前にローカルで即座に暫定スコアを計算して描画反映 (ゼロレイテンシー化)
+    const { calculateIntegratedTiltScore } = require('../../lib/tiltBlameDetector');
+    const localResult = calculateIntegratedTiltScore({
+      quickChoice: choice,
+      aiBlameScore: result?.aiBlameScore || (choice === 'ally_fault' ? 80 : choice === 'self_fault' ? 10 : 30),
+      aiCalmScore: result?.aiCalmScore || (choice === 'self_fault' ? 90 : 30),
+      lossStreak: result?.streakAnalysis?.currentStreak || 0,
+      text: inputText,
+    });
+    setResult((prev: any) => ({
+      ...prev,
+      integratedResult: localResult,
+    }));
     runAnalysis(choice, inputText);
   };
 

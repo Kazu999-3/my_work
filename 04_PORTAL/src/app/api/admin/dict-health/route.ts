@@ -40,16 +40,20 @@ export async function GET(req: Request) {
       const hasContent = !!f.strengths;
 
       let status: 'verified' | 'ai_generated' | 'stale';
+      let priorityScore = 0; // 優先確認スコア
 
       if (!hasContent || !isLatestPatch || conf === 'stale') {
         status = 'stale'; // 🔴 要対応
         staleCount++;
+        priorityScore = !hasContent ? 100 : !isLatestPatch ? 80 : 70;
       } else if (conf === 'verified') {
         status = 'verified'; // 🟢 確認済み
         verifiedCount++;
+        priorityScore = 10;
       } else {
         status = 'ai_generated'; // 🟡 AI生成（確認未完了）
         aiGeneratedCount++;
+        priorityScore = 50;
       }
 
       return {
@@ -63,8 +67,15 @@ export async function GET(req: Request) {
         sourceSummary: f.source_summary,
         updatedAt: f.updated_at,
         hasContent,
+        priorityScore,
       };
     });
+
+    // 優先確認トップ10 (要対応・AI未確認の重要度の高いチャンピオン)
+    const priorityChampions = [...list]
+      .filter((c) => c.status !== 'verified')
+      .sort((a, b) => b.priorityScore - a.priorityScore)
+      .slice(0, 10);
 
     return NextResponse.json({
       currentPatch,
@@ -74,6 +85,7 @@ export async function GET(req: Request) {
         aiGenerated: aiGeneratedCount,
         stale: staleCount,
       },
+      priorityChampions,
       champions: list,
     });
   } catch (err: any) {

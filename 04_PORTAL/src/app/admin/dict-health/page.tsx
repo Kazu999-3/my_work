@@ -24,6 +24,7 @@ export default function DictHealthDashboard() {
     currentPatch: string;
     totalCount: number;
     summary: { verified: number; aiGenerated: number; stale: number };
+    priorityChampions?: ChampHealth[];
     champions: ChampHealth[];
   } | null>(null);
 
@@ -250,6 +251,44 @@ export default function DictHealthDashboard() {
             <p className="text-[11px] text-red-700/80 mt-2">パッチ遅れ・データ未入力（要自動/手動更新）</p>
           </button>
         </div>
+
+        {/* 今パッチ最優先確認チャンピオン Top 10 */}
+        {data?.priorityChampions && data.priorityChampions.length > 0 && (
+          <div className="bg-amber-950/10 border border-amber-500/30 rounded-2xl p-4 mb-8 bg-amber-50/50 shadow-sm">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-xs font-black text-amber-900 flex items-center gap-1.5">
+                <span className="text-base">🔥</span>
+                今パッチ最優先で確認すべきチャンピオン (Top {data.priorityChampions.length})
+              </span>
+              <span className="text-[10px] text-amber-800/80 font-bold">空データ・パッチ遅れを自動抽出</span>
+            </div>
+
+            <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-thin">
+              {data.priorityChampions.map((c: any) => (
+                <div
+                  key={c.champion}
+                  className="shrink-0 bg-white border border-amber-200 rounded-xl p-2.5 flex items-center gap-2 shadow-sm min-w-[140px]"
+                >
+                  <img
+                    src={getChampIcon(c.champion)}
+                    alt={c.champion}
+                    className="w-8 h-8 rounded-lg border border-stone-200 object-cover"
+                    onError={(e) => { (e.target as any).src = '/favicon.ico'; }}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs font-bold text-stone-900 truncate">{c.champion}</div>
+                    <button
+                      onClick={() => handleVerify(c.champion, 'verify')}
+                      className="mt-1 text-[9px] font-bold px-1.5 py-0.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded transition block w-full text-center"
+                    >
+                      ✅ 確認完了
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* コントロールバー */}
         <div className="bg-white p-4 rounded-2xl border border-stone-200 shadow-sm mb-6 flex flex-col md:flex-row items-center justify-between gap-4">
