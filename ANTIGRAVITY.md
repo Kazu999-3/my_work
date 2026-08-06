@@ -10,6 +10,7 @@ League of Legends のリサーチ、記事生成、ソロキュー監視を統�
 - **Database/Cloud**: Supabase (PostgreSQL), ChromaDB (Vector DB)
 - **Web Portal**: Next.js (App Router, TailwindCSS/Vanilla CSS)
 - **Monitoring**: Riot API (Spectator v5), YouTube Data API, Playwright note Scraping
+- **AI Agent Framework**: Google Official Agent Skills Standard (google/skills) 準拠（.agent/rules, .agent/skills による動的コンテキスト・オンデマンド知識注入）
 
 ## 🛰️ 主要モジュール (Diet Mode / MVP)
 システム全体の軽量化とAPIコスト削減のため、以下のコアモジュールを稼働させます。
