@@ -1375,6 +1375,28 @@ export default function BalancerPage() {
               <span className="text-xs opacity-60">人</span>
             </div>
             <div className="flex items-center gap-2 ml-auto flex-wrap">
+              {/* 一括参加切り替えボタン */}
+              <button
+                type="button"
+                onClick={() => {
+                  setPlayers(prev => prev.map(p => ({ ...p, is_active: true })));
+                }}
+                className="px-3 py-2 rounded-xl bg-emerald-100 hover:bg-emerald-200 border border-emerald-200 text-emerald-800 font-bold text-xs transition"
+                title="全メンバーの参加チェックボックスをONにします"
+              >
+                ✅ 全員参加ON
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setPlayers(prev => prev.map(p => ({ ...p, is_active: false })));
+                }}
+                className="px-3 py-2 rounded-xl bg-stone-200 hover:bg-stone-300 border border-stone-300 text-stone-700 font-bold text-xs transition"
+                title="全メンバーの参加チェックをクリアします"
+              >
+                ❌ 全員解除
+              </button>
+
               {/* 卓分割の選択状態表示 */}
               {selectedTable && (
                 <span className="text-xs font-black px-3 py-2 rounded-lg bg-amber-100 text-amber-700 border border-amber-200 flex items-center gap-1.5">

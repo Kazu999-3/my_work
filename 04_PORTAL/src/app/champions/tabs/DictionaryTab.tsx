@@ -1554,8 +1554,19 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
               <input type="text" placeholder="例: Ahri / アリ (英名・日本語検索対応)..." value={search} onChange={e => setSearch(e.target.value)}
                 className="w-full bg-[var(--color-surface)] border border-transparent focus:border-[#c89b3c]/50 rounded-xl py-3 pl-12 pr-4 text-stone-900 font-bold outline-none transition-colors text-xs md:text-sm" />
             </div>
-            {/* ロール別フィルターボタン */}
-            <div className="flex glass-panel p-1 rounded-xl items-center gap-0.5">
+            {/* ロール別フィルターボタン ＆ ⭐️ お気に入りフィルター */}
+            <div className="flex glass-panel p-1 rounded-xl items-center gap-0.5 flex-wrap">
+              <button
+                onClick={() => setRoleFilter(roleFilter === 'FAVORITES' ? 'ALL' : 'FAVORITES' as any)}
+                className={`px-3 py-2 rounded-lg text-xs font-black tracking-wider transition-all flex items-center gap-1 ${
+                  (roleFilter as any) === 'FAVORITES'
+                    ? 'bg-amber-400 text-stone-900 shadow-lg shadow-amber-400/40'
+                    : 'text-amber-600 hover:text-amber-700 hover:bg-amber-400/10'
+                }`}
+                title="お気に入りに登録した得意チャンピオンのみを抽出表示します"
+              >
+                ⭐️ お気に入り
+              </button>
               {ROLE_LABELS.map(role => (
                 <button key={role} onClick={() => setRoleFilter(role)}
                   className={`px-3 py-2 rounded-lg text-xs font-black tracking-wider transition-all ${
