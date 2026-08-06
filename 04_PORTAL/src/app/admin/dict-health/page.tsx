@@ -286,6 +286,28 @@ export default function DictHealthDashboard() {
             </div>
           </Collapsible>
         </div>
+        {/* 🔰 初心者安心 1分でわかる使い方ガイド */}
+        <div className="mb-6 bg-gradient-to-r from-amber-500/10 via-amber-400/5 to-transparent border border-amber-300/80 rounded-2xl p-5 shadow-sm text-stone-900">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-xl">🔰</span>
+            <h2 className="text-base font-extrabold text-amber-900">1分でできる！おすすめメンテナンスの3ステップ</h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+            <div className="bg-white/80 backdrop-blur p-3.5 rounded-xl border border-amber-200 shadow-xs">
+              <span className="font-extrabold text-amber-800 block mb-1">ステップ1: パッチ照合 🔄</span>
+              <p className="text-stone-600 leading-relaxed">右上の「再照合」を押すと、最新パッチ(P16.15)と照合して古いデータを自動検出します。</p>
+            </div>
+            <div className="bg-white/80 backdrop-blur p-3.5 rounded-xl border border-amber-200 shadow-xs">
+              <span className="font-extrabold text-amber-800 block mb-1">ステップ2: 一括AI更新 ⚡</span>
+              <p className="text-stone-600 leading-relaxed">「要対応のみ一括AI更新」を押すと、赤色の古いチャンプだけを全自動で最新化します。</p>
+            </div>
+            <div className="bg-white/80 backdrop-blur p-3.5 rounded-xl border border-amber-200 shadow-xs">
+              <span className="font-extrabold text-amber-800 block mb-1">ステップ3: 辞典で確認・完了 🎯</span>
+              <p className="text-stone-600 leading-relaxed">気になるカードの「辞典で編集」をタップ。問題がなければ「確認完了」を押せば緑色になります。</p>
+            </div>
+          </div>
+        </div>
+
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8 border-b border-stone-200 pb-6">
           <div>
             <div className="flex items-center gap-2.5">
@@ -306,23 +328,23 @@ export default function DictHealthDashboard() {
             <button
               onClick={handleBulkEnqueueStale}
               disabled={!!actionLoading}
-              className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-700 to-amber-800 hover:from-amber-800 hover:to-amber-900 active:scale-95 text-white text-xs font-black transition flex items-center gap-1.5 shadow-md disabled:opacity-50"
+              className="px-5 py-3 rounded-xl bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 active:scale-95 text-white text-xs font-black transition flex items-center gap-2 shadow-lg disabled:opacity-50"
               title="確認が未完了・エラー状態のチャンピオンのみを一括でAI再試行キューに積みます"
             >
               <RefreshCw className={`w-4 h-4 ${actionLoading ? 'animate-spin' : ''}`} />
-              🔁 要対応(stale)のみ一括再試行
+              ⚡ 要対応(stale)のみ一括AI更新
             </button>
 
             <button
               onClick={() => fetchHealth()}
-              className="p-2.5 rounded-xl border border-stone-300 bg-white hover:bg-stone-50 text-stone-700 transition flex items-center gap-2 text-xs font-bold shadow-sm"
+              className="px-4 py-3 rounded-xl border border-stone-300 bg-white hover:bg-stone-50 text-stone-700 transition flex items-center gap-2 text-xs font-bold shadow-sm"
             >
               <RefreshCw className="w-4 h-4 text-stone-500" />
               再照合
             </button>
             <Link
               href="/champions"
-              className="px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-md shadow-amber-600/20"
+              className="px-4 py-3 rounded-xl bg-stone-800 hover:bg-stone-900 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-md"
             >
               <Layers className="w-4 h-4" />
               辞典本体を開く
