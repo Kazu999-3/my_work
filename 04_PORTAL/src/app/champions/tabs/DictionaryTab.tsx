@@ -246,11 +246,9 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
   const [detailError, setDetailError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!selected) {
-      document.body.style.overflow = 'unset';
-      return;
-    }
-    document.body.style.overflow = 'hidden';
+    document.body.style.overflow = 'unset';
+    if (!selected) return;
+
     setExpandedMatchupId(null); // 選択したチャンピオンが変わったときにアコーディオンをリセット
     setDraftRestored(false);
     setDetailLoading(true);
