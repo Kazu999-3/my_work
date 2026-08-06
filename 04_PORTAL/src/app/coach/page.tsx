@@ -105,6 +105,86 @@ function AdviceBox({ text }: { text: string }) {
   );
 }
 
+// ============================
+// タブ: 今週のAI練習メニュー (蓄積データから自動生成)
+// ============================
+function PracticeMenuTab() {
+  const [loading, setLoading] = useState(false);
+  const [menuData, setMenuData] = useState<any>(null);
+  const [error, setError] = useState('');
+
+  const fetchMenu = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const data = await callCoachAPI({ mode: 'practice_menu', limit: 20 });
+      setMenuData(data);
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchMenu();
+  }, []);
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-sm font-bold text-stone-900">🏋️‍♂️ 今週のAIカスタム練習メニュー</h3>
+          <p className="text-xs text-stone-500">直近のソロQ振り返り蓄積データからAIが課題に合わせた具体的な練習課題を作成します</p>
+        </div>
+        <button
+          onClick={fetchMenu}
+          disabled={loading}
+          className="px-3 py-1.5 bg-amber-700 hover:bg-amber-800 text-white rounded-xl text-xs font-bold transition shadow-sm disabled:opacity-50"
+        >
+          {loading ? '再生成中...' : '🔄 練習メニューを再作成'}
+        </button>
+      </div>
+
+      {loading && <Spinner />}
+      {error && <p className="text-xs text-rose-600 font-bold">❌ {error}</p>}
+
+      {menuData && !menuData.enough && (
+        <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl text-xs text-amber-800 font-medium">
+          ⚠️ {menuData.message || '練習メニュー生成には振り返りログが3件以上必要です。'}
+        </div>
+      )}
+
+      {menuData && menuData.enough && (
+        <div className="space-y-3">
+          {menuData.note && (
+            <div className="bg-amber-50 border border-amber-300 p-3 rounded-xl text-xs text-amber-900 font-bold flex items-start gap-2">
+              <span>💡</span>
+              <span>全体方針: {menuData.note}</span>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {menuData.menu?.map((item: any, idx: number) => (
+              <div key={idx} className="bg-white border border-stone-200 rounded-xl p-4 shadow-sm space-y-1.5">
+                <div className="flex items-center justify-between text-xs font-black text-amber-900">
+                  <span>課題 {idx + 1}: {item.title}</span>
+                  {item.target && (
+                    <span className="bg-amber-100 text-amber-800 text-[10px] px-2 py-0.5 rounded-full">
+                      目標: {item.target}
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-stone-700 leading-relaxed font-medium">{item.detail}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // 過去実績データ表示用
 function CounterStatsBox({ text }: { text: string }) {
   if (!text) return null;
@@ -1201,6 +1281,14 @@ function MatchupTab({ champion, enemyChampion, triggerSignal }: { champion: stri
 // ============================
 // メインページ
 // ============================
+const STEP_TABS = [
+  { id: 'banpick', label: '1. BAN/PICKナビ', icon: '🎯' },
+  { id: 'pregame', label: '2. 事前分析＆レーンシミュレータ', icon: '⚡' },
+  { id: 'postgame', label: '3. 振り返り＆実績ダッシュボード', icon: '🔍' },
+  { id: 'menu', label: '4. AI練習メニュー', icon: '🏋️‍♂️' },
+  { id: 'research', label: '5. ディープリサーチ', icon: '🔬' },
+];
+
 export default function CoachPage() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [isReflectionModalOpen, setIsReflectionModalOpen] = useState(false);
@@ -1340,14 +1428,15 @@ export default function CoachPage() {
     setDailyCheckTrigger(Date.now());
   };
 
-  // 4ステップ統合タブ構造
-  const [activeStepTab, setActiveStepTab] = useState<'banpick' | 'pregame' | 'postgame' | 'research'>('banpick');
+  // 5ステップ統合タブ構造
+  const [activeStepTab, setActiveStepTab] = useState<'banpick' | 'pregame' | 'postgame' | 'menu' | 'research'>('banpick');
 
   const STEP_TABS = [
-    { id: 'banpick', label: '1. BAN/PICK中', icon: '🎯' },
-    { id: 'pregame', label: '2. 試合直前 (ロード)', icon: '⚡' },
-    { id: 'postgame', label: '3. 試合後振り返り', icon: '🔍' },
-    { id: 'research', label: '4. 辞典 & バトルリサーチ', icon: '🎯' },
+    { id: 'banpick', label: '1. BAN/PICKナビ', icon: '🎯' },
+    { id: 'pregame', label: '2. 事前分析＆レーンシミュレータ', icon: '⚡' },
+    { id: 'postgame', label: '3. 振り返り＆実績ダッシュボード', icon: '🔍' },
+    { id: 'menu', label: '4. AI練習メニュー', icon: '🏋️‍♂️' },
+    { id: 'research', label: '5. ディープリサーチ', icon: '🔬' },
   ] as const;
 
   if (isAuthenticated === null) {
@@ -1575,6 +1664,12 @@ export default function CoachPage() {
               </h3>
               <TimingHeatmapTab />
             </div>
+        </div>
+
+        <div className={activeStepTab === 'menu' ? 'space-y-6 animate-in' : 'hidden'}>
+          <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-sm">
+            <PracticeMenuTab />
+          </div>
         </div>
 
         {activeStepTab === 'research' && (
