@@ -116,16 +116,34 @@ ${notesSummary || '（特記事項なし）'}
       };
     }
 
-    // 4. note_articles テーブルへ保存
+    // 4. AIポエムクレンジング・フィルター (参考記事ノウハウ: AI臭い装飾表現を徹底自動排除)
+    const cleanAiPoetry = (text: string) => {
+      if (!text) return '';
+      return text
+        .replace(/【?SoloQの王】?/g, 'SoloQで高い勝率を誇るチャンピオン')
+        .replace(/【?盤上の軍師】?/g, '正確な判断')
+        .replace(/圧倒的な力/g, '高いパフォーマンス')
+        .replace(/至高の/g, '効果的な')
+        .replace(/戦場を支配する/g, '試合主導権を握る')
+        .replace(/降臨/g, 'ピック')
+        .replace(/神の如き/g, '優れた');
+    };
+
+    const finalTitle = cleanAiPoetry(parsed.title || `【パッチ${patch}】${champion}攻略ガイド`);
+    const finalFree = cleanAiPoetry(parsed.content_free || '');
+    const finalPaid = cleanAiPoetry(parsed.content_paid || '');
+    const finalPromo = cleanAiPoetry(parsed.promo_text || '');
+
+    // 5. note_articles テーブルへ保存
     const { data: inserted, error: insErr } = await supabase
       .from('note_articles')
       .insert({
-        title: parsed.title || `【パッチ${patch}】${champion}攻略ガイド`,
+        title: finalTitle,
         champion,
         patch,
-        content_free: parsed.content_free || '',
-        content_paid: parsed.content_paid || '',
-        promo_text: parsed.promo_text || '',
+        content_free: finalFree,
+        content_paid: finalPaid,
+        promo_text: finalPromo,
         status: 'draft',
         source_skill: 'auto_generator_ssot',
       })
