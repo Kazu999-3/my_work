@@ -238,6 +238,8 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
 
   const isFavorited = selected ? favoriteChamps.includes(selected.id) : false;
 
+  const [draftRestored, setDraftRestored] = useState(false);
+
   useEffect(() => {
     if (!selected) {
       document.body.style.overflow = 'unset';
@@ -245,6 +247,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
     }
     document.body.style.overflow = 'hidden';
     setExpandedMatchupId(null); // 選択したチャンピオンが変わったときにアコーディオンをリセット
+    setDraftRestored(false);
     let cancelled = false; // 読み込み中に別チャンピオンへ切り替えた場合、古い結果で上書きしないためのガード
 
     const loadChampionData = async (champId: string) => {
@@ -256,7 +259,21 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
 
         setMatchupsList(detail.matchupsList || []);
         setPowerSpikeScores(detail.powerSpikeScores || null);
-        setDataFields(detail.dataFields);
+
+        // 下書き (champ_draft_{champId}) のチェックと自動復元
+        try {
+          const savedDraft = localStorage.getItem(`champ_draft_${champId}`);
+          if (savedDraft) {
+            const parsed = JSON.parse(savedDraft);
+            setDataFields((prev: any) => ({ ...detail.dataFields, ...parsed }));
+            setDraftRestored(true);
+          } else {
+            setDataFields(detail.dataFields);
+          }
+        } catch {
+          setDataFields(detail.dataFields);
+        }
+
         setPastInterrogations(detail.pastInterrogations || []);
       } catch (err) {
         console.warn('⚠️ チャンピオン詳細データのロードに失敗しました:', err);
@@ -434,13 +451,17 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
   const setJgStyleField = (subKey: string, val: any) => {
     setDataFields((p: any) => {
       const currentJgStyle = p.jg_style || { role: 'JUNGLE', type: '', blind_pickable: 3, counter_pickable: 3, description: '' };
-      return {
+      const next = {
         ...p,
         jg_style: {
           ...currentJgStyle,
           [subKey]: val
         }
       };
+      if (selected?.id) {
+        try { localStorage.setItem(`champ_draft_${selected.id}`, JSON.stringify(next)); } catch {}
+      }
+      return next;
     });
   };
 
@@ -597,9 +618,16 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
   if (selected) {
     return (
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="min-h-screen p-6 md:p-12 max-w-7xl mx-auto flex flex-col gap-8">
-        <button onClick={() => setSelected(null)} className="flex items-center gap-2 text-[#c89b3c] font-bold w-fit hover:text-stone-900 transition-colors">
-          <ChevronLeft size={18} /> 辞典トップに戻る
-        </button>
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <button onClick={() => setSelected(null)} className="flex items-center gap-2 text-[#c89b3c] font-bold w-fit hover:text-stone-900 transition-colors">
+            <ChevronLeft size={18} /> 辞典トップに戻る
+          </button>
+          {draftRestored && (
+            <div className="px-3 py-1.5 rounded-xl bg-amber-100 border border-amber-300 text-amber-900 text-xs font-bold flex items-center gap-2 animate-bounce shadow">
+              <span>✏️</span> 前回編集中の未保存下書きを自動復元しました
+            </div>
+          )}
+        </div>
 
         <div className="relative rounded-3xl overflow-hidden shadow-2xl border border-white/10 group bg-[#0a0b10]">
           <div className="absolute inset-0 bg-cover bg-[center_20%] opacity-60 group-hover:opacity-80 transition-opacity duration-1000" style={{ backgroundImage: `url(${getChampSplash(selected.id)})` }}></div>
