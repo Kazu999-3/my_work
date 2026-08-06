@@ -28,9 +28,8 @@ function MobileNavItem({ item, active, pending, onClick }: { item: MenuItem; act
       href={item.href}
       prefetch={isAdminGated ? false : true}
       onClick={onClick}
-      className={`flex flex-col items-center justify-center min-w-[3.5rem] px-2 py-1.5 rounded-xl transition-colors duration-100 touch-manipulation select-none ${
-        lit ? `${item.activeBg} ${item.color}` : 'text-stone-500 active:bg-black/10'
-      } ${pending && !active ? 'opacity-70' : ''}`}
+      className={`flex flex-col items-center justify-center min-w-[3.5rem] px-2 py-1.5 rounded-xl transition-colors duration-100 touch-manipulation select-none ${lit ? `${item.activeBg} ${item.color}` : 'text-stone-500 active:bg-black/10'
+        } ${pending && !active ? 'opacity-70' : ''}`}
     >
       <Icon size={18} className={`mb-1 ${pending && !active ? 'animate-pulse' : ''}`} />
       <span className="text-[9px] font-bold tracking-wider truncate w-full text-center">{item.label}</span>
@@ -39,12 +38,12 @@ function MobileNavItem({ item, active, pending, onClick }: { item: MenuItem; act
 }
 
 const MENU_ITEMS: MenuItem[] = [
-  { id: 'balancer',    label: 'チーム分け',     icon: Swords,         href: '/balancer',         color: 'text-rose-500',    activeBg: 'bg-rose-500/15' },
-  { id: 'leaderboard', label: '順位表',         icon: Trophy,         href: '/leaderboard',      color: 'text-yellow-400',  activeBg: 'bg-yellow-400/15' },
-  { id: 'synergy',     label: 'チームシナジー',     icon: HeartHandshake, href: '/synergy',          color: 'text-fuchsia-400', activeBg: 'bg-fuchsia-400/15' },
-  { id: 'history',     label: '試合履歴',       icon: Swords,         href: '/history',          color: 'text-orange-400',  activeBg: 'bg-orange-400/15' },
-  { id: 'changelog',   label: '更新情報',       icon: ScrollText,     href: '/changelog',        color: 'text-cyan-400',    activeBg: 'bg-cyan-400/15' },
-  { id: 'login',       label: 'ログイン',       icon: Shield,         href: '/login',            color: 'text-indigo-400',  activeBg: 'bg-indigo-400/15' },
+  { id: 'balancer', label: 'チーム分け', icon: Swords, href: '/balancer', color: 'text-rose-500', activeBg: 'bg-rose-500/15' },
+  { id: 'leaderboard', label: '順位表', icon: Trophy, href: '/leaderboard', color: 'text-yellow-400', activeBg: 'bg-yellow-400/15' },
+  { id: 'synergy', label: 'チームシナジー', icon: HeartHandshake, href: '/synergy', color: 'text-fuchsia-400', activeBg: 'bg-fuchsia-400/15' },
+  { id: 'history', label: '試合履歴', icon: Swords, href: '/history', color: 'text-orange-400', activeBg: 'bg-orange-400/15' },
+  { id: 'changelog', label: '更新情報', icon: ScrollText, href: '/changelog', color: 'text-cyan-400', activeBg: 'bg-cyan-400/15' },
+  { id: 'login', label: 'ログイン', icon: Shield, href: '/login', color: 'text-indigo-400', activeBg: 'bg-indigo-400/15' },
 ];
 
 const ADMIN_ONLY_MENU_ITEMS: MenuItem[] = [
@@ -63,9 +62,9 @@ const ADMIN_ONLY_MENU_ITEMS: MenuItem[] = [
 ];
 
 const ADMIN_GENERAL_MENU_ITEMS: MenuItem[] = [
-  { id: 'balancer',  label: 'チーム分け', icon: Swords, href: '/balancer', color: 'text-rose-500', activeBg: 'bg-rose-500/15' },
+  { id: 'balancer', label: 'チーム分け', icon: Swords, href: '/balancer', color: 'text-rose-500', activeBg: 'bg-rose-500/15' },
   { id: 'leaderboard', label: 'リーダーボード', icon: Trophy, href: '/leaderboard', color: 'text-yellow-400', activeBg: 'bg-yellow-400/15' },
-  { id: 'synergy',   label: 'チームシナジー', icon: HeartHandshake, href: '/synergy', color: 'text-fuchsia-400', activeBg: 'bg-fuchsia-400/15' },
+  { id: 'synergy', label: 'チームシナジー', icon: HeartHandshake, href: '/synergy', color: 'text-fuchsia-400', activeBg: 'bg-fuchsia-400/15' },
   { id: 'changelog', label: '更新情報', icon: ScrollText, href: '/changelog', color: 'text-cyan-400', activeBg: 'bg-cyan-400/15' },
 ];
 
@@ -104,9 +103,8 @@ export default function Sidebar() {
   return (
     <>
       <aside
-        className={`hidden md:flex flex-col h-screen sticky top-0 bg-[#f7f5f0] border-r border-stone-200/80 transition-all duration-300 z-30 ${
-          isCollapsed ? 'w-20' : 'w-64'
-        }`}
+        className={`hidden md:flex flex-col h-screen sticky top-0 bg-[#f7f5f0] border-r border-stone-200/80 transition-all duration-300 z-30 ${isCollapsed ? 'w-20' : 'w-64'
+          }`}
       >
         <div className="flex items-center justify-between p-4 border-b border-stone-200/80">
           {!isCollapsed && (
@@ -127,17 +125,15 @@ export default function Sidebar() {
             <div className="flex bg-stone-200/60 p-1 rounded-xl">
               <button
                 onClick={() => setActiveTab('admin')}
-                className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition ${
-                  activeTab === 'admin' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-600 hover:text-stone-900'
-                }`}
+                className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition ${activeTab === 'admin' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-600 hover:text-stone-900'
+                  }`}
               >
                 管理者
               </button>
               <button
                 onClick={() => setActiveTab('general')}
-                className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition ${
-                  activeTab === 'general' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-600 hover:text-stone-900'
-                }`}
+                className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition ${activeTab === 'general' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-600 hover:text-stone-900'
+                  }`}
               >
                 一般
               </button>
@@ -160,9 +156,8 @@ export default function Sidebar() {
                 )}
                 <Link
                   href={item.href}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition ${
-                    isActive ? `${item.activeBg} ${item.color}` : 'text-stone-600 hover:bg-stone-200/50 hover:text-stone-900'
-                  }`}
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition ${isActive ? `${item.activeBg} ${item.color}` : 'text-stone-600 hover:bg-stone-200/50 hover:text-stone-900'
+                    }`}
                   title={isCollapsed ? item.label : undefined}
                 >
                   <Icon size={18} className="shrink-0" />
@@ -218,9 +213,8 @@ export default function Sidebar() {
                     key={item.id}
                     href={item.href}
                     onClick={() => setShowMobileMore(false)}
-                    className={`flex flex-col items-center p-3 rounded-2xl border text-center transition ${
-                      isActive ? `${item.activeBg} ${item.color} border-current` : 'bg-white border-stone-200 text-stone-700'
-                    }`}
+                    className={`flex flex-col items-center p-3 rounded-2xl border text-center transition ${isActive ? `${item.activeBg} ${item.color} border-current` : 'bg-white border-stone-200 text-stone-700'
+                      }`}
                   >
                     <Icon size={20} className="mb-1.5" />
                     <span className="text-[10px] font-bold truncate w-full">{item.label}</span>
