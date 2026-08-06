@@ -359,13 +359,11 @@ function KnowledgeBaseContent() {
         </div>
 
         {/* タブ切り替え */}
-        <div className="flex gap-2 border-b border-gray-200 pb-4 mb-8 overflow-x-auto">
+        <div className="flex gap-2 border-b border-gray-200 pb-4 mb-8 overflow-x-auto items-center">
           {[
             { id: 'knowledge', label: '📖 ナレッジ一覧', icon: BookOpen },
             { id: 'video', label: '⏳ 動画解析キュー', icon: Video },
             { id: 'library', label: '🗂️ 攻略ライブラリ', icon: Layers },
-            { id: 'maintenance', label: '🔧 メンテナンス・鮮度レビュー', icon: RefreshCw },
-            { id: 'review', label: '🔍 点検・履歴', icon: Search },
           ].map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -382,6 +380,14 @@ function KnowledgeBaseContent() {
               </button>
             );
           })}
+
+          <Link
+            href="/admin/dict-health"
+            className="ml-auto flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-black bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white shadow-md transition shrink-0"
+          >
+            <Sparkles size={14} />
+            🩺 統合ヘルス診断 ＆ 全データAI最新化へ
+          </Link>
         </div>
 
         {/* --- タブ別コンテンツ --- */}
