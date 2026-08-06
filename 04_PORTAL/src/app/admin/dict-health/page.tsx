@@ -298,6 +298,18 @@ export default function DictHealthDashboard() {
               ② ⚡ 古いデータ({data?.summary.stale || 0}件)を一括AI最新化
             </button>
 
+            <button
+              onClick={() => {
+                const el = document.getElementById('fact-check-section');
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className="px-4 py-3 rounded-xl border border-cyan-400 bg-cyan-50 hover:bg-cyan-100 text-cyan-950 transition flex items-center gap-2 text-xs font-black shadow-sm"
+              title="【ステップ3】全170+体のチャンピオンの誤記述・パッチ矛盾をAIが自動完走スキャンします"
+            >
+              <ShieldCheck className="w-4 h-4 text-cyan-700" />
+              ③ 🛡️ 全チャンプAI誤り監査
+            </button>
+
             <Link
               href="/champions"
               className="px-4 py-3 rounded-xl bg-stone-800 hover:bg-stone-900 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-md ml-auto"
@@ -588,7 +600,7 @@ export default function DictHealthDashboard() {
         )}
 
         {/* 統合パネル1: 🕵️‍♂️ AIファクトチェック＆不正確表現の誤り自動検知 */}
-        <div className="bg-white rounded-3xl border border-stone-200 p-6 shadow-sm">
+        <div id="fact-check-section" className="bg-white rounded-3xl border border-stone-200 p-6 shadow-sm scroll-mt-6">
           <Collapsible
             defaultOpen={false}
             title={
