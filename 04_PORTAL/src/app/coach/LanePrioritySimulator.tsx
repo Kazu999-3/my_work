@@ -55,20 +55,45 @@ export default function LanePrioritySimulator() {
 
       {priorities.length > 0 && (
         <div className="space-y-3">
-          <div className="grid grid-cols-1 sm:grid-cols-5 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
             {priorities.map((lp) => {
               const scoreColor =
                 lp.priorityScore >= 4 ? 'bg-emerald-600 text-white' : lp.priorityScore === 3 ? 'bg-amber-600 text-white' : 'bg-rose-600 text-white';
+
+              // Lv1-6 の主導権推移タイムラインデータ（スコアに応じた目安）
+              const timelineLevels = [
+                { lv: 'Lv1', label: lp.priorityScore >= 4 ? 'Push' : lp.priorityScore === 3 ? 'Even' : 'Pull', color: lp.priorityScore >= 4 ? 'bg-blue-500' : lp.priorityScore === 3 ? 'bg-amber-400' : 'bg-rose-500' },
+                { lv: 'Lv2', label: lp.priorityScore >= 4 ? 'Push' : lp.priorityScore >= 3 ? 'Push' : 'Pull', color: lp.priorityScore >= 3 ? 'bg-blue-500' : 'bg-rose-500' },
+                { lv: 'Lv3', label: lp.priorityScore >= 3 ? 'Gankok' : 'Pull', color: lp.priorityScore >= 3 ? 'bg-emerald-500' : 'bg-rose-500' },
+                { lv: 'Lv6', label: lp.priorityScore >= 4 ? 'Power' : lp.priorityScore === 3 ? 'UltPower' : 'Safe', color: lp.priorityScore >= 3 ? 'bg-indigo-500' : 'bg-amber-500' },
+              ];
+
               return (
-                <div key={lp.lane} className="bg-white border border-stone-200 rounded-xl p-3 text-center space-y-1 shadow-sm">
-                  <span className="text-[10px] font-bold text-stone-500 uppercase block">{lp.lane}</span>
-                  <div className="text-xs font-extrabold text-stone-900 truncate">
-                    {lp.myChampion} <span className="text-stone-400 font-normal">vs</span> {lp.enemyChampion}
+                <div key={lp.lane} className="bg-white border border-stone-200 rounded-xl p-3.5 space-y-2 shadow-sm flex flex-col justify-between">
+                  <div className="text-center space-y-1">
+                    <span className="text-[10px] font-bold text-stone-500 uppercase block tracking-wider">{lp.lane}</span>
+                    <div className="text-xs font-extrabold text-stone-900 truncate">
+                      {lp.myChampion} <span className="text-stone-400 font-normal">vs</span> {lp.enemyChampion}
+                    </div>
+                    <div className={`mt-1 py-0.5 px-2 text-[11px] font-bold rounded-full inline-block ${scoreColor}`}>
+                      主導権: {lp.advantageLabel} ({lp.priorityScore}/5)
+                    </div>
                   </div>
-                  <div className={`mt-1 py-0.5 px-2 text-[11px] font-bold rounded-full inline-block ${scoreColor}`}>
-                    主導権: {lp.advantageLabel} ({lp.priorityScore}/5)
+
+                  {/* 📈 Lv1-6 主導権グラフィックタイムライン */}
+                  <div className="bg-stone-50 p-2 rounded-lg border border-stone-200/80 space-y-1">
+                    <span className="text-[9px] font-bold text-stone-400 block text-center">📈 レベル別主導権 (Priority Timeline)</span>
+                    <div className="grid grid-cols-4 gap-1 text-[9px] font-black text-center text-white">
+                      {timelineLevels.map((tl) => (
+                        <div key={tl.lv} className={`${tl.color} py-1 rounded shadow-xs flex flex-col items-center justify-center`} title={`${tl.lv}: ${tl.label}`}>
+                          <span className="opacity-80 text-[8px]">{tl.lv}</span>
+                          <span className="leading-tight">{tl.label}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                  <p className="text-[11px] text-stone-600 leading-tight pt-1 border-t border-stone-100 mt-1">{lp.advice}</p>
+
+                  <p className="text-[11px] text-stone-600 leading-tight pt-1.5 border-t border-stone-100">{lp.advice}</p>
                 </div>
               );
             })}
