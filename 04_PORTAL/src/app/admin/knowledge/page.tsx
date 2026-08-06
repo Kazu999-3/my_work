@@ -380,14 +380,6 @@ function KnowledgeBaseContent() {
               </button>
             );
           })}
-
-          <Link
-            href="/admin/dict-health"
-            className="ml-auto flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-black bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white shadow-md transition shrink-0"
-          >
-            <Sparkles size={14} />
-            🩺 統合ヘルス診断 ＆ 全データAI最新化へ
-          </Link>
         </div>
 
         {/* --- タブ別コンテンツ --- */}
