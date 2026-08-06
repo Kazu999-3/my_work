@@ -63,8 +63,35 @@ export default function MySoloQDashboard({ refreshSignal }: { refreshSignal?: nu
       ? (reflections.reduce((acc, r) => acc + (r.mental_rating || 3), 0) / totalMatches).toFixed(1)
       : '3.0';
 
+  // 直近の連敗数を算出 (最新の試合から連続で敗北している数)
+  const consecutiveLosses = (() => {
+    let count = 0;
+    for (const r of reflections) {
+      if (!r.win) count++;
+      else break;
+    }
+    return count;
+  })();
+
   return (
     <div className="space-y-4">
+      {/* ⚠️ 連敗検知時のAIメンタルクールダウン安全装置 */}
+      {consecutiveLosses >= 3 && (
+        <div className="bg-rose-500/10 border-2 border-rose-400 rounded-2xl p-4 text-stone-900 shadow-md flex items-center justify-between flex-wrap gap-3 animate-pulse">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">⚠️</span>
+            <div>
+              <div className="font-extrabold text-rose-900 text-sm">
+                現在 {consecutiveLosses} 連敗中！ AIメンタルクールダウン推奨
+              </div>
+              <p className="text-xs text-rose-800/80 mt-0.5">
+                熱くなった状態での連戦は勝率が平均35%低下します。15分間の離脱・休憩をおすすめします。
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* スタッツハイライト */}
       <div className="grid grid-cols-3 gap-3">
         <div className="bg-white border border-stone-200 rounded-xl p-3.5 text-center shadow-sm">
