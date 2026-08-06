@@ -20,17 +20,22 @@ export default function TiltDiagnosisPopup({ isOpen, onClose, onProceedToReflect
   const [error, setError] = useState('');
   const [isDetoxOpen, setIsDetoxOpen] = useState(false);
 
-  // 1秒直感チェックの状態
+  // 1秒直感チェックおよびコメントの状態
   const [quickChoice, setQuickChoice] = useState<QuickChoiceOption | null>(null);
+  const [inputText, setInputText] = useState('');
 
-  const runAnalysis = async (choice?: QuickChoiceOption) => {
+  const runAnalysis = async (choice?: QuickChoiceOption, textVal?: string) => {
     setLoading(true);
     setError('');
     try {
       const data = await apiJson('/api/coach/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mode: 'tilt', quickChoice: choice || quickChoice }),
+        body: JSON.stringify({
+          mode: 'tilt',
+          quickChoice: choice !== undefined ? choice : quickChoice,
+          text: textVal !== undefined ? textVal : inputText,
+        }),
         timeout: 60000,
         redirectOn401: false,
       });
@@ -45,13 +50,19 @@ export default function TiltDiagnosisPopup({ isOpen, onClose, onProceedToReflect
   useEffect(() => {
     if (!isOpen) return;
     setQuickChoice(null);
+    setInputText('');
     setResult(null);
     runAnalysis();
   }, [isOpen]);
 
   const handleSelectChoice = (choice: QuickChoiceOption) => {
     setQuickChoice(choice);
-    runAnalysis(choice);
+    runAnalysis(choice, inputText);
+  };
+
+  const handleTextSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    runAnalysis(quickChoice || undefined, inputText);
   };
 
   if (!isOpen) return null;
@@ -141,6 +152,28 @@ export default function TiltDiagnosisPopup({ isOpen, onClose, onProceedToReflect
                 </button>
               </div>
             </div>
+
+            {/* Step 2: 思考・理由メモ入力 (AI感情トーン解析に連動) */}
+            <form onSubmit={handleTextSubmit} className="bg-white p-4 rounded-xl border border-stone-200 shadow-sm space-y-2.5">
+              <h3 className="font-extrabold text-xs text-stone-700 uppercase tracking-wider flex items-center justify-between">
+                <span>💬 Step 2: 今のイラつき理由や反省点（任意）</span>
+                <span className="text-[10px] text-stone-400 font-normal">AIトーン解析</span>
+              </h3>
+              <textarea
+                value={inputText}
+                onChange={(e) => setInputText(e.target.value)}
+                placeholder="例: 「味方が寄らなくてゴミ」「自分のTop判断ミスで捕まった」など..."
+                className="w-full p-2.5 rounded-lg border border-stone-200 text-xs bg-stone-50 focus:outline-none focus:border-amber-500 font-medium leading-relaxed resize-none"
+                rows={2}
+              />
+              <button
+                type="submit"
+                disabled={loading || !inputText.trim()}
+                className="w-full py-1.5 px-3 bg-stone-800 hover:bg-stone-900 text-white rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 disabled:opacity-40"
+              >
+                <span>🔍 AIで文章の感情・冷静度トーンを解析する</span>
+              </button>
+            </form>
 
             {loading && (
               <div className="flex items-center justify-center gap-2 py-6 text-stone-500">
