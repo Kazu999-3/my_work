@@ -244,10 +244,10 @@ export default function DictHealthDashboard() {
         <div className="mb-6 bg-gradient-to-r from-amber-500/10 via-amber-400/5 to-transparent border border-amber-300/80 rounded-2xl p-5 shadow-sm text-stone-900">
           <div className="flex items-center gap-2 mb-2">
             <span className="text-xl">⚡</span>
-            <h2 className="text-base font-extrabold text-amber-900">ワンタップで完了！全自動AIメンテナンス</h2>
+            <h2 className="text-base font-extrabold text-amber-900">ワンタップで完了！辞典 ＆ ナレッジ全自動AIメンテナンス</h2>
           </div>
           <p className="text-xs text-stone-600 leading-relaxed">
-            右上の <strong className="text-amber-950">「⚡ ワンタップで全自動AI最新化」</strong> ボタンを押すだけで、<strong>「最新パッチ照合」</strong> ➔ <strong>「誤記述AIファクトチェック」</strong> ➔ <strong>「古いデータのAI最新化」</strong> が一気通貫で全自動実行されます。手動で複数ボタンを押す必要は一切ありません！
+            右上の <strong className="text-amber-950">「⚡ ワンタップで全自動AI最新化」</strong> ボタンを押すだけで、<strong>「チャンピオン辞典 ＆ コーチAIナレッジ全データの最新パッチ照合」</strong> ➔ <strong>「誤記述AIファクトチェック」</strong> ➔ <strong>「古いデータの一括AI最新化」</strong> がすべて一気通貫で全自動実行されます。手動で分ける必要は一切ありません！
           </p>
         </div>
 
@@ -256,14 +256,14 @@ export default function DictHealthDashboard() {
             <div className="flex items-center gap-2.5">
               <Activity className="w-8 h-8 text-amber-600" />
               <h1 className="text-3xl font-extrabold tracking-tight text-stone-900">
-                辞典ヘルスダッシュボード
+                辞典 ＆ ナレッジ統合ヘルスダッシュボード
               </h1>
               <span className="bg-amber-100 text-amber-800 border border-amber-300 px-3 py-0.5 rounded-full text-xs font-bold">
                 パッチ {data?.currentPatch || '16.15'}
               </span>
             </div>
             <p className="text-xs text-stone-500 mt-1.5">
-              全 {data?.totalCount || 0} チャンピオンのSSOTデータ健康度を一瞥し、最小限の操作で手動検証・パッチ自動更新を行えます
+              全 {data?.totalCount || 0} チャンピオンの辞典 ＆ ナレッジSSOTデータ健康度を一瞥し、1ボタンで手動検証・一括AI最新化を行えます
             </p>
           </div>
 
@@ -278,7 +278,7 @@ export default function DictHealthDashboard() {
               title="最新パッチ照合、AI誤記述監査、古いデータの一括最新化をすべてワンタップで全自動実行します"
             >
               <Sparkles className={`w-4 h-4 ${actionLoading ? 'animate-spin' : ''}`} />
-              ⚡ ワンタップで全自動AI最新化 (パッチ照合＋AI監査＋一括更新)
+              ⚡ ワンタップで全自動AI最新化 (辞典・ナレッジ一括更新＋誤り監査)
             </button>
 
             <Link
