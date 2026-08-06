@@ -114,6 +114,13 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
   const [champStats, setChampStats] = useState<Record<string, any>>({});
   const [pastInterrogations, setPastInterrogations] = useState<any[]>([]);
 
+  const [matchupSearch, setMatchupSearch] = useState('');
+  const filteredMatchupsList = useMemo(() => {
+    if (!matchupSearch.trim()) return matchupsList;
+    const q = matchupSearch.toLowerCase();
+    return matchupsList.filter((m) => m.enemy?.toLowerCase().includes(q) || m.title?.toLowerCase().includes(q));
+  }, [matchupsList, matchupSearch]);
+
   // トレンド取得中の経過秒数を1秒ごとに更新（「本当に動いているか」を見えるようにする）
   useEffect(() => {
     if (!trendStartedAt || !fetchingTrend) return;
@@ -1119,8 +1126,20 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
           </button>
 
           {!isMatchupsCollapsed && (
-            <div className="p-6 border-t border-black/10 relative">
-              {sortedMatchups.map((m) => {
+            <div className="p-6 border-t border-black/10 relative space-y-4">
+              {/* 対面チャンプ・インクリメンタル検索窓 */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" size={16} />
+                <input
+                  type="text"
+                  placeholder="対面チャンプ名で絞り込み (例: Lee Sin, Malphite)..."
+                  value={matchupSearch}
+                  onChange={(e) => setMatchupSearch(e.target.value)}
+                  className="w-full pl-9 pr-4 py-2 border border-stone-200 rounded-xl bg-white text-xs text-stone-900 font-bold outline-none focus:border-[#00cfef]"
+                />
+              </div>
+
+              {filteredMatchupsList.map((m) => {
                 const isExpanded = expandedMatchupId === m.matchup_id;
                 const rd = m.raw_data || {};
                 const difficulty = rd.difficulty || 3;
