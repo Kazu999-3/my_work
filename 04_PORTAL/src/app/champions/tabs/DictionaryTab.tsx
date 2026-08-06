@@ -83,6 +83,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
     return `${diffDays}日前`;
   };
   
+  const [isGuideOpen, setIsGuideOpen] = useState(false);
   const [dataFields, setDataFields] = useState<any>({
     strengths: '', weaknesses: '', powerSpikes: '', buildRunes: '',
     fullClearTime: '', counterChampions: '', mustBanChampions: '', pickRecommendation: '',
@@ -1556,8 +1557,6 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
       </motion.div>
     );
   }
-
-  const [isGuideOpen, setIsGuideOpen] = useState(false);
 
   return (
     <div className="min-h-screen p-6 md:p-12 max-w-7xl mx-auto flex flex-col gap-6">
