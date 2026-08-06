@@ -649,6 +649,12 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                 <Check size={16} />
                 ✅ 確認済みに設定
               </button>
+              <Link
+                href="/admin/dict-health"
+                className="px-4 py-3 bg-stone-800 hover:bg-stone-900 text-white font-bold rounded-xl transition-all flex items-center gap-2 text-sm shadow-md"
+              >
+                🩺 ヘルス診断へ戻る
+              </Link>
 
               <button
                 onClick={handleFetchTrend}

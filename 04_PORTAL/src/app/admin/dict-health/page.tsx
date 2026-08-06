@@ -542,6 +542,14 @@ export default function DictHealthDashboard() {
 
                 {/* アクションボタン */}
                 <div className="flex items-center gap-2 pt-2 border-t border-stone-100">
+                  <Link
+                    href={`/champions?select=${encodeURIComponent(champ.champion)}`}
+                    className="py-1.5 px-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-[11px] font-bold transition text-center flex items-center justify-center gap-1 shadow-sm shrink-0"
+                    title="このチャンピオンの辞典詳細を開き内容を確認・編集します"
+                  >
+                    ✏️ 辞典で確認・編集
+                  </Link>
+
                   {isVerified ? (
                     <button
                       onClick={() => handleVerify(champ.champion, 'unverify')}
