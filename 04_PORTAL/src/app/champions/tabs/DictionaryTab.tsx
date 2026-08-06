@@ -241,6 +241,8 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
   const isFavorited = selected ? favoriteChamps.includes(selected.id) : false;
 
   const [draftRestored, setDraftRestored] = useState(false);
+  const [detailLoading, setDetailLoading] = useState(true);
+  const [detailError, setDetailError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!selected) {
@@ -250,6 +252,8 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
     document.body.style.overflow = 'hidden';
     setExpandedMatchupId(null); // 選択したチャンピオンが変わったときにアコーディオンをリセット
     setDraftRestored(false);
+    setDetailLoading(true);
+    setDetailError(null);
     let cancelled = false; // 読み込み中に別チャンピオンへ切り替えた場合、古い結果で上書きしないためのガード
 
     const loadChampionData = async (champId: string) => {
@@ -267,22 +271,25 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
           const savedDraft = localStorage.getItem(`champ_draft_${champId}`);
           if (savedDraft) {
             const parsed = JSON.parse(savedDraft);
-            setDataFields((prev: any) => ({ ...detail.dataFields, ...parsed }));
+            setDataFields((prev: any) => ({ ...(detail.dataFields || {}), ...parsed }));
             setDraftRestored(true);
           } else {
-            setDataFields(detail.dataFields);
+            setDataFields(detail.dataFields || {});
           }
         } catch {
-          setDataFields(detail.dataFields);
+          setDataFields(detail.dataFields || {});
         }
 
         setPastInterrogations(detail.pastInterrogations || []);
-      } catch (err) {
+      } catch (err: any) {
         console.warn('⚠️ チャンピオン詳細データのロードに失敗しました:', err);
         if (cancelled) return;
+        setDetailError(err.message || '詳細データの取得に失敗しました');
         setMatchupsList([]);
         setPowerSpikeScores(null);
         setPastInterrogations([]);
+      } finally {
+        if (!cancelled) setDetailLoading(false);
       }
     };
     loadChampionData(selected.id);
@@ -624,11 +631,23 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
           <button onClick={() => setSelected(null)} className="flex items-center gap-2 text-[#c89b3c] font-bold w-fit hover:text-stone-900 transition-colors">
             <ChevronLeft size={18} /> 辞典トップに戻る
           </button>
-          {draftRestored && (
-            <div className="px-3 py-1.5 rounded-xl bg-amber-100 border border-amber-300 text-amber-900 text-xs font-bold flex items-center gap-2 animate-bounce shadow">
-              <span>✏️</span> 前回編集中の未保存下書きを自動復元しました
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            {detailLoading && (
+              <div className="px-3 py-1.5 rounded-xl bg-cyan-950/40 border border-cyan-800 text-cyan-300 text-xs font-bold flex items-center gap-2 shadow">
+                <RefreshCw size={14} className="animate-spin" /> 詳細データを読み込み中...
+              </div>
+            )}
+            {detailError && (
+              <div className="px-3 py-1.5 rounded-xl bg-rose-950/40 border border-rose-800 text-rose-300 text-xs font-bold flex items-center gap-2 shadow">
+                <span>⚠️</span> {detailError}
+              </div>
+            )}
+            {draftRestored && (
+              <div className="px-3 py-1.5 rounded-xl bg-amber-100 border border-amber-300 text-amber-900 text-xs font-bold flex items-center gap-2 animate-bounce shadow">
+                <span>✏️</span> 前回編集中の未保存下書きを自動復元しました
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="relative rounded-3xl overflow-hidden shadow-2xl border border-white/10 group bg-[#0a0b10]">
