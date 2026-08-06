@@ -206,9 +206,16 @@ export default function PickRecommendationTab() {
               type="button"
               onClick={fetchRecommendations}
               disabled={loading}
-              className="px-4 py-2 bg-amber-700 hover:bg-amber-800 text-white font-bold text-xs rounded-lg shadow transition-colors shrink-0 disabled:opacity-50"
+              className="px-4 py-2 bg-amber-700 hover:bg-amber-800 active:scale-95 text-white font-bold text-xs rounded-lg shadow transition-all shrink-0 disabled:opacity-50 flex items-center gap-1.5"
             >
-              {loading ? '計算中...' : '推奨ピック表示'}
+              {loading ? (
+                <>
+                  <div className="w-3.5 h-3.5 animate-spin rounded-full border-2 border-white border-t-transparent shrink-0" />
+                  <span>AI計算中...</span>
+                </>
+              ) : (
+                '推奨ピック表示'
+              )}
             </button>
           </div>
         </div>
