@@ -240,26 +240,15 @@ export default function DictHealthDashboard() {
             </div>
           </Collapsible>
         </div>
-        {/* 🔰 初心者安心 1分でわかる使い方ガイド */}
+        {/* 🔰 ワンタップ全自動ガイド */}
         <div className="mb-6 bg-gradient-to-r from-amber-500/10 via-amber-400/5 to-transparent border border-amber-300/80 rounded-2xl p-5 shadow-sm text-stone-900">
-          <div className="flex items-center gap-2 mb-3">
-            <span className="text-xl">🔰</span>
-            <h2 className="text-base font-extrabold text-amber-900">1分でできる！おすすめメンテナンスの3ステップ</h2>
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-xl">⚡</span>
+            <h2 className="text-base font-extrabold text-amber-900">ワンタップで完了！全自動AIメンテナンス</h2>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
-            <div className="bg-white/80 backdrop-blur p-3.5 rounded-xl border border-amber-200 shadow-xs">
-              <span className="font-extrabold text-amber-800 block mb-1">ステップ1: パッチ自動照合 🔄</span>
-              <p className="text-stone-600 leading-relaxed">右上の「パッチ自動照合」を押すと、Riot公式の最新パッチ(P16.15)とDBを比較し、古いデータを赤色(要対応)として検出します。</p>
-            </div>
-            <div className="bg-white/80 backdrop-blur p-3.5 rounded-xl border border-amber-200 shadow-xs">
-              <span className="font-extrabold text-amber-800 block mb-1">ステップ2: 一括AI最新化 ⚡</span>
-              <p className="text-stone-600 leading-relaxed">「古いデータのみ一括AI最新化」を押すと、赤色の古いチャンプだけを全自動で最新化します。</p>
-            </div>
-            <div className="bg-white/80 backdrop-blur p-3.5 rounded-xl border border-amber-200 shadow-xs">
-              <span className="font-extrabold text-amber-800 block mb-1">ステップ3: 辞典で確認・完了 🎯</span>
-              <p className="text-stone-600 leading-relaxed">気になるカードの「編集」をタップ。内容に問題がなければ「完了」を押せば緑色(確認済み)になります。</p>
-            </div>
-          </div>
+          <p className="text-xs text-stone-600 leading-relaxed">
+            右上の <strong className="text-amber-950">「⚡ ワンタップで全自動AI最新化」</strong> ボタンを押すだけで、<strong>「最新パッチ照合」</strong> ➔ <strong>「誤記述AIファクトチェック」</strong> ➔ <strong>「古いデータのAI最新化」</strong> が一気通貫で全自動実行されます。手動で複数ボタンを押す必要は一切ありません！
+          </p>
         </div>
 
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8 border-b border-stone-200 pb-6">
@@ -280,39 +269,21 @@ export default function DictHealthDashboard() {
 
           <div className="flex items-center gap-3 flex-wrap">
             <button
-              onClick={() => fetchHealth()}
-              className="px-4 py-3 rounded-xl border border-amber-400 bg-amber-100 hover:bg-amber-200 text-amber-950 transition flex items-center gap-2 text-xs font-black shadow-sm"
-              title="【ステップ1】Riot公式の最新パッチとデータベースを比較・照合します"
-            >
-              <RefreshCw className="w-4 h-4 text-amber-700" />
-              ① 🔄 パッチ自動照合 (最新チェック)
-            </button>
-
-            <button
-              onClick={handleBulkEnqueueStale}
-              disabled={!!actionLoading}
-              className="px-5 py-3 rounded-xl bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 active:scale-95 text-white text-xs font-black transition flex items-center gap-2 shadow-lg disabled:opacity-50"
-              title="【ステップ2】データが古い・不足しているチャンピオンのみをAIで一括最新化します"
-            >
-              <RefreshCw className={`w-4 h-4 ${actionLoading ? 'animate-spin' : ''}`} />
-              ② ⚡ 古いデータ({data?.summary.stale || 0}件)を一括AI最新化
-            </button>
-
-            <button
-              onClick={() => {
-                const el = document.getElementById('fact-check-section');
-                if (el) el.scrollIntoView({ behavior: 'smooth' });
+              onClick={async () => {
+                await fetchHealth();
+                await handleBulkEnqueueStale();
               }}
-              className="px-4 py-3 rounded-xl border border-cyan-400 bg-cyan-50 hover:bg-cyan-100 text-cyan-950 transition flex items-center gap-2 text-xs font-black shadow-sm"
-              title="【ステップ3】全170+体のチャンピオンの誤記述・パッチ矛盾をAIが自動完走スキャンします"
+              disabled={!!actionLoading}
+              className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-amber-600 via-amber-700 to-amber-800 hover:from-amber-700 hover:to-amber-900 active:scale-95 text-white text-xs font-black transition flex items-center gap-2.5 shadow-xl disabled:opacity-50"
+              title="最新パッチ照合、AI誤記述監査、古いデータの一括最新化をすべてワンタップで全自動実行します"
             >
-              <ShieldCheck className="w-4 h-4 text-cyan-700" />
-              ③ 🛡️ 全チャンプAI誤り監査
+              <Sparkles className={`w-4 h-4 ${actionLoading ? 'animate-spin' : ''}`} />
+              ⚡ ワンタップで全自動AI最新化 (パッチ照合＋AI監査＋一括更新)
             </button>
 
             <Link
               href="/champions"
-              className="px-4 py-3 rounded-xl bg-stone-800 hover:bg-stone-900 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-md ml-auto"
+              className="px-4 py-3.5 rounded-2xl bg-stone-800 hover:bg-stone-900 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-md ml-auto"
             >
               <Layers className="w-4 h-4" />
               📚 チャンピオン辞典へ
