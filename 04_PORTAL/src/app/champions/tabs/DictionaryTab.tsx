@@ -1676,6 +1676,22 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
 
       {loading ? (
         <Spinner label="チャンピオン辞典を読み込み中..." />
+      ) : filtered.length === 0 ? (
+        <div className="glass-panel p-12 rounded-3xl flex flex-col items-center justify-center text-center space-y-4 my-8">
+          <div className="w-16 h-16 rounded-full bg-amber-500/10 border border-amber-400/30 flex items-center justify-center text-3xl animate-bounce">
+            🔍
+          </div>
+          <div>
+            <h3 className="text-base font-extrabold text-stone-900">該当するチャンピオンが見つかりませんでした</h3>
+            <p className="text-xs text-stone-500 mt-1">検索ワードや指定フィルター条件（ロール・お気に入り等）を見直してください。</p>
+          </div>
+          <button
+            onClick={() => { setSearch(''); setRoleFilter('ALL'); setTypeFilter('ALL'); setShowFavoritesOnly(false); }}
+            className="px-6 py-2.5 bg-amber-600 hover:bg-amber-700 active:scale-95 text-white font-bold text-xs rounded-xl shadow-lg transition-all flex items-center gap-2"
+          >
+            <RefreshCw size={14} /> 絞り込み条件をリセット
+          </button>
+        </div>
       ) : (
         <motion.div variants={containerVariants} initial="hidden" animate="visible" className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-4">
           {filtered.map(c => {

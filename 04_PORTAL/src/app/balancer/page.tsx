@@ -1379,7 +1379,9 @@ export default function BalancerPage() {
               <button
                 type="button"
                 onClick={() => {
-                  setPlayers(prev => prev.map(p => p.is_spectator_fixed ? p : { ...p, is_active: true }));
+                  const updated = players.map(p => p.is_spectator_fixed ? p : { ...p, is_active: true });
+                  setPlayers(updated);
+                  try { localStorage.setItem('balancer_active_ids', JSON.stringify(updated.filter(p => p.is_active).map(p => p.id))); } catch {}
                 }}
                 className="px-3 py-2 rounded-xl bg-emerald-100 hover:bg-emerald-200 border border-emerald-200 text-emerald-800 font-bold text-xs transition"
                 title="観戦固定メンバーを除く全員の参加チェックをONにします"
@@ -1389,12 +1391,33 @@ export default function BalancerPage() {
               <button
                 type="button"
                 onClick={() => {
-                  setPlayers(prev => prev.map(p => p.is_spectator_fixed ? p : { ...p, is_active: false }));
+                  const updated = players.map(p => p.is_spectator_fixed ? p : { ...p, is_active: false });
+                  setPlayers(updated);
+                  try { localStorage.setItem('balancer_active_ids', JSON.stringify(updated.filter(p => p.is_active).map(p => p.id))); } catch {}
                 }}
                 className="px-3 py-2 rounded-xl bg-stone-200 hover:bg-stone-300 border border-stone-300 text-stone-700 font-bold text-xs transition"
                 title="観戦固定メンバーを除く全員の参加チェックをクリアします"
               >
                 ❌ 全員解除
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  try {
+                    const savedIds = JSON.parse(localStorage.getItem('balancer_active_ids') || '[]');
+                    if (Array.isArray(savedIds) && savedIds.length > 0) {
+                      setPlayers(prev => prev.map(p => ({ ...p, is_active: savedIds.includes(p.id) })));
+                    } else {
+                      alert('保存された前回のメンバー構成が見つかりません。');
+                    }
+                  } catch {
+                    alert('復元に失敗しました。');
+                  }
+                }}
+                className="px-3 py-2 rounded-xl bg-amber-100 hover:bg-amber-200 border border-amber-300 text-amber-900 font-bold text-xs transition"
+                title="前回のチーム分け時に参加していたメンバー構成を一元復元します"
+              >
+                ⏪ 前回構成を復元
               </button>
 
               {/* 卓分割の選択状態表示 */}

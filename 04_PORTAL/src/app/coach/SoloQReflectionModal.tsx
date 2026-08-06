@@ -87,7 +87,9 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
     } catch {}
   };
 
-  // 1. 初回マウント時・モーダルオープン時に localStorage から Riot ID を自動ロード
+  // 1. 初回マウント時・モーダルオープン時に localStorage から Riot ID および入力下書きを自動ロード
+  const [draftRestored, setDraftRestored] = useState(false);
+
   useEffect(() => {
     if (isOpen) {
       fetchSavedMatchIds();
@@ -96,8 +98,35 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
         setIgn(savedIgn);
         fetchMatches(savedIgn);
       }
+
+      // 下書きの復元
+      try {
+        const draftJson = localStorage.getItem('soloq_reflection_draft');
+        if (draftJson) {
+          const draft = JSON.parse(draftJson);
+          if (draft.reflectionNote) setReflectionNote(draft.reflectionNote);
+          if (draft.matchupMemo) setMatchupMemo(draft.matchupMemo);
+          if (draft.nextFocusPoint) setNextFocusPoint(draft.nextFocusPoint);
+          setDraftRestored(true);
+        }
+      } catch {}
+    } else {
+      setDraftRestored(false);
     }
   }, [isOpen]);
+
+  // 入力中に自動下書き保存
+  useEffect(() => {
+    if (!isOpen) return;
+    if (reflectionNote || matchupMemo || nextFocusPoint) {
+      try {
+        localStorage.setItem(
+          'soloq_reflection_draft',
+          JSON.stringify({ reflectionNote, matchupMemo, nextFocusPoint })
+        );
+      } catch {}
+    }
+  }, [isOpen, reflectionNote, matchupMemo, nextFocusPoint]);
 
   // 選択中の試合について、AI自動分析(coach_analyses)が既にあるか安価に確認する。
   // Gemini呼び出しを伴わない読み取りのみなので、選択が変わるたびに自動実行してよい。
@@ -241,6 +270,7 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
       }
 
       setSaveSuccess(true);
+      try { localStorage.removeItem('soloq_reflection_draft'); } catch {}
       if (onSaved) onSaved();
 
       setTimeout(() => {
