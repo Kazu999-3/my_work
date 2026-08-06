@@ -329,25 +329,26 @@ export default function DictHealthDashboard() {
               onClick={handleBulkEnqueueStale}
               disabled={!!actionLoading}
               className="px-5 py-3 rounded-xl bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 active:scale-95 text-white text-xs font-black transition flex items-center gap-2 shadow-lg disabled:opacity-50"
-              title="確認が未完了・エラー状態のチャンピオンのみを一括でAI再試行キューに積みます"
+              title="データが古い・不足しているチャンピオンのみをAIで一括最新化します"
             >
               <RefreshCw className={`w-4 h-4 ${actionLoading ? 'animate-spin' : ''}`} />
-              ⚡ 要対応(stale)のみ一括AI更新
+              ⚡ 古いデータ({data?.summary.stale || 0}件)を一括AI最新化
             </button>
 
             <button
               onClick={() => fetchHealth()}
               className="px-4 py-3 rounded-xl border border-stone-300 bg-white hover:bg-stone-50 text-stone-700 transition flex items-center gap-2 text-xs font-bold shadow-sm"
+              title="最新パッチとデータベースを照合して状態を更新します"
             >
               <RefreshCw className="w-4 h-4 text-stone-500" />
-              再照合
+              データ照合 (更新検知)
             </button>
             <Link
               href="/champions"
               className="px-4 py-3 rounded-xl bg-stone-800 hover:bg-stone-900 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-md"
             >
               <Layers className="w-4 h-4" />
-              辞典本体を開く
+              📚 チャンピオン辞典へ
             </Link>
           </div>
         </div>
@@ -495,10 +496,10 @@ export default function DictHealthDashboard() {
             <button
               onClick={handleBulkEnqueueStale}
               disabled={actionLoading === 'bulk_stale'}
-              className="w-full md:w-auto px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-md shadow-red-600/20 disabled:opacity-50"
+              className="w-full md:w-auto px-4 py-2 rounded-xl bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white text-xs font-black transition flex items-center justify-center gap-1.5 shadow-md disabled:opacity-50"
             >
               <Play className="w-3.5 h-3.5" />
-              🔴 要対応の {data?.summary.stale} 体を一括自動更新タスクに積む
+              ⚡ 古いデータ {data?.summary.stale} 件を今すぐAI自動更新
             </button>
           )}
         </div>
@@ -579,7 +580,7 @@ export default function DictHealthDashboard() {
                     className="py-1.5 px-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-[11px] font-bold transition text-center flex items-center justify-center gap-1 shadow-sm shrink-0"
                     title="このチャンピオンの辞典詳細を開き内容を確認・編集します"
                   >
-                    ✏️ 辞典で確認・編集
+                    ✏️ 辞典で直接編集
                   </Link>
 
                   {isVerified ? (
@@ -588,7 +589,7 @@ export default function DictHealthDashboard() {
                       disabled={actionLoading === champ.champion + '_unverify'}
                       className="flex-1 py-1.5 px-2 bg-stone-100 hover:bg-stone-200 text-stone-700 rounded-lg text-[11px] font-bold transition text-center disabled:opacity-50"
                     >
-                      AI判定に戻す
+                      ↩️ 未確認に戻す
                     </button>
                   ) : (
                     <button
@@ -597,7 +598,7 @@ export default function DictHealthDashboard() {
                       className="flex-1 py-1.5 px-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[11px] font-bold transition text-center flex items-center justify-center gap-1 shadow-sm disabled:opacity-50"
                     >
                       <ShieldCheck className="w-3.5 h-3.5" />
-                      ✅ 確認済みにする
+                      ✅ 人間チェック完了
                     </button>
                   )}
 
