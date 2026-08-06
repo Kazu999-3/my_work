@@ -302,7 +302,17 @@ export default function DictHealthDashboard() {
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
+            <button
+              onClick={handleBulkEnqueueStale}
+              disabled={!!actionLoading}
+              className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-700 to-amber-800 hover:from-amber-800 hover:to-amber-900 active:scale-95 text-white text-xs font-black transition flex items-center gap-1.5 shadow-md disabled:opacity-50"
+              title="確認が未完了・エラー状態のチャンピオンのみを一括でAI再試行キューに積みます"
+            >
+              <RefreshCw className={`w-4 h-4 ${actionLoading ? 'animate-spin' : ''}`} />
+              🔁 失敗・未確認件数のみ一括再試行
+            </button>
+
             <button
               onClick={() => fetchHealth()}
               className="p-2.5 rounded-xl border border-stone-300 bg-white hover:bg-stone-50 text-stone-700 transition flex items-center gap-2 text-xs font-bold shadow-sm"
