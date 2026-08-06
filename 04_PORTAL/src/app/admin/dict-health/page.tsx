@@ -8,7 +8,8 @@ import { getChampIcon } from '../../../lib/ddragonClient';
 import Collapsible from '../../../components/Collapsible';
 import DictFactCheckPanel from '../knowledge/DictFactCheckPanel';
 import RevisionsPanel from '../knowledge/RevisionsPanel';
-import DictReviewPanel from '../knowledge/DictReviewPanel';
+import DictInsightsPanel from '../knowledge/DictInsightsPanel';
+import FreshnessPanel from '../knowledge/FreshnessPanel';
 
 interface ChampHealth {
   champion: string;
@@ -591,13 +592,34 @@ export default function DictHealthDashboard() {
         </div>
 
         {/* 統合パネル2: 📜 変更リビジョン履歴＆ワンタップ復元 */}
+        {/* 統合パネル2: 💡 ナレッジ点検 & 蓄積メモ・プロ分析インサイト */}
+        <div className="bg-white rounded-3xl border border-stone-200 p-6 shadow-sm">
+          <Collapsible
+            defaultOpen={false}
+            title={
+              <div className="flex items-center gap-2 text-stone-900">
+                <Sparkles className="text-amber-600 w-5 h-5" />
+                <span className="text-sm font-extrabold">💡 ナレッジ点検 & 蓄積メモ・プロ分析インサイト</span>
+              </div>
+            }
+          >
+            <div className="pt-4 border-t border-stone-100 mt-3">
+              <p className="text-xs text-stone-500 mb-4">
+                コーチAIが対戦データから集計したチャンピオン別の蓄積メモやナレッジの整合性を点検・直接編集します。
+              </p>
+              <DictInsightsPanel />
+            </div>
+          </Collapsible>
+        </div>
+
+        {/* 統合パネル3: 📜 辞典 ＆ ナレッジ全変更履歴 Diff & 0秒ワンタップ巻き戻し */}
         <div className="bg-white rounded-3xl border border-stone-200 p-6 shadow-sm">
           <Collapsible
             defaultOpen={false}
             title={
               <div className="flex items-center gap-2 text-stone-900">
                 <History className="text-pink-600 w-5 h-5" />
-                <span className="text-sm font-extrabold">📜 変更履歴 Diff & 0秒ワンタップ巻き戻し</span>
+                <span className="text-sm font-extrabold">📜 辞典 ＆ ナレッジ全変更履歴 Diff & 0秒ワンタップ巻き戻し</span>
               </div>
             }
           >
@@ -606,6 +628,26 @@ export default function DictHealthDashboard() {
                 過去にいつ・誰が（手動またはAI）・何を変更したかの全差分ログを閲覧し、必要に応じて以前の状態へ巻き戻せます。
               </p>
               <RevisionsPanel />
+            </div>
+          </Collapsible>
+        </div>
+
+        {/* 統合パネル4: 🍃 ナレッジ鮮度レビュー & 定期点検 */}
+        <div className="bg-white rounded-3xl border border-stone-200 p-6 shadow-sm">
+          <Collapsible
+            defaultOpen={false}
+            title={
+              <div className="flex items-center gap-2 text-stone-900">
+                <Activity className="text-emerald-600 w-5 h-5" />
+                <span className="text-sm font-extrabold">🍃 ナレッジ鮮度レビュー & 定期点検</span>
+              </div>
+            }
+          >
+            <div className="pt-4 border-t border-stone-100 mt-3">
+              <p className="text-xs text-stone-500 mb-4">
+                ナレッジデータの更新日時・鮮度を点検し、最新パッチとの適合率を確認できます。
+              </p>
+              <FreshnessPanel />
             </div>
           </Collapsible>
         </div>
