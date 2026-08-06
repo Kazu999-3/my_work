@@ -115,9 +115,35 @@ export default function LeaderboardPage() {
     );
   }
 
+  const [isGuideOpen, setIsGuideOpen] = useState(false);
+
   return (
     <div className="min-h-screen bg-background py-10 px-4 sm:px-6 lg:px-8 text-stone-800">
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-7xl mx-auto space-y-4">
+
+        {/* 🔰 リーダーボードの見方ガイド（初心者安心折りたたみガイド） */}
+        <div className="bg-amber-500/10 border border-amber-300/60 rounded-2xl p-4 text-stone-900 shadow-sm mb-4">
+          <button
+            onClick={() => setIsGuideOpen(!isGuideOpen)}
+            className="w-full flex items-center justify-between font-bold text-xs text-amber-900 hover:text-amber-950 transition"
+          >
+            <div className="flex items-center gap-2">
+              <span className="text-base">🔰</span>
+              <span className="font-extrabold text-sm">KTM リーダーボードの見方 ＆ ランキング仕様</span>
+            </div>
+            <span className="text-[11px] bg-amber-200/80 px-2 py-0.5 rounded-full font-bold">
+              {isGuideOpen ? '▲ ガイドを閉じる' : '▼ ガイドを開く'}
+            </span>
+          </button>
+
+          {isGuideOpen && (
+            <div className="mt-3 pt-3 border-t border-amber-300/40 text-xs text-stone-800 space-y-2 leading-relaxed animate-fade-in">
+              <p><strong>1. ロール別ランキング:</strong> TOP/JG/MID/ADC/SUP のレーンごとに通算戦績・MMRランキングが表示されます。</p>
+              <p><strong>2. 相性マトリクス:</strong> 上部タブの「勝率マトリクス」をタップすると、対面・チーム構成ごとの相性データが閲覧できます。</p>
+            </div>
+          )}
+        </div>
+
         <div className="relative mb-6">
           <h1 className="text-3xl font-extrabold text-stone-900 text-center tracking-tight flex items-center justify-center gap-3">
             <span className="text-amber-500">🏆</span> KTM LEADERBOARD

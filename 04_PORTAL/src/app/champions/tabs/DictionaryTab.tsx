@@ -1459,9 +1459,34 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
     );
   }
 
-  return (
-    <div className="min-h-screen p-6 md:p-12 max-w-7xl mx-auto flex flex-col gap-8">
+  const [isGuideOpen, setIsGuideOpen] = useState(false);
 
+  return (
+    <div className="min-h-screen p-6 md:p-12 max-w-7xl mx-auto flex flex-col gap-6">
+
+      {/* 🔰 チャンピオン辞典の使い方ガイド（初心者安心折りたたみガイド） */}
+      <div className="bg-amber-500/10 border border-amber-300/60 rounded-2xl p-4 text-stone-900 shadow-sm">
+        <button
+          onClick={() => setIsGuideOpen(!isGuideOpen)}
+          className="w-full flex items-center justify-between font-bold text-xs text-amber-900 hover:text-amber-950 transition"
+        >
+          <div className="flex items-center gap-2">
+            <span className="text-base">🔰</span>
+            <span className="font-extrabold text-sm">チャンピオン辞典の使い方 ＆ 検索のコツ</span>
+          </div>
+          <span className="text-[11px] bg-amber-200/80 px-2 py-0.5 rounded-full font-bold">
+            {isGuideOpen ? '▲ ガイドを閉じる' : '▼ ガイドを開く'}
+          </span>
+        </button>
+
+        {isGuideOpen && (
+          <div className="mt-3 pt-3 border-t border-amber-300/40 text-xs text-stone-800 space-y-2 leading-relaxed animate-fade-in">
+            <p><strong>1. 検索・絞り込み:</strong> 上の入力欄に「アリ」などのひらがな・日本語名、または「Ahri」などの英語名を入力すると0秒で絞り込まれます。</p>
+            <p><strong>2. レーン・ピック属性:</strong> TOP/JG/MID/ADC/SUP ボタンでレーン別、または「先出し向け/後出し向け」で絞り込めます。</p>
+            <p><strong>3. 詳細データ確認:</strong> チャンピオンカードをタップすると、強み・弱み・パワースパイク時間帯・対策ビルドが閲覧できます。</p>
+          </div>
+        )}
+      </div>
 
       {/* 検索バー・フィルター（スクロール追従） */}
       <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }} className="sticky top-0 z-20 flex flex-col gap-3 glass-panel p-4 rounded-2xl shadow-2xl backdrop-blur-2xl bg-white/90">
@@ -1482,8 +1507,8 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
           <div className="flex gap-4 items-center flex-wrap w-full">
             <div className="relative flex-1 min-w-[200px]">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[#c89b3c]" size={20} />
-              <input type="text" placeholder="チャンピオン名で検索..." value={search} onChange={e => setSearch(e.target.value)}
-                className="w-full bg-[var(--color-surface)] border border-transparent focus:border-[#c89b3c]/50 rounded-xl py-3 pl-12 pr-4 text-stone-900 font-bold outline-none transition-colors" />
+              <input type="text" placeholder="例: Ahri / アリ (英名・日本語検索対応)..." value={search} onChange={e => setSearch(e.target.value)}
+                className="w-full bg-[var(--color-surface)] border border-transparent focus:border-[#c89b3c]/50 rounded-xl py-3 pl-12 pr-4 text-stone-900 font-bold outline-none transition-colors text-xs md:text-sm" />
             </div>
             {/* ロール別フィルターボタン */}
             <div className="flex glass-panel p-1 rounded-xl items-center gap-0.5">
