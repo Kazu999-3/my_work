@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { TrendingUp, Users, Heart, Layers, RefreshCw, AlertCircle, FileText, CheckCircle, Lightbulb, Copy } from 'lucide-react';
+import { TrendingUp, Users, Heart, Layers, RefreshCw, AlertCircle, FileText, CheckCircle, Lightbulb, Copy, Sparkles } from 'lucide-react';
 
 interface Report {
   date: string;
@@ -576,15 +576,47 @@ export default function NoteAnalytics() {
           </motion.div>
         ) : (
           // === 記事下書きプレビュー表示エリア ===
-          drafts.length === 0 ? (
-            <div className="glass-panel rounded-3xl p-12 border border-black/5 text-center bg-black/[0.03] max-w-xl mx-auto mt-16">
-              <AlertCircle size={48} className="text-amber-600 mx-auto mb-4 animate-bounce" />
-              <h3 className="text-xl font-black text-stone-900 mb-2">下書き原稿が見つかりません</h3>
-              <p className="text-xs text-stone-600 leading-relaxed mb-6">
-                `note_articles` テーブルにまだ記事が投入されていません。sovereign-factory等のスキルでnote記事を書くと、ここに自動で表示されます。
-              </p>
+          <div>
+            <div className="flex items-center justify-between mb-6 bg-white p-4 rounded-2xl border border-stone-200 shadow-sm">
+              <div>
+                <h3 className="text-sm font-extrabold text-stone-900">記事ドラフト自動生成</h3>
+                <p className="text-xs text-stone-500">SSOTの最新パッチデータから500円モデル有料note記事をAIが自動執筆します</p>
+              </div>
+              <button
+                onClick={async () => {
+                  try {
+                    const res = await fetch('/api/admin/note-articles/generate', {
+                      method: 'POST',
+                      credentials: 'include',
+                      headers: { 'Content-Type': 'application/json' },
+                    });
+                    const json = await res.json();
+                    if (res.ok) {
+                      alert(`✅ 記事「${json.article.title}」を自動生成しました！`);
+                      window.location.reload();
+                    } else {
+                      alert(`❌ 生成失敗: ${json.error}`);
+                    }
+                  } catch (e: any) {
+                    alert(`❌ 通信エラー: ${e.message}`);
+                  }
+                }}
+                className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-md shadow-amber-600/20"
+              >
+                <Sparkles size={16} />
+                ✨ SSOTデータから有料note記事を生成
+              </button>
             </div>
-          ) : (
+
+            {drafts.length === 0 ? (
+              <div className="glass-panel rounded-3xl p-12 border border-black/5 text-center bg-black/[0.03] max-w-xl mx-auto mt-8">
+                <AlertCircle size={48} className="text-amber-600 mx-auto mb-4 animate-bounce" />
+                <h3 className="text-xl font-black text-stone-900 mb-2">下書き原稿が見つかりません</h3>
+                <p className="text-xs text-stone-600 leading-relaxed mb-6">
+                  右上の「✨ SSOTデータから有料note記事を生成」ボタンを押すと、最新の勝率・ビルドデータから500円記事が自動作成されます。
+                </p>
+              </div>
+            ) : (
             <motion.div
               variants={containerVariants}
               initial="hidden"
@@ -796,7 +828,8 @@ export default function NoteAnalytics() {
                 )}
               </motion.div>
             </motion.div>
-          )
+          )}
+          </div>
         )}
       </main>
     </div>
