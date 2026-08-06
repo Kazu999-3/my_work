@@ -232,7 +232,11 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
   const isFavorited = selected ? favoriteChamps.includes(selected.id) : false;
 
   useEffect(() => {
-    if (!selected) return;
+    if (!selected) {
+      document.body.style.overflow = 'unset';
+      return;
+    }
+    document.body.style.overflow = 'hidden';
     setExpandedMatchupId(null); // 選択したチャンピオンが変わったときにアコーディオンをリセット
     let cancelled = false; // 読み込み中に別チャンピオンへ切り替えた場合、古い結果で上書きしないためのガード
 
@@ -257,7 +261,10 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
     };
     loadChampionData(selected.id);
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+      document.body.style.overflow = 'unset';
+    };
   }, [selected]);
 
   const handleToggleFavorite = async () => {

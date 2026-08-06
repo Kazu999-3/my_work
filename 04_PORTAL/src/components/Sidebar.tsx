@@ -174,7 +174,7 @@ export default function Sidebar() {
         </div>
       </aside>
 
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[#f7f5f0]/95 backdrop-blur-md border-t border-stone-200 z-40 px-2 py-1.5 flex items-center justify-around">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[#f7f5f0]/95 backdrop-blur-md border-t border-stone-200 z-40 px-2 py-2 min-h-[52px] flex items-center justify-around">
         {primaryMobileItems.map((item) => (
           <MobileNavItem
             key={item.id}
@@ -187,10 +187,10 @@ export default function Sidebar() {
         {overflowMobileItems.length > 0 && (
           <button
             onClick={() => setShowMobileMore(true)}
-            className="flex flex-col items-center justify-center min-w-[3.5rem] px-2 py-1.5 rounded-xl text-stone-500 active:bg-black/10 touch-manipulation select-none"
+            className="flex flex-col items-center justify-center min-w-[3.75rem] px-2 py-2 rounded-xl text-stone-600 active:bg-black/10 touch-manipulation select-none"
           >
-            <MoreHorizontal size={18} className="mb-1" />
-            <span className="text-[9px] font-bold tracking-wider truncate w-full text-center">その他</span>
+            <MoreHorizontal size={20} className="mb-0.5" />
+            <span className="text-[10px] font-extrabold tracking-wider truncate w-full text-center">その他</span>
           </button>
         )}
       </nav>

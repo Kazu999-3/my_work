@@ -1550,25 +1550,30 @@ export default function CoachPage() {
           </div>
         )}
 
-        {/* 4ステップ切り替えナビゲーションバー */}
-        <div className="mb-6 flex gap-2 border-b border-black/10 pb-3 overflow-x-auto">
-          {STEP_TABS.map((tab) => {
-            const isActive = activeStepTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveStepTab(tab.id as any)}
-                className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold transition-all shrink-0 ${
-                  isActive
-                    ? 'bg-gradient-to-r from-amber-700 to-amber-800 text-white shadow-md'
-                    : 'bg-black/5 text-stone-600 hover:bg-black/10'
-                }`}
-              >
-                <span>{tab.icon}</span>
-                <span>{tab.label}</span>
-              </button>
-            );
-          })}
+        {/* 5ステップ切り替えプロ景観ナビゲーションバー（ユーザビリティ改修） */}
+        <div className="mb-6 bg-white border border-stone-200/90 p-2 rounded-2xl shadow-sm">
+          <div className="text-[10px] font-bold text-stone-400 uppercase tracking-widest px-2 pt-1 pb-1">
+            🎮 試合進行フェーズ（タップして切り替え）
+          </div>
+          <div className="flex gap-1.5 overflow-x-auto pb-1 touch-manipulation scrollbar-none">
+            {STEP_TABS.map((tab, idx) => {
+              const isActive = activeStepTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveStepTab(tab.id as any)}
+                  className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-black transition-all shrink-0 min-h-[44px] ${
+                    isActive
+                      ? 'bg-amber-800 text-white shadow-md ring-2 ring-amber-500/50 scale-[1.02]'
+                      : 'bg-stone-100 text-stone-700 hover:bg-stone-200 active:scale-95'
+                  }`}
+                >
+                  <span className="text-base">{tab.icon}</span>
+                  <span className="whitespace-nowrap">{tab.label}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {/* --- 4ステップ別メインコンテンツ --- */}
