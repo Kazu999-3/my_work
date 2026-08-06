@@ -32,6 +32,8 @@ export const viewport: Viewport = {
   themeColor: "#eae4d4",
 };
 
+import BackToTop from "../components/BackToTop";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -61,6 +63,7 @@ export default function RootLayout({
           <BackButton />
           {children}
         </div>
+        <BackToTop />
       </body>
     </html>
   );
