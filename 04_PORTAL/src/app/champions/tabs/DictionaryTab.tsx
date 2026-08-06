@@ -198,42 +198,44 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
         .then(versions => fetch(`https://ddragon.leagueoflegends.com/cdn/${versions[0]}/data/ja_JP/champion.json`).then(r => r.json()))
         .catch(() => null),
       fetch('/api/champions/dictionary-overview', { credentials: 'include' }).then(res => res.json()).catch(() => null),
-    ]).then(([statsData, ddragonData, overview]) => {
-      if (!isMounted) return;
+    ])
+      .then(([statsData, ddragonData, overview]) => {
+        if (!isMounted) return;
 
-      if (statsData && statsData.success && statsData.stats) {
-        setChampStats(statsData.stats);
-      }
-
-      if (!ddragonData || !ddragonData.data) return;
-
-      const fetchedChampions = Object.values(ddragonData.data).map((c: any) => ({
-        id: c.id, key: c.key, name: c.name, title: c.title, tags: c.tags,
-        searchKey: `${c.id.toLowerCase()} ${c.name}`
-      }));
-
-        setChampPowerSpikes(overview?.powerSpikes || {});
-        setChampDates(overview?.dates || {});
-        setChampPending(overview?.pending || {});
-        setChampPatchMetas(overview?.patchMetas || {});
-        setChampJgStyles(overview?.jgStyles || {});
-        setChampions(fetchedChampions);
-
-        // localStorage と Supabase のお気に入りをマージしてセット
-        const localFavs = getFavorites().champions;
-        const mergedFavs = Array.from(new Set([...localFavs, ...(overview?.dbFavorites || [])]));
-        setFavoriteChamps(mergedFavs);
-
-        // URLパラメータ ?select=ChampId の自動選択処理
-        const selectId = searchParams.get('select');
-        if (selectId) {
-          const found = fetchedChampions.find(c => c.id === selectId);
-          if (found) setSelected(found);
+        if (statsData && statsData.success && statsData.stats) {
+          setChampStats(statsData.stats);
         }
 
-        setLoading(false);
+        if (ddragonData && ddragonData.data) {
+          const fetchedChampions = Object.values(ddragonData.data).map((c: any) => ({
+            id: c.id, key: c.key, name: c.name, title: c.title, tags: c.tags,
+            searchKey: `${c.id.toLowerCase()} ${c.name}`
+          }));
+
+          setChampPowerSpikes(overview?.powerSpikes || {});
+          setChampDates(overview?.dates || {});
+          setChampPending(overview?.pending || {});
+          setChampPatchMetas(overview?.patchMetas || {});
+          setChampJgStyles(overview?.jgStyles || {});
+          setChampions(fetchedChampions);
+
+          // localStorage と Supabase のお気に入りをマージしてセット
+          const localFavs = getFavorites().champions;
+          const mergedFavs = Array.from(new Set([...localFavs, ...(overview?.dbFavorites || [])]));
+          setFavoriteChamps(mergedFavs);
+
+          // URLパラメータ ?select=ChampId の自動選択処理
+          const selectId = searchParams.get('select');
+          if (selectId) {
+            const found = fetchedChampions.find(c => c.id === selectId);
+            if (found) setSelected(found);
+          }
+        }
       })
-      .catch(console.error);
+      .catch(console.error)
+      .finally(() => {
+        if (isMounted) setLoading(false);
+      });
   }, [searchParams]);
 
   const isFavorited = selected ? favoriteChamps.includes(selected.id) : false;
@@ -1676,6 +1678,22 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
 
       {loading ? (
         <Spinner label="チャンピオン辞典を読み込み中..." />
+      ) : champions.length === 0 ? (
+        <div className="glass-panel p-12 rounded-3xl flex flex-col items-center justify-center text-center space-y-4 my-8">
+          <div className="w-16 h-16 rounded-full bg-rose-500/10 border border-rose-400/30 flex items-center justify-center text-3xl animate-pulse text-rose-500">
+            ⚠️
+          </div>
+          <div>
+            <h3 className="text-base font-extrabold text-stone-900">チャンピオンデータの読み込みに失敗しました</h3>
+            <p className="text-xs text-stone-500 mt-1">ネットワーク接続、またはDDragonサーバーへの通信状態を確認して再試行してください。</p>
+          </div>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-6 py-2.5 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-bold text-xs rounded-xl shadow-lg transition-all flex items-center gap-2"
+          >
+            <RefreshCw size={14} /> 画面を再読み込みする
+          </button>
+        </div>
       ) : filtered.length === 0 ? (
         <div className="glass-panel p-12 rounded-3xl flex flex-col items-center justify-center text-center space-y-4 my-8">
           <div className="w-16 h-16 rounded-full bg-amber-500/10 border border-amber-400/30 flex items-center justify-center text-3xl animate-bounce">
