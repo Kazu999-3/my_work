@@ -19,13 +19,14 @@ export async function GET(req: Request) {
   if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: 401 });
 
   try {
-    const currentPatch = await getCurrentPatch();
-
-    const { data: facts, error } = await supabase
-      .from('champion_facts')
-      .select('champion, patch, confidence, last_verified_at, last_verified_by, auto_updated_at, source_summary, updated_at, strengths')
-      .eq('archived', false)
-      .order('champion', { ascending: true });
+    const [currentPatch, { data: facts, error }] = await Promise.all([
+      getCurrentPatch(),
+      supabase
+        .from('champion_facts')
+        .select('champion, patch, confidence, last_verified_at, last_verified_by, auto_updated_at, source_summary, updated_at, strengths')
+        .eq('archived', false)
+        .order('champion', { ascending: true })
+    ]);
 
     if (error) throw error;
 

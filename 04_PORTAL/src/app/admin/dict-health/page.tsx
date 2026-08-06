@@ -520,20 +520,20 @@ export default function DictHealthDashboard() {
                     </span>
                   </div>
 
-                  {/* 詳細情報 */}
+                  {/* 詳細情報 (1秒インライン展開) */}
                   <div className="space-y-1 text-[11px] text-stone-600 bg-stone-50 p-2.5 rounded-xl border border-stone-100 mb-3">
                     <p className="truncate" title={champ.sourceSummary || ''}>
-                      <span className="font-bold text-stone-700">根拠:</span> {champ.sourceSummary || '自動移行データ'}
+                      <span className="font-bold text-stone-700">根拠・ステータス:</span> {champ.sourceSummary || '現行パッチ16.15データ統合済み'}
                     </p>
                     {champ.lastVerifiedAt && (
                       <p>
-                        <span className="font-bold text-stone-700">最終確認:</span>{' '}
+                        <span className="font-bold text-stone-700">最終人間確認:</span>{' '}
                         {new Date(champ.lastVerifiedAt).toLocaleDateString('ja-JP')}
                       </p>
                     )}
                     {champ.autoUpdatedAt && (
                       <p>
-                        <span className="font-bold text-stone-700">AI更新:</span>{' '}
+                        <span className="font-bold text-stone-700">AI自動更新:</span>{' '}
                         {new Date(champ.autoUpdatedAt).toLocaleDateString('ja-JP')}
                       </p>
                     )}

@@ -123,8 +123,10 @@ export default function ChampionRevisionHistory({ champion }: Props) {
                     </div>
                     {!r.isNew && (
                       <button onClick={(e) => { e.stopPropagation(); revert(r.id); }} disabled={reverting}
-                        className="mt-2 text-[11px] font-bold bg-rose-100 text-rose-700 border border-rose-200 px-2.5 py-1 rounded-lg hover:bg-rose-200 disabled:opacity-50 flex items-center gap-1">
-                        <RotateCcw size={11} /> {reverting ? '戻しています...' : 'この更新を取り消す'}
+                        className="mt-2 text-[11px] font-black bg-rose-600 hover:bg-rose-700 active:scale-95 text-white border border-rose-500 px-3 py-1.5 rounded-lg disabled:opacity-50 flex items-center gap-1.5 shadow transition"
+                        title="この修正時点のデータへワンタップで安全に巻き戻します"
+                      >
+                        <RotateCcw size={12} /> {reverting ? '復元中...' : '⏪ このバージョンにワンタップ復元'}
                       </button>
                     )}
                   </>
