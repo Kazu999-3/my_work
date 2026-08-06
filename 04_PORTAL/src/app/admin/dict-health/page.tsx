@@ -634,20 +634,20 @@ export default function DictHealthDashboard() {
           </Collapsible>
         </div>
 
-        {/* 統合パネル3: 🤖 AI自動更新・実行ログ */}
+        {/* 統合パネル3: 🤖 AI詳細判定 ＆ 個別再生成レビュー */}
         <div className="bg-white rounded-3xl border border-stone-200 p-6 shadow-sm">
           <Collapsible
             defaultOpen={false}
             title={
               <div className="flex items-center gap-2 text-stone-900">
                 <Sparkles className="text-emerald-600 w-5 h-5" />
-                <span className="text-sm font-extrabold">🤖 AI最新トレンド自動取得・Cron実行ログ</span>
+                <span className="text-sm font-extrabold">🤖 AI詳細判定 ＆ 個別再生成レビュー</span>
               </div>
             }
           >
             <div className="pt-4 border-t border-stone-100 mt-3">
               <p className="text-xs text-stone-500 mb-4">
-                パッチ自動検知 Cron や一括自動更新タスクの進行状況・直近の更新結果ログを表示します。
+                特定のチャンピオンを指定し、AIが「現パッチでも有効か」を1体ずつ深掘り診断・個別にAI文章を再生成テストするパネルです。
               </p>
               <DictReviewPanel />
             </div>
