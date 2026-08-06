@@ -310,7 +310,7 @@ export default function DictHealthDashboard() {
               title="確認が未完了・エラー状態のチャンピオンのみを一括でAI再試行キューに積みます"
             >
               <RefreshCw className={`w-4 h-4 ${actionLoading ? 'animate-spin' : ''}`} />
-              🔁 失敗・未確認件数のみ一括再試行
+              🔁 要対応(stale)のみ一括再試行
             </button>
 
             <button

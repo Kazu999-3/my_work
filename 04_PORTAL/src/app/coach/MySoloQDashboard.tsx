@@ -64,9 +64,13 @@ export default function MySoloQDashboard({ refreshSignal }: { refreshSignal?: nu
       : '3.0';
 
   // 直近の連敗数を算出 (最新の試合から連続で敗北している数)
+  // APIのソート順に依存しないよう、created_at降順で明示的にソートしてから判定する
   const consecutiveLosses = (() => {
+    const sorted = [...reflections].sort(
+      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
     let count = 0;
-    for (const r of reflections) {
+    for (const r of sorted) {
       if (!r.win) count++;
       else break;
     }

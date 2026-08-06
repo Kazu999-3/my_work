@@ -1379,20 +1379,20 @@ export default function BalancerPage() {
               <button
                 type="button"
                 onClick={() => {
-                  setPlayers(prev => prev.map(p => ({ ...p, is_active: true })));
+                  setPlayers(prev => prev.map(p => p.is_spectator_fixed ? p : { ...p, is_active: true }));
                 }}
                 className="px-3 py-2 rounded-xl bg-emerald-100 hover:bg-emerald-200 border border-emerald-200 text-emerald-800 font-bold text-xs transition"
-                title="全メンバーの参加チェックボックスをONにします"
+                title="観戦固定メンバーを除く全員の参加チェックをONにします"
               >
                 ✅ 全員参加ON
               </button>
               <button
                 type="button"
                 onClick={() => {
-                  setPlayers(prev => prev.map(p => ({ ...p, is_active: false })));
+                  setPlayers(prev => prev.map(p => p.is_spectator_fixed ? p : { ...p, is_active: false }));
                 }}
                 className="px-3 py-2 rounded-xl bg-stone-200 hover:bg-stone-300 border border-stone-300 text-stone-700 font-bold text-xs transition"
-                title="全メンバーの参加チェックをクリアします"
+                title="観戦固定メンバーを除く全員の参加チェックをクリアします"
               >
                 ❌ 全員解除
               </button>

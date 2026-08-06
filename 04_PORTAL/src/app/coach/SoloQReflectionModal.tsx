@@ -283,7 +283,7 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
                 onClick={onClose}
                 className="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-black transition shadow"
               >
-                ⚡ 次の試合のBAN/PICKへ
+                ✕ 閉じてコーチ画面に戻る
               </button>
             </div>
           )}
