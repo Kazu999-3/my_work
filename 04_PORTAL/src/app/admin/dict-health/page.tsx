@@ -248,16 +248,16 @@ export default function DictHealthDashboard() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
             <div className="bg-white/80 backdrop-blur p-3.5 rounded-xl border border-amber-200 shadow-xs">
-              <span className="font-extrabold text-amber-800 block mb-1">ステップ1: パッチ照合 🔄</span>
-              <p className="text-stone-600 leading-relaxed">右上の「再照合」を押すと、最新パッチ(P16.15)と照合して古いデータを自動検出します。</p>
+              <span className="font-extrabold text-amber-800 block mb-1">ステップ1: パッチ自動照合 🔄</span>
+              <p className="text-stone-600 leading-relaxed">右上の「パッチ自動照合」を押すと、Riot公式の最新パッチ(P16.15)とDBを比較し、古いデータを赤色(要対応)として検出します。</p>
             </div>
             <div className="bg-white/80 backdrop-blur p-3.5 rounded-xl border border-amber-200 shadow-xs">
-              <span className="font-extrabold text-amber-800 block mb-1">ステップ2: 一括AI更新 ⚡</span>
-              <p className="text-stone-600 leading-relaxed">「要対応のみ一括AI更新」を押すと、赤色の古いチャンプだけを全自動で最新化します。</p>
+              <span className="font-extrabold text-amber-800 block mb-1">ステップ2: 一括AI最新化 ⚡</span>
+              <p className="text-stone-600 leading-relaxed">「古いデータのみ一括AI最新化」を押すと、赤色の古いチャンプだけを全自動で最新化します。</p>
             </div>
             <div className="bg-white/80 backdrop-blur p-3.5 rounded-xl border border-amber-200 shadow-xs">
               <span className="font-extrabold text-amber-800 block mb-1">ステップ3: 辞典で確認・完了 🎯</span>
-              <p className="text-stone-600 leading-relaxed">気になるカードの「辞典で編集」をタップ。問題がなければ「確認完了」を押せば緑色になります。</p>
+              <p className="text-stone-600 leading-relaxed">気になるカードの「編集」をタップ。内容に問題がなければ「完了」を押せば緑色(確認済み)になります。</p>
             </div>
           </div>
         </div>
@@ -291,11 +291,11 @@ export default function DictHealthDashboard() {
 
             <button
               onClick={() => fetchHealth()}
-              className="px-4 py-3 rounded-xl border border-stone-300 bg-white hover:bg-stone-50 text-stone-700 transition flex items-center gap-2 text-xs font-bold shadow-sm"
-              title="最新パッチとデータベースを照合して状態を更新します"
+              className="px-4 py-3 rounded-xl border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-900 transition flex items-center gap-2 text-xs font-bold shadow-sm"
+              title="Riot公式の最新パッチとデータベースを比較・照合して最新状態に更新します"
             >
-              <RefreshCw className="w-4 h-4 text-stone-500" />
-              データ照合 (更新検知)
+              <RefreshCw className="w-4 h-4 text-amber-700" />
+              🔄 パッチ自動照合 (最新チェック)
             </button>
             <Link
               href="/champions"
