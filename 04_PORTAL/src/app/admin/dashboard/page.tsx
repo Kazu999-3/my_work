@@ -511,285 +511,132 @@ export default function Home() {
         <motion.div variants={itemVariants} className="md:col-span-2 lg:col-span-4 mt-2">
           <div className="glass-panel rounded-2xl p-3.5 border border-black/5 bg-white/50 space-y-3">
 
-            {/* タブナビゲーション */}
+            {/* ヘッダー */}
             <div className="flex justify-between items-center border-b border-black/5 pb-2.5 flex-wrap gap-2">
               <div className="flex items-center gap-2">
                 <div className="w-1.5 h-5 bg-gradient-to-b from-orange-400 via-amber-400 to-rose-500 rounded-full"></div>
-                <h3 className="text-base font-black text-stone-900">🛠️ システムコクピット</h3>
+                <h3 className="text-base font-black text-stone-900">🛠️ サービス監視コクピット</h3>
               </div>
-              <div className="flex glass-panel p-0.5 rounded-lg items-center border border-black/5 bg-black/[0.03]">
-                {[
-                  { id: 'nodes', label: '🛰️ サービス監視' },
-                  { id: 'queue', label: '⚡ ジョブ実行キュー' },
-                ].map((tab) => (
-                  <button
-                    key={tab.id}
-                    type="button"
-                    onClick={() => setActiveSystemTab(tab.id as any)}
-                    className={`px-3 py-1.5 rounded-md text-[11px] font-bold transition-all ${
-                      activeSystemTab === tab.id
-                        ? 'bg-white text-stone-900 shadow-sm border border-black/5'
-                        : 'text-stone-500 hover:text-stone-800'
-                    }`}
-                  >
-                    {tab.label}
-                  </button>
-                ))}
-              </div>
+              <span className="text-[11px] font-bold text-stone-500 bg-stone-100 px-2.5 py-1 rounded-lg border border-stone-200">
+                ⚡ タスクキュー状況はヘッダー/サイドバーの「タスク」から画面遷移なしで確認できます
+              </span>
             </div>
 
-            {/* タブコンテンツ */}
-            <div className="mt-3">
-              {/* 1. 🛰️ サービス監視 (Nodes Sentinel) */}
-              {activeSystemTab === 'nodes' && (
-                <div className="space-y-3">
-                  <p className="text-[11px] text-stone-500">
-                    ポータルとBotはクラウドで常時稼働しています。動画解析まわりはPC起動時のみ動くため、<strong className="text-stone-700">「未起動」は正常な状態</strong>です。
-                  </p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
-                    {[
-                      { id: 'portal', name: 'Next.js Portal', desc: 'ポータル (Vercel)', kind: 'cloud' as const },
-                      { id: 'bot', name: 'Discord Bot (KTM)', desc: 'Bot (Workers)', kind: 'cloud' as const },
-                      { id: 'edge_worker', name: 'Edge Worker', desc: 'タスク実行 (ローカル)', kind: 'worker' as const },
-                      { id: 'youtube_absorber', name: 'YouTube Absorber', desc: '動画解析 (ローカル)', kind: 'local' as const },
-                    ].map((service) => {
-                      const status = systemMetrics.services?.[service.id] || {};
-                      const metricsTime = systemMetrics.updated_at ? Number(systemMetrics.updated_at) * 1000 : 0;
-                      const isDaemonOffline = !metricsTime || (Date.now() - metricsTime > 60000);
-                      const isRunning = isDaemonOffline ? false : status.running;
+            {/* 1. 🛰️ サービス監視 (Nodes Sentinel) */}
+            <div className="mt-3 space-y-3">
+              <p className="text-[11px] text-stone-500">
+                ポータルとBotはクラウドで常時稼働しています。動画解析まわりはPC起動時のみ動くため、<strong className="text-stone-700">「未起動」は正常な状態</strong>です。
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+                {[
+                  { id: 'portal', name: 'Next.js Portal', desc: 'ポータル (Vercel)', kind: 'cloud' as const },
+                  { id: 'bot', name: 'Discord Bot (KTM)', desc: 'Bot (Workers)', kind: 'cloud' as const },
+                  { id: 'edge_worker', name: 'Edge Worker', desc: 'タスク実行 (ローカル)', kind: 'worker' as const },
+                  { id: 'youtube_absorber', name: 'YouTube Absorber', desc: '動画解析 (ローカル)', kind: 'local' as const },
+                ].map((service) => {
+                  const status = systemMetrics.services?.[service.id] || {};
+                  const metricsTime = systemMetrics.updated_at ? Number(systemMetrics.updated_at) * 1000 : 0;
+                  const isDaemonOffline = !metricsTime || (Date.now() - metricsTime > 60000);
+                  const isRunning = isDaemonOffline ? false : status.running;
 
-                      let statusText = '停止中';
-                      let statusColor = 'text-stone-500 bg-stone-100 border-stone-200';
-                      let indicatorColor = 'bg-stone-400';
+                  let statusText = '停止中';
+                  let statusColor = 'text-stone-500 bg-stone-100 border-stone-200';
+                  let indicatorColor = 'bg-stone-400';
 
-                      if (service.kind === 'cloud') {
-                        statusText = '稼働中';
-                        statusColor = 'text-emerald-700 bg-emerald-100 border-emerald-200';
-                        indicatorColor = 'bg-emerald-400';
-                      } else if (service.kind === 'worker') {
-                        if (systemStatus.worker.active) {
-                          statusText = '稼働中';
-                          statusColor = 'text-amber-700 bg-amber-100 border-amber-200';
-                          indicatorColor = 'bg-amber-400 animate-pulse';
-                        } else {
-                          statusText = '未起動';
-                          statusColor = 'text-stone-500 bg-black/[0.03] border-black/10';
-                          indicatorColor = 'bg-stone-400';
-                        }
-                      } else if (service.id === 'youtube_absorber' && systemStatus.worker.active) {
-                        statusText = isRunning ? '解析中' : '待機中 (稼働中)';
-                        statusColor = 'text-emerald-700 bg-emerald-100 border-emerald-200';
-                        indicatorColor = 'bg-emerald-400 animate-pulse';
-                      } else if (isRunning) {
-                        statusText = '稼働中';
-                        statusColor = 'text-amber-700 bg-amber-100 border-amber-200';
-                        indicatorColor = 'bg-amber-400 animate-pulse';
-                      } else {
-                        statusText = '未起動';
-                        statusColor = 'text-stone-500 bg-black/[0.03] border-black/10';
-                        indicatorColor = 'bg-stone-400';
-                      }
+                  if (service.kind === 'cloud') {
+                    statusText = '稼働中';
+                    statusColor = 'text-emerald-700 bg-emerald-100 border-emerald-200';
+                    indicatorColor = 'bg-emerald-400';
+                  } else if (service.kind === 'worker') {
+                    if (systemStatus.worker.active) {
+                      statusText = '稼働中';
+                      statusColor = 'text-amber-700 bg-amber-100 border-amber-200';
+                      indicatorColor = 'bg-amber-400 animate-pulse';
+                    } else {
+                      statusText = '未起動';
+                      statusColor = 'text-stone-500 bg-black/[0.03] border-black/10';
+                      indicatorColor = 'bg-stone-400';
+                    }
+                  } else if (service.id === 'youtube_absorber' && systemStatus.worker.active) {
+                    statusText = isRunning ? '解析中' : '待機中 (稼働中)';
+                    statusColor = 'text-emerald-700 bg-emerald-100 border-emerald-200';
+                    indicatorColor = 'bg-emerald-400 animate-pulse';
+                  } else if (isRunning) {
+                    statusText = '稼働中';
+                    statusColor = 'text-amber-700 bg-amber-100 border-amber-200';
+                    indicatorColor = 'bg-amber-400 animate-pulse';
+                  } else {
+                    statusText = '未起動';
+                    statusColor = 'text-stone-500 bg-black/[0.03] border-black/10';
+                    indicatorColor = 'bg-stone-400';
+                  }
+
+                  return (
+                    <div key={service.id} className="bg-black/[0.03] p-3 rounded-xl border border-black/5 flex flex-col justify-between hover:border-black/10 transition-colors">
+                      <div>
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-xs font-bold text-stone-800">{service.name}</span>
+                          <span className={`w-2 h-2 rounded-full ${indicatorColor}`}></span>
+                        </div>
+                        <p className="text-[9px] text-stone-500 mb-2">{service.desc}</p>
+                      </div>
+                      <div className="flex justify-between items-center mt-auto">
+                        <span className="text-[9px] font-mono text-stone-400">{service.kind === 'cloud' ? '常時' : '必要時'}</span>
+                        <span className={`px-2 py-0.5 rounded-full border text-[9px] font-bold ${statusColor}`}>{statusText}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* ☁️ クラウドワーカー (GitHub Actions) の最終実行ログ */}
+              {systemMetrics.cloud_workers && Object.keys(systemMetrics.cloud_workers).length > 0 && (
+                <div className="pt-6 border-t border-black/5">
+                  <h4 className="text-xs font-bold text-stone-700 mb-3 flex items-center gap-2">
+                    <span>☁️</span> GitHub Actions ワーカー実行ステータス
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {Object.entries(systemMetrics.cloud_workers).map(([workerKey, log]: [string, any]) => {
+                      const isOk = log.status === 'ok';
+                      const isWarn = log.status === 'warn';
+
+                      const updatedAtMs = log.updated_at ? new Date(log.updated_at).getTime() : NaN;
+                      const ageHours = Number.isFinite(updatedAtMs) ? (Date.now() - updatedAtMs) / (1000 * 60 * 60) : Infinity;
+                      const isStale = ageHours > 24;
+
+                      const statusBg = isStale ? 'border-stone-200 bg-stone-50' : isOk ? 'border-emerald-200 bg-emerald-50' : isWarn ? 'border-amber-200 bg-amber-50' : 'border-rose-200 bg-rose-50';
+                      const badgeColor = isStale ? 'text-stone-600 bg-stone-100 border-stone-300' : isOk ? 'text-emerald-700 bg-emerald-100 border-emerald-200' : isWarn ? 'text-amber-700 bg-amber-100 border-amber-200' : 'text-rose-700 bg-rose-100 border-rose-200';
+                      const lastResultLabel = isOk ? '正常完了' : isWarn ? '一部失敗/警告' : 'エラー';
+                      const ageLabel = Number.isFinite(ageHours)
+                        ? ageHours < 24 ? `${Math.max(1, Math.round(ageHours))}時間前` : `${Math.round(ageHours / 24)}日前`
+                        : '';
+                      const badgeLabel = isStale ? `古い情報(前回:${lastResultLabel})` : lastResultLabel;
+
+                      const updatedTime = log.updated_at ? new Date(log.updated_at).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }) : '時刻不明';
 
                       return (
-                        <div key={service.id} className="bg-black/[0.03] p-3 rounded-xl border border-black/5 flex flex-col justify-between hover:border-black/10 transition-colors">
-                          <div>
-                            <div className="flex justify-between items-center mb-1">
-                              <span className="text-xs font-bold text-stone-800">{service.name}</span>
-                              <span className={`w-2 h-2 rounded-full ${indicatorColor}`}></span>
+                        <div key={workerKey} className={`p-4 rounded-2xl border text-xs bg-white/60 ${statusBg}`}>
+                          <div className="flex justify-between items-center mb-2">
+                            <span className="font-bold text-stone-900 uppercase">{workerKey}</span>
+                            <span className={`px-2 py-0.5 rounded-full border text-[9px] font-bold ${badgeColor}`}>
+                              {badgeLabel}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-stone-700 mb-2 font-medium">{log.summary}</p>
+                          {log.details && log.details.length > 0 && (
+                            <div className="space-y-1 mb-2 bg-black/[0.04] p-2 rounded-lg text-[10px] text-stone-600 font-mono">
+                              {log.details.slice(0, 3).map((detail: string, i: number) => (
+                                <div key={i} className="truncate">• {detail}</div>
+                              ))}
                             </div>
-                            <p className="text-[9px] text-stone-500 mb-2">{service.desc}</p>
-                          </div>
-                          <div className="flex justify-between items-center mt-auto">
-                            <span className="text-[9px] font-mono text-stone-400">{service.kind === 'cloud' ? '常時' : '必要時'}</span>
-                            <span className={`px-2 py-0.5 rounded-full border text-[9px] font-bold ${statusColor}`}>{statusText}</span>
-                          </div>
+                          )}
+                          <div className="text-[9px] text-stone-500 text-right">最終実行: {updatedTime}{ageLabel && ` (${ageLabel})`}</div>
                         </div>
                       );
                     })}
                   </div>
-
-                  {/* ☁️ クラウドワーカー (GitHub Actions) の最終実行ログ */}
-                  {systemMetrics.cloud_workers && Object.keys(systemMetrics.cloud_workers).length > 0 && (
-                    <div className="pt-6 border-t border-black/5">
-                      <h4 className="text-xs font-bold text-stone-700 mb-3 flex items-center gap-2">
-                        <span>☁️</span> GitHub Actions ワーカー実行ステータス
-                      </h4>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {Object.entries(systemMetrics.cloud_workers).map(([workerKey, log]: [string, any]) => {
-                          const isOk = log.status === 'ok';
-                          const isWarn = log.status === 'warn';
-
-                          // updated_at が古い(24時間以上前)ログは「今も警告/エラーが続いている」のか
-                          // 「単に長期間実行されておらず古い結果が残っているだけ」なのか区別が付かず、
-                          // 定期cronを止めたジョブ(youtube等)で数日前の失敗がずっと現在進行形の
-                          // 警告のように見え続けていた。経過時間を見て、古い場合は中立色の
-                          // 「古い情報」表示に切り替え、再実行して初めて解消したかどうかが
-                          // 一目で分かるようにする(新しく実行された結果は通常通り緑/黄/赤で出る)。
-                          const updatedAtMs = log.updated_at ? new Date(log.updated_at).getTime() : NaN;
-                          const ageHours = Number.isFinite(updatedAtMs) ? (Date.now() - updatedAtMs) / (1000 * 60 * 60) : Infinity;
-                          const isStale = ageHours > 24;
-
-                          const statusBg = isStale ? 'border-stone-200 bg-stone-50' : isOk ? 'border-emerald-200 bg-emerald-50' : isWarn ? 'border-amber-200 bg-amber-50' : 'border-rose-200 bg-rose-50';
-                          const badgeColor = isStale ? 'text-stone-600 bg-stone-100 border-stone-300' : isOk ? 'text-emerald-700 bg-emerald-100 border-emerald-200' : isWarn ? 'text-amber-700 bg-amber-100 border-amber-200' : 'text-rose-700 bg-rose-100 border-rose-200';
-                          const lastResultLabel = isOk ? '正常完了' : isWarn ? '一部失敗/警告' : 'エラー';
-                          const ageLabel = Number.isFinite(ageHours)
-                            ? ageHours < 24 ? `${Math.max(1, Math.round(ageHours))}時間前` : `${Math.round(ageHours / 24)}日前`
-                            : '';
-                          const badgeLabel = isStale ? `古い情報(前回:${lastResultLabel})` : lastResultLabel;
-
-                          const updatedTime = log.updated_at ? new Date(log.updated_at).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }) : '時刻不明';
-
-                          return (
-                            <div key={workerKey} className={`p-4 rounded-2xl border text-xs bg-white/60 ${statusBg}`}>
-                              <div className="flex justify-between items-center mb-2">
-                                <span className="font-bold text-stone-900 uppercase">{workerKey}</span>
-                                <span className={`px-2 py-0.5 rounded-full border text-[9px] font-bold ${badgeColor}`}>
-                                  {badgeLabel}
-                                </span>
-                              </div>
-                              <p className="text-[11px] text-stone-700 mb-2 font-medium">{log.summary}</p>
-                              {log.details && log.details.length > 0 && (
-                                <div className="space-y-1 mb-2 bg-black/[0.04] p-2 rounded-lg text-[10px] text-stone-600 font-mono">
-                                  {log.details.slice(0, 3).map((detail: string, i: number) => (
-                                    <div key={i} className="truncate">• {detail}</div>
-                                  ))}
-                                </div>
-                              )}
-                              <div className="text-[9px] text-stone-500 text-right">最終実行: {updatedTime}{ageLabel && ` (${ageLabel})`}</div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
                 </div>
               )}
-
-              {/* 2. ⚡ ジョブ実行キュー (Job Queue) */}
-              {activeSystemTab === 'queue' && (
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center border-b border-black/5 pb-4 flex-wrap gap-2">
-                    <p className="text-xs text-stone-500">
-                      Discord Bot（エッジワーカー）のジョブ処理状況です。
-                    </p>
-                    <div className="flex items-center gap-3">
-                      <span className={`text-[10px] font-black border px-2.5 py-0.5 rounded-full flex items-center gap-1.5 transition-all ${
-                        systemStatus.worker.active
-                          ? 'bg-emerald-100 border-emerald-300 text-emerald-700'
-                          : 'bg-rose-100 border-rose-300 text-rose-700 animate-pulse'
-                      }`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${systemStatus.worker.active ? 'bg-emerald-500' : 'bg-rose-500'}`} />
-                        {systemStatus.worker.active ? 'エッジワーカー: 稼働中' : 'エッジワーカー: 停止中'}
-                      </span>
-                      <span className="text-xs text-stone-500 font-mono">
-                        最終更新: {systemStatus.worker.last_active ? new Date(systemStatus.worker.last_active).toLocaleTimeString() : '未受信'}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                    {/* 現在実行中のタスク */}
-                    <div className="space-y-3">
-                      <h4 className="text-xs font-bold uppercase tracking-wider text-amber-700 flex items-center gap-1.5">
-                        <span>●</span> 現在実行中のタスク
-                      </h4>
-                      {systemStatus.queue.filter(t => t.status === 'running').length === 0 ? (
-                        <div className="text-xs text-stone-500 py-4 text-center rounded-2xl border border-black/5 bg-black/[0.03]">
-                          現在実行中のタスクはありません（待機中）
-                        </div>
-                      ) : (
-                        systemStatus.queue.filter(t => t.status === 'running').map(task => (
-                          <div key={task.id} className="p-4 rounded-2xl border border-amber-200 bg-amber-50 space-y-2">
-                            <div className="flex justify-between items-center">
-                              <span className="text-xs bg-amber-100 border border-amber-300 text-amber-700 px-2 py-0.5 rounded font-mono font-bold">
-                                {task.task_type}
-                              </span>
-                              <span className="text-[10px] text-stone-500 font-mono">ID: {task.id.slice(0, 8)}...</span>
-                            </div>
-                            <div className="text-[10px] text-stone-600 font-mono bg-black/[0.04] p-2 rounded border border-black/5 break-all max-h-24 overflow-y-auto">
-                              {JSON.stringify(task.payload, null, 2)}
-                            </div>
-                            <div className="flex justify-between items-center text-[10px] text-stone-500 pt-1">
-                              <span>🔥 実行中</span>
-                              <span>開始: {new Date(task.updated_at).toLocaleTimeString()}</span>
-                            </div>
-                          </div>
-                        ))
-                      )}
-                    </div>
-
-                    {/* 待機中のキュー一覧 */}
-                    <div className="space-y-3">
-                      <h4 className="text-xs font-bold uppercase tracking-wider text-stone-500 flex items-center gap-1.5">
-                        <span>●</span> 待機中のタスク列 ({systemStatus.queue.filter(t => t.status === 'pending').length})
-                      </h4>
-                      {systemStatus.queue.filter(t => t.status === 'pending').length === 0 ? (
-                        <div className="text-xs text-stone-500 py-4 text-center rounded-2xl border border-black/5 bg-black/[0.03]">
-                          待機中のタスクはありません
-                        </div>
-                      ) : (
-                        <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
-                          {systemStatus.queue.filter(t => t.status === 'pending').map((task, idx) => (
-                            <div key={task.id} className="p-3 rounded-xl border border-black/5 bg-black/[0.03] flex justify-between items-center gap-4 hover:border-black/10 transition-colors">
-                              <div className="flex items-center gap-2.5 min-w-0">
-                                <span className="text-xs font-bold text-stone-500 font-mono w-5">#{idx + 1}</span>
-                                <span className="text-xs bg-black/5 border border-black/10 text-stone-700 px-2 py-0.5 rounded font-mono truncate" title={task.task_type}>
-                                  {task.task_type}
-                                </span>
-                              </div>
-                              <span className="text-[9px] text-stone-500 font-mono shrink-0">
-                                {new Date(task.created_at).toLocaleTimeString()}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* 直近の実行履歴 */}
-                    <div className="space-y-3">
-                      <h4 className="text-xs font-bold uppercase tracking-wider text-stone-500 flex items-center gap-1.5">
-                        <span>●</span> 直近の実行履歴 (直近5件)
-                      </h4>
-                      {systemStatus.history.length === 0 ? (
-                        <div className="text-xs text-stone-500 py-4 text-center rounded-2xl border border-black/5 bg-black/[0.03]">
-                          履歴はありません
-                        </div>
-                      ) : (
-                        <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
-                          {systemStatus.history.map(task => (
-                            <div key={task.id} className="p-3 rounded-xl border border-black/5 bg-black/[0.03] space-y-1.5">
-                              <div className="flex justify-between items-center gap-4">
-                                <div className="flex items-center gap-2">
-                                  <span className="text-xs bg-black/5 text-stone-600 px-2 py-0.5 rounded font-mono">
-                                    {task.task_type}
-                                  </span>
-                                  <span className={`px-2 py-0.5 text-[9px] font-bold rounded ${
-                                    task.status === 'completed'
-                                      ? 'bg-emerald-100 text-emerald-700 border border-emerald-200'
-                                      : 'bg-rose-100 text-rose-700 border border-rose-200'
-                                  }`}>
-                                    {task.status === 'completed' ? '成功' : '失敗'}
-                                  </span>
-                                </div>
-                                <span className="text-[9px] text-stone-500 font-mono">
-                                  {new Date(task.updated_at).toLocaleTimeString()}
-                                </span>
-                              </div>
-                              {task.status === 'failed' && task.error_message && (
-                                <div className="text-[9px] text-rose-700 bg-rose-50 border border-rose-200 p-2 rounded font-mono break-all max-h-16 overflow-y-auto">
-                                  エラー: {task.error_message}
-                                </div>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
-
             </div>
           </div>
         </motion.div>

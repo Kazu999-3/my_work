@@ -8,6 +8,7 @@ import FavoritesPanel from './FavoritesPanel';
 import PushOptIn from './PushOptIn';
 import NotificationBell from './NotificationBell';
 import SystemStatus from './SystemStatus';
+import TaskStatusDrawer from './TaskStatusDrawer';
 
 interface MenuItem {
   id: string;
@@ -169,6 +170,8 @@ export default function Sidebar() {
         </div>
 
         <div className="p-3 border-t border-stone-200/80 space-y-2">
+          <TaskStatusDrawer collapsed={isCollapsed} />
+          <NotificationBell collapsed={isCollapsed} />
           <FavoritesPanel isCollapsed={isCollapsed} />
           <PushOptIn collapsed={isCollapsed} />
         </div>
@@ -226,6 +229,10 @@ export default function Sidebar() {
                 </button>
               </div>
             )}
+            <div className="flex items-center gap-2 mb-4">
+              <TaskStatusDrawer />
+              <NotificationBell />
+            </div>
             <div className="grid grid-cols-3 gap-3">
               {overflowMobileItems.map((item) => {
                 const Icon = item.icon;
