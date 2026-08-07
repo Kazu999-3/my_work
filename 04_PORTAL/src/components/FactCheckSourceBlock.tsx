@@ -82,8 +82,8 @@ export default function FactCheckSourceBlock({
                 <CheckCircle2 size={11} /> これが正しい
               </button>
             )}
-            <button onClick={() => { setDraft(value); setEditing(true); }} className="text-stone-500 hover:text-sky-700 flex items-center gap-0.5">
-              <Edit2 size={11} /> 編集
+            <button onClick={() => { setDraft(value); setEditing(true); }} className="px-2 py-0.5 rounded bg-sky-100 text-sky-800 border border-sky-200 font-bold hover:bg-sky-200 flex items-center gap-1 transition">
+              <Edit2 size={11} /> ✏️ 文章を直接修正・保存
             </button>
             {block.deletable && (
               <button onClick={remove} disabled={saving} className="text-stone-500 hover:text-rose-700 flex items-center gap-0.5 disabled:opacity-50">
