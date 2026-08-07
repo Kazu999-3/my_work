@@ -10,6 +10,7 @@ import DictFactCheckPanel from '../knowledge/DictFactCheckPanel';
 import RevisionsPanel from '../knowledge/RevisionsPanel';
 import DictInsightsPanel from '../knowledge/DictInsightsPanel';
 import FreshnessPanel from '../knowledge/FreshnessPanel';
+import InventoryAuditPanel from '../knowledge/InventoryAuditPanel';
 
 interface ChampHealth {
   champion: string;
@@ -296,6 +297,9 @@ export default function DictHealthDashboard() {
             </Link>
           </div>
         </div>
+
+        {/* 🧹 データ棚卸し ＆ 健全性点検ハブの統合 */}
+        <InventoryAuditPanel />
 
         {/* 集計サマリーカード */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
