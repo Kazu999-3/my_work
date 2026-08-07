@@ -403,7 +403,7 @@ async function postWeeklyRecruitment(env) {
     // 2部屋統合 Embed
     const embed = {
       title: `⚔️ KTM 定期カスタム開催告知 [${dateLabel} 21:00]`,
-      description: `毎週末恒例の定期カスタム戦です！\n下のボタンを押すだけで参加エントリーできます（部門は名簿の代表MMRから自動振り分けされます）。\n\n💡 **希望レーンに変更がある方は、ポータルの「マイページ」より変更をお願いします！**`,
+      description: `🚨 **【シルバー以下 あと10名 / ゴルプラ あと10名】**\n\n毎週末恒例の定期カスタム戦です！\n下のボタンを押すだけで参加エントリーできます（部門は名簿の代表MMRから自動振り分けされます）。\n\n💡 **希望レーンに変更がある方は、ポータルの「マイページ」より変更をお願いします！**`,
       color: 0xc89b3c, // 琥珀色
       fields: [
         {
@@ -441,7 +441,7 @@ async function postWeeklyRecruitment(env) {
       method: 'POST',
       headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        content: `📢 **【定期カスタム募集】${dateLabel} 21:00 開催！** <@&${CONFIG.NOTIFICATION_ROLE_ID}>`,
+        content: `📢 **【定期カスタム募集】${dateLabel} 21:00 開催！** 🚨 **【シルバー以下 あと10名 / ゴルプラ あと10名】** <@&${CONFIG.NOTIFICATION_ROLE_ID}>`,
         embeds: [embed],
         components: components,
         allowed_mentions: { roles: [CONFIG.NOTIFICATION_ROLE_ID] }

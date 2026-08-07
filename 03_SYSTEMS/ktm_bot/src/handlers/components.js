@@ -193,10 +193,35 @@ export async function handleButtonInteraction(interaction, env, ctx) {
           targetEmbed.fields[targetFieldIdx].value = fLines.join('\n');
         }
 
-        // 押されたメッセージ自体の更新と、同期対象を探すための直近メッセージ一覧取得は
-        // 互いに依存しないため並列実行する(2026-08-05発覚)。
+        // 3. 各部門の最新の参加人数と残数を動的に計算し、アナウンス用ステータスヘッダーを作成
+        const silverCount = (targetEmbed.fields[0]?.value || "").split('\n').filter(l => l.startsWith('- ')).length;
+        const goldCount = (targetEmbed.fields[1]?.value || "").split('\n').filter(l => l.startsWith('- ')).length;
+        const silverRem = Math.max(0, 10 - silverCount);
+        const goldRem = Math.max(0, 10 - goldCount);
+
+        const statusBanner = (silverRem === 0 && goldRem === 0)
+          ? "✅ **【全枠10名満員御礼！チーム分け可能です】**"
+          : `🚨 **【シルバー以下 あと${silverRem}名 / ゴルプラ あと${goldRem}名】**`;
+
+        // メッセージ本文(content)やdescription内の残数ヘッダーを最新数値にリアルタイム置換
+        const updateTextWithStatus = (text) => {
+          if (!text) return text;
+          if (/(?:🚨\s*)?【シルバー以下\s*あと\d+名\s*\/\s*ゴルプラ\s*あと\d+名】/.test(text)) {
+            return text.replace(/(?:🚨\s*)?【シルバー以下\s*あと\d+名\s*\/\s*ゴルプラ\s*あと\d+名】/g, statusBanner);
+          }
+          return text;
+        };
+
+        if (targetEmbed.description) {
+          targetEmbed.description = updateTextWithStatus(targetEmbed.description);
+        }
+
+        const updatedContent = updateTextWithStatus(interaction.message.content);
+
+        // 押されたメッセージ自体の更新と、同期対象を探すための直近メッセージ一覧取得を並列実行
         const [, channelMsgsRes] = await Promise.all([
           sendDiscordMessage(`channels/${channelId}/messages/${msgId}`, botToken, "PATCH", {
+            content: updatedContent,
             embeds: [targetEmbed],
             components: interaction.message.components
           }),
@@ -212,17 +237,26 @@ export async function handleButtonInteraction(interaction, env, ctx) {
             const relatedMsgs = channelMsgs.filter(m => 
               m.id !== msgId && 
               m.author?.bot && 
-              m.embeds?.[0]?.title && 
-              (m.embeds[0].title.includes("定期カスタム") || m.embeds[0].title.includes("事前告知") || m.embeds[0].title.includes("メンバー状況"))
+              (
+                (m.embeds?.[0]?.title && (m.embeds[0].title.includes("定期カスタム") || m.embeds[0].title.includes("事前告知") || m.embeds[0].title.includes("メンバー状況"))) ||
+                (m.content && m.content.includes("【定期カスタム募集】"))
+              )
             );
 
-            // 各メッセージは独立した書き込み先なので、直列awaitではなく並列実行して
-            // 反映までの待ち時間を短縮する(2026-08-05発覚)。
+            // 各メッセージは独立した書き込み先なので並列実行して一元更新
             await Promise.all(relatedMsgs.map((relMsg) => {
-              const relEmbed = { ...relMsg.embeds[0] };
-              relEmbed.fields = targetEmbed.fields; // フィールドを完全同期
+              const relEmbed = relMsg.embeds?.[0] ? { ...relMsg.embeds[0] } : null;
+              if (relEmbed) {
+                relEmbed.fields = targetEmbed.fields; // フィールドを完全同期
+                if (relEmbed.description) {
+                  relEmbed.description = updateTextWithStatus(relEmbed.description);
+                }
+              }
+              const relContent = updateTextWithStatus(relMsg.content);
+
               return sendDiscordMessage(`channels/${channelId}/messages/${relMsg.id}`, botToken, "PATCH", {
-                embeds: [relEmbed],
+                content: relContent,
+                embeds: relEmbed ? [relEmbed] : relMsg.embeds,
                 components: relMsg.components
               }).catch(() => {});
             }));
