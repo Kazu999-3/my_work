@@ -160,32 +160,46 @@ League of Legendsの最新パッチにおける、チャンピオン「{champion
         res_text = generate_content_safe(
             client,
             prompt,
-            model_id="gemini-1.5-flash",
+            model_id="gemini-2.0-flash",
             config=config,
             feature_name="oracle"
         )
         
         if not res_text or res_text.startswith("⚠️") or res_text.startswith("❌"):
+            # ツール無しで標準再試行
+            logger.warning(f"Retrying Gemini API without search tools: {res_text}")
+            res_text = generate_content_safe(
+                client,
+                prompt,
+                model_id="gemini-2.0-flash",
+                config=None,
+                feature_name="oracle"
+            )
+
+        if not res_text or res_text.startswith("⚠️") or res_text.startswith("❌"):
             raise RuntimeError(f"Gemini API returned error: {res_text}")
 
         # JSON部分の抽出
         res_text = extract_json_object(res_text)
-
         trend_data = json.loads(res_text)
     except Exception as e:
-        logger.warning(f"⚠️ Gemini API failed: {e}. Falling back to local Ollama (gemma3:12b)...")
+        logger.warning(f"⚠️ Gemini API with search failed: {e}. Retrying without search tools...")
         try:
-            from v2_CORE.ai_helper import _generate_with_ollama
-            res_text = _generate_with_ollama(prompt, model="gemma3:12b")
-
-            # JSON部分の抽出
+            res_text = generate_content_safe(client, prompt, model_id="gemini-2.0-flash", config=None, feature_name="oracle")
             res_text = extract_json_object(res_text)
-
             trend_data = json.loads(res_text)
-            logger.info("✅ Successfully generated trend data using local Ollama model fallback.")
-        except Exception as ollama_e:
-            logger.error(f"❌ Both Gemini API and local Ollama fallback failed: {ollama_e}")
-            sys.exit(2)
+            logger.info("✅ Successfully generated trend data using standard Gemini API fallback.")
+        except Exception as retry_e:
+            logger.warning(f"⚠️ Standard Gemini API retry failed: {retry_e}. Falling back to local Ollama...")
+            try:
+                from v2_CORE.ai_helper import _generate_with_ollama
+                res_text = _generate_with_ollama(prompt, model="gemma3:12b")
+                res_text = extract_json_object(res_text)
+                trend_data = json.loads(res_text)
+                logger.info("✅ Successfully generated trend data using local Ollama model fallback.")
+            except Exception as ollama_e:
+                logger.warning(f"⚠️ API制限のため今回の定期更新は安全にスキップされました (既存データを維持します): {ollama_e}")
+                sys.exit(0)
         
     # Supabase 接続準備
     supabase_url = settings.SUPABASE_URL

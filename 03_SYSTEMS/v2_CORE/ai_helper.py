@@ -51,15 +51,12 @@ def generate_content_safe(client, prompt, model_id=None, config=None, feature_na
     if not client:
         return "⚠️ Gemini API クライアントが初期化されていません。"
 
-    # 試行するモデルの優先順リスト (クォータ枠と実績に基づき最適化: 3.5 Flash Lite [500 RPD] 優先)
+    # 試行するモデルの優先順リスト (公式実在モデル名)
     base_models = [
-        "gemini-3.5-flash-lite",
-        "gemini-3.1-flash-lite",
-        "gemini-3.6-flash",
-        "gemini-3.5-flash",
-        "gemini-3-flash",
-        "gemini-2.5-flash-lite",
-        "gemini-2.5-flash"
+        "gemini-2.0-flash-lite",
+        "gemini-2.0-flash",
+        "gemini-1.5-flash",
+        "gemini-1.5-pro",
     ]
     if model_id and model_id in base_models:
         models_to_try = [model_id] + [m for m in base_models if m != model_id]
@@ -164,16 +161,16 @@ def generate_content_safe(client, prompt, model_id=None, config=None, feature_na
                         quota_manager.record_error("error_429")
                         logger.warning(f"⚠️ [AIHelper] クォータ制限詳細 ({key_name}): {err_msg}")
                         
-                        # 最後の試行またはスリープ無効化時は、次のキーへの移行を急ぐため待機をスキップする
-                        if attempt == retries - 1 or not sleep_on_rate_limit:
-                            break
+                        # クォータ制限(Quota Exceeded)が発生した場合、待機してもキーの枠が即復活しないため、速やかに次のモデルへフォールバックする
+                        logger.warning(f"⚠️ [AIHelper] クォータ制限検知 ({model} / {key_name})。次のモデルへフォールバックします。")
+                        break
                             
                         import re
                         retry_match = re.search(r"Please retry in ([\d\.]+)s", err_msg)
-                        wait_time = float(retry_match.group(1)) + random.uniform(2.0, 5.0) if retry_match else max(35.0, delay) + random.uniform(2.0, 5.0)
-                        wait_time = min(wait_time, 120.0)
+                        wait_time = float(retry_match.group(1)) + random.uniform(1.0, 3.0) if retry_match else 5.0
+                        wait_time = min(wait_time, 10.0)
                         
-                        logger.warning(f"⚠️ [AIHelper] 無料キーの制限/一時エラー検知 ({model})。回復のため {wait_time:.1f} 秒待機してリトライします... (試行 {attempt + 1}/{retries})")
+                        logger.warning(f"⚠️ [AIHelper] 制限検知 ({model})。{wait_time:.1f} 秒待機してリトライします... (試行 {attempt + 1}/{retries})")
                         time.sleep(wait_time)
                         delay *= 2
                         
