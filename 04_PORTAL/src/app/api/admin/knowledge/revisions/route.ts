@@ -31,9 +31,10 @@ export async function GET(req: Request) {
 
     // --- 一覧 ---
     const targetType = searchParams.get('type');   // lane_guide / champion_fact
-    const targetKey = searchParams.get('key');     // TOP / Graves など
+    const targetKey = searchParams.get('key') || searchParams.get('targetKey'); // TOP / Graves / champ_Ahri_global など
     const sourceId = searchParams.get('sourceId'); // personal_knowledge記事のid（この記事由来の履歴だけに絞る）
     const champion = searchParams.get('champion'); // チャンピオン辞典ページ内で、そのチャンピオンに関わる全履歴を横断表示する用
+    const fieldParam = searchParams.get('field');  // 特定項目（strengths, strategy, jg_style など）だけに絞り込む用
     const limit = Math.min(Number(searchParams.get('limit') || 50), 200);
 
     // champion_fact は target_key=champion名で直接引けるが、matchup_sentinel は
@@ -42,21 +43,32 @@ export async function GET(req: Request) {
     // 引けない。該当チャンピオンの実際の行を先に引いてから、そのキー群で履歴を絞り込む。
     if (champion) {
       const selectCols = 'id, target_type, target_key, field, before_text, after_text, source_title, source_id, created_at';
+      
+      let factQuery = supabase.from('knowledge_revisions').select(selectCols).eq('target_type', 'champion_fact').eq('target_key', champion);
+      if (fieldParam) factQuery = factQuery.eq('field', fieldParam);
+
       const [factRes, sentinelRes, noteRes] = await Promise.all([
-        supabase.from('knowledge_revisions').select(selectCols).eq('target_type', 'champion_fact').eq('target_key', champion),
+        factQuery,
         supabase.from('matchup_sentinel').select('matchup_id').eq('champion', champion),
         supabase.from('champion_notes').select('id').eq('champion', champion),
       ]);
       const matchupIds = ((sentinelRes.data || []) as any[]).map((r) => r.matchup_id).filter(Boolean);
       const noteIds = ((noteRes.data || []) as any[]).map((r) => String(r.id));
 
+      let matchupQuery = matchupIds.length > 0
+        ? supabase.from('knowledge_revisions').select(selectCols).eq('target_type', 'matchup_sentinel').in('target_key', matchupIds)
+        : null;
+      if (matchupQuery && fieldParam) matchupQuery = matchupQuery.eq('field', fieldParam);
+      if (matchupQuery && targetKey) matchupQuery = matchupQuery.eq('target_key', targetKey);
+
+      let noteQuery = noteIds.length > 0
+        ? supabase.from('knowledge_revisions').select(selectCols).eq('target_type', 'champion_notes').in('target_key', noteIds)
+        : null;
+      if (noteQuery && fieldParam) noteQuery = noteQuery.eq('field', fieldParam);
+
       const [matchupRevRes, noteRevRes] = await Promise.all([
-        matchupIds.length > 0
-          ? supabase.from('knowledge_revisions').select(selectCols).eq('target_type', 'matchup_sentinel').in('target_key', matchupIds)
-          : Promise.resolve({ data: [] as any[] }),
-        noteIds.length > 0
-          ? supabase.from('knowledge_revisions').select(selectCols).eq('target_type', 'champion_notes').in('target_key', noteIds)
-          : Promise.resolve({ data: [] as any[] }),
+        matchupQuery ? matchupQuery : Promise.resolve({ data: [] as any[] }),
+        noteQuery ? noteQuery : Promise.resolve({ data: [] as any[] }),
       ]);
 
       const merged = ([...(factRes.data || []), ...(matchupRevRes.data || []), ...(noteRevRes.data || [])] as any[])
@@ -83,6 +95,7 @@ export async function GET(req: Request) {
 
     if (targetType) query = query.eq('target_type', targetType);
     if (targetKey) query = query.eq('target_key', targetKey);
+    if (fieldParam) query = query.eq('field', fieldParam);
     if (sourceId) query = query.eq('source_id', String(sourceId));
 
     const { data, error } = await query;

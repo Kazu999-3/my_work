@@ -115,6 +115,17 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
   const [champStats, setChampStats] = useState<Record<string, any>>({});
   const [pastInterrogations, setPastInterrogations] = useState<any[]>([]);
 
+  const [historyModal, setHistoryModal] = useState<{
+    isOpen: boolean;
+    field?: string;
+    targetKey?: string;
+    title?: string;
+  } | null>(null);
+
+  const handleOpenHistory = (field?: string, title?: string, targetKey?: string) => {
+    setHistoryModal({ isOpen: true, field, title, targetKey });
+  };
+
   const [matchupSearch, setMatchupSearch] = useState('');
   const filteredMatchupsList = useMemo(() => {
     if (!matchupSearch.trim()) return matchupsList;
@@ -765,8 +776,8 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
 
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <TextAreaCard title="強み (Strengths)" icon={Swords} color="text-[var(--color-success)] border-[var(--color-success)] shadow-[var(--color-success)]" value={dataFields.strengths} onChange={v => setField('strengths', v)} />
-          <TextAreaCard title="弱み (Weaknesses)" icon={ShieldAlert} color="text-[var(--color-danger)] border-[var(--color-danger)] shadow-[var(--color-danger)]" value={dataFields.weaknesses} onChange={v => setField('weaknesses', v)} />
+          <TextAreaCard title="強み (Strengths)" icon={Swords} color="text-[var(--color-success)] border-[var(--color-success)] shadow-[var(--color-success)]" value={dataFields.strengths} onChange={v => setField('strengths', v)} fieldKey="strengths" onOpenHistory={handleOpenHistory} />
+          <TextAreaCard title="弱み (Weaknesses)" icon={ShieldAlert} color="text-[var(--color-danger)] border-[var(--color-danger)] shadow-[var(--color-danger)]" value={dataFields.weaknesses} onChange={v => setField('weaknesses', v)} fieldKey="weaknesses" onOpenHistory={handleOpenHistory} />
           <div>
             {powerSpikeScores && (() => {
               const early = Math.max(0, Math.min(5, Number(powerSpikeScores.early_game_score) || 0));
@@ -782,18 +793,27 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                 </div>
               );
             })()}
-            <TextAreaCard title="パワースパイク" icon={Zap} color="text-[#c89b3c] border-[#c89b3c] shadow-[#c89b3c]" value={dataFields.powerSpikes} onChange={v => setField('powerSpikes', v)} />
+            <TextAreaCard title="パワースパイク" icon={Zap} color="text-[#c89b3c] border-[#c89b3c] shadow-[#c89b3c]" value={dataFields.powerSpikes} onChange={v => setField('powerSpikes', v)} fieldKey="powerSpikes" onOpenHistory={handleOpenHistory} />
           </div>
-          <TextAreaCard title="コアビルド / ルーン" icon={Shield} color="text-purple-600 border-purple-500 shadow-purple-500" value={dataFields.buildRunes} onChange={v => setField('buildRunes', v)} />
-          <TextAreaCard title="対面の有利・不利" icon={Swords} color="text-[#00cfef] border-[#00cfef] shadow-[#00cfef]" value={dataFields.counterChampions} onChange={v => setField('counterChampions', v)} />
-          <TextAreaCard title="ピック推奨 (先/後)" icon={Shield} color="text-emerald-600 border-emerald-500 shadow-emerald-500" value={dataFields.pickRecommendation} onChange={v => setField('pickRecommendation', v)} />
+          <TextAreaCard title="コアビルド / ルーン" icon={Shield} color="text-purple-600 border-purple-500 shadow-purple-500" value={dataFields.buildRunes} onChange={v => setField('buildRunes', v)} fieldKey="buildRunes" onOpenHistory={handleOpenHistory} />
+          <TextAreaCard title="対面の有利・不利" icon={Swords} color="text-[#00cfef] border-[#00cfef] shadow-[#00cfef]" value={dataFields.counterChampions} onChange={v => setField('counterChampions', v)} fieldKey="counterChampions" onOpenHistory={handleOpenHistory} />
+          <TextAreaCard title="ピック推奨 (先/後)" icon={Shield} color="text-emerald-600 border-emerald-500 shadow-emerald-500" value={dataFields.pickRecommendation} onChange={v => setField('pickRecommendation', v)} fieldKey="pickRecommendation" onOpenHistory={handleOpenHistory} />
           
           {/* 🌲 ジャングルプレイスタイル分類 (自動判定) */}
           {/* 🎯 プレイスタイル分類 (手動編集・全ロール対応) */}
           <div className="glass-panel border-t-2 border-emerald-400 p-5 rounded-2xl group transition-all hover:shadow-[0_4px_20px_rgba(0,0,0,0.3)] shadow-emerald-400/20 relative col-span-1 md:col-span-2">
-            <h3 className="text-sm font-black mb-4 flex items-center gap-2 text-emerald-600">
-              <Shield size={16} /> 🎯 プレイスタイル分類 ({(dataFields.jg_style?.role || 'JUNGLE').toUpperCase()}基準)
-            </h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-black flex items-center gap-2 text-emerald-600">
+                <Shield size={16} /> 🎯 プレイスタイル分類 ({(dataFields.jg_style?.role || 'JUNGLE').toUpperCase()}基準)
+              </h3>
+              <button
+                onClick={() => handleOpenHistory('jg_style', 'プレイスタイル分類')}
+                className="text-[11px] font-bold px-2 py-0.5 rounded bg-black/5 hover:bg-amber-100 hover:text-amber-800 text-stone-600 transition-colors flex items-center gap-1 border border-black/10"
+                title="この項目の変更履歴を確認"
+              >
+                <History size={12} /> 履歴
+              </button>
+            </div>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-4">
               {/* 基準ロール */}
@@ -903,9 +923,18 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
 
           {/* 📈 最新パッチトレンド (自動収集) */}
           <div className="glass-panel border-t-2 border-cyan-400 p-5 rounded-2xl group transition-all hover:shadow-[0_4px_20px_rgba(0,0,0,0.3)] shadow-cyan-400/20 relative">
-            <h3 className="text-sm font-black mb-4 flex items-center gap-2 text-cyan-600">
-              <Activity size={16} /> 📈 最新パッチトレンド (自動収集)
-            </h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-black flex items-center gap-2 text-cyan-600">
+                <Activity size={16} /> 📈 最新パッチトレンド (自動収集)
+              </h3>
+              <button
+                onClick={() => handleOpenHistory('patch_meta', '最新パッチトレンド')}
+                className="text-[11px] font-bold px-2 py-0.5 rounded bg-black/5 hover:bg-amber-100 hover:text-amber-800 text-stone-600 transition-colors flex items-center gap-1 border border-black/10"
+                title="この項目の変更履歴を確認"
+              >
+                <History size={12} /> 履歴
+              </button>
+            </div>
             {dataFields.patch_meta ? (
               <div className="flex flex-col gap-4 text-sm text-stone-800">
                 <div className="flex gap-2 flex-wrap items-center w-full">
@@ -998,9 +1027,18 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
 
           {/* 🏆 プロ推奨ルーン・ビルド (自動収集) */}
           <div className="glass-panel border-t-2 border-amber-400 p-5 rounded-2xl group transition-all hover:shadow-[0_4px_20px_rgba(0,0,0,0.3)] shadow-amber-400/20 relative col-span-1 md:col-span-2">
-            <h3 className="text-sm font-black mb-4 flex items-center gap-2 text-amber-600">
-              <Award size={16} /> 🏆 プロ最先端ビルド (直近のソロキュー実例)
-            </h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-black flex items-center gap-2 text-amber-600">
+                <Award size={16} /> 🏆 プロ最先端ビルド (直近のソロキュー実例)
+              </h3>
+              <button
+                onClick={() => handleOpenHistory('pro_builds', 'プロ最先端ビルド')}
+                className="text-[11px] font-bold px-2 py-0.5 rounded bg-black/5 hover:bg-amber-100 hover:text-amber-800 text-stone-600 transition-colors flex items-center gap-1 border border-black/10"
+                title="この項目の変更履歴を確認"
+              >
+                <History size={12} /> 履歴
+              </button>
+            </div>
             {dataFields.pro_builds && dataFields.pro_builds.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {dataFields.pro_builds.map((pb: any, idx: number) => (
@@ -1064,6 +1102,13 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                 <BookOpen className="text-[#c89b3c]" size={20} />
                 <h3 className="text-base font-black text-stone-900">全体的な立ち回り・統合トレンドメモ</h3>
                 {dataFields.strategy && <span className="text-[10px] bg-[#c89b3c]/20 text-[#c89b3c] px-2.5 py-0.5 rounded-full font-bold">記載あり</span>}
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleOpenHistory('strategy', '全体的な立ち回りメモ'); }}
+                  className="text-[11px] font-bold px-2 py-0.5 rounded bg-black/5 hover:bg-amber-100 hover:text-amber-800 text-stone-600 transition-colors flex items-center gap-1 border border-black/10"
+                  title="この項目の変更履歴を確認"
+                >
+                  <History size={12} /> 履歴
+                </button>
               </div>
               <span className="text-xs text-gray-400 font-bold flex items-center gap-1">
                 {isStrategyCollapsed ? '▼ 開く' : '▲ 閉じる'}
@@ -1132,7 +1177,16 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                     {Object.entries(dataFields.customFields || {}).map(([key, val]) => (
                       <div key={key} className="glass-panel border-t-2 border-pink-400 p-5 rounded-2xl group transition-all hover:shadow-[0_4px_20px_rgba(0,0,0,0.3)] shadow-pink-400/20 relative">
                         <button onClick={() => removeCustomField(key)} className="absolute top-4 right-4 text-gray-500 hover:text-red-600 transition-colors"><Trash size={14}/></button>
-                        <h3 className="text-sm font-black mb-4 flex items-center gap-2 text-pink-600"><FileText size={16} /> {key}</h3>
+                        <div className="flex items-center justify-between mb-4 pr-6">
+                          <h3 className="text-sm font-black flex items-center gap-2 text-pink-600"><FileText size={16} /> {key}</h3>
+                          <button
+                            onClick={() => handleOpenHistory('customFields', `カスタム項目: ${key}`)}
+                            className="text-[11px] font-bold px-2 py-0.5 rounded bg-black/5 hover:bg-amber-100 hover:text-amber-800 text-stone-600 transition-colors flex items-center gap-1 border border-black/10"
+                            title="この項目の変更履歴を確認"
+                          >
+                            <History size={12} /> 履歴
+                          </button>
+                        </div>
                         <textarea value={val as string} onChange={e => updateCustomField(key, e.target.value)} className="w-full h-28 bg-black/3 border border-black/10 rounded-xl p-3 text-sm text-stone-800 outline-none focus:border-black/20 resize-y shadow-inner transition-colors" placeholder={`${key}を記録...`} />
                       </div>
                     ))}
@@ -1198,7 +1252,6 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                 const difficulty = rd.difficulty || 3;
                 const result = rd.result || 'UNKNOWN';
 
-                // 動的な有利・不利の算出とカラーの決定
                 const ktmMatchup = champStats[m.champion]?.matchup_stats?.[m.enemy];
                 let winRate = 50;
                 let hasData = false;
@@ -1223,7 +1276,6 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                 
                 return (
                   <div key={m.matchup_id} className={`glass-panel border-l-4 rounded-xl transition-all ${cardBorderColor}`}>
-                    {/* ヘッダー部分。クリックでアコーディオン開閉 */}
                     <div 
                       onClick={() => setExpandedMatchupId(isExpanded ? null : m.matchup_id)}
                       className="p-4 flex items-center justify-between cursor-pointer select-none flex-wrap gap-4"
@@ -1248,14 +1300,12 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                       </div>
                       
                       <div className="flex items-center gap-6">
-                        {/* 各チャンプごとの勝率表示 */}
                         {(() => {
                           const enemyMatchups = matchupsList.filter(x => x.enemy === m.enemy);
                           const eWins = enemyMatchups.filter(x => String(x.raw_data?.result).toLowerCase() === 'win').length;
                           const eLosses = enemyMatchups.filter(x => String(x.raw_data?.result).toLowerCase() === 'lose').length;
                           const eTotal = eWins + eLosses;
 
-                          // 1. KTMカスタムマッチの対面勝率があれば最優先で使用
                           const ktmMatchup = champStats[m.champion]?.matchup_stats?.[m.enemy];
                           if (ktmMatchup && ktmMatchup.games > 0) {
                             const winRate = ktmMatchup.win_rate;
@@ -1267,7 +1317,6 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                             );
                           }
                           
-                          // 2. なければメモの勝敗結果から勝率を算出して表示
                           const memoWinRate = eTotal > 0 ? Math.round((eWins / eTotal) * 100) : null;
                           if (memoWinRate !== null) {
                             return (
@@ -1278,7 +1327,6 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                             );
                           }
 
-                          // 3. どちらもなければ元のメモの単体勝敗結果を出す
                           if (result && result !== 'UNKNOWN') {
                             return (
                               <span className={`text-[10px] font-black px-2 py-1 rounded-md ${result === 'Win' ? 'bg-[#22c55e]/15 text-[var(--color-success)]' : 'bg-[#ef4444]/15 text-[var(--color-danger)]'}`}>
@@ -1289,7 +1337,6 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                           return null;
                         })()}
 
-                        {/* 難易度(星)表示 */}
                         <div className="flex gap-0.5" title={`難易度: ${difficulty}`}>
                           {Array.from({ length: 5 }).map((_, idx) => (
                             <StarIcon 
@@ -1300,10 +1347,17 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                           ))}
                         </div>
                         
-                        {/* バトルサーチの該当マッチアップへ直接ジャンプするリンク */}
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleOpenHistory(undefined, `対面 ${m.enemy} の変更履歴`, m.matchup_id); }}
+                          className="px-3 py-1 bg-black/5 hover:bg-amber-100 hover:text-amber-800 border border-black/10 rounded-lg text-xs font-bold transition-all flex items-center gap-1 text-stone-700"
+                          title="この対面の変更履歴を確認"
+                        >
+                          <History size={12} /> 履歴
+                        </button>
+
                         <a 
                           href={`/coach?champion=${m.champion}&enemy=${m.enemy}`}
-                          onClick={(e) => e.stopPropagation()} // 親アコーディオンのクリック伝播を防止
+                          onClick={(e) => e.stopPropagation()} 
                           className="px-3 py-1 bg-black/5 hover:bg-[#c89b3c]/20 hover:text-[#c89b3c] border border-black/10 rounded-lg text-xs font-bold transition-all flex items-center gap-1 text-stone-700"
                         >
                           <Edit2 size={12} /> 編集
@@ -1311,7 +1365,6 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                       </div>
                     </div>
                     
-                    {/* アコーディオンによる詳細開閉 (winCondition, strategyを表示) */}
                     <AnimatePresence>
                       {isExpanded && (
                         <motion.div 
@@ -1338,13 +1391,9 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                             {!rd.winCondition && !m.strategy && (
                               <p className="text-gray-500 italic text-xs">このマッチアップに関する詳細な立ち回りメモは登録されていません。</p>
                             )}
-
-                            {/* KTM直接対決データ分析の表示 */}
-                            {champStats[m.champion] && (() => {
+                {champStats[m.champion] && (() => {
                               const history = champStats[m.champion].match_history?.filter((h: any) => h.enemy_champion === m.enemy) || [];
                               const trendHistory = [...history].reverse();
-                              
-                              // プレイヤー別の集計ロジック
                               const playerAgg: Record<string, { games: number, wins: number, kills: number, deaths: number, assists: number, role: string }> = {};
                               history.forEach((h: any) => {
                                 const name = h.player_name;
@@ -1375,7 +1424,6 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                                     )}
                                   </div>
 
-                                  {/* 1. 勝敗推移 */}
                                   <div className="space-y-1">
                                     <span className="text-[9px] text-gray-500 font-bold uppercase tracking-wider block">📈 勝敗トレンド</span>
                                     <div className="flex items-center gap-1.5 overflow-x-auto py-1">
@@ -1391,7 +1439,6 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                                     </div>
                                   </div>
 
-                                  {/* 2. プレイヤー集計 */}
                                   <div className="space-y-1">
                                     <span className="text-[9px] text-gray-500 font-bold uppercase tracking-wider block">📊 プレイヤー別の実績</span>
                                     <div className="overflow-hidden rounded-lg border border-black/10 bg-black/5">
@@ -1430,7 +1477,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                                     </div>
                                   </div>
 
-                                  {/* 3. 対面の総合サマリ（1試合ずつではなく、まとめた数字を見る） */}
+                                  {/* 3. 対面の総合サマリ */}
                                   {(() => {
                                     const games = history.length;
                                     const wins = history.filter((h: any) => h.is_win).length;
@@ -1837,12 +1884,46 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
   );
 }
 
-const TextAreaCard = ({ title, icon: Icon, color, value, onChange }: { title: string, icon: any, color: string, value: string, onChange: (v: string) => void }) => {
-  const [textColor, borderColor, shadowColor] = color.split(' ');
+const TextAreaCard = ({
+  title,
+  icon: Icon,
+  color,
+  value,
+  onChange,
+  fieldKey,
+  onOpenHistory,
+}: {
+  title: string;
+  icon: any;
+  color: string;
+  value: string;
+  onChange: (v: string) => void;
+  fieldKey?: string;
+  onOpenHistory?: (fieldKey: string, title: string) => void;
+}) => {
+  const [textColor, borderColor] = color.split(' ');
   return (
     <div className={`glass-panel border-t-2 p-5 rounded-2xl group transition-all hover:shadow-[0_4px_20px_rgba(0,0,0,0.3)] ${borderColor}`}>
-      <h3 className={`text-sm font-black mb-4 flex items-center gap-2 ${textColor}`}><Icon size={16} /> {title}</h3>
-      <textarea value={value} onChange={e => onChange(e.target.value)} className="w-full h-28 bg-black/3 border border-black/10 rounded-xl p-3 text-sm text-stone-800 outline-none focus:border-black/20 resize-y shadow-inner transition-colors" placeholder={`${title}を記録...`} />
+      <div className="flex items-center justify-between mb-4">
+        <h3 className={`text-sm font-black flex items-center gap-2 ${textColor}`}>
+          <Icon size={16} /> {title}
+        </h3>
+        {fieldKey && onOpenHistory && (
+          <button
+            onClick={() => onOpenHistory(fieldKey, title)}
+            className="text-[11px] font-bold px-2 py-0.5 rounded bg-black/5 hover:bg-amber-100 hover:text-amber-800 text-stone-600 transition-colors flex items-center gap-1 border border-black/10"
+            title="この項目の変更履歴を確認"
+          >
+            <History size={12} /> 履歴
+          </button>
+        )}
+      </div>
+      <textarea
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full h-28 bg-black/3 border border-black/10 rounded-xl p-3 text-sm text-stone-800 outline-none focus:border-black/20 resize-y shadow-inner transition-colors"
+        placeholder={`${title}を記録...`}
+      />
     </div>
   );
 };
