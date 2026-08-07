@@ -41,10 +41,20 @@ export async function POST(req: Request) {
 
     // B. 人間確認済みに変更: verify
     if (action === 'verify') {
+      let currentPatch = '16.15';
+      try {
+        const vRes = await fetch('https://ddragon.leagueoflegends.com/api/versions.json');
+        const versions = await vRes.json();
+        currentPatch = (versions[0] || '16.15.1').split('.').slice(0, 2).join('.');
+      } catch {
+        // fallback
+      }
+
       const { error } = await supabase
         .from('champion_facts')
         .update({
           confidence: 'verified',
+          patch: currentPatch,
           last_verified_at: new Date().toISOString(),
           last_verified_by: 'admin',
           updated_at: new Date().toISOString(),
@@ -52,7 +62,7 @@ export async function POST(req: Request) {
         .ilike('champion', champion);
 
       if (error) throw error;
-      return NextResponse.json({ success: true, message: `${champion} を確認済みに設定しました` });
+      return NextResponse.json({ success: true, message: `${champion} を確認済み（🟢 パッチ ${currentPatch}）に設定しました` });
     }
 
     // C. AI生成に戻す: unverify

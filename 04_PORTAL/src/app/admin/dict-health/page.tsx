@@ -79,6 +79,31 @@ export default function DictHealthDashboard() {
 
   const handleVerify = async (champion: string, action: 'verify' | 'unverify' | 'enqueue_update') => {
     setActionLoading(champion + '_' + action);
+
+    // オプティミスティックUI反映
+    if (data && (action === 'verify' || action === 'unverify')) {
+      const nextStatus: 'verified' | 'ai_generated' = action === 'verify' ? 'verified' : 'ai_generated';
+      setData((prev) => {
+        if (!prev) return prev;
+        const updatedChamps = prev.champions.map((c) =>
+          c.champion.toLowerCase() === champion.toLowerCase()
+            ? { ...c, status: nextStatus, confidence: nextStatus }
+            : c
+        );
+        const verifiedCount = updatedChamps.filter((c) => c.status === 'verified').length;
+        const aiGenCount = updatedChamps.filter((c) => c.status === 'ai_generated').length;
+        const staleCount = updatedChamps.filter((c) => c.status === 'stale').length;
+        const nextPriority = updatedChamps.filter((c) => c.status !== 'verified').slice(0, 10);
+
+        return {
+          ...prev,
+          summary: { verified: verifiedCount, aiGenerated: aiGenCount, stale: staleCount },
+          priorityChampions: nextPriority,
+          champions: updatedChamps,
+        };
+      });
+    }
+
     try {
       const res = await fetch('/api/admin/dict-health/verify', {
         method: 'POST',
@@ -92,9 +117,11 @@ export default function DictHealthDashboard() {
         fetchHealth(true);
       } else {
         showMessage(json.error || '処理に失敗しました', 'error');
+        fetchHealth(true);
       }
     } catch {
       showMessage('通信エラーが発生しました', 'error');
+      fetchHealth(true);
     } finally {
       setActionLoading(null);
     }

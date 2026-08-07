@@ -43,16 +43,16 @@ export async function GET(req: Request) {
       let status: 'verified' | 'ai_generated' | 'stale';
       let priorityScore = 0; // 優先確認スコア
 
-      if (!hasContent || !isLatestPatch || conf === 'stale') {
-        status = 'stale'; // 🔴 要対応
-        staleCount++;
-        priorityScore = !hasContent ? 100 : !isLatestPatch ? 80 : 70;
-      } else if (conf === 'verified') {
-        status = 'verified'; // 🟢 確認済み
+      if (conf === 'verified') {
+        status = 'verified'; // 🟢 確認済み（人間が確認完了したものは最優先で確認済み）
         verifiedCount++;
         priorityScore = 10;
+      } else if (!hasContent || !isLatestPatch || conf === 'stale') {
+        status = 'stale'; // 🔴 要対応（未確認かつ空データまたは古いパッチ）
+        staleCount++;
+        priorityScore = !hasContent ? 100 : !isLatestPatch ? 80 : 70;
       } else {
-        status = 'ai_generated'; // 🟡 AI生成（確認未完了）
+        status = 'ai_generated'; // 🟡 AI生成（現行パッチで最新だが人間未確認）
         aiGeneratedCount++;
         priorityScore = 50;
       }
