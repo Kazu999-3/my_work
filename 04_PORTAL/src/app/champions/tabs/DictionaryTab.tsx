@@ -770,23 +770,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <TextAreaCard title="強み (Strengths)" icon={Swords} color="text-[var(--color-success)] border-[var(--color-success)] shadow-[var(--color-success)]" value={dataFields.strengths} onChange={v => setField('strengths', v)} fieldKey="strengths" onOpenHistory={handleOpenHistory} />
           <TextAreaCard title="弱み (Weaknesses)" icon={ShieldAlert} color="text-[var(--color-danger)] border-[var(--color-danger)] shadow-[var(--color-danger)]" value={dataFields.weaknesses} onChange={v => setField('weaknesses', v)} fieldKey="weaknesses" onOpenHistory={handleOpenHistory} />
-          <div>
-            {powerSpikeScores && (() => {
-              const early = Math.max(0, Math.min(5, Number(powerSpikeScores.early_game_score) || 0));
-              const mid = Math.max(0, Math.min(5, Number(powerSpikeScores.mid_game_score) || 0));
-              const late = Math.max(0, Math.min(5, Number(powerSpikeScores.late_game_score) || 0));
-              return (
-                <div className="mb-2 flex items-center gap-3 rounded-lg border border-[#c89b3c] px-3 py-2 text-sm flex-wrap">
-                  <span className="font-bold text-[#c89b3c]">時間帯別の強さ:</span>
-                  <span>序盤 {'★'.repeat(early)}{'☆'.repeat(5 - early)}</span>
-                  <span>中盤 {'★'.repeat(mid)}{'☆'.repeat(5 - mid)}</span>
-                  <span>終盤 {'★'.repeat(late)}{'☆'.repeat(5 - late)}</span>
-                  {powerSpikeScores.summary && <span className="text-xs opacity-80">{powerSpikeScores.summary}</span>}
-                </div>
-              );
-            })()}
-            <TextAreaCard title="パワースパイク" icon={Zap} color="text-[#c89b3c] border-[#c89b3c] shadow-[#c89b3c]" value={dataFields.powerSpikes} onChange={v => setField('powerSpikes', v)} fieldKey="powerSpikes" onOpenHistory={handleOpenHistory} />
-          </div>
+          <TextAreaCard title="パワースパイク" icon={Zap} color="text-[#c89b3c] border-[#c89b3c] shadow-[#c89b3c]" value={dataFields.powerSpikes} onChange={v => setField('powerSpikes', v)} fieldKey="powerSpikes" onOpenHistory={handleOpenHistory} />
           <TextAreaCard title="コアビルド / ルーン" icon={Shield} color="text-purple-600 border-purple-500 shadow-purple-500" value={dataFields.buildRunes} onChange={v => setField('buildRunes', v)} fieldKey="buildRunes" onOpenHistory={handleOpenHistory} />
           <TextAreaCard title="対面の有利・不利" icon={Swords} color="text-[#00cfef] border-[#00cfef] shadow-[#00cfef]" value={dataFields.counterChampions} onChange={v => setField('counterChampions', v)} fieldKey="counterChampions" onOpenHistory={handleOpenHistory} />
           <TextAreaCard title="ピック推奨 (先/後)" icon={Shield} color="text-emerald-600 border-emerald-500 shadow-emerald-500" value={dataFields.pickRecommendation} onChange={v => setField('pickRecommendation', v)} fieldKey="pickRecommendation" onOpenHistory={handleOpenHistory} />
@@ -1868,30 +1852,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                     </div>
                   );
                 })()}
-                {(() => {
-                  // 時間帯別の強さ（パワースパイク）を一覧グリッドでもひと目で確認できるようにするミニ表示
-                  const normKey = String(c.id || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-                  const spike = champPowerSpikes[c.id] || champPowerSpikes[normKey];
-                  if (!spike || typeof spike.early_game_score !== 'number' || typeof spike.mid_game_score !== 'number' || typeof spike.late_game_score !== 'number') return null;
-                  
-                  const phases: { label: string; score: number }[] = [
-                    { label: '序', score: spike.early_game_score },
-                    { label: '中', score: spike.mid_game_score },
-                    { label: '終', score: spike.late_game_score }
-                  ];
-                  const peakIdx = phases.reduce((maxI, p, i, arr) => p.score > arr[maxI].score ? i : maxI, 0);
-                  return (
-                    <div className="flex justify-center gap-1 mt-1 pointer-events-none" title="時間帯別の強さ（序盤/中盤/終盤）">
-                      {phases.map((p, i) => (
-                        <span key={p.label} className={`text-[8px] font-black px-1 rounded leading-none ${
-                          i === peakIdx ? 'bg-rose-100 text-rose-700 border border-rose-200' : 'text-gray-500'
-                        }`}>
-                          {p.label}{p.score}
-                        </span>
-                      ))}
-                    </div>
-                  );
-                })()}
+
               </motion.div>
             );
           })}
