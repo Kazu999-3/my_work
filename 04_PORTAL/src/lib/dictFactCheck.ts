@@ -669,6 +669,15 @@ export async function runFactCheckBatch(supabase: any, offset: number, limit: nu
   };
 }
 
+/** 全168チャンピオンの過去の古い pending キューを一元で綺麗サッパリ削除・一括リセットする */
+export async function resetAllPendingFactChecks(supabase: any): Promise<number> {
+  const { count } = await supabase
+    .from('dict_fact_check_queue')
+    .delete({ count: 'exact' })
+    .eq('status', 'pending');
+  return count || 0;
+}
+
 /** チャンピオン辞典ページから、そのチャンピオン1体だけを即時ファクトチェックする。 */
 export async function runFactCheckForChampion(supabase: any, champion: string): Promise<{ flagged: number; capped: boolean }> {
   // 過去の古い過剰検出キュー(19件等)を一度綺麗にリセット・削除

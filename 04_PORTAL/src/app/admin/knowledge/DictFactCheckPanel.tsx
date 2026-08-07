@@ -96,6 +96,21 @@ export default function DictFactCheckPanel() {
     } catch (e: any) { setError(e.message); } finally { setRunning(false); }
   };
 
+  const runResetAndFactCheck = async () => {
+    try {
+      setRunMsg('🧹 過去の古い全残留キューを一括リセット中...');
+      await fetch('/api/admin/dict-fact-check', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: 'reset_all' }),
+      });
+      await runScan();
+      await runFactCheck();
+    } catch (e: any) {
+      setError(e.message);
+    }
+  };
+
   return (
     <div className="bg-white border border-stone-200 rounded-3xl p-6 space-y-5">
       <h2 className="text-base font-bold text-stone-900 flex items-center gap-2">
@@ -104,33 +119,29 @@ export default function DictFactCheckPanel() {
       <p className="text-xs text-stone-500">
         辞典(matchup_sentinel)・コーチAI知識層(champion_facts/champion_notes)・ナレッジ(personal_knowledge)を横断し、
         表記ゆれ・矛盾・単一ソースのみの未確証な記述・公式データとの食い違いを検出します。
-        <strong className="text-stone-700">自動修正・自動削除は一切行わず</strong>、検出結果は下のリストに積まれ、人間が個別に判断します。
-        「訂正を記録」した内容は<strong className="text-stone-700">コーチAI・辞典再生成など今後の全AI生成の共通入口</strong>に反映され、同じ誤りの再発を防ぎます。
       </p>
 
       {error && <p className="text-sm text-rose-700 bg-rose-100 border border-rose-200 rounded-lg px-3 py-2">{error}</p>}
 
       {/* 統合全自動ファクトチェックボタン */}
-      <div className="rounded-2xl border border-cyan-300 bg-gradient-to-r from-cyan-500/10 via-indigo-500/5 to-transparent p-5 shadow-sm">
-        <h3 className="text-sm font-extrabold text-cyan-950 flex items-center gap-2 mb-1.5">
+      <div className="rounded-2xl border border-cyan-300 bg-gradient-to-r from-cyan-500/10 via-indigo-500/5 to-transparent p-5 shadow-sm space-y-3">
+        <h3 className="text-sm font-extrabold text-cyan-950 flex items-center gap-2">
           <ShieldCheck className="w-5 h-5 text-cyan-600" />
-          全自動一斉ファクトチェック (表記ゆれスキャン ＋ 全170+体AI判定完走)
+          全168チャンプ過去キュー一括リセット ＋ 最新AI全自動一斉ファクトチェック完走
         </h3>
-        <p className="text-xs text-stone-600 mb-3 leading-relaxed">
-          ボタン1つで「表記ゆれ・タグ異常の即時検知」と「全チャンピオン全データと公式データのAI整合性チェック」を全自動で完走させます。
+        <p className="text-xs text-stone-600 leading-relaxed">
+          ボタン1つで「全168チャンピオンの過去の古い残留キュー（19件等）をキレイサッパリ一括消去」➔「表記ゆれ即時検知」➔「最新AIによる厳選一斉ファクトチェック」が全自動で完走します。
         </p>
+
         <button
-          onClick={async () => {
-            await runScan();
-            await runFactCheck();
-          }}
+          onClick={runResetAndFactCheck}
           disabled={scanning || running}
-          className="flex items-center gap-2 text-xs font-black bg-gradient-to-r from-cyan-600 to-indigo-600 hover:from-cyan-700 hover:to-indigo-700 active:scale-95 text-white px-6 py-3 rounded-xl shadow-md transition disabled:opacity-50"
+          className="flex items-center gap-2 text-xs font-black bg-gradient-to-r from-cyan-600 via-indigo-600 to-amber-600 hover:from-cyan-700 hover:to-amber-700 active:scale-95 text-white px-6 py-3.5 rounded-xl shadow-md transition disabled:opacity-50"
         >
           <RefreshCw className={`w-4 h-4 ${(scanning || running) ? 'animate-spin' : ''}`} />
           {(scanning || running)
-            ? `AI全自動一斉ファクトチェック実行中... (${progress?.processed ?? 0}/${progress?.total ?? '?'}体完了・${progress?.flagged ?? 0}件検出)`
-            : '🛡️ 辞典・ナレッジ全自動一斉ファクトチェックを実行'}
+            ? `最新AI一斉ファクトチェック実行中... (${progress?.processed ?? 0}/${progress?.total ?? '?'}体完了・${progress?.flagged ?? 0}件検出)`
+            : '⚡ 過去の全残留キューを一括リセット ＆ AI一斉ファクトチェックを実行'}
         </button>
 
         {(scanning || running) && (

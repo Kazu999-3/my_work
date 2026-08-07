@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 import { verifyAdminSession } from '../../../../lib/adminAuth';
-import { scanInvalidChampionTags, runFactCheckBatch } from '../../../../lib/dictFactCheck';
+import { scanInvalidChampionTags, runFactCheckBatch, resetAllPendingFactChecks } from '../../../../lib/dictFactCheck';
 
 // 辞典/コーチAI知識層/ナレッジの一斉ファクトチェック(#②精度向上)。
 // mode='scan_tags': champion列の表記揺れ・ゴミ値検出（LLM不要・即時）
 // mode='batch'    : チャンピオン単位で全ソースを横断照合するAI判定（チャンク処理）
+// mode='reset_all': 全168チャンピオンの過去の古い残留pendingキューを一発リセット・削除
 export const dynamic = 'force-dynamic';
 export const maxDuration = 120;
 
@@ -16,6 +17,11 @@ export async function POST(req: Request) {
   try {
     const body = await req.json().catch(() => ({}));
     const mode = body.mode || 'batch';
+
+    if (mode === 'reset_all') {
+      const deletedCount = await resetAllPendingFactChecks(supabase);
+      return NextResponse.json({ mode: 'reset_all', success: true, deletedCount });
+    }
 
     if (mode === 'scan_tags') {
       const result = await scanInvalidChampionTags(supabase);
