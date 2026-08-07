@@ -671,18 +671,19 @@ export async function runFactCheckBatch(supabase: any, offset: number, limit: nu
 
 /** チャンピオン辞典ページから、そのチャンピオン1体だけを即時ファクトチェックする。 */
 export async function runFactCheckForChampion(supabase: any, champion: string): Promise<{ flagged: number; capped: boolean }> {
-  const pendingCount = await getPendingQueueCount(supabase);
-  if (pendingCount >= PENDING_QUEUE_CAP) {
-    return { flagged: 0, capped: true };
-  }
+  // 過去の古い過剰検出キュー(19件等)を一度綺麗にリセット・削除
+  await supabase
+    .from('dict_fact_check_queue')
+    .delete()
+    .eq('champion', champion)
+    .eq('status', 'pending');
 
   const bundle = await getChampionBundle(supabase, champion);
   const rawIssues = await factCheckChampion(supabase, bundle);
-  const issues = await filterAlreadyPendingIssues(supabase, champion, rawIssues);
-  if (issues.length === 0) return { flagged: 0, capped: false };
+  if (rawIssues.length === 0) return { flagged: 0, capped: false };
 
   const sourceTables = sourceTablesOf(bundle);
-  const rows = issues.map((i) => ({
+  const rows = rawIssues.map((i) => ({
     champion,
     issue_type: i.issue_type,
     summary: i.summary,

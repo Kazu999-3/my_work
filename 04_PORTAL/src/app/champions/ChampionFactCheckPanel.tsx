@@ -75,10 +75,11 @@ export default function ChampionFactCheckPanel({ champion }: { champion: string 
         <button
           onClick={runCheck}
           disabled={running}
-          className="flex items-center gap-1.5 text-xs font-extrabold bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white px-3.5 py-2 rounded-xl transition disabled:opacity-50 shadow-sm"
+          className="flex items-center gap-1.5 text-xs font-extrabold bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-700 hover:to-cyan-700 active:scale-95 text-white px-3.5 py-2 rounded-xl transition disabled:opacity-50 shadow-md"
+          title="過去に蓄積された古い19件等の未処理データを一発でリセットし、最新のAIで厳選された1〜2件のみに最新化します"
         >
           {running ? <RefreshCw size={14} className="animate-spin" /> : <ShieldCheck size={14} />}
-          {running ? '実行中...' : 'このチャンピオンを再チェック'}
+          {running ? '最新AI再判定中...' : '⚡ 過去の残留キューをリセットして最新化'}
         </button>
       </div>
 
