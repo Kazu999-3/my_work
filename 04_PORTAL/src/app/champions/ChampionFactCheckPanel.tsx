@@ -1,23 +1,16 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { ShieldCheck, RefreshCw } from 'lucide-react';
+import { ShieldCheck, RefreshCw, CheckCircle2, Sparkles, ArrowRight } from 'lucide-react';
 import FactCheckQueueCard, { QueueItem } from '../../components/FactCheckQueueCard';
 
-// 辞典の一斉ファクトチェック(admin/knowledge)は170体前後を回すため完走に時間がかかる。
-// 今見ているチャンピオンだけをその場ですぐ確認したい、というニーズに対応する
-// 単体版。検出結果は同じdict_fact_check_queueに積まれるため、全体チェック側の
-// レビューキューにも同じ内容が表示される。
 export default function ChampionFactCheckPanel({ champion }: { champion: string }) {
   const [items, setItems] = useState<QueueItem[]>([]);
+  const [initialTotal, setInitialTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [running, setRunning] = useState(false);
   const [msg, setMsg] = useState('');
   const [error, setError] = useState('');
-  // 単体版と全体版が同じdict_fact_check_queueを共有しているのに、「未対応の検出項目は
-  // ありません」が「検証済みで綺麗」なのか「全体スキャンをまだ一度も走らせていない
-  // だけ」なのか区別できなかった(2026-08-05発覚)。全ステータス込みで1件でも
-  // 履歴があれば「チェック済み」とみなす。
   const [everChecked, setEverChecked] = useState<boolean | null>(null);
 
   const load = async () => {
@@ -29,7 +22,9 @@ export default function ChampionFactCheckPanel({ champion }: { champion: string 
       ]);
       const d = await pendingRes.json();
       if (!pendingRes.ok) throw new Error(d.error || '取得に失敗しました');
-      setItems(d.items || []);
+      const loadedItems = d.items || [];
+      setItems(loadedItems);
+      setInitialTotal(loadedItems.length);
       const allD = await allRes.json();
       setEverChecked(allRes.ok ? (allD.items || []).length > 0 : null);
     } catch (e: any) { setError(e.message); } finally { setLoading(false); }
@@ -56,32 +51,81 @@ export default function ChampionFactCheckPanel({ champion }: { champion: string 
     } catch (e: any) { setError(e.message); } finally { setRunning(false); }
   };
 
+  const handleActed = (actedId: number) => {
+    setItems((prev) => prev.filter((x) => x.id !== actedId));
+  };
+
+  const currentItem = items[0]; // 常に1件ずつ最優先の1つだけを表示
+  const processedCount = initialTotal - items.length;
+  const progressPercent = initialTotal > 0 ? Math.round((processedCount / initialTotal) * 100) : 100;
+
   return (
-    <div className="glass-panel border-t-2 border-indigo-400 p-5 rounded-2xl group transition-all hover:shadow-[0_4px_20px_rgba(0,0,0,0.3)] shadow-indigo-400/20 relative col-span-1 md:col-span-2">
-      <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
-        <h3 className="text-sm font-black flex items-center gap-2 text-indigo-600">
-          <ShieldCheck size={16} /> ファクトチェック（このチャンピオンのみ）
-        </h3>
-        <button onClick={runCheck} disabled={running}
-          className="flex items-center gap-1.5 text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg disabled:opacity-50">
-          {running ? <RefreshCw size={13} className="animate-spin" /> : <ShieldCheck size={13} />} {running ? '実行中...' : 'このチャンピオンをチェック'}
+    <div className="glass-panel border-t-2 border-indigo-400 p-5 rounded-2xl group transition-all hover:shadow-[0_4px_20px_rgba(0,0,0,0.3)] shadow-indigo-400/20 relative col-span-1 md:col-span-2 space-y-4">
+      {/* ヘッダー */}
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <div>
+          <h3 className="text-sm font-black flex items-center gap-2 text-indigo-600">
+            <ShieldCheck size={18} /> ファクトチェック（1件ずつ集中して片付けるフォーカスモード）
+          </h3>
+          <p className="text-[11px] text-stone-500 mt-0.5">
+            一度に大量にカードを出さず、最優先の1件ずつ順番に「確認・採択・却下」で片付けます
+          </p>
+        </div>
+
+        <button
+          onClick={runCheck}
+          disabled={running}
+          className="flex items-center gap-1.5 text-xs font-extrabold bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white px-3.5 py-2 rounded-xl transition disabled:opacity-50 shadow-sm"
+        >
+          {running ? <RefreshCw size={14} className="animate-spin" /> : <ShieldCheck size={14} />}
+          {running ? '実行中...' : 'このチャンピオンを再チェック'}
         </button>
       </div>
-      {msg && <p className="text-xs text-emerald-700 mb-2">{msg}</p>}
-      {error && <p className="text-xs text-rose-700 mb-2">{error}</p>}
+
+      {msg && <p className="text-xs text-emerald-700 font-bold bg-emerald-50 border border-emerald-200 p-2.5 rounded-xl">{msg}</p>}
+      {error && <p className="text-xs text-rose-700 font-bold bg-rose-50 border border-rose-200 p-2.5 rounded-xl">{error}</p>}
+
+      {/* 1件ずつ集中処理のプログレスバー */}
+      {!loading && items.length > 0 && (
+        <div className="bg-stone-100 border border-stone-200 rounded-xl p-3 space-y-2">
+          <div className="flex items-center justify-between text-xs font-extrabold text-stone-800">
+            <span className="flex items-center gap-1.5 text-indigo-900">
+              <Sparkles size={14} className="text-indigo-600" />
+              残り {items.length} 件 （{processedCount + 1} / {initialTotal} 件目を片付け中）
+            </span>
+            <span className="text-stone-500 font-mono">{progressPercent}% 完了</span>
+          </div>
+          <div className="w-full bg-stone-200 rounded-full h-2 overflow-hidden">
+            <div className="bg-indigo-600 h-full transition-all duration-300" style={{ width: `${progressPercent}%` }}></div>
+          </div>
+        </div>
+      )}
+
+      {/* --- メインコンテンツ --- */}
       {loading ? (
-        <p className="text-xs text-stone-500 py-2">読み込み中...</p>
+        <div className="py-8 text-center text-xs text-stone-500 font-bold flex items-center justify-center gap-2">
+          <RefreshCw size={14} className="animate-spin text-indigo-600" />
+          ファクトチェックデータをロード中...
+        </div>
       ) : items.length === 0 ? (
-        <p className="text-xs text-stone-500 py-2">
-          {everChecked
-            ? '✅ チェック済み・未対応の検出項目はありません。'
-            : 'まだこのチャンピオンのファクトチェックは実行されていません（上のボタンから実行できます）。'}
-        </p>
+        <div className="p-6 rounded-2xl bg-emerald-50/70 border border-emerald-200 text-center space-y-2">
+          <CheckCircle2 size={32} className="text-emerald-600 mx-auto" />
+          <h4 className="text-sm font-extrabold text-emerald-900">🎉 すべての矛盾・不整合の片付けが完了しました！</h4>
+          <p className="text-xs text-emerald-800/80">
+            {everChecked
+              ? 'このチャンピオンに関する全ての要レビュー項目は人間確認・採択・訂正が完了しています。'
+              : 'まだこのチャンピオンのファクトチェックは実行されていません。「再チェック」ボタンを押して点検を開始できます。'}
+          </p>
+        </div>
       ) : (
-        <div className="space-y-2">
-          {items.map((it) => (
-            <FactCheckQueueCard key={it.id} item={it} onActed={(id) => setItems((prev) => prev.filter((x) => x.id !== id))} />
-          ))}
+        /* 1件ずつ目の前のカードのみをグラフィカルに表示 */
+        <div className="space-y-3">
+          <FactCheckQueueCard item={currentItem} onActed={handleActed} />
+          {items.length > 1 && (
+            <p className="text-[11px] text-stone-400 text-right font-bold flex items-center justify-end gap-1">
+              この1件を片付けると自動で次のカードに進みます <ArrowRight size={12} />
+            </p>
+          )}
         </div>
       )}
     </div>

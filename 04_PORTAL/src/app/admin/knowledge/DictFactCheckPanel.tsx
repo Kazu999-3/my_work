@@ -143,23 +143,36 @@ export default function DictFactCheckPanel() {
       </div>
 
       {/* レビューキュー */}
-      <div>
-        <div className="flex items-center justify-between mb-2">
-          <h3 className="text-sm font-bold text-stone-900">検出結果一覧（要人間レビュー・{items.length}件）</h3>
-          <button onClick={loadQueue} disabled={loadingQueue} className="text-xs text-stone-500 hover:text-stone-800 flex items-center gap-1">
-            <RefreshCw size={12} className={loadingQueue ? 'animate-spin' : ''} /> 再読込
-          </button>
+      <div className="space-y-3">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <h3 className="text-sm font-bold text-stone-900 flex items-center gap-2">
+            検出結果レビュー（要人間確認・残り {items.length} 件）
+          </h3>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => loadQueue()}
+              disabled={loadingQueue}
+              className="text-xs text-stone-500 hover:text-stone-800 flex items-center gap-1 font-bold"
+            >
+              <RefreshCw size={12} className={loadingQueue ? 'animate-spin' : ''} /> 再読込
+            </button>
+          </div>
         </div>
 
         {loadingQueue ? (
           <p className="text-xs text-stone-500 py-4 text-center">読み込み中...</p>
         ) : items.length === 0 ? (
-          <p className="text-xs text-stone-500 py-4 text-center">未対応の検出項目はありません。</p>
+          <div className="p-6 rounded-2xl bg-emerald-50 border border-emerald-200 text-center space-y-1">
+            <p className="text-xs font-bold text-emerald-800">🎉 未対応の検出項目はありません。すべてのファクトチェック点検が完了しています！</p>
+          </div>
         ) : (
+          /* 1件ずつ集中処理のフォーカスカード */
           <div className="space-y-2">
-            {items.map((it) => (
-              <FactCheckQueueCard key={it.id} item={it} onActed={(id) => setItems((prev) => prev.filter((x) => x.id !== id))} />
-            ))}
+            <div className="bg-stone-100 p-2.5 rounded-xl text-xs text-stone-600 font-extrabold flex justify-between items-center">
+              <span>🎯 目の前の1件に集中して片付ける (1 / {items.length} 件目を点検中)</span>
+              <span>1件片付けると自動で次のカードへ進みます</span>
+            </div>
+            <FactCheckQueueCard item={items[0]} onActed={(id) => setItems((prev) => prev.filter((x) => x.id !== id))} />
           </div>
         )}
       </div>
