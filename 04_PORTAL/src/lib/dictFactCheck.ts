@@ -86,7 +86,11 @@ export interface QueuedIssue {
   champion: string;
   issue_type: 'contradiction' | 'unconfirmed_source' | 'possible_fact_error' | 'invalid_champion_tag';
   summary: string;
-  detail?: any;
+  detail?: {
+    claim_a?: string;
+    claim_b?: string;
+    conflict_reason?: string;
+  };
   source_refs?: any;
 }
 
@@ -430,7 +434,7 @@ export function buildEditableBlocks(bundle: ChampionSourceBundle): { editable: E
   return { editable, linked };
 }
 
-async function factCheckChampion(supabase: any, bundle: ChampionSourceBundle): Promise<FactCheckResult[]> {
+async function factCheckChampion(supabase: any, bundle: ChampionSourceBundle): Promise<QueuedIssue[]> {
   // 過去に人間が確定した訂正情報。これを「既に解決済み」として扱わせることで、
   // 同じ指摘を再度キューに積み続ける(再発)のを防ぐ。
   const { data: corrections } = await supabase
@@ -457,13 +461,35 @@ ${abilityBlock}${correctionsBlock}
 ${parts.join('\n\n---\n\n')}
 
 以下の3種類を判定してください:
-1. 矛盾(contradiction): 異なる出典間で結論が明確に矛盾している記述（例: 一方は「対面有利」、他方は「対面不利」）。パッチ変化による自然な評価の変化は矛盾に含めない。
-2. 未確証(unconfirmed_source): 1つの出典にしか出てこない、具体的すぎる断定（例: 特定の秒数・数値の言い切り）で、他の出典で裏取りできないもの。一般的な内容や複数出典で一致している内容は含めない。
-3. 事実誤りの疑い(fact_error): 公式スキル情報と矛盾する記述、または実在しないスキル名・効果への言及。
-上記の「過去に確定した訂正」に既に対応済みの内容（正しい情報の方に沿っている記述）は問題として指摘しないこと。逆に、訂正後もまだ誤った内容(「誤り」欄の内容)がどこかに残っている場合は事実誤りの疑いとして指摘すること。
+1. 矛盾(contradiction): 異なる出典間で結論が明確に矛盾している記述（例: 一方は「対面有利」、他方は「対面不利」）。必ず「引っかかった実際の記述A（抜粋テキスト）」と「食い違っている実際の記述B（抜粋テキスト）」をピンポイントで抽出してください。
+2. 未確証(unconfirmed_source): 1つの出典にしか出てこない、具体的すぎる断定（例: 特定の秒数・数値の言い切り）で、他の出典で裏取りできないもの。
+3. 事実誤りの疑い(fact_error): 公式スキル情報と矛盾する記述、または実在しないスキル名・効果への言及。実際の誤った記述をピンポイントで抽出してください。
 
 必ず以下のJSON形式のみ出力（前置き・コードブロック禁止、該当が無い項目は空配列）:
-{"contradictions":[{"summary":"<40字以内>"}],"unconfirmed":[{"summary":"<40字以内>"}],"factErrors":[{"summary":"<40字以内>"}]}`;
+{
+  "contradictions": [
+    {
+      "summary": "<40字以内の概要>",
+      "claim_a": "<引っかかった実際の記述Aの要点・抜粋テキスト (例: 【対面メモ vs Ahri】6後も有利に立ち回れる)>",
+      "claim_b": "<食い違っている実際の記述Bの要点・抜粋テキスト (例: 【強み】6後はウルトでワンコンされるため不利)>",
+      "conflict_reason": "<どこがどう食い違っているのかの具体的理由>"
+    }
+  ],
+  "unconfirmed": [
+    {
+      "summary": "<40字以内の概要>",
+      "claim_a": "<該当する具体的な断定記述テキスト>",
+      "conflict_reason": "<他の情報源で裏取りできない理由>"
+    }
+  ],
+  "factErrors": [
+    {
+      "summary": "<40字以内の概要>",
+      "claim_a": "<実際に公式情報と矛盾している具体的な記述テキスト>",
+      "conflict_reason": "<公式情報との矛盾理由>"
+    }
+  ]
+}`;
 
   const contentHash = createHash('sha1')
     .update(parts.join('|') + '||' + knownCorrections.map((c) => c.wrong_claim + c.correct_info).join('|'))
@@ -471,7 +497,7 @@ ${parts.join('\n\n---\n\n')}
   const raw = await callGeminiWithRetry(prompt, {
     model: 'gemini-3.1-flash-lite',
     temperature: 0.2,
-    maxOutputTokens: 700,
+    maxOutputTokens: 900,
     maxRetries: 2,
     cacheKey: `factcheck:${bundle.champion}:${contentHash}`,
   });
@@ -483,10 +509,47 @@ ${parts.join('\n\n---\n\n')}
     const e = cleaned.lastIndexOf('}');
     if (s < 0 || e <= s) return [];
     const parsed = JSON.parse(cleaned.slice(s, e + 1));
-    const issues: FactCheckResult[] = [];
-    (parsed.contradictions || []).forEach((c: any) => c?.summary && issues.push({ issue_type: 'contradiction', summary: String(c.summary).slice(0, 100) }));
-    (parsed.unconfirmed || []).forEach((c: any) => c?.summary && issues.push({ issue_type: 'unconfirmed_source', summary: String(c.summary).slice(0, 100) }));
-    (parsed.factErrors || []).forEach((c: any) => c?.summary && issues.push({ issue_type: 'possible_fact_error', summary: String(c.summary).slice(0, 100) }));
+    const issues: QueuedIssue[] = [];
+    (parsed.contradictions || []).forEach((c: any) => {
+      if (c?.summary) {
+        issues.push({
+          champion: bundle.champion,
+          issue_type: 'contradiction',
+          summary: String(c.summary).slice(0, 100),
+          detail: {
+            claim_a: c.claim_a ? String(c.claim_a) : undefined,
+            claim_b: c.claim_b ? String(c.claim_b) : undefined,
+            conflict_reason: c.conflict_reason ? String(c.conflict_reason) : undefined,
+          },
+        });
+      }
+    });
+    (parsed.unconfirmed || []).forEach((c: any) => {
+      if (c?.summary) {
+        issues.push({
+          champion: bundle.champion,
+          issue_type: 'unconfirmed_source',
+          summary: String(c.summary).slice(0, 100),
+          detail: {
+            claim_a: c.claim_a ? String(c.claim_a) : undefined,
+            conflict_reason: c.conflict_reason ? String(c.conflict_reason) : undefined,
+          },
+        });
+      }
+    });
+    (parsed.factErrors || []).forEach((c: any) => {
+      if (c?.summary) {
+        issues.push({
+          champion: bundle.champion,
+          issue_type: 'possible_fact_error',
+          summary: String(c.summary).slice(0, 100),
+          detail: {
+            claim_a: c.claim_a ? String(c.claim_a) : undefined,
+            conflict_reason: c.conflict_reason ? String(c.conflict_reason) : undefined,
+          },
+        });
+      }
+    });
     return issues;
   } catch {
     return [];
@@ -502,7 +565,7 @@ ${parts.join('\n\n---\n\n')}
  * 二重にかかっていた。同じ内容(issue_type+summary)が既にpendingで存在する場合は
  * 挿入対象から除外する。
  */
-async function filterAlreadyPendingIssues(supabase: any, champion: string, issues: FactCheckResult[]): Promise<FactCheckResult[]> {
+async function filterAlreadyPendingIssues(supabase: any, champion: string, issues: QueuedIssue[]): Promise<QueuedIssue[]> {
   if (issues.length === 0) return issues;
   const { data: existing } = await supabase
     .from('dict_fact_check_queue')
@@ -564,6 +627,7 @@ export async function runFactCheckBatch(supabase: any, offset: number, limit: nu
           champion: champ,
           issue_type: i.issue_type,
           summary: i.summary,
+          detail: i.detail || null,
           source_refs: sourceTables,
           status: 'pending',
         }));
@@ -610,6 +674,7 @@ export async function runFactCheckForChampion(supabase: any, champion: string): 
     champion,
     issue_type: i.issue_type,
     summary: i.summary,
+    detail: i.detail || null,
     source_refs: sourceTables,
     status: 'pending',
   }));

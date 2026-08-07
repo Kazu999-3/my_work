@@ -9,6 +9,11 @@ export interface QueueItem {
   champion: string;
   issue_type: 'contradiction' | 'unconfirmed_source' | 'possible_fact_error' | 'invalid_champion_tag';
   summary: string;
+  detail?: {
+    claim_a?: string;
+    claim_b?: string;
+    conflict_reason?: string;
+  };
   source_refs: any;
   status: string;
   created_at: string;
@@ -31,10 +36,8 @@ export default function FactCheckQueueCard({ item, onActed }: { item: QueueItem;
   const [fixInput, setFixInput] = useState('');
   const [enemyInput, setEnemyInput] = useState('');
   const [acting, setActing] = useState(false);
-  // 矛盾(contradiction)はAIが読んだ複数の情報源のうちどちらが正しいかを比較しないと
-  // 判断できないため、デフォルトで元データを開いておく(2026-08-05発覚: 従来は毎回
-  // 「元データを確認・編集する」を手動で開く必要があった)。
-  const [showBlocks, setShowBlocks] = useState(isContradiction);
+  // 全情報源の垂れ流し表示を防ぎ、ピンポイント抽出対比カードを最優先表示するためデフォルトはfalse
+  const [showBlocks, setShowBlocks] = useState(false);
   const [error, setError] = useState('');
 
   const act = async (
@@ -87,7 +90,58 @@ export default function FactCheckQueueCard({ item, onActed }: { item: QueueItem;
           </a>
         )}
       </div>
-      <p className="text-xs text-stone-700 mt-1.5">{it.summary}</p>
+      <p className="text-xs text-stone-700 mt-1.5 font-bold">{it.summary}</p>
+
+      {/* ⚡ AIがピンポイント抽出した矛盾・問題箇所の比較対比カード ⚡ */}
+      {it.detail && (it.detail.claim_a || it.detail.claim_b) && (
+        <div className="mt-3 p-3.5 rounded-xl border border-rose-300 bg-rose-50/60 space-y-3 shadow-xs">
+          <div className="text-xs font-black text-rose-900 flex items-center gap-1.5 border-b border-rose-200 pb-2">
+            <span className="text-base">⚡</span> AIが検出したピンポイントの矛盾・不整合箇所
+          </div>
+
+          {it.detail.conflict_reason && (
+            <p className="text-xs text-stone-800 bg-white/90 p-2.5 rounded-lg border border-rose-200 font-bold leading-relaxed">
+              💡 <strong className="text-rose-900">食い違いの理由:</strong> {it.detail.conflict_reason}
+            </p>
+          )}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+            {/* 記述 A */}
+            {it.detail.claim_a && (
+              <div className="p-3 rounded-xl bg-white border border-rose-200 space-y-2 flex flex-col justify-between shadow-2xs">
+                <div>
+                  <span className="font-extrabold text-rose-800 text-[11px] block mb-1">【記述 A】</span>
+                  <p className="text-stone-800 leading-relaxed font-mono text-[11px] bg-stone-50 p-2 rounded border border-stone-200">{it.detail.claim_a}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => pickCorrect('記述 A', it.detail?.claim_a || '')}
+                  className="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[11px] font-extrabold transition flex items-center justify-center gap-1 w-full mt-2 shadow-xs cursor-pointer"
+                >
+                  <Check size={13} /> ✅ 記述 A を正しい情報として即時採用
+                </button>
+              </div>
+            )}
+
+            {/* 記述 B */}
+            {it.detail.claim_b && (
+              <div className="p-3 rounded-xl bg-white border border-rose-200 space-y-2 flex flex-col justify-between shadow-2xs">
+                <div>
+                  <span className="font-extrabold text-rose-800 text-[11px] block mb-1">【記述 B (矛盾)】</span>
+                  <p className="text-stone-800 leading-relaxed font-mono text-[11px] bg-stone-50 p-2 rounded border border-stone-200">{it.detail.claim_b}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => pickCorrect('記述 B', it.detail?.claim_b || '')}
+                  className="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[11px] font-extrabold transition flex items-center justify-center gap-1 w-full mt-2 shadow-xs cursor-pointer"
+                >
+                  <Check size={13} /> ✅ 記述 B を正しい情報として即時採用
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* invalid_champion_tagはchampion列自体がゴミ値のことが多く、辞典リンクが
           意味を持たないため、参照元レコードの中身をここに直接プレビュー表示する */}
