@@ -18,7 +18,7 @@ export interface QueueItem {
   status: string;
   created_at: string;
   sourcePreview?: { title: string; body: string; url?: string };
-  championBlocks?: { editable: EditableSourceBlock[]; linked: { key: string; label: string; value: string; url: string }[] };
+  championBlocks?: { editable: EditableSourceBlock[]; linked: { key: string; table?: 'personal_knowledge'; id?: number; label: string; value: string; url: string }[] };
 }
 
 const ISSUE_LABEL: Record<string, { label: string; cls: string }> = {
@@ -64,8 +64,30 @@ export default function FactCheckQueueCard({ item, onActed }: { item: QueueItem;
     } catch (e: any) { setError(e.message); } finally { setActing(false); }
   };
 
+  // 該当する問題レコード・記事のみを厳密抽出（無関係な大量の対面メモや分析をノイズ除去）
+  const filteredEditable = (it.championBlocks?.editable || []).filter((b) => {
+    if (!Array.isArray(it.source_refs) || it.source_refs.length === 0) return true;
+    return it.source_refs.some((ref: any) => {
+      const targetTable = typeof ref === 'string' ? ref : ref.table;
+      const targetId = typeof ref === 'object' ? ref.id : undefined;
+      if (b.table !== targetTable) return false;
+      if (targetId !== undefined && b.id !== undefined) return b.id === targetId;
+      return true;
+    });
+  });
+
+  const filteredLinked = (it.championBlocks?.linked || []).filter((b) => {
+    if (!Array.isArray(it.source_refs) || it.source_refs.length === 0) return true;
+    return it.source_refs.some((ref: any) => {
+      const targetTable = typeof ref === 'string' ? ref : ref.table;
+      const targetId = typeof ref === 'object' ? ref.id : undefined;
+      if (b.table !== targetTable) return false;
+      if (targetId !== undefined && b.id !== undefined) return b.id === targetId;
+      return true;
+    });
+  });
+
   // 矛盾レビューで「Aが正しい」「Bが正しい」のようにワンクリックで選べるようにする。
-  // record_correctionにそのままthenブロックの内容を渡し、自由入力欄への手打ちを不要にする。
   const pickCorrect = (label: string, value: string) => {
     if (!confirm(`「${label}」の内容を正しい情報として記録します。よろしいですか？\n\n${value.slice(0, 200)}${value.length > 200 ? '…' : ''}`)) return;
     act('record_correction', `[${label}] ${value}`);
@@ -106,7 +128,6 @@ export default function FactCheckQueueCard({ item, onActed }: { item: QueueItem;
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-            {/* 記述 A */}
             {it.detail.claim_a && (
               <div className="p-3 rounded-xl bg-white border border-rose-200 space-y-2 flex flex-col justify-between shadow-2xs">
                 <div>
@@ -122,8 +143,6 @@ export default function FactCheckQueueCard({ item, onActed }: { item: QueueItem;
                 </button>
               </div>
             )}
-
-            {/* 記述 B */}
             {it.detail.claim_b && (
               <div className="p-3 rounded-xl bg-white border border-rose-200 space-y-2 flex flex-col justify-between shadow-2xs">
                 <div>
@@ -143,8 +162,43 @@ export default function FactCheckQueueCard({ item, onActed }: { item: QueueItem;
         </div>
       )}
 
-      {/* invalid_champion_tagはchampion列自体がゴミ値のことが多く、辞典リンクが
-          意味を持たないため、参照元レコードの中身をここに直接プレビュー表示する */}
+      {/* 🎯 指摘該当記事・記載内容のみ（無関係な何十件ものノイズを排して1〜2件のみ強調表示） */}
+      {it.issue_type !== 'invalid_champion_tag' && (filteredEditable.length > 0 || filteredLinked.length > 0) && (
+        <div className="mt-3 p-3.5 rounded-xl border border-sky-300 bg-sky-50/70 space-y-2">
+          <div className="text-xs font-black text-sky-950 flex items-center justify-between border-b border-sky-200 pb-2">
+            <span className="flex items-center gap-1.5">
+              <span className="text-base">🎯</span> 指摘該当記事・記載内容（確認対象）
+            </span>
+            <span className="text-[10px] bg-sky-200 text-sky-900 px-2 py-0.5 rounded-full font-bold">
+              該当 {filteredEditable.length + filteredLinked.length} 件のみ抽出
+            </span>
+          </div>
+
+          <div className="space-y-2 pt-1 max-h-60 overflow-y-auto pr-1">
+            {filteredEditable.map((b) => (
+              <FactCheckSourceBlock key={b.key} block={b} onPickAsCorrect={isContradiction ? pickCorrect : undefined} />
+            ))}
+            {filteredLinked.map((b) => (
+              <div key={b.key} className="rounded-lg border border-violet-200 bg-white p-3 text-xs shadow-2xs">
+                <div className="flex items-center justify-between gap-2 mb-1">
+                  <span className="font-bold text-violet-900">{b.label}</span>
+                  {isContradiction && (
+                    <button onClick={() => pickCorrect(b.label, b.value)} className="text-emerald-700 hover:text-emerald-900 font-bold flex items-center gap-0.5 shrink-0 text-[11px]">
+                      <Check size={12} /> これが正しい
+                    </button>
+                  )}
+                </div>
+                <p className="text-stone-800 font-mono text-[11px] whitespace-pre-wrap leading-relaxed bg-stone-50 p-2 rounded border border-stone-200">{b.value.slice(0, 400)}{b.value.length >= 400 ? '…' : ''}</p>
+                <a href={b.url} target="_blank" rel="noreferrer" className="text-sky-700 hover:underline flex items-center gap-0.5 mt-1.5 w-fit text-[10px] font-bold">
+                  ナレッジ記事を直接編集する <ExternalLink size={10} />
+                </a>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* invalid_champion_tagはchampion列自体がゴミ値のことが多く、参照元レコードの中身をここに直接プレビュー表示する */}
       {it.issue_type === 'invalid_champion_tag' && it.sourcePreview && (
         <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50/70 p-2.5 text-xs">
           <div className="font-bold text-amber-900">📄 {it.sourcePreview.title || '(タイトルなし)'}</div>
@@ -156,49 +210,6 @@ export default function FactCheckQueueCard({ item, onActed }: { item: QueueItem;
               className="text-sky-700 hover:underline flex items-center gap-0.5 mt-1 w-fit">
               元記事を開く <ExternalLink size={10} />
             </a>
-          )}
-        </div>
-      )}
-
-      {/* contradiction/unconfirmed_source/possible_fact_errorはチャンピオン単位で
-          複数ソースを横断した判定のため、summary(40字程度)だけでは根拠を検証できない。
-          AIが実際に読んだブロックをその場で直接編集・削除できるようにする */}
-      {it.issue_type !== 'invalid_champion_tag' && it.championBlocks && (it.championBlocks.editable.length > 0 || it.championBlocks.linked.length > 0) && (
-        <div className="mt-2">
-          <button onClick={() => setShowBlocks(!showBlocks)} className="flex items-center gap-1 text-[11px] text-sky-700 hover:underline">
-            <FileText size={11} />
-            {isContradiction
-              ? (showBlocks ? '情報源の比較を閉じる' : '矛盾している情報源を比較する')
-              : (showBlocks ? '元データを閉じる' : '元データを確認・編集する')}
-            {showBlocks ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
-          </button>
-          {isContradiction && showBlocks && (
-            <p className="text-[11px] text-stone-500 mt-1">
-              下の情報源を見比べて、正しい方の「✅ これが正しい」を押してください。どちらも不正確な場合は下の自由入力欄を使ってください。
-            </p>
-          )}
-          {showBlocks && (
-            <div className="mt-1.5 space-y-1.5 max-h-96 overflow-y-auto pr-1">
-              {it.championBlocks.editable.map((b) => (
-                <FactCheckSourceBlock key={b.key} block={b} onPickAsCorrect={isContradiction ? pickCorrect : undefined} />
-              ))}
-              {it.championBlocks.linked.map((b) => (
-                <div key={b.key} className="rounded-lg border border-violet-200 bg-violet-50/60 p-2.5 text-[11px]">
-                  <div className="flex items-center justify-between gap-2 mb-1">
-                    <span className="font-bold text-violet-900">{b.label}</span>
-                    {isContradiction && (
-                      <button onClick={() => pickCorrect(b.label, b.value)} className="text-emerald-700 hover:text-emerald-900 font-bold flex items-center gap-0.5 shrink-0">
-                        <Check size={11} /> これが正しい
-                      </button>
-                    )}
-                  </div>
-                  <p className="text-stone-700 whitespace-pre-wrap leading-relaxed">{b.value.slice(0, 300)}{b.value.length >= 300 ? '…' : ''}</p>
-                  <a href={b.url} target="_blank" rel="noreferrer" className="text-sky-700 hover:underline flex items-center gap-0.5 mt-1 w-fit">
-                    ナレッジ記事を編集する <ExternalLink size={10} />
-                  </a>
-                </div>
-              ))}
-            </div>
           )}
         </div>
       )}
