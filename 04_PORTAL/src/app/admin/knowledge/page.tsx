@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Brain, Search, Plus, Trash2, Calendar, Link as LinkIcon, RefreshCw, FileText, ChevronDown, ChevronUp, BookOpen, Layers, Sparkles, Video } from 'lucide-react';
+import { Brain, Search, Plus, Trash2, Calendar, Link as LinkIcon, RefreshCw, FileText, ChevronDown, ChevronUp, BookOpen, Layers, Sparkles, Video, MessageSquare } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import YoutubeQueueManager from '../youtube/YoutubeQueueManager';
@@ -12,6 +12,7 @@ import DictInsightsPanel from './DictInsightsPanel';
 import DictFactCheckPanel from './DictFactCheckPanel';
 import RevisionsPanel from './RevisionsPanel';
 import FreshnessPanel from './FreshnessPanel';
+import DiscordImportPanel from './DiscordImportPanel';
 import { supabaseBrowser } from '../../../lib/supabaseBrowserClient';
 
 interface KnowledgeItem {
@@ -45,8 +46,8 @@ function KnowledgeBaseContent() {
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
-  // ページ内タブ: ナレッジ一覧 or チャンプ深掘り or 動画キュー or 攻略ライブラリ or 鮮度レビュー
-  const [activeTab, setActiveTab] = useState<'knowledge' | 'research' | 'video' | 'library' | 'maintenance' | 'review'>('knowledge');
+  // ページ内タブ: ナレッジ一覧 or チャンプ深掘り or 動画キュー or 攻略ライブラリ or 鮮度レビュー or Discordインポート
+  const [activeTab, setActiveTab] = useState<'knowledge' | 'research' | 'video' | 'library' | 'maintenance' | 'review' | 'discord'>('knowledge');
   const [isResearchModalOpen, setIsResearchModalOpen] = useState(false);
 
   const searchParams = useSearchParams();
@@ -54,7 +55,7 @@ function KnowledgeBaseContent() {
   // URLパラメータ (?tab=research等) の自動反映
   useEffect(() => {
     const tabParam = searchParams?.get('tab');
-    if (tabParam && ['knowledge', 'research', 'video', 'library', 'maintenance', 'review'].includes(tabParam)) {
+    if (tabParam && ['knowledge', 'research', 'video', 'library', 'maintenance', 'review', 'discord'].includes(tabParam)) {
       setActiveTab(tabParam as any);
     }
   }, [searchParams]);
@@ -362,6 +363,7 @@ function KnowledgeBaseContent() {
         <div className="flex gap-2 border-b border-gray-200 pb-4 mb-8 overflow-x-auto items-center">
           {[
             { id: 'knowledge', label: '📖 ナレッジ一覧', icon: BookOpen },
+            { id: 'discord', label: '💬 Discord AIインポート', icon: MessageSquare },
             { id: 'video', label: '⏳ 動画解析キュー', icon: Video },
             { id: 'library', label: '🗂️ 攻略ライブラリ', icon: Layers },
           ].map((tab) => {
@@ -383,6 +385,7 @@ function KnowledgeBaseContent() {
         </div>
 
         {/* --- タブ別コンテンツ --- */}
+        {activeTab === 'discord' && <DiscordImportPanel />}
         {activeTab === 'video' && <YoutubeQueueManager />}
         {activeTab === 'library' && <LibraryTabContent />}
 
