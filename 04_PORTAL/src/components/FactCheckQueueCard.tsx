@@ -13,6 +13,7 @@ export interface QueueItem {
     claim_a?: string;
     claim_b?: string;
     conflict_reason?: string;
+    target_field?: string;
   };
   source_refs: any;
   status: string;
@@ -65,7 +66,13 @@ export default function FactCheckQueueCard({ item, onActed }: { item: QueueItem;
   };
 
   // 該当する問題レコード・記事のみを厳密抽出（無関係な大量の対面メモや分析をノイズ除去）
+  // 指摘テーマ（例: target_field = 'power_spikes'）がある場合は、そのフィールドのテキスト『のみ』をピンポイント切り抜き抽出！
+  const targetField = it.detail?.target_field;
+
   const filteredEditable = (it.championBlocks?.editable || []).filter((b) => {
+    if (targetField && b.field && b.field !== targetField) {
+      return false; // 無関係な全フィールド（ルーン、弱み等）を100%遮断
+    }
     if (!Array.isArray(it.source_refs) || it.source_refs.length === 0) return true;
     return it.source_refs.some((ref: any) => {
       const targetTable = typeof ref === 'string' ? ref : ref.table;

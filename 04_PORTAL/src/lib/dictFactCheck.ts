@@ -90,6 +90,7 @@ export interface QueuedIssue {
     claim_a?: string;
     claim_b?: string;
     conflict_reason?: string;
+    target_field?: string;
   };
   source_refs?: any;
 }
@@ -455,29 +456,35 @@ async function factCheckChampion(supabase: any, bundle: ChampionSourceBundle): P
     ? `\n【過去に人間が確定した訂正（既に解決済み。同じ内容を再度指摘しないこと）】\n${knownCorrections.map((c) => `- 誤り: ${c.wrong_claim} → 正しくは: ${c.correct_info}`).join('\n')}\n`
     : '';
 
-  const prompt = `あなたはLoLの厳格なファクトチェッカーです。以下は「${bundle.champion}」について複数の場所（辞典/コーチAI知識層/ナレッジ）に保存されている記述です。
-これらはYouTube動画の自動文字起こし→AI要約→AI統合という無検証の経路で生成されたものが多く含まれ、誤りが混入している可能性があります。
+  const prompt = `あなたはLoLの超厳格なファクトチェッカーです。以下は「${bundle.champion}」について複数の場所（辞典/コーチAI知識層/ナレッジ）に保存されている記述です。
 ${abilityBlock}${correctionsBlock}
 ${parts.join('\n\n---\n\n')}
 
+【厳格な指示】
+1. 微細な言い回しの違いや過剰な指摘は一切行わず、ユーザーが確認すべき【最も本質的で重大な問題のみ】を厳選してください。
+2. 重複する指摘は完全に除外し、各カテゴリ（矛盾, 未確証, 事実誤り）で【最大2件まで】しか出力してはいけません（該当がなければ0件）。
+3. 判定時には、対象となっている具体的なデータフィールド（例: "power_spikes", "strengths", "weaknesses", "build_runes", "strategy", "counter_champions", "must_ban_champions", "matchup_sentinel"）を "target_field" に明記してください。
+
 以下の3種類を判定してください:
-1. 矛盾(contradiction): 異なる出典間で結論が明確に矛盾している記述（例: 一方は「対面有利」、他方は「対面不利」）。必ず「引っかかった実際の記述A（抜粋テキスト）」と「食い違っている実際の記述B（抜粋テキスト）」をピンポイントで抽出してください。
-2. 未確証(unconfirmed_source): 1つの出典にしか出てこない、具体的すぎる断定（例: 特定の秒数・数値の言い切り）で、他の出典で裏取りできないもの。
-3. 事実誤りの疑い(fact_error): 公式スキル情報と矛盾する記述、または実在しないスキル名・効果への言及。実際の誤った記述をピンポイントで抽出してください。
+1. 矛盾(contradiction): 異なる出典間で結論が明確に矛盾している記述（例: 一方は「対面有利」、他方は「対面不利」）。
+2. 未確証(unconfirmed_source): 1つの出典にしか出てこない、具体的すぎる断定。
+3. 事実誤りの疑い(fact_error): 公式スキル情報と矛盾する記述、または実在しないスキル名・効果への言及。
 
 必ず以下のJSON形式のみ出力（前置き・コードブロック禁止、該当が無い項目は空配列）:
 {
   "contradictions": [
     {
-      "summary": "<40字以内の概要>",
-      "claim_a": "<引っかかった実際の記述Aの要点・抜粋テキスト (例: 【対面メモ vs Ahri】6後も有利に立ち回れる)>",
-      "claim_b": "<食い違っている実際の記述Bの要点・抜粋テキスト (例: 【強み】6後はウルトでワンコンされるため不利)>",
+      "summary": "<40字以内の概要 (例: Wukongのパワースパイク時期の矛盾)>",
+      "target_field": "<"power_spikes" | "strengths" | "weaknesses" | "build_runes" | "strategy" | "matchup_sentinel">",
+      "claim_a": "<引っかかった実際の記述Aの要点・抜粋テキスト (例: 【パワー: 中盤】)>",
+      "claim_b": "<食い違っている実際の記述Bの要点・抜粋テキスト (例: 【パワー: 35分以降弱体化】)>",
       "conflict_reason": "<どこがどう食い違っているのかの具体的理由>"
     }
   ],
   "unconfirmed": [
     {
       "summary": "<40字以内の概要>",
+      "target_field": "<"power_spikes" | "strengths" | "weaknesses" | "build_runes" | "strategy" | "matchup_sentinel">",
       "claim_a": "<該当する具体的な断定記述テキスト>",
       "conflict_reason": "<他の情報源で裏取りできない理由>"
     }
@@ -485,6 +492,7 @@ ${parts.join('\n\n---\n\n')}
   "factErrors": [
     {
       "summary": "<40字以内の概要>",
+      "target_field": "<"power_spikes" | "strengths" | "weaknesses" | "build_runes" | "strategy" | "matchup_sentinel">",
       "claim_a": "<実際に公式情報と矛盾している具体的な記述テキスト>",
       "conflict_reason": "<公式情報との矛盾理由>"
     }
@@ -496,8 +504,8 @@ ${parts.join('\n\n---\n\n')}
     .digest('hex').slice(0, 16);
   const raw = await callGeminiWithRetry(prompt, {
     model: 'gemini-3.1-flash-lite',
-    temperature: 0.2,
-    maxOutputTokens: 900,
+    temperature: 0.1,
+    maxOutputTokens: 800,
     maxRetries: 2,
     cacheKey: `factcheck:${bundle.champion}:${contentHash}`,
   });
@@ -510,7 +518,8 @@ ${parts.join('\n\n---\n\n')}
     if (s < 0 || e <= s) return [];
     const parsed = JSON.parse(cleaned.slice(s, e + 1));
     const issues: QueuedIssue[] = [];
-    (parsed.contradictions || []).forEach((c: any) => {
+
+    (parsed.contradictions || []).slice(0, 2).forEach((c: any) => {
       if (c?.summary) {
         issues.push({
           champion: bundle.champion,
@@ -520,11 +529,12 @@ ${parts.join('\n\n---\n\n')}
             claim_a: c.claim_a ? String(c.claim_a) : undefined,
             claim_b: c.claim_b ? String(c.claim_b) : undefined,
             conflict_reason: c.conflict_reason ? String(c.conflict_reason) : undefined,
+            target_field: c.target_field ? String(c.target_field) : undefined,
           },
         });
       }
     });
-    (parsed.unconfirmed || []).forEach((c: any) => {
+    (parsed.unconfirmed || []).slice(0, 2).forEach((c: any) => {
       if (c?.summary) {
         issues.push({
           champion: bundle.champion,
@@ -533,11 +543,12 @@ ${parts.join('\n\n---\n\n')}
           detail: {
             claim_a: c.claim_a ? String(c.claim_a) : undefined,
             conflict_reason: c.conflict_reason ? String(c.conflict_reason) : undefined,
+            target_field: c.target_field ? String(c.target_field) : undefined,
           },
         });
       }
     });
-    (parsed.factErrors || []).forEach((c: any) => {
+    (parsed.factErrors || []).slice(0, 2).forEach((c: any) => {
       if (c?.summary) {
         issues.push({
           champion: bundle.champion,
@@ -546,6 +557,7 @@ ${parts.join('\n\n---\n\n')}
           detail: {
             claim_a: c.claim_a ? String(c.claim_a) : undefined,
             conflict_reason: c.conflict_reason ? String(c.conflict_reason) : undefined,
+            target_field: c.target_field ? String(c.target_field) : undefined,
           },
         });
       }
