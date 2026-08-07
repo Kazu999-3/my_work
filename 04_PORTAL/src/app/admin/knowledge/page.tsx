@@ -13,6 +13,7 @@ import DictFactCheckPanel from './DictFactCheckPanel';
 import RevisionsPanel from './RevisionsPanel';
 import FreshnessPanel from './FreshnessPanel';
 import DiscordImportPanel from './DiscordImportPanel';
+import InventoryAuditPanel from './InventoryAuditPanel';
 import { supabaseBrowser } from '../../../lib/supabaseBrowserClient';
 
 interface KnowledgeItem {
@@ -363,6 +364,7 @@ function KnowledgeBaseContent() {
         <div className="flex gap-2 border-b border-gray-200 pb-4 mb-8 overflow-x-auto items-center">
           {[
             { id: 'knowledge', label: '📖 ナレッジ一覧', icon: BookOpen },
+            { id: 'maintenance', label: '🧹 データ棚卸し・点検', icon: RefreshCw },
             { id: 'discord', label: '💬 Discord AIインポート', icon: MessageSquare },
             { id: 'video', label: '⏳ 動画解析キュー', icon: Video },
             { id: 'library', label: '🗂️ 攻略ライブラリ', icon: Layers },
@@ -391,6 +393,7 @@ function KnowledgeBaseContent() {
 
         {activeTab === 'maintenance' && (
           <div className="space-y-8 animate-in">
+            <InventoryAuditPanel />
             <FreshnessPanel />
             <DictFactCheckPanel />
             <DictReviewPanel />
