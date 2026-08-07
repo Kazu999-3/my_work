@@ -51,12 +51,10 @@ def generate_content_safe(client, prompt, model_id=None, config=None, feature_na
     if not client:
         return "⚠️ Gemini API クライアントが初期化されていません。"
 
-    # 試行するモデルの優先順リスト (公式実在モデル名)
+    # 試行するモデルの優先順リスト (Google GenAI SDK現行サポートモデル)
     base_models = [
-        "gemini-2.0-flash-lite",
         "gemini-2.0-flash",
-        "gemini-1.5-flash",
-        "gemini-1.5-pro",
+        "gemini-2.0-flash-lite",
     ]
     if model_id and model_id in base_models:
         models_to_try = [model_id] + [m for m in base_models if m != model_id]
