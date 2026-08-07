@@ -35,6 +35,11 @@ export default function DictHealthDashboard() {
 
   const [loading, setLoading] = useState(true);
   const [hubTab, setHubTab] = useState<'health' | 'factcheck' | 'revisions' | 'auto_update'>('health');
+  const [openFactCheck, setOpenFactCheck] = useState(false);
+  const [openInsights, setOpenInsights] = useState(false);
+  const [openRevisions, setOpenRevisions] = useState(false);
+  const [openFreshness, setOpenFreshness] = useState(false);
+
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'verified' | 'ai_generated' | 'stale'>('ALL');
   const [roleFilter, setRoleFilter] = useState<'ALL' | 'TOP' | 'JG' | 'MID' | 'ADC' | 'SUP'>('ALL');
@@ -293,7 +298,7 @@ export default function DictHealthDashboard() {
         </div>
 
         {/* 集計サマリーカード */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
           <button
             onClick={() => setStatusFilter('verified')}
             className={`p-5 rounded-2xl border text-left transition ${
@@ -347,6 +352,85 @@ export default function DictHealthDashboard() {
             </div>
             <p className="text-[11px] text-red-700/80 mt-2">パッチ遅れ・データ未入力（要自動/手動更新）</p>
           </button>
+        </div>
+
+        {/* 🚨 クイックダイレクトナビ（どこを確認すべきかが一目で分かり直接飛べる） */}
+        <div className="bg-gradient-to-r from-amber-600 via-amber-700 to-orange-700 rounded-2xl p-4 shadow-lg text-white mb-8">
+          <div className="flex items-center justify-between flex-wrap gap-2 mb-2.5">
+            <span className="text-xs font-extrabold uppercase tracking-wider flex items-center gap-1.5 text-amber-100">
+              <Activity className="w-4 h-4 animate-pulse text-amber-300" />
+              🚨 あなたの確認・メンテが求められている場所（直行ショートカット）
+            </span>
+            <span className="text-[10px] text-amber-200 font-mono">ワンタップで該当セクションへ自動ジャンプ ➔</span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+            <button
+              onClick={() => {
+                setStatusFilter('stale');
+                const el = document.getElementById('champion-grid-section');
+                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }}
+              className="bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl p-3 text-left transition flex items-center justify-between group"
+            >
+              <div>
+                <span className="text-xs font-black block text-rose-200">🔴 古い・未入力チャンピオン</span>
+                <span className="text-[10px] text-white/80">{data?.summary.stale || 0}件の要更新チャンピオン</span>
+              </div>
+              <span className="text-xs font-bold bg-white/20 px-2 py-1 rounded-lg group-hover:bg-white/30">移動 ➔</span>
+            </button>
+
+            <button
+              onClick={() => {
+                setOpenFactCheck(true);
+                setTimeout(() => {
+                  const el = document.getElementById('fact-check-section');
+                  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 50);
+              }}
+              className="bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl p-3 text-left transition flex items-center justify-between group"
+            >
+              <div>
+                <span className="text-xs font-black block text-cyan-200">🕵️‍♂️ AIファクトチェック指摘</span>
+                <span className="text-[10px] text-white/80">表記ゆれ・矛盾・誤記述の検知</span>
+              </div>
+              <span className="text-xs font-bold bg-white/20 px-2 py-1 rounded-lg group-hover:bg-white/30">移動 ➔</span>
+            </button>
+
+            <button
+              onClick={() => {
+                setOpenFreshness(true);
+                setTimeout(() => {
+                  const el = document.getElementById('freshness-section');
+                  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 50);
+              }}
+              className="bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl p-3 text-left transition flex items-center justify-between group"
+            >
+              <div>
+                <span className="text-xs font-black block text-emerald-200">🍃 ナレッジ鮮度レビュー</span>
+                <span className="text-[10px] text-white/80">更新停滞テーブルの判定</span>
+              </div>
+              <span className="text-xs font-bold bg-white/20 px-2 py-1 rounded-lg group-hover:bg-white/30">移動 ➔</span>
+            </button>
+
+            <button
+              onClick={() => {
+                setOpenRevisions(true);
+                setTimeout(() => {
+                  const el = document.getElementById('revisions-section');
+                  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 50);
+              }}
+              className="bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl p-3 text-left transition flex items-center justify-between group"
+            >
+              <div>
+                <span className="text-xs font-black block text-pink-200">📜 全リビジョン変更履歴</span>
+                <span className="text-[10px] text-white/80">0秒ワンタップ過去復元</span>
+              </div>
+              <span className="text-xs font-bold bg-white/20 px-2 py-1 rounded-lg group-hover:bg-white/30">移動 ➔</span>
+            </button>
+          </div>
         </div>
 
         {/* 今パッチ最優先確認チャンピオン Top 10 */}
@@ -453,7 +537,7 @@ export default function DictHealthDashboard() {
         </div>
 
         {/* グリッドビュー */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div id="champion-grid-section" className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 scroll-mt-6">
           {filteredList.map((champ) => {
             const isVerified = champ.status === 'verified';
             const isAiGenerated = champ.status === 'ai_generated';
@@ -522,43 +606,45 @@ export default function DictHealthDashboard() {
                 </div>
 
                 {/* アクションボタン */}
-                <div className="flex items-center gap-2 pt-2 border-t border-stone-100">
+                <div className="flex items-center gap-2 pt-2 border-t border-stone-100 flex-wrap">
                   <Link
                     href={`/champions?select=${encodeURIComponent(champ.champion)}`}
-                    className="py-1.5 px-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-[11px] font-bold transition text-center flex items-center justify-center gap-1 shadow-sm shrink-0"
-                    title="このチャンピオンの辞典詳細を開き内容を確認・編集します"
+                    className="py-1.5 px-3 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-[11px] font-extrabold transition text-center flex items-center justify-center gap-1 shadow-md w-full"
+                    title="このチャンピオンの辞典詳細を開き内容を確認・直接編集します"
                   >
-                    ✏️ 辞典で直接編集
+                    🎯 直接該当チャンピオンの辞典を開く ➔
                   </Link>
 
-                  {isVerified ? (
-                    <button
-                      onClick={() => handleVerify(champ.champion, 'unverify')}
-                      disabled={actionLoading === champ.champion + '_unverify'}
-                      className="flex-1 py-1.5 px-2 bg-stone-100 hover:bg-stone-200 text-stone-700 rounded-lg text-[11px] font-bold transition text-center disabled:opacity-50"
-                    >
-                      ↩️ 未確認に戻す
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => handleVerify(champ.champion, 'verify')}
-                      disabled={actionLoading === champ.champion + '_verify'}
-                      className="flex-1 py-1.5 px-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[11px] font-bold transition text-center flex items-center justify-center gap-1 shadow-sm disabled:opacity-50"
-                    >
-                      <ShieldCheck className="w-3.5 h-3.5" />
-                      ✅ 人間チェック完了
-                    </button>
-                  )}
+                  <div className="flex items-center gap-1.5 w-full mt-1">
+                    {isVerified ? (
+                      <button
+                        onClick={() => handleVerify(champ.champion, 'unverify')}
+                        disabled={actionLoading === champ.champion + '_unverify'}
+                        className="flex-1 py-1.5 px-2 bg-stone-100 hover:bg-stone-200 text-stone-700 rounded-lg text-[10px] font-bold transition text-center disabled:opacity-50"
+                      >
+                        ↩️ 未確認に戻す
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleVerify(champ.champion, 'verify')}
+                        disabled={actionLoading === champ.champion + '_verify'}
+                        className="flex-1 py-1.5 px-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[10px] font-bold transition text-center flex items-center justify-center gap-1 shadow-sm disabled:opacity-50"
+                      >
+                        <ShieldCheck className="w-3.5 h-3.5" />
+                        ✅ チェック完了
+                      </button>
+                    )}
 
-                  <button
-                    onClick={() => handleVerify(champ.champion, 'enqueue_update')}
-                    disabled={actionLoading === champ.champion + '_enqueue_update'}
-                    title="このチャンピオンのSSOTデータをAIで単体再生成・最新化します"
-                    className="py-1.5 px-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white rounded-lg text-[11px] font-bold transition flex items-center justify-center gap-1 shadow-xs disabled:opacity-50"
-                  >
-                    <Sparkles className={`w-3.5 h-3.5 ${actionLoading === champ.champion + '_enqueue_update' ? 'animate-spin' : ''}`} />
-                    ⚡ AI再生成
-                  </button>
+                    <button
+                      onClick={() => handleVerify(champ.champion, 'enqueue_update')}
+                      disabled={actionLoading === champ.champion + '_enqueue_update'}
+                      title="このチャンピオンのSSOTデータをAIで単体再生成・最新化します"
+                      className="py-1.5 px-2 bg-stone-800 hover:bg-stone-900 text-white rounded-lg text-[10px] font-bold transition flex items-center justify-center gap-1 shadow-xs disabled:opacity-50 shrink-0"
+                    >
+                      <Sparkles className={`w-3.5 h-3.5 ${actionLoading === champ.champion + '_enqueue_update' ? 'animate-spin' : ''}`} />
+                      ⚡ AI再生成
+                    </button>
+                  </div>
                 </div>
               </div>
             );
@@ -575,6 +661,8 @@ export default function DictHealthDashboard() {
         <div id="fact-check-section" className="bg-white rounded-3xl border border-stone-200 p-6 shadow-sm scroll-mt-6">
           <Collapsible
             defaultOpen={false}
+            open={openFactCheck}
+            onToggle={(op) => setOpenFactCheck(op)}
             title={
               <div className="flex items-center gap-2 text-stone-900">
                 <FileCheck className="text-cyan-600 w-5 h-5" />
@@ -591,11 +679,12 @@ export default function DictHealthDashboard() {
           </Collapsible>
         </div>
 
-        {/* 統合パネル2: 📜 変更リビジョン履歴＆ワンタップ復元 */}
         {/* 統合パネル2: 💡 ナレッジ点検 & 蓄積メモ・プロ分析インサイト */}
-        <div className="bg-white rounded-3xl border border-stone-200 p-6 shadow-sm">
+        <div id="insights-section" className="bg-white rounded-3xl border border-stone-200 p-6 shadow-sm scroll-mt-6">
           <Collapsible
             defaultOpen={false}
+            open={openInsights}
+            onToggle={(op) => setOpenInsights(op)}
             title={
               <div className="flex items-center gap-2 text-stone-900">
                 <Sparkles className="text-amber-600 w-5 h-5" />
@@ -613,9 +702,11 @@ export default function DictHealthDashboard() {
         </div>
 
         {/* 統合パネル3: 📜 辞典 ＆ ナレッジ全変更履歴 Diff & 0秒ワンタップ巻き戻し */}
-        <div className="bg-white rounded-3xl border border-stone-200 p-6 shadow-sm">
+        <div id="revisions-section" className="bg-white rounded-3xl border border-stone-200 p-6 shadow-sm scroll-mt-6">
           <Collapsible
             defaultOpen={false}
+            open={openRevisions}
+            onToggle={(op) => setOpenRevisions(op)}
             title={
               <div className="flex items-center gap-2 text-stone-900">
                 <History className="text-pink-600 w-5 h-5" />
@@ -633,9 +724,11 @@ export default function DictHealthDashboard() {
         </div>
 
         {/* 統合パネル4: 🍃 ナレッジ鮮度レビュー & 定期点検 */}
-        <div className="bg-white rounded-3xl border border-stone-200 p-6 shadow-sm">
+        <div id="freshness-section" className="bg-white rounded-3xl border border-stone-200 p-6 shadow-sm scroll-mt-6">
           <Collapsible
             defaultOpen={false}
+            open={openFreshness}
+            onToggle={(op) => setOpenFreshness(op)}
             title={
               <div className="flex items-center gap-2 text-stone-900">
                 <Activity className="text-emerald-600 w-5 h-5" />
