@@ -739,14 +739,6 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                 <RefreshCw size={16} className={fetchingTrend ? "animate-spin" : ""} />
                 {trendPhase === 'running' ? "AI生成中..." : trendPhase === 'pending' ? "順番待ち中..." : fetchingTrend ? "登録中..." : "最新トレンド取得"}
               </button>
-
-              <Link
-                href="/admin/knowledge?tab=review"
-                className="px-4 py-3 bg-white/5 hover:bg-white/10 border border-white/15 text-pink-300 font-bold rounded-xl transition-all flex items-center gap-2 text-sm"
-                title="全チャンピオンの更新履歴・変更リビジョンパネルへ移動"
-              >
-                📜 変更履歴パネルへ ➔
-              </Link>
             </div>
             )}
 
@@ -807,11 +799,16 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                 <Shield size={16} /> 🎯 プレイスタイル分類 ({(dataFields.jg_style?.role || 'JUNGLE').toUpperCase()}基準)
               </h3>
               <button
-                onClick={() => handleOpenHistory('jg_style', 'プレイスタイル分類')}
-                className="text-[11px] font-bold px-2 py-0.5 rounded bg-black/5 hover:bg-amber-100 hover:text-amber-800 text-stone-600 transition-colors flex items-center gap-1 border border-black/10"
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  handleOpenHistory('jg_style', 'プレイスタイル分類');
+                }}
+                className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-black/5 hover:bg-amber-100 hover:text-amber-800 text-stone-700 transition-all flex items-center gap-1 border border-black/10 shadow-xs cursor-pointer"
                 title="この項目の変更履歴を確認"
               >
-                <History size={12} /> 履歴
+                <History size={13} /> 📜 履歴
               </button>
             </div>
             
@@ -928,11 +925,16 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                 <Activity size={16} /> 📈 最新パッチトレンド (自動収集)
               </h3>
               <button
-                onClick={() => handleOpenHistory('patch_meta', '最新パッチトレンド')}
-                className="text-[11px] font-bold px-2 py-0.5 rounded bg-black/5 hover:bg-amber-100 hover:text-amber-800 text-stone-600 transition-colors flex items-center gap-1 border border-black/10"
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  handleOpenHistory('patch_meta', '最新パッチトレンド');
+                }}
+                className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-black/5 hover:bg-amber-100 hover:text-amber-800 text-stone-700 transition-all flex items-center gap-1 border border-black/10 shadow-xs cursor-pointer"
                 title="この項目の変更履歴を確認"
               >
-                <History size={12} /> 履歴
+                <History size={13} /> 📜 履歴
               </button>
             </div>
             {dataFields.patch_meta ? (
@@ -1180,11 +1182,16 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                         <div className="flex items-center justify-between mb-4 pr-6">
                           <h3 className="text-sm font-black flex items-center gap-2 text-pink-600"><FileText size={16} /> {key}</h3>
                           <button
-                            onClick={() => handleOpenHistory('customFields', `カスタム項目: ${key}`)}
-                            className="text-[11px] font-bold px-2 py-0.5 rounded bg-black/5 hover:bg-amber-100 hover:text-amber-800 text-stone-600 transition-colors flex items-center gap-1 border border-black/10"
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              e.preventDefault();
+                              handleOpenHistory('customFields', `カスタム項目: ${key}`);
+                            }}
+                            className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-black/5 hover:bg-amber-100 hover:text-amber-800 text-stone-700 transition-all flex items-center gap-1 border border-black/10 shadow-xs cursor-pointer"
                             title="この項目の変更履歴を確認"
                           >
-                            <History size={12} /> 履歴
+                            <History size={13} /> 📜 履歴
                           </button>
                         </div>
                         <textarea value={val as string} onChange={e => updateCustomField(key, e.target.value)} className="w-full h-28 bg-black/3 border border-black/10 rounded-xl p-3 text-sm text-stone-800 outline-none focus:border-black/20 resize-y shadow-inner transition-colors" placeholder={`${key}を記録...`} />
@@ -1201,16 +1208,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
           </div>
 
           {isAdmin && (
-            <>
-              <ChampionFactCheckPanel champion={selected.id} />
-
-              <div className="glass-panel rounded-2xl border-l-4 border-amber-400 bg-amber-400/5 overflow-hidden col-span-1 md:col-span-2 p-5">
-                <h3 className="text-sm font-black flex items-center gap-2 text-amber-600">
-                  <History size={16} /> 変更履歴
-                </h3>
-                <ChampionRevisionHistory champion={selected.id} />
-              </div>
-            </>
+            <ChampionFactCheckPanel champion={selected.id} />
           )}
         </div>
 
@@ -1348,11 +1346,16 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                         </div>
                         
                         <button
-                          onClick={(e) => { e.stopPropagation(); handleOpenHistory(undefined, `対面 ${m.enemy} の変更履歴`, m.matchup_id); }}
-                          className="px-3 py-1 bg-black/5 hover:bg-amber-100 hover:text-amber-800 border border-black/10 rounded-lg text-xs font-bold transition-all flex items-center gap-1 text-stone-700"
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            handleOpenHistory(undefined, `対面 ${m.enemy} の変更履歴`, m.matchup_id);
+                          }}
+                          className="px-3 py-1 bg-black/5 hover:bg-amber-100 hover:text-amber-800 border border-black/10 rounded-lg text-xs font-bold transition-all flex items-center gap-1 text-stone-700 cursor-pointer"
                           title="この対面の変更履歴を確認"
                         >
-                          <History size={12} /> 履歴
+                          <History size={13} /> 📜 履歴
                         </button>
 
                         <a 
@@ -1598,6 +1601,20 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
             {saving ? <RefreshCw size={18} className="animate-spin" /> : <Save size={18} />} チャンピオン辞典の変更を保存する
           </button>
         </div>
+        )}
+
+        {historyModal?.isOpen && selected && (
+          <ChampionRevisionHistory
+            champion={selected.id || selected.name}
+            field={historyModal.field}
+            targetKey={historyModal.targetKey}
+            title={historyModal.title}
+            isModal={true}
+            onClose={() => setHistoryModal(null)}
+            onRevertSuccess={() => {
+              setHistoryModal(null);
+            }}
+          />
         )}
       </motion.div>
     );
@@ -1880,6 +1897,20 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
           })}
         </motion.div>
       )}
+
+      {historyModal?.isOpen && (
+        <ChampionRevisionHistory
+          champion={selected.id || selected.name}
+          field={historyModal.field}
+          targetKey={historyModal.targetKey}
+          title={historyModal.title}
+          isModal={true}
+          onClose={() => setHistoryModal(null)}
+          onRevertSuccess={() => {
+            setHistoryModal(null);
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -1910,11 +1941,16 @@ const TextAreaCard = ({
         </h3>
         {fieldKey && onOpenHistory && (
           <button
-            onClick={() => onOpenHistory(fieldKey, title)}
-            className="text-[11px] font-bold px-2 py-0.5 rounded bg-black/5 hover:bg-amber-100 hover:text-amber-800 text-stone-600 transition-colors flex items-center gap-1 border border-black/10"
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              onOpenHistory(fieldKey, title);
+            }}
+            className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-black/5 hover:bg-amber-100 hover:text-amber-800 text-stone-700 transition-all flex items-center gap-1 border border-black/10 shadow-xs cursor-pointer"
             title="この項目の変更履歴を確認"
           >
-            <History size={12} /> 履歴
+            <History size={13} /> 📜 履歴
           </button>
         )}
       </div>
