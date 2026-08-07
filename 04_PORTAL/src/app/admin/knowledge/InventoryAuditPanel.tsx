@@ -12,8 +12,6 @@ interface DictFactItem {
   has_weaknesses: boolean;
   has_power_spikes: boolean;
   has_build_runes: boolean;
-  has_counter_champions: boolean;
-  has_pick_recommendation: boolean;
   human_verified: boolean;
   verified_at: string | null;
   patch_meta_updated_at: string | null;
@@ -37,24 +35,38 @@ export default function InventoryAuditPanel() {
   const [knowledgeItems, setKnowledgeItems] = useState<PersonalKnowledgeItem[]>([]);
   const [activeFilter, setActiveFilter] = useState<'unverified' | 'outdated' | 'incomplete' | 'knowledge'>('unverified');
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [cleanupLoading, setCleanupLoading] = useState(false);
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
   const showMsg = (text: string, type: 'success' | 'error') => {
     setMessage({ text, type });
-    setTimeout(() => setMessage(null), 5000);
+    setTimeout(() => setMessage(null), 6000);
   };
 
   const loadAuditData = async () => {
     setLoading(true);
     try {
-      // 1. チャンピオン辞典ファクトの全状況取得
-      const resFact = await fetch('/api/admin/dict-health', { credentials: 'include' });
-      if (resFact.ok) {
-        const data = await resFact.json();
-        setFacts(data.facts || []);
+      // 1. チャンピオン辞典ヘルスデータ取得
+      const resHealth = await fetch('/api/admin/dict-health', { credentials: 'include' });
+      if (resHealth.ok) {
+        const data = await resHealth.json();
+        const rawChamps = data.champions || [];
+        const formatted: DictFactItem[] = rawChamps.map((c: any) => ({
+          champion_name: c.champion,
+          display_name: c.champion,
+          has_strengths: c.hasContent,
+          has_weaknesses: c.hasContent,
+          has_power_spikes: c.hasContent,
+          has_build_runes: c.hasContent,
+          human_verified: c.status === 'verified',
+          verified_at: c.lastVerifiedAt,
+          patch_meta_updated_at: c.updatedAt || c.autoUpdatedAt,
+          patch_meta_patch: c.patch,
+        }));
+        setFacts(formatted);
       }
 
-      // 2. ナレッジDB (personal_knowledge) の全状況取得
+      // 2. ナレッジDB (personal_knowledge) 取得
       const resKb = await fetch('/api/admin/knowledge/list-personal', { credentials: 'include' }).catch(() => null);
       if (resKb && resKb.ok) {
         const dataKb = await resKb.json();
@@ -96,6 +108,29 @@ export default function InventoryAuditPanel() {
     }
   };
 
+  // データベース全自動ゴミ掃除の実行
+  const handleRunCleanup = async () => {
+    if (!confirm('データベース内の空レコード・不要な下書き・却下済みキューアイテムを全自動クリーンアップします。実行しますか？')) return;
+    setCleanupLoading(true);
+    try {
+      const res = await fetch('/api/admin/dict-cleanup', {
+        method: 'POST',
+        credentials: 'include',
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showMsg(data.message || '✅ ゴミデータのクリーンアップが完了しました', 'success');
+        await loadAuditData();
+      } else {
+        showMsg(data.error || 'ゴミ掃除に失敗しました。', 'error');
+      }
+    } catch {
+      showMsg('通信エラーが発生しました。', 'error');
+    } finally {
+      setCleanupLoading(false);
+    }
+  };
+
   // ナレッジの削除
   const handleDeleteKb = async (id: number) => {
     if (!confirm('このナレッジアイテムを削除しますか？')) return;
@@ -127,10 +162,7 @@ export default function InventoryAuditPanel() {
     return nowSec - updatedSec > 259200; // 3日以上前
   }).length;
 
-  const incompleteCount = facts.filter(
-    (f) => !f.has_strengths || !f.has_weaknesses || !f.has_power_spikes || !f.has_build_runes
-  ).length;
-
+  const incompleteCount = facts.filter((f) => !f.has_strengths).length;
   const completionRate = totalCount > 0 ? Math.round((verifiedCount / totalCount) * 100) : 0;
 
   // フィルタリングデータ
@@ -140,13 +172,11 @@ export default function InventoryAuditPanel() {
     const updatedSec = new Date(f.patch_meta_updated_at).getTime() / 1000;
     return nowSec - updatedSec > 259200;
   });
-  const incompleteList = facts.filter(
-    (f) => !f.has_strengths || !f.has_weaknesses || !f.has_power_spikes || !f.has_build_runes
-  );
+  const incompleteList = facts.filter((f) => !f.has_strengths);
 
   return (
     <div className="bg-white border border-stone-200 rounded-3xl p-6 space-y-6 shadow-sm">
-      {/* タイトル ＆ リフレッシュ */}
+      {/* タイトル ＆ アクション */}
       <div className="flex items-center justify-between border-b border-stone-100 pb-4 flex-wrap gap-3">
         <div>
           <h2 className="text-lg font-black text-stone-900 flex items-center gap-2">
@@ -156,13 +186,26 @@ export default function InventoryAuditPanel() {
             全168チャンピオンのデータ完全性・人間の確認状況・古いトレンド・ナレッジDBを一元で点検・整理します
           </p>
         </div>
-        <button
-          onClick={loadAuditData}
-          disabled={loading}
-          className="px-4 py-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 text-xs font-bold transition flex items-center gap-1.5"
-        >
-          <RefreshCw size={14} className={loading ? 'animate-spin' : ''} /> 再読み込み
-        </button>
+
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            onClick={handleRunCleanup}
+            disabled={cleanupLoading || loading}
+            className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-600 to-rose-600 hover:from-amber-700 hover:to-rose-700 text-white text-xs font-black transition flex items-center gap-1.5 shadow-md disabled:opacity-50"
+            title="空テキスト、重複項目、古い下書きゴミデータを一発で完全削除・クリーンアップします"
+          >
+            <Trash2 size={14} className={cleanupLoading ? 'animate-spin' : ''} />
+            {cleanupLoading ? 'ゴミ掃除実行中...' : '🧹 DB全自動ゴミ掃除を実行'}
+          </button>
+
+          <button
+            onClick={loadAuditData}
+            disabled={loading}
+            className="px-4 py-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 text-xs font-bold transition flex items-center gap-1.5"
+          >
+            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} /> 再読み込み
+          </button>
+        </div>
       </div>
 
       {message && (
@@ -295,7 +338,7 @@ export default function InventoryAuditPanel() {
                         <Check size={12} /> 確認
                       </button>
                       <Link
-                        href={`/champions?champion=${f.champion_name}`}
+                        href={`/champions?select=${encodeURIComponent(f.champion_name)}`}
                         className="p-1.5 rounded-lg bg-stone-200 hover:bg-stone-300 text-stone-700 transition text-[10px] font-bold"
                         title="辞典を開いて直接編集"
                       >
@@ -327,7 +370,7 @@ export default function InventoryAuditPanel() {
                       </div>
                     </div>
                     <Link
-                      href={`/champions?champion=${f.champion_name}`}
+                      href={`/champions?select=${encodeURIComponent(f.champion_name)}`}
                       className="px-3 py-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white text-[10px] font-bold transition flex items-center gap-1 shadow-sm"
                     >
                       最新化する <ArrowRight size={12} />
@@ -352,14 +395,12 @@ export default function InventoryAuditPanel() {
                       <div>
                         <span className="font-extrabold text-stone-900 text-xs block">{f.display_name}</span>
                         <div className="flex gap-1 text-[9px] font-bold text-rose-600 mt-0.5">
-                          {!f.has_strengths && <span>[強み欠損]</span>}
-                          {!f.has_weaknesses && <span>[弱み欠損]</span>}
-                          {!f.has_power_spikes && <span>[スパイク欠損]</span>}
+                          {!f.has_strengths && <span>[要コンテンツ入力]</span>}
                         </div>
                       </div>
                     </div>
                     <Link
-                      href={`/champions?champion=${f.champion_name}`}
+                      href={`/champions?select=${encodeURIComponent(f.champion_name)}`}
                       className="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-[10px] font-bold transition flex items-center gap-1 shadow-sm"
                     >
                       補全する <ArrowRight size={12} />
