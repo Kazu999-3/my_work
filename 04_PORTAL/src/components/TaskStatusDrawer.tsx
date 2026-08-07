@@ -69,16 +69,50 @@ export default function TaskStatusDrawer({ collapsed = false, align = 'left' }: 
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    if (!open) return;
+    const handleResize = () => calculateCoords();
+    window.addEventListener('resize', handleResize);
+    window.addEventListener('scroll', handleResize, true);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('scroll', handleResize, true);
+    };
+  }, [open]);
+
+  const calculateCoords = () => {
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const drawerWidth = Math.min(384, window.innerWidth - 32);
+    
+    let left: number | undefined;
+    let right: number | undefined;
+
+    if (align === 'right') {
+      const calculatedRight = window.innerWidth - rect.right;
+      right = Math.max(16, Math.min(calculatedRight, window.innerWidth - drawerWidth - 16));
+    } else {
+      const calculatedLeft = rect.left;
+      if (calculatedLeft + drawerWidth > window.innerWidth - 16) {
+        left = Math.max(16, window.innerWidth - drawerWidth - 16);
+      } else {
+        left = Math.max(16, calculatedLeft);
+      }
+    }
+
+    let top = rect.bottom + 8;
+    if (top + 450 > window.innerHeight && rect.top > 450) {
+      top = Math.max(16, rect.top - 460);
+    }
+
+    setCoords({ top, left, right });
+  };
+
   const toggleOpen = () => {
     setOpen((v) => {
       const next = !v;
-      if (next && containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect();
-        setCoords(
-          align === 'right'
-            ? { top: rect.bottom + 8, right: window.innerWidth - rect.right }
-            : { top: rect.bottom + 8, left: rect.left }
-        );
+      if (next) {
+        setTimeout(calculateCoords, 0);
       }
       return next;
     });
