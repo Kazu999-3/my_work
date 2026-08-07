@@ -2,18 +2,12 @@
 
 import React, { useState, useEffect, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Brain, Search, Plus, Trash2, Calendar, Link as LinkIcon, RefreshCw, FileText, ChevronDown, ChevronUp, BookOpen, Layers, Sparkles, Video, MessageSquare } from 'lucide-react';
+import { Brain, Search, Plus, Trash2, Calendar, Link as LinkIcon, RefreshCw, FileText, ChevronDown, ChevronUp, BookOpen, Layers, Sparkles, Video, MessageSquare, Activity } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import YoutubeQueueManager from '../youtube/YoutubeQueueManager';
 import LibraryTabContent from './LibraryTabContent';
-import DictReviewPanel from './DictReviewPanel';
-import DictInsightsPanel from './DictInsightsPanel';
-import DictFactCheckPanel from './DictFactCheckPanel';
-import RevisionsPanel from './RevisionsPanel';
-import FreshnessPanel from './FreshnessPanel';
 import DiscordImportPanel from './DiscordImportPanel';
-import InventoryAuditPanel from './InventoryAuditPanel';
 import { supabaseBrowser } from '../../../lib/supabaseBrowserClient';
 
 interface KnowledgeItem {
@@ -47,8 +41,8 @@ function KnowledgeBaseContent() {
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
-  // ページ内タブ: ナレッジ一覧 or チャンプ深掘り or 動画キュー or 攻略ライブラリ or 鮮度レビュー or Discordインポート
-  const [activeTab, setActiveTab] = useState<'knowledge' | 'research' | 'video' | 'library' | 'maintenance' | 'review' | 'discord'>('knowledge');
+  // ページ内タブ: ナレッジ一覧 or 動画キュー or 攻略ライブラリ or Discordインポート
+  const [activeTab, setActiveTab] = useState<'knowledge' | 'video' | 'library' | 'discord'>('knowledge');
   const [isResearchModalOpen, setIsResearchModalOpen] = useState(false);
 
   const searchParams = useSearchParams();
@@ -56,7 +50,7 @@ function KnowledgeBaseContent() {
   // URLパラメータ (?tab=research等) の自動反映
   useEffect(() => {
     const tabParam = searchParams?.get('tab');
-    if (tabParam && ['knowledge', 'research', 'video', 'library', 'maintenance', 'review', 'discord'].includes(tabParam)) {
+    if (tabParam && ['knowledge', 'video', 'library', 'discord'].includes(tabParam)) {
       setActiveTab(tabParam as any);
     }
   }, [searchParams]);
@@ -360,11 +354,27 @@ function KnowledgeBaseContent() {
           </div>
         </div>
 
+        {/* 📊 辞典ヘルスダッシュボードへのショートカットバナー */}
+        <Link
+          href="/admin/dict-health"
+          className="block bg-gradient-to-r from-amber-500/10 via-amber-400/5 to-transparent border border-amber-300/80 rounded-2xl p-4 mb-6 shadow-sm hover:shadow-md transition group"
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Activity className="w-6 h-6 text-amber-600" />
+              <div>
+                <div className="text-sm font-extrabold text-amber-900">📊 辞典 ＆ ナレッジ統合ヘルスダッシュボード</div>
+                <div className="text-[11px] text-stone-500">ファクトチェック・データ棚卸し・変更履歴・鮮度レビューをワンストップで管理</div>
+              </div>
+            </div>
+            <span className="text-xs font-bold bg-amber-100 text-amber-800 px-3 py-1.5 rounded-xl group-hover:bg-amber-200 transition">開く ➔</span>
+          </div>
+        </Link>
+
         {/* タブ切り替え */}
         <div className="flex gap-2 border-b border-gray-200 pb-4 mb-8 overflow-x-auto items-center">
           {[
             { id: 'knowledge', label: '📖 ナレッジ一覧', icon: BookOpen },
-            { id: 'maintenance', label: '🧹 データ棚卸し・点検', icon: RefreshCw },
             { id: 'discord', label: '💬 Discord AIインポート', icon: MessageSquare },
             { id: 'video', label: '⏳ 動画解析キュー', icon: Video },
             { id: 'library', label: '🗂️ 攻略ライブラリ', icon: Layers },
@@ -390,23 +400,6 @@ function KnowledgeBaseContent() {
         {activeTab === 'discord' && <DiscordImportPanel />}
         {activeTab === 'video' && <YoutubeQueueManager />}
         {activeTab === 'library' && <LibraryTabContent />}
-
-        {activeTab === 'maintenance' && (
-          <div className="space-y-8 animate-in">
-            <InventoryAuditPanel />
-            <FreshnessPanel />
-            <DictFactCheckPanel />
-            <DictReviewPanel />
-            <DictInsightsPanel mode="maintenance" />
-          </div>
-        )}
-
-        {activeTab === 'review' && (
-          <div className="space-y-8 animate-in">
-            <DictInsightsPanel mode="inspect" />
-            <RevisionsPanel />
-          </div>
-        )}
 
         {activeTab === 'knowledge' && (
           <div className="space-y-8 animate-in">

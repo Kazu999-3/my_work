@@ -3,10 +3,10 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Activity, CheckCircle2, AlertTriangle, RefreshCw, Search, ShieldCheck, Sparkles, Filter, ExternalLink, Play, Layers, HelpCircle, History, FileCheck } from 'lucide-react';
+import { Activity, CheckCircle2, AlertTriangle, RefreshCw, Search, ShieldCheck, Sparkles, Filter, ExternalLink, Play, Layers, HelpCircle, History, FileCheck, ClipboardCheck } from 'lucide-react';
 import { getChampIcon } from '../../../lib/ddragonClient';
-import Collapsible from '../../../components/Collapsible';
 import DictFactCheckPanel from '../knowledge/DictFactCheckPanel';
+import DictReviewPanel from '../knowledge/DictReviewPanel';
 import RevisionsPanel from '../knowledge/RevisionsPanel';
 import DictInsightsPanel from '../knowledge/DictInsightsPanel';
 import FreshnessPanel from '../knowledge/FreshnessPanel';
@@ -35,11 +35,7 @@ export default function DictHealthDashboard() {
   } | null>(null);
 
   const [loading, setLoading] = useState(true);
-  const [hubTab, setHubTab] = useState<'health' | 'factcheck' | 'revisions' | 'auto_update'>('health');
-  const [openFactCheck, setOpenFactCheck] = useState(false);
-  const [openInsights, setOpenInsights] = useState(false);
-  const [openRevisions, setOpenRevisions] = useState(false);
-  const [openFreshness, setOpenFreshness] = useState(false);
+  const [hubTab, setHubTab] = useState<'health' | 'audit' | 'history'>('health');
 
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'verified' | 'ai_generated' | 'stale'>('ALL');
@@ -190,19 +186,15 @@ export default function DictHealthDashboard() {
       <div className="max-w-6xl mx-auto px-4 pt-8 space-y-8">
             {/* 使い方ガイド (折りたたみ可能) */}
         <div className="bg-white rounded-2xl border border-stone-200 p-4 mb-8 shadow-sm">
-          <Collapsible
-            defaultOpen={false}
-            title={
-              <div className="flex items-center gap-2 text-stone-800">
-                <HelpCircle className="w-5 h-5 text-amber-600 shrink-0" />
-                <span className="text-xs font-black">📖 辞典ヘルス診断の使い方ガイド（ここをクリックで開閉）</span>
-                <span className="text-[10px] bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded-full ml-auto">
-                  ヘルプ
-                </span>
-              </div>
-            }
-          >
-            <div className="pt-3 border-t border-stone-100 text-xs text-stone-700 space-y-3 leading-relaxed">
+          <details>
+            <summary className="flex items-center gap-2 text-stone-800 cursor-pointer list-none [&::-webkit-details-marker]:hidden">
+              <HelpCircle className="w-5 h-5 text-amber-600 shrink-0" />
+              <span className="text-xs font-black">📖 辞典ヘルス診断の使い方ガイド（ここをクリックで開閉）</span>
+              <span className="text-[10px] bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded-full ml-auto">
+                ヘルプ
+              </span>
+            </summary>
+            <div className="pt-3 border-t border-stone-100 text-xs text-stone-700 space-y-3 leading-relaxed mt-3">
               <p className="font-semibold text-stone-800">
                 このページは、チャンピオン辞典（全170+体）の情報が「最新かつ信頼できる状態か」を一目で監視・メンテするための管理画面です。
               </p>
@@ -239,26 +231,16 @@ export default function DictHealthDashboard() {
               <div className="bg-stone-50 p-3 rounded-xl border border-stone-200 text-[11px] space-y-1.5">
                 <div className="font-bold text-stone-800">💡 おすすめのメンテナンス手順：</div>
                 <ul className="list-disc list-inside space-y-1 text-stone-600">
-                  <li><strong>手順1:</strong> パッチ更新後は「🔴 要対応の全チャンピオンを一括自動更新」を押してAIに一括最新化させます。</li>
-                  <li><strong>手順2:</strong> 画面中央の「🔥 今パッチ最優先確認チャンピオン (Top 10)」から主要チャンピオンの内容をチェックし「✅ 確認完了」を押します。</li>
-                  <li><strong>手順3:</strong> 個別に内容を編集したい場合はカード右下の外部リンクアイコンから辞典本文へ移動して直接編集・保存できます。</li>
+                  <li><strong>手順1:</strong> 「📊ヘルス概要」タブで「⚡ワンタップで全自動AI最新化」を押してAIに一括最新化させます。</li>
+                  <li><strong>手順2:</strong> 「🕵️ファクトチェック&棚卸し」タブで矛盾や誤記述を1件ずつチェックします。</li>
+                  <li><strong>手順3:</strong> 「📜履歴&鮮度」タブで変更履歴やデータ鮮度を確認し、必要に応じて巻き戻します。</li>
                 </ul>
               </div>
             </div>
-          </Collapsible>
+          </details>
         </div>
-        {/* 🔰 ワンタップ全自動ガイド */}
-        <div className="mb-6 bg-gradient-to-r from-amber-500/10 via-amber-400/5 to-transparent border border-amber-300/80 rounded-2xl p-5 shadow-sm text-stone-900">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-xl">⚡</span>
-            <h2 className="text-base font-extrabold text-amber-900">ワンタップで完了！辞典 ＆ ナレッジ全自動AIメンテナンス</h2>
-          </div>
-          <p className="text-xs text-stone-600 leading-relaxed">
-            右上の <strong className="text-amber-950">「⚡ ワンタップで全自動AI最新化」</strong> ボタンを押すだけで、<strong>「チャンピオン辞典 ＆ コーチAIナレッジ全データの最新パッチ照合」</strong> ➔ <strong>「誤記述AIファクトチェック」</strong> ➔ <strong>「古いデータの一括AI最新化」</strong> がすべて一気通貫で全自動実行されます。手動で分ける必要は一切ありません！
-          </p>
-        </div>
-
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8 border-b border-stone-200 pb-6">
+        {/* ヘッダー */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-6 border-b border-stone-200 pb-6">
           <div>
             <div className="flex items-center gap-2.5">
               <Activity className="w-8 h-8 text-amber-600" />
@@ -285,12 +267,12 @@ export default function DictHealthDashboard() {
               title="最新パッチ照合、AI誤記述監査、古いデータの一括最新化をすべてワンタップで全自動実行します"
             >
               <Sparkles className={`w-4 h-4 ${actionLoading ? 'animate-spin' : ''}`} />
-              ⚡ ワンタップで全自動AI最新化 (辞典・ナレッジ一括更新＋誤り監査)
+              ⚡ ワンタップで全自動AI最新化
             </button>
 
             <Link
               href="/champions"
-              className="px-4 py-3.5 rounded-2xl bg-stone-800 hover:bg-stone-900 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-md ml-auto"
+              className="px-4 py-3.5 rounded-2xl bg-stone-800 hover:bg-stone-900 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-md"
             >
               <Layers className="w-4 h-4" />
               📚 チャンピオン辞典へ
@@ -298,191 +280,141 @@ export default function DictHealthDashboard() {
           </div>
         </div>
 
-        {/* 🧹 データ棚卸し ＆ 健全性点検ハブの統合 */}
-        <InventoryAuditPanel />
-
-        {/* 集計サマリーカード */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-          <button
-            onClick={() => setStatusFilter('verified')}
-            className={`p-5 rounded-2xl border text-left transition ${
-              statusFilter === 'verified'
-                ? 'bg-emerald-100/80 border-emerald-400 ring-2 ring-emerald-500/30'
-                : 'bg-white border-stone-200 hover:border-emerald-300'
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-emerald-800 flex items-center gap-1.5">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                🟢 確認済み (Verified)
-              </span>
-              <span className="text-2xl font-black text-emerald-900">{data?.summary.verified || 0}</span>
-            </div>
-            <p className="text-[11px] text-emerald-700/80 mt-2">人間が確認・手動保存した最新データ</p>
-          </button>
-
-          <button
-            onClick={() => setStatusFilter('ai_generated')}
-            className={`p-5 rounded-2xl border text-left transition ${
-              statusFilter === 'ai_generated'
-                ? 'bg-amber-100/80 border-amber-400 ring-2 ring-amber-500/30'
-                : 'bg-white border-stone-200 hover:border-amber-300'
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-amber-800 flex items-center gap-1.5">
-                <Sparkles className="w-4 h-4 text-amber-600" />
-                🟡 AI生成 (AI Updated)
-              </span>
-              <span className="text-2xl font-black text-amber-900">{data?.summary.aiGenerated || 0}</span>
-            </div>
-            <p className="text-[11px] text-amber-700/80 mt-2">現行パッチでAIが自動更新・人間未確認</p>
-          </button>
-
-          <button
-            onClick={() => setStatusFilter('stale')}
-            className={`p-5 rounded-2xl border text-left transition ${
-              statusFilter === 'stale'
-                ? 'bg-red-100/80 border-red-400 ring-2 ring-red-500/30'
-                : 'bg-white border-stone-200 hover:border-red-300'
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-red-800 flex items-center gap-1.5">
-                <AlertTriangle className="w-4 h-4 text-red-600" />
-                🔴 要対応 (Stale / Outdated)
-              </span>
-              <span className="text-2xl font-black text-red-900">{data?.summary.stale || 0}</span>
-            </div>
-            <p className="text-[11px] text-red-700/80 mt-2">パッチ遅れ・データ未入力（要自動/手動更新）</p>
-          </button>
-        </div>
-
-        {/* 🚨 クイックダイレクトナビ（どこを確認すべきかが一目で分かり直接飛べる） */}
-        <div className="bg-gradient-to-r from-amber-600 via-amber-700 to-orange-700 rounded-2xl p-4 shadow-lg text-white mb-8">
-          <div className="flex items-center justify-between flex-wrap gap-2 mb-2.5">
-            <span className="text-xs font-extrabold uppercase tracking-wider flex items-center gap-1.5 text-amber-100">
-              <Activity className="w-4 h-4 animate-pulse text-amber-300" />
-              🚨 あなたの確認・メンテが求められている場所（直行ショートカット）
-            </span>
-            <span className="text-[10px] text-amber-200 font-mono">ワンタップで該当セクションへ自動ジャンプ ➔</span>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
-            <button
-              onClick={() => {
-                setStatusFilter('stale');
-                const el = document.getElementById('champion-grid-section');
-                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-              }}
-              className="bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl p-3 text-left transition flex items-center justify-between group"
-            >
-              <div>
-                <span className="text-xs font-black block text-rose-200">🔴 古い・未入力チャンピオン</span>
-                <span className="text-[10px] text-white/80">{data?.summary.stale || 0}件の要更新チャンピオン</span>
-              </div>
-              <span className="text-xs font-bold bg-white/20 px-2 py-1 rounded-lg group-hover:bg-white/30">移動 ➔</span>
-            </button>
-
-            <button
-              onClick={() => {
-                setOpenFactCheck(true);
-                setTimeout(() => {
-                  const el = document.getElementById('fact-check-section');
-                  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }, 50);
-              }}
-              className="bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl p-3 text-left transition flex items-center justify-between group"
-            >
-              <div>
-                <span className="text-xs font-black block text-cyan-200">🕵️‍♂️ AIファクトチェック指摘</span>
-                <span className="text-[10px] text-white/80">表記ゆれ・矛盾・誤記述の検知</span>
-              </div>
-              <span className="text-xs font-bold bg-white/20 px-2 py-1 rounded-lg group-hover:bg-white/30">移動 ➔</span>
-            </button>
-
-            <button
-              onClick={() => {
-                setOpenFreshness(true);
-                setTimeout(() => {
-                  const el = document.getElementById('freshness-section');
-                  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }, 50);
-              }}
-              className="bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl p-3 text-left transition flex items-center justify-between group"
-            >
-              <div>
-                <span className="text-xs font-black block text-emerald-200">🍃 ナレッジ鮮度レビュー</span>
-                <span className="text-[10px] text-white/80">更新停滞テーブルの判定</span>
-              </div>
-              <span className="text-xs font-bold bg-white/20 px-2 py-1 rounded-lg group-hover:bg-white/30">移動 ➔</span>
-            </button>
-
-            <button
-              onClick={() => {
-                setOpenRevisions(true);
-                setTimeout(() => {
-                  const el = document.getElementById('revisions-section');
-                  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }, 50);
-              }}
-              className="bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl p-3 text-left transition flex items-center justify-between group"
-            >
-              <div>
-                <span className="text-xs font-black block text-pink-200">📜 全リビジョン変更履歴</span>
-                <span className="text-[10px] text-white/80">0秒ワンタップ過去復元</span>
-              </div>
-              <span className="text-xs font-bold bg-white/20 px-2 py-1 rounded-lg group-hover:bg-white/30">移動 ➔</span>
-            </button>
-          </div>
-        </div>
-
-        {/* 今パッチ最優先確認チャンピオン Top 10 */}
-        {data?.priorityChampions && data.priorityChampions.length > 0 && (
-          <div className="bg-amber-950/10 border border-amber-500/30 rounded-2xl p-4 mb-8 bg-amber-50/50 shadow-sm">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-black text-amber-900 flex items-center gap-1.5">
-                <span className="text-base">🔥</span>
-                今パッチ最優先で確認すべきチャンピオン (Top {data.priorityChampions.length})
-              </span>
-              <span className="text-[10px] text-amber-800/80 font-bold">空データ・パッチ遅れを自動抽出</span>
-            </div>
-
-            <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-thin">
-              {data.priorityChampions.map((c: any) => (
-                <div
-                  key={c.champion}
-                  className="shrink-0 bg-white border border-amber-200 rounded-xl p-2.5 flex items-center gap-2.5 shadow-sm min-w-[170px]"
-                >
-                  <img
-                    src={getChampIcon(c.champion)}
-                    alt={c.champion}
-                    className="w-9 h-9 rounded-lg border border-stone-200 object-cover"
-                    onError={(e) => { (e.target as any).src = '/favicon.ico'; }}
-                  />
-                  <div className="flex-1 min-w-0 space-y-1">
-                    <div className="text-xs font-black text-stone-900 truncate">{c.champion}</div>
-                    <div className="flex items-center gap-1">
-                      <Link
-                        href={`/champions?select=${encodeURIComponent(c.champion)}`}
-                        className="text-[9px] font-bold px-2 py-0.5 bg-amber-600 hover:bg-amber-700 text-white rounded transition shrink-0"
-                        title="このチャンピオンの辞典を開き内容を確認・編集します"
-                      >
-                        ✏️ 編集
-                      </Link>
-                      <button
-                        onClick={() => handleVerify(c.champion, 'verify')}
-                        className="text-[9px] font-bold px-2 py-0.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded transition flex-1 text-center truncate"
-                      >
-                        ✅ 完了
-                      </button>
-                    </div>
-                  </div>
+        {/* ━━━━━ 3タブ切替バー ━━━━━ */}
+        <div className="flex gap-2 bg-stone-100 p-1.5 rounded-2xl mb-8 overflow-x-auto">
+          {[
+            { id: 'health' as const, label: '📊 ヘルス概要', icon: Activity, desc: 'チャンピオン一覧・サマリー・一括操作' },
+            { id: 'audit' as const, label: '🕵️ ファクトチェック & 棚卸し', icon: ClipboardCheck, desc: '矛盾検知・データ監査・レビュー' },
+            { id: 'history' as const, label: '📜 履歴 & 鮮度', icon: History, desc: '変更履歴・鮮度レビュー・インサイト' },
+          ].map((tab) => {
+            const Icon = tab.icon;
+            const isActive = hubTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setHubTab(tab.id)}
+                className={`flex items-center gap-2 px-5 py-3 rounded-xl text-xs font-bold transition-all shrink-0 ${
+                  isActive
+                    ? 'bg-gradient-to-r from-amber-600 to-amber-700 text-white shadow-lg shadow-amber-600/30'
+                    : 'text-stone-500 hover:text-stone-800 hover:bg-white/60'
+                }`}
+              >
+                <Icon className="w-4 h-4" />
+                <div className="text-left">
+                  <div>{tab.label}</div>
+                  {isActive && <div className="text-[10px] font-normal opacity-80 mt-0.5">{tab.desc}</div>}
                 </div>
-              ))}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* ━━━━━ タブ1: ヘルス概要 ━━━━━ */}
+        {hubTab === 'health' && (
+          <div className="space-y-6 animate-in">
+            {/* 集計サマリーカード */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <button
+                onClick={() => setStatusFilter('verified')}
+                className={`p-5 rounded-2xl border text-left transition ${
+                  statusFilter === 'verified'
+                    ? 'bg-emerald-100/80 border-emerald-400 ring-2 ring-emerald-500/30'
+                    : 'bg-white border-stone-200 hover:border-emerald-300'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-emerald-800 flex items-center gap-1.5">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                    🟢 確認済み
+                  </span>
+                  <span className="text-2xl font-black text-emerald-900">{data?.summary.verified || 0}</span>
+                </div>
+                <p className="text-[11px] text-emerald-700/80 mt-2">人間が確認・手動保存した最新データ</p>
+              </button>
+
+              <button
+                onClick={() => setStatusFilter('ai_generated')}
+                className={`p-5 rounded-2xl border text-left transition ${
+                  statusFilter === 'ai_generated'
+                    ? 'bg-amber-100/80 border-amber-400 ring-2 ring-amber-500/30'
+                    : 'bg-white border-stone-200 hover:border-amber-300'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-amber-800 flex items-center gap-1.5">
+                    <Sparkles className="w-4 h-4 text-amber-600" />
+                    🟡 AI生成
+                  </span>
+                  <span className="text-2xl font-black text-amber-900">{data?.summary.aiGenerated || 0}</span>
+                </div>
+                <p className="text-[11px] text-amber-700/80 mt-2">現行パッチでAIが自動更新・人間未確認</p>
+              </button>
+
+              <button
+                onClick={() => setStatusFilter('stale')}
+                className={`p-5 rounded-2xl border text-left transition ${
+                  statusFilter === 'stale'
+                    ? 'bg-red-100/80 border-red-400 ring-2 ring-red-500/30'
+                    : 'bg-white border-stone-200 hover:border-red-300'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-red-800 flex items-center gap-1.5">
+                    <AlertTriangle className="w-4 h-4 text-red-600" />
+                    🔴 要対応
+                  </span>
+                  <span className="text-2xl font-black text-red-900">{data?.summary.stale || 0}</span>
+                </div>
+                <p className="text-[11px] text-red-700/80 mt-2">パッチ遅れ・データ未入力（要自動/手動更新）</p>
+              </button>
             </div>
-          </div>
-        )}
+
+            {/* 今パッチ最優先確認チャンピオン Top 10 */}
+            {data?.priorityChampions && data.priorityChampions.length > 0 && (
+              <div className="bg-amber-950/10 border border-amber-500/30 rounded-2xl p-4 bg-amber-50/50 shadow-sm">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-xs font-black text-amber-900 flex items-center gap-1.5">
+                    <span className="text-base">🔥</span>
+                    今パッチ最優先で確認すべきチャンピオン (Top {data.priorityChampions.length})
+                  </span>
+                  <span className="text-[10px] text-amber-800/80 font-bold">空データ・パッチ遅れを自動抽出</span>
+                </div>
+
+                <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-thin">
+                  {data.priorityChampions.map((c: any) => (
+                    <div
+                      key={c.champion}
+                      className="shrink-0 bg-white border border-amber-200 rounded-xl p-2.5 flex items-center gap-2.5 shadow-sm min-w-[170px]"
+                    >
+                      <img
+                        src={getChampIcon(c.champion)}
+                        alt={c.champion}
+                        className="w-9 h-9 rounded-lg border border-stone-200 object-cover"
+                        onError={(e) => { (e.target as any).src = '/favicon.ico'; }}
+                      />
+                      <div className="flex-1 min-w-0 space-y-1">
+                        <div className="text-xs font-black text-stone-900 truncate">{c.champion}</div>
+                        <div className="flex items-center gap-1">
+                          <Link
+                            href={`/champions?select=${encodeURIComponent(c.champion)}`}
+                            className="text-[9px] font-bold px-2 py-0.5 bg-amber-600 hover:bg-amber-700 text-white rounded transition shrink-0"
+                            title="このチャンピオンの辞典を開き内容を確認・編集します"
+                          >
+                            ✏️ 編集
+                          </Link>
+                          <button
+                            onClick={() => handleVerify(c.champion, 'verify')}
+                            className="text-[9px] font-bold px-2 py-0.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded transition flex-1 text-center truncate"
+                          >
+                            ✅ 完了
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
         {/* コントロールバー */}
         <div className="bg-white p-4 rounded-2xl border border-stone-200 shadow-sm mb-6 flex flex-col md:flex-row items-center justify-between gap-4">
@@ -660,95 +592,83 @@ export default function DictHealthDashboard() {
             <p className="text-sm font-bold text-stone-500">条件に一致するチャンピオンが見つかりませんでした</p>
           </div>
         )}
+          </div>
+        )}
 
-        {/* 統合パネル1: 🕵️‍♂️ AIファクトチェック＆不正確表現の誤り自動検知 */}
-        <div id="fact-check-section" className="bg-white rounded-3xl border border-stone-200 p-6 shadow-sm scroll-mt-6">
-          <Collapsible
-            defaultOpen={false}
-            open={openFactCheck}
-            onToggle={(op) => setOpenFactCheck(op)}
-            title={
-              <div className="flex items-center gap-2 text-stone-900">
+        {/* ━━━━━ タブ2: ファクトチェック & 棚卸し ━━━━━ */}
+        {hubTab === 'audit' && (
+          <div className="space-y-8 animate-in">
+            {/* データ棚卸し ＆ 健全性点検 */}
+            <InventoryAuditPanel />
+
+            {/* AIファクトチェック */}
+            <div className="bg-white rounded-3xl border border-stone-200 p-6 shadow-sm">
+              <div className="flex items-center gap-2 mb-4">
                 <FileCheck className="text-cyan-600 w-5 h-5" />
-                <span className="text-sm font-extrabold">🕵️‍♂️ AIファクトチェック & 誤記述の自動検知キュー</span>
+                <h2 className="text-sm font-extrabold text-stone-900">🕵️‍♂️ AIファクトチェック & 誤記述の自動検知キュー</h2>
               </div>
-            }
-          >
-            <div className="pt-4 border-t border-stone-100 mt-3">
               <p className="text-xs text-stone-500 mb-4">
                 全170+体のチャンピオン辞典から、パッチ数値の相違や古い記述・誤った解説をAIがスキャンしキューとして表示します。
               </p>
               <DictFactCheckPanel />
             </div>
-          </Collapsible>
-        </div>
 
-        {/* 統合パネル2: 💡 ナレッジ点検 & 蓄積メモ・プロ分析インサイト */}
-        <div id="insights-section" className="bg-white rounded-3xl border border-stone-200 p-6 shadow-sm scroll-mt-6">
-          <Collapsible
-            defaultOpen={false}
-            open={openInsights}
-            onToggle={(op) => setOpenInsights(op)}
-            title={
-              <div className="flex items-center gap-2 text-stone-900">
-                <Sparkles className="text-amber-600 w-5 h-5" />
-                <span className="text-sm font-extrabold">💡 ナレッジ点検 & 蓄積メモ・プロ分析インサイト</span>
+            {/* レビューパネル */}
+            <div className="bg-white rounded-3xl border border-stone-200 p-6 shadow-sm">
+              <div className="flex items-center gap-2 mb-4">
+                <ClipboardCheck className="text-violet-600 w-5 h-5" />
+                <h2 className="text-sm font-extrabold text-stone-900">📝 辞典データ人間レビュー</h2>
               </div>
-            }
-          >
-            <div className="pt-4 border-t border-stone-100 mt-3">
               <p className="text-xs text-stone-500 mb-4">
-                コーチAIが対戦データから集計したチャンピオン別の蓄積メモやナレッジの整合性を点検・直接編集します。
+                AI生成データの品質を人間の目で最終確認するレビューキューです。
               </p>
-              <DictInsightsPanel />
+              <DictReviewPanel />
             </div>
-          </Collapsible>
-        </div>
+          </div>
+        )}
 
-        {/* 統合パネル3: 📜 辞典 ＆ ナレッジ全変更履歴 Diff & 0秒ワンタップ巻き戻し */}
-        <div id="revisions-section" className="bg-white rounded-3xl border border-stone-200 p-6 shadow-sm scroll-mt-6">
-          <Collapsible
-            defaultOpen={false}
-            open={openRevisions}
-            onToggle={(op) => setOpenRevisions(op)}
-            title={
-              <div className="flex items-center gap-2 text-stone-900">
+        {/* ━━━━━ タブ3: 履歴 & 鮮度 ━━━━━ */}
+        {hubTab === 'history' && (
+          <div className="space-y-8 animate-in">
+            {/* 変更履歴 */}
+            <div className="bg-white rounded-3xl border border-stone-200 p-6 shadow-sm">
+              <div className="flex items-center gap-2 mb-4">
                 <History className="text-pink-600 w-5 h-5" />
-                <span className="text-sm font-extrabold">📜 辞典 ＆ ナレッジ全変更履歴 Diff & 0秒ワンタップ巻き戻し</span>
+                <h2 className="text-sm font-extrabold text-stone-900">📜 辞典 ＆ ナレッジ全変更履歴 Diff & ワンタップ巻き戻し</h2>
               </div>
-            }
-          >
-            <div className="pt-4 border-t border-stone-100 mt-3">
               <p className="text-xs text-stone-500 mb-4">
                 過去にいつ・誰が（手動またはAI）・何を変更したかの全差分ログを閲覧し、必要に応じて以前の状態へ巻き戻せます。
               </p>
               <RevisionsPanel />
             </div>
-          </Collapsible>
-        </div>
 
-        {/* 統合パネル4: 🍃 ナレッジ鮮度レビュー & 定期点検 */}
-        <div id="freshness-section" className="bg-white rounded-3xl border border-stone-200 p-6 shadow-sm scroll-mt-6">
-          <Collapsible
-            defaultOpen={false}
-            open={openFreshness}
-            onToggle={(op) => setOpenFreshness(op)}
-            title={
-              <div className="flex items-center gap-2 text-stone-900">
+            {/* 鮮度レビュー */}
+            <div className="bg-white rounded-3xl border border-stone-200 p-6 shadow-sm">
+              <div className="flex items-center gap-2 mb-4">
                 <Activity className="text-emerald-600 w-5 h-5" />
-                <span className="text-sm font-extrabold">🍃 ナレッジ鮮度レビュー & 定期点検</span>
+                <h2 className="text-sm font-extrabold text-stone-900">🍃 ナレッジ鮮度レビュー & 定期点検</h2>
               </div>
-            }
-          >
-            <div className="pt-4 border-t border-stone-100 mt-3">
               <p className="text-xs text-stone-500 mb-4">
                 ナレッジデータの更新日時・鮮度を点検し、最新パッチとの適合率を確認できます。
               </p>
               <FreshnessPanel />
             </div>
-          </Collapsible>
-        </div>
+
+            {/* インサイト */}
+            <div className="bg-white rounded-3xl border border-stone-200 p-6 shadow-sm">
+              <div className="flex items-center gap-2 mb-4">
+                <Sparkles className="text-amber-600 w-5 h-5" />
+                <h2 className="text-sm font-extrabold text-stone-900">💡 ナレッジ点検 & 蓄積メモ・プロ分析インサイト</h2>
+              </div>
+              <p className="text-xs text-stone-500 mb-4">
+                コーチAIが対戦データから集計したチャンピオン別の蓄積メモやナレッジの整合性を点検・直接編集します。
+              </p>
+              <DictInsightsPanel />
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
 }
+
