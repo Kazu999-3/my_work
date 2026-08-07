@@ -94,10 +94,37 @@ export default function FactCheckQueueCard({ item, onActed }: { item: QueueItem;
     });
   });
 
-  // 矛盾レビューで「Aが正しい」「Bが正しい」のようにワンクリックで選べるようにする。
-  const pickCorrect = (label: string, value: string) => {
-    if (!confirm(`「${label}」の内容を正しい情報として記録します。よろしいですか？\n\n${value.slice(0, 200)}${value.length > 200 ? '…' : ''}`)) return;
-    act('record_correction', `[${label}] ${value}`);
+  // 1タップで「元データテキストの自動更新」＋「AI再発防止ルールの学習登録」＋「カードの完了」を全て全自動で完走！
+  const pickCorrect = async (label: string, value: string) => {
+    if (!confirm(`「${label}」の内容を正しい情報として全自動適用しますか？\n\n【1タップで自動実行される内容】\n1. 元のテキストデータをこの正解テキストで即時自動全更新\n2. AIの再発防止ルールに登録（今後の自動生成でも二度と同じ間違いをしない）\n3. このカードを点検完了にして次のカードへ進む\n\n適用内容: ${value.slice(0, 150)}...`)) return;
+    setActing(true); setError('');
+    try {
+      // 1. もし編集可能な対象ブロック (editable) が存在すれば、元テキストを正解で自動更新！
+      if (filteredEditable.length > 0) {
+        for (const block of filteredEditable) {
+          await fetch('/api/admin/dict-fact-check/source', {
+            method: 'PATCH', credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ table: block.table, id: block.id, champion: block.champion, field: block.field, value }),
+          }).catch(() => null);
+        }
+      }
+
+      // 2. AIの再発防止ルールに登録＋キューカード完了
+      const body = { id: it.id, action: 'record_correction', correctInfo: `[${label}] ${value}` };
+      const res = await fetch('/api/admin/dict-fact-check/queue', {
+        method: 'PATCH', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error || '反映に失敗しました');
+      onActed(it.id);
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setActing(false);
+    }
   };
 
   return (
@@ -125,7 +152,7 @@ export default function FactCheckQueueCard({ item, onActed }: { item: QueueItem;
       {it.detail && (it.detail.claim_a || it.detail.claim_b) && (
         <div className="mt-3 p-3.5 rounded-xl border border-rose-300 bg-rose-50/60 space-y-3 shadow-xs">
           <div className="text-xs font-black text-rose-900 flex items-center gap-1.5 border-b border-rose-200 pb-2">
-            <span className="text-base">⚡</span> AIが検出したピンポイントの矛盾・不整合箇所
+            <span className="text-base">⚡</span> AIが検出したピンポイント的矛盾・不整合箇所
           </div>
 
           {it.detail.conflict_reason && (
@@ -144,9 +171,10 @@ export default function FactCheckQueueCard({ item, onActed }: { item: QueueItem;
                 <button
                   type="button"
                   onClick={() => pickCorrect('記述 A', it.detail?.claim_a || '')}
-                  className="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[11px] font-extrabold transition flex items-center justify-center gap-1 w-full mt-2 shadow-xs cursor-pointer"
+                  disabled={acting}
+                  className="px-3 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-lg text-[11px] font-extrabold transition flex items-center justify-center gap-1 w-full mt-2 shadow-xs cursor-pointer disabled:opacity-50"
                 >
-                  <Check size={13} /> ✅ 記述 A を正しい情報として即時採用
+                  <Check size={13} /> ⚡ 1タップ全自動採用（テキスト更新＋AI再発防止記録）
                 </button>
               </div>
             )}
@@ -159,9 +187,10 @@ export default function FactCheckQueueCard({ item, onActed }: { item: QueueItem;
                 <button
                   type="button"
                   onClick={() => pickCorrect('記述 B', it.detail?.claim_b || '')}
-                  className="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[11px] font-extrabold transition flex items-center justify-center gap-1 w-full mt-2 shadow-xs cursor-pointer"
+                  disabled={acting}
+                  className="px-3 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-lg text-[11px] font-extrabold transition flex items-center justify-center gap-1 w-full mt-2 shadow-xs cursor-pointer disabled:opacity-50"
                 >
-                  <Check size={13} /> ✅ 記述 B を正しい情報として即時採用
+                  <Check size={13} /> ⚡ 1タップ全自動採用（テキスト更新＋AI再発防止記録）
                 </button>
               </div>
             )}
