@@ -85,16 +85,50 @@ export default function NotificationBell({ collapsed = false, align = 'left' }: 
   // ドロップダウンだとサイドバー幅で見切れて中身が切れてしまっていた。
   // ボタンの画面上の位置を測って document.body へ Portal 描画し、position: fixed で
   // 出すことでサイドバーのoverflowに影響されないようにする。
+  useEffect(() => {
+    if (!open) return;
+    const handleResize = () => calculateCoords();
+    window.addEventListener('resize', handleResize);
+    window.addEventListener('scroll', handleResize, true);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('scroll', handleResize, true);
+    };
+  }, [open]);
+
+  const calculateCoords = () => {
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const drawerWidth = Math.min(320, window.innerWidth - 32);
+    
+    let left: number | undefined;
+    let right: number | undefined;
+
+    if (align === 'right') {
+      const calculatedRight = window.innerWidth - rect.right;
+      right = Math.max(16, Math.min(calculatedRight, window.innerWidth - drawerWidth - 16));
+    } else {
+      const calculatedLeft = rect.left;
+      if (calculatedLeft + drawerWidth > window.innerWidth - 16) {
+        left = Math.max(16, window.innerWidth - drawerWidth - 16);
+      } else {
+        left = Math.max(16, calculatedLeft);
+      }
+    }
+
+    let top = rect.bottom + 8;
+    if (top + 400 > window.innerHeight && rect.top > 400) {
+      top = Math.max(16, rect.top - 410);
+    }
+
+    setCoords({ top, left, right });
+  };
+
   const toggleOpen = () => {
     setOpen((v) => {
       const next = !v;
-      if (next && containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect();
-        setCoords(
-          align === 'right'
-            ? { top: rect.bottom + 8, right: window.innerWidth - rect.right }
-            : { top: rect.bottom + 8, left: rect.left }
-        );
+      if (next) {
+        setTimeout(calculateCoords, 0);
       }
       return next;
     });
@@ -161,7 +195,7 @@ export default function NotificationBell({ collapsed = false, align = 'left' }: 
         <div
           ref={dropdownRef}
           style={{ top: coords.top, left: coords.left, right: coords.right }}
-          className="fixed z-50 w-80 max-w-[85vw] max-h-96 overflow-y-auto rounded-2xl border border-black/10 bg-white shadow-2xl"
+          className="fixed z-50 w-80 max-w-[calc(100vw-2rem)] max-h-96 overflow-y-auto rounded-2xl border border-black/10 bg-white shadow-2xl"
         >
           <div className="flex items-center justify-between border-b border-black/10 px-4 py-3">
             <span className="text-xs font-black text-gray-700">通知</span>
