@@ -9,7 +9,6 @@ import Link from 'next/link';
 
 export default function Home() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-  const [apiUsage, setApiUsage] = useState<number>(0);
   const [systemMetrics, setSystemMetrics] = useState<any>({ queue: { pending: 0, completed: 0 }, cloud_workers: {} });
   const [recentDictUpdates, setRecentDictUpdates] = useState<any[]>([]);
   const [recentLibraryUpdates, setRecentLibraryUpdates] = useState<any[]>([]);
@@ -77,7 +76,6 @@ export default function Home() {
         if (data.worker) setSystemStatus({ worker: data.worker, queue: data.queue || [], history: data.history || [] });
         if (data.kbStats) setKbStats(data.kbStats);
         if (data.systemMetrics) setSystemMetrics(data.systemMetrics);
-        if (data.apiUsage !== undefined) setApiUsage(data.apiUsage);
         if (data.recentYoutubeQueue) setRecentYoutubeQueue(data.recentYoutubeQueue);
         if (data.recentDictUpdates) setRecentDictUpdates(data.recentDictUpdates);
         if (data.recentLibraryUpdates) setRecentLibraryUpdates(data.recentLibraryUpdates);
@@ -390,45 +388,6 @@ export default function Home() {
                 <div>🌐 <strong>クラウド自動:</strong> 辞典更新/プロビルド/5v5/戦績同期</div>
               </div>
             </details>
-          </div>
-        </motion.div>
-
-        {/* QUOTA Card (2カラム化・コンパクト) */}
-        <motion.div variants={itemVariants} className="md:col-span-2 lg:col-span-2 glass-panel glass-panel-hover rounded-2xl p-3.5 relative overflow-hidden border border-black/5 bg-gradient-to-b from-black/[0.02] to-transparent flex flex-col justify-between">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-orange-400/15 rounded-full blur-[40px] -mr-8 -mt-8 pointer-events-none"></div>
-          <div className="flex justify-between items-center mb-2">
-            <div className="flex items-center gap-2">
-              <div className="p-2 bg-orange-100 border border-orange-200 rounded-xl text-orange-700">
-                <Zap size={18} />
-              </div>
-              <h3 className="text-base font-black text-stone-900 tracking-tight">API Quota (1500回/日)</h3>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <div className="flex justify-between items-end gap-2">
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-2xl md:text-4xl font-black text-stone-900 tracking-tight">{apiUsage}</span>
-                <span className="text-xs text-stone-500 font-medium">/ 1500 消費</span>
-              </div>
-              <div className="text-right">
-                <span className="text-[10px] text-stone-500 block">残り</span>
-                <span className="text-lg font-bold text-emerald-700">{Math.max(0, 1500 - apiUsage)}</span>
-              </div>
-            </div>
-
-            <div className="w-full bg-black/[0.05] rounded-full h-2.5 overflow-hidden border border-black/5">
-              <div
-                className={`h-full rounded-full transition-all duration-1000 ${apiUsage >= 1500 ? 'bg-rose-500' : apiUsage > 1200 ? 'bg-gradient-to-r from-orange-400 to-rose-500' : 'bg-gradient-to-r from-amber-400 to-orange-500'}`}
-                style={{ width: `${Math.min((apiUsage / 1500) * 100, 100)}%` }}
-              ></div>
-            </div>
-
-            <div className="flex justify-between text-[9px] text-stone-500 font-medium">
-              <span>0%</span>
-              <span>リセット: 16:00 (JST)</span>
-              <span>100%</span>
-            </div>
           </div>
         </motion.div>
 

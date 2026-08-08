@@ -12,7 +12,6 @@ export async function GET(req: NextRequest) {
     }
 
     const heartbeatId = '00000000-0000-0000-0000-000000000000';
-    const todayStart = new Date(new Date().setHours(0, 0, 0, 0)).toISOString();
 
     // 1回のリクエストで全クエリを並列超高速実行
     const [
@@ -27,7 +26,6 @@ export async function GET(req: NextRequest) {
       { count: memosCount },
       { count: matchupLogCount },
       { data: ytQueueData },
-      { count: todayTasksCount },
       { data: dictData },
       { data: libData },
       { data: recentTaskData },
@@ -54,8 +52,6 @@ export async function GET(req: NextRequest) {
       supabase.from('matchup_log').select('id', { count: 'exact', head: true }),
       // YouTubeキュー
       supabase.from('youtube_queue').select('id, title, status, channel_name, updated_at').order('updated_at', { ascending: false }).limit(3),
-      // 本日消費カウント
-      supabase.from('edge_tasks').select('id', { count: 'exact', head: true }).gt('created_at', todayStart),
       // 直近の更新
       supabase.from('matchup_sentinel').select('matchup_id, champion, title, created_at').eq('enemy', 'GLOBAL').order('created_at', { ascending: false }).limit(5),
       supabase.from('personal_knowledge').select('id, title, champion, created_at').order('created_at', { ascending: false }).limit(5),
@@ -162,7 +158,6 @@ export async function GET(req: NextRequest) {
         },
         cloud_workers: (systemMetricsRow?.raw_data as any)?.cloud_workers || {},
       },
-      apiUsage: todayTasksCount ?? 0,
       recentYoutubeQueue: ytQueueData || [],
       recentDictUpdates: dictData || [],
       recentLibraryUpdates: libData || [],
