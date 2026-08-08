@@ -64,23 +64,26 @@ def fetch_champion_notes(champ_id: str, supabase_url: str, supabase_key: str) ->
     return ""
 
 
-def main():
-    if len(sys.argv) < 3:
-        logger.error("Usage: python champion_trend_worker.py <champion> <role>")
-        sys.exit(1)
+def collect_and_save_champion_trend(champion: str, role: str, client=None) -> bool:
+    """1チャンピオン分のAIトレンド収集〜保存を行う共通エンジン。
 
-    champion = normalize_champion_id(sys.argv[1])
-    role = sys.argv[2]
-    
+    辞典の「最新トレンド取得」ボタン(CLI経由のmain)と、champ_db_bulk_updater.pyの
+    一括更新ループの両方から呼ばれる(2026-08-08、旧・自由記述ベースの一括更新
+    パイプラインをこちらへ統合)。呼び出し元ごとにGemini APIキーのクォータを
+    分離したい場合があるため、clientを外部から注入できるようにしている
+    (未指定時はこのモジュール自身のデフォルトキーで生成する)。
+    例外は投げず、成功時True・失敗時Falseを返す。
+    """
+    champion = normalize_champion_id(champion)
     logger.info(f"Starting trend collection for {champion} ({role})")
-    
-    api_key = settings.GEMINI_API_KEY_FREE or settings.GEMINI_API_KEY
-    if not api_key:
-        logger.error("Gemini API key is not configured.")
-        sys.exit(1)
-        
-    client = genai.Client(api_key=api_key)
-    
+
+    if client is None:
+        api_key = settings.GEMINI_API_KEY_FREE or settings.GEMINI_API_KEY
+        if not api_key:
+            logger.error("Gemini API key is not configured.")
+            return False
+        client = genai.Client(api_key=api_key)
+
     now_str = datetime.now(timezone.utc).strftime("%Y/%m/%d")
     notes_context = fetch_champion_notes(champion, settings.SUPABASE_URL, settings.SUPABASE_KEY)
     
@@ -98,13 +101,21 @@ def main():
 さらに、以下の【評価基準】を1〜5の数値（星の数）で評価してください：
 - 先出し安定度（カウンターされにくく、先出ししやすい。1〜5）
 - 後出し有利度（特定の敵に対して理不尽なカウンターになり得る。1〜5）
+
+加えて、このチャンピオンの標準的なジャングルルーティンについて、以下のタイミングを秒数（整数）でリサーチしてください（攻略サイトやガイド記事に掲載されている一般的な目安値。不明な場合は無理に数字を作らずnullにすること）：
+- 1周目フルクリア時間（ジャングル開始からジャングルモンスター1周を終えるまでの目安秒数）
+- 1個目のコアアイテムが完成する目安タイミング（試合開始からの秒数）
+- 2個目のコアアイテムが完成する目安タイミング（試合開始からの秒数）
 """
         jg_json_schema = """,
   "jg_style": {
     "type": "侵入型" | "ガンク型" | "ファーム型" | "タンク型", // いずれか1つを厳密に選択
     "blind_pickable": 3, // 先出し安定度 (1〜5 の数値)
     "counter_pickable": 4, // 後出し有利度 (1〜5 の数値)
-    "description": "なぜその先出し安定度・後出し有利度の星評価になったのかの具体的な根拠と、アイアン〜ゴールド帯を基準とした立ち回りの特徴（日本語で2〜3文程度）"
+    "description": "なぜその先出し安定度・後出し有利度の星評価になったのかの具体的な根拠と、アイアン〜ゴールド帯を基準とした立ち回りの特徴（日本語で2〜3文程度）",
+    "full_clear_time_sec": 480, // 1周目フルクリアの目安秒数（数値のみ。不明ならnull）
+    "first_core_timing_sec": 210, // 1個目コアアイテム完成の目安秒数（数値のみ。不明ならnull）
+    "second_core_timing_sec": 420 // 2個目コアアイテム完成の目安秒数（数値のみ。不明ならnull）
   }"""
 
     prompt = f"""【システムコンテキスト：現在の年は2026年です（本日は {now_str}）。この日時を基準に、未来や過去の出来事を正しく判定し、文脈を構築してください。】
@@ -120,7 +131,7 @@ League of Legendsの最新パッチにおける、チャンピオン「{champion
 {{
   "champion": "{champion}",
   "role": "{role}",
-  "patch": "最新パッチ番号 (例: 14.12)",
+  "patch": "最新パッチ番号 (西暦下2桁基準の表記。例: 26.12)",
   "win_rate": 50.2, // 最新勝率 (%、数値のみ)
   "pick_rate": 5.4, // 最新ピック率 (%、数値のみ)
   "ban_rate": 8.1,  // 最新バン率 (%、数値のみ)
@@ -199,7 +210,7 @@ League of Legendsの最新パッチにおける、チャンピオン「{champion
                 logger.info("✅ Successfully generated trend data using local Ollama model fallback.")
             except Exception as ollama_e:
                 logger.warning(f"⚠️ API制限のため今回の定期更新は安全にスキップされました (既存データを維持します): {ollama_e}")
-                sys.exit(0)
+                return False
         
     # Supabase 接続準備
     supabase_url = settings.SUPABASE_URL
@@ -221,7 +232,7 @@ League of Legendsの最新パッチにおける、チャンピオン「{champion
             existing = res.json()[0]
     except Exception as e:
         logger.error(f"Failed to fetch existing sentinel record: {e}")
-        sys.exit(3)
+        return False
         
     raw_data = existing.get("raw_data") or {}
     if not isinstance(raw_data, dict):
@@ -257,6 +268,9 @@ League of Legendsの最新パッチにおける、チャンピオン「{champion
             "description": new_jg_style.get("description") or existing_jg_style.get("description"),
             "blind_pickable": new_jg_style.get("blind_pickable") if new_jg_style.get("blind_pickable") is not None else existing_jg_style.get("blind_pickable"),
             "counter_pickable": new_jg_style.get("counter_pickable") if new_jg_style.get("counter_pickable") is not None else existing_jg_style.get("counter_pickable"),
+            "full_clear_time_sec": new_jg_style.get("full_clear_time_sec") if new_jg_style.get("full_clear_time_sec") is not None else existing_jg_style.get("full_clear_time_sec"),
+            "first_core_timing_sec": new_jg_style.get("first_core_timing_sec") if new_jg_style.get("first_core_timing_sec") is not None else existing_jg_style.get("first_core_timing_sec"),
+            "second_core_timing_sec": new_jg_style.get("second_core_timing_sec") if new_jg_style.get("second_core_timing_sec") is not None else existing_jg_style.get("second_core_timing_sec"),
         }
     
     # 攻略情報の上書き
@@ -290,11 +304,11 @@ League of Legendsの最新パッチにおける、チャンピオン「{champion
         res = httpx.post(url_upsert, headers=headers_upsert, json=payload, timeout=15)
         if res.status_code not in (200, 201, 204):
             logger.error(f"Failed to upsert matchup_sentinel: {res.status_code} - {res.text}")
-            sys.exit(4)
+            return False
         logger.info(f"Successfully updated trend and matchup_sentinel for {champion}")
     except Exception as e:
         logger.error(f"Exception during upsert: {e}")
-        sys.exit(5)
+        return False
 
     record_matchup_sentinel_revision(
         matchup_id, existing or None, payload,
@@ -319,6 +333,9 @@ League of Legendsの最新パッチにおける、チャンピオン「{champion
         "jg_description": jg_style_data.get("description") or None,
         "jg_blind_pickable": jg_style_data.get("blind_pickable"),
         "jg_counter_pickable": jg_style_data.get("counter_pickable"),
+        "full_clear_time_sec": jg_style_data.get("full_clear_time_sec"),
+        "first_core_timing_sec": jg_style_data.get("first_core_timing_sec"),
+        "second_core_timing_sec": jg_style_data.get("second_core_timing_sec"),
         "patch": patch_meta_data.get("patch") or None,
         "patch_meta": patch_meta_data or None,
         "pro_builds": raw_data.get("pro_builds") or [],
@@ -341,8 +358,24 @@ League of Legendsの最新パッチにおける、チャンピオン「{champion
     except Exception as fe:
         logger.warning(f"⚠️ [{champion}] champion_facts 書き込み例外 (sentinel側は成功): {fe}")
 
-    # 成功終了情報を出力
-    print(json.dumps({"success": True, "message": f"Updated {champion} trend", "matchup_id": matchup_id}))
+    return True
+
+
+def main():
+    if len(sys.argv) < 3:
+        logger.error("Usage: python champion_trend_worker.py <champion> <role>")
+        sys.exit(1)
+
+    champion = sys.argv[1]
+    role = sys.argv[2]
+    success = collect_and_save_champion_trend(champion, role)
+
+    print(json.dumps({
+        "success": success,
+        "message": f"{'Updated' if success else 'Failed to update'} {normalize_champion_id(champion)} trend",
+    }))
+    sys.exit(0 if success else 1)
+
 
 if __name__ == "__main__":
     main()

@@ -48,6 +48,9 @@ export async function GET(req: Request) {
           description: fact.jg_description || '',
           blind_pickable: fact.jg_blind_pickable,
           counter_pickable: fact.jg_counter_pickable,
+          full_clear_time_sec: fact.full_clear_time_sec ?? null,
+          first_core_timing_sec: fact.first_core_timing_sec ?? null,
+          second_core_timing_sec: fact.second_core_timing_sec ?? null,
         } : null,
       };
 

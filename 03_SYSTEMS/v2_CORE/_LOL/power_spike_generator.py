@@ -171,7 +171,7 @@ def upsert_power_spike(champion: str, data: dict, patch: str, retries: int = 3) 
     return False
 
 
-def generate_power_spike(champion: str, role: str = "GLOBAL", patch: str = "16.11") -> bool:
+def generate_power_spike(champion: str, role: str = "GLOBAL", patch: str = "26.11") -> bool:
     """1チャンピオン分のパワースパイクを生成しDBへ反映する。champ_db_bulk_updater.pyのループから呼び出し可能。"""
     logging.info(f"⚡ [{champion}] パワースパイク生成を開始します...")
     data = _call_llm(champion, role, patch)

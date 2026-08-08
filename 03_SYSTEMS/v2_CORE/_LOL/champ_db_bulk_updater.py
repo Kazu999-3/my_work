@@ -11,18 +11,16 @@ import dotenv
 # パス追加と設定の読み込み
 try:
     from v2_CORE.settings import settings
-    from v2_CORE.ai_helper import generate_content_safe
-    from v2_CORE._LOL.champ_db_updater import update_champion_db
+    from v2_CORE._LOL.champion_trend_worker import collect_and_save_champion_trend
     from v2_CORE._LOL.power_spike_generator import generate_power_spike
-    from v2_CORE._LOL.champ_id_normalizer import get_latest_ddragon_version
+    from v2_CORE._LOL.champ_id_normalizer import get_latest_ddragon_version, to_display_patch_version
     from v2_CORE._LOL.herald import herald
 except ImportError:
     sys.path.append(str(Path(__file__).resolve().parent.parent.parent))
     from v2_CORE.settings import settings
-    from v2_CORE.ai_helper import generate_content_safe
-    from v2_CORE._LOL.champ_db_updater import update_champion_db
+    from v2_CORE._LOL.champion_trend_worker import collect_and_save_champion_trend
     from v2_CORE._LOL.power_spike_generator import generate_power_spike
-    from v2_CORE._LOL.champ_id_normalizer import get_latest_ddragon_version
+    from v2_CORE._LOL.champ_id_normalizer import get_latest_ddragon_version, to_display_patch_version
     from v2_CORE._LOL.herald import herald
 
 dotenv.load_dotenv(Path("d:/my_work/.env"))
@@ -90,10 +88,18 @@ def report_bulk_status(queue_data: dict):
     except Exception as e:
         logging.warning(f"⚠️ 進捗レポートの送信に失敗しました（処理は続行）: {e}")
 
-def get_latest_patch() -> str:
+def get_latest_patch() -> tuple[str, str]:
+    """(raw_ddragon_version, display_patch_version) を返す。
+
+    raw はそのままDDragonのCDN URL(get_all_champions)に使う生のバージョン文字列
+    (例: "16.15.1")。display は辞典表記(champion_facts.patch等)に揃えた
+    西暦下2桁基準の文字列(例: "26.15")。この2つを混同すると、CDN URLに
+    "26.15" のような存在しないパスを渡してチャンピオン一覧取得が404になる
+    (2026-08-08発覚)。
+    """
     version = get_latest_ddragon_version(timeout=10)
     if version:
-        return version
+        return version, to_display_patch_version(version)
     raise RuntimeError(
         "最新パッチバージョンの取得に失敗しました。古いパッチのまま同期を継続すると"
         "誤ったデータで辞典を上書きするため、同期を中断します。DDragonの疎通を確認してください。"
@@ -127,71 +133,6 @@ def save_queue(data: dict):
         logging.error(f"Failed to save queue file: {e}")
     report_bulk_status(data)
 
-def research_champion(champ_name: str, champ_id: str, patch_version: str) -> str:
-    # 1. まず Gemini API での生成を試みる
-    if GEMINI_API_KEY:
-        try:
-            from google import genai
-            client = genai.Client(api_key=GEMINI_API_KEY)
-            patch_major = ".".join(patch_version.split(".")[:2]) if patch_version else "16.11"
-            
-            prompt = f"""
-            League of Legendsのチャンピオン「{champ_name} ({champ_id})」について、最新パッチ（パッチ {patch_major}想定）の情報をリサーチしてください。
-
-            以下の項目を詳しくまとめてください：
-            1. 強み
-            2. 弱み
-            3. パワースパイク (コアアイテムやレベル)
-            4. 推奨ビルドと主要ルーン
-            5. フルクリア時間とルート（ジャングラーの場合のみ。それ以外は「対象外」と記載）
-            6. 基本的な立ち回りとメタでの位置づけ
-
-            情報は Lolalytics や u.gg などの統計に基づいた客観的な内容にしてください。
-
-            【重要】アイテム名・チャンピオン名・ルーン名などの固有名詞を除き、本文は必ず日本語で記述してください。英単語や英文をそのまま出力しないでください。
-            """
-
-            # generate_content_safe は内部で APIGateway および自動モデルローテーションを介してレート制限をハンドリングする
-            response_text = generate_content_safe(
-                client, 
-                prompt, 
-                model_id="gemini-3.5-flash-lite",
-                feature_name="oracle",
-                sleep_on_rate_limit=True  # 429発生時は自動スリープおよび他モデルへのフォールバックを実施
-            )
-            # 正常に取得できたら返す
-            if response_text and not response_text.startswith("❌") and not response_text.startswith("⚠️") and "本日の利用上限に達しました" not in response_text:
-                return response_text
-        except Exception as e:
-            logging.warning(f"⚠️ Geminiでの {champ_name} のリサーチに失敗しました。ローカルOllamaへのフォールバックを試みます。エラー: {e}")
-
-    # 2. Gemini が制限やエラーで失敗した場合は、ローカルの Ollama (gemma3:12b) にフォールバックする
-    logging.info(f"🏠 Ollama (ローカルLLM) を使用して {champ_name} をリサーチします...")
-    try:
-        from v2_CORE.ai_helper import _generate_with_ollama
-        patch_major = ".".join(patch_version.split(".")[:2]) if patch_version else "16.11"
-        prompt = f"""
-        League of Legendsのチャンピオン「{champ_name} ({champ_id})」について、最新パッチ（パッチ {patch_major}想定）の情報をリサーチしてください。
-        
-        以下の項目を詳しくまとめてください：
-        1. 強み (Strengths)
-        2. 弱み (Weaknesses)
-        3. パワースパイク (コアアイテムやレベル)
-        4. 推奨ビルドと主要ルーン
-        5. フルクリア時間とルート（ジャングラーの場合のみ。それ以外は「対象外」と記載）
-        6. 基本的な立ち回りとメタでの位置づけ
-        
-        情報は Lolalytics や u.gg などの統計に基づいた客観的な内容にしてください。
-        """
-        
-        response_text = _generate_with_ollama(prompt, model=settings.OLLAMA_MODEL)
-        if response_text:
-            return response_text
-    except Exception as e:
-        logging.error(f"❌ ローカルOllamaでの {champ_name} のリサーチも失敗しました: {e}")
-        
-    return "❌ リサーチに失敗しました。"
-
 def run_bulk_update():
     logging.info("🏁 チャンピオン辞典一括更新プロセスを起動しました。")
     
@@ -201,15 +142,15 @@ def run_bulk_update():
     
     if not queue_data or not queue_data.get("queue"):
         try:
-            patch_version = get_latest_patch()
+            raw_version, patch_version = get_latest_patch()
         except RuntimeError as e:
             logging.error(f"❌ {e}")
             herald.notify_progress(
-                f"❌ **【辞典一括更新 中断】** {e}", portal_link=True, page="champdb"
+                f"❌ **【辞典一括更新 中断】** {e}", portal_link=True, page="champdb", discord=False
             )
             return
         logging.info(f"🌐 最新パッチ特定: {patch_version}")
-        champions = get_all_champions(patch_version)
+        champions = get_all_champions(raw_version)
         if not champions:
             logging.error("❌ チャンピオンリストの取得に失敗したため、処理を中断します。")
             return
@@ -230,6 +171,9 @@ def run_bulk_update():
         save_queue(queue_data)
         logging.info(f"🆕 新規更新キューを作成しました: {len(queue_data['queue'])} 件のチャンピオン")
     else:
+        # 過去の実行で正規化前（16.xx形式）のパッチが保存されている場合に備え、読み込み時にも揃える
+        patch_version = to_display_patch_version(patch_version)
+        queue_data["patch_version"] = patch_version
         logging.info(f"📂 既存の更新キューを読み込みました。パッチバージョン: {patch_version}")
         queue_data["status"] = "running"
         queue_data["updated_at"] = datetime.now(timezone.utc).isoformat()
@@ -258,10 +202,16 @@ def run_bulk_update():
         target_champs = list(queue.keys())
         total_targets = len(target_champs)
 
+    # 対話側(GEMINI_API_KEY_FREE)とクォータを分離するため、一括更新専用のクライアントを
+    # 明示的に注入する(未設定ならNoneのままとし、collect_and_save_champion_trend側の
+    # デフォルトキー解決にフォールバックさせる)。
+    from google import genai
+    batch_client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
+
     processed_count = 0
     consecutive_db_failures = 0
     suspended = False
-    
+
     for champ_id in target_champs:
         info = queue[champ_id]
         champ_name = info["name"]
@@ -273,33 +223,14 @@ def run_bulk_update():
         queue_data["updated_at"] = datetime.now(timezone.utc).isoformat()
         save_queue(queue_data)
         
-        # AIリサーチの実行
-        intel = research_champion(champ_name, champ_id, patch_version)
-        
-        # エラー判定 (ai_helper の戻り値検証)
-        # 「本日の利用上限」は日次クォータ枯渇であり、これ以降の全チャンピオンも
-        # 確実に失敗するため、ここでのみバッチ全体を安全に一時停止する。
-        # それ以外の一過性エラー(❌/⚠️)は当該チャンピオンだけ failed にして次へ進める。
-        if intel and "本日の利用上限に達しました" in intel:
-            logging.warning(f"⚠️ [{champ_id}] 日次クォータ上限を検知しました。バッチ全体を一時停止します。")
-            queue[champ_id]["status"] = "failed"
-            queue[champ_id]["error"] = intel
-            suspended = True
-            break
+        # AIトレンド収集〜保存。以前はここが自由記述ベースの独自パイプライン
+        # (research_champion + update_champion_db)だったため、辞典の「最新トレンド取得」
+        # ボタンや健康ダッシュボードの一括更新（champion_trend_worker.py）と処理内容が
+        # 食い違っていた（勝率/ピック率/プロビルド/フルクリア時間等が一括更新側では
+        # 収集されない）。2026-08-08、同じエンジンに統合。
+        # このOSはジャングル中心のため、ロールはJungle基準で統一してリサーチする。
+        success = collect_and_save_champion_trend(champ_id, "Jungle", client=batch_client)
 
-        if not intel or intel.startswith("❌") or intel.startswith("⚠️"):
-            logging.warning(f"⚠️ [{champ_id}] 一時的なエラーを検知しました。このチャンピオンをスキップして次へ進みます。エラー: {(intel or '')[:100]}")
-            queue[champ_id]["status"] = "failed"
-            queue[champ_id]["error"] = intel or "Empty response"
-            queue_data["updated_at"] = datetime.now(timezone.utc).isoformat()
-            save_queue(queue_data)
-            processed_count += 1
-            time.sleep(5)
-            continue
-
-        # データベースの更新
-        success = update_champion_db(champ_id, champ_name, intel, patch_version)
-        
         if success:
             queue[champ_id]["status"] = "completed"
             queue[champ_id]["updated_at"] = datetime.now(timezone.utc).isoformat()
@@ -315,18 +246,18 @@ def run_bulk_update():
             except Exception as e:
                 logging.warning(f"⚠️ [{champ_id}] パワースパイク生成でエラーが発生しましたが処理を継続します: {e}")
         else:
-            logging.error(f"❌ {champ_name} のデータベース更新に失敗しました。")
+            logging.error(f"❌ {champ_name} のトレンド収集・更新に失敗しました。")
             queue[champ_id]["status"] = "failed"
-            queue[champ_id]["error"] = "Database upsert failed"
+            queue[champ_id]["error"] = "Trend collection failed (API/quota error or DB write failure)"
             consecutive_db_failures += 1
             processed_count += 1
             if consecutive_db_failures >= 5:
-                logging.error("❌ データベースの連続更新失敗が上限(5回)に達したため、処理を一時停止します。")
+                logging.error("❌ 連続更新失敗が上限(5回)に達したため、処理を一時停止します。")
                 suspended = True
                 break
             else:
-                logging.warning(f"⚠️ {champ_name} のデータベース更新失敗をスキップして次のチャンピオンへ進みます (連続失敗: {consecutive_db_failures}/5)")
-            
+                logging.warning(f"⚠️ {champ_name} の更新失敗をスキップして次のチャンピオンへ進みます (連続失敗: {consecutive_db_failures}/5)")
+
         # キューの進捗を保存
         queue_data["updated_at"] = datetime.now(timezone.utc).isoformat()
         save_queue(queue_data)
@@ -341,7 +272,7 @@ def run_bulk_update():
         logging.info("⏸️ API制限またはエラーにより、一括更新を安全に一時停止しました。次回実行時に再開します。")
         queue_data["status"] = "suspended"
         save_queue(queue_data)
-        herald.notify_progress("⚠️ **【辞典一括更新一時停止】** API利用上限または一時的な接続エラーのため、一括更新を一時停止しました。残りのチャンピオンは次回実行時に再開します。", portal_link=True, page="champdb")
+        herald.notify_progress("⚠️ **【辞典一括更新一時停止】** API利用上限または一時的な接続エラーのため、一括更新を一時停止しました。残りのチャンピオンは次回実行時に再開します。", portal_link=True, page="champdb", discord=False)
     else:
         # 完了チェック
         still_pending = [cid for cid, info in queue.items() if info["status"] in ("pending", "failed")]
@@ -358,7 +289,7 @@ def run_bulk_update():
             except Exception:
                 pass
             
-            herald.notify_progress("🎉 **【辞典一括更新完了】** 全チャンピオンの統計データとトレンド基本戦略の一括アップデートが完了しました！", portal_link=True, page="champdb")
+            herald.notify_progress("🎉 **【辞典一括更新完了】** 全チャンピオンの統計データとトレンド基本戦略の一括アップデートが完了しました！", portal_link=True, page="champdb", discord=False)
         else:
             logging.info(f"⏸️ ループが終了しました。残り未処理: {len(still_pending)} 件")
             queue_data["status"] = "suspended"

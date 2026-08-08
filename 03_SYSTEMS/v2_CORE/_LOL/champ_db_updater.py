@@ -196,7 +196,7 @@ def merge_and_extract_intel(champ_name: str, new_text: str, existing_data: dict)
         
     return None
 
-def update_champion_db(champ_id: str, champ_name: str, new_text: str, patch_version: str = "16.11"):
+def update_champion_db(champ_id: str, champ_name: str, new_text: str, patch_version: str = "26.11"):
     """メイン関数：既存データを取得、マージ、SupabaseへUpsert"""
     champ_id = normalize_champion_id(champ_id)
     logging.info(f"[{champ_id}] Auto-updating Champion DB...")
@@ -223,7 +223,7 @@ def update_champion_db(champ_id: str, champ_name: str, new_text: str, patch_vers
     # 新しい patch_meta の決定
     import time
     patch_meta = {
-        "patch": patch_version or existing_patch_meta.get("patch") or "16.11",
+        "patch": patch_version or existing_patch_meta.get("patch") or "26.11",
         "updated_at": int(time.time()),
         "win_rate": existing_patch_meta.get("win_rate") or 50.0,
         "pick_rate": existing_patch_meta.get("pick_rate") or 5.0,

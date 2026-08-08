@@ -38,6 +38,31 @@ def _sanitize_rate(value, field_name: str, champion: str):
     return v
 
 
+# ジャングルの1周目フルクリア/1コア/2コア購入タイミング。現実的な範囲外の値は
+# ハルシネーションとみなして破棄する（フォールバックに任せる）。
+_SECONDS_BOUNDS = {
+    "full_clear_time_sec": (180, 900),    # 3分〜15分
+    "first_core_timing_sec": (90, 600),   # 1分30秒〜10分
+    "second_core_timing_sec": (180, 900), # 3分〜15分
+}
+
+
+def _sanitize_seconds(value, field_name: str, champion: str):
+    """秒数として妥当な範囲(_SECONDS_BOUNDS)に収まる数値だけを通す。"""
+    if value is None:
+        return None
+    try:
+        v = float(value)
+    except (TypeError, ValueError):
+        logger.warning(f"⚠️ [{champion}] {field_name}が数値ではありません({value!r})。破棄してフォールバックします。")
+        return None
+    lo, hi = _SECONDS_BOUNDS[field_name]
+    if not (lo <= v <= hi):
+        logger.warning(f"⚠️ [{champion}] {field_name}が異常値({v}秒)です。破棄してフォールバックします。")
+        return None
+    return int(round(v))
+
+
 def _sanitize_pro_builds(pro_builds, champion: str) -> list:
     """実在プロ選手に関する事実主張のため、根拠(source_hint)が無い/構造が壊れている
     項目は創作の疑いが強いとみなして丸ごと落とす(記事の「引用義務化」の考え方を適用)。"""
@@ -75,6 +100,14 @@ def sanitize_trend_data(trend_data: dict, champion: str) -> dict:
 
     if "pro_builds" in sanitized:
         sanitized["pro_builds"] = _sanitize_pro_builds(sanitized.get("pro_builds"), champion)
+
+    jg_style = sanitized.get("jg_style")
+    if isinstance(jg_style, dict):
+        sanitized_jg_style = dict(jg_style)
+        for field in _SECONDS_BOUNDS:
+            if field in sanitized_jg_style:
+                sanitized_jg_style[field] = _sanitize_seconds(sanitized_jg_style.get(field), field, champion)
+        sanitized["jg_style"] = sanitized_jg_style
 
     return sanitized
 
@@ -295,7 +328,7 @@ class LolTrendCollector:
         {{
           "champion": "{champion}",
           "role": "{role}",
-          "patch": "最新パッチ番号 (例: 14.12)",
+          "patch": "最新パッチ番号 (西暦下2桁基準の表記。例: 26.12)",
           "win_rate": 50.2, // 最新勝率 (%、数値のみ)
           "pick_rate": 5.4, // 最新ピック率 (%、数値のみ)
           "ban_rate": 8.1,  // 最新バン率 (%、数値のみ)

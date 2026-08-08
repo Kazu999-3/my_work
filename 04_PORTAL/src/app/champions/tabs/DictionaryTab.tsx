@@ -5,7 +5,7 @@ import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { getChampIcon, getChampSplash } from '../../../lib/ddragonClient';
-import { ChevronLeft, Search, Save, BookOpen, RefreshCw, Zap, ShieldAlert, Swords, Shield, Copy, Check, FileText, Eye, Edit2, Activity, Plus, Trash, Filter, Star as StarIcon, Award, Sparkles, History } from 'lucide-react';
+import { ChevronLeft, Search, Save, BookOpen, RefreshCw, Zap, ShieldAlert, Swords, Shield, Copy, Check, FileText, Eye, Edit2, Activity, Plus, Trash, Filter, Star as StarIcon, Award, Sparkles, History, Clock } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -81,6 +81,14 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
     const diffDays = Math.floor(diffHours / 24);
     if (diffDays === 1) return '昨日';
     return `${diffDays}日前`;
+  };
+
+  // ジャングルタイミング（秒）をmm:ss表示に変換する。AI自動取得のみで手動入力欄は持たない。
+  const formatTimingSec = (sec?: number | null) => {
+    if (sec === null || sec === undefined || isNaN(sec)) return '未取得';
+    const m = Math.floor(sec / 60);
+    const s = Math.round(sec % 60);
+    return `${m}:${String(s).padStart(2, '0')}`;
   };
   
   const [isGuideOpen, setIsGuideOpen] = useState(false);
@@ -900,6 +908,31 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                 className="w-full h-20 bg-white border border-border rounded-lg px-3 py-2 text-stone-900 text-xs resize-none focus:outline-none focus:border-emerald-500 transition-colors"
               />
             </div>
+
+            {/* ⏱ ジャングル序盤タイミング（AI自動取得のみ・手動編集不可） */}
+            {(dataFields.jg_style?.role || 'JUNGLE') === 'JUNGLE' && (
+              <div className="mt-4 pt-4 border-t border-black/10">
+                <p className="text-xs text-gray-400 font-bold mb-2 flex items-center gap-1.5">
+                  <Clock size={13} /> ジャングル序盤タイミング（自動取得）
+                </p>
+                <div className="flex gap-2 flex-wrap items-center">
+                  <span className="px-3 py-1.5 bg-black/5 border border-black/10 rounded-lg text-xs font-bold text-stone-700">
+                    1周目フルクリア {formatTimingSec(dataFields.jg_style?.full_clear_time_sec)}
+                  </span>
+                  <span className="px-3 py-1.5 bg-black/5 border border-black/10 rounded-lg text-xs font-bold text-stone-700">
+                    1コア完成 {formatTimingSec(dataFields.jg_style?.first_core_timing_sec)}
+                  </span>
+                  <span className="px-3 py-1.5 bg-black/5 border border-black/10 rounded-lg text-xs font-bold text-stone-700">
+                    2コア完成 {formatTimingSec(dataFields.jg_style?.second_core_timing_sec)}
+                  </span>
+                </div>
+                {(dataFields.jg_style?.full_clear_time_sec == null) && (
+                  <p className="text-[11px] text-gray-400 mt-2">
+                    未取得の項目は、上部の「最新トレンド取得」ボタンでAIが攻略サイトを調査して自動入力します。
+                  </p>
+                )}
+              </div>
+            )}
           </div>
 
           {/* 📈 最新パッチトレンド (自動収集) */}

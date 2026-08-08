@@ -98,6 +98,33 @@ def get_latest_ddragon_version(timeout: int = 5) -> Optional[str]:
         logging.warning(f"⚠️ DDragonからの最新バージョン取得に失敗しました: {e}")
     return None
 
+
+def to_display_patch_version(version: Optional[str]) -> Optional[str]:
+    """DDragonの内部バージョン表記（例: '16.15.1'）を、辞典で使う表記（例: '26.15'）へ揃える。
+
+    DDragonのメジャー番号はシーズン通し番号（14=2024, 15=2025, 16=2026...）で、
+    辞典側（AI自動トレンド収集 champion_trend_worker.py）は西暦下2桁基準の表記（26.xx）を
+    使っているため、両者が混在すると辞典内でパッチ表記が割れる(2026-08-08発覚)。
+    +10してビルド番号(3つ目の.X)を切り捨てることで統一する。
+
+    冪等性: 既に26.xx形式(メジャー20以上)の値を渡された場合は+10しない。
+    「一時保存された値が正規化前(16.xx)か正規化済み(26.xx)か分からない」呼び出し元
+    (例: キューファイルのresume読み込み)で毎回呼んでも、26→36→46...とズレていかない
+    ようにするため(2026-08-08、二重適用バグ発覚)。
+    """
+    if not version:
+        return version
+    parts = str(version).split(".")
+    if len(parts) < 2:
+        return version
+    try:
+        major = int(parts[0])
+    except ValueError:
+        return version
+    if major < 20:
+        major += 10
+    return f"{major}.{parts[1]}"
+
 def load_ddragon_mapping() -> Dict[str, str]:
     global _ddragon_id_map
     if _ddragon_id_map is not None:
