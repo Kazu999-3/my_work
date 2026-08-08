@@ -273,6 +273,7 @@ export default function BalancerPage() {
   // ★ チーム分け結果モーダルの表示フラグ
   const [showResultModal, setShowResultModal] = useState(false);
   const [modalTab, setModalTab] = useState<'teams' | 'matchups'>('teams');
+  const [isGuideOpen, setIsGuideOpen] = useState(false);
   
   const [sortConfig, setSortConfig] = useState({ key: "no", direction: "asc" });
   const [selectedPlayer, setSelectedPlayer] = useState<any>(null);
@@ -941,8 +942,6 @@ export default function BalancerPage() {
   const spectatorCount = players.filter(p => p.is_spectator_fixed).length;
   const inactiveCount  = players.filter(p => !p.is_active).length;
   const canBalance     = activeCount >= 10;
-
-  const [isGuideOpen, setIsGuideOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-background text-stone-800 p-4 md:p-8 max-w-7xl mx-auto space-y-4">

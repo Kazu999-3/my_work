@@ -83,6 +83,8 @@ export default function LeaderboardPage() {
       .catch(() => {});
   }, []);
 
+  const [isGuideOpen, setIsGuideOpen] = useState(false);
+
   const handleSyncDiscordNames = async () => {
     if (!confirm('全プレイヤーのDiscord名を最新のものに一括同期しますか？少し時間がかかります。')) return;
     setSyncing(true);
@@ -123,8 +125,6 @@ export default function LeaderboardPage() {
       </div>
     );
   }
-
-  const [isGuideOpen, setIsGuideOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-background py-10 px-4 sm:px-6 lg:px-8 text-stone-800">
