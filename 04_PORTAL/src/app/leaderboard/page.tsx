@@ -29,7 +29,7 @@ interface LeaderboardData {
 }
 
 import WinrateMatrixPanel from './WinrateMatrixPanel';
-import { Trophy, Activity, Info, RefreshCw, Lock } from 'lucide-react';
+import { Trophy, Activity, Info } from 'lucide-react';
 
 export default function LeaderboardPage() {
   const [data, setData] = useState<LeaderboardData>({
@@ -42,6 +42,21 @@ export default function LeaderboardPage() {
   const [metaData, setMetaData] = useState<any[] | null>(null);
   const [metaLoading, setMetaLoading] = useState(false);
   const [metaMinGames, setMetaMinGames] = useState(2);
+  // メタ統計のソート機能(2026-08-08追加: ピック数順固定でソートできなかった要望に対応)
+  const [metaSortKey, setMetaSortKey] = useState<'games' | 'winRate' | 'avgKda'>('games');
+  const [metaSortDir, setMetaSortDir] = useState<'asc' | 'desc'>('desc');
+  const toggleMetaSort = (key: 'games' | 'winRate' | 'avgKda') => {
+    if (metaSortKey === key) {
+      setMetaSortDir(d => d === 'desc' ? 'asc' : 'desc');
+    } else {
+      setMetaSortKey(key);
+      setMetaSortDir('desc');
+    }
+  };
+  const sortedMetaData = (rows: any[]) => {
+    const sorted = [...rows].sort((a, b) => (a[metaSortKey] - b[metaSortKey]));
+    return metaSortDir === 'desc' ? sorted.reverse() : sorted;
+  };
   useEffect(() => {
     if (activeTab !== 'meta' || metaData !== null || metaLoading) return;
     (async () => {
@@ -59,7 +74,6 @@ export default function LeaderboardPage() {
       }
     })();
   }, [activeTab, metaData, metaLoading]);
-  const [syncing, setSyncing] = useState(false);
   const [minGames, setMinGames] = useState<number>(3);
   const [search, setSearch] = useState(''); // プレイヤー名検索(L-03)
   const [sortMetric, setSortMetric] = useState<'mmr' | 'winRate' | 'games'>('mmr');
@@ -71,34 +85,7 @@ export default function LeaderboardPage() {
       return b.mmr - a.mmr;
     });
   };
-  // 「名前の一括同期」は全登録プレイヤー分のDiscord API呼び出しを伴う管理運用向けの
-  // 操作で、balancer/match-recordのような個々のメンバーが自分のために使う機能とは
-  // 性質が異なる。姉妹APIのdiscord/membersが管理者専用なのに、この公開ページには
-  // isAdmin判定が無く誰にでもボタンが見えていた(2026-08-05発覚)。
-  const [isAdmin, setIsAdmin] = useState(false);
-  useEffect(() => {
-    fetch('/api/auth/verify', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) })
-      .then((res) => res.json())
-      .then((data) => setIsAdmin(!!data.valid))
-      .catch(() => {});
-  }, []);
-
   const [isGuideOpen, setIsGuideOpen] = useState(false);
-
-  const handleSyncDiscordNames = async () => {
-    if (!confirm('全プレイヤーのDiscord名を最新のものに一括同期しますか？少し時間がかかります。')) return;
-    setSyncing(true);
-    try {
-      const res = await fetch(`/api/discord/sync?_t=${Date.now()}`, { cache: 'no-store', credentials: 'include' });
-      const result = await res.json();
-      if (!res.ok) throw new Error(result.error || '同期に失敗しました');
-      alert(`✅ ${result.syncedCount}人の名前を最新のDiscord名に更新しました！\nページを再読み込みして反映します。`);
-      window.location.reload();
-    } catch (err: any) {
-      alert('エラー: ' + err.message);
-      setSyncing(false);
-    }
-  };
 
   useEffect(() => {
     async function fetchLeaderboard() {
@@ -157,22 +144,8 @@ export default function LeaderboardPage() {
           <h1 className="text-3xl font-extrabold text-stone-900 text-center tracking-tight flex items-center justify-center gap-3">
             <span className="text-amber-500">🏆</span> KTM LEADERBOARD
           </h1>
-          {isAdmin && (
-            <button
-              onClick={handleSyncDiscordNames}
-              disabled={syncing}
-              title="管理者専用操作"
-              className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center gap-2 bg-orange-600 hover:bg-orange-500 text-stone-900 px-3 py-1.5 rounded-lg text-xs font-bold transition disabled:opacity-50"
-            >
-              {/* 色(オレンジ)だけでは管理者専用操作だと伝わりにくかったため、鍵アイコンで明示
-                  (2026-08-06発覚)。 */}
-              <Lock className="w-3 h-3 shrink-0" />
-              <RefreshCw className={`w-3 h-3 ${syncing ? 'animate-spin' : ''}`} />
-              <span className="hidden sm:inline">{syncing ? '同期中...' : '名前の一括同期'}</span>
-            </button>
-          )}
         </div>
-        
+
         {/* タブナビゲーション */}
         <div className="flex justify-center mb-10 px-2">
           <div className="inline-flex flex-wrap justify-center gap-1 bg-surface rounded-xl p-1 border border-border max-w-full">
@@ -227,21 +200,40 @@ export default function LeaderboardPage() {
             {metaLoading || metaData === null ? (
               <Spinner label="メタ統計を集計中..." />
             ) : (
-              <div className="bg-surface rounded-2xl border border-border overflow-hidden divide-y divide-stone-800">
-                {metaData.filter(m => m.games >= metaMinGames).map((m, idx) => (
-                  <div key={m.name} className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 hover:bg-black/5">
-                    <span className="w-5 sm:w-6 text-center text-xs font-black text-stone-500 shrink-0">{idx + 1}</span>
-                    <Image src={getChampIcon(m.name)} alt={m.name} width={32} height={32} className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-border shrink-0"
-                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                    <span className="flex-1 min-w-0 font-bold text-stone-900 text-sm truncate">{m.name}</span>
-                    <span className="text-xs text-stone-400 w-9 sm:w-16 text-right shrink-0">{m.games}戦</span>
-                    <span className={`text-sm font-black w-10 sm:w-14 text-right shrink-0 ${m.winRate >= 55 ? 'text-emerald-700' : m.winRate <= 45 ? 'text-rose-700' : 'text-stone-800'}`}>{m.winRate}%</span>
-                    <span className="hidden sm:block text-xs font-mono text-stone-400 w-20 text-right shrink-0">KDA {m.avgKda}</span>
-                  </div>
-                ))}
-                {metaData.filter(m => m.games >= metaMinGames).length === 0 && (
-                  <p className="text-center text-stone-500 text-sm py-10">条件に合うチャンピオンがいません</p>
-                )}
+              <div className="bg-surface rounded-2xl border border-border overflow-hidden">
+                <div className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 border-b border-border text-[10px] font-bold text-stone-500">
+                  <span className="w-5 sm:w-6 shrink-0" />
+                  <span className="w-7 sm:w-8 shrink-0" />
+                  <span className="flex-1 min-w-0">チャンピオン</span>
+                  <button onClick={() => toggleMetaSort('games')}
+                    className={`w-9 sm:w-16 text-right shrink-0 hover:text-stone-900 transition ${metaSortKey === 'games' ? 'text-amber-600' : ''}`}>
+                    試合数{metaSortKey === 'games' ? (metaSortDir === 'desc' ? ' ↓' : ' ↑') : ''}
+                  </button>
+                  <button onClick={() => toggleMetaSort('winRate')}
+                    className={`w-10 sm:w-14 text-right shrink-0 hover:text-stone-900 transition ${metaSortKey === 'winRate' ? 'text-amber-600' : ''}`}>
+                    勝率{metaSortKey === 'winRate' ? (metaSortDir === 'desc' ? ' ↓' : ' ↑') : ''}
+                  </button>
+                  <button onClick={() => toggleMetaSort('avgKda')}
+                    className={`hidden sm:block w-20 text-right shrink-0 hover:text-stone-900 transition ${metaSortKey === 'avgKda' ? 'text-amber-600' : ''}`}>
+                    KDA{metaSortKey === 'avgKda' ? (metaSortDir === 'desc' ? ' ↓' : ' ↑') : ''}
+                  </button>
+                </div>
+                <div className="divide-y divide-stone-800">
+                  {sortedMetaData(metaData.filter(m => m.games >= metaMinGames)).map((m, idx) => (
+                    <div key={m.name} className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 hover:bg-black/5">
+                      <span className="w-5 sm:w-6 text-center text-xs font-black text-stone-500 shrink-0">{idx + 1}</span>
+                      <Image src={getChampIcon(m.name)} alt={m.name} width={32} height={32} className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-border shrink-0"
+                        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                      <span className="flex-1 min-w-0 font-bold text-stone-900 text-sm truncate">{m.name}</span>
+                      <span className="text-xs text-stone-400 w-9 sm:w-16 text-right shrink-0">{m.games}戦</span>
+                      <span className={`text-sm font-black w-10 sm:w-14 text-right shrink-0 ${m.winRate >= 55 ? 'text-emerald-700' : m.winRate <= 45 ? 'text-rose-700' : 'text-stone-800'}`}>{m.winRate}%</span>
+                      <span className="hidden sm:block text-xs font-mono text-stone-400 w-20 text-right shrink-0">KDA {m.avgKda}</span>
+                    </div>
+                  ))}
+                  {metaData.filter(m => m.games >= metaMinGames).length === 0 && (
+                    <p className="text-center text-stone-500 text-sm py-10">条件に合うチャンピオンがいません</p>
+                  )}
+                </div>
               </div>
             )}
           </div>

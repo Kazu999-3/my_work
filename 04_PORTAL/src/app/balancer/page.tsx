@@ -4,7 +4,7 @@ import { useEffect, useState, useRef, useCallback, useMemo, Fragment } from "rea
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "../../lib/supabaseClient";
-import { Users, RefreshCw, Swords, X, Activity, Globe, MessageSquare, Info, Crown, Trophy, History, Shield, AlertTriangle, ChevronDown, Trees, Zap, Target, Heart, Sparkles, Settings } from "lucide-react";
+import { Users, RefreshCw, Swords, X, Activity, Globe, MessageSquare, Info, Crown, Trophy, History, Shield, AlertTriangle, ChevronDown, Trees, Zap, Target, Heart, Settings } from "lucide-react";
 import { getChampIcon } from "../../lib/ddragonClient";
 import ProfileModal from "../ktm-admin/ProfileModal";
 import MatchRecordPanel from "../ktm-admin/MatchRecordPanel";
@@ -272,7 +272,6 @@ export default function BalancerPage() {
   const [sendingDiscord, setSendingDiscord] = useState(false);
   // ★ チーム分け結果モーダルの表示フラグ
   const [showResultModal, setShowResultModal] = useState(false);
-  const [modalTab, setModalTab] = useState<'teams' | 'matchups'>('teams');
   const [isGuideOpen, setIsGuideOpen] = useState(false);
   
   const [sortConfig, setSortConfig] = useState({ key: "no", direction: "asc" });
@@ -598,7 +597,13 @@ export default function BalancerPage() {
       setMessage({ type: "error", text: `チーム分けには最低10人のActiveプレイヤーが必要です。(現在 ${activePlayers.length}人)` });
       return;
     }
-    
+
+    // 「⏪前回構成を復元」ボタンが参照する保存先。以前は「全員参加ON/解除」ボタンでしか
+    // 書き込まれず、通常のチェックボックス操作やチーム分け実行時には一切保存されていなかった
+    // ため、「前回のチーム分け時の構成」を復元しようとしても常に「見つかりません」になっていた
+    // (2026-08-08発覚)。実際にチーム分けを実行するこの時点で、使ったメンバー構成を保存する。
+    try { localStorage.setItem('balancer_active_ids', JSON.stringify(activePlayers.map(p => p.id))); } catch {}
+
     // 前回のチーム分け結果が表示されている場合、結果記録の確認を促す
     if (balanceResult) {
       const confirmNext = confirm("前回のチーム分けの試合結果は記録しましたか？\n（[キャンセル] を押すと結果画面に戻ります）");
@@ -657,28 +662,6 @@ export default function BalancerPage() {
       setBalancing(false);
     }
   };
-
-  // 対戦分析の実データ(#75): 表示中の10人のプレイスタイルを試合履歴から計算
-  const [vsStyles, setVsStyles] = useState<Record<string, any>>({});
-  const fetchVsStyles = async (result: any) => {
-    try {
-      const names = [...(result?.teamBlue || []), ...(result?.teamRed || [])].map((p: any) => p.name).filter(Boolean);
-      if (names.length === 0) return;
-      const res = await fetch('/api/balancer/vs-analytics', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ names }),
-      });
-      const data = await res.json();
-      if (data.success) setVsStyles((prev) => ({ ...prev, ...data.styles }));
-    } catch (e) {
-      console.warn('vs-analytics fetch failed', e);
-    }
-  };
-  useEffect(() => {
-    if (showResultModal && balanceResult) fetchVsStyles(balanceResult);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showResultModal, balanceResult]);
 
   // 4案すべてをDiscordへ投稿(#77)。メンバーはリアクションで希望表明。
   const [sendingProposals, setSendingProposals] = useState(false);
@@ -993,14 +976,6 @@ export default function BalancerPage() {
                     <span className="hidden sm:inline">{proposals.length}案を投稿</span>
                   </button>
                 )}
-                <Link
-                  href="/coach"
-                  className="flex items-center gap-1.5 bg-gradient-to-r from-amber-700 to-amber-800 hover:from-amber-800 hover:to-amber-900 text-white px-3 py-1.5 rounded-lg font-black transition text-xs md:text-sm shadow-sm"
-                  title="チーム分け結果のメンバー構成で相性や勝率期待値をAI診断します"
-                >
-                  <Zap className="h-3.5 w-3.5 text-amber-300" />
-                  🎯 チーム相性を診断 (/coach)
-                </Link>
                 <button onClick={handleSendDiscord} disabled={sendingDiscord}
                   className="flex items-center gap-1.5 bg-[#5865F2] hover:bg-[#4752C4] text-white px-3 py-1.5 rounded-lg font-bold transition text-xs md:text-sm">
                   {sendingDiscord ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <MessageSquare className="h-3.5 w-3.5" />}
@@ -1072,36 +1047,8 @@ export default function BalancerPage() {
                 </div>
               )}
 
-              {/* モーダル内タブ切り替え */}
-              <div className="flex gap-2 border-b border-stone-200 pb-1">
-                <button
-                  type="button"
-                  onClick={() => setModalTab('teams')}
-                  className={`px-4 py-2 text-xs font-black transition-all ${
-                    modalTab === 'teams'
-                      ? 'border-b-2 border-amber-500 text-amber-700 font-extrabold'
-                      : 'text-stone-400 hover:text-stone-900'
-                  }`}
-                >
-                  チーム編成
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setModalTab('matchups')}
-                  className={`px-4 py-2 text-xs font-black transition-all ${
-                    modalTab === 'matchups'
-                      ? 'border-b-2 border-amber-500 text-amber-700 font-extrabold'
-                      : 'text-stone-400 hover:text-stone-900'
-                  }`}
-                >
-                  対戦分析 (VS Analytics)
-                </button>
-              </div>
-
               {/* チーム表示 */}
-              {modalTab === 'teams' && (
-                <>
-                  <div className="space-y-3">
+              <div className="space-y-3">
                 <div className="grid grid-cols-1 md:grid-cols-11 gap-3 items-center border-b border-stone-200 pb-3">
                   <div className="col-span-5 bg-gradient-to-r from-blue-950/40 to-transparent p-3 rounded-xl border-l-4 border-blue-500 flex justify-between items-center">
                     <span className="text-base font-black text-blue-400">BLUE TEAM</span>
@@ -1217,89 +1164,6 @@ export default function BalancerPage() {
                   </button>
                 </div>
               </div>
-            </>)}
-
-              {/* 対面分析 (VS Analytics) */}
-              {modalTab === 'matchups' && (
-                <div className="space-y-4">
-                  {['TOP', 'JG', 'MID', 'ADC', 'SUP'].map(role => {
-                    const pB = balanceResult.teamBlue.find((x: any) => x.currentRole === role);
-                    const pR = balanceResult.teamRed.find((x: any) => x.currentRole === role);
-                    
-                    if (!pB || !pR) return null;
-
-                    const dbB = players.find((p: any) => p.name === pB.name);
-                    const dbR = players.find((p: any) => p.name === pR.name);
-
-                    // 実データ優先(#75): 試合履歴から計算したスタイル → キャッシュ → デフォルト
-                    // KTMカスタム戦はCS・ファーストブラッドを取得できないため、farming/diffsは持たない
-                    const defaultStyle = {
-                      sliders: { aggressive: 50, supportive: 50 },
-                      tags: [{ id: 'balanced', name: 'バランス型', description: '標準的なプレイスタイル。', reason: '' }]
-                    };
-                    const liveB = vsStyles[pB.name];
-                    const liveR = vsStyles[pR.name];
-                    const styleB = (liveB && liveB.games > 0 && liveB.tags?.length > 0) ? liveB
-                      : (liveB && liveB.games > 0) ? { ...liveB, tags: defaultStyle.tags }
-                      : dbB?.metadata?.playstyle_cache?.custom || defaultStyle;
-                    const styleR = (liveR && liveR.games > 0 && liveR.tags?.length > 0) ? liveR
-                      : (liveR && liveR.games > 0) ? { ...liveR, tags: defaultStyle.tags }
-                      : dbR?.metadata?.playstyle_cache?.custom || defaultStyle;
-
-                    const tagB = styleB.tags?.[0] || { id: 'balanced', name: 'バランス型' };
-                    const tagR = styleR.tags?.[0] || { id: 'balanced', name: 'バランス型' };
-                    const tip = generateMatchupTip(tagB, tagR, role);
-
-                    return (
-                      <div key={role} className="bg-stone-100 p-4 rounded-2xl border border-stone-200 space-y-4">
-                        {/* ロールヘッダー */}
-                        <div className="flex items-center justify-between border-b border-black/5 pb-2">
-                          <div className="flex items-center gap-2">
-                            <div className="w-6 h-6 rounded-full bg-white border border-stone-200 flex items-center justify-center">
-                              <RoleIcon role={role} className="w-3.5 h-3.5" />
-                            </div>
-                            <span className="text-sm font-black text-stone-900">{role} 対面分析</span>
-                          </div>
-                          <span className="text-[10px] text-stone-500 font-mono">MMR差: {pB.mmr - pR.mmr > 0 ? `+${pB.mmr - pR.mmr}` : pB.mmr - pR.mmr}</span>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4 items-center">
-                          {/* BLUE側 */}
-                          <div className="space-y-1.5">
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs font-black text-blue-400">{pB.name}</span>
-                              <span className="text-[9px] bg-blue-500/10 text-blue-400 px-1.5 py-0.5 rounded border border-blue-500/20 font-black">{tagB.name}</span>
-                            </div>
-                            <div className="space-y-1 text-[10px] text-stone-400">
-                              <div className="flex justify-between"><span>Aggressive:</span> <span className="font-bold text-stone-900">{styleB.sliders?.aggressive || 50}%</span></div>
-                            </div>
-                          </div>
-
-                          {/* RED側 */}
-                          <div className="space-y-1.5 text-right">
-                            <div className="flex items-center gap-2 justify-end">
-                              <span className="text-[9px] bg-red-500/10 text-red-400 px-1.5 py-0.5 rounded border border-red-500/20 font-black">{tagR.name}</span>
-                              <span className="text-xs font-black text-red-400">{pR.name}</span>
-                            </div>
-                            <div className="space-y-1 text-[10px] text-stone-400">
-                              <div className="flex justify-between"><span>Aggressive:</span> <span className="font-bold text-stone-900">{styleR.sliders?.aggressive || 50}%</span></div>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* 対面アドバイス */}
-                        <div className="bg-amber-100 border border-amber-200 p-2.5 rounded-xl text-[11px] text-amber-700 leading-relaxed">
-                          <div className="flex items-center gap-1 font-bold mb-1">
-                            <Sparkles className="w-3.5 h-3.5 text-amber-700 shrink-0" />
-                            <span>マッチアップ攻略アドバイス</span>
-                          </div>
-                          {tip}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
             </div>
           </div>
         </div>
@@ -2072,35 +1936,4 @@ export default function BalancerPage() {
   );
 }
 
-/**
- * 対面のプレイスタイルタグの組み合わせに基づいて、動的な攻略ヒントを生成します。
- */
-function generateMatchupTip(tagB: any, tagR: any, role: string): string {
-  const idB = tagB.id || 'balanced';
-  const idR = tagR.id || 'balanced';
-
-  if (role === 'JG') {
-    if (idB === 'early-brawler' && idR === 'speed-demon') {
-      return "BLUE側は戦闘重視で序盤から動くガンク型、RED側はファーム優先の周回型。BLUE側はレーンへの早期アクションで試合を壊す必要があり、RED側は視界で相手のGankを防ぎながら周回差をつけてカウンタージャングルを狙うべきです。";
-    }
-    if (idB === 'speed-demon' && idR === 'early-brawler') {
-      return "BLUE側は周回重視、RED側は戦闘重視のガンク型。RED側は早い段階でインベイドやレーンへの強襲を仕掛ける傾向があります。BLUE側はカウンターGank用のカバー視界を整え、ファーム速度の差で中盤以降圧倒するルートを目指しましょう。";
-    }
-  }
-
-  if (idB === 'early-brawler' && idR === 'kda-safeplayer') {
-    return "BLUE側は戦闘意欲が極めて高いアグレッシブ型、RED側はデスを避ける防壁型。BLUE側はタワーダイブや強引なトレードを仕掛けがちですが、RED側はそれをいなして中盤の集団戦へ繋ぎます。序盤の主導権争いが勝負の分かれ目です。";
-  }
-  
-  if (idB === 'kda-safeplayer' && idR === 'early-brawler') {
-    return "BLUE側はデスを最小限に抑える安定型、RED側は積極的に戦闘を起こす戦闘狂。RED側はジャングラーを巻き込んだ早期の仕掛けを得意とするため、BLUE側は無理なトレードをせず、ロームやタワー下でのファームで耐え切るのが最も勝率を高めます。";
-  }
-
-  if (idB === 'speed-demon' && idR === 'speed-demon') {
-    return "両者ともに高いCS管理能力を持つファーム型。お互いにレーンを押し合い、ファーム差での有利形成を目指すため、ジャングラーの介入や他レーンへのロームによるテンポ破壊がこの対面を崩す鍵となります。";
-  }
-
-  // デフォルト
-  return `BLUE側（${tagB.name || 'バランス型'}）とRED側（${tagR.name || 'バランス型'}）の対面です。MMRはほぼ均衡しています。自身のプレイスタイルを崩さず、味方のレーンカバーやオブジェクト周辺での視界争いを徹底することで主導権を握りましょう。`;
-}
 

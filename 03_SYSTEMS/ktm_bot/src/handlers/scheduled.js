@@ -329,6 +329,34 @@ async function postWeeklyRecruitment(env) {
   try {
     const targetChannelId = CONFIG.PERIODIC_RECRUIT_CHANNEL_ID || CONFIG.RECRUIT_CHANNEL_ID || "1528646515533287497";
 
+    // 0. 二重投稿防止(2026-08-08発覚): この関数には重複チェックが一切無く、
+    // Cloudflareネイティブcron(日曜0:00 JST)とGitHub Actionsバックアップ(土曜21:10 JST)が
+    // 数時間差で両方発火すると、同じ週の定期カスタム募集が毎回2回投稿されていた。
+    // 投稿対象の開催日時(startAtIso)を先に計算し、同じstart_atの募集が既にDBにあれば
+    // (open/closed問わず)スキップする。
+    const nowForCheck = new Date();
+    const jstNowForCheck = new Date(nowForCheck.getTime() + 9 * 3600 * 1000);
+    const currentDayForCheck = jstNowForCheck.getUTCDay();
+    let diffToSaturdayForCheck = (6 - currentDayForCheck + 7) % 7;
+    if (diffToSaturdayForCheck === 0 && jstNowForCheck.getUTCHours() >= 21) {
+      diffToSaturdayForCheck = 7;
+    }
+    const targetDateForCheck = jstNowForCheck.getUTCDate() + diffToSaturdayForCheck;
+    const startUtcMsForCheck = Date.UTC(jstNowForCheck.getUTCFullYear(), jstNowForCheck.getUTCMonth(), targetDateForCheck, 12, 0, 0, 0);
+    const startAtIsoForCheck = new Date(startUtcMsForCheck).toISOString();
+    try {
+      const existing = await fetchSupabase(
+        env, 'recruitments',
+        `mode=eq.${encodeURIComponent('定期カスタム')}&start_at=eq.${encodeURIComponent(startAtIsoForCheck)}&select=id&limit=1`
+      );
+      if (existing && existing.length > 0) {
+        console.log(`[WeeklyRecruit] 今週(${startAtIsoForCheck})の募集は投稿済みのためスキップ（二重発火防止）`);
+        return;
+      }
+    } catch (dupErr) {
+      console.warn('[WeeklyRecruit] 二重投稿チェックに失敗（投稿は続行）:', dupErr);
+    }
+
     // 1. 前回のオープンな募集を DB および Discord 上で締め切る (status = 'closed')
     try {
       const activeRecruits = await fetchSupabase(env, 'recruitments', 'status=eq.open&select=*');
