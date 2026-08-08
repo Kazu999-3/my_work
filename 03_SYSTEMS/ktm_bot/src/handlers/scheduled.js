@@ -695,6 +695,29 @@ async function sendEventUsersNotification(env, options = {}) {
       timestamp: new Date().toISOString()
     };
 
+    // 二重投稿防止: Cloudflareのネイティブcron(20:00 JST)とGitHub Actionsの
+    // バックアップキック(20:15 JST、#85)が両方発火すると、このアナウンスだけ
+    // sendRecruitStatusNotificationと違って重複チェックが無く、15分違いで
+    // 同じ内容が2回届いていた(2026-08-08発覚)。直近1時間以内に同じタイトルの
+    // Bot投稿があればスキップする。
+    try {
+      const recentRes = await fetchWithRetry(
+        `https://discord.com/api/v10/channels/${channelId}/messages?limit=10`,
+        { headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}` } }
+      );
+      if (recentRes.ok) {
+        const recent = await recentRes.json();
+        const oneHourAgo = Date.now() - 60 * 60 * 1000;
+        const dupTitle = embed.title;
+        if (recent.find((m) => m.author?.bot && m.embeds?.[0]?.title === dupTitle && new Date(m.timestamp).getTime() > oneHourAgo)) {
+          console.log('[EventNotify] 同一タイトルの通知が直近1時間以内にあるためスキップ（二重発火防止）');
+          return;
+        }
+      }
+    } catch (dupErr) {
+      console.warn('[EventNotify] 二重投稿チェックに失敗（送信は続行）:', dupErr);
+    }
+
     // 5. メッセージ ＆ ワンタップ「参加する」ボタンの作成
     const roleId = CONFIG.NOTIFICATION_ROLE_ID;
     const messageBody = {
