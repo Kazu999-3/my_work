@@ -204,7 +204,7 @@ class SovereignHerald:
         except Exception as e:
             logger.warning(f"⚠️ [Herald] ポータル通知の送信に失敗しました（Discordのみ継続）: {e}")
 
-    def notify_progress(self, msg, portal_link=False, page: str = None):
+    def notify_progress(self, msg, portal_link=False, page: str = None, discord: bool = True):
         """システム進捗を王へ報告する
 
         Args:
@@ -212,10 +212,13 @@ class SovereignHerald:
             portal_link (bool): ポータルへのリンクを追加するか
             page (str): ポータルの具体的なページパス（例: 'drafts', 'publish', 'sns', 'logs'）
                         指定しない場合はトップページ
+            discord (bool): Discordへも送信するか。False指定時はポータル通知(portal_link=True時)
+                        のみ行いDiscordへは送らない(2026-08-08、辞典一括更新の進捗通知が
+                        Discordに毎回流れてうるさいという要望で追加)。
         """
         if portal_link:
             self._notify_portal(msg, page)
-        if not self.webhook_url: return
+        if not discord or not self.webhook_url: return
 
         # ページ名の日本語対応テーブル
         page_labels = {
