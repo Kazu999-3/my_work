@@ -81,10 +81,21 @@ export async function POST(request: Request) {
     }
 
     // 2. Player インタフェースへマッピング
+    // 名簿未登録の参加者が1人でも混ざると即例外でリクエスト全体が失敗し、しかも
+    // 最初に見つかった1人分の名前しかエラーに出ないため管理者が原因を特定しづらかった
+    // (2026-08-08発覚)。未登録者を全員集めてから、まとめて分かりやすい400エラーで返す。
+    const missingNames = participants
+      .map(input => input.name)
+      .filter(name => !playersData.some((p: any) => p.name === name));
+    if (missingNames.length > 0) {
+      return NextResponse.json({
+        error: `名簿に登録されていないプレイヤーがいます: ${missingNames.join(', ')}（管理ダッシュボードで登録してから再度実行してください）`
+      }, { status: 400 });
+    }
+
     const allPlayers: Player[] = participants.map(input => {
-      const dbPlayer = playersData.find((p: any) => p.name === input.name);
-      if (!dbPlayer) throw new Error(`プレイヤーが見つかりません: ${input.name}`);
-      
+      const dbPlayer = playersData.find((p: any) => p.name === input.name)!;
+
       const roleMap: Record<string, Role | 'ALL'> = {
         'JUNGLE': 'JG',
         'SUPPORT': 'SUP',
@@ -144,6 +155,15 @@ export async function POST(request: Request) {
     // 見学固定のプレイヤーを事前に除外して spectators 確定枠とする
     const forcedSpectators = allPlayers.filter(p => p.isSpectatorFixed);
     const balanceCandidates = allPlayers.filter(p => !p.isSpectatorFixed);
+
+    // 見学固定で対象が10人未満になると、この後のrunBalanceSearchが「ちょうど10人必要」の
+    // 例外を投げて500エラーになり、原因が分かりにくかった(2026-08-08発覚)。
+    // ここで先に検知し、あと何人必要かが分かる400エラーとして返す。
+    if (balanceCandidates.length < 10) {
+      return NextResponse.json({
+        error: `見学固定を除くとチーム分け対象が${balanceCandidates.length}人しかいません。あと${10 - balanceCandidates.length}人必要です（見学固定を減らすか参加者を増やしてください）。`
+      }, { status: 400 });
+    }
 
     let selectedPatterns: { selected: Player[]; spectators: Player[] }[] = [];
 
@@ -237,6 +257,22 @@ export async function POST(request: Request) {
       }
     } catch (e) {
       console.warn('[balancer] 禁止ペア設定の読み込みに失敗（制約なしで続行）:', e);
+    }
+
+    // 同チーム固定ペアをDB設定(ktm_settings)から読み込む(2026-08-08追加)。
+    // forbiddenPairsと対になる設定で、balancer.tsのrequiredPairs制約に渡す。
+    try {
+      const { data: setting } = await supabase
+        .from('ktm_settings')
+        .select('value')
+        .eq('key', 'balancer_required_pairs')
+        .maybeSingle();
+      const pairs = setting?.value;
+      if (Array.isArray(pairs)) {
+        ctx.requiredPairs = pairs.filter((p: any) => Array.isArray(p) && p.length === 2);
+      }
+    } catch (e) {
+      console.warn('[balancer] 同チーム固定ペア設定の読み込みに失敗（制約なしで続行）:', e);
     }
 
     try {

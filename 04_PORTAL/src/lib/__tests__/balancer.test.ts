@@ -135,3 +135,48 @@ test('selectPlayersWithPity: spectator_pityが高いプレイヤーは優先的�
   const { selected } = selectPlayersWithPity(players);
   assert.ok(selected.some(p => p.name === 'EAGER'), 'spectator_pityが高い人が選出されていない');
 });
+
+// ============ 制約(forbiddenPairs/requiredPairs)の実効性 ============
+// レビュー指摘: 「絶対条件」のはずのforbiddenPairsが実際に効いているかを検証する
+// テストが一つもなかった(2026-08-08指摘)。ここで固定する。
+
+test('forbiddenPairs: 指定した2人は同じチームに入らない', () => {
+  const players = tenPlayers();
+  const ctx = { ...emptyCtx(), forbiddenPairs: [['P1', 'P2']] as [string, string][] };
+  // 複数回試行してランダム性による偶然の通過を排除する
+  for (let i = 0; i < 10; i++) {
+    const result = coreBalanceTeams(players, ctx);
+    const p1InBlue = result.teamBlue.some(p => p.name === 'P1');
+    const p2InBlue = result.teamBlue.some(p => p.name === 'P2');
+    const p1InRed = result.teamRed.some(p => p.name === 'P1');
+    const p2InRed = result.teamRed.some(p => p.name === 'P2');
+    assert.ok(!(p1InBlue && p2InBlue) && !(p1InRed && p2InRed), 'P1とP2が同じチームに入ってはいけない');
+  }
+});
+
+test('requiredPairs: 指定した2人は必ず同じチームに入る', () => {
+  const players = tenPlayers();
+  const ctx = { ...emptyCtx(), requiredPairs: [['P1', 'P2']] as [string, string][] };
+  for (let i = 0; i < 10; i++) {
+    const result = coreBalanceTeams(players, ctx);
+    const p1InBlue = result.teamBlue.some(p => p.name === 'P1');
+    const p2InBlue = result.teamBlue.some(p => p.name === 'P2');
+    const p1InRed = result.teamRed.some(p => p.name === 'P1');
+    const p2InRed = result.teamRed.some(p => p.name === 'P2');
+    assert.ok((p1InBlue && p2InBlue) || (p1InRed && p2InRed), 'P1とP2は同じチームに入らなければならない');
+  }
+});
+
+test('forbiddenPairsとrequiredPairsが同じペアで競合した場合、forbiddenPairs側が優先される', () => {
+  const players = tenPlayers();
+  const ctx = {
+    ...emptyCtx(),
+    forbiddenPairs: [['P1', 'P2']] as [string, string][],
+    requiredPairs: [['P1', 'P2']] as [string, string][],
+  };
+  // 矛盾設定でも候補が0件にならず、forbiddenPairs優先で分離される
+  const result = coreBalanceTeams(players, ctx);
+  const p1InBlue = result.teamBlue.some(p => p.name === 'P1');
+  const p2InBlue = result.teamBlue.some(p => p.name === 'P2');
+  assert.notEqual(p1InBlue, p2InBlue, '競合時はforbiddenPairs優先でP1とP2は別チームになる');
+});

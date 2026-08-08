@@ -14,6 +14,8 @@ import {
   calculateNewMMR,
   calculateKdaScore,
   getKtmRank,
+  computeRepresentativeMmr,
+  RANKS,
   type MmrCalcContext,
 } from '../mmr';
 
@@ -130,6 +132,37 @@ test('calculateNewMMR: 対面回数ダンパーは案Aで廃止済み(matchupCou
   const fresh = calculateNewMMR(baseCtx({ isWin: true, matchupCount: 0, kills: 8, deaths: 2, assists: 6 }));
   const repeated = calculateNewMMR(baseCtx({ isWin: true, matchupCount: 8, kills: 8, deaths: 2, assists: 6 }));
   assert.equal(repeated, fresh, `対面回数ダンパーは廃止済みのため変動は同じはず: fresh=${fresh}, repeated=${repeated}`);
+});
+
+// ============ RANKS ============
+// レビュー指摘: BRONZEがUNRANKEDと同値(1200)になっており、正直にBRONZEと自己申告した
+// プレイヤーが未申告(UNRANKED)より低いIRON寄りの扱いになる矛盾があった(2026-08-08是正)。
+test('RANKS: IRON < BRONZE < SILVER の順で単調増加し、BRONZEはUNRANKEDと重複しない', () => {
+  assert.ok(RANKS.IRON < RANKS.BRONZE, `IRON(${RANKS.IRON}) < BRONZE(${RANKS.BRONZE}) のはず`);
+  assert.ok(RANKS.BRONZE < RANKS.SILVER, `BRONZE(${RANKS.BRONZE}) < SILVER(${RANKS.SILVER}) のはず`);
+  assert.notEqual(RANKS.BRONZE, RANKS.UNRANKED, 'BRONZEはUNRANKEDと同値であってはならない');
+});
+
+// ============ computeRepresentativeMmr ============
+test('computeRepresentativeMmr: 試合数が全く無ければ5レーン単純平均', () => {
+  const v = computeRepresentativeMmr({ TOP: 1200, JG: 1300, MID: 1000, ADC: 1100, SUP: 1400 });
+  assert.equal(v, 1200); // (1200+1300+1000+1100+1400)/5
+});
+
+// レビュー指摘: 1レーンだけ1試合しただけで代表MMRがその1試合後の値そのものになり、
+// 他4レーンの未検証な初期推定が完全に無視されていた(2026-08-08是正)。
+// 信頼度ブレンドにより、試合数が少ないうちは単純平均寄りになるべき。
+test('computeRepresentativeMmr: 1レーン1試合だけでは代表MMRがそのレーンの値そのものにはならない', () => {
+  const mmrs = { TOP: 1500, JG: 1200, MID: 1200, ADC: 1200, SUP: 1200 }; // TOPだけ突出
+  const v = computeRepresentativeMmr(mmrs, { TOP: 1 });
+  assert.notEqual(v, 1500, 'TOP1戦だけの値がそのまま採用されてはいけない');
+  assert.ok(v > 1200 && v < 1500, `単純平均(1200)とTOP値(1500)の間に収まるはず: ${v}`);
+});
+
+test('computeRepresentativeMmr: 試合数が十分多ければ重み付け平均にほぼ収束する', () => {
+  const mmrs = { TOP: 1500, JG: 1200, MID: 1200, ADC: 1200, SUP: 1200 };
+  const v = computeRepresentativeMmr(mmrs, { TOP: 100 });
+  assert.equal(v, 1500, '試合数が十分あれば重み付け平均(=TOPの値)に収束するはず');
 });
 
 // ============ getKtmRank ============

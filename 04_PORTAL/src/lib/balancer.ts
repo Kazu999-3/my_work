@@ -39,8 +39,13 @@ export interface BalanceContext {
   winStreakTeam: Set<string> | null; // 直近2連勝している5人のSet
   sideHistory: Record<string, { BLUE: number; RED: number }>;
   // 同じチームにしない禁止ペア（#30: 従来はコードに直書きされていた「こんぺい/tamias」をDB設定化）。
-  // 各要素は [名前1, 名前2]。部分一致（表記揺れ吸収）で判定する。未指定なら制約なし。
+  // 各要素は [名前1, 名前2]。完全一致（表記揺れ吸収）で判定する。未指定なら制約なし。
   forbiddenPairs?: [string, string][];
+  // 同じチームに固定するペア（2026-08-08追加: ktm-adminのSKILL.mdには「AとBは同じチーム」
+  // という制約注入が既にできると書かれていたが、実装が無く常にAIによる手動スワップ頼みだった
+  // ギャップを解消）。各要素は [名前1, 名前2]。forbiddenPairsと同名ペアが両方に含まれる場合は
+  // 競合のため、探索時にforbiddenPairs側を優先する（同一チーム分割が0件になるのを避ける）。
+  requiredPairs?: [string, string][];
   // BL-02: 精密探索する候補数（40=速い / 100=標準 / 200=精密）。未指定は100。
   searchDepth?: number;
 }
@@ -73,6 +78,12 @@ export interface ProposalResult extends BalanceResult {
 // ==========================================
 // ヘルパー関数
 // ==========================================
+
+// 表記揺れ（前後空白・大文字小文字）を吸収した名前の完全一致判定。
+// forbiddenPairs/requiredPairsの両方から共通で使う。
+function eqName(a: string, b: string): boolean {
+  return a.toLowerCase().trim() === b.toLowerCase().trim();
+}
 
 function getCombinations(arr: number[], k: number): number[][] {
   const result: number[][] = [];
@@ -296,18 +307,24 @@ function runBalanceSearch(players: Player[], ctx: BalanceContext): RawBalanceCan
     // N3: 以前は部分一致(includes)で判定していたため、短い名前(例「こん」)が別人(「こんた」等)にも
     // 当たって意図せず引き離す事故があった。完全一致(前後空白は無視)に変更して誤爆を防ぐ。
     const checkSameTeam = (name1: string, name2: string) => {
-      const n1 = name1.toLowerCase().trim();
-      const n2 = name2.toLowerCase().trim();
-      const eq = (playerName: string, target: string) => playerName.toLowerCase().trim() === target;
-      const hasN1A = teamA.some(p => eq(p.name, n1));
-      const hasN2A = teamA.some(p => eq(p.name, n2));
-      const hasN1B = teamB.some(p => eq(p.name, n1));
-      const hasN2B = teamB.some(p => eq(p.name, n2));
+      const hasN1A = teamA.some(p => eqName(p.name, name1));
+      const hasN2A = teamA.some(p => eqName(p.name, name2));
+      const hasN1B = teamB.some(p => eqName(p.name, name1));
+      const hasN2B = teamB.some(p => eqName(p.name, name2));
       return (hasN1A && hasN2A) || (hasN1B && hasN2B);
     };
 
     const forbiddenPairs = ctx.forbiddenPairs || [];
     if (forbiddenPairs.some(([a, b]) => a && b && checkSameTeam(a, b))) continue;
+
+    // requiredPairs: 指定された2人が同じチームに入っていない分割は除外する。
+    // forbiddenPairsと同じペアが両方に混ざっている場合は競合するため、
+    // forbiddenPairs側を優先してrequiredPairs側はスキップする（矛盾設定による0件化を防止）。
+    const requiredPairs = ctx.requiredPairs || [];
+    const isForbidden = (a: string, b: string) => forbiddenPairs.some(
+      ([fa, fb]) => (fa && fb) && ((eqName(fa, a) && eqName(fb, b)) || (eqName(fa, b) && eqName(fb, a)))
+    );
+    if (requiredPairs.some(([a, b]) => a && b && !isForbidden(a, b) && !checkSameTeam(a, b))) continue;
 
     const pA = greedyAssign(teamA);
     const pB = greedyAssign(teamB);

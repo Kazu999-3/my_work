@@ -8,8 +8,12 @@ import rawKtmTiers from '../shared/ktm_tiers.json';
 import { fetchAllRows } from './fetchAll';
 
 
+// BRONZEが以前UNRANKEDと同値(1200)になっていた(2026-08-08発覚)。自己申告でBRONZEを
+// 選んだプレイヤーが、未申告(UNRANKED)より低いIRON(1100)寄りの扱いになる一方、
+// UNRANKEDと区別が付かなくなるという矛盾があった。IRON(1100)〜SILVER(1350)の間の
+// 値(1250)に是正し、全ティアを一意な値にする。
 export const RANKS: Record<string, number> = {
-  'UNRANKED': 1200, 'IRON': 1100, 'BRONZE': 1200, 'SILVER': 1350, 'GOLD': 1500,
+  'UNRANKED': 1200, 'IRON': 1100, 'BRONZE': 1250, 'SILVER': 1350, 'GOLD': 1500,
   'PLATINUM': 1650, 'EMERALD': 1800, 'DIAMOND': 2000, 'MASTER': 2200,
   'GRANDMASTER': 2400, 'CHALLENGER': 2600
 };
@@ -65,23 +69,6 @@ export const KTM_TIERS: KtmTier[] = rawKtmTiers as KtmTier[];
 export function getKtmRank(mmr: number): { name: string; color: string; bg: string } {
   const tier = KTM_TIERS.find(t => mmr >= t.min);
   return tier ? { name: tier.name, color: tier.color, bg: tier.bg } : { name: 'UNRANKED', color: 'text-gray-400', bg: 'bg-gray-800' };
-}
-
-export function getMultiplierByAffinity(pref1: string, pref2: string, targetRole: string): number {
-  const isAllMain = (pref1 === 'ALL' || pref1 === 'FILL' || pref1 === '-');
-  const isAllSub  = (pref2 === 'ALL' || pref2 === 'FILL' || pref2 === '-');
-
-  if (targetRole === pref1 || isAllMain) return 1.0;
-  
-  const soloLanes = ['TOP', 'MID'];
-  const isSoloPref1 = soloLanes.includes(pref1);
-  const isTargetSolo = soloLanes.includes(targetRole);
-
-  if (targetRole === pref2 || isAllSub) {
-    return (isSoloPref1 && isTargetSolo) ? 0.85 : 0.80;
-  } else {
-    return (isSoloPref1 && isTargetSolo) ? 0.75 : 0.65;
-  }
 }
 
 export interface RolePreferences {
@@ -267,10 +254,17 @@ export function calculateNewMMRDetailed(ctx: MmrCalcContext): { delta: number; b
 export interface LaneMmrs { TOP: number; JG: number; MID: number; ADC: number; SUP: number }
 export interface LaneGames { TOP?: number; JG?: number; MID?: number; ADC?: number; SUP?: number }
 
+// 代表MMRの信頼度が総試合数に応じて増すしきい値。総試合数がこの値に達するまでは
+// 「試合数で重み付けた値」と「5レーン単純平均」を按分してブレンドする(2026-08-08是正)。
+// 以前は1試合でもあればその重み付け平均を100%採用しており、例えば TOP を1戦しただけの
+// プレイヤーの代表MMRが「TOP1戦後の値そのもの」になり、未検証の他4レーンの初期推定が
+// 完全に無視されてしまっていた。
+const REPRESENTATIVE_MMR_CONFIDENCE_GAMES = 10;
+
 /**
  * 代表MMR（ktm_players.mmr）を「実際にプレイしたレーンの試合数」で重み付け平均して算出する。
  * ライブ更新(match/record)とフルリビルド(performFullMmrRebuild)の両方から呼び、両経路で
- * 同じ値になるようにするための共通関数(N1)。試合数が全く無い場合のみ従来の単純平均にフォールバック。
+ * 同じ値になるようにするための共通関数(N1)。試合数が全く無い場合は5レーン単純平均のみを使う。
  */
 export function computeRepresentativeMmr(mmrs: LaneMmrs, games?: LaneGames | null): number {
   const lanes: (keyof LaneMmrs)[] = ['TOP', 'JG', 'MID', 'ADC', 'SUP'];
@@ -280,8 +274,12 @@ export function computeRepresentativeMmr(mmrs: LaneMmrs, games?: LaneGames | nul
     wSum += mmrs[l] * g;
     gSum += g;
   }
-  if (gSum > 0) return Math.round(wSum / gSum);
-  return Math.round((mmrs.TOP + mmrs.JG + mmrs.MID + mmrs.ADC + mmrs.SUP) / 5);
+  const flatAvg = (mmrs.TOP + mmrs.JG + mmrs.MID + mmrs.ADC + mmrs.SUP) / 5;
+  if (gSum <= 0) return Math.round(flatAvg);
+
+  const weightedAvg = wSum / gSum;
+  const confidence = Math.min(1, gSum / REPRESENTATIVE_MMR_CONFIDENCE_GAMES);
+  return Math.round(weightedAvg * confidence + flatAvg * (1 - confidence));
 }
 
 export function calculateKdaScore(kills: number, deaths: number, assists: number): number {
