@@ -309,7 +309,7 @@ export default function DictHealthDashboard() {
                 辞典 ＆ ナレッジ統合ヘルスダッシュボード
               </h1>
               <span className="bg-amber-100 text-amber-800 border border-amber-300 px-3 py-0.5 rounded-full text-xs font-bold">
-                パッチ {data?.currentPatch || '16.15'}
+                パッチ {data?.currentPatch || '26.15'}
               </span>
             </div>
             <p className="text-xs text-stone-500 mt-1.5">
@@ -585,7 +585,7 @@ export default function DictHealthDashboard() {
                   {/* 詳細情報 (1秒インライン展開) */}
                   <div className="space-y-1 text-[11px] text-stone-600 bg-stone-50 p-2.5 rounded-xl border border-stone-100 mb-3">
                     <p className="truncate" title={champ.sourceSummary || ''}>
-                      <span className="font-bold text-stone-700">根拠・ステータス:</span> {champ.sourceSummary || '現行パッチ16.15データ統合済み'}
+                      <span className="font-bold text-stone-700">根拠・ステータス:</span> {champ.sourceSummary || '現行パッチ26.15データ統合済み'}
                     </p>
                     {champ.lastVerifiedAt && (
                       <p>

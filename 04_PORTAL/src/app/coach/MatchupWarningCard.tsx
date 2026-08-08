@@ -150,7 +150,7 @@ export default function MatchupWarningCard({ champion, enemyChampion }: MatchupW
           </div>
         ) : (
           <p className="text-xs text-stone-400 text-center py-2 font-medium">
-            対面 {enemyChampion} の正本データは最新パッチ16.15に適合済みです。
+            対面 {enemyChampion} の正本データは最新パッチ26.15に適合済みです。
           </p>
         )}
       </div>

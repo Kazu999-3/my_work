@@ -24,11 +24,15 @@ export interface DictReviewCandidate {
   };
 }
 
+// DDragonのメジャー番号はシーズン通し番号(14=2024,15=2025,16=2026...)のため、
+// 辞典側(champion_facts.patch)の表記(西暦下2桁基準の26.xx)に揃えるため+10する(2026-08-08発覚)。
 export async function getCurrentPatch(): Promise<string> {
   try {
     const res = await fetch('https://ddragon.leagueoflegends.com/api/versions.json');
     const versions = await res.json();
-    return (versions[0] || '').split('.').slice(0, 2).join('.'); // "15.13"
+    const [rawMajor, rawMinor] = (versions[0] || '').split('.');
+    if (!rawMajor || !rawMinor) return '';
+    return `${parseInt(rawMajor, 10) + 10}.${rawMinor}`; // "26.13"
   } catch {
     return '';
   }

@@ -4,13 +4,17 @@ import { verifyAdminSession } from '../../../../lib/adminAuth';
 
 export const dynamic = 'force-dynamic';
 
+// DDragonのメジャー番号はシーズン通し番号(14=2024,15=2025,16=2026...)のため、
+// 辞典側(champion_facts.patch)の表記(西暦下2桁基準の26.xx)に揃えるため+10する。
+// ここがズレると全チャンピオンが「パッチ不一致」と誤判定され🔴要対応になる(2026-08-08発覚)。
 async function getCurrentPatch(): Promise<string> {
   try {
     const res = await fetch('https://ddragon.leagueoflegends.com/api/versions.json');
     const versions = await res.json();
-    return (versions[0] || '16.15.1').split('.').slice(0, 2).join('.');
+    const [rawMajor, rawMinor] = (versions[0] || '16.15.1').split('.');
+    return `${parseInt(rawMajor, 10) + 10}.${rawMinor}`;
   } catch {
-    return '16.15';
+    return '26.15';
   }
 }
 

@@ -53,7 +53,7 @@ export default function SystemStatus({ isCollapsed = false }: { isCollapsed?: bo
             <div className="flex items-center justify-between">
               <span className="text-[9px] text-gray-500 font-bold uppercase tracking-widest">Status</span>
               <span className="text-[9px] bg-amber-100/80 text-amber-900 font-black px-1.5 py-0.2 rounded border border-amber-300">
-                パッチ 16.15
+                パッチ 26.15
               </span>
             </div>
             <p className="text-xs font-black" style={{ color }}>
