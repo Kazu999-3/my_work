@@ -2,8 +2,9 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Sparkles, RefreshCw, Activity, AlertTriangle } from 'lucide-react';
+import { Sparkles, RefreshCw, Activity, AlertTriangle, Target } from 'lucide-react';
 import { motion } from 'framer-motion';
+import DeepResearchPanel from '../../admin/knowledge/DeepResearchPanel';
 
 export default function AiUpdateTab() {
   const searchParams = useSearchParams();
@@ -292,6 +293,25 @@ export default function AiUpdateTab() {
           </button>
         </div>
       </div>
+    </motion.div>
+
+    {/* 特定チャンプ ディープリサーチ（バトルリサーチ）。以前はパーソナルコーチ内にあったが、
+        結果はチャンピオン辞典へ直接蓄積される辞典コンテンツ生成機能のため、
+        AI更新タブ側へ移設した(2026-08-08)。 */}
+    <motion.div
+      initial={{ y: 20, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ delay: 0.15 }}
+      className="space-y-3"
+    >
+      <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5 px-1">
+        <Target size={16} className="text-purple-600" />
+        バトルリサーチ（特定チャンピオンのAIディープリサーチ）
+      </h3>
+      <p className="text-xs text-gray-400 px-1">
+        チャンピオンを指定してAI＋YouTube最新動画から戦術・立ち回りを深掘り検索します。結果は「チャンピオン辞典」へ直接自動蓄積・同期されます。
+      </p>
+      <DeepResearchPanel />
     </motion.div>
 
     {/* 自動化パイプラインステータス */}

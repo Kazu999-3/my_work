@@ -11,7 +11,6 @@ import PickRecommendationTab from './PickRecommendationTab';
 import MatchupWarningCard from './MatchupWarningCard';
 import LanePrioritySimulator from './LanePrioritySimulator';
 import MySoloQDashboard from './MySoloQDashboard';
-import DeepResearchPanel from '../admin/knowledge/DeepResearchPanel';
 import Collapsible from '../../components/Collapsible';
 
 // ============================
@@ -1281,13 +1280,6 @@ function MatchupTab({ champion, enemyChampion, triggerSignal }: { champion: stri
 // ============================
 // メインページ
 // ============================
-const STEP_TABS = [
-  { id: 'banpick', label: '1. BAN/PICKナビ', icon: '🎯' },
-  { id: 'pregame', label: '2. 事前分析＆レーンシミュレータ', icon: '⚡' },
-  { id: 'postgame', label: '3. 振り返り＆実績ダッシュボード', icon: '🔍' },
-  { id: 'menu', label: '4. AI練習メニュー', icon: '🏋️‍♂️' },
-  { id: 'research', label: '5. ディープリサーチ', icon: '🔬' },
-];
 
 export default function CoachPage() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
@@ -1446,14 +1438,13 @@ export default function CoachPage() {
   };
 
   // 5ステップ統合タブ構造
-  const [activeStepTab, setActiveStepTab] = useState<'banpick' | 'pregame' | 'postgame' | 'menu' | 'research'>('banpick');
+  const [activeStepTab, setActiveStepTab] = useState<'banpick' | 'pregame' | 'postgame' | 'menu'>('banpick');
 
   const STEP_TABS = [
     { id: 'banpick', label: '1. BAN/PICKナビ', icon: '🎯' },
     { id: 'pregame', label: '2. 事前分析＆レーンシミュレータ', icon: '⚡' },
     { id: 'postgame', label: '3. 振り返り＆実績ダッシュボード', icon: '🔍' },
     { id: 'menu', label: '4. AI練習メニュー', icon: '🏋️‍♂️' },
-    { id: 'research', label: '5. ディープリサーチ', icon: '🔬' },
   ] as const;
 
   if (isAuthenticated === null) {
@@ -1707,20 +1698,6 @@ export default function CoachPage() {
             <PracticeMenuTab />
           </div>
         </div>
-
-        {activeStepTab === 'research' && (
-          <div className="space-y-6 animate-in">
-            <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-sm space-y-3">
-              <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5">
-                <span>🎯</span> バトルリサーチ (特定チャンピオンのAIディープリサーチ)
-              </h3>
-              <p className="text-xs text-stone-500">
-                チャンピオンを指定してAI＋YouTube最新動画から戦術・立ち回りを深掘り検索します。結果は「チャンピオン辞典」へ直接自動蓄積・同期されます。
-              </p>
-              <DeepResearchPanel />
-            </div>
-          </div>
-        )}
 
         {/* フッター */}
         <div className="mt-10 text-center text-xs text-foreground/20">
