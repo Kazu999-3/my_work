@@ -201,6 +201,15 @@ def generate_content_safe(client, prompt, model_id=None, config=None, feature_na
     # すべてのモデルとリトライが失敗した場合
     error_msg = f"❌ [AIHelper] すべての試行およびフォールバックモデルが失敗しました。最後のエラー: {last_error}"
     logger.error(error_msg)
+    # 以前はここで固定の汎用文言(「分析中に一時的なエラーが発生した」)を返しており、
+    # 実際の失敗理由(クォータ/レート制限か、それ以外の障害か)が呼び出し元に一切伝わらな
+    # かった。呼び出し元(champion_trend_worker.py等)がこの戻り値だけを見て「クォータ枯渇に
+    # よる安全スキップ」か「本当の失敗」かを正しく判定できるよう、429/RESOURCE_EXHAUSTED系の
+    # 兆候が最後のエラーに含まれていれば、その旨が分かる文言を返す(2026-08-10発覚)。
+    last_error_text = str(last_error) if last_error else ""
+    is_quota_exhausted = any(m in last_error_text for m in ("429", "RESOURCE_EXHAUSTED", "quota", "Quota"))
+    if is_quota_exhausted:
+        return "⚠️ APIクォータ制限(429/RESOURCE_EXHAUSTED)により生成できませんでした。"
     return "❌ 分析中に一時的なエラーが発生した。次はもっとうまくやってみせるよ。"
 
 

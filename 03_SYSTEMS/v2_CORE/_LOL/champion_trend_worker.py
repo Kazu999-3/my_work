@@ -19,6 +19,21 @@ from v2_CORE._LOL.lol_trend_collector import sanitize_trend_data
 
 logger = setup_sovereign_logging("ChampionTrendWorker")
 
+# collect_and_save_champion_trend()内で失敗理由がクォータ/レート制限由来だったかを記録する。
+# 以前はmain()側でquota_manager.check_quota("oracle")を事後に問い合わせて判定していたが、
+# これは「1日の合計上限」しか見ておらず、Google側の分単位レート制限(1分あたりのリクエスト数)
+# でのみ429が起きたケース(その日全体としてはまだ余裕がある)を検知できず、"Skipped"と
+# 表示すべきなのに"Failed"という不正確な見出しになっていた(2026-08-10発覚)。実際に429/
+# RESOURCE_EXHAUSTED等の兆候が出たかをその場でモジュール変数に記録する方式に変更する。
+_quota_hit_this_run = False
+
+
+def _mark_if_quota_related(text) -> None:
+    global _quota_hit_this_run
+    markers = ("429", "RESOURCE_EXHAUSTED", "利用上限", "quota", "Quota", "rate limit")
+    if text and any(m in str(text) for m in markers):
+        _quota_hit_this_run = True
+
 
 def extract_json_object(text: str) -> str:
     """AI応答からJSONオブジェクト部分だけを堅牢に取り出す。
@@ -74,6 +89,9 @@ def collect_and_save_champion_trend(champion: str, role: str, client=None) -> bo
     (未指定時はこのモジュール自身のデフォルトキーで生成する)。
     例外は投げず、成功時True・失敗時Falseを返す。
     """
+    global _quota_hit_this_run
+    _quota_hit_this_run = False
+
     champion = normalize_champion_id(champion)
     logger.info(f"Starting trend collection for {champion} ({role})")
 
@@ -188,19 +206,23 @@ League of Legendsの最新パッチにおける、チャンピオン「{champion
             )
 
         if not res_text or res_text.startswith("⚠️") or res_text.startswith("❌"):
+            _mark_if_quota_related(res_text)
             raise RuntimeError(f"Gemini API returned error: {res_text}")
 
         # JSON部分の抽出
         res_text = extract_json_object(res_text)
         trend_data = json.loads(res_text)
     except Exception as e:
+        _mark_if_quota_related(e)
         logger.warning(f"⚠️ Gemini API with search failed: {e}. Retrying without search tools...")
         try:
             res_text = generate_content_safe(client, prompt, model_id="gemini-2.0-flash", config=None, feature_name="oracle")
+            _mark_if_quota_related(res_text)
             res_text = extract_json_object(res_text)
             trend_data = json.loads(res_text)
             logger.info("✅ Successfully generated trend data using standard Gemini API fallback.")
         except Exception as retry_e:
+            _mark_if_quota_related(retry_e)
             logger.warning(f"⚠️ Standard Gemini API retry failed: {retry_e}. Falling back to local Ollama...")
             try:
                 from v2_CORE.ai_helper import _generate_with_ollama
@@ -385,10 +407,11 @@ def main():
     # バグによる異常終了ではなく想定内の一時停止であり、ここではその区別をメッセージ文言だけに
     # 反映する(区別自体はedge_worker_daemon.py側の_run_subprocess_taskがこのJSONの"message"を
     # 拾ってエラーメッセージを分かりやすくする、2026-08-10)。
-    is_quota_skip = False
-    if not success:
-        from v2_CORE.quota_manager import quota_manager
-        is_quota_skip = not quota_manager.check_quota("oracle")
+    # 判定にはquota_manager.check_quota("oracle")(1日の合計上限)ではなく_quota_hit_this_run
+    # (このチャンピオン1体の呼び出し中に実際に429/RESOURCE_EXHAUSTEDの兆候が出たか)を使う。
+    # 前者は分単位レート制限だけで失敗したケース(1日全体としてはまだ余裕がある)を検知できず、
+    # 「Skipped」と表示すべきなのに「Failed」という不正確な見出しになっていた(2026-08-10発覚)。
+    is_quota_skip = (not success) and _quota_hit_this_run
 
     print(json.dumps({
         "success": success,
