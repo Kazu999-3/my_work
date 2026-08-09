@@ -189,7 +189,7 @@ League of Legendsの最新パッチにおける、チャンピオン「{champion
         res_text = generate_content_safe(
             client,
             prompt,
-            model_id="gemini-2.0-flash",
+            model_id="gemini-3.1-flash-lite",
             config=config,
             feature_name="oracle"
         )
@@ -200,7 +200,7 @@ League of Legendsの最新パッチにおける、チャンピオン「{champion
             res_text = generate_content_safe(
                 client,
                 prompt,
-                model_id="gemini-2.0-flash",
+                model_id="gemini-3.1-flash-lite",
                 config=None,
                 feature_name="oracle"
             )
@@ -216,7 +216,7 @@ League of Legendsの最新パッチにおける、チャンピオン「{champion
         _mark_if_quota_related(e)
         logger.warning(f"⚠️ Gemini API with search failed: {e}. Retrying without search tools...")
         try:
-            res_text = generate_content_safe(client, prompt, model_id="gemini-2.0-flash", config=None, feature_name="oracle")
+            res_text = generate_content_safe(client, prompt, model_id="gemini-3.1-flash-lite", config=None, feature_name="oracle")
             _mark_if_quota_related(res_text)
             res_text = extract_json_object(res_text)
             trend_data = json.loads(res_text)
