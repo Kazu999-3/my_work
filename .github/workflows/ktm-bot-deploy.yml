@@ -27,7 +27,10 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v7
         with:
-          node-version: '20'
+          # wrangler 4.xはNode.js 22以上が必須(v20ではdeploy時に即エラー終了する)。
+          # ローカルのdry-run検証はNode 22系で行ったため気づけず、wrangler 3.x→4.xの
+          # メジャー更新後に本番デプロイが実際に失敗していた(2026-08-08発覚)。
+          node-version: '22'
 
       - name: Install dependencies
         run: npm install
