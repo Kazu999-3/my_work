@@ -62,6 +62,40 @@ class QuotaManager:
         except Exception:
             pass
 
+    def _get_supabase_creds(self):
+        try:
+            import dotenv
+            dotenv.load_dotenv(settings.ROOT_DIR / ".env")
+        except Exception:
+            pass
+        return os.environ.get("SUPABASE_URL"), os.environ.get("SUPABASE_KEY")
+
+    def _fetch_remote_usage(self, today: str) -> dict:
+        """Supabase(api_usage_logs)上の当日usage_dataを取得する。取得できなければ空dictを返す。
+
+        GitHub Actions等の実行環境は毎回まっさらな状態でリポジトリをcheckoutするため、
+        quota_usage.json(gitignore対象)が存在せず、ローカルファイルだけを信頼すると
+        「1日の合計使用量」を常にゼロから誤認してしまう。さらに_save_data()がその
+        ゼロ起点の値をそのままSupabaseへupsertすると、PC常駐のdaemon等が1日かけて
+        積み上げていたカウントを小さい値で上書き(巻き戻し)してしまうバグがあった
+        (2026-08-10発覚、error_429が10→6に逆行して発覚)。
+        """
+        supabase_url, supabase_key = self._get_supabase_creds()
+        if not supabase_url or not supabase_key:
+            return {}
+        try:
+            import httpx
+            headers = {"apikey": supabase_key, "Authorization": f"Bearer {supabase_key}"}
+            res = httpx.get(
+                f"{supabase_url}/rest/v1/api_usage_logs?date=eq.{today}&select=usage_data",
+                headers=headers, timeout=5.0
+            )
+            if res.status_code == 200 and res.json():
+                return res.json()[0].get("usage_data") or {}
+        except Exception as e:
+            logger.warning(f"[QuotaManager] Supabaseからの当日使用量取得に失敗(ローカル値のみで判定): {e}")
+        return {}
+
     def _load_data(self):
         self._acquire_file_lock()
         try:
@@ -85,20 +119,27 @@ class QuotaManager:
             # Supabaseへの同期
             try:
                 import httpx
-                import dotenv
-                dotenv.load_dotenv(settings.ROOT_DIR / ".env")
-                
-                supabase_url = os.environ.get("SUPABASE_URL")
-                supabase_key = os.environ.get("SUPABASE_KEY")
+                supabase_url, supabase_key = self._get_supabase_creds()
                 if supabase_url and supabase_key:
                     today = self._get_today_str()
                     usage_data = data.get(today, {}).copy()
-                    
+
+                    # ローカルの値だけでそのままupsertすると、他の実行環境(GitHub Actions等)が
+                    # 積み上げていたカウントを小さい値で上書き(巻き戻し)てしまう(2026-08-10発覚)。
+                    # 書き込み前にSupabase側の現在値を取得し、カウンタ系のキーはmax(ローカル,
+                    # リモート)を採用することで単調増加を保証する。
+                    remote_usage = self._fetch_remote_usage(today)
+                    for k, v in remote_usage.items():
+                        if k.startswith("__limit_"):
+                            continue
+                        if isinstance(v, (int, float)):
+                            usage_data[k] = max(usage_data.get(k, 0), v)
+
                     # ポータル側で上限値と機能ごとの内訳を表示できるように、limitの値を付与する
                     limits = getattr(settings, "DAILY_QUOTA_LIMITS", {})
                     for k, v in limits.items():
                         usage_data[f"__limit_{k}"] = v
-                        
+
                     url = f"{supabase_url}/rest/v1/api_usage_logs?on_conflict=date"
                     headers = {
                         "apikey": supabase_key,
@@ -124,22 +165,26 @@ class QuotaManager:
         if limit is None:
             return True # 制限が定義されていない場合は無制限
 
+        today = self._get_today_str()
+        # GitHub Actions等の実行環境は毎回まっさらな状態でリポジトリをcheckoutするため、
+        # ローカルファイルだけを信頼すると「today not in data」で常にTrue(制限なし)を
+        # 返してしまい、PC常駐daemon等が既に積み上げている使用量を見落とす(2026-08-10発覚)。
+        # ローカルとSupabase側の値のうち大きい方を採用して判定する。
+        remote_today = self._fetch_remote_usage(today)
+
         with self.file_lock:
             data = self._load_data()
-            today = self._get_today_str()
-
-            if today not in data:
-                return True
+            local_today = data.get(today, {})
 
             # サーキットブレーカー: consume_quota()は成功時にしかカウントされないため、
             # クォータ枯渇で429が連発している間は成功カウンタ(current_usage)が増えず
             # 上限チェックをすり抜け続ける。今日のエラー数が閾値を超えたら、成功回数に
             # 関わらず全機能を一律でスキップし、5分おきの自動巡回が丸1日失敗し続けるのを防ぐ。
-            error_count = data[today].get("error_429", 0)
+            error_count = max(local_today.get("error_429", 0), remote_today.get("error_429", 0))
             if error_count >= settings.DAILY_ERROR_CIRCUIT_BREAKER:
                 return False
 
-            current_usage = data[today].get(feature_name, 0)
+            current_usage = max(local_today.get(feature_name, 0), remote_today.get(feature_name, 0))
             return current_usage < limit
 
     def check_quota_or_raise(self, feature_name: str):
