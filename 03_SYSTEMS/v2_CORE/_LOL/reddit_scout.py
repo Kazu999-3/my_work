@@ -146,7 +146,11 @@ class RedditScout:
             response_text = generate_content_safe(
                 self.client,
                 prompt,
-                model_id="gemini-2.5-pro",  # 高度な要約マージのためProを優先
+                # 元々は高度な要約マージのためgemini-2.5-proを優先していたが、AI Studioの
+                # クォータ画面でこのアカウントには2.5-pro/3.1-proとも無料枠が0/0(割り当てなし)
+                # と判明(2026-08-10)。Pro系はこのアカウントでは使えないため、実クォータのある
+                # flash-liteへ変更。
+                model_id="gemini-3.1-flash-lite",
                 feature_name="oracle"
             )
             return response_text

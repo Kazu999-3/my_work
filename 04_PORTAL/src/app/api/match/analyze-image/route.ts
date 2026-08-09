@@ -119,7 +119,10 @@ ${championsText}
     // 画像解析はモデルによって可否・クォータが分かれる。
     // 1つ目がダメでも代替の画像対応モデルへ切り替えられるよう、複数モデルを順に試す。
     // （共通クライアント化した際にこのフォールバックが失われ、画像解析が落ちやすくなっていた）
-    const visionModels = ['gemini-2.0-flash', 'gemini-1.5-flash-latest', 'gemini-3.1-flash-lite'];
+    // gemini-2.0-flash/gemini-1.5-flash-latestはこのアカウントのAI Studioクォータ画面で
+    // 無料枠が0/0(gemini-2.0-flash)または廃止済み(1.5系)と判明したため、実クォータのある
+    // モデルのみに変更(2026-08-10)。
+    const visionModels = ['gemini-3.1-flash-lite', 'gemini-2.5-flash-lite'];
     let textOutput = '';
     let lastErr: any = null;
     for (const model of visionModels) {
