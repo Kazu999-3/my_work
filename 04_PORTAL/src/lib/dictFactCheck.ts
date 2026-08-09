@@ -2,6 +2,7 @@ import { createHash } from 'crypto';
 import { callGeminiWithRetry } from './geminiClient';
 import { normalizeChampionName } from './championNames';
 import { formatChampId, getAllChampionIds, getChampionAbilityNames } from './ddragonClient';
+import { fetchAllRows } from './fetchAll';
 
 // ============================================================
 // 辞典(matchup_sentinel) / コーチAI知識層(champion_facts, champion_notes) /
@@ -196,12 +197,13 @@ export async function scanInvalidChampionTags(supabase: any): Promise<InvalidTag
   }
 
   let inserted = 0;
+  let capped = false;
   outer:
   for (const target of INVALID_TAG_TARGETS) {
-    const { data: rows } = await supabase.from(target.table).select('id, champion').not('champion', 'is', null);
+    const { data: rows } = await fetchAllRows((from, to) =>
+      supabase.from(target.table).select('id, champion').not('champion', 'is', null).range(from, to)
+    );
     for (const row of rows || []) {
-      if (pendingCount + inserted >= PENDING_QUEUE_CAP) break outer;
-
       const raw = String(row.champion || '').trim();
       if (!raw || target.skip.includes(raw.toUpperCase())) continue;
 
@@ -215,6 +217,13 @@ export async function scanInvalidChampionTags(supabase: any): Promise<InvalidTag
       const key = `${target.table}:${row.id}`;
       if (already.has(key)) continue;
 
+      // 別リクエスト(単体チェック等)が並行実行された場合に上限を超えて積み増され
+      // 続けないよう、実際に挿入する直前でDBの最新pending件数を取り直す。
+      // ループ開始時点のpendingCountのままだと、その間に他リクエストが挿入した分を
+      // 考慮できずレース窓が広いままだった。
+      const liveCount = await getPendingQueueCount(supabase);
+      if (liveCount >= PENDING_QUEUE_CAP) { capped = true; break outer; }
+
       const { error } = await supabase.from('dict_fact_check_queue').insert({
         champion: raw,
         issue_type: 'invalid_champion_tag',
@@ -225,7 +234,7 @@ export async function scanInvalidChampionTags(supabase: any): Promise<InvalidTag
       if (!error) inserted++;
     }
   }
-  return { inserted, autoResolved, capped: pendingCount + inserted >= PENDING_QUEUE_CAP };
+  return { inserted, autoResolved, capped };
 }
 
 // ------------------------------------------------------------
@@ -255,8 +264,9 @@ export async function groupSourcesByChampion(supabase: any): Promise<Map<string,
     return map.get(canonical)!;
   };
 
-  const { data: sentinelRows } = await supabase
-    .from('matchup_sentinel').select('id, champion, enemy, strategy').not('strategy', 'is', null);
+  const { data: sentinelRows } = await fetchAllRows((from, to) =>
+    supabase.from('matchup_sentinel').select('id, champion, enemy, strategy').not('strategy', 'is', null).range(from, to)
+  );
   (sentinelRows || []).forEach((r: any) => {
     const b = ensure(r.champion);
     if (!b) return;
@@ -264,24 +274,29 @@ export async function groupSourcesByChampion(supabase: any): Promise<Map<string,
     else if (b.matchupEnemies.length < 5) b.matchupEnemies.push({ id: r.id, enemy: r.enemy, strategy: r.strategy || '' });
   });
 
-  const { data: factsRows } = await supabase
-    .from('champion_facts')
-    .select('champion, strengths, weaknesses, power_spikes, build_runes, strategy, counter_champions, must_ban_champions')
-    .eq('archived', false);
+  const { data: factsRows } = await fetchAllRows((from, to) =>
+    supabase
+      .from('champion_facts')
+      .select('champion, strengths, weaknesses, power_spikes, build_runes, strategy, counter_champions, must_ban_champions')
+      .eq('archived', false)
+      .range(from, to)
+  );
   (factsRows || []).forEach((r: any) => {
     const b = ensure(r.champion);
     if (b) b.facts = r;
   });
 
-  const { data: notesRows } = await supabase
-    .from('champion_notes').select('id, champion, title, body').order('created_at', { ascending: false });
+  const { data: notesRows } = await fetchAllRows((from, to) =>
+    supabase.from('champion_notes').select('id, champion, title, body').order('created_at', { ascending: false }).range(from, to)
+  );
   (notesRows || []).forEach((r: any) => {
     const b = ensure(r.champion);
     if (b && b.notes.length < 8) b.notes.push({ id: r.id, title: r.title || '', body: (r.body || '').slice(0, 400) });
   });
 
-  const { data: knowledgeRows } = await supabase
-    .from('personal_knowledge').select('id, champion, title, content').not('champion', 'is', null).neq('champion', 'Unknown');
+  const { data: knowledgeRows } = await fetchAllRows((from, to) =>
+    supabase.from('personal_knowledge').select('id, champion, title, content').not('champion', 'is', null).neq('champion', 'Unknown').range(from, to)
+  );
   (knowledgeRows || []).forEach((r: any) => {
     // personal_knowledgeはカンマ区切りで複数チャンピオンに紐付く記事をサポートしている。
     // 以前はensure()に生の"Graves, Jax"をそのまま渡しており単一チャンピオン解決に
@@ -627,7 +642,10 @@ export async function runFactCheckBatch(supabase: any, offset: number, limit: nu
   let capped = false;
 
   for (const champ of slice) {
-    if (pendingCount + flagged >= PENDING_QUEUE_CAP) { capped = true; break; }
+    // 別リクエスト(単体チェック等)が並行実行された場合に上限超過が続かないよう、
+    // ループ開始時点のpendingCountではなくDBの最新件数を毎回取り直して判定する。
+    const liveCount = await getPendingQueueCount(supabase);
+    if (liveCount >= PENDING_QUEUE_CAP) { capped = true; break; }
 
     const bundle = grouped.get(champ)!;
     try {

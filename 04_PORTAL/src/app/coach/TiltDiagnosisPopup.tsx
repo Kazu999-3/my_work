@@ -9,12 +9,13 @@ type Level = 'green' | 'yellow' | 'red';
 
 interface Props {
   isOpen: boolean;
+  isWin?: boolean | null;
   onClose: () => void;
   onProceedToReflection: () => void;
   onSnooze: () => void;
 }
 
-export default function TiltDiagnosisPopup({ isOpen, onClose, onProceedToReflection, onSnooze }: Props) {
+export default function TiltDiagnosisPopup({ isOpen, isWin, onClose, onProceedToReflection, onSnooze }: Props) {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState('');
@@ -120,18 +121,22 @@ export default function TiltDiagnosisPopup({ isOpen, onClose, onProceedToReflect
                 <span>⚡ Step 1: 1秒直感チェック</span>
                 <span className="text-[10px] text-stone-400 font-normal">（直感で選択）</span>
               </h3>
-              <p className="text-xs text-stone-600 mb-3 font-semibold">今の試合で一番大きな敗因・問題と感じるのは？</p>
-              
+              <p className="text-xs text-stone-600 mb-3 font-semibold">
+                {isWin
+                  ? '今の試合で一番大きな勝因・良かった点と感じるのは？'
+                  : '今の試合で一番大きな敗因・問題と感じるのは？'}
+              </p>
+
               <div className="grid grid-cols-2 gap-2">
                 <button
                   onClick={() => handleSelectChoice('ally_fault')}
                   className={`p-2.5 rounded-lg border text-xs font-bold text-left transition ${
                     quickChoice === 'ally_fault'
-                      ? 'bg-red-500 text-white border-red-600 shadow-sm'
-                      : 'bg-stone-50 hover:bg-red-50 text-stone-800 border-stone-200'
+                      ? (isWin ? 'bg-emerald-600 text-white border-emerald-700 shadow-sm' : 'bg-red-500 text-white border-red-600 shadow-sm')
+                      : (isWin ? 'bg-stone-50 hover:bg-emerald-50 text-stone-800 border-stone-200' : 'bg-stone-50 hover:bg-red-50 text-stone-800 border-stone-200')
                   }`}
                 >
-                  🔴 味方のミス・判断
+                  {isWin ? '🟢 味方の好プレー・判断' : '🔴 味方のミス・判断'}
                 </button>
                 <button
                   onClick={() => handleSelectChoice('self_fault')}
@@ -141,7 +146,7 @@ export default function TiltDiagnosisPopup({ isOpen, onClose, onProceedToReflect
                       : 'bg-stone-50 hover:bg-emerald-50 text-stone-800 border-stone-200'
                   }`}
                 >
-                  🟢 自分のミス・判断
+                  {isWin ? '🟢 自分の好プレー・判断' : '🟢 自分のミス・判断'}
                 </button>
                 <button
                   onClick={() => handleSelectChoice('comp_fault')}
@@ -151,7 +156,7 @@ export default function TiltDiagnosisPopup({ isOpen, onClose, onProceedToReflect
                       : 'bg-stone-50 hover:bg-blue-50 text-stone-800 border-stone-200'
                   }`}
                 >
-                  🔵 構成・不可抗力
+                  {isWin ? '🔵 構成・噛み合いの良さ' : '🔵 構成・不可抗力'}
                 </button>
                 <button
                   onClick={() => handleSelectChoice('unknown')}

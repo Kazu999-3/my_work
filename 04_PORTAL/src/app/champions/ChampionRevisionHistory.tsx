@@ -2,6 +2,24 @@
 
 import { useEffect, useState } from 'react';
 import { History, RotateCcw, ChevronDown, ChevronUp, X } from 'lucide-react';
+import type { DiffLine } from '../../lib/knowledgeRevisions';
+
+interface RevisionListItem {
+  id: number;
+  target_type: string;
+  target_key: string;
+  field: string;
+  added: number;
+  removed: number;
+  isNew: boolean;
+  created_at: string;
+}
+
+interface RevisionDetailResponse {
+  success: boolean;
+  revision: Record<string, unknown>;
+  diff: DiffLine[];
+}
 
 const TYPE_LABELS: Record<string, string> = {
   champion_fact: 'コーチAI知識層',
@@ -43,11 +61,11 @@ export default function ChampionRevisionHistory({
   isModal = false,
   onClose,
 }: Props) {
-  const [revisions, setRevisions] = useState<any[] | null>(null);
+  const [revisions, setRevisions] = useState<RevisionListItem[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [openId, setOpenId] = useState<number | null>(null);
-  const [detail, setDetail] = useState<any>(null);
+  const [detail, setDetail] = useState<RevisionDetailResponse | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [reverting, setReverting] = useState(false);
 
@@ -179,7 +197,7 @@ export default function ChampionRevisionHistory({
                   ) : detail ? (
                     <>
                       <div className="max-h-64 overflow-auto font-mono text-[10px] leading-relaxed rounded-lg border border-stone-200 bg-white">
-                        {(detail.diff || []).map((line: any, i: number) => (
+                        {(detail.diff || []).map((line: DiffLine, i: number) => (
                           <div
                             key={i}
                             className={

@@ -127,10 +127,18 @@ class QuotaManager:
         with self.file_lock:
             data = self._load_data()
             today = self._get_today_str()
-            
+
             if today not in data:
                 return True
-                
+
+            # サーキットブレーカー: consume_quota()は成功時にしかカウントされないため、
+            # クォータ枯渇で429が連発している間は成功カウンタ(current_usage)が増えず
+            # 上限チェックをすり抜け続ける。今日のエラー数が閾値を超えたら、成功回数に
+            # 関わらず全機能を一律でスキップし、5分おきの自動巡回が丸1日失敗し続けるのを防ぐ。
+            error_count = data[today].get("error_429", 0)
+            if error_count >= settings.DAILY_ERROR_CIRCUIT_BREAKER:
+                return False
+
             current_usage = data[today].get(feature_name, 0)
             return current_usage < limit
 

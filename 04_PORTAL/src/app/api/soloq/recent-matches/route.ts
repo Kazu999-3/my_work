@@ -11,6 +11,9 @@ export async function POST(request: Request) {
 
     const body = await request.json().catch(() => ({}));
     const ign = body.ign || process.env.DEFAULT_RIOT_IGN || "";
+    // MySoloQDashboardの「直近成績」集計用に、既定の5件より多く取得したい呼び出し元向け
+    // (2026-08-10追加)。省略時は従来通り5件。
+    const count = Math.min(Math.max(Number(body.count) || 5, 1), 30);
 
     if (!ign || !ign.includes('#')) {
       return NextResponse.json(
@@ -31,9 +34,9 @@ export async function POST(request: Request) {
     const puuid = await fetchPuuidByRiotId(gameName.trim(), tagLine.trim(), apiKey);
 
     // ランクソロ(420)または直近マッチ
-    let matchIds = await fetchRecentMatchIds(puuid, apiKey, 5, 420);
+    let matchIds = await fetchRecentMatchIds(puuid, apiKey, count, 420);
     if (!matchIds || matchIds.length === 0) {
-      matchIds = await fetchRecentMatchIds(puuid, apiKey, 5);
+      matchIds = await fetchRecentMatchIds(puuid, apiKey, count);
     }
 
     if (!matchIds || matchIds.length === 0) {

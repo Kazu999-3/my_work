@@ -134,7 +134,9 @@ class EdgeWorkerDaemon:
         # matchup_simulation_5v5 は Vercel側(/api/match/simulate)で同期的に完結するようになったため、
         # このデーモンが横取りしないよう明示的に除外する（横取りするとGeminiクォータを無駄に消費し、
         # Vercel側の正常な結果を後から上書きしてしまうことがあった）。
-        url = f"{self.supabase_url}/rest/v1/edge_tasks?status=eq.pending&task_type=neq.matchup_simulation_5v5&order=created_at.asc&limit=10"
+        # balancer_pending も同様に、edge_tasksをチーム分け結果の永続ストアとして間借りしている
+        # だけで実行対象ではないため除外する（未対応タスクタイプとして即failedになっていた）。
+        url = f"{self.supabase_url}/rest/v1/edge_tasks?status=eq.pending&task_type=neq.matchup_simulation_5v5&task_type=neq.balancer_pending&order=created_at.asc&limit=10"
         try:
             res = httpx.get(url, headers=self.headers, timeout=10)
             if res.status_code == 200 and res.json():
@@ -233,6 +235,23 @@ class EdgeWorkerDaemon:
         else:
             logger.error(f"❌ サブプロセスエラー終了 ({res.returncode}): {script_path}")
             logger.error(f"Stderr: {res.stderr[-1000:]}")
+            # 各スクリプトはmain()の最後にprint(json.dumps({..., "message": ...}))で結果概要を
+            # 標準出力に出している。以前はここでstderrの生ログ(内部リトライ・クォータ内部詳細等、
+            # 数百行に及ぶこともある)をそのままエラーメッセージにしていたため、「Gemini無料枠が
+            # 尽きて安全にスキップしただけ」なのか本当のバグなのかユーザーが区別できない、
+            # 読みづらいメッセージが表示され続けていた(2026-08-10発覚)。stdout末尾のJSON要約を
+            # 拾えればそれを優先的にエラーメッセージとして使う。
+            import json
+            clean_message = None
+            try:
+                last_line = res.stdout.strip().splitlines()[-1] if res.stdout.strip() else ""
+                stdout_json = json.loads(last_line)
+                if isinstance(stdout_json, dict) and stdout_json.get("message"):
+                    clean_message = stdout_json["message"]
+            except Exception:
+                pass
+            if clean_message:
+                raise RuntimeError(f"{clean_message}\n（詳細ログ末尾: {res.stderr[-300:]}）")
             raise RuntimeError(f"プロセス実行エラー (Exit code: {res.returncode})\nStderr: {res.stderr[-1000:]}")
 
     def send_heartbeat(self):

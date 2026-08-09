@@ -13,13 +13,15 @@ export default function AiUpdateTab() {
   const [champions, setChampions] = useState<any[]>([]);
   const [champDates, setChampDates] = useState<Record<string, string>>({});
   const [champPending, setChampPending] = useState<Record<string, boolean>>({});
+  const [champLoadError, setChampLoadError] = useState(false);
 
   // パイプラインステータス（自動化ジョブの鮮度監視）
   const [pipelineStatus, setPipelineStatus] = useState<any[]>([]);
   const [failedTasks, setFailedTasks] = useState<any[]>([]);
   const [retryingId, setRetryingId] = useState<string | null>(null);
 
-  useEffect(() => {
+  const loadChampions = () => {
+    setChampLoadError(false);
     let fetchedChampions: any[] = [];
     fetch('https://ddragon.leagueoflegends.com/api/versions.json')
       .then(r => r.json())
@@ -36,7 +38,15 @@ export default function AiUpdateTab() {
         setChampPending(statusData.pending || {});
         setChampions(fetchedChampions);
       })
-      .catch(console.error);
+      .catch((err) => {
+        console.error(err);
+        setChampLoadError(true);
+      });
+  };
+
+  useEffect(() => {
+    loadChampions();
+    /* eslint-disable-next-line react-hooks/exhaustive-deps */
   }, []);
 
   const dbProgress = useMemo(() => {
@@ -235,7 +245,14 @@ export default function AiUpdateTab() {
           <p className="text-xs text-gray-400">
             全チャンピオンの統計・ルーン・ビルドをGemini APIで自動リサーチし、既存のユーザーメモを保護しながら辞書を一括更新します。
           </p>
-          
+
+          {champLoadError && (
+            <div className="flex items-center justify-between gap-3 mt-2 p-2.5 rounded-xl bg-rose-100 border border-rose-200 text-rose-700 text-xs font-bold">
+              <span className="flex items-center gap-1.5"><AlertTriangle size={14} /> チャンピオン一覧の取得に失敗しました（ネットワーク不安定の可能性）</span>
+              <button onClick={loadChampions} className="shrink-0 px-2.5 py-1 bg-rose-200 hover:bg-rose-300 rounded-lg">再試行</button>
+            </div>
+          )}
+
           {isBulkRunning || (bulkStatus.initialized && bulkStatus.total > 0) ? (
             <div className="space-y-2 mt-2 w-full">
               <div className="flex justify-between text-xs font-bold text-stone-700 flex-wrap gap-2">

@@ -224,7 +224,20 @@ def main():
             res = run_script(script_path, build_args(payload), timeout)
 
             if res.returncode != 0:
-                err = f"Exit code {res.returncode}\n{res.stderr[-1500:]}"
+                # 各スクリプトはmain()の最後にprint(json.dumps({..., "message": ...}))で結果概要を
+                # 標準出力に出している。以前はここでstderrの生ログをそのままエラーメッセージ・
+                # プッシュ通知本文にしていたため、「Gemini無料枠が尽きて安全にスキップしただけ」
+                # なのか本当のバグなのか区別できない読みづらい通知が飛び続けていた
+                # (2026-08-10発覚、edge_worker_daemon.pyの同種修正と対で対応)。
+                clean_message = None
+                try:
+                    last_line = res.stdout.strip().splitlines()[-1] if res.stdout.strip() else ""
+                    stdout_json = json.loads(last_line)
+                    if isinstance(stdout_json, dict) and stdout_json.get("message"):
+                        clean_message = stdout_json["message"]
+                except Exception:
+                    pass
+                err = f"{clean_message}\n（詳細ログ末尾: {res.stderr[-300:]}）" if clean_message else f"Exit code {res.returncode}\n{res.stderr[-1500:]}"
                 print(f"❌ 失敗: {task_type} — {err}", file=sys.stderr)
                 complete_task(task_id, "failed", error_message=err[:2000])
                 notify_portal(task_type, payload, False, detail=err, task_id=task_id)

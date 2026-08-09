@@ -14,7 +14,7 @@ from v2_CORE.settings import settings
 from v2_CORE.ai_helper import generate_content_safe
 from v2_CORE.logger_config import setup_sovereign_logging
 from v2_CORE.knowledge_revisions import record_matchup_sentinel_revision
-from v2_CORE._LOL.champ_id_normalizer import normalize_champion_id
+from v2_CORE._LOL.champ_id_normalizer import normalize_champion_id, get_latest_ddragon_version, to_display_patch_version
 from v2_CORE._LOL.lol_trend_collector import sanitize_trend_data
 
 logger = setup_sovereign_logging("ChampionTrendWorker")
@@ -246,6 +246,14 @@ League of Legendsの最新パッチにおける、チャンピオン「{champion
     # 単純上書きだと既存の正常な値まで消してしまう。既存値をフォールバックにして
     # 「取得できたものだけ更新、取れなかったものは前回値を維持」する(#⑤)。
     existing_patch_meta = raw_data.get("patch_meta") if isinstance(raw_data.get("patch_meta"), dict) else {}
+
+    # AIに「最新パッチ番号」を自己申告させると、google_searchグラウンディングが
+    # 有効でも学習知識ベースの古いパッチに寄ってしまい、実際より約1ヶ月古い値が
+    # 返ることがあった(2026-08-09発覚)。DDragonの実データから確実に取得し、
+    # AIの回答(trend_data.get("patch"))は使わない。DDragon疎通失敗時のみ
+    # AI回答→前回値の順にフォールバックする。
+    real_patch = to_display_patch_version(get_latest_ddragon_version(timeout=10))
+
     raw_data["patch_meta"] = {
         "win_rate": trend_data.get("win_rate") if trend_data.get("win_rate") is not None else existing_patch_meta.get("win_rate"),
         "pick_rate": trend_data.get("pick_rate") if trend_data.get("pick_rate") is not None else existing_patch_meta.get("pick_rate"),
@@ -253,7 +261,7 @@ League of Legendsの最新パッチにおける、チャンピオン「{champion
         "tier": trend_data.get("tier") or existing_patch_meta.get("tier"),
         "trend_items": trend_data.get("trend_items") or existing_patch_meta.get("trend_items", []),
         "trend_runes": trend_data.get("trend_runes") or existing_patch_meta.get("trend_runes", {}),
-        "patch": trend_data.get("patch") or existing_patch_meta.get("patch"),
+        "patch": real_patch or trend_data.get("patch") or existing_patch_meta.get("patch"),
         "updated_at": int(time.time())
     }
     raw_data["pro_builds"] = trend_data.get("pro_builds") or raw_data.get("pro_builds", [])
@@ -370,9 +378,26 @@ def main():
     role = sys.argv[2]
     success = collect_and_save_champion_trend(champion, role)
 
+    # exit codeはchampion_facts/matchup_sentinelが実際に更新されたかどうかを正確に反映する
+    # 必要がある(ポータルの個別更新ボタンはstatus==='completed'を見た瞬間に「更新しました！」と
+    # 表示するため、クォータ枯渇でexit 0にすると何も更新していないのに成功したと嘘をつくことに
+    # なる)。exit codeはsuccessのみで判定し、変えない。一方でクォータ枯渇による安全スキップは
+    # バグによる異常終了ではなく想定内の一時停止であり、ここではその区別をメッセージ文言だけに
+    # 反映する(区別自体はedge_worker_daemon.py側の_run_subprocess_taskがこのJSONの"message"を
+    # 拾ってエラーメッセージを分かりやすくする、2026-08-10)。
+    is_quota_skip = False
+    if not success:
+        from v2_CORE.quota_manager import quota_manager
+        is_quota_skip = not quota_manager.check_quota("oracle")
+
     print(json.dumps({
         "success": success,
-        "message": f"{'Updated' if success else 'Failed to update'} {normalize_champion_id(champion)} trend",
+        "skipped": is_quota_skip,
+        "message": (
+            f"Updated {normalize_champion_id(champion)} trend" if success
+            else f"Skipped {normalize_champion_id(champion)} trend (quota exhausted, existing data preserved)" if is_quota_skip
+            else f"Failed to update {normalize_champion_id(champion)} trend"
+        ),
     }))
     sys.exit(0 if success else 1)
 

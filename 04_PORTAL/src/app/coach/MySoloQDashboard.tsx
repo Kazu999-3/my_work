@@ -22,6 +22,11 @@ export default function MySoloQDashboard({ refreshSignal }: { refreshSignal?: nu
   const [reflections, setReflections] = useState<SoloQReflection[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  // 「振り返り試合の勝率」(手動記録分のみの集計)を実際の直近成績と誤認させていた問題
+  // (2026-08-10発覚)。記録し忘れた試合が母数に入らず実態とズレるため、Riot APIの
+  // 実試合履歴から別途正しく集計し直す。取得できない間は手動記録側の値を暫定表示する。
+  const [realRecord, setRealRecord] = useState<{ totalMatches: number; wins: number } | null>(null);
+  const [realRecordError, setRealRecordError] = useState(false);
 
   const fetchAllReflections = async () => {
     setLoading(true);
@@ -36,8 +41,30 @@ export default function MySoloQDashboard({ refreshSignal }: { refreshSignal?: nu
     }
   };
 
+  const fetchRealRecord = async () => {
+    const savedIgn = localStorage.getItem('soloq_riot_id') || '';
+    if (!savedIgn) { setRealRecordError(true); return; }
+    try {
+      const res = await fetch('/api/soloq/recent-matches', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ign: savedIgn, count: 20 }),
+      });
+      const data = await res.json();
+      if (!res.ok || !Array.isArray(data.matches)) throw new Error(data.error || '取得失敗');
+      setRealRecord({
+        totalMatches: data.matches.length,
+        wins: data.matches.filter((m: { win: boolean }) => m.win).length,
+      });
+      setRealRecordError(false);
+    } catch {
+      setRealRecordError(true);
+    }
+  };
+
   useEffect(() => {
     fetchAllReflections();
+    fetchRealRecord();
     // refreshSignalは振り返り保存完了時にインクリメントされる。このダッシュボードは
     // 常時マウントのため、保存後も再fetchせず「保存したのに一覧が更新されない」状態に
     // なっていた(2026-08-05発覚)。
@@ -103,8 +130,18 @@ export default function MySoloQDashboard({ refreshSignal }: { refreshSignal?: nu
           <span className="text-xl font-extrabold text-stone-900">{totalMatches} <span className="text-xs font-normal text-stone-500">試合</span></span>
         </div>
         <div className="bg-white border border-stone-200 rounded-xl p-3.5 text-center shadow-sm">
-          <span className="text-[11px] text-stone-500 font-medium block">振り返り試合の勝率</span>
-          <span className={`text-xl font-extrabold ${winRate >= 50 ? 'text-emerald-700' : 'text-rose-700'}`}>{winRate}%</span>
+          <span className="text-[11px] text-stone-500 font-medium block">
+            {realRecord ? `直近${realRecord.totalMatches}戦の勝率` : realRecordError ? '振り返り試合の勝率' : '取得中...'}
+          </span>
+          {realRecord ? (
+            <span className={`text-xl font-extrabold ${(Math.round((realRecord.wins / realRecord.totalMatches) * 100) || 0) >= 50 ? 'text-emerald-700' : 'text-rose-700'}`}>
+              {Math.round((realRecord.wins / realRecord.totalMatches) * 100) || 0}%
+            </span>
+          ) : realRecordError ? (
+            <span className={`text-xl font-extrabold ${winRate >= 50 ? 'text-emerald-700' : 'text-rose-700'}`}>{winRate}%</span>
+          ) : (
+            <span className="text-xl font-extrabold text-stone-300">-</span>
+          )}
         </div>
         <div className="bg-white border border-stone-200 rounded-xl p-3.5 text-center shadow-sm">
           <span className="text-[11px] text-stone-500 font-medium block">平均集中・メンタル度</span>

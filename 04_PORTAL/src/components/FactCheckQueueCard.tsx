@@ -100,13 +100,18 @@ export default function FactCheckQueueCard({ item, onActed }: { item: QueueItem;
     setActing(true); setError('');
     try {
       // 1. もし編集可能な対象ブロック (editable) が存在すれば、元テキストを正解で自動更新！
+      // ここが失敗したまま次の手順(訂正記録＋完了)に進むと、誤った記述がDBに残ったまま
+      // レビュー済み扱いになってしまうため、1件でも更新に失敗したら中断する。
       if (filteredEditable.length > 0) {
-        for (const block of filteredEditable) {
-          await fetch('/api/admin/dict-fact-check/source', {
+        const results = await Promise.all(filteredEditable.map((block) =>
+          fetch('/api/admin/dict-fact-check/source', {
             method: 'PATCH', credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ table: block.table, id: block.id, champion: block.champion, field: block.field, value }),
-          }).catch(() => null);
+          }).then((r) => r.ok).catch(() => false)
+        ));
+        if (results.some((ok) => !ok)) {
+          throw new Error('元データの更新に失敗しました。ネットワーク状態を確認してもう一度お試しください。');
         }
       }
 

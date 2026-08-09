@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { fetchPuuidByRiotId, fetchRecentMatchIds } from '../../../../lib/riot';
+import { fetchPuuidByRiotId, fetchRecentMatchIds, fetchMatchDetails } from '../../../../lib/riot';
 import { verifyAdminSession } from '../../../../lib/adminAuth';
 
 export async function POST(request: Request) {
@@ -36,9 +36,23 @@ export async function POST(request: Request) {
     const latestMatchId = matchIds[0];
     const isNewMatch = !!lastKnownMatchId && lastKnownMatchId !== latestMatchId;
 
+    // ティルト診断ポップアップが勝敗を無視して常に「敗因」を尋ねていた問題(2026-08-10発覚)の
+    // 修正用。新しい試合を検知した時だけ試合詳細を取得し、勝敗をポップアップ側の分岐に渡す。
+    let win: boolean | null = null;
+    if (isNewMatch) {
+      try {
+        const matchDetails = await fetchMatchDetails(latestMatchId, apiKey);
+        const me = matchDetails.participants.find((p) => p.puuid === puuid);
+        win = me ? me.win : null;
+      } catch (e) {
+        console.warn('[soloq/check-finished] 勝敗取得に失敗（ポップアップは敗因寄りの汎用文言で表示継続）:', e);
+      }
+    }
+
     return NextResponse.json({
       isNewMatch,
       latestMatchId,
+      win,
     });
   } catch (err: any) {
     // 「新しい試合は無い」のか「取得自体に失敗した」のかを区別できないと、Riot APIキー

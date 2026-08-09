@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../../lib/supabaseAdmin';
 import { verifyAdminSession } from '../../../../lib/adminAuth';
+import { normalizeChampionName } from '../../../../lib/championNames';
 
 // 「前回の次回テーマ」「保存済みマッチ判定」等の軽量呼び出しは既定の10件で十分だが、
 // 「過去ログ」ダッシュボード(MySoloQDashboard)が全件集計・全文検索に使うため、
@@ -79,48 +80,52 @@ export async function POST(request: Request) {
     }
 
     // クライアント側はsavedMatchIdsによるボタン無効化のみで重複を防いでおり、複数タブや
-    // 素早い二重送信をすり抜けると同一試合が重複挿入される(2026-08-05発覚)。一意制約が
-    // 無いため、insert前にサーバー側で同一match_idの既存レコードを確認する。
-    if (matchId) {
-      const { data: dup } = await supabaseAdmin
-        .from('soloq_reflections')
-        .select('id')
-        .eq('match_id', matchId)
-        .maybeSingle();
-      if (dup) {
-        return NextResponse.json({ error: 'この試合は既に振り返り記録済みです。' }, { status: 409 });
-      }
-    }
+    // 素早い二重送信をすり抜けると同一試合が重複挿入されうる(2026-08-05発覚)。
+    // 以前はinsert前にselectで確認していたが、select→insertの間にレースが残っていたため、
+    // match_idへのユニークインデックス(migration 53)を前提にupsert+ignoreDuplicatesへ
+    // 置き換えてアトミックに重複を防ぐ。
+    const reflectionPayload = {
+      champion,
+      enemy_champion: enemyChampion || null,
+      win: !!win,
+      kda: kda || null,
+      cs: typeof cs === 'number' ? cs : null,
+      game_duration: typeof gameDuration === 'number' ? gameDuration : null,
+      mental_rating: typeof mentalRating === 'number' ? mentalRating : null,
+      win_lose_reason_tags: Array.isArray(winLoseReasonTags) ? winLoseReasonTags : [],
+      reflection_note: reflectionNote || null,
+      matchup_memo: matchupMemo || null,
+      next_focus_point: nextFocusPoint || null,
+    };
 
-    // 1. Insert into soloq_reflections
-    const { data: reflectionData, error: insertError } = await supabaseAdmin
-      .from('soloq_reflections')
-      .insert({
-        match_id: matchId || null,
-        champion,
-        enemy_champion: enemyChampion || null,
-        win: !!win,
-        kda: kda || null,
-        cs: typeof cs === 'number' ? cs : null,
-        game_duration: typeof gameDuration === 'number' ? gameDuration : null,
-        mental_rating: typeof mentalRating === 'number' ? mentalRating : null,
-        win_lose_reason_tags: Array.isArray(winLoseReasonTags) ? winLoseReasonTags : [],
-        reflection_note: reflectionNote || null,
-        matchup_memo: matchupMemo || null,
-        next_focus_point: nextFocusPoint || null
-      })
-      .select()
-      .single();
+    const { data: reflectionData, error: insertError } = matchId
+      ? await supabaseAdmin
+          .from('soloq_reflections')
+          .upsert({ match_id: matchId, ...reflectionPayload }, { onConflict: 'match_id', ignoreDuplicates: true })
+          .select()
+          .maybeSingle()
+      : await supabaseAdmin
+          .from('soloq_reflections')
+          .insert({ match_id: null, ...reflectionPayload })
+          .select()
+          .single();
 
     if (insertError) {
       console.error('Error inserting reflection:', insertError);
       return NextResponse.json({ error: insertError.message }, { status: 500 });
     }
+    if (matchId && !reflectionData) {
+      return NextResponse.json({ error: 'この試合は既に振り返り記録済みです。' }, { status: 409 });
+    }
 
     // 2. If matchupMemo exists, sync to matchup_sentinel
     if (matchupMemo && enemyChampion && enemyChampion !== 'Unknown') {
-      const matchupId = `${champion}_vs_${enemyChampion}`;
-      
+      // matchup-warning/route.tsと同じ正規化(表記ゆれ・大文字小文字・アポストロフィ差異の吸収)を
+      // 通さないと、同一対面が別のmatchup_idとして重複レコード化する(Talonで実際に発生したバグと同型)。
+      const normalizedChampion = normalizeChampionName(champion);
+      const normalizedEnemy = normalizeChampionName(enemyChampion);
+      const matchupId = `${normalizedChampion}_vs_${normalizedEnemy}`;
+
       const { data: existingMatchup } = await supabaseAdmin
         .from('matchup_sentinel')
         .select('*')
@@ -143,9 +148,9 @@ export async function POST(request: Request) {
           .from('matchup_sentinel')
           .insert({
             matchup_id: matchupId,
-            champion: champion,
-            enemy: enemyChampion,
-            title: `${champion} vs ${enemyChampion} 対策`,
+            champion: normalizedChampion,
+            enemy: normalizedEnemy,
+            title: `${normalizedChampion} vs ${normalizedEnemy} 対策`,
             strategy: matchupMemo,
             raw_data: { source: 'soloq_reflection', created_at: new Date().toISOString() }
           });

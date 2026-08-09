@@ -226,27 +226,47 @@ export async function runPostGameReview(opts: { matchId?: string; focus?: string
   const enemyLaner = match.participants.find((p: any) => p.teamId !== me.teamId && p.lane === me.lane);
 
   const deathTimeline: string[] = [];
-  const deathEvents: { min: number; phase: string; killer: string }[] = [];
+  const deathEvents: { min: number; phase: string; killer: string; teamGoldDiffAtDeath: number | null }[] = [];
   try {
     const timeline = await fetchMatchTimeline(targetMatchId, apiKey);
     const participants: any[] = timeline?.info?.participants || [];
     const myParticipantId = participants.find((p) => p.puuid === puuid)?.participantId;
     const participantIdToChampion = new Map<number, string>();
+    // デスが「試合展開の結果」なのか「原因」なのかを区別できるよう、デス発生時点の
+    // チーム総ゴールド差も一緒に記録する(週次傾向レポートの因果関係誤読対策、2026-08-10)。
+    const participantIdToTeam = new Map<number, number>();
     participants.forEach((p) => {
-      const champ = match.participants.find((mp: any) => mp.puuid === p.puuid)?.championName;
-      if (champ) participantIdToChampion.set(p.participantId, champ);
+      const matchParticipant = match.participants.find((mp: any) => mp.puuid === p.puuid);
+      if (matchParticipant?.championName) participantIdToChampion.set(p.participantId, matchParticipant.championName);
+      if (matchParticipant?.teamId) participantIdToTeam.set(p.participantId, matchParticipant.teamId);
     });
 
     if (myParticipantId) {
       const frames: any[] = timeline?.info?.frames || [];
       for (const frame of frames) {
+        let teamGoldDiff: number | null = null;
+        const pFrames = frame.participantFrames || {};
+        const goldEntries = Object.keys(pFrames);
+        if (goldEntries.length > 0) {
+          let myTeamGold = 0;
+          let enemyTeamGold = 0;
+          for (const pidStr of goldEntries) {
+            const pid = Number(pidStr);
+            const gold = pFrames[pidStr]?.totalGold || 0;
+            const team = participantIdToTeam.get(pid);
+            if (team === me.teamId) myTeamGold += gold;
+            else if (team !== undefined) enemyTeamGold += gold;
+          }
+          teamGoldDiff = myTeamGold - enemyTeamGold;
+        }
+
         for (const ev of frame.events || []) {
           if (ev.type === 'CHAMPION_KILL' && ev.victimId === myParticipantId) {
             const min = Math.floor(ev.timestamp / 60000);
             const killerChamp = participantIdToChampion.get(ev.killerId) || '不明';
             const phase = min <= 10 ? '序盤' : min <= 20 ? '中盤' : '終盤';
-            deathTimeline.push(`${min}分(${phase}): ${killerChamp}に討たれた`);
-            deathEvents.push({ min, phase, killer: killerChamp });
+            deathTimeline.push(`${min}分(${phase}): ${killerChamp}に討たれた${teamGoldDiff !== null ? `（チーム総ゴールド差: ${teamGoldDiff >= 0 ? '+' : ''}${teamGoldDiff}）` : ''}`);
+            deathEvents.push({ min, phase, killer: killerChamp, teamGoldDiffAtDeath: teamGoldDiff });
           }
         }
       }

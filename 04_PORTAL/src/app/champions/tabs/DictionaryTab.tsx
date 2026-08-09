@@ -349,7 +349,14 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
     setTrendStartedAt(Date.now());
     setTrendElapsedSec(0);
     try {
-      const role = roleFilter === 'ALL' ? 'Jungle' : roleFilter;
+      // roleFilterは一覧の表示絞り込み用のUI状態であり、AIリサーチのroleとは無関係。
+      // このOSは全チャンピオンをジャングル基準で統一リサーチする設計(champ_db_bulk_updater.py
+      // の一括更新と同じ)で、champion_trend_worker.py側はrole="Jungle"の時だけ
+      // 先出し・後出し評価根拠やジャングル序盤タイミングを生成する。以前はここが
+      // roleFilterをそのまま渡していたため、一覧をJungle以外で絞り込んだ状態で個別更新
+      // すると、これらのジャングル関連フィールドだけ生成されないまま「更新済み」に
+      // なっていた(2026-08-09発覚)。
+      const role = 'Jungle';
       const res = await fetch('/api/admin/champions/trend', {
         method: 'POST', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },

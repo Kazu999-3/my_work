@@ -60,18 +60,29 @@ class SovereignSettings(BaseSettings):
     OLLAMA_MODEL: str = "gemma3:12b"  # gemma3, qwen3, llama3 等
     OLLAMA_ENABLED: bool = True  # Falseの場合はすべてGeminiにフォールバック
     
-    # クォータ（1日あたりのAPI実行回数）制限: 合計780枠 (余裕をもったバッファ)
+    # クォータ（1日あたりのAPI実行回数）制限。
+    # oracleは元々「実質無制限」の2000だったが、Google側の実クォータ(APIキー×モデル単位、
+    # feature_nameとは無関係に共有される)より遥かに緩く、辞典一括更新(168体×最大2リクエスト
+    # 程度=最大300強)を1回フルで回しきれる余裕を残しつつ他の自動ジョブとの共食いを防ぐ
+    # 現実的な値へ引き下げた(2026-08-10)。
     DAILY_QUOTA_LIMITS: dict = {
         "kingdom_cycle": 50,   # 記事作成、リライト、SNSフック等の合計 (制限)
         "draft_analyzer": 20,  # ライブドラフトの分析 (制限)
         "news_scout": 20,      # 海外ニュースの翻訳・要約 (制限)
-        "oracle": 2000,        # 隠れメタの調査/チャンピオン辞典 (実質無制限・全チャンピオン完走)
+        "oracle": 300,         # 隠れメタの調査/チャンピオン辞典 (一括更新1回分の余裕を残した現実的な上限)
         "video_forge": 200,    # 動画台本の作成 (制限)
         "bounty_hunter": 10,   # 競合noteのハンティング (制限)
         "magazine_forge": 10,  # マガジン生成 (制限)
         "bible_forge": 50,     # バイブルの生成 (制限)
         "x_analyzer": 20,      # Xのトレンド解析 (制限)
     }
+
+    # サーキットブレーカー: quota_manager.consume_quota()は呼び出し成功時にしか
+    # インクリメントされないため、429が連発している間は上限チェック(current_usage<limit)を
+    # 延々とすり抜け続けてしまう。5分おきのedge-cloud-worker.yml等の自動巡回が丸1日
+    # 失敗し続け429を240件積み上げた実例(2026-08-07)があったため、当日のerror_429回数が
+    # この値を超えたら成功回数に関わらず全機能を一律でスキップする。
+    DAILY_ERROR_CIRCUIT_BREAKER: int = 10
     
     model_config = SettingsConfigDict(
         env_file=str(ROOT_DIR / ".env"),

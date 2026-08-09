@@ -1285,6 +1285,7 @@ export default function CoachPage() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [isReflectionModalOpen, setIsReflectionModalOpen] = useState(false);
   const [isTiltPopupOpen, setIsTiltPopupOpen] = useState(false);
+  const [lastMatchWin, setLastMatchWin] = useState<boolean | null>(null);
   const [lastFocusPoint, setLastFocusPoint] = useState<string | null>(null);
   const [lastKnownMatchId, setLastKnownMatchId] = useState<string>('');
   // ポーリングのuseEffectをisAuthenticatedだけに依存させたまま(pollのたびにintervalが
@@ -1369,6 +1370,7 @@ export default function CoachPage() {
             sessionStorage.removeItem('tilt_popup_snoozed');
           } else {
             // 自動ポップアップ！！ まずティルト診断を出し、そこから振り返りへ進めるようにする(#①)
+            setLastMatchWin(typeof data.win === 'boolean' ? data.win : null);
             setIsTiltPopupOpen(true);
           }
         }
@@ -1707,6 +1709,7 @@ export default function CoachPage() {
 
       <TiltDiagnosisPopup
         isOpen={isTiltPopupOpen}
+        isWin={lastMatchWin}
         onClose={() => setIsTiltPopupOpen(false)}
         onProceedToReflection={() => {
           setIsTiltPopupOpen(false);
