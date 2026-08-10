@@ -73,6 +73,7 @@ class EdgeWorkerDaemon:
         # 競合排他グループの定義
         conflict_groups = [
             {"youtube_absorb", "dict_synthesizer", "champion_trend"},  # DB/辞書書き換え競合
+            {"youtube_absorb", "youtube_queue_process", "youtube_channel_monitor"},  # yt-dlp多用によるレート制限(429)回避
         ]
         
         # 自タスクが含まれる競合グループを特定
@@ -388,6 +389,18 @@ class EdgeWorkerDaemon:
                     timeout=300
                 )
                 self.update_task_status(task_id, "completed", result=result)
+
+            elif task_type == "youtube_queue_process":
+                # youtube_queue(動画解析キュー)の処理本体。以前はktm-cloud-worker.ymlの
+                # youtubeジョブ(GitHub Actions)経由のみだったが、共有IPがYouTube側から
+                # bot判定され続けるため2026-07-31に定期cronが停止され、キューが滞留していた
+                # (2026-08-10発覚、166件滞留)。ローカルPCのIPなら比較的安定するため、
+                # このデーモン経由でも処理できるようにする。MAX_ITEMS未指定時は
+                # scripts/youtube_worker.py側の既定値(3件/回)で少量ずつ処理し、
+                # 連続リクエストによる429を避ける。
+                logger.info("🎬 [youtube_queue_process] YouTube動画解析キューの処理を実行...")
+                result = self._run_subprocess_task("scripts/youtube_worker.py", timeout=900)
+                self.update_task_status(task_id, "completed", result=result)
                 
             elif task_type == "champion_db_bulk_update":
                 logger.info("📚 [champion_db_bulk_update] チャンピオン辞典一括更新を実行...")
@@ -458,6 +471,38 @@ class EdgeWorkerDaemon:
                 logger.error(f"❌ [YoutubeAbsorbScheduler] エラー: {e}")
             time.sleep(900)  # 15分おき
 
+    def youtube_queue_scheduler_loop(self):
+        """
+        youtube_queue(動画解析キュー)の処理(youtube_queue_process)を10分おきに自動起票する。
+        youtube_absorb_scheduler_loopと同じ「重複起票しない・ゴースト行は無視する」設計。
+        1回あたりMAX_ITEMS件(既定3件)ずつ少量処理することで、YouTube側の429を避ける。
+        """
+        time.sleep(30)  # youtube_absorbの初回起票と時間をずらす
+        while getattr(self, "_heartbeat_active", True):
+            try:
+                stale_cutoff = (datetime.now(timezone.utc) - timedelta(hours=2)).isoformat().replace("+00:00", "Z")
+                check_url = (
+                    f"{self.supabase_url}/rest/v1/edge_tasks?task_type=eq.youtube_queue_process"
+                    f"&status=in.(pending,running)&updated_at=gt.{stale_cutoff}&select=id&limit=1"
+                )
+                res = httpx.get(check_url, headers=self.headers, timeout=10)
+                if res.status_code == 200 and res.json():
+                    logger.info("🔧 [YoutubeQueueScheduler] 既に未処理のyoutube_queue_processタスクがあるためスキップします。")
+                else:
+                    post_res = httpx.post(
+                        f"{self.supabase_url}/rest/v1/edge_tasks",
+                        headers=self.headers,
+                        json={"task_type": "youtube_queue_process", "payload": {}, "status": "pending"},
+                        timeout=10
+                    )
+                    if post_res.status_code in (200, 201):
+                        logger.info("🔧 [YoutubeQueueScheduler] youtube_queue_processタスクをキューイングしました。")
+                    else:
+                        logger.error(f"❌ [YoutubeQueueScheduler] キューイング失敗: {post_res.status_code} {post_res.text}")
+            except Exception as e:
+                logger.error(f"❌ [YoutubeQueueScheduler] エラー: {e}")
+            time.sleep(600)  # 10分おき
+
     def heartbeat_loop(self):
         """別スレッドで5秒おきにハートビートを送信し続ける"""
         logger.info("📡 バックグラウンド・ハートビート監視スレッドを開始しました。")
@@ -485,7 +530,11 @@ class EdgeWorkerDaemon:
         # バックグラウンドでYouTube Absorber(字幕なし動画)の自動起票スレッドを起動
         self.youtube_absorb_scheduler_thread = threading.Thread(target=self.youtube_absorb_scheduler_loop, daemon=True)
         self.youtube_absorb_scheduler_thread.start()
-        
+
+        # バックグラウンドでYouTube動画解析キュー(youtube_queue)の自動起票スレッドを起動
+        self.youtube_queue_scheduler_thread = threading.Thread(target=self.youtube_queue_scheduler_loop, daemon=True)
+        self.youtube_queue_scheduler_thread.start()
+
         # スリープ防止の開始
         self.prevent_sleep()
         
