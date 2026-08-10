@@ -9,9 +9,8 @@ description: プロプレイヤー（Oner, Canyon, Kanavi等）の最新ビル�
 プロ・ハイエロプレイヤーの最新ビルドを追跡し、「一般統計サイトにはまだ反映されていないメタの先端」を捉える。
 
 ## 使用タイミング
-- `/lol-tactics-production` ワークフローのStep 2として自動起動
-- Strategistエージェントからの呼び出し
 - ユーザーが「プロの最新ビルドを調べて」と依頼した時
+- `lol-deep-research`・`note-article-drafter`等、リサーチ結果を必要とする他スキルから呼ばれた時
 
 ## 入力パラメータ
 | パラメータ | 必須 | 説明 | 例 |
