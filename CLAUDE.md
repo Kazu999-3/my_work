@@ -31,11 +31,13 @@
 
 `.claude/skills/`（プロジェクト直下）と `04_PORTAL/.claude/skills/`（ポータル固有）配下のスキルはネイティブのSkill機構で自動検出されるため、ここで手動リストアップする必要はありません。タスク内容に応じて自発的に該当スキルを読み込み、その手順・制約に従ってください。
 
-現存する主なスキル: `ghost-writer`（AI臭さ排除の校正）、`ghost-tactics`（YouTube動画からの戦術自動抽出）、`lol-data-collector`（統計収集）、`lol-deep-research`（チャンピオン深掘りリサーチ）、`pro-build-tracker`（プロビルド追跡）、`sovereign-factory`（戦術バイブル/SNS/画像プロンプト量産）、`lexicon-editor`（辞典編纂）、`style-auditor`（文章のAI臭さ監査）、`article-review`（note記事の6観点レビュー＆改善ループ）、`note-article-drafter`（note記事ドラフト生成）、`note-production`（note量産の一気通貫フロー、Worker/Reviewerループ内蔵）、`notification-designer`（Discord/Web通知のUXライティング）、`find-skills`（外部スキルエコシステムの発見）、`ktm-admin`（KTM大会運営・MMR計算・チーム分け）、`skill-creator`（スキルの新規作成・検証）、`canvas-design`（画像/ポスター生成）、`supabase-table-security`（04_PORTAL固有、新規テーブル/APIルートのセキュリティチェックリスト）。
+現存する主なスキル: `ghost-writer`（AI臭さ排除の校正）、`ghost-tactics`（YouTube動画からの戦術自動抽出）、`lol-data-collector`（統計収集）、`lol-deep-research`（チャンピオン深掘りリサーチ）、`pro-build-tracker`（プロビルド追跡）、`sovereign-factory`（戦術バイブル/SNS/画像プロンプト量産）、`lexicon-editor`（辞典編纂）、`style-auditor`（文章のAI臭さ監査）、`article-review`（note記事の6観点レビュー＆改善ループ）、`note-article-drafter`（note記事ドラフト生成）、`note-production`（note量産の一気通貫フロー、Worker/Reviewerループ内蔵）、`notification-designer`（Discord/Web通知のUXライティング）、`find-skills`（外部スキルエコシステムの発見）、`ktm-admin`（KTM大会運営・MMR計算・チーム分け）、`skill-creator`（スキルの新規作成・検証）、`canvas-design`（画像/ポスター生成）、`supabase-table-security`（04_PORTAL固有、新規テーブル/APIルートのセキュリティチェックリスト）、`gemini-model-health-check`（Geminiモデルの実クォータ実測）、`known-regression-patterns`（既知の再発バグパターン・チェックリスト）、`ktm-recruitment-status-dryrun`（KTM Bot募集カード色ロジックの無投稿検証）、`session-handover-update`（HANDOVER/TODOへのセッション記録更新）、`supabase-migration-lint`（Supabaseマイグレーションの既知の罠スキャン）、`handover-staleness-check`（HANDOVER/TODO記録漏れの検知）、`skill-usage-audit`（スキル使用実績の棚卸し）。
 
 `d:/my_work/.agent/skills/`・`.agent/workflows/` の旧スキル・ワークフローは2026-08-04に棚卸し完了。実際に使われている/価値のあるものは全て`.claude/skills/`へ移行済みで、残りは削除済み（`.agent/agents`・`.agent/rules`等の他ディレクトリは対象外・未調査）。
 
 **スキルの継続的な改善**: あるスキルの実行中に実害のある失敗（依存先の削除、規約違反、誤ったデータ書き込み等）を発見・修正した場合は、そのスキル自身のSKILL.md末尾に「## 既知の落とし穴 (Known Pitfalls)」として日付付きで記録すること（`sovereign-factory/SKILL.md`参照）。次にそのスキルを使う際に同じ轍を踏まないための経験メモとして機能する。新しいスキルを作る/大きく直す際は`skill-creator`スキル（`.claude/skills/skill-creator/scripts/quick_validate.py`でフォーマット検証可能）を使うこと。
+
+**スキル数の規律**: 外部事例（複数のnote記事、2026-08-10調査）で「常設スキルは少数に絞るべき」「実運用は結局1桁〜十数個に収束する」という指摘が繰り返し見られた。新しいスキルを追加する際は、追加するだけで終わらせず、①似た役割の既存スキルと統合できないか検討し、②`skill-usage-audit`スキルで全体の使用実績を確認し、長期間呼ばれていない・明らかに陳腐化したスキルがあれば削除をユーザーに提案すること。ただし機械的な「0件だから削除」は禁止で、`skill-usage-audit`自身が明記する限界（トランスクリプトのローテーション、直接参照は検出不可等）を踏まえ、最終判断は必ずユーザーに委ねる。
 
 ---
 
