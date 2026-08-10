@@ -79,48 +79,75 @@ def _supabase_request(path, method='GET', payload=None):
         logger.error(f"Supabase request failed: {e}")
         return None, str(e)
 
+def _fetch_channel_name_from_rss(channel_id: str) -> str | None:
+    """yt-dlpでchannel名が取れなかった場合のフォールバック。
+    RSSフィードの<title>(=チャンネル名)を軽量に取得する。取れなければNoneを返す。"""
+    try:
+        rss_url = f"https://www.youtube.com/feeds/videos.xml?channel_id={channel_id}"
+        req = urllib.request.Request(rss_url, headers={'User-Agent': 'Mozilla/5.0'})
+        with urllib.request.urlopen(req, timeout=10) as r:
+            xml_content = r.read().decode('utf-8')
+        root = ET.fromstring(xml_content)
+        title_el = root.find('{http://www.w3.org/2005/Atom}title')
+        if title_el is not None and title_el.text:
+            return title_el.text.strip()
+    except Exception as e:
+        logger.warning(f"RSSからのchannel名取得に失敗: {e}")
+    return None
+
 # ============================================================
 # チャンネル解決機能 (yt-dlp を使用)
 # ============================================================
 def resolve_and_register_channel(channel_url: str) -> bool:
     logger.info(f"🔍 チャンネルURLの解決を試行中: {channel_url}")
     try:
-        # yt-dlp で channel_id と channel 名を取得する
-        # 出力をJSONでパースしやすくするために --dump-json オプション等を使うことも可能だが、
-        # --print オプションで改行区切りで取るのが最もシンプル
+        # yt-dlp で channel_id と channel 名を取得する。
+        # 以前は "%(channel_id)s\n%(channel)s" を1つの--printに詰め、出力を
+        # 空行フィルタ後の位置（0番目=ID、1番目=名前）で対応付けていたが、
+        # --playlist-items 1で取れた動画の%(channel)sが空文字になるケースがあり、
+        # 空行がフィルタで消えてchannel_idしか残らず「Unexpected yt-dlp output lines」で
+        # 誤って失敗扱いになっていた(2026-08-10発覚)。プレフィックス付きの別々の--printに
+        # 分離し、どちらの行かを内容で判定する方式に変更。
         cmd = YT_DLP_CMD + [
             "--extractor-args", "youtube:client=android",
             "--playlist-items", "1", # 1番目の動画情報を取得（チャンネル解決が安定する）
-            "--print", "%(channel_id)s\n%(channel)s",
+            "--print", "CHID:%(channel_id)s",
+            "--print", "CHNAME:%(channel)s",
             channel_url
         ]
-        
+
         res = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=30)
         if res.returncode != 0:
             logger.error(f"yt-dlp resolution failed: {res.stderr}")
             return False
-            
-        lines = [line.strip() for line in res.stdout.strip().split('\n') if line.strip()]
+
         channel_id = None
         channel_name = None
-        
-        for idx, line in enumerate(lines):
-            if line.startswith("UC") and len(line) >= 20: # UCで始まるチャンネルID
-                channel_id = line
-                if idx + 1 < len(lines):
-                    channel_name = lines[idx + 1]
-                break
-                
-        if not channel_id or not channel_name:
-            logger.error(f"Unexpected yt-dlp output lines: {lines}")
+        for line in res.stdout.splitlines():
+            line = line.strip()
+            if line.startswith("CHID:"):
+                channel_id = line[len("CHID:"):].strip()
+            elif line.startswith("CHNAME:"):
+                channel_name = line[len("CHNAME:"):].strip()
+
+        if not channel_id or not channel_id.startswith("UC"):
+            logger.error(f"Unexpected yt-dlp output: {res.stdout!r}")
             return False
-            
+
         # ハンドル名の抽出 (例: @KireiLoL)
         handle = None
         handle_match = re.search(r'(@[a-zA-Z0-9_\-\.]+)', channel_url)
         if handle_match:
             handle = handle_match.group(1)
-            
+
+        # channel名が空/NA(一部動画で%(channel)sが取得できないケースがある)の場合は、
+        # 解決自体を失敗させず、まずRSSフィードのチャンネル名で補完を試み、
+        # それも取れなければハンドル名またはIDで代用する
+        # (resolve_and_register_playlistの空タイトル時フォールバックと同じ方針)。
+        if not channel_name or channel_name.upper() == "NA":
+            channel_name = _fetch_channel_name_from_rss(channel_id) or handle or channel_id
+            logger.warning(f"yt-dlpからchannel名が取得できなかったため代用値を使用: {channel_name}")
+
         logger.info(f"✨ チャンネル解決成功: {channel_name} (ID: {channel_id}, Handle: {handle})")
         
         # Supabase へ登録

@@ -34,6 +34,12 @@ MAX_RETRY = 3
 class NoTranscript(RuntimeError):
     """字幕が取得できなかった。再試行しても回復しないので区別する。"""
 
+class RateLimited(RuntimeError):
+    """YouTube側のレート制限(429)やbot判定によるエラー。「字幕が存在しない」動画とは異なり、
+    時間を置けば成功する可能性が高いため、NoTranscriptとは区別してリトライ対象(pending)に戻す。
+    (2026-08-10: この区別が無く、429もNoTranscript扱いでerror_no_transcript(リトライなし)に
+    即確定していたため、一時的な制限のはずの動画が永久に処理されない状態になっていた)"""
+
 def sb(method, path, body=None, prefer=None):
     req = urllib.request.Request(f"{SUPABASE_URL}/rest/v1/{path}", method=method)
     req.add_header("apikey", SUPABASE_KEY)
@@ -88,6 +94,7 @@ def fetch_subtitles(url, vid):
         print(f"  [字幕なし] {vid}: {tail}", file=sys.stderr)
         if "Sign in to confirm" in err or "bot" in err.lower() or "429" in err:
             print(f"  ⚠️ IP制限の疑い（YouTubeがbot判定）: {vid}", file=sys.stderr)
+            raise RateLimited(tail)
         return None
     text_lines, seen = [], set()
     for line in open(files[0], encoding="utf-8", errors="ignore"):
