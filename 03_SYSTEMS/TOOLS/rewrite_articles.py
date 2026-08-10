@@ -15,7 +15,7 @@ if not api_key:
     sys.exit(1)
 
 client = genai.Client(api_key=api_key)
-model_id = "gemini-2.5-flash"
+model_id = "gemini-3.1-flash-lite"  # gemini-2.5-flashはこのアカウントで無料枠0/0(割り当てなし)と判明済み(2026-08-10)
 
 ARTICLE_DIR = Path("D:/my_work/02_FACTORY/PRODUCTS/ARTICLES")
 

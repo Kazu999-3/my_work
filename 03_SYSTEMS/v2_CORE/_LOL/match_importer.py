@@ -155,22 +155,33 @@ def import_matches():
         return
 
     # Supabaseから登録済みの matchup_id リストを取得してキャッシュを初期化
+    # PostgRESTはデフォルト最大1000件しか返さないため、1000件超で取りこぼすと
+    # 既取込マッチを再取込・再解析してGemini/Riotクォータを無駄に消費する
+    # (known-regression-patterns #1)。limit/offsetでページングする。
     global processed_match_ids
     try:
-        r = httpx.get(
-            f"{SUPABASE_URL}/rest/v1/matchup_sentinel?select=matchup_id",
-            headers={"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}"},
-            timeout=15
-        )
-        if r.status_code == 200:
+        page_size = 1000
+        offset = 0
+        total_loaded = 0
+        while True:
+            r = httpx.get(
+                f"{SUPABASE_URL}/rest/v1/matchup_sentinel?select=matchup_id&limit={page_size}&offset={offset}",
+                headers={"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}"},
+                timeout=15
+            )
+            if r.status_code != 200:
+                log.warning(f"⚠️ 既存マッチIDのキャッシュロードに失敗しました (Status: {r.status_code})")
+                break
             existing = r.json()
             for row in existing:
                 muid = row.get("matchup_id", "")
                 if muid.startswith("riot_"):
                     processed_match_ids.add(muid.replace("riot_", ""))
-            log.info(f"💾 Supabase から登録済みの {len(processed_match_ids)} 件のマッチIDをキャッシュロードしました。")
-        else:
-            log.warning(f"⚠️ 既存マッチIDのキャッシュロードに失敗しました (Status: {r.status_code})")
+            total_loaded += len(existing)
+            if len(existing) < page_size:
+                break
+            offset += page_size
+        log.info(f"💾 Supabase から登録済みの {len(processed_match_ids)} 件のマッチIDをキャッシュロードしました（走査{total_loaded}件）。")
     except Exception as e:
         log.warning(f"⚠️ 既存マッチIDのキャッシュロード中に例外が発生しました: {e}")
 

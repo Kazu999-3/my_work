@@ -161,7 +161,7 @@ my_work/
 
 - **ポータル・Bot はクラウド常時稼働**: `04_PORTAL` は Vercel、`03_SYSTEMS/ktm_bot` は Cloudflare Workers 上で稼働。ローカルで `npm run dev` を叩いても本番とは別のプレビュー環境が立つだけ。
 - **YouTube解析・辞典同期はGitHub Actions**: `scripts/youtube_worker.py`（30分おき）・`scripts/prospector.py`・`.github/workflows/ktm-cloud-worker.yml` が担当。`03_SYSTEMS/v2_CORE/youtube_absorber.py` 系の旧処理（`absorber.yml`）は重複解析を防ぐため**明示的に停止済み**。
-- **v2_CORE が現役なのは2つだけ**: ① `run_pulse_once.py`（Sovereign Pulse、GitHub Actionsから6時間おき） ② `edge_worker_daemon.py`（ローカルPCでの字幕なし動画のwhisper文字起こし、`start_all.bat` 経由）。それ以外の `v2_CORE` モジュール（FastAPI Gateway常時起動、SREデーモン等）は本番では使われていません。
+- **v2_CORE が現役なのは3つ**: ① `run_pulse_once.py`（Sovereign Pulse、GitHub Actionsから6時間おき） ② `edge_worker_daemon.py`（ローカルPCでの字幕なし動画のwhisper文字起こし、`start_all.bat` 経由） ③ `scripts/edge_cloud_worker.py`（GitHub Actions `edge-cloud-worker.yml`から5分おき、クラウド完結タスクを処理）。2026-08-10監査時点でこの③が抜け落ちて「2つだけ」と記載されていたのを修正（実害はないが次回セッションの文脈誤認リスクがあったため）。それ以外の `v2_CORE` モジュール（FastAPI Gateway常時起動、SREデーモン等）は本番では使われていません。
 - **既知の修正済みバグ**: `start_all.ps1` の既定モード（`-Mode edge`）は「Edge Worker Daemon起動」を謳いながら実際は SQLite時代の遺物 `task_worker.py` を起動しており、`SovereignQueue._get_conn()` 不在で起動直後にクラッシュしていた（2026-07-26修正済み）。これにより字幕なし動画の文字起こしが実質機能していなかった可能性がある。
 - **`start_all.ps1` の簡素化 (2026-07-26)**: `-Mode all`（ポータル/Bot/Ollama/Core APIのローカル重複起動＋`sre_daemon.py`）を廃止し、Edge Worker Daemon単独起動のみに一本化した。`sre_daemon.py`はGatewayバイパス問題とクラウド側との重複巡回タスクを抱えていたため削除。唯一有用だった「字幕なし動画(youtube_absorb)の15分おき自動起票」ロジックは `edge_worker_daemon.py` 自身（`youtube_absorb_scheduler_loop`）に統合済み。`healer.py`（sre_daemon.py専用の自己修復エンジン）も呼び出し元が無くなったため`deprecated/`へ移動。
 - 詳細な移行経緯・落とし穴は `AI_HANDOFF.md` を参照。同ファイルの方が本書より新しい場合がある。

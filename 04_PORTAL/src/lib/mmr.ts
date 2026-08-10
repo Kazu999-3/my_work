@@ -66,6 +66,24 @@ export interface KtmTier {
 
 export const KTM_TIERS: KtmTier[] = rawKtmTiers as KtmTier[];
 
+// ランク名からTailwindの文字色クラスを判定するユーティリティ。
+// balancer/page.tsxとktm-admin/page.tsxに同一実装が個別コピーされ、ドリフトリスクが
+// あったため一元化(known-regression-patterns #4系、2026-08-10)。
+export function getColorFromRankName(rank: string): string {
+  const r = (rank || "").toUpperCase();
+  if (r.includes("IRON")) return "text-stone-500 font-bold";
+  if (r.includes("BRONZE")) return "text-amber-700 font-bold";
+  if (r.includes("SILVER")) return "text-stone-700 font-bold";
+  if (r.includes("GOLD")) return "text-yellow-700 font-bold";
+  if (r.includes("PLATINUM")) return "text-teal-700 font-bold";
+  if (r.includes("EMERALD")) return "text-emerald-700 font-bold";
+  if (r.includes("DIAMOND")) return "text-amber-700 font-bold";
+  if (r.includes("MASTER")) return "text-orange-700 font-bold";
+  if (r.includes("GRANDMASTER")) return "text-red-500 font-bold";
+  if (r.includes("CHALLENGER")) return "text-amber-700 font-bold";
+  return "text-stone-400 font-medium";
+}
+
 export function getKtmRank(mmr: number): { name: string; color: string; bg: string } {
   const tier = KTM_TIERS.find(t => mmr >= t.min);
   return tier ? { name: tier.name, color: tier.color, bg: tier.bg } : { name: 'UNRANKED', color: 'text-gray-400', bg: 'bg-gray-800' };

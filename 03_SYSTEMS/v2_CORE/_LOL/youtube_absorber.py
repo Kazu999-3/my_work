@@ -526,7 +526,9 @@ class YouTubeAbsorber:
 
             system_prompt = prompt_data.get("system_prompt") or ""
             user_prompt_template = prompt_data.get("user_prompt_template")
-            model_id = prompt_data.get("default_model") or "gemini-2.5-flash"
+            # gemini-2.5-flashはこのアカウントで無料枠0/0(割り当てなし)と判明済み(2026-08-10)。
+            # generate_content_safe()経由で最終的にフォールバックはされるが、無駄な失敗試行を避ける。
+            model_id = prompt_data.get("default_model") or "gemini-3.1-flash-lite"
             fallback_model = prompt_data.get("fallback_model") or ""
 
             user_prompt = user_prompt_template.format(**variables)

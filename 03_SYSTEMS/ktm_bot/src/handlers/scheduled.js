@@ -5,7 +5,7 @@ import { fetchWithRetry, fetchPortalAPI } from '../utils/api.js';
 import { createMessageContent, createRecruitButtons, createRecruitEmbed } from '../ui/embeds.js';
 import { createRecruitment } from '../utils/recruitPermission.js';
 import { getKtmRank, formatRankDistribution, formatMmrWithRank, getHighestLaneMmr } from '../utils/ktmRank.js';
-import { computeRecruitmentStatus } from '../utils/recruitmentStatus.js';
+import { computeRecruitmentStatus, RECRUITMENT_COLORS } from '../utils/recruitmentStatus.js';
 
 export async function handleScheduledEvent(event, env, ctx) {
   console.log("Scheduled event triggered:", JSON.stringify(event));
@@ -220,7 +220,7 @@ async function sendRecruitStatusNotification(env) {
       const embed = {
         title,
         description: `**開催予定: ${startJst}${startJst ? ' (JST)' : ''}**\n現在の参加者 **${joined.length}/${max}** 名\n\n${nameList}${tierLine}`,
-        color: shortage > 0 ? 0xf1c40f : 0x2ecc71,
+        color: shortage > 0 ? RECRUITMENT_COLORS.recruiting : RECRUITMENT_COLORS.confirmed,
         footer: { text: 'KTM Bot | 募集状況のお知らせ' },
         timestamp: new Date().toISOString()
       };

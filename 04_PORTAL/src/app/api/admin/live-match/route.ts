@@ -55,22 +55,36 @@ export async function POST(req: Request) {
         try {
           // 1. 直近5試合のソロキュー履歴 (420) の取得を試行
           let myMatchIds: string[] = [];
+          let matchIdFetchError: any = null;
           try {
             myMatchIds = await fetchRecentMatchIds(myPuuid, apiKey, 5, 420);
-          } catch (e) {}
-          
+          } catch (e) {
+            matchIdFetchError = e;
+            console.warn('[live-match] 直近ソロキュー履歴の取得に失敗:', e);
+          }
+
           // 2. ソロキュー履歴が無い場合は、全ゲームモード（ノーマル・カスタム等）から再取得
           if (!myMatchIds || myMatchIds.length === 0) {
             try {
               myMatchIds = await fetchRecentMatchIds(myPuuid, apiKey, 5);
-            } catch (e) {}
+              matchIdFetchError = null;
+            } catch (e) {
+              matchIdFetchError = e;
+              console.warn('[live-match] 全ゲームモードでの対戦履歴取得に失敗:', e);
+            }
           }
-          
+
           if (!myMatchIds || myMatchIds.length === 0) {
-            return NextResponse.json({ 
-              isGameActive: false, 
+            // APIキー失効・レート制限等が「見つかりませんでした」に丸め込まれ、真因が
+            // ログにもUIにも出ないまま握りつぶされていた問題を修正(known-regression-patterns系)。
+            const errMsg = matchIdFetchError?.message || '';
+            if (errMsg.includes('Forbidden') || errMsg.includes('403') || errMsg.includes('Unauthorized')) {
+              return NextResponse.json({ error: 'Riot APIキーが失効またはアクセス制限（Forbidden / 403）されています。管理者画面でAPIキーを更新してください。' }, { status: 403 });
+            }
+            return NextResponse.json({
+              isGameActive: false,
               isPreMatch: false,
-              message: `${gameName}#${tagLine} の直近の対戦履歴（ソロキュー・ノーマル等）が見つかりませんでした。` 
+              message: `${gameName}#${tagLine} の直近の対戦履歴（ソロキュー・ノーマル等）が見つかりませんでした。${errMsg ? `（詳細: ${errMsg}）` : ''}`
             });
           }
 

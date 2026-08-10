@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 import { verifyAdminSession } from '../../../../lib/adminAuth';
 import { resolveToRosterChampion } from '../../../../lib/dictFactCheck';
+import { fetchAllRows } from '../../../../lib/fetchAll';
 
 // ============================================================
 // チャンピオン辞典 構造化バックフィル (課題#29 / 段階1)
@@ -54,7 +55,10 @@ export async function GET(req: Request) {
   try {
     const dryRun = new URL(req.url).searchParams.get('dryRun') === '1';
 
-    const { data: rows, error } = await supabase.from('matchup_sentinel').select('*');
+    // 日次cronの現役処理のため1000件超で取りこぼさないようページングする(known-regression-patterns #1)
+    const { data: rows, error } = await fetchAllRows((from, to) =>
+      supabase.from('matchup_sentinel').select('*').range(from, to)
+    );
     if (error) throw error;
 
     let notesCount = 0;

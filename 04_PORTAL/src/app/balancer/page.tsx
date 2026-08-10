@@ -6,6 +6,7 @@ import Link from "next/link";
 import { supabase } from "../../lib/supabaseClient";
 import { Users, RefreshCw, Swords, X, Activity, Globe, MessageSquare, Info, Crown, Trophy, History, Shield, AlertTriangle, ChevronDown, Trees, Zap, Target, Heart, Settings } from "lucide-react";
 import { getChampIcon } from "../../lib/ddragonClient";
+import { getColorFromRankName } from "../../lib/mmr";
 import ProfileModal from "../ktm-admin/ProfileModal";
 import MatchRecordPanel from "../ktm-admin/MatchRecordPanel";
 import { Spinner } from "../../components/Feedback";
@@ -21,22 +22,6 @@ const RoleIcon = ({ role, className = "w-3.5 h-3.5" }: { role: string; className
     default: return null;
   }
 };
-
-// ランク名から色を判定するユーティリティ
-function getColorFromRankName(rank: string): string {
-  const r = (rank || "").toUpperCase();
-  if (r.includes("IRON")) return "text-stone-500 font-bold";
-  if (r.includes("BRONZE")) return "text-amber-700 font-bold";
-  if (r.includes("SILVER")) return "text-stone-700 font-bold";
-  if (r.includes("GOLD")) return "text-yellow-700 font-bold";
-  if (r.includes("PLATINUM")) return "text-teal-700 font-bold";
-  if (r.includes("EMERALD")) return "text-emerald-700 font-bold";
-  if (r.includes("DIAMOND")) return "text-amber-700 font-bold";
-  if (r.includes("MASTER")) return "text-orange-700 font-bold";
-  if (r.includes("GRANDMASTER")) return "text-red-500 font-bold";
-  if (r.includes("CHALLENGER")) return "text-amber-700 font-bold";
-  return "text-stone-400 font-medium";
-}
 
 // ★ グループ判定ユーティリティ（固定0 > 通常参加1 > 見学固定2 > 不参加3）
 function getGroup(p: any): number {

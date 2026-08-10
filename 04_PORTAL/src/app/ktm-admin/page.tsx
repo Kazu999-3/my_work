@@ -5,7 +5,7 @@ import { supabase } from "../../lib/supabaseClient";
 import MatchHistoryPanel from "./MatchHistoryPanel";
 import ProfileModal from "./ProfileModal";
 import { Info, Users, RefreshCw, Save, Trophy, Filter, Plus, AlertCircle, X, History, Globe, ChevronDown, Shield, Trees, Zap, Target, Heart, Sparkles, Settings, AlertTriangle } from "lucide-react";
-import { getKtmRank, RANKS, calculateInitialMmr, HIGHEST_RANK_OPTIONS } from "../../lib/mmr";
+import { getKtmRank, RANKS, calculateInitialMmr, HIGHEST_RANK_OPTIONS, getColorFromRankName } from "../../lib/mmr";
 
 async function fetchWithTimeout(resource: RequestInfo, options: RequestInit & { timeout?: number } = {}) {
   const { timeout = 15000 } = options; // デフォルト15秒でタイムアウト
@@ -50,21 +50,6 @@ const RANKS_MMR = RANKS;
 
 function calculateAutoMmr(highestRank: string | null, targetRole: string, prefs: { primary: string, secondary: string }) {
   return calculateInitialMmr(highestRank, targetRole, prefs);
-}
-
-function getColorFromRankName(rank: string): string {
-  const r = (rank || "").toUpperCase();
-  if (r.includes("IRON")) return "text-stone-500 font-bold";
-  if (r.includes("BRONZE")) return "text-amber-700 font-bold";
-  if (r.includes("SILVER")) return "text-stone-700 font-bold";
-  if (r.includes("GOLD")) return "text-yellow-700 font-bold";
-  if (r.includes("PLATINUM")) return "text-teal-700 font-bold";
-  if (r.includes("EMERALD")) return "text-emerald-700 font-bold";
-  if (r.includes("DIAMOND")) return "text-amber-700 font-bold";
-  if (r.includes("MASTER")) return "text-orange-700 font-bold";
-  if (r.includes("GRANDMASTER")) return "text-red-500 font-bold";
-  if (r.includes("CHALLENGER")) return "text-amber-700 font-bold";
-  return "text-stone-400 font-medium";
 }
 
 function getColorFromRole(role: string): string {

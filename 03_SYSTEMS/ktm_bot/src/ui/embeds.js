@@ -1,4 +1,5 @@
 import { CONFIG } from '../config.js';
+import { RECRUITMENT_COLORS } from '../utils/recruitmentStatus.js';
 
 /**
  * @param {object} metadata 募集メタデータ
@@ -21,7 +22,9 @@ export function createRecruitEmbed(metadata, tierLine) {
     // 募集主を埋め込み上部にも表示（footerだけだと気づきにくいため）
     author: { name: `👤 募集主: ${ownerName}` },
     description: renderRoles(metadata) + (tierLine ? `\n\n${tierLine}` : ''),
-    color: isFull ? 0xe74c3c : 0x2ecc71,
+    // 満員=確定(緑)/未達=募集中(琥珀)。以前は満員=赤/未達=緑と、他の募集カード
+    // (recruitmentStatus.js)と正反対の色意味になっていた(known-regression-patterns #4系)。
+    color: isFull ? RECRUITMENT_COLORS.confirmed : RECRUITMENT_COLORS.recruiting,
     thumbnail: { url: pixelUrl },
     footer: { text: visibleFooter },
     // 投稿時刻を固定表示（再描画で現在時刻に上書きしない）。古い募集はcreatedAt無しなので従来通り現在時刻。

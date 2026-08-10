@@ -223,7 +223,6 @@ class MentalCheckerAPI:
 - 厳しくも、次に勝つための具体的な行動を指示してください。
 """
         
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
         headers = {"Content-Type": "application/json"}
         post_data = {
             "contents": [{
@@ -233,23 +232,29 @@ class MentalCheckerAPI:
             }]
         }
 
-        try:
-            r = httpx.post(url, headers=headers, json=post_data, timeout=10)
-            if r.status_code == 200:
-                res_json = r.json()
-                advice = res_json["candidates"][0]["content"]["parts"][0]["text"].strip()
-                # JS 側にプッシュ
-                js_code = f"if(window.onAdviceLoaded) {{ window.onAdviceLoaded({json.dumps(advice)}); }}"
-                self.window.evaluate_js(js_code)
-                logger.info("🤖 AIアドバイスの生成が完了し、JSへ送信しました。")
-            else:
-                logger.error(f"Gemini API Error: {r.status_code} - {r.text}")
-                js_code = f"if(window.onAdviceFailed) {{ window.onAdviceFailed('Gemini API エラーが発生しました。キーが有効かご確認ください。'); }}"
-                self.window.evaluate_js(js_code)
-        except Exception as e:
-            logger.error(f"Error generating AI advice: {e}")
-            js_code = f"if(window.onAdviceFailed) {{ window.onAdviceFailed('AIアドバイス取得中に通信エラーが発生しました。'); }}"
-            self.window.evaluate_js(js_code)
+        # gemini-2.5-flashはこのプロジェクトのアカウントでは無料枠0/0(割り当てなし)と判明済み
+        # (ai_helper.pyのbase_modelsと同じ、実リクエストで動作確認済みの順序)
+        MODEL_CHAIN = ["gemini-3.1-flash-lite", "gemini-3.5-flash-lite"]
+        last_error = None
+        for model in MODEL_CHAIN:
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
+            try:
+                r = httpx.post(url, headers=headers, json=post_data, timeout=10)
+                if r.status_code == 200:
+                    res_json = r.json()
+                    advice = res_json["candidates"][0]["content"]["parts"][0]["text"].strip()
+                    js_code = f"if(window.onAdviceLoaded) {{ window.onAdviceLoaded({json.dumps(advice)}); }}"
+                    self.window.evaluate_js(js_code)
+                    logger.info(f"🤖 AIアドバイスの生成が完了し({model})、JSへ送信しました。")
+                    return
+                last_error = f"{r.status_code} - {r.text}"
+                logger.error(f"Gemini API Error ({model}): {last_error}")
+            except Exception as e:
+                last_error = str(e)
+                logger.error(f"Error generating AI advice ({model}): {e}")
+
+        js_code = f"if(window.onAdviceFailed) {{ window.onAdviceFailed('Gemini API エラーが発生しました。キーが有効かご確認ください。({last_error})'); }}"
+        self.window.evaluate_js(js_code)
 
     def save_diagnosis_to_history(self, record):
         """診断履歴を config に保存する"""
