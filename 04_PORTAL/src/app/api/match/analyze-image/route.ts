@@ -121,8 +121,10 @@ ${championsText}
     // （共通クライアント化した際にこのフォールバックが失われ、画像解析が落ちやすくなっていた）
     // gemini-2.0-flash/gemini-1.5-flash-latestはこのアカウントのAI Studioクォータ画面で
     // 無料枠が0/0(gemini-2.0-flash)または廃止済み(1.5系)と判明したため、実クォータのある
-    // モデルのみに変更(2026-08-10)。
-    const visionModels = ['gemini-3.1-flash-lite', 'gemini-2.5-flash-lite'];
+    // モデルのみに変更(2026-08-10)。gemini-2.5-flash-liteはさらに実際のAPI呼び出しで
+    // 404 NOT_FOUNDと判明したため、実リクエストで動作確認済みのgemini-3.5-flash-liteに
+    // 差し替え(同日、gemini-model-health-checkスキルで検出)。
+    const visionModels = ['gemini-3.1-flash-lite', 'gemini-3.5-flash-lite'];
     let textOutput = '';
     let lastErr: any = null;
     for (const model of visionModels) {

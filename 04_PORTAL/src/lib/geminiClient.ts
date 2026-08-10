@@ -8,7 +8,7 @@ import { supabase } from './supabaseClient';
 // ============================
 
 export interface GeminiCallOptions {
-  model?: string; // デフォルト: gemini-2.0-flash-lite
+  model?: string; // デフォルト: DEFAULT_MODEL定数(gemini-3.5-flash-lite)を参照
   temperature?: number;
   maxOutputTokens?: number;
   maxRetries?: number;

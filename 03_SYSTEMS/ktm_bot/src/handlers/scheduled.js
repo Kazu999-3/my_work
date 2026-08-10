@@ -5,6 +5,7 @@ import { fetchWithRetry, fetchPortalAPI } from '../utils/api.js';
 import { createMessageContent, createRecruitButtons, createRecruitEmbed } from '../ui/embeds.js';
 import { createRecruitment } from '../utils/recruitPermission.js';
 import { getKtmRank, formatRankDistribution, formatMmrWithRank, getHighestLaneMmr } from '../utils/ktmRank.js';
+import { computeRecruitmentStatus } from '../utils/recruitmentStatus.js';
 
 export async function handleScheduledEvent(event, env, ctx) {
   console.log("Scheduled event triggered:", JSON.stringify(event));
@@ -633,9 +634,13 @@ async function sendEventUsersNotification(env, options = {}) {
       });
     }
 
-    const silverShortfall = Math.max(0, 10 - silverCount);
-    const goldShortfall = Math.max(0, 10 - goldCount);
-    const totalJoined = silverCount + goldCount;
+    // 色・状態フラグはutils/recruitmentStatus.jsの共通関数で計算する(#①)。
+    // 以前はこのファイル単独でembedColorを再実装しており、「募集中」の色コードが
+    // components.js側の0xc89b3c(琥珀色)とズレて0xe74c3c(赤)になっていた。
+    const recruitStatus = computeRecruitmentStatus(silverCount, goldCount);
+    const silverShortfall = recruitStatus.silverRem;
+    const goldShortfall = recruitStatus.goldRem;
+    const totalJoined = recruitStatus.totalJoined;
 
     // 4. アナウンス Embed の作成（募集カードを完全同期 ＆ 参加者の希望レーンを自動付与）
     let syncFields = activeEmbed ? activeEmbed.fields : [];
@@ -709,16 +714,15 @@ async function sendEventUsersNotification(env, options = {}) {
     const laneNote = `\n\n💡 **希望レーンに変更がある方は、ポータルの「マイページ」より事前に変更をお願いします！**`;
 
     // 片方の部門が単独で10名到達(通常カスタム確定)と、部門をまたいだ合計で10名到達
-    // (混合カスタムなら組める)を区別する(#①)。totalJoinedは既に上で計算済みだったが
-    // 以前はここで未使用のまま残っていた。
-    const isConfirmed = silverCount >= 10 || goldCount >= 10;
-    const isMixedReady = !isConfirmed && totalJoined >= 10;
+    // (混合カスタムなら組める)を区別する(#①)。
+    const isConfirmed = recruitStatus.isConfirmed;
+    const isMixedReady = recruitStatus.isMixedReady;
     const statusMessage = isConfirmed
       ? `🔥 **開催確定！** 現在 **シルバー: ${silverCount}名 / ゴルプラ: ${goldCount}名** (合計${totalJoined}名) エントリー済みです！このまま開催します。${laneNote}${recruitLink}`
       : isMixedReady
       ? `🟡 **混合カスタムで開催可能！** 現在 **シルバー: ${silverCount}名 / ゴルプラ: ${goldCount}名** (合計${totalJoined}名) 、部門をまたいだ混合カスタムが組めます。${laneNote}${recruitLink}`
       : `⚠️ **メンバー募集中！** 現在 **シルバー: ${silverCount}名 / ゴルプラ: ${goldCount}名** (合計${totalJoined}名) です。\n▫ シルバー以下: あと **${silverShortfall}名**\n▫ ゴルプラ: あと **${goldShortfall}名**\n下のボタンからエントリーしてください！${laneNote}${recruitLink}`;
-    const embedColor = isConfirmed ? 0x2ecc71 : isMixedReady ? 0xf1c40f : 0xe74c3c;
+    const embedColor = recruitStatus.color;
 
     const embed = {
       title: activeEmbed ? activeEmbed.title : (isAdvanceNotice ? `📅 【定期】イベント 事前告知 🔔` : `📅 【定期】カスタム戦 参加メンバー状況`),

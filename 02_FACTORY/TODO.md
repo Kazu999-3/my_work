@@ -15,6 +15,9 @@
 - [x] **ソロQコーチの複数改善** → ①ティルト診断が勝敗を無視して常に「敗因」を尋ねていたのを勝敗で質問文を分岐、②「直近成績」の集計元を自己記録からRiot API実試合履歴に変更、③週次傾向レポートにデス発生時点のチーム総ゴールド差からの因果関係判定とロール反映を追加(`lib/coachTrends.ts`へ集計ロジックを一本化)、④AI試合後分析で集団戦中の被弾死を「孤立死」と誤記しないようデス前後20秒以内のキル数で判定、⑤**対面(レーン)勝敗の記録機能を新設**(migration 55, `lane_result`列。試合全体の勝敗とは別に対面との勝ち負けを記録し`MatchupWarningCard`に対面別成績を表示)。
 - [x] **KTM Bot** → 定期カスタムが部門をまたいで合計10人到達した場合に埋め込みを黄色化(「混合カスタム可能」)、Discord参加者取得ボタンが実際のembed文言と検索条件の不一致で常に失敗していたバグを修正、残数バナーが状態遷移で固着するバグを修正。
 - [x] **二重起動防止・エラーメッセージ可読化** → `start_all.ps1`のロックをTOCTOUレースの無いファイル排他方式に変更(実運用の起動経路はポータルの「🚀 ワーカー起動」ボタンで、既存`SocketLock`自体は正常動作と確認済み)。サブプロセス失敗時のエラーメッセージをstderr生ログからstdout構造化JSON要約ベースに変更し可読化。
+- [x] **`gemini-2.5-flash-lite`の自己混入バグを検出・修正** → 上記クォータ対応中に「別チーの-liteモデル」として誤って参照していた`gemini-2.5-flash-lite`が、実際にはAPI呼び出しで404 NOT_FOUND(モデルID自体が存在しない)と判明。新設した`gemini-model-health-check`スキルの実測スクリプトが検出し、`ai_helper.py`含む6ファイルを動作確認済みの`gemini-3.5-flash-lite`へ差し替え。
+- [x] **KTM Bot募集カードの色ロジックを共通関数化** → `components.js`と`scheduled.js`が別々に実装していた「募集中/混合カスタム可能/開催確定」の色判定に、募集中状態の色コード食い違い(0xc89b3c vs 0xe74c3c)というバグを発見。`src/utils/recruitmentStatus.js`に一本化し、Discordへ実投稿せず全パターン検証できるドライランスクリプトを追加。
+- [x] **今後の再発防止用に内部スキルを4つ新設** → `gemini-model-health-check`(Geminiモデルの実クォータを実測)、`known-regression-patterns`(今回発見した再発しやすいバグパターンのチェックリスト)、`ktm-recruitment-status-dryrun`(KTM Bot募集カード色ロジックの無投稿検証)、`session-handover-update`(このHANDOVER/TODO更新作業自体の手順化)。
 
 ## ✅ 2026-08-04 Claude Codeセッションで対応済み（Antigravityへの作業引き継ぎ用）
 

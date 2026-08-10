@@ -57,9 +57,13 @@ def generate_content_safe(client, prompt, model_id=None, config=None, feature_na
     # (待っても増えない、日付が変わっても0/0のまま)。ポータル側(TS)は既にgemini-3.1-flash-lite
     # を使って正常に動いており(15RPM/500RPD相当の実クォータあり)、こちらに揃える
     # (2026-08-10発覚)。
+    # gemini-2.5-flash-liteはAI Studioの表示上はクォータがあるように見えるが、実際の
+    # APIリクエストでは404 NOT_FOUND(モデルID自体が呼び出せない)とgemini-model-health-check
+    # スキルで判明したため、実リクエストで動作確認済みのgemini-3.5-flash-liteに置き換えた
+    # (2026-08-10)。
     base_models = [
         "gemini-3.1-flash-lite",
-        "gemini-2.5-flash-lite",
+        "gemini-3.5-flash-lite",
     ]
     if model_id and model_id in base_models:
         models_to_try = [model_id] + [m for m in base_models if m != model_id]

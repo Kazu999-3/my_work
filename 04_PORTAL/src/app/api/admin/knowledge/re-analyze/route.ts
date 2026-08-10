@@ -95,7 +95,7 @@ async function analyzeXPostImagesWithGemini(photos: any[], videos: any[], tweetT
           combinedAnalysis.push(`### 🎬 添付メディア【${item.label}】のAI動画・ビジュアル解読\n${text}`);
         }
       } else {
-        const fallbackRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${apiKey}`, {
+        const fallbackRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(reqBody),

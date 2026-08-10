@@ -245,9 +245,13 @@ export default function PromptsAdmin() {
                         >
                           {/* 'gemini-2.5-flash'は日次上限超過、'gemini-2.5-pro'は上限0で
                               いずれも常時429になるためリストから外し、実際にクォータの
-                              あるモデルのみを選択肢にしている（Google AI Studioで確認済み）。 */}
+                              あるモデルのみを選択肢にしている（Google AI Studioで確認済み）。
+                              'gemini-2.5-flash-lite'はAI Studio上は10RPM/20RPDと表示されるが、
+                              実際のAPI呼び出しでは404 NOT_FOUNDになりモデルID自体が呼び出せない
+                              ことがgemini-model-health-checkスキルで判明したため、'gemini-3.5-
+                              flash-lite'(実リクエストで動作確認済み)に置き換えた(2026-08-10)。 */}
                           <option value="gemini-3.1-flash-lite">Gemini 3.1 Flash Lite (クラウド・推奨)</option>
-                          <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash Lite (クラウド)</option>
+                          <option value="gemini-3.5-flash-lite">Gemini 3.5 Flash Lite (クラウド)</option>
                           <option value="ollama/gemma">Ollama: Gemma (ローカル)</option>
                           <option value="ollama/llama3">Ollama: Llama 3 (ローカル)</option>
                           <option value="ollama/phi3">Ollama: Phi 3 (ローカル)</option>

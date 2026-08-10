@@ -34,7 +34,9 @@ import { callGeminiWithRetry } from '../../../../lib/geminiClient';
 async function callGemini(prompt: string, cacheKey?: string): Promise<string> {
   // 'gemini-2.0-flash-lite' はこのAPIキーではRPM/RPD上限が0（=常に429）だったため、
   // 最もクォータに余裕のある 'gemini-3.1-flash-lite'（15 RPM / 500 RPD）に変更
-  // （Google AI Studioの利用状況で確認済み。'gemini-2.5-flash-lite'は10 RPM/20 RPDしかない）。
+  // （Google AI Studioの利用状況で確認済み。'gemini-2.5-flash-lite'はAI Studio上は10RPM/20RPDと
+  // 表示されるが、実際のAPI呼び出しでは404 NOT_FOUNDでモデルID自体を呼び出せないと
+  // gemini-model-health-checkスキルで判明、2026-08-10）。
   return callGeminiWithRetry(prompt, {
     model: 'gemini-3.1-flash-lite',
     temperature: 0.7,
