@@ -5,7 +5,8 @@
 
 ## 🏛️ プロジェクト憲法 ＆ 定義への参照
 - プロジェクト全容・技術スタック・機能マップ: [ANTIGRAVITY.md](file:///d:/my_work/ANTIGRAVITY.md)
-- 基本行動指針・自動デプロイフロー: [01_base_style.md](file:///d:/my_work/.agent/rules/01_base_style.md)
+- 基本行動指針: [01_base_style.md](file:///d:/my_work/.agent/rules/01_base_style.md)
+- 実装ワークフロー（自動デプロイフロー）: [05_implementation_workflow.md](file:///d:/my_work/.agent/rules/05_implementation_workflow.md)
 - セキュリティ・破壊操作縛り: [03_security_rules.md](file:///d:/my_work/.agent/rules/03_security_rules.md)
 - ハルシネーション防止＆知識カットオフ対策: [04_hallucination_prevention.md](file:///d:/my_work/.agent/rules/04_hallucination_prevention.md)
 
