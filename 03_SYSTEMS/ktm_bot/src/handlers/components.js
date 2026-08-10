@@ -215,11 +215,16 @@ export async function handleButtonInteraction(interaction, env, ctx) {
           ? 0xf1c40f
           : 0xc89b3c;
 
-        // メッセージ本文(content)やdescription内の残数ヘッダーを最新数値にリアルタイム置換
+        // メッセージ本文(content)やdescription内の残数ヘッダーを最新数値にリアルタイム置換。
+        // 従来は「あと◯名」パターンしか検出しておらず、一度「満員」バナーに切り替わった後に
+        // 誰かが抜けて再び募集中に戻っても、テキストが更新されず古いバナーのまま固着する
+        // 不具合が既にあった。今回バナーの状態を3種類(募集中/黄色=混合カスタム可/満員)に
+        // 増やしたことで発生しやすくなったため、3状態すべてを検出対象にする(#①)。
+        const BANNER_PATTERN = /(?:🚨\s*)?【シルバー以下\s*あと\d+名\s*\/\s*ゴルプラ\s*あと\d+名】|✅\s*\*\*【全枠10名満員御礼！チーム分け可能です】\*\*|🟡\s*\*\*【合計10名到達！部門を跨いだ混合カスタムが組めます】\*\*/;
         const updateTextWithStatus = (text) => {
           if (!text) return text;
-          if (/(?:🚨\s*)?【シルバー以下\s*あと\d+名\s*\/\s*ゴルプラ\s*あと\d+名】/.test(text)) {
-            return text.replace(/(?:🚨\s*)?【シルバー以下\s*あと\d+名\s*\/\s*ゴルプラ\s*あと\d+名】/g, statusBanner);
+          if (BANNER_PATTERN.test(text)) {
+            return text.replace(new RegExp(BANNER_PATTERN.source, 'g'), statusBanner);
           }
           return text;
         };
