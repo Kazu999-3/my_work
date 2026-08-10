@@ -226,7 +226,7 @@ export async function runPostGameReview(opts: { matchId?: string; focus?: string
   const enemyLaner = match.participants.find((p: any) => p.teamId !== me.teamId && p.lane === me.lane);
 
   const deathTimeline: string[] = [];
-  const deathEvents: { min: number; phase: string; killer: string; teamGoldDiffAtDeath: number | null }[] = [];
+  const deathEvents: { min: number; phase: string; killer: string; teamGoldDiffAtDeath: number | null; nearbyFightKills: number }[] = [];
   try {
     const timeline = await fetchMatchTimeline(targetMatchId, apiKey);
     const participants: any[] = timeline?.info?.participants || [];
@@ -243,6 +243,13 @@ export async function runPostGameReview(opts: { matchId?: string; focus?: string
 
     if (myParticipantId) {
       const frames: any[] = timeline?.info?.frames || [];
+      // 「孤立死」かどうかを正しく判定するため、全参加者(敵味方問わず)のCHAMPION_KILLの
+      // タイムスタンプを先に集めておく。集団戦でフロントラインとして死んでも、周囲の
+      // キル/デス状況を見ずに見た目のデス数だけで「孤立死」と誤って書かれる問題があった
+      // (2026-08-10発覚)。
+      const allKillTimestamps: number[] = [];
+      const rawDeaths: { timestamp: number; min: number; phase: string; killer: string; teamGoldDiffAtDeath: number | null }[] = [];
+
       for (const frame of frames) {
         let teamGoldDiff: number | null = null;
         const pFrames = frame.participantFrames || {};
@@ -261,14 +268,30 @@ export async function runPostGameReview(opts: { matchId?: string; focus?: string
         }
 
         for (const ev of frame.events || []) {
-          if (ev.type === 'CHAMPION_KILL' && ev.victimId === myParticipantId) {
+          if (ev.type !== 'CHAMPION_KILL') continue;
+          allKillTimestamps.push(ev.timestamp);
+          if (ev.victimId === myParticipantId) {
             const min = Math.floor(ev.timestamp / 60000);
             const killerChamp = participantIdToChampion.get(ev.killerId) || '不明';
             const phase = min <= 10 ? '序盤' : min <= 20 ? '中盤' : '終盤';
-            deathTimeline.push(`${min}分(${phase}): ${killerChamp}に討たれた${teamGoldDiff !== null ? `（チーム総ゴールド差: ${teamGoldDiff >= 0 ? '+' : ''}${teamGoldDiff}）` : ''}`);
-            deathEvents.push({ min, phase, killer: killerChamp, teamGoldDiffAtDeath: teamGoldDiff });
+            rawDeaths.push({ timestamp: ev.timestamp, min, phase, killer: killerChamp, teamGoldDiffAtDeath: teamGoldDiff });
           }
         }
+      }
+
+      // 前後20秒以内に自分のデス以外のキルがあれば、集団戦・混戦の最中のデスとみなす
+      // (自分のデス自体もCHAMPION_KILLとして1件含まれるため-1する)。
+      const FIGHT_WINDOW_MS = 20000;
+      for (const d of rawDeaths) {
+        const nearbyFightKills = Math.max(
+          0,
+          allKillTimestamps.filter((t) => Math.abs(t - d.timestamp) <= FIGHT_WINDOW_MS).length - 1
+        );
+        const fightNote = nearbyFightKills > 0
+          ? `、前後20秒以内に他に${nearbyFightKills}件のキルが発生(集団戦の最中)`
+          : '、前後20秒以内に他のキルなし(孤立している可能性)';
+        deathTimeline.push(`${d.min}分(${d.phase}): ${d.killer}に討たれた${d.teamGoldDiffAtDeath !== null ? `（チーム総ゴールド差: ${d.teamGoldDiffAtDeath >= 0 ? '+' : ''}${d.teamGoldDiffAtDeath}）` : ''}${fightNote}`);
+        deathEvents.push({ min: d.min, phase: d.phase, killer: d.killer, teamGoldDiffAtDeath: d.teamGoldDiffAtDeath, nearbyFightKills });
       }
     }
   } catch (e) {
@@ -308,7 +331,7 @@ ${knowledgeCtx ? `参考ナレッジ:\n${knowledgeCtx}\n` : ''}
 ${focus ? `\n=== この試合で意識すると宣言した「今日の焦点」===\n${focus}\n` : ''}
 
 以下の観点を必ず含め、日本語600字程度で具体的にアドバイスしてください（データが乏しい項目は正直にその旨を述べた上で分かる範囲で分析すること）:
-1. デスの傾向分析: デス発生タイミングが序盤/中盤/終盤のどこに偏っているか、誰にやられているかから読み取れるパターン（例: 同じ相手に連続で狩られている、終盤の集団戦での事故が多い等）を指摘する。パワースパイクデータがある場合は、デスが自分の弱い時間帯や相手の強い時間帯に集中していないかも分析する。
+1. デスの傾向分析: デス発生タイミングが序盤/中盤/終盤のどこに偏っているか、誰にやられているかから読み取れるパターン（例: 同じ相手に連続で狩られている等）を指摘する。パワースパイクデータがある場合は、デスが自分の弱い時間帯や相手の強い時間帯に集中していないかも分析する。【重要】各デスの末尾に付いている「前後20秒以内に他に○件のキルが発生(集団戦の最中)」「前後20秒以内に他のキルなし(孤立している可能性)」の情報を必ず参照し、前者(集団戦中)のデスを「孤立死」「無駄死に」と誤って表現しないこと。集団戦の最中に前衛として被弾して倒れたのは想定内の役割遂行であり得るため、「孤立している可能性」の注記があるデスのみを実際の「孤立死」候補として扱うこと。
 2. 対面関係を踏まえた具体策: ${enemyLaner ? `${enemyLaner.championName}という対面の特性（対面ナレッジがあれば引用）を踏まえ、次回このマッチアップで何を変えるべきか` : '対面が特定できない場合は、KDA/CS/Visionの数値から読み取れる立ち回りの課題'}を挙げる。
 3. 次の試合での具体的アクション: 上記1・2を踏まえた、次回すぐ実践できる行動を1〜2つ提示する。${focus ? `\n4. 今日の焦点の達成度: 宣言した焦点「${focus}」を、この試合のデータ（KDA/デス傾向/CS/Vision等）に照らして達成できたか、できなかったかを最初に【達成】または【未達成】と明記した上で、その根拠を述べる。` : ''}`;
 

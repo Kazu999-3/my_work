@@ -708,11 +708,17 @@ async function sendEventUsersNotification(env, options = {}) {
     const recruitLink = targetMessageId ? `\n\n👉 [元の募集メッセージを開く](https://discord.com/channels/${guildId}/${channelId}/${targetMessageId})` : '';
     const laneNote = `\n\n💡 **希望レーンに変更がある方は、ポータルの「マイページ」より事前に変更をお願いします！**`;
 
+    // 片方の部門が単独で10名到達(通常カスタム確定)と、部門をまたいだ合計で10名到達
+    // (混合カスタムなら組める)を区別する(#①)。totalJoinedは既に上で計算済みだったが
+    // 以前はここで未使用のまま残っていた。
     const isConfirmed = silverCount >= 10 || goldCount >= 10;
+    const isMixedReady = !isConfirmed && totalJoined >= 10;
     const statusMessage = isConfirmed
       ? `🔥 **開催確定！** 現在 **シルバー: ${silverCount}名 / ゴルプラ: ${goldCount}名** (合計${totalJoined}名) エントリー済みです！このまま開催します。${laneNote}${recruitLink}`
+      : isMixedReady
+      ? `🟡 **混合カスタムで開催可能！** 現在 **シルバー: ${silverCount}名 / ゴルプラ: ${goldCount}名** (合計${totalJoined}名) 、部門をまたいだ混合カスタムが組めます。${laneNote}${recruitLink}`
       : `⚠️ **メンバー募集中！** 現在 **シルバー: ${silverCount}名 / ゴルプラ: ${goldCount}名** (合計${totalJoined}名) です。\n▫ シルバー以下: あと **${silverShortfall}名**\n▫ ゴルプラ: あと **${goldShortfall}名**\n下のボタンからエントリーしてください！${laneNote}${recruitLink}`;
-    const embedColor = isConfirmed ? 0x2ecc71 : 0xe74c3c;
+    const embedColor = isConfirmed ? 0x2ecc71 : isMixedReady ? 0xf1c40f : 0xe74c3c;
 
     const embed = {
       title: activeEmbed ? activeEmbed.title : (isAdvanceNotice ? `📅 【定期】イベント 事前告知 🔔` : `📅 【定期】カスタム戦 参加メンバー状況`),

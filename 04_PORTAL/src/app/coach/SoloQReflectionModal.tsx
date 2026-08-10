@@ -52,6 +52,9 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
   const [savedMatchIds, setSavedMatchIds] = useState<Set<string>>(new Set());
 
   // フォーム状態
+  // 試合全体の勝敗(win)とは別の、対面(レーン)単位の勝ち負け。集団戦で拾われた/味方の
+  // 乱入等でチームの勝敗と対面の内容が一致しないケースを区別するため独立させている。
+  const [laneResult, setLaneResult] = useState<'win' | 'even' | 'loss' | null>(null);
   const [mentalRating, setMentalRating] = useState<number>(3);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [reflectionNote, setReflectionNote] = useState('');
@@ -181,6 +184,7 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
       setMatches(data.matches || []);
       setSelectedIndex(0);
       setSelectedTags([]); // マッチ切替時タグ初期化
+      setLaneResult(null);
     } catch (err: any) {
       setMatchError(err.message);
     } finally {
@@ -248,6 +252,7 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
         champion: currentMatch.champion,
         enemyChampion: currentMatch.enemyChampion,
         win: currentMatch.win,
+        laneResult,
         kda: currentMatch.kda,
         cs: currentMatch.cs,
         gameDuration: currentMatch.gameDuration,
@@ -459,9 +464,37 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
             </div>
           )}
 
-          {/* 2. メンタル度評価 */}
+          {/* 2. 対面(レーン)勝敗。試合全体の勝敗(win)とは別に記録する(#⑤) */}
           <div className="bg-white border border-stone-200 rounded-lg p-3.5 space-y-2 shadow-sm">
-            <label className="font-bold text-stone-800 text-xs block">2. 集中度・メンタル評価 (1〜5)</label>
+            <label className="font-bold text-stone-800 text-xs block">
+              2. 対面 {currentMatch ? currentMatch.enemyChampion : ''} との勝敗（レーン戦の内容。任意）
+              <span className="text-[11px] text-stone-400 font-normal block mt-0.5">試合自体の勝敗とは別に、対面との勝ち負けを記録します（集団戦で拾われた等で試合結果と食い違ってもOK）</span>
+            </label>
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { value: 'win' as const, label: '🟢 レーン勝ち', color: 'border-emerald-300 bg-emerald-50 text-emerald-900' },
+                { value: 'even' as const, label: '⚪ 互角', color: 'border-stone-300 bg-stone-100 text-stone-800' },
+                { value: 'loss' as const, label: '🔴 レーン負け', color: 'border-rose-300 bg-rose-50 text-rose-900' },
+              ].map((opt) => (
+                <button
+                  type="button"
+                  key={opt.value}
+                  onClick={() => setLaneResult(laneResult === opt.value ? null : opt.value)}
+                  className={`py-2 px-1 text-[11px] font-bold rounded-lg border transition-all text-center ${
+                    laneResult === opt.value
+                      ? `${opt.color} ring-2 ring-amber-500 shadow-sm scale-105`
+                      : 'border-stone-200 bg-stone-50 text-stone-600 hover:bg-stone-100'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* 3. メンタル度評価 */}
+          <div className="bg-white border border-stone-200 rounded-lg p-3.5 space-y-2 shadow-sm">
+            <label className="font-bold text-stone-800 text-xs block">3. 集中度・メンタル評価 (1〜5)</label>
             <div className="grid grid-cols-5 gap-2">
               {[
                 { rating: 1, label: '1 (絶望/ティルト)', color: 'border-rose-300 bg-rose-50 text-rose-900' },
@@ -489,7 +522,7 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
           {/* 3. 勝因・敗因ワンタップタグ ＆ 反省メモ */}
           <div className="bg-white border border-stone-200 rounded-lg p-3.5 space-y-2.5 shadow-sm">
             <label className="font-bold text-stone-800 text-xs block flex items-center justify-between">
-              <span>3. {isWin ? '🏆 勝因タグ' : '⚠️ 敗因タグ'}（ワンタップ選定）</span>
+              <span>4. {isWin ? '🏆 勝因タグ' : '⚠️ 敗因タグ'}（ワンタップ選定）</span>
               <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${isWin ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}`}>
                 {isWin ? '勝利理由' : '敗北理由'}
               </span>
@@ -549,7 +582,7 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
           {/* 4. 対面メモ（対面DBへ自動連携） */}
           <div className="bg-white border border-stone-200 rounded-lg p-3.5 space-y-2 shadow-sm">
             <label className="font-bold text-stone-800 text-xs block">
-              4. 対面チャンピオンメモ <span className="text-[11px] text-amber-800 font-normal">（対面DB `matchup_sentinel` へ自動蓄積）</span>
+              5. 対面チャンピオンメモ <span className="text-[11px] text-amber-800 font-normal">（対面DB `matchup_sentinel` へ自動蓄積）</span>
             </label>
             <textarea
               rows={2}
@@ -560,10 +593,10 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
             />
           </div>
 
-          {/* 5. 次の1試合で意識すること */}
+          {/* 6. 次の1試合で意識すること */}
           <div className="bg-amber-50/80 border border-amber-300 rounded-lg p-3.5 space-y-2 shadow-sm">
             <label className="font-bold text-amber-950 text-xs block flex items-center gap-1.5">
-              <span>🔥</span> 5. 次の1試合で意識すること（次回テーマ）
+              <span>🔥</span> 6. 次の1試合で意識すること（次回テーマ）
             </label>
             <input
               type="text"

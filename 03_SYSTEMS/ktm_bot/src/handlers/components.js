@@ -198,10 +198,22 @@ export async function handleButtonInteraction(interaction, env, ctx) {
         const goldCount = (targetEmbed.fields[1]?.value || "").split('\n').filter(l => l.startsWith('- ')).length;
         const silverRem = Math.max(0, 10 - silverCount);
         const goldRem = Math.max(0, 10 - goldCount);
+        const totalJoined = silverCount + goldCount;
 
         const statusBanner = (silverRem === 0 && goldRem === 0)
           ? "✅ **【全枠10名満員御礼！チーム分け可能です】**"
+          : (totalJoined >= 10)
+          ? "🟡 **【合計10名到達！部門を跨いだ混合カスタムが組めます】**"
           : `🚨 **【シルバー以下 あと${silverRem}名 / ゴルプラ あと${goldRem}名】**`;
+
+        // 埋め込みの色を参加状況に応じて更新(#①)。
+        // 片方の部門単独で10名到達(通常カスタム確定)=緑、部門をまたいだ合計で10名到達
+        // (混合カスタムなら組める)=黄色、それ未満=初期の琥珀色のまま。
+        targetEmbed.color = (silverCount >= 10 || goldCount >= 10)
+          ? 0x2ecc71
+          : (totalJoined >= 10)
+          ? 0xf1c40f
+          : 0xc89b3c;
 
         // メッセージ本文(content)やdescription内の残数ヘッダーを最新数値にリアルタイム置換
         const updateTextWithStatus = (text) => {
@@ -248,6 +260,7 @@ export async function handleButtonInteraction(interaction, env, ctx) {
               const relEmbed = relMsg.embeds?.[0] ? { ...relMsg.embeds[0] } : null;
               if (relEmbed) {
                 relEmbed.fields = targetEmbed.fields; // フィールドを完全同期
+                relEmbed.color = targetEmbed.color; // 色(混合カスタム到達サイン等)も同期
                 if (relEmbed.description) {
                   relEmbed.description = updateTextWithStatus(relEmbed.description);
                 }

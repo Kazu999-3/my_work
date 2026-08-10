@@ -34,7 +34,7 @@ export async function POST(request: Request) {
       .eq('matchup_id', matchupId)
       .maybeSingle();
 
-    // 2. Check soloq_reflections
+    // 2. Check soloq_reflections（メモ付きのみ、最新3件）
     const { data: reflectionsData } = await supabaseAdmin
       .from('soloq_reflections')
       .select('matchup_memo, reflection_note, win, kda, created_at')
@@ -44,6 +44,24 @@ export async function POST(request: Request) {
       .order('created_at', { ascending: false })
       .limit(3);
 
+    // 3. 対面(レーン)成績の集計(#⑤、migration 55)。試合全体の勝敗(win)とは別に記録される
+    // lane_resultを使う。メモの有無に関わらず、この対面での振り返りが1件でもあれば返す。
+    const { data: laneRows } = await supabaseAdmin
+      .from('soloq_reflections')
+      .select('lane_result')
+      .eq('champion', champion)
+      .eq('enemy_champion', enemyChampion)
+      .not('lane_result', 'is', null);
+
+    const laneRecord = laneRows && laneRows.length > 0
+      ? {
+          wins: laneRows.filter((r: any) => r.lane_result === 'win').length,
+          evens: laneRows.filter((r: any) => r.lane_result === 'even').length,
+          losses: laneRows.filter((r: any) => r.lane_result === 'loss').length,
+          total: laneRows.length,
+        }
+      : null;
+
     let memoText = '';
     if (sentinelData?.strategy) {
       memoText = sentinelData.strategy;
@@ -51,7 +69,7 @@ export async function POST(request: Request) {
       memoText = reflectionsData.map((r: any) => r.matchup_memo).filter(Boolean).join('\n---\n');
     }
 
-    if (!memoText) {
+    if (!memoText && !laneRecord) {
       return NextResponse.json({ warning: null });
     }
 
@@ -59,7 +77,8 @@ export async function POST(request: Request) {
       warning: {
         champion,
         enemyChampion,
-        memo: memoText,
+        memo: memoText || null,
+        laneRecord,
         recentReflectionsCount: reflectionsData ? reflectionsData.length : 0,
         lastUpdatedAt: sentinelData?.updated_at || (reflectionsData?.[0]?.created_at || null),
       },

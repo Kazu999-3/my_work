@@ -72,12 +72,20 @@ export async function POST(request: Request) {
       winLoseReasonTags,
       reflectionNote,
       matchupMemo,
-      nextFocusPoint
+      nextFocusPoint,
+      laneResult
     } = body;
 
     if (!champion) {
       return NextResponse.json({ error: '使用チャンピオンは必須です。' }, { status: 400 });
     }
+
+    // 試合全体の勝敗(win)とは別に、対面(レーン)単位の勝ち負けを記録する(migration 55)。
+    // 集団戦で拾われた/味方の乱入等でチームは勝っても対面には負けている、というケースを
+    // 区別するため、未指定なら'even'扱いにはせずnullのまま(「対面成績は記録なし」として
+    // 集計から除外する)。
+    const validLaneResults = new Set(['win', 'even', 'loss']);
+    const normalizedLaneResult = validLaneResults.has(laneResult) ? laneResult : null;
 
     // クライアント側はsavedMatchIdsによるボタン無効化のみで重複を防いでおり、複数タブや
     // 素早い二重送信をすり抜けると同一試合が重複挿入されうる(2026-08-05発覚)。
@@ -88,6 +96,7 @@ export async function POST(request: Request) {
       champion,
       enemy_champion: enemyChampion || null,
       win: !!win,
+      lane_result: normalizedLaneResult,
       kda: kda || null,
       cs: typeof cs === 'number' ? cs : null,
       game_duration: typeof gameDuration === 'number' ? gameDuration : null,

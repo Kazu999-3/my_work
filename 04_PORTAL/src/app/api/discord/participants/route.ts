@@ -61,14 +61,20 @@ export async function GET() {
 
       const messages = await msgsRes.json();
 
-      // Embedのタイトルに「募集」または「確定」が含まれ、かつフッターからモードが「カスタム」であることを判定
+      // Embedのタイトル/フッターの固定文言一致だけでは、定期カスタム(postWeeklyRecruitment)の
+      // 実際の文言(title="⚔️ KTM 定期カスタム開催告知 [...]"、footer="日時: ... | 主催: KTM運営")
+      // が「募集」「確定」「モード: カスタム」のどれにも一致せず、このメッセージ自体は
+      // チャンネルに存在するのに永久にヒットしなかった(2026-08-10発覚)。定期カスタム側の
+      // 実際の文言と、本文(content)に必ず含まれる「【定期カスタム募集】」も判定に加える。
       targetMsg = messages.find((m: any) => {
-        if (m.embeds && m.embeds.length > 0) {
-          const embed = m.embeds[0];
-          const isRecruit = embed.title && (embed.title.includes('募集') || embed.title.includes('確定'));
-          const isCustom = embed.footer?.text?.includes('モード: カスタム');
-          return isRecruit && isCustom;
-        }
+        const embed = m.embeds?.[0];
+        if (!embed) return false;
+        const title = embed.title || '';
+        const footerText = embed.footer?.text || '';
+        const isRecruitTitle = title.includes('募集') || title.includes('確定') || title.includes('定期カスタム') || title.includes('開催告知');
+        const isCustomFooter = footerText.includes('モード: カスタム') || footerText.includes('主催: KTM運営');
+        if (isRecruitTitle && isCustomFooter) return true;
+        if (m.content && (m.content.includes('カスタム募集') || m.content.includes('定期カスタム'))) return true;
         return false;
       });
     }
