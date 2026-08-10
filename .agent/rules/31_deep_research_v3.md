@@ -1,4 +1,5 @@
 ---
+trigger: model_decision
 description: リサーチの品質を極限まで高め、Geminiアプリ版のディープリサーチを超えるためのエージェント調査規約。
 ---
 
