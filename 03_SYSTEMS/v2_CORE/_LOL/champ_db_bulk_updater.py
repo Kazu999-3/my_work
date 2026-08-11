@@ -48,8 +48,13 @@ QUEUE_FILE = Path("d:/my_work/02_FACTORY/_LOL/champion_update_queue.json")
 # 見えるようにする。ポータル側の /api/admin/champions/queue はこの行を見る。
 BULK_STATUS_ID = "00000000-0000-0000-0000-000000000002"
 
-def report_bulk_status(queue_data: dict):
-    """一括更新の進捗をSupabaseへ報告する（ポータルの進捗バー用）。失敗しても本処理は継続する。"""
+def report_bulk_status(queue_data: dict, phase: str | None = None):
+    """一括更新の進捗をSupabaseへ報告する（ポータルの進捗バー用）。失敗しても本処理は継続する。
+
+    phase: 現在処理中のチャンピオン内での細かい途中経過（例:「Gemini APIで検索リサーチ中...」）。
+    1体の処理に数十秒〜数分かかり、従来は"running"になった瞬間と完了した瞬間の2回しか
+    報告していなかったため、ポータルの進捗ゲージが長時間止まって見える問題があった(2026-08-11)。
+    """
     if not settings.SUPABASE_URL or not settings.SUPABASE_KEY:
         return
     queue = queue_data.get("queue", {})
@@ -74,6 +79,7 @@ def report_bulk_status(queue_data: dict):
             "failed": failed,
             "pending": pending,
             "current_champ": running_items[0]["name"] if running_items else None,
+            "current_phase": phase,
         },
         "updated_at": datetime.now(timezone.utc).isoformat()
     }
@@ -87,6 +93,11 @@ def report_bulk_status(queue_data: dict):
         requests.post(f"{settings.SUPABASE_URL}/rest/v1/edge_tasks", headers=headers, json=payload, timeout=10)
     except Exception as e:
         logging.warning(f"⚠️ 進捗レポートの送信に失敗しました（処理は続行）: {e}")
+
+
+def report_phase(queue_data: dict, phase: str) -> None:
+    """1体の処理途中の細かいフェーズだけを即時反映する軽量版（キューファイルへの書き込みはしない）。"""
+    report_bulk_status(queue_data, phase=phase)
 
 def get_latest_patch() -> tuple[str, str]:
     """(raw_ddragon_version, display_patch_version) を返す。
@@ -229,7 +240,10 @@ def run_bulk_update():
         # 食い違っていた（勝率/ピック率/プロビルド/フルクリア時間等が一括更新側では
         # 収集されない）。2026-08-08、同じエンジンに統合。
         # このOSはジャングル中心のため、ロールはJungle基準で統一してリサーチする。
-        success = collect_and_save_champion_trend(champ_id, "Jungle", client=batch_client)
+        success = collect_and_save_champion_trend(
+            champ_id, "Jungle", client=batch_client,
+            on_phase=lambda phase: report_phase(queue_data, phase)
+        )
 
         if success:
             queue[champ_id]["status"] = "completed"
@@ -242,6 +256,7 @@ def run_bulk_update():
             # パワースパイク(時間帯別の強さ)の生成・格納。失敗してもチャンピオン辞典本体の
             # 更新は既に成功済みなので、ここでのエラーはバッチを止めずログのみで次へ進む。
             try:
+                report_phase(queue_data, "パワースパイク生成中...")
                 generate_power_spike(champ_id, role="GLOBAL", patch=patch_version)
             except Exception as e:
                 logging.warning(f"⚠️ [{champ_id}] パワースパイク生成でエラーが発生しましたが処理を継続します: {e}")

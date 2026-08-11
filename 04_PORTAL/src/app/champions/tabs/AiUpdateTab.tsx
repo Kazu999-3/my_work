@@ -162,13 +162,27 @@ export default function AiUpdateTab() {
     fetchQueueStatus();
     fetchJobStatus();
 
+    // 実行中は2秒間隔で追いかけ、待機中は8秒間隔に緩める（体感のリアルタイム性とAPI負荷のバランス）
+    const intervalMs = isBulkRunning || bulkStatus.status === 'running' ? 2000 : 8000;
     const timer = setInterval(() => {
       fetchQueueStatus();
       fetchJobStatus();
-    }, 5000);
+    }, intervalMs);
 
     return () => clearInterval(timer);
-  }, []);
+  }, [isBulkRunning, bulkStatus.status]);
+
+  // 進捗ゲージの「最終更新: n秒前」表示用ティッカー（実行中のみ回す）
+  const [nowTick, setNowTick] = useState(Date.now());
+  useEffect(() => {
+    if (!isBulkRunning && bulkStatus.status !== 'running') return;
+    const t = setInterval(() => setNowTick(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, [isBulkRunning, bulkStatus.status]);
+
+  const lastUpdatedSec = bulkStatus.updated_at
+    ? Math.max(0, Math.round((nowTick - new Date(bulkStatus.updated_at).getTime()) / 1000))
+    : null;
 
   // パイプラインステータスを30秒ごとにポーリング取得
   const fetchPipeline = async () => {
@@ -258,9 +272,10 @@ export default function AiUpdateTab() {
               <div className="flex justify-between text-xs font-bold text-stone-700 flex-wrap gap-2">
                 <span>ジョブ進捗率: {Math.round((bulkStatus.completed / bulkStatus.total) * 100) || 0}% ({bulkStatus.completed} / {bulkStatus.total} 体)</span>
                 <span className="text-gray-400">
-                  {isBulkRunning ? `🔥 ${bulkStatus.current_champ || '調査中'} をリサーチ中...` :
-                   bulkStatus.status === 'suspended' ? '⏸️ API制限により一時停止中' :
-                   bulkStatus.status === 'completed' ? '✅ すべての更新が完了' : '💤 待機中'}
+                  {bulkStatus.status === 'running'
+                    ? `🔥 ${bulkStatus.current_champ || '調査中'}${bulkStatus.current_phase ? ` — ${bulkStatus.current_phase}` : ' をリサーチ中...'}`
+                    : bulkStatus.status === 'suspended' ? '⏸️ API制限により一時停止中' :
+                      bulkStatus.status === 'completed' ? '✅ すべての更新が完了' : '💤 待機中'}
                 </span>
               </div>
               <div className="w-full bg-black/[0.03] rounded-full h-2 overflow-hidden border border-black/5">
@@ -269,12 +284,20 @@ export default function AiUpdateTab() {
                   style={{ width: `${(bulkStatus.completed / bulkStatus.total) * 100 || 0}%` }}
                 />
               </div>
-              <div className="flex gap-4 text-[10px] text-gray-500 font-semibold font-mono flex-wrap">
+              <div className="flex gap-4 text-[10px] text-gray-500 font-semibold font-mono flex-wrap items-center">
                 <span>未処理: {bulkStatus.pending}</span>
                 <span className="text-amber-600">実行中: {bulkStatus.running}</span>
                 <span className="text-emerald-700">完了: {bulkStatus.completed}</span>
                 <span className="text-red-700">失敗: {bulkStatus.failed}</span>
+                {lastUpdatedSec !== null && (
+                  <span className="text-gray-400 ml-auto">最終更新: {lastUpdatedSec}秒前</span>
+                )}
               </div>
+              {bulkStatus.status === 'running' && bulkLogs && (
+                <pre className="mt-1 w-full max-h-32 overflow-y-auto rounded-lg bg-black/[0.04] border border-black/5 p-2 text-[10px] leading-relaxed text-gray-500 font-mono whitespace-pre-wrap">
+                  {bulkLogs}
+                </pre>
+              )}
             </div>
           ) : (
             <div className="space-y-2 mt-2 w-full">

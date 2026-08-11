@@ -50,6 +50,7 @@ export async function GET(req: NextRequest) {
         failed: p.failed || 0,
         pending: p.pending || 0,
         current_champ: p.current_champ || null,
+        current_phase: p.current_phase || null,
       });
     }
 

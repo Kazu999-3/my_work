@@ -31,6 +31,12 @@ export default function TaskStatusDrawer({ collapsed = false, align = 'left' }: 
 
   const [retryingTaskId, setRetryingTaskId] = useState<string | null>(null);
 
+  // champion_trend以外で再実行可能なタスク種別（/api/admin/tasks/retryが対応）
+  const RETRYABLE_TASK_TYPES = new Set([
+    'resolve_youtube_channel', 'resolve_youtube_playlist',
+    'youtube_channel_monitor', 'reddit_scout', 'lol_trend_collect', 'dict_synthesizer',
+  ]);
+
   const fetchTaskStatus = async () => {
     try {
       const res = await fetch('/api/admin/dashboard-stats', { credentials: 'include' });
@@ -119,15 +125,23 @@ export default function TaskStatusDrawer({ collapsed = false, align = 'left' }: 
   };
 
   const handleRetryTask = async (task: any) => {
-    if (task.task_type !== 'champion_trend') return;
+    const isRetryable = task.task_type === 'champion_trend' || RETRYABLE_TASK_TYPES.has(task.task_type);
+    if (!isRetryable) return;
     setRetryingTaskId(task.id);
     try {
-      const res = await fetch('/api/admin/champions/trend', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ champion: task.payload?.champion, role: task.payload?.role || 'Jungle' }),
-      });
+      const res = task.task_type === 'champion_trend'
+        ? await fetch('/api/admin/champions/trend', {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ champion: task.payload?.champion, role: task.payload?.role || 'Jungle' }),
+          })
+        : await fetch('/api/admin/tasks/retry', {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ task_type: task.task_type, payload: task.payload }),
+          });
       const data = await res.json();
       if (data.success) {
         await fetchTaskStatus();
@@ -240,7 +254,7 @@ export default function TaskStatusDrawer({ collapsed = false, align = 'left' }: 
                         {TASK_LABELS[t.task_type] || t.task_type}
                         {t.payload?.champion && <span className="text-stone-500 font-normal"> ({t.payload.champion})</span>}
                       </span>
-                      {t.task_type === 'champion_trend' && (
+                      {(t.task_type === 'champion_trend' || RETRYABLE_TASK_TYPES.has(t.task_type)) && (
                         <button
                           onClick={() => handleRetryTask(t)}
                           disabled={retryingTaskId === t.id}

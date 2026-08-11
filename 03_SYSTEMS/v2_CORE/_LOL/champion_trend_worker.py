@@ -79,7 +79,7 @@ def fetch_champion_notes(champ_id: str, supabase_url: str, supabase_key: str) ->
     return ""
 
 
-def collect_and_save_champion_trend(champion: str, role: str, client=None) -> bool:
+def collect_and_save_champion_trend(champion: str, role: str, client=None, on_phase=None) -> bool:
     """1チャンピオン分のAIトレンド収集〜保存を行う共通エンジン。
 
     辞典の「最新トレンド取得」ボタン(CLI経由のmain)と、champ_db_bulk_updater.pyの
@@ -88,9 +88,19 @@ def collect_and_save_champion_trend(champion: str, role: str, client=None) -> bo
     分離したい場合があるため、clientを外部から注入できるようにしている
     (未指定時はこのモジュール自身のデフォルトキーで生成する)。
     例外は投げず、成功時True・失敗時Falseを返す。
+
+    on_phase: 1体あたり数十秒〜数分かかる処理の途中経過を呼び出し元(進捗ゲージ)へ
+    伝えるための任意コールバック(phase: str) -> None。未指定なら何もしない。
     """
     global _quota_hit_this_run
     _quota_hit_this_run = False
+
+    def _phase(text: str) -> None:
+        if on_phase:
+            try:
+                on_phase(text)
+            except Exception:
+                pass
 
     champion = normalize_champion_id(champion)
     logger.info(f"Starting trend collection for {champion} ({role})")
@@ -103,6 +113,7 @@ def collect_and_save_champion_trend(champion: str, role: str, client=None) -> bo
         client = genai.Client(api_key=api_key)
 
     now_str = datetime.now(timezone.utc).strftime("%Y/%m/%d")
+    _phase("攻略ノートを参照中...")
     notes_context = fetch_champion_notes(champion, settings.SUPABASE_URL, settings.SUPABASE_KEY)
     
     jg_instructions = ""
@@ -187,6 +198,7 @@ League of Legendsの最新パッチにおける、チャンピオン「{champion
     
     try:
         logger.info("Calling Gemini API...")
+        _phase("Gemini APIで検索リサーチ中...")
         res_text = generate_content_safe(
             client,
             prompt,
@@ -194,10 +206,11 @@ League of Legendsの最新パッチにおける、チャンピオン「{champion
             config=config,
             feature_name="oracle"
         )
-        
+
         if not res_text or res_text.startswith("⚠️") or res_text.startswith("❌"):
             # ツール無しで標準再試行
             logger.warning(f"Retrying Gemini API without search tools: {res_text}")
+            _phase("Gemini APIへ再試行中（検索ツールなし）...")
             res_text = generate_content_safe(
                 client,
                 prompt,
@@ -216,6 +229,7 @@ League of Legendsの最新パッチにおける、チャンピオン「{champion
     except Exception as e:
         _mark_if_quota_related(e)
         logger.warning(f"⚠️ Gemini API with search failed: {e}. Retrying without search tools...")
+        _phase("Gemini APIへ再試行中（検索ツールなし）...")
         try:
             res_text = generate_content_safe(client, prompt, model_id="gemini-3.1-flash-lite", config=None, feature_name="oracle")
             _mark_if_quota_related(res_text)
@@ -225,6 +239,7 @@ League of Legendsの最新パッチにおける、チャンピオン「{champion
         except Exception as retry_e:
             _mark_if_quota_related(retry_e)
             logger.warning(f"⚠️ Standard Gemini API retry failed: {retry_e}. Falling back to local Ollama...")
+            _phase("ローカルAI(Ollama)へフォールバック中...")
             try:
                 from v2_CORE.ai_helper import _generate_with_ollama
                 res_text = _generate_with_ollama(prompt, model="gemma3:12b")
@@ -235,6 +250,8 @@ League of Legendsの最新パッチにおける、チャンピオン「{champion
                 logger.warning(f"⚠️ API制限のため今回の定期更新は安全にスキップされました (既存データを維持します): {ollama_e}")
                 return False
         
+    _phase("辞典データベースへ保存中...")
+
     # Supabase 接続準備
     supabase_url = settings.SUPABASE_URL
     supabase_key = settings.SUPABASE_KEY
