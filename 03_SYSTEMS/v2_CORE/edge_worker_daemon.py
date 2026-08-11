@@ -199,7 +199,14 @@ class EdgeWorkerDaemon:
         
         env = os.environ.copy()
         env["PYTHONPATH"] = "d:/my_work/03_SYSTEMS;" + env.get("PYTHONPATH", "")
-        
+        # このWindows環境ではパイプ経由の子プロセスのstdout/stderrが既定でcp932
+        # (Shift-JIS)にフォールバックし、print()に▶や絵文字等cp932非対応文字が
+        # 含まれると UnicodeEncodeError で即クラッシュする(2026-08-12、
+        # youtube_worker.pyの「▶ 処理開始」で発覚)。個々のスクリプト側で
+        # sys.stdout.reconfigure()するのではなく、ここで子プロセス全体にUTF-8を
+        # 強制することで、このデーモン経由で起動する全タスクに一括対応する。
+        env["PYTHONIOENCODING"] = "utf-8"
+
         cmd = [sys.executable, script_path]
         if args:
             cmd.extend(args)
