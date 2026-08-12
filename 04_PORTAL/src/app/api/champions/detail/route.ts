@@ -43,6 +43,7 @@ export async function GET(req: Request) {
         customFields: fact.custom_fields || {},
         patch_meta: fact.patch_meta || null,
         pro_builds: fact.pro_builds || [],
+        research_sources: fact.research_sources || [],
         jg_style: fact.jg_type ? {
           type: fact.jg_type,
           description: fact.jg_description || '',
@@ -110,6 +111,7 @@ export async function GET(req: Request) {
       customFields: rd.customFields || {},
       patch_meta: rd.patch_meta || null,
       pro_builds: rd.pro_builds || [],
+      research_sources: rd.research_sources || [],
       jg_style: rd.jg_style || null,
     };
 

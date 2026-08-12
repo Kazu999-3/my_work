@@ -333,6 +333,11 @@ League of Legendsの最新パッチにおける、チャンピオン「{champion
         tools=[{"google_search": {}}]
     )
     
+    # google_searchグラウンディングの引用元URL(出典)を記録する。以前はGeminiが返して
+    # いた出典情報を毎回捨てており、辞典の記述が「どこから来た情報か」を一切辿れなかった
+    # (2026-08-12、note記事群のEvidence追跡可能性の考え方を参考に追加)。
+    research_sources: list = []
+
     try:
         logger.info("Calling Gemini API...")
         _phase("Gemini APIで検索リサーチ中...")
@@ -341,7 +346,8 @@ League of Legendsの最新パッチにおける、チャンピオン「{champion
             prompt,
             model_id="gemini-3.1-flash-lite",
             config=config,
-            feature_name="oracle"
+            feature_name="oracle",
+            on_grounding=lambda s: research_sources.extend(s)
         )
 
         if not res_text or res_text.startswith("⚠️") or res_text.startswith("❌"):
@@ -442,6 +448,17 @@ League of Legendsの最新パッチにおける、チャンピオン「{champion
         "updated_at": int(time.time())
     }
     raw_data["pro_builds"] = trend_data.get("pro_builds") or raw_data.get("pro_builds", [])
+
+    # 今回リサーチで実際にGeminiが参照した出典URL(取得できた場合のみ更新、既存値は維持)
+    if research_sources:
+        seen_uris = set()
+        deduped_sources = []
+        for s in research_sources:
+            uri = s.get("uri")
+            if uri and uri not in seen_uris:
+                seen_uris.add(uri)
+                deduped_sources.append(s)
+        raw_data["research_sources"] = deduped_sources[:10]
 
     # jg_styleも同様に、応答に含まれるサブフィールドだけを反映し、欠けている
     # サブフィールド(type/blind_pickable/counter_pickable/description)は既存値を維持する。

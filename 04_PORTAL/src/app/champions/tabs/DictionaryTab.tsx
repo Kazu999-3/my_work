@@ -96,7 +96,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
     strengths: '', weaknesses: '', powerSpikes: '', buildRunes: '',
     fullClearTime: '', counterChampions: '', mustBanChampions: '', pickRecommendation: '',
     strategy: '', note_draft: '', customFields: {},
-    patch_meta: null, pro_builds: [], jg_style: null
+    patch_meta: null, pro_builds: [], research_sources: [], jg_style: null
   });
   const [powerSpikeScores, setPowerSpikeScores] = useState<{
     early_game_score: number; mid_game_score: number; late_game_score: number;
@@ -531,6 +531,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
         mustBanChampions: dataFields.mustBanChampions, pickRecommendation: dataFields.pickRecommendation,
         note_draft: dataFields.note_draft, customFields: dataFields.customFields,
         patch_meta: dataFields.patch_meta, pro_builds: dataFields.pro_builds,
+        research_sources: dataFields.research_sources,
         jg_style: dataFields.jg_style
       }
     };
@@ -1117,6 +1118,29 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
               <p className="text-gray-500 italic text-xs py-4">プロの採用ビルドデータは未収集です。上の「最新トレンド取得」ボタンを押してロードしてください。</p>
             )}
           </div>
+
+          {/* 🔎 AIリサーチの出典 (google_searchグラウンディング由来、参考・裏取り用) */}
+          {dataFields.research_sources && dataFields.research_sources.length > 0 && (
+            <div className="glass-panel border-t-2 border-cyan-400 p-5 rounded-2xl col-span-1 md:col-span-2">
+              <h3 className="text-sm font-black flex items-center gap-2 text-cyan-700 mb-3">
+                🔎 AIリサーチの出典（参考・裏取り用）
+              </h3>
+              <ul className="space-y-1.5">
+                {dataFields.research_sources.map((src: any, idx: number) => (
+                  <li key={idx} className="text-xs">
+                    <a
+                      href={src.uri}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-cyan-700 hover:text-cyan-900 hover:underline break-all"
+                    >
+                      {src.title || src.uri}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           {/* 📖 全体的な立ち回り・統合トレンドメモ (折りたたみアコーディオン) */}
           <div className="glass-panel rounded-2xl border-l-4 border-[#c89b3c] bg-[#c89b3c]/5 overflow-hidden col-span-1 md:col-span-2">

@@ -110,6 +110,7 @@ export async function GET(req: Request) {
           custom_fields: rd.customFields || {},
           patch_meta: rd.patch_meta || null,
           pro_builds: rd.pro_builds || [],
+          research_sources: rd.research_sources || [],
           // 日次cronからの同期なのでAI生成扱い。人間が確認済みにしたconfidenceは上書きしない。
           confidence: 'ai_generated',
           auto_updated_at: new Date().toISOString(),

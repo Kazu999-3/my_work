@@ -31,11 +31,41 @@ def _set_last_request_time(t):
     except Exception as e:
         logger.error(f"[AIHelper] スロットル状態の保存に失敗: {e}")
 
-def generate_content_safe(client, prompt, model_id=None, config=None, feature_name="default", sleep_on_rate_limit=True) -> str:
+def _extract_grounding_sources(response) -> list:
+    """google_searchグラウンディング使用時、応答に添付される引用元URLを抽出する。
+
+    これまでgenerate_content_safe()はresponse.textだけを取り出し、Gemini自身が
+    返している出典情報(grounding_metadata)を毎回捨てていた。辞典の記述に対する
+    「どこから来た情報か」を辿る手段が無かったため、呼び出し元がon_grounding経由で
+    拾えるようにする(2026-08-12)。取得できなければ空リストを返すだけで例外は投げない。
+    """
+    sources = []
+    try:
+        candidates = getattr(response, 'candidates', None) or []
+        if not candidates:
+            return sources
+        grounding_metadata = getattr(candidates[0], 'grounding_metadata', None)
+        if not grounding_metadata:
+            return sources
+        chunks = getattr(grounding_metadata, 'grounding_chunks', None) or []
+        for chunk in chunks:
+            web = getattr(chunk, 'web', None)
+            if web and getattr(web, 'uri', None):
+                sources.append({"uri": web.uri, "title": getattr(web, 'title', None)})
+    except Exception:
+        pass
+    return sources
+
+
+def generate_content_safe(client, prompt, model_id=None, config=None, feature_name="default", sleep_on_rate_limit=True, on_grounding=None) -> str:
     """
     クォータ制限 (429 RESOURCE_EXHAUSTED) や一時的なサーバーエラー (503) を
     自動的に指数バックオフでリトライし、必要に応じて別モデルへフォールバックする堅牢なテキスト生成関数。
     クロスプロセスロックにより複数スクリプト同時起動時も頻度超過を防ぐ。
+
+    on_grounding: google_searchグラウンディングの引用元URLを受け取りたい場合に
+    指定するコールバック(sources: list[{uri, title}]) -> None。戻り値の型(文字列)を
+    変えず、既存の全呼び出し元への影響を避けるための任意フックにしている。
     """
     # ローカル直接生成。以前はここでFastAPI Gateway(api.py, port 8000)へまず
     # ヘルスチェック(1.5秒)を試みていたが、Gatewayは2026-07-26のstart_all.ps1簡素化
@@ -139,6 +169,13 @@ def generate_content_safe(client, prompt, model_id=None, config=None, feature_na
                     if response and hasattr(response, 'text') and response.text:
                         logger.info(f"[AIHelper] 🌟 モデル {model} ({key_name}) での生成に成功しました。")
                         quota_manager.consume_quota(feature_name)
+                        if on_grounding:
+                            try:
+                                sources = _extract_grounding_sources(response)
+                                if sources:
+                                    on_grounding(sources)
+                            except Exception:
+                                pass
                         return response.text
                     elif response and hasattr(response, 'candidates') and response.candidates:
                         reason = str(getattr(response.candidates[0], 'finish_reason', ''))
