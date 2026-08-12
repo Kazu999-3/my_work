@@ -182,3 +182,62 @@ export async function checkOneMatchupContradiction(
   if (!row || !row.strategy) return null;
   return judgeContradiction(row);
 }
+
+// ============================================================
+// 修正パターン検知 (knowledge_revisions の再利用)
+//
+// knowledge_revisionsは差分ビューアー(/admin/knowledge/revisions)で人間が
+// 個別に見るだけの書きっぱなしログだった。特定の項目だけ短期間に何度も
+// 書き換えられている場合、パッチ更新等の通常サイクルではなく、AIの
+// リサーチ内容が不安定/誤り続けている兆候である可能性が高いため、
+// 週次の鮮度レビューに合わせて検知する(2026-08-12追加)。
+// ============================================================
+
+export interface RevisionHotspotCandidate {
+  targetType: string;
+  targetKey: string;
+  revisionCount: number;
+  mostRevisedField: string;
+  lastRevisedAt: string;
+}
+
+const REVISION_HOTSPOT_WINDOW_DAYS = 14;
+const REVISION_HOTSPOT_THRESHOLD = 6; // 通常の週次一括更新なら14日で2回程度のため、これを大きく超える件数のみ拾う
+
+export async function reviewRevisionHotspots(supabase: any, limit: number): Promise<RevisionHotspotCandidate[]> {
+  const since = new Date(Date.now() - REVISION_HOTSPOT_WINDOW_DAYS * 24 * 60 * 60 * 1000).toISOString();
+  const { data: rows } = await supabase
+    .from('knowledge_revisions')
+    .select('target_type, target_key, field, created_at')
+    .gte('created_at', since);
+
+  if (!rows || rows.length === 0) return [];
+
+  const groups = new Map<
+    string,
+    { targetType: string; targetKey: string; count: number; fieldCounts: Map<string, number>; lastRevisedAt: string }
+  >();
+  for (const r of rows as { target_type: string; target_key: string; field: string; created_at: string }[]) {
+    const key = `${r.target_type}|${r.target_key}`;
+    let g = groups.get(key);
+    if (!g) {
+      g = { targetType: r.target_type, targetKey: r.target_key, count: 0, fieldCounts: new Map(), lastRevisedAt: r.created_at };
+      groups.set(key, g);
+    }
+    g.count += 1;
+    g.fieldCounts.set(r.field, (g.fieldCounts.get(r.field) || 0) + 1);
+    if (r.created_at > g.lastRevisedAt) g.lastRevisedAt = r.created_at;
+  }
+
+  return Array.from(groups.values())
+    .filter((g) => g.count >= REVISION_HOTSPOT_THRESHOLD)
+    .map((g) => ({
+      targetType: g.targetType,
+      targetKey: g.targetKey,
+      revisionCount: g.count,
+      mostRevisedField: Array.from(g.fieldCounts.entries()).sort((a, b) => b[1] - a[1])[0]?.[0] || 'body',
+      lastRevisedAt: g.lastRevisedAt,
+    }))
+    .sort((a, b) => b.revisionCount - a.revisionCount)
+    .slice(0, limit);
+}
