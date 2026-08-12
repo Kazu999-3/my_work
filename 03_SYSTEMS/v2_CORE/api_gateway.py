@@ -8,8 +8,11 @@ logger = logging.getLogger("APIGateway")
 
 class APIGateway:
     DB_PATH = os.path.join(os.path.dirname(__file__), "api_gateway.db")
-    RPM_LIMIT = 12       # 1分あたりの最大リクエスト数 (安全マージン)
-    MIN_INTERVAL = 4.0   # 最小リクエスト間隔 (秒)
+    # 12回/分の自主規制でも実際のGemini側の許容量を上回り本物の429が頻発、
+    # 1日の429サーキットブレーカー(10回)に日常的に到達していた(2026-08-11/12発覚)。
+    # まずは半分の6回/分・間隔10秒に下げて、実際のGoogle側許容量に近づける。
+    RPM_LIMIT = 6         # 1分あたりの最大リクエスト数 (安全マージン)
+    MIN_INTERVAL = 10.0   # 最小リクエスト間隔 (秒)
 
     @classmethod
     def _get_connection(cls):
