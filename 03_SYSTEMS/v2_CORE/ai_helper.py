@@ -165,7 +165,7 @@ def generate_content_safe(client, prompt, model_id=None, config=None, feature_na
                         break
                     
                     if is_quota:
-                        quota_manager.record_error("error_429")
+                        quota_manager.record_error("error_429", feature_name=feature_name)
                         logger.warning(f"⚠️ [AIHelper] クォータ制限詳細 ({key_name}): {err_msg}")
                         
                         # クォータ制限(Quota Exceeded)が発生した場合、待機してもキーの枠が即復活しないため、速やかに次のモデルへフォールバックする

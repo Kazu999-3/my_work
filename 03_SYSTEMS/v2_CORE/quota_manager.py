@@ -179,8 +179,15 @@ class QuotaManager:
             # サーキットブレーカー: consume_quota()は成功時にしかカウントされないため、
             # クォータ枯渇で429が連発している間は成功カウンタ(current_usage)が増えず
             # 上限チェックをすり抜け続ける。今日のエラー数が閾値を超えたら、成功回数に
-            # 関わらず全機能を一律でスキップし、5分おきの自動巡回が丸1日失敗し続けるのを防ぐ。
-            error_count = max(local_today.get("error_429", 0), remote_today.get("error_429", 0))
+            # 関わらずスキップし、5分おきの自動巡回が丸1日失敗し続けるのを防ぐ。
+            #
+            # 機能ごとに独立集計する(以前は全機能共通の"error_429"を見ており、無関係な
+            # 機能で429が10回超えただけで、辞典一括更新(oracle)のように自分の残り枠には
+            # まだ十分余裕がある機能まで一律で巻き込んで止めてしまっていた。2026-08-11、
+            # oracleが300回中8回しか使っていないのに他機能由来のerror_429が原因で
+            # 2日連続で一括更新が中断される問題として発覚)。
+            error_key = f"error_429:{feature_name}"
+            error_count = max(local_today.get(error_key, 0), remote_today.get(error_key, 0))
             if error_count >= settings.DAILY_ERROR_CIRCUIT_BREAKER:
                 return False
 
@@ -220,19 +227,28 @@ class QuotaManager:
             self._save_data(data)
             logger.debug(f"[QuotaManager] Consumed quota for '{feature_name}': {current_usage + 1}/{limit}")
 
-    def record_error(self, error_type: str):
-        """指定されたエラー（429など）の発生回数を記録する"""
+    def record_error(self, error_type: str, feature_name: str = None):
+        """指定されたエラー（429など）の発生回数を記録する。
+
+        feature_name指定時は"{error_type}:{feature_name}"としても記録し、
+        check_quota()の機能別サーキットブレーカー判定に使わせる（全機能共通の
+        error_type単体キーも後方互換のため引き続き記録する）。
+        """
         with self.file_lock:
             data = self._load_data()
             today = self._get_today_str()
-            
+
             if today not in data:
                 data[today] = {}
-                
-            current_count = data[today].get(error_type, 0)
-            data[today][error_type] = current_count + 1
-            
+
+            keys = [error_type]
+            if feature_name:
+                keys.append(f"{error_type}:{feature_name}")
+            for key in keys:
+                current_count = data[today].get(key, 0)
+                data[today][key] = current_count + 1
+
             self._save_data(data)
-            logger.debug(f"[QuotaManager] Recorded error '{error_type}': {current_count + 1}")
+            logger.debug(f"[QuotaManager] Recorded error '{error_type}' (feature={feature_name})")
 
 quota_manager = QuotaManager()
