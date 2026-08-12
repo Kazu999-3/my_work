@@ -38,9 +38,16 @@ logging.basicConfig(
     ]
 )
 
-# ポータルの/coachページと同じGEMINI_API_KEYを共有すると、一括同期が対話側のクォータを
-# 食い潰す(逆もまた然り)。GEMINI_API_KEY_BATCHを.envに設定すればそちらを優先的に使う。
-# 未設定の場合は従来通りの挙動にフォールバックする。
+# 【現状の運用方針(2026-08-12確認)】GEMINI_API_KEY_BATCHは.envに未設定のままで、
+# 実際にはGEMINI_API_KEY_FREEにフォールバックしている。つまり一括更新はポータルの
+# /coachページや他のPythonスクリプト(reddit_scout/lol_trend_collector/dict_synthesizer等)
+# と同じキー・同じ実クォータを意図的に共有する方針とし、専用キーによる分離は行わない
+# (取得・管理のコストより、共有のまま自動再開に任せる方を優先するとのユーザー判断)。
+# そのため1日に処理できる体数は他の利用状況次第で数体〜十数体程度に留まりやすいが、
+# champ_db_bulk_updater.py自体は自動再開スケジューラ(edge_worker_daemon.py)により
+# クォータが空き次第自動的に続きを処理するため、手動操作は不要。
+# GEMINI_API_KEY_BATCHを.envに設定すれば、コードの変更無しに専用キーへ切り替えられる
+# (このフォールバックの仕組み自体は残してある)。
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY_BATCH") or os.environ.get("GEMINI_API_KEY_FREE") or os.environ.get("GEMINI_API_KEY")
 QUEUE_FILE = Path("d:/my_work/02_FACTORY/_LOL/champion_update_queue.json")
 
