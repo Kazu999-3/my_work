@@ -15,6 +15,7 @@ try:
     from v2_CORE._LOL.power_spike_generator import generate_power_spike
     from v2_CORE._LOL.champ_id_normalizer import get_latest_ddragon_version, to_display_patch_version
     from v2_CORE._LOL.herald import herald
+    from v2_CORE.ai_helper import sync_corrections_to_insights
 except ImportError:
     sys.path.append(str(Path(__file__).resolve().parent.parent.parent))
     from v2_CORE.settings import settings
@@ -22,6 +23,7 @@ except ImportError:
     from v2_CORE._LOL.power_spike_generator import generate_power_spike
     from v2_CORE._LOL.champ_id_normalizer import get_latest_ddragon_version, to_display_patch_version
     from v2_CORE._LOL.herald import herald
+    from v2_CORE.ai_helper import sync_corrections_to_insights
 
 dotenv.load_dotenv(Path("d:/my_work/.env"))
 
@@ -218,6 +220,15 @@ def run_bulk_update():
     # デフォルトキー解決にフォールバックさせる)。
     from google import genai
     batch_client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
+
+    # 一括更新のたびに、まだベクトル化されていない確定済み訂正(dict_known_corrections)を
+    # evolved_insightsへ少しずつ追いつかせる。失敗しても辞典本体の更新は止めない。
+    try:
+        synced = sync_corrections_to_insights(batch_client)
+        if synced:
+            logging.info(f"🧠 [insight_sync] {synced}件の訂正事例を意味検索用に新規ベクトル化しました。")
+    except Exception as e:
+        logging.warning(f"⚠️ [insight_sync] 訂正事例のベクトル化に失敗しましたが処理を継続します: {e}")
 
     processed_count = 0
     consecutive_db_failures = 0

@@ -11,7 +11,7 @@ from google import genai
 # パス追加
 sys.path.append(os.path.join(os.path.dirname(__file__), "..", ".."))
 from v2_CORE.settings import settings
-from v2_CORE.ai_helper import generate_content_safe
+from v2_CORE.ai_helper import generate_content_safe, fetch_similar_insights
 from v2_CORE.logger_config import setup_sovereign_logging
 from v2_CORE.knowledge_revisions import record_matchup_sentinel_revision
 from v2_CORE._LOL.champ_id_normalizer import normalize_champion_id, get_latest_ddragon_version, to_display_patch_version
@@ -157,6 +157,20 @@ def collect_and_save_champion_trend(champion: str, role: str, client=None, on_ph
     reflections_context = fetch_soloq_reflections(champion, settings.SUPABASE_URL, settings.SUPABASE_KEY)
     if reflections_context:
         notes_context = f"{notes_context}\n\n{reflections_context}" if notes_context else reflections_context
+
+    # 別チャンピオンで確定した訂正でも、意味的に近い内容なら同じ誤りをここで繰り返さないよう
+    # 意味検索(evolved_insights)で横断的に拾う。champion名の完全一致検索
+    # (championKnowledge.ts側のdict_known_corrections検索)を補完する位置づけ。
+    try:
+        similar_insights = fetch_similar_insights(client, f"{champion} {role} ジャングル運用の注意点")
+    except Exception as e:
+        logger.warning(f"Failed to fetch similar insights for {champion}: {e}")
+        similar_insights = []
+    if similar_insights:
+        insight_lines = ["【意味的に類似する、他チャンピオンで確定した過去の訂正事例（参考・鵜呑み厳禁）】"]
+        insight_lines += [f"- {i.get('insight_text', '')}" for i in similar_insights if i.get("insight_text")]
+        insights_context = "\n".join(insight_lines)
+        notes_context = f"{notes_context}\n\n{insights_context}" if notes_context else insights_context
     
     jg_instructions = ""
     jg_json_schema = ""

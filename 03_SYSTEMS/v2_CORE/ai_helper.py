@@ -405,3 +405,64 @@ def fetch_similar_insights(client, query_text: str, threshold: float = 0.6, limi
     return []
 
 
+def sync_corrections_to_insights(client, limit: int = 20) -> int:
+    """dict_known_correctionsのうち、まだevolved_insightsに埋め込まれていないものを
+    ベクトル化して蓄積する。
+
+    championKnowledge.ts(ポータル側の全AI生成共通レイヤー)はdict_known_corrections
+    をchampion名の完全一致でしか検索できず、「別チャンピオンでの意味的に近い誤り」を
+    横断的に拾えない。evolved_insightsはもともとnote記事のCVR/PVから学ぶ収益化
+    パイプライン専用だったが、そのパイプラインが削除され死蔵していたため、この
+    横断検索用途に転用した(2026-08-12)。champ_db_bulk_updater.pyの実行のたびに
+    少しずつ追いつく。例外は投げず、新規に埋め込んだ件数を返す。
+    """
+    supabase_url = os.environ.get("SUPABASE_URL")
+    supabase_key = os.environ.get("SUPABASE_KEY")
+    if not supabase_url or not supabase_key or not client:
+        return 0
+
+    import httpx
+    headers = {
+        "apikey": supabase_key, "Authorization": f"Bearer {supabase_key}",
+        "Content-Type": "application/json"
+    }
+    try:
+        r = httpx.get(
+            f"{supabase_url}/rest/v1/evolved_insights?select=source_correction_id&source_correction_id=not.is.null",
+            headers=headers, timeout=10
+        )
+        already_synced = {row["source_correction_id"] for row in r.json()} if r.status_code == 200 else set()
+
+        r = httpx.get(
+            f"{supabase_url}/rest/v1/dict_known_corrections"
+            f"?select=id,champion,wrong_claim,correct_info&order=created_at.desc&limit={limit}",
+            headers=headers, timeout=10
+        )
+        if r.status_code != 200:
+            return 0
+        corrections = [c for c in r.json() if c["id"] not in already_synced]
+    except Exception as e:
+        logger.warning(f"[AIHelper] Failed to fetch dict_known_corrections for insight sync: {e}")
+        return 0
+
+    synced = 0
+    for c in corrections:
+        insight_text = f"【{c['champion']}】誤り: {c['wrong_claim']} → 正しくは: {c['correct_info']}"
+        embedding = get_embedding(client, insight_text)
+        if not embedding:
+            continue
+        try:
+            payload = {
+                "champion": c["champion"],
+                "insight_text": insight_text,
+                "embedding": embedding,
+                "source_correction_id": c["id"],
+            }
+            res = httpx.post(f"{supabase_url}/rest/v1/evolved_insights", headers=headers, json=payload, timeout=10)
+            if res.status_code in (200, 201):
+                synced += 1
+        except Exception as e:
+            logger.warning(f"[AIHelper] Failed to insert evolved_insight for correction {c['id']}: {e}")
+    return synced
+
+
