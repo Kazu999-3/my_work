@@ -44,6 +44,23 @@ export function LibraryTabContentInner() {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }, [selectedArticle]);
+
+  // この記事が実際に辞典生成プロンプトへ何回採用されたか(knowledge_usage_log)。
+  // 「記事数」ではなく「再利用率」を可視化するための指標(2026-08-12)。
+  const [usageCount, setUsageCount] = useState<number | null>(null);
+  useEffect(() => {
+    if (!selectedArticle?.id || !supabase) { setUsageCount(null); return; }
+    let cancelled = false;
+    supabase
+      .from('knowledge_usage_log')
+      .select('id', { count: 'exact', head: true })
+      .eq('source_table', 'personal_knowledge')
+      .eq('source_id', String(selectedArticle.id))
+      .then(({ count }: { count: number | null }) => {
+        if (!cancelled) setUsageCount(count ?? 0);
+      });
+    return () => { cancelled = true; };
+  }, [selectedArticle?.id]);
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
   const [groupMode, setGroupMode] = useState<'champion' | 'keyword'>('champion');
@@ -720,6 +737,18 @@ export function LibraryTabContentInner() {
               <div className="flex flex-wrap gap-2 text-xs text-gray-400 items-center">
                 <span className="flex items-center gap-2 bg-black/5 px-3 py-1.5 rounded-full font-bold uppercase tracking-widest border border-black/10"><User size={14} className="text-violet-700" /> AI AGENT</span>
                 <span className="flex items-center gap-2 bg-black/5 px-3 py-1.5 rounded-full font-bold uppercase tracking-widest border border-black/10"><Clock size={14} className="text-violet-700" /> {isMounted && selectedArticle.created_at ? new Date(selectedArticle.created_at).toLocaleString('ja-JP') : '日付不明'}</span>
+                {usageCount !== null && (
+                  <span
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full font-bold border ${
+                      usageCount > 0
+                        ? 'bg-emerald-100 text-emerald-700 border-emerald-200'
+                        : 'bg-gray-100 text-gray-400 border-gray-200'
+                    }`}
+                    title="この記事が辞典生成のAIプロンプトに実際に採用された回数"
+                  >
+                    🔁 辞典採用: {usageCount}回
+                  </span>
+                )}
                 {selectedArticle.champion && (
                   <span className="flex items-center gap-1.5 bg-violet-100 text-violet-700 border border-violet-200 px-3 py-1.5 rounded-full font-bold">
                     🏆 {selectedArticle.champion}

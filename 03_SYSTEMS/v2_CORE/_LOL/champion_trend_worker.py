@@ -11,7 +11,7 @@ from google import genai
 # パス追加
 sys.path.append(os.path.join(os.path.dirname(__file__), "..", ".."))
 from v2_CORE.settings import settings
-from v2_CORE.ai_helper import generate_content_safe, fetch_similar_insights
+from v2_CORE.ai_helper import generate_content_safe, fetch_similar_insights, log_knowledge_usage
 from v2_CORE.logger_config import setup_sovereign_logging
 from v2_CORE.knowledge_revisions import record_matchup_sentinel_revision
 from v2_CORE._LOL.champ_id_normalizer import normalize_champion_id, get_latest_ddragon_version, to_display_patch_version
@@ -61,7 +61,7 @@ def fetch_champion_notes(champ_id: str, supabase_url: str, supabase_key: str) ->
     """Supabaseのchampion_notesから最新の攻略ノート・記事を取得する"""
     champ_id = normalize_champion_id(champ_id)
     if not supabase_url or not supabase_key: return ""
-    url = f"{supabase_url}/rest/v1/champion_notes?champion=ilike.{champ_id}&order=created_at.desc&limit=5"
+    url = f"{supabase_url}/rest/v1/champion_notes?champion=ilike.{champ_id}&select=id,title,body&order=created_at.desc&limit=5"
     headers = {"apikey": supabase_key, "Authorization": f"Bearer {supabase_key}"}
     try:
         r = httpx.get(url, headers=headers, timeout=10)
@@ -73,6 +73,7 @@ def fetch_champion_notes(champ_id: str, supabase_url: str, supabase_key: str) ->
                     title = n.get("title") or "無題"
                     body = (n.get("body") or "").strip()[:300]
                     lines.append(f"- 【{title}】 {body}")
+                log_knowledge_usage("champion_notes", [n["id"] for n in notes], champ_id)
                 return "\n".join(lines)
     except Exception as e:
         logger.warning(f"Failed to fetch champion_notes for {champ_id}: {e}")
@@ -94,7 +95,7 @@ def fetch_soloq_reflections(champ_id: str, supabase_url: str, supabase_key: str)
     if not supabase_url or not supabase_key: return ""
     url = (
         f"{supabase_url}/rest/v1/soloq_reflections?champion=ilike.{champ_id}"
-        "&select=enemy_champion,win,matchup_memo,reflection_note,next_focus_point"
+        "&select=id,enemy_champion,win,matchup_memo,reflection_note,next_focus_point"
         "&order=created_at.desc&limit=5"
     )
     headers = {"apikey": supabase_key, "Authorization": f"Bearer {supabase_key}"}
@@ -102,6 +103,7 @@ def fetch_soloq_reflections(champ_id: str, supabase_url: str, supabase_key: str)
         r = httpx.get(url, headers=headers, timeout=10)
         if r.status_code == 200:
             lines = []
+            used_ids = []
             for row in r.json():
                 memo = (row.get("matchup_memo") or "").strip()
                 note = (row.get("reflection_note") or "").strip()
@@ -111,7 +113,9 @@ def fetch_soloq_reflections(champ_id: str, supabase_url: str, supabase_key: str)
                 result = "勝利" if row.get("win") else "敗北"
                 snippet = " / ".join(x for x in (memo, note) if x)[:300]
                 lines.append(f"- vs {enemy} ({result}): {snippet}")
+                used_ids.append(row["id"])
             if lines:
+                log_knowledge_usage("soloq_reflections", used_ids, champ_id)
                 return "\n".join(["【プレイヤー自身の実戦振り返り（直近5件のうちメモありのもの）】", *lines])
     except Exception as e:
         logger.warning(f"Failed to fetch soloq_reflections for {champ_id}: {e}")
@@ -133,7 +137,7 @@ def fetch_personal_knowledge(champ_id: str, supabase_url: str, supabase_key: str
     if not supabase_url or not supabase_key: return ""
     url = (
         f"{supabase_url}/rest/v1/personal_knowledge?champion=ilike.{champ_id}"
-        "&select=title,content&order=created_at.desc&limit=5"
+        "&select=id,title,content&order=created_at.desc&limit=5"
     )
     headers = {"apikey": supabase_key, "Authorization": f"Bearer {supabase_key}"}
     try:
@@ -146,6 +150,7 @@ def fetch_personal_knowledge(champ_id: str, supabase_url: str, supabase_key: str
                     title = n.get("title") or "無題"
                     body = (n.get("content") or "").strip()[:300]
                     lines.append(f"- 【{title}】 {body}")
+                log_knowledge_usage("personal_knowledge", [n["id"] for n in notes], champ_id)
                 return "\n".join(lines)
     except Exception as e:
         logger.warning(f"Failed to fetch personal_knowledge for {champ_id}: {e}")
@@ -246,6 +251,7 @@ def collect_and_save_champion_trend(champion: str, role: str, client=None, on_ph
         insight_lines += [f"- {i.get('insight_text', '')}" for i in similar_insights if i.get("insight_text")]
         insights_context = "\n".join(insight_lines)
         notes_context = f"{notes_context}\n\n{insights_context}" if notes_context else insights_context
+        log_knowledge_usage("evolved_insights", [i["id"] for i in similar_insights if i.get("id")], champion)
     
     jg_instructions = ""
     jg_json_schema = ""

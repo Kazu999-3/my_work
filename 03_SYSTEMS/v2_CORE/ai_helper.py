@@ -419,6 +419,34 @@ def fetch_similar_insights(client, query_text: str, threshold: float = 0.78, lim
     return []
 
 
+def log_knowledge_usage(source_table: str, ids: list, champion: str = None) -> None:
+    """知識ソース(champion_notes/soloq_reflections/personal_knowledge/evolved_insights)が
+    実際に辞典生成プロンプトへ採用された記録をknowledge_usage_logへ残す。
+
+    これらのソースは毎回プロンプトに混ぜ込まれているが、どの知見が実際に採用された
+    かを一切計測しておらず、「記事数」はあっても「再利用率」を測る手段が無かった
+    (note記事群のKnowledge Object成果指標の考え方を参考に、2026-08-12追加)。
+    失敗しても本処理は継続する(例外は投げない)。
+    """
+    if not ids:
+        return
+    supabase_url = settings.SUPABASE_URL or os.environ.get("SUPABASE_URL")
+    supabase_key = settings.SUPABASE_KEY or os.environ.get("SUPABASE_KEY")
+    if not supabase_url or not supabase_key:
+        return
+    headers = {
+        "apikey": supabase_key,
+        "Authorization": f"Bearer {supabase_key}",
+        "Content-Type": "application/json"
+    }
+    rows = [{"source_table": source_table, "source_id": str(i), "champion": champion} for i in ids]
+    try:
+        import httpx
+        httpx.post(f"{supabase_url}/rest/v1/knowledge_usage_log", headers=headers, json=rows, timeout=10)
+    except Exception as e:
+        logger.warning(f"[AIHelper] Failed to log knowledge usage for {source_table}: {e}")
+
+
 def sync_corrections_to_insights(client, limit: int = 20) -> int:
     """dict_known_correctionsのうち、まだevolved_insightsに埋め込まれていないものを
     ベクトル化して蓄積する。
