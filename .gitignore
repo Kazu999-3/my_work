@@ -35,6 +35,11 @@ scratch/
 # src/shared/ 配下はソースコードが import するデータファイル（例: ktm_tiers.json）。
 # これを無視すると手元では動くのにVercel/Botのクリーンビルドで Module not found になる。
 !**/src/shared/*.json
+# 辞典一括更新のキュー進捗(champ_db_bulk_updater.py)。champ-dict-update.ymlが
+# 実行後にgit commitで永続化する設計だが、*.jsonに巻き込まれてgit add自体が
+# 常に黙って失敗しており、GitHub Actions実行のたびにキューが失われ、
+# 毎回全チャンピオンを最初からやり直していた(2026-08-12発覚)。
+!02_FACTORY/_LOL/champion_update_queue.json
 # Supabase Edge Functions (memory-encoder/stats-collector)のimport map。tsconfig.jsonと同じ理由
 # (2026-08-04発覚)でこれも*.jsonに巻き込まれ未追跡だった。本番デプロイ済み関数が参照する設定のため必須。
 !supabase/functions/*/deno.json

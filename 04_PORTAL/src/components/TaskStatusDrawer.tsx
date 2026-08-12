@@ -254,7 +254,15 @@ export default function TaskStatusDrawer({ collapsed = false, align = 'left' }: 
                         {TASK_LABELS[t.task_type] || t.task_type}
                         {t.payload?.champion && <span className="text-stone-500 font-normal"> ({t.payload.champion})</span>}
                       </span>
-                      {(t.task_type === 'champion_trend' || RETRYABLE_TASK_TYPES.has(t.task_type)) && (
+                      {t.task_type === 'champion_db_bulk_update' ? (
+                        <Link
+                          href="/champions?tab=ai-update"
+                          onClick={() => setOpen(false)}
+                          className="shrink-0 px-2 py-0.5 bg-rose-600 hover:bg-rose-700 text-white font-bold text-[10px] rounded-md shadow flex items-center gap-1"
+                        >
+                          状況を見る
+                        </Link>
+                      ) : (t.task_type === 'champion_trend' || RETRYABLE_TASK_TYPES.has(t.task_type)) && (
                         <button
                           onClick={() => handleRetryTask(t)}
                           disabled={retryingTaskId === t.id}

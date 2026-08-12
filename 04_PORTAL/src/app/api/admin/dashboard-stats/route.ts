@@ -32,6 +32,7 @@ export async function GET(req: NextRequest) {
       { count: youtubeErrorCount },
       { data: systemMetricsRow },
       { data: dictReviewNotif },
+      { data: champdbBulkProgress },
     ] = await Promise.all([
       // ワーカーハートビート
       supabase.from('edge_tasks').select('*').eq('id', heartbeatId).maybeSingle(),
@@ -94,6 +95,17 @@ export async function GET(req: NextRequest) {
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle(),
+      // 「要対応」パネル用: 辞典一括更新の進捗ハートビート行(champ_db_bulk_updater.pyが
+      // save_queueのたびにUPSERTする固定ID行)。champion_db_bulk_updateのedge_task自体は
+      // edge_worker_daemon.py側でサブプロセスさえ正常終了すれば内部でsuspendedしていても
+      // 常に"completed"にされるため、下のfailedTaskData(status=failed検出)では
+      // 一切引っかからない。一括更新がAPI制限で一時停止していても「リアルタイム
+      // タスクキュー」から完全に消えて見えてしまう問題(2026-08-12発覚)を防ぐため、
+      // この行を直接見てstatus==='suspended'なら別途要対応に加える。
+      supabase.from('edge_tasks')
+        .select('status, payload, updated_at')
+        .eq('id', '00000000-0000-0000-0000-000000000002')
+        .maybeSingle(),
     ]);
 
     // (task_type, payload)ごとに最新の1件だけを残し、それが failed のものだけを
@@ -106,6 +118,25 @@ export async function GET(req: NextRequest) {
     const failedTaskData = Array.from(latestByKey.values())
       .filter((t) => t.status === 'failed')
       .slice(0, 10);
+
+    // 辞典一括更新が内部でsuspended(API制限等で一時停止)している場合、上のデデュープ
+    // では検知できないため別枠で先頭に追加する。
+    const bulkProgress = champdbBulkProgress?.payload as any;
+    if (champdbBulkProgress?.status === 'suspended' && bulkProgress) {
+      failedTaskData.unshift({
+        id: 'champdb_bulk_progress',
+        task_type: 'champion_db_bulk_update',
+        payload: {
+          completed: bulkProgress.completed,
+          total: bulkProgress.total,
+          patch_version: bulkProgress.patch_version,
+        },
+        status: 'suspended',
+        error_message: `${bulkProgress.completed ?? 0}/${bulkProgress.total ?? '?'}体完了、API制限等により一時停止中です`,
+        updated_at: champdbBulkProgress.updated_at,
+        executor: null,
+      });
+    }
 
     // ワーカー判定 (DBのupdated_at と payload.last_active の双方からタイムスタンプをパース)
     let workerActive = false;
