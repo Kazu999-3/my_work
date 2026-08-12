@@ -349,7 +349,14 @@ def get_embedding(client, text: str) -> list:
         return []
     
     # 429 回避のためのレートリミッターチェック
-    api_key = os.environ.get("GEMINI_API_KEY_FREE") or os.environ.get("GEMINI_API_KEY")
+    # settings(.envをpydanticで読み込み済み)を優先し、os.environへの直読みは
+    # dotenv.load_dotenv()を呼んでいない呼び出し元(champion_trend_worker.py単体実行等)
+    # 向けのフォールバックとする(2026-08-12、この不整合により類似検索が静かに
+    # 空振りし続けるバグとして発覚)。
+    api_key = (
+        settings.GEMINI_API_KEY_FREE or settings.GEMINI_API_KEY
+        or os.environ.get("GEMINI_API_KEY_FREE") or os.environ.get("GEMINI_API_KEY")
+    )
     if api_key:
         APIGateway.wait_if_needed(api_key, feature_name="embedding")
         
@@ -368,16 +375,23 @@ def get_embedding(client, text: str) -> list:
     return []
 
 
-def fetch_similar_insights(client, query_text: str, threshold: float = 0.6, limit: int = 3) -> list:
+def fetch_similar_insights(client, query_text: str, threshold: float = 0.78, limit: int = 3) -> list:
     """
     クエリテキストに関連する過去の進化ルール（Evolved Insights）を Supabase pgvector からコサイン類似度で検索する。
+
+    thresholdは元0.6だったが、実データ検証(2026-08-12)で「Graves Jungle運用の
+    注意点」というクエリに対し、無関係なZyraの訂正(勝率ピーク時期の話)が
+    類似度0.66で拾われてしまうことを確認した。無関係なチャンピオンの訂正内容が
+    紛れ込むと、AIが誤った類推でリライトしてしまうリスクがあるため、
+    デフォルトを0.78へ引き上げて安全側に倒す(訂正データが十分溜まった時点で
+    再調整を検討する)。
     """
     embedding = get_embedding(client, query_text)
     if not embedding:
         return []
-    
-    supabase_url = os.environ.get("SUPABASE_URL")
-    supabase_key = os.environ.get("SUPABASE_KEY")
+
+    supabase_url = settings.SUPABASE_URL or os.environ.get("SUPABASE_URL")
+    supabase_key = settings.SUPABASE_KEY or os.environ.get("SUPABASE_KEY")
     if not supabase_url or not supabase_key:
         logger.warning("[AIHelper] Supabase credentials not found. Skipping similar insights fetch.")
         return []
@@ -416,8 +430,8 @@ def sync_corrections_to_insights(client, limit: int = 20) -> int:
     横断検索用途に転用した(2026-08-12)。champ_db_bulk_updater.pyの実行のたびに
     少しずつ追いつく。例外は投げず、新規に埋め込んだ件数を返す。
     """
-    supabase_url = os.environ.get("SUPABASE_URL")
-    supabase_key = os.environ.get("SUPABASE_KEY")
+    supabase_url = settings.SUPABASE_URL or os.environ.get("SUPABASE_URL")
+    supabase_key = settings.SUPABASE_KEY or os.environ.get("SUPABASE_KEY")
     if not supabase_url or not supabase_key or not client:
         return 0
 

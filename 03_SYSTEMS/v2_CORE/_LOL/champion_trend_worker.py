@@ -226,13 +226,23 @@ def collect_and_save_champion_trend(champion: str, role: str, client=None, on_ph
     # 別チャンピオンで確定した訂正でも、意味的に近い内容なら同じ誤りをここで繰り返さないよう
     # 意味検索(evolved_insights)で横断的に拾う。champion名の完全一致検索
     # (championKnowledge.ts側のdict_known_corrections検索)を補完する位置づけ。
+    # 無関係なチャンピオンの訂正が紛れ込みAIが誤った類推でリライトする事故を避けるため、
+    # 閾値は既定(0.78)よりさらに高くして呼ぶ(2026-08-12、実データ検証でthreshold=0.6
+    # だと無関係な訂正が拾われることを確認したため)。
     try:
-        similar_insights = fetch_similar_insights(client, f"{champion} {role} ジャングル運用の注意点")
+        similar_insights = fetch_similar_insights(
+            client, f"{champion} {role} ジャングル運用の注意点", threshold=0.82
+        )
     except Exception as e:
         logger.warning(f"Failed to fetch similar insights for {champion}: {e}")
         similar_insights = []
     if similar_insights:
-        insight_lines = ["【意味的に類似する、他チャンピオンで確定した過去の訂正事例（参考・鵜呑み厳禁）】"]
+        insight_lines = [
+            "【意味的に類似する、他チャンピオンで確定した過去の訂正事例】"
+            "このチャンピオン自身の話ではない可能性があるため、内容が本当にこのチャンピオン・"
+            "この文脈にも当てはまると確信できる場合のみ参考にし、少しでも関係が薄いと感じたら"
+            "完全に無視すること。"
+        ]
         insight_lines += [f"- {i.get('insight_text', '')}" for i in similar_insights if i.get("insight_text")]
         insights_context = "\n".join(insight_lines)
         notes_context = f"{notes_context}\n\n{insights_context}" if notes_context else insights_context
