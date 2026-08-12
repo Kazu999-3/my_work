@@ -1,0 +1,40 @@
+name: Riot Jungle Timing Update
+
+# ⑤(ジャングル序盤タイミングのAI推定が不正確)・①(Riot APIで面白い情報ないの？)への対応。
+# エメラルド帯の実試合(Match Timeline API)からフルクリア時間・コアアイテム完成タイミングの
+# 実測値を収集し、champion_jungle_timing_samples/aggへ保存する。
+# riot_jungle_timing_collector.pyはネットワーク取得とSupabase REST APIへの直接書き込みのみで
+# ローカルファイルへの書き込みを行わないため、lane-role-update.ymlと同様にd:/my_work
+# シンボリックリンクの回避策は不要。
+
+on:
+  schedule:
+    - cron: '0 18 * * 4'   # 毎週金曜 03:00 JST（木曜18:00 UTC）
+  workflow_dispatch:        # 手動実行用
+
+jobs:
+  riot-jungle-timing-update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r 03_SYSTEMS/requirements.txt
+
+      - name: Run Riot jungle timing collector
+        env:
+          RIOT_API_KEY: ${{ secrets.RIOT_API_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || secrets.SUPABASE_SERVICE_KEY || secrets.SUPABASE_KEY }}
+          PYTHONPATH: 03_SYSTEMS
+        run: |
+          python 03_SYSTEMS/v2_CORE/_LOL/riot_jungle_timing_collector.py

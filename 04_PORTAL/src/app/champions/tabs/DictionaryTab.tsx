@@ -104,6 +104,10 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
     early_game_score: number; mid_game_score: number; late_game_score: number;
     peak_window: string; summary: string;
   } | null>(null);
+  // Riot Timeline APIから収集したジャングル序盤タイミングの実測値(エメラルド帯、2026-08-13)
+  const [realJungleTiming, setRealJungleTiming] = useState<{
+    sampleCount: number; avgFullClearSec: number | null; avgFirstCoreSec: number | null; avgSecondCoreSec: number | null; tier: string;
+  } | null>(null);
   const [editingStrategy, setEditingStrategy] = useState(false);
   const [saving, setSaving] = useState(false);
   // 成功時はsaving状態がfalseに戻るだけで明示表示が無く、保存されたか確信が持てなかった
@@ -311,6 +315,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
 
         setMatchupsList(detail.matchupsList || []);
         setPowerSpikeScores(detail.powerSpikeScores || null);
+        setRealJungleTiming(detail.realJungleTiming || null);
 
         // 下書き (champ_draft_{champId}) のチェックと自動復元
         try {
@@ -334,6 +339,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
         setMatchupsList([]);
         setPowerSpikeScores(null);
         setPastInterrogations([]);
+        setRealJungleTiming(null);
       } finally {
         if (!cancelled) setDetailLoading(false);
       }
@@ -1011,6 +1017,26 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                   <p className="text-[11px] text-gray-400 mt-2">
                     未取得の項目は、上部の「最新トレンド取得」ボタンでAIが攻略サイトを調査して自動入力します。
                   </p>
+                )}
+
+                {/* 🎮 Riot Timeline APIから収集した実測値(エメラルド帯)。AI推定値は上書きせず別枠表示(2026-08-13) */}
+                {realJungleTiming && (
+                  <div className="mt-3 pt-3 border-t border-black/10">
+                    <p className="text-[11px] text-gray-400 font-bold mb-2 flex items-center gap-1.5">
+                      🎮 実測値（{realJungleTiming.tier}帯・{realJungleTiming.sampleCount}試合平均・概算）
+                    </p>
+                    <div className="flex gap-2 flex-wrap items-center">
+                      <span className="px-3 py-1.5 bg-sky-50 border border-sky-200 rounded-lg text-xs font-bold text-sky-700">
+                        フルクリア {formatTimingSec(realJungleTiming.avgFullClearSec)}
+                      </span>
+                      <span className="px-3 py-1.5 bg-sky-50 border border-sky-200 rounded-lg text-xs font-bold text-sky-700">
+                        1コア完成 {formatTimingSec(realJungleTiming.avgFirstCoreSec)}
+                      </span>
+                      <span className="px-3 py-1.5 bg-sky-50 border border-sky-200 rounded-lg text-xs font-bold text-sky-700">
+                        2コア完成 {formatTimingSec(realJungleTiming.avgSecondCoreSec)}
+                      </span>
+                    </div>
+                  </div>
                 )}
               </div>
             )}

@@ -13,7 +13,7 @@ export async function GET(req: Request) {
     const champId = searchParams.get('champion');
     if (!champId) return NextResponse.json({ error: 'champion が必要です' }, { status: 400 });
 
-    const [factsRes, matchupsRes, spikeRes, interrogationRes] = await Promise.all([
+    const [factsRes, matchupsRes, spikeRes, interrogationRes, jungleTimingRes] = await Promise.all([
       // --- 正本: champion_facts (SSOT) ---
       supabase.from('champion_facts').select('*').ilike('champion', champId).maybeSingle(),
       // --- 対面メモ: matchup_sentinel（GLOBAL以外） ---
@@ -22,10 +22,20 @@ export async function GET(req: Request) {
       supabase.from('champion_power_spikes').select('early_game_score, mid_game_score, late_game_score, peak_window, summary').ilike('champion', champId).maybeSingle(),
       // --- 反省ログ ---
       supabase.from('matchup_sentinel').select('strategy, raw_data, created_at').eq('enemy', 'PROCESS_INTERROGATION'),
+      // --- Riot実測ジャングルタイミング(エメラルド帯、AI推定値とは別枠、2026-08-13) ---
+      supabase.from('champion_jungle_timing_agg').select('sample_count, avg_full_clear_sec, avg_first_core_sec, avg_second_core_sec, tier').ilike('champion', champId).maybeSingle(),
     ]);
 
     const fact = factsRes.data;
     const matchupsList = matchupsRes.data && matchupsRes.data.length > 0 ? matchupsRes.data : [];
+    const jt = jungleTimingRes.data;
+    const realJungleTiming = jt ? {
+      sampleCount: jt.sample_count,
+      avgFullClearSec: jt.avg_full_clear_sec,
+      avgFirstCoreSec: jt.avg_first_core_sec,
+      avgSecondCoreSec: jt.avg_second_core_sec,
+      tier: jt.tier,
+    } : null;
 
     // champion_facts にデータがある場合は正本から構成
     if (fact) {
@@ -66,6 +76,7 @@ export async function GET(req: Request) {
         dictCreatedAt: fact.updated_at || null,
         powerSpikeScores: spikeRes.data || null,
         pastInterrogations,
+        realJungleTiming,
         // SSOT メタ情報（UIがconfidence/last_verified_at等を表示するために返す）
         ssotMeta: {
           confidence: fact.confidence || 'ai_generated',
@@ -126,6 +137,7 @@ export async function GET(req: Request) {
       dictCreatedAt: noteData?.created_at || null,
       powerSpikeScores: spikeRes.data || null,
       pastInterrogations,
+      realJungleTiming,
       ssotMeta: null, // フォールバック中はメタ情報なし
     });
   } catch (err: any) {
