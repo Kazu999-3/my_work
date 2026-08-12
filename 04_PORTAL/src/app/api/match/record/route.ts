@@ -354,6 +354,10 @@ export async function POST(request: Request) {
             correct,
           })
           .eq('id', match.id);
+
+        // 結果が確定するたびに直近の的中率を確認し、コイントス並みまで落ちていれば通知する
+        const { reviewBalancerPredictionAccuracy } = await import('../../../../lib/balancer');
+        await reviewBalancerPredictionAccuracy(supabase).catch(() => {});
       }
     } catch (e) {
       console.warn('[match/record] 予測突き合わせに失敗（続行）:', e);

@@ -872,3 +872,56 @@ export function coreBalanceProposals(players: Player[], ctx: BalanceContext): Pr
   // 切り替え時に綺麗に表示されるように、インデックス順にソートして返却
   return proposals.sort((a, b) => a.id.localeCompare(b.id));
 }
+
+// ============================================================
+// バランサー予測精度の監視 (balancer_predictions の再利用)
+//
+// api/balancer/pending が保存するpredicted_blue_winprob(Elo式、定数400)と
+// api/match/record が結果確定時に埋めるcorrect(的中したか)は、これまで
+// match/history での表示と満足度集計にしか使われておらず、予測式自体の
+// 精度が落ちてきても誰も気づけなかった(2026-08-12発覚)。試合結果が確定する
+// たびに直近の的中率を見て、コイントスと大差ない水準まで落ちていたら管理者へ
+// 通知する。的中率に応じてEloの定数(400)を自動調整することはしない
+// (大会の公平性に直結するうえ、サンプル数が少ない状態での自動調整は
+// 統計的に不安定なため、判断は人に委ねる)。
+// ============================================================
+
+const BALANCER_ACCURACY_MIN_SAMPLES = 15; // これ未満は自動調整判断すら統計的に無意味なため何もしない
+const BALANCER_ACCURACY_ALERT_THRESHOLD = 0.55; // コイントス(50%)とほぼ変わらない水準
+const BALANCER_ACCURACY_NOTIFY_COOLDOWN_DAYS = 7; // 通知の連発防止
+
+export async function reviewBalancerPredictionAccuracy(
+  supabase: any
+): Promise<{ accuracy: number; sampleSize: number; notified: boolean } | null> {
+  const { data: rows } = await supabase
+    .from('balancer_predictions')
+    .select('correct')
+    .not('correct', 'is', null)
+    .order('created_at', { ascending: false })
+    .limit(50);
+
+  if (!rows || rows.length < BALANCER_ACCURACY_MIN_SAMPLES) return null;
+
+  const correctCount = rows.filter((r: any) => r.correct === true).length;
+  const accuracy = correctCount / rows.length;
+  if (accuracy >= BALANCER_ACCURACY_ALERT_THRESHOLD) return { accuracy, sampleSize: rows.length, notified: false };
+
+  const { data: recentNotif } = await supabase
+    .from('admin_notifications')
+    .select('id')
+    .eq('type', 'balancer_accuracy')
+    .gt('created_at', new Date(Date.now() - BALANCER_ACCURACY_NOTIFY_COOLDOWN_DAYS * 24 * 60 * 60 * 1000).toISOString())
+    .limit(1);
+  if (recentNotif && recentNotif.length > 0) return { accuracy, sampleSize: rows.length, notified: false };
+
+  const { createAdminNotification } = await import('./notify');
+  await createAdminNotification({
+    type: 'balancer_accuracy',
+    title: `⚠️ チーム分け予測の的中率が低下しています（直近${rows.length}戦中${correctCount}戦的中）`,
+    body: `的中率 ${(accuracy * 100).toFixed(0)}%（目安: 55%以上）。予測式(Eloの定数400)の見直しを検討してください。`,
+    url: '/balancer',
+    data: { accuracy, sampleSize: rows.length },
+  });
+
+  return { accuracy, sampleSize: rows.length, notified: true };
+}
