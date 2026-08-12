@@ -804,6 +804,20 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                     {qualityResult.issues.map((issue, i) => <li key={i}>{issue}</li>)}
                   </ul>
                 )}
+                {!qualityResult.pass && (
+                  <div className="flex items-center gap-2 mt-2 pt-2 border-t border-rose-200/60">
+                    <span className="text-[11px]">次にすること:</span>
+                    <button
+                      onClick={handleFetchTrend}
+                      disabled={fetchingTrend}
+                      className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-lg text-[11px] disabled:opacity-50 flex items-center gap-1"
+                    >
+                      <RefreshCw size={11} className={fetchingTrend ? "animate-spin" : ""} />
+                      🔄 最新トレンド取得で再生成
+                    </button>
+                    <span className="text-[11px] text-rose-600/70">または上記の問題点を見て手動で編集・保存</span>
+                  </div>
+                )}
               </div>
             )}
 

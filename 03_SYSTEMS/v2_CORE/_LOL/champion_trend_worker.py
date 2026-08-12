@@ -316,8 +316,8 @@ League of Legendsの最新パッチにおける、チャンピオン「{champion
       "player": "プロ選手名 (例: Canyon, Oner, Faker, Chovy, Zeus, ShowMaker, Rulerなど。実在するプロ選手)",
       "team": "チーム名 (例: GEN, T1, DK, HLE, BLGなど)",
       "win_lose": "直近の勝敗 (例: 3勝1敗, 4W-1Lなど)",
-      "build": ["1stコア", "2ndコア", "3rdコア"],
-      "runes": ["キーストーン名", "主要ルーン"],
+      "build": ["1stコア", "2ndコア", "3rdコア"], // アイテム名は日本語版クライアントのカタカナ表記にすること(例: Kraken Slayer→クラーケンスレイヤー、The Collector→精算人)。英語表記のまま出力しないこと
+      "runes": ["キーストーン名", "主要ルーン"], // ルーン名も同様に日本語版クライアントのカタカナ表記にすること(例: Press the Attack→プレスの一撃、Conqueror→征服者)
       "description": "このビルドの特徴や狙いに関する短い日本語の解説（1文。'バースト重視'や'序盤のトレード強化'など簡潔に）"
     }}
   ],
