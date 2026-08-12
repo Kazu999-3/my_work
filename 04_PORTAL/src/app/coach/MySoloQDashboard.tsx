@@ -228,6 +228,64 @@ export default function MySoloQDashboard({ refreshSignal }: { refreshSignal?: nu
         );
       })()}
 
+      {/* 🏷️ 勝因・敗因タグの集計（メンタル相関カードと同じ枠組みで、選択式タグを集計するだけ） */}
+      {!loading && reflections.length > 0 && (() => {
+        const countTags = (list: SoloQReflection[]) => {
+          const counts: Record<string, number> = {};
+          for (const r of list) {
+            for (const tag of r.win_lose_reason_tags || []) {
+              counts[tag] = (counts[tag] || 0) + 1;
+            }
+          }
+          return Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 5);
+        };
+        const winTags = countTags(reflections.filter((r) => r.win));
+        const loseTags = countTags(reflections.filter((r) => !r.win));
+
+        if (winTags.length === 0 && loseTags.length === 0) return null;
+
+        return (
+          <div className="bg-white border border-stone-200 rounded-2xl p-4 mb-4 shadow-sm">
+            <div className="text-xs font-black text-stone-800 mb-2 flex items-center justify-between">
+              <span>🏷️ 勝因・敗因タグの傾向</span>
+              <span className="text-[10px] text-stone-500 font-normal">過去{reflections.length}戦のデータ</span>
+            </div>
+            <div className="grid grid-cols-2 gap-3 text-xs">
+              <div className="bg-emerald-50 p-3 rounded-xl border border-emerald-200">
+                <div className="text-emerald-800 font-bold text-[11px] mb-1.5">🟢 勝因TOP{Math.min(5, winTags.length)}</div>
+                {winTags.length === 0 ? (
+                  <div className="text-stone-400 text-[11px]">データなし</div>
+                ) : (
+                  <ul className="space-y-1">
+                    {winTags.map(([tag, count]) => (
+                      <li key={tag} className="flex justify-between gap-2 text-emerald-900">
+                        <span className="truncate">{tag}</span>
+                        <span className="font-bold shrink-0">{count}回</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+              <div className="bg-rose-50 p-3 rounded-xl border border-rose-200">
+                <div className="text-rose-800 font-bold text-[11px] mb-1.5">🔴 敗因TOP{Math.min(5, loseTags.length)}</div>
+                {loseTags.length === 0 ? (
+                  <div className="text-stone-400 text-[11px]">データなし</div>
+                ) : (
+                  <ul className="space-y-1">
+                    {loseTags.map(([tag, count]) => (
+                      <li key={tag} className="flex justify-between gap-2 text-rose-900">
+                        <span className="truncate">{tag}</span>
+                        <span className="font-bold shrink-0">{count}回</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
       {!loading && filtered.length > 0 && (
         <div className="space-y-3">
           {filtered.map((ref) => (

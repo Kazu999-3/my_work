@@ -79,6 +79,45 @@ def fetch_champion_notes(champ_id: str, supabase_url: str, supabase_key: str) ->
     return ""
 
 
+def fetch_soloq_reflections(champ_id: str, supabase_url: str, supabase_key: str) -> str:
+    """Supabaseのsoloq_reflections(1分振り返り)から、このチャンピオンをプレイした際の
+    実戦メモを取得する。
+
+    AIの辞典リサーチはlolalytics等の外部統計とchampion_notesしか見ておらず、
+    プレイヤー自身が実戦で気づいた対面メモ・反省点(soloq_reflections)が辞典執筆に
+    一切還元されていなかった。champion_notesと同じ枠組みでプロンプトへ混ぜ込み、
+    実戦の気づきをAIの辞典執筆に反映させる(2026-08-12)。soloq_reflectionsは
+    RLSでservice_role専用に閉じているため、champion_notes同様settings.SUPABASE_KEY
+    (service role)でのみ読める。
+    """
+    champ_id = normalize_champion_id(champ_id)
+    if not supabase_url or not supabase_key: return ""
+    url = (
+        f"{supabase_url}/rest/v1/soloq_reflections?champion=ilike.{champ_id}"
+        "&select=enemy_champion,win,matchup_memo,reflection_note,next_focus_point"
+        "&order=created_at.desc&limit=5"
+    )
+    headers = {"apikey": supabase_key, "Authorization": f"Bearer {supabase_key}"}
+    try:
+        r = httpx.get(url, headers=headers, timeout=10)
+        if r.status_code == 200:
+            lines = []
+            for row in r.json():
+                memo = (row.get("matchup_memo") or "").strip()
+                note = (row.get("reflection_note") or "").strip()
+                if not memo and not note:
+                    continue
+                enemy = row.get("enemy_champion") or "不明"
+                result = "勝利" if row.get("win") else "敗北"
+                snippet = " / ".join(x for x in (memo, note) if x)[:300]
+                lines.append(f"- vs {enemy} ({result}): {snippet}")
+            if lines:
+                return "\n".join(["【プレイヤー自身の実戦振り返り（直近5件のうちメモありのもの）】", *lines])
+    except Exception as e:
+        logger.warning(f"Failed to fetch soloq_reflections for {champ_id}: {e}")
+    return ""
+
+
 def collect_and_save_champion_trend(champion: str, role: str, client=None, on_phase=None) -> bool:
     """1チャンピオン分のAIトレンド収集〜保存を行う共通エンジン。
 
@@ -115,6 +154,9 @@ def collect_and_save_champion_trend(champion: str, role: str, client=None, on_ph
     now_str = datetime.now(timezone.utc).strftime("%Y/%m/%d")
     _phase("攻略ノートを参照中...")
     notes_context = fetch_champion_notes(champion, settings.SUPABASE_URL, settings.SUPABASE_KEY)
+    reflections_context = fetch_soloq_reflections(champion, settings.SUPABASE_URL, settings.SUPABASE_KEY)
+    if reflections_context:
+        notes_context = f"{notes_context}\n\n{reflections_context}" if notes_context else reflections_context
     
     jg_instructions = ""
     jg_json_schema = ""
