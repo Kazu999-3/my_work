@@ -170,7 +170,9 @@ function KnowledgeBaseContent() {
           const relatedNote = related.length > 0
             ? `（同じ投稿者の既存記事が${related.length}件あります: ${related.slice(0, 3).map((r) => r.title).join('、')}${related.length > 3 ? '...' : ''}）`
             : '';
-          showFeedback(`新しいナレッジを自動要約して登録しました！${relatedNote}`, 'success');
+          const atomicCount: number = resData?.atomicInsightCount || 0;
+          const atomicNote = atomicCount > 0 ? `（独立した知見を${atomicCount}件、原子的なメモとしても分割保存しました）` : '';
+          showFeedback(`新しいナレッジを自動要約して登録しました！${atomicNote}${relatedNote}`, 'success');
           setInputUrl('');
           setInputMemo('');
           fetchKnowledge(true);

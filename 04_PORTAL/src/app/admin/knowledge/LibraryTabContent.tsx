@@ -231,7 +231,7 @@ export function LibraryTabContentInner() {
       }
       const { data, error } = await supabase
         .from('personal_knowledge')
-        .select('id, created_at, title, content, raw_content, source_url, genre, tags, champion, author')
+        .select('id, created_at, title, content, raw_content, source_url, genre, tags, champion, author, parent_id, is_atomic')
         .order('created_at', { ascending: false })
         .limit(2000);
       if (!error && data) {
@@ -310,6 +310,9 @@ export function LibraryTabContentInner() {
     const q = (debouncedSearch || '').toLowerCase();
     const filtered = articles.filter(a => {
       if (!a) return false;
+      // 原子的な知見(is_atomic)は元記事の詳細画面(「この記事から抽出された知見」)にのみ
+      // 表示し、一覧をフラグメントだらけにしない(2026-08-12)。
+      if (a.is_atomic) return false;
       const titleMatch = a.title ? a.title.toLowerCase().includes(q) : false;
       const champMatch = a.champion ? a.champion.toLowerCase().includes(q) : false;
       const tagsMatch = (a.tags && Array.isArray(a.tags))
@@ -779,6 +782,27 @@ export function LibraryTabContentInner() {
                 )}
               </div>
             )}
+
+            {!editing && !selectedArticle.is_atomic && (() => {
+              // この記事(container)から登録時に分割抽出された、原子的な知見(Zettelkasten方式)。
+              const childInsights = articles.filter((a) => String(a.parent_id) === String(selectedArticle.id));
+              if (childInsights.length === 0) return null;
+              return (
+                <div className="mt-8 pt-6 border-t border-black/10">
+                  <h3 className="text-sm font-black text-gray-900 mb-3 flex items-center gap-2">
+                    🧩 この記事から抽出された知見（{childInsights.length}件）
+                  </h3>
+                  <div className="space-y-2">
+                    {childInsights.map((a) => (
+                      <div key={a.id} className="px-3 py-2.5 rounded-xl bg-black/5 border border-black/10 text-sm">
+                        <div className="font-bold text-gray-900 mb-1">{a.title}</div>
+                        <div className="text-gray-600 text-xs leading-relaxed">{a.content}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
 
             {!editing && selectedArticle.author && (() => {
               // 新たにプロフィールを巡回して取得するのではなく、既にライブラリに

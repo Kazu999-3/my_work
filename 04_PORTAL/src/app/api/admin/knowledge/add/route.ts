@@ -287,6 +287,7 @@ async function analyzeWithGemini(title: string, content: string): Promise<{
   genre: string;
   tags: string[];
   champion: string;
+  atomicInsights: { title: string; summary: string; tags: string[] }[];
 }> {
   const prompt = `以下のインプット情報（Webサイトの内容、X投稿のマルチモーダル画像・動画解析結果、またはメモ書き）を解析し、以下の処理を行ってください。
 
@@ -305,6 +306,10 @@ async function analyzeWithGemini(title: string, content: string): Promise<{
 3. 関連する重要なキーワードタグ（最大8つ）を抽出してください。
 4. このナレッジに最も適した具体的で分かりやすいタイトル（日本語）を決定してください。
 5. LoLの攻略情報である場合、対象となっているチャンピオン名を特定してください（無い場合は 'Unknown' を返却）。
+6. 【原子的な知見への分解（Zettelkasten方式）】: 内容の中に、独立して再利用できる具体的な知見（例：「特定のアイテムビルドの根拠」「特定の局面での立ち回りの結論」）が複数含まれている場合、それぞれを「1つのテーマに限定した短いメモ」として最大5件抽出してください。
+   - 各メモは要約(summary)を2〜4文程度に留め、他の知見と混ぜないこと。
+   - 単一の主張・情報しか無い短い内容の場合は、無理に分解せず空配列 [] を返すこと。
+   - 元の全文網羅ナレッジ(summary)と重複が多くても構わない（こちらは検索・再利用のための短い抜粋という位置づけ）。
 
 出力は、必ず以下のJSONフォーマットのみを返却してください。
 
@@ -313,7 +318,10 @@ async function analyzeWithGemini(title: string, content: string): Promise<{
   "summary": "全情報を一つも漏らさず完全網羅した高密度・圧倒的ボリュームのMarkdownコンテンツ",
   "genre": "選択したジャンル",
   "tags": ["タグ1", "タグ2", "タグ3"],
-  "champion": "特定したチャンピオン名"
+  "champion": "特定したチャンピオン名",
+  "atomicInsights": [
+    { "title": "具体的で短いタイトル", "summary": "2〜4文程度の独立した知見の要約", "tags": ["タグ1"] }
+  ]
 }
 
 [インプット情報]:
@@ -391,6 +399,30 @@ export async function POST(req: NextRequest) {
 
     if (error) throw error;
 
+    // 原子的な知見(Zettelkasten方式)を、元記事(container)の子レコードとして分割保存する。
+    // 「1ノート1アイデア」に反する巨大な塊のまま辞典生成プロンプトへ渡ってノイズが増える
+    // 問題を避けるため、独立して再利用できる知見だけを短く切り出す(2026-08-12)。
+    const atomicInsights = Array.isArray(analyzed.atomicInsights) ? analyzed.atomicInsights.slice(0, 5) : [];
+    if (atomicInsights.length > 0) {
+      const { error: atomicError } = await supabase
+        .from('personal_knowledge')
+        .insert(
+          atomicInsights.map((insight) => ({
+            title: insight.title,
+            content: insight.summary,
+            raw_content: insight.summary,
+            source_url: url || '',
+            genre: analyzed.genre,
+            tags: Array.isArray(insight.tags) ? insight.tags : [],
+            champion: resolvedChampion || getNoChampionMarker('personal_knowledge'),
+            author: authorKey,
+            parent_id: data.id,
+            is_atomic: true,
+          }))
+        );
+      if (atomicError) console.error('❌ [Knowledge Add API] 原子的な知見の保存に失敗:', atomicError);
+    }
+
     // 同じ投稿者(X/note)の既存記事があれば、後から気づけるようここで一緒に返す。
     // 新たにプロフィールを巡回して取得することはせず、既に登録済みのものだけを紐づける。
     let relatedByAuthor: { id: number; title: string; source_url: string | null; created_at: string }[] = [];
@@ -400,6 +432,7 @@ export async function POST(req: NextRequest) {
         .select('id, title, source_url, created_at')
         .eq('author', authorKey)
         .neq('id', data.id)
+        .is('parent_id', null)
         .order('created_at', { ascending: false })
         .limit(10);
       relatedByAuthor = related || [];
@@ -409,6 +442,7 @@ export async function POST(req: NextRequest) {
       success: true,
       message: `ナレッジ「${analyzed.title}」を動画・画像AI解析付きで登録しました。`,
       relatedByAuthor,
+      atomicInsightCount: atomicInsights.length,
       data
     });
 
