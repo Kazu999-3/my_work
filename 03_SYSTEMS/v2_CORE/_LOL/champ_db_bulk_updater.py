@@ -157,7 +157,7 @@ def run_bulk_update():
         except RuntimeError as e:
             logging.error(f"❌ {e}")
             herald.notify_progress(
-                f"❌ **【辞典一括更新 中断】** {e}", portal_link=True, page="champdb", discord=False
+                f"❌ **【辞典一括更新 中断】** {e}", portal_link=True, page="champdb_bulk", discord=False
             )
             return
         logging.info(f"🌐 最新パッチ特定: {patch_version}")
@@ -287,7 +287,7 @@ def run_bulk_update():
         logging.info("⏸️ API制限またはエラーにより、一括更新を安全に一時停止しました。次回実行時に再開します。")
         queue_data["status"] = "suspended"
         save_queue(queue_data)
-        herald.notify_progress("⚠️ **【辞典一括更新一時停止】** API利用上限または一時的な接続エラーのため、一括更新を一時停止しました。残りのチャンピオンは次回実行時に再開します。", portal_link=True, page="champdb", discord=False)
+        herald.notify_progress("⚠️ **【辞典一括更新一時停止】** API利用上限または一時的な接続エラーのため、一括更新を一時停止しました。残りのチャンピオンは次回実行時に再開します。", portal_link=True, page="champdb_bulk", discord=False)
     else:
         # 完了チェック
         still_pending = [cid for cid, info in queue.items() if info["status"] in ("pending", "failed")]
@@ -304,7 +304,7 @@ def run_bulk_update():
             except Exception:
                 pass
             
-            herald.notify_progress("🎉 **【辞典一括更新完了】** 全チャンピオンの統計データとトレンド基本戦略の一括アップデートが完了しました！", portal_link=True, page="champdb", discord=False)
+            herald.notify_progress("🎉 **【辞典一括更新完了】** 全チャンピオンの統計データとトレンド基本戦略の一括アップデートが完了しました！", portal_link=True, page="champdb_bulk", discord=False)
         else:
             logging.info(f"⏸️ ループが終了しました。残り未処理: {len(still_pending)} 件")
             queue_data["status"] = "suspended"
