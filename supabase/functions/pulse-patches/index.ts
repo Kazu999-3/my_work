@@ -66,22 +66,37 @@ serve(async (req) => {
         
         // 新しいパッチが見つかった場合、DBに保存してDiscordへ通知
         console.log(`[Pulse-Patches] NEW PATCH DETECTED: ${patchNo}! Storing to DB...`);
-        
+
         await supabase.from('intelligence_core').insert({
             id: `patch_edge_${patchNo}`,
             content: `New patch ${patchNo} detected by Edge Function.`,
             metadata: { type: "patch_notes", patch: patchNo, source_url: latestLink },
             created_at: new Date().toISOString()
         });
-        
+
+        // 新パッチ検知を、既存の辞典一括更新パイプライン(champ_db_bulk_updater.py)へ
+        // 直接つなぐ。以前はDBのInsertトリガーでstats-collector(MVPとしてNidalee固定、
+        // DDragonの薄いデータでmatchup_sentinelを直接上書きする危険なコード)をキックする
+        // 設計だったが、実際のチャンピオンとは無関係に動くうえ、AIが丁寧にリサーチした
+        // 辞典データを薄いプレースホルダーで上書きしてしまう恐れがあった(2026-08-12発覚、
+        // 幸い実際の汚染は未発生)。ここで直接、ローカルデーモン/GitHub Actionsクラウド
+        // ワーカーの両方が処理できるedge_tasksキューへchampion_db_bulk_updateを起票し、
+        // 検知から実際の辞典更新まで安全につながるようにする。
+        const { error: taskError } = await supabase.from('edge_tasks').insert({
+            task_type: 'champion_db_bulk_update',
+            payload: { source: 'pulse-patches', patch: patchNo },
+            status: 'pending',
+        });
+        if (taskError) {
+            console.error("[Pulse-Patches] Failed to enqueue champion_db_bulk_update:", taskError.message);
+        }
+
         await notifyDiscord(
-            `新パッチ ${patchNo} 到来 (Edge 検知)`, 
-            `公式パッチノートが更新されました。\nこの通知はローカルPCからではなく、**クラウドのエッジサーバー**から自律的に送信されています。`, 
+            `新パッチ ${patchNo} 到来 (Edge 検知)`,
+            `公式パッチノートが更新されました。辞典の一括更新を自動的に起票しました。\nこの通知はローカルPCからではなく、**クラウドのエッジサーバー**から自律的に送信されています。`,
             latestLink
         );
-        
-        // 注意: 後続の重い処理 (RAGや記事生成) は、DBのInsertトリガーで別のEdge Functionをキックするアーキテクチャ(非同期イベント駆動)にするため、ここでは処理を終える。
-        
+
         return new Response(JSON.stringify({ status: "New patch processed", patch: patchNo, url: latestLink }), { headers: { "Content-Type": "application/json" } });
 
     } catch (err: any) {

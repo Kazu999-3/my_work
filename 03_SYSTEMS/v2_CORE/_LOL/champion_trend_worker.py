@@ -118,6 +118,65 @@ def fetch_soloq_reflections(champ_id: str, supabase_url: str, supabase_key: str)
     return ""
 
 
+def fetch_personal_knowledge(champ_id: str, supabase_url: str, supabase_key: str) -> str:
+    """Supabaseのpersonal_knowledge(YouTube動画からAIが抽出した攻略メモ)から、
+    このチャンピオンに関連する知見を取得する。
+
+    youtube_worker.pyが動画から抽出した174件超の攻略メモは、ライブラリ画面での
+    閲覧とファクトチェックの照合にしか使われておらず、辞典生成のプロンプトには
+    一切渡っていなかった(2026-08-12発覚)。champion_notes/soloq_reflectionsと
+    同じ枠組みで混ぜ込む。personal_knowledgeはLoL以外の記事も雑多に含むため、
+    championカラムでの絞り込みに限定する(champion未設定の行=無関係な記事は
+    自動的に除外される)。
+    """
+    champ_id = normalize_champion_id(champ_id)
+    if not supabase_url or not supabase_key: return ""
+    url = (
+        f"{supabase_url}/rest/v1/personal_knowledge?champion=ilike.{champ_id}"
+        "&select=title,content&order=created_at.desc&limit=5"
+    )
+    headers = {"apikey": supabase_key, "Authorization": f"Bearer {supabase_key}"}
+    try:
+        r = httpx.get(url, headers=headers, timeout=10)
+        if r.status_code == 200:
+            notes = r.json()
+            if notes:
+                lines = ["【YouTube動画から抽出した攻略メモ（最新5件）】"]
+                for n in notes:
+                    title = n.get("title") or "無題"
+                    body = (n.get("content") or "").strip()[:300]
+                    lines.append(f"- 【{title}】 {body}")
+                return "\n".join(lines)
+    except Exception as e:
+        logger.warning(f"Failed to fetch personal_knowledge for {champ_id}: {e}")
+    return ""
+
+
+def fetch_pro_trend_notes(champ_id: str) -> str:
+    """pro-build-trackerスキルが出力したプロビルド速報(01_INTEL/tactics/pro_trend_{champion}_*.md)
+    があれば読み込む。
+
+    matchup_sentinel.pro_builds は完全にGemini任せで実データの裏取りが一切無く、
+    スキルの出力もこの辞典ワーカーからは一度も参照されていなかった(2026-08-12発覚)。
+    ファイルが存在しない場合(スキルが未実行の場合)は空文字を返すだけなので、
+    今後スキルを使うたびに自動で辞典生成へ反映されるようになる。
+    """
+    champ_id = normalize_champion_id(champ_id)
+    try:
+        tactics_dir = settings.NEXUS_DIR / "tactics"
+        if not tactics_dir.exists():
+            return ""
+        candidates = [p for p in tactics_dir.glob("pro_trend_*.md") if champ_id.lower() in p.name.lower()]
+        if not candidates:
+            return ""
+        latest = max(candidates, key=lambda p: p.stat().st_mtime)
+        body = latest.read_text(encoding="utf-8", errors="replace").strip()[:1500]
+        return f"【プロビルド速報（{latest.name}、pro-build-trackerスキルの出力）】\n{body}"
+    except Exception as e:
+        logger.warning(f"Failed to fetch pro trend notes for {champ_id}: {e}")
+    return ""
+
+
 def collect_and_save_champion_trend(champion: str, role: str, client=None, on_phase=None) -> bool:
     """1チャンピオン分のAIトレンド収集〜保存を行う共通エンジン。
 
@@ -157,6 +216,12 @@ def collect_and_save_champion_trend(champion: str, role: str, client=None, on_ph
     reflections_context = fetch_soloq_reflections(champion, settings.SUPABASE_URL, settings.SUPABASE_KEY)
     if reflections_context:
         notes_context = f"{notes_context}\n\n{reflections_context}" if notes_context else reflections_context
+    knowledge_context = fetch_personal_knowledge(champion, settings.SUPABASE_URL, settings.SUPABASE_KEY)
+    if knowledge_context:
+        notes_context = f"{notes_context}\n\n{knowledge_context}" if notes_context else knowledge_context
+    pro_trend_context = fetch_pro_trend_notes(champion)
+    if pro_trend_context:
+        notes_context = f"{notes_context}\n\n{pro_trend_context}" if notes_context else pro_trend_context
 
     # 別チャンピオンで確定した訂正でも、意味的に近い内容なら同じ誤りをここで繰り返さないよう
     # 意味検索(evolved_insights)で横断的に拾う。champion名の完全一致検索
