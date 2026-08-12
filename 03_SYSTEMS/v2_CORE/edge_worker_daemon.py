@@ -265,12 +265,18 @@ class EdgeWorkerDaemon:
     def send_heartbeat(self):
         """Supabase の edge_tasks に対し、固定IDで生存シグナル（ハートビート）を UPSERT 送信する"""
         heartbeat_id = "00000000-0000-0000-0000-000000000000"
+        # ローカルデーモン専用のハートビート行(edge-cloud-worker.ymlも同じ固定ID(...000000)へ
+        # 5分おきにフォールバック更新するため、そちらだけを見ているとローカルデーモンが
+        # 実際には落ちていても「クラウド側の更新で最近動いたように」見えてしまい、
+        # ローカルの生死だけを判定できなかった(2026-08-12発覚)。誰も書き込みを共有しない
+        # 専用IDを別に立てることで、ローカルデーモン限定の死活監視を可能にする。
+        local_only_heartbeat_id = "00000000-0000-0000-0000-000000000005"
         url = f"{self.supabase_url}/rest/v1/edge_tasks"
         now_str = datetime.now(timezone.utc).isoformat()
-        
+
         headers = self.headers.copy()
         headers["Prefer"] = "resolution=merge-duplicates"
-        
+
         payload = {
             "id": heartbeat_id,
             "task_type": "worker_heartbeat",
@@ -282,13 +288,19 @@ class EdgeWorkerDaemon:
             },
             "updated_at": now_str
         }
-        
+
         try:
             res = httpx.post(url, headers=headers, json=payload, timeout=5)
             if res.status_code not in (200, 201, 204):
                 logger.error(f"❌ ハートビート送信(UPSERT)失敗: {res.status_code} {res.text}")
         except Exception as e:
             logger.error(f"❌ ハートビート送信中に通信エラーが発生しました: {e}")
+
+        try:
+            local_payload = {**payload, "id": local_only_heartbeat_id, "task_type": "local_daemon_heartbeat"}
+            httpx.post(url, headers=headers, json=local_payload, timeout=5)
+        except Exception as e:
+            logger.error(f"❌ ローカル専用ハートビート送信中に通信エラーが発生しました: {e}")
 
     def _insert_initial_heartbeat(self):
         """初回のみハートビート用ダミーレコードを POST 挿入する"""

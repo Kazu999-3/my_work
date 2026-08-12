@@ -37,6 +37,11 @@ REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 PORTAL_URL = os.environ.get("PORTAL_URL", "").rstrip("/")
 PORTAL_BOT_SECRET = os.environ.get("PORTAL_BOT_SECRET", "")
+DISCORD_WEBHOOK = os.environ.get("DISCORD_WEBHOOK", "")
+
+# edge_worker_daemon.py専用のハートビートID(共有の...000000はこのワーカー自身も
+# 5分おきにフォールバック更新するため、ローカルデーモン単体の生死判定には使えない)。
+LOCAL_DAEMON_HEARTBEAT_ID = "00000000-0000-0000-0000-000000000005"
 
 TASK_LABELS = {
     "champion_trend": ("チャンピオントレンド更新", "/champions"),
@@ -243,9 +248,78 @@ def ensure_bulk_update_resumed():
         print(f"❌ [BulkUpdateResumer] 再起票失敗: {status}", file=sys.stderr)
 
 
+def notify_discord_direct(title: str, description: str, color: int = 0xe74c3c):
+    """ポータル経由ではなく、Discord Webhookへ直接投稿する(このワーカーは通常
+    notify_portal()でポータルの通知ベルにしか投げないが、ローカルデーモン死活監視は
+    ユーザーがDiscordで気づく想定のため直接投稿する)。"""
+    if not DISCORD_WEBHOOK:
+        return
+    payload = {
+        "embeds": [{
+            "title": title,
+            "description": description,
+            "color": color,
+            "timestamp": now_iso(),
+            "footer": {"text": "Antigravity OS (Edge Cloud Worker)"},
+        }]
+    }
+    req = urllib.request.Request(DISCORD_WEBHOOK, data=json.dumps(payload).encode(), method="POST")
+    req.add_header("Content-Type", "application/json")
+    try:
+        urllib.request.urlopen(req, timeout=10)
+    except Exception as e:
+        print(f"  [Discord直接通知失敗] {e}", file=sys.stderr)
+
+
+def ensure_local_daemon_healthy():
+    """
+    ローカル常駐デーモン(edge_worker_daemon.py)は5秒おきに専用のハートビート行
+    (LOCAL_DAEMON_HEARTBEAT_ID)を更新する。このワーカー自身はPCの電源状態に関係なく
+    5分おきに動くため、そのハートビートが一定時間(既定10分、5秒間隔に対して十分な
+    バッファ)更新されていなければ「PCがオフか、デーモンだけがクラッシュしたか」を
+    区別はできないが、少なくとも今動いていないことを検知して知らせる(2026-08-12、
+    「デーモンが落ちても誰も気づけない」という報告を受けて追加)。
+    連続アラートを防ぐため3時間に1回だけ通知する。
+    """
+    status, rows = sb("GET", f"edge_tasks?id=eq.{LOCAL_DAEMON_HEARTBEAT_ID}&select=updated_at")
+    if status != 200 or not rows or not rows[0].get("updated_at"):
+        return
+
+    try:
+        updated_at = datetime.fromisoformat(rows[0]["updated_at"].replace("Z", "+00:00"))
+    except Exception:
+        return
+
+    age_minutes = (datetime.now(timezone.utc) - updated_at).total_seconds() / 60
+    if age_minutes < 10:
+        return  # 生きている
+
+    cutoff = (datetime.now(timezone.utc) - timedelta(hours=3)).isoformat()
+    status, existing = sb(
+        "GET",
+        f"edge_tasks?task_type=eq.local_daemon_down_alert&created_at=gt.{cutoff}&select=id&limit=1",
+    )
+    if status == 200 and existing:
+        print("🔧 [LocalDaemonWatchdog] 直近3時間以内に通知済みのためスキップします。")
+        return
+
+    sb("POST", "edge_tasks", {
+        "task_type": "local_daemon_down_alert",
+        "payload": {"age_minutes": round(age_minutes)},
+        "status": "completed",
+    })
+    print(f"🔴 [LocalDaemonWatchdog] ローカルデーモンのハートビートが{round(age_minutes)}分以上更新されていません。")
+    notify_discord_direct(
+        "🔴 ローカル常駐デーモンが応答していません",
+        f"edge_worker_daemon.pyのハートビートが{round(age_minutes)}分以上更新されていません。"
+        f"PCがオフ/スリープか、デーモンだけがクラッシュしている可能性があります。",
+    )
+
+
 def main():
     ensure_channel_monitor_scheduled()
     ensure_bulk_update_resumed()
+    ensure_local_daemon_healthy()
 
     types_str = ",".join(TASK_MAP.keys())
     status, tasks = sb(
