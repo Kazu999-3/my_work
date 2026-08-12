@@ -14,15 +14,23 @@ const normalizeKey = (str: string) => String(str || '').toLowerCase().replace(/[
 
 export async function GET(req: Request) {
   try {
-    const [{ data: factsData, error: factsError }, { data: spikeRows, error: spikeError }] = await Promise.all([
+    const [{ data: factsData, error: factsError }, { data: spikeRows, error: spikeError }, { data: laneRoleRows, error: laneRoleError }, { data: favRows, error: favError }] = await Promise.all([
       // champion_facts (SSOT) から一覧用データを取得
       supabase.from('champion_facts')
         .select('champion, updated_at, patch, patch_meta, jg_type, jg_description, jg_blind_pickable, jg_counter_pickable, strengths, confidence, auto_updated_at, last_verified_at')
         .eq('archived', false),
       supabase.from('champion_power_spikes').select('champion, early_game_score, mid_game_score, late_game_score'),
+      // op.gg由来のレーン絞り込み実データ(migration 62, 2026-08-12)
+      supabase.from('champion_lane_roles').select('champion, role'),
+      // お気に入り(/api/champions/favorite が書き込む先)。書き込み経路は実装済みだったが、
+      // ここが常に空配列を返す実装のまま放置されていたため、実際はlocalStorage単独運用と
+      // 変わらず「他デバイス/localStorageクリアで消える」状態になっていた(2026-08-12発覚)。
+      supabase.from('matchup_sentinel').select('champion, raw_data').eq('raw_data->>is_favorited', 'true'),
     ]);
     if (factsError) throw factsError;
     if (spikeError) throw spikeError;
+    if (laneRoleError) throw laneRoleError;
+    if (favError) throw favError;
 
     const dates: Record<string, string> = {};
     const pending: Record<string, boolean> = {};
@@ -30,7 +38,7 @@ export async function GET(req: Request) {
     const jgStyles: Record<string, any> = {};
     // SSOT: 各チャンピオンの信頼度・最終確認日をUIに返す
     const confidences: Record<string, string> = {};
-    const dbFavorites: string[] = [];
+    const dbFavorites: string[] = (favRows || []).map((row: any) => row.champion);
 
     (factsData || []).forEach((row: any) => {
       const normKey = normalizeKey(row.champion);
@@ -89,7 +97,18 @@ export async function GET(req: Request) {
       powerSpikes[aliasKey] = spikeObj;
     });
 
-    return NextResponse.json({ dates, pending, patchMetas, jgStyles, powerSpikes, dbFavorites, confidences });
+    // op.gg由来のレーン絞り込みデータ。1チャンピオンが複数レーンを持ちうるため配列で保持する。
+    const laneRoles: Record<string, string[]> = {};
+    (laneRoleRows || []).forEach((row: any) => {
+      const normKey = normalizeKey(row.champion);
+      const aliasKey = ALIAS_MAP[normKey] || normKey;
+      for (const key of [row.champion, normKey, aliasKey]) {
+        if (!laneRoles[key]) laneRoles[key] = [];
+        if (!laneRoles[key].includes(row.role)) laneRoles[key].push(row.role);
+      }
+    });
+
+    return NextResponse.json({ dates, pending, patchMetas, jgStyles, powerSpikes, dbFavorites, confidences, laneRoles });
   } catch (err: any) {
     console.error('[champions/dictionary-overview] error:', err);
     return NextResponse.json({ error: err.message }, { status: 500 });

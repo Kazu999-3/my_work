@@ -1,0 +1,38 @@
+name: Champion Lane Role Update
+
+# 辞典のレーン絞り込みデータ(champion_lane_roles)をop.ggから週次で再取得する。
+# lane_role_collector.pyはネットワーク取得とSupabase REST APIへの直接書き込みのみで
+# ローカルファイルへの書き込みを行わないため、champ-dict-update.ymlのような
+# d:/my_work シンボリックリンクの回避策は不要。champ-dict-update.yml(日曜)とは
+# 別曜日にして負荷を分散する。
+
+on:
+  schedule:
+    - cron: '0 18 * * 2'   # 毎週水曜 03:00 JST（火曜18:00 UTC）
+  workflow_dispatch:        # 手動実行用
+
+jobs:
+  lane-role-update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r 03_SYSTEMS/requirements.txt
+
+      - name: Run lane role collector
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || secrets.SUPABASE_SERVICE_KEY || secrets.SUPABASE_KEY }}
+          PYTHONPATH: 03_SYSTEMS
+        run: |
+          python 03_SYSTEMS/v2_CORE/_LOL/lane_role_collector.py

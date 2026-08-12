@@ -48,6 +48,8 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
   const [champPending, setChampPending] = useState<Record<string, boolean>>({});
   const [champPatchMetas, setChampPatchMetas] = useState<Record<string, any>>({});
   const [champJgStyles, setChampJgStyles] = useState<Record<string, any>>({});
+  // op.gg由来のレーン絞り込み実データ(2026-08-12、migration 62)。1体が複数レーンを持つ場合がある
+  const [champLaneRoles, setChampLaneRoles] = useState<Record<string, string[]>>({});
   // 一覧グリッドでも「いつ頃強いか」がひと目でわかるように、全チャンピオン分を一括取得する
   const [champPowerSpikes, setChampPowerSpikes] = useState<Record<string, { early_game_score: number; mid_game_score: number; late_game_score: number }>>({});
   const [typeFilter, setTypeFilter] = useState<'ALL' | 'FARM' | 'GANK' | 'INVASION' | 'TANK'>(() => (searchParams.get('type') as any) || 'ALL');
@@ -262,6 +264,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
           setChampPending(overview?.pending || {});
           setChampPatchMetas(overview?.patchMetas || {});
           setChampJgStyles(overview?.jgStyles || {});
+          setChampLaneRoles(overview?.laneRoles || {});
           setChampions(fetchedChampions);
 
           // localStorage と Supabase のお気に入りをマージしてセット
@@ -602,8 +605,15 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
           if (normalizedDbRole === 'SUPPORT') normalizedDbRole = 'SUP';
           return normalizedDbRole === roleFilter;
         }
-        
-        // 2. なければ DDragon の tags ベースでフォールバック判定
+
+        // 2. op.gg由来の実データ（複数レーン許容）があればそれを使う(2026-08-12)。
+        //    DDragonタグの粗い推測だけでは「全く当てにならない」との指摘への対応。
+        const opggRoles = champLaneRoles[c.id];
+        if (opggRoles && opggRoles.length > 0) {
+          return opggRoles.includes(roleFilter);
+        }
+
+        // 3. op.ggにも載っていない場合のみ DDragon の tags ベースでフォールバック判定
         const allowedTags = ROLE_MAP[roleFilter] || [];
         return c.tags?.some((tag: string) => allowedTags.includes(tag));
       });
@@ -670,7 +680,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
       }
       return a.name.localeCompare(b.name);
     });
-  }, [champions, search, sortOrder, champDates, showPendingOnly, champPending, roleFilter, showFavoritesOnly, favoriteChamps, typeFilter, pickFilter, champJgStyles]);
+  }, [champions, search, sortOrder, champDates, showPendingOnly, champPending, roleFilter, showFavoritesOnly, favoriteChamps, typeFilter, pickFilter, champJgStyles, champLaneRoles]);
 
   const containerVariants = { hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.02 } } };
   const itemVariants = { hidden: { scale: 0.9, opacity: 0 }, visible: { scale: 1, opacity: 1 } };

@@ -2,6 +2,27 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 import { resolveToRosterChampion } from '../../../../lib/dictFactCheck';
 
+// サイドバー常設のFavoritesPanel.tsxはlocalStorageのみを読んでおり、Supabase側に
+// 書き込み済みのお気に入りを一切読み返していなかった。localStorageがクリアされたり
+// 別デバイス/別ブラウザから見た場合に「お気に入りが消える」原因になっていたため(2026-08-12発覚、③)、
+// 一覧取得用のGETを追加する。POSTと同様、認証は要求しない（閲覧できる人なら誰でも安全な個人設定のため）。
+export async function GET() {
+  try {
+    if (!supabase) {
+      return NextResponse.json({ error: 'Supabase環境変数が設定されていません。' }, { status: 500 });
+    }
+    const { data, error } = await supabase
+      .from('matchup_sentinel')
+      .select('champion')
+      .eq('raw_data->>is_favorited', 'true');
+    if (error) throw error;
+    return NextResponse.json({ champions: (data || []).map((row: any) => row.champion) });
+  } catch (err: any) {
+    console.error('❌ [Favorite API] GET Error:', err);
+    return NextResponse.json({ error: 'お気に入りの取得に失敗しました: ' + err.message }, { status: 500 });
+  }
+}
+
 // お気に入りは管理者専用の辞典編集とは違い、閲覧できる人なら誰でも安全にトグルできる
 // 個人の好み設定なので、あえて管理者セッションを要求しない（要求すると、管理者ログインしていない
 // スマホ閲覧時にトグルがSupabaseへ届かず、PCとスマホでお気に入りが同期しない不具合になる）。

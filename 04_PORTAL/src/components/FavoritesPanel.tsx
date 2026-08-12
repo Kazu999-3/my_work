@@ -99,6 +99,26 @@ export default function FavoritesPanel({ isCollapsed = false, isAdmin = false }:
     };
   }, [loadFavorites]);
 
+  // localStorageのみに依存していたため、別デバイス/別ブラウザでのトグルや
+  // localStorageクリアで「お気に入りが消える」不具合があった(2026-08-12発覚、③)。
+  // Supabase側の実データを取得し、localStorageへマージして真の状態に追いつかせる。
+  useEffect(() => {
+    if (!isAdmin) return;
+    let cancelled = false;
+    fetch("/api/champions/favorite")
+      .then((res) => res.json())
+      .then((data) => {
+        if (cancelled || !Array.isArray(data?.champions)) return;
+        const current = getFavorites();
+        const merged = Array.from(new Set([...current.champions, ...data.champions]));
+        if (merged.length !== current.champions.length) {
+          saveFavorites({ ...current, champions: merged });
+        }
+      })
+      .catch((err) => console.error("❌ Failed to fetch favorites from Supabase:", err));
+    return () => { cancelled = true; };
+  }, [isAdmin]);
+
   // チャンピオン辞典(/champions)・ナレッジ記事(/admin/knowledge)はともに管理者専用のため、
   // 一般訪問者にはお気に入りパネル自体を表示しない（リンク先がログイン画面になるため）(#④)。
   const showChampions = isAdmin && favs.champions.length > 0;
@@ -109,6 +129,13 @@ export default function FavoritesPanel({ isCollapsed = false, isAdmin = false }:
 
   const removeChamp = (id: string) => {
     toggleFavoriteChampion(id);
+    // localStorageだけ外してSupabase側を放置すると、次回のDBマージ(上のuseEffect)で
+    // 復活してしまうため、DictionaryTab.tsxのトグルと同様にSupabaseへも解除を反映する。
+    fetch("/api/champions/favorite", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ champion: id, is_favorited: false }),
+    }).catch((err) => console.error("❌ Failed to sync favorite removal to Supabase:", err));
   };
 
   const removeArticle = (id: number) => {
