@@ -312,7 +312,7 @@ export default function Home() {
             )}
             {needsAttention.dictReviewCount > 0 && (
               <Link
-                href="/admin/knowledge?tab=maintenance"
+                href="/admin/dict-health"
                 className="flex items-center justify-between gap-2.5 p-2.5 rounded-xl bg-white border border-black/5 hover:border-rose-300 transition-colors"
               >
                 <span className="text-xs font-bold text-stone-900">辞典の鮮度レビューで要対応 {needsAttention.dictReviewCount}件（週次自動検知）</span>

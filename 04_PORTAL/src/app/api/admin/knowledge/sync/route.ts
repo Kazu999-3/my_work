@@ -155,7 +155,7 @@ export async function POST(req: Request) {
             type: 'dict_review',
             title: `⚠️ 辞典の矛盾疑いを検知: ${championName}`,
             body: `${found.summary}\n（攻略ライブラリ同期直後の即時チェックで検知）`,
-            url: '/admin/knowledge?tab=maintenance',
+            url: '/admin/dict-health',
             data: { staleCount: 1 },
           });
         }

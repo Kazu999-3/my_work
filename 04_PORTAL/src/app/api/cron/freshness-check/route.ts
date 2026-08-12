@@ -37,7 +37,7 @@ export async function GET(req: Request) {
           const ageLabel = s.ageHours === null ? 'データなし' : s.ageHours < 24 ? `${Math.round(s.ageHours)}時間前` : `${Math.round(s.ageHours / 24)}日前`;
           return `・${s.label}: 最終更新 ${ageLabel}（想定 ${s.expectedIntervalHours}時間以内）`;
         }).join('\n'),
-        url: '/admin/knowledge?tab=maintenance',
+        url: '/admin/dict-health',
         data: { staleCount: stale.length },
       });
     }

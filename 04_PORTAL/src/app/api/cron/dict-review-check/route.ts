@@ -62,7 +62,7 @@ export async function GET(req: Request) {
         type: 'dict_review',
         title: `🔄 辞典鮮度レビュー: ${needsAttention.length + contradictions.length + revisionHotspots.length}件が要対応`,
         body: bodyParts.join('\n'),
-        url: '/admin/knowledge?tab=maintenance',
+        url: '/admin/dict-health',
         data: {
           needsAttention: needsAttention.length + contradictions.length + revisionHotspots.length,
           updateCount, archiveCount, contradictionCount: contradictions.length,

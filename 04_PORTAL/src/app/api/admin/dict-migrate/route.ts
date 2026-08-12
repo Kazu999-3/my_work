@@ -104,6 +104,13 @@ export async function GET(req: Request) {
           jg_description: jg.description || null,
           jg_blind_pickable: typeof jg.blind_pickable === 'number' ? jg.blind_pickable : null,
           jg_counter_pickable: typeof jg.counter_pickable === 'number' ? jg.counter_pickable : null,
+          // full_clear_time_sec以下3項目: 以前はここでコピーされておらず、AIが実際に
+          // 値を返していても自動同期(この日次cron)では辞典本体(SSOT)に一切反映されず、
+          // 個別に「保存」ボタンを手動で押した時(champions/save)だけ救われる状態だった
+          // (2026-08-12発覚)。
+          full_clear_time_sec: typeof jg.full_clear_time_sec === 'number' ? jg.full_clear_time_sec : null,
+          first_core_timing_sec: typeof jg.first_core_timing_sec === 'number' ? jg.first_core_timing_sec : null,
+          second_core_timing_sec: typeof jg.second_core_timing_sec === 'number' ? jg.second_core_timing_sec : null,
           patch: rd.patch_meta?.patch || null,
           source: rd.source || 'champ_db',
           // --- SSOT新カラム (51_champion_facts_as_ssot.sql) ---
