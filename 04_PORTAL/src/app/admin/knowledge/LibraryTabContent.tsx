@@ -214,7 +214,7 @@ export function LibraryTabContentInner() {
       }
       const { data, error } = await supabase
         .from('personal_knowledge')
-        .select('id, created_at, title, content, raw_content, source_url, genre, tags, champion')
+        .select('id, created_at, title, content, raw_content, source_url, genre, tags, champion, author')
         .order('created_at', { ascending: false })
         .limit(2000);
       if (!error && data) {
@@ -750,6 +750,34 @@ export function LibraryTabContentInner() {
                 )}
               </div>
             )}
+
+            {!editing && selectedArticle.author && (() => {
+              // 新たにプロフィールを巡回して取得するのではなく、既にライブラリに
+              // 登録済みの記事の中から同じ投稿者(author: "x:handle" / "note:username")
+              // のものだけを紐づけて表示する(2026-08-12)。
+              const sameAuthorArticles = articles.filter(
+                (a) => a.author === selectedArticle.author && String(a.id) !== String(selectedArticle.id)
+              );
+              if (sameAuthorArticles.length === 0) return null;
+              return (
+                <div className="mt-8 pt-6 border-t border-black/10">
+                  <h3 className="text-sm font-black text-gray-900 mb-3 flex items-center gap-2">
+                    📌 同じ投稿者の他の記事（{sameAuthorArticles.length}件）
+                  </h3>
+                  <div className="space-y-2">
+                    {sameAuthorArticles.map((a) => (
+                      <button
+                        key={a.id}
+                        onClick={() => setSelectedArticle(a)}
+                        className="w-full text-left px-3 py-2 rounded-xl glass-panel glass-panel-hover text-sm text-gray-700 hover:text-gray-900 truncate"
+                      >
+                        {a.title}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
 
             {!editing && <ArticleRevisionHistory articleId={selectedArticle.id} />}
           </div>

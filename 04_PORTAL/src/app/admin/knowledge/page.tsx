@@ -165,7 +165,12 @@ function KnowledgeBaseContent() {
           body: JSON.stringify(payload)
         });
         if (res.ok) {
-          showFeedback('新しいナレッジを自動要約して登録しました！', 'success');
+          const resData = await res.json().catch(() => ({}));
+          const related: { title: string }[] = resData?.relatedByAuthor || [];
+          const relatedNote = related.length > 0
+            ? `（同じ投稿者の既存記事が${related.length}件あります: ${related.slice(0, 3).map((r) => r.title).join('、')}${related.length > 3 ? '...' : ''}）`
+            : '';
+          showFeedback(`新しいナレッジを自動要約して登録しました！${relatedNote}`, 'success');
           setInputUrl('');
           setInputMemo('');
           fetchKnowledge(true);

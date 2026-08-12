@@ -123,7 +123,7 @@ async function analyzeXPostImagesWithGemini(photos: any[], videos: any[], tweetT
 // ============================================================
 // URLからタイトルと本文（多重フォールバック対応）をスクレイピング
 // ============================================================
-async function extractUrlContent(url: string): Promise<{ title: string; textContent: string }> {
+async function extractUrlContent(url: string): Promise<{ title: string; textContent: string; authorKey: string | null }> {
   try {
     const isXPost = /x\.com|twitter\.com/i.test(url) && /status\/\d+/i.test(url);
 
@@ -134,6 +134,7 @@ async function extractUrlContent(url: string): Promise<{ title: string; textCont
       if (tweetId) {
         let tweetText = '';
         let author = 'X(Twitter) ユーザー';
+        let authorScreenName = '';
         let photos: any[] = [];
         let videos: any[] = [];
 
@@ -146,7 +147,8 @@ async function extractUrlContent(url: string): Promise<{ title: string; textCont
           if (vxRes.ok) {
             const vxData = await vxRes.json();
             tweetText = vxData.text || '';
-            author = `${vxData.user_name || 'Unknown'} (@${vxData.user_screen_name || ''})`;
+            authorScreenName = vxData.user_screen_name || '';
+            author = `${vxData.user_name || 'Unknown'} (@${authorScreenName})`;
             if (vxData.media_urls) {
               photos = vxData.media_urls;
             }
@@ -176,7 +178,8 @@ async function extractUrlContent(url: string): Promise<{ title: string; textCont
               const tweet = fxData.tweet;
               if (tweet) {
                 tweetText = tweet.text || '';
-                author = `${tweet.author?.name || 'Unknown'} (@${tweet.author?.screen_name || ''})`;
+                authorScreenName = tweet.author?.screen_name || '';
+                author = `${tweet.author?.name || 'Unknown'} (@${authorScreenName})`;
                 photos = tweet.media?.photos || [];
                 videos = tweet.media?.videos || [];
               }
@@ -221,10 +224,16 @@ async function extractUrlContent(url: string): Promise<{ title: string; textCont
 
         return {
           title: `X解析 (${author}): ${(tweetText || url).slice(0, 30)}...`,
-          textContent: finalContent
+          textContent: finalContent,
+          authorKey: authorScreenName ? `x:${authorScreenName}` : null
         };
       }
     }
+
+    // note.comの記事URLは note.com/{username}/n/{noteId} という形式のため、
+    // スクレイピングせずURLから直接投稿者(ユーザー名)を取り出せる。
+    const noteMatch = url.match(/note\.com\/([^/?#]+)\/n\//i);
+    const noteAuthorKey = noteMatch ? `note:${noteMatch[1]}` : null;
 
     const res = await fetch(url, {
       headers: {
@@ -258,10 +267,14 @@ async function extractUrlContent(url: string): Promise<{ title: string; textCont
       .trim()
       .slice(0, 15000);
 
-    return { title: title || 'Webコンテンツ', textContent: textContent || `URL (${url}) からの抽出ナレッジ` };
+    return {
+      title: title || 'Webコンテンツ',
+      textContent: textContent || `URL (${url}) からの抽出ナレッジ`,
+      authorKey: noteAuthorKey
+    };
   } catch (e: any) {
     console.error(`URLスクレイピングエラー: ${e.message}`);
-    return { title: 'Webコンテンツ', textContent: `URL: ${url} (自動抽出結果)` };
+    return { title: 'Webコンテンツ', textContent: `URL: ${url} (自動抽出結果)`, authorKey: null };
   }
 }
 
@@ -342,11 +355,13 @@ export async function POST(req: NextRequest) {
 
     let title = '手書きメモ';
     let rawContent = '';
+    let authorKey: string | null = null;
 
     if (url) {
       const extracted = await extractUrlContent(url);
       title = extracted.title;
       rawContent = extracted.textContent;
+      authorKey = extracted.authorKey;
     } else if (text) {
       rawContent = text;
       title = text.split('\n')[0].slice(0, 50);
@@ -368,16 +383,32 @@ export async function POST(req: NextRequest) {
         source_url: url || '',
         genre: analyzed.genre,
         tags: analyzed.tags,
-        champion: resolvedChampion || getNoChampionMarker('personal_knowledge')
+        champion: resolvedChampion || getNoChampionMarker('personal_knowledge'),
+        author: authorKey
       }])
       .select()
       .single();
 
     if (error) throw error;
 
+    // 同じ投稿者(X/note)の既存記事があれば、後から気づけるようここで一緒に返す。
+    // 新たにプロフィールを巡回して取得することはせず、既に登録済みのものだけを紐づける。
+    let relatedByAuthor: { id: number; title: string; source_url: string | null; created_at: string }[] = [];
+    if (authorKey) {
+      const { data: related } = await supabase
+        .from('personal_knowledge')
+        .select('id, title, source_url, created_at')
+        .eq('author', authorKey)
+        .neq('id', data.id)
+        .order('created_at', { ascending: false })
+        .limit(10);
+      relatedByAuthor = related || [];
+    }
+
     return NextResponse.json({
       success: true,
       message: `ナレッジ「${analyzed.title}」を動画・画像AI解析付きで登録しました。`,
+      relatedByAuthor,
       data
     });
 
