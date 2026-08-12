@@ -510,6 +510,92 @@ class EdgeWorkerDaemon:
                 logger.error(f"❌ [YoutubeQueueScheduler] エラー: {e}")
             time.sleep(600)  # 10分おき
 
+    def bulk_update_resume_scheduler_loop(self):
+        """
+        チャンピオン辞典一括更新がAPI制限等でsuspended状態のまま放置されると、ユーザーが
+        手動でポータルの「更新を再開」を押さない限り進まなかった(2026-08-12発覚)。
+        30分おきに進捗ハートビート(champdb_bulk_progress)を確認し、suspendedかつ
+        直近1時間以内に再起票していなければ自動でchampion_db_bulk_updateを再起票する。
+        サーキットブレーカーでまだ止まっていれば数十秒で再度suspendするだけで実害は無く、
+        枠が空き次第(APIクォータの日次リセット等)自動的に続きが進むようになる。
+
+        あわせて、「意図的な一時停止(自動再開待ち・そのうち勝手に直る)」と「静かに詰まって
+        いる(自動再開を試みても進捗が動かない・要確認)」を区別できるようにする(2026-08-12)。
+        completed数を毎回記録し、再開を試みても一定回数(既定3回=約1.5時間)変化しなければ、
+        単なるクォータ待ちではなく別の問題(コード側の不具合等)の可能性が高いとみなし、
+        通常のsuspended通知(discord=False)とは別に一度だけ強めのアラートを出す。
+        """
+        time.sleep(60)  # 他のスケジューラの初回起票と時間をずらす
+        STAGNANT_THRESHOLD = 3
+        last_seen_completed = None
+        stagnant_ticks = 0
+        alerted = False
+        while getattr(self, "_heartbeat_active", True):
+            try:
+                status_url = (
+                    f"{self.supabase_url}/rest/v1/edge_tasks"
+                    f"?id=eq.00000000-0000-0000-0000-000000000002&select=status,payload"
+                )
+                res = httpx.get(status_url, headers=self.headers, timeout=10)
+                rows = res.json() if res.status_code == 200 else []
+                row = rows[0] if rows else None
+
+                if not row or row.get("status") != "suspended":
+                    # 稼働中/未初期化ならリセットして「詰まり」判定を仕切り直す
+                    last_seen_completed = None
+                    stagnant_ticks = 0
+                    alerted = False
+                    time.sleep(1800)
+                    continue
+
+                completed = (row.get("payload") or {}).get("completed")
+                if last_seen_completed is not None and completed == last_seen_completed:
+                    stagnant_ticks += 1
+                else:
+                    stagnant_ticks = 0
+                    alerted = False
+                last_seen_completed = completed
+
+                if stagnant_ticks >= STAGNANT_THRESHOLD and not alerted:
+                    logger.error(
+                        f"🔴 [BulkUpdateResumeScheduler] 自動再開を{stagnant_ticks}回試みても"
+                        f"完了数(completed={completed})が変化していません。静かに詰まっている可能性があります。"
+                    )
+                    try:
+                        from v2_CORE._LOL.herald import herald
+                        herald.notify_progress(
+                            f"🔴 **【辞典一括更新: 詰まっている可能性】** 自動再開を{stagnant_ticks}回試みましたが、"
+                            f"完了数（{completed}体）が変化していません。API制限の自動解除待ちではなく、"
+                            f"別の問題（コード側の不具合等）の可能性があるため確認してください。",
+                            portal_link=True, page="champdb_bulk", discord=True
+                        )
+                    except Exception as herald_err:
+                        logger.warning(f"⚠️ [BulkUpdateResumeScheduler] 詰まり通知の送信に失敗: {herald_err}")
+                    alerted = True
+
+                cutoff = (datetime.now(timezone.utc) - timedelta(hours=1)).isoformat().replace("+00:00", "Z")
+                check_url = (
+                    f"{self.supabase_url}/rest/v1/edge_tasks?task_type=eq.champion_db_bulk_update"
+                    f"&created_at=gt.{cutoff}&select=id&limit=1"
+                )
+                check_res = httpx.get(check_url, headers=self.headers, timeout=10)
+                if check_res.status_code == 200 and check_res.json():
+                    logger.info("🔧 [BulkUpdateResumeScheduler] 直近1時間以内に再起票済みのためスキップします。")
+                else:
+                    post_res = httpx.post(
+                        f"{self.supabase_url}/rest/v1/edge_tasks",
+                        headers=self.headers,
+                        json={"task_type": "champion_db_bulk_update", "payload": {"source": "auto_resume"}, "status": "pending"},
+                        timeout=10
+                    )
+                    if post_res.status_code in (200, 201):
+                        logger.info("🔧 [BulkUpdateResumeScheduler] 辞典一括更新(suspended)を自動的に再起票しました。")
+                    else:
+                        logger.error(f"❌ [BulkUpdateResumeScheduler] キューイング失敗: {post_res.status_code} {post_res.text}")
+            except Exception as e:
+                logger.error(f"❌ [BulkUpdateResumeScheduler] エラー: {e}")
+            time.sleep(1800)  # 30分おき
+
     def heartbeat_loop(self):
         """別スレッドで5秒おきにハートビートを送信し続ける"""
         logger.info("📡 バックグラウンド・ハートビート監視スレッドを開始しました。")
@@ -541,6 +627,10 @@ class EdgeWorkerDaemon:
         # バックグラウンドでYouTube動画解析キュー(youtube_queue)の自動起票スレッドを起動
         self.youtube_queue_scheduler_thread = threading.Thread(target=self.youtube_queue_scheduler_loop, daemon=True)
         self.youtube_queue_scheduler_thread.start()
+
+        # バックグラウンドで辞典一括更新のsuspended自動再開スレッドを起動
+        self.bulk_update_resume_scheduler_thread = threading.Thread(target=self.bulk_update_resume_scheduler_loop, daemon=True)
+        self.bulk_update_resume_scheduler_thread.start()
 
         # スリープ防止の開始
         self.prevent_sleep()

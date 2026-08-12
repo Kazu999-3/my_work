@@ -46,6 +46,7 @@ TASK_LABELS = {
     "reddit_scout": ("Redditスカウト", "/champions"),
     "lol_trend_collect": ("LoLトレンド収集", "/champions"),
     "dict_synthesizer": ("辞典シンセサイザー", "/champions"),
+    "champion_db_bulk_update": ("チャンピオン辞典一括更新", "/champions?tab=ai-update"),
 }
 
 
@@ -106,6 +107,14 @@ TASK_MAP = {
     "reddit_scout": ("03_SYSTEMS/v2_CORE/_LOL/reddit_scout.py", build_no_args, 280),
     "lol_trend_collect": ("03_SYSTEMS/v2_CORE/_LOL/lol_trend_collector.py", build_no_args, 280),
     "dict_synthesizer": ("03_SYSTEMS/v2_CORE/_LOL/dict_synthesizer.py", build_no_args, 280),
+    # 注意: champion_db_bulk_updateはここのTASK_MAPに加えない。
+    # champ_db_bulk_updater.pyはd:/my_work/...を直接ハードコードしており、champ-dict-update.yml
+    # 側は"Setup d:/my_work path"ステップでシンボリックリンクを張って対処しているが、
+    # このワークフロー(5分おき)には無い。もしここで処理すると、Linuxランナー上でキューファイルが
+    # 正しいパスに書き込まれず(存在しないドライブ扱いで別物として作成・毎回破棄)、実行のたびに
+    # 233体のキューを新規作成しては失敗するだけの無限ループになる恐れがある。実処理は
+    # ensure_bulk_update_resumed()での起票のみ行い、実行自体はローカルデーモン
+    # (edge_worker_daemon.py、正しいWindowsパスで動く)側に委ねる。
 }
 
 
@@ -198,8 +207,45 @@ def ensure_channel_monitor_scheduled():
         print(f"❌ [ChannelMonitorScheduler] キューイング失敗: {status}", file=sys.stderr)
 
 
+def ensure_bulk_update_resumed():
+    """
+    辞典一括更新がAPI制限等でsuspended状態のまま放置されると、ユーザーが手動で
+    ポータルの「更新を再開」を押さない限り進まなかった(2026-08-12発覚)。5分おきの
+    このワーカー巡回に相乗りし、進捗ハートビート(champdb_bulk_progress)が
+    suspendedかつ直近1時間以内に再起票していなければ、champion_db_bulk_updateを
+    自動的に再起票する。サーキットブレーカーでまだ止まっていれば数十秒で
+    再度suspendするだけで実害は無く、枠が空き次第自動的に続きが進むようになる。
+    """
+    status, rows = sb(
+        "GET",
+        "edge_tasks?id=eq.00000000-0000-0000-0000-000000000002&select=status",
+    )
+    if status != 200 or not rows or rows[0].get("status") != "suspended":
+        return
+
+    cutoff = (datetime.now(timezone.utc) - timedelta(hours=1)).isoformat()
+    status, existing = sb(
+        "GET",
+        f"edge_tasks?task_type=eq.champion_db_bulk_update&created_at=gt.{cutoff}&select=id&limit=1",
+    )
+    if status == 200 and existing:
+        print("🔧 [BulkUpdateResumer] 直近1時間以内に再起票済みのためスキップします。")
+        return
+
+    status, _ = sb("POST", "edge_tasks", {
+        "task_type": "champion_db_bulk_update",
+        "payload": {"source": "auto_resume"},
+        "status": "pending",
+    })
+    if status in (200, 201):
+        print("🔧 [BulkUpdateResumer] 辞典一括更新(suspended)を自動的に再起票しました。")
+    else:
+        print(f"❌ [BulkUpdateResumer] 再起票失敗: {status}", file=sys.stderr)
+
+
 def main():
     ensure_channel_monitor_scheduled()
+    ensure_bulk_update_resumed()
 
     types_str = ",".join(TASK_MAP.keys())
     status, tasks = sb(
