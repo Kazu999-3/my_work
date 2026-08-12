@@ -120,6 +120,31 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
   const [trendMessage, setTrendMessage] = useState('');
   const [trendStartedAt, setTrendStartedAt] = useState<number | null>(null);
   const [trendElapsedSec, setTrendElapsedSec] = useState(0);
+  // Builder-Critic方式の品質チェック(オンデマンド専用、2026-08-12)
+  const [checkingQuality, setCheckingQuality] = useState(false);
+  const [qualityResult, setQualityResult] = useState<{
+    pass: boolean; score: number; issues: string[]; verdictSummary: string; barChampion: string;
+  } | null>(null);
+
+  const handleQualityCheck = async () => {
+    if (!selected) return;
+    setCheckingQuality(true);
+    setQualityResult(null);
+    try {
+      const res = await fetch('/api/admin/champions/quality-check', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ champion: selected.id }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || '品質チェックに失敗しました。');
+      setQualityResult(data.result);
+    } catch (err: any) {
+      alert(err.message || '品質チェックに失敗しました。');
+    } finally {
+      setCheckingQuality(false);
+    }
+  };
   const [champStats, setChampStats] = useState<Record<string, any>>({});
   const [pastInterrogations, setPastInterrogations] = useState<any[]>([]);
 
@@ -755,7 +780,31 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                 <RefreshCw size={16} className={fetchingTrend ? "animate-spin" : ""} />
                 {trendPhase === 'running' ? "AI生成中..." : trendPhase === 'pending' ? "順番待ち中..." : fetchingTrend ? "登録中..." : "最新トレンド取得"}
               </button>
+              <button
+                onClick={handleQualityCheck}
+                disabled={checkingQuality}
+                className="px-4 py-3 bg-cyan-700 hover:bg-cyan-800 text-white font-black rounded-xl transition-all flex items-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                title="実在する優良事例と比較し、記述の具体性・実用性をAIが審査します（都度Geminiを呼ぶため乱用注意）"
+              >
+                🔎 {checkingQuality ? "審査中..." : "品質チェック"}
+              </button>
             </div>
+            )}
+
+            {qualityResult && (
+              <div className={`flex flex-col gap-1.5 px-4 py-3 rounded-xl text-xs border ${
+                qualityResult.pass ? 'bg-emerald-950/30 text-emerald-400 border-emerald-800/60' : 'bg-rose-100 text-rose-700 border-rose-200'
+              }`}>
+                <div className="font-black flex items-center gap-2">
+                  {qualityResult.pass ? '✅ 合格' : '⚠️ 要改善'}（スコア {qualityResult.score}/10、基準: {qualityResult.barChampion}）
+                </div>
+                <div>{qualityResult.verdictSummary}</div>
+                {qualityResult.issues.length > 0 && (
+                  <ul className="list-disc list-inside space-y-0.5 mt-1">
+                    {qualityResult.issues.map((issue, i) => <li key={i}>{issue}</li>)}
+                  </ul>
+                )}
+              </div>
             )}
 
             {/* トレンド取得の進行状況（「取得中から変わらない」という不透明さの指摘を受けて追加） */}

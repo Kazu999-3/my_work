@@ -241,3 +241,106 @@ export async function reviewRevisionHotspots(supabase: any, limit: number): Prom
     .sort((a, b) => b.revisionCount - a.revisionCount)
     .slice(0, limit);
 }
+
+// ============================================================
+// 品質審査 (Builder-Critic方式)
+//
+// これまで辞典生成は「作って終わり」の一発勝負で、実在の優良事例と比較する
+// 品質チェックが無かった(2026-08-12、参考にしたnote記事群のBuilder-Critic
+// パターンを踏まえ追加)。自動一括更新パイプライン(champ_db_bulk_updater.py)には
+// 組み込まず、オンデマンドの手動チェックに留める——チャンピオン1体あたり実質
+// Gemini呼び出しが増えるため、233体を毎回自動で二重採点すると、同日中に直した
+// クォータ問題を再燃させかねないため。TS側の対話用キー(GEMINI_API_KEY)を使う
+// ため、辞典一括更新のバッチ専用キー(GEMINI_API_KEY_BATCH)とも枠が別。
+// ============================================================
+
+export interface QualityCritique {
+  champion: string;
+  barChampion: string;
+  pass: boolean;
+  score: number;
+  issues: string[];
+  verdictSummary: string;
+}
+
+export async function critiqueChampionEntry(supabase: any, champion: string): Promise<QualityCritique | null> {
+  const FIELDS = 'champion, strengths, weaknesses, power_spikes, build_runes, jg_type, jg_description, pro_builds, research_sources';
+
+  const { data: target } = await supabase
+    .from('champion_facts')
+    .select(FIELDS)
+    .ilike('champion', champion)
+    .maybeSingle();
+  if (!target) return null;
+
+  // 「基準」を固定チャンピオンにハードコードすると、その記述自体が将来劣化/変更
+  // された時に基準として機能しなくなるため、その時点で最も内容が充実している
+  // 別チャンピオンを毎回動的に選ぶ。
+  const { data: candidates } = await supabase
+    .from('champion_facts')
+    .select(FIELDS)
+    .neq('champion', target.champion)
+    .not('strengths', 'is', null)
+    .not('weaknesses', 'is', null)
+    .limit(30);
+
+  const scored = (candidates || []).map((c: any) => ({
+    row: c,
+    len:
+      (c.strengths?.length || 0) + (c.weaknesses?.length || 0) + (c.power_spikes?.length || 0) + (c.build_runes?.length || 0)
+      + (Array.isArray(c.pro_builds) ? c.pro_builds.length * 50 : 0)
+      + (Array.isArray(c.research_sources) ? c.research_sources.length * 20 : 0),
+  })).sort((a: any, b: any) => b.len - a.len);
+  const bar = scored[0]?.row;
+  if (!bar) return null;
+
+  const formatEntry = (f: any) =>
+    `強み: ${f.strengths || '(空)'}\n弱み: ${f.weaknesses || '(空)'}\nパワースパイク: ${f.power_spikes || '(空)'}\n`
+    + `ビルド・ルーン: ${f.build_runes || '(空)'}\nジャングルタイプ: ${f.jg_type || '(空)'} - ${f.jg_description || ''}\n`
+    + `プロビルド件数: ${Array.isArray(f.pro_builds) ? f.pro_builds.length : 0}件\n出典件数: ${Array.isArray(f.research_sources) ? f.research_sources.length : 0}件`;
+
+  const prompt = `あなたは辛口の品質審査AI(Critic)です。LoL(League of Legends)のチャンピオン辞典の「評価対象」を、実在の「基準となる優良事例」と比較し、同等以上の具体性・実用性を持っているか判定してください。
+
+【基準となる優良事例】(チャンピオン: ${bar.champion})
+${formatEntry(bar)}
+
+【評価対象】(チャンピオン: ${target.champion})
+${formatEntry(target)}
+
+【評価基準】
+1. 具体性: 「強い」「弱い」等の抽象的な表現だけでなく、具体的な数値・アイテム名・タイミングが含まれているか
+2. 実用性: プレイヤーが実戦ですぐ使える示唆になっているか
+3. 出典の有無: 裏取り可能な情報源が記録されているか
+
+必ず以下のJSON形式のみで出力してください:
+{
+  "pass": true または false,
+  "score": 1から10の整数,
+  "issues": ["具体的な問題点(無ければ空配列)"],
+  "verdict_summary": "1〜2文の日本語の総評"
+}`;
+
+  try {
+    const raw = await callGeminiWithRetry(prompt, {
+      model: 'gemini-3.1-flash-lite',
+      temperature: 0.2,
+      maxOutputTokens: 512,
+      maxRetries: 2,
+    });
+    let cleaned = (raw || '').trim();
+    if (cleaned.startsWith('```')) cleaned = cleaned.replace(/^```[a-z]*\n?/, '').replace(/```$/, '').trim();
+    const s = cleaned.indexOf('{'), e = cleaned.lastIndexOf('}');
+    if (s < 0 || e <= s) return null;
+    const parsed = JSON.parse(cleaned.slice(s, e + 1));
+    return {
+      champion: target.champion,
+      barChampion: bar.champion,
+      pass: !!parsed.pass,
+      score: typeof parsed.score === 'number' ? parsed.score : 0,
+      issues: Array.isArray(parsed.issues) ? parsed.issues : [],
+      verdictSummary: parsed.verdict_summary || '',
+    };
+  } catch {
+    return null;
+  }
+}
