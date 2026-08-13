@@ -1,357 +1,42 @@
 import os
-import json
 import logging
-import time
-from datetime import datetime, timezone
-from pathlib import Path
 import requests
-from google import genai
-from google.genai import types
 import dotenv
-from v2_CORE._LOL.herald import herald
-from v2_CORE._LOL.champ_id_normalizer import normalize_champion_id
-from v2_CORE.knowledge_revisions import record_matchup_sentinel_revision
+from pathlib import Path
 
 dotenv.load_dotenv(Path("D:/my_work/.env"))
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [ChampDB] %(levelname)s: %(message)s")
 
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
-# ポータルの/coachページと同じGEMINI_API_KEYを共有すると、一括同期が対話側のクォータを
-# 食い潰す(逆もまた然り)。GEMINI_API_KEY_BATCHを.envに設定すればそちらを優先的に使う。
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY_BATCH") or os.environ.get("GEMINI_API_KEY_FREE") or os.environ.get("GEMINI_API_KEY")
 
-def fetch_existing_champ_data(champ_id: str) -> dict:
-    """Supabaseから既存のGLOBALデータを取得する"""
-    champ_id = normalize_champion_id(champ_id)
-    if not SUPABASE_URL or not SUPABASE_KEY:
-        logging.error("Supabase credentials not found in .env")
-        return {}
-        
-    url = f"{SUPABASE_URL}/rest/v1/matchup_sentinel?champion=eq.{champ_id}&enemy=eq.GLOBAL&select=strategy,raw_data"
-    headers = {
-        "apikey": SUPABASE_KEY,
-        "Authorization": f"Bearer {SUPABASE_KEY}",
-        "Content-Type": "application/json"
-    }
-    
-    try:
-        r = requests.get(url, headers=headers, timeout=10)
-        if r.status_code == 200:
-            data = r.json()
-            if data and len(data) > 0:
-                return data[0]
-    except Exception as e:
-        logging.error(f"Failed to fetch existing data for {champ_id}: {e}")
-    return {}
+# 2026-08-13、機能監査で「辞典を書き換えるAIプロンプト実装」が本ファイルの
+# merge_and_extract_intel/update_champion_db・overseas_scout.py・champion_trend_worker.py
+# の3箇所に分散し、ほぼ同じ出力スキーマを別々のプロンプトで生成し続ける重複が見つかった。
+# overseas_scout.pyはどこからも呼ばれていない完全な休眠コードだったため削除。
+# 本ファイルの独自マージロジックは、反省会フィードバックをchampion_trend_worker.pyの
+# 共通コンテキスト(fetch_interrogation_feedback)に統合する形で正式エンジンへ委譲し、
+# process_interrogation_queue()だけを残した。
 
-def fetch_champion_notes(champ_id: str) -> str:
-    """Supabaseのchampion_notesから最新の攻略ノート・記事を取得する"""
-    champ_id = normalize_champion_id(champ_id)
-    if not SUPABASE_URL or not SUPABASE_KEY: return ""
-    url = f"{SUPABASE_URL}/rest/v1/champion_notes?champion=ilike.{champ_id}&order=created_at.desc&limit=5"
-    headers = {"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}"}
-    try:
-        r = requests.get(url, headers=headers, timeout=10)
-        if r.status_code == 200:
-            notes = r.json()
-            if notes:
-                lines = ["【攻略ライブラリ・関連ノートの知見（最新5件）】"]
-                for n in notes:
-                    title = n.get("title") or "無題"
-                    body = (n.get("body") or "").strip()[:300]
-                    lines.append(f"- 【{title}】 {body}")
-                return "\n".join(lines)
-    except Exception as e:
-        logging.warning(f"Failed to fetch champion_notes for {champ_id}: {e}")
-    return ""
-
-def merge_and_extract_intel(champ_name: str, new_text: str, existing_data: dict) -> dict:
-    """Geminiを使用して既存のメモ、関連ノート、新しいトレンド記事を賢くマージし、JSONを出力する"""
-    if not GEMINI_API_KEY:
-        logging.error("GEMINI_API_KEY not found in .env")
-        return None
-
-    client = genai.Client(api_key=GEMINI_API_KEY)
-    
-    # 既存のデータおよび関連ノートを取得・文字列化
-    old_raw = existing_data.get("raw_data", {})
-    notes_text = fetch_champion_notes(champ_name)
-    existing_text = f"""
-    【既存のユーザー手書きメモ（絶対に保護し、失わないこと！）】
-    - 強み: {old_raw.get('strengths', '')}
-    - 弱み: {old_raw.get('weaknesses', '')}
-    - パワースパイク: {old_raw.get('powerSpikes', '')}
-    - ビルド/ルーン: {old_raw.get('buildRunes', '')}
-    - フルクリア時間: {old_raw.get('fullClearTime', '')}
-    - 立ち回り: {existing_data.get('strategy', '')}
-
-    {notes_text}
-    """
-    
-    prompt = f"""
-    あなたはLeague of Legendsの戦略データ管理者です。
-    ユーザーの【既存のメモ】と【最新のトレンド記事】を統合し、指定されたJSONフィールドのみを更新して出力してください。
-    ※長文の記事作成は不要です。JSONの抽出のみを行ってください。
-    
-    【対象チャンピオン】: {champ_name}
-    
-    {existing_text}
-    
-    【最新のトレンド記事・AI調査結果】
-    {new_text[:8000]}
-    
-    【厳格なルール】
-    1. 既存のメモのニュアンスは絶対に削除せず、ベースとして残すこと。
-    2. 新しい記事から有用な知識を見つけたら、既存のメモに「追記・整理」する形でマージすること。
-    3. 「fullClearTime」は最新パッチでの最適な周回ルートや時間のみを抽出すること（JG以外は空白）。
-    4. 「jg_style」には、このチャンピオンのメインのプレイスタイル、先出し耐性、カウンター（後出し）耐性を客観的に判定して設定してください。
-    5. 出力は必ず以下のスキーマに準拠した有効なJSON形式のみで行うこと。改行やダブルクォーテーションは正しくエスケープしてください。
-    6. アイテム名・チャンピオン名・ルーン名などの固有名詞を除き、すべてのフィールドの文章は必ず日本語で記述すること。英単語や英文をそのまま出力しないこと。
-
-    {{
-      "strengths": "強み",
-      "weaknesses": "弱み",
-      "powerSpikes": "パワースパイク",
-      "buildRunes": "おすすめのビルドとルーン（※具体的な理由も記述）",
-      "fullClearTime": "フルクリア時間（JG以外は空白）",
-      "strategy": "全体的な立ち回り",
-      "jg_style": {{
-        "type": "「ファーム型」「ガンク型」「侵入型」「タンク型」のいずれか1つを必ず設定",
-        "description": "そのプレイスタイルの短い日本語説明（50文字以内）",
-        "blind_pickable": 1から5の数値（5:先出し最強、1:先出し不可能）,
-        "counter_pickable": 1から5の数値（5:カウンター特化、1:カウンター不可）
-      }}
-    }}
-    """
-    
-    from v2_CORE.ai_helper import generate_content_safe
-    from v2_CORE.settings import settings
-    response_text = None
-    try:
-        response_text = generate_content_safe(
-            client,
-            prompt,
-            config=types.GenerateContentConfig(
-                temperature=0.2, # データ抽出なので温度をさらに下げる
-                response_mime_type="application/json"
-            ),
-            model_id="gemini-3.5-flash-lite",
-            feature_name="oracle",
-            sleep_on_rate_limit=True  # 429発生時は自動スリープおよび他モデルへのフォールバックを実施
-        )
-        if response_text and not response_text.startswith("❌") and not response_text.startswith("⚠️") and "本日の利用上限に達しました" not in response_text:
-            cleaned = response_text.strip()
-            if cleaned.startswith("```"):
-                lines = cleaned.split("\n")
-                if len(lines) >= 2 and (lines[0].startswith("```json") or lines[0].startswith("```")):
-                    cleaned = "\n".join(lines[1:-1]).strip()
-            result_json = json.loads(cleaned)
-            result_json["note_draft"] = new_text
-            return result_json
-    except Exception as e:
-        logging.warning(f"⚠️ Geminiでのマージ処理に失敗しました。Ollamaフォールバックを試みます。エラー: {e}")
-
-    # Ollamaへのフォールバック
-    logging.info(f"🏠 Ollama (ローカルLLM) を使用して {champ_name} のデータをマージ・抽出します...")
-    try:
-        from v2_CORE.ai_helper import _generate_with_ollama
-        # JSON形式での返却を確実にするためのプロンプト調整
-        ollama_prompt = prompt + "\n\n【出力形式の絶対ルール】\n必ず指定されたスキーマに従った有効なJSON形式のみを返してください。不要な前置きや説明（```json 等のコードブロック含む）は一切出力しないでください。"
-        
-        response_text = _generate_with_ollama(ollama_prompt, model=settings.OLLAMA_MODEL)
-        if response_text:
-            cleaned_text = response_text.strip()
-            # Markdownコードブロックの除去
-            if cleaned_text.startswith("```"):
-                lines = cleaned_text.split("\n")
-                if len(lines) >= 2 and (lines[0].startswith("```json") or lines[0].startswith("```")):
-                    cleaned_text = "\n".join(lines[1:-1]).strip()
-            
-            # JSONパースの堅牢化 (不正な制御文字の除去・エスケープ)
-            import re
-            def escape_control_chars(match):
-                char = match.group(0)
-                if char == "\n": return "\\n"
-                if char == "\r": return "\\r"
-                if char == "\t": return "\\t"
-                return "" # その他の制御文字は消去
-                
-            try:
-                result_json = json.loads(cleaned_text)
-            except json.JSONDecodeError:
-                try:
-                    # 生の制御文字(0x00-0x1f)をエスケープ表現に置換して再試行
-                    fixed_text = re.sub(r'[\x00-\x1f]', escape_control_chars, cleaned_text)
-                    result_json = json.loads(fixed_text)
-                except Exception as je:
-                    logging.error(f"❌ JSON parsing failed even after escaping control characters: {je}")
-                    logging.error(f"Raw text was: {cleaned_text[:1000]}")
-                    return None
-            
-            result_json["note_draft"] = new_text
-            return result_json
-    except Exception as oe:
-        logging.error(f"❌ ローカルOllamaでのマージ処理も失敗しました: {oe}")
-        
-    return None
-
-def update_champion_db(champ_id: str, champ_name: str, new_text: str, patch_version: str = "26.11"):
-    """メイン関数：既存データを取得、マージ、SupabaseへUpsert"""
-    champ_id = normalize_champion_id(champ_id)
-    logging.info(f"[{champ_id}] Auto-updating Champion DB...")
-    
-    existing_data = fetch_existing_champ_data(champ_id)
-    merged_json = merge_and_extract_intel(champ_name, new_text, existing_data)
-    
-    if not merged_json:
-        logging.error(f"[{champ_id}] Failed to merge data, aborting update.")
-        return False
-        
-    # 既存データの引き継ぎ・マージ
-    existing_raw = existing_data.get("raw_data", {}) if isinstance(existing_data.get("raw_data"), dict) else {}
-    existing_jg_style = existing_raw.get("jg_style", {}) if isinstance(existing_raw.get("jg_style"), dict) else {}
-    existing_patch_meta = existing_raw.get("patch_meta", {}) if isinstance(existing_raw.get("patch_meta"), dict) else {}
-    
-    # 新しい jg_style の決定
-    new_jg_style = merged_json.get("jg_style", {}) if isinstance(merged_json.get("jg_style"), dict) else {}
-    jg_style_type = new_jg_style.get("type") or existing_jg_style.get("type") or "ガンク型"
-    jg_style_desc = new_jg_style.get("description") or existing_jg_style.get("description") or "標準的なプレイスタイルです。"
-    jg_style_blind = new_jg_style.get("blind_pickable") or existing_jg_style.get("blind_pickable") or 3
-    jg_style_counter = new_jg_style.get("counter_pickable") or existing_jg_style.get("counter_pickable") or 3
-    
-    # 新しい patch_meta の決定
-    import time
-    patch_meta = {
-        "patch": patch_version or existing_patch_meta.get("patch") or "26.11",
-        "updated_at": int(time.time()),
-        "win_rate": existing_patch_meta.get("win_rate") or 50.0,
-        "pick_rate": existing_patch_meta.get("pick_rate") or 5.0,
-        "ban_rate": existing_patch_meta.get("ban_rate") or 5.0,
-        "tier": existing_patch_meta.get("tier") or "A"
-    }
-
-    # Upsertデータ構築
-    # 辞典一覧の「更新日」は created_at を見ているため、更新時も明示的に現在時刻を入れる
-    # （入れないとUPSERTで既存行の created_at がそのまま残り、更新したのに一覧に反映されない）
-    upsert_data = {
-        "matchup_id": f"champ_{champ_id}_global",
-        "champion": champ_id,
-        "enemy": "GLOBAL",
-        "title": f"{champ_name} 基本戦略・トレンド",
-        "created_at": datetime.now(timezone.utc).isoformat(),
-        "strategy": merged_json.get("strategy", ""),
-        "raw_data": {
-            **existing_raw,
-            "source": "champ_db",
-            "role": "GLOBAL",
-            "strengths": merged_json.get("strengths", ""),
-            "weaknesses": merged_json.get("weaknesses", ""),
-            "powerSpikes": merged_json.get("powerSpikes", ""),
-            "buildRunes": merged_json.get("buildRunes", ""),
-            "fullClearTime": merged_json.get("fullClearTime", ""),
-            "note_draft": merged_json.get("note_draft", ""),
-            "jg_style": {
-                "type": jg_style_type,
-                "description": jg_style_desc,
-                "blind_pickable": int(jg_style_blind),
-                "counter_pickable": int(jg_style_counter)
-            },
-            "patch_meta": patch_meta
-        }
-    }
-    
-    url = f"{SUPABASE_URL}/rest/v1/matchup_sentinel?on_conflict=matchup_id"
-    headers = {
-        "apikey": SUPABASE_KEY,
-        "Authorization": f"Bearer {SUPABASE_KEY}",
-        "Content-Type": "application/json",
-        "Prefer": "resolution=merge-duplicates"
-    }
-    
-    max_retries = 3
-    for attempt in range(max_retries):
-        try:
-            r = requests.post(url, headers=headers, json=upsert_data, timeout=15)
-            if r.status_code in (200, 201):
-                logging.info(f"✅ [{champ_id}] Champion DB successfully updated & merged!")
-                record_matchup_sentinel_revision(
-                    upsert_data["matchup_id"], existing_data, upsert_data,
-                    source_title="辞典自動ブラッシュアップ（champ_db_updater）",
-                    supabase_url=SUPABASE_URL, supabase_key=SUPABASE_KEY
-                )
-                herald.notify_progress(f"📖 **【辞典更新完了】** {champ_name} のデータとnoteドラフトが自動ブラッシュアップされました！", portal_link=True, page="champdb")
-
-                # --- SSOT: champion_facts にも並行書き込み ---
-                now_iso = datetime.now(timezone.utc).isoformat()
-                facts_payload = {
-                    "champion": champ_id,
-                    "strengths": merged_json.get("strengths") or None,
-                    "weaknesses": merged_json.get("weaknesses") or None,
-                    "power_spikes": merged_json.get("powerSpikes") or None,
-                    "build_runes": merged_json.get("buildRunes") or None,
-                    "full_clear_time": merged_json.get("fullClearTime") or None,
-                    "strategy": merged_json.get("strategy") or None,
-                    "counter_champions": existing_raw.get("counterChampions") or None,
-                    "pick_recommendation": existing_raw.get("pickRecommendation") or None,
-                    "jg_type": jg_style_type,
-                    "jg_description": jg_style_desc,
-                    "jg_blind_pickable": int(jg_style_blind),
-                    "jg_counter_pickable": int(jg_style_counter),
-                    "patch": patch_meta.get("patch") or None,
-                    "patch_meta": patch_meta,
-                    "pro_builds": existing_raw.get("pro_builds", []),
-                    "source": "champ_db_updater",
-                    "confidence": "ai_generated",
-                    "auto_updated_at": now_iso,
-                    "source_summary": f"辞典自動ブラッシュアップ ({now_iso[:10]})",
-                    "updated_at": now_iso,
-                    "migrated_from_sentinel": True,
-                }
-                try:
-                    facts_url = f"{SUPABASE_URL}/rest/v1/champion_facts?on_conflict=champion"
-                    facts_headers = {
-                        "apikey": SUPABASE_KEY,
-                        "Authorization": f"Bearer {SUPABASE_KEY}",
-                        "Content-Type": "application/json",
-                        "Prefer": "resolution=merge-duplicates"
-                    }
-                    facts_r = requests.post(facts_url, headers=facts_headers, json=facts_payload, timeout=15)
-                    if facts_r.status_code in (200, 201):
-                        logging.info(f"✅ [{champ_id}] champion_facts (SSOT) も更新しました")
-                    else:
-                        logging.warning(f"⚠️ [{champ_id}] champion_facts upsert失敗: {facts_r.status_code}")
-                except Exception as fe:
-                    logging.warning(f"⚠️ [{champ_id}] champion_facts 書き込み例外: {fe}")
-
-                return True
-            elif r.status_code in (429, 500, 502, 503, 504) and attempt < max_retries - 1:
-                wait = 2 ** attempt
-                logging.warning(f"⚠️ Supabase Upsert一時エラー({r.status_code})。{wait}秒後にリトライします... ({attempt + 1}/{max_retries})")
-                import time as _time
-                _time.sleep(wait)
-                continue
-            else:
-                logging.error(f"Supabase Upsert failed: {r.status_code} - {r.text}")
-                return False
-        except requests.RequestException as e:
-            if attempt < max_retries - 1:
-                wait = 2 ** attempt
-                logging.warning(f"⚠️ Supabase接続エラー。{wait}秒後にリトライします... ({attempt + 1}/{max_retries}): {e}")
-                import time as _time
-                _time.sleep(wait)
-                continue
-            logging.error(f"Supabase connection failed after {max_retries} attempts: {e}")
-            return False
-    return False
 
 def process_interrogation_queue():
-    """UIから送信された反省会フィードバック（PROCESS_INTERROGATION_*）を処理する"""
-    if not SUPABASE_URL or not SUPABASE_KEY: return
-    
+    """UIから送信された反省会フィードバック（PROCESS_INTERROGATION行）を処理する。
+
+    以前はここで独自のGemini呼び出し(merge_and_extract_intel)を行い辞典を直接
+    書き換えていたが、champion_trend_worker.pyのcollect_and_save_champion_trend
+    (辞典更新の正式エンジン)がfetch_interrogation_feedback経由でこのフィードバックを
+    プロンプトコンテキストへ取り込むようになったため、ここでは正式エンジンを
+    呼び出すだけでよい。フィードバック行はエンジン呼び出し後に削除する
+    （エンジンが読み取れるよう、削除は呼び出しの後で行う）。
+    """
+    if not SUPABASE_URL or not SUPABASE_KEY:
+        return
+
+    from v2_CORE._LOL.champion_trend_worker import collect_and_save_champion_trend
+
     url = f"{SUPABASE_URL}/rest/v1/matchup_sentinel?enemy=eq.PROCESS_INTERROGATION"
     headers = {"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}", "Content-Type": "application/json"}
-    
+
     try:
         r = requests.get(url, headers=headers)
         if r.status_code == 200:
@@ -359,13 +44,13 @@ def process_interrogation_queue():
             for record in records:
                 feedback = record.get("strategy", "")
                 target_enemy = record.get("raw_data", {}).get("target_enemy", "")
-                
+
                 if feedback and target_enemy:
-                    # 対象のチャンピオン（敵）のDBを更新する
-                    new_text = f"【最近の敗北からの学び・AI鬼コーチ反省】\n{feedback}"
                     logging.info(f"Processing Interrogation for {target_enemy}: {feedback}")
-                    update_champion_db(target_enemy, target_enemy, new_text)
-                    
+                    success = collect_and_save_champion_trend(target_enemy, "GLOBAL")
+                    if not success:
+                        logging.warning(f"⚠️ {target_enemy} の反省会フィードバック反映に失敗しました（キューからは削除します）。")
+
                 # 処理完了したキューを削除
                 m_id = record.get("matchup_id")
                 if not m_id:
@@ -375,8 +60,3 @@ def process_interrogation_queue():
                 requests.delete(del_url, headers=headers)
     except Exception as e:
         logging.error(f"Interrogation process failed: {e}")
-
-if __name__ == "__main__":
-    # テスト用
-    test_text = "リリアの14.10パッチ最新ビルドは黒炎のトーチが最強です。コンカーラールーンを持ちます。"
-    update_champion_db("Lillia", "リリア", test_text)

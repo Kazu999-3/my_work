@@ -11,13 +11,42 @@ from google import genai
 # パス追加
 sys.path.append(os.path.join(os.path.dirname(__file__), "..", ".."))
 from v2_CORE.settings import settings
-from v2_CORE.ai_helper import generate_content_safe, fetch_similar_insights, log_knowledge_usage
+from v2_CORE.ai_helper import generate_content_safe, fetch_similar_insights, log_knowledge_usage, sync_corrections_to_insights
 from v2_CORE.logger_config import setup_sovereign_logging
 from v2_CORE.knowledge_revisions import record_matchup_sentinel_revision
 from v2_CORE._LOL.champ_id_normalizer import normalize_champion_id, get_latest_ddragon_version, to_display_patch_version
 from v2_CORE._LOL.lol_trend_collector import sanitize_trend_data
+from v2_CORE._LOL.power_spike_generator import generate_power_spike
 
 logger = setup_sovereign_logging("ChampionTrendWorker")
+
+# main()は個別更新ボタン・health dashboardのstale一括enqueue・auto-refresh cron等、
+# 単発の軽量更新すべてが経由する共有エントリなので、sync_corrections_to_insights
+# (訂正事例のベクトル化、本来は辞典一括更新のたびに少しずつ追いつく想定の重い処理)を
+# 呼び出しのたびに毎回実行すると、単発トリガー全部にAIコストが波及してしまう
+# (2026-08-13の辞典更新パイプライン監査#3で発覚)。マーカーファイルのmtimeで
+# クールダウンし、直近実行から一定時間経っていない場合はスキップする。
+# generate_power_spikeはチャンピオン固有の実データなのでクールダウン対象外。
+INSIGHT_SYNC_COOLDOWN_SEC = 4 * 60 * 60  # 4時間
+INSIGHT_SYNC_MARKER = Path("d:/my_work/00_LOGS/.insight_sync_last_run")
+
+
+def _insight_sync_due() -> bool:
+    try:
+        if not INSIGHT_SYNC_MARKER.exists():
+            return True
+        age = time.time() - INSIGHT_SYNC_MARKER.stat().st_mtime
+        return age >= INSIGHT_SYNC_COOLDOWN_SEC
+    except Exception:
+        return True
+
+
+def _mark_insight_synced() -> None:
+    try:
+        INSIGHT_SYNC_MARKER.parent.mkdir(parents=True, exist_ok=True)
+        INSIGHT_SYNC_MARKER.touch()
+    except Exception:
+        pass
 
 # collect_and_save_champion_trend()内で失敗理由がクォータ/レート制限由来だったかを記録する。
 # 以前はmain()側でquota_manager.check_quota("oracle")を事後に問い合わせて判定していたが、
@@ -119,6 +148,45 @@ def fetch_soloq_reflections(champ_id: str, supabase_url: str, supabase_key: str)
                 return "\n".join(["【プレイヤー自身の実戦振り返り（直近5件のうちメモありのもの）】", *lines])
     except Exception as e:
         logger.warning(f"Failed to fetch soloq_reflections for {champ_id}: {e}")
+    return ""
+
+
+def fetch_interrogation_feedback(champ_id: str, supabase_url: str, supabase_key: str) -> str:
+    """matchup_sentinelのPROCESS_INTERROGATION行（反省会フィードバック）から、
+    このチャンピオンが相手だった試合の敗因反省メモを取得する。
+
+    以前はchamp_db_updater.pyがこのフィードバックだけを対象に独自のGemini呼び出し
+    (merge_and_extract_intel)で辞典を書き換えており、このエンジンとほぼ同じ出力
+    スキーマを別実装で生成し続ける重複があった(2026-08-13の機能監査で発覚)。
+    champion_notes等と同じ枠組みでコンテキストに混ぜ込むことで、champ_db_updater.py
+    側はこのエンジンを呼ぶだけで済むようにする。
+    """
+    champ_id = normalize_champion_id(champ_id)
+    if not supabase_url or not supabase_key: return ""
+    # target_enemyはraw_data内のJSONフィールドでPostgRESTのJSONパスフィルタが未検証のため、
+    # process_interrogation_queue()と同じ「直近分を取得してPython側で絞り込む」方式に揃える。
+    url = (
+        f"{supabase_url}/rest/v1/matchup_sentinel?enemy=eq.PROCESS_INTERROGATION"
+        "&select=strategy,raw_data&order=created_at.desc&limit=20"
+    )
+    headers = {"apikey": supabase_key, "Authorization": f"Bearer {supabase_key}"}
+    try:
+        r = httpx.get(url, headers=headers, timeout=10)
+        if r.status_code == 200:
+            lines = []
+            for row in r.json():
+                target = ((row.get("raw_data") or {}).get("target_enemy") or "")
+                if target.lower() != champ_id.lower():
+                    continue
+                memo = (row.get("strategy") or "").strip()
+                if memo:
+                    lines.append(f"- {memo}")
+                if len(lines) >= 5:
+                    break
+            if lines:
+                return "\n".join(["【直近の敗北からの反省メモ（このチャンピオンが相手だった試合）】", *lines])
+    except Exception as e:
+        logger.warning(f"Failed to fetch interrogation feedback for {champ_id}: {e}")
     return ""
 
 
@@ -224,6 +292,9 @@ def collect_and_save_champion_trend(champion: str, role: str, client=None, on_ph
     knowledge_context = fetch_personal_knowledge(champion, settings.SUPABASE_URL, settings.SUPABASE_KEY)
     if knowledge_context:
         notes_context = f"{notes_context}\n\n{knowledge_context}" if notes_context else knowledge_context
+    interrogation_context = fetch_interrogation_feedback(champion, settings.SUPABASE_URL, settings.SUPABASE_KEY)
+    if interrogation_context:
+        notes_context = f"{notes_context}\n\n{interrogation_context}" if notes_context else interrogation_context
     pro_trend_context = fetch_pro_trend_notes(champion)
     if pro_trend_context:
         notes_context = f"{notes_context}\n\n{pro_trend_context}" if notes_context else pro_trend_context
@@ -578,6 +649,31 @@ def main():
     champion = sys.argv[1]
     role = sys.argv[2]
     success = collect_and_save_champion_trend(champion, role)
+
+    # 辞典ページの一括更新(champ_db_bulk_updater.py)と処理内容を合わせるため、トレンド収集に
+    # 成功した場合はパワースパイク生成と訂正事例のベクトル化も行う。個別更新ボタン・健康
+    # ダッシュボードの一括更新・自動巡回cronはすべてこのCLIを経由するため、ここに置くことで
+    # 呼び出し元を問わず内容が揃う。どちらも失敗しても辞典本体の更新は既に成功済みなので
+    # 握りつぶして継続する(2026-08-13)。
+    if success:
+        try:
+            raw_version = get_latest_ddragon_version(timeout=10)
+            patch_version = to_display_patch_version(raw_version) if raw_version else None
+            if patch_version:
+                generate_power_spike(normalize_champion_id(champion), role="GLOBAL", patch=patch_version)
+        except Exception as e:
+            logger.warning(f"⚠️ パワースパイク生成でエラーが発生しましたが処理を継続します: {e}")
+
+        try:
+            if _insight_sync_due():
+                _mark_insight_synced()
+                api_key = settings.GEMINI_API_KEY_FREE or settings.GEMINI_API_KEY
+                if api_key:
+                    synced = sync_corrections_to_insights(genai.Client(api_key=api_key))
+                    if synced:
+                        logger.info(f"🧠 [insight_sync] {synced}件の訂正事例を意味検索用に新規ベクトル化しました。")
+        except Exception as e:
+            logger.warning(f"⚠️ [insight_sync] 訂正事例のベクトル化に失敗しましたが処理を継続します: {e}")
 
     # exit codeはchampion_facts/matchup_sentinelが実際に更新されたかどうかを正確に反映する
     # 必要がある(ポータルの個別更新ボタンはstatus==='completed'を見た瞬間に「更新しました！」と

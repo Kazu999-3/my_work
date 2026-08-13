@@ -1,0 +1,1405 @@
+{
+  "patch_version": "26.16",
+  "updated_at": "2026-08-13T09:23:37.353858+00:00",
+  "status": "suspended",
+  "queue": {
+    "Aatrox": {
+      "name": "エイトロックス",
+      "status": "completed",
+      "updated_at": "2026-08-13T08:06:47.586085+00:00",
+      "error": null
+    },
+    "Ahri": {
+      "name": "アーリ",
+      "status": "completed",
+      "updated_at": "2026-08-13T08:07:40.979856+00:00",
+      "error": null
+    },
+    "Akali": {
+      "name": "アカリ",
+      "status": "completed",
+      "updated_at": "2026-08-13T08:08:32.286840+00:00",
+      "error": null
+    },
+    "Akshan": {
+      "name": "アクシャン",
+      "status": "completed",
+      "updated_at": "2026-08-13T08:09:25.310037+00:00",
+      "error": null
+    },
+    "Alistar": {
+      "name": "アリスター",
+      "status": "failed",
+      "updated_at": "2026-08-12T00:31:30.103034+00:00",
+      "error": "Trend collection failed (API/quota error or DB write failure)"
+    },
+    "Ambessa": {
+      "name": "アンベッサ",
+      "status": "failed",
+      "updated_at": "2026-08-12T00:32:06.169075+00:00",
+      "error": "Trend collection failed (API/quota error or DB write failure)"
+    },
+    "Amumu": {
+      "name": "アムム",
+      "status": "failed",
+      "updated_at": "2026-08-12T00:32:43.210183+00:00",
+      "error": "Trend collection failed (API/quota error or DB write failure)"
+    },
+    "Anivia": {
+      "name": "アニビア",
+      "status": "failed",
+      "updated_at": "2026-08-12T00:33:24.550641+00:00",
+      "error": "Trend collection failed (API/quota error or DB write failure)"
+    },
+    "Annie": {
+      "name": "アニー",
+      "status": "failed",
+      "updated_at": "2026-08-12T01:59:20.444774+00:00",
+      "error": "Trend collection failed (API/quota error or DB write failure)"
+    },
+    "Aphelios": {
+      "name": "アフェリオス",
+      "status": "pending",
+      "updated_at": "2026-08-12T02:00:11.353850+00:00",
+      "error": null
+    },
+    "Ashe": {
+      "name": "アッシュ",
+      "status": "pending",
+      "updated_at": "2026-08-12T02:01:12.711048+00:00",
+      "error": null
+    },
+    "AurelionSol": {
+      "name": "オレリオン・ソル",
+      "status": "pending",
+      "updated_at": "2026-08-12T02:02:01.061975+00:00",
+      "error": null
+    },
+    "Aurora": {
+      "name": "オーロラ",
+      "status": "pending",
+      "updated_at": "2026-08-12T08:00:05.964257+00:00",
+      "error": null
+    },
+    "Azir": {
+      "name": "アジール",
+      "status": "pending",
+      "updated_at": "2026-08-12T08:00:51.959841+00:00",
+      "error": null
+    },
+    "Bard": {
+      "name": "バード",
+      "status": "pending",
+      "updated_at": "2026-08-12T08:01:38.681149+00:00",
+      "error": null
+    },
+    "Belveth": {
+      "name": "ベル＝ヴェス",
+      "status": "pending",
+      "updated_at": "2026-08-12T08:02:25.900063+00:00",
+      "error": null
+    },
+    "Blitzcrank": {
+      "name": "ブリッツクランク",
+      "status": "pending",
+      "updated_at": "2026-08-12T08:03:12.388566+00:00",
+      "error": null
+    },
+    "Brand": {
+      "name": "ブランド",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Braum": {
+      "name": "ブラウム",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Briar": {
+      "name": "ブライアー",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Caitlyn": {
+      "name": "ケイトリン",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Camille": {
+      "name": "カミール",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Cassiopeia": {
+      "name": "カシオペア",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Chogath": {
+      "name": "チョ＝ガス",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Corki": {
+      "name": "コーキ",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Darius": {
+      "name": "ダリウス",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Diana": {
+      "name": "ダイアナ",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Draven": {
+      "name": "ドレイヴン",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "DrMundo": {
+      "name": "ドクター・ムンド",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Ekko": {
+      "name": "エコー",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Elise": {
+      "name": "エリス",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Evelynn": {
+      "name": "イブリン",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Ezreal": {
+      "name": "エズリアル",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Fiddlesticks": {
+      "name": "フィドルスティックス",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Fiora": {
+      "name": "フィオラ",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Fizz": {
+      "name": "フィズ",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Galio": {
+      "name": "ガリオ",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Gangplank": {
+      "name": "ガングプランク",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Garen": {
+      "name": "ガレン",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Gnar": {
+      "name": "ナー",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Gragas": {
+      "name": "グラガス",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Graves": {
+      "name": "グレイブス",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Gwen": {
+      "name": "グウェン",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Hecarim": {
+      "name": "ヘカリム",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Heimerdinger": {
+      "name": "ハイマーディンガー",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Hwei": {
+      "name": "フェイ",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Illaoi": {
+      "name": "イラオイ",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Irelia": {
+      "name": "イレリア",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Ivern": {
+      "name": "アイバーン",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Jade_Ahri": {
+      "name": "アーリ",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Jade_Alistar": {
+      "name": "アリスター",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Jade_Amumu": {
+      "name": "アムム",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Jade_Anivia": {
+      "name": "アニビア",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Jade_Annie": {
+      "name": "アニー",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Jade_Ashe": {
+      "name": "アッシュ",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Jade_Blitzcrank": {
+      "name": "ブリッツクランク",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Jade_Brand": {
+      "name": "ブランド",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Jade_Chogath": {
+      "name": "チョ＝ガス",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Jade_Corki": {
+      "name": "コーキ",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Jade_DrMundo": {
+      "name": "ドクター・ムンド",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Jade_Evelynn": {
+      "name": "イブリン",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Jade_Ezreal": {
+      "name": "エズリアル",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Jade_Fiddlesticks": {
+      "name": "フィドルスティックス",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Jade_Gangplank": {
+      "name": "ガングプランク",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Jade_Garen": {
+      "name": "ガレン",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Jade_Gragas": {
+      "name": "グラガス",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Jade_Heimerdinger": {
+      "name": "ハイマーディンガー",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Jade_Janna": {
+      "name": "ジャンナ",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Jade_JarvanIV": {
+      "name": "ジャーヴァンⅣ",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Jade_Jax": {
+      "name": "ジャックス",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Jade_Karthus": {
+      "name": "カーサス",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Jade_Kassadin": {
+      "name": "カサディン",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Jade_Katarina": {
+      "name": "カタリナ",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Jade_Kayle": {
+      "name": "ケイル",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Jade_KogMaw": {
+      "name": "コグ＝マウ",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Jade_LeeSin": {
+      "name": "リー・シン",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Jade_Leona": {
+      "name": "レオナ",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Jade_Lulu": {
+      "name": "ルル",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Jade_Lux": {
+      "name": "ラックス",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Jade_Malphite": {
+      "name": "マルファイト",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Jade_Malzahar": {
+      "name": "マルザハール",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Jade_MasterYi": {
+      "name": "マスター・イー",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Jade_MissFortune": {
+      "name": "ミス・フォーチュン",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Jade_Morgana": {
+      "name": "モルガナ",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Jade_Nasus": {
+      "name": "ナサス",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Jade_Nidalee": {
+      "name": "ニダリー",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Jade_Nunu": {
+      "name": "ヌヌ＆ウィルンプ",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Jade_Olaf": {
+      "name": "オラフ",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Jade_Pantheon": {
+      "name": "パンテオン",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Jade_Rammus": {
+      "name": "ラムス",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Jade_Ryze": {
+      "name": "ライズ",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Jade_Shaco": {
+      "name": "シャコ",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Jade_Singed": {
+      "name": "シンジド",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Jade_Sion": {
+      "name": "サイオン",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Jade_Sivir": {
+      "name": "シヴィア",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Jade_Skarner": {
+      "name": "スカーナー",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Jade_Sona": {
+      "name": "ソナ",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Jade_Soraka": {
+      "name": "ソラカ",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Jade_Taric": {
+      "name": "タリック",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Jade_Teemo": {
+      "name": "ティーモ",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Jade_Tristana": {
+      "name": "トリスターナ",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Jade_Tryndamere": {
+      "name": "トリンダメア",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Jade_TwistedFate": {
+      "name": "ツイステッド・フェイト",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Jade_Twitch": {
+      "name": "トゥイッチ",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Jade_Vayne": {
+      "name": "ヴェイン",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Jade_Veigar": {
+      "name": "ベイガー",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Jade_Warwick": {
+      "name": "ワーウィック",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Jade_Wukong": {
+      "name": "ウーコン",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Jade_Zilean": {
+      "name": "ジリアン",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Janna": {
+      "name": "ジャンナ",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "JarvanIV": {
+      "name": "ジャーヴァンⅣ",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Jax": {
+      "name": "ジャックス",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Jayce": {
+      "name": "ジェイス",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Jhin": {
+      "name": "ジン",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Jinx": {
+      "name": "ジンクス",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Kaisa": {
+      "name": "カイ＝サ",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Kalista": {
+      "name": "カリスタ",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Karma": {
+      "name": "カルマ",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Karthus": {
+      "name": "カーサス",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Kassadin": {
+      "name": "カサディン",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Katarina": {
+      "name": "カタリナ",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Kayle": {
+      "name": "ケイル",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Kayn": {
+      "name": "ケイン",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Kennen": {
+      "name": "ケネン",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Khazix": {
+      "name": "カ＝ジックス",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Kindred": {
+      "name": "キンドレッド",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Kled": {
+      "name": "クレッド",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "KogMaw": {
+      "name": "コグ＝マウ",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "KSante": {
+      "name": "カ・サンテ",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Leblanc": {
+      "name": "ルブラン",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "LeeSin": {
+      "name": "リー・シン",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Leona": {
+      "name": "レオナ",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Lillia": {
+      "name": "リリア",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Lissandra": {
+      "name": "リサンドラ",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Locke": {
+      "name": "ロック",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Lucian": {
+      "name": "ルシアン",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Lulu": {
+      "name": "ルル",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Lux": {
+      "name": "ラックス",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Malphite": {
+      "name": "マルファイト",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Malzahar": {
+      "name": "マルザハール",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Maokai": {
+      "name": "マオカイ",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "MasterYi": {
+      "name": "マスター・イー",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Mel": {
+      "name": "メル",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Milio": {
+      "name": "ミリオ",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "MissFortune": {
+      "name": "ミス・フォーチュン",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "MonkeyKing": {
+      "name": "ウーコン",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Mordekaiser": {
+      "name": "モルデカイザー",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Morgana": {
+      "name": "モルガナ",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Naafiri": {
+      "name": "ナフィーリ",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Nami": {
+      "name": "ナミ",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Nasus": {
+      "name": "ナサス",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Nautilus": {
+      "name": "ノーチラス",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Neeko": {
+      "name": "ニーコ",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Nidalee": {
+      "name": "ニダリー",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Nilah": {
+      "name": "ニーラ",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Nocturne": {
+      "name": "ノクターン",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Nunu": {
+      "name": "ヌヌ＆ウィルンプ",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Olaf": {
+      "name": "オラフ",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Orianna": {
+      "name": "オリアナ",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Ornn": {
+      "name": "オーン",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Pantheon": {
+      "name": "パンテオン",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Poppy": {
+      "name": "ポッピー",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Pyke": {
+      "name": "パイク",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Qiyana": {
+      "name": "キヤナ",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Quinn": {
+      "name": "クイン",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Rakan": {
+      "name": "ラカン",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Rammus": {
+      "name": "ラムス",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "RekSai": {
+      "name": "レク＝サイ",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Rell": {
+      "name": "レル",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Renata": {
+      "name": "レナータ・グラスク",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Renekton": {
+      "name": "レネクトン",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Rengar": {
+      "name": "レンガー",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Riven": {
+      "name": "リヴェン",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Rumble": {
+      "name": "ランブル",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Ryze": {
+      "name": "ライズ",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Samira": {
+      "name": "サミーラ",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Sejuani": {
+      "name": "セジュアニ",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Senna": {
+      "name": "セナ",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Seraphine": {
+      "name": "セラフィーン",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Sett": {
+      "name": "セト",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Shaco": {
+      "name": "シャコ",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Shen": {
+      "name": "シェン",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Shyvana": {
+      "name": "シヴァーナ",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Singed": {
+      "name": "シンジド",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Sion": {
+      "name": "サイオン",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Sivir": {
+      "name": "シヴィア",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Skarner": {
+      "name": "スカーナー",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Smolder": {
+      "name": "スモルダー",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Sona": {
+      "name": "ソナ",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Soraka": {
+      "name": "ソラカ",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Swain": {
+      "name": "スウェイン",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Sylas": {
+      "name": "サイラス",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Syndra": {
+      "name": "シンドラ",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "TahmKench": {
+      "name": "タム・ケンチ",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Taliyah": {
+      "name": "タリヤ",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Talon": {
+      "name": "タロン",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Taric": {
+      "name": "タリック",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Teemo": {
+      "name": "ティーモ",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Thresh": {
+      "name": "スレッシュ",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Tristana": {
+      "name": "トリスターナ",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Trundle": {
+      "name": "トランドル",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Tryndamere": {
+      "name": "トリンダメア",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "TwistedFate": {
+      "name": "ツイステッド・フェイト",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Twitch": {
+      "name": "トゥイッチ",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Udyr": {
+      "name": "ウディア",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Urgot": {
+      "name": "アーゴット",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Varus": {
+      "name": "ヴァルス",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Vayne": {
+      "name": "ヴェイン",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Veigar": {
+      "name": "ベイガー",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Velkoz": {
+      "name": "ヴェル＝コズ",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Vex": {
+      "name": "ヴェックス",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Vi": {
+      "name": "ヴァイ",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Viego": {
+      "name": "ヴィエゴ",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Viktor": {
+      "name": "ビクター",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Vladimir": {
+      "name": "ブラッドミア",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Volibear": {
+      "name": "ボリベア",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Warwick": {
+      "name": "ワーウィック",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Xayah": {
+      "name": "ザヤ",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Xerath": {
+      "name": "ゼラス",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "XinZhao": {
+      "name": "シン・ジャオ",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Yasuo": {
+      "name": "ヤスオ",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Yone": {
+      "name": "ヨネ",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Yorick": {
+      "name": "ヨリック",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Yunara": {
+      "name": "ユナラ",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Yuumi": {
+      "name": "ユーミ",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Zaahen": {
+      "name": "ザーヘン",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Zac": {
+      "name": "ザック",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Zed": {
+      "name": "ゼド",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Zeri": {
+      "name": "ゼリ",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Ziggs": {
+      "name": "ジグス",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Zilean": {
+      "name": "ジリアン",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Zoe": {
+      "name": "ゾーイ",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    },
+    "Zyra": {
+      "name": "ザイラ",
+      "status": "pending",
+      "updated_at": null,
+      "error": null
+    }
+  }
+}

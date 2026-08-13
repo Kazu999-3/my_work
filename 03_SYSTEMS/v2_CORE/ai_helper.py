@@ -493,7 +493,13 @@ def sync_corrections_to_insights(client, limit: int = 20) -> int:
     横断的に拾えない。evolved_insightsはもともとnote記事のCVR/PVから学ぶ収益化
     パイプライン専用だったが、そのパイプラインが削除され死蔵していたため、この
     横断検索用途に転用した(2026-08-12)。champ_db_bulk_updater.pyの実行のたびに
-    少しずつ追いつく。例外は投げず、新規に埋め込んだ件数を返す。
+    少しずつ追いつくのに加えて、2026-08-13からはchampion_trend_worker.py経由の
+    個別トレンド更新成功時にも(4時間クールダウン付きで)呼ばれるようになり、
+    確定した訂正が意味検索へ反映されるまでの遅延が短縮された。例外は投げず、
+    新規に埋め込んだ件数を返す。evolved_insights.source_correction_idにはUNIQUE
+    制約があるため、複数の呼び出し元(ローカルデーモン/GitHub Actions)が同時に
+    同じ訂正を処理しても、後勝ちのINSERTはDB側で拒否され二重登録にはならない
+    (呼び出し元は単にsynced件数にカウントしないだけで例外にはならない)。
     """
     supabase_url = settings.SUPABASE_URL or os.environ.get("SUPABASE_URL")
     supabase_key = settings.SUPABASE_KEY or os.environ.get("SUPABASE_KEY")

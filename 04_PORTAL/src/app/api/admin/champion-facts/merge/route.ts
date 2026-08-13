@@ -3,6 +3,7 @@ import { supabaseAdmin as supabase } from '../../../../../lib/supabaseAdmin';
 import { verifyAdminSession } from '../../../../../lib/adminAuth';
 import { callGeminiWithRetry } from '../../../../../lib/geminiClient';
 import { recordRevision } from '../../../../../lib/knowledgeRevisions';
+import { resolveToRosterChampion } from '../../../../../lib/dictFactCheck';
 
 // 記事統合時に champion_facts（強み/弱み/パワースパイク/ビルド）も更新する。
 // 重要: 既存を丸ごと上書きせず、「既存に無い知見だけを足す」マージ方式にする。
@@ -31,8 +32,16 @@ export async function POST(req: Request) {
 
     const results: any[] = [];
 
-    for (const champion of list) {
+    for (const rawChampion of list) {
       try {
+        // 表記ゆれのまま champion_facts へ書くと重複レコードを生む(2026-08-05の実例と同型、
+        // 2026-08-13の監査#6で発覚)。他の書き込み経路と同様にここでも正規化を通す。
+        const champion = await resolveToRosterChampion(rawChampion);
+        if (!champion) {
+          results.push({ champion: rawChampion, ok: false, error: `「${rawChampion}」を実在チャンピオン名として認識できませんでした。` });
+          continue;
+        }
+
         // 既存の辞典を取得（無ければ新規作成扱い）
         const { data: existing } = await supabase
           .from('champion_facts')
@@ -96,8 +105,8 @@ ${String(body).slice(0, 8000)}
 
         results.push({ champion, ok: true, added: merged.added || [] });
       } catch (err: any) {
-        console.warn(`[champion-facts/merge] ${champion} の更新に失敗:`, err?.message);
-        results.push({ champion, ok: false, error: err?.message });
+        console.warn(`[champion-facts/merge] ${rawChampion} の更新に失敗:`, err?.message);
+        results.push({ champion: rawChampion, ok: false, error: err?.message });
       }
     }
 

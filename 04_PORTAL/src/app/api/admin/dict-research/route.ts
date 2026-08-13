@@ -66,14 +66,26 @@ ${site.ok ? site.text : '（公式データを取得できませんでした。�
     const result = JSON.parse(cleaned.slice(s, e + 1));
 
     // save=true なら辞典に反映（確認してから保存できるよう、既定では下書きを返すだけ）
+    // 既に値がある項目は上書きしない（champion-facts/mergeと同じ「追記のみ」方針に統一。
+    // 以前はここだけ無条件の全上書きで、他経路が書いた内容を消してしまうことがあった）。
     if (save) {
+      const { data: existing } = await supabase
+        .from('champion_facts')
+        .select('strengths, weaknesses, power_spikes, build_runes, counter_champions')
+        .eq('champion', champion)
+        .maybeSingle();
+      const keepOrFill = (key: 'strengths' | 'weaknesses' | 'power_spikes' | 'build_runes' | 'counter_champions', value: string | undefined) => {
+        const existingVal = (existing as any)?.[key];
+        if (existingVal && String(existingVal).trim()) return existingVal;
+        return value || null;
+      };
       await supabase.from('champion_facts').upsert({
         champion,
-        strengths: result.strengths || null,
-        weaknesses: result.weaknesses || null,
-        power_spikes: result.power_spikes || null,
-        build_runes: result.build_runes || null,
-        counter_champions: result.counter_champions || null,
+        strengths: keepOrFill('strengths', result.strengths),
+        weaknesses: keepOrFill('weaknesses', result.weaknesses),
+        power_spikes: keepOrFill('power_spikes', result.power_spikes),
+        build_runes: keepOrFill('build_runes', result.build_runes),
+        counter_champions: keepOrFill('counter_champions', result.counter_champions),
         patch: site.patch || null,
         source: 'opgg_research',
         updated_at: new Date().toISOString(),

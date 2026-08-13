@@ -195,9 +195,29 @@ def run_bulk_update():
         patch_version = to_display_patch_version(patch_version)
         queue_data["patch_version"] = patch_version
         logging.info(f"📂 既存の更新キューを読み込みました。パッチバージョン: {patch_version}")
+
+        # キューに未処理/失敗中の項目が残っている限り、何ヶ月経っても最初に取得したパッチ表記の
+        # まま動き続けるバグがあった。従来は「キューファイルが空(=全チャンピオン完了後の
+        # 次回実行)」の場合しか最新パッチを再取得しておらず、その間に新パッチがリリースされても
+        # 検知できなかった(2026-08-13発覚。26.15のまま26.16リリース後も進まなかった実例)。
+        # 毎回実際の最新パッチと突き合わせ、ズレていれば新パッチとして全件を再キューイングする。
+        try:
+            _, latest_patch_version = get_latest_patch()
+        except RuntimeError as e:
+            logging.warning(f"⚠️ 最新パッチの確認に失敗しました。既存のパッチ({patch_version})のまま続行します: {e}")
+            latest_patch_version = patch_version
+
+        if latest_patch_version != patch_version:
+            logging.info(f"🆕 新パッチを検知しました({patch_version} → {latest_patch_version})。全チャンピオンを再キューイングします。")
+            patch_version = latest_patch_version
+            queue_data["patch_version"] = patch_version
+            for champ_id, info in queue_data["queue"].items():
+                info["status"] = "pending"
+                info["error"] = None
+
         queue_data["status"] = "running"
         queue_data["updated_at"] = datetime.now(timezone.utc).isoformat()
-        
+
         # 起動時に running 状態のまま放置されているチャンピオンがあれば pending に戻す (レジューム用)
         for champ_id, info in queue_data["queue"].items():
             if info["status"] == "running":

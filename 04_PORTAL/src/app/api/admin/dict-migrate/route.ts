@@ -123,6 +123,10 @@ export async function GET(req: Request) {
           auto_updated_at: new Date().toISOString(),
           source_summary: `matchup_sentinel GLOBAL行から同期 (${new Date().toISOString().slice(0, 10)})`,
           migrated_from_sentinel: true,
+          // 実カラムではない一時フィールド。champion-facts/merge等がmatchup_sentinelより
+          // 後にchampion_factsだけを更新した場合に、この日次同期で上書き消去しないための
+          // 判定に使う（下の書き込み処理で剥がしてからupsertする）。
+          _sentinelCreatedAt: row.created_at || null,
         };
         // 中身が全部空のGLOBAL行（ゴミ/テストデータ）は facts に書き込まない
         if (hasFactContent(fact)) facts.push(fact);
@@ -177,24 +181,41 @@ export async function GET(req: Request) {
     // facts は upsert（champion PK）
     // ただし、人間が 'verified' に設定した confidence を上書きしないよう、
     // 既存行の confidence/last_verified_at/last_verified_by を先に取得してマージする。
+    // champion-facts/merge等がmatchup_sentinelより後に直接champion_factsだけを更新した
+    // ケースを上書きしないよう保護する対象フィールド(#1: 2026-08-13発覚。マージで追記した
+    // 内容が翌日のこの同期で無警告のまま消える事故があった)。
+    const MERGE_PROTECTED_KEYS = ['strengths', 'weaknesses', 'power_spikes', 'build_runes'] as const;
+
     if (facts.length > 0) {
       const { data: existingFacts } = await supabase
         .from('champion_facts')
-        .select('champion, confidence, last_verified_at, last_verified_by')
+        .select('champion, confidence, last_verified_at, last_verified_by, updated_at, strengths, weaknesses, power_spikes, build_runes')
         .in('champion', facts.map((f) => f.champion));
-      const existingMap = new Map<string, { confidence?: string; last_verified_at?: string; last_verified_by?: string }>((existingFacts || []).map((e: any) => [e.champion, e]));
+      const existingMap = new Map<string, any>((existingFacts || []).map((e: any) => [e.champion, e]));
 
       for (let i = 0; i < facts.length; i += 100) {
         const chunk = facts.slice(i, i + 100).map((f) => {
+          const { _sentinelCreatedAt, ...rest } = f;
           const existing = existingMap.get(f.champion);
-          return {
-            ...f,
+          const next: Record<string, any> = {
+            ...rest,
             updated_at: new Date().toISOString(),
             // 既に verified なら confidence を上書きしない
             confidence: existing?.confidence === 'verified' ? 'verified' : f.confidence,
             last_verified_at: existing?.last_verified_at || null,
             last_verified_by: existing?.last_verified_by || null,
           };
+          // champion_factsが最後に更新された時刻がmatchup_sentinel側の行より新しければ、
+          // その間に直接編集(merge等)された可能性が高いので、対象フィールドは
+          // 既存値を維持し、この日次同期による上書きをスキップする。
+          if (existing?.updated_at && _sentinelCreatedAt && new Date(existing.updated_at) > new Date(_sentinelCreatedAt)) {
+            for (const key of MERGE_PROTECTED_KEYS) {
+              if (existing[key] !== null && existing[key] !== undefined && String(existing[key]).trim() !== '') {
+                next[key] = existing[key];
+              }
+            }
+          }
+          return next;
         });
         const { error: fErr } = await supabase.from('champion_facts').upsert(chunk, { onConflict: 'champion' });
         if (fErr) throw new Error(`champion_facts upsert失敗: ${fErr.message}`);

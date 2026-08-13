@@ -155,37 +155,39 @@ class DictSynthesizer:
             if "archived_notes" not in updated_raw_data:
                 updated_raw_data["archived_notes"] = {}
 
-            # 0. 最新トレンドデータの自動取得・マージ (更新から3日以上経過している場合)
+            # 0. 最新トレンドデータの自動取得 (更新から3日以上経過している場合)
+            # 以前はここだけ独自実装(lol_trend_collector)でAI呼び出し・パースを別管理しており、
+            # champion_trend_worker.pyの共通エンジンと処理内容がズレていく懸念があったため統一する
+            # (2026-08-13、辞典更新パイプライン監査#4)。collect_and_save_champion_trendは
+            # matchup_sentinel/champion_facts双方への書き込みまで自分で完結させるので、呼び出し後に
+            # このループが持つraw_dataのローカルコピーを再取得して同期し直す。再取得しないと、
+            # 下のnote_draft整理で古いコピーのままupsertし、直後に書いたはずのトレンド更新を
+            # 自分で上書き消去してしまう(ロストアップデート)。
             import time
             patch_meta = updated_raw_data.get("patch_meta", {})
             last_updated = patch_meta.get("updated_at", 0) if isinstance(patch_meta, dict) else 0
             now_ts = int(time.time())
-            
+
             if not last_updated or (now_ts - last_updated > 259200):
                 logger.info(f"🔄 {champion_name} のパッチトレンドが古い、または存在しないため自動更新します...")
                 try:
-                    from v2_CORE._LOL.lol_trend_collector import LolTrendCollector, sanitize_trend_data
-                    collector = LolTrendCollector()
+                    from v2_CORE._LOL.champion_trend_worker import collect_and_save_champion_trend
                     role = updated_raw_data.get("role") or "Jungle"
-                    trend_data = collector.collect_champ_trends(champion_name, role)
-                    if trend_data:
-                        # Gemini(google_search grounding)によるハルシネーション対策: 異常値を捨てる
-                        trend_data = sanitize_trend_data(trend_data, champion_name)
-                        # AI応答が一部フィールド(tier/trend_items等)を欠くことがあるため、
-                        # 単純上書きにせず既存値をフォールバックにする(#⑤ champion_trend_workerと同じ修正)
-                        existing_patch_meta = patch_meta if isinstance(patch_meta, dict) else {}
-                        updated_raw_data["patch_meta"] = {
-                            "win_rate": trend_data.get("win_rate") if trend_data.get("win_rate") is not None else existing_patch_meta.get("win_rate"),
-                            "pick_rate": trend_data.get("pick_rate") if trend_data.get("pick_rate") is not None else existing_patch_meta.get("pick_rate"),
-                            "ban_rate": trend_data.get("ban_rate") if trend_data.get("ban_rate") is not None else existing_patch_meta.get("ban_rate"),
-                            "tier": trend_data.get("tier") or existing_patch_meta.get("tier"),
-                            "trend_items": trend_data.get("trend_items") or existing_patch_meta.get("trend_items", []),
-                            "trend_runes": trend_data.get("trend_runes") or existing_patch_meta.get("trend_runes", {}),
-                            "patch": trend_data.get("patch") or existing_patch_meta.get("patch"),
-                            "updated_at": now_ts
-                        }
-                        updated_raw_data["pro_builds"] = trend_data.get("pro_builds") or updated_raw_data.get("pro_builds", [])
-                        changed = True
+                    trend_success = collect_and_save_champion_trend(champion_name, role)
+                    if trend_success:
+                        fresh = httpx.get(
+                            self._api("matchup_sentinel") + f"?matchup_id=eq.{champ_data['matchup_id']}&select=raw_data",
+                            headers=self._headers(), timeout=15
+                        )
+                        if fresh.status_code == 200 and fresh.json():
+                            fresh_raw = fresh.json()[0].get("raw_data")
+                            raw_data = fresh_raw if isinstance(fresh_raw, dict) else {}
+                            updated_raw_data = dict(raw_data)
+                            if "archived_notes" not in updated_raw_data:
+                                updated_raw_data["archived_notes"] = {}
+                            changed = True
+                        else:
+                            logger.warning(f"⚠️ {champion_name} のトレンド更新後の再取得に失敗しました（辞典本体への反映は完了済み）。")
                 except Exception as te:
                     logger.error(f"⚠️ {champion_name} の自動トレンド更新に失敗: {te}")
 
