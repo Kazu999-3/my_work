@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useState, useEffect } from 'react';
 import { BookOpen, Activity } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -11,21 +10,10 @@ const DictionaryTab = dynamic(() => import('./tabs/DictionaryTab'), {
   loading: () => <div className="flex justify-center py-20"><div className="w-8 h-8 border-4 border-[#c89b3c] border-t-transparent rounded-full animate-spin"></div></div>
 });
 
-// 2026-08-13: 「AI更新」タブは辞典ヘルスダッシュボード(/admin/dict-health)へ統合し廃止。
-// 旧?tab=ai-updateリンクを踏んでも(通知リンク等は/admin/dict-healthへ更新済みだが、念のため)
-// 単に辞典タブへフォールバックする。
-const TABS = [
-  { id: 'dictionary', label: '辞典', icon: BookOpen, color: 'text-[#c89b3c]' },
-] as const;
-
-type TabId = typeof TABS[number]['id'];
-
+// 2026-08-13: 「AI更新」タブを辞典ヘルスダッシュボード(/admin/dict-health)へ統合し廃止した結果、
+// タブが「辞典」1つだけになったため、タブ切り替えUI自体を撤去した(1つしかないタブバーは
+// ただのUIノイズだったため)。今後タブが増える場合はTABS配列とタブバーJSXを復元すること。
 function ChampionsShell() {
-  const searchParams = useSearchParams();
-  const requestedTab = searchParams.get('tab');
-  const initialTab: TabId = TABS.some((t) => t.id === requestedTab) ? (requestedTab as TabId) : 'dictionary';
-  const [activeTab, setActiveTab] = useState<TabId>(initialTab);
-
   // チャンピオン辞典は管理者専用（閲覧含め一般訪問者はアクセス不可）(#④)。
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   useEffect(() => {
@@ -75,38 +63,12 @@ function ChampionsShell() {
         </p>
       </motion.header>
 
-      {/* タブナビゲーション */}
-      <div className="flex glass-panel p-1 rounded-xl items-center gap-0.5">
-        {TABS.map(tab => {
-          const Icon = tab.icon;
-          const isActive = activeTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-5 py-3 rounded-lg text-sm font-black tracking-wider transition-all ${
-                isActive
-                  ? `bg-black/5 ${tab.color} shadow-lg`
-                  : 'text-gray-400 hover:text-stone-900 hover:bg-black/[0.03]'
-              }`}
-            >
-              <Icon size={16} />
-              {tab.label}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* タブコンテンツ（この画面自体が管理者専用のため、DictionaryTabの編集機能も常に有効） */}
-      {activeTab === 'dictionary' && <DictionaryTab isAdmin={true} />}
+      {/* この画面自体が管理者専用のため、DictionaryTabの編集機能も常に有効 */}
+      <DictionaryTab isAdmin={true} />
     </div>
   );
 }
 
 export default function ChampionsPage() {
-  return (
-    <Suspense fallback={<div className="flex justify-center py-20"><div className="w-8 h-8 border-4 border-[#c89b3c] border-t-transparent rounded-full animate-spin"></div></div>}>
-      <ChampionsShell />
-    </Suspense>
-  );
+  return <ChampionsShell />;
 }
