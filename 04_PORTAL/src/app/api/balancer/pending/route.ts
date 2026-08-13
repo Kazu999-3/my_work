@@ -62,12 +62,29 @@ export async function POST(request: Request) {
     // チーム確定（結果入力ページへの遷移）の瞬間に即時付与することで、次のゲームの選出で優先される。
     // 以前はSELECT→計算→UPDATEの非アトミック処理で、同時リクエスト時に加算が
     // 失われる競合状態があったため、DB側で加算するRPC(increment_ktm_pity)に置き換えた。
+    //
+    // このAPI自体は認証なし・spectatorsはリクエストボディの値をそのまま使っていたため、
+    // 実在しない名前や同名の重複を含む配列を送りつけて任意にpityを水増しできた
+    // (2026-08-13、コーチ/対戦シミュレーター監査#23で発覚)。balancer/pending自体を
+    // ログイン必須にする変更はこのツールの「仲間内で気軽に使える」設計方針に反するため、
+    // 実在するktm_players.nameかどうかの照合と重複排除だけを追加する。
     if (balanceResult.spectators && balanceResult.spectators.length > 0) {
-      const { error: pityError } = await supabase.rpc('increment_ktm_pity', {
-        p_names: balanceResult.spectators,
-        p_amount: 10,
-      });
-      if (pityError) console.warn('[balancer/pending] pity加算に失敗（続行）:', pityError);
+      const uniqueSpectators = Array.from(new Set(
+        (balanceResult.spectators as any[]).map((s) => String(s).trim()).filter(Boolean)
+      ));
+      const { data: validPlayers } = await supabase
+        .from('ktm_players')
+        .select('name')
+        .in('name', uniqueSpectators);
+      const validNames = (validPlayers || []).map((p: any) => p.name);
+
+      if (validNames.length > 0) {
+        const { error: pityError } = await supabase.rpc('increment_ktm_pity', {
+          p_names: validNames,
+          p_amount: 10,
+        });
+        if (pityError) console.warn('[balancer/pending] pity加算に失敗（続行）:', pityError);
+      }
     }
 
     return NextResponse.json({ success: true, pendingId });

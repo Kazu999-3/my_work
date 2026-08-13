@@ -42,7 +42,31 @@ export async function GET(req: Request) {
       });
     }
 
-    return NextResponse.json({ success: true, checked: sources.length, stale: stale.length });
+    // dict_fact_check_queueは検出(スキャン)も消化も完全に手動で、他のどのcronからも
+    // 監視されていなかった(2026-08-13の監査#13で発覚)。誰もタブを開かなければ積み上がりに
+    // 気づけないため、pending件数がしきい値を超えたら鮮度アラートとは別に通知する。
+    const PENDING_ALERT_THRESHOLD = 15;
+    const { count: pendingFactCheckCount } = await supabase
+      .from('dict_fact_check_queue')
+      .select('id', { count: 'exact', head: true })
+      .eq('status', 'pending');
+
+    if ((pendingFactCheckCount || 0) >= PENDING_ALERT_THRESHOLD) {
+      await createAdminNotification({
+        type: 'dict_review',
+        title: `📋 辞典ファクトチェックキューが${pendingFactCheckCount}件滞留中`,
+        body: `dict_fact_check_queueの未対応件数がしきい値(${PENDING_ALERT_THRESHOLD}件)を超えました。「辞典＆ナレッジ統合ヘルスダッシュボード」のファクトチェックタブで確認してください。`,
+        url: '/admin/dict-health',
+        data: { pendingFactCheckCount },
+      });
+    }
+
+    return NextResponse.json({
+      success: true,
+      checked: sources.length,
+      stale: stale.length,
+      pendingFactCheckCount: pendingFactCheckCount || 0,
+    });
   } catch (err: any) {
     console.error('[freshness-check] error:', err);
     return NextResponse.json({ error: err.message }, { status: 500 });

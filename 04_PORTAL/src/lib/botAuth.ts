@@ -23,3 +23,22 @@ export function verifyBotSecret(req: Request): { ok: boolean; error?: string } {
   }
   return { ok: true };
 }
+
+/**
+ * verifyAdminSessionの代替として使う厳格版。verifyBotSecretと違い、
+ * PORTAL_BOT_SECRET未設定時はfail-openせず必ず拒否する
+ * （admin/init-mmr・fix-match・adjust-mmr等、管理者専用エンドポイントに
+ * Botからの呼び出しを許可する用途のため。ここでfail-openすると、
+ * シークレット未設定の間これらのエンドポイントが誰でも呼べる状態になってしまう）。
+ */
+export function verifyBotSecretStrict(req: Request): { ok: boolean; error?: string } {
+  const expected = process.env.PORTAL_BOT_SECRET;
+  if (!expected) {
+    return { ok: false, error: 'PORTAL_BOT_SECRET is not configured' };
+  }
+  const provided = req.headers.get('x-bot-secret');
+  if (provided !== expected) {
+    return { ok: false, error: 'Unauthorized (invalid bot secret)' };
+  }
+  return { ok: true };
+}

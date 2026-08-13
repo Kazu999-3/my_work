@@ -2,6 +2,7 @@ import { NextResponse, NextRequest } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 import { callGeminiWithRetry } from '../../../../lib/geminiClient';
 import { verifyAdminSession } from '../../../../lib/adminAuth';
+import { normalizeChampionName } from '../../../../lib/championNames';
 
 
 // 以前はローカルPCのPythonデーモン(edge_worker_daemon.py)がedge_tasksを処理する設計で、
@@ -21,11 +22,19 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { blue, red } = body;
+    let { blue, red } = body;
 
     if (!blue || !red || Object.keys(blue).length !== 5 || Object.keys(red).length !== 5) {
       return NextResponse.json({ success: false, error: '味方チーム5名、敵チーム5名のチャンピオンをすべて選択してください。' }, { status: 400 });
     }
+
+    // coach/analyzeは表記ゆれ正規化を徹底しているのに対し、ここはピッカーの出力値を
+    // champion_facts.championとの完全一致検索へそのまま使っており、表記が揺れていると
+    // 辞典の知見を取りこぼしていた(2026-08-13、コーチ/対戦シミュレーター監査#25で発覚)。
+    const normalizeTeam = (team: Record<string, string>) =>
+      Object.fromEntries(Object.entries(team).map(([role, champ]) => [role, normalizeChampionName(champ)]));
+    blue = normalizeTeam(blue);
+    red = normalizeTeam(red);
 
     // タスク行を作成（クライアントはこのidをポーリングする）
     const { data: inserted, error: insertErr } = await supabase

@@ -2,12 +2,16 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 import { performFullMmrRebuild } from '../../../../lib/mmr';
 import { verifyAdminSession } from '../../../../lib/adminAuth';
+import { verifyBotSecretStrict } from '../../../../lib/botAuth';
 
 export async function POST(req: Request) {
   try {
   // ===== 管理者セッション確認 =====
+  // KTM Botの管理者パネル(Discord)からもこのエンドポイントを叩くが、Bot側はX-Bot-Secret
+  // ヘッダーしか送らずverifyAdminSessionでは通らないため常に401になっていた
+  // (2026-08-13の監査#18で発覚)。PORTAL_BOT_SECRETが有効な場合のみBot経由の呼び出しも許可する。
   const authResult = await verifyAdminSession(req);
-  if (!authResult.ok) {
+  if (!authResult.ok && !verifyBotSecretStrict(req).ok) {
     return NextResponse.json({ error: authResult.error }, { status: 401 });
   }
   // =================================

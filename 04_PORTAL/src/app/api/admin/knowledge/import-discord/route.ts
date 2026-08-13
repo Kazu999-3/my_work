@@ -1,9 +1,16 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../../../lib/supabaseAdmin';
+import { verifyAdminSession } from '../../../../../lib/adminAuth';
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
 export async function POST(req: Request) {
+  // 他のadmin/knowledge/*ルートと異なり認証チェックが無く、誰でもGemini APIを
+  // 無制限消費した上でpersonal_knowledgeへ任意データをinsertできる状態だった
+  // (2026-08-13の監査#10で発覚)。
+  const auth = await verifyAdminSession(req);
+  if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: 401 });
+
   try {
     const body = await req.json();
     const { mode } = body;

@@ -1,3 +1,10 @@
+# ⚠️ 未使用ファイル (2026-08-13、コーチ/対戦シミュレーター監査#24で確認)。
+# 対戦シミュレーター(5v5)の実処理は 04_PORTAL/src/app/api/match/simulate/route.ts の
+# TypeScript実装へ移行済みで、このスクリプトをsubprocess等で起動している箇所は
+# リポジトリ全体を検索しても存在しない。edge_worker_daemon.py / edge_cloud_worker.py の
+# 両方が task_type='matchup_simulation_5v5' を明示的にディスパッチ対象から除外しているのも、
+# TS側で同期処理が完結しているため。このファイルは独自のCHAMPION_JA_MAP(日本語名辞書)を
+# 持っており、championNames.tsと表記が乖離しうるので、再接続する場合は要注意。
 import os
 import sys
 import json

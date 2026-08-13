@@ -1,7 +1,13 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../../../lib/supabaseAdmin';
+import { verifyAdminSession } from '../../../../../lib/adminAuth';
 
 export async function DELETE(req: Request) {
+  // 他のadmin/knowledge/*ルートと異なり認証チェックが無く、idさえ分かれば誰でも
+  // personal_knowledgeの任意レコードを削除できる状態だった(2026-08-13の監査#28で発覚)。
+  const auth = await verifyAdminSession(req);
+  if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: 401 });
+
   try {
     const { searchParams } = new URL(req.url);
     const id = searchParams.get('id');

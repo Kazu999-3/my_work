@@ -29,7 +29,11 @@ export async function POST(req: Request) {
             status: 'pending',
             created_at: new Date().toISOString(),
           });
-          if (!taskErr) enqueued++;
+          // 23505 = 一意制約違反。事前のSELECTと実際のINSERTの間に別経路(手動ボタン/
+          // auto-refreshなど)が同じチャンピオンを投入していた場合の正常なレース結果なので、
+          // 「既に投入済み」として扱いエラーにしない(2026-08-13の監査#9で発覚したTOCTOU対策、
+          // migration 64のユニークインデックスとセット)。
+          if (!taskErr || taskErr.code === '23505') enqueued++;
         }
       }
       return NextResponse.json({ success: true, message: `${enqueued} 体のチャンピオンを更新キューに追加しました` });
@@ -103,7 +107,9 @@ export async function POST(req: Request) {
         created_at: new Date().toISOString(),
       });
 
-      if (taskErr) throw taskErr;
+      // 23505 = 一意制約違反。事前のSELECTとの間に別経路が投入済みだった場合の正常な
+      // レース結果として扱う(2026-08-13の監査#9対策、migration 64とセット)。
+      if (taskErr && taskErr.code !== '23505') throw taskErr;
       return NextResponse.json({ success: true, message: `${champion} の更新タスクをキューに追加しました` });
     }
 
