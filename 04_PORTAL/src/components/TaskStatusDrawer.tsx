@@ -256,7 +256,7 @@ export default function TaskStatusDrawer({ collapsed = false, align = 'left' }: 
                       </span>
                       {t.task_type === 'champion_db_bulk_update' ? (
                         <Link
-                          href="/champions?tab=ai-update"
+                          href="/admin/dict-health"
                           onClick={() => setOpen(false)}
                           className="shrink-0 px-2 py-0.5 bg-rose-600 hover:bg-rose-700 text-white font-bold text-[10px] rounded-md shadow flex items-center gap-1"
                         >

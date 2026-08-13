@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, Suspense } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Activity, CheckCircle2, AlertTriangle, RefreshCw, Search, ShieldCheck, Sparkles, Filter, ExternalLink, Play, Layers, HelpCircle, History, FileCheck, ClipboardCheck } from 'lucide-react';
+import { Activity, CheckCircle2, AlertTriangle, RefreshCw, Search, ShieldCheck, Sparkles, Filter, ExternalLink, Play, Layers, HelpCircle, History, FileCheck, ClipboardCheck, Target } from 'lucide-react';
 import { getChampIcon } from '../../../lib/ddragonClient';
 import DictFactCheckPanel from '../knowledge/DictFactCheckPanel';
 import DictReviewPanel from '../knowledge/DictReviewPanel';
@@ -11,6 +12,8 @@ import RevisionsPanel from '../knowledge/RevisionsPanel';
 import DictInsightsPanel from '../knowledge/DictInsightsPanel';
 import FreshnessPanel from '../knowledge/FreshnessPanel';
 import InventoryAuditPanel from '../knowledge/InventoryAuditPanel';
+import BulkUpdatePanel from '../knowledge/BulkUpdatePanel';
+import DeepResearchPanel from '../knowledge/DeepResearchPanel';
 
 interface ChampHealth {
   champion: string;
@@ -25,7 +28,8 @@ interface ChampHealth {
   hasContent: boolean;
 }
 
-export default function DictHealthDashboard() {
+function DictHealthDashboardContent() {
+  const searchParams = useSearchParams();
   const [data, setData] = useState<{
     currentPatch: string;
     totalCount: number;
@@ -36,6 +40,15 @@ export default function DictHealthDashboard() {
 
   const [loading, setLoading] = useState(true);
   const [hubTab, setHubTab] = useState<'health' | 'audit' | 'history'>('health');
+
+  // edge_cloud_worker.pyの失敗通知(?failed_task=...)からの直リンクは、辞典ページの
+  // AI更新タブ廃止に伴いここへ着地するようにした(2026-08-13)。失敗タスク一覧が
+  // あるヘルス概要タブへ自動で切り替える。
+  useEffect(() => {
+    if (searchParams?.get('failed_task')) {
+      setHubTab('health');
+    }
+  }, [searchParams]);
 
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'verified' | 'ai_generated' | 'stale'>('ALL');
@@ -373,6 +386,37 @@ export default function DictHealthDashboard() {
         {/* ━━━━━ タブ1: ヘルス概要 ━━━━━ */}
         {hubTab === 'health' && (
           <div className="space-y-6 animate-in">
+            {/* AI一括更新ツール群（2026-08-13、辞典ページのAI更新タブから統合。
+                「更新ボタンがページによって分かれていて分かりにくい」というフィードバックを受け、
+                手動更新系のトリガーはすべてここへ一本化した） */}
+            <div className="space-y-6">
+              <Suspense fallback={null}>
+                <BulkUpdatePanel />
+              </Suspense>
+
+              <div className="space-y-3">
+                <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5 px-1">
+                  <Target size={16} className="text-purple-600" />
+                  バトルリサーチ（特定チャンピオンのAIディープリサーチ）
+                </h3>
+                <p className="text-xs text-gray-400 px-1">
+                  チャンピオンを指定してAI＋YouTube最新動画から戦術・立ち回りを深掘り検索します。結果は「チャンピオン辞典」へ直接自動蓄積・同期されます。
+                </p>
+                <DeepResearchPanel />
+              </div>
+
+              <div className="bg-white rounded-3xl border border-stone-200 p-6 shadow-sm">
+                <div className="flex items-center gap-2 mb-4">
+                  <Sparkles className="text-amber-600 w-5 h-5" />
+                  <h2 className="text-sm font-extrabold text-stone-900">💡 ナレッジ点検 & 蓄積メモ・プロ分析インサイト</h2>
+                </div>
+                <p className="text-xs text-stone-500 mb-4">
+                  コーチAIが対戦データから集計したチャンピオン別の蓄積メモやナレッジの整合性を点検・直接編集します。公式データを起点にした個別チャンピオンの下書き作成もここから行えます。
+                </p>
+                <DictInsightsPanel />
+              </div>
+            </div>
+
             {/* 集計サマリーカード */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <button
@@ -714,22 +758,22 @@ export default function DictHealthDashboard() {
               </p>
               <FreshnessPanel />
             </div>
-
-            {/* インサイト */}
-            <div className="bg-white rounded-3xl border border-stone-200 p-6 shadow-sm">
-              <div className="flex items-center gap-2 mb-4">
-                <Sparkles className="text-amber-600 w-5 h-5" />
-                <h2 className="text-sm font-extrabold text-stone-900">💡 ナレッジ点検 & 蓄積メモ・プロ分析インサイト</h2>
-              </div>
-              <p className="text-xs text-stone-500 mb-4">
-                コーチAIが対戦データから集計したチャンピオン別の蓄積メモやナレッジの整合性を点検・直接編集します。
-              </p>
-              <DictInsightsPanel />
-            </div>
           </div>
         )}
       </div>
     </div>
+  );
+}
+
+export default function DictHealthDashboard() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#f7f5f0] flex items-center justify-center">
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-amber-200 border-t-amber-600" />
+      </div>
+    }>
+      <DictHealthDashboardContent />
+    </Suspense>
   );
 }
 

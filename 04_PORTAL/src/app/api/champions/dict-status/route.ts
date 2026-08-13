@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 import { verifyAdminSession } from '../../../../lib/adminAuth';
 
-// champions/tabs/AiUpdateTab.tsx 用: チャンピオン辞典(matchup_sentinel, enemy=GLOBAL)の
+// admin/knowledge/BulkUpdatePanel.tsx 用: チャンピオン辞典(matchup_sentinel, enemy=GLOBAL)の
 // 構築済み日時と、本文が未着手(pending)かどうかを返す読み取り専用API。
 export const dynamic = 'force-dynamic';
 

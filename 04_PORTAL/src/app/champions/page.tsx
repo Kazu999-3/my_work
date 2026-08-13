@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { BookOpen, Activity, Sparkles } from 'lucide-react';
+import { BookOpen, Activity } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 // タブコンポーネントの遅延読み込み
@@ -10,20 +10,20 @@ import dynamic from 'next/dynamic';
 const DictionaryTab = dynamic(() => import('./tabs/DictionaryTab'), {
   loading: () => <div className="flex justify-center py-20"><div className="w-8 h-8 border-4 border-[#c89b3c] border-t-transparent rounded-full animate-spin"></div></div>
 });
-const AiUpdateTab = dynamic(() => import('./tabs/AiUpdateTab'), {
-  loading: () => <div className="flex justify-center py-20"><div className="w-8 h-8 border-4 border-[#c89b3c] border-t-transparent rounded-full animate-spin"></div></div>
-});
 
+// 2026-08-13: 「AI更新」タブは辞典ヘルスダッシュボード(/admin/dict-health)へ統合し廃止。
+// 旧?tab=ai-updateリンクを踏んでも(通知リンク等は/admin/dict-healthへ更新済みだが、念のため)
+// 単に辞典タブへフォールバックする。
 const TABS = [
   { id: 'dictionary', label: '辞典', icon: BookOpen, color: 'text-[#c89b3c]' },
-  { id: 'ai-update', label: 'AI更新', icon: Sparkles, color: 'text-amber-700' },
 ] as const;
 
 type TabId = typeof TABS[number]['id'];
 
 function ChampionsShell() {
   const searchParams = useSearchParams();
-  const initialTab = (searchParams.get('tab') as TabId) || 'dictionary';
+  const requestedTab = searchParams.get('tab');
+  const initialTab: TabId = TABS.some((t) => t.id === requestedTab) ? (requestedTab as TabId) : 'dictionary';
   const [activeTab, setActiveTab] = useState<TabId>(initialTab);
 
   // チャンピオン辞典は管理者専用（閲覧含め一般訪問者はアクセス不可）(#④)。
@@ -99,7 +99,6 @@ function ChampionsShell() {
 
       {/* タブコンテンツ（この画面自体が管理者専用のため、DictionaryTabの編集機能も常に有効） */}
       {activeTab === 'dictionary' && <DictionaryTab isAdmin={true} />}
-      {activeTab === 'ai-update' && <AiUpdateTab />}
     </div>
   );
 }

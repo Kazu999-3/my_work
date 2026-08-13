@@ -106,10 +106,10 @@ export default function Home() {
     resolve_youtube_channel: '/admin/youtube',
     resolve_youtube_playlist: '/admin/youtube',
     youtube_channel_monitor: '/admin/youtube',
-    reddit_scout: '/champions?tab=ai-update',
-    lol_trend_collect: '/champions?tab=ai-update',
-    dict_synthesizer: '/champions?tab=ai-update',
-    champion_db_bulk_update: '/champions?tab=ai-update',
+    reddit_scout: '/admin/dict-health',
+    lol_trend_collect: '/admin/dict-health',
+    dict_synthesizer: '/admin/dict-health',
+    champion_db_bulk_update: '/admin/dict-health',
   };
 
   const handleRetryFailedTask = async (task: any) => {

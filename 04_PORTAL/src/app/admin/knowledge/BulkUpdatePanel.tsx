@@ -2,11 +2,15 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Sparkles, RefreshCw, Activity, AlertTriangle, Target } from 'lucide-react';
+import { Sparkles, RefreshCw, Activity, AlertTriangle } from 'lucide-react';
 import { motion } from 'framer-motion';
-import DeepResearchPanel from '../../admin/knowledge/DeepResearchPanel';
 
-export default function AiUpdateTab() {
+// 2026-08-13、機能監査の一環でchampions/tabs/AiUpdateTab.tsxから抽出。
+// 「一括更新ボタンが辞典ページとヘルスダッシュボードの2箇所に分裂していて分かりにくい」
+// というフィードバックを受け、辞典ページ側のAI更新タブを廃止しヘルスダッシュボードへ一本化した。
+// バトルリサーチ(DeepResearchPanel)は本コンポーネントに含めず、呼び出し元(dict-health)で
+// 別途配置している。
+export default function BulkUpdatePanel() {
   const searchParams = useSearchParams();
   const highlightTaskId = searchParams?.get('failed_task') || null;
 
@@ -230,10 +234,10 @@ export default function AiUpdateTab() {
 
   return (
     <>
-    <motion.div 
-      initial={{ y: 20, opacity: 0 }} 
-      animate={{ y: 0, opacity: 1 }} 
-      transition={{ delay: 0.1 }} 
+    <motion.div
+      initial={{ y: 20, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ delay: 0.1 }}
       className="glass-panel p-6 rounded-2xl border-t-2 border-[#c89b3c]/50 relative overflow-hidden"
     >
       <div className="absolute -right-10 -top-10 w-40 h-40 bg-[#c89b3c]/5 rounded-full blur-2xl pointer-events-none" />
@@ -314,7 +318,7 @@ export default function AiUpdateTab() {
             </div>
           )}
         </div>
-        
+
         <div className="flex gap-3 shrink-0 flex-wrap w-full md:w-auto justify-end">
           <button
             onClick={handleStartBulkUpdate}
@@ -324,7 +328,7 @@ export default function AiUpdateTab() {
             <RefreshCw size={16} className={isBulkRunning ? 'animate-spin' : ''} />
             {isBulkRunning ? '更新を実行中...' : bulkStatus.status === 'suspended' ? '更新を再開' : '一括更新を開始'}
           </button>
-          
+
           <button
             onClick={handleResetQueue}
             className="px-4 py-3 glass-panel glass-panel-hover text-gray-400 hover:text-stone-900 rounded-xl text-sm font-bold transition-all"
@@ -335,30 +339,11 @@ export default function AiUpdateTab() {
       </div>
     </motion.div>
 
-    {/* 特定チャンプ ディープリサーチ（バトルリサーチ）。以前はパーソナルコーチ内にあったが、
-        結果はチャンピオン辞典へ直接蓄積される辞典コンテンツ生成機能のため、
-        AI更新タブ側へ移設した(2026-08-08)。 */}
-    <motion.div
-      initial={{ y: 20, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ delay: 0.15 }}
-      className="space-y-3"
-    >
-      <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5 px-1">
-        <Target size={16} className="text-purple-600" />
-        バトルリサーチ（特定チャンピオンのAIディープリサーチ）
-      </h3>
-      <p className="text-xs text-gray-400 px-1">
-        チャンピオンを指定してAI＋YouTube最新動画から戦術・立ち回りを深掘り検索します。結果は「チャンピオン辞典」へ直接自動蓄積・同期されます。
-      </p>
-      <DeepResearchPanel />
-    </motion.div>
-
     {/* 自動化パイプラインステータス */}
     {pipelineStatus.length > 0 && (
-      <motion.div 
-        initial={{ y: 20, opacity: 0 }} 
-        animate={{ y: 0, opacity: 1 }} 
+      <motion.div
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.2 }}
         className="glass-panel p-6 rounded-2xl"
       >

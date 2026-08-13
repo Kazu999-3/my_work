@@ -186,7 +186,7 @@ class SovereignHerald:
         portal_url = os.environ.get("PORTAL_URL", "http://localhost:5173").rstrip("/")
         bot_secret = os.environ.get("PORTAL_BOT_SECRET", "")
         path_mapping = {
-            "champdb": "champions", "champdb_bulk": "champions?tab=ai-update",
+            "champdb": "champions", "champdb_bulk": "admin/dict-health",
             "drafts": "library", "publish": "library",
             "dashboard": "", "sns": "", "logs": "", "analysis": "", "youtube": "admin/youtube",
         }
@@ -237,7 +237,7 @@ class SovereignHerald:
         # 実際のポータルのURLパスへのマッピング
         path_mapping = {
             "champdb": "champions",
-            "champdb_bulk": "champions?tab=ai-update",
+            "champdb_bulk": "admin/dict-health",
             "drafts": "library",
             "publish": "library",
             "dashboard": "",

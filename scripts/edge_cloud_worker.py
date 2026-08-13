@@ -51,7 +51,7 @@ TASK_LABELS = {
     "reddit_scout": ("Redditスカウト", "/champions"),
     "lol_trend_collect": ("LoLトレンド収集", "/champions"),
     "dict_synthesizer": ("辞典シンセサイザー", "/champions"),
-    "champion_db_bulk_update": ("チャンピオン辞典一括更新", "/champions?tab=ai-update"),
+    "champion_db_bulk_update": ("チャンピオン辞典一括更新", "/admin/dict-health"),
 }
 
 
@@ -155,12 +155,13 @@ def notify_portal(task_type, payload, success, detail="", task_id=None):
         champion = payload.get("champion", "")
         role = payload.get("role", "")
         label += f"（{champion}/{role}）"
-        # 失敗通知をクリックした際に、辞典のAI更新タブで該当チャンピオン/ロールを
-        # 直接開いて再実行できるよう、クエリパラメータで引き継ぐ。
+        # 失敗通知をクリックした際に、辞典ヘルスダッシュボードの失敗タスク一覧で該当タスクを
+        # 直接ハイライト表示できるよう、クエリパラメータで引き継ぐ。2026-08-13、辞典ページの
+        # AI更新タブ廃止に伴いリンク先を/admin/dict-healthへ変更。
         if not success:
             from urllib.parse import urlencode
-            qs = urlencode({"tab": "ai-update", "champion": champion, "role": role, "failed_task": task_id or ""})
-            url_path = f"{url_path}?{qs}"
+            qs = urlencode({"failed_task": task_id or ""})
+            url_path = f"/admin/dict-health?{qs}"
     title = f"{'✅' if success else '❌'} {label}{'完了' if success else '失敗'}"
     body = (detail or "")[:400] or None
 
