@@ -386,37 +386,6 @@ function DictHealthDashboardContent() {
         {/* ━━━━━ タブ1: ヘルス概要 ━━━━━ */}
         {hubTab === 'health' && (
           <div className="space-y-6 animate-in">
-            {/* AI一括更新ツール群（2026-08-13、辞典ページのAI更新タブから統合。
-                「更新ボタンがページによって分かれていて分かりにくい」というフィードバックを受け、
-                手動更新系のトリガーはすべてここへ一本化した） */}
-            <div className="space-y-6">
-              <Suspense fallback={null}>
-                <BulkUpdatePanel />
-              </Suspense>
-
-              <div className="space-y-3">
-                <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5 px-1">
-                  <Target size={16} className="text-purple-600" />
-                  バトルリサーチ（特定チャンピオンのAIディープリサーチ）
-                </h3>
-                <p className="text-xs text-gray-400 px-1">
-                  チャンピオンを指定してAI＋YouTube最新動画から戦術・立ち回りを深掘り検索します。結果は「チャンピオン辞典」へ直接自動蓄積・同期されます。
-                </p>
-                <DeepResearchPanel />
-              </div>
-
-              <div className="bg-white rounded-3xl border border-stone-200 p-6 shadow-sm">
-                <div className="flex items-center gap-2 mb-4">
-                  <Sparkles className="text-amber-600 w-5 h-5" />
-                  <h2 className="text-sm font-extrabold text-stone-900">💡 ナレッジ点検 & 蓄積メモ・プロ分析インサイト</h2>
-                </div>
-                <p className="text-xs text-stone-500 mb-4">
-                  コーチAIが対戦データから集計したチャンピオン別の蓄積メモやナレッジの整合性を点検・直接編集します。公式データを起点にした個別チャンピオンの下書き作成もここから行えます。
-                </p>
-                <DictInsightsPanel />
-              </div>
-            </div>
-
             {/* 集計サマリーカード */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <button
@@ -697,6 +666,39 @@ function DictHealthDashboardContent() {
             <p className="text-sm font-bold text-stone-500">条件に一致するチャンピオンが見つかりませんでした</p>
           </div>
         )}
+
+            {/* AI一括更新ツール群（2026-08-13、辞典ページのAI更新タブから統合。
+                「更新ボタンがページによって分かれていて分かりにくい」というフィードバックを受け、
+                手動更新系のトリガーはすべてここへ一本化した。2026-08-13、一覧より前に
+                置くと本来の主役(チャンピオン状態一覧)にたどり着くまでが長すぎたため、
+                一覧の下へ並び替えた） */}
+            <div className="space-y-6">
+              <Suspense fallback={null}>
+                <BulkUpdatePanel />
+              </Suspense>
+
+              <div className="space-y-3">
+                <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5 px-1">
+                  <Target size={16} className="text-purple-600" />
+                  バトルリサーチ（特定チャンピオンのAIディープリサーチ）
+                </h3>
+                <p className="text-xs text-gray-400 px-1">
+                  チャンピオンを指定してAI＋YouTube最新動画から戦術・立ち回りを深掘り検索します。結果は「チャンピオン辞典」へ直接自動蓄積・同期されます。
+                </p>
+                <DeepResearchPanel />
+              </div>
+
+              <div className="bg-white rounded-3xl border border-stone-200 p-6 shadow-sm">
+                <div className="flex items-center gap-2 mb-4">
+                  <Sparkles className="text-amber-600 w-5 h-5" />
+                  <h2 className="text-sm font-extrabold text-stone-900">💡 ナレッジ点検 & 蓄積メモ・プロ分析インサイト</h2>
+                </div>
+                <p className="text-xs text-stone-500 mb-4">
+                  コーチAIが対戦データから集計したチャンピオン別の蓄積メモやナレッジの整合性を点検・直接編集します。公式データを起点にした個別チャンピオンの下書き作成もここから行えます。
+                </p>
+                <DictInsightsPanel />
+              </div>
+            </div>
           </div>
         )}
 

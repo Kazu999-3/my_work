@@ -33,6 +33,7 @@ export async function GET(req: NextRequest) {
       { data: systemMetricsRow },
       { data: dictReviewNotif },
       { data: champdbBulkProgress },
+      { data: dictHealthRows },
     ] = await Promise.all([
       // ワーカーハートビート
       supabase.from('edge_tasks').select('*').eq('id', heartbeatId).maybeSingle(),
@@ -106,6 +107,10 @@ export async function GET(req: NextRequest) {
         .select('status, payload, updated_at')
         .eq('id', '00000000-0000-0000-0000-000000000002')
         .maybeSingle(),
+      // 「辞典ヘルス」カード用: /admin/dict-health と同じconfidence内訳のサマリー。
+      // システム運用トップに辞典の要対応件数が一切出ておらず、ヘルスダッシュボードを
+      // 開くまで気づけなかったため追加(2026-08-13)。
+      supabase.from('champion_facts').select('confidence'),
     ]);
 
     // (task_type, payload)ごとに最新の1件だけを残し、それが failed のものだけを
@@ -161,6 +166,13 @@ export async function GET(req: NextRequest) {
     const youtubeRunning = runningTasks.some((t: any) => t.task_type?.includes('youtube'));
     const dictRunning = runningTasks.some((t: any) => t.task_type?.includes('champion_db') || t.task_type?.includes('dict'));
 
+    const dictHealthSummary = { verified: 0, aiGenerated: 0, stale: 0 };
+    for (const row of (dictHealthRows || [])) {
+      if (row.confidence === 'verified') dictHealthSummary.verified++;
+      else if (row.confidence === 'stale') dictHealthSummary.stale++;
+      else dictHealthSummary.aiGenerated++;
+    }
+
     return NextResponse.json({
       worker: {
         active: workerActive,
@@ -189,6 +201,7 @@ export async function GET(req: NextRequest) {
         },
         cloud_workers: (systemMetricsRow?.raw_data as any)?.cloud_workers || {},
       },
+      dictHealthSummary,
       recentYoutubeQueue: ytQueueData || [],
       recentDictUpdates: dictData || [],
       recentLibraryUpdates: libData || [],

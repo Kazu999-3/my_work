@@ -66,6 +66,9 @@ export default function Home() {
   const [kbStats, setKbStats] = useState<{ facts: number | null; library: number | null; laneGuides: number | null; memos: number | null; matchupLog: number | null }>({
     facts: null, library: null, laneGuides: null, memos: null, matchupLog: null,
   });
+  // 辞典ヘルス(確認済み/AI生成/要対応の内訳)。以前はこのトップダッシュボードに一切出ておらず、
+  // /admin/dict-healthを開くまで要対応件数に気づけなかったため追加(2026-08-13)。
+  const [dictHealthSummary, setDictHealthSummary] = useState<{ verified: number; aiGenerated: number; stale: number } | null>(null);
 
   const fetchData = async (silent = false) => {
     if (!silent) setIsLoading(true);
@@ -75,6 +78,7 @@ export default function Home() {
         const data = await res.json();
         if (data.worker) setSystemStatus({ worker: data.worker, queue: data.queue || [], history: data.history || [] });
         if (data.kbStats) setKbStats(data.kbStats);
+        if (data.dictHealthSummary) setDictHealthSummary(data.dictHealthSummary);
         if (data.systemMetrics) setSystemMetrics(data.systemMetrics);
         if (data.recentYoutubeQueue) setRecentYoutubeQueue(data.recentYoutubeQueue);
         if (data.recentDictUpdates) setRecentDictUpdates(data.recentDictUpdates);
@@ -628,6 +632,31 @@ export default function Home() {
                   <div className="text-[10px] text-stone-500 font-bold mt-0.5">{s.label}</div>
                 </Link>
               ))}
+            </div>
+          </div>
+
+          {/* 辞典ヘルス */}
+          <div className="glass-panel rounded-2xl p-3.5 border border-black/5 bg-gradient-to-br from-rose-50/70 to-transparent lg:col-span-2">
+            <div className="flex justify-between items-center mb-3 flex-wrap gap-2">
+              <h3 className="text-base font-black text-stone-900 flex items-center gap-1.5">
+                <div className="w-1.5 h-5 bg-rose-500 rounded-full"></div>
+                辞典ヘルス
+              </h3>
+              <Link href="/admin/dict-health" className="text-xs font-bold text-rose-700 hover:text-rose-800 hover:underline">📊 ヘルスダッシュボードへ →</Link>
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              <Link href="/admin/dict-health" className="bg-emerald-100/60 rounded-xl p-2.5 border border-emerald-200 hover:bg-emerald-100 transition-colors text-center">
+                <div className="text-xl font-black text-emerald-800">{dictHealthSummary === null ? '—' : dictHealthSummary.verified}</div>
+                <div className="text-[10px] text-emerald-700 font-bold mt-0.5">🟢 確認済み</div>
+              </Link>
+              <Link href="/admin/dict-health" className="bg-amber-100/60 rounded-xl p-2.5 border border-amber-200 hover:bg-amber-100 transition-colors text-center">
+                <div className="text-xl font-black text-amber-800">{dictHealthSummary === null ? '—' : dictHealthSummary.aiGenerated}</div>
+                <div className="text-[10px] text-amber-700 font-bold mt-0.5">🟡 AI生成</div>
+              </Link>
+              <Link href="/admin/dict-health" className="bg-red-100/60 rounded-xl p-2.5 border border-red-200 hover:bg-red-100 transition-colors text-center">
+                <div className="text-xl font-black text-red-800">{dictHealthSummary === null ? '—' : dictHealthSummary.stale}</div>
+                <div className="text-[10px] text-red-700 font-bold mt-0.5">🔴 要対応</div>
+              </Link>
             </div>
           </div>
 
