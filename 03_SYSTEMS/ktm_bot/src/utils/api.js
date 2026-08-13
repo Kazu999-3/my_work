@@ -33,7 +33,10 @@ export async function sendDiscordMessage(endpoint, token, method, bodyJSON) {
     "Authorization": `Bot ${token}`,
     "Content-Type": "application/json"
   };
-  const res = await fetch(url, { method, headers, body: JSON.stringify(bodyJSON) });
+  // 以前はリトライが無く、参加ボタン連打等でDiscordのレート制限(429)にかかった瞬間に
+  // 募集カードの更新が静かに失敗していた(2026-08-13、KTM運営Bot監査#21で発覚)。
+  // scheduled.js側の通知送信と同じfetchWithRetryに揃える。
+  const res = await fetchWithRetry(url, { method, headers, body: JSON.stringify(bodyJSON) });
   if (!res.ok) {
     const clone = res.clone();
     const errorText = await clone.text();

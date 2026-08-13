@@ -17,10 +17,16 @@ export async function handleScheduledEvent(event, env, ctx) {
   if (cronExpression.includes("0 15 * * 7") || mode === "weekly_recruit") {
     console.log("[Scheduled] Executing weekly recruitment posting...");
     await postWeeklyRecruitment(env);
-  } else if (mode === "create") {
-    await createWeeklyEvents(env);
-  } else if (mode === "weekly_report") {
+  } else if (cronExpression.includes("0 0 * * 2") || mode === "weekly_report") {
+    // 毎週月曜 9:00 JST (UTC 0:00 月曜=Cloudflare基準dow=2): 個人週間レポート配信。
+    // 以前はcronに未登録でmode==="weekly_report"経由(手動テストのみ)でしか到達せず、
+    // 「毎週月曜配信」という文言に反して一度も自動送信されていなかった
+    // (2026-08-13、KTM運営Bot監査#19で発覚)。
     await sendWeeklyReports(env);
+  } else if (mode === "create") {
+    // createWeeklyEvents はDiscordイベント作成のPOSTを書く前に処理が終わる未完成実装のため
+    // (2026-08-13の同監査で発覚)、意図的にcronへは登録しない。手動テスト(mode指定)のみ到達可能。
+    await createWeeklyEvents(env);
   } else if (mode === "event_notify" || cronExpression.includes("0 11 * *")) {
     await sendEventUsersNotification(env, { lookaheadHours: 48 });
   } else if (cronExpression.includes("*/10 * * * *") || mode === "recruit_reminder") {
@@ -28,9 +34,13 @@ export async function handleScheduledEvent(event, env, ctx) {
     await sendRecruitmentReminders(env);
     // 同じ10分おきcronで、試合終了3分後に予約されたリザルト自動取得も処理する
     await processPendingMatchSyncs(env);
-  } else {
-    // 直前通知: 進行中の募集の集まり具合を通知し、不足なら欠員アラート
+  } else if (cronExpression.includes("0 * * * *") || mode === "recruit_status") {
+    // 毎時0分: 直前通知（進行中の募集の集まり具合を通知し、不足なら欠員アラート）。
+    // 以前はどのcron文字列ともマッチしない「default分岐」のまま放置されており、
+    // 実際には一度も自動実行されていなかった(2026-08-13の同監査で発覚)。
     await sendRecruitStatusNotification(env);
+  } else {
+    console.log("[Scheduled] No matching handler for this trigger:", cronExpression || mode);
   }
 }
 

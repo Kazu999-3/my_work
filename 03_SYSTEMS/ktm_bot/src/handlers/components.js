@@ -225,31 +225,60 @@ export async function handleButtonInteraction(interaction, env, ctx) {
 
         const updatedContent = updateTextWithStatus(interaction.message.content);
 
-        // 押されたメッセージ自体の更新と、同期対象を探すための直近メッセージ一覧取得を並列実行
-        const [, channelMsgsRes] = await Promise.all([
+        // 押されたメッセージ自体の更新と、同期対象を探すための直近メッセージ一覧取得・
+        // DBに永続化されている「定期カスタム募集」本カードの直接取得を並列実行。
+        // 以前は直近15件の検索のみに頼っており、チャンネルの他投稿がその間に15件を
+        // 超えると本カードが同期対象から漏れて色・人数が古いまま固着し得た
+        // (2026-08-13、KTM運営Bot監査#20で発覚)。Discord APIの上限である100件まで
+        // 検索範囲を広げた上で、recruitmentsテーブルに永続化されている本カードのIDは
+        // 検索に頼らず直接取得して確実に同期対象へ含める(事前告知/メンバー状況カードは
+        // DBに追跡列が無いため引き続き検索頼みだが、上限拡大で漏れの可能性は大幅に減る)。
+        const [, channelMsgsRes, mainCardRow] = await Promise.all([
           sendDiscordMessage(`channels/${channelId}/messages/${msgId}`, botToken, "PATCH", {
             content: updatedContent,
             embeds: [targetEmbed],
             components: interaction.message.components
           }),
-          fetch(`https://discord.com/api/v10/channels/${channelId}/messages?limit=15`, {
+          fetch(`https://discord.com/api/v10/channels/${channelId}/messages?limit=100`, {
             headers: { "Authorization": `Bot ${botToken}` }
           }).catch(() => null),
+          fetchSupabase(env, 'recruitments', `mode=eq.${encodeURIComponent('定期カスタム')}&status=eq.open&discord_channel_id=eq.${channelId}&select=discord_message_id&order=created_at.desc&limit=1`)
+            .then((rows) => (rows && rows.length > 0 ? rows[0] : null))
+            .catch(() => null),
         ]);
 
         // チャンネル内の直近メッセージから「募集カード」と「アナウンス通知」の両方を検索して完全同期
         try {
+          const relatedMsgs = [];
+          const seenIds = new Set([msgId]);
+
           if (channelMsgsRes && channelMsgsRes.ok) {
             const channelMsgs = await channelMsgsRes.json();
-            const relatedMsgs = channelMsgs.filter(m => 
-              m.id !== msgId && 
-              m.author?.bot && 
-              (
+            for (const m of channelMsgs) {
+              if (seenIds.has(m.id) || !m.author?.bot) continue;
+              const matches =
                 (m.embeds?.[0]?.title && (m.embeds[0].title.includes("定期カスタム") || m.embeds[0].title.includes("事前告知") || m.embeds[0].title.includes("メンバー状況"))) ||
-                (m.content && m.content.includes("【定期カスタム募集】"))
-              )
-            );
+                (m.content && m.content.includes("【定期カスタム募集】"));
+              if (matches) { relatedMsgs.push(m); seenIds.add(m.id); }
+            }
+          }
 
+          // DB永続化されている本カードが検索範囲(100件)からも漏れていた場合の最終保険。
+          if (mainCardRow?.discord_message_id && !seenIds.has(mainCardRow.discord_message_id)) {
+            try {
+              const mainMsgRes = await fetch(`https://discord.com/api/v10/channels/${channelId}/messages/${mainCardRow.discord_message_id}`, {
+                headers: { "Authorization": `Bot ${botToken}` }
+              });
+              if (mainMsgRes.ok) {
+                relatedMsgs.push(await mainMsgRes.json());
+                seenIds.add(mainCardRow.discord_message_id);
+              }
+            } catch (e) {
+              console.warn("main recruitment card direct fetch failed:", e);
+            }
+          }
+
+          {
             // 各メッセージは独立した書き込み先なので並列実行して一元更新
             await Promise.all(relatedMsgs.map((relMsg) => {
               const relEmbed = relMsg.embeds?.[0] ? { ...relMsg.embeds[0] } : null;
