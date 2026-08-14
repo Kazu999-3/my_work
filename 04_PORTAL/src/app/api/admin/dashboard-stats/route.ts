@@ -107,11 +107,28 @@ export async function GET(req: NextRequest) {
         .select('status, payload, updated_at')
         .eq('id', '00000000-0000-0000-0000-000000000002')
         .maybeSingle(),
-      // 「辞典ヘルス」カード用: /admin/dict-health と同じconfidence内訳のサマリー。
+      // 「辞典ヘルス」カード用: /admin/dict-health と同じ内訳のサマリー。
       // システム運用トップに辞典の要対応件数が一切出ておらず、ヘルスダッシュボードを
       // 開くまで気づけなかったため追加(2026-08-13)。
-      supabase.from('champion_facts').select('confidence'),
+      // 2026-08-14発覚: confidence列の値をそのまま数えるだけの実装だったため、常に
+      // 要対応=0を表示する実バグだった。confidence='stale'という値はDBに一度も保存
+      // されておらず、/admin/dict-healthは「パッチ不一致」または「strengths空」も
+      // 要対応として動的に判定している。同じ分類ロジックに揃える。
+      supabase.from('champion_facts').select('confidence, patch, strengths'),
     ]);
+
+    // dict-health/route.tsのgetCurrentPatch()と同じロジック(西暦下2桁基準への変換)。
+    // ここがズレると全チャンピオンが誤って「パッチ不一致」判定される。
+    const dictHealthCurrentPatch = await (async () => {
+      try {
+        const res = await fetch('https://ddragon.leagueoflegends.com/api/versions.json');
+        const versions = await res.json();
+        const [rawMajor, rawMinor] = (versions[0] || '16.15.1').split('.');
+        return `${parseInt(rawMajor, 10) + 10}.${rawMinor}`;
+      } catch {
+        return '26.15';
+      }
+    })();
 
     // (task_type, payload)ごとに最新の1件だけを残し、それが failed のものだけを
     // 「まだ未解決の要対応」として抽出する（再実行後に成功していれば自動的に消える）。
@@ -167,9 +184,14 @@ export async function GET(req: NextRequest) {
     const dictRunning = runningTasks.some((t: any) => t.task_type?.includes('champion_db') || t.task_type?.includes('dict'));
 
     const dictHealthSummary = { verified: 0, aiGenerated: 0, stale: 0 };
-    for (const row of (dictHealthRows || [])) {
-      if (row.confidence === 'verified') dictHealthSummary.verified++;
-      else if (row.confidence === 'stale') dictHealthSummary.stale++;
+    for (const row of (dictHealthRows || []) as any[]) {
+      const p = (row.patch || '').split('.').slice(0, 2).join('.');
+      const isLatestPatch = p === dictHealthCurrentPatch;
+      const conf = row.confidence || 'ai_generated';
+      const hasContent = !!row.strengths;
+
+      if (conf === 'verified') dictHealthSummary.verified++;
+      else if (!hasContent || !isLatestPatch || conf === 'stale') dictHealthSummary.stale++;
       else dictHealthSummary.aiGenerated++;
     }
 
