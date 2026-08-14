@@ -53,6 +53,20 @@ export default function BulkUpdatePanel() {
     /* eslint-disable-next-line react-hooks/exhaustive-deps */
   }, []);
 
+  // dict-status(どのチャンピオンが更新済みか)だけを軽量に再取得する。DDragonのチャンピオン
+  // 一覧(loadChampions)は初回だけでよいが、この部分は下のチャンピオン一覧タブで確認/更新
+  // 操作をした結果が進捗バーへ反映されず古いまま固まって見えていたため、定期ポーリング対象に
+  // 追加した(2026-08-14発覚)。
+  const refreshDictStatus = () => {
+    fetch('/api/champions/dict-status', { credentials: 'include' })
+      .then((r) => r.json())
+      .then((statusData) => {
+        setChampDates(statusData.dates || {});
+        setChampPending(statusData.pending || {});
+      })
+      .catch((err) => console.error('Failed to refresh dict-status:', err));
+  };
+
   const dbProgress = useMemo(() => {
     if (champions.length === 0) return { total: 0, completed: 0, percentage: 0, pending: 0 };
     const total = champions.length;
@@ -165,12 +179,14 @@ export default function BulkUpdatePanel() {
   useEffect(() => {
     fetchQueueStatus();
     fetchJobStatus();
+    refreshDictStatus();
 
     // 実行中は2秒間隔で追いかけ、待機中は8秒間隔に緩める（体感のリアルタイム性とAPI負荷のバランス）
     const intervalMs = isBulkRunning || bulkStatus.status === 'running' ? 2000 : 8000;
     const timer = setInterval(() => {
       fetchQueueStatus();
       fetchJobStatus();
+      refreshDictStatus();
     }, intervalMs);
 
     return () => clearInterval(timer);

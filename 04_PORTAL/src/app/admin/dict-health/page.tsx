@@ -386,6 +386,13 @@ function DictHealthDashboardContent() {
         {/* ━━━━━ タブ1: ヘルス概要 ━━━━━ */}
         {hubTab === 'health' && (
           <div className="space-y-6 animate-in">
+            {/* AI一括更新の進捗・操作（2026-08-14、単独で上部に再配置。進捗・パッチ・開始ボタン等
+                「すぐ見たい情報」なので一覧より上に置く。バトルリサーチ・ナレッジ点検は
+                利用頻度が低いツール群のため下部のまま） */}
+            <Suspense fallback={null}>
+              <BulkUpdatePanel />
+            </Suspense>
+
             {/* 集計サマリーカード */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <button
@@ -667,16 +674,9 @@ function DictHealthDashboardContent() {
           </div>
         )}
 
-            {/* AI一括更新ツール群（2026-08-13、辞典ページのAI更新タブから統合。
-                「更新ボタンがページによって分かれていて分かりにくい」というフィードバックを受け、
-                手動更新系のトリガーはすべてここへ一本化した。2026-08-13、一覧より前に
-                置くと本来の主役(チャンピオン状態一覧)にたどり着くまでが長すぎたため、
-                一覧の下へ並び替えた） */}
+            {/* 補助ツール群（2026-08-13、辞典ページのAI更新タブから統合。2026-08-14、
+                一括更新の進捗・操作は上部へ再配置し、利用頻度の低いこの2つだけ下部に残した） */}
             <div className="space-y-6">
-              <Suspense fallback={null}>
-                <BulkUpdatePanel />
-              </Suspense>
-
               <div className="space-y-3">
                 <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5 px-1">
                   <Target size={16} className="text-purple-600" />
