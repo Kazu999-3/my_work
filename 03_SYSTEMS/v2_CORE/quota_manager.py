@@ -198,7 +198,13 @@ class QuotaManager:
                 cooled_down = False
                 if last_ts:
                     elapsed_min = (datetime.utcnow().timestamp() - last_ts) / 60.0
-                    cooled_down = elapsed_min >= settings.DAILY_ERROR_COOLDOWN_MINUTES
+                    # このマシンでdatetime.utcnow()がまれに約9時間ズレた値を返す環境要因の
+                    # 不整合が確認されており(2026-08-14発覚)、その場合elapsed_minが負の値
+                    # (=最終エラーが未来時刻)になる。あり得ない値なので時計側を疑い、
+                    # クールダウン解除側(安全側)に倒す。これが無いと一度ズレを引いた瞬間に
+                    # 「経過時間が永久にマイナス」扱いとなり、実際は何時間経っていても
+                    # サーキットブレーカーが二度と解除されなくなってしまう。
+                    cooled_down = elapsed_min < 0 or elapsed_min >= settings.DAILY_ERROR_COOLDOWN_MINUTES
                 if not cooled_down:
                     return False
 
