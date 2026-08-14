@@ -1,6 +1,6 @@
 {
   "patch_version": "26.16",
-  "updated_at": "2026-08-14T08:33:49.914437+00:00",
+  "updated_at": "2026-08-14T10:14:50.728122+00:00",
   "status": "suspended",
   "queue": {
     "Aatrox": {
@@ -47,33 +47,33 @@
     },
     "Anivia": {
       "name": "アニビア",
-      "status": "failed",
+      "status": "pending",
       "updated_at": "2026-08-12T00:33:24.550641+00:00",
-      "error": "Trend collection failed (API/quota error or DB write failure)"
+      "error": null
     },
     "Annie": {
       "name": "アニー",
-      "status": "failed",
+      "status": "pending",
       "updated_at": "2026-08-12T01:59:20.444774+00:00",
-      "error": "Trend collection failed (API/quota error or DB write failure)"
+      "error": null
     },
     "Aphelios": {
       "name": "アフェリオス",
-      "status": "failed",
+      "status": "pending",
       "updated_at": "2026-08-12T02:00:11.353850+00:00",
-      "error": "Trend collection failed (API/quota error or DB write failure)"
+      "error": null
     },
     "Ashe": {
       "name": "アッシュ",
-      "status": "failed",
+      "status": "pending",
       "updated_at": "2026-08-12T02:01:12.711048+00:00",
-      "error": "Trend collection failed (API/quota error or DB write failure)"
+      "error": null
     },
     "AurelionSol": {
       "name": "オレリオン・ソル",
-      "status": "failed",
+      "status": "pending",
       "updated_at": "2026-08-12T02:02:01.061975+00:00",
-      "error": "Trend collection failed (API/quota error or DB write failure)"
+      "error": null
     },
     "Aurora": {
       "name": "オーロラ",

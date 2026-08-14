@@ -11,6 +11,7 @@ import dotenv
 # パス追加と設定の読み込み
 try:
     from v2_CORE.settings import settings
+    from v2_CORE._LOL import champion_trend_worker as trend_worker
     from v2_CORE._LOL.champion_trend_worker import collect_and_save_champion_trend
     from v2_CORE._LOL.power_spike_generator import generate_power_spike
     from v2_CORE._LOL.champ_id_normalizer import get_latest_ddragon_version, to_display_patch_version
@@ -19,6 +20,7 @@ try:
 except ImportError:
     sys.path.append(str(Path(__file__).resolve().parent.parent.parent))
     from v2_CORE.settings import settings
+    from v2_CORE._LOL import champion_trend_worker as trend_worker
     from v2_CORE._LOL.champion_trend_worker import collect_and_save_champion_trend
     from v2_CORE._LOL.power_spike_generator import generate_power_spike
     from v2_CORE._LOL.champ_id_normalizer import get_latest_ddragon_version, to_display_patch_version
@@ -298,6 +300,20 @@ def run_bulk_update():
                 generate_power_spike(champ_id, role="GLOBAL", patch=patch_version)
             except Exception as e:
                 logging.warning(f"⚠️ [{champ_id}] パワースパイク生成でエラーが発生しましたが処理を継続します: {e}")
+        elif trend_worker._quota_hit_this_run:
+            # クォータ切れによる安全なスキップは、本物のバグ(DB書き込み失敗等)と違い
+            # 既存データを一切壊していない。これまでは両方を"failed"として扱っており、
+            # アルファベット順で先頭付近のチャンピオンがクォータ切れで失敗すると、次回
+            # 再開のたびに毎回そこから5連続失敗→即suspendを繰り返し、後続の221体に
+            # 一度も処理が回らなくなっていた(2026-08-14発覚)。"pending"のまま残し、
+            # 連続失敗カウントにも加算せず、クォータが空くまで安全にこの回を終える。
+            logging.warning(f"⏸️ {champ_name} はクォータ制限のため安全にスキップしました（既存データは保持）。")
+            queue[champ_id]["status"] = "pending"
+            queue[champ_id]["error"] = None
+            queue_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+            save_queue(queue_data)
+            suspended = True
+            break
         else:
             logging.error(f"❌ {champ_name} のトレンド収集・更新に失敗しました。")
             queue[champ_id]["status"] = "failed"

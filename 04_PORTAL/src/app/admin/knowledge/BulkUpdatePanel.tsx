@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Sparkles, RefreshCw, Activity, AlertTriangle } from 'lucide-react';
+import { Sparkles, RefreshCw, AlertTriangle } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 // 2026-08-13、機能監査の一環でchampions/tabs/AiUpdateTab.tsxから抽出。
@@ -19,8 +19,6 @@ export default function BulkUpdatePanel() {
   const [champPending, setChampPending] = useState<Record<string, boolean>>({});
   const [champLoadError, setChampLoadError] = useState(false);
 
-  // パイプラインステータス（自動化ジョブの鮮度監視）
-  const [pipelineStatus, setPipelineStatus] = useState<any[]>([]);
   const [failedTasks, setFailedTasks] = useState<any[]>([]);
   const [retryingId, setRetryingId] = useState<string | null>(null);
 
@@ -204,23 +202,22 @@ export default function BulkUpdatePanel() {
     ? Math.max(0, Math.round((nowTick - new Date(bulkStatus.updated_at).getTime()) / 1000))
     : null;
 
-  // パイプラインステータスを30秒ごとにポーリング取得
-  const fetchPipeline = async () => {
+  // チャンピオントレンド更新の失敗タスク一覧を30秒ごとにポーリング取得
+  const fetchFailedTasks = async () => {
     try {
       const res = await fetch('/api/admin/pipeline-status');
       if (res.ok) {
         const data = await res.json();
-        setPipelineStatus(data.pipelines || []);
         setFailedTasks(data.failedTasks || []);
       }
     } catch (err) {
-      console.error('パイプラインステータス取得エラー:', err);
+      console.error('失敗タスク一覧取得エラー:', err);
     }
   };
 
   useEffect(() => {
-    fetchPipeline();
-    const interval = setInterval(fetchPipeline, 30000);
+    fetchFailedTasks();
+    const interval = setInterval(fetchFailedTasks, 30000);
     return () => clearInterval(interval);
   }, []);
 
@@ -354,44 +351,6 @@ export default function BulkUpdatePanel() {
         </div>
       </div>
     </motion.div>
-
-    {/* 自動化パイプラインステータス */}
-    {pipelineStatus.length > 0 && (
-      <motion.div
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 0.2 }}
-        className="glass-panel p-6 rounded-2xl"
-      >
-        <h3 className="text-lg font-bold text-stone-900 flex items-center gap-2 mb-4">
-          <Activity size={20} className="text-cyan-700" />
-          自動化パイプラインステータス
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {pipelineStatus.map((p: any) => (
-            <div key={p.id} className="flex items-center justify-between p-3 rounded-xl bg-black/[0.04] border border-black/5">
-              <div>
-                <span className="text-sm font-bold text-stone-900">{p.label}</span>
-                <div className="text-xs text-gray-500 mt-0.5">
-                  {p.lastRun ? `最終: ${new Date(p.lastRun).toLocaleString('ja-JP')}` : '未実行'}
-                  {p.executor && ` （${p.executor === 'cloud' ? 'クラウド実行' : 'ローカルPC実行'}）`}
-                </div>
-              </div>
-              <span className={`text-xs font-black px-2.5 py-1 rounded-full border ${
-                p.freshness === 'fresh' ? 'bg-emerald-100 border-emerald-200 text-emerald-700' :
-                p.freshness === 'stale' ? 'bg-amber-100 border-amber-200 text-amber-700' :
-                p.freshness === 'old' ? 'bg-rose-100 border-rose-200 text-rose-700' :
-                'bg-stone-100 border-stone-200 text-stone-600'
-              }`}>
-                {p.freshness === 'fresh' ? '✅ 正常' :
-                 p.freshness === 'stale' ? '⚠️ 要更新' :
-                 p.freshness === 'old' ? '🔴 古い' : '➖ 未実行'}
-              </span>
-            </div>
-          ))}
-        </div>
-      </motion.div>
-    )}
 
     {/* チャンピオントレンド 失敗タスク一覧 + 再実行 */}
     {failedTasks.length > 0 && (
