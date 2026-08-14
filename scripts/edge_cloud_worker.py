@@ -351,13 +351,26 @@ def main():
                 # なのか本当のバグなのか区別できない読みづらい通知が飛び続けていた
                 # (2026-08-10発覚、edge_worker_daemon.pyの同種修正と対で対応)。
                 clean_message = None
+                is_skip = False
                 try:
                     last_line = res.stdout.strip().splitlines()[-1] if res.stdout.strip() else ""
                     stdout_json = json.loads(last_line)
-                    if isinstance(stdout_json, dict) and stdout_json.get("message"):
-                        clean_message = stdout_json["message"]
+                    if isinstance(stdout_json, dict):
+                        if stdout_json.get("message"):
+                            clean_message = stdout_json["message"]
+                        is_skip = bool(stdout_json.get("skipped"))
                 except Exception:
                     pass
+
+                # クォータ切れ等による安全なスキップ(skipped=True、既存データは保護済み)は
+                # 本物のバグではないため、failedにして「要対応」リストへ積むと本当に対応が
+                # 必要なタスクに埋もれて分かりにくくなっていた(2026-08-14発覚)。completedとして
+                # 扱い、通知も飛ばさない(edge_worker_daemon.pyの同種修正と対で対応)。
+                if is_skip:
+                    print(f"⏭ 安全にスキップ: {task_type} ({task_id}) — {clean_message}")
+                    complete_task(task_id, "completed", result={"success": False, "skipped": True, "message": clean_message})
+                    continue
+
                 err = f"{clean_message}\n（詳細ログ末尾: {res.stderr[-300:]}）" if clean_message else f"Exit code {res.returncode}\n{res.stderr[-1500:]}"
                 print(f"❌ 失敗: {task_type} — {err}", file=sys.stderr)
                 complete_task(task_id, "failed", error_message=err[:2000])

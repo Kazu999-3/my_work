@@ -251,13 +251,33 @@ class EdgeWorkerDaemon:
             # 拾えればそれを優先的にエラーメッセージとして使う。
             import json
             clean_message = None
+            is_skip = False
             try:
                 last_line = res.stdout.strip().splitlines()[-1] if res.stdout.strip() else ""
                 stdout_json = json.loads(last_line)
-                if isinstance(stdout_json, dict) and stdout_json.get("message"):
-                    clean_message = stdout_json["message"]
+                if isinstance(stdout_json, dict):
+                    if stdout_json.get("message"):
+                        clean_message = stdout_json["message"]
+                    is_skip = bool(stdout_json.get("skipped"))
             except Exception:
                 pass
+
+            # クォータ切れ等による安全なスキップ(skipped=True、既存データは保護済み)は
+            # 本物のバグではないため、例外にして「要対応」リストへ積むと本当に対応が
+            # 必要なタスクに埋もれて分かりにくくなっていた(2026-08-14発覚。同一チャンピオンの
+            # スキップが何件も並び、しかもログ末尾が二重切り詰めで意味不明な断片
+            # 「WARNI」等になっていた)。completedとして扱い、result.skippedで
+            # 区別できるようにする。
+            if is_skip:
+                logger.warning(f"⏭ 安全にスキップされました(要対応扱いしません): {clean_message}")
+                return {
+                    "success": False,
+                    "skipped": True,
+                    "message": clean_message,
+                    "stdout": res.stdout,
+                    "stderr": res.stderr[-50000:],
+                }
+
             if clean_message:
                 raise RuntimeError(f"{clean_message}\n（詳細ログ末尾: {res.stderr[-300:]}）")
             raise RuntimeError(f"プロセス実行エラー (Exit code: {res.returncode})\nStderr: {res.stderr[-1000:]}")
