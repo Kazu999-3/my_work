@@ -83,7 +83,16 @@ class SovereignSettings(BaseSettings):
     # 失敗し続け429を240件積み上げた実例(2026-08-07)があったため、当日のerror_429回数が
     # この値を超えたら成功回数に関わらず全機能を一律でスキップする。
     DAILY_ERROR_CIRCUIT_BREAKER: int = 10
-    
+
+    # 上のサーキットブレーカーは「日付が変わるまで」しか解除されない設計だったため、
+    # 分単位のレート制限(RPM)バーストで短時間に10件エラーが積み上がっただけでも、
+    # 実際の日次予算(DAILY_QUOTA_LIMITS)にまだ大きく余裕があるのに丸1日ブロックされて
+    # いた(2026-08-14発覚。oracleが300件中4件しか消費していないのに429を10件出しただけで
+    # 打ち止めになった実例)。最後のエラーからこの時間(分)静かであれば、日次カウントに
+    # 関わらずブロックを解除し再試行を許可する。本当にクォータが尽きている場合は
+    # 再試行してもまた失敗しクールダウンが再度かかるだけなので実害は小さい。
+    DAILY_ERROR_COOLDOWN_MINUTES: int = 15
+
     model_config = SettingsConfigDict(
         env_file=str(ROOT_DIR / ".env"),
         env_file_encoding='utf-8',

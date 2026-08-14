@@ -189,7 +189,18 @@ class QuotaManager:
             error_key = f"error_429:{feature_name}"
             error_count = max(local_today.get(error_key, 0), remote_today.get(error_key, 0))
             if error_count >= settings.DAILY_ERROR_CIRCUIT_BREAKER:
-                return False
+                # クールダウン: 最後のエラーから一定時間静かならブロックを解除する
+                # (日付が変わるまで固定ロックされる問題への対処。上のDAILY_ERROR_COOLDOWN_MINUTES
+                # コメント参照)。タイムスタンプが記録されていない古い形式のデータの場合は
+                # 従来通り安全側(ブロック継続)にフォールバックする。
+                ts_key = f"{error_key}:last_ts"
+                last_ts = max(local_today.get(ts_key, 0), remote_today.get(ts_key, 0))
+                cooled_down = False
+                if last_ts:
+                    elapsed_min = (datetime.utcnow().timestamp() - last_ts) / 60.0
+                    cooled_down = elapsed_min >= settings.DAILY_ERROR_COOLDOWN_MINUTES
+                if not cooled_down:
+                    return False
 
             current_usage = max(local_today.get(feature_name, 0), remote_today.get(feature_name, 0))
             return current_usage < limit
@@ -247,6 +258,11 @@ class QuotaManager:
             for key in keys:
                 current_count = data[today].get(key, 0)
                 data[today][key] = current_count + 1
+
+            # サーキットブレーカーのクールダウン判定用に、機能別エラーの最終発生時刻を記録する
+            # (check_quota()参照)。
+            if feature_name:
+                data[today][f"{error_type}:{feature_name}:last_ts"] = datetime.utcnow().timestamp()
 
             self._save_data(data)
             logger.debug(f"[QuotaManager] Recorded error '{error_type}' (feature={feature_name})")
