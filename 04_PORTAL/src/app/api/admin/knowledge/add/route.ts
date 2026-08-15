@@ -3,7 +3,6 @@ import { supabaseAdmin as supabase } from '../../../../../lib/supabaseAdmin';
 import { callGeminiWithRetry } from '../../../../../lib/geminiClient';
 import { verifyAdminSession } from '../../../../../lib/adminAuth';
 import { resolveToRosterChampion, getNoChampionMarker } from '../../../../../lib/dictFactCheck';
-import { detectLane, mergeArticleIntoLane } from '../../../../../lib/laneGuideMerge';
 
 // ============================================================
 // X (Twitter) 投稿の画像および「動画メディア(MP4/サムネイル)」を全自動動画・画像AI解析
@@ -410,61 +409,35 @@ export async function POST(req: NextRequest) {
     // レーン一般論が混在する記事は、champion欄がAhriである以上レーン一般論も丸ごとAhriの
     // 辞典生成プロンプトへ流れ込み、レーン別ガイド側には一切反映されない片方向バイアスが
     // あった(2026-08-15発覚)。atomic insight単位でscopeを判定し、"lane_general"のものは
-    // personal_knowledgeにチャンピオン付きで残さず、レーン別ガイドへ直接統合する。
+    // champion欄を空にしてpersonal_knowledgeへ保存する。これによりfetch_personal_knowledge
+    // (champion列一致検索)からは自然に外れてチャンピオン辞典生成には混ざらなくなる一方、
+    // レーンガイドへの統合はAIが自動実行せず、既存の「レーン別ガイドへ一括統合」admin操作
+    // (lane-guides/route.ts、人間が実行ボタンを押すまで動かない)に委ねる。AIの判定ミスで
+    // 誤った内容がガイドへ勝手に書き換わるのを防ぐため、最終判断は人間に残す設計にした
+    // (2026-08-15、ユーザー要望により自動マージから変更)。
     const atomicInsights = Array.isArray(analyzed.atomicInsights) ? analyzed.atomicInsights.slice(0, 5) : [];
-    const championSpecificInsights = atomicInsights.filter((i) => i.scope !== 'lane_general');
-    const laneGeneralInsights = atomicInsights.filter((i) => i.scope === 'lane_general');
-    let laneGuideMergedCount = 0;
+    const laneGeneralCount = atomicInsights.filter((i) => i.scope === 'lane_general').length;
 
-    if (championSpecificInsights.length > 0) {
+    if (atomicInsights.length > 0) {
       const { error: atomicError } = await supabase
         .from('personal_knowledge')
         .insert(
-          championSpecificInsights.map((insight) => ({
+          atomicInsights.map((insight) => ({
             title: insight.title,
             content: insight.summary,
             raw_content: insight.summary,
             source_url: url || '',
             genre: analyzed.genre,
             tags: Array.isArray(insight.tags) ? insight.tags : [],
-            champion: resolvedChampion || getNoChampionMarker('personal_knowledge'),
+            champion: insight.scope === 'lane_general'
+              ? getNoChampionMarker('personal_knowledge')
+              : (resolvedChampion || getNoChampionMarker('personal_knowledge')),
             author: authorKey,
             parent_id: data.id,
             is_atomic: true,
           }))
         );
       if (atomicError) console.error('❌ [Knowledge Add API] 原子的な知見の保存に失敗:', atomicError);
-    }
-
-    // レーン一般論の知見は、mergeArticleIntoLaneの既存の慣習(統合→ライブラリからは片付ける)を
-    // そのまま流用するため、まず子レコードとして保存してからレーンガイドへ統合する。
-    // 失敗しても記事本体の登録自体は既に成功しているため、ログのみでレスポンスは止めない。
-    for (const insight of laneGeneralInsights) {
-      try {
-        const { data: inserted, error: insertErr } = await supabase
-          .from('personal_knowledge')
-          .insert({
-            title: insight.title,
-            content: insight.summary,
-            raw_content: insight.summary,
-            source_url: url || '',
-            genre: analyzed.genre,
-            tags: Array.isArray(insight.tags) ? insight.tags : [],
-            champion: getNoChampionMarker('personal_knowledge'),
-            author: authorKey,
-            parent_id: data.id,
-            is_atomic: true,
-          })
-          .select('id, title, content, raw_content')
-          .single();
-        if (insertErr || !inserted) throw insertErr || new Error('insert returned no row');
-
-        const lane = detectLane({ title: insight.title, content: insight.summary, raw_content: insight.summary });
-        await mergeArticleIntoLane(inserted, lane);
-        laneGuideMergedCount++;
-      } catch (laneErr: any) {
-        console.error('❌ [Knowledge Add API] レーン一般知見のガイド統合に失敗:', laneErr?.message || laneErr);
-      }
     }
 
     // 同じ投稿者(X/note)の既存記事があれば、後から気づけるようここで一緒に返す。
@@ -486,8 +459,8 @@ export async function POST(req: NextRequest) {
       success: true,
       message: `ナレッジ「${analyzed.title}」を動画・画像AI解析付きで登録しました。`,
       relatedByAuthor,
-      atomicInsightCount: championSpecificInsights.length,
-      laneGuideMergedCount,
+      atomicInsightCount: atomicInsights.length - laneGeneralCount,
+      laneGeneralPendingCount: laneGeneralCount,
       data
     });
 

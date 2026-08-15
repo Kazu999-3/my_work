@@ -172,8 +172,8 @@ function KnowledgeBaseContent() {
             : '';
           const atomicCount: number = resData?.atomicInsightCount || 0;
           const atomicNote = atomicCount > 0 ? `（独立した知見を${atomicCount}件、原子的なメモとしても分割保存しました）` : '';
-          const laneMergedCount: number = resData?.laneGuideMergedCount || 0;
-          const laneNote = laneMergedCount > 0 ? `（レーン一般論を${laneMergedCount}件、レーン別ガイドへ統合しました）` : '';
+          const laneGeneralPending: number = resData?.laneGeneralPendingCount || 0;
+          const laneNote = laneGeneralPending > 0 ? `（レーン一般論を${laneGeneralPending}件検知。チャンピオン辞典には混ぜず、レーン別ガイドへの統合は「レーン別ガイドへ一括統合」から確認のうえ実行してください）` : '';
           showFeedback(`新しいナレッジを自動要約して登録しました！${atomicNote}${laneNote}${relatedNote}`, 'success');
           setInputUrl('');
           setInputMemo('');
