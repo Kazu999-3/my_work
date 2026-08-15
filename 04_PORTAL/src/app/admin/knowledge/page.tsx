@@ -172,7 +172,9 @@ function KnowledgeBaseContent() {
             : '';
           const atomicCount: number = resData?.atomicInsightCount || 0;
           const atomicNote = atomicCount > 0 ? `（独立した知見を${atomicCount}件、原子的なメモとしても分割保存しました）` : '';
-          showFeedback(`新しいナレッジを自動要約して登録しました！${atomicNote}${relatedNote}`, 'success');
+          const laneMergedCount: number = resData?.laneGuideMergedCount || 0;
+          const laneNote = laneMergedCount > 0 ? `（レーン一般論を${laneMergedCount}件、レーン別ガイドへ統合しました）` : '';
+          showFeedback(`新しいナレッジを自動要約して登録しました！${atomicNote}${laneNote}${relatedNote}`, 'success');
           setInputUrl('');
           setInputMemo('');
           fetchKnowledge(true);

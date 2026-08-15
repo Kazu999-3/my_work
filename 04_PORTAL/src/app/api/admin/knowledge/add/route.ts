@@ -3,6 +3,7 @@ import { supabaseAdmin as supabase } from '../../../../../lib/supabaseAdmin';
 import { callGeminiWithRetry } from '../../../../../lib/geminiClient';
 import { verifyAdminSession } from '../../../../../lib/adminAuth';
 import { resolveToRosterChampion, getNoChampionMarker } from '../../../../../lib/dictFactCheck';
+import { detectLane, mergeArticleIntoLane } from '../../../../../lib/laneGuideMerge';
 
 // ============================================================
 // X (Twitter) 投稿の画像および「動画メディア(MP4/サムネイル)」を全自動動画・画像AI解析
@@ -287,7 +288,7 @@ async function analyzeWithGemini(title: string, content: string): Promise<{
   genre: string;
   tags: string[];
   champion: string;
-  atomicInsights: { title: string; summary: string; tags: string[] }[];
+  atomicInsights: { title: string; summary: string; tags: string[]; scope: 'champion_specific' | 'lane_general' }[];
 }> {
   const prompt = `以下のインプット情報（Webサイトの内容、X投稿のマルチモーダル画像・動画解析結果、またはメモ書き）を解析し、以下の処理を行ってください。
 
@@ -310,6 +311,8 @@ async function analyzeWithGemini(title: string, content: string): Promise<{
    - 各メモは要約(summary)を2〜4文程度に留め、他の知見と混ぜないこと。
    - 単一の主張・情報しか無い短い内容の場合は、無理に分解せず空配列 [] を返すこと。
    - 元の全文網羅ナレッジ(summary)と重複が多くても構わない（こちらは検索・再利用のための短い抜粋という位置づけ）。
+   - 各メモに scope を付けてください: そのチャンピオン固有の性能・ビルド・スキル使用法の話なら "champion_specific"、特定チャンピオンに限らずそのレーン全般で通用するマクロ・立ち回り・判断の話（例:「ミッドはウェーブが溜まったら必ずロームする」）なら "lane_general"。
+     "lane_general"と判定した知見は、後続処理でこの記事のchampion欄とは切り離し、レーン別ガイドへ直接統合されるため、レーン一般論をchampion_specificに混ぜないよう厳密に判定すること。
 
 出力は、必ず以下のJSONフォーマットのみを返却してください。
 
@@ -320,7 +323,7 @@ async function analyzeWithGemini(title: string, content: string): Promise<{
   "tags": ["タグ1", "タグ2", "タグ3"],
   "champion": "特定したチャンピオン名",
   "atomicInsights": [
-    { "title": "具体的で短いタイトル", "summary": "2〜4文程度の独立した知見の要約", "tags": ["タグ1"] }
+    { "title": "具体的で短いタイトル", "summary": "2〜4文程度の独立した知見の要約", "tags": ["タグ1"], "scope": "champion_specific または lane_general" }
   ]
 }
 
@@ -402,12 +405,22 @@ export async function POST(req: NextRequest) {
     // 原子的な知見(Zettelkasten方式)を、元記事(container)の子レコードとして分割保存する。
     // 「1ノート1アイデア」に反する巨大な塊のまま辞典生成プロンプトへ渡ってノイズが増える
     // 問題を避けるため、独立して再利用できる知見だけを短く切り出す(2026-08-12)。
+    //
+    // 記事全体のchampion欄だけで振り分けると、「ミッドAhri」のようにチャンピオン固有の話と
+    // レーン一般論が混在する記事は、champion欄がAhriである以上レーン一般論も丸ごとAhriの
+    // 辞典生成プロンプトへ流れ込み、レーン別ガイド側には一切反映されない片方向バイアスが
+    // あった(2026-08-15発覚)。atomic insight単位でscopeを判定し、"lane_general"のものは
+    // personal_knowledgeにチャンピオン付きで残さず、レーン別ガイドへ直接統合する。
     const atomicInsights = Array.isArray(analyzed.atomicInsights) ? analyzed.atomicInsights.slice(0, 5) : [];
-    if (atomicInsights.length > 0) {
+    const championSpecificInsights = atomicInsights.filter((i) => i.scope !== 'lane_general');
+    const laneGeneralInsights = atomicInsights.filter((i) => i.scope === 'lane_general');
+    let laneGuideMergedCount = 0;
+
+    if (championSpecificInsights.length > 0) {
       const { error: atomicError } = await supabase
         .from('personal_knowledge')
         .insert(
-          atomicInsights.map((insight) => ({
+          championSpecificInsights.map((insight) => ({
             title: insight.title,
             content: insight.summary,
             raw_content: insight.summary,
@@ -421,6 +434,37 @@ export async function POST(req: NextRequest) {
           }))
         );
       if (atomicError) console.error('❌ [Knowledge Add API] 原子的な知見の保存に失敗:', atomicError);
+    }
+
+    // レーン一般論の知見は、mergeArticleIntoLaneの既存の慣習(統合→ライブラリからは片付ける)を
+    // そのまま流用するため、まず子レコードとして保存してからレーンガイドへ統合する。
+    // 失敗しても記事本体の登録自体は既に成功しているため、ログのみでレスポンスは止めない。
+    for (const insight of laneGeneralInsights) {
+      try {
+        const { data: inserted, error: insertErr } = await supabase
+          .from('personal_knowledge')
+          .insert({
+            title: insight.title,
+            content: insight.summary,
+            raw_content: insight.summary,
+            source_url: url || '',
+            genre: analyzed.genre,
+            tags: Array.isArray(insight.tags) ? insight.tags : [],
+            champion: getNoChampionMarker('personal_knowledge'),
+            author: authorKey,
+            parent_id: data.id,
+            is_atomic: true,
+          })
+          .select('id, title, content, raw_content')
+          .single();
+        if (insertErr || !inserted) throw insertErr || new Error('insert returned no row');
+
+        const lane = detectLane({ title: insight.title, content: insight.summary, raw_content: insight.summary });
+        await mergeArticleIntoLane(inserted, lane);
+        laneGuideMergedCount++;
+      } catch (laneErr: any) {
+        console.error('❌ [Knowledge Add API] レーン一般知見のガイド統合に失敗:', laneErr?.message || laneErr);
+      }
     }
 
     // 同じ投稿者(X/note)の既存記事があれば、後から気づけるようここで一緒に返す。
@@ -442,7 +486,8 @@ export async function POST(req: NextRequest) {
       success: true,
       message: `ナレッジ「${analyzed.title}」を動画・画像AI解析付きで登録しました。`,
       relatedByAuthor,
-      atomicInsightCount: atomicInsights.length,
+      atomicInsightCount: championSpecificInsights.length,
+      laneGuideMergedCount,
       data
     });
 
