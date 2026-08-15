@@ -1019,16 +1019,17 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                   </p>
                 )}
 
-                {/* 🎮 Riot Timeline APIから収集した実測値(エメラルド帯)。AI推定値は上書きせず別枠表示(2026-08-13) */}
+                {/* 🎮 Riot Timeline APIから収集した実測値(エメラルド帯)。AI推定値は上書きせず別枠表示(2026-08-13)
+                    フルクリア時間は累積カウンタ(jungleMinionsKilled)を60秒間隔のスナップショットで
+                    「増えなくなった瞬間=クリア終了」とみなす作りで、実際には3分〜18分まで無秩序に
+                    ばらつく指標選定ミスと判明したため非表示にした(2026-08-15)。コアアイテム完成
+                    タイミングは実際のITEM_PURCHASEDイベントを使っており正確なため表示を維持する。 */}
                 {realJungleTiming && (
                   <div className="mt-3 pt-3 border-t border-black/10">
                     <p className="text-[11px] text-gray-400 font-bold mb-2 flex items-center gap-1.5">
                       🎮 実測値（{realJungleTiming.tier}帯・{realJungleTiming.sampleCount}試合平均・概算）
                     </p>
                     <div className="flex gap-2 flex-wrap items-center">
-                      <span className="px-3 py-1.5 bg-sky-50 border border-sky-200 rounded-lg text-xs font-bold text-sky-700">
-                        フルクリア {formatTimingSec(realJungleTiming.avgFullClearSec)}
-                      </span>
                       <span className="px-3 py-1.5 bg-sky-50 border border-sky-200 rounded-lg text-xs font-bold text-sky-700">
                         1コア完成 {formatTimingSec(realJungleTiming.avgFirstCoreSec)}
                       </span>
