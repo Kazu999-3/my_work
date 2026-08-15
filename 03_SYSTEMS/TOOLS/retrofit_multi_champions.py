@@ -31,7 +31,7 @@ ALL_CHAMPIONS = [
     "Garen", "Gnar", "Gragas", "Graves", "Gwen", "Hecarim", "Heimerdinger", "Hwei",
     "Illaoi", "Irelia", "Ivern", "Janna", "JarvanIV", "Jax", "Jayce", "Jhin",
     "Jinx", "KSante", "KaiSa", "Kalista", "Karma", "Karthus", "Kassadin", "Katarina",
-    "Kayle", "Kayn", "Kennen", "KhaZix", "Kindred", "Kled", "KogMaw", "LeBlanc",
+    "Kayle", "Kayn", "Kennen", "Khazix", "Kindred", "Kled", "KogMaw", "LeBlanc",
     "LeeSin", "Leona", "Lillia", "Lissandra", "Lucian", "Lulu", "Lux", "Malphite",
     "Malzahar", "Maokai", "MasterYi", "Milio", "MissFortune", "MonkeyKing", "Mordekaiser",
     "Morgana", "Naafiri", "Nami", "Nasus", "Nautilus", "Neeko", "Nidalee", "Nilah",

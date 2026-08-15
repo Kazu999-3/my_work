@@ -6,9 +6,9 @@
  */
 export const CHAMPION_NAME_MAP: Record<string, string> = {
   // 英語表記ゆれ
-  'khazix': 'KhaZix',
-  'kha\'zix': 'KhaZix',
-  'kha zix': 'KhaZix',
+  'khazix': 'Khazix',
+  'kha\'zix': 'Khazix',
+  'kha zix': 'Khazix',
   'leesin': 'LeeSin',
   'lee sin': 'LeeSin',
   'xin zhao': 'XinZhao',
@@ -277,7 +277,7 @@ export function getChampionSearchVariations(name: string): string[] {
   const normalized = normalizeChampionName(name);
   const variations = [normalized];
 
-  if (normalized === 'KhaZix') variations.push("Kha'Zix", "Kha Zix");
+  if (normalized === 'Khazix') variations.push("Kha'Zix", "Kha Zix");
   if (normalized === 'LeeSin') variations.push("Lee Sin");
   if (normalized === 'XinZhao') variations.push("Xin Zhao");
   if (normalized === 'JarvanIV') variations.push("Jarvan IV", "Jarvan");
