@@ -132,7 +132,13 @@ def get_all_champions(patch_version: str) -> dict:
     try:
         r = requests.get(url, timeout=10)
         if r.status_code == 200:
-            return r.json()["data"]
+            data = r.json()["data"]
+            # "Jade_Ahri"等、実在しない派生フォームIDがDDragonの過去レスポンスに混入していた
+            # ことがあり(2026-08-15発覚、championNames.tsは既に除外済みだったがこちら側に
+            # フィルターが無く60体分の偽チャンピオンが辞典に登録されていた)、実チャンピオンの
+            # IDには一切アンダースコアが含まれない(現行DDragon全173体で確認済み)ため、
+            # アンダースコアを含むIDは丸ごと除外する。
+            return {k: v for k, v in data.items() if "_" not in k}
     except Exception as e:
         logging.error(f"Failed to fetch champions: {e}")
     return {}
