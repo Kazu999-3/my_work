@@ -54,7 +54,7 @@ REQUEST_HEADERS = {
     "Accept": "application/json, text/plain, */*",
 }
 
-# 最低限これくらいの試合数は無いと平均値の信頼性が低いとみなし、書き込み対象から除外する
+# 最低限これくらいの試合数は無いと値の信頼性が低いとみなし、書き込み対象から除外する
 MIN_SAMPLE_SIZE = 30
 
 
@@ -85,9 +85,11 @@ def run() -> None:
     skipped_low_sample = 0
     for c in champions:
         sample_size = c.get("sampleSize") or 0
-        avg_ms = c.get("avgClearMs")
-        if avg_ms is None or sample_size < MIN_SAMPLE_SIZE:
-            if avg_ms is not None:
+        # 平均(avgClearMs)ではなく最速(fastestClearMs)を使う(2026-08-15、ユーザー要望。
+        # 「上手いプレイヤーがどこまで詰められるか」の目安として最速値の方が実用的)。
+        fastest_ms = c.get("fastestClearMs")
+        if fastest_ms is None or sample_size < MIN_SAMPLE_SIZE:
+            if fastest_ms is not None:
                 skipped_low_sample += 1
             continue
 
@@ -98,7 +100,7 @@ def run() -> None:
         champ_id = normalize_champion_id(c["champion"])
         payload.append({
             "champion": champ_id,
-            "external_avg_clear_sec": round(avg_ms / 1000),
+            "external_fastest_clear_sec": round(fastest_ms / 1000),
             "external_sample_size": sample_size,
             "external_source": "junglepedia.lol",
             "external_updated_at": now,

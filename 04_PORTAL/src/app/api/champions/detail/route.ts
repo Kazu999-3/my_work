@@ -25,10 +25,11 @@ export async function GET(req: Request) {
       // --- Riot実測ジャングルタイミング(エメラルド帯、AI推定値とは別枠、2026-08-13) ---
       // フルクリア時間(avg_full_clear_sec)はRiot Timeline APIの自前集計ロジックが
       // 構造的に破綻しており(累積カウンタを60秒間隔で誤判定、3〜18分でばらつく)、
-      // 2026-08-15に表示を撤去した。代わりにexternal_avg_clear_sec(junglepedia.lolの
-      // 高エロソロキュー50万試合超の集計)を使う。コアアイテム完成タイミングは
-      // 実際のITEM_PURCHASEDイベントベースで正確なため、引き続きRiot集計を使う。
-      supabase.from('champion_jungle_timing_agg').select('sample_count, avg_first_core_sec, avg_second_core_sec, tier, external_avg_clear_sec, external_sample_size, external_source').ilike('champion', champId).maybeSingle(),
+      // 2026-08-15に表示を撤去した。代わりにexternal_fastest_clear_sec(junglepedia.lolの
+      // 高エロソロキュー50万試合超の集計における最速値、平均ではなく最速を使う方針
+      // 2026-08-15)を使う。コアアイテム完成タイミングは実際のITEM_PURCHASEDイベント
+      // ベースで正確なため、引き続きRiot集計を使う。
+      supabase.from('champion_jungle_timing_agg').select('sample_count, avg_first_core_sec, avg_second_core_sec, tier, external_fastest_clear_sec, external_sample_size, external_source').ilike('champion', champId).maybeSingle(),
     ]);
 
     const fact = factsRes.data;
@@ -39,7 +40,7 @@ export async function GET(req: Request) {
       avgFirstCoreSec: jt.avg_first_core_sec,
       avgSecondCoreSec: jt.avg_second_core_sec,
       tier: jt.tier,
-      externalAvgClearSec: jt.external_avg_clear_sec,
+      externalFastestClearSec: jt.external_fastest_clear_sec,
       externalSampleSize: jt.external_sample_size,
       externalSource: jt.external_source,
     } : null;

@@ -106,10 +106,10 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
   } | null>(null);
   // ジャングル序盤タイミングの実測値。コアアイテム完成はRiot Timeline APIの自前集計
   // (エメラルド帯、2026-08-13)、フルクリア時間はjunglepedia.lolの実データ(全ティア、
-  // 2026-08-15〜。Riot集計側は指標選定ミスで表示撤去したため)と出典が異なる。
+  // 最速値を使用。2026-08-15〜。Riot集計側は指標選定ミスで表示撤去したため)と出典が異なる。
   const [realJungleTiming, setRealJungleTiming] = useState<{
     sampleCount: number; avgFirstCoreSec: number | null; avgSecondCoreSec: number | null; tier: string;
-    externalAvgClearSec?: number | null; externalSampleSize?: number | null; externalSource?: string | null;
+    externalFastestClearSec?: number | null; externalSampleSize?: number | null; externalSource?: string | null;
   } | null>(null);
   const [editingStrategy, setEditingStrategy] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -1025,20 +1025,22 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                 {/* 🎮 実測値。AI推定値は上書きせず別枠表示(2026-08-13)。出典が2つ混在する:
                     - フルクリア時間: 以前はRiot Timeline APIの自前集計だったが、累積カウンタを
                       60秒間隔で誤判定する構造的ミスで3〜18分にばらついていたため、2026-08-15に
-                      junglepedia.lol(高エロソロキュー50万試合超の集計)へ切り替えた。
+                      junglepedia.lol(高エロソロキュー50万試合超の集計)へ切り替えた。平均ではなく
+                      最速値(fastestClearMs)を使う(「上手いプレイヤーがどこまで詰められるか」の
+                      目安として最速の方が実用的、というユーザー判断)。
                     - コアアイテム完成タイミング: 実際のITEM_PURCHASEDイベントを使うRiot集計の
                       ままで、こちらは元々正確なため変更していない。 */}
-                {(realJungleTiming && (realJungleTiming.externalAvgClearSec != null || realJungleTiming.avgFirstCoreSec != null)) && (
+                {(realJungleTiming && (realJungleTiming.externalFastestClearSec != null || realJungleTiming.avgFirstCoreSec != null)) && (
                   <div className="mt-3 pt-3 border-t border-black/10 space-y-1.5">
-                    {realJungleTiming.externalAvgClearSec != null && (
+                    {realJungleTiming.externalFastestClearSec != null && (
                       <p className="text-[11px] text-gray-400 font-bold flex items-center gap-1.5">
-                        🎮 実測値・フルクリア（{realJungleTiming.externalSource || 'junglepedia.lol'}調べ・全ティア{realJungleTiming.externalSampleSize ? `・${realJungleTiming.externalSampleSize.toLocaleString()}試合` : ''}）
+                        🎮 実測値・フルクリア最速（{realJungleTiming.externalSource || 'junglepedia.lol'}調べ・全ティア{realJungleTiming.externalSampleSize ? `・${realJungleTiming.externalSampleSize.toLocaleString()}試合` : ''}）
                       </p>
                     )}
                     <div className="flex gap-2 flex-wrap items-center">
-                      {realJungleTiming.externalAvgClearSec != null && (
+                      {realJungleTiming.externalFastestClearSec != null && (
                         <span className="px-3 py-1.5 bg-sky-50 border border-sky-200 rounded-lg text-xs font-bold text-sky-700">
-                          フルクリア {formatTimingSec(realJungleTiming.externalAvgClearSec)}
+                          フルクリア(最速) {formatTimingSec(realJungleTiming.externalFastestClearSec)}
                         </span>
                       )}
                       {realJungleTiming.avgFirstCoreSec != null && (
