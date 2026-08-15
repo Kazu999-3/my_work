@@ -121,10 +121,14 @@ export async function POST(req: Request) {
 
   try {
     // 1) チャンピオン記事ではない＝レーン/マクロ記事を集める
+    // review_status='approved'のみが対象。atomic insight分解(2026-08-15〜)は分割その
+    // ものを人間が確認するまでpendingで保存されるため、未承認のまま一括統合されて
+    // しまわないようここで弾く。
     const { data: articles } = await supabase
       .from('personal_knowledge')
       .select('id, title, content, raw_content, champion, genre')
       .or('tags.is.null,tags.not.cs.{__DELETED__}')
+      .eq('review_status', 'approved')
       .limit(500);
 
     // champion欄が空 or 実在しないチャンピオン名（Jungle/macro等）のものが対象

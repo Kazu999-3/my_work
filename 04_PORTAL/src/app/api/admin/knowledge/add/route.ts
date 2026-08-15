@@ -415,6 +415,12 @@ export async function POST(req: NextRequest) {
     // (lane-guides/route.ts、人間が実行ボタンを押すまで動かない)に委ねる。AIの判定ミスで
     // 誤った内容がガイドへ勝手に書き換わるのを防ぐため、最終判断は人間に残す設計にした
     // (2026-08-15、ユーザー要望により自動マージから変更)。
+    //
+    // さらに、チャンピオン固有側の分割も含め「分割そのもの」をAIに丸ごと任せず、
+    // 全atomic insightをreview_status='pending'で保存する(2026-08-15、ユーザー要望)。
+    // pending中はfetch_personal_knowledge(champion_trend_worker.py)のクエリからも
+    // レーンガイド一括統合の対象クエリからも除外され、/admin/knowledgeの
+    // 「未承認の分割知見」パネルで人間が承認するまで一切使われない。
     const atomicInsights = Array.isArray(analyzed.atomicInsights) ? analyzed.atomicInsights.slice(0, 5) : [];
     const laneGeneralCount = atomicInsights.filter((i) => i.scope === 'lane_general').length;
 
@@ -435,6 +441,7 @@ export async function POST(req: NextRequest) {
             author: authorKey,
             parent_id: data.id,
             is_atomic: true,
+            review_status: 'pending',
           }))
         );
       if (atomicError) console.error('❌ [Knowledge Add API] 原子的な知見の保存に失敗:', atomicError);

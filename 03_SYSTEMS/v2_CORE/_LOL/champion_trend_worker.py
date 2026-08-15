@@ -200,11 +200,18 @@ def fetch_personal_knowledge(champ_id: str, supabase_url: str, supabase_key: str
     同じ枠組みで混ぜ込む。personal_knowledgeはLoL以外の記事も雑多に含むため、
     championカラムでの絞り込みに限定する(champion未設定の行=無関係な記事は
     自動的に除外される)。
+
+    AIによるatomic insight分解(knowledge/add/route.ts)は、分割そのものを人間が
+    確認するまでreview_status='pending'で保存される(2026-08-15)。ここで
+    approved以外を弾かないと、未確認の分割知見がそのまま辞典生成プロンプトへ
+    混ざってしまう。通常の記事(is_atomic=false)は投稿者自身が内容を決めている
+    ため常にapprovedで、この絞り込みの影響を受けない。
     """
     champ_id = normalize_champion_id(champ_id)
     if not supabase_url or not supabase_key: return ""
     url = (
         f"{supabase_url}/rest/v1/personal_knowledge?champion=ilike.{champ_id}"
+        "&review_status=eq.approved"
         "&select=id,title,content&order=created_at.desc&limit=5"
     )
     headers = {"apikey": supabase_key, "Authorization": f"Bearer {supabase_key}"}

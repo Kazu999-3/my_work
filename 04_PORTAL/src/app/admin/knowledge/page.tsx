@@ -8,6 +8,7 @@ import { useSearchParams } from 'next/navigation';
 import YoutubeQueueManager from '../youtube/YoutubeQueueManager';
 import LibraryTabContent from './LibraryTabContent';
 import DiscordImportPanel from './DiscordImportPanel';
+import PendingInsightsPanel from './PendingInsightsPanel';
 import { supabaseBrowser } from '../../../lib/supabaseBrowserClient';
 
 interface KnowledgeItem {
@@ -42,7 +43,7 @@ function KnowledgeBaseContent() {
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
   // ページ内タブ: ナレッジ一覧 or 動画キュー or 攻略ライブラリ or Discordインポート
-  const [activeTab, setActiveTab] = useState<'knowledge' | 'video' | 'library' | 'discord'>('knowledge');
+  const [activeTab, setActiveTab] = useState<'knowledge' | 'video' | 'library' | 'discord' | 'pending'>('knowledge');
   const [isResearchModalOpen, setIsResearchModalOpen] = useState(false);
 
   const searchParams = useSearchParams();
@@ -171,10 +172,10 @@ function KnowledgeBaseContent() {
             ? `（同じ投稿者の既存記事が${related.length}件あります: ${related.slice(0, 3).map((r) => r.title).join('、')}${related.length > 3 ? '...' : ''}）`
             : '';
           const atomicCount: number = resData?.atomicInsightCount || 0;
-          const atomicNote = atomicCount > 0 ? `（独立した知見を${atomicCount}件、原子的なメモとしても分割保存しました）` : '';
           const laneGeneralPending: number = resData?.laneGeneralPendingCount || 0;
-          const laneNote = laneGeneralPending > 0 ? `（レーン一般論を${laneGeneralPending}件検知。チャンピオン辞典には混ぜず、レーン別ガイドへの統合は「レーン別ガイドへ一括統合」から確認のうえ実行してください）` : '';
-          showFeedback(`新しいナレッジを自動要約して登録しました！${atomicNote}${laneNote}${relatedNote}`, 'success');
+          const totalPending = atomicCount + laneGeneralPending;
+          const atomicNote = totalPending > 0 ? `（独立した知見を${totalPending}件、原子的なメモとして分割しました。「未承認の分割知見」で内容を確認・承認するまで辞典生成やレーンガイド統合には使われません）` : '';
+          showFeedback(`新しいナレッジを自動要約して登録しました！${atomicNote}${relatedNote}`, 'success');
           setInputUrl('');
           setInputMemo('');
           fetchKnowledge(true);
@@ -387,6 +388,7 @@ function KnowledgeBaseContent() {
             { id: 'discord', label: '💬 Discord AIインポート', icon: MessageSquare },
             { id: 'video', label: '⏳ 動画解析キュー', icon: Video },
             { id: 'library', label: '🗂️ 攻略ライブラリ', icon: Layers },
+            { id: 'pending', label: '🧩 未承認の分割知見', icon: Sparkles },
           ].map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -409,6 +411,7 @@ function KnowledgeBaseContent() {
         {activeTab === 'discord' && <DiscordImportPanel />}
         {activeTab === 'video' && <YoutubeQueueManager />}
         {activeTab === 'library' && <LibraryTabContent />}
+        {activeTab === 'pending' && <PendingInsightsPanel />}
 
         {activeTab === 'knowledge' && (
           <div className="space-y-8 animate-in">
