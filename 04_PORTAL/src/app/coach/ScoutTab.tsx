@@ -19,7 +19,13 @@ import {
 import Image from "next/image";
 import { getChampIcon } from "../../lib/ddragonClient";
 
-export default function ScoutTab({ onLiveMatchDetected }: { onLiveMatchDetected?: (myChampion: string, enemyChampion: string) => void }) {
+// 5v5シミュレータの自動反映(リアルタイム連携)用に、ライブ試合の参加者10人を
+// {champion, isEnemy, isJungle}のシンプルな形へ整形して呼び出し元へ渡す型。
+export type LiveRosterEntry = { champion: string; isEnemy: boolean; isJungle: boolean };
+
+export default function ScoutTab({ onLiveMatchDetected }: {
+  onLiveMatchDetected?: (myChampion: string, enemyChampion: string, roster?: LiveRosterEntry[]) => void
+}) {
   const [riotId, setRiotId] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
@@ -65,7 +71,12 @@ export default function ScoutTab({ onLiveMatchDetected }: { onLiveMatchDetected?
       // コーチページのマッチアップ分析を自動起動する(#① 手動タブ廃止に伴う自動化)。
       // プレマッチ(推定表示)時は本当の対面が存在しないため対象外。
       if (data.isGameActive && data.myChampionName && data.championName && onLiveMatchDetected) {
-        onLiveMatchDetected(data.myChampionName, data.championName);
+        const roster: LiveRosterEntry[] | undefined = Array.isArray(data.allParticipants)
+          ? data.allParticipants
+              .filter((p: any) => !!p.championName)
+              .map((p: any) => ({ champion: p.championName, isEnemy: !!p.isEnemy, isJungle: p.role === 'JG' }))
+          : undefined;
+        onLiveMatchDetected(data.myChampionName, data.championName, roster);
       }
     } catch (err: any) {
       setError(err.message);

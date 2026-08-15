@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { apiJson } from '../../lib/apiClient';
-import ScoutTab from './ScoutTab';
+import ScoutTab, { type LiveRosterEntry } from './ScoutTab';
 import PushOptIn from '../../components/PushOptIn';
 import FiveVFiveSimTab from './FiveVFiveSimTab';
 import SoloQReflectionModal from './SoloQReflectionModal';
@@ -1424,10 +1424,14 @@ export default function CoachPage() {
   // 「マッチアップ」タブを廃止し、偵察(ScoutTab)がライブゲームから自分・対面の
   // チャンピオンを検知した瞬間に自動でマッチアップ分析を走らせる(#①)。
   const [scoutMatchupTrigger, setScoutMatchupTrigger] = useState(0);
-  const handleLiveMatchDetected = (myChampion: string, enemyChampion: string) => {
+  // 偵察で検出した10人分のロースターを5v5シミュレータへ自動反映する(2026-08-15、
+  // 「リアルタイムで取得更新できるようにしたい」という要望への対応)。
+  const [liveRoster, setLiveRoster] = useState<LiveRosterEntry[] | null>(null);
+  const handleLiveMatchDetected = (myChampion: string, enemyChampion: string, roster?: LiveRosterEntry[]) => {
     setSharedChampion(myChampion);
     setSharedEnemyChampion(enemyChampion);
     setScoutMatchupTrigger(Date.now());
+    if (roster && roster.length === 10) setLiveRoster(roster);
   };
 
   // 「今日のチェック」ボタン。試合を始める前に見る3項目(事前分析・目標・ティルト)を
@@ -1634,7 +1638,7 @@ export default function CoachPage() {
                 </div>
               )}
               <div className="border-t border-stone-200 pt-5">
-                <FiveVFiveSimTab />
+                <FiveVFiveSimTab liveRoster={liveRoster} />
               </div>
             </div>
           </div>

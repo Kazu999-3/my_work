@@ -6,8 +6,9 @@ import { getChampIcon } from '../../lib/ddragonClient';
 import { Swords, Zap, AlertCircle, RefreshCw, History, Save, Activity, Target, Award } from 'lucide-react';
 import { motion } from 'framer-motion';
 import ChampSelect from '../../components/ChampSelect';
+import type { LiveRosterEntry } from './ScoutTab';
 
-export default function FiveVFiveSimTab() {
+export default function FiveVFiveSimTab({ liveRoster }: { liveRoster?: LiveRosterEntry[] | null }) {
   // 5v5 AIシミュレータ用ステート
   const [blueChamps, setBlueChamps] = useState<Record<string, string>>({
     TOP: '', JG: '', MID: '', BOT: '', SUP: ''
@@ -202,6 +203,75 @@ export default function FiveVFiveSimTab() {
     }
   };
 
+  // リアルタイム偵察(ScoutTab)がライブ試合を検知すると、10人分のチャンピオンが自動で
+  // ここに流れてくる(2026-08-15、「5v5シミュレータをリアルタイムで取得更新できるように
+  // したい」という要望への対応)。ジャングルは事前にRiot側で確実に判定済みだが、残り4人
+  // (TOP/MID/BOT/SUP)はRiotのライブ試合データ上"LANER"としか区別が付かないため、
+  // champion_lane_roles(op.ggの実データ)の最有力ロールで推定して割り当てる。推定が
+  // 外れることもあるため、割り当て後も各スロットは手動で入れ替え可能。
+  const autoTriggerPendingRef = useRef(false);
+
+  useEffect(() => {
+    if (!liveRoster || liveRoster.length !== 10) return;
+
+    const assignTeam = async (isEnemy: boolean): Promise<Record<string, string>> => {
+      const teamRoster = liveRoster.filter((p) => p.isEnemy === isEnemy);
+      const jgEntry = teamRoster.find((p) => p.isJungle);
+      const laners = teamRoster.filter((p) => !p.isJungle);
+
+      const assigned: Record<string, string> = { TOP: '', JG: jgEntry?.champion || '', MID: '', BOT: '', SUP: '' };
+      let remainingSlots: string[] = ['TOP', 'MID', 'BOT', 'SUP'];
+      let remainingLaners = [...laners];
+
+      if (laners.length > 0) {
+        try {
+          const res = await fetch(`/api/champions/primary-roles?champions=${laners.map((l) => l.champion).join(',')}`, { credentials: 'include' });
+          const data = await res.json();
+          const preferredRole: Record<string, string> = data.roles || {};
+
+          // 1巡目: 希望ロールがまだ空いているレーナーだけを埋める(重複希望は先勝ち)
+          remainingLaners = remainingLaners.filter((l) => {
+            const pref = preferredRole[l.champion];
+            if (pref && remainingSlots.includes(pref) && !assigned[pref]) {
+              assigned[pref] = l.champion;
+              remainingSlots = remainingSlots.filter((s) => s !== pref);
+              return false;
+            }
+            return true;
+          });
+        } catch { /* 推定に失敗しても2巡目で機械的に埋める */ }
+      }
+
+      // 2巡目: 希望が競合/不明だった残りを、空いているスロットへ機械的に割り当てる
+      remainingLaners.forEach((l, i) => {
+        const slot = remainingSlots[i];
+        if (slot) assigned[slot] = l.champion;
+      });
+
+      return assigned;
+    };
+
+    (async () => {
+      const [blue, red] = await Promise.all([assignTeam(false), assignTeam(true)]);
+      autoTriggerPendingRef.current = true;
+      setBlueChamps(blue);
+      setRedChamps(red);
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [liveRoster]);
+
+  // ライブ試合からの自動反映が完了し、10枠すべて埋まった直後だけ自動でシミュレーションを
+  // 開始する(ユーザーが手動で埋めた場合は自動起動しない、という区別のためフラグ経由にする)。
+  useEffect(() => {
+    if (!autoTriggerPendingRef.current) return;
+    const allFilled = [...Object.values(blueChamps), ...Object.values(redChamps)].every((v) => !!v);
+    if (allFilled) {
+      autoTriggerPendingRef.current = false;
+      startSimulation();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [blueChamps, redChamps]);
+
   const roles = ['TOP', 'JG', 'MID', 'BOT', 'SUP'] as const;
 
   return (
@@ -224,14 +294,24 @@ export default function FiveVFiveSimTab() {
           <h3 className="text-[#a78bfa] font-black text-lg flex items-center gap-2">
             <Swords size={20} /> 5v5 チーム構成＆勝利プラン・アナライザー
           </h3>
-          <button
-            onClick={loadFromRecentMatch}
-            disabled={loadingRecent || simLoading}
-            title="直近の試合のチーム構成を読み込む"
-            className="glass-panel glass-panel-hover rounded-xl px-4 py-2 text-xs font-bold text-[#00cfef] flex items-center gap-2 disabled:opacity-50 active:scale-95 transition-transform"
-          >
-            {loadingRecent ? <RefreshCw size={14} className="animate-spin" /> : <History size={14} />} 直近の試合から読み込む
-          </button>
+          <div className="flex items-center gap-2">
+            {liveRoster && liveRoster.length === 10 && (
+              <span
+                className="text-[10px] font-black px-2.5 py-1.5 rounded-lg bg-emerald-100 border border-emerald-200 text-emerald-700"
+                title="上の「リアルタイム偵察」で検出したライブ試合から自動反映しました。TOP/MID/BOT/SUPはチャンピオンの主戦ロール推定のため、実際と違う場合は手動で入れ替えてください。"
+              >
+                🔴 ライブ試合から自動反映
+              </span>
+            )}
+            <button
+              onClick={loadFromRecentMatch}
+              disabled={loadingRecent || simLoading}
+              title="直近の試合のチーム構成を読み込む"
+              className="glass-panel glass-panel-hover rounded-xl px-4 py-2 text-xs font-bold text-[#00cfef] flex items-center gap-2 disabled:opacity-50 active:scale-95 transition-transform"
+            >
+              {loadingRecent ? <RefreshCw size={14} className="animate-spin" /> : <History size={14} />} 直近の試合から読み込む
+            </button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-9 gap-6 items-center">
