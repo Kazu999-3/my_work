@@ -1,11 +1,12 @@
 name: Riot Jungle Timing Update
 
 # ⑤(ジャングル序盤タイミングのAI推定が不正確)・①(Riot APIで面白い情報ないの？)への対応。
-# エメラルド帯の実試合(Match Timeline API)からフルクリア時間・コアアイテム完成タイミングの
-# 実測値を収集し、champion_jungle_timing_samples/aggへ保存する。
-# riot_jungle_timing_collector.pyはネットワーク取得とSupabase REST APIへの直接書き込みのみで
-# ローカルファイルへの書き込みを行わないため、lane-role-update.ymlと同様にd:/my_work
-# シンボリックリンクの回避策は不要。
+# エメラルド帯の実試合(Match Timeline API)からコアアイテム完成タイミングの実測値を収集し、
+# champion_jungle_timing_samples/aggへ保存する。フルクリア時間はRiot集計側の指標選定ミス
+# (累積カウンタを60秒間隔で誤判定、2026-08-15発覚)によりjunglepedia.lolの実データへ切替済み。
+# どちらもネットワーク取得とSupabase REST APIへの直接書き込みのみでローカルファイルへの
+# 書き込みを行わないため、lane-role-update.ymlと同様にd:/my_work シンボリックリンクの
+# 回避策は不要。
 
 on:
   schedule:
@@ -38,3 +39,13 @@ jobs:
           PYTHONPATH: 03_SYSTEMS
         run: |
           python 03_SYSTEMS/v2_CORE/_LOL/riot_jungle_timing_collector.py
+
+      # フルクリア時間はRiot集計側の指標選定ミス(2026-08-15発覚)によりjunglepedia.lolの
+      # 実データへ切り替えた。RIOT_API_KEYの24時間失効の制約を受けないため同じジョブに同居させる。
+      - name: Run Junglepedia clear-time collector
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || secrets.SUPABASE_SERVICE_KEY || secrets.SUPABASE_KEY }}
+          PYTHONPATH: 03_SYSTEMS
+        run: |
+          python 03_SYSTEMS/v2_CORE/_LOL/junglepedia_clear_collector.py

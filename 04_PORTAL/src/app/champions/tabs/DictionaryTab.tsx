@@ -104,9 +104,12 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
     early_game_score: number; mid_game_score: number; late_game_score: number;
     peak_window: string; summary: string;
   } | null>(null);
-  // Riot Timeline APIから収集したジャングル序盤タイミングの実測値(エメラルド帯、2026-08-13)
+  // ジャングル序盤タイミングの実測値。コアアイテム完成はRiot Timeline APIの自前集計
+  // (エメラルド帯、2026-08-13)、フルクリア時間はjunglepedia.lolの実データ(全ティア、
+  // 2026-08-15〜。Riot集計側は指標選定ミスで表示撤去したため)と出典が異なる。
   const [realJungleTiming, setRealJungleTiming] = useState<{
-    sampleCount: number; avgFullClearSec: number | null; avgFirstCoreSec: number | null; avgSecondCoreSec: number | null; tier: string;
+    sampleCount: number; avgFirstCoreSec: number | null; avgSecondCoreSec: number | null; tier: string;
+    externalAvgClearSec?: number | null; externalSampleSize?: number | null; externalSource?: string | null;
   } | null>(null);
   const [editingStrategy, setEditingStrategy] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -1019,23 +1022,35 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                   </p>
                 )}
 
-                {/* 🎮 Riot Timeline APIから収集した実測値(エメラルド帯)。AI推定値は上書きせず別枠表示(2026-08-13)
-                    フルクリア時間は累積カウンタ(jungleMinionsKilled)を60秒間隔のスナップショットで
-                    「増えなくなった瞬間=クリア終了」とみなす作りで、実際には3分〜18分まで無秩序に
-                    ばらつく指標選定ミスと判明したため非表示にした(2026-08-15)。コアアイテム完成
-                    タイミングは実際のITEM_PURCHASEDイベントを使っており正確なため表示を維持する。 */}
-                {realJungleTiming && (
-                  <div className="mt-3 pt-3 border-t border-black/10">
-                    <p className="text-[11px] text-gray-400 font-bold mb-2 flex items-center gap-1.5">
-                      🎮 実測値（{realJungleTiming.tier}帯・{realJungleTiming.sampleCount}試合平均・概算）
-                    </p>
+                {/* 🎮 実測値。AI推定値は上書きせず別枠表示(2026-08-13)。出典が2つ混在する:
+                    - フルクリア時間: 以前はRiot Timeline APIの自前集計だったが、累積カウンタを
+                      60秒間隔で誤判定する構造的ミスで3〜18分にばらついていたため、2026-08-15に
+                      junglepedia.lol(高エロソロキュー50万試合超の集計)へ切り替えた。
+                    - コアアイテム完成タイミング: 実際のITEM_PURCHASEDイベントを使うRiot集計の
+                      ままで、こちらは元々正確なため変更していない。 */}
+                {(realJungleTiming && (realJungleTiming.externalAvgClearSec != null || realJungleTiming.avgFirstCoreSec != null)) && (
+                  <div className="mt-3 pt-3 border-t border-black/10 space-y-1.5">
+                    {realJungleTiming.externalAvgClearSec != null && (
+                      <p className="text-[11px] text-gray-400 font-bold flex items-center gap-1.5">
+                        🎮 実測値・フルクリア（{realJungleTiming.externalSource || 'junglepedia.lol'}調べ・全ティア{realJungleTiming.externalSampleSize ? `・${realJungleTiming.externalSampleSize.toLocaleString()}試合` : ''}）
+                      </p>
+                    )}
                     <div className="flex gap-2 flex-wrap items-center">
-                      <span className="px-3 py-1.5 bg-sky-50 border border-sky-200 rounded-lg text-xs font-bold text-sky-700">
-                        1コア完成 {formatTimingSec(realJungleTiming.avgFirstCoreSec)}
-                      </span>
-                      <span className="px-3 py-1.5 bg-sky-50 border border-sky-200 rounded-lg text-xs font-bold text-sky-700">
-                        2コア完成 {formatTimingSec(realJungleTiming.avgSecondCoreSec)}
-                      </span>
+                      {realJungleTiming.externalAvgClearSec != null && (
+                        <span className="px-3 py-1.5 bg-sky-50 border border-sky-200 rounded-lg text-xs font-bold text-sky-700">
+                          フルクリア {formatTimingSec(realJungleTiming.externalAvgClearSec)}
+                        </span>
+                      )}
+                      {realJungleTiming.avgFirstCoreSec != null && (
+                        <span className="px-3 py-1.5 bg-sky-50 border border-sky-200 rounded-lg text-xs font-bold text-sky-700">
+                          1コア完成 {formatTimingSec(realJungleTiming.avgFirstCoreSec)}（{realJungleTiming.tier}帯・{realJungleTiming.sampleCount}試合）
+                        </span>
+                      )}
+                      {realJungleTiming.avgSecondCoreSec != null && (
+                        <span className="px-3 py-1.5 bg-sky-50 border border-sky-200 rounded-lg text-xs font-bold text-sky-700">
+                          2コア完成 {formatTimingSec(realJungleTiming.avgSecondCoreSec)}（{realJungleTiming.tier}帯・{realJungleTiming.sampleCount}試合）
+                        </span>
+                      )}
                     </div>
                   </div>
                 )}
