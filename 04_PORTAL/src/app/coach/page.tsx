@@ -7,9 +7,7 @@ import PushOptIn from '../../components/PushOptIn';
 import FiveVFiveSimTab from './FiveVFiveSimTab';
 import SoloQReflectionModal from './SoloQReflectionModal';
 import TiltDiagnosisPopup from './TiltDiagnosisPopup';
-import PickRecommendationTab from './PickRecommendationTab';
 import MatchupWarningCard from './MatchupWarningCard';
-import LanePrioritySimulator from './LanePrioritySimulator';
 import MySoloQDashboard from './MySoloQDashboard';
 import Collapsible from '../../components/Collapsible';
 
@@ -1439,14 +1437,14 @@ export default function CoachPage() {
     setDailyCheckTrigger(Date.now());
   };
 
-  // 5ステップ統合タブ構造
-  const [activeStepTab, setActiveStepTab] = useState<'banpick' | 'pregame' | 'postgame' | 'menu'>('banpick');
+  // ステップ統合タブ構造。「BAN/PICKナビ」はシナジー/カウンター統計DBが未整備で
+  // 完全なハードコードのサンプル値しか返せないダミー実装だったため撤去した(2026-08-15)。
+  const [activeStepTab, setActiveStepTab] = useState<'pregame' | 'postgame' | 'menu'>('pregame');
 
   const STEP_TABS = [
-    { id: 'banpick', label: '1. BAN/PICKナビ', icon: '🎯' },
-    { id: 'pregame', label: '2. 事前分析＆レーンシミュレータ', icon: '⚡' },
-    { id: 'postgame', label: '3. 振り返り＆実績ダッシュボード', icon: '🔍' },
-    { id: 'menu', label: '4. AI練習メニュー', icon: '🏋️‍♂️' },
+    { id: 'pregame', label: '1. 事前分析＆レーンシミュレータ', icon: '⚡' },
+    { id: 'postgame', label: '2. 振り返り＆実績ダッシュボード', icon: '🔍' },
+    { id: 'menu', label: '3. AI練習メニュー', icon: '🏋️‍♂️' },
   ] as const;
 
   if (isAuthenticated === null) {
@@ -1600,33 +1598,20 @@ export default function CoachPage() {
           </div>
         </div>
 
-        {/* --- 4ステップ別メインコンテンツ --- */}
-        {activeStepTab === 'banpick' && (
-          <div className="space-y-6 animate-in">
-            <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-sm space-y-3">
-              <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5">
-                <span>🎯</span> BAN/PICK推奨ナビゲーター (シナジー ＆ カウンターTop3)
-              </h3>
-              <PickRecommendationTab />
-            </div>
-          </div>
-        )}
-
+        {/* --- ステップ別メインコンテンツ --- */}
         {/*
           「🎯 今日のチェック」ボタン(runDailyCheck)はPreGameTab/GoalTab/TiltTabに
           triggerSignalを渡して一括起動する設計だが、これらは元々activeStepTabに応じて
           JSXごとマウント/アンマウントされていたため、ボタンを押した時点でその子が
           マウントされていないタブでは useEffect(triggerSignal) が発火せず「反応しない」
-          バグになっていた(2026-08-04発覚)。LanePrioritySimulator/PreGameTabは
-          副作用のあるポーリングを持たないため、常時マウントしCSSで表示切替する。
+          バグになっていた(2026-08-04発覚)。PreGameTabは副作用のあるポーリングを
+          持たないため、常時マウントしCSSで表示切替する。
+          「5レーン主導権＆試合展開シミュレーター」(LanePrioritySimulator)は入力に関わらず
+          固定のサンプルテキストしか返さない完全なモックだったため撤去した(2026-08-15)。
+          同じ内容(レーン主導権・試合展開の予測)は下部の「5v5シミュレータ」が実データ
+          (Gemini分析)で計算済みのため、そちらに一本化する。
         */}
         <div className={activeStepTab === 'pregame' ? 'space-y-6 animate-in' : 'hidden'}>
-          <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-sm space-y-3">
-            <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5">
-              <span>📊</span> 5レーン主導権 ＆ 試合展開シミュレーター
-            </h3>
-            <LanePrioritySimulator />
-          </div>
           <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-sm space-y-3">
             <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5">
               <span>⚡</span> 事前分析 (対面対策ナレッジ)
