@@ -322,11 +322,23 @@ export async function POST(req: NextRequest) {
     // 実在チャンピオンへ正規化する(knowledge/addと同じ理由・同じ処理)。
     const resolvedChampion = await resolveToRosterChampion(analyzed.champion);
 
+    // 元ソース情報（動画・記事URL）を記事の先頭に必ず明記する（2026-08-17、ユーザー指示）
+    let finalSummary = analyzed.summary || '';
+    if (url) {
+      const isYouTube = /youtube\.com|youtu\.be/i.test(url);
+      const isX = /x\.com|twitter\.com/i.test(url);
+      const sourceLabel = isYouTube ? '📺 **元動画情報**' : isX ? '🐦 **元投稿情報 (X/Twitter)**' : '🌐 **元記事・ソース情報**';
+      const sourceHeader = `> ${sourceLabel}\n> - **タイトル**: ${extracted.title || analyzed.title}\n> - **元URL**: [${url}](${url})\n\n---\n\n`;
+      if (!finalSummary.includes('元動画情報') && !finalSummary.includes('元投稿情報') && !finalSummary.includes('元記事') && !finalSummary.includes(url)) {
+        finalSummary = `${sourceHeader}${finalSummary}`;
+      }
+    }
+
     const { data: updated, error: updateErr } = await supabase
       .from('personal_knowledge')
       .update({
         title: analyzed.title,
-        content: analyzed.summary,
+        content: finalSummary,
         raw_content: extracted.textContent.slice(0, 15000),
         genre: analyzed.genre,
         tags: analyzed.tags,

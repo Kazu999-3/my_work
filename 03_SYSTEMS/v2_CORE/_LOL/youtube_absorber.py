@@ -719,13 +719,30 @@ class YouTubeAbsorber:
                 if champ_match:
                     extracted_champ = champ_match.group(1).strip()
                     
+                # 過去のリトライで付いた [エラー: ...] タグを、成功したこの時点で綺麗にする
+                clean_title = self.strip_error_tags(item['title'])
+
+                # 元動画情報を先頭に確実に付与する（2026-08-17、ユーザー指示）
+                channel_name = item.get("channel_name", "Unknown")
+                video_url = item.get("url", f"https://www.youtube.com/watch?v={item['id']}")
+                video_meta_header = (
+                    f"# {clean_title}\n\n"
+                    f"> 📺 **元動画情報**\n"
+                    f"> - **動画タイトル**: {clean_title}\n"
+                    f"> - **チャンネル**: {channel_name}\n"
+                    f"> - **動画リンク**: [{video_url}]({video_url})\n\n"
+                    f"---\n\n"
+                )
+                if "元動画情報" not in bible_text and video_url not in bible_text:
+                    final_bible_text = f"{video_meta_header}{bible_text}"
+                else:
+                    final_bible_text = bible_text
+
                 # Markdown保存
                 file_path = os.path.join(self.bible_dir, f"{item['id']}.md")
                 with open(file_path, "w", encoding="utf-8") as f:
-                    f.write(bible_text)
+                    f.write(final_bible_text)
                     
-                # 過去のリトライで付いた [エラー: ...] タグを、成功したこの時点で綺麗にする
-                clean_title = self.strip_error_tags(item['title'])
                 self.update_video(item["id"], {"status": "completed", "title": clean_title})
                 success_count += 1
                 dur = item.get('duration_sec')

@@ -389,11 +389,23 @@ export async function POST(req: NextRequest) {
     const resolvedChampion = await resolveToRosterChampion(analyzed.champion);
     const atomicInsights = Array.isArray(analyzed.atomicInsights) ? analyzed.atomicInsights.slice(0, 5) : [];
 
+    // 元ソース情報（動画・記事URL）を記事の先頭に必ず明記する（2026-08-17、ユーザー指示）
+    let finalSummary = analyzed.summary || '';
+    if (url) {
+      const isYouTube = /youtube\.com|youtu\.be/i.test(url);
+      const isX = /x\.com|twitter\.com/i.test(url);
+      const sourceLabel = isYouTube ? '📺 **元動画情報**' : isX ? '🐦 **元投稿情報 (X/Twitter)**' : '🌐 **元記事・ソース情報**';
+      const sourceHeader = `> ${sourceLabel}\n> - **タイトル**: ${title || analyzed.title}\n> - **元URL**: [${url}](${url})\n\n---\n\n`;
+      if (!finalSummary.includes('元動画情報') && !finalSummary.includes('元投稿情報') && !finalSummary.includes('元記事') && !finalSummary.includes(url)) {
+        finalSummary = `${sourceHeader}${finalSummary}`;
+      }
+    }
+
     return NextResponse.json({
       success: true,
       preview: {
         title: analyzed.title,
-        summary: analyzed.summary,
+        summary: finalSummary,
         rawContent: rawContent.slice(0, 15000),
         url: url || '',
         genre: analyzed.genre,

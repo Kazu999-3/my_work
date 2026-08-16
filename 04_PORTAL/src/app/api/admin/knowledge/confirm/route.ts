@@ -29,11 +29,23 @@ export async function POST(req: NextRequest) {
     // 管理者が手で書き換えた場合を考慮)。
     const resolvedChampion = champion ? await resolveToRosterChampion(champion) : null;
 
+    // 元ソース情報（動画・記事URL）を記事の先頭に必ず明記する（2026-08-17、ユーザー指示）
+    let finalContent = summary || '';
+    if (url) {
+      const isYouTube = /youtube\.com|youtu\.be/i.test(url);
+      const isX = /x\.com|twitter\.com/i.test(url);
+      const sourceLabel = isYouTube ? '📺 **元動画情報**' : isX ? '🐦 **元投稿情報 (X/Twitter)**' : '🌐 **元記事・ソース情報**';
+      const sourceHeader = `> ${sourceLabel}\n> - **タイトル**: ${title}\n> - **元URL**: [${url}](${url})\n\n---\n\n`;
+      if (!finalContent.includes('元動画情報') && !finalContent.includes('元投稿情報') && !finalContent.includes('元記事') && !finalContent.includes(url)) {
+        finalContent = `${sourceHeader}${finalContent}`;
+      }
+    }
+
     const { data, error } = await supabase
       .from('personal_knowledge')
       .insert([{
         title,
-        content: summary,
+        content: finalContent,
         raw_content: String(rawContent || '').slice(0, 15000),
         source_url: url || '',
         genre: genre || 'その他',

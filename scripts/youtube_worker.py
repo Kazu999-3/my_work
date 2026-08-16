@@ -205,14 +205,30 @@ def main():
             if not transcript:
                 raise NoTranscript("字幕を取得できませんでした（字幕なし or IP制限の可能性）")
             a = gemini_summarize(it.get("title") or "YouTube Video", it.get("channel_name") or "", transcript)
+            # 元動画情報を記事の先頭に必ず明記する（2026-08-17、ユーザー指示）
+            video_title = a.get("title") or it.get("title") or "YouTube攻略メモ"
+            channel_name = it.get("channel_name") or "YouTube Channel"
+            summary_content = a.get("summary") or ""
+            video_meta_header = (
+                f"> 📺 **元動画情報**\n"
+                f"> - **動画タイトル**: {video_title}\n"
+                f"> - **チャンネル**: {channel_name}\n"
+                f"> - **動画リンク**: [{url}]({url})\n\n"
+                f"---\n\n"
+            )
+            if "元動画情報" not in summary_content and url not in summary_content:
+                final_content = f"{video_meta_header}{summary_content}"
+            else:
+                final_content = summary_content
+
             # 完全自動(人間の確認なし)でチャンピオン辞典生成にそのまま使われていたため、
             # 手動登録(knowledge/add→confirm)と同じくreview_status='pending'で保存し、
             # /admin/knowledgeの「未承認」パネルで人間が承認するまではfetch_personal_knowledge
             # (champion_trend_worker.py)の対象から外れるようにする(2026-08-16、ユーザー要望)。
             # 既存の承認済み記事はそのまま維持し、今後の新規分だけが対象。
             sb("POST", "personal_knowledge", [{
-                "title": a.get("title") or it.get("title") or "YouTube攻略メモ",
-                "content": a.get("summary") or "",
+                "title": video_title,
+                "content": final_content,
                 "raw_content": transcript[:8000],
                 "source_url": url,
                 "genre": a.get("genre") or "LoL攻略",
@@ -221,7 +237,7 @@ def main():
                 "review_status": "pending",
             }], prefer="return=minimal")
             sb("PATCH", f"youtube_queue?id=eq.{vid}", {"status": "completed"})
-            title = a.get("title") or it.get("title") or "(無題)"
+            title = video_title
             done.append(title)
             print(f"✅ 完了: {title}")
         except Exception as e:
