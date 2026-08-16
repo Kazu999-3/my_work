@@ -1166,7 +1166,11 @@ export default function BalancerPage() {
         </div>
       )}
 
-      <div className="max-w-[1400px] mx-auto p-3 md:p-6 space-y-4">
+      {/* 参加者リストの表は13列(参加設定/No./名前/ランク/MMR/希望×2/NG×2/こだわり/格上/
+          Pity/備考)あり、自然な幅は約1300pxに達する。旧max-w-[1400px]では左サイドバー
+          (約256px)や余白を差し引くと1440px前後の画面でも収まりきらず、常に横スクロール
+          が発生していた。ワイドモニタでは表がしっかり収まるよう広げる(2026-08-15)。 */}
+      <div className="max-w-[1900px] mx-auto p-3 md:p-6 space-y-4">
 
         {/* ヘッダー */}
         <div className="flex flex-col gap-3 border-b border-stone-200 pb-4">
