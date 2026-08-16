@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { RefreshCw, Trophy, Target, Search, Settings } from 'lucide-react';
+import { RefreshCw, Trophy, Target, Search, Settings, ArrowLeftRight } from 'lucide-react';
 import Image from 'next/image';
 import { getChampIcon } from '../../../lib/ddragonClient';
 
@@ -410,6 +410,26 @@ function CustomRecordPageContent() {
     loadPendingMatch();
   }, [pendingId]);
 
+  // BLUE(0-4)とRED(5-9)の中身(名前・チャンピオン・スタッツ等)を丸ごと入れ替える。
+  // スクショ解析(handleImageUpload)がBLUE/REDを逆に判定した場合や、単純に手入力を
+  // 間違えた場合に、10人分を選び直さずワンクリックで直せるようにする(2026-08-15)。
+  // ロール(currentRole)はそのスロット位置に紐づいたまま(TOP同士、JG同士…)入れ替え、
+  // 勝利チームが選択済みなら合わせて反転させる(実際に勝ったロースターの所属色が
+  // 変わるため)。
+  const handleSwapTeams = () => {
+    setStats(prev => {
+      const next = [...prev];
+      for (let i = 0; i < 5; i++) {
+        const blueSlot = next[i];
+        const redSlot = next[i + 5];
+        next[i] = { ...redSlot, team: 'BLUE', currentRole: blueSlot.currentRole };
+        next[i + 5] = { ...blueSlot, team: 'RED', currentRole: redSlot.currentRole };
+      }
+      return next;
+    });
+    setWinningTeam(prev => (prev === 'BLUE' ? 'RED' : prev === 'RED' ? 'BLUE' : prev));
+  };
+
   const handleStatChangeByIndex = (index: number, field: string, value: string) => {
     setStats(prev => prev.map((p, idx) => {
       if (idx === index) {
@@ -559,10 +579,20 @@ function CustomRecordPageContent() {
             )}
           </div>
 
+          <div className="flex justify-end mb-2">
+            <button
+              type="button"
+              onClick={handleSwapTeams}
+              title="BLUE/REDの中身(名前・チャンピオン・スタッツ)を丸ごと入れ替えます"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-black/5 hover:bg-black/10 border border-border text-stone-700 font-bold text-xs transition"
+            >
+              <ArrowLeftRight className="h-3.5 w-3.5" /> BLUE ⇄ RED 入れ替え
+            </button>
+          </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
             {/* BLUE TEAM */}
             <div>
-              <h4 className="font-bold text-blue-400 mb-4 text-xl tracking-wider">🟦 BLUE TEAM</h4>
+              <h4 className="font-bold text-blue-700 mb-4 text-xl tracking-wider">🟦 BLUE TEAM</h4>
               <div className="space-y-3">
                 {[0, 1, 2, 3, 4].map(index => {
                   const s = stats[index];
@@ -650,7 +680,7 @@ function CustomRecordPageContent() {
 
             {/* RED TEAM */}
             <div>
-              <h4 className="font-bold text-red-400 mb-4 text-xl tracking-wider">🟥 RED TEAM</h4>
+              <h4 className="font-bold text-red-700 mb-4 text-xl tracking-wider">🟥 RED TEAM</h4>
               <div className="space-y-3">
                 {[5, 6, 7, 8, 9].map(index => {
                   const s = stats[index];
