@@ -316,7 +316,13 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
         if (cancelled) return;
         if (!res.ok) throw new Error(detail.error || '取得に失敗しました');
 
-        setMatchupsList(detail.matchupsList || []);
+        const loadedMatchups = detail.matchupsList || [];
+        setMatchupsList(loadedMatchups);
+        if (loadedMatchups.length > 0) {
+          setIsMatchupsCollapsed(false); // 対面メモが存在する場合は自動展開して見やすくする
+        } else {
+          setIsMatchupsCollapsed(true);
+        }
         setPowerSpikeScores(detail.powerSpikeScores || null);
         setRealJungleTiming(detail.realJungleTiming || null);
 
@@ -1385,7 +1391,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
           >
             <div className="flex items-center gap-3">
               <Swords className="text-[#00cfef]" size={20} />
-              <h3 className="text-base font-black text-stone-900">⚔️ 対面マッチアップ履歴 (ランク戦データ連携)</h3>
+              <h3 className="text-base font-black text-stone-900">⚔️ 対面マッチアップ対策 ＆ 戦術メモ</h3>
               <span className="text-xs bg-[#00cfef]/20 text-[#00cfef] px-2.5 py-0.5 rounded-full font-bold">
                 {matchupsList.length} 件
               </span>

@@ -26,13 +26,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ warning: null });
     }
 
-    // 1. Check matchup_sentinel
-    const matchupId = `${champion}_vs_${enemyChampion}`;
-    const { data: sentinelData } = await supabaseAdmin
+    // 1. Check matchup_sentinel (複数のID形式またはchampion+enemyで検索)
+    const matchupIds = [`${champion}_vs_${enemyChampion}`, `champ_${champion}_vs_${enemyChampion}`];
+    const { data: sentinelDataList } = await supabaseAdmin
       .from('matchup_sentinel')
       .select('strategy, title, updated_at')
-      .eq('matchup_id', matchupId)
-      .maybeSingle();
+      .or(`matchup_id.in.(${matchupIds.join(',')}),and(champion.eq.${champion},enemy.eq.${enemyChampion})`)
+      .order('updated_at', { ascending: false })
+      .limit(1);
+
+    const sentinelData = sentinelDataList?.[0] || null;
 
     // 2. Check soloq_reflections（メモ付きのみ、最新3件）
     const { data: reflectionsData } = await supabaseAdmin

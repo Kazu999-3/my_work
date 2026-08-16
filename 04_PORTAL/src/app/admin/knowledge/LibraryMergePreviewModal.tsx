@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from 'react';
-import { CheckCircle2, RefreshCw, X, BookOpen, Map } from 'lucide-react';
+import { CheckCircle2, RefreshCw, X, BookOpen, Map, Swords, Sparkles, ShieldAlert, ChevronDown, ChevronUp, Zap, Target, Layers } from 'lucide-react';
+import { getChampIcon } from '../../../lib/ddragonClient';
 
 export type MergePreviewItem = {
   champion: string;
@@ -9,6 +10,29 @@ export type MergePreviewItem = {
   isNewField: boolean;
   existingExcerpt: string;
   mergedExcerpt: string;
+};
+
+export type TrendFieldUpdate = {
+  fieldKey: string;
+  fieldLabel: string;
+  existingValue: string;
+  extractedValue: string;
+  mergedValue: string;
+  isNew: boolean;
+};
+
+export type ChampionTrendAnalysis = {
+  champion: string;
+  summaryPoints: string[];
+  fieldUpdates: TrendFieldUpdate[];
+};
+
+export type MatchupInsight = {
+  targetChampion: string;
+  enemyChampion: string;
+  title: string;
+  strategy: string;
+  confidence?: 'high' | 'medium';
 };
 
 export type LaneGeneralInsight = { title: string; summary: string };
@@ -22,136 +46,372 @@ const LANE_LABELS: Record<string, string> = {
   SUP: 'SUP（サポート）',
 };
 
-// 「攻略ライブラリから保存した時にチャンピオン辞典割り振りする際のプレビューが出ない」
-// への対応(2026-08-16)。LibraryTabContent.tsxの記事編集画面で「保存する」を押した際、
-// 従来は確認なしに即matchup_sentinelへマージ＆ライブラリから削除していたが、
-// dryRunで計算した「どのフィールドに」「マージ後どうなるか」をここで見せてから
-// 実際の統合を実行する。あわせて、記事内に混じっている「レーン一般論」がチャンピオン
-// 固有の項目に埋もれて失われないよう、検出結果を見せてレーンガイドへの統合も選べるようにする
-// (「レーン全体の攻略情報は優先的に確保したい」という要望への対応)。
+const FIELD_ICONS: Record<string, any> = {
+  strengths: Sparkles,
+  weaknesses: ShieldAlert,
+  power_spikes: Zap,
+  build_runes: Layers,
+  strategy: Target,
+  must_ban_champions: ShieldAlert,
+  pick_recommendation: BookOpen,
+};
+
 export default function LibraryMergePreviewModal({
-  previews, laneGeneralInsights, detectedLane, saving, onConfirm, onCancel,
+  previews,
+  trendAnalyses = [],
+  matchupInsights = [],
+  laneGeneralInsights = [],
+  detectedLane = 'COMMON',
+  saving,
+  onConfirm,
+  onCancel,
 }: {
   previews: MergePreviewItem[];
-  laneGeneralInsights: LaneGeneralInsight[];
-  detectedLane: string;
+  trendAnalyses?: ChampionTrendAnalysis[];
+  matchupInsights?: MatchupInsight[];
+  laneGeneralInsights?: LaneGeneralInsight[];
+  detectedLane?: string;
   saving: boolean;
-  onConfirm: (sendToLane: string | null) => void;
+  onConfirm: (options: {
+    sendToLane: string | null;
+    approvedMatchups: MatchupInsight[];
+    trendDataOverrides?: Record<string, Record<string, string>>;
+  }) => void;
   onCancel: () => void;
 }) {
+  const hasTrendAnalyses = trendAnalyses.length > 0;
+  const hasMatchups = matchupInsights.length > 0;
   const hasLaneGeneral = laneGeneralInsights.length > 0;
+
+  // 選択された対面メモ（デフォルトは全てON）
+  const [selectedMatchupIndices, setSelectedMatchupIndices] = useState<number[]>(() =>
+    matchupInsights.map((_, i) => i)
+  );
+
+  // レーンガイド統合チェック
   const [sendToLaneChecked, setSendToLaneChecked] = useState(hasLaneGeneral);
   const [laneChoice, setLaneChoice] = useState(detectedLane || 'COMMON');
 
+  // トレンド項目の展開状態管理
+  const [expandedFields, setExpandedFields] = useState<Record<string, boolean>>({});
+
+  const toggleFieldExpand = (key: string) => {
+    setExpandedFields((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const toggleMatchupSelect = (index: number) => {
+    setSelectedMatchupIndices((prev) =>
+      prev.includes(index) ? prev.filter((i) => i !== index) : [...prev, index]
+    );
+  };
+
+  const handleConfirm = () => {
+    const approvedMatchups = matchupInsights.filter((_, i) => selectedMatchupIndices.includes(i));
+    
+    // トレンドデータのオーバーライド（マージ後の値）
+    const trendDataOverrides: Record<string, Record<string, string>> = {};
+    for (const analysis of trendAnalyses) {
+      trendDataOverrides[analysis.champion] = {};
+      for (const field of analysis.fieldUpdates) {
+        if (field.mergedValue) {
+          trendDataOverrides[analysis.champion][field.fieldKey] = field.mergedValue;
+        }
+      }
+    }
+
+    onConfirm({
+      sendToLane: sendToLaneChecked ? laneChoice : null,
+      approvedMatchups,
+      trendDataOverrides,
+    });
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="bg-white border border-gray-200 rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 shadow-2xl">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-            <BookOpen size={20} className="text-violet-600" /> 辞典統合プレビュー
-          </h3>
-          <button onClick={onCancel} disabled={saving} className="text-gray-400 hover:text-gray-900 disabled:opacity-50">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/60 backdrop-blur-sm animate-fade-in">
+      <div className="bg-[#fcfbf9] border border-stone-200 rounded-3xl w-full max-w-3xl max-h-[90vh] overflow-y-auto p-6 shadow-2xl space-y-6">
+        {/* ヘッダー */}
+        <div className="flex items-center justify-between border-b border-stone-200 pb-4">
+          <div>
+            <h3 className="text-xl font-black text-stone-900 flex items-center gap-2">
+              <BookOpen size={22} className="text-amber-600" />
+              <span>辞典統合 ＆ 戦略データ整理プレビュー</span>
+            </h3>
+            <p className="text-xs text-stone-500 mt-1">
+              記事の内容をAIが整理し、チャンピオントレンド各項目・対面メモ・レーンガイドへ最適配分します。
+            </p>
+          </div>
+          <button
+            onClick={onCancel}
+            disabled={saving}
+            className="text-stone-400 hover:text-stone-700 p-1.5 rounded-full hover:bg-stone-100 disabled:opacity-50 transition"
+          >
             <X size={20} />
           </button>
         </div>
 
-        <p className="text-xs text-gray-500 mb-4 leading-relaxed">
-          保存すると、この記事は下記の内容でチャンピオン辞典へマージされ、攻略ライブラリからは削除されます（辞典側に統合済みとして残ります）。
-        </p>
+        {/* 1. チャンピオントレンド構造化プレビュー */}
+        {hasTrendAnalyses ? (
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <Sparkles size={16} className="text-amber-600" />
+              <h4 className="text-sm font-extrabold text-stone-900">
+                1. チャンピオントレンド統合（構造化項目への整理）
+              </h4>
+            </div>
 
-        <div className="space-y-4">
-          {previews.map((p, idx) => (
-            <div key={idx} className="border border-violet-200 rounded-2xl p-4 bg-violet-50/40">
-              <div className="flex items-center gap-2 flex-wrap mb-2">
-                <span className="text-xs font-black px-2.5 py-1 rounded-lg bg-violet-100 border border-violet-300 text-violet-700">
-                  🏆 {p.champion}
-                </span>
-                <span className="text-[10px] text-gray-500">項目: <span className="font-mono">{p.fieldName}</span></span>
-                <span className={`text-[9px] font-black px-1.5 py-0.5 rounded border ${
-                  p.isNewField ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-amber-50 border-amber-200 text-amber-700'
-                }`}>
-                  {p.isNewField ? '新規項目として追加' : '既存項目に追記/更新'}
-                </span>
-              </div>
-
-              {!p.isNewField && (
-                <div className="mb-2">
-                  <p className="text-[10px] font-bold text-gray-400 mb-1">現在の内容（統合前）</p>
-                  <div className="bg-white border border-gray-200 rounded-xl p-3 max-h-24 overflow-y-auto text-[11px] text-gray-500 whitespace-pre-wrap leading-relaxed">
-                    {p.existingExcerpt || '(空)'}
+            {trendAnalyses.map((analysis) => (
+              <div key={analysis.champion} className="bg-white border border-stone-200 rounded-2xl p-4 shadow-sm space-y-3">
+                <div className="flex items-center justify-between border-b border-stone-100 pb-2">
+                  <div className="flex items-center gap-2.5">
+                    {getChampIcon(analysis.champion) && (
+                      <img
+                        src={getChampIcon(analysis.champion)}
+                        alt={analysis.champion}
+                        className="w-8 h-8 rounded-lg border border-amber-300 shadow-sm"
+                      />
+                    )}
+                    <div>
+                      <span className="text-sm font-black text-stone-900">{analysis.champion}</span>
+                      <span className="text-[10px] text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md ml-2 font-bold">
+                        トレンドデータ更新
+                      </span>
+                    </div>
                   </div>
                 </div>
-              )}
 
-              <div>
-                <p className="text-[10px] font-bold text-gray-400 mb-1">統合後の内容</p>
-                <div className="bg-white border border-gray-200 rounded-xl p-3 max-h-40 overflow-y-auto text-[11px] text-gray-700 whitespace-pre-wrap leading-relaxed">
+                {/* 整理された主要ポイント */}
+                {analysis.summaryPoints && analysis.summaryPoints.length > 0 && (
+                  <div className="bg-amber-50/60 border border-amber-200/80 rounded-xl p-3">
+                    <p className="text-[11px] font-black text-amber-900 mb-1.5 flex items-center gap-1">
+                      <Sparkles size={13} className="text-amber-600" /> 記事から抽出・整理された要点:
+                    </p>
+                    <ul className="space-y-1">
+                      {analysis.summaryPoints.map((pt, i) => (
+                        <li key={i} className="text-xs text-stone-700 font-medium flex items-start gap-1.5">
+                          <span className="text-amber-500 font-bold">•</span>
+                          <span>{pt}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* 各フィールドの差分リスト */}
+                <div className="space-y-2 pt-1">
+                  {analysis.fieldUpdates
+                    .filter((f) => f.extractedValue.trim().length > 0)
+                    .map((field) => {
+                      const IconComp = FIELD_ICONS[field.fieldKey] || BookOpen;
+                      const expandKey = `${analysis.champion}_${field.fieldKey}`;
+                      const isExpanded = expandedFields[expandKey];
+
+                      return (
+                        <div
+                          key={field.fieldKey}
+                          className="border border-stone-200 rounded-xl bg-stone-50/50 overflow-hidden"
+                        >
+                          <button
+                            type="button"
+                            onClick={() => toggleFieldExpand(expandKey)}
+                            className="w-full flex items-center justify-between p-3 text-left hover:bg-stone-100/60 transition"
+                          >
+                            <div className="flex items-center gap-2">
+                              <IconComp size={15} className="text-amber-700" />
+                              <span className="text-xs font-bold text-stone-800">{field.fieldLabel}</span>
+                              <span
+                                className={`text-[9px] font-black px-1.5 py-0.5 rounded border ${
+                                  field.isNew
+                                    ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                                    : 'bg-blue-50 border-blue-200 text-blue-700'
+                                }`}
+                              >
+                                {field.isNew ? '新規追加' : '追記/統合'}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1 text-[11px] text-stone-500 font-medium">
+                              <span>{isExpanded ? '折りたたむ' : '差分を確認'}</span>
+                              {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                            </div>
+                          </button>
+
+                          {isExpanded && (
+                            <div className="p-3 pt-0 border-t border-stone-200 bg-white space-y-2 text-xs">
+                              {!field.isNew && field.existingValue && (
+                                <div>
+                                  <p className="text-[10px] font-bold text-stone-400 mb-0.5">現在の内容:</p>
+                                  <div className="bg-stone-50 border border-stone-200 rounded-lg p-2 text-stone-600 text-[11px] whitespace-pre-wrap max-h-24 overflow-y-auto">
+                                    {field.existingValue}
+                                  </div>
+                                </div>
+                              )}
+                              <div>
+                                <p className="text-[10px] font-bold text-amber-700 mb-0.5">統合後の内容（提案）:</p>
+                                <div className="bg-amber-50/40 border border-amber-200 rounded-lg p-2.5 text-stone-800 text-[11px] whitespace-pre-wrap font-medium leading-relaxed">
+                                  {field.mergedValue}
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          /* フォールバック用プレビュー */
+          <div className="space-y-3">
+            {previews.map((p, idx) => (
+              <div key={idx} className="border border-stone-200 rounded-2xl p-4 bg-white">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-xs font-black px-2.5 py-1 rounded-lg bg-amber-100 text-amber-800">
+                    🏆 {p.champion}
+                  </span>
+                  <span className="text-xs text-stone-500">項目: {p.fieldName}</span>
+                </div>
+                <div className="bg-stone-50 border border-stone-200 rounded-xl p-3 text-xs text-stone-700 whitespace-pre-wrap">
                   {p.mergedExcerpt}
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
 
+        {/* 2. 対チャンピオン（マッチアップ）情報 */}
+        {hasMatchups && (
+          <div className="space-y-3 pt-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Swords size={16} className="text-rose-600" />
+                <h4 className="text-sm font-extrabold text-stone-900">
+                  2. 検出された対チャンピオン（マッチアップ）対策 ({matchupInsights.length}件)
+                </h4>
+              </div>
+              <span className="text-[10px] font-bold text-rose-600 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-full">
+                調査時に即表示可能
+              </span>
+            </div>
+            <p className="text-xs text-stone-500">
+              記事内に対特定チャンピオンへの立ち回り・対策が含まれています。保存すると、パーソナルコーチの試合前警告やマッチアップ検索時に自動表示されます。
+            </p>
+
+            <div className="space-y-2.5">
+              {matchupInsights.map((m, idx) => {
+                const isSelected = selectedMatchupIndices.includes(idx);
+                return (
+                  <div
+                    key={idx}
+                    className={`border rounded-2xl p-3.5 transition ${
+                      isSelected
+                        ? 'border-rose-300 bg-rose-50/40 shadow-sm'
+                        : 'border-stone-200 bg-stone-50/40 opacity-60'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => toggleMatchupSelect(idx)}
+                            className="rounded border-rose-300 text-rose-600 focus:ring-rose-400"
+                          />
+                          <span className="text-xs font-black text-rose-950 flex items-center gap-1.5">
+                            🛡️ {m.targetChampion} vs {m.enemyChampion}
+                          </span>
+                        </label>
+                        {getChampIcon(m.enemyChampion) && (
+                          <img
+                            src={getChampIcon(m.enemyChampion)}
+                            alt={m.enemyChampion}
+                            className="w-5 h-5 rounded-md border border-stone-200"
+                          />
+                        )}
+                      </div>
+                      <span className="text-[10px] font-bold text-stone-500">{m.title}</span>
+                    </div>
+
+                    <div className="bg-white border border-rose-200/80 rounded-xl p-2.5 text-xs text-stone-800 leading-relaxed whitespace-pre-wrap">
+                      {m.strategy}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* 3. レーン一般論 */}
         {hasLaneGeneral && (
-          <div className="mt-4 border border-sky-200 rounded-2xl p-4 bg-sky-50/50">
-            <div className="flex items-center justify-between gap-2 flex-wrap mb-2">
-              <p className="text-xs font-black text-sky-700 flex items-center gap-1.5">
-                <Map size={14} /> レーン一般論として検出された内容（{laneGeneralInsights.length}件）
-              </p>
-              <label className="flex items-center gap-1.5 text-[11px] font-bold text-sky-700 cursor-pointer">
+          <div className="space-y-3 pt-2">
+            <div className="flex items-center justify-between border-t border-stone-200 pt-4">
+              <div className="flex items-center gap-2">
+                <Map size={16} className="text-sky-600" />
+                <h4 className="text-sm font-extrabold text-stone-900">
+                  3. レーン一般論として検出された内容 ({laneGeneralInsights.length}件)
+                </h4>
+              </div>
+              <label className="flex items-center gap-1.5 text-xs font-bold text-sky-700 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={sendToLaneChecked}
                   onChange={(e) => setSendToLaneChecked(e.target.checked)}
                 />
-                レーンガイドにも統合する
+                <span>レーンガイドにも統合する</span>
               </label>
             </div>
-            <p className="text-[10px] text-gray-500 mb-2 leading-relaxed">
-              チャンピオン固有の話ではなく、そのレーン全般で通用する内容と判定されました。統合すると、チャンピオン辞典への統合とは別に、選んだレーンのガイドにも追記されます（記事は削除されません、この記事の統合とは独立して追加されます）。
-            </p>
-            <div className="flex items-center gap-2 mb-3">
-              <span className="text-[10px] font-bold text-gray-500">送り先レーン:</span>
+
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-xs font-bold text-stone-500">送り先レーン:</span>
               <select
                 value={laneChoice}
                 onChange={(e) => setLaneChoice(e.target.value)}
                 disabled={!sendToLaneChecked}
-                className="bg-white border border-sky-300 rounded-lg px-2 py-1 text-xs text-sky-800 outline-none disabled:opacity-50"
+                className="bg-white border border-sky-300 rounded-lg px-2.5 py-1 text-xs text-sky-800 outline-none disabled:opacity-50 font-medium"
               >
                 {Object.entries(LANE_LABELS).map(([key, label]) => (
-                  <option key={key} value={key}>{label}</option>
+                  <option key={key} value={key}>
+                    {label}
+                  </option>
                 ))}
               </select>
             </div>
+
             <div className="space-y-2">
               {laneGeneralInsights.map((insight, idx) => (
-                <div key={idx} className={`border rounded-xl p-3 bg-white ${sendToLaneChecked ? 'border-sky-200' : 'border-gray-100 opacity-50'}`}>
-                  <p className="text-xs font-bold text-gray-900 mb-1">{insight.title}</p>
-                  <p className="text-[11px] text-gray-500 leading-relaxed">{insight.summary}</p>
+                <div
+                  key={idx}
+                  className={`border rounded-xl p-3 bg-white ${
+                    sendToLaneChecked ? 'border-sky-200' : 'border-stone-200 opacity-50'
+                  }`}
+                >
+                  <p className="text-xs font-bold text-stone-900 mb-0.5">{insight.title}</p>
+                  <p className="text-[11px] text-stone-600 leading-relaxed">{insight.summary}</p>
                 </div>
               ))}
             </div>
           </div>
         )}
 
-        <div className="flex items-center justify-end gap-2 mt-6 pt-4 border-t border-gray-100">
+        {/* フッターアクション */}
+        <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-stone-200">
           <button
             type="button"
             onClick={onCancel}
             disabled={saving}
-            className="px-4 py-2.5 rounded-xl text-xs font-bold text-gray-500 hover:bg-gray-100 disabled:opacity-50"
+            className="px-4 py-2.5 rounded-xl text-xs font-bold text-stone-500 hover:bg-stone-100 disabled:opacity-50 transition"
           >
             キャンセル
           </button>
           <button
             type="button"
-            onClick={() => onConfirm(sendToLaneChecked ? laneChoice : null)}
+            onClick={handleConfirm}
             disabled={saving}
-            className="px-5 py-2.5 rounded-xl text-xs font-bold bg-violet-600 hover:bg-violet-700 text-white flex items-center gap-1.5 disabled:opacity-50"
+            className="px-6 py-2.5 rounded-xl text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white flex items-center gap-2 shadow-sm disabled:opacity-50 transition"
           >
-            {saving ? <RefreshCw size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
-            {saving ? '統合中...' : 'この内容で辞典に統合する'}
+            {saving ? <RefreshCw size={14} className="animate-spin" /> : <CheckCircle2 size={15} />}
+            <span>{saving ? '統合処理中...' : 'この内容で辞典・対面情報に統合する'}</span>
           </button>
         </div>
       </div>

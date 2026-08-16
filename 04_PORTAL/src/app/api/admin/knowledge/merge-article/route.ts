@@ -2,19 +2,56 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../../lib/supabaseAdmin';
 import { verifyAdminSession } from '../../../../../lib/adminAuth';
 import { recordMatchupSentinelRevision } from '../../../../../lib/matchupSentinelRevisions';
+import { recordRevision } from '../../../../../lib/knowledgeRevisions';
 import { resolveToRosterChampion } from '../../../../../lib/dictFactCheck';
 import { detectLane, classifyLaneGeneralContent, mergeContentIntoLane } from '../../../../../lib/laneGuideMerge';
+import { callGeminiWithRetry } from '../../../../../lib/geminiClient';
 
 // ============================================================
 // 攻略ライブラリ(personal_knowledge)の1記事を、選択されたチャンピオンの
-// 辞典(matchup_sentinel)へ統合する（LibraryTabContent.tsxの「保存する」から呼ばれる）。
+// 辞典(champion_facts / matchup_sentinel)へ高度に統合する。
 //
-// 従来はブラウザ(anon)からmatchup_sentinelへ直接select/upsertし、
-// personal_knowledgeも直接updateしていたが、書き込み系はservice role経由に統一する
-// (Supabase直接アクセスのAPI経由化)。ロジック自体は既存のクライアント側実装をそのまま移設。
+// 1. チャンピオントレンド構造化項目 (強み/弱み/パワースパイク/ビルド/立ち回り/BAN/ピック)
+//    をAIで事前に整理・抽出し、プレビューで確認してから移動。
+// 2. 記事内に含まれる「対〇〇（敵チャンピオン）」対策を自動検知し、
+//    対面マッチアップ情報として matchup_sentinel に保存。
+// 3. レーン一般論を検知し、レーンガイドへの同時統合もサポート。
 // ============================================================
 export const dynamic = 'force-dynamic';
-export const maxDuration = 60; // champion-facts/mergeのAI呼び出しを含むため延長
+export const maxDuration = 60;
+
+const TREND_FIELDS = [
+  { key: 'strengths', label: '強み・長所' },
+  { key: 'weaknesses', label: '弱み・注意点' },
+  { key: 'power_spikes', label: 'パワースパイク' },
+  { key: 'build_runes', label: 'ビルド/ルーン' },
+  { key: 'strategy', label: '基本立ち回り' },
+  { key: 'must_ban_champions', label: '要注意・BAN推奨' },
+  { key: 'pick_recommendation', label: 'ピック基準' },
+] as const;
+
+export type MatchupInsight = {
+  targetChampion: string;
+  enemyChampion: string;
+  title: string;
+  strategy: string;
+  confidence?: 'high' | 'medium';
+};
+
+export type TrendFieldUpdate = {
+  fieldKey: string;
+  fieldLabel: string;
+  existingValue: string;
+  extractedValue: string;
+  mergedValue: string;
+  isNew: boolean;
+};
+
+export type ChampionTrendAnalysis = {
+  champion: string;
+  summaryPoints: string[];
+  fieldUpdates: TrendFieldUpdate[];
+};
 
 function mergeContent(existingText: string, newText: string, title: string): string {
   const ext = existingText || "";
@@ -31,20 +68,136 @@ function mergeContent(existingText: string, newText: string, title: string): str
   return `${ext}\n\n---\n\n${header}\n\n${newText}`;
 }
 
+/** AIで記事を解析し、チャンピオントレンド構造化項目と対面マッチアップ情報を抽出する */
+async function analyzeArticleInsights(
+  title: string,
+  content: string,
+  champions: string[]
+): Promise<{
+  trendData: Record<string, {
+    summaryPoints: string[];
+    fields: Partial<Record<typeof TREND_FIELDS[number]['key'], string>>;
+  }>;
+  matchups: MatchupInsight[];
+}> {
+  const champListStr = champions.join(', ');
+  const prompt = `あなたはLeague of Legendsの戦略データアナリストです。
+以下の攻略記事を詳細に分析し、対象チャンピオン【${champListStr}】に関する構造化トレンドデータ、および記事中に登場する「対特定チャンピオン（マッチアップ対策）」情報を整理して抽出してください。
+
+【記事タイトル】
+${title || '無題'}
+
+【記事本文】
+${content.slice(0, 10000)}
+
+【指示】
+1. **各チャンピオンのトレンド項目**:
+   - 対象チャンピオン（${champListStr}）ごとに、記事から得られる知見を以下の項目別に文章で整理してください。
+   - strengths: 強み・長所
+   - weaknesses: 弱み・課題・警戒すべき点
+   - power_spikes: パワースパイク（強い時間帯、特定アイテム完成時、Lv到達時など）
+   - build_runes: 推奨ビルド、アイテム順、主要ルーン
+   - strategy: レーン戦や集団戦の基本立ち回り・戦術
+   - must_ban_champions: BANすべき相手や厳しい相性の敵
+   - pick_recommendation: どんな構成や状況で出すべきか
+   - summaryPoints: 今回の記事から得られる重要な要点箇条書き（最大4点）
+   ※記事に該当情報がない項目は空文字 "" にしてください。
+
+2. **対チャンピオン（マッチアップ）情報**:
+   - 記事中に「対〇〇（敵チャンピオン名）」に対する立ち回り、有利不利、スキル回避、アイテム対策、レーン戦の戦い方が具体的に書かれている場合、抽出してください。
+   - targetChampion: 自チャンピオン名（${champListStr} のいずれか）
+   - enemyChampion: 相手チャンピオン名（英名。例: Darius, Yasuo, Ahri, Sylas など）
+   - title: 対策の要約見出し（例: 「Lv1〜3のショートトレード回避と1コア後のオールイン」）
+   - strategy: 具体的な立ち回り・対策詳細（100〜300字程度）
+   ※対面情報が見当たらない場合は空配列 [] にしてください。
+
+必ず以下のJSON形式のみを出力してください（Markdownのバッククォート禁止）:
+{
+  "trendData": {
+    "<ChampionName>": {
+      "summaryPoints": ["..."],
+      "strengths": "...",
+      "weaknesses": "...",
+      "power_spikes": "...",
+      "build_runes": "...",
+      "strategy": "...",
+      "must_ban_champions": "...",
+      "pick_recommendation": "..."
+    }
+  },
+  "matchups": [
+    {
+      "targetChampion": "<自チャンピオン名>",
+      "enemyChampion": "<相手チャンピオン英名>",
+      "title": "<対策見出し>",
+      "strategy": "<具体的な立ち回り・対策>"
+    }
+  ]
+}`;
+
+  try {
+    const raw = await callGeminiWithRetry(prompt, {
+      model: 'gemini-3.1-flash-lite',
+      temperature: 0.2,
+      maxOutputTokens: 3000,
+      maxRetries: 2,
+    });
+
+    let cleaned = (raw || '').trim().replace(/^```[a-z]*\n?/, '').replace(/```$/, '').trim();
+    const s = cleaned.indexOf('{'), e = cleaned.lastIndexOf('}');
+    if (s >= 0 && e > s) {
+      const parsed = JSON.parse(cleaned.slice(s, e + 1));
+      const trendData = parsed.trendData || {};
+      const rawMatchups = Array.isArray(parsed.matchups) ? parsed.matchups : [];
+      
+      // 敵チャンピオン名を正規化
+      const validatedMatchups: MatchupInsight[] = [];
+      for (const m of rawMatchups) {
+        if (!m.enemyChampion || !m.strategy) continue;
+        const normalizedEnemy = await resolveToRosterChampion(m.enemyChampion);
+        const normalizedTarget = await resolveToRosterChampion(m.targetChampion) || champions[0];
+        if (normalizedEnemy && normalizedTarget && normalizedEnemy !== normalizedTarget) {
+          validatedMatchups.push({
+            targetChampion: normalizedTarget,
+            enemyChampion: normalizedEnemy,
+            title: m.title || `${normalizedTarget} vs ${normalizedEnemy} 対策`,
+            strategy: m.strategy,
+            confidence: 'high',
+          });
+        }
+      }
+
+      return { trendData, matchups: validatedMatchups };
+    }
+  } catch (err) {
+    console.warn('[merge-article] analyzeArticleInsights失敗(フォールバック):', err);
+  }
+
+  return { trendData: {}, matchups: [] };
+}
+
 export async function POST(req: Request) {
   const auth = await verifyAdminSession(req);
   if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: 401 });
 
   try {
-    const { articleId, title, content, editChampions, dryRun, sendLaneGeneralToLane, laneGeneralExcerpt } = await req.json();
+    const {
+      articleId,
+      title,
+      content,
+      editChampions,
+      dryRun,
+      sendLaneGeneralToLane,
+      laneGeneralExcerpt,
+      approvedMatchups,
+      trendDataOverrides,
+    } = await req.json();
+
     if (!articleId || !title || typeof content !== 'string') {
       return NextResponse.json({ error: 'articleId, title, content が必要です' }, { status: 400 });
     }
     const rawList: string[] = Array.isArray(editChampions) ? editChampions : [];
 
-    // 「実在チャンピオンかどうか」だけを判定基準にする(resolveToRosterChampion)。
-    // 手作りの除外リスト(FAKE_CHAMPIONS)は他の書き込み経路と食い違いやすく、
-    // 正規化もnormalizeChampionNameだけでは表記ゆれが正規IDまで揃わなかったため統一する。
     const resolvedList = await Promise.all(rawList.map((c) => resolveToRosterChampion((c || '').trim())));
     const validChampions = Array.from(new Set(resolvedList.filter((c): c is string => !!c)));
 
@@ -52,108 +205,251 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: true, merged: false, champions: [] });
     }
 
-    // dryRun: 実際の書き込みは一切行わず、チャンピオンごとに「どのフィールドへ」
-    // 「マージ後どうなるか」だけを計算して返す。LibraryTabContent.tsxの「保存する」で、
-    // 辞典へ即マージされる前に内容を確認できるプレビュー画面のために追加した
-    // (2026-08-16、「攻略ライブラリから保存した時にチャンピオン辞典割り振りする際の
-    // プレビューが出ない」への対応。従来この経路にはプレビュー自体が存在しなかった)。
+    // ============================================================
+    // dryRun: 実際の書き込みを行わず、AIで整理されたチャンピオントレンド各項目の
+    // 更新案、対面マッチアップ情報、レーン一般論を計算して返す
+    // ============================================================
     if (dryRun) {
-      const previews = await Promise.all(validChampions.map(async (championName) => {
-        const matchupId = `champ_${championName}_global`;
-        const { data: existingData } = await supabase
-          .from('matchup_sentinel')
-          .select('raw_data')
-          .eq('matchup_id', matchupId)
-          .maybeSingle();
+      // 1. AIによる構造化トレンド＆対面情報の抽出
+      const { trendData, matchups } = await analyzeArticleInsights(title, content, validChampions);
 
-        const rawData = existingData?.raw_data || {};
-        const customFields = rawData.customFields || {};
-        const isNoteDraft = title.includes("HONKI_BIBLE") || title.includes("ARTICLE");
-        const fieldName = isNoteDraft ? 'note_draft' : title.replace(`${championName}_`, "").replace(`_${championName}`, "");
-        const existingContent = isNoteDraft ? (rawData.note_draft || '') : (customFields[fieldName] || '');
-        const mergedContentText = mergeContent(existingContent, content, title);
+      // 2. チャンピオンごとの既存データ取得と差分マージ計算
+      const trendAnalyses: ChampionTrendAnalysis[] = await Promise.all(
+        validChampions.map(async (championName) => {
+          const { data: existingFact } = await supabase
+            .from('champion_facts')
+            .select('*')
+            .eq('champion', championName)
+            .maybeSingle();
 
-        return {
-          champion: championName,
-          fieldName,
-          isNewField: !existingContent.trim(),
-          existingExcerpt: existingContent.slice(0, 500),
-          mergedExcerpt: mergedContentText.slice(0, 1500),
-        };
-      }));
+          const extractedForChamp = trendData[championName] || trendData[validChampions[0]] || { fields: {}, summaryPoints: [] };
+          const extractedFields = extractedForChamp.fields || extractedForChamp || {};
 
-      // 記事本文の中に「特定チャンピオンに限らないレーン一般論」が混じっていないか
-      // AIで検出する。検出できても辞典統合自体は止めず、失敗時は無視して続行する
-      // (2026-08-16、「レーン全体の攻略情報は優先的に確保したい」という要望への対応)。
+          const fieldUpdates: TrendFieldUpdate[] = TREND_FIELDS.map((f) => {
+            const existingVal = (existingFact as any)?.[f.key] || '';
+            const extractedVal = (extractedFields as any)?.[f.key] || '';
+            let mergedVal = existingVal;
+
+            if (extractedVal && extractedVal.trim()) {
+              if (!existingVal.trim()) {
+                mergedVal = extractedVal.trim();
+              } else if (!existingVal.includes(extractedVal.trim())) {
+                mergedVal = `${existingVal.trim()}\n\n【追記知見】\n${extractedVal.trim()}`;
+              }
+            }
+
+            return {
+              fieldKey: f.key,
+              fieldLabel: f.label,
+              existingValue: existingVal,
+              extractedValue: extractedVal,
+              mergedValue: mergedVal,
+              isNew: !existingVal.trim() && !!extractedVal.trim(),
+            };
+          });
+
+          return {
+            champion: championName,
+            summaryPoints: extractedForChamp.summaryPoints || [],
+            fieldUpdates,
+          };
+        })
+      );
+
+      // 3. 後方互換プレビューデータ
+      const previews = await Promise.all(
+        validChampions.map(async (championName) => {
+          const matchupId = `champ_${championName}_global`;
+          const { data: existingData } = await supabase
+            .from('matchup_sentinel')
+            .select('raw_data')
+            .eq('matchup_id', matchupId)
+            .maybeSingle();
+
+          const rawData = existingData?.raw_data || {};
+          const customFields = rawData.customFields || {};
+          const isNoteDraft = title.includes('HONKI_BIBLE') || title.includes('ARTICLE');
+          const fieldName = isNoteDraft ? 'note_draft' : title.replace(`${championName}_`, '').replace(`_${championName}`, '');
+          const existingContent = isNoteDraft ? rawData.note_draft || '' : customFields[fieldName] || '';
+          const mergedContentText = mergeContent(existingContent, content, title);
+
+          return {
+            champion: championName,
+            fieldName,
+            isNewField: !existingContent.trim(),
+            existingExcerpt: existingContent.slice(0, 500),
+            mergedExcerpt: mergedContentText.slice(0, 1500),
+          };
+        })
+      );
+
+      // 4. レーン一般論の抽出
       let laneGeneralInsights: { title: string; summary: string }[] = [];
       let detectedLaneKey = 'COMMON';
       try {
         detectedLaneKey = detectLane({ champion: validChampions.join(', '), title, content });
         laneGeneralInsights = await classifyLaneGeneralContent(title, content, validChampions.join(', '));
       } catch (laneDetectErr) {
-        console.warn('[merge-article] レーン一般論の判定に失敗(無視して続行):', laneDetectErr);
+        console.warn('[merge-article] レーン一般論の判定に失敗:', laneDetectErr);
       }
 
       return NextResponse.json({
         success: true,
         dryRun: true,
         champions: validChampions,
-        previews,
+        trendAnalyses,
+        matchupInsights: matchups,
         laneGeneralInsights,
         detectedLane: detectedLaneKey,
+        previews,
       });
     }
 
+    // ============================================================
+    // 確定実行 (dryRun: false)
+    // ============================================================
     let mergedNote = '';
 
+    // 1. チャンピオントレンド構造化項目 (champion_facts & matchup_sentinel) の更新
     for (const championName of validChampions) {
       const matchupId = `champ_${championName}_global`;
-      const { data: existingData } = await supabase
+      const { data: existingSentinel } = await supabase
         .from('matchup_sentinel')
         .select('*')
         .eq('matchup_id', matchupId)
         .maybeSingle();
 
-      let rawData = existingData?.raw_data || {};
+      const { data: existingFact } = await supabase
+        .from('champion_facts')
+        .select('*')
+        .eq('champion', championName)
+        .maybeSingle();
+
+      // raw_data & customFields の更新
+      let rawData = existingSentinel?.raw_data || {};
       let customFields = rawData.customFields || {};
 
-      if (title.includes("HONKI_BIBLE") || title.includes("ARTICLE")) {
-        rawData.note_draft = mergeContent(rawData.note_draft || "", content, title);
+      if (title.includes('HONKI_BIBLE') || title.includes('ARTICLE')) {
+        rawData.note_draft = mergeContent(rawData.note_draft || '', content, title);
       } else {
-        const fieldName = title.replace(`${championName}_`, "").replace(`_${championName}`, "");
-        customFields[fieldName] = mergeContent(customFields[fieldName] || "", content, title);
+        const fieldName = title.replace(`${championName}_`, '').replace(`_${championName}`, '');
+        customFields[fieldName] = mergeContent(customFields[fieldName] || '', content, title);
       }
       rawData.customFields = customFields;
-      rawData.source = "champ_db";
-      rawData.role = "GLOBAL";
+      rawData.source = 'champ_db';
+      rawData.role = 'GLOBAL';
 
-      // 辞典一覧の「更新日」は created_at を見ているため、更新時も明示的に現在時刻を入れる
+      // 構造化項目（champion_facts）の更新ペイロード
+      const factPayload: any = {
+        champion: championName,
+        updated_at: new Date().toISOString(),
+      };
+
+      // クライアントから渡された overrides または直接マージ値
+      const champOverrides = trendDataOverrides?.[championName];
+      for (const f of TREND_FIELDS) {
+        if (champOverrides && champOverrides[f.key] !== undefined) {
+          factPayload[f.key] = champOverrides[f.key];
+        }
+      }
+
+      // champion_facts を upsert
+      const { error: factErr } = await supabase
+        .from('champion_facts')
+        .upsert(factPayload, { onConflict: 'champion' });
+      if (factErr) console.warn('[merge-article] champion_facts upsert error:', factErr);
+
+      // リビジョン履歴記録
+      for (const f of TREND_FIELDS) {
+        if (factPayload[f.key] !== undefined && factPayload[f.key] !== (existingFact as any)?.[f.key]) {
+          await recordRevision({
+            targetType: 'champion_fact',
+            targetKey: championName,
+            field: f.key,
+            before: (existingFact as any)?.[f.key],
+            after: factPayload[f.key],
+            sourceTitle: title,
+            sourceId: articleId,
+          });
+        }
+      }
+
+      // matchup_sentinel (GLOBAL) を upsert
       const dictData = {
         matchup_id: matchupId,
         champion: championName,
-        enemy: "GLOBAL",
-        title: existingData?.title || `${championName} 基本戦略・トレンド`,
-        strategy: existingData?.strategy || "",
+        enemy: 'GLOBAL',
+        title: existingSentinel?.title || `${championName} 基本戦略・トレンド`,
+        strategy: factPayload.strategy || existingSentinel?.strategy || '',
         raw_data: rawData,
         created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       };
 
-      const { error: upsertError } = await supabase
+      const { error: sentinelError } = await supabase
         .from('matchup_sentinel')
         .upsert(dictData, { onConflict: 'matchup_id' });
-      if (upsertError) throw upsertError;
+      if (sentinelError) throw sentinelError;
 
       await recordMatchupSentinelRevision(
         matchupId,
-        existingData ?? null,
+        existingSentinel ?? null,
         { title: dictData.title, strategy: dictData.strategy, raw_data: dictData.raw_data },
         title,
-        articleId,
+        articleId
       );
     }
 
-    // 段階2 dual-write: 構造化テーブル champion_notes にも同じ記事を1行追加する（#29）。
-    // 失敗しても本筋(辞典統合)は止めない。
+    // 2. 対チャンピオン（マッチアップ）情報の保存
+    const matchupsToSave: MatchupInsight[] = Array.isArray(approvedMatchups) ? approvedMatchups : [];
+    let savedMatchupsCount = 0;
+
+    for (const m of matchupsToSave) {
+      if (!m.targetChampion || !m.enemyChampion || !m.strategy) continue;
+
+      try {
+        const targetChamp = await resolveToRosterChampion(m.targetChampion) || m.targetChampion;
+        const enemyChamp = await resolveToRosterChampion(m.enemyChampion) || m.enemyChampion;
+        const matchupIdPrimary = `champ_${targetChamp}_vs_${enemyChamp}`;
+        const matchupIdSecondary = `${targetChamp}_vs_${enemyChamp}`;
+
+        const matchupRecord = {
+          matchup_id: matchupIdPrimary,
+          champion: targetChamp,
+          enemy: enemyChamp,
+          title: m.title || `${targetChamp} vs ${enemyChamp} 対策メモ`,
+          strategy: m.strategy,
+          raw_data: {
+            source: 'library_article',
+            source_article_id: articleId,
+            source_title: title,
+            extracted_at: new Date().toISOString(),
+          },
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+
+        // プライマリID (champ_A_vs_B) で upsert
+        await supabase
+          .from('matchup_sentinel')
+          .upsert(matchupRecord, { onConflict: 'matchup_id' });
+
+        // 互換性のためレガシーID (A_vs_B) でも upsert
+        await supabase
+          .from('matchup_sentinel')
+          .upsert({ ...matchupRecord, matchup_id: matchupIdSecondary }, { onConflict: 'matchup_id' });
+
+        savedMatchupsCount++;
+      } catch (matchupErr) {
+        console.warn(`[merge-article] 対面メモ保存失敗 (${m.targetChampion} vs ${m.enemyChampion}):`, matchupErr);
+      }
+    }
+
+    if (savedMatchupsCount > 0) {
+      mergedNote += `／対面メモ${savedMatchupsCount}件を保存`;
+    }
+
+    // 3. champion_notes にもdual-write
     try {
       const origin = new URL(req.url).origin;
       await fetch(`${origin}/api/admin/champion-notes/add`, {
@@ -168,46 +464,33 @@ export async function POST(req: Request) {
         }),
       });
     } catch (dualErr) {
-      console.warn('[merge-article] champion_notesへのdual-write失敗（辞典統合自体は成功）:', dualErr);
+      console.warn('[merge-article] champion_notesへのdual-write失敗:', dualErr);
     }
 
-    // 構造化項目（強み/弱み/パワースパイク/ビルド）も記事の内容でマージ更新する。
-    // 上書きではなく「既存に無い知見だけ追記」なので、手書きの内容は消えない。
-    try {
-      const origin = new URL(req.url).origin;
-      const mergeRes = await fetch(`${origin}/api/admin/champion-facts/merge`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', cookie: req.headers.get('cookie') || '' },
-        body: JSON.stringify({ champions: validChampions, title, body: content, articleId }),
-      });
-      const mergeData = await mergeRes.json();
-      if (mergeRes.ok) {
-        const added = (mergeData.results || []).flatMap((r: any) => r.added || []);
-        if (added.length > 0) mergedNote = `／辞典項目に${added.length}件を追記`;
-      }
-    } catch (mergeErr) {
-      console.warn('[merge-article] champion_factsのマージ更新に失敗（辞典統合自体は成功）:', mergeErr);
-    }
-
-    // プレビューで確認された「レーン一般論」の抜粋を、選択されたレーンガイドにも統合する。
-    // チャンピオン辞典への統合は上のループで既に完了しているため、失敗しても本筋は止めない。
+    // 4. レーン一般論の統合
     if (sendLaneGeneralToLane && typeof laneGeneralExcerpt === 'string' && laneGeneralExcerpt.trim()) {
       try {
         await mergeContentIntoLane(sendLaneGeneralToLane, title, laneGeneralExcerpt, articleId);
         mergedNote += (mergedNote ? '／' : '') + 'レーンガイドにも統合';
       } catch (laneErr: any) {
-        console.warn('[merge-article] レーンガイドへの統合に失敗（辞典統合自体は成功）:', laneErr);
+        console.warn('[merge-article] レーンガイドへの統合に失敗:', laneErr);
       }
     }
 
-    // ライブラリから削除（__DELETED__ タグを付けて非表示化。物理削除ではない）
+    // 5. ライブラリから削除（__DELETED__ タグを付与）
     const { error: deleteError } = await supabase
       .from('personal_knowledge')
       .update({ tags: ['__DELETED__'] })
       .eq('id', articleId);
     if (deleteError) throw deleteError;
 
-    return NextResponse.json({ success: true, merged: true, champions: validChampions, mergedNote });
+    return NextResponse.json({
+      success: true,
+      merged: true,
+      champions: validChampions,
+      mergedNote: mergedNote || '／トレンド構造化データを更新',
+      savedMatchupsCount,
+    });
   } catch (e: any) {
     console.error('[merge-article] error:', e);
     return NextResponse.json({ error: e.message }, { status: 500 });

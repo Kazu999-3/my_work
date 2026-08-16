@@ -11,7 +11,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import ChampSelect from '../../../components/ChampSelect';
 import { getFavorites, toggleFavoriteArticle } from '../../../components/FavoritesPanel';
 import ArticleRevisionHistory from './ArticleRevisionHistory';
-import LibraryMergePreviewModal, { type MergePreviewItem, type LaneGeneralInsight } from './LibraryMergePreviewModal';
+import LibraryMergePreviewModal, {
+  type MergePreviewItem,
+  type LaneGeneralInsight,
+  type ChampionTrendAnalysis,
+  type MatchupInsight,
+} from './LibraryMergePreviewModal';
 const parseDate = (dStr: any) => {
   if (!dStr) return 0;
   const t = new Date(dStr).getTime();
@@ -34,6 +39,8 @@ export function LibraryTabContentInner() {
   // 記事保存時にチャンピオン辞典へマージする前のプレビュー(2026-08-16)
   const [mergePreview, setMergePreview] = useState<{
     previews: MergePreviewItem[];
+    trendAnalyses?: ChampionTrendAnalysis[];
+    matchupInsights?: MatchupInsight[];
     laneGeneralInsights: LaneGeneralInsight[];
     detectedLane: string;
     articleId: number | string;
@@ -517,7 +524,9 @@ export function LibraryTabContentInner() {
 
         if (data.champions && data.champions.length > 0) {
           setMergePreview({
-            previews: data.previews,
+            previews: data.previews || [],
+            trendAnalyses: data.trendAnalyses || [],
+            matchupInsights: data.matchupInsights || [],
             laneGeneralInsights: data.laneGeneralInsights || [],
             detectedLane: data.detectedLane || 'COMMON',
             articleId: selectedArticle.id,
@@ -559,9 +568,17 @@ export function LibraryTabContentInner() {
     setSaving(false);
   };
 
-  // プレビュー確認後、実際にチャンピオン辞典へ統合する。sendToLaneが指定されていれば、
-  // 検出された「レーン一般論」の抜粋も同時にそのレーンガイドへ統合する。
-  const confirmMergeToChampionDict = async (sendToLane: string | null) => {
+  // プレビュー確認後、実際にチャンピオン辞典へ統合する。
+  // トレンド構造化項目、対面マッチアップメモ、レーン一般論をまとめて確定保存する。
+  const confirmMergeToChampionDict = async ({
+    sendToLane,
+    approvedMatchups,
+    trendDataOverrides,
+  }: {
+    sendToLane: string | null;
+    approvedMatchups: MatchupInsight[];
+    trendDataOverrides?: Record<string, Record<string, string>>;
+  }) => {
     if (!mergePreview) return;
     setMergeConfirmSaving(true);
     try {
@@ -579,6 +596,8 @@ export function LibraryTabContentInner() {
           editChampions: mergePreview.editChampions,
           sendLaneGeneralToLane: sendToLane,
           laneGeneralExcerpt,
+          approvedMatchups,
+          trendDataOverrides,
         }),
       });
       const data = await res.json();
@@ -899,6 +918,8 @@ export function LibraryTabContentInner() {
       {mergePreview && (
         <LibraryMergePreviewModal
           previews={mergePreview.previews}
+          trendAnalyses={mergePreview.trendAnalyses}
+          matchupInsights={mergePreview.matchupInsights}
           laneGeneralInsights={mergePreview.laneGeneralInsights}
           detectedLane={mergePreview.detectedLane}
           saving={mergeConfirmSaving}
