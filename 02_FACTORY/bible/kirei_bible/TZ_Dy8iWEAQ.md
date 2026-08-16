@@ -1,3 +1,9 @@
+> 📺 **元動画情報**
+> - **動画ID**: TZ_Dy8iWEAQ
+> - **動画リンク**: [https://www.youtube.com/watch?v=TZ_Dy8iWEAQ](https://www.youtube.com/watch?v=TZ_Dy8iWEAQ)
+
+---
+
 [Champions: Jarvan IV, Rengar, Vladimir, Ezreal, Fizz, Yuumi, Zeri, Lulu, Riven]
 # How to WIN Your Games With FULL LETHALITY JARVAN IV [エラー: 字幕を取得できませんでした（字幕なし or IP制限の可能性）]
 

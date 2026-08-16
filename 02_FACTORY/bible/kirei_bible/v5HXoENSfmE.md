@@ -1,3 +1,9 @@
+> 📺 **元動画情報**
+> - **動画ID**: v5HXoENSfmE
+> - **動画リンク**: [https://www.youtube.com/watch?v=v5HXoENSfmE](https://www.youtube.com/watch?v=v5HXoENSfmE)
+
+---
+
 [Champions: Akshan, Azir, Vladimir]
 # Akshan 101 - The BEST Akshan Guide [エラー: 字幕を取得できませんでした（字幕なし or IP制限の可能性）]
 

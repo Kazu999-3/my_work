@@ -1,3 +1,9 @@
+> 📺 **元動画情報**
+> - **動画ID**: HCsyadHH7c4
+> - **動画リンク**: [https://www.youtube.com/watch?v=HCsyadHH7c4](https://www.youtube.com/watch?v=HCsyadHH7c4)
+
+---
+
 [Champions: Talon, Warwick, Kindred, Anivia, Sona, Jinx, Darius, Vladimir, Caitlyn, Lux, Senna]
 # How To PLAY Talon Jungle | FREE GUIDE [エラー: 字幕を取得できませんでした（字幕なし or IP制限の可能性）]
 

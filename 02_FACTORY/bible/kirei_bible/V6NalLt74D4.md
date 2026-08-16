@@ -1,3 +1,9 @@
+> 📺 **元動画情報**
+> - **動画ID**: V6NalLt74D4
+> - **動画リンク**: [https://www.youtube.com/watch?v=V6NalLt74D4](https://www.youtube.com/watch?v=V6NalLt74D4)
+
+---
+
 [Champions: Brand, Graves]
 # Brand Jungle vs Graves - EUW Challenger Patch 26.10 [エラー: 字幕を取得できませんでした（字幕なし or IP制限の可能性）]
 

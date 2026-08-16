@@ -1,3 +1,9 @@
+> 📺 **元動画情報**
+> - **動画ID**: THzMDZljjuk
+> - **動画リンク**: [https://www.youtube.com/watch?v=THzMDZljjuk](https://www.youtube.com/watch?v=THzMDZljjuk)
+
+---
+
 [Champion: Vi]
 # [ディープリサーチ] ヴァイ 解説動画 (THzMDZljjuk) [エラー: 字幕を取得できませんでした（字幕なし or IP制限の可能性）]
 ## 📌 動画の結論（1行サマリー）

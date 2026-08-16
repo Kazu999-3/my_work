@@ -1,3 +1,9 @@
+> 📺 **元動画情報**
+> - **動画ID**: OdttUIfSm9A
+> - **動画リンク**: [https://www.youtube.com/watch?v=OdttUIfSm9A](https://www.youtube.com/watch?v=OdttUIfSm9A)
+
+---
+
 [Champion: Ambessa]
 # AMBESSA Advanced Tips & Tricks and Combos - LoL Guide [エラー: 字幕を取得できませんでした（字幕なし or IP制限の可能性）]
 ## 📌 動画の結論（1行サマリー）

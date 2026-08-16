@@ -1,3 +1,9 @@
+> 📺 **元動画情報**
+> - **動画ID**: 2k_Afn_F24Q
+> - **動画リンク**: [https://www.youtube.com/watch?v=2k_Afn_F24Q](https://www.youtube.com/watch?v=2k_Afn_F24Q)
+
+---
+
 [Champion: Wukong]
 # 3 Minute Wukong Guide - A Guide for League of Legends [エラー: 字幕を取得できませんでした（字幕なし or IP制限の可能性）]
 ## 📌 動画の結論（1行サマリー）

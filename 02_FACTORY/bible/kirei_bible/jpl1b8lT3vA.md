@@ -1,3 +1,9 @@
+> 📺 **元動画情報**
+> - **動画ID**: jpl1b8lT3vA
+> - **動画リンク**: [https://www.youtube.com/watch?v=jpl1b8lT3vA](https://www.youtube.com/watch?v=jpl1b8lT3vA)
+
+---
+
 [Champions: Akali, Ahri, Maokai, Gwen, Pantheon, Milio, Sylas, Lillia]
 # How to NEVER Lose Teamfights as AKALI | Complete Guide [エラー: 字幕を取得できませんでした（字幕なし or IP制限の可能性）]
 

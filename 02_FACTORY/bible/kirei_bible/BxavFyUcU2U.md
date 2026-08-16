@@ -1,3 +1,9 @@
+> 📺 **元動画情報**
+> - **動画ID**: BxavFyUcU2U
+> - **動画リンク**: [https://www.youtube.com/watch?v=BxavFyUcU2U](https://www.youtube.com/watch?v=BxavFyUcU2U)
+
+---
+
 [Champions: Viego, Volibear]
 # Coaching Jungle Fundamentals - How to climb in League of Legends
 ## 📌 動画の結論（1行サマリー）

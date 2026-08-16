@@ -1,3 +1,9 @@
+> 📺 **元動画情報**
+> - **動画ID**: BSFniQL1Dwk
+> - **動画リンク**: [https://www.youtube.com/watch?v=BSFniQL1Dwk](https://www.youtube.com/watch?v=BSFniQL1Dwk)
+
+---
+
 [Champions: Caitlyn, Zoe, Alistar, Lee Sin, Katarina, Lucian, Jayce, Tryndamere, K'Sante]
 # 【LOL】不利な中盤以降でやることが分からない人は今すぐこの動画を見てね【ジャングル】 [エラー: 字幕を取得できませんでした（字幕なし or IP制限の可能性）]
 

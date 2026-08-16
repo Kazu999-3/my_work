@@ -1,3 +1,9 @@
+> 📺 **元動画情報**
+> - **動画ID**: rweX_f-ic8M
+> - **動画リンク**: [https://www.youtube.com/watch?v=rweX_f-ic8M](https://www.youtube.com/watch?v=rweX_f-ic8M)
+
+---
+
 [Champion: Vi]
 # [ディープリサーチ] ヴァイ 解説動画 (rweX_f-ic8M) [エラー: 字幕を取得できませんでした（字幕なし or IP制限の可能性）]
 

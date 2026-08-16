@@ -1,3 +1,9 @@
+> 📺 **元動画情報**
+> - **動画ID**: nDGZTq5ly5c
+> - **動画リンク**: [https://www.youtube.com/watch?v=nDGZTq5ly5c](https://www.youtube.com/watch?v=nDGZTq5ly5c)
+
+---
+
 [Champion: Wukong]
 # WUKONG JUNGLE is a 1v9 CARRYING POWERHOUSE! — Wukong Jungle Guide [エラー: 字幕を取得できませんでした（字幕なし or IP制限の可能性）]
 

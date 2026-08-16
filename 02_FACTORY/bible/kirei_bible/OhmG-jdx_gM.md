@@ -1,3 +1,9 @@
+> 📺 **元動画情報**
+> - **動画ID**: OhmG-jdx_gM
+> - **動画リンク**: [https://www.youtube.com/watch?v=OhmG-jdx_gM](https://www.youtube.com/watch?v=OhmG-jdx_gM)
+
+---
+
 [Champion: Ambessa]
 # An Actual Ambessa Guide [エラー: 字幕を取得できませんでした（字幕なし or IP制限の可能性）]
 
