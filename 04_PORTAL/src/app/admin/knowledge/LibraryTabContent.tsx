@@ -405,7 +405,7 @@ export function LibraryTabContentInner() {
   const toggleGroup = (key: string) => setCollapsedGroups(prev => ({ ...prev, [key]: !prev[key] }));
 
   const startEditing = () => { 
-    setEditContent(selectedArticle.raw_content || selectedArticle.content || ''); 
+    setEditContent(selectedArticle.content || selectedArticle.raw_content || ''); 
     setEditTitle(selectedArticle.title || '');
     // champion フィールドがカンマ区切り複数の場合も対応
     const rawChamp = selectedArticle.champion || '';
@@ -853,11 +853,25 @@ export function LibraryTabContentInner() {
                 </div>
               </div>
             ) : (
-              <div className="prose prose-purple max-w-none text-[15px] leading-loose text-gray-700 break-words overflow-x-auto [&_table]:w-full [&_table]:table-auto [&_table]:my-4 [&_table]:border-collapse [&_th]:border [&_th]:border-black/10 [&_th]:bg-black/5 [&_th]:p-2 text-left [&_td]:border [&_td]:border-black/10 [&_td]:p-2 [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-xl [&_pre]:overflow-x-auto [&_pre]:max-w-full [&_code]:break-all">
-                {typeof (selectedArticle.raw_content || selectedArticle.content) === 'string' ? (
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{selectedArticle.raw_content || selectedArticle.content}</ReactMarkdown>
-                ) : (
-                  <p className="text-gray-500 italic">本文が空です</p>
+              <div className="space-y-6">
+                <div className="prose prose-purple max-w-none text-[15px] leading-loose text-gray-700 break-words overflow-x-auto [&_table]:w-full [&_table]:table-auto [&_table]:my-4 [&_table]:border-collapse [&_th]:border [&_th]:border-black/10 [&_th]:bg-black/5 [&_th]:p-2 text-left [&_td]:border [&_td]:border-black/10 [&_td]:p-2 [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-xl [&_pre]:overflow-x-auto [&_pre]:max-w-full [&_code]:break-all">
+                  {typeof (selectedArticle.content || selectedArticle.raw_content) === 'string' ? (
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{selectedArticle.content || selectedArticle.raw_content}</ReactMarkdown>
+                  ) : (
+                    <p className="text-gray-500 italic">本文が空です</p>
+                  )}
+                </div>
+
+                {/* 生字幕/文字起こしテキストがある場合の折りたたみ表示 */}
+                {selectedArticle.raw_content && selectedArticle.content && selectedArticle.raw_content !== selectedArticle.content && (
+                  <details className="mt-6 border border-stone-200 rounded-2xl bg-stone-50/60 p-4 text-xs">
+                    <summary className="font-bold text-stone-600 cursor-pointer hover:text-stone-900 select-none">
+                      📄 元の動画字幕 / 生文字起こしテキストを確認（{selectedArticle.raw_content.length}文字）
+                    </summary>
+                    <div className="mt-3 p-3 bg-white border border-stone-200 rounded-xl max-h-60 overflow-y-auto font-mono text-[11px] text-stone-600 whitespace-pre-wrap leading-relaxed">
+                      {selectedArticle.raw_content}
+                    </div>
+                  </details>
                 )}
               </div>
             )}
@@ -1130,8 +1144,8 @@ export function LibraryTabContentInner() {
                                 <div className="px-3 sm:px-5 pb-5 ml-2 sm:ml-6 border-l-2 border-violet-200">
                                   {/* Markdownプレビュー */}
                                   <div className="prose prose-purple prose-sm max-w-none max-h-[400px] overflow-y-auto p-4 bg-black/5 border border-black/10 rounded-xl text-sm leading-relaxed mb-4 scrollbar-thin">
-                                    {typeof (article.raw_content || article.content) === 'string' ? (
-                                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{article.raw_content || article.content}</ReactMarkdown>
+                                    {typeof (article.content || article.raw_content) === 'string' ? (
+                                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{article.content || article.raw_content}</ReactMarkdown>
                                   ) : (
                                     <p className="text-gray-500 italic">本文が空です</p>
                                   )}
