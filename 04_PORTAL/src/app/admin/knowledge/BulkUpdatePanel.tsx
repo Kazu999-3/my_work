@@ -93,7 +93,9 @@ export default function BulkUpdatePanel() {
       }
     };
     checkStatus();
-    const interval = setInterval(checkStatus, 5000);
+    // ワーカーの稼働状況はハートビートベースで数秒単位では変化しないため、5秒間隔は
+    // 過剰だった(Vercelの無料枠CPU使用量の75%消費に伴う見直し、2026-08-16)。20秒に緩和。
+    const interval = setInterval(checkStatus, 20000);
     return () => clearInterval(interval);
   }, []);
 
@@ -179,8 +181,11 @@ export default function BulkUpdatePanel() {
     fetchJobStatus();
     refreshDictStatus();
 
-    // 実行中は2秒間隔で追いかけ、待機中は8秒間隔に緩める（体感のリアルタイム性とAPI負荷のバランス）
-    const intervalMs = isBulkRunning || bulkStatus.status === 'running' ? 2000 : 8000;
+    // 実行中は10秒間隔で追いかけ、待機中は30秒間隔に緩める（体感のリアルタイム性とAPI負荷の
+    // バランス）。1体あたりの処理は数十秒〜数分かかるため2秒間隔は過剰で、Vercel無料枠の
+    // Fluid Active CPU使用量が75%に達したのを受けて緩和した(2026-08-16)。3エンドポイントを
+    // 同時に叩くため、この変更だけで実行中の呼び出し回数を1/5に削減できる。
+    const intervalMs = isBulkRunning || bulkStatus.status === 'running' ? 10000 : 30000;
     const timer = setInterval(() => {
       fetchQueueStatus();
       fetchJobStatus();
