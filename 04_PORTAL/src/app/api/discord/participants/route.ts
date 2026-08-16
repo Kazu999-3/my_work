@@ -66,14 +66,23 @@ export async function GET() {
       // が「募集」「確定」「モード: カスタム」のどれにも一致せず、このメッセージ自体は
       // チャンネルに存在するのに永久にヒットしなかった(2026-08-10発覚)。定期カスタム側の
       // 実際の文言と、本文(content)に必ず含まれる「【定期カスタム募集】」も判定に加える。
+      //
+      // さらに「モード: カスタム」の完全一致だけを見ていたが、実際にBotが生成する募集は
+      // 「モード: ノーマル」がデフォルトで(modals.js)、ほとんどのユーザー作成の募集は
+      // ノーマルモードのまま作られている。ここでの「カスタム」はゲームモード名ではなく
+      // 「Discordで募集されたKTMのカスタムゲーム」全般を指す言葉として使われているため、
+      // モードの値(ノーマル/カスタム/ARAM/定期カスタム)を問わず、embeds.js/scheduled.jsが
+      // 生成する「モード: X | 募集主: ...」または「主催: KTM運営」という構造そのもので
+      // 判定する(2026-08-15発覚。直近20件が全て「モード: ノーマル」で作成されており、
+      // Discord参加者取得ボタンが常に「見つかりませんでした」になっていた)。
       targetMsg = messages.find((m: any) => {
         const embed = m.embeds?.[0];
         if (!embed) return false;
         const title = embed.title || '';
         const footerText = embed.footer?.text || '';
         const isRecruitTitle = title.includes('募集') || title.includes('確定') || title.includes('定期カスタム') || title.includes('開催告知');
-        const isCustomFooter = footerText.includes('モード: カスタム') || footerText.includes('主催: KTM運営');
-        if (isRecruitTitle && isCustomFooter) return true;
+        const isKtmRecruitmentFooter = /モード: \S+/.test(footerText) || footerText.includes('主催: KTM運営');
+        if (isRecruitTitle && isKtmRecruitmentFooter) return true;
         if (m.content && (m.content.includes('カスタム募集') || m.content.includes('定期カスタム'))) return true;
         return false;
       });
