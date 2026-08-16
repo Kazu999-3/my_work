@@ -35,7 +35,7 @@ export async function POST(req: Request) {
   if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: 401 });
 
   try {
-    const { articleId, title, content, editChampions } = await req.json();
+    const { articleId, title, content, editChampions, dryRun } = await req.json();
     if (!articleId || !title || typeof content !== 'string') {
       return NextResponse.json({ error: 'articleId, title, content が必要です' }, { status: 400 });
     }
@@ -49,6 +49,39 @@ export async function POST(req: Request) {
 
     if (validChampions.length === 0) {
       return NextResponse.json({ success: true, merged: false, champions: [] });
+    }
+
+    // dryRun: 実際の書き込みは一切行わず、チャンピオンごとに「どのフィールドへ」
+    // 「マージ後どうなるか」だけを計算して返す。LibraryTabContent.tsxの「保存する」で、
+    // 辞典へ即マージされる前に内容を確認できるプレビュー画面のために追加した
+    // (2026-08-16、「攻略ライブラリから保存した時にチャンピオン辞典割り振りする際の
+    // プレビューが出ない」への対応。従来この経路にはプレビュー自体が存在しなかった)。
+    if (dryRun) {
+      const previews = await Promise.all(validChampions.map(async (championName) => {
+        const matchupId = `champ_${championName}_global`;
+        const { data: existingData } = await supabase
+          .from('matchup_sentinel')
+          .select('raw_data')
+          .eq('matchup_id', matchupId)
+          .maybeSingle();
+
+        const rawData = existingData?.raw_data || {};
+        const customFields = rawData.customFields || {};
+        const isNoteDraft = title.includes("HONKI_BIBLE") || title.includes("ARTICLE");
+        const fieldName = isNoteDraft ? 'note_draft' : title.replace(`${championName}_`, "").replace(`_${championName}`, "");
+        const existingContent = isNoteDraft ? (rawData.note_draft || '') : (customFields[fieldName] || '');
+        const mergedContentText = mergeContent(existingContent, content, title);
+
+        return {
+          champion: championName,
+          fieldName,
+          isNewField: !existingContent.trim(),
+          existingExcerpt: existingContent.slice(0, 500),
+          mergedExcerpt: mergedContentText.slice(0, 1500),
+        };
+      }));
+
+      return NextResponse.json({ success: true, dryRun: true, champions: validChampions, previews });
     }
 
     let mergedNote = '';

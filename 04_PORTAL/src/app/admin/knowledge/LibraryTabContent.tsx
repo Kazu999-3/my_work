@@ -11,6 +11,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import ChampSelect from '../../../components/ChampSelect';
 import { getFavorites, toggleFavoriteArticle } from '../../../components/FavoritesPanel';
 import ArticleRevisionHistory from './ArticleRevisionHistory';
+import LibraryMergePreviewModal, { type MergePreviewItem } from './LibraryMergePreviewModal';
 const parseDate = (dStr: any) => {
   if (!dStr) return 0;
   const t = new Date(dStr).getTime();
@@ -30,6 +31,15 @@ export function LibraryTabContentInner() {
   const [champInput, setChampInput] = useState('');
   const [editKeywords, setEditKeywords] = useState('');
   const [saving, setSaving] = useState(false);
+  // 記事保存時にチャンピオン辞典へマージする前のプレビュー(2026-08-16)
+  const [mergePreview, setMergePreview] = useState<{
+    previews: MergePreviewItem[];
+    articleId: number | string;
+    title: string;
+    content: string;
+    editChampions: string[];
+  } | null>(null);
+  const [mergeConfirmSaving, setMergeConfirmSaving] = useState(false);
   const [syncingAll, setSyncingAll] = useState(false);
   const [syncProgress, setSyncProgress] = useState<{ processed: number; total: number; synced: number } | null>(null);
   // ?q=... で検索語を渡せる（動画キューから「記事をタイトルで探す」で飛んでくる）
@@ -482,8 +492,10 @@ export function LibraryTabContentInner() {
     };
 
     // --- チャンピオン辞典統合ロジック（複数チャンピオン対応）---
-    // チャンピオンが1体以上指定されている場合は、辞典(matchup_sentinel)へのマージと
-    // ライブラリからの削除(__DELETED__化)をまとめてサーバー側(service role)で行う。
+    // チャンピオンが1体以上指定されている場合は、即マージせずまずdryRunでプレビューを
+    // 取得し、モーダルで確認してから実際の統合(mergeToChampionDict)を実行する
+    // (2026-08-16、「攻略ライブラリから保存した時にチャンピオン辞典割り振りする際の
+    // プレビューが出ない」への対応。この経路には従来プレビュー自体が存在しなかった)。
     if (editChampions.some(c => c.trim())) {
       try {
         const res = await fetch('/api/admin/knowledge/merge-article', {
@@ -495,23 +507,26 @@ export function LibraryTabContentInner() {
             title: editTitle,
             content: editContent,
             editChampions,
+            dryRun: true,
           }),
         });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error || '辞典への統合に失敗しました');
+        if (!res.ok) throw new Error(data.error || 'プレビューの取得に失敗しました');
 
-        if (data.merged) {
-          const champLabel = data.champions.length > 1 ? `${data.champions.join(', ')} (${data.champions.length}体)` : data.champions[0];
-          showToast(`【統合完了】${champLabel} のチャンピオン辞典にマージ${data.mergedNote || ''}し、ライブラリから削除しました！`, 'success');
-          setArticles(prev => prev.filter(a => String(a.id) !== String(selectedArticle.id)));
-          setSelectedArticle(null);
-          setEditing(false);
+        if (data.champions && data.champions.length > 0) {
+          setMergePreview({
+            previews: data.previews,
+            articleId: selectedArticle.id,
+            title: editTitle,
+            content: editContent,
+            editChampions,
+          });
           setSaving(false);
           return;
         }
-        // merged: false（有効なチャンピオンが無かった）の場合は下の汎用保存にフォールスルー
+        // 有効なチャンピオンが無かった場合は下の汎用保存にフォールスルー
       } catch (err: any) {
-        showToast('辞典への統合中にエラーが発生しました: ' + err.message, 'error');
+        showToast('プレビュー取得中にエラーが発生しました: ' + err.message, 'error');
         setSaving(false);
         return;
       }
@@ -538,6 +553,40 @@ export function LibraryTabContentInner() {
       showToast('保存失敗: ' + err.message, 'error');
     }
     setSaving(false);
+  };
+
+  // プレビュー確認後、実際にチャンピオン辞典へ統合する
+  const confirmMergeToChampionDict = async () => {
+    if (!mergePreview) return;
+    setMergeConfirmSaving(true);
+    try {
+      const res = await fetch('/api/admin/knowledge/merge-article', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          articleId: mergePreview.articleId,
+          title: mergePreview.title,
+          content: mergePreview.content,
+          editChampions: mergePreview.editChampions,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || '辞典への統合に失敗しました');
+
+      if (data.merged) {
+        const champLabel = data.champions.length > 1 ? `${data.champions.join(', ')} (${data.champions.length}体)` : data.champions[0];
+        showToast(`【統合完了】${champLabel} のチャンピオン辞典にマージ${data.mergedNote || ''}し、ライブラリから削除しました！`, 'success');
+        setArticles(prev => prev.filter(a => String(a.id) !== String(mergePreview.articleId)));
+        setSelectedArticle(null);
+        setEditing(false);
+        setMergePreview(null);
+      }
+    } catch (err: any) {
+      showToast('辞典への統合中にエラーが発生しました: ' + err.message, 'error');
+    } finally {
+      setMergeConfirmSaving(false);
+    }
   };
 
   const deleteArticle = async (id: number | string, e: React.MouseEvent) => {
@@ -593,6 +642,7 @@ export function LibraryTabContentInner() {
 
   if (selectedArticle) {
     return (
+      <>
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="p-6 md:p-12 max-w-5xl mx-auto flex flex-col gap-6">
         <div className="flex justify-between items-center flex-wrap gap-4">
           <button onClick={() => { setSelectedArticle(null); setEditing(false); }} className="flex items-center gap-2 text-violet-700 font-bold hover:text-violet-900 transition-colors">
@@ -836,6 +886,15 @@ export function LibraryTabContentInner() {
           </div>
         </div>
       </motion.div>
+      {mergePreview && (
+        <LibraryMergePreviewModal
+          previews={mergePreview.previews}
+          saving={mergeConfirmSaving}
+          onConfirm={confirmMergeToChampionDict}
+          onCancel={() => setMergePreview(null)}
+        />
+      )}
+      </>
     );
   }
 
