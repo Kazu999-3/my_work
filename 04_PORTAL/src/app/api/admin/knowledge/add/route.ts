@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../../lib/supabaseAdmin';
 import { callGeminiWithRetry } from '../../../../../lib/geminiClient';
 import { verifyAdminSession } from '../../../../../lib/adminAuth';
-import { resolveToRosterChampion, getNoChampionMarker } from '../../../../../lib/dictFactCheck';
+import { resolveToRosterChampion } from '../../../../../lib/dictFactCheck';
 
 // ============================================================
 // X (Twitter) 投稿の画像および「動画メディア(MP4/サムネイル)」を全自動動画・画像AI解析
@@ -348,8 +348,12 @@ ${content}`;
 }
 
 // ============================================================
-// POST: ナレッジの追加（URL or テキスト → AI解析 → DB保存）
+// POST: ナレッジのAI解析のみを行う（DB保存はしない）
 // ============================================================
+// 以前はここでAI解析した内容をそのまま即DB保存していたが、「記事のどこがチャンピオン辞典に
+// 保存されるかプレビュー画面を挟みたい」という要望を受け、解析結果をいったんクライアントへ
+// 返して確認・編集できるようにし、実際の保存は/api/admin/knowledge/confirmへ分離した
+// (2026-08-15)。このエンドポイントはSupabaseへの書き込みを一切行わない。
 export async function POST(req: NextRequest) {
   try {
     const authResult = await verifyAdminSession(req);
@@ -383,96 +387,25 @@ export async function POST(req: NextRequest) {
     // そのままDBに混入し正規のページから漏れる（辞典の表記ゆれ汚染の主要な発生源だった）。
     // 実在チャンピオンへ正規化し、解決できなければ既存の「対象外」慣習値にフォールバックする。
     const resolvedChampion = await resolveToRosterChampion(analyzed.champion);
-
-    const { data, error } = await supabase
-      .from('personal_knowledge')
-      .insert([{
-        title: analyzed.title,
-        content: analyzed.summary,
-        raw_content: rawContent.slice(0, 15000),
-        source_url: url || '',
-        genre: analyzed.genre,
-        tags: analyzed.tags,
-        champion: resolvedChampion || getNoChampionMarker('personal_knowledge'),
-        author: authorKey
-      }])
-      .select()
-      .single();
-
-    if (error) throw error;
-
-    // 原子的な知見(Zettelkasten方式)を、元記事(container)の子レコードとして分割保存する。
-    // 「1ノート1アイデア」に反する巨大な塊のまま辞典生成プロンプトへ渡ってノイズが増える
-    // 問題を避けるため、独立して再利用できる知見だけを短く切り出す(2026-08-12)。
-    //
-    // 記事全体のchampion欄だけで振り分けると、「ミッドAhri」のようにチャンピオン固有の話と
-    // レーン一般論が混在する記事は、champion欄がAhriである以上レーン一般論も丸ごとAhriの
-    // 辞典生成プロンプトへ流れ込み、レーン別ガイド側には一切反映されない片方向バイアスが
-    // あった(2026-08-15発覚)。atomic insight単位でscopeを判定し、"lane_general"のものは
-    // champion欄を空にしてpersonal_knowledgeへ保存する。これによりfetch_personal_knowledge
-    // (champion列一致検索)からは自然に外れてチャンピオン辞典生成には混ざらなくなる一方、
-    // レーンガイドへの統合はAIが自動実行せず、既存の「レーン別ガイドへ一括統合」admin操作
-    // (lane-guides/route.ts、人間が実行ボタンを押すまで動かない)に委ねる。AIの判定ミスで
-    // 誤った内容がガイドへ勝手に書き換わるのを防ぐため、最終判断は人間に残す設計にした
-    // (2026-08-15、ユーザー要望により自動マージから変更)。
-    //
-    // さらに、チャンピオン固有側の分割も含め「分割そのもの」をAIに丸ごと任せず、
-    // 全atomic insightをreview_status='pending'で保存する(2026-08-15、ユーザー要望)。
-    // pending中はfetch_personal_knowledge(champion_trend_worker.py)のクエリからも
-    // レーンガイド一括統合の対象クエリからも除外され、/admin/knowledgeの
-    // 「未承認の分割知見」パネルで人間が承認するまで一切使われない。
     const atomicInsights = Array.isArray(analyzed.atomicInsights) ? analyzed.atomicInsights.slice(0, 5) : [];
-    const laneGeneralCount = atomicInsights.filter((i) => i.scope === 'lane_general').length;
-
-    if (atomicInsights.length > 0) {
-      const { error: atomicError } = await supabase
-        .from('personal_knowledge')
-        .insert(
-          atomicInsights.map((insight) => ({
-            title: insight.title,
-            content: insight.summary,
-            raw_content: insight.summary,
-            source_url: url || '',
-            genre: analyzed.genre,
-            tags: Array.isArray(insight.tags) ? insight.tags : [],
-            champion: insight.scope === 'lane_general'
-              ? getNoChampionMarker('personal_knowledge')
-              : (resolvedChampion || getNoChampionMarker('personal_knowledge')),
-            author: authorKey,
-            parent_id: data.id,
-            is_atomic: true,
-            review_status: 'pending',
-          }))
-        );
-      if (atomicError) console.error('❌ [Knowledge Add API] 原子的な知見の保存に失敗:', atomicError);
-    }
-
-    // 同じ投稿者(X/note)の既存記事があれば、後から気づけるようここで一緒に返す。
-    // 新たにプロフィールを巡回して取得することはせず、既に登録済みのものだけを紐づける。
-    let relatedByAuthor: { id: number; title: string; source_url: string | null; created_at: string }[] = [];
-    if (authorKey) {
-      const { data: related } = await supabase
-        .from('personal_knowledge')
-        .select('id, title, source_url, created_at')
-        .eq('author', authorKey)
-        .neq('id', data.id)
-        .is('parent_id', null)
-        .order('created_at', { ascending: false })
-        .limit(10);
-      relatedByAuthor = related || [];
-    }
 
     return NextResponse.json({
       success: true,
-      message: `ナレッジ「${analyzed.title}」を動画・画像AI解析付きで登録しました。`,
-      relatedByAuthor,
-      atomicInsightCount: atomicInsights.length - laneGeneralCount,
-      laneGeneralPendingCount: laneGeneralCount,
-      data
+      preview: {
+        title: analyzed.title,
+        summary: analyzed.summary,
+        rawContent: rawContent.slice(0, 15000),
+        url: url || '',
+        genre: analyzed.genre,
+        tags: analyzed.tags,
+        champion: resolvedChampion || '',
+        authorKey,
+        atomicInsights,
+      },
     });
 
   } catch (err: any) {
     console.error('❌ [Knowledge Add API] POST Error:', err);
-    return NextResponse.json({ error: err.message || 'ナレッジの処理に失敗しました。' }, { status: 500 });
+    return NextResponse.json({ error: err.message || 'ナレッジの解析に失敗しました。' }, { status: 500 });
   }
 }

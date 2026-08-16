@@ -9,6 +9,7 @@ import YoutubeQueueManager from '../youtube/YoutubeQueueManager';
 import LibraryTabContent from './LibraryTabContent';
 import DiscordImportPanel from './DiscordImportPanel';
 import PendingInsightsPanel from './PendingInsightsPanel';
+import KnowledgePreviewModal, { type KnowledgePreview } from './KnowledgePreviewModal';
 import { supabaseBrowser } from '../../../lib/supabaseBrowserClient';
 
 interface KnowledgeItem {
@@ -33,6 +34,10 @@ function KnowledgeBaseContent() {
   const [inputType, setInputType] = useState<'url' | 'memo'>('url');
   const [inputUrl, setInputUrl] = useState('');
   const [inputMemo, setInputMemo] = useState('');
+
+  // AI解析結果のプレビュー(2026-08-15、保存前にチャンピオン辞典への反映内容を確認できるように)
+  const [pendingPreview, setPendingPreview] = useState<KnowledgePreview | null>(null);
+  const [confirmSaving, setConfirmSaving] = useState(false);
 
   // 検索とフィルタ
   const [searchQuery, setSearchQuery] = useState('');
@@ -159,7 +164,9 @@ function KnowledgeBaseContent() {
           showFeedback(err.error || 'キュー追加に失敗しました。', 'error');
         }
       } else {
-        // 通常ナレッジ追加
+        // 通常ナレッジ追加: まずAI解析のみ行い、結果をプレビューとして表示する
+        // (2026-08-15、「記事のどこがチャンピオン辞典に保存されるかプレビュー画面を
+        // 挟みたい」という要望への対応。この時点ではまだDBに保存されない)。
         const res = await fetch('/api/admin/knowledge/add', {
           method: 'POST', credentials: 'include',
           headers,
@@ -167,27 +174,60 @@ function KnowledgeBaseContent() {
         });
         if (res.ok) {
           const resData = await res.json().catch(() => ({}));
-          const related: { title: string }[] = resData?.relatedByAuthor || [];
-          const relatedNote = related.length > 0
-            ? `（同じ投稿者の既存記事が${related.length}件あります: ${related.slice(0, 3).map((r) => r.title).join('、')}${related.length > 3 ? '...' : ''}）`
-            : '';
-          const atomicCount: number = resData?.atomicInsightCount || 0;
-          const laneGeneralPending: number = resData?.laneGeneralPendingCount || 0;
-          const totalPending = atomicCount + laneGeneralPending;
-          const atomicNote = totalPending > 0 ? `（独立した知見を${totalPending}件、原子的なメモとして分割しました。「未承認の分割知見」で内容を確認・承認するまで辞典生成やレーンガイド統合には使われません）` : '';
-          showFeedback(`新しいナレッジを自動要約して登録しました！${atomicNote}${relatedNote}`, 'success');
-          setInputUrl('');
-          setInputMemo('');
-          fetchKnowledge(true);
+          if (resData?.preview) {
+            setPendingPreview(resData.preview);
+          } else {
+            showFeedback('AI解析結果の取得に失敗しました。', 'error');
+          }
         } else {
           const err = await res.json().catch(() => ({}));
-          showFeedback(err.error || '登録に失敗しました。', 'error');
+          showFeedback(err.error || 'AI解析に失敗しました。', 'error');
         }
       }
     } catch (err) {
       showFeedback('リクエストに失敗しました。', 'error');
     } finally {
       setActionLoading(false);
+    }
+  };
+
+  // プレビュー確認後、実際にDBへ保存する
+  const handleConfirmSave = async (edited: KnowledgePreview) => {
+    setConfirmSaving(true);
+    try {
+      const { data: sessionData } = await supabaseBrowser.auth.getSession();
+      const token = sessionData?.session?.access_token;
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
+      const res = await fetch('/api/admin/knowledge/confirm', {
+        method: 'POST', credentials: 'include',
+        headers,
+        body: JSON.stringify(edited)
+      });
+      if (res.ok) {
+        const resData = await res.json().catch(() => ({}));
+        const related: { title: string }[] = resData?.relatedByAuthor || [];
+        const relatedNote = related.length > 0
+          ? `（同じ投稿者の既存記事が${related.length}件あります: ${related.slice(0, 3).map((r) => r.title).join('、')}${related.length > 3 ? '...' : ''}）`
+          : '';
+        const atomicCount: number = resData?.atomicInsightCount || 0;
+        const laneGeneralPending: number = resData?.laneGeneralPendingCount || 0;
+        const totalPending = atomicCount + laneGeneralPending;
+        const atomicNote = totalPending > 0 ? `（独立した知見を${totalPending}件、原子的なメモとして分割しました。「未承認の分割知見」で内容を確認・承認するまで辞典生成やレーンガイド統合には使われません）` : '';
+        showFeedback(`新しいナレッジを登録しました！${atomicNote}${relatedNote}`, 'success');
+        setInputUrl('');
+        setInputMemo('');
+        setPendingPreview(null);
+        fetchKnowledge(true);
+      } else {
+        const err = await res.json().catch(() => ({}));
+        showFeedback(err.error || '保存に失敗しました。', 'error');
+      }
+    } catch (err) {
+      showFeedback('保存リクエストに失敗しました。', 'error');
+    } finally {
+      setConfirmSaving(false);
     }
   };
 
@@ -639,6 +679,15 @@ function KnowledgeBaseContent() {
           </div>
         )}
       </div>
+
+      {pendingPreview && (
+        <KnowledgePreviewModal
+          preview={pendingPreview}
+          saving={confirmSaving}
+          onConfirm={handleConfirmSave}
+          onCancel={() => setPendingPreview(null)}
+        />
+      )}
     </div>
   );
 }
