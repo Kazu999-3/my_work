@@ -1,5 +1,12 @@
 > 📺 **元動画情報**
 > - **動画ID**: 5uPebPSFnns
+> - **チャンネル**: LoL Dobby
+> - **動画リンク**: [https://www.youtube.com/watch?v=5uPebPSFnns](https://www.youtube.com/watch?v=5uPebPSFnns)
+
+---
+
+> 📺 **元動画情報**
+> - **動画ID**: 5uPebPSFnns
 > - **動画リンク**: [https://www.youtube.com/watch?v=5uPebPSFnns](https://www.youtube.com/watch?v=5uPebPSFnns)
 
 ---

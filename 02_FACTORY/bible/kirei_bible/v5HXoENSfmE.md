@@ -1,5 +1,12 @@
 > 📺 **元動画情報**
 > - **動画ID**: v5HXoENSfmE
+> - **チャンネル**: Chen Chen
+> - **動画リンク**: [https://www.youtube.com/watch?v=v5HXoENSfmE](https://www.youtube.com/watch?v=v5HXoENSfmE)
+
+---
+
+> 📺 **元動画情報**
+> - **動画ID**: v5HXoENSfmE
 > - **動画リンク**: [https://www.youtube.com/watch?v=v5HXoENSfmE](https://www.youtube.com/watch?v=v5HXoENSfmE)
 
 ---

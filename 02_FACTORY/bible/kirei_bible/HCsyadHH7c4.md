@@ -1,5 +1,12 @@
 > 📺 **元動画情報**
 > - **動画ID**: HCsyadHH7c4
+> - **チャンネル**: Perry Gameplay
+> - **動画リンク**: [https://www.youtube.com/watch?v=HCsyadHH7c4](https://www.youtube.com/watch?v=HCsyadHH7c4)
+
+---
+
+> 📺 **元動画情報**
+> - **動画ID**: HCsyadHH7c4
 > - **動画リンク**: [https://www.youtube.com/watch?v=HCsyadHH7c4](https://www.youtube.com/watch?v=HCsyadHH7c4)
 
 ---

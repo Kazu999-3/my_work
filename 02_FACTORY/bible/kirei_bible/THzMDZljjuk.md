@@ -1,5 +1,12 @@
 > 📺 **元動画情報**
 > - **動画ID**: THzMDZljjuk
+> - **チャンネル**: DeepResearch
+> - **動画リンク**: [https://www.youtube.com/watch?v=THzMDZljjuk](https://www.youtube.com/watch?v=THzMDZljjuk)
+
+---
+
+> 📺 **元動画情報**
+> - **動画ID**: THzMDZljjuk
 > - **動画リンク**: [https://www.youtube.com/watch?v=THzMDZljjuk](https://www.youtube.com/watch?v=THzMDZljjuk)
 
 ---

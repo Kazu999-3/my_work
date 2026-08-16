@@ -1,5 +1,12 @@
 > 📺 **元動画情報**
 > - **動画ID**: cnhS3ZYaWQ0
+> - **チャンネル**: Sawyer Jungle
+> - **動画リンク**: [https://www.youtube.com/watch?v=cnhS3ZYaWQ0](https://www.youtube.com/watch?v=cnhS3ZYaWQ0)
+
+---
+
+> 📺 **元動画情報**
+> - **動画ID**: cnhS3ZYaWQ0
 > - **動画リンク**: [https://www.youtube.com/watch?v=cnhS3ZYaWQ0](https://www.youtube.com/watch?v=cnhS3ZYaWQ0)
 
 ---

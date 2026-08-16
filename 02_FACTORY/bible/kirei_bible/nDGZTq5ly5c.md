@@ -1,5 +1,12 @@
 > 📺 **元動画情報**
 > - **動画ID**: nDGZTq5ly5c
+> - **チャンネル**: perryjg
+> - **動画リンク**: [https://www.youtube.com/watch?v=nDGZTq5ly5c](https://www.youtube.com/watch?v=nDGZTq5ly5c)
+
+---
+
+> 📺 **元動画情報**
+> - **動画ID**: nDGZTq5ly5c
 > - **動画リンク**: [https://www.youtube.com/watch?v=nDGZTq5ly5c](https://www.youtube.com/watch?v=nDGZTq5ly5c)
 
 ---

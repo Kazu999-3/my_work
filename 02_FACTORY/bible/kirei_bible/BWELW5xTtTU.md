@@ -1,5 +1,12 @@
 > 📺 **元動画情報**
 > - **動画ID**: BWELW5xTtTU
+> - **チャンネル**: DeepResearch
+> - **動画リンク**: [https://www.youtube.com/watch?v=BWELW5xTtTU](https://www.youtube.com/watch?v=BWELW5xTtTU)
+
+---
+
+> 📺 **元動画情報**
+> - **動画ID**: BWELW5xTtTU
 > - **動画リンク**: [https://www.youtube.com/watch?v=BWELW5xTtTU](https://www.youtube.com/watch?v=BWELW5xTtTU)
 
 ---

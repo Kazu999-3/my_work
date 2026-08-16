@@ -1,5 +1,12 @@
 > 📺 **元動画情報**
 > - **動画ID**: 2k_Afn_F24Q
+> - **チャンネル**: 3 Minute League of Legends
+> - **動画リンク**: [https://www.youtube.com/watch?v=2k_Afn_F24Q](https://www.youtube.com/watch?v=2k_Afn_F24Q)
+
+---
+
+> 📺 **元動画情報**
+> - **動画ID**: 2k_Afn_F24Q
 > - **動画リンク**: [https://www.youtube.com/watch?v=2k_Afn_F24Q](https://www.youtube.com/watch?v=2k_Afn_F24Q)
 
 ---

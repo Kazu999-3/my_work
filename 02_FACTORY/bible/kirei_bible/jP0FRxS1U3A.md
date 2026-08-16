@@ -1,5 +1,12 @@
 > 📺 **元動画情報**
 > - **動画ID**: jP0FRxS1U3A
+> - **チャンネル**: Shyvana Challenger Replays
+> - **動画リンク**: [https://www.youtube.com/watch?v=jP0FRxS1U3A](https://www.youtube.com/watch?v=jP0FRxS1U3A)
+
+---
+
+> 📺 **元動画情報**
+> - **動画ID**: jP0FRxS1U3A
 > - **動画リンク**: [https://www.youtube.com/watch?v=jP0FRxS1U3A](https://www.youtube.com/watch?v=jP0FRxS1U3A)
 
 ---

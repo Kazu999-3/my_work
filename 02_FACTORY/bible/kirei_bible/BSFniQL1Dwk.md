@@ -1,5 +1,12 @@
 > 📺 **元動画情報**
 > - **動画ID**: BSFniQL1Dwk
+> - **チャンネル**: [PL] Playlist PL7aNfKUA-1lvPVfUoYHpD6jaK0p44HQGM
+> - **動画リンク**: [https://www.youtube.com/watch?v=BSFniQL1Dwk](https://www.youtube.com/watch?v=BSFniQL1Dwk)
+
+---
+
+> 📺 **元動画情報**
+> - **動画ID**: BSFniQL1Dwk
 > - **動画リンク**: [https://www.youtube.com/watch?v=BSFniQL1Dwk](https://www.youtube.com/watch?v=BSFniQL1Dwk)
 
 ---

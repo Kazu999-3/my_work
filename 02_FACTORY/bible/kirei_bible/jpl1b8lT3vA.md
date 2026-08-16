@@ -1,5 +1,12 @@
 > 📺 **元動画情報**
 > - **動画ID**: jpl1b8lT3vA
+> - **チャンネル**: B1LAL
+> - **動画リンク**: [https://www.youtube.com/watch?v=jpl1b8lT3vA](https://www.youtube.com/watch?v=jpl1b8lT3vA)
+
+---
+
+> 📺 **元動画情報**
+> - **動画ID**: jpl1b8lT3vA
 > - **動画リンク**: [https://www.youtube.com/watch?v=jpl1b8lT3vA](https://www.youtube.com/watch?v=jpl1b8lT3vA)
 
 ---

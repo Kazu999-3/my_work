@@ -1,5 +1,12 @@
 > 📺 **元動画情報**
 > - **動画ID**: eNU22ef9T4M
+> - **チャンネル**: Akshan Gameplay
+> - **動画リンク**: [https://www.youtube.com/watch?v=eNU22ef9T4M](https://www.youtube.com/watch?v=eNU22ef9T4M)
+
+---
+
+> 📺 **元動画情報**
+> - **動画ID**: eNU22ef9T4M
 > - **動画リンク**: [https://www.youtube.com/watch?v=eNU22ef9T4M](https://www.youtube.com/watch?v=eNU22ef9T4M)
 
 ---

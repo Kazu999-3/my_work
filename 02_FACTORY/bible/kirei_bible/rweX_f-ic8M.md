@@ -1,5 +1,12 @@
 > 📺 **元動画情報**
 > - **動画ID**: rweX_f-ic8M
+> - **チャンネル**: DeepResearch
+> - **動画リンク**: [https://www.youtube.com/watch?v=rweX_f-ic8M](https://www.youtube.com/watch?v=rweX_f-ic8M)
+
+---
+
+> 📺 **元動画情報**
+> - **動画ID**: rweX_f-ic8M
 > - **動画リンク**: [https://www.youtube.com/watch?v=rweX_f-ic8M](https://www.youtube.com/watch?v=rweX_f-ic8M)
 
 ---

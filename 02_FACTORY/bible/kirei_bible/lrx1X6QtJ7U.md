@@ -1,5 +1,12 @@
 > 📺 **元動画情報**
 > - **動画ID**: lrx1X6QtJ7U
+> - **チャンネル**: LoL One Trick Lab
+> - **動画リンク**: [https://www.youtube.com/watch?v=lrx1X6QtJ7U](https://www.youtube.com/watch?v=lrx1X6QtJ7U)
+
+---
+
+> 📺 **元動画情報**
+> - **動画ID**: lrx1X6QtJ7U
 > - **動画リンク**: [https://www.youtube.com/watch?v=lrx1X6QtJ7U](https://www.youtube.com/watch?v=lrx1X6QtJ7U)
 
 ---

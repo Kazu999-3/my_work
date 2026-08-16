@@ -1,5 +1,12 @@
 > 📺 **元動画情報**
 > - **動画ID**: OdttUIfSm9A
+> - **チャンネル**: Cannon Minion
+> - **動画リンク**: [https://www.youtube.com/watch?v=OdttUIfSm9A](https://www.youtube.com/watch?v=OdttUIfSm9A)
+
+---
+
+> 📺 **元動画情報**
+> - **動画ID**: OdttUIfSm9A
 > - **動画リンク**: [https://www.youtube.com/watch?v=OdttUIfSm9A](https://www.youtube.com/watch?v=OdttUIfSm9A)
 
 ---

@@ -1,5 +1,12 @@
 > 📺 **元動画情報**
 > - **動画ID**: BxavFyUcU2U
+> - **チャンネル**: KireiLoL
+> - **動画リンク**: [https://www.youtube.com/watch?v=BxavFyUcU2U](https://www.youtube.com/watch?v=BxavFyUcU2U)
+
+---
+
+> 📺 **元動画情報**
+> - **動画ID**: BxavFyUcU2U
 > - **動画リンク**: [https://www.youtube.com/watch?v=BxavFyUcU2U](https://www.youtube.com/watch?v=BxavFyUcU2U)
 
 ---

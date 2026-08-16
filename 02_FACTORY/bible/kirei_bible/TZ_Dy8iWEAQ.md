@@ -1,5 +1,12 @@
 > 📺 **元動画情報**
 > - **動画ID**: TZ_Dy8iWEAQ
+> - **チャンネル**: Perry Gameplay
+> - **動画リンク**: [https://www.youtube.com/watch?v=TZ_Dy8iWEAQ](https://www.youtube.com/watch?v=TZ_Dy8iWEAQ)
+
+---
+
+> 📺 **元動画情報**
+> - **動画ID**: TZ_Dy8iWEAQ
 > - **動画リンク**: [https://www.youtube.com/watch?v=TZ_Dy8iWEAQ](https://www.youtube.com/watch?v=TZ_Dy8iWEAQ)
 
 ---

@@ -1,5 +1,12 @@
 > 📺 **元動画情報**
 > - **動画ID**: xgIhwNwQmvk
+> - **チャンネル**: DeepResearch
+> - **動画リンク**: [https://www.youtube.com/watch?v=xgIhwNwQmvk](https://www.youtube.com/watch?v=xgIhwNwQmvk)
+
+---
+
+> 📺 **元動画情報**
+> - **動画ID**: xgIhwNwQmvk
 > - **動画リンク**: [https://www.youtube.com/watch?v=xgIhwNwQmvk](https://www.youtube.com/watch?v=xgIhwNwQmvk)
 
 ---

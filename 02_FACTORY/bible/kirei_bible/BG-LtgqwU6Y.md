@@ -1,5 +1,12 @@
 > 📺 **元動画情報**
 > - **動画ID**: BG-LtgqwU6Y
+> - **チャンネル**: Kireilol
+> - **動画リンク**: [https://www.youtube.com/watch?v=BG-LtgqwU6Y](https://www.youtube.com/watch?v=BG-LtgqwU6Y)
+
+---
+
+> 📺 **元動画情報**
+> - **動画ID**: BG-LtgqwU6Y
 > - **動画リンク**: [https://www.youtube.com/watch?v=BG-LtgqwU6Y](https://www.youtube.com/watch?v=BG-LtgqwU6Y)
 
 ---

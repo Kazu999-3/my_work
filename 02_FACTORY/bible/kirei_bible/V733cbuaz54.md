@@ -1,5 +1,12 @@
 > 📺 **元動画情報**
 > - **動画ID**: V733cbuaz54
+> - **チャンネル**: Agurin
+> - **動画リンク**: [https://www.youtube.com/watch?v=V733cbuaz54](https://www.youtube.com/watch?v=V733cbuaz54)
+
+---
+
+> 📺 **元動画情報**
+> - **動画ID**: V733cbuaz54
 > - **動画リンク**: [https://www.youtube.com/watch?v=V733cbuaz54](https://www.youtube.com/watch?v=V733cbuaz54)
 
 ---

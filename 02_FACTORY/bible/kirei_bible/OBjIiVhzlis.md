@@ -1,5 +1,12 @@
 > 📺 **元動画情報**
 > - **動画ID**: OBjIiVhzlis
+> - **チャンネル**: Coach Kirei
+> - **動画リンク**: [https://www.youtube.com/watch?v=OBjIiVhzlis](https://www.youtube.com/watch?v=OBjIiVhzlis)
+
+---
+
+> 📺 **元動画情報**
+> - **動画ID**: OBjIiVhzlis
 > - **動画リンク**: [https://www.youtube.com/watch?v=OBjIiVhzlis](https://www.youtube.com/watch?v=OBjIiVhzlis)
 
 ---

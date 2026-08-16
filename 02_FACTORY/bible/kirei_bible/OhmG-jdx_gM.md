@@ -1,5 +1,12 @@
 > 📺 **元動画情報**
 > - **動画ID**: OhmG-jdx_gM
+> - **チャンネル**: tothericefields
+> - **動画リンク**: [https://www.youtube.com/watch?v=OhmG-jdx_gM](https://www.youtube.com/watch?v=OhmG-jdx_gM)
+
+---
+
+> 📺 **元動画情報**
+> - **動画ID**: OhmG-jdx_gM
 > - **動画リンク**: [https://www.youtube.com/watch?v=OhmG-jdx_gM](https://www.youtube.com/watch?v=OhmG-jdx_gM)
 
 ---

@@ -1,5 +1,12 @@
 > 📺 **元動画情報**
 > - **動画ID**: WyA1CdmmJRc
+> - **チャンネル**: [PL] Playlist PL7aNfKUA-1lvPVfUoYHpD6jaK0p44HQGM
+> - **動画リンク**: [https://www.youtube.com/watch?v=WyA1CdmmJRc](https://www.youtube.com/watch?v=WyA1CdmmJRc)
+
+---
+
+> 📺 **元動画情報**
+> - **動画ID**: WyA1CdmmJRc
 > - **動画リンク**: [https://www.youtube.com/watch?v=WyA1CdmmJRc](https://www.youtube.com/watch?v=WyA1CdmmJRc)
 
 ---
