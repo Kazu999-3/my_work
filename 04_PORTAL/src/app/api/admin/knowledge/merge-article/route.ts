@@ -382,8 +382,6 @@ export async function POST(req: Request) {
         title: existingSentinel?.title || `${championName} 基本戦略・トレンド`,
         strategy: factPayload.strategy || existingSentinel?.strategy || '',
         raw_data: rawData,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
       };
 
       const { error: sentinelError } = await supabase
@@ -425,8 +423,6 @@ export async function POST(req: Request) {
             source_title: title,
             extracted_at: new Date().toISOString(),
           },
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
         };
 
         // プライマリID (champ_A_vs_B) で upsert
@@ -449,20 +445,22 @@ export async function POST(req: Request) {
       mergedNote += `／対面メモ${savedMatchupsCount}件を保存`;
     }
 
-    // 3. champion_notes にもdual-write
+    // 3. champion_notes にも直接dual-write（内部fetchのハング防止）
     try {
-      const origin = new URL(req.url).origin;
-      await fetch(`${origin}/api/admin/champion-notes/add`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', cookie: req.headers.get('cookie') || '' },
-        body: JSON.stringify({
-          champions: validChampions,
+      for (const champion of validChampions) {
+        if (articleId != null) {
+          await supabase.from('champion_notes').delete().eq('champion', champion).eq('source_article_id', articleId);
+        } else {
+          await supabase.from('champion_notes').delete().eq('champion', champion).eq('title', title).eq('source', 'article');
+        }
+        await supabase.from('champion_notes').insert({
+          champion,
+          source_article_id: articleId,
           title,
           body: content,
           source: 'article',
-          source_article_id: articleId,
-        }),
-      });
+        });
+      }
     } catch (dualErr) {
       console.warn('[merge-article] champion_notesへのdual-write失敗:', dualErr);
     }
