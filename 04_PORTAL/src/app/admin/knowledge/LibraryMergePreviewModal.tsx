@@ -1,6 +1,7 @@
 "use client";
 
-import { CheckCircle2, RefreshCw, X, BookOpen } from 'lucide-react';
+import { useState } from 'react';
+import { CheckCircle2, RefreshCw, X, BookOpen, Map } from 'lucide-react';
 
 export type MergePreviewItem = {
   champion: string;
@@ -10,19 +11,38 @@ export type MergePreviewItem = {
   mergedExcerpt: string;
 };
 
+export type LaneGeneralInsight = { title: string; summary: string };
+
+const LANE_LABELS: Record<string, string> = {
+  COMMON: '全レーン共通（上達の原則）',
+  TOP: 'TOP（トップ）',
+  JG: 'JG（ジャングル）',
+  MID: 'MID（ミッド）',
+  ADC: 'ADC（ボット）',
+  SUP: 'SUP（サポート）',
+};
+
 // 「攻略ライブラリから保存した時にチャンピオン辞典割り振りする際のプレビューが出ない」
 // への対応(2026-08-16)。LibraryTabContent.tsxの記事編集画面で「保存する」を押した際、
 // 従来は確認なしに即matchup_sentinelへマージ＆ライブラリから削除していたが、
 // dryRunで計算した「どのフィールドに」「マージ後どうなるか」をここで見せてから
-// 実際の統合を実行する。
+// 実際の統合を実行する。あわせて、記事内に混じっている「レーン一般論」がチャンピオン
+// 固有の項目に埋もれて失われないよう、検出結果を見せてレーンガイドへの統合も選べるようにする
+// (「レーン全体の攻略情報は優先的に確保したい」という要望への対応)。
 export default function LibraryMergePreviewModal({
-  previews, saving, onConfirm, onCancel,
+  previews, laneGeneralInsights, detectedLane, saving, onConfirm, onCancel,
 }: {
   previews: MergePreviewItem[];
+  laneGeneralInsights: LaneGeneralInsight[];
+  detectedLane: string;
   saving: boolean;
-  onConfirm: () => void;
+  onConfirm: (sendToLane: string | null) => void;
   onCancel: () => void;
 }) {
+  const hasLaneGeneral = laneGeneralInsights.length > 0;
+  const [sendToLaneChecked, setSendToLaneChecked] = useState(hasLaneGeneral);
+  const [laneChoice, setLaneChoice] = useState(detectedLane || 'COMMON');
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
       <div className="bg-white border border-gray-200 rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 shadow-2xl">
@@ -73,6 +93,48 @@ export default function LibraryMergePreviewModal({
           ))}
         </div>
 
+        {hasLaneGeneral && (
+          <div className="mt-4 border border-sky-200 rounded-2xl p-4 bg-sky-50/50">
+            <div className="flex items-center justify-between gap-2 flex-wrap mb-2">
+              <p className="text-xs font-black text-sky-700 flex items-center gap-1.5">
+                <Map size={14} /> レーン一般論として検出された内容（{laneGeneralInsights.length}件）
+              </p>
+              <label className="flex items-center gap-1.5 text-[11px] font-bold text-sky-700 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={sendToLaneChecked}
+                  onChange={(e) => setSendToLaneChecked(e.target.checked)}
+                />
+                レーンガイドにも統合する
+              </label>
+            </div>
+            <p className="text-[10px] text-gray-500 mb-2 leading-relaxed">
+              チャンピオン固有の話ではなく、そのレーン全般で通用する内容と判定されました。統合すると、チャンピオン辞典への統合とは別に、選んだレーンのガイドにも追記されます（記事は削除されません、この記事の統合とは独立して追加されます）。
+            </p>
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-[10px] font-bold text-gray-500">送り先レーン:</span>
+              <select
+                value={laneChoice}
+                onChange={(e) => setLaneChoice(e.target.value)}
+                disabled={!sendToLaneChecked}
+                className="bg-white border border-sky-300 rounded-lg px-2 py-1 text-xs text-sky-800 outline-none disabled:opacity-50"
+              >
+                {Object.entries(LANE_LABELS).map(([key, label]) => (
+                  <option key={key} value={key}>{label}</option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-2">
+              {laneGeneralInsights.map((insight, idx) => (
+                <div key={idx} className={`border rounded-xl p-3 bg-white ${sendToLaneChecked ? 'border-sky-200' : 'border-gray-100 opacity-50'}`}>
+                  <p className="text-xs font-bold text-gray-900 mb-1">{insight.title}</p>
+                  <p className="text-[11px] text-gray-500 leading-relaxed">{insight.summary}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div className="flex items-center justify-end gap-2 mt-6 pt-4 border-t border-gray-100">
           <button
             type="button"
@@ -84,7 +146,7 @@ export default function LibraryMergePreviewModal({
           </button>
           <button
             type="button"
-            onClick={onConfirm}
+            onClick={() => onConfirm(sendToLaneChecked ? laneChoice : null)}
             disabled={saving}
             className="px-5 py-2.5 rounded-xl text-xs font-bold bg-violet-600 hover:bg-violet-700 text-white flex items-center gap-1.5 disabled:opacity-50"
           >

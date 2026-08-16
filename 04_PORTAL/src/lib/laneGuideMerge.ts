@@ -37,12 +37,12 @@ export function detectLane(article: any): string {
 export class RateLimitedError extends Error {}
 
 /**
- * 記事1本を指定レーンのガイドへ追記マージし、元記事をライブラリから片付ける。
- * 一括統合・「この記事を送る」・atomic insight単位の自動振り分けの全てから使う。
+ * Markdown本文1つを指定レーンのガイドへ追記マージする（personal_knowledgeの削除は行わない）。
+ * 記事まるごとの統合(mergeArticleIntoLane)と、記事の一部だけ(レーン一般論の抜粋)を
+ * 統合したいケース(merge-article route、2026-08-16)の両方から使えるよう分離した。
  */
-export async function mergeArticleIntoLane(a: any, lane: string): Promise<{ title: string }> {
+export async function mergeContentIntoLane(lane: string, title: string, body: string, sourceId?: number | string): Promise<{ title: string }> {
   const laneLabel = LANES.find((l) => l.key === lane)?.label || lane;
-  const body = a.raw_content || a.content || '';
 
   const { data: existing } = await supabase
       .from('lane_guides').select('title, body, source_count').eq('lane', lane).maybeSingle();
@@ -59,7 +59,7 @@ export async function mergeArticleIntoLane(a: any, lane: string): Promise<{ titl
 【現在のガイド】
 ${existing?.body || '（まだ何も書かれていません）'}
 
-【新しい記事: ${a.title || '無題'}】
+【新しい記事: ${title || '無題'}】
 ${String(body).slice(0, 8000)}
 
 指示:
@@ -91,7 +91,7 @@ ${String(body).slice(0, 8000)}
 
   // 保存の成否を必ず確認する。
   // ここを見ていなかったため、テーブル未作成時に「保存に失敗したのに記事だけ消える」事故が起きた。
-  const cleanBody = (result.body || '').replace(/\{\{champion\}\}/gi, a.champion || '対象チャンピオン').replace(/\{\{role\}\}/gi, lane || '全レーン');
+  const cleanBody = (result.body || '').replace(/\{\{champion\}\}/gi, '対象チャンピオン').replace(/\{\{role\}\}/gi, lane || '全レーン');
   const { error: saveError } = await supabase.from('lane_guides').upsert({
       lane,
       title: result.title || laneLabel,
@@ -108,13 +108,66 @@ ${String(body).slice(0, 8000)}
       field: 'body',
       before: existing?.body,
       after: result.body,
-      sourceTitle: a.title,
-      sourceId: a.id,
+      sourceTitle: title,
+      sourceId,
   });
+
+  return { title: result.title || laneLabel };
+}
+
+/**
+ * 記事1本を指定レーンのガイドへ追記マージし、元記事をライブラリから片付ける。
+ * 一括統合・「この記事を送る」・atomic insight単位の自動振り分けの全てから使う。
+ */
+export async function mergeArticleIntoLane(a: any, lane: string): Promise<{ title: string }> {
+  const body = a.raw_content || a.content || '';
+  const result = await mergeContentIntoLane(lane, a.title || '無題', body, a.id);
 
   // 保存が確定してから、統合済みの記事をライブラリから片付ける（復元は「移動済み」から可能）
   if (a.id != null) {
     await supabase.from('personal_knowledge').update({ tags: ['__DELETED__'] }).eq('id', a.id);
   }
-  return { title: result.title || laneLabel };
+  return result;
+}
+
+/**
+ * 記事本文の中から、特定チャンピオンに限らずそのレーン全般で通用するマクロ・
+ * 立ち回り・判断の知見だけを抽出する。チャンピオン辞典統合プレビュー画面で、
+ * 「レーン一般論がチャンピオン固有の項目に埋もれてしまう」ことを防ぐために使う
+ * (2026-08-16、「レーン全体の攻略情報は優先的に確保したい」という要望への対応)。
+ */
+export async function classifyLaneGeneralContent(
+  title: string,
+  content: string,
+  championLabel: string,
+): Promise<{ title: string; summary: string }[]> {
+  const prompt = `以下はLoL(League of Legends)の攻略記事です。この記事の中から、特定チャンピオン(${championLabel || '対象チャンピオン'})の性能・スキル・ビルドに限らず、そのレーン全般・ロール全般で通用するマクロ・立ち回り・判断の知見だけを抽出してください（例:「ジャングルはリスク管理としてスカットルより先に自陣バフを取る」）。
+チャンピオン固有の性能・スキル・アイテムビルドの話は含めないでください。
+独立して再利用できる知見を最大5件、それぞれ短いタイトルと2〜4文の要約で挙げてください。該当する内容が無ければ空配列を返してください。
+
+必ず以下のJSONのみ出力（コードブロック禁止）:
+{"insights": [{"title": "短いタイトル", "summary": "2〜4文の要約"}]}
+
+[記事タイトル]: ${title}
+[記事本文]:
+${String(content).slice(0, 8000)}`;
+
+  const raw = await callGeminiWithRetry(prompt, {
+    temperature: 0.2,
+    maxOutputTokens: 3072,
+    maxRetries: 2,
+    responseMimeType: 'application/json',
+  });
+  const cleaned = (raw || '').trim().replace(/^```[a-z]*\n?/, '').replace(/```$/, '').trim();
+  const s = cleaned.indexOf('{'), e = cleaned.lastIndexOf('}');
+  if (s < 0 || e <= s) return [];
+  try {
+    const result = JSON.parse(cleaned.slice(s, e + 1));
+    return Array.isArray(result.insights) ? result.insights.slice(0, 5) : [];
+  } catch (parseErr) {
+    // 出力が途中で切れて不正なJSONになるケースがある。辞典統合の本筋は止めず、
+    // レーン一般論の検出だけスキップする。
+    console.warn('[classifyLaneGeneralContent] JSON解析に失敗:', parseErr, cleaned.slice(0, 300));
+    return [];
+  }
 }

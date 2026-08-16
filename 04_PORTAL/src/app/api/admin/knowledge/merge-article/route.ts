@@ -3,6 +3,7 @@ import { supabaseAdmin as supabase } from '../../../../../lib/supabaseAdmin';
 import { verifyAdminSession } from '../../../../../lib/adminAuth';
 import { recordMatchupSentinelRevision } from '../../../../../lib/matchupSentinelRevisions';
 import { resolveToRosterChampion } from '../../../../../lib/dictFactCheck';
+import { detectLane, classifyLaneGeneralContent, mergeContentIntoLane } from '../../../../../lib/laneGuideMerge';
 
 // ============================================================
 // 攻略ライブラリ(personal_knowledge)の1記事を、選択されたチャンピオンの
@@ -35,7 +36,7 @@ export async function POST(req: Request) {
   if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: 401 });
 
   try {
-    const { articleId, title, content, editChampions, dryRun } = await req.json();
+    const { articleId, title, content, editChampions, dryRun, sendLaneGeneralToLane, laneGeneralExcerpt } = await req.json();
     if (!articleId || !title || typeof content !== 'string') {
       return NextResponse.json({ error: 'articleId, title, content が必要です' }, { status: 400 });
     }
@@ -81,7 +82,26 @@ export async function POST(req: Request) {
         };
       }));
 
-      return NextResponse.json({ success: true, dryRun: true, champions: validChampions, previews });
+      // 記事本文の中に「特定チャンピオンに限らないレーン一般論」が混じっていないか
+      // AIで検出する。検出できても辞典統合自体は止めず、失敗時は無視して続行する
+      // (2026-08-16、「レーン全体の攻略情報は優先的に確保したい」という要望への対応)。
+      let laneGeneralInsights: { title: string; summary: string }[] = [];
+      let detectedLaneKey = 'COMMON';
+      try {
+        detectedLaneKey = detectLane({ champion: validChampions.join(', '), title, content });
+        laneGeneralInsights = await classifyLaneGeneralContent(title, content, validChampions.join(', '));
+      } catch (laneDetectErr) {
+        console.warn('[merge-article] レーン一般論の判定に失敗(無視して続行):', laneDetectErr);
+      }
+
+      return NextResponse.json({
+        success: true,
+        dryRun: true,
+        champions: validChampions,
+        previews,
+        laneGeneralInsights,
+        detectedLane: detectedLaneKey,
+      });
     }
 
     let mergedNote = '';
@@ -167,6 +187,17 @@ export async function POST(req: Request) {
       }
     } catch (mergeErr) {
       console.warn('[merge-article] champion_factsのマージ更新に失敗（辞典統合自体は成功）:', mergeErr);
+    }
+
+    // プレビューで確認された「レーン一般論」の抜粋を、選択されたレーンガイドにも統合する。
+    // チャンピオン辞典への統合は上のループで既に完了しているため、失敗しても本筋は止めない。
+    if (sendLaneGeneralToLane && typeof laneGeneralExcerpt === 'string' && laneGeneralExcerpt.trim()) {
+      try {
+        await mergeContentIntoLane(sendLaneGeneralToLane, title, laneGeneralExcerpt, articleId);
+        mergedNote += (mergedNote ? '／' : '') + 'レーンガイドにも統合';
+      } catch (laneErr: any) {
+        console.warn('[merge-article] レーンガイドへの統合に失敗（辞典統合自体は成功）:', laneErr);
+      }
     }
 
     // ライブラリから削除（__DELETED__ タグを付けて非表示化。物理削除ではない）

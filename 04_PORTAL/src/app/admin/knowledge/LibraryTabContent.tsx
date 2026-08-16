@@ -11,7 +11,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import ChampSelect from '../../../components/ChampSelect';
 import { getFavorites, toggleFavoriteArticle } from '../../../components/FavoritesPanel';
 import ArticleRevisionHistory from './ArticleRevisionHistory';
-import LibraryMergePreviewModal, { type MergePreviewItem } from './LibraryMergePreviewModal';
+import LibraryMergePreviewModal, { type MergePreviewItem, type LaneGeneralInsight } from './LibraryMergePreviewModal';
 const parseDate = (dStr: any) => {
   if (!dStr) return 0;
   const t = new Date(dStr).getTime();
@@ -34,6 +34,8 @@ export function LibraryTabContentInner() {
   // 記事保存時にチャンピオン辞典へマージする前のプレビュー(2026-08-16)
   const [mergePreview, setMergePreview] = useState<{
     previews: MergePreviewItem[];
+    laneGeneralInsights: LaneGeneralInsight[];
+    detectedLane: string;
     articleId: number | string;
     title: string;
     content: string;
@@ -516,6 +518,8 @@ export function LibraryTabContentInner() {
         if (data.champions && data.champions.length > 0) {
           setMergePreview({
             previews: data.previews,
+            laneGeneralInsights: data.laneGeneralInsights || [],
+            detectedLane: data.detectedLane || 'COMMON',
             articleId: selectedArticle.id,
             title: editTitle,
             content: editContent,
@@ -555,11 +559,15 @@ export function LibraryTabContentInner() {
     setSaving(false);
   };
 
-  // プレビュー確認後、実際にチャンピオン辞典へ統合する
-  const confirmMergeToChampionDict = async () => {
+  // プレビュー確認後、実際にチャンピオン辞典へ統合する。sendToLaneが指定されていれば、
+  // 検出された「レーン一般論」の抜粋も同時にそのレーンガイドへ統合する。
+  const confirmMergeToChampionDict = async (sendToLane: string | null) => {
     if (!mergePreview) return;
     setMergeConfirmSaving(true);
     try {
+      const laneGeneralExcerpt = sendToLane
+        ? mergePreview.laneGeneralInsights.map((i) => `## ${i.title}\n${i.summary}`).join('\n\n')
+        : '';
       const res = await fetch('/api/admin/knowledge/merge-article', {
         method: 'POST',
         credentials: 'include',
@@ -569,6 +577,8 @@ export function LibraryTabContentInner() {
           title: mergePreview.title,
           content: mergePreview.content,
           editChampions: mergePreview.editChampions,
+          sendLaneGeneralToLane: sendToLane,
+          laneGeneralExcerpt,
         }),
       });
       const data = await res.json();
@@ -889,6 +899,8 @@ export function LibraryTabContentInner() {
       {mergePreview && (
         <LibraryMergePreviewModal
           previews={mergePreview.previews}
+          laneGeneralInsights={mergePreview.laneGeneralInsights}
+          detectedLane={mergePreview.detectedLane}
           saving={mergeConfirmSaving}
           onConfirm={confirmMergeToChampionDict}
           onCancel={() => setMergePreview(null)}
