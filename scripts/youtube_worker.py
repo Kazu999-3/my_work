@@ -205,6 +205,11 @@ def main():
             if not transcript:
                 raise NoTranscript("字幕を取得できませんでした（字幕なし or IP制限の可能性）")
             a = gemini_summarize(it.get("title") or "YouTube Video", it.get("channel_name") or "", transcript)
+            # 完全自動(人間の確認なし)でチャンピオン辞典生成にそのまま使われていたため、
+            # 手動登録(knowledge/add→confirm)と同じくreview_status='pending'で保存し、
+            # /admin/knowledgeの「未承認」パネルで人間が承認するまではfetch_personal_knowledge
+            # (champion_trend_worker.py)の対象から外れるようにする(2026-08-16、ユーザー要望)。
+            # 既存の承認済み記事はそのまま維持し、今後の新規分だけが対象。
             sb("POST", "personal_knowledge", [{
                 "title": a.get("title") or it.get("title") or "YouTube攻略メモ",
                 "content": a.get("summary") or "",
@@ -213,6 +218,7 @@ def main():
                 "genre": a.get("genre") or "LoL攻略",
                 "tags": a.get("tags") or [],
                 "champion": a.get("champion") or "Unknown",
+                "review_status": "pending",
             }], prefer="return=minimal")
             sb("PATCH", f"youtube_queue?id=eq.{vid}", {"status": "completed"})
             title = a.get("title") or it.get("title") or "(無題)"

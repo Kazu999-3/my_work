@@ -214,7 +214,7 @@ function KnowledgeBaseContent() {
         const atomicCount: number = resData?.atomicInsightCount || 0;
         const laneGeneralPending: number = resData?.laneGeneralPendingCount || 0;
         const totalPending = atomicCount + laneGeneralPending;
-        const atomicNote = totalPending > 0 ? `（独立した知見を${totalPending}件、原子的なメモとして分割しました。「未承認の分割知見」で内容を確認・承認するまで辞典生成やレーンガイド統合には使われません）` : '';
+        const atomicNote = totalPending > 0 ? `（独立した知見を${totalPending}件、原子的なメモとして分割しました。「未承認のナレッジ」で内容を確認・承認するまで辞典生成やレーンガイド統合には使われません）` : '';
         showFeedback(`新しいナレッジを登録しました！${atomicNote}${relatedNote}`, 'success');
         setInputUrl('');
         setInputMemo('');
@@ -428,7 +428,7 @@ function KnowledgeBaseContent() {
             { id: 'discord', label: '💬 Discord AIインポート', icon: MessageSquare },
             { id: 'video', label: '⏳ 動画解析キュー', icon: Video },
             { id: 'library', label: '🗂️ 攻略ライブラリ', icon: Layers },
-            { id: 'pending', label: '🧩 未承認の分割知見', icon: Sparkles },
+            { id: 'pending', label: '🧩 未承認のナレッジ', icon: Sparkles },
           ].map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;

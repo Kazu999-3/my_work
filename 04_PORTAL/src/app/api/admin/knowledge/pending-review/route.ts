@@ -5,11 +5,13 @@ import { resolveToRosterChampion, getNoChampionMarker } from '../../../../../lib
 
 export const dynamic = 'force-dynamic';
 
-// atomic insight(AIによる知見分解)は分割そのものを人間が確認するまで
-// review_status='pending'で保存される(2026-08-15、knowledge/add/route.ts参照)。
-// このAPIは/admin/knowledgeの「未承認の分割知見」パネルから、pending中の知見を
-// 一覧・承認・却下するために使う。
-
+// review_status='pending'の行を一覧・承認・却下するAPI。対象は2種類:
+// 1. atomic insight(AIによる知見分解、is_atomic=true) — 2026-08-15、knowledge/add側で導入。
+// 2. 動画解析(youtube_worker.py)が自動生成した攻略記事本体(is_atomic=false) — 2026-08-16、
+//    「攻略ライブラリから各チャンピオンの辞典に振り分ける前にプレビューしたい」という要望を
+//    受け、こちらも人間が承認するまでfetch_personal_knowledge(champion_trend_worker.py)の
+//    対象から外れるようにした。既存の承認済み記事(手動登録分・過去の動画解析分)は対象外で、
+//    今後youtube_worker.pyが新規保存する分だけがここに現れる。
 export async function GET(req: NextRequest) {
   const auth = await verifyAdminSession(req);
   if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: 401 });
@@ -17,8 +19,7 @@ export async function GET(req: NextRequest) {
   try {
     const { data, error } = await supabase
       .from('personal_knowledge')
-      .select('id, title, content, champion, tags, parent_id, created_at')
-      .eq('is_atomic', true)
+      .select('id, title, content, champion, tags, parent_id, is_atomic, source_url, created_at')
       .eq('review_status', 'pending')
       .order('created_at', { ascending: false })
       .limit(200);
@@ -56,7 +57,7 @@ export async function POST(req: NextRequest) {
     if (!id || !action) return NextResponse.json({ error: 'idとactionが必要です' }, { status: 400 });
 
     if (action === 'reject') {
-      const { error } = await supabase.from('personal_knowledge').delete().eq('id', id).eq('is_atomic', true);
+      const { error } = await supabase.from('personal_knowledge').delete().eq('id', id).eq('review_status', 'pending');
       if (error) throw error;
       return NextResponse.json({ success: true });
     }
@@ -73,7 +74,7 @@ export async function POST(req: NextRequest) {
           update.champion = resolved || champion;
         }
       }
-      const { error } = await supabase.from('personal_knowledge').update(update).eq('id', id).eq('is_atomic', true);
+      const { error } = await supabase.from('personal_knowledge').update(update).eq('id', id).eq('review_status', 'pending');
       if (error) throw error;
       return NextResponse.json({ success: true });
     }

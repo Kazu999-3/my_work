@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { CheckCircle2, XCircle, RefreshCw, HelpCircle } from 'lucide-react';
+import { CheckCircle2, XCircle, RefreshCw, HelpCircle, ExternalLink } from 'lucide-react';
 import ChampSelect from '../../../components/ChampSelect';
 
 type PendingItem = {
@@ -12,14 +12,19 @@ type PendingItem = {
   tags: string[] | null;
   parent_id: number | null;
   parentTitle: string | null;
+  is_atomic: boolean;
+  source_url: string | null;
   created_at: string;
   isLaneGeneral: boolean;
 };
 
-// AIによるatomic insight分解(記事を独立した知見へ分割する処理)は、分割そのものを
-// 人間が確認するまでreview_status='pending'で保存され、辞典生成にもレーンガイド
-// 統合にも使われない(2026-08-15、ユーザー要望「チャンピオンごとの分割も全て
-// 最終的に人間が確認するようにしたい」への対応)。このパネルはその承認/却下UI。
+// review_status='pending'の行を承認/却下するパネル。対象は2種類:
+// 1. AIによるatomic insight分解(記事を独立した知見へ分割する処理、is_atomic=true) —
+//    分割そのものを人間が確認するまで辞典生成にもレーンガイド統合にも使われない
+//    (2026-08-15、「チャンピオンごとの分割も全て最終的に人間が確認するようにしたい」への対応)。
+// 2. 動画解析(youtube_worker.py)が完全自動生成した攻略記事本体(is_atomic=false) —
+//    「攻略ライブラリから各チャンピオンの辞典に振り分ける前にプレビューしたい」という要望
+//    (2026-08-16)により、こちらも人間が承認するまで対象外にした。
 export default function PendingInsightsPanel() {
   const [items, setItems] = useState<PendingItem[] | null>(null);
   const [loading, setLoading] = useState(false);
@@ -66,13 +71,13 @@ export default function PendingInsightsPanel() {
       <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-start gap-3">
         <HelpCircle size={18} className="text-amber-600 shrink-0 mt-0.5" />
         <p className="text-xs text-amber-800 leading-relaxed">
-          AIが記事から自動抽出した「独立した知見」の一覧です。承認するまでチャンピオン辞典の生成にもレーン別ガイドへの統合にも一切使われません。
+          AIが自動生成した知見・記事の一覧です（記事から分割された「独立した知見」と、動画解析で自動保存された攻略記事本体の両方）。承認するまでチャンピオン辞典の生成にもレーン別ガイドへの統合にも一切使われません。
           内容とチャンピオン判定(空欄＝レーン一般論としてレーン別ガイド側の対象になります)を確認し、必要なら修正してから承認してください。
         </p>
       </div>
 
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-bold text-gray-900">🧩 未承認の分割知見 {items ? `(${items.length}件)` : ''}</h3>
+        <h3 className="text-sm font-bold text-gray-900">🧩 未承認のナレッジ {items ? `(${items.length}件)` : ''}</h3>
         <button onClick={load} disabled={loading} className="text-xs font-bold text-purple-600 hover:text-purple-800 flex items-center gap-1.5 disabled:opacity-50">
           <RefreshCw size={13} className={loading ? 'animate-spin' : ''} /> 再読み込み
         </button>
@@ -83,7 +88,7 @@ export default function PendingInsightsPanel() {
       {loading && !items && <p className="text-xs text-gray-400">読み込み中...</p>}
 
       {items && items.length === 0 && (
-        <p className="text-xs text-gray-400 py-8 text-center">未承認の分割知見はありません。</p>
+        <p className="text-xs text-gray-400 py-8 text-center">未承認のナレッジはありません。</p>
       )}
 
       <div className="space-y-4">
@@ -94,9 +99,22 @@ export default function PendingInsightsPanel() {
             <div key={item.id} className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm space-y-3">
               <div className="flex items-start justify-between gap-3 flex-wrap">
                 <div>
-                  <h4 className="text-sm font-bold text-gray-900">{item.title}</h4>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h4 className="text-sm font-bold text-gray-900">{item.title}</h4>
+                    <span className={`text-[9px] font-black px-1.5 py-0.5 rounded border shrink-0 ${
+                      item.is_atomic ? 'bg-purple-50 border-purple-200 text-purple-600' : 'bg-blue-50 border-blue-200 text-blue-600'
+                    }`}>
+                      {item.is_atomic ? '分割知見' : '動画解析記事'}
+                    </span>
+                  </div>
                   {item.parentTitle && (
                     <p className="text-[11px] text-gray-400 mt-0.5">元記事: {item.parentTitle}</p>
+                  )}
+                  {item.source_url && (
+                    <a href={item.source_url} target="_blank" rel="noopener noreferrer"
+                      className="text-[11px] text-sky-600 hover:text-sky-800 mt-0.5 inline-flex items-center gap-1">
+                      <ExternalLink size={11} /> 元動画/記事を開く
+                    </a>
                   )}
                 </div>
                 <span className={`text-[10px] font-black px-2.5 py-1 rounded-lg border shrink-0 ${
@@ -106,7 +124,7 @@ export default function PendingInsightsPanel() {
                 </span>
               </div>
 
-              <p className="text-xs text-gray-700 leading-relaxed whitespace-pre-wrap">{item.content}</p>
+              <p className="text-xs text-gray-700 leading-relaxed whitespace-pre-wrap max-h-48 overflow-y-auto">{item.content}</p>
 
               <div className="flex items-end justify-between gap-4 pt-3 border-t border-gray-100 flex-wrap">
                 <div className="flex flex-col gap-1 min-w-[220px]">

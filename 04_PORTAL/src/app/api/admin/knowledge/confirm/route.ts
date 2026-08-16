@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
     // チャンピオン固有側の分割も含め「分割そのもの」をAIに丸ごと任せず、全atomic insightを
     // review_status='pending'で保存する(2026-08-15、ユーザー要望)。pending中は
     // fetch_personal_knowledge(champion_trend_worker.py)のクエリからもレーンガイド
-    // 一括統合の対象クエリからも除外され、/admin/knowledgeの「未承認の分割知見」パネルで
+    // 一括統合の対象クエリからも除外され、/admin/knowledgeの「未承認のナレッジ」パネルで
     // 人間が承認するまで一切使われない。
     const insights = Array.isArray(atomicInsights) ? atomicInsights.slice(0, 5) : [];
     const laneGeneralCount = insights.filter((i: any) => i.scope === 'lane_general').length;

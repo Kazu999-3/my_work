@@ -125,7 +125,7 @@ export default function KnowledgePreviewModal({
                 ))}
               </div>
               <p className="text-[10px] text-gray-400 mt-2">
-                保存後も「未承認の分割知見」タブで内容を再確認・承認するまで辞典生成やレーンガイド統合には使われません。
+                保存後も「未承認のナレッジ」タブで内容を再確認・承認するまで辞典生成やレーンガイド統合には使われません。
               </p>
             </div>
           )}
