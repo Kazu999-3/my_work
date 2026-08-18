@@ -3,36 +3,51 @@ import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 import { verifyAdminSession } from '../../../../lib/adminAuth';
 
 // champions/tabs/DictionaryTab.tsx の詳細モーダル用。
-// フェーズ1 SSOT化: champion_factsを正本として読み取る。
-// matchup_sentinel GLOBAL行にフォールバック（移行期間の安全装置）。
+// フェーズ1 SSOT化 + 複数レーン対応: champion_factsを正本として読み取る。
+// ロール(role)が指定されている場合は該当ロールの知見を返し、
+// プレイ可能なレーン一覧(availableRoles)も同時に返却する。
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
     const champId = searchParams.get('champion');
+    const requestedRole = searchParams.get('role');
     if (!champId) return NextResponse.json({ error: 'champion が必要です' }, { status: 400 });
 
-    const [factsRes, matchupsRes, spikeRes, interrogationRes, jungleTimingRes] = await Promise.all([
-      // --- 正本: champion_facts (SSOT) ---
-      supabase.from('champion_facts').select('*').ilike('champion', champId).maybeSingle(),
+    // 1. そのチャンピオンのプレイ可能ロール一覧を取得
+    const { data: laneRoleRows } = await supabase
+      .from('champion_lane_roles')
+      .select('role, rank')
+      .ilike('champion', champId)
+      .order('rank', { ascending: true });
+
+    const availableRoles: string[] = (laneRoleRows || [])
+      .map((r: any) => (r.role === 'ADC' ? 'BOT' : r.role))
+      .filter((r: string, i: number, arr: string[]) => arr.indexOf(r) === i);
+
+    // ロールが明示されていない場合は最有力ロール、それも無ければ 'GLOBAL'
+    const targetRole = requestedRole || (availableRoles.length > 0 ? availableRoles[0] : 'GLOBAL');
+
+    // 2. 指定ロール、またはフォールバック用のクエリを実行
+    const [factsRoleRes, factsFallbackRes, matchupsRes, spikeRes, interrogationRes, jungleTimingRes] = await Promise.all([
+      // --- 指定ロールの champion_facts ---
+      requestedRole
+        ? supabase.from('champion_facts').select('*').ilike('champion', champId).ilike('role', requestedRole).maybeSingle()
+        : Promise.resolve({ data: null, error: null }),
+      // --- フォールバック（champion一致のみ、最新順） ---
+      supabase.from('champion_facts').select('*').ilike('champion', champId).order('updated_at', { ascending: false }).limit(1).maybeSingle(),
       // --- 対面メモ: matchup_sentinel（GLOBAL以外） ---
       supabase.from('matchup_sentinel').select('id, matchup_id, champion, enemy, title, strategy, raw_data').ilike('champion', champId).neq('enemy', 'GLOBAL'),
       // --- パワースパイク ---
       supabase.from('champion_power_spikes').select('early_game_score, mid_game_score, late_game_score, peak_window, summary').ilike('champion', champId).maybeSingle(),
       // --- 反省ログ ---
       supabase.from('matchup_sentinel').select('strategy, raw_data, created_at').eq('enemy', 'PROCESS_INTERROGATION'),
-      // --- Riot実測ジャングルタイミング(エメラルド帯、AI推定値とは別枠、2026-08-13) ---
-      // フルクリア時間(avg_full_clear_sec)はRiot Timeline APIの自前集計ロジックが
-      // 構造的に破綻しており(累積カウンタを60秒間隔で誤判定、3〜18分でばらつく)、
-      // 2026-08-15に表示を撤去した。代わりにexternal_fastest_clear_sec(junglepedia.lolの
-      // 高エロソロキュー50万試合超の集計における最速値、平均ではなく最速を使う方針
-      // 2026-08-15)を使う。コアアイテム完成タイミングは実際のITEM_PURCHASEDイベント
-      // ベースで正確なため、引き続きRiot集計を使う。
+      // --- Riot実測ジャングルタイミング ---
       supabase.from('champion_jungle_timing_agg').select('sample_count, avg_first_core_sec, avg_second_core_sec, tier, external_fastest_clear_sec, external_sample_size, external_source').ilike('champion', champId).maybeSingle(),
     ]);
 
-    const fact = factsRes.data;
+    const fact = factsRoleRes?.data || factsFallbackRes.data;
     const matchupsList = matchupsRes.data && matchupsRes.data.length > 0 ? matchupsRes.data : [];
     const jt = jungleTimingRes.data;
     const realJungleTiming = jt ? {
@@ -45,9 +60,27 @@ export async function GET(req: Request) {
       externalSource: jt.external_source,
     } : null;
 
-    // champion_facts にデータがある場合は正本から構成
+    let dataFields: any = {
+      strengths: '',
+      weaknesses: '',
+      powerSpikes: '',
+      buildRunes: '',
+      fullClearTime: '',
+      counterChampions: '',
+      mustBanChampions: '',
+      pickRecommendation: '',
+      strategy: '',
+      note_draft: '',
+      customFields: {},
+      patch_meta: null,
+      pro_builds: [],
+      research_sources: [],
+      jg_style: null,
+      role: targetRole,
+    };
+
     if (fact) {
-      const dataFields = {
+      dataFields = {
         strengths: fact.strengths || '',
         weaknesses: fact.weaknesses || '',
         powerSpikes: fact.power_spikes || '',
@@ -71,68 +104,9 @@ export async function GET(req: Request) {
           first_core_timing_sec: fact.first_core_timing_sec ?? null,
           second_core_timing_sec: fact.second_core_timing_sec ?? null,
         } : null,
+        role: fact.role || targetRole,
       };
-
-      const pastInterrogations = (interrogationRes.data || []).filter((r: any) => {
-        const target = r.raw_data?.target_enemy || '';
-        return target.toLowerCase() === champId.toLowerCase();
-      });
-
-      return NextResponse.json({
-        matchupsList,
-        dataFields,
-        dictCreatedAt: fact.updated_at || null,
-        powerSpikeScores: spikeRes.data || null,
-        pastInterrogations,
-        realJungleTiming,
-        // SSOT メタ情報（UIがconfidence/last_verified_at等を表示するために返す）
-        ssotMeta: {
-          confidence: fact.confidence || 'ai_generated',
-          lastVerifiedAt: fact.last_verified_at || null,
-          lastVerifiedBy: fact.last_verified_by || null,
-          autoUpdatedAt: fact.auto_updated_at || null,
-          sourceSummary: fact.source_summary || null,
-          patch: fact.patch || null,
-        },
-      });
     }
-
-    // --- フォールバック: champion_facts にデータが無い場合のみ matchup_sentinel GLOBAL行 ---
-    const { data: noteData, error: noteError } = await supabase
-      .from('matchup_sentinel')
-      .select('strategy, raw_data, created_at')
-      .eq('champion', champId)
-      .eq('enemy', 'GLOBAL')
-      .maybeSingle();
-
-    if (noteError) {
-      console.warn(`[champions/detail] ${champId}のGLOBAL行取得でエラー（重複行の可能性）:`, noteError);
-    }
-
-    const rd = noteData?.raw_data || {};
-
-    let loadedNoteDraft = rd.note_draft || '';
-    if (rd.note_draft_url) {
-      try {
-        const res = await fetch(rd.note_draft_url);
-        if (res.ok) loadedNoteDraft = await res.text();
-      } catch (fetchErr) {
-        console.error('note_draft_urlの取得に失敗:', rd.note_draft_url, fetchErr);
-      }
-    }
-
-    const dataFields = {
-      strengths: rd.strengths || '', weaknesses: rd.weaknesses || '',
-      powerSpikes: rd.powerSpikes || '', buildRunes: rd.buildRunes || '',
-      fullClearTime: rd.fullClearTime || '', counterChampions: rd.counterChampions || '',
-      mustBanChampions: rd.mustBanChampions || '', pickRecommendation: rd.pickRecommendation || '',
-      strategy: noteData?.strategy || '', note_draft: loadedNoteDraft,
-      customFields: rd.customFields || {},
-      patch_meta: rd.patch_meta || null,
-      pro_builds: rd.pro_builds || [],
-      research_sources: rd.research_sources || [],
-      jg_style: rd.jg_style || null,
-    };
 
     const pastInterrogations = (interrogationRes.data || []).filter((r: any) => {
       const target = r.raw_data?.target_enemy || '';
@@ -140,16 +114,18 @@ export async function GET(req: Request) {
     });
 
     return NextResponse.json({
-      matchupsList,
+      success: true,
+      champion: champId,
+      currentRole: targetRole,
+      availableRoles: availableRoles.length > 0 ? availableRoles : ['GLOBAL'],
       dataFields,
-      dictCreatedAt: noteData?.created_at || null,
-      powerSpikeScores: spikeRes.data || null,
+      powerSpikes: spikeRes.data || null,
+      matchupsList,
       pastInterrogations,
       realJungleTiming,
-      ssotMeta: null, // フォールバック中はメタ情報なし
     });
   } catch (err: any) {
-    console.error('[champions/detail] error:', err);
+    console.error('[api/champions/detail] error:', err);
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }

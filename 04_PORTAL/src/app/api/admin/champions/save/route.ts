@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Supabase環境変数が設定されていません。' }, { status: 500 });
     }
     const body = await req.json();
-    const { matchup_id, champion, enemy, strategy, raw_data } = body;
+    const { matchup_id, champion, enemy, strategy, raw_data, role } = body;
 
     if (!matchup_id || !champion || !enemy) {
       return NextResponse.json({ error: '必須パラメータが不足しています。' }, { status: 400 });
@@ -36,8 +36,10 @@ export async function POST(req: NextRequest) {
     // =============================================
     const rd = raw_data || {};
     const jg = rd.jg_style || {};
+    const targetRole = role || rd.role || 'GLOBAL';
     const factsUpsert: Record<string, any> = {
       champion,
+      role: targetRole,
       strengths: rd.strengths || null,
       weaknesses: rd.weaknesses || null,
       power_spikes: rd.powerSpikes || null,

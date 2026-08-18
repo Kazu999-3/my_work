@@ -119,6 +119,8 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
   const [copied, setCopied] = useState(false);
   const [noteDraftMode, setNoteDraftMode] = useState<'preview' | 'edit'>('preview');
   const [favoriteChamps, setFavoriteChamps] = useState<string[]>([]);
+  const [availableRoles, setAvailableRoles] = useState<string[]>([]);
+  const [selectedRole, setSelectedRole] = useState<string>('GLOBAL');
   const [matchupsList, setMatchupsList] = useState<any[]>([]);
   const [expandedMatchupId, setExpandedMatchupId] = useState<string | null>(null);
   const [isMatchupSectionCollapsed, setIsMatchupSectionCollapsed] = useState(true);
@@ -309,15 +311,22 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
     setDetailError(null);
     let cancelled = false; // 読み込み中に別チャンピオンへ切り替えた場合、古い結果で上書きしないためのガード
 
-    const loadChampionData = async (champId: string) => {
+    const loadChampionData = async (champId: string, role?: string) => {
       try {
-        const res = await fetch(`/api/champions/detail?champion=${encodeURIComponent(champId)}`, { credentials: 'include' });
+        const roleQuery = role ? `&role=${encodeURIComponent(role)}` : '';
+        const res = await fetch(`/api/champions/detail?champion=${encodeURIComponent(champId)}${roleQuery}`, { credentials: 'include' });
         const detail = await res.json();
         if (cancelled) return;
         if (!res.ok) throw new Error(detail.error || '取得に失敗しました');
 
         const loadedMatchups = detail.matchupsList || [];
         setMatchupsList(loadedMatchups);
+        if (detail.availableRoles && Array.isArray(detail.availableRoles)) {
+          setAvailableRoles(detail.availableRoles);
+        }
+        if (detail.currentRole) {
+          setSelectedRole(detail.currentRole);
+        }
         if (loadedMatchups.length > 0) {
           setIsMatchupsCollapsed(false); // 対面メモが存在する場合は自動展開して見やすくする
         } else {
@@ -582,7 +591,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
       const res = await fetch('/api/admin/champions/save', {
         method: 'POST', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
+        body: JSON.stringify({ ...data, role: selectedRole })
       });
       const result = await res.json();
       if (!res.ok) throw new Error(result.error || '保存APIエラー');
@@ -751,6 +760,54 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                 </div>
               </div>
             </div>
+
+            {/* 複数レーン対応: レーン別辞典切替タブ */}
+            {availableRoles.length > 0 && (
+              <div className="flex items-center gap-2 flex-wrap pt-1">
+                <span className="text-xs font-black text-amber-300 flex items-center gap-1">
+                  🛡️ レーン別辞典:
+                </span>
+                <div className="flex items-center gap-1.5 bg-black/50 backdrop-blur-md p-1 rounded-2xl border border-white/10 shadow-inner">
+                  {availableRoles.map((r) => {
+                    const isSelected = selectedRole.toUpperCase() === r.toUpperCase();
+                    return (
+                      <button
+                        key={r}
+                        type="button"
+                        onClick={async () => {
+                          setSelectedRole(r);
+                          setDetailLoading(true);
+                          try {
+                            const res = await fetch(`/api/champions/detail?champion=${encodeURIComponent(selected.id)}&role=${encodeURIComponent(r)}`, { credentials: 'include' });
+                            const detail = await res.json();
+                            if (res.ok && detail.dataFields) {
+                              setDataFields(detail.dataFields);
+                              if (detail.currentRole) setSelectedRole(detail.currentRole);
+                            }
+                          } catch (e) {
+                            console.error('レーン別データ切替エラー:', e);
+                          } finally {
+                            setDetailLoading(false);
+                          }
+                        }}
+                        className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 ${
+                          isSelected
+                            ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-stone-950 shadow-[0_0_15px_rgba(245,158,11,0.5)] scale-105'
+                            : 'text-stone-300 hover:text-white hover:bg-white/10'
+                        }`}
+                      >
+                        <span>{r === 'TOP' ? '⚔️ TOP' : r === 'JG' ? '🌲 JG' : r === 'MID' ? '⚡ MID' : r === 'BOT' ? '🏹 BOT' : r === 'SUP' ? '🛡️ SUP' : r}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+                {availableRoles.length > 1 && (
+                  <span className="text-[11px] text-amber-200/70 font-medium">
+                    （レーンごとに個別のビルド・立ち回りを閲覧・保存できます）
+                  </span>
+                )}
+              </div>
+            )}
 
             {/* シームレス導線: 辞典 ➔ AIコーチへ即座に繋ぐボタン */}
             <div className="flex gap-3 items-center flex-wrap pt-2">
