@@ -609,6 +609,7 @@ export function LibraryTabContentInner() {
     approvedLaneGeneralInsights,
     championSpecificInsights,
     trendDataOverrides,
+    championRoles,
     finalChampions,
   }: {
     sendToLane: string | null;
@@ -616,6 +617,7 @@ export function LibraryTabContentInner() {
     approvedLaneGeneralInsights?: any[];
     championSpecificInsights?: any[];
     trendDataOverrides?: Record<string, Record<string, string>>;
+    championRoles?: Record<string, string>;
     finalChampions?: string[];
   }) => {
     if (!mergePreview) return;
@@ -643,6 +645,7 @@ export function LibraryTabContentInner() {
           approvedLaneGeneralInsights: laneInsights,
           championSpecificInsights: championSpecificInsights || [],
           trendDataOverrides,
+          championRoles: championRoles || {},
         }),
       });
       const data = await res.json();

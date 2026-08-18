@@ -51,6 +51,8 @@ export type ChampionTrendAnalysis = {
   champion: string;
   summaryPoints: string[];
   fieldUpdates: TrendFieldUpdate[];
+  availableRoles?: string[];
+  detectedRole?: string;
 };
 
 function mergeContent(existingText: string, newText: string, title: string): string {
@@ -193,6 +195,7 @@ export async function POST(req: Request) {
       approvedLaneGeneralInsights,
       championSpecificInsights,
       trendDataOverrides,
+      championRoles,
     } = await req.json();
 
     if (!articleId || !title || typeof content !== 'string') {
@@ -215,13 +218,35 @@ export async function POST(req: Request) {
       // 1. AIによる構造化トレンド＆対面情報の抽出
       const { trendData, matchups } = await analyzeArticleInsights(title, content, validChampions);
 
-      // 2. チャンピオンごとの既存データ取得と差分マージ計算
+      // 2. チャンピオンごとのプレイ可能ロール取得と既存データマージ計算
       const trendAnalyses: ChampionTrendAnalysis[] = await Promise.all(
         validChampions.map(async (championName) => {
+          // 該当チャンピオンのプレイ可能ロール一覧
+          const { data: laneRoleRows } = await supabase
+            .from('champion_lane_roles')
+            .select('role, rank')
+            .ilike('champion', championName)
+            .order('rank', { ascending: true });
+
+          const availableRoles: string[] = (laneRoleRows || [])
+            .map((r: any) => (r.role === 'ADC' ? 'BOT' : r.role))
+            .filter((r: string, i: number, arr: string[]) => arr.indexOf(r) === i);
+
+          // 記事タイトルや本文から推奨ロールを推定
+          let detectedRole = availableRoles.length > 0 ? availableRoles[0] : 'GLOBAL';
+          for (const r of availableRoles) {
+            if (new RegExp(`\\b${r}\\b|${r}ヤスオ|${r}グラガス|${r}運用|${r}ビルド`, 'i').test(`${title} ${content.slice(0, 1000)}`)) {
+              detectedRole = r;
+              break;
+            }
+          }
+
+          // 指定ロールまたは最新の既存factを取得
           const { data: existingFact } = await supabase
             .from('champion_facts')
             .select('*')
             .eq('champion', championName)
+            .ilike('role', detectedRole)
             .maybeSingle();
 
           const extractedForChamp = trendData[championName] || trendData[validChampions[0]] || { fields: {}, summaryPoints: [] };
@@ -254,6 +279,8 @@ export async function POST(req: Request) {
             champion: championName,
             summaryPoints: extractedForChamp.summaryPoints || [],
             fieldUpdates,
+            availableRoles: availableRoles.length > 0 ? availableRoles : ['GLOBAL'],
+            detectedRole,
           };
         })
       );
@@ -314,6 +341,7 @@ export async function POST(req: Request) {
 
     // 1. チャンピオントレンド構造化項目 (champion_facts & matchup_sentinel) の更新
     for (const championName of validChampions) {
+      const targetRole = (championRoles && championRoles[championName]) || 'GLOBAL';
       const matchupId = `champ_${championName}_global`;
       const { data: existingSentinel } = await supabase
         .from('matchup_sentinel')
@@ -325,6 +353,7 @@ export async function POST(req: Request) {
         .from('champion_facts')
         .select('*')
         .eq('champion', championName)
+        .ilike('role', targetRole)
         .maybeSingle();
 
       // raw_data & customFields の更新
@@ -344,6 +373,7 @@ export async function POST(req: Request) {
       // 構造化項目（champion_facts）の更新ペイロード
       const factPayload: any = {
         champion: championName,
+        role: targetRole,
         updated_at: new Date().toISOString(),
       };
 

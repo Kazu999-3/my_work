@@ -26,6 +26,8 @@ export type ChampionTrendAnalysis = {
   champion: string;
   summaryPoints: string[];
   fieldUpdates: TrendFieldUpdate[];
+  availableRoles?: string[];
+  detectedRole?: string;
 };
 
 export type MatchupInsight = {
@@ -91,6 +93,7 @@ export default function LibraryMergePreviewModal({
     approvedLaneGeneralInsights: LaneGeneralInsight[];
     championSpecificInsights: ChampionSpecificInsight[];
     trendDataOverrides?: Record<string, Record<string, string>>;
+    championRoles?: Record<string, string>;
     finalChampions?: string[];
   }) => void;
   onCancel: () => void;
@@ -103,6 +106,15 @@ export default function LibraryMergePreviewModal({
   const [selectedMatchupIndices, setSelectedMatchupIndices] = useState<number[]>(() =>
     matchupInsights.map((_, i) => i)
   );
+
+  // 各チャンピオンの送り先レーン管理
+  const [championRoles, setChampionRoles] = useState<Record<string, string>>(() => {
+    const roles: Record<string, string> = {};
+    for (const a of trendAnalyses) {
+      roles[a.champion] = a.detectedRole || (a.availableRoles && a.availableRoles[0]) || 'GLOBAL';
+    }
+    return roles;
+  });
 
   // レーン一般論アイテムの個別管理（選択ON/OFF、一般論 ↔ チャンピオン固有切り替え、紐付けチャンピオン）
   const [laneInsightItems, setLaneInsightItems] = useState<Array<{
@@ -220,6 +232,7 @@ export default function LibraryMergePreviewModal({
       approvedLaneGeneralInsights,
       championSpecificInsights,
       trendDataOverrides,
+      championRoles,
       finalChampions: currentChampions,
     });
   };
@@ -316,19 +329,40 @@ export default function LibraryMergePreviewModal({
             {trendAnalyses.map((analysis) => (
               <div key={analysis.champion} className="bg-white border border-stone-200 rounded-2xl p-4 shadow-sm space-y-3">
                 <div className="flex items-center justify-between border-b border-stone-100 pb-2">
-                  <div className="flex items-center gap-2.5">
-                    {getChampIcon(analysis.champion) && (
-                      <img
-                        src={getChampIcon(analysis.champion)}
-                        alt={analysis.champion}
-                        className="w-8 h-8 rounded-lg border border-amber-300 shadow-sm"
-                      />
-                    )}
-                    <div>
-                      <span className="text-sm font-black text-stone-900">{analysis.champion}</span>
-                      <span className="text-[10px] text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md ml-2 font-bold">
-                        トレンドデータ更新
-                      </span>
+                  <div className="flex items-center justify-between w-full flex-wrap gap-2">
+                    <div className="flex items-center gap-2.5">
+                      {getChampIcon(analysis.champion) && (
+                        <img
+                          src={getChampIcon(analysis.champion)}
+                          alt={analysis.champion}
+                          className="w-8 h-8 rounded-lg border border-amber-300 shadow-sm"
+                        />
+                      )}
+                      <div>
+                        <span className="text-sm font-black text-stone-900">{analysis.champion}</span>
+                        <span className="text-[10px] text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md ml-2 font-bold">
+                          トレンドデータ更新
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* 送り先レーン選択ドロップダウン */}
+                    <div className="flex items-center gap-1.5 bg-amber-50/80 border border-amber-300/80 px-2.5 py-1 rounded-xl">
+                      <span className="text-[11px] font-black text-amber-900">🛡️ 送り先レーン:</span>
+                      <select
+                        value={championRoles[analysis.champion] || analysis.detectedRole || (analysis.availableRoles && analysis.availableRoles[0]) || 'GLOBAL'}
+                        onChange={(e) => {
+                          const newRole = e.target.value;
+                          setChampionRoles((prev) => ({ ...prev, [analysis.champion]: newRole }));
+                        }}
+                        className="bg-white border border-amber-300 rounded-lg px-2 py-0.5 text-xs font-bold text-stone-900 outline-none"
+                      >
+                        {(analysis.availableRoles && analysis.availableRoles.length > 0 ? analysis.availableRoles : ['GLOBAL', 'TOP', 'JG', 'MID', 'BOT', 'SUP']).map((r) => (
+                          <option key={r} value={r}>
+                            {r === 'TOP' ? '⚔️ TOP' : r === 'JG' ? '🌲 JG' : r === 'MID' ? '⚡ MID' : r === 'BOT' ? '🏹 BOT' : r === 'SUP' ? '🛡️ SUP' : r}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                   </div>
                 </div>
