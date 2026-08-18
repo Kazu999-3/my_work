@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from 'react';
-import { CheckCircle2, RefreshCw, X, BookOpen, Map, Swords, Sparkles, ShieldAlert, ChevronDown, ChevronUp, Zap, Target, Layers } from 'lucide-react';
+import { CheckCircle2, RefreshCw, X, BookOpen, Map, Swords, Sparkles, ShieldAlert, ChevronDown, ChevronUp, Zap, Target, Layers, Plus } from 'lucide-react';
 import { getChampIcon } from '../../../lib/ddragonClient';
+import ChampSelect from '../../../components/ChampSelect';
 
 export type MergePreviewItem = {
   champion: string;
@@ -37,6 +38,12 @@ export type MatchupInsight = {
 
 export type LaneGeneralInsight = { title: string; summary: string };
 
+export type ChampionSpecificInsight = {
+  champion: string;
+  title: string;
+  summary: string;
+};
+
 const LANE_LABELS: Record<string, string> = {
   COMMON: '全レーン共通（上達の原則）',
   TOP: 'TOP（トップ）',
@@ -62,7 +69,10 @@ export default function LibraryMergePreviewModal({
   matchupInsights = [],
   laneGeneralInsights = [],
   detectedLane = 'COMMON',
+  currentChampions = [],
   saving,
+  reAnalyzing = false,
+  onReAnalyze,
   onConfirm,
   onCancel,
 }: {
@@ -71,11 +81,17 @@ export default function LibraryMergePreviewModal({
   matchupInsights?: MatchupInsight[];
   laneGeneralInsights?: LaneGeneralInsight[];
   detectedLane?: string;
+  currentChampions?: string[];
   saving: boolean;
+  reAnalyzing?: boolean;
+  onReAnalyze?: (newChampions: string[]) => void;
   onConfirm: (options: {
     sendToLane: string | null;
     approvedMatchups: MatchupInsight[];
+    approvedLaneGeneralInsights: LaneGeneralInsight[];
+    championSpecificInsights: ChampionSpecificInsight[];
     trendDataOverrides?: Record<string, Record<string, string>>;
+    finalChampions?: string[];
   }) => void;
   onCancel: () => void;
 }) {
@@ -87,6 +103,26 @@ export default function LibraryMergePreviewModal({
   const [selectedMatchupIndices, setSelectedMatchupIndices] = useState<number[]>(() =>
     matchupInsights.map((_, i) => i)
   );
+
+  // レーン一般論アイテムの個別管理（選択ON/OFF、一般論 ↔ チャンピオン固有切り替え、紐付けチャンピオン）
+  const [laneInsightItems, setLaneInsightItems] = useState<Array<{
+    title: string;
+    summary: string;
+    included: boolean;
+    scope: 'lane_general' | 'champion_specific';
+    assignedChampion: string;
+  }>>(() =>
+    laneGeneralInsights.map((item) => ({
+      title: item.title,
+      summary: item.summary,
+      included: true,
+      scope: 'lane_general',
+      assignedChampion: currentChampions[0] || '',
+    }))
+  );
+
+  // チャンピオン追加用入力
+  const [champInput, setChampInput] = useState('');
 
   // レーンガイド統合チェック
   const [sendToLaneChecked, setSendToLaneChecked] = useState(hasLaneGeneral);
@@ -105,9 +141,68 @@ export default function LibraryMergePreviewModal({
     );
   };
 
+  // レーン一般論の選択ON/OFF
+  const toggleLaneInsightIncluded = (idx: number) => {
+    setLaneInsightItems((prev) =>
+      prev.map((item, n) => (n === idx ? { ...item, included: !item.included } : item))
+    );
+  };
+
+  // レーン一般論 ↔ チャンピオン固有のスコープ切り替え
+  const toggleLaneInsightScope = (idx: number) => {
+    setLaneInsightItems((prev) =>
+      prev.map((item, n) => {
+        if (n !== idx) return item;
+        const newScope = item.scope === 'lane_general' ? 'champion_specific' : 'lane_general';
+        return {
+          ...item,
+          scope: newScope,
+          assignedChampion: item.assignedChampion || currentChampions[0] || '',
+        };
+      })
+    );
+  };
+
+  // チャンピオン固有項目の割当チャンピオン変更
+  const handleAssignChampion = (idx: number, champ: string) => {
+    setLaneInsightItems((prev) =>
+      prev.map((item, n) => (n === idx ? { ...item, assignedChampion: champ } : item))
+    );
+  };
+
+  const handleAddChampion = (champ: string) => {
+    if (!champ || currentChampions.includes(champ)) return;
+    const updated = [...currentChampions, champ];
+    setChampInput('');
+    if (onReAnalyze) {
+      onReAnalyze(updated);
+    }
+  };
+
+  const handleRemoveChampion = (champ: string) => {
+    const updated = currentChampions.filter((c) => c !== champ);
+    if (onReAnalyze) {
+      onReAnalyze(updated);
+    }
+  };
+
   const handleConfirm = () => {
     const approvedMatchups = matchupInsights.filter((_, i) => selectedMatchupIndices.includes(i));
-    
+
+    // 承認されたレーン一般論
+    const approvedLaneGeneralInsights = laneInsightItems
+      .filter((i) => i.included && i.scope === 'lane_general')
+      .map((i) => ({ title: i.title, summary: i.summary }));
+
+    // チャンピオン固有として振り分けられた知見
+    const championSpecificInsights: ChampionSpecificInsight[] = laneInsightItems
+      .filter((i) => i.included && i.scope === 'champion_specific')
+      .map((i) => ({
+        champion: i.assignedChampion || currentChampions[0] || 'Unknown',
+        title: i.title,
+        summary: i.summary,
+      }));
+
     // トレンドデータのオーバーライド（マージ後の値）
     const trendDataOverrides: Record<string, Record<string, string>> = {};
     for (const analysis of trendAnalyses) {
@@ -120,11 +215,17 @@ export default function LibraryMergePreviewModal({
     }
 
     onConfirm({
-      sendToLane: sendToLaneChecked ? laneChoice : null,
+      sendToLane: sendToLaneChecked && approvedLaneGeneralInsights.length > 0 ? laneChoice : null,
       approvedMatchups,
+      approvedLaneGeneralInsights,
+      championSpecificInsights,
       trendDataOverrides,
+      finalChampions: currentChampions,
     });
   };
+
+  const laneGeneralCount = laneInsightItems.filter((i) => i.included && i.scope === 'lane_general').length;
+  const champSpecificCount = laneInsightItems.filter((i) => i.included && i.scope === 'champion_specific').length;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/60 backdrop-blur-sm animate-fade-in">
@@ -142,11 +243,64 @@ export default function LibraryMergePreviewModal({
           </div>
           <button
             onClick={onCancel}
-            disabled={saving}
+            disabled={saving || reAnalyzing}
             className="text-stone-400 hover:text-stone-700 p-1.5 rounded-full hover:bg-stone-100 disabled:opacity-50 transition"
           >
             <X size={20} />
           </button>
+        </div>
+
+        {/* 対象チャンピオン編集バー (プレビュー内での追加・削除・再解析) */}
+        <div className="bg-amber-50/70 border border-amber-200/90 rounded-2xl p-3.5 space-y-2.5">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <span className="text-xs font-black text-amber-950 flex items-center gap-1.5">
+              🏆 統合対象のチャンピオン ({currentChampions.length}体)
+            </span>
+            {reAnalyzing && (
+              <span className="text-[11px] font-bold text-amber-700 flex items-center gap-1 animate-pulse">
+                <RefreshCw size={12} className="animate-spin" /> AI解析を再実行中...
+              </span>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* 選択中のチャンピオンタグ */}
+            {currentChampions.map((c) => (
+              <span
+                key={c}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white border border-amber-300 rounded-lg text-xs font-bold text-stone-800 shadow-sm"
+              >
+                {getChampIcon(c) && (
+                  <img
+                    src={getChampIcon(c)}
+                    alt={c}
+                    className="w-4 h-4 rounded-md border border-amber-200"
+                  />
+                )}
+                <span>{c}</span>
+                <button
+                  type="button"
+                  onClick={() => handleRemoveChampion(c)}
+                  disabled={saving || reAnalyzing}
+                  title={`${c} を除外`}
+                  className="text-stone-400 hover:text-rose-600 ml-0.5 transition"
+                >
+                  <X size={13} />
+                </button>
+              </span>
+            ))}
+
+            {/* 新規チャンピオン追加用サジェスト */}
+            <div className="w-44">
+              <ChampSelect
+                value={champInput}
+                onChange={setChampInput}
+                placeholder="＋チャンプ追加..."
+                className="bg-white border-amber-300 focus:border-amber-500 py-1 text-xs"
+                onSelect={(champ: string) => handleAddChampion(champ)}
+              />
+            </div>
+          </div>
         </div>
 
         {/* 1. チャンピオントレンド構造化プレビュー */}
@@ -342,77 +496,172 @@ export default function LibraryMergePreviewModal({
           </div>
         )}
 
-        {/* 3. レーン一般論 */}
-        {hasLaneGeneral && (
+        {/* 3. レーン一般論 ＆ チャンピオン固有への振り分け */}
+        {laneInsightItems.length > 0 && (
           <div className="space-y-3 pt-2">
-            <div className="flex items-center justify-between border-t border-stone-200 pt-4">
-              <div className="flex items-center gap-2">
-                <Map size={16} className="text-sky-600" />
-                <h4 className="text-sm font-extrabold text-stone-900">
-                  3. レーン一般論として検出された内容 ({laneGeneralInsights.length}件)
-                </h4>
-              </div>
-              <label className="flex items-center gap-1.5 text-xs font-bold text-sky-700 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={sendToLaneChecked}
-                  onChange={(e) => setSendToLaneChecked(e.target.checked)}
-                />
-                <span>レーンガイドにも統合する</span>
-              </label>
-            </div>
-
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-xs font-bold text-stone-500">送り先レーン:</span>
-              <select
-                value={laneChoice}
-                onChange={(e) => setLaneChoice(e.target.value)}
-                disabled={!sendToLaneChecked}
-                className="bg-white border border-sky-300 rounded-lg px-2.5 py-1 text-xs text-sky-800 outline-none disabled:opacity-50 font-medium"
-              >
-                {Object.entries(LANE_LABELS).map(([key, label]) => (
-                  <option key={key} value={key}>
-                    {label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="space-y-2">
-              {laneGeneralInsights.map((insight, idx) => (
-                <div
-                  key={idx}
-                  className={`border rounded-xl p-3 bg-white ${
-                    sendToLaneChecked ? 'border-sky-200' : 'border-stone-200 opacity-50'
-                  }`}
-                >
-                  <p className="text-xs font-bold text-stone-900 mb-0.5">{insight.title}</p>
-                  <p className="text-[11px] text-stone-600 leading-relaxed">{insight.summary}</p>
+            <div className="flex items-center justify-between border-t border-stone-200 pt-4 flex-wrap gap-2">
+              <div>
+                <div className="flex items-center gap-2">
+                  <Map size={16} className="text-sky-600" />
+                  <h4 className="text-sm font-extrabold text-stone-900">
+                    3. 抽出された一般論・戦術知見 ({laneInsightItems.length}件)
+                  </h4>
                 </div>
-              ))}
+                <p className="text-xs text-stone-500 mt-0.5">
+                  各項目のチェックを外して除外したり、「チャンピオン固有」に切り替えて対象チャンプの辞典へ直接書き込むことができます。
+                </p>
+              </div>
+
+              {laneGeneralCount > 0 && (
+                <label className="flex items-center gap-1.5 text-xs font-bold text-sky-700 cursor-pointer bg-sky-50 border border-sky-200 px-3 py-1.5 rounded-xl">
+                  <input
+                    type="checkbox"
+                    checked={sendToLaneChecked}
+                    onChange={(e) => setSendToLaneChecked(e.target.checked)}
+                  />
+                  <span>レーンガイドにも統合する ({laneGeneralCount}件)</span>
+                </label>
+              )}
+            </div>
+
+            {sendToLaneChecked && laneGeneralCount > 0 && (
+              <div className="flex items-center gap-2 mb-2 bg-sky-50/50 p-2.5 rounded-xl border border-sky-100">
+                <span className="text-xs font-bold text-sky-900">送り先レーン:</span>
+                <select
+                  value={laneChoice}
+                  onChange={(e) => setLaneChoice(e.target.value)}
+                  className="bg-white border border-sky-300 rounded-lg px-2.5 py-1 text-xs text-sky-800 outline-none font-medium"
+                >
+                  {Object.entries(LANE_LABELS).map(([key, label]) => (
+                    <option key={key} value={key}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            <div className="space-y-2.5">
+              {laneInsightItems.map((item, idx) => {
+                const isLaneGeneral = item.scope === 'lane_general';
+                return (
+                  <div
+                    key={idx}
+                    className={`border rounded-2xl p-3.5 transition ${
+                      !item.included
+                        ? 'border-stone-200 bg-stone-50/50 opacity-40'
+                        : isLaneGeneral
+                        ? 'border-sky-200 bg-sky-50/30'
+                        : 'border-amber-300 bg-amber-50/40 shadow-sm'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-3 mb-2 flex-wrap">
+                      <label className="flex items-start gap-2 flex-1 min-w-0 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={item.included}
+                          onChange={() => toggleLaneInsightIncluded(idx)}
+                          className="mt-0.5 rounded border-stone-300 text-sky-600 focus:ring-sky-400"
+                        />
+                        <div className="min-w-0">
+                          <span className="text-xs font-bold text-stone-900 block leading-tight">
+                            {item.title}
+                          </span>
+                        </div>
+                      </label>
+
+                      {/* スコープ切り替え＆チャンピオン選択 */}
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => toggleLaneInsightScope(idx)}
+                          disabled={!item.included}
+                          title="クリックでレーン一般論 ⇄ チャンピオン固有を切り替え"
+                          className={`text-[11px] font-black px-2.5 py-1 rounded-lg border transition disabled:opacity-40 flex items-center gap-1 ${
+                            isLaneGeneral
+                              ? 'bg-sky-100 border-sky-300 text-sky-800 hover:bg-sky-200'
+                              : 'bg-amber-100 border-amber-300 text-amber-900 hover:bg-amber-200'
+                          }`}
+                        >
+                          {isLaneGeneral ? (
+                            <>
+                              <Map size={12} />
+                              <span>🌊 レーン一般論</span>
+                            </>
+                          ) : (
+                            <>
+                              <Sparkles size={12} />
+                              <span>🏆 チャンピオン固有</span>
+                            </>
+                          )}
+                        </button>
+
+                        {!isLaneGeneral && item.included && (
+                          <div className="w-36">
+                            <ChampSelect
+                              value={item.assignedChampion}
+                              onChange={(val) => handleAssignChampion(idx, val)}
+                              placeholder="チャンプ選択..."
+                              className="bg-white border-amber-300 py-0.5 text-xs h-7"
+                            />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div
+                      className={`rounded-xl p-2.5 text-xs leading-relaxed whitespace-pre-wrap ${
+                        item.included ? 'bg-white text-stone-700 border border-stone-200/80' : 'text-stone-400'
+                      }`}
+                    >
+                      {item.summary}
+                    </div>
+
+                    {item.included && !isLaneGeneral && item.assignedChampion && (
+                      <p className="text-[10px] font-bold text-amber-700 mt-1.5 flex items-center gap-1">
+                        🏆 「{item.assignedChampion}」のチャンピオン辞典（基本立ち回り・メモ）へ書き込まれます
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
 
         {/* フッターアクション */}
-        <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-stone-200">
-          <button
-            type="button"
-            onClick={onCancel}
-            disabled={saving}
-            className="px-4 py-2.5 rounded-xl text-xs font-bold text-stone-500 hover:bg-stone-100 disabled:opacity-50 transition"
-          >
-            キャンセル
-          </button>
-          <button
-            type="button"
-            onClick={handleConfirm}
-            disabled={saving}
-            className="px-6 py-2.5 rounded-xl text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white flex items-center gap-2 shadow-sm disabled:opacity-50 transition"
-          >
-            {saving ? <RefreshCw size={14} className="animate-spin" /> : <CheckCircle2 size={15} />}
-            <span>{saving ? '統合処理中...' : 'この内容で辞典・対面情報に統合する'}</span>
-          </button>
+        <div className="flex items-center justify-between gap-2.5 pt-4 border-t border-stone-200">
+          <div className="text-xs text-stone-500">
+            {currentChampions.length === 0 ? (
+              <span className="text-rose-600 font-bold">⚠️ 統合対象のチャンピオンを1体以上追加してください</span>
+            ) : (
+              <span>対象: <strong className="text-stone-800">{currentChampions.join(', ')}</strong></span>
+            )}
+            {champSpecificCount > 0 && (
+              <span className="ml-2 text-amber-700 font-bold">
+                （固有知見 {champSpecificCount}件を追加統合）
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-2.5">
+            <button
+              type="button"
+              onClick={onCancel}
+              disabled={saving || reAnalyzing}
+              className="px-4 py-2.5 rounded-xl text-xs font-bold text-stone-500 hover:bg-stone-100 disabled:opacity-50 transition"
+            >
+              キャンセル
+            </button>
+            <button
+              type="button"
+              onClick={handleConfirm}
+              disabled={saving || reAnalyzing || currentChampions.length === 0}
+              className="px-6 py-2.5 rounded-xl text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white flex items-center gap-2 shadow-sm disabled:opacity-50 transition"
+            >
+              {saving ? <RefreshCw size={14} className="animate-spin" /> : <CheckCircle2 size={15} />}
+              <span>{saving ? '統合処理中...' : 'この内容で辞典・対面情報に統合する'}</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>

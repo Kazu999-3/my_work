@@ -190,6 +190,8 @@ export async function POST(req: Request) {
       sendLaneGeneralToLane,
       laneGeneralExcerpt,
       approvedMatchups,
+      approvedLaneGeneralInsights,
+      championSpecificInsights,
       trendDataOverrides,
     } = await req.json();
 
@@ -445,7 +447,70 @@ export async function POST(req: Request) {
       mergedNote += `／対面メモ${savedMatchupsCount}件を保存`;
     }
 
-    // 3. champion_notes にも直接dual-write（内部fetchのハング防止）
+    // 3. チャンピオン固有へ振り分けられた知見の辞典への書き込み
+    const specificInsights: Array<{ champion: string; title: string; summary: string }> =
+      Array.isArray(championSpecificInsights) ? championSpecificInsights : [];
+    let savedSpecificCount = 0;
+
+    for (const item of specificInsights) {
+      if (!item.champion || !item.summary) continue;
+      try {
+        const resolvedChamp = await resolveToRosterChampion(item.champion) || item.champion;
+        const insightHeader = `### 【固有知見】${item.title || '戦術メモ'}`;
+        const insightText = `${insightHeader}\n${item.summary}`;
+
+        // 1) champion_facts の strategy へ追記マージ
+        const { data: existingFact } = await supabase
+          .from('champion_facts')
+          .select('strategy')
+          .eq('champion', resolvedChamp)
+          .maybeSingle();
+
+        const currentStrategy = existingFact?.strategy || '';
+        if (!currentStrategy.includes(item.summary.trim())) {
+          const updatedStrategy = currentStrategy.trim()
+            ? `${currentStrategy.trim()}\n\n${insightText}`
+            : insightText;
+
+          await supabase
+            .from('champion_facts')
+            .upsert({
+              champion: resolvedChamp,
+              strategy: updatedStrategy,
+              updated_at: new Date().toISOString(),
+            }, { onConflict: 'champion' });
+
+          await recordRevision({
+            targetType: 'champion_fact',
+            targetKey: resolvedChamp,
+            field: 'strategy',
+            before: currentStrategy,
+            after: updatedStrategy,
+            sourceTitle: title,
+            sourceId: articleId,
+          });
+        }
+
+        // 2) champion_notes にも個別知見として保存
+        await supabase.from('champion_notes').insert({
+          champion: resolvedChamp,
+          source_article_id: articleId,
+          title: `【知見】${item.title || title}`,
+          body: item.summary,
+          source: 'article_specific_insight',
+        });
+
+        savedSpecificCount++;
+      } catch (specErr) {
+        console.warn(`[merge-article] チャンピオン固有知見保存失敗 (${item.champion}):`, specErr);
+      }
+    }
+
+    if (savedSpecificCount > 0) {
+      mergedNote += (mergedNote ? '／' : '') + `チャンピオン固有知見${savedSpecificCount}件を辞典に反映`;
+    }
+
+    // 4. champion_notes にも元記事を直接dual-write（内部fetchのハング防止）
     try {
       for (const champion of validChampions) {
         if (articleId != null) {
@@ -465,7 +530,7 @@ export async function POST(req: Request) {
       console.warn('[merge-article] champion_notesへのdual-write失敗:', dualErr);
     }
 
-    // 4. レーン一般論の統合
+    // 5. レーン一般論の統合（選択された知見のみを統合）
     if (sendLaneGeneralToLane && typeof laneGeneralExcerpt === 'string' && laneGeneralExcerpt.trim()) {
       try {
         await mergeContentIntoLane(sendLaneGeneralToLane, title, laneGeneralExcerpt, articleId);

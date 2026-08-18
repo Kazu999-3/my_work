@@ -11,6 +11,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import ChampSelect from '../../../components/ChampSelect';
 import { getFavorites, toggleFavoriteArticle } from '../../../components/FavoritesPanel';
 import ArticleRevisionHistory from './ArticleRevisionHistory';
+import { detectChampionsFromText } from '../../../lib/championDetection';
 import LibraryMergePreviewModal, {
   type MergePreviewItem,
   type LaneGeneralInsight,
@@ -36,6 +37,7 @@ export function LibraryTabContentInner() {
   const [champInput, setChampInput] = useState('');
   const [editKeywords, setEditKeywords] = useState('');
   const [saving, setSaving] = useState(false);
+  const [reAnalyzing, setReAnalyzing] = useState(false);
   // 記事保存時にチャンピオン辞典へマージする前のプレビュー(2026-08-16)
   const [mergePreview, setMergePreview] = useState<{
     previews: MergePreviewItem[];
@@ -49,6 +51,12 @@ export function LibraryTabContentInner() {
     editChampions: string[];
   } | null>(null);
   const [mergeConfirmSaving, setMergeConfirmSaving] = useState(false);
+
+  // 記事本文・タイトルから登場するチャンピオンを自動検出（未追加分のみ）
+  const detectedChampions = useMemo(() => {
+    if (!editing) return [];
+    return detectChampionsFromText(editTitle, editContent, editChampions);
+  }, [editing, editTitle, editContent, editChampions]);
   const [syncingAll, setSyncingAll] = useState(false);
   const [syncProgress, setSyncProgress] = useState<{ processed: number; total: number; synced: number } | null>(null);
   // ?q=... で検索語を渡せる（動画キューから「記事をタイトルで探す」で飛んでくる）
@@ -485,6 +493,59 @@ export function LibraryTabContentInner() {
     }
   };
 
+  /** チャンピオン辞典マージ前のプレビューをAPIから取得する */
+  const fetchMergePreview = async (champs: string[]) => {
+    if (!selectedArticle) return;
+    const res = await fetch('/api/admin/knowledge/merge-article', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        articleId: selectedArticle.id,
+        title: editTitle,
+        content: editContent,
+        editChampions: champs,
+        dryRun: true,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'プレビューの取得に失敗しました');
+
+    if (data.champions && data.champions.length > 0) {
+      setMergePreview({
+        previews: data.previews || [],
+        trendAnalyses: data.trendAnalyses || [],
+        matchupInsights: data.matchupInsights || [],
+        laneGeneralInsights: data.laneGeneralInsights || [],
+        detectedLane: data.detectedLane || 'COMMON',
+        articleId: selectedArticle.id,
+        title: editTitle,
+        content: editContent,
+        editChampions: data.champions,
+      });
+      return true;
+    }
+    return false;
+  };
+
+  /** プレビューモーダル内からチャンピオンが変更された時の再解析ハンドラ */
+  const handleReAnalyzeFromModal = async (newChamps: string[]) => {
+    if (!selectedArticle) return;
+    setReAnalyzing(true);
+    setEditChampions(newChamps);
+    try {
+      if (newChamps.length === 0) {
+        setMergePreview(prev => prev ? { ...prev, editChampions: [], previews: [], trendAnalyses: [], matchupInsights: [] } : null);
+        return;
+      }
+      await fetchMergePreview(newChamps);
+    } catch (err: any) {
+      showToast('再解析中にエラーが発生しました: ' + err.message, 'error');
+    } finally {
+      setReAnalyzing(false);
+    }
+  };
+
   const saveArticle = async () => {
     setSaving(true);
     const now = new Date().toISOString();
@@ -503,41 +564,13 @@ export function LibraryTabContentInner() {
     // --- チャンピオン辞典統合ロジック（複数チャンピオン対応）---
     // チャンピオンが1体以上指定されている場合は、即マージせずまずdryRunでプレビューを
     // 取得し、モーダルで確認してから実際の統合(mergeToChampionDict)を実行する
-    // (2026-08-16、「攻略ライブラリから保存した時にチャンピオン辞典割り振りする際の
-    // プレビューが出ない」への対応。この経路には従来プレビュー自体が存在しなかった)。
     if (editChampions.some(c => c.trim())) {
       try {
-        const res = await fetch('/api/admin/knowledge/merge-article', {
-          method: 'POST',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            articleId: selectedArticle.id,
-            title: editTitle,
-            content: editContent,
-            editChampions,
-            dryRun: true,
-          }),
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'プレビューの取得に失敗しました');
-
-        if (data.champions && data.champions.length > 0) {
-          setMergePreview({
-            previews: data.previews || [],
-            trendAnalyses: data.trendAnalyses || [],
-            matchupInsights: data.matchupInsights || [],
-            laneGeneralInsights: data.laneGeneralInsights || [],
-            detectedLane: data.detectedLane || 'COMMON',
-            articleId: selectedArticle.id,
-            title: editTitle,
-            content: editContent,
-            editChampions,
-          });
+        const hasPreview = await fetchMergePreview(editChampions);
+        if (hasPreview) {
           setSaving(false);
           return;
         }
-        // 有効なチャンピオンが無かった場合は下の汎用保存にフォールスルー
       } catch (err: any) {
         showToast('プレビュー取得中にエラーが発生しました: ' + err.message, 'error');
         setSaving(false);
@@ -569,21 +602,31 @@ export function LibraryTabContentInner() {
   };
 
   // プレビュー確認後、実際にチャンピオン辞典へ統合する。
-  // トレンド構造化項目、対面マッチアップメモ、レーン一般論をまとめて確定保存する。
+  // トレンド構造化項目、対面マッチアップメモ、レーン一般論、チャンピオン固有への振り分け知見をまとめて確定保存する。
   const confirmMergeToChampionDict = async ({
     sendToLane,
     approvedMatchups,
+    approvedLaneGeneralInsights,
+    championSpecificInsights,
     trendDataOverrides,
+    finalChampions,
   }: {
     sendToLane: string | null;
-    approvedMatchups: MatchupInsight[];
+    approvedMatchups: any[];
+    approvedLaneGeneralInsights?: any[];
+    championSpecificInsights?: any[];
     trendDataOverrides?: Record<string, Record<string, string>>;
+    finalChampions?: string[];
   }) => {
     if (!mergePreview) return;
     setMergeConfirmSaving(true);
+    const champsToMerge = finalChampions && finalChampions.length > 0 ? finalChampions : mergePreview.editChampions;
     try {
-      const laneGeneralExcerpt = sendToLane
-        ? mergePreview.laneGeneralInsights.map((i) => `## ${i.title}\n${i.summary}`).join('\n\n')
+      const laneInsights = Array.isArray(approvedLaneGeneralInsights)
+        ? approvedLaneGeneralInsights
+        : mergePreview.laneGeneralInsights;
+      const laneGeneralExcerpt = sendToLane && laneInsights.length > 0
+        ? laneInsights.map((i: any) => `## ${i.title}\n${i.summary}`).join('\n\n')
         : '';
       const res = await fetch('/api/admin/knowledge/merge-article', {
         method: 'POST',
@@ -593,10 +636,12 @@ export function LibraryTabContentInner() {
           articleId: mergePreview.articleId,
           title: mergePreview.title,
           content: mergePreview.content,
-          editChampions: mergePreview.editChampions,
+          editChampions: champsToMerge,
           sendLaneGeneralToLane: sendToLane,
           laneGeneralExcerpt,
           approvedMatchups,
+          approvedLaneGeneralInsights: laneInsights,
+          championSpecificInsights: championSpecificInsights || [],
           trendDataOverrides,
         }),
       });
@@ -735,7 +780,49 @@ export function LibraryTabContentInner() {
                   </div>
                   <div className="flex gap-4 flex-wrap">
                     <div className="flex-1 min-w-[200px]">
-                      <label className="text-xs text-violet-700 font-bold">チャンピオン（複数選択可）</label>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="text-xs text-violet-700 font-bold">チャンピオン（複数選択可）</label>
+                      </div>
+
+                      {/* 記事から自動検出されたチャンピオンの候補チップ */}
+                      {detectedChampions.length > 0 && (
+                        <div className="mb-2.5 p-2.5 bg-amber-50/80 border border-amber-200 rounded-xl space-y-1.5 animate-fade-in">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[11px] font-bold text-amber-900 flex items-center gap-1">
+                              <Sparkles size={12} className="text-amber-600" />
+                              記事から検出されたチャンピオン ({detectedChampions.length}体):
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const newChamps = detectedChampions.map(d => d.champion);
+                                setEditChampions(prev => Array.from(new Set([...prev, ...newChamps])));
+                              }}
+                              className="text-[10px] font-black text-amber-800 hover:text-amber-950 underline ml-2 cursor-pointer"
+                            >
+                              すべて追加
+                            </button>
+                          </div>
+                          <div className="flex flex-wrap gap-1.5">
+                            {detectedChampions.map(d => (
+                              <button
+                                key={d.champion}
+                                type="button"
+                                onClick={() => {
+                                  setEditChampions(prev => prev.includes(d.champion) ? prev : [...prev, d.champion]);
+                                }}
+                                className="inline-flex items-center gap-1 px-2 py-0.5 bg-white border border-amber-300 rounded-md text-[11px] font-bold text-stone-800 hover:bg-amber-100 hover:border-amber-400 transition shadow-2xs cursor-pointer"
+                                title={`出現: ${d.count}回 / マッチ表記: ${d.matchedAlias}${d.inTitle ? ' (タイトル内)' : ''}`}
+                              >
+                                <span>{d.champion}</span>
+                                <span className="text-[9px] text-amber-600 font-normal">({d.matchedAlias})</span>
+                                <span className="text-[10px] font-bold text-amber-600">＋</span>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
                       {/* 選択済みタグ */}
                       {editChampions.length > 0 && (
                         <div className="flex flex-wrap gap-1.5 mb-2">
@@ -936,7 +1023,10 @@ export function LibraryTabContentInner() {
           matchupInsights={mergePreview.matchupInsights}
           laneGeneralInsights={mergePreview.laneGeneralInsights}
           detectedLane={mergePreview.detectedLane}
+          currentChampions={mergePreview.editChampions}
           saving={mergeConfirmSaving}
+          reAnalyzing={reAnalyzing}
+          onReAnalyze={handleReAnalyzeFromModal}
           onConfirm={confirmMergeToChampionDict}
           onCancel={() => setMergePreview(null)}
         />

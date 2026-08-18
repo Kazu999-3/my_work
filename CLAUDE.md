@@ -51,32 +51,21 @@
 
 ## 🚨 3. 絶対遵守ルール (Strict Rules & Conventions)
 
-全ての作業において、以下の規約を**例外なく厳守**してください。
+全ての作業において、以下の規約を**例外なく厳守**してください（各項目の詳細は `.claude/rules/` 配下）。
 
-### ① コミュニケーション ＆ 言語
-- 原則として**すべて日本語**で応答・思考・コメント・タスク表示を行ってください。
-- ユーザーに報告・提案する際は、親しみやすく論理的な説明を心がけてください。
-
-### ② 作業前の確認 (y/n 原則)
-- ファイルの作成・変更・削除、管理者権限コマンドや破壊的操作を行う前には、**必ず作業計画を報告し「y/n」でユーザー確認を取ってください**。
-- ※`ls`, `cat`, `grep` などの非破壊的な読み取り・調査操作は即時実行して構いません。
-
-### ③ トーン＆マナー（AI臭さの排除）
-- note 記事や SNS 投稿、ユーザー向け文章では**「王」「王国」「～の舞」「～の調べ」などのポエミーな比喩表現を一切禁止**します。
-- 語尾や文面はフラットで自然な人間らしい文章を作成してください。
-
-### ④ データベース (Supabase) 操作ルール
-- `ktm_players` などの PostgreSQL Identity 列（`GENERATED ALWAYS AS IDENTITY`）に主キー ID を指定して insert/upsert しないでください（`cannot insert a non-DEFAULT value into column "id"` エラー防止）。更新時は ID を指定した個別 `update` を使用してください。
-- 新しいテーブルをAPIルート経由で公開する際は、RLSを`USING (true)`のまま放置しない（`04_PORTAL/CLAUDE.md`のセキュリティチェックリスト参照）。
-
-### ⑤ UI メッセージ表現規約
-- 正常終了時や成功メッセージの通知は、琥珀色（警告色）ではなく、**エメラルドグリーン（`bg-emerald-950/30 text-emerald-400 border-emerald-800/60`）** を使用してください。
+@.claude/rules/language.md
+@.claude/rules/confirmation.md
+@.claude/rules/writing-tone.md
+@.claude/rules/database.md
+@.claude/rules/ui-conventions.md
 
 **`04_PORTAL` (Next.js) 固有のルール（インポートパス制限等）は `04_PORTAL/CLAUDE.md` を参照してください。** 04_PORTAL内で作業する際は自動的に読み込まれます。
 
 ---
 
 ## 💻 4. コマンドリファレンス (Command Reference)
+
+下記3つは `.claude/commands/` にスラッシュコマンド化済みです（`/dev-portal` `/dev-api` `/dev-edge`）。
 
 ### 🌐 ポータル (Next.js Web Portal)
 ```bash
