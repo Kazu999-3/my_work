@@ -21,25 +21,27 @@ interface SoloQReflectionModalProps {
   onSaved?: () => void;
 }
 
-// 勝敗に合わせたプリセットタグ
+// JG目線に特化した勝敗プリセットタグ
 const WIN_TAGS = [
-  'CSアドバンテージ',
-  '視界コントロール',
-  '集団戦のフォーカス',
-  'オブジェクト関与',
-  'レーンソロキル',
-  'マクロ判断が成功',
-  'カウンタービルド',
+  '勝ち筋レーン集中ガンク',
+  'オブジェクト完全掌握',
+  'カウンターガンク成功',
+  '敵JG妨害・インベード成功',
+  'ルート最適化・テンポ圧倒',
+  '視界支配・デワード徹底',
+  '集団戦エンゲージ・ピール成功',
 ];
 
 const LOSE_TAGS = [
-  'レーン戦のミス',
-  '無理なローム',
-  '視界管理不足',
-  'ティルト・集中力低下',
-  '連戦疲労',
-  'キャッチされた',
-  '集団戦のフォーカスミス',
+  '寄れないサイドの無理なガンク',
+  '崩壊レーン救援で2v2負け',
+  '敵JG位置予測ミス・逆ガンク被弾',
+  'オブジェクト判断・トレードミス',
+  'ファーム遅れ・テンポロス',
+  '1500G+抱え落ち・リコール遅れ',
+  'インベード被弾・視界管理不足',
+  '集団戦ポジショニング・孤立死',
+  'ティルト・判断の焦り',
 ];
 
 export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQReflectionModalProps) {
@@ -64,6 +66,17 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
   
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+
+  // フォームの入力項目をまっさらに初期化する（過去の入力を残さない）
+  const resetFormState = () => {
+    setLaneResult(null);
+    setMentalRating(3);
+    setSelectedTags([]);
+    setReflectionNote('');
+    setMatchupMemo('');
+    setNextFocusPoint('');
+    setChatQuestion('');
+  };
 
   // AI自動分析(coach_analyses)の結果キャッシュ。試合(matchId)ごとに1回だけ確認し、
   // タブ切替のたびに再取得しないようにする。見つからない場合は明示的なボタンで
@@ -96,46 +109,18 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
     } catch {}
   };
 
-  // 1. 初回マウント時・モーダルオープン時に localStorage から Riot ID および入力下書きを自動ロード
-  const [draftRestored, setDraftRestored] = useState(false);
-
+  // 1. 初回マウント時・モーダルオープン時に Riot ID のみロードし、フォームは常にクリーンに初期化
   useEffect(() => {
     if (isOpen) {
+      resetFormState();
       fetchSavedMatchIds();
       const savedIgn = localStorage.getItem('soloq_riot_id') || '';
       if (savedIgn) {
         setIgn(savedIgn);
         fetchMatches(savedIgn);
       }
-
-      // 下書きの復元
-      try {
-        const draftJson = localStorage.getItem('soloq_reflection_draft');
-        if (draftJson) {
-          const draft = JSON.parse(draftJson);
-          if (draft.reflectionNote) setReflectionNote(draft.reflectionNote);
-          if (draft.matchupMemo) setMatchupMemo(draft.matchupMemo);
-          if (draft.nextFocusPoint) setNextFocusPoint(draft.nextFocusPoint);
-          setDraftRestored(true);
-        }
-      } catch {}
-    } else {
-      setDraftRestored(false);
     }
   }, [isOpen]);
-
-  // 入力中に自動下書き保存
-  useEffect(() => {
-    if (!isOpen) return;
-    if (reflectionNote || matchupMemo || nextFocusPoint) {
-      try {
-        localStorage.setItem(
-          'soloq_reflection_draft',
-          JSON.stringify({ reflectionNote, matchupMemo, nextFocusPoint })
-        );
-      } catch {}
-    }
-  }, [isOpen, reflectionNote, matchupMemo, nextFocusPoint]);
 
   // 選択中の試合について、AI自動分析(coach_analyses)が既にあるか安価に確認する。
   // Gemini呼び出しを伴わない読み取りのみなので、選択が変わるたびに自動実行してよい。
@@ -189,8 +174,7 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
 
       setMatches(data.matches || []);
       setSelectedIndex(0);
-      setSelectedTags([]); // マッチ切替時タグ初期化
-      setLaneResult(null);
+      resetFormState();
     } catch (err: any) {
       setMatchError(err.message);
     } finally {
@@ -201,6 +185,12 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
   const handleManualFetch = (e: React.FormEvent) => {
     e.preventDefault();
     fetchMatches(ign);
+  };
+
+  const handleSelectMatch = (idx: number) => {
+    if (idx === selectedIndex) return;
+    setSelectedIndex(idx);
+    resetFormState();
   };
 
   const currentMatch = matches[selectedIndex] || null;
@@ -328,7 +318,6 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
 
       setSaveSuccess(true);
       try {
-        localStorage.removeItem('soloq_reflection_draft');
         if (nextFocusPoint) {
           localStorage.setItem('today_soloq_focus', nextFocusPoint);
           window.dispatchEvent(new Event('storage'));
@@ -425,7 +414,7 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
                     <button
                       type="button"
                       key={m.matchId || idx}
-                      onClick={() => setSelectedIndex(idx)}
+                      onClick={() => handleSelectMatch(idx)}
                       className={`w-full p-2.5 rounded-lg border text-left flex items-center justify-between transition-all ${
                         isSelected
                           ? 'border-amber-500 bg-amber-50/90 ring-2 ring-amber-500/40 shadow-sm'
@@ -717,14 +706,14 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
               </span>
               <div className="flex flex-wrap gap-1.5">
                 {[
-                  { label: '🌊 寄れないサイドのスカトル無理争奪', tag: 'ガンク判断ミス' },
-                  { label: '💰 1500G抱え落ちでオブジェクト突入', tag: 'リコールタイミング' },
-                  { label: '👁️ 敵JG位置予測ミス（逆展開不可）', tag: 'オブジェクト意識不足' },
-                  { label: '💀 崩壊レーン救援で2v2ダブルキル', tag: 'ガンク判断ミス' },
-                  { label: '🛡️ インベード警戒ワード不足', tag: '視界管理不足' },
-                  { label: '👾 オブジェクト判断遅れ（トレード失敗）', tag: 'オブジェクト意識不足' },
-                  { label: '👑 勝ち筋レーン集中ガンクで勝利', tag: 'ガンク成功' },
-                  { label: '🐉 1分前リコールからドラゴン確保', tag: 'オブジェクト管理' },
+                  { label: '🌊 寄れないサイドのスカトル無理争奪', tag: '寄れないサイドの無理なガンク' },
+                  { label: '💰 1500G抱え落ちでオブジェクト突入', tag: '1500G+抱え落ち・リコール遅れ' },
+                  { label: '👁️ 敵JG位置予測ミス（逆展開不可）', tag: '敵JG位置予測ミス・逆ガンク被弾' },
+                  { label: '💀 崩壊レーン救援で2v2ダブルキル', tag: '崩壊レーン救援で2v2負け' },
+                  { label: '🛡️ インベード警戒ワード不足', tag: 'インベード被弾・視界管理不足' },
+                  { label: '👾 オブジェクト判断遅れ（トレード失敗）', tag: 'オブジェクト判断・トレードミス' },
+                  { label: '👑 勝ち筋レーン集中ガンクで勝利', tag: '勝ち筋レーン集中ガンク' },
+                  { label: '🐉 1分前リコールからドラゴン確保', tag: 'オブジェクト完全掌握' },
                 ].map((item) => (
                   <button
                     type="button"
