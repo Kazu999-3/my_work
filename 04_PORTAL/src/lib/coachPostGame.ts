@@ -15,6 +15,7 @@ import { getChampionSearchVariations } from './championNames';
 import { getChampionKnowledge } from './championKnowledge';
 import { callGeminiWithRetry } from './geminiClient';
 import { analyzeSpatialContext, SpatialEvent } from './mapCoordinates';
+import { getPlayerStylePromptContext } from './playerStyleProfile';
 
 async function callGemini(prompt: string, cacheKey?: string): Promise<string> {
   return callGeminiWithRetry(prompt, {
@@ -461,6 +462,8 @@ export async function runPostGameReview(opts: { matchId?: string; focus?: string
 ・勝敗: ${me.win ? '✅ 勝利' : '❌ 敗北'}
 ・KDA: ${me.kills}/${me.deaths}/${me.assists} (比率: ${kda}) | ダメージ: ${me.damageDealtToChampions.toLocaleString()}
 ・CS/min: ${csPerMin} (JG基準: 5.5〜6.5/min) | Vision/min: ${visionPerMin} (JG目標: 0.8以上)
+
+${getPlayerStylePromptContext()}
 
 【弱点・課題特定】
 ${weaknesses.length > 0 ? weaknesses.map((w) => `・${w}`).join('\n') : '・特になし'}

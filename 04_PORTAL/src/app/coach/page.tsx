@@ -13,6 +13,7 @@ import Collapsible from '../../components/Collapsible';
 import FocusStickyBar from '../../components/coach/FocusStickyBar';
 import JgMatchupPredictor from '../../components/coach/JgMatchupPredictor';
 import JgSkillMasteryChecklist from '../../components/coach/JgSkillMasteryChecklist';
+import PlayerStyleRadarCard from '../../components/coach/PlayerStyleRadarCard';
 
 // ============================
 // 型定義
@@ -1657,6 +1658,9 @@ export default function CoachPage() {
         {/* MySoloQDashboard/PostGameTab/TrendsTab/GoalTab/TiltTabはいずれもマウント時に
             一度きりのfetchのみ(継続ポーリング無し)のため、常時マウントしてCSSで表示切替する。 */}
         <div className={activeStepTab === 'postgame' ? 'space-y-6 animate-in' : 'hidden'}>
+            {/* 📊 your.gg連動 プレイスタイル特性カルテ */}
+            <PlayerStyleRadarCard />
+
             {/* 📋 ふつぐ式 JGステップアップ習熟度チェックリスト */}
             <JgSkillMasteryChecklist />
 
