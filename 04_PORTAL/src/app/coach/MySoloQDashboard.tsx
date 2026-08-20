@@ -104,20 +104,72 @@ export default function MySoloQDashboard({ refreshSignal }: { refreshSignal?: nu
     return count;
   })();
 
+  // クールダウンタイマー状態 (秒)
+  const [dashboardCooldownSec, setDashboardCooldownSec] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (dashboardCooldownSec === null || dashboardCooldownSec <= 0) return;
+    const timer = setInterval(() => {
+      setDashboardCooldownSec((prev) => (prev === null || prev <= 1 ? 0 : prev - 1));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [dashboardCooldownSec]);
+
+  const startCooldown = (mins: number) => {
+    setDashboardCooldownSec(mins * 60);
+  };
+
+  const formatTimer = (sec: number) => {
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    return `${m}分${s < 10 ? '0' : ''}${s}秒`;
+  };
+
   return (
     <div className="space-y-4">
-      {/* ⚠️ 連敗検知時のAIメンタルクールダウン安全装置 */}
-      {consecutiveLosses >= 3 && (
-        <div className="bg-rose-500/10 border-2 border-rose-400 rounded-2xl p-4 text-stone-900 shadow-md flex items-center justify-between flex-wrap gap-3 animate-pulse">
-          <div className="flex items-center gap-3">
-            <span className="text-2xl">⚠️</span>
-            <div>
-              <div className="font-extrabold text-rose-900 text-sm">
-                現在 {consecutiveLosses} 連敗中！ AIメンタルクールダウン推奨
+      {/* 🛑 連敗検知時のAI連敗ストッパー安全装置 */}
+      {consecutiveLosses >= 2 && (
+        <div
+          className={`rounded-2xl p-4.5 text-stone-900 shadow-lg border-2 transition-all ${
+            consecutiveLosses >= 3
+              ? 'bg-rose-50 border-rose-500 shadow-rose-500/10 animate-pulse'
+              : 'bg-amber-50 border-amber-500 shadow-amber-500/10'
+          }`}
+        >
+          <div className="flex items-start justify-between flex-wrap gap-3">
+            <div className="flex items-start gap-3">
+              <span className="text-3xl">{consecutiveLosses >= 3 ? '🛑' : '⚠️'}</span>
+              <div>
+                <div className={`font-black text-sm flex items-center gap-2 ${consecutiveLosses >= 3 ? 'text-rose-900' : 'text-amber-900'}`}>
+                  <span>{consecutiveLosses >= 3 ? `現在 ${consecutiveLosses} 連敗中！ 本日はここでランク終了を推奨` : '現在 2連敗中！ 15分間のクールダウン推奨'}</span>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-white border">
+                    JG安全装置発動
+                  </span>
+                </div>
+                <p className={`text-xs mt-1 leading-relaxed ${consecutiveLosses >= 3 ? 'text-rose-800' : 'text-amber-800'}`}>
+                  JGは判断力とメンタルが試合の8割を握ります。連敗中の連続プレイは勝率が平均35%以下に急落します。
+                  {consecutiveLosses >= 3 ? ' 本日のランク戦はここで終了し、リプレイ確認かノーマルに切り替えてください。' : ' 最低15分はキューを入れず、水分補給か散歩を挟みましょう。'}
+                </p>
               </div>
-              <p className="text-xs text-rose-800/80 mt-0.5">
-                熱くなった状態での連戦は勝率が平均35%低下します。15分間の離脱・休憩をおすすめします。
-              </p>
+            </div>
+
+            {/* タイマー操作ボタン */}
+            <div className="flex items-center gap-2">
+              {dashboardCooldownSec !== null ? (
+                <div className="bg-stone-900 text-white px-3.5 py-1.5 rounded-xl font-mono text-xs font-bold flex items-center gap-1.5 shadow">
+                  <span>⏱️ 休憩残:</span>
+                  <span className="text-amber-300 font-black">{dashboardCooldownSec > 0 ? formatTimer(dashboardCooldownSec) : '✅ 休憩完了！'}</span>
+                </div>
+              ) : (
+                <button
+                  onClick={() => startCooldown(consecutiveLosses >= 3 ? 30 : 15)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold text-white transition shadow-sm ${
+                    consecutiveLosses >= 3 ? 'bg-rose-600 hover:bg-rose-700' : 'bg-amber-600 hover:bg-amber-700'
+                  }`}
+                >
+                  ⏱️ {consecutiveLosses >= 3 ? '30分' : '15分'} クールダウン開始
+                </button>
+              )}
             </div>
           </div>
         </div>

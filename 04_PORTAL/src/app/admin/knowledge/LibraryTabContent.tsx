@@ -511,7 +511,7 @@ export function LibraryTabContentInner() {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'プレビューの取得に失敗しました');
 
-    if (data.champions && data.champions.length > 0) {
+    if (data.success && ((data.champions && data.champions.length > 0) || (data.laneGeneralInsights && data.laneGeneralInsights.length > 0) || (data.matchupInsights && data.matchupInsights.length > 0))) {
       setMergePreview({
         previews: data.previews || [],
         trendAnalyses: data.trendAnalyses || [],
@@ -521,7 +521,7 @@ export function LibraryTabContentInner() {
         articleId: selectedArticle.id,
         title: editTitle,
         content: editContent,
-        editChampions: data.champions,
+        editChampions: data.champions || [],
       });
       return true;
     }
@@ -534,10 +534,6 @@ export function LibraryTabContentInner() {
     setReAnalyzing(true);
     setEditChampions(newChamps);
     try {
-      if (newChamps.length === 0) {
-        setMergePreview(prev => prev ? { ...prev, editChampions: [], previews: [], trendAnalyses: [], matchupInsights: [] } : null);
-        return;
-      }
       await fetchMergePreview(newChamps);
     } catch (err: any) {
       showToast('再解析中にエラーが発生しました: ' + err.message, 'error');
@@ -652,8 +648,11 @@ export function LibraryTabContentInner() {
       if (!res.ok) throw new Error(data.error || '辞典への統合に失敗しました');
 
       if (data.merged) {
-        const champLabel = data.champions.length > 1 ? `${data.champions.join(', ')} (${data.champions.length}体)` : data.champions[0];
-        showToast(`【統合完了】${champLabel} のチャンピオン辞典にマージ${data.mergedNote || ''}し、ライブラリから削除しました！`, 'success');
+        const champLabel = data.champions && data.champions.length > 0
+          ? (data.champions.length > 1 ? `${data.champions.join(', ')} (${data.champions.length}体)` : data.champions[0])
+          : 'レーン別ガイド';
+        const actionLabel = data.champions && data.champions.length > 0 ? 'のチャンピオン辞典' : '';
+        showToast(`【統合完了】${champLabel}${actionLabel}にマージ${data.mergedNote || ''}し、ライブラリから削除しました！`, 'success');
         setArticles(prev => prev.filter(a => String(a.id) !== String(mergePreview.articleId)));
         setSelectedArticle(null);
         setEditing(false);

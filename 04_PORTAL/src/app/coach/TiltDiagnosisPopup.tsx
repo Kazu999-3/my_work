@@ -21,9 +21,24 @@ export default function TiltDiagnosisPopup({ isOpen, isWin, onClose, onProceedTo
   const [error, setError] = useState('');
   const [isDetoxOpen, setIsDetoxOpen] = useState(false);
 
+  // クールダウンタイマー状態 (秒)
+  const [cooldownSec, setCooldownSec] = useState<number | null>(null);
+
   // 1秒直感チェックおよびコメントの状態
   const [quickChoice, setQuickChoice] = useState<QuickChoiceOption | null>(null);
   const [inputText, setInputText] = useState('');
+
+  // クールダウンカウントダウン
+  useEffect(() => {
+    if (cooldownSec === null || cooldownSec <= 0) return;
+    const interval = setInterval(() => {
+      setCooldownSec((prev) => {
+        if (prev === null || prev <= 1) return 0;
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [cooldownSec]);
 
   const runAnalysis = async (choice?: QuickChoiceOption, textVal?: string) => {
     setLoading(true);
@@ -41,6 +56,9 @@ export default function TiltDiagnosisPopup({ isOpen, isWin, onClose, onProceedTo
         redirectOn401: false,
       });
       setResult(data);
+      if (data?.playRecommendation?.cooldownMinutes && cooldownSec === null) {
+        setCooldownSec(data.playRecommendation.cooldownMinutes * 60);
+      }
     } catch (e: any) {
       setError(e.message);
     } finally {
@@ -53,12 +71,12 @@ export default function TiltDiagnosisPopup({ isOpen, isWin, onClose, onProceedTo
     setQuickChoice(null);
     setInputText('');
     setResult(null);
+    setCooldownSec(null);
     runAnalysis();
   }, [isOpen]);
 
   const handleSelectChoice = (choice: QuickChoiceOption) => {
     setQuickChoice(choice);
-    // AI応答待機前にローカルで即座に暫定スコアを計算して描画反映 (ゼロレイテンシー化)
     const { calculateIntegratedTiltScore } = require('../../lib/tiltBlameDetector');
     const localResult = calculateIntegratedTiltScore({
       quickChoice: choice,
@@ -84,16 +102,25 @@ export default function TiltDiagnosisPopup({ isOpen, isWin, onClose, onProceedTo
   const tilt = result?.tilt;
   const timing = result?.timing;
   const rec = result?.playRecommendation;
+  const streak = result?.streakAnalysis;
   const integrated: BlameCheckResult | undefined = result?.integratedResult;
 
   const blameScore = integrated?.blameScore ?? 0;
   const calmScore = integrated?.calmScore ?? 50;
   const isHighBlame = blameScore >= 70;
 
+  const isStopRecommended = rec?.level === 'red' || (streak?.streakType === 'loss' && streak.currentStreak >= 2);
+
   const tiltColors: Record<Level, string> = {
     green: 'border-emerald-300 bg-emerald-50',
     yellow: 'border-yellow-300 bg-yellow-50',
     red: 'border-red-300 bg-red-50',
+  };
+
+  const formatTimer = (sec: number) => {
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    return `${m}分${s < 10 ? '0' : ''}${s}秒`;
   };
 
   return (
@@ -104,7 +131,7 @@ export default function TiltDiagnosisPopup({ isOpen, isWin, onClose, onProceedTo
           <div className="bg-amber-900 text-amber-50 px-5 py-3.5 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="text-xl">🧠</span>
-              <h2 className="text-base font-bold">試合終了：メンタル＆ティルト高精度診断</h2>
+              <h2 className="text-base font-bold">ソロQ安全装置：ティルト＆連敗やめ時診断</h2>
             </div>
             <button
               onClick={onClose}
@@ -114,11 +141,51 @@ export default function TiltDiagnosisPopup({ isOpen, isWin, onClose, onProceedTo
             </button>
           </div>
 
-          <div className="p-5 space-y-5 text-sm text-stone-800 max-h-[75vh] overflow-y-auto">
+          <div className="p-5 space-y-4 text-sm text-stone-800 max-h-[75vh] overflow-y-auto">
+            {/* 🛑 連敗ストッパー・やめ時強力警告カード */}
+            {isStopRecommended && (
+              <div className="bg-gradient-to-r from-red-600 to-rose-700 text-white p-4 rounded-xl shadow-lg border border-red-500 space-y-2.5 animate-pulse">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-black bg-white/20 px-2 py-0.5 rounded tracking-wide uppercase">
+                    🛑 STOP STREAK 警告
+                  </span>
+                  {streak?.currentStreak && streak.streakType === 'loss' && (
+                    <span className="text-xs font-black bg-black/30 px-2.5 py-0.5 rounded-full">
+                      現在 {streak.currentStreak} 連敗中
+                    </span>
+                  )}
+                </div>
+
+                <div className="font-extrabold text-sm leading-snug">
+                  {rec?.label || '🛑 今はキューを入れず、一旦ゲームから離れてください！'}
+                </div>
+
+                <p className="text-xs text-red-100 leading-relaxed">
+                  JGの判断ミスは全レーンに波及します。連敗中の連続プレイは期待勝率が
+                  <strong className="text-white underline ml-1">
+                    {rec?.expectedWinRate ? `${rec.expectedWinRate}%` : '約35%'} に低下
+                  </strong>
+                  します。
+                </p>
+
+                {/* クールダウンタイマー */}
+                {cooldownSec !== null && (
+                  <div className="bg-black/30 p-2.5 rounded-lg flex items-center justify-between text-xs">
+                    <span className="font-bold flex items-center gap-1">
+                      ⏱️ 推奨クールダウン残:
+                    </span>
+                    <span className="font-mono font-black text-sm text-amber-300">
+                      {cooldownSec > 0 ? formatTimer(cooldownSec) : '✅ クールダウン完了！'}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Step 1: 1秒直感チェック */}
             <div className="bg-white p-4 rounded-xl border border-stone-200 shadow-sm">
               <h3 className="font-extrabold text-xs text-stone-700 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
-                <span>⚡ Step 1: 1秒直感チェック</span>
+                <span>⚡ Step 1: 1秒直感チェック (JG視点)</span>
                 <span className="text-[10px] text-stone-400 font-normal">（直感で選択）</span>
               </h3>
               <p className="text-xs text-stone-600 mb-3 font-semibold">

@@ -64,21 +64,52 @@ export interface PlayRecommendation {
   level: 'green' | 'yellow' | 'red';
   label: string;
   reasons: string[];
+  cooldownMinutes?: number;
+  expectedWinRate?: number | null;
+  stopStreakTriggered?: boolean;
 }
 
-/** ティルト診断＋時間帯勝率を踏まえた「次の試合に行くべきか」の統合判定。 */
+/** ティルト診断＋時間帯勝率＋連敗ストッパーを踏まえた「次の試合に行くべきか」の統合判定。 */
 export function buildPlayRecommendation(
-  tilt: { level: 'green' | 'yellow' | 'red' },
-  timing: TimingContext
+  tilt: { level: 'green' | 'yellow' | 'red'; score?: number },
+  timing: TimingContext,
+  streakInfo?: {
+    currentStreak: number;
+    streakType: 'win' | 'loss' | null;
+    overallWinRate?: number;
+    afterLossWinRate?: number | null;
+  }
 ): PlayRecommendation {
   const reasons: string[] = [];
   let level: 'green' | 'yellow' | 'red' = 'green';
+  let cooldownMinutes = 0;
+  let stopStreakTriggered = false;
 
   const timingLabel = timing.scope === 'hour' ? `${timing.dayLabel}曜${timing.hour}時台` : `${timing.dayLabel}曜全体`;
+  const lossStreak = streakInfo?.streakType === 'loss' ? streakInfo.currentStreak : 0;
+
+  // 連敗ストッパー判定（最優先）
+  if (lossStreak >= 3) {
+    level = 'red';
+    stopStreakTriggered = true;
+    cooldownMinutes = 30;
+    reasons.push(`現在${lossStreak}連敗中（ティルト・判断力低下リスク極大）`);
+  } else if (lossStreak === 2) {
+    level = 'yellow';
+    stopStreakTriggered = true;
+    cooldownMinutes = 15;
+    reasons.push('現在2連敗中（連敗スパイラル警戒）');
+  }
+
+  if (streakInfo?.afterLossWinRate !== null && streakInfo?.afterLossWinRate !== undefined && streakInfo.afterLossWinRate < 40 && lossStreak >= 1) {
+    if (level !== 'red' && lossStreak >= 2) level = 'red';
+    reasons.push(`敗北直後の次戦勝率が ${streakInfo.afterLossWinRate}% と大幅に低下する傾向`);
+  }
 
   if (tilt.level === 'red') {
     level = 'red';
-    reasons.push('ティルトスコアが高い');
+    if (!cooldownMinutes) cooldownMinutes = 20;
+    reasons.push('ティルト・他罰感情スコアが高い');
   }
   if (timing.winRate !== null && timing.winRate < 40) {
     level = 'red';
@@ -88,7 +119,8 @@ export function buildPlayRecommendation(
   if (level !== 'red') {
     if (tilt.level === 'yellow') {
       level = 'yellow';
-      reasons.push('やや調子が落ちている');
+      if (!cooldownMinutes) cooldownMinutes = 10;
+      reasons.push('やや集中力・冷静度が低下');
     }
     if (timing.winRate !== null && timing.winRate < 50) {
       level = 'yellow';
@@ -96,10 +128,13 @@ export function buildPlayRecommendation(
     }
   }
 
+  const expectedWinRate = streakInfo?.afterLossWinRate ?? timing.winRate ?? (level === 'red' ? 35 : level === 'yellow' ? 45 : 55);
+
   const label =
-    level === 'red' ? '🛑 今は一旦離れた方がよさそう' :
-    level === 'yellow' ? '⚠️ 注意しつつ続けるならOK' :
+    level === 'red' ? '🛑 今は一旦離れてクールダウン推奨' :
+    level === 'yellow' ? '⚠️ 10〜15分休憩を挟んでから再開推奨' :
     '✅ このまま続けてOK';
 
-  return { level, label, reasons };
+  return { level, label, reasons, cooldownMinutes, expectedWinRate, stopStreakTriggered };
 }
+

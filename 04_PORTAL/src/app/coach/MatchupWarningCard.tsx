@@ -13,7 +13,12 @@ export default function MatchupWarningCard({ champion, enemyChampion }: MatchupW
     champion: string;
     enemyChampion: string;
     memo: string | null;
-    laneRecord: { wins: number; evens: number; losses: number; total: number } | null;
+    laneRecord: { wins: number; evens: number; losses: number; total: number; gameWinRate?: number } | null;
+    personalDossier?: {
+      totalMatches: number;
+      recentMatches: { matchId: string; champion: string; win: boolean; laneResult: string; kda: string; memo: string; createdAt: string }[];
+      frequentTags: string[];
+    } | null;
     lastUpdatedAt?: string;
   } | null>(null);
 
@@ -26,7 +31,15 @@ export default function MatchupWarningCard({ champion, enemyChampion }: MatchupW
   } | null>(null);
 
   const [loading, setLoading] = useState(false);
+  const [isHudOpen, setIsHudOpen] = useState(false);
+  const [todayFocus, setTodayFocus] = useState('');
   const requestIdRef = useRef(0);
+
+  useEffect(() => {
+    try {
+      setTodayFocus(localStorage.getItem('today_soloq_focus') || localStorage.getItem('coach_focus') || '');
+    } catch {}
+  }, [isHudOpen]);
 
   useEffect(() => {
     if (!enemyChampion) {
@@ -116,18 +129,27 @@ export default function MatchupWarningCard({ champion, enemyChampion }: MatchupW
         </div>
       )}
 
-      {/* 🛡️ 対面クイックカウンターカード (SSOT 正本連動) */}
+      {/* 🛡️ 対面クイックカウンターカード (SSOT 正本連動) ＆ HUDカンペボタン */}
       <div className="bg-gradient-to-r from-stone-900 via-stone-800 to-stone-900 text-stone-100 border border-stone-700 rounded-2xl p-4 shadow-md space-y-3">
-        <div className="flex items-center justify-between border-b border-stone-700/80 pb-2.5">
+        <div className="flex items-center justify-between border-b border-stone-700/80 pb-2.5 flex-wrap gap-2">
           <div className="flex items-center gap-2">
             <Target className="w-5 h-5 text-amber-400" />
             <h3 className="font-black text-sm text-white">
               🛡️ 対面 {enemyChampion} クイックカウンターカード
             </h3>
           </div>
-          <span className="text-[9px] font-bold px-2 py-0.5 bg-amber-400/20 text-amber-300 border border-amber-400/40 rounded-full">
-            SSOT正本データ連動
-          </span>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setIsHudOpen(true)}
+              className="px-3 py-1 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white font-extrabold text-xs rounded-lg shadow transition flex items-center gap-1.5 active:scale-95"
+            >
+              <span>📱</span> ロード中HUDカンペ
+            </button>
+            <span className="text-[9px] font-bold px-2 py-0.5 bg-amber-400/20 text-amber-300 border border-amber-400/40 rounded-full">
+              SSOT正本連動
+            </span>
+          </div>
         </div>
 
         {loading ? (
@@ -175,6 +197,143 @@ export default function MatchupWarningCard({ champion, enemyChampion }: MatchupW
           </p>
         )}
       </div>
+
+      {/* 📂 対面 {enemyChampion} とのパーソナル対戦カルテ（過去全ログ） */}
+      {warning?.personalDossier && warning.personalDossier.recentMatches.length > 0 && (
+        <div className="bg-white border border-stone-200 rounded-xl p-3.5 space-y-2.5 shadow-sm">
+          <div className="flex items-center justify-between flex-wrap gap-1 border-b border-stone-100 pb-2">
+            <h4 className="font-extrabold text-stone-800 text-xs flex items-center gap-1.5">
+              <span>📂</span> あなたの対 {enemyChampion} 個人カルテ（過去{warning.personalDossier.totalMatches}戦）
+            </h4>
+            {warning.laneRecord?.gameWinRate !== undefined && (
+              <span className={`text-[10px] font-black px-2 py-0.5 rounded-full border ${
+                warning.laneRecord.gameWinRate >= 50
+                  ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                  : 'bg-rose-100 text-rose-800 border-rose-300'
+              }`}>
+                総合勝率 {warning.laneRecord.gameWinRate}%
+              </span>
+            )}
+          </div>
+
+          {/* 頻出タグ */}
+          {warning.personalDossier.frequentTags.length > 0 && (
+            <div className="flex items-center gap-1.5 flex-wrap text-xs">
+              <span className="text-[10px] font-bold text-stone-400">よくある敗因/勝因:</span>
+              {warning.personalDossier.frequentTags.map((tag, i) => (
+                <span key={i} className="text-[10px] bg-stone-100 text-stone-700 px-2 py-0.5 rounded-full border border-stone-200 font-semibold">
+                  🏷️ {tag}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* 直近の戦歴リスト */}
+          <div className="space-y-1.5 max-h-36 overflow-y-auto pr-1">
+            {warning.personalDossier.recentMatches.map((m, i) => (
+              <div key={i} className="bg-stone-50 p-2 rounded-lg border border-stone-200 text-xs flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <span className={`font-black text-[10px] px-1.5 py-0.5 rounded ${
+                    m.win ? 'bg-emerald-600 text-white' : 'bg-rose-600 text-white'
+                  }`}>
+                    {m.win ? 'WIN' : 'LOSE'}
+                  </span>
+                  <span className="font-bold text-stone-800">{m.champion}</span>
+                  <span className="text-stone-400 font-mono text-[11px]">KDA: {m.kda}</span>
+                </div>
+                {m.memo && (
+                  <span className="text-[10px] text-stone-500 truncate max-w-[200px]" title={m.memo}>
+                    📝 {m.memo}
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* 📱 ロード画面専用 HUDカンペモーダル (Compact Overlay) */}
+      {isHudOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in">
+          <div className="bg-stone-950 border-2 border-amber-500/80 rounded-3xl shadow-2xl w-full max-w-lg p-6 text-stone-100 space-y-4">
+            {/* HUDヘッダー */}
+            <div className="flex items-center justify-between border-b border-stone-800 pb-3">
+              <div className="flex items-center gap-2">
+                <span className="text-2xl animate-pulse">⚡</span>
+                <div>
+                  <h2 className="text-base font-black text-amber-400 tracking-wider uppercase">
+                    HUD 戦闘ブリーフィング
+                  </h2>
+                  <p className="text-[11px] text-stone-400 font-mono">
+                    {champion || 'YOU'} vs <strong className="text-white text-xs">{enemyChampion}</strong>
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsHudOpen(false)}
+                className="px-3 py-1 bg-stone-800 hover:bg-stone-700 text-stone-200 rounded-xl text-xs font-bold transition"
+              >
+                ✕ 閉じる
+              </button>
+            </div>
+
+            {/* 今日の焦点 (最上部強調) */}
+            {todayFocus && (
+              <div className="bg-gradient-to-r from-amber-950 to-stone-900 border border-amber-600/60 p-3 rounded-2xl space-y-1">
+                <div className="text-[10px] font-black text-amber-300 uppercase tracking-widest flex items-center gap-1">
+                  <span>🎯</span> TODAY&apos;S FOCUS (最重要意識)
+                </div>
+                <div className="text-sm font-black text-white leading-snug">
+                  {todayFocus}
+                </div>
+              </div>
+            )}
+
+            {/* 3秒で把握できる結論グリッド */}
+            <div className="grid grid-cols-2 gap-3 text-xs">
+              <div className="bg-stone-900 border border-stone-800 p-3 rounded-xl space-y-1">
+                <div className="text-[10px] font-bold text-rose-400 flex items-center gap-1">
+                  <span>⚠️</span> 警戒パワースパイク
+                </div>
+                <p className="text-xs font-bold text-stone-200">
+                  {counterIntel?.power_spikes || 'Lv2/Lv6到達時に注意'}
+                </p>
+              </div>
+
+              <div className="bg-stone-900 border border-stone-800 p-3 rounded-xl space-y-1">
+                <div className="text-[10px] font-bold text-emerald-400 flex items-center gap-1">
+                  <span>💡</span> 推奨立ち回り
+                </div>
+                <p className="text-xs font-bold text-stone-200">
+                  {counterIntel?.build_runes || '早期防御靴 ＆ 視界確保'}
+                </p>
+              </div>
+            </div>
+
+            {/* 過去の自分からのメモ */}
+            {warning?.memo && (
+              <div className="bg-rose-950/60 border border-rose-700/80 p-3 rounded-xl text-xs space-y-1">
+                <div className="text-[10px] font-black text-rose-400 flex items-center gap-1">
+                  <span>📝</span> 過去の自分からの警戒メモ
+                </div>
+                <p className="text-xs font-medium text-rose-200 whitespace-pre-wrap leading-relaxed">
+                  {warning.memo}
+                </p>
+              </div>
+            )}
+
+            {/* フッター */}
+            <div className="pt-2 text-center">
+              <button
+                onClick={() => setIsHudOpen(false)}
+                className="w-full py-3 bg-amber-600 hover:bg-amber-500 text-white font-black text-sm rounded-xl shadow-lg transition active:scale-98"
+              >
+                ✅ 把握完了！試合へ集中する
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

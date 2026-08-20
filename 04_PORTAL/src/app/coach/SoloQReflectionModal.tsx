@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { apiJson } from '../../lib/apiClient';
+import MinimapPlotView from '../../components/coach/MinimapPlotView';
 
 interface MatchInfo {
   matchId: string;
@@ -71,6 +72,11 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
   const [analysisLoading, setAnalysisLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [analysisError, setAnalysisError] = useState('');
+
+  // AIコーチ深掘りチャット状態
+  const [chatQuestion, setChatQuestion] = useState('');
+  const [chatLoading, setChatLoading] = useState(false);
+  const [chatHistory, setChatHistory] = useState<Record<string, { q: string; a: string }[]>>({});
 
   // 保存済みマッチIDのフェッチ。
   // 既定のlimit(10件)だけで判定すると、古い試合を遡って記録しようとした際に
@@ -209,16 +215,62 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ mode: 'post', matchId: currentMatch.matchId }),
-        timeout: 60000, // Gemini生成込みのため長め
+        timeout: 60000,
       });
       setAnalysisCache((prev) => ({
         ...prev,
-        [currentMatch.matchId]: { found: true, result: data.result, weaknesses: data.weaknesses, advice: data.advice, focus: data.focus, focusAchieved: data.focusAchieved },
+        [currentMatch.matchId]: {
+          found: true,
+          result: data.result,
+          weaknesses: data.weaknesses,
+          advice: data.advice,
+          focus: data.focus,
+          focusAchieved: data.focusAchieved,
+          turningPoints: data.turningPoints,
+          rootCauses: data.rootCauses,
+          actionItems: data.actionItems,
+        },
       }));
     } catch (e: any) {
       setAnalysisError(e.message || 'AI分析の生成に失敗しました。');
     } finally {
       setGenerating(false);
+    }
+  };
+
+  const handleAskCoach = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!chatQuestion.trim() || !currentMatch) return;
+    const q = chatQuestion;
+    setChatQuestion('');
+    setChatLoading(true);
+    try {
+      const res: any = await apiJson('/api/coach/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mode: 'chat',
+          message: q,
+          matchContext: {
+            champion: currentMatch.champion,
+            enemyChampion: currentMatch.enemyChampion,
+            win: currentMatch.win,
+            kda: currentMatch.kda,
+            csPerMin: (currentMatch.cs / (currentMatch.gameDuration / 60 || 1)).toFixed(1),
+            weaknesses: currentAnalysis?.weaknesses,
+            turningPoints: currentAnalysis?.turningPoints,
+            advice: currentAnalysis?.advice,
+          },
+        }),
+      });
+      setChatHistory((prev) => ({
+        ...prev,
+        [currentMatch.matchId]: [...(prev[currentMatch.matchId] || []), { q, a: res.reply }],
+      }));
+    } catch (err: any) {
+      alert(`AI質問エラー: ${err.message}`);
+    } finally {
+      setChatLoading(false);
     }
   };
   const isWin = currentMatch ? currentMatch.win : true;
@@ -275,7 +327,13 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
       }
 
       setSaveSuccess(true);
-      try { localStorage.removeItem('soloq_reflection_draft'); } catch {}
+      try {
+        localStorage.removeItem('soloq_reflection_draft');
+        if (nextFocusPoint) {
+          localStorage.setItem('today_soloq_focus', nextFocusPoint);
+          window.dispatchEvent(new Event('storage'));
+        }
+      } catch {}
       if (onSaved) onSaved();
 
       setTimeout(() => {
@@ -441,11 +499,115 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
                       ))}
                     </div>
                   )}
+                  {/* ターニングポイント */}
+                  {currentAnalysis.turningPoints?.length > 0 && (
+                    <div className="bg-white/80 rounded-lg p-2.5 border border-amber-200 text-xs space-y-1">
+                      <div className="font-extrabold text-amber-900 flex items-center gap-1">
+                        <span>⚡</span> 試合のターニングポイント (崩れた瞬間)
+                      </div>
+                      <ul className="text-stone-700 list-disc list-inside text-[11px] space-y-0.5">
+                        {currentAnalysis.turningPoints.map((tp: string, idx: number) => (
+                          <li key={idx}>{tp}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* 根本原因タグ */}
+                  {currentAnalysis.rootCauses?.length > 0 && (
+                    <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                      <span className="text-[10px] font-bold text-stone-500">根本課題:</span>
+                      {currentAnalysis.rootCauses.map((rc: string, idx: number) => (
+                        <span key={idx} className="text-[10px] bg-amber-100 text-amber-900 border border-amber-300 font-bold px-2 py-0.5 rounded-full">
+                          🏷️ {rc}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* 次戦修正アクション */}
+                  {currentAnalysis.actionItems?.length > 0 && (
+                    <div className="bg-emerald-50/90 rounded-lg p-2.5 border border-emerald-300 space-y-1.5">
+                      <div className="font-extrabold text-emerald-950 text-xs flex items-center justify-between">
+                        <span className="flex items-center gap-1">🎯 次戦の修正アクション (即座に意識できる1〜2点)</span>
+                      </div>
+                      <div className="space-y-1.5">
+                        {currentAnalysis.actionItems.map((item: { action: string; why: string }, idx: number) => (
+                          <div key={idx} className="bg-white p-2 rounded border border-emerald-200 flex items-center justify-between gap-2 text-xs">
+                            <div>
+                              <div className="font-bold text-stone-900">・{item.action}</div>
+                              <div className="text-[10px] text-stone-500">{item.why}</div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setNextFocusPoint(item.action);
+                                try {
+                                  localStorage.setItem('today_soloq_focus', item.action);
+                                  window.dispatchEvent(new Event('storage'));
+                                } catch {}
+                              }}
+                              className="shrink-0 px-2 py-1 bg-emerald-700 hover:bg-emerald-800 text-white text-[10px] font-bold rounded shadow-sm transition"
+                            >
+                              次回テーマにセット ➔
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   {currentAnalysis.advice && (
                     <p className="text-xs text-stone-700 bg-white/70 rounded border border-indigo-100 p-2 whitespace-pre-wrap leading-relaxed">
                       {currentAnalysis.advice}
                     </p>
                   )}
+
+                  {/* 🗺️ ミニマップ空間交戦プロット */}
+                  {currentAnalysis.mapEvents?.length > 0 && (
+                    <MinimapPlotView events={currentAnalysis.mapEvents} />
+                  )}
+
+                  {/* 💬 AIコーチにこの試合を質問する（JG深掘り） */}
+                  <div className="bg-white/90 rounded-lg p-2.5 border border-indigo-200 space-y-2">
+                    <div className="font-extrabold text-indigo-950 text-xs flex items-center gap-1">
+                      <span>💬</span> AIコーチに質問する (JGの立ち回り・敗因深掘り)
+                    </div>
+
+                    {/* チャット履歴 */}
+                    {chatHistory[currentMatch.matchId]?.length > 0 && (
+                      <div className="space-y-2 max-h-36 overflow-y-auto pr-1">
+                        {chatHistory[currentMatch.matchId].map((msg, i) => (
+                          <div key={i} className="text-xs space-y-1">
+                            <div className="bg-indigo-50 text-indigo-900 font-bold p-1.5 rounded-lg text-left">
+                              Q: {msg.q}
+                            </div>
+                            <div className="bg-stone-50 text-stone-800 p-1.5 rounded-lg border border-stone-200 text-left leading-relaxed">
+                              A: {msg.a}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        placeholder="例: 「BOTが崩壊した時JGはどう動くべきだった？」「スカトル争うべきだった？」"
+                        value={chatQuestion}
+                        onChange={(e) => setChatQuestion(e.target.value)}
+                        className="flex-1 px-2.5 py-1.5 text-xs border border-stone-300 rounded-md bg-stone-50 text-stone-900 focus:bg-white focus:outline-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleAskCoach}
+                        disabled={chatLoading || !chatQuestion.trim()}
+                        className="px-3 py-1.5 bg-indigo-700 hover:bg-indigo-800 text-white text-xs font-bold rounded-md shadow-sm transition disabled:opacity-40"
+                      >
+                        {chatLoading ? '回答中...' : '質問する'}
+                      </button>
+                    </div>
+                  </div>
                 </div>
               ) : (
                 <div className="flex items-center justify-between gap-2">
@@ -548,34 +710,45 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
                 );
               })}
             </div>
-            <div className="flex flex-wrap gap-1 pt-1 pb-1">
-              <span className="text-[10px] text-stone-400 font-bold block w-full">⚡ タップでメモに即座追加:</span>
-              {[
-                '序盤の寄りが遅れた',
-                '相手JG位置が見えていなかった',
-                '無理なオールインで倒された',
-                'オブジェクト意識が高く勝利',
-                '視界管理でキャッチを防止できた',
-                '次からは引いてファーム優先',
-              ].map((snippet) => (
-                <button
-                  type="button"
-                  key={snippet}
-                  onClick={() => {
-                    setReflectionNote((prev) => (prev ? `${prev} / ${snippet}` : snippet));
-                  }}
-                  className="px-2 py-0.5 text-[10px] bg-stone-100 hover:bg-amber-100 text-stone-700 hover:text-amber-900 border border-stone-200 rounded font-semibold transition"
-                >
-                  + {snippet}
-                </button>
-              ))}
+            {/* JG専用死因・勝因スタンプ (タップだけで文字入力ゼロ化) */}
+            <div className="bg-stone-50 p-2.5 rounded-lg border border-stone-200 space-y-1.5">
+              <span className="text-[10px] text-amber-900 font-extrabold flex items-center gap-1">
+                <span>⚡</span> JG専用クイックスタンプ (タップでメモとタグを自動入力):
+              </span>
+              <div className="flex flex-wrap gap-1.5">
+                {[
+                  { label: '🌊 寄れないサイドのスカトル無理争奪', tag: 'ガンク判断ミス' },
+                  { label: '💰 1500G抱え落ちでオブジェクト突入', tag: 'リコールタイミング' },
+                  { label: '👁️ 敵JG位置予測ミス（逆展開不可）', tag: 'オブジェクト意識不足' },
+                  { label: '💀 崩壊レーン救援で2v2ダブルキル', tag: 'ガンク判断ミス' },
+                  { label: '🛡️ インベード警戒ワード不足', tag: '視界管理不足' },
+                  { label: '👾 オブジェクト判断遅れ（トレード失敗）', tag: 'オブジェクト意識不足' },
+                  { label: '👑 勝ち筋レーン集中ガンクで勝利', tag: 'ガンク成功' },
+                  { label: '🐉 1分前リコールからドラゴン確保', tag: 'オブジェクト管理' },
+                ].map((item) => (
+                  <button
+                    type="button"
+                    key={item.label}
+                    onClick={() => {
+                      setReflectionNote((prev) => (prev ? `${prev} / ${item.label}` : item.label));
+                      if (item.tag && !selectedTags.includes(item.tag)) {
+                        setSelectedTags((prev) => [...prev, item.tag]);
+                      }
+                    }}
+                    className="px-2 py-1 text-[10px] bg-white hover:bg-amber-100 text-stone-800 hover:text-amber-950 border border-stone-300 rounded-lg font-bold transition shadow-xs active:scale-95 text-left"
+                  >
+                    + {item.label}
+                  </button>
+                ))}
+              </div>
             </div>
+
             <textarea
               rows={2}
-              placeholder="反省メモや勝敗を分けたプレイ（例: 14分ドラゴン戦での寄りが遅れた / 相手JGの位置把握）"
+              placeholder="反省メモや勝敗を分けたプレイ（上記スタンプをタップするか直接入力）"
               value={reflectionNote}
               onChange={(e) => setReflectionNote(e.target.value)}
-              className="w-full px-3 py-2 border border-stone-300 rounded-md bg-stone-50 text-stone-900 focus:bg-white focus:outline-none text-xs placeholder:text-stone-400"
+              className="w-full px-3 py-2 border border-stone-300 rounded-md bg-stone-50 text-stone-900 focus:bg-white focus:outline-none text-xs placeholder:text-stone-400 font-medium"
             />
           </div>
 

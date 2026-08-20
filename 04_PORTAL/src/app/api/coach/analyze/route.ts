@@ -342,7 +342,7 @@ export async function POST(req: NextRequest) {
   }
   // =================================
     const body = await req.json();
-    const mode: 'pre' | 'post' | 'post_latest' | 'post_lookup' | 'history' | 'matchup' | 'tilt' | 'trends' | 'practice_menu' | 'goal' = body.mode || 'pre';
+    const mode: 'pre' | 'post' | 'post_latest' | 'post_lookup' | 'history' | 'matchup' | 'tilt' | 'trends' | 'practice_menu' | 'goal' | 'chat' = body.mode || 'pre';
     const championInput: string = body.champion || '';
     const enemyChampionInput: string = body.enemyChampion || '';
 
@@ -626,9 +626,9 @@ CS/min: 直近${agg.csTrend.recent} / 以前${agg.csTrend.older}　Vision/min: �
         stopRecommended: streakType === 'loss' && currentStreak >= 2,
       };
 
-      // 曜日×時間帯の過去勝率も加味して「次の試合に行くべきか」を判定する(#①)
+      // 曜日×時間帯の過去勝率＋連敗ストッパーも加味して「次の試合に行くべきか」を判定する
       const timing = await getTimingContext(supabase, puuid);
-      const playRecommendation = buildPlayRecommendation(tilt, timing);
+      const playRecommendation = buildPlayRecommendation(tilt, timing, streakAnalysis);
       const timingLabel = timing.scope === 'hour' ? `${timing.dayLabel}曜${timing.hour}時台` : `${timing.dayLabel}曜全体`;
 
       const knowledgeCtx = tilt.level !== 'green'
@@ -857,6 +857,35 @@ ${sentinelCtx || '（辞典データなし）'}`;
           createdAt: row.created_at,
         })),
       });
+    }
+
+    // ----------------------------
+    // MODE: chat - AIコーチとの対話（試合の深掘り質問やJG戦術相談）
+    // ----------------------------
+    if (mode === 'chat') {
+      const userMessage: string = body.message || '';
+      const matchContext: any = body.matchContext || null;
+      if (!userMessage.trim()) {
+        return NextResponse.json({ error: 'メッセージを入力してください。' }, { status: 400 });
+      }
+
+      const prompt = `あなたはLoLの専属パーソナルコーチです。プレイヤーはジャングル（JG）メインです。
+精神論や他責ではなく、客観的なゲーム理論（レーン主導権、フルクリアvsガンク判断、オブジェクト管理、逆サイドでのトレード、パワースパイク、連敗防止メンタル）に基づいて論理的かつ具体的に回答してください。
+
+${matchContext ? `【対象の試合コンテキスト】
+・使用チャンピオン: ${matchContext.champion || '不明'} vs 敵: ${matchContext.enemyChampion || '不明'} (${matchContext.win ? '勝利' : '敗北'})
+・KDA: ${matchContext.kda || '不明'} | CS/min: ${matchContext.csPerMin || '不明'} | Vision/min: ${matchContext.visionPerMin || '不明'}
+${matchContext.weaknesses?.length ? `・弱点: ${matchContext.weaknesses.join(', ')}` : ''}
+${matchContext.turningPoints?.length ? `・ターニングポイント: ${matchContext.turningPoints.join('\n')}` : ''}
+${matchContext.advice ? `・前回の添削要約: ${matchContext.advice.slice(0, 300)}...` : ''}` : ''}
+
+【プレイヤーからの質問・相談】
+"${userMessage}"
+
+回答は親しみやすく論理的な日本語で、250〜400字程度で簡潔かつ即効性のあるアクション（次戦ですぐ試せること）を1〜2点交えて答えてください。`;
+
+      const reply = await callGemini(prompt);
+      return NextResponse.json({ mode: 'chat', reply });
     }
 
     // ----------------------------

@@ -10,6 +10,9 @@ import TiltDiagnosisPopup from './TiltDiagnosisPopup';
 import MatchupWarningCard from './MatchupWarningCard';
 import MySoloQDashboard from './MySoloQDashboard';
 import Collapsible from '../../components/Collapsible';
+import FocusStickyBar from '../../components/coach/FocusStickyBar';
+import JgMatchupPredictor from '../../components/coach/JgMatchupPredictor';
+import JgSkillMasteryChecklist from '../../components/coach/JgSkillMasteryChecklist';
 
 // ============================
 // 型定義
@@ -1533,6 +1536,10 @@ export default function CoachPage() {
               </button>
             </div>
           )}
+          {/* 今日の意識テーマ常駐バー */}
+          <div className="mt-5 max-w-xl mx-auto">
+            <FocusStickyBar />
+          </div>
         </div>
 
         {/* 共通入力欄: 事前分析とマッチアップで別々に入力させていたのを統合 */}
@@ -1626,6 +1633,9 @@ export default function CoachPage() {
 
         {activeStepTab === 'pregame' && (
           <div className="space-y-6 animate-in mt-6">
+            {/* ⚡ 敵JG初動ルート＆3:30スカトル予測カンペ */}
+            <JgMatchupPredictor />
+
             <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-sm space-y-3">
               <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5">
                 <span>🧭</span> リアルタイム偵察 ＆ 5v5シミュレータ
@@ -1647,6 +1657,9 @@ export default function CoachPage() {
         {/* MySoloQDashboard/PostGameTab/TrendsTab/GoalTab/TiltTabはいずれもマウント時に
             一度きりのfetchのみ(継続ポーリング無し)のため、常時マウントしてCSSで表示切替する。 */}
         <div className={activeStepTab === 'postgame' ? 'space-y-6 animate-in' : 'hidden'}>
+            {/* 📋 ふつぐ式 JGステップアップ習熟度チェックリスト */}
+            <JgSkillMasteryChecklist />
+
             <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-sm">
               <Collapsible
                 title={

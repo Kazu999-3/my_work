@@ -37,24 +37,19 @@ export async function POST(request: Request) {
 
     const sentinelData = sentinelDataList?.[0] || null;
 
-    // 2. Check soloq_reflections（メモ付きのみ、最新3件）
+    // 2. Check soloq_reflections（メモ付きまたは過去の全戦績）
     const { data: reflectionsData } = await supabaseAdmin
       .from('soloq_reflections')
-      .select('matchup_memo, reflection_note, win, kda, created_at')
-      .eq('champion', champion)
+      .select('id, match_id, champion, enemy_champion, win, lane_result, kda, cs, game_duration, win_lose_reason_tags, reflection_note, matchup_memo, next_focus_point, created_at')
       .eq('enemy_champion', enemyChampion)
-      .not('matchup_memo', 'is', null)
       .order('created_at', { ascending: false })
-      .limit(3);
+      .limit(10);
 
-    // 3. 対面(レーン)成績の集計(#⑤、migration 55)。試合全体の勝敗(win)とは別に記録される
-    // lane_resultを使う。メモの有無に関わらず、この対面での振り返りが1件でもあれば返す。
+    // 3. 対面(レーン)成績の集計
     const { data: laneRows } = await supabaseAdmin
       .from('soloq_reflections')
-      .select('lane_result')
-      .eq('champion', champion)
-      .eq('enemy_champion', enemyChampion)
-      .not('lane_result', 'is', null);
+      .select('lane_result, win')
+      .eq('enemy_champion', enemyChampion);
 
     const laneRecord = laneRows && laneRows.length > 0
       ? {
@@ -62,6 +57,7 @@ export async function POST(request: Request) {
           evens: laneRows.filter((r: any) => r.lane_result === 'even').length,
           losses: laneRows.filter((r: any) => r.lane_result === 'loss').length,
           total: laneRows.length,
+          gameWinRate: Math.round((laneRows.filter((r: any) => r.win).length / laneRows.length) * 100),
         }
       : null;
 
@@ -69,12 +65,36 @@ export async function POST(request: Request) {
     if (sentinelData?.strategy) {
       memoText = sentinelData.strategy;
     } else if (reflectionsData && reflectionsData.length > 0) {
-      memoText = reflectionsData.map((r: any) => r.matchup_memo).filter(Boolean).join('\n---\n');
+      memoText = reflectionsData.map((r: any) => r.matchup_memo).filter(Boolean).slice(0, 3).join('\n---\n');
     }
 
-    if (!memoText && !laneRecord) {
-      return NextResponse.json({ warning: null });
-    }
+    // 頻出タグの集計
+    const tagCount: Record<string, number> = {};
+    (reflectionsData || []).forEach((r: any) => {
+      (r.win_lose_reason_tags || []).forEach((t: string) => {
+        tagCount[t] = (tagCount[t] || 0) + 1;
+      });
+    });
+    const frequentTags = Object.entries(tagCount)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 4)
+      .map(([tag]) => tag);
+
+    const personalDossier = reflectionsData && reflectionsData.length > 0
+      ? {
+          totalMatches: reflectionsData.length,
+          recentMatches: reflectionsData.slice(0, 5).map((r: any) => ({
+            matchId: r.match_id,
+            champion: r.champion,
+            win: r.win,
+            laneResult: r.lane_result,
+            kda: r.kda,
+            memo: r.matchup_memo || r.reflection_note,
+            createdAt: r.created_at,
+          })),
+          frequentTags,
+        }
+      : null;
 
     return NextResponse.json({
       warning: {
@@ -82,6 +102,7 @@ export async function POST(request: Request) {
         enemyChampion,
         memo: memoText || null,
         laneRecord,
+        personalDossier,
         recentReflectionsCount: reflectionsData ? reflectionsData.length : 0,
         lastUpdatedAt: sentinelData?.updated_at || (reflectionsData?.[0]?.created_at || null),
       },

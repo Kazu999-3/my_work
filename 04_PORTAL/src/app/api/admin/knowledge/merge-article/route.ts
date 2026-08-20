@@ -206,17 +206,16 @@ export async function POST(req: Request) {
     const resolvedList = await Promise.all(rawList.map((c) => resolveToRosterChampion((c || '').trim())));
     const validChampions = Array.from(new Set(resolvedList.filter((c): c is string => !!c)));
 
-    if (validChampions.length === 0) {
-      return NextResponse.json({ success: true, merged: false, champions: [] });
-    }
-
     // ============================================================
     // dryRun: 実際の書き込みを行わず、AIで整理されたチャンピオントレンド各項目の
     // 更新案、対面マッチアップ情報、レーン一般論を計算して返す
+    // （対象チャンピオンが0体でも、レーン一般論の抽出とプレビューは続行する）
     // ============================================================
     if (dryRun) {
-      // 1. AIによる構造化トレンド＆対面情報の抽出
-      const { trendData, matchups } = await analyzeArticleInsights(title, content, validChampions);
+      // 1. AIによる構造化トレンド＆対面情報の抽出 (チャンピオンが存在する場合のみ)
+      const { trendData, matchups } = validChampions.length > 0
+        ? await analyzeArticleInsights(title, content, validChampions)
+        : { trendData: {}, matchups: [] };
 
       // 2. チャンピオンごとのプレイ可能ロール取得と既存データマージ計算
       const trendAnalyses: ChampionTrendAnalysis[] = await Promise.all(

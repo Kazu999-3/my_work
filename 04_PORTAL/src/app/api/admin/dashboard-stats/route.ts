@@ -92,6 +92,7 @@ export async function GET(req: NextRequest) {
       supabase.from('admin_notifications')
         .select('data, created_at')
         .eq('type', 'dict_review')
+        .eq('read', false)
         .gt('created_at', new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString())
         .order('created_at', { ascending: false })
         .limit(1)

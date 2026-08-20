@@ -227,7 +227,7 @@ export default function LibraryMergePreviewModal({
     }
 
     onConfirm({
-      sendToLane: sendToLaneChecked && approvedLaneGeneralInsights.length > 0 ? laneChoice : null,
+      sendToLane: sendToLaneChecked && (approvedLaneGeneralInsights.length > 0 || currentChampions.length === 0) ? laneChoice : null,
       approvedMatchups,
       approvedLaneGeneralInsights,
       championSpecificInsights,
@@ -239,6 +239,7 @@ export default function LibraryMergePreviewModal({
 
   const laneGeneralCount = laneInsightItems.filter((i) => i.included && i.scope === 'lane_general').length;
   const champSpecificCount = laneInsightItems.filter((i) => i.included && i.scope === 'champion_specific').length;
+  const canConfirm = currentChampions.length > 0 || (sendToLaneChecked && (laneGeneralCount > 0 || hasLaneGeneral)) || champSpecificCount > 0 || selectedMatchupIndices.length > 0;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/60 backdrop-blur-sm animate-fade-in">
@@ -664,10 +665,17 @@ export default function LibraryMergePreviewModal({
         )}
 
         {/* フッターアクション */}
-        <div className="flex items-center justify-between gap-2.5 pt-4 border-t border-stone-200">
+        <div className="flex items-center justify-between gap-2.5 pt-4 border-t border-stone-200 flex-wrap">
           <div className="text-xs text-stone-500">
             {currentChampions.length === 0 ? (
-              <span className="text-rose-600 font-bold">⚠️ 統合対象のチャンピオンを1体以上追加してください</span>
+              sendToLaneChecked ? (
+                <span className="text-sky-800 font-bold flex items-center gap-1">
+                  <Map size={14} className="text-sky-600" />
+                  <span>送り先: <strong>{LANE_LABELS[laneChoice] || laneChoice} レーンガイド</strong></span>
+                </span>
+              ) : (
+                <span className="text-rose-600 font-bold">⚠️ 統合対象のチャンピオンまたは送り先レーンを選択してください</span>
+              )
             ) : (
               <span>対象: <strong className="text-stone-800">{currentChampions.join(', ')}</strong></span>
             )}
@@ -689,11 +697,17 @@ export default function LibraryMergePreviewModal({
             <button
               type="button"
               onClick={handleConfirm}
-              disabled={saving || reAnalyzing || currentChampions.length === 0}
+              disabled={saving || reAnalyzing || !canConfirm}
               className="px-6 py-2.5 rounded-xl text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white flex items-center gap-2 shadow-sm disabled:opacity-50 transition"
             >
               {saving ? <RefreshCw size={14} className="animate-spin" /> : <CheckCircle2 size={15} />}
-              <span>{saving ? '統合処理中...' : 'この内容で辞典・対面情報に統合する'}</span>
+              <span>
+                {saving
+                  ? '統合処理中...'
+                  : currentChampions.length === 0
+                    ? `レーン別ガイド (${LANE_LABELS[laneChoice] || laneChoice}) へ統合する`
+                    : 'この内容で辞典・対面情報に統合する'}
+              </span>
             </button>
           </div>
         </div>
