@@ -62,7 +62,7 @@ export default function RootLayout({
         <Toaster />
         <OfflineNotifier />
         <Sidebar />
-        <div className="flex-1 min-w-0 pb-20 md:pb-0">
+        <div className="flex-1 min-w-0 overflow-x-hidden pb-20 md:pb-0">
           <BackButton />
           {children}
         </div>

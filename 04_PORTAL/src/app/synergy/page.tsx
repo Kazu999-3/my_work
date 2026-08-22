@@ -25,6 +25,8 @@ export default function SynergyPage() {
   const [minGames, setMinGames] = useState(3);
   const [groupStats, setGroupStats] = useState<Record<number, GroupStat[]>>({ 3: [], 4: [], 5: [] });
   const [groupSize, setGroupSize] = useState<2 | 3 | 4 | 5>(2);
+  const [simPlayer1, setSimPlayer1] = useState('');
+  const [simPlayer2, setSimPlayer2] = useState('');
 
   useEffect(() => {
     async function fetchData() {
@@ -72,10 +74,6 @@ export default function SynergyPage() {
     .filter(g => g.games >= groupMin)
     .sort((a, b) => a.winRate === b.winRate ? b.games - a.games : a.winRate - b.winRate)
     .slice(0, 50);
-
-  // デュオ相性シミュレータ用
-  const [simPlayer1, setSimPlayer1] = useState('');
-  const [simPlayer2, setSimPlayer2] = useState('');
 
   // 全プレイヤー一覧の抽出
   const allPlayerNames = Array.from(
