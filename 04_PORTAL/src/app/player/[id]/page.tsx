@@ -312,16 +312,16 @@ export default function PlayerMyPage() {
     return 'FLEX';
   }, [history, champPool, player]);
 
-  // Hextech 5軸能力パラメーター計算 (キャリー力/集団戦/安定度/プール広さ/勝負強さ) - リアル戦績基準の厳密計算
+  // Hextech 5軸能力パラメーター計算 (キャリー力/集団戦/安定度/プール広さ/勝負強さ) - 【カスタムメンバー全体平均を3.0とする5段階評価 (1.0〜5.0)】
   const hextechRadarData = useMemo(() => {
     const totalG = history?.length || 0;
     if (totalG === 0) {
       return [
-        { subject: 'キャリー力', value: 60, fullMark: 100 },
-        { subject: '集団戦', value: 65, fullMark: 100 },
-        { subject: '安定度', value: 70, fullMark: 100 },
-        { subject: 'プール広さ', value: 50, fullMark: 100 },
-        { subject: '勝負強さ', value: 60, fullMark: 100 },
+        { subject: 'キャリー力', value: 3.0, fullMark: 5.0 },
+        { subject: '集団戦', value: 3.0, fullMark: 5.0 },
+        { subject: '安定度', value: 3.0, fullMark: 5.0 },
+        { subject: 'プール広さ', value: 3.0, fullMark: 5.0 },
+        { subject: '勝負強さ', value: 3.0, fullMark: 5.0 },
       ];
     }
 
@@ -339,35 +339,36 @@ export default function PlayerMyPage() {
     const avgDeaths = totalDeaths / totalG;
     const avgAssists = totalAssists / totalG;
 
-    // 1. キャリー力: 平均キル数 & 勝率 & MMRレベルから精密算定
-    const carryScore = Math.round(45 + (avgKills * 4.5) + (winRate * 0.25) - (avgDeaths * 2));
-    const carry = Math.min(100, Math.max(40, carryScore));
+    // 1. キャリー力 (平均4.5キル/勝率50%が3.0)
+    const carryRaw = 3.0 + (avgKills - 4.5) * 0.32 + (winRate - 50) * 0.02 - (avgDeaths - 5.0) * 0.12;
+    const carry = Number(Math.min(5.0, Math.max(1.0, carryRaw)).toFixed(1));
 
-    // 2. 集団戦: アシスト関与 & サポート/ジャングル適性
-    const teamfightScore = Math.round(45 + (avgAssists * 3.8) + (champPool.length * 1.5));
-    const teamfight = Math.min(100, Math.max(40, teamfightScore));
+    // 2. 集団戦 (平均7.0アシストが3.0)
+    const teamfightRaw = 3.0 + (avgAssists - 7.0) * 0.25;
+    const teamfight = Number(Math.min(5.0, Math.max(1.0, teamfightRaw)).toFixed(1));
 
-    // 3. 安定度: デスの少なさ & デス5以下の安定試合割合
+    // 3. 安定度 (平均5.0デスが3.0 / デスが少ないほど高評価)
     const lowDeathGames = history.filter(m => (m.deaths || 0) <= 4).length;
     const lowDeathRatio = (lowDeathGames / totalG) * 100;
-    const consistencyScore = Math.round(40 + (lowDeathRatio * 0.4) + Math.max(0, 30 - avgDeaths * 5));
-    const consistency = Math.min(100, Math.max(35, consistencyScore));
+    const consistencyRaw = 3.0 + (5.0 - avgDeaths) * 0.35 + (lowDeathRatio - 50) * 0.015;
+    const consistency = Number(Math.min(5.0, Math.max(1.0, consistencyRaw)).toFixed(1));
 
-    // 4. プール広さ: 使用チャンピオン種類数（厳格化: 1体=25点(OTP), 3体=45点, 5体=60点, 10体=85点, 15体以上=100点）
+    // 4. プール広さ (カスタム平均3〜4体が3.0 / 1体=1.5, 3体=2.8, 6体=3.8, 10体=4.6, 12体以上=5.0)
     const validChampsCount = champPool.filter(c => c.name && c.name !== 'Unknown').length;
-    const poolSize = Math.min(100, Math.max(20, Math.round(20 + Math.min(validChampsCount, 15) * 5.33)));
+    const poolRaw = 1.2 + Math.min(validChampsCount, 12) * 0.32;
+    const poolSize = Number(Math.min(5.0, Math.max(1.0, poolRaw)).toFixed(1));
 
-    // 5. 勝負強さ: 勝率 & 直近調子(10戦勝率)
+    // 5. 勝負強さ (通算勝率50%が3.0 / 直近10戦勝率加味)
     const recentRate = recentForm?.last10Rate || winRate;
-    const clutchScore = Math.round(40 + (winRate * 0.4) + (recentRate * 0.2));
-    const clutch = Math.min(100, Math.max(35, clutchScore));
+    const clutchRaw = 3.0 + (winRate - 50) * 0.035 + (recentRate - 50) * 0.015;
+    const clutch = Number(Math.min(5.0, Math.max(1.0, clutchRaw)).toFixed(1));
 
     return [
-      { subject: 'キャリー力', value: carry, fullMark: 100 },
-      { subject: '集団戦', value: teamfight, fullMark: 100 },
-      { subject: '安定度', value: consistency, fullMark: 100 },
-      { subject: 'プール広さ', value: poolSize, fullMark: 100 },
-      { subject: '勝負強さ', value: clutch, fullMark: 100 },
+      { subject: 'キャリー力', value: carry, fullMark: 5.0 },
+      { subject: '集団戦', value: teamfight, fullMark: 5.0 },
+      { subject: '安定度', value: consistency, fullMark: 5.0 },
+      { subject: 'プール広さ', value: poolSize, fullMark: 5.0 },
+      { subject: '勝負強さ', value: clutch, fullMark: 5.0 },
     ];
   }, [history, recentForm, champPool]);
 
@@ -966,24 +967,30 @@ export default function PlayerMyPage() {
                           <Zap className="w-5 h-5 text-cyan-600" />
                           <span>Hextech 5軸能力</span>
                         </span>
-                        <span className="text-[10px] bg-cyan-100 text-cyan-700 px-2 py-0.5 rounded-full border border-cyan-200">5-Axis</span>
+                        <span className="text-[10px] bg-cyan-100 text-cyan-700 px-2 py-0.5 rounded-full border border-cyan-200 font-bold">
+                          平均 3.0 基準 (1〜5)
+                        </span>
                       </h3>
                       <div className="w-full h-56 relative">
                         <ResponsiveContainer width="100%" height="100%">
                           <RadarChart cx="50%" cy="50%" outerRadius="70%" data={hextechRadarData}>
-                            <PolarGrid stroke="rgba(255, 255, 255, 0.1)" />
-                            <PolarAngleAxis dataKey="subject" stroke="#9ca3af" tick={{ fill: '#d1d5db', fontSize: 11, fontWeight: 'bold' }} />
-                            <PolarRadiusAxis angle={30} domain={[0, 100]} stroke="none" />
+                            <PolarGrid stroke="rgba(0, 0, 0, 0.08)" />
+                            <PolarAngleAxis dataKey="subject" stroke="#6b7280" tick={{ fill: '#374151', fontSize: 11, fontWeight: 'bold' }} />
+                            <PolarRadiusAxis angle={30} domain={[0, 5]} stroke="none" />
                             <Radar name={player.name} dataKey="value" stroke="#06b6d4" fill="#06b6d4" fillOpacity={0.4} />
                           </RadarChart>
                         </ResponsiveContainer>
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-2 text-[10px] pt-2 border-t border-black/10 text-gray-400 font-bold">
+                    <div className="grid grid-cols-2 gap-2 text-[10px] pt-2 border-t border-black/10 text-gray-500 font-bold">
                       {hextechRadarData.map(d => (
-                        <div key={d.subject} className="flex justify-between items-center bg-black/5 px-2.5 py-1 rounded-lg">
-                          <span>{d.subject}:</span>
-                          <span className="text-cyan-600 font-black">{d.value}</span>
+                        <div key={d.subject} className="flex justify-between items-center bg-black/5 px-2.5 py-1.5 rounded-xl border border-black/5">
+                          <span className="text-stone-600">{d.subject}:</span>
+                          <span className={`font-black text-xs ${
+                            d.value >= 4.0 ? 'text-cyan-700' : d.value >= 3.0 ? 'text-stone-900' : 'text-rose-600'
+                          }`}>
+                            {d.value} <span className="text-[9px] font-normal text-stone-400">/ 5.0</span>
+                          </span>
                         </div>
                       ))}
                     </div>
