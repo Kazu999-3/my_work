@@ -91,6 +91,37 @@ export function createRecruitButtons(metadata) {
   return comps;
 }
 
+export function getWelcomeEmbed() {
+  return {
+    title: "👑 KTM LoL部へようこそ！",
+    description: "カスタムマッチやノーマル募集に公平・快適に参加するための初期設定です。\nまずは下のボタンから**【3ステップ】**を完了させてください！\n\n1️⃣ **サモナー名登録 (Riot ID)**\nあなたのLoLアカウント（`名前#JP1` 等）を紐付けます。\n※未登録の方もこのボタンを押せば即座に名簿登録されます！\n\n2️⃣ **希望レーン・NG設定**\nメイン/サブレーンやNGレーンを設定します。\nチーム分け時に希望が最大限考慮されます。\n\n3️⃣ **マイ戦績 / Webポータル**\nWebポータルで個人スタッツや初心者ガイドをチェックできます。",
+    color: 0xc2650f, // KTMブランドのアンバー/ゴールド調
+    fields: [
+      { name: "💡 初めての方へ", value: "登録完了後、募集メッセージの「✋ 参加する」を押すだけで誰でもカスタムに参加できます！", inline: false }
+    ],
+    footer: { text: "KTM Sovereign OS | 新規メンバー案内" },
+    timestamp: new Date().toISOString()
+  };
+}
+
+export function getWelcomeComponents(portalUrl = CONFIG.PORTAL_URL) {
+  const row1 = [
+    { type: 2, label: "📝 サモナー名登録", style: 3, custom_id: "portal_ign" },
+    { type: 2, label: "📍 希望レーン設定", style: 1, custom_id: "portal_lane" }
+  ];
+
+  const row2 = [
+    { type: 2, label: "📊 マイ戦績確認", style: 2, custom_id: "portal_stats" },
+    { type: 2, label: "🔰 スタートガイド", style: 5, url: `${portalUrl}/guide` },
+    { type: 2, label: "🌐 Webポータル", style: 5, url: `${portalUrl}/balancer` }
+  ];
+
+  return [
+    { type: 1, components: row1 },
+    { type: 1, components: row2 }
+  ];
+}
+
 export function getPortalEmbed() { 
   return { 
     title: "🛡️ KTM 司令塔: ポータルOS", 
@@ -116,6 +147,7 @@ export function getPortalComponents(userId) {
 
   const row2 = [
     { type: 2, label: "🔔 募集通知 (ON/OFF)", style: 2, custom_id: "toggle_recruit_notification" },
+    { type: 2, label: "🔰 スタートガイド", style: 5, url: `${CONFIG.PORTAL_URL}/guide` },
     { type: 2, label: "🌐 Webポータルへアクセス", style: 5, url: `${CONFIG.PORTAL_URL}/leaderboard` }
   ];
 

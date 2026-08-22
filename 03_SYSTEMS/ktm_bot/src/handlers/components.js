@@ -40,6 +40,70 @@ export async function handleButtonInteraction(interaction, env, ctx) {
   const token = interaction.token;
   const botToken = env.DISCORD_TOKEN;
 
+  // 🎛️ ポータル・ウェルカム用共通ボタンハンドラー
+  if (customId === 'portal_ign') {
+    return Response.json({
+      type: 9,
+      data: {
+        title: "📝 サモナー名 (Riot ID) 登録",
+        custom_id: "portal_ign_modal",
+        components: [
+          {
+            type: 1,
+            components: [
+              {
+                type: 4,
+                custom_id: "ign",
+                label: "LoL サモナー名 (Name#Tag)",
+                style: 1,
+                placeholder: "例: Faker#KR1 / りくや#JP1",
+                required: true,
+                max_length: 50
+              }
+            ]
+          }
+        ]
+      }
+    });
+  }
+
+  if (customId === 'portal_lane') {
+    return Response.json({
+      type: 9,
+      data: {
+        title: "📍 希望レーン・NGレーンの設定",
+        custom_id: "portal_lane_modal",
+        components: [
+          { type: 1, components: [{ type: 4, custom_id: "main", label: "メインレーン", style: 1, placeholder: "TOP / JG / MID / ADC / SUP / ALL", required: true }] },
+          { type: 1, components: [{ type: 4, custom_id: "sub", label: "サブレーン (2番目に得意)", style: 1, placeholder: "TOP / JG / MID / ADC / SUP", required: false }] },
+          { type: 1, components: [{ type: 4, custom_id: "weight", label: "こだわり度 (1:絶対, 2:通常, 3:柔軟)", style: 1, placeholder: "1, 2, または 3 (未入力は2)", required: false }] },
+          { type: 1, components: [{ type: 4, custom_id: "ng1", label: "NGレーン1 (行きたくないレーン)", style: 1, placeholder: "TOP / JG / MID / ADC / SUP", required: false }] },
+          { type: 1, components: [{ type: 4, custom_id: "ng2", label: "NGレーン2", style: 1, placeholder: "TOP / JG / MID / ADC / SUP", required: false }] }
+        ]
+      }
+    });
+  }
+
+  if (customId === 'portal_stats') {
+    return handleStatsCommand(interaction, env, ctx);
+  }
+
+  if (customId === 'portal_recruit') {
+    return Response.json({
+      type: 9,
+      data: {
+        title: "⚔️ メンバー募集の作成",
+        custom_id: "portal_recruit_modal",
+        components: [
+          { type: 1, components: [{ type: 4, custom_id: "mode", label: "ゲームモード", style: 1, placeholder: "ノーマル / カスタム / ARAM", required: true }] },
+          { type: 1, components: [{ type: 4, custom_id: "time", label: "開始予定時刻", style: 1, placeholder: "21:00〜 / 今から", required: false }] },
+          { type: 1, components: [{ type: 4, custom_id: "max", label: "募集人数 (通常は 5 または 10)", style: 1, placeholder: "5 or 10", required: false }] },
+          { type: 1, components: [{ type: 4, custom_id: "memo", label: "一言メモ", style: 1, placeholder: "初心者歓迎！ VCあり", required: false }] }
+        ]
+      }
+    });
+  }
+
   if (customId === 'toggle_recruit_notification') {
     const roleId = CONFIG.NOTIFICATION_ROLE_ID;
     if (!roleId) {

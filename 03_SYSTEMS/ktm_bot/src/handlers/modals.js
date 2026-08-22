@@ -54,28 +54,23 @@ export async function handleModalSubmit(interaction, env, ctx) {
     
     ctx.waitUntil((async () => {
       try {
-        const { fetchSupabase } = await import('../utils/supabase.js');
-        const { patchInteractionResponse } = await import('../utils/api.js');
-        const existingData = await fetchSupabase(env, 'ktm_players', `discord_id=eq.${userId}`);
-        if (!existingData || existingData.length === 0) {
-            await patchInteractionResponse(appId, token, { content: "⚠️ 名簿にあなたの Discord ID が見当たりませんでした。\n👉 **対処法**: まずパネルの「📍 レーン設定」を一度実行すると名簿に登録されます。その後もう一度「📝 サモナー名登録」をお試しください。" });
+        const { fetchPortalAPI, patchInteractionResponse } = await import('../utils/api.js');
+        // Next.js ポータル API経由で IGN と PUUID を登録する（未登録でも自動作成）
+        const data = await fetchPortalAPI(env, '/api/player/update-puuid', {
+          discordId: userId,
+          discordName: discordName,
+          ign: ign
+        });
+        if (data.status === "SUCCESS") {
+          const rankMsg = data.rankTier ? ` (現在のランク: **${data.rankTier}** を同期)` : '';
+          await patchInteractionResponse(appId, token, { 
+            content: `✅ LoL IGN を **${ign}** に設定し、Riot API との紐付けを完了しました！${rankMsg}\n👉 続いて「📍 レーン設定」を行うとチーム分けで希望が通りやすくなります。` 
+          });
         } else {
-            // Next.js ポータル API経由で IGN と PUUID を登録する
-            const res = await fetch(`${getPortalUrl(env)}/api/player/update-puuid`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ discordId: userId, ign: ign })
-            });
-            const data = await res.json();
-            if (data.status === "SUCCESS") {
-              await patchInteractionResponse(appId, token, { content: `✅ LoL IGN を **${ign}** に設定し、Riot API との紐付け(PUUID)を完了しました！これ以降、ランク情報が自動同期されます。` });
-            } else {
-              await patchInteractionResponse(appId, token, { content: `⚠️ IGNは登録されましたが、PUUIDの取得に失敗しました: ${data.message}` });
-            }
+          await patchInteractionResponse(appId, token, { content: `⚠️ 登録中にエラーが発生しました: ${data.message}` });
         }
       } catch (err) {
         console.error("Modal SetIGN Error:", err);
-        // 失敗を握りつぶさずユーザーに通知(D-07)。「⌛処理中」のまま止まる事態を防ぐ。
         try {
           const { patchInteractionResponse } = await import('../utils/api.js');
           await patchInteractionResponse(appId, token, { content: `❌ **IGN登録に失敗しました**: ${err.message}\n👉 時間をおいて再度お試しください。繰り返す場合は管理者へ連絡を。` });

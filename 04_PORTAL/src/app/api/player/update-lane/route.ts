@@ -32,7 +32,31 @@ export async function POST(req: Request) {
       }
     }
     if (!player) {
-      player = { discord_id: discordId, name: discordName || 'Unknown', is_active: true };
+      const initialMmr = 1200;
+      player = {
+        discord_id: discordId,
+        name: discordName || 'NewPlayer',
+        is_active: true,
+        highest_rank: 'UNRANKED',
+        mmrs: {
+          TOP: initialMmr,
+          JG: initialMmr,
+          MID: initialMmr,
+          ADC: initialMmr,
+          SUP: initialMmr
+        },
+        stats: {
+          total: { g: 0, w: 0 },
+          roles: {
+            TOP: { g: 0, w: 0 },
+            JG: { g: 0, w: 0 },
+            MID: { g: 0, w: 0 },
+            ADC: { g: 0, w: 0 },
+            SUP: { g: 0, w: 0 }
+          },
+          recent: []
+        }
+      };
     }
 
     // マージ

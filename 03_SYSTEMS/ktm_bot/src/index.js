@@ -1,5 +1,5 @@
 import { verifySignature } from './utils/security.js';
-import { handleAnnounceMatch, handleLaneCommand, handleRecruitDirect, handleSetIgn, handleStatsCommand, handleMemoCommand } from './handlers/commands.js';
+import { handleAnnounceMatch, handleLaneCommand, handleRecruitDirect, handleSetIgn, handleStatsCommand, handleMemoCommand, handleWelcomePanel } from './handlers/commands.js';
 import { handleButtonInteraction } from './handlers/components.js';
 import { handleModalSubmit } from './handlers/modals.js';
 import { handleScheduledEvent } from './handlers/scheduled.js';
@@ -111,6 +111,7 @@ export default {
         if (name === 'stats') return handleStatsCommand(interaction, context, ctx);
         if (name === 'lane') return handleLaneCommand(interaction, context, ctx);
         if (name === 'memo') return await handleMemoCommand(interaction, context, ctx);
+        if (name === 'welcome' || name === 'welcome-panel') return await handleWelcomePanel(interaction, context, ctx);
         if (name === 'panel') {
           return Response.json({
             type: 4,
