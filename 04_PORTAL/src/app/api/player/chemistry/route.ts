@@ -69,15 +69,25 @@ export async function GET(request: Request) {
       };
     });
 
+    // アクティブなメンバー一覧を取得（退会者・非アクティブ者を除外）
+    const { data: activePlayersData, error: activeErr } = await supabase
+      .from('ktm_players')
+      .select('name')
+      .eq('is_active', true);
+    if (activeErr) throw activeErr;
+    const activePlayerNames = new Set(activePlayersData?.map((p: any) => p.name) || []);
+
     const chemistry: Record<string, { games: number, wins: number }> = {};
     const rivals: Record<string, { games: number, wins: number }> = {};
 
-    // 参加者レコードをループして集計
+    // 参加者レコードをループして集計（アクティブメンバーのみ）
     allParticipants.forEach((p: any) => {
+      const partnerName = p.player_name;
+      if (!activePlayerNames.has(partnerName)) return; // 退会者・非アクティブ者は除外
+
       const myMatch = myMatchesMap[p.match_id];
       if (!myMatch) return;
 
-      const partnerName = p.player_name;
       const sameTeam = myMatch.team === p.team;
       const isWin = myMatch.isWin;
 

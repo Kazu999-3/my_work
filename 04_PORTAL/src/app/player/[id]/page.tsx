@@ -353,8 +353,9 @@ export default function PlayerMyPage() {
     const consistencyScore = Math.round(40 + (lowDeathRatio * 0.4) + Math.max(0, 30 - avgDeaths * 5));
     const consistency = Math.min(100, Math.max(35, consistencyScore));
 
-    // 4. プール広さ: 使用チャンピオン種類数
-    const poolSize = Math.min(100, Math.max(30, Math.round(30 + champPool.length * 14)));
+    // 4. プール広さ: 使用チャンピオン種類数（厳格化: 1体=25点(OTP), 3体=45点, 5体=60点, 10体=85点, 15体以上=100点）
+    const validChampsCount = champPool.filter(c => c.name && c.name !== 'Unknown').length;
+    const poolSize = Math.min(100, Math.max(20, Math.round(20 + Math.min(validChampsCount, 15) * 5.33)));
 
     // 5. 勝負強さ: 勝率 & 直近調子(10戦勝率)
     const recentRate = recentForm?.last10Rate || winRate;
@@ -998,7 +999,7 @@ export default function PlayerMyPage() {
                             <span className="bg-gradient-to-r from-amber-700 via-orange-600 to-amber-700 bg-clip-text text-transparent">勝ちパターン分析 (Victory Blueprint)</span>
                           </span>
                           <span className="text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full border border-amber-200 font-bold">
-                            勝率 {victoryBlueprint.winRate}%
+                            通算勝率 {victoryBlueprint.winRate}%
                           </span>
                         </h3>
                         <div className="space-y-3">

@@ -40,7 +40,8 @@ export async function GET() {
 
     const { data: activePlayersData, error: activePlayersError } = await supabase
       .from('ktm_players')
-      .select('name');
+      .select('name')
+      .eq('is_active', true);
     if (activePlayersError) throw activePlayersError;
 
     const activePlayerNames = new Set(activePlayersData?.map((p: any) => p.name) || []);
