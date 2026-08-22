@@ -238,10 +238,40 @@ export async function GET(request: Request) {
       }
     };
 
+    // 全対戦（全期間）の通算スタッツを集計
+    let totalK = 0, totalD = 0, totalA = 0, totalWins = 0;
+    playerMatches.forEach((row: any) => {
+      const match = matchMap.get(row.match_id);
+      const isWin = match ? row.team === match.winning_team : false;
+      if (isWin) totalWins++;
+      totalK += row.kills || 0;
+      totalD += row.deaths || 0;
+      totalA += row.assists || 0;
+    });
+    const totalGames = playerMatches.length;
+    const totalLosses = totalGames - totalWins;
+    const totalWinRate = totalGames > 0 ? Math.round((totalWins / totalGames) * 100) : 0;
+    const avgK = totalGames > 0 ? (totalK / totalGames).toFixed(1) : "0.0";
+    const avgD = totalGames > 0 ? (totalD / totalGames).toFixed(1) : "0.0";
+    const avgA = totalGames > 0 ? (totalA / totalGames).toFixed(1) : "0.0";
+    const kda = totalD > 0 ? ((totalK + totalA) / totalD).toFixed(2) : (totalK + totalA).toFixed(2);
+
+    const overall = {
+      total: totalGames,
+      wins: totalWins,
+      losses: totalLosses,
+      winRate: totalWinRate,
+      avgK,
+      avgD,
+      avgA,
+      kda
+    };
+
     const result = { 
         stats: formattedStats,
         matchups: formattedMatchups,
         history: formattedHistory,
+        overall,
         playstyle
     };
 

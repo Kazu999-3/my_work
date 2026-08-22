@@ -59,6 +59,7 @@ export default function PlayerMyPage() {
   const [activeLane, setActiveLane] = useState<'TOTAL' | 'ALL' | 'TOP' | 'JG' | 'MID' | 'ADC' | 'SUP'>('TOTAL');
   const [chemistry, setChemistry] = useState<any[]>([]);
   const [rivals, setRivals] = useState<any[]>([]);
+  const [overall, setOverall] = useState<any>(null);
   
   // プレイスタイル関連State
   const [playstyle, setPlaystyle] = useState<any>(null);
@@ -432,8 +433,11 @@ export default function PlayerMyPage() {
     };
   }, [history, champPool]);
 
-  // 通算戦績・全体勝率の集計
+  // 通算戦績・全体勝率の集計（APIの全対戦集計overallを最優先、なければhistoryからフォールバック）
   const overallStats = useMemo(() => {
+    if (overall && overall.total !== undefined) {
+      return overall;
+    }
     const total = history?.length || 0;
     const wins = history?.filter(m => m.isWin).length || 0;
     const losses = total - wins;
@@ -449,7 +453,7 @@ export default function PlayerMyPage() {
     const avgA = total > 0 ? (totalA / total).toFixed(1) : "0.0";
     const kda = totalD > 0 ? ((totalK + totalA) / totalD).toFixed(2) : (totalK + totalA).toFixed(2);
     return { total, wins, losses, winRate, avgK, avgD, avgA, kda };
-  }, [history]);
+  }, [overall, history]);
 
   useEffect(() => {
     async function fetchData() {
@@ -478,6 +482,7 @@ export default function PlayerMyPage() {
         if (sData.matchups) setMatchups(sData.matchups);
         if (sData.history) setHistory(sData.history);
         if (sData.playstyle) setPlaystyle(sData.playstyle);
+        if (sData.overall) setOverall(sData.overall);
 
         // 4. 相性・ライバルの取得
         const cRes = await fetch(`/api/player/chemistry?name=${encodeURIComponent(pData.name)}`);
