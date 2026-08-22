@@ -325,33 +325,57 @@ export default function LeaderboardPage() {
                       </div>
                     ) : (
                       sortedRows.map((player, idx) => (
-                        <div key={player.name} className="p-4 hover:bg-black/5 transition-colors flex items-center justify-between">
+                        <div 
+                          key={player.name} 
+                          className="p-4 hover:bg-stone-100/60 transition-colors flex items-center justify-between relative group"
+                        >
                           <div className="flex items-center gap-3">
-                            <div className={`w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0
-                              ${idx === 0 ? 'bg-yellow-400 text-yellow-900' : 
+                            <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-black flex-shrink-0
+                              ${idx === 0 ? 'bg-amber-400 text-amber-950 shadow-xs' : 
                                 idx === 1 ? 'bg-stone-300 text-stone-800' : 
-                                idx === 2 ? 'bg-amber-600 text-amber-50' : 
-                                'bg-black/5 text-stone-400'}`}>
+                                idx === 2 ? 'bg-amber-700 text-white' : 
+                                'bg-stone-200/80 text-stone-600'}`}>
                               {idx + 1}
                             </div>
                             <div className="min-w-0 flex-1">
-                              <a href={`/player/${player.discordId}`} className="font-bold text-stone-900 hover:text-amber-700 truncate block transition" title={`${player.name} の詳細を見る`}>
+                              <a href={`/player/${player.discordId}`} className="font-extrabold text-stone-900 hover:text-primary truncate block transition text-xs" title={`${player.name} の詳細を見る`}>
                                 {player.name}
                               </a>
-                              <div className="text-[10px] text-stone-400">
-                                {player.games} Games ({player.winRate}%)
+                              <div className="text-[10px] text-stone-500 font-bold">
+                                {player.games} 試合 (<span className={parseFloat(player.winRate) >= 60 ? 'text-emerald-700 font-extrabold' : parseFloat(player.winRate) <= 45 ? 'text-rose-700' : 'text-stone-700'}>{player.winRate}%</span>)
                               </div>
                             </div>
                           </div>
                           
                           <div className="text-right">
                             <div 
-                              className={`text-[10px] font-bold px-2 py-0.5 rounded border border-current/20 inline-block whitespace-nowrap mb-1 ${player.rankBadge.bg} ${player.rankBadge.color}`}
+                              className={`text-[10px] font-extrabold px-2 py-0.5 rounded-md border border-current/20 inline-block whitespace-nowrap mb-1 ${player.rankBadge.bg} ${player.rankBadge.color}`}
                             >
                               {player.rankBadge.name}
                             </div>
-                            <div className="text-sm font-bold text-stone-800">
-                              {player.mmr.toLocaleString()} <span className="text-[10px] font-normal text-stone-500">MMR</span>
+                            <div className="text-xs font-black text-stone-800">
+                              {player.mmr.toLocaleString()} <span className="text-[9px] font-bold text-stone-400">MMR</span>
+                            </div>
+                          </div>
+
+                          {/* クイックカルテ (ホバーポップオーバー) */}
+                          <div className="hidden group-hover:block absolute z-30 bottom-full left-1/2 -translate-x-1/2 mb-2 w-52 p-3 bg-white border border-stone-200 rounded-2xl shadow-xl pointer-events-none text-left animate-in fade-in">
+                            <div className="text-xs font-extrabold text-stone-900 mb-1 flex items-center justify-between">
+                              <span>{player.name}</span>
+                              <span className="text-[10px] text-stone-400">{role} 実績</span>
+                            </div>
+                            <div className="grid grid-cols-2 gap-1.5 text-center text-[10px] bg-stone-50 p-2 rounded-xl border border-stone-200/60 mb-1.5">
+                              <div>
+                                <span className="text-stone-400 block">勝率</span>
+                                <strong className="text-stone-800">{player.winRate}%</strong>
+                              </div>
+                              <div>
+                                <span className="text-stone-400 block">試合数</span>
+                                <strong className="text-stone-800">{player.games}戦</strong>
+                              </div>
+                            </div>
+                            <div className="text-[10px] text-stone-500 text-center font-bold">
+                              タップで個人カルテへ移動 ➔
                             </div>
                           </div>
                         </div>

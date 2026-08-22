@@ -67,6 +67,17 @@ export default function HistoryPage() {
     );
   }
 
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const filteredMatches = matches.filter(m => {
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    return m.participants.some(p => 
+      p.player_name?.toLowerCase().includes(q) || 
+      p.champion_name?.toLowerCase().includes(q)
+    );
+  });
+
   return (
     <div className="min-h-screen bg-background text-stone-800 p-4 md:p-8">
       <div className="max-w-[1400px] mx-auto space-y-8">
@@ -74,86 +85,139 @@ export default function HistoryPage() {
         {/* ヘッダー */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-border pb-6 gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-stone-900 flex items-center gap-3">
-              <History className="h-8 w-8 text-amber-500" />
+            <h1 className="text-3xl font-extrabold text-stone-900 flex items-center gap-3">
+              <History className="h-8 w-8 text-primary" />
               過去の試合履歴
             </h1>
-            <p className="text-stone-400 mt-2 text-sm">
-              KTMで記録された過去のカスタムマッチの履歴と詳細を確認できます。
+            <p className="text-stone-500 mt-2 text-sm font-medium">
+              KTMで記録された過去のカスタムマッチの履歴とレーン別対決詳細を確認できます。
             </p>
           </div>
-          <Link
-            href="/balancer/record"
-            className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2.5 rounded-xl font-bold transition text-xs shadow-lg shadow-emerald-950/40"
-          >
-            <Trophy className="h-4 w-4" />
-            戦績の手動記録 🏆
-          </Link>
+          <div className="flex items-center gap-3 flex-wrap">
+            <input
+              type="text"
+              placeholder="プレイヤー・チャンピオンで検索..."
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              className="bg-white border border-stone-300 text-stone-900 text-xs font-bold rounded-xl px-3.5 py-2.5 outline-none focus:border-primary w-64 shadow-xs"
+            />
+            <Link
+              href="/balancer/record"
+              className="flex items-center gap-2 bg-primary hover:bg-accent text-white px-4 py-2.5 rounded-xl font-bold transition text-xs shadow-xs"
+            >
+              <Trophy className="h-4 w-4" />
+              戦績の手動記録 🏆
+            </Link>
+          </div>
         </div>
 
         <div className="space-y-6">
           {fetchError ? (
-            <div className="bg-red-100 border border-red-200 text-red-700 rounded-xl p-8 text-center">
+            <div className="bg-rose-50 border border-rose-200 text-rose-700 rounded-2xl p-8 text-center font-bold">
               試合履歴の取得中にエラーが発生しました: {fetchError}
             </div>
-          ) : matches.length === 0 ? (
-            <div className="bg-surface border border-border rounded-xl p-8 text-center text-stone-500">
-              まだ記録された試合がありません。
+          ) : filteredMatches.length === 0 ? (
+            <div className="bg-white border border-stone-200 rounded-3xl p-12 text-center text-stone-500 font-bold">
+              {searchQuery ? '条件に一致する試合が見つかりませんでした。' : 'まだ記録された試合がありません。'}
             </div>
           ) : (
-            matches.map(match => {
-              const blueTeam = match.participants.filter(p => p.team === 'BLUE').sort((a, b) => getRoleWeight(a.role) - getRoleWeight(b.role));
-              const redTeam = match.participants.filter(p => p.team === 'RED').sort((a, b) => getRoleWeight(a.role) - getRoleWeight(b.role));
+            filteredMatches.map(match => {
+              const roles = ['TOP', 'JG', 'MID', 'ADC', 'SUP'];
+              const blueMap = new Map(match.participants.filter(p => p.team === 'BLUE').map(p => [p.role, p]));
+              const redMap = new Map(match.participants.filter(p => p.team === 'RED').map(p => [p.role, p]));
 
               return (
-                <div key={match.id} className="bg-surface border border-border rounded-xl overflow-hidden shadow-lg">
-                  <div className="bg-black/5 px-4 py-3 md:px-6 flex flex-col md:flex-row justify-between items-start md:items-center border-b border-border gap-2 md:gap-0 flex-wrap">
+                <div key={match.id} className="bg-white border border-stone-200/90 rounded-3xl overflow-hidden shadow-xs hover:border-stone-300 transition-all">
+                  <div className="bg-stone-50/80 px-4 py-3.5 md:px-6 flex flex-col md:flex-row justify-between items-start md:items-center border-b border-stone-200 gap-2 md:gap-0 flex-wrap">
                     <div className="flex items-center gap-2 md:gap-3 flex-wrap">
-                      <span className="text-stone-400 font-mono text-xs md:text-sm">Match #{match.id}</span>
-                      <span className="text-stone-500 flex items-center gap-1 text-xs md:text-sm"><Calendar className="w-3 h-3 md:w-4 md:h-4"/> {match.created_at}</span>
+                      <span className="text-stone-900 font-extrabold text-xs md:text-sm bg-stone-200/70 px-2 py-0.5 rounded-lg">Match #{match.id}</span>
+                      <span className="text-stone-500 flex items-center gap-1 text-xs font-medium"><Calendar className="w-3.5 h-3.5 text-stone-400"/> {match.created_at}</span>
                       {match.prediction && (
-                        <div className="flex items-center gap-1.5 md:gap-2 text-xs bg-black/5 px-2 py-0.5 md:py-1 rounded border border-border text-stone-700 ml-0 md:ml-2">
-                          <span>予測勝率:</span>
-                          <span className="text-blue-400 font-mono font-bold">🟦 {Math.round(match.prediction.predicted_blue_winprob * 100)}%</span>
-                          <span className="text-stone-500">/</span>
-                          <span className="text-red-400 font-mono font-bold">🟥 {Math.round((1 - match.prediction.predicted_blue_winprob) * 100)}%</span>
+                        <div className="flex items-center gap-1.5 md:gap-2 text-xs bg-white px-2.5 py-1 rounded-xl border border-stone-200 text-stone-700 ml-0 md:ml-2 font-bold shadow-2xs">
+                          <span className="text-stone-400 text-[10px]">予測勝率:</span>
+                          <span className="text-blue-700 font-mono">🟦 {Math.round(match.prediction.predicted_blue_winprob * 100)}%</span>
+                          <span className="text-stone-300">/</span>
+                          <span className="text-rose-700 font-mono">🟥 {Math.round((1 - match.prediction.predicted_blue_winprob) * 100)}%</span>
                           <span className="ml-1">
                             {match.prediction.correct ? (
-                              <span className="text-emerald-700 font-bold bg-emerald-100 px-1.5 py-0.5 rounded border border-emerald-200 text-[10px] md:text-xs">🎯 的中</span>
+                              <span className="text-emerald-800 font-extrabold bg-emerald-100 px-1.5 py-0.5 rounded-md border border-emerald-300 text-[10px]">🎯 的中</span>
                             ) : (
-                              <span className="text-red-700 font-bold bg-red-100 px-1.5 py-0.5 rounded border border-red-200 text-[10px] md:text-xs">💀 不的中</span>
+                              <span className="text-rose-800 font-extrabold bg-rose-100 px-1.5 py-0.5 rounded-md border border-rose-300 text-[10px]">💀 不的中</span>
                             )}
                           </span>
                         </div>
                       )}
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-xs md:text-sm text-stone-400">WINNER:</span>
-                      <span className={`font-black px-2 py-0.5 md:px-3 md:py-1 rounded text-xs md:text-sm ${match.winning_team === 'BLUE' ? 'bg-blue-900/50 text-blue-400 border border-blue-800' : 'bg-red-900/50 text-red-400 border border-red-800'}`}>
-                        {match.winning_team === 'BLUE' ? '🟦 BLUE TEAM' : '🟥 RED TEAM'}
+                      <span className="text-xs text-stone-400 font-bold">WINNER:</span>
+                      <span className={`font-extrabold px-3 py-1 rounded-xl text-xs border ${match.winning_team === 'BLUE' ? 'bg-blue-100 text-blue-800 border-blue-300' : 'bg-rose-100 text-rose-800 border-rose-300'}`}>
+                        {match.winning_team === 'BLUE' ? '🟦 BLUE TEAM 勝利' : '🟥 RED TEAM 勝利'}
                       </span>
                     </div>
                   </div>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-2">
-                    {/* BLUE TEAM */}
-                    <div className={`p-4 ${match.winning_team === 'BLUE' ? 'bg-blue-950/20' : ''}`}>
-                      <h3 className="font-bold text-blue-400 mb-3 text-center tracking-widest">BLUE TEAM</h3>
-                      <div className="space-y-2">
-                        {blueTeam.map(p => (
-                          <PlayerRow key={p.player_name} p={p} />
-                        ))}
-                      </div>
-                    </div>
-                    {/* RED TEAM */}
-                    <div className={`p-4 border-t md:border-t-0 md:border-l border-border ${match.winning_team === 'RED' ? 'bg-red-950/20' : ''}`}>
-                      <h3 className="font-bold text-red-400 mb-3 text-center tracking-widest">RED TEAM</h3>
-                      <div className="space-y-2">
-                        {redTeam.map(p => (
-                          <PlayerRow key={p.player_name} p={p} />
-                        ))}
-                      </div>
-                    </div>
+                  {/* レーン直接対決テーブル */}
+                  <div className="divide-y divide-stone-100 p-2 md:p-4">
+                    {roles.map(role => {
+                      const blueP = blueMap.get(role);
+                      const redP = redMap.get(role);
+                      return (
+                        <div key={role} className="grid grid-cols-11 gap-2 items-center py-2 px-2 hover:bg-stone-50 rounded-xl transition">
+                          {/* BLUE 側 */}
+                          <div className="col-span-5 flex items-center justify-end gap-2 text-right">
+                            {blueP ? (
+                              <>
+                                <span className="font-mono text-xs bg-stone-100 px-2 py-0.5 rounded text-stone-600 font-bold hidden sm:inline">
+                                  {blueP.kills}/{blueP.deaths}/{blueP.assists}
+                                </span>
+                                <span className="font-bold text-xs md:text-sm text-stone-900 truncate max-w-[120px]">{blueP.player_name}</span>
+                                {blueP.champion_name && (
+                                  <Image
+                                    src={getChampIcon(blueP.champion_name)}
+                                    alt={blueP.champion_name}
+                                    title={blueP.champion_name}
+                                    width={28}
+                                    height={28}
+                                    className="w-7 h-7 rounded-full border border-blue-300 shrink-0"
+                                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                                  />
+                                )}
+                              </>
+                            ) : <span className="text-stone-300 text-xs">-</span>}
+                          </div>
+
+                          {/* 中央レーンバッジ */}
+                          <div className="col-span-1 text-center">
+                            <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-stone-200/80 text-stone-700 border border-stone-300">
+                              {role}
+                            </span>
+                          </div>
+
+                          {/* RED 側 */}
+                          <div className="col-span-5 flex items-center justify-start gap-2 text-left">
+                            {redP ? (
+                              <>
+                                {redP.champion_name && (
+                                  <Image
+                                    src={getChampIcon(redP.champion_name)}
+                                    alt={redP.champion_name}
+                                    title={redP.champion_name}
+                                    width={28}
+                                    height={28}
+                                    className="w-7 h-7 rounded-full border border-rose-300 shrink-0"
+                                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                                  />
+                                )}
+                                <span className="font-bold text-xs md:text-sm text-stone-900 truncate max-w-[120px]">{redP.player_name}</span>
+                                <span className="font-mono text-xs bg-stone-100 px-2 py-0.5 rounded text-stone-600 font-bold hidden sm:inline">
+                                  {redP.kills}/{redP.deaths}/{redP.assists}
+                                </span>
+                              </>
+                            ) : <span className="text-stone-300 text-xs">-</span>}
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               );

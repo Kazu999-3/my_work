@@ -10,7 +10,6 @@ import LibraryTabContent from './LibraryTabContent';
 import DiscordImportPanel from './DiscordImportPanel';
 import PendingInsightsPanel from './PendingInsightsPanel';
 import KnowledgePreviewModal, { type KnowledgePreview } from './KnowledgePreviewModal';
-import { supabaseBrowser } from '../../../lib/supabaseBrowserClient';
 
 interface KnowledgeItem {
   id: number;
@@ -77,20 +76,12 @@ function KnowledgeBaseContent() {
     setTimeout(() => setMessage(null), 5000);
   };
 
-  // 1. ナレッジ一覧取得 (認証ヘッダーを自動付与)
+// 1. ナレッジ一覧取得
   const fetchKnowledge = async (silent = false) => {
     try {
       if (!silent) setLoading(true);
-      const { data: sessionData } = await supabaseBrowser.auth.getSession();
-      const token = sessionData?.session?.access_token;
-      
-      const headers: Record<string, string> = {};
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-
       const res = await fetch(`/api/admin/knowledge?genre=${filterGenre}&query=${searchQuery}`, {
-        headers
+        credentials: 'include',
       });
       if (res.ok) {
         const data = await res.json();
@@ -138,21 +129,11 @@ function KnowledgeBaseContent() {
 
     setActionLoading(true);
     try {
-      const { data: sessionData } = await supabaseBrowser.auth.getSession();
-      const token = sessionData?.session?.access_token;
-      
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json'
-      };
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-
       // YouTube URLの場合は動画キューに送る
       if (inputType === 'url' && isYoutubeUrl(payload.url)) {
         const res = await fetch('/api/admin/youtube', {
           method: 'POST', credentials: 'include',
-          headers,
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ url: payload.url })
         });
         if (res.ok) {
@@ -165,11 +146,9 @@ function KnowledgeBaseContent() {
         }
       } else {
         // 通常ナレッジ追加: まずAI解析のみ行い、結果をプレビューとして表示する
-        // (2026-08-15、「記事のどこがチャンピオン辞典に保存されるかプレビュー画面を
-        // 挟みたい」という要望への対応。この時点ではまだDBに保存されない)。
         const res = await fetch('/api/admin/knowledge/add', {
           method: 'POST', credentials: 'include',
-          headers,
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         });
         if (res.ok) {
@@ -195,14 +174,9 @@ function KnowledgeBaseContent() {
   const handleConfirmSave = async (edited: KnowledgePreview) => {
     setConfirmSaving(true);
     try {
-      const { data: sessionData } = await supabaseBrowser.auth.getSession();
-      const token = sessionData?.session?.access_token;
-      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-      if (token) headers['Authorization'] = `Bearer ${token}`;
-
       const res = await fetch('/api/admin/knowledge/confirm', {
         method: 'POST', credentials: 'include',
-        headers,
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(edited)
       });
       if (res.ok) {
@@ -236,19 +210,9 @@ function KnowledgeBaseContent() {
     if (!confirm(`「${title}」を削除してもよろしいですか？`)) return;
     setDeleteLoading(id);
     try {
-      const { data: sessionData } = await supabaseBrowser.auth.getSession();
-      const token = sessionData?.session?.access_token;
-      
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json'
-      };
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-
       const res = await fetch('/api/admin/knowledge', {
         method: 'DELETE', credentials: 'include',
-        headers,
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id })
       });
 
@@ -271,15 +235,9 @@ function KnowledgeBaseContent() {
     if (!confirm(`「${title}」のURLから画像を含めて再解析・要約更新しますか？`)) return;
     setReAnalyzeLoading(id);
     try {
-      const { data: sessionData } = await supabaseBrowser.auth.getSession();
-      const token = sessionData?.session?.access_token;
-      
-      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-      if (token) headers['Authorization'] = `Bearer ${token}`;
-
       const res = await fetch('/api/admin/knowledge/re-analyze', {
         method: 'POST', credentials: 'include',
-        headers,
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id })
       });
 
@@ -581,6 +539,16 @@ function KnowledgeBaseContent() {
                         <div className="space-y-1.5 min-w-0">
                           <div className="flex flex-wrap items-center gap-2">
                             {getGenreBadge(item.genre)}
+                            {(() => {
+                              const days = Math.floor((Date.now() - new Date(item.created_at).getTime()) / (1000 * 60 * 60 * 24));
+                              if (days <= 30) {
+                                return <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">🟢 新鮮 ({days}日前)</span>;
+                              } else if (days <= 60) {
+                                return <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300">🟡 要確認 ({days}日前)</span>;
+                              } else {
+                                return <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 border border-rose-300">🔴 過去メタ ({days}日前)</span>;
+                              }
+                            })()}
                             <span className="text-[10px] text-gray-500 font-medium flex items-center gap-1">
                               <Calendar size={10} />
                               {new Date(item.created_at).toLocaleDateString('ja-JP')}

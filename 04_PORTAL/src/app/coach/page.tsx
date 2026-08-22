@@ -60,12 +60,15 @@ async function callCoachAPI(payload: Record<string, any>) {
   });
 }
 
+import Skeleton, { CardSkeleton } from '../../components/Skeleton';
+import EmptyState from '../../components/EmptyState';
+
 // ============================
 // パーツコンポーネント
 // ============================
 function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={`rounded-2xl border border-black/10 bg-black/5 p-4 backdrop-blur ${className}`}>
+    <div className={`rounded-2xl border border-stone-200/90 bg-white/90 p-5 shadow-xs transition-all hover:border-stone-300 ${className}`}>
       {children}
     </div>
   );
@@ -73,14 +76,14 @@ function Card({ children, className = '' }: { children: React.ReactNode; classNa
 
 function Tag({ children, color = 'blue' }: { children: React.ReactNode; color?: string }) {
   const colors: Record<string, string> = {
-    blue: 'bg-amber-100 text-amber-700 border-amber-200',
-    green: 'bg-emerald-100 text-emerald-700 border-emerald-200',
-    red: 'bg-red-100 text-red-700 border-red-200',
-    yellow: 'bg-yellow-100 text-yellow-700 border-yellow-200',
-    purple: 'bg-orange-100 text-orange-700 border-orange-200',
+    blue: 'bg-amber-100/80 text-amber-800 border-amber-200',
+    green: 'bg-emerald-100/80 text-emerald-800 border-emerald-200',
+    red: 'bg-rose-100/80 text-rose-800 border-rose-200',
+    yellow: 'bg-yellow-100/80 text-yellow-800 border-yellow-200',
+    purple: 'bg-orange-100/80 text-orange-800 border-orange-200',
   };
   return (
-    <span className={`inline-block rounded-full border px-2 py-0.5 text-xs font-medium ${colors[color] || colors.blue}`}>
+    <span className={`inline-block rounded-lg border px-2.5 py-0.5 text-xs font-bold ${colors[color] || colors.blue}`}>
       {children}
     </span>
   );
@@ -88,20 +91,20 @@ function Tag({ children, color = 'blue' }: { children: React.ReactNode; color?: 
 
 function Spinner() {
   return (
-    <div className="flex items-center justify-center gap-2 text-foreground/50">
-      <div className="h-5 w-5 animate-spin rounded-full border-2 border-black/15 border-t-orange-400" />
-      <span className="text-sm">AIコーチが分析中...</span>
+    <div className="flex items-center justify-center gap-3 py-6 text-stone-500">
+      <div className="h-5 w-5 animate-spin rounded-full border-2 border-stone-300 border-t-primary" />
+      <span className="text-xs font-bold text-stone-600">AIコーチが分析中...</span>
     </div>
   );
 }
 
 function AdviceBox({ text }: { text: string }) {
   return (
-    <div className="mt-4 rounded-xl border border-orange-200 bg-orange-100 p-4">
-      <div className="mb-1 flex items-center gap-2 text-xs font-semibold text-orange-700">
-        <span>🤖</span> AIコーチアドバイス
+    <div className="mt-4 rounded-2xl border border-amber-300/80 bg-gradient-to-br from-amber-50 to-orange-50/50 p-5 shadow-xs">
+      <div className="mb-2 flex items-center gap-2 text-xs font-extrabold text-amber-900 uppercase tracking-wider">
+        <span className="text-base">🤖</span> AIコーチアドバイス
       </div>
-      <p className="whitespace-pre-wrap text-sm leading-relaxed text-stone-800">{text}</p>
+      <p className="whitespace-pre-wrap text-sm leading-relaxed text-stone-800 font-medium">{text}</p>
     </div>
   );
 }
@@ -360,50 +363,56 @@ function PostGameTab({ onOpenReflectionModal, refreshSignal }: { onOpenReflectio
         </button>
       </div>
 
-      {loading && <Spinner />}
+      {loading && <CardSkeleton count={2} />}
 
       {!loading && reflections.length === 0 && (
-        <p className="text-xs text-stone-500 text-center py-4">まだ振り返り記録がありません。上記のボタンから最初の振り返りを記録してみましょう！</p>
+        <EmptyState
+          icon="📝"
+          title="まだ振り返り記録がありません"
+          description="試合終了直後にワンクリックで戦績を読み込み、メンタル評価や勝因・敗因を記録しましょう。"
+          actionText="最初の振り返りを記録する"
+          onAction={onOpenReflectionModal}
+        />
       )}
 
       {!loading && reflections.length > 0 && (
         <div className="space-y-3 animate-in fade-in">
           <div className="flex items-center justify-between">
-            <h5 className="text-xs font-bold text-foreground/60 uppercase tracking-wider">過去のソロQ振り返り履歴 ({reflections.length}件)</h5>
+            <h5 className="text-xs font-bold text-stone-600 uppercase tracking-wider">過去のソロQ振り返り履歴 ({reflections.length}件)</h5>
           </div>
 
           <div className="space-y-3 max-h-[500px] overflow-y-auto pr-1">
             {reflections.map((ref, idx) => (
-              <Card key={ref.id || idx} className={idx === 0 ? 'ring-2 ring-amber-500/30' : ''}>
-                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-black/5 pb-2.5 mb-2.5">
+              <Card key={ref.id || idx} className={idx === 0 ? 'ring-2 ring-amber-500/40 border-amber-300' : ''}>
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-stone-200/80 pb-2.5 mb-2.5">
                   <div className="flex items-center gap-2">
                     <Tag color={ref.win ? 'green' : 'red'}>{ref.win ? 'VICTORY' : 'DEFEAT'}</Tag>
                     <span className="font-bold text-stone-900 text-sm">{ref.champion}</span>
                     <span className="text-xs text-stone-400">vs</span>
                     <span className="font-bold text-stone-700 text-sm">{ref.enemy_champion || 'Unknown'}</span>
-                    {idx === 0 && <span className="text-[10px] bg-amber-600 text-white font-bold px-1.5 py-0.5 rounded">最新</span>}
+                    {idx === 0 && <span className="text-[10px] bg-primary text-white font-bold px-1.5 py-0.5 rounded">最新</span>}
                   </div>
-                  <div className="text-xs text-stone-500">
+                  <div className="text-xs text-stone-500 font-medium">
                     {new Date(ref.created_at).toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-xs mb-3">
-                  <div className="bg-black/5 rounded-lg p-2">
-                    <div className="text-foreground/40">KDA</div>
-                    <div className="font-bold text-stone-800">{ref.kda || '-'}</div>
+                  <div className="bg-stone-100/80 rounded-xl p-2 border border-stone-200/50">
+                    <div className="text-stone-400 text-[10px] font-bold">KDA</div>
+                    <div className="font-extrabold text-stone-800">{ref.kda || '-'}</div>
                   </div>
-                  <div className="bg-black/5 rounded-lg p-2">
-                    <div className="text-foreground/40">CS</div>
-                    <div className="font-bold text-stone-800">{ref.cs ?? '-'}</div>
+                  <div className="bg-stone-100/80 rounded-xl p-2 border border-stone-200/50">
+                    <div className="text-stone-400 text-[10px] font-bold">CS</div>
+                    <div className="font-extrabold text-stone-800">{ref.cs ?? '-'}</div>
                   </div>
-                  <div className="bg-black/5 rounded-lg p-2">
-                    <div className="text-foreground/40">メンタル評価</div>
-                    <div className="font-bold text-amber-800">{ref.mental_rating ? `${ref.mental_rating} / 5` : '-'}</div>
+                  <div className="bg-stone-100/80 rounded-xl p-2 border border-stone-200/50">
+                    <div className="text-stone-400 text-[10px] font-bold">メンタル評価</div>
+                    <div className="font-extrabold text-amber-800">{ref.mental_rating ? `${ref.mental_rating} / 5` : '-'}</div>
                   </div>
-                  <div className="bg-black/5 rounded-lg p-2">
-                    <div className="text-foreground/40">次回テーマ</div>
-                    <div className="font-bold text-emerald-800 truncate">{ref.next_focus_point || '未設定'}</div>
+                  <div className="bg-stone-100/80 rounded-xl p-2 border border-stone-200/50">
+                    <div className="text-stone-400 text-[10px] font-bold">次回テーマ</div>
+                    <div className="font-extrabold text-emerald-800 truncate">{ref.next_focus_point || '未設定'}</div>
                   </div>
                 </div>
 
@@ -416,13 +425,13 @@ function PostGameTab({ onOpenReflectionModal, refreshSignal }: { onOpenReflectio
                 )}
 
                 {ref.reflection_note && (
-                  <div className="mt-2 text-xs bg-white/60 rounded border border-black/5 p-2 text-stone-700">
+                  <div className="mt-2 text-xs bg-stone-50 rounded-xl border border-stone-200/80 p-2.5 text-stone-700">
                     <span className="font-bold text-stone-900 block mb-0.5">💬 反省メモ:</span>
                     {ref.reflection_note}
                   </div>
                 )}
                 {ref.matchup_memo && (
-                  <div className="mt-2 text-xs bg-amber-50/80 rounded border border-amber-200/60 p-2 text-stone-800">
+                  <div className="mt-2 text-xs bg-amber-50/90 rounded-xl border border-amber-200/80 p-2.5 text-stone-800">
                     <span className="font-bold text-amber-900 block mb-0.5">🎯 対面メモ (matchup_sentinel同期済み):</span>
                     {ref.matchup_memo}
                   </div>
@@ -1147,21 +1156,33 @@ function TimingHeatmapTab() {
             </div>
           )}
 
-          {/* カーソルを合わせた(またはタップした)マスの詳細。テーブル内のtitle属性だと
-              表示が遅い/出ないことがあり、スマホのタップでは発火しないための代替表示。 */}
-          <div className="min-h-[2rem] rounded-xl border border-black/10 bg-black/[0.02] px-3 py-2 text-xs">
+          <div className="min-h-[2.5rem] rounded-xl border border-stone-200 bg-white px-3.5 py-2 text-xs flex items-center justify-between gap-2 shadow-xs">
             {activeCell ? (() => {
               const c = cellMap.get(`${activeCell.day}-${activeCell.hour}`);
               const games = c?.games || 0;
+              const isGood = games >= 3 && (c?.winRate || 0) >= 55;
+              const isBad = games >= 3 && (c?.winRate || 0) < 45;
               return (
-                <span className="font-bold text-stone-900">
-                  {HEATMAP_DAYS[activeCell.day]}曜 {activeCell.hour}時台:{' '}
-                  {games > 0 ? (
-                    <span className="font-normal text-stone-600">{c!.winRate}% ({c!.wins}/{games}勝)</span>
-                  ) : (
-                    <span className="font-normal text-stone-400">データなし</span>
+                <div className="flex items-center justify-between w-full flex-wrap gap-2">
+                  <span className="font-bold text-stone-900">
+                    {HEATMAP_DAYS[activeCell.day]}曜 {activeCell.hour}時台:{' '}
+                    {games > 0 ? (
+                      <span className="font-extrabold text-stone-700">{c!.winRate}% ({c!.wins}/{games}勝)</span>
+                    ) : (
+                      <span className="font-normal text-stone-400">データなし</span>
+                    )}
+                  </span>
+                  {isGood && (
+                    <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1">
+                      <span>🌟</span> 勝ち時（推奨時間帯）
+                    </span>
                   )}
-                </span>
+                  {isBad && (
+                    <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 border border-rose-300 flex items-center gap-1">
+                      <span>⚠️</span> 要警戒（勝率低下傾向）
+                    </span>
+                  )}
+                </div>
               );
             })() : (
               <span className="text-stone-400">マスにカーソルを合わせる（スマホはタップ）と詳細がここに表示されます</span>
@@ -1450,15 +1471,15 @@ export default function CoachPage() {
   const [activeStepTab, setActiveStepTab] = useState<'pregame' | 'postgame' | 'menu'>('pregame');
 
   const STEP_TABS = [
-    { id: 'pregame', label: '1. 事前分析＆レーンシミュレータ', icon: '⚡' },
-    { id: 'postgame', label: '2. 振り返り＆実績ダッシュボード', icon: '🔍' },
-    { id: 'menu', label: '3. AI練習メニュー', icon: '🏋️‍♂️' },
+    { id: 'pregame', label: '1. 試合前準備（事前分析・JG予測・偵察）', icon: '⚡' },
+    { id: 'postgame', label: '2. 試合後分析（1分振り返り・傾向・ヒートマップ）', icon: '🔍' },
+    { id: 'menu', label: '3. 週間強化（AI練習メニュー）', icon: '🏋️‍♂️' },
   ] as const;
 
   if (isAuthenticated === null) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-black/15 border-t-orange-400" />
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-stone-300 border-t-primary" />
       </div>
     );
   }
@@ -1468,15 +1489,15 @@ export default function CoachPage() {
       <div
         className="min-h-screen flex items-center justify-center p-4 font-sans text-foreground bg-background"
       >
-        <div className="text-center max-w-sm rounded-2xl border border-black/10 bg-white p-8 backdrop-blur shadow-lg">
+        <div className="text-center max-w-sm rounded-3xl border border-stone-200/90 bg-white p-8 shadow-xl">
           <div className="text-4xl mb-4">🔑</div>
-          <h2 className="text-lg font-bold mb-2">認証が必要です</h2>
-          <p className="text-sm text-foreground/50 mb-6 leading-relaxed">
+          <h2 className="text-lg font-bold mb-2 text-stone-900">認証が必要です</h2>
+          <p className="text-xs text-stone-500 mb-6 leading-relaxed">
             このコーチング機能は管理者専用です。管理者パスコードでログインしてから再度アクセスしてください。
           </p>
           <a
             href="/login"
-            className="inline-block w-full rounded-xl bg-orange-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-orange-500"
+            className="inline-block w-full rounded-xl bg-primary px-5 py-3 text-xs font-bold text-white transition hover:bg-accent shadow-xs"
           >
             ログインページへ
           </a>
@@ -1498,29 +1519,33 @@ export default function CoachPage() {
 
       <div className="mx-auto max-w-4xl">
         {/* ヘッダー */}
-        <div className="mb-8 text-center">
+        <div className="mb-8 text-center relative">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100/80 border border-emerald-300 text-emerald-800 text-[10px] font-extrabold mb-3 shadow-xs">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span>🟢 ライブ試合自動検知 稼働中 (Riot API連動)</span>
+          </div>
           <div className="mb-2 text-4xl">🏆</div>
-          <h1 className="text-2xl font-bold tracking-tight">パーソナルコーチ</h1>
-          <p className="mt-1 text-sm text-foreground/40">
+          <h1 className="text-2xl font-extrabold tracking-tight text-stone-900">パーソナルコーチ</h1>
+          <p className="mt-1 text-xs text-stone-500 font-medium">
             Riot API × ナレッジDB × Gemini AI があなたの勝率を上げる
           </p>
           <div className="mt-3 flex items-center justify-center gap-3">
             <PushOptIn scope="admin" label="ポータル通知" inline />
             <button
               onClick={() => setIsReflectionModalOpen(true)}
-              className="px-4 py-2 bg-gradient-to-r from-amber-700 to-amber-800 hover:from-amber-800 hover:to-amber-900 text-white font-bold text-xs rounded-xl shadow-md transition-all hover:scale-105 flex items-center gap-1.5"
+              className="px-4 py-2 bg-gradient-to-r from-amber-700 to-amber-800 hover:from-amber-800 hover:to-amber-900 text-white font-bold text-xs rounded-xl shadow-md transition-all hover:scale-105 flex items-center gap-1.5 cursor-pointer"
             >
               <span>⚡</span> 1分ソロQ振り返り
             </button>
           </div>
 
           {lastFocusPoint && (
-            <div className="mt-4 mx-auto max-w-md bg-amber-50 border border-amber-300 rounded-xl p-3 text-left shadow-sm flex items-center justify-between gap-2.5">
+            <div className="mt-4 mx-auto max-w-md bg-amber-50 border border-amber-300 rounded-2xl p-3.5 text-left shadow-xs flex items-center justify-between gap-3">
               <div className="flex items-start gap-2.5">
-                <span className="text-base">🔥</span>
+                <span className="text-lg">🔥</span>
                 <div>
-                  <span className="text-[11px] font-bold text-amber-900 block">前回の試合で設定した意識テーマ</span>
-                  <p className="text-xs text-stone-800 font-medium leading-relaxed">{lastFocusPoint}</p>
+                  <span className="text-[11px] font-extrabold text-amber-900 block uppercase tracking-wider">前回の試合で設定した意識テーマ</span>
+                  <p className="text-xs text-stone-800 font-bold leading-relaxed">{lastFocusPoint}</p>
                 </div>
               </div>
               <button
@@ -1530,7 +1555,7 @@ export default function CoachPage() {
                   localStorage.removeItem('soloq_last_focus_point');
                   window.location.reload();
                 }}
-                className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-black shrink-0 transition shadow active:scale-95"
+                className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black shrink-0 transition shadow-xs active:scale-95 cursor-pointer"
                 title="この目標を達成できたらタップ！"
               >
                 ✅ 達成！
@@ -1544,34 +1569,34 @@ export default function CoachPage() {
         </div>
 
         {/* 共通入力欄: 事前分析とマッチアップで別々に入力させていたのを統合 */}
-        <div className="mb-6 rounded-2xl border border-black/10 bg-black/5 p-5">
-          <div className="grid grid-cols-2 gap-3">
+        <div className="mb-6 rounded-2xl border border-stone-200/90 bg-white/90 p-5 shadow-xs">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="mb-1 block text-xs text-foreground/50">今日使うチャンピオン</label>
+              <label className="mb-1.5 block text-xs font-bold text-stone-700">今日使うチャンピオン</label>
               <input
                 value={sharedChampion}
                 onChange={(e) => setSharedChampion(e.target.value)}
                 placeholder="例: Graves"
-                className="w-full rounded-xl border border-black/10 bg-black/5 px-4 py-2.5 text-sm text-stone-900 placeholder-foreground/30 outline-none focus:border-orange-400"
+                className="w-full rounded-xl border border-stone-300/80 bg-stone-50/50 px-4 py-2.5 text-sm text-stone-900 placeholder-stone-400 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all font-medium"
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs text-foreground/50">対面の敵チャンピオン</label>
+              <label className="mb-1.5 block text-xs font-bold text-stone-700">対面の敵チャンピオン</label>
               <input
                 value={sharedEnemyChampion}
                 onChange={(e) => setSharedEnemyChampion(e.target.value)}
                 placeholder="例: Lee Sin"
-                className="w-full rounded-xl border border-black/10 bg-black/5 px-4 py-2.5 text-sm text-stone-900 placeholder-foreground/30 outline-none focus:border-orange-400"
+                className="w-full rounded-xl border border-stone-300/80 bg-stone-50/50 px-4 py-2.5 text-sm text-stone-900 placeholder-stone-400 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all font-medium"
               />
             </div>
           </div>
-          <p className="mt-2 text-[11px] text-foreground/30">「事前分析」「マッチアップ」で共通して使われます（偵察でライブゲームを検知すると自動入力されます）。</p>
+          <p className="mt-2 text-[11px] text-stone-500 font-medium">※「事前分析」「マッチアップ」で共通して使われます（偵察でライブゲームを検知すると自動入力されます）。</p>
 
           <button
             onClick={runDailyCheck}
-            className="mt-4 w-full rounded-xl border border-amber-200 bg-amber-100 px-5 py-3 text-sm font-bold text-amber-700 transition hover:bg-amber-200"
+            className="mt-4 w-full rounded-xl border border-amber-300 bg-amber-100 hover:bg-amber-200 px-5 py-3 text-xs font-extrabold text-amber-900 transition-all shadow-xs cursor-pointer flex items-center justify-center gap-2"
           >
-            🎯 今日のチェック（事前分析・目標・ティルトを一括実行）
+            <span>🎯</span> 今日のチェック（事前分析・目標・ティルトを一括実行）
           </button>
         </div>
 
@@ -1579,27 +1604,27 @@ export default function CoachPage() {
         <MatchupWarningCard champion={sharedChampion} enemyChampion={sharedEnemyChampion} />
 
         {matchDetectFailCount >= 3 && (
-          <div className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-xs text-rose-700">
+          <div className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs text-rose-700 font-medium">
             ⚠️ 試合終了の自動検知が{matchDetectFailCount}回連続で失敗しています。Riot IDの設定やRiot APIキーの有効期限を確認してください（自動ポップアップが出ない間も、下の「振り返りを記録する」から手動で記録できます）。
           </div>
         )}
 
         {/* 5ステップ切り替えプロ景観ナビゲーションバー（ユーザビリティ改修） */}
-        <div className="mb-6 bg-white border border-stone-200/90 p-2 rounded-2xl shadow-sm">
-          <div className="text-[10px] font-bold text-stone-400 uppercase tracking-widest px-2 pt-1 pb-1">
+        <div className="mb-6 bg-white/90 border border-stone-200/90 p-2 rounded-2xl shadow-xs">
+          <div className="text-[10px] font-extrabold text-stone-400 uppercase tracking-widest px-2 pt-1 pb-1.5">
             🎮 試合進行フェーズ（タップして切り替え）
           </div>
-          <div className="flex gap-1.5 overflow-x-auto pb-1 touch-manipulation scrollbar-none">
-            {STEP_TABS.map((tab, idx) => {
+          <div className="flex gap-2 overflow-x-auto pb-1 touch-manipulation scrollbar-none">
+            {STEP_TABS.map((tab) => {
               const isActive = activeStepTab === tab.id;
               return (
                 <button
                   key={tab.id}
                   onClick={() => setActiveStepTab(tab.id as any)}
-                  className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-black transition-all shrink-0 min-h-[44px] ${
+                  className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-extrabold transition-all shrink-0 min-h-[44px] cursor-pointer ${
                     isActive
-                      ? 'bg-amber-800 text-white shadow-md ring-2 ring-amber-500/50 scale-[1.02]'
-                      : 'bg-stone-100 text-stone-700 hover:bg-stone-200 active:scale-95'
+                      ? 'bg-primary text-white shadow-md ring-2 ring-primary/40 scale-[1.01]'
+                      : 'bg-stone-100/80 text-stone-600 hover:bg-stone-200/80 hover:text-stone-900 active:scale-95'
                   }`}
                 >
                   <span className="text-base">{tab.icon}</span>

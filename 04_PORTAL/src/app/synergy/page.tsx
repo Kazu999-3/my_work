@@ -73,6 +73,20 @@ export default function SynergyPage() {
     .sort((a, b) => a.winRate === b.winRate ? b.games - a.games : a.winRate - b.winRate)
     .slice(0, 50);
 
+  // デュオ相性シミュレータ用
+  const [simPlayer1, setSimPlayer1] = useState('');
+  const [simPlayer2, setSimPlayer2] = useState('');
+
+  // 全プレイヤー一覧の抽出
+  const allPlayerNames = Array.from(
+    new Set(allyStats.flatMap(a => [a.p1, a.p2]))
+  ).sort();
+
+  // 選択された2人の共闘スタッツ
+  const selectedDuoStat = simPlayer1 && simPlayer2 && simPlayer1 !== simPlayer2
+    ? allyStats.find(a => (a.p1 === simPlayer1 && a.p2 === simPlayer2) || (a.p1 === simPlayer2 && a.p2 === simPlayer1))
+    : null;
+
   return (
     <div className="min-h-screen bg-background text-stone-800 p-4 md:p-8">
       <div className="max-w-[1400px] mx-auto space-y-8">
@@ -84,18 +98,18 @@ export default function SynergyPage() {
               <HeartHandshake className="h-8 w-8 text-fuchsia-700" />
               チームシナジー分析
             </h1>
-            <p className="text-stone-400 mt-2 text-sm">
+            <p className="text-stone-500 mt-2 text-sm font-medium">
               KTMの全試合データから算出された「味方時の勝率」を分析。<br/>
               最強のコンビと最弱のコンビを2〜5人の人数別で一覧化します。
             </p>
           </div>
           
-          <div className="flex items-center gap-3 bg-surface border border-border rounded-xl px-4 py-2">
-            <span className="text-sm font-bold text-stone-400">最小共闘数:</span>
+          <div className="flex items-center gap-3 bg-surface border border-border rounded-xl px-4 py-2 shadow-xs">
+            <span className="text-sm font-bold text-stone-500">最小共闘数:</span>
             <select 
               value={minGames} 
               onChange={e => setMinGames(Number(e.target.value))}
-              className="bg-black/5 border border-border text-stone-900 rounded px-2 py-1 outline-none focus:border-fuchsia-500 font-bold"
+              className="bg-stone-50 border border-stone-300 text-stone-900 rounded-lg px-2.5 py-1 outline-none focus:border-fuchsia-500 font-bold text-xs"
             >
               <option value={2}>2試合以上共闘</option>
               <option value={3}>3試合以上共闘</option>
@@ -103,6 +117,76 @@ export default function SynergyPage() {
               <option value={10}>10試合以上共闘</option>
             </select>
           </div>
+        </div>
+
+        {/* ✨ デュオ相性シミュレータ */}
+        <div className="bg-white border border-stone-200/90 rounded-3xl p-6 shadow-xs">
+          <div className="flex items-center gap-2 mb-4">
+            <Sparkles className="text-fuchsia-600 h-5 w-5" />
+            <h2 className="text-base font-extrabold text-stone-900">デュオ相性シミュレータ</h2>
+            <span className="text-xs text-stone-500 font-medium">（2人のプレイヤーを選んで相性を即座に診断）</span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+              <label className="block text-xs font-bold text-stone-600 mb-1.5">プレイヤー 1</label>
+              <select
+                value={simPlayer1}
+                onChange={e => setSimPlayer1(e.target.value)}
+                className="w-full bg-stone-50 border border-stone-300 rounded-xl px-3.5 py-2.5 text-xs font-bold text-stone-900 outline-none focus:border-fuchsia-500"
+              >
+                <option value="">-- 選択してください --</option>
+                {allPlayerNames.map(p => (
+                  <option key={p} value={p}>{p}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-stone-600 mb-1.5">プレイヤー 2</label>
+              <select
+                value={simPlayer2}
+                onChange={e => setSimPlayer2(e.target.value)}
+                className="w-full bg-stone-50 border border-stone-300 rounded-xl px-3.5 py-2.5 text-xs font-bold text-stone-900 outline-none focus:border-fuchsia-500"
+              >
+                <option value="">-- 選択してください --</option>
+                {allPlayerNames.map(p => (
+                  <option key={p} value={p}>{p}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {simPlayer1 && simPlayer2 && simPlayer1 !== simPlayer2 && (
+            <div className="mt-4 p-4 rounded-2xl bg-gradient-to-r from-fuchsia-50 via-pink-50 to-amber-50 border border-fuchsia-200">
+              {selectedDuoStat ? (
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl">
+                      {selectedDuoStat.winRate >= 65 ? '👑' : selectedDuoStat.winRate >= 50 ? '⚡' : '⚠️'}
+                    </span>
+                    <div>
+                      <div className="text-sm font-extrabold text-stone-900">
+                        {simPlayer1} & {simPlayer2}
+                      </div>
+                      <div className="text-xs text-stone-600">
+                        共闘数: <strong className="text-stone-900">{selectedDuoStat.games}試合</strong> ({selectedDuoStat.wins}勝 {selectedDuoStat.games - selectedDuoStat.wins}敗)
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-xs font-bold text-stone-500">デュオ勝率</div>
+                    <div className={`text-2xl font-black ${selectedDuoStat.winRate >= 60 ? 'text-emerald-700' : selectedDuoStat.winRate >= 45 ? 'text-amber-700' : 'text-rose-700'}`}>
+                      {selectedDuoStat.winRate}%
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-xs text-stone-600 text-center py-2 font-medium">
+                  まだこの2人の共闘記録がありません（KTMカスタムで同じチームで試合するとデータが蓄積されます）。
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* 人数切替タブ (2〜5人選択) */}
@@ -114,7 +198,7 @@ export default function SynergyPage() {
           <div className="flex gap-2">
             {([2, 3, 4, 5] as const).map(n => (
               <button key={n} onClick={() => setGroupSize(n)}
-                className={`px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${groupSize === n ? 'bg-gradient-to-r from-fuchsia-600 to-pink-600 text-white shadow-lg shadow-fuchsia-500/20' : 'bg-background text-stone-400 hover:text-stone-900 border border-border'}`}>
+                className={`px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${groupSize === n ? 'bg-gradient-to-r from-fuchsia-600 to-pink-600 text-white shadow-lg shadow-fuchsia-500/20' : 'bg-background text-stone-500 hover:text-stone-900 border border-border'}`}>
                 {n}人コンビ / チーム
               </button>
             ))}

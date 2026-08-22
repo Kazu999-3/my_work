@@ -819,6 +819,32 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
               </Link>
             </div>
 
+            {/* ⚡ パワースパイク ＆ 対面必勝心得サマリーカード */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div className="bg-stone-900/90 border border-stone-800 rounded-2xl p-4 text-center">
+                <div className="text-[10px] font-extrabold text-amber-400 uppercase tracking-wider mb-1">⏱ パワースパイク時間帯</div>
+                <div className="text-sm font-extrabold text-white">
+                  {powerSpikeScores?.peak_window || '中盤キャリー型 (1〜2コア)'}
+                </div>
+                <div className="flex justify-center items-center gap-2 mt-2 text-[10px] text-stone-400">
+                  <span>序盤: <strong className="text-stone-200">{powerSpikeScores?.early_game_score ?? 3}/5</strong></span>
+                  <span>・</span>
+                  <span>中盤: <strong className="text-amber-300">{powerSpikeScores?.mid_game_score ?? 4}/5</strong></span>
+                  <span>・</span>
+                  <span>終盤: <strong className="text-stone-200">{powerSpikeScores?.late_game_score ?? 4}/5</strong></span>
+                </div>
+              </div>
+
+              <div className="bg-stone-900/90 border border-stone-800 rounded-2xl p-4 md:col-span-2 flex flex-col justify-center">
+                <div className="text-[10px] font-extrabold text-emerald-400 uppercase tracking-wider mb-1 flex items-center gap-1">
+                  <span>🎯</span> 対面必勝の心得
+                </div>
+                <p className="text-xs text-stone-300 font-medium leading-relaxed line-clamp-2">
+                  {dataFields.strengths || dataFields.strategy || '相手の主要スキルのクールダウン中に有利なトレードを仕掛け、パワースパイク（1コア完成時）に合わせて主導権を握る。'}
+                </p>
+              </div>
+            </div>
+
             {isAdmin && (
             <div className="flex gap-3 items-center flex-wrap">
               <button

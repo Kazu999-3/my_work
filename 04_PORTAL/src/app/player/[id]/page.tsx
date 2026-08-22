@@ -599,8 +599,38 @@ export default function PlayerMyPage() {
               </div>
             </div>
 
-            {/* Participation Status */}
-            <div className="bg-white/70 border border-black/10 backdrop-blur-md rounded-2xl p-4 w-full md:w-auto flex items-center justify-between md:justify-start gap-8 shadow-xl">
+            {/* Participation Status & Recent Form */}
+            <div className="bg-white/70 border border-black/10 backdrop-blur-md rounded-2xl p-4 w-full md:w-auto flex items-center justify-between md:justify-start gap-6 shadow-xl flex-wrap">
+              <div className="space-y-1">
+                <div className="text-[10px] text-gray-400 font-black tracking-wider uppercase">直近コンディション</div>
+                <div className="flex items-center gap-1.5">
+                  {recentForm ? (
+                    <span className={`text-xs font-black px-2.5 py-0.5 rounded-full border flex items-center gap-1 ${
+                      recentForm.streak >= 3 && recentForm.streakWin
+                        ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                        : recentForm.last10Rate >= 60
+                        ? 'bg-amber-100 text-amber-800 border-amber-300'
+                        : recentForm.last10Rate <= 40
+                        ? 'bg-rose-100 text-rose-800 border-rose-300'
+                        : 'bg-stone-100 text-stone-700 border-stone-300'
+                    }`}>
+                      <span>
+                        {recentForm.streak >= 3 && recentForm.streakWin ? '🔥' : recentForm.last10Rate >= 60 ? '📈' : recentForm.last10Rate <= 40 ? '⚠️' : '⚖️'}
+                      </span>
+                      <span>
+                        {recentForm.streak >= 3 && recentForm.streakWin 
+                          ? `${recentForm.streak}連勝中！` 
+                          : `直近10戦 ${recentForm.last10Wins}勝 (${recentForm.last10Rate}%)`}
+                      </span>
+                    </span>
+                  ) : (
+                    <span className="text-xs text-stone-400 font-bold">データ収集中</span>
+                  )}
+                </div>
+              </div>
+
+              <div className="h-8 w-[1px] bg-black/5 hidden md:block"></div>
+
               <div className="space-y-1">
                 <div className="text-[10px] text-gray-400 font-black tracking-wider uppercase">内戦ステータス</div>
                 <div className={`flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-black border ${
