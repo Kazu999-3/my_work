@@ -430,6 +430,25 @@ export default function PlayerMyPage() {
     };
   }, [history, champPool]);
 
+  // 通算戦績・全体勝率の集計
+  const overallStats = useMemo(() => {
+    const total = history?.length || 0;
+    const wins = history?.filter(m => m.isWin).length || 0;
+    const losses = total - wins;
+    const winRate = total > 0 ? Math.round((wins / total) * 100) : 0;
+    let totalK = 0, totalD = 0, totalA = 0;
+    history?.forEach(m => {
+      totalK += m.kills || 0;
+      totalD += m.deaths || 0;
+      totalA += m.assists || 0;
+    });
+    const avgK = total > 0 ? (totalK / total).toFixed(1) : "0.0";
+    const avgD = total > 0 ? (totalD / total).toFixed(1) : "0.0";
+    const avgA = total > 0 ? (totalA / total).toFixed(1) : "0.0";
+    const kda = totalD > 0 ? ((totalK + totalA) / totalD).toFixed(2) : (totalK + totalA).toFixed(2);
+    return { total, wins, losses, winRate, avgK, avgD, avgA, kda };
+  }, [history]);
+
   useEffect(() => {
     async function fetchData() {
       if (!id) return;
@@ -594,6 +613,19 @@ export default function PlayerMyPage() {
                     <span className="bg-cyan-100 border border-cyan-200 px-2.5 py-0.5 rounded-full text-xs font-bold text-cyan-700 backdrop-blur-md">
                       総合MMR: <span className="text-stone-900 font-black">{player.mmr || 1000}</span>
                     </span>
+                    {overallStats.total > 0 && (
+                      <span className={`px-2.5 py-0.5 rounded-full text-xs font-black border backdrop-blur-md flex items-center gap-1 ${
+                        overallStats.winRate >= 60
+                          ? 'bg-amber-100/90 text-amber-900 border-amber-300'
+                          : overallStats.winRate >= 50
+                          ? 'bg-emerald-100/90 text-emerald-900 border-emerald-300'
+                          : 'bg-rose-100/90 text-rose-900 border-rose-300'
+                      }`}>
+                        <span>🏆 通算勝率:</span>
+                        <span className="font-extrabold">{overallStats.winRate}%</span>
+                        <span className="text-[10px] opacity-80">({overallStats.wins}勝{overallStats.losses}敗)</span>
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -709,6 +741,85 @@ export default function PlayerMyPage() {
               {/* 1. 総合分析タブ */}
               {activeTab === 'summary' && (
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  {/* 通算戦績サマリーカード (全体勝率 / 試合数 / KDA) */}
+                  <div className="lg:col-span-3 bg-white/70 backdrop-blur-xl border border-black/10 rounded-3xl p-6 shadow-xl relative overflow-hidden">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-black/10 pb-4 mb-6">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-white shadow-md">
+                          <Trophy className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <h2 className="text-lg font-black text-stone-900">👑 KTMカスタム 通算戦績サマリー</h2>
+                          <p className="text-xs text-stone-500 font-bold">全対戦履歴から集計された公式スタッツ</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-stone-500">総試合数:</span>
+                        <span className="text-sm font-black px-3 py-1 bg-stone-100 rounded-full border border-stone-200 text-stone-800">
+                          {overallStats.total} 試合
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                      {/* 全体勝率 */}
+                      <div className="bg-stone-50/80 border border-stone-200/80 rounded-2xl p-4 flex flex-col justify-between">
+                        <span className="text-[11px] font-bold text-stone-500 uppercase tracking-wider">全体勝率</span>
+                        <div className="my-2">
+                          <span className={`text-3xl sm:text-4xl font-black ${
+                            overallStats.winRate >= 60 ? 'text-amber-600' : overallStats.winRate >= 50 ? 'text-emerald-600' : 'text-rose-600'
+                          }`}>
+                            {overallStats.winRate}<span className="text-lg font-bold">%</span>
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between text-[11px] font-bold text-stone-500">
+                          <span className="text-emerald-700">{overallStats.wins} 勝</span>
+                          <span>/</span>
+                          <span className="text-rose-700">{overallStats.losses} 敗</span>
+                        </div>
+                      </div>
+
+                      {/* 平均 KDA */}
+                      <div className="bg-stone-50/80 border border-stone-200/80 rounded-2xl p-4 flex flex-col justify-between">
+                        <span className="text-[11px] font-bold text-stone-500 uppercase tracking-wider">平均 KDA</span>
+                        <div className="my-2">
+                          <span className="text-3xl sm:text-4xl font-black text-indigo-600">
+                            {overallStats.kda}
+                          </span>
+                        </div>
+                        <div className="text-[11px] font-bold text-stone-600 truncate">
+                          {overallStats.avgK} / {overallStats.avgD} / {overallStats.avgA}
+                        </div>
+                      </div>
+
+                      {/* 勝ちパターン判定 */}
+                      <div className="bg-stone-50/80 border border-stone-200/80 rounded-2xl p-4 flex flex-col justify-between">
+                        <span className="text-[11px] font-bold text-stone-500 uppercase tracking-wider">プレイスタイル</span>
+                        <div className="my-2">
+                          <span className="text-sm font-black text-stone-900 line-clamp-2">
+                            {victoryBlueprint?.archetype.replace(/^[^\s]+ /, '') || "データ収集中"}
+                          </span>
+                        </div>
+                        <span className="text-[10px] font-bold text-stone-400">
+                          {victoryBlueprint ? 'AI適性判定完了' : '未判定'}
+                        </span>
+                      </div>
+
+                      {/* 代表MMR */}
+                      <div className="bg-stone-50/80 border border-stone-200/80 rounded-2xl p-4 flex flex-col justify-between">
+                        <span className="text-[11px] font-bold text-stone-500 uppercase tracking-wider">実力レーティング</span>
+                        <div className="my-2">
+                          <span className="text-3xl sm:text-4xl font-black text-cyan-600">
+                            {player.mmr || 1200}
+                          </span>
+                        </div>
+                        <span className="text-[10px] font-bold text-stone-500">
+                          {player.highest_rank || "UNRANKED"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
                   {/* 直近の調子 & 対面の得意/苦手 */}
                   <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* 直近の調子 */}
