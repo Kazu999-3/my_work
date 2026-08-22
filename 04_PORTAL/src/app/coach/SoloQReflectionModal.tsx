@@ -320,6 +320,14 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
       try {
         if (nextFocusPoint) {
           localStorage.setItem('today_soloq_focus', nextFocusPoint);
+          localStorage.setItem('soloq_last_focus_point', nextFocusPoint);
+          window.dispatchEvent(new Event('storage'));
+        } else if (selectedTags.length > 0) {
+          // タグから次回意識ポイントを自動サジェストしてピン留め
+          const autoFocus = isWin 
+            ? `【好調維持】${selectedTags[0]}を継続して試合主導権を握る`
+            : `【弱点克服】${selectedTags[0]}の改善（判断と視界の徹底）`;
+          localStorage.setItem('soloq_last_focus_point', autoFocus);
           window.dispatchEvent(new Event('storage'));
         }
       } catch {}

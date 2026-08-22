@@ -995,26 +995,62 @@ export default function BalancerPage() {
                 </div>
               )}
 
-              {/* 勝利予想（#79）: pending保存時と同じElo式で表示 */}
+              {/* 勝利予想（#79）: リッチなグラデーション予測ゲージメーター */}
               {(() => {
                 const blueAvg = balanceResult.teamBlue.reduce((s: number, p: any) => s + (p.mmr || 1200), 0) / (balanceResult.teamBlue.length || 1);
                 const redAvg = balanceResult.teamRed.reduce((s: number, p: any) => s + (p.mmr || 1200), 0) / (balanceResult.teamRed.length || 1);
                 const pBlue = 1 / (1 + Math.pow(10, (redAvg - blueAvg) / 400));
                 const bluePct = Math.round(pBlue * 100);
                 const redPct = 100 - bluePct;
+                const mmrDiff = Math.abs(balanceResult.teamBlueMMR - balanceResult.teamRedMMR);
+                const isCloseMatch = mmrDiff <= 50;
+
                 return (
-                  <div className="p-3 rounded-xl border border-stone-200 bg-black/[0.04]">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-black text-stone-400">🔮 勝利予想 (MMRベース)</span>
-                      <span className="text-[10px] text-stone-500">50%に近いほど接戦</span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-sm font-black text-blue-700 w-24 text-right">BLUE {bluePct}%</span>
-                      <div className="flex-1 h-3 rounded-full overflow-hidden bg-stone-100 flex">
-                        <div className="bg-blue-500/80" style={{ width: `${bluePct}%` }}></div>
-                        <div className="bg-red-500/80" style={{ width: `${redPct}%` }}></div>
+                  <div className="p-4 rounded-2xl border border-stone-200 bg-white shadow-xs">
+                    <div className="flex items-center justify-between mb-2.5 flex-wrap gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-black text-stone-900">🔮 Elo勝率予測 ＆ 接戦度診断</span>
+                        {isCloseMatch ? (
+                          <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
+                            🔥 超接戦（名勝負の予感！）
+                          </span>
+                        ) : mmrDiff <= 120 ? (
+                          <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300">
+                            ⚔️ 互角（実力拮抗）
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-stone-100 text-stone-700 border border-stone-300">
+                            ⚖️ やや戦力差あり (差: {mmrDiff} MMR)
+                          </span>
+                        )}
                       </div>
-                      <span className="text-sm font-black text-red-700 w-24">RED {redPct}%</span>
+                      <span className="text-[10px] text-stone-500 font-bold">50%に近いほど理想的なバランス</span>
+                    </div>
+
+                    {/* ゲージバー */}
+                    <div className="flex items-center gap-3">
+                      <div className="text-right w-24 shrink-0">
+                        <span className="text-xs font-extrabold text-blue-700 block">🟦 BLUE TEAM</span>
+                        <strong className="text-base font-black text-blue-900 font-mono">{bluePct}%</strong>
+                      </div>
+                      <div className="flex-1 h-4 rounded-full overflow-hidden bg-stone-100 p-0.5 border border-stone-200 flex shadow-inner">
+                        <div
+                          className="bg-gradient-to-r from-blue-600 to-cyan-500 rounded-l-full transition-all duration-700 flex items-center justify-center text-[9px] text-white font-black"
+                          style={{ width: `${bluePct}%` }}
+                        >
+                          {bluePct >= 20 ? `${bluePct}%` : ''}
+                        </div>
+                        <div
+                          className="bg-gradient-to-l from-rose-600 to-pink-500 rounded-r-full transition-all duration-700 flex items-center justify-center text-[9px] text-white font-black"
+                          style={{ width: `${redPct}%` }}
+                        >
+                          {redPct >= 20 ? `${redPct}%` : ''}
+                        </div>
+                      </div>
+                      <div className="text-left w-24 shrink-0">
+                        <span className="text-xs font-extrabold text-rose-700 block">🟥 RED TEAM</span>
+                        <strong className="text-base font-black text-rose-900 font-mono">{redPct}%</strong>
+                      </div>
                     </div>
                   </div>
                 );
