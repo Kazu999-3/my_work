@@ -8,10 +8,13 @@ import { LANES } from '../../../../../lib/laneGuideMerge';
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
+export type RefineStage = 'dedup' | 'meta_align' | 'structure' | 'all';
+
 /**
- * レーン別ガイドのAI清書・体系化リライトAPI
- * 複数の記事から蓄積されたパッチワーク文章を、重複を排除し、
- * 序盤・中盤・終盤・マクロ原則の美しい章立てで1本の完全攻略ガイドに再構成する。
+ * レーン別ガイドのAI段階的清書・体系化リライトAPI
+ * ステージ1: 重複・ノイズ排除（元構成を維持しつつ重複のみ削除 ➔ Diff比較が最も綺麗に効く）
+ * ステージ2: 2026年最新メタ・表記統一（スカトル2:55、グラブ8:00、永続プレート等への補正）
+ * ステージ3: 究極の章立て・体系化（序盤・中盤・終盤・マクロの5大章立てにリライト）
  */
 export async function POST(req: Request) {
   const auth = await verifyAdminSession(req);
@@ -19,7 +22,7 @@ export async function POST(req: Request) {
 
   try {
     const body = await req.json();
-    const { lane, dryRun = false } = body;
+    const { lane, stage = 'all', inputBody, dryRun = false } = body;
 
     if (!lane) {
       return NextResponse.json({ error: 'lane は必須です' }, { status: 400 });
@@ -36,7 +39,8 @@ export async function POST(req: Request) {
 
     if (fetchErr) throw fetchErr;
 
-    if (!guide || !guide.body || guide.body.trim().length === 0) {
+    const baseBody = inputBody || guide?.body;
+    if (!baseBody || baseBody.trim().length === 0) {
       return NextResponse.json({ error: '清書対象のガイド知見がまだありません' }, { status: 400 });
     }
 
@@ -45,45 +49,97 @@ export async function POST(req: Request) {
       ? `- 【全レーン共通】どのロール・どのチャンピオンでも通用する普遍的なマクロ原則・判断基準に統一してください。特定のチャンピオン名や個別スキルの解説は含めないでください。`
       : `- 【${laneMeta.label}専用】このレーン特有の視界管理、ローム判断、ウェーブコントロール、マッチアップ原則を具体的に掘り下げてください。`;
 
-    const prompt = `あなたはLeague of Legendsの最高峰の戦略アナリスト兼プロコーチです。
+    let prompt = '';
+    let stageTitle = '';
+
+    if (stage === 'dedup') {
+      // 🧹 ステージ1: 重複・ノイズの排除（元の文章構成・段落を維持）
+      stageTitle = '第1段階: 重複・ノイズ排除';
+      prompt = `あなたはLeague of Legendsの戦略アナリストです。
+以下は、${laneMeta.label}に関して様々な記事から追記された【蓄積知見】です。
+
+【最重要指示】
+元の文章の構成、段落、見出しの骨格は【できる限りそのまま維持】してください。
+その上で、以下の作業のみを行ってください：
+1. **重複記述のカット**: 同じノウハウや立ち回りが複数回書かれている場合、1箇所を残して他方の重複行・段落を削除する。
+2. **ノイズ・無駄な文頭文末の削除**: 「〜〜という意見もあります」「動画の解説によると」などの前置きや余計な挨拶文を削除し、簡潔にする。
+3. **重要知見の保持**: 個別の具体的テクニックや注意点は削らずに必ず残す。
+
+※この段階では大がかりな章立ての再編は行わず、元の文章から重複とノイズだけを取り除いたMarkdownを出力してください。
+余計な解説は一切出力せず、本文のみを出力してください。
+
+【蓄積生データ】
+${baseBody}
+`;
+    } else if (stage === 'meta_align') {
+      // ⏱ ステージ2: 2026年最新メタ・表記統一
+      stageTitle = '第2段階: 2026年最新仕様・表記統一';
+      prompt = `あなたはLeague of Legendsの戦略アナリストです。
+以下は、${laneMeta.label}の攻略知見テキストです。
+
+【最重要指示】
+以下の【2026年最新仕様】に基づき、文章内の古い数値・出現時間・仕様を正確に補正・統一してください：
+- 【試合開始】ミニオン湧き0:30、ジャングルキャンプ湧き0:55、初動スカトル（蟹）出現は【2:55】（※3:30は過去パッチの古い情報なので2:55に修正）。
+- 【オブジェクト】初代ドラゴン【5:00】（5分リスポーン）、ヴォイドグラブ【8:00】（14:45消滅）、ヘラルド【15:00】（19:45消滅）、バロン【20:00】（6分リスポーン）。
+- 【タワープレート】タワープレートは14分で消滅せず【永続（Permanent）】仕様。
+- 表現を具体的かつ統一されたプロのトーン＆マナーに整える。
+
+余計な解説は一切出力せず、修正後のMarkdown本文のみを出力してください。
+
+【対象テキスト】
+${baseBody}
+`;
+    } else if (stage === 'structure') {
+      // 🏛 ステージ3: 究極の章立て・体系化
+      stageTitle = '第3段階: 序盤・中盤・終盤の完全体系化';
+      prompt = `あなたはLeague of Legendsの最高峰プロコーチです。
+以下は、${laneMeta.label}の攻略知見データです。
+すべての重要戦術・具体的ノウハウを網羅し、初心者から上級者まで実践できる「究極の体系的攻略マニュアル」として以下の5大章立てに美しく再構成してください：
+
+- ## 1. ${laneMeta.label}の基本思想と勝利条件（コアコンセプト）
+- ## 2. 序盤戦術（Lv1〜6・2:55スカトル・ウェーブ管理とトレード原則）
+- ## 3. 中盤戦術（8:00グラブ・15:00ヘラルド・サイドプッシュ・ローム）
+- ## 4. 終盤戦術・集団戦（20分以降・バロン戦・オブジェクト戦・ポジション取り）
+- ## 5. 勝率を底上げする2026マクロ原則とよくある負け筋の回避
+
+${laneSpecificInstruction}
+余計な解説は一切出力せず、Markdown本文のみを出力してください。
+
+【対象テキスト】
+${baseBody}
+`;
+    } else {
+      // 一括（all）
+      stageTitle = '完全清書・体系化';
+      prompt = `あなたはLeague of Legendsの最高峰の戦略アナリスト兼プロコーチです。
 以下は、${laneMeta.label}に関して様々な解説動画や記事から収集・追記された【蓄積知見】です。
-多くの記事が追記されたため、文章に重複や散らかりが生じています。
 
-この蓄積知見の【全ての重要戦術・具体的ノウハウ】を漏らさず網羅した上で、
-無駄な重複を完全に排除し、初心者から上級者まで実践できる「究極の体系的攻略マニュアル」として1本の洗練されたMarkdownドキュメントに清書・リライトしてください。
-
-━━━━━━━━━━━━━━━━━━━━
 【🚨 2026年シーズン最新仕様の厳格適用ルール】
-蓄積生データに過去パッチの古い記述が含まれている場合でも、必ず以下の【2026年最新仕様】に自動補正・統一して執筆してください：
 - 【試合開始・初動】ミニオン湧き0:30、ジャングルキャンプ湧き0:55、初動スカトル（Scuttle Crab）出現は【2:55】（※3:30は過去パッチの古い情報なので絶対に出力しないでください）。
-- 【中立オブジェクト】初代ドラゴン出現は【5:00】（5分リスポーン）。ヴォイドグラブは【8:00】（1回のみ出現、14:45消滅）。リフトヘラルドは【15:00】（19:45消滅）。バロンナッシャーは【20:00】（6分リスポーン）。
-- 【タワープレート】タワープレートは14分で消滅せず【永続（Permanent）】仕様。外塔・内塔・インヒビター塔にプレートが存在し、近接チャンプのダメージボーナス（+20%）あり。
-- 過去の古い出現時間（3:30スカトル、14:00プレート消滅など）をそのまま出力することは厳禁です。
+- 【中立オブジェクト】初代ドラゴン【5:00】、ヴォイドグラブ【8:00】（14:45消滅）、ヘラルド【15:00】（19:45消滅）、バロン【20:00】。
+- 【タワープレート】タワープレートは14分で消滅せず【永続（Permanent）】仕様。
 
 【執筆ルール】
-1. **章立ての徹底**:
-   以下の体系的な構成で美しくMarkdown見出し（##, ###）を組み立ててください：
-   - ## 1. ${laneMeta.label}の基本思想と勝利条件（コアコンセプト）
-   - ## 2. 序盤戦術（Lv1〜6・2:55スカトル・ウェーブ管理とトレード原則）
-   - ## 3. 中盤戦術（8:00グラブ・15:00ヘラルド・サイドプッシュ・ローム）
-   - ## 4. 終盤戦術・集団戦（20分以降・バロン戦・オブジェクト戦・ポジション取り）
-   - ## 5. 勝率を底上げする2026マクロ原則とよくある負け筋の回避
-2. **重複の完全排除**:
-   同じ内容（例: リコールタイミング、ガンク警戒など）が複数回書かれている場合は、最も具体的で分かりやすい一箇所に統合してください。
-3. **具体性の維持**:
-   「意識する」「気をつける」といった抽象表現を避け、「相手JGがTopに見えたら即座にBotでダイブまたは5:00ドラゴンを触る」のように【状況＋具体的行動】で記述してください。
+1. 以下の5大章立てで美しくMarkdown見出しを組み立てる：
+   - ## 1. ${laneMeta.label}の基本思想と勝利条件
+   - ## 2. 序盤戦術（Lv1〜6・2:55スカトル・ウェーブ管理）
+   - ## 3. 中盤戦術（8:00グラブ・15:00ヘラルド・サイドプッシュ）
+   - ## 4. 終盤戦術・集団戦（20分以降・バロン戦・ポジション取り）
+   - ## 5. 勝率を底上げする2026マクロ原則
+2. 重複の完全排除
+3. 「状況＋具体的行動」での記述
 ${laneSpecificInstruction}
-4. **出力形式**:
-   余計な挨拶や解説（「はい、清書しました」など）は一切出力せず、Markdown本文のみを出力してください。
-━━━━━━━━━━━━━━━━━━━━
+
+余計な挨拶や解説は一切出力せず、Markdown本文のみを出力してください。
 
 【蓄積された生データ】
-${guide.body}
+${baseBody}
 `;
+    }
 
     const refinedBody = await callGeminiWithRetry(prompt, { temperature: 0.2 });
 
-    if (!refinedBody || refinedBody.trim().length < 50) {
+    if (!refinedBody || refinedBody.trim().length < 30) {
       throw new Error('AIによる清書の生成に失敗しました（出力が短すぎます）');
     }
 
@@ -95,10 +151,12 @@ ${guide.body}
         success: true,
         dryRun: true,
         lane,
+        stage,
+        stageTitle,
         title: refinedTitle,
         refinedBody: cleanBody,
-        originalBody: guide.body,
-        sourceCount: guide.source_count,
+        originalBody: baseBody,
+        sourceCount: guide?.source_count || 0,
       });
     }
 
@@ -109,7 +167,7 @@ ${guide.body}
         lane,
         title: refinedTitle,
         body: cleanBody,
-        source_count: guide.source_count,
+        source_count: guide?.source_count || 0,
         updated_at: new Date().toISOString(),
       }, { onConflict: 'lane' });
 
@@ -120,18 +178,20 @@ ${guide.body}
       targetType: 'lane_guide',
       targetKey: lane,
       field: 'body',
-      before: guide.body,
+      before: guide?.body,
       after: cleanBody,
-      sourceTitle: 'AI体系化リライト（清書・重複排除）',
+      sourceTitle: `AI清書 [${stageTitle}]`,
     });
 
     return NextResponse.json({
       success: true,
       dryRun: false,
       lane,
+      stage,
+      stageTitle,
       title: refinedTitle,
       body: cleanBody,
-      sourceCount: guide.source_count,
+      sourceCount: guide?.source_count || 0,
     });
   } catch (err: any) {
     console.error('[lane-guides/refine] error:', err);
