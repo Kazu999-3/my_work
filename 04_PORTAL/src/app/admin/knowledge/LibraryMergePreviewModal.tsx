@@ -547,23 +547,65 @@ export default function LibraryMergePreviewModal({
                       </div>
                     </div>
 
-                    {/* 送り先レーン選択ドロップダウン */}
-                    <div className="flex items-center gap-1.5 bg-amber-50/80 border border-amber-300/80 px-2.5 py-1 rounded-xl">
-                      <span className="text-[11px] font-black text-amber-900">🛡️ 送り先レーン:</span>
-                      <select
-                        value={championRoles[analysis.champion] || analysis.detectedRole || (analysis.availableRoles && analysis.availableRoles[0]) || 'GLOBAL'}
-                        onChange={(e) => {
-                          const newRole = e.target.value;
-                          setChampionRoles((prev) => ({ ...prev, [analysis.champion]: newRole }));
-                        }}
-                        className="bg-white border border-amber-300 rounded-lg px-2 py-0.5 text-xs font-bold text-stone-900 outline-none"
-                      >
-                        {(analysis.availableRoles && analysis.availableRoles.length > 0 ? analysis.availableRoles : ['GLOBAL', 'TOP', 'JG', 'MID', 'BOT', 'SUP']).map((r) => (
-                          <option key={r} value={r}>
-                            {r === 'TOP' ? '⚔️ TOP' : r === 'JG' ? '🌲 JG' : r === 'MID' ? '⚡ MID' : r === 'BOT' ? '🏹 BOT' : r === 'SUP' ? '🛡️ SUP' : r}
-                          </option>
-                        ))}
-                      </select>
+                    {/* 送り先レーン選択エリア（全レーン選択可能＋クイック切り替え） */}
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <div className="flex items-center gap-1.5 bg-amber-50/90 border border-amber-300 px-2.5 py-1 rounded-xl shadow-xs">
+                        <span className="text-[11px] font-black text-amber-900">🛡️ 送り先レーン:</span>
+                        <select
+                          value={championRoles[analysis.champion] || analysis.detectedRole || (analysis.availableRoles && analysis.availableRoles[0]) || 'GLOBAL'}
+                          onChange={(e) => {
+                            const newRole = e.target.value;
+                            setChampionRoles((prev) => ({ ...prev, [analysis.champion]: newRole }));
+                          }}
+                          className="bg-white border border-amber-300 rounded-lg px-2 py-0.5 text-xs font-bold text-stone-900 outline-none cursor-pointer"
+                        >
+                          {[
+                            { key: 'TOP', label: '⚔️ TOP（トップ）' },
+                            { key: 'JG', label: '🌲 JG（ジャングル）' },
+                            { key: 'MID', label: '⚡ MID（ミッド）' },
+                            { key: 'BOT', label: '🏹 BOT（ボット/ADC）' },
+                            { key: 'SUP', label: '🛡️ SUP（サポート）' },
+                            { key: 'GLOBAL', label: '🌐 全レーン共通 (GLOBAL)' },
+                          ].map((r) => {
+                            const isRecommended = (analysis.availableRoles || []).includes(r.key);
+                            return (
+                              <option key={r.key} value={r.key}>
+                                {r.label} {isRecommended ? ' ★推奨' : ''}
+                              </option>
+                            );
+                          })}
+                        </select>
+                      </div>
+
+                      {/* クイックレーン切り替えバッジ */}
+                      <div className="flex items-center gap-1 flex-wrap">
+                        {['TOP', 'JG', 'MID', 'BOT', 'SUP', 'GLOBAL'].map((roleKey) => {
+                          const currentRole = championRoles[analysis.champion] || analysis.detectedRole || (analysis.availableRoles && analysis.availableRoles[0]) || 'GLOBAL';
+                          const isSelected = currentRole === roleKey;
+                          const isRecommended = (analysis.availableRoles || []).includes(roleKey);
+                          const roleLabel = roleKey === 'TOP' ? 'TOP' : roleKey === 'JG' ? 'JG' : roleKey === 'MID' ? 'MID' : roleKey === 'BOT' ? 'BOT' : roleKey === 'SUP' ? 'SUP' : '共通';
+
+                          return (
+                            <button
+                              key={roleKey}
+                              type="button"
+                              onClick={() => setChampionRoles((prev) => ({ ...prev, [analysis.champion]: roleKey }))}
+                              disabled={saving || reAnalyzing}
+                              className={`px-2 py-0.5 rounded-lg text-[11px] font-bold transition flex items-center gap-0.5 border ${
+                                isSelected
+                                  ? 'bg-amber-600 border-amber-600 text-white shadow-xs'
+                                  : isRecommended
+                                    ? 'bg-white border-amber-300 text-amber-900 hover:bg-amber-100'
+                                    : 'bg-stone-100/80 border-stone-200 text-stone-500 hover:bg-stone-200/80 hover:text-stone-800'
+                              }`}
+                              title={isRecommended ? '推奨レーン' : 'このレーンとして統合'}
+                            >
+                              <span>{roleLabel}</span>
+                              {isRecommended && !isSelected && <span className="text-[9px] text-amber-600">★</span>}
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
                   </div>
                 </div>

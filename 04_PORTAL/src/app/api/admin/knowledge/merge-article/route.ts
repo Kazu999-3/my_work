@@ -390,6 +390,29 @@ export async function POST(req: Request) {
         .upsert(factPayload, { onConflict: 'champion' });
       if (factErr) console.warn('[merge-article] champion_facts upsert error:', factErr);
 
+      // 新しいロールが指定された場合、champion_lane_rolesにも追加登録
+      if (targetRole && targetRole !== 'GLOBAL') {
+        try {
+          const { data: existingRoles } = await supabase
+            .from('champion_lane_roles')
+            .select('role, rank')
+            .ilike('champion', championName);
+
+          const dbRole = targetRole === 'BOT' ? 'ADC' : targetRole;
+          const alreadyHas = (existingRoles || []).some((r: any) => r.role === dbRole || r.role === targetRole);
+          if (!alreadyHas) {
+            const nextRank = (existingRoles || []).length + 1;
+            await supabase.from('champion_lane_roles').insert({
+              champion: championName,
+              role: dbRole,
+              rank: nextRank,
+            });
+          }
+        } catch (laneRoleErr) {
+          console.warn('[merge-article] champion_lane_roles insert error:', laneRoleErr);
+        }
+      }
+
       // リビジョン履歴記録
       for (const f of TREND_FIELDS) {
         if (factPayload[f.key] !== undefined && factPayload[f.key] !== (existingFact as any)?.[f.key]) {
