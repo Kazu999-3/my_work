@@ -13,6 +13,7 @@ import { getFavorites, toggleFavoriteChampion } from '../../../components/Favori
 import { Spinner } from '../../../components/Feedback';
 import ChampionFactCheckPanel from '../ChampionFactCheckPanel';
 import ChampionRevisionHistory from '../ChampionRevisionHistory';
+import { diffLines, diffSummary } from '../../../lib/diffUtils';
 
 function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
   const searchParams = useSearchParams();
@@ -2245,37 +2246,60 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
               </button>
             </div>
 
-            {/* 項目ごとのビフォーアフター差分一覧 */}
+            {/* 項目ごとのビフォーアフター差分一覧 (色付きDiff) */}
             <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
               {factsRefinePreview.diffs
                 .filter((d) => (d.before && d.before.trim().length > 0) || (d.after && d.after.trim().length > 0))
-                .map((d) => (
-                  <div key={d.fieldKey} className="bg-white border border-stone-200 rounded-2xl p-4 shadow-xs space-y-3">
-                    <span className="text-xs font-black text-amber-900 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-lg inline-block">
-                      📌 {d.fieldLabel}
-                    </span>
+                .map((d) => {
+                  const itemDiffs = diffLines(d.before, d.after);
+                  const itemSummary = diffSummary(d.before, d.after);
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-                      {/* 清書前 */}
-                      <div className="bg-stone-50 border border-stone-200 rounded-xl p-3 space-y-1">
-                        <span className="text-[10px] font-bold text-stone-400 block">清書前（蓄積された生データ）:</span>
-                        <div className="text-stone-600 whitespace-pre-wrap leading-relaxed max-h-36 overflow-y-auto font-mono text-[11px]">
-                          {d.before || '（未記載）'}
+                  return (
+                    <div key={d.fieldKey} className="bg-white border border-stone-200 rounded-2xl p-4 shadow-xs space-y-3">
+                      <div className="flex items-center justify-between flex-wrap gap-2">
+                        <span className="text-xs font-black text-amber-900 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-lg inline-block">
+                          📌 {d.fieldLabel}
+                        </span>
+                        <div className="flex items-center gap-1.5 text-[11px] font-mono font-bold">
+                          <span className="bg-emerald-100 text-emerald-800 border border-emerald-300 px-2 py-0.5 rounded">
+                            +{itemSummary.added} 行
+                          </span>
+                          <span className="bg-rose-100 text-rose-800 border border-rose-300 px-2 py-0.5 rounded">
+                            -{itemSummary.removed} 行
+                          </span>
                         </div>
                       </div>
 
-                      {/* 清書後 */}
-                      <div className="bg-amber-50/50 border border-amber-200/90 rounded-xl p-3 space-y-1">
-                        <span className="text-[10px] font-bold text-amber-700 block flex items-center gap-1">
-                          <Sparkles size={11} /> 清書後（AI推敲版）:
-                        </span>
-                        <div className="text-stone-900 whitespace-pre-wrap leading-relaxed max-h-36 overflow-y-auto font-medium text-[11px]">
-                          {d.after || '（未記載）'}
-                        </div>
+                      {/* 📝 行単位の色付きDiff表示 */}
+                      <div className="bg-stone-950 border border-stone-800 rounded-xl p-3 font-mono text-[11px] leading-relaxed space-y-0.5 max-h-48 overflow-y-auto">
+                        {itemDiffs.map((line, lIdx) => {
+                          if (line.op === 'added') {
+                            return (
+                              <div key={lIdx} className="bg-emerald-950/60 text-emerald-300 px-2 py-0.5 rounded border-l-2 border-emerald-500 flex items-start gap-1.5">
+                                <span className="text-emerald-500 font-bold select-none shrink-0">+</span>
+                                <span className="whitespace-pre-wrap">{line.text || ' '}</span>
+                              </div>
+                            );
+                          }
+                          if (line.op === 'removed') {
+                            return (
+                              <div key={lIdx} className="bg-rose-950/50 text-rose-300/80 px-2 py-0.5 rounded border-l-2 border-rose-500 flex items-start gap-1.5 line-through decoration-rose-500/60">
+                                <span className="text-rose-500 font-bold select-none shrink-0">-</span>
+                                <span className="whitespace-pre-wrap">{line.text || ' '}</span>
+                              </div>
+                            );
+                          }
+                          return (
+                            <div key={lIdx} className="text-stone-400 px-2 py-0.5 flex items-start gap-1.5 hover:bg-white/5 rounded">
+                              <span className="text-stone-600 select-none shrink-0"> </span>
+                              <span className="whitespace-pre-wrap">{line.text || ' '}</span>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
             </div>
 
             {/* フッターアクション */}
