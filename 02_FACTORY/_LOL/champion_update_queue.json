@@ -1,6 +1,6 @@
 {
   "patch_version": "26.16",
-  "updated_at": "2026-08-16T18:19:49.959429+00:00",
+  "updated_at": "2026-08-23T18:20:07.348851+00:00",
   "status": "suspended",
   "queue": {
     "Aatrox": {
@@ -29,26 +29,26 @@
     },
     "Alistar": {
       "name": "アリスター",
-      "status": "pending",
-      "updated_at": "2026-08-14T08:30:30.189088+00:00",
+      "status": "completed",
+      "updated_at": "2026-08-23T18:17:16.860604+00:00",
       "error": null
     },
     "Ambessa": {
       "name": "アンベッサ",
-      "status": "pending",
-      "updated_at": "2026-08-14T08:31:24.474994+00:00",
+      "status": "completed",
+      "updated_at": "2026-08-23T18:18:03.612417+00:00",
       "error": null
     },
     "Amumu": {
       "name": "アムム",
-      "status": "pending",
-      "updated_at": "2026-08-14T08:32:12.176087+00:00",
+      "status": "completed",
+      "updated_at": "2026-08-23T18:18:49.712841+00:00",
       "error": null
     },
     "Anivia": {
       "name": "アニビア",
-      "status": "pending",
-      "updated_at": "2026-08-14T15:15:27.106488+00:00",
+      "status": "completed",
+      "updated_at": "2026-08-23T18:19:34.576041+00:00",
       "error": null
     },
     "Annie": {
