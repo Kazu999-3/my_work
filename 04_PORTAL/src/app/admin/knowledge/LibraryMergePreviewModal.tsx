@@ -1,9 +1,12 @@
 "use client";
 
-import { useState, useEffect } from 'react';
-import { CheckCircle2, RefreshCw, X, BookOpen, Map, Swords, Sparkles, ShieldAlert, ChevronDown, ChevronUp, Zap, Target, Layers, Plus } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { CheckCircle2, RefreshCw, X, BookOpen, Map, Swords, Sparkles, ShieldAlert, ChevronDown, ChevronUp, Zap, Target, Layers, Plus, FileText, ExternalLink, Trash } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { getChampIcon } from '../../../lib/ddragonClient';
 import ChampSelect from '../../../components/ChampSelect';
+import { detectChampionsFromText } from '../../../lib/championDetection';
 
 export type MergePreviewItem = {
   champion: string;
@@ -72,6 +75,9 @@ export default function LibraryMergePreviewModal({
   laneGeneralInsights = [],
   detectedLane = 'COMMON',
   currentChampions = [],
+  articleTitle = '',
+  articleContent = '',
+  sourceUrl = '',
   saving,
   reAnalyzing = false,
   continuousReview,
@@ -85,6 +91,9 @@ export default function LibraryMergePreviewModal({
   laneGeneralInsights?: LaneGeneralInsight[];
   detectedLane?: string;
   currentChampions?: string[];
+  articleTitle?: string;
+  articleContent?: string;
+  sourceUrl?: string;
   saving: boolean;
   reAnalyzing?: boolean;
   continuousReview?: {
@@ -316,13 +325,26 @@ export default function LibraryMergePreviewModal({
     });
   };
 
+  const [showSourceArticle, setShowSourceArticle] = useState(false);
+
+  // 本文・タイトルから登場するチャンピオン候補を検出（現在選択中以外のもの）
+  const detectedSuggestions = useMemo(() => {
+    return detectChampionsFromText(articleTitle, articleContent, currentChampions);
+  }, [articleTitle, articleContent, currentChampions]);
+
+  const handleClearAllChampions = () => {
+    if (onReAnalyze) {
+      onReAnalyze([]);
+    }
+  };
+
   const laneGeneralCount = laneInsightItems.filter((i) => i.included && i.scope === 'lane_general').length;
   const champSpecificCount = laneInsightItems.filter((i) => i.included && i.scope === 'champion_specific').length;
   const canConfirm = currentChampions.length > 0 || (sendToLaneChecked && (laneGeneralCount > 0 || hasLaneGeneral)) || champSpecificCount > 0 || selectedMatchupIndices.length > 0;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/60 backdrop-blur-sm animate-fade-in">
-      <div className="bg-[#fcfbf9] border border-stone-200 rounded-3xl w-full max-w-3xl max-h-[90vh] overflow-y-auto p-6 shadow-2xl space-y-6">
+      <div className="bg-[#fcfbf9] border border-stone-200 rounded-3xl w-full max-w-3xl max-h-[90vh] overflow-y-auto p-6 shadow-2xl space-y-5">
         {/* ヘッダー */}
         <div className="flex items-start sm:items-center justify-between border-b border-stone-200 pb-4 gap-4 flex-col sm:flex-row">
           <div>
@@ -351,45 +373,109 @@ export default function LibraryMergePreviewModal({
           </button>
         </div>
 
+        {/* 📄 元記事の即座確認アコーディオン */}
+        <div className="bg-stone-100/80 border border-stone-200 rounded-2xl overflow-hidden transition-all">
+          <div
+            onClick={() => setShowSourceArticle(v => !v)}
+            className="p-3.5 flex items-center justify-between cursor-pointer hover:bg-stone-200/50 transition-colors"
+          >
+            <div className="flex items-center gap-2 min-w-0 flex-1 pr-2">
+              <FileText size={16} className="text-amber-700 shrink-0" />
+              <span className="text-xs font-black text-stone-900 truncate">
+                元記事: {articleTitle || '無題'}
+              </span>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              {sourceUrl && (
+                <a
+                  href={sourceUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="text-[11px] font-bold text-amber-700 bg-white border border-amber-300 hover:bg-amber-50 px-2 py-1 rounded-lg flex items-center gap-1 shadow-sm transition"
+                  title="元動画・記事を開く"
+                >
+                  <span>元ソース</span>
+                  <ExternalLink size={11} />
+                </a>
+              )}
+              <span className="text-stone-400 text-xs flex items-center gap-0.5 font-bold">
+                {showSourceArticle ? '閉じる' : '全文を見る'}
+                <ChevronDown size={14} className={`transition-transform duration-200 ${showSourceArticle ? 'rotate-180' : 'rotate-0'}`} />
+              </span>
+            </div>
+          </div>
+
+          {showSourceArticle && (
+            <div className="p-4 border-t border-stone-200 bg-white max-h-[300px] overflow-y-auto text-xs leading-relaxed text-stone-700 prose prose-stone max-w-none">
+              {articleContent ? (
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{articleContent}</ReactMarkdown>
+              ) : (
+                <p className="text-stone-400 italic">本文がありません</p>
+              )}
+            </div>
+          )}
+        </div>
+
         {/* 対象チャンピオン編集バー (プレビュー内での追加・削除・再解析) */}
-        <div className="bg-amber-50/70 border border-amber-200/90 rounded-2xl p-3.5 space-y-2.5">
+        <div className="bg-amber-50/70 border border-amber-200/90 rounded-2xl p-3.5 space-y-3">
           <div className="flex items-center justify-between flex-wrap gap-2">
             <span className="text-xs font-black text-amber-950 flex items-center gap-1.5">
               🏆 統合対象のチャンピオン ({currentChampions.length}体)
             </span>
-            {reAnalyzing && (
-              <span className="text-[11px] font-bold text-amber-700 flex items-center gap-1 animate-pulse">
-                <RefreshCw size={12} className="animate-spin" /> AI解析を再実行中...
-              </span>
-            )}
+            <div className="flex items-center gap-2">
+              {reAnalyzing && (
+                <span className="text-[11px] font-bold text-amber-700 flex items-center gap-1 animate-pulse">
+                  <RefreshCw size={12} className="animate-spin" /> AI再解析中...
+                </span>
+              )}
+              {currentChampions.length > 0 && (
+                <button
+                  type="button"
+                  onClick={handleClearAllChampions}
+                  disabled={saving || reAnalyzing}
+                  className="text-[11px] font-bold text-rose-700 hover:text-rose-800 bg-rose-50 hover:bg-rose-100 border border-rose-200 px-2 py-0.5 rounded-lg transition flex items-center gap-1"
+                  title="チャンピオンを全解除してレーン一般論のみにします"
+                >
+                  <Trash size={11} />
+                  <span>チャンプ全解除（一般論のみ）</span>
+                </button>
+              )}
+            </div>
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
             {/* 選択中のチャンピオンタグ */}
-            {currentChampions.map((c) => (
-              <span
-                key={c}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white border border-amber-300 rounded-lg text-xs font-bold text-stone-800 shadow-sm"
-              >
-                {getChampIcon(c) && (
-                  <img
-                    src={getChampIcon(c)}
-                    alt={c}
-                    className="w-4 h-4 rounded-md border border-amber-200"
-                  />
-                )}
-                <span>{c}</span>
-                <button
-                  type="button"
-                  onClick={() => handleRemoveChampion(c)}
-                  disabled={saving || reAnalyzing}
-                  title={`${c} を除外`}
-                  className="text-stone-400 hover:text-rose-600 ml-0.5 transition"
+            {currentChampions.length > 0 ? (
+              currentChampions.map((c) => (
+                <span
+                  key={c}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white border border-amber-300 rounded-lg text-xs font-bold text-stone-800 shadow-sm"
                 >
-                  <X size={13} />
-                </button>
+                  {getChampIcon(c) && (
+                    <img
+                      src={getChampIcon(c)}
+                      alt={c}
+                      className="w-4 h-4 rounded-md border border-amber-200"
+                    />
+                  )}
+                  <span>{c}</span>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveChampion(c)}
+                    disabled={saving || reAnalyzing}
+                    title={`${c} を除外`}
+                    className="text-stone-400 hover:text-rose-600 ml-0.5 transition"
+                  >
+                    <X size={13} />
+                  </button>
+                </span>
+              ))
+            ) : (
+              <span className="text-xs font-bold text-stone-500 bg-white/70 border border-stone-300 px-2.5 py-1 rounded-lg">
+                チャンピオン未設定（レーン別ガイドへのみ統合されます）
               </span>
-            ))}
+            )}
 
             {/* 新規チャンピオン追加用サジェスト */}
             <div className="w-44">
@@ -402,6 +488,33 @@ export default function LibraryMergePreviewModal({
               />
             </div>
           </div>
+
+          {/* 💡 本文・タイトルから検出された候補チャンピオン */}
+          {detectedSuggestions.length > 0 && (
+            <div className="pt-2 border-t border-amber-200/60 flex items-center gap-2 flex-wrap">
+              <span className="text-[11px] font-bold text-amber-900 flex items-center gap-1">
+                <Sparkles size={12} className="text-amber-600" />
+                <span>本文から検出された候補:</span>
+              </span>
+              <div className="flex gap-1.5 flex-wrap">
+                {detectedSuggestions.slice(0, 6).map((s) => (
+                  <button
+                    key={s.champion}
+                    type="button"
+                    onClick={() => handleAddChampion(s.champion)}
+                    disabled={saving || reAnalyzing}
+                    className="text-[11px] font-bold bg-white hover:bg-amber-100 border border-amber-300 text-stone-800 px-2 py-0.5 rounded-md flex items-center gap-1 shadow-xs hover:border-amber-400 transition"
+                    title={`${s.matchedAlias} (${s.count}回出現) を対象に追加して再解析`}
+                  >
+                    <span>＋ {s.matchedAlias}</span>
+                    <span className="text-[9px] text-amber-700 bg-amber-100 px-1 rounded font-mono">
+                      {s.count}回{s.inTitle ? '・題' : ''}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* 1. チャンピオントレンド構造化プレビュー */}

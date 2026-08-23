@@ -48,6 +48,7 @@ export function LibraryTabContentInner() {
     articleId: number | string;
     title: string;
     content: string;
+    sourceUrl?: string;
     editChampions: string[];
   } | null>(null);
   const [mergeConfirmSaving, setMergeConfirmSaving] = useState(false);
@@ -533,6 +534,7 @@ export function LibraryTabContentInner() {
         articleId: selectedArticle.id,
         title: editTitle,
         content: editContent,
+        sourceUrl: selectedArticle.source_url || '',
         editChampions: data.champions || [],
       });
       return true;
@@ -746,6 +748,7 @@ export function LibraryTabContentInner() {
           articleId: article.id,
           title: article.title || '',
           content: body,
+          sourceUrl: article.source_url || '',
           editChampions: data.champions || champs,
         });
       } else {
@@ -1210,6 +1213,9 @@ export function LibraryTabContentInner() {
           laneGeneralInsights={mergePreview.laneGeneralInsights}
           detectedLane={mergePreview.detectedLane}
           currentChampions={mergePreview.editChampions}
+          articleTitle={mergePreview.title}
+          articleContent={mergePreview.content}
+          sourceUrl={mergePreview.sourceUrl}
           saving={mergeConfirmSaving}
           reAnalyzing={reAnalyzing}
           continuousReview={reviewQueue.length > 0 ? {
