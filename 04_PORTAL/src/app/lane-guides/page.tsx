@@ -203,26 +203,36 @@ export default function LaneGuidesPage() {
               )}
             </div>
 
-            {/* ⏱ 時間帯別マクロチェックリスト */}
+            {/* ⏱ 2026年シーズン タイムライン・マクロチェックリスト */}
             <div className="bg-amber-50/70 border border-amber-200/80 rounded-2xl p-5 shadow-xs">
-              <h3 className="text-xs font-black text-amber-900 mb-3 flex items-center gap-1.5 uppercase tracking-wider">
-                <span>⏱</span> 試合中タイムライン・マクロチェックポイント
-              </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+              <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+                <h3 className="text-xs font-black text-amber-900 flex items-center gap-1.5 uppercase tracking-wider">
+                  <span>⏱</span> 2026年シーズン タイムライン ＆ オブジェクト管理基準
+                </h3>
+                <span className="text-[10px] bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded border border-amber-300">
+                  2026 Meta Verified
+                </span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-2.5 text-xs">
                 <div className="bg-white p-3 rounded-xl border border-amber-200/60 shadow-2xs">
-                  <span className="text-[10px] font-mono font-extrabold text-amber-700 block">3:30 〜</span>
-                  <strong className="text-stone-900 block mt-0.5">初動スカトル ＆ レーン介入</strong>
-                  <p className="text-[11px] text-stone-500 mt-1">JGの位置を視界で特定し、ガンク回避または合流準備</p>
+                  <span className="text-[10px] font-mono font-extrabold text-amber-700 block">2:55 〜</span>
+                  <strong className="text-stone-900 block mt-0.5">初動スカトル争奪</strong>
+                  <p className="text-[11px] text-stone-500 mt-1">キャンプ湧き(0:55)から最速周回。レーン優先度を見て交戦判断</p>
+                </div>
+                <div className="bg-white p-3 rounded-xl border border-amber-200/60 shadow-2xs">
+                  <span className="text-[10px] font-mono font-extrabold text-amber-700 block">5:00 〜</span>
+                  <strong className="text-stone-900 block mt-0.5">初代ドラゴン出現</strong>
+                  <p className="text-[11px] text-stone-500 mt-1">Bot/MidプッシュとBot視界掌握で先手触り（5分リスポーン）</p>
                 </div>
                 <div className="bg-white p-3 rounded-xl border border-amber-200/60 shadow-2xs">
                   <span className="text-[10px] font-mono font-extrabold text-amber-700 block">8:00 〜</span>
                   <strong className="text-stone-900 block mt-0.5">ヴォイドグラブ出現</strong>
-                  <p className="text-[11px] text-stone-500 mt-1">Top/Midのプライオリティを活かしてオブジェクト確保</p>
+                  <p className="text-[11px] text-stone-500 mt-1">1回のみ出現(14:45消滅)。Top/Midプライオリティで確保</p>
                 </div>
                 <div className="bg-white p-3 rounded-xl border border-amber-200/60 shadow-2xs">
-                  <span className="text-[10px] font-mono font-extrabold text-amber-700 block">14:00 〜</span>
-                  <strong className="text-stone-900 block mt-0.5">タワープレート消滅</strong>
-                  <p className="text-[11px] text-stone-500 mt-1">Bot/Midローテーション開始。サイドレーンの管理</p>
+                  <span className="text-[10px] font-mono font-extrabold text-amber-700 block">15:00 〜</span>
+                  <strong className="text-stone-900 block mt-0.5">リフトヘラルド出現</strong>
+                  <p className="text-[11px] text-stone-500 mt-1">19:45消滅。永続タワープレート削りや外塔破壊の起点に</p>
                 </div>
                 <div className="bg-white p-3 rounded-xl border border-amber-200/60 shadow-2xs">
                   <span className="text-[10px] font-mono font-extrabold text-amber-700 block">20:00 〜</span>
