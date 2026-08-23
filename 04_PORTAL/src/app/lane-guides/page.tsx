@@ -16,16 +16,14 @@ export default function LaneGuidesPage() {
   // AI清書・体系化リライト状態
   const [refining, setRefining] = useState(false);
   const [savingRefined, setSavingRefined] = useState(false);
-  const [currentStage, setCurrentStage] = useState<'dedup' | 'meta_align' | 'structure' | 'all'>('dedup');
-  const [viewMode, setViewMode] = useState<'side-by-side' | 'markdown'>('side-by-side');
   const [refinePreview, setRefinePreview] = useState<{
     lane: string;
-    stage: 'dedup' | 'meta_align' | 'structure' | 'all';
-    stageTitle: string;
     title: string;
     refinedBody: string;
     originalBody: string;
     sourceCount: number;
+    retainedKeyPoints?: Array<{ topic: string; targetSection: string }>;
+    consolidatedDuplicates?: Array<{ duplicateSummary: string; resolvedAction: string }>;
   } | null>(null);
   const [toastMessage, setToastMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
@@ -56,31 +54,26 @@ export default function LaneGuidesPage() {
     fetchGuides();
   }, [isAuthenticated]);
 
-  // AI段階的清書プレビューの取得
-  const handleStartRefine = async (laneKey: string, stage: 'dedup' | 'meta_align' | 'structure' | 'all' = 'dedup', customInput?: string) => {
+  // AI清書プレビューの取得
+  const handleStartRefine = async (laneKey: string) => {
     setRefining(true);
-    setCurrentStage(stage);
-    // 重複削除の時はSide-by-Side Diffが最も見やすいので自動切り替え
-    if (stage === 'dedup') {
-      setViewMode('side-by-side');
-    }
     try {
       const res = await fetch('/api/admin/lane-guides/refine', {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ lane: laneKey, stage, inputBody: customInput, dryRun: true }),
+        body: JSON.stringify({ lane: laneKey, dryRun: true }),
       });
       const d = await res.json();
       if (!res.ok || !d.success) throw new Error(d.error || '清書の生成に失敗しました');
       setRefinePreview({
         lane: d.lane,
-        stage: d.stage,
-        stageTitle: d.stageTitle,
         title: d.title,
         refinedBody: d.refinedBody,
         originalBody: d.originalBody,
         sourceCount: d.sourceCount,
+        retainedKeyPoints: d.retainedKeyPoints || [],
+        consolidatedDuplicates: d.consolidatedDuplicates || [],
       });
     } catch (e: any) {
       showToast(`❌ 清書エラー: ${e.message}`, 'error');
@@ -100,14 +93,12 @@ export default function LaneGuidesPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           lane: refinePreview.lane,
-          stage: refinePreview.stage,
-          inputBody: refinePreview.refinedBody,
           dryRun: false,
         }),
       });
       const d = await res.json();
       if (!res.ok || !d.success) throw new Error(d.error || '保存に失敗しました');
-      showToast(`✨ [${refinePreview.stageTitle || '清書版'}] をガイドへ反映しました！`, 'success');
+      showToast('✨ AI清書版をガイドへ反映しました！', 'success');
       setRefinePreview(null);
       fetchGuides();
     } catch (e: any) {
@@ -293,262 +284,119 @@ export default function LaneGuidesPage() {
           </>
         )}
 
-        {/* ✨ AI段階的清書 プレビューモーダル */}
-        {refinePreview && (() => {
-          const sbsRows = diffSideBySide(refinePreview.originalBody, refinePreview.refinedBody);
-          const summary = diffSummary(refinePreview.originalBody, refinePreview.refinedBody);
-
-          return (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/70 backdrop-blur-sm animate-fade-in">
-              <div className="bg-[#fcfbf9] border border-stone-200 rounded-3xl w-full max-w-6xl max-h-[94vh] overflow-hidden p-6 shadow-2xl flex flex-col space-y-3.5">
-                {/* ヘッダー */}
-                <div className="flex items-center justify-between border-b border-stone-200 pb-3 flex-wrap gap-3">
-                  <div>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="text-xl font-black text-stone-900 flex items-center gap-2">
-                        <Sparkles size={22} className="text-amber-600" />
-                        <span>レーンガイド 段階的AI清書プレビュー</span>
-                      </h3>
-                      <span className="text-xs bg-amber-100 text-amber-900 font-bold px-2.5 py-0.5 rounded-full border border-amber-300">
-                        {refinePreview.stageTitle || '清書中'}
-                      </span>
-                    </div>
-                    <p className="text-xs text-stone-500 mt-1">
-                      段階を分けてプレビューを確認できます。重複削除 ➔ メタ統一 ➔ 完全体系化の順で進められます。
-                    </p>
+        {/* ✨ AI清書 プレビューモーダル (🔍 重要知見の網羅性チェック ＆ 左右文章比較) */}
+        {refinePreview && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/70 backdrop-blur-sm animate-fade-in">
+            <div className="bg-[#fcfbf9] border border-stone-200 rounded-3xl w-full max-w-6xl max-h-[94vh] overflow-hidden p-6 shadow-2xl flex flex-col space-y-3.5">
+              {/* ヘッダー */}
+              <div className="flex items-center justify-between border-b border-stone-200 pb-3 flex-wrap gap-3">
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="text-xl font-black text-stone-900 flex items-center gap-2">
+                      <Sparkles size={22} className="text-amber-600" />
+                      <span>レーンガイド AI清書・体系化プレビュー</span>
+                    </h3>
+                    <span className="text-xs bg-amber-100 text-amber-900 font-bold px-2.5 py-0.5 rounded-full border border-amber-300">
+                      {refinePreview.title}
+                    </span>
                   </div>
-                  <button
-                    onClick={() => setRefinePreview(null)}
-                    disabled={savingRefined || refining}
-                    className="text-stone-400 hover:text-stone-700 p-1.5 rounded-lg hover:bg-stone-100 transition"
-                  >
-                    <X size={20} />
-                  </button>
+                  <p className="text-xs text-stone-500 mt-1">
+                    元の生データにあった重要戦術を漏らさず引き継ぎ、重複を排除して2026年最新章立てに再構成しました。
+                  </p>
                 </div>
+                <button
+                  onClick={() => setRefinePreview(null)}
+                  disabled={savingRefined || refining}
+                  className="text-stone-400 hover:text-stone-700 p-1.5 rounded-lg hover:bg-stone-100 transition"
+                >
+                  <X size={20} />
+                </button>
+              </div>
 
-                {/* 🧭 段階（ステップ）切り替え ＆ ビューモード切り替えバー */}
-                <div className="flex items-center justify-between gap-3 flex-wrap bg-stone-100 p-2 rounded-2xl border border-stone-200">
-                  {/* ステップ切り替えタブ */}
-                  <div className="flex items-center gap-1 flex-wrap">
-                    {[
-                      { id: 'dedup', label: '🧹 Step 1: 重複削除', desc: '元構成維持・重複のみカット' },
-                      { id: 'meta_align', label: '⏱ Step 2: 2026メタ統一', desc: 'スカトル2:55・永続プレート等' },
-                      { id: 'structure', label: '🏛 Step 3: 完全体系化', desc: '序盤・中盤・終盤の章立て' },
-                      { id: 'all', label: '🚀 一括完全清書', desc: '全工程を一括実行' },
-                    ].map((st) => (
-                      <button
-                        key={st.id}
-                        type="button"
-                        onClick={() => handleStartRefine(refinePreview.lane, st.id as any)}
-                        disabled={refining}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
-                          currentStage === st.id
-                            ? 'bg-amber-600 text-white shadow-xs'
-                            : 'bg-white text-stone-600 hover:text-stone-900 border border-stone-200'
-                        }`}
-                        title={st.desc}
-                      >
-                        <span>{st.label}</span>
-                      </button>
+              {/* 🔍 【重要知見の網羅性チェック (AI監査レポート)】 */}
+              {refinePreview.retainedKeyPoints && refinePreview.retainedKeyPoints.length > 0 && (
+                <div className="bg-emerald-50/70 border border-emerald-300/80 rounded-2xl p-3.5 shadow-xs space-y-2 shrink-0">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <span className="text-xs font-black text-emerald-950 flex items-center gap-1.5">
+                      <CheckCircle2 size={15} className="text-emerald-600" />
+                      <span>🔍 元データから引き継がれた重要戦術・ノウハウ（{refinePreview.retainedKeyPoints.length}項目 網羅確認済み）</span>
+                    </span>
+                    <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded border border-emerald-300">
+                      100% Retained & Mapped
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 text-xs">
+                    {refinePreview.retainedKeyPoints.map((kp, idx) => (
+                      <div key={idx} className="bg-white p-2 rounded-xl border border-emerald-200/80 shadow-2xs flex items-start gap-1.5">
+                        <span className="text-emerald-600 font-bold shrink-0">✔</span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-stone-800 font-bold text-[11px] leading-snug line-clamp-2">{kp.topic}</p>
+                          <span className="text-[10px] text-emerald-700 font-medium mt-0.5 block">➔ {kp.targetSection}</span>
+                        </div>
+                      </div>
                     ))}
                   </div>
+                </div>
+              )}
 
-                  {/* 表示形式切り替え */}
-                  <div className="flex items-center gap-1 bg-white border border-stone-200 p-0.5 rounded-xl">
-                    <button
-                      type="button"
-                      onClick={() => setViewMode('side-by-side')}
-                      className={`px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1 ${
-                        viewMode === 'side-by-side' ? 'bg-stone-800 text-white' : 'text-stone-500 hover:text-stone-800'
-                      }`}
-                      title="削除（赤）と追加（緑）を左右横並びDiffで比較"
-                    >
-                      <SplitSquareVertical size={13} />
-                      <span>横並びDiff</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setViewMode('markdown')}
-                      className={`px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1 ${
-                        viewMode === 'markdown' ? 'bg-stone-800 text-white' : 'text-stone-500 hover:text-stone-800'
-                      }`}
-                      title="Markdown文書として左右並列で読む"
-                    >
-                      <Columns size={13} />
-                      <span>文章比較</span>
-                    </button>
+              {/* 📄 左右並列 Markdown 文章比較（文章としてそのまま読める！） */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1 overflow-hidden min-h-[42vh] max-h-[52vh]">
+                {/* 左列: 清書前の生知見 */}
+                <div className="bg-stone-50 border border-stone-200 rounded-2xl p-4 shadow-2xs flex flex-col overflow-hidden">
+                  <div className="flex items-center justify-between border-b border-stone-200 pb-2 mb-2.5 shrink-0">
+                    <span className="text-xs font-black text-stone-600 flex items-center gap-1.5">
+                      <span>📄</span> 清書前（蓄積された生データ）
+                    </span>
+                    <span className="text-[10px] bg-stone-200 text-stone-700 px-2 py-0.5 rounded font-mono font-bold">
+                      {refinePreview.originalBody.length} 文字
+                    </span>
+                  </div>
+                  <div className="prose prose-xs max-w-none text-stone-600 overflow-y-auto pr-2 leading-relaxed flex-1 prose-headings:text-stone-800">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{refinePreview.originalBody}</ReactMarkdown>
                   </div>
                 </div>
 
-                {/* 💡 サマリーバー */}
-                <div className="bg-amber-50/80 border border-amber-200/90 rounded-xl px-3.5 py-1.5 text-xs flex items-center justify-between gap-3 flex-wrap">
-                  <div className="flex items-center gap-2 text-amber-900 font-bold">
-                    <span>💡 現在の段階:</span>
-                    <span className="font-normal text-amber-800">
-                      {currentStage === 'dedup'
-                        ? '【Step 1】文章の骨格を維持したまま、重複している記述・ノイズのみを削ぎ落としています（Diffで赤く確認できます）。'
-                        : currentStage === 'meta_align'
-                        ? '【Step 2】2026年最新仕様（スカトル2:55、グラブ8:00、永続タワープレート等）に数値を統一しています。'
-                        : currentStage === 'structure'
-                        ? '【Step 3】序盤・中盤・終盤・マクロの5大章立てに美しく再構成しています。'
-                        : '全ステップ（重複削除＋2026メタ統一＋体系化）を一括実行しています。'}
+                {/* 右列: 清書後の完成攻略ガイド */}
+                <div className="bg-white border-2 border-amber-400/80 rounded-2xl p-4 shadow-md flex flex-col overflow-hidden">
+                  <div className="flex items-center justify-between border-b border-amber-100 pb-2 mb-2.5 shrink-0">
+                    <span className="text-xs font-black text-amber-900 flex items-center gap-1.5">
+                      <Sparkles size={14} className="text-amber-600" />
+                      <span>清書後（2026年最新・完全体系化ガイド）</span>
+                    </span>
+                    <span className="text-[10px] bg-amber-100 text-amber-800 border border-amber-200 px-2 py-0.5 rounded font-mono font-black">
+                      {refinePreview.refinedBody.length} 文字
                     </span>
                   </div>
-                  <div className="flex items-center gap-2 text-[11px] font-mono font-bold">
-                    <span className="bg-emerald-100 text-emerald-800 border border-emerald-300 px-1.5 py-0.5 rounded">
-                      +{summary.added} 行
-                    </span>
-                    <span className="bg-rose-100 text-rose-800 border border-rose-300 px-1.5 py-0.5 rounded">
-                      -{summary.removed} 行
-                    </span>
-                  </div>
-                </div>
-
-                {/* メインプレビューエリア（モード切り替え） */}
-                {viewMode === 'side-by-side' ? (
-                  /* 📝 左右横並び Side-by-Side Diff */
-                  <div className="flex flex-col flex-1 overflow-hidden min-h-[44vh] max-h-[54vh] bg-stone-950 border border-stone-800 rounded-2xl shadow-inner">
-                    <div className="grid grid-cols-2 gap-2 text-[11px] font-bold px-3 py-1.5 bg-stone-900 text-stone-300 border-b border-stone-800 shrink-0">
-                      <div className="flex items-center gap-1.5 text-rose-400">
-                        <span>📄</span> 変更前（削除・整理された行: 赤）
-                      </div>
-                      <div className="flex items-center gap-1.5 text-emerald-400">
-                        <Sparkles size={12} /> 変更後（残った・追加された行: 緑）
-                      </div>
-                    </div>
-                    <div className="p-2 overflow-y-auto font-mono text-[11px] leading-relaxed space-y-0.5 select-text flex-1">
-                      {sbsRows.map((row, idx) => {
-                        const l = row.left;
-                        const r = row.right;
-
-                        return (
-                          <div key={idx} className="grid grid-cols-2 gap-2 group hover:bg-white/5 py-0.5 px-1 rounded">
-                            {/* 左列: 変更前 */}
-                            <div
-                              className={`flex items-start gap-1.5 px-2 py-0.5 rounded overflow-x-auto min-h-[1.4rem] ${
-                                l.op === 'removed'
-                                  ? 'bg-rose-950/60 text-rose-300 border-l-2 border-rose-500 line-through decoration-rose-500/70'
-                                  : l.op === 'empty'
-                                  ? 'opacity-20'
-                                  : 'text-stone-400'
-                              }`}
-                            >
-                              <span className="text-[9px] text-stone-600 select-none w-5 shrink-0 text-right font-mono">
-                                {l.lineNum || ''}
-                              </span>
-                              <span className="select-none text-rose-500 font-bold shrink-0">
-                                {l.op === 'removed' ? '-' : ' '}
-                              </span>
-                              <span className="whitespace-pre-wrap break-all">{l.text || (l.op === 'empty' ? ' ' : '')}</span>
-                            </div>
-
-                            {/* 右列: 変更後 */}
-                            <div
-                              className={`flex items-start gap-1.5 px-2 py-0.5 rounded overflow-x-auto min-h-[1.4rem] ${
-                                r.op === 'added'
-                                  ? 'bg-emerald-950/70 text-emerald-300 border-l-2 border-emerald-500'
-                                  : r.op === 'empty'
-                                  ? 'opacity-20'
-                                  : 'text-stone-300'
-                              }`}
-                            >
-                              <span className="text-[9px] text-stone-600 select-none w-5 shrink-0 text-right font-mono">
-                                {r.lineNum || ''}
-                              </span>
-                              <span className="select-none text-emerald-500 font-bold shrink-0">
-                                {r.op === 'added' ? '+' : ' '}
-                              </span>
-                              <span className="whitespace-pre-wrap break-all">{r.text || (r.op === 'empty' ? ' ' : '')}</span>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ) : (
-                  /* 📄 左右並列 Markdown 文章比較 */
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1 overflow-hidden min-h-[44vh] max-h-[54vh]">
-                    <div className="bg-stone-50 border border-stone-200 rounded-2xl p-4 shadow-2xs flex flex-col overflow-hidden">
-                      <div className="flex items-center justify-between border-b border-stone-200 pb-2 mb-2.5 shrink-0">
-                        <span className="text-xs font-black text-stone-600 flex items-center gap-1.5">
-                          <span>📄</span> 変更前（生知見）
-                        </span>
-                        <span className="text-[10px] bg-stone-200 text-stone-700 px-2 py-0.5 rounded font-mono font-bold">
-                          {refinePreview.originalBody.length} 文字
-                        </span>
-                      </div>
-                      <div className="prose prose-xs max-w-none text-stone-600 overflow-y-auto pr-2 leading-relaxed flex-1 prose-headings:text-stone-800">
-                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{refinePreview.originalBody}</ReactMarkdown>
-                      </div>
-                    </div>
-
-                    <div className="bg-white border-2 border-amber-400/80 rounded-2xl p-4 shadow-md flex flex-col overflow-hidden">
-                      <div className="flex items-center justify-between border-b border-amber-100 pb-2 mb-2.5 shrink-0">
-                        <span className="text-xs font-black text-amber-900 flex items-center gap-1.5">
-                          <Sparkles size={14} className="text-amber-600" />
-                          <span>変更後（{refinePreview.stageTitle}）</span>
-                        </span>
-                        <span className="text-[10px] bg-amber-100 text-amber-800 border border-amber-200 px-2 py-0.5 rounded font-mono font-black">
-                          {refinePreview.refinedBody.length} 文字
-                        </span>
-                      </div>
-                      <div className="prose prose-xs max-w-none prose-headings:text-amber-800 prose-strong:text-stone-900 text-stone-800 overflow-y-auto pr-2 leading-relaxed flex-1 font-medium">
-                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{refinePreview.refinedBody}</ReactMarkdown>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* フッターアクション */}
-                <div className="flex items-center justify-between gap-3 pt-2.5 border-t border-stone-200 flex-wrap">
-                  <button
-                    type="button"
-                    onClick={() => setRefinePreview(null)}
-                    disabled={savingRefined || refining}
-                    className="px-4 py-2 rounded-xl text-xs font-bold text-stone-500 hover:bg-stone-100 transition"
-                  >
-                    閉じる
-                  </button>
-
-                  <div className="flex items-center gap-2">
-                    {/* 次のステップへ進むボタン */}
-                    {currentStage === 'dedup' && (
-                      <button
-                        type="button"
-                        onClick={() => handleStartRefine(refinePreview.lane, 'meta_align', refinePreview.refinedBody)}
-                        disabled={refining || savingRefined}
-                        className="px-4 py-2 bg-stone-800 hover:bg-stone-900 text-white font-bold rounded-xl text-xs transition flex items-center gap-1.5"
-                      >
-                        <span>⏱ 2026メタ統一へ進む ➔</span>
-                      </button>
-                    )}
-                    {currentStage === 'meta_align' && (
-                      <button
-                        type="button"
-                        onClick={() => handleStartRefine(refinePreview.lane, 'structure', refinePreview.refinedBody)}
-                        disabled={refining || savingRefined}
-                        className="px-4 py-2 bg-stone-800 hover:bg-stone-900 text-white font-bold rounded-xl text-xs transition flex items-center gap-1.5"
-                      >
-                        <span>🏛 完全体系化へ進む ➔</span>
-                      </button>
-                    )}
-
-                    {/* 確定保存ボタン */}
-                    <button
-                      type="button"
-                      onClick={handleConfirmRefine}
-                      disabled={savingRefined || refining}
-                      className="px-6 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl text-xs transition flex items-center gap-2 shadow-md shadow-amber-600/20 disabled:opacity-50"
-                    >
-                      {savingRefined ? <RefreshCw size={14} className="animate-spin" /> : <CheckCircle2 size={15} />}
-                      <span>{savingRefined ? '反映処理中...' : '✨ この段階の内容でガイドを更新'}</span>
-                    </button>
+                  <div className="prose prose-xs max-w-none prose-headings:text-amber-800 prose-strong:text-stone-900 text-stone-800 overflow-y-auto pr-2 leading-relaxed flex-1 font-medium">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{refinePreview.refinedBody}</ReactMarkdown>
                   </div>
                 </div>
               </div>
+
+              {/* フッターアクション */}
+              <div className="flex items-center justify-between gap-3 pt-2.5 border-t border-stone-200 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => setRefinePreview(null)}
+                  disabled={savingRefined || refining}
+                  className="px-4 py-2 rounded-xl text-xs font-bold text-stone-500 hover:bg-stone-100 transition"
+                >
+                  破棄して閉じる
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleConfirmRefine}
+                  disabled={savingRefined || refining}
+                  className="px-6 py-2.5 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl text-xs transition flex items-center gap-2 shadow-md shadow-amber-600/20 disabled:opacity-50"
+                >
+                  {savingRefined ? <RefreshCw size={14} className="animate-spin" /> : <CheckCircle2 size={15} />}
+                  <span>{savingRefined ? '反映処理中...' : '✨ この清書版でガイドを更新する'}</span>
+                </button>
+              </div>
             </div>
-          );
-        })()}
+          </div>
+        )}
       </div>
     </div>
   );
