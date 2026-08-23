@@ -266,15 +266,15 @@ export default function LaneGuidesPage() {
           </>
         )}
 
-        {/* ✨ AI清書 差分プレビューモーダル */}
+        {/* ✨ AI清書 差分プレビューモーダル (ビフォーアフター比較) */}
         {refinePreview && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/60 backdrop-blur-sm animate-fade-in">
-            <div className="bg-[#fcfbf9] border border-stone-200 rounded-3xl w-full max-w-3xl max-h-[90vh] overflow-y-auto p-6 shadow-2xl space-y-5">
+            <div className="bg-[#fcfbf9] border border-stone-200 rounded-3xl w-full max-w-5xl max-h-[90vh] overflow-y-auto p-6 shadow-2xl space-y-5">
               <div className="flex items-center justify-between border-b border-stone-200 pb-4">
                 <div>
                   <h3 className="text-xl font-black text-stone-900 flex items-center gap-2">
                     <Sparkles size={22} className="text-amber-600" />
-                    <span>レーンガイド AI清書・体系化プレビュー</span>
+                    <span>レーンガイド AI清書・体系化プレビュー（ビフォーアフター比較）</span>
                   </h3>
                   <p className="text-xs text-stone-500 mt-1">
                     蓄積された全知見の重複を排除し、序盤・中盤・終盤の美しい章立てで清書しました。
@@ -289,11 +289,37 @@ export default function LaneGuidesPage() {
                 </button>
               </div>
 
-              {/* プレビュー表示エリア */}
-              <div className="bg-white border border-stone-200 rounded-2xl p-6 shadow-xs max-h-[55vh] overflow-y-auto">
-                <h4 className="text-lg font-extrabold text-stone-900 mb-3">{refinePreview.title}</h4>
-                <div className="prose prose-sm max-w-none prose-headings:text-amber-800 prose-strong:text-stone-900 prose-li:text-stone-700 leading-relaxed">
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{refinePreview.refinedBody}</ReactMarkdown>
+              {/* ビフォーアフター 2カラム比較エリア */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* 1. 清書前（蓄積データ） */}
+                <div className="bg-stone-50 border border-stone-200 rounded-2xl p-5 shadow-2xs flex flex-col">
+                  <div className="flex items-center justify-between border-b border-stone-200 pb-2.5 mb-3">
+                    <span className="text-xs font-black text-stone-500 flex items-center gap-1.5">
+                      <span>📄</span> 清書前（蓄積された生データ）
+                    </span>
+                    <span className="text-[10px] bg-stone-200 text-stone-700 font-mono px-2 py-0.5 rounded font-bold">
+                      {refinePreview.originalBody.length} 文字
+                    </span>
+                  </div>
+                  <div className="prose prose-xs max-w-none text-stone-600 max-h-[50vh] overflow-y-auto pr-2 leading-relaxed">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{refinePreview.originalBody}</ReactMarkdown>
+                  </div>
+                </div>
+
+                {/* 2. 清書後（AI推敲版） */}
+                <div className="bg-amber-50/40 border border-amber-300/80 rounded-2xl p-5 shadow-xs flex flex-col">
+                  <div className="flex items-center justify-between border-b border-amber-200 pb-2.5 mb-3">
+                    <span className="text-xs font-black text-amber-900 flex items-center gap-1.5">
+                      <Sparkles size={14} className="text-amber-600" />
+                      <span>清書後（AI体系化リライト版）</span>
+                    </span>
+                    <span className="text-[10px] bg-amber-100 text-amber-800 font-mono px-2 py-0.5 rounded font-bold border border-amber-200">
+                      {refinePreview.refinedBody.length} 文字
+                    </span>
+                  </div>
+                  <div className="prose prose-xs max-w-none prose-headings:text-amber-800 prose-strong:text-stone-900 text-stone-800 max-h-[50vh] overflow-y-auto pr-2 leading-relaxed font-medium">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{refinePreview.refinedBody}</ReactMarkdown>
+                  </div>
                 </div>
               </div>
 
