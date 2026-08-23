@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { supabase } from '../../../lib/supabaseClient';
-import { Book, ChevronLeft, ChevronDown, ChevronUp, Clock, User, Sparkles, Pencil, Save, X, Trash2, Search, Activity, Eye, Edit2, Star as StarIcon, RefreshCw } from 'lucide-react';
+import { Book, ChevronLeft, ChevronDown, ChevronUp, Clock, User, Sparkles, Pencil, Save, X, Trash2, Search, Activity, Eye, Edit2, Star as StarIcon, RefreshCw, Zap } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -96,6 +96,16 @@ export function LibraryTabContentInner() {
   const [expandedId, setExpandedId] = useState<string | number | null>(null);
   const [favoriteArticles, setFavoriteArticles] = useState<number[]>([]);
   const [visibleGroupsCount, setVisibleGroupsCount] = useState(20);
+
+  // 複数選択
+  const [selectedIds, setSelectedIds] = useState<Set<number | string>>(new Set());
+  // スマート一括統合
+  const [batchMerging, setBatchMerging] = useState(false);
+  const [batchProgress, setBatchProgress] = useState<{ current: number; total: number; success: number } | null>(null);
+  // 連続レビュー（案A）
+  const [reviewQueue, setReviewQueue] = useState<any[]>([]);
+  const [reviewIndex, setReviewIndex] = useState(0);
+
   const [toast, setToast] = useState<{ show: boolean; message: string; type: 'success' | 'error' | 'info' }>({
     show: false,
     message: '',
@@ -333,12 +343,11 @@ export function LibraryTabContentInner() {
     };
   }, [articles]);
 
-  const grouped = useMemo(() => {
+  const filteredArticles = useMemo(() => {
     const q = (debouncedSearch || '').toLowerCase();
-    const filtered = articles.filter(a => {
+    return articles.filter((a: any) => {
       if (!a) return false;
-      // 原子的な知見(is_atomic)は元記事の詳細画面(「この記事から抽出された知見」)にのみ
-      // 表示し、一覧をフラグメントだらけにしない(2026-08-12)。
+      // 原子的な知見(is_atomic)は元記事の詳細画面にのみ表示
       if (a.is_atomic) return false;
       const titleMatch = a.title ? a.title.toLowerCase().includes(q) : false;
       const champMatch = a.champion ? a.champion.toLowerCase().includes(q) : false;
@@ -347,16 +356,19 @@ export function LibraryTabContentInner() {
         : false;
       return titleMatch || champMatch || tagsMatch;
     });
+  }, [articles, debouncedSearch]);
 
+  const grouped = useMemo(() => {
+    const filtered = filteredArticles;
     const groups: Record<string, any[]> = {};
     if (groupMode === 'champion') {
-      filtered.forEach(a => {
+      filtered.forEach((a: any) => {
         const key = a.champion || 'その他';
         if (!groups[key]) groups[key] = [];
         groups[key].push(a);
       });
     } else {
-      filtered.forEach(a => {
+      filtered.forEach((a: any) => {
         const keys = (a.tags && Array.isArray(a.tags) && a.tags.length > 0) ? a.tags : ['未分類'];
         keys.forEach((k: any) => {
           const key = (k && typeof k === 'string') ? k : '未分類';
@@ -597,8 +609,171 @@ export function LibraryTabContentInner() {
     setSaving(false);
   };
 
+  // 複数選択用ハンドラ
+  const toggleSelect = (id: number | string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectGroup = (items: any[], e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    const ids = items.map(a => a.id);
+    const allSelected = ids.every(id => selectedIds.has(id));
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (allSelected) {
+        ids.forEach(id => next.delete(id));
+      } else {
+        ids.forEach(id => next.add(id));
+      }
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    const allCurrentIds = filteredArticles.map(a => a.id);
+    const allSelected = allCurrentIds.length > 0 && allCurrentIds.every(id => selectedIds.has(id));
+    if (allSelected) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(allCurrentIds));
+    }
+  };
+
+  // スマート一括統合実行（案C）
+  const handleBatchSmartMerge = async (customIds?: (number | string)[]) => {
+    const targetIds = customIds && customIds.length > 0 ? customIds : Array.from(selectedIds);
+    if (targetIds.length === 0) return;
+    if (!confirm(`選択した ${targetIds.length} 件の記事をAIスマート統合しますか？\n\n各記事からチャンピオン知見とレーン一般論を自動分解し、辞典とレーンガイドへ振り分けてライブラリから退避します。`)) return;
+
+    setBatchMerging(true);
+    setBatchProgress({ current: 0, total: targetIds.length, success: 0 });
+
+    let remaining = [...targetIds];
+    let successTotal = 0;
+    let processedTotal = 0;
+
+    try {
+      while (remaining.length > 0) {
+        const chunk = remaining.slice(0, 3); // 3件ずつ処理
+        const res = await fetch('/api/admin/knowledge/batch-smart-merge', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ articleIds: chunk }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'バッチ処理エラー');
+
+        const successCount = (data.results || []).filter((r: any) => r.success).length;
+        successTotal += successCount;
+        processedTotal += chunk.length;
+        remaining = remaining.slice(chunk.length);
+
+        setBatchProgress({
+          current: processedTotal,
+          total: targetIds.length,
+          success: successTotal,
+        });
+
+        // 成功した記事をローカルstateからも除外
+        const deletedIds = new Set((data.results || []).filter((r: any) => r.success).map((r: any) => r.articleId));
+        setArticles(prev => prev.filter(a => !deletedIds.has(a.id)));
+      }
+
+      showToast(`✨ ${successTotal}件の記事をスマート統合（チャンプ辞典＆レーンガイド）しました！`, 'success');
+      setSelectedIds(new Set());
+    } catch (err: any) {
+      showToast(`スマート統合中にエラーが発生しました: ${err.message}`, 'error');
+    } finally {
+      setBatchMerging(false);
+      setBatchProgress(null);
+      fetchArticles();
+    }
+  };
+
+  // 連続レビュー（案A）開始
+  const startContinuousReview = async (fromArticles?: any[], startIndex = 0) => {
+    const queue = fromArticles && fromArticles.length > 0 ? fromArticles : filteredArticles;
+    if (queue.length === 0) {
+      showToast('レビュー対象の記事がありません', 'info');
+      return;
+    }
+    setReviewQueue(queue);
+    setReviewIndex(startIndex);
+    await loadArticleForMergePreview(queue[startIndex]);
+  };
+
+  // 特定記事のプレビューをロードしてモーダルを開く
+  const loadArticleForMergePreview = async (article: any) => {
+    if (!article) return;
+    setSelectedArticle(article);
+    setEditTitle(article.title || '');
+    const body = article.raw_content || article.content || '';
+    setEditContent(body);
+
+    const rawChamp = article.champion || '';
+    const champs = rawChamp.split(',').map((c: string) => c.trim()).filter((c: string) => c);
+    setEditChampions(champs);
+
+    setSaving(true);
+    try {
+      const res = await fetch('/api/admin/knowledge/merge-article', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          articleId: article.id,
+          title: article.title || '',
+          content: body,
+          editChampions: champs,
+          dryRun: true,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setMergePreview({
+          previews: data.previews || [],
+          trendAnalyses: data.trendAnalyses || [],
+          matchupInsights: data.matchupInsights || [],
+          laneGeneralInsights: data.laneGeneralInsights || [],
+          detectedLane: data.detectedLane || 'COMMON',
+          articleId: article.id,
+          title: article.title || '',
+          content: body,
+          editChampions: data.champions || champs,
+        });
+      } else {
+        showToast(data.error || 'プレビューの取得に失敗しました', 'error');
+      }
+    } catch (e: any) {
+      showToast('エラー: ' + e.message, 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // 連続レビューの次へ進む（確定後またはスキップ時）
+  const advanceReviewQueue = async () => {
+    const nextIdx = reviewIndex + 1;
+    if (nextIdx < reviewQueue.length) {
+      setReviewIndex(nextIdx);
+      await loadArticleForMergePreview(reviewQueue[nextIdx]);
+    } else {
+      setMergePreview(null);
+      setSelectedArticle(null);
+      setReviewQueue([]);
+      showToast('🎉 全ての記事のレビュー・統合が完了しました！', 'success');
+      fetchArticles();
+    }
+  };
+
   // プレビュー確認後、実際にチャンピオン辞典へ統合する。
-  // トレンド構造化項目、対面マッチアップメモ、レーン一般論、チャンピオン固有への振り分け知見をまとめて確定保存する。
   const confirmMergeToChampionDict = async ({
     sendToLane,
     approvedMatchups,
@@ -607,6 +782,7 @@ export function LibraryTabContentInner() {
     trendDataOverrides,
     championRoles,
     finalChampions,
+    andNext = false,
   }: {
     sendToLane: string | null;
     approvedMatchups: any[];
@@ -615,6 +791,7 @@ export function LibraryTabContentInner() {
     trendDataOverrides?: Record<string, Record<string, string>>;
     championRoles?: Record<string, string>;
     finalChampions?: string[];
+    andNext?: boolean;
   }) => {
     if (!mergePreview) return;
     setMergeConfirmSaving(true);
@@ -654,9 +831,15 @@ export function LibraryTabContentInner() {
         const actionLabel = data.champions && data.champions.length > 0 ? 'のチャンピオン辞典' : '';
         showToast(`【統合完了】${champLabel}${actionLabel}にマージ${data.mergedNote || ''}し、ライブラリから削除しました！`, 'success');
         setArticles(prev => prev.filter(a => String(a.id) !== String(mergePreview.articleId)));
-        setSelectedArticle(null);
-        setEditing(false);
-        setMergePreview(null);
+
+        if (andNext && reviewQueue.length > 0) {
+          await advanceReviewQueue();
+        } else {
+          setSelectedArticle(null);
+          setEditing(false);
+          setMergePreview(null);
+          setReviewQueue([]);
+        }
       }
     } catch (err: any) {
       showToast('辞典への統合中にエラーが発生しました: ' + err.message, 'error');
@@ -1028,9 +1211,18 @@ export function LibraryTabContentInner() {
           currentChampions={mergePreview.editChampions}
           saving={mergeConfirmSaving}
           reAnalyzing={reAnalyzing}
+          continuousReview={reviewQueue.length > 0 ? {
+            currentIndex: reviewIndex,
+            totalCount: reviewQueue.length,
+            onSkipNext: advanceReviewQueue,
+            onConfirmAndNext: (opts) => confirmMergeToChampionDict({ ...opts, andNext: true }),
+          } : undefined}
           onReAnalyze={handleReAnalyzeFromModal}
-          onConfirm={confirmMergeToChampionDict}
-          onCancel={() => setMergePreview(null)}
+          onConfirm={(opts) => confirmMergeToChampionDict({ ...opts, andNext: false })}
+          onCancel={() => {
+            setMergePreview(null);
+            setReviewQueue([]);
+          }}
         />
       )}
       </>
@@ -1119,10 +1311,34 @@ export function LibraryTabContentInner() {
           )}
         </div>
         
-        <div className="flex gap-2 sm:gap-3 flex-wrap w-full sm:w-auto">
+        <div className="flex gap-2 sm:gap-3 flex-wrap w-full sm:w-auto items-center">
+          {/* 連続レビュー（案A）開始ボタン */}
+          {!showMoved && filteredArticles.length > 0 && (
+            <button
+              onClick={() => startContinuousReview(filteredArticles, 0)}
+              disabled={batchMerging || syncingAll}
+              title="未処理記事を1件ずつプレビュー確認しながらサクサク連続で統合・振り分けします"
+              className="px-3 sm:px-4 py-2.5 bg-amber-600 hover:bg-amber-500 text-white rounded-2xl text-xs font-black transition-all shadow-md shadow-amber-600/20 flex items-center gap-1.5 disabled:opacity-50"
+            >
+              <Zap size={14} /> ⚡ 連続レビュー開始
+            </button>
+          )}
+
+          {/* 全選択 / 選択解除 */}
+          {!showMoved && filteredArticles.length > 0 && (
+            <button
+              onClick={toggleSelectAll}
+              className="px-3 sm:px-4 py-2.5 glass-panel glass-panel-hover text-xs font-bold text-stone-700 rounded-2xl transition-all"
+            >
+              {selectedIds.size === filteredArticles.length && filteredArticles.length > 0
+                ? '選択を全解除'
+                : `すべて選択 (${selectedIds.size}/${filteredArticles.length})`}
+            </button>
+          )}
+
           {/* 辞典へ移動した記事の閲覧・復元（誤移動のリカバリ用） */}
           <button
-            onClick={() => { setShowMoved(v => !v); setSelectedArticle(null); }}
+            onClick={() => { setShowMoved(v => !v); setSelectedArticle(null); setSelectedIds(new Set()); }}
             title="辞典へ移動してライブラリから消えた記事を表示し、必要なら元に戻せます"
             className={`px-3 sm:px-4 py-2.5 rounded-2xl text-xs font-bold transition-all border flex-1 sm:flex-none text-center ${
               showMoved
@@ -1146,7 +1362,7 @@ export function LibraryTabContentInner() {
           </button>
           <button
             onClick={handleSyncAllArticles}
-            disabled={syncingAll}
+            disabled={syncingAll || batchMerging}
             className="px-3 sm:px-4 py-2.5 bg-gradient-to-r from-pink-500 to-indigo-600 hover:from-pink-400 hover:to-indigo-500 text-white text-xs font-bold rounded-2xl transition-all shadow-[0_0_15px_rgba(244,63,94,0.15)] flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto"
           >
             <RefreshCw className={`h-3 w-3 ${syncingAll ? 'animate-spin' : ''}`} />
@@ -1162,6 +1378,26 @@ export function LibraryTabContentInner() {
               />
             </div>
           )}
+
+          {/* スマート一括統合のプログレスバー */}
+          {batchMerging && batchProgress && (
+            <div className="w-full basis-full p-3 bg-amber-50 border border-amber-300 rounded-2xl space-y-1.5 mt-2 animate-fade-in">
+              <div className="flex items-center justify-between text-xs font-bold text-amber-900">
+                <span className="flex items-center gap-1.5">
+                  <RefreshCw size={13} className="animate-spin text-amber-600" />
+                  <span>AIスマート一括統合を実行中... ({batchProgress.current} / {batchProgress.total}件完了)</span>
+                </span>
+                <span>{Math.round((batchProgress.current / batchProgress.total) * 100)}%</span>
+              </div>
+              <div className="w-full h-2 bg-amber-200/60 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-amber-500 to-emerald-500 transition-all duration-300"
+                  style={{ width: `${Math.min(100, Math.round((batchProgress.current / batchProgress.total) * 100))}%` }}
+                />
+              </div>
+            </div>
+          )}
+
           <div className="flex glass-panel p-1 rounded-2xl items-center flex-1 sm:flex-none justify-center">
             <button onClick={() => setGroupMode('champion')} className={`flex-1 sm:flex-none px-4 sm:px-5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all ${groupMode === 'champion' ? 'bg-violet-400 text-black shadow-lg shadow-violet-400/20' : 'text-gray-500 hover:text-gray-900'}`}>チャンピオン別</button>
             <button onClick={() => setGroupMode('keyword')} className={`flex-1 sm:flex-none px-4 sm:px-5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all ${groupMode === 'keyword' ? 'bg-violet-400 text-black shadow-lg shadow-violet-400/20' : 'text-gray-500 hover:text-gray-900'}`}>キーワード別</button>
@@ -1182,11 +1418,31 @@ export function LibraryTabContentInner() {
             const isCollapsed = collapsedGroups[groupName] === undefined ? false : collapsedGroups[groupName];
             return (
               <div key={groupName} className="glass-panel rounded-2xl overflow-hidden group">
-                <button onClick={() => toggleGroup(groupName)} className="w-full flex items-center gap-3 p-4 sm:p-5 bg-black/2 hover:bg-black/5 transition-colors text-left border-b border-black/10 flex-wrap sm:flex-nowrap">
-                  <span className="text-violet-700 transition-transform duration-300 shrink-0" style={{ transform: isCollapsed ? 'rotate(-90deg)' : 'rotate(0)' }}><ChevronDown size={20} /></span>
-                  <span className="bg-violet-100 text-violet-700 border border-violet-300 px-3 sm:px-4 py-1.5 rounded-lg font-black font-mono tracking-wider shadow-[0_0_10px_rgba(167,139,250,0.1)] text-xs sm:text-sm break-all">{groupName}</span>
-                  <span className="text-gray-500 text-xs sm:text-sm font-bold ml-auto sm:ml-0">({items.length} 記事)</span>
-                </button>
+                <div className="w-full flex items-center justify-between p-4 sm:p-5 bg-black/2 hover:bg-black/5 transition-colors border-b border-black/10 flex-wrap sm:flex-nowrap gap-3">
+                  <button onClick={() => toggleGroup(groupName)} className="flex items-center gap-3 text-left flex-1 min-w-0">
+                    <span className="text-violet-700 transition-transform duration-300 shrink-0" style={{ transform: isCollapsed ? 'rotate(-90deg)' : 'rotate(0)' }}><ChevronDown size={20} /></span>
+                    <span className="bg-violet-100 text-violet-700 border border-violet-300 px-3 sm:px-4 py-1.5 rounded-lg font-black font-mono tracking-wider shadow-[0_0_10px_rgba(167,139,250,0.1)] text-xs sm:text-sm break-all">{groupName}</span>
+                    <span className="text-gray-500 text-xs sm:text-sm font-bold">({items.length} 記事)</span>
+                  </button>
+
+                  {!showMoved && (
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        onClick={(e) => startContinuousReview(items, 0)}
+                        className="text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 px-2.5 py-1.5 rounded-xl transition flex items-center gap-1"
+                        title="このグループ内の記事を順番に連続レビューします"
+                      >
+                        <Zap size={12} /> 連続レビュー
+                      </button>
+                      <button
+                        onClick={(e) => toggleSelectGroup(items, e)}
+                        className="text-xs font-bold text-stone-600 bg-black/5 hover:bg-black/10 border border-black/10 px-2.5 py-1.5 rounded-xl transition"
+                      >
+                        {items.every(a => selectedIds.has(a.id)) ? 'グループ解除' : 'グループ全選択'}
+                      </button>
+                    </div>
+                  )}
+                </div>
 
                 <div 
                   className="transition-all duration-300 ease-in-out overflow-hidden" 
@@ -1199,27 +1455,39 @@ export function LibraryTabContentInner() {
                     <div className="divide-y divide-white/5">
                       {items.map(article => {
                         const isExpanded = expandedId === article.id;
+                        const isSelected = selectedIds.has(article.id);
                         return (
-                          <div key={article.id} className="transition-colors">
+                          <div key={article.id} className={`transition-colors ${isSelected ? 'bg-amber-500/5' : ''}`}>
                             {/* 記事ヘッダー（クリックでアコーディオン展開） */}
                             <div
                               onClick={() => setExpandedId(isExpanded ? null : article.id)}
                               className="p-4 sm:p-5 hover:bg-black/2 cursor-pointer flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 group/item"
                             >
-                              <div className="flex flex-col gap-2 min-w-0 flex-1">
-                                <div className="flex items-start sm:items-center gap-2">
-                                  <span className={`text-violet-700 transition-transform duration-300 shrink-0 mt-0.5 sm:mt-0 ${isExpanded ? 'rotate-90' : 'rotate-0'}`}>
-                                    <ChevronDown size={16} />
-                                  </span>
-                                  <h3 className={`font-bold transition-colors flex items-start sm:items-center gap-2 min-w-0 text-sm sm:text-base ${isExpanded ? 'text-violet-700' : 'text-stone-800 group-hover/item:text-violet-700'}`}>
-                                    {favoriteArticles.includes(article.id) && <StarIcon size={14} className="text-amber-600 shrink-0 mt-0.5 sm:mt-0" fill="currentColor" />}
-                                    <span className="break-all">{article.title ? article.title.replace(/_/g, ' ') : ''}</span>
-                                  </h3>
-                                </div>
-                                <div className="flex gap-1.5 flex-wrap pl-6">
-                                  {article.tags && Array.isArray(article.tags) && article.tags.map((kw: string, kidx: number) => (
-                                    <span key={kidx} className="text-[10px] text-stone-500 bg-black/5 border border-black/10 px-2 py-0.5 rounded-md break-all">{kw}</span>
-                                  ))}
+                              <div className="flex items-start gap-3 min-w-0 flex-1">
+                                {!showMoved && (
+                                  <input
+                                    type="checkbox"
+                                    checked={isSelected}
+                                    onChange={(e) => toggleSelect(article.id, e as any)}
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="mt-1 sm:mt-1.5 h-4 w-4 rounded border-stone-300 text-amber-600 focus:ring-amber-500 cursor-pointer shrink-0 accent-amber-600"
+                                  />
+                                )}
+                                <div className="flex flex-col gap-2 min-w-0 flex-1">
+                                  <div className="flex items-start sm:items-center gap-2">
+                                    <span className={`text-violet-700 transition-transform duration-300 shrink-0 mt-0.5 sm:mt-0 ${isExpanded ? 'rotate-90' : 'rotate-0'}`}>
+                                      <ChevronDown size={16} />
+                                    </span>
+                                    <h3 className={`font-bold transition-colors flex items-start sm:items-center gap-2 min-w-0 text-sm sm:text-base ${isExpanded ? 'text-violet-700' : 'text-stone-800 group-hover/item:text-violet-700'}`}>
+                                      {favoriteArticles.includes(article.id) && <StarIcon size={14} className="text-amber-600 shrink-0 mt-0.5 sm:mt-0" fill="currentColor" />}
+                                      <span className="break-all">{article.title ? article.title.replace(/_/g, ' ') : ''}</span>
+                                    </h3>
+                                  </div>
+                                  <div className="flex gap-1.5 flex-wrap pl-6">
+                                    {article.tags && Array.isArray(article.tags) && article.tags.map((kw: string, kidx: number) => (
+                                      <span key={kidx} className="text-[10px] text-stone-500 bg-black/5 border border-black/10 px-2 py-0.5 rounded-md break-all">{kw}</span>
+                                    ))}
+                                  </div>
                                 </div>
                               </div>
                               <div className="flex items-center justify-between sm:justify-end gap-4 pl-6 sm:pl-0 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-black/10">
@@ -1328,6 +1596,63 @@ export function LibraryTabContentInner() {
           <h3 className="text-xl font-bold text-stone-900 mb-2">{search ? `「${search}」に一致する記事なし` : 'まだ記事がありません'}</h3>
         </div>
       )}
+      {/* 複数選択時のフローティングアクションバー */}
+      {selectedIds.size > 0 && !showMoved && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 animate-fade-in-up w-full max-w-2xl px-4">
+          <div className="bg-stone-900/95 text-white border border-amber-500/40 rounded-3xl p-4 shadow-[0_20px_50px_rgba(0,0,0,0.6)] backdrop-blur-md flex items-center justify-between gap-4 flex-wrap sm:flex-nowrap">
+            <div className="flex items-center gap-3">
+              <span className="bg-amber-500 text-black text-xs font-black px-2.5 py-1 rounded-full font-mono">
+                {selectedIds.size} 件選択中
+              </span>
+              <span className="text-xs text-stone-300 hidden sm:inline">
+                辞典とレーンガイドへ自動仕分け
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
+              <button
+                type="button"
+                onClick={() => setSelectedIds(new Set())}
+                disabled={batchMerging}
+                className="px-3 py-2 text-xs font-bold text-stone-400 hover:text-white rounded-xl hover:bg-white/10 transition disabled:opacity-50"
+              >
+                選択解除
+              </button>
+
+              <button
+                type="button"
+                onClick={() => startContinuousReview(articles.filter(a => selectedIds.has(a.id)), 0)}
+                disabled={batchMerging}
+                className="px-4 py-2 text-xs font-bold bg-stone-700 hover:bg-stone-600 text-stone-100 rounded-xl transition flex items-center gap-1.5 disabled:opacity-50"
+                title="選択した記事だけを順番に連続プレビュー確認します"
+              >
+                <Zap size={13} className="text-amber-400" />
+                <span>選択分を連続レビュー</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleBatchSmartMerge()}
+                disabled={batchMerging}
+                className="px-5 py-2.5 text-xs font-black bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950 rounded-xl shadow-lg shadow-amber-500/20 transition flex items-center gap-2 disabled:opacity-50"
+              >
+                {batchMerging ? (
+                  <>
+                    <RefreshCw size={14} className="animate-spin" />
+                    <span>統合中...</span>
+                  </>
+                ) : (
+                  <>
+                    <Zap size={14} />
+                    <span>⚡ 選択した{selectedIds.size}件をスマート統合</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* トースト通知 */}
       {toast.show && (
         <div className="fixed bottom-6 right-6 z-50 animate-fade-in-up">

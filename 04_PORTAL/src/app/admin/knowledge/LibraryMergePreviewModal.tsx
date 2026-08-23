@@ -74,6 +74,7 @@ export default function LibraryMergePreviewModal({
   currentChampions = [],
   saving,
   reAnalyzing = false,
+  continuousReview,
   onReAnalyze,
   onConfirm,
   onCancel,
@@ -86,6 +87,20 @@ export default function LibraryMergePreviewModal({
   currentChampions?: string[];
   saving: boolean;
   reAnalyzing?: boolean;
+  continuousReview?: {
+    currentIndex: number;
+    totalCount: number;
+    onSkipNext: () => void;
+    onConfirmAndNext: (options: {
+      sendToLane: string | null;
+      approvedMatchups: MatchupInsight[];
+      approvedLaneGeneralInsights: LaneGeneralInsight[];
+      championSpecificInsights: ChampionSpecificInsight[];
+      trendDataOverrides?: Record<string, Record<string, string>>;
+      championRoles?: Record<string, string>;
+      finalChampions?: string[];
+    }) => void;
+  };
   onReAnalyze?: (newChampions: string[]) => void;
   onConfirm: (options: {
     sendToLane: string | null;
@@ -237,6 +252,45 @@ export default function LibraryMergePreviewModal({
     });
   };
 
+  const handleConfirmAndNext = () => {
+    if (!continuousReview) {
+      handleConfirm();
+      return;
+    }
+    const approvedMatchups = matchupInsights.filter((_, i) => selectedMatchupIndices.includes(i));
+    const approvedLaneGeneralInsights = laneInsightItems
+      .filter((i) => i.included && i.scope === 'lane_general')
+      .map((i) => ({ title: i.title, summary: i.summary }));
+
+    const championSpecificInsights: ChampionSpecificInsight[] = laneInsightItems
+      .filter((i) => i.included && i.scope === 'champion_specific')
+      .map((i) => ({
+        champion: i.assignedChampion || currentChampions[0] || 'Unknown',
+        title: i.title,
+        summary: i.summary,
+      }));
+
+    const trendDataOverrides: Record<string, Record<string, string>> = {};
+    for (const analysis of trendAnalyses) {
+      trendDataOverrides[analysis.champion] = {};
+      for (const field of analysis.fieldUpdates) {
+        if (field.mergedValue) {
+          trendDataOverrides[analysis.champion][field.fieldKey] = field.mergedValue;
+        }
+      }
+    }
+
+    continuousReview.onConfirmAndNext({
+      sendToLane: sendToLaneChecked && (approvedLaneGeneralInsights.length > 0 || currentChampions.length === 0) ? laneChoice : null,
+      approvedMatchups,
+      approvedLaneGeneralInsights,
+      championSpecificInsights,
+      trendDataOverrides,
+      championRoles,
+      finalChampions: currentChampions,
+    });
+  };
+
   const laneGeneralCount = laneInsightItems.filter((i) => i.included && i.scope === 'lane_general').length;
   const champSpecificCount = laneInsightItems.filter((i) => i.included && i.scope === 'champion_specific').length;
   const canConfirm = currentChampions.length > 0 || (sendToLaneChecked && (laneGeneralCount > 0 || hasLaneGeneral)) || champSpecificCount > 0 || selectedMatchupIndices.length > 0;
@@ -245,12 +299,19 @@ export default function LibraryMergePreviewModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/60 backdrop-blur-sm animate-fade-in">
       <div className="bg-[#fcfbf9] border border-stone-200 rounded-3xl w-full max-w-3xl max-h-[90vh] overflow-y-auto p-6 shadow-2xl space-y-6">
         {/* ヘッダー */}
-        <div className="flex items-center justify-between border-b border-stone-200 pb-4">
+        <div className="flex items-start sm:items-center justify-between border-b border-stone-200 pb-4 gap-4 flex-col sm:flex-row">
           <div>
-            <h3 className="text-xl font-black text-stone-900 flex items-center gap-2">
-              <BookOpen size={22} className="text-amber-600" />
-              <span>辞典統合 ＆ 戦略データ整理プレビュー</span>
-            </h3>
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <h3 className="text-xl font-black text-stone-900 flex items-center gap-2">
+                <BookOpen size={22} className="text-amber-600" />
+                <span>辞典統合 ＆ 戦略データ整理プレビュー</span>
+              </h3>
+              {continuousReview && (
+                <span className="bg-amber-100 text-amber-800 border border-amber-300 text-xs px-2.5 py-0.5 rounded-full font-bold flex items-center gap-1">
+                  ⚡ 連続レビュー中 (残り {Math.max(0, continuousReview.totalCount - continuousReview.currentIndex)} 件)
+                </span>
+              )}
+            </div>
             <p className="text-xs text-stone-500 mt-1">
               記事の内容をAIが整理し、チャンピオントレンド各項目・対面メモ・レーンガイドへ最適配分します。
             </p>
@@ -258,7 +319,8 @@ export default function LibraryMergePreviewModal({
           <button
             onClick={onCancel}
             disabled={saving || reAnalyzing}
-            className="text-stone-400 hover:text-stone-700 p-1.5 rounded-full hover:bg-stone-100 disabled:opacity-50 transition"
+            className="text-stone-400 hover:text-stone-700 p-1.5 rounded-lg hover:bg-stone-100 disabled:opacity-50 transition self-end sm:self-auto"
+            title="閉じる"
           >
             <X size={20} />
           </button>
@@ -685,30 +747,55 @@ export default function LibraryMergePreviewModal({
               </span>
             )}
           </div>
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2 flex-wrap">
             <button
               type="button"
               onClick={onCancel}
               disabled={saving || reAnalyzing}
-              className="px-4 py-2.5 rounded-xl text-xs font-bold text-stone-500 hover:bg-stone-100 disabled:opacity-50 transition"
+              className="px-3.5 py-2.5 rounded-xl text-xs font-bold text-stone-500 hover:bg-stone-100 disabled:opacity-50 transition"
             >
-              キャンセル
+              {continuousReview ? '中断して閉じる' : 'キャンセル'}
             </button>
-            <button
-              type="button"
-              onClick={handleConfirm}
-              disabled={saving || reAnalyzing || !canConfirm}
-              className="px-6 py-2.5 rounded-xl text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white flex items-center gap-2 shadow-sm disabled:opacity-50 transition"
-            >
-              {saving ? <RefreshCw size={14} className="animate-spin" /> : <CheckCircle2 size={15} />}
-              <span>
-                {saving
-                  ? '統合処理中...'
-                  : currentChampions.length === 0
-                    ? `レーン別ガイド (${LANE_LABELS[laneChoice] || laneChoice}) へ統合する`
-                    : 'この内容で辞典・対面情報に統合する'}
-              </span>
-            </button>
+
+            {continuousReview && (
+              <button
+                type="button"
+                onClick={continuousReview.onSkipNext}
+                disabled={saving || reAnalyzing}
+                className="px-4 py-2.5 rounded-xl text-xs font-bold bg-stone-100 hover:bg-stone-200 text-stone-700 flex items-center gap-1.5 disabled:opacity-50 transition"
+                title="この記事は統合せず、次の未処理記事を表示します"
+              >
+                <span>⏭️ スキップして次へ</span>
+              </button>
+            )}
+
+            {continuousReview ? (
+              <button
+                type="button"
+                onClick={handleConfirmAndNext}
+                disabled={saving || reAnalyzing || !canConfirm}
+                className="px-6 py-2.5 rounded-xl text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white flex items-center gap-2 shadow-md shadow-amber-600/20 disabled:opacity-50 transition"
+              >
+                {saving ? <RefreshCw size={14} className="animate-spin" /> : <CheckCircle2 size={15} />}
+                <span>{saving ? '統合処理中...' : '✨ 確定して次の記事へ'}</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={handleConfirm}
+                disabled={saving || reAnalyzing || !canConfirm}
+                className="px-6 py-2.5 rounded-xl text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white flex items-center gap-2 shadow-sm disabled:opacity-50 transition"
+              >
+                {saving ? <RefreshCw size={14} className="animate-spin" /> : <CheckCircle2 size={15} />}
+                <span>
+                  {saving
+                    ? '統合処理中...'
+                    : currentChampions.length === 0
+                      ? `レーン別ガイド (${LANE_LABELS[laneChoice] || laneChoice}) へ統合する`
+                      : 'この内容で辞典・対面情報に統合する'}
+                </span>
+              </button>
+            )}
           </div>
         </div>
       </div>
