@@ -4,6 +4,11 @@ export interface DiffLine {
   text: string;
 }
 
+export interface SideBySideLine {
+  left: { op: 'removed' | 'same' | 'empty'; text: string; lineNum?: number };
+  right: { op: 'added' | 'same' | 'empty'; text: string; lineNum?: number };
+}
+
 /**
  * 行単位の差分（LCS: 最長共通部分列アルゴリズム）
  * 削除行（removed）、追加行（added）、共通行（same）を判定する。
@@ -56,4 +61,47 @@ export function diffSummary(before: string, after: string): { added: number; rem
     else if (line.op === 'removed') removed++;
   }
   return { added, removed };
+}
+
+/**
+ * 左右横並び（Side-by-Side）表示用の差分行ペアを生成する。
+ * 左：清書前（削除行が赤ハイライト）、右：清書後（追加行が緑ハイライト）
+ */
+export function diffSideBySide(before: string, after: string): SideBySideLine[] {
+  const lines = diffLines(before, after);
+  const rows: SideBySideLine[] = [];
+
+  let leftNum = 1;
+  let rightNum = 1;
+
+  for (let i = 0; i < lines.length; i++) {
+    const cur = lines[i];
+    if (cur.op === 'same') {
+      rows.push({
+        left: { op: 'same', text: cur.text, lineNum: leftNum++ },
+        right: { op: 'same', text: cur.text, lineNum: rightNum++ },
+      });
+    } else if (cur.op === 'removed') {
+      const next = lines[i + 1];
+      if (next && next.op === 'added') {
+        rows.push({
+          left: { op: 'removed', text: cur.text, lineNum: leftNum++ },
+          right: { op: 'added', text: next.text, lineNum: rightNum++ },
+        });
+        i++; // added分を消費
+      } else {
+        rows.push({
+          left: { op: 'removed', text: cur.text, lineNum: leftNum++ },
+          right: { op: 'empty', text: '' },
+        });
+      }
+    } else if (cur.op === 'added') {
+      rows.push({
+        left: { op: 'empty', text: '' },
+        right: { op: 'added', text: cur.text, lineNum: rightNum++ },
+      });
+    }
+  }
+
+  return rows;
 }

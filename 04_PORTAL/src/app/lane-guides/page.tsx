@@ -6,7 +6,7 @@ import remarkGfm from 'remark-gfm';
 import { Map as MapIcon, Sparkles, RefreshCw, CheckCircle2, X, Eye, BookHeart, FileText, SplitSquareVertical, Columns } from 'lucide-react';
 import Link from 'next/link';
 import { Spinner, EmptyState } from '../../components/Feedback';
-import { diffLines, diffSummary, type DiffLine } from '../../lib/diffUtils';
+import { diffLines, diffSummary, diffSideBySide, type DiffLine, type SideBySideLine } from '../../lib/diffUtils';
 
 export default function LaneGuidesPage() {
   const [data, setData] = useState<any>(null);
@@ -267,20 +267,21 @@ export default function LaneGuidesPage() {
           </>
         )}
 
-        {/* ✨ AI清書 差分プレビューモーダル (色付きDiff ＆ 2カラム比較) */}
+        {/* ✨ AI清書 差分プレビューモーダル (左右横並び Side-by-Side Diff ＆ Markdownプレビュー) */}
         {refinePreview && (() => {
-          const diffs = diffLines(refinePreview.originalBody, refinePreview.refinedBody);
+          const sbsRows = diffSideBySide(refinePreview.originalBody, refinePreview.refinedBody);
           const summary = diffSummary(refinePreview.originalBody, refinePreview.refinedBody);
 
           return (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/60 backdrop-blur-sm animate-fade-in">
-              <div className="bg-[#fcfbf9] border border-stone-200 rounded-3xl w-full max-w-5xl max-h-[90vh] overflow-y-auto p-6 shadow-2xl space-y-5">
-                <div className="flex items-center justify-between border-b border-stone-200 pb-4 flex-wrap gap-3">
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/70 backdrop-blur-sm animate-fade-in">
+              <div className="bg-[#fcfbf9] border border-stone-200 rounded-3xl w-full max-w-6xl max-h-[92vh] overflow-hidden p-6 shadow-2xl flex flex-col space-y-4">
+                {/* ヘッダー */}
+                <div className="flex items-center justify-between border-b border-stone-200 pb-3 flex-wrap gap-3">
                   <div>
                     <div className="flex items-center gap-2 flex-wrap">
                       <h3 className="text-xl font-black text-stone-900 flex items-center gap-2">
                         <Sparkles size={22} className="text-amber-600" />
-                        <span>レーンガイド AI清書・体系化プレビュー</span>
+                        <span>レーンガイド AI清書・体系化プレビュー（横並び比較）</span>
                       </h3>
                       <div className="flex items-center gap-1.5 text-xs font-mono font-bold">
                         <span className="bg-emerald-100 text-emerald-800 border border-emerald-300 px-2 py-0.5 rounded-md">
@@ -292,7 +293,7 @@ export default function LaneGuidesPage() {
                       </div>
                     </div>
                     <p className="text-xs text-stone-500 mt-1">
-                      蓄積された全知見の重複を排除し、序盤・中盤・終盤の美しい章立てで清書しました。
+                      左列（清書前・赤）と右列（清書後・緑）で重複の削除や体系化された内容を横並びで比較できます。
                     </p>
                   </div>
                   <button
@@ -304,36 +305,69 @@ export default function LaneGuidesPage() {
                   </button>
                 </div>
 
-                {/* 📝 行単位の色付きDiff表示（削除＝赤、追加＝緑） */}
-                <div className="bg-stone-950 border border-stone-800 rounded-2xl p-4 shadow-inner max-h-[55vh] overflow-y-auto font-mono text-xs leading-relaxed space-y-0.5">
-                  {diffs.map((line, idx) => {
-                    if (line.op === 'added') {
-                      return (
-                        <div key={idx} className="bg-emerald-950/60 text-emerald-300 px-3 py-1 rounded border-l-4 border-emerald-500 flex items-start gap-2">
-                          <span className="text-emerald-500 font-bold select-none shrink-0">+</span>
-                          <span className="whitespace-pre-wrap">{line.text || ' '}</span>
-                        </div>
-                      );
-                    }
-                    if (line.op === 'removed') {
-                      return (
-                        <div key={idx} className="bg-rose-950/50 text-rose-300/80 px-3 py-1 rounded border-l-4 border-rose-500 flex items-start gap-2 line-through decoration-rose-500/60">
-                          <span className="text-rose-500 font-bold select-none shrink-0">-</span>
-                          <span className="whitespace-pre-wrap">{line.text || ' '}</span>
-                        </div>
-                      );
-                    }
+                {/* 列ヘッダー */}
+                <div className="grid grid-cols-2 gap-2 text-xs font-black px-3 py-1.5 bg-stone-100 rounded-xl border border-stone-200">
+                  <div className="text-stone-600 flex items-center gap-1.5">
+                    <span>📄</span> 清書前（蓄積された生データ / 削除行）
+                  </div>
+                  <div className="text-amber-900 flex items-center gap-1.5">
+                    <Sparkles size={13} className="text-amber-600" />
+                    <span>清書後（AI体系化リライト版 / 追加行）</span>
+                  </div>
+                </div>
+
+                {/* 📝 左右横並び (Side-by-Side) Diff 表示テーブル */}
+                <div className="bg-stone-950 border border-stone-800 rounded-2xl p-3 shadow-inner max-h-[58vh] overflow-y-auto font-mono text-[11px] leading-relaxed space-y-0.5 select-text">
+                  {sbsRows.map((row, idx) => {
+                    const l = row.left;
+                    const r = row.right;
+
                     return (
-                      <div key={idx} className="text-stone-400 px-3 py-0.5 flex items-start gap-2 hover:bg-white/5 rounded">
-                        <span className="text-stone-600 select-none shrink-0"> </span>
-                        <span className="whitespace-pre-wrap">{line.text || ' '}</span>
+                      <div key={idx} className="grid grid-cols-2 gap-2 group hover:bg-white/5 py-0.5 px-1 rounded">
+                        {/* 左列: 清書前 */}
+                        <div
+                          className={`flex items-start gap-1.5 px-2 py-0.5 rounded overflow-x-auto min-h-[1.5rem] ${
+                            l.op === 'removed'
+                              ? 'bg-rose-950/60 text-rose-300 border-l-2 border-rose-500 line-through decoration-rose-500/70'
+                              : l.op === 'empty'
+                              ? 'opacity-20'
+                              : 'text-stone-400'
+                          }`}
+                        >
+                          <span className="text-[9px] text-stone-600 select-none w-6 shrink-0 text-right font-mono">
+                            {l.lineNum || ''}
+                          </span>
+                          <span className="select-none text-rose-500 font-bold shrink-0">
+                            {l.op === 'removed' ? '-' : ' '}
+                          </span>
+                          <span className="whitespace-pre-wrap break-all">{l.text || (l.op === 'empty' ? ' ' : '')}</span>
+                        </div>
+
+                        {/* 右列: 清書後 */}
+                        <div
+                          className={`flex items-start gap-1.5 px-2 py-0.5 rounded overflow-x-auto min-h-[1.5rem] ${
+                            r.op === 'added'
+                              ? 'bg-emerald-950/70 text-emerald-300 border-l-2 border-emerald-500'
+                              : r.op === 'empty'
+                              ? 'opacity-20'
+                              : 'text-stone-300'
+                          }`}
+                        >
+                          <span className="text-[9px] text-stone-600 select-none w-6 shrink-0 text-right font-mono">
+                            {r.lineNum || ''}
+                          </span>
+                          <span className="select-none text-emerald-500 font-bold shrink-0">
+                            {r.op === 'added' ? '+' : ' '}
+                          </span>
+                          <span className="whitespace-pre-wrap break-all">{r.text || (r.op === 'empty' ? ' ' : '')}</span>
+                        </div>
                       </div>
                     );
                   })}
                 </div>
 
                 {/* フッターアクション */}
-                <div className="flex items-center justify-between gap-3 pt-4 border-t border-stone-200 flex-wrap">
+                <div className="flex items-center justify-between gap-3 pt-3 border-t border-stone-200 flex-wrap">
                   <button
                     type="button"
                     onClick={() => setRefinePreview(null)}

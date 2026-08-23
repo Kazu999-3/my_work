@@ -13,7 +13,7 @@ import { getFavorites, toggleFavoriteChampion } from '../../../components/Favori
 import { Spinner } from '../../../components/Feedback';
 import ChampionFactCheckPanel from '../ChampionFactCheckPanel';
 import ChampionRevisionHistory from '../ChampionRevisionHistory';
-import { diffLines, diffSummary } from '../../../lib/diffUtils';
+import { diffLines, diffSummary, diffSideBySide } from '../../../lib/diffUtils';
 
 function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
   const searchParams = useSearchParams();
@@ -2246,16 +2246,16 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
               </button>
             </div>
 
-            {/* 項目ごとのビフォーアフター差分一覧 (色付きDiff) */}
+            {/* 項目ごとのビフォーアフター差分一覧 (左右横並び Side-by-Side Diff) */}
             <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
               {factsRefinePreview.diffs
                 .filter((d) => (d.before && d.before.trim().length > 0) || (d.after && d.after.trim().length > 0))
                 .map((d) => {
-                  const itemDiffs = diffLines(d.before, d.after);
+                  const sbs = diffSideBySide(d.before, d.after);
                   const itemSummary = diffSummary(d.before, d.after);
 
                   return (
-                    <div key={d.fieldKey} className="bg-white border border-stone-200 rounded-2xl p-4 shadow-xs space-y-3">
+                    <div key={d.fieldKey} className="bg-white border border-stone-200 rounded-2xl p-4 shadow-xs space-y-2.5">
                       <div className="flex items-center justify-between flex-wrap gap-2">
                         <span className="text-xs font-black text-amber-900 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-lg inline-block">
                           📌 {d.fieldLabel}
@@ -2270,29 +2270,51 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                         </div>
                       </div>
 
-                      {/* 📝 行単位の色付きDiff表示 */}
-                      <div className="bg-stone-950 border border-stone-800 rounded-xl p-3 font-mono text-[11px] leading-relaxed space-y-0.5 max-h-48 overflow-y-auto">
-                        {itemDiffs.map((line, lIdx) => {
-                          if (line.op === 'added') {
-                            return (
-                              <div key={lIdx} className="bg-emerald-950/60 text-emerald-300 px-2 py-0.5 rounded border-l-2 border-emerald-500 flex items-start gap-1.5">
-                                <span className="text-emerald-500 font-bold select-none shrink-0">+</span>
-                                <span className="whitespace-pre-wrap">{line.text || ' '}</span>
-                              </div>
-                            );
-                          }
-                          if (line.op === 'removed') {
-                            return (
-                              <div key={lIdx} className="bg-rose-950/50 text-rose-300/80 px-2 py-0.5 rounded border-l-2 border-rose-500 flex items-start gap-1.5 line-through decoration-rose-500/60">
-                                <span className="text-rose-500 font-bold select-none shrink-0">-</span>
-                                <span className="whitespace-pre-wrap">{line.text || ' '}</span>
-                              </div>
-                            );
-                          }
+                      {/* 左右ラベル */}
+                      <div className="grid grid-cols-2 gap-2 text-[10px] font-bold px-2 text-stone-500">
+                        <span>📄 清書前（削除行: 赤）</span>
+                        <span className="text-amber-800">✨ 清書後（追加行: 緑）</span>
+                      </div>
+
+                      {/* 📝 左右横並び Diff 表示 */}
+                      <div className="bg-stone-950 border border-stone-800 rounded-xl p-2.5 font-mono text-[11px] leading-relaxed space-y-0.5 max-h-52 overflow-y-auto">
+                        {sbs.map((row, rIdx) => {
+                          const l = row.left;
+                          const r = row.right;
+
                           return (
-                            <div key={lIdx} className="text-stone-400 px-2 py-0.5 flex items-start gap-1.5 hover:bg-white/5 rounded">
-                              <span className="text-stone-600 select-none shrink-0"> </span>
-                              <span className="whitespace-pre-wrap">{line.text || ' '}</span>
+                            <div key={rIdx} className="grid grid-cols-2 gap-1.5 hover:bg-white/5 py-0.5 px-0.5 rounded">
+                              {/* 左列: 清書前 */}
+                              <div
+                                className={`flex items-start gap-1 px-1.5 py-0.5 rounded overflow-x-auto min-h-[1.4rem] ${
+                                  l.op === 'removed'
+                                    ? 'bg-rose-950/60 text-rose-300 border-l-2 border-rose-500 line-through decoration-rose-500/70'
+                                    : l.op === 'empty'
+                                    ? 'opacity-20'
+                                    : 'text-stone-400'
+                                }`}
+                              >
+                                <span className="select-none text-rose-500 font-bold shrink-0">
+                                  {l.op === 'removed' ? '-' : ' '}
+                                </span>
+                                <span className="whitespace-pre-wrap break-all">{l.text || (l.op === 'empty' ? ' ' : '')}</span>
+                              </div>
+
+                              {/* 右列: 清書後 */}
+                              <div
+                                className={`flex items-start gap-1 px-1.5 py-0.5 rounded overflow-x-auto min-h-[1.4rem] ${
+                                  r.op === 'added'
+                                    ? 'bg-emerald-950/70 text-emerald-300 border-l-2 border-emerald-500'
+                                    : r.op === 'empty'
+                                    ? 'opacity-20'
+                                    : 'text-stone-300'
+                                }`}
+                              >
+                                <span className="select-none text-emerald-500 font-bold shrink-0">
+                                  {r.op === 'added' ? '+' : ' '}
+                                </span>
+                                <span className="whitespace-pre-wrap break-all">{r.text || (r.op === 'empty' ? ' ' : '')}</span>
+                              </div>
                             </div>
                           );
                         })}
