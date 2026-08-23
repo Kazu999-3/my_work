@@ -370,16 +370,17 @@ export default function LaneGuidesPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1 overflow-hidden min-h-[44vh] max-h-[54vh]">
                   {/* 左列: 元文章の各段落に対する朱入れ（移動先・削除理由） */}
                   <div className="bg-stone-50 border border-stone-200 rounded-2xl p-4 shadow-2xs flex flex-col overflow-hidden">
-                    <div className="flex items-center justify-between border-b border-stone-200 pb-2 mb-3 shrink-0">
+                    <div className="flex items-center justify-between border-b border-stone-200 pb-2 mb-2.5 shrink-0">
                       <span className="text-xs font-black text-stone-700 flex items-center gap-1.5">
                         <span>📋</span> 元の生知見 ➔ 各段落の移動先・削除判定
                       </span>
                       <span className="text-[10px] bg-stone-200 text-stone-700 px-2 py-0.5 rounded font-bold font-mono">
-                        {refinePreview.editMap?.length || 0} 項目
+                        {refinePreview.originalBody.length} 文字
                       </span>
                     </div>
 
-                    <div className="overflow-y-auto pr-2 space-y-2.5 flex-1">
+                    {/* 朱入れカードリスト */}
+                    <div className="overflow-y-auto pr-2 space-y-3 flex-1">
                       {refinePreview.editMap && refinePreview.editMap.length > 0 ? (
                         refinePreview.editMap.map((item, idx) => {
                           const isDup = item.action === 'deleted_duplicate';
@@ -390,26 +391,26 @@ export default function LaneGuidesPage() {
                           return (
                             <div
                               key={idx}
-                              className={`p-3 rounded-xl border text-xs transition shadow-2xs ${
+                              className={`p-3.5 rounded-xl border text-xs transition shadow-2xs ${
                                 isDup
-                                  ? 'bg-rose-50/70 border-rose-200 text-rose-900'
+                                  ? 'bg-rose-50/80 border-rose-300 text-rose-950'
                                   : is2026
-                                  ? 'bg-amber-50/70 border-amber-200 text-amber-900'
+                                  ? 'bg-amber-50/80 border-amber-300 text-amber-950'
                                   : isNoise
-                                  ? 'bg-stone-100/70 border-stone-200 text-stone-500'
-                                  : 'bg-white border-emerald-200/80 text-stone-800'
+                                  ? 'bg-stone-100 border-stone-300 text-stone-600'
+                                  : 'bg-white border-emerald-300 text-stone-900'
                               }`}
                             >
-                              <div className="flex items-center justify-between gap-2 mb-1.5 flex-wrap">
+                              <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
                                 <span
-                                  className={`text-[10px] font-black px-2 py-0.5 rounded-md flex items-center gap-1 ${
+                                  className={`text-[11px] font-black px-2.5 py-0.5 rounded-md flex items-center gap-1 shadow-2xs ${
                                     isDup
-                                      ? 'bg-rose-100 text-rose-800 border border-rose-300'
+                                      ? 'bg-rose-600 text-white'
                                       : is2026
-                                      ? 'bg-amber-100 text-amber-900 border border-amber-300'
+                                      ? 'bg-amber-600 text-white'
                                       : isNoise
-                                      ? 'bg-stone-200 text-stone-700'
-                                      : 'bg-emerald-100 text-emerald-900 border border-emerald-300'
+                                      ? 'bg-stone-600 text-white'
+                                      : 'bg-emerald-700 text-white'
                                   }`}
                                 >
                                   {isDup && '🗑️ 重複のため削除・1本化'}
@@ -417,19 +418,21 @@ export default function LaneGuidesPage() {
                                   {isNoise && '🗑️ ノイズ削除'}
                                   {isMoved && `➔ 【${item.targetChapter}】へ統合`}
                                 </span>
-                                {item.reason && !isMoved && (
-                                  <span className="text-[10px] text-stone-500 font-medium">{item.reason}</span>
+                                {item.reason && (
+                                  <span className="text-[10px] font-bold text-stone-600 bg-stone-100 px-2 py-0.5 rounded border border-stone-200">
+                                    {item.reason}
+                                  </span>
                                 )}
                               </div>
-                              <p className={`leading-relaxed ${isDup || isNoise ? 'line-through opacity-70' : 'font-medium'}`}>
+                              <p className={`leading-relaxed text-stone-800 text-[11px] ${isDup || isNoise ? 'line-through opacity-70' : 'font-medium'}`}>
                                 {item.originalSnippet}
                               </p>
                             </div>
                           );
                         })
                       ) : (
-                        <div className="text-center py-8 text-xs text-stone-400">
-                          朱入れマップを生成中または対象データがありません
+                        <div className="prose prose-xs max-w-none text-stone-600">
+                          <ReactMarkdown remarkPlugins={[remarkGfm]}>{refinePreview.originalBody}</ReactMarkdown>
                         </div>
                       )}
                     </div>
@@ -443,7 +446,7 @@ export default function LaneGuidesPage() {
                         <span>清書後（2026年最新・完全体系化ガイド）</span>
                       </span>
                       <span className="text-[10px] bg-amber-100 text-amber-800 border border-amber-200 px-2 py-0.5 rounded font-mono font-black">
-                        完成プレビュー
+                        {refinePreview.refinedBody.length} 文字
                       </span>
                     </div>
                     <div className="prose prose-xs max-w-none prose-headings:text-amber-800 prose-strong:text-stone-900 text-stone-800 overflow-y-auto pr-2 leading-relaxed flex-1 font-medium">
