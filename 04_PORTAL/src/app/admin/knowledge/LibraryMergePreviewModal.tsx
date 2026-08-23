@@ -160,8 +160,8 @@ export default function LibraryMergePreviewModal({
   // チャンピオン追加用入力
   const [champInput, setChampInput] = useState('');
 
-  // レーンガイド統合チェック
-  const [sendToLaneChecked, setSendToLaneChecked] = useState(hasLaneGeneral);
+  // レーンガイド統合チェック（チャンピオン未設定なら自動でON）
+  const [sendToLaneChecked, setSendToLaneChecked] = useState(currentChampions.length === 0 || hasLaneGeneral);
   const [laneChoice, setLaneChoice] = useState(detectedLane || 'COMMON');
 
   // 連続レビュー時など、記事やpropsが切り替わったときに各stateを最新のpropsと同期する
@@ -184,7 +184,8 @@ export default function LibraryMergePreviewModal({
       }))
     );
 
-    setSendToLaneChecked(laneGeneralInsights.length > 0);
+    // チャンピオンが0件（マクロ記事）の場合は常にレーンガイド統合をONにする
+    setSendToLaneChecked(currentChampions.length === 0 || laneGeneralInsights.length > 0);
     setLaneChoice(detectedLane || 'COMMON');
     setExpandedFields({});
   }, [laneGeneralInsights, matchupInsights, trendAnalyses, detectedLane, currentChampions]);
@@ -340,7 +341,14 @@ export default function LibraryMergePreviewModal({
 
   const laneGeneralCount = laneInsightItems.filter((i) => i.included && i.scope === 'lane_general').length;
   const champSpecificCount = laneInsightItems.filter((i) => i.included && i.scope === 'champion_specific').length;
-  const canConfirm = currentChampions.length > 0 || (sendToLaneChecked && (laneGeneralCount > 0 || hasLaneGeneral)) || champSpecificCount > 0 || selectedMatchupIndices.length > 0;
+  // チャンピオンがいる場合、またはレーンガイド送り先が選択されている場合は常に確定可能
+  const canConfirm =
+    currentChampions.length > 0 ||
+    (sendToLaneChecked && !!laneChoice) ||
+    laneGeneralCount > 0 ||
+    hasLaneGeneral ||
+    champSpecificCount > 0 ||
+    selectedMatchupIndices.length > 0;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/60 backdrop-blur-sm animate-fade-in">
@@ -472,17 +480,46 @@ export default function LibraryMergePreviewModal({
                 </span>
               ))
             ) : (
-              <span className="text-xs font-bold text-stone-500 bg-white/70 border border-stone-300 px-2.5 py-1 rounded-lg">
-                チャンピオン未設定（レーン別ガイドへのみ統合されます）
-              </span>
+              <div className="flex items-center gap-2 flex-wrap w-full bg-white/90 border border-amber-300/80 p-2.5 rounded-xl">
+                <span className="text-xs font-black text-amber-950 flex items-center gap-1">
+                  <Map size={14} className="text-amber-600" />
+                  <span>送り先レーンガイド:</span>
+                </span>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {[
+                    { key: 'COMMON', label: '🌐 全体/共通' },
+                    { key: 'TOP', label: '⚔️ TOP' },
+                    { key: 'JG', label: '🌲 JG' },
+                    { key: 'MID', label: '⚡ MID' },
+                    { key: 'ADC', label: '🏹 BOT' },
+                    { key: 'SUP', label: '🛡️ SUP' },
+                  ].map((l) => (
+                    <button
+                      key={l.key}
+                      type="button"
+                      onClick={() => {
+                        setLaneChoice(l.key);
+                        setSendToLaneChecked(true);
+                      }}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1 border ${
+                        laneChoice === l.key
+                          ? 'bg-amber-600 border-amber-600 text-white shadow-xs'
+                          : 'bg-stone-50 border-stone-200 text-stone-700 hover:bg-amber-50 hover:border-amber-300'
+                      }`}
+                    >
+                      <span>{l.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
             )}
 
             {/* 新規チャンピオン追加用サジェスト */}
-            <div className="w-44">
+            <div className="w-48 pt-1">
               <ChampSelect
                 value={champInput}
                 onChange={setChampInput}
-                placeholder="＋チャンプ追加..."
+                placeholder="＋チャンプを追加して辞典へ..."
                 className="bg-white border-amber-300 focus:border-amber-500 py-1 text-xs"
                 onSelect={(champ: string) => handleAddChampion(champ)}
               />
