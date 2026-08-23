@@ -8,20 +8,22 @@ import { LANES } from '../../../../../lib/laneGuideMerge';
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
+export interface EditAnnotation {
+  originalSnippet: string;
+  action: 'moved' | 'deleted_duplicate' | 'deleted_noise' | 'updated_2026';
+  targetChapter: string;
+  reason: string;
+}
+
 export interface KeyPointAudit {
   topic: string;
   targetSection: string;
 }
 
-export interface DuplicateAudit {
-  duplicateSummary: string;
-  resolvedAction: string;
-}
-
 /**
  * レーン別ガイドのAI清書・体系化リライトAPI
  * 蓄積知見を2026年最新仕様で完全体系化しつつ、
- * 「元データの重要情報が漏れなく引き継がれているか」を監査する重要知見網羅レポート(Key Points Audit)を同時に返却する。
+ * 「元データのどの段落が何章に移動したか/なぜ削除されたか」の朱入れ編集マップ(Edit Annotations)を返却する。
  */
 export async function POST(req: Request) {
   const auth = await verifyAdminSession(req);
@@ -60,10 +62,14 @@ export async function POST(req: Request) {
 以下は、${laneMeta.label}に関して様々な解説記事から収集・追記された【蓄積知見】です。
 
 ━━━━━━━━━━━━━━━━━━━━
-【🚨 最重要ミッション：重要知見の欠落ゼロ ＆ 2026年最新仕様の適用】
-1. **情報欠落の完全防止**:
-   元の生データに含まれる【具体的戦術・テクニック・注意点・判断基準】を絶対に削除・省略しないでください。
-   すべての具体的知見を、適切な章の下に100%網羅して組み込んでください。
+【🚨 最重要ミッション：元文章の編集マップ（朱入れ） ＆ 2026年最新仕様の完全体系化】
+1. **編集マップ（朱入れ）の作成**:
+   元の蓄積データに含まれる各段落・主要トピックが「清書後にどう扱われたか」を1つずつ追跡してください：
+   - 「第○章に移動・統合された」
+   - 「○○と内容が重複していたため削除・1本化された」
+   - 「2026年最新仕様（2:55スカトル等）に補正されて配置された」
+   - 「無駄な挨拶やノイズのため削除された」
+
 2. **2026年シーズン最新仕様の厳格適用**:
    - 初動ミニオン0:30、キャンプ湧き0:55、初動スカトル（蟹）出現は【2:55】（※3:30は過去仕様）。
    - 初代ドラゴン【5:00】（5分リスポーン）。
@@ -71,29 +77,30 @@ export async function POST(req: Request) {
    - リフトヘラルド【15:00】（19:45消滅）。
    - バロンナッシャー【20:00】（6分リスポーン）。
    - タワープレートは14分消滅ではなく【永続（Permanent）】仕様。
-3. **章立ての構造**:
+
+3. **清書後の5大章立て**:
    - ## 1. ${laneMeta.label}の基本思想と勝利条件（コアコンセプト）
    - ## 2. 序盤戦術（Lv1〜6・2:55スカトル争奪・ウェーブ管理とトレード原則）
    - ## 3. 中盤戦術（8:00グラブ・15:00ヘラルド・サイドプッシュ・ローム）
    - ## 4. 終盤戦術・集団戦（20分以降・バロン戦・オブジェクト戦・ポジション取り）
    - ## 5. 勝率を底上げする2026マクロ原則とよくある負け筋の回避
 ${laneSpecificInstruction}
-4. **監査レポート（重要知見の網羅性チェック）の作成**:
-   元データに含まれていた【主要戦術・ノウハウ（5〜10個）】を抽出し、清書版のどの章に継承されたかをリスト化してください。
-   また、重複として1本化された内容があればそれも記載してください。
 ━━━━━━━━━━━━━━━━━━━━
 
 【蓄積生データ】
 ${baseBody}
 
 【出力フォーマット（厳格遵守）】
-以下の区切りタグを使って出力してください（JSONは不要です。Markdownをそのまま出力してください）：
+以下の区切りタグを使って出力してください（JSONは不要です）：
+
+===EDIT_MAP===
+- [元データの内容・抜粋] || [action: moved / deleted_duplicate / deleted_noise / updated_2026] || [移動先・理由: 第2章: 序盤戦術へ統合 / 第2章と重複のためカット / 3:30から2:55へ補正]
+（元データの主要な段落・知見を網羅して8〜15行記述）
 
 ===RETAINED_POINTS===
 - [2:55初動スカトルでのレーン主導権と寄りの判断] ➔ 第2章: 序盤戦術
 - [8:00ヴォイドグラブ出現前のウェーブプッシュ原則] ➔ 第3章: 中盤戦術
 - [永続タワープレートの削り方とリコールタイミング] ➔ 第2章・第3章
-（元データから引き継いだ重要戦術を5〜10個箇条書き）
 
 ===REFINED_BODY===
 ## 1. ${laneMeta.label}の基本思想と勝利条件（コアコンセプト）
@@ -111,64 +118,54 @@ ${baseBody}
     const rawResponse = await callGeminiWithRetry(prompt, { temperature: 0.2 });
 
     let refinedBody = '';
+    let editMap: EditAnnotation[] = [];
     let retainedKeyPoints: KeyPointAudit[] = [];
-    let consolidatedDuplicates: DuplicateAudit[] = [];
 
     // 1. セクション区切り（===REFINED_BODY===）の抽出
     if (rawResponse.includes('===REFINED_BODY===')) {
       const parts = rawResponse.split('===REFINED_BODY===');
       refinedBody = parts[1]?.trim() || '';
 
-      const auditPart = parts[0];
-      const pointMatches = auditPart.matchAll(/-\s*\[(.*?)\]\s*(?:➔|->|:)\s*(.*)/g);
-      for (const m of pointMatches) {
-        if (m[1] && m[2]) {
-          retainedKeyPoints.push({
-            topic: m[1].trim(),
-            targetSection: m[2].trim(),
-          });
+      const metaPart = parts[0];
+
+      // EDIT_MAP のパース
+      if (metaPart.includes('===EDIT_MAP===')) {
+        const editMapPart = metaPart.split('===EDIT_MAP===')[1].split('===RETAINED_POINTS===')[0];
+        const editLines = editMapPart.split('\n');
+        for (const line of editLines) {
+          const m = line.match(/^-\s*\[(.*?)\]\s*\|\|\s*\[?(.*?)\]?\s*\|\|\s*\[?(.*?)\]?$/);
+          if (m && m[1] && m[3]) {
+            const rawAction = m[2]?.trim().toLowerCase() || 'moved';
+            let action: EditAnnotation['action'] = 'moved';
+            if (rawAction.includes('duplicate')) action = 'deleted_duplicate';
+            else if (rawAction.includes('noise')) action = 'deleted_noise';
+            else if (rawAction.includes('2026') || rawAction.includes('update')) action = 'updated_2026';
+
+            editMap.push({
+              originalSnippet: m[1].trim(),
+              action,
+              targetChapter: m[3].trim(),
+              reason: m[3].trim(),
+            });
+          }
         }
       }
-    } else if (rawResponse.trim().startsWith('{') || rawResponse.includes('"refinedBody"')) {
-      // 2. 万が一JSON形式で返ってきた場合の安全な抽出
-      try {
-        // 通常のJSON.parseを試みる
-        const parsed = JSON.parse(rawResponse.replace(/```(?:json)?/g, '').replace(/```/g, '').trim());
-        refinedBody = parsed.refinedBody || '';
-        retainedKeyPoints = parsed.retainedKeyPoints || [];
-      } catch {
-        // パースエラー時は正規表現で中身だけを救出
-        const bodyMatch = rawResponse.match(/"refinedBody"\s*:\s*"([\s\S]*?)(?:",\s*"retainedKeyPoints"|"\s*\})/);
-        if (bodyMatch && bodyMatch[1]) {
-          // エスケープされた\nを本物の改行に復元
-          refinedBody = bodyMatch[1].replace(/\\n/g, '\n').replace(/\\"/g, '"');
-        } else {
-          refinedBody = rawResponse.replace(/```(?:json)?/g, '').replace(/```/g, '').trim();
-        }
 
-        // トピックも正規表現で救出
-        const topicMatches = rawResponse.matchAll(/"topic"\s*:\s*"([^"]+)"\s*,\s*"targetSection"\s*:\s*"([^"]+)"/g);
-        for (const tm of topicMatches) {
-          retainedKeyPoints.push({
-            topic: tm[1].trim(),
-            targetSection: tm[2].trim(),
-          });
+      // RETAINED_POINTS のパース
+      if (metaPart.includes('===RETAINED_POINTS===')) {
+        const pointsPart = metaPart.split('===RETAINED_POINTS===')[1];
+        const pointMatches = pointsPart.matchAll(/-\s*\[(.*?)\]\s*(?:➔|->|:)\s*(.*)/g);
+        for (const m of pointMatches) {
+          if (m[1] && m[2]) {
+            retainedKeyPoints.push({
+              topic: m[1].trim(),
+              targetSection: m[2].trim(),
+            });
+          }
         }
       }
     } else {
-      // 3. その他（Markdown直出力）
       refinedBody = rawResponse.replace(/```(?:markdown)?/g, '').replace(/```/g, '').trim();
-    }
-
-    // もし抽出された本文の先頭に {"refinedBody": が残っていた場合の完全サニタイズ
-    if (refinedBody.startsWith('{\n  "refinedBody": "') || refinedBody.startsWith('{"refinedBody":"')) {
-      refinedBody = refinedBody
-        .replace(/^\{\s*"refinedBody"\s*:\s*"/, '')
-        .replace(/"\s*,?\s*"retainedKeyPoints"[\s\S]*$/, '')
-        .replace(/"\s*\}\s*$/, '')
-        .replace(/\\n/g, '\n')
-        .replace(/\\"/g, '"')
-        .trim();
     }
 
     if (!refinedBody || refinedBody.length < 50) {
@@ -187,8 +184,8 @@ ${baseBody}
         refinedBody: cleanBody,
         originalBody: baseBody,
         sourceCount: guide?.source_count || 0,
+        editMap,
         retainedKeyPoints,
-        consolidatedDuplicates,
       });
     }
 
@@ -222,8 +219,8 @@ ${baseBody}
       title: refinedTitle,
       body: cleanBody,
       sourceCount: guide?.source_count || 0,
+      editMap,
       retainedKeyPoints,
-      consolidatedDuplicates,
     });
   } catch (err: any) {
     console.error('[lane-guides/refine] error:', err);

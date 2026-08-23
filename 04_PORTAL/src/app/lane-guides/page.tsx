@@ -16,14 +16,20 @@ export default function LaneGuidesPage() {
   // AI清書・体系化リライト状態
   const [refining, setRefining] = useState(false);
   const [savingRefined, setSavingRefined] = useState(false);
+  const [previewTab, setPreviewTab] = useState<'annotations' | 'comparison' | 'refined'>('annotations');
   const [refinePreview, setRefinePreview] = useState<{
     lane: string;
     title: string;
     refinedBody: string;
     originalBody: string;
     sourceCount: number;
+    editMap?: Array<{
+      originalSnippet: string;
+      action: 'moved' | 'deleted_duplicate' | 'deleted_noise' | 'updated_2026';
+      targetChapter: string;
+      reason: string;
+    }>;
     retainedKeyPoints?: Array<{ topic: string; targetSection: string }>;
-    consolidatedDuplicates?: Array<{ duplicateSummary: string; resolvedAction: string }>;
   } | null>(null);
   const [toastMessage, setToastMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
@@ -57,6 +63,7 @@ export default function LaneGuidesPage() {
   // AI清書プレビューの取得
   const handleStartRefine = async (laneKey: string) => {
     setRefining(true);
+    setPreviewTab('annotations'); // 朱入れマップをデフォルト表示
     try {
       const res = await fetch('/api/admin/lane-guides/refine', {
         method: 'POST',
@@ -72,8 +79,8 @@ export default function LaneGuidesPage() {
         refinedBody: d.refinedBody,
         originalBody: d.originalBody,
         sourceCount: d.sourceCount,
+        editMap: d.editMap || [],
         retainedKeyPoints: d.retainedKeyPoints || [],
-        consolidatedDuplicates: d.consolidatedDuplicates || [],
       });
     } catch (e: any) {
       showToast(`❌ 清書エラー: ${e.message}`, 'error');
@@ -284,7 +291,7 @@ export default function LaneGuidesPage() {
           </>
         )}
 
-        {/* ✨ AI清書 プレビューモーダル (🔍 重要知見の網羅性チェック ＆ 左右文章比較) */}
+        {/* ✨ AI清書 プレビューモーダル (📋 元文章の朱入れマップ ＆ 左右比較 ＆ 完成版) */}
         {refinePreview && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/70 backdrop-blur-sm animate-fade-in">
             <div className="bg-[#fcfbf9] border border-stone-200 rounded-3xl w-full max-w-6xl max-h-[94vh] overflow-hidden p-6 shadow-2xl flex flex-col space-y-3.5">
@@ -301,7 +308,7 @@ export default function LaneGuidesPage() {
                     </span>
                   </div>
                   <p className="text-xs text-stone-500 mt-1">
-                    元の生データにあった重要戦術を漏らさず引き継ぎ、重複を排除して2026年最新章立てに再構成しました。
+                    元の生文章の各段落が「何章に移動したか」「なぜ重複削除されたか」を朱入れマップで確認できます。
                   </p>
                 </div>
                 <button
@@ -313,65 +320,181 @@ export default function LaneGuidesPage() {
                 </button>
               </div>
 
-              {/* 🔍 【重要知見の網羅性チェック (AI監査レポート)】 */}
-              {refinePreview.retainedKeyPoints && refinePreview.retainedKeyPoints.length > 0 && (
-                <div className="bg-emerald-50/70 border border-emerald-300/80 rounded-2xl p-3.5 shadow-xs space-y-2 shrink-0">
-                  <div className="flex items-center justify-between flex-wrap gap-2">
-                    <span className="text-xs font-black text-emerald-950 flex items-center gap-1.5">
-                      <CheckCircle2 size={15} className="text-emerald-600" />
-                      <span>🔍 元データから引き継がれた重要戦術・ノウハウ（{refinePreview.retainedKeyPoints.length}項目 網羅確認済み）</span>
-                    </span>
-                    <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded border border-emerald-300">
-                      100% Retained & Mapped
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 text-xs">
-                    {refinePreview.retainedKeyPoints.map((kp, idx) => (
-                      <div key={idx} className="bg-white p-2 rounded-xl border border-emerald-200/80 shadow-2xs flex items-start gap-1.5">
-                        <span className="text-emerald-600 font-bold shrink-0">✔</span>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-stone-800 font-bold text-[11px] leading-snug line-clamp-2">{kp.topic}</p>
-                          <span className="text-[10px] text-emerald-700 font-medium mt-0.5 block">➔ {kp.targetSection}</span>
+              {/* 🧭 ビュー切り替えタブ */}
+              <div className="flex items-center justify-between gap-3 flex-wrap bg-stone-100 p-1.5 rounded-2xl border border-stone-200">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <button
+                    type="button"
+                    onClick={() => setPreviewTab('annotations')}
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+                      previewTab === 'annotations'
+                        ? 'bg-amber-600 text-white shadow-xs'
+                        : 'bg-white text-stone-600 hover:text-stone-900 border border-stone-200'
+                    }`}
+                  >
+                    <span>📋 ① 元文章の朱入れマップ (移動先・削除理由)</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPreviewTab('comparison')}
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+                      previewTab === 'comparison'
+                        ? 'bg-amber-600 text-white shadow-xs'
+                        : 'bg-white text-stone-600 hover:text-stone-900 border border-stone-200'
+                    }`}
+                  >
+                    <Columns size={13} />
+                    <span>📄 ② 左右並列・文章比較</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPreviewTab('refined')}
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+                      previewTab === 'refined'
+                        ? 'bg-amber-600 text-white shadow-xs'
+                        : 'bg-white text-stone-600 hover:text-stone-900 border border-stone-200'
+                    }`}
+                  >
+                    <Sparkles size={13} />
+                    <span>✨ ③ 清書後の完成ガイド</span>
+                  </button>
+                </div>
+
+                <div className="text-[11px] font-mono font-bold text-stone-500 pr-2">
+                  清書前: {refinePreview.originalBody.length}字 ➔ 清書後: {refinePreview.refinedBody.length}字
+                </div>
+              </div>
+
+              {/* 📋 タブ①: 元文章の朱入れ編集マップ */}
+              {previewTab === 'annotations' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1 overflow-hidden min-h-[44vh] max-h-[54vh]">
+                  {/* 左列: 元文章の各段落に対する朱入れ（移動先・削除理由） */}
+                  <div className="bg-stone-50 border border-stone-200 rounded-2xl p-4 shadow-2xs flex flex-col overflow-hidden">
+                    <div className="flex items-center justify-between border-b border-stone-200 pb-2 mb-3 shrink-0">
+                      <span className="text-xs font-black text-stone-700 flex items-center gap-1.5">
+                        <span>📋</span> 元の生知見 ➔ 各段落の移動先・削除判定
+                      </span>
+                      <span className="text-[10px] bg-stone-200 text-stone-700 px-2 py-0.5 rounded font-bold font-mono">
+                        {refinePreview.editMap?.length || 0} 項目
+                      </span>
+                    </div>
+
+                    <div className="overflow-y-auto pr-2 space-y-2.5 flex-1">
+                      {refinePreview.editMap && refinePreview.editMap.length > 0 ? (
+                        refinePreview.editMap.map((item, idx) => {
+                          const isDup = item.action === 'deleted_duplicate';
+                          const is2026 = item.action === 'updated_2026';
+                          const isNoise = item.action === 'deleted_noise';
+                          const isMoved = item.action === 'moved';
+
+                          return (
+                            <div
+                              key={idx}
+                              className={`p-3 rounded-xl border text-xs transition shadow-2xs ${
+                                isDup
+                                  ? 'bg-rose-50/70 border-rose-200 text-rose-900'
+                                  : is2026
+                                  ? 'bg-amber-50/70 border-amber-200 text-amber-900'
+                                  : isNoise
+                                  ? 'bg-stone-100/70 border-stone-200 text-stone-500'
+                                  : 'bg-white border-emerald-200/80 text-stone-800'
+                              }`}
+                            >
+                              <div className="flex items-center justify-between gap-2 mb-1.5 flex-wrap">
+                                <span
+                                  className={`text-[10px] font-black px-2 py-0.5 rounded-md flex items-center gap-1 ${
+                                    isDup
+                                      ? 'bg-rose-100 text-rose-800 border border-rose-300'
+                                      : is2026
+                                      ? 'bg-amber-100 text-amber-900 border border-amber-300'
+                                      : isNoise
+                                      ? 'bg-stone-200 text-stone-700'
+                                      : 'bg-emerald-100 text-emerald-900 border border-emerald-300'
+                                  }`}
+                                >
+                                  {isDup && '🗑️ 重複のため削除・1本化'}
+                                  {is2026 && '⏱ 2026年最新仕様へ補正'}
+                                  {isNoise && '🗑️ ノイズ削除'}
+                                  {isMoved && `➔ 【${item.targetChapter}】へ統合`}
+                                </span>
+                                {item.reason && !isMoved && (
+                                  <span className="text-[10px] text-stone-500 font-medium">{item.reason}</span>
+                                )}
+                              </div>
+                              <p className={`leading-relaxed ${isDup || isNoise ? 'line-through opacity-70' : 'font-medium'}`}>
+                                {item.originalSnippet}
+                              </p>
+                            </div>
+                          );
+                        })
+                      ) : (
+                        <div className="text-center py-8 text-xs text-stone-400">
+                          朱入れマップを生成中または対象データがありません
                         </div>
-                      </div>
-                    ))}
+                      )}
+                    </div>
+                  </div>
+
+                  {/* 右列: 清書後の完成攻略ガイド */}
+                  <div className="bg-white border-2 border-amber-400/80 rounded-2xl p-4 shadow-md flex flex-col overflow-hidden">
+                    <div className="flex items-center justify-between border-b border-amber-100 pb-2 mb-2.5 shrink-0">
+                      <span className="text-xs font-black text-amber-900 flex items-center gap-1.5">
+                        <Sparkles size={14} className="text-amber-600" />
+                        <span>清書後（2026年最新・完全体系化ガイド）</span>
+                      </span>
+                      <span className="text-[10px] bg-amber-100 text-amber-800 border border-amber-200 px-2 py-0.5 rounded font-mono font-black">
+                        完成プレビュー
+                      </span>
+                    </div>
+                    <div className="prose prose-xs max-w-none prose-headings:text-amber-800 prose-strong:text-stone-900 text-stone-800 overflow-y-auto pr-2 leading-relaxed flex-1 font-medium">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{refinePreview.refinedBody}</ReactMarkdown>
+                    </div>
                   </div>
                 </div>
               )}
 
-              {/* 📄 左右並列 Markdown 文章比較（文章としてそのまま読める！） */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1 overflow-hidden min-h-[42vh] max-h-[52vh]">
-                {/* 左列: 清書前の生知見 */}
-                <div className="bg-stone-50 border border-stone-200 rounded-2xl p-4 shadow-2xs flex flex-col overflow-hidden">
-                  <div className="flex items-center justify-between border-b border-stone-200 pb-2 mb-2.5 shrink-0">
-                    <span className="text-xs font-black text-stone-600 flex items-center gap-1.5">
-                      <span>📄</span> 清書前（蓄積された生データ）
-                    </span>
-                    <span className="text-[10px] bg-stone-200 text-stone-700 px-2 py-0.5 rounded font-mono font-bold">
-                      {refinePreview.originalBody.length} 文字
-                    </span>
+              {/* 📄 タブ②: 左右並列 Markdown 文章比較 */}
+              {previewTab === 'comparison' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1 overflow-hidden min-h-[44vh] max-h-[54vh]">
+                  <div className="bg-stone-50 border border-stone-200 rounded-2xl p-4 shadow-2xs flex flex-col overflow-hidden">
+                    <div className="flex items-center justify-between border-b border-stone-200 pb-2 mb-2.5 shrink-0">
+                      <span className="text-xs font-black text-stone-600 flex items-center gap-1.5">
+                        <span>📄</span> 清書前（蓄積された生データ）
+                      </span>
+                      <span className="text-[10px] bg-stone-200 text-stone-700 px-2 py-0.5 rounded font-mono font-bold">
+                        {refinePreview.originalBody.length} 文字
+                      </span>
+                    </div>
+                    <div className="prose prose-xs max-w-none text-stone-600 overflow-y-auto pr-2 leading-relaxed flex-1 prose-headings:text-stone-800">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{refinePreview.originalBody}</ReactMarkdown>
+                    </div>
                   </div>
-                  <div className="prose prose-xs max-w-none text-stone-600 overflow-y-auto pr-2 leading-relaxed flex-1 prose-headings:text-stone-800">
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{refinePreview.originalBody}</ReactMarkdown>
+
+                  <div className="bg-white border-2 border-amber-400/80 rounded-2xl p-4 shadow-md flex flex-col overflow-hidden">
+                    <div className="flex items-center justify-between border-b border-amber-100 pb-2 mb-2.5 shrink-0">
+                      <span className="text-xs font-black text-amber-900 flex items-center gap-1.5">
+                        <Sparkles size={14} className="text-amber-600" />
+                        <span>清書後（2026年最新・完全体系化ガイド）</span>
+                      </span>
+                      <span className="text-[10px] bg-amber-100 text-amber-800 border border-amber-200 px-2 py-0.5 rounded font-mono font-black">
+                        {refinePreview.refinedBody.length} 文字
+                      </span>
+                    </div>
+                    <div className="prose prose-xs max-w-none prose-headings:text-amber-800 prose-strong:text-stone-900 text-stone-800 overflow-y-auto pr-2 leading-relaxed flex-1 font-medium">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{refinePreview.refinedBody}</ReactMarkdown>
+                    </div>
                   </div>
                 </div>
+              )}
 
-                {/* 右列: 清書後の完成攻略ガイド */}
-                <div className="bg-white border-2 border-amber-400/80 rounded-2xl p-4 shadow-md flex flex-col overflow-hidden">
-                  <div className="flex items-center justify-between border-b border-amber-100 pb-2 mb-2.5 shrink-0">
-                    <span className="text-xs font-black text-amber-900 flex items-center gap-1.5">
-                      <Sparkles size={14} className="text-amber-600" />
-                      <span>清書後（2026年最新・完全体系化ガイド）</span>
-                    </span>
-                    <span className="text-[10px] bg-amber-100 text-amber-800 border border-amber-200 px-2 py-0.5 rounded font-mono font-black">
-                      {refinePreview.refinedBody.length} 文字
-                    </span>
-                  </div>
-                  <div className="prose prose-xs max-w-none prose-headings:text-amber-800 prose-strong:text-stone-900 text-stone-800 overflow-y-auto pr-2 leading-relaxed flex-1 font-medium">
+              {/* ✨ タブ③: 清書後フル幅表示 */}
+              {previewTab === 'refined' && (
+                <div className="bg-white border-2 border-amber-400/80 rounded-2xl p-6 shadow-md flex flex-col overflow-hidden min-h-[44vh] max-h-[54vh]">
+                  <div className="prose prose-sm max-w-none prose-headings:text-amber-800 prose-strong:text-stone-900 text-stone-800 overflow-y-auto pr-3 leading-relaxed flex-1">
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>{refinePreview.refinedBody}</ReactMarkdown>
                   </div>
                 </div>
-              </div>
+              )}
 
               {/* フッターアクション */}
               <div className="flex items-center justify-between gap-3 pt-2.5 border-t border-stone-200 flex-wrap">
