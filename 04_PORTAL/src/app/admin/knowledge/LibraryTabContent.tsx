@@ -776,6 +776,30 @@ export function LibraryTabContentInner() {
     }
   };
 
+  // 連続レビュー中に統合せずに移動済み（アーカイブ）へ移して次へ進む
+  const handleMoveToArchiveAndNext = async () => {
+    if (!mergePreview) return;
+    const articleId = mergePreview.articleId;
+    setMergeConfirmSaving(true);
+    try {
+      const res = await fetch('/api/admin/knowledge/update', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: articleId, updateData: { tags: ['__DELETED__'] } }),
+      });
+      if (!res.ok) throw new Error('移動に失敗しました');
+      showToast('📦 統合せずに移動済みへ移しました', 'info');
+      setArticles(prev => prev.filter(a => String(a.id) !== String(articleId)));
+      setMovedCount(prev => prev + 1);
+      await advanceReviewQueue();
+    } catch (e: any) {
+      showToast('移動エラー: ' + e.message, 'error');
+    } finally {
+      setMergeConfirmSaving(false);
+    }
+  };
+
   // プレビュー確認後、実際にチャンピオン辞典へ統合する。
   const confirmMergeToChampionDict = async ({
     sendToLane,
@@ -1222,6 +1246,7 @@ export function LibraryTabContentInner() {
             currentIndex: reviewIndex,
             totalCount: reviewQueue.length,
             onSkipNext: advanceReviewQueue,
+            onMoveToArchiveAndNext: handleMoveToArchiveAndNext,
             onConfirmAndNext: (opts) => confirmMergeToChampionDict({ ...opts, andNext: true }),
           } : undefined}
           onReAnalyze={handleReAnalyzeFromModal}

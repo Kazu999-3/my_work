@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
-import { CheckCircle2, RefreshCw, X, BookOpen, Map, Swords, Sparkles, ShieldAlert, ChevronDown, ChevronUp, Zap, Target, Layers, Plus, FileText, ExternalLink, Trash } from 'lucide-react';
+import { CheckCircle2, RefreshCw, X, BookOpen, Map, Swords, Sparkles, ShieldAlert, ChevronDown, ChevronUp, Zap, Target, Layers, Plus, FileText, ExternalLink, Trash, Archive } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { getChampIcon } from '../../../lib/ddragonClient';
@@ -100,6 +100,7 @@ export default function LibraryMergePreviewModal({
     currentIndex: number;
     totalCount: number;
     onSkipNext: () => void;
+    onMoveToArchiveAndNext?: () => void;
     onConfirmAndNext: (options: {
       sendToLane: string | null;
       approvedMatchups: MatchupInsight[];
@@ -975,15 +976,30 @@ export default function LibraryMergePreviewModal({
             </button>
 
             {continuousReview && (
-              <button
-                type="button"
-                onClick={continuousReview.onSkipNext}
-                disabled={saving || reAnalyzing}
-                className="px-4 py-2.5 rounded-xl text-xs font-bold bg-stone-100 hover:bg-stone-200 text-stone-700 flex items-center gap-1.5 disabled:opacity-50 transition"
-                title="この記事は統合せず、次の未処理記事を表示します"
-              >
-                <span>⏭️ スキップして次へ</span>
-              </button>
+              <>
+                <button
+                  type="button"
+                  onClick={continuousReview.onSkipNext}
+                  disabled={saving || reAnalyzing}
+                  className="px-3.5 py-2.5 rounded-xl text-xs font-bold bg-stone-100 hover:bg-stone-200 text-stone-600 flex items-center gap-1.5 disabled:opacity-50 transition"
+                  title="この記事は統合せず、スキップして次の記事を表示します"
+                >
+                  <span>⏭️ スキップ</span>
+                </button>
+
+                {continuousReview.onMoveToArchiveAndNext && (
+                  <button
+                    type="button"
+                    onClick={continuousReview.onMoveToArchiveAndNext}
+                    disabled={saving || reAnalyzing}
+                    className="px-3.5 py-2.5 rounded-xl text-xs font-bold bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 flex items-center gap-1.5 disabled:opacity-50 transition"
+                    title="この記事を辞典等へ統合せず、そのまま移動済み（アーカイブ）へ移して次へ進みます"
+                  >
+                    <Archive size={13} />
+                    <span>📦 統合せずに移動済みへ</span>
+                  </button>
+                )}
+              </>
             )}
 
             {continuousReview ? (
