@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { CheckCircle2, RefreshCw, X, BookOpen, Map, Swords, Sparkles, ShieldAlert, ChevronDown, ChevronUp, Zap, Target, Layers, Plus } from 'lucide-react';
 import { getChampIcon } from '../../../lib/ddragonClient';
 import ChampSelect from '../../../components/ChampSelect';
@@ -154,6 +154,31 @@ export default function LibraryMergePreviewModal({
   // レーンガイド統合チェック
   const [sendToLaneChecked, setSendToLaneChecked] = useState(hasLaneGeneral);
   const [laneChoice, setLaneChoice] = useState(detectedLane || 'COMMON');
+
+  // 連続レビュー時など、記事やpropsが切り替わったときに各stateを最新のpropsと同期する
+  useEffect(() => {
+    setSelectedMatchupIndices(matchupInsights.map((_, i) => i));
+
+    const roles: Record<string, string> = {};
+    for (const a of trendAnalyses) {
+      roles[a.champion] = a.detectedRole || (a.availableRoles && a.availableRoles[0]) || 'GLOBAL';
+    }
+    setChampionRoles(roles);
+
+    setLaneInsightItems(
+      laneGeneralInsights.map((item) => ({
+        title: item.title,
+        summary: item.summary,
+        included: true,
+        scope: 'lane_general',
+        assignedChampion: currentChampions[0] || '',
+      }))
+    );
+
+    setSendToLaneChecked(laneGeneralInsights.length > 0);
+    setLaneChoice(detectedLane || 'COMMON');
+    setExpandedFields({});
+  }, [laneGeneralInsights, matchupInsights, trendAnalyses, detectedLane, currentChampions]);
 
   // トレンド項目の展開状態管理
   const [expandedFields, setExpandedFields] = useState<Record<string, boolean>>({});

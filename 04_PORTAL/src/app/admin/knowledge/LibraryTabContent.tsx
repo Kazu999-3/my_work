@@ -1203,6 +1203,7 @@ export function LibraryTabContentInner() {
       </motion.div>
       {mergePreview && (
         <LibraryMergePreviewModal
+          key={mergePreview.articleId}
           previews={mergePreview.previews}
           trendAnalyses={mergePreview.trendAnalyses}
           matchupInsights={mergePreview.matchupInsights}
