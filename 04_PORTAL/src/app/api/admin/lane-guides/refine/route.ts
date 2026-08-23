@@ -15,15 +15,10 @@ export interface EditAnnotation {
   reason: string;
 }
 
-export interface KeyPointAudit {
-  topic: string;
-  targetSection: string;
-}
-
 /**
  * レーン別ガイドのAI清書・体系化リライトAPI
- * 蓄積知見を2026年最新仕様で完全体系化しつつ、
- * 元文章の各段落が「何章に移動したか/なぜ削除されたか」の朱入れ編集マップ(Edit Annotations)を返却する。
+ * 1. 2026年最新仕様に基づくフルボリュームの完全攻略ガイド（Markdown本文）を生成
+ * 2. 元の生文章の各段落に対する朱入れマップ（移動先・削除理由・2026更新）を生成
  */
 export async function POST(req: Request) {
   const auth = await verifyAdminSession(req);
@@ -58,104 +53,74 @@ export async function POST(req: Request) {
       ? `- 【全レーン共通】どのロール・どのチャンピオンでも通用する普遍的なマクロ原則・判断基準に統一してください。特定のチャンピオン名や個別スキルの解説は含めないでください。`
       : `- 【${laneMeta.label}専用】このレーン特有の視界管理、ローム判断、ウェーブコントロール、マッチアップ原則を具体的に掘り下げてください。`;
 
-    const prompt = `あなたはLeague of Legendsの最高峰の戦略アナリスト兼プロコーチです。
-以下は、${laneMeta.label}に関して様々な解説記事から収集・追記された【蓄積知見】です。
+    // 🎯 ステップ1: フルボリュームの長文Markdown攻略本文を生成（省略厳禁）
+    const generateGuidePrompt = `あなたはLeague of Legendsの最高峰の戦略アナリスト兼プロコーチです。
+以下は、${laneMeta.label}に関して様々な解説記事から収集・追記された【蓄積生データ】です。
+この生データに含まれる全ての重要知見・具体的ノウハウを漏らさず網羅し、以下の5大章立てで【2500文字以上の完全な長文攻略バイブル】を書き下ろしてください。
 
 ━━━━━━━━━━━━━━━━━━━━
-【🚨 最重要ミッション】
-1. **元文章の朱入れ編集マップ（段落追跡）**:
-   元の蓄積データに含まれる各段落・主要トピックが「清書後にどう扱われたか」を1つずつ追跡してください：
-   - どこの章（第1章〜第5章）に移動・統合されたか
-   - なぜ重複削除されたか（「第2章のリコール解説と重複のため1本化」など）
-   - 2026年最新仕様（2:55スカトル等）にどう補正されたか
+【🚨 2026年シーズン最新仕様の厳格適用】
+- 初動ミニオン0:30、キャンプ湧き0:55、初動スカトル（蟹）出現は【2:55】（※3:30は過去仕様）。
+- 初代ドラゴン【5:00】（5分リスポーン）。
+- ヴォイドグラブ【8:00】（1回のみ、14:45消滅）。
+- リフトヘラルド【15:00】（19:45消滅）。
+- バロンナッシャー【20:00】（6分リスポーン）。
+- タワープレートは14分消滅ではなく【永続（Permanent）】仕様。
 
-2. **2026年シーズン最新仕様の厳格適用**:
-   - 初動ミニオン0:30、キャンプ湧き0:55、初動スカトル（蟹）出現は【2:55】（※3:30は過去仕様）。
-   - 初代ドラゴン【5:00】（5分リスポーン）。
-   - ヴォイドグラブ【8:00】（1回のみ、14:45消滅）。
-   - リフトヘラルド【15:00】（19:45消滅）。
-   - バロンナッシャー【20:00】（6分リスポーン）。
-   - タワープレートは14分消滅ではなく【永続（Permanent）】仕様。
+【構成ルール】
+以下の5つの大見出し（##）を必ず使い、各見出しの下に【具体的な行動・状況別の判断基準・箇条書き】を詳細に書き下ろしてください。
+決して要約したり省略記号（...）で端折ったりせず、最高品質の実践マニュアルとして出力してください：
 
-3. **清書後の完全Markdown出力（※省略・短縮は絶対に禁止）**:
-   以下の5大章立てで、元データの具体的戦術・テクニックをすべて詳細に書き下ろしてください（2000〜4000文字の完全な長文攻略ガイドとして出力すること。「...」などで省略することは厳禁です）：
-   - ## 1. ${laneMeta.label}の基本思想と勝利条件（コアコンセプト）
-   - ## 2. 序盤戦術（Lv1〜6・2:55スカトル争奪・ウェーブ管理とトレード原則）
-   - ## 3. 中盤戦術（8:00グラブ・15:00ヘラルド・サイドプッシュ・ローム）
-   - ## 4. 終盤戦術・集団戦（20分以降・バロン戦・オブジェクト戦・ポジション取り）
-   - ## 5. 勝率を底上げする2026マクロ原則とよくある負け筋の回避
+## 1. ${laneMeta.label}の基本思想と勝利条件（コアコンセプト）
+## 2. 序盤戦術（Lv1〜6・2:55スカトル争奪・ウェーブ管理とトレード原則）
+## 3. 中盤戦術（8:00グラブ・15:00ヘラルド・サイドプッシュ・ローム）
+## 4. 終盤戦術・集団戦（20分以降・バロン戦・オブジェクト戦・ポジション取り）
+## 5. 勝率を底上げする2026マクロ原則とよくある負け筋の回避
 ${laneSpecificInstruction}
 ━━━━━━━━━━━━━━━━━━━━
 
 【蓄積生データ】
 ${baseBody}
 
-【出力フォーマット（厳格遵守）】
-以下の2つの区切りタグを使って出力してください：
+※余計な挨拶やコードブロック解説は一切出力せず、Markdown本文のみを出力してください。`;
 
-===EDIT_MAP===
-- [元データの段落や文の抜粋] || [action: moved / deleted_duplicate / deleted_noise / updated_2026] || [移動先・理由: 第2章: 序盤戦術へ統合 / 第2章と重複のためカット / 3:30から2:55へ補正]
-（元データの段落・トピックを網羅して10〜20件記述）
+    const refinedRaw = await callGeminiWithRetry(generateGuidePrompt, { temperature: 0.2, maxOutputTokens: 8192 });
+    let refinedBody = refinedRaw.replace(/```(?:markdown)?/g, '').replace(/```/g, '').trim();
 
-===REFINED_BODY===
-（ここに第1章から第5章までの詳細なMarkdown攻略本文を全文漏らさず記述してください。省略は一切禁止です）
+    // 🎯 ステップ2: 元の生文章に対する朱入れマップ（移動先・削除理由・2026更新）の抽出
+    const auditPrompt = `あなたはLeague of Legendsの編集デスクです。
+以下の【元データの各段落・主要トピック】が、清書版でどう扱われたかを1つずつ分析してください。
+
+【元データ】
+${baseBody}
+
+以下のフォーマットで1行ずつ出力してください（Markdown箇条書き）：
+- [元データの具体的な文やトピックの抜粋] || [action: moved / deleted_duplicate / deleted_noise / updated_2026] || [第○章へ統合 / 理由: ○○と重複のため1本化 / 2026年仕様へ補正]
 `;
 
-    const rawResponse = await callGeminiWithRetry(prompt, { temperature: 0.2, maxOutputTokens: 6000 });
-
-    let refinedBody = '';
     let editMap: EditAnnotation[] = [];
+    try {
+      const auditRaw = await callGeminiWithRetry(auditPrompt, { temperature: 0.1, maxOutputTokens: 4096 });
+      const lines = auditRaw.split('\n');
+      for (const line of lines) {
+        const m = line.match(/^-\s*\[(.*?)\]\s*\|\|\s*\[?(.*?)\]?\s*\|\|\s*\[?(.*?)\]?$/);
+        if (m && m[1] && m[3]) {
+          const rawAction = m[2]?.trim().toLowerCase() || 'moved';
+          let action: EditAnnotation['action'] = 'moved';
+          if (rawAction.includes('duplicate')) action = 'deleted_duplicate';
+          else if (rawAction.includes('noise')) action = 'deleted_noise';
+          else if (rawAction.includes('2026') || rawAction.includes('update')) action = 'updated_2026';
 
-    // セクション区切り（===REFINED_BODY===）の抽出
-    if (rawResponse.includes('===REFINED_BODY===')) {
-      const parts = rawResponse.split('===REFINED_BODY===');
-      refinedBody = parts[1]?.trim() || '';
-
-      const metaPart = parts[0];
-
-      // EDIT_MAP のパース
-      if (metaPart.includes('===EDIT_MAP===')) {
-        const editMapPart = metaPart.split('===EDIT_MAP===')[1];
-        const editLines = editMapPart.split('\n');
-        for (const line of editLines) {
-          const m = line.match(/^-\s*\[(.*?)\]\s*\|\|\s*\[?(.*?)\]?\s*\|\|\s*\[?(.*?)\]?$/);
-          if (m && m[1] && m[3]) {
-            const rawAction = m[2]?.trim().toLowerCase() || 'moved';
-            let action: EditAnnotation['action'] = 'moved';
-            if (rawAction.includes('duplicate')) action = 'deleted_duplicate';
-            else if (rawAction.includes('noise')) action = 'deleted_noise';
-            else if (rawAction.includes('2026') || rawAction.includes('update')) action = 'updated_2026';
-
-            editMap.push({
-              originalSnippet: m[1].trim(),
-              action,
-              targetChapter: m[3].trim(),
-              reason: m[3].trim(),
-            });
-          }
+          editMap.push({
+            originalSnippet: m[1].trim(),
+            action,
+            targetChapter: m[3].trim(),
+            reason: m[3].trim(),
+          });
         }
       }
-    } else {
-      refinedBody = rawResponse.replace(/```(?:markdown)?/g, '').replace(/```/g, '').trim();
-    }
-
-    if (!refinedBody || refinedBody.length < 200) {
-      // 万が一短すぎる場合は生データベースでフルプロンプト再実行
-      const fallbackPrompt = `あなたはLeague of Legendsの戦略アナリスト兼プロコーチです。
-以下は「${laneMeta.label}」の蓄積知見データです。
-2026年最新仕様（2:55スカトル、8:00グラブ、15:00ヘラルド、20:00バロン、永続タワープレート）を適用し、
-以下の5大章立てで、具体的戦術を省略せず詳細に完全書き下ろしたMarkdown攻略ガイドを出力してください：
-- ## 1. ${laneMeta.label}の基本思想と勝利条件
-- ## 2. 序盤戦術（Lv1〜6・2:55スカトル争奪・ウェーブ管理）
-- ## 3. 中盤戦術（8:00グラブ・15:00ヘラルド・サイドプッシュ）
-- ## 4. 終盤戦術・集団戦（20分以降・バロン戦・ポジション取り）
-- ## 5. 勝率を底上げする2026マクロ原則
-
-【生データ】
-${baseBody}
-`;
-      refinedBody = await callGeminiWithRetry(fallbackPrompt, { temperature: 0.2, maxOutputTokens: 6000 });
-      refinedBody = refinedBody.replace(/```(?:markdown)?/g, '').replace(/```/g, '').trim();
+    } catch (e) {
+      console.warn('[refine] editMap parse warning:', e);
     }
 
     const cleanBody = refinedBody.trim();
