@@ -2246,82 +2246,45 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
               </button>
             </div>
 
-            {/* 項目ごとのビフォーアフター差分一覧 (左右横並び Side-by-Side Diff) */}
+            {/* 項目ごとのビフォーアフター差分一覧 (左右並列 文章比較) */}
             <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
               {factsRefinePreview.diffs
                 .filter((d) => (d.before && d.before.trim().length > 0) || (d.after && d.after.trim().length > 0))
-                .map((d) => {
-                  const sbs = diffSideBySide(d.before, d.after);
-                  const itemSummary = diffSummary(d.before, d.after);
+                .map((d) => (
+                  <div key={d.fieldKey} className="bg-white border border-stone-200 rounded-2xl p-4 shadow-xs space-y-3">
+                    <div className="flex items-center justify-between flex-wrap gap-2">
+                      <span className="text-xs font-black text-amber-900 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-lg inline-block">
+                        📌 {d.fieldLabel}
+                      </span>
+                      <span className="text-[10px] text-stone-400 font-mono">
+                        {d.before?.length || 0} 文字 ➔ {d.after?.length || 0} 文字
+                      </span>
+                    </div>
 
-                  return (
-                    <div key={d.fieldKey} className="bg-white border border-stone-200 rounded-2xl p-4 shadow-xs space-y-2.5">
-                      <div className="flex items-center justify-between flex-wrap gap-2">
-                        <span className="text-xs font-black text-amber-900 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-lg inline-block">
-                          📌 {d.fieldLabel}
+                    {/* 左右文章並列比較 */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                      {/* 清書前 */}
+                      <div className="bg-stone-50 border border-stone-200 rounded-xl p-3.5 space-y-1.5 flex flex-col">
+                        <span className="text-[10px] font-bold text-stone-500 flex items-center gap-1">
+                          <span>📄</span> 清書前（蓄積された生知見）:
                         </span>
-                        <div className="flex items-center gap-1.5 text-[11px] font-mono font-bold">
-                          <span className="bg-emerald-100 text-emerald-800 border border-emerald-300 px-2 py-0.5 rounded">
-                            +{itemSummary.added} 行
-                          </span>
-                          <span className="bg-rose-100 text-rose-800 border border-rose-300 px-2 py-0.5 rounded">
-                            -{itemSummary.removed} 行
-                          </span>
+                        <div className="text-stone-600 whitespace-pre-wrap leading-relaxed max-h-40 overflow-y-auto font-sans text-xs flex-1">
+                          {d.before || '（未記載）'}
                         </div>
                       </div>
 
-                      {/* 左右ラベル */}
-                      <div className="grid grid-cols-2 gap-2 text-[10px] font-bold px-2 text-stone-500">
-                        <span>📄 清書前（削除行: 赤）</span>
-                        <span className="text-amber-800">✨ 清書後（追加行: 緑）</span>
-                      </div>
-
-                      {/* 📝 左右横並び Diff 表示 */}
-                      <div className="bg-stone-950 border border-stone-800 rounded-xl p-2.5 font-mono text-[11px] leading-relaxed space-y-0.5 max-h-52 overflow-y-auto">
-                        {sbs.map((row, rIdx) => {
-                          const l = row.left;
-                          const r = row.right;
-
-                          return (
-                            <div key={rIdx} className="grid grid-cols-2 gap-1.5 hover:bg-white/5 py-0.5 px-0.5 rounded">
-                              {/* 左列: 清書前 */}
-                              <div
-                                className={`flex items-start gap-1 px-1.5 py-0.5 rounded overflow-x-auto min-h-[1.4rem] ${
-                                  l.op === 'removed'
-                                    ? 'bg-rose-950/60 text-rose-300 border-l-2 border-rose-500 line-through decoration-rose-500/70'
-                                    : l.op === 'empty'
-                                    ? 'opacity-20'
-                                    : 'text-stone-400'
-                                }`}
-                              >
-                                <span className="select-none text-rose-500 font-bold shrink-0">
-                                  {l.op === 'removed' ? '-' : ' '}
-                                </span>
-                                <span className="whitespace-pre-wrap break-all">{l.text || (l.op === 'empty' ? ' ' : '')}</span>
-                              </div>
-
-                              {/* 右列: 清書後 */}
-                              <div
-                                className={`flex items-start gap-1 px-1.5 py-0.5 rounded overflow-x-auto min-h-[1.4rem] ${
-                                  r.op === 'added'
-                                    ? 'bg-emerald-950/70 text-emerald-300 border-l-2 border-emerald-500'
-                                    : r.op === 'empty'
-                                    ? 'opacity-20'
-                                    : 'text-stone-300'
-                                }`}
-                              >
-                                <span className="select-none text-emerald-500 font-bold shrink-0">
-                                  {r.op === 'added' ? '+' : ' '}
-                                </span>
-                                <span className="whitespace-pre-wrap break-all">{r.text || (r.op === 'empty' ? ' ' : '')}</span>
-                              </div>
-                            </div>
-                          );
-                        })}
+                      {/* 清書後 */}
+                      <div className="bg-amber-50/40 border border-amber-300/80 rounded-xl p-3.5 space-y-1.5 flex flex-col shadow-2xs">
+                        <span className="text-[10px] font-bold text-amber-800 flex items-center gap-1">
+                          <Sparkles size={12} className="text-amber-600" /> 清書後（AI推敲・重複排除版）:
+                        </span>
+                        <div className="text-stone-900 whitespace-pre-wrap leading-relaxed max-h-40 overflow-y-auto font-medium text-xs flex-1">
+                          {d.after || '（未記載）'}
+                        </div>
                       </div>
                     </div>
-                  );
-                })}
+                  </div>
+                ))}
             </div>
 
             {/* フッターアクション */}

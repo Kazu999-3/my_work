@@ -267,7 +267,7 @@ export default function LaneGuidesPage() {
           </>
         )}
 
-        {/* ✨ AI清書 差分プレビューモーダル (左右横並び Side-by-Side Diff ＆ Markdownプレビュー) */}
+        {/* ✨ AI清書 差分プレビューモーダル (Markdown並列比較 ＆ 行Diff ＆ 完成プレビュー) */}
         {refinePreview && (() => {
           const sbsRows = diffSideBySide(refinePreview.originalBody, refinePreview.refinedBody);
           const summary = diffSummary(refinePreview.originalBody, refinePreview.refinedBody);
@@ -281,19 +281,14 @@ export default function LaneGuidesPage() {
                     <div className="flex items-center gap-2 flex-wrap">
                       <h3 className="text-xl font-black text-stone-900 flex items-center gap-2">
                         <Sparkles size={22} className="text-amber-600" />
-                        <span>レーンガイド AI清書・体系化プレビュー（横並び比較）</span>
+                        <span>レーンガイド AI清書・体系化プレビュー</span>
                       </h3>
-                      <div className="flex items-center gap-1.5 text-xs font-mono font-bold">
-                        <span className="bg-emerald-100 text-emerald-800 border border-emerald-300 px-2 py-0.5 rounded-md">
-                          +{summary.added} 行
-                        </span>
-                        <span className="bg-rose-100 text-rose-800 border border-rose-300 px-2 py-0.5 rounded-md">
-                          -{summary.removed} 行
-                        </span>
-                      </div>
+                      <span className="text-xs bg-amber-100 text-amber-900 font-bold px-2.5 py-0.5 rounded-full border border-amber-300">
+                        {refinePreview.title}
+                      </span>
                     </div>
                     <p className="text-xs text-stone-500 mt-1">
-                      左列（清書前・赤）と右列（清書後・緑）で重複の削除や体系化された内容を横並びで比較できます。
+                      散らばっていた複数の知見を、序盤・中盤・終盤の章立てに再構成し、重複を排除しました。
                     </p>
                   </div>
                   <button
@@ -305,65 +300,53 @@ export default function LaneGuidesPage() {
                   </button>
                 </div>
 
-                {/* 列ヘッダー */}
-                <div className="grid grid-cols-2 gap-2 text-xs font-black px-3 py-1.5 bg-stone-100 rounded-xl border border-stone-200">
-                  <div className="text-stone-600 flex items-center gap-1.5">
-                    <span>📄</span> 清書前（蓄積された生データ / 削除行）
+                {/* 💡 AI整理の要約バー */}
+                <div className="bg-amber-50/80 border border-amber-200/90 rounded-xl px-4 py-2 text-xs flex items-center justify-between gap-3 flex-wrap">
+                  <div className="flex items-center gap-2 text-amber-900 font-bold">
+                    <span>💡 整理ポイント:</span>
+                    <span className="font-normal text-amber-800">
+                      パッチワーク状の【追記知見】を統合 ➔ 序盤・中盤・終盤・マクロの5大章立てに再構成
+                    </span>
                   </div>
-                  <div className="text-amber-900 flex items-center gap-1.5">
-                    <Sparkles size={13} className="text-amber-600" />
-                    <span>清書後（AI体系化リライト版 / 追加行）</span>
+                  <div className="flex items-center gap-2 text-[11px] font-mono font-bold text-stone-600">
+                    <span>清書前: {refinePreview.originalBody.length} 文字</span>
+                    <span>➔</span>
+                    <span className="text-amber-700 font-black">清書後: {refinePreview.refinedBody.length} 文字</span>
                   </div>
                 </div>
 
-                {/* 📝 左右横並び (Side-by-Side) Diff 表示テーブル */}
-                <div className="bg-stone-950 border border-stone-800 rounded-2xl p-3 shadow-inner max-h-[58vh] overflow-y-auto font-mono text-[11px] leading-relaxed space-y-0.5 select-text">
-                  {sbsRows.map((row, idx) => {
-                    const l = row.left;
-                    const r = row.right;
+                {/* 📄 左右並列 Markdown ドキュメント比較（文章としてそのまま読める！） */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1 overflow-hidden min-h-[45vh] max-h-[55vh]">
+                  {/* 左列: 清書前の蓄積データ */}
+                  <div className="bg-stone-50 border border-stone-200 rounded-2xl p-4 shadow-2xs flex flex-col overflow-hidden">
+                    <div className="flex items-center justify-between border-b border-stone-200 pb-2 mb-3 shrink-0">
+                      <span className="text-xs font-black text-stone-600 flex items-center gap-1.5">
+                        <span>📄</span> 清書前（蓄積された生知見）
+                      </span>
+                      <span className="text-[10px] bg-stone-200 text-stone-700 px-2 py-0.5 rounded font-mono font-bold">
+                        {refinePreview.sourceCount || 0} 本の記事から統合
+                      </span>
+                    </div>
+                    <div className="prose prose-xs max-w-none text-stone-600 overflow-y-auto pr-2 leading-relaxed flex-1 prose-headings:text-stone-800">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{refinePreview.originalBody}</ReactMarkdown>
+                    </div>
+                  </div>
 
-                    return (
-                      <div key={idx} className="grid grid-cols-2 gap-2 group hover:bg-white/5 py-0.5 px-1 rounded">
-                        {/* 左列: 清書前 */}
-                        <div
-                          className={`flex items-start gap-1.5 px-2 py-0.5 rounded overflow-x-auto min-h-[1.5rem] ${
-                            l.op === 'removed'
-                              ? 'bg-rose-950/60 text-rose-300 border-l-2 border-rose-500 line-through decoration-rose-500/70'
-                              : l.op === 'empty'
-                              ? 'opacity-20'
-                              : 'text-stone-400'
-                          }`}
-                        >
-                          <span className="text-[9px] text-stone-600 select-none w-6 shrink-0 text-right font-mono">
-                            {l.lineNum || ''}
-                          </span>
-                          <span className="select-none text-rose-500 font-bold shrink-0">
-                            {l.op === 'removed' ? '-' : ' '}
-                          </span>
-                          <span className="whitespace-pre-wrap break-all">{l.text || (l.op === 'empty' ? ' ' : '')}</span>
-                        </div>
-
-                        {/* 右列: 清書後 */}
-                        <div
-                          className={`flex items-start gap-1.5 px-2 py-0.5 rounded overflow-x-auto min-h-[1.5rem] ${
-                            r.op === 'added'
-                              ? 'bg-emerald-950/70 text-emerald-300 border-l-2 border-emerald-500'
-                              : r.op === 'empty'
-                              ? 'opacity-20'
-                              : 'text-stone-300'
-                          }`}
-                        >
-                          <span className="text-[9px] text-stone-600 select-none w-6 shrink-0 text-right font-mono">
-                            {r.lineNum || ''}
-                          </span>
-                          <span className="select-none text-emerald-500 font-bold shrink-0">
-                            {r.op === 'added' ? '+' : ' '}
-                          </span>
-                          <span className="whitespace-pre-wrap break-all">{r.text || (r.op === 'empty' ? ' ' : '')}</span>
-                        </div>
-                      </div>
-                    );
-                  })}
+                  {/* 右列: 清書後の完成攻略ガイド */}
+                  <div className="bg-white border-2 border-amber-400/80 rounded-2xl p-4 shadow-md flex flex-col overflow-hidden">
+                    <div className="flex items-center justify-between border-b border-amber-100 pb-2 mb-3 shrink-0">
+                      <span className="text-xs font-black text-amber-900 flex items-center gap-1.5">
+                        <Sparkles size={14} className="text-amber-600" />
+                        <span>清書後（AI体系化リライト完成版）</span>
+                      </span>
+                      <span className="text-[10px] bg-amber-100 text-amber-800 border border-amber-200 px-2 py-0.5 rounded font-mono font-black">
+                        完全体系化
+                      </span>
+                    </div>
+                    <div className="prose prose-xs max-w-none prose-headings:text-amber-800 prose-strong:text-stone-900 text-stone-800 overflow-y-auto pr-2 leading-relaxed flex-1 font-medium">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{refinePreview.refinedBody}</ReactMarkdown>
+                    </div>
+                  </div>
                 </div>
 
                 {/* フッターアクション */}
