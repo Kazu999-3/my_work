@@ -86,20 +86,26 @@ ${laneSpecificInstruction}
 【蓄積生データ】
 ${baseBody}
 
-以下のJSONフォーマットのみを出力してください（Markdownコードブロックで囲む）：
-\`\`\`json
-{
-  "refinedBody": "## 1. ...\\n## 2. ...\\n（清書後の完全Markdown本文）",
-  "retainedKeyPoints": [
-    { "topic": "2:55初動スカトルでのレーン主導権と寄りの判断", "targetSection": "第2章: 序盤戦術" },
-    { "topic": "8:00ヴォイドグラブ出現前のウェーブプッシュ原則", "targetSection": "第3章: 中盤戦術" },
-    { "topic": "永続タワープレートの削り方とリコールタイミング", "targetSection": "第2章・第3章" }
-  ],
-  "consolidatedDuplicates": [
-    { "duplicateSummary": "複数記事に重複していたリコールタイミングの記述", "resolvedAction": "第2章に最も具体的な判断基準として1本化統合" }
-  ]
-}
-\`\`\`
+【出力フォーマット（厳格遵守）】
+以下の区切りタグを使って出力してください（JSONは不要です。Markdownをそのまま出力してください）：
+
+===RETAINED_POINTS===
+- [2:55初動スカトルでのレーン主導権と寄りの判断] ➔ 第2章: 序盤戦術
+- [8:00ヴォイドグラブ出現前のウェーブプッシュ原則] ➔ 第3章: 中盤戦術
+- [永続タワープレートの削り方とリコールタイミング] ➔ 第2章・第3章
+（元データから引き継いだ重要戦術を5〜10個箇条書き）
+
+===REFINED_BODY===
+## 1. ${laneMeta.label}の基本思想と勝利条件（コアコンセプト）
+...
+## 2. 序盤戦術（Lv1〜6・2:55スカトル争奪・ウェーブ管理とトレード原則）
+...
+## 3. 中盤戦術（8:00グラブ・15:00ヘラルド・サイドプッシュ・ローム）
+...
+## 4. 終盤戦術・集団戦（20分以降・バロン戦・オブジェクト戦・ポジション取り）
+...
+## 5. 勝率を底上げする2026マクロ原則とよくある負け筋の回避
+...
 `;
 
     const rawResponse = await callGeminiWithRetry(prompt, { temperature: 0.2 });
@@ -108,19 +114,64 @@ ${baseBody}
     let retainedKeyPoints: KeyPointAudit[] = [];
     let consolidatedDuplicates: DuplicateAudit[] = [];
 
-    try {
-      const jsonMatch = rawResponse.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
-      const jsonStr = jsonMatch ? jsonMatch[1] : rawResponse;
-      const parsed = JSON.parse(jsonStr.trim());
-      refinedBody = parsed.refinedBody || '';
-      retainedKeyPoints = parsed.retainedKeyPoints || [];
-      consolidatedDuplicates = parsed.consolidatedDuplicates || [];
-    } catch {
-      // JSONパースに失敗した場合は生テキストをそのままMarkdownとして扱う
-      refinedBody = rawResponse.replace(/```(?:json)?/g, '').replace(/```/g, '').trim();
+    // 1. セクション区切り（===REFINED_BODY===）の抽出
+    if (rawResponse.includes('===REFINED_BODY===')) {
+      const parts = rawResponse.split('===REFINED_BODY===');
+      refinedBody = parts[1]?.trim() || '';
+
+      const auditPart = parts[0];
+      const pointMatches = auditPart.matchAll(/-\s*\[(.*?)\]\s*(?:➔|->|:)\s*(.*)/g);
+      for (const m of pointMatches) {
+        if (m[1] && m[2]) {
+          retainedKeyPoints.push({
+            topic: m[1].trim(),
+            targetSection: m[2].trim(),
+          });
+        }
+      }
+    } else if (rawResponse.trim().startsWith('{') || rawResponse.includes('"refinedBody"')) {
+      // 2. 万が一JSON形式で返ってきた場合の安全な抽出
+      try {
+        // 通常のJSON.parseを試みる
+        const parsed = JSON.parse(rawResponse.replace(/```(?:json)?/g, '').replace(/```/g, '').trim());
+        refinedBody = parsed.refinedBody || '';
+        retainedKeyPoints = parsed.retainedKeyPoints || [];
+      } catch {
+        // パースエラー時は正規表現で中身だけを救出
+        const bodyMatch = rawResponse.match(/"refinedBody"\s*:\s*"([\s\S]*?)(?:",\s*"retainedKeyPoints"|"\s*\})/);
+        if (bodyMatch && bodyMatch[1]) {
+          // エスケープされた\nを本物の改行に復元
+          refinedBody = bodyMatch[1].replace(/\\n/g, '\n').replace(/\\"/g, '"');
+        } else {
+          refinedBody = rawResponse.replace(/```(?:json)?/g, '').replace(/```/g, '').trim();
+        }
+
+        // トピックも正規表現で救出
+        const topicMatches = rawResponse.matchAll(/"topic"\s*:\s*"([^"]+)"\s*,\s*"targetSection"\s*:\s*"([^"]+)"/g);
+        for (const tm of topicMatches) {
+          retainedKeyPoints.push({
+            topic: tm[1].trim(),
+            targetSection: tm[2].trim(),
+          });
+        }
+      }
+    } else {
+      // 3. その他（Markdown直出力）
+      refinedBody = rawResponse.replace(/```(?:markdown)?/g, '').replace(/```/g, '').trim();
     }
 
-    if (!refinedBody || refinedBody.trim().length < 50) {
+    // もし抽出された本文の先頭に {"refinedBody": が残っていた場合の完全サニタイズ
+    if (refinedBody.startsWith('{\n  "refinedBody": "') || refinedBody.startsWith('{"refinedBody":"')) {
+      refinedBody = refinedBody
+        .replace(/^\{\s*"refinedBody"\s*:\s*"/, '')
+        .replace(/"\s*,?\s*"retainedKeyPoints"[\s\S]*$/, '')
+        .replace(/"\s*\}\s*$/, '')
+        .replace(/\\n/g, '\n')
+        .replace(/\\"/g, '"')
+        .trim();
+    }
+
+    if (!refinedBody || refinedBody.length < 50) {
       throw new Error('AIによる清書の生成に失敗しました（出力が短すぎます）');
     }
 
