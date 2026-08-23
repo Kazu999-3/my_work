@@ -5,7 +5,7 @@ import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { getChampIcon, getChampSplash } from '../../../lib/ddragonClient';
-import { ChevronLeft, Search, Save, BookOpen, RefreshCw, Zap, ShieldAlert, Swords, Shield, Copy, Check, FileText, Eye, Edit2, Activity, Plus, Trash, Filter, Star as StarIcon, Award, Sparkles, History, Clock } from 'lucide-react';
+import { ChevronLeft, Search, Save, BookOpen, RefreshCw, Zap, ShieldAlert, Swords, Shield, Copy, Check, FileText, Eye, Edit2, Activity, Plus, Trash, Filter, Star as StarIcon, Award, Sparkles, History, Clock, X } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -197,6 +197,74 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
   const [isStrategyCollapsed, setIsStrategyCollapsed] = useState(true);
   const [isDraftsCollapsed, setIsDraftsCollapsed] = useState(true);
   const [isMatchupsCollapsed, setIsMatchupsCollapsed] = useState(true);
+
+  // ✨ 蓄積知見のAI清書・重複排除 (AI Refine Facts)
+  const [refiningFacts, setRefiningFacts] = useState(false);
+  const [savingRefinedFacts, setSavingRefinedFacts] = useState(false);
+  const [factsRefinePreview, setFactsRefinePreview] = useState<{
+    champion: string;
+    role: string;
+    diffs: Array<{ fieldKey: string; fieldLabel: string; before: string; after: string }>;
+    refinedFields: any;
+  } | null>(null);
+
+  const handleStartRefineFacts = async (championName: string, roleName?: string) => {
+    setRefiningFacts(true);
+    try {
+      const res = await fetch('/api/admin/champions/refine-facts', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ champion: championName, role: roleName, dryRun: true }),
+      });
+      const d = await res.json();
+      if (!res.ok || !d.success) throw new Error(d.error || '知見清書の生成に失敗しました');
+      setFactsRefinePreview({
+        champion: d.champion,
+        role: d.role,
+        diffs: d.diffs || [],
+        refinedFields: d.refinedFields,
+      });
+    } catch (e: any) {
+      alert(`❌ 清書エラー: ${e.message}`);
+    } finally {
+      setRefiningFacts(false);
+    }
+  };
+
+  const handleConfirmRefineFacts = async () => {
+    if (!factsRefinePreview) return;
+    setSavingRefinedFacts(true);
+    try {
+      const res = await fetch('/api/admin/champions/refine-facts', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          champion: factsRefinePreview.champion,
+          role: factsRefinePreview.role,
+          dryRun: false,
+        }),
+      });
+      const d = await res.json();
+      if (!res.ok || !d.success) throw new Error(d.error || '保存に失敗しました');
+      
+      // dataFieldsを更新
+      if (d.refinedFields) {
+        for (const [k, v] of Object.entries(d.refinedFields)) {
+          if (k !== 'champion' && k !== 'role' && k !== 'updated_at') {
+            setField(k, v as any);
+          }
+        }
+      }
+      alert('✨ 蓄積知見を清書版へ更新しました！');
+      setFactsRefinePreview(null);
+    } catch (e: any) {
+      alert(`❌ 保存エラー: ${e.message}`);
+    } finally {
+      setSavingRefinedFacts(false);
+    }
+  };
 
 
   // 描画用のソート済みマッチアップリストの作成（勝率の降順）
@@ -887,6 +955,17 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
               >
                 <RefreshCw size={16} className={fetchingTrend ? "animate-spin" : ""} />
                 {trendPhase === 'running' ? "AI生成中..." : trendPhase === 'pending' ? "順番待ち中..." : fetchingTrend ? "登録中..." : "最新トレンド取得"}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleStartRefineFacts(selected.id || selected.name, dataFields.role)}
+                disabled={refiningFacts}
+                className="px-4 py-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-black rounded-xl transition-all flex items-center gap-2 text-sm shadow-md shadow-amber-500/20 disabled:opacity-50"
+                title="蓄積された知見の重複を排除し、各項目を洗練された1本の文章に清書・整理します"
+              >
+                {refiningFacts ? <RefreshCw size={16} className="animate-spin" /> : <Sparkles size={16} />}
+                <span>{refiningFacts ? 'AIが知見を清書中...' : '✨ 蓄積知見をAI清書・整理'}</span>
               </button>
               <button
                 onClick={handleQualityCheck}
@@ -2141,6 +2220,86 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
             setHistoryModal(null);
           }}
         />
+      )}
+
+      {/* ✨ AI知見清書・重複排除 プレビューモーダル */}
+      {factsRefinePreview && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-[#fcfbf9] border border-stone-200 rounded-3xl w-full max-w-4xl max-h-[90vh] overflow-y-auto p-6 shadow-2xl space-y-5">
+            <div className="flex items-center justify-between border-b border-stone-200 pb-4">
+              <div>
+                <h3 className="text-xl font-black text-stone-900 flex items-center gap-2">
+                  <Sparkles size={22} className="text-amber-600" />
+                  <span>{factsRefinePreview.champion} 蓄積知見 AI清書・重複排除プレビュー</span>
+                </h3>
+                <p className="text-xs text-stone-500 mt-1">
+                  蓄積された複数の【追記知見】の重複を削ぎ落とし、最新メタに合わせた洗練された文章に清書しました。
+                </p>
+              </div>
+              <button
+                onClick={() => setFactsRefinePreview(null)}
+                disabled={savingRefinedFacts}
+                className="text-stone-400 hover:text-stone-700 p-1.5 rounded-lg hover:bg-stone-100 transition"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* 項目ごとのビフォーアフター差分一覧 */}
+            <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
+              {factsRefinePreview.diffs
+                .filter((d) => (d.before && d.before.trim().length > 0) || (d.after && d.after.trim().length > 0))
+                .map((d) => (
+                  <div key={d.fieldKey} className="bg-white border border-stone-200 rounded-2xl p-4 shadow-xs space-y-3">
+                    <span className="text-xs font-black text-amber-900 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-lg inline-block">
+                      📌 {d.fieldLabel}
+                    </span>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                      {/* 清書前 */}
+                      <div className="bg-stone-50 border border-stone-200 rounded-xl p-3 space-y-1">
+                        <span className="text-[10px] font-bold text-stone-400 block">清書前（蓄積された生データ）:</span>
+                        <div className="text-stone-600 whitespace-pre-wrap leading-relaxed max-h-36 overflow-y-auto font-mono text-[11px]">
+                          {d.before || '（未記載）'}
+                        </div>
+                      </div>
+
+                      {/* 清書後 */}
+                      <div className="bg-amber-50/50 border border-amber-200/90 rounded-xl p-3 space-y-1">
+                        <span className="text-[10px] font-bold text-amber-700 block flex items-center gap-1">
+                          <Sparkles size={11} /> 清書後（AI推敲版）:
+                        </span>
+                        <div className="text-stone-900 whitespace-pre-wrap leading-relaxed max-h-36 overflow-y-auto font-medium text-[11px]">
+                          {d.after || '（未記載）'}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+            </div>
+
+            {/* フッターアクション */}
+            <div className="flex items-center justify-between gap-3 pt-4 border-t border-stone-200 flex-wrap">
+              <button
+                type="button"
+                onClick={() => setFactsRefinePreview(null)}
+                disabled={savingRefinedFacts}
+                className="px-4 py-2.5 rounded-xl text-xs font-bold text-stone-500 hover:bg-stone-100 transition"
+              >
+                破棄して閉じる
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmRefineFacts}
+                disabled={savingRefinedFacts}
+                className="px-6 py-2.5 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl text-xs transition flex items-center gap-2 shadow-md shadow-amber-600/20 disabled:opacity-50"
+              >
+                {savingRefinedFacts ? <RefreshCw size={14} className="animate-spin" /> : <Check size={15} />}
+                <span>{savingRefinedFacts ? '反映処理中...' : '✨ この清書版で辞典を更新する'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

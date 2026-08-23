@@ -3,17 +3,31 @@
 import { useEffect, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Map as MapIcon } from 'lucide-react';
+import { Map as MapIcon, Sparkles, RefreshCw, CheckCircle2, X, Eye, BookHeart, FileText } from 'lucide-react';
+import Link from 'next/link';
 import { Spinner, EmptyState } from '../../components/Feedback';
 
-// レーン別ガイドの閲覧ページ（管理者専用）。
-// 攻略ライブラリのマクロ記事をレーンごとに1本へ統合したものを読む場所。
-// 元データ(personal_knowledge・matchup_sentinel等)は辞典と同様に管理者専用のため、
-// このページも同じ扱いに揃える(2026-08-05)。
 export default function LaneGuidesPage() {
   const [data, setData] = useState<any>(null);
   const [active, setActive] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  
+  // AI清書・体系化リライト状態
+  const [refining, setRefining] = useState(false);
+  const [savingRefined, setSavingRefined] = useState(false);
+  const [refinePreview, setRefinePreview] = useState<{
+    lane: string;
+    title: string;
+    refinedBody: string;
+    originalBody: string;
+    sourceCount: number;
+  } | null>(null);
+  const [toastMessage, setToastMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+
+  const showToast = (text: string, type: 'success' | 'error' = 'success') => {
+    setToastMessage({ text, type });
+    setTimeout(() => setToastMessage(null), 4000);
+  };
 
   useEffect(() => {
     fetch('/api/auth/verify', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) })
@@ -22,16 +36,69 @@ export default function LaneGuidesPage() {
       .catch(() => setIsAuthenticated(false));
   }, []);
 
-  useEffect(() => {
+  const fetchGuides = () => {
     if (!isAuthenticated) return;
     fetch('/api/admin/lane-guides', { credentials: 'include' })
       .then(r => r.json())
       .then(d => {
         setData(d);
-        if (d.guides?.length > 0) setActive(d.guides[0].lane);
+        if (d.guides?.length > 0 && !active) setActive(d.guides[0].lane);
       })
       .catch(() => setData({ guides: [], lanes: [] }));
+  };
+
+  useEffect(() => {
+    fetchGuides();
   }, [isAuthenticated]);
+
+  // AI清書プレビューの取得
+  const handleStartRefine = async (laneKey: string) => {
+    setRefining(true);
+    try {
+      const res = await fetch('/api/admin/lane-guides/refine', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lane: laneKey, dryRun: true }),
+      });
+      const d = await res.json();
+      if (!res.ok || !d.success) throw new Error(d.error || '清書の生成に失敗しました');
+      setRefinePreview({
+        lane: d.lane,
+        title: d.title,
+        refinedBody: d.refinedBody,
+        originalBody: d.originalBody,
+        sourceCount: d.sourceCount,
+      });
+    } catch (e: any) {
+      showToast(`❌ 清書エラー: ${e.message}`, 'error');
+    } finally {
+      setRefining(false);
+    }
+  };
+
+  // 清書結果の確定保存
+  const handleConfirmRefine = async () => {
+    if (!refinePreview) return;
+    setSavingRefined(true);
+    try {
+      const res = await fetch('/api/admin/lane-guides/refine', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lane: refinePreview.lane, dryRun: false }),
+      });
+      const d = await res.json();
+      if (!res.ok || !d.success) throw new Error(d.error || '保存に失敗しました');
+      showToast('✨ AI清書版をガイドへ反映しました！', 'success');
+      setRefinePreview(null);
+      fetchGuides();
+    } catch (e: any) {
+      showToast(`❌ 保存エラー: ${e.message}`, 'error');
+    } finally {
+      setSavingRefined(false);
+    }
+  };
 
   if (isAuthenticated === null) {
     return <div className="min-h-screen bg-background flex items-center justify-center"><Spinner label="読み込み中..." /></div>;
@@ -68,15 +135,34 @@ export default function LaneGuidesPage() {
   return (
     <div className="min-h-screen bg-background text-foreground p-4 md:p-8">
       <div className="max-w-4xl mx-auto space-y-6">
-        <div className="border-b border-black/10 pb-6">
-          <h1 className="text-3xl font-bold text-stone-900 flex items-center gap-3">
-            <MapIcon className="h-8 w-8 text-amber-600" />
-            レーン別ガイド
-          </h1>
-          <p className="text-stone-500 mt-2 text-sm">
-            攻略ライブラリの記事から、<strong className="text-amber-700">レーンごとの立ち回り・マクロ</strong>を1本に統合したガイドです。
-            どのレーンでも通用する判断・考え方は<strong className="text-amber-700">「全レーン共通」</strong>にまとまっています。
-          </p>
+        {/* トースト通知 */}
+        {toastMessage && (
+          <div className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-2xl shadow-xl border text-sm font-bold animate-fade-in ${
+            toastMessage.type === 'success' ? 'bg-emerald-50 border-emerald-300 text-emerald-900' : 'bg-rose-50 border-rose-300 text-rose-900'
+          }`}>
+            {toastMessage.text}
+          </div>
+        )}
+
+        {/* ヘッダー */}
+        <div className="border-b border-black/10 pb-6 flex items-start sm:items-center justify-between gap-4 flex-col sm:flex-row">
+          <div>
+            <h1 className="text-3xl font-bold text-stone-900 flex items-center gap-3">
+              <MapIcon className="h-8 w-8 text-amber-600" />
+              レーン別ガイド
+            </h1>
+            <p className="text-stone-500 mt-2 text-sm">
+              攻略ライブラリの記事から、<strong className="text-amber-700">レーンごとの立ち回り・マクロ</strong>を1本に統合したガイドです。
+              どのレーンでも通用する判断・考え方は<strong className="text-amber-700">「全レーン共通」</strong>にまとまっています。
+            </p>
+          </div>
+          <Link
+            href="/champions"
+            className="px-4 py-2 bg-stone-100 hover:bg-stone-200 text-stone-800 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 border border-stone-200"
+          >
+            <BookHeart size={14} className="text-[#c89b3c]" />
+            <span>チャンピオン辞典へ</span>
+          </Link>
         </div>
 
         {guides.length === 0 ? (
@@ -86,18 +172,34 @@ export default function LaneGuidesPage() {
           />
         ) : (
           <>
-            <div className="flex gap-2 flex-wrap">
-              {guides.map((g: any) => (
+            <div className="flex gap-2 flex-wrap items-center justify-between">
+              <div className="flex gap-2 flex-wrap">
+                {guides.map((g: any) => (
+                  <button
+                    key={g.lane}
+                    onClick={() => setActive(g.lane)}
+                    className={`px-4 py-2 rounded-xl text-sm font-black transition-all ${
+                      active === g.lane ? 'bg-amber-600 text-white shadow-xs' : 'bg-black/5 text-stone-500 hover:text-stone-900 hover:bg-black/10'
+                    }`}
+                  >
+                    {laneLabel(g.lane)}
+                  </button>
+                ))}
+              </div>
+
+              {/* ✨ AI清書・体系化ボタン */}
+              {current && (
                 <button
-                  key={g.lane}
-                  onClick={() => setActive(g.lane)}
-                  className={`px-4 py-2 rounded-xl text-sm font-black transition-all ${
-                    active === g.lane ? 'bg-amber-600 text-white' : 'bg-black/5 text-stone-500 hover:text-stone-900 hover:bg-black/10'
-                  }`}
+                  type="button"
+                  onClick={() => handleStartRefine(current.lane)}
+                  disabled={refining}
+                  className="px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white rounded-xl text-xs font-black transition flex items-center gap-1.5 shadow-md shadow-amber-500/20 disabled:opacity-50"
+                  title="蓄積された知見の重複を排除し、序盤・中盤・終盤の美しい章立てで清書します"
                 >
-                  {laneLabel(g.lane)}
+                  {refining ? <RefreshCw size={13} className="animate-spin" /> : <Sparkles size={13} />}
+                  <span>{refining ? 'AIが清書・整理中...' : '✨ 蓄積知見をAI清書・体系化'}</span>
                 </button>
-              ))}
+              )}
             </div>
 
             {/* ⏱ 時間帯別マクロチェックリスト */}
@@ -131,24 +233,92 @@ export default function LaneGuidesPage() {
 
             {current && (
               <article className="bg-white border border-stone-200/90 rounded-3xl p-6 md:p-8 shadow-xs">
-                <h2 className="text-2xl font-black text-stone-900 mb-1">{current.title}</h2>
-                <p className="text-[11px] text-stone-500 mb-6 flex items-center gap-2 flex-wrap">
-                  <span>{current.source_count}本の記事を統合 ／ 更新: {new Date(current.updated_at).toLocaleDateString('ja-JP')}</span>
-                  {(() => {
-                    const days = (Date.now() - new Date(current.updated_at).getTime()) / 86400000;
-                    return days <= 3 ? (
-                      <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 border border-emerald-200">
-                        NEW
-                      </span>
-                    ) : null;
-                  })()}
-                </p>
-                <div className="prose prose-sm max-w-none prose-headings:text-amber-700 prose-strong:text-stone-900 prose-li:text-stone-700 leading-relaxed">
+                <div className="flex items-center justify-between border-b border-stone-100 pb-4 mb-6 flex-wrap gap-2">
+                  <div>
+                    <h2 className="text-2xl font-black text-stone-900 mb-1">{current.title}</h2>
+                    <p className="text-[11px] text-stone-500 flex items-center gap-2 flex-wrap">
+                      <span>{current.source_count}本の記事を統合 ／ 更新: {new Date(current.updated_at).toLocaleDateString('ja-JP')}</span>
+                      {(() => {
+                        const days = (Date.now() - new Date(current.updated_at).getTime()) / 86400000;
+                        return days <= 3 ? (
+                          <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 border border-emerald-200">
+                            NEW
+                          </span>
+                        ) : null;
+                      })()}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleStartRefine(current.lane)}
+                    disabled={refining}
+                    className="px-3.5 py-1.5 bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-800 rounded-xl text-xs font-bold transition flex items-center gap-1"
+                  >
+                    <Sparkles size={12} className="text-amber-600" />
+                    <span>清書・体系化を実行</span>
+                  </button>
+                </div>
+                <div className="prose prose-sm max-w-none prose-headings:text-amber-800 prose-strong:text-stone-900 prose-li:text-stone-700 leading-relaxed">
                   <ReactMarkdown remarkPlugins={[remarkGfm]}>{current.body}</ReactMarkdown>
                 </div>
               </article>
             )}
           </>
+        )}
+
+        {/* ✨ AI清書 差分プレビューモーダル */}
+        {refinePreview && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/60 backdrop-blur-sm animate-fade-in">
+            <div className="bg-[#fcfbf9] border border-stone-200 rounded-3xl w-full max-w-3xl max-h-[90vh] overflow-y-auto p-6 shadow-2xl space-y-5">
+              <div className="flex items-center justify-between border-b border-stone-200 pb-4">
+                <div>
+                  <h3 className="text-xl font-black text-stone-900 flex items-center gap-2">
+                    <Sparkles size={22} className="text-amber-600" />
+                    <span>レーンガイド AI清書・体系化プレビュー</span>
+                  </h3>
+                  <p className="text-xs text-stone-500 mt-1">
+                    蓄積された全知見の重複を排除し、序盤・中盤・終盤の美しい章立てで清書しました。
+                  </p>
+                </div>
+                <button
+                  onClick={() => setRefinePreview(null)}
+                  disabled={savingRefined}
+                  className="text-stone-400 hover:text-stone-700 p-1.5 rounded-lg hover:bg-stone-100 transition"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              {/* プレビュー表示エリア */}
+              <div className="bg-white border border-stone-200 rounded-2xl p-6 shadow-xs max-h-[55vh] overflow-y-auto">
+                <h4 className="text-lg font-extrabold text-stone-900 mb-3">{refinePreview.title}</h4>
+                <div className="prose prose-sm max-w-none prose-headings:text-amber-800 prose-strong:text-stone-900 prose-li:text-stone-700 leading-relaxed">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{refinePreview.refinedBody}</ReactMarkdown>
+                </div>
+              </div>
+
+              {/* フッターアクション */}
+              <div className="flex items-center justify-between gap-3 pt-4 border-t border-stone-200 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => setRefinePreview(null)}
+                  disabled={savingRefined}
+                  className="px-4 py-2.5 rounded-xl text-xs font-bold text-stone-500 hover:bg-stone-100 transition"
+                >
+                  破棄して閉じる
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmRefine}
+                  disabled={savingRefined}
+                  className="px-6 py-2.5 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl text-xs transition flex items-center gap-2 shadow-md shadow-amber-600/20 disabled:opacity-50"
+                >
+                  {savingRefined ? <RefreshCw size={14} className="animate-spin" /> : <CheckCircle2 size={15} />}
+                  <span>{savingRefined ? '反映処理中...' : '✨ この清書版でガイドを更新する'}</span>
+                </button>
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </div>

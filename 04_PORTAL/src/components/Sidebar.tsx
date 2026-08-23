@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Shield, LayoutDashboard, Swords, BookOpen, BookHeart, Trophy, Users, HeartHandshake, ScrollText, ListVideo, ChevronLeft, ChevronRight, Coins, Brain, Trees, Sparkles, Search, MoreHorizontal, X as XIcon, TrendingUp, Activity } from 'lucide-react';
+import { Shield, LayoutDashboard, Swords, BookOpen, BookHeart, Trophy, Users, HeartHandshake, ScrollText, ListVideo, ChevronLeft, ChevronRight, Coins, Brain, Trees, Sparkles, Search, MoreHorizontal, X as XIcon, TrendingUp, Activity, Map as MapIcon } from 'lucide-react';
 import FavoritesPanel from './FavoritesPanel';
 import PushOptIn from './PushOptIn';
 import NotificationBell from './NotificationBell';
@@ -54,6 +54,7 @@ const ADMIN_ONLY_MENU_ITEMS: MenuItem[] = [
   { id: 'dashboard', label: 'システム運用', icon: LayoutDashboard, href: '/admin/dashboard', color: 'text-stone-900', activeBg: 'bg-black/10', section: 'システム運用' },
   // ── 📖 攻略ハブ ──
   { id: 'champions', label: '辞典', icon: BookHeart, href: '/champions', color: 'text-[#c89b3c]', activeBg: 'bg-[#c89b3c]/15', section: '攻略ハブ' },
+  { id: 'lane-guides', label: 'レーン別ガイド', icon: MapIcon, href: '/lane-guides', color: 'text-sky-400', activeBg: 'bg-sky-400/15' },
   { id: 'dict-health', label: 'ヘルス診断', icon: Activity, href: '/admin/dict-health', color: 'text-amber-500', activeBg: 'bg-amber-500/15' },
   { id: 'knowledge-admin', label: 'ナレッジ', icon: Brain, href: '/admin/knowledge', color: 'text-pink-400', activeBg: 'bg-pink-400/15' },
   // ── 🔍 分析 ──
