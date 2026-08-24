@@ -2225,29 +2225,32 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
 
       {/* ✨ AI知見清書・重複排除 プレビューモーダル */}
       {factsRefinePreview && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-stone-950/75 backdrop-blur-sm animate-fade-in">
-          <div className="bg-[#fcfbf9] border border-stone-200 rounded-3xl w-full max-w-[1550px] w-[95vw] max-h-[92vh] overflow-y-auto p-6 md:p-8 shadow-2xl space-y-5">
-            <div className="flex items-center justify-between border-b border-stone-200 pb-4">
-              <div>
-                <h3 className="text-xl font-black text-stone-900 flex items-center gap-2">
-                  <Sparkles size={22} className="text-amber-600" />
-                  <span>{factsRefinePreview.champion} 蓄積知見 AI清書・重複排除プレビュー</span>
-                </h3>
-                <p className="text-xs text-stone-500 mt-1">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-stone-950/80 backdrop-blur-md animate-fade-in touch-pan-y">
+          <div className="bg-[#fcfbf9] border border-stone-200 rounded-2xl sm:rounded-3xl w-full max-w-[1550px] w-[96vw] h-[94vh] max-h-[94vh] shadow-2xl flex flex-col overflow-hidden">
+            {/* ヘッダー */}
+            <div className="p-3.5 sm:p-5 border-b border-stone-200 flex items-center justify-between gap-2 shrink-0 bg-white">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3 className="text-base sm:text-xl font-black text-stone-900 flex items-center gap-1.5 truncate">
+                    <Sparkles size={20} className="text-amber-600 shrink-0" />
+                    <span>{factsRefinePreview.champion} 蓄積知見 AI清書プレビュー</span>
+                  </h3>
+                </div>
+                <p className="text-[11px] text-stone-500 mt-0.5 hidden sm:block">
                   蓄積された複数の【追記知見】の重複を削ぎ落とし、最新メタに合わせた洗練された文章に清書しました。
                 </p>
               </div>
               <button
                 onClick={() => setFactsRefinePreview(null)}
                 disabled={savingRefinedFacts}
-                className="text-stone-400 hover:text-stone-700 p-1.5 rounded-lg hover:bg-stone-100 transition"
+                className="text-stone-400 hover:text-stone-700 p-2 rounded-xl hover:bg-stone-100 transition shrink-0"
               >
                 <X size={20} />
               </button>
             </div>
 
-            {/* 項目ごとのビフォーアフター差分一覧 (左右並列 文章比較) */}
-            <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
+            {/* 項目ごとのビフォーアフター差分一覧 (メインスクロールエリア) */}
+            <div className="flex-1 min-h-0 overflow-y-auto p-3 sm:p-6 space-y-4 overscroll-contain touch-pan-y" style={{ WebkitOverflowScrolling: 'touch' }}>
               {factsRefinePreview.diffs
                 .filter((d) => (d.before && d.before.trim().length > 0) || (d.after && d.after.trim().length > 0))
                 .map((d) => (
@@ -2268,7 +2271,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                         <span className="text-[10px] font-bold text-stone-500 flex items-center gap-1">
                           <span>📄</span> 清書前（蓄積された生知見）:
                         </span>
-                        <div className="text-stone-600 whitespace-pre-wrap leading-relaxed max-h-40 overflow-y-auto font-sans text-xs flex-1">
+                        <div className="text-stone-600 whitespace-pre-wrap leading-relaxed font-sans text-xs flex-1">
                           {d.before || '（未記載）'}
                         </div>
                       </div>
@@ -2278,7 +2281,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                         <span className="text-[10px] font-bold text-amber-800 flex items-center gap-1">
                           <Sparkles size={12} className="text-amber-600" /> 清書後（AI推敲・重複排除版）:
                         </span>
-                        <div className="text-stone-900 whitespace-pre-wrap leading-relaxed max-h-40 overflow-y-auto font-medium text-xs flex-1">
+                        <div className="text-stone-900 whitespace-pre-wrap leading-relaxed font-medium text-xs flex-1">
                           {d.after || '（未記載）'}
                         </div>
                       </div>
@@ -2288,12 +2291,12 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
             </div>
 
             {/* フッターアクション */}
-            <div className="flex items-center justify-between gap-3 pt-4 border-t border-stone-200 flex-wrap">
+            <div className="p-3 sm:p-4 bg-white border-t border-stone-200 flex items-center justify-between gap-2 flex-wrap shrink-0">
               <button
                 type="button"
                 onClick={() => setFactsRefinePreview(null)}
                 disabled={savingRefinedFacts}
-                className="px-4 py-2.5 rounded-xl text-xs font-bold text-stone-500 hover:bg-stone-100 transition"
+                className="px-4 py-2 rounded-xl text-xs font-bold text-stone-500 hover:bg-stone-100 transition"
               >
                 破棄して閉じる
               </button>
@@ -2301,10 +2304,10 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                 type="button"
                 onClick={handleConfirmRefineFacts}
                 disabled={savingRefinedFacts}
-                className="px-6 py-2.5 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl text-xs transition flex items-center gap-2 shadow-md shadow-amber-600/20 disabled:opacity-50"
+                className="px-5 sm:px-6 py-2.5 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl text-xs sm:text-sm transition flex items-center gap-2 shadow-md shadow-amber-600/20 disabled:opacity-50"
               >
-                {savingRefinedFacts ? <RefreshCw size={14} className="animate-spin" /> : <Check size={15} />}
-                <span>{savingRefinedFacts ? '反映処理中...' : '✨ この清書版で辞典を更新する'}</span>
+                {savingRefinedFacts ? <RefreshCw size={14} className="animate-spin" /> : <Check size={16} />}
+                <span>{savingRefinedFacts ? '反映処理中...' : '✨ この清書版で辞典を更新'}</span>
               </button>
             </div>
           </div>

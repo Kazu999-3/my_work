@@ -93,20 +93,20 @@ export default function HistoryPage() {
               KTMで記録された過去のカスタムマッチの履歴とレーン別対決詳細を確認できます。
             </p>
           </div>
-          <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex items-center gap-2 sm:gap-3 flex-wrap w-full sm:w-auto">
             <input
               type="text"
               placeholder="プレイヤー・チャンピオンで検索..."
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              className="bg-white border border-stone-300 text-stone-900 text-xs font-bold rounded-xl px-3.5 py-2.5 outline-none focus:border-primary w-64 shadow-xs"
+              className="bg-white border border-stone-300 text-stone-900 text-xs font-bold rounded-xl px-3.5 py-2.5 outline-none focus:border-primary flex-1 sm:w-64 shadow-xs"
             />
             <Link
               href="/balancer/record"
-              className="flex items-center gap-2 bg-primary hover:bg-accent text-white px-4 py-2.5 rounded-xl font-bold transition text-xs shadow-xs"
+              className="flex items-center gap-2 bg-primary hover:bg-accent text-white px-4 py-2.5 rounded-xl font-bold transition text-xs shadow-xs shrink-0"
             >
               <Trophy className="h-4 w-4" />
-              戦績の手動記録 🏆
+              <span>戦績の手動記録 🏆</span>
             </Link>
           </div>
         </div>

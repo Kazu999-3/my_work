@@ -250,35 +250,35 @@ export default function LeaderboardPage() {
             </div>
 
             {/* 試合数フィルター・検索コントロール */}
-            <div className="flex flex-wrap justify-center gap-3 mb-8">
-              <div className="flex items-center gap-2 bg-surface border border-border rounded-xl px-4 py-2">
-                <span className="text-xs text-stone-400 font-bold">表示する最小試合数:</span>
+            <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 mb-6 sm:mb-8">
+              <div className="flex items-center gap-2 bg-surface border border-border rounded-xl px-3 sm:px-4 py-2 text-xs">
+                <span className="text-stone-400 font-bold">最小試合:</span>
                 <select
                   value={minGames}
                   onChange={(e) => setMinGames(Number(e.target.value))}
                   className="bg-black/5 text-stone-900 text-xs font-bold rounded-lg border border-border px-2 py-1 focus:outline-none focus:border-amber-500"
                 >
-                  <option value={0}>制限なし (全登録者)</option>
+                  <option value={0}>制限なし</option>
                   <option value={1}>1試合以上</option>
-                  <option value={3}>3試合以上 (デフォルト)</option>
+                  <option value={3}>3試合以上</option>
                   <option value={5}>5試合以上</option>
                   <option value={10}>10試合以上</option>
                 </select>
               </div>
-              <div className="flex items-center gap-2 bg-surface border border-border rounded-xl px-4 py-2">
+              <div className="flex items-center gap-2 bg-surface border border-border rounded-xl px-3 sm:px-4 py-2 flex-1 sm:flex-initial min-w-[200px]">
                 <span className="text-xs text-stone-400 font-bold">🔍</span>
                 <input
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder="プレイヤー名で検索..."
-                  className="bg-black/5 text-stone-900 text-xs font-bold rounded-lg border border-border px-2 py-1 focus:outline-none focus:border-amber-500 w-40"
+                  placeholder="プレイヤー名検索..."
+                  className="bg-black/5 text-stone-900 text-xs font-bold rounded-lg border border-border px-2 py-1 focus:outline-none focus:border-amber-500 w-full sm:w-40"
                 />
                 {search && <button onClick={() => setSearch('')} className="text-stone-500 hover:text-stone-900 text-xs">✕</button>}
               </div>
 
               {/* 並び替えソートボタン群 */}
-              <div className="flex items-center gap-1 bg-surface border border-border rounded-xl px-3 py-1.5 text-xs font-bold">
-                <span className="text-stone-400 mr-1">並び替え:</span>
+              <div className="flex items-center gap-1 bg-surface border border-border rounded-xl px-2.5 sm:px-3 py-1.5 text-xs font-bold flex-wrap">
+                <span className="text-stone-400 mr-1 text-[11px]">並替:</span>
                 {[
                   { id: 'mmr', label: '🏆 MMR' },
                   { id: 'winRate', label: '📈 勝率' },
@@ -287,7 +287,7 @@ export default function LeaderboardPage() {
                   <button
                     key={s.id}
                     onClick={() => setSortMetric(s.id as any)}
-                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition ${
+                    className={`px-2 py-1 rounded-lg text-[11px] sm:text-xs font-bold transition ${
                       sortMetric === s.id
                         ? 'bg-amber-600 text-stone-900 shadow'
                         : 'text-stone-400 hover:text-stone-900 hover:bg-black/5'
