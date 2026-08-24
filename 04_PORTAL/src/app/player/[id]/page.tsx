@@ -580,7 +580,7 @@ export default function PlayerMyPage() {
       <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-cyan-500/5 rounded-full blur-[120px] pointer-events-none -z-10"></div>
       <div className="absolute top-1/3 right-1/4 w-[400px] h-[400px] bg-indigo-500/5 rounded-full blur-[120px] pointer-events-none -z-10"></div>
 
-      <div className="max-w-5xl mx-auto space-y-6">
+      <div className="max-w-[1600px] w-full mx-auto space-y-6">
         
         {/* Header / Control Panel (得意チャンピオンの公式スプラッシュアート背景 ＆ グラスモルフィズム) */}
         <div className="bg-white/60 backdrop-blur-xl border border-black/10 rounded-3xl p-6 shadow-[0_8px_32px_0_rgba(32,28,43,0.08)] relative overflow-hidden group">

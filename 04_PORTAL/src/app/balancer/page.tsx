@@ -912,7 +912,7 @@ export default function BalancerPage() {
   const canBalance     = activeCount >= 10;
 
   return (
-    <div className="min-h-screen bg-background text-stone-800 p-4 md:p-8 max-w-7xl mx-auto space-y-4">
+    <div className="min-h-screen bg-background text-stone-800 p-4 md:p-8 lg:p-10 max-w-[1680px] w-full mx-auto space-y-4">
 
       {/* 🔰 チーム分けツールの使い方ガイド（初心者安心折りたたみガイド） */}
       <div className="bg-amber-500/10 border border-amber-300/60 rounded-2xl p-4 text-stone-900 shadow-sm">

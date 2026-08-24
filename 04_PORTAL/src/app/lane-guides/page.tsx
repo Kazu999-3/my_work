@@ -1,17 +1,17 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import Link from 'next/link';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Map as MapIcon, Sparkles, RefreshCw, CheckCircle2, X, Eye, BookHeart, FileText, SplitSquareVertical, Columns } from 'lucide-react';
-import Link from 'next/link';
-import { Spinner, EmptyState } from '../../components/Feedback';
-import { diffLines, diffSummary, diffSideBySide, type DiffLine, type SideBySideLine } from '../../lib/diffUtils';
+import { MapIcon, Sparkles, RefreshCw, X, Columns, CheckCircle2, BookHeart, ListOrdered, ChevronRight } from 'lucide-react';
+import { Spinner } from '../../components/Feedback';
+import EmptyState from '../../components/EmptyState';
 
 export default function LaneGuidesPage() {
-  const [data, setData] = useState<any>(null);
-  const [active, setActive] = useState<string | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [data, setData] = useState<{ guides: any[]; lanes: any[] } | null>(null);
+  const [active, setActive] = useState<string>('');
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   
   // AI清書・体系化リライト状態
   const [refining, setRefining] = useState(false);
@@ -29,7 +29,6 @@ export default function LaneGuidesPage() {
       targetChapter: string;
       reason: string;
     }>;
-    retainedKeyPoints?: Array<{ topic: string; targetSection: string }>;
   } | null>(null);
   const [toastMessage, setToastMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
@@ -63,7 +62,7 @@ export default function LaneGuidesPage() {
   // AI清書プレビューの取得
   const handleStartRefine = async (laneKey: string) => {
     setRefining(true);
-    setPreviewTab('annotations'); // 朱入れマップをデフォルト表示
+    setPreviewTab('annotations');
     try {
       const res = await fetch('/api/admin/lane-guides/refine', {
         method: 'POST',
@@ -80,7 +79,6 @@ export default function LaneGuidesPage() {
         originalBody: d.originalBody,
         sourceCount: d.sourceCount,
         editMap: d.editMap || [],
-        retainedKeyPoints: d.retainedKeyPoints || [],
       });
     } catch (e: any) {
       showToast(`❌ 清書エラー: ${e.message}`, 'error');
@@ -115,41 +113,34 @@ export default function LaneGuidesPage() {
     }
   };
 
-  if (isAuthenticated === null) {
-    return <div className="min-h-screen bg-background flex items-center justify-center"><Spinner label="読み込み中..." /></div>;
-  }
+  const guides = data?.guides || [];
+  const current = guides.find((g: any) => g.lane === active);
+  const laneLabel = (key: string) => (data?.lanes || []).find((l: any) => l.key === key)?.label || key;
 
-  if (isAuthenticated === false) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="text-center max-w-sm rounded-2xl border border-black/10 bg-black/[0.03] p-8 backdrop-blur">
-          <div className="text-4xl mb-4">🔑</div>
-          <h2 className="text-lg font-bold mb-2 text-stone-900">認証が必要です</h2>
-          <p className="text-sm text-stone-500 mb-6 leading-relaxed">
-            レーン別ガイドは管理者専用です。管理者パスコードでログインしてから再度アクセスしてください。
-          </p>
-          <a
-            href="/login"
-            className="inline-block w-full rounded-xl bg-amber-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-amber-500"
-          >
-            ログインページへ
-          </a>
-        </div>
-      </div>
-    );
-  }
+  // 目次（TOC）の見出し抽出
+  const headings = useMemo(() => {
+    if (!current?.body) return [];
+    const lines = current.body.split('\n');
+    const list: Array<{ text: string; level: number; id: string }> = [];
+    for (const line of lines) {
+      const match = line.match(/^(#{2,3})\s+(.*)$/);
+      if (match) {
+        const level = match[1].length;
+        const text = match[2].trim();
+        const id = text.toLowerCase().replace(/[^a-z0-9\u3040-\u309f\u30a0-\u30ff\u4e00-\u9faf]/g, '-');
+        list.push({ text, level, id });
+      }
+    }
+    return list;
+  }, [current?.body]);
 
   if (!data) {
     return <div className="min-h-screen bg-background flex items-center justify-center"><Spinner label="読み込み中..." /></div>;
   }
 
-  const guides = data.guides || [];
-  const current = guides.find((g: any) => g.lane === active);
-  const laneLabel = (key: string) => (data.lanes || []).find((l: any) => l.key === key)?.label || key;
-
   return (
-    <div className="min-h-screen bg-background text-foreground p-4 md:p-8">
-      <div className="max-w-4xl mx-auto space-y-6">
+    <div className="min-h-screen bg-background text-foreground p-4 md:p-8 lg:p-10">
+      <div className="max-w-[1600px] w-full mx-auto space-y-6">
         {/* トースト通知 */}
         {toastMessage && (
           <div className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-2xl shadow-xl border text-sm font-bold animate-fade-in ${
@@ -162,42 +153,55 @@ export default function LaneGuidesPage() {
         {/* ヘッダー */}
         <div className="border-b border-black/10 pb-6 flex items-start sm:items-center justify-between gap-4 flex-col sm:flex-row">
           <div>
-            <h1 className="text-3xl font-bold text-stone-900 flex items-center gap-3">
-              <MapIcon className="h-8 w-8 text-amber-600" />
-              レーン別ガイド
-            </h1>
-            <p className="text-stone-500 mt-2 text-sm">
-              攻略ライブラリの記事から、<strong className="text-amber-700">レーンごとの立ち回り・マクロ</strong>を1本に統合したガイドです。
-              どのレーンでも通用する判断・考え方は<strong className="text-amber-700">「全レーン共通」</strong>にまとまっています。
-            </p>
+            <div className="flex items-center gap-3">
+              <span className="p-2.5 bg-amber-500/10 text-amber-600 rounded-2xl border border-amber-500/20 shadow-2xs">
+                <MapIcon className="h-7 w-7" />
+              </span>
+              <div>
+                <h1 className="text-2xl md:text-3xl font-black text-stone-900 tracking-tight">
+                  レーン別ガイド ＆ マクロ戦術バイブル
+                </h1>
+                <p className="text-stone-500 mt-1 text-xs md:text-sm">
+                  攻略ライブラリから統合された<strong className="text-amber-700 font-bold">各ロールの普遍的マクロ・立ち回り</strong>を閲覧・AI清書できます。
+                </p>
+              </div>
+            </div>
           </div>
           <Link
             href="/champions"
-            className="px-4 py-2 bg-stone-100 hover:bg-stone-200 text-stone-800 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 border border-stone-200"
+            className="px-4 py-2.5 bg-white hover:bg-stone-50 text-stone-800 rounded-2xl text-xs font-black transition flex items-center gap-2 shrink-0 border border-stone-200 shadow-2xs"
           >
-            <BookHeart size={14} className="text-[#c89b3c]" />
-            <span>チャンピオン辞典へ</span>
+            <BookHeart size={15} className="text-[#c89b3c]" />
+            <span>📖 チャンピオン辞典へ移動</span>
           </Link>
         </div>
 
         {guides.length === 0 ? (
           <EmptyState
             title="まだガイドが作成されていません"
-            message="管理者が「レーン別ガイドへ統合」を実行すると、ここに各レーンのガイドが並びます。"
+            description="管理者が「レーン別ガイドへ統合」を実行すると、ここに各レーンのガイドが並びます。"
           />
         ) : (
           <>
-            <div className="flex gap-2 flex-wrap items-center justify-between">
+            {/* レーン切り替えタブバー ＆ AI清書ボタン */}
+            <div className="flex gap-3 flex-wrap items-center justify-between bg-white p-2.5 rounded-2xl border border-stone-200/90 shadow-2xs">
               <div className="flex gap-2 flex-wrap">
                 {guides.map((g: any) => (
                   <button
                     key={g.lane}
                     onClick={() => setActive(g.lane)}
-                    className={`px-4 py-2 rounded-xl text-sm font-black transition-all ${
-                      active === g.lane ? 'bg-amber-600 text-white shadow-xs' : 'bg-black/5 text-stone-500 hover:text-stone-900 hover:bg-black/10'
+                    className={`px-4 py-2 rounded-xl text-xs md:text-sm font-black transition-all flex items-center gap-2 ${
+                      active === g.lane
+                        ? 'bg-amber-600 text-white shadow-sm'
+                        : 'bg-stone-100 text-stone-600 hover:text-stone-900 hover:bg-stone-200'
                     }`}
                   >
-                    {laneLabel(g.lane)}
+                    <span>{laneLabel(g.lane)}</span>
+                    <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono font-bold ${
+                      active === g.lane ? 'bg-amber-700/60 text-white' : 'bg-stone-200 text-stone-600'
+                    }`}>
+                      {g.source_count || 0}
+                    </span>
                   </button>
                 ))}
               </div>
@@ -208,93 +212,152 @@ export default function LaneGuidesPage() {
                   type="button"
                   onClick={() => handleStartRefine(current.lane)}
                   disabled={refining}
-                  className="px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white rounded-xl text-xs font-black transition flex items-center gap-1.5 shadow-md shadow-amber-500/20 disabled:opacity-50"
+                  className="px-4 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white rounded-xl text-xs font-black transition flex items-center gap-2 shadow-md shadow-amber-500/20 disabled:opacity-50"
                   title="蓄積された知見の重複を排除し、序盤・中盤・終盤の美しい章立てで清書します"
                 >
-                  {refining ? <RefreshCw size={13} className="animate-spin" /> : <Sparkles size={13} />}
+                  {refining ? <RefreshCw size={14} className="animate-spin" /> : <Sparkles size={14} />}
                   <span>{refining ? 'AIが清書・整理中...' : '✨ 蓄積知見をAI清書・体系化'}</span>
                 </button>
               )}
             </div>
 
-            {/* ⏱ 2026年シーズン タイムライン・マクロチェックリスト */}
-            <div className="bg-amber-50/70 border border-amber-200/80 rounded-2xl p-5 shadow-xs">
-              <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-                <h3 className="text-xs font-black text-amber-900 flex items-center gap-1.5 uppercase tracking-wider">
-                  <span>⏱</span> 2026年シーズン タイムライン ＆ オブジェクト管理基準
+            {/* ⏱ 2026年シーズン タイムライン・マクロチェックリスト（横幅フル活用グリッド） */}
+            <div className="bg-amber-50/70 border border-amber-200/90 rounded-3xl p-5 md:p-6 shadow-xs">
+              <div className="flex items-center justify-between mb-3.5 flex-wrap gap-2">
+                <h3 className="text-xs font-black text-amber-950 flex items-center gap-2 uppercase tracking-wider">
+                  <span className="p-1 bg-amber-200/80 rounded-lg">⏱</span>
+                  <span>2026年シーズン タイムライン ＆ オブジェクト管理基準</span>
                 </h3>
-                <span className="text-[10px] bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded border border-amber-300">
-                  2026 Meta Verified
+                <span className="text-[11px] bg-amber-100 text-amber-900 font-bold px-2.5 py-0.5 rounded-full border border-amber-300">
+                  Season 2026 Verified
                 </span>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-2.5 text-xs">
-                <div className="bg-white p-3 rounded-xl border border-amber-200/60 shadow-2xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 text-xs">
+                <div className="bg-white p-3.5 rounded-2xl border border-amber-200/70 shadow-2xs">
                   <span className="text-[10px] font-mono font-extrabold text-amber-700 block">2:55 〜</span>
-                  <strong className="text-stone-900 block mt-0.5">初動スカトル争奪</strong>
+                  <strong className="text-stone-900 block mt-0.5 text-sm">初動スカトル争奪</strong>
                   <p className="text-[11px] text-stone-500 mt-1">キャンプ湧き(0:55)から最速周回。レーン優先度を見て交戦判断</p>
                 </div>
-                <div className="bg-white p-3 rounded-xl border border-amber-200/60 shadow-2xs">
+                <div className="bg-white p-3.5 rounded-2xl border border-amber-200/70 shadow-2xs">
                   <span className="text-[10px] font-mono font-extrabold text-amber-700 block">5:00 〜</span>
-                  <strong className="text-stone-900 block mt-0.5">初代ドラゴン出現</strong>
+                  <strong className="text-stone-900 block mt-0.5 text-sm">初代ドラゴン出現</strong>
                   <p className="text-[11px] text-stone-500 mt-1">Bot/MidプッシュとBot視界掌握で先手触り（5分リスポーン）</p>
                 </div>
-                <div className="bg-white p-3 rounded-xl border border-amber-200/60 shadow-2xs">
+                <div className="bg-white p-3.5 rounded-2xl border border-amber-200/70 shadow-2xs">
                   <span className="text-[10px] font-mono font-extrabold text-amber-700 block">8:00 〜</span>
-                  <strong className="text-stone-900 block mt-0.5">ヴォイドグラブ出現</strong>
+                  <strong className="text-stone-900 block mt-0.5 text-sm">ヴォイドグラブ出現</strong>
                   <p className="text-[11px] text-stone-500 mt-1">1回のみ出現(14:45消滅)。Top/Midプライオリティで確保</p>
                 </div>
-                <div className="bg-white p-3 rounded-xl border border-amber-200/60 shadow-2xs">
+                <div className="bg-white p-3.5 rounded-2xl border border-amber-200/70 shadow-2xs">
                   <span className="text-[10px] font-mono font-extrabold text-amber-700 block">15:00 〜</span>
-                  <strong className="text-stone-900 block mt-0.5">リフトヘラルド出現</strong>
+                  <strong className="text-stone-900 block mt-0.5 text-sm">リフトヘラルド出現</strong>
                   <p className="text-[11px] text-stone-500 mt-1">19:45消滅。永続タワープレート削りや外塔破壊の起点に</p>
                 </div>
-                <div className="bg-white p-3 rounded-xl border border-amber-200/60 shadow-2xs">
+                <div className="bg-white p-3.5 rounded-2xl border border-amber-200/70 shadow-2xs">
                   <span className="text-[10px] font-mono font-extrabold text-amber-700 block">20:00 〜</span>
-                  <strong className="text-stone-900 block mt-0.5">バロンナッシャー出現</strong>
+                  <strong className="text-stone-900 block mt-0.5 text-sm">バロンナッシャー出現</strong>
                   <p className="text-[11px] text-stone-500 mt-1">視界制圧と人数有利（ピックアップ）からのバロン決戦</p>
                 </div>
               </div>
             </div>
 
+            {/* ガイドメインエリア (2カラム: 目次ナビゲーション + 本文) */}
             {current && (
-              <article className="bg-white border border-stone-200/90 rounded-3xl p-6 md:p-8 shadow-xs">
-                <div className="flex items-center justify-between border-b border-stone-100 pb-4 mb-6 flex-wrap gap-2">
-                  <div>
-                    <h2 className="text-2xl font-black text-stone-900 mb-1">{current.title}</h2>
-                    <p className="text-[11px] text-stone-500 flex items-center gap-2 flex-wrap">
-                      <span>{current.source_count}本の記事を統合 ／ 更新: {new Date(current.updated_at).toLocaleDateString('ja-JP')}</span>
-                      {(() => {
-                        const days = (Date.now() - new Date(current.updated_at).getTime()) / 86400000;
-                        return days <= 3 ? (
-                          <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 border border-emerald-200">
-                            NEW
-                          </span>
-                        ) : null;
-                      })()}
-                    </p>
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                {/* 📌 左カラム: 目次（Sticky TOC） */}
+                <aside className="lg:col-span-3 lg:sticky lg:top-6 space-y-4">
+                  <div className="bg-white border border-stone-200/90 rounded-3xl p-5 shadow-2xs">
+                    <h3 className="text-xs font-black text-stone-900 mb-3 flex items-center gap-1.5 uppercase tracking-wider">
+                      <ListOrdered size={15} className="text-amber-600" />
+                      <span>章立て・クイック目次</span>
+                    </h3>
+                    {headings.length > 0 ? (
+                      <nav className="space-y-1 text-xs">
+                        {headings.map((h, i) => (
+                          <a
+                            key={i}
+                            href={`#section-${i}`}
+                            className={`block py-1.5 px-2.5 rounded-xl transition font-medium line-clamp-1 ${
+                              h.level === 2
+                                ? 'text-stone-800 hover:text-amber-900 hover:bg-amber-50 font-bold'
+                                : 'text-stone-500 hover:text-stone-800 pl-5 text-[11px]'
+                            }`}
+                          >
+                            <span className="flex items-center gap-1">
+                              {h.level === 2 && <ChevronRight size={12} className="text-amber-600 shrink-0" />}
+                              <span>{h.text.replace(/^[#0-9.\s]+/, '')}</span>
+                            </span>
+                          </a>
+                        ))}
+                      </nav>
+                    ) : (
+                      <p className="text-stone-400 text-xs">目次を自動生成中...</p>
+                    )}
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => handleStartRefine(current.lane)}
-                    disabled={refining}
-                    className="px-3.5 py-1.5 bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-800 rounded-xl text-xs font-bold transition flex items-center gap-1"
-                  >
-                    <Sparkles size={12} className="text-amber-600" />
-                    <span>清書・体系化を実行</span>
-                  </button>
-                </div>
-                <div className="prose prose-sm max-w-none prose-headings:text-amber-800 prose-strong:text-stone-900 prose-li:text-stone-700 leading-relaxed">
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{current.body}</ReactMarkdown>
-                </div>
-              </article>
+
+                  {/* ガイドメタ情報カード */}
+                  <div className="bg-stone-50 border border-stone-200/80 rounded-2xl p-4 text-xs space-y-2 text-stone-600">
+                    <div className="flex justify-between">
+                      <span className="text-stone-400">対象ロール</span>
+                      <strong className="text-stone-800">{laneLabel(current.lane)}</strong>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-stone-400">統合記事数</span>
+                      <strong className="text-stone-800">{current.source_count || 0} 本</strong>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-stone-400">最終更新</span>
+                      <strong className="text-stone-800">{new Date(current.updated_at).toLocaleDateString('ja-JP')}</strong>
+                    </div>
+                  </div>
+                </aside>
+
+                {/* 📄 右カラム: ガイド本文 */}
+                <article className="lg:col-span-9 bg-white border border-stone-200/90 rounded-3xl p-6 md:p-10 shadow-xs">
+                  <div className="flex items-center justify-between border-b border-stone-100 pb-5 mb-8 flex-wrap gap-3">
+                    <div>
+                      <h2 className="text-2xl md:text-3xl font-black text-stone-900 tracking-tight mb-2">
+                        {current.title}
+                      </h2>
+                      <p className="text-xs text-stone-500 flex items-center gap-2 flex-wrap">
+                        <span>{current.source_count}本の記事から統合</span>
+                        <span>・</span>
+                        <span>更新: {new Date(current.updated_at).toLocaleDateString('ja-JP')}</span>
+                        {(() => {
+                          const days = (Date.now() - new Date(current.updated_at).getTime()) / 86400000;
+                          return days <= 3 ? (
+                            <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
+                              NEW
+                            </span>
+                          ) : null;
+                        })()}
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => handleStartRefine(current.lane)}
+                      disabled={refining}
+                      className="px-4 py-2 bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-900 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-2xs"
+                    >
+                      <Sparkles size={13} className="text-amber-600" />
+                      <span>知見をAI清書する</span>
+                    </button>
+                  </div>
+
+                  <div className="prose prose-sm md:prose-base max-w-none prose-headings:text-amber-950 prose-headings:font-black prose-h2:border-b prose-h2:border-amber-100 prose-h2:pb-2 prose-h2:mt-10 prose-h2:mb-4 prose-h3:text-amber-900 prose-strong:text-stone-900 prose-li:text-stone-700 leading-relaxed font-sans">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{current.body}</ReactMarkdown>
+                  </div>
+                </article>
+              </div>
             )}
           </>
         )}
 
-        {/* ✨ AI清書 プレビューモーダル (📋 元文章の朱入れマップ ＆ 左右比較 ＆ 完成版) */}
+        {/* ✨ AI清書 プレビューモーダル (幅1550px・大画面ワイド対応) */}
         {refinePreview && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-stone-950/75 backdrop-blur-sm animate-fade-in">
-            <div className="bg-[#fcfbf9] border border-stone-200 rounded-3xl w-full max-w-6xl h-[90vh] max-h-[90vh] overflow-hidden p-4 sm:p-6 shadow-2xl flex flex-col space-y-3">
+            <div className="bg-[#fcfbf9] border border-stone-200 rounded-3xl w-full max-w-[1550px] w-[95vw] h-[90vh] max-h-[90vh] overflow-hidden p-4 sm:p-6 shadow-2xl flex flex-col space-y-3">
               {/* ヘッダー */}
               <div className="flex items-center justify-between border-b border-stone-200 pb-3 flex-wrap gap-2 shrink-0">
                 <div>

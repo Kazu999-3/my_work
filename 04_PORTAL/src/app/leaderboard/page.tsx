@@ -114,8 +114,8 @@ export default function LeaderboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background py-10 px-4 sm:px-6 lg:px-8 text-stone-800">
-      <div className="max-w-7xl mx-auto space-y-4">
+    <div className="min-h-screen bg-background py-6 md:py-10 px-4 sm:px-6 lg:px-10 text-stone-800">
+      <div className="max-w-[1680px] w-full mx-auto space-y-4">
 
         {/* 🔰 リーダーボードの見方ガイド（初心者安心折りたたみガイド） */}
         <div className="bg-amber-500/10 border border-amber-300/60 rounded-2xl p-4 text-stone-900 shadow-sm mb-4">

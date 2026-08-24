@@ -929,7 +929,7 @@ export function LibraryTabContentInner() {
   if (selectedArticle) {
     return (
       <>
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="p-6 md:p-12 max-w-5xl mx-auto flex flex-col gap-6">
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="p-4 md:p-8 max-w-[1600px] w-full mx-auto flex flex-col gap-6">
         <div className="flex justify-between items-center flex-wrap gap-4">
           <button onClick={() => { setSelectedArticle(null); setEditing(false); }} className="flex items-center gap-2 text-violet-700 font-bold hover:text-violet-900 transition-colors">
             <ChevronLeft size={18} /> 一覧へ戻る
@@ -1262,7 +1262,7 @@ export function LibraryTabContentInner() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto flex flex-col gap-8">
+    <div className="max-w-[1600px] w-full mx-auto flex flex-col gap-8">
       <motion.header initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.5 }}>
         <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-2 flex items-center gap-4">
           <Book className="text-violet-700" size={36} /> <span className="text-gradient text-gradient-purple">攻略ライブラリ</span>

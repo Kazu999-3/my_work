@@ -69,7 +69,7 @@ export default function GuidePage() {
       </div>
 
       {/* メインコンテンツ */}
-      <div className="max-w-4xl mx-auto px-4 md:px-6 py-10 space-y-12">
+      <div className="max-w-[1550px] w-full mx-auto px-4 md:px-8 py-10 space-y-12">
         
         {/* 🌟 3ステップ初期登録 */}
         <section>

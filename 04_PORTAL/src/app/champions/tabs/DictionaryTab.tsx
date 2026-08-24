@@ -780,7 +780,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
 
   if (selected) {
     return (
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="min-h-screen p-6 md:p-12 max-w-7xl mx-auto flex flex-col gap-8">
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="min-h-screen p-4 md:p-8 lg:p-10 max-w-[1680px] w-full mx-auto flex flex-col gap-6">
         <div className="flex items-center justify-between flex-wrap gap-3">
           <button onClick={() => setSelected(null)} className="flex items-center gap-2 text-[#c89b3c] font-bold w-fit hover:text-stone-900 transition-colors">
             <ChevronLeft size={18} /> 辞典トップに戻る
@@ -1809,7 +1809,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                                               </tr>
                                             );
                                           })}
-                                        </tbody>
+                        </tbody>
                                       </table>
                                     </div>
                                   </div>
@@ -1955,7 +1955,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
   }
 
   return (
-    <div className="min-h-screen p-6 md:p-12 max-w-7xl mx-auto flex flex-col gap-6">
+    <div className="min-h-screen p-6 md:p-12 max-w-[1680px] w-full mx-auto flex flex-col gap-6">
 
       {/* 🔰 チャンピオン辞典の使い方ガイド（初心者安心折りたたみガイド） */}
       <div className="bg-amber-500/10 border border-amber-300/60 rounded-2xl p-4 text-stone-900 shadow-sm">
@@ -2225,8 +2225,8 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
 
       {/* ✨ AI知見清書・重複排除 プレビューモーダル */}
       {factsRefinePreview && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/60 backdrop-blur-sm animate-fade-in">
-          <div className="bg-[#fcfbf9] border border-stone-200 rounded-3xl w-full max-w-4xl max-h-[90vh] overflow-y-auto p-6 shadow-2xl space-y-5">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-stone-950/75 backdrop-blur-sm animate-fade-in">
+          <div className="bg-[#fcfbf9] border border-stone-200 rounded-3xl w-full max-w-[1550px] w-[95vw] max-h-[92vh] overflow-y-auto p-6 md:p-8 shadow-2xl space-y-5">
             <div className="flex items-center justify-between border-b border-stone-200 pb-4">
               <div>
                 <h3 className="text-xl font-black text-stone-900 flex items-center gap-2">

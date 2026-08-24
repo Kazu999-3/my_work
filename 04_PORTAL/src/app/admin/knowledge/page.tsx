@@ -339,7 +339,7 @@ function KnowledgeBaseContent() {
         )}
       </AnimatePresence>
 
-      <div className="max-w-4xl mx-auto px-4 pt-10">
+      <div className="max-w-[1600px] w-full mx-auto px-4 md:px-8 pt-6 md:pt-10">
         {/* ヘッダー */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10 border-b border-gray-200 pb-8">
           <div className="space-y-1">

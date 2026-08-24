@@ -83,7 +83,7 @@ function SearchInner() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8 text-stone-900">
+    <div className="max-w-[1550px] w-full mx-auto px-4 md:px-8 py-8 text-stone-900">
       <h1 className="text-3xl md:text-4xl font-extrabold mb-2 flex items-center gap-3">
         <SearchIcon className="text-primary" size={32} /> 横断検索
       </h1>

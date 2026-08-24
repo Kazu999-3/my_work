@@ -1517,7 +1517,7 @@ export default function CoachPage() {
         .animate-in { animation: fade-in 0.35s ease forwards; }
       `}</style>
 
-      <div className="mx-auto max-w-4xl">
+      <div className="mx-auto max-w-[1600px] w-full px-4 md:px-8">
         {/* ヘッダー */}
         <div className="mb-8 text-center relative">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100/80 border border-emerald-300 text-emerald-800 text-[10px] font-extrabold mb-3 shadow-xs">

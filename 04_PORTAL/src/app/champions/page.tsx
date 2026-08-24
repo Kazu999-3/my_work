@@ -52,9 +52,9 @@ function ChampionsShell() {
   }
 
   return (
-    <div className="min-h-screen p-6 md:p-12 max-w-7xl mx-auto flex flex-col gap-8">
+    <div className="min-h-screen p-4 md:p-8 lg:p-10 max-w-[1680px] w-full mx-auto flex flex-col gap-6">
       <motion.header initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.5 }}>
-        <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-2 flex items-center gap-4">
+        <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight mb-2 flex items-center gap-3">
           <BookOpen className="text-[#c89b3c]" size={36} />
           <span className="text-gradient text-gradient-gold">チャンピオン辞典</span>
         </h1>
