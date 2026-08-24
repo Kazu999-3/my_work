@@ -97,7 +97,7 @@ export default function Sidebar() {
     localStorage.setItem('sovereign_sidebar_collapsed', String(nextState));
   };
 
-  const isAdminGatedPage = pathname.startsWith('/admin') || ['/ktm-admin', '/champions', '/coach', '/search'].some(p => pathname.startsWith(p));
+  const isAdminGatedPage = pathname.startsWith('/admin') || ['/ktm-admin', '/champions', '/coach', '/search', '/lane-guides'].some(p => pathname.startsWith(p));
 
   const items = isAdminGatedPage
     ? (activeTab === 'admin' ? ADMIN_ONLY_MENU_ITEMS : ADMIN_GENERAL_MENU_ITEMS)
