@@ -1159,12 +1159,12 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
 
             {/* 立ち回り解説 */}
             <div>
-              <label className="block text-xs text-gray-400 font-bold mb-1">先出し・後出し評価の根拠 ＆ 立ち回り解説</label>
+              <label className="block text-xs text-gray-500 font-bold mb-1.5">先出し・後出し評価の根拠 ＆ 立ち回り解説</label>
               <textarea
                 value={dataFields.jg_style?.description || ''}
                 onChange={e => setJgStyleField('description', e.target.value)}
                 placeholder="なぜその先出し・後出しの星評価になったのかの具体的な理由や、立ち回り上の強み・弱みを記述..."
-                className="w-full h-20 bg-white border border-border rounded-lg px-3 py-2 text-stone-900 text-xs resize-none focus:outline-none focus:border-emerald-500 transition-colors"
+                className="w-full min-h-[90px] h-auto bg-white border border-border rounded-xl p-3 text-stone-900 text-xs leading-relaxed resize-y focus:outline-none focus:border-emerald-500 transition-colors shadow-2xs font-sans"
               />
             </div>
 
@@ -1528,7 +1528,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                             <History size={13} /> 📜 履歴
                           </button>
                         </div>
-                        <textarea value={val as string} onChange={e => updateCustomField(key, e.target.value)} className="w-full h-28 bg-black/3 border border-black/10 rounded-xl p-3 text-sm text-stone-800 outline-none focus:border-black/20 resize-y shadow-inner transition-colors" placeholder={`${key}を記録...`} />
+                        <textarea value={val as string} onChange={e => updateCustomField(key, e.target.value)} className="w-full min-h-[140px] h-auto bg-white border border-black/10 rounded-xl p-3.5 text-sm text-stone-800 leading-relaxed outline-none focus:border-pink-500/60 resize-y shadow-inner transition-colors font-sans" placeholder={`${key}を記録...`} />
                       </div>
                     ))}
                   </div>
@@ -2332,33 +2332,71 @@ const TextAreaCard = ({
   onOpenHistory?: (fieldKey: string, title: string) => void;
 }) => {
   const [textColor, borderColor] = color.split(' ');
+  const [isEditing, setIsEditing] = useState(false);
+
   return (
-    <div className={`glass-panel border-t-2 p-5 rounded-2xl group transition-all hover:shadow-[0_4px_20px_rgba(0,0,0,0.3)] ${borderColor}`}>
-      <div className="flex items-center justify-between mb-4">
-        <h3 className={`text-sm font-black flex items-center gap-2 ${textColor}`}>
-          <Icon size={16} /> {title}
-        </h3>
-        {fieldKey && onOpenHistory && (
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              e.preventDefault();
-              onOpenHistory(fieldKey, title);
-            }}
-            className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-black/5 hover:bg-amber-100 hover:text-amber-800 text-stone-700 transition-all flex items-center gap-1 border border-black/10 shadow-xs cursor-pointer"
-            title="この項目の変更履歴を確認"
+    <div className={`glass-panel border-t-2 p-5 rounded-2xl group transition-all hover:shadow-[0_4px_20px_rgba(0,0,0,0.15)] ${borderColor} flex flex-col justify-between`}>
+      <div>
+        <div className="flex items-center justify-between mb-3 border-b border-black/5 pb-2.5">
+          <h3 className={`text-sm font-black flex items-center gap-2 ${textColor}`}>
+            <Icon size={16} /> {title}
+          </h3>
+          <div className="flex items-center gap-1.5">
+            {fieldKey && onOpenHistory && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  onOpenHistory(fieldKey, title);
+                }}
+                className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-black/5 hover:bg-amber-100 hover:text-amber-800 text-stone-700 transition-all flex items-center gap-1 border border-black/10 shadow-xs cursor-pointer"
+                title="この項目の変更履歴を確認"
+              >
+                <History size={12} /> 📜 履歴
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => setIsEditing(!isEditing)}
+              className={`text-[11px] font-bold px-2.5 py-1 rounded-lg transition-all flex items-center gap-1 border shadow-xs cursor-pointer ${
+                isEditing
+                  ? 'bg-amber-600 text-white border-amber-600'
+                  : 'bg-black/5 hover:bg-black/10 text-stone-700 border-black/10'
+              }`}
+            >
+              <Edit2 size={12} />
+              <span>{isEditing ? '完了' : '編集'}</span>
+            </button>
+          </div>
+        </div>
+
+        {isEditing ? (
+          <textarea
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            className="w-full min-h-[160px] bg-white border border-stone-300 rounded-xl p-3.5 text-sm text-stone-900 leading-relaxed outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 shadow-inner transition-colors resize-y font-sans"
+            placeholder={`${title}を記録...`}
+            autoFocus
+          />
+        ) : (
+          <div
+            onClick={() => setIsEditing(true)}
+            className="min-h-[90px] p-2 text-stone-800 text-sm leading-relaxed cursor-pointer hover:bg-black/[0.02] rounded-xl transition"
+            title="クリックして編集"
           >
-            <History size={13} /> 📜 履歴
-          </button>
+            {value ? (
+              <div className="prose prose-sm max-w-none prose-stone prose-p:my-1 prose-ul:my-1 prose-li:my-0.5 text-stone-800 font-normal">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{value}</ReactMarkdown>
+              </div>
+            ) : (
+              <p className="text-stone-400 italic text-xs py-2">
+                まだ知見が記録されていません。クリックまたは「編集」ボタンから追記できます。
+              </p>
+            )}
+          </div>
         )}
       </div>
-      <textarea
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full h-28 bg-black/3 border border-black/10 rounded-xl p-3 text-sm text-stone-800 outline-none focus:border-black/20 resize-y shadow-inner transition-colors"
-        placeholder={`${title}を記録...`}
-      />
     </div>
   );
 };
