@@ -2,10 +2,28 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Activity, Zap, ShieldAlert, Cpu, Network, Gamepad2, RefreshCw, CheckCircle2, X, ChevronRight, Sparkles } from 'lucide-react';
+import { Activity, Zap, ShieldAlert, Cpu, Network, Gamepad2, RefreshCw, CheckCircle2, X, ChevronRight, Sparkles, Play, AlertTriangle } from 'lucide-react';
 import { supabaseBrowser } from '../../../lib/supabaseBrowserClient';
 import Link from 'next/link';
+import TodoBoard from './TodoBoard';
 
+function summarizeError(errorStr?: string): { label: string; bg: string } {
+  if (!errorStr) return { label: 'エラー発生', bg: 'bg-stone-100 text-stone-700 border-stone-200' };
+  const s = errorStr.toLowerCase();
+  if (s.includes('429') || s.includes('quota') || s.includes('resource_exhausted')) {
+    return { label: 'Gemini API 一時混雑 (429)', bg: 'bg-amber-100 text-amber-900 border-amber-300' };
+  }
+  if (s.includes('404') || s.includes('not found') || s.includes('private') || s.includes('deleted')) {
+    return { label: '動画が非公開/削除済み', bg: 'bg-rose-100 text-rose-900 border-rose-300' };
+  }
+  if (s.includes('timeout') || s.includes('econnreset') || s.includes('network')) {
+    return { label: 'ネットワーク接続タイムアウト', bg: 'bg-orange-100 text-orange-900 border-orange-300' };
+  }
+  if (s.includes('syntax') || s.includes('parse')) {
+    return { label: 'JSONパース不整合', bg: 'bg-purple-100 text-purple-900 border-purple-300' };
+  }
+  return { label: '処理失敗', bg: 'bg-rose-100 text-rose-900 border-rose-300' };
+}
 
 export default function Home() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
@@ -15,6 +33,9 @@ export default function Home() {
   const [recentYoutubeQueue, setRecentYoutubeQueue] = useState<any[]>([]);
   const [needsAttention, setNeedsAttention] = useState<{ failedTasks: any[]; youtubeErrorCount: number; dictReviewCount: number }>({ failedTasks: [], youtubeErrorCount: 0, dictReviewCount: 0 });
   const [retryingTaskId, setRetryingTaskId] = useState<string | null>(null);
+  const [isRetryingAll, setIsRetryingAll] = useState(false);
+  const [triggeringJob, setTriggeringJob] = useState<string | null>(null);
+  const [triggerMessage, setTriggerMessage] = useState<string | null>(null);
   const [setupChecks, setSetupChecks] = useState<Record<string, boolean> | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<string>('');
@@ -33,6 +54,55 @@ export default function Home() {
     queue: [],
     history: []
   });
+
+  // クイックジョブ手動実行
+  const handleTriggerJob = async (job: string, label: string) => {
+    setTriggeringJob(job);
+    setTriggerMessage(null);
+    try {
+      const res = await fetch('/api/admin/system/trigger', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ job }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setTriggerMessage(`✅ 「${label}」を起動しました。`);
+        fetchData(true);
+      } else {
+        setTriggerMessage(`⚠️ エラー: ${data.error || '起動に失敗しました'}`);
+      }
+    } catch {
+      setTriggerMessage('⚠️ 通信エラーが発生しました。');
+    } finally {
+      setTriggeringJob(null);
+      setTimeout(() => setTriggerMessage(null), 5000);
+    }
+  };
+
+  // 失敗タスクの一括再実行
+  const handleRetryAll = async () => {
+    if (needsAttention.failedTasks.length === 0) return;
+    setIsRetryingAll(true);
+    try {
+      const res = await fetch('/api/admin/tasks/retry-all', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tasks: needsAttention.failedTasks }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert(`⚡ ${data.retriedCount}件の失敗タスクを一括再実行しました。`);
+        fetchData(true);
+      } else {
+        alert(data.error || '一括再実行に失敗しました。');
+      }
+    } catch {
+      alert('通信エラーが発生しました。');
+    } finally {
+      setIsRetryingAll(false);
+    }
+  };
 
   // 1. 認証の確認（middleware.tsが/admin/*を既にCookieでゲートしているため、
   // ここに到達している時点でCookie自体は有効。UI側のローディング制御のみ。）
@@ -269,46 +339,156 @@ export default function Home() {
         </div>
       </motion.header>
 
-      {/* 要対応パネル: 失敗タスクとエラーをスリム表示 */}
+      {/* ワーカー停止監視アラート */}
+      {!systemStatus.worker.active && (
+        <div className="bg-rose-50 border-2 border-rose-300 rounded-2xl p-4 shadow-xs flex items-center justify-between gap-3 text-rose-950">
+          <div className="flex items-center gap-3">
+            <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0 animate-bounce" />
+            <div>
+              <span className="font-black text-xs block">⚠️ ローカルPythonワーカーが停止しています</span>
+              <p className="text-[11px] text-rose-700 font-medium">
+                バックグラウンド収集・分析タスクが待機中になります。ポータルの「ワーカー起動」またはコマンドラインからワーカーを起動してください。
+              </p>
+            </div>
+          </div>
+          {systemStatus.worker.last_active && (
+            <span className="text-[10px] text-rose-500 font-mono shrink-0">
+              最終稼働: {new Date(systemStatus.worker.last_active).toLocaleTimeString('ja-JP')}
+            </span>
+          )}
+        </div>
+      )}
+
+      {/* 🚀 クイックジョブ手動実行バー */}
+      <div className="bg-white/90 border border-stone-200/90 rounded-2xl p-4 shadow-xs space-y-2.5">
+        <div className="flex items-center justify-between">
+          <h3 className="text-xs font-black text-stone-900 flex items-center gap-1.5 uppercase tracking-wider">
+            <Zap className="w-4 h-4 text-amber-600" />
+            定期ジョブ即時実行（クイックトリガー）
+          </h3>
+          {triggerMessage && (
+            <span className="text-xs font-bold text-amber-800 animate-fade-in font-medium">
+              {triggerMessage}
+            </span>
+          )}
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <button
+            type="button"
+            onClick={() => handleTriggerJob('youtube_absorber', 'YouTube動画収集')}
+            disabled={triggeringJob !== null}
+            className="p-2.5 rounded-xl border border-stone-200 bg-stone-50/70 hover:bg-amber-50 hover:border-amber-300 text-left transition cursor-pointer flex items-center gap-2 group disabled:opacity-50"
+          >
+            <Play className={`w-3.5 h-3.5 text-amber-600 group-hover:scale-110 transition shrink-0 ${triggeringJob === 'youtube_absorber' ? 'animate-spin' : ''}`} />
+            <div className="min-w-0">
+              <span className="text-xs font-black text-stone-900 block truncate">YouTube収集</span>
+              <span className="text-[9px] text-stone-500 block truncate">新着動画を即時解析</span>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleTriggerJob('dict_fact_check', '辞典ファクトチェック')}
+            disabled={triggeringJob !== null}
+            className="p-2.5 rounded-xl border border-stone-200 bg-stone-50/70 hover:bg-amber-50 hover:border-amber-300 text-left transition cursor-pointer flex items-center gap-2 group disabled:opacity-50"
+          >
+            <Play className={`w-3.5 h-3.5 text-amber-600 group-hover:scale-110 transition shrink-0 ${triggeringJob === 'dict_fact_check' ? 'animate-spin' : ''}`} />
+            <div className="min-w-0">
+              <span className="text-xs font-black text-stone-900 block truncate">辞典ファクトチェック</span>
+              <span className="text-[9px] text-stone-500 block truncate">全知見の整合性検査</span>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleTriggerJob('discord_sync', 'Discord新メンバー同期')}
+            disabled={triggeringJob !== null}
+            className="p-2.5 rounded-xl border border-stone-200 bg-stone-50/70 hover:bg-indigo-50 hover:border-indigo-300 text-left transition cursor-pointer flex items-center gap-2 group disabled:opacity-50"
+          >
+            <Play className={`w-3.5 h-3.5 text-indigo-600 group-hover:scale-110 transition shrink-0 ${triggeringJob === 'discord_sync' ? 'animate-spin' : ''}`} />
+            <div className="min-w-0">
+              <span className="text-xs font-black text-stone-900 block truncate">Discord同期</span>
+              <span className="text-[9px] text-stone-500 block truncate">新メンバーを名簿登録</span>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleTriggerJob('patch_update', 'パッチトレンド同期')}
+            disabled={triggeringJob !== null}
+            className="p-2.5 rounded-xl border border-stone-200 bg-stone-50/70 hover:bg-emerald-50 hover:border-emerald-300 text-left transition cursor-pointer flex items-center gap-2 group disabled:opacity-50"
+          >
+            <Play className={`w-3.5 h-3.5 text-emerald-600 group-hover:scale-110 transition shrink-0 ${triggeringJob === 'patch_update' ? 'animate-spin' : ''}`} />
+            <div className="min-w-0">
+              <span className="text-xs font-black text-stone-900 block truncate">パッチ・トレンド</span>
+              <span className="text-[9px] text-stone-500 block truncate">最新OPチャンピオン取得</span>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      {/* 📌 業務＆開発TODOボード */}
+      <TodoBoard />
+
+      {/* 要対応パネル: 失敗タスクとエラーを一括リトライ付きで表示 */}
       {(needsAttention.failedTasks.length > 0 || needsAttention.youtubeErrorCount > 0 || needsAttention.dictReviewCount > 0) && (
         <motion.div
           initial={{ y: -10, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          className="glass-panel rounded-2xl p-3 border border-rose-300 bg-rose-50/70"
+          className="glass-panel rounded-2xl p-4 border border-rose-300 bg-rose-50/80 space-y-3"
         >
-          <h3 className="text-base font-black text-rose-700 flex items-center gap-2 mb-2.5">
-            <ShieldAlert size={18} /> ⚠️ 要対応（{needsAttention.failedTasks.length + (needsAttention.youtubeErrorCount > 0 ? 1 : 0) + (needsAttention.dictReviewCount > 0 ? 1 : 0)}件）
-          </h3>
-          <div className="space-y-1.5">
-            {needsAttention.failedTasks.map((task) => (
-              <div key={task.id} className="flex items-center justify-between gap-2.5 p-2.5 rounded-xl bg-white border border-black/5">
-                <div className="min-w-0">
-                  <div className="text-xs font-bold text-stone-900">
-                    {TASK_LABELS[task.task_type] || task.task_type}
-                    {task.payload?.champion && <span className="text-stone-500 font-normal"> （{task.payload.champion}/{task.payload.role || ''}）</span>}
-                    {task.executor && <span className="ml-1.5 text-[9px] text-stone-500 font-normal">({task.executor === 'cloud' ? 'クラウド' : 'ローカル'})</span>}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-rose-200 pb-2.5">
+            <h3 className="text-sm font-black text-rose-800 flex items-center gap-2">
+              <ShieldAlert size={18} /> ⚠️ 要対応タスク（{needsAttention.failedTasks.length + (needsAttention.youtubeErrorCount > 0 ? 1 : 0) + (needsAttention.dictReviewCount > 0 ? 1 : 0)}件）
+            </h3>
+
+            {needsAttention.failedTasks.length > 0 && (
+              <button
+                type="button"
+                onClick={handleRetryAll}
+                disabled={isRetryingAll}
+                className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white font-black text-xs rounded-xl shadow-xs transition-all flex items-center gap-1.5 cursor-pointer shrink-0"
+              >
+                <RefreshCw size={12} className={isRetryingAll ? 'animate-spin' : ''} />
+                <span>⚡ 失敗タスクを一括再実行 ({needsAttention.failedTasks.length}件)</span>
+              </button>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            {needsAttention.failedTasks.map((task) => {
+              const errSummary = summarizeError(task.error_message);
+              return (
+                <div key={task.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 rounded-xl bg-white border border-rose-100 shadow-2xs">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap mb-1">
+                      <span className="text-xs font-black text-stone-900">
+                        {TASK_LABELS[task.task_type] || task.task_type}
+                        {task.payload?.champion && <span className="text-stone-500 font-normal"> （{task.payload.champion}/{task.payload.role || ''}）</span>}
+                      </span>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${errSummary.bg}`}>
+                        {errSummary.label}
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-stone-500 font-mono truncate" title={task.error_message || ''}>
+                      {(task.error_message || '').slice(0, 90) || '(エラー詳細なし)'}
+                    </div>
                   </div>
-                  <div className="text-[11px] text-stone-500 mt-0.5 truncate" title={task.error_message || ''}>
-                    {(task.error_message || '').slice(0, 80) || '(エラー詳細なし)'}
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Link href={TASK_LINKS[task.task_type] || '/admin/dashboard'} className="text-[11px] font-bold text-stone-500 hover:text-stone-900 underline">
+                      詳細へ
+                    </Link>
                   </div>
                 </div>
-                {task.task_type === 'champion_trend' ? (
-                  <button
-                    onClick={() => handleRetryFailedTask(task)}
-                    disabled={retryingTaskId === task.id}
-                    className="shrink-0 px-2.5 py-1 bg-rose-100 hover:bg-rose-200 border border-rose-300 text-rose-700 font-bold text-[11px] rounded-lg transition-all disabled:opacity-50 flex items-center gap-1"
-                  >
-                    <RefreshCw size={11} className={retryingTaskId === task.id ? 'animate-spin' : ''} /> 再実行
-                  </button>
-                ) : (
-                  <Link href={TASK_LINKS[task.task_type] || '/admin/dashboard'} className="shrink-0 text-[11px] font-bold text-stone-500 hover:text-stone-900 underline">詳細へ</Link>
-                )}
-              </div>
-            ))}
+              );
+            })}
+
             {needsAttention.youtubeErrorCount > 0 && (
               <Link
                 href="/admin/youtube"
-                className="flex items-center justify-between gap-2.5 p-2.5 rounded-xl bg-white border border-black/5 hover:border-rose-300 transition-colors"
+                className="flex items-center justify-between gap-2.5 p-2.5 rounded-xl bg-white border border-rose-200 hover:border-rose-300 transition-colors"
               >
                 <span className="text-xs font-bold text-stone-900">YouTube動画キューのエラー・手動対応要 {needsAttention.youtubeErrorCount}件</span>
                 <span className="text-[11px] font-bold text-rose-700">管理画面へ →</span>
@@ -317,7 +497,7 @@ export default function Home() {
             {needsAttention.dictReviewCount > 0 && (
               <Link
                 href="/admin/dict-health"
-                className="flex items-center justify-between gap-2.5 p-2.5 rounded-xl bg-white border border-black/5 hover:border-rose-300 transition-colors"
+                className="flex items-center justify-between gap-2.5 p-2.5 rounded-xl bg-white border border-rose-200 hover:border-rose-300 transition-colors"
               >
                 <span className="text-xs font-bold text-stone-900">辞典の鮮度レビューで要対応 {needsAttention.dictReviewCount}件（週次自動検知）</span>
                 <span className="text-[11px] font-bold text-rose-700">データ整備へ →</span>

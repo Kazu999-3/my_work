@@ -242,43 +242,65 @@ export default function TaskStatusDrawer({ collapsed = false, align = 'left' }: 
           {/* 2. 要対応・失敗したタスク */}
           {failedTasks.length > 0 && (
             <div className="space-y-2">
-              <div className="flex items-center gap-1.5 text-rose-700 font-bold text-xs">
-                <AlertTriangle size={14} />
-                <span>要対応・失敗タスク ({failedTasks.length}件)</span>
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-rose-700 text-xs flex items-center gap-1">
+                  <AlertTriangle size={14} /> 要対応・失敗 ({failedTasks.length}件)
+                </span>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    setLoading(true);
+                    try {
+                      await fetch('/api/admin/tasks/retry-all', {
+                        method: 'POST', credentials: 'include',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ tasks: failedTasks }),
+                      });
+                      fetchTaskStatus();
+                    } finally {
+                      setLoading(false);
+                    }
+                  }}
+                  className="text-[10px] font-black text-rose-700 hover:text-rose-900 transition underline cursor-pointer"
+                >
+                  ⚡ 全て再実行
+                </button>
               </div>
-              <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
-                {failedTasks.map((t) => (
-                  <div key={t.id} className="p-2.5 rounded-xl border border-rose-200 bg-rose-50 space-y-1">
-                    <div className="flex justify-between items-center gap-2">
-                      <span className="font-bold text-stone-900 text-[11px] truncate">
-                        {TASK_LABELS[t.task_type] || t.task_type}
-                        {t.payload?.champion && <span className="text-stone-500 font-normal"> ({t.payload.champion})</span>}
-                      </span>
-                      {t.task_type === 'champion_db_bulk_update' ? (
-                        <Link
-                          href="/admin/dict-health"
-                          onClick={() => setOpen(false)}
-                          className="shrink-0 px-2 py-0.5 bg-rose-600 hover:bg-rose-700 text-white font-bold text-[10px] rounded-md shadow flex items-center gap-1"
-                        >
-                          状況を見る
-                        </Link>
-                      ) : (t.task_type === 'champion_trend' || RETRYABLE_TASK_TYPES.has(t.task_type)) && (
-                        <button
-                          onClick={() => handleRetryTask(t)}
-                          disabled={retryingTaskId === t.id}
-                          className="shrink-0 px-2 py-0.5 bg-rose-600 hover:bg-rose-700 text-white font-bold text-[10px] rounded-md shadow disabled:opacity-50 flex items-center gap-1"
-                        >
-                          <RefreshCw size={10} className={retryingTaskId === t.id ? 'animate-spin' : ''} /> 再実行
-                        </button>
+
+              <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                {failedTasks.map((t) => {
+                  const errorMsg = (t.error_message || '').toLowerCase();
+                  const errorLabel = errorMsg.includes('429') ? 'Gemini 429混雑' : errorMsg.includes('404') ? '動画削除' : '処理失敗';
+                  return (
+                    <div key={t.id} className="p-2.5 rounded-xl border border-rose-200 bg-rose-50 space-y-1">
+                      <div className="flex justify-between items-center gap-2">
+                        <span className="font-bold text-stone-900 text-[11px] truncate">
+                          {TASK_LABELS[t.task_type] || t.task_type}
+                          {t.payload?.champion && <span className="text-stone-500 font-normal"> ({t.payload.champion})</span>}
+                        </span>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <span className="text-[9px] font-black text-rose-800 bg-rose-200/80 px-1.5 py-0.2 rounded">
+                            {errorLabel}
+                          </span>
+                          {(t.task_type === 'champion_trend' || RETRYABLE_TASK_TYPES.has(t.task_type)) && (
+                            <button
+                              onClick={() => handleRetryTask(t)}
+                              disabled={retryingTaskId === t.id}
+                              className="px-2 py-0.5 bg-rose-600 hover:bg-rose-700 text-white font-bold text-[10px] rounded-md shadow disabled:opacity-50 flex items-center gap-1 cursor-pointer"
+                            >
+                              <RefreshCw size={10} className={retryingTaskId === t.id ? 'animate-spin' : ''} /> 再実行
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                      {t.error_message && (
+                        <p className="text-[10px] text-rose-700 leading-tight truncate font-mono" title={t.error_message}>
+                          {t.error_message}
+                        </p>
                       )}
                     </div>
-                    {t.error_message && (
-                      <p className="text-[10px] text-rose-700 leading-tight truncate" title={t.error_message}>
-                        {t.error_message}
-                      </p>
-                    )}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
