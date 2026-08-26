@@ -422,7 +422,105 @@ export default function ScoutTab({ onLiveMatchDetected }: {
 
                   {/* 敵チーム全員の簡易分析グリッド */}
                   {result.allParticipants && result.allParticipants.some((p: any) => p.isEnemy) && (
-                    <div className="bg-black/3 border border-black/10 rounded-3xl p-6 shadow-xl space-y-4">
+                    <div className="bg-black/3 border border-black/10 rounded-3xl p-6 shadow-xl space-y-5">
+                      {/* 🎯 敵の穴特定 ＆ JGガンク優先度サマリー */}
+                      {(() => {
+                        const enemies = result.allParticipants.filter((p: any) => p.isEnemy);
+                        // ガンク優先度スコアの算出 (連敗ティルト: +35, 被FB率高: +30, 低勝率: +20, OTP: -30)
+                        const scoredEnemies = enemies.map((e: any) => {
+                          let score = 50;
+                          const reasons: string[] = [];
+                          if (e.isTilted || (e.consecutiveLosses && e.consecutiveLosses >= 2)) {
+                            score += 35;
+                            reasons.push(`${e.consecutiveLosses || 2}連敗中(ティルト気味)`);
+                          }
+                          if (e.isVulnerable || (e.fbRate && e.fbRate >= 25)) {
+                            score += 30;
+                            reasons.push(`被ファーストブラッド率高(${e.fbRate || 30}%)`);
+                          }
+                          if (e.winRate && e.winRate <= 45) {
+                            score += 20;
+                            reasons.push(`勝率低迷(${e.winRate}%)`);
+                          }
+                          if (e.isOtp) {
+                            score -= 30;
+                            reasons.push(`OTP熟練者(${e.otpChampion || e.championName})`);
+                          }
+                          return { ...e, gankScore: score, reasons };
+                        }).sort((a: any, b: any) => b.gankScore - a.gankScore);
+
+                        const primaryTarget = scoredEnemies[0];
+                        const avoidTarget = [...scoredEnemies].reverse().find((e: any) => e.isOtp || e.gankScore < 40);
+
+                        return (
+                          <div className="bg-gradient-to-r from-rose-900/10 via-amber-900/5 to-transparent border border-rose-300 rounded-2xl p-4 space-y-3">
+                            <div className="flex items-center justify-between">
+                              <h4 className="text-xs font-black text-rose-950 flex items-center gap-1.5 uppercase tracking-wider">
+                                <Zap className="w-4 h-4 text-rose-600 animate-pulse" />
+                                <span>ローディング速報: JGガンク優先ターゲット診断</span>
+                              </h4>
+                              <span className="text-[10px] font-black bg-rose-600 text-white px-2 py-0.5 rounded-full">
+                                敵の隙を自動検知
+                              </span>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                              {/* 🎯 最優先ガンクターゲット */}
+                              {primaryTarget && (
+                                <div className="bg-white p-3 rounded-xl border border-rose-200 shadow-2xs space-y-1">
+                                  <div className="text-[10px] font-black text-rose-600 flex items-center gap-1">
+                                    <span>🎯</span> 【最優先破壊レーン】
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <Image
+                                      src={getChampIcon(primaryTarget.championName || 'Unknown')}
+                                      alt={primaryTarget.championName || 'Champ'}
+                                      width={28}
+                                      height={28}
+                                      className="rounded-lg border border-rose-200"
+                                    />
+                                    <div>
+                                      <div className="font-black text-stone-900">
+                                        {primaryTarget.role}: {primaryTarget.championName} ({primaryTarget.name})
+                                      </div>
+                                      <div className="text-[10px] text-rose-700 font-bold">
+                                        ⚠️ 理由: {primaryTarget.reasons.join('、') || '立ち位置の甘さを突く'}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* 🛡️ 警戒・放置推奨レーン */}
+                              {avoidTarget && avoidTarget.name !== primaryTarget?.name && (
+                                <div className="bg-white p-3 rounded-xl border border-stone-200 shadow-2xs space-y-1">
+                                  <div className="text-[10px] font-black text-stone-600 flex items-center gap-1">
+                                    <span>🛡️</span> 【警戒・カウンター警戒レーン】
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <Image
+                                      src={getChampIcon(avoidTarget.championName || 'Unknown')}
+                                      alt={avoidTarget.championName || 'Champ'}
+                                      width={28}
+                                      height={28}
+                                      className="rounded-lg border border-stone-200"
+                                    />
+                                    <div>
+                                      <div className="font-black text-stone-900">
+                                        {avoidTarget.role}: {avoidTarget.championName} ({avoidTarget.name})
+                                      </div>
+                                      <div className="text-[10px] text-stone-600 font-medium">
+                                        熟練度が高いため、無理なダイブを避け味方の救援優先
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })()}
+
                       <h3 className="text-sm font-black text-stone-900 uppercase tracking-wider flex items-center gap-2 border-b border-black/10 pb-3">
                         <Users className="w-4 h-4 text-cyan-600" />
                         <span>敵チーム メンバー情報 & ガンク脆弱レーン特定</span>

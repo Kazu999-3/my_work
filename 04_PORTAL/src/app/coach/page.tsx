@@ -1572,13 +1572,27 @@ export default function CoachPage() {
           <p className="mt-1 text-xs text-stone-500 font-medium">
             Riot API × ナレッジDB × Gemini AI があなたの勝率を上げる
           </p>
-          <div className="mt-3 flex items-center justify-center gap-3">
+          <div className="mt-3 flex items-center justify-center gap-2.5 flex-wrap">
             <PushOptIn scope="admin" label="ポータル通知" inline />
             <button
               onClick={() => setIsReflectionModalOpen(true)}
               className="px-4 py-2 bg-gradient-to-r from-amber-700 to-amber-800 hover:from-amber-800 hover:to-amber-900 text-white font-bold text-xs rounded-xl shadow-md transition-all hover:scale-105 flex items-center gap-1.5 cursor-pointer"
             >
               <span>⚡</span> 1分ソロQ振り返り
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                window.open(
+                  '/hud',
+                  'LoL_Minimal_HUD',
+                  'width=420,height=600,menubar=no,toolbar=no,location=no,status=no,resizable=yes'
+                );
+              }}
+              className="px-4 py-2 bg-[#12151d] hover:bg-[#1c2230] text-amber-400 border border-amber-500/40 font-bold text-xs rounded-xl shadow-md transition-all hover:scale-105 flex items-center gap-1.5 cursor-pointer"
+              title="サブモニターや画面端に置いておける極小ウィンドウ"
+            >
+              <span>🖥️</span> 試合中HUD (小窓)
             </button>
           </div>
 
