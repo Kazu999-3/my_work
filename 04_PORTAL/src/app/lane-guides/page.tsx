@@ -39,13 +39,13 @@ export default function LaneGuidesPage() {
 
   useEffect(() => {
     fetch('/api/auth/verify', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) })
-      .then((res) => res.json())
-      .then((d) => setIsAuthenticated(!!d.valid))
+      .then((res) => {
+        setIsAuthenticated(res.ok);
+      })
       .catch(() => setIsAuthenticated(false));
   }, []);
 
   const fetchGuides = () => {
-    if (!isAuthenticated) return;
     fetch('/api/admin/lane-guides', { credentials: 'include' })
       .then(r => r.json())
       .then(d => {
@@ -57,7 +57,7 @@ export default function LaneGuidesPage() {
 
   useEffect(() => {
     fetchGuides();
-  }, [isAuthenticated]);
+  }, []);
 
   // AI清書プレビューの取得
   const handleStartRefine = async (laneKey: string) => {

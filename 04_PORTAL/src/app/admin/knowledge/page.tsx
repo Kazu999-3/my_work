@@ -475,44 +475,78 @@ function KnowledgeBaseContent() {
             </div>
 
             {/* フィルター＆検索ヘッダー */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white border border-gray-200 rounded-3xl p-4">
-              {/* ジャンルタブ */}
-              <div className="flex flex-wrap gap-1">
+            <div className="space-y-3 bg-white border border-gray-200 rounded-3xl p-4 shadow-sm">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                {/* ジャンルタブ */}
+                <div className="flex flex-wrap gap-1">
+                  {[
+                    { id: 'all', label: 'すべて' },
+                    { id: 'LoL攻略', label: '⚔️ LoL攻略' },
+                    { id: 'AIツール', label: '🤖 AIツール' },
+                    { id: '副業ノウハウ', label: '💰 副業ノウハウ' },
+                    { id: 'その他', label: '📁 その他' },
+                  ].map((tab) => {
+                    const isActive = filterGenre === tab.id;
+                    return (
+                      <button
+                        key={tab.id}
+                        onClick={() => setFilterGenre(tab.id)}
+                        className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                          isActive ? 'bg-pink-500 text-white shadow-md' : 'text-gray-500 hover:text-gray-800 hover:bg-gray-100'
+                        }`}
+                      >
+                        {tab.label}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* 検索窓 */}
+                <form onSubmit={handleSearchSubmit} className="relative w-full sm:w-64">
+                  <input
+                    type="text"
+                    placeholder="ナレッジを検索..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-9 pr-4 py-2 bg-white border border-gray-300 rounded-xl focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500 text-xs text-gray-900"
+                  />
+                  <button type="submit" className="absolute left-3 top-2.5 text-gray-500 hover:text-pink-600 transition-colors">
+                    <Search size={14} />
+                  </button>
+                </form>
+              </div>
+
+              {/* 🏷️ スマート階層タグ（実戦逆引きインデックス） */}
+              <div className="pt-2 border-t border-gray-100 flex items-center gap-1.5 flex-wrap">
+                <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider mr-1">
+                  逆引きタグ:
+                </span>
                 {[
-                  { id: 'all', label: 'すべて', count: knowledgeList.length },
-                  { id: 'LoL攻略', label: '⚔️ LoL攻略' },
-                  { id: 'AIツール', label: '🤖 AIツール' },
-                  { id: '副業ノウハウ', label: '💰 副業ノウハウ' },
-                  { id: 'その他', label: '📁 その他' },
-                ].map((tab) => {
-                  const isActive = filterGenre === tab.id;
+                  { tag: '初動', label: '🌲 初動ルート・スカトル' },
+                  { tag: 'オブジェクト', label: '🐉 ドラゴン・グラブ・バロン' },
+                  { tag: '集団戦', label: '⚔️ 集団戦・立ち回り' },
+                  { tag: 'マクロ', label: '🛡️ マクロ・ウェーブ管理' },
+                  { tag: 'メンタル', label: '🧠 メンタル・連敗対策' },
+                  { tag: '対面', label: '🥊 マッチアップ・対面対策' },
+                  { tag: 'ビルド', label: '📦 ビルド・アイテム' },
+                ].map((item) => {
+                  const isSelected = searchQuery === item.tag;
                   return (
                     <button
-                      key={tab.id}
-                      onClick={() => setFilterGenre(tab.id)}
-                      className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-                        isActive ? 'bg-pink-500 text-white shadow-md' : 'text-gray-500 hover:text-gray-800 hover:bg-gray-100'
+                      key={item.tag}
+                      type="button"
+                      onClick={() => setSearchQuery(isSelected ? '' : item.tag)}
+                      className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border transition-all cursor-pointer ${
+                        isSelected
+                          ? 'bg-purple-600 text-white border-purple-600 shadow-xs'
+                          : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-purple-50 hover:text-purple-700 hover:border-purple-200'
                       }`}
                     >
-                      {tab.label}
+                      {item.label}
                     </button>
                   );
                 })}
               </div>
-
-              {/* 検索窓 */}
-              <form onSubmit={handleSearchSubmit} className="relative w-full sm:w-64">
-                <input
-                  type="text"
-                  placeholder="ナレッジを検索..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2.5 bg-white border border-gray-300 rounded-xl focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500 text-xs text-gray-900"
-                />
-                <button type="submit" className="absolute left-3 top-3 text-gray-500 hover:text-pink-600 transition-colors">
-                  <Search size={14} />
-                </button>
-              </form>
             </div>
 
             {/* ナレッジ一覧リスト */}

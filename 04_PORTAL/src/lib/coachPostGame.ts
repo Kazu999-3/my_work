@@ -205,6 +205,13 @@ export interface WorstDeathInfo {
   lesson: string;
 }
 
+export interface RecallEfficiencyInfo {
+  grade: 'S' | 'A' | 'B' | 'C';
+  avgRecallGold: number;
+  unspentGoldOver1500Events: { min: number; gold: number; summary: string }[];
+  summary: string;
+}
+
 export interface PostGameReviewResult {
   result: {
     win: boolean;
@@ -231,6 +238,7 @@ export interface PostGameReviewResult {
   mapEvents?: SpatialEvent[];
   timingComparison?: JungleTimingComparison | null;
   worstDeath?: WorstDeathInfo | null;
+  recallEfficiency?: RecallEfficiencyInfo | null;
 }
 
 /**
@@ -308,6 +316,7 @@ export async function runPostGameReview(opts: { matchId?: string; focus?: string
   const myItemPurchases: { timestamp: number; sec: number; min: number; itemId: number; itemName: string }[] = [];
   let myJungleCsAt5Min: number | null = null;
   let worstDeath: WorstDeathInfo | null = null;
+  let recallEfficiency: RecallEfficiencyInfo | null = null;
 
   try {
     const timeline = await fetchMatchTimeline(targetMatchId, apiKey);
@@ -566,6 +575,51 @@ export async function runPostGameReview(opts: { matchId?: string; focus?: string
       }
 
       worstDeath = topWorstDeath;
+
+      // リコール効率 ＆ 1500G抱え落ち診断の集計
+      const unspent1500Events: { min: number; gold: number; summary: string }[] = [];
+      const recallGoldList: number[] = [];
+
+      for (let fIdx = 0; fIdx < frames.length; fIdx++) {
+        const frame = frames[fIdx];
+        const min = Math.floor(frame.timestamp / 60000);
+        const myFrame = frame.participantFrames?.[String(myParticipantId)];
+        const currentGold = myFrame?.currentGold ?? 0;
+
+        if (currentGold >= 1500) {
+          unspent1500Events.push({
+            min,
+            gold: currentGold,
+            summary: `${min}分時点: ${currentGold.toLocaleString()}G を未消費のまま戦闘継続`,
+          });
+        }
+      }
+
+      const totalItemsPurchased = myItemPurchases.length;
+      const totalGold = me.goldEarned || 0;
+      const avgRecallGold = totalItemsPurchased > 0 && totalGold > 0 ? Math.round(totalGold / Math.max(1, totalItemsPurchased + 2)) : 1100;
+      
+      const unspentCount = unspent1500Events.length;
+      let grade: 'S' | 'A' | 'B' | 'C' = 'S';
+      let summaryText = '適正なタイミングでリコールし、ゴールドを装備パワーへ効率よく変換できています。';
+
+      if (unspentCount >= 4) {
+        grade = 'C';
+        summaryText = '1500G以上の抱え落ちが頻発しています。オブジェクト前やパワースパイク直前にリコールして装備を整えましょう。';
+      } else if (unspentCount >= 2) {
+        grade = 'B';
+        summaryText = '中盤に1500G以上を持ったまま交戦した場面がありました。ファーム一段落後の即時リコールを意識してください。';
+      } else if (unspentCount === 1) {
+        grade = 'A';
+        summaryText = 'リコールタイミングは概ね良好です。1500Gを超える前に一度ベースへ戻る意識を持つとさらに安定します。';
+      }
+
+      recallEfficiency = {
+        grade,
+        avgRecallGold,
+        unspentGoldOver1500Events: unspent1500Events.slice(0, 3),
+        summary: summaryText,
+      };
     }
   } catch (e) {
     console.warn('[coachPostGame] タイムライン取得に失敗（続行）:', e);
@@ -776,6 +830,7 @@ ${focus ? `4. 今日の焦点の達成度: 「${focus}」を【達成】また�
     mapEvents,
     timingComparison,
     worstDeath,
+    recallEfficiency,
   };
 }
 

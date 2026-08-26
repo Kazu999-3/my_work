@@ -616,6 +616,52 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
                     </div>
                   )}
 
+                  {/* 💰 リコール効率 ＆ 1500G抱え落ち診断 */}
+                  {currentAnalysis.recallEfficiency && (
+                    <div className="bg-amber-50/70 rounded-xl p-3 border border-amber-300 text-xs space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="font-extrabold text-amber-950 flex items-center gap-1.5">
+                          <span>💰</span> リコール効率 ＆ ゴールド抱え落ち診断
+                        </div>
+                        <span className={`text-[10px] font-black px-2 py-0.5 rounded-full border ${
+                          currentAnalysis.recallEfficiency.grade === 'S'
+                            ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                            : currentAnalysis.recallEfficiency.grade === 'A'
+                            ? 'bg-sky-100 text-sky-800 border-sky-300'
+                            : 'bg-amber-100 text-amber-900 border-amber-300'
+                        }`}>
+                          健全度: グレード {currentAnalysis.recallEfficiency.grade}
+                        </span>
+                      </div>
+
+                      <div className="bg-white p-2.5 rounded-lg border border-amber-200 text-[11px] space-y-1.5">
+                        <div className="flex justify-between items-center text-stone-700 font-bold">
+                          <span>平均リコール時ゴールド</span>
+                          <span className="font-mono font-black text-amber-900">
+                            約 {currentAnalysis.recallEfficiency.avgRecallGold?.toLocaleString()} G (適正目安: 900〜1300G)
+                          </span>
+                        </div>
+
+                        <p className="text-stone-700 leading-relaxed font-medium">
+                          💡 {currentAnalysis.recallEfficiency.summary}
+                        </p>
+
+                        {currentAnalysis.recallEfficiency.unspentGoldOver1500Events?.length > 0 && (
+                          <div className="pt-1.5 border-t border-amber-100 space-y-1">
+                            <span className="text-[10px] font-bold text-rose-700 block">
+                              ⚠️ 1500G以上の抱え落ち検知:
+                            </span>
+                            {currentAnalysis.recallEfficiency.unspentGoldOver1500Events.map((ev: any, idx: number) => (
+                              <div key={idx} className="text-[10px] text-rose-800 bg-rose-50 px-2 py-0.5 rounded border border-rose-200 font-semibold">
+                                ・{ev.summary}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
                   {/* ターニングポイント */}
                   {currentAnalysis.turningPoints?.length > 0 && (
                     <div className="bg-white/80 rounded-lg p-2.5 border border-amber-200 text-xs space-y-1">

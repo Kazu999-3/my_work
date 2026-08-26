@@ -33,6 +33,7 @@ interface ParticipantStats {
   damageDealtToObjectives: number;
   totalHeal: number;
   damageSelfMitigated: number;
+  goldEarned?: number;
   win: boolean;
   lane: string; // TOP, JUNGLE, MIDDLE, BOTTOM, UTILITY
 }
@@ -132,6 +133,7 @@ export async function fetchMatchDetails(matchId: string, apiKey: string): Promis
     damageDealtToObjectives: p.damageDealtToObjectives || 0,
     totalHeal: (p.totalHeal || 0) + (p.totalDamageShieldedOnTeammates || 0),
     damageSelfMitigated: p.damageSelfMitigated || 0,
+    goldEarned: p.goldEarned || 0,
     win: p.win,
     lane: p.teamPosition || p.lane // TOP, JUNGLE, MIDDLE, BOTTOM, UTILITY
   }));
