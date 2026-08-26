@@ -370,7 +370,7 @@ export async function POST(req: NextRequest) {
   }
   // =================================
     const body = await req.json();
-    const mode: 'pre' | 'post' | 'post_latest' | 'post_lookup' | 'history' | 'matchup' | 'tilt' | 'trends' | 'practice_menu' | 'goal' | 'chat' | 'win_condition' = body.mode || 'pre';
+    const mode: 'pre' | 'post' | 'post_latest' | 'post_lookup' | 'history' | 'matchup' | 'tilt' | 'trends' | 'practice_menu' | 'goal' | 'chat' | 'win_condition' | 'counter_pick' | 'objective_priority' = body.mode || 'pre';
     const championInput: string = body.champion || '';
     const enemyChampionInput: string = body.enemyChampion || '';
 
@@ -812,6 +812,128 @@ ${sentinelCtx || '（辞典データなし）'}`;
         focusAchieved: latest.focus_achieved,
         createdAt: latest.created_at,
         saved: true,
+      });
+    }
+
+    // ----------------------------
+    // MODE: counter_pick - 敵チャンプに対する有利カウンターTOP3・推奨ルーン・初手ビルド
+    // ----------------------------
+    if (mode === 'counter_pick') {
+      const enemy: string = body.enemyChampion || '';
+      if (!enemy) return NextResponse.json({ error: 'enemyChampionを指定してください。' }, { status: 400 });
+
+      // チャンピオン知識と対面メモを取得
+      const knowledge = await getChampionKnowledge(supabase, enemy).catch(() => ({ text: '', hasData: false }));
+      
+      const prompt = `あなたはLoLの専属アナリスト兼コーチです。
+敵チャンピオン「${enemy}」に対する【有利なカウンターピック3選】および【推奨ルーン・初手ビルド・序盤の戦い方】をJSON形式で出力してください。
+
+=== 敵チャンピオン情報 ===
+${knowledge.text || `${enemy} の基本データ`}
+
+以下の厳密なJSON形式のみで出力してください（マークダウンのコードブロック不要）:
+{
+  "enemy": "${enemy}",
+  "counters": [
+    {
+      "champion": "カウンターチャンプ名（英語英名例: Poppy）",
+      "nameJp": "日本語名（例: ポッピー）",
+      "reason": "なぜカウンターなのかの明確な理由（1〜2文）",
+      "difficulty": "Easy" | "Medium" | "Hard"
+    }
+  ],
+  "recommendedRune": {
+    "keystone": "推奨キーストーン（例: 征服者 / アフターショック / フェイズラッシュ）",
+    "primaryTree": "メインパス名（例: 栄華）",
+    "secondaryTree": "サブパス名（例: 覇道）",
+    "shardNotes": "ステータス破片の注意点（例: 攻撃速度 + 物理防御）"
+  },
+  "starterItem": "推奨スタートアイテム（例: ドランブレード + ポーション / 詰め替えポーション + 涙）",
+  "earlyLaningTip": "Lv1〜Lv3で絶対に意識すべき対面対策の核心（1〜2文）"
+}`;
+
+      const raw = await callGemini(prompt, `counter_pick_${enemy}`);
+      let parsed: any;
+      try {
+        let cleaned = raw.trim();
+        if (cleaned.startsWith('```')) cleaned = cleaned.replace(/^```[a-z]*\n?/, '').replace(/```$/, '').trim();
+        const jsonStart = cleaned.indexOf('{');
+        const jsonEnd = cleaned.lastIndexOf('}');
+        if (jsonStart >= 0 && jsonEnd > jsonStart) cleaned = cleaned.slice(jsonStart, jsonEnd + 1);
+        parsed = JSON.parse(cleaned);
+      } catch {
+        parsed = {
+          enemy,
+          counters: [],
+          recommendedRune: { keystone: '汎用', primaryTree: '栄華', secondaryTree: '覇道', shardNotes: '' },
+          starterItem: '標準スタートアイテム',
+          earlyLaningTip: '序盤は敵の主要スキルを避けてからダメージトレードを行いましょう。'
+        };
+      }
+
+      return NextResponse.json({
+        mode: 'counter_pick',
+        ...parsed
+      });
+    }
+
+    // ----------------------------
+    // MODE: objective_priority - 5分オブジェクト診断（ヴォイドグラブ vs ドラゴン方針）
+    // ----------------------------
+    if (mode === 'objective_priority') {
+      const myChamp = body.champion || '';
+      const enemyChamp = body.enemyChampion || '';
+      const liveRoster = body.liveRoster || null;
+
+      const prompt = `あなたはLoLの専属マクロコーチです。
+2026年メタ（シーズン16・ヴォイドグラブ3体仕様 vs 1stドラゴン）に基づき、5分〜6分の「オブジェクト初動優先度」を診断してください。
+
+条件:
+- 自分のチャンピオン: ${myChamp || '未指定'}
+- 敵対面チャンピオン: ${enemyChamp || '未指定'}
+${liveRoster ? `- ライブロスター情報あり` : ''}
+
+以下の厳密なJSON形式のみで出力してください（マークダウンのコードブロック不要）:
+{
+  "recommendedFocus": "GRUB" | "DRAGON" | "CROSS_MAP",
+  "focusTitle": "上ルート（ヴォイドグラブ3体）最優先" または "下ルート（1stドラゴン＋ボットプレート）優先" または "クロスマップ（敵の逆サイドを強奪）",
+  "confidenceScore": 85,
+  "oneSentenceStrategy": "5分時点で実行すべき最重要マクロ方針を1文で（例: 4分40秒にTOP主導権を作って幼虫3体を即狩り、敵JGがボットに寄るならドラゴンを捨てて上サイドタワーを破壊する）",
+  "laneTasks": {
+    "jg": "JGの初動タスク（リコール秒数と寄り）",
+    "topMid": "TOP/MIDのレーン管理タスク",
+    "bot": "BOT/SUPの視界とプレート削りタスク"
+  },
+  "resetTimingAlert": "4分25秒〜4分35秒にリコールして買い物・ポーション補充を完了させること"
+}`;
+
+      const raw = await callGemini(prompt, `obj_prio_${myChamp}_${enemyChamp}`);
+      let parsed: any;
+      try {
+        let cleaned = raw.trim();
+        if (cleaned.startsWith('```')) cleaned = cleaned.replace(/^```[a-z]*\n?/, '').replace(/```$/, '').trim();
+        const jsonStart = cleaned.indexOf('{');
+        const jsonEnd = cleaned.lastIndexOf('}');
+        if (jsonStart >= 0 && jsonEnd > jsonStart) cleaned = cleaned.slice(jsonStart, jsonEnd + 1);
+        parsed = JSON.parse(cleaned);
+      } catch {
+        parsed = {
+          recommendedFocus: 'GRUB',
+          focusTitle: '上ルート（ヴォイドグラブ3体）優先',
+          confidenceScore: 80,
+          oneSentenceStrategy: '序盤はTOP/MIDの主導権を活かしてヴォイドグラブを確保し、タワー破壊ゴールドを先行させましょう。',
+          laneTasks: {
+            jg: '4:30までにフルクリアを完了し、4:45に上リバーへ侵入',
+            topMid: '4:50にウェーブをプッシュしてリバーに即合流',
+            bot: '無理に戦わず安全にファームし、敵JGの位置をコール'
+          },
+          resetTimingAlert: '4分30秒にリコールを完了させる'
+        };
+      }
+
+      return NextResponse.json({
+        mode: 'objective_priority',
+        ...parsed
       });
     }
 

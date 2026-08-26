@@ -15,6 +15,7 @@ import JgMatchupPredictor from '../../components/coach/JgMatchupPredictor';
 import JgSkillMasteryChecklist from '../../components/coach/JgSkillMasteryChecklist';
 import PlayerStyleRadarCard from '../../components/coach/PlayerStyleRadarCard';
 import WinConditionTab from './WinConditionTab';
+import MatchupSmartCard from './MatchupSmartCard';
 
 // ============================
 // 型定義
@@ -1510,13 +1511,12 @@ export default function CoachPage() {
     setDailyCheckTrigger(Date.now());
   };
 
-  const [activeStepTab, setActiveStepTab] = useState<'pregame' | 'win_condition' | 'postgame' | 'menu'>('pregame');
+  const [activeStepTab, setActiveStepTab] = useState<'pregame' | 'live' | 'postgame'>('pregame');
 
   const STEP_TABS = [
-    { id: 'pregame', label: '1. 試合前準備（事前分析・JG予測・偵察）', icon: '⚡' },
-    { id: 'win_condition', label: '2. 構成勝ち筋診断 (Win Condition)', icon: '🏰' },
-    { id: 'postgame', label: '3. 試合後分析（1分振り返り・傾向・ヒートマップ）', icon: '🔍' },
-    { id: 'menu', label: '4. 週間強化（AI練習メニュー）', icon: '🏋️‍♂️' },
+    { id: 'pregame', label: '1. 🎯 試合前 (バンピック・対面対策・5分作戦)', icon: '🎯' },
+    { id: 'live', label: '2. 🧭 試合中 (ライブ偵察・構成勝ち筋・HUD)', icon: '🧭' },
+    { id: 'postgame', label: '3. 📈 試合後 (1分振り返り・カルテ・AI練習)', icon: '📈' },
   ] as const;
 
   if (isAuthenticated === null) {
@@ -1551,7 +1551,7 @@ export default function CoachPage() {
 
   return (
     <div
-      className="min-h-screen px-4 py-8 font-sans text-foreground bg-background"
+      className="min-h-screen px-4 py-6 font-sans text-foreground bg-background"
     >
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
@@ -1560,25 +1560,33 @@ export default function CoachPage() {
         .animate-in { animation: fade-in 0.35s ease forwards; }
       `}</style>
 
-      <div className="mx-auto max-w-[1600px] w-full px-4 md:px-8">
-        {/* ヘッダー */}
-        <div className="mb-8 text-center relative">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100/80 border border-emerald-300 text-emerald-800 text-[10px] font-extrabold mb-3 shadow-xs">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span>🟢 ライブ試合自動検知 稼働中 (Riot API連動)</span>
+      <div className="mx-auto max-w-[1600px] w-full px-2 md:px-6 space-y-5">
+        {/* スリム化されたモダンヘッダー */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white/80 border border-stone-200/90 rounded-2xl p-4 shadow-xs backdrop-blur-sm">
+          <div className="flex items-center gap-3">
+            <div className="text-3xl p-2 bg-amber-50 rounded-2xl border border-amber-200/80">🏆</div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="text-xl font-black tracking-tight text-stone-900">パーソナルコーチ</h1>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 border border-emerald-300 text-emerald-800 text-[10px] font-extrabold shadow-2xs">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  <span>ライブ検知中</span>
+                </span>
+              </div>
+              <p className="text-[11px] text-stone-500 font-medium">
+                Riot API × ナレッジDB × Gemini AI があなたの勝率を最大化
+              </p>
+            </div>
           </div>
-          <div className="mb-2 text-4xl">🏆</div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-stone-900">パーソナルコーチ</h1>
-          <p className="mt-1 text-xs text-stone-500 font-medium">
-            Riot API × ナレッジDB × Gemini AI があなたの勝率を上げる
-          </p>
-          <div className="mt-3 flex items-center justify-center gap-2.5 flex-wrap">
-            <PushOptIn scope="admin" label="ポータル通知" inline />
+
+          {/* クイックアクションボタン群 */}
+          <div className="flex items-center gap-2 flex-wrap justify-end">
+            <PushOptIn scope="admin" label="通知" inline />
             <button
               onClick={() => setIsReflectionModalOpen(true)}
-              className="px-4 py-2 bg-gradient-to-r from-amber-700 to-amber-800 hover:from-amber-800 hover:to-amber-900 text-white font-bold text-xs rounded-xl shadow-md transition-all hover:scale-105 flex items-center gap-1.5 cursor-pointer"
+              className="px-3.5 py-2 bg-gradient-to-r from-amber-700 to-amber-800 hover:from-amber-800 hover:to-amber-900 text-white font-bold text-xs rounded-xl shadow-xs transition-all hover:scale-105 flex items-center gap-1.5 cursor-pointer"
             >
-              <span>⚡</span> 1分ソロQ振り返り
+              <span>⚡</span> 1分振り返り
             </button>
             <button
               type="button"
@@ -1589,99 +1597,30 @@ export default function CoachPage() {
                   'width=420,height=600,menubar=no,toolbar=no,location=no,status=no,resizable=yes'
                 );
               }}
-              className="px-4 py-2 bg-[#12151d] hover:bg-[#1c2230] text-amber-400 border border-amber-500/40 font-bold text-xs rounded-xl shadow-md transition-all hover:scale-105 flex items-center gap-1.5 cursor-pointer"
+              className="px-3.5 py-2 bg-[#12151d] hover:bg-[#1c2230] text-amber-400 border border-amber-500/40 font-bold text-xs rounded-xl shadow-xs transition-all hover:scale-105 flex items-center gap-1.5 cursor-pointer"
               title="サブモニターや画面端に置いておける極小ウィンドウ"
             >
               <span>🖥️</span> 試合中HUD (小窓)
             </button>
           </div>
-
-          {lastFocusPoint && (
-            <div className="mt-4 mx-auto max-w-md bg-amber-50 border border-amber-300 rounded-2xl p-3.5 text-left shadow-xs flex items-center justify-between gap-3">
-              <div className="flex items-start gap-2.5">
-                <span className="text-lg">🔥</span>
-                <div>
-                  <span className="text-[11px] font-extrabold text-amber-900 block uppercase tracking-wider">前回の試合で設定した意識テーマ</span>
-                  <p className="text-xs text-stone-800 font-bold leading-relaxed">{lastFocusPoint}</p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  alert('🎉 意識テーマの達成おめでとうございます！モチベーションを維持して次の戦いへ！');
-                  localStorage.removeItem('soloq_last_focus_point');
-                  window.location.reload();
-                }}
-                className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black shrink-0 transition shadow-xs active:scale-95 cursor-pointer"
-                title="この目標を達成できたらタップ！"
-              >
-                ✅ 達成！
-              </button>
-            </div>
-          )}
-          {/* 今日の意識テーマ常駐バー */}
-          <div className="mt-5 max-w-xl mx-auto">
-            <FocusStickyBar />
-          </div>
         </div>
 
-        {/* 共通入力欄: 事前分析とマッチアップで別々に入力させていたのを統合 */}
-        <div className="mb-6 rounded-2xl border border-stone-200/90 bg-white/90 p-5 shadow-xs">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="mb-1.5 block text-xs font-bold text-stone-700">今日使うチャンピオン</label>
-              <input
-                value={sharedChampion}
-                onChange={(e) => setSharedChampion(e.target.value)}
-                placeholder="例: Graves"
-                className="w-full rounded-xl border border-stone-300/80 bg-stone-50/50 px-4 py-2.5 text-sm text-stone-900 placeholder-stone-400 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all font-medium"
-              />
-            </div>
-            <div>
-              <label className="mb-1.5 block text-xs font-bold text-stone-700">対面の敵チャンピオン</label>
-              <input
-                value={sharedEnemyChampion}
-                onChange={(e) => setSharedEnemyChampion(e.target.value)}
-                placeholder="例: Lee Sin"
-                className="w-full rounded-xl border border-stone-300/80 bg-stone-50/50 px-4 py-2.5 text-sm text-stone-900 placeholder-stone-400 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all font-medium"
-              />
-            </div>
-          </div>
-          <p className="mt-2 text-[11px] text-stone-500 font-medium">※「事前分析」「マッチアップ」で共通して使われます（偵察でライブゲームを検知すると自動入力されます）。</p>
+        {/* 今日の意識テーマ常駐バー */}
+        <FocusStickyBar />
 
-          <button
-            onClick={runDailyCheck}
-            className="mt-4 w-full rounded-xl border border-amber-300 bg-amber-100 hover:bg-amber-200 px-5 py-3 text-xs font-extrabold text-amber-900 transition-all shadow-xs cursor-pointer flex items-center justify-center gap-2"
-          >
-            <span>🎯</span> 今日のチェック（事前分析・目標・ティルトを一括実行）
-          </button>
-        </div>
-
-        {/* 過去の自分からの対面警戒メモ（対面チャンプ決定時に即座にハイライト表示） */}
-        <MatchupWarningCard champion={sharedChampion} enemyChampion={sharedEnemyChampion} />
-
-        {matchDetectFailCount >= 3 && (
-          <div className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs text-rose-700 font-medium">
-            ⚠️ 試合終了の自動検知が{matchDetectFailCount}回連続で失敗しています。Riot IDの設定やRiot APIキーの有効期限を確認してください（自動ポップアップが出ない間も、下の「振り返りを記録する」から手動で記録できます）。
-          </div>
-        )}
-
-        {/* 5ステップ切り替えプロ景観ナビゲーションバー（ユーザビリティ改修） */}
-        <div className="mb-6 bg-white/90 border border-stone-200/90 p-2 rounded-2xl shadow-xs">
-          <div className="text-[10px] font-extrabold text-stone-400 uppercase tracking-widest px-2 pt-1 pb-1.5">
-            🎮 試合進行フェーズ（タップして切り替え）
-          </div>
-          <div className="flex gap-2 overflow-x-auto pb-1 touch-manipulation scrollbar-none">
+        {/* 3ステップ プロ景観ナビゲーションバー */}
+        <div className="bg-white/90 border border-stone-200/90 p-1.5 rounded-2xl shadow-xs">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-1.5">
             {STEP_TABS.map((tab) => {
               const isActive = activeStepTab === tab.id;
               return (
                 <button
                   key={tab.id}
                   onClick={() => setActiveStepTab(tab.id as any)}
-                  className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-extrabold transition-all shrink-0 min-h-[44px] cursor-pointer ${
+                  className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-black transition-all cursor-pointer ${
                     isActive
                       ? 'bg-primary text-white shadow-md ring-2 ring-primary/40 scale-[1.01]'
-                      : 'bg-stone-100/80 text-stone-600 hover:bg-stone-200/80 hover:text-stone-900 active:scale-95'
+                      : 'bg-stone-100/70 text-stone-600 hover:bg-stone-200/80 hover:text-stone-900'
                   }`}
                 >
                   <span className="text-base">{tab.icon}</span>
@@ -1692,21 +1631,44 @@ export default function CoachPage() {
           </div>
         </div>
 
-        {/* --- ステップ別メインコンテンツ --- */}
-        {/*
-          「🎯 今日のチェック」ボタン(runDailyCheck)はPreGameTab/GoalTab/TiltTabに
-          triggerSignalを渡して一括起動する設計だが、これらは元々activeStepTabに応じて
-          JSXごとマウント/アンマウントされていたため、ボタンを押した時点でその子が
-          マウントされていないタブでは useEffect(triggerSignal) が発火せず「反応しない」
-          バグになっていた(2026-08-04発覚)。PreGameTabは副作用のあるポーリングを
-          持たないため、常時マウントしCSSで表示切替する。
-          「5レーン主導権＆試合展開シミュレーター」(LanePrioritySimulator)は入力に関わらず
-          固定のサンプルテキストしか返さない完全なモックだったため撤去した(2026-08-15)。
-          同じ内容(レーン主導権・試合展開の予測)は下部の「5v5シミュレータ」が実データ
-          (Gemini分析)で計算済みのため、そちらに一本化する。
-        */}
-        <div className={activeStepTab === 'pregame' ? 'space-y-6 animate-in' : 'hidden'}>
-          <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-sm space-y-3">
+        {/* ========================================================================= */}
+        {/* 1. 🎯 試合前 (バンピック・対面対策・5分作戦) */}
+        {/* ========================================================================= */}
+        <div className={activeStepTab === 'pregame' ? 'space-y-4 animate-in' : 'hidden'}>
+          {/* 共通チャンピオン入力バー */}
+          <div className="rounded-2xl border border-stone-200/90 bg-white/95 p-4 shadow-xs">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="mb-1 block text-xs font-bold text-stone-700">今日使うチャンピオン (自分)</label>
+                <input
+                  value={sharedChampion}
+                  onChange={(e) => setSharedChampion(e.target.value)}
+                  placeholder="例: Graves"
+                  className="w-full rounded-xl border border-stone-300/80 bg-stone-50/50 px-3.5 py-2 text-xs text-stone-900 placeholder-stone-400 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all font-bold"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-bold text-stone-700">対面の敵チャンピオン (相手)</label>
+                <input
+                  value={sharedEnemyChampion}
+                  onChange={(e) => setSharedEnemyChampion(e.target.value)}
+                  placeholder="例: Lee Sin"
+                  className="w-full rounded-xl border border-stone-300/80 bg-stone-50/50 px-3.5 py-2 text-xs text-stone-900 placeholder-stone-400 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all font-bold"
+                />
+              </div>
+            </div>
+            <p className="mt-2 text-[10px] text-stone-500 font-medium">※ ライブゲームが始まると自動入力されます。対面チャンプを入れるとカウンターピック・推奨ルーン・5分作戦が即座に表示されます。</p>
+          </div>
+
+          {/* 新機能: カウンターピック ＆ 5分オブジェクト方針 ＆ 過去メモ ＆ JG初動予測 */}
+          <MatchupSmartCard
+            champion={sharedChampion}
+            enemyChampion={sharedEnemyChampion}
+            onSelectChampion={setSharedChampion}
+          />
+
+          {/* 事前分析ナレッジ */}
+          <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-xs space-y-3">
             <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5">
               <span>⚡</span> 事前分析 (対面対策ナレッジ)
             </h3>
@@ -1714,90 +1676,96 @@ export default function CoachPage() {
           </div>
         </div>
 
-        {activeStepTab === 'pregame' && (
-          <div className="space-y-6 animate-in mt-6">
-            {/* ⚡ 敵JG初動ルート＆3:30スカトル予測カンペ */}
-            <JgMatchupPredictor />
-
-            <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-sm space-y-3">
-              <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5">
-                <span>🧭</span> リアルタイム偵察 ＆ 5v5シミュレータ
-              </h3>
-              <ScoutTab onLiveMatchDetected={handleLiveMatchDetected} />
-              {(sharedChampion && sharedEnemyChampion) && (
-                <div className="border-t border-stone-200 pt-5">
-                  <h4 className="mb-3 text-xs font-bold text-stone-700">⚔️ マッチアップ分析（自動生成）</h4>
-                  <MatchupTab champion={sharedChampion} enemyChampion={sharedEnemyChampion} triggerSignal={scoutMatchupTrigger} />
-                </div>
-              )}
-              <div className="border-t border-stone-200 pt-5">
-                <FiveVFiveSimTab liveRoster={liveRoster} />
-              </div>
-            </div>
+        {/* ========================================================================= */}
+        {/* 2. 🧭 試合中 (ライブ偵察・構成勝ち筋診断) */}
+        {/* ========================================================================= */}
+        <div className={activeStepTab === 'live' ? 'space-y-4 animate-in' : 'hidden'}>
+          {/* リアルタイム偵察 */}
+          <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-xs space-y-3">
+            <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5">
+              <span>🧭</span> リアルタイム偵察 (敵10人スキャン ＆ ガンク優先ターゲット)
+            </h3>
+            <ScoutTab onLiveMatchDetected={handleLiveMatchDetected} />
           </div>
-        )}
 
-        {/* 2. 構成勝ち筋診断 */}
-        <div className={activeStepTab === 'win_condition' ? 'space-y-6 animate-in' : 'hidden'}>
-          <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-sm">
+          {/* 構成勝ち筋診断 */}
+          <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-xs space-y-3">
+            <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5">
+              <span>🏰</span> 構成勝ち筋診断 (Win Condition)
+            </h3>
             <WinConditionTab />
           </div>
+
+          {/* 5v5シミュレータ */}
+          <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-xs space-y-3">
+            <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5">
+              <span>⚔️</span> 5v5 チーム構成詳細シミュレーター
+            </h3>
+            <FiveVFiveSimTab liveRoster={liveRoster} />
+          </div>
         </div>
 
-        {/* MySoloQDashboard/PostGameTab/TrendsTab/GoalTab/TiltTabはいずれもマウント時に
-            一度きりのfetchのみ(継続ポーリング無し)のため、常時マウントしてCSSで表示切替する。 */}
-        <div className={activeStepTab === 'postgame' ? 'space-y-6 animate-in' : 'hidden'}>
-            {/* 📊 your.gg連動 プレイスタイル特性カルテ */}
-            <PlayerStyleRadarCard />
+        {/* ========================================================================= */}
+        {/* 3. 📈 試合後 (1分振り返り・カルテ・AI練習メニュー) */}
+        {/* ========================================================================= */}
+        <div className={activeStepTab === 'postgame' ? 'space-y-4 animate-in' : 'hidden'}>
+          {/* プレイスタイル特性カルテ */}
+          <PlayerStyleRadarCard />
 
-            {/* 📋 ふつぐ式 JGステップアップ習熟度チェックリスト */}
-            <JgSkillMasteryChecklist />
+          {/* ふつぐ式 JGステップアップ習熟度チェックリスト */}
+          <JgSkillMasteryChecklist />
 
-            <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-sm">
-              <Collapsible
-                title={
-                  <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5">
-                    <span>📊</span> マイソロQダッシュボード (過去全ログ ＆ 成績一覧)
-                  </h3>
-                }
-              >
-                <MySoloQDashboard refreshSignal={reflectionRefreshSignal} />
-              </Collapsible>
-            </div>
-            <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-sm space-y-3">
-              <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5">
-                <span>⚡</span> 直近のソロQ振り返り ＆ 実績
-              </h3>
-              <PostGameTab onOpenReflectionModal={() => setIsReflectionModalOpen(true)} refreshSignal={reflectionRefreshSignal} />
-            </div>
-            <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-sm space-y-3">
-              <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5">
-                <span>📈</span> 傾向分析・目標管理・ティルト判定
-              </h3>
-              <TrendsTab active={activeStepTab === 'postgame'} />
-              <div className="border-t border-stone-200 pt-4">
-                <GoalTab triggerSignal={dailyCheckTrigger} />
-              </div>
-              <div className="border-t border-stone-200 pt-4">
-                <TiltTab triggerSignal={dailyCheckTrigger} />
-              </div>
-            </div>
-            <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-sm space-y-3">
-              <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5">
-                <span>🗓️</span> 曜日×時間帯 勝率ヒートマップ
-              </h3>
-              <TimingHeatmapTab />
-            </div>
-        </div>
+          {/* マイソロQダッシュボード */}
+          <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-xs">
+            <Collapsible
+              title={
+                <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5">
+                  <span>📊</span> マイソロQダッシュボード (過去全ログ ＆ 成績一覧)
+                </h3>
+              }
+            >
+              <MySoloQDashboard refreshSignal={reflectionRefreshSignal} />
+            </Collapsible>
+          </div>
 
-        <div className={activeStepTab === 'menu' ? 'space-y-6 animate-in' : 'hidden'}>
-          <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-sm">
+          {/* 直近のソロQ振り返り */}
+          <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-xs space-y-3">
+            <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5">
+              <span>⚡</span> 直近のソロQ振り返り ＆ 実績
+            </h3>
+            <PostGameTab onOpenReflectionModal={() => setIsReflectionModalOpen(true)} refreshSignal={reflectionRefreshSignal} />
+          </div>
+
+          {/* AI練習メニュー */}
+          <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-xs space-y-3">
             <PracticeMenuTab />
+          </div>
+
+          {/* 傾向分析・目標管理 */}
+          <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-xs space-y-3">
+            <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5">
+              <span>📈</span> 傾向分析・目標管理・ティルト判定
+            </h3>
+            <TrendsTab active={activeStepTab === 'postgame'} />
+            <div className="border-t border-stone-200 pt-4">
+              <GoalTab triggerSignal={dailyCheckTrigger} />
+            </div>
+            <div className="border-t border-stone-200 pt-4">
+              <TiltTab triggerSignal={dailyCheckTrigger} />
+            </div>
+          </div>
+
+          {/* 曜日×時間帯 勝率ヒートマップ */}
+          <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-xs space-y-3">
+            <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5">
+              <span>🗓️</span> 曜日×時間帯 勝率ヒートマップ
+            </h3>
+            <TimingHeatmapTab />
           </div>
         </div>
 
         {/* フッター */}
-        <div className="mt-10 text-center text-xs text-foreground/20">
+        <div className="mt-8 text-center text-xs text-foreground/30">
           生成結果はナレッジDBに蓄積され、次回の精度向上に活用されます
         </div>
       </div>
