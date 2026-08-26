@@ -30,6 +30,8 @@ export default function NotificationBell({ collapsed = false, align = 'left' }: 
   const [notifications, setNotifications] = useState<AdminNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [open, setOpen] = useState(false);
+  const [onlyUnread, setOnlyUnread] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   // 通知本文はline-clampで2行に省略されるため、KDA/Vision等を含む長い本文
   // (例: ソロQ振り返り通知)を全文読むための開閉状態。
   const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
@@ -53,9 +55,7 @@ export default function NotificationBell({ collapsed = false, align = 'left' }: 
     return () => clearInterval(interval);
   }, []);
 
-  // タスクバー/DockのバッジをService Worker側(push受信時)だけでなく、
-  // ページを開いて既読にした時点でも同期する(#63)。未対応ブラウザ/
-  // 未インストール環境では 'setAppBadge' が無いので何もしない。
+  // タスクバー/Dockのバッジ同期
   useEffect(() => {
     if (!('setAppBadge' in navigator)) return;
     if (unreadCount > 0) {
@@ -68,8 +68,6 @@ export default function NotificationBell({ collapsed = false, align = 'left' }: 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       const target = e.target as Node;
-      // ドロップダウンは document.body へ Portal 描画しているため、
-      // containerRef だけでなく dropdownRef 内のクリックも「外側」判定から除外する。
       if (
         containerRef.current && !containerRef.current.contains(target) &&
         dropdownRef.current && !dropdownRef.current.contains(target)
@@ -81,10 +79,6 @@ export default function NotificationBell({ collapsed = false, align = 'left' }: 
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // サイドバーの <aside> は overflow-y-auto (スクロール領域) なので、absolute位置指定の
-  // ドロップダウンだとサイドバー幅で見切れて中身が切れてしまっていた。
-  // ボタンの画面上の位置を測って document.body へ Portal 描画し、position: fixed で
-  // 出すことでサイドバーのoverflowに影響されないようにする。
   useEffect(() => {
     if (!open) return;
     const handleResize = () => calculateCoords();
@@ -99,7 +93,7 @@ export default function NotificationBell({ collapsed = false, align = 'left' }: 
   const calculateCoords = () => {
     if (!containerRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
-    const drawerWidth = Math.min(320, window.innerWidth - 32);
+    const drawerWidth = Math.min(360, window.innerWidth - 32);
     
     let left: number | undefined;
     let right: number | undefined;
@@ -117,8 +111,8 @@ export default function NotificationBell({ collapsed = false, align = 'left' }: 
     }
 
     let top = rect.bottom + 8;
-    if (top + 400 > window.innerHeight && rect.top > 400) {
-      top = Math.max(16, rect.top - 410);
+    if (top + 460 > window.innerHeight && rect.top > 460) {
+      top = Math.max(16, rect.top - 470);
     }
 
     setCoords({ top, left, right });
@@ -159,9 +153,21 @@ export default function NotificationBell({ collapsed = false, align = 'left' }: 
     } catch {}
   };
 
-  // 本文をタップした時は既読化＋開閉のみ行い、遷移はしない
-  // （2行省略された本文を全文読みたいだけで、対面メモ画面へ飛びたいとは限らないため）。
-  // 実際のページ遷移は下の明示的な「開く」リンクに分離する。
+  const clearAllRead = async () => {
+    if (!confirm('既読の通知をすべて削除しますか？')) return;
+    setDeleting(true);
+    setNotifications((prev) => prev.filter((n) => !n.read));
+    try {
+      await fetch('/api/admin/notifications/delete', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ allRead: true }),
+      });
+    } catch {} finally {
+      setDeleting(false);
+    }
+  };
+
   const toggleExpand = (n: AdminNotification) => {
     markRead(n);
     setExpandedIds((prev) => {
@@ -171,19 +177,59 @@ export default function NotificationBell({ collapsed = false, align = 'left' }: 
     });
   };
 
+  const getNotificationBadge = (n: AdminNotification) => {
+    const title = n.title.toLowerCase();
+    const type = n.type.toLowerCase();
+    if (type.includes('soloq') || title.includes('ソロq') || title.includes('振り返り')) {
+      return { icon: '🎮', label: 'ソロQ', bg: 'bg-amber-100 text-amber-800 border-amber-200' };
+    }
+    if (type.includes('discord') || title.includes('メンバー') || title.includes('参加')) {
+      return { icon: '👤', label: '新メンバー', bg: 'bg-indigo-100 text-indigo-800 border-indigo-200' };
+    }
+    if (type.includes('match') || title.includes('内戦') || title.includes('試合')) {
+      return { icon: '🏆', label: '大会・内戦', bg: 'bg-emerald-100 text-emerald-800 border-emerald-200' };
+    }
+    if (type.includes('error') || title.includes('エラー') || title.includes('失敗')) {
+      return { icon: '⚠️', label: 'アラート', bg: 'bg-rose-100 text-rose-800 border-rose-200' };
+    }
+    return { icon: '🔔', label: 'お知らせ', bg: 'bg-stone-100 text-stone-800 border-stone-200' };
+  };
+
+  const getQuickAction = (n: AdminNotification) => {
+    const title = n.title.toLowerCase();
+    const type = n.type.toLowerCase();
+    if (type.includes('soloq') || title.includes('ソロq') || title.includes('振り返り')) {
+      return { label: '⚡ 1分振り返りを開く →', url: '/coach' };
+    }
+    if (type.includes('discord') || title.includes('メンバー') || title.includes('参加')) {
+      return { label: '👤 名簿で確認・Rank設定 →', url: '/ktm-admin' };
+    }
+    if (type.includes('match') || title.includes('内戦') || title.includes('試合')) {
+      return { label: '🏆 戦績履歴を見る →', url: '/ktm-admin' };
+    }
+    if (type.includes('error') || title.includes('riot')) {
+      return { label: '🔧 Riot ID修正へ →', url: '/ktm-admin' };
+    }
+    return n.url ? { label: '関連ページを開く →', url: n.url } : null;
+  };
+
+  const displayedNotifications = onlyUnread 
+    ? notifications.filter(n => !n.read) 
+    : notifications;
+
   return (
     <div ref={containerRef} className={`relative ${collapsed ? '' : 'w-full'}`}>
       <button
         onClick={toggleOpen}
         title="通知"
-        className={`flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-bold transition-all hover:bg-black/5 hover:text-stone-900 text-gray-400 relative ${
+        className={`flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-bold transition-all hover:bg-black/5 hover:text-stone-900 text-gray-400 relative cursor-pointer ${
           collapsed ? 'justify-center' : 'w-full'
         }`}
       >
         <span className="relative">
           <Bell size={16} />
           {unreadCount > 0 && (
-            <span className="absolute -top-1.5 -right-1.5 flex h-3.5 min-w-[0.875rem] items-center justify-center rounded-full bg-rose-500 px-1 text-[8px] font-black text-white">
+            <span className="absolute -top-1.5 -right-1.5 flex h-3.5 min-w-[0.875rem] items-center justify-center rounded-full bg-rose-500 px-1 text-[8px] font-black text-white shadow-2xs">
               {unreadCount > 9 ? '9+' : unreadCount}
             </span>
           )}
@@ -195,61 +241,129 @@ export default function NotificationBell({ collapsed = false, align = 'left' }: 
         <div
           ref={dropdownRef}
           style={{ top: coords.top, left: coords.left, right: coords.right }}
-          className="fixed z-50 w-80 max-w-[calc(100vw-2rem)] max-h-96 overflow-y-auto rounded-2xl border border-black/10 bg-white shadow-2xl"
+          className="fixed z-50 w-96 max-w-[calc(100vw-2rem)] max-h-[460px] overflow-hidden flex flex-col rounded-2xl border border-stone-300/80 bg-white shadow-2xl animate-in"
         >
-          <div className="flex items-center justify-between border-b border-black/10 px-4 py-3">
-            <span className="text-xs font-black text-gray-700">通知</span>
-            {unreadCount > 0 && (
-              <button onClick={markAllRead} className="text-[10px] font-bold text-cyan-700 hover:text-cyan-800">
-                すべて既読にする
+          {/* ヘッダー コントロールバー */}
+          <div className="flex items-center justify-between border-b border-stone-200 px-4 py-3 bg-stone-50/80">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-black text-stone-900">通知センター</span>
+              {unreadCount > 0 && (
+                <span className="px-1.5 py-0.5 rounded-full bg-rose-500 text-white text-[9px] font-black">
+                  未読 {unreadCount}
+                </span>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2 text-[10px] font-bold">
+              <button
+                type="button"
+                onClick={() => setOnlyUnread(!onlyUnread)}
+                className={`px-2 py-0.5 rounded-md transition cursor-pointer border ${
+                  onlyUnread ? 'bg-amber-600 text-white border-amber-600' : 'bg-white text-stone-600 border-stone-300 hover:bg-stone-100'
+                }`}
+              >
+                {onlyUnread ? '未読のみ' : 'すべて'}
               </button>
-            )}
+
+              {unreadCount > 0 && (
+                <button 
+                  type="button"
+                  onClick={markAllRead} 
+                  className="text-amber-800 hover:text-amber-950 transition cursor-pointer"
+                  title="すべて既読にする"
+                >
+                  ✓ 全既読
+                </button>
+              )}
+
+              {notifications.some(n => n.read) && (
+                <button
+                  type="button"
+                  onClick={clearAllRead}
+                  disabled={deleting}
+                  className="text-stone-400 hover:text-rose-700 transition cursor-pointer"
+                  title="既読の通知をすべて削除"
+                >
+                  🗑️ 既読消去
+                </button>
+              )}
+            </div>
           </div>
-          {notifications.length === 0 ? (
-            <div className="px-4 py-8 text-center text-xs text-gray-500">通知はありません</div>
-          ) : (
-            <div className="divide-y divide-black/5">
-              {notifications.map((n) => {
+
+          {/* 通知リスト本体 */}
+          <div className="overflow-y-auto flex-1 divide-y divide-stone-100">
+            {displayedNotifications.length === 0 ? (
+              <div className="px-4 py-12 text-center text-xs text-stone-400 font-medium">
+                {onlyUnread ? '未読の通知はありません 🎉' : '通知はありません'}
+              </div>
+            ) : (
+              displayedNotifications.map((n) => {
                 const isExpanded = expandedIds.has(n.id);
-                const isLong = !!n.body && n.body.length > 50;
+                const isLong = !!n.body && n.body.length > 40;
+                const badge = getNotificationBadge(n);
+                const action = getQuickAction(n);
+
                 return (
-                  <div key={n.id} className={`px-4 py-3 ${!n.read ? 'bg-cyan-50' : ''}`}>
-                    <button
-                      onClick={() => toggleExpand(n)}
-                      className="block w-full text-left"
-                    >
-                      <div className="flex items-start gap-2">
-                        {!n.read && <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-cyan-400" />}
-                        <div className="min-w-0 flex-1">
-                          <div className="text-xs font-bold text-gray-800">{n.title}</div>
-                          {n.body && (
-                            <div className={`mt-0.5 text-[10px] text-gray-500 whitespace-pre-wrap ${isExpanded ? '' : 'line-clamp-2'}`}>
-                              {n.body}
-                            </div>
-                          )}
-                          <div className="mt-1 flex items-center gap-2">
-                            <span className="text-[9px] text-gray-500">{timeAgo(n.created_at)}</span>
-                            {isLong && (
-                              <span className="text-[9px] font-bold text-cyan-700">{isExpanded ? '閉じる' : 'もっと見る'}</span>
-                            )}
+                  <div 
+                    key={n.id} 
+                    className={`p-3.5 transition-colors ${
+                      !n.read ? 'bg-amber-50/50 hover:bg-amber-50' : 'hover:bg-stone-50'
+                    }`}
+                  >
+                    <div className="flex items-start gap-2.5">
+                      <span className="text-base shrink-0 select-none mt-0.5">{badge.icon}</span>
+
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-1 mb-1">
+                          <span className={`text-[9px] font-black px-1.5 py-0.2 rounded border ${badge.bg}`}>
+                            {badge.label}
+                          </span>
+                          <span className="text-[9px] text-stone-400 font-mono">{timeAgo(n.created_at)}</span>
+                        </div>
+
+                        <div 
+                          onClick={() => toggleExpand(n)}
+                          className="cursor-pointer group"
+                        >
+                          <div className={`text-xs font-black text-stone-900 group-hover:text-amber-800 transition ${!n.read ? 'font-black' : 'font-bold text-stone-700'}`}>
+                            {n.title}
                           </div>
+
+                          {n.body && (
+                            <p className={`mt-1 text-[11px] text-stone-600 whitespace-pre-wrap leading-relaxed ${isExpanded ? '' : 'line-clamp-2'}`}>
+                              {n.body}
+                            </p>
+                          )}
+                        </div>
+
+                        <div className="mt-2 flex items-center justify-between gap-2 pt-1 border-t border-stone-100">
+                          {action ? (
+                            <a
+                              href={action.url}
+                              onClick={() => markRead(n)}
+                              className="text-[10px] font-black text-amber-800 hover:text-amber-950 transition hover:underline flex items-center gap-0.5"
+                            >
+                              {action.label}
+                            </a>
+                          ) : <div />}
+
+                          {isLong && (
+                            <button
+                              type="button"
+                              onClick={() => toggleExpand(n)}
+                              className="text-[9px] font-bold text-stone-400 hover:text-stone-700 cursor-pointer"
+                            >
+                              {isExpanded ? '閉じる ▲' : 'もっと見る ▼'}
+                            </button>
+                          )}
                         </div>
                       </div>
-                    </button>
-                    {n.url && (
-                      <a
-                        href={n.url}
-                        onClick={() => markRead(n)}
-                        className="mt-1.5 ml-3.5 inline-block text-[10px] font-bold text-cyan-700 hover:underline"
-                      >
-                        関連ページを開く →
-                      </a>
-                    )}
+                    </div>
                   </div>
                 );
-              })}
-            </div>
-          )}
+              })
+            )}
+          </div>
         </div>,
         document.body
       )}
