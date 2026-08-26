@@ -281,6 +281,20 @@ export default function KtmAdminPage() {
     fetchPlayers();
     checkIntegrity();
 
+    // バックグラウンドでDiscordの新規参加メンバーを自動検出・ダッシュボードへ追加
+    fetch('/api/discord/auto-sync-members')
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.addedCount > 0) {
+          setMessage({
+            type: 'success',
+            text: `🎉 Discordサーバーに参加した新メンバー (${data.addedMembers.join(', ')}) を自動で名簿に追加しました！`
+          });
+          fetchPlayers();
+        }
+      })
+      .catch(e => console.warn('Discord auto sync check warning:', e));
+
     // ktm_playersテーブルのリアルタイム購読をセットアップ
     const channel = supabase
       .channel('ktm_players_realtime_changes')

@@ -294,96 +294,84 @@ export default function MatchHistoryPanel() {
                 {/* BLUE TEAM */}
                 <div className="flex-1 p-4 bg-black/3">
                   <div className="space-y-3">
-                    {blueSorted.map(p => {
-                      const maxDmg = Math.max(...blueSorted.map(x => x.damage_dealt || 0));
-                      const dmgPercent = maxDmg > 0 ? ((p.damage_dealt || 0) / maxDmg) * 100 : 0;
-                      return (
-                        <div key={p.player_name} className="flex items-center gap-3 bg-white/70 p-2 rounded hover:bg-black/5 transition">
-                          <div className="w-8 text-center text-xs font-bold text-stone-500 flex-shrink-0">{p.role}</div>
-                          {p.champion_name ? (
-                            <Image
-                              src={getChampIcon(p.champion_name)}
-                              alt={p.champion_name}
-                              width={40}
-                              height={40}
-                              className="w-10 h-10 rounded-full border border-border flex-shrink-0 object-cover"
-                              onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                            />
-                          ) : (
-                            <div className="w-10 h-10 rounded-full bg-black/5 flex-shrink-0 border border-border flex items-center justify-center text-[10px] text-stone-500">?</div>
-                          )}
-                          <div className="flex-1 min-w-0">
-                            <div className="font-bold text-stone-800 truncate text-sm">{p.player_name}</div>
-                            <div className="text-xs text-stone-500 mt-0.5 flex gap-2">
-                              <span>CS {p.cs || 0}</span>
-                              <span title="Vision Score">VS {p.vision_score || 0}</span>
-                            </div>
-                          </div>
-                          
-                          <div className="flex flex-col items-end gap-1 flex-shrink-0 w-24">
-                            <div className="text-xs font-bold text-stone-700">
-                              {p.kills} / <span className="text-red-700">{p.deaths}</span> / {p.assists}
-                            </div>
-                            <div className="w-full h-1.5 bg-black/10 rounded-full overflow-hidden mt-0.5">
-                              <div className="h-full bg-amber-500 rounded-full" style={{ width: `${dmgPercent}%` }}></div>
-                            </div>
-                            <div className="text-[10px] text-stone-500">{p.damage_dealt ? p.damage_dealt.toLocaleString() : '0'} DMG</div>
-                          </div>
-
-                          <div className={`w-12 text-right font-black text-sm flex-shrink-0 ${p.mmr_delta > 0 ? 'text-emerald-700' : p.mmr_delta < 0 ? 'text-red-700' : 'text-stone-500'}`}>
-                            {p.mmr_delta > 0 ? '+' : ''}{p.mmr_delta}
+                    {blueSorted.map(p => (
+                      <div key={p.player_name} className="flex items-center gap-3 bg-white/70 p-2.5 rounded-xl border border-border/50 hover:bg-black/5 transition">
+                        <div className="w-8 text-center text-xs font-black text-stone-500 flex-shrink-0">{p.role}</div>
+                        {p.champion_name ? (
+                          <Image
+                            src={getChampIcon(p.champion_name)}
+                            alt={p.champion_name}
+                            width={40}
+                            height={40}
+                            className="w-10 h-10 rounded-full border border-border flex-shrink-0 object-cover shadow-2xs"
+                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                          />
+                        ) : (
+                          <div className="w-10 h-10 rounded-full bg-black/5 flex-shrink-0 border border-border flex items-center justify-center text-[10px] text-stone-500">?</div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <div className="font-black text-stone-900 truncate text-sm">{p.player_name}</div>
+                          <div className="text-xs font-bold text-stone-500 mt-0.5">
+                            {p.champion_name || 'Champion'}
                           </div>
                         </div>
-                      );
-                    })}
+                        
+                        <div className="flex flex-col items-end justify-center flex-shrink-0">
+                          <div className="text-xs font-bold text-stone-700">
+                            {p.kills} / <span className="text-red-700">{p.deaths}</span> / {p.assists}
+                          </div>
+                          <div className="text-[10px] font-mono text-stone-400">
+                            KDA {p.kda_score ? p.kda_score.toFixed(2) : ((p.kills + p.assists) / Math.max(1, p.deaths)).toFixed(2)}
+                          </div>
+                        </div>
+
+                        <div className={`w-14 text-right font-black text-sm flex-shrink-0 ${p.mmr_delta > 0 ? 'text-emerald-700' : p.mmr_delta < 0 ? 'text-red-700' : 'text-stone-500'}`}>
+                          {p.mmr_delta > 0 ? '+' : ''}{p.mmr_delta}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
 
                 {/* RED TEAM */}
                 <div className="flex-1 p-4 bg-black/3">
                   <div className="space-y-3">
-                    {redSorted.map(p => {
-                      const maxDmg = Math.max(...redSorted.map(x => x.damage_dealt || 0));
-                      const dmgPercent = maxDmg > 0 ? ((p.damage_dealt || 0) / maxDmg) * 100 : 0;
-                      return (
-                        <div key={p.player_name} className="flex items-center gap-3 bg-white/70 p-2 rounded hover:bg-black/5 transition">
-                          <div className="w-8 text-center text-xs font-bold text-stone-500 flex-shrink-0">{p.role}</div>
-                          {p.champion_name ? (
-                            <Image
-                              src={getChampIcon(p.champion_name)}
-                              alt={p.champion_name}
-                              width={40}
-                              height={40}
-                              className="w-10 h-10 rounded-full border border-border flex-shrink-0 object-cover"
-                              onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                            />
-                          ) : (
-                            <div className="w-10 h-10 rounded-full bg-black/5 flex-shrink-0 border border-border flex items-center justify-center text-[10px] text-stone-500">?</div>
-                          )}
-                          <div className="flex-1 min-w-0">
-                            <div className="font-bold text-stone-800 truncate text-sm">{p.player_name}</div>
-                            <div className="text-xs text-stone-500 mt-0.5 flex gap-2">
-                              <span>CS {p.cs || 0}</span>
-                              <span title="Vision Score">VS {p.vision_score || 0}</span>
-                            </div>
-                          </div>
-                          
-                          <div className="flex flex-col items-end gap-1 flex-shrink-0 w-24">
-                            <div className="text-xs font-bold text-stone-700">
-                              {p.kills} / <span className="text-red-700">{p.deaths}</span> / {p.assists}
-                            </div>
-                            <div className="w-full h-1.5 bg-black/10 rounded-full overflow-hidden mt-0.5">
-                              <div className="h-full bg-red-500 rounded-full" style={{ width: `${dmgPercent}%` }}></div>
-                            </div>
-                            <div className="text-[10px] text-stone-500">{p.damage_dealt ? p.damage_dealt.toLocaleString() : '0'} DMG</div>
-                          </div>
-
-                          <div className={`w-12 text-right font-black text-sm flex-shrink-0 ${p.mmr_delta > 0 ? 'text-emerald-700' : p.mmr_delta < 0 ? 'text-red-700' : 'text-stone-500'}`}>
-                            {p.mmr_delta > 0 ? '+' : ''}{p.mmr_delta}
+                    {redSorted.map(p => (
+                      <div key={p.player_name} className="flex items-center gap-3 bg-white/70 p-2.5 rounded-xl border border-border/50 hover:bg-black/5 transition">
+                        <div className="w-8 text-center text-xs font-black text-stone-500 flex-shrink-0">{p.role}</div>
+                        {p.champion_name ? (
+                          <Image
+                            src={getChampIcon(p.champion_name)}
+                            alt={p.champion_name}
+                            width={40}
+                            height={40}
+                            className="w-10 h-10 rounded-full border border-border flex-shrink-0 object-cover shadow-2xs"
+                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                          />
+                        ) : (
+                          <div className="w-10 h-10 rounded-full bg-black/5 flex-shrink-0 border border-border flex items-center justify-center text-[10px] text-stone-500">?</div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <div className="font-black text-stone-900 truncate text-sm">{p.player_name}</div>
+                          <div className="text-xs font-bold text-stone-500 mt-0.5">
+                            {p.champion_name || 'Champion'}
                           </div>
                         </div>
-                      );
-                    })}
+                        
+                        <div className="flex flex-col items-end justify-center flex-shrink-0">
+                          <div className="text-xs font-bold text-stone-700">
+                            {p.kills} / <span className="text-red-700">{p.deaths}</span> / {p.assists}
+                          </div>
+                          <div className="text-[10px] font-mono text-stone-400">
+                            KDA {p.kda_score ? p.kda_score.toFixed(2) : ((p.kills + p.assists) / Math.max(1, p.deaths)).toFixed(2)}
+                          </div>
+                        </div>
+
+                        <div className={`w-14 text-right font-black text-sm flex-shrink-0 ${p.mmr_delta > 0 ? 'text-emerald-700' : p.mmr_delta < 0 ? 'text-red-700' : 'text-stone-500'}`}>
+                          {p.mmr_delta > 0 ? '+' : ''}{p.mmr_delta}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>
