@@ -217,7 +217,7 @@ export default function KtmAdminPage() {
     }
   };
   
-  const [activeTab, setActiveTab] = useState<'players' | 'history' | 'affiliate'>('players');
+  const [activeTab, setActiveTab] = useState<'players' | 'history'>('players');
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   const [syncingDiscord, setSyncingDiscord] = useState(false);
@@ -228,143 +228,37 @@ export default function KtmAdminPage() {
   const [integrityData, setIntegrityData] = useState<any>(null);
   const [checkingIntegrity, setCheckingIntegrity] = useState(false);
 
-  // アフィリエイト管理用ステート
-  const [affiliateLinks, setAffiliateLinks] = useState<Record<string, string>>({});
-  const [affiliateArticles, setAffiliateArticles] = useState<any[]>([]);
-  const [loadingAffiliate, setLoadingAffiliate] = useState(false);
-  const [syncingAffiliate, setSyncingAffiliate] = useState(false);
-  const [selectedArticle, setSelectedArticle] = useState<any>(null);
-  const [isDryRun, setIsDryRun] = useState(true);
+  // 当日出欠・チェックイン管理ステート
+  const [checkedInPlayerIds, setCheckedInPlayerIds] = useState<number[]>([]);
 
-
-  const fetchAffiliateData = async () => {
-    setLoadingAffiliate(true);
-    try {
-      const res = await fetch('/api/admin/affiliate');
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'データの読み込みに失敗しました');
-      setAffiliateLinks(data.links || {});
-      setAffiliateArticles(data.articles || []);
-    } catch (err: any) {
-      setMessage({ type: 'error', text: '❌ アフィリエイトデータ読み込みエラー: ' + err.message });
-    } finally {
-      setLoadingAffiliate(false);
-    }
-  };
-
-  const handleLinkChange = (key: string, value: string) => {
-    setAffiliateLinks(prev => ({
-      ...prev,
-      [key]: value
-    }));
-  };
-
-  const handleSaveLinks = async () => {
-    setSyncingAffiliate(true);
-    setMessage({ type: '', text: '' });
-    try {
-      const res = await fetch('/api/admin/affiliate', {
-        method: 'POST', credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'save_links',
-          links: affiliateLinks
-        })
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'リンクの保存に失敗しました');
-      setMessage({ type: 'success', text: '✅ ' + data.message });
-    } catch (err: any) {
-      setMessage({ type: 'error', text: '❌ リンク保存エラー: ' + err.message });
-    } finally {
-      setSyncingAffiliate(false);
-    }
-  };
-
-  const handleAddLink = () => {
-    const key = prompt("追加するツールの名前を入力してください（例: Notion）:");
-    if (!key) return;
-    if (affiliateLinks[key] !== undefined) {
-      alert("そのツール名は既に登録されています。");
-      return;
-    }
-    setAffiliateLinks(prev => ({
-      ...prev,
-      [key]: ""
-    }));
-  };
-
-  const handleDeleteLink = (key: string) => {
-    if (!confirm(`本当に「${key}」のアフィリエイトリンクを削除しますか？`)) return;
-    setAffiliateLinks(prev => {
-      const copy = { ...prev };
-      delete copy[key];
-      return copy;
-    });
-  };
-
-  const handleTriggerForge = async () => {
-    if (!confirm("最新トレンドツールの自動収集 ＆ 広告リンク埋め込み記事の生成を実行します。数分かかる場合がありますがよろしいですか？")) return;
-    
-    setSyncingAffiliate(true);
-    setMessage({ type: 'info', text: '🤖 アフィリエイト記事を自律生成中 (Scout & Forge実行中)...' });
-    try {
-      const res = await fetch('/api/admin/affiliate', {
-        method: 'POST', credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'trigger_forge'
-        })
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || '記事生成に失敗しました');
-      setMessage({ type: 'success', text: '✅ ' + data.message });
-      setAffiliateArticles(data.articles || []);
-    } catch (err: any) {
-      setMessage({ type: 'error', text: '❌ 記事生成エラー: ' + err.message });
-    } finally {
-      setSyncingAffiliate(false);
-    }
-  };
-
-  const handleTriggerBatch = async () => {
-    const modeText = isDryRun ? "【テストモード (Dry Run)】" : "【本番モード (実際の投稿を実行)】";
-    if (!confirm(`${modeText} で一気通貫アフィリエイトバッチを実行します。\nよろしいですか？`)) return;
-    
-    setSyncingAffiliate(true);
-    setMessage({ 
-      type: 'info', 
-      text: isDryRun 
-        ? '🚀 一気通貫アフィリエイトバッチをテスト実行中 (実際の投稿はスキップされます)...' 
-        : '🚀 一気通貫アフィリエイトバッチを本番実行中 (Scout ➔ Forge ➔ note下書き ➔ Xプロモ)...' 
-    });
-    try {
-      const res = await fetch('/api/admin/affiliate', {
-        method: 'POST', credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'trigger_batch',
-          dryRun: isDryRun
-        })
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'バッチ実行に失敗しました');
-      setMessage({ type: 'success', text: '✅ ' + data.message });
-      setAffiliateArticles(data.articles || []);
-    } catch (err: any) {
-      setMessage({ type: 'error', text: '❌ バッチ実行エラー: ' + err.message });
-    } finally {
-      setSyncingAffiliate(false);
-    }
-  };
-
-
-  // タブ切り替え時のデータ取得
   useEffect(() => {
-    if (activeTab === 'affiliate') {
-      fetchAffiliateData();
-    }
-  }, [activeTab]);
+    try {
+      const saved = localStorage.getItem('ktm_checked_in_players');
+      if (saved) setCheckedInPlayerIds(JSON.parse(saved));
+    } catch {}
+  }, []);
+
+  const toggleCheckIn = (id: number) => {
+    setCheckedInPlayerIds(prev => {
+      const next = prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id];
+      try { localStorage.setItem('ktm_checked_in_players', JSON.stringify(next)); } catch {}
+      return next;
+    });
+  };
+
+  const checkInAllVisible = (ids: number[]) => {
+    setCheckedInPlayerIds(prev => {
+      const next = Array.from(new Set([...prev, ...ids]));
+      try { localStorage.setItem('ktm_checked_in_players', JSON.stringify(next)); } catch {}
+      return next;
+    });
+  };
+
+  const clearAllCheckIns = () => {
+    if (!confirm('全てのプレイヤーのチェックイン（出席状態）をクリアしますか？')) return;
+    setCheckedInPlayerIds([]);
+    try { localStorage.removeItem('ktm_checked_in_players'); } catch {}
+  };
 
   const checkIntegrity = async () => {
     setCheckingIntegrity(true);
@@ -899,6 +793,7 @@ export default function KtmAdminPage() {
       }
       
       if (statusFilter) {
+        if (statusFilter === 'checked_in' && !checkedInPlayerIds.includes(p.id)) return false;
         if (statusFilter === 'active' && (!p.is_active || p.is_spectator_fixed)) return false;
         if (statusFilter === 'spectator' && !p.is_spectator_fixed) return false;
         if (statusFilter === 'inactive' && p.is_active) return false;
@@ -1001,33 +896,23 @@ export default function KtmAdminPage() {
         <div className="flex border-b border-border mb-6">
           <button
             onClick={() => setActiveTab('players')}
-            className={`px-6 py-3 font-bold text-sm flex items-center gap-2 transition border-b-2 ${
+            className={`px-6 py-3 font-bold text-sm flex items-center gap-2 transition border-b-2 cursor-pointer ${
               activeTab === 'players' 
                 ? 'border-amber-500 text-amber-700 bg-amber-500/5' 
                 : 'border-transparent text-stone-500 hover:text-stone-700 hover:bg-black/5'
             }`}
           >
-            <Users className="h-4 w-4" /> プレイヤー名簿・MMR編集
+            <Users className="h-4 w-4" /> 👥 プレイヤー名簿・MMR編集 ({players.length}名)
           </button>
           <button
             onClick={() => setActiveTab('history')}
-            className={`px-6 py-3 font-bold text-sm flex items-center gap-2 transition border-b-2 ${
+            className={`px-6 py-3 font-bold text-sm flex items-center gap-2 transition border-b-2 cursor-pointer ${
               activeTab === 'history' 
                 ? 'border-emerald-500 text-emerald-700 bg-emerald-500/5' 
                 : 'border-transparent text-stone-500 hover:text-stone-700 hover:bg-black/5'
             }`}
           >
-            <History className="h-4 w-4" /> 戦績履歴
-          </button>
-          <button
-            onClick={() => setActiveTab('affiliate')}
-            className={`px-6 py-3 font-bold text-sm flex items-center gap-2 transition border-b-2 ${
-              activeTab === 'affiliate' 
-                ? 'border-amber-500 text-amber-700 bg-amber-500/5' 
-                : 'border-transparent text-stone-500 hover:text-stone-700 hover:bg-black/5'
-            }`}
-          >
-            <Globe className="h-4 w-4" /> 💰 アフィリエイト管理
+            <History className="h-4 w-4" /> ⚔️ 戦績履歴・勝敗登録
           </button>
         </div>
 
@@ -1534,39 +1419,76 @@ export default function KtmAdminPage() {
               </div>
             )}
 
-            {/* ★ フィルターUI（junglepedia風） */}
-            <div className="flex flex-col md:flex-row gap-3 items-center justify-between bg-white/60 p-4 rounded-xl border border-border mb-4">
-              {/* 左：ステータス */}
-              <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
-                <span className="text-xs text-stone-500 font-bold mr-1">ステータス:</span>
-                {[
-                  { key: null, label: '全員' },
-                  { key: 'active', label: '参加予定' },
-                  { key: 'spectator', label: '見学のみ' },
-                  { key: 'inactive', label: '不参加' }
-                ].map(tab => (
+            {/* ★ フィルターUI ＆ 大会当日チェックイン操作バー */}
+            <div className="space-y-3 bg-white/70 p-4 rounded-2xl border border-border shadow-xs mb-4">
+              <div className="flex flex-col md:flex-row gap-3 items-start md:items-center justify-between">
+                {/* 左：ステータス & チェックイン絞り込み */}
+                <div className="flex flex-wrap items-center gap-1.5 w-full md:w-auto">
+                  <span className="text-xs text-stone-500 font-bold mr-1">絞り込み:</span>
+                  {[
+                    { key: null, label: `全員 (${players.length})` },
+                    { key: 'checked_in', label: `🟢 チェックイン済 (${checkedInPlayerIds.length})` },
+                    { key: 'active', label: '参加予定' },
+                    { key: 'spectator', label: '見学のみ' },
+                    { key: 'inactive', label: '不参加' }
+                  ].map(tab => (
+                    <button
+                      key={tab.label}
+                      onClick={() => setStatusFilter(tab.key)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                        statusFilter === tab.key
+                          ? tab.key === 'checked_in'
+                            ? 'bg-emerald-600 text-white shadow-md'
+                            : 'bg-amber-600 text-white shadow-md'
+                          : 'bg-black/5 text-stone-600 hover:text-stone-900 hover:bg-black/8'
+                      }`}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* 右：大会当日バランサー連携 & チェックイン一括操作 */}
+                <div className="flex items-center gap-2 w-full md:w-auto justify-end">
                   <button
-                    key={tab.label}
-                    onClick={() => setStatusFilter(tab.key)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                      statusFilter === tab.key
-                        ? 'bg-amber-600 text-white shadow-md shadow-amber-900/30'
-                        : 'bg-black/5 text-stone-400 hover:text-stone-900 hover:bg-black/8'
-                    }`}
+                    type="button"
+                    onClick={() => {
+                      const visibleIds = sortedPlayers.map(p => p.id).filter(Boolean);
+                      checkInAllVisible(visibleIds);
+                    }}
+                    className="text-[11px] font-bold px-2.5 py-1.5 bg-black/5 hover:bg-black/10 rounded-lg text-stone-700 transition"
+                    title="表示中の全プレイヤーを出席状態にします"
                   >
-                    {tab.label}
+                    表示中全員出席
                   </button>
-                ))}
+                  {checkedInPlayerIds.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={clearAllCheckIns}
+                      className="text-[11px] font-bold px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-lg border border-rose-200 transition"
+                    >
+                      出欠クリア
+                    </button>
+                  )}
+                  <a
+                    href="/balancer"
+                    className="px-3.5 py-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs font-black rounded-xl shadow-md transition flex items-center gap-1.5"
+                  >
+                    <Trophy className="w-3.5 h-3.5" />
+                    <span>バランサーを開く →</span>
+                  </a>
+                </div>
               </div>
-              {/* 右：希望ロール絞り込み */}
-              <div className="flex flex-wrap items-center gap-1.5 w-full md:w-auto overflow-x-auto">
+
+              {/* 希望ロール絞り込み */}
+              <div className="pt-2 border-t border-border flex flex-wrap items-center gap-1.5">
                 <span className="text-xs text-stone-500 font-bold mr-1">希望ロール:</span>
                 <button
                   onClick={() => setRoleFilter(null)}
-                  className={`px-2.5 py-1.5 rounded-lg text-xs font-black transition-all ${
+                  className={`px-2.5 py-1 rounded-lg text-xs font-black transition-all cursor-pointer ${
                     roleFilter === null
-                      ? 'bg-amber-500 text-black shadow-md shadow-amber-900/20'
-                      : 'bg-black/5 text-stone-400 hover:text-stone-900 hover:bg-black/8'
+                      ? 'bg-amber-500 text-black shadow-xs'
+                      : 'bg-black/5 text-stone-500 hover:text-stone-900 hover:bg-black/8'
                   }`}
                 >
                   ALL
@@ -1575,10 +1497,10 @@ export default function KtmAdminPage() {
                   <button
                     key={role}
                     onClick={() => setRoleFilter(role)}
-                    className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all border ${
+                    className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold transition-all border cursor-pointer ${
                       roleFilter === role
-                        ? 'bg-surface border-amber-500 text-amber-700 font-black shadow-inner'
-                        : 'bg-black/5 border-transparent text-stone-400 hover:text-stone-900 hover:bg-black/8'
+                        ? 'bg-surface border-amber-500 text-amber-700 font-black shadow-xs'
+                        : 'bg-black/5 border-transparent text-stone-500 hover:text-stone-900 hover:bg-black/8'
                     }`}
                   >
                     <RoleIcon role={role} className="w-3 h-3" />
@@ -1588,43 +1510,75 @@ export default function KtmAdminPage() {
               </div>
             </div>
 
-            {/* Player Cards (モバイル専用: カスタム当日にスマホから参加/希望/ランク/MMRを編集) */}
-            <div className="md:hidden space-y-2">
+            {/* Player Cards (モバイル専用: スマホから片手で出欠・ロール・MMRを編集) */}
+            <div className="md:hidden space-y-2.5">
               {sortedPlayers.map((p) => {
                 const uid = p.id || p.discord_id;
+                const isCheckedIn = checkedInPlayerIds.includes(p.id);
                 return (
-                  <div key={uid} className={`bg-surface border rounded-xl p-3 ${p.is_active ? 'border-emerald-700/50 bg-emerald-100' : 'border-border'}`}>
-                    <div className="flex items-center gap-2 mb-2">
-                      <input type="checkbox" checked={p.is_active}
-                        onChange={(e) => handleInputSave(uid, "is_active", e.target.checked)}
-                        className="h-5 w-5 rounded border-border text-amber-600 focus:ring-amber-500 bg-black/5 cursor-pointer shrink-0" />
-                      <button onClick={() => setSelectedPlayer(p)} className="text-amber-700 shrink-0"><Info className="w-4 h-4" /></button>
-                      <input type="text" value={p.name}
-                        onChange={(e) => handleInputChange(uid, "name", e.target.value)}
-                        onBlur={handleBlurSave}
-                        className="bg-transparent border border-transparent focus:border-border focus:bg-black/5 rounded px-1.5 py-1 outline-none flex-1 font-bold text-stone-900 text-sm min-w-0" />
-                      <span className="text-xs font-bold text-amber-700 shrink-0">MMR {p.mmr || 1000}</span>
+                  <div key={uid} className={`bg-surface border rounded-2xl p-3.5 transition shadow-2xs space-y-2.5 ${
+                    isCheckedIn ? 'border-emerald-500 bg-emerald-50/40 ring-1 ring-emerald-400/40' : p.is_active ? 'border-amber-400 bg-amber-50/30' : 'border-border'
+                  }`}>
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <button
+                          type="button"
+                          onClick={() => toggleCheckIn(p.id)}
+                          className={`shrink-0 px-2.5 py-1 rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-1 ${
+                            isCheckedIn
+                              ? 'bg-emerald-600 text-white shadow-xs'
+                              : 'bg-stone-200 text-stone-600 hover:bg-emerald-100 hover:text-emerald-800'
+                          }`}
+                        >
+                          <span>{isCheckedIn ? '🟢 出席' : '⚪ 未着'}</span>
+                        </button>
+                        <input
+                          type="text"
+                          value={p.name}
+                          onChange={(e) => handleInputChange(uid, "name", e.target.value)}
+                          onBlur={handleBlurSave}
+                          className="bg-transparent font-black text-stone-900 text-sm outline-none truncate"
+                        />
+                      </div>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <button onClick={() => setSelectedPlayer(p)} className="text-amber-700 p-1 hover:bg-black/5 rounded">
+                          <Info className="w-4 h-4" />
+                        </button>
+                        <span className="text-xs font-mono font-black text-amber-900 bg-amber-100 px-2 py-0.5 rounded-lg border border-amber-200">
+                          MMR {p.mmr || 1000}
+                        </span>
+                      </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-2 text-xs">
-                      <label className="flex flex-col gap-1">
-                        <span className="text-stone-500">最高Rank</span>
-                        <select value={p.highest_rank || "UNRANKED"} onChange={(e) => handleInputSave(uid, "highest_rank", e.target.value)}
-                          className={`bg-black/5 border border-border rounded px-2 py-1.5 outline-none focus:border-amber-500 ${getColorFromRankName(p.highest_rank)}`}>
+
+                    <div className="grid grid-cols-2 gap-2 text-xs pt-1 border-t border-border/60">
+                      <label className="flex flex-col gap-0.5">
+                        <span className="text-[10px] text-stone-400 font-bold">最高Rank</span>
+                        <select
+                          value={p.highest_rank || "UNRANKED"}
+                          onChange={(e) => handleInputSave(uid, "highest_rank", e.target.value)}
+                          className={`bg-black/5 border border-border rounded-lg px-2 py-1 outline-none font-bold text-xs ${getColorFromRankName(p.highest_rank)}`}
+                        >
                           {HIGHEST_RANK_OPTIONS.map(r => <option key={r} value={r}>{r}</option>)}
                         </select>
                       </label>
-                      <label className="flex flex-col gap-1">
-                        <span className="text-stone-500">希望レーン (メイン / サブ)</span>
+
+                      <label className="flex flex-col gap-0.5">
+                        <span className="text-[10px] text-stone-400 font-bold">希望ロール (主/副)</span>
                         <div className="flex items-center gap-1">
-                          <select value={p.role_preferences?.primary || "ALL"}
+                          <select
+                            value={p.role_preferences?.primary || "ALL"}
                             onChange={(e) => { const v = e.target.value; handleInputSave(uid, "primary_role", v); if (v === "ALL") handleInputSave(uid, "secondary_role", "-"); }}
-                            className={`flex-1 bg-black/5 border border-border rounded px-1.5 py-1.5 outline-none font-bold ${getColorFromRole(p.role_preferences?.primary)}`}>
+                            className={`flex-1 bg-black/5 border border-border rounded-lg px-1.5 py-1 outline-none font-bold text-xs ${getColorFromRole(p.role_preferences?.primary)}`}
+                          >
                             {["ALL","TOP","JG","MID","ADC","SUP"].map(role => <option key={role} value={role}>{role}</option>)}
                           </select>
-                          <span className="text-stone-500">/</span>
-                          <select value={p.role_preferences?.secondary || "-"} disabled={p.role_preferences?.primary === "ALL"}
+                          <span className="text-stone-400">/</span>
+                          <select
+                            value={p.role_preferences?.secondary || "-"}
+                            disabled={p.role_preferences?.primary === "ALL"}
                             onChange={(e) => handleInputSave(uid, "secondary_role", e.target.value)}
-                            className={`flex-1 bg-black/5 border border-border rounded px-1.5 py-1.5 outline-none font-bold disabled:opacity-50 ${getColorFromRole(p.role_preferences?.secondary)}`}>
+                            className={`flex-1 bg-black/5 border border-border rounded-lg px-1.5 py-1 outline-none font-bold text-xs disabled:opacity-40 ${getColorFromRole(p.role_preferences?.secondary)}`}
+                          >
                             {["-","ALL","TOP","JG","MID","ADC","SUP"].map(role => <option key={role} value={role}>{role}</option>)}
                           </select>
                         </div>
@@ -1633,16 +1587,17 @@ export default function KtmAdminPage() {
                   </div>
                 );
               })}
-              {sortedPlayers.length === 0 && <p className="text-center text-stone-500 text-sm py-8">該当プレイヤーなし</p>}
+              {sortedPlayers.length === 0 && <p className="text-center text-stone-500 text-sm py-8 bg-surface rounded-2xl border border-border">該当プレイヤーなし</p>}
             </div>
 
             {/* Player Table (デスクトップ専用) */}
-            <div className="hidden md:block bg-surface border border-border rounded-xl overflow-hidden shadow-2xl">
+            <div className="hidden md:block bg-surface border border-border rounded-2xl overflow-hidden shadow-2xl">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm whitespace-nowrap">
                   <thead className="bg-black/5 text-stone-400 uppercase text-xs tracking-wider sticky top-0 z-30 shadow-md backdrop-blur-sm">
                     <tr>
                       <SortableHeader label="No." sortKey="no" />
+                      <th className="px-2 py-2 text-center text-xs font-bold text-stone-600">出欠</th>
                       <SortableHeader label="Active" sortKey="is_active" />
                       <SortableHeader label="名前" sortKey="name" sticky={true} />
                       <SortableHeader label="最高Rank" sortKey="highest_rank" />
@@ -1658,11 +1613,14 @@ export default function KtmAdminPage() {
                   <tbody className="divide-y divide-border text-sm">
                     {sortedPlayers.map((p) => {
                       const uid = p.id || p.discord_id;
+                      const isCheckedIn = checkedInPlayerIds.includes(p.id);
                       return (
                       <>
                       <tr 
                         key={uid} 
-                        className={`hover:bg-black/5 transition-all duration-1000 ${
+                        className={`hover:bg-black/5 transition-all duration-300 ${
+                          isCheckedIn ? 'bg-emerald-50/50 font-medium' : ''
+                        } ${
                           flashingPlayerIds.includes(uid) 
                             ? 'bg-emerald-100 text-emerald-700 font-bold border-y border-emerald-300 shadow-[inset_0_0_15px_rgba(16,185,129,0.15)]' 
                             : ''
@@ -1670,6 +1628,20 @@ export default function KtmAdminPage() {
                       >
                         <td className="px-2 py-1.5 text-center font-bold text-stone-500 text-xs">
                           {p.no}
+                        </td>
+                        <td className="px-2 py-1.5 text-center">
+                          <button
+                            type="button"
+                            onClick={() => toggleCheckIn(p.id)}
+                            className={`px-2 py-0.5 rounded-lg text-[10px] font-black transition cursor-pointer ${
+                              isCheckedIn
+                                ? 'bg-emerald-600 text-white shadow-2xs'
+                                : 'bg-stone-200 text-stone-600 hover:bg-emerald-100 hover:text-emerald-800'
+                            }`}
+                            title="クリックで出席状態を切り替え"
+                          >
+                            {isCheckedIn ? '🟢 出席' : '⚪ 未着'}
+                          </button>
                         </td>
                         <td className="px-2 py-1.5 text-center">
                           <input
@@ -1871,215 +1843,6 @@ export default function KtmAdminPage() {
                 </table>
               </div>
             </div>
-          </div>
-        )}
-
-        {activeTab === 'affiliate' && (
-          <div className="space-y-6">
-            {/* Header */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-border pb-6 gap-4">
-              <div>
-                <h1 className="text-3xl font-bold text-stone-900 flex items-center gap-3">
-                  <Globe className="h-8 w-8 text-amber-500" />
-                  収益化 ＆ アフィリエイト管理
-                </h1>
-                <p className="text-stone-400 mt-2 text-sm">
-                  管理者用: アフィリエイトリンクの登録とトレンドツール記事の自律生成
-                </p>
-              </div>
-
-              <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
-                <label className="flex items-center gap-2 text-xs font-bold text-stone-400 cursor-pointer select-none">
-                  <input
-                    type="checkbox"
-                    checked={isDryRun}
-                    onChange={(e) => setIsDryRun(e.target.checked)}
-                    className="w-4 h-4 rounded border-border bg-background text-amber-500 focus:ring-0 focus:ring-offset-0 cursor-pointer"
-                  />
-                  テストモード (Dry Run)
-                </label>
-
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={fetchAffiliateData}
-                    className="flex items-center gap-2 bg-black/5 hover:bg-black/8 text-stone-800 px-4 py-2 rounded-lg font-bold transition text-xs"
-                  >
-                    <RefreshCw className={`h-4 w-4 ${loadingAffiliate ? 'animate-spin' : ''}`} />
-                    更新
-                  </button>
-                  <button
-                    onClick={handleTriggerForge}
-                    disabled={syncingAffiliate}
-                    className={`flex items-center gap-2 bg-black/5 hover:bg-black/8 text-stone-800 px-4 py-2 rounded-lg font-bold transition text-xs ${
-                      syncingAffiliate ? 'opacity-50 cursor-not-allowed' : ''
-                    }`}
-                  >
-                    {syncingAffiliate ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                    🤖 トレンド記事の自律生成 (Auto-Forge)
-                  </button>
-                  <button
-                    onClick={handleTriggerBatch}
-                    disabled={syncingAffiliate}
-                    className={`flex items-center gap-2 bg-amber-600 hover:bg-amber-500 text-black px-4 py-2 rounded-lg font-bold transition text-xs shadow-lg shadow-amber-900/10 ${
-                      syncingAffiliate ? 'opacity-50 cursor-not-allowed' : ''
-                    }`}
-                  >
-                    {syncingAffiliate ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Globe className="h-4 w-4" />}
-                    🚀 一気通貫バッチ実行 (Auto-Publish)
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Message Banner */}
-            {message.text && (
-              <div className={`p-4 rounded-lg flex items-center gap-3 ${message.type === 'error' ? 'bg-red-100 text-red-700 border border-red-200' : 'bg-green-100 text-green-700 border border-green-200'}`}>
-                <AlertCircle className="h-5 w-5 flex-shrink-0" />
-                <p className="text-sm font-medium whitespace-pre-wrap">{message.text}</p>
-              </div>
-            )}
-
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Left Column: Link Settings */}
-              <div className="bg-surface border border-border rounded-xl p-6 shadow-xl space-y-4 lg:col-span-1">
-                <div className="flex justify-between items-center border-b border-border pb-3">
-                  <h2 className="text-lg font-bold text-stone-900 flex items-center gap-2">
-                    🔗 アフィリエイトリンク設定
-                  </h2>
-                  <button
-                    onClick={handleAddLink}
-                    className="flex items-center gap-1 text-xs text-amber-700 hover:text-stone-900 font-bold transition"
-                  >
-                    <Plus className="w-4 h-4" /> 追加
-                  </button>
-                </div>
-
-                <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
-                  {Object.entries(affiliateLinks).map(([key, url]) => (
-                    <div key={key} className="bg-black/5 border border-border rounded-xl p-3 space-y-2 relative group">
-                      <div className="flex justify-between items-center">
-                        <span className="font-bold text-sm text-amber-700">{key}</span>
-                        <button
-                          onClick={() => handleDeleteLink(key)}
-                          className="text-stone-500 hover:text-red-700 transition"
-                          title="削除"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      </div>
-                      <input
-                        type="text"
-                        value={url}
-                        onChange={(e) => handleLinkChange(key, e.target.value)}
-                        placeholder="http://..."
-                        className="w-full bg-surface border border-border focus:border-amber-500 rounded px-2 py-1.5 text-xs text-stone-900 outline-none"
-                      />
-                    </div>
-                  ))}
-
-                  {Object.keys(affiliateLinks).length === 0 && (
-                    <div className="text-center py-12 text-stone-500 text-sm">
-                      登録されているアフィリエイトリンクがありません。
-                    </div>
-                  )}
-                </div>
-
-                {Object.keys(affiliateLinks).length > 0 && (
-                  <button
-                    onClick={handleSaveLinks}
-                    disabled={syncingAffiliate}
-                    className="w-full py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-lg font-bold text-xs transition disabled:opacity-50 flex items-center justify-center gap-2"
-                  >
-                    {syncingAffiliate ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                    アフィリエイトリンクの変更を保存
-                  </button>
-                )}
-              </div>
-
-              {/* Right Column: Draft Articles List */}
-              <div className="bg-surface border border-border rounded-xl p-6 shadow-xl space-y-4 lg:col-span-2">
-                <div className="border-b border-border pb-3">
-                  <h2 className="text-lg font-bold text-stone-900 flex items-center gap-2">
-                    📄 自動生成ドラフト記事一覧 (Supabase)
-                  </h2>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[70vh] overflow-y-auto pr-1">
-                  {affiliateArticles.map((art) => (
-                    <div 
-                      key={art.id} 
-                      onClick={() => setSelectedArticle(art)}
-                      className="bg-black/3 border border-border hover:border-amber-300 rounded-xl p-4 space-y-3 cursor-pointer transition hover:bg-black/8 group"
-                    >
-                      <div className="flex justify-between items-start">
-                        <span className="text-[10px] font-bold px-2 py-0.5 bg-amber-100 border border-amber-200 text-amber-700 rounded-full">
-                          {art.champion || "ITツール"}
-                        </span>
-                        <span className="text-[10px] text-stone-500 font-mono">
-                          {new Date(art.created_at).toLocaleDateString()}
-                        </span>
-                      </div>
-                      <h3 className="font-bold text-sm text-stone-900 group-hover:text-amber-700 transition line-clamp-2">
-                        {art.title.replace("[ITツール攻略] ", "")}
-                      </h3>
-                      <p className="text-xs text-stone-400 line-clamp-3">
-                        {art.content.replace(/#.*?\n/g, "").replace(/\[.*?\]\(.*?\)/g, "").substring(0, 150)}...
-                      </p>
-                      <div className="text-[10px] text-amber-700 group-hover:text-amber-700 font-bold flex items-center gap-1">
-                        プレビュー・詳細を表示 →
-                      </div>
-                    </div>
-                  ))}
-
-                  {affiliateArticles.length === 0 && (
-                    <div className="col-span-2 text-center py-24 text-stone-500 text-sm">
-                      生成されたドラフト記事がまだありません。上の「Auto-Forge」ボタンを押して自律生成を実行してください。
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Article Detail Modal */}
-            {selectedArticle && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm p-4">
-                <div className="bg-surface border border-border rounded-xl max-w-4xl w-full shadow-2xl flex flex-col max-h-[90vh]">
-                  <div className="p-6 border-b border-border flex justify-between items-center bg-black/5">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold px-2 py-0.5 bg-amber-100 border border-amber-200 text-amber-700 rounded-full">
-                        {selectedArticle.champion || "ITツール"}
-                      </span>
-                      <h2 className="text-lg font-bold text-stone-900 truncate max-w-[60vw]">
-                        {selectedArticle.title.replace("[ITツール攻略] ", "")}
-                      </h2>
-                    </div>
-                    <button onClick={() => setSelectedArticle(null)} className="text-stone-500 hover:text-stone-900">
-                      <X className="h-6 w-6" />
-                    </button>
-                  </div>
-                  
-                  <div className="p-6 overflow-y-auto space-y-4 flex-1 font-mono text-xs bg-background text-stone-700 select-text whitespace-pre-wrap">
-                    {selectedArticle.content}
-                  </div>
-
-                  <div className="p-6 border-t border-border bg-black/5 flex justify-between items-center">
-                    <span className="text-[10px] text-stone-500">
-                      保存パス: <code className="bg-background px-1 py-0.5 rounded text-stone-400">{selectedArticle.file_path}</code>
-                    </span>
-                    <button 
-                      onClick={() => {
-                        navigator.clipboard.writeText(selectedArticle.content);
-                        alert("Markdown 本文をクリップボードにコピーしました！ noteの下書きへ貼り付けてください。");
-                      }}
-                      className="px-6 py-2 rounded-lg font-bold bg-amber-600 hover:bg-amber-500 text-white transition shadow-lg flex items-center gap-2 text-xs"
-                    >
-                      <Save className="w-4 h-4" />
-                      Markdownをコピー
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         )}
 
