@@ -1514,9 +1514,9 @@ export default function CoachPage() {
   const [activeStepTab, setActiveStepTab] = useState<'pregame' | 'live' | 'postgame'>('pregame');
 
   const STEP_TABS = [
-    { id: 'pregame', label: '1. 🎯 試合前 (バンピック・対面対策・5分作戦)', icon: '🎯' },
-    { id: 'live', label: '2. 🧭 試合中 (ライブ偵察・構成勝ち筋・HUD)', icon: '🧭' },
-    { id: 'postgame', label: '3. 📈 試合後 (1分振り返り・カルテ・AI練習)', icon: '📈' },
+    { id: 'pregame', title: '1. 試合前', sub: 'バンピック・5分作戦', icon: '🎯' },
+    { id: 'live', title: '2. 試合中', sub: 'ライブ偵察・構成診断', icon: '🧭' },
+    { id: 'postgame', title: '3. 試合後', sub: '1分振り返り・カルテ', icon: '📈' },
   ] as const;
 
   if (isAuthenticated === null) {
@@ -1608,23 +1608,29 @@ export default function CoachPage() {
         {/* 今日の意識テーマ常駐バー */}
         <FocusStickyBar />
 
-        {/* 3ステップ プロ景観ナビゲーションバー */}
-        <div className="bg-white/90 border border-stone-200/90 p-1.5 rounded-2xl shadow-xs">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-1.5">
+        {/* 3ステップ レスポンシブナビゲーションバー（文字被り防止設計） */}
+        <div className="bg-white/95 border border-stone-200/90 p-1.5 rounded-2xl shadow-xs">
+          <div className="grid grid-cols-3 gap-1.5">
             {STEP_TABS.map((tab) => {
               const isActive = activeStepTab === tab.id;
               return (
                 <button
                   key={tab.id}
+                  type="button"
                   onClick={() => setActiveStepTab(tab.id as any)}
-                  className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                  className={`flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 px-2 sm:px-4 py-2.5 sm:py-3 rounded-xl transition-all cursor-pointer min-w-0 overflow-hidden ${
                     isActive
                       ? 'bg-primary text-white shadow-md ring-2 ring-primary/40 scale-[1.01]'
                       : 'bg-stone-100/70 text-stone-600 hover:bg-stone-200/80 hover:text-stone-900'
                   }`}
                 >
-                  <span className="text-base">{tab.icon}</span>
-                  <span className="whitespace-nowrap">{tab.label}</span>
+                  <span className="text-base shrink-0">{tab.icon}</span>
+                  <div className="flex flex-col sm:flex-row sm:items-baseline sm:gap-1.5 min-w-0 text-center sm:text-left overflow-hidden">
+                    <span className="text-xs font-black truncate">{tab.title}</span>
+                    <span className={`text-[10px] truncate hidden lg:inline font-medium ${isActive ? 'text-white/80' : 'text-stone-400'}`}>
+                      ({tab.sub})
+                    </span>
+                  </div>
                 </button>
               );
             })}
