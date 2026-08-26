@@ -212,11 +212,12 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
   const handleStartRefineFacts = async (championName: string, roleName?: string) => {
     setRefiningFacts(true);
     try {
+      const targetRole = roleName && roleName !== 'GLOBAL' ? roleName : selectedRole;
       const res = await fetch('/api/admin/champions/refine-facts', {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ champion: championName, role: roleName, dryRun: true }),
+        body: JSON.stringify({ champion: championName, role: targetRole, dryRun: true }),
       });
       const d = await res.json();
       if (!res.ok || !d.success) throw new Error(d.error || '知見清書の生成に失敗しました');
@@ -252,11 +253,15 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
       
       // dataFieldsを更新
       if (d.refinedFields) {
-        for (const [k, v] of Object.entries(d.refinedFields)) {
-          if (k !== 'champion' && k !== 'role' && k !== 'updated_at') {
-            setField(k, v as any);
+        setDataFields((prev: any) => {
+          const next = { ...(prev || {}) };
+          for (const [k, v] of Object.entries(d.refinedFields)) {
+            if (k !== 'champion' && k !== 'role' && k !== 'updated_at') {
+              next[k] = v;
+            }
           }
-        }
+          return next;
+        });
       }
       alert('✨ 蓄積知見を清書版へ更新しました！');
       setFactsRefinePreview(null);
@@ -960,7 +965,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
 
               <button
                 type="button"
-                onClick={() => handleStartRefineFacts(selected.id || selected.name, dataFields.role)}
+                onClick={() => handleStartRefineFacts(selected.id || selected.name, selectedRole)}
                 disabled={refiningFacts}
                 className="px-4 py-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-black rounded-xl transition-all flex items-center gap-2 text-sm shadow-md shadow-amber-500/20 disabled:opacity-50"
                 title="蓄積された知見の重複を排除し、各項目を洗練された1本の文章に清書・整理します"
@@ -2221,6 +2226,27 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
             setHistoryModal(null);
           }}
         />
+      )}
+
+      {/* ✨ AI知見清書 処理中オーバーレイ */}
+      {refiningFacts && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/70 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white border border-amber-300 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl flex flex-col items-center text-center space-y-4">
+            <div className="w-16 h-16 rounded-2xl bg-amber-100 flex items-center justify-center text-amber-600 shadow-inner">
+              <Sparkles size={32} className="animate-spin text-amber-600" />
+            </div>
+            <div className="space-y-1.5">
+              <h3 className="text-lg font-black text-stone-900">✨ 蓄積知見をAI清書・整理中...</h3>
+              <p className="text-xs text-stone-500 leading-relaxed">
+                重複表現を削ぎ落とし、2026年最新メタ仕様（スカトル2:55/グラブ8:00等）に合わせたプロ品質の文章へ再構成しています。
+              </p>
+            </div>
+            <div className="flex items-center gap-2 text-xs font-bold text-amber-800 bg-amber-50 px-3 py-1.5 rounded-xl border border-amber-200">
+              <RefreshCw size={14} className="animate-spin" />
+              <span>Gemini 3 が推敲中（数秒お待ちください）</span>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* ✨ AI知見清書・重複排除 プレビューモーダル */}

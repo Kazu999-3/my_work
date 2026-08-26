@@ -39,11 +39,36 @@ export async function POST(req: Request) {
     if (role && role !== 'GLOBAL') {
       query = query.ilike('role', role);
     }
-    const { data: existingFact, error: factErr } = await query.maybeSingle();
+    let { data: existingFact, error: factErr } = await query.maybeSingle();
     if (factErr) throw factErr;
 
+    // champion_facts がない場合、matchup_sentinel からフォールバック取得
     if (!existingFact) {
-      return NextResponse.json({ error: '対象チャンピオンの知見データが存在しません' }, { status: 404 });
+      const { data: sentinelData } = await supabase
+        .from('matchup_sentinel')
+        .select('*')
+        .eq('champion', champion)
+        .order('updated_at', { ascending: false })
+        .limit(1);
+
+      if (sentinelData && sentinelData.length > 0) {
+        const s = sentinelData[0];
+        existingFact = {
+          champion,
+          role: s.role || role || 'GLOBAL',
+          strengths: s.strengths || '',
+          weaknesses: s.weaknesses || '',
+          power_spikes: s.power_spikes || '',
+          build_runes: s.build_runes || '',
+          strategy: s.strategy || '',
+          must_ban_champions: s.must_ban_champions || '',
+          pick_recommendation: s.pick_recommendation || '',
+        };
+      }
+    }
+
+    if (!existingFact) {
+      return NextResponse.json({ error: `「${champion}」の蓄積知見データがまだありません。まず「最新トレンド取得」または編集から知見を追加してください。` }, { status: 404 });
     }
 
     // 既存の各フィールド内容を整理

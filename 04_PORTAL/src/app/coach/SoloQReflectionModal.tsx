@@ -496,6 +496,78 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
                       ))}
                     </div>
                   )}
+                  {/* ⏱️ チャンピオン辞典基準 vs 今回の実測比較 */}
+                  {currentAnalysis.timingComparison && (
+                    <div className="bg-amber-50/80 rounded-lg p-3 border border-amber-300 text-xs space-y-2">
+                      <div className="font-extrabold text-amber-950 flex items-center justify-between">
+                        <span className="flex items-center gap-1.5">
+                          <span>⏱️</span> チャンピオン辞典基準 vs 実測テンポ比較
+                        </span>
+                        {currentAnalysis.timingComparison.dictFastestClearSec && (
+                          <span className="text-[10px] font-bold text-amber-800 bg-amber-200/60 px-2 py-0.5 rounded">
+                            最速フルクリア基準: {Math.floor(currentAnalysis.timingComparison.dictFastestClearSec / 60)}分{String(currentAnalysis.timingComparison.dictFastestClearSec % 60).padStart(2, '0')}秒
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
+                        {/* 1stコア */}
+                        <div className="bg-white p-2 rounded border border-amber-200 space-y-1">
+                          <div className="font-bold text-stone-700 flex items-center justify-between">
+                            <span>1stコア: {currentAnalysis.timingComparison.actualFirstCoreName || '未完成'}</span>
+                            {currentAnalysis.timingComparison.firstCoreDiffSec !== null && (
+                              <span className={`font-black text-[10px] px-1.5 py-0.5 rounded ${
+                                currentAnalysis.timingComparison.firstCoreDiffSec > 0
+                                  ? 'bg-rose-100 text-rose-800'
+                                  : 'bg-emerald-100 text-emerald-800'
+                              }`}>
+                                {currentAnalysis.timingComparison.firstCoreDiffSec > 0
+                                  ? `+${Math.floor(currentAnalysis.timingComparison.firstCoreDiffSec / 60)}分${String(currentAnalysis.timingComparison.firstCoreDiffSec % 60).padStart(2, '0')}秒 遅延`
+                                  : `${Math.floor(Math.abs(currentAnalysis.timingComparison.firstCoreDiffSec) / 60)}分${String(Math.abs(currentAnalysis.timingComparison.firstCoreDiffSec) % 60).padStart(2, '0')}秒 先行`}
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-stone-500 text-[10px] flex justify-between">
+                            <span>実測: {currentAnalysis.timingComparison.actualFirstCoreSec ? `${Math.floor(currentAnalysis.timingComparison.actualFirstCoreSec / 60)}分${String(currentAnalysis.timingComparison.actualFirstCoreSec % 60).padStart(2, '0')}秒` : '未完成'}</span>
+                            {currentAnalysis.timingComparison.dictAvgFirstCoreSec && (
+                              <span>辞典平均: {Math.floor(currentAnalysis.timingComparison.dictAvgFirstCoreSec / 60)}分{String(currentAnalysis.timingComparison.dictAvgFirstCoreSec % 60).padStart(2, '0')}秒</span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* 2ndコア */}
+                        <div className="bg-white p-2 rounded border border-amber-200 space-y-1">
+                          <div className="font-bold text-stone-700 flex items-center justify-between">
+                            <span>2ndコア: {currentAnalysis.timingComparison.actualSecondCoreName || '未完成'}</span>
+                            {currentAnalysis.timingComparison.secondCoreDiffSec !== null && (
+                              <span className={`font-black text-[10px] px-1.5 py-0.5 rounded ${
+                                currentAnalysis.timingComparison.secondCoreDiffSec > 0
+                                  ? 'bg-rose-100 text-rose-800'
+                                  : 'bg-emerald-100 text-emerald-800'
+                              }`}>
+                                {currentAnalysis.timingComparison.secondCoreDiffSec > 0
+                                  ? `+${Math.floor(currentAnalysis.timingComparison.secondCoreDiffSec / 60)}分${String(currentAnalysis.timingComparison.secondCoreDiffSec % 60).padStart(2, '0')}秒 遅延`
+                                  : `${Math.floor(Math.abs(currentAnalysis.timingComparison.secondCoreDiffSec) / 60)}分${String(Math.abs(currentAnalysis.timingComparison.secondCoreDiffSec) % 60).padStart(2, '0')}秒 先行`}
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-stone-500 text-[10px] flex justify-between">
+                            <span>実測: {currentAnalysis.timingComparison.actualSecondCoreSec ? `${Math.floor(currentAnalysis.timingComparison.actualSecondCoreSec / 60)}分${String(currentAnalysis.timingComparison.actualSecondCoreSec % 60).padStart(2, '0')}秒` : '未完成'}</span>
+                            {currentAnalysis.timingComparison.dictAvgSecondCoreSec && (
+                              <span>辞典平均: {Math.floor(currentAnalysis.timingComparison.dictAvgSecondCoreSec / 60)}分{String(currentAnalysis.timingComparison.dictAvgSecondCoreSec % 60).padStart(2, '0')}秒</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {currentAnalysis.timingComparison.earlyJungleCsAt5Min !== null && (
+                        <div className="text-[10px] text-amber-900/80 font-bold">
+                          🌱 5分時点のジャングルCS: {currentAnalysis.timingComparison.earlyJungleCsAt5Min} CS
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   {/* ターニングポイント */}
                   {currentAnalysis.turningPoints?.length > 0 && (
                     <div className="bg-white/80 rounded-lg p-2.5 border border-amber-200 text-xs space-y-1">

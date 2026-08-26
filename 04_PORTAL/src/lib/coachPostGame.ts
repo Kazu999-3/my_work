@@ -139,6 +139,60 @@ async function fetchPowerSpikeContext(champion: string): Promise<string> {
   ].filter(Boolean).join('\n');
 }
 
+// DDragon アイテムキャッシュ
+let cachedCompletedItemIds: Set<number> | null = null;
+let cachedItemNames: Map<number, string> | null = null;
+
+async function getCompletedItemMetadata(): Promise<{ completedIds: Set<number>; itemNames: Map<number, string> }> {
+  if (cachedCompletedItemIds && cachedItemNames) {
+    return { completedIds: cachedCompletedItemIds, itemNames: cachedItemNames };
+  }
+  try {
+    const vRes = await fetch('https://ddragon.leagueoflegends.com/api/versions.json');
+    const versions = await vRes.json();
+    const latest = versions[0] || '14.1.1';
+    const itemRes = await fetch(`https://ddragon.leagueoflegends.com/cdn/${latest}/data/ja_JP/item.json`);
+    const itemData = await itemRes.json();
+    const completed = new Set<number>();
+    const names = new Map<number, string>();
+
+    for (const [idStr, info] of Object.entries(itemData.data || {})) {
+      const id = Number(idStr);
+      const item: any = info;
+      names.set(id, item.name || `Item_${id}`);
+
+      if (item.into && item.into.length > 0) continue; // 素材アイテムは除外
+      const totalGold = item.gold?.total || 0;
+      if (totalGold < 2400) continue; // 廉価品や消耗品は除外
+      if (item.tags?.includes('Boots') || item.tags?.includes('Consumable')) continue; // ブーツ・消費アイテム除外
+      if (item.maps && item.maps['11'] === false) continue; // サモナーズリフト以外専用は除外
+
+      completed.add(id);
+    }
+    cachedCompletedItemIds = completed;
+    cachedItemNames = names;
+    return { completedIds: completed, itemNames: names };
+  } catch (e) {
+    console.warn('[coachPostGame] DDragon item data fetch failed, using fallback:', e);
+    return { completedIds: new Set<number>(), itemNames: new Map<number, string>() };
+  }
+}
+
+export interface JungleTimingComparison {
+  champion: string;
+  actualFirstCoreSec: number | null;
+  actualFirstCoreName: string | null;
+  dictAvgFirstCoreSec: number | null;
+  firstCoreDiffSec: number | null;
+  actualSecondCoreSec: number | null;
+  actualSecondCoreName: string | null;
+  dictAvgSecondCoreSec: number | null;
+  secondCoreDiffSec: number | null;
+  dictFastestClearSec: number | null;
+  earlyJungleCsAt5Min: number | null;
+  summary: string;
+}
+
 export interface PostGameReviewResult {
   result: {
     win: boolean;
@@ -163,6 +217,7 @@ export interface PostGameReviewResult {
   rootCauses?: string[];
   actionItems?: { action: string; why: string }[];
   mapEvents?: SpatialEvent[];
+  timingComparison?: JungleTimingComparison | null;
 }
 
 /**
@@ -237,6 +292,8 @@ export async function runPostGameReview(opts: { matchId?: string; focus?: string
   const recallTrips: { min: number; items: string[]; goldSpent: number }[] = [];
   const mapEvents: SpatialEvent[] = [];
   let earlyLv1to6Events: string[] = [];
+  const myItemPurchases: { timestamp: number; sec: number; min: number; itemId: number; itemName: string }[] = [];
+  let myJungleCsAt5Min: number | null = null;
 
   try {
     const timeline = await fetchMatchTimeline(targetMatchId, apiKey);
@@ -249,6 +306,8 @@ export async function runPostGameReview(opts: { matchId?: string; focus?: string
       if (matchParticipant?.championName) participantIdToChampion.set(p.participantId, matchParticipant.championName);
       if (matchParticipant?.teamId) participantIdToTeam.set(p.participantId, matchParticipant.teamId);
     });
+
+    const { completedIds: completedItemIds, itemNames: ddragonItemNames } = await getCompletedItemMetadata();
 
     if (myParticipantId) {
       const frames: any[] = timeline?.info?.frames || [];
@@ -272,6 +331,11 @@ export async function runPostGameReview(opts: { matchId?: string; focus?: string
 
         const pFrames = frame.participantFrames || {};
         const goldEntries = Object.keys(pFrames);
+
+        // 5分フレームのJG CS記録
+        if (min === 5 && myJungleCsAt5Min === null && pFrames[String(myParticipantId)]) {
+          myJungleCsAt5Min = pFrames[String(myParticipantId)]?.jungleMinionsKilled ?? null;
+        }
 
         // 同フレームにおける全参加者の位置情報リスト
         const allParticipantsPositions: { participantId: number; teamId: number; pos: { x: number; y: number } }[] = [];
@@ -316,7 +380,17 @@ export async function runPostGameReview(opts: { matchId?: string; focus?: string
           const evMin = Math.floor(ev.timestamp / 60000);
           const evSec = Math.floor((ev.timestamp % 60000) / 1000);
 
-          if (ev.type === 'CHAMPION_KILL') {
+          if (ev.type === 'ITEM_PURCHASED' && ev.participantId === myParticipantId) {
+            if (completedItemIds.has(ev.itemId)) {
+              myItemPurchases.push({
+                timestamp: ev.timestamp,
+                sec: Math.floor(ev.timestamp / 1000),
+                min: evMin,
+                itemId: ev.itemId,
+                itemName: ddragonItemNames.get(ev.itemId) || `Item #${ev.itemId}`,
+              });
+            }
+          } else if (ev.type === 'CHAMPION_KILL') {
             allKillTimestamps.push(ev.timestamp);
             const killerChamp = participantIdToChampion.get(ev.killerId) || '敵';
             const victimChamp = participantIdToChampion.get(ev.victimId) || '味方';
@@ -437,6 +511,71 @@ export async function runPostGameReview(opts: { matchId?: string; focus?: string
     console.warn('[coachPostGame] タイムライン取得に失敗（続行）:', e);
   }
 
+  // チャンピオン辞典のタイミング基準データ（champion_jungle_timing_agg）を取得
+  let timingComparison: JungleTimingComparison | null = null;
+  const formatSec = (sec: number | null) => {
+    if (sec === null || isNaN(sec)) return '未計測';
+    const m = Math.floor(sec / 60);
+    const s = Math.round(sec % 60);
+    return `${m}:${String(s).padStart(2, '0')}`;
+  };
+
+  try {
+    const { data: timingRow } = await supabase
+      .from('champion_jungle_timing_agg')
+      .select('avg_first_core_sec, avg_second_core_sec, external_fastest_clear_sec')
+      .ilike('champion', me.championName)
+      .maybeSingle();
+
+    const actual1st = myItemPurchases[0] || null;
+    const actual2nd = myItemPurchases[1] || null;
+    const actual1stSec = actual1st ? actual1st.sec : null;
+    const actual2ndSec = actual2nd ? actual2nd.sec : null;
+    const dict1stSec = timingRow?.avg_first_core_sec ?? null;
+    const dict2ndSec = timingRow?.avg_second_core_sec ?? null;
+    const dictClearSec = timingRow?.external_fastest_clear_sec ?? null;
+
+    const firstDiff = (actual1stSec !== null && dict1stSec !== null) ? (actual1stSec - dict1stSec) : null;
+    const secondDiff = (actual2ndSec !== null && dict2ndSec !== null) ? (actual2ndSec - dict2ndSec) : null;
+
+    const lines: string[] = [];
+    if (dictClearSec) {
+      lines.push(`・最速フルクリア基準: ${formatSec(dictClearSec)} (junglepedia基準)`);
+    }
+    if (actual1stSec !== null && dict1stSec !== null) {
+      const diffStr = firstDiff !== null ? (firstDiff > 0 ? `+${formatSec(firstDiff)}遅延 ⚠️` : `${formatSec(Math.abs(firstDiff))}先行 ⚡`) : '';
+      lines.push(`・1stコア [${actual1st?.itemName}]: 実測 ${formatSec(actual1stSec)} (辞典平均: ${formatSec(dict1stSec)} ➔ ${diffStr})`);
+    } else if (actual1stSec !== null) {
+      lines.push(`・1stコア [${actual1st?.itemName}]: 実測 ${formatSec(actual1stSec)}`);
+    }
+    if (actual2ndSec !== null && dict2ndSec !== null) {
+      const diffStr = secondDiff !== null ? (secondDiff > 0 ? `+${formatSec(secondDiff)}遅延 ⚠️` : `${formatSec(Math.abs(secondDiff))}先行 ⚡`) : '';
+      lines.push(`・2ndコア [${actual2nd?.itemName}]: 実測 ${formatSec(actual2ndSec)} (辞典平均: ${formatSec(dict2ndSec)} ➔ ${diffStr})`);
+    } else if (actual2ndSec !== null) {
+      lines.push(`・2ndコア [${actual2nd?.itemName}]: 実測 ${formatSec(actual2ndSec)}`);
+    }
+    if (myJungleCsAt5Min !== null) {
+      lines.push(`・5分時点のジャングルCS: ${myJungleCsAt5Min} CS (初動ファーム指標)`);
+    }
+
+    timingComparison = {
+      champion: me.championName,
+      actualFirstCoreSec: actual1stSec,
+      actualFirstCoreName: actual1st?.itemName || null,
+      dictAvgFirstCoreSec: dict1stSec,
+      firstCoreDiffSec: firstDiff,
+      actualSecondCoreSec: actual2ndSec,
+      actualSecondCoreName: actual2nd?.itemName || null,
+      dictAvgSecondCoreSec: dict2ndSec,
+      secondCoreDiffSec: secondDiff,
+      dictFastestClearSec: dictClearSec,
+      earlyJungleCsAt5Min: myJungleCsAt5Min,
+      summary: lines.join('\n'),
+    };
+  } catch (e) {
+    console.warn('[coachPostGame] timing comparison calculation failed:', e);
+  }
+
   const knowledgeCtx = await searchKnowledge([
     me.championName,
     ...(enemyLaner ? [enemyLaner.championName] : []),
@@ -468,6 +607,8 @@ ${getPlayerStylePromptContext()}
 【弱点・課題特定】
 ${weaknesses.length > 0 ? weaknesses.map((w) => `・${w}`).join('\n') : '・特になし'}
 
+${timingComparison?.summary ? `=== チャンピオン辞典の基準値 vs 今回の実績比較 ===\n${timingComparison.summary}\n` : ''}
+
 【最序盤(Lv1〜8分)の重要イベント】
 ${earlyLv1to6Events.length > 0 ? earlyLv1to6Events.map((e) => `・${e}`).join('\n') : '・目立った早期イベントなし'}
 
@@ -484,7 +625,7 @@ ${focus ? `\n=== この試合で意識すると宣言した「今日の焦点」
 
 【コーチング指示】
 以下の構成で日本語600字程度でアドバイスし、最後に必ずJSONブロックを出力してください:
-1. 試合が崩れた根本要因の分析: ${isJungle ? 'JG視点での最序盤(Lv1〜6)のルート・スカトル争奪・ガンク成否、ヴォイドグラブ/ドラゴン前の主導権判断、およびターニングポイント時のポジショニング' : '序盤のレーン主導権とターニングポイント'}。
+1. 試合が崩れた根本要因・テンポの分析: ${isJungle ? 'JG視点での最序盤(Lv1〜6)のルート・スカトル争奪・ガンク成否、および【チャンピオン辞典の基準タイム（フルクリアや1コア完成時間）との比較】を踏まえたテンポ評価' : '序盤のレーン主導権とターニングポイント、アイテム完成テンポ'}。
 2. 対面JGとのパワースパイク比較: 自分と相手のどちらがどの時間帯に強かったか、無理な戦闘を仕掛けていなかったか。
 3. 次戦の修正アクション（1〜2点）: 次の試合ですぐ実践できる具体的な行動。
 ${focus ? `4. 今日の焦点の達成度: 「${focus}」を【達成】または【未達成】と明記した上で根拠を述べる。` : ''}
@@ -573,6 +714,7 @@ ${focus ? `4. 今日の焦点の達成度: 「${focus}」を【達成】また�
     rootCauses,
     actionItems,
     mapEvents,
+    timingComparison,
   };
 }
 

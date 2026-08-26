@@ -198,6 +198,8 @@ function DictHealthDashboardContent() {
     );
   }
 
+  const [showGuide, setShowGuide] = useState(false); // スマホでは初期折りたたみ
+
   return (
     <div className="min-h-screen bg-[#f7f5f0] text-gray-900 font-sans pb-24 antialiased selection:bg-amber-500/20">
       <style>{`
@@ -223,143 +225,157 @@ function DictHealthDashboardContent() {
         )}
       </AnimatePresence>
 
-      <div className="max-w-6xl mx-auto px-4 pt-8 space-y-8">
-            {/* 3タブの使い方ガイド（常時表示） */}
-        <div className="bg-gradient-to-br from-stone-50 to-amber-50/30 rounded-2xl border border-stone-200 p-5 mb-4 shadow-sm">
-          <div className="flex items-center gap-2 mb-3">
-            <HelpCircle className="w-5 h-5 text-amber-600 shrink-0" />
-            <span className="text-sm font-extrabold text-stone-900">🗺️ 3つのタブの使い方 & 使うタイミング</span>
-          </div>
+      <div className="max-w-6xl mx-auto px-3 sm:px-4 pt-4 sm:pt-8 space-y-5 sm:space-y-8">
+        {/* 3タブの使い方ガイド（折りたたみアコーディオン） */}
+        <div className="bg-gradient-to-br from-stone-50 to-amber-50/30 rounded-2xl border border-stone-200 p-3.5 sm:p-5 shadow-xs">
+          <button
+            type="button"
+            onClick={() => setShowGuide(!showGuide)}
+            className="w-full flex items-center justify-between gap-2 text-left"
+          >
+            <div className="flex items-center gap-2">
+              <HelpCircle className="w-4 h-4 sm:w-5 sm:h-5 text-amber-600 shrink-0" />
+              <span className="text-xs sm:text-sm font-extrabold text-stone-900">🗺️ 3つのタブの使い方 & 使うタイミング</span>
+            </div>
+            <span className="text-[11px] font-bold text-amber-700 bg-amber-100/80 px-2.5 py-1 rounded-lg shrink-0">
+              {showGuide ? '閉じる ▲' : 'ガイドを見る ▼'}
+            </span>
+          </button>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            {/* タブ1 ガイド */}
-            <button
-              onClick={() => setHubTab('health')}
-              className={`text-left p-3.5 rounded-xl border-2 transition-all hover:shadow-md ${
-                hubTab === 'health'
-                  ? 'border-amber-400 bg-amber-50 ring-2 ring-amber-300/40'
-                  : 'border-stone-200 bg-white hover:border-amber-300'
-              }`}
-            >
-              <div className="flex items-center gap-2 mb-2">
-                <Activity className="w-4 h-4 text-amber-600" />
-                <span className="text-xs font-black text-amber-900">📊 ヘルス概要</span>
-              </div>
-              <div className="text-[11px] text-stone-600 space-y-1.5 leading-relaxed">
-                <div className="flex items-start gap-1.5">
-                  <span className="text-amber-500 font-bold shrink-0 mt-0.5">▸</span>
-                  <span><strong className="text-stone-800">やること:</strong> 全チャンピオンの状態を一覧し、ワンタップで一括AI最新化</span>
-                </div>
-                <div className="flex items-start gap-1.5">
-                  <span className="text-amber-500 font-bold shrink-0 mt-0.5">▸</span>
-                  <span><strong className="text-stone-800">タイミング:</strong> パッチ更新後の最初の作業。🔴要対応が0になるまで</span>
-                </div>
-              </div>
-            </button>
+          {showGuide && (
+            <div className="mt-3.5 pt-3 border-t border-stone-200 space-y-3 animate-fade-in">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 sm:gap-3">
+                {/* タブ1 ガイド */}
+                <button
+                  onClick={() => setHubTab('health')}
+                  className={`text-left p-3 sm:p-3.5 rounded-xl border-2 transition-all hover:shadow-md ${
+                    hubTab === 'health'
+                      ? 'border-amber-400 bg-amber-50 ring-2 ring-amber-300/40'
+                      : 'border-stone-200 bg-white hover:border-amber-300'
+                  }`}
+                >
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <Activity className="w-4 h-4 text-amber-600" />
+                    <span className="text-xs font-black text-amber-900">📊 ヘルス概要</span>
+                  </div>
+                  <div className="text-[11px] text-stone-600 space-y-1 leading-relaxed">
+                    <div className="flex items-start gap-1.5">
+                      <span className="text-amber-500 font-bold shrink-0 mt-0.5">▸</span>
+                      <span><strong className="text-stone-800">やること:</strong> 全チャンピオンの状態を一覧し、ワンタップで一括AI最新化</span>
+                    </div>
+                    <div className="flex items-start gap-1.5">
+                      <span className="text-amber-500 font-bold shrink-0 mt-0.5">▸</span>
+                      <span><strong className="text-stone-800">タイミング:</strong> パッチ更新後の最初の作業。🔴要対応が0になるまで</span>
+                    </div>
+                  </div>
+                </button>
 
-            {/* タブ2 ガイド */}
-            <button
-              onClick={() => setHubTab('audit')}
-              className={`text-left p-3.5 rounded-xl border-2 transition-all hover:shadow-md ${
-                hubTab === 'audit'
-                  ? 'border-cyan-400 bg-cyan-50 ring-2 ring-cyan-300/40'
-                  : 'border-stone-200 bg-white hover:border-cyan-300'
-              }`}
-            >
-              <div className="flex items-center gap-2 mb-2">
-                <ClipboardCheck className="w-4 h-4 text-cyan-600" />
-                <span className="text-xs font-black text-cyan-900">🕵️ ファクトチェック & 棚卸し</span>
-              </div>
-              <div className="text-[11px] text-stone-600 space-y-1.5 leading-relaxed">
-                <div className="flex items-start gap-1.5">
-                  <span className="text-cyan-500 font-bold shrink-0 mt-0.5">▸</span>
-                  <span><strong className="text-stone-800">やること:</strong> AIが検知した矛盾・誤記述を1件ずつ確認し修正</span>
-                </div>
-                <div className="flex items-start gap-1.5">
-                  <span className="text-cyan-500 font-bold shrink-0 mt-0.5">▸</span>
-                  <span><strong className="text-stone-800">タイミング:</strong> ヘルス概要で一括更新した後。指摘が0件になるまで</span>
-                </div>
-              </div>
-            </button>
+                {/* タブ2 ガイド */}
+                <button
+                  onClick={() => setHubTab('audit')}
+                  className={`text-left p-3 sm:p-3.5 rounded-xl border-2 transition-all hover:shadow-md ${
+                    hubTab === 'audit'
+                      ? 'border-cyan-400 bg-cyan-50 ring-2 ring-cyan-300/40'
+                      : 'border-stone-200 bg-white hover:border-cyan-300'
+                  }`}
+                >
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <ClipboardCheck className="w-4 h-4 text-cyan-600" />
+                    <span className="text-xs font-black text-cyan-900">🕵️ ファクトチェック & 棚卸し</span>
+                  </div>
+                  <div className="text-[11px] text-stone-600 space-y-1 leading-relaxed">
+                    <div className="flex items-start gap-1.5">
+                      <span className="text-cyan-500 font-bold shrink-0 mt-0.5">▸</span>
+                      <span><strong className="text-stone-800">やること:</strong> AIが検知した矛盾・誤記述を1件ずつ確認し修正</span>
+                    </div>
+                    <div className="flex items-start gap-1.5">
+                      <span className="text-cyan-500 font-bold shrink-0 mt-0.5">▸</span>
+                      <span><strong className="text-stone-800">タイミング:</strong> ヘルス概要で一括更新した後。指摘が0件になるまで</span>
+                    </div>
+                  </div>
+                </button>
 
-            {/* タブ3 ガイド */}
-            <button
-              onClick={() => setHubTab('history')}
-              className={`text-left p-3.5 rounded-xl border-2 transition-all hover:shadow-md ${
-                hubTab === 'history'
-                  ? 'border-pink-400 bg-pink-50 ring-2 ring-pink-300/40'
-                  : 'border-stone-200 bg-white hover:border-pink-300'
-              }`}
-            >
-              <div className="flex items-center gap-2 mb-2">
-                <History className="w-4 h-4 text-pink-600" />
-                <span className="text-xs font-black text-pink-900">📜 履歴 & 鮮度</span>
+                {/* タブ3 ガイド */}
+                <button
+                  onClick={() => setHubTab('history')}
+                  className={`text-left p-3 sm:p-3.5 rounded-xl border-2 transition-all hover:shadow-md ${
+                    hubTab === 'history'
+                      ? 'border-pink-400 bg-pink-50 ring-2 ring-pink-300/40'
+                      : 'border-stone-200 bg-white hover:border-pink-300'
+                  }`}
+                >
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <History className="w-4 h-4 text-pink-600" />
+                    <span className="text-xs font-black text-pink-900">📜 履歴 & 鮮度</span>
+                  </div>
+                  <div className="text-[11px] text-stone-600 space-y-1 leading-relaxed">
+                    <div className="flex items-start gap-1.5">
+                      <span className="text-pink-500 font-bold shrink-0 mt-0.5">▸</span>
+                      <span><strong className="text-stone-800">やること:</strong> 変更履歴の確認・巻き戻し、データ鮮度チェック</span>
+                    </div>
+                    <div className="flex items-start gap-1.5">
+                      <span className="text-pink-500 font-bold shrink-0 mt-0.5">▸</span>
+                      <span><strong className="text-stone-800">タイミング:</strong> AI更新後に「何が変わったか」を確認したい時・定期点検</span>
+                    </div>
+                  </div>
+                </button>
               </div>
-              <div className="text-[11px] text-stone-600 space-y-1.5 leading-relaxed">
-                <div className="flex items-start gap-1.5">
-                  <span className="text-pink-500 font-bold shrink-0 mt-0.5">▸</span>
-                  <span><strong className="text-stone-800">やること:</strong> 変更履歴の確認・巻き戻し、データ鮮度チェック</span>
-                </div>
-                <div className="flex items-start gap-1.5">
-                  <span className="text-pink-500 font-bold shrink-0 mt-0.5">▸</span>
-                  <span><strong className="text-stone-800">タイミング:</strong> AI更新後に「何が変わったか」を確認したい時・定期点検</span>
-                </div>
-              </div>
-            </button>
-          </div>
 
-          <div className="mt-3 bg-amber-100/60 border border-amber-200 rounded-xl px-3 py-2 text-[10px] text-amber-900 font-bold flex items-center gap-2">
-            <span className="text-base">💡</span>
-            おすすめの流れ: ① ヘルス概要で一括更新 → ② ファクトチェックで矛盾を片付け → ③ 履歴&鮮度で最終確認
-          </div>
+              <div className="bg-amber-100/60 border border-amber-200 rounded-xl px-3 py-2 text-[10px] text-amber-900 font-bold flex items-center gap-2">
+                <span className="text-base">💡</span>
+                おすすめの流れ: ① ヘルス概要で一括更新 → ② ファクトチェックで矛盾を片付け → ③ 履歴&鮮度で最終確認
+              </div>
+            </div>
+          )}
         </div>
+
         {/* ヘッダー */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-6 border-b border-stone-200 pb-6">
-          <div>
-            <div className="flex items-center gap-2.5">
-              <Activity className="w-8 h-8 text-amber-600" />
-              <h1 className="text-3xl font-extrabold tracking-tight text-stone-900">
-                辞典 ＆ ナレッジ統合ヘルスダッシュボード
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 sm:gap-6 border-b border-stone-200 pb-4 sm:pb-6">
+          <div className="w-full md:w-auto">
+            <div className="flex items-center gap-2 flex-wrap">
+              <Activity className="w-6 h-6 sm:w-8 sm:h-8 text-amber-600 shrink-0" />
+              <h1 className="text-lg sm:text-2xl md:text-3xl font-extrabold tracking-tight text-stone-900">
+                辞典 ＆ ナレッジヘルス
               </h1>
-              <span className="bg-amber-100 text-amber-800 border border-amber-300 px-3 py-0.5 rounded-full text-xs font-bold">
+              <span className="bg-amber-100 text-amber-800 border border-amber-300 px-2.5 py-0.5 rounded-full text-[10px] sm:text-xs font-bold shrink-0">
                 パッチ {data?.currentPatch || '26.15'}
               </span>
             </div>
-            <p className="text-xs text-stone-500 mt-1.5">
-              全 {data?.totalCount || 0} チャンピオンの辞典 ＆ ナレッジSSOTデータ健康度を一瞥し、1ボタンで手動検証・一括AI最新化を行えます
+            <p className="text-[11px] sm:text-xs text-stone-500 mt-1">
+              全 {data?.totalCount || 0} チャンピオンの辞典SSOT健康度を監視し、一括AI最新化を行えます
             </p>
           </div>
 
-          <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex items-center gap-2 sm:gap-3 w-full md:w-auto">
             <button
               onClick={async () => {
                 await fetchHealth();
                 await handleBulkEnqueueStale();
               }}
               disabled={!!actionLoading}
-              className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-amber-600 via-amber-700 to-amber-800 hover:from-amber-700 hover:to-amber-900 active:scale-95 text-white text-xs font-black transition flex items-center gap-2.5 shadow-xl disabled:opacity-50"
+              className="flex-1 md:flex-none px-4 sm:px-6 py-2.5 sm:py-3.5 rounded-xl sm:rounded-2xl bg-gradient-to-r from-amber-600 via-amber-700 to-amber-800 hover:from-amber-700 hover:to-amber-900 active:scale-95 text-white text-xs font-black transition flex items-center justify-center gap-2 shadow-lg disabled:opacity-50"
               title="最新パッチ照合、AI誤記述監査、古いデータの一括最新化をすべてワンタップで全自動実行します"
             >
-              <Sparkles className={`w-4 h-4 ${actionLoading ? 'animate-spin' : ''}`} />
-              ⚡ ワンタップで全自動AI最新化
+              <Sparkles className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${actionLoading ? 'animate-spin' : ''}`} />
+              <span>⚡ ワンタップ全自動AI更新</span>
             </button>
 
             <Link
               href="/champions"
-              className="px-4 py-3.5 rounded-2xl bg-stone-800 hover:bg-stone-900 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-md"
+              className="px-3 sm:px-4 py-2.5 sm:py-3.5 rounded-xl sm:rounded-2xl bg-stone-800 hover:bg-stone-900 text-white text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-md shrink-0"
             >
-              <Layers className="w-4 h-4" />
-              📚 チャンピオン辞典へ
+              <Layers className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              <span>辞典へ</span>
             </Link>
           </div>
         </div>
 
         {/* ━━━━━ 3タブ切替バー ━━━━━ */}
-        <div className="flex gap-2 bg-stone-100 p-1.5 rounded-2xl mb-8 overflow-x-auto">
+        <div className="flex gap-1.5 sm:gap-2 bg-stone-100 p-1 sm:p-1.5 rounded-2xl overflow-x-auto scrollbar-none">
           {[
-            { id: 'health' as const, label: '📊 ヘルス概要', icon: Activity, desc: 'チャンピオン一覧・サマリー・一括操作' },
-            { id: 'audit' as const, label: '🕵️ ファクトチェック & 棚卸し', icon: ClipboardCheck, desc: '矛盾検知・データ監査・レビュー' },
-            { id: 'history' as const, label: '📜 履歴 & 鮮度', icon: History, desc: '変更履歴・鮮度レビュー・インサイト' },
+            { id: 'health' as const, label: '📊 ヘルス概要', icon: Activity, desc: '一覧・サマリー・一括操作' },
+            { id: 'audit' as const, label: '🕵️ ファクトチェック', icon: ClipboardCheck, desc: '矛盾検知・データ監査' },
+            { id: 'history' as const, label: '📜 履歴 & 鮮度', icon: History, desc: '変更履歴・鮮度レビュー' },
           ].map((tab) => {
             const Icon = tab.icon;
             const isActive = hubTab === tab.id;
@@ -367,16 +383,16 @@ function DictHealthDashboardContent() {
               <button
                 key={tab.id}
                 onClick={() => setHubTab(tab.id)}
-                className={`flex items-center gap-2 px-5 py-3 rounded-xl text-xs font-bold transition-all shrink-0 ${
+                className={`flex items-center gap-1.5 sm:gap-2 px-3.5 sm:px-5 py-2 sm:py-3 rounded-xl text-xs font-bold transition-all shrink-0 ${
                   isActive
-                    ? 'bg-gradient-to-r from-amber-600 to-amber-700 text-white shadow-lg shadow-amber-600/30'
+                    ? 'bg-gradient-to-r from-amber-600 to-amber-700 text-white shadow-md shadow-amber-600/30'
                     : 'text-stone-500 hover:text-stone-800 hover:bg-white/60'
                 }`}
               >
-                <Icon className="w-4 h-4" />
+                <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
                 <div className="text-left">
-                  <div>{tab.label}</div>
-                  {isActive && <div className="text-[10px] font-normal opacity-80 mt-0.5">{tab.desc}</div>}
+                  <div className="whitespace-nowrap">{tab.label}</div>
+                  {isActive && <div className="text-[10px] font-normal opacity-80 mt-0.5 hidden md:block">{tab.desc}</div>}
                 </div>
               </button>
             );
@@ -498,9 +514,10 @@ function DictHealthDashboardContent() {
             )}
 
         {/* コントロールバー */}
-        <div className="bg-white p-4 rounded-2xl border border-stone-200 shadow-sm mb-6 flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-3 w-full md:w-auto">
-            <div className="relative flex-1 md:w-64">
+        <div className="bg-white p-3.5 sm:p-4 rounded-2xl border border-stone-200 shadow-xs mb-4 sm:mb-6 space-y-3">
+          <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+            {/* 検索入力 */}
+            <div className="relative flex-1">
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
               <input
                 type="text"
@@ -511,33 +528,37 @@ function DictHealthDashboardContent() {
               />
             </div>
 
-            <div className="flex items-center gap-1 bg-stone-100 p-1 rounded-xl">
-              {(['ALL', 'verified', 'ai_generated', 'stale'] as const).map((st) => (
-                <button
-                  key={st}
-                  onClick={() => setStatusFilter(st)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
-                    statusFilter === st ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-500 hover:text-stone-800'
-                  }`}
-                >
-                  {st === 'ALL' ? 'すべて' : st === 'verified' ? '🟢確認済' : st === 'ai_generated' ? '🟡AI生成' : '🔴要対応'}
-                </button>
-              ))}
-            </div>
+            {/* フィルターボタングループ */}
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
+              {/* ステータスフィルター */}
+              <div className="flex items-center gap-1 bg-stone-100 p-1 rounded-xl shrink-0">
+                {(['ALL', 'verified', 'ai_generated', 'stale'] as const).map((st) => (
+                  <button
+                    key={st}
+                    onClick={() => setStatusFilter(st)}
+                    className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-[11px] sm:text-xs font-bold transition whitespace-nowrap ${
+                      statusFilter === st ? 'bg-white text-stone-900 shadow-xs' : 'text-stone-500 hover:text-stone-800'
+                    }`}
+                  >
+                    {st === 'ALL' ? 'すべて' : st === 'verified' ? '🟢確認済' : st === 'ai_generated' ? '🟡AI' : '🔴要対応'}
+                  </button>
+                ))}
+              </div>
 
-            {/* レーン別フィルター */}
-            <div className="flex items-center gap-1 bg-amber-100/60 border border-amber-200/80 p-1 rounded-xl">
-              {(['ALL', 'TOP', 'JG', 'MID', 'ADC', 'SUP'] as const).map((r) => (
-                <button
-                  key={r}
-                  onClick={() => setRoleFilter(r)}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition ${
-                    roleFilter === r ? 'bg-amber-700 text-white shadow-sm' : 'text-amber-900/70 hover:text-amber-950'
-                  }`}
-                >
-                  {r === 'ALL' ? '全レーン' : r}
-                </button>
-              ))}
+              {/* レーン別フィルター */}
+              <div className="flex items-center gap-0.5 sm:gap-1 bg-amber-100/60 border border-amber-200/80 p-1 rounded-xl shrink-0">
+                {(['ALL', 'TOP', 'JG', 'MID', 'ADC', 'SUP'] as const).map((r) => (
+                  <button
+                    key={r}
+                    onClick={() => setRoleFilter(r)}
+                    className={`px-2 sm:px-2.5 py-1.5 rounded-lg text-[11px] sm:text-xs font-bold transition whitespace-nowrap ${
+                      roleFilter === r ? 'bg-amber-700 text-white shadow-xs' : 'text-amber-900/70 hover:text-amber-950'
+                    }`}
+                  >
+                    {r === 'ALL' ? '全レーン' : r}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
@@ -545,7 +566,7 @@ function DictHealthDashboardContent() {
             <button
               onClick={handleBulkEnqueueStale}
               disabled={actionLoading === 'bulk_stale'}
-              className="w-full md:w-auto px-4 py-2 rounded-xl bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white text-xs font-black transition flex items-center justify-center gap-1.5 shadow-md disabled:opacity-50"
+              className="w-full px-4 py-2.5 rounded-xl bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white text-xs font-black transition flex items-center justify-center gap-1.5 shadow-sm disabled:opacity-50"
             >
               <Play className="w-3.5 h-3.5" />
               ⚡ 古いデータ {data?.summary.stale} 件を今すぐAI自動更新
