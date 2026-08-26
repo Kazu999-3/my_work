@@ -58,8 +58,7 @@ const ADMIN_ONLY_MENU_ITEMS: MenuItem[] = [
   { id: 'dict-health', label: 'ヘルス診断', icon: Activity, href: '/admin/dict-health', color: 'text-amber-500', activeBg: 'bg-amber-500/15' },
   { id: 'knowledge-admin', label: 'ナレッジ', icon: Brain, href: '/admin/knowledge', color: 'text-pink-400', activeBg: 'bg-pink-400/15' },
   // ── 🔍 分析 ──
-  { id: 'coach', label: 'コーチ', icon: Sparkles, href: '/coach', color: 'text-indigo-300', activeBg: 'bg-indigo-500/15', section: '分析・検索' },
-  { id: 'search', label: '横断検索', icon: Search, href: '/search', color: 'text-[#a78bfa]', activeBg: 'bg-[#a78bfa]/15' },
+  { id: 'coach', label: 'コーチ', icon: Sparkles, href: '/coach', color: 'text-indigo-300', activeBg: 'bg-indigo-500/15', section: '分析' },
   { id: 'analytics', label: 'note分析', icon: TrendingUp, href: '/admin/analytics', color: 'text-teal-400', activeBg: 'bg-teal-400/15' },
   // ── 📊 大会運営 ──
   { id: 'ktm-admin', label: 'KTM大会管理', icon: Shield, href: '/ktm-admin', color: 'text-indigo-400', activeBg: 'bg-indigo-400/15', section: '大会運営' },
@@ -97,7 +96,7 @@ export default function Sidebar() {
     localStorage.setItem('sovereign_sidebar_collapsed', String(nextState));
   };
 
-  const isAdminGatedPage = pathname.startsWith('/admin') || ['/ktm-admin', '/champions', '/coach', '/search', '/lane-guides'].some(p => pathname.startsWith(p));
+  const isAdminGatedPage = pathname.startsWith('/admin') || ['/ktm-admin', '/champions', '/coach', '/lane-guides'].some(p => pathname.startsWith(p));
 
   const items = isAdminGatedPage
     ? (activeTab === 'admin' ? ADMIN_ONLY_MENU_ITEMS : ADMIN_GENERAL_MENU_ITEMS)
