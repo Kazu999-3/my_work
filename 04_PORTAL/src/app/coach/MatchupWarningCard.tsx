@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { ShieldAlert, Zap, Target, BookOpen, AlertCircle } from 'lucide-react';
+import EarlyJunglePathingCard from './EarlyJunglePathingCard';
 
 interface MatchupWarningCardProps {
   champion: string;
@@ -254,6 +255,17 @@ export default function MatchupWarningCard({ champion, enemyChampion }: MatchupW
                 </div>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* 🗺️ 初動3分ルート分岐フローチャート */}
+        {champion && enemyChampion && (
+          <div className="mt-3 pt-3 border-t border-stone-800">
+            <EarlyJunglePathingCard
+              myChampion={champion}
+              enemyChampion={enemyChampion}
+              enemyFastestClearSec={enemyJungleTiming?.externalFastestClearSec}
+            />
           </div>
         )}
       </div>

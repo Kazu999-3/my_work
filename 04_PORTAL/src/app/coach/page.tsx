@@ -14,6 +14,7 @@ import FocusStickyBar from '../../components/coach/FocusStickyBar';
 import JgMatchupPredictor from '../../components/coach/JgMatchupPredictor';
 import JgSkillMasteryChecklist from '../../components/coach/JgSkillMasteryChecklist';
 import PlayerStyleRadarCard from '../../components/coach/PlayerStyleRadarCard';
+import WinConditionTab from './WinConditionTab';
 
 // ============================
 // 型定義
@@ -1509,14 +1510,13 @@ export default function CoachPage() {
     setDailyCheckTrigger(Date.now());
   };
 
-  // ステップ統合タブ構造。「BAN/PICKナビ」はシナジー/カウンター統計DBが未整備で
-  // 完全なハードコードのサンプル値しか返せないダミー実装だったため撤去した(2026-08-15)。
-  const [activeStepTab, setActiveStepTab] = useState<'pregame' | 'postgame' | 'menu'>('pregame');
+  const [activeStepTab, setActiveStepTab] = useState<'pregame' | 'win_condition' | 'postgame' | 'menu'>('pregame');
 
   const STEP_TABS = [
     { id: 'pregame', label: '1. 試合前準備（事前分析・JG予測・偵察）', icon: '⚡' },
-    { id: 'postgame', label: '2. 試合後分析（1分振り返り・傾向・ヒートマップ）', icon: '🔍' },
-    { id: 'menu', label: '3. 週間強化（AI練習メニュー）', icon: '🏋️‍♂️' },
+    { id: 'win_condition', label: '2. 構成勝ち筋診断 (Win Condition)', icon: '🏰' },
+    { id: 'postgame', label: '3. 試合後分析（1分振り返り・傾向・ヒートマップ）', icon: '🔍' },
+    { id: 'menu', label: '4. 週間強化（AI練習メニュー）', icon: '🏋️‍♂️' },
   ] as const;
 
   if (isAuthenticated === null) {
@@ -1722,6 +1722,13 @@ export default function CoachPage() {
             </div>
           </div>
         )}
+
+        {/* 2. 構成勝ち筋診断 */}
+        <div className={activeStepTab === 'win_condition' ? 'space-y-6 animate-in' : 'hidden'}>
+          <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-sm">
+            <WinConditionTab />
+          </div>
+        </div>
 
         {/* MySoloQDashboard/PostGameTab/TrendsTab/GoalTab/TiltTabはいずれもマウント時に
             一度きりのfetchのみ(継続ポーリング無し)のため、常時マウントしてCSSで表示切替する。 */}

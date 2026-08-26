@@ -370,7 +370,7 @@ export async function POST(req: NextRequest) {
   }
   // =================================
     const body = await req.json();
-    const mode: 'pre' | 'post' | 'post_latest' | 'post_lookup' | 'history' | 'matchup' | 'tilt' | 'trends' | 'practice_menu' | 'goal' | 'chat' = body.mode || 'pre';
+    const mode: 'pre' | 'post' | 'post_latest' | 'post_lookup' | 'history' | 'matchup' | 'tilt' | 'trends' | 'practice_menu' | 'goal' | 'chat' | 'win_condition' = body.mode || 'pre';
     const championInput: string = body.champion || '';
     const enemyChampionInput: string = body.enemyChampion || '';
 
@@ -914,6 +914,81 @@ ${matchContext.advice ? `・前回の添削要約: ${matchContext.advice.slice(0
 
       const reply = await callGemini(prompt);
       return NextResponse.json({ mode: 'chat', reply });
+    }
+
+    // ----------------------------
+    // MODE: win_condition - ピック・構成の勝ち筋診断
+    // ----------------------------
+    if (mode === 'win_condition') {
+      const allies: { role: string; champion: string }[] = body.allies || [];
+      const enemies: { role: string; champion: string }[] = body.enemies || [];
+
+      const allyChamps = allies.filter((a) => a.champion).map((a) => `${a.role}: ${a.champion}`);
+      const enemyChamps = enemies.filter((e) => e.champion).map((e) => `${e.role}: ${e.champion}`);
+
+      if (allyChamps.length === 0 || enemyChamps.length === 0) {
+        return NextResponse.json({ error: '味方と敵のチャンピオンをそれぞれ1体以上指定してください。' }, { status: 400 });
+      }
+
+      const prompt = `あなたはLoLの専属パーソナルコーチです。ピック画面での構成対比から、チームの勝ち筋（Win Condition）とJGとしてのゲームプランを診断してください。
+
+【味方構成】
+${allyChamps.join('\n')}
+
+【敵構成】
+${enemyChamps.join('\n')}
+
+以下のJSONフォーマットのみを返してください。markdownのコードブロック内に記述すること:
+\`\`\`json
+{
+  "winCondition": "この試合で最も重要な勝ち筋の要約(60字以内)",
+  "teamCompType": {
+    "ally": "集団戦重視 / サイドプッシュ / キャッチ＆暗殺 / レイトスケール / ポーク",
+    "enemy": "集団戦重視 / サイドプッシュ / キャッチ＆暗殺 / レイトスケール / ポーク"
+  },
+  "powerSpikeComparison": {
+    "early": "味方有利 / 互角 / 敵有利",
+    "mid": "味方有利 / 互角 / 敵有利",
+    "late": "味方有利 / 互角 / 敵有利",
+    "criticalWindow": "最も勝負を決めるべき時間帯 (例: 14〜22分)"
+  },
+  "keyPlayerToFeed": "味方の中で最優先で育てるべきレーン・チャンピオンとその理由(80字以内)",
+  "dangerEnemy": "敵の中で最も警戒すべきチャンピオンと対策(80字以内)",
+  "jgGamePlan": [
+    "序盤(Lv1〜6): 初動のルート・介入方針(60字以内)",
+    "中盤(8〜20分): オブジェクト(グラブ/ドラゴン/ヘラルド)のプライオリティ(60字以内)",
+    "終盤(20分〜): 集団戦での立ち回り(エンゲージ/ピール/裏取り等)(60字以内)"
+  ]
+}
+\`\`\``;
+
+      const raw = await callGemini(prompt);
+      let parsed: any = null;
+      try {
+        const jsonMatch = raw.match(/```json\s*([\s\S]*?)\s*```/) || raw.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          parsed = JSON.parse(jsonMatch[1] || jsonMatch[0]);
+        }
+      } catch (e) {
+        console.warn('[win_condition] JSON parse error:', e);
+      }
+
+      if (!parsed) {
+        parsed = {
+          winCondition: '味方のパワースパイクに合わせてオブジェクト主導権を握る',
+          teamCompType: { ally: '集団戦重視', enemy: 'バランス型' },
+          powerSpikeComparison: { early: '互角', mid: '味方有利', late: '互角', criticalWindow: '15〜25分' },
+          keyPlayerToFeed: '主導権を取りやすいレーンを優先支援',
+          dangerEnemy: '敵の主要キャリーの早期ロームを警戒',
+          jgGamePlan: [
+            '序盤: フルクリアから有利レーンへガンク',
+            '中盤: ドラゴン・ヴォイドグラブの管理徹底',
+            '終盤: キャリーのピールまたは敵後衛へのエンゲージ',
+          ],
+        };
+      }
+
+      return NextResponse.json({ mode: 'win_condition', result: parsed });
     }
 
     // ----------------------------

@@ -193,6 +193,18 @@ export interface JungleTimingComparison {
   summary: string;
 }
 
+export interface WorstDeathInfo {
+  min: number;
+  sec: number;
+  phase: string;
+  killer: string;
+  impactScore: number;
+  areaName: string;
+  teamGoldDiffAtDeath: number | null;
+  reason: string;
+  lesson: string;
+}
+
 export interface PostGameReviewResult {
   result: {
     win: boolean;
@@ -218,6 +230,7 @@ export interface PostGameReviewResult {
   actionItems?: { action: string; why: string }[];
   mapEvents?: SpatialEvent[];
   timingComparison?: JungleTimingComparison | null;
+  worstDeath?: WorstDeathInfo | null;
 }
 
 /**
@@ -294,6 +307,7 @@ export async function runPostGameReview(opts: { matchId?: string; focus?: string
   let earlyLv1to6Events: string[] = [];
   const myItemPurchases: { timestamp: number; sec: number; min: number; itemId: number; itemName: string }[] = [];
   let myJungleCsAt5Min: number | null = null;
+  let worstDeath: WorstDeathInfo | null = null;
 
   try {
     const timeline = await fetchMatchTimeline(targetMatchId, apiKey);
@@ -491,6 +505,9 @@ export async function runPostGameReview(opts: { matchId?: string; focus?: string
       }
 
       const FIGHT_WINDOW_MS = 20000;
+      let topWorstDeath: WorstDeathInfo | null = null;
+      let maxImpactScore = -1;
+
       for (const d of rawDeaths) {
         const nearbyFightKills = Math.max(
           0,
@@ -505,7 +522,50 @@ export async function runPostGameReview(opts: { matchId?: string; focus?: string
         const locNote = d.spatialInfo ? `【${d.spatialInfo.areaName}】(周囲味方${d.spatialInfo.alliesCountNearby}人/敵${d.spatialInfo.enemiesCountNearby}人)` : '';
         deathTimeline.push(`${d.min}分${d.sec}秒(${d.phase}): ${d.killer}に討伐 ${locNote}${d.teamGoldDiffAtDeath !== null ? `（総ゴールド差: ${d.teamGoldDiffAtDeath >= 0 ? '+' : ''}${d.teamGoldDiffAtDeath}G）` : ''}${fightNote}`);
         deathEvents.push({ min: d.min, phase: d.phase, killer: d.killer, teamGoldDiffAtDeath: d.teamGoldDiffAtDeath, nearbyFightKills });
+
+        // ワースト1デスのスコアリング (1〜100点)
+        let impactScore = 20;
+        let reasons: string[] = [];
+        let lessons: string[] = [];
+
+        if (d.spatialInfo?.isolationLevel === 'ISOLATED') {
+          impactScore += 30;
+          reasons.push('味方から大きく離れた孤立位置での被キャッチ');
+          lessons.push('視界のない敵陣深部への単独進入を控え、味方の寄れる範囲でアクションを起こす');
+        }
+        if (d.phase === '中盤') {
+          impactScore += 20;
+          reasons.push('ドラゴン・ヘラルドが絡む重要時間帯でのデス');
+          lessons.push('中盤の重要オブジェクト沸き45秒前は被弾リスクを下げ、リコールと川の視界確保を徹底');
+        }
+        if (d.teamGoldDiffAtDeath !== null && d.teamGoldDiffAtDeath > 1000) {
+          impactScore += 25;
+          reasons.push('味方有利時（リード時）のシャットダウンゴールド献上');
+          lessons.push('有利時ほど焦って深追いせず、オブジェクト確定獲得で安全に差を広げる');
+        }
+        if (nearbyFightKills === 0) {
+          impactScore += 10;
+          reasons.push('味方のトレードキルが発生しなかった無駄死に');
+          lessons.push('人数不利（1v多）になる危険ゾーンを察知して事前に下がる');
+        }
+
+        if (impactScore > maxImpactScore) {
+          maxImpactScore = impactScore;
+          topWorstDeath = {
+            min: d.min,
+            sec: d.sec,
+            phase: d.phase,
+            killer: d.killer,
+            impactScore: Math.min(100, impactScore),
+            areaName: d.spatialInfo?.areaName || 'リバー周辺',
+            teamGoldDiffAtDeath: d.teamGoldDiffAtDeath,
+            reason: reasons.join('、') || '立ち回りの隙を突かれた被討伐',
+            lesson: lessons[0] || '次の試合では同様のシチュエーションでの位置取りに注意する',
+          };
+        }
       }
+
+      worstDeath = topWorstDeath;
     }
   } catch (e) {
     console.warn('[coachPostGame] タイムライン取得に失敗（続行）:', e);
@@ -715,6 +775,7 @@ ${focus ? `4. 今日の焦点の達成度: 「${focus}」を【達成】また�
     actionItems,
     mapEvents,
     timingComparison,
+    worstDeath,
   };
 }
 

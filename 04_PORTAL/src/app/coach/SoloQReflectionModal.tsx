@@ -568,6 +568,54 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
                     </div>
                   )}
 
+                  {/* 💥 致命傷となったワースト1デス (Game-Losing Death) */}
+                  {currentAnalysis.worstDeath && (
+                    <div className="bg-rose-50/90 rounded-xl p-3.5 border border-rose-300 text-xs space-y-2 shadow-xs animate-in">
+                      <div className="flex items-center justify-between">
+                        <div className="font-black text-rose-950 flex items-center gap-1.5">
+                          <span className="text-base">💥</span> 致命傷となったワースト1デス (最重要敗因)
+                        </div>
+                        <span className="text-[10px] font-black bg-rose-600 text-white px-2 py-0.5 rounded-full">
+                          影響度スコア: {currentAnalysis.worstDeath.impactScore}/100
+                        </span>
+                      </div>
+
+                      <div className="bg-white p-2.5 rounded-lg border border-rose-200 space-y-1.5">
+                        <div className="flex items-center justify-between text-[11px] font-bold text-stone-900">
+                          <span>
+                            ⏰ {currentAnalysis.worstDeath.min}分{String(currentAnalysis.worstDeath.sec).padStart(2, '0')}秒 ({currentAnalysis.worstDeath.phase}) vs {currentAnalysis.worstDeath.killer}
+                          </span>
+                          <span className="text-stone-500 text-[10px]">
+                            場所: {currentAnalysis.worstDeath.areaName}
+                          </span>
+                        </div>
+
+                        <p className="text-[11px] text-rose-900 leading-relaxed font-semibold">
+                          ⚠️ <strong className="text-rose-950">敗因分析:</strong> {currentAnalysis.worstDeath.reason}
+                        </p>
+
+                        <div className="pt-1.5 border-t border-rose-100 flex items-center justify-between gap-2">
+                          <p className="text-[11px] text-emerald-900 font-bold">
+                            💡 <strong className="text-emerald-950">改善指針:</strong> {currentAnalysis.worstDeath.lesson}
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setNextFocusPoint(currentAnalysis.worstDeath.lesson);
+                              try {
+                                localStorage.setItem('today_soloq_focus', currentAnalysis.worstDeath.lesson);
+                                window.dispatchEvent(new Event('storage'));
+                              } catch {}
+                            }}
+                            className="shrink-0 px-2 py-1 bg-rose-700 hover:bg-rose-800 text-white text-[10px] font-bold rounded shadow-xs transition cursor-pointer"
+                          >
+                            次回テーマにセット ➔
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {/* ターニングポイント */}
                   {currentAnalysis.turningPoints?.length > 0 && (
                     <div className="bg-white/80 rounded-lg p-2.5 border border-amber-200 text-xs space-y-1">
