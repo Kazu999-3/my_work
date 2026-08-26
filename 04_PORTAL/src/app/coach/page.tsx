@@ -644,6 +644,49 @@ function TrendsTab({ active }: { active: boolean }) {
             <Trend label="Vision/min" recent={result.visionTrend.recent} older={result.visionTrend.older} />
           </div>
 
+          {result.coreTimingTrend && (result.coreTimingTrend.avgFirstCoreWinSec || result.coreTimingTrend.recentAvgFirstCoreSec) && (
+            <Card>
+              <div className="mb-2 text-sm font-semibold text-foreground/80 flex items-center justify-between">
+                <span>⏱️ 1stコア完成テンポ（チャンピオン辞典基準比較）</span>
+                <span className="text-[10px] text-amber-700 font-bold bg-amber-100/80 px-2 py-0.5 rounded">ファーム健全度</span>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-xs">
+                <div className="bg-emerald-50 border border-emerald-200 p-2.5 rounded-xl">
+                  <div className="text-[10px] text-emerald-800 font-bold">勝利時の平均</div>
+                  <div className="text-sm font-black text-emerald-950 mt-0.5">
+                    {result.coreTimingTrend.avgFirstCoreWinSec
+                      ? `${Math.floor(result.coreTimingTrend.avgFirstCoreWinSec / 60)}分${String(result.coreTimingTrend.avgFirstCoreWinSec % 60).padStart(2, '0')}秒`
+                      : '未計測'}
+                  </div>
+                </div>
+                <div className="bg-rose-50 border border-rose-200 p-2.5 rounded-xl">
+                  <div className="text-[10px] text-rose-800 font-bold">敗北時の平均</div>
+                  <div className="text-sm font-black text-rose-950 mt-0.5">
+                    {result.coreTimingTrend.avgFirstCoreLossSec
+                      ? `${Math.floor(result.coreTimingTrend.avgFirstCoreLossSec / 60)}分${String(result.coreTimingTrend.avgFirstCoreLossSec % 60).padStart(2, '0')}秒`
+                      : '未計測'}
+                  </div>
+                </div>
+                <div className="bg-stone-100 border border-stone-200 p-2.5 rounded-xl">
+                  <div className="text-[10px] text-stone-600 font-bold">直近の平均</div>
+                  <div className="text-sm font-black text-stone-900 mt-0.5">
+                    {result.coreTimingTrend.recentAvgFirstCoreSec
+                      ? `${Math.floor(result.coreTimingTrend.recentAvgFirstCoreSec / 60)}分${String(result.coreTimingTrend.recentAvgFirstCoreSec % 60).padStart(2, '0')}秒`
+                      : '未計測'}
+                  </div>
+                </div>
+                <div className="bg-stone-100 border border-stone-200 p-2.5 rounded-xl">
+                  <div className="text-[10px] text-stone-600 font-bold">過去の平均</div>
+                  <div className="text-sm font-black text-stone-900 mt-0.5">
+                    {result.coreTimingTrend.olderAvgFirstCoreSec
+                      ? `${Math.floor(result.coreTimingTrend.olderAvgFirstCoreSec / 60)}分${String(result.coreTimingTrend.olderAvgFirstCoreSec % 60).padStart(2, '0')}秒`
+                      : '未計測'}
+                  </div>
+                </div>
+              </div>
+            </Card>
+          )}
+
           {result.topKillers?.length > 0 && (
             <Card>
               <div className="mb-2 text-sm font-semibold text-foreground/80">☠️ 繰り返し狩られている相手</div>

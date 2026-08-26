@@ -823,9 +823,26 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
 
           {/* 4. 対面メモ（対面DBへ自動連携） */}
           <div className="bg-white border border-stone-200 rounded-lg p-3.5 space-y-2 shadow-sm">
-            <label className="font-bold text-stone-800 text-xs block">
-              5. 対面チャンピオンメモ <span className="text-[11px] text-amber-800 font-normal">（対面DB `matchup_sentinel` へ自動蓄積）</span>
-            </label>
+            <div className="flex items-center justify-between flex-wrap gap-1">
+              <label className="font-bold text-stone-800 text-xs block">
+                5. 対面チャンピオンメモ <span className="text-[11px] text-amber-800 font-bold">（📚 チャンピオン辞典 `matchup_sentinel` へ自動学習・反映）</span>
+              </label>
+              {currentAnalysis?.advice && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    // AIアドバイスから対面対策に関連する要約を抽出してセット
+                    const advice = currentAnalysis.advice || '';
+                    const matchVs = advice.match(/(?:対面|敵JG|マッチアップ)[\s\S]*?(?=\n\d|\n【|$)/);
+                    const snippet = matchVs ? matchVs[0].trim() : advice.slice(0, 120);
+                    setMatchupMemo((prev) => (prev ? `${prev}\n${snippet}` : snippet));
+                  }}
+                  className="text-[10px] bg-indigo-50 hover:bg-indigo-100 text-indigo-800 border border-indigo-200 font-bold px-2 py-0.5 rounded transition"
+                >
+                  🤖 AIアドバイスから対面対策を取り込む
+                </button>
+              )}
+            </div>
             <textarea
               rows={2}
               placeholder={`対面 ${currentMatch ? currentMatch.enemyChampion : ''} への次回対策・やりづらかった点（例: Lv2トレード注意 / スペル落ちたタイミングでローム）`}

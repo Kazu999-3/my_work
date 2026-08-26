@@ -292,6 +292,17 @@ export default function FactCheckQueueCard({ item, onActed }: { item: QueueItem;
           </>
         ) : (
           <>
+            {it.detail?.conflict_reason && (
+              <button
+                type="button"
+                onClick={() => act('record_correction', it.detail?.conflict_reason)}
+                disabled={acting}
+                className="flex items-center gap-1 text-xs font-black bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white px-3 py-1.5 rounded-lg shadow-xs transition disabled:opacity-50 cursor-pointer"
+                title="AIが分析した指摘・理由をそのまま正解訂正として記録し、キューを完了にします"
+              >
+                <Check size={12} /> ✨ AI提案どおりに訂正＆完了（1タップ）
+              </button>
+            )}
             <input
               value={fixInput}
               onChange={(e) => setFixInput(e.target.value)}

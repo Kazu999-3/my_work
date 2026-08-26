@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../../lib/supabaseAdmin';
 import { verifyAdminSession } from '../../../../lib/adminAuth';
 import { normalizeChampionName } from '../../../../lib/championNames';
+import { recordRevision } from '../../../../lib/knowledgeRevisions';
 
 // 「前回の次回テーマ」「保存済みマッチ判定」等の軽量呼び出しは既定の10件で十分だが、
 // 「過去ログ」ダッシュボード(MySoloQDashboard)が全件集計・全文検索に使うため、
@@ -152,6 +153,15 @@ export async function POST(request: Request) {
             strategy: updatedStrategy,
           })
           .eq('matchup_id', matchupId);
+
+        await recordRevision({
+          targetType: 'matchup_sentinel',
+          targetKey: matchupId,
+          field: 'strategy',
+          before: existingMatchup.strategy || '',
+          after: updatedStrategy,
+          sourceTitle: `ソロQ振り返り実戦メモ (${normalizedChampion} vs ${normalizedEnemy})`,
+        });
       } else {
         await supabaseAdmin
           .from('matchup_sentinel')
@@ -163,6 +173,15 @@ export async function POST(request: Request) {
             strategy: matchupMemo,
             raw_data: { source: 'soloq_reflection', created_at: new Date().toISOString() }
           });
+
+        await recordRevision({
+          targetType: 'matchup_sentinel',
+          targetKey: matchupId,
+          field: 'strategy',
+          before: '',
+          after: matchupMemo,
+          sourceTitle: `ソロQ振り返り実戦メモ新規作成 (${normalizedChampion} vs ${normalizedEnemy})`,
+        });
       }
     }
 

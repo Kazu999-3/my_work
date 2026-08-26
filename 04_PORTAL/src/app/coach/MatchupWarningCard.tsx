@@ -30,6 +30,14 @@ export default function MatchupWarningCard({ champion, enemyChampion }: MatchupW
     full_clear_time?: string;
   } | null>(null);
 
+  const [enemyJungleTiming, setEnemyJungleTiming] = useState<{
+    sampleCount?: number;
+    avgFirstCoreSec?: number | null;
+    avgSecondCoreSec?: number | null;
+    externalFastestClearSec?: number | null;
+    tier?: string;
+  } | null>(null);
+
   const [loading, setLoading] = useState(false);
   const [isHudOpen, setIsHudOpen] = useState(false);
   const [todayFocus, setTodayFocus] = useState('');
@@ -46,6 +54,7 @@ export default function MatchupWarningCard({ champion, enemyChampion }: MatchupW
       requestIdRef.current += 1;
       setWarning(null);
       setCounterIntel(null);
+      setEnemyJungleTiming(null);
       return;
     }
 
@@ -64,16 +73,24 @@ export default function MatchupWarningCard({ champion, enemyChampion }: MatchupW
           if (requestIdRef.current === myRequestId) setWarning(data.warning || null);
         }
 
-        // 2. SSOT正本から対面チャンピオンの弱点・カウンター情報を取得
+        // 2. SSOT正本から対面チャンピオンの弱点・カウンター情報およびジャングルタイミングを取得
         const detailRes = await fetch(`/api/champions/detail?champion=${encodeURIComponent(enemyChampion)}`);
         const detailData = await detailRes.json();
-        if (requestIdRef.current === myRequestId && detailData.data) {
-          setCounterIntel(detailData.data);
+        if (requestIdRef.current === myRequestId) {
+          if (detailData.dataFields) {
+            setCounterIntel(detailData.dataFields);
+          } else if (detailData.data) {
+            setCounterIntel(detailData.data);
+          }
+          if (detailData.realJungleTiming) {
+            setEnemyJungleTiming(detailData.realJungleTiming);
+          }
         }
       } catch {
         if (requestIdRef.current === myRequestId) {
           setWarning(null);
           setCounterIntel(null);
+          setEnemyJungleTiming(null);
         }
       } finally {
         if (requestIdRef.current === myRequestId) setLoading(false);
@@ -195,6 +212,49 @@ export default function MatchupWarningCard({ champion, enemyChampion }: MatchupW
           <p className="text-xs text-stone-400 text-center py-2 font-medium">
             対面 {enemyChampion} の正本データは最新パッチ26.15に適合済みです。
           </p>
+        )}
+
+        {/* ⏱️ 敵JGテンポ・初動予測カード */}
+        {enemyJungleTiming && (
+          <div className="mt-3 pt-3 border-t border-stone-800 bg-stone-900/60 p-3 rounded-xl space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-black text-amber-400 flex items-center gap-1.5">
+                <span>⏱️</span> 敵JGテンポ・初動予測（{enemyChampion}）
+              </span>
+              <span className="text-[9px] text-stone-400">
+                2:55スカトル / 5:00初代ドラゴン
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-center text-xs">
+              <div className="bg-stone-800/80 p-2 rounded-lg border border-stone-700">
+                <div className="text-[10px] text-stone-400 font-bold">最速フルクリア基準</div>
+                <div className="text-xs font-black text-amber-300 mt-0.5">
+                  {enemyJungleTiming.externalFastestClearSec
+                    ? `${Math.floor(enemyJungleTiming.externalFastestClearSec / 60)}分${String(enemyJungleTiming.externalFastestClearSec % 60).padStart(2, '0')}秒`
+                    : 'データ収集中'}
+                </div>
+              </div>
+
+              <div className="bg-stone-800/80 p-2 rounded-lg border border-stone-700">
+                <div className="text-[10px] text-stone-400 font-bold">1stコア平均完成</div>
+                <div className="text-xs font-black text-stone-200 mt-0.5">
+                  {enemyJungleTiming.avgFirstCoreSec
+                    ? `${Math.floor(enemyJungleTiming.avgFirstCoreSec / 60)}分${String(enemyJungleTiming.avgFirstCoreSec % 60).padStart(2, '0')}秒`
+                    : '約11〜12分'}
+                </div>
+              </div>
+
+              <div className="bg-stone-800/80 p-2 rounded-lg border border-stone-700 col-span-2 sm:col-span-1">
+                <div className="text-[10px] text-stone-400 font-bold">初動ガンク・接敵目安</div>
+                <div className="text-xs font-black text-emerald-400 mt-0.5">
+                  {enemyJungleTiming.externalFastestClearSec && enemyJungleTiming.externalFastestClearSec <= 200
+                    ? '⚡ 最速スカトル到達型'
+                    : '🛡️ フルファーム先行型'}
+                </div>
+              </div>
+            </div>
+          </div>
         )}
       </div>
 

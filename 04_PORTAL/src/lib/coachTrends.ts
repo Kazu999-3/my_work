@@ -22,6 +22,12 @@ export interface TrendAggregates {
   // 無関係な助言(サイドレーンでのファーム等)が生成される原因になっていた問題への対応。
   mainRole: string;
   roleCounts: Record<string, number>;
+  coreTimingTrend?: {
+    avgFirstCoreWinSec: number | null;
+    avgFirstCoreLossSec: number | null;
+    recentAvgFirstCoreSec: number | null;
+    olderAvgFirstCoreSec: number | null;
+  };
 }
 
 const BEHIND_GOLD_THRESHOLD = -1500;
@@ -74,7 +80,25 @@ export function computeTrendAggregates(analyses: any[]): TrendAggregates {
   const visionTrend = { recent: +avg(num(recent, 'vision_per_min')).toFixed(2), older: +avg(num(older, 'vision_per_min')).toFixed(2) };
   const winRate = Math.round((analyses.filter((a) => a.win).length / analyses.length) * 100);
 
-  return { count: analyses.length, winRate, totalDeaths, deathPhases, topKillers, topWeaknesses, csTrend, visionTrend, deathContext, mainRole, roleCounts };
+  // 1stコア完成時間の集計 (秒)
+  const getFirstCoreSec = (a: any): number | null => {
+    if (a.timing_comparison?.actualFirstCoreSec) return Number(a.timing_comparison.actualFirstCoreSec);
+    if (a.timingComparison?.actualFirstCoreSec) return Number(a.timingComparison.actualFirstCoreSec);
+    return null;
+  };
+  const winCoreSecs = analyses.filter((a) => a.win).map(getFirstCoreSec).filter((v): v is number => v !== null);
+  const lossCoreSecs = analyses.filter((a) => !a.win).map(getFirstCoreSec).filter((v): v is number => v !== null);
+  const recentCoreSecs = recent.map(getFirstCoreSec).filter((v): v is number => v !== null);
+  const olderCoreSecs = older.map(getFirstCoreSec).filter((v): v is number => v !== null);
+
+  const coreTimingTrend = {
+    avgFirstCoreWinSec: winCoreSecs.length ? Math.round(avg(winCoreSecs)) : null,
+    avgFirstCoreLossSec: lossCoreSecs.length ? Math.round(avg(lossCoreSecs)) : null,
+    recentAvgFirstCoreSec: recentCoreSecs.length ? Math.round(avg(recentCoreSecs)) : null,
+    olderAvgFirstCoreSec: olderCoreSecs.length ? Math.round(avg(olderCoreSecs)) : null,
+  };
+
+  return { count: analyses.length, winRate, totalDeaths, deathPhases, topKillers, topWeaknesses, csTrend, visionTrend, deathContext, mainRole, roleCounts, coreTimingTrend };
 }
 
 /** プロンプトに埋め込む「主にプレイしているロール」の表示用テキスト。 */

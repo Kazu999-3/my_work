@@ -188,6 +188,34 @@ async function fetchPowerSpikeContext(champion: string): Promise<string> {
   ].filter(Boolean).join('\n');
 }
 
+async function fetchJungleTimingContext(champion: string): Promise<string> {
+  if (!champion) return '';
+  try {
+    const { data } = await supabase
+      .from('champion_jungle_timing_agg')
+      .select('avg_first_core_sec, avg_second_core_sec, external_fastest_clear_sec')
+      .ilike('champion', champion)
+      .maybeSingle();
+
+    if (!data) return '';
+    const fmt = (s: number | null) => (s ? `${Math.floor(s / 60)}分${String(s % 60).padStart(2, '0')}秒` : '未計測');
+    const parts: string[] = [];
+    if (data.external_fastest_clear_sec) {
+      parts.push(`- 最速フルクリア基準: ${fmt(data.external_fastest_clear_sec)} (2:55スカトル/5:00ドラゴンへの初動テンポ基準)`);
+    }
+    if (data.avg_first_core_sec) {
+      parts.push(`- 1stコア平均完成: ${fmt(data.avg_first_core_sec)}`);
+    }
+    if (data.avg_second_core_sec) {
+      parts.push(`- 2ndコア平均完成: ${fmt(data.avg_second_core_sec)}`);
+    }
+    if (parts.length === 0) return '';
+    return `【${champion} のジャングルテンポ基準（チャンピオン辞典）】\n${parts.join('\n')}`;
+  } catch {
+    return '';
+  }
+}
+
 // ============================
 // プレイヤーの対敵過去勝率の集計
 // ============================
@@ -949,12 +977,15 @@ ${matchContext.advice ? `・前回の添削要約: ${matchContext.advice.slice(0
     // 対敵勝率データの取得
     const counterStats = enemyChampion ? await getPlayerCounterStats(gameName, enemyChampion) : '';
 
-    // 時間帯別の強さ（パワースパイク）: 使いたいチャンプ・警戒対面それぞれ取得
-    const [mySpike, enemySpikePre] = await Promise.all([
+    // 時間帯別の強さ（パワースパイク）とジャングルテンポ基準: 使いたいチャンプ・警戒対面それぞれ取得
+    const [mySpike, enemySpikePre, myTimingPre, enemyTimingPre] = await Promise.all([
       champion ? fetchPowerSpikeContext(champion) : Promise.resolve(''),
       enemyChampion ? fetchPowerSpikeContext(enemyChampion) : Promise.resolve(''),
+      champion ? fetchJungleTimingContext(champion) : Promise.resolve(''),
+      enemyChampion ? fetchJungleTimingContext(enemyChampion) : Promise.resolve(''),
     ]);
     const spikeBlockPre = [mySpike, enemySpikePre].filter(Boolean).join('\n\n');
+    const timingBlockPre = [myTimingPre, enemyTimingPre].filter(Boolean).join('\n\n');
 
     const searchKeywords = [
       ...recentChampions.slice(0, 3),
@@ -979,6 +1010,7 @@ ${champion ? `- 今日使いたいチャンピオン: ${champion}` : ''}
 ${enemyChampion ? `- 警戒する敵対面チャンピオン: ${enemyChampion}` : ''}
 
 ${counterStats ? `=== プレイヤーの対敵勝率実績 ===\n${counterStats}\n` : ''}
+${timingBlockPre ? `=== ジャングルテンポ・フルクリア基準（初動予測）===\n${timingBlockPre}\n` : ''}
 ${spikeBlockPre ? `=== 時間帯別の強さ（パワースパイク）===\n${spikeBlockPre}\n` : ''}
 ${knowledgeCtx ? `=== 参考ナレッジ（最新メタ・攻略記事・チャンピオン辞典）===\n${knowledgeCtx}\n` : ''}
 
