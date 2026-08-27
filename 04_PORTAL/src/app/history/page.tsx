@@ -31,6 +31,7 @@ export default function HistoryPage() {
   const [matches, setMatches] = useState<MatchData[]>([]);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     async function fetchHistory() {
@@ -66,8 +67,6 @@ export default function HistoryPage() {
       </div>
     );
   }
-
-  const [searchQuery, setSearchQuery] = useState('');
 
   const filteredMatches = matches.filter(m => {
     if (!searchQuery) return true;

@@ -157,27 +157,33 @@ export default function SynergyPage() {
           {simPlayer1 && simPlayer2 && simPlayer1 !== simPlayer2 && (
             <div className="mt-4 p-4 rounded-2xl bg-gradient-to-r from-fuchsia-50 via-pink-50 to-amber-50 border border-fuchsia-200">
               {selectedDuoStat ? (
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                  <div className="flex items-center gap-3">
-                    <span className="text-2xl">
-                      {selectedDuoStat.winRate >= 65 ? '👑' : selectedDuoStat.winRate >= 50 ? '⚡' : '⚠️'}
-                    </span>
-                    <div>
-                      <div className="text-sm font-extrabold text-stone-900">
-                        {simPlayer1} & {simPlayer2}
+                (() => {
+                  const duoWinPct = (selectedDuoStat.winRate * 100).toFixed(1);
+                  const winRateNum = selectedDuoStat.winRate * 100;
+                  return (
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                      <div className="flex items-center gap-3">
+                        <span className="text-2xl">
+                          {winRateNum >= 65 ? '👑' : winRateNum >= 50 ? '⚡' : '⚠️'}
+                        </span>
+                        <div>
+                          <div className="text-sm font-extrabold text-stone-900">
+                            {simPlayer1} & {simPlayer2}
+                          </div>
+                          <div className="text-xs text-stone-600">
+                            共闘数: <strong className="text-stone-900">{selectedDuoStat.games}試合</strong> ({selectedDuoStat.wins}勝 {selectedDuoStat.games - selectedDuoStat.wins}敗)
+                          </div>
+                        </div>
                       </div>
-                      <div className="text-xs text-stone-600">
-                        共闘数: <strong className="text-stone-900">{selectedDuoStat.games}試合</strong> ({selectedDuoStat.wins}勝 {selectedDuoStat.games - selectedDuoStat.wins}敗)
+                      <div className="text-right">
+                        <div className="text-xs font-bold text-stone-500">デュオ勝率</div>
+                        <div className={`text-2xl font-black ${winRateNum >= 60 ? 'text-emerald-700' : winRateNum >= 45 ? 'text-amber-700' : 'text-rose-700'}`}>
+                          {duoWinPct}%
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-xs font-bold text-stone-500">デュオ勝率</div>
-                    <div className={`text-2xl font-black ${selectedDuoStat.winRate >= 60 ? 'text-emerald-700' : selectedDuoStat.winRate >= 45 ? 'text-amber-700' : 'text-rose-700'}`}>
-                      {selectedDuoStat.winRate}%
-                    </div>
-                  </div>
-                </div>
+                  );
+                })()
               ) : (
                 <div className="text-xs text-stone-600 text-center py-2 font-medium">
                   まだこの2人の共闘記録がありません（KTMカスタムで同じチームで試合するとデータが蓄積されます）。
