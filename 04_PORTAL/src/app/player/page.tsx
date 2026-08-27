@@ -62,12 +62,12 @@ export default function PlayerIndexPage() {
       {/* ヘッダー */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-stone-200/80 pb-5">
         <div>
-          <h1 className="text-2xl md:text-3xl font-black text-stone-900 tracking-tight flex items-center gap-3">
+          <h1 className="text-2xl md:text-3xl font-black text-stone-900 tracking-tight flex items-center gap-2.5">
             <User className="text-indigo-600 h-7 w-7" />
             プレイヤー名簿 ＆ カルテ検索
           </h1>
-          <p className="text-xs text-stone-500 mt-1">
-            KTMメンバーの個人戦績・MMR推移・得意チャンピオン・相性データを閲覧できます。
+          <p className="text-xs text-stone-500 font-bold mt-1">
+            メンバーの戦績・得意チャンプ・MMRを即チェック🔥
           </p>
         </div>
 

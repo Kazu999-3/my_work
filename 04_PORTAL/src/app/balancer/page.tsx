@@ -914,26 +914,26 @@ export default function BalancerPage() {
   return (
     <div className="min-h-screen bg-background text-stone-800 p-4 md:p-8 lg:p-10 max-w-[1680px] w-full mx-auto space-y-4">
 
-      {/* 🔰 チーム分けツールの使い方ガイド（初心者安心折りたたみガイド） */}
-      <div className="bg-amber-500/10 border border-amber-300/60 rounded-2xl p-4 text-stone-900 shadow-sm">
+      {/* 🔰 チーム分けツールの使い方ガイド */}
+      <div className="bg-amber-500/10 border border-amber-300/60 rounded-2xl p-3.5 text-stone-900 shadow-xs">
         <button
           onClick={() => setIsGuideOpen(!isGuideOpen)}
-          className="w-full flex items-center justify-between font-bold text-xs text-amber-900 hover:text-amber-950 transition"
+          className="w-full flex items-center justify-between font-bold text-xs text-amber-900 hover:text-amber-950 transition cursor-pointer"
         >
           <div className="flex items-center gap-2">
-            <span className="text-base">🔰</span>
-            <span className="font-extrabold text-sm">チーム分け (Balancer) の使い方 ＆ 自動シャッフル</span>
+            <span className="text-base">⚡</span>
+            <span className="font-black text-xs sm:text-sm">3秒でわかるチーム分け手順</span>
           </div>
-          <span className="text-[11px] bg-amber-200/80 px-2 py-0.5 rounded-full font-bold">
-            {isGuideOpen ? '▲ ガイドを閉じる' : '▼ ガイドを開く'}
+          <span className="text-[10px] bg-amber-200/80 px-2 py-0.5 rounded-full font-black">
+            {isGuideOpen ? '閉じる ▲' : '見る ▼'}
           </span>
         </button>
 
         {isGuideOpen && (
-          <div className="mt-3 pt-3 border-t border-amber-300/40 text-xs text-stone-800 space-y-2 leading-relaxed animate-fade-in">
-            <p><strong>1. 参加メンバーの選択:</strong> 一覧から今日のカスタムゲームに参加するメンバー（10人以上）のチェックボックスをONにします。</p>
-            <p><strong>2. ロール・レーン希望:</strong> 各プレイヤーの「希望レーン (TOP/JG/MID/ADC/SUP)」や「NGレーン」を設定すると相味を全自動計算します。</p>
-            <p><strong>3. チーム分け実行:</strong> 下部の「⚔️ チーム分け実行」ボタンを押すと、MMR差が最小になる公平なチーム構成が瞬時に生成されます。</p>
+          <div className="mt-2.5 pt-2.5 border-t border-amber-300/40 text-xs text-stone-800 space-y-1.5 leading-relaxed animate-fade-in font-bold">
+            <p>① 参加するメンバーにチェックを入れる（10人〜）</p>
+            <p>② 希望レーン（TOP/JG/MID/ADC/SUP）を選ぶ</p>
+            <p>③ 下の「⚔️ チーム分け実行」を押すだけ！</p>
           </div>
         )}
       </div>

@@ -31,117 +31,112 @@ export default function GuidePage() {
   return (
     <div className="min-h-screen pb-16 bg-[#eae4d4] text-[#201c2b]">
       {/* ヒーローセクション */}
-      <div className="bg-gradient-to-b from-stone-900 via-stone-800 to-stone-900 text-stone-100 py-16 px-6 relative overflow-hidden border-b border-black/10">
+      <div className="bg-gradient-to-b from-stone-900 via-stone-800 to-stone-900 text-stone-100 py-12 px-6 relative overflow-hidden border-b border-black/10">
         <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#c2650f_1px,transparent_1px)] [background-size:16px_16px]"></div>
-        <div className="max-w-4xl mx-auto relative z-10 text-center">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 text-xs font-bold tracking-wider mb-4 border border-amber-500/30">
+        <div className="max-w-4xl mx-auto relative z-10 text-center space-y-3">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 text-xs font-black tracking-wider border border-amber-500/30">
             <Sparkles size={14} />
-            WELCOME TO KTM LoL
+            KTM LoL 1分スタートガイド
           </div>
-          <h1 className="text-3xl md:text-5xl font-black tracking-tight text-white mb-4">
-            KTM スタートアップガイド
+          <h1 className="text-3xl md:text-4xl font-black tracking-tight text-white">
+            1分でわかる！KTMカスタム参加手順
           </h1>
-          <p className="text-stone-300 text-base md:text-lg max-w-2xl mx-auto leading-relaxed">
-            KTM LoL部へようこそ！公平で熱いカスタムマッチを楽しむための<br className="hidden md:inline" />
-            「3ステップの初期登録」と便利なWebポータルの使い方をご案内します。
+          <p className="text-stone-300 text-xs md:text-sm max-w-xl mx-auto font-medium">
+            3ステップ登録で即参戦！公平なチーム分けで熱いカスタムを楽しもう🔥
           </p>
 
           {/* クイックマイページ検索 */}
-          <form onSubmit={handleSearch} className="mt-8 max-w-md mx-auto flex gap-2">
+          <form onSubmit={handleSearch} className="mt-6 max-w-md mx-auto flex gap-2">
             <div className="relative flex-1">
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400 w-4 h-4" />
               <input
                 type="text"
-                placeholder="サモナー名 or 名前を入力してマイページへ..."
+                placeholder="サモナー名でマイページを即検索..."
                 value={searchName}
                 onChange={(e) => setSearchName(e.target.value)}
-                className="w-full bg-stone-950/80 border border-stone-700 text-white rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:border-amber-500 transition-colors shadow-inner"
+                className="w-full bg-stone-950/80 border border-stone-700 text-white rounded-xl pl-10 pr-4 py-2 text-xs font-bold focus:outline-none focus:border-amber-500 transition-colors shadow-inner"
               />
             </div>
             <button
               type="submit"
-              className="bg-amber-600 hover:bg-amber-500 text-white px-5 py-2.5 rounded-xl font-bold text-sm transition-all shadow-md hover:shadow-lg flex items-center gap-1.5 shrink-0 cursor-pointer"
+              className="bg-amber-600 hover:bg-amber-500 text-white px-4 py-2 rounded-xl font-black text-xs transition-all shadow-md flex items-center gap-1.5 shrink-0 cursor-pointer"
             >
-              検索 <ArrowRight size={16} />
+              検索 <ArrowRight size={14} />
             </button>
           </form>
         </div>
       </div>
 
       {/* メインコンテンツ */}
-      <div className="max-w-[1550px] w-full mx-auto px-4 md:px-8 py-10 space-y-12">
+      <div className="max-w-[1550px] w-full mx-auto px-4 md:px-8 py-8 space-y-8">
         
         {/* 🌟 3ステップ初期登録 */}
         <section>
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-9 h-9 rounded-xl bg-amber-600/10 border border-amber-600/20 flex items-center justify-center text-amber-700 font-black">
-              1
-            </div>
-            <div>
-              <h2 className="text-xl md:text-2xl font-black text-stone-900">
-                参加のための初期設定 3ステップ
-              </h2>
-              <p className="text-stone-600 text-xs md:text-sm">
-                Discordサーバー内のボタンまたはコマンドから約1分で完了します。
-              </p>
-            </div>
+          <div className="flex items-center gap-2 mb-4">
+            <span className="text-lg">⚡</span>
+            <h2 className="text-lg md:text-xl font-black text-stone-900">
+              今すぐ始める3ステップ
+            </h2>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Step 1 */}
-            <div className="bg-white rounded-2xl p-6 border border-black/10 shadow-sm relative overflow-hidden flex flex-col justify-between">
-              <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/5 rounded-full -mr-10 -mt-10 pointer-events-none"></div>
+            <div className="bg-white rounded-2xl p-5 border border-black/10 shadow-xs relative overflow-hidden flex flex-col justify-between">
               <div>
-                <div className="w-12 h-12 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 mb-4 font-bold">
-                  <UserCheck size={24} />
+                <div className="flex items-center justify-between mb-3">
+                  <div className="w-10 h-10 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 font-bold">
+                    <UserCheck size={20} />
+                  </div>
+                  <span className="text-xs font-black text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">STEP 1</span>
                 </div>
-                <div className="text-xs font-black text-amber-700 uppercase tracking-wider mb-1">Step 1</div>
-                <h3 className="text-lg font-black text-stone-900 mb-2">サモナー名 (Riot ID) 登録</h3>
-                <p className="text-stone-600 text-xs leading-relaxed mb-4">
-                  Discordの「📝 サモナー名登録」ボタンまたは <code className="bg-stone-100 px-1.5 py-0.5 rounded text-amber-800 font-mono text-[11px]">/ign</code> であなたのLoLアカウント（例: <code className="text-stone-700 font-mono">Player#JP1</code>）を紐付けます。
+                <h3 className="text-base font-black text-stone-900 mb-1.5">サモナー名 (Riot ID) 登録</h3>
+                <p className="text-stone-600 text-xs leading-relaxed mb-3">
+                  Discordで「📝 サモナー名登録」を押してLoL ID（<code className="bg-stone-100 px-1 py-0.5 rounded text-amber-800 font-mono text-[10px]">名前#JP1</code>）を入力！
                 </p>
               </div>
-              <div className="pt-3 border-t border-stone-100 flex items-center gap-2 text-[11px] text-stone-500 font-medium">
-                <CheckCircle2 size={14} className="text-emerald-600 shrink-0" />
-                最高ランク・戦績が自動同期されます
+              <div className="pt-2.5 border-t border-stone-100 flex items-center gap-1.5 text-[11px] text-stone-500 font-bold">
+                <CheckCircle2 size={13} className="text-emerald-600 shrink-0" />
+                最高ランク・戦績を全自動同期
               </div>
             </div>
 
             {/* Step 2 */}
-            <div className="bg-white rounded-2xl p-6 border border-black/10 shadow-sm relative overflow-hidden flex flex-col justify-between">
-              <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-500/5 rounded-full -mr-10 -mt-10 pointer-events-none"></div>
+            <div className="bg-white rounded-2xl p-5 border border-black/10 shadow-xs relative overflow-hidden flex flex-col justify-between">
               <div>
-                <div className="w-12 h-12 rounded-xl bg-indigo-50 border border-indigo-200 flex items-center justify-center text-indigo-600 mb-4 font-bold">
-                  <MapPin size={24} />
+                <div className="flex items-center justify-between mb-3">
+                  <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-200 flex items-center justify-center text-indigo-600 font-bold">
+                    <MapPin size={20} />
+                  </div>
+                  <span className="text-xs font-black text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-200">STEP 2</span>
                 </div>
-                <div className="text-xs font-black text-indigo-700 uppercase tracking-wider mb-1">Step 2</div>
-                <h3 className="text-lg font-black text-stone-900 mb-2">得意・NGレーン設定</h3>
-                <p className="text-stone-600 text-xs leading-relaxed mb-4">
-                  「📍 希望レーン設定」ボタンまたは <code className="bg-stone-100 px-1.5 py-0.5 rounded text-indigo-800 font-mono text-[11px]">/lane</code> でメイン・サブレーンやNGレーンを登録します。
+                <h3 className="text-base font-black text-stone-900 mb-1.5">希望レーン設定</h3>
+                <p className="text-stone-600 text-xs leading-relaxed mb-3">
+                  「📍 希望レーン設定」で得意ロールやNGレーンをポチッと選ぶだけ！
                 </p>
               </div>
-              <div className="pt-3 border-t border-stone-100 flex items-center gap-2 text-[11px] text-stone-500 font-medium">
-                <CheckCircle2 size={14} className="text-emerald-600 shrink-0" />
-                チーム分けAIが希望を最優先で考慮
+              <div className="pt-2.5 border-t border-stone-100 flex items-center gap-1.5 text-[11px] text-stone-500 font-bold">
+                <CheckCircle2 size={13} className="text-emerald-600 shrink-0" />
+                チーム分けAIが希望を最優先考慮
               </div>
             </div>
 
             {/* Step 3 */}
-            <div className="bg-white rounded-2xl p-6 border border-black/10 shadow-sm relative overflow-hidden flex flex-col justify-between">
-              <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-full -mr-10 -mt-10 pointer-events-none"></div>
+            <div className="bg-white rounded-2xl p-5 border border-black/10 shadow-xs relative overflow-hidden flex flex-col justify-between">
               <div>
-                <div className="w-12 h-12 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600 mb-4 font-bold">
-                  <Swords size={24} />
+                <div className="flex items-center justify-between mb-3">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600 font-bold">
+                    <Swords size={20} />
+                  </div>
+                  <span className="text-xs font-black text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">STEP 3</span>
                 </div>
-                <div className="text-xs font-black text-emerald-700 uppercase tracking-wider mb-1">Step 3</div>
-                <h3 className="text-lg font-black text-stone-900 mb-2">募集に参加する！</h3>
-                <p className="text-stone-600 text-xs leading-relaxed mb-4">
-                  募集チャンネル（<code className="bg-stone-100 px-1.5 py-0.5 rounded text-emerald-800 font-mono text-[11px]">#🎮募集</code> / <code className="bg-stone-100 px-1.5 py-0.5 rounded text-emerald-800 font-mono text-[11px]">#🔄定期カスタム</code>）のメッセージにある「✋ 参加する」を押すだけで完了！
+                <h3 className="text-base font-black text-stone-900 mb-1.5">募集に参加する！</h3>
+                <p className="text-stone-600 text-xs leading-relaxed mb-3">
+                  募集通知の「✋ 参加する」を押すだけ！10人揃えば自動でチーム分け開始🔥
                 </p>
               </div>
-              <div className="pt-3 border-t border-stone-100 flex items-center gap-2 text-[11px] text-stone-500 font-medium">
-                <CheckCircle2 size={14} className="text-emerald-600 shrink-0" />
-                10人揃うと自動でチーム分け実行
+              <div className="pt-2.5 border-t border-stone-100 flex items-center gap-1.5 text-[11px] text-stone-500 font-bold">
+                <CheckCircle2 size={13} className="text-emerald-600 shrink-0" />
+                初心者から上級者まで完全公平マッチ
               </div>
             </div>
           </div>

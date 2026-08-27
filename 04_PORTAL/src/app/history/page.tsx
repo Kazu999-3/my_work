@@ -82,14 +82,14 @@ export default function HistoryPage() {
       <div className="max-w-[1400px] mx-auto space-y-8">
         
         {/* ヘッダー */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-border pb-6 gap-4">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-border pb-4 gap-3">
           <div>
-            <h1 className="text-3xl font-extrabold text-stone-900 flex items-center gap-3">
-              <History className="h-8 w-8 text-primary" />
+            <h1 className="text-2xl md:text-3xl font-extrabold text-stone-900 flex items-center gap-2.5">
+              <History className="h-7 w-7 text-primary" />
               過去の試合履歴
             </h1>
-            <p className="text-stone-500 mt-2 text-sm font-medium">
-              KTMで記録された過去のカスタムマッチの履歴とレーン別対決詳細を確認できます。
+            <p className="text-stone-500 mt-1 text-xs font-bold">
+              直近のカスタム対戦結果 ＆ レーン別対決詳細 ⚔️
             </p>
           </div>
           <div className="flex items-center gap-2 sm:gap-3 flex-wrap w-full sm:w-auto">

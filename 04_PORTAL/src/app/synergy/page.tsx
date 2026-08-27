@@ -90,39 +90,38 @@ export default function SynergyPage() {
       <div className="max-w-[1400px] mx-auto space-y-8">
         
         {/* ヘッダー */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-border pb-6 gap-4">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-border pb-4 gap-3">
           <div>
-            <h1 className="text-3xl font-extrabold text-stone-900 flex items-center gap-3">
-              <HeartHandshake className="h-8 w-8 text-fuchsia-700" />
-              チームシナジー分析
+            <h1 className="text-2xl md:text-3xl font-extrabold text-stone-900 flex items-center gap-2.5">
+              <HeartHandshake className="h-7 w-7 text-fuchsia-700" />
+              チームシナジー ＆ 相性診断
             </h1>
-            <p className="text-stone-500 mt-2 text-sm font-medium">
-              KTMの全試合データから算出された「味方時の勝率」を分析。<br/>
-              最強のコンビと最弱のコンビを2〜5人の人数別で一覧化します。
+            <p className="text-stone-500 mt-1 text-xs font-bold">
+              誰と組めば勝てるか一発診断🔥 KTM全試合データから勝率を自動算出！
             </p>
           </div>
           
-          <div className="flex items-center gap-3 bg-surface border border-border rounded-xl px-4 py-2 shadow-xs">
-            <span className="text-sm font-bold text-stone-500">最小共闘数:</span>
+          <div className="flex items-center gap-2 bg-surface border border-border rounded-xl px-3 py-1.5 shadow-xs">
+            <span className="text-xs font-black text-stone-500">条件:</span>
             <select 
               value={minGames} 
               onChange={e => setMinGames(Number(e.target.value))}
-              className="bg-stone-50 border border-stone-300 text-stone-900 rounded-lg px-2.5 py-1 outline-none focus:border-fuchsia-500 font-bold text-xs"
+              className="bg-stone-50 border border-stone-300 text-stone-900 rounded-lg px-2 py-1 outline-none focus:border-fuchsia-500 font-bold text-xs cursor-pointer"
             >
-              <option value={2}>2試合以上共闘</option>
-              <option value={3}>3試合以上共闘</option>
-              <option value={5}>5試合以上共闘</option>
-              <option value={10}>10試合以上共闘</option>
+              <option value={2}>2試合以上</option>
+              <option value={3}>3試合以上</option>
+              <option value={5}>5試合以上</option>
+              <option value={10}>10試合以上</option>
             </select>
           </div>
         </div>
 
         {/* ✨ デュオ相性シミュレータ */}
-        <div className="bg-white border border-stone-200/90 rounded-3xl p-6 shadow-xs">
-          <div className="flex items-center gap-2 mb-4">
-            <Sparkles className="text-fuchsia-600 h-5 w-5" />
-            <h2 className="text-base font-extrabold text-stone-900">デュオ相性シミュレータ</h2>
-            <span className="text-xs text-stone-500 font-medium">（2人のプレイヤーを選んで相性を即座に診断）</span>
+        <div className="bg-white border border-stone-200/90 rounded-2xl p-5 shadow-xs">
+          <div className="flex items-center gap-2 mb-3">
+            <Sparkles className="text-fuchsia-600 h-4 w-4" />
+            <h2 className="text-sm font-black text-stone-900">デュオ相性シミュレーター</h2>
+            <span className="text-[11px] text-stone-500 font-medium">（2人選んで即座に共闘勝率チェック）</span>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
