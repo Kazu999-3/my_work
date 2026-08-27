@@ -793,9 +793,9 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
   return (
     <div className="w-full flex flex-col gap-4">
       {/* 2ペインレイアウトコンテナ */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start w-full">
         {/* ── 左ペイン: マスターリスト (lg:col-span-4 xl:col-span-3) ── */}
-        <div className={`flex flex-col gap-3.5 lg:sticky lg:top-4 ${selected ? 'hidden lg:flex' : 'flex'} w-full`}>
+        <div className={`lg:col-span-4 xl:col-span-3 flex flex-col gap-3.5 lg:sticky lg:top-4 ${selected ? 'hidden lg:flex' : 'flex'} w-full min-w-0`}>
           {/* 検索バー ＆ フィルター */}
           <div className="bg-white border border-stone-200 p-3.5 rounded-2xl shadow-xs space-y-3">
             <div className="relative">
@@ -923,7 +923,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
         </div>
 
         {/* ── 右ペイン: 詳細＆アクションキャンバス (lg:col-span-8 xl:col-span-9) ── */}
-        <div className={`flex-1 min-w-0 ${!selected ? 'hidden lg:flex' : 'flex'} flex-col gap-5`}>
+        <div className={`lg:col-span-8 xl:col-span-9 w-full min-w-0 ${!selected ? 'hidden lg:flex' : 'flex'} flex-col gap-5`}>
           {!selected ? (
             <div className="bg-white border border-stone-200 rounded-3xl p-12 text-center flex flex-col items-center justify-center min-h-[500px] text-stone-400 space-y-3">
               <BookOpen size={48} className="text-stone-300 animate-pulse" />
@@ -933,12 +933,12 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
               </p>
             </div>
           ) : (
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col gap-5">
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col gap-5 w-full min-w-0">
               {/* モバイル用 戻るボタン ＆ ステータスバー */}
-              <div className="flex items-center justify-between flex-wrap gap-2">
+              <div className="flex items-center justify-between flex-wrap gap-2 w-full">
                 <button
                   onClick={() => setSelected(null)}
-                  className="lg:hidden flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-stone-200/80 text-stone-800 text-xs font-bold hover:bg-stone-300 transition"
+                  className="lg:hidden flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-stone-200/80 text-stone-800 text-xs font-bold hover:bg-stone-300 transition cursor-pointer"
                 >
                   <ChevronLeft size={16} /> チャンピオン一覧へ戻る
                 </button>
@@ -966,7 +966,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                 </div>
               </div>
 
-        <div className="relative rounded-3xl overflow-hidden shadow-2xl border border-white/10 group bg-[#0a0b10]">
+        <div className="relative rounded-3xl overflow-hidden shadow-2xl border border-white/10 group bg-[#0a0b10] w-full">
           <div className="absolute inset-0 bg-cover bg-[center_20%] opacity-60 group-hover:opacity-80 transition-opacity duration-1000" style={{ backgroundImage: `url(${getChampSplash(selected.id)})` }}></div>
           <div className="absolute inset-0 bg-gradient-to-t from-[#06070a] via-[#06070a]/60 to-transparent"></div>
 
@@ -992,12 +992,9 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
               </div>
             </div>
 
-            {/* 複数レーン対応: レーン別辞典切替タブ */}
-            {availableRoles.length > 0 && (
-              <div className="flex items-center gap-2 flex-wrap pt-1">
-                <span className="text-xs font-black text-amber-300 flex items-center gap-1">
-                  🛡️ レーン別辞典:
-                </span>
+            {/* 複数レーン対応: レーン別辞典切替タブ ＆ クイックアクションバー */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pt-2">
+              {availableRoles.length > 0 && (
                 <div className="flex items-center gap-1.5 bg-black/50 backdrop-blur-md p-1 rounded-2xl border border-white/10 shadow-inner">
                   {availableRoles.map((r) => {
                     const isSelected = selectedRole.toUpperCase() === r.toUpperCase();
@@ -1021,9 +1018,9 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                             setDetailLoading(false);
                           }
                         }}
-                        className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 ${
+                        className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
                           isSelected
-                            ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-stone-950 shadow-[0_0_15px_rgba(245,158,11,0.5)] scale-105'
+                            ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-stone-950 shadow-md scale-105'
                             : 'text-stone-300 hover:text-white hover:bg-white/10'
                         }`}
                       >
@@ -1032,114 +1029,65 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                     );
                   })}
                 </div>
-                {availableRoles.length > 1 && (
-                  <span className="text-[11px] text-amber-200/70 font-medium">
-                    （レーンごとに個別のビルド・立ち回りを閲覧・保存できます）
-                  </span>
+              )}
+
+              {/* 右側クイックアクション群 */}
+              <div className="flex items-center gap-2 flex-wrap ml-auto">
+                {isAdmin && (
+                  <>
+                    <button
+                      onClick={handleFetchTrend}
+                      disabled={fetchingTrend}
+                      className="px-3 py-1.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-stone-950 font-black rounded-xl transition-all flex items-center gap-1.5 text-xs shadow-sm disabled:opacity-50 cursor-pointer"
+                      title="最新パッチのメタ・プロビルド・トレンド情報をAIで自動更新"
+                    >
+                      <RefreshCw size={13} className={fetchingTrend ? "animate-spin" : ""} />
+                      <span>{trendPhase === 'running' ? "AI生成中..." : trendPhase === 'pending' ? "順番待ち..." : fetchingTrend ? "登録中..." : "⚡ 最新トレンド取得"}</span>
+                    </button>
+
+                    <button
+                      onClick={() => handleStartRefineFacts(selected.id || selected.name, selectedRole)}
+                      disabled={refiningFacts}
+                      className="px-3 py-1.5 bg-stone-800 hover:bg-stone-700 text-white font-bold rounded-xl transition-all flex items-center gap-1.5 text-xs shadow-sm disabled:opacity-50 cursor-pointer"
+                      title="蓄積された知見の重複を排除し、最新メタ仕様にAIで清書"
+                    >
+                      <Sparkles size={13} className="text-amber-400" />
+                      <span>✨ AI清書</span>
+                    </button>
+
+                    <button
+                      onClick={async () => {
+                        try {
+                          const res = await fetch('/api/admin/dict-health/verify', {
+                            method: 'POST', credentials: 'include',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ champion: selected.id, action: 'verify' }),
+                          });
+                          if (res.ok) {
+                            setSaveSuccess(true);
+                            setTimeout(() => setSaveSuccess(false), 3000);
+                          }
+                        } catch (e: any) {
+                          console.error(e);
+                        }
+                      }}
+                      className="px-3 py-1.5 bg-emerald-700/80 hover:bg-emerald-600 text-white font-bold rounded-xl transition-all flex items-center gap-1.5 text-xs shadow-sm cursor-pointer"
+                      title="このチャンピオンの情報を確認済みにマーク"
+                    >
+                      <Check size={13} />
+                      <span>確認済みに設定</span>
+                    </button>
+                  </>
                 )}
-              </div>
-            )}
 
-            {/* シームレス導線: 辞典 ➔ AIコーチへ即座に繋ぐボタン */}
-            <div className="flex gap-3 items-center flex-wrap pt-2">
-              <Link
-                href={`/coach?champion=${encodeURIComponent(selected.id)}`}
-                className="px-5 py-2.5 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white font-black rounded-xl transition-all shadow-lg flex items-center gap-2 text-xs"
-              >
-                <Zap size={16} /> 🎯 このチャンピオンでAIコーチを起動する (/coach)
-              </Link>
-            </div>
-
-            {/* ⚡ パワースパイク ＆ 対面必勝心得サマリーカード */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <div className="bg-stone-900/90 border border-stone-800 rounded-2xl p-4 text-center">
-                <div className="text-[10px] font-extrabold text-amber-400 uppercase tracking-wider mb-1">⏱ パワースパイク時間帯</div>
-                <div className="text-sm font-extrabold text-white">
-                  {powerSpikeScores?.peak_window || '中盤キャリー型 (1〜2コア)'}
-                </div>
-                <div className="flex justify-center items-center gap-2 mt-2 text-[10px] text-stone-400">
-                  <span>序盤: <strong className="text-stone-200">{powerSpikeScores?.early_game_score ?? 3}/5</strong></span>
-                  <span>・</span>
-                  <span>中盤: <strong className="text-amber-300">{powerSpikeScores?.mid_game_score ?? 4}/5</strong></span>
-                  <span>・</span>
-                  <span>終盤: <strong className="text-stone-200">{powerSpikeScores?.late_game_score ?? 4}/5</strong></span>
-                </div>
-              </div>
-
-              <div className="bg-stone-900/90 border border-stone-800 rounded-2xl p-4 md:col-span-2 flex flex-col justify-center">
-                <div className="text-[10px] font-extrabold text-emerald-400 uppercase tracking-wider mb-1 flex items-center gap-1">
-                  <span>🎯</span> 対面必勝の心得
-                </div>
-                <p className="text-xs text-stone-300 font-medium leading-relaxed line-clamp-2">
-                  {dataFields.strengths || dataFields.strategy || '相手の主要スキルのクールダウン中に有利なトレードを仕掛け、パワースパイク（1コア完成時）に合わせて主導権を握る。'}
-                </p>
+                <Link
+                  href={`/coach?champion=${encodeURIComponent(selected.id)}`}
+                  className="px-3 py-1.5 bg-indigo-600/90 hover:bg-indigo-600 text-white font-bold rounded-xl transition-all flex items-center gap-1.5 text-xs shadow-sm"
+                >
+                  <Zap size={13} /> <span>AIコーチ起動</span>
+                </Link>
               </div>
             </div>
-
-            {isAdmin && (
-            <div className="flex gap-3 items-center flex-wrap">
-              <button
-                onClick={async () => {
-                  try {
-                    const res = await fetch('/api/admin/dict-health/verify', {
-                      method: 'POST', credentials: 'include',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ champion: selected.id, action: 'verify' }),
-                    });
-                    if (res.ok) {
-                      setSaveSuccess(true);
-                      setTimeout(() => setSaveSuccess(false), 3000);
-                      alert(`✅ ${selected.name || selected.id} を「人間確認済み」に設定しました！`);
-                    } else {
-                      const errJson = await res.json();
-                      alert(`❌ 確認状態の更新失敗: ${errJson.error}`);
-                    }
-                  } catch (e: any) {
-                    alert(`❌ 通信エラー: ${e.message}`);
-                  }
-                }}
-                className="px-4 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl transition-all flex items-center gap-2 text-sm shadow-md shadow-emerald-600/20"
-                title="このチャンピオンの情報を人間が確認完了した状態にマークします"
-              >
-                <Check size={16} />
-                ✅ 確認済みに設定
-              </button>
-              <Link
-                href="/admin/dict-health"
-                className="px-4 py-3 bg-stone-800 hover:bg-stone-900 text-white font-bold rounded-xl transition-all flex items-center gap-2 text-sm shadow-md"
-              >
-                🩺 ヘルス診断へ戻る
-              </Link>
-
-              <button
-                onClick={handleFetchTrend}
-                disabled={fetchingTrend}
-                className="px-4 py-3 bg-[#c89b3c] hover:bg-[#c89b3c]/80 text-black font-black rounded-xl transition-all flex items-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_15px_rgba(200,155,60,0.3)] hover:shadow-[0_0_25px_rgba(200,155,60,0.5)]"
-              >
-                <RefreshCw size={16} className={fetchingTrend ? "animate-spin" : ""} />
-                {trendPhase === 'running' ? "AI生成中..." : trendPhase === 'pending' ? "順番待ち中..." : fetchingTrend ? "登録中..." : "最新トレンド取得"}
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleStartRefineFacts(selected.id || selected.name, selectedRole)}
-                disabled={refiningFacts}
-                className="px-4 py-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-black rounded-xl transition-all flex items-center gap-2 text-sm shadow-md shadow-amber-500/20 disabled:opacity-50"
-                title="蓄積された知見の重複を排除し、各項目を洗練された1本の文章に清書・整理します"
-              >
-                {refiningFacts ? <RefreshCw size={16} className="animate-spin" /> : <Sparkles size={16} />}
-                <span>{refiningFacts ? 'AIが知見を清書中...' : '✨ 蓄積知見をAI清書・整理'}</span>
-              </button>
-              <button
-                onClick={handleQualityCheck}
-                disabled={checkingQuality}
-                className="px-4 py-3 bg-cyan-700 hover:bg-cyan-800 text-white font-black rounded-xl transition-all flex items-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                title="実在する優良事例と比較し、記述の具体性・実用性をAIが審査します（都度Geminiを呼ぶため乱用注意）"
-              >
-                🔎 {checkingQuality ? "審査中..." : "品質チェック"}
-              </button>
-            </div>
-            )}
 
             {qualityResult && (
               <div className={`flex flex-col gap-1.5 px-4 py-3 rounded-xl text-xs border ${
@@ -1196,7 +1144,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
 
 
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
           <TextAreaCard title="強み (Strengths)" icon={Swords} color="text-[var(--color-success)] border-[var(--color-success)] shadow-[var(--color-success)]" value={dataFields.strengths} onChange={v => setField('strengths', v)} fieldKey="strengths" onOpenHistory={handleOpenHistory} />
           <TextAreaCard title="弱み (Weaknesses)" icon={ShieldAlert} color="text-[var(--color-danger)] border-[var(--color-danger)] shadow-[var(--color-danger)]" value={dataFields.weaknesses} onChange={v => setField('weaknesses', v)} fieldKey="weaknesses" onOpenHistory={handleOpenHistory} />
           <TextAreaCard title="パワースパイク" icon={Zap} color="text-[#c89b3c] border-[#c89b3c] shadow-[#c89b3c]" value={dataFields.powerSpikes} onChange={v => setField('powerSpikes', v)} fieldKey="powerSpikes" onOpenHistory={handleOpenHistory} />
@@ -1592,15 +1540,16 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
 
           {/* 📖 全体的な立ち回り・統合トレンドメモ (折りたたみアコーディオン) */}
           <div className="glass-panel rounded-2xl border-l-4 border-[#c89b3c] bg-[#c89b3c]/5 overflow-hidden col-span-1 md:col-span-2">
-            <button
+            <div
               onClick={() => setIsStrategyCollapsed(!isStrategyCollapsed)}
-              className="w-full p-5 flex items-center justify-between text-left hover:bg-black/5 transition-colors cursor-pointer"
+              className="w-full p-5 flex items-center justify-between text-left hover:bg-black/5 transition-colors cursor-pointer select-none"
             >
               <div className="flex items-center gap-3">
                 <BookOpen className="text-[#c89b3c]" size={20} />
                 <h3 className="text-base font-black text-stone-900">全体的な立ち回り・統合トレンドメモ</h3>
                 {dataFields.strategy && <span className="text-[10px] bg-[#c89b3c]/20 text-[#c89b3c] px-2.5 py-0.5 rounded-full font-bold">記載あり</span>}
                 <button
+                  type="button"
                   onClick={(e) => { e.stopPropagation(); handleOpenHistory('strategy', '全体的な立ち回りメモ'); }}
                   className="text-[11px] font-bold px-2 py-0.5 rounded bg-black/5 hover:bg-amber-100 hover:text-amber-800 text-stone-600 transition-colors flex items-center gap-1 border border-black/10"
                   title="この項目の変更履歴を確認"
@@ -1611,7 +1560,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
               <span className="text-xs text-gray-400 font-bold flex items-center gap-1">
                 {isStrategyCollapsed ? '▼ 開く' : '▲ 閉じる'}
               </span>
-            </button>
+            </div>
 
             {!isStrategyCollapsed && (
               <div className="p-6 border-t border-black/10 prose max-w-none text-sm leading-relaxed text-stone-800">
@@ -1650,9 +1599,9 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
 
           {/* 📄 AI生成ドラフト・追加メモ項目 (折りたたみアコーディオン) */}
           <div className="glass-panel rounded-2xl border-l-4 border-pink-400 bg-pink-400/5 overflow-hidden col-span-1 md:col-span-2">
-            <button
+            <div
               onClick={() => setIsDraftsCollapsed(!isDraftsCollapsed)}
-              className="w-full p-5 flex items-center justify-between text-left hover:bg-black/5 transition-colors cursor-pointer"
+              className="w-full p-5 flex items-center justify-between text-left hover:bg-black/5 transition-colors cursor-pointer select-none"
             >
               <div className="flex items-center gap-3">
                 <FileText className="text-pink-600" size={20} />
@@ -1664,7 +1613,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
               <span className="text-xs text-gray-400 font-bold flex items-center gap-1">
                 {isDraftsCollapsed ? '▼ 開く' : '▲ 閉じる'}
               </span>
-            </button>
+            </div>
 
             {!isDraftsCollapsed && (
               <div className="p-6 border-t border-black/10 space-y-4">
@@ -1709,10 +1658,10 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
         </div>
 
         {/* ⚔️ 対面マッチアップ履歴 (折りたたみアコーディオン) */}
-        <div className="glass-panel border-t-4 border-[#00cfef] rounded-2xl overflow-hidden group">
-          <button
+        <div className="glass-panel border-t-4 border-[#00cfef] rounded-2xl overflow-hidden group col-span-1 md:col-span-2">
+          <div
             onClick={() => setIsMatchupsCollapsed(!isMatchupsCollapsed)}
-            className="w-full p-5 flex items-center justify-between text-left hover:bg-black/5 transition-colors cursor-pointer"
+            className="w-full p-5 flex items-center justify-between text-left hover:bg-black/5 transition-colors cursor-pointer select-none"
           >
             <div className="flex items-center gap-3">
               <Swords className="text-[#00cfef]" size={20} />
@@ -1724,7 +1673,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
             <span className="text-xs text-gray-400 font-bold flex items-center gap-1">
               {isMatchupsCollapsed ? '▼ 開く' : '▲ 閉じる'}
             </span>
-          </button>
+          </div>
 
           {!isMatchupsCollapsed && (
             <div className="p-6 border-t border-black/10 relative space-y-4">
