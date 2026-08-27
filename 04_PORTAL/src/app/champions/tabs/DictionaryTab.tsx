@@ -783,31 +783,188 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
   const containerVariants = { hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.02 } } };
   const itemVariants = { hidden: { scale: 0.9, opacity: 0 }, visible: { scale: 1, opacity: 1 } };
 
-  if (selected) {
-    return (
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="min-h-screen p-4 md:p-8 lg:p-10 max-w-[1680px] w-full mx-auto flex flex-col gap-6">
-        <div className="flex items-center justify-between flex-wrap gap-3">
-          <button onClick={() => setSelected(null)} className="flex items-center gap-2 text-[#c89b3c] font-bold w-fit hover:text-stone-900 transition-colors">
-            <ChevronLeft size={18} /> 辞典トップに戻る
-          </button>
-          <div className="flex items-center gap-2">
-            {detailLoading && (
-              <div className="px-3 py-1.5 rounded-xl bg-cyan-950/40 border border-cyan-800 text-cyan-300 text-xs font-bold flex items-center gap-2 shadow">
-                <RefreshCw size={14} className="animate-spin" /> 詳細データを読み込み中...
+  // 初回ロード時にチャンピオン一覧が存在し、PC画面(lg以上)で未選択の場合、先頭を自動選択する
+  useEffect(() => {
+    if (!selected && filtered.length > 0 && typeof window !== 'undefined' && window.innerWidth >= 1024) {
+      setSelected(filtered[0]);
+    }
+  }, [filtered.length]);
+
+  return (
+    <div className="w-full flex flex-col gap-4">
+      {/* 2ペインレイアウトコンテナ */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* ── 左ペイン: マスターリスト (lg:col-span-4 xl:col-span-3) ── */}
+        <div className={`flex flex-col gap-3.5 lg:sticky lg:top-4 ${selected ? 'hidden lg:flex' : 'flex'} w-full`}>
+          {/* 検索バー ＆ フィルター */}
+          <div className="bg-white border border-stone-200 p-3.5 rounded-2xl shadow-xs space-y-3">
+            <div className="relative">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400" size={16} />
+              <input
+                type="text"
+                placeholder="Ahri / アリ (英・日対応)..."
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                className="w-full bg-stone-50 border border-stone-200 focus:border-[#c89b3c] focus:bg-white rounded-xl py-2 pl-9 pr-3 text-stone-900 font-bold outline-none transition-all text-xs"
+              />
+            </div>
+
+            {/* ロール別ピルフィルター */}
+            <div className="flex items-center gap-1 overflow-x-auto pb-1 scrollbar-none">
+              <button
+                onClick={() => setRoleFilter(roleFilter === 'FAVORITES' ? 'ALL' : 'FAVORITES' as any)}
+                className={`px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition shrink-0 flex items-center gap-1 ${
+                  (roleFilter as any) === 'FAVORITES'
+                    ? 'bg-amber-400 text-stone-950 shadow-xs'
+                    : 'text-amber-700 bg-amber-50 hover:bg-amber-100'
+                }`}
+                title="お気に入りのみ表示"
+              >
+                ⭐️
+              </button>
+              {ROLE_LABELS.map(role => (
+                <button
+                  key={role}
+                  onClick={() => setRoleFilter(role)}
+                  className={`px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition shrink-0 ${
+                    roleFilter === role
+                      ? 'bg-[#c89b3c] text-stone-950 shadow-xs font-black'
+                      : 'text-stone-600 hover:text-stone-900 hover:bg-stone-100'
+                  }`}
+                >
+                  {role}
+                </button>
+              ))}
+            </div>
+
+            {/* ピック属性 ＆ タイプフィルター */}
+            <div className="flex items-center justify-between gap-1 pt-1 border-t border-stone-100 text-[10px]">
+              <div className="flex items-center gap-1">
+                {(['ALL', 'BLIND', 'COUNTER'] as const).map(p => (
+                  <button
+                    key={p}
+                    onClick={() => setPickFilter(p)}
+                    className={`px-2 py-1 rounded-md font-bold transition ${
+                      pickFilter === p
+                        ? 'bg-stone-900 text-white'
+                        : 'text-stone-500 hover:bg-stone-100'
+                    }`}
+                  >
+                    {p === 'ALL' ? '全属性' : p === 'BLIND' ? '先出し' : '後出し'}
+                  </button>
+                ))}
               </div>
-            )}
-            {detailError && (
-              <div className="px-3 py-1.5 rounded-xl bg-rose-950/40 border border-rose-800 text-rose-300 text-xs font-bold flex items-center gap-2 shadow">
-                <span>⚠️</span> {detailError}
-              </div>
-            )}
-            {draftRestored && (
-              <div className="px-3 py-1.5 rounded-xl bg-amber-100 border border-amber-300 text-amber-900 text-xs font-bold flex items-center gap-2 animate-bounce shadow">
-                <span>✏️</span> 前回編集中の未保存下書きを自動復元しました
-              </div>
-            )}
+              <span className="text-stone-400 font-mono font-bold">
+                {filtered.length} 体
+              </span>
+            </div>
+          </div>
+
+          {/* チャンピオン縦スクロールリスト */}
+          <div className="overflow-y-auto max-h-[calc(100vh-250px)] lg:max-h-[calc(100vh-210px)] space-y-1.5 pr-1">
+            {filtered.map(c => {
+              const isSelected = selected?.id === c.id;
+              const isFav = favoriteChamps.includes(c.id);
+              const jgStyle = champJgStyles[c.id] || {};
+              const powerSpike = champPowerSpikes[c.id];
+
+              return (
+                <div
+                  key={c.id}
+                  onClick={() => setSelected(c)}
+                  className={`p-2.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-2.5 ${
+                    isSelected
+                      ? 'bg-amber-500/10 border-[#c89b3c] shadow-xs ring-1 ring-[#c89b3c]'
+                      : 'bg-white border-stone-200 hover:border-stone-300 hover:bg-stone-50/80'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <Image
+                      src={getChampIcon(c.id)}
+                      alt={c.name}
+                      width={38}
+                      height={38}
+                      className="w-9 h-9 rounded-lg border border-black/10 shrink-0"
+                    />
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-bold text-xs text-stone-900 truncate">{c.name}</span>
+                        {isFav && <span className="text-amber-500 text-xs">★</span>}
+                      </div>
+                      <div className="flex items-center gap-1.5 text-[10px] text-stone-400">
+                        <span className="truncate">{c.id}</span>
+                        {champDates[c.id] && (
+                          <span className="text-[9px] text-stone-400">
+                            • {getRelativeTimeString(new Date(champDates[c.id]).getTime() / 1000)}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col items-end gap-1 shrink-0">
+                    {jgStyle.type && (
+                      <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-stone-100 text-stone-700">
+                        {jgStyle.type.replace('型', '')}
+                      </span>
+                    )}
+                    {powerSpike && (
+                      <div className="flex items-center gap-0.5 text-[8px] font-mono">
+                        <span className={`px-1 rounded ${powerSpike.early_game_score >= 4 ? 'bg-emerald-100 text-emerald-800 font-bold' : 'text-stone-400'}`}>E</span>
+                        <span className={`px-1 rounded ${powerSpike.mid_game_score >= 4 ? 'bg-amber-100 text-amber-800 font-bold' : 'text-stone-400'}`}>M</span>
+                        <span className={`px-1 rounded ${powerSpike.late_game_score >= 4 ? 'bg-rose-100 text-rose-800 font-bold' : 'text-stone-400'}`}>L</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
+
+        {/* ── 右ペイン: 詳細＆アクションキャンバス (lg:col-span-8 xl:col-span-9) ── */}
+        <div className={`flex-1 min-w-0 ${!selected ? 'hidden lg:flex' : 'flex'} flex-col gap-5`}>
+          {!selected ? (
+            <div className="bg-white border border-stone-200 rounded-3xl p-12 text-center flex flex-col items-center justify-center min-h-[500px] text-stone-400 space-y-3">
+              <BookOpen size={48} className="text-stone-300 animate-pulse" />
+              <h3 className="font-bold text-stone-700 text-lg">チャンピオンが選択されていません</h3>
+              <p className="text-xs text-stone-400 max-w-sm">
+                左の一覧からチャンピオンをクリックすると、戦略・ビルド・パワースパイク・対面メモが即座に表示されます。
+              </p>
+            </div>
+          ) : (
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col gap-5">
+              {/* モバイル用 戻るボタン ＆ ステータスバー */}
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <button
+                  onClick={() => setSelected(null)}
+                  className="lg:hidden flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-stone-200/80 text-stone-800 text-xs font-bold hover:bg-stone-300 transition"
+                >
+                  <ChevronLeft size={16} /> チャンピオン一覧へ戻る
+                </button>
+                <div className="flex items-center gap-2 ml-auto">
+                  {detailLoading && (
+                    <div className="px-2.5 py-1 rounded-lg bg-cyan-50 border border-cyan-200 text-cyan-800 text-xs font-bold flex items-center gap-1.5">
+                      <RefreshCw size={12} className="animate-spin" /> 読込中...
+                    </div>
+                  )}
+                  {detailError && (
+                    <div className="px-2.5 py-1 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 text-xs font-bold flex items-center gap-1.5">
+                      <span>⚠️</span> {detailError}
+                    </div>
+                  )}
+                  {saveSuccess && (
+                    <div className="px-2.5 py-1 rounded-lg bg-emerald-50 border border-emerald-300 text-emerald-800 text-xs font-bold flex items-center gap-1.5">
+                      <Check size={12} /> 保存完了
+                    </div>
+                  )}
+                  {draftRestored && (
+                    <div className="px-2.5 py-1 rounded-lg bg-amber-50 border border-amber-300 text-amber-900 text-xs font-bold flex items-center gap-1.5 animate-bounce">
+                      <span>✏️</span> 下書き復元
+                    </div>
+                  )}
+                </div>
+              </div>
 
         <div className="relative rounded-3xl overflow-hidden shadow-2xl border border-white/10 group bg-[#0a0b10]">
           <div className="absolute inset-0 bg-cover bg-[center_20%] opacity-60 group-hover:opacity-80 transition-opacity duration-1000" style={{ backgroundImage: `url(${getChampSplash(selected.id)})` }}></div>
@@ -1814,7 +1971,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                                               </tr>
                                             );
                                           })}
-                        </tbody>
+                                        </tbody>
                                       </table>
                                     </div>
                                   </div>
@@ -1830,7 +1987,6 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                                     }
                                     const winRate = games ? Math.round((wins / games) * 100) : 0;
                                     const kda = d > 0 ? Math.round(((k + a) / d) * 10) / 10 : (k + a);
-                                    // 直近5戦の勝敗（新しい順）。調子の変化が分かるようにする。
                                     const recent = [...history]
                                       .sort((x: any, y: any) => new Date(y.created_at).getTime() - new Date(x.created_at).getTime())
                                       .slice(0, 5);
@@ -1888,333 +2044,30 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
           )}
         </div>
 
-        <div className="glass-panel border-t-4 border-pink-500 rounded-2xl p-6 relative overflow-hidden group">
-          <div className="absolute -right-20 -top-20 w-64 h-64 bg-pink-500/5 rounded-full blur-3xl group-hover:bg-pink-500/10 transition-colors"></div>
-          <div className="relative z-10 flex justify-between items-center mb-6 flex-wrap gap-4">
-            <h3 className="text-lg font-black font-mono flex items-center gap-2 text-stone-900"><FileText className="text-pink-500" size={20} /> noteドラフト記事</h3>
-            <div className="flex gap-2">
-              <div className="flex bg-[var(--color-surface)] p-1 rounded-xl border border-black/10">
-                <button onClick={() => setNoteDraftMode('preview')} className={`px-4 py-1.5 rounded-lg text-xs font-bold flex items-center gap-2 transition-colors ${noteDraftMode === 'preview' ? 'bg-pink-500 text-white shadow-lg' : 'text-gray-400 hover:text-stone-900'}`}><Eye size={14} /> プレビュー</button>
-                {isAdmin && (
-                  <button onClick={() => setNoteDraftMode('edit')} className={`px-4 py-1.5 rounded-lg text-xs font-bold flex items-center gap-2 transition-colors ${noteDraftMode === 'edit' ? 'bg-pink-500 text-white shadow-lg' : 'text-gray-400 hover:text-stone-900'}`}><Edit2 size={14} /> 編集</button>
-                )}
-              </div>
-              <button onClick={() => { navigator.clipboard.writeText(dataFields.note_draft); setCopied(true); setTimeout(() => setCopied(false), 2000); }} className="px-4 py-2 bg-[var(--color-surface)] hover:bg-[var(--color-surface-hover)] border border-black/10 rounded-xl text-sm font-bold flex items-center gap-2 transition-colors text-stone-900">
-                {copied ? <span className="text-[var(--color-success)] flex items-center gap-2"><Check size={16} /> コピー完了</span> : <><Copy size={16} /> Markdownをコピー</>}
-              </button>
-            </div>
-          </div>
-          <div className="relative z-10">
-            {noteDraftMode === 'edit' ? (
-              <textarea value={dataFields.note_draft} onChange={e => setField('note_draft', e.target.value)} className="w-full h-[400px] p-6 bg-black/5 border border-pink-500/30 rounded-xl text-sm leading-relaxed font-mono outline-none focus:border-pink-500/60 shadow-inner text-stone-800" placeholder="# 究極の攻略バイブル..." />
-            ) : (
-              <div className="prose prose-pink max-w-none min-h-[400px] p-6 bg-black/3 border border-black/10 rounded-xl text-sm leading-loose">
-                {dataFields.note_draft ? <ReactMarkdown remarkPlugins={[remarkGfm]}>{dataFields.note_draft}</ReactMarkdown> : <p className="text-gray-500 italic">まだドラフト記事がありません。</p>}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* レーンガイドへのリンク */}
-        <div className="glass-panel p-4 rounded-2xl flex items-center justify-between">
-          <div>
-            <h4 className="text-sm font-bold text-amber-600 flex items-center gap-2">
-              <BookOpen size={16} /> レーン別ガイド
-            </h4>
-            <p className="text-xs text-gray-500 mt-1">このチャンピオンのレーン別攻略を確認</p>
-          </div>
-          <Link href="/lane-guides" className="px-4 py-2 bg-amber-100 border border-amber-200 text-amber-700 hover:bg-amber-200 rounded-xl text-sm font-bold transition-all">
-            ガイドを見る →
-          </Link>
-        </div>
-
-        {/* 保存ボタン（辞典編集は管理者専用。一般訪問者には表示しない） */}
-        {isAdmin && (
-        <div className="flex justify-end items-center gap-3 relative z-10 pt-4 flex-wrap">
-          {saveSuccess && (
-            <span className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-950/30 text-emerald-400 border border-emerald-800/60 text-xs font-bold animate-in fade-in">
-              <Check size={14} /> 保存しました
-            </span>
-          )}
-          <button onClick={saveMemo} disabled={saving} className="px-8 py-3 bg-gradient-to-r from-amber-400 to-amber-500 text-black font-black rounded-xl hover:shadow-[0_0_20px_rgba(251,191,36,0.4)] hover:-translate-y-0.5 transition-all flex items-center gap-2 text-sm">
-            {saving ? <RefreshCw size={18} className="animate-spin" /> : <Save size={18} />} チャンピオン辞典の変更を保存する
-          </button>
-        </div>
-        )}
-
-        {historyModal?.isOpen && selected && (
-          <ChampionRevisionHistory
-            champion={selected.id || selected.name}
-            field={historyModal.field}
-            targetKey={historyModal.targetKey}
-            title={historyModal.title}
-            isModal={true}
-            onClose={() => setHistoryModal(null)}
-            onRevertSuccess={() => {
-              setHistoryModal(null);
-            }}
-          />
-        )}
-      </motion.div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen p-6 md:p-12 max-w-[1680px] w-full mx-auto flex flex-col gap-6">
-
-      {/* 🔰 チャンピオン辞典の使い方ガイド（初心者安心折りたたみガイド） */}
-      <div className="bg-amber-500/10 border border-amber-300/60 rounded-2xl p-4 text-stone-900 shadow-sm">
-        <button
-          onClick={() => setIsGuideOpen(!isGuideOpen)}
-          className="w-full flex items-center justify-between font-bold text-xs text-amber-900 hover:text-amber-950 transition"
-        >
-          <div className="flex items-center gap-2">
-            <span className="text-base">🔰</span>
-            <span className="font-extrabold text-sm">チャンピオン辞典の使い方 ＆ 検索のコツ</span>
-          </div>
-          <span className="text-[11px] bg-amber-200/80 px-2 py-0.5 rounded-full font-bold">
-            {isGuideOpen ? '▲ ガイドを閉じる' : '▼ ガイドを開く'}
-          </span>
-        </button>
-
-        {isGuideOpen && (
-          <div className="mt-3 pt-3 border-t border-amber-300/40 text-xs text-stone-800 space-y-2 leading-relaxed animate-fade-in">
-            <p><strong>1. 検索・絞り込み:</strong> 上の入力欄に「アリ」などのひらがな・日本語名、または「Ahri」などの英語名を入力すると0秒で絞り込まれます。</p>
-            <p><strong>2. レーン・ピック属性:</strong> TOP/JG/MID/ADC/SUP ボタンでレーン別、または「先出し向け/後出し向け」で絞り込めます。</p>
-            <p><strong>3. 詳細データ確認:</strong> チャンピオンカードをタップすると、強み・弱み・パワースパイク時間帯・対策ビルドが閲覧できます。</p>
-          </div>
-        )}
-      </div>
-
-      {/* 検索バー・フィルター（スクロール追従） */}
-      <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }} className="sticky top-0 z-20 flex flex-col gap-3 glass-panel p-4 rounded-2xl shadow-2xl backdrop-blur-2xl bg-white/90">
-        
-        {/* スマホ表示の時だけ見える「フィルター開閉ボタン」 */}
-        <button 
-          onClick={() => setIsFilterOpen(!isFilterOpen)}
-          className="md:hidden w-full flex items-center justify-between px-4 py-3 bg-white border border-border rounded-xl text-[#c89b3c] font-bold text-xs hover:bg-black/5 transition-all"
-        >
-          <span className="flex items-center gap-1.5">
-            <Filter size={14} /> 絞り込み条件を指定する
-          </span>
-          <span>{isFilterOpen ? '▲ 閉じる' : '▼ 開く'}</span>
-        </button>
-
-        {/* フィルター本体：スマホ時は開閉状態に連動、PC（md以上）では常に表示 */}
-        <div className={`${isFilterOpen ? 'flex' : 'hidden'} md:flex flex-col gap-4 items-center flex-wrap w-full`}>
-          <div className="flex gap-4 items-center flex-wrap w-full">
-            <div className="relative flex-1 min-w-[200px]">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[#c89b3c]" size={20} />
-              <input type="text" placeholder="例: Ahri / アリ (英名・日本語検索対応)..." value={search} onChange={e => setSearch(e.target.value)}
-                className="w-full bg-[var(--color-surface)] border border-transparent focus:border-[#c89b3c]/50 rounded-xl py-3 pl-12 pr-4 text-stone-900 font-bold outline-none transition-colors text-xs md:text-sm" />
-            </div>
-            {/* ロール別フィルターボタン ＆ ⭐️ お気に入りフィルター */}
-            <div className="flex glass-panel p-1 rounded-xl items-center gap-0.5 flex-wrap">
+          {/* 保存ボタン（管理者用） */}
+          {isAdmin && (
+            <div className="flex justify-end items-center gap-3 pt-4 border-t border-stone-200">
+              {saveSuccess && (
+                <span className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-300 text-xs font-bold">
+                  <Check size={14} /> 保存しました
+                </span>
+              )}
               <button
-                onClick={() => setRoleFilter(roleFilter === 'FAVORITES' ? 'ALL' : 'FAVORITES' as any)}
-                className={`px-3 py-2 rounded-lg text-xs font-black tracking-wider transition-all flex items-center gap-1 ${
-                  (roleFilter as any) === 'FAVORITES'
-                    ? 'bg-amber-400 text-stone-900 shadow-lg shadow-amber-400/40'
-                    : 'text-amber-600 hover:text-amber-700 hover:bg-amber-400/10'
-                }`}
-                title="お気に入りに登録した得意チャンピオンのみを抽出表示します"
+                onClick={saveMemo}
+                disabled={saving}
+                className="px-6 py-2.5 bg-gradient-to-r from-amber-400 to-amber-500 text-stone-950 font-black rounded-xl hover:shadow-md transition-all flex items-center gap-2 text-xs cursor-pointer"
               >
-                ⭐️ お気に入り
+                {saving ? <RefreshCw size={14} className="animate-spin" /> : <Save size={14} />} チャンピオン辞典の変更を保存する
               </button>
-              {ROLE_LABELS.map(role => (
-                <button key={role} onClick={() => setRoleFilter(role)}
-                  className={`px-3 py-2 rounded-lg text-xs font-black tracking-wider transition-all ${
-                    roleFilter === role
-                      ? 'bg-[#c89b3c] text-black shadow-lg shadow-[#c89b3c]/30'
-                      : 'text-gray-400 hover:text-stone-900 hover:bg-black/5'
-                  }`}>
-                  {role}
-                </button>
-              ))}
             </div>
-            {/* ピック属性フィルターボタン */}
-            <div className="flex glass-panel p-1 rounded-xl items-center gap-0.5">
-              {[
-                { id: 'ALL', label: 'すべてのピック属性' },
-                { id: 'BLIND', label: '🟢 先出し向け' },
-                { id: 'COUNTER', label: '🔴 後出し向け' }
-              ].map(p => (
-                <button key={p.id} onClick={() => setPickFilter(p.id as any)}
-                  className={`px-3 py-2 rounded-lg text-xs font-black tracking-wider transition-all ${
-                    pickFilter === p.id
-                      ? 'bg-emerald-500 text-black shadow-lg shadow-emerald-500/30'
-                      : 'text-gray-400 hover:text-stone-900 hover:bg-black/5'
-                  }`}>
-                  {p.label}
-                </button>
-              ))}
-            </div>
-
-            {/* タイプ（戦術）フィルターボタン */}
-            <div className="flex glass-panel p-1 rounded-xl items-center gap-0.5">
-              {[
-                { id: 'ALL', label: 'すべてのタイプ' },
-                { id: 'FARM', label: '🚜 ファーム' },
-                { id: 'GANK', label: '⚔️ ガンク' },
-                { id: 'INVASION', label: '🎒 侵入' },
-                { id: 'TANK', label: '🛡️ タンク' }
-              ].map(t => (
-                <button key={t.id} onClick={() => setTypeFilter(t.id as any)}
-                  className={`px-3 py-2 rounded-lg text-xs font-black tracking-wider transition-all ${
-                    typeFilter === t.id
-                      ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/30'
-                      : 'text-gray-400 hover:text-stone-900 hover:bg-black/5'
-                  }`}>
-                  {t.label}
-                </button>
-              ))}
-            </div>
-
-            <button 
-              onClick={() => setShowFavoritesOnly(!showFavoritesOnly)} 
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all border ${showFavoritesOnly ? 'bg-yellow-100 text-yellow-700 border-yellow-200 shadow-[0_0_15px_rgba(234,179,8,0.15)]' : 'glass-panel text-gray-400 border-transparent hover:text-stone-900'}`}
-            >
-              <StarIcon size={16} fill={showFavoritesOnly ? 'currentColor' : 'none'} className={showFavoritesOnly ? 'text-yellow-600' : ''} /> お気に入り
-            </button>
-            <select value={sortOrder} onChange={e => setSortOrder(e.target.value)} className="glass-panel border-none rounded-xl px-4 py-2.5 font-bold text-[#c89b3c] outline-none min-w-[160px] cursor-pointer">
-              <option value="updated_desc">更新日が新しい順</option>
-              <option value="updated_asc">更新日が古い順</option>
-              <option value="blind_pickable_desc">先出し安定度順 (★順)</option>
-              <option value="counter_pickable_desc">後出し有利度順 (★順)</option>
-              <option value="style_farm_desc">ファーム重視度順</option>
-              <option value="name_asc">名前順</option>
-            </select>
-          </div>
-        </div>
-        {/* ヒット数表示 */}
-        <div className="flex items-center gap-2 px-1 text-xs font-bold">
-          <span className="text-gray-500">{champions.length}件中</span>
-          <span className="text-[#c89b3c] text-sm">{filtered.length}件</span>
-          <span className="text-gray-500">ヒット</span>
-          {(search || roleFilter !== 'ALL' || typeFilter !== 'ALL' || showFavoritesOnly) && (
-            <button onClick={() => { setSearch(''); setRoleFilter('ALL'); setTypeFilter('ALL'); setShowFavoritesOnly(false); }}
-              className="ml-2 text-gray-500 hover:text-stone-900 transition-colors underline underline-offset-2">
-              フィルターをリセット
-            </button>
           )}
-        </div>
-      </motion.div>
-
-      {loading ? (
-        <Spinner label="チャンピオン辞典を読み込み中..." />
-      ) : champions.length === 0 ? (
-        <div className="glass-panel p-12 rounded-3xl flex flex-col items-center justify-center text-center space-y-4 my-8">
-          <div className="w-16 h-16 rounded-full bg-rose-500/10 border border-rose-400/30 flex items-center justify-center text-3xl animate-pulse text-rose-500">
-            ⚠️
-          </div>
-          <div>
-            <h3 className="text-base font-extrabold text-stone-900">チャンピオンデータの読み込みに失敗しました</h3>
-            <p className="text-xs text-stone-500 mt-1">ネットワーク接続、またはDDragonサーバーへの通信状態を確認して再試行してください。</p>
-          </div>
-          <button
-            onClick={() => window.location.reload()}
-            className="px-6 py-2.5 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-bold text-xs rounded-xl shadow-lg transition-all flex items-center gap-2"
-          >
-            <RefreshCw size={14} /> 画面を再読み込みする
-          </button>
-        </div>
-      ) : filtered.length === 0 ? (
-        <div className="glass-panel p-12 rounded-3xl flex flex-col items-center justify-center text-center space-y-4 my-8">
-          <div className="w-16 h-16 rounded-full bg-amber-500/10 border border-amber-400/30 flex items-center justify-center text-3xl animate-bounce">
-            🔍
-          </div>
-          <div>
-            <h3 className="text-base font-extrabold text-stone-900">該当するチャンピオンが見つかりませんでした</h3>
-            <p className="text-xs text-stone-500 mt-1">検索ワードや指定フィルター条件（ロール・お気に入り等）を見直してください。</p>
-          </div>
-          <button
-            onClick={() => { setSearch(''); setRoleFilter('ALL'); setTypeFilter('ALL'); setShowFavoritesOnly(false); }}
-            className="px-6 py-2.5 bg-amber-600 hover:bg-amber-700 active:scale-95 text-white font-bold text-xs rounded-xl shadow-lg transition-all flex items-center gap-2"
-          >
-            <RefreshCw size={14} /> 絞り込み条件をリセット
-          </button>
-        </div>
-      ) : (
-        <motion.div variants={containerVariants} initial="hidden" animate="visible" className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-4">
-          {filtered.map(c => {
-            const normId = c.id.toLowerCase().replace(/[^a-z0-9]/g, '');
-            const hasNote = !!(champDates[c.id] || champDates[normId]);
-            const isPending = champPending[c.id] !== undefined ? champPending[c.id] : champPending[normId];
-            const isFav = favoriteChamps.includes(c.id);
-            return (
-              <motion.div variants={itemVariants} key={c.id} onClick={() => setSelected(c)} 
-                className={`glass-panel glass-panel-hover flex flex-col items-center gap-2 p-4 rounded-2xl cursor-pointer group relative ${hasNote ? 'bg-[#c89b3c]/10 border-[#c89b3c]/30 shadow-[0_0_15px_rgba(200,155,60,0.15)]' : ''}`}>
-                {isFav && (
-                  <div className="absolute top-2 right-2 text-amber-600 z-10" title="お気に入り">
-                    <StarIcon size={12} fill="currentColor" />
-                  </div>
-                )}
-                <div className="relative">
-                  <Image src={getChampIcon(c.id)} alt={c.name} width={56} height={56} className={`w-14 h-14 rounded-full border-2 transition-colors ${hasNote ? 'border-[#c89b3c]' : 'border-black/10 group-hover:border-black/20'}`} />
-                  {hasNote && <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-background ${isPending ? 'bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.8)]' : 'bg-[#c89b3c]'}`}></div>}
-                </div>
-                <span className={`text-xs font-bold text-center leading-tight transition-colors ${hasNote ? 'text-[#c89b3c]' : 'text-gray-400 group-hover:text-stone-900'}`}>{c.name}</span>
-                {(() => {
-                  const patchMeta = champPatchMetas[c.id] || champPatchMetas[normId];
-                  const patchName = patchMeta?.patch ? `P${patchMeta.patch}` : 'P??';
-                  
-                  // 更新から3日以上経っている場合は少し古いトレンドと判定 (259200秒)
-                  const isOld = patchMeta?.updated_at ? (Date.now() / 1000 - patchMeta.updated_at > 259200) : true;
-                  
-                  return (
-                    <div className="flex flex-col items-center gap-0.5 mt-1 pointer-events-none">
-                      <span className={`px-1.5 py-0.5 rounded text-[9px] font-black leading-none border transition-colors ${
-                        !patchMeta
-                          ? 'bg-red-100 border-red-200 text-red-700/60'
-                          : isOld
-                            ? 'bg-amber-100 border-amber-200 text-amber-700/60'
-                            : 'bg-cyan-100 border-cyan-200 text-cyan-700'
-                      }`}>
-                        {patchName}
-                      </span>
-                      <span className="text-[8px] font-bold leading-none text-gray-500">
-                        {patchMeta?.updated_at ? getRelativeTimeString(patchMeta.updated_at) : '未解析'}
-                      </span>
-                    </div>
-                  );
-                })()}
-                {(() => {
-                  const jgStyle = champJgStyles[c.id] || champJgStyles[normId];
-                  if (!jgStyle || (jgStyle.blind_pickable === undefined && jgStyle.counter_pickable === undefined && !jgStyle.type)) return null;
-                  
-                  return (
-                    <div className="flex flex-col items-center gap-0.5 mt-1 border-t border-black/10 pt-1.5 w-full text-[9px] font-bold pointer-events-none">
-                      {jgStyle.blind_pickable !== undefined && (
-                        <div className="flex justify-between w-full px-1 text-emerald-600">
-                          <span>先</span>
-                          <span className="font-mono">★{jgStyle.blind_pickable}</span>
-                        </div>
-                      )}
-                      {jgStyle.counter_pickable !== undefined && (
-                        <div className="flex justify-between w-full px-1 text-[#00cfef]">
-                          <span>後</span>
-                          <span className="font-mono">★{jgStyle.counter_pickable}</span>
-                        </div>
-                      )}
-                      {jgStyle.type && (
-                        <div className="mt-1 px-1 py-0.5 rounded text-[8px] font-black leading-none bg-amber-100 border border-amber-200 text-amber-700 text-center w-full truncate" title={jgStyle.type}>
-                          {jgStyle.type === 'ファーム型' ? '🚜 ファーム' :
-                           jgStyle.type === 'ガンク型' ? '⚔️ ガンク' :
-                           jgStyle.type === '侵入型' ? '🎒 侵入' :
-                           jgStyle.type === 'タンク型' ? '🛡️ タンク' : jgStyle.type}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })()}
-
-              </motion.div>
-            );
-          })}
         </motion.div>
       )}
+    </div>
+  </div>
 
-      {historyModal?.isOpen && (
+      {/* 変更履歴モーダル */}
+      {historyModal?.isOpen && selected && (
         <ChampionRevisionHistory
           champion={selected.id || selected.name}
           field={historyModal.field}
