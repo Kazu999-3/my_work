@@ -1144,6 +1144,37 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
 
 
 
+        {/* ⚡ 15秒サクッと対策カード（ロード中15秒で頭に入る要点） */}
+        <div className="bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-amber-500/15 border border-amber-400/50 rounded-2xl p-4 shadow-xs">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-base">⚡</span>
+            <h3 className="text-sm font-black text-amber-950">15秒サクッと対策（試合前チェック）</h3>
+            <span className="text-[10px] font-bold bg-amber-200/80 text-amber-900 px-2 py-0.5 rounded-full ml-auto">
+              ロード画面用
+            </span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
+            <div className="bg-white/80 rounded-xl p-2.5 border border-amber-200/60 shadow-2xs">
+              <span className="text-[10px] font-black text-amber-800 block mb-0.5">💥 初動・パワースパイク</span>
+              <p className="text-stone-800 font-bold text-[11px] line-clamp-2">
+                {dataFields.powerSpikes ? dataFields.powerSpikes.split('\n')[0].replace(/^[#*-\s]+/, '') : 'レベル2-3および1コア完成時'}
+              </p>
+            </div>
+            <div className="bg-white/80 rounded-xl p-2.5 border border-amber-200/60 shadow-2xs">
+              <span className="text-[10px] font-black text-rose-800 block mb-0.5">⚠️ 要注意スキル・弱点</span>
+              <p className="text-stone-800 font-bold text-[11px] line-clamp-2">
+                {dataFields.weaknesses ? dataFields.weaknesses.split('\n')[0].replace(/^[#*-\s]+/, '') : '序盤の被ガンク・CC耐性'}
+              </p>
+            </div>
+            <div className="bg-white/80 rounded-xl p-2.5 border border-amber-200/60 shadow-2xs">
+              <span className="text-[10px] font-black text-emerald-800 block mb-0.5">🎯 勝つための1箇条</span>
+              <p className="text-stone-800 font-bold text-[11px] line-clamp-2">
+                {dataFields.pickRecommendation ? dataFields.pickRecommendation.split('\n')[0].replace(/^[#*-\s]+/, '') : 'パワースパイクに合わせた仕掛け'}
+              </p>
+            </div>
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
           <TextAreaCard title="強み (Strengths)" icon={Swords} color="text-[var(--color-success)] border-[var(--color-success)] shadow-[var(--color-success)]" value={dataFields.strengths} onChange={v => setField('strengths', v)} fieldKey="strengths" onOpenHistory={handleOpenHistory} />
           <TextAreaCard title="弱み (Weaknesses)" icon={ShieldAlert} color="text-[var(--color-danger)] border-[var(--color-danger)] shadow-[var(--color-danger)]" value={dataFields.weaknesses} onChange={v => setField('weaknesses', v)} fieldKey="weaknesses" onOpenHistory={handleOpenHistory} />
