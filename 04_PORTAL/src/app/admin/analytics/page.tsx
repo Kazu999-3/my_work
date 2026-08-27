@@ -52,6 +52,8 @@ export default function NoteAnalytics() {
   const [mainContent, setMainContent] = useState('');
   const [activeTab, setActiveTab] = useState<'analytics' | 'drafts'>('analytics');
   const [isCopied, setIsCopied] = useState(false);
+  const [targetChampion, setTargetChampion] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const fetchReports = async (silent = false) => {
     if (!silent) setIsLoading(true);
@@ -577,35 +579,56 @@ export default function NoteAnalytics() {
         ) : (
           // === 記事下書きプレビュー表示エリア ===
           <div>
-            <div className="flex items-center justify-between mb-6 bg-white p-4 rounded-2xl border border-stone-200 shadow-sm">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 bg-white p-5 rounded-2xl border border-stone-200 shadow-xs">
               <div>
-                <h3 className="text-sm font-extrabold text-stone-900">記事ドラフト自動生成</h3>
-                <p className="text-xs text-stone-500">SSOTの最新パッチデータから500円モデル有料note記事をAIが自動執筆します</p>
+                <h3 className="text-sm font-extrabold text-stone-900 flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-amber-500" />
+                  有料note記事ドラフト AI自動生成
+                </h3>
+                <p className="text-xs text-stone-500 mt-0.5">
+                  SSOTの最新パッチデータから500円モデル有料note記事（無料フック＋有料本編＋X宣伝文）をAIが自動執筆します
+                </p>
               </div>
-              <button
-                onClick={async () => {
-                  try {
-                    const res = await fetch('/api/admin/note-articles/generate', {
-                      method: 'POST',
-                      credentials: 'include',
-                      headers: { 'Content-Type': 'application/json' },
-                    });
-                    const json = await res.json();
-                    if (res.ok) {
-                      alert(`✅ 記事「${json.article.title}」を自動生成しました！`);
-                      window.location.reload();
-                    } else {
-                      alert(`❌ 生成失敗: ${json.error}`);
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  placeholder="チャンピオン名 (例: Ahri / 空欄で自動)"
+                  value={targetChampion}
+                  onChange={(e) => setTargetChampion(e.target.value)}
+                  className="bg-stone-50 border border-stone-300 rounded-xl px-3 py-2 text-xs font-bold text-stone-900 outline-none focus:border-amber-500 w-44"
+                />
+                <button
+                  onClick={async () => {
+                    setIsGenerating(true);
+                    try {
+                      const res = await fetch('/api/admin/note-articles/generate', {
+                        method: 'POST',
+                        credentials: 'include',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ champion: targetChampion.trim() || undefined }),
+                      });
+                      const json = await res.json();
+                      if (res.ok) {
+                        alert(`✅ 記事「${json.article.title}」を自動生成しました！`);
+                        setTargetChampion('');
+                        await fetchReports(true);
+                      } else {
+                        alert(`❌ 生成失敗: ${json.error}`);
+                      }
+                    } catch (e: any) {
+                      alert(`❌ 通信エラー: ${e.message}`);
+                    } finally {
+                      setIsGenerating(false);
                     }
-                  } catch (e: any) {
-                    alert(`❌ 通信エラー: ${e.message}`);
-                  }
-                }}
-                className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-md shadow-amber-600/20"
-              >
-                <Sparkles size={16} />
-                ✨ SSOTデータから有料note記事を生成
-              </button>
+                  }}
+                  disabled={isGenerating}
+                  className="px-4 py-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 disabled:opacity-50 text-white rounded-xl text-xs font-black transition flex items-center gap-1.5 shadow-md shadow-amber-600/20 shrink-0"
+                >
+                  <Sparkles size={15} className={isGenerating ? 'animate-spin' : ''} />
+                  <span>{isGenerating ? 'AI執筆中...' : '✨ 記事を生成'}</span>
+                </button>
+              </div>
             </div>
 
             {drafts.length === 0 ? (
