@@ -187,6 +187,8 @@ function DictHealthDashboardContent() {
     });
   }, [data, search, statusFilter, roleFilter]);
 
+  const [showGuide, setShowGuide] = useState(false); // スマホでは初期折りたたみ
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#f7f5f0] text-gray-900 font-sans">
@@ -197,8 +199,6 @@ function DictHealthDashboardContent() {
       </div>
     );
   }
-
-  const [showGuide, setShowGuide] = useState(false); // スマホでは初期折りたたみ
 
   return (
     <div className="min-h-screen bg-[#f7f5f0] text-gray-900 font-sans pb-24 antialiased selection:bg-amber-500/20">
