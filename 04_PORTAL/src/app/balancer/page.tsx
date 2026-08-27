@@ -4,7 +4,7 @@ import { useEffect, useState, useRef, useCallback, useMemo, Fragment } from "rea
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "../../lib/supabaseClient";
-import { Users, RefreshCw, Swords, X, Activity, Globe, MessageSquare, Info, Crown, Trophy, History, Shield, AlertTriangle, ChevronDown, Trees, Zap, Target, Heart, Settings } from "lucide-react";
+import { Users, RefreshCw, Swords, X, Activity, Globe, MessageSquare, Info, Crown, Trophy, History, Shield, AlertTriangle, ChevronDown, Trees, Zap, Target, Heart, Settings, Sparkles } from "lucide-react";
 import { getChampIcon } from "../../lib/ddragonClient";
 import { getColorFromRankName } from "../../lib/mmr";
 import ProfileModal from "../ktm-admin/ProfileModal";
@@ -1183,18 +1183,27 @@ export default function BalancerPage() {
                 </div>
               )}
 
-              {/* 試合結果記録 */}
+              {/* 試合結果記録 & ドラフトシミュレータ直結 */}
               <div className="pt-3 border-t border-stone-200">
-                <div className="text-center">
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
                   <button
                     onClick={handleRecordNavigate}
                     disabled={savingPending}
                     type="button"
-                    className="bg-emerald-600 hover:bg-emerald-500 disabled:bg-emerald-800 text-white px-8 py-3 rounded-xl font-black transition flex items-center gap-2 mx-auto shadow-lg"
+                    className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-500 disabled:bg-emerald-800 text-white px-6 py-3 rounded-xl font-black transition flex items-center justify-center gap-2 shadow-lg cursor-pointer text-xs sm:text-sm"
                   >
-                    <Trophy className="h-5 w-5" />
-                    {savingPending ? '一時保存中...' : 'この編成で試合結果を記録する 🏆'}
+                    <Trophy className="h-4 w-4" />
+                    {savingPending ? '一時保存中...' : 'この編成で試合結果を記録 🏆'}
                   </button>
+
+                  <Link
+                    href="/coach?tab=live"
+                    className="w-full sm:w-auto bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white px-6 py-3 rounded-xl font-black transition flex items-center justify-center gap-2 shadow-lg cursor-pointer text-xs sm:text-sm"
+                    title="コーチ画面の5v5シミュレータ・勝ち筋診断へ直結"
+                  >
+                    <Sparkles className="h-4 w-4" />
+                    5v5ドラフト・勝ち筋診断を開始 🎯
+                  </Link>
                 </div>
               </div>
             </div>
