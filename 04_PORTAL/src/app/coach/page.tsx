@@ -1368,10 +1368,10 @@ export default function CoachPage() {
   // 振り返り保存完了のたびにインクリメントし、常時マウントのMySoloQDashboard/PostGameTabへ
   // 再fetchのトリガーとして渡す(保存後に一覧タブが更新されない問題の修正)。
   const [reflectionRefreshSignal, setReflectionRefreshSignal] = useState(0);
-  // 試合終了自動検知が連続して失敗している場合に気づけるようにする(2026-08-05発覚:
-  // 以前はcatchが完全にサイレントで、Riot APIキー失効等が起きても自動ポップアップが
-  // 永遠に出なくなるだけで、ユーザーには何も表示されなかった)。
+  // 試合終了自動検知が連続して失敗している場合に気づけるようにする
   const [matchDetectFailCount, setMatchDetectFailCount] = useState(0);
+  // 🔥 新着試合オートシンクバナー用ステート
+  const [newMatchAlert, setNewMatchAlert] = useState<{ matchId: string; win?: boolean; champion?: string } | null>(null);
 
   const fetchLastReflection = async () => {
     try {
@@ -1400,16 +1400,8 @@ export default function CoachPage() {
   }, []);
 
   useEffect(() => {
-    // 未認証（未確認含む）の間はAPIを一切叩かない。「認証が必要です」画面表示中も
-    // コンポーネント自体はアンマウントされないため、ここでガードしないと
-    // ログアウト後の端末でもRiot APIポーリングが裏で動き続けてしまう。
     if (isAuthenticated !== true) return;
 
-    // 試合終了の自動監視（45秒おきにチェック）。
-    // 複数タブ・複数端末で同時に開いていると個人用Riot APIキーの消費が線形に増える
-    // 問題があった(2026-08-05発覚)。バックグラウンドタブでは意味のあるポーリングにならない
-    // (ユーザーが見ていないので自動ポップアップも気づけない)ため、Page Visibility APIで
-    // 非表示中は完全にスキップする。
     const checkFinished = async () => {
       try {
         if (document.hidden) return;
@@ -1430,14 +1422,16 @@ export default function CoachPage() {
         }
 
         if (data.isNewMatch) {
+          // オートシンクバナーを即時表示
+          setNewMatchAlert({
+            matchId: data.latestMatchId,
+            win: typeof data.win === 'boolean' ? data.win : undefined,
+            champion: data.champion || 'LoL'
+          });
+
           if (sessionStorage.getItem('tilt_popup_snoozed')) {
-            // スヌーズは「次の1試合だけ」抑制する意図(TiltDiagnosisPopup.tsxのUI文言)。
-            // フラグを消さないままだとタブを閉じるまで恒久的に沈黙してしまっていた
-            // (2026-08-05発覚)。今回の1件を消費したら解除し、次の新規試合検知では
-            // 通常どおりポップアップする。
             sessionStorage.removeItem('tilt_popup_snoozed');
           } else {
-            // 自動ポップアップ！！ まずティルト診断を出し、そこから振り返りへ進めるようにする(#①)
             setLastMatchWin(typeof data.win === 'boolean' ? data.win : null);
             setIsTiltPopupOpen(true);
           }
@@ -1604,6 +1598,51 @@ export default function CoachPage() {
             </button>
           </div>
         </div>
+
+        {/* 🔥 新着試合オートシンクバナー */}
+        {newMatchAlert && (
+          <div className="bg-gradient-to-r from-amber-500/20 via-orange-500/20 to-amber-500/20 border-2 border-amber-500/60 rounded-2xl p-4 shadow-md flex flex-col sm:flex-row items-center justify-between gap-3 animate-in">
+            <div className="flex items-center gap-3 text-stone-900">
+              <span className="text-2xl animate-bounce">🔥</span>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="font-black text-sm">直前の試合が終了しました！</span>
+                  {newMatchAlert.win !== undefined && (
+                    <span className={`px-2 py-0.5 rounded-md text-[10px] font-black ${newMatchAlert.win ? 'bg-emerald-500 text-white' : 'bg-rose-500 text-white'}`}>
+                      {newMatchAlert.win ? 'VICTORY 🏆' : 'DEFEAT 💀'}
+                    </span>
+                  )}
+                  {newMatchAlert.champion && (
+                    <span className="text-xs font-bold text-amber-900">({newMatchAlert.champion})</span>
+                  )}
+                </div>
+                <p className="text-xs text-stone-600 font-medium mt-0.5">
+                  熱量そのままにAI振り返りを行い、改善点と課題をカルテに記録しよう！
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveStepTab('postgame');
+                  setIsReflectionModalOpen(true);
+                }}
+                className="w-full sm:w-auto px-5 py-2.5 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white font-black text-xs rounded-xl shadow-md transition-all hover:scale-105 flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <span>⚡</span> AI振り返りを開始
+              </button>
+              <button
+                type="button"
+                onClick={() => setNewMatchAlert(null)}
+                className="p-2 text-stone-400 hover:text-stone-700 rounded-lg hover:bg-black/5 transition cursor-pointer"
+                title="閉じる"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* 今日の意識テーマ常駐バー */}
         <FocusStickyBar />
