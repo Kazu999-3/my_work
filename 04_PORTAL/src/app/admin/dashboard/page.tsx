@@ -34,8 +34,6 @@ export default function Home() {
   const [needsAttention, setNeedsAttention] = useState<{ failedTasks: any[]; youtubeErrorCount: number; dictReviewCount: number }>({ failedTasks: [], youtubeErrorCount: 0, dictReviewCount: 0 });
   const [retryingTaskId, setRetryingTaskId] = useState<string | null>(null);
   const [isRetryingAll, setIsRetryingAll] = useState(false);
-  const [triggeringJob, setTriggeringJob] = useState<string | null>(null);
-  const [triggerMessage, setTriggerMessage] = useState<string | null>(null);
   const [setupChecks, setSetupChecks] = useState<Record<string, boolean> | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<string>('');
@@ -55,30 +53,6 @@ export default function Home() {
     history: []
   });
 
-  // クイックジョブ手動実行
-  const handleTriggerJob = async (job: string, label: string) => {
-    setTriggeringJob(job);
-    setTriggerMessage(null);
-    try {
-      const res = await fetch('/api/admin/system/trigger', {
-        method: 'POST', credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ job }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setTriggerMessage(`✅ 「${label}」を起動しました。`);
-        fetchData(true);
-      } else {
-        setTriggerMessage(`⚠️ エラー: ${data.error || '起動に失敗しました'}`);
-      }
-    } catch {
-      setTriggerMessage('⚠️ 通信エラーが発生しました。');
-    } finally {
-      setTriggeringJob(null);
-      setTimeout(() => setTriggerMessage(null), 5000);
-    }
-  };
 
   // 失敗タスクの一括再実行
   const handleRetryAll = async () => {
@@ -359,74 +333,7 @@ export default function Home() {
         </div>
       )}
 
-      {/* 🚀 クイックジョブ手動実行バー */}
-      <div className="bg-white/90 border border-stone-200/90 rounded-2xl p-4 shadow-xs space-y-2.5">
-        <div className="flex items-center justify-between">
-          <h3 className="text-xs font-black text-stone-900 flex items-center gap-1.5 uppercase tracking-wider">
-            <Zap className="w-4 h-4 text-amber-600" />
-            定期ジョブ即時実行（クイックトリガー）
-          </h3>
-          {triggerMessage && (
-            <span className="text-xs font-bold text-amber-800 animate-fade-in font-medium">
-              {triggerMessage}
-            </span>
-          )}
-        </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-          <button
-            type="button"
-            onClick={() => handleTriggerJob('youtube_absorber', 'YouTube動画収集')}
-            disabled={triggeringJob !== null}
-            className="p-2.5 rounded-xl border border-stone-200 bg-stone-50/70 hover:bg-amber-50 hover:border-amber-300 text-left transition cursor-pointer flex items-center gap-2 group disabled:opacity-50"
-          >
-            <Play className={`w-3.5 h-3.5 text-amber-600 group-hover:scale-110 transition shrink-0 ${triggeringJob === 'youtube_absorber' ? 'animate-spin' : ''}`} />
-            <div className="min-w-0">
-              <span className="text-xs font-black text-stone-900 block truncate">YouTube収集</span>
-              <span className="text-[9px] text-stone-500 block truncate">新着動画を即時解析</span>
-            </div>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => handleTriggerJob('dict_fact_check', '辞典ファクトチェック')}
-            disabled={triggeringJob !== null}
-            className="p-2.5 rounded-xl border border-stone-200 bg-stone-50/70 hover:bg-amber-50 hover:border-amber-300 text-left transition cursor-pointer flex items-center gap-2 group disabled:opacity-50"
-          >
-            <Play className={`w-3.5 h-3.5 text-amber-600 group-hover:scale-110 transition shrink-0 ${triggeringJob === 'dict_fact_check' ? 'animate-spin' : ''}`} />
-            <div className="min-w-0">
-              <span className="text-xs font-black text-stone-900 block truncate">辞典ファクトチェック</span>
-              <span className="text-[9px] text-stone-500 block truncate">全知見の整合性検査</span>
-            </div>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => handleTriggerJob('discord_sync', 'Discord新メンバー同期')}
-            disabled={triggeringJob !== null}
-            className="p-2.5 rounded-xl border border-stone-200 bg-stone-50/70 hover:bg-indigo-50 hover:border-indigo-300 text-left transition cursor-pointer flex items-center gap-2 group disabled:opacity-50"
-          >
-            <Play className={`w-3.5 h-3.5 text-indigo-600 group-hover:scale-110 transition shrink-0 ${triggeringJob === 'discord_sync' ? 'animate-spin' : ''}`} />
-            <div className="min-w-0">
-              <span className="text-xs font-black text-stone-900 block truncate">Discord同期</span>
-              <span className="text-[9px] text-stone-500 block truncate">新メンバーを名簿登録</span>
-            </div>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => handleTriggerJob('patch_update', 'パッチトレンド同期')}
-            disabled={triggeringJob !== null}
-            className="p-2.5 rounded-xl border border-stone-200 bg-stone-50/70 hover:bg-emerald-50 hover:border-emerald-300 text-left transition cursor-pointer flex items-center gap-2 group disabled:opacity-50"
-          >
-            <Play className={`w-3.5 h-3.5 text-emerald-600 group-hover:scale-110 transition shrink-0 ${triggeringJob === 'patch_update' ? 'animate-spin' : ''}`} />
-            <div className="min-w-0">
-              <span className="text-xs font-black text-stone-900 block truncate">パッチ・トレンド</span>
-              <span className="text-[9px] text-stone-500 block truncate">最新OPチャンピオン取得</span>
-            </div>
-          </button>
-        </div>
-      </div>
 
       {/* 📌 業務＆開発TODOボード */}
       <TodoBoard />
