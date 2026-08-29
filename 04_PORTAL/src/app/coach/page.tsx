@@ -1706,32 +1706,42 @@ export default function CoachPage() {
 
           {/* 2カラムHUDグリッド */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-            {/* 左側: マッチアップ・5分作戦・事前分析 */}
-            <div className="lg:col-span-7 xl:col-span-8 flex flex-col gap-5">
+            {/* 左側: マッチアップ・カウンター・5分初動作戦 (一本化) */}
+            <div className="lg:col-span-8 flex flex-col gap-5">
               <MatchupSmartCard
                 champion={sharedChampion}
                 enemyChampion={sharedEnemyChampion}
                 onSelectChampion={setSharedChampion}
               />
-              <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-xs">
-                <Collapsible
-                  title={
-                    <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5">
-                      <span>⚡</span> AI対面事前分析 (ナレッジ詳細を展開)
-                    </h3>
-                  }
-                >
-                  <div className="pt-3">
-                    <PreGameTab champion={sharedChampion} enemyChampion={sharedEnemyChampion} triggerSignal={dailyCheckTrigger} />
-                  </div>
-                </Collapsible>
-              </div>
             </div>
 
-            {/* 右側: スキル習熟度・プレイスタイル */}
-            <div className="lg:col-span-5 xl:col-span-4 flex flex-col gap-5 lg:sticky lg:top-4">
-              <JgSkillMasteryChecklist />
-              <PlayerStyleRadarCard />
+            {/* 右側: 補助ツール (JG習熟度・プレイスタイル) */}
+            <div className="lg:col-span-4 flex flex-col gap-5 lg:sticky lg:top-4">
+              <Collapsible
+                defaultOpen={false}
+                title={
+                  <h3 className="text-xs font-bold text-stone-700 flex items-center gap-1.5">
+                    <span>🎯</span> JGスキル習熟度チェック
+                  </h3>
+                }
+              >
+                <div className="pt-2">
+                  <JgSkillMasteryChecklist />
+                </div>
+              </Collapsible>
+
+              <Collapsible
+                defaultOpen={false}
+                title={
+                  <h3 className="text-xs font-bold text-stone-700 flex items-center gap-1.5">
+                    <span>📊</span> プレイスタイル診断
+                  </h3>
+                }
+              >
+                <div className="pt-2">
+                  <PlayerStyleRadarCard />
+                </div>
+              </Collapsible>
             </div>
           </div>
         </div>
