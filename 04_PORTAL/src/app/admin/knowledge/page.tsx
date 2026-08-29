@@ -46,17 +46,26 @@ function KnowledgeBaseContent() {
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
-  // ページ内タブ: ナレッジ一覧 or 動画キュー or 攻略ライブラリ or Discordインポート
-  const [activeTab, setActiveTab] = useState<'knowledge' | 'video' | 'library' | 'discord' | 'pending'>('knowledge');
+  // ページ内タブ: 取り込み (ingest) or 蓄積ライブラリ (library)
+  const [activeTab, setActiveTab] = useState<'ingest' | 'library'>('ingest');
+  const [ingestMode, setIngestMode] = useState<'url' | 'memo' | 'discord' | 'queue'>('url');
+  const [librarySubTab, setLibrarySubTab] = useState<'articles' | 'memos'>('articles');
   const [isResearchModalOpen, setIsResearchModalOpen] = useState(false);
 
   const searchParams = useSearchParams();
 
-  // URLパラメータ (?tab=research等) の自動反映
+  // URLパラメータ (?tab=...) の自動反映
   useEffect(() => {
     const tabParam = searchParams?.get('tab');
-    if (tabParam && ['knowledge', 'video', 'library', 'discord'].includes(tabParam)) {
-      setActiveTab(tabParam as any);
+    if (tabParam === 'library' || tabParam === 'knowledge') {
+      setActiveTab('library');
+      if (tabParam === 'knowledge') setLibrarySubTab('memos');
+      else setLibrarySubTab('articles');
+    } else if (tabParam === 'video' || tabParam === 'discord' || tabParam === 'ingest') {
+      setActiveTab('ingest');
+      if (tabParam === 'video') setIngestMode('queue');
+      else if (tabParam === 'discord') setIngestMode('discord');
+      else setIngestMode('url');
     }
   }, [searchParams]);
 
@@ -139,7 +148,8 @@ function KnowledgeBaseContent() {
         if (res.ok) {
           showFeedback('YouTube動画を解析キューに追加しました！(SREデーモンが順次要約します)', 'success');
           setInputUrl('');
-          setActiveTab('video'); // キュー一覧タブへ遷移
+          setActiveTab('ingest');
+          setIngestMode('queue'); // キュー一覧へ遷移
         } else {
           const err = await res.json().catch(() => ({}));
           showFeedback(err.error || 'キュー追加に失敗しました。', 'error');
@@ -340,39 +350,143 @@ function KnowledgeBaseContent() {
       </AnimatePresence>
 
       <div className="w-full space-y-4">
-        {/* タブ切り替え */}
+        {/* メイン2タブ切り替え */}
         <div className="flex gap-2 border-b border-stone-200 pb-3 mb-4 overflow-x-auto items-center scrollbar-none">
-          {[
-            { id: 'knowledge', label: '📖 ナレッジ一覧', icon: BookOpen },
-            { id: 'discord', label: '💬 Discord AIインポート', icon: MessageSquare },
-            { id: 'video', label: '⏳ 動画解析キュー', icon: Video },
-            { id: 'library', label: '🗂️ 攻略ライブラリ', icon: Layers },
-            { id: 'pending', label: '🧩 未承認のナレッジ', icon: Sparkles },
-          ].map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id as any)}
-                className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold transition-all shrink-0 ${
-                  isActive ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30' : 'text-gray-500 hover:text-gray-800 hover:bg-gray-100'
-                }`}
-              >
-                <Icon size={14} />
-                {tab.label}
-              </button>
-            );
-          })}
+          <button
+            onClick={() => setActiveTab('ingest')}
+            className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer ${
+              activeTab === 'ingest'
+                ? 'bg-pink-600 text-white shadow-md shadow-pink-600/20 font-black'
+                : 'text-stone-600 hover:text-stone-900 hover:bg-stone-100'
+            }`}
+          >
+            <Sparkles size={14} />
+            <span>📥 戦術インテリジェンス取り込み</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('library')}
+            className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer ${
+              activeTab === 'library'
+                ? 'bg-purple-600 text-white shadow-md shadow-purple-600/20 font-black'
+                : 'text-stone-600 hover:text-stone-900 hover:bg-stone-100'
+            }`}
+          >
+            <Layers size={14} />
+            <span>🗂️ 蓄積ナレッジ ＆ 攻略ライブラリ</span>
+          </button>
         </div>
 
-        {/* --- タブ別コンテンツ --- */}
-        {activeTab === 'discord' && <DiscordImportPanel />}
-        {activeTab === 'video' && <YoutubeQueueManager />}
-        {activeTab === 'library' && <LibraryTabContent />}
-        {activeTab === 'pending' && <PendingInsightsPanel />}
+        {/* ── ① 戦術取り込みタブ ── */}
+        {activeTab === 'ingest' && (
+          <div className="space-y-6">
+            <div className="flex gap-1.5 bg-stone-100 p-1 rounded-xl w-fit flex-wrap">
+              <button
+                onClick={() => setIngestMode('url')}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  ingestMode === 'url' ? 'bg-white text-stone-900 shadow-xs font-black' : 'text-stone-600 hover:text-stone-900'
+                }`}
+              >
+                🌐 Web/X/YouTube 要約
+              </button>
+              <button
+                onClick={() => setIngestMode('memo')}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  ingestMode === 'memo' ? 'bg-white text-stone-900 shadow-xs font-black' : 'text-stone-600 hover:text-stone-900'
+                }`}
+              >
+                📝 テキストメモ保存
+              </button>
+              <button
+                onClick={() => setIngestMode('discord')}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  ingestMode === 'discord' ? 'bg-white text-stone-900 shadow-xs font-black' : 'text-stone-600 hover:text-stone-900'
+                }`}
+              >
+                💬 Discord ログ解析
+              </button>
+              <button
+                onClick={() => setIngestMode('queue')}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  ingestMode === 'queue' ? 'bg-white text-stone-900 shadow-xs font-black' : 'text-stone-600 hover:text-stone-900'
+                }`}
+              >
+                ⏳ 動画解析キュー
+              </button>
+            </div>
 
-        {activeTab === 'knowledge' && (
+            {ingestMode === 'discord' && <DiscordImportPanel />}
+            {ingestMode === 'queue' && <YoutubeQueueManager />}
+
+            {(ingestMode === 'url' || ingestMode === 'memo') && (
+              <div className="bg-white border border-stone-200 rounded-3xl p-6 shadow-xs space-y-4">
+                <h2 className="text-sm font-bold text-stone-900 flex items-center gap-1.5">
+                  <Plus size={16} className="text-pink-500" />
+                  {ingestMode === 'url' ? 'Web記事・X投稿・YouTube動画を取り込む' : '戦術メモ・気付きを登録する'}
+                </h2>
+
+                <form onSubmit={handleAddKnowledge} className="space-y-4">
+                  {ingestMode === 'url' ? (
+                    <div className="space-y-1">
+                      <input
+                        type="url"
+                        placeholder="https://x.com/username/status/12345... または Web記事 / YouTube URL..."
+                        value={inputUrl}
+                        onChange={(e) => setInputUrl(e.target.value)}
+                        className="w-full px-4 py-3 bg-stone-50 border border-stone-300 rounded-xl focus:outline-none focus:border-pink-500 focus:bg-white text-xs text-stone-900 placeholder-stone-400 font-mono"
+                      />
+                      <p className="text-[10px] text-stone-500 pl-1">
+                        ※ X(Twitter)画像・動画やWeb記事をAIが自動要約。YouTube動画は自動的に解析キューへ送信されます。
+                      </p>
+                    </div>
+                  ) : (
+                    <textarea
+                      rows={5}
+                      placeholder="戦術メモ、マッチアップの気付き、立ち回りノウハウを記入..."
+                      value={inputMemo}
+                      onChange={(e) => setInputMemo(e.target.value)}
+                      className="w-full px-4 py-3 bg-stone-50 border border-stone-300 rounded-xl focus:outline-none focus:border-pink-500 focus:bg-white text-xs text-stone-900 placeholder-stone-400 resize-none leading-relaxed"
+                    />
+                  )}
+
+                  <button
+                    type="submit"
+                    disabled={actionLoading}
+                    className="w-full flex items-center justify-center gap-1.5 py-3 rounded-xl bg-pink-600 hover:bg-pink-700 text-white text-xs font-bold transition-all shadow-md shadow-pink-600/20 disabled:opacity-50 cursor-pointer"
+                  >
+                    {actionLoading ? <RefreshCw size={14} className="animate-spin" /> : <Sparkles size={14} />}
+                    {ingestMode === 'url' ? '要約・解析を実行' : 'AIによる分類・保存'}
+                  </button>
+                </form>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── ② 蓄積ナレッジ ＆ 攻略ライブラリ タブ ── */}
+        {activeTab === 'library' && (
+          <div className="space-y-4">
+            <div className="flex gap-1.5 bg-stone-100 p-1 rounded-xl w-fit">
+              <button
+                onClick={() => setLibrarySubTab('articles')}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  librarySubTab === 'articles' ? 'bg-white text-stone-900 shadow-xs font-black' : 'text-stone-600 hover:text-stone-900'
+                }`}
+              >
+                🗂️ 攻略記事ライブラリ (長文・動画解析)
+              </button>
+              <button
+                onClick={() => setLibrarySubTab('memos')}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  librarySubTab === 'memos' ? 'bg-white text-stone-900 shadow-xs font-black' : 'text-stone-600 hover:text-stone-900'
+                }`}
+              >
+                📖 短文メモ・知見一覧
+              </button>
+            </div>
+
+            {librarySubTab === 'articles' && <LibraryTabContent />}
+
+            {librarySubTab === 'memos' && (
           <div className="space-y-8 animate-in">
             {/* 登録セクション */}
             <div className="bg-white border border-gray-200 rounded-3xl p-6 shadow-xl">
@@ -641,6 +755,8 @@ function KnowledgeBaseContent() {
             </div>
           </div>
         )}
+        </div>
+      )}
       </div>
 
       {pendingPreview && (
