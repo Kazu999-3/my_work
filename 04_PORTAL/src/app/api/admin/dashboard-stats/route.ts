@@ -25,9 +25,6 @@ export async function GET(req: NextRequest) {
       { count: laneGuidesCount },
       { count: memosCount },
       { count: matchupLogCount },
-      { data: ytQueueData },
-      { data: dictData },
-      { data: libData },
       { data: recentTaskData },
       { count: youtubeErrorCount },
       { data: systemMetricsRow },
@@ -52,11 +49,6 @@ export async function GET(req: NextRequest) {
       supabase.from('lane_guides').select('id', { count: 'exact', head: true }),
       supabase.from('matchup_sentinel').select('matchup_id', { count: 'exact', head: true }).neq('enemy', 'GLOBAL'),
       supabase.from('matchup_log').select('id', { count: 'exact', head: true }),
-      // YouTubeキュー
-      supabase.from('youtube_queue').select('id, title, status, channel_name, updated_at').order('updated_at', { ascending: false }).limit(3),
-      // 直近の更新
-      supabase.from('matchup_sentinel').select('matchup_id, champion, title, created_at').eq('enemy', 'GLOBAL').order('created_at', { ascending: false }).limit(5),
-      supabase.from('personal_knowledge').select('id, title, champion, created_at').order('created_at', { ascending: false }).limit(5),
       // 「要対応」パネル用: 直近の失敗/完了タスク（同一(task_type, payload)キーの中で
       // 最新の状態だけを見て「今も本当に失敗中か」を判定するため、failed単独ではなく
       // completedも一緒に広めに取得する。再実行は新規タスクを積むだけで古い失敗行を
@@ -236,9 +228,6 @@ export async function GET(req: NextRequest) {
         cloud_workers: (systemMetricsRow?.raw_data as any)?.cloud_workers || {},
       },
       dictHealthSummary,
-      recentYoutubeQueue: ytQueueData || [],
-      recentDictUpdates: dictData || [],
-      recentLibraryUpdates: libData || [],
       needsAttention: {
         failedTasks: failedTaskData,
         youtubeErrorCount: youtubeErrorCount ?? 0,

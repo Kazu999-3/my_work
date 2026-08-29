@@ -28,19 +28,11 @@ function summarizeError(errorStr?: string): { label: string; bg: string } {
 export default function Home() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [systemMetrics, setSystemMetrics] = useState<any>({ queue: { pending: 0, completed: 0 }, cloud_workers: {} });
-  const [recentDictUpdates, setRecentDictUpdates] = useState<any[]>([]);
-  const [recentLibraryUpdates, setRecentLibraryUpdates] = useState<any[]>([]);
-  const [recentYoutubeQueue, setRecentYoutubeQueue] = useState<any[]>([]);
   const [needsAttention, setNeedsAttention] = useState<{ failedTasks: any[]; youtubeErrorCount: number; dictReviewCount: number }>({ failedTasks: [], youtubeErrorCount: 0, dictReviewCount: 0 });
   const [retryingTaskId, setRetryingTaskId] = useState<string | null>(null);
   const [isRetryingAll, setIsRetryingAll] = useState(false);
-  const [setupChecks, setSetupChecks] = useState<Record<string, boolean> | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<string>('');
-
-  const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
-  const [isResetting, setIsResetting] = useState(false);
-  const [activeSystemTab, setActiveSystemTab] = useState<'nodes' | 'queue'>('nodes');
 
   // システムの稼働状況とジョブキューの状況を監視する状態
   const [systemStatus, setSystemStatus] = useState<{
@@ -52,7 +44,6 @@ export default function Home() {
     queue: [],
     history: []
   });
-
 
   // 失敗タスクの一括再実行
   const handleRetryAll = async () => {
@@ -78,40 +69,18 @@ export default function Home() {
     }
   };
 
-  // 1. 認証の確認（middleware.tsが/admin/*を既にCookieでゲートしているため、
-  // ここに到達している時点でCookie自体は有効。UI側のローディング制御のみ。）
+  // 1. 認証の確認
   useEffect(() => {
     fetch('/api/auth/verify', { method: 'POST', credentials: 'include' })
       .then(res => setIsAuthenticated(res.ok))
       .catch(() => setIsAuthenticated(false));
   }, []);
 
-  // 2. 認証完了後にステータスチェックを実行
-  useEffect(() => {
-    if (!isAuthenticated) return;
-
-    const checkStatus = async () => {
-      try {
-        const res = await fetch('/api/admin/system/status');
-        if (res.ok) {
-          const data = await res.json();
-          setSystemStatus(data);
-        }
-      } catch (err) {
-        console.error('Failed to fetch system status:', err);
-      }
-    };
-    checkStatus();
-  }, [isAuthenticated]);
-
-
-
   // 知識ベースの整備状況（件数のみ・head:trueでエグレスを抑える）
   const [kbStats, setKbStats] = useState<{ facts: number | null; library: number | null; laneGuides: number | null; memos: number | null; matchupLog: number | null }>({
     facts: null, library: null, laneGuides: null, memos: null, matchupLog: null,
   });
-  // 辞典ヘルス(確認済み/AI生成/要対応の内訳)。以前はこのトップダッシュボードに一切出ておらず、
-  // /admin/dict-healthを開くまで要対応件数に気づけなかったため追加(2026-08-13)。
+  // 辞典ヘルス(確認済み/AI生成/要対応の内訳)
   const [dictHealthSummary, setDictHealthSummary] = useState<{ verified: number; aiGenerated: number; stale: number } | null>(null);
 
   const fetchData = async (silent = false) => {
@@ -124,9 +93,6 @@ export default function Home() {
         if (data.kbStats) setKbStats(data.kbStats);
         if (data.dictHealthSummary) setDictHealthSummary(data.dictHealthSummary);
         if (data.systemMetrics) setSystemMetrics(data.systemMetrics);
-        if (data.recentYoutubeQueue) setRecentYoutubeQueue(data.recentYoutubeQueue);
-        if (data.recentDictUpdates) setRecentDictUpdates(data.recentDictUpdates);
-        if (data.recentLibraryUpdates) setRecentLibraryUpdates(data.recentLibraryUpdates);
         if (data.needsAttention) setNeedsAttention(data.needsAttention);
       }
     } catch (err) {
@@ -191,39 +157,7 @@ export default function Home() {
     setLastUpdated(new Date().toLocaleTimeString('ja-JP'));
   }, [isAuthenticated]);
 
-  // セットアップ未完了チェックリスト（環境変数の設定有無のみ。値は取得しない）
-  useEffect(() => {
-    if (!isAuthenticated) return;
-    fetch('/api/health')
-      .then((res) => res.json())
-      .then((data) => setSetupChecks({
-        db: !!data.db,
-        riotKey: !!data.riotKey,
-        geminiKey: !!data.geminiKey,
-        vapid: !!data.vapid,
-        discordWebhook: !!data.discordWebhook,
-        portalBotSecret: !!data.portalBotSecret,
-      }))
-      .catch(() => {});
-  }, [isAuthenticated]);
 
-  const handleResetQueue = async () => {
-    setIsResetting(true);
-    try {
-      const res = await fetch('/api/queue/reset', { method: 'POST' });
-      const data = await res.json();
-      if (data.success) {
-        setIsErrorModalOpen(false);
-        fetchData(true);
-      } else {
-        alert(`エラー: ${data.error}`);
-      }
-    } catch (e: any) {
-      alert(`通信エラーが発生しました: ${e.message}`);
-    } finally {
-      setIsResetting(false);
-    }
-  };
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -623,12 +557,12 @@ export default function Home() {
                 <div className="w-1.5 h-5 bg-emerald-500 rounded-full"></div>
                 知識ベースの整備状況
               </h3>
-              <Link href="/admin/knowledge" className="text-xs font-bold text-emerald-700 hover:text-emerald-800 hover:underline">🛠️ データ整備へ →</Link>
+              <Link href="/champions?tab=knowledge" className="text-xs font-bold text-emerald-700 hover:text-emerald-800 hover:underline">🛠️ データ整備へ →</Link>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
               {[
                 { label: 'チャンピオン辞典', value: kbStats.facts, href: '/champions', color: 'text-amber-700' },
-                { label: '未整理の記事', value: kbStats.library, href: '/admin/knowledge', color: 'text-orange-700' },
+                { label: '未整理の記事', value: kbStats.library, href: '/champions?tab=knowledge', color: 'text-orange-700' },
                 { label: 'レーン別ガイド', value: kbStats.laneGuides, href: '/lane-guides', color: 'text-amber-700', suffix: '/6' },
                 { label: '対面メモ', value: kbStats.memos, href: '/coach?tab=matchup-memo', color: 'text-amber-700' },
                 { label: '対面カルテ', value: kbStats.matchupLog, href: '/coach?tab=matchup-memo', color: 'text-rose-700' },
@@ -669,59 +603,7 @@ export default function Home() {
               </Link>
             </div>
           </div>
-
-          {/* Dictionary Updates */}
-          <div className="glass-panel rounded-2xl p-3.5 border border-black/5 bg-gradient-to-br from-amber-50/70 to-transparent">
-            <div className="flex justify-between items-center mb-3">
-              <h3 className="text-base font-black text-stone-900 flex items-center gap-1.5">
-                <div className="w-1.5 h-5 bg-amber-500 rounded-full"></div>
-                チャンピオン辞典 更新履歴
-              </h3>
-              <Link href="/champions" className="text-xs font-bold text-amber-700 hover:text-amber-800 hover:underline">すべて見る →</Link>
-            </div>
-            <div className="space-y-2">
-              {recentDictUpdates.length > 0 ? recentDictUpdates.slice(0, 3).map((item, idx) => (
-                <div key={idx} className="flex justify-between items-center bg-black/[0.03] p-2.5 rounded-xl border border-black/5 hover:bg-black/5 transition-colors group">
-                  <div className="flex flex-col min-w-0">
-                    <span className="text-xs font-bold text-stone-700 group-hover:text-stone-900 transition-colors truncate">{item.champion}</span>
-                    <span className="text-[11px] text-stone-500 truncate max-w-[180px]">{item.title}</span>
-                  </div>
-                  <span className="text-[10px] font-mono text-stone-500 px-1.5 py-0.5 bg-black/5 rounded">{new Date(item.created_at).toLocaleDateString('ja-JP')}</span>
-                </div>
-              )) : (
-                <p className="text-xs text-stone-500 text-center py-3">データがありません</p>
-              )}
-            </div>
-          </div>
-
-          {/* Library Updates */}
-          <div className="glass-panel rounded-2xl p-3.5 border border-black/5 bg-gradient-to-br from-orange-50/70 to-transparent">
-            <div className="flex justify-between items-center mb-3">
-              <h3 className="text-base font-black text-stone-900 flex items-center gap-1.5">
-                <div className="w-1.5 h-5 bg-orange-500 rounded-full"></div>
-                ライブラリ 追加履歴
-              </h3>
-              <Link href="/admin/knowledge" className="text-xs font-bold text-orange-700 hover:text-orange-800 hover:underline">すべて見る →</Link>
-            </div>
-            <div className="space-y-2">
-              {recentLibraryUpdates.length > 0 ? recentLibraryUpdates.slice(0, 3).map((item, idx) => (
-                <div key={idx} className="flex justify-between items-center bg-black/[0.03] p-2.5 rounded-xl border border-black/5 hover:bg-black/5 transition-colors group">
-                  <div className="flex flex-col min-w-0">
-                    <span className="text-xs font-bold text-stone-700 truncate max-w-[180px] group-hover:text-stone-900 transition-colors" title={item.title}>{item.title}</span>
-                    {item.champion && <span className="text-[10px] text-orange-700 mt-0.5">Champion: {item.champion}</span>}
-                  </div>
-                  <span className="text-[10px] font-mono text-stone-500 px-1.5 py-0.5 bg-black/5 rounded">{new Date(item.created_at).toLocaleDateString('ja-JP')}</span>
-                </div>
-              )) : (
-                <p className="text-xs text-stone-500 text-center py-3">データがありません</p>
-              )}
-            </div>
-          </div>
-
         </motion.div>
-
-
-
 
       </motion.main>
 
