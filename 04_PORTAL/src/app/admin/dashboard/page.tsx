@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Activity, Zap, ShieldAlert, Cpu, Network, Gamepad2, RefreshCw, CheckCircle2, X, ChevronRight, Sparkles, Play, AlertTriangle } from 'lucide-react';
 import { supabaseBrowser } from '../../../lib/supabaseBrowserClient';
 import Link from 'next/link';
-import TodoBoard from './TodoBoard';
+
 
 function summarizeError(errorStr?: string): { label: string; bg: string } {
   if (!errorStr) return { label: 'エラー発生', bg: 'bg-stone-100 text-stone-700 border-stone-200' };
@@ -333,10 +333,6 @@ export default function Home() {
         </div>
       )}
 
-
-
-      {/* 📌 業務＆開発TODOボード */}
-      <TodoBoard />
 
       {/* 要対応パネル: 失敗タスクとエラーを一括リトライ付きで表示 */}
       {(needsAttention.failedTasks.length > 0 || needsAttention.youtubeErrorCount > 0 || needsAttention.dictReviewCount > 0) && (
