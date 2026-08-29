@@ -9,12 +9,12 @@ export default function SoloqScoutRedirect() {
   const router = useRouter();
 
   useEffect(() => {
-    router.replace("/ktm-admin");
+    router.replace("/coach");
   }, [router]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background text-stone-900 text-sm">
-      この機能は廃止されました。管理者ダッシュボードへ移動中...
+      ソロQコーチへ移動中...
     </div>
   );
 }

@@ -117,13 +117,13 @@ export default function Home() {
   // 「詳細へ」の遷移先をtask_typeごとに正しく振り分ける（以前は全種別が一律/admin/youtubeに
   // 飛んでいて、辞典一括更新等の失敗がYouTube管理画面を開いても何も解決できなかった）
   const TASK_LINKS: Record<string, string> = {
-    resolve_youtube_channel: '/admin/youtube',
-    resolve_youtube_playlist: '/admin/youtube',
-    youtube_channel_monitor: '/admin/youtube',
-    reddit_scout: '/admin/dict-health',
-    lol_trend_collect: '/admin/dict-health',
-    dict_synthesizer: '/admin/dict-health',
-    champion_db_bulk_update: '/admin/dict-health',
+    resolve_youtube_channel: '/champions?scope=knowledge&tab=video',
+    resolve_youtube_playlist: '/champions?scope=knowledge&tab=video',
+    youtube_channel_monitor: '/champions?scope=knowledge&tab=video',
+    reddit_scout: '/champions?scope=health',
+    lol_trend_collect: '/champions?scope=health',
+    dict_synthesizer: '/champions?scope=health',
+    champion_db_bulk_update: '/champions?scope=health',
   };
 
   const handleRetryFailedTask = async (task: any) => {
@@ -333,7 +333,7 @@ export default function Home() {
             )}
             {needsAttention.dictReviewCount > 0 && (
               <Link
-                href="/admin/dict-health"
+                href="/champions?scope=health"
                 className="flex items-center justify-between gap-2.5 p-2.5 rounded-xl bg-white border border-rose-200 hover:border-rose-300 transition-colors"
               >
                 <span className="text-xs font-bold text-stone-900">辞典の鮮度レビューで要対応 {needsAttention.dictReviewCount}件（週次自動検知）</span>
@@ -586,18 +586,18 @@ export default function Home() {
                 <div className="w-1.5 h-5 bg-rose-500 rounded-full"></div>
                 辞典ヘルス
               </h3>
-              <Link href="/admin/dict-health" className="text-xs font-bold text-rose-700 hover:text-rose-800 hover:underline">📊 ヘルスダッシュボードへ →</Link>
+              <Link href="/champions?scope=health" className="text-xs font-bold text-rose-700 hover:text-rose-800 hover:underline">📊 ヘルスダッシュボードへ →</Link>
             </div>
             <div className="grid grid-cols-3 gap-2">
-              <Link href="/admin/dict-health" className="bg-emerald-100/60 rounded-xl p-2.5 border border-emerald-200 hover:bg-emerald-100 transition-colors text-center">
+              <Link href="/champions?scope=health" className="bg-emerald-100/60 rounded-xl p-2.5 border border-emerald-200 hover:bg-emerald-100 transition-colors text-center">
                 <div className="text-xl font-black text-emerald-800">{dictHealthSummary === null ? '—' : dictHealthSummary.verified}</div>
                 <div className="text-[10px] text-emerald-700 font-bold mt-0.5">🟢 確認済み</div>
               </Link>
-              <Link href="/admin/dict-health" className="bg-amber-100/60 rounded-xl p-2.5 border border-amber-200 hover:bg-amber-100 transition-colors text-center">
+              <Link href="/champions?scope=health" className="bg-amber-100/60 rounded-xl p-2.5 border border-amber-200 hover:bg-amber-100 transition-colors text-center">
                 <div className="text-xl font-black text-amber-800">{dictHealthSummary === null ? '—' : dictHealthSummary.aiGenerated}</div>
                 <div className="text-[10px] text-amber-700 font-bold mt-0.5">🟡 AI生成</div>
               </Link>
-              <Link href="/admin/dict-health" className="bg-red-100/60 rounded-xl p-2.5 border border-red-200 hover:bg-red-100 transition-colors text-center">
+              <Link href="/champions?scope=health" className="bg-red-100/60 rounded-xl p-2.5 border border-red-200 hover:bg-red-100 transition-colors text-center">
                 <div className="text-xl font-black text-red-800">{dictHealthSummary === null ? '—' : dictHealthSummary.stale}</div>
                 <div className="text-[10px] text-red-700 font-bold mt-0.5">🔴 要対応</div>
               </Link>
