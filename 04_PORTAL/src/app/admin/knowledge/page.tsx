@@ -2,82 +2,47 @@
 
 import React, { useState, useEffect, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Brain, Search, Plus, Trash2, Calendar, Link as LinkIcon, RefreshCw, FileText, ChevronDown, ChevronUp, BookOpen, Layers, Sparkles, Video, MessageSquare, Activity } from 'lucide-react';
-import Link from 'next/link';
+import { Plus, RefreshCw, Sparkles } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import YoutubeQueueManager from '../youtube/YoutubeQueueManager';
-import LibraryTabContent from './LibraryTabContent';
 import DiscordImportPanel from './DiscordImportPanel';
-import PendingInsightsPanel from './PendingInsightsPanel';
 import KnowledgePreviewModal, { type KnowledgePreview } from './KnowledgePreviewModal';
-
-interface KnowledgeItem {
-  id: number;
-  created_at: string;
-  title: string;
-  content: string;
-  raw_content?: string;
-  source_url?: string;
-  genre: string;
-  tags?: string[];
-}
 
 function KnowledgeBaseContent() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-  const [knowledgeList, setKnowledgeList] = useState<KnowledgeItem[]>([]);
-  const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<boolean>(false);
-  const [deleteLoading, setDeleteLoading] = useState<number | null>(null);
 
   // 入力フォームの状態
-  const [inputType, setInputType] = useState<'url' | 'memo'>('url');
+  const [ingestMode, setIngestMode] = useState<'url' | 'memo' | 'discord' | 'queue'>('url');
   const [inputUrl, setInputUrl] = useState('');
   const [inputMemo, setInputMemo] = useState('');
 
-  // AI解析結果のプレビュー(2026-08-15、保存前にチャンピオン辞典への反映内容を確認できるように)
+  // AI解析結果のプレビュー
   const [pendingPreview, setPendingPreview] = useState<KnowledgePreview | null>(null);
   const [confirmSaving, setConfirmSaving] = useState(false);
-
-  // 検索とフィルタ
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filterGenre, setFilterGenre] = useState('all');
-
-  // カード展開用
-  const [expandedId, setExpandedId] = useState<number | null>(null);
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
-
-  // ページ内タブ: 取り込み (ingest) or 蓄積ライブラリ (library)
-  const [activeTab, setActiveTab] = useState<'ingest' | 'library'>('ingest');
-  const [ingestMode, setIngestMode] = useState<'url' | 'memo' | 'discord' | 'queue'>('url');
-  const [librarySubTab, setLibrarySubTab] = useState<'articles' | 'memos'>('articles');
-  const [isResearchModalOpen, setIsResearchModalOpen] = useState(false);
 
   const searchParams = useSearchParams();
 
   // URLパラメータ (?tab=...) の自動反映
   useEffect(() => {
     const tabParam = searchParams?.get('tab');
-    if (tabParam === 'library' || tabParam === 'knowledge') {
-      setActiveTab('library');
-      if (tabParam === 'knowledge') setLibrarySubTab('memos');
-      else setLibrarySubTab('articles');
-    } else if (tabParam === 'video' || tabParam === 'discord' || tabParam === 'ingest') {
-      setActiveTab('ingest');
-      if (tabParam === 'video') setIngestMode('queue');
-      else if (tabParam === 'discord') setIngestMode('discord');
-      else setIngestMode('url');
+    if (tabParam === 'video' || tabParam === 'queue') {
+      setIngestMode('queue');
+    } else if (tabParam === 'discord') {
+      setIngestMode('discord');
+    } else if (tabParam === 'memo') {
+      setIngestMode('memo');
+    } else {
+      setIngestMode('url');
     }
   }, [searchParams]);
 
-  // 認証の確認（middleware.tsが/admin/*をCookieでゲート済み。UIローディング制御のみ）
+  // 認証の確認
   useEffect(() => {
     fetch('/api/auth/verify', { method: 'POST', credentials: 'include' })
-      .then(res => {
-        setIsAuthenticated(res.ok);
-      })
-      .catch(() => {
-        setIsAuthenticated(false);
-      });
+      .then(res => setIsAuthenticated(res.ok))
+      .catch(() => setIsAuthenticated(false));
   }, []);
 
   const showFeedback = (text: string, type: 'success' | 'error') => {
@@ -85,61 +50,26 @@ function KnowledgeBaseContent() {
     setTimeout(() => setMessage(null), 5000);
   };
 
-// 1. ナレッジ一覧取得
-  const fetchKnowledge = async (silent = false) => {
-    try {
-      if (!silent) setLoading(true);
-      const res = await fetch(`/api/admin/knowledge?genre=${filterGenre}&query=${searchQuery}`, {
-        credentials: 'include',
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setKnowledgeList(Array.isArray(data) ? data : []);
-      } else {
-        showFeedback('ナレッジの取得に失敗しました。', 'error');
-      }
-    } catch (err) {
-      showFeedback('通信エラーが発生しました。', 'error');
-    } finally {
-      if (!silent) setLoading(false);
-    }
-  };
-
-  // 検索とフィルタの自動デバウンス実行
-  useEffect(() => {
-    if (isAuthenticated) {
-      const timer = setTimeout(() => {
-        fetchKnowledge();
-      }, 150);
-      return () => clearTimeout(timer);
-    }
-  }, [filterGenre, searchQuery, isAuthenticated]);
-
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-  };
-
-  // YouTube URL判定
   const isYoutubeUrl = (url: string): boolean => {
     return /youtube\.com\/watch|youtu\.be\//i.test(url);
   };
 
-  // 2. ナレッジの追加（要約＆分類）— YouTube URLは動画キューへ自動振り分け
+  // ナレッジの追加（要約＆分類）
   const handleAddKnowledge = async (e: React.FormEvent) => {
     e.preventDefault();
-    const payload: any = {};
-    if (inputType === 'url') {
-      if (!inputUrl.trim()) return;
-      payload.url = inputUrl.trim();
-    } else {
-      if (!inputMemo.trim()) return;
-      payload.text = inputMemo.trim();
+    const payload = ingestMode === 'url' ? { type: 'url', url: inputUrl } : { type: 'memo', memo: inputMemo };
+    if (ingestMode === 'url' && !inputUrl) {
+      showFeedback('URLを入力してください。', 'error');
+      return;
+    }
+    if (ingestMode === 'memo' && !inputMemo) {
+      showFeedback('メモ本文を入力してください。', 'error');
+      return;
     }
 
     setActionLoading(true);
     try {
-      // YouTube URLの場合は動画キューに送る
-      if (inputType === 'url' && isYoutubeUrl(payload.url)) {
+      if (ingestMode === 'url' && isYoutubeUrl(payload.url || '')) {
         const res = await fetch('/api/admin/youtube', {
           method: 'POST', credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
@@ -148,14 +78,12 @@ function KnowledgeBaseContent() {
         if (res.ok) {
           showFeedback('YouTube動画を解析キューに追加しました！(SREデーモンが順次要約します)', 'success');
           setInputUrl('');
-          setActiveTab('ingest');
-          setIngestMode('queue'); // キュー一覧へ遷移
+          setIngestMode('queue');
         } else {
           const err = await res.json().catch(() => ({}));
           showFeedback(err.error || 'キュー追加に失敗しました。', 'error');
         }
       } else {
-        // 通常ナレッジ追加: まずAI解析のみ行い、結果をプレビューとして表示する
         const res = await fetch('/api/admin/knowledge/add', {
           method: 'POST', credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
@@ -166,173 +94,53 @@ function KnowledgeBaseContent() {
           if (resData?.preview) {
             setPendingPreview(resData.preview);
           } else {
-            showFeedback('AI解析結果の取得に失敗しました。', 'error');
+            showFeedback('ナレッジのAI要約・解析が完了しました！', 'success');
+            if (ingestMode === 'url') setInputUrl('');
+            else setInputMemo('');
           }
         } else {
           const err = await res.json().catch(() => ({}));
-          showFeedback(err.error || 'AI解析に失敗しました。', 'error');
+          showFeedback(err.error || 'ナレッジの解析・追加に失敗しました。', 'error');
         }
       }
     } catch (err) {
-      showFeedback('リクエストに失敗しました。', 'error');
+      showFeedback('通信エラーが発生しました。', 'error');
     } finally {
       setActionLoading(false);
     }
   };
 
-  // プレビュー確認後、実際にDBへ保存する
-  const handleConfirmSave = async (edited: KnowledgePreview) => {
+  const handleConfirmSave = async (data: any) => {
     setConfirmSaving(true);
     try {
       const res = await fetch('/api/admin/knowledge/confirm', {
-        method: 'POST', credentials: 'include',
+        method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(edited)
+        body: JSON.stringify(data),
       });
       if (res.ok) {
-        const resData = await res.json().catch(() => ({}));
-        const related: { title: string }[] = resData?.relatedByAuthor || [];
-        const relatedNote = related.length > 0
-          ? `（同じ投稿者の既存記事が${related.length}件あります: ${related.slice(0, 3).map((r) => r.title).join('、')}${related.length > 3 ? '...' : ''}）`
-          : '';
-        const atomicCount: number = resData?.atomicInsightCount || 0;
-        const laneGeneralPending: number = resData?.laneGeneralPendingCount || 0;
-        const totalPending = atomicCount + laneGeneralPending;
-        const atomicNote = totalPending > 0 ? `（独立した知見を${totalPending}件、原子的なメモとして分割しました。「未承認のナレッジ」で内容を確認・承認するまで辞典生成やレーンガイド統合には使われません）` : '';
-        showFeedback(`新しいナレッジを登録しました！${atomicNote}${relatedNote}`, 'success');
-        setInputUrl('');
-        setInputMemo('');
+        showFeedback('ナレッジを保存し、チャンピオン辞典へ反映しました！', 'success');
         setPendingPreview(null);
-        fetchKnowledge(true);
+        if (ingestMode === 'url') setInputUrl('');
+        else setInputMemo('');
       } else {
         const err = await res.json().catch(() => ({}));
         showFeedback(err.error || '保存に失敗しました。', 'error');
       }
-    } catch (err) {
-      showFeedback('保存リクエストに失敗しました。', 'error');
+    } catch {
+      showFeedback('通信エラーが発生しました。', 'error');
     } finally {
       setConfirmSaving(false);
     }
   };
 
-  // 3. ナレッジの削除
-  const handleDeleteKnowledge = async (id: number, title: string) => {
-    if (!confirm(`「${title}」を削除してもよろしいですか？`)) return;
-    setDeleteLoading(id);
-    try {
-      const res = await fetch('/api/admin/knowledge', {
-        method: 'DELETE', credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id })
-      });
-
-      if (res.ok) {
-        showFeedback('ナレッジを削除しました。', 'success');
-        setKnowledgeList(prev => prev.filter(item => item.id !== id));
-      } else {
-        showFeedback('削除に失敗しました。', 'error');
-      }
-    } catch (err) {
-      showFeedback('通信エラーが発生しました。', 'error');
-    } finally {
-      setDeleteLoading(null);
-    }
-  };
-
-  // 2.5. 既存ナレッジの画像込み再解析
-  const [reAnalyzeLoading, setReAnalyzeLoading] = useState<number | null>(null);
-  const handleReAnalyzeKnowledge = async (id: number, title: string) => {
-    if (!confirm(`「${title}」のURLから画像を含めて再解析・要約更新しますか？`)) return;
-    setReAnalyzeLoading(id);
-    try {
-      const res = await fetch('/api/admin/knowledge/re-analyze', {
-        method: 'POST', credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id })
-      });
-
-      const data = await res.json();
-      if (res.ok) {
-        showFeedback(data.message || '画像込みで再解析・更新しました！', 'success');
-        fetchKnowledge(true);
-      } else {
-        showFeedback(data.error || '再解析に失敗しました。', 'error');
-      }
-    } catch (err) {
-      showFeedback('通信エラーが発生しました。', 'error');
-    } finally {
-      setReAnalyzeLoading(null);
-    }
-  };
-
-  const toggleExpand = (id: number) => {
-    setExpandedId(expandedId === id ? null : id);
-  };
-
-  const getGenreBadge = (genre: string) => {
-    const defaultStyle = 'bg-gray-100 text-gray-500 border border-gray-200';
-    const styles: Record<string, string> = {
-      'LoL攻略': 'bg-blue-100 text-blue-700 border border-blue-200',
-      'AIツール': 'bg-purple-100 text-purple-700 border border-purple-200',
-      '副業ノウハウ': 'bg-green-100 text-green-700 border border-green-200',
-      'その他': 'bg-gray-100 text-gray-500 border border-gray-200',
-    };
-    return (
-      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wide ${styles[genre] || defaultStyle}`}>
-        {genre || '分類なし'}
-      </span>
-    );
-  };
-
-  // 動画IDしかタイトルに入っていない場合に美化するヘルパー
-  const formatTitle = (item: KnowledgeItem) => {
-    const t = item.title || '';
-    // 英数字のみで構成される11桁のYouTube動画IDパターンの場合
-    if (/^[a-zA-Z0-9_-]{11}$/.test(t)) {
-      return `[YouTube] 動画 ${t} (タイトル未取得)`;
-    }
-    return t;
-  };
-
   if (isAuthenticated === null) {
-    return (
-      <div style={{ minHeight: '100vh' }} className="flex items-center justify-center bg-background">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-black/10 border-t-pink-500" />
-      </div>
-    );
-  }
-
-  if (isAuthenticated === false) {
-    return (
-      <div
-        style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #f5f1e6 0%, #fdfcf9 60%, #f5f1e6 100%)' }}
-        className="flex items-center justify-center p-4 font-sans text-gray-900"
-      >
-        <div className="text-center max-w-sm rounded-3xl border border-gray-200 bg-white p-8 shadow-2xl">
-          <div className="text-4xl mb-4">🔑</div>
-          <h2 className="text-lg font-bold mb-2">認証が必要です</h2>
-          <p className="text-sm text-gray-500 mb-6 leading-relaxed">
-            この管理機能は管理者専用です。Discordアカウントでログインしてから再度アクセスしてください。
-          </p>
-          <a
-            href="/login"
-            className="inline-block w-full rounded-xl bg-pink-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-pink-600"
-          >
-            ログインページへ
-          </a>
-        </div>
-      </div>
-    );
+    return <div className="flex justify-center py-20"><RefreshCw className="animate-spin text-pink-500" size={24} /></div>;
   }
 
   return (
-    <div className="min-h-screen bg-background font-sans text-gray-900 antialiased selection:bg-pink-500/30 pb-20">
-      {/* 共通のCSSインポート */}
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=Noto+Sans+JP:wght@400;700&display=swap');
-        * { font-family: 'Outfit', 'Noto Sans JP', sans-serif; }
-      `}</style>
-
+    <div className="w-full space-y-4">
       {/* フィードバックメッセージ */}
       <AnimatePresence>
         {message && (
@@ -349,415 +157,87 @@ function KnowledgeBaseContent() {
         )}
       </AnimatePresence>
 
-      <div className="w-full space-y-4">
-        {/* メイン2タブ切り替え */}
-        <div className="flex gap-2 border-b border-stone-200 pb-3 mb-4 overflow-x-auto items-center scrollbar-none">
-          <button
-            onClick={() => setActiveTab('ingest')}
-            className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer ${
-              activeTab === 'ingest'
-                ? 'bg-pink-600 text-white shadow-md shadow-pink-600/20 font-black'
-                : 'text-stone-600 hover:text-stone-900 hover:bg-stone-100'
-            }`}
-          >
-            <Sparkles size={14} />
-            <span>📥 戦術インテリジェンス取り込み</span>
-          </button>
-          <button
-            onClick={() => setActiveTab('library')}
-            className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer ${
-              activeTab === 'library'
-                ? 'bg-purple-600 text-white shadow-md shadow-purple-600/20 font-black'
-                : 'text-stone-600 hover:text-stone-900 hover:bg-stone-100'
-            }`}
-          >
-            <Layers size={14} />
-            <span>🗂️ 蓄積ナレッジ ＆ 攻略ライブラリ</span>
-          </button>
-        </div>
+      {/* モード切り替えバー */}
+      <div className="flex gap-1.5 bg-stone-100 p-1 rounded-xl w-fit flex-wrap border border-stone-200/60">
+        <button
+          onClick={() => setIngestMode('url')}
+          className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+            ingestMode === 'url' ? 'bg-white text-stone-900 shadow-xs font-black' : 'text-stone-600 hover:text-stone-900'
+          }`}
+        >
+          🌐 Web / X / YouTube 要約
+        </button>
+        <button
+          onClick={() => setIngestMode('memo')}
+          className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+            ingestMode === 'memo' ? 'bg-white text-stone-900 shadow-xs font-black' : 'text-stone-600 hover:text-stone-900'
+          }`}
+        >
+          📝 テキストメモ保存
+        </button>
+        <button
+          onClick={() => setIngestMode('discord')}
+          className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+            ingestMode === 'discord' ? 'bg-white text-stone-900 shadow-xs font-black' : 'text-stone-600 hover:text-stone-900'
+          }`}
+        >
+          💬 Discord ログ解析
+        </button>
+        <button
+          onClick={() => setIngestMode('queue')}
+          className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+            ingestMode === 'queue' ? 'bg-white text-stone-900 shadow-xs font-black' : 'text-stone-600 hover:text-stone-900'
+          }`}
+        >
+          ⏳ 動画解析キュー
+        </button>
+      </div>
 
-        {/* ── ① 戦術取り込みタブ ── */}
-        {activeTab === 'ingest' && (
-          <div className="space-y-6">
-            <div className="flex gap-1.5 bg-stone-100 p-1 rounded-xl w-fit flex-wrap">
-              <button
-                onClick={() => setIngestMode('url')}
-                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                  ingestMode === 'url' ? 'bg-white text-stone-900 shadow-xs font-black' : 'text-stone-600 hover:text-stone-900'
-                }`}
-              >
-                🌐 Web/X/YouTube 要約
-              </button>
-              <button
-                onClick={() => setIngestMode('memo')}
-                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                  ingestMode === 'memo' ? 'bg-white text-stone-900 shadow-xs font-black' : 'text-stone-600 hover:text-stone-900'
-                }`}
-              >
-                📝 テキストメモ保存
-              </button>
-              <button
-                onClick={() => setIngestMode('discord')}
-                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                  ingestMode === 'discord' ? 'bg-white text-stone-900 shadow-xs font-black' : 'text-stone-600 hover:text-stone-900'
-                }`}
-              >
-                💬 Discord ログ解析
-              </button>
-              <button
-                onClick={() => setIngestMode('queue')}
-                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                  ingestMode === 'queue' ? 'bg-white text-stone-900 shadow-xs font-black' : 'text-stone-600 hover:text-stone-900'
-                }`}
-              >
-                ⏳ 動画解析キュー
-              </button>
-            </div>
+      {ingestMode === 'discord' && <DiscordImportPanel />}
+      {ingestMode === 'queue' && <YoutubeQueueManager />}
 
-            {ingestMode === 'discord' && <DiscordImportPanel />}
-            {ingestMode === 'queue' && <YoutubeQueueManager />}
+      {(ingestMode === 'url' || ingestMode === 'memo') && (
+        <div className="bg-white border border-stone-200 rounded-3xl p-6 shadow-xs space-y-4">
+          <h2 className="text-sm font-bold text-stone-900 flex items-center gap-1.5">
+            <Plus size={16} className="text-pink-500" />
+            {ingestMode === 'url' ? 'Web記事・X投稿・YouTube動画を取り込む' : '戦術メモ・気付きを登録する'}
+          </h2>
 
-            {(ingestMode === 'url' || ingestMode === 'memo') && (
-              <div className="bg-white border border-stone-200 rounded-3xl p-6 shadow-xs space-y-4">
-                <h2 className="text-sm font-bold text-stone-900 flex items-center gap-1.5">
-                  <Plus size={16} className="text-pink-500" />
-                  {ingestMode === 'url' ? 'Web記事・X投稿・YouTube動画を取り込む' : '戦術メモ・気付きを登録する'}
-                </h2>
-
-                <form onSubmit={handleAddKnowledge} className="space-y-4">
-                  {ingestMode === 'url' ? (
-                    <div className="space-y-1">
-                      <input
-                        type="url"
-                        placeholder="https://x.com/username/status/12345... または Web記事 / YouTube URL..."
-                        value={inputUrl}
-                        onChange={(e) => setInputUrl(e.target.value)}
-                        className="w-full px-4 py-3 bg-stone-50 border border-stone-300 rounded-xl focus:outline-none focus:border-pink-500 focus:bg-white text-xs text-stone-900 placeholder-stone-400 font-mono"
-                      />
-                      <p className="text-[10px] text-stone-500 pl-1">
-                        ※ X(Twitter)画像・動画やWeb記事をAIが自動要約。YouTube動画は自動的に解析キューへ送信されます。
-                      </p>
-                    </div>
-                  ) : (
-                    <textarea
-                      rows={5}
-                      placeholder="戦術メモ、マッチアップの気付き、立ち回りノウハウを記入..."
-                      value={inputMemo}
-                      onChange={(e) => setInputMemo(e.target.value)}
-                      className="w-full px-4 py-3 bg-stone-50 border border-stone-300 rounded-xl focus:outline-none focus:border-pink-500 focus:bg-white text-xs text-stone-900 placeholder-stone-400 resize-none leading-relaxed"
-                    />
-                  )}
-
-                  <button
-                    type="submit"
-                    disabled={actionLoading}
-                    className="w-full flex items-center justify-center gap-1.5 py-3 rounded-xl bg-pink-600 hover:bg-pink-700 text-white text-xs font-bold transition-all shadow-md shadow-pink-600/20 disabled:opacity-50 cursor-pointer"
-                  >
-                    {actionLoading ? <RefreshCw size={14} className="animate-spin" /> : <Sparkles size={14} />}
-                    {ingestMode === 'url' ? '要約・解析を実行' : 'AIによる分類・保存'}
-                  </button>
-                </form>
+          <form onSubmit={handleAddKnowledge} className="space-y-4">
+            {ingestMode === 'url' ? (
+              <div className="space-y-1">
+                <input
+                  type="url"
+                  placeholder="https://x.com/username/status/12345... または Web記事 / YouTube URL..."
+                  value={inputUrl}
+                  onChange={(e) => setInputUrl(e.target.value)}
+                  className="w-full px-4 py-3 bg-stone-50 border border-stone-300 rounded-xl focus:outline-none focus:border-pink-500 focus:bg-white text-xs text-stone-900 placeholder-stone-400 font-mono"
+                />
+                <p className="text-[10px] text-stone-500 pl-1">
+                  ※ X(Twitter)画像・動画やWeb記事をAIが自動要約。YouTube動画は自動的に解析キューへ送信されます。
+                </p>
               </div>
+            ) : (
+              <textarea
+                rows={5}
+                placeholder="戦術メモ、マッチアップの気付き、立ち回りノウハウを記入..."
+                value={inputMemo}
+                onChange={(e) => setInputMemo(e.target.value)}
+                className="w-full px-4 py-3 bg-stone-50 border border-stone-300 rounded-xl focus:outline-none focus:border-pink-500 focus:bg-white text-xs text-stone-900 placeholder-stone-400 resize-none leading-relaxed"
+              />
             )}
-          </div>
-        )}
 
-        {/* ── ② 蓄積ナレッジ ＆ 攻略ライブラリ タブ ── */}
-        {activeTab === 'library' && (
-          <div className="space-y-4">
-            <div className="flex gap-1.5 bg-stone-100 p-1 rounded-xl w-fit">
-              <button
-                onClick={() => setLibrarySubTab('articles')}
-                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                  librarySubTab === 'articles' ? 'bg-white text-stone-900 shadow-xs font-black' : 'text-stone-600 hover:text-stone-900'
-                }`}
-              >
-                🗂️ 攻略記事ライブラリ (長文・動画解析)
-              </button>
-              <button
-                onClick={() => setLibrarySubTab('memos')}
-                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                  librarySubTab === 'memos' ? 'bg-white text-stone-900 shadow-xs font-black' : 'text-stone-600 hover:text-stone-900'
-                }`}
-              >
-                📖 短文メモ・知見一覧
-              </button>
-            </div>
-
-            {librarySubTab === 'articles' && <LibraryTabContent />}
-
-            {librarySubTab === 'memos' && (
-          <div className="space-y-8 animate-in">
-            {/* 登録セクション */}
-            <div className="bg-white border border-gray-200 rounded-3xl p-6 shadow-xl">
-              <h2 className="text-base font-bold text-gray-900 mb-4 flex items-center gap-1.5">
-                <Plus size={18} className="text-pink-400" />
-                新しい戦術・ノウハウを追加する
-              </h2>
-
-              <div className="flex gap-1 mb-5 bg-gray-100 p-1 rounded-xl w-fit">
-                <button
-                  onClick={() => setInputType('url')}
-                  className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all ${
-                    inputType === 'url' ? 'bg-white text-gray-900 shadow' : 'text-gray-500 hover:text-gray-700'
-                  }`}
-                >
-                  🌐 URLから追加 (自動要約)
-                </button>
-                <button
-                  onClick={() => setInputType('memo')}
-                  className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all ${
-                    inputType === 'memo' ? 'bg-white text-gray-900 shadow' : 'text-gray-500 hover:text-gray-700'
-                  }`}
-                >
-                  📝 メモから追加 (AI分類)
-                </button>
-              </div>
-
-              <form onSubmit={handleAddKnowledge} className="space-y-4">
-                {inputType === 'url' ? (
-                  <div className="space-y-1">
-                    <input
-                      type="url"
-                      placeholder="https://x.com/username/status/12345... または Web記事 / YouTube URL..."
-                      value={inputUrl}
-                      onChange={(e) => setInputUrl(e.target.value)}
-                      className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500 text-xs text-gray-900 placeholder-gray-400 font-mono"
-                    />
-                    <p className="text-[10px] text-gray-400 pl-1 flex items-center gap-1.5 pt-0.5">
-                      <span className="text-pink-600 font-bold">✨ X(Twitter)投稿対応:</span> 画像・動画・添付メディアをAIがマルチモーダル視覚解析して要約保存します。（※ YouTubeは動画キューへ送信）
-                    </p>
-                  </div>
-                ) : (
-                  <textarea
-                    rows={4}
-                    placeholder="戦術メモ、分析の気付き、アフィリエイトの学びなどを記入..."
-                    value={inputMemo}
-                    onChange={(e) => setInputMemo(e.target.value)}
-                    className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500 text-xs text-gray-900 placeholder-gray-400 resize-none leading-relaxed"
-                  />
-                )}
-
-                <button
-                  type="submit"
-                  disabled={actionLoading}
-                  className="w-full flex items-center justify-center gap-1.5 py-3 rounded-xl bg-pink-500 hover:bg-pink-600 text-white text-xs font-bold transition-all shadow-lg hover:shadow-pink-500/20 disabled:opacity-50"
-                >
-                  {actionLoading ? <RefreshCw size={14} className="animate-spin" /> : <Sparkles size={14} />}
-                  {inputType === 'url' ? '要約・解析を実行' : 'AIによる分類・保存'}
-                </button>
-              </form>
-            </div>
-
-            {/* フィルター＆検索ヘッダー */}
-            <div className="space-y-3 bg-white border border-gray-200 rounded-3xl p-4 shadow-sm">
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                {/* ジャンルタブ */}
-                <div className="flex flex-wrap gap-1">
-                  {[
-                    { id: 'all', label: 'すべて' },
-                    { id: 'LoL攻略', label: '⚔️ LoL攻略' },
-                    { id: 'AIツール', label: '🤖 AIツール' },
-                    { id: '副業ノウハウ', label: '💰 副業ノウハウ' },
-                    { id: 'その他', label: '📁 その他' },
-                  ].map((tab) => {
-                    const isActive = filterGenre === tab.id;
-                    return (
-                      <button
-                        key={tab.id}
-                        onClick={() => setFilterGenre(tab.id)}
-                        className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                          isActive ? 'bg-pink-500 text-white shadow-md' : 'text-gray-500 hover:text-gray-800 hover:bg-gray-100'
-                        }`}
-                      >
-                        {tab.label}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {/* 検索窓 */}
-                <form onSubmit={handleSearchSubmit} className="relative w-full sm:w-64">
-                  <input
-                    type="text"
-                    placeholder="ナレッジを検索..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-9 pr-4 py-2 bg-white border border-gray-300 rounded-xl focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500 text-xs text-gray-900"
-                  />
-                  <button type="submit" className="absolute left-3 top-2.5 text-gray-500 hover:text-pink-600 transition-colors">
-                    <Search size={14} />
-                  </button>
-                </form>
-              </div>
-
-              {/* 🏷️ スマート階層タグ（実戦逆引きインデックス） */}
-              <div className="pt-2 border-t border-gray-100 flex items-center gap-1.5 flex-wrap">
-                <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider mr-1">
-                  逆引きタグ:
-                </span>
-                {[
-                  { tag: '初動', label: '🌲 初動ルート・スカトル' },
-                  { tag: 'オブジェクト', label: '🐉 ドラゴン・グラブ・バロン' },
-                  { tag: '集団戦', label: '⚔️ 集団戦・立ち回り' },
-                  { tag: 'マクロ', label: '🛡️ マクロ・ウェーブ管理' },
-                  { tag: 'メンタル', label: '🧠 メンタル・連敗対策' },
-                  { tag: '対面', label: '🥊 マッチアップ・対面対策' },
-                  { tag: 'ビルド', label: '📦 ビルド・アイテム' },
-                ].map((item) => {
-                  const isSelected = searchQuery === item.tag;
-                  return (
-                    <button
-                      key={item.tag}
-                      type="button"
-                      onClick={() => setSearchQuery(isSelected ? '' : item.tag)}
-                      className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border transition-all cursor-pointer ${
-                        isSelected
-                          ? 'bg-purple-600 text-white border-purple-600 shadow-xs'
-                          : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-purple-50 hover:text-purple-700 hover:border-purple-200'
-                      }`}
-                    >
-                      {item.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* ナレッジ一覧リスト */}
-            <div className="space-y-4">
-              {loading ? (
-                <div className="flex flex-col items-center justify-center py-20 space-y-4 bg-white border border-gray-200 rounded-3xl">
-                  <RefreshCw className="animate-spin h-8 w-8 text-pink-600" />
-                  <span className="text-sm text-gray-400">知識資産をロード中...</span>
-                </div>
-              ) : knowledgeList.length === 0 ? (
-                <div className="py-20 text-center text-gray-500 text-sm bg-white border border-gray-200 rounded-3xl">
-                  ナレッジが見つかりません。新しいURLやメモを登録してみましょう！
-                </div>
-              ) : (
-                knowledgeList.map((item) => {
-                  const isExpanded = expandedId === item.id;
-                  return (
-                    <div
-                      key={item.id}
-                      className="bg-white border border-gray-200 rounded-3xl p-5 hover:border-gray-300 transition-all duration-300 relative overflow-hidden"
-                    >
-                      {/* カードヘッダー */}
-                      <div className="flex justify-between items-start gap-4 cursor-pointer" onClick={() => toggleExpand(item.id)}>
-                        <div className="space-y-1.5 min-w-0">
-                          <div className="flex flex-wrap items-center gap-2">
-                            {getGenreBadge(item.genre)}
-                            {(() => {
-                              const days = Math.floor((Date.now() - new Date(item.created_at).getTime()) / (1000 * 60 * 60 * 24));
-                              if (days <= 30) {
-                                return <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">🟢 新鮮 ({days}日前)</span>;
-                              } else if (days <= 60) {
-                                return <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300">🟡 要確認 ({days}日前)</span>;
-                              } else {
-                                return <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 border border-rose-300">🔴 過去メタ ({days}日前)</span>;
-                              }
-                            })()}
-                            <span className="text-[10px] text-gray-500 font-medium flex items-center gap-1">
-                              <Calendar size={10} />
-                              {new Date(item.created_at).toLocaleDateString('ja-JP')}
-                            </span>
-                            {item.source_url && (
-                              <a
-                                href={item.source_url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                onClick={(e) => e.stopPropagation()}
-                                className="text-pink-600 hover:text-pink-700 text-[10px] flex items-center gap-0.5 shrink-0"
-                              >
-                                <LinkIcon size={10} /> URLリンク
-                              </a>
-                            )}
-                          </div>
-                          <h2 className="text-lg font-bold text-gray-900 line-clamp-1">{formatTitle(item)}</h2>
-                        </div>
-
-                        <div className="flex items-center gap-2 shrink-0">
-                          {item.source_url && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleReAnalyzeKnowledge(item.id, formatTitle(item));
-                              }}
-                              disabled={reAnalyzeLoading === item.id}
-                              className="px-2.5 py-1 hover:bg-purple-100 rounded-xl text-purple-700 border border-purple-200 text-xs font-bold transition-all flex items-center gap-1"
-                              title="画像込みで再解析・更新"
-                            >
-                              <RefreshCw size={12} className={reAnalyzeLoading === item.id ? "animate-spin" : ""} />
-                              {reAnalyzeLoading === item.id ? "解析中..." : "画像再解析"}
-                            </button>
-                          )}
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteKnowledge(item.id, formatTitle(item));
-                            }}
-                            disabled={deleteLoading === item.id}
-                            className="p-2 hover:bg-red-100 rounded-xl text-gray-500 hover:text-red-600 transition-all"
-                            title="ナレッジ削除"
-                          >
-                            {deleteLoading === item.id ? <RefreshCw size={14} className="animate-spin" /> : <Trash2 size={14} />}
-                          </button>
-                          <button className="text-gray-500 hover:text-pink-600 p-2">
-                            {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* 短縮要約（展開されていない時に少し見せる） */}
-                      {!isExpanded && (
-                        <p className="text-xs text-gray-400 mt-3 line-clamp-2 leading-relaxed bg-gray-50 p-3 rounded-xl border border-gray-200">
-                          {(item.content || '').replace(/[#*`]/g, '')}
-                        </p>
-                      )}
-
-                      {/* 展開時詳細コンテンツ */}
-                      <AnimatePresence>
-                        {isExpanded && (
-                          <motion.div
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: 'auto' }}
-                            exit={{ opacity: 0, height: 0 }}
-                            transition={{ duration: 0.3 }}
-                            className="overflow-hidden"
-                          >
-                            <div className="mt-4 pt-4 border-t border-gray-200 space-y-4">
-                              {/* 要約テキスト */}
-                              <div className="bg-gray-50 p-5 rounded-2xl border border-gray-200 leading-relaxed text-sm text-gray-700 whitespace-pre-wrap">
-                                {item.content}
-                              </div>
-
-                              {/* 生テキスト（メタデータ）の表示がある場合 */}
-                              {item.raw_content && (
-                                <details className="group">
-                                  <summary className="text-xs text-gray-500 hover:text-gray-700 cursor-pointer list-none flex items-center gap-1 outline-none">
-                                    <FileText size={12} />
-                                    <span>生データ（インテリジェンス）を表示</span>
-                                  </summary>
-                                  <div className="mt-2 p-4 bg-gray-50 border border-gray-200 rounded-2xl text-[10px] text-gray-500 max-h-48 overflow-y-auto whitespace-pre-wrap leading-normal font-mono select-all">
-                                    {item.raw_content}
-                                  </div>
-                                </details>
-                              )}
-                            </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          </div>
-        )}
+            <button
+              type="submit"
+              disabled={actionLoading}
+              className="w-full flex items-center justify-center gap-1.5 py-3 rounded-xl bg-pink-600 hover:bg-pink-700 text-white text-xs font-bold transition-all shadow-md shadow-pink-600/20 disabled:opacity-50 cursor-pointer"
+            >
+              {actionLoading ? <RefreshCw size={14} className="animate-spin" /> : <Sparkles size={14} />}
+              {ingestMode === 'url' ? '要約・解析を実行' : 'AIによる分類・保存'}
+            </button>
+          </form>
         </div>
       )}
-      </div>
 
       {pendingPreview && (
         <KnowledgePreviewModal

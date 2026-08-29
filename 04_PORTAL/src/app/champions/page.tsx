@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { BookOpen, Activity, Map, Brain, ShieldAlert, Sparkles } from 'lucide-react';
+import { BookOpen, Activity, Map, Sparkles, Layers } from 'lucide-react';
 import { motion } from 'framer-motion';
 import dynamic from 'next/dynamic';
 
@@ -13,25 +13,38 @@ const DictionaryTab = dynamic(() => import('./tabs/DictionaryTab'), {
 const LaneGuidesView = dynamic(() => import('../lane-guides/page'), {
   loading: () => <div className="flex justify-center py-20"><div className="w-8 h-8 border-4 border-sky-400 border-t-transparent rounded-full animate-spin"></div></div>
 });
-const MaintenanceTab = dynamic(() => import('./tabs/MaintenanceTab'), {
+const LibraryTabContent = dynamic(() => import('../admin/knowledge/LibraryTabContent'), {
+  loading: () => <div className="flex justify-center py-20"><div className="w-8 h-8 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div></div>
+});
+const KnowledgeIngestView = dynamic(() => import('../admin/knowledge/page'), {
+  loading: () => <div className="flex justify-center py-20"><div className="w-8 h-8 border-4 border-pink-500 border-t-transparent rounded-full animate-spin"></div></div>
+});
+const DictHealthView = dynamic(() => import('../admin/dict-health/page'), {
   loading: () => <div className="flex justify-center py-20"><div className="w-8 h-8 border-4 border-amber-500 border-t-transparent rounded-full animate-spin"></div></div>
 });
 
-type KnowledgeScope = 'champions' | 'lane-guides' | 'maintenance';
+type KnowledgeScope = 'champions' | 'lane-guides' | 'library' | 'ingest' | 'health';
 
 const SCOPES: { id: KnowledgeScope; label: string; icon: any; color: string; activeBg: string }[] = [
   { id: 'champions', label: '👑 チャンピオン辞典', icon: BookOpen, color: 'text-[#c89b3c]', activeBg: 'bg-[#c89b3c]/15 text-[#c89b3c] border-[#c89b3c]/40' },
   { id: 'lane-guides', label: '🗺️ レーン・マクロ', icon: Map, color: 'text-sky-500', activeBg: 'bg-sky-500/15 text-sky-600 border-sky-500/40' },
-  { id: 'maintenance', label: '🛠️ データ整備 ＆ ヘルス', icon: Activity, color: 'text-amber-600', activeBg: 'bg-amber-500/15 text-amber-700 border-amber-500/40' },
+  { id: 'library', label: '🗂️ 攻略ライブラリ', icon: Layers, color: 'text-purple-600', activeBg: 'bg-purple-500/15 text-purple-700 border-purple-500/40' },
+  { id: 'ingest', label: '📥 戦術取り込み', icon: Sparkles, color: 'text-pink-600', activeBg: 'bg-pink-500/15 text-pink-700 border-pink-500/40' },
+  { id: 'health', label: '📊 辞典ヘルス', icon: Activity, color: 'text-amber-600', activeBg: 'bg-amber-500/15 text-amber-700 border-amber-500/40' },
 ];
 
 function ChampionsShell() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const rawScope = searchParams.get('scope');
+  
+  // 後方互換性を持たせたスコープ正規化
   const normalizedScope: KnowledgeScope = 
     rawScope === 'lane-guides' ? 'lane-guides' :
-    (rawScope === 'maintenance' || rawScope === 'knowledge' || rawScope === 'health') ? 'maintenance' : 
+    rawScope === 'library' ? 'library' :
+    (rawScope === 'ingest' || rawScope === 'knowledge') ? 'ingest' :
+    rawScope === 'health' ? 'health' :
+    rawScope === 'maintenance' ? 'health' :
     'champions';
 
   const [scope, setScope] = useState<KnowledgeScope>(normalizedScope);
@@ -81,7 +94,7 @@ function ChampionsShell() {
 
   return (
     <div className="min-h-screen p-2 sm:p-4 md:p-6 max-w-[1760px] w-full mx-auto flex flex-col gap-4">
-      {/* 統合ナレッジヘッダー ＆ スコープ切り替えバー */}
+      {/* 統合ナレッジヘッダー ＆ スコープ切り替えバー（フラット5タブ） */}
       <motion.header 
         initial={{ y: -6, opacity: 0 }} 
         animate={{ y: 0, opacity: 1 }} 
@@ -98,12 +111,12 @@ function ChampionsShell() {
               </span>
             </div>
             <p className="text-[11px] text-stone-500 font-medium hidden sm:block">
-              チャンピオン辞典・レーン戦略・AI知見・ヘルス診断を一元管理
+              チャンピオン辞典・レーン戦術・攻略記事・知見取り込み・データ品質監査
             </p>
           </div>
         </div>
 
-        {/* スコープ切り替えタブ（3タブに集約） */}
+        {/* スコープ切り替えタブ（完全フラットな5タブ） */}
         <div className="flex items-center gap-1.5 p-1 bg-stone-100/90 rounded-xl overflow-x-auto scrollbar-none max-w-full">
           {SCOPES.map((s) => {
             const isActive = scope === s.id;
@@ -111,7 +124,7 @@ function ChampionsShell() {
               <button
                 key={s.id}
                 onClick={() => handleScopeChange(s.id)}
-                className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 select-none cursor-pointer ${
+                className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 select-none cursor-pointer ${
                   isActive
                     ? `bg-white shadow-xs ${s.color} border border-stone-200/80 font-black scale-102`
                     : 'text-stone-600 hover:text-stone-900 hover:bg-stone-200/60'
@@ -124,11 +137,13 @@ function ChampionsShell() {
         </div>
       </motion.header>
 
-      {/* スコープに応じたゼロ遷移ビュー */}
+      {/* スコープに応じたゼロ遷移ビュー（すべてフラットに表示） */}
       <div className="flex-1 min-w-0">
         {scope === 'champions' && <DictionaryTab isAdmin={true} />}
         {scope === 'lane-guides' && <LaneGuidesView />}
-        {scope === 'maintenance' && <MaintenanceTab />}
+        {scope === 'library' && <LibraryTabContent />}
+        {scope === 'ingest' && <KnowledgeIngestView />}
+        {scope === 'health' && <DictHealthView />}
       </div>
     </div>
   );
