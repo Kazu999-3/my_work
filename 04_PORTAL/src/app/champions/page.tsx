@@ -13,27 +13,28 @@ const DictionaryTab = dynamic(() => import('./tabs/DictionaryTab'), {
 const LaneGuidesView = dynamic(() => import('../lane-guides/page'), {
   loading: () => <div className="flex justify-center py-20"><div className="w-8 h-8 border-4 border-sky-400 border-t-transparent rounded-full animate-spin"></div></div>
 });
-const KnowledgeAdminView = dynamic(() => import('../admin/knowledge/page'), {
-  loading: () => <div className="flex justify-center py-20"><div className="w-8 h-8 border-4 border-pink-400 border-t-transparent rounded-full animate-spin"></div></div>
-});
-const DictHealthView = dynamic(() => import('../admin/dict-health/page'), {
+const MaintenanceTab = dynamic(() => import('./tabs/MaintenanceTab'), {
   loading: () => <div className="flex justify-center py-20"><div className="w-8 h-8 border-4 border-amber-500 border-t-transparent rounded-full animate-spin"></div></div>
 });
 
-type KnowledgeScope = 'champions' | 'lane-guides' | 'knowledge' | 'health';
+type KnowledgeScope = 'champions' | 'lane-guides' | 'maintenance';
 
 const SCOPES: { id: KnowledgeScope; label: string; icon: any; color: string; activeBg: string }[] = [
   { id: 'champions', label: '👑 チャンピオン辞典', icon: BookOpen, color: 'text-[#c89b3c]', activeBg: 'bg-[#c89b3c]/15 text-[#c89b3c] border-[#c89b3c]/40' },
   { id: 'lane-guides', label: '🗺️ レーン・マクロ', icon: Map, color: 'text-sky-500', activeBg: 'bg-sky-500/15 text-sky-600 border-sky-500/40' },
-  { id: 'knowledge', label: '📝 ナレッジメモ', icon: Brain, color: 'text-pink-500', activeBg: 'bg-pink-500/15 text-pink-600 border-pink-500/40' },
-  { id: 'health', label: '⚠️ ヘルス診断・キュー', icon: Activity, color: 'text-amber-500', activeBg: 'bg-amber-500/15 text-amber-600 border-amber-500/40' },
+  { id: 'maintenance', label: '🛠️ データ整備 ＆ ヘルス', icon: Activity, color: 'text-amber-600', activeBg: 'bg-amber-500/15 text-amber-700 border-amber-500/40' },
 ];
 
 function ChampionsShell() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const initialScope = (searchParams.get('scope') as KnowledgeScope) || 'champions';
-  const [scope, setScope] = useState<KnowledgeScope>(initialScope);
+  const rawScope = searchParams.get('scope');
+  const normalizedScope: KnowledgeScope = 
+    rawScope === 'lane-guides' ? 'lane-guides' :
+    (rawScope === 'maintenance' || rawScope === 'knowledge' || rawScope === 'health') ? 'maintenance' : 
+    'champions';
+
+  const [scope, setScope] = useState<KnowledgeScope>(normalizedScope);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
   useEffect(() => {
@@ -102,15 +103,15 @@ function ChampionsShell() {
           </div>
         </div>
 
-        {/* スコープ切り替えタブ */}
-        <div className="flex items-center gap-1 p-1 bg-stone-100/90 rounded-xl overflow-x-auto scrollbar-none max-w-full">
+        {/* スコープ切り替えタブ（3タブに集約） */}
+        <div className="flex items-center gap-1.5 p-1 bg-stone-100/90 rounded-xl overflow-x-auto scrollbar-none max-w-full">
           {SCOPES.map((s) => {
             const isActive = scope === s.id;
             return (
               <button
                 key={s.id}
                 onClick={() => handleScopeChange(s.id)}
-                className={`px-3 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 select-none cursor-pointer ${
+                className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 select-none cursor-pointer ${
                   isActive
                     ? `bg-white shadow-xs ${s.color} border border-stone-200/80 font-black scale-102`
                     : 'text-stone-600 hover:text-stone-900 hover:bg-stone-200/60'
@@ -127,8 +128,7 @@ function ChampionsShell() {
       <div className="flex-1 min-w-0">
         {scope === 'champions' && <DictionaryTab isAdmin={true} />}
         {scope === 'lane-guides' && <LaneGuidesView />}
-        {scope === 'knowledge' && <KnowledgeAdminView />}
-        {scope === 'health' && <DictHealthView />}
+        {scope === 'maintenance' && <MaintenanceTab />}
       </div>
     </div>
   );
