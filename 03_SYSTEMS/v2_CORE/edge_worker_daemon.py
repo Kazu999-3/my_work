@@ -458,11 +458,15 @@ class EdgeWorkerDaemon:
                     try:
                         from v2_CORE.task_queue import SovereignQueue
                         SovereignQueue().enqueue("champion_db_bulk_update", {})
-                        error_message = f"{te}（残りのチャンピオンは自動的に再キューされ、次回のワーカー巡回で継続処理されます）"
+                        # 自動再キュー成功時は正常な分割継続のため completed 扱いとし、管理画面で要対応エラー扱いにならないようにする
+                        self.update_task_status(task_id, "completed", result={
+                            "success": True,
+                            "message": "タスク実行時間制限（3600秒）に達したため、残りの処理を自動的に次タスクへ引き継ぎました。"
+                        })
                     except Exception as re_err:
                         logger.error(f"❌ 再キューに失敗しました: {re_err}")
                         error_message = f"{te}（再キューにも失敗したため、手動で「一括更新を開始」を押し直してください）"
-                    self.update_task_status(task_id, "failed", error_message=error_message)
+                        self.update_task_status(task_id, "failed", error_message=error_message)
                 
             else:
                 raise NotImplementedError(f"未サポートのタスクタイプです: {task_type}")

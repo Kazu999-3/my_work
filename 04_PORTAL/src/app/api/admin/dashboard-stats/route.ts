@@ -139,7 +139,18 @@ export async function GET(req: NextRequest) {
       if (!latestByKey.has(key)) latestByKey.set(key, t); // 降順取得済みなので最初の1件が最新
     }
     const failedTaskData = Array.from(latestByKey.values())
-      .filter((t) => t.status === 'failed')
+      .filter((t) => {
+        if (t.status !== 'failed') return false;
+        // チャンピオン辞典一括更新のタイムアウト＆自動再キューは正常な分割処理のため要対応から除外
+        if (
+          t.task_type === 'champion_db_bulk_update' &&
+          typeof t.error_message === 'string' &&
+          (t.error_message.includes('自動的に再キュー') || t.error_message.includes('3600秒'))
+        ) {
+          return false;
+        }
+        return true;
+      })
       .slice(0, 10);
 
     // 辞典一括更新が内部でsuspended(API制限等で一時停止)している場合、上のデデュープ
