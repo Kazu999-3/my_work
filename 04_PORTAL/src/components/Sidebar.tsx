@@ -40,7 +40,7 @@ function MobileNavItem({ item, active, pending, onClick }: { item: MenuItem; act
 const MENU_ITEMS: MenuItem[] = [
   { id: 'guide', label: 'はじめに', icon: BookOpen, href: '/guide', color: 'text-amber-500', activeBg: 'bg-amber-500/15' },
   { id: 'balancer', label: 'チーム分け', icon: Swords, href: '/balancer', color: 'text-rose-500', activeBg: 'bg-rose-500/15' },
-  { id: 'player', label: 'プレイヤー検索', icon: Users, href: '/player', color: 'text-indigo-500', activeBg: 'bg-indigo-500/15' },
+  { id: 'player', label: 'プレイヤー名簿', icon: Users, href: '/player', color: 'text-indigo-500', activeBg: 'bg-indigo-500/15' },
   { id: 'leaderboard', label: '順位表', icon: Trophy, href: '/leaderboard', color: 'text-yellow-400', activeBg: 'bg-yellow-400/15' },
   { id: 'synergy', label: 'チームシナジー', icon: HeartHandshake, href: '/synergy', color: 'text-fuchsia-400', activeBg: 'bg-fuchsia-400/15' },
   { id: 'history', label: '試合履歴', icon: Swords, href: '/history', color: 'text-orange-400', activeBg: 'bg-orange-400/15' },
@@ -57,7 +57,7 @@ const ADMIN_ONLY_MENU_ITEMS: MenuItem[] = [
   // ── 📊 大会 ＆ コミュニティ ──
   { id: 'ktm-admin', label: 'KTM大会管理', icon: Shield, href: '/ktm-admin', color: 'text-indigo-400', activeBg: 'bg-indigo-400/15', section: '大会 ＆ コミュニティ' },
   { id: 'leaderboard', label: 'リーダーボード', icon: Trophy, href: '/leaderboard', color: 'text-yellow-500', activeBg: 'bg-yellow-500/15', section: '大会 ＆ コミュニティ' },
-  { id: 'player', label: 'プレイヤー分析', icon: Users, href: '/player', color: 'text-sky-500', activeBg: 'bg-sky-500/15', section: '大会 ＆ コミュニティ' },
+  { id: 'player', label: 'プレイヤー名簿', icon: Users, href: '/player', color: 'text-sky-500', activeBg: 'bg-sky-500/15', section: '大会 ＆ コミュニティ' },
   // ── ⚙️ システム ＆ 分析 ──
   { id: 'dashboard', label: 'システム運用', icon: LayoutDashboard, href: '/admin/dashboard', color: 'text-stone-800', activeBg: 'bg-black/10', section: 'システム ＆ 分析' },
   { id: 'analytics', label: 'note分析', icon: TrendingUp, href: '/admin/analytics', color: 'text-teal-500', activeBg: 'bg-teal-500/15', section: 'システム ＆ 分析' },
@@ -66,7 +66,7 @@ const ADMIN_ONLY_MENU_ITEMS: MenuItem[] = [
 const ADMIN_GENERAL_MENU_ITEMS: MenuItem[] = [
   { id: 'guide', label: 'はじめに', icon: BookOpen, href: '/guide', color: 'text-amber-500', activeBg: 'bg-amber-500/15' },
   { id: 'balancer', label: 'チーム分け', icon: Swords, href: '/balancer', color: 'text-rose-500', activeBg: 'bg-rose-500/15' },
-  { id: 'player', label: 'プレイヤー検索', icon: Users, href: '/player', color: 'text-indigo-500', activeBg: 'bg-indigo-500/15' },
+  { id: 'player', label: 'プレイヤー名簿', icon: Users, href: '/player', color: 'text-indigo-500', activeBg: 'bg-indigo-500/15' },
   { id: 'leaderboard', label: 'リーダーボード', icon: Trophy, href: '/leaderboard', color: 'text-yellow-400', activeBg: 'bg-yellow-400/15' },
   { id: 'synergy', label: 'チームシナジー', icon: HeartHandshake, href: '/synergy', color: 'text-fuchsia-400', activeBg: 'bg-fuchsia-400/15' },
   { id: 'history', label: '試合履歴', icon: Swords, href: '/history', color: 'text-orange-400', activeBg: 'bg-orange-400/15' },
@@ -79,14 +79,32 @@ export default function Sidebar() {
   useEffect(() => { setPendingHref(null); }, [pathname]);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [activeTab, setActiveTab] = useState<'admin' | 'general'>('admin');
+  const [isAdminUser, setIsAdminUser] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [showMobileMore, setShowMobileMore] = useState(false);
 
   useEffect(() => {
-    const saved = localStorage.getItem('sovereign_sidebar_collapsed');
-    if (saved === 'true') {
+    const savedCollapsed = localStorage.getItem('sovereign_sidebar_collapsed');
+    if (savedCollapsed === 'true') {
       setIsCollapsed(true);
     }
+    const savedTab = localStorage.getItem('sovereign_sidebar_tab') as 'admin' | 'general';
+    if (savedTab) {
+      setActiveTab(savedTab);
+    }
+
+    // 認証状態の確認
+    fetch("/api/auth/verify", { method: "POST", credentials: "include", headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) })
+      .then((res) => res.json())
+      .then((data) => {
+        const authed = !!data.valid;
+        setIsAdminUser(authed);
+        if (authed && !savedTab) {
+          setActiveTab('admin');
+        }
+      })
+      .catch(() => setIsAdminUser(false));
+
     setMounted(true);
   }, []);
 
@@ -96,9 +114,15 @@ export default function Sidebar() {
     localStorage.setItem('sovereign_sidebar_collapsed', String(nextState));
   };
 
-  const isAdminGatedPage = pathname.startsWith('/admin') || ['/ktm-admin', '/champions', '/coach', '/lane-guides'].some(p => pathname.startsWith(p));
+  const handleTabChange = (tab: 'admin' | 'general') => {
+    setActiveTab(tab);
+    localStorage.setItem('sovereign_sidebar_tab', tab);
+  };
 
-  const items = isAdminGatedPage
+  const isAdminGatedPage = pathname.startsWith('/admin') || ['/ktm-admin', '/champions', '/coach', '/lane-guides'].some(p => pathname.startsWith(p));
+  const showAdminToggle = isAdminUser || isAdminGatedPage;
+
+  const items = showAdminToggle
     ? (activeTab === 'admin' ? ADMIN_ONLY_MENU_ITEMS : ADMIN_GENERAL_MENU_ITEMS)
     : MENU_ITEMS;
 
@@ -125,19 +149,19 @@ export default function Sidebar() {
           </button>
         </div>
 
-        {isAdminGatedPage && !isCollapsed && (
+        {showAdminToggle && !isCollapsed && (
           <div className="p-3 border-b border-stone-200/80">
             <div className="flex bg-stone-200/60 p-1 rounded-xl">
               <button
-                onClick={() => setActiveTab('admin')}
-                className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition ${activeTab === 'admin' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-600 hover:text-stone-900'
+                onClick={() => handleTabChange('admin')}
+                className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition cursor-pointer ${activeTab === 'admin' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-600 hover:text-stone-900'
                   }`}
               >
                 管理者
               </button>
               <button
-                onClick={() => setActiveTab('general')}
-                className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition ${activeTab === 'general' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-600 hover:text-stone-900'
+                onClick={() => handleTabChange('general')}
+                className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition cursor-pointer ${activeTab === 'general' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-600 hover:text-stone-900'
                   }`}
               >
                 一般
@@ -213,19 +237,19 @@ export default function Sidebar() {
             </div>
 
             {/* スマホ用 管理者 / 一般 切り替えタブ */}
-            {(isAdminGatedPage || activeTab === 'admin' || activeTab === 'general') && (
+            {showAdminToggle && (
               <div className="flex bg-stone-200/60 p-1 rounded-xl mb-4">
                 <button
-                  onClick={() => setActiveTab('admin')}
-                  className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition ${
+                  onClick={() => handleTabChange('admin')}
+                  className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition cursor-pointer ${
                     activeTab === 'admin' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-600 hover:text-stone-900'
                   }`}
                 >
                   管理者
                 </button>
                 <button
-                  onClick={() => setActiveTab('general')}
-                  className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition ${
+                  onClick={() => handleTabChange('general')}
+                  className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition cursor-pointer ${
                     activeTab === 'general' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-600 hover:text-stone-900'
                   }`}
                 >
