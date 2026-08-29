@@ -46,12 +46,15 @@ export default function PlayerIndexPage() {
         (statusFilter === "ACTIVE" && p.is_active) ||
         (statusFilter === "INACTIVE" && !p.is_active);
 
-      const prefs = p.role_preferences || { primary: "ALL" };
-      const mainRole = p.main_role || prefs.primary || "ALL";
+      const prefs = p.role_preferences || {};
+      const primary = (prefs.primary || p.preferred_lane || p.main_role || "").toUpperCase();
+      const secondary = (prefs.secondary || "").toUpperCase();
+      
       const matchRole =
         roleFilter === "ALL" ||
-        mainRole.toUpperCase() === roleFilter.toUpperCase() ||
-        (p.preferred_lane && p.preferred_lane.toUpperCase() === roleFilter.toUpperCase());
+        primary === roleFilter.toUpperCase() ||
+        secondary === roleFilter.toUpperCase() ||
+        (roleFilter === "ALL" && !primary);
 
       return matchSearch && matchStatus && matchRole;
     });
@@ -135,9 +138,13 @@ export default function PlayerIndexPage() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {filteredPlayers.map((player) => {
-            const prefs = player.role_preferences || { primary: "ALL" };
-            const mainRole = (player.main_role || prefs.primary || "ALL").toUpperCase();
-            const RoleIconComp = ROLE_ICONS[mainRole];
+            const prefs = player.role_preferences || {};
+            const mainRole = (prefs.primary || player.preferred_lane || player.main_role || "").toUpperCase();
+            const subRole = (prefs.secondary || "").toUpperCase();
+            const RoleIconComp = ROLE_ICONS[mainRole] || (roleFilter !== "ALL" ? ROLE_ICONS[roleFilter] : null);
+
+            const roleKey = roleFilter !== "ALL" ? `mmr_${roleFilter.toLowerCase()}` : null;
+            const specificMmr = roleKey ? player[roleKey] : null;
             const avgMmr = Math.round(
               ((player.mmr_top || 1200) +
                 (player.mmr_jg || 1200) +
@@ -146,6 +153,7 @@ export default function PlayerIndexPage() {
                 (player.mmr_sup || 1200)) /
                 5
             );
+            const displayMmr = specificMmr || player.mmr || avgMmr;
 
             return (
               <Link href={`/player/${player.name}`} key={player.id}>
@@ -172,8 +180,8 @@ export default function PlayerIndexPage() {
                           {player.name}
                         </h3>
                         {RoleIconComp && (
-                          <span title={`メイン希望: ${mainRole}`}>
-                            <RoleIconComp className="w-3.5 h-3.5 text-stone-400 shrink-0" />
+                          <span title={mainRole ? `希望: ${mainRole}${subRole ? ` / ${subRole}` : ''}` : 'ロール未設定'}>
+                            <RoleIconComp className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
                           </span>
                         )}
                       </div>
@@ -188,7 +196,7 @@ export default function PlayerIndexPage() {
                     </div>
                     <div className="flex items-center gap-1 font-mono font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md">
                       <Activity className="w-3.5 h-3.5" />
-                      <span>{avgMmr} MMR</span>
+                      <span>{displayMmr} MMR{roleFilter !== "ALL" && specificMmr ? ` (${roleFilter})` : ''}</span>
                     </div>
                   </div>
                 </div>
