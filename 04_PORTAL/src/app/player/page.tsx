@@ -47,14 +47,13 @@ export default function PlayerIndexPage() {
         (statusFilter === "INACTIVE" && !p.is_active);
 
       const prefs = p.role_preferences || {};
-      const primary = (prefs.primary || p.preferred_lane || p.main_role || "").toUpperCase();
+      const primary = (prefs.primary || "").toUpperCase();
       const secondary = (prefs.secondary || "").toUpperCase();
       
       const matchRole =
         roleFilter === "ALL" ||
         primary === roleFilter.toUpperCase() ||
-        secondary === roleFilter.toUpperCase() ||
-        (roleFilter === "ALL" && !primary);
+        secondary === roleFilter.toUpperCase();
 
       return matchSearch && matchStatus && matchRole;
     });
@@ -139,7 +138,7 @@ export default function PlayerIndexPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {filteredPlayers.map((player) => {
             const prefs = player.role_preferences || {};
-            const mainRole = (prefs.primary || player.preferred_lane || player.main_role || "").toUpperCase();
+            const mainRole = (prefs.primary || "").toUpperCase();
             const subRole = (prefs.secondary || "").toUpperCase();
             const RoleIconComp = ROLE_ICONS[mainRole] || (roleFilter !== "ALL" ? ROLE_ICONS[roleFilter] : null);
 

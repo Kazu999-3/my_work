@@ -10,7 +10,7 @@ export async function GET() {
   try {
     const { data, error } = await supabase
       .from('ktm_players')
-      .select('id, name, ign, discord_id, is_active, mmr, mmr_top, mmr_jg, mmr_mid, mmr_adc, mmr_sup, highest_rank, role_preferences, preferred_lane')
+      .select('id, name, ign, discord_id, is_active, mmr, mmr_top, mmr_jg, mmr_mid, mmr_adc, mmr_sup, highest_rank, role_preferences')
       .order('is_active', { ascending: false })
       .order('name', { ascending: true });
     if (error) throw error;
