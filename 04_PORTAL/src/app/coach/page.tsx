@@ -14,7 +14,6 @@ import FocusStickyBar from '../../components/coach/FocusStickyBar';
 import JgMatchupPredictor from '../../components/coach/JgMatchupPredictor';
 import JgSkillMasteryChecklist from '../../components/coach/JgSkillMasteryChecklist';
 import PlayerStyleRadarCard from '../../components/coach/PlayerStyleRadarCard';
-import WinConditionTab from './WinConditionTab';
 import MatchupSmartCard from './MatchupSmartCard';
 
 // ============================
@@ -1714,11 +1713,18 @@ export default function CoachPage() {
                 enemyChampion={sharedEnemyChampion}
                 onSelectChampion={setSharedChampion}
               />
-              <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-xs space-y-3">
-                <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5">
-                  <span>⚡</span> 事前分析 (対面対策ナレッジ)
-                </h3>
-                <PreGameTab champion={sharedChampion} enemyChampion={sharedEnemyChampion} triggerSignal={dailyCheckTrigger} />
+              <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-xs">
+                <Collapsible
+                  title={
+                    <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5">
+                      <span>⚡</span> AI対面事前分析 (ナレッジ詳細を展開)
+                    </h3>
+                  }
+                >
+                  <div className="pt-3">
+                    <PreGameTab champion={sharedChampion} enemyChampion={sharedEnemyChampion} triggerSignal={dailyCheckTrigger} />
+                  </div>
+                </Collapsible>
               </div>
             </div>
 
@@ -1745,17 +1751,11 @@ export default function CoachPage() {
               </div>
             </div>
 
-            {/* 右側: 勝ち筋診断 ＆ 5v5シミュレーター */}
+            {/* 右側: 統合 チーム構成 ＆ 勝ち筋シミュレーター */}
             <div className="lg:col-span-5 xl:col-span-4 flex flex-col gap-5 lg:sticky lg:top-4">
               <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-xs space-y-3">
                 <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5">
-                  <span>🏰</span> 構成勝ち筋診断 (Win Condition)
-                </h3>
-                <WinConditionTab />
-              </div>
-              <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-xs space-y-3">
-                <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5">
-                  <span>⚔️</span> 5v5 チーム構成シミュレーター
+                  <span>⚔️</span> チーム構成 ＆ 勝ち筋シミュレーター
                 </h3>
                 <FiveVFiveSimTab liveRoster={liveRoster} />
               </div>
@@ -1809,11 +1809,18 @@ export default function CoachPage() {
                 </div>
               </div>
 
-              <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-xs space-y-3">
-                <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5">
-                  <span>🗓️</span> 曜日×時間帯 勝率ヒートマップ
-                </h3>
-                <TimingHeatmapTab />
+              <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-xs">
+                <Collapsible
+                  title={
+                    <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5">
+                      <span>🗓️</span> 曜日×時間帯 勝率ヒートマップ
+                    </h3>
+                  }
+                >
+                  <div className="pt-3">
+                    <TimingHeatmapTab />
+                  </div>
+                </Collapsible>
               </div>
             </div>
           </div>
