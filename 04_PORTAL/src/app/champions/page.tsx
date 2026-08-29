@@ -79,35 +79,41 @@ function ChampionsShell() {
   }
 
   return (
-    <div className="min-h-screen p-3 md:p-6 lg:p-8 max-w-[1760px] w-full mx-auto flex flex-col gap-5">
+    <div className="min-h-screen p-2 sm:p-4 md:p-6 max-w-[1760px] w-full mx-auto flex flex-col gap-4">
       {/* 統合ナレッジヘッダー ＆ スコープ切り替えバー */}
       <motion.header 
-        initial={{ y: -10, opacity: 0 }} 
+        initial={{ y: -6, opacity: 0 }} 
         animate={{ y: 0, opacity: 1 }} 
-        transition={{ duration: 0.3 }}
-        className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-3 border-b border-stone-200"
+        transition={{ duration: 0.2 }}
+        className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 p-3 sm:p-4 bg-white/90 border border-stone-200/90 rounded-2xl shadow-xs backdrop-blur-sm"
       >
-        <div>
-          <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight flex items-center gap-2.5">
-            <span className="text-gradient text-gradient-gold">攻略ナレッジハブ</span>
-          </h1>
-          <p className="text-xs text-stone-500 font-medium mt-0.5">
-            チャンピオン・レーン戦略・AI知見・ファクトチェックを一元管理する統合ワークスペース
-          </p>
+        <div className="flex items-center gap-3 pl-8 md:pl-0">
+          <div className="text-2xl sm:text-3xl p-1.5 bg-amber-50 rounded-xl border border-amber-200/80 shrink-0">📖</div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-lg sm:text-xl font-black tracking-tight text-stone-900">攻略ナレッジハブ</h1>
+              <span className="px-2 py-0.5 rounded-full bg-amber-100 border border-amber-300 text-amber-900 text-[10px] font-extrabold">
+                統合ワークスペース
+              </span>
+            </div>
+            <p className="text-[11px] text-stone-500 font-medium hidden sm:block">
+              チャンピオン辞典・レーン戦略・AI知見・ヘルス診断を一元管理
+            </p>
+          </div>
         </div>
 
         {/* スコープ切り替えタブ */}
-        <div className="flex items-center gap-1.5 p-1 bg-stone-200/60 rounded-2xl overflow-x-auto max-w-full">
+        <div className="flex items-center gap-1 p-1 bg-stone-100/90 rounded-xl overflow-x-auto scrollbar-none max-w-full">
           {SCOPES.map((s) => {
             const isActive = scope === s.id;
             return (
               <button
                 key={s.id}
                 onClick={() => handleScopeChange(s.id)}
-                className={`px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 select-none ${
+                className={`px-3 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 select-none cursor-pointer ${
                   isActive
-                    ? `bg-white shadow-sm ${s.color} border border-stone-200/60 font-black`
-                    : 'text-stone-600 hover:text-stone-900 hover:bg-white/40'
+                    ? `bg-white shadow-xs ${s.color} border border-stone-200/80 font-black scale-102`
+                    : 'text-stone-600 hover:text-stone-900 hover:bg-stone-200/60'
                 }`}
               >
                 <span>{s.label}</span>
@@ -118,7 +124,7 @@ function ChampionsShell() {
       </motion.header>
 
       {/* スコープに応じたゼロ遷移ビュー */}
-      <div className="flex-1">
+      <div className="flex-1 min-w-0">
         {scope === 'champions' && <DictionaryTab isAdmin={true} />}
         {scope === 'lane-guides' && <LaneGuidesView />}
         {scope === 'knowledge' && <KnowledgeAdminView />}

@@ -339,48 +339,9 @@ function KnowledgeBaseContent() {
         )}
       </AnimatePresence>
 
-      <div className="max-w-[1600px] w-full mx-auto px-4 md:px-8 pt-6 md:pt-10">
-        {/* ヘッダー */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10 border-b border-gray-200 pb-8">
-          <div className="space-y-1">
-            <h1 className="text-3xl font-extrabold tracking-tight text-gray-900 flex items-center gap-2">
-              <Brain className="text-pink-500" />
-              Sovereign Knowledge
-            </h1>
-            <p className="text-xs text-gray-500">
-              インテリジェンスとLoL戦術を蓄積する自律型要約ナレッジベース
-            </p>
-          </div>
-          <div className="flex items-center gap-3 shrink-0">
-            <Link
-              href="/coach"
-              className="text-xs font-bold px-4 py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl shadow-lg transition-all flex items-center gap-1.5 hover:opacity-90"
-            >
-              <Sparkles size={14} />
-              コーチ・深掘りへ移動
-            </Link>
-          </div>
-        </div>
-
-        {/* 📊 辞典ヘルスダッシュボードへのショートカットバナー */}
-        <Link
-          href="/admin/dict-health"
-          className="block bg-gradient-to-r from-amber-500/10 via-amber-400/5 to-transparent border border-amber-300/80 rounded-2xl p-4 mb-6 shadow-sm hover:shadow-md transition group"
-        >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Activity className="w-6 h-6 text-amber-600" />
-              <div>
-                <div className="text-sm font-extrabold text-amber-900">📊 辞典 ＆ ナレッジ統合ヘルスダッシュボード</div>
-                <div className="text-[11px] text-stone-500">ファクトチェック・データ棚卸し・変更履歴・鮮度レビューをワンストップで管理</div>
-              </div>
-            </div>
-            <span className="text-xs font-bold bg-amber-100 text-amber-800 px-3 py-1.5 rounded-xl group-hover:bg-amber-200 transition">開く ➔</span>
-          </div>
-        </Link>
-
+      <div className="w-full space-y-4">
         {/* タブ切り替え */}
-        <div className="flex gap-2 border-b border-gray-200 pb-4 mb-8 overflow-x-auto items-center">
+        <div className="flex gap-2 border-b border-stone-200 pb-3 mb-4 overflow-x-auto items-center scrollbar-none">
           {[
             { id: 'knowledge', label: '📖 ナレッジ一覧', icon: BookOpen },
             { id: 'discord', label: '💬 Discord AIインポート', icon: MessageSquare },

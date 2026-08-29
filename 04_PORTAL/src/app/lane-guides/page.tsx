@@ -189,49 +189,22 @@ export default function LaneGuidesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground p-4 md:p-8 lg:p-10">
-      <div className="max-w-[1600px] w-full mx-auto space-y-6">
-        {/* トースト通知 */}
-        {toastMessage && (
-          <div className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-2xl shadow-xl border text-sm font-bold animate-fade-in ${
-            toastMessage.type === 'success' ? 'bg-emerald-50 border-emerald-300 text-emerald-900' : 'bg-rose-50 border-rose-300 text-rose-900'
-          }`}>
-            {toastMessage.text}
-          </div>
-        )}
-
-        {/* ヘッダー */}
-        <div className="border-b border-black/10 pb-6 flex items-start sm:items-center justify-between gap-4 flex-col sm:flex-row">
-          <div>
-            <div className="flex items-center gap-3">
-              <span className="p-2.5 bg-amber-500/10 text-amber-600 rounded-2xl border border-amber-500/20 shadow-2xs">
-                <MapIcon className="h-7 w-7" />
-              </span>
-              <div>
-                <h1 className="text-2xl md:text-3xl font-black text-stone-900 tracking-tight">
-                  レーン別ガイド ＆ マクロ戦術バイブル
-                </h1>
-                <p className="text-stone-500 mt-1 text-xs md:text-sm">
-                  攻略ライブラリから統合された<strong className="text-amber-700 font-bold">各ロールの普遍的マクロ・立ち回り</strong>を閲覧・AI清書できます。
-                </p>
-              </div>
-            </div>
-          </div>
-          <Link
-            href="/champions"
-            className="px-4 py-2.5 bg-white hover:bg-stone-50 text-stone-800 rounded-2xl text-xs font-black transition flex items-center gap-2 shrink-0 border border-stone-200 shadow-2xs"
-          >
-            <BookHeart size={15} className="text-[#c89b3c]" />
-            <span>📖 チャンピオン辞典へ移動</span>
-          </Link>
+    <div className="w-full space-y-4">
+      {/* トースト通知 */}
+      {toastMessage && (
+        <div className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-2xl shadow-xl border text-sm font-bold animate-fade-in ${
+          toastMessage.type === 'success' ? 'bg-emerald-50 border-emerald-300 text-emerald-900' : 'bg-rose-50 border-rose-300 text-rose-900'
+        }`}>
+          {toastMessage.text}
         </div>
+      )}
 
-        {guides.length === 0 ? (
-          <EmptyState
-            title="まだガイドが作成されていません"
-            description="管理者が「レーン別ガイドへ統合」を実行すると、ここに各レーンのガイドが並びます。"
-          />
-        ) : (
+      {guides.length === 0 ? (
+        <EmptyState
+          title="まだガイドが作成されていません"
+          description="管理者が「レーン別ガイドへ統合」を実行すると、ここに各レーンのガイドが並びます。"
+        />
+      ) : (
           <>
             {/* レーン切り替えタブバー ＆ AI清書ボタン */}
             <div className="flex gap-3 flex-wrap items-center justify-between bg-white p-2.5 rounded-2xl border border-stone-200/90 shadow-2xs">
@@ -637,7 +610,6 @@ export default function LaneGuidesPage() {
             </div>
           </div>
         )}
-      </div>
     </div>
   );
 }

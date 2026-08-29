@@ -201,12 +201,7 @@ function DictHealthDashboardContent() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f7f5f0] text-gray-900 font-sans pb-24 antialiased selection:bg-amber-500/20">
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=Noto+Sans+JP:wght@400;600;700&display=swap');
-        * { font-family: 'Outfit', 'Noto Sans JP', sans-serif; }
-      `}</style>
-
+    <div className="w-full space-y-5 antialiased">
       {/* フィードバック通知 */}
       <AnimatePresence>
         {message && (
@@ -225,7 +220,7 @@ function DictHealthDashboardContent() {
         )}
       </AnimatePresence>
 
-      <div className="max-w-6xl mx-auto px-3 sm:px-4 pt-4 sm:pt-8 space-y-5 sm:space-y-8">
+      <div className="w-full space-y-5">
         {/* 3タブの使い方ガイド（折りたたみアコーディオン） */}
         <div className="bg-gradient-to-br from-stone-50 to-amber-50/30 rounded-2xl border border-stone-200 p-3.5 sm:p-5 shadow-xs">
           <button
