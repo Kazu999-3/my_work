@@ -13,13 +13,16 @@ import {
   ArrowRight, 
   CheckCircle2, 
   Search, 
-  Users
+  Users,
+  ZoomIn,
+  X
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 export default function GuidePage() {
   const router = useRouter();
   const [searchName, setSearchName] = useState('');
+  const [modalImage, setModalImage] = useState<{ src: string; title: string } | null>(null);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -427,22 +430,31 @@ export default function GuidePage() {
                 </p>
 
                 {/* 折りたたみ使い方例 */}
-                <details className="mt-2 text-xs bg-black/40 rounded-xl border border-white/10 p-2.5 group/details">
+                <details className="mt-2 text-xs bg-black/40 rounded-xl border border-white/10 p-3 group/details">
                   <summary className="font-bold text-amber-400 cursor-pointer select-none flex items-center justify-between">
                     <span>📸 使い方・画面例を見る</span>
                     <span className="text-[10px] text-stone-400 group-open/details:rotate-180 transition-transform">▼</span>
                   </summary>
                   <div className="mt-2.5 pt-2.5 border-t border-white/10 space-y-2.5 text-[11px] text-stone-300">
-                    <img
-                      src="/guide/casino_preview.png"
-                      alt="勝敗予想とKTMショップ画面例"
-                      className="w-full rounded-xl border border-white/20 shadow-md object-cover"
-                    />
-                    <div className="p-2 rounded-lg bg-white/5 border border-amber-500/20">
+                    <div 
+                      onClick={() => setModalImage({ src: '/guide/casino_preview.png', title: '勝敗予想 ＆ KTMショップ 画面例' })}
+                      className="relative group/img cursor-zoom-in rounded-2xl overflow-hidden border border-white/20 shadow-md"
+                    >
+                      <img
+                        src="/guide/casino_preview.png"
+                        alt="勝敗予想とKTMショップ画面例"
+                        className="w-full object-cover group-hover/img:scale-102 transition-transform duration-300"
+                      />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center gap-1.5 text-white font-black text-xs">
+                        <ZoomIn size={16} />
+                        <span>クリックで拡大</span>
+                      </div>
+                    </div>
+                    <div className="p-2.5 rounded-xl bg-white/5 border border-amber-500/20">
                       <div className="font-bold text-amber-300 mb-0.5">① 勝敗予想カード</div>
                       <p>「🟦 BLUE勝利 (x1.8)」または「🟥 RED勝利 (x2.1)」をワンタップして予想完了！</p>
                     </div>
-                    <div className="p-2 rounded-lg bg-white/5 border border-indigo-500/20">
+                    <div className="p-2.5 rounded-xl bg-white/5 border border-indigo-500/20">
                       <div className="font-bold text-indigo-300 mb-0.5">② 特権ショップ</div>
                       <p>「🛡️ チャンピオンプロテクト権」や「🚫 全員BAN禁止権」をコインで即時交換！</p>
                     </div>
@@ -482,11 +494,20 @@ export default function GuidePage() {
                     <span className="text-[10px] text-stone-400 group-open/details:rotate-180 transition-transform">▼</span>
                   </summary>
                   <div className="mt-2.5 pt-2.5 border-t border-white/10 space-y-2.5 text-[11px] text-stone-300">
-                    <img
-                      src="/guide/balancer_preview.png"
-                      alt="チーム分けバランサー画面例"
-                      className="w-full rounded-2xl border border-white/20 shadow-md object-cover"
-                    />
+                    <div 
+                      onClick={() => setModalImage({ src: '/guide/balancer_preview.png', title: 'チーム分け (KTM Balancer) 画面例' })}
+                      className="relative group/img cursor-zoom-in rounded-2xl overflow-hidden border border-white/20 shadow-md"
+                    >
+                      <img
+                        src="/guide/balancer_preview.png"
+                        alt="チーム分けバランサー画面例"
+                        className="w-full object-cover group-hover/img:scale-102 transition-transform duration-300"
+                      />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center gap-1.5 text-white font-black text-xs">
+                        <ZoomIn size={16} />
+                        <span>クリックで拡大</span>
+                      </div>
+                    </div>
                     <div className="p-2.5 rounded-xl bg-white/5 border border-rose-500/20">
                       <div className="font-bold text-rose-300 mb-0.5">① 10人選択 ➔ 即チーム分け</div>
                       <p>参加者10人にチェックを入れるだけで、AIが最も実力差が小さくなるチームを自動生成！</p>
@@ -531,11 +552,20 @@ export default function GuidePage() {
                     <span className="text-[10px] text-stone-400 group-open/details:rotate-180 transition-transform">▼</span>
                   </summary>
                   <div className="mt-2.5 pt-2.5 border-t border-white/10 space-y-2.5 text-[11px] text-stone-300">
-                    <img
-                      src="/guide/player_preview.png"
-                      alt="プレイヤー名簿画面例"
-                      className="w-full rounded-2xl border border-white/20 shadow-md object-cover"
-                    />
+                    <div 
+                      onClick={() => setModalImage({ src: '/guide/player_preview.png', title: 'プレイヤー名簿 ＆ カルテ 画面例' })}
+                      className="relative group/img cursor-zoom-in rounded-2xl overflow-hidden border border-white/20 shadow-md"
+                    >
+                      <img
+                        src="/guide/player_preview.png"
+                        alt="プレイヤー名簿画面例"
+                        className="w-full object-cover group-hover/img:scale-102 transition-transform duration-300"
+                      />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center gap-1.5 text-white font-black text-xs">
+                        <ZoomIn size={16} />
+                        <span>クリックで拡大</span>
+                      </div>
+                    </div>
                     <div className="p-2.5 rounded-xl bg-white/5 border border-indigo-500/20">
                       <div className="font-bold text-indigo-300 mb-0.5">① レーダーチャート＆カルテ</div>
                       <p>TOP/JG/MID/ADC/SUPそれぞれの実力レート（MMR）と勝率推移が一目で丸わかり！</p>
@@ -576,11 +606,20 @@ export default function GuidePage() {
                     <span className="text-[10px] text-stone-400 group-open/details:rotate-180 transition-transform">▼</span>
                   </summary>
                   <div className="mt-2.5 pt-2.5 border-t border-white/10 space-y-2.5 text-[11px] text-stone-300">
-                    <img
-                      src="/guide/leaderboard_preview.png"
-                      alt="リーダーボード順位表画面例"
-                      className="w-full rounded-2xl border border-white/20 shadow-md object-cover"
-                    />
+                    <div 
+                      onClick={() => setModalImage({ src: '/guide/leaderboard_preview.png', title: 'リーダーボード 順位表 画面例' })}
+                      className="relative group/img cursor-zoom-in rounded-2xl overflow-hidden border border-white/20 shadow-md"
+                    >
+                      <img
+                        src="/guide/leaderboard_preview.png"
+                        alt="リーダーボード順位表画面例"
+                        className="w-full object-cover group-hover/img:scale-102 transition-transform duration-300"
+                      />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center gap-1.5 text-white font-black text-xs">
+                        <ZoomIn size={16} />
+                        <span>クリックで拡大</span>
+                      </div>
+                    </div>
                     <div className="p-2.5 rounded-xl bg-white/5 border border-yellow-500/20">
                       <div className="font-bold text-yellow-300 mb-0.5">① サーバー内最強ランキング</div>
                       <p>全メンバーのカスタム成績に基づき、1位〜最下位までの総合順位をリアルタイム集計！</p>
@@ -621,11 +660,20 @@ export default function GuidePage() {
                     <span className="text-[10px] text-stone-400 group-open/details:rotate-180 transition-transform">▼</span>
                   </summary>
                   <div className="mt-2.5 pt-2.5 border-t border-white/10 space-y-2.5 text-[11px] text-stone-300">
-                    <img
-                      src="/guide/history_preview.png"
-                      alt="試合履歴・対戦ログ画面例"
-                      className="w-full rounded-2xl border border-white/20 shadow-md object-cover"
-                    />
+                    <div 
+                      onClick={() => setModalImage({ src: '/guide/history_preview.png', title: '試合履歴 ＆ 対戦ログ 画面例' })}
+                      className="relative group/img cursor-zoom-in rounded-2xl overflow-hidden border border-white/20 shadow-md"
+                    >
+                      <img
+                        src="/guide/history_preview.png"
+                        alt="試合履歴・対戦ログ画面例"
+                        className="w-full object-cover group-hover/img:scale-102 transition-transform duration-300"
+                      />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center gap-1.5 text-white font-black text-xs">
+                        <ZoomIn size={16} />
+                        <span>クリックで拡大</span>
+                      </div>
+                    </div>
                     <div className="p-2.5 rounded-xl bg-white/5 border border-orange-500/20">
                       <div className="font-bold text-orange-300 mb-0.5">① 10人全員のスコアボード</div>
                       <p>各レーンの対面対決（KDA・ダメージ・獲得MMR）が綺麗に並んだ試合ログを閲覧可能！</p>
@@ -666,11 +714,20 @@ export default function GuidePage() {
                     <span className="text-[10px] text-stone-400 group-open/details:rotate-180 transition-transform">▼</span>
                   </summary>
                   <div className="mt-2.5 pt-2.5 border-t border-white/10 space-y-2.5 text-[11px] text-stone-300">
-                    <img
-                      src="/guide/synergy_preview.png"
-                      alt="チームシナジー相性画面例"
-                      className="w-full rounded-2xl border border-white/20 shadow-md object-cover"
-                    />
+                    <div 
+                      onClick={() => setModalImage({ src: '/guide/synergy_preview.png', title: 'チームシナジー ＆ 相性診断 画面例' })}
+                      className="relative group/img cursor-zoom-in rounded-2xl overflow-hidden border border-white/20 shadow-md"
+                    >
+                      <img
+                        src="/guide/synergy_preview.png"
+                        alt="チームシナジー相性画面例"
+                        className="w-full object-cover group-hover/img:scale-102 transition-transform duration-300"
+                      />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center gap-1.5 text-white font-black text-xs">
+                        <ZoomIn size={16} />
+                        <span>クリックで拡大</span>
+                      </div>
+                    </div>
                     <div className="p-2.5 rounded-xl bg-white/5 border border-fuchsia-500/20">
                       <div className="font-bold text-fuchsia-300 mb-0.5">① 最強DUO・コンビ発掘</div>
                       <p>勝率70%超えの相性抜群ペアや、逆に勝率が振るわない組み合わせをデータで分析！</p>
@@ -751,6 +808,44 @@ export default function GuidePage() {
         </section>
 
       </div>
+
+      {/* 🔍 画像拡大ライトボックスモーダル */}
+      {modalImage && (
+        <div 
+          onClick={() => setModalImage(null)}
+          className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex flex-col items-center justify-center p-4 md:p-8 animate-in fade-in duration-200 cursor-zoom-out select-none"
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()} 
+            className="relative max-w-5xl w-full bg-stone-900 rounded-3xl border border-white/20 shadow-2xl overflow-hidden cursor-default flex flex-col"
+          >
+            {/* モーダルヘッダー */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-stone-950/80">
+              <div className="flex items-center gap-2 text-sm font-black text-white">
+                <span>📸</span>
+                <span>{modalImage.title}</span>
+              </div>
+              <button
+                onClick={() => setModalImage(null)}
+                className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-stone-300 hover:text-white transition-colors cursor-pointer"
+                title="閉じる"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* 拡大画像本体 */}
+            <div className="p-3 md:p-6 bg-stone-950 flex items-center justify-center max-h-[78vh] overflow-auto">
+              <img
+                src={modalImage.src}
+                alt={modalImage.title}
+                className="w-full h-auto max-h-[74vh] object-contain rounded-xl shadow-lg border border-white/10"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
