@@ -90,7 +90,7 @@ const SHOP_ITEMS = [
 
 export default function CasinoPage() {
   const { user, loginWithDiscord, logout, refreshUser } = useCurrentUser();
-  const [activeTab, setActiveTab] = useState<'bet' | 'shop' | 'ranking'>('bet');
+  const [activeTab, setActiveTab] = useState<'bet' | 'shop'>('bet');
   const [ranking, setRanking] = useState<RankingPlayer[]>([]);
   const [activeMatch, setActiveMatch] = useState<any | null>(null);
   const [betTeam, setBetTeam] = useState<'BLUE' | 'RED'>('BLUE');
@@ -251,12 +251,11 @@ export default function CasinoPage() {
 
       <div className="max-w-[1200px] w-full mx-auto px-4 md:px-8 py-8 space-y-6">
         
-        {/* 3大機能タブナビゲーション */}
-        <div className="flex items-center justify-center gap-2 p-1.5 rounded-2xl bg-stone-900 text-white max-w-lg mx-auto shadow-lg overflow-x-auto">
+        {/* 2大機能タブナビゲーション */}
+        <div className="flex items-center justify-center gap-2 p-1.5 rounded-2xl bg-stone-900 text-white max-w-sm mx-auto shadow-lg">
           {[
-            { id: 'bet', label: '🎯 勝敗予想', desc: '試合予想' },
+            { id: 'bet', label: '🎯 勝敗予想', desc: '試合予想 ＆ 長者番付' },
             { id: 'shop', label: '🛒 KTMショップ', desc: '特権交換' },
-            { id: 'ranking', label: '🏆 長者番付', desc: 'コイン順位' },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -648,59 +647,6 @@ export default function CasinoPage() {
                     >
                       交換する
                     </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* タブ3: 🏆 長者番付 (ランキング) */}
-        {activeTab === 'ranking' && (
-          <div className="bg-white rounded-3xl p-6 md:p-8 border border-black/10 shadow-sm space-y-6 max-w-3xl mx-auto">
-            <div className="flex items-center justify-between border-b border-stone-100 pb-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold">
-                  <Trophy size={20} />
-                </div>
-                <div>
-                  <h3 className="text-lg font-black text-stone-900">KTM 長者番付 TOP 10</h3>
-                  <p className="text-xs text-stone-500">カスタムベットで最もコインを稼いだ富豪たち！</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-2.5">
-              {ranking.map((p, idx) => (
-                <div
-                  key={p.name}
-                  className={`flex items-center justify-between p-3.5 rounded-2xl border transition-all ${
-                    idx === 0
-                      ? 'bg-amber-50/80 border-amber-300 font-bold shadow-xs'
-                      : idx === 1
-                      ? 'bg-stone-50 border-stone-300 font-bold'
-                      : idx === 2
-                      ? 'bg-amber-900/5 border-amber-700/20 font-bold'
-                      : 'bg-white border-black/5 hover:bg-stone-50'
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="w-6 text-center text-sm font-black font-mono">
-                      {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `${idx + 1}`}
-                    </span>
-                    <div>
-                      <div className="text-xs font-black text-stone-900 flex items-center gap-1.5">
-                        {p.name}
-                        <span className="text-[9px] px-1.5 py-0.2 rounded bg-black/5 text-stone-600 font-mono">
-                          {p.rank}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-xs font-black text-amber-600 font-mono">
-                      🪙 {(p.coins ?? 1000).toLocaleString()}
-                    </span>
                   </div>
                 </div>
               ))}

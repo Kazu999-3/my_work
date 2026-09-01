@@ -266,10 +266,14 @@ export default function Sidebar() {
         <div className="p-3 border-t border-stone-200/80 space-y-2">
           {/* Discord ユーザープロフィール / ログイン */}
           <UserAuthWidget collapsed={isCollapsed} />
-          <TaskStatusDrawer collapsed={isCollapsed} />
-          <NotificationBell collapsed={isCollapsed} />
-          <FavoritesPanel isCollapsed={isCollapsed} />
-          <PushOptIn collapsed={isCollapsed} />
+          {showAdminToggle && (
+            <>
+              <TaskStatusDrawer collapsed={isCollapsed} />
+              <NotificationBell collapsed={isCollapsed} />
+              <FavoritesPanel isCollapsed={isCollapsed} />
+              <PushOptIn collapsed={isCollapsed} />
+            </>
+          )}
         </div>
       </aside>
 
@@ -325,10 +329,12 @@ export default function Sidebar() {
                 </button>
               </div>
             )}
-            <div className="flex items-center gap-2 mb-4">
-              <TaskStatusDrawer />
-              <NotificationBell />
-            </div>
+            {showAdminToggle && (
+              <div className="flex items-center gap-2 mb-4">
+                <TaskStatusDrawer />
+                <NotificationBell />
+              </div>
+            )}
             <div className="grid grid-cols-3 gap-3">
               {overflowMobileItems.map((item) => {
                 const Icon = item.icon;

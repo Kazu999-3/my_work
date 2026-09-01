@@ -409,13 +409,10 @@ export default function GuidePage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {/* 1. 勝敗予想 & ショップ */}
-            <Link
-              href="/casino"
-              className="p-5 rounded-2xl bg-white/5 border border-white/10 hover:border-amber-400 hover:bg-white/10 transition-all flex flex-col justify-between space-y-3 group cursor-pointer"
-            >
-              <div className="space-y-1.5">
+            <div className="p-5 rounded-2xl bg-white/5 border border-white/10 hover:border-amber-400 transition-all flex flex-col justify-between space-y-3 group">
+              <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-2xl">🎯</span>
                   <span className="text-[10px] font-black text-amber-400 bg-amber-500/20 px-2 py-0.5 rounded-full border border-amber-500/30">
@@ -428,18 +425,38 @@ export default function GuidePage() {
                 <p className="text-xs text-stone-300 leading-relaxed">
                   試合の勝利チーム予想、貯めたコインでの特権チケット交換、長者番付TOP10をリアルタイム確認！
                 </p>
+
+                {/* 折りたたみ使い方例 */}
+                <details className="mt-2 text-xs bg-black/40 rounded-xl border border-white/10 p-2.5 group/details">
+                  <summary className="font-bold text-amber-400 cursor-pointer select-none flex items-center justify-between">
+                    <span>📸 使い方・画面例を見る</span>
+                    <span className="text-[10px] text-stone-400 group-open/details:rotate-180 transition-transform">▼</span>
+                  </summary>
+                  <div className="mt-2.5 pt-2.5 border-t border-white/10 space-y-2 text-[11px] text-stone-300">
+                    <div className="p-2 rounded-lg bg-white/5 border border-amber-500/20">
+                      <div className="font-bold text-amber-300 mb-1">① 勝敗予想カード</div>
+                      <p>「🟦 BLUE勝利 (x1.8)」または「🟥 RED勝利 (x2.1)」をワンタップして予想完了！</p>
+                    </div>
+                    <div className="p-2 rounded-lg bg-white/5 border border-indigo-500/20">
+                      <div className="font-bold text-indigo-300 mb-1">② 特権ショップ</div>
+                      <p>「🛡️ チャンピオンプロテクト権」や「🚫 全員BAN禁止権」をコインで即時交換！</p>
+                    </div>
+                  </div>
+                </details>
               </div>
-              <div className="text-xs text-amber-400 font-bold flex items-center gap-1">
-                ページを開く <ArrowRight size={12} />
-              </div>
-            </Link>
+
+              <Link
+                href="/casino"
+                className="mt-2 text-xs text-amber-400 hover:text-amber-300 font-bold flex items-center justify-between pt-2 border-t border-white/10"
+              >
+                <span>ページを開く</span>
+                <ArrowRight size={12} />
+              </Link>
+            </div>
 
             {/* 2. チーム分け */}
-            <Link
-              href="/balancer"
-              className="p-5 rounded-2xl bg-white/5 border border-white/10 hover:border-rose-400 hover:bg-white/10 transition-all flex flex-col justify-between space-y-3 group cursor-pointer"
-            >
-              <div className="space-y-1.5">
+            <div className="p-5 rounded-2xl bg-white/5 border border-white/10 hover:border-rose-400 transition-all flex flex-col justify-between space-y-3 group">
+              <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-2xl">⚔️</span>
                   <span className="text-[10px] font-black text-rose-400 bg-rose-500/20 px-2 py-0.5 rounded-full border border-rose-500/30">
@@ -452,18 +469,38 @@ export default function GuidePage() {
                 <p className="text-xs text-stone-300 leading-relaxed">
                   10人の実力・ロール希望を考慮した完全自動チーム分け ＆ 勝率50:50シミュレーション！
                 </p>
+
+                {/* 折りたたみ使い方例 */}
+                <details className="mt-2 text-xs bg-black/40 rounded-xl border border-white/10 p-2.5 group/details">
+                  <summary className="font-bold text-rose-400 cursor-pointer select-none flex items-center justify-between">
+                    <span>📸 使い方・画面例を見る</span>
+                    <span className="text-[10px] text-stone-400 group-open/details:rotate-180 transition-transform">▼</span>
+                  </summary>
+                  <div className="mt-2.5 pt-2.5 border-t border-white/10 space-y-2 text-[11px] text-stone-300">
+                    <div className="p-2 rounded-lg bg-white/5 border border-rose-500/20">
+                      <div className="font-bold text-rose-300 mb-1">① 10人選択 ➔ 即チーム分け</div>
+                      <p>参加者10人にチェックを入れるだけで、AIが最も実力差が小さくなるチームを自動生成！</p>
+                    </div>
+                    <div className="p-2 rounded-lg bg-white/5 border border-amber-500/20">
+                      <div className="font-bold text-amber-300 mb-1">② 予想勝率グラフ</div>
+                      <p>「BLUE 49.8% vs RED 50.2%」のように完全互角な黄金バランスを視覚表示！</p>
+                    </div>
+                  </div>
+                </details>
               </div>
-              <div className="text-xs text-rose-400 font-bold flex items-center gap-1">
-                ページを開く <ArrowRight size={12} />
-              </div>
-            </Link>
+
+              <Link
+                href="/balancer"
+                className="mt-2 text-xs text-rose-400 hover:text-rose-300 font-bold flex items-center justify-between pt-2 border-t border-white/10"
+              >
+                <span>ページを開く</span>
+                <ArrowRight size={12} />
+              </Link>
+            </div>
 
             {/* 3. プレイヤー名簿 */}
-            <Link
-              href="/player"
-              className="p-5 rounded-2xl bg-white/5 border border-white/10 hover:border-indigo-400 hover:bg-white/10 transition-all flex flex-col justify-between space-y-3 group cursor-pointer"
-            >
-              <div className="space-y-1.5">
+            <div className="p-5 rounded-2xl bg-white/5 border border-white/10 hover:border-indigo-400 transition-all flex flex-col justify-between space-y-3 group">
+              <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-2xl">👥</span>
                   <span className="text-[10px] font-black text-indigo-400 bg-indigo-500/20 px-2 py-0.5 rounded-full border border-indigo-500/30">
@@ -476,18 +513,34 @@ export default function GuidePage() {
                 <p className="text-xs text-stone-300 leading-relaxed">
                   メンバー全員の得意ロール・最高ランク・通算勝率・ロール別MMR（実力値）カルテをチェック！
                 </p>
+
+                {/* 折りたたみ使い方例 */}
+                <details className="mt-2 text-xs bg-black/40 rounded-xl border border-white/10 p-2.5 group/details">
+                  <summary className="font-bold text-indigo-400 cursor-pointer select-none flex items-center justify-between">
+                    <span>📸 使い方・画面例を見る</span>
+                    <span className="text-[10px] text-stone-400 group-open/details:rotate-180 transition-transform">▼</span>
+                  </summary>
+                  <div className="mt-2.5 pt-2.5 border-t border-white/10 space-y-2 text-[11px] text-stone-300">
+                    <div className="p-2 rounded-lg bg-white/5 border border-indigo-500/20">
+                      <div className="font-bold text-indigo-300 mb-1">① レーダーチャート＆カルテ</div>
+                      <p>TOP/JG/MID/ADC/SUPそれぞれの実力レート（MMR）と勝率推移が一目で丸わかり！</p>
+                    </div>
+                  </div>
+                </details>
               </div>
-              <div className="text-xs text-indigo-400 font-bold flex items-center gap-1">
-                ページを開く <ArrowRight size={12} />
-              </div>
-            </Link>
+
+              <Link
+                href="/player"
+                className="mt-2 text-xs text-indigo-400 hover:text-indigo-300 font-bold flex items-center justify-between pt-2 border-t border-white/10"
+              >
+                <span>ページを開く</span>
+                <ArrowRight size={12} />
+              </Link>
+            </div>
 
             {/* 4. リーダーボード */}
-            <Link
-              href="/leaderboard"
-              className="p-5 rounded-2xl bg-white/5 border border-white/10 hover:border-yellow-400 hover:bg-white/10 transition-all flex flex-col justify-between space-y-3 group cursor-pointer"
-            >
-              <div className="space-y-1.5">
+            <div className="p-5 rounded-2xl bg-white/5 border border-white/10 hover:border-yellow-400 transition-all flex flex-col justify-between space-y-3 group">
+              <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-2xl">🏆</span>
                   <span className="text-[10px] font-black text-yellow-400 bg-yellow-500/20 px-2 py-0.5 rounded-full border border-yellow-500/30">
@@ -500,18 +553,34 @@ export default function GuidePage() {
                 <p className="text-xs text-stone-300 leading-relaxed">
                   KTMサーバー内のMMR総合ランキング、月間最多キル・最高勝率トッププレイヤーを表彰！
                 </p>
+
+                {/* 折りたたみ使い方例 */}
+                <details className="mt-2 text-xs bg-black/40 rounded-xl border border-white/10 p-2.5 group/details">
+                  <summary className="font-bold text-yellow-400 cursor-pointer select-none flex items-center justify-between">
+                    <span>📸 使い方・画面例を見る</span>
+                    <span className="text-[10px] text-stone-400 group-open/details:rotate-180 transition-transform">▼</span>
+                  </summary>
+                  <div className="mt-2.5 pt-2.5 border-t border-white/10 space-y-2 text-[11px] text-stone-300">
+                    <div className="p-2 rounded-lg bg-white/5 border border-yellow-500/20">
+                      <div className="font-bold text-yellow-300 mb-1">① サーバー内最強ランキング</div>
+                      <p>全メンバーのカスタム成績に基づき、1位〜最下位までの総合順位をリアルタイム集計！</p>
+                    </div>
+                  </div>
+                </details>
               </div>
-              <div className="text-xs text-yellow-400 font-bold flex items-center gap-1">
-                ページを開く <ArrowRight size={12} />
-              </div>
-            </Link>
+
+              <Link
+                href="/leaderboard"
+                className="mt-2 text-xs text-yellow-400 hover:text-yellow-300 font-bold flex items-center justify-between pt-2 border-t border-white/10"
+              >
+                <span>ページを開く</span>
+                <ArrowRight size={12} />
+              </Link>
+            </div>
 
             {/* 5. 試合履歴 */}
-            <Link
-              href="/history"
-              className="p-5 rounded-2xl bg-white/5 border border-white/10 hover:border-orange-400 hover:bg-white/10 transition-all flex flex-col justify-between space-y-3 group cursor-pointer"
-            >
-              <div className="space-y-1.5">
+            <div className="p-5 rounded-2xl bg-white/5 border border-white/10 hover:border-orange-400 transition-all flex flex-col justify-between space-y-3 group">
+              <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-2xl">📜</span>
                   <span className="text-[10px] font-black text-orange-400 bg-orange-500/20 px-2 py-0.5 rounded-full border border-orange-500/30">
@@ -524,18 +593,34 @@ export default function GuidePage() {
                 <p className="text-xs text-stone-300 leading-relaxed">
                   過去のカスタム対戦結果、対面勝敗、KDA、MMR変動の詳細ログをいつでも振り返り！
                 </p>
+
+                {/* 折りたたみ使い方例 */}
+                <details className="mt-2 text-xs bg-black/40 rounded-xl border border-white/10 p-2.5 group/details">
+                  <summary className="font-bold text-orange-400 cursor-pointer select-none flex items-center justify-between">
+                    <span>📸 使い方・画面例を見る</span>
+                    <span className="text-[10px] text-stone-400 group-open/details:rotate-180 transition-transform">▼</span>
+                  </summary>
+                  <div className="mt-2.5 pt-2.5 border-t border-white/10 space-y-2 text-[11px] text-stone-300">
+                    <div className="p-2 rounded-lg bg-white/5 border border-orange-500/20">
+                      <div className="font-bold text-orange-300 mb-1">① 10人全員のスコアボード</div>
+                      <p>各レーンの対面対決（KDA・ダメージ・獲得MMR）が綺麗に並んだ試合ログを閲覧可能！</p>
+                    </div>
+                  </div>
+                </details>
               </div>
-              <div className="text-xs text-orange-400 font-bold flex items-center gap-1">
-                ページを開く <ArrowRight size={12} />
-              </div>
-            </Link>
+
+              <Link
+                href="/history"
+                className="mt-2 text-xs text-orange-400 hover:text-orange-300 font-bold flex items-center justify-between pt-2 border-t border-white/10"
+              >
+                <span>ページを開く</span>
+                <ArrowRight size={12} />
+              </Link>
+            </div>
 
             {/* 6. チームシナジー */}
-            <Link
-              href="/synergy"
-              className="p-5 rounded-2xl bg-white/5 border border-white/10 hover:border-fuchsia-400 hover:bg-white/10 transition-all flex flex-col justify-between space-y-3 group cursor-pointer"
-            >
-              <div className="space-y-1.5">
+            <div className="p-5 rounded-2xl bg-white/5 border border-white/10 hover:border-fuchsia-400 transition-all flex flex-col justify-between space-y-3 group">
+              <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-2xl">🤝</span>
                   <span className="text-[10px] font-black text-fuchsia-400 bg-fuchsia-500/20 px-2 py-0.5 rounded-full border border-fuchsia-500/30">
@@ -548,11 +633,30 @@ export default function GuidePage() {
                 <p className="text-xs text-stone-300 leading-relaxed">
                   「誰と誰が組むと勝率が高いか？」メンバー同士のベストコンビ・シナジーを自動解析！
                 </p>
+
+                {/* 折りたたみ使い方例 */}
+                <details className="mt-2 text-xs bg-black/40 rounded-xl border border-white/10 p-2.5 group/details">
+                  <summary className="font-bold text-fuchsia-400 cursor-pointer select-none flex items-center justify-between">
+                    <span>📸 使い方・画面例を見る</span>
+                    <span className="text-[10px] text-stone-400 group-open/details:rotate-180 transition-transform">▼</span>
+                  </summary>
+                  <div className="mt-2.5 pt-2.5 border-t border-white/10 space-y-2 text-[11px] text-stone-300">
+                    <div className="p-2 rounded-lg bg-white/5 border border-fuchsia-500/20">
+                      <div className="font-bold text-fuchsia-300 mb-1">① 最強DUO・コンビ発掘</div>
+                      <p>勝率70%超えの相性抜群ペアや、逆に勝率が振るわない組み合わせをデータで分析！</p>
+                    </div>
+                  </div>
+                </details>
               </div>
-              <div className="text-xs text-fuchsia-400 font-bold flex items-center gap-1">
-                ページを開く <ArrowRight size={12} />
-              </div>
-            </Link>
+
+              <Link
+                href="/synergy"
+                className="mt-2 text-xs text-fuchsia-400 hover:text-fuchsia-300 font-bold flex items-center justify-between pt-2 border-t border-white/10"
+              >
+                <span>ページを開く</span>
+                <ArrowRight size={12} />
+              </Link>
+            </div>
           </div>
         </section>
 
