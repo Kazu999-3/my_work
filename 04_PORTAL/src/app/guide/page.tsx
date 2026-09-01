@@ -502,12 +502,12 @@ export default function GuidePage() {
                       type="button" 
                       onClick={(e) => {
                         e.stopPropagation();
-                        setModalImage({ src: '/guide/balancer_preview.png', title: 'チーム分け (KTM Balancer) 画面例' });
+                        setModalImage({ src: '/guide/balancer_clean_preview.png', title: 'チーム分け (KTM Balancer) 画面例' });
                       }}
                       className="w-full relative group/img cursor-zoom-in rounded-2xl overflow-hidden border border-white/20 shadow-md block text-left"
                     >
                       <img
-                        src="/guide/balancer_preview.png"
+                        src="/guide/balancer_clean_preview.png"
                         alt="チーム分けバランサー画面例"
                         className="w-full object-cover group-hover/img:scale-102 transition-transform duration-300 pointer-events-none"
                       />
@@ -564,12 +564,12 @@ export default function GuidePage() {
                       type="button" 
                       onClick={(e) => {
                         e.stopPropagation();
-                        setModalImage({ src: '/guide/player_preview.png', title: 'プレイヤー名簿 ＆ カルテ 画面例' });
+                        setModalImage({ src: '/guide/player_clean_preview.png', title: 'プレイヤー名簿 ＆ カルテ 画面例' });
                       }}
                       className="w-full relative group/img cursor-zoom-in rounded-2xl overflow-hidden border border-white/20 shadow-md block text-left"
                     >
                       <img
-                        src="/guide/player_preview.png"
+                        src="/guide/player_clean_preview.png"
                         alt="プレイヤー名簿画面例"
                         className="w-full object-cover group-hover/img:scale-102 transition-transform duration-300 pointer-events-none"
                       />
@@ -622,12 +622,12 @@ export default function GuidePage() {
                       type="button" 
                       onClick={(e) => {
                         e.stopPropagation();
-                        setModalImage({ src: '/guide/leaderboard_preview.png', title: 'リーダーボード 順位表 画面例' });
+                        setModalImage({ src: '/guide/leaderboard_clean_preview.png', title: 'リーダーボード 順位表 画面例' });
                       }}
                       className="w-full relative group/img cursor-zoom-in rounded-2xl overflow-hidden border border-white/20 shadow-md block text-left"
                     >
                       <img
-                        src="/guide/leaderboard_preview.png"
+                        src="/guide/leaderboard_clean_preview.png"
                         alt="リーダーボード順位表画面例"
                         className="w-full object-cover group-hover/img:scale-102 transition-transform duration-300 pointer-events-none"
                       />
@@ -680,12 +680,12 @@ export default function GuidePage() {
                       type="button" 
                       onClick={(e) => {
                         e.stopPropagation();
-                        setModalImage({ src: '/guide/history_preview.png', title: '試合履歴 ＆ 対戦ログ 画面例' });
+                        setModalImage({ src: '/guide/history_clean_preview.png', title: '試合履歴 ＆ 対戦ログ 画面例' });
                       }}
                       className="w-full relative group/img cursor-zoom-in rounded-2xl overflow-hidden border border-white/20 shadow-md block text-left"
                     >
                       <img
-                        src="/guide/history_preview.png"
+                        src="/guide/history_clean_preview.png"
                         alt="試合履歴・対戦ログ画面例"
                         className="w-full object-cover group-hover/img:scale-102 transition-transform duration-300 pointer-events-none"
                       />
@@ -738,12 +738,12 @@ export default function GuidePage() {
                       type="button" 
                       onClick={(e) => {
                         e.stopPropagation();
-                        setModalImage({ src: '/guide/synergy_preview.png', title: 'チームシナジー ＆ 相性診断 画面例' });
+                        setModalImage({ src: '/guide/synergy_clean_preview.png', title: 'チームシナジー ＆ 相性診断 画面例' });
                       }}
                       className="w-full relative group/img cursor-zoom-in rounded-2xl overflow-hidden border border-white/20 shadow-md block text-left"
                     >
                       <img
-                        src="/guide/synergy_preview.png"
+                        src="/guide/synergy_clean_preview.png"
                         alt="チームシナジー相性画面例"
                         className="w-full object-cover group-hover/img:scale-102 transition-transform duration-300 pointer-events-none"
                       />
