@@ -611,13 +611,17 @@ export default function BalancerPage() {
         body: JSON.stringify({
           participants: activePlayers.map(p => {
             const pref1 = p.role_preferences?.primary;
+            const customH = (p as any).customHandicap;
             return {
               name: p.name,
               isFixed: p.is_fixed || false,
               isSpectatorFixed: p.is_spectator_fixed || false,
               fixedRole: (p.is_fixed && pref1 && pref1 !== 'ALL' && pref1 !== '-') ? pref1 : null,
               // ハンデ参加: チーム分けの計算上だけMMRを下げて格差を緩和する（実際の戦績は変えない）
-              handicap: handicapIds.includes(p.id),
+              handicap: handicapIds.includes(p.id) || !!customH,
+              handicapMmrPenalty: customH?.mmrPenalty || (handicapIds.includes(p.id) ? HANDICAP_MMR_PENALTY : 0),
+              handicapRule: customH?.rule || (handicapIds.includes(p.id) ? 'ハンデ参加' : null),
+              handicappedBy: customH?.by || null,
             };
           }),
           searchDepth, // BL-02: 探索強度

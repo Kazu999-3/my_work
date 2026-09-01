@@ -143,6 +143,9 @@ export async function POST(request: Request) {
           };
         })(),
         isHandicap: !!input.handicap,
+        handicapMmrPenalty: input.handicapMmrPenalty || (input.handicap ? (Number(body.handicapPenalty) || 150) : 0),
+        handicapRule: input.handicapRule || null,
+        handicappedBy: input.handicappedBy || null,
         games: pGames,
         winRate: pWinRate,
         isFixed: input.isFixed,

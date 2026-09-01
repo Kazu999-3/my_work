@@ -60,6 +60,10 @@ export async function POST(request: Request) {
     const blueBars = Math.round((bluePct / 100) * barLen);
     const winBar = '🟦'.repeat(blueBars) + '🟥'.repeat(barLen - blueBars);
 
+    const handicapText = (body.handicaps && Array.isArray(body.handicaps) && body.handicaps.length > 0)
+      ? `\n🎗️ 格差ハンデ適用: ` + body.handicaps.map((h: any) => `${h.targetName}選手（${h.rule} / -${h.mmrPenalty}MMR）`).join('、')
+      : '';
+
     const payload: any = {
       content: "🔥 **KTM チーム分けが完了しました！** 🔥\n準備ができたらロビーに参加してください。",
       embeds: [
@@ -82,6 +86,7 @@ export async function POST(request: Request) {
           footer: {
             text: `👀 観戦: ${spectators && spectators.length > 0 ? spectators.join(', ') : 'なし'}`
               + (handicapSet.size > 0 ? `\n🎗️ ハンデ参加(オフロール等の制約付き): ${Array.from(handicapSet).join(', ')}` : '')
+              + handicapText
           },
           timestamp: new Date().toISOString()
         }

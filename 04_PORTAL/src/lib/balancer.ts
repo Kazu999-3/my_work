@@ -31,6 +31,9 @@ export interface Player {
   effectiveRates?: Record<Role, number>;
   spectator_pity?: number;
   isHandicap?: boolean;
+  handicapMmrPenalty?: number; // ポイント消費による実効MMR減算 (150 / 300 / 500)
+  handicapRule?: string;       // 縛りルール内容 (例: 'Lv.2: サモスペ1枠制限')
+  handicappedBy?: string;      // ハンデを発動したプレイヤー名
 }
 
 export interface BalanceContext {
@@ -233,6 +236,9 @@ function runBalanceSearch(players: Player[], ctx: BalanceContext): RawBalanceCan
       const raw = p.rates[role];
       let eff = Math.round(raw + (globalAvgMMR - raw) * 0.5) - wrPityPenalty; // 平均へ50%寄せ + 勝率ペナルティ
       if (p.isOutlierLow) eff -= 200; // 格差救済補正
+      if (p.handicapMmrPenalty) {
+        eff -= p.handicapMmrPenalty; // ポイント消費型ハンデ補正 (Lv.1: -150 / Lv.2: -300 / Lv.3: -500)
+      }
       p.effectiveRates![role] = Math.max(100, eff);
     });
   });
@@ -660,6 +666,16 @@ function buildBalanceResult(
   // --- 事後分析レポートの作成 ---
   const allAssigned = [...teamBlue, ...teamRed];
   const balanceReport: string[] = [];
+  
+  // 🎗️ ポイント消費型ハンデ縛りのレポート
+  const handicappedPlayers = allAssigned.filter(p => p.handicapMmrPenalty && p.handicapRule);
+  if (handicappedPlayers.length > 0) {
+    handicappedPlayers.forEach(hp => {
+      const byText = hp.handicappedBy ? `（${hp.handicappedBy}選手のポイント行使）` : '';
+      balanceReport.push(`🎗️ **【格差対面ハンデ発動】**: **${hp.name}** 選手に「${hp.handicapRule}」（実効MMR -${hp.handicapMmrPenalty}）が適用され、格差対面が均等化されました！${byText}`);
+    });
+  }
+
   const newbiePlayers = allAssigned.filter(p => p.isNewbie);
   if (newbiePlayers.length > 0) {
     const newbieNames = newbiePlayers.map(p => `**${p.name}**（${p.currentRole}）`).join('、');
