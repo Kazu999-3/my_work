@@ -429,10 +429,11 @@ export async function POST(request: Request) {
         const redTeam = results.filter((r: any) => r.team === 'RED');
         
         const formatPlayer = (p: any) => {
-          const delta = p.mmrDelta > 0 ? `+${p.mmrDelta}` : `${p.mmrDelta}`;
+          const delta = isExhibition ? `±0 (お祭り保護)` : (p.mmrDelta > 0 ? `+${p.mmrDelta}` : `${p.mmrDelta}`);
           const kda = `${p.kills}/${p.deaths}/${p.assists}`;
           const champ = p.champion_name ? p.champion_name : 'Unknown';
-          return `\`${p.name}\` (${champ}) - **${kda}** (MMR: ${delta})`;
+          const coinsEarned = p.team === winningTeam ? '+250🪙' : '+100🪙';
+          return `\`${p.name}\` (${champ}) - **${kda}** (MMR: ${delta} | ${coinsEarned})`;
         };
 
         const roles = ['TOP', 'JG', 'MID', 'ADC', 'SUP'];
@@ -449,7 +450,24 @@ export async function POST(request: Request) {
         const blueTitle = winningTeam === 'BLUE' ? '🏆 🟦 BLUE TEAM (WIN)' : '💀 🟦 BLUE TEAM';
         const redTitle = winningTeam === 'RED' ? '🏆 🟥 RED TEAM (WIN)' : '💀 🟥 RED TEAM';
 
-        const payload = {
+        const payload = isExhibition ? {
+          content: "🎪 **【KTMお祭りカスタム速報】エキシビション対決が終了しました！** 🎪\n🛡️ **完全戦績保護適用**: 全員の公式MMR・通算勝率はノーカウント（±0）で保護されました！\n🪙 参加賞（+100pt）＆勝利ボーナス（+150pt）および勝敗予想配当を付与しました！",
+          embeds: [
+            {
+              title: "🎪 お祭りカスタム 試合リザルト (戦績ノーカウント保護)",
+              color: 0xf59e0b, // Amber Gold
+              fields: [
+                {
+                  name: `${blueTitle}  🆚  ${redTitle}`,
+                  value: matchupsText,
+                  inline: false
+                }
+              ],
+              footer: { text: 'KTM Sovereign Festival Match • Official MMR Protected' },
+              timestamp: new Date().toISOString()
+            }
+          ]
+        } : {
           content: "📜 **KTM 試合結果が記録されました！** 📜\n各プレイヤーのMMRが更新されました。",
           embeds: [
             {

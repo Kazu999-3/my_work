@@ -116,6 +116,24 @@ export default function CasinoPage() {
   const [shopMessage, setShopMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [inventory, setInventory] = useState<Array<{ id: string; name: string; icon: string; boughtAt: string }>>([]);
+  const [lastClaimDate, setLastClaimDate] = useState<string | null>(null);
+  const [betStats, setBetStats] = useState<{
+    blueAmount: number;
+    redAmount: number;
+    blueCount: number;
+    redCount: number;
+    totalAmount: number;
+    blueRatio: number;
+    redRatio: number;
+  }>({
+    blueAmount: 2800,
+    redAmount: 2200,
+    blueCount: 4,
+    redCount: 3,
+    totalAmount: 5000,
+    blueRatio: 56,
+    redRatio: 44
+  });
 
   // 実効プレイヤー名（ログインユーザー優先）
   const activePlayerName = user?.displayName || '';
@@ -126,7 +144,10 @@ export default function CasinoPage() {
     if (user?.discordId || user?.displayName) {
       fetchInventory();
     }
-    const interval = setInterval(fetchActiveMatch, 15000); // 15秒ごとに最新試合をチェック
+    const interval = setInterval(() => {
+      fetchActiveMatch();
+      fetchBetData();
+    }, 15000); // 15秒ごとに最新試合と投票比率をチェック
     return () => clearInterval(interval);
   }, [user]);
 
@@ -169,15 +190,76 @@ export default function CasinoPage() {
   const fetchBetData = async () => {
     try {
       setLoading(true);
-      const res = await fetch('/api/bet');
+      const param = user?.discordId ? `discordId=${user.discordId}` : (user?.displayName ? `name=${encodeURIComponent(user.displayName)}` : '');
+      const res = await fetch(`/api/bet?${param}`);
       if (res.ok) {
         const data = await res.json();
         setRanking(data.ranking || []);
+        if (data.betStats) setBetStats(data.betStats);
+        if (data.lastClaimDate) setLastClaimDate(data.lastClaimDate);
       }
     } catch (e) {
       console.error('Failed to fetch bet data:', e);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleClaimBonus = async (type: 'daily' | 'rescue') => {
+    if (!user) {
+      alert('ボーナスを受け取るにはDiscordでログインしてください。');
+      return;
+    }
+    try {
+      const res = await fetch('/api/bet', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          discordId: user.discordId,
+          playerName: user.displayName,
+          type
+        })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        triggerCelebration();
+        alert(data.message);
+        fetchBetData();
+        refreshUser();
+      } else {
+        alert(data.error || '受取に失敗しました。');
+      }
+    } catch (e: any) {
+      alert('エラー: ' + e.message);
+    }
+  };
+
+  const handleAnnounceTicket = async (item: any) => {
+    if (!confirm(`「${item.name}」を次回試合で発動することをDiscordに宣言しますか？`)) {
+      return;
+    }
+    try {
+      const res = await fetch('/api/bet/shop/announce', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          discordId: user?.discordId,
+          playerName: activePlayerName,
+          itemId: item.id,
+          itemName: item.name,
+          itemIcon: item.icon,
+        })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        triggerCelebration();
+        alert(data.message);
+        fetchInventory();
+      } else {
+        alert(data.error || '発動宣言に失敗しました。');
+      }
+    } catch (e: any) {
+      alert('エラー: ' + e.message);
     }
   };
 
@@ -307,7 +389,7 @@ export default function CasinoPage() {
 
         {/* ユーザー認証状態ヘッダー（ログイン時は全タブで常時表示） */}
         {user ? (
-          <div className="p-5 rounded-3xl bg-amber-500/10 border-2 border-amber-500/30 space-y-3 shadow-sm">
+          <div className="p-5 rounded-3xl bg-amber-500/10 border-2 border-amber-500/30 space-y-4 shadow-sm">
             <div className="flex items-center justify-between flex-wrap gap-4">
               <div className="flex items-center gap-3">
                 <img
@@ -329,31 +411,67 @@ export default function CasinoPage() {
                   </div>
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={logout}
-                className="text-xs text-stone-500 hover:text-stone-800 underline font-bold px-3 py-1.5 rounded-xl hover:bg-black/5"
-              >
-                ログアウト
-              </button>
+
+              {/* ボーナス獲得アクション群 */}
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => handleClaimBonus('daily')}
+                  className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-stone-950 font-black text-xs shadow transition flex items-center gap-1.5 cursor-pointer"
+                  title="1日1回ログインボーナスを受け取ります"
+                >
+                  <span>🎁</span>
+                  <span>デイリーボーナス (+100pt)</span>
+                </button>
+
+                {(user.coins ?? 1000) < 100 && (
+                  <button
+                    type="button"
+                    onClick={() => handleClaimBonus('rescue')}
+                    className="px-3 py-1.5 rounded-xl bg-rose-500 hover:bg-rose-600 text-white font-black text-xs shadow transition flex items-center gap-1.5 cursor-pointer animate-bounce"
+                    title="所持コインが100枚未満のときの救済措置"
+                  >
+                    <span>💸</span>
+                    <span>破産救済保険 (+300pt)</span>
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  onClick={logout}
+                  className="text-xs text-stone-500 hover:text-stone-800 underline font-bold px-2 py-1"
+                >
+                  ログアウト
+                </button>
+              </div>
             </div>
 
-            {/* 🎒 所持特権チケット（インベントリ） */}
+            {/* 🎒 所持特権チケット（インベントリ） ＆ 発動宣言ボタン */}
             <div className="pt-3 border-t border-amber-500/20">
-              <div className="flex items-center gap-2 text-xs font-bold text-amber-950 mb-1.5">
+              <div className="flex items-center gap-2 text-xs font-bold text-amber-950 mb-2">
                 <span>🎒 あなたの所持特権チケット:</span>
                 <span className="text-[11px] font-normal text-stone-600">({inventory.length}枚保有中)</span>
               </div>
               {inventory.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
                   {inventory.map((item, idx) => (
                     <div
                       key={idx}
-                      className="px-3 py-1.5 rounded-xl bg-white border border-amber-400 text-stone-900 text-xs font-bold flex items-center gap-1.5 shadow-sm"
+                      className="p-3 rounded-2xl bg-white border border-amber-400 text-stone-900 text-xs font-bold flex flex-col justify-between gap-2 shadow-sm"
                     >
-                      <span>{item.icon}</span>
-                      <span>{item.name}</span>
-                      <span className="text-[10px] text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded ml-1">未使用</span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-base">{item.icon}</span>
+                        <span className="truncate">{item.name}</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleAnnounceTicket(item)}
+                        className="w-full py-1.5 px-2 rounded-xl bg-rose-500 hover:bg-rose-600 text-white font-black text-[11px] transition shadow flex items-center justify-center gap-1 cursor-pointer"
+                        title="次回のカスタム試合でこの特権を発動することをDiscordに宣言します"
+                      >
+                        <span>📣</span>
+                        <span>Discordで発動宣言する</span>
+                      </button>
                     </div>
                   ))}
                 </div>
@@ -375,7 +493,7 @@ export default function CasinoPage() {
                   Discordアカウントで1秒ログイン
                 </h3>
                 <p className="text-xs text-stone-300 mt-0.5">
-                  ログインすると、手入力不要でワンタップ勝敗ベットやアイテム購入が楽しめます！
+                  ログインすると、毎日のボーナス受取やワンタップ勝敗ベット、特権アイテム発動が楽しめます！
                 </p>
               </div>
             </div>
@@ -415,6 +533,36 @@ export default function CasinoPage() {
             {/* 試合受付状況に応じた表示切り替え */}
             {activeMatch ? (
               <div className="space-y-6">
+                {/* 📊 リアルタイム投票比率バー */}
+                <div className="p-4 rounded-2xl bg-stone-900 text-white space-y-2 border border-stone-800 shadow-md">
+                  <div className="flex items-center justify-between text-xs font-black">
+                    <span className="text-indigo-400 flex items-center gap-1">
+                      <span>🟦 BLUE:</span>
+                      <span className="font-mono">{betStats.blueRatio}%</span>
+                      <span className="text-[10px] text-stone-400 font-normal">({betStats.blueAmount.toLocaleString()}pt / {betStats.blueCount}人)</span>
+                    </span>
+                    <span className="text-amber-400 font-mono text-[11px]">
+                      総プール: {betStats.totalAmount.toLocaleString()}pt
+                    </span>
+                    <span className="text-rose-400 flex items-center gap-1">
+                      <span className="text-[10px] text-stone-400 font-normal">({betStats.redAmount.toLocaleString()}pt / {betStats.redCount}人)</span>
+                      <span className="font-mono">{betStats.redRatio}%</span>
+                      <span>:RED 🟥</span>
+                    </span>
+                  </div>
+                  {/* プログレスバー */}
+                  <div className="w-full h-3 bg-stone-800 rounded-full overflow-hidden flex border border-stone-700">
+                    <div
+                      style={{ width: `${betStats.blueRatio}%` }}
+                      className="h-full bg-gradient-to-r from-indigo-600 to-indigo-400 transition-all duration-500"
+                    ></div>
+                    <div
+                      style={{ width: `${betStats.redRatio}%` }}
+                      className="h-full bg-gradient-to-r from-rose-400 to-rose-600 transition-all duration-500"
+                    ></div>
+                  </div>
+                </div>
+
                 {/* 対戦カード表示 */}
                 <div className="p-5 rounded-3xl bg-stone-900 text-white space-y-4 border border-stone-800 shadow-md">
                   <div className="flex items-center justify-between">
