@@ -833,37 +833,38 @@ export default function GuidePage() {
 
       </div>
 
-      {/* 🔍 画像拡大ライトボックスモーダル */}
+      {/* 🔍 画像拡大ライトボックスモーダル（超特大フルスクリーン） */}
       {modalImage && (
         <div 
           onClick={() => setModalImage(null)}
-          className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex flex-col items-center justify-center p-4 md:p-8 animate-in fade-in duration-200 cursor-zoom-out select-none"
+          className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex flex-col items-center justify-center p-2 sm:p-4 md:p-6 animate-in fade-in duration-200 cursor-zoom-out select-none"
         >
           <div 
             onClick={(e) => e.stopPropagation()} 
-            className="relative max-w-5xl w-full bg-stone-900 rounded-3xl border border-white/20 shadow-2xl overflow-hidden cursor-default flex flex-col"
+            className="relative max-w-[96vw] w-full max-h-[94vh] bg-stone-900 rounded-3xl border border-white/20 shadow-2xl overflow-hidden cursor-default flex flex-col"
           >
             {/* モーダルヘッダー */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-stone-950/80">
-              <div className="flex items-center gap-2 text-sm font-black text-white">
+            <div className="flex items-center justify-between px-5 py-3 border-b border-white/10 bg-stone-950/90 shrink-0">
+              <div className="flex items-center gap-2 text-sm md:text-base font-black text-white">
                 <span>📸</span>
                 <span>{modalImage.title}</span>
               </div>
               <button
                 onClick={() => setModalImage(null)}
-                className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-stone-300 hover:text-white transition-colors cursor-pointer"
+                className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-stone-300 hover:text-white transition-colors cursor-pointer text-xs font-bold flex items-center gap-1"
                 title="閉じる"
               >
-                <X size={18} />
+                <X size={16} />
+                <span>閉じる</span>
               </button>
             </div>
 
-            {/* 拡大画像本体 */}
-            <div className="p-3 md:p-6 bg-stone-950 flex items-center justify-center max-h-[78vh] overflow-auto">
+            {/* 拡大画像本体（超特大） */}
+            <div className="p-2 sm:p-4 bg-stone-950/95 flex items-center justify-center overflow-auto flex-1">
               <img
                 src={modalImage.src}
                 alt={modalImage.title}
-                className="w-full h-auto max-h-[74vh] object-contain rounded-xl shadow-lg border border-white/10"
+                className="w-full h-auto max-h-[84vh] object-contain rounded-xl shadow-2xl border border-white/10"
               />
             </div>
           </div>
