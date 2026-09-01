@@ -17,12 +17,8 @@ export async function POST(req: Request) {
     const { mode, time } = await req.json().catch(() => ({}));
     const safeMode = ['ノーマル', 'カスタム', 'ARAM'].includes(mode) ? mode : 'カスタム';
     const safeTime = typeof time === 'string' ? time.slice(0, 20) : '';
-    const result = await sendPushToAll({
-      title: '⚔️ 新しい募集が始まりました！',
-      body: `${safeMode}${safeTime ? `（${safeTime}開始予定）` : ''} 参加はDiscordの募集板から！`,
-      url: '/',
-    });
-    return NextResponse.json({ success: true, ...result });
+    // ユーザー要望によりカスタム募集通知は停止中
+    return NextResponse.json({ success: true, message: 'カスタム募集通知は無効化されています（スキップ）' });
   } catch (e: any) {
     // VAPID未設定などでも呼び出し元(BOT)の本処理は止めない
     console.warn('[push/notify-recruit] skipped:', e.message);

@@ -623,7 +623,8 @@ class YouTubeAbsorber:
 
         dur_info = ", ".join([f"{(t.get('duration_sec') or 0)//60}分" for t in targets])
         logger.info(f"🎯 [SmartQueue] {len(targets)}本を処理予定（動画長さ: {dur_info}、推定字幕量: {char_budget_used:,}文字）")
-        herald.notify_progress(f"📺 **【YouTube Absorber】** KireiLoL動画 {len(targets)}本を吸収開始（短い順: {dur_info}）...")
+        # 動画解析通知はユーザー要望により無効化
+        # herald.notify_progress(f"📺 **【YouTube Absorber】** KireiLoL動画 {len(targets)}本を吸収開始（短い順: {dur_info}）...")
         
         success_count = 0
         processed_details = []
@@ -770,14 +771,16 @@ class YouTubeAbsorber:
         if success_count > 0:
             details_str = "\n".join(processed_details)
             pending_remaining = self.get_pending_count()
-            herald.notify_progress(
-                f"👑 **【YouTube Absorber完了】** {success_count}本のKireiLoL動画をバイブル化しました！\n\n"
-                f"{details_str}\n\n"
-                f"📁 `02_FACTORY/bible/kirei_bible/`\n"
-                f"📊 残りキュー: **{pending_remaining}件**\n"
-                f"*(※ この後、Dict Synthesizerによってチャンピオン辞典へ自動でマージされます)*",
-                portal_link=True, page='youtube'
-            )
+            logger.info(f"👑 【YouTube Absorber完了】 {success_count}本の動画をバイブル化しました（残り: {pending_remaining}件）")
+            # 動画解析通知はユーザー要望により無効化
+            # herald.notify_progress(
+            #     f"👑 **【YouTube Absorber完了】** {success_count}本のKireiLoL動画をバイブル化しました！\n\n"
+            #     f"{details_str}\n\n"
+            #     f"📁 `02_FACTORY/bible/kirei_bible/`\n"
+            #     f"📊 残りキュー: **{pending_remaining}件**\n"
+            #     f"*(※ この後、Dict Synthesizerによってチャンピオン辞典へ自動でマージされます)*",
+            #     portal_link=True, page='youtube'
+            # )
             
             # 自動同期（Sovereign Sync）を実行してクラウドへ同期し、Discordへ通知を送る
             try:

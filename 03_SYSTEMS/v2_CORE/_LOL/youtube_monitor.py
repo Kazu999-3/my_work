@@ -345,8 +345,9 @@ def monitor_channels():
         time.sleep(2)  # チャンネル間の連続リクエストを抑える
 
     logger.info(f"🎉 チャンネルスキャン完了。新規動画 {new_videos_found} 件を追加しました。")
-    if new_videos_found > 0:
-        herald.notify_progress(f"📺 **【自動動画解析】** 監視チャンネルから新しく {new_videos_found} 本の動画を検知し、解析キューに追加しました！", portal_link=True, page="youtube")
+    # 動画解析通知はユーザー要望により無効化
+    # if new_videos_found > 0:
+    #     herald.notify_progress(f"📺 **【自動動画解析】** 監視チャンネルから新しく {new_videos_found} 本の動画を検知し、解析キューに追加しました！", portal_link=True, page="youtube")
 
 # ============================================================
 # プレイリスト動画監視機能 (yt-dlp を使用)
@@ -449,8 +450,9 @@ def monitor_playlists():
         time.sleep(2)
 
     logger.info(f"🎉 プレイリストスキャン完了。新規動画 {new_videos_found} 件を追加しました。")
-    if new_videos_found > 0:
-        herald.notify_progress(f"📺 **【自動動画解析】** 監視プレイリストから新しく {new_videos_found} 本の動画を検知し、解析キューに追加しました！", portal_link=True, page="youtube")
+    # 動画解析通知はユーザー要望により無効化
+    # if new_videos_found > 0:
+    #     herald.notify_progress(f"📺 **【自動動画解析】** 監視プレイリストから新しく {new_videos_found} 本の動画を検知し、解析キューに追加しました！", portal_link=True, page="youtube")
 
 # ============================================================
 # メインエントリーポイント

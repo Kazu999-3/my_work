@@ -12,8 +12,8 @@ import MySoloQDashboard from './MySoloQDashboard';
 import Collapsible from '../../components/Collapsible';
 import FocusStickyBar from '../../components/coach/FocusStickyBar';
 import JgMatchupPredictor from '../../components/coach/JgMatchupPredictor';
-import JgSkillMasteryChecklist from '../../components/coach/JgSkillMasteryChecklist';
 import PlayerStyleRadarCard from '../../components/coach/PlayerStyleRadarCard';
+import ChampionQuickSelector from '../../components/coach/ChampionQuickSelector';
 import MatchupSmartCard from './MatchupSmartCard';
 
 // ============================
@@ -1679,35 +1679,22 @@ export default function CoachPage() {
         {/* 1. 🎯 試合前 (バンピック・対面対策・5分作戦) */}
         {/* ========================================================================= */}
         <div className={activeStepTab === 'pregame' ? 'space-y-5 animate-in' : 'hidden'}>
-          {/* 共通チャンピオン入力バー */}
-          <div className="rounded-2xl border border-stone-200/90 bg-white/95 p-4 shadow-xs">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="mb-1 block text-xs font-bold text-stone-700">今日使うチャンピオン (自分)</label>
-                <input
-                  value={sharedChampion}
-                  onChange={(e) => setSharedChampion(e.target.value)}
-                  placeholder="例: Graves"
-                  className="w-full rounded-xl border border-stone-300/80 bg-stone-50/50 px-3.5 py-2 text-xs text-stone-900 placeholder-stone-400 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all font-bold"
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-xs font-bold text-stone-700">対面の敵チャンピオン (相手)</label>
-                <input
-                  value={sharedEnemyChampion}
-                  onChange={(e) => setSharedEnemyChampion(e.target.value)}
-                  placeholder="例: Lee Sin"
-                  className="w-full rounded-xl border border-stone-300/80 bg-stone-50/50 px-3.5 py-2 text-xs text-stone-900 placeholder-stone-400 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all font-bold"
-                />
-              </div>
-            </div>
-            <p className="mt-2 text-[10px] text-stone-500 font-medium">※ ライブゲームが始まると自動入力されます。対面チャンプを入れるとカウンターピック・推奨ルーン・5分作戦が即座に表示されます。</p>
-          </div>
+          {/* 爆速チャンピオン高速セレクター (ワンタップ & 日本語検索 & ライブ連動) */}
+          <ChampionQuickSelector
+            myChampion={sharedChampion}
+            enemyChampion={sharedEnemyChampion}
+            onMyChampionChange={setSharedChampion}
+            onEnemyChampionChange={setSharedEnemyChampion}
+            onLiveMatchDetected={(my, enemy) => {
+              if (my) setSharedChampion(my);
+              if (enemy) setSharedEnemyChampion(enemy);
+            }}
+          />
 
           {/* 2カラムHUDグリッド */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
             {/* 左側: マッチアップ・カウンター・5分初動作戦 (一本化) */}
-            <div className="lg:col-span-8 flex flex-col gap-5">
+            <div className="lg:col-span-7 xl:col-span-7 flex flex-col gap-5">
               <MatchupSmartCard
                 champion={sharedChampion}
                 enemyChampion={sharedEnemyChampion}
@@ -1715,33 +1702,9 @@ export default function CoachPage() {
               />
             </div>
 
-            {/* 右側: 補助ツール (JG習熟度・プレイスタイル) */}
-            <div className="lg:col-span-4 flex flex-col gap-5 lg:sticky lg:top-4">
-              <Collapsible
-                defaultOpen={false}
-                title={
-                  <h3 className="text-xs font-bold text-stone-700 flex items-center gap-1.5">
-                    <span>🎯</span> JGスキル習熟度チェック
-                  </h3>
-                }
-              >
-                <div className="pt-2">
-                  <JgSkillMasteryChecklist />
-                </div>
-              </Collapsible>
-
-              <Collapsible
-                defaultOpen={false}
-                title={
-                  <h3 className="text-xs font-bold text-stone-700 flex items-center gap-1.5">
-                    <span>📊</span> プレイスタイル診断
-                  </h3>
-                }
-              >
-                <div className="pt-2">
-                  <PlayerStyleRadarCard />
-                </div>
-              </Collapsible>
+            {/* 右側: プレイスタイル深層カルテ (常時オープン・タブ閉じ不要) */}
+            <div className="lg:col-span-5 xl:col-span-5 flex flex-col gap-5 lg:sticky lg:top-4">
+              <PlayerStyleRadarCard />
             </div>
           </div>
         </div>
@@ -1787,16 +1750,11 @@ export default function CoachPage() {
                 <PostGameTab onOpenReflectionModal={() => setIsReflectionModalOpen(true)} refreshSignal={reflectionRefreshSignal} />
               </div>
 
-              <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-xs">
-                <Collapsible
-                  title={
-                    <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5">
-                      <span>📊</span> マイソロQダッシュボード (過去全ログ ＆ 成績一覧)
-                    </h3>
-                  }
-                >
-                  <MySoloQDashboard refreshSignal={reflectionRefreshSignal} />
-                </Collapsible>
+              <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-xs space-y-3">
+                <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5 border-b border-stone-100 pb-2">
+                  <span>📊</span> マイソロQダッシュボード (過去全ログ ＆ 成績一覧)
+                </h3>
+                <MySoloQDashboard refreshSignal={reflectionRefreshSignal} />
               </div>
 
               <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-xs space-y-3">
@@ -1819,18 +1777,13 @@ export default function CoachPage() {
                 </div>
               </div>
 
-              <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-xs">
-                <Collapsible
-                  title={
-                    <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5">
-                      <span>🗓️</span> 曜日×時間帯 勝率ヒートマップ
-                    </h3>
-                  }
-                >
-                  <div className="pt-3">
-                    <TimingHeatmapTab />
-                  </div>
-                </Collapsible>
+              <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-xs space-y-3">
+                <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5 border-b border-stone-100 pb-2">
+                  <span>🗓️</span> 曜日×時間帯 勝率ヒートマップ
+                </h3>
+                <div className="pt-1">
+                  <TimingHeatmapTab />
+                </div>
               </div>
             </div>
           </div>
