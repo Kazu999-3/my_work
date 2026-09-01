@@ -708,6 +708,71 @@ export default function CasinoPage() {
           </div>
         )}
 
+        {/* 🪙 コインの貯め方ガイド（5大ルート一覧） */}
+        <div className="bg-stone-900 text-stone-100 rounded-3xl p-6 md:p-8 border border-white/10 shadow-xl space-y-6">
+          <div className="flex items-center gap-3 border-b border-white/10 pb-4">
+            <div className="w-10 h-10 rounded-2xl bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center text-xl font-bold">
+              🪙
+            </div>
+            <div>
+              <h3 className="text-base md:text-lg font-black text-white">コインを自動で貯める 5つの方法</h3>
+              <p className="text-xs text-stone-400">試合に出る人も、観戦する人も全員がコインを獲得できます！</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+            <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-black text-amber-400">① 初回ログイン</span>
+                <span className="text-xs font-mono font-black text-emerald-400">+1,000 pt</span>
+              </div>
+              <p className="text-[11px] text-stone-300 leading-relaxed">
+                Discordで初めてログインすると、全員に初期所持金として自動付与！
+              </p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-black text-amber-400">② 試合に参加</span>
+                <span className="text-xs font-mono font-black text-emerald-400">+100 pt</span>
+              </div>
+              <p className="text-[11px] text-stone-300 leading-relaxed">
+                カスタム試合に参加するだけで、勝敗に関係なく全員に参加賞を付与！
+              </p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-black text-amber-400">③ 試合に勝利</span>
+                <span className="text-xs font-mono font-black text-emerald-400">+150 pt (計250)</span>
+              </div>
+              <p className="text-[11px] text-stone-300 leading-relaxed">
+                試合に勝利したチームのメンバー全員に勝利ボーナスを追加付与！
+              </p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-black text-amber-400">④ 募集を主催</span>
+                <span className="text-xs font-mono font-black text-emerald-400">+200 pt</span>
+              </div>
+              <p className="text-[11px] text-stone-300 leading-relaxed">
+                Discordで `/recruit` を打って募集を立てた主催者に感謝ボーナス！
+              </p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-1.5 sm:col-span-2 lg:col-span-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-black text-amber-400">⑤ 勝敗予想が的中</span>
+                <span className="text-xs font-mono font-black text-amber-300">賭け金 × 2倍 配当</span>
+              </div>
+              <p className="text-[11px] text-stone-300 leading-relaxed">
+                カスタムの勝利チームを予想して的中すると、賭けたコインがザクザク倍増して戻ってきます！
+              </p>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
   );

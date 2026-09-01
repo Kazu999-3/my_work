@@ -185,8 +185,35 @@ export default function GuidePage() {
             <div className="p-4 rounded-2xl bg-stone-900/80 border border-amber-500/20 space-y-2">
               <div className="text-lg">🛒 3. 特権アイテムと交換</div>
               <p className="text-stone-300 leading-relaxed text-[11px]">
-                「第一希望ロール確約チケット」や「賞金首ターゲット権」と交換して次回カスタムを有利に！
+                「🛡️ チャンピオンプロテクト権」や「🚫 全員BAN禁止権」「🎯 賞金首指定権」と交換！
               </p>
+            </div>
+          </div>
+
+          {/* コイン獲得5大ルート一覧 */}
+          <div className="pt-4 border-t border-amber-500/20 space-y-3">
+            <h4 className="text-sm font-black text-amber-300">🪙 コインを自動で貯める 5つの方法</h4>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 text-center text-xs">
+              <div className="p-2.5 rounded-xl bg-black/30 border border-amber-500/20">
+                <div className="text-[10px] text-stone-400">初回ログイン</div>
+                <div className="font-mono font-black text-emerald-400 text-sm mt-0.5">+1,000 pt</div>
+              </div>
+              <div className="p-2.5 rounded-xl bg-black/30 border border-amber-500/20">
+                <div className="text-[10px] text-stone-400">試合参加賞</div>
+                <div className="font-mono font-black text-emerald-400 text-sm mt-0.5">+100 pt</div>
+              </div>
+              <div className="p-2.5 rounded-xl bg-black/30 border border-amber-500/20">
+                <div className="text-[10px] text-stone-400">試合勝利</div>
+                <div className="font-mono font-black text-emerald-400 text-sm mt-0.5">+150 pt</div>
+              </div>
+              <div className="p-2.5 rounded-xl bg-black/30 border border-amber-500/20">
+                <div className="text-[10px] text-stone-400">募集主催</div>
+                <div className="font-mono font-black text-emerald-400 text-sm mt-0.5">+200 pt</div>
+              </div>
+              <div className="p-2.5 rounded-xl bg-black/30 border border-amber-500/20 col-span-2 sm:col-span-1">
+                <div className="text-[10px] text-stone-400">勝敗予想的中</div>
+                <div className="font-mono font-black text-amber-300 text-sm mt-0.5">賭け金 × 2倍</div>
+              </div>
             </div>
           </div>
         </section>
