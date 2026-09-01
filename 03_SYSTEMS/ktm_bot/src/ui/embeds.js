@@ -1,33 +1,55 @@
 import { CONFIG } from '../config.js';
 import { RECRUITMENT_COLORS } from '../utils/recruitmentStatus.js';
 
+function renderProgressBar(current, max) {
+  const totalBlocks = 10;
+  const filled = Math.min(totalBlocks, Math.max(0, Math.round((current / max) * totalBlocks)));
+  const empty = totalBlocks - filled;
+  return `[${'■'.repeat(filled)}${'□'.repeat(empty)}] ${current}/${max}人`;
+}
+
 /**
  * @param {object} metadata 募集メタデータ
- * @param {string} [tierLine] レート帯の内訳（「🔼1350以上 3名 ／ 🔽未満 5名」等）。
- *   参加ボタンを押す時点で構成が分かるよう、募集メッセージ本体にも常時表示する。
+ * @param {string} [tierLine] レート帯の内訳
  */
 export function createRecruitEmbed(metadata, tierLine) {
-  const isFull = metadata.joined.length >= metadata.maxCount;
-  const title = isFull ? "⚔️ メンバー確定" : `⚔️ KTM メンバー募集 [${metadata.joined.length}/${metadata.maxCount}]`;
+  const currentCount = metadata.joined.length;
+  const maxCount = metadata.maxCount || (metadata.mode === 'カスタム' ? 10 : 5);
+  const remaining = Math.max(0, maxCount - currentCount);
+  const isFull = currentCount >= maxCount;
+  const isAlmostFull = remaining > 0 && remaining <= 2;
+
+  let title = `⚔️ KTM メンバー募集 [${currentCount}/${maxCount}]`;
+  if (isFull) {
+    title = `🎉 メンバー確定！ [${currentCount}/${maxCount}] カスタム開催決定！`;
+  } else if (isAlmostFull) {
+    title = `🔥 あと【${remaining}名】でカスタム開催！ [${currentCount}/${maxCount}]`;
+  }
 
   const ownerName = metadata.names[metadata.owner] || "不明";
   const visibleFooter = `モード: ${metadata.mode} | 募集主: ${ownerName}`;
+  const progressBar = renderProgressBar(currentCount, maxCount);
 
   // 透明ピクセルのURLパラメータにメタデータを仕込む (完全に不可視)
   const encodedMetadata = encodeURIComponent(JSON.stringify(metadata));
   const pixelUrl = `https://raw.githubusercontent.com/nikolay-govorov/1x1-transparent-pixel/master/1x1.png?metadata=${encodedMetadata}`;
 
+  let bannerText = '';
+  if (isFull) {
+    bannerText = `✅ **10名集まりました！チーム分けの準備を行ってください。**\n\n`;
+  } else if (isAlmostFull) {
+    bannerText = `⚡ **あと少しで10名確定！飛び入り参加・初参加大歓迎です！**\n進捗: \`${progressBar}\` (あと**${remaining}**名)\n\n`;
+  } else {
+    bannerText = `進捗: \`${progressBar}\` (あと**${remaining}**名募集)\n\n`;
+  }
+
   return {
     title,
-    // 募集主を埋め込み上部にも表示（footerだけだと気づきにくいため）
     author: { name: `👤 募集主: ${ownerName}` },
-    description: renderRoles(metadata) + (tierLine ? `\n\n${tierLine}` : ''),
-    // 満員=確定(緑)/未達=募集中(琥珀)。以前は満員=赤/未達=緑と、他の募集カード
-    // (recruitmentStatus.js)と正反対の色意味になっていた(known-regression-patterns #4系)。
-    color: isFull ? RECRUITMENT_COLORS.confirmed : RECRUITMENT_COLORS.recruiting,
+    description: bannerText + renderRoles(metadata) + (tierLine ? `\n\n${tierLine}` : ''),
+    color: isFull ? RECRUITMENT_COLORS.confirmed : (isAlmostFull ? 0xe67e22 : RECRUITMENT_COLORS.recruiting),
     thumbnail: { url: pixelUrl },
     footer: { text: visibleFooter },
-    // 投稿時刻を固定表示（再描画で現在時刻に上書きしない）。古い募集はcreatedAt無しなので従来通り現在時刻。
     timestamp: metadata.createdAt || new Date().toISOString()
   };
 }
@@ -41,38 +63,88 @@ export function renderRoles(data) {
     const pooled = data.joined.filter(id => !Object.values(data.roles).includes(id));
     if (pooled.length > 0) pooled.forEach(id => lines.push(`- <@${id}>`));
   } else {
-    lines.push("👥 **PARTICIPANTS POOL**");
-    data.joined.forEach((id, i) => lines.push(`${i+1}. <@${id}>`));
-    for (let i = data.joined.length + 1; i <= data.maxCount; i++) lines.push(`${i}. ◽`);
+    lines.push("👥 **参加者一覧 (PARTICIPANTS)**");
+    data.joined.forEach((id, i) => lines.push(`\`${String(i + 1).padStart(2, '0')}.\` <@${id}>`));
+    for (let i = data.joined.length + 1; i <= data.maxCount; i++) {
+      lines.push(`\`${String(i).padStart(2, '0')}.\` ◽ *(募集中)*`);
+    }
   }
-  const specHeader = (data.mode === 'ノーマル' || data.mode === 'ARAM') ? "⏳ **カスタム待機**" : "👁️ **SPECTATORS**";
-  if (data.spectating.length > 0) { lines.push(`\n${specHeader}`); data.spectating.forEach(id => lines.push(`- <@${id}>`)); }
+  const specHeader = (data.mode === 'ノーマル' || data.mode === 'ARAM') ? "⏳ **カスタム待機・補欠**" : "👁️ **見学・補欠メンバー**";
+  if (data.spectating && data.spectating.length > 0) {
+    lines.push(`\n${specHeader}`);
+    data.spectating.forEach(id => lines.push(`- <@${id}>`));
+  }
   return lines.join('\n');
 }
 
 export function createRecruitButtons(metadata) {
-  const isFull = metadata.joined.length >= metadata.maxCount;
+  const currentCount = metadata.joined.length;
+  const maxCount = metadata.maxCount || (metadata.mode === 'カスタム' ? 10 : 5);
+  const remaining = Math.max(0, maxCount - currentCount);
+  const isFull = currentCount >= maxCount;
   const comps = [];
 
-  // Row 1: 参加（主動線を大きく1つに）
+  // Row 1: メインアクション（参加・見学・キャンセル）
   if (!isFull) {
-    comps.push({ type: 1, components: [{ type: 2, label: "✋ 参加する", style: 3, custom_id: `join_any:${metadata.owner}` }] });
+    comps.push({
+      type: 1,
+      components: [
+        {
+          type: 2,
+          label: `✋ 参加する (あと${remaining}名)`,
+          style: 3, // 緑
+          custom_id: `join_any:${metadata.owner}`,
+        },
+        {
+          type: 2,
+          label: "👁️ 見学/補欠",
+          style: 2, // 灰
+          custom_id: `toggle_spectate:${metadata.owner}`,
+        },
+        {
+          type: 2,
+          label: "❌ 辞退",
+          style: 4, // 赤
+          custom_id: `leave_recruit:${metadata.owner}`,
+        },
+      ],
+    });
   } else {
-    comps.push({ type: 1, components: [{ type: 2, label: "✅ 募集完了（ポータルでチーム分け）", style: 2, custom_id: `recruit_completed`, disabled: true }] });
+    comps.push({
+      type: 1,
+      components: [
+        {
+          type: 2,
+          label: "🌐 Webバランサーでチーム分け",
+          style: 5, // リンク
+          url: `${CONFIG.PORTAL_URL}/balancer`,
+        },
+        {
+          type: 2,
+          label: "👁️ 見学/補欠に入る",
+          style: 2,
+          custom_id: `toggle_spectate:${metadata.owner}`,
+        },
+      ],
+    });
   }
 
-  // Row 2: ロール選択（ノーマルかつ未満員のみ）。5個の個別ボタンは氾濫するため、
-  // 募集主メニュー(Row 3)と同じ「セレクト1つに集約」方式に統一する(#①)。
+  // Row 2: ロール選択（ノーマルかつ未満員のみ）
   if (!isFull && metadata.mode === 'ノーマル') {
-    comps.push({ type: 1, components: [{
-      type: 3, custom_id: `join_role_select:${metadata.owner}`,
-      placeholder: '⚔️ ロールを選んで参加（任意・プールのままでもOK）',
-      min_values: 0, max_values: 1,
-      options: ['Top', 'Jg', 'Mid', 'Adc', 'Sup'].map(r => ({ label: r, value: r }))
-    }] });
+    comps.push({
+      type: 1,
+      components: [{
+        type: 3,
+        custom_id: `join_role_select:${metadata.owner}`,
+        placeholder: '⚔️ 希望ロールを選んで参加（任意）',
+        min_values: 0,
+        max_values: 1,
+        options: ['Top', 'Jg', 'Mid', 'Adc', 'Sup'].map(r => ({ label: r, value: r })),
+      }],
+    });
   }
 
-  // Row 3: 募集主メニュー（編集・終了・削除などをセレクト1つに集約してボタンの氾濫を解消）
+  // Row 3: 募集主メニュー
   const manageOptions = [
     { label: "⚙️ 募集を編集", value: "edit", description: "モード/時刻/人数/メモを変更" },
     { label: "👥 メンバーを代理追加", value: "proxy", description: "他の人を代わりに参加させる" },
@@ -82,11 +154,17 @@ export function createRecruitButtons(metadata) {
   if (!isFull && metadata.mode !== 'カスタム' && metadata.joined.length >= 5) {
     manageOptions.splice(1, 0, { label: "🚀 10人に拡張", value: "upgrade", description: "カスタム10人募集に切り替え" });
   }
-  comps.push({ type: 1, components: [{
-    type: 3, custom_id: `recruit_manage:${metadata.owner}`,
-    placeholder: "⚙️ 募集主メニュー（編集・終了・削除…）",
-    min_values: 0, max_values: 1, options: manageOptions
-  }] });
+  comps.push({
+    type: 1,
+    components: [{
+      type: 3,
+      custom_id: `recruit_manage:${metadata.owner}`,
+      placeholder: "⚙️ 募集主メニュー（編集・終了・削除…）",
+      min_values: 0,
+      max_values: 1,
+      options: manageOptions,
+    }],
+  });
 
   return comps;
 }
@@ -139,10 +217,11 @@ export function getPortalComponents(userId) {
     { type: 2, label: "📝 サモナー名登録", style: 2, custom_id: "portal_ign" }
   ];
 
-  // 即募集(D-08): モーダル入力を飛ばしてデフォルト設定で1タップ募集
+  // 即募集 & エンタメ機能 (ルーレット)
   const rowQuick = [
     { type: 2, label: "⚡ ノーマル5 即募集", style: 2, custom_id: "quick_recruit:ノーマル:5" },
-    { type: 2, label: "⚡ カスタム10 即募集", style: 2, custom_id: "quick_recruit:カスタム:10" }
+    { type: 2, label: "⚡ カスタム10 即募集", style: 2, custom_id: "quick_recruit:カスタム:10" },
+    { type: 2, label: "🎲 ルーレット", style: 1, custom_id: "portal_roulette" }
   ];
 
   const row2 = [

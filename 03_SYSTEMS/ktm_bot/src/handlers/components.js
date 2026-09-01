@@ -2,6 +2,7 @@ import { CONFIG } from '../config.js';
 import { fetchGAS, patchInteractionResponse, sendDiscordMessage, sendInteractionFollowup } from '../utils/api.js';
 import { fetchSupabase } from '../utils/supabase.js';
 import { handleLaneCommand, handleStatsCommand } from './commands.js';
+import { generateChampionRoulette } from './roulette.js';
 import { createMessageContent, createRecruitButtons, createRecruitEmbed, extractPlayersFromEmbed, getPortalComponents, getPortalEmbed, handleHelpPage } from '../ui/embeds.js';
 import { parseMessageData, handleAutoMatchEnd } from '../utils/helpers.js';
 import { getAdminDiscordIds, markRecruitmentStatus } from '../utils/recruitPermission.js';
@@ -86,6 +87,18 @@ export async function handleButtonInteraction(interaction, env, ctx) {
 
   if (customId === 'portal_stats') {
     return handleStatsCommand(interaction, env, ctx);
+  }
+
+  if (customId === 'portal_roulette') {
+    const result = generateChampionRoulette('ALL', 1);
+    return Response.json({
+      type: 4,
+      data: {
+        embeds: [result.embed],
+        components: result.components,
+        flags: 64 // 実行者のみに表示
+      }
+    });
   }
 
   if (customId === 'portal_recruit') {
@@ -669,6 +682,24 @@ export async function handleButtonInteraction(interaction, env, ctx) {
         metadata.spectating = metadata.spectating.filter(id => id !== userId);
       }
     }
+  } else if (customId.startsWith('toggle_spectate')) {
+    await refreshJoinMetadata();
+    if (!metadata.spectating) metadata.spectating = [];
+    if (metadata.spectating.includes(userId)) {
+      metadata.spectating = metadata.spectating.filter(id => id !== userId);
+    } else {
+      metadata.spectating.push(userId);
+      metadata.joined = metadata.joined.filter(id => id !== userId);
+      Object.keys(metadata.roles).forEach(r => { if (metadata.roles[r] === userId) metadata.roles[r] = null; });
+      metadata.names[userId] = userName;
+    }
+  } else if (customId.startsWith('leave_recruit')) {
+    await refreshJoinMetadata();
+    metadata.joined = metadata.joined.filter(id => id !== userId);
+    if (metadata.spectating) {
+      metadata.spectating = metadata.spectating.filter(id => id !== userId);
+    }
+    Object.keys(metadata.roles).forEach(r => { if (metadata.roles[r] === userId) metadata.roles[r] = null; });
   } else if (customId.startsWith('close')) {
     // 募集終了→ボタンなしで閉じる（返信メンションで一括連絡してください）
     // recruitmentsテーブルのstatusも'closed'に反映し、ポータル側が古い募集を

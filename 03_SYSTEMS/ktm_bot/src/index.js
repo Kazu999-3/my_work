@@ -1,5 +1,6 @@
 import { verifySignature } from './utils/security.js';
 import { handleAnnounceMatch, handleLaneCommand, handleRecruitDirect, handleSetIgn, handleStatsCommand, handleMemoCommand, handleWelcomePanel } from './handlers/commands.js';
+import { handleRouletteCommand, handleRouletteButton } from './handlers/roulette.js';
 import { handleButtonInteraction } from './handlers/components.js';
 import { handleModalSubmit } from './handlers/modals.js';
 import { handleScheduledEvent } from './handlers/scheduled.js';
@@ -112,6 +113,7 @@ export default {
         if (name === 'lane') return handleLaneCommand(interaction, context, ctx);
         if (name === 'memo') return await handleMemoCommand(interaction, context, ctx);
         if (name === 'welcome' || name === 'welcome-panel') return await handleWelcomePanel(interaction, context, ctx);
+        if (name === 'roulette') return await handleRouletteCommand(interaction, context, ctx);
         if (name === 'panel') {
           return Response.json({
             type: 4,
@@ -125,7 +127,13 @@ export default {
       }
 
       // Message Component (Buttons/Select Menus)
-      if (interaction.type === 3) return await handleButtonInteraction(interaction, { ...env, DISCORD_TOKEN }, ctx);
+      if (interaction.type === 3) {
+        const customId = interaction.data?.custom_id || '';
+        if (customId.startsWith('roulette_reroll:')) {
+          return await handleRouletteButton(interaction, { ...env, DISCORD_TOKEN }, ctx);
+        }
+        return await handleButtonInteraction(interaction, { ...env, DISCORD_TOKEN }, ctx);
+      }
 
       // Modal Submit
       if (interaction.type === 5) return await handleModalSubmit(interaction, { ...env, DISCORD_TOKEN }, ctx);
