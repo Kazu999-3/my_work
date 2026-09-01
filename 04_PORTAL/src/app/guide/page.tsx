@@ -317,6 +317,69 @@ export default function GuidePage() {
           </div>
         </section>
 
+        {/* 🎲 勝敗ベット ＆ KTMショップ ＆ コインシステムの使い方 */}
+        <section className="bg-gradient-to-br from-amber-950 via-stone-900 to-amber-950 text-white rounded-3xl p-6 md:p-8 border border-amber-500/30 shadow-xl space-y-6">
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-amber-500/20 text-amber-400 border border-amber-500/40 flex items-center justify-center font-black text-xl">
+                🎲
+              </div>
+              <div>
+                <h2 className="text-xl md:text-2xl font-black text-white flex items-center gap-2">
+                  勝敗予想ベット ＆ KTMショップ ＆ 長者番付
+                </h2>
+                <p className="text-amber-200/80 text-xs md:text-sm">
+                  カスタムを見る人も出る人も全員が熱狂！貯めたコインで特権アイテムをGETしよう🔥
+                </p>
+              </div>
+            </div>
+            <Link
+              href="/casino"
+              className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950 font-black text-xs transition-all shadow-md flex items-center gap-1.5 cursor-pointer"
+            >
+              勝敗ベット画面へ <ArrowRight size={14} />
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Step 1 */}
+            <div className="bg-stone-950/80 p-5 rounded-2xl border border-amber-500/20 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-2xl">🪙</span>
+                <span className="text-[10px] font-black bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded border border-amber-500/30">STEP 1</span>
+              </div>
+              <h3 className="text-sm font-black text-white">コインを貯める</h3>
+              <p className="text-xs text-stone-300 leading-relaxed">
+                募集を立てる（<strong>+100〜200</strong>）、参加する（<strong>+50〜100</strong>）、勝つ（<strong>+150</strong>）、MVP（<strong>+200</strong>）で自然とザクザク貯まります！
+              </p>
+            </div>
+
+            {/* Step 2 */}
+            <div className="bg-stone-950/80 p-5 rounded-2xl border border-amber-500/20 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-2xl">🎲</span>
+                <span className="text-[10px] font-black bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded border border-amber-500/30">STEP 2</span>
+              </div>
+              <h3 className="text-sm font-black text-white">勝敗予想にベット！</h3>
+              <p className="text-xs text-stone-300 leading-relaxed">
+                Discord通知やWeb画面で <strong>[🟦 BLUE]</strong> または <strong>[🟥 RED]</strong> を押すだけ！見事的中するとオッズ倍率でコインが増加！
+              </p>
+            </div>
+
+            {/* Step 3 */}
+            <div className="bg-stone-950/80 p-5 rounded-2xl border border-amber-500/20 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-2xl">🛒</span>
+                <span className="text-[10px] font-black bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded border border-amber-500/30">STEP 3</span>
+              </div>
+              <h3 className="text-sm font-black text-white">ショップでアイテム交換</h3>
+              <p className="text-xs text-stone-300 leading-relaxed">
+                「<strong>第一希望確約チケット</strong>」「<strong>賞金首指定権</strong>」「<strong>全員ブレイバリー権</strong>」「<strong>週末メガ宝くじ</strong>」といつでも交換可能！
+              </p>
+            </div>
+          </div>
+        </section>
+
         {/* ❓ よくある質問 (FAQ) */}
         <section className="bg-white rounded-3xl p-6 md:p-8 border border-black/10 shadow-sm">
           <div className="flex items-center gap-3 mb-6">
@@ -334,6 +397,17 @@ export default function GuidePage() {
           </div>
 
           <div className="space-y-4">
+            <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200">
+              <h4 className="font-bold text-stone-900 text-sm flex items-center gap-2">
+                <span className="text-amber-600 font-black">Q.</span>
+                勝敗ベットやコインの利用に、アカウント登録やパスワードは必要ですか？
+              </h4>
+              <p className="text-xs text-stone-700 mt-2 pl-5 leading-relaxed">
+                <strong>いいえ、アカウント登録やパスワードは一切不要です！</strong><br />
+                Discordから使う時は「あなたのDiscordアカウント」、Webポータルから使う時は「あなたのサモナー名（名簿名）」を入力するだけで、システムが自動であなたを識別してコインを安全に管理します。
+              </p>
+            </div>
+
             <div className="p-4 rounded-2xl bg-stone-50 border border-black/5">
               <h4 className="font-bold text-stone-900 text-sm flex items-center gap-2">
                 <span className="text-amber-600 font-black">Q.</span>
