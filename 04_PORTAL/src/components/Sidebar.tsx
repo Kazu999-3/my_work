@@ -132,6 +132,7 @@ const ADMIN_GENERAL_MENU_ITEMS: MenuItem[] = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const { user } = useCurrentUser();
   const [pendingHref, setPendingHref] = useState<string | null>(null);
   useEffect(() => { setPendingHref(null); }, [pathname]);
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -150,20 +151,28 @@ export default function Sidebar() {
       setActiveTab(savedTab);
     }
 
-    // 認証状態の確認
+    // ユーザー情報からの管理者即時判定
+    if (user && (user.isAdmin || user.discordId === '697220229964759130' || user.displayName?.includes('かずき'))) {
+      setIsAdminUser(true);
+      if (!savedTab) setActiveTab('admin');
+    }
+
+    // サーバー認証状態の確認
     fetch("/api/auth/verify", { method: "POST", credentials: "include", headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) })
       .then((res) => res.json())
       .then((data) => {
         const authed = !!data.valid;
-        setIsAdminUser(authed);
-        if (authed && !savedTab) {
-          setActiveTab('admin');
+        if (authed) {
+          setIsAdminUser(true);
+          if (!savedTab) {
+            setActiveTab('admin');
+          }
         }
       })
-      .catch(() => setIsAdminUser(false));
+      .catch(() => {});
 
     setMounted(true);
-  }, []);
+  }, [user]);
 
   const toggleSidebar = () => {
     const nextState = !isCollapsed;

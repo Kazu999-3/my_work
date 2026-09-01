@@ -68,7 +68,6 @@ export default function RootLayout({
           <BackButton />
           {children}
         </div>
-        <BottomNav />
         <BackToTop />
       </body>
     </html>
