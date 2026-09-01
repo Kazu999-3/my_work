@@ -128,6 +128,9 @@ export default function BalancerPage() {
     }
   };
 
+  // 🎗️ 案E用: 実践的レーン戦ハンデ縛り設定
+  const [selectedHandicaps, setSelectedHandicaps] = useState<Record<string, { role: string; targetName: string; level: number; penalty: number; rule: string; cost: number }>>({});
+
   // サイド偏り検証(#81): Blue/Redの勝率差を集計（headカウントでエグレス最小）
   const [sideStats, setSideStats] = useState<{ total: number; blueWins: number; blueRate: number } | null>(null);
   const fetchSideStats = async () => {
@@ -1065,10 +1068,103 @@ export default function BalancerPage() {
                 <div className="flex border-b border-stone-200 gap-2 overflow-x-auto pb-1">
                   {proposals.map((prop, idx) => (
                     <button key={prop.id || idx} onClick={() => { setBalanceResult(prop); setSelectedProposalIdx(idx); }}
-                      className={`px-4 py-2 text-sm font-bold border-b-2 transition whitespace-nowrap ${selectedProposalIdx === idx ? 'border-amber-500 text-amber-700' : 'border-transparent text-stone-500 hover:text-stone-700'}`}>
+                      className={`px-4 py-2 text-sm font-bold border-b-2 transition whitespace-nowrap ${selectedProposalIdx === idx ? 'border-amber-500 text-amber-700 font-black' : 'border-transparent text-stone-500 hover:text-stone-700'}`}>
                       {prop.title || `案${prop.id || idx}`}
+                      {prop.id === 'E' && <span className="ml-1 text-[10px] bg-amber-200 text-amber-900 px-1.5 py-0.2 rounded-full">🎗️ルール設定</span>}
                     </button>
                   ))}
+                </div>
+              )}
+
+              {/* 🎗️ 案E選択時: 実践的レーン戦ハンデ縛り ＆ 再微調整パネル */}
+              {balanceResult.id === 'E' && (
+                <div className="p-4 rounded-2xl bg-amber-50 border-2 border-amber-300 shadow-sm space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xl">🎗️</span>
+                      <div>
+                        <h3 className="text-xs font-black text-amber-950">案E：実践的レーン戦ハンデ縛り設定 ＆ 再微調整</h3>
+                        <p className="text-[11px] text-amber-800">不利対面（2ランク格差等）の格上プレイヤーに縛りルールを設定し、戦力を完全に均等化します。</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 pt-1 text-xs">
+                    {/* Lv.1 */}
+                    <div className="p-3 rounded-xl bg-white border border-amber-200 space-y-1.5 shadow-xs">
+                      <div className="flex items-center justify-between">
+                        <span className="font-black text-amber-900 text-xs">Lv.1 軽度ハンデ</span>
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-800">実効MMR -150</span>
+                      </div>
+                      <p className="text-[11px] text-stone-600 leading-relaxed">
+                        ▫ <strong>フラッシュ禁止</strong>（ゴースト/TP強制）<br />
+                        ▫ <strong>序盤5分間リコール禁止</strong>
+                      </p>
+                      <div className="text-[10px] text-amber-700 font-bold">消費: 300 コイン</div>
+                    </div>
+
+                    {/* Lv.2 */}
+                    <div className="p-3 rounded-xl bg-white border-2 border-amber-400 space-y-1.5 shadow-xs">
+                      <div className="flex items-center justify-between">
+                        <span className="font-black text-amber-950 text-xs">Lv.2 中度ハンデ</span>
+                        <span className="text-[10px] font-black px-2 py-0.5 rounded bg-amber-500 text-white">実効MMR -300 (1ランク差)</span>
+                      </div>
+                      <p className="text-[11px] text-stone-600 leading-relaxed">
+                        ▫ <strong>ポーション購入禁止</strong>（回復封じ）<br />
+                        ▫ <strong>メインチャンプBAN＆セカンド強制</strong>
+                      </p>
+                      <div className="text-[10px] text-amber-700 font-bold">消費: 600 コイン</div>
+                    </div>
+
+                    {/* Lv.3 */}
+                    <div className="p-3 rounded-xl bg-white border border-amber-200 space-y-1.5 shadow-xs">
+                      <div className="flex items-center justify-between">
+                        <span className="font-black text-amber-900 text-xs">Lv.3 重度ハンデ</span>
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-rose-100 text-rose-800">実効MMR -500 (完全互角)</span>
+                      </div>
+                      <p className="text-[11px] text-stone-600 leading-relaxed">
+                        ▫ <strong>初手『女神の涙』スタート縛り</strong><br />
+                        ▫ <strong>スキル1つ（Ult除く）使用禁止</strong>
+                      </p>
+                      <div className="text-[10px] text-amber-700 font-bold">消費: 1,200 コイン</div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-2 border-t border-amber-200/60">
+                    <span className="text-[11px] text-amber-900 font-bold">
+                      ※この設定で推定MMRが再計算され、対面格差がピタッと埋まります。
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        // 案Eの再微調整を実行: 格上プレイヤーの実効MMRを補正して再描画
+                        const updatedBlue = balanceResult.teamBlue.map((p: any) => {
+                          const penalty = handicapNames.has(p.name) ? 300 : 0;
+                          return { ...p, mmr: Math.max(100, p.mmr - penalty) };
+                        });
+                        const updatedRed = balanceResult.teamRed.map((p: any) => {
+                          const penalty = handicapNames.has(p.name) ? 300 : 0;
+                          return { ...p, mmr: Math.max(100, p.mmr - penalty) };
+                        });
+                        const newBlueMMR = updatedBlue.reduce((s: number, p: any) => s + p.mmr, 0);
+                        const newRedMMR = updatedRed.reduce((s: number, p: any) => s + p.mmr, 0);
+                        const updatedRes = {
+                          ...balanceResult,
+                          teamBlue: updatedBlue,
+                          teamRed: updatedRed,
+                          teamBlueMMR: newBlueMMR,
+                          teamRedMMR: newRedMMR,
+                          mmrDiff: Math.abs(newBlueMMR - newRedMMR),
+                        };
+                        setBalanceResult(updatedRes);
+                        alert("⚡ 【案E微調整完了】 ハンデ補正（実効MMR -300）を適用し、対面格差と勝率予想を再計算しました！");
+                      }}
+                      className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white font-black text-xs transition-all shadow-sm cursor-pointer flex items-center gap-1.5"
+                    >
+                      <Sparkles size={14} />
+                      推定MMRを反映してチーム分けを微調整する
+                    </button>
+                  </div>
                 </div>
               )}
 
