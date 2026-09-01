@@ -293,12 +293,18 @@ export async function POST(request: Request) {
         newOffRolePity += 1; // それ以外ならオフロールPity蓄積
       }
 
+      // コイン付与計算: 参加賞 +100コイン、勝利チーム +150コイン
+      const currentCoins = Number(r.dbPlayer.coins) || 1000;
+      const coinReward = (r.team === winningTeam) ? 250 : 100; // 勝利時: 100+150=250, 敗北時: 100
+      const newCoins = currentCoins + coinReward;
+
       const updateData: any = {
         [roleMmrKey]: newRoleMmr,
         [gamesKey]: (newGames as any)[r.role],
         mmr: newTotalMmr,
         pity: newPity,
-        off_role_pity: newOffRolePity
+        off_role_pity: newOffRolePity,
+        coins: newCoins
       };
 
       const { error: uError } = await supabase
@@ -361,6 +367,45 @@ export async function POST(request: Request) {
       }
     } catch (e) {
       console.warn('[match/record] 予測突き合わせに失敗（続行）:', e);
+    }
+
+    // (4.6) 勝敗予想ベットの自動精算（的中者へのコイン払い戻し）
+    try {
+      const { data: openBets } = await supabase
+        .from('ktm_bets')
+        .select('*')
+        .eq('settled', false);
+
+      if (openBets && openBets.length > 0) {
+        for (const bet of openBets) {
+          const won = (bet.team === winningTeam);
+          if (won) {
+            const payout = Math.floor(bet.amount * 2); // 2倍払い戻し
+            const { data: pData } = await supabase
+              .from('ktm_players')
+              .select('name, coins')
+              .eq('name', bet.player_name)
+              .single();
+            if (pData) {
+              const cur = pData.coins ?? 1000;
+              await supabase
+                .from('ktm_players')
+                .update({ coins: cur + payout })
+                .eq('name', pData.name);
+            }
+          }
+          await supabase
+            .from('ktm_bets')
+            .update({
+              settled: true,
+              won,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', bet.id);
+        }
+      }
+    } catch (e) {
+      console.warn('[match/record] 勝敗予想の自動精算エラー（続行）:', e);
     }
 
     // 5. Discordへ試合結果を速報通知 (非同期で送信して待たないか、待つか。エラーになっても保存は完了させる)
