@@ -9,6 +9,7 @@ export interface CurrentUser {
   avatar: string;
   coins: number;
   rank: string;
+  isAdmin?: boolean;
 }
 
 export function useCurrentUser() {
