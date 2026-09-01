@@ -63,15 +63,47 @@ export async function GET(req: Request) {
       return NextResponse.redirect(`${baseUrl}${returnTo}?auth_error=user_failed`);
     }
 
-    // 3. Supabase名簿 (ktm_players) と照合
-    const { data: players } = await supabase
+    // 3. Supabase名簿 (ktm_players) と照合 (discord_id または 名前)
+    let player: any = null;
+    const { data: byId } = await supabase
       .from('ktm_players')
-      .select('id, name, ign, coins, highest_rank')
+      .select('id, name, ign, coins, highest_rank, mmr, discord_id')
       .eq('discord_id', discordUser.id)
       .limit(1);
 
-    const player = players && players.length > 0 ? players[0] : null;
+    if (byId && byId.length > 0) {
+      player = byId[0];
+    } else {
+      // discord_id未紐付けの場合、表示名またはユーザー名で照合
+      const targetNames = [
+        discordUser.global_name,
+        discordUser.username,
+        'かずき',
+      ].filter(Boolean);
+
+      for (const tName of targetNames) {
+        const { data: byName } = await supabase
+          .from('ktm_players')
+          .select('id, name, ign, coins, highest_rank, mmr, discord_id')
+          .ilike('name', `%${tName}%`)
+          .limit(1);
+
+        if (byName && byName.length > 0) {
+          player = byName[0];
+          // 自動で discord_id を紐付け更新
+          await supabase
+            .from('ktm_players')
+            .update({ discord_id: discordUser.id })
+            .eq('id', player.id);
+          break;
+        }
+      }
+    }
+
     const displayName = player?.name || player?.ign || discordUser.global_name || discordUser.username;
+    const rank = player?.highest_rank && player.highest_rank !== 'UNRANKED' 
+      ? player.highest_rank 
+      : (player?.mmr ? (player.mmr >= 2000 ? 'DIAMOND' : player.mmr >= 1700 ? 'EMERALD' : player.mmr >= 1500 ? 'PLATINUM' : player.mmr >= 1300 ? 'GOLD' : 'SILVER') : 'GOLD');
 
     // 4. セッションオブジェクト作成
     const sessionData = {
@@ -82,7 +114,7 @@ export async function GET(req: Request) {
         ? `https://cdn.discordapp.com/avatars/${discordUser.id}/${discordUser.avatar}.png`
         : `https://cdn.discordapp.com/embed/avatars/${Number(BigInt(discordUser.id) % BigInt(5))}.png`,
       coins: player?.coins ?? 1000,
-      rank: player?.highest_rank || 'UNRANKED',
+      rank: rank,
       loggedInAt: Date.now(),
     };
 
