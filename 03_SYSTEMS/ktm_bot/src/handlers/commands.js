@@ -2,7 +2,7 @@ import { CONFIG, getPortalUrl } from '../config.js';
 import { fetchGAS, patchInteractionResponse, sendDiscordMessage, fetchPortalAPI } from '../utils/api.js';
 import { createMessageContent, createRecruitButtons, createRecruitEmbed, getPortalComponents, getPortalEmbed } from '../ui/embeds.js';
 import { getPlayersByNames, fetchSupabase } from '../utils/supabase.js';
-import { parseMessageData, parseStartTime } from '../utils/helpers.js';
+import { parseMessageData, parseStartTime, parseSmartRecruitInput } from '../utils/helpers.js';
 import { createRecruitment } from '../utils/recruitPermission.js';
 import { getTierEmoji } from '../utils/ktmRank.js';
 
@@ -10,10 +10,20 @@ export function handleRecruitDirect(interaction, env, ctx) {
   const options = interaction.data.options || [];
   const getOpt = (name) => options.find(o => o.name === name)?.value;
 
-  const mode = getOpt('mode') || 'カスタム';
-  const time = getOpt('time') || '';
-  const max = parseInt(getOpt('max') || (mode === 'カスタム' ? 10 : 5));
-  const memo = getOpt('memo') || '';
+  // フリー入力テキスト (text / query / input / memo など) または個別オプションを統合解釈
+  const rawText = getOpt('text') || getOpt('query') || getOpt('input') || getOpt('memo') || '';
+  const explicit = {
+    mode: getOpt('mode'),
+    time: getOpt('time'),
+    max: getOpt('max'),
+    memo: getOpt('memo')
+  };
+
+  const parsed = parseSmartRecruitInput(rawText, explicit);
+  const mode = parsed.mode;
+  const time = parsed.time;
+  const max = parsed.max;
+  const memo = parsed.memo;
   const userId = interaction.member.user.id;
 
   const initialJoined = [userId];
@@ -34,7 +44,7 @@ export function handleRecruitDirect(interaction, env, ctx) {
 
   const metadata = {
     mode, time, maxCount: max, memo,
-    // createdAt: 投稿時刻を固定保存（モーダル版と同様、再描画で日時が現在時刻に上書きされるのを防ぐ）
+    // createdAt: 投稿時刻を固定保存
     owner: userId, createdAt: new Date().toISOString(), joined: initialJoined, spectating: [],
     roles: { Top: null, Jg: null, Mid: null, Adc: null, Sup: null }, names: names
   };

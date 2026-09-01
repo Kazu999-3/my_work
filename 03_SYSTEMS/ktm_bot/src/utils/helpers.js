@@ -3,6 +3,89 @@ import { fetchGAS, fetchPortalAPI, sendDiscordMessage, sendInteractionFollowup }
 import { fetchSupabase } from './supabase.js';
 
 /**
+ * parseSmartRecruitInput: フリー入力テキストや省略入力をスマートに解釈して募集パラメータを生成
+ * 例: "21:00" -> { mode: 'カスタム', time: '21:00〜', max: 10 }
+ * 例: "21:30 ノーマル 楽しく" -> { mode: 'ノーマル', time: '21:30〜', max: 5, memo: '楽しく' }
+ * 例: "5" -> { mode: 'ノーマル', time: '今から', max: 5 }
+ * 例: "ARAM" -> { mode: 'ARAM', time: '今から', max: 5 }
+ */
+export function parseSmartRecruitInput(rawInput, explicitOptions = {}) {
+  let mode = explicitOptions.mode || null;
+  let time = explicitOptions.time || null;
+  let max = explicitOptions.max ? parseInt(explicitOptions.max, 10) : null;
+  let memo = explicitOptions.memo || null;
+
+  if (rawInput && typeof rawInput === 'string') {
+    let text = rawInput.trim();
+
+    // 1. モード判定
+    if (!mode) {
+      if (/aram|アラム/i.test(text)) {
+        mode = 'ARAM';
+        if (!max) max = 5;
+        text = text.replace(/aram|アラム/gi, '');
+      } else if (/ノーマル|normal|flex|フレク|ランク/i.test(text)) {
+        mode = 'ノーマル';
+        if (!max) max = 5;
+        text = text.replace(/ノーマル|normal|flex|フレク|ランク/gi, '');
+      } else if (/カスタム|custom|内戦/i.test(text)) {
+        mode = 'カスタム';
+        if (!max) max = 10;
+        text = text.replace(/カスタム|custom|内戦/gi, '');
+      }
+    }
+
+    // 2. 人数判定
+    if (!max) {
+      const maxMatch = text.match(/\b(10|5|[2-9])\s*人?(?:募集)?\b/);
+      if (maxMatch) {
+        max = parseInt(maxMatch[1], 10);
+        text = text.replace(maxMatch[0], '');
+      }
+    }
+
+    // 3. 時刻判定
+    if (!time) {
+      if (/今から|今すぐ|いまから|now/i.test(text)) {
+        time = '今から';
+        text = text.replace(/今から|今すぐ|いまから|now/gi, '');
+      } else {
+        const timeMatch = text.match(/(\d{1,2}[:：]\d{2}(?:〜|~)?|\d{1,2}時(?:半|\d{1,2}分)?(?:〜|~)?|\b(?:2[0-3]|1[89])\b)/);
+        if (timeMatch) {
+          let t = timeMatch[1].replace('：', ':');
+          if (/^\d{1,2}$/.test(t)) {
+            t = `${t}:00〜`;
+          } else if (!t.endsWith('〜') && !t.endsWith('~')) {
+            t = `${t}〜`;
+          }
+          time = t;
+          text = text.replace(timeMatch[0], '');
+        }
+      }
+    }
+
+    // 4. 残りのテキストをメモとして扱う
+    const remainingText = text.replace(/\s+/g, ' ').trim();
+    if (remainingText && !memo) {
+      memo = remainingText;
+    }
+  }
+
+  // デフォルト値補完
+  if (!mode) {
+    mode = (max === 5) ? 'ノーマル' : 'カスタム';
+  }
+  if (!max) {
+    max = (mode === 'カスタム') ? 10 : 5;
+  }
+  if (!time) {
+    time = '今から';
+  }
+
+  return { mode, time, max, memo: memo || '' };
+}
+
+/**
  * parseStartTime: 募集の「開始予定時刻」テキスト(JST)を解釈してISO(UTC)文字列を返す。
  * 対応例: "21:00" / "21時" / "土曜21時" / "明日21:00" / "7/25 21時" / "2100"。
  * 解釈できない(例: "今夜"/"未定"/空)場合は null を返す＝リマインド対象外。
