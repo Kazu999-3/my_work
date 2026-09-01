@@ -51,7 +51,23 @@ export function useCurrentUser() {
     window.location.href = `/api/auth/discord?returnTo=${encodeURIComponent(returnTo)}`;
   };
 
-  const selectPlayerLocal = (player: { name: string; coins?: number; highest_rank?: string; discord_id?: string }) => {
+  const selectPlayerLocal = async (player: { name: string; coins?: number; highest_rank?: string; discord_id?: string }) => {
+    try {
+      const res = await fetch('/api/auth/select', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: player.name, discordId: player.discord_id }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.user) {
+          setUser(data.user);
+          localStorage.setItem('ktm_current_user', JSON.stringify(data.user));
+          return;
+        }
+      }
+    } catch {}
+
     const mockUser: CurrentUser = {
       discordId: player.discord_id || `local_${player.name}`,
       username: player.name,

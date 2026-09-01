@@ -315,31 +315,22 @@ export default function CasinoPage() {
                   </button>
                 </div>
               ) : (
-                <div className="p-6 rounded-3xl bg-gradient-to-br from-indigo-950 via-stone-900 to-indigo-950 border border-indigo-500/30 text-white space-y-4 text-center shadow-lg">
-                  <div className="w-12 h-12 rounded-2xl bg-[#5865F2]/20 text-[#5865F2] border border-[#5865F2]/40 flex items-center justify-center mx-auto text-2xl">
-                    🎮
+                <div className="p-6 rounded-3xl bg-gradient-to-br from-amber-950 via-stone-900 to-amber-950 border-2 border-amber-500/40 text-white space-y-4 shadow-xl">
+                  <div className="flex items-center gap-3 justify-center">
+                    <div className="w-10 h-10 rounded-2xl bg-amber-500/20 text-amber-400 border border-amber-500/40 flex items-center justify-center text-xl font-black">
+                      🪙
+                    </div>
+                    <div className="text-left">
+                      <h3 className="text-base font-black text-white">
+                        マイアカウントでログイン
+                      </h3>
+                      <p className="text-xs text-amber-200/80">
+                        名前を選ぶだけで1秒でログイン完了！あなたの残高でベットできます🔥
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="text-base font-black text-white">
-                      アカウントログイン
-                    </h3>
-                    <p className="text-xs text-stone-300 mt-1 max-w-sm mx-auto leading-relaxed">
-                      名前入力の手間なく、あなたのアカウント残高からワンタップで勝敗ベット・アイテム購入ができます！
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => loginWithDiscord('/casino')}
-                    className="w-full max-w-xs mx-auto py-3 px-6 rounded-xl bg-[#5865F2] hover:bg-[#4752C4] text-white font-black text-sm transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
-                  >
-                    <LogIn size={18} />
-                    Discordでログイン
-                  </button>
 
-                  <div className="pt-3 border-t border-white/10 max-w-xs mx-auto">
-                    <label className="block text-[11px] text-stone-400 font-bold mb-1.5 text-left">
-                      または名簿から自分を選んでクイックログイン:
-                    </label>
+                  <div className="max-w-md mx-auto space-y-2">
                     <select
                       onChange={(e) => {
                         const sel = ranking.find((p) => p.name === e.target.value);
@@ -353,14 +344,14 @@ export default function CasinoPage() {
                         }
                       }}
                       defaultValue=""
-                      className="w-full bg-stone-900 border border-stone-700 text-stone-200 rounded-xl px-3 py-2 text-xs font-bold focus:outline-none focus:border-amber-500"
+                      className="w-full bg-stone-950 border-2 border-amber-500/50 text-amber-100 rounded-2xl px-4 py-3 text-sm font-black focus:outline-none focus:border-amber-400 shadow-inner cursor-pointer"
                     >
                       <option value="" disabled>
-                        名簿からあなたの名前を選択...
+                        👇 あなたの名前（サモナー名）を選択してください
                       </option>
                       {ranking.map((p) => (
-                        <option key={p.name} value={p.name}>
-                          {p.name} ({p.rank || 'UNRANKED'} / 🪙 {p.coins.toLocaleString()}pt)
+                        <option key={p.name} value={p.name} className="bg-stone-900 text-white font-bold py-1">
+                          {p.name}（{p.rank || 'UNRANKED'} / 🪙 {(p.coins ?? 1000).toLocaleString()}コイン）
                         </option>
                       ))}
                     </select>
