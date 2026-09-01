@@ -5,7 +5,7 @@ import { fetchAllRows } from '../../../../lib/fetchAll';
 
 export async function POST(request: Request) {
   try {
-    const { winningTeam, gameDuration, participants, riotMatchId, balanceSatisfaction } = await request.json();
+    const { winningTeam, gameDuration, participants, riotMatchId, balanceSatisfaction, isExhibition } = await request.json();
 
     if (!winningTeam || !participants || participants.length !== 10) {
       return NextResponse.json({ error: '入力データが不正です。10人の参加者と勝利チームが必要です。' }, { status: 400 });
@@ -179,7 +179,25 @@ export async function POST(request: Request) {
         csd15: input.csd15
       };
 
-      const { delta: mmrDelta, breakdown: mmrBreakdown } = calculateNewMMRDetailed(ctx); // M-03: 内訳も取得
+      // お祭りマッチ（完全オフメタ・ランダム等）の場合はMMR変動ゼロ（完全戦績保護）
+      let mmrDelta = 0;
+      let mmrBreakdown = null;
+
+      if (!isExhibition) {
+        const mmrResult = calculateNewMMRDetailed(ctx);
+        mmrDelta = mmrResult.delta;
+        mmrBreakdown = mmrResult.breakdown;
+      } else {
+        mmrBreakdown = {
+          baseDelta: 0,
+          kdaBonus: 0,
+          mvpBonus: 0,
+          streakBonus: 0,
+          finalDelta: 0,
+          note: 'お祭りカスタム (戦績ノーカウント保護)'
+        };
+      }
+
       const kdaScore = calculateKdaScore(input.kills, input.deaths, input.assists);
 
       results.push({
@@ -239,28 +257,27 @@ export async function POST(request: Request) {
     
     if (piError) throw new Error(`参加者データの作成に失敗: ${piError.message}`);
 
-    // (3) ktm_players のMMRとPityをUPDATE
-    // それぞれのレコードを更新
+    // (3) ktm_players のMMRとPityとコインをUPDATE
     for (const r of results) {
       const roleMmrKey = `mmr_${r.role.toLowerCase()}`;
       const gamesKey = `games_${r.role.toLowerCase()}`;
       const newRoleMmr = r.currentMmr + r.mmrDelta;
 
-      const top = r.role === 'TOP' ? newRoleMmr : (r.dbPlayer.mmr_top || 1200);
-      const jg = r.role === 'JG' ? newRoleMmr : (r.dbPlayer.mmr_jg || 1200);
-      const mid = r.role === 'MID' ? newRoleMmr : (r.dbPlayer.mmr_mid || 1200);
-      const adc = r.role === 'ADC' ? newRoleMmr : (r.dbPlayer.mmr_adc || 1200);
-      const sup = r.role === 'SUP' ? newRoleMmr : (r.dbPlayer.mmr_sup || 1200);
+      // お祭りマッチ時はMMRと公式試合数は現状維持
+      const top = isExhibition ? (r.dbPlayer.mmr_top || 1200) : (r.role === 'TOP' ? newRoleMmr : (r.dbPlayer.mmr_top || 1200));
+      const jg = isExhibition ? (r.dbPlayer.mmr_jg || 1200) : (r.role === 'JG' ? newRoleMmr : (r.dbPlayer.mmr_jg || 1200));
+      const mid = isExhibition ? (r.dbPlayer.mmr_mid || 1200) : (r.role === 'MID' ? newRoleMmr : (r.dbPlayer.mmr_mid || 1200));
+      const adc = isExhibition ? (r.dbPlayer.mmr_adc || 1200) : (r.role === 'ADC' ? newRoleMmr : (r.dbPlayer.mmr_adc || 1200));
+      const sup = isExhibition ? (r.dbPlayer.mmr_sup || 1200) : (r.role === 'SUP' ? newRoleMmr : (r.dbPlayer.mmr_sup || 1200));
 
-      // レーン別試合数を+1し、代表MMRは共通関数で試合数重み付け(N1・リビルドと同じ計算)
       const newGames = {
-        TOP: (r.dbPlayer.games_top || 0) + (r.role === 'TOP' ? 1 : 0),
-        JG:  (r.dbPlayer.games_jg  || 0) + (r.role === 'JG'  ? 1 : 0),
-        MID: (r.dbPlayer.games_mid || 0) + (r.role === 'MID' ? 1 : 0),
-        ADC: (r.dbPlayer.games_adc || 0) + (r.role === 'ADC' ? 1 : 0),
-        SUP: (r.dbPlayer.games_sup || 0) + (r.role === 'SUP' ? 1 : 0),
+        TOP: (r.dbPlayer.games_top || 0) + (!isExhibition && r.role === 'TOP' ? 1 : 0),
+        JG:  (r.dbPlayer.games_jg  || 0) + (!isExhibition && r.role === 'JG'  ? 1 : 0),
+        MID: (r.dbPlayer.games_mid || 0) + (!isExhibition && r.role === 'MID' ? 1 : 0),
+        ADC: (r.dbPlayer.games_adc || 0) + (!isExhibition && r.role === 'ADC' ? 1 : 0),
+        SUP: (r.dbPlayer.games_sup || 0) + (!isExhibition && r.role === 'SUP' ? 1 : 0),
       };
-      const newTotalMmr = computeRepresentativeMmr({ TOP: top, JG: jg, MID: mid, ADC: adc, SUP: sup }, newGames);
+      const newTotalMmr = isExhibition ? (r.dbPlayer.mmr || 1200) : computeRepresentativeMmr({ TOP: top, JG: jg, MID: mid, ADC: adc, SUP: sup }, newGames);
 
       // Pity（通常の選抜漏れ・配置Pity）の計算
       const primary = r.dbPlayer.role_preferences?.primary || 'ALL';
@@ -268,34 +285,30 @@ export async function POST(request: Request) {
       const playedRole = r.role;
       let newPity = Number(r.dbPlayer.pity) || 0;
 
-      // 試合に参加したので、メイン配置ならリセット、サブなら+2、その他なら+5
       if (primary === 'ALL' || primary === 'FILL') {
         newPity = 0;
       } else if (playedRole === primary) {
-        newPity = 0; // メインロール
+        newPity = 0;
       } else if (playedRole === secondary || secondary === 'ALL' || secondary === 'FILL') {
-        newPity += 2; // サブロール
+        newPity += 2;
       } else {
-        newPity += 5; // 希望外ロール
+        newPity += 5;
       }
 
-      // オフロールPityの計算
       let newOffRolePity = Number(r.dbPlayer.off_role_pity) || 0;
-
-      // "ALL" や "FILL" は実質全ロールが希望レーンとみなす
       if (primary === 'ALL' || primary === 'FILL') {
         newOffRolePity = 0;
       } else if (playedRole === primary) {
-        newOffRolePity = 0; // 第一希望ならリセット
+        newOffRolePity = 0;
       } else if (playedRole === secondary || secondary === 'ALL' || secondary === 'FILL') {
-        // 第二希望なら維持（増減なし）
+        // 維持
       } else {
-        newOffRolePity += 1; // それ以外ならオフロールPity蓄積
+        newOffRolePity += 1;
       }
 
-      // コイン付与計算: 参加賞 +100コイン、勝利チーム +150コイン
+      // コイン付与計算: 参加賞 +100コイン、勝利チーム +150コイン (お祭りマッチでもコインは満額付与！)
       const currentCoins = Number(r.dbPlayer.coins) || 1000;
-      const coinReward = (r.team === winningTeam) ? 250 : 100; // 勝利時: 100+150=250, 敗北時: 100
+      const coinReward = (r.team === winningTeam) ? 250 : 100;
       const newCoins = currentCoins + coinReward;
 
       const updateData: any = {
