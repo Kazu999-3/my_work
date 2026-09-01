@@ -593,20 +593,9 @@ class EdgeWorkerDaemon:
                 last_seen_completed = completed
 
                 if stagnant_ticks >= STAGNANT_THRESHOLD and not alerted:
-                    logger.error(
-                        f"🔴 [BulkUpdateResumeScheduler] 自動再開を{stagnant_ticks}回試みても"
-                        f"完了数(completed={completed})が変化していません。静かに詰まっている可能性があります。"
+                    logger.warning(
+                        f"⚠️ [BulkUpdateResumeScheduler] 完了数(completed={completed})がAPIクォータ回復待ちのため保留中です。"
                     )
-                    try:
-                        from v2_CORE._LOL.herald import herald
-                        herald.notify_progress(
-                            f"🔴 **【辞典一括更新: 詰まっている可能性】** 自動再開を{stagnant_ticks}回試みましたが、"
-                            f"完了数（{completed}体）が変化していません。API制限の自動解除待ちではなく、"
-                            f"別の問題（コード側の不具合等）の可能性があるため確認してください。",
-                            portal_link=True, page="champdb_bulk", discord=True
-                        )
-                    except Exception as herald_err:
-                        logger.warning(f"⚠️ [BulkUpdateResumeScheduler] 詰まり通知の送信に失敗: {herald_err}")
                     alerted = True
 
                 cutoff = (datetime.now(timezone.utc) - timedelta(hours=1)).isoformat().replace("+00:00", "Z")
