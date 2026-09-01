@@ -3,11 +3,15 @@ import { NextResponse } from 'next/server';
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url);
-  const returnTo = searchParams.get('returnTo') || '/casino';
+  const reqUrl = new URL(req.url);
+  const returnTo = reqUrl.searchParams.get('returnTo') || '/casino';
 
   const clientId = process.env.DISCORD_CLIENT_ID || process.env.NEXT_PUBLIC_DISCORD_CLIENT_ID || '1487839977487470813';
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://my-work-8jbd.vercel.app';
+  
+  // 現在アクセス中のオリジン（localhostまたは本番ドメイン）から正確にコールバックURIを決定
+  const host = req.headers.get('x-forwarded-host') || req.headers.get('host') || reqUrl.host;
+  const proto = req.headers.get('x-forwarded-proto') || reqUrl.protocol.replace(':', '') || (host.includes('localhost') ? 'http' : 'https');
+  const baseUrl = `${proto}://${host}`;
   const redirectUri = `${baseUrl}/api/auth/discord/callback`;
 
   const state = Buffer.from(JSON.stringify({ returnTo })).toString('base64');

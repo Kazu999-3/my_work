@@ -16,7 +16,10 @@ export async function GET(req: Request) {
     } catch {}
   }
 
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://my-work-8jbd.vercel.app';
+  const reqUrl = new URL(req.url);
+  const host = req.headers.get('x-forwarded-host') || req.headers.get('host') || reqUrl.host;
+  const proto = req.headers.get('x-forwarded-proto') || reqUrl.protocol.replace(':', '') || (host.includes('localhost') ? 'http' : 'https');
+  const baseUrl = `${proto}://${host}`;
   const redirectUri = `${baseUrl}/api/auth/discord/callback`;
 
   if (!code) {
