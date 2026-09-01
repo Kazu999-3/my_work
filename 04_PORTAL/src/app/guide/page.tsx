@@ -146,73 +146,73 @@ export default function GuidePage() {
         </section>
 
         {/* 🎯 勝敗予想 ＆ KTMショップの遊び方 */}
-        <section className="bg-gradient-to-br from-amber-950 via-stone-900 to-amber-950 text-white rounded-3xl p-6 md:p-8 border border-amber-500/30 shadow-xl space-y-6">
-          <div className="flex items-center justify-between flex-wrap gap-4 border-b border-amber-500/20 pb-4">
+        <section className="bg-white text-stone-900 rounded-3xl p-6 md:p-8 border border-black/10 shadow-sm space-y-6">
+          <div className="flex items-center justify-between flex-wrap gap-4 border-b border-stone-100 pb-4">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-amber-500/20 text-amber-400 border border-amber-500/40 flex items-center justify-center text-2xl">
+              <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 border border-amber-200 flex items-center justify-center text-2xl font-bold">
                 🪙
               </div>
               <div>
-                <h2 className="text-xl md:text-2xl font-black text-white">
+                <h2 className="text-xl md:text-2xl font-black text-stone-900">
                   勝敗予想 ＆ KTMショップで遊ぶ！
                 </h2>
-                <p className="text-stone-300 text-xs md:text-sm">
+                <p className="text-stone-600 text-xs md:text-sm">
                   観戦者も参加者も全員が熱狂できるKTM独自のコイン＆特権システム
                 </p>
               </div>
             </div>
             <Link
               href="/casino"
-              className="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 font-black text-xs transition-all shadow-md flex items-center gap-2 cursor-pointer"
+              className="px-5 py-2.5 rounded-xl bg-stone-900 hover:bg-amber-600 text-white font-black text-xs transition-all shadow-md flex items-center gap-2 cursor-pointer"
             >
               勝敗予想画面へ行く <ArrowRight size={14} />
             </Link>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
-            <div className="p-4 rounded-2xl bg-stone-900/80 border border-amber-500/20 space-y-2">
-              <div className="text-lg">🎯 1. 勝敗を予想</div>
-              <p className="text-stone-300 leading-relaxed text-[11px]">
-                カスタムの試合が決まったら、BLUEかREDの勝つと思う方にコインをベット！
+            <div className="p-4 rounded-2xl bg-stone-50 border border-stone-200/80 space-y-2">
+              <div className="text-base font-black text-stone-900">🎯 1. 勝敗を予想</div>
+              <p className="text-stone-600 leading-relaxed text-[11px]">
+                カスタムの試合が決まったら、BLUEかREDの勝つと思う方にコインを予想投票！
               </p>
             </div>
-            <div className="p-4 rounded-2xl bg-stone-900/80 border border-amber-500/20 space-y-2">
-              <div className="text-lg">💰 2. コインを倍増</div>
-              <p className="text-stone-300 leading-relaxed text-[11px]">
+            <div className="p-4 rounded-2xl bg-stone-50 border border-stone-200/80 space-y-2">
+              <div className="text-base font-black text-stone-900">💰 2. コインを倍増</div>
+              <p className="text-stone-600 leading-relaxed text-[11px]">
                 予想が当たればオッズに応じてコインが手元にザクザク戻ってきます！
               </p>
             </div>
-            <div className="p-4 rounded-2xl bg-stone-900/80 border border-amber-500/20 space-y-2">
-              <div className="text-lg">🛒 3. 特権アイテムと交換</div>
-              <p className="text-stone-300 leading-relaxed text-[11px]">
+            <div className="p-4 rounded-2xl bg-stone-50 border border-stone-200/80 space-y-2">
+              <div className="text-base font-black text-stone-900">🛒 3. 特権アイテムと交換</div>
+              <p className="text-stone-600 leading-relaxed text-[11px]">
                 「🛡️ チャンピオンプロテクト権」や「🚫 全員BAN禁止権」「🎯 賞金首指定権」と交換！
               </p>
             </div>
           </div>
 
           {/* コイン獲得5大ルート一覧 */}
-          <div className="pt-4 border-t border-amber-500/20 space-y-3">
-            <h4 className="text-sm font-black text-amber-300">🪙 コインを自動で貯める 5つの方法</h4>
+          <div className="pt-4 border-t border-stone-100 space-y-3">
+            <h4 className="text-sm font-black text-stone-900">🪙 コインを自動で貯める 5つの方法</h4>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 text-center text-xs">
-              <div className="p-2.5 rounded-xl bg-black/30 border border-amber-500/20">
-                <div className="text-[10px] text-stone-400">初回ログイン</div>
-                <div className="font-mono font-black text-emerald-400 text-sm mt-0.5">+1,000 pt</div>
+              <div className="p-2.5 rounded-xl bg-stone-50 border border-stone-200">
+                <div className="text-[10px] text-stone-500 font-bold">初回ログイン</div>
+                <div className="font-mono font-black text-emerald-600 text-sm mt-0.5">+1,000 pt</div>
               </div>
-              <div className="p-2.5 rounded-xl bg-black/30 border border-amber-500/20">
-                <div className="text-[10px] text-stone-400">試合参加賞</div>
-                <div className="font-mono font-black text-emerald-400 text-sm mt-0.5">+100 pt</div>
+              <div className="p-2.5 rounded-xl bg-stone-50 border border-stone-200">
+                <div className="text-[10px] text-stone-500 font-bold">試合参加賞</div>
+                <div className="font-mono font-black text-emerald-600 text-sm mt-0.5">+100 pt</div>
               </div>
-              <div className="p-2.5 rounded-xl bg-black/30 border border-amber-500/20">
-                <div className="text-[10px] text-stone-400">試合勝利</div>
-                <div className="font-mono font-black text-emerald-400 text-sm mt-0.5">+150 pt</div>
+              <div className="p-2.5 rounded-xl bg-stone-50 border border-stone-200">
+                <div className="text-[10px] text-stone-500 font-bold">試合勝利</div>
+                <div className="font-mono font-black text-emerald-600 text-sm mt-0.5">+150 pt</div>
               </div>
-              <div className="p-2.5 rounded-xl bg-black/30 border border-amber-500/20">
-                <div className="text-[10px] text-stone-400">募集主催</div>
-                <div className="font-mono font-black text-emerald-400 text-sm mt-0.5">+200 pt</div>
+              <div className="p-2.5 rounded-xl bg-stone-50 border border-stone-200">
+                <div className="text-[10px] text-stone-500 font-bold">募集主催</div>
+                <div className="font-mono font-black text-emerald-600 text-sm mt-0.5">+200 pt</div>
               </div>
-              <div className="p-2.5 rounded-xl bg-black/30 border border-amber-500/20 col-span-2 sm:col-span-1">
-                <div className="text-[10px] text-stone-400">勝敗予想的中</div>
-                <div className="font-mono font-black text-amber-300 text-sm mt-0.5">賭け金 × 2倍</div>
+              <div className="p-2.5 rounded-xl bg-stone-50 border border-stone-200 col-span-2 sm:col-span-1">
+                <div className="text-[10px] text-stone-500 font-bold">勝敗予想的中</div>
+                <div className="font-mono font-black text-amber-600 text-sm mt-0.5">賭け金 × 2倍</div>
               </div>
             </div>
           </div>
@@ -290,48 +290,48 @@ export default function GuidePage() {
         </section>
 
         {/* ⚡ 爆速募集コマンド (/recruit) の使い方 */}
-        <section className="bg-gradient-to-br from-stone-900 to-stone-850 text-white rounded-3xl p-6 md:p-8 border border-stone-700 shadow-md">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center justify-center font-black">
+        <section className="bg-white text-stone-900 rounded-3xl p-6 md:p-8 border border-black/10 shadow-sm space-y-6">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-amber-50 text-amber-600 border border-amber-200 flex items-center justify-center font-black text-xl">
               ⚡
             </div>
             <div>
-              <h2 className="text-xl md:text-2xl font-black text-white">
-                Discord 爆速募集コマンド (<code className="text-amber-400 font-mono">/recruit</code>)
+              <h2 className="text-xl md:text-2xl font-black text-stone-900">
+                Discord 爆速募集コマンド (<code className="text-amber-600 font-mono text-base">/recruit</code>)
               </h2>
-              <p className="text-stone-300 text-xs md:text-sm">
+              <p className="text-stone-600 text-xs md:text-sm">
                 オプション不要！チャットに打つだけで、AIが時刻・人数・モードを自動判定してリッチな募集カードを投下します。
               </p>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 mt-4">
-            <div className="bg-stone-950/80 p-4 rounded-2xl border border-stone-800">
-              <div className="text-xs font-mono text-amber-400 font-bold bg-amber-950/40 px-2 py-1 rounded w-fit mb-2">
-                /recruit 21:00
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+            <div className="bg-stone-50 p-4 rounded-2xl border border-stone-200/80 space-y-1">
+              <div className="text-xs font-mono text-amber-800 font-bold bg-amber-100/80 px-2 py-0.5 rounded w-fit mb-1.5 border border-amber-200">
+                /recruit
               </div>
-              <div className="text-xs font-bold text-stone-200">カスタム10人募集</div>
-              <p className="text-[11px] text-stone-400 mt-1">「本日21:00〜開始」の10人カスタム募集を即時作成します。</p>
+              <div className="text-xs font-black text-stone-900">ノーマル5人募集（デフォルト）</div>
+              <p className="text-[11px] text-stone-600 leading-relaxed">何も書かずに打つだけで「今から・ノーマル5人募集」を即時作成します。</p>
             </div>
 
-            <div className="bg-stone-950/80 p-4 rounded-2xl border border-stone-800">
-              <div className="text-xs font-mono text-amber-400 font-bold bg-amber-950/40 px-2 py-1 rounded w-fit mb-2">
-                /recruit 5 楽しく
+            <div className="bg-stone-50 p-4 rounded-2xl border border-stone-200/80 space-y-1">
+              <div className="text-xs font-mono text-amber-800 font-bold bg-amber-100/80 px-2 py-0.5 rounded w-fit mb-1.5 border border-amber-200">
+                /recruit 10 21:00
               </div>
-              <div className="text-xs font-bold text-stone-200">ノーマル5人募集</div>
-              <p className="text-[11px] text-stone-400 mt-1">「今から・ノーマル5人・メモ: 楽しく」で即時投下します。</p>
+              <div className="text-xs font-black text-stone-900">カスタム10人募集</div>
+              <p className="text-[11px] text-stone-600 leading-relaxed">「本日21:00〜開始」の10人カスタム募集を即時作成します。</p>
             </div>
 
-            <div className="bg-stone-950/80 p-4 rounded-2xl border border-stone-800">
-              <div className="text-xs font-mono text-amber-400 font-bold bg-amber-950/40 px-2 py-1 rounded w-fit mb-2">
+            <div className="bg-stone-50 p-4 rounded-2xl border border-stone-200/80 space-y-1">
+              <div className="text-xs font-mono text-amber-800 font-bold bg-amber-100/80 px-2 py-0.5 rounded w-fit mb-1.5 border border-amber-200">
                 /recruit ARAM
               </div>
-              <div className="text-xs font-bold text-stone-200">ARAM 5人募集</div>
-              <p className="text-[11px] text-stone-400 mt-1">「今から・ARAM5人」の募集を即時作成します。</p>
+              <div className="text-xs font-black text-stone-900">ARAM 5人募集</div>
+              <p className="text-[11px] text-stone-600 leading-relaxed">「今から・ARAM5人」の募集を即時作成します。</p>
             </div>
           </div>
-          <div className="mt-4 pt-3 border-t border-stone-800 flex items-center justify-between text-xs text-stone-400">
-            <span>💡 何も文字を入れずに <code className="text-amber-300 font-mono">/recruit</code> と打つだけでも、デフォルト（カスタム10人・今から）で即募集できます！</span>
+          <div className="pt-3 border-t border-stone-100 flex items-center justify-between text-xs text-stone-600">
+            <span>💡 何も文字を入れずに <code className="text-amber-700 font-bold font-mono">/recruit</code> と打つだけで、自動で「今からノーマル5人募集」になります！</span>
           </div>
         </section>
 
