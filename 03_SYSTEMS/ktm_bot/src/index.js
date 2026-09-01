@@ -130,6 +130,10 @@ export default {
           const { handleCasinoCommand } = await import('./handlers/bet.js');
           return await handleCasinoCommand(interaction, context, ctx);
         }
+        if (name === 'tip' || name === 'send-coins') {
+          const { handleTipCommand } = await import('./handlers/bet.js');
+          return await handleTipCommand(interaction, context, ctx);
+        }
         if (name === 'panel') {
           return Response.json({
             type: 4,

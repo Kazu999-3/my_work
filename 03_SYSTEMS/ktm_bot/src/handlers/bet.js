@@ -189,3 +189,66 @@ export async function handleBetModalSubmit(interaction, env, ctx) {
     }
   });
 }
+
+/**
+ * 仲間へコインをチップ（投げ銭）する (/tip)
+ */
+export async function handleTipCommand(interaction, env, ctx) {
+  const options = interaction.data?.options || [];
+  const targetUserOption = options.find(o => o.name === 'user');
+  const amountOption = options.find(o => o.name === 'amount');
+  const messageOption = options.find(o => o.name === 'message');
+
+  const toDiscordId = targetUserOption?.value;
+  const amount = amountOption?.value || 100;
+  const tipMsg = messageOption?.value || 'ナイスキャリー！';
+
+  const fromDiscordId = interaction.member?.user?.id || interaction.user?.id;
+  const fromName = interaction.member?.user?.global_name || interaction.member?.user?.username || '不明';
+
+  if (!toDiscordId) {
+    return Response.json({
+      type: 4,
+      data: { content: '⚠️ 送り先のユーザーを指定してください。', flags: 64 }
+    });
+  }
+
+  if (toDiscordId === fromDiscordId) {
+    return Response.json({
+      type: 4,
+      data: { content: '⚠️ 自分自身にはチップを送れません。', flags: 64 }
+    });
+  }
+
+  const appId = interaction.application_id;
+  const token = interaction.token;
+
+  ctx.waitUntil((async () => {
+    try {
+      const res = await fetchPortalAPI(env, '/api/bet/tip', {
+        fromDiscordId,
+        fromName,
+        toDiscordId,
+        amount,
+        message: tipMsg
+      });
+
+      if (res && res.success) {
+        await patchInteractionResponse(appId, token, {
+          content: `🎉 **【チップ送金完了】** <@${fromDiscordId}> さんが <@${toDiscordId}> さんに **${amount}コイン** を贈りました！\n💬 「${tipMsg}」`
+        });
+      } else {
+        await patchInteractionResponse(appId, token, {
+          content: `❌ **チップ送信失敗**: ${res?.error || 'コインが不足しているかエラーが発生しました。'}`
+        });
+      }
+    } catch (e) {
+      await patchInteractionResponse(appId, token, {
+        content: `❌ **エラー**: ${e.message}`
+      });
+    }
+  })());
+
+  return Response.json({ type: 5 });
+}
+
