@@ -15,6 +15,46 @@ interface RankingPlayer {
 
 const SHOP_ITEMS = [
   {
+    id: 'force_champ_pick',
+    name: '👑 下剋上キャラ指定権 (高レート使用キャラ強制)',
+    price: 1000,
+    icon: '👑',
+    badge: '下剋上',
+    desc: '低レート側が、相手の高レートプレイヤーが使うチャンピオンを1体強制指定！苦手キャラを押し付けて下剋上を起こそう！'
+  },
+  {
+    id: 'lane_heavy_ban',
+    name: '🚫 特定レーン複数BAN権 (レーン集中封鎖)',
+    price: 800,
+    icon: '🚫',
+    badge: 'ドラフト',
+    desc: 'あらかじめ特定のレーン（TOPやMIDなど）の使用禁止キャラを事前に複数体指定して徹底封鎖！'
+  },
+  {
+    id: 'force_enemy_roles',
+    name: '🔀 相手ロール強制配置権 (ポジション指定)',
+    price: 1200,
+    icon: '🔀',
+    badge: 'お祭りルール',
+    desc: 'チーム分け確定後、相手チームの誰がどのレーン（TOP/JG/MID/ADC/SUP）を担当するかをこちらが勝手に指定！'
+  },
+  {
+    id: 'all_offmeta_match',
+    name: '🤡 完全オフメタカスタム開催権',
+    price: 1000,
+    icon: '🤡',
+    badge: 'お祭りルール',
+    desc: '通常のメタピックは全面禁止！10人全員が普段絶対に見られない未開拓オフメタチャンプ・構成で戦う爆笑お祭りマッチ！'
+  },
+  {
+    id: 'all_random_match',
+    name: '🎲 キャラランダムカスタム開催権 (ALL RANDOM)',
+    price: 1000,
+    icon: '🎲',
+    badge: 'お祭りルール',
+    desc: '10人全員がランダム抽選されたチャンピオンでサモナーズリフトを戦う完全運ゲーお祭り対決！'
+  },
+  {
     id: 'champ_protect',
     name: '🛡️ チャンピオンプロテクト権 (マイチャンプ保護)',
     price: 800,
@@ -37,30 +77,6 @@ const SHOP_ITEMS = [
     icon: '🎯',
     badge: '懸賞金',
     desc: '次の試合で「相手の〇〇選手を最初に倒した人に懸賞金」を掛けて試合を白熱させる！'
-  },
-  {
-    id: 'handicap_lv1',
-    name: '🎗️ Lv.1 軽度ハンデ縛り (得意BAN/フラッシュ禁止)',
-    price: 300,
-    icon: '🎗️',
-    badge: 'ハンデ',
-    desc: '2ランク格上の相手に「得意チャンプ1体BAN」または「フラッシュ禁止」を発動！実効MMR -150'
-  },
-  {
-    id: 'handicap_lv2',
-    name: '🎗️ Lv.2 中度ハンデ縛り (サモスペ/アイテム制限)',
-    price: 600,
-    icon: '🎗️',
-    badge: 'ハンデ',
-    desc: '2ランク格上の相手に「サモスペ1枠固定」または「特定アイテム禁止」を発動！実効MMR -300（1ランクダウン）'
-  },
-  {
-    id: 'handicap_lv3',
-    name: '🎗️ Lv.3 重度ハンデ縛り (アイテム縛り/ブーツ禁止)',
-    price: 1200,
-    icon: '🎗️',
-    badge: 'ハンデ',
-    desc: '2ランク格上の相手に「ランダムビルド縛り」または「ブーツ禁止」を発動！実効MMR -500（2ランクダウンで互角化）'
   },
   {
     id: 'ultimate_bravery',

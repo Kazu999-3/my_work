@@ -459,8 +459,8 @@ export default function GuidePage() {
                       <p>「🟦 BLUE勝利 (x1.8)」または「🟥 RED勝利 (x2.1)」をワンタップして予想完了！</p>
                     </div>
                     <div className="p-2.5 rounded-xl bg-white/5 border border-indigo-500/20">
-                      <div className="font-bold text-indigo-300 mb-0.5">② 特権ショップ</div>
-                      <p>「🛡️ チャンピオンプロテクト権」や「🚫 全員BAN禁止権」をコインで即時交換！</p>
+                      <div className="font-bold text-indigo-300 mb-0.5">② 特権ショップ（面白ルール満載）</div>
+                      <p>「👑 下剋上キャラ指定権」「🚫 特定レーン複数BAN」「🔀 相手ロール強制配置」「🤡 完全オフメタカスタム」などをコインで即時交換！</p>
                     </div>
                   </div>
                 </details>
