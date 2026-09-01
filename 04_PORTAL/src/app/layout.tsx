@@ -36,6 +36,8 @@ import BackToTop from "../components/BackToTop";
 
 import OfflineNotifier from "../components/OfflineNotifier";
 
+import BottomNav from "../components/BottomNav";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -66,6 +68,7 @@ export default function RootLayout({
           <BackButton />
           {children}
         </div>
+        <BottomNav />
         <BackToTop />
       </body>
     </html>
