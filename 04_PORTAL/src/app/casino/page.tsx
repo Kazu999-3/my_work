@@ -82,7 +82,8 @@ const SHOP_ITEMS = [
 export default function CasinoPage() {
   const { user, loginWithDiscord, selectPlayerLocal, logout, refreshUser } = useCurrentUser();
   const [ranking, setRanking] = useState<RankingPlayer[]>([]);
-  const [customName, setCustomName] = useState<string>('');
+  const [allPlayers, setAllPlayers] = useState<{ id: string; name: string; rank?: string; coins?: number; discord_id?: string }[]>([]);
+  const [inputName, setInputName] = useState<string>('');
   const [betTeam, setBetTeam] = useState<'BLUE' | 'RED'>('BLUE');
   const [betAmount, setBetAmount] = useState<number>(100);
   const [loading, setLoading] = useState<boolean>(true);
@@ -91,7 +92,7 @@ export default function CasinoPage() {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   // 実効プレイヤー名（ログインユーザー優先）
-  const activePlayerName = user?.displayName || customName;
+  const activePlayerName = user?.displayName || '';
 
   // チップ送金用
   const [tipTo, setTipTo] = useState<string>('');
@@ -100,6 +101,7 @@ export default function CasinoPage() {
 
   useEffect(() => {
     fetchBetData();
+    fetchAllPlayers();
   }, []);
 
   const fetchBetData = async () => {
@@ -115,6 +117,36 @@ export default function CasinoPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchAllPlayers = async () => {
+    try {
+      const res = await fetch('/api/players/list');
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          setAllPlayers(data);
+        } else if (data.players && Array.isArray(data.players)) {
+          setAllPlayers(data.players);
+        }
+      }
+    } catch (e) {
+      console.error('Failed to fetch all players:', e);
+    }
+  };
+
+  const handleSearchLogin = (nameToLogin: string) => {
+    const trimmed = nameToLogin.trim();
+    if (!trimmed) return;
+    const found = allPlayers.find(p => p.name.toLowerCase() === trimmed.toLowerCase()) ||
+                  ranking.find(p => p.name.toLowerCase() === trimmed.toLowerCase());
+    
+    selectPlayerLocal({
+      name: found ? found.name : trimmed,
+      coins: (found as any)?.coins ?? 1000,
+      highest_rank: (found as any)?.rank || (found as any)?.highest_rank || 'UNRANKED',
+      discord_id: (found as any)?.discord_id || (found as any)?.discordId,
+    });
   };
 
   const handlePlaceBet = async (e: React.FormEvent) => {
@@ -315,46 +347,83 @@ export default function CasinoPage() {
                   </button>
                 </div>
               ) : (
-                <div className="p-6 rounded-3xl bg-gradient-to-br from-amber-950 via-stone-900 to-amber-950 border-2 border-amber-500/40 text-white space-y-4 shadow-xl">
+                <div className="p-6 rounded-3xl bg-gradient-to-br from-amber-950 via-stone-900 to-amber-950 border-2 border-amber-500/40 text-white space-y-5 shadow-xl">
                   <div className="flex items-center gap-3 justify-center">
                     <div className="w-10 h-10 rounded-2xl bg-amber-500/20 text-amber-400 border border-amber-500/40 flex items-center justify-center text-xl font-black">
                       🪙
                     </div>
                     <div className="text-left">
                       <h3 className="text-base font-black text-white">
-                        マイアカウントでログイン
+                        アカウントログイン
                       </h3>
                       <p className="text-xs text-amber-200/80">
-                        名前を選ぶだけで1秒でログイン完了！あなたの残高でベットできます🔥
+                        ログインすると、あなたのアカウント残高からワンタップで勝敗ベットできます🔥
                       </p>
                     </div>
                   </div>
 
-                  <div className="max-w-md mx-auto space-y-2">
+                  {/* 1. 名簿から選ぶ */}
+                  <div className="max-w-md mx-auto space-y-1.5 text-left">
+                    <label className="block text-xs font-black text-amber-300">
+                      👤 方法1: 名簿からあなたの名前を選択（1秒ログイン）
+                    </label>
                     <select
                       onChange={(e) => {
-                        const sel = ranking.find((p) => p.name === e.target.value);
-                        if (sel) {
-                          selectPlayerLocal({
-                            name: sel.name,
-                            coins: sel.coins,
-                            highest_rank: sel.rank,
-                            discord_id: sel.discordId,
-                          });
-                        }
+                        handleSearchLogin(e.target.value);
                       }}
                       defaultValue=""
-                      className="w-full bg-stone-950 border-2 border-amber-500/50 text-amber-100 rounded-2xl px-4 py-3 text-sm font-black focus:outline-none focus:border-amber-400 shadow-inner cursor-pointer"
+                      className="w-full bg-stone-950 border-2 border-amber-500/50 text-amber-100 rounded-2xl px-4 py-3 text-xs md:text-sm font-black focus:outline-none focus:border-amber-400 shadow-inner cursor-pointer"
                     >
                       <option value="" disabled>
-                        👇 あなたの名前（サモナー名）を選択してください
+                        👇 名簿からあなたの名前を選択... (全{allPlayers.length || ranking.length}名)
                       </option>
-                      {ranking.map((p) => (
-                        <option key={p.name} value={p.name} className="bg-stone-900 text-white font-bold py-1">
-                          {p.name}（{p.rank || 'UNRANKED'} / 🪙 {(p.coins ?? 1000).toLocaleString()}コイン）
+                      {(allPlayers.length > 0 ? allPlayers : ranking).map((p: any) => (
+                        <option key={p.id || p.name} value={p.name} className="bg-stone-900 text-white font-bold py-1">
+                          {p.name}（{p.highest_rank || p.rank || 'UNRANKED'} / 🪙 {(p.coins ?? 1000).toLocaleString()}pt）
                         </option>
                       ))}
                     </select>
+                  </div>
+
+                  {/* 2. サモナー名直接入力 */}
+                  <div className="max-w-md mx-auto space-y-1.5 text-left pt-2 border-t border-white/10">
+                    <label className="block text-xs font-black text-stone-300">
+                      🔍 方法2: サモナー名を入力してログイン
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        placeholder="例: りくや"
+                        value={inputName}
+                        onChange={(e) => setInputName(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleSearchLogin(inputName);
+                          }
+                        }}
+                        className="flex-1 bg-stone-950 border border-stone-700 text-white rounded-xl px-3 py-2 text-xs font-bold focus:outline-none focus:border-amber-500"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleSearchLogin(inputName)}
+                        className="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-xs font-black transition cursor-pointer shadow-sm"
+                      >
+                        ログイン
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* 3. Discord OAuth2 */}
+                  <div className="pt-2 border-t border-white/10 text-center">
+                    <button
+                      type="button"
+                      onClick={() => loginWithDiscord('/casino')}
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#5865F2]/80 hover:bg-[#5865F2] text-white text-xs font-bold transition cursor-pointer"
+                    >
+                      <LogIn size={14} />
+                      Discord公式認証画面でログイン
+                    </button>
                   </div>
                 </div>
               )}
