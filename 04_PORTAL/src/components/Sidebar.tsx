@@ -94,7 +94,7 @@ function MobileNavItem({ item, active, pending, onClick }: { item: MenuItem; act
 const MENU_ITEMS: MenuItem[] = [
   { id: 'guide', label: 'はじめに', icon: BookOpen, href: '/guide', color: 'text-amber-500', activeBg: 'bg-amber-500/15' },
   { id: 'balancer', label: 'チーム分け', icon: Swords, href: '/balancer', color: 'text-rose-500', activeBg: 'bg-rose-500/15' },
-  { id: 'casino', label: '勝敗ベット', icon: Coins, href: '/casino', color: 'text-amber-400', activeBg: 'bg-amber-400/15' },
+  { id: 'casino', label: '勝敗予想', icon: Coins, href: '/casino', color: 'text-amber-400', activeBg: 'bg-amber-400/15' },
   { id: 'player', label: 'プレイヤー名簿', icon: Users, href: '/player', color: 'text-indigo-500', activeBg: 'bg-indigo-500/15' },
   { id: 'leaderboard', label: '順位表', icon: Trophy, href: '/leaderboard', color: 'text-yellow-400', activeBg: 'bg-yellow-400/15' },
   { id: 'synergy', label: 'チームシナジー', icon: HeartHandshake, href: '/synergy', color: 'text-fuchsia-400', activeBg: 'bg-fuchsia-400/15' },
@@ -110,7 +110,7 @@ const ADMIN_ONLY_MENU_ITEMS: MenuItem[] = [
   { id: 'champions', label: '攻略ナレッジハブ', icon: BookHeart, href: '/champions', color: 'text-[#c89b3c]', activeBg: 'bg-[#c89b3c]/15', section: '攻略・ナレッジ' },
   // ── 📊 大会 ＆ コミュニティ ──
   { id: 'balancer', label: 'チーム分け', icon: Swords, href: '/balancer', color: 'text-rose-500', activeBg: 'bg-rose-500/15', section: '大会 ＆ コミュニティ' },
-  { id: 'casino', label: '勝敗ベット', icon: Coins, href: '/casino', color: 'text-amber-500', activeBg: 'bg-amber-500/15', section: '大会 ＆ コミュニティ' },
+  { id: 'casino', label: '勝敗予想', icon: Coins, href: '/casino', color: 'text-amber-500', activeBg: 'bg-amber-500/15', section: '大会 ＆ コミュニティ' },
   { id: 'ktm-admin', label: 'KTM大会管理', icon: Shield, href: '/ktm-admin', color: 'text-indigo-400', activeBg: 'bg-indigo-400/15', section: '大会 ＆ コミュニティ' },
   { id: 'leaderboard', label: 'リーダーボード', icon: Trophy, href: '/leaderboard', color: 'text-yellow-500', activeBg: 'bg-yellow-500/15', section: '大会 ＆ コミュニティ' },
   { id: 'player', label: 'プレイヤー名簿', icon: Users, href: '/player', color: 'text-sky-500', activeBg: 'bg-sky-500/15', section: '大会 ＆ コミュニティ' },
@@ -122,7 +122,7 @@ const ADMIN_ONLY_MENU_ITEMS: MenuItem[] = [
 const ADMIN_GENERAL_MENU_ITEMS: MenuItem[] = [
   { id: 'guide', label: 'はじめに', icon: BookOpen, href: '/guide', color: 'text-amber-500', activeBg: 'bg-amber-500/15' },
   { id: 'balancer', label: 'チーム分け', icon: Swords, href: '/balancer', color: 'text-rose-500', activeBg: 'bg-rose-500/15' },
-  { id: 'casino', label: '勝敗ベット', icon: Coins, href: '/casino', color: 'text-amber-400', activeBg: 'bg-amber-400/15' },
+  { id: 'casino', label: '勝敗予想', icon: Coins, href: '/casino', color: 'text-amber-400', activeBg: 'bg-amber-400/15' },
   { id: 'player', label: 'プレイヤー名簿', icon: Users, href: '/player', color: 'text-indigo-500', activeBg: 'bg-indigo-500/15' },
   { id: 'leaderboard', label: 'リーダーボード', icon: Trophy, href: '/leaderboard', color: 'text-yellow-400', activeBg: 'bg-yellow-400/15' },
   { id: 'synergy', label: 'チームシナジー', icon: HeartHandshake, href: '/synergy', color: 'text-fuchsia-400', activeBg: 'bg-fuchsia-400/15' },

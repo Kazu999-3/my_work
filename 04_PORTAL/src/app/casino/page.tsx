@@ -15,12 +15,20 @@ interface RankingPlayer {
 
 const SHOP_ITEMS = [
   {
-    id: 'first_role_pass',
-    name: '📍 第一希望レーン確約チケット',
-    price: 1500,
-    icon: '📍',
-    badge: 'ロール指定',
-    desc: '次のカスタムで絶対にオフロールにならず第一希望でプレイできる権利！'
+    id: 'champ_protect',
+    name: '🛡️ チャンピオンプロテクト権 (マイチャンプ保護)',
+    price: 800,
+    icon: '🛡️',
+    badge: 'BAN保護',
+    desc: '相手チームからのBANを1体絶対に阻止し、自分の得意チャンピオンを必ず使える権利！'
+  },
+  {
+    id: 'ban_free',
+    name: '🚫 全員BAN禁止マッチ権 (自由ピック対決)',
+    price: 800,
+    icon: '🚫',
+    badge: 'ドラフト',
+    desc: '次の試合で両チームのBAN枠を全撤廃し、お互い好きなチャンピオンを完全自由に使って対決！'
   },
   {
     id: 'bounty_target',
@@ -48,7 +56,7 @@ const SHOP_ITEMS = [
   },
   {
     id: 'handicap_lv3',
-    name: '🎗️ Lv.3 重度ハンデ縛り (ブレイバリー/ブーツ禁止)',
+    name: '🎗️ Lv.3 重度ハンデ縛り (アイテム縛り/ブーツ禁止)',
     price: 1200,
     icon: '🎗️',
     badge: 'ハンデ',
@@ -56,11 +64,11 @@ const SHOP_ITEMS = [
   },
   {
     id: 'ultimate_bravery',
-    name: '🎲 全員アルティメット・ブレイバリー発動権',
+    name: '🎲 全員ランダムビルド対決権',
     price: 1000,
     icon: '🎲',
     badge: 'お祭りルール',
-    desc: '10人全員がランダム抽選ビルドで戦う爆笑お祭りマッチを開催できる！'
+    desc: '10人全員がランダム抽選のアイテムビルドで戦う爆笑お祭りマッチを開催できる！'
   },
   {
     id: 'side_pick',
@@ -268,7 +276,7 @@ export default function CasinoPage() {
           </div>
           <h1 className="text-3xl md:text-4xl font-black tracking-tight text-white flex items-center justify-center gap-3">
             <Coins className="text-amber-400" size={32} />
-            勝敗ベット ＆ KTMショップ ＆ 長者番付
+            勝敗予想 ＆ KTMショップ ＆ 長者番付
           </h1>
           <p className="text-stone-300 text-xs md:text-sm max-w-xl mx-auto font-medium">
             勝敗予想でコインを増やし、特権チケットやバラエティ権と交換しよう🔥
@@ -288,7 +296,7 @@ export default function CasinoPage() {
         {/* 4大機能タブナビゲーション */}
         <div className="flex items-center justify-center gap-2 p-1.5 rounded-2xl bg-stone-900 text-white max-w-xl mx-auto shadow-lg overflow-x-auto">
           {[
-            { id: 'bet', label: '🎯 試合ベット', desc: '勝敗予想' },
+            { id: 'bet', label: '🎯 勝敗予想', desc: '試合予想' },
             { id: 'shop', label: '🛒 KTMショップ', desc: '特権交換' },
             { id: 'tip', label: '🤝 チップ送信', desc: '推し応援' },
             { id: 'ranking', label: '🏆 長者番付', desc: 'コイン順位' },
@@ -364,7 +372,7 @@ export default function CasinoPage() {
           </div>
         )}
 
-        {/* タブ1: 🎯 勝敗ベット */}
+        {/* タブ1: 🎯 勝敗予想 */}
         {activeTab === 'bet' && (
           <div className="bg-white rounded-3xl p-6 md:p-8 border border-black/10 shadow-sm space-y-6">
             <div className="flex items-center justify-between border-b border-stone-100 pb-4">
@@ -373,8 +381,8 @@ export default function CasinoPage() {
                   <Flame size={20} />
                 </div>
                 <div>
-                  <h2 className="text-lg font-black text-stone-900">カスタム勝敗ベット</h2>
-                  <p className="text-xs text-stone-500">次のマッチの勝利チームを予想して賭けよう！</p>
+                  <h2 className="text-lg font-black text-stone-900">カスタム勝敗予想</h2>
+                  <p className="text-xs text-stone-500">次のマッチの勝利チームを予想してコインを賭けよう！</p>
                 </div>
               </div>
             </div>

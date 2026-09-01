@@ -134,7 +134,7 @@ export default function GuidePage() {
                 </div>
                 <h3 className="text-base font-black text-stone-900 mb-2">募集に参加 ＆ コインGET！</h3>
                 <p className="text-stone-600 text-xs leading-relaxed mb-4">
-                  募集通知の「✋ 参加する」を押すだけ！試合や勝敗ベットでコインを稼ぎ、特権アイテムと交換しよう🔥
+                  募集通知の「✋ 参加する」を押すだけ！試合や勝敗予想でコインを稼ぎ、特権アイテムと交換しよう🔥
                 </p>
               </div>
               <div className="pt-3 border-t border-stone-100 flex items-center gap-1.5 text-xs text-emerald-700 font-black">
@@ -145,7 +145,7 @@ export default function GuidePage() {
           </div>
         </section>
 
-        {/* 🎯 勝敗ベット ＆ KTMショップの遊び方 */}
+        {/* 🎯 勝敗予想 ＆ KTMショップの遊び方 */}
         <section className="bg-gradient-to-br from-amber-950 via-stone-900 to-amber-950 text-white rounded-3xl p-6 md:p-8 border border-amber-500/30 shadow-xl space-y-6">
           <div className="flex items-center justify-between flex-wrap gap-4 border-b border-amber-500/20 pb-4">
             <div className="flex items-center gap-3">
@@ -154,10 +154,10 @@ export default function GuidePage() {
               </div>
               <div>
                 <h2 className="text-xl md:text-2xl font-black text-white">
-                  勝敗ベット ＆ KTMショップで遊ぶ！
+                  勝敗予想 ＆ KTMショップで遊ぶ！
                 </h2>
                 <p className="text-stone-300 text-xs md:text-sm">
-                  観戦者も参加者も全員が熱狂できるKTM独自のカジノ＆特権システム
+                  観戦者も参加者も全員が熱狂できるKTM独自のコイン＆特権システム
                 </p>
               </div>
             </div>
@@ -165,7 +165,7 @@ export default function GuidePage() {
               href="/casino"
               className="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 font-black text-xs transition-all shadow-md flex items-center gap-2 cursor-pointer"
             >
-              勝敗ベット画面へ行く <ArrowRight size={14} />
+              勝敗予想画面へ行く <ArrowRight size={14} />
             </Link>
           </div>
 
