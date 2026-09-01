@@ -163,7 +163,8 @@ def resolve_and_register_channel(channel_url: str) -> bool:
         status, body = _supabase_request(f"youtube_channels?on_conflict=id", method='POST', payload=payload)
         if status in (200, 201, 204):
             logger.info(f"✅ Supabase にチャンネルを登録しました: {channel_name}")
-            herald.notify_progress(f"📺 **【チャンネル監視登録】** {channel_name} が新しく自動監視リストに追加されました！", portal_link=True, page="youtube")
+            # ユーザー要望により通知は停止（ログのみ）
+            # herald.notify_progress(f"📺 **【チャンネル監視登録】** {channel_name} が新しく自動監視リストに追加されました！", portal_link=True, page="youtube")
             return True
         else:
             logger.error(f"Failed to upsert channel in Supabase: {status} - {body}")
@@ -215,7 +216,8 @@ def resolve_and_register_playlist(playlist_url: str) -> bool:
         status, body = _supabase_request(f"youtube_playlists?on_conflict=id", method='POST', payload=payload)
         if status in (200, 201, 204):
             logger.info(f"✅ Supabase にプレイリストを登録しました: {playlist_title}")
-            herald.notify_progress(f"📺 **【プレイリスト監視登録】** {playlist_title} が新しく自動監視リストに追加されました！", portal_link=True, page="youtube")
+            # ユーザー要望により通知は停止（ログのみ）
+            # herald.notify_progress(f"📺 **【プレイリスト監視登録】** {playlist_title} が新しく自動監視リストに追加されました！", portal_link=True, page="youtube")
             return True
         else:
             logger.error(f"Failed to upsert playlist in Supabase: {status} - {body}")

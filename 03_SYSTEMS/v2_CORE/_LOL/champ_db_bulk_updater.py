@@ -173,9 +173,10 @@ def run_bulk_update():
             raw_version, patch_version = get_latest_patch()
         except RuntimeError as e:
             logging.error(f"❌ {e}")
-            herald.notify_progress(
-                f"❌ **【辞典一括更新 中断】** {e}", portal_link=True, page="champdb_bulk", discord=False
-            )
+            # ユーザー要望により通知は停止（ログのみ）
+            # herald.notify_progress(
+            #     f"❌ **【辞典一括更新 中断】** {e}", portal_link=True, page="champdb_bulk", discord=False
+            # )
             return
         logging.info(f"🌐 最新パッチ特定: {patch_version}")
         champions = get_all_champions(raw_version)
@@ -347,7 +348,8 @@ def run_bulk_update():
         logging.info("⏸️ API制限またはエラーにより、一括更新を安全に一時停止しました。次回実行時に再開します。")
         queue_data["status"] = "suspended"
         save_queue(queue_data)
-        herald.notify_progress("⚠️ **【辞典一括更新一時停止】** API利用上限または一時的な接続エラーのため、一括更新を一時停止しました。残りのチャンピオンは次回実行時に再開します。", portal_link=True, page="champdb_bulk", discord=False)
+        # ユーザー要望により通知は停止（ログのみ）
+        # herald.notify_progress("⚠️ **【辞典一括更新一時停止】** API利用上限または一時的な接続エラーのため、一括更新を一時停止しました。残りのチャンピオンは次回実行時に再開します。", portal_link=True, page="champdb_bulk", discord=False)
     else:
         # 完了チェック
         still_pending = [cid for cid, info in queue.items() if info["status"] in ("pending", "failed")]
@@ -358,13 +360,12 @@ def run_bulk_update():
             # 完了時にキューファイルを削除して次回まっさらな状態からスタートできるようにする
             try:
                 if QUEUE_FILE.exists():
-                    # 削除する前に最終状態を残しておきたいが、UI側での完了表示のためにすぐ削除せず、
-                    # ステータスを completed にした状態で維持し、UIでリセットボタンを押すか次回起動時に初期化させる
                     pass
             except Exception:
                 pass
             
-            herald.notify_progress("🎉 **【辞典一括更新完了】** 全チャンピオンの統計データとトレンド基本戦略の一括アップデートが完了しました！", portal_link=True, page="champdb_bulk", discord=False)
+            # ユーザー要望により通知は停止（ログのみ）
+            # herald.notify_progress("🎉 **【辞典一括更新完了】** 全チャンピオンの統計データとトレンド基本戦略の一括アップデートが完了しました！", portal_link=True, page="champdb_bulk", discord=False)
         else:
             logging.info(f"⏸️ ループが終了しました。残り未処理: {len(still_pending)} 件")
             queue_data["status"] = "suspended"

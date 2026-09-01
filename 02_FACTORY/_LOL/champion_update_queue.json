@@ -1,30 +1,30 @@
 {
   "patch_version": "26.17",
-  "updated_at": "2026-08-30T20:23:01.388807+00:00",
+  "updated_at": "2026-08-31T23:53:52.041474+00:00",
   "status": "suspended",
   "queue": {
     "Aatrox": {
       "name": "エイトロックス",
       "status": "completed",
-      "updated_at": "2026-08-30T20:20:00.960757+00:00",
+      "updated_at": "2026-08-31T17:22:32.937851+00:00",
       "error": null
     },
     "Ahri": {
       "name": "アーリ",
       "status": "completed",
-      "updated_at": "2026-08-30T20:20:48.917663+00:00",
+      "updated_at": "2026-08-31T17:23:22.292690+00:00",
       "error": null
     },
     "Akali": {
       "name": "アカリ",
       "status": "completed",
-      "updated_at": "2026-08-30T20:21:37.990673+00:00",
+      "updated_at": "2026-08-31T17:24:11.196043+00:00",
       "error": null
     },
     "Akshan": {
       "name": "アクシャン",
       "status": "completed",
-      "updated_at": "2026-08-30T20:22:26.767503+00:00",
+      "updated_at": "2026-08-31T17:25:00.301586+00:00",
       "error": null
     },
     "Alistar": {
