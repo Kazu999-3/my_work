@@ -440,12 +440,12 @@ export default function GuidePage() {
                       type="button" 
                       onClick={(e) => {
                         e.stopPropagation();
-                        setModalImage({ src: '/guide/casino_preview.png', title: '勝敗予想 ＆ KTMショップ 画面例' });
+                        setModalImage({ src: '/guide/casino_clean_preview.png', title: '勝敗予想 ＆ KTMショップ 画面例' });
                       }}
                       className="w-full relative group/img cursor-zoom-in rounded-2xl overflow-hidden border border-white/20 shadow-md block text-left"
                     >
                       <img
-                        src="/guide/casino_preview.png"
+                        src="/guide/casino_clean_preview.png"
                         alt="勝敗予想とKTMショップ画面例"
                         className="w-full object-cover group-hover/img:scale-102 transition-transform duration-300 pointer-events-none"
                       />
