@@ -28,6 +28,7 @@ export default function MatchRecordPanel({ balanceResult, onComplete }: MatchRec
   const [activeChampSelectorPlayer, setActiveChampSelectorPlayer] = useState<string | null>(null);
   const [champSearchQuery, setChampSearchQuery] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [isExhibition, setIsExhibition] = useState(false); // 🎪 お祭りカスタム（戦績ノーカウント保護）
   const [message, setMessage] = useState('');
 
   // Riot API自動取得用の状態
@@ -153,6 +154,7 @@ export default function MatchRecordPanel({ balanceResult, onComplete }: MatchRec
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           winningTeam,
+          isExhibition, // 🎪 お祭りカスタム（戦績ノーカウント保護）
           riotMatchId: null,
           participants: stats.map(s => ({
             name: s.name,
@@ -174,7 +176,7 @@ export default function MatchRecordPanel({ balanceResult, onComplete }: MatchRec
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
       
-      alert('試合結果を保存し、MMRを更新しました！');
+      alert(isExhibition ? 'お祭り試合結果を記録しました！（MMR・公式勝率は完全保護されました）' : '試合結果を保存し、MMRを更新しました！');
       onComplete(); // 親コンポーネントをリセット
     } catch (err: any) {
       setMessage(`保存エラー: ${err.message}`);
@@ -201,6 +203,30 @@ export default function MatchRecordPanel({ balanceResult, onComplete }: MatchRec
       <h3 className="text-xl font-bold text-stone-900 mb-4 flex items-center gap-2">
         <Target className="h-5 w-5 text-blue-400" /> 試合結果入力
       </h3>
+
+      {/* 🎪 お祭りカスタム（戦績ノーカウント）トグル */}
+      <div className="mb-6 p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between">
+        <div className="space-y-0.5">
+          <div className="font-extrabold text-amber-900 text-sm flex items-center gap-2">
+            <span>🎪 お祭りカスタム（エキシビション）として記録</span>
+            {isExhibition && <span className="text-[10px] bg-amber-500 text-white font-black px-2 py-0.5 rounded-full animate-pulse">完全戦績保護 ON</span>}
+          </div>
+          <p className="text-xs text-amber-800/80">
+            {isExhibition 
+              ? '🛡️ この試合の結果は公式勝率・ロール別MMR変動に一切影響しません（ノーカウント）。'
+              : '通常の真剣勝負カスタムです（勝敗・スタッツに応じて公式MMRと勝率が変動します）。'}
+          </p>
+        </div>
+        <label className="relative inline-flex items-center cursor-pointer shrink-0 ml-4">
+          <input
+            type="checkbox"
+            checked={isExhibition}
+            onChange={(e) => setIsExhibition(e.target.checked)}
+            className="sr-only peer"
+          />
+          <div className="w-11 h-6 bg-stone-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-stone-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
+        </label>
+      </div>
 
       {/* Riot APIから自動入力 */}
       <div className="mb-6 p-4 bg-white/60 border border-border rounded-xl flex flex-col md:flex-row items-center justify-between gap-4">

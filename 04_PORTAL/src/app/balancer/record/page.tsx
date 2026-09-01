@@ -35,8 +35,7 @@ function CustomRecordPageContent() {
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error' | '', text: string }>({ type: '', text: '' });
   const [winningTeam, setWinningTeam] = useState<'BLUE' | 'RED' | null>(null);
-  // チーム分けの満足度。Discordのリアクション集計は集まりが悪く手間もかかるため、
-  // 管理者が成績入力時にその場で1タップ記録する方式にした。
+  const [isExhibition, setIsExhibition] = useState<boolean>(false); // 🎪 お祭りカスタム（MMRノーカウント保護）
   const [balanceSatisfaction, setBalanceSatisfaction] = useState<'good' | 'normal' | 'bad' | null>(null);
   const [championsList, setChampionsList] = useState<{ id: string, name: string }[]>([]);
   const championsListRef = useRef(championsList);
@@ -475,6 +474,7 @@ function CustomRecordPageContent() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           winningTeam,
+          isExhibition, // 🎪 お祭りカスタム（MMRノーカウント保護）
           balanceSatisfaction, // チーム分けの満足度（管理者が入力時に記録）
           riotMatchId: null, // 手動入力のため常にnull
           adminPassword: 'ktm', // API側で検証を無効化したため、デフォルト値を設定
@@ -577,6 +577,30 @@ function CustomRecordPageContent() {
                 </p>
               </div>
             )}
+          </div>
+
+          {/* 🎪 お祭りカスタム（戦績ノーカウント）トグル */}
+          <div className="mb-6 p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between">
+            <div className="space-y-0.5">
+              <div className="font-extrabold text-amber-900 text-sm flex items-center gap-2">
+                <span>🎪 お祭りカスタム（エキシビション）として記録</span>
+                {isExhibition && <span className="text-[10px] bg-amber-500 text-white font-black px-2 py-0.5 rounded-full animate-pulse">完全戦績保護 ON</span>}
+              </div>
+              <p className="text-xs text-amber-800/80">
+                {isExhibition 
+                  ? '🛡️ この試合の結果は公式勝率・ロール別MMR変動に一切影響しません（ノーカウント）。コインと勝敗予想配当のみ全員に付与されます。'
+                  : '通常の真剣勝負カスタムです（勝敗・スタッツに応じて公式MMRと勝率が変動します）。'}
+              </p>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer shrink-0 ml-4">
+              <input
+                type="checkbox"
+                checked={isExhibition}
+                onChange={(e) => setIsExhibition(e.target.checked)}
+                className="sr-only peer"
+              />
+              <div className="w-11 h-6 bg-stone-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-stone-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
+            </label>
           </div>
 
           <div className="flex justify-end mb-2">

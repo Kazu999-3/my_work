@@ -94,6 +94,34 @@ export const SHOP_ITEMS: Record<string, { id: string; name: string; price: numbe
   }
 };
 
+// ユーザーの所持インベントリ取得
+export async function GET(req: Request) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const discordId = searchParams.get('discordId');
+    const name = searchParams.get('name');
+
+    if (!discordId && !name) {
+      return NextResponse.json({ inventory: [] });
+    }
+
+    let q = supabase.from('ktm_players').select('name, inventory, role_preferences');
+    if (discordId) q = q.eq('discord_id', discordId);
+    else if (name) q = q.eq('name', name);
+    const { data: player } = await q.single();
+
+    const inventory = (player?.inventory || player?.role_preferences?.inventory || []) as Array<{ id: string; name: string; icon: string; boughtAt: string }>;
+
+    return NextResponse.json({
+      success: true,
+      inventory
+    });
+  } catch (error: any) {
+    console.error('Shop API GET error:', error);
+    return NextResponse.json({ inventory: [] });
+  }
+}
+
 // アイテム購入
 export async function POST(req: Request) {
   try {
@@ -112,7 +140,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: authCheck.error }, { status: 403 });
     }
 
-    let q = supabase.from('ktm_players').select('name, coins');
+    let q = supabase.from('ktm_players').select('name, coins, inventory, role_preferences');
     if (discordId) q = q.eq('discord_id', discordId);
     else if (playerName) q = q.eq('name', playerName);
     const { data: player } = await q.single();
@@ -122,7 +150,27 @@ export async function POST(req: Request) {
     }
 
     const newCoins = (player.coins ?? 1000) - item.price;
-    await supabase.from('ktm_players').update({ coins: newCoins }).eq('name', player.name);
+    const currentInventory = (player.inventory || player.role_preferences?.inventory || []) as Array<{ id: string; name: string; icon: string; boughtAt: string }>;
+    const newInventory = [
+      ...currentInventory,
+      {
+        id: item.id,
+        name: item.name,
+        icon: item.icon,
+        boughtAt: new Date().toISOString()
+      }
+    ];
+
+    // role_preferences 内にもフォールバック保存
+    const updatedPreferences = {
+      ...(player.role_preferences || {}),
+      inventory: newInventory
+    };
+
+    await supabase.from('ktm_players').update({ 
+      coins: newCoins,
+      role_preferences: updatedPreferences
+    }).eq('name', player.name);
 
     // Discordへの特権発動アナウンス（Webhookがあれば通知）
     const webhookUrl = process.env.DISCORD_WEBHOOK_URL;
@@ -149,6 +197,7 @@ export async function POST(req: Request) {
       success: true,
       item,
       remainingCoins: newCoins,
+      inventory: newInventory,
       message: `🎉 **【購入完了】** 「${item.name}」を購入しました！（残り: ${newCoins}コイン）\n※次回のカスタム開始時に進行役へ発動をお伝えください！`
     });
   } catch (error: any) {

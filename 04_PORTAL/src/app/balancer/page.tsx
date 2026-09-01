@@ -1460,6 +1460,32 @@ export default function BalancerPage() {
               </button>
             </div>
           </div>
+
+          {/* 🛒 発動中の特権・ハンデ確認メモ */}
+          <details className="mt-3 bg-amber-500/10 border border-amber-500/20 rounded-2xl p-3 text-xs">
+            <summary className="font-bold text-amber-900 cursor-pointer select-none flex items-center justify-between">
+              <span className="flex items-center gap-2">
+                <span>🛒 発動中の特権・ハンデを確認する</span>
+                <span className="text-[10px] bg-amber-200 text-amber-900 px-2 py-0.5 rounded-full font-bold">KTMショップ連動</span>
+              </span>
+              <span className="text-[10px] text-amber-700">▼</span>
+            </summary>
+            <div className="mt-2.5 pt-2.5 border-t border-amber-500/20 space-y-2 text-stone-700">
+              <p className="text-[11px] text-stone-600">
+                参加者がKTMショップで購入した特権（下剋上キャラ指定、特定レーンBAN、お祭りマッチ等）がある場合は、ここで確認しながらドラフトや試合記録を行えます。
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
+                <div className="p-2 rounded-xl bg-white border border-amber-200">
+                  <span className="font-bold text-amber-900">👑 下剋上キャラ指定:</span>
+                  <span className="ml-1 text-stone-600">対象の高レートに苦手チャンプを指定 (実効MMR -400)</span>
+                </div>
+                <div className="p-2 rounded-xl bg-white border border-amber-200">
+                  <span className="font-bold text-amber-900">🎪 お祭りカスタム:</span>
+                  <span className="ml-1 text-stone-600">結果記録時に「戦績ノーカウント保護」をONにする</span>
+                </div>
+              </div>
+            </div>
+          </details>
           {/* 前回結果の再表示ボタン */}
           {balanceResult && !showResultModal && (
             <button onClick={() => setShowResultModal(true)}

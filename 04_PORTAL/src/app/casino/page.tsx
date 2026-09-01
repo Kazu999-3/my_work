@@ -115,6 +115,7 @@ export default function CasinoPage() {
   const [betMessage, setBetMessage] = useState<string | null>(null);
   const [shopMessage, setShopMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [inventory, setInventory] = useState<Array<{ id: string; name: string; icon: string; boughtAt: string }>>([]);
 
   // 実効プレイヤー名（ログインユーザー優先）
   const activePlayerName = user?.displayName || '';
@@ -122,9 +123,25 @@ export default function CasinoPage() {
   useEffect(() => {
     fetchBetData();
     fetchActiveMatch();
+    if (user?.discordId || user?.displayName) {
+      fetchInventory();
+    }
     const interval = setInterval(fetchActiveMatch, 15000); // 15秒ごとに最新試合をチェック
     return () => clearInterval(interval);
-  }, []);
+  }, [user]);
+
+  const fetchInventory = async () => {
+    try {
+      const param = user?.discordId ? `discordId=${user.discordId}` : `name=${encodeURIComponent(user?.displayName || '')}`;
+      const res = await fetch(`/api/bet/shop?${param}`);
+      if (res.ok) {
+        const data = await res.json();
+        setInventory(data.inventory || []);
+      }
+    } catch (e) {
+      console.error('Failed to fetch inventory:', e);
+    }
+  };
 
   const triggerCelebration = () => {
     try {
@@ -230,6 +247,7 @@ export default function CasinoPage() {
         triggerCelebration();
         setShopMessage(data.message);
         fetchBetData();
+        fetchInventory();
         refreshUser();
       } else {
         alert(data.error || '購入に失敗しました。');
@@ -289,34 +307,62 @@ export default function CasinoPage() {
 
         {/* ユーザー認証状態ヘッダー（ログイン時は全タブで常時表示） */}
         {user ? (
-          <div className="p-4 rounded-3xl bg-amber-500/10 border-2 border-amber-500/30 flex items-center justify-between flex-wrap gap-4 shadow-sm">
-            <div className="flex items-center gap-3">
-              <img
-                src={user.avatar}
-                alt={user.displayName}
-                className="w-12 h-12 rounded-2xl border-2 border-amber-500 shadow-sm"
-              />
-              <div>
-                <div className="text-sm font-black text-stone-900 flex items-center gap-2">
-                  {user.displayName}
-                  <span className="text-[10px] px-2 py-0.5 rounded-md bg-amber-200 text-amber-900 font-bold border border-amber-300">
-                    {user.rank}
-                  </span>
-                </div>
-                <div className="text-xs font-bold text-amber-800 flex items-center gap-1.5 mt-0.5">
-                  <span>🪙 あなたの残高:</span>
-                  <strong className="font-mono text-base text-amber-600">{(user.coins ?? 1000).toLocaleString()}</strong>
-                  <span>コイン</span>
+          <div className="p-5 rounded-3xl bg-amber-500/10 border-2 border-amber-500/30 space-y-3 shadow-sm">
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <div className="flex items-center gap-3">
+                <img
+                  src={user.avatar}
+                  alt={user.displayName}
+                  className="w-12 h-12 rounded-2xl border-2 border-amber-500 shadow-sm"
+                />
+                <div>
+                  <div className="text-sm font-black text-stone-900 flex items-center gap-2">
+                    {user.displayName}
+                    <span className="text-[10px] px-2 py-0.5 rounded-md bg-amber-200 text-amber-900 font-bold border border-amber-300">
+                      {user.rank}
+                    </span>
+                  </div>
+                  <div className="text-xs font-bold text-amber-800 flex items-center gap-1.5 mt-0.5">
+                    <span>🪙 あなたの残高:</span>
+                    <strong className="font-mono text-base text-amber-600">{(user.coins ?? 1000).toLocaleString()}</strong>
+                    <span>コイン</span>
+                  </div>
                 </div>
               </div>
+              <button
+                type="button"
+                onClick={logout}
+                className="text-xs text-stone-500 hover:text-stone-800 underline font-bold px-3 py-1.5 rounded-xl hover:bg-black/5"
+              >
+                ログアウト
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={logout}
-              className="text-xs text-stone-500 hover:text-stone-800 underline font-bold px-3 py-1.5 rounded-xl hover:bg-black/5"
-            >
-              ログアウト
-            </button>
+
+            {/* 🎒 所持特権チケット（インベントリ） */}
+            <div className="pt-3 border-t border-amber-500/20">
+              <div className="flex items-center gap-2 text-xs font-bold text-amber-950 mb-1.5">
+                <span>🎒 あなたの所持特権チケット:</span>
+                <span className="text-[11px] font-normal text-stone-600">({inventory.length}枚保有中)</span>
+              </div>
+              {inventory.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {inventory.map((item, idx) => (
+                    <div
+                      key={idx}
+                      className="px-3 py-1.5 rounded-xl bg-white border border-amber-400 text-stone-900 text-xs font-bold flex items-center gap-1.5 shadow-sm"
+                    >
+                      <span>{item.icon}</span>
+                      <span>{item.name}</span>
+                      <span className="text-[10px] text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded ml-1">未使用</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-stone-500 italic">
+                  現在保有している特権チケットはありません。「🛒 KTMショップ」からお好みの特権を交換できます！
+                </p>
+              )}
+            </div>
           </div>
         ) : (
           <div className="p-6 rounded-3xl bg-gradient-to-br from-indigo-950 via-stone-900 to-indigo-950 border border-indigo-500/30 text-white flex flex-col md:flex-row items-center justify-between gap-4 shadow-xl text-center md:text-left">
@@ -423,94 +469,108 @@ export default function CasinoPage() {
                 {/* ベットフォーム */}
                 {user ? (
                   <form onSubmit={handlePlaceBet} className="space-y-5">
-                    <div>
-                      <label className="block text-xs font-black text-stone-700 mb-2">
-                        👉 どちらのチームが勝つか選んでください:
-                      </label>
-                      <div className="grid grid-cols-2 gap-4">
-                        <button
-                          type="button"
-                          onClick={() => setBetTeam('BLUE')}
-                          className={`p-5 rounded-3xl border-3 font-black text-sm transition-all flex flex-col items-center gap-2 cursor-pointer ${
-                            betTeam === 'BLUE'
-                              ? 'border-indigo-600 bg-indigo-50 text-indigo-700 shadow-md scale-102'
-                              : 'border-stone-200 hover:border-indigo-200 text-stone-600'
-                          }`}
-                        >
-                          <span className="text-2xl">🟦</span>
-                          <span>BLUE TEAM の勝ち！</span>
-                          <span className="text-xs px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800 font-mono font-black">
-                            オッズ: 1.85倍
-                          </span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => setBetTeam('RED')}
-                          className={`p-5 rounded-3xl border-3 font-black text-sm transition-all flex flex-col items-center gap-2 cursor-pointer ${
-                            betTeam === 'RED'
-                              ? 'border-rose-600 bg-rose-50 text-rose-700 shadow-md scale-102'
-                              : 'border-stone-200 hover:border-rose-200 text-stone-600'
-                          }`}
-                        >
-                          <span className="text-2xl">🟥</span>
-                          <span>RED TEAM の勝ち！</span>
-                          <span className="text-xs px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 font-mono font-black">
-                            オッズ: 1.95倍
-                          </span>
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* 賭け金 & もらえるコイン直感シミュレーター */}
-                    <div className="p-5 rounded-3xl bg-amber-50/60 border border-amber-200/80 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <label className="block text-xs font-black text-stone-800">
-                          🪙 賭けるコイン数
-                        </label>
-                        {/* 🎯 もらえるコイン直感表示 */}
-                        <div className="text-right">
-                          <span className="text-[11px] text-stone-500 font-bold">勝った場合の手取り: </span>
-                          <strong className="text-sm font-black text-amber-600 font-mono">
-                            🎯 +{Math.round(betAmount * (betTeam === 'BLUE' ? 1.85 : 1.95))} コインGET！
-                          </strong>
+                    {activeMatch.status === 'IN_PROGRESS' || activeMatch.isLocked ? (
+                      <div className="p-4 rounded-2xl bg-amber-500/10 border-2 border-amber-500/30 text-amber-900 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg">🔒</span>
+                          <div>
+                            <div className="font-extrabold text-xs">勝敗予想は締め切られました（試合進行中）</div>
+                            <div className="text-[11px] text-stone-600">試合終了後のコイン精算をお待ちください！</div>
+                          </div>
                         </div>
+                        <span className="text-[10px] bg-amber-200 text-amber-900 font-bold px-2 py-0.5 rounded-full">LOCK</span>
                       </div>
+                    ) : (
+                      <>
+                        <div>
+                          <label className="block text-xs font-black text-stone-700 mb-2">
+                            👉 どちらのチームが勝つか選んでください:
+                          </label>
+                          <div className="grid grid-cols-2 gap-4">
+                            <button
+                              type="button"
+                              onClick={() => setBetTeam('BLUE')}
+                              className={`p-5 rounded-3xl border-3 font-black text-sm transition-all flex flex-col items-center gap-2 cursor-pointer ${
+                                betTeam === 'BLUE'
+                                  ? 'border-indigo-600 bg-indigo-50 text-indigo-700 shadow-md scale-102'
+                                  : 'border-stone-200 hover:border-indigo-200 text-stone-600'
+                              }`}
+                            >
+                              <span className="text-2xl">🟦</span>
+                              <span>BLUE TEAM 勝利</span>
+                              <span className="text-xs px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800 font-mono font-black">
+                                オッズ: 1.85倍
+                              </span>
+                            </button>
 
-                      <div className="flex gap-2">
-                        {[50, 100, 300, 500, 1000].map((amt) => (
-                          <button
-                            key={amt}
-                            type="button"
-                            onClick={() => setBetAmount(amt)}
-                            className={`flex-1 py-2.5 rounded-xl text-xs font-black border transition-all cursor-pointer ${
-                              betAmount === amt
-                                ? 'bg-amber-500 text-white border-amber-600 shadow-sm scale-105'
-                                : 'bg-white hover:bg-amber-100/50 text-stone-700 border-stone-200'
-                            }`}
-                          >
-                            {amt}
-                          </button>
-                        ))}
-                      </div>
-                      <input
-                        type="number"
-                        min="1"
-                        max={user?.coins ?? 1000}
-                        value={betAmount}
-                        onChange={(e) => setBetAmount(Number(e.target.value))}
-                        className="w-full bg-white border border-stone-300 rounded-xl px-4 py-2.5 text-sm font-black text-stone-900 focus:outline-none focus:border-amber-500 font-mono"
-                      />
-                    </div>
+                            <button
+                              type="button"
+                              onClick={() => setBetTeam('RED')}
+                              className={`p-5 rounded-3xl border-3 font-black text-sm transition-all flex flex-col items-center gap-2 cursor-pointer ${
+                                betTeam === 'RED'
+                                  ? 'border-rose-600 bg-rose-50 text-rose-700 shadow-md scale-102'
+                                  : 'border-stone-200 hover:border-rose-200 text-stone-600'
+                              }`}
+                            >
+                              <span className="text-2xl">🟥</span>
+                              <span>RED TEAM 勝利</span>
+                              <span className="text-xs px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 font-mono font-black">
+                                オッズ: 1.95倍
+                              </span>
+                            </button>
+                          </div>
+                        </div>
 
-                    <button
-                      type="submit"
-                      disabled={isSubmitting}
-                      className="w-full bg-gradient-to-r from-amber-600 via-amber-500 to-amber-600 hover:from-amber-500 hover:to-amber-400 text-white py-4 rounded-2xl font-black text-base transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 transform active:scale-98"
-                    >
-                      <Coins size={20} />
-                      {isSubmitting ? '処理中...' : `🪙 ${betAmount}コイン を ${betTeam} の勝利にベット！`}
-                    </button>
+                        {/* 賭け金 & もらえるコイン直感シミュレーター */}
+                        <div className="p-5 rounded-3xl bg-amber-50/60 border border-amber-200/80 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <label className="block text-xs font-black text-stone-800">
+                              🪙 賭けるコイン数
+                            </label>
+                            <div className="text-right">
+                              <span className="text-[11px] text-stone-500 font-bold">勝った場合の手取り: </span>
+                              <strong className="text-sm font-black text-amber-600 font-mono">
+                                🎯 +{Math.round(betAmount * (betTeam === 'BLUE' ? 1.85 : 1.95))} コインGET！
+                              </strong>
+                            </div>
+                          </div>
+
+                          <div className="flex gap-2">
+                            {[50, 100, 300, 500, 1000].map((amt) => (
+                              <button
+                                key={amt}
+                                type="button"
+                                onClick={() => setBetAmount(amt)}
+                                className={`flex-1 py-2.5 rounded-xl text-xs font-black border transition-all cursor-pointer ${
+                                  betAmount === amt
+                                    ? 'bg-amber-500 text-white border-amber-600 shadow-sm scale-105'
+                                    : 'bg-white hover:bg-amber-100/50 text-stone-700 border-stone-200'
+                                }`}
+                              >
+                                {amt}
+                              </button>
+                            ))}
+                          </div>
+                          <input
+                            type="number"
+                            min="1"
+                            max={user?.coins ?? 1000}
+                            value={betAmount}
+                            onChange={(e) => setBetAmount(Number(e.target.value))}
+                            className="w-full bg-white border border-stone-300 rounded-xl px-4 py-2.5 text-sm font-black text-stone-900 focus:outline-none focus:border-amber-500 font-mono"
+                          />
+                        </div>
+
+                        <button
+                          type="submit"
+                          disabled={isSubmitting}
+                          className="w-full bg-gradient-to-r from-amber-600 via-amber-500 to-amber-600 hover:from-amber-500 hover:to-amber-400 text-white py-4 rounded-2xl font-black text-base transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 transform active:scale-98"
+                        >
+                          <Coins size={20} />
+                          {isSubmitting ? '処理中...' : `🪙 ${betAmount}コイン を ${betTeam} の勝利にベット！`}
+                        </button>
+                      </>
+                    )}
                   </form>
                 ) : (
                   <div className="text-center p-6 bg-stone-50 rounded-2xl border border-stone-200">
