@@ -1,8 +1,7 @@
-'use client';
-
 import React, { useState, useEffect } from 'react';
-import { Coins, Trophy, Flame, Swords, CheckCircle2, TrendingUp, Sparkles, Shield, ArrowRight, ShoppingBag, Heart, Gift, Target, Dices, Ticket } from 'lucide-react';
+import { Coins, Trophy, Flame, Swords, CheckCircle2, TrendingUp, Sparkles, Shield, ArrowRight, ShoppingBag, Heart, Gift, Target, Dices, Ticket, LogIn, LogOut, UserCheck } from 'lucide-react';
 import Link from 'next/link';
+import { useCurrentUser } from '../../hooks/useCurrentUser';
 
 interface RankingPlayer {
   name: string;
@@ -79,14 +78,18 @@ const SHOP_ITEMS = [
 ];
 
 export default function CasinoPage() {
+  const { user, loginWithDiscord, selectPlayerLocal, logout, refreshUser } = useCurrentUser();
   const [ranking, setRanking] = useState<RankingPlayer[]>([]);
-  const [playerName, setPlayerName] = useState<string>('');
+  const [customName, setCustomName] = useState<string>('');
   const [betTeam, setBetTeam] = useState<'BLUE' | 'RED'>('BLUE');
   const [betAmount, setBetAmount] = useState<number>(100);
   const [loading, setLoading] = useState<boolean>(true);
   const [betMessage, setBetMessage] = useState<string | null>(null);
   const [shopMessage, setShopMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+
+  // 実効プレイヤー名（ログインユーザー優先）
+  const activePlayerName = user?.displayName || customName;
 
   // チップ送金用
   const [tipTo, setTipTo] = useState<string>('');
@@ -114,8 +117,8 @@ export default function CasinoPage() {
 
   const handlePlaceBet = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!playerName.trim()) {
-      alert('プレイヤー名を入力してください。');
+    if (!activePlayerName.trim()) {
+      alert('Discordでログインするか、お名前を選択してください。');
       return;
     }
     if (betAmount <= 0) {
@@ -130,7 +133,7 @@ export default function CasinoPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          playerName: playerName.trim(),
+          playerName: activePlayerName.trim(),
           team: betTeam,
           amount: betAmount,
         }),
@@ -140,6 +143,7 @@ export default function CasinoPage() {
       if (res.ok && data.success) {
         setBetMessage(`🎉 【ベット完了】 ${data.playerName} さんが ${data.team} に ${data.amount}コイン 賭けました！ (残高: ${data.remainingCoins}コイン)`);
         fetchBetData();
+        refreshUser();
       } else {
         alert(data.error || 'ベットに失敗しました。');
       }
@@ -151,8 +155,8 @@ export default function CasinoPage() {
   };
 
   const handleBuyItem = async (itemId: string, itemName: string, price: number) => {
-    if (!playerName.trim()) {
-      alert('上部のフォームであなたのサモナー名を入力してください。');
+    if (!activePlayerName.trim()) {
+      alert('Discordでログインするか、上部でお名前を選択してください。');
       return;
     }
     if (!confirm(`「${itemName}」を ${price}コイン で購入しますか？`)) {
@@ -164,7 +168,7 @@ export default function CasinoPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          playerName: playerName.trim(),
+          playerName: activePlayerName.trim(),
           itemId,
         }),
       });
@@ -173,6 +177,7 @@ export default function CasinoPage() {
       if (res.ok && data.success) {
         setShopMessage(data.message);
         fetchBetData();
+        refreshUser();
       } else {
         alert(data.error || '購入に失敗しました。');
       }
@@ -183,12 +188,12 @@ export default function CasinoPage() {
 
   const handleSendTip = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!playerName.trim()) {
-      alert('あなたのサモナー名を入力してください。');
+    if (!activePlayerName.trim()) {
+      alert('Discordでログインするか、あなたの名前を選択してください。');
       return;
     }
     if (!tipTo.trim()) {
-      alert('チップを送る相手のサモナー名を入力してください。');
+      alert('チップを送る相手のサモナー名を選択または入力してください。');
       return;
     }
 
@@ -197,7 +202,7 @@ export default function CasinoPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          fromName: playerName.trim(),
+          fromName: activePlayerName.trim(),
           toName: tipTo.trim(),
           amount: tipAmount,
           message: tipMessageText.trim(),
@@ -208,6 +213,7 @@ export default function CasinoPage() {
       if (res.ok && data.success) {
         alert(data.announcement);
         fetchBetData();
+        refreshUser();
       } else {
         alert(data.error || 'チップ送信に失敗しました。');
       }
@@ -273,20 +279,71 @@ export default function CasinoPage() {
                 </div>
               )}
 
-              <form onSubmit={handlePlaceBet} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-bold text-stone-700 mb-1.5">
-                    あなたのサモナー名（名簿登録名）
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="例: りくや"
-                    value={playerName}
-                    onChange={(e) => setPlayerName(e.target.value)}
-                    className="w-full bg-stone-50 border border-stone-300 rounded-xl px-4 py-2.5 text-xs font-bold focus:outline-none focus:border-amber-500"
-                    required
-                  />
+              {/* ユーザー認証状態カード */}
+              {user ? (
+                <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <img
+                      src={user.avatar}
+                      alt={user.displayName}
+                      className="w-10 h-10 rounded-full border-2 border-amber-500/40 shadow-xs"
+                    />
+                    <div>
+                      <div className="text-xs font-black text-stone-900 flex items-center gap-2">
+                        {user.displayName}
+                        <span className="text-[10px] px-2 py-0.5 rounded-md bg-amber-200 text-amber-900 font-bold border border-amber-300">
+                          {user.rank}
+                        </span>
+                      </div>
+                      <div className="text-xs font-bold text-amber-700 flex items-center gap-1 mt-0.5">
+                        <span>🪙 所持残高:</span>
+                        <strong className="font-mono text-sm">{(user.coins ?? 1000).toLocaleString()}</strong>
+                        <span>コイン</span>
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={logout}
+                    className="text-xs text-stone-500 hover:text-stone-800 underline font-bold px-2 py-1"
+                  >
+                    ログアウト
+                  </button>
                 </div>
+              ) : (
+                <div className="p-4 rounded-2xl bg-stone-50 border border-stone-200 space-y-3">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <div className="text-xs font-bold text-stone-700">
+                      🎮 Discordログインしてワンクリックでベット・購入
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => loginWithDiscord('/casino')}
+                      className="px-4 py-2 rounded-xl bg-[#5865F2] hover:bg-[#4752C4] text-white font-black text-xs transition flex items-center gap-1.5 shadow-sm cursor-pointer"
+                    >
+                      <LogIn size={14} />
+                      Discordでログイン
+                    </button>
+                  </div>
+
+                  <div className="pt-2 border-t border-stone-200/60">
+                    <label className="block text-[11px] font-bold text-stone-500 mb-1">
+                      または名簿から自分を選択 / サモナー名を入力:
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        placeholder="例: りくや"
+                        value={customName}
+                        onChange={(e) => setCustomName(e.target.value)}
+                        className="flex-1 bg-white border border-stone-300 rounded-xl px-3 py-2 text-xs font-bold focus:outline-none focus:border-amber-500"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <form onSubmit={handlePlaceBet} className="space-y-4">
 
                 <div>
                   <label className="block text-xs font-bold text-stone-700 mb-1.5">

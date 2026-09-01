@@ -3,11 +3,65 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Shield, LayoutDashboard, Swords, BookOpen, BookHeart, Trophy, Users, HeartHandshake, ScrollText, ChevronLeft, ChevronRight, Sparkles, MoreHorizontal, X as XIcon, TrendingUp, Coins } from 'lucide-react';
+import { Shield, LayoutDashboard, Swords, BookOpen, BookHeart, Trophy, Users, HeartHandshake, ScrollText, ChevronLeft, ChevronRight, Sparkles, MoreHorizontal, X as XIcon, TrendingUp, Coins, LogIn, LogOut } from 'lucide-react';
 import FavoritesPanel from './FavoritesPanel';
 import PushOptIn from './PushOptIn';
 import NotificationBell from './NotificationBell';
 import TaskStatusDrawer from './TaskStatusDrawer';
+import { useCurrentUser } from '../hooks/useCurrentUser';
+
+function UserAuthWidget({ collapsed }: { collapsed?: boolean }) {
+  const { user, loading, loginWithDiscord, logout } = useCurrentUser();
+
+  if (loading) return null;
+
+  if (user) {
+    return (
+      <div className={`p-2 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center gap-2 ${collapsed ? 'justify-center' : ''}`}>
+        <img
+          src={user.avatar}
+          alt={user.displayName}
+          className="w-7 h-7 rounded-full border border-amber-500/40 shrink-0"
+        />
+        {!collapsed && (
+          <div className="min-w-0 flex-1">
+            <div className="text-[11px] font-black text-stone-900 truncate">
+              {user.displayName}
+            </div>
+            <div className="text-[10px] font-bold text-amber-700 flex items-center gap-1">
+              <span>🪙</span>
+              <span>{(user.coins ?? 1000).toLocaleString()} pt</span>
+            </div>
+          </div>
+        )}
+        {!collapsed && (
+          <button
+            type="button"
+            onClick={logout}
+            title="ログアウト"
+            className="p-1 text-stone-400 hover:text-stone-700 transition"
+          >
+            <LogOut size={13} />
+          </button>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={() => loginWithDiscord()}
+      className={`w-full py-2 px-3 rounded-xl bg-[#5865F2] hover:bg-[#4752C4] text-white font-black text-xs transition flex items-center justify-center gap-1.5 shadow-sm cursor-pointer ${
+        collapsed ? 'px-0' : ''
+      }`}
+      title="Discordアカウントでログイン"
+    >
+      <LogIn size={14} />
+      {!collapsed && <span>Discordログイン</span>}
+    </button>
+  );
+}
 
 interface MenuItem {
   id: string;
@@ -201,6 +255,8 @@ export default function Sidebar() {
         </div>
 
         <div className="p-3 border-t border-stone-200/80 space-y-2">
+          {/* Discord ユーザープロフィール / ログイン */}
+          <UserAuthWidget collapsed={isCollapsed} />
           <TaskStatusDrawer collapsed={isCollapsed} />
           <NotificationBell collapsed={isCollapsed} />
           <FavoritesPanel isCollapsed={isCollapsed} />
