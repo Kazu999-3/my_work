@@ -3,7 +3,6 @@
 // ============================================================
 
 import { CONFIG } from '../config.js';
-import { getLatestPatch } from '../utils/helpers.js';
 
 // 最新パッチのメタ要約データ (パッチごとに定期更新またはDDragon連携)
 export const LATEST_PATCH_INFO = {
