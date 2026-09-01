@@ -13,6 +13,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: '1コイン以上の金額を指定してください。' }, { status: 400 });
     }
 
+    // 他者のコインを勝手に送金しないよう本人・管理者検証
+    const { verifyUserOrAdmin } = await import('../../../../lib/authGuard');
+    const authCheck = await verifyUserOrAdmin(fromDiscordId || fromName);
+    if (!authCheck.ok) {
+      return NextResponse.json({ error: authCheck.error }, { status: 403 });
+    }
+
     // 送信者のコイン確認
     let qSender = supabase.from('ktm_players').select('name, coins');
     if (fromDiscordId) qSender = qSender.eq('discord_id', fromDiscordId);

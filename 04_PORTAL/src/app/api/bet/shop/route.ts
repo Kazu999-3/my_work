@@ -52,6 +52,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: '無効なアイテムIDです。' }, { status: 400 });
     }
 
+    // 他者のコインを勝手に使わないよう本人・管理者検証
+    const { verifyUserOrAdmin } = await import('../../../../lib/authGuard');
+    const authCheck = await verifyUserOrAdmin(discordId || playerName);
+    if (!authCheck.ok) {
+      return NextResponse.json({ error: authCheck.error }, { status: 403 });
+    }
+
     let q = supabase.from('ktm_players').select('name, coins');
     if (discordId) q = q.eq('discord_id', discordId);
     else if (playerName) q = q.eq('name', playerName);

@@ -77,6 +77,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'プレイヤー情報が不足しています。' }, { status: 400 });
     }
 
+    // 他者のコインを勝手に賭けないよう本人・管理者検証
+    const { verifyUserOrAdmin } = await import('../../../lib/authGuard');
+    const authCheck = await verifyUserOrAdmin(discordId || playerName);
+    if (!authCheck.ok) {
+      return NextResponse.json({ error: authCheck.error }, { status: 403 });
+    }
+
     const { data: player, error: pError } = await query.single();
     if (pError || !player) {
       return NextResponse.json({ error: 'プレイヤーが見つかりません。名簿登録を行ってください。' }, { status: 404 });

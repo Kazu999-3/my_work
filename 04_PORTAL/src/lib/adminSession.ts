@@ -71,5 +71,15 @@ export async function verifyAdminSession(req: Request): Promise<{ ok: boolean; e
   const token = match ? decodeURIComponent(match[1]) : null;
 
   if (verifySessionToken(token)) return { ok: true };
+
+  // Discord OAuth2 ログインセッションの管理者チェック
+  try {
+    const { getAuthSession } = await import('./authGuard');
+    const session = await getAuthSession();
+    if (session && session.isAdmin) {
+      return { ok: true };
+    }
+  } catch {}
+
   return { ok: false, error: '認証セッションが無効または期限切れです。/login から再ログインしてください。' };
 }
