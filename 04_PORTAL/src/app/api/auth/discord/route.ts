@@ -6,7 +6,7 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const returnTo = searchParams.get('returnTo') || '/casino';
 
-  const clientId = process.env.DISCORD_CLIENT_ID || process.env.NEXT_PUBLIC_DISCORD_CLIENT_ID || '1485995531434987541';
+  const clientId = process.env.DISCORD_CLIENT_ID || process.env.NEXT_PUBLIC_DISCORD_CLIENT_ID || '1487839977487470813';
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://my-work-8jbd.vercel.app';
   const redirectUri = `${baseUrl}/api/auth/discord/callback`;
 

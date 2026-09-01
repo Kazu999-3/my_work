@@ -321,7 +321,7 @@ export default function CasinoPage() {
                   </div>
                   <div>
                     <h3 className="text-base font-black text-white">
-                      Discordアカウントでログイン
+                      アカウントログイン
                     </h3>
                     <p className="text-xs text-stone-300 mt-1 max-w-sm mx-auto leading-relaxed">
                       名前入力の手間なく、あなたのアカウント残高からワンタップで勝敗ベット・アイテム購入ができます！
@@ -333,8 +333,38 @@ export default function CasinoPage() {
                     className="w-full max-w-xs mx-auto py-3 px-6 rounded-xl bg-[#5865F2] hover:bg-[#4752C4] text-white font-black text-sm transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
                   >
                     <LogIn size={18} />
-                    Discordでログインしてベットする
+                    Discordでログイン
                   </button>
+
+                  <div className="pt-3 border-t border-white/10 max-w-xs mx-auto">
+                    <label className="block text-[11px] text-stone-400 font-bold mb-1.5 text-left">
+                      または名簿から自分を選んでクイックログイン:
+                    </label>
+                    <select
+                      onChange={(e) => {
+                        const sel = ranking.find((p) => p.name === e.target.value);
+                        if (sel) {
+                          selectPlayerLocal({
+                            name: sel.name,
+                            coins: sel.coins,
+                            highest_rank: sel.rank,
+                            discord_id: sel.discordId,
+                          });
+                        }
+                      }}
+                      defaultValue=""
+                      className="w-full bg-stone-900 border border-stone-700 text-stone-200 rounded-xl px-3 py-2 text-xs font-bold focus:outline-none focus:border-amber-500"
+                    >
+                      <option value="" disabled>
+                        名簿からあなたの名前を選択...
+                      </option>
+                      {ranking.map((p) => (
+                        <option key={p.name} value={p.name}>
+                          {p.name} ({p.rank || 'UNRANKED'} / 🪙 {p.coins.toLocaleString()}pt)
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
               )}
 

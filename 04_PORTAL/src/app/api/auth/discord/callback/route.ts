@@ -23,7 +23,7 @@ export async function GET(req: Request) {
     return NextResponse.redirect(`${baseUrl}${returnTo}?auth_error=no_code`);
   }
 
-  const clientId = process.env.DISCORD_CLIENT_ID || process.env.NEXT_PUBLIC_DISCORD_CLIENT_ID || '1485995531434987541';
+  const clientId = process.env.DISCORD_CLIENT_ID || process.env.NEXT_PUBLIC_DISCORD_CLIENT_ID || '1487839977487470813';
   const clientSecret = process.env.DISCORD_CLIENT_SECRET;
 
   if (!clientSecret) {
