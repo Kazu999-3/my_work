@@ -70,7 +70,9 @@ export async function POST(req: Request) {
     } else {
       // 新規プレイヤーの自動作成 (Upsert)
       const defaultName = discordName || gameName || 'NewPlayer';
-      const initialMmr = 1200;
+      const tierKey = (rankTier || 'UNRANKED').toUpperCase();
+      const initialMmr = (await import('../../../../lib/mmr')).RANKS[tierKey] || 1200;
+
       const newPlayerData: any = {
         discord_id: discordId,
         name: defaultName,
@@ -80,6 +82,11 @@ export async function POST(req: Request) {
         highest_rank: rankTier || 'UNRANKED',
         coins: 1000, // 初期KTMコイン
         role_preferences: { primary: 'ALL', secondary: '-' },
+        mmr_top: initialMmr,
+        mmr_jg: initialMmr,
+        mmr_mid: initialMmr,
+        mmr_adc: initialMmr,
+        mmr_sup: initialMmr,
         mmrs: {
           TOP: initialMmr,
           JG: initialMmr,
