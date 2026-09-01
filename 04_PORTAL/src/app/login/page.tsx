@@ -2,18 +2,19 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useCurrentUser } from "../../hooks/useCurrentUser";
+import { Shield, LogIn, Key, Sparkles, AlertTriangle } from "lucide-react";
 
 function LoginContent() {
   const router = useRouter();
+  const { user, loginWithDiscord } = useCurrentUser();
   const [password, setPassword] = useState("");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    // HttpOnly Cookie(admin_session)ベースの検証に統一。
-    // Cookieはサーバー側(/api/auth/login)がセットするため、ここではJSから読めない
-    // （それが目的＝XSS耐性）。/api/auth/verifyがCookieを見て判定する。
+    // 既存セッションの検証
     fetch("/api/auth/verify", { method: "POST", credentials: "include" })
       .then((res) => {
         if (res.ok) {
@@ -23,7 +24,7 @@ function LoginContent() {
         }
       })
       .catch(() => setChecking(false));
-  }, [router]);
+  }, [router, user]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,10 +44,6 @@ function LoginContent() {
       const data = await res.json();
 
       if (res.ok && data.success) {
-        // サーバーがHttpOnly Cookieをセット済み。localStorageは使わない。
-        // 通知経由でどのページからログインに来ても、ログイン後は常にダッシュボードへ
-        // 統一する（以前は元のページに戻していたが、通知の多くが/coach等の個別ページに
-        // リンクしていたため「ログインしたら毎回コーチ画面」という体感になっていた）。
         router.replace("/admin/dashboard");
       } else {
         setErrorMsg(data.error || "パスワードが正しくありません。");
@@ -60,254 +57,91 @@ function LoginContent() {
 
   if (checking) {
     return (
-      <div style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        minHeight: "100vh",
-        background: "#eae4d4"
-      }}>
-        <div className="spinner" />
-        <style>{`
-          .spinner {
-            width: 40px;
-            height: 40px;
-            border: 3px solid rgba(32,28,43,0.08);
-            border-top-color: #c2650f;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-          }
-          @keyframes spin { to { transform: rotate(360deg); } }
-        `}</style>
+      <div className="flex items-center justify-center min-h-screen bg-[#eae4d4]">
+        <div className="w-10 h-10 border-3 border-stone-800/10 border-t-amber-600 rounded-full animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="login-container">
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&family=JetBrains+Mono:wght@400;700&display=swap');
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-[#f5f1e6] via-[#eae4d4] to-[#ded5be] text-stone-900">
+      <div className="w-full max-w-md bg-white/80 backdrop-blur-xl border border-black/10 rounded-3xl p-8 shadow-2xl space-y-6 text-center">
         
-        .login-container {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          min-height: 100vh;
-          width: 100%;
-          background: radial-gradient(circle at 50% 50%, #f5f1e6 0%, #eae4d4 100%);
-          color: #201c2b;
-          padding: 20px;
-          font-family: 'Outfit', sans-serif;
-          position: relative;
-          overflow: hidden;
-        }
+        {/* ロゴ ＆ タイトル */}
+        <div className="space-y-2">
+          <div className="w-16 h-16 rounded-3xl bg-amber-500/10 text-amber-600 border border-amber-500/30 flex items-center justify-center mx-auto text-3xl shadow-sm">
+            <Shield size={32} />
+          </div>
+          <h1 className="text-2xl font-black tracking-tight text-stone-900">
+            Sovereign Portal 管理認証
+          </h1>
+          <p className="text-xs text-stone-500 max-w-xs mx-auto leading-relaxed">
+            システムダッシュボードおよび管理機能へアクセスするには、ログインを行ってください。
+          </p>
+        </div>
 
-        /* 背景のアニメーションオーブ */
-        .orb-1 {
-          position: absolute;
-          width: 400px;
-          height: 400px;
-          border-radius: 50%;
-          background: radial-gradient(circle, rgba(194, 101, 15, 0.10) 0%, rgba(234,228,212,0) 70%);
-          top: -100px;
-          right: -100px;
-          filter: blur(80px);
-          animation: float 10s ease-in-out infinite alternate;
-        }
-        .orb-2 {
-          position: absolute;
-          width: 500px;
-          height: 500px;
-          border-radius: 50%;
-          background: radial-gradient(circle, rgba(181, 65, 10, 0.07) 0%, rgba(234,228,212,0) 70%);
-          bottom: -150px;
-          left: -150px;
-          filter: blur(100px);
-          animation: float 12s ease-in-out infinite alternate-reverse;
-        }
+        {/* 方法1: 🎮 Discord管理者アカウントで1秒ログイン */}
+        <div className="p-5 rounded-2xl bg-indigo-50/80 border border-indigo-200/80 space-y-3">
+          <div className="text-left">
+            <div className="text-xs font-black text-indigo-950 flex items-center gap-1.5">
+              <Sparkles size={14} className="text-indigo-600" />
+              おすすめ：Discordアカウントで認証
+            </div>
+            <p className="text-[11px] text-stone-600 mt-0.5">
+              管理者Discordアカウント（かずき）でログインすると、パスワード不要で即座に開きます🔥
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => loginWithDiscord('/admin/dashboard')}
+            className="w-full py-3.5 px-4 rounded-xl bg-[#5865F2] hover:bg-[#4752C4] text-white font-black text-xs transition-all shadow-md hover:shadow-indigo-500/20 flex items-center justify-center gap-2 cursor-pointer transform active:scale-98"
+          >
+            <LogIn size={16} />
+            Discordアカウントで管理者ログイン
+          </button>
+        </div>
 
-        @keyframes float {
-          0% { transform: translateY(0) scale(1); }
-          100% { transform: translateY(30px) scale(1.1); }
-        }
+        {/* 区切り線 */}
+        <div className="flex items-center gap-3 my-4">
+          <div className="flex-1 h-px bg-stone-200" />
+          <span className="text-[10px] font-bold text-stone-400">または パスコードで認証</span>
+          <div className="flex-1 h-px bg-stone-200" />
+        </div>
 
-        .login-card {
-          position: relative;
-          background: rgba(255, 255, 255, 0.72);
-          border: 1px solid rgba(32, 28, 43, 0.1);
-          backdrop-filter: blur(24px);
-          border-radius: 28px;
-          padding: 56px 48px;
-          width: 100%;
-          max-width: 420px;
-          box-shadow: 0 30px 60px rgba(32, 28, 43, 0.15),
-                      inset 0 1px 0 rgba(255, 255, 255, 0.6);
-          text-align: center;
-          animation: cardAppear 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
-
-        @keyframes cardAppear {
-          from { opacity: 0; transform: translateY(30px) scale(0.98); }
-          to { opacity: 1; transform: translateY(0) scale(1); }
-        }
-
-        .login-logo {
-          font-size: 48px;
-          margin-bottom: 24px;
-          filter: drop-shadow(0 10px 15px rgba(194, 101, 15, 0.3));
-        }
-
-        .login-title {
-          font-size: 28px;
-          font-weight: 800;
-          letter-spacing: -0.04em;
-          background: linear-gradient(135deg, #201c2b 30%, #a9760f 100%);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          margin-bottom: 12px;
-        }
-
-        .login-subtitle {
-          font-size: 14px;
-          color: rgba(32, 28, 43, 0.55);
-          line-height: 1.6;
-          margin-bottom: 40px;
-        }
-
-        .input-group {
-          position: relative;
-          margin-bottom: 24px;
-        }
-
-        .input-field {
-          width: 100%;
-          padding: 16px 20px;
-          background: rgba(255, 255, 255, 0.6);
-          border: 1px solid rgba(32, 28, 43, 0.12);
-          border-radius: 16px;
-          font-size: 16px;
-          color: #201c2b;
-          font-family: 'JetBrains Mono', monospace;
-          text-align: center;
-          letter-spacing: 0.1em;
-          transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        .input-field:focus {
-          outline: none;
-          background: rgba(255, 255, 255, 0.85);
-          border-color: #c2650f;
-          box-shadow: 0 0 20px rgba(194, 101, 15, 0.15);
-        }
-
-        .input-field::placeholder {
-          font-family: 'Outfit', sans-serif;
-          letter-spacing: normal;
-          color: rgba(32, 28, 43, 0.35);
-        }
-
-        .error-message {
-          font-size: 13px;
-          color: #b91c1c;
-          background: rgba(213, 55, 47, 0.08);
-          border: 1px solid rgba(213, 55, 47, 0.25);
-          border-radius: 12px;
-          padding: 12px 16px;
-          margin-bottom: 24px;
-          text-align: left;
-          animation: shake 0.4s ease;
-        }
-
-        @keyframes shake {
-          0%, 100% { transform: translateX(0); }
-          20%, 60% { transform: translateX(-4px); }
-          40%, 80% { transform: translateX(4px); }
-        }
-
-        .submit-btn {
-          width: 100%;
-          padding: 16px 28px;
-          background: linear-gradient(135deg, #c2650f 0%, #b5410a 100%);
-          color: white;
-          border: none;
-          border-radius: 16px;
-          font-size: 15px;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-          box-shadow: 0 4px 20px rgba(181, 65, 10, 0.3);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 10px;
-        }
-
-        .submit-btn:hover:not(:disabled) {
-          transform: translateY(-2px);
-          box-shadow: 0 8px 30px rgba(194, 101, 15, 0.4);
-        }
-
-        .submit-btn:active:not(:disabled) {
-          transform: translateY(0);
-        }
-
-        .submit-btn:disabled {
-          opacity: 0.5;
-          cursor: not-allowed;
-          box-shadow: none;
-        }
-
-        .submit-btn-spinner {
-          width: 18px;
-          height: 18px;
-          border: 2px solid rgba(255,255,255,0.2);
-          border-top-color: white;
-          border-radius: 50%;
-          animation: spin 0.8s linear infinite;
-        }
-      `}</style>
-
-      <div className="orb-1" />
-      <div className="orb-2" />
-
-      <div className="login-card">
-        <div className="login-logo">🔒</div>
-        <h1 className="login-title">Sovereign Portal</h1>
-        <p className="login-subtitle">
-          管理コントロールパネルおよびパーソナルコーチへアクセスするには、管理者用パスコードを入力してください。
-        </p>
-
-        <form onSubmit={handleSubmit}>
-          <div className="input-group">
+        {/* 方法2: 🔑 パスワード認証フォーム */}
+        <form onSubmit={handleSubmit} className="space-y-4 text-left">
+          <div>
+            <label className="block text-xs font-bold text-stone-700 mb-1.5 flex items-center gap-1">
+              <Key size={13} className="text-stone-500" />
+              管理者パスコード
+            </label>
             <input
               type="password"
-              placeholder="管理者パスコードを入力"
+              placeholder="••••••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="input-field"
+              className="w-full bg-stone-50 border border-stone-300 rounded-xl px-4 py-3 text-sm font-mono text-stone-900 focus:outline-none focus:border-amber-500 focus:bg-white transition-all shadow-inner"
               disabled={isLoading}
               required
-              autoFocus
             />
           </div>
 
           {errorMsg && (
-            <div className="error-message">
-              ⚠️ {errorMsg}
+            <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-bold flex items-center gap-2">
+              <AlertTriangle size={15} className="shrink-0 text-rose-600" />
+              {errorMsg}
             </div>
           )}
 
-          <button type="submit" disabled={isLoading} className="submit-btn">
-            {isLoading ? (
-              <>
-                <div className="submit-btn-spinner" />
-                <span>検証中...</span>
-              </>
-            ) : (
-              <span>ゲートを通過する ➔</span>
-            )}
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="w-full py-3.5 px-4 rounded-xl bg-stone-900 hover:bg-amber-600 text-white font-black text-xs transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+          >
+            {isLoading ? "検証中..." : "パスコードでゲートを通過する ➔"}
           </button>
         </form>
+
       </div>
     </div>
   );
@@ -315,11 +149,13 @@ function LoginContent() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh", background: "#eae4d4" }}>
-        <div style={{ width: 40, height: 40, border: "3px solid rgba(32,28,43,0.08)", borderTopColor: "#c2650f", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center min-h-screen bg-[#eae4d4]">
+          <div className="w-10 h-10 border-3 border-stone-800/10 border-t-amber-600 rounded-full animate-spin" />
+        </div>
+      }
+    >
       <LoginContent />
     </Suspense>
   );

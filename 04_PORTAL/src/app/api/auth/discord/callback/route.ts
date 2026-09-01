@@ -105,6 +105,8 @@ export async function GET(req: Request) {
       ? player.highest_rank 
       : (player?.mmr ? (player.mmr >= 2000 ? 'DIAMOND' : player.mmr >= 1700 ? 'EMERALD' : player.mmr >= 1500 ? 'PLATINUM' : player.mmr >= 1300 ? 'GOLD' : 'SILVER') : 'GOLD');
 
+    const isAdmin = discordUser.id === '697220229964759130' || discordUser.username === 'kazuki' || displayName?.includes('かずき');
+
     // 4. セッションオブジェクト作成
     const sessionData = {
       discordId: discordUser.id,
@@ -115,6 +117,7 @@ export async function GET(req: Request) {
         : `https://cdn.discordapp.com/embed/avatars/${Number(BigInt(discordUser.id) % BigInt(5))}.png`,
       coins: player?.coins ?? 1000,
       rank: rank,
+      isAdmin: isAdmin,
       loggedInAt: Date.now(),
     };
 
@@ -128,6 +131,23 @@ export async function GET(req: Request) {
       sameSite: 'lax',
       maxAge: 60 * 60 * 24 * 30, // 30日間
     });
+
+    // 管理者の場合は管理者セッションCookie(admin_session)も発行してセット
+    if (isAdmin) {
+      try {
+        const { createSessionToken, ADMIN_SESSION_COOKIE } = await import('../../../../../lib/adminSession');
+        const { token, maxAgeSec } = createSessionToken();
+        response.cookies.set(ADMIN_SESSION_COOKIE, token, {
+          path: '/',
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax',
+          maxAge: maxAgeSec,
+        });
+      } catch (e) {
+        console.error('Failed to issue admin_session cookie:', e);
+      }
+    }
 
     return response;
   } catch (err: any) {
