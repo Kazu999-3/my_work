@@ -502,12 +502,12 @@ export default function GuidePage() {
                       type="button" 
                       onClick={(e) => {
                         e.stopPropagation();
-                        setModalImage({ src: '/guide/balancer_clean_preview.png', title: 'チーム分け (KTM Balancer) 画面例' });
+                        setModalImage({ src: '/guide/balancer_v2.png', title: 'チーム分け (KTM Balancer) 画面例' });
                       }}
                       className="w-full relative group/img cursor-zoom-in rounded-2xl overflow-hidden border border-white/20 shadow-md block text-left"
                     >
                       <img
-                        src="/guide/balancer_clean_preview.png"
+                        src="/guide/balancer_v2.png"
                         alt="チーム分けバランサー画面例"
                         className="w-full object-cover group-hover/img:scale-102 transition-transform duration-300 pointer-events-none"
                       />
@@ -564,12 +564,12 @@ export default function GuidePage() {
                       type="button" 
                       onClick={(e) => {
                         e.stopPropagation();
-                        setModalImage({ src: '/guide/player_clean_preview.png', title: 'プレイヤー名簿 ＆ カルテ 画面例' });
+                        setModalImage({ src: '/guide/player_kazuki.png', title: 'プレイヤー名簿 ＆ カルテ 画面例' });
                       }}
                       className="w-full relative group/img cursor-zoom-in rounded-2xl overflow-hidden border border-white/20 shadow-md block text-left"
                     >
                       <img
-                        src="/guide/player_clean_preview.png"
+                        src="/guide/player_kazuki.png"
                         alt="プレイヤー名簿画面例"
                         className="w-full object-cover group-hover/img:scale-102 transition-transform duration-300 pointer-events-none"
                       />
