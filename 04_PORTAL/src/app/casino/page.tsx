@@ -90,7 +90,7 @@ const SHOP_ITEMS = [
 
 export default function CasinoPage() {
   const { user, loginWithDiscord, logout, refreshUser } = useCurrentUser();
-  const [activeTab, setActiveTab] = useState<'bet' | 'shop' | 'tip' | 'ranking'>('bet');
+  const [activeTab, setActiveTab] = useState<'bet' | 'shop' | 'ranking'>('bet');
   const [ranking, setRanking] = useState<RankingPlayer[]>([]);
   const [activeMatch, setActiveMatch] = useState<any | null>(null);
   const [betTeam, setBetTeam] = useState<'BLUE' | 'RED'>('BLUE');
@@ -102,11 +102,6 @@ export default function CasinoPage() {
 
   // 実効プレイヤー名（ログインユーザー優先）
   const activePlayerName = user?.displayName || '';
-
-  // チップ送金用
-  const [tipTo, setTipTo] = useState<string>('');
-  const [tipAmount, setTipAmount] = useState<number>(100);
-  const [tipMessageText, setTipMessageText] = useState<string>('ナイスキャリー！');
 
   useEffect(() => {
     fetchBetData();
@@ -228,43 +223,6 @@ export default function CasinoPage() {
     }
   };
 
-  const handleSendTip = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!activePlayerName.trim()) {
-      alert('Discordでログインするか、あなたの名前を選択してください。');
-      return;
-    }
-    if (!tipTo.trim()) {
-      alert('チップを送る相手のサモナー名を選択または入力してください。');
-      return;
-    }
-
-    try {
-      const res = await fetch('/api/bet/tip', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          fromName: activePlayerName.trim(),
-          toName: tipTo.trim(),
-          amount: tipAmount,
-          message: tipMessageText.trim(),
-        }),
-      });
-
-      const data = await res.json();
-      if (res.ok && data.success) {
-        triggerCelebration();
-        alert(data.announcement);
-        fetchBetData();
-        refreshUser();
-      } else {
-        alert(data.error || 'チップ送信に失敗しました。');
-      }
-    } catch (e: any) {
-      alert('エラー: ' + e.message);
-    }
-  };
-
   return (
     <div className="min-h-screen pb-16 bg-[#eae4d4] text-[#201c2b]">
       {/* ヒーローセクション */}
@@ -293,12 +251,11 @@ export default function CasinoPage() {
 
       <div className="max-w-[1200px] w-full mx-auto px-4 md:px-8 py-8 space-y-6">
         
-        {/* 4大機能タブナビゲーション */}
-        <div className="flex items-center justify-center gap-2 p-1.5 rounded-2xl bg-stone-900 text-white max-w-xl mx-auto shadow-lg overflow-x-auto">
+        {/* 3大機能タブナビゲーション */}
+        <div className="flex items-center justify-center gap-2 p-1.5 rounded-2xl bg-stone-900 text-white max-w-lg mx-auto shadow-lg overflow-x-auto">
           {[
             { id: 'bet', label: '🎯 勝敗予想', desc: '試合予想' },
             { id: 'shop', label: '🛒 KTMショップ', desc: '特権交換' },
-            { id: 'tip', label: '🤝 チップ送信', desc: '推し応援' },
             { id: 'ranking', label: '🏆 長者番付', desc: 'コイン順位' },
           ].map((tab) => (
             <button
@@ -644,76 +601,7 @@ export default function CasinoPage() {
           </div>
         )}
 
-        {/* タブ3: 🤝 投げ銭 (チップ) 送金 */}
-        {activeTab === 'tip' && (
-          <div className="bg-white rounded-3xl p-6 md:p-8 border border-black/10 shadow-sm space-y-6 max-w-2xl mx-auto">
-            <div className="flex items-center gap-3 border-b border-stone-100 pb-4">
-              <div className="w-10 h-10 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center font-bold">
-                <Heart size={20} />
-              </div>
-              <div>
-                <h3 className="text-lg font-black text-stone-900">推しプレイヤー・仲間へチップを送る</h3>
-                <p className="text-xs text-stone-500">ナイスプレイやキャリーへ感謝のコインをプレゼント！</p>
-              </div>
-            </div>
-
-            <form onSubmit={handleSendTip} className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-bold text-stone-600 mb-1.5">送り先メンバー</label>
-                  <select
-                    value={tipTo}
-                    onChange={(e) => setTipTo(e.target.value)}
-                    className="w-full bg-stone-50 border border-stone-300 rounded-xl px-3 py-2.5 text-xs font-bold focus:outline-none"
-                    required
-                  >
-                    <option value="">選択してください...</option>
-                    {ranking
-                      .filter((p) => p.name !== user?.displayName)
-                      .map((p) => (
-                        <option key={p.name} value={p.name}>
-                          {p.name} ({p.rank || 'UNRANKED'})
-                        </option>
-                      ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-stone-600 mb-1.5">チップ額 (コイン)</label>
-                  <input
-                    type="number"
-                    min="10"
-                    value={tipAmount}
-                    onChange={(e) => setTipAmount(Number(e.target.value))}
-                    className="w-full bg-stone-50 border border-stone-300 rounded-xl px-3 py-2.5 text-xs font-bold focus:outline-none font-mono"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-stone-600 mb-1.5">応援メッセージ</label>
-                <input
-                  type="text"
-                  placeholder="例: 今日のウルト最高でした！"
-                  value={tipMessageText}
-                  onChange={(e) => setTipMessageText(e.target.value)}
-                  className="w-full bg-stone-50 border border-stone-300 rounded-xl px-3 py-2.5 text-xs font-bold focus:outline-none"
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={!user}
-                className="w-full bg-rose-600 hover:bg-rose-700 text-white py-3.5 rounded-2xl font-black text-xs transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
-              >
-                <Gift size={16} />
-                🪙 {tipAmount}コイン を {tipTo || '仲間'} にプレゼント！
-              </button>
-            </form>
-          </div>
-        )}
-
-        {/* タブ4: 🏆 長者番付 (ランキング) */}
+        {/* タブ3: 🏆 長者番付 (ランキング) */}
         {activeTab === 'ranking' && (
           <div className="bg-white rounded-3xl p-6 md:p-8 border border-black/10 shadow-sm space-y-6 max-w-3xl mx-auto">
             <div className="flex items-center justify-between border-b border-stone-100 pb-4">
