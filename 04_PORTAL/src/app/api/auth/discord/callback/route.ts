@@ -27,11 +27,10 @@ export async function GET(req: Request) {
   }
 
   const clientId = process.env.DISCORD_CLIENT_ID || process.env.NEXT_PUBLIC_DISCORD_CLIENT_ID || '1487839977487470813';
-  const clientSecret = process.env.DISCORD_CLIENT_SECRET;
+  const clientSecret = process.env.DISCORD_CLIENT_SECRET || '7b9BIMgFZtampwPWo1Z0QeyxxnpwcDJr';
 
   if (!clientSecret) {
     console.warn('[discord-callback] DISCORD_CLIENT_SECRET is not set.');
-    // シークレット未設定時は、モック/開発用フォールバック
     return NextResponse.redirect(`${baseUrl}${returnTo}?auth_error=no_secret`);
   }
 
