@@ -208,12 +208,10 @@ function runBalanceSearch(players: Player[], ctx: BalanceContext): RawBalanceCan
   const globalAvgMMR = players.reduce((s, p) => s + (p.avgMMR || 1200), 0) / 10;
 
   players.forEach((p) => {
-    p.isNewbie = (p.rank === 'UNRANKED' && p.games < 3);
+    // 初参加・新規判定: 試合数が3試合未満、またはUnrankedで5試合未満
+    p.isNewbie = (p.games < 3 || (p.rank === 'UNRANKED' && p.games < 5));
     const avgP = p.avgMMR || 1200;
     p.isOutlierLow = (avgP < globalAvgMMR - 350);
-    // B2: 以前は +1000 で事実上発火せず「突出した強者をあえてオフロール/弱い側へ回して均衡させる」
-    // 調整(applyOutlierReliefなど)が死んでいた。実際に効く +500 に是正（弱者側 -350 と概ね対称）。
-    // ※発火が多すぎ/少なすぎと感じたら、この値だけで感度を調整可能。
     p.isOutlierHigh = (avgP > globalAvgMMR + 500);
 
     // --- MMRは2スケール(B4: 3種類→2種類に統合) ---
@@ -465,6 +463,11 @@ function runBalanceSearch(players: Player[], ctx: BalanceContext): RawBalanceCan
                }
              }
 
+             // 初参加者保護: 初参加者の対面に格上・突出強者が来るのを強力に抑制
+             if (p.isNewbie && (opp.isOutlierHigh || mmrDiff > 200 || HIGH_RANKS.includes(opp.rank))) {
+               penalty += 45000;
+             }
+
              if (p.isOutlierLow && (opp.isOutlierHigh || mmrDiff > 1200)) {
                penalty += 20000; 
              }
@@ -481,9 +484,11 @@ function runBalanceSearch(players: Player[], ctx: BalanceContext): RawBalanceCan
               if (w === 1) rolePenalty *= 10;
               else if (w === 2) rolePenalty *= 2;
             } else if (p.isFixed || p.pref1 === 'ALL' || p.pref1 === currentRole) {
-              rolePenalty = 0;
+              // 初参加バフ: 初参加者が第一希望に配属されたら大幅な歓迎ボーナス
+              rolePenalty = p.isNewbie ? -30000 : 0;
             } else if (p.pref2 === currentRole) {
               rolePenalty = 500 + (p.pity * 10000);
+              if (p.isNewbie) rolePenalty += 80000; // 初参加者のオフロールは強く回避
               if (p.pity >= 4) rolePenalty += 40000;
               if (isSpecialist) rolePenalty *= 2;
               if (w === 1) rolePenalty *= 10;
@@ -491,14 +496,15 @@ function runBalanceSearch(players: Player[], ctx: BalanceContext): RawBalanceCan
               rolePenalty += p.off_role_pity * 30000;
             } else {
               rolePenalty = 5000 + (p.pity * 20000);
+              if (p.isNewbie) rolePenalty += 120000; // 初参加者のオフロールは強力にブロック
               if (p.pity >= 4) rolePenalty += 60000;
               if (isSpecialist) rolePenalty *= 3;
               if (w === 1) rolePenalty *= 20;
               if (w === 3) rolePenalty *= 0.2;
               rolePenalty += p.off_role_pity * 50000;
             }
-            if ((p.isNewbie || p.isOutlierLow) && (currentRole === 'JG' || currentRole === 'MID')) {
-              rolePenalty += 10000; 
+            if ((p.isNewbie || p.isOutlierLow) && (currentRole === 'JG' || currentRole === 'MID') && p.pref1 !== currentRole) {
+              rolePenalty += 15000; 
             }
 
             if (p.isOutlierLow) {
@@ -652,14 +658,20 @@ function buildBalanceResult(
   const teamRed = isSwapped ? assignA : assignB;
 
   // --- 事後分析レポートの作成 ---
+  const allAssigned = [...teamBlue, ...teamRed];
   const balanceReport: string[] = [];
+  const newbiePlayers = allAssigned.filter(p => p.isNewbie);
+  if (newbiePlayers.length > 0) {
+    const newbieNames = newbiePlayers.map(p => `**${p.name}**（${p.currentRole}）`).join('、');
+    balanceReport.push(`🔰 **【初参加バフ適用中】**: 新規参戦の ${newbieNames} 選手が第一希望で思い切り楽しめるよう、レーン希望を最優先し対面格差を抑えた構成に調整しました！`);
+  }
+
   const avgBlue = Math.round(teamBlue.reduce((s, p) => s + p.mmr, 0) / 5);
   const avgRed = Math.round(teamRed.reduce((s, p) => s + p.mmr, 0) / 5);
   const diff = Math.abs(avgBlue - avgRed);
   
   balanceReport.push(`**チーム間戦力差**: 両チームの平均レート差はわずか \`${diff}\` です。`);
 
-  const allAssigned = [...teamBlue, ...teamRed];
   const mainCount = allAssigned.filter(p => p.currentRole === p.mainLane || p.mainLane === 'ALL' || p.isFixed).length;
   balanceReport.push(`**レーン希望**: 10人中 \`${mainCount}人\` が第一希望（または固定）を獲得しました。`);
 
