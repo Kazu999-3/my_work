@@ -523,7 +523,7 @@ export default function CasinoPage() {
                     現在受付中のカスタム対戦はありません
                   </h3>
                   <p className="text-xs text-stone-500 max-w-md mx-auto leading-relaxed">
-                    バランサーでチーム分けが確定されると、ここに自動で5v5対戦カードが出現し、勝敗ベットの投票が開始されます🔥
+                    バランサーでチーム分けが確定されると、ここに自動で5v5対戦カードが出現し、勝敗予想の受付が開始されます🔥
                   </p>
                 </div>
                 <div className="pt-2">
@@ -538,6 +538,60 @@ export default function CasinoPage() {
                 </div>
               </div>
             )}
+
+            {/* 勝敗予想の下に常時表示される長者番付 */}
+            <div className="pt-6 border-t border-stone-100 space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold">
+                    <Trophy size={16} />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-black text-stone-900">KTM 長者番付 TOP 10</h3>
+                    <p className="text-[11px] text-stone-500">現在のコイン富豪ランキング</p>
+                  </div>
+                </div>
+                <span className="text-[10px] text-amber-700 bg-amber-100/70 font-bold px-2 py-0.5 rounded-full">
+                  リアルタイム
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                {ranking.map((p, idx) => (
+                  <div
+                    key={`bet-rank-${p.name}`}
+                    className={`flex items-center justify-between p-3 rounded-2xl border transition-all ${
+                      idx === 0
+                        ? 'bg-amber-50/80 border-amber-300 font-bold shadow-xs'
+                        : idx === 1
+                        ? 'bg-stone-50 border-stone-300 font-bold'
+                        : idx === 2
+                        ? 'bg-amber-900/5 border-amber-700/20 font-bold'
+                        : 'bg-white border-black/5 hover:bg-stone-50'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <span className="w-5 text-center text-xs font-black font-mono">
+                        {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `${idx + 1}`}
+                      </span>
+                      <div>
+                        <div className="text-xs font-black text-stone-900 flex items-center gap-1">
+                          {p.name}
+                          <span className="text-[8px] px-1 py-0.2 rounded bg-black/5 text-stone-500 font-mono">
+                            {p.rank}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-xs font-black text-amber-600 font-mono">
+                        🪙 {(p.coins ?? 1000).toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         )}
 
