@@ -100,7 +100,31 @@ export async function GET(request: Request) {
     const id = searchParams.get('id');
 
     if (!id) {
-      return NextResponse.json({ error: 'IDが指定されていません。' }, { status: 400 });
+      // 最新の受付中アクティブマッチを取得（直近2時間以内の pending）
+      const { data: latestTask, error: lError } = await supabase
+        .from('edge_tasks')
+        .select('id, payload, created_at')
+        .eq('task_type', TASK_TYPE)
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (lError || !latestTask) {
+        return NextResponse.json({ success: true, activeMatch: null });
+      }
+
+      const isExpired = Date.now() - new Date(latestTask.created_at).getTime() > EXPIRE_MS;
+      if (isExpired) {
+        return NextResponse.json({ success: true, activeMatch: null });
+      }
+
+      return NextResponse.json({
+        success: true,
+        pendingId: latestTask.id,
+        balanceResult: latestTask.payload?.balanceResult,
+        activeMatch: latestTask.payload?.balanceResult,
+      });
     }
 
     const { data: task, error } = await supabase
