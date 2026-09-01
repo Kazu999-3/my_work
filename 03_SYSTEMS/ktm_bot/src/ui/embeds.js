@@ -13,17 +13,19 @@ function renderProgressBar(current, max) {
  * @param {string} [tierLine] レート帯の内訳
  */
 export function createRecruitEmbed(metadata, tierLine) {
+  const isCustom = metadata.mode === 'カスタム';
+  const maxCount = metadata.maxCount || (isCustom ? 10 : 5);
   const currentCount = metadata.joined.length;
-  const maxCount = metadata.maxCount || (metadata.mode === 'カスタム' ? 10 : 5);
   const remaining = Math.max(0, maxCount - currentCount);
   const isFull = currentCount >= maxCount;
-  const isAlmostFull = remaining > 0 && remaining <= 2;
+  const isAlmostFull = remaining > 0 && remaining <= (isCustom ? 2 : 1);
 
-  let title = `⚔️ KTM メンバー募集 [${currentCount}/${maxCount}]`;
+  const modeIcon = isCustom ? '⚔️' : metadata.mode === 'ARAM' ? '❄️' : '🎮';
+  let title = `${modeIcon} 【${metadata.mode}募集】 [${currentCount}/${maxCount}人]`;
   if (isFull) {
-    title = `🎉 メンバー確定！ [${currentCount}/${maxCount}] カスタム開催決定！`;
+    title = `🎉 【${metadata.mode}】メンバー確定！ [${currentCount}/${maxCount}人] 出発準備完了！`;
   } else if (isAlmostFull) {
-    title = `🔥 あと【${remaining}名】でカスタム開催！ [${currentCount}/${maxCount}]`;
+    title = `🔥 【あと${remaining}名】で出発！ [${currentCount}/${maxCount}人]`;
   }
 
   const ownerName = metadata.names[metadata.owner] || "不明";
@@ -36,11 +38,15 @@ export function createRecruitEmbed(metadata, tierLine) {
 
   let bannerText = '';
   if (isFull) {
-    bannerText = `✅ **10名集まりました！チーム分けの準備を行ってください。**\n\n`;
+    bannerText = isCustom
+      ? `✅ **10名集まりました！下のボタンからWebバランサーでチーム分けを行ってください。**\n\n`
+      : `✅ **5名揃いました！フルパーティーで出発できます🎮**\n\n`;
   } else if (isAlmostFull) {
-    bannerText = `⚡ **あと少しで10名確定！飛び入り参加・初参加大歓迎です！**\n進捗: \`${progressBar}\` (あと**${remaining}**名)\n\n`;
+    bannerText = isCustom
+      ? `⚡ **あと少しで10名確定！飛び入り参加・初参加大歓迎です！**\n進捗: \`${progressBar}\` (あと**${remaining}**名)\n\n`
+      : `⚡ **あと【${remaining}名】で満員（5人）！気軽に参加ボタンを押してください！**\n進捗: \`${progressBar}\` (あと**${remaining}**名)\n\n`;
   } else {
-    bannerText = `進捗: \`${progressBar}\` (あと**${remaining}**名募集)\n\n`;
+    bannerText = `進捗: \`${progressBar}\` (あと**${remaining}**名募集中)\n\n`;
   }
 
   return {
@@ -55,22 +61,33 @@ export function createRecruitEmbed(metadata, tierLine) {
 }
 
 export function renderRoles(data) {
+  const isCustom = data.mode === 'カスタム';
   const icons = { Top: '🛡️', Jg: '⚔️', Mid: '🧙', Adc: '🏹', Sup: '🩹' };
   let lines = [];
+
   if (data.mode === 'ノーマル') {
-    lines.push("🟦 **TEAM ROLES**");
-    ['Top', 'Jg', 'Mid', 'Adc', 'Sup'].forEach(r => lines.push(`${icons[r]} **${r}**: ${data.roles[r] ? `<@${data.roles[r]}>` : "◽"}`));
-    const pooled = data.joined.filter(id => !Object.values(data.roles).includes(id));
-    if (pooled.length > 0) pooled.forEach(id => lines.push(`- <@${id}>`));
+    lines.push("🟦 **希望ポジション (ROLES)**");
+    ['Top', 'Jg', 'Mid', 'Adc', 'Sup'].forEach(r => {
+      const pId = data.roles ? data.roles[r] : null;
+      lines.push(`${icons[r]} **${r}**: ${pId ? `<@${pId}>` : "◽ *(空き)*"}`);
+    });
+    const pooled = data.joined.filter(id => !(data.roles && Object.values(data.roles).includes(id)));
+    if (pooled.length > 0) {
+      lines.push("\n👥 **ロール未定・参加者:**");
+      pooled.forEach(id => lines.push(`- <@${id}>`));
+    }
   } else {
-    lines.push("👥 **参加者一覧 (PARTICIPANTS)**");
+    lines.push(`👥 **参加メンバー一覧 (${data.joined.length}/${data.maxCount || (isCustom ? 10 : 5)}人)**`);
     data.joined.forEach((id, i) => lines.push(`\`${String(i + 1).padStart(2, '0')}.\` <@${id}>`));
-    for (let i = data.joined.length + 1; i <= data.maxCount; i++) {
+    const targetMax = data.maxCount || (isCustom ? 10 : 5);
+    for (let i = data.joined.length + 1; i <= targetMax; i++) {
       lines.push(`\`${String(i).padStart(2, '0')}.\` ◽ *(募集中)*`);
     }
   }
-  const specHeader = (data.mode === 'ノーマル' || data.mode === 'ARAM') ? "⏳ **カスタム待機・補欠**" : "👁️ **見学・補欠メンバー**";
+
+  // 見学・補欠（カスタム時のみ補欠、通常時は見学のみ）
   if (data.spectating && data.spectating.length > 0) {
+    const specHeader = isCustom ? "👁️ **見学・補欠メンバー**" : "👁️ **見学・応援**";
     lines.push(`\n${specHeader}`);
     data.spectating.forEach(id => lines.push(`- <@${id}>`));
   }
@@ -78,8 +95,9 @@ export function renderRoles(data) {
 }
 
 export function createRecruitButtons(metadata) {
+  const isCustom = metadata.mode === 'カスタム';
   const currentCount = metadata.joined.length;
-  const maxCount = metadata.maxCount || (metadata.mode === 'カスタム' ? 10 : 5);
+  const maxCount = metadata.maxCount || (isCustom ? 10 : 5);
   const remaining = Math.max(0, maxCount - currentCount);
   const isFull = currentCount >= maxCount;
   const comps = [];
@@ -97,7 +115,7 @@ export function createRecruitButtons(metadata) {
         },
         {
           type: 2,
-          label: "👁️ 見学/補欠",
+          label: isCustom ? "👁️ 見学/補欠" : "👁️ 見学",
           style: 2, // 灰
           custom_id: `toggle_spectate:${metadata.owner}`,
         },
@@ -110,22 +128,24 @@ export function createRecruitButtons(metadata) {
       ],
     });
   } else {
+    const fullRow = [];
+    if (isCustom) {
+      fullRow.push({
+        type: 2,
+        label: "🌐 Webバランサーでチーム分け",
+        style: 5, // リンク
+        url: `${CONFIG.PORTAL_URL}/balancer`,
+      });
+    }
+    fullRow.push({
+      type: 2,
+      label: isCustom ? "👁️ 補欠/見学に入る" : "👁️ 見学に入る",
+      style: 2,
+      custom_id: `toggle_spectate:${metadata.owner}`,
+    });
     comps.push({
       type: 1,
-      components: [
-        {
-          type: 2,
-          label: "🌐 Webバランサーでチーム分け",
-          style: 5, // リンク
-          url: `${CONFIG.PORTAL_URL}/balancer`,
-        },
-        {
-          type: 2,
-          label: "👁️ 見学/補欠に入る",
-          style: 2,
-          custom_id: `toggle_spectate:${metadata.owner}`,
-        },
-      ],
+      components: fullRow,
     });
   }
 

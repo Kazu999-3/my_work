@@ -68,76 +68,125 @@ export default function GuidePage() {
       </div>
 
       {/* メインコンテンツ */}
-      <div className="max-w-[1550px] w-full mx-auto px-4 md:px-8 py-8 space-y-8">
+      <div className="max-w-[1400px] w-full mx-auto px-4 md:px-8 py-8 space-y-8">
         
         {/* 🌟 3ステップ初期登録 */}
         <section>
           <div className="flex items-center gap-2 mb-4">
-            <span className="text-lg">⚡</span>
-            <h2 className="text-lg md:text-xl font-black text-stone-900">
-              今すぐ始める3ステップ
-            </h2>
+            <span className="text-xl">⚡</span>
+            <div>
+              <h2 className="text-lg md:text-xl font-black text-stone-900">
+                1分で完了！今すぐ遊べる3ステップ
+              </h2>
+              <p className="text-xs text-stone-500">登録しておけば、募集が出た時にワンタップで参加できます！</p>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Step 1 */}
-            <div className="bg-white rounded-2xl p-5 border border-black/10 shadow-xs relative overflow-hidden flex flex-col justify-between">
+            <div className="bg-white rounded-3xl p-6 border-2 border-amber-200/80 shadow-xs relative overflow-hidden flex flex-col justify-between hover:border-amber-400 transition-all">
               <div>
-                <div className="flex items-center justify-between mb-3">
-                  <div className="w-10 h-10 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 font-bold">
-                    <UserCheck size={20} />
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 font-bold text-2xl">
+                    📝
                   </div>
-                  <span className="text-xs font-black text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">STEP 1</span>
+                  <span className="text-xs font-black text-amber-700 bg-amber-100/70 px-2.5 py-1 rounded-full">STEP 1</span>
                 </div>
-                <h3 className="text-base font-black text-stone-900 mb-1.5">サモナー名 (Riot ID) 登録</h3>
-                <p className="text-stone-600 text-xs leading-relaxed mb-3">
-                  Discordで「📝 サモナー名登録」を押してLoL ID（<code className="bg-stone-100 px-1 py-0.5 rounded text-amber-800 font-mono text-[10px]">名前#JP1</code>）を入力！
+                <h3 className="text-base font-black text-stone-900 mb-2">サモナー名 (Riot ID) 登録</h3>
+                <p className="text-stone-600 text-xs leading-relaxed mb-4">
+                  Discordの「📝 サモナー名登録」ボタンを押して、あなたのLoL ID（<code className="bg-stone-100 px-1 py-0.5 rounded text-amber-800 font-mono text-[10px]">名前#JP1</code>）を入力するだけ！
                 </p>
               </div>
-              <div className="pt-2.5 border-t border-stone-100 flex items-center gap-1.5 text-[11px] text-stone-500 font-bold">
-                <CheckCircle2 size={13} className="text-emerald-600 shrink-0" />
+              <div className="pt-3 border-t border-stone-100 flex items-center gap-1.5 text-xs text-emerald-700 font-black">
+                <CheckCircle2 size={15} className="text-emerald-600 shrink-0" />
                 最高ランク・戦績を全自動同期
               </div>
             </div>
 
             {/* Step 2 */}
-            <div className="bg-white rounded-2xl p-5 border border-black/10 shadow-xs relative overflow-hidden flex flex-col justify-between">
+            <div className="bg-white rounded-3xl p-6 border-2 border-indigo-200/80 shadow-xs relative overflow-hidden flex flex-col justify-between hover:border-indigo-400 transition-all">
               <div>
-                <div className="flex items-center justify-between mb-3">
-                  <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-200 flex items-center justify-center text-indigo-600 font-bold">
-                    <MapPin size={20} />
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-200 flex items-center justify-center text-indigo-600 font-bold text-2xl">
+                    📍
                   </div>
-                  <span className="text-xs font-black text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-200">STEP 2</span>
+                  <span className="text-xs font-black text-indigo-700 bg-indigo-100/70 px-2.5 py-1 rounded-full">STEP 2</span>
                 </div>
-                <h3 className="text-base font-black text-stone-900 mb-1.5">希望レーン設定</h3>
-                <p className="text-stone-600 text-xs leading-relaxed mb-3">
-                  「📍 希望レーン設定」で得意ロールやNGレーンをポチッと選ぶだけ！
+                <h3 className="text-base font-black text-stone-900 mb-2">希望レーン ＆ NGレーン設定</h3>
+                <p className="text-stone-600 text-xs leading-relaxed mb-4">
+                  「📍 希望レーン設定」で得意ロールや絶対やりたくないNGレーンをポチッと選ぶだけ！
                 </p>
               </div>
-              <div className="pt-2.5 border-t border-stone-100 flex items-center gap-1.5 text-[11px] text-stone-500 font-bold">
-                <CheckCircle2 size={13} className="text-emerald-600 shrink-0" />
-                チーム分けAIが希望を最優先考慮
+              <div className="pt-3 border-t border-stone-100 flex items-center gap-1.5 text-xs text-indigo-700 font-black">
+                <CheckCircle2 size={15} className="text-indigo-600 shrink-0" />
+                NGレーンには絶対に配置されません
               </div>
             </div>
 
             {/* Step 3 */}
-            <div className="bg-white rounded-2xl p-5 border border-black/10 shadow-xs relative overflow-hidden flex flex-col justify-between">
+            <div className="bg-white rounded-3xl p-6 border-2 border-emerald-200/80 shadow-xs relative overflow-hidden flex flex-col justify-between hover:border-emerald-400 transition-all">
               <div>
-                <div className="flex items-center justify-between mb-3">
-                  <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600 font-bold">
-                    <Swords size={20} />
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600 font-bold text-2xl">
+                    ⚔️
                   </div>
-                  <span className="text-xs font-black text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">STEP 3</span>
+                  <span className="text-xs font-black text-emerald-700 bg-emerald-100/70 px-2.5 py-1 rounded-full">STEP 3</span>
                 </div>
-                <h3 className="text-base font-black text-stone-900 mb-1.5">募集に参加する！</h3>
-                <p className="text-stone-600 text-xs leading-relaxed mb-3">
-                  募集通知の「✋ 参加する」を押すだけ！10人揃えば自動でチーム分け開始🔥
+                <h3 className="text-base font-black text-stone-900 mb-2">募集に参加 ＆ コインGET！</h3>
+                <p className="text-stone-600 text-xs leading-relaxed mb-4">
+                  募集通知の「✋ 参加する」を押すだけ！試合や勝敗ベットでコインを稼ぎ、特権アイテムと交換しよう🔥
                 </p>
               </div>
-              <div className="pt-2.5 border-t border-stone-100 flex items-center gap-1.5 text-[11px] text-stone-500 font-bold">
-                <CheckCircle2 size={13} className="text-emerald-600 shrink-0" />
+              <div className="pt-3 border-t border-stone-100 flex items-center gap-1.5 text-xs text-emerald-700 font-black">
+                <CheckCircle2 size={15} className="text-emerald-600 shrink-0" />
                 初心者から上級者まで完全公平マッチ
               </div>
+            </div>
+          </div>
+        </section>
+
+        {/* 🎯 勝敗ベット ＆ KTMショップの遊び方 */}
+        <section className="bg-gradient-to-br from-amber-950 via-stone-900 to-amber-950 text-white rounded-3xl p-6 md:p-8 border border-amber-500/30 shadow-xl space-y-6">
+          <div className="flex items-center justify-between flex-wrap gap-4 border-b border-amber-500/20 pb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-amber-500/20 text-amber-400 border border-amber-500/40 flex items-center justify-center text-2xl">
+                🪙
+              </div>
+              <div>
+                <h2 className="text-xl md:text-2xl font-black text-white">
+                  勝敗ベット ＆ KTMショップで遊ぶ！
+                </h2>
+                <p className="text-stone-300 text-xs md:text-sm">
+                  観戦者も参加者も全員が熱狂できるKTM独自のカジノ＆特権システム
+                </p>
+              </div>
+            </div>
+            <Link
+              href="/casino"
+              className="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 font-black text-xs transition-all shadow-md flex items-center gap-2 cursor-pointer"
+            >
+              勝敗ベット画面へ行く <ArrowRight size={14} />
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+            <div className="p-4 rounded-2xl bg-stone-900/80 border border-amber-500/20 space-y-2">
+              <div className="text-lg">🎯 1. 勝敗を予想</div>
+              <p className="text-stone-300 leading-relaxed text-[11px]">
+                カスタムの試合が決まったら、BLUEかREDの勝つと思う方にコインをベット！
+              </p>
+            </div>
+            <div className="p-4 rounded-2xl bg-stone-900/80 border border-amber-500/20 space-y-2">
+              <div className="text-lg">💰 2. コインを倍増</div>
+              <p className="text-stone-300 leading-relaxed text-[11px]">
+                予想が当たればオッズに応じてコインが手元にザクザク戻ってきます！
+              </p>
+            </div>
+            <div className="p-4 rounded-2xl bg-stone-900/80 border border-amber-500/20 space-y-2">
+              <div className="text-lg">🛒 3. 特権アイテムと交換</div>
+              <p className="text-stone-300 leading-relaxed text-[11px]">
+                「第一希望ロール確約チケット」や「賞金首ターゲット権」と交換して次回カスタムを有利に！
+              </p>
             </div>
           </div>
         </section>
