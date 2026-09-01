@@ -76,9 +76,9 @@ export function parseSmartRecruitInput(rawInput, explicitOptions = {}) {
     }
   }
 
-  // デフォルト値補完
+  // デフォルト値補完 (ニュートラルはノーマル5人・今から)
   if (!mode) {
-    mode = (max === 5) ? 'ノーマル' : 'カスタム';
+    mode = (max === 10) ? 'カスタム' : 'ノーマル';
   }
   if (!max) {
     max = (mode === 'カスタム') ? 10 : 5;

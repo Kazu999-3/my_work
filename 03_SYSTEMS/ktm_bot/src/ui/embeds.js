@@ -260,7 +260,7 @@ export function getPortalComponents(userId) {
 export function handleHelpPage() {
   const pages = [
     { title: "📜 KTM ガイド (1/3): 基本設定", description: "1. 「📝 サモナー名登録」でRiot IDを連携\n2. 「📍 レーン設定」で希望ロールを登録\n3. 募集カードの「✋ 参加する」を押して参戦！", color: 0x3498db },
-    { title: "⚡ KTM ガイド (2/3): 爆速募集コマンド", description: "`/recruit` はオプションなしでもAIがスマート判定！\n\n・`/recruit 21:00` ➔ 21:00開始のカスタム10人募集\n・`/recruit 5 楽しく` ➔ 今からノーマル5人募集\n・`/recruit ARAM` ➔ ARAM5人募集\n・`/recruit` ➔ デフォルト（カスタム10人・今から）", color: 0x2ecc71 },
+    { title: "⚡ KTM ガイド (2/3): 爆速募集コマンド", description: "`/recruit` はオプションなしでもAIがスマート判定！\n\n・`/recruit` ➔ デフォルト（今からノーマル5人募集）\n・`/recruit 21:00 カスタム` ➔ 21:00開始のカスタム10人募集\n・`/recruit ARAM` ➔ ARAM5人募集\n・`/recruit 5 楽しく` ➔ メモ付き募集", color: 0x2ecc71 },
     { title: "📊 KTM ガイド (3/3): レートと表彰", description: "対戦結果に基づき MMR が公平なマッチを自動生成します。\n毎月1日には月間MVPなどの表彰も発表されます！", color: 0xe67e22 }
   ];
   return { embeds: pages };
