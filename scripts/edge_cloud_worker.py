@@ -150,6 +150,9 @@ def notify_portal(task_type, payload, success, detail="", task_id=None):
     PORTAL_URL未設定や送信失敗は握りつぶす(タスク自体の成否には影響させない)。"""
     if not PORTAL_URL:
         return
+    # YouTubeチャンネル監視などの定期バックグラウンド巡回完了通知は不要なためスキップ
+    if task_type == "youtube_channel_monitor" and success:
+        return
     label, url_path = TASK_LABELS.get(task_type, (task_type, "/"))
     if task_type == "champion_trend":
         champion = payload.get("champion", "")
