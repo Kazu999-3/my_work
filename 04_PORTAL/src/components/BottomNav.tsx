@@ -1,14 +1,29 @@
 "use client";
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Coins, Swords, Trophy, BookOpen, User, Flame } from 'lucide-react';
+import { Coins, Swords, Trophy, BookOpen, User, ShieldCheck } from 'lucide-react';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 
 export default function BottomNav() {
   const pathname = usePathname();
   const { user } = useCurrentUser();
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    if (user && (user.isAdmin || user.discordId === '697220229964759130' || user.displayName?.includes('かずき'))) {
+      setIsAdmin(true);
+      return;
+    }
+    // サーバー認証の確認
+    fetch("/api/auth/verify", { method: "POST", credentials: "include" })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.valid) setIsAdmin(true);
+      })
+      .catch(() => {});
+  }, [user]);
 
   const navItems = [
     {
@@ -32,11 +47,22 @@ export default function BottomNav() {
       href: '/guide',
       icon: BookOpen,
     },
-    {
-      label: 'マイ戦績',
-      href: user ? `/player/${user.displayName || user.username}` : '/casino',
-      icon: User,
-    },
+    ...(isAdmin
+      ? [
+          {
+            label: '管理運用',
+            href: '/admin/dashboard',
+            icon: ShieldCheck,
+            badge: 'ADMIN',
+          },
+        ]
+      : [
+          {
+            label: 'マイ戦績',
+            href: user ? `/player/${user.displayName || user.username}` : '/casino',
+            icon: User,
+          },
+        ]),
   ];
 
   return (
