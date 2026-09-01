@@ -393,66 +393,166 @@ export default function GuidePage() {
           </div>
         </section>
 
-        {/* 🎲 勝敗ベット ＆ KTMショップ ＆ コインシステムの使い方 */}
-        <section className="bg-gradient-to-br from-amber-950 via-stone-900 to-amber-950 text-white rounded-3xl p-6 md:p-8 border border-amber-500/30 shadow-xl space-y-6">
-          <div className="flex items-center justify-between flex-wrap gap-3">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-amber-500/20 text-amber-400 border border-amber-500/40 flex items-center justify-center font-black text-xl">
-                🎲
-              </div>
-              <div>
-                <h2 className="text-xl md:text-2xl font-black text-white flex items-center gap-2">
-                  勝敗予想ベット ＆ KTMショップ ＆ 長者番付
-                </h2>
-                <p className="text-amber-200/80 text-xs md:text-sm">
-                  カスタムを見る人も出る人も全員が熱狂！貯めたコインで特権アイテムをGETしよう🔥
-                </p>
-              </div>
+        {/* 🗺️ どこを見ればいい？ ポータル機能まるわかり案内マップ */}
+        <section className="bg-stone-900 text-white rounded-3xl p-6 md:p-8 border border-white/10 shadow-xl space-y-6">
+          <div className="flex items-center gap-3 border-b border-white/10 pb-4">
+            <div className="w-10 h-10 rounded-2xl bg-amber-500/20 text-amber-400 border border-amber-500/40 flex items-center justify-center font-black text-xl">
+              🗺️
             </div>
-            <Link
-              href="/casino"
-              className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950 font-black text-xs transition-all shadow-md flex items-center gap-1.5 cursor-pointer"
-            >
-              勝敗ベット画面へ <ArrowRight size={14} />
-            </Link>
+            <div>
+              <h2 className="text-xl md:text-2xl font-black text-white">
+                どこを見ればいい？ ポータル機能まるわかりマップ
+              </h2>
+              <p className="text-stone-300 text-xs md:text-sm">
+                使いたい機能に合わせて、各ページをワンタップで開けます！
+              </p>
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Step 1 */}
-            <div className="bg-stone-950/80 p-5 rounded-2xl border border-amber-500/20 space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-2xl">🪙</span>
-                <span className="text-[10px] font-black bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded border border-amber-500/30">STEP 1</span>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {/* 1. 勝敗予想 & ショップ */}
+            <Link
+              href="/casino"
+              className="p-5 rounded-2xl bg-white/5 border border-white/10 hover:border-amber-400 hover:bg-white/10 transition-all flex flex-col justify-between space-y-3 group cursor-pointer"
+            >
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-2xl">🎯</span>
+                  <span className="text-[10px] font-black text-amber-400 bg-amber-500/20 px-2 py-0.5 rounded-full border border-amber-500/30">
+                    /casino
+                  </span>
+                </div>
+                <h3 className="text-sm font-black text-white group-hover:text-amber-300 transition-colors">
+                  勝敗予想 ＆ KTMショップ
+                </h3>
+                <p className="text-xs text-stone-300 leading-relaxed">
+                  試合の勝利チーム予想、貯めたコインでの特権チケット交換、長者番付TOP10をリアルタイム確認！
+                </p>
               </div>
-              <h3 className="text-sm font-black text-white">コインを貯める</h3>
-              <p className="text-xs text-stone-300 leading-relaxed">
-                募集を立てる（<strong>+100〜200</strong>）、参加する（<strong>+50〜100</strong>）、勝つ（<strong>+150</strong>）、MVP（<strong>+200</strong>）で自然とザクザク貯まります！
-              </p>
-            </div>
+              <div className="text-xs text-amber-400 font-bold flex items-center gap-1">
+                ページを開く <ArrowRight size={12} />
+              </div>
+            </Link>
 
-            {/* Step 2 */}
-            <div className="bg-stone-950/80 p-5 rounded-2xl border border-amber-500/20 space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-2xl">🎲</span>
-                <span className="text-[10px] font-black bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded border border-amber-500/30">STEP 2</span>
+            {/* 2. チーム分け */}
+            <Link
+              href="/balancer"
+              className="p-5 rounded-2xl bg-white/5 border border-white/10 hover:border-rose-400 hover:bg-white/10 transition-all flex flex-col justify-between space-y-3 group cursor-pointer"
+            >
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-2xl">⚔️</span>
+                  <span className="text-[10px] font-black text-rose-400 bg-rose-500/20 px-2 py-0.5 rounded-full border border-rose-500/30">
+                    /balancer
+                  </span>
+                </div>
+                <h3 className="text-sm font-black text-white group-hover:text-rose-300 transition-colors">
+                  チーム分け (KTM Balancer)
+                </h3>
+                <p className="text-xs text-stone-300 leading-relaxed">
+                  10人の実力・ロール希望を考慮した完全自動チーム分け ＆ 勝率50:50シミュレーション！
+                </p>
               </div>
-              <h3 className="text-sm font-black text-white">勝敗予想にベット！</h3>
-              <p className="text-xs text-stone-300 leading-relaxed">
-                Discord通知やWeb画面で <strong>[🟦 BLUE]</strong> または <strong>[🟥 RED]</strong> を押すだけ！見事的中するとオッズ倍率でコインが増加！
-              </p>
-            </div>
+              <div className="text-xs text-rose-400 font-bold flex items-center gap-1">
+                ページを開く <ArrowRight size={12} />
+              </div>
+            </Link>
 
-            {/* Step 3 */}
-            <div className="bg-stone-950/80 p-5 rounded-2xl border border-amber-500/20 space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-2xl">🛒</span>
-                <span className="text-[10px] font-black bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded border border-amber-500/30">STEP 3</span>
+            {/* 3. プレイヤー名簿 */}
+            <Link
+              href="/player"
+              className="p-5 rounded-2xl bg-white/5 border border-white/10 hover:border-indigo-400 hover:bg-white/10 transition-all flex flex-col justify-between space-y-3 group cursor-pointer"
+            >
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-2xl">👥</span>
+                  <span className="text-[10px] font-black text-indigo-400 bg-indigo-500/20 px-2 py-0.5 rounded-full border border-indigo-500/30">
+                    /player
+                  </span>
+                </div>
+                <h3 className="text-sm font-black text-white group-hover:text-indigo-300 transition-colors">
+                  プレイヤー名簿 ＆ マイ戦績
+                </h3>
+                <p className="text-xs text-stone-300 leading-relaxed">
+                  メンバー全員の得意ロール・最高ランク・通算勝率・ロール別MMR（実力値）カルテをチェック！
+                </p>
               </div>
-              <h3 className="text-sm font-black text-white">ショップでアイテム交換</h3>
-              <p className="text-xs text-stone-300 leading-relaxed">
-                「<strong>第一希望確約チケット</strong>」「<strong>賞金首指定権</strong>」「<strong>全員ブレイバリー権</strong>」「<strong>週末メガ宝くじ</strong>」といつでも交換可能！
-              </p>
-            </div>
+              <div className="text-xs text-indigo-400 font-bold flex items-center gap-1">
+                ページを開く <ArrowRight size={12} />
+              </div>
+            </Link>
+
+            {/* 4. リーダーボード */}
+            <Link
+              href="/leaderboard"
+              className="p-5 rounded-2xl bg-white/5 border border-white/10 hover:border-yellow-400 hover:bg-white/10 transition-all flex flex-col justify-between space-y-3 group cursor-pointer"
+            >
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-2xl">🏆</span>
+                  <span className="text-[10px] font-black text-yellow-400 bg-yellow-500/20 px-2 py-0.5 rounded-full border border-yellow-500/30">
+                    /leaderboard
+                  </span>
+                </div>
+                <h3 className="text-sm font-black text-white group-hover:text-yellow-300 transition-colors">
+                  リーダーボード (順位表)
+                </h3>
+                <p className="text-xs text-stone-300 leading-relaxed">
+                  KTMサーバー内のMMR総合ランキング、月間最多キル・最高勝率トッププレイヤーを表彰！
+                </p>
+              </div>
+              <div className="text-xs text-yellow-400 font-bold flex items-center gap-1">
+                ページを開く <ArrowRight size={12} />
+              </div>
+            </Link>
+
+            {/* 5. 試合履歴 */}
+            <Link
+              href="/history"
+              className="p-5 rounded-2xl bg-white/5 border border-white/10 hover:border-orange-400 hover:bg-white/10 transition-all flex flex-col justify-between space-y-3 group cursor-pointer"
+            >
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-2xl">📜</span>
+                  <span className="text-[10px] font-black text-orange-400 bg-orange-500/20 px-2 py-0.5 rounded-full border border-orange-500/30">
+                    /history
+                  </span>
+                </div>
+                <h3 className="text-sm font-black text-white group-hover:text-orange-300 transition-colors">
+                  試合履歴 ＆ 対戦ログ
+                </h3>
+                <p className="text-xs text-stone-300 leading-relaxed">
+                  過去のカスタム対戦結果、対面勝敗、KDA、MMR変動の詳細ログをいつでも振り返り！
+                </p>
+              </div>
+              <div className="text-xs text-orange-400 font-bold flex items-center gap-1">
+                ページを開く <ArrowRight size={12} />
+              </div>
+            </Link>
+
+            {/* 6. チームシナジー */}
+            <Link
+              href="/synergy"
+              className="p-5 rounded-2xl bg-white/5 border border-white/10 hover:border-fuchsia-400 hover:bg-white/10 transition-all flex flex-col justify-between space-y-3 group cursor-pointer"
+            >
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-2xl">🤝</span>
+                  <span className="text-[10px] font-black text-fuchsia-400 bg-fuchsia-500/20 px-2 py-0.5 rounded-full border border-fuchsia-500/30">
+                    /synergy
+                  </span>
+                </div>
+                <h3 className="text-sm font-black text-white group-hover:text-fuchsia-300 transition-colors">
+                  チームシナジー ＆ 相性診断
+                </h3>
+                <p className="text-xs text-stone-300 leading-relaxed">
+                  「誰と誰が組むと勝率が高いか？」メンバー同士のベストコンビ・シナジーを自動解析！
+                </p>
+              </div>
+              <div className="text-xs text-fuchsia-400 font-bold flex items-center gap-1">
+                ページを開く <ArrowRight size={12} />
+              </div>
+            </Link>
           </div>
         </section>
 
