@@ -15,9 +15,14 @@ export function parseSmartRecruitInput(rawInput, explicitOptions = {}) {
   let max = explicitOptions.max ? parseInt(explicitOptions.max, 10) : null;
   let memo = explicitOptions.memo || null;
 
-  if (rawInput && typeof rawInput === 'string') {
-    let text = rawInput.trim();
+  // rawInput または memo のテキストを走査対象にする
+  let text = (rawInput && typeof rawInput === 'string') ? rawInput.trim() : '';
+  if (!text && memo && typeof memo === 'string') {
+    text = memo.trim();
+    memo = null; // 後で残りテキストを再代入
+  }
 
+  if (text) {
     // 1. モード判定
     if (!mode) {
       if (/aram|アラム/i.test(text)) {
@@ -66,7 +71,7 @@ export function parseSmartRecruitInput(rawInput, explicitOptions = {}) {
 
     // 4. 残りのテキストをメモとして扱う
     const remainingText = text.replace(/\s+/g, ' ').trim();
-    if (remainingText && !memo) {
+    if (remainingText) {
       memo = remainingText;
     }
   }
