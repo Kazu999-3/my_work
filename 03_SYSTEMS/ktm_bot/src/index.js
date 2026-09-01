@@ -114,6 +114,10 @@ export default {
         if (name === 'memo') return await handleMemoCommand(interaction, context, ctx);
         if (name === 'welcome' || name === 'welcome-panel') return await handleWelcomePanel(interaction, context, ctx);
         if (name === 'roulette') return await handleRouletteCommand(interaction, context, ctx);
+        if (name === 'ranking' || name === 'award') {
+          const { handleRankingCommand } = await import('./handlers/ranking.js');
+          return await handleRankingCommand(interaction, context, ctx);
+        }
         if (name === 'panel') {
           return Response.json({
             type: 4,

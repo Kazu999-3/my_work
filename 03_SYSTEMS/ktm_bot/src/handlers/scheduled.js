@@ -36,9 +36,19 @@ export async function handleScheduledEvent(event, env, ctx) {
     await processPendingMatchSyncs(env);
   } else if (cronExpression.includes("0 * * * *") || mode === "recruit_status") {
     // 毎時0分: 直前通知（進行中の募集の集まり具合を通知し、不足なら欠員アラート）。
-    // 以前はどのcron文字列ともマッチしない「default分岐」のまま放置されており、
-    // 実際には一度も自動実行されていなかった(2026-08-13の同監査で発覚)。
     await sendRecruitStatusNotification(env);
+  } else if (cronExpression.includes("0 3 1 * *") || mode === "monthly_award") {
+    // 毎月1日 12:00 JST (UTC 3:00 毎月1日): 月間アワード表彰の自動投稿
+    console.log("[Scheduled] Executing monthly award announcement...");
+    const { generateMonthlyAwardEmbed } = await import('./ranking.js');
+    const embed = await generateMonthlyAwardEmbed(env);
+    if (embed) {
+      const channelId = CONFIG.RECRUIT_CHANNEL_ID || "1485636511679651871";
+      await sendDiscordMessage(`channels/${channelId}/messages`, env.DISCORD_TOKEN, "POST", {
+        content: `👑 **【KTM 月間アワード発表】先月最も活躍したメンバーを表彰します！** <@&${CONFIG.NOTIFICATION_ROLE_ID}>`,
+        embeds: [embed]
+      }).catch(e => console.error("Monthly award post failed:", e));
+    }
   } else {
     console.log("[Scheduled] No matching handler for this trigger:", cronExpression || mode);
   }

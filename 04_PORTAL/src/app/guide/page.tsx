@@ -213,6 +213,52 @@ export default function GuidePage() {
           </div>
         </section>
 
+        {/* ⚡ 爆速募集コマンド (/recruit) の使い方 */}
+        <section className="bg-gradient-to-br from-stone-900 to-stone-850 text-white rounded-3xl p-6 md:p-8 border border-stone-700 shadow-md">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center justify-center font-black">
+              ⚡
+            </div>
+            <div>
+              <h2 className="text-xl md:text-2xl font-black text-white">
+                Discord 爆速募集コマンド (<code className="text-amber-400 font-mono">/recruit</code>)
+              </h2>
+              <p className="text-stone-300 text-xs md:text-sm">
+                オプション不要！チャットに打つだけで、AIが時刻・人数・モードを自動判定してリッチな募集カードを投下します。
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 mt-4">
+            <div className="bg-stone-950/80 p-4 rounded-2xl border border-stone-800">
+              <div className="text-xs font-mono text-amber-400 font-bold bg-amber-950/40 px-2 py-1 rounded w-fit mb-2">
+                /recruit 21:00
+              </div>
+              <div className="text-xs font-bold text-stone-200">カスタム10人募集</div>
+              <p className="text-[11px] text-stone-400 mt-1">「本日21:00〜開始」の10人カスタム募集を即時作成します。</p>
+            </div>
+
+            <div className="bg-stone-950/80 p-4 rounded-2xl border border-stone-800">
+              <div className="text-xs font-mono text-amber-400 font-bold bg-amber-950/40 px-2 py-1 rounded w-fit mb-2">
+                /recruit 5 楽しく
+              </div>
+              <div className="text-xs font-bold text-stone-200">ノーマル5人募集</div>
+              <p className="text-[11px] text-stone-400 mt-1">「今から・ノーマル5人・メモ: 楽しく」で即時投下します。</p>
+            </div>
+
+            <div className="bg-stone-950/80 p-4 rounded-2xl border border-stone-800">
+              <div className="text-xs font-mono text-amber-400 font-bold bg-amber-950/40 px-2 py-1 rounded w-fit mb-2">
+                /recruit ARAM
+              </div>
+              <div className="text-xs font-bold text-stone-200">ARAM 5人募集</div>
+              <p className="text-[11px] text-stone-400 mt-1">「今から・ARAM5人」の募集を即時作成します。</p>
+            </div>
+          </div>
+          <div className="mt-4 pt-3 border-t border-stone-800 flex items-center justify-between text-xs text-stone-400">
+            <span>💡 何も文字を入れずに <code className="text-amber-300 font-mono">/recruit</code> と打つだけでも、デフォルト（カスタム10人・今から）で即募集できます！</span>
+          </div>
+        </section>
+
         {/* 🌐 Webポータルの便利機能 */}
         <section>
           <div className="flex items-center gap-3 mb-6">
