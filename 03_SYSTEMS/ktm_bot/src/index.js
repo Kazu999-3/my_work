@@ -118,6 +118,18 @@ export default {
           const { handleRankingCommand } = await import('./handlers/ranking.js');
           return await handleRankingCommand(interaction, context, ctx);
         }
+        if (name === 'patch') {
+          const { handlePatchCommand } = await import('./handlers/patchNoteSummary.js');
+          return await handlePatchCommand(interaction, context, ctx);
+        }
+        if (name === 'coins' || name === 'bet') {
+          const { handleCoinsCommand } = await import('./handlers/bet.js');
+          return await handleCoinsCommand(interaction, context, ctx);
+        }
+        if (name === 'casino' || name === 'rich') {
+          const { handleCasinoCommand } = await import('./handlers/bet.js');
+          return await handleCasinoCommand(interaction, context, ctx);
+        }
         if (name === 'panel') {
           return Response.json({
             type: 4,
@@ -136,11 +148,22 @@ export default {
         if (customId.startsWith('roulette_reroll:')) {
           return await handleRouletteButton(interaction, { ...env, DISCORD_TOKEN }, ctx);
         }
+        if (customId.startsWith('bet_team:')) {
+          const { handleBetButton } = await import('./handlers/bet.js');
+          return handleBetButton(interaction, { ...env, DISCORD_TOKEN }, ctx);
+        }
         return await handleButtonInteraction(interaction, { ...env, DISCORD_TOKEN }, ctx);
       }
 
       // Modal Submit
-      if (interaction.type === 5) return await handleModalSubmit(interaction, { ...env, DISCORD_TOKEN }, ctx);
+      if (interaction.type === 5) {
+        const customId = interaction.data?.custom_id || '';
+        if (customId.startsWith('bet_modal:')) {
+          const { handleBetModalSubmit } = await import('./handlers/bet.js');
+          return await handleBetModalSubmit(interaction, { ...env, DISCORD_TOKEN }, ctx);
+        }
+        return await handleModalSubmit(interaction, { ...env, DISCORD_TOKEN }, ctx);
+      }
 
     } catch (err) {
       console.error("Interaction Error:", err);

@@ -96,6 +96,33 @@ export async function POST(request: Request) {
       });
     }
 
+    // 🎲 勝敗ベットボタンを追加
+    payload.components = [
+      {
+        type: 1,
+        components: [
+          {
+            type: 2,
+            label: "🟦 BLUE にベット",
+            style: 1,
+            custom_id: "bet_team:BLUE"
+          },
+          {
+            type: 2,
+            label: "🟥 RED にベット",
+            style: 4,
+            custom_id: "bet_team:RED"
+          },
+          {
+            type: 2,
+            label: "🎲 Webカジノ / 番付",
+            style: 5,
+            url: `${process.env.NEXT_PUBLIC_BASE_URL || 'https://ktm-portal.vercel.app'}/casino`
+          }
+        ]
+      }
+    ];
+
     const res = await fetch(webhookUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

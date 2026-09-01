@@ -244,6 +244,16 @@ export async function handleAutoMatchEnd(interaction, players, winnerTeam, env, 
 
       const resultData = await fetchPortalAPI(env, '/api/match/record', payload);
 
+      // 🪙 勝敗ベット＆コインボーナス精算（参加賞+100、勝利+150等）
+      try {
+        await fetchPortalAPI(env, '/api/bet/settle', {
+          winner: winnerTeam,
+          players: players.map(p => ({ name: p.name, team: p.team, role: p.role }))
+        });
+      } catch (betErr) {
+        console.warn("Bet settle API error:", betErr);
+      }
+
       // 3分後の match-sync 実行を予約する。ctx.waitUntil+setTimeoutはワーカーの
       // 生存期間を延ばさず実行保証がないため、10分おきcron(scheduled.js)が拾う
       // 永続キューに積む。

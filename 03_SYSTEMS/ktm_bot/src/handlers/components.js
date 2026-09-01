@@ -767,6 +767,20 @@ export async function handleButtonInteraction(interaction, env, ctx) {
         if (String(e?.message) !== 'skip:not-custom') console.warn('lane summary failed:', e);
       }
 
+      // 🪙 募集成立ボーナス（募集主+100〜200、参加者+50〜100）
+      try {
+        const { fetchPortalAPI } = await import('../utils/api.js');
+        await fetchPortalAPI(env, '/api/bet/recruit-reward', {
+          mode: metadata.mode,
+          ownerDiscordId: metadata.owner,
+          ownerName: metadata.names[metadata.owner],
+          joinedDiscordIds: metadata.joined,
+          joinedNames: metadata.joined.map(id => metadata.names[id]).filter(Boolean)
+        });
+      } catch (rewardErr) {
+        console.warn('Recruit reward API error:', rewardErr);
+      }
+
       await sendInteractionFollowup(appId, token, {
         content: `⚔️ **メンバー確定！** 対戦準備を開始してください。\n通知: ${mentions}`,
         ...(laneEmbed ? { embeds: [laneEmbed] } : {})
