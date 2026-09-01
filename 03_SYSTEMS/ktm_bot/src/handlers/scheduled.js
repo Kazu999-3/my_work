@@ -439,10 +439,12 @@ async function postWeeklyRecruitment(env) {
       names: { [ownerId]: 'KTM定期カスタム' }
     };
 
-    // 2部屋統合 Embed
+    // 2部屋統合 Embed (プログレスバー付き初期状態)
+    const initialStatusText = `🔥 **【定期カスタム募集中！合計 0/20名】**\n🛡️ **シルバー以下**: \`[□□□□□□□□□□] 0/10名\` (あと**10**名)\n👑 **ゴルプラ**: \`[□□□□□□□□□□] 0/10名\` (あと**10**名)`;
+
     const embed = {
       title: `⚔️ KTM 定期カスタム開催告知 [${dateLabel} 21:00]`,
-      description: `🚨 **【シルバー以下 あと10名 / ゴルプラ あと10名】**\n\n毎週末恒例の定期カスタム戦です！\n下のボタンを押すだけで参加エントリーできます（部門は名簿の代表MMRから自動振り分けされます）。\n\n💡 **希望レーンに変更がある方は、ポータルの「マイページ」より変更をお願いします！**`,
+      description: `${initialStatusText}\n\n毎週末恒例の定期カスタム戦です！\n下のボタンを押すだけで参加エントリーできます（部門は名簿の代表MMRから自動振り分けされます）。\n\n💡 **希望レーンに変更がある方は、ポータルの「マイページ」より変更をお願いします！**`,
       color: 0xc89b3c, // 琥珀色
       fields: [
         {
@@ -460,15 +462,14 @@ async function postWeeklyRecruitment(env) {
       timestamp: new Date().toISOString()
     };
 
-    // 参加ボタンは1つに統合。どちらの部門になるかは代表MMRから自動判定する
-    // （以前はシルバー以下/ゴルプラをユーザー自身に選ばせていた）。
+    // 参加ボタン
     const components = [
       {
         type: 1, // Action Row
         components: [
           {
             type: 2,
-            label: "🎮 参加する",
+            label: "🎮 参加する (あと各10名)",
             style: 1, // Primary (Blue)
             custom_id: "join_periodic_auto"
           }
@@ -480,7 +481,7 @@ async function postWeeklyRecruitment(env) {
       method: 'POST',
       headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        content: `📢 **【定期カスタム募集】${dateLabel} 21:00 開催！** 🚨 **【シルバー以下 あと10名 / ゴルプラ あと10名】** <@&${CONFIG.NOTIFICATION_ROLE_ID}>`,
+        content: `📢 **【定期カスタム募集】${dateLabel} 21:00 開催！** 🔥 **【シルバー以下 あと10名 / ゴルプラ あと10名】** <@&${CONFIG.NOTIFICATION_ROLE_ID}>`,
         embeds: [embed],
         components: components,
         allowed_mentions: { roles: [CONFIG.NOTIFICATION_ROLE_ID] }
