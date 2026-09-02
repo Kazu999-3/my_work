@@ -11,6 +11,7 @@ interface MatchData {
   id: number;
   created_at: string;
   winning_team: 'BLUE' | 'RED';
+  riot_match_id?: string | null;
   participants: {
     player_name: string;
     team: 'BLUE' | 'RED';
@@ -20,6 +21,7 @@ interface MatchData {
     deaths: number;
     assists: number;
     player_mmr?: number | null;
+    mmr_breakdown?: any;
   }[];
   prediction?: {
     predicted_blue_winprob: number;
@@ -138,11 +140,19 @@ export default function HistoryPage() {
               const rawId = String((match as any).id || '');
               const shortMatchId = rawId.length > 8 ? `#${rawId.slice(0, 8)}` : `#${rawId}`;
 
+              const isExhibition = match.riot_match_id === 'EXHIBITION' || match.participants?.some((p: any) => p.mmr_breakdown?.isExhibition || p.mmr_breakdown?.note?.includes('お祭り'));
+
               return (
                 <div key={match.id} className="bg-white border border-stone-200/90 rounded-3xl overflow-hidden shadow-xs hover:border-stone-300 transition-all">
                   <div className="bg-stone-50/80 px-4 py-3.5 md:px-6 flex flex-col md:flex-row justify-between items-start md:items-center border-b border-stone-200 gap-2 md:gap-0 flex-wrap">
                     <div className="flex items-center gap-2 md:gap-3 flex-wrap">
                       <span className="text-stone-900 font-extrabold text-xs md:text-sm bg-stone-200/70 px-2.5 py-1 rounded-lg">Match {shortMatchId}</span>
+                      {isExhibition && (
+                        <span className="text-[10px] font-black bg-amber-500 text-white px-2.5 py-0.5 rounded-full inline-flex items-center gap-1 shadow-2xs">
+                          <span>🎪</span>
+                          <span>お祭りエキシビション (戦績保護)</span>
+                        </span>
+                      )}
                       <span className="text-stone-500 flex items-center gap-1 text-xs font-medium"><Calendar className="w-3.5 h-3.5 text-stone-400"/> {match.created_at}</span>
                       {match.prediction && (
                         <div className="flex items-center gap-1.5 md:gap-2 text-xs bg-white px-2.5 py-1 rounded-xl border border-stone-200 text-stone-700 ml-0 md:ml-2 font-bold shadow-2xs">

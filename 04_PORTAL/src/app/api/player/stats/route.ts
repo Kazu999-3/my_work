@@ -54,6 +54,13 @@ export async function POST(req: Request) {
     participants?.forEach((p: any) => {
       const match = p.ktm_matches;
       if (!match) return;
+
+      // お祭りカスタム（エキシビション）は公式戦績ノーカウント保護のため勝率計算から完全除外
+      const isExhibition = 
+        match.riot_match_id === 'EXHIBITION' || 
+        p.mmr_breakdown?.isExhibition === true || 
+        p.mmr_breakdown?.note?.includes('お祭り');
+      if (isExhibition) return;
       
       const isWin = p.team === match.winning_team;
       totalG++;

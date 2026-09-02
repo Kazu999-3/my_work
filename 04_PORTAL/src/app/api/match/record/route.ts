@@ -194,6 +194,7 @@ export async function POST(request: Request) {
           mvpBonus: 0,
           streakBonus: 0,
           finalDelta: 0,
+          isExhibition: true,
           note: 'お祭りカスタム (戦績ノーカウント保護)'
         };
       }
@@ -212,12 +213,13 @@ export async function POST(request: Request) {
 
     // 4. DBへのトランザクション書き込み
     // (1) ktm_matches レコード作成
+    const effectiveRiotMatchId = isExhibition ? 'EXHIBITION' : (riotMatchId || null);
     const { data: matchData, error: mError } = await supabase
       .from('ktm_matches')
       .insert({
         winning_team: winningTeam,
         game_duration: gameDuration || 0,
-        riot_match_id: riotMatchId || null
+        riot_match_id: effectiveRiotMatchId
       })
       .select('id')
       .single();
