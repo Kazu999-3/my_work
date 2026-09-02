@@ -383,6 +383,7 @@ export async function POST(request: Request) {
     }
 
     // (4.6) 勝敗予想ベットの自動精算（的中者へのコイン払い戻し）
+    const payoutWinners: Array<{ name: string; payout: number; multiplier: number }> = [];
     try {
       const { data: openBets } = await supabase
         .from('ktm_bets')
@@ -393,7 +394,10 @@ export async function POST(request: Request) {
         for (const bet of openBets) {
           const won = (bet.team === winningTeam);
           if (won) {
-            const payout = Math.floor(bet.amount * 2); // 2倍払い戻し
+            const multiplier = Number(bet.odds) > 0 ? Number(bet.odds) : 2.0;
+            const payout = Math.floor(bet.amount * multiplier);
+            payoutWinners.push({ name: bet.player_name, payout, multiplier });
+
             const { data: pData } = await supabase
               .from('ktm_players')
               .select('name, coins')
@@ -450,6 +454,10 @@ export async function POST(request: Request) {
         const blueTitle = winningTeam === 'BLUE' ? '🏆 🟦 BLUE TEAM (WIN)' : '💀 🟦 BLUE TEAM';
         const redTitle = winningTeam === 'RED' ? '🏆 🟥 RED TEAM (WIN)' : '💀 🟥 RED TEAM';
 
+        const betPayoutSummary = payoutWinners.length > 0
+          ? payoutWinners.map(w => `・\`${w.name}\`: **+${w.payout.toLocaleString()}🪙** 獲得！(x${w.multiplier}倍)`).join('\n')
+          : '的中者なし (または受付中のベットなし)';
+
         const payload = isExhibition ? {
           content: "🎪 **【KTMお祭りカスタム速報】エキシビション対決が終了しました！** 🎪\n🛡️ **完全戦績保護適用**: 全員の公式MMR・通算勝率はノーカウント（±0）で保護されました！\n🪙 参加賞（+100pt）＆勝利ボーナス（+150pt）および勝敗予想配当を付与しました！",
           embeds: [
@@ -460,6 +468,11 @@ export async function POST(request: Request) {
                 {
                   name: `${blueTitle}  🆚  ${redTitle}`,
                   value: matchupsText,
+                  inline: false
+                },
+                {
+                  name: "💰 勝敗予想カジノ 配当結果",
+                  value: betPayoutSummary,
                   inline: false
                 }
               ],
@@ -477,6 +490,11 @@ export async function POST(request: Request) {
                 {
                   name: `${blueTitle}  🆚  ${redTitle}`,
                   value: matchupsText,
+                  inline: false
+                },
+                {
+                  name: "💰 勝敗予想カジノ 配当結果",
+                  value: betPayoutSummary,
                   inline: false
                 }
               ]

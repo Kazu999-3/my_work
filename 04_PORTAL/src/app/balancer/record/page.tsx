@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { RefreshCw, Trophy, Target, Search, Settings, ArrowLeftRight } from 'lucide-react';
 import Image from 'next/image';
 import { getChampIcon } from '../../../lib/ddragonClient';
@@ -518,9 +519,26 @@ function CustomRecordPageContent() {
   return (
     <div className="min-h-screen bg-background text-stone-800 p-4 md:p-8">
       <div className="max-w-6xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl font-extrabold text-stone-900 flex items-center gap-3">
-            <Trophy className="h-8 w-8 text-emerald-600" />
+        {/* ナビゲーションリンク */}
+        <div className="flex items-center gap-2.5 mb-4">
+          <Link
+            href="/balancer"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white border border-stone-200 text-stone-700 hover:text-stone-900 font-bold text-xs shadow-2xs hover:bg-stone-50 transition"
+          >
+            <span>←</span>
+            <span>バランサーへ戻る</span>
+          </Link>
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-600 hover:text-stone-900 font-bold text-xs transition"
+          >
+            <span>ポータルトップ</span>
+          </Link>
+        </div>
+
+        <div className="mb-6">
+          <h1 className="text-2xl md:text-3xl font-extrabold text-stone-900 flex items-center gap-3">
+            <Trophy className="h-7 w-7 md:h-8 md:w-8 text-emerald-600" />
             カスタム試合を手動記録
           </h1>
         </div>

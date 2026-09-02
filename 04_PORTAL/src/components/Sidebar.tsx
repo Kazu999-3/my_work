@@ -66,6 +66,7 @@ function UserAuthWidget({ collapsed }: { collapsed?: boolean }) {
 interface MenuItem {
   id: string;
   label: string;
+  shortLabel?: string;
   icon: any;
   href: string;
   color: string;
@@ -82,52 +83,52 @@ function MobileNavItem({ item, active, pending, onClick }: { item: MenuItem; act
       href={item.href}
       prefetch={isAdminGated ? false : true}
       onClick={onClick}
-      className={`flex flex-col items-center justify-center min-w-[3.5rem] px-2 py-1.5 rounded-xl transition-colors duration-100 touch-manipulation select-none ${lit ? `${item.activeBg} ${item.color}` : 'text-stone-500 active:bg-black/10'
+      className={`flex flex-col items-center justify-center flex-1 px-1 py-1 rounded-xl transition-colors duration-100 touch-manipulation select-none ${lit ? `${item.activeBg} ${item.color}` : 'text-stone-500 active:bg-black/10'
         } ${pending && !active ? 'opacity-70' : ''}`}
     >
-      <Icon size={18} className={`mb-1 ${pending && !active ? 'animate-pulse' : ''}`} />
-      <span className="text-[9px] font-bold tracking-wider truncate w-full text-center">{item.label}</span>
+      <Icon size={19} className={`mb-0.5 ${pending && !active ? 'animate-pulse' : ''}`} />
+      <span className="text-[10px] font-black tracking-tight whitespace-nowrap leading-none">{item.shortLabel || item.label}</span>
     </Link>
   );
 }
 
 const MENU_ITEMS: MenuItem[] = [
-  { id: 'guide', label: 'はじめに', icon: BookOpen, href: '/guide', color: 'text-amber-500', activeBg: 'bg-amber-500/15' },
-  { id: 'balancer', label: 'チーム分け', icon: Swords, href: '/balancer', color: 'text-rose-500', activeBg: 'bg-rose-500/15' },
-  { id: 'casino', label: '勝敗予想', icon: Coins, href: '/casino', color: 'text-amber-400', activeBg: 'bg-amber-400/15' },
-  { id: 'player', label: 'プレイヤー名簿', icon: Users, href: '/player', color: 'text-indigo-500', activeBg: 'bg-indigo-500/15' },
-  { id: 'leaderboard', label: '順位表', icon: Trophy, href: '/leaderboard', color: 'text-yellow-400', activeBg: 'bg-yellow-400/15' },
-  { id: 'synergy', label: 'チームシナジー', icon: HeartHandshake, href: '/synergy', color: 'text-fuchsia-400', activeBg: 'bg-fuchsia-400/15' },
-  { id: 'history', label: '試合履歴', icon: Swords, href: '/history', color: 'text-orange-400', activeBg: 'bg-orange-400/15' },
-  { id: 'changelog', label: '更新情報', icon: ScrollText, href: '/changelog', color: 'text-cyan-400', activeBg: 'bg-cyan-400/15' },
-  { id: 'login', label: 'ログイン', icon: Shield, href: '/login', color: 'text-indigo-400', activeBg: 'bg-indigo-400/15' },
+  { id: 'guide', label: 'はじめに', shortLabel: 'ガイド', icon: BookOpen, href: '/guide', color: 'text-amber-500', activeBg: 'bg-amber-500/15' },
+  { id: 'balancer', label: 'チーム分け', shortLabel: 'チーム', icon: Swords, href: '/balancer', color: 'text-rose-500', activeBg: 'bg-rose-500/15' },
+  { id: 'casino', label: '勝敗予想', shortLabel: 'カジノ', icon: Coins, href: '/casino', color: 'text-amber-400', activeBg: 'bg-amber-400/15' },
+  { id: 'player', label: 'プレイヤー名簿', shortLabel: 'カルテ', icon: Users, href: '/player', color: 'text-indigo-500', activeBg: 'bg-indigo-500/15' },
+  { id: 'leaderboard', label: '順位表', shortLabel: '順位', icon: Trophy, href: '/leaderboard', color: 'text-yellow-400', activeBg: 'bg-yellow-400/15' },
+  { id: 'synergy', label: 'チームシナジー', shortLabel: '相性', icon: HeartHandshake, href: '/synergy', color: 'text-fuchsia-400', activeBg: 'bg-fuchsia-400/15' },
+  { id: 'history', label: '試合履歴', shortLabel: '履歴', icon: Swords, href: '/history', color: 'text-orange-400', activeBg: 'bg-orange-400/15' },
+  { id: 'changelog', label: '更新情報', shortLabel: '更新', icon: ScrollText, href: '/changelog', color: 'text-cyan-400', activeBg: 'bg-cyan-400/15' },
+  { id: 'login', label: 'ログイン', shortLabel: '認証', icon: Shield, href: '/login', color: 'text-indigo-400', activeBg: 'bg-indigo-400/15' },
 ];
 
 const ADMIN_ONLY_MENU_ITEMS: MenuItem[] = [
   // ── 🎮 プレイ ＆ コーチ ──
-  { id: 'coach', label: 'ソロQコーチ', icon: Sparkles, href: '/coach', color: 'text-indigo-500', activeBg: 'bg-indigo-500/15', section: 'プレイ ＆ コーチ' },
+  { id: 'coach', label: 'ソロQコーチ', shortLabel: 'コーチ', icon: Sparkles, href: '/coach', color: 'text-indigo-500', activeBg: 'bg-indigo-500/15', section: 'プレイ ＆ コーチ' },
   // ── 📖 攻略・ナレッジ ──
-  { id: 'champions', label: '攻略ナレッジハブ', icon: BookHeart, href: '/champions', color: 'text-[#c89b3c]', activeBg: 'bg-[#c89b3c]/15', section: '攻略・ナレッジ' },
+  { id: 'champions', label: '攻略ナレッジハブ', shortLabel: '辞典', icon: BookHeart, href: '/champions', color: 'text-[#c89b3c]', activeBg: 'bg-[#c89b3c]/15', section: '攻略・ナレッジ' },
   // ── 📊 大会 ＆ コミュニティ ──
-  { id: 'balancer', label: 'チーム分け', icon: Swords, href: '/balancer', color: 'text-rose-500', activeBg: 'bg-rose-500/15', section: '大会 ＆ コミュニティ' },
-  { id: 'casino', label: '勝敗予想', icon: Coins, href: '/casino', color: 'text-amber-500', activeBg: 'bg-amber-500/15', section: '大会 ＆ コミュニティ' },
-  { id: 'ktm-admin', label: 'KTM大会管理', icon: Shield, href: '/ktm-admin', color: 'text-indigo-400', activeBg: 'bg-indigo-400/15', section: '大会 ＆ コミュニティ' },
-  { id: 'leaderboard', label: 'リーダーボード', icon: Trophy, href: '/leaderboard', color: 'text-yellow-500', activeBg: 'bg-yellow-500/15', section: '大会 ＆ コミュニティ' },
-  { id: 'player', label: 'プレイヤー名簿', icon: Users, href: '/player', color: 'text-sky-500', activeBg: 'bg-sky-500/15', section: '大会 ＆ コミュニティ' },
+  { id: 'balancer', label: 'チーム分け', shortLabel: 'チーム', icon: Swords, href: '/balancer', color: 'text-rose-500', activeBg: 'bg-rose-500/15', section: '大会 ＆ コミュニティ' },
+  { id: 'casino', label: '勝敗予想', shortLabel: 'カジノ', icon: Coins, href: '/casino', color: 'text-amber-500', activeBg: 'bg-amber-500/15', section: '大会 ＆ コミュニティ' },
+  { id: 'ktm-admin', label: 'KTM大会管理', shortLabel: '大会管理', icon: Shield, href: '/ktm-admin', color: 'text-indigo-400', activeBg: 'bg-indigo-400/15', section: '大会 ＆ コミュニティ' },
+  { id: 'leaderboard', label: 'リーダーボード', shortLabel: '順位', icon: Trophy, href: '/leaderboard', color: 'text-yellow-500', activeBg: 'bg-yellow-500/15', section: '大会 ＆ コミュニティ' },
+  { id: 'player', label: 'プレイヤー名簿', shortLabel: 'カルテ', icon: Users, href: '/player', color: 'text-sky-500', activeBg: 'bg-sky-500/15', section: '大会 ＆ コミュニティ' },
   // ── ⚙️ システム ＆ 分析 ──
-  { id: 'dashboard', label: 'システム運用', icon: LayoutDashboard, href: '/admin/dashboard', color: 'text-stone-800', activeBg: 'bg-black/10', section: 'システム ＆ 分析' },
-  { id: 'analytics', label: 'note分析', icon: TrendingUp, href: '/admin/analytics', color: 'text-teal-500', activeBg: 'bg-teal-500/15', section: 'システム ＆ 分析' },
+  { id: 'dashboard', label: 'システム運用', shortLabel: '設定', icon: LayoutDashboard, href: '/admin/dashboard', color: 'text-stone-800', activeBg: 'bg-black/10', section: 'システム ＆ 分析' },
+  { id: 'analytics', label: 'note分析', shortLabel: '分析', icon: TrendingUp, href: '/admin/analytics', color: 'text-teal-500', activeBg: 'bg-teal-500/15', section: 'システム ＆ 分析' },
 ];
 
 const ADMIN_GENERAL_MENU_ITEMS: MenuItem[] = [
-  { id: 'guide', label: 'はじめに', icon: BookOpen, href: '/guide', color: 'text-amber-500', activeBg: 'bg-amber-500/15' },
-  { id: 'balancer', label: 'チーム分け', icon: Swords, href: '/balancer', color: 'text-rose-500', activeBg: 'bg-rose-500/15' },
-  { id: 'casino', label: '勝敗予想', icon: Coins, href: '/casino', color: 'text-amber-400', activeBg: 'bg-amber-400/15' },
-  { id: 'player', label: 'プレイヤー名簿', icon: Users, href: '/player', color: 'text-indigo-500', activeBg: 'bg-indigo-500/15' },
-  { id: 'leaderboard', label: 'リーダーボード', icon: Trophy, href: '/leaderboard', color: 'text-yellow-400', activeBg: 'bg-yellow-400/15' },
-  { id: 'synergy', label: 'チームシナジー', icon: HeartHandshake, href: '/synergy', color: 'text-fuchsia-400', activeBg: 'bg-fuchsia-400/15' },
-  { id: 'history', label: '試合履歴', icon: Swords, href: '/history', color: 'text-orange-400', activeBg: 'bg-orange-400/15' },
-  { id: 'changelog', label: '更新情報', icon: ScrollText, href: '/changelog', color: 'text-cyan-400', activeBg: 'bg-cyan-400/15' },
+  { id: 'guide', label: 'はじめに', shortLabel: 'ガイド', icon: BookOpen, href: '/guide', color: 'text-amber-500', activeBg: 'bg-amber-500/15' },
+  { id: 'balancer', label: 'チーム分け', shortLabel: 'チーム', icon: Swords, href: '/balancer', color: 'text-rose-500', activeBg: 'bg-rose-500/15' },
+  { id: 'casino', label: '勝敗予想', shortLabel: 'カジノ', icon: Coins, href: '/casino', color: 'text-amber-400', activeBg: 'bg-amber-400/15' },
+  { id: 'player', label: 'プレイヤー名簿', shortLabel: 'カルテ', icon: Users, href: '/player', color: 'text-indigo-500', activeBg: 'bg-indigo-500/15' },
+  { id: 'leaderboard', label: 'リーダーボード', shortLabel: '順位', icon: Trophy, href: '/leaderboard', color: 'text-yellow-400', activeBg: 'bg-yellow-400/15' },
+  { id: 'synergy', label: 'チームシナジー', shortLabel: '相性', icon: HeartHandshake, href: '/synergy', color: 'text-fuchsia-400', activeBg: 'bg-fuchsia-400/15' },
+  { id: 'history', label: '試合履歴', shortLabel: '履歴', icon: Swords, href: '/history', color: 'text-orange-400', activeBg: 'bg-orange-400/15' },
+  { id: 'changelog', label: '更新情報', shortLabel: '更新', icon: ScrollText, href: '/changelog', color: 'text-cyan-400', activeBg: 'bg-cyan-400/15' },
 ];
 
 export default function Sidebar() {
