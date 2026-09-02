@@ -132,12 +132,12 @@ export default function MatchupSmartCard({ champion, enemyChampion, onSelectCham
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
             {counterData.counters.map((c: any) => {
-              const isSelected = champion?.toLowerCase() === c.champion?.toLowerCase();
+              const isSelected = champion?.toLowerCase() === (c.nameJp || c.champion)?.toLowerCase() || champion?.toLowerCase() === c.champion?.toLowerCase();
               return (
                 <button
                   key={c.champion}
                   type="button"
-                  onClick={() => onSelectChampion && onSelectChampion(c.champion)}
+                  onClick={() => onSelectChampion && onSelectChampion(c.nameJp || c.champion)}
                   className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex items-start gap-2.5 ${
                     isSelected
                       ? 'bg-amber-100/90 border-amber-500 shadow-xs ring-2 ring-amber-400/40'

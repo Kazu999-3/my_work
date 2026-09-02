@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import Link from 'next/link';
 import { apiJson } from '../../lib/apiClient';
 import ScoutTab, { type LiveRosterEntry } from './ScoutTab';
 import PushOptIn from '../../components/PushOptIn';
@@ -1557,6 +1558,13 @@ export default function CoachPage() {
         {/* スリム化されたモダンヘッダー */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white/80 border border-stone-200/90 rounded-2xl p-4 shadow-xs backdrop-blur-sm">
           <div className="flex items-center gap-3">
+            <Link
+              href="/"
+              className="px-2.5 py-1.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-xs border border-stone-200 transition shrink-0"
+              title="ポータルトップへ戻る"
+            >
+              ← ポータル
+            </Link>
             <div className="text-3xl p-2 bg-amber-50 rounded-2xl border border-amber-200/80">🏆</div>
             <div>
               <div className="flex items-center gap-2">

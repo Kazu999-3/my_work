@@ -81,6 +81,17 @@ export default function HistoryPage() {
     <div className="min-h-screen bg-background text-stone-800 p-4 md:p-8">
       <div className="max-w-[1400px] mx-auto space-y-8">
         
+        {/* 戻るリンク */}
+        <div className="flex items-center gap-2">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-stone-200 text-stone-600 hover:text-stone-900 font-bold text-xs shadow-2xs hover:bg-stone-50 transition"
+          >
+            <span>←</span>
+            <span>ポータルトップへ戻る</span>
+          </Link>
+        </div>
+
         {/* ヘッダー */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-border pb-4 gap-3">
           <div>
@@ -124,12 +135,14 @@ export default function HistoryPage() {
               const roles = ['TOP', 'JG', 'MID', 'ADC', 'SUP'];
               const blueMap = new Map(match.participants.filter(p => p.team === 'BLUE').map(p => [p.role, p]));
               const redMap = new Map(match.participants.filter(p => p.team === 'RED').map(p => [p.role, p]));
+              const rawId = String((match as any).id || '');
+              const shortMatchId = rawId.length > 8 ? `#${rawId.slice(0, 8)}` : `#${rawId}`;
 
               return (
                 <div key={match.id} className="bg-white border border-stone-200/90 rounded-3xl overflow-hidden shadow-xs hover:border-stone-300 transition-all">
                   <div className="bg-stone-50/80 px-4 py-3.5 md:px-6 flex flex-col md:flex-row justify-between items-start md:items-center border-b border-stone-200 gap-2 md:gap-0 flex-wrap">
                     <div className="flex items-center gap-2 md:gap-3 flex-wrap">
-                      <span className="text-stone-900 font-extrabold text-xs md:text-sm bg-stone-200/70 px-2 py-0.5 rounded-lg">Match #{match.id}</span>
+                      <span className="text-stone-900 font-extrabold text-xs md:text-sm bg-stone-200/70 px-2.5 py-1 rounded-lg">Match {shortMatchId}</span>
                       <span className="text-stone-500 flex items-center gap-1 text-xs font-medium"><Calendar className="w-3.5 h-3.5 text-stone-400"/> {match.created_at}</span>
                       {match.prediction && (
                         <div className="flex items-center gap-1.5 md:gap-2 text-xs bg-white px-2.5 py-1 rounded-xl border border-stone-200 text-stone-700 ml-0 md:ml-2 font-bold shadow-2xs">
@@ -155,6 +168,19 @@ export default function HistoryPage() {
                     </div>
                   </div>
                   
+                  {/* 対戦カードのヘッダー見出し */}
+                  <div className="grid grid-cols-11 gap-2 items-center py-2.5 px-4 bg-stone-100/60 border-b border-stone-200 text-xs font-black">
+                    <div className="col-span-5 flex items-center justify-end gap-1.5 text-blue-700">
+                      <span>🟦 BLUE TEAM</span>
+                      {match.winning_team === 'BLUE' && <span className="text-[10px] bg-blue-600 text-white px-1.5 py-0.5 rounded">WIN</span>}
+                    </div>
+                    <div className="col-span-1 text-center text-stone-400 text-[10px]">VS</div>
+                    <div className="col-span-5 flex items-center justify-start gap-1.5 text-rose-700">
+                      {match.winning_team === 'RED' && <span className="text-[10px] bg-rose-600 text-white px-1.5 py-0.5 rounded">WIN</span>}
+                      <span>RED TEAM 🟥</span>
+                    </div>
+                  </div>
+
                   {/* レーン直接対決テーブル */}
                   <div className="divide-y divide-stone-100 p-2 md:p-4">
                     {roles.map(role => {

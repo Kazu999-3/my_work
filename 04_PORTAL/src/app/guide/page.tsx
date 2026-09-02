@@ -37,9 +37,17 @@ export default function GuidePage() {
       <div className="bg-gradient-to-b from-stone-900 via-stone-800 to-stone-900 text-stone-100 py-12 px-6 relative overflow-hidden border-b border-black/10">
         <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#c2650f_1px,transparent_1px)] [background-size:16px_16px]"></div>
         <div className="max-w-4xl mx-auto relative z-10 text-center space-y-3">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 text-xs font-black tracking-wider border border-amber-500/30">
-            <Sparkles size={14} />
-            KTM LoL 1分スタートガイド
+          <div className="flex items-center justify-center gap-3">
+            <Link
+              href="/"
+              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 hover:bg-white/20 text-stone-200 text-xs font-bold transition border border-white/10"
+            >
+              ← ポータルへ戻る
+            </Link>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 text-xs font-black tracking-wider border border-amber-500/30">
+              <Sparkles size={14} />
+              KTM LoL 1分スタートガイド
+            </div>
           </div>
           <h1 className="text-3xl md:text-4xl font-black tracking-tight text-white">
             1分でわかる！KTMカスタム参加手順

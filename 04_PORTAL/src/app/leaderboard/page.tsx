@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { Spinner } from '../../components/Feedback';
 import Image from 'next/image';
 import { getChampIcon } from '../../lib/ddragonClient';
@@ -116,6 +117,17 @@ export default function LeaderboardPage() {
   return (
     <div className="min-h-screen bg-background py-6 md:py-10 px-4 sm:px-6 lg:px-10 text-stone-800">
       <div className="max-w-[1680px] w-full mx-auto space-y-4">
+
+        {/* 戻るリンク */}
+        <div className="flex items-center gap-2 mb-2">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface border border-border text-stone-600 hover:text-stone-900 font-bold text-xs shadow-2xs transition"
+          >
+            <span>←</span>
+            <span>ポータルトップへ戻る</span>
+          </Link>
+        </div>
 
         <div className="relative mb-4 text-center">
           <h1 className="text-2xl md:text-3xl font-black text-stone-900 tracking-tight flex items-center justify-center gap-2">
@@ -307,10 +319,10 @@ export default function LeaderboardPage() {
                       sortedRows.map((player, idx) => (
                         <div 
                           key={player.name} 
-                          className="p-4 hover:bg-stone-100/60 transition-colors flex items-center justify-between relative group"
+                          className="p-3 sm:p-4 hover:bg-stone-100/60 transition-colors flex items-center justify-between relative group gap-2"
                         >
-                          <div className="flex items-center gap-3">
-                            <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-black flex-shrink-0
+                          <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                            <div className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center text-[10px] sm:text-xs font-black flex-shrink-0
                               ${idx === 0 ? 'bg-amber-400 text-amber-950 shadow-xs' : 
                                 idx === 1 ? 'bg-stone-300 text-stone-800' : 
                                 idx === 2 ? 'bg-amber-700 text-white' : 
@@ -321,19 +333,19 @@ export default function LeaderboardPage() {
                               <a href={`/player/${player.discordId}`} className="font-extrabold text-stone-900 hover:text-primary truncate block transition text-xs" title={`${player.name} の詳細を見る`}>
                                 {player.name}
                               </a>
-                              <div className="text-[10px] text-stone-500 font-bold">
-                                {player.games} 試合 (<span className={parseFloat(player.winRate) >= 60 ? 'text-emerald-700 font-extrabold' : parseFloat(player.winRate) <= 45 ? 'text-rose-700' : 'text-stone-700'}>{player.winRate}%</span>)
+                              <div className="text-[10px] text-stone-500 font-bold whitespace-nowrap">
+                                {player.games}戦 (<span className={parseFloat(player.winRate) >= 60 ? 'text-emerald-700 font-extrabold' : parseFloat(player.winRate) <= 45 ? 'text-rose-700' : 'text-stone-700'}>{player.winRate}%</span>)
                               </div>
                             </div>
                           </div>
                           
-                          <div className="text-right">
+                          <div className="text-right shrink-0">
                             <div 
-                              className={`text-[10px] font-extrabold px-2 py-0.5 rounded-md border border-current/20 inline-block whitespace-nowrap mb-1 ${player.rankBadge.bg} ${player.rankBadge.color}`}
+                              className={`text-[9px] sm:text-[10px] font-extrabold px-1.5 sm:px-2 py-0.5 rounded-md border border-current/20 inline-block whitespace-nowrap mb-0.5 ${player.rankBadge.bg} ${player.rankBadge.color}`}
                             >
                               {player.rankBadge.name}
                             </div>
-                            <div className="text-xs font-black text-stone-800">
+                            <div className="text-xs font-black text-stone-800 whitespace-nowrap">
                               {player.mmr.toLocaleString()} <span className="text-[9px] font-bold text-stone-400">MMR</span>
                             </div>
                           </div>

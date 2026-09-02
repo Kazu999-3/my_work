@@ -367,6 +367,17 @@ export default function CasinoPage() {
 
       <div className="max-w-[1200px] w-full mx-auto px-4 md:px-8 py-8 space-y-6">
         
+        {/* 戻るリンク */}
+        <div className="flex items-center gap-2">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white/80 hover:bg-white border border-black/10 text-stone-700 font-bold text-xs shadow-2xs transition"
+          >
+            <span>←</span>
+            <span>ポータルトップへ戻る</span>
+          </Link>
+        </div>
+
         {/* 2大機能タブナビゲーション */}
         <div className="flex items-center justify-center gap-2 p-1.5 rounded-2xl bg-stone-900 text-white max-w-sm mx-auto shadow-lg">
           {[
@@ -420,7 +431,7 @@ export default function CasinoPage() {
                   className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-stone-950 font-black text-xs shadow transition flex items-center gap-1.5 cursor-pointer"
                   title="1日1回ログインボーナスを受け取ります"
                 >
-                  <span>🎁</span>
+                  <span className="text-sm">🎁</span>
                   <span>デイリーボーナス (+100pt)</span>
                 </button>
 
@@ -431,7 +442,7 @@ export default function CasinoPage() {
                     className="px-3 py-1.5 rounded-xl bg-rose-500 hover:bg-rose-600 text-white font-black text-xs shadow transition flex items-center gap-1.5 cursor-pointer animate-bounce"
                     title="所持コインが100枚未満のときの救済措置"
                   >
-                    <span>💸</span>
+                    <span className="text-sm">💸</span>
                     <span>破産救済保険 (+300pt)</span>
                   </button>
                 )}
@@ -439,7 +450,7 @@ export default function CasinoPage() {
                 <button
                   type="button"
                   onClick={logout}
-                  className="text-xs text-stone-500 hover:text-stone-800 underline font-bold px-2 py-1"
+                  className="text-xs text-stone-700 hover:text-stone-950 font-black px-3 py-1.5 rounded-xl bg-white/90 hover:bg-white border border-amber-400 shadow-2xs transition"
                 >
                   ログアウト
                 </button>

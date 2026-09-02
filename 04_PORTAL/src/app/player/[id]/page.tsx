@@ -251,15 +251,16 @@ export default function PlayerMyPage() {
   const synergyPair = useMemo(() => {
     if (qualifiedChemistry.length === 0) return null;
     const sorted = [...qualifiedChemistry].sort((a, b) => b.winRate - a.winRate || b.games - a.games);
-    return {
-      best: sorted[0], // 勝率が最も高い最強チーム相性
-      challenging: sorted[sorted.length - 1] // 課題のあるチーム相性
-    };
+    const best = sorted[0];
+    // 1人しかいないか、同じ人が選ばれないよう保護
+    const challenging = sorted.length > 1 && sorted[sorted.length - 1].name !== best.name ? sorted[sorted.length - 1] : null;
+    return { best, challenging };
   }, [qualifiedChemistry]);
 
   // 伸びしろのある味方相性リスト (課題のシナジー)
   const challengingTeammates = useMemo(() => {
     return [...qualifiedChemistry]
+      .filter((t: any) => t.winRate < 60) // 勝率60%以上は課題リストから除外
       .sort((a, b) => a.winRate - b.winRate || b.games - a.games)
       .slice(0, 5);
   }, [qualifiedChemistry]);
@@ -267,8 +268,19 @@ export default function PlayerMyPage() {
   // 対面別の得意/苦手（2戦以上の相手のみ）
   const matchupExtremes = useMemo(() => {
     const qualified = (matchups || []).filter((m: any) => m.games >= 2);
-    const best = [...qualified].sort((a, b) => b.winRate - a.winRate || b.games - a.games).slice(0, 3);
-    const worst = [...qualified].sort((a, b) => a.winRate - b.winRate || b.games - a.games).slice(0, 3);
+    // 勝率50%以上を得意候補、50%未満を苦手候補に明確分離
+    const bestCandidates = qualified.filter((m: any) => m.winRate >= 50);
+    const worstCandidates = qualified.filter((m: any) => m.winRate < 50);
+
+    const best = [...bestCandidates].sort((a, b) => b.winRate - a.winRate || b.games - a.games).slice(0, 3);
+    const bestKeys = new Set(best.map((b: any) => b.champion || b.name));
+
+    // worstからbestに含まれるものは絶対に除外
+    const worst = [...worstCandidates]
+      .filter((w: any) => !bestKeys.has(w.champion || w.name))
+      .sort((a, b) => a.winRate - b.winRate || b.games - a.games)
+      .slice(0, 3);
+
     return { best, worst };
   }, [matchups]);
 
@@ -955,8 +967,14 @@ export default function PlayerMyPage() {
                             </div>
                             <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4">
                               <p className="text-[10px] text-amber-700 font-black mb-1">⚠️ 課題のシナジー (伸びしろ)</p>
-                              <p className="text-lg font-black text-stone-900 truncate">{synergyPair.challenging.name}</p>
-                              <p className="text-xs text-stone-500">同チーム{synergyPair.challenging.games}戦・勝率<span className="text-amber-700 font-bold ml-1">{synergyPair.challenging.winRate}%</span></p>
+                              {synergyPair.challenging ? (
+                                <>
+                                  <p className="text-lg font-black text-stone-900 truncate">{synergyPair.challenging.name}</p>
+                                  <p className="text-xs text-stone-500">同チーム{synergyPair.challenging.games}戦・勝率<span className="text-amber-700 font-bold ml-1">{synergyPair.challenging.winRate}%</span></p>
+                                </>
+                              ) : (
+                                <p className="text-xs text-stone-500 py-3">十分な対戦データがありません</p>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -988,8 +1006,13 @@ export default function PlayerMyPage() {
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-2 text-[10px] pt-2 border-t border-black/10 text-gray-500 font-bold">
-                      {hextechRadarData.map(d => (
-                        <div key={d.subject} className="flex justify-between items-center bg-black/5 px-2.5 py-1.5 rounded-xl border border-black/5">
+                      {hextechRadarData.map((d, index) => (
+                        <div
+                          key={d.subject}
+                          className={`flex justify-between items-center bg-black/5 px-2.5 py-1.5 rounded-xl border border-black/5 ${
+                            index === 4 ? 'col-span-2' : ''
+                          }`}
+                        >
                           <span className="text-stone-600">{d.subject}:</span>
                           <span className={`font-black text-xs ${
                             d.value >= 4.0 ? 'text-cyan-700' : d.value >= 3.0 ? 'text-stone-900' : 'text-rose-600'
