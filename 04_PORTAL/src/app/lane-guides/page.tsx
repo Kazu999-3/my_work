@@ -199,6 +199,21 @@ export default function LaneGuidesPage() {
         </div>
       )}
 
+      {/* 上部ヘッダー ＆ 戻るリンク */}
+      <div className="flex items-center justify-between pb-2 border-b border-stone-200/60">
+        <div className="flex items-center gap-3">
+          <Link
+            href="/"
+            className="px-3 py-1.5 rounded-xl bg-white border border-stone-200 text-stone-700 hover:text-stone-900 font-bold text-xs shadow-2xs hover:bg-stone-50 transition"
+          >
+            ← ポータルトップへ戻る
+          </Link>
+          <h1 className="text-base md:text-lg font-black text-stone-900 flex items-center gap-2">
+            <span>🗺️</span> レーン別・マクロ攻略ガイド
+          </h1>
+        </div>
+      </div>
+
       {guides.length === 0 ? (
         <EmptyState
           title="まだガイドが作成されていません"

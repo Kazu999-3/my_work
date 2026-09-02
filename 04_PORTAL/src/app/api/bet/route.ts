@@ -153,7 +153,7 @@ export async function PUT(req: Request) {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { discordId, playerName, team, amount, matchId } = body;
+    const { discordId, playerName, team, amount, matchId, odds } = body;
 
     if (!team || !amount || amount <= 0) {
       return NextResponse.json({ error: 'チームと有効な賭け金（1コイン以上）を指定してください。' }, { status: 400 });
@@ -198,13 +198,16 @@ export async function POST(req: Request) {
       .update({ coins: newCoins })
       .eq('name', player.name);
 
+    const oddsText = odds ? ` (オッズ: x${odds}倍)` : '';
+
     return NextResponse.json({
       success: true,
       playerName: player.name,
       team: team.toUpperCase(),
       amount: betAmount,
       remainingCoins: newCoins,
-      message: `🎉 ${player.name} さんが 【${team.toUpperCase()} チーム】に ${betAmount}コイン をベットしました！（残り: ${newCoins}コイン）`,
+      odds,
+      message: `🎉 ${player.name} さんが 【${team.toUpperCase()} チーム】に ${betAmount}コイン をベットしました！${oddsText}（残り: ${newCoins}コイン）`,
     });
   } catch (error: any) {
     console.error('Bet API POST error:', error);

@@ -317,7 +317,8 @@ export function LibraryTabContentInner() {
 
     articles.forEach(a => {
       if (!a) return;
-      const champ = a.champion || 'その他';
+      const rawChamp = a.champion?.trim();
+      const champ = (!rawChamp || rawChamp.toLowerCase() === 'unknown' || rawChamp.toLowerCase() === 'null') ? '全般・共通戦術' : rawChamp;
       champCounts[champ] = (champCounts[champ] || 0) + 1;
 
       if (a.tags && Array.isArray(a.tags)) {
@@ -364,7 +365,8 @@ export function LibraryTabContentInner() {
     const groups: Record<string, any[]> = {};
     if (groupMode === 'champion') {
       filtered.forEach((a: any) => {
-        const key = a.champion || 'その他';
+        const rawChamp = a.champion?.trim();
+        const key = (!rawChamp || rawChamp.toLowerCase() === 'unknown' || rawChamp.toLowerCase() === 'null') ? '全般・共通戦術' : rawChamp;
         if (!groups[key]) groups[key] = [];
         groups[key].push(a);
       });

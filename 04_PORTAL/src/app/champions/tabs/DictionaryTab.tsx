@@ -1309,8 +1309,8 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
               />
             </div>
 
-            {/* ⏱ ジャングル序盤タイミング（AI自動取得のみ・手動編集不可） */}
-            {(dataFields.jg_style?.role || 'JUNGLE') === 'JUNGLE' && (
+            {/* ⏱ ジャングル序盤タイミング（AI自動取得のみ・手動編集不可・ジャングルロールのみ表示） */}
+            {(dataFields.jg_style?.role === 'JUNGLE' || (selected && champLaneRoles[selected.id]?.includes('JG') && !champLaneRoles[selected.id]?.includes('MID'))) && (
               <div className="mt-4 pt-4 border-t border-black/10">
                 <p className="text-xs text-gray-400 font-bold mb-2 flex items-center gap-1.5">
                   <Clock size={13} /> ジャングル序盤タイミング（自動取得）

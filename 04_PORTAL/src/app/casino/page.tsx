@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Coins, Trophy, Flame, Swords, CheckCircle2, TrendingUp, Sparkles, Shield, ArrowRight, ShoppingBag, Heart, Gift, Target, Dices, Ticket, LogIn, LogOut, UserCheck } from 'lucide-react';
 import Link from 'next/link';
 import confetti from 'canvas-confetti';
@@ -187,6 +187,25 @@ export default function CasinoPage() {
     }
   };
 
+  // リアルタイム動的オッズ（パリミュチュエル方式：投票比率に反比例）
+  const calculatedOdds = useMemo(() => {
+    if (!betStats || (betStats.blueAmount === 0 && betStats.redAmount === 0)) {
+      return { blue: 1.85, red: 1.95 };
+    }
+    const total = betStats.blueAmount + betStats.redAmount;
+    const blueRatio = betStats.blueAmount > 0 ? betStats.blueAmount / total : 0.5;
+    const redRatio = betStats.redAmount > 0 ? betStats.redAmount / total : 0.5;
+
+    // オッズ = (0.95 / 比率)
+    const rawBlue = 0.95 / Math.max(blueRatio, 0.05);
+    const rawRed = 0.95 / Math.max(redRatio, 0.05);
+
+    const blueOdds = Number(Math.min(10.0, Math.max(1.15, rawBlue)).toFixed(2));
+    const redOdds = Number(Math.min(10.0, Math.max(1.15, rawRed)).toFixed(2));
+
+    return { blue: blueOdds, red: redOdds };
+  }, [betStats]);
+
   const fetchBetData = async () => {
     try {
       setLoading(true);
@@ -277,6 +296,7 @@ export default function CasinoPage() {
     try {
       setIsSubmitting(true);
       setBetMessage(null);
+      const currentOdds = betTeam === 'BLUE' ? calculatedOdds.blue : calculatedOdds.red;
       const res = await fetch('/api/bet', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -284,13 +304,14 @@ export default function CasinoPage() {
           playerName: activePlayerName.trim(),
           team: betTeam,
           amount: betAmount,
+          odds: currentOdds,
         }),
       });
 
       const data = await res.json();
       if (res.ok && data.success) {
         triggerCelebration();
-        setBetMessage(`🎉 【ベット完了】 ${data.playerName} さんが ${data.team} に ${data.amount}コイン 賭けました！ (残高: ${data.remainingCoins}コイン)`);
+        setBetMessage(`🎉 【ベット完了】 ${data.playerName} さんが ${data.team} に ${data.amount}コイン 賭けました！ (オッズ: x${currentOdds}倍 / 残高: ${data.remainingCoins}コイン)`);
         fetchBetData();
         refreshUser();
       } else {
@@ -657,8 +678,8 @@ export default function CasinoPage() {
                             >
                               <span className="text-2xl">🟦</span>
                               <span>BLUE TEAM 勝利</span>
-                              <span className="text-xs px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800 font-mono font-black">
-                                オッズ: 1.85倍
+                              <span className="text-xs px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-800 font-mono font-black">
+                                オッズ: x{calculatedOdds.blue}倍
                               </span>
                             </button>
 
@@ -673,8 +694,8 @@ export default function CasinoPage() {
                             >
                               <span className="text-2xl">🟥</span>
                               <span>RED TEAM 勝利</span>
-                              <span className="text-xs px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 font-mono font-black">
-                                オッズ: 1.95倍
+                              <span className="text-xs px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-800 font-mono font-black">
+                                オッズ: x{calculatedOdds.red}倍
                               </span>
                             </button>
                           </div>
@@ -689,7 +710,7 @@ export default function CasinoPage() {
                             <div className="text-right">
                               <span className="text-[11px] text-stone-500 font-bold">勝った場合の手取り: </span>
                               <strong className="text-sm font-black text-amber-600 font-mono">
-                                🎯 +{Math.round(betAmount * (betTeam === 'BLUE' ? 1.85 : 1.95))} コインGET！
+                                🎯 +{Math.round(betAmount * (betTeam === 'BLUE' ? calculatedOdds.blue : calculatedOdds.red))} コインGET！
                               </strong>
                             </div>
                           </div>
