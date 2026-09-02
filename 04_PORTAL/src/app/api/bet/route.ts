@@ -154,9 +154,9 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
     const { discordId, playerName, team, amount, matchId, odds } = body;
-
-    if (!team || !amount || amount <= 0) {
-      return NextResponse.json({ error: 'チームと有効な賭け金（1コイン以上）を指定してください。' }, { status: 400 });
+    const parsedAmount = Math.floor(Number(amount));
+    if (!team || !parsedAmount || parsedAmount <= 0) {
+      return NextResponse.json({ error: 'チームと有効な賭け金（1コイン以上の整数）を指定してください。' }, { status: 400 });
     }
 
     if (!['BLUE', 'RED'].includes(team.toUpperCase())) {
@@ -186,7 +186,7 @@ export async function POST(req: Request) {
     }
 
     const currentCoins = player.coins ?? 1000;
-    const betAmount = Math.min(amount, currentCoins);
+    const betAmount = Math.min(parsedAmount, currentCoins);
     if (betAmount <= 0 || currentCoins < betAmount) {
       return NextResponse.json({ error: `所持コインが足りません（現在: ${currentCoins}コイン）。` }, { status: 400 });
     }
@@ -198,6 +198,23 @@ export async function POST(req: Request) {
       .update({ coins: newCoins })
       .eq('name', player.name);
 
+    // ktm_bets レコードをDBに保存（試合確定時の自動精算・配当払い戻し用）
+    const effectiveOdds = Number(odds) > 0 ? Number(odds) : 2.0;
+    try {
+      await supabase
+        .from('ktm_bets')
+        .insert({
+          player_name: player.name,
+          discord_id: player.discord_id || discordId || null,
+          team: team.toUpperCase(),
+          amount: betAmount,
+          odds: effectiveOdds,
+          settled: false,
+        });
+    } catch (bErr) {
+      console.warn('ktm_bets insert warning:', bErr);
+    }
+
     const oddsText = odds ? ` (オッズ: x${odds}倍)` : '';
 
     return NextResponse.json({
@@ -206,7 +223,7 @@ export async function POST(req: Request) {
       team: team.toUpperCase(),
       amount: betAmount,
       remainingCoins: newCoins,
-      odds,
+      odds: effectiveOdds,
       message: `🎉 ${player.name} さんが 【${team.toUpperCase()} チーム】に ${betAmount}コイン をベットしました！${oddsText}（残り: ${newCoins}コイン）`,
     });
   } catch (error: any) {
