@@ -113,21 +113,19 @@ export default function PwaRegister() {
   return (
     <>
       {minimized ? (
-        /* 📲 最小化アイコン: 通常はこれだけを表示し、必要な人だけクリックで展開する */
+        /* 📲 最小化アイコン: デスクトップで表示（モバイルでは画面を広く清潔に保つ） */
         <button
           type="button"
           onClick={() => setMinimized(false)}
           title="ホーム画面にアプリ化"
-          style={{ position: 'fixed', bottom: '5rem', right: '1rem', zIndex: 99999 }}
-          className="w-10 h-10 rounded-full bg-white/90 border border-[#c89b3c]/40 text-[#c89b3c] flex items-center justify-center shadow-md hover:bg-white transition-colors cursor-pointer md:bottom-6"
+          className="hidden md:flex fixed bottom-6 right-6 z-40 w-10 h-10 rounded-full bg-white/90 border border-[#c89b3c]/40 text-[#c89b3c] items-center justify-center shadow-md hover:bg-white transition-colors cursor-pointer"
         >
           <Download size={16} />
         </button>
       ) : (
         /* 📲 PWA インストール誘導カード（クリックで展開時のみ） */
         <div
-          style={{ position: 'fixed', bottom: '5rem', right: '1rem', zIndex: 99999 }}
-          className="bg-white border border-[#c89b3c]/30 text-stone-900 p-3 rounded-xl shadow-md flex items-center gap-3 max-w-xs md:bottom-6"
+          className="fixed bottom-20 right-4 md:bottom-6 md:right-6 z-50 bg-white border border-[#c89b3c]/30 text-stone-900 p-3 rounded-xl shadow-xl flex items-center gap-3 max-w-xs"
         >
           <div className="w-8 h-8 rounded-lg bg-[#c89b3c]/15 border border-[#c89b3c]/40 flex items-center justify-center shrink-0">
             <Download className="text-[#c89b3c]" size={16} />

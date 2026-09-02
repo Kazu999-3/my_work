@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { Users, HeartHandshake, Crown, Skull, Sparkles } from 'lucide-react';
 import { Spinner } from '../../components/Feedback';
 
@@ -87,8 +88,19 @@ export default function SynergyPage() {
 
   return (
     <div className="min-h-screen bg-background text-stone-800 p-4 md:p-8">
-      <div className="max-w-[1400px] mx-auto space-y-8">
+      <div className="max-w-[1400px] mx-auto space-y-6">
         
+        {/* 戻るリンク */}
+        <div className="flex items-center gap-2">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-stone-200 text-stone-700 hover:text-stone-900 font-bold text-xs shadow-2xs hover:bg-stone-50 transition"
+          >
+            <span>←</span>
+            <span>ポータルトップへ戻る</span>
+          </Link>
+        </div>
+
         {/* ヘッダー */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-border pb-4 gap-3">
           <div>

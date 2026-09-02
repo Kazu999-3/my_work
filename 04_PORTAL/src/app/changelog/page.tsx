@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { ScrollText } from 'lucide-react';
 import { CHANGELOG } from '../../lib/changelog';
 
@@ -5,13 +6,24 @@ import { CHANGELOG } from '../../lib/changelog';
 export default function ChangelogPage() {
   return (
     <div className="min-h-screen bg-background text-stone-800 p-4 md:p-8">
-      <div className="max-w-3xl mx-auto space-y-8">
+      <div className="max-w-3xl mx-auto space-y-6">
+        {/* 戻るリンク */}
+        <div className="flex items-center gap-2">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-stone-200 text-stone-700 hover:text-stone-900 font-bold text-xs shadow-2xs hover:bg-stone-50 transition"
+          >
+            <span>←</span>
+            <span>ポータルトップへ戻る</span>
+          </Link>
+        </div>
+
         <div className="border-b border-stone-200 pb-6">
-          <h1 className="text-3xl font-bold text-stone-900 flex items-center gap-3">
-            <ScrollText className="h-8 w-8 text-cyan-600" />
+          <h1 className="text-2xl md:text-3xl font-bold text-stone-900 flex items-center gap-3">
+            <ScrollText className="h-7 w-7 md:h-8 md:w-8 text-cyan-600" />
             更新情報
           </h1>
-          <p className="text-stone-500 mt-2 text-sm">KTMポータル・BOTの最近のアップデート一覧です。</p>
+          <p className="text-stone-500 mt-2 text-xs md:text-sm font-medium">KTMポータル・BOTの最近のアップデート一覧です。</p>
         </div>
 
         <div className="space-y-6">

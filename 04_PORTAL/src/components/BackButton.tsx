@@ -10,7 +10,23 @@ export default function BackButton() {
   const router = useRouter();
   const pathname = usePathname();
 
-  if (pathname === '/balancer') return null;
+  // トップページや自前で戻るナビゲーションを持つ主要ページでは重複・文字被りを防ぐため非表示
+  const SELF_NAV_PAGES = [
+    '/',
+    '/balancer',
+    '/balancer/record',
+    '/casino',
+    '/leaderboard',
+    '/coach',
+    '/history',
+    '/guide',
+    '/lane-guides',
+    '/champions',
+    '/synergy',
+    '/changelog',
+  ];
+
+  if (SELF_NAV_PAGES.includes(pathname) || pathname.startsWith('/player/')) return null;
 
   const handleClick = () => {
     if (typeof window !== 'undefined' && window.history.length > 1) {
