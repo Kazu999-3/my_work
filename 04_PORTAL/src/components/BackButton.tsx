@@ -26,7 +26,11 @@ export default function BackButton() {
     '/changelog',
   ];
 
-  if (SELF_NAV_PAGES.includes(pathname) || pathname.startsWith('/player/')) return null;
+  if (
+    SELF_NAV_PAGES.includes(pathname) || 
+    pathname.startsWith('/player/') ||
+    pathname.startsWith('/admin')
+  ) return null;
 
   const handleClick = () => {
     if (typeof window !== 'undefined' && window.history.length > 1) {

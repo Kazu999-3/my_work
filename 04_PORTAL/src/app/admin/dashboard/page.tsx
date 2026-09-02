@@ -325,19 +325,19 @@ export default function Home() {
             {needsAttention.youtubeErrorCount > 0 && (
               <Link
                 href="/admin/youtube"
-                className="flex items-center justify-between gap-2.5 p-2.5 rounded-xl bg-white border border-rose-200 hover:border-rose-300 transition-colors"
+                className="flex items-center justify-between flex-wrap gap-2 p-2.5 rounded-xl bg-white border border-rose-200 hover:border-rose-300 transition-colors"
               >
-                <span className="text-xs font-bold text-stone-900">YouTube動画キューのエラー・手動対応要 {needsAttention.youtubeErrorCount}件</span>
-                <span className="text-[11px] font-bold text-rose-700">管理画面へ →</span>
+                <span className="text-xs font-bold text-stone-900 min-w-0 break-words flex-1">YouTube動画キューのエラー・手動対応要 {needsAttention.youtubeErrorCount}件</span>
+                <span className="text-[11px] font-bold text-rose-700 shrink-0">管理画面へ →</span>
               </Link>
             )}
             {needsAttention.dictReviewCount > 0 && (
               <Link
                 href="/champions?scope=health"
-                className="flex items-center justify-between gap-2.5 p-2.5 rounded-xl bg-white border border-rose-200 hover:border-rose-300 transition-colors"
+                className="flex items-center justify-between flex-wrap gap-2 p-2.5 rounded-xl bg-white border border-rose-200 hover:border-rose-300 transition-colors"
               >
-                <span className="text-xs font-bold text-stone-900">辞典の鮮度レビューで要対応 {needsAttention.dictReviewCount}件（週次自動検知）</span>
-                <span className="text-[11px] font-bold text-rose-700">データ整備へ →</span>
+                <span className="text-xs font-bold text-stone-900 min-w-0 break-words flex-1">辞典鮮度レビュー要対応 {needsAttention.dictReviewCount}件（週次自動検知）</span>
+                <span className="text-[11px] font-bold text-rose-700 shrink-0">データ整備へ →</span>
               </Link>
             )}
           </div>

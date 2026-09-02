@@ -387,10 +387,11 @@ export default function CasinoPage() {
           </p>
 
           {/* ジャックポット金庫バナー */}
-          <div className="mt-4 inline-flex items-center gap-3 px-4 py-2 rounded-2xl bg-amber-950/80 border border-amber-500/40 text-amber-200 text-xs font-black">
+          <div className="mt-4 inline-flex flex-wrap items-center justify-center gap-1.5 md:gap-3 px-3 md:px-4 py-2 rounded-2xl bg-amber-950/80 border border-amber-500/40 text-amber-200 text-xs font-black text-center max-w-full">
             <span className="text-base">💎</span>
-            サーバー共有ジャックポット金庫: <span className="text-amber-400 font-mono text-sm">12,800 コイン</span>
-            <span className="text-[10px] text-stone-400 font-normal">（ペンタキル達成で総取り！）</span>
+            <span>サーバー共有ジャックポット金庫:</span>
+            <span className="text-amber-400 font-mono text-sm">12,800 コイン</span>
+            <span className="text-[10px] text-stone-400 font-normal">（ペンタキルで総取り！）</span>
           </div>
         </div>
       </div>
@@ -664,62 +665,62 @@ export default function CasinoPage() {
                           <label className="block text-xs font-black text-stone-700 mb-2">
                             👉 どちらのチームが勝つか選んでください:
                           </label>
-                          <div className="grid grid-cols-2 gap-4">
+                          <div className="grid grid-cols-2 gap-2 md:gap-4">
                             <button
                               type="button"
                               onClick={() => setBetTeam('BLUE')}
-                              className={`p-5 rounded-3xl border-3 font-black text-sm transition-all flex flex-col items-center gap-2 cursor-pointer ${
+                              className={`p-3 md:p-5 rounded-2xl md:rounded-3xl border-2 md:border-3 font-black text-xs md:text-sm transition-all flex flex-col items-center gap-1.5 md:gap-2 cursor-pointer ${
                                 betTeam === 'BLUE'
                                   ? 'border-indigo-600 bg-indigo-50 text-indigo-700 shadow-md scale-102'
                                   : 'border-stone-200 hover:border-indigo-200 text-stone-600'
                               }`}
                             >
-                              <span className="text-2xl">🟦</span>
-                              <span>BLUE TEAM 勝利</span>
-                              <span className="text-xs px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-800 font-mono font-black">
-                                オッズ: x{calculatedOdds.blue}倍
+                              <span className="text-xl md:text-2xl">🟦</span>
+                              <span className="truncate max-w-full">BLUE TEAM</span>
+                              <span className="text-[10px] md:text-xs px-2 md:px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-800 font-mono font-black">
+                                x{calculatedOdds.blue}倍
                               </span>
                             </button>
 
                             <button
                               type="button"
                               onClick={() => setBetTeam('RED')}
-                              className={`p-5 rounded-3xl border-3 font-black text-sm transition-all flex flex-col items-center gap-2 cursor-pointer ${
+                              className={`p-3 md:p-5 rounded-2xl md:rounded-3xl border-2 md:border-3 font-black text-xs md:text-sm transition-all flex flex-col items-center gap-1.5 md:gap-2 cursor-pointer ${
                                 betTeam === 'RED'
                                   ? 'border-rose-600 bg-rose-50 text-rose-700 shadow-md scale-102'
                                   : 'border-stone-200 hover:border-rose-200 text-stone-600'
                               }`}
                             >
-                              <span className="text-2xl">🟥</span>
-                              <span>RED TEAM 勝利</span>
-                              <span className="text-xs px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-800 font-mono font-black">
-                                オッズ: x{calculatedOdds.red}倍
+                              <span className="text-xl md:text-2xl">🟥</span>
+                              <span className="truncate max-w-full">RED TEAM</span>
+                              <span className="text-[10px] md:text-xs px-2 md:px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-800 font-mono font-black">
+                                x{calculatedOdds.red}倍
                               </span>
                             </button>
                           </div>
                         </div>
 
                         {/* 賭け金 & もらえるコイン直感シミュレーター */}
-                        <div className="p-5 rounded-3xl bg-amber-50/60 border border-amber-200/80 space-y-3">
-                          <div className="flex items-center justify-between">
+                        <div className="p-4 md:p-5 rounded-2xl md:rounded-3xl bg-amber-50/60 border border-amber-200/80 space-y-3">
+                          <div className="flex items-center justify-between flex-wrap gap-1">
                             <label className="block text-xs font-black text-stone-800">
                               🪙 賭けるコイン数
                             </label>
                             <div className="text-right">
-                              <span className="text-[11px] text-stone-500 font-bold">勝った場合の手取り: </span>
-                              <strong className="text-sm font-black text-amber-600 font-mono">
-                                🎯 +{Math.round(betAmount * (betTeam === 'BLUE' ? calculatedOdds.blue : calculatedOdds.red))} コインGET！
+                              <span className="text-[10px] md:text-[11px] text-stone-500 font-bold">勝った場合: </span>
+                              <strong className="text-xs md:text-sm font-black text-amber-600 font-mono">
+                                🎯 +{Math.round(betAmount * (betTeam === 'BLUE' ? calculatedOdds.blue : calculatedOdds.red))} コイン
                               </strong>
                             </div>
                           </div>
 
-                          <div className="flex gap-2">
+                          <div className="grid grid-cols-5 gap-1.5">
                             {[50, 100, 300, 500, 1000].map((amt) => (
                               <button
                                 key={amt}
                                 type="button"
                                 onClick={() => setBetAmount(amt)}
-                                className={`flex-1 py-2.5 rounded-xl text-xs font-black border transition-all cursor-pointer ${
+                                className={`py-2 md:py-2.5 rounded-xl text-[11px] md:text-xs font-black border transition-all cursor-pointer ${
                                   betAmount === amt
                                     ? 'bg-amber-500 text-white border-amber-600 shadow-sm scale-105'
                                     : 'bg-white hover:bg-amber-100/50 text-stone-700 border-stone-200'
