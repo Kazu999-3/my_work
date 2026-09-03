@@ -5,6 +5,18 @@
 
 ---
 
+## ✅ 2026-09-03 Antigravity セッションで対応済み
+
+- [x] **チャンピオン辞典更新のタスク失敗非表示化（API枯渇時対応）** → `champion_trend_worker.py` および `edge_worker_daemon.py` で、Gemini APIの429/クォータ枯渇・レート制限による安全停止を包括的に検知し、タスクステータスを `failed`（要対応）ではなく `completed (skipped)` として記録するように改修。`dashboard-stats` / `pipeline-status` API側でも過去のクォータ関連タスクを要対応一覧から除外し、真のバグのみ赤色表示するように修正。
+- [x] **通知の重要度厳選（オオカミ少年化防止）** → `notify.ts` および `herald.py` において、日常的な進捗通知（`system_progress`）やクォータ枯渇による一時スキップ通知はPush配信を行わないようフィルタリングを追加。重要な通知のみPush通知されるよう適正化。
+- [x] **LoLリアルタイムオーバーレイ「Sovereign HUD」Step 1 (MVP) 構築** → `03_SYSTEMS/v2_CORE/_LOL/overlay/` を新設し、PyQt6 による最前面・透過HUDを実装。
+  - `lol_live_client.py`: Riot公式 Live Client Data API (`https://127.0.0.1:2999`) との安全な非同期/ポーリング通信およびモックテストデータ生成。
+  - `hud_state_engine.py`: 対面自動特定、ポータルSupabase連携による対面メモ取得、2:40〜3:30の敵JG危険ガンクタイマー、CS/分ペース計算（目標8.0+）、1stリコール目標ゴールド計算を統合。
+  - `hud_window.py`: ドラッグ移動可能・折りたたみ可能な洗練された半透明ダークHUD。
+  - `start_overlay.ps1` / `start_overlay_mock.bat`: 簡単起動ランチャー（`--mock` で即座にUIテスト可能）。
+
+---
+
 ## ✅ 2026-08-10 Claude Codeセッションで対応済み
 
 > チャンピオン辞典の更新失敗報告を起点に、Gemini APIクォータ枯渇の根本原因（後述）を突き止めるまで深掘りし、ついでにソロQコーチ・KTM Botの複数不具合も対応した大規模セッション。詳細は`HANDOVER_CLAUDE.md`の「2.6 Claude Code期間 (2026-08-09〜08-10)」を参照。
