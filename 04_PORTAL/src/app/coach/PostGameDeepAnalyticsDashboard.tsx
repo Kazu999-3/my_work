@@ -232,6 +232,41 @@ export default function PostGameDeepAnalyticsDashboard() {
           </div>
         </div>
       </div>
+
+      {/* 完全勝利サイクル: ナレッジ自動フィードバック同期バー */}
+      <div className="bg-gradient-to-r from-amber-50 via-purple-50 to-emerald-50 border border-amber-200/80 rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-2xs">
+        <div className="space-y-0.5 text-center sm:text-left">
+          <div className="flex items-center justify-center sm:justify-start gap-1.5 text-xs font-black text-stone-900">
+            <Sparkles className="w-4 h-4 text-amber-600" />
+            <span>完全勝利サイクル (The Sovereign Victory Loop) 連動</span>
+          </div>
+          <p className="text-[11px] text-stone-600 font-medium">
+            この試合で得た確定データ（対面攻略 ＆ 視界改善点）をチャンピオン辞典へ自動蓄積し、次回プレイ前へ循環させます。
+          </p>
+        </div>
+        <button
+          onClick={async () => {
+            const res = await fetch('/api/lol/sync-match-feedback', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                myChampion: data.my_champion,
+                enemyChampion: data.enemy_champion,
+                keyLearning: 'Lv3で敵のE空振りに合わせたショートトレードが極めて有効だった',
+                bottleneck: data.biggest_bottleneck.metric
+              })
+            });
+            const d = await res.json();
+            if (d.success) {
+              alert(d.message);
+            }
+          }}
+          className="px-4 py-2 bg-stone-900 hover:bg-stone-800 text-white rounded-xl text-xs font-extrabold flex items-center gap-2 shadow-xs transition-colors shrink-0 cursor-pointer"
+        >
+          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+          <span>教訓をナレッジ辞典に自動同期</span>
+        </button>
+      </div>
     </div>
   );
 }
