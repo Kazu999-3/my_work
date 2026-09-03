@@ -8,7 +8,8 @@ DataDragon公式CDNからサモナースペルおよびチャンピオンのア�
 import os
 from pathlib import Path
 import httpx
-from PyQt6.QtGui import QPixmap
+from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QPixmap, QColor
 
 CACHE_DIR = Path(__file__).parent / "cache"
 CACHE_DIR.mkdir(exist_ok=True)
@@ -82,7 +83,7 @@ class SpellAssetManager:
 
         # フォールバック (空のピックスマップ)
         pix = QPixmap(32, 32)
-        pix.fill(Qt.GlobalColor.darkGray if hasattr(Qt, 'GlobalColor') else Qt.darkGray)
+        pix.fill(QColor(60, 60, 60))
         return pix
 
     @classmethod
