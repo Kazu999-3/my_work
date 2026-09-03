@@ -1,20 +1,21 @@
 """
-Sovereign HUD - オーバーレイ統合ランチャー (TABキー連動 ＆ 各メンバー対面ゴールド差対応)
-========================================================================================
+Sovereign HUD - オーバーレイ統合ランチャー (リスク1〜4完全解決版)
+===================================================================
 1. TopBarWidget (画面右上): 経済＆マクロ ➔ 【常時表示】
-2. SpellTrackerWidget (画面右下): 敵Ult＆スペルタイマー ➔ 【常時表示】
-3. MatchupCardWidget (画面左側): 対面インテル＆動的ビルド (折りたたみなしフル表示) ➔ 【TAB押下中のみ表示】
-4. LaneDominanceWidget (画面中央): 各メンバー対面ゴールド差＆レーン優勢度 ➔ 【TAB押下中のみ表示】
-
-※ すべてのウィジェットの位置 (x, y) はドラッグ移動で自動保存され、次回起動時に復元されます。
+2. SpellTrackerWidget (画面右下): 敵Ult＆スペルタイマー ➔ 【常時表示 ＆ テンキー1〜5連動】
+3. MatchupCardWidget (画面左側): 対面手順＆キルライン ➔ 【TAB連動】
+4. LaneDominanceWidget (画面中央下部): 対面ゴールド差 ➔ 【TAB連動 / スコアボード完全非被り】
+5. 試合終了時バックグラウンド完全非同期スレッド送信 (threading.Thread)
 """
 
 import os
 import sys
 import argparse
+import threading
 from pathlib import Path
 from PyQt6.QtWidgets import QApplication
-from PyQt6.QtCore import QTimer
+from PyQt6.QtCore import QTimer, Qt
+from PyQt6.QtGui import QKeySequence, QShortcut
 
 # パス追加
 sys.path.append(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
@@ -47,88 +48,92 @@ def main():
     spell_tracker = SpellTrackerWidget()
     lane_dominance = LaneDominanceWidget()
 
-    # 保存された位置のロード ＆ 復元
+    # リスク2解消: 解像度自動取得 ＆ スコアボード完全非被り安全領域自動スナップ
     saved_positions = load_widget_positions()
     screen = app.primaryScreen().geometry()
     screen_w = screen.width()
     screen_h = screen.height()
 
-    # ① 経済＆マクロ (TopBar): 画面右上 ➔ 常時表示
+    # ① 画面右上 (TopBar): 幅340px
     pos_top = saved_positions.get("top_bar", {})
     if pos_top:
-        top_bar.move(pos_top.get("x", screen_w - top_bar.width() - 24), pos_top.get("y", 50))
+        top_bar.move(pos_top.get("x", screen_w - 360), pos_top.get("y", 40))
     else:
-        top_bar.move(screen_w - top_bar.width() - 24, 50)
+        top_bar.move(screen_w - 360, 40)
 
-    # ② 対面インテル (MatchupCard): 画面左側 ➔ TAB連動
-    pos_card = saved_positions.get("matchup_card", {})
-    if pos_card:
-        matchup_card.move(pos_card.get("x", 24), pos_card.get("y", 80))
-    else:
-        matchup_card.move(24, 80)
-
-    # ③ アラートトースト (ToastAlert): 画面中央上部
-    pos_toast = saved_positions.get("toast_alert", {})
-    if pos_toast:
-        toast_alert.move(pos_toast.get("x", (screen_w - toast_alert.width()) // 2), pos_toast.get("y", 70))
-    else:
-        toast_alert.move((screen_w - toast_alert.width()) // 2, 70)
-
-    # ④ 敵スペル管理 (SpellTracker): 画面右下 (ミニマップ上) ➔ 常時表示
+    # ② 画面右下 (SpellTracker):
     pos_spell = saved_positions.get("spell_tracker", {})
     if pos_spell:
-        spell_tracker.move(pos_spell.get("x", screen_w - spell_tracker.width() - 24), pos_spell.get("y", screen_h - 380))
+        spell_tracker.move(pos_spell.get("x", screen_w - 420), pos_spell.get("y", screen_h - 180))
     else:
-        spell_tracker.move(screen_w - spell_tracker.width() - 24, screen_h - 380)
+        spell_tracker.move(screen_w - 420, screen_h - 180)
 
-    # ⑤ レーン優勢度＆対面ゴールド差 (LaneDominance): 画面中央上部 ➔ TAB連動
+    # ③ 画面左側 (MatchupCard): スコアボードの左側余白 (x=24)
+    pos_card = saved_positions.get("matchup_card", {})
+    if pos_card:
+        matchup_card.move(pos_card.get("x", 24), pos_card.get("y", int(screen_h * 0.22)))
+    else:
+        matchup_card.move(24, int(screen_h * 0.22))
+
+    # ④ 画面中央下部 (LaneDominance): LoLスコアボード（y: 120〜450）の下側安全マージン (y: 600)
     pos_lane = saved_positions.get("lane_dominance", {})
     if pos_lane:
-        lane_dominance.move(pos_lane.get("x", (screen_w - lane_dominance.width()) // 2), pos_lane.get("y", 120))
+        lane_dominance.move(pos_lane.get("x", int((screen_w - 520) / 2)), pos_lane.get("y", int(screen_h * 0.62)))
     else:
-        lane_dominance.move((screen_w - lane_dominance.width()) // 2, 120)
+        lane_dominance.move(int((screen_w - 520) / 2), int(screen_h * 0.62))
 
-    # 常時表示ウィジェットの表示
-    top_bar.show()        # 右上は常時表示
-    spell_tracker.show()  # 右下は常時表示
+    # ⑤ トーストアラート (画面中央上部)
+    toast_alert.move(int((screen_w - 320) / 2), 60)
+
+    # リスク4解消: テンキー (1〜5) による敵Flash一撃自動始動ホットキー
+    def trigger_enemy_flash(role_idx: int):
+        if role_idx < len(spell_tracker.columns):
+            col = spell_tracker.columns[role_idx]
+            col.btn_spell1.trigger_cooldown()  # Flash(Spell1)を即始動
+            toast_alert.show_alert("⚡", f"敵 {col.champ_name} Flash 使用検知！タイマー始動 (残り300s)", alert_type="spike", duration_ms=4000)
+            print(f"🎯 [HotKey] 敵 {col.champ_name} のFlashタイマーを自動始動しました！")
+
+    # QShortcut によるテンキー1〜5ホットキー登録
+    shortcuts = []
+    for i in range(5):
+        sc = QShortcut(QKeySequence(f"Alt+{i+1}"), spell_tracker)
+        sc.activated.connect(lambda idx=i: trigger_enemy_flash(idx))
+        shortcuts.append(sc)
+
+    # 初期表示状態
+    top_bar.show()
+    spell_tracker.show()
 
     if args.always_show:
         matchup_card.show()
         lane_dominance.show()
     else:
-        # TAB連動ウィジェットは初期非表示
         matchup_card.hide()
         lane_dominance.hide()
 
-    # TABキー監視リスナー
+    # TABキーフック連動
     tab_listener = TabKeyListener()
+    tab_listener.start()
 
     def on_tab_state_changed(is_pressed: bool):
         if args.always_show:
             return
-
         if is_pressed:
-            # TAB押下中: 左側対面カード ＆ 中央レーン優勢度パネルをスッと表示
             matchup_card.show()
             lane_dominance.show()
         else:
-            # TAB解放時: スッと非表示にしてゲーム視界をクリアに保つ
             matchup_card.hide()
             lane_dominance.hide()
 
     tab_listener.tab_state_changed.connect(on_tab_state_changed)
 
-    # モックテスト起動時はサンプルアラートを1回表示
-    if args.mock:
-        QTimer.singleShot(1000, lambda: toast_alert.show_alert("⚔️", "敵 Darius: Trinity Force 完成！ (パワースパイク)", alert_type="spike", duration_ms=6000))
-
-    # 改善点B: 試合終了時の完全自動バックグラウンドデータ転送フラグ
+    # リスク3解消: 試合終了時の完全非同期スレッド自動データ転送 (threading.Thread)
     game_state_tracker = {
         "was_in_game": False,
         "last_active_state": None
     }
 
-    def auto_sync_postgame(last_state):
+    def async_sync_worker(last_state):
         if not last_state or not last_state.get("my_champion"):
             return
         try:
@@ -146,10 +151,14 @@ def main():
                 data=req_data,
                 headers={'Content-Type': 'application/json'}
             )
-            urllib.request.urlopen(req, timeout=2)
-            print(f"🚀 [Auto-Sync] 試合終了を自動検知: {my_champ} vs {enemy_champ} の教訓をポータルへ全自動転送完了！")
-        except Exception as e:
-            pass  # ポータル非起動時もHUD本体は影響を受けない
+            urllib.request.urlopen(req, timeout=3)
+            print(f"🚀 [Auto-Sync Thread] 試合終了を自動検知: {my_champ} vs {enemy_champ} の教訓を完全非同期転送完了！")
+        except Exception:
+            pass
+
+    def on_game_ended(last_state):
+        # メインGUIスレッドを1msも止めずに別スレッドで送信
+        threading.Thread(target=async_sync_worker, args=(last_state,), daemon=True).start()
 
     # 定期更新ループ (1秒おき)
     def update_all():
@@ -168,9 +177,8 @@ def main():
             game_state_tracker["was_in_game"] = True
             game_state_tracker["last_active_state"] = state
         elif game_state_tracker["was_in_game"]:
-            # 試合が終了した瞬間！
             game_state_tracker["was_in_game"] = False
-            auto_sync_postgame(game_state_tracker["last_active_state"])
+            on_game_ended(game_state_tracker["last_active_state"])
 
         top_bar.update_data(state)
         matchup_card.update_data(state)
@@ -184,15 +192,15 @@ def main():
     update_all()
 
     print("=" * 65)
-    print("👑 Sovereign HUD (TAB連動レーン優勢度 ＆ 常時右上経済版)")
+    print("👑 Sovereign HUD (v2.0 リスク1〜4完全解決版)")
     print("  [1] 💰 経済＆マクロ (画面右上 / 常時表示)")
-    print("  [2] ⚡ 敵Ult＆スペル管理 (画面右下 / 常時表示)")
+    print("  [2] ⚡ 敵Ult＆スペル管理 (画面右下 / Alt+1〜5でFlash一撃始動)")
     print("  [3] ⚔️ 対面インテル＆動的ビルド (画面左側 / TAB連動)")
-    print("  [4] 📊 各メンバー対面ゴールド差＆レーン優勢度 (画面中央 / TAB連動)")
-    print("  [5] ⚠️ アラートトースト (イベント時のみ中央表示)")
+    print("  [4] 📊 各メンバー対面ゴールド差 (画面中央下部 / TAB連動)")
+    print("  [5] 🚀 試合終了時完全非同期データ転送 (threading.Thread)")
     print("-----------------------------------------------------------------")
-    print("⌨️ 【TABキー連動】: TABを押している間だけ左側カード＆レーン優勢度が出現！")
-    print("※ すべてのHUDはドラッグ移動で位置が自動保存されます")
+    print("⌨️ 【TABキー連動】: TABを押している間だけ左側カード＆中央パネルが出現！")
+    print("⌨️ 【Flash自動始動】: Alt+1〜5 で敵TOP〜SUPのFlashタイマーが即走る！")
     print("=" * 65)
 
     sys.exit(app.exec())

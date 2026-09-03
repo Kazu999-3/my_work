@@ -12,6 +12,13 @@ const BURST_PROFILES: Record<string, { baseLvl6: number; adScale: number; apScal
   Garen: { baseLvl6: 460, adScale: 2.2, apScale: 0.0, primaryType: 'true_hybrid' },
   Irelia: { baseLvl6: 530, adScale: 2.5, apScale: 0.0, primaryType: 'physical' },
   Jax: { baseLvl6: 490, adScale: 2.0, apScale: 1.4, primaryType: 'mixed' },
+  Fiora: { baseLvl6: 480, adScale: 2.5, apScale: 0.0, primaryType: 'true_hybrid' },
+  Camille: { baseLvl6: 470, adScale: 2.6, apScale: 0.0, primaryType: 'true_hybrid' },
+  Sett: { baseLvl6: 500, adScale: 2.4, apScale: 0.0, primaryType: 'true_hybrid' },
+  Syndra: { baseLvl6: 550, adScale: 0.0, apScale: 2.6, primaryType: 'magic' },
+  Kaisa: { baseLvl6: 510, adScale: 1.8, apScale: 2.0, primaryType: 'mixed' },
+  Jinx: { baseLvl6: 420, adScale: 2.0, apScale: 0.0, primaryType: 'physical' },
+  Lucian: { baseLvl6: 520, adScale: 2.6, apScale: 0.0, primaryType: 'physical' },
 };
 
 const BLUEPRINTS: Record<string, any[]> = {
