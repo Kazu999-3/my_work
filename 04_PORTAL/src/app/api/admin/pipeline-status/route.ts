@@ -78,7 +78,22 @@ export async function GET(req: Request) {
       if (!latestByPayload.has(key)) latestByPayload.set(key, t); // 降順取得済みなので最初の1件が最新
     }
     const failedTrendTasks = Array.from(latestByPayload.values())
-      .filter((t) => t.status === 'failed')
+      .filter((t) => {
+        if (t.status !== 'failed') return false;
+        const errMsg = String(t.error_message || '').toLowerCase();
+        if (
+          errMsg.includes('quota') ||
+          errMsg.includes('429') ||
+          errMsg.includes('resource_exhausted') ||
+          errMsg.includes('クォータ') ||
+          errMsg.includes('利用上限') ||
+          errMsg.includes('安全にスキップ') ||
+          errMsg.includes('skipped')
+        ) {
+          return false;
+        }
+        return true;
+      })
       .slice(0, 10);
 
     return NextResponse.json({ pipelines: results, failedTasks: failedTrendTasks });

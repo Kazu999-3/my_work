@@ -49,18 +49,31 @@ export async function createAdminNotification(input: AdminNotificationInput) {
     console.warn('[notify] 未読件数の取得に失敗（バッジ更新なしで続行）:', e);
   }
 
+  // Push通知の送信判定（日常的な進捗やクォータスキップ等の通知はPushを抑制し、重要通知のみPush配信）
+  const lowPriorityTypes = new Set(['system_progress', 'routine_info']);
+  const isQuotaOrSkip = (input.title + ' ' + (input.body || '')).toLowerCase();
+  const shouldSkipPush =
+    lowPriorityTypes.has(input.type) ||
+    isQuotaOrSkip.includes('429') ||
+    isQuotaOrSkip.includes('quota') ||
+    isQuotaOrSkip.includes('クォータ') ||
+    isQuotaOrSkip.includes('スキップされました') ||
+    isQuotaOrSkip.includes('利用上限');
+
   let pushResult: Awaited<ReturnType<typeof sendPushToScope>> | { error: string } = { sent: 0, removed: 0, failed: [] };
-  try {
-    pushResult = await sendPushToScope('admin', {
-      title: input.title,
-      body: input.body || '',
-      url: input.url || '/admin/dashboard',
-      icon: input.icon,
-      badgeCount,
-    });
-  } catch (e: any) {
-    console.warn('[notify] Push通知送信に失敗（履歴には記録済み）:', e);
-    pushResult = { error: e?.message || String(e) };
+  if (!shouldSkipPush) {
+    try {
+      pushResult = await sendPushToScope('admin', {
+        title: input.title,
+        body: input.body || '',
+        url: input.url || '/admin/dashboard',
+        icon: input.icon,
+        badgeCount,
+      });
+    } catch (e: any) {
+      console.warn('[notify] Push通知送信に失敗（履歴には記録済み）:', e);
+      pushResult = { error: e?.message || String(e) };
+    }
   }
 
   return { ...(row || {}), _pushResult: pushResult };

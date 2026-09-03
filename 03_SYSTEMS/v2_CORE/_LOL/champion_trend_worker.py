@@ -59,9 +59,16 @@ _quota_hit_this_run = False
 
 def _mark_if_quota_related(text) -> None:
     global _quota_hit_this_run
-    markers = ("429", "RESOURCE_EXHAUSTED", "利用上限", "quota", "Quota", "rate limit")
-    if text and any(m in str(text) for m in markers):
+    if not text:
+        return
+    s = str(text).lower()
+    markers = (
+        "429", "resource_exhausted", "resourceexhausted", "利用上限", "quota", "rate limit",
+        "rate_limit", "too many requests", "クォータ", "exhausted", "overloaded", "503"
+    )
+    if any(m in s for m in markers):
         _quota_hit_this_run = True
+
 
 
 def extract_json_object(text: str) -> str:
@@ -475,6 +482,8 @@ League of Legendsの最新パッチにおける、チャンピオン「{champion
                 trend_data = json.loads(res_text)
                 logger.info("✅ Successfully generated trend data using local Ollama model fallback.")
             except Exception as ollama_e:
+                global _quota_hit_this_run
+                _quota_hit_this_run = True
                 logger.warning(f"⚠️ API制限のため今回の定期更新は安全にスキップされました (既存データを維持します): {ollama_e}")
                 return False
         

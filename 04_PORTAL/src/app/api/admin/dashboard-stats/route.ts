@@ -141,6 +141,19 @@ export async function GET(req: NextRequest) {
         ) {
           return false;
         }
+        // クォータ枯渇・レート制限による安全スキップは要対応（バグ）から除外
+        const errMsg = String(t.error_message || '').toLowerCase();
+        if (
+          errMsg.includes('quota') ||
+          errMsg.includes('429') ||
+          errMsg.includes('resource_exhausted') ||
+          errMsg.includes('クォータ') ||
+          errMsg.includes('利用上限') ||
+          errMsg.includes('安全にスキップ') ||
+          errMsg.includes('skipped')
+        ) {
+          return false;
+        }
         return true;
       })
       .slice(0, 10);

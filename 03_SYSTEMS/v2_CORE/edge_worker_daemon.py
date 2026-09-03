@@ -262,6 +262,19 @@ class EdgeWorkerDaemon:
             except Exception:
                 pass
 
+            # JSONのskippedフラグ以外にも、エラー文言やログからクォータ枯渇起因を包括判定
+            if not is_skip:
+                all_text = f"{clean_message or ''} {res.stdout[-1000:]} {res.stderr[-1000:]}".lower()
+                quota_keywords = (
+                    "quota exhausted", "resource_exhausted", "resourceexhausted",
+                    "429", "apiクォータ制限", "api制限のため今回の定期更新は安全にスキップ",
+                    "too many requests", "利用上限"
+                )
+                if any(kw in all_text for kw in quota_keywords):
+                    is_skip = True
+                    if not clean_message:
+                        clean_message = "APIクォータ制限のため安全にスキップされました（既存データは保護されています）"
+
             # クォータ切れ等による安全なスキップ(skipped=True、既存データは保護済み)は
             # 本物のバグではないため、例外にして「要対応」リストへ積むと本当に対応が
             # 必要なタスクに埋もれて分かりにくくなっていた(2026-08-14発覚。同一チャンピオンの

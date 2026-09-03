@@ -178,11 +178,13 @@ class SovereignHerald:
 
     def _notify_portal(self, title: str, page: str = None):
         """ポータルの通知ベル＋プッシュ通知(管理者専用)へも同じ内容を流す。
-        Discordだけだと見逃しやすい上、ポータル側に履歴が一切残らなかったため、
-        portal_link=Trueで送っている（=ユーザーに見てほしいと判断した）通知は
-        まとめてポータル側にも複製する。PORTAL_BOT_SECRETが未設定でも
-        (verifyBotSecretがfail-openのため)動作する。
+        重要度の低いクォータ枯渇・一時スキップ等のルーチン通知はポータルを汚さないよう抑制する。
         """
+        # クォータ枯渇や一時スキップなどの定常メッセージはポータル通知しない
+        low_priority_keywords = ["429", "quota", "クォータ", "利用上限", "スキップされました", "一時停止"]
+        if any(kw in (title or "").lower() for kw in low_priority_keywords):
+            return
+
         portal_url = os.environ.get("PORTAL_URL", "http://localhost:5173").rstrip("/")
         bot_secret = os.environ.get("PORTAL_BOT_SECRET", "")
         path_mapping = {

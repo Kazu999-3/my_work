@@ -1,6 +1,6 @@
 {
   "patch_version": "26.17",
-  "updated_at": "2026-08-31T23:53:52.041474+00:00",
+  "updated_at": "2026-09-02T12:25:28.141092+00:00",
   "status": "suspended",
   "queue": {
     "Aatrox": {
@@ -29,50 +29,50 @@
     },
     "Alistar": {
       "name": "アリスター",
-      "status": "pending",
-      "updated_at": "2026-08-23T18:52:43.788363+00:00",
+      "status": "completed",
+      "updated_at": "2026-09-01T08:24:32.992616+00:00",
       "error": null
     },
     "Ambessa": {
       "name": "アンベッサ",
-      "status": "pending",
-      "updated_at": "2026-08-23T18:53:31.236211+00:00",
+      "status": "completed",
+      "updated_at": "2026-09-01T08:25:25.313741+00:00",
       "error": null
     },
     "Amumu": {
       "name": "アムム",
-      "status": "pending",
-      "updated_at": "2026-08-23T18:54:18.248034+00:00",
+      "status": "completed",
+      "updated_at": "2026-09-01T08:26:12.421457+00:00",
       "error": null
     },
     "Anivia": {
       "name": "アニビア",
-      "status": "pending",
-      "updated_at": "2026-08-23T18:55:03.738983+00:00",
+      "status": "completed",
+      "updated_at": "2026-09-01T08:26:59.708819+00:00",
       "error": null
     },
     "Annie": {
       "name": "アニー",
-      "status": "pending",
-      "updated_at": "2026-08-23T18:55:48.593023+00:00",
+      "status": "completed",
+      "updated_at": "2026-09-02T08:55:39.687213+00:00",
       "error": null
     },
     "Aphelios": {
       "name": "アフェリオス",
-      "status": "pending",
-      "updated_at": "2026-08-23T18:56:34.233946+00:00",
+      "status": "completed",
+      "updated_at": "2026-09-02T08:56:26.869437+00:00",
       "error": null
     },
     "Ashe": {
       "name": "アッシュ",
-      "status": "pending",
-      "updated_at": "2026-08-23T18:57:20.072181+00:00",
+      "status": "completed",
+      "updated_at": "2026-09-02T08:57:13.848872+00:00",
       "error": null
     },
     "AurelionSol": {
       "name": "オレリオン・ソル",
-      "status": "pending",
-      "updated_at": "2026-08-23T18:58:06.761162+00:00",
+      "status": "completed",
+      "updated_at": "2026-09-02T08:58:00.694189+00:00",
       "error": null
     },
     "Aurora": {
