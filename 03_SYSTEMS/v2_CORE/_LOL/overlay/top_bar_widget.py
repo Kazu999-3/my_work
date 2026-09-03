@@ -24,7 +24,7 @@ class TopBarWidget(QWidget):
             Qt.WindowType.Tool
         )
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
-        self.setFixedWidth(290)
+        self.setFixedWidth(340)
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -32,15 +32,15 @@ class TopBarWidget(QWidget):
         self.card_frame = QFrame(self)
         self.card_frame.setStyleSheet("""
             QFrame {
-                background-color: rgba(14, 12, 20, 0.72);
+                background-color: rgba(14, 12, 20, 0.75);
                 border: 1px solid rgba(212, 140, 40, 0.35);
                 border-radius: 10px;
-                padding: 6px 10px;
+                padding: 4px 8px;
             }
         """)
         
         card_layout = QVBoxLayout(self.card_frame)
-        card_layout.setContentsMargins(8, 6, 8, 6)
+        card_layout.setContentsMargins(10, 6, 10, 6)
         card_layout.setSpacing(5)
 
         # 1行目: 時間 ＆ チームゴールド差
