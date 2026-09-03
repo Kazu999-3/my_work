@@ -18,6 +18,8 @@ sys.path.append(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
 from v2_CORE.settings import settings
 from v2_CORE._LOL.champ_id_normalizer import normalize_champion_id
 from v2_CORE._LOL.overlay.dynamic_build_advisor import DynamicBuildAdvisor
+from v2_CORE._LOL.overlay.fight_tracker import FightTracker
+from v2_CORE._LOL.overlay.fight_analyst import FightAnalyst
 
 HEAL_HEAVY_CHAMPIONS = {
     "Aatrox", "Warwick", "Vladimir", "Soraka", "Briar", "Swain",
@@ -34,6 +36,10 @@ class HudStateEngine:
         self.supabase_url = settings.SUPABASE_URL
         self.supabase_key = settings.SUPABASE_KEY
         self.cached_matchup_memo = {}
+        
+        # 集団戦・ファイト分析
+        self.fight_tracker = FightTracker()
+        self.recorded_fights_analyzed = []
         
         # 状態追跡用
         self.known_enemy_items = {}  # {summoner_name: set(item_ids)}
@@ -322,11 +328,22 @@ class HudStateEngine:
         if elder_left > 0:
             buff_status.append(f"🐉 エルダーバフ: 残り {elder_left}s")
 
-        # --- 8. ファイト瞬間ダメージ（Δダメージ）シミュレーション/集計 ---
-        # モックまたは実交戦時の直近戦闘ダメージ
-        recent_fight_dmg = None
-        if is_gank_danger or game_time_sec > 180:
-            recent_fight_dmg = 1450 if game_time_sec < 300 else 2380
+        # --- 8. 集団戦セッション自動トラッキング ＆ 勝因・敗因分析 ---
+        self.fight_tracker.process_events(
+            events=events,
+            game_time_sec=game_time_sec,
+            my_team=my_team,
+            my_damage=2380.0 if game_time_sec > 180 else 1450.0
+        )
+
+        all_fights_raw = self.fight_tracker.get_all_fights()
+        all_fights_analyzed = [
+            FightAnalyst.analyze_fight(f_data, my_champion=my_champion)
+            for f_data in all_fights_raw
+        ]
+
+        recent_fight = self.fight_tracker.get_recent_finished_fight()
+        recent_fight_dmg = int(recent_fight.get("my_damage_dealt", 2380)) if recent_fight else (2380 if game_time_sec > 180 else 1450)
 
         # --- 10. 敵5人の動的ステータス (Ult・スペル・アイテム・レベル) ---
         enemy_team_details = []
@@ -381,4 +398,6 @@ class HudStateEngine:
             "next_item_advice": next_item_advice,
             # ロール別対面ゴールド差
             "lane_dominance": lane_dominance,
+            # 全ファイトの勝因・敗因ディープアナリティクス
+            "all_fights_analyzed": all_fights_analyzed,
         }
