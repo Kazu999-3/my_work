@@ -22,6 +22,7 @@ from v2_CORE._LOL.overlay.fight_tracker import FightTracker
 from v2_CORE._LOL.overlay.fight_analyst import FightAnalyst
 from v2_CORE._LOL.overlay.kill_line_calculator import KillLineCalculator
 from v2_CORE._LOL.overlay.matchup_blueprint_engine import MatchupBlueprintEngine
+from v2_CORE._LOL.overlay.comeback_compass_engine import ComebackCompassEngine
 
 HEAL_HEAVY_CHAMPIONS = {
     "Aatrox", "Warwick", "Vladimir", "Soraka", "Briar", "Swain",
@@ -389,15 +390,13 @@ class HudStateEngine:
         else:
             current_phase = phases[0] if phases else {"title": "ファーム継続", "badge": "通常 🟡"}
 
-        # --- 13. 案C: 劣勢時（-3000G）逆転コンパス ---
-        comeback_compass = None
-        if gold_diff <= -2500:
-            comeback_compass = {
-                "active": True,
-                "strategy": "スプリットプッシュ ＆ 敵分断推奨 🧭",
-                "advice": "正面5v5は不利。サイドレーンを押して敵キャリーを1人拘束し、人数差を作ってオブジェクトを狙う！",
-                "gold_deficit": abs(gold_diff)
-            }
+        # --- 13. 案C: 劣勢時 完全流動型 逆転コンパス ---
+        comeback_compass = ComebackCompassEngine.evaluate_comeback_strategy(
+            my_champion=my_champion,
+            gold_diff=gold_diff,
+            game_time_sec=game_time_sec,
+            enemy_team=enemy_team_details
+        )
 
         # 時間フォーマット
         min_part = int(game_time_sec // 60)
