@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Shield, Skull, Zap, Swords, ChevronRight, AlertTriangle } from 'lucide-react';
+import { Skull, Zap, ChevronRight, Swords, ArrowRightLeft } from 'lucide-react';
 
 interface Phase {
   phase: string;
@@ -34,20 +34,36 @@ interface BlueprintResponse {
   };
 }
 
+const COMMON_CHAMPIONS = [
+  'Darius', 'Aatrox', 'Zed', 'Ahri', 'Riven', 'Renekton', 'Fiora', 'Jax', 'Malphite', 'Garen', 'Irelia'
+];
+
 export default function MatchupBlueprintCard({
-  myChampion = 'Aatrox',
-  enemyChampion = 'Darius'
+  myChampion: initialMyChampion = 'Aatrox',
+  enemyChampion: initialEnemyChampion = 'Darius'
 }: {
   myChampion?: string;
   enemyChampion?: string;
 }) {
+  const [myChamp, setMyChamp] = useState(initialMyChampion);
+  const [enemyChamp, setEnemyChamp] = useState(initialEnemyChampion);
+  const [enemyLevel, setEnemyLevel] = useState(6);
   const [data, setData] = useState<BlueprintResponse | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // 外部からのprops更新に同期
   useEffect(() => {
-    if (!enemyChampion) return;
+    if (initialMyChampion) setMyChamp(initialMyChampion);
+  }, [initialMyChampion]);
+
+  useEffect(() => {
+    if (initialEnemyChampion) setEnemyChamp(initialEnemyChampion);
+  }, [initialEnemyChampion]);
+
+  useEffect(() => {
+    if (!enemyChamp) return;
     setLoading(true);
-    fetch(`/api/lol/matchup-blueprint?my=${encodeURIComponent(myChampion)}&enemy=${encodeURIComponent(enemyChampion)}`)
+    fetch(`/api/lol/matchup-blueprint?my=${encodeURIComponent(myChamp)}&enemy=${encodeURIComponent(enemyChamp)}&level=${enemyLevel}`)
       .then((res) => res.json())
       .then((d) => {
         setData(d);
@@ -57,9 +73,9 @@ export default function MatchupBlueprintCard({
         console.error(err);
         setLoading(false);
       });
-  }, [myChampion, enemyChampion]);
+  }, [myChamp, enemyChamp, enemyLevel]);
 
-  if (loading) {
+  if (loading && !data) {
     return (
       <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-xs animate-pulse">
         <div className="h-4 bg-stone-200 rounded w-1/3 mb-3"></div>
@@ -75,20 +91,80 @@ export default function MatchupBlueprintCard({
 
   return (
     <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-xs text-stone-900 space-y-5">
-      {/* ヘッダー */}
-      <div className="flex items-center justify-between border-b border-stone-100 pb-3 flex-wrap gap-2">
-        <div className="flex items-center gap-2">
-          <span className="px-2 py-0.5 bg-amber-100 text-amber-800 border border-amber-200 rounded-md text-[10px] font-black uppercase tracking-wider">
-            Matchup Blueprint
-          </span>
-          <h3 className="text-sm md:text-base font-extrabold text-stone-900 flex items-center gap-1.5">
-            <span>⚔️ {data.my_champion} vs {data.enemy_champion}</span>
-            <span className="text-stone-400 text-xs font-bold">完全攻略手順書</span>
-          </h3>
+      {/* ヘッダー ＆ 動的対面セレクター */}
+      <div className="border-b border-stone-100 pb-3.5 space-y-3">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div className="flex items-center gap-2">
+            <span className="px-2 py-0.5 bg-amber-100 text-amber-800 border border-amber-200 rounded-md text-[10px] font-black uppercase tracking-wider">
+              Matchup Blueprint
+            </span>
+            <h3 className="text-sm md:text-base font-extrabold text-stone-900 flex items-center gap-1.5">
+              <span>⚔️ 対面攻略手順書 ＆ 即死キルライン</span>
+            </h3>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] font-bold text-stone-500">敵レベル:</span>
+            <select
+              value={enemyLevel}
+              onChange={(e) => setEnemyLevel(parseInt(e.target.value, 10))}
+              className="text-xs font-bold px-2 py-1 rounded-md border border-stone-200 bg-stone-50 text-stone-800 cursor-pointer font-mono"
+            >
+              <option value="3">Lv3 (序盤)</option>
+              <option value="6">Lv6 (Ult習得)</option>
+              <option value="11">Lv11 (中盤)</option>
+              <option value="16">Lv16 (レイト)</option>
+            </select>
+          </div>
         </div>
-        <span className="text-xs font-extrabold px-2.5 py-0.5 rounded-md border bg-stone-50 border-stone-200 text-stone-700">
-          Lv6 フルコンボ算定
-        </span>
+
+        {/* 動的対面切り替えセレクター */}
+        <div className="flex items-center gap-2 bg-stone-50/80 p-2.5 rounded-xl border border-stone-200 flex-wrap">
+          <div className="flex items-center gap-1.5 min-w-[140px]">
+            <span className="text-[11px] font-bold text-stone-400">自分:</span>
+            <select
+              value={myChamp}
+              onChange={(e) => setMyChamp(e.target.value)}
+              className="text-xs font-black px-2.5 py-1 rounded-lg border border-stone-200 bg-white text-stone-900 cursor-pointer"
+            >
+              {COMMON_CHAMPIONS.map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+          </div>
+
+          <ArrowRightLeft className="w-3.5 h-3.5 text-stone-400" />
+
+          <div className="flex items-center gap-1.5 min-w-[140px]">
+            <span className="text-[11px] font-bold text-stone-400">敵対面:</span>
+            <select
+              value={enemyChamp}
+              onChange={(e) => setEnemyChamp(e.target.value)}
+              className="text-xs font-black px-2.5 py-1 rounded-lg border border-stone-200 bg-white text-rose-800 cursor-pointer"
+            >
+              {COMMON_CHAMPIONS.map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* クイック選択チップ */}
+          <div className="flex items-center gap-1.5 flex-wrap ml-auto">
+            <span className="text-[10px] text-stone-400 font-bold">人気対面:</span>
+            {['Darius', 'Zed', 'Ahri', 'Riven'].map((c) => (
+              <button
+                key={c}
+                onClick={() => setEnemyChamp(c)}
+                className={`text-[10px] font-extrabold px-2 py-0.5 rounded-md border transition-colors ${
+                  enemyChamp === c
+                    ? 'bg-rose-100 text-rose-800 border-rose-300'
+                    : 'bg-white text-stone-600 border-stone-200 hover:bg-stone-100'
+                }`}
+              >
+                vs {c}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* 案A: 即死キルライン（致死ダメージ）境界メーター */}
@@ -96,7 +172,9 @@ export default function MatchupBlueprintCard({
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div className="flex items-center gap-2">
             <Skull className="w-4 h-4 text-rose-600" />
-            <span className="text-xs font-black text-stone-900">即死キルライン（敵Lv6フルコンボ最大火力）</span>
+            <span className="text-xs font-black text-stone-900">
+              即死キルライン（敵 {data.enemy_champion} Lv{data.enemy_level} 最大瞬間火力）
+            </span>
           </div>
           <span className="text-xs font-black text-rose-700 font-mono bg-rose-100/80 px-2.5 py-0.5 rounded-md border border-rose-200">
             {kill_line.total_lethal_damage} dmg (HP {kill_line.kill_hp_percent}% 以下即死) {kill_line.danger_badge}
@@ -137,7 +215,7 @@ export default function MatchupBlueprintCard({
       <div className="space-y-3">
         <div className="flex items-center gap-1.5 text-xs font-black text-stone-800">
           <Zap className="w-4 h-4 text-amber-600" />
-          <span>レーン戦 3段階勝ちパターン・タイムライン</span>
+          <span>{data.my_champion} vs {data.enemy_champion} 3段階勝ちパターン・タイムライン</span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">

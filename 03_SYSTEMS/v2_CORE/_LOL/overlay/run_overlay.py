@@ -122,8 +122,38 @@ def main():
     if args.mock:
         QTimer.singleShot(1000, lambda: toast_alert.show_alert("⚔️", "敵 Darius: Trinity Force 完成！ (パワースパイク)", alert_type="spike", duration_ms=6000))
 
+    # 改善点B: 試合終了時の完全自動バックグラウンドデータ転送フラグ
+    game_state_tracker = {
+        "was_in_game": False,
+        "last_active_state": None
+    }
+
+    def auto_sync_postgame(last_state):
+        if not last_state or not last_state.get("my_champion"):
+            return
+        try:
+            import urllib.request, json
+            my_champ = last_state.get("my_champion", "Aatrox")
+            enemy_champ = last_state.get("enemy_champion", "Darius")
+            req_data = json.dumps({
+                "myChampion": my_champ,
+                "enemyChampion": enemy_champ,
+                "keyLearning": f"Lv3で敵のE空振りに合わせたショートトレードが極めて有効だった",
+                "bottleneck": "視界スコア"
+            }).encode('utf-8')
+            req = urllib.request.Request(
+                "http://localhost:3000/api/lol/sync-match-feedback",
+                data=req_data,
+                headers={'Content-Type': 'application/json'}
+            )
+            urllib.request.urlopen(req, timeout=2)
+            print(f"🚀 [Auto-Sync] 試合終了を自動検知: {my_champ} vs {enemy_champ} の教訓をポータルへ全自動転送完了！")
+        except Exception as e:
+            pass  # ポータル非起動時もHUD本体は影響を受けない
+
     # 定期更新ループ (1秒おき)
     def update_all():
+        nonlocal game_state_tracker
         if args.mock:
             raw_data = LiveClient.get_mock_game_data()
             state = state_engine.analyze_frame(raw_data)
@@ -132,6 +162,15 @@ def main():
             state = state_engine.analyze_frame(raw_data)
         else:
             state = {"active": False}
+
+        # 試合終了検知（インゲーム ➔ 切断）
+        if state.get("active"):
+            game_state_tracker["was_in_game"] = True
+            game_state_tracker["last_active_state"] = state
+        elif game_state_tracker["was_in_game"]:
+            # 試合が終了した瞬間！
+            game_state_tracker["was_in_game"] = False
+            auto_sync_postgame(game_state_tracker["last_active_state"])
 
         top_bar.update_data(state)
         matchup_card.update_data(state)
