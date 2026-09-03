@@ -18,6 +18,7 @@ import ChampionQuickSelector from '../../components/coach/ChampionQuickSelector'
 import MatchupSmartCard from './MatchupSmartCard';
 import MatchFightsAnalyticsCard from './MatchFightsAnalyticsCard';
 import MatchupBlueprintCard from './MatchupBlueprintCard';
+import PostGameDeepAnalyticsDashboard from './PostGameDeepAnalyticsDashboard';
 
 // ============================
 // 型定義
@@ -1767,6 +1768,9 @@ export default function CoachPage() {
 
               {/* 集団戦ディープアナリティクス (勝因・敗因・タイムラインレビュー) */}
               <MatchFightsAnalyticsCard />
+
+              {/* 5大ディープアナリティクス (序盤メトリクス・リコール逆再生・ビルド監査・目標ランクギャップ) */}
+              <PostGameDeepAnalyticsDashboard />
 
               <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-xs space-y-3">
                 <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5 border-b border-stone-100 pb-2">
