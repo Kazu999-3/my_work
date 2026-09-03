@@ -128,6 +128,60 @@ class LiveClient:
                     "level": 6,
                     "scores": {"creepScore": 45, "kills": 1, "deaths": 0, "assists": 0},
                     "items": [{"itemID": 3157, "displayName": "Zhonya's Hourglass", "price": 3250, "count": 1}]
+                },
+                {
+                    "championName": "Ahri",
+                    "position": "MIDDLE",
+                    "team": "ORDER",
+                    "summonerName": "Ally Mid",
+                    "level": 7,
+                    "scores": {"creepScore": 65, "kills": 3, "deaths": 1, "assists": 2},
+                    "items": [{"itemID": 3285, "displayName": "Luden's Companion", "price": 3000, "count": 1}]
+                },
+                {
+                    "championName": "Zed",
+                    "position": "MIDDLE",
+                    "team": "CHAOS",
+                    "summonerName": "Enemy Mid",
+                    "level": 7,
+                    "scores": {"creepScore": 60, "kills": 1, "deaths": 3, "assists": 0},
+                    "items": [{"itemID": 3142, "displayName": "Youmuu's Ghostblade", "price": 2800, "count": 1}]
+                },
+                {
+                    "championName": "Jinx",
+                    "position": "BOTTOM",
+                    "team": "ORDER",
+                    "summonerName": "Ally ADC",
+                    "level": 6,
+                    "scores": {"creepScore": 62, "kills": 1, "deaths": 0, "assists": 3},
+                    "items": [{"itemID": 3031, "displayName": "Infinity Edge", "price": 3400, "count": 1}]
+                },
+                {
+                    "championName": "Thresh",
+                    "position": "UTILITY",
+                    "team": "ORDER",
+                    "summonerName": "Ally Sup",
+                    "level": 5,
+                    "scores": {"creepScore": 8, "kills": 0, "deaths": 0, "assists": 4},
+                    "items": [{"itemID": 3865, "displayName": "World Atlas", "price": 400, "count": 1}]
+                },
+                {
+                    "championName": "KaiSa",
+                    "position": "BOTTOM",
+                    "team": "CHAOS",
+                    "summonerName": "Enemy ADC",
+                    "level": 6,
+                    "scores": {"creepScore": 55, "kills": 0, "deaths": 2, "assists": 1},
+                    "items": [{"itemID": 3124, "displayName": "Guinsoo's Rageblade", "price": 3000, "count": 1}]
+                },
+                {
+                    "championName": "Nautilus",
+                    "position": "UTILITY",
+                    "team": "CHAOS",
+                    "summonerName": "Enemy Sup",
+                    "level": 5,
+                    "scores": {"creepScore": 10, "kills": 1, "deaths": 1, "assists": 0},
+                    "items": [{"itemID": 3865, "displayName": "World Atlas", "price": 400, "count": 1}]
                 }
             ],
             "gameData": {
@@ -136,7 +190,8 @@ class LiveClient:
             },
             "events": {
                 "Events": [
-                    {"EventID": 0, "EventName": "GameStart", "EventTime": 0.0}
+                    {"EventID": 0, "EventName": "GameStart", "EventTime": 0.0},
+                    {"EventID": 1, "EventName": "BaronKill", "EventTime": 150.0}
                 ]
             }
         }
