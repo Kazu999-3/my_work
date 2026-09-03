@@ -85,20 +85,24 @@ def main():
     # ⑤ トーストアラート (画面中央上部)
     toast_alert.move(int((screen_w - 320) / 2), 60)
 
-    # リスク4解消: テンキー (1〜5) による敵Flash一撃自動始動ホットキー
-    def trigger_enemy_flash(role_idx: int):
-        if role_idx < len(spell_tracker.columns):
-            col = spell_tracker.columns[role_idx]
-            col.btn_spell1.trigger_cooldown()  # Flash(Spell1)を即始動
-            toast_alert.show_alert("⚡", f"敵 {col.champ_name} Flash 使用検知！タイマー始動 (残り300s)", alert_type="spike", duration_ms=4000)
-            print(f"🎯 [HotKey] 敵 {col.champ_name} のFlashタイマーを自動始動しました！")
-
-    # QShortcut によるテンキー1〜5ホットキー登録
-    shortcuts = []
-    for i in range(5):
-        sc = QShortcut(QKeySequence(f"Alt+{i+1}"), spell_tracker)
-        sc.activated.connect(lambda idx=i: trigger_enemy_flash(idx))
-        shortcuts.append(sc)
+    # チャット・スペル自動検知連動 (チャットで「〇〇がフラッシュを使用」「Darius: Flash」が出たら自動始動)
+    def on_chat_spell_event(chat_message: str):
+        from v2_CORE._LOL.overlay.chat_spell_detector import ChatSpellDetector
+        parsed = ChatSpellDetector.parse_chat_message(chat_message)
+        if not parsed:
+            return
+        champ_name, spell_type = parsed
+        for col in spell_tracker.columns:
+            if col.champ_name.lower() == champ_name.lower():
+                if spell_type == "FLASH":
+                    col.btn_spell1.trigger_cooldown()
+                    toast_alert.show_alert("⚡", f"敵 {col.champ_name} Flash 使用検知！タイマー自動始動", alert_type="spike", duration_ms=4000)
+                    print(f"🎯 [Chat Auto-Sync] 敵 {col.champ_name} のFlashタイマーを自動始動しました！")
+                elif spell_type == "ULT":
+                    col.btn_ult.trigger_cooldown()
+                    toast_alert.show_alert("👑", f"敵 {col.champ_name} Ult 使用検知！タイマー自動始動", alert_type="spike", duration_ms=4000)
+                    print(f"🎯 [Chat Auto-Sync] 敵 {col.champ_name} のUltタイマーを自動始動しました！")
+                break
 
     # 初期表示状態
     top_bar.show()
@@ -194,13 +198,13 @@ def main():
     print("=" * 65)
     print("👑 Sovereign HUD (v2.0 リスク1〜4完全解決版)")
     print("  [1] 💰 経済＆マクロ (画面右上 / 常時表示)")
-    print("  [2] ⚡ 敵Ult＆スペル管理 (画面右下 / Alt+1〜5でFlash一撃始動)")
+    print("  [2] ⚡ 敵Ult＆スペル管理 (画面右下 / チャット検知で自動始動)")
     print("  [3] ⚔️ 対面インテル＆動的ビルド (画面左側 / TAB連動)")
     print("  [4] 📊 各メンバー対面ゴールド差 (画面中央下部 / TAB連動)")
     print("  [5] 🚀 試合終了時完全非同期データ転送 (threading.Thread)")
     print("-----------------------------------------------------------------")
     print("⌨️ 【TABキー連動】: TABを押している間だけ左側カード＆中央パネルが出現！")
-    print("⌨️ 【Flash自動始動】: Alt+1〜5 で敵TOP〜SUPのFlashタイマーが即走る！")
+    print("💬 【チャット自動連動】: 「ダリウスがフラッシュを使用」「Darius: Flash」を自動検知！")
     print("=" * 65)
 
     sys.exit(app.exec())
