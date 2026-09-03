@@ -16,6 +16,7 @@ import JgMatchupPredictor from '../../components/coach/JgMatchupPredictor';
 import PlayerStyleRadarCard from '../../components/coach/PlayerStyleRadarCard';
 import ChampionQuickSelector from '../../components/coach/ChampionQuickSelector';
 import MatchupSmartCard from './MatchupSmartCard';
+import MatchFightsAnalyticsCard from './MatchFightsAnalyticsCard';
 
 // ============================
 // 型定義
@@ -1757,6 +1758,9 @@ export default function CoachPage() {
                 </h3>
                 <PostGameTab onOpenReflectionModal={() => setIsReflectionModalOpen(true)} refreshSignal={reflectionRefreshSignal} />
               </div>
+
+              {/* 集団戦ディープアナリティクス (勝因・敗因・タイムラインレビュー) */}
+              <MatchFightsAnalyticsCard />
 
               <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-xs space-y-3">
                 <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5 border-b border-stone-100 pb-2">
