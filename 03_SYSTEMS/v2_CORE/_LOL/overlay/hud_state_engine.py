@@ -20,6 +20,8 @@ from v2_CORE._LOL.champ_id_normalizer import normalize_champion_id
 from v2_CORE._LOL.overlay.dynamic_build_advisor import DynamicBuildAdvisor
 from v2_CORE._LOL.overlay.fight_tracker import FightTracker
 from v2_CORE._LOL.overlay.fight_analyst import FightAnalyst
+from v2_CORE._LOL.overlay.kill_line_calculator import KillLineCalculator
+from v2_CORE._LOL.overlay.matchup_blueprint_engine import MatchupBlueprintEngine
 
 HEAL_HEAVY_CHAMPIONS = {
     "Aatrox", "Warwick", "Vladimir", "Soraka", "Briar", "Swain",
@@ -362,6 +364,41 @@ class HudStateEngine:
         # --- 9. 対面攻略メモ ---
         matchup_memo = self.get_matchup_memo(my_champion, enemy_champion)
 
+        # --- 11. 案A: 即死キルライン計算 (DataDragon確定公式) ---
+        enemy_lvl = opponent_obj.get("level", 6) if opponent_obj else 6
+        kill_line = KillLineCalculator.calculate_kill_line(
+            enemy_champ=enemy_champion,
+            enemy_level=enemy_lvl,
+            enemy_bonus_ad=25.0,
+            has_ignite=True,
+            my_champ=my_champion,
+            my_max_hp=1150.0 + (my_level * 90),
+            my_armor=45.0 + (my_level * 4),
+            my_mr=36.0 + (my_level * 1.5),
+        )
+
+        # --- 12. 案B: レーン戦3段階勝ちパターン手順 ＆ 現在フェーズ抽出 ---
+        blueprint_data = MatchupBlueprintEngine.get_blueprint(my_champion, enemy_champion)
+        phases = blueprint_data.get("phases", [])
+        if my_level <= 2 and len(phases) > 0:
+            current_phase = phases[0]
+        elif my_level <= 5 and len(phases) > 1:
+            current_phase = phases[1]
+        elif len(phases) > 2:
+            current_phase = phases[2]
+        else:
+            current_phase = phases[0] if phases else {"title": "ファーム継続", "badge": "通常 🟡"}
+
+        # --- 13. 案C: 劣勢時（-3000G）逆転コンパス ---
+        comeback_compass = None
+        if gold_diff <= -2500:
+            comeback_compass = {
+                "active": True,
+                "strategy": "スプリットプッシュ ＆ 敵分断推奨 🧭",
+                "advice": "正面5v5は不利。サイドレーンを押して敵キャリーを1人拘束し、人数差を作ってオブジェクトを狙う！",
+                "gold_deficit": abs(gold_diff)
+            }
+
         # 時間フォーマット
         min_part = int(game_time_sec // 60)
         sec_part = int(game_time_sec % 60)
@@ -400,4 +437,11 @@ class HudStateEngine:
             "lane_dominance": lane_dominance,
             # 全ファイトの勝因・敗因ディープアナリティクス
             "all_fights_analyzed": all_fights_analyzed,
+            # 案A: 即死キルライン
+            "kill_line": kill_line,
+            # 案B: 現在フェーズ手順 ＆ 勝ちパターン手順書
+            "current_phase": current_phase,
+            "matchup_blueprint": blueprint_data,
+            # 案C: 劣勢時逆転コンパス
+            "comeback_compass": comeback_compass,
         }
