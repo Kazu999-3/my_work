@@ -17,6 +17,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
 
 from v2_CORE.settings import settings
 from v2_CORE._LOL.champ_id_normalizer import normalize_champion_id
+from v2_CORE._LOL.overlay.dynamic_build_advisor import DynamicBuildAdvisor
 
 HEAL_HEAVY_CHAMPIONS = {
     "Aatrox", "Warwick", "Vladimir", "Soraka", "Briar", "Swain",
@@ -253,26 +254,18 @@ class HudStateEngine:
         if spike_alerts:
             self.power_spike_alerts = spike_alerts
 
-        # --- 6. 敵ダメージ比率 ＆ 動的対抗ビルド提案 ---
-        enemy_has_heal = any(ep.get("championName") in HEAL_HEAVY_CHAMPIONS for ep in enemy_players)
-        enemy_has_heavy_cc = sum(1 for ep in enemy_players if ep.get("championName") in HEAVY_CC_CHAMPIONS) >= 2
-
-        build_recommendations = []
-        if enemy_has_heal:
-            build_recommendations.append("🩸 重傷アイテム推奨 (忘却のオーブ / 処刑人 / ブランブル)")
-        
-        # 敵防具の集計
-        enemy_armor_count = sum(
-            1 for ep in enemy_players for it in ep.get("items", [])
-            if any(k in it.get("displayName", "").lower() for k in ["armor", "sunfire", "thornmail", "heartsteel", "frozen"])
+        # --- 6. 動的対抗ビルド推薦 (Dynamic Build Advisor) ---
+        my_items = my_player_obj.get("items", []) if my_player_obj else []
+        next_item_advice = DynamicBuildAdvisor.advise_next_item(
+            my_champion=my_champion,
+            my_items=my_items,
+            enemy_players=enemy_players,
+            game_time_sec=game_time_sec
         )
-        if enemy_armor_count >= 3:
-            build_recommendations.append("🛡️ 物理貫通推奨 (ドミニクリガード / セリルダ / ブラッククリーバー)")
 
-        if enemy_has_heavy_cc:
-            build_recommendations.append("👟 耐久靴推奨: マーキュリーブーツ (CC耐性)")
-        else:
-            build_recommendations.append("👟 物理防御靴推奨: プレートスチール")
+        build_recommendations = [f"{next_item_advice['tag']}: {next_item_advice['item_name']} ({next_item_advice['price']}G)"]
+        if next_item_advice.get("reason"):
+            build_recommendations.append(next_item_advice["reason"])
 
         # --- 7. バロン・エルダーバフタイマー ---
         for ev in events:
@@ -312,6 +305,13 @@ class HudStateEngine:
                 "spell1": sp1,
                 "spell2": sp2,
             })
+        # --- 9. 対面攻略メモ ---
+        matchup_memo = self.get_matchup_memo(my_champion, enemy_champion)
+
+        # 時間フォーマット
+        min_part = int(game_time_sec // 60)
+        sec_part = int(game_time_sec % 60)
+        time_str = f"{min_part:02d}:{sec_part:02d}"
 
         return {
             "active": True,
@@ -341,4 +341,5 @@ class HudStateEngine:
             "recent_fight_damage": recent_fight_dmg,
             # 敵5人の動的詳細
             "enemy_team_details": enemy_team_details,
+            "next_item_advice": next_item_advice,
         }

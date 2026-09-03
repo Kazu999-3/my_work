@@ -110,14 +110,20 @@ class TopBarWidget(QWidget):
         self.cs_label.setText(f"🎯 {cs} ({cspm}/m)")
         self.cs_label.setStyleSheet(f"color: {cs_col}; font-size: 13px; font-weight: bold;")
 
-        # 1stリコール目標
-        gold_needed = state.get("target_gold_needed", 0)
-        waves = state.get("target_waves_needed", 0)
+        # 次のおすすめアイテム目標ゴールド
+        advice = state.get("next_item_advice", {})
+        target_price = advice.get("price", 1100)
+        target_item_short = advice.get("item_name", "1stコア")[:6]
+        my_gold = state.get("my_gold", 0)
+
+        gold_needed = max(0, target_price - my_gold)
+        waves = max(1, int((gold_needed + 120) / 125)) if gold_needed > 0 else 0
+
         if gold_needed > 0:
-            self.recall_label.setText(f"帰還まで {gold_needed}G ({waves}W)")
+            self.recall_label.setText(f"{target_item_short}まで {gold_needed}G ({waves}W)")
             self.recall_label.setStyleSheet("color: #fbbf24; font-size: 12px; font-weight: bold;")
         else:
-            self.recall_label.setText("1st帰還推奨！🟢")
+            self.recall_label.setText(f"{target_item_short} 購入可！🟢")
             self.recall_label.setStyleSheet("color: #22c55e; font-size: 12px; font-weight: bold;")
 
         # バフ
