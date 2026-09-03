@@ -1,10 +1,10 @@
 """
-Sovereign HUD - 敵サモナースペル ＆ Ultトラッカー (Spell & Ult Tracker Widget - Refined)
-======================================================================================
-1. 大きなチャンピオン顔アイコン (36px) ＋ Ult(R) ＋ Flash ＋ Spell2。
-2. 余計な説明文やロール文字を全廃し、極限までスマートに整理。
-3. クリック時の位置ズレを完全防止（ボタンクリックとウィンドウドラッグを完全分離）。
-4. 上部ドラッグバーまたは余白ドラッグで自由に移動 ＆ 位置自動保存。
+Sovereign HUD - 敵サモナースペル ＆ Ultトラッカー (動的クールダウン計算対応版)
+=============================================================================
+1. 敵のレベル（Lv6/11/16）およびスキルヘイスト（所持アイテム）に応じたUltクールダウン自動短縮。
+2. 明敏の靴（アイオニアブーツ）所持時のサモナースペル短縮（300s ➔ 267s）の自動計算。
+3. 大きなチャンピオン顔アイコン (36px) ＋ Ult(R) ＋ Flash ＋ Spell2。
+4. クリック時の位置ズレ完全防止 ＆ 位置自動記憶。
 """
 
 import time
@@ -16,7 +16,10 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtGui import QIcon, QPixmap
 from v2_CORE._LOL.overlay.hud_config import save_widget_position
 from v2_CORE._LOL.overlay.spell_asset_manager import (
-    SpellAssetManager, SPELL_COOLDOWNS, DEFAULT_ULT_COOLDOWNS
+    SpellAssetManager,
+    calculate_effective_ult_cd,
+    calculate_effective_spell_cd,
+    SPELL_COOLDOWNS,
 )
 
 class CoolDownButton(QPushButton):
@@ -31,6 +34,9 @@ class CoolDownButton(QPushButton):
         self.setFixedSize(36, 24)
         self.setIconSize(QSize(18, 18))
         self.update_appearance(ready=True)
+
+    def set_max_cd(self, new_cd: int):
+        self.max_cd = new_cd
 
     def trigger_cooldown(self):
         self.ready_time = time.time() + self.max_cd
@@ -95,7 +101,6 @@ class CoolDownButton(QPushButton):
                 }}
             """)
 
-    # ボタンクリック時にウィンドウ移動イベントが誤発火しないようイベントを遮断
     def mousePressEvent(self, event):
         event.accept()
         if event.button() == Qt.MouseButton.LeftButton:
@@ -117,6 +122,8 @@ class EnemyColumn(QWidget):
         self.champion = champion
         self.spell1 = spell1
         self.spell2 = spell2
+        self.level = 6
+        self.items = []
         self.init_ui()
 
     def init_ui(self):
@@ -135,40 +142,49 @@ class EnemyColumn(QWidget):
         col_layout.addWidget(self.avatar_label, alignment=Qt.AlignmentFlag.AlignCenter)
 
         # 2. [ R (Ult) ] ボタン
-        ult_cd = DEFAULT_ULT_COOLDOWNS.get(self.champion, 100)
+        ult_cd = calculate_effective_ult_cd(self.champion, self.level, self.items)
         self.btn_ult = CoolDownButton("ULT", "Ult", ult_cd, self)
         col_layout.addWidget(self.btn_ult, alignment=Qt.AlignmentFlag.AlignCenter)
 
         # 3. [ Flash ] ボタン
-        flash_cd = SPELL_COOLDOWNS.get(self.spell1, 300)
+        flash_cd = calculate_effective_spell_cd(self.spell1, self.items)
         self.btn_spell1 = CoolDownButton("SPELL", self.spell1, flash_cd, self)
         col_layout.addWidget(self.btn_spell1, alignment=Qt.AlignmentFlag.AlignCenter)
 
         # 4. [ Spell 2 (TP / Ignite等) ] ボタン
-        spell2_cd = SPELL_COOLDOWNS.get(self.spell2, 240)
+        spell2_cd = calculate_effective_spell_cd(self.spell2, self.items)
         self.btn_spell2 = CoolDownButton("SPELL", self.spell2, spell2_cd, self)
         col_layout.addWidget(self.btn_spell2, alignment=Qt.AlignmentFlag.AlignCenter)
 
-    def set_champion(self, champion: str, spell1: str = None, spell2: str = None):
-        if self.champion != champion:
+    def update_stats(self, champion: str, level: int, items: list, spell1: str = None, spell2: str = None):
+        """敵のレベルアップやアイテム購入を反映して実効CDを自動更新"""
+        if champion and self.champion != champion:
             self.champion = champion
             pix = SpellAssetManager.get_champion_icon(self.champion)
             if not pix.isNull():
                 self.avatar_label.setPixmap(pix)
-            self.btn_ult.max_cd = DEFAULT_ULT_COOLDOWNS.get(self.champion, 100)
-            self.btn_ult.update_appearance(ready=(self.btn_ult.ready_time == 0.0))
 
         if spell1 and self.spell1 != spell1:
             self.spell1 = spell1
             self.btn_spell1.spell_name = spell1
-            self.btn_spell1.max_cd = SPELL_COOLDOWNS.get(spell1, 300)
             self.btn_spell1.update_appearance(ready=(self.btn_spell1.ready_time == 0.0))
 
         if spell2 and self.spell2 != spell2:
             self.spell2 = spell2
             self.btn_spell2.spell_name = spell2
-            self.btn_spell2.max_cd = SPELL_COOLDOWNS.get(spell2, 240)
             self.btn_spell2.update_appearance(ready=(self.btn_spell2.ready_time == 0.0))
+
+        self.level = level
+        self.items = items
+
+        # 動的CD再計算
+        eff_ult = calculate_effective_ult_cd(self.champion, self.level, self.items)
+        eff_sp1 = calculate_effective_spell_cd(self.spell1, self.items)
+        eff_sp2 = calculate_effective_spell_cd(self.spell2, self.items)
+
+        self.btn_ult.set_max_cd(eff_ult)
+        self.btn_spell1.set_max_cd(eff_sp1)
+        self.btn_spell2.set_max_cd(eff_sp2)
 
     def update_tick(self):
         self.btn_ult.update_tick()
@@ -213,7 +229,7 @@ class SpellTrackerWidget(QWidget):
         card_layout.setContentsMargins(4, 2, 4, 4)
         card_layout.setSpacing(3)
 
-        # 極薄のドラッグハンドルバー (余計な説明文は完全削除)
+        # 極薄のドラッグハンドルバー
         self.drag_handle = QFrame(self.card_frame)
         self.drag_handle.setFixedHeight(6)
         self.drag_handle.setStyleSheet("""
@@ -254,7 +270,18 @@ class SpellTrackerWidget(QWidget):
         if not state or not state.get("active"):
             return
 
-    # ウィジェットの余白またはドラッグバーを掴んだ時だけドラッグ移動
+        details = state.get("enemy_team_details", [])
+        for i, ep_info in enumerate(details[:5]):
+            if i < len(self.columns):
+                self.columns[i].update_stats(
+                    champion=ep_info.get("champion", "Enemy"),
+                    level=ep_info.get("level", 6),
+                    items=ep_info.get("items", []),
+                    spell1=ep_info.get("spell1", "Flash"),
+                    spell2=ep_info.get("spell2", "Teleport")
+                )
+
+    # ドラッグ移動
     def mousePressEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
             self.is_dragging = True

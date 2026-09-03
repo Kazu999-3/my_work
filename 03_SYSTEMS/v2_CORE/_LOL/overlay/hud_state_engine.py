@@ -298,13 +298,20 @@ class HudStateEngine:
         if is_gank_danger or game_time_sec > 180:
             recent_fight_dmg = 1450 if game_time_sec < 300 else 2380
 
-        # --- 9. 対面攻略メモ ---
-        matchup_memo = self.get_matchup_memo(my_champion, enemy_champion)
-
-        # 時間フォーマット
-        min_part = int(game_time_sec // 60)
-        sec_part = int(game_time_sec % 60)
-        time_str = f"{min_part:02d}:{sec_part:02d}"
+        # --- 10. 敵5人の動的ステータス (Ult・スペル・アイテム・レベル) ---
+        enemy_team_details = []
+        for ep in enemy_players:
+            spells = ep.get("summonerSpells", {})
+            sp1 = spells.get("summonerSpellOne", {}).get("displayName", "Flash")
+            sp2 = spells.get("summonerSpellTwo", {}).get("displayName", "Teleport")
+            enemy_team_details.append({
+                "role": ep.get("position", "MID"),
+                "champion": ep.get("championName", "Enemy"),
+                "level": ep.get("level", 6),
+                "items": ep.get("items", []),
+                "spell1": sp1,
+                "spell2": sp2,
+            })
 
         return {
             "active": True,
@@ -332,4 +339,6 @@ class HudStateEngine:
             "build_recommendations": build_recommendations[:2],
             "buff_status": buff_status,
             "recent_fight_damage": recent_fight_dmg,
+            # 敵5人の動的詳細
+            "enemy_team_details": enemy_team_details,
         }
