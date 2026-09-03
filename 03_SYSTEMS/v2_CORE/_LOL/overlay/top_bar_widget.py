@@ -1,12 +1,12 @@
 """
-Sovereign HUD - トップステータスバー (Top Bar Widget)
-=====================================================
-画面最上部にスリークに配置される極薄・横長のステータスバー。
-時間、チームゴールド差、CSペース、バフ持続、1stリコール目標を横1行で美しく表示。
+Sovereign HUD - 経済＆マクロウィジェット (Top Right Widget)
+===========================================================
+画面右上に配置される半透明・高視認性パネル。
+透過度を高め、文字サイズを大きくして0.2秒で状況把握できるように設計。
 """
 
 from PyQt6.QtCore import Qt, QPoint
-from PyQt6.QtWidgets import QWidget, QHBoxLayout, QLabel, QFrame
+from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QFrame
 from PyQt6.QtGui import QColor
 
 class TopBarWidget(QWidget):
@@ -23,104 +23,106 @@ class TopBarWidget(QWidget):
             Qt.WindowType.Tool
         )
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
-        self.setFixedHeight(36)
+        self.setFixedWidth(290)
 
-        layout = QHBoxLayout(self)
+        layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
 
-        self.bar_frame = QFrame(self)
-        self.bar_frame.setStyleSheet("""
+        self.card_frame = QFrame(self)
+        self.card_frame.setStyleSheet("""
             QFrame {
-                background-color: rgba(16, 14, 22, 0.90);
-                border: 1px solid rgba(212, 140, 40, 0.4);
-                border-radius: 18px;
-                padding: 0px 14px;
+                background-color: rgba(14, 12, 20, 0.72);
+                border: 1px solid rgba(212, 140, 40, 0.35);
+                border-radius: 10px;
+                padding: 6px 10px;
             }
         """)
         
-        bar_layout = QHBoxLayout(self.bar_frame)
-        bar_layout.setContentsMargins(10, 0, 10, 0)
-        bar_layout.setSpacing(12)
+        card_layout = QVBoxLayout(self.card_frame)
+        card_layout.setContentsMargins(8, 6, 8, 6)
+        card_layout.setSpacing(5)
 
-        # 👑 ロゴ ＆ 時間
-        self.logo_label = QLabel("👑", self.bar_frame)
-        self.time_label = QLabel("00:00", self.bar_frame)
-        self.time_label.setStyleSheet("color: #a8a29e; font-size: 11px; font-weight: bold; font-family: monospace;")
+        # 1行目: 時間 ＆ チームゴールド差
+        row1 = QHBoxLayout()
+        self.time_label = QLabel("⏱ 00:00", self.card_frame)
+        self.time_label.setStyleSheet("color: #d6d3d1; font-size: 13px; font-weight: bold; font-family: monospace;")
+        
+        self.gold_label = QLabel("💰 ゴールド差: ---", self.card_frame)
+        self.gold_label.setStyleSheet("color: #eab308; font-size: 13px; font-weight: bold;")
 
-        # 💰 チームゴールド差
-        self.gold_label = QLabel("+0G 🟡", self.bar_frame)
-        self.gold_label.setStyleSheet("color: #eab308; font-size: 11px; font-weight: bold;")
+        row1.addWidget(self.time_label)
+        row1.addStretch()
+        row1.addWidget(self.gold_label)
+        card_layout.addLayout(row1)
 
-        # 🎯 CS / 分
-        self.cs_label = QLabel("0.0 CS/m", self.bar_frame)
-        self.cs_label.setStyleSheet("color: #22c55e; font-size: 11px; font-weight: bold;")
+        # 2行目: CSペース ＆ 1stリコール目標
+        row2 = QHBoxLayout()
+        self.cs_label = QLabel("🎯 CS: 0 (0.0/m)", self.card_frame)
+        self.cs_label.setStyleSheet("color: #22c55e; font-size: 13px; font-weight: bold;")
 
-        # 💰 1stリコール目標
-        self.recall_label = QLabel("1st目標: ---", self.bar_frame)
-        self.recall_label.setStyleSheet("color: #fbbf24; font-size: 11px;")
+        self.recall_label = QLabel("1st目標: ---", self.card_frame)
+        self.recall_label.setStyleSheet("color: #fbbf24; font-size: 12px; font-weight: bold;")
 
-        # 🟣 バフタイマー
-        self.buff_label = QLabel("", self.bar_frame)
-        self.buff_label.setStyleSheet("color: #c084fc; font-size: 11px; font-weight: bold;")
+        row2.addWidget(self.cs_label)
+        row2.addStretch()
+        row2.addWidget(self.recall_label)
+        card_layout.addLayout(row2)
+
+        # 3行目: バフタイマー (バロン/エルダー獲得時のみ表示)
+        self.buff_label = QLabel("", self.card_frame)
+        self.buff_label.setStyleSheet("""
+            background-color: rgba(168, 85, 247, 0.2);
+            color: #d8b4fe;
+            font-size: 12px;
+            font-weight: bold;
+            padding: 2px 6px;
+            border-radius: 4px;
+        """)
         self.buff_label.setVisible(False)
+        card_layout.addWidget(self.buff_label)
 
-        bar_layout.addWidget(self.logo_label)
-        bar_layout.addWidget(self.time_label)
-        bar_layout.addWidget(self._create_divider())
-        bar_layout.addWidget(self.gold_label)
-        bar_layout.addWidget(self._create_divider())
-        bar_layout.addWidget(self.cs_label)
-        bar_layout.addWidget(self._create_divider())
-        bar_layout.addWidget(self.recall_label)
-        bar_layout.addWidget(self.buff_label)
-
-        layout.addWidget(self.bar_frame)
+        layout.addWidget(self.card_frame)
         self.adjustSize()
-
-    def _create_divider(self):
-        d = QLabel("│", self.bar_frame)
-        d.setStyleSheet("color: rgba(255, 255, 255, 0.15); font-size: 10px;")
-        return d
 
     def update_data(self, state: dict):
         if not state or not state.get("active"):
-            self.time_label.setText("待機中")
-            self.gold_label.setText("---")
-            self.cs_label.setText("---")
-            self.recall_label.setText("LoL待機中")
+            self.time_label.setText("⏱ 待機中")
+            self.gold_label.setText("💰 ---")
+            self.cs_label.setText("🎯 0.0/m")
+            self.recall_label.setText("1st目標: ---")
             self.buff_label.setVisible(False)
             self.adjustSize()
             return
 
-        self.time_label.setText(state.get("game_time_str", "00:00"))
+        self.time_label.setText(f"⏱ {state.get('game_time_str', '00:00')}")
 
         # ゴールド差
         gold_str = state.get("gold_diff_str", "互角 🟡")
         gold_col = state.get("gold_diff_color", "#eab308")
         self.gold_label.setText(f"💰 {gold_str}")
-        self.gold_label.setStyleSheet(f"color: {gold_col}; font-size: 11px; font-weight: bold;")
+        self.gold_label.setStyleSheet(f"color: {gold_col}; font-size: 13px; font-weight: bold;")
 
         # CS
         cs = state.get("my_cs", 0)
         cspm = state.get("cs_per_min", 0.0)
         cs_col = state.get("cs_color", "#22c55e")
-        self.cs_label.setText(f"🎯 {cspm}/m ({cs})")
-        self.cs_label.setStyleSheet(f"color: {cs_col}; font-size: 11px; font-weight: bold;")
+        self.cs_label.setText(f"🎯 {cs} ({cspm}/m)")
+        self.cs_label.setStyleSheet(f"color: {cs_col}; font-size: 13px; font-weight: bold;")
 
         # 1stリコール目標
         gold_needed = state.get("target_gold_needed", 0)
         waves = state.get("target_waves_needed", 0)
         if gold_needed > 0:
-            self.recall_label.setText(f"1st帰還(1100G)まで {gold_needed}G ({waves}W)")
-            self.recall_label.setStyleSheet("color: #fbbf24; font-size: 11px;")
+            self.recall_label.setText(f"帰還まで {gold_needed}G ({waves}W)")
+            self.recall_label.setStyleSheet("color: #fbbf24; font-size: 12px; font-weight: bold;")
         else:
-            self.recall_label.setText("1st目標達成！(プッシュ後帰還)")
-            self.recall_label.setStyleSheet("color: #22c55e; font-size: 11px; font-weight: bold;")
+            self.recall_label.setText("1st帰還推奨！🟢")
+            self.recall_label.setStyleSheet("color: #22c55e; font-size: 12px; font-weight: bold;")
 
         # バフ
         buffs = state.get("buff_status", [])
         if buffs:
-            self.buff_label.setText(" │ " + " | ".join(buffs))
+            self.buff_label.setText(" | ".join(buffs))
             self.buff_label.setVisible(True)
         else:
             self.buff_label.setVisible(False)

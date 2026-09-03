@@ -1,8 +1,8 @@
 """
-Sovereign HUD - 対面インテルカード (Matchup Card Widget)
-======================================================
-画面端にコンパクトに配置される対面攻略メモ ＆ 動的ビルド推奨カード。
-ワンクリックで最小化/展開可能。
+Sovereign HUD - 対面インテルカード (Matchup Card Widget - オンデマンド展開型)
+========================================================================
+普段は左端に極小ピルボタンとして待機し、必要な時だけクリックで開いて確認できる。
+高透過度 ＆ 読みやすい13pxフォント。
 """
 
 from PyQt6.QtCore import Qt, QPoint
@@ -16,7 +16,7 @@ class MatchupCardWidget(QWidget):
         super().__init__()
         self.data_provider_cb = data_provider_cb
         self.drag_position = QPoint()
-        self.is_collapsed = False
+        self.is_expanded = False  # 普段は折りたたみ状態
         self.init_ui()
 
     def init_ui(self):
@@ -26,88 +26,97 @@ class MatchupCardWidget(QWidget):
             Qt.WindowType.Tool
         )
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
-        self.setFixedWidth(300)
+        self.setFixedWidth(310)
 
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
+        self.main_layout = QVBoxLayout(self)
+        self.main_layout.setContentsMargins(0, 0, 0, 0)
 
         self.card_frame = QFrame(self)
         self.card_frame.setStyleSheet("""
             QFrame {
-                background-color: rgba(18, 16, 26, 0.90);
-                border: 1px solid rgba(212, 140, 40, 0.4);
-                border-radius: 10px;
+                background-color: rgba(14, 12, 20, 0.75);
+                border: 1px solid rgba(212, 140, 40, 0.35);
+                border-radius: 8px;
             }
         """)
         
-        card_layout = QVBoxLayout(self.card_frame)
-        card_layout.setContentsMargins(10, 8, 10, 10)
-        card_layout.setSpacing(6)
+        self.card_layout = QVBoxLayout(self.card_frame)
+        self.card_layout.setContentsMargins(8, 6, 8, 6)
+        self.card_layout.setSpacing(6)
 
-        # ヘッダー行 (対面名 / 最小化ボタン / 閉じる)
-        header_layout = QHBoxLayout()
-        self.title_label = QLabel("⚔️ vs ---", self.card_frame)
-        self.title_label.setStyleSheet("color: #f5f5f4; font-weight: bold; font-size: 13px;")
-
-        self.collapse_btn = QPushButton("─", self.card_frame)
-        self.collapse_btn.setFixedSize(18, 18)
-        self.collapse_btn.setStyleSheet("""
+        # ヘッダー行 (クリックで展開/折りたたみ可能なピルバー)
+        self.toggle_btn = QPushButton("⚔️ vs --- (クリックで攻略展開 ▾)", self.card_frame)
+        self.toggle_btn.setStyleSheet("""
             QPushButton {
-                background-color: rgba(255, 255, 255, 0.08);
-                color: #e7e5e4;
-                border: none;
-                border-radius: 3px;
-                font-size: 10px;
+                background-color: transparent;
+                color: #f5f5f4;
                 font-weight: bold;
+                font-size: 13px;
+                text-align: left;
+                border: none;
+                padding: 2px 4px;
             }
             QPushButton:hover {
-                background-color: rgba(212, 140, 40, 0.4);
+                color: #fbbf24;
             }
         """)
-        self.collapse_btn.clicked.connect(self.toggle_collapse)
+        self.toggle_btn.clicked.connect(self.toggle_expand)
+        self.card_layout.addWidget(self.toggle_btn)
 
-        header_layout.addWidget(self.title_label)
-        header_layout.addStretch()
-        header_layout.addWidget(self.collapse_btn)
-        card_layout.addLayout(header_layout)
-
-        # コンテンツ領域（折りたたみ可能）
+        # 展開コンテンツ領域
         self.content_widget = QWidget(self.card_frame)
-        content_layout = QVBoxLayout(self.content_widget)
-        content_layout.setContentsMargins(0, 2, 0, 0)
-        content_layout.setSpacing(4)
+        self.content_layout = QVBoxLayout(self.content_widget)
+        self.content_layout.setContentsMargins(4, 2, 4, 4)
+        self.content_layout.setSpacing(5)
 
         # 立ち回り要点
         self.memo_line1 = QLabel("・対面メモを取得中...", self.content_widget)
-        self.memo_line1.setStyleSheet("color: #d6d3d1; font-size: 11px;")
+        self.memo_line1.setStyleSheet("color: #e2e8f0; font-size: 13px; line-height: 1.3;")
         self.memo_line1.setWordWrap(True)
 
         self.memo_line2 = QLabel("・---", self.content_widget)
-        self.memo_line2.setStyleSheet("color: #d6d3d1; font-size: 11px;")
+        self.memo_line2.setStyleSheet("color: #e2e8f0; font-size: 13px; line-height: 1.3;")
         self.memo_line2.setWordWrap(True)
 
-        content_layout.addWidget(self.memo_line1)
-        content_layout.addWidget(self.memo_line2)
+        self.content_layout.addWidget(self.memo_line1)
+        self.content_layout.addWidget(self.memo_line2)
 
         # 動的ビルド推奨行
         self.build_label = QLabel("🛡️ ビルド推奨: 分析中...", self.content_widget)
-        self.build_label.setStyleSheet("color: #38bdf8; font-size: 10px; font-weight: bold; margin-top: 2px;")
+        self.build_label.setStyleSheet("""
+            background-color: rgba(56, 189, 248, 0.12);
+            color: #7dd3fc;
+            font-size: 12px;
+            font-weight: bold;
+            padding: 4px 6px;
+            border-radius: 4px;
+            margin-top: 2px;
+        """)
         self.build_label.setWordWrap(True)
-        content_layout.addWidget(self.build_label)
+        self.content_layout.addWidget(self.build_label)
 
-        card_layout.addWidget(self.content_widget)
-        layout.addWidget(self.card_frame)
+        self.card_layout.addWidget(self.content_widget)
+        self.main_layout.addWidget(self.card_frame)
+
+        # 初期状態は折りたたみ
+        self.content_widget.setVisible(self.is_expanded)
         self.adjustSize()
 
-    def toggle_collapse(self):
-        self.is_collapsed = not self.is_collapsed
-        self.content_widget.setVisible(not self.is_collapsed)
-        self.collapse_btn.setText("＋" if self.is_collapsed else "─")
+    def toggle_expand(self):
+        self.is_expanded = not self.is_expanded
+        self.content_widget.setVisible(self.is_expanded)
+        self.update_header_text()
         self.adjustSize()
+
+    def update_header_text(self):
+        arrow = "▴ 閉じる" if self.is_expanded else "▾ 攻略メモ"
+        base_title = getattr(self, "current_matchup_title", "vs ---")
+        self.toggle_btn.setText(f"⚔️ {base_title} ({arrow})")
 
     def update_data(self, state: dict):
         if not state or not state.get("active"):
-            self.title_label.setText("⚔️ vs 試合待機中")
+            self.current_matchup_title = "vs 試合待機中"
+            self.update_header_text()
             self.memo_line1.setText("・ゲーム起動を待機しています...")
             self.memo_line2.setVisible(False)
             self.build_label.setVisible(False)
@@ -116,7 +125,8 @@ class MatchupCardWidget(QWidget):
 
         enemy_champ = state.get("enemy_champion", "Enemy")
         my_champ = state.get("my_champion", "")
-        self.title_label.setText(f"⚔️ {my_champ} vs {enemy_champ}")
+        self.current_matchup_title = f"{my_champ} vs {enemy_champ}"
+        self.update_header_text()
 
         memo = state.get("matchup_memo", {})
         pts = memo.get("key_points", [])

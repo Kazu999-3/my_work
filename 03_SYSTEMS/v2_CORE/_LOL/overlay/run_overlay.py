@@ -42,12 +42,12 @@ def main():
     screen_w = screen.width()
     screen_h = screen.height()
 
-    # トップバー: 画面中央最上部
-    top_bar.move((screen_w - top_bar.width()) // 2, 12)
-    # 対面カード: 画面左上 (少し下)
-    matchup_card.move(24, 60)
-    # アラートトースト: 画面中央上 (トップバーの少し下)
-    toast_alert.move((screen_w - toast_alert.width()) // 2, 80)
+    # ① 経済＆マクロ (TopBarWidget): 画面右上
+    top_bar.move(screen_w - top_bar.width() - 24, 50)
+    # ② 対面インテル (MatchupCardWidget): 画面左側
+    matchup_card.move(24, 80)
+    # ③ アラートトースト (ToastAlertWidget): 画面中央上部
+    toast_alert.move((screen_w - toast_alert.width()) // 2, 70)
 
     top_bar.show()
     matchup_card.show()

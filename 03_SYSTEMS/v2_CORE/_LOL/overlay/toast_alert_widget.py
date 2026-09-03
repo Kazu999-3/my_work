@@ -3,12 +3,11 @@ Sovereign HUD - 動的アラートトースト (Toast Alert Widget)
 ========================================================
 普段は完全に非表示。
 敵コア完成、ガンク危険時間突入、ファイト終了時などの重要なイベント発生時のみ、
-画面中央に数秒間フワッと出現して自動的にフェードアウトする。
+画面中央上に高透過度 ＆ 大きな文字(15px太字)でフワッと出現し、数秒で自動消去。
 """
 
 from PyQt6.QtCore import Qt, QTimer, QPoint
 from PyQt6.QtWidgets import QWidget, QHBoxLayout, QLabel, QFrame
-from PyQt6.QtGui import QColor
 
 class ToastAlertWidget(QWidget):
     def __init__(self):
@@ -17,7 +16,7 @@ class ToastAlertWidget(QWidget):
         self.last_alert_id = None
         self.init_ui()
 
-        # 自動非表示タイマー (5秒)
+        # 自動非表示タイマー (5.5秒)
         self.hide_timer = QTimer(self)
         self.hide_timer.setSingleShot(True)
         self.hide_timer.timeout.connect(self.hide_toast)
@@ -29,7 +28,7 @@ class ToastAlertWidget(QWidget):
             Qt.WindowType.Tool
         )
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
-        self.setFixedHeight(44)
+        self.setFixedHeight(48)
 
         layout = QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -38,65 +37,64 @@ class ToastAlertWidget(QWidget):
         self.toast_frame.setObjectName("toastFrame")
         self.toast_frame.setStyleSheet("""
             QFrame#toastFrame {
-                background-color: rgba(30, 15, 20, 0.95);
-                border: 1px solid #ef4444;
-                border-radius: 8px;
-                padding: 4px 12px;
+                background-color: rgba(22, 10, 16, 0.78);
+                border: 2px solid #ef4444;
+                border-radius: 10px;
+                padding: 4px 16px;
             }
         """)
 
         toast_layout = QHBoxLayout(self.toast_frame)
-        toast_layout.setContentsMargins(10, 4, 10, 4)
-        toast_layout.setSpacing(8)
+        toast_layout.setContentsMargins(12, 4, 12, 4)
+        toast_layout.setSpacing(10)
 
         self.icon_label = QLabel("⚠️", self.toast_frame)
-        self.icon_label.setStyleSheet("font-size: 14px;")
+        self.icon_label.setStyleSheet("font-size: 18px;")
 
         self.message_label = QLabel("アラートメッセージ", self.toast_frame)
-        self.message_label.setStyleSheet("color: #fecaca; font-weight: bold; font-size: 12px;")
+        self.message_label.setStyleSheet("color: #fee2e2; font-weight: bold; font-size: 15px; letter-spacing: 0.5px;")
 
         toast_layout.addWidget(self.icon_label)
         toast_layout.addWidget(self.message_label)
 
         layout.addWidget(self.toast_frame)
         self.adjustSize()
-        self.hide()  # 初期状態は非表示
+        self.hide()
 
-    def show_alert(self, icon: str, message: str, alert_type: str = "danger", duration_ms: int = 5000):
-        """アラートを表示して自動消去タイマーを開始"""
+    def show_alert(self, icon: str, message: str, alert_type: str = "danger", duration_ms: int = 5500):
         self.icon_label.setText(icon)
         self.message_label.setText(message)
 
         if alert_type == "spike":
             self.toast_frame.setStyleSheet("""
                 QFrame#toastFrame {
-                    background-color: rgba(45, 20, 10, 0.95);
-                    border: 1px solid #f97316;
-                    border-radius: 8px;
-                    padding: 4px 12px;
+                    background-color: rgba(35, 15, 8, 0.82);
+                    border: 2px solid #f97316;
+                    border-radius: 10px;
+                    padding: 4px 16px;
                 }
             """)
-            self.message_label.setStyleSheet("color: #fdba74; font-weight: bold; font-size: 12px;")
+            self.message_label.setStyleSheet("color: #ffedd5; font-weight: bold; font-size: 15px;")
         elif alert_type == "fight":
             self.toast_frame.setStyleSheet("""
                 QFrame#toastFrame {
-                    background-color: rgba(35, 10, 40, 0.95);
-                    border: 1px solid #c084fc;
-                    border-radius: 8px;
-                    padding: 4px 12px;
+                    background-color: rgba(28, 8, 35, 0.82);
+                    border: 2px solid #c084fc;
+                    border-radius: 10px;
+                    padding: 4px 16px;
                 }
             """)
-            self.message_label.setStyleSheet("color: #e9d5ff; font-weight: bold; font-size: 12px;")
+            self.message_label.setStyleSheet("color: #fae8ff; font-weight: bold; font-size: 15px;")
         else:
             self.toast_frame.setStyleSheet("""
                 QFrame#toastFrame {
-                    background-color: rgba(45, 12, 12, 0.95);
-                    border: 1px solid #ef4444;
-                    border-radius: 8px;
-                    padding: 4px 12px;
+                    background-color: rgba(35, 8, 8, 0.82);
+                    border: 2px solid #ef4444;
+                    border-radius: 10px;
+                    padding: 4px 16px;
                 }
             """)
-            self.message_label.setStyleSheet("color: #fecaca; font-weight: bold; font-size: 12px;")
+            self.message_label.setStyleSheet("color: #fee2e2; font-weight: bold; font-size: 15px;")
 
         self.adjustSize()
         self.show()
@@ -106,7 +104,6 @@ class ToastAlertWidget(QWidget):
         self.hide()
 
     def update_events(self, state: dict):
-        """ステートから新着アラートを監視してトーストをトリガー"""
         if not state or not state.get("active"):
             return
 
