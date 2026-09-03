@@ -482,7 +482,6 @@ League of Legendsの最新パッチにおける、チャンピオン「{champion
                 trend_data = json.loads(res_text)
                 logger.info("✅ Successfully generated trend data using local Ollama model fallback.")
             except Exception as ollama_e:
-                global _quota_hit_this_run
                 _quota_hit_this_run = True
                 logger.warning(f"⚠️ API制限のため今回の定期更新は安全にスキップされました (既存データを維持します): {ollama_e}")
                 return False
