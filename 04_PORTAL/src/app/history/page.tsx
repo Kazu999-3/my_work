@@ -83,14 +83,22 @@ export default function HistoryPage() {
     <div className="min-h-screen bg-background text-stone-800 p-4 md:p-8">
       <div className="max-w-[1400px] mx-auto space-y-8">
         
-        {/* 戻るリンク */}
-        <div className="flex items-center gap-2">
+        {/* 戻るリンク ＆ アナリティクスリンク */}
+        <div className="flex items-center justify-between flex-wrap gap-3">
           <Link
             href="/"
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-stone-200 text-stone-600 hover:text-stone-900 font-bold text-xs shadow-2xs hover:bg-stone-50 transition"
           >
             <span>←</span>
             <span>ポータルトップへ戻る</span>
+          </Link>
+
+          <Link
+            href="/history/analytics"
+            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-xl bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white font-bold text-xs shadow-sm transition"
+          >
+            <span>👑 集団戦ディープアナリティクスを見る</span>
+            <span>➔</span>
           </Link>
         </div>
 

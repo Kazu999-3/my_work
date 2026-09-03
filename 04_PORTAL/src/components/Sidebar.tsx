@@ -100,6 +100,7 @@ const MENU_ITEMS: MenuItem[] = [
   { id: 'leaderboard', label: '順位表', shortLabel: '順位', icon: Trophy, href: '/leaderboard', color: 'text-yellow-400', activeBg: 'bg-yellow-400/15' },
   { id: 'synergy', label: 'チームシナジー', shortLabel: '相性', icon: HeartHandshake, href: '/synergy', color: 'text-fuchsia-400', activeBg: 'bg-fuchsia-400/15' },
   { id: 'history', label: '試合履歴', shortLabel: '履歴', icon: Swords, href: '/history', color: 'text-orange-400', activeBg: 'bg-orange-400/15' },
+  { id: 'analytics', label: '集団戦アナリティクス', shortLabel: '集団戦', icon: Flame, href: '/history/analytics', color: 'text-purple-400', activeBg: 'bg-purple-400/15' },
   { id: 'changelog', label: '更新情報', shortLabel: '更新', icon: ScrollText, href: '/changelog', color: 'text-cyan-400', activeBg: 'bg-cyan-400/15' },
   { id: 'login', label: 'ログイン', shortLabel: '認証', icon: Shield, href: '/login', color: 'text-indigo-400', activeBg: 'bg-indigo-400/15' },
 ];
@@ -107,6 +108,7 @@ const MENU_ITEMS: MenuItem[] = [
 const ADMIN_ONLY_MENU_ITEMS: MenuItem[] = [
   // ── 🎮 プレイ ＆ コーチ ──
   { id: 'coach', label: 'ソロQコーチ', shortLabel: 'コーチ', icon: Sparkles, href: '/coach', color: 'text-indigo-500', activeBg: 'bg-indigo-500/15', section: 'プレイ ＆ コーチ' },
+  { id: 'match-analytics', label: '集団戦アナリティクス', shortLabel: '集団戦', icon: Flame, href: '/history/analytics', color: 'text-purple-400', activeBg: 'bg-purple-400/15', section: 'プレイ ＆ コーチ' },
   // ── 📖 攻略・ナレッジ ──
   { id: 'champions', label: '攻略ナレッジハブ', shortLabel: '辞典', icon: BookHeart, href: '/champions', color: 'text-[#c89b3c]', activeBg: 'bg-[#c89b3c]/15', section: '攻略・ナレッジ' },
   // ── 📊 大会 ＆ コミュニティ ──
