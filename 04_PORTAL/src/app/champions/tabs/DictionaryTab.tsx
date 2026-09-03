@@ -14,6 +14,7 @@ import { Spinner } from '../../../components/Feedback';
 import ChampionFactCheckPanel from '../ChampionFactCheckPanel';
 import ChampionRevisionHistory from '../ChampionRevisionHistory';
 import { diffLines, diffSummary, diffSideBySide } from '../../../lib/diffUtils';
+import MatchupBlueprintCard from '../../coach/MatchupBlueprintCard';
 
 function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
   const searchParams = useSearchParams();
@@ -1477,6 +1478,14 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
             ) : (
               <p className="text-gray-500 italic text-xs py-4">このチャンピオン対面での過去の敗北・反省点（教訓）はありません。良好な状態です！</p>
             )}
+          </div>
+
+          {/* ⚔️ 対面完全攻略手順書 ＆ 即死キルライン危険メーター (Sovereign Victory Loop 逆展開) */}
+          <div className="col-span-1 md:col-span-2">
+            <MatchupBlueprintCard
+              myChampion="Aatrox"
+              enemyChampion={selected?.id || "Darius"}
+            />
           </div>
 
           {/* 🏆 プロ推奨ルーン・ビルド (自動収集) */}

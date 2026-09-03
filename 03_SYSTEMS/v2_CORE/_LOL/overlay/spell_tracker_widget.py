@@ -266,7 +266,10 @@ class SpellTrackerWidget(QWidget):
         for col in self.columns:
             col.update_tick()
 
-    def update_enemies(self, state: dict):
+    def update_data(self, state: dict):
+        self.update_enemy_status(state)
+
+    def update_enemy_status(self, state: dict):
         if not state or not state.get("active"):
             return
 

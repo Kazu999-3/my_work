@@ -562,6 +562,22 @@ function runBalanceSearch(players: Player[], ctx: BalanceContext): RawBalanceCan
         penalty += calcTeamSpreadPenalty(teamA, pA);
         penalty += calcTeamSpreadPenalty(teamB, pB);
 
+        // ★ レーン対面格差（対面同士の実力差）の極小化ペナルティ
+        let maxLaneDiff = 0;
+        let sumLaneDiffSq = 0;
+        for (let r = 0; r < 5; r++) {
+          const role = ROLES[r];
+          const diff = Math.abs(teamA[r].rates[role] - teamB[r].rates[role]);
+          if (diff > maxLaneDiff) maxLaneDiff = diff;
+          sumLaneDiffSq += Math.pow(diff, 2);
+          if (diff >= 600) {
+            penalty += 150000; // 対面で超格差（レーン崩壊）
+          } else if (diff >= 400) {
+            penalty += 40000;  // 対面で中格差
+          }
+        }
+        penalty += sumLaneDiffSq * 0.05; // 対面差二乗和による連続ペナルティ
+
         const mainShortfall = 10 - mainCount;
         penalty += mainShortfall * 80000;
 
