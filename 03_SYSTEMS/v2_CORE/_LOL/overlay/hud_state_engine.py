@@ -210,7 +210,7 @@ class HudStateEngine:
         gold_needed = max(0, int(TARGET_1ST_RECALL_GOLD - my_gold))
         waves_needed = max(1, int((gold_needed + 120) / 125)) if gold_needed > 0 else 0
 
-        # --- 4. チーム総アイテムゴールド差 ---
+        # --- 4. チーム総アイテムゴールド差 ＆ ロール別対面ゴールド差 ---
         ally_item_gold = sum(
             item.get("price", 0) * item.get("count", 1)
             for p in ally_players for item in p.get("items", [])
@@ -229,6 +229,43 @@ class HudStateEngine:
         else:
             gold_diff_str = f"ゴールド差 ほぼ互角 ({gold_diff:+d}G) 🟡"
             gold_diff_color = "#eab308"
+
+        # 各レーン（TOP, JG, MID, ADC, SUP）の対面ゴールド差
+        roles_order = ["TOP", "JUNGLE", "MIDDLE", "BOTTOM", "UTILITY"]
+        role_label_map = {"TOP": "TOP", "JUNGLE": "JG", "MIDDLE": "MID", "BOTTOM": "ADC", "UTILITY": "SUP"}
+        lane_dominance = []
+
+        for r_key in roles_order:
+            ally_p = next((p for p in ally_players if p.get("position") == r_key), None)
+            enemy_p = next((p for p in enemy_players if p.get("position") == r_key), None)
+
+            ally_g = sum(it.get("price", 0) * it.get("count", 1) for it in ally_p.get("items", [])) if ally_p else 0
+            enemy_g = sum(it.get("price", 0) * it.get("count", 1) for it in enemy_p.get("items", [])) if enemy_p else 0
+            diff = ally_g - enemy_g
+
+            lbl = role_label_map.get(r_key, r_key)
+            a_champ = ally_p.get("championName", "Ally") if ally_p else "Ally"
+            e_champ = enemy_p.get("championName", "Enemy") if enemy_p else "Enemy"
+
+            if diff >= 300:
+                status = "味方リード 🟢"
+                color = "#22c55e"
+            elif diff <= -300:
+                status = "敵リード 🔴"
+                color = "#ef4444"
+            else:
+                status = "互角 🟡"
+                color = "#eab308"
+
+            lane_dominance.append({
+                "role": lbl,
+                "diff": diff,
+                "diff_str": f"{diff:+d}G",
+                "status": status,
+                "color": color,
+                "ally_champ": a_champ,
+                "enemy_champ": e_champ
+            })
 
         # --- 5. 敵コアアイテム完成 ＆ パワースパイク検知 ---
         spike_alerts = []
@@ -342,4 +379,6 @@ class HudStateEngine:
             # 敵5人の動的詳細
             "enemy_team_details": enemy_team_details,
             "next_item_advice": next_item_advice,
+            # ロール別対面ゴールド差
+            "lane_dominance": lane_dominance,
         }

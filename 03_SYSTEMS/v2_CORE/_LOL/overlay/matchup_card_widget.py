@@ -1,14 +1,13 @@
 """
-Sovereign HUD - 対面インテルカード (Matchup Card Widget - 動的ビルド推薦対応版)
-================================================================================
-普段は左端に極小ピルボタンとして待機し、必要な時だけクリックで開いて確認できる。
-高透過度 ＆ 読みやすい13pxフォント ＋ リアルタイム動的対抗アイテム推薦。
+Sovereign HUD - 対面インテル ＆ 動的ビルドカード (Matchup Card Widget - フルオープン版)
+======================================================================================
+TABキー押下時にスッと表示される、折りたたみ不要の完全展開型インテルカード。
+対面攻略メモ ＋ 👑動的ビルド推薦カード（タグ・アイテム名・理由）を高透過・大フォントで描画。
 """
 
 from PyQt6.QtCore import Qt, QPoint
 from PyQt6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QLabel,
-    QPushButton, QFrame
+    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QFrame
 )
 from v2_CORE._LOL.overlay.hud_config import save_widget_position
 
@@ -17,7 +16,6 @@ class MatchupCardWidget(QWidget):
         super().__init__()
         self.data_provider_cb = data_provider_cb
         self.drag_position = QPoint()
-        self.is_expanded = False
         self.init_ui()
 
     def init_ui(self):
@@ -27,7 +25,7 @@ class MatchupCardWidget(QWidget):
             Qt.WindowType.Tool
         )
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
-        self.setFixedWidth(320)
+        self.setFixedWidth(330)
 
         self.main_layout = QVBoxLayout(self)
         self.main_layout.setContentsMargins(0, 0, 0, 0)
@@ -35,43 +33,23 @@ class MatchupCardWidget(QWidget):
         self.card_frame = QFrame(self)
         self.card_frame.setStyleSheet("""
             QFrame {
-                background-color: rgba(14, 12, 20, 0.78);
-                border: 1px solid rgba(212, 140, 40, 0.35);
-                border-radius: 8px;
+                background-color: rgba(14, 12, 20, 0.82);
+                border: 1px solid rgba(212, 140, 40, 0.40);
+                border-radius: 10px;
             }
         """)
         
-        self.card_layout = QVBoxLayout(self.card_frame)
-        self.card_layout.setContentsMargins(8, 6, 8, 8)
-        self.card_layout.setSpacing(6)
+        card_layout = QVBoxLayout(self.card_frame)
+        card_layout.setContentsMargins(10, 8, 10, 10)
+        card_layout.setSpacing(6)
 
-        # ヘッダー行 (クリックで展開/折りたたみ可能なピルバー)
-        self.toggle_btn = QPushButton("⚔️ vs --- (クリックで攻略展開 ▾)", self.card_frame)
-        self.toggle_btn.setStyleSheet("""
-            QPushButton {
-                background-color: transparent;
-                color: #f5f5f4;
-                font-weight: bold;
-                font-size: 13px;
-                text-align: left;
-                border: none;
-                padding: 2px 4px;
-            }
-            QPushButton:hover {
-                color: #fbbf24;
-            }
-        """)
-        self.toggle_btn.clicked.connect(self.toggle_expand)
-        self.card_layout.addWidget(self.toggle_btn)
+        # 1. タイトルヘッダー (対面カード名)
+        self.title_label = QLabel("⚔️ vs ---", self.card_frame)
+        self.title_label.setStyleSheet("color: #f5f5f4; font-weight: bold; font-size: 14px;")
+        card_layout.addWidget(self.title_label)
 
-        # 展開コンテンツ領域
-        self.content_widget = QWidget(self.card_frame)
-        self.content_layout = QVBoxLayout(self.content_widget)
-        self.content_layout.setContentsMargins(4, 2, 4, 4)
-        self.content_layout.setSpacing(6)
-
-        # 立ち回り要点フレーム
-        self.memo_frame = QFrame(self.content_widget)
+        # 2. 立ち回り要点フレーム
+        self.memo_frame = QFrame(self.card_frame)
         memo_layout = QVBoxLayout(self.memo_frame)
         memo_layout.setContentsMargins(0, 0, 0, 0)
         memo_layout.setSpacing(3)
@@ -86,21 +64,21 @@ class MatchupCardWidget(QWidget):
 
         memo_layout.addWidget(self.memo_line1)
         memo_layout.addWidget(self.memo_line2)
-        self.content_layout.addWidget(self.memo_frame)
+        card_layout.addWidget(self.memo_frame)
 
-        # 動的ビルド推薦フレーム (リッチカード)
-        self.build_frame = QFrame(self.content_widget)
+        # 3. 動的ビルド推薦フレーム (リッチカード)
+        self.build_frame = QFrame(self.card_frame)
         self.build_frame.setStyleSheet("""
             QFrame {
-                background-color: rgba(30, 25, 40, 0.85);
-                border: 1px solid rgba(56, 189, 248, 0.4);
+                background-color: rgba(26, 20, 36, 0.90);
+                border: 1px solid rgba(56, 189, 248, 0.45);
                 border-radius: 6px;
                 padding: 4px;
             }
         """)
         build_layout = QVBoxLayout(self.build_frame)
-        build_layout.setContentsMargins(6, 4, 6, 4)
-        build_layout.setSpacing(2)
+        build_layout.setContentsMargins(8, 6, 8, 6)
+        build_layout.setSpacing(3)
 
         self.build_title = QLabel("👑 次のおすすめアイテム", self.build_frame)
         self.build_title.setStyleSheet("color: #38bdf8; font-size: 11px; font-weight: bold;")
@@ -111,32 +89,17 @@ class MatchupCardWidget(QWidget):
         build_layout.addWidget(self.build_item_name)
 
         self.build_reason = QLabel("敵の回復量が激しいため、800G素材で対策！", self.build_frame)
-        self.build_reason.setStyleSheet("color: #cbd5e1; font-size: 11px; line-height: 1.2;")
+        self.build_reason.setStyleSheet("color: #cbd5e1; font-size: 11px; line-height: 1.3;")
         self.build_reason.setWordWrap(True)
         build_layout.addWidget(self.build_reason)
 
-        self.content_layout.addWidget(self.build_frame)
-        self.card_layout.addWidget(self.content_widget)
+        card_layout.addWidget(self.build_frame)
         self.main_layout.addWidget(self.card_frame)
-
-        self.content_widget.setVisible(self.is_expanded)
         self.adjustSize()
-
-    def toggle_expand(self):
-        self.is_expanded = not self.is_expanded
-        self.content_widget.setVisible(self.is_expanded)
-        self.update_header_text()
-        self.adjustSize()
-
-    def update_header_text(self):
-        arrow = "▴ 閉じる" if self.is_expanded else "▾ 攻略＆ビルド"
-        base_title = getattr(self, "current_matchup_title", "vs ---")
-        self.toggle_btn.setText(f"⚔️ {base_title} ({arrow})")
 
     def update_data(self, state: dict):
         if not state or not state.get("active"):
-            self.current_matchup_title = "vs 試合待機中"
-            self.update_header_text()
+            self.title_label.setText("⚔️ vs 試合待機中")
             self.memo_line1.setText("・ゲーム起動を待機しています...")
             self.memo_line2.setVisible(False)
             self.build_frame.setVisible(False)
@@ -145,8 +108,7 @@ class MatchupCardWidget(QWidget):
 
         enemy_champ = state.get("enemy_champion", "Enemy")
         my_champ = state.get("my_champion", "")
-        self.current_matchup_title = f"{my_champ} vs {enemy_champ}"
-        self.update_header_text()
+        self.title_label.setText(f"⚔️ {my_champ}  vs  {enemy_champ}")
 
         memo = state.get("matchup_memo", {})
         pts = memo.get("key_points", [])
@@ -161,7 +123,7 @@ class MatchupCardWidget(QWidget):
         else:
             self.memo_line2.setVisible(False)
 
-        # 動的ビルド推薦の反映
+        # 動的ビルド推薦
         advice = state.get("next_item_advice")
         if advice:
             self.build_title.setText(f"👑 {advice.get('tag', '次のおすすめアイテム')}")
