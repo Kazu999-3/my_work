@@ -17,6 +17,7 @@ import PlayerStyleRadarCard from '../../components/coach/PlayerStyleRadarCard';
 import ChampionQuickSelector from '../../components/coach/ChampionQuickSelector';
 import MatchupSmartCard from './MatchupSmartCard';
 import MatchFightsAnalyticsCard from './MatchFightsAnalyticsCard';
+import MatchupBlueprintCard from './MatchupBlueprintCard';
 
 // ============================
 // 型定義
@@ -1708,6 +1709,11 @@ export default function CoachPage() {
                 champion={sharedChampion}
                 enemyChampion={sharedEnemyChampion}
                 onSelectChampion={setSharedChampion}
+              />
+              {/* 即死キルライン危険メーター ＆ 3段階勝ちパターン完全手順書 */}
+              <MatchupBlueprintCard
+                myChampion={sharedChampion}
+                enemyChampion={sharedEnemyChampion}
               />
             </div>
 

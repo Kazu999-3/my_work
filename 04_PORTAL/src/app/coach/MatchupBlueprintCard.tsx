@@ -1,0 +1,175 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { Shield, Skull, Zap, Swords, ChevronRight, AlertTriangle } from 'lucide-react';
+
+interface Phase {
+  phase: string;
+  title: string;
+  action: string;
+  win_trigger: string;
+  badge: string;
+}
+
+interface KillLineData {
+  total_lethal_damage: number;
+  raw_burst_damage: number;
+  ignite_damage: number;
+  kill_hp_percent: number;
+  my_max_hp: number;
+  safe_hp_threshold: number;
+  danger_badge: string;
+  danger_color: string;
+  advice: string;
+}
+
+interface BlueprintResponse {
+  success: boolean;
+  my_champion: string;
+  enemy_champion: string;
+  enemy_level: number;
+  kill_line: KillLineData;
+  blueprint: {
+    phases: Phase[];
+  };
+}
+
+export default function MatchupBlueprintCard({
+  myChampion = 'Aatrox',
+  enemyChampion = 'Darius'
+}: {
+  myChampion?: string;
+  enemyChampion?: string;
+}) {
+  const [data, setData] = useState<BlueprintResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!enemyChampion) return;
+    setLoading(true);
+    fetch(`/api/lol/matchup-blueprint?my=${encodeURIComponent(myChampion)}&enemy=${encodeURIComponent(enemyChampion)}`)
+      .then((res) => res.json())
+      .then((d) => {
+        setData(d);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error(err);
+        setLoading(false);
+      });
+  }, [myChampion, enemyChampion]);
+
+  if (loading) {
+    return (
+      <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-xs animate-pulse">
+        <div className="h-4 bg-stone-200 rounded w-1/3 mb-3"></div>
+        <div className="h-16 bg-stone-100 rounded-xl mb-4"></div>
+        <div className="h-24 bg-stone-100 rounded-xl"></div>
+      </div>
+    );
+  }
+
+  if (!data || !data.kill_line) return null;
+
+  const { kill_line, blueprint } = data;
+
+  return (
+    <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-xs text-stone-900 space-y-5">
+      {/* ヘッダー */}
+      <div className="flex items-center justify-between border-b border-stone-100 pb-3 flex-wrap gap-2">
+        <div className="flex items-center gap-2">
+          <span className="px-2 py-0.5 bg-amber-100 text-amber-800 border border-amber-200 rounded-md text-[10px] font-black uppercase tracking-wider">
+            Matchup Blueprint
+          </span>
+          <h3 className="text-sm md:text-base font-extrabold text-stone-900 flex items-center gap-1.5">
+            <span>⚔️ {data.my_champion} vs {data.enemy_champion}</span>
+            <span className="text-stone-400 text-xs font-bold">完全攻略手順書</span>
+          </h3>
+        </div>
+        <span className="text-xs font-extrabold px-2.5 py-0.5 rounded-md border bg-stone-50 border-stone-200 text-stone-700">
+          Lv6 フルコンボ算定
+        </span>
+      </div>
+
+      {/* 案A: 即死キルライン（致死ダメージ）境界メーター */}
+      <div className="bg-gradient-to-br from-rose-50/60 via-amber-50/40 to-white border border-rose-200/80 rounded-xl p-4 space-y-3 shadow-2xs">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div className="flex items-center gap-2">
+            <Skull className="w-4 h-4 text-rose-600" />
+            <span className="text-xs font-black text-stone-900">即死キルライン（敵Lv6フルコンボ最大火力）</span>
+          </div>
+          <span className="text-xs font-black text-rose-700 font-mono bg-rose-100/80 px-2.5 py-0.5 rounded-md border border-rose-200">
+            {kill_line.total_lethal_damage} dmg (HP {kill_line.kill_hp_percent}% 以下即死) {kill_line.danger_badge}
+          </span>
+        </div>
+
+        {/* 視覚的HP即死メーター */}
+        <div className="space-y-1">
+          <div className="h-4 w-full bg-stone-200 rounded-full overflow-hidden flex border border-stone-300">
+            {/* 安全ゾーン */}
+            <div
+              style={{ width: `${100 - kill_line.kill_hp_percent}%` }}
+              className="bg-emerald-500 h-full flex items-center justify-center text-[9px] font-black text-white"
+            >
+              安全圏 (HP {100 - kill_line.kill_hp_percent}%以上)
+            </div>
+            {/* 即死ゾーン */}
+            <div
+              style={{ width: `${kill_line.kill_hp_percent}%` }}
+              className="bg-rose-500 h-full flex items-center justify-center text-[9px] font-black text-white animate-pulse"
+            >
+              💀 即死圏 ({kill_line.kill_hp_percent}%)
+            </div>
+          </div>
+          <div className="flex justify-between text-[10px] font-mono font-bold text-stone-400">
+            <span>0 HP</span>
+            <span>致死境界: {kill_line.total_lethal_damage} HP</span>
+            <span>最大 {kill_line.my_max_hp} HP</span>
+          </div>
+        </div>
+
+        <p className="text-xs font-bold text-stone-700 bg-white/80 p-2.5 rounded-lg border border-rose-100">
+          💡 <span className="text-rose-700">【安全管理】</span> {kill_line.advice}
+        </p>
+      </div>
+
+      {/* 案B: レーン戦3段階勝ちパターン手順書 */}
+      <div className="space-y-3">
+        <div className="flex items-center gap-1.5 text-xs font-black text-stone-800">
+          <Zap className="w-4 h-4 text-amber-600" />
+          <span>レーン戦 3段階勝ちパターン・タイムライン</span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {blueprint.phases.map((p, idx) => (
+            <div
+              key={idx}
+              className="bg-stone-50/70 border border-stone-200 rounded-xl p-3.5 space-y-2 flex flex-col justify-between shadow-2xs"
+            >
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="font-extrabold text-amber-900 bg-amber-100/80 px-2 py-0.5 rounded border border-amber-200">
+                    {p.phase}
+                  </span>
+                  <span className="font-bold text-stone-600 text-[10px]">
+                    {p.badge}
+                  </span>
+                </div>
+                <h4 className="text-xs font-black text-stone-900 leading-snug">
+                  {p.title}
+                </h4>
+                <p className="text-[11px] text-stone-600 leading-relaxed font-medium">
+                  {p.action}
+                </p>
+              </div>
+
+              <div className="pt-2 border-t border-stone-200/60 text-[10px] text-emerald-800 font-bold bg-emerald-50/60 p-1.5 rounded">
+                🎯 クリア条件: {p.win_trigger}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
