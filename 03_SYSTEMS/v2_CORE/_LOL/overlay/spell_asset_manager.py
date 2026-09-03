@@ -28,6 +28,19 @@ SPELL_IMG_MAP = {
     "Smite": f"{CDN_BASE}/spell/SummonerSmite.png",
 }
 
+# サモナースペル別クールダウン秒数
+SPELL_COOLDOWNS = {
+    "Flash": 300,
+    "Teleport": 360,
+    "Ignite": 180,
+    "Ghost": 240,
+    "Heal": 240,
+    "Exhaust": 210,
+    "Cleanse": 210,
+    "Barrier": 180,
+    "Smite": 90,
+}
+
 # チャンピオン別Ultの概算クールダウン秒数（Lv6〜11の標準値）
 DEFAULT_ULT_COOLDOWNS = {
     "Malphite": 120, "Amumu": 130, "Aatrox": 120, "Darius": 100,
