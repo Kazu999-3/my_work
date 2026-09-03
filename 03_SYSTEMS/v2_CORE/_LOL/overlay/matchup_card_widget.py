@@ -10,6 +10,7 @@ from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel,
     QPushButton, QFrame
 )
+from v2_CORE._LOL.overlay.hud_config import save_widget_position
 
 class MatchupCardWidget(QWidget):
     def __init__(self, data_provider_cb=None):
@@ -160,3 +161,6 @@ class MatchupCardWidget(QWidget):
         if event.buttons() == Qt.MouseButton.LeftButton:
             self.move(event.globalPosition().toPoint() - self.drag_position)
             event.accept()
+
+    def mouseReleaseEvent(self, event):
+        save_widget_position("matchup_card", self.x(), self.y())

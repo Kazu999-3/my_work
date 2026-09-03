@@ -1,9 +1,13 @@
 """
-Sovereign HUD - オーバーレイ起動ランチャー (マルチウィジェット構成)
-===================================================================
-1. TopBarWidget: 画面中央最上部の極薄ステータスバー (時間 / ゴールド差 / CS / 1st目標 / バフ)
-2. MatchupCardWidget: 画面左端の対面攻略メモ ＆ 動的ビルド推奨カード (最小化可能)
-3. ToastAlertWidget: 画面中央のアラートトースト (敵コア完成 / ガンク警戒 / ファイトダメージを数秒だけ表示)
+Sovereign HUD - オーバーレイ統合ランチャー (マルチウィジェット ＆ 位置記憶対応)
+================================================================================
+4つの独立ウィジェットを統合管理：
+  1. TopBarWidget: 画面右上の経済＆マクロ (時間 / ゴールド差 / CS / 1st目標 / バフ)
+  2. MatchupCardWidget: 画面左側のオンデマンド対面メモ (クリックで展開)
+  3. ToastAlertWidget: 画面中央上のフロストガラス調アラート (イベント時のみ表示)
+  4. SpellTrackerWidget: 画面右下(ミニマップ上)の手動スペルタイマー (敵5人Flash/TP)
+
+すべてのウィジェットの位置 (x, y) はドラッグ移動で自動保存され、次回起動時に復元されます。
 """
 
 import os
@@ -21,6 +25,8 @@ from v2_CORE._LOL.overlay.hud_state_engine import HudStateEngine
 from v2_CORE._LOL.overlay.top_bar_widget import TopBarWidget
 from v2_CORE._LOL.overlay.matchup_card_widget import MatchupCardWidget
 from v2_CORE._LOL.overlay.toast_alert_widget import ToastAlertWidget
+from v2_CORE._LOL.overlay.spell_tracker_widget import SpellTrackerWidget
+from v2_CORE._LOL.overlay.hud_config import load_widget_positions
 
 def main():
     parser = argparse.ArgumentParser(description="Sovereign HUD Overlay")
@@ -32,25 +38,53 @@ def main():
     live_client = LiveClient()
     state_engine = HudStateEngine()
 
-    # 1. 3つのウィジェットを初期化
+    # 4つのウィジェットを初期化
     top_bar = TopBarWidget()
     matchup_card = MatchupCardWidget()
     toast_alert = ToastAlertWidget()
+    spell_tracker = SpellTrackerWidget()
 
-    # 画面サイズに応じた初期配置
+    # 保存された位置のロード ＆ 復元
+    saved_positions = load_widget_positions()
     screen = app.primaryScreen().geometry()
     screen_w = screen.width()
     screen_h = screen.height()
 
-    # ① 経済＆マクロ (TopBarWidget): 画面右上
-    top_bar.move(screen_w - top_bar.width() - 24, 50)
-    # ② 対面インテル (MatchupCardWidget): 画面左側
-    matchup_card.move(24, 80)
-    # ③ アラートトースト (ToastAlertWidget): 画面中央上部
-    toast_alert.move((screen_w - toast_alert.width()) // 2, 70)
+    # ① 経済＆マクロ (TopBar): 画面右上
+    pos_top = saved_positions.get("top_bar", {})
+    if pos_top:
+        top_bar.move(pos_top.get("x", screen_w - top_bar.width() - 24), pos_top.get("y", 50))
+    else:
+        top_bar.move(screen_w - top_bar.width() - 24, 50)
+
+    # ② 対面インテル (MatchupCard): 画面左側
+    pos_card = saved_positions.get("matchup_card", {})
+    if pos_card:
+        matchup_card.move(pos_card.get("x", 24), pos_card.get("y", 80))
+    else:
+        matchup_card.move(24, 80)
+
+    # ③ アラートトースト (ToastAlert): 画面中央上部
+    pos_toast = saved_positions.get("toast_alert", {})
+    if pos_toast:
+        toast_alert.move(pos_toast.get("x", (screen_w - toast_alert.width()) // 2), pos_toast.get("y", 70))
+    else:
+        toast_alert.move((screen_w - toast_alert.width()) // 2, 70)
+
+    # ④ 敵スペル管理 (SpellTracker): 画面右下 (ミニマップの真上)
+    pos_spell = saved_positions.get("spell_tracker", {})
+    if pos_spell:
+        spell_tracker.move(pos_spell.get("x", screen_w - spell_tracker.width() - 24), pos_spell.get("y", screen_h - 380))
+    else:
+        spell_tracker.move(screen_w - spell_tracker.width() - 24, screen_h - 380)
 
     top_bar.show()
     matchup_card.show()
+    spell_tracker.show()
+
+    # モックテスト起動時はサンプルアラートを1回表示
+    if args.mock:
+        QTimer.singleShot(1000, lambda: toast_alert.show_alert("⚔️", "敵 Darius: Trinity Force 完成！ (パワースパイク)", alert_type="spike", duration_ms=6000))
 
     # 定期更新ループ (1秒おき)
     def update_all():
@@ -66,23 +100,26 @@ def main():
         top_bar.update_data(state)
         matchup_card.update_data(state)
         toast_alert.update_events(state)
+        spell_tracker.update_enemies(state)
 
     timer = QTimer()
     timer.timeout.connect(update_all)
     timer.start(1000)
     update_all()
 
-    print("=" * 50)
-    print("👑 Sovereign HUD (マルチウィジェット版) が起動しました")
-    print("  [1] 📊 トップステータスバー (画面上部)")
-    print("  [2] ⚔️ 対面インテルカード (画面左側)")
-    print("  [3] ⚠️ アラートトースト (イベント時のみ中央表示)")
+    print("=" * 55)
+    print("👑 Sovereign HUD (フルスペック・マルチウィジェット版)")
+    print("  [1] 💰 経済＆マクロ (画面右上)")
+    print("  [2] ⚔️ 対面インテル (画面左側・クリックで攻略開閉)")
+    print("  [3] ⚠️ アラートトースト (フロストガラス調・自動消去)")
+    print("  [4] ⚡ 敵スペル管理 (画面右下・クリックでタイマー)")
+    print("-------------------------------------------------------")
+    print("※ すべてのHUDはドラッグ移動で位置が自動保存されます")
     if args.mock:
         print("💡 モックプレビューモードで動作中 (--mock)")
     else:
         print("🔍 LoLクライアントの試合開始を監視中")
-    print("※ 各ウィジェットはマウスで好きな位置にドラッグ移動できます")
-    print("=" * 50)
+    print("=" * 55)
 
     sys.exit(app.exec())
 

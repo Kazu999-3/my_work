@@ -8,6 +8,7 @@ Sovereign HUD - 経済＆マクロウィジェット (Top Right Widget)
 from PyQt6.QtCore import Qt, QPoint
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QFrame
 from PyQt6.QtGui import QColor
+from v2_CORE._LOL.overlay.hud_config import save_widget_position
 
 class TopBarWidget(QWidget):
     def __init__(self, data_provider_cb=None):
@@ -139,3 +140,6 @@ class TopBarWidget(QWidget):
         if event.buttons() == Qt.MouseButton.LeftButton:
             self.move(event.globalPosition().toPoint() - self.drag_position)
             event.accept()
+
+    def mouseReleaseEvent(self, event):
+        save_widget_position("top_bar", self.x(), self.y())
