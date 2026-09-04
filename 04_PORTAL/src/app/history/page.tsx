@@ -83,7 +83,7 @@ export default function HistoryPage() {
     <div className="min-h-screen bg-background text-stone-800 p-4 md:p-8">
       <div className="max-w-[1400px] mx-auto space-y-8">
         
-        {/* 戻るリンク ＆ アナリティクスリンク */}
+        {/* 戻るリンク ＆ アナリティクス・コーチリンク */}
         <div className="flex items-center justify-between flex-wrap gap-3">
           <Link
             href="/"
@@ -93,13 +93,21 @@ export default function HistoryPage() {
             <span>ポータルトップへ戻る</span>
           </Link>
 
-          <Link
-            href="/history/analytics"
-            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-xl bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white font-bold text-xs shadow-sm transition"
-          >
-            <span>👑 集団戦ディープアナリティクスを見る</span>
-            <span>➔</span>
-          </Link>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Link
+              href="/coach?tab=postgame"
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 border border-stone-300 font-bold text-xs shadow-2xs transition"
+            >
+              <span>⚡</span>
+              <span>1分ソロQ振り返り</span>
+            </Link>
+            <Link
+              href="/history/analytics"
+              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-xl bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white font-bold text-xs shadow-sm transition"
+            >
+              <span>👑 集団戦ディープアナリティクスを見る</span>
+            </Link>
+          </div>
         </div>
 
         {/* ヘッダー */}

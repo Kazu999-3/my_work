@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, Fragment } from "react";
 import { supabase } from "../../lib/supabaseClient";
 import MatchHistoryPanel from "./MatchHistoryPanel";
 import ProfileModal from "./ProfileModal";
@@ -1667,17 +1667,16 @@ export default function KtmAdminPage() {
                       const uid = p.id || p.discord_id;
                       const isCheckedIn = checkedInPlayerIds.includes(p.id);
                       return (
-                      <>
-                      <tr 
-                        key={uid} 
-                        className={`hover:bg-black/5 transition-all duration-300 ${
-                          isCheckedIn ? 'bg-emerald-50/50 font-medium' : ''
-                        } ${
-                          flashingPlayerIds.includes(uid) 
-                            ? 'bg-emerald-100 text-emerald-700 font-bold border-y border-emerald-300 shadow-[inset_0_0_15px_rgba(16,185,129,0.15)]' 
-                            : ''
-                        }`}
-                      >
+                        <React.Fragment key={uid}>
+                          <tr 
+                            className={`hover:bg-black/5 transition-all duration-300 ${
+                              isCheckedIn ? 'bg-emerald-50/50 font-medium' : ''
+                            } ${
+                              flashingPlayerIds.includes(uid) 
+                                ? 'bg-emerald-100 text-emerald-700 font-bold border-y border-emerald-300 shadow-[inset_0_0_15px_rgba(16,185,129,0.15)]' 
+                                : ''
+                            }`}
+                          >
                         <td className="px-2 py-1.5 text-center font-bold text-stone-500 text-xs">
                           {p.no}
                         </td>
@@ -1880,7 +1879,7 @@ export default function KtmAdminPage() {
                           </td>
                         </tr>
                       )}
-                      </>
+                      </React.Fragment>
                       );
                     })}
                     

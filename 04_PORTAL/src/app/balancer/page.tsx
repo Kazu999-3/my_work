@@ -1247,10 +1247,29 @@ export default function BalancerPage() {
 
               {/* AIレポート */}
               {balanceResult.balanceReport && (
-                <div className="p-4 bg-orange-100 border border-orange-200 rounded-lg">
-                  <h3 className="text-sm font-bold text-orange-700 mb-2 flex items-center gap-2"><Activity className="h-4 w-4" /> AIバランス分析レポート</h3>
-                  <div className="text-sm text-orange-900/90 leading-relaxed font-mono space-y-2">
-                    {Array.isArray(balanceResult.balanceReport) ? balanceResult.balanceReport.map((l: string, i: number) => <div key={i}>{l}</div>) : balanceResult.balanceReport}
+                <div className="p-4 bg-gradient-to-br from-amber-50 to-orange-50/60 border border-amber-300/80 rounded-2xl shadow-2xs space-y-2">
+                  <h3 className="text-sm font-extrabold text-amber-950 flex items-center gap-2">
+                    <Activity className="h-4 w-4 text-amber-600" />
+                    <span>AIバランス分析 ＆ 勝敗予想レポート</span>
+                  </h3>
+                  <div className="text-xs text-stone-800 leading-relaxed font-sans space-y-1.5 bg-white/80 p-3.5 rounded-xl border border-amber-200/60">
+                    {(Array.isArray(balanceResult.balanceReport)
+                      ? balanceResult.balanceReport
+                      : [balanceResult.balanceReport]
+                    ).map((line: string, i: number) => {
+                      if (!line) return <div key={i} className="h-1" />;
+                      // **太字** や `コード` の簡易リッチテキスト変換
+                      const formatted = line
+                        .replace(/\*\*(.*?)\*\*/g, '<strong class="font-black text-amber-950">$1</strong>')
+                        .replace(/`(.*?)`/g, '<code class="bg-amber-100 text-amber-900 font-mono px-1 py-0.5 rounded text-[11px] font-bold border border-amber-200">$1</code>');
+                      return (
+                        <div
+                          key={i}
+                          dangerouslySetInnerHTML={{ __html: formatted }}
+                          className="leading-relaxed"
+                        />
+                      );
+                    })}
                   </div>
                 </div>
               )}
