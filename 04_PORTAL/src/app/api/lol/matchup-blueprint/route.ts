@@ -79,11 +79,13 @@ export async function GET(request: NextRequest) {
   const myArmor = parseFloat(searchParams.get('myArmor') || '45');
   const myMr = parseFloat(searchParams.get('myMr') || '36');
 
+  const hasIgnite = searchParams.get('ignite') !== 'false';
+
   // 即死キルライン計算
   const prof = BURST_PROFILES[enemyChamp] || { baseLvl6: 450, adScale: 2.0, apScale: 1.5, primaryType: 'physical' };
   const baseDmg = prof.baseLvl6 * (0.6 + (enemyLevel * 0.066));
   const rawBurst = baseDmg + (25 * prof.adScale);
-  const igniteDmg = 70 + (20 * enemyLevel);
+  const igniteDmg = hasIgnite ? (70 + (20 * enemyLevel)) : 0;
 
   let mitigated = rawBurst * (100 / (100 + (prof.primaryType === 'magic' ? myMr : myArmor)));
   if (prof.primaryType === 'true_hybrid') {

@@ -1,6 +1,6 @@
 {
   "patch_version": "26.17",
-  "updated_at": "2026-09-02T12:25:28.141092+00:00",
+  "updated_at": "2026-09-04T10:45:03.282230+00:00",
   "status": "suspended",
   "queue": {
     "Aatrox": {
@@ -77,50 +77,50 @@
     },
     "Aurora": {
       "name": "オーロラ",
-      "status": "pending",
-      "updated_at": "2026-08-23T18:58:52.550609+00:00",
+      "status": "completed",
+      "updated_at": "2026-09-03T18:26:00.697972+00:00",
       "error": null
     },
     "Azir": {
       "name": "アジール",
-      "status": "pending",
-      "updated_at": "2026-08-23T18:59:38.534355+00:00",
+      "status": "completed",
+      "updated_at": "2026-09-03T18:26:53.494528+00:00",
       "error": null
     },
     "Bard": {
       "name": "バード",
-      "status": "pending",
-      "updated_at": "2026-08-23T19:00:23.983343+00:00",
+      "status": "completed",
+      "updated_at": "2026-09-03T18:27:42.315680+00:00",
       "error": null
     },
     "Belveth": {
       "name": "ベル＝ヴェス",
-      "status": "pending",
-      "updated_at": "2026-08-23T19:01:10.514981+00:00",
+      "status": "completed",
+      "updated_at": "2026-09-03T18:28:32.811294+00:00",
       "error": null
     },
     "Blitzcrank": {
       "name": "ブリッツクランク",
-      "status": "pending",
-      "updated_at": "2026-08-23T19:01:55.486855+00:00",
+      "status": "completed",
+      "updated_at": "2026-09-04T08:26:07.805199+00:00",
       "error": null
     },
     "Brand": {
       "name": "ブランド",
-      "status": "pending",
-      "updated_at": "2026-08-23T19:02:42.900892+00:00",
+      "status": "completed",
+      "updated_at": "2026-09-04T08:26:59.674313+00:00",
       "error": null
     },
     "Braum": {
       "name": "ブラウム",
-      "status": "pending",
-      "updated_at": "2026-08-23T19:03:28.558074+00:00",
+      "status": "completed",
+      "updated_at": "2026-09-04T08:27:47.164604+00:00",
       "error": null
     },
     "Briar": {
       "name": "ブライアー",
-      "status": "pending",
-      "updated_at": "2026-08-23T19:04:15.257663+00:00",
+      "status": "completed",
+      "updated_at": "2026-09-04T08:28:35.337387+00:00",
       "error": null
     },
     "Caitlyn": {

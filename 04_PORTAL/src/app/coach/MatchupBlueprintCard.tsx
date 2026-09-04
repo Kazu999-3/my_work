@@ -37,8 +37,12 @@ interface BlueprintResponse {
   };
 }
 
-const COMMON_CHAMPIONS = [
-  'Darius', 'Aatrox', 'Zed', 'Ahri', 'Riven', 'Renekton', 'Fiora', 'Jax', 'Malphite', 'Garen', 'Irelia', 'Yone', 'Yasuo', 'Kassadin', 'Sylas'
+const MY_POOL_CHAMPIONS = [
+  'Aatrox', 'Darius', 'Renekton', 'Riven', 'Camille', 'Fiora', 'Jax', 'Sett', 'Yone', 'Zed', 'Ahri', 'Sylas', 'Jinx', 'Kaisa'
+];
+
+const ENEMY_POPULAR_CHAMPIONS = [
+  'Darius', 'Aatrox', 'Renekton', 'Riven', 'Jax', 'Fiora', 'Sett', 'Malphite', 'Garen', 'Irelia', 'Yone', 'Yasuo', 'Zed', 'Ahri', 'Sylas'
 ];
 
 export default function MatchupBlueprintCard({
@@ -55,6 +59,7 @@ export default function MatchupBlueprintCard({
   const [myChamp, setMyChamp] = useState(initialMyChampion);
   const [enemyChamp, setEnemyChamp] = useState(initialEnemyChampion);
   const [enemyLevel, setEnemyLevel] = useState(6);
+  const [hasIgnite, setHasIgnite] = useState(true);
   const [data, setData] = useState<BlueprintResponse | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -86,7 +91,7 @@ export default function MatchupBlueprintCard({
   useEffect(() => {
     if (!enemyChamp) return;
     setLoading(true);
-    fetch(`/api/lol/matchup-blueprint?my=${encodeURIComponent(myChamp)}&enemy=${encodeURIComponent(enemyChamp)}&level=${enemyLevel}`)
+    fetch(`/api/lol/matchup-blueprint?my=${encodeURIComponent(myChamp)}&enemy=${encodeURIComponent(enemyChamp)}&level=${enemyLevel}&ignite=${hasIgnite}`)
       .then((res) => res.json())
       .then((d) => {
         setData(d);
@@ -96,7 +101,7 @@ export default function MatchupBlueprintCard({
         console.error(err);
         setLoading(false);
       });
-  }, [myChamp, enemyChamp, enemyLevel]);
+  }, [myChamp, enemyChamp, enemyLevel, hasIgnite]);
 
   // カウンター＆ビルド情報の取得
   useEffect(() => {
@@ -177,9 +182,95 @@ export default function MatchupBlueprintCard({
         </div>
       )}
 
-      {/* ヘッダー: 対戦カード ＆ Lv想定切替 */}
-      <div className="border-b border-stone-100 pb-3 space-y-2.5">
-        <div className="flex items-center justify-between flex-wrap gap-2">
+      {/* ヘッダー: ドラフト即応セレクター ＆ 対戦カード ＆ Lv/スペル切替 */}
+      <div className="border-b border-stone-100 pb-3.5 space-y-3">
+        {/* 1段目: チャンピオンクイックセレクター (MyPool / 敵対面) */}
+        <div className="bg-stone-50/90 border border-stone-200/90 rounded-xl p-3 space-y-2.5">
+          {/* 自分側の選択 */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <label className="text-[11px] font-black text-stone-700 flex items-center gap-1">
+                <span>🛡️ 使用チャンピオン (My Pick):</span>
+              </label>
+              <input
+                type="text"
+                value={myChamp}
+                onChange={(e) => handleMyChange(e.target.value)}
+                placeholder="自チャンプ検索..."
+                className="text-xs font-bold px-2 py-0.5 rounded border border-stone-300 bg-white text-stone-800 w-28 text-right outline-none focus:border-amber-500"
+              />
+            </div>
+            <div className="flex items-center gap-1 overflow-x-auto pb-1 scrollbar-none">
+              <span className="text-[10px] font-bold text-stone-400 shrink-0 mr-0.5">MyPool:</span>
+              {MY_POOL_CHAMPIONS.map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => handleMyChange(c)}
+                  className={`shrink-0 flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-bold transition border ${
+                    myChamp.toLowerCase() === c.toLowerCase()
+                      ? 'bg-amber-500 text-stone-950 border-amber-600 shadow-2xs'
+                      : 'bg-white text-stone-700 border-stone-200 hover:border-amber-300'
+                  }`}
+                >
+                  <Image
+                    src={getChampIcon(c)}
+                    alt={c}
+                    width={14}
+                    height={14}
+                    className="w-3.5 h-3.5 rounded-full"
+                    onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                  />
+                  <span>{c}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* 敵側の選択 */}
+          <div className="space-y-1.5 pt-1 border-t border-stone-200/60">
+            <div className="flex items-center justify-between">
+              <label className="text-[11px] font-black text-rose-900 flex items-center gap-1">
+                <span>⚔️ 敵チャンピオン (Enemy Pick):</span>
+              </label>
+              <input
+                type="text"
+                value={enemyChamp}
+                onChange={(e) => handleEnemyChange(e.target.value)}
+                placeholder="敵チャンプ検索..."
+                className="text-xs font-bold px-2 py-0.5 rounded border border-rose-300 bg-white text-rose-900 w-28 text-right outline-none focus:border-rose-500"
+              />
+            </div>
+            <div className="flex items-center gap-1 overflow-x-auto pb-1 scrollbar-none">
+              <span className="text-[10px] font-bold text-stone-400 shrink-0 mr-0.5">人気対面:</span>
+              {ENEMY_POPULAR_CHAMPIONS.map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => handleEnemyChange(c)}
+                  className={`shrink-0 flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-bold transition border ${
+                    enemyChamp.toLowerCase() === c.toLowerCase()
+                      ? 'bg-rose-600 text-white border-rose-700 shadow-2xs'
+                      : 'bg-white text-stone-700 border-stone-200 hover:border-rose-300'
+                  }`}
+                >
+                  <Image
+                    src={getChampIcon(c)}
+                    alt={c}
+                    width={14}
+                    height={14}
+                    className="w-3.5 h-3.5 rounded-full"
+                    onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                  />
+                  <span>{c}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* 2段目: 対戦カードサマリー ＆ スペル/Lv切替 */}
+        <div className="flex items-center justify-between flex-wrap gap-2 pt-1">
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-2 bg-stone-100/80 px-2.5 py-1 rounded-xl border border-stone-200">
               <div className="flex items-center gap-1.5">
@@ -207,22 +298,39 @@ export default function MatchupBlueprintCard({
               </div>
             </div>
             <span className="px-2 py-0.5 bg-amber-100 text-amber-900 border border-amber-300 rounded-md text-[10px] font-black uppercase tracking-wider">
-              ドラフト作戦司令塔
+              公式計算キルライン
             </span>
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="text-[11px] font-bold text-stone-500">敵Lv想定:</span>
-            <select
-              value={enemyLevel}
-              onChange={(e) => setEnemyLevel(parseInt(e.target.value, 10))}
-              className="text-xs font-bold px-2 py-1 rounded-md border border-stone-200 bg-stone-50 text-stone-800 cursor-pointer font-mono"
+            {/* サモナースペル切替 */}
+            <button
+              type="button"
+              onClick={() => setHasIgnite(!hasIgnite)}
+              className={`px-2 py-1 rounded-md text-[11px] font-black border transition flex items-center gap-1 ${
+                hasIgnite
+                  ? 'bg-rose-100 text-rose-900 border-rose-300 shadow-2xs'
+                  : 'bg-stone-100 text-stone-500 border-stone-200'
+              }`}
             >
-              <option value="3">Lv3 (序盤)</option>
-              <option value="6">Lv6 (Ult習得)</option>
-              <option value="11">Lv11 (中盤)</option>
-              <option value="16">Lv16 (レイト)</option>
-            </select>
+              <span>{hasIgnite ? '🔥' : '🌀'}</span>
+              <span>{hasIgnite ? '敵Igniteあり' : 'TP/他スペル'}</span>
+            </button>
+
+            {/* 敵Lv切替 */}
+            <div className="flex items-center gap-1">
+              <span className="text-[11px] font-bold text-stone-500">敵Lv:</span>
+              <select
+                value={enemyLevel}
+                onChange={(e) => setEnemyLevel(parseInt(e.target.value, 10))}
+                className="text-xs font-bold px-2 py-1 rounded-md border border-stone-200 bg-stone-50 text-stone-800 cursor-pointer font-mono"
+              >
+                <option value="3">Lv3 (序盤)</option>
+                <option value="6">Lv6 (Ult)</option>
+                <option value="11">Lv11 (中盤)</option>
+                <option value="16">Lv16 (終盤)</option>
+              </select>
+            </div>
           </div>
         </div>
 
