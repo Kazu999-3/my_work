@@ -5,7 +5,8 @@ import { fetchAllRows } from '../../../../lib/fetchAll';
 
 export async function POST(request: Request) {
   try {
-    const { winningTeam, gameDuration, participants, riotMatchId, balanceSatisfaction, isExhibition } = await request.json();
+    const body = await request.json();
+    const { winningTeam, gameDuration, participants, riotMatchId, balanceSatisfaction, isExhibition, dry_run } = body;
 
     if (!winningTeam || !participants || participants.length !== 10) {
       return NextResponse.json({ error: '入力データが不正です。10人の参加者と勝利チームが必要です。' }, { status: 400 });
@@ -208,6 +209,22 @@ export async function POST(request: Request) {
         mmrBreakdown,
         kdaScore,
         dbPlayer: dbP
+      });
+    }
+
+    // 🛡️ DRY_RUN ガード: 自動操作やテスト時はDB更新・Webhook送信を行わず計算結果のみ返す
+    if (dry_run) {
+      return NextResponse.json({
+        success: true,
+        matchId: 'dry-run-match-id',
+        message: '【DRY RUN】シミュレーション完了（DB書き込み・Discord通知は安全にスキップされました）',
+        results: results.map((r: any) => ({
+          name: r.name,
+          role: r.role,
+          team: r.team,
+          mmrDelta: r.mmrDelta,
+          newMmr: r.currentMmr + r.mmrDelta
+        }))
       });
     }
 
@@ -513,6 +530,17 @@ export async function POST(request: Request) {
             }
           ]
         };
+
+        // 開発環境（ローカル実行やE2E自動テスト）では本番Discordチャンネルへの誤爆送信を安全に防止
+        const isDev = process.env.NODE_ENV === 'development';
+        if (isDev) {
+          console.log('[match/record DEV] ローカル開発環境のため Discord Webhook 送信をスキップしました。');
+          return NextResponse.json({
+            success: true,
+            matchId: newMatchId,
+            message: '試合結果が正常に記録されました（ローカル開発のためDiscord通知はスキップ）。'
+          });
+        }
 
         // ?wait=true でメッセージ本体(id/channel_id)を受け取り、満足度投票の👍/👎を付ける（課題#42）
         const sep = webhookUrl.includes('?') ? '&' : '?';
