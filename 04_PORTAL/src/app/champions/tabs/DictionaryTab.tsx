@@ -1176,6 +1176,15 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
           </div>
         </div>
 
+        {/* 🗺️ AI実戦対面手順書 ＆ 即死キルライン警告 (AIコーチ連動 / SSoT) */}
+        {selected && (
+          <div className="w-full">
+            <MatchupBlueprintCard
+              enemyChampion={selected.id || selected.name}
+            />
+          </div>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
           <TextAreaCard title="強み (Strengths)" icon={Swords} color="text-[var(--color-success)] border-[var(--color-success)] shadow-[var(--color-success)]" value={dataFields.strengths} onChange={v => setField('strengths', v)} fieldKey="strengths" onOpenHistory={handleOpenHistory} />
           <TextAreaCard title="弱み (Weaknesses)" icon={ShieldAlert} color="text-[var(--color-danger)] border-[var(--color-danger)] shadow-[var(--color-danger)]" value={dataFields.weaknesses} onChange={v => setField('weaknesses', v)} fieldKey="weaknesses" onOpenHistory={handleOpenHistory} />

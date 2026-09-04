@@ -176,7 +176,14 @@ export default function HomePage() {
         </div>
 
         {/* クイックサブメニュー */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+          <Link
+            href="/hud"
+            className="p-3 bg-amber-950/30 hover:bg-amber-900/40 border border-amber-500/40 rounded-2xl text-center transition group"
+          >
+            <span className="text-base block mb-1">🖥️</span>
+            <span className="text-xs font-black text-amber-300 group-hover:text-amber-200">HUDオーバーレイ</span>
+          </Link>
           <Link
             href="/balancer/record"
             className="p-3 bg-stone-800/60 hover:bg-stone-800 border border-stone-700/60 rounded-2xl text-center transition group"

@@ -1747,19 +1747,13 @@ export default function CoachPage() {
                     </p>
                   </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    window.open(
-                      '/hud',
-                      'LoL_Minimal_HUD',
-                      'width=420,height=600,menubar=no,toolbar=no,location=no,status=no,resizable=yes'
-                    );
-                  }}
-                  className="shrink-0 px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-stone-950 font-black text-xs rounded-xl shadow-xs transition"
+                <Link
+                  href="/hud"
+                  className="shrink-0 px-3.5 py-2 bg-amber-500 hover:bg-amber-400 text-stone-950 font-black text-xs rounded-xl shadow-xs transition flex items-center gap-1.5"
                 >
-                  小窓HUDを開く
-                </button>
+                  <span>🖥️</span>
+                  <span>HUDオーバーレイ ＆ カンペ</span>
+                </Link>
               </div>
 
               <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-xs space-y-3">
