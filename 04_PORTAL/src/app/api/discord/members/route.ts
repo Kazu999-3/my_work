@@ -4,101 +4,7 @@ import { resolveDisplayName } from '../../../../lib/discordName';
 import { verifyAdminSession } from '../../../../lib/adminAuth';
 
 
-function parseIntroduction(content: string) {
-  const lower = content.toLowerCase();
-  let ign: string | null = null;
-  let primary: string = "ALL";
-  let secondary: string = "-";
-  let ignore_role: string = "-";
 
-  // 1. Riot ID の抽出 (Name#TAG) - ReDoSフリーな超シンプル設計
-  const match = lower.match(/[^\s#]{2,16}#[a-z0-9]{3,5}/g);
-  if (match && match.length > 0) {
-    ign = match[0].trim();
-  }
-
-  // 2. 希望・NGレーンの判定
-  const roleMapping: Record<string, string> = {
-    top: "TOP", 
-    トップ: "TOP",
-    jg: "JG",
-    jungle: "JG",
-    ジャングル: "JG",
-    mid: "MID",
-    ミッド: "MID",
-    adc: "ADC",
-    bot: "ADC",
-    ボット: "ADC",
-    sup: "SUP",
-    support: "SUP",
-    サポート: "SUP"
-  };
-
-  // 行単位に分割してスキャンする（ReDoSを完全に防ぐ）
-  const lines = lower.split(/[\r\n]+/);
-
-  for (const line of lines) {
-    // NGロールの検出
-    const isNgLine = line.includes("ng") || line.includes("苦手") || line.includes("やりたくない") || line.includes("無理") || line.includes("できない") || line.includes("できません");
-    if (isNgLine) {
-      for (const [key, val] of Object.entries(roleMapping)) {
-        if (line.includes(key)) {
-          ignore_role = val;
-          break;
-        }
-      }
-    }
-
-    // 第一希望の検出
-    const isPrimaryLine = line.includes("第1") || line.includes("第一") || line.includes("メイン") || line.includes("希望") || line.includes("1");
-    if (isPrimaryLine && primary === "ALL") {
-      for (const [key, val] of Object.entries(roleMapping)) {
-        if (line.includes(key) && val !== ignore_role) {
-          primary = val;
-          break;
-        }
-      }
-    }
-
-    // 第二希望の検出
-    const isSecondaryLine = line.includes("第2") || line.includes("第二") || line.includes("サブ") || line.includes("2");
-    if (isSecondaryLine && secondary === "-") {
-      for (const [key, val] of Object.entries(roleMapping)) {
-        if (line.includes(key) && val !== ignore_role && val !== primary) {
-          secondary = val;
-          break;
-        }
-      }
-    }
-  }
-
-  // フォールバック: 出現順での判定 (行スキャンでヒットしなかった場合)
-  if (primary === "ALL") {
-    const appearances: { role: string, index: number }[] = [];
-    for (const [key, val] of Object.entries(roleMapping)) {
-      const idx = lower.indexOf(key);
-      if (idx !== -1 && val !== ignore_role) {
-        appearances.push({ role: val, index: idx });
-      }
-    }
-    appearances.sort((a, b) => a.index - b.index);
-    if (appearances.length > 0) {
-      primary = appearances[0].role;
-      if (appearances.length > 1 && appearances[1].role !== primary) {
-        secondary = appearances[1].role;
-      }
-    }
-  }
-
-  return {
-    ign,
-    role_preferences: {
-      primary,
-      secondary,
-      ignore_role
-    }
-  };
-}
 
 export async function GET(request: Request) {
   // ===== 管理者セッション確認 =====
@@ -169,6 +75,7 @@ export async function GET(request: Request) {
           discord_id: discordId,
           name: displayName,
           ign: `${m.user.username}#...`, // ダミー
+          role_preferences: { primary: "ALL", secondary: "-", ignore_role: "-" },
           metadata: { joined_at: m.joined_at }
         });
       } else {
@@ -189,51 +96,6 @@ export async function GET(request: Request) {
         });
       }
     });
-
-    // 4. toAdd (新規追加候補) がある場合、自己紹介チャンネルから書き込みを検索・解析して初期値を埋める
-    if (toAdd.length > 0) {
-      try {
-        const introChannelId = '1485646578621616209';
-        const msgRes = await fetch(`https://discord.com/api/v10/channels/${introChannelId}/messages?limit=100`, {
-          headers: {
-            Authorization: `Bot ${DISCORD_BOT_TOKEN}`,
-          },
-        });
-        
-        if (msgRes.ok) {
-          const messages: any[] = await msgRes.json();
-          
-          const introMap = new Map<string, string>();
-          messages.forEach((msg: any) => {
-            if (msg.author && !msg.author.bot && msg.content) {
-              if (!introMap.has(msg.author.id)) {
-                introMap.set(msg.author.id, msg.content);
-              }
-            }
-          });
-
-          toAdd.forEach((p: any) => {
-            const introText = introMap.get(p.discord_id);
-            if (introText) {
-              const parsed = parseIntroduction(introText);
-              if (parsed.ign) {
-                p.ign = parsed.ign;
-              }
-              p.role_preferences = parsed.role_preferences;
-              p.metadata = {
-                ...p.metadata,
-                intro_parsed: true,
-                raw_intro: introText.slice(0, 100)
-              };
-            } else {
-              p.role_preferences = { primary: "ALL", secondary: "-", ignore_role: "-" };
-            }
-          });
-        }
-      } catch (err) {
-        console.error('Failed to parse introductions:', err);
-      }
-    }
 
     // DBにはいるが、Discordにいない人（Active/Inactive問わず）
     dbPlayers.forEach((p: any) => {

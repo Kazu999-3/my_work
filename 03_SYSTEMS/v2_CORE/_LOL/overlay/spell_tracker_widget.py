@@ -124,6 +124,7 @@ class EnemyColumn(QWidget):
         self.spell2 = spell2
         self.level = 6
         self.items = []
+        self.champ_name = champion  # 互換用エイリアス
         self.init_ui()
 
     def init_ui(self):
@@ -267,6 +268,9 @@ class SpellTrackerWidget(QWidget):
             col.update_tick()
 
     def update_data(self, state: dict):
+        self.update_enemy_status(state)
+
+    def update_enemies(self, state: dict):
         self.update_enemy_status(state)
 
     def update_enemy_status(self, state: dict):

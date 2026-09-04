@@ -30,6 +30,29 @@ SPELL_IMG_MAP = {
     "Smite": f"{CDN_BASE}/spell/SummonerSmite.png",
 }
 
+SPELL_NAME_ALIASES = {
+    # 英語
+    "flash": "Flash", "teleport": "Teleport", "ignite": "Ignite", "ghost": "Ghost",
+    "heal": "Heal", "exhaust": "Exhaust", "barrier": "Barrier", "cleanse": "Cleanse", "smite": "Smite",
+    # 日本語
+    "フラッシュ": "Flash", "テレポート": "Teleport", "イグナイト": "Ignite", "ゴースト": "Ghost",
+    "ヒール": "Heal", "イグゾースト": "Exhaust", "バリア": "Barrier", "クレンズ": "Cleanse", "スマイト": "Smite",
+    # Raw Display / Asset IDs
+    "summonerflash": "Flash", "summonerteleport": "Teleport", "summonerdot": "Ignite", "summonerhaste": "Ghost",
+    "summonerheal": "Heal", "summonerexhaust": "Exhaust", "summonerbarrier": "Barrier", "summonerboost": "Cleanse",
+    "summonersmite": "Smite", "s5_summonersmiteplayerganker": "Smite", "s5_summonersmiteduel": "Smite",
+}
+
+def normalize_spell_name(raw_name: str) -> str:
+    """任意のスペル名（日本語、英語、内部ID）を正規名（Flash/Teleport等）に変換"""
+    if not raw_name:
+        return "Flash"
+    s = str(raw_name).strip().lower().replace(" ", "").replace("_", "").replace("-", "")
+    for k, v in SPELL_NAME_ALIASES.items():
+        if k in s:
+            return v
+    return "Flash"
+
 # サモナースペル別 基礎クールダウン秒数
 SPELL_COOLDOWNS = {
     "Flash": 300,
@@ -111,7 +134,8 @@ def calculate_effective_ult_cd(champion_name: str, level: int, items: list) -> i
 
 def calculate_effective_spell_cd(spell_name: str, items: list) -> int:
     """敵の所持アイテム（明敏の靴など）から実効サモナースペルクールダウン秒数を算出"""
-    base_cd = SPELL_COOLDOWNS.get(spell_name, 300)
+    norm_name = normalize_spell_name(spell_name)
+    base_cd = SPELL_COOLDOWNS.get(norm_name, 300)
     
     # アイオニアブーツ所持判定 (itemID: 3158)
     has_ionian = any(it.get("itemID") == 3158 or "Lucidity" in it.get("displayName", "") for it in items)
@@ -158,16 +182,17 @@ class SpellAssetManager:
     @classmethod
     def get_spell_icon(cls, spell_name: str) -> QPixmap:
         """サモナースペルのアイコンを取得"""
-        cache_file = CACHE_DIR / f"spell_{spell_name}.png"
-        if spell_name in cls._pixmap_cache:
-            return cls._pixmap_cache[spell_name]
+        norm_name = normalize_spell_name(spell_name)
+        cache_file = CACHE_DIR / f"spell_{norm_name}.png"
+        if norm_name in cls._pixmap_cache:
+            return cls._pixmap_cache[norm_name]
 
         if cache_file.exists():
             pix = QPixmap(str(cache_file))
-            cls._pixmap_cache[spell_name] = pix
+            cls._pixmap_cache[norm_name] = pix
             return pix
 
-        url = SPELL_IMG_MAP.get(spell_name, SPELL_IMG_MAP["Flash"])
+        url = SPELL_IMG_MAP.get(norm_name, SPELL_IMG_MAP["Flash"])
         try:
             r = httpx.get(url, timeout=3.0)
             if r.status_code == 200:

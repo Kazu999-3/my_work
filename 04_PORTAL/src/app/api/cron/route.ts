@@ -92,13 +92,7 @@ export async function GET(request: Request) {
       headers: cronHeaders,
     });
 
-    // 7. Discord新メンバー自動検出 ＆ ダッシュボード名簿登録
-    fireAndForget('Discord-auto-sync-members', `${origin}/api/discord/auto-sync-members`, {
-      method: 'GET',
-      headers: cronHeaders,
-    });
-
-    return NextResponse.json({ success: true, message: '全自動バックグラウンドメンテナンス（データ整備・日本語化・Discord新メンバー同期）を正常発火しました' });
+    return NextResponse.json({ success: true, message: '全自動バックグラウンドメンテナンス（データ整備・日本語化）を正常発火しました' });
   } catch (error: any) {
     console.error('Cron Execution Error:', error);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });

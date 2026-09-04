@@ -221,33 +221,7 @@ export default function KtmAdminPage() {
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   const [syncingDiscord, setSyncingDiscord] = useState(false);
-  const [syncingIntro, setSyncingIntro] = useState(false);
   const [syncData, setSyncData] = useState<any>(null);
-
-  const handleSyncIntro = async () => {
-    if (!confirm('Discord自己紹介チャンネルのメッセージを読み取り、メンバー情報（Riot ID・メインロール・ランク等）を自動登録・更新します。実行しますか？')) return;
-    setSyncingIntro(true);
-    setMessage({ type: '', text: '' });
-    try {
-      const res = await fetchWithTimeout('/api/discord/auto-sync-members', {
-        method: 'POST',
-        timeout: 45000,
-      });
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || '自己紹介チャンネルの同期に失敗しました');
-      }
-      setMessage({
-        type: 'success',
-        text: `✅ ${data.message} ${data.syncedNames?.length > 0 ? `(${data.syncedNames.join(', ')})` : ''}`,
-      });
-      fetchPlayers();
-    } catch (err: any) {
-      setMessage({ type: 'error', text: '❌ 自己紹介同期エラー: ' + err.message });
-    } finally {
-      setSyncingIntro(false);
-    }
-  };
 
   const [syncingRiot, setSyncingRiot] = useState(false);
   const [syncingAutoAll, setSyncingAutoAll] = useState(false);
@@ -306,20 +280,6 @@ export default function KtmAdminPage() {
 
     fetchPlayers();
     checkIntegrity();
-
-    // バックグラウンドでDiscordの新規参加メンバーを自動検出・ダッシュボードへ追加
-    fetch('/api/discord/auto-sync-members')
-      .then(res => res.json())
-      .then(data => {
-        if (data.success && data.addedCount > 0) {
-          setMessage({
-            type: 'success',
-            text: `🎉 Discordサーバーに参加した新メンバー (${data.addedMembers.join(', ')}) を自動で名簿に追加しました！`
-          });
-          fetchPlayers();
-        }
-      })
-      .catch(e => console.warn('Discord auto sync check warning:', e));
 
     // ktm_playersテーブルのリアルタイム購読をセットアップ
     const channel = supabase
@@ -1034,20 +994,8 @@ export default function KtmAdminPage() {
                 )}
                 
                 <button
-                  onClick={handleSyncIntro}
-                  disabled={syncingIntro || syncingDiscord || syncingAutoAll}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold transition border text-xs cursor-pointer ${
-                    syncingIntro ? 'bg-amber-100 border-amber-300 text-amber-800' : 'bg-amber-500/20 border-amber-600 text-amber-900 hover:bg-amber-600 hover:text-white'
-                  }`}
-                  title="Discordの自己紹介チャンネルを巡回し、Riot ID・希望ロール・最高ランクを自動抽出して名簿に反映します"
-                >
-                  <Users className={`h-4 w-4 ${syncingIntro ? 'animate-spin' : ''}`} /> 
-                  {syncingIntro ? "自己紹介解析中..." : "📋 自己紹介から名簿同期"}
-                </button>
-
-                <button
                   onClick={handleSyncCheck}
-                  disabled={syncingDiscord || syncingAutoAll || syncingIntro}
+                  disabled={syncingDiscord || syncingAutoAll}
                   className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold transition border text-xs ${
                     syncingDiscord ? 'bg-[#404eed]/50 border-[#404eed]/50 text-stone-400 cursor-not-allowed' : 'bg-[#5865F2]/20 border-[#5865F2] text-[#5865F2] hover:bg-[#5865F2] hover:text-white'
                   }`}
@@ -1112,11 +1060,6 @@ export default function KtmAdminPage() {
                             <div key={p.discord_id} className="bg-green-100 border border-green-200 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
                               <span className="font-bold text-green-700 text-sm flex items-center gap-1.5">
                                 {p.name}
-                                {p.metadata?.intro_parsed && (
-                                  <span className="bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded text-[10px] font-medium border border-amber-200 animate-pulse animate-duration-1000" title="自己紹介からRiot ID、希望、NGを自動で読み込みました">
-                                    💡 自動入力済
-                                  </span>
-                                )}
                               </span>
                               <div className="flex flex-wrap items-center gap-4">
                                 {/* 最高Rank選択 */}

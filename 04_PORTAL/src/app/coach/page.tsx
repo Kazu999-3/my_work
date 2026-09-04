@@ -1593,20 +1593,6 @@ export default function CoachPage() {
             >
               <span>⚡</span> 1分振り返り
             </button>
-            <button
-              type="button"
-              onClick={() => {
-                window.open(
-                  '/hud',
-                  'LoL_Minimal_HUD',
-                  'width=420,height=600,menubar=no,toolbar=no,location=no,status=no,resizable=yes'
-                );
-              }}
-              className="px-3.5 py-2 bg-[#12151d] hover:bg-[#1c2230] text-amber-400 border border-amber-500/40 font-bold text-xs rounded-xl shadow-xs transition-all hover:scale-105 flex items-center gap-1.5 cursor-pointer"
-              title="サブモニターや画面端に置いておける極小Web HUD"
-            >
-              <span>🖥️</span> 軽量Web HUD (サブ画面用)
-            </button>
           </div>
         </div>
 
@@ -1743,17 +1729,10 @@ export default function CoachPage() {
                       </span>
                     </div>
                     <p className="text-[11px] text-stone-300 mt-0.5">
-                      ⌨️ <span className="text-amber-300 font-bold">TABキー</span>で対面キルライン＆対面ゴールド差表示 / 💬 チャットから敵スペル・Ult自動検知
+                      ⌨️ <span className="text-amber-300 font-bold">TABキー</span>で対面キルライン＆対面ゴールド差表示 / 💬 チャットから敵スペル・Ult自動検知 (デスクトップ版常駐)
                     </p>
                   </div>
                 </div>
-                <Link
-                  href="/hud"
-                  className="shrink-0 px-3.5 py-2 bg-amber-500 hover:bg-amber-400 text-stone-950 font-black text-xs rounded-xl shadow-xs transition flex items-center gap-1.5"
-                >
-                  <span>🖥️</span>
-                  <span>HUDオーバーレイ ＆ カンペ</span>
-                </Link>
               </div>
 
               <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-xs space-y-3">

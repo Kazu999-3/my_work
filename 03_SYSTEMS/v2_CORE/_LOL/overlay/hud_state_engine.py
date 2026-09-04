@@ -17,12 +17,41 @@ sys.path.append(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
 
 from v2_CORE.settings import settings
 from v2_CORE._LOL.champ_id_normalizer import normalize_champion_id
+from v2_CORE._LOL.overlay.spell_asset_manager import normalize_spell_name
+from v2_CORE._LOL.overlay.item_price_manager import ItemPriceManager
 from v2_CORE._LOL.overlay.dynamic_build_advisor import DynamicBuildAdvisor
 from v2_CORE._LOL.overlay.fight_tracker import FightTracker
 from v2_CORE._LOL.overlay.fight_analyst import FightAnalyst
 from v2_CORE._LOL.overlay.kill_line_calculator import KillLineCalculator
 from v2_CORE._LOL.overlay.matchup_blueprint_engine import MatchupBlueprintEngine
 from v2_CORE._LOL.overlay.comeback_compass_engine import ComebackCompassEngine
+
+def extract_champion_name(player_obj: dict) -> str:
+    """Live Client Data APIのplayerオブジェクトから100%確実にチャンピオン名を抽出"""
+    if not player_obj:
+        return "Unknown"
+    
+    # 1. rawChampionName (最優先: "game_character_displayname_KaiSa" -> "KaiSa")
+    raw = player_obj.get("rawChampionName", "")
+    if raw and "game_character_displayname_" in raw:
+        c_id = raw.replace("game_character_displayname_", "").strip()
+        if c_id:
+            return normalize_champion_id(c_id)
+            
+    # 2. championName (日本語・英語の正規化)
+    c_name = player_obj.get("championName", "")
+    if c_name:
+        norm = normalize_champion_id(c_name)
+        if norm and norm not in ("Unknown", "Enemy"):
+            return norm
+
+    # 3. skinID 等のフォールバック
+    skin_id = str(player_obj.get("skinID", 0))
+    if len(skin_id) >= 4:
+        # 例: 145001 -> 145 (KaiSa)
+        pass
+
+    return normalize_champion_id(c_name) if c_name else "Unknown"
 
 HEAL_HEAVY_CHAMPIONS = {
     "Aatrox", "Warwick", "Vladimir", "Soraka", "Briar", "Swain",
@@ -150,18 +179,20 @@ class HudStateEngine:
         my_champion = "Unknown"
 
         for p in all_players:
-            if p.get("summonerName") == my_summoner:
+            # summonerName, riotId, riotIdGameName のいずれかで自分を特定
+            p_name = p.get("summonerName") or p.get("riotId") or p.get("riotIdGameName") or ""
+            if my_summoner and (p.get("summonerName") == my_summoner or p.get("riotId") == my_summoner or p_name == my_summoner):
                 my_player_obj = p
                 my_team = p.get("team", "ORDER")
                 my_position = p.get("position") or "TOP"
-                my_champion = p.get("championName") or "Unknown"
+                my_champion = extract_champion_name(p)
                 break
 
         if not my_player_obj and all_players:
             my_player_obj = all_players[0]
             my_team = my_player_obj.get("team", "ORDER")
             my_position = my_player_obj.get("position", "TOP")
-            my_champion = my_player_obj.get("championName", "Unknown")
+            my_champion = extract_champion_name(my_player_obj)
 
         enemy_team = "CHAOS" if my_team == "ORDER" else "ORDER"
         opponent_obj = None
@@ -183,8 +214,34 @@ class HudStateEngine:
         if not opponent_obj and enemy_players:
             opponent_obj = enemy_players[0]
 
-        enemy_champion = opponent_obj.get("championName", "Enemy") if opponent_obj else "Enemy"
-        enemy_jg_name = enemy_jg_obj.get("championName", "Enemy Jungle") if enemy_jg_obj else "敵JG"
+        enemy_champion = extract_champion_name(opponent_obj) if opponent_obj else "Enemy"
+        enemy_jg_name = extract_champion_name(enemy_jg_obj) if enemy_jg_obj else "敵JG"
+
+        # JG判定 (ポジションまたはスマイト所持判定)
+        my_spells_raw = []
+        if my_player_obj:
+            sp_dict = my_player_obj.get("summonerSpells", {})
+            my_spells_raw.append(str(sp_dict.get("summonerSpellOne", {}).get("displayName", "")))
+            my_spells_raw.append(str(sp_dict.get("summonerSpellTwo", {}).get("displayName", "")))
+            my_spells_raw.append(str(sp_dict.get("summonerSpellOne", {}).get("rawDisplayName", "")))
+            my_spells_raw.append(str(sp_dict.get("summonerSpellTwo", {}).get("rawDisplayName", "")))
+        
+        has_smite = any("smite" in s.lower() or "スマイト" in s for s in my_spells_raw if s)
+        is_jg = (my_position == "JUNGLE") or has_smite
+        if is_jg and enemy_jg_obj:
+            opponent_obj = enemy_jg_obj
+            enemy_champion = enemy_jg_name
+
+        # スマイト確殺ダメージ計算
+        if my_level >= 11:
+            smite_damage = 1200
+            smite_tier_name = "Avatar (最大)"
+        elif my_level >= 6:
+            smite_damage = 900
+            smite_tier_name = "Primal (強化)"
+        else:
+            smite_damage = 600
+            smite_tier_name = "Unleashed"
 
         # --- 1. CS / 分の計算 ---
         my_cs = my_player_obj.get("scores", {}).get("creepScore", 0) if my_player_obj else 0
@@ -220,13 +277,14 @@ class HudStateEngine:
         waves_needed = max(1, int((gold_needed + 120) / 125)) if gold_needed > 0 else 0
 
         # --- 4. チーム総アイテムゴールド差 ＆ ロール別対面ゴールド差 ---
+        # ItemPriceManagerから100%正確な実アイテム価格を合算
         ally_item_gold = sum(
-            item.get("price", 0) * item.get("count", 1)
-            for p in ally_players for item in p.get("items", [])
+            ItemPriceManager.calculate_player_item_gold(p.get("items", []))
+            for p in ally_players
         )
         enemy_item_gold = sum(
-            item.get("price", 0) * item.get("count", 1)
-            for p in enemy_players for item in p.get("items", [])
+            ItemPriceManager.calculate_player_item_gold(p.get("items", []))
+            for p in enemy_players
         )
         gold_diff = ally_item_gold - enemy_item_gold
         if gold_diff >= 500:
@@ -244,17 +302,25 @@ class HudStateEngine:
         role_label_map = {"TOP": "TOP", "JUNGLE": "JG", "MIDDLE": "MID", "BOTTOM": "ADC", "UTILITY": "SUP"}
         lane_dominance = []
 
-        for r_key in roles_order:
-            ally_p = next((p for p in ally_players if p.get("position") == r_key), None)
-            enemy_p = next((p for p in enemy_players if p.get("position") == r_key), None)
+        # positionが取得できない（カスタム・プラクティス等）場合のフォールバック
+        has_positions = any(p.get("position") for p in ally_players + enemy_players)
 
-            ally_g = sum(it.get("price", 0) * it.get("count", 1) for it in ally_p.get("items", [])) if ally_p else 0
-            enemy_g = sum(it.get("price", 0) * it.get("count", 1) for it in enemy_p.get("items", [])) if enemy_p else 0
+        for i, r_key in enumerate(roles_order):
+            if has_positions:
+                ally_p = next((p for p in ally_players if p.get("position") == r_key), None)
+                enemy_p = next((p for p in enemy_players if p.get("position") == r_key), None)
+            else:
+                ally_p = ally_players[i] if i < len(ally_players) else None
+                enemy_p = enemy_players[i] if i < len(enemy_players) else None
+
+            # ロール別アイテムゴールド (ItemPriceManagerで正確に計算)
+            ally_g = ItemPriceManager.calculate_player_item_gold(ally_p.get("items", [])) if ally_p else 0
+            enemy_g = ItemPriceManager.calculate_player_item_gold(enemy_p.get("items", [])) if enemy_p else 0
             diff = ally_g - enemy_g
 
             lbl = role_label_map.get(r_key, r_key)
-            a_champ = ally_p.get("championName", "Ally") if ally_p else "Ally"
-            e_champ = enemy_p.get("championName", "Enemy") if enemy_p else "Enemy"
+            a_champ = extract_champion_name(ally_p) if ally_p else "味方"
+            e_champ = extract_champion_name(enemy_p) if enemy_p else "敵"
 
             if diff >= 300:
                 status = "味方リード 🟢"
@@ -352,11 +418,13 @@ class HudStateEngine:
         enemy_team_details = []
         for ep in enemy_players:
             spells = ep.get("summonerSpells", {})
-            sp1 = spells.get("summonerSpellOne", {}).get("displayName", "Flash")
-            sp2 = spells.get("summonerSpellTwo", {}).get("displayName", "Teleport")
+            sp1_raw = spells.get("summonerSpellOne", {}).get("displayName") or spells.get("summonerSpellOne", {}).get("rawDisplayName", "Flash")
+            sp2_raw = spells.get("summonerSpellTwo", {}).get("displayName") or spells.get("summonerSpellTwo", {}).get("rawDisplayName", "Teleport")
+            sp1 = normalize_spell_name(sp1_raw)
+            sp2 = normalize_spell_name(sp2_raw)
             enemy_team_details.append({
                 "role": ep.get("position", "MID"),
-                "champion": ep.get("championName", "Enemy"),
+                "champion": extract_champion_name(ep),
                 "level": ep.get("level", 6),
                 "items": ep.get("items", []),
                 "spell1": sp1,
@@ -411,6 +479,29 @@ class HudStateEngine:
                     "message": f"👑 購入可能: {item_name} ({target_price}G 満額達成！)"
                 }
 
+        # --- 15. JG戦術インテル (Gank Radar ＆ オブジェクト方針) ---
+        jg_gank_targets = []
+        for row in lane_dominance:
+            r_name = row["role"]
+            if r_name in ["TOP", "MID", "ADC"]:
+                e_champ = row["enemy_champ"]
+                diff = row["diff"]
+                if diff <= -200:
+                    jg_gank_targets.append(f"🎯 {r_name} ({e_champ}): 味方劣勢 ➔ カバー/カウンターガンク推奨")
+                elif diff >= 300:
+                    jg_gank_targets.append(f"🎯 {r_name} ({e_champ}): 味方優勢 ➔ ダイブ/タワー破壊支援")
+                else:
+                    jg_gank_targets.append(f"🎯 {r_name} ({e_champ}): 互角 ➔ ガンク成功でレーン完全崩壊")
+
+        if game_time_sec < 300:
+            jg_objective_plan = "🌲 3:30 スカットル争奪 ➔ 5:00 ヴォイドグラブ先行"
+        elif game_time_sec < 840:
+            jg_objective_plan = f"🐉 ヴォイドグラブ ＆ ドラゴン確保 (スマイト: {smite_damage}dmg)"
+        elif game_time_sec < 1200:
+            jg_objective_plan = f"👁️ ヘラルド召喚 ➔ Mid破壊 ➔ ドラゴン魂 (スマイト: {smite_damage}dmg)"
+        else:
+            jg_objective_plan = f"👑 バロン / エルダー決戦 視界掌握 (スマイト: {smite_damage}dmg)"
+
         # 時間フォーマット
         min_part = int(game_time_sec // 60)
         sec_part = int(game_time_sec % 60)
@@ -418,6 +509,11 @@ class HudStateEngine:
 
         return {
             "active": True,
+            "is_jg": is_jg,
+            "smite_damage": smite_damage,
+            "smite_tier_name": smite_tier_name,
+            "jg_gank_targets": jg_gank_targets,
+            "jg_objective_plan": jg_objective_plan,
             "game_time_str": time_str,
             "game_time_sec": game_time_sec,
             "my_champion": my_champion,

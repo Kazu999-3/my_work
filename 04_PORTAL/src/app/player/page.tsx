@@ -154,6 +154,17 @@ export default function PlayerIndexPage() {
             );
             const displayMmr = specificMmr || player.mmr || avgMmr;
 
+            const opggUrl = (() => {
+              const raw = player.ign || (player.name && player.name.includes('#') ? player.name : null);
+              if (!raw) return null;
+              const trimmed = raw.trim();
+              if (trimmed.includes('#')) {
+                const [gameName, tagLine] = trimmed.split('#');
+                return `https://www.op.gg/summoners/jp/${encodeURIComponent(gameName.trim())}-${encodeURIComponent(tagLine.trim() || 'JP1')}`;
+              }
+              return `https://www.op.gg/summoners/jp/${encodeURIComponent(trimmed)}-JP1`;
+            })();
+
             return (
               <Link href={`/player/${player.name}`} key={player.id}>
                 <div className="bg-white border border-stone-200/90 hover:border-indigo-400 rounded-2xl p-5 transition-all hover:shadow-lg group cursor-pointer h-full flex flex-col relative overflow-hidden">
@@ -184,7 +195,21 @@ export default function PlayerIndexPage() {
                           </span>
                         )}
                       </div>
-                      <p className="text-xs text-stone-400 truncate font-mono">{player.ign || "No IGN"}</p>
+                      <div className="flex items-center justify-between gap-1 mt-0.5">
+                        <p className="text-xs text-stone-400 truncate font-mono">{player.ign || "No IGN"}</p>
+                        {opggUrl && (
+                          <a
+                            href={opggUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="text-[10px] font-black text-[#5383e8] hover:text-[#3862b8] hover:underline flex items-center gap-0.5 shrink-0 px-1 py-0.2 bg-[#5383e8]/10 rounded"
+                            title="OP.GGで戦績を見る"
+                          >
+                            OP.GG ↗
+                          </a>
+                        )}
+                      </div>
                     </div>
                   </div>
 

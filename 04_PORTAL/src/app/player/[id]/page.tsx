@@ -293,6 +293,18 @@ export default function PlayerMyPage() {
     return '';
   }, [champPool]);
 
+  // OP.GG URL の生成
+  const opggUrl = useMemo(() => {
+    const raw = player?.ign || (player?.name && player.name.includes('#') ? player.name : null);
+    if (!raw) return null;
+    const trimmed = raw.trim();
+    if (trimmed.includes('#')) {
+      const [gameName, tagLine] = trimmed.split('#');
+      return `https://www.op.gg/summoners/jp/${encodeURIComponent(gameName.trim())}-${encodeURIComponent(tagLine.trim() || 'JP1')}`;
+    }
+    return `https://www.op.gg/summoners/jp/${encodeURIComponent(trimmed)}-JP1`;
+  }, [player]);
+
   // ヘッダー表示用メインタグ (history & champPool から Unknown を100%排除して得意キャラ名 or 主力ロール名を表示)
   const mainDisplayTag = useMemo(() => {
     // 1. history から直接有効なチャンピオンをカウント
@@ -624,7 +636,19 @@ export default function PlayerMyPage() {
                   )}
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-stone-700 text-sm font-bold">{player.ign || "IGN未登録"}</span>
+                  <span className="text-stone-200 text-sm font-bold font-mono">{player.ign || "IGN未登録"}</span>
+                  {opggUrl && (
+                    <a
+                      href={opggUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-[#5383e8] hover:bg-[#4168c4] text-white rounded-full text-xs font-black transition-all shadow-md hover:scale-105"
+                      title="OP.GGで戦績・直近のマッチ履歴を確認"
+                    >
+                      <span className="font-black text-[10px] bg-white text-[#5383e8] px-1 py-0.2 rounded font-mono">OP</span>
+                      <span>OP.GG ↗</span>
+                    </a>
+                  )}
                   <div className="flex gap-1.5 flex-wrap">
                     <span className="bg-black/5 border border-black/10 px-2.5 py-0.5 rounded-full text-xs font-bold text-stone-700 backdrop-blur-md">
                       最高: <span className="text-cyan-600 font-extrabold">{player.highest_rank || "UNRANKED"}</span>

@@ -94,9 +94,18 @@ class KillLineCalculator:
         base_dmg = profile["base_lvl6"] * (0.6 + (enemy_level * 0.066))
 
         # 2. AD/APスケーリング加算
-        ad_scale = profile.get("ad_scale", 2.0)
-        ap_scale = profile.get("ap_scale", 0.0)
-        raw_burst = base_dmg + (enemy_bonus_ad * ad_scale) + (enemy_bonus_ap * ap_scale)
+        ad_scale = float(profile.get("ad_scale", 2.0))
+        ap_scale = float(profile.get("ap_scale", 0.0))
+        try:
+            bonus_ad = float(enemy_bonus_ad)
+        except (ValueError, TypeError):
+            bonus_ad = 25.0
+        try:
+            bonus_ap = float(enemy_bonus_ap)
+        except (ValueError, TypeError):
+            bonus_ap = 0.0
+
+        raw_burst = base_dmg + (bonus_ad * ad_scale) + (bonus_ap * ap_scale)
 
         # 3. イグナイト公式ダメージ (70 + 20 * Lv の確定ダメージ)
         ignite_dmg = (70 + (20 * enemy_level)) if has_ignite else 0.0

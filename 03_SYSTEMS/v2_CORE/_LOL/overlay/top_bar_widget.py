@@ -63,13 +63,13 @@ class TopBarWidget(QWidget):
 
         # 2. 🎯 CSペース行
         cs_row = QHBoxLayout()
-        cs_title = QLabel("🎯 CSペース :", self.card_frame)
-        cs_title.setStyleSheet("color: #a8a29e; font-size: 12px; font-weight: bold;")
+        self.cs_title = QLabel("🎯 CSペース :", self.card_frame)
+        self.cs_title.setStyleSheet("color: #a8a29e; font-size: 12px; font-weight: bold;")
 
         self.cs_value_label = QLabel("0.0 /分 (---)", self.card_frame)
         self.cs_value_label.setStyleSheet("color: #22c55e; font-size: 13px; font-weight: bold;")
 
-        cs_row.addWidget(cs_title)
+        cs_row.addWidget(self.cs_title)
         cs_row.addWidget(self.cs_value_label)
         cs_row.addStretch()
         card_layout.addLayout(cs_row)
@@ -149,12 +149,21 @@ class TopBarWidget(QWidget):
         self.gold_value_label.setText(gold_str)
         self.gold_value_label.setStyleSheet(f"color: {gold_col}; font-size: 13px; font-weight: bold;")
 
-        # 2. CSペース
+        # 2. CSペース / JGファーム
+        is_jg = state.get("is_jg", False)
         cspm = state.get("cs_per_min", 0.0)
         cs_rating = state.get("cs_rating", "MID")
         cs_col = state.get("cs_color", "#22c55e")
         rating_text = "好調 🟢" if cs_rating == "HIGH" else ("普通 🟡" if cs_rating == "MID" else "警戒 🔴")
-        self.cs_value_label.setText(f"{cspm} /分 ({rating_text})")
+        
+        if is_jg:
+            self.cs_title.setText("🌲 JGファーム :")
+            smite_dmg = state.get("smite_damage", 900)
+            self.cs_value_label.setText(f"{cspm}/分 (⚡{smite_dmg})")
+        else:
+            self.cs_title.setText("🎯 CSペース :")
+            self.cs_value_label.setText(f"{cspm} /分 ({rating_text})")
+
         self.cs_value_label.setStyleSheet(f"color: {cs_col}; font-size: 13px; font-weight: bold;")
 
         # 3. 次のおすすめ目標アイテム ＆ プログレスバー

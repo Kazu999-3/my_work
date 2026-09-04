@@ -10,6 +10,14 @@ Sovereign HUD - オーバーレイ統合ランチャー (リスク1〜4完全解
 
 import os
 import sys
+
+# Windows コンソールでの文字化け・UnicodeEncodeError防止
+if sys.stdout and hasattr(sys.stdout, 'reconfigure'):
+    try:
+        sys.stdout.reconfigure(encoding='utf-8')
+    except Exception:
+        pass
+
 import argparse
 import threading
 from pathlib import Path
@@ -33,8 +41,14 @@ from v2_CORE._LOL.overlay.hud_config import load_widget_positions
 def main():
     parser = argparse.ArgumentParser(description="Sovereign HUD Overlay")
     parser.add_argument("--mock", action="store_true", help="モックデータを使用してUIテストを実行")
+    parser.add_argument("--demo", action="store_true", help="リアルタイム試合シミュレーション(デモモード)を実行")
+    parser.add_argument("--test", action="store_true", help="自動テストスイートを実行")
     parser.add_argument("--always-show", action="store_true", help="すべてのウィジェットを常時表示")
     args = parser.parse_args()
+
+    if args.test:
+        from v2_CORE._LOL.overlay.test_overlay_suite import run_full_suite
+        sys.exit(run_full_suite())
 
     app = QApplication(sys.argv)
     
@@ -93,29 +107,29 @@ def main():
             return
         champ_name, spell_type = parsed
         for col in spell_tracker.columns:
-            if col.champ_name.lower() == champ_name.lower():
+            c_name = getattr(col, "champion", "")
+            if c_name.lower() == champ_name.lower():
                 if spell_type == "FLASH":
                     col.btn_spell1.trigger_cooldown()
-                    toast_alert.show_alert("⚡", f"敵 {col.champ_name} Flash 使用検知！タイマー自動始動", alert_type="spike", duration_ms=4000)
-                    print(f"🎯 [Chat Auto-Sync] 敵 {col.champ_name} のFlashタイマーを自動始動しました！")
+                    toast_alert.show_alert("⚡", f"敵 {c_name} Flash 使用検知！タイマー自動始動", alert_type="spike", duration_ms=4000)
+                    print(f"🎯 [Chat Auto-Sync] 敵 {c_name} のFlashタイマーを自動始動しました！")
                 elif spell_type == "ULT":
                     col.btn_ult.trigger_cooldown()
-                    toast_alert.show_alert("👑", f"敵 {col.champ_name} Ult 使用検知！タイマー自動始動", alert_type="spike", duration_ms=4000)
-                    print(f"🎯 [Chat Auto-Sync] 敵 {col.champ_name} のUltタイマーを自動始動しました！")
+                    toast_alert.show_alert("👑", f"敵 {c_name} Ult 使用検知！タイマー自動始動", alert_type="spike", duration_ms=4000)
+                    print(f"🎯 [Chat Auto-Sync] 敵 {c_name} のUltタイマーを自動始動しました！")
                 break
 
-    # 初期表示状態
+    # 初期表示状態: TopBar(右上), SpellTracker(右下), MatchupCard(左側) を常時表示
     top_bar.show()
     spell_tracker.show()
+    matchup_card.show()
 
     if args.always_show:
-        matchup_card.show()
         lane_dominance.show()
     else:
-        matchup_card.hide()
         lane_dominance.hide()
 
-    # TABキーフック連動
+    # TABキーフック連動 (中央下 レーン優勢度パネル)
     tab_listener = TabKeyListener()
     tab_listener.start()
 
@@ -123,10 +137,8 @@ def main():
         if args.always_show:
             return
         if is_pressed:
-            matchup_card.show()
             lane_dominance.show()
         else:
-            matchup_card.hide()
             lane_dominance.hide()
 
     tab_listener.tab_state_changed.connect(on_tab_state_changed)
@@ -165,24 +177,62 @@ def main():
         threading.Thread(target=async_sync_worker, args=(last_state,), daemon=True).start()
 
     # 定期更新ループ (1秒おき)
+    last_reported_status = None
+    tick_count = 0
+
     def update_all():
-        nonlocal game_state_tracker
-        if args.mock:
+        nonlocal game_state_tracker, last_reported_status, tick_count
+        tick_count += 1
+
+        if args.demo:
+            raw_data = LiveClient.get_mock_game_data()
+            sim_time = 180.0 + (tick_count * 3.0)
+            raw_data["gameData"]["gameTime"] = sim_time
+            if "activePlayer" in raw_data:
+                raw_data["activePlayer"]["currentGold"] = 450 + (tick_count * 65)
+            if tick_count == 3:
+                print("💬 [デモチャット検知] 「Darius: Flash」を自動検知しました！")
+                on_chat_spell_event("darius flash")
+            elif tick_count == 7:
+                print("💬 [デモチャット検知] 「Zed: R」を自動検知しました！")
+                on_chat_spell_event("zed r")
+            state = state_engine.analyze_frame(raw_data)
+        elif args.mock:
             raw_data = LiveClient.get_mock_game_data()
             state = state_engine.analyze_frame(raw_data)
-        elif live_client.check_connection():
-            raw_data = live_client.fetch_all_game_data()
-            state = state_engine.analyze_frame(raw_data)
         else:
-            state = {"active": False}
+            # 2回叩かず直接 allgamedata を取得して高速化・安定化
+            raw_data = live_client.fetch_all_game_data()
+            if raw_data:
+                state = state_engine.analyze_frame(raw_data)
+            else:
+                state = {"active": False}
 
-        # 試合終了検知（インゲーム ➔ 切断）
-        if state.get("active"):
+        is_active = state.get("active", False)
+
+        # 接続状態の変化をコンソールに出力
+        if is_active:
+            my_champ = state.get("my_champion", "---")
+            enemy_champ = state.get("enemy_champion", "---")
+            t_str = state.get("game_time_str", "00:00")
+            g_str = state.get("gold_diff_str", "0G")
+            if last_reported_status != "in_game":
+                print(f"\n🟢 [インゲーム連動成功！] 試合時間: {t_str} | {my_champ} vs {enemy_champ} | {g_str}")
+                print("💡 画面右上/右下のHUDが実データに更新されました！（TABキーを押すと左側に対面手順書＆中央にレーン差が出現）\n")
+                last_reported_status = "in_game"
+            elif tick_count % 10 == 0:
+                print(f"⏱️ [In-Game] {t_str} | {my_champ} vs {enemy_champ} | CS: {state.get('my_cs', 0)} ({state.get('cs_per_min', 0)}/m) | {g_str}")
+
             game_state_tracker["was_in_game"] = True
             game_state_tracker["last_active_state"] = state
-        elif game_state_tracker["was_in_game"]:
-            game_state_tracker["was_in_game"] = False
-            on_game_ended(game_state_tracker["last_active_state"])
+        else:
+            if last_reported_status != "waiting":
+                print("⏳ [ゲーム待機中...] サモナーズリフト（League of Legends.exe）の開始を待機しています...")
+                last_reported_status = "waiting"
+
+            if game_state_tracker["was_in_game"]:
+                game_state_tracker["was_in_game"] = False
+                on_game_ended(game_state_tracker["last_active_state"])
 
         top_bar.update_data(state)
         matchup_card.update_data(state)
@@ -198,12 +248,13 @@ def main():
     print("=" * 65)
     print("👑 Sovereign HUD (v2.0 リスク1〜4完全解決版)")
     print("  [1] 💰 経済＆マクロ (画面右上 / 常時表示)")
-    print("  [2] ⚡ 敵Ult＆スペル管理 (画面右下 / チャット検知で自動始動)")
-    print("  [3] ⚔️ 対面インテル＆動的ビルド (画面左側 / TAB連動)")
+    print("  [2] ⚡ 敵Ult＆スペル管理 (画面右下 / 常時表示 ＆ チャット自動連動)")
+    print("  [3] ⚔️ 対面インテル＆動的ビルド (画面左側 / 常時表示)")
     print("  [4] 📊 各メンバー対面ゴールド差 (画面中央下部 / TAB連動)")
     print("  [5] 🚀 試合終了時完全非同期データ転送 (threading.Thread)")
     print("-----------------------------------------------------------------")
-    print("⌨️ 【TABキー連動】: TABを押している間だけ左側カード＆中央パネルが出現！")
+    print("👁️ 左側対面カード・右上マクロ・右下スペルが常時表示されます。")
+    print("⌨️ 【TABキー連動】: スコアボード確認時、中央下にレーン優勢度が出現！")
     print("💬 【チャット自動連動】: 「ダリウスがフラッシュを使用」「Darius: Flash」を自動検知！")
     print("=" * 65)
 

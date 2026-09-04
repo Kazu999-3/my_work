@@ -33,14 +33,6 @@ export default function HomePage() {
 
           <div className="flex items-center gap-2 flex-wrap">
             <Link
-              href="/hud"
-              target="_blank"
-              className="px-3.5 py-2 bg-stone-800 hover:bg-stone-700 text-amber-400 border border-amber-500/30 rounded-xl text-xs font-black transition flex items-center gap-1.5 shadow-2xs cursor-pointer"
-              title="サブモニターや画面端に置いておける極小Web HUD"
-            >
-              <span>🖥️</span> 軽量Web HUD
-            </Link>
-            <Link
               href="/admin/dashboard"
               className="px-3.5 py-2 bg-stone-800/80 hover:bg-stone-700 text-stone-300 border border-stone-700 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-2xs"
               title="開発者用 Sovereign OS 監視センター"
@@ -176,14 +168,7 @@ export default function HomePage() {
         </div>
 
         {/* クイックサブメニュー */}
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-          <Link
-            href="/hud"
-            className="p-3 bg-amber-950/30 hover:bg-amber-900/40 border border-amber-500/40 rounded-2xl text-center transition group"
-          >
-            <span className="text-base block mb-1">🖥️</span>
-            <span className="text-xs font-black text-amber-300 group-hover:text-amber-200">HUDオーバーレイ</span>
-          </Link>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <Link
             href="/balancer/record"
             className="p-3 bg-stone-800/60 hover:bg-stone-800 border border-stone-700/60 rounded-2xl text-center transition group"

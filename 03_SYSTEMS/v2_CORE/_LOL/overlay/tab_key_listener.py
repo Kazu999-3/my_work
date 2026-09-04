@@ -21,9 +21,20 @@ class TabKeyListener(QObject):
         self.user32 = ctypes.windll.user32
 
         # 50ms (秒間20回) で超軽量ポーリング
+        self.check_interval_ms = check_interval_ms
         self.poll_timer = QTimer(self)
         self.poll_timer.timeout.connect(self.check_tab_state)
-        self.poll_timer.start(check_interval_ms)
+        self.poll_timer.start(self.check_interval_ms)
+
+    def start(self):
+        """ポーリングタイマーを開始"""
+        if not self.poll_timer.isActive():
+            self.poll_timer.start(self.check_interval_ms)
+
+    def stop(self):
+        """ポーリングタイマーを停止"""
+        if self.poll_timer.isActive():
+            self.poll_timer.stop()
 
     def check_tab_state(self):
         # 最上位ビットが立っていればキー押下中 (0x8000)
