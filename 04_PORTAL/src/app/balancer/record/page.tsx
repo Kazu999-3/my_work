@@ -46,6 +46,7 @@ function CustomRecordPageContent() {
   const [analyzing, setAnalyzing] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [openDetails, setOpenDetails] = useState<Record<number, boolean>>({});
+  const [savedMatchSummary, setSavedMatchSummary] = useState<{ matchId?: any; winningTeam: 'BLUE' | 'RED'; isExhibition: boolean; playersCount: number } | null>(null);
   const toggleDetails = (index: number) => {
     setOpenDetails(prev => ({ ...prev, [index]: !prev[index] }));
   };
@@ -541,13 +542,19 @@ function CustomRecordPageContent() {
         })
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
+      if (!res.ok) throw new Error(data.error || '保存に失敗しました');
       
-      alert('試合結果を保存し、MMRを更新しました！');
       if (pendingId) {
         await fetch(`/api/balancer/pending?id=${pendingId}`, { method: 'DELETE' }).catch(() => {});
       }
-      router.push('/balancer');
+
+      setSavedMatchSummary({
+        matchId: data.match?.id || data.id,
+        winningTeam,
+        isExhibition,
+        playersCount: stats.filter(s => s.name).length
+      });
+      setMessage({ type: 'success', text: '✅ 試合結果を記録し、MMRを更新しました！' });
     } catch (err: any) {
       setMessage({ type: 'error', text: `保存エラー: ${err.message}` });
     } finally {
@@ -986,6 +993,76 @@ function CustomRecordPageContent() {
                   該当するチャンピオンが見つかりません。
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 🎉 試合結果記録 完了モーダル (3大ネクストアクション) */}
+      {savedMatchSummary && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4 animate-fade-in"
+          onClick={e => { if (e.target === e.currentTarget) setSavedMatchSummary(null); }}
+        >
+          <div className="bg-white border border-stone-300 rounded-3xl w-full max-w-lg shadow-2xl p-6 sm:p-8 space-y-6 text-center animate-scale-up">
+            <div className="w-16 h-16 rounded-3xl bg-emerald-100 border-2 border-emerald-300 flex items-center justify-center text-3xl mx-auto shadow-xs">
+              🏆
+            </div>
+
+            <div className="space-y-2">
+              <h2 className="text-xl sm:text-2xl font-black text-stone-900 tracking-tight">
+                試合結果の記録が完了しました！
+              </h2>
+              <div className="flex items-center justify-center gap-2 text-xs font-bold text-stone-600">
+                <span className={`px-2.5 py-0.5 rounded-full font-black text-white ${savedMatchSummary.winningTeam === 'BLUE' ? 'bg-blue-600' : 'bg-rose-600'}`}>
+                  {savedMatchSummary.winningTeam === 'BLUE' ? '🟦 BLUE 勝利' : '🟥 RED 勝利'}
+                </span>
+                <span>参加者: {savedMatchSummary.playersCount} 名</span>
+                {savedMatchSummary.isExhibition && (
+                  <span className="bg-amber-500 text-white px-2 py-0.5 rounded-full font-black text-[10px]">
+                    🎪 お祭り保護
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-stone-500 font-medium pt-1">
+                戦績ログが保存され、参加メンバーの公式MMRと勝率が最新化されました。
+              </p>
+            </div>
+
+            {/* 3大ネクストアクション分岐 */}
+            <div className="space-y-2.5 pt-2">
+              <Link
+                href="/history"
+                className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white font-black text-xs sm:text-sm shadow-md transition group"
+              >
+                <div className="flex items-center gap-2.5">
+                  <span className="text-lg">📜</span>
+                  <span>確定した対戦履歴を見る</span>
+                </div>
+                <span className="text-amber-200 group-hover:translate-x-1 transition-transform">→</span>
+              </Link>
+
+              <Link
+                href="/coach?tab=postgame"
+                className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-stone-900 hover:bg-stone-800 text-white font-black text-xs sm:text-sm shadow-md transition group"
+              >
+                <div className="flex items-center gap-2.5">
+                  <span className="text-lg">👑</span>
+                  <span>1分振り返り ＆ 集団戦ディープアナリティクス</span>
+                </div>
+                <span className="text-stone-400 group-hover:translate-x-1 transition-transform">→</span>
+              </Link>
+
+              <Link
+                href="/balancer"
+                className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-stone-100 hover:bg-stone-200 text-stone-800 font-bold text-xs sm:text-sm border border-stone-200 transition group"
+              >
+                <div className="flex items-center gap-2.5">
+                  <span className="text-lg">⚔️</span>
+                  <span>次の試合のチーム分けを行う</span>
+                </div>
+                <span className="text-stone-500 group-hover:translate-x-1 transition-transform">→</span>
+              </Link>
             </div>
           </div>
         </div>

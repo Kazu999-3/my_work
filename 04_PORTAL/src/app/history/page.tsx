@@ -119,16 +119,9 @@ export default function HistoryPage() {
           <div className="flex items-center gap-2 flex-wrap">
             <Link
               href="/coach?tab=postgame"
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 border border-stone-300 font-bold text-xs shadow-2xs transition"
-            >
-              <span>⚡</span>
-              <span>1分ソロQ振り返り</span>
-            </Link>
-            <Link
-              href="/history/analytics"
               className="inline-flex items-center gap-2 px-4 py-1.5 rounded-xl bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white font-bold text-xs shadow-sm transition"
             >
-              <span>👑 集団戦ディープアナリティクスを見る</span>
+              <span>👑 試合後ディープアナリティクス ＆ 1分振り返り</span>
             </Link>
           </div>
         </div>
