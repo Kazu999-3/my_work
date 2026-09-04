@@ -58,10 +58,11 @@ export default function MatchupBlueprintCard({
   const [data, setData] = useState<BlueprintResponse | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // 追加インテル (カウンター・ビルド・JG警戒)
+  // 追加インテル (カウンター・ビルド・JG警戒・過去の反省遺言)
   const [activeTab, setActiveTab] = useState<'blueprint' | 'builds' | 'jungle'>('blueprint');
   const [counterData, setCounterData] = useState<any>(null);
   const [counterLoading, setCounterLoading] = useState(false);
+  const [matchupWarning, setMatchupWarning] = useState<any>(null);
 
   // 外部からのprops更新に同期
   useEffect(() => {
@@ -114,6 +115,25 @@ export default function MatchupBlueprintCard({
       .catch(() => setCounterLoading(false));
   }, [myChamp, enemyChamp]);
 
+  // 過去の反省遺言・対面過去戦績の取得
+  useEffect(() => {
+    if (!enemyChamp) return;
+    fetch('/api/soloq/matchup-warning', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ champion: myChamp, enemyChampion: enemyChamp })
+    })
+      .then((r) => r.json())
+      .then((d) => {
+        if (d && d.warning) {
+          setMatchupWarning(d.warning);
+        } else {
+          setMatchupWarning(null);
+        }
+      })
+      .catch(() => setMatchupWarning(null));
+  }, [myChamp, enemyChamp]);
+
   if (loading && !data) {
     return (
       <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-xs animate-pulse">
@@ -130,17 +150,67 @@ export default function MatchupBlueprintCard({
 
   return (
     <div className="bg-white border border-stone-200/90 rounded-2xl p-5 shadow-sm text-stone-900 space-y-4">
-      {/* ヘッダー ＆ 動的対面セレクター */}
-      <div className="border-b border-stone-100 pb-3 space-y-3">
+      {/* ⚠️ 過去の自分の反省遺言バナー（存在時最優先ポップアップ） */}
+      {matchupWarning && (
+        <div className="bg-gradient-to-r from-amber-500/15 via-rose-500/10 to-amber-500/15 border-2 border-amber-500/60 rounded-xl p-3.5 shadow-2xs space-y-2 animate-in">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5 text-xs font-black text-amber-950">
+              <AlertTriangle className="w-4 h-4 text-amber-600 animate-bounce" />
+              <span>【過去の反省遺言】 vs {enemyChamp} 前回の教訓</span>
+            </div>
+            {matchupWarning.laneRecord && (
+              <span className="text-[10px] font-black font-mono bg-white/90 text-stone-700 px-2 py-0.5 rounded border border-amber-300">
+                対面勝率 {matchupWarning.laneRecord.gameWinRate}% ({matchupWarning.laneRecord.wins}勝 {matchupWarning.laneRecord.losses}敗)
+              </span>
+            )}
+          </div>
+          {matchupWarning.matchupMemo && (
+            <p className="text-xs font-bold text-stone-800 bg-white/90 p-2 rounded-lg border border-amber-200/80 leading-relaxed">
+              💬 <span className="text-amber-900 font-extrabold">メモ:</span> {matchupWarning.matchupMemo}
+            </p>
+          )}
+          {matchupWarning.sentinelStrategy && (
+            <p className="text-[11px] font-medium text-stone-700 leading-snug">
+              🛡️ <span className="font-bold">対策要点:</span> {matchupWarning.sentinelStrategy}
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* ヘッダー: 対戦カード ＆ Lv想定切替 */}
+      <div className="border-b border-stone-100 pb-3 space-y-2.5">
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div className="flex items-center gap-2">
-            <span className="px-2 py-0.5 bg-gradient-to-r from-amber-600 to-amber-700 text-white rounded-md text-[10px] font-black uppercase tracking-wider shadow-2xs">
-              Sovereign Pre-Game Hub
+            <div className="flex items-center gap-2 bg-stone-100/80 px-2.5 py-1 rounded-xl border border-stone-200">
+              <div className="flex items-center gap-1.5">
+                <Image
+                  src={getChampIcon(myChamp)}
+                  alt={myChamp}
+                  width={22}
+                  height={22}
+                  className="w-5.5 h-5.5 rounded-full border border-amber-500 shrink-0"
+                  onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                />
+                <span className="font-black text-xs text-stone-900">{myChamp}</span>
+              </div>
+              <span className="text-[10px] font-black text-stone-400">VS</span>
+              <div className="flex items-center gap-1.5">
+                <Image
+                  src={getChampIcon(enemyChamp)}
+                  alt={enemyChamp}
+                  width={22}
+                  height={22}
+                  className="w-5.5 h-5.5 rounded-full border border-rose-500 shrink-0"
+                  onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                />
+                <span className="font-black text-xs text-rose-900">{enemyChamp}</span>
+              </div>
+            </div>
+            <span className="px-2 py-0.5 bg-amber-100 text-amber-900 border border-amber-300 rounded-md text-[10px] font-black uppercase tracking-wider">
+              ドラフト作戦司令塔
             </span>
-            <h3 className="text-sm md:text-base font-extrabold text-stone-900 flex items-center gap-1.5">
-              <span>⚔️ ドラフト勝率最大化 1画面作戦司令塔</span>
-            </h3>
           </div>
+
           <div className="flex items-center gap-2">
             <span className="text-[11px] font-bold text-stone-500">敵Lv想定:</span>
             <select
@@ -153,75 +223,6 @@ export default function MatchupBlueprintCard({
               <option value="11">Lv11 (中盤)</option>
               <option value="16">Lv16 (レイト)</option>
             </select>
-          </div>
-        </div>
-
-        {/* 動的対面切り替えセレクター */}
-        <div className="flex items-center gap-2 bg-stone-50/90 p-2.5 rounded-xl border border-stone-200/80 flex-wrap">
-          <div className="flex items-center gap-2 min-w-[150px]">
-            <Image
-              src={getChampIcon(myChamp)}
-              alt={myChamp}
-              width={26}
-              height={26}
-              className="w-6.5 h-6.5 rounded-full border border-amber-500 shrink-0"
-              onError={(e) => { e.currentTarget.style.display = 'none'; }}
-            />
-            <div className="flex flex-col">
-              <span className="text-[9px] font-bold text-stone-400">自分</span>
-              <select
-                value={myChamp}
-                onChange={(e) => handleMyChange(e.target.value)}
-                className="text-xs font-black px-2 py-0.5 rounded-md border border-stone-200 bg-white text-stone-900 cursor-pointer"
-              >
-                {COMMON_CHAMPIONS.map((c) => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <ArrowRightLeft className="w-3.5 h-3.5 text-stone-400 shrink-0" />
-
-          <div className="flex items-center gap-2 min-w-[150px]">
-            <Image
-              src={getChampIcon(enemyChamp)}
-              alt={enemyChamp}
-              width={26}
-              height={26}
-              className="w-6.5 h-6.5 rounded-full border border-rose-500 shrink-0"
-              onError={(e) => { e.currentTarget.style.display = 'none'; }}
-            />
-            <div className="flex flex-col">
-              <span className="text-[9px] font-bold text-stone-400">敵対面</span>
-              <select
-                value={enemyChamp}
-                onChange={(e) => handleEnemyChange(e.target.value)}
-                className="text-xs font-black px-2 py-0.5 rounded-md border border-stone-200 bg-white text-rose-800 cursor-pointer"
-              >
-                {COMMON_CHAMPIONS.map((c) => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {/* クイック選択チップ */}
-          <div className="flex items-center gap-1 flex-wrap ml-auto">
-            <span className="text-[10px] text-stone-400 font-bold">即切替:</span>
-            {['Darius', 'Zed', 'Ahri', 'Riven', 'Renekton'].map((c) => (
-              <button
-                key={c}
-                onClick={() => handleEnemyChange(c)}
-                className={`text-[10px] font-extrabold px-2 py-0.5 rounded-md border transition-colors ${
-                  enemyChamp === c
-                    ? 'bg-rose-100 text-rose-800 border-rose-300'
-                    : 'bg-white text-stone-600 border-stone-200 hover:bg-stone-100'
-                }`}
-              >
-                vs {c}
-              </button>
-            ))}
           </div>
         </div>
 

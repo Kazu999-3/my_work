@@ -1509,6 +1509,7 @@ export default function CoachPage() {
   };
 
   const [activeStepTab, setActiveStepTab] = useState<'pregame' | 'live' | 'postgame'>('pregame');
+  const [postGameSubTab, setPostGameSubTab] = useState<'instant' | 'archive'>('instant');
 
   const STEP_TABS = [
     { id: 'pregame', title: '1. 試合前', sub: 'バンピック・5分作戦', icon: '🎯' },
@@ -1602,9 +1603,9 @@ export default function CoachPage() {
                 );
               }}
               className="px-3.5 py-2 bg-[#12151d] hover:bg-[#1c2230] text-amber-400 border border-amber-500/40 font-bold text-xs rounded-xl shadow-xs transition-all hover:scale-105 flex items-center gap-1.5 cursor-pointer"
-              title="サブモニターや画面端に置いておける極小ウィンドウ"
+              title="サブモニターや画面端に置いておける極小Web HUD"
             >
-              <span>🖥️</span> 試合中HUD (小窓)
+              <span>🖥️</span> 軽量Web HUD (サブ画面用)
             </button>
           </div>
         </div>
@@ -1726,8 +1727,41 @@ export default function CoachPage() {
         {/* ========================================================================= */}
         <div className={activeStepTab === 'live' ? 'space-y-5 animate-in' : 'hidden'}>
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-            {/* 左側: リアルタイム偵察 */}
+            {/* 左側: リアルタイム偵察 ＆ インゲームHUD連携ガイド */}
             <div className="lg:col-span-7 xl:col-span-8 flex flex-col gap-5">
+              {/* インゲームHUD連携ステータスバナー */}
+              <div className="bg-gradient-to-r from-stone-900 to-stone-800 text-white rounded-2xl p-4 shadow-sm border border-stone-700/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-lg shrink-0">
+                    👑
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-black text-xs text-amber-400">Sovereign HUD 連動ガイド</span>
+                      <span className="text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 font-bold px-1.5 py-0.2 rounded">
+                        自動同期中
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-stone-300 mt-0.5">
+                      ⌨️ <span className="text-amber-300 font-bold">TABキー</span>で対面キルライン＆対面ゴールド差表示 / 💬 チャットから敵スペル・Ult自動検知
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    window.open(
+                      '/hud',
+                      'LoL_Minimal_HUD',
+                      'width=420,height=600,menubar=no,toolbar=no,location=no,status=no,resizable=yes'
+                    );
+                  }}
+                  className="shrink-0 px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-stone-950 font-black text-xs rounded-xl shadow-xs transition"
+                >
+                  小窓HUDを開く
+                </button>
+              </div>
+
               <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-xs space-y-3">
                 <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5">
                   <span>🧭</span> リアルタイム偵察 (敵10人スキャン ＆ ガンク優先ターゲット)
@@ -1749,63 +1783,104 @@ export default function CoachPage() {
         </div>
 
         {/* ========================================================================= */}
-        {/* 3. 📈 試合後 (1画面クイックデトックス ＆ 5大ディープアナリティクス) */}
+        {/* 3. 📈 試合後 (1画面クイックデトックス ＆ 長期カルテ) */}
         {/* ========================================================================= */}
-        <div className={activeStepTab === 'postgame' ? 'space-y-5 animate-in' : 'hidden'}>
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-            {/* 左側: 直近試合最優先（5大ディープアナリティクス ＋ 集団戦 ＋ 1分振り返り） */}
-            <div className="lg:col-span-7 xl:col-span-8 flex flex-col gap-5">
+        <div className={activeStepTab === 'postgame' ? 'space-y-4 animate-in' : 'hidden'}>
+          {/* 試合後 2分割サブナビゲーション */}
+          <div className="flex items-center justify-between gap-3 bg-white/95 border border-stone-200/90 p-1.5 rounded-2xl shadow-xs">
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => setPostGameSubTab('instant')}
+                className={`px-4 py-2 rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-1.5 ${
+                  postGameSubTab === 'instant'
+                    ? 'bg-amber-700 text-white shadow-xs'
+                    : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+                }`}
+              >
+                <span>⚡</span>
+                <span>直近試合クイックデトックス (5大分析 ＆ 振り返り)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setPostGameSubTab('archive')}
+                className={`px-4 py-2 rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-1.5 ${
+                  postGameSubTab === 'archive'
+                    ? 'bg-amber-700 text-white shadow-xs'
+                    : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+                }`}
+              >
+                <span>📊</span>
+                <span>過去カルテ ＆ 長期傾向・練習メニュー</span>
+              </button>
+            </div>
+            <span className="text-[11px] font-bold text-stone-400 hidden sm:inline pr-2">
+              {postGameSubTab === 'instant' ? '試合終了直後1分モード' : '長期分析・ダッシュボード'}
+            </span>
+          </div>
+
+          {/* サブビュー1: 直近試合クイックデトックス (1画面完結) */}
+          {postGameSubTab === 'instant' && (
+            <div className="space-y-5 animate-in">
               {/* 5大ディープアナリティクス (序盤15分メトリクス・リコール逆再生・ビルド監査・ダイヤ帯ギャップ・教訓同期) */}
               <PostGameDeepAnalyticsDashboard />
 
               {/* 集団戦ディープアナリティクス (勝因・敗因・タイムラインレビュー) */}
               <MatchFightsAnalyticsCard />
 
-              {/* 1分振り返り ＆ 過去の反省カルテ */}
+              {/* 1分振り返り ＆ 反省カルテ記録 */}
               <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-xs space-y-3">
                 <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5">
                   <span>⚡</span> 1分ソロQ振り返り ＆ 反省カルテ記録
                 </h3>
                 <PostGameTab onOpenReflectionModal={() => setIsReflectionModalOpen(true)} refreshSignal={reflectionRefreshSignal} />
               </div>
+            </div>
+          )}
 
-              <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-xs space-y-3">
-                <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5 border-b border-stone-100 pb-2">
-                  <span>📊</span> マイソロQダッシュボード (過去全ログ ＆ 成績一覧)
-                </h3>
-                <MySoloQDashboard refreshSignal={reflectionRefreshSignal} />
+          {/* サブビュー2: 過去カルテ・長期傾向・練習メニュー */}
+          {postGameSubTab === 'archive' && (
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start animate-in">
+              {/* 左側: マイソロQダッシュボード ＆ AI練習メニュー */}
+              <div className="lg:col-span-7 xl:col-span-8 flex flex-col gap-5">
+                <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-xs space-y-3">
+                  <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5 border-b border-stone-100 pb-2">
+                    <span>📊</span> マイソロQダッシュボード (過去全ログ ＆ 成績一覧)
+                  </h3>
+                  <MySoloQDashboard refreshSignal={reflectionRefreshSignal} />
+                </div>
+
+                <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-xs space-y-3">
+                  <PracticeMenuTab />
+                </div>
               </div>
 
-              <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-xs space-y-3">
-                <PracticeMenuTab />
+              {/* 右側: 傾向分析・目標管理・ティルト判定・勝率ヒートマップ */}
+              <div className="lg:col-span-5 xl:col-span-4 flex flex-col gap-5 lg:sticky lg:top-4">
+                <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-xs space-y-3">
+                  <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5">
+                    <span>📈</span> 傾向分析・目標管理・ティルト判定
+                  </h3>
+                  <TrendsTab active={activeStepTab === 'postgame' && postGameSubTab === 'archive'} />
+                  <div className="border-t border-stone-200 pt-4">
+                    <GoalTab triggerSignal={dailyCheckTrigger} />
+                  </div>
+                  <div className="border-t border-stone-200 pt-4">
+                    <TiltTab triggerSignal={dailyCheckTrigger} />
+                  </div>
+                </div>
+
+                <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-xs space-y-3">
+                  <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5 border-b border-stone-100 pb-2">
+                    <span>🗓️</span> 曜日×時間帯 勝率ヒートマップ
+                  </h3>
+                  <div className="pt-1">
+                    <TimingHeatmapTab />
+                  </div>
+                </div>
               </div>
             </div>
-
-            {/* 右側: 傾向分析・目標管理・ティルト判定・勝率ヒートマップ */}
-            <div className="lg:col-span-5 xl:col-span-4 flex flex-col gap-5 lg:sticky lg:top-4">
-              <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-xs space-y-3">
-                <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5">
-                  <span>📈</span> 傾向分析・目標管理・ティルト判定
-                </h3>
-                <TrendsTab active={activeStepTab === 'postgame'} />
-                <div className="border-t border-stone-200 pt-4">
-                  <GoalTab triggerSignal={dailyCheckTrigger} />
-                </div>
-                <div className="border-t border-stone-200 pt-4">
-                  <TiltTab triggerSignal={dailyCheckTrigger} />
-                </div>
-              </div>
-
-              <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-xs space-y-3">
-                <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5 border-b border-stone-100 pb-2">
-                  <span>🗓️</span> 曜日×時間帯 勝率ヒートマップ
-                </h3>
-                <div className="pt-1">
-                  <TimingHeatmapTab />
-                </div>
-              </div>
-            </div>
-          </div>
+          )}
         </div>
 
         {/* フッター */}
