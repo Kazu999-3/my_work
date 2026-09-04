@@ -398,6 +398,19 @@ class HudStateEngine:
             enemy_team=enemy_team_details
         )
 
+        # --- 14. 目標アイテム購入アラート (ベース帰還 ＆ ゴールド到達) ---
+        shop_alert = None
+        if next_item_advice and next_item_advice.get("price"):
+            target_price = next_item_advice.get("price", 800)
+            item_name = next_item_advice.get("item_name", "目標アイテム")
+            if my_gold >= target_price:
+                shop_alert = {
+                    "can_afford": True,
+                    "item_name": item_name,
+                    "price": target_price,
+                    "message": f"👑 購入可能: {item_name} ({target_price}G 満額達成！)"
+                }
+
         # 時間フォーマット
         min_part = int(game_time_sec // 60)
         sec_part = int(game_time_sec % 60)
@@ -432,6 +445,7 @@ class HudStateEngine:
             # 敵5人の動的詳細
             "enemy_team_details": enemy_team_details,
             "next_item_advice": next_item_advice,
+            "shop_alert": shop_alert,
             # ロール別対面ゴールド差
             "lane_dominance": lane_dominance,
             # 全ファイトの勝因・敗因ディープアナリティクス

@@ -1702,19 +1702,15 @@ export default function CoachPage() {
             }}
           />
 
-          {/* 2カラムHUDグリッド */}
+          {/* 2カラムHUDグリッド: ドラフト1画面集約 */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-            {/* 左側: マッチアップ・カウンター・5分初動作戦 (一本化) */}
+            {/* 左側: 即死ライン・3段階手順書・推奨ルーン・JG警戒 (完全1画面集約) */}
             <div className="lg:col-span-7 xl:col-span-7 flex flex-col gap-5">
-              <MatchupSmartCard
-                champion={sharedChampion}
-                enemyChampion={sharedEnemyChampion}
-                onSelectChampion={setSharedChampion}
-              />
-              {/* 即死キルライン危険メーター ＆ 3段階勝ちパターン完全手順書 */}
               <MatchupBlueprintCard
                 myChampion={sharedChampion}
                 enemyChampion={sharedEnemyChampion}
+                onMyChampionChange={setSharedChampion}
+                onEnemyChampionChange={setSharedEnemyChampion}
               />
             </div>
 
@@ -1753,24 +1749,25 @@ export default function CoachPage() {
         </div>
 
         {/* ========================================================================= */}
-        {/* 3. 📈 試合後 (1分振り返り・カルテ・AI練習メニュー) */}
+        {/* 3. 📈 試合後 (1画面クイックデトックス ＆ 5大ディープアナリティクス) */}
         {/* ========================================================================= */}
         <div className={activeStepTab === 'postgame' ? 'space-y-5 animate-in' : 'hidden'}>
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-            {/* 左側: 直近振り返り・マイソロQダッシュボード・AI練習メニュー */}
+            {/* 左側: 直近試合最優先（5大ディープアナリティクス ＋ 集団戦 ＋ 1分振り返り） */}
             <div className="lg:col-span-7 xl:col-span-8 flex flex-col gap-5">
-              <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-xs space-y-3">
-                <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5">
-                  <span>⚡</span> 直近のソロQ振り返り ＆ 実績
-                </h3>
-                <PostGameTab onOpenReflectionModal={() => setIsReflectionModalOpen(true)} refreshSignal={reflectionRefreshSignal} />
-              </div>
+              {/* 5大ディープアナリティクス (序盤15分メトリクス・リコール逆再生・ビルド監査・ダイヤ帯ギャップ・教訓同期) */}
+              <PostGameDeepAnalyticsDashboard />
 
               {/* 集団戦ディープアナリティクス (勝因・敗因・タイムラインレビュー) */}
               <MatchFightsAnalyticsCard />
 
-              {/* 5大ディープアナリティクス (序盤メトリクス・リコール逆再生・ビルド監査・目標ランクギャップ) */}
-              <PostGameDeepAnalyticsDashboard />
+              {/* 1分振り返り ＆ 過去の反省カルテ */}
+              <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-xs space-y-3">
+                <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5">
+                  <span>⚡</span> 1分ソロQ振り返り ＆ 反省カルテ記録
+                </h3>
+                <PostGameTab onOpenReflectionModal={() => setIsReflectionModalOpen(true)} refreshSignal={reflectionRefreshSignal} />
+              </div>
 
               <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-xs space-y-3">
                 <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5 border-b border-stone-100 pb-2">

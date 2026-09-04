@@ -86,27 +86,36 @@ class ToastAlertWidget(QWidget):
         if alert_type == "spike":
             self.toast_frame.setStyleSheet("""
                 QFrame#toastFrame {
-                    background-color: rgba(18, 12, 10, 0.84);
-                    border: 1px solid rgba(249, 115, 22, 0.4);
-                    border-left: 4px solid #f97316;
+                    background-color: rgba(18, 12, 10, 0.90);
+                    border: 1.5px solid rgba(249, 115, 22, 0.6);
+                    border-left: 5px solid #f97316;
                     border-radius: 8px;
                 }
             """)
         elif alert_type == "fight":
             self.toast_frame.setStyleSheet("""
                 QFrame#toastFrame {
-                    background-color: rgba(16, 10, 22, 0.84);
-                    border: 1px solid rgba(192, 132, 252, 0.4);
-                    border-left: 4px solid #c084fc;
+                    background-color: rgba(16, 10, 24, 0.90);
+                    border: 1.5px solid rgba(192, 132, 252, 0.6);
+                    border-left: 5px solid #c084fc;
+                    border-radius: 8px;
+                }
+            """)
+        elif alert_type == "shop":
+            self.toast_frame.setStyleSheet("""
+                QFrame#toastFrame {
+                    background-color: rgba(12, 18, 28, 0.92);
+                    border: 1.5px solid rgba(56, 189, 248, 0.7);
+                    border-left: 5px solid #38bdf8;
                     border-radius: 8px;
                 }
             """)
         else:
             self.toast_frame.setStyleSheet("""
                 QFrame#toastFrame {
-                    background-color: rgba(22, 10, 12, 0.84);
-                    border: 1px solid rgba(239, 68, 68, 0.4);
-                    border-left: 4px solid #ef4444;
+                    background-color: rgba(22, 10, 12, 0.90);
+                    border: 1.5px solid rgba(239, 68, 68, 0.6);
+                    border-left: 5px solid #ef4444;
                     border-radius: 8px;
                 }
             """)
@@ -145,6 +154,17 @@ class ToastAlertWidget(QWidget):
         if fight_dmg and self.last_alert_id != f"fight_{fight_dmg}":
             self.last_alert_id = f"fight_{fight_dmg}"
             self.show_alert("🔥", f"戦闘終了！ 直前ファイト与ダメージ: {fight_dmg:,} dmg", alert_type="fight", duration_ms=5000)
+            return
+
+        # 4. 目標アイテム購入可能通知 (Shop Alert)
+        shop = state.get("shop_alert")
+        if shop and shop.get("can_afford"):
+            item_name = shop.get("item_name")
+            shop_key = f"shop_{item_name}"
+            if self.last_alert_id != shop_key:
+                self.last_alert_id = shop_key
+                self.show_alert("👑", shop.get("message", f"👑 {item_name} 購入可能！"), alert_type="shop", duration_ms=6500)
+                return
 
     # ドラッグ移動 ＆ 位置自動保存
     def mousePressEvent(self, event):

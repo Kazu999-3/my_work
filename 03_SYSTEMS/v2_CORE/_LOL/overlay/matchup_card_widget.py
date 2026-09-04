@@ -28,7 +28,7 @@ class MatchupCardWidget(QWidget):
             Qt.WindowType.Tool
         )
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
-        self.setFixedWidth(340)
+        self.setFixedWidth(360)
 
         self.main_layout = QVBoxLayout(self)
         self.main_layout.setContentsMargins(0, 0, 0, 0)
@@ -36,56 +36,57 @@ class MatchupCardWidget(QWidget):
         self.card_frame = QFrame(self)
         self.card_frame.setStyleSheet("""
             QFrame {
-                background-color: rgba(14, 12, 20, 0.88);
-                border: 1px solid rgba(212, 140, 40, 0.40);
+                background-color: rgba(10, 8, 16, 0.94);
+                border: 1.5px solid rgba(245, 158, 11, 0.60);
                 border-radius: 10px;
             }
         """)
         
         card_layout = QVBoxLayout(self.card_frame)
-        card_layout.setContentsMargins(10, 8, 10, 10)
-        card_layout.setSpacing(6)
+        card_layout.setContentsMargins(12, 10, 12, 12)
+        card_layout.setSpacing(7)
 
         # 1. タイトルヘッダー (対面カード名)
         self.title_label = QLabel("⚔️ vs ---", self.card_frame)
-        self.title_label.setStyleSheet("color: #f5f5f4; font-weight: bold; font-size: 14px;")
+        self.title_label.setStyleSheet("color: #ffffff; font-weight: 900; font-size: 15px; letter-spacing: 0.5px;")
         card_layout.addWidget(self.title_label)
 
         # 2. 🩸 案A: 即死キルライン警告フレーム
         self.kill_line_frame = QFrame(self.card_frame)
         self.kill_line_frame.setStyleSheet("""
             QFrame {
-                background-color: rgba(239, 68, 68, 0.15);
-                border: 1px solid rgba(239, 68, 68, 0.35);
-                border-radius: 6px;
-                padding: 3px;
+                background-color: rgba(239, 68, 68, 0.22);
+                border: 1.5px solid rgba(239, 68, 68, 0.65);
+                border-radius: 8px;
+                padding: 4px;
             }
         """)
         kill_line_layout = QVBoxLayout(self.kill_line_frame)
-        kill_line_layout.setContentsMargins(6, 4, 6, 4)
-        kill_line_layout.setSpacing(2)
+        kill_line_layout.setContentsMargins(8, 6, 8, 6)
+        kill_line_layout.setSpacing(4)
 
         self.kill_line_title = QLabel("💀 敵Lv6即死ライン: ---", self.kill_line_frame)
-        self.kill_line_title.setStyleSheet("color: #fca5a5; font-size: 11px; font-weight: bold;")
+        self.kill_line_title.setStyleSheet("color: #fecaca; font-size: 13px; font-weight: 900;")
         kill_line_layout.addWidget(self.kill_line_title)
 
         self.kill_line_bar = QProgressBar(self.kill_line_frame)
-        self.kill_line_bar.setFixedHeight(8)
+        self.kill_line_bar.setFixedHeight(10)
         self.kill_line_bar.setTextVisible(False)
         self.kill_line_bar.setStyleSheet("""
             QProgressBar {
-                background-color: rgba(34, 197, 94, 0.4);
-                border-radius: 4px;
+                background-color: rgba(34, 197, 94, 0.5);
+                border-radius: 5px;
             }
             QProgressBar::chunk {
                 background-color: #ef4444;
-                border-radius: 4px;
+                border-radius: 5px;
             }
         """)
         kill_line_layout.addWidget(self.kill_line_bar)
 
         self.kill_line_advice = QLabel("HP --%以下で即死圏内。安全管理に注意！", self.kill_line_frame)
-        self.kill_line_advice.setStyleSheet("color: #fecaca; font-size: 10px;")
+        self.kill_line_advice.setStyleSheet("color: #ffffff; font-size: 12px; font-weight: bold; line-height: 1.3;")
+        self.kill_line_advice.setWordWrap(True)
         kill_line_layout.addWidget(self.kill_line_advice)
 
         card_layout.addWidget(self.kill_line_frame)
@@ -94,26 +95,27 @@ class MatchupCardWidget(QWidget):
         self.phase_frame = QFrame(self.card_frame)
         self.phase_frame.setStyleSheet("""
             QFrame {
-                background-color: rgba(255, 255, 255, 0.05);
-                border-radius: 6px;
-                padding: 4px;
+                background-color: rgba(255, 255, 255, 0.08);
+                border: 1px solid rgba(255, 255, 255, 0.18);
+                border-radius: 8px;
+                padding: 5px;
             }
         """)
         phase_layout = QVBoxLayout(self.phase_frame)
-        phase_layout.setContentsMargins(6, 4, 6, 4)
-        phase_layout.setSpacing(2)
+        phase_layout.setContentsMargins(8, 6, 8, 6)
+        phase_layout.setSpacing(4)
 
         self.phase_badge_label = QLabel("🗺️ 現在の行動手順: [Phase 1 (Lv1〜2)]", self.phase_frame)
-        self.phase_badge_label.setStyleSheet("color: #fbbf24; font-size: 11px; font-weight: bold;")
+        self.phase_badge_label.setStyleSheet("color: #fde047; font-size: 13px; font-weight: 900;")
         phase_layout.addWidget(self.phase_badge_label)
 
         self.phase_action_label = QLabel("・対面手順を取得中...", self.phase_frame)
-        self.phase_action_label.setStyleSheet("color: #e2e8f0; font-size: 12px; line-height: 1.3;")
+        self.phase_action_label.setStyleSheet("color: #f1f5f9; font-size: 12px; font-weight: bold; line-height: 1.35;")
         self.phase_action_label.setWordWrap(True)
         phase_layout.addWidget(self.phase_action_label)
 
         self.phase_trigger_label = QLabel("🎯 クリア: ---", self.phase_frame)
-        self.phase_trigger_label.setStyleSheet("color: #86efac; font-size: 10px; font-weight: bold;")
+        self.phase_trigger_label.setStyleSheet("color: #86efac; font-size: 12px; font-weight: 900;")
         phase_layout.addWidget(self.phase_trigger_label)
 
         card_layout.addWidget(self.phase_frame)
@@ -122,26 +124,26 @@ class MatchupCardWidget(QWidget):
         self.build_frame = QFrame(self.card_frame)
         self.build_frame.setStyleSheet("""
             QFrame {
-                background-color: rgba(26, 20, 36, 0.90);
-                border: 1px solid rgba(56, 189, 248, 0.45);
-                border-radius: 6px;
-                padding: 4px;
+                background-color: rgba(20, 16, 30, 0.95);
+                border: 1.5px solid rgba(56, 189, 248, 0.65);
+                border-radius: 8px;
+                padding: 5px;
             }
         """)
         build_layout = QVBoxLayout(self.build_frame)
-        build_layout.setContentsMargins(8, 5, 8, 5)
-        build_layout.setSpacing(2)
+        build_layout.setContentsMargins(8, 6, 8, 6)
+        build_layout.setSpacing(3)
 
         self.build_title = QLabel("👑 次のおすすめアイテム", self.build_frame)
-        self.build_title.setStyleSheet("color: #38bdf8; font-size: 11px; font-weight: bold;")
+        self.build_title.setStyleSheet("color: #38bdf8; font-size: 13px; font-weight: 900;")
         build_layout.addWidget(self.build_title)
 
         self.build_item_name = QLabel("処刑人の劫罰 (800G)", self.build_frame)
-        self.build_item_name.setStyleSheet("color: #fef08a; font-size: 12px; font-weight: bold;")
+        self.build_item_name.setStyleSheet("color: #fef08a; font-size: 13px; font-weight: 900;")
         build_layout.addWidget(self.build_item_name)
 
         self.build_reason = QLabel("敵の回復量が激しいため、800G素材で対策！", self.build_frame)
-        self.build_reason.setStyleSheet("color: #cbd5e1; font-size: 10px; line-height: 1.3;")
+        self.build_reason.setStyleSheet("color: #e2e8f0; font-size: 12px; font-weight: bold; line-height: 1.3;")
         self.build_reason.setWordWrap(True)
         build_layout.addWidget(self.build_reason)
 
@@ -151,22 +153,22 @@ class MatchupCardWidget(QWidget):
         self.compass_frame = QFrame(self.card_frame)
         self.compass_frame.setStyleSheet("""
             QFrame {
-                background-color: rgba(168, 85, 247, 0.20);
-                border: 1px solid rgba(168, 85, 247, 0.45);
-                border-radius: 6px;
-                padding: 4px;
+                background-color: rgba(147, 51, 234, 0.25);
+                border: 1.5px solid rgba(192, 132, 252, 0.65);
+                border-radius: 8px;
+                padding: 5px;
             }
         """)
         compass_layout = QVBoxLayout(self.compass_frame)
-        compass_layout.setContentsMargins(6, 4, 6, 4)
-        compass_layout.setSpacing(2)
+        compass_layout.setContentsMargins(8, 6, 8, 6)
+        compass_layout.setSpacing(3)
 
         self.compass_title = QLabel("🧭 劣勢逆転コンパス: スプリット推奨", self.compass_frame)
-        self.compass_title.setStyleSheet("color: #e9d5ff; font-size: 11px; font-weight: bold;")
+        self.compass_title.setStyleSheet("color: #f3e8ff; font-size: 13px; font-weight: 900;")
         compass_layout.addWidget(self.compass_title)
 
         self.compass_advice = QLabel("正面5v5は不利。サイドを押して敵を分断！", self.compass_frame)
-        self.compass_advice.setStyleSheet("color: #f3e8ff; font-size: 10px; line-height: 1.3;")
+        self.compass_advice.setStyleSheet("color: #ffffff; font-size: 12px; font-weight: bold; line-height: 1.3;")
         self.compass_advice.setWordWrap(True)
         compass_layout.addWidget(self.compass_advice)
 
