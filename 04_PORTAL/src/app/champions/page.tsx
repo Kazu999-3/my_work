@@ -48,13 +48,15 @@ function ChampionsShell() {
     'champions';
 
   const [scope, setScope] = useState<KnowledgeScope>(normalizedScope);
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [authChecking, setAuthChecking] = useState<boolean>(true);
 
   useEffect(() => {
     fetch('/api/auth/verify', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) })
       .then((res) => res.json())
       .then((data) => setIsAuthenticated(!!data.valid))
-      .catch(() => setIsAuthenticated(false));
+      .catch(() => setIsAuthenticated(false))
+      .finally(() => setAuthChecking(false));
   }, []);
 
   const handleScopeChange = (newScope: KnowledgeScope) => {
@@ -64,33 +66,7 @@ function ChampionsShell() {
     router.replace(`/champions?${params.toString()}`, { scroll: false });
   };
 
-  if (isAuthenticated === null) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-[#c89b3c] border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
-
-  if (isAuthenticated === false) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="text-center max-w-sm rounded-2xl border border-black/10 bg-black/[0.03] p-8 backdrop-blur">
-          <div className="text-4xl mb-4">🔑</div>
-          <h2 className="text-lg font-bold mb-2 text-stone-900">認証が必要です</h2>
-          <p className="text-sm text-stone-500 mb-6 leading-relaxed">
-            攻略ナレッジハブは管理者専用です。管理者パスコードでログインしてから再度アクセスしてください。
-          </p>
-          <a
-            href="/login"
-            className="inline-block w-full rounded-xl bg-[#c89b3c] px-5 py-3 text-sm font-semibold text-black transition hover:bg-yellow-400"
-          >
-            ログインページへ
-          </a>
-        </div>
-      </div>
-    );
-  }
+  const isAdminOnlyScope = scope === 'ingest' || scope === 'health';
 
   return (
     <div className="min-h-screen p-2 sm:p-4 md:p-6 max-w-[1760px] w-full mx-auto flex flex-col gap-4">
@@ -101,13 +77,20 @@ function ChampionsShell() {
         transition={{ duration: 0.2 }}
         className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 p-3 sm:p-4 bg-white/90 border border-stone-200/90 rounded-2xl shadow-xs backdrop-blur-sm"
       >
-        <div className="flex items-center gap-3 pl-8 md:pl-0">
+        <div className="flex items-center gap-3">
+          <a
+            href="/"
+            className="px-2.5 py-1.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-xs border border-stone-200 transition shrink-0"
+            title="ポータルトップへ戻る"
+          >
+            ← ポータル
+          </a>
           <div className="text-2xl sm:text-3xl p-1.5 bg-amber-50 rounded-xl border border-amber-200/80 shrink-0">📖</div>
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-lg sm:text-xl font-black tracking-tight text-stone-900">攻略ナレッジハブ</h1>
               <span className="px-2 py-0.5 rounded-full bg-amber-100 border border-amber-300 text-amber-900 text-[10px] font-extrabold">
-                統合ワークスペース
+                {isAuthenticated ? '管理者モード' : 'プレイヤー攻略モード'}
               </span>
             </div>
             <p className="text-[11px] text-stone-500 font-medium hidden sm:block">
@@ -120,6 +103,7 @@ function ChampionsShell() {
         <div className="flex items-center gap-1.5 p-1 bg-stone-100/90 rounded-xl overflow-x-auto scrollbar-none max-w-full">
           {SCOPES.map((s) => {
             const isActive = scope === s.id;
+            const isProtected = (s.id === 'ingest' || s.id === 'health') && !isAuthenticated;
             return (
               <button
                 key={s.id}
@@ -131,19 +115,50 @@ function ChampionsShell() {
                 }`}
               >
                 <span>{s.label}</span>
+                {isProtected && <span className="text-[10px] opacity-70">🔒</span>}
               </button>
             );
           })}
         </div>
       </motion.header>
 
-      {/* スコープに応じたゼロ遷移ビュー（すべてフラットに表示） */}
+      {/* スコープに応じたゼロ遷移ビュー */}
       <div className="flex-1 min-w-0">
-        {scope === 'champions' && <DictionaryTab isAdmin={true} />}
-        {scope === 'lane-guides' && <LaneGuidesView />}
-        {scope === 'library' && <LibraryTabContent />}
-        {scope === 'ingest' && <KnowledgeIngestView />}
-        {scope === 'health' && <DictHealthView />}
+        {isAdminOnlyScope && !isAuthenticated ? (
+          <div className="min-h-[400px] flex items-center justify-center p-4">
+            <div className="text-center max-w-md rounded-2xl border border-stone-200 bg-white p-8 shadow-xs">
+              <div className="text-4xl mb-3">🔑</div>
+              <h2 className="text-base font-black mb-2 text-stone-900">管理者認証が必要です</h2>
+              <p className="text-xs text-stone-600 mb-6 leading-relaxed">
+                「{scope === 'ingest' ? '戦術取り込み' : '辞典ヘルス'}」は管理者専用の保守管理機能です。<br />
+                チャンピオン辞典やレーン攻略はログイン不要でどなたでもご利用いただけます。
+              </p>
+              <div className="flex items-center justify-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => handleScopeChange('champions')}
+                  className="px-4 py-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-xs transition"
+                >
+                  👑 チャンピオン辞典を見る
+                </button>
+                <a
+                  href="/login"
+                  className="rounded-xl bg-amber-500 hover:bg-amber-400 px-4 py-2 text-xs font-black text-stone-950 transition"
+                >
+                  管理者ログイン
+                </a>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <>
+            {scope === 'champions' && <DictionaryTab isAdmin={isAuthenticated} />}
+            {scope === 'lane-guides' && <LaneGuidesView />}
+            {scope === 'library' && <LibraryTabContent />}
+            {scope === 'ingest' && <KnowledgeIngestView />}
+            {scope === 'health' && <DictHealthView />}
+          </>
+        )}
       </div>
     </div>
   );
