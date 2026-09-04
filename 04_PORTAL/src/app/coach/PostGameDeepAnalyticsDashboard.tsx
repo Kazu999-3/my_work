@@ -64,6 +64,8 @@ interface PostGameData {
 export default function PostGameDeepAnalyticsDashboard() {
   const [data, setData] = useState<PostGameData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [syncing, setSyncing] = useState(false);
+  const [synced, setSynced] = useState(false);
 
   useEffect(() => {
     fetch('/api/lol/postgame-deep-analytics')
@@ -77,6 +79,31 @@ export default function PostGameDeepAnalyticsDashboard() {
         setLoading(false);
       });
   }, []);
+
+  const handleSyncFeedback = async () => {
+    if (!data || syncing || synced) return;
+    setSyncing(true);
+    try {
+      const res = await fetch('/api/lol/sync-match-feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          myChampion: data.my_champion,
+          enemyChampion: data.enemy_champion,
+          keyLearning: `${data.biggest_bottleneck.metric}: ${data.biggest_bottleneck.advice}`,
+          bottleneck: data.biggest_bottleneck.metric
+        })
+      });
+      const d = await res.json();
+      if (d.success) {
+        setSynced(true);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -93,22 +120,42 @@ export default function PostGameDeepAnalyticsDashboard() {
   if (!data) return null;
 
   return (
-    <div className="bg-white border border-stone-200 rounded-2xl p-5 md:p-6 shadow-xs text-stone-900 space-y-6">
+    <div className="bg-white border border-stone-200 rounded-2xl p-5 md:p-6 shadow-xs text-stone-900 space-y-5">
       {/* ヘッダー */}
       <div className="flex items-center justify-between border-b border-stone-100 pb-3 flex-wrap gap-2">
         <div className="flex items-center gap-2">
-          <span className="px-2 py-0.5 bg-purple-100 text-purple-800 border border-purple-200 rounded-md text-[10px] font-black uppercase tracking-wider">
+          <span className="px-2 py-0.5 bg-amber-100 text-amber-900 border border-amber-300 rounded-md text-[10px] font-black uppercase tracking-wider">
             Deep Analytics v3.0
           </span>
-          <h3 className="text-base font-extrabold text-stone-900 flex items-center gap-1.5">
-            <span>📊 試合後ディープアナリティクス (5大戦術分析)</span>
+          <h3 className="text-base font-black text-stone-900 flex items-center gap-1.5">
+            <span>⚡ 試合後クイックデトックス ＆ 5大ディープアナリティクス</span>
           </h3>
         </div>
         <div className="flex items-center gap-2 text-xs font-mono font-bold text-stone-500">
+          <span className="bg-stone-100 px-2 py-0.5 rounded border border-stone-200 text-stone-700">対戦: {data.my_champion} vs {data.enemy_champion}</span>
+          <span>•</span>
           <span>KDA: {data.kda_str}</span>
           <span>•</span>
           <span>時間: {data.match_duration_str}</span>
         </div>
+      </div>
+
+      {/* 🚨 1-Action Takeaway (次戦への最重要改善アクション・最優先ファーストビュー) */}
+      <div className="bg-gradient-to-r from-rose-50 via-amber-50 to-rose-50 border-2 border-rose-400/80 rounded-xl p-4 shadow-sm space-y-2">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div className="flex items-center gap-2">
+            <span className="text-lg">🎯</span>
+            <span className="text-xs font-black text-rose-950 uppercase tracking-wide">
+              【次戦への絶対約束】1分で脳に刻む最重要改善アクション
+            </span>
+          </div>
+          <span className="text-[10px] font-black bg-rose-600 text-white px-2 py-0.5 rounded font-mono">
+            ボトルネック: {data.biggest_bottleneck.metric}
+          </span>
+        </div>
+        <p className="text-xs md:text-sm font-black text-stone-900 leading-relaxed bg-white/95 p-3 rounded-lg border border-rose-200">
+          {data.biggest_bottleneck.advice}
+        </p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
@@ -245,26 +292,18 @@ export default function PostGameDeepAnalyticsDashboard() {
           </p>
         </div>
         <button
-          onClick={async () => {
-            const res = await fetch('/api/lol/sync-match-feedback', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                myChampion: data.my_champion,
-                enemyChampion: data.enemy_champion,
-                keyLearning: 'Lv3で敵のE空振りに合わせたショートトレードが極めて有効だった',
-                bottleneck: data.biggest_bottleneck.metric
-              })
-            });
-            const d = await res.json();
-            if (d.success) {
-              alert(d.message);
-            }
-          }}
-          className="px-4 py-2 bg-stone-900 hover:bg-stone-800 text-white rounded-xl text-xs font-extrabold flex items-center gap-2 shadow-xs transition-colors shrink-0 cursor-pointer"
+          onClick={handleSyncFeedback}
+          disabled={syncing || synced}
+          className={`px-4 py-2.5 rounded-xl text-xs font-black flex items-center gap-2 shadow-xs transition-all shrink-0 cursor-pointer ${
+            synced
+              ? 'bg-emerald-600 text-white border border-emerald-500'
+              : syncing
+              ? 'bg-stone-700 text-stone-300 animate-pulse'
+              : 'bg-stone-900 hover:bg-stone-800 text-white'
+          }`}
         >
-          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-          <span>教訓をナレッジ辞典に自動同期</span>
+          <CheckCircle2 className={`w-4 h-4 ${synced ? 'text-white' : 'text-emerald-400'}`} />
+          <span>{synced ? '✅ ナレッジ辞典に自動同期完了！' : syncing ? '同期中...' : '教訓をナレッジ辞典に自動同期'}</span>
         </button>
       </div>
     </div>
