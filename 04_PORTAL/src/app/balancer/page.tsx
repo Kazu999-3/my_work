@@ -4,7 +4,7 @@ import { useEffect, useState, useRef, useCallback, useMemo, Fragment } from "rea
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "../../lib/supabaseClient";
-import { Users, RefreshCw, Swords, X, Activity, Globe, MessageSquare, Info, Crown, Trophy, History, Shield, AlertTriangle, ChevronDown, Trees, Zap, Target, Heart, Settings, Sparkles } from "lucide-react";
+import { Users, RefreshCw, Swords, X, Activity, Globe, MessageSquare, Info, Crown, Trophy, History, Shield, AlertTriangle, ChevronDown, Trees, Zap, Target, Heart, Settings, Sparkles, Coins } from "lucide-react";
 import { getChampIcon } from "../../lib/ddragonClient";
 import { getColorFromRankName } from "../../lib/mmr";
 import ProfileModal from "../ktm-admin/ProfileModal";
@@ -22,6 +22,23 @@ const RoleIcon = ({ role, className = "w-3.5 h-3.5" }: { role: string; className
     default: return null;
   }
 };
+
+// ★ カジノ特典バッジ抽出ユーティリティ
+function getPlayerCasinoBadges(player: any): Array<{ id: string; icon: string; label: string }> {
+  const inv = (player?.inventory || player?.role_preferences?.inventory || []) as Array<{ id?: string; name?: string; icon?: string }>;
+  if (!Array.isArray(inv) || inv.length === 0) return [];
+  return inv.map(item => {
+    const id = item.id || '';
+    let label = (item.name || '').replace(/^[^\s]+\s*/, '').slice(0, 5) || 'アイテム';
+    let icon = item.icon || '👑';
+    if (id === 'force_champ_pick') { icon = '👑'; label = '下剋上'; }
+    else if (id === 'lane_heavy_ban') { icon = '🚫'; label = '集中BAN'; }
+    else if (id === 'champ_protect') { icon = '🛡️'; label = '保護'; }
+    else if (id === 'force_enemy_roles') { icon = '🔀'; label = 'ロール指定'; }
+    else if (id === 'all_offmeta_match') { icon = '🤡'; label = 'オフメタ'; }
+    return { id, icon, label };
+  });
+}
 
 // ★ グループ判定ユーティリティ（固定0 > 通常参加1 > 見学固定2 > 不参加3）
 function getGroup(p: any): number {
@@ -1207,6 +1224,8 @@ export default function BalancerPage() {
                 {['TOP','JG','MID','ADC','SUP'].map(role => {
                   const pB = balanceResult.teamBlue.find((x: any) => x.currentRole === role);
                   const pR = balanceResult.teamRed.find((x: any) => x.currentRole === role);
+                  const pBData = players.find((p: any) => p.name === pB?.name);
+                  const pRData = players.find((p: any) => p.name === pR?.name);
                   const offB = pB && pB.mainLane !== 'ALL' && pB.mainLane !== '-' && pB.currentRole !== pB.mainLane;
                   const offR = pR && pR.mainLane !== 'ALL' && pR.mainLane !== '-' && pR.currentRole !== pR.mainLane;
                   const bKey = `teamBlue-${role}`, rKey = `teamRed-${role}`;
@@ -1228,6 +1247,11 @@ export default function BalancerPage() {
                         )}
                         {offB && <span className="text-[9px] bg-red-100 border border-red-300 text-red-700 px-1.5 py-0.5 rounded font-black shrink-0">⚠️OFF</span>}
                         {pB?.name && handicapNames.has(pB.name) && <span className="text-[9px] bg-amber-100 border border-amber-300 text-amber-700 px-1.5 py-0.5 rounded font-black shrink-0" title="ハンデ参加（オフロール等の制約付き）">🎗️ハンデ</span>}
+                        {pBData && getPlayerCasinoBadges(pBData).map((b, idx) => (
+                          <span key={idx} className="text-[9px] bg-purple-100 border border-purple-300 text-purple-900 px-1.5 py-0.5 rounded font-black shrink-0" title={`カジノ特典: ${b.label}`}>
+                            {b.icon}{b.label}
+                          </span>
+                        ))}
                         {pB?.name && (pB.mainLane !== 'ALL' || pB.subLane !== 'ALL') && (
                           <span className="text-[9px] bg-black/5 border border-black/10 text-stone-500 px-1.5 py-0.5 rounded font-bold shrink-0" title="第一希望／第二希望レーン">
                             {pB.mainLane !== 'ALL' && pB.mainLane !== '-' ? pB.mainLane : '指定無'}
@@ -1245,6 +1269,11 @@ export default function BalancerPage() {
                         <span className="font-mono text-xs font-bold text-red-700 shrink-0 bg-red-100 px-2 py-0.5 rounded border border-red-300">{rMMR}</span>
                         {offR && <span className="text-[9px] bg-red-100 border border-red-300 text-red-700 px-1.5 py-0.5 rounded font-black shrink-0">⚠️OFF</span>}
                         {pR?.name && handicapNames.has(pR.name) && <span className="text-[9px] bg-amber-100 border border-amber-300 text-amber-700 px-1.5 py-0.5 rounded font-black shrink-0" title="ハンデ参加（オフロール等の制約付き）">🎗️ハンデ</span>}
+                        {pRData && getPlayerCasinoBadges(pRData).map((b, idx) => (
+                          <span key={idx} className="text-[9px] bg-purple-100 border border-purple-300 text-purple-900 px-1.5 py-0.5 rounded font-black shrink-0" title={`カジノ特典: ${b.label}`}>
+                            {b.icon}{b.label}
+                          </span>
+                        ))}
                         {pR?.name && (pR.mainLane !== 'ALL' || pR.subLane !== 'ALL') && (
                           <span className="text-[9px] bg-black/5 border border-black/10 text-stone-500 px-1.5 py-0.5 rounded font-bold shrink-0" title="第一希望／第二希望レーン">
                             {pR.mainLane !== 'ALL' && pR.mainLane !== '-' ? pR.mainLane : '指定無'}
@@ -1990,10 +2019,26 @@ export default function BalancerPage() {
                         </td>
                         <td className="px-2 py-1.5 text-center font-bold text-stone-500 text-xs">{p.no}</td>
                         <td className="px-2 py-1.5 font-bold text-stone-900 whitespace-nowrap text-xs">
-                          <div className="flex items-center gap-1.5">
+                          <div className="flex items-center gap-1.5 flex-wrap">
                             <button onClick={() => setSelectedPlayer(p)} className="text-amber-700 hover:text-stone-900 p-0.5 hover:bg-stone-100 rounded transition flex-shrink-0" title="プロフィール">
                               <Info className="w-3.5 h-3.5" /></button>
-                            <span>{p.name}</span>
+                            <span className="font-extrabold">{p.name}</span>
+                            
+                            {/* 🪙 所持コイン */}
+                            {(p.coins > 0 || (p.metadata?.coins && p.metadata.coins > 0)) && (
+                              <span className="text-[10px] font-mono font-black bg-amber-100 text-amber-900 border border-amber-300 px-1.5 py-0.2 rounded-full flex items-center gap-0.5 shadow-2xs" title={`所持コイン: ${p.coins || p.metadata?.coins}枚`}>
+                                <Coins className="w-2.5 h-2.5 text-amber-600" />
+                                {p.coins || p.metadata?.coins}
+                              </span>
+                            )}
+
+                            {/* 👑 カジノ保有アイテムバッジ */}
+                            {getPlayerCasinoBadges(p).map((badge, idx) => (
+                              <span key={idx} className="text-[9px] font-black bg-purple-100 text-purple-900 border border-purple-300 px-1.5 py-0.2 rounded flex items-center gap-0.5 shadow-2xs" title={`カジノ特典: ${badge.label}`}>
+                                <span>{badge.icon}</span>
+                                <span>{badge.label}</span>
+                              </span>
+                            ))}
                           </div>
                         </td>
                         <td className={`px-2 py-1.5 text-xs font-semibold ${getColorFromRankName(p.highest_rank)}`}>{p.highest_rank ? p.highest_rank.split(' ')[0] : 'UNRANKED'}</td>
