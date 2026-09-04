@@ -723,6 +723,94 @@ export default function PlayerMyPage() {
           </div>
         )}
 
+        {/* 👑 ファーストビュー: 3大戦闘力サマリー（KTMレート・得意チャンプTOP3・主力レーン適正） */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+          {/* 1. KTMレート ＆ 実力Tier */}
+          <div className="bg-white/90 border border-stone-200/90 rounded-2xl p-4 shadow-xs flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-100 border border-amber-300 flex items-center justify-center text-xl shrink-0">
+                🏆
+              </div>
+              <div>
+                <div className="text-[10px] font-black text-stone-400 uppercase tracking-wider">KTM内戦レート ＆ Tier</div>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <span className="text-xl font-black font-mono text-stone-900">{player.mmr || 1000}</span>
+                  <span className="text-xs font-black text-amber-800 bg-amber-100 px-2 py-0.5 rounded border border-amber-200">
+                    {getKtmRank(player.mmr || 1000).name}
+                  </span>
+                </div>
+              </div>
+            </div>
+            {(player.coins > 0 || (player.metadata?.coins && player.metadata.coins > 0)) && (
+              <div className="text-right">
+                <div className="text-[10px] font-bold text-stone-400">所持コイン</div>
+                <div className="text-xs font-black font-mono text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 mt-0.5">
+                  🪙 {player.coins || player.metadata?.coins}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* 2. 得意チャンピオン TOP3 */}
+          <div className="bg-white/90 border border-stone-200/90 rounded-2xl p-4 shadow-xs flex flex-col justify-between gap-1.5">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-black text-stone-400 uppercase tracking-wider flex items-center gap-1">
+                <span>⚔️ 得意チャンピオン TOP3</span>
+              </span>
+              <span className="text-[10px] font-bold text-stone-400 font-mono">勝率 (試合数)</span>
+            </div>
+            <div className="flex items-center gap-2 pt-0.5">
+              {champPool.filter((c: any) => c.name && c.name !== 'Unknown').slice(0, 3).map((c: any, idx: number) => (
+                <div key={idx} className="flex-1 flex items-center gap-1.5 bg-stone-50 border border-stone-200/80 p-1.5 rounded-xl">
+                  <Image
+                    src={getChampIcon(c.name)}
+                    alt={c.name}
+                    width={22}
+                    height={22}
+                    className="w-5.5 h-5.5 rounded-full border border-stone-300 shrink-0"
+                    onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                  />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[11px] font-black text-stone-900 truncate">{c.name}</div>
+                    <div className="text-[9px] font-mono font-bold text-emerald-700">{c.winRate}% ({c.games}戦)</div>
+                  </div>
+                </div>
+              ))}
+              {champPool.filter((c: any) => c.name && c.name !== 'Unknown').length === 0 && (
+                <div className="text-xs text-stone-400 font-bold py-1">データ収集中</div>
+              )}
+            </div>
+          </div>
+
+          {/* 3. 主力レーン適正 ＆ 通算勝率 */}
+          <div className="bg-white/90 border border-stone-200/90 rounded-2xl p-4 shadow-xs flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-cyan-100 border border-cyan-300 flex items-center justify-center text-xl shrink-0">
+                🎯
+              </div>
+              <div>
+                <div className="text-[10px] font-black text-stone-400 uppercase tracking-wider">主力希望レーン ＆ 勝率</div>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <span className="text-sm font-black text-stone-900 bg-stone-100 px-2 py-0.5 rounded border border-stone-200">
+                    {player.role_preferences?.primary || 'ALL'}
+                  </span>
+                  <span className="text-xs font-bold text-stone-400">/</span>
+                  <span className="text-xs font-bold text-stone-600">
+                    {player.role_preferences?.secondary || 'ALL'}
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div className="text-right">
+              <div className="text-[10px] font-bold text-stone-400">通算戦績</div>
+              <div className="text-xs font-black font-mono text-stone-900 mt-0.5">
+                <span className="text-emerald-700 font-extrabold">{overallStats.winRate}%</span>
+                <span className="text-[10px] text-stone-500 ml-1">({overallStats.wins}勝{overallStats.losses}敗)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Tab Controls (横スライド対応、洗練されたグラスデザイン) */}
         <div className="flex gap-1 bg-white/60 backdrop-blur-md p-1.5 rounded-2xl border border-black/10 overflow-x-auto scrollbar-none shadow-lg">
           {tabItems.map((tab) => {
