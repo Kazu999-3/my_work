@@ -205,17 +205,30 @@ export default function BalancerPage() {
     if (!balanceResult) return;
     setSavingPending(true);
     try {
+      try {
+        localStorage.setItem('balancer_last_result', JSON.stringify(balanceResult));
+      } catch (e) {
+        console.error('Failed to cache balancer_last_result:', e);
+      }
       const res = await fetch('/api/balancer/pending', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ balanceResult })
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || '一時保存に失敗しました。');
-      
-      router.push(`/balancer/record?pending_id=${data.pendingId}`);
+      }).catch(() => null);
+
+      if (res && res.ok) {
+        const data = await res.json().catch(() => ({}));
+        const pendingId = data.pendingId || data.id;
+        if (pendingId) {
+          router.push(`/balancer/record?pending_id=${pendingId}`);
+          return;
+        }
+      }
+      // API保存が失敗しても、localStorageフォールバックがあるので記録画面へ遷移
+      router.push('/balancer/record');
     } catch (err: any) {
-      alert(`エラー: ${err.message}`);
+      console.error('Navigate error:', err);
+      router.push('/balancer/record');
     } finally {
       setSavingPending(false);
     }
@@ -635,16 +648,26 @@ export default function BalancerPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'チーム分けに失敗しました');
       
+      let activeResult: any = null;
       if (data.proposals && Array.isArray(data.proposals) && data.proposals.length > 0) {
         setProposals(data.proposals);
         setBalanceResult(data.proposals[0]);
+        activeResult = data.proposals[0];
         setSelectedProposalIdx(0);
         setAnalysis(data.analysis || null);
       } else {
         setBalanceResult(data);
+        activeResult = data;
         setProposals([data]);
         setSelectedProposalIdx(0);
         setAnalysis(null);
+      }
+      try {
+        if (activeResult) {
+          localStorage.setItem('balancer_last_result', JSON.stringify(activeResult));
+        }
+      } catch (e) {
+        console.error('Failed to cache balancer_last_result:', e);
       }
       // ★ 完了後に自動でモーダルを開く
       setShowResultModal(true);

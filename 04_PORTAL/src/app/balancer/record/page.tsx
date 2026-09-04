@@ -364,51 +364,95 @@ function CustomRecordPageContent() {
   };
   useEffect(() => { loadChampions(); }, []);
 
+  // バランサー結果を10名のロースターに適用する共通関数
+  const applyBalancerResult = (br: any) => {
+    if (!br || (!br.teamBlue && !br.teamRed)) return false;
+    setStats(() => {
+      const initial: PlayerStat[] = [];
+      
+      ROLES.forEach(role => {
+        const pb = br.teamBlue?.find((p: any) => p.currentRole === role);
+        initial.push({
+          name: pb ? pb.name : '',
+          team: 'BLUE',
+          currentRole: role,
+          kills: 0, deaths: 0, assists: 0, vision: 0,
+          champion_name: '', damage_dealt: 0, damage_taken: 0,
+          heal_shield: 0, objective_damage: 0, cs: 0
+        });
+      });
+      
+      ROLES.forEach(role => {
+        const pr = br.teamRed?.find((p: any) => p.currentRole === role);
+        initial.push({
+          name: pr ? pr.name : '',
+          team: 'RED',
+          currentRole: role,
+          kills: 0, deaths: 0, assists: 0, vision: 0,
+          champion_name: '', damage_dealt: 0, damage_taken: 0,
+          heal_shield: 0, objective_damage: 0, cs: 0
+        });
+      });
+      
+      return initial;
+    });
+    return true;
+  };
+
+  const [hasCachedResult, setHasCachedResult] = useState(false);
+
+  // マウント時に pending_id または localStorage の前回結果を自動読み込み
   useEffect(() => {
-    if (!pendingId) return;
-    
-    async function loadPendingMatch() {
-      try {
-        const res = await fetch(`/api/balancer/pending?id=${pendingId}`);
-        const data = await res.json();
-        if (res.ok && data.balanceResult) {
-          const br = data.balanceResult;
-          setStats(() => {
-            const initial: PlayerStat[] = [];
-            
-            ROLES.forEach(role => {
-              const pb = br.teamBlue?.find((p: any) => p.currentRole === role);
-              initial.push({
-                name: pb ? pb.name : '',
-                team: 'BLUE',
-                currentRole: role,
-                kills: 0, deaths: 0, assists: 0, vision: 0,
-                champion_name: '', damage_dealt: 0, damage_taken: 0,
-                heal_shield: 0, objective_damage: 0, cs: 0
-              });
-            });
-            
-            ROLES.forEach(role => {
-              const pr = br.teamRed?.find((p: any) => p.currentRole === role);
-              initial.push({
-                name: pr ? pr.name : '',
-                team: 'RED',
-                currentRole: role,
-                kills: 0, deaths: 0, assists: 0, vision: 0,
-                champion_name: '', damage_dealt: 0, damage_taken: 0,
-                heal_shield: 0, objective_damage: 0, cs: 0
-              });
-            });
-            
-            return initial;
-          });
+    if (pendingId) {
+      async function loadPendingMatch() {
+        try {
+          const res = await fetch(`/api/balancer/pending?id=${pendingId}`);
+          const data = await res.json();
+          if (res.ok && data.balanceResult) {
+            applyBalancerResult(data.balanceResult);
+            setMessage({ type: 'success', text: '✅ バランサーのチーム分け編成（10名）を自動ロードしました！' });
+          }
+        } catch (err) {
+          console.error('Failed to load pending match:', err);
         }
-      } catch (err) {
-        console.error('Failed to load pending match:', err);
+      }
+      loadPendingMatch();
+    } else {
+      // pendingId がない場合、localStorage から前回のチーム分け結果を自動反映
+      try {
+        const cached = localStorage.getItem('balancer_last_result');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (parsed && (parsed.teamBlue || parsed.teamRed)) {
+            setHasCachedResult(true);
+            applyBalancerResult(parsed);
+            setMessage({ type: 'success', text: '⚡ 直前のチーム分け構成（10名）を自動反映しました！' });
+          }
+        }
+      } catch (e) {
+        console.error('Failed to load cached balancer result:', e);
       }
     }
-    loadPendingMatch();
   }, [pendingId]);
+
+  const handleRestoreCachedBalancer = () => {
+    try {
+      const cached = localStorage.getItem('balancer_last_result');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        const success = applyBalancerResult(parsed);
+        if (success) {
+          setMessage({ type: 'success', text: '⚡ 直前のチーム分け構成（10名）を再反映しました！' });
+        } else {
+          setMessage({ type: 'error', text: '前回のチーム分けデータ形式が不正です。' });
+        }
+      } else {
+        setMessage({ type: 'error', text: '前回のチーム分け構成が見つかりませんでした。先にバランサーでチーム分けを実行してください。' });
+      }
+    } catch (e: any) {
+      setMessage({ type: 'error', text: `復元エラー: ${e.message}` });
+    }
+  };
 
   // BLUE(0-4)とRED(5-9)の中身(名前・チャンピオン・スタッツ等)を丸ごと入れ替える。
   // スクショ解析(handleImageUpload)がBLUE/REDを逆に判定した場合や、単純に手入力を
@@ -536,11 +580,20 @@ function CustomRecordPageContent() {
           </Link>
         </div>
 
-        <div className="mb-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
           <h1 className="text-2xl md:text-3xl font-extrabold text-stone-900 flex items-center gap-3">
             <Trophy className="h-7 w-7 md:h-8 md:w-8 text-emerald-600" />
             カスタム試合を手動記録
           </h1>
+          <button
+            type="button"
+            onClick={handleRestoreCachedBalancer}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold text-xs shadow-xs transition cursor-pointer"
+            title="直前にバランサーで決定した10人の編成（BLUE/REDとレーン）をこの入力欄へ一括自動入力します"
+          >
+            <RefreshCw className="h-3.5 w-3.5" />
+            <span>⚡ 直前のチーム分け構成（10人）を反映</span>
+          </button>
         </div>
 
         <div className="bg-surface border border-border rounded-xl p-6 shadow-2xl">

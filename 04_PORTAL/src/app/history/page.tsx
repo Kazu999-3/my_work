@@ -34,6 +34,10 @@ export default function HistoryPage() {
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [winFilter, setWinFilter] = useState<'ALL' | 'BLUE' | 'RED'>('ALL');
+  const [roleFilter, setRoleFilter] = useState<'ALL' | 'TOP' | 'JG' | 'MID' | 'ADC' | 'SUP'>('ALL');
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 10;
 
   useEffect(() => {
     async function fetchHistory() {
@@ -70,7 +74,18 @@ export default function HistoryPage() {
     );
   }
 
+  // 絞り込み
   const filteredMatches = matches.filter(m => {
+    // 勝敗フィルター
+    if (winFilter !== 'ALL' && m.winning_team !== winFilter) return false;
+
+    // ロールフィルター
+    if (roleFilter !== 'ALL') {
+      const hasRole = m.participants.some(p => p.role === roleFilter);
+      if (!hasRole) return false;
+    }
+
+    // 検索クエリ
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
     return m.participants.some(p => 
@@ -78,6 +93,14 @@ export default function HistoryPage() {
       p.champion_name?.toLowerCase().includes(q)
     );
   });
+
+  const totalPages = Math.max(1, Math.ceil(filteredMatches.length / PAGE_SIZE));
+  const paginatedMatches = filteredMatches.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
+  const handleFilterChange = (setter: any, val: any) => {
+    setter(val);
+    setCurrentPage(1);
+  };
 
   return (
     <div className="min-h-screen bg-background text-stone-800 p-4 md:p-8">
@@ -110,7 +133,7 @@ export default function HistoryPage() {
           </div>
         </div>
 
-        {/* ヘッダー */}
+        {/* ヘッダー ＆ 検索 */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-border pb-4 gap-3">
           <div>
             <h1 className="text-2xl md:text-3xl font-extrabold text-stone-900 flex items-center gap-2.5">
@@ -126,7 +149,7 @@ export default function HistoryPage() {
               type="text"
               placeholder="名前・チャンピオンで検索..."
               value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
+              onChange={e => { setSearchQuery(e.target.value); setCurrentPage(1); }}
               className="bg-white border border-stone-300 text-stone-900 text-xs font-bold rounded-xl px-3 py-2 outline-none focus:border-primary flex-1 min-w-0 sm:w-64 shadow-xs"
             />
             <Link
@@ -139,6 +162,56 @@ export default function HistoryPage() {
           </div>
         </div>
 
+        {/* 🏷️ 多角フィルターバー (勝敗 ＆ ロール) */}
+        <div className="bg-white border border-stone-200/90 rounded-2xl p-3 shadow-2xs flex flex-wrap items-center justify-between gap-3 text-xs">
+          {/* 勝敗フィルター */}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-stone-500 font-bold text-[11px] mr-1">勝敗:</span>
+            {(['ALL', 'BLUE', 'RED'] as const).map(w => (
+              <button
+                key={w}
+                type="button"
+                onClick={() => handleFilterChange(setWinFilter, w)}
+                className={`px-3 py-1.5 rounded-xl font-extrabold text-xs transition cursor-pointer ${
+                  winFilter === w
+                    ? w === 'BLUE'
+                      ? 'bg-blue-600 text-white shadow-2xs'
+                      : w === 'RED'
+                      ? 'bg-rose-600 text-white shadow-2xs'
+                      : 'bg-stone-800 text-white shadow-2xs'
+                    : 'bg-stone-100 hover:bg-stone-200 text-stone-700'
+                }`}
+              >
+                {w === 'ALL' ? 'すべて' : w === 'BLUE' ? '🟦 BLUE勝利' : '🟥 RED勝利'}
+              </button>
+            ))}
+          </div>
+
+          {/* ロールフィルター */}
+          <div className="flex items-center gap-1 flex-wrap">
+            <span className="text-stone-500 font-bold text-[11px] mr-1">レーン:</span>
+            {(['ALL', 'TOP', 'JG', 'MID', 'ADC', 'SUP'] as const).map(r => (
+              <button
+                key={r}
+                type="button"
+                onClick={() => handleFilterChange(setRoleFilter, r)}
+                className={`px-2.5 py-1 rounded-lg font-black text-[11px] transition cursor-pointer ${
+                  roleFilter === r
+                    ? 'bg-amber-600 text-white shadow-2xs'
+                    : 'bg-stone-100 hover:bg-stone-200 text-stone-600'
+                }`}
+              >
+                {r === 'ALL' ? '全レーン' : r}
+              </button>
+            ))}
+          </div>
+
+          {/* 件数バッジ */}
+          <div className="text-[11px] font-bold text-stone-500 ml-auto">
+            該当: <span className="text-stone-900 font-black font-mono">{filteredMatches.length}</span> 件
+          </div>
+        </div>
+
         <div className="space-y-6">
           {fetchError ? (
             <div className="bg-rose-50 border border-rose-200 text-rose-700 rounded-2xl p-8 text-center font-bold">
@@ -146,10 +219,10 @@ export default function HistoryPage() {
             </div>
           ) : filteredMatches.length === 0 ? (
             <div className="bg-white border border-stone-200 rounded-3xl p-12 text-center text-stone-500 font-bold">
-              {searchQuery ? '条件に一致する試合が見つかりませんでした。' : 'まだ記録された試合がありません。'}
+              {searchQuery || winFilter !== 'ALL' || roleFilter !== 'ALL' ? '条件に一致する試合が見つかりませんでした。' : 'まだ記録された試合がありません。'}
             </div>
           ) : (
-            filteredMatches.map(match => {
+            paginatedMatches.map(match => {
               const roles = ['TOP', 'JG', 'MID', 'ADC', 'SUP'];
               const blueMap = new Map(match.participants.filter(p => p.team === 'BLUE').map(p => [p.role, p]));
               const redMap = new Map(match.participants.filter(p => p.team === 'RED').map(p => [p.role, p]));
@@ -275,6 +348,52 @@ export default function HistoryPage() {
             })
           )}
         </div>
+
+        {/* 📄 ページネーションコントロール */}
+        {totalPages > 1 && (
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-stone-200">
+            <div className="text-xs font-bold text-stone-500">
+              全 <span className="text-stone-900 font-black">{filteredMatches.length}</span> 件中 <span className="text-stone-900 font-black">{(currentPage - 1) * PAGE_SIZE + 1}〜{Math.min(currentPage * PAGE_SIZE, filteredMatches.length)}</span> 件を表示
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                className="px-3 py-1.5 rounded-xl bg-white border border-stone-300 text-stone-700 hover:bg-stone-100 font-bold text-xs disabled:opacity-40 disabled:cursor-not-allowed transition shadow-2xs"
+              >
+                ◀ 前へ
+              </button>
+
+              <div className="flex items-center gap-1 px-2">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+                  <button
+                    key={p}
+                    type="button"
+                    onClick={() => setCurrentPage(p)}
+                    className={`w-7 h-7 rounded-lg font-black text-xs transition cursor-pointer ${
+                      currentPage === p
+                        ? 'bg-amber-600 text-white shadow-2xs'
+                        : 'bg-white border border-stone-200 text-stone-600 hover:bg-stone-100'
+                    }`}
+                  >
+                    {p}
+                  </button>
+                ))}
+              </div>
+
+              <button
+                type="button"
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                className="px-3 py-1.5 rounded-xl bg-white border border-stone-300 text-stone-700 hover:bg-stone-100 font-bold text-xs disabled:opacity-40 disabled:cursor-not-allowed transition shadow-2xs"
+              >
+                次へ ▶
+              </button>
+            </div>
+          </div>
+        )}
 
       </div>
     </div>
