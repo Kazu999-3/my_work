@@ -73,15 +73,25 @@ export async function POST(req: Request) {
       player.allow_higher = (allowHigher === 'true' || allowHigher === true);
     }
 
-    // 書き込み（既存はupdate、新規はupsert）
-    const payload: any = { ...player };
-    delete payload.created_at;
+    // 書き込み（既存はupdate、新規はupsert）: 有効なDBカラムのみを安全に抽出
+    const safePayload: any = {
+      name: player.name,
+      discord_id: player.discord_id,
+      role_preferences: player.role_preferences,
+      highest_rank: player.highest_rank || 'UNRANKED',
+      is_active: player.is_active ?? true,
+    };
+    if (player.ng_lane_1 !== undefined) safePayload.ng_lane_1 = player.ng_lane_1;
+    if (player.ng_lane_2 !== undefined) safePayload.ng_lane_2 = player.ng_lane_2;
+    if (player.weight !== undefined) safePayload.weight = player.weight;
+    if (player.allow_higher !== undefined) safePayload.allow_higher = player.allow_higher;
+    if (player.mmr !== undefined) safePayload.mmr = player.mmr;
+
     let error;
     if (player.id) {
-      delete payload.id;
-      ({ error } = await supabase.from('ktm_players').update(payload).eq('id', player.id));
+      ({ error } = await supabase.from('ktm_players').update(safePayload).eq('id', player.id));
     } else {
-      ({ error } = await supabase.from('ktm_players').upsert(payload, { onConflict: 'discord_id' }));
+      ({ error } = await supabase.from('ktm_players').upsert(safePayload, { onConflict: 'discord_id' }));
     }
     if (error) throw new Error(error.message);
 

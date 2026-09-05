@@ -326,7 +326,8 @@ export async function POST(request: Request) {
       }
 
       // コイン付与計算: 参加賞 +100コイン、勝利チーム +150コイン (お祭りマッチでもコインは満額付与！)
-      const currentCoins = Number(r.dbPlayer.coins || r.dbPlayer.metadata?.coins) || 1000;
+      const currentRolePrefs = typeof r.dbPlayer.role_preferences === 'object' && r.dbPlayer.role_preferences !== null ? r.dbPlayer.role_preferences : {};
+      const currentCoins = Number(currentRolePrefs.coins ?? r.dbPlayer.coins ?? r.dbPlayer.metadata?.coins) || 1000;
       const coinReward = (r.team === winningTeam) ? 250 : 100;
       const newCoins = currentCoins + coinReward;
       const currentMeta = typeof r.dbPlayer.metadata === 'object' && r.dbPlayer.metadata !== null ? r.dbPlayer.metadata : {};
@@ -337,22 +338,14 @@ export async function POST(request: Request) {
         mmr: newTotalMmr,
         pity: newPity,
         off_role_pity: newOffRolePity,
+        role_preferences: { ...currentRolePrefs, coins: newCoins },
         metadata: { ...currentMeta, coins: newCoins }
       };
 
-      // coins 列がDBスキーマに存在する場合は coins も更新、なければ metadata のみで保存
       let { error: uError } = await supabase
         .from('ktm_players')
-        .update({ ...baseUpdate, coins: newCoins })
+        .update(baseUpdate)
         .eq('name', r.name);
-        
-      if (uError && uError.message.includes('coins')) {
-        const retryRes = await supabase
-          .from('ktm_players')
-          .update(baseUpdate)
-          .eq('name', r.name);
-        uError = retryRes.error;
-      }
 
       if (uError) {
         throw new Error(`Player ${r.name} の更新エラー: ${uError.message}`);

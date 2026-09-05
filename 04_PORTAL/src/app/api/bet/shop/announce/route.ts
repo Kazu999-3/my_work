@@ -31,17 +31,24 @@ export async function POST(req: Request) {
       autoCreate: false,
     });
 
-    if (player) {
-      const currentInventory = getPlayerInventory(player);
-      const targetIndex = currentInventory.findIndex(item => item.id === itemId || item.name === itemName);
-      if (targetIndex !== -1) {
-        currentInventory.splice(targetIndex, 1); // 1枚消費
-        await updatePlayerCoinsAndInventory({
-          player,
-          newInventory: currentInventory,
-        });
-      }
+    if (!player) {
+      return NextResponse.json({ error: 'プレイヤー情報の取得に失敗しました。' }, { status: 404 });
     }
+
+    const currentInventory = getPlayerInventory(player);
+    const targetIndex = currentInventory.findIndex(item => item.id === itemId || item.name === itemName);
+
+    if (targetIndex === -1) {
+      return NextResponse.json({
+        error: `「${itemName}」を所持していません。ショップで購入後に発動してください。`
+      }, { status: 400 });
+    }
+
+    currentInventory.splice(targetIndex, 1); // 1枚消費
+    await updatePlayerCoinsAndInventory({
+      player,
+      newInventory: currentInventory,
+    });
 
     // Discordへ公式発動アナウンス送信（指定チャンネル: 1545806575770276061 / #ショップ通知 へ送信）
     const { sendShopNotification } = await import('../../../../../lib/discordNotify');

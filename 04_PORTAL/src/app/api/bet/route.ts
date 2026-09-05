@@ -284,6 +284,7 @@ export async function POST(req: Request) {
             team: team.toUpperCase(),
             amount: betAmount,
             odds: effectiveOdds,
+            match_id: matchId || null,
             created_at: new Date().toISOString()
           }
         });

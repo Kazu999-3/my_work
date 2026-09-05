@@ -388,14 +388,19 @@ export default function CasinoPage() {
     }
   };
 
-  const handleBuyItem = async (itemId: string, itemName: string, price: number) => {
+  const handleBuyItem = async (itemId: string, itemName: string, price: number, quantity: number = 1) => {
     if (!user) {
       if (confirm('アイテムを購入するにはDiscordアカウントでログインが必要です。ログイン画面へ移動しますか？')) {
         loginWithDiscord('/casino');
       }
       return;
     }
-    if (!confirm(`「${itemName}」を ${price}コイン で購入しますか？`)) {
+    const totalPrice = price * quantity;
+    const confirmMsg = quantity > 1
+      ? `「${itemName}」を ${quantity}口（合計: ${totalPrice.toLocaleString()}コイン）でまとめ買いしますか？`
+      : `「${itemName}」を ${price}コイン で購入しますか？`;
+
+    if (!confirm(confirmMsg)) {
       return;
     }
 
@@ -407,6 +412,7 @@ export default function CasinoPage() {
           discordId: user.discordId,
           playerName: activePlayerName.trim() || user.username,
           itemId,
+          quantity,
         }),
       });
 
@@ -1058,16 +1064,42 @@ export default function CasinoPage() {
                     </p>
                   </div>
 
-                  <div className="flex items-center justify-between pt-3 border-t border-stone-200">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-3 border-t border-stone-200">
                     <span className="text-sm font-black text-amber-600 font-mono">
-                      🪙 {item.price.toLocaleString()}
+                      🪙 {item.price.toLocaleString()} {item.id === 'lottery_ticket' ? '/ 1口' : ''}
                     </span>
-                    <button
-                      onClick={() => handleBuyItem(item.id, item.name, item.price)}
-                      className="px-4 py-2 rounded-xl bg-stone-900 hover:bg-amber-600 text-white text-xs font-black transition-colors cursor-pointer shadow-sm"
-                    >
-                      交換する
-                    </button>
+                    {item.id === 'lottery_ticket' ? (
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <button
+                          onClick={() => handleBuyItem(item.id, item.name, item.price, 1)}
+                          className="px-2.5 py-1.5 rounded-lg bg-stone-900 hover:bg-amber-600 text-white text-[11px] font-black transition-colors cursor-pointer shadow-xs"
+                          title="1口購入"
+                        >
+                          1口
+                        </button>
+                        <button
+                          onClick={() => handleBuyItem(item.id, item.name, item.price, 5)}
+                          className="px-2.5 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-stone-950 text-[11px] font-black transition-colors cursor-pointer shadow-xs"
+                          title="5口まとめ買い (500コイン)"
+                        >
+                          5口
+                        </button>
+                        <button
+                          onClick={() => handleBuyItem(item.id, item.name, item.price, 10)}
+                          className="px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-[11px] font-black transition-colors cursor-pointer shadow-xs"
+                          title="10口まとめ買い (1,000コイン)"
+                        >
+                          10口
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => handleBuyItem(item.id, item.name, item.price, 1)}
+                        className="px-4 py-2 rounded-xl bg-stone-900 hover:bg-amber-600 text-white text-xs font-black transition-colors cursor-pointer shadow-sm"
+                      >
+                        交換する
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}
