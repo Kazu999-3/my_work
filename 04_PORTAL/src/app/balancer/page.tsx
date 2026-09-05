@@ -497,7 +497,14 @@ export default function BalancerPage() {
     setMessage({ type: "", text: "" });
     try {
       const targetPlayers = currentPlayers || players;
-      const existingPlayers = targetPlayers.filter(p => p.id);
+      const dirtyIds = dirtyPlayerIdsRef.current;
+      // 編集されたプレイヤーのみを対象にする（無関係な他プレイヤーの最新設定上書きを完全防止）
+      const existingPlayers = targetPlayers.filter(p => p.id && (dirtyIds.size === 0 || dirtyIds.has(p.id) || dirtyIds.has(p.discord_id)));
+
+      if (existingPlayers.length === 0) {
+        setSaving(false);
+        return;
+      }
 
       if (isAdmin) {
         // 管理者は weight 等も含めフル書き込み可能。RLSをバイパスするサーバーAPI経由。
@@ -521,10 +528,6 @@ export default function BalancerPage() {
         if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || '保存に失敗しました'); }
       } else {
         // 一般ユーザーは非センシティブ列のみ（名前・weightは書き込まない）。サーバーAPI経由。
-        // metadataは他機能のキャッシュ(playstyle_cache等)も同居する汎用列のため、
-        // フルスナップショットをそのまま送ると、ページ読み込み後にサーバー側で更新された
-        // playstyle_cache等を古い値で上書き消去してしまう(2026-08-05発覚)。
-        // このUIが実際に編集させるnotesフィールドだけを送り、サーバー側でマージさせる。
         const updates = existingPlayers.map(p => ({
           id: p.id,
           role_preferences: p.role_preferences,

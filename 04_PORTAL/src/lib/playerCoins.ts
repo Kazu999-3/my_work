@@ -245,6 +245,7 @@ export async function findOrCreatePlayer(params: {
 
 /**
  * プレイヤーのコインおよびインベントリを安全に更新
+ * ★ 重要: 希望レーン（primary / secondary / ignore_role 等）の設定を絶対に消さないよう厳重プロテクト
  */
 export async function updatePlayerCoinsAndInventory(params: {
   player: PlayerRecord;
@@ -256,24 +257,40 @@ export async function updatePlayerCoinsAndInventory(params: {
   const targetCoins = typeof newCoins === 'number' ? newCoins : getPlayerCoins(player);
   const targetInventory = Array.isArray(newInventory) ? newInventory : getPlayerInventory(player);
 
-  const updatedPrefs = {
-    ...(player.role_preferences || {}),
-    ...(rolePreferencesUpdate || {}),
-    coins: targetCoins,
-    inventory: targetInventory,
-  };
-
   if (!supabase) {
     return { success: true, coins: targetCoins, inventory: targetInventory };
   }
 
-  const updatePayload: any = {
-    role_preferences: updatedPrefs,
-    coins: targetCoins,
-    inventory: targetInventory,
-  };
-
   try {
+    // 1. DBから最新の role_preferences を取得（希望レーンの破壊を完全防止）
+    let currentDbPrefs: Record<string, any> = {};
+    const { data: dbCurrent } = await supabase
+      .from('ktm_players')
+      .select('role_preferences')
+      .eq('name', player.name)
+      .limit(1)
+      .maybeSingle();
+
+    if (dbCurrent && dbCurrent.role_preferences && typeof dbCurrent.role_preferences === 'object') {
+      currentDbPrefs = dbCurrent.role_preferences;
+    } else if (player.role_preferences && typeof player.role_preferences === 'object') {
+      currentDbPrefs = player.role_preferences;
+    }
+
+    // 2. 既存の希望レーン情報（primary, secondary, ignore_role 等）を完全保護してマージ
+    const updatedPrefs = {
+      ...currentDbPrefs,
+      ...(rolePreferencesUpdate || {}),
+      coins: targetCoins,
+      inventory: targetInventory,
+    };
+
+    const updatePayload: any = {
+      role_preferences: updatedPrefs,
+      coins: targetCoins,
+      inventory: targetInventory,
+    };
+
     const { error: upErr } = await supabase
       .from('ktm_players')
       .update(updatePayload)
