@@ -412,8 +412,10 @@ export async function POST(request: Request) {
     }
 
     // (4.6) 勝敗予想ベットの自動精算（的中者へのコイン払い戻し）
+    // 4. 勝敗予想（ベット）の自動精算 ＆ 的中配当払い戻し
     const payoutWinners: Array<{ name: string; payout: number; multiplier: number }> = [];
     try {
+      const { findOrCreatePlayer, getPlayerCoins, updatePlayerCoinsAndInventory } = await import('../../../../lib/playerCoins');
       const { data: openBets } = await supabase
         .from('ktm_bets')
         .select('*')
@@ -427,17 +429,18 @@ export async function POST(request: Request) {
             const payout = Math.floor(bet.amount * multiplier);
             payoutWinners.push({ name: bet.player_name, payout, multiplier });
 
-            const { data: pData } = await supabase
-              .from('ktm_players')
-              .select('name, coins')
-              .eq('name', bet.player_name)
-              .single();
-            if (pData) {
-              const cur = pData.coins ?? 1000;
-              await supabase
-                .from('ktm_players')
-                .update({ coins: cur + payout })
-                .eq('name', pData.name);
+            const pPlayer = await findOrCreatePlayer({
+              discordId: bet.discord_id,
+              name: bet.player_name,
+              autoCreate: true,
+            });
+
+            if (pPlayer) {
+              const cur = getPlayerCoins(pPlayer);
+              await updatePlayerCoinsAndInventory({
+                player: pPlayer,
+                newCoins: cur + payout,
+              });
             }
           }
           await supabase
