@@ -43,20 +43,21 @@ export async function GET() {
       .select('name');
     if (allPlayersError) throw allPlayersError;
 
-    const registeredPlayerNames = new Set((allPlayersData || []).map((p: any) => p.name).filter(Boolean));
-    const allPlayerNamesList = (allPlayersData || []).map((p: any) => p.name).filter(Boolean).sort();
+    const registeredPlayerNames = new Set((allPlayersData || []).map((p: any) => p.name?.trim()).filter(Boolean));
+    const allPlayerNamesList = Array.from(registeredPlayerNames).sort();
 
     if (!data) throw new Error('No data');
 
     const matches: Record<number, { BLUE: string[], RED: string[], winner: 'BLUE' | 'RED' }> = {};
     data.forEach((row: any) => {
       const winner = winMap[row.match_id];
-      if (!winner || !row.player_name) return;
+      const rawName = row.player_name?.trim();
+      if (!winner || !rawName) return;
 
       if (!matches[row.match_id]) {
         matches[row.match_id] = { BLUE: [], RED: [], winner };
       }
-      matches[row.match_id][row.team as 'BLUE' | 'RED'].push(row.player_name);
+      matches[row.match_id][row.team as 'BLUE' | 'RED'].push(rawName);
     });
 
     const allyMap: Record<string, { games: number, wins: number }> = {};
@@ -64,9 +65,11 @@ export async function GET() {
 
     Object.values(matches).forEach(m => {
       const processTeam = (teamPlayers: string[], isWin: boolean) => {
-        for (let i = 0; i < teamPlayers.length; i++) {
-          for (let j = i + 1; j < teamPlayers.length; j++) {
-            const pair = [teamPlayers[i], teamPlayers[j]].sort();
+        // 重複除外
+        const uniquePlayers = Array.from(new Set(teamPlayers));
+        for (let i = 0; i < uniquePlayers.length; i++) {
+          for (let j = i + 1; j < uniquePlayers.length; j++) {
+            const pair = [uniquePlayers[i], uniquePlayers[j]].sort();
             const key = `${pair[0]}::${pair[1]}`;
             if (!allyMap[key]) allyMap[key] = { games: 0, wins: 0 };
             allyMap[key].games++;
@@ -74,8 +77,8 @@ export async function GET() {
           }
         }
         for (const k of [3, 4, 5]) {
-          if (teamPlayers.length < k) continue;
-          for (const combo of combosOf(teamPlayers, k)) {
+          if (uniquePlayers.length < k) continue;
+          for (const combo of combosOf(uniquePlayers, k)) {
             const key = [...combo].sort().join('::');
             if (!groupMaps[k][key]) groupMaps[k][key] = { games: 0, wins: 0 };
             groupMaps[k][key].games++;
@@ -102,7 +105,17 @@ export async function GET() {
       }));
     });
 
-    return NextResponse.json({ allyStats, groupStats, allPlayers: allPlayerNamesList });
+    // 対戦履歴に存在する全プレイヤーも網羅した完全プレイヤーリスト
+    const allKnownPlayers = Array.from(
+      new Set([...allPlayerNamesList, ...allyStats.flatMap(a => [a.p1, a.p2])])
+    ).filter(Boolean).sort();
+
+    return NextResponse.json({ 
+      allyStats, 
+      groupStats, 
+      allPlayers: allKnownPlayers,
+      totalMatches: Object.keys(matches).length 
+    });
   } catch (err: any) {
     console.error('[synergy] error:', err);
     return NextResponse.json({ error: err.message }, { status: 500 });
