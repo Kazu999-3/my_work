@@ -78,13 +78,6 @@ function ChampionsShell() {
         className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 p-3 sm:p-4 bg-white/90 border border-stone-200/90 rounded-2xl shadow-xs backdrop-blur-sm"
       >
         <div className="flex items-center gap-3">
-          <a
-            href="/"
-            className="px-2.5 py-1.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-xs border border-stone-200 transition shrink-0"
-            title="ポータルトップへ戻る"
-          >
-            ← ポータル
-          </a>
           <div className="text-2xl sm:text-3xl p-1.5 bg-amber-50 rounded-xl border border-amber-200/80 shrink-0">📖</div>
           <div>
             <div className="flex items-center gap-2">
