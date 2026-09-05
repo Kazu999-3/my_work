@@ -416,17 +416,21 @@ export async function POST(request: Request) {
     const payoutWinners: Array<{ name: string; payout: number; multiplier: number }> = [];
     try {
       const { findOrCreatePlayer, getPlayerCoins, updatePlayerCoinsAndInventory } = await import('../../../../lib/playerCoins');
-      const { data: openBets } = await supabase
-        .from('ktm_bets')
-        .select('*')
-        .eq('settled', false);
+      const { data: openBetTasks } = await supabase
+        .from('edge_tasks')
+        .select('id, payload')
+        .eq('task_type', 'custom_bet')
+        .eq('status', 'pending');
 
-      if (openBets && openBets.length > 0) {
-        for (const bet of openBets) {
+      if (openBetTasks && openBetTasks.length > 0) {
+        for (const task of openBetTasks) {
+          const bet = task.payload || {};
           const won = (bet.team === winningTeam);
+          let payout = 0;
+          let multiplier = Number(bet.odds) > 0 ? Number(bet.odds) : 2.0;
+
           if (won) {
-            const multiplier = Number(bet.odds) > 0 ? Number(bet.odds) : 2.0;
-            const payout = Math.floor(bet.amount * multiplier);
+            payout = Math.floor((bet.amount || 0) * multiplier);
             payoutWinners.push({ name: bet.player_name, payout, multiplier });
 
             const pPlayer = await findOrCreatePlayer({
@@ -443,14 +447,20 @@ export async function POST(request: Request) {
               });
             }
           }
+
           await supabase
-            .from('ktm_bets')
+            .from('edge_tasks')
             .update({
-              settled: true,
-              won,
+              status: 'completed',
+              result: {
+                won,
+                payout,
+                multiplier,
+                settled_at: new Date().toISOString()
+              },
               updated_at: new Date().toISOString()
             })
-            .eq('id', bet.id);
+            .eq('id', task.id);
         }
       }
     } catch (e) {

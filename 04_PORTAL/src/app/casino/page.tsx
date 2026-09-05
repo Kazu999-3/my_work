@@ -159,8 +159,6 @@ export default function CasinoPage() {
         .channel('realtime-casino')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'edge_tasks' }, () => {
           fetchActiveMatch();
-        })
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'ktm_bets' }, () => {
           fetchBetData();
         })
         .subscribe();

@@ -47,30 +47,31 @@ export async function GET(req: Request) {
       }
     }
 
-    // 3. リアルタイム投票統計（現在アクティブなベット状況）
-    let blueAmount = 2800;
-    let redAmount = 2200;
-    let blueCount = 4;
-    let redCount = 3;
+    // 3. リアルタイム投票統計（現在アクティブな未精算ベット状況）
+    let blueAmount = 0;
+    let redAmount = 0;
+    let blueCount = 0;
+    let redCount = 0;
 
     try {
-      const { data: bets } = await supabase
-        .from('ktm_bets')
-        .select('team, amount')
-        .order('created_at', { ascending: false })
-        .limit(50);
+      const { data: betTasks } = await supabase
+        .from('edge_tasks')
+        .select('payload')
+        .eq('task_type', 'custom_bet')
+        .eq('status', 'pending');
 
-      if (bets && bets.length > 0) {
-        blueAmount = bets.filter((b: any) => b.team === 'BLUE').reduce((s: number, b: any) => s + (b.amount || 0), 0) || 2800;
-        redAmount = bets.filter((b: any) => b.team === 'RED').reduce((s: number, b: any) => s + (b.amount || 0), 0) || 2200;
-        blueCount = bets.filter((b: any) => b.team === 'BLUE').length || 4;
-        redCount = bets.filter((b: any) => b.team === 'RED').length || 3;
+      if (betTasks && betTasks.length > 0) {
+        const bets = betTasks.map((t: any) => t.payload).filter(Boolean);
+        blueAmount = bets.filter((b: any) => b.team === 'BLUE').reduce((s: number, b: any) => s + (b.amount || 0), 0);
+        redAmount = bets.filter((b: any) => b.team === 'RED').reduce((s: number, b: any) => s + (b.amount || 0), 0);
+        blueCount = bets.filter((b: any) => b.team === 'BLUE').length;
+        redCount = bets.filter((b: any) => b.team === 'RED').length;
       }
     } catch {}
 
     const totalAmount = blueAmount + redAmount;
     const blueRatio = totalAmount > 0 ? Math.round((blueAmount / totalAmount) * 100) : 50;
-    const redRatio = 100 - blueRatio;
+    const redRatio = totalAmount > 0 ? 100 - blueRatio : 50;
 
     return NextResponse.json({
       success: true,
@@ -247,21 +248,25 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'コインの控除に失敗しました。' }, { status: 500 });
     }
 
-    // ktm_bets レコードをDBに保存（試合確定時の自動精算・配当払い戻し用）
+    // ベートレコードを edge_tasks に保存（試合確定時の自動精算・配当払い戻し用）
     const effectiveOdds = Number(odds) > 0 ? Number(odds) : 2.0;
     try {
       await supabase
-        .from('ktm_bets')
+        .from('edge_tasks')
         .insert({
-          player_name: player.name,
-          discord_id: player.discord_id || discordId || null,
-          team: team.toUpperCase(),
-          amount: betAmount,
-          odds: effectiveOdds,
-          settled: false,
+          task_type: 'custom_bet',
+          status: 'pending',
+          payload: {
+            player_name: player.name,
+            discord_id: player.discord_id || discordId || null,
+            team: team.toUpperCase(),
+            amount: betAmount,
+            odds: effectiveOdds,
+            created_at: new Date().toISOString()
+          }
         });
     } catch (bErr) {
-      console.warn('ktm_bets insert warning:', bErr);
+      console.warn('[bet POST] edge_tasks insert warning:', bErr);
     }
 
     const oddsText = odds ? ` (オッズ: x${odds}倍)` : '';

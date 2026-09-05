@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 import { fetchAllRows } from '../../../../lib/fetchAll';
+import { normalizeRole } from '../../../../lib/roleUtils';
 
 export const dynamic = 'force-dynamic';
 
@@ -82,17 +83,13 @@ export async function GET() {
       const winningTeam = matchWinMap.get(String(row.match_id));
       if (!winningTeam) return;
 
-      let role = (row.role || '').toUpperCase();
-      if (role === 'JUG' || role === 'JUNGLE') role = 'JG';
-      if (role === 'BOT' || role === 'UTILITY') role = 'ADC';
-      if (role === 'SUPPORT') role = 'SUP';
-
+      const role = normalizeRole(row.role);
       const isWin = row.team === winningTeam;
 
       statsMap[pName].totalGames += 1;
       if (isWin) statsMap[pName].totalWins += 1;
 
-      if (statsMap[pName].lanes[role]) {
+      if (role && statsMap[pName].lanes[role]) {
         statsMap[pName].lanes[role].games += 1;
         if (isWin) statsMap[pName].lanes[role].wins += 1;
       }

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 import { calculatePlaystyle } from '../../../../lib/playstyle';
 import { fetchAllRows } from '../../../../lib/fetchAll';
+import { normalizeRole } from '../../../../lib/roleUtils';
 
 const cache = new Map<string, { data: any; expiry: number }>();
 const CACHE_TTL_MS = 30000; // 30 seconds TTL
@@ -86,8 +87,8 @@ export async function GET(request: Request) {
 
     // 試合データの集計
     playerMatches.forEach((row: any) => {
-      const role = row.role?.toUpperCase();
-      if (!validRoles.includes(role)) return;
+      const role = normalizeRole(row.role);
+      if (!role) return;
 
       const match = matchMap.get(row.match_id);
       if (!match) return;
@@ -107,7 +108,7 @@ export async function GET(request: Request) {
 
       // 2. 対面（マッチアップ）の集計
       const allParticipants = partsMap.get(row.match_id) || [];
-      const opponent = allParticipants.find((p: any) => p.role?.toUpperCase() === role && p.team !== row.team);
+      const opponent = allParticipants.find((p: any) => normalizeRole(p.role) === role && p.team !== row.team);
       
       if (opponent && opponent.champion_name) {
         const oppChamp = opponent.champion_name;

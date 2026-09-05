@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 import { fetchAllRows } from '../../../../lib/fetchAll';
+import { normalizeRoleCapitalized } from '../../../../lib/roleUtils';
 
 export async function POST(req: Request) {
   try {
@@ -70,15 +71,10 @@ export async function POST(req: Request) {
         stats.recent.push({ win: isWin });
       }
 
-      // 'TOP', 'JG' 等を先頭大文字に直す (Top, Jg, Mid, Adc, Sup)
-      let role = p.role ? p.role.toUpperCase() : 'UNKNOWN';
-      if (role === 'TOP') role = 'Top';
-      if (role === 'JG') role = 'Jg';
-      if (role === 'MID') role = 'Mid';
-      if (role === 'ADC') role = 'Adc';
-      if (role === 'SUP') role = 'Sup';
+      // 'TOP', 'JG', 'JUNGLE', 'SUPPORT', 'UTILITY' 等を先頭大文字に直す (Top, Jg, Mid, Adc, Sup)
+      const role = normalizeRoleCapitalized(p.role);
 
-      if (stats.roles[role]) {
+      if (role !== 'Unknown' && stats.roles[role]) {
         stats.roles[role].g++;
         if (isWin) stats.roles[role].w++;
       }

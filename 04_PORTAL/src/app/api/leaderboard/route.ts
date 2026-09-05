@@ -3,6 +3,8 @@ import { supabaseAdmin as supabase } from '../../../lib/supabaseAdmin';
 import { fetchAllRows } from '../../../lib/fetchAll';
 import { getKtmRank } from '../../../lib/mmr';
 
+import { normalizeRole } from '../../../lib/roleUtils';
+
 // leaderboard/page.tsx の「MMRランキング」タブ用集計API。
 // 従来はブラウザが全ktm_match_participants行を受信して集計していたのをサーバー側に移す。
 export const dynamic = 'force-dynamic';
@@ -32,8 +34,8 @@ export async function GET(req: Request) {
       .select('id, winning_team');
     if (rawmError) throw rawmError;
 
-    const matchWinMap = new Map<number, string>();
-    (rawMatches || []).forEach((m: any) => matchWinMap.set(m.id, m.winning_team));
+    const matchWinMap = new Map<string, string>();
+    (rawMatches || []).forEach((m: any) => matchWinMap.set(String(m.id), m.winning_team));
 
     const byDiscord = new Map<string, any>();
     const byName = new Map<string, any>();
@@ -55,9 +57,9 @@ export async function GET(req: Request) {
       const resolved = (m.discord_id && byDiscord.get(m.discord_id)) || byName.get(m.player_name);
       if (!resolved) return;
       const key = keyOfPlayer(resolved);
-      const role = (m.role || '').toUpperCase();
-      const winningTeam = matchWinMap.get(m.match_id);
-      if (statsMap[key] && statsMap[key][role]) {
+      const role = normalizeRole(m.role);
+      const winningTeam = matchWinMap.get(String(m.match_id));
+      if (role && statsMap[key] && statsMap[key][role]) {
         statsMap[key][role].games += 1;
         if (m.team === winningTeam) statsMap[key][role].wins += 1;
       }
