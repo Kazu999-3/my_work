@@ -100,8 +100,8 @@ const SHOP_ITEMS = [
     name: '🎟️ 週末メガ宝くじ (1口)',
     price: 100,
     icon: '🎟️',
-    badge: '定期抽選',
-    desc: '毎週日曜22:00に抽選！当選者にジャックポット総取り（数万コイン）のチャンス！'
+    badge: '1等キャリーオーバー制',
+    desc: '【毎週日曜22:00抽選】🥇1等: ジャックポット総取り(8%抽選・キャリーオーバー制) / 🥈2等: 1,000コイン確約当選 / 🥉3等: 参加賞(1口30コイン還元)！'
   }
 ];
 
@@ -611,15 +611,22 @@ export default function CasinoPage() {
                         <span className="text-base">{item.icon}</span>
                         <span className="truncate">{item.name}</span>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => handleAnnounceTicket(item)}
-                        className="w-full py-1.5 px-2 rounded-xl bg-rose-500 hover:bg-rose-600 text-white font-black text-[11px] transition shadow flex items-center justify-center gap-1 cursor-pointer"
-                        title="次回のカスタム試合でこの特権を発動することをDiscordに宣言します"
-                      >
-                        <span>📣</span>
-                        <span>Discordで発動宣言する</span>
-                      </button>
+                      {item.id === 'lottery_ticket' ? (
+                        <div className="w-full py-1.5 px-2 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-900 font-bold text-[11px] flex items-center justify-center gap-1">
+                          <span>⏳</span>
+                          <span>日曜22:00 自動抽選エントリー中</span>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => handleAnnounceTicket(item)}
+                          className="w-full py-1.5 px-2 rounded-xl bg-rose-500 hover:bg-rose-600 text-white font-black text-[11px] transition shadow flex items-center justify-center gap-1 cursor-pointer"
+                          title="次回のカスタム試合でこの特権を発動することをDiscordに宣言します"
+                        >
+                          <span>📣</span>
+                          <span>Discordで発動宣言する</span>
+                        </button>
+                      )}
                     </div>
                   ))}
                 </div>
