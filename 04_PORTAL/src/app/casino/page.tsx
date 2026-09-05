@@ -5,6 +5,7 @@ import { Coins, Trophy, Flame, Swords, CheckCircle2, TrendingUp, Sparkles, Shiel
 import Link from 'next/link';
 import confetti from 'canvas-confetti';
 import { useCurrentUser } from '../../hooks/useCurrentUser';
+import { supabase } from '../../lib/supabaseClient';
 
 interface RankingPlayer {
   name: string;
@@ -144,11 +145,35 @@ export default function CasinoPage() {
     if (user?.discordId || user?.displayName) {
       fetchInventory();
     }
+
+    // 10秒ごとのフォールバックポーリング
     const interval = setInterval(() => {
       fetchActiveMatch();
       fetchBetData();
-    }, 15000); // 15秒ごとに最新試合と投票比率をチェック
-    return () => clearInterval(interval);
+    }, 10000);
+
+    // 🎲 Supabase Realtime による試合確定・ベット受付の即時同期
+    let channel: any = null;
+    try {
+      channel = supabase
+        .channel('realtime-casino')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'edge_tasks' }, () => {
+          fetchActiveMatch();
+        })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'ktm_bets' }, () => {
+          fetchBetData();
+        })
+        .subscribe();
+    } catch (rErr) {
+      console.warn('[casino] Realtime subscription warning:', rErr);
+    }
+
+    return () => {
+      clearInterval(interval);
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
+    };
   }, [user]);
 
   const fetchInventory = async () => {

@@ -101,6 +101,30 @@ export async function POST(request: Request) {
       });
     }
 
+    // 🎲 勝敗予想受付用: edge_tasks に pending マッチを自動保存/更新
+    try {
+      const balanceResultPayload = {
+        teamBlue,
+        teamRed,
+        spectators,
+        blueWinRate: Number(pBlue.toFixed(4)),
+        isExhibition: false,
+        announcedAt: new Date().toISOString()
+      };
+
+      await supabase
+        .from('edge_tasks')
+        .insert({
+          task_type: 'balancer_pending',
+          payload: { balanceResult: balanceResultPayload },
+          status: 'pending'
+        });
+    } catch (pendErr) {
+      console.warn('[discord route] Failed to auto-save balancer_pending:', pendErr);
+    }
+
+    const portalBaseUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_BASE_URL || 'https://my-work-8jbd.vercel.app';
+
     // 🎲 勝敗ベットボタンを追加
     payload.components = [
       {
@@ -122,7 +146,7 @@ export async function POST(request: Request) {
             type: 2,
             label: "🎲 Webカジノ / 番付",
             style: 5,
-            url: `${process.env.NEXT_PUBLIC_BASE_URL || 'https://ktm-portal.vercel.app'}/casino`
+            url: `${portalBaseUrl}/casino`
           }
         ]
       }

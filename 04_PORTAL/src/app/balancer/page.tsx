@@ -685,6 +685,12 @@ export default function BalancerPage() {
       try {
         if (activeResult) {
           localStorage.setItem('balancer_last_result', JSON.stringify(activeResult));
+          // 🎲 勝敗予想（/casino）へ即時連動するため、自動で pending マッチを保存・更新
+          fetch('/api/balancer/pending', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ balanceResult: activeResult }),
+          }).catch(pErr => console.warn('[balancer] Auto-save pending match failed:', pErr));
         }
       } catch (e) {
         console.error('Failed to cache balancer_last_result:', e);
