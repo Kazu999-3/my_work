@@ -38,21 +38,20 @@ export async function GET() {
     const winMap: Record<number, 'BLUE' | 'RED'> = {};
     (matchWins || []).forEach((m: any) => { winMap[m.id] = m.winning_team; });
 
-    const { data: activePlayersData, error: activePlayersError } = await supabase
+    const { data: allPlayersData, error: allPlayersError } = await supabase
       .from('ktm_players')
-      .select('name')
-      .eq('is_active', true);
-    if (activePlayersError) throw activePlayersError;
+      .select('name');
+    if (allPlayersError) throw allPlayersError;
 
-    const activePlayerNames = new Set(activePlayersData?.map((p: any) => p.name) || []);
+    const registeredPlayerNames = new Set((allPlayersData || []).map((p: any) => p.name).filter(Boolean));
+    const allPlayerNamesList = (allPlayersData || []).map((p: any) => p.name).filter(Boolean).sort();
 
     if (!data) throw new Error('No data');
 
     const matches: Record<number, { BLUE: string[], RED: string[], winner: 'BLUE' | 'RED' }> = {};
     data.forEach((row: any) => {
-      if (!activePlayerNames.has(row.player_name)) return;
       const winner = winMap[row.match_id];
-      if (!winner) return;
+      if (!winner || !row.player_name) return;
 
       if (!matches[row.match_id]) {
         matches[row.match_id] = { BLUE: [], RED: [], winner };
@@ -103,7 +102,7 @@ export async function GET() {
       }));
     });
 
-    return NextResponse.json({ allyStats, groupStats });
+    return NextResponse.json({ allyStats, groupStats, allPlayers: allPlayerNamesList });
   } catch (err: any) {
     console.error('[synergy] error:', err);
     return NextResponse.json({ error: err.message }, { status: 500 });

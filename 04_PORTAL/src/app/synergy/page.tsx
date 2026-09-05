@@ -23,6 +23,7 @@ interface GroupStat {
 export default function SynergyPage() {
   const [loading, setLoading] = useState(true);
   const [allyStats, setAllyStats] = useState<AllyStat[]>([]);
+  const [allPlayersList, setAllPlayersList] = useState<string[]>([]);
   const [minGames, setMinGames] = useState(3);
   const [groupStats, setGroupStats] = useState<Record<number, GroupStat[]>>({ 3: [], 4: [], 5: [] });
   const [groupSize, setGroupSize] = useState<2 | 3 | 4 | 5>(2);
@@ -38,6 +39,7 @@ export default function SynergyPage() {
         if (!res.ok) throw new Error(data.error || '取得に失敗しました');
         setAllyStats(data.allyStats || []);
         setGroupStats(data.groupStats || { 3: [], 4: [], 5: [] });
+        setAllPlayersList(data.allPlayers || []);
       } catch (err) {
         console.error("Synergy fetchData Error:", err);
       } finally {
@@ -76,10 +78,10 @@ export default function SynergyPage() {
     .sort((a, b) => a.winRate === b.winRate ? b.games - a.games : a.winRate - b.winRate)
     .slice(0, 50);
 
-  // 全プレイヤー一覧の抽出
+  // 全プレイヤー一覧の抽出（DB登録全プレイヤー + 対戦履歴のある全プレイヤー）
   const allPlayerNames = Array.from(
-    new Set(allyStats.flatMap(a => [a.p1, a.p2]))
-  ).sort();
+    new Set([...allPlayersList, ...allyStats.flatMap(a => [a.p1, a.p2])])
+  ).filter(Boolean).sort();
 
   // 選択された2人の共闘スタッツ
   const selectedDuoStat = simPlayer1 && simPlayer2 && simPlayer1 !== simPlayer2
