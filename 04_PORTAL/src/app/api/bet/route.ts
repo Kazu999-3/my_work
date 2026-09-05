@@ -120,7 +120,14 @@ export async function PUT(req: Request) {
       return NextResponse.json({ error: 'プレイヤー情報の取得に失敗しました。' }, { status: 404 });
     }
 
-    const todayStr = new Date().toISOString().slice(0, 10);
+    // 日本時間（JST = UTC+9）基準で今日の日付（YYYY-MM-DD）を取得
+    const todayStr = new Intl.DateTimeFormat('ja-JP', {
+      timeZone: 'Asia/Tokyo',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).format(new Date()).replace(/\//g, '-');
+
     const currentCoins = getPlayerCoins(player);
     let addedCoins = 0;
     let successMessage = '';

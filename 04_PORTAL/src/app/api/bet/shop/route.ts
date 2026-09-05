@@ -184,8 +184,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: '購入処理（コイン控除）に失敗しました。' }, { status: 500 });
     }
 
-    // Discordへの特権発動アナウンス（Webhookがあれば通知）
-    const webhookUrl = process.env.DISCORD_KTM_WEBHOOK_URL || process.env.DISCORD_WEBHOOK_URL;
+    // Discordへの特権発動アナウンス（ショップ専用Webhook最優先）
+    const webhookUrl = process.env.DISCORD_SHOP_WEBHOOK_URL || process.env.DISCORD_KTM_WEBHOOK_URL || process.env.DISCORD_WEBHOOK_URL;
     if (webhookUrl) {
       try {
         await fetch(webhookUrl, {

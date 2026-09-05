@@ -43,8 +43,8 @@ export async function POST(req: Request) {
       }
     }
 
-    // Discord Webhookへ公式発動アナウンス送信
-    const webhookUrl = process.env.DISCORD_WEBHOOK_URL;
+    // Discord Webhookへ公式発動アナウンス送信（ショップ専用Webhook最優先）
+    const webhookUrl = process.env.DISCORD_SHOP_WEBHOOK_URL || process.env.DISCORD_KTM_WEBHOOK_URL || process.env.DISCORD_WEBHOOK_URL;
     if (webhookUrl) {
       try {
         await fetch(webhookUrl, {
