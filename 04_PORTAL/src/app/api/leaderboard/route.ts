@@ -18,7 +18,8 @@ export async function GET(req: Request) {
 
     const { data: players, error: pError } = await supabase
       .from('ktm_players')
-      .select('name, discord_id, mmr_top, mmr_jg, mmr_mid, mmr_adc, mmr_sup');
+      .select('name, discord_id, mmr_top, mmr_jg, mmr_mid, mmr_adc, mmr_sup')
+      .neq('is_active', false);
     if (pError || !players) throw pError || new Error('players not found');
 
     const { data: matchesData, error: mError } = await fetchAllRows((from, to) =>

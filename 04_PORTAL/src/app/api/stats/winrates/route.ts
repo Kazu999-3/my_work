@@ -7,10 +7,11 @@ export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    // 1. 全てのプレイヤー一覧を取得
+    // 1. アクティブなプレイヤー一覧を取得
     const { data: players, error: pError } = await supabase
       .from('ktm_players')
-      .select('name, discord_id, is_active, mmr_top, mmr_jg, mmr_mid, mmr_adc, mmr_sup, mmr');
+      .select('name, discord_id, is_active, mmr_top, mmr_jg, mmr_mid, mmr_adc, mmr_sup, mmr')
+      .neq('is_active', false);
 
     if (pError || !players) {
       throw new Error("Failed to fetch players");

@@ -40,11 +40,14 @@ export async function GET() {
 
     const { data: allPlayersData, error: allPlayersError } = await supabase
       .from('ktm_players')
-      .select('name');
+      .select('name, is_active')
+      .neq('is_active', false);
     if (allPlayersError) throw allPlayersError;
 
-    const registeredPlayerNames = new Set((allPlayersData || []).map((p: any) => p.name?.trim()).filter(Boolean));
-    const allPlayerNamesList = Array.from(registeredPlayerNames).sort();
+    const registeredPlayerNames = new Set<string>(
+      (allPlayersData || []).map((p: any) => p.name?.trim()).filter(Boolean)
+    );
+    const allPlayerNamesList: string[] = Array.from(registeredPlayerNames).sort((a, b) => a.localeCompare(b, 'ja'));
 
     if (!data) throw new Error('No data');
 
@@ -53,6 +56,8 @@ export async function GET() {
       const winner = winMap[row.match_id];
       const rawName = row.player_name?.trim();
       if (!winner || !rawName) return;
+      // アクティブな登録プレイヤー以外（トラとらお等の未登録ゲストや非アクティブ選手）は除外
+      if (!registeredPlayerNames.has(rawName)) return;
 
       if (!matches[row.match_id]) {
         matches[row.match_id] = { BLUE: [], RED: [], winner };
@@ -65,8 +70,8 @@ export async function GET() {
 
     Object.values(matches).forEach(m => {
       const processTeam = (teamPlayers: string[], isWin: boolean) => {
-        // 重複除外
-        const uniquePlayers = Array.from(new Set(teamPlayers));
+        // 重複除外＆アクティブ選手のみ
+        const uniquePlayers = Array.from(new Set(teamPlayers)).filter(p => registeredPlayerNames.has(p));
         for (let i = 0; i < uniquePlayers.length; i++) {
           for (let j = i + 1; j < uniquePlayers.length; j++) {
             const pair = [uniquePlayers[i], uniquePlayers[j]].sort();
@@ -105,15 +110,10 @@ export async function GET() {
       }));
     });
 
-    // 対戦履歴に存在する全プレイヤーも網羅した完全プレイヤーリスト
-    const allKnownPlayers = Array.from(
-      new Set([...allPlayerNamesList, ...allyStats.flatMap(a => [a.p1, a.p2])])
-    ).filter(Boolean).sort();
-
     return NextResponse.json({ 
       allyStats, 
       groupStats, 
-      allPlayers: allKnownPlayers,
+      allPlayers: allPlayerNamesList,
       totalMatches: Object.keys(matches).length 
     });
   } catch (err: any) {

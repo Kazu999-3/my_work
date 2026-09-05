@@ -69,12 +69,13 @@ export async function GET(request: Request) {
       };
     });
 
-    // 登録メンバー一覧を取得
+    // 登録メンバー（アクティブ）一覧を取得
     const { data: registeredPlayersData, error: regErr } = await supabase
       .from('ktm_players')
-      .select('name');
+      .select('name')
+      .neq('is_active', false);
     if (regErr) throw regErr;
-    const registeredPlayerNames = new Set(registeredPlayersData?.map((p: any) => p.name) || []);
+    const registeredPlayerNames = new Set(registeredPlayersData?.map((p: any) => p.name?.trim()).filter(Boolean) || []);
 
     const chemistry: Record<string, { games: number, wins: number }> = {};
     const rivals: Record<string, { games: number, wins: number }> = {};
