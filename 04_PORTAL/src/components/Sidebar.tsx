@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Shield, LayoutDashboard, Swords, BookOpen, BookHeart, Trophy, Users, HeartHandshake, ScrollText, ChevronLeft, ChevronRight, Sparkles, MoreHorizontal, X as XIcon, TrendingUp, Coins, LogIn, LogOut, Flame } from 'lucide-react';
+import { Shield, LayoutDashboard, Swords, BookOpen, BookHeart, Trophy, Users, HeartHandshake, ScrollText, ChevronLeft, ChevronRight, Sparkles, MoreHorizontal, X as XIcon, TrendingUp, Coins, LogIn, LogOut, Flame, History } from 'lucide-react';
 import FavoritesPanel from './FavoritesPanel';
 import PushOptIn from './PushOptIn';
 import NotificationBell from './NotificationBell';
