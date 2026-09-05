@@ -90,19 +90,8 @@ export default function SynergyPage() {
     <div className="min-h-screen bg-background text-stone-800 p-4 md:p-8">
       <div className="max-w-[1400px] mx-auto space-y-6">
         
-        {/* 戻るリンク */}
-        <div className="flex items-center gap-2">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-stone-200 text-stone-700 hover:text-stone-900 font-bold text-xs shadow-2xs hover:bg-stone-50 transition"
-          >
-            <span>←</span>
-            <span>ポータルトップへ戻る</span>
-          </Link>
-        </div>
-
         {/* ヘッダー */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-border pb-4 gap-3">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white/80 backdrop-blur-sm border border-stone-200/90 rounded-2xl p-5 shadow-xs gap-4">
           <div>
             <h1 className="text-2xl md:text-3xl font-extrabold text-stone-900 flex items-center gap-2.5">
               <HeartHandshake className="h-7 w-7 text-fuchsia-700" />
@@ -113,12 +102,12 @@ export default function SynergyPage() {
             </p>
           </div>
           
-          <div className="flex items-center gap-2 bg-surface border border-border rounded-xl px-3 py-1.5 shadow-xs">
-            <span className="text-xs font-black text-stone-500">条件:</span>
+          <div className="flex items-center gap-2 bg-stone-100 border border-stone-200 rounded-xl px-3 py-1.5 shadow-2xs">
+            <span className="text-xs font-black text-stone-600">表示条件:</span>
             <select 
               value={minGames} 
               onChange={e => setMinGames(Number(e.target.value))}
-              className="bg-stone-50 border border-stone-300 text-stone-900 rounded-lg px-2 py-1 outline-none focus:border-fuchsia-500 font-bold text-xs cursor-pointer"
+              className="bg-white border border-stone-300 text-stone-900 rounded-lg px-2.5 py-1 outline-none focus:border-fuchsia-500 font-bold text-xs cursor-pointer shadow-2xs"
             >
               <option value={2}>2試合以上</option>
               <option value={3}>3試合以上</option>

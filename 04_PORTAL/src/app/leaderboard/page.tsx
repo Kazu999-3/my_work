@@ -118,18 +118,8 @@ export default function LeaderboardPage() {
     <div className="min-h-screen bg-background py-6 md:py-10 px-4 sm:px-6 lg:px-10 text-stone-800">
       <div className="max-w-[1680px] w-full mx-auto space-y-4">
 
-        {/* 戻るリンク */}
-        <div className="flex items-center gap-2 mb-2">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface border border-border text-stone-600 hover:text-stone-900 font-bold text-xs shadow-2xs transition"
-          >
-            <span>←</span>
-            <span>ポータルトップへ戻る</span>
-          </Link>
-        </div>
-
-        <div className="relative mb-4 text-center">
+        {/* ヘッダー */}
+        <div className="bg-white/80 backdrop-blur-sm border border-stone-200/90 rounded-2xl p-5 shadow-xs text-center">
           <h1 className="text-2xl md:text-3xl font-black text-stone-900 tracking-tight flex items-center justify-center gap-2">
             <span className="text-amber-500">🏆</span> KTM 最強ランキング
           </h1>
@@ -139,14 +129,14 @@ export default function LeaderboardPage() {
         </div>
 
         {/* タブナビゲーション */}
-        <div className="flex justify-center mb-10 px-2">
-          <div className="inline-flex flex-wrap justify-center gap-1 bg-surface rounded-xl p-1 border border-border max-w-full">
+        <div className="flex justify-center mb-6 px-2">
+          <div className="inline-flex flex-wrap justify-center gap-1.5 bg-white/90 rounded-2xl p-1.5 border border-stone-200/90 shadow-2xs max-w-full">
             <button
               onClick={() => setActiveTab('ranking')}
-              className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-6 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-bold transition-all whitespace-nowrap ${
+              className={`flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2 rounded-xl text-xs sm:text-sm font-black transition-all whitespace-nowrap cursor-pointer ${
                 activeTab === 'ranking'
-                  ? 'bg-amber-600 text-stone-900 shadow-lg'
-                  : 'text-stone-400 hover:text-stone-900 hover:bg-black/5'
+                  ? 'bg-amber-600 text-white shadow-xs scale-102'
+                  : 'text-stone-600 hover:text-stone-900 hover:bg-stone-100'
               }`}
             >
               <Trophy size={16} />
@@ -154,10 +144,10 @@ export default function LeaderboardPage() {
             </button>
             <button
               onClick={() => setActiveTab('winrate')}
-              className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-6 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-bold transition-all whitespace-nowrap ${
+              className={`flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2 rounded-xl text-xs sm:text-sm font-black transition-all whitespace-nowrap cursor-pointer ${
                 activeTab === 'winrate'
-                  ? 'bg-emerald-600 text-stone-900 shadow-lg'
-                  : 'text-stone-400 hover:text-stone-900 hover:bg-black/5'
+                  ? 'bg-emerald-600 text-white shadow-xs scale-102'
+                  : 'text-stone-600 hover:text-stone-900 hover:bg-stone-100'
               }`}
             >
               <Activity size={16} />
@@ -165,10 +155,10 @@ export default function LeaderboardPage() {
             </button>
             <button
               onClick={() => setActiveTab('meta')}
-              className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-6 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-bold transition-all whitespace-nowrap ${
+              className={`flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2 rounded-xl text-xs sm:text-sm font-black transition-all whitespace-nowrap cursor-pointer ${
                 activeTab === 'meta'
-                  ? 'bg-amber-600 text-stone-900 shadow-lg'
-                  : 'text-stone-400 hover:text-stone-900 hover:bg-black/5'
+                  ? 'bg-amber-600 text-white shadow-xs scale-102'
+                  : 'text-stone-600 hover:text-stone-900 hover:bg-stone-100'
               }`}
             >
               🏆 メタ統計

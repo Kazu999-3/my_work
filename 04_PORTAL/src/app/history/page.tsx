@@ -104,30 +104,10 @@ export default function HistoryPage() {
 
   return (
     <div className="min-h-screen bg-background text-stone-800 p-4 md:p-8">
-      <div className="max-w-[1400px] mx-auto space-y-8">
+      <div className="max-w-[1400px] mx-auto space-y-6">
         
-        {/* 戻るリンク ＆ アナリティクス・コーチリンク */}
-        <div className="flex items-center justify-between flex-wrap gap-3">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-stone-200 text-stone-600 hover:text-stone-900 font-bold text-xs shadow-2xs hover:bg-stone-50 transition"
-          >
-            <span>←</span>
-            <span>ポータルトップへ戻る</span>
-          </Link>
-
-          <div className="flex items-center gap-2 flex-wrap">
-            <Link
-              href="/coach?tab=postgame"
-              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-xl bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white font-bold text-xs shadow-sm transition"
-            >
-              <span>👑 試合後ディープアナリティクス ＆ 1分振り返り</span>
-            </Link>
-          </div>
-        </div>
-
         {/* ヘッダー ＆ 検索 */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-border pb-4 gap-3">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white/80 backdrop-blur-sm border border-stone-200/90 rounded-2xl p-5 shadow-xs gap-4">
           <div>
             <h1 className="text-2xl md:text-3xl font-extrabold text-stone-900 flex items-center gap-2.5">
               <History className="h-7 w-7 text-primary" />
@@ -137,20 +117,28 @@ export default function HistoryPage() {
               直近のカスタム対戦結果 ＆ レーン別対決詳細 ⚔️
             </p>
           </div>
-          <div className="flex items-center gap-2 sm:gap-3 flex-wrap w-full sm:w-auto">
+
+          <div className="flex items-center gap-2.5 flex-wrap">
             <input
               type="text"
               placeholder="名前・チャンピオンで検索..."
               value={searchQuery}
               onChange={e => { setSearchQuery(e.target.value); setCurrentPage(1); }}
-              className="bg-white border border-stone-300 text-stone-900 text-xs font-bold rounded-xl px-3 py-2 outline-none focus:border-primary flex-1 min-w-0 sm:w-64 shadow-xs"
+              className="bg-white border border-stone-300 text-stone-900 text-xs font-bold rounded-xl px-3 py-2 outline-none focus:border-primary min-w-[200px] shadow-xs"
             />
             <Link
               href="/balancer/record"
-              className="flex items-center gap-2 bg-primary hover:bg-accent text-white px-4 py-2.5 rounded-xl font-bold transition text-xs shadow-xs shrink-0"
+              className="flex items-center gap-1.5 bg-stone-100 hover:bg-stone-200 border border-stone-300 text-stone-700 px-3.5 py-2 rounded-xl font-bold transition text-xs shadow-2xs shrink-0"
             >
-              <Trophy className="h-4 w-4" />
-              <span>戦績の手動記録 🏆</span>
+              <Trophy className="h-4 w-4 text-amber-600" />
+              <span>手動記録</span>
+            </Link>
+            <Link
+              href="/coach?tab=postgame"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white font-black text-xs shadow-xs hover:scale-102 transition-all shrink-0"
+            >
+              <span>👑</span>
+              <span>1分振り返り</span>
             </Link>
           </div>
         </div>

@@ -2,28 +2,20 @@ import Link from 'next/link';
 import { ScrollText } from 'lucide-react';
 import { CHANGELOG } from '../../lib/changelog';
 
-// メンバー向け更新履歴ページ(#83)
 export default function ChangelogPage() {
   return (
     <div className="min-h-screen bg-background text-stone-800 p-4 md:p-8">
-      <div className="max-w-3xl mx-auto space-y-6">
-        {/* 戻るリンク */}
-        <div className="flex items-center gap-2">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-stone-200 text-stone-700 hover:text-stone-900 font-bold text-xs shadow-2xs hover:bg-stone-50 transition"
-          >
-            <span>←</span>
-            <span>ポータルトップへ戻る</span>
-          </Link>
-        </div>
-
-        <div className="border-b border-stone-200 pb-6">
-          <h1 className="text-2xl md:text-3xl font-bold text-stone-900 flex items-center gap-3">
-            <ScrollText className="h-7 w-7 md:h-8 md:w-8 text-cyan-600" />
-            更新情報
+      <div className="max-w-4xl mx-auto space-y-6">
+        
+        {/* ヘッダー */}
+        <div className="bg-white/80 backdrop-blur-sm border border-stone-200/90 rounded-2xl p-5 shadow-xs">
+          <h1 className="text-2xl md:text-3xl font-extrabold text-stone-900 flex items-center gap-2.5">
+            <ScrollText className="h-7 w-7 text-cyan-600" />
+            更新情報 ＆ リリースノート
           </h1>
-          <p className="text-stone-500 mt-2 text-xs md:text-sm font-medium">KTMポータル・BOTの最近のアップデート一覧です。</p>
+          <p className="text-stone-500 mt-1 text-xs font-bold">
+            KTMポータル・戦術オーバーレイ・BOTの最新アップデート一覧です 🚀
+          </p>
         </div>
 
         <div className="space-y-6">
