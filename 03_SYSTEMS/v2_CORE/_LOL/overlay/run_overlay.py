@@ -99,25 +99,21 @@ def main():
     # ⑤ トーストアラート (画面中央上部)
     toast_alert.move(int((screen_w - 320) / 2), 60)
 
-    # チャット・スペル自動検知連動 (チャットで「〇〇がフラッシュを使用」「Darius: Flash」が出たら自動始動)
+    # チャット・スペル自動検知連動 (チャットで「牛 f」「Darius: Flash」「mid tp」「jg no r」等が出たら自動始動)
     def on_chat_spell_event(chat_message: str):
-        from v2_CORE._LOL.overlay.chat_spell_detector import ChatSpellDetector
+        try:
+            from v2_CORE._LOL.overlay.chat_spell_detector import ChatSpellDetector
+        except ImportError:
+            from overlay.chat_spell_detector import ChatSpellDetector
         parsed = ChatSpellDetector.parse_chat_message(chat_message)
         if not parsed:
             return
-        champ_name, spell_type = parsed
-        for col in spell_tracker.columns:
-            c_name = getattr(col, "champion", "")
-            if c_name.lower() == champ_name.lower():
-                if spell_type == "FLASH":
-                    col.btn_spell1.trigger_cooldown()
-                    toast_alert.show_alert("⚡", f"敵 {c_name} Flash 使用検知！タイマー自動始動", alert_type="spike", duration_ms=4000)
-                    print(f"🎯 [Chat Auto-Sync] 敵 {c_name} のFlashタイマーを自動始動しました！")
-                elif spell_type == "ULT":
-                    col.btn_ult.trigger_cooldown()
-                    toast_alert.show_alert("👑", f"敵 {c_name} Ult 使用検知！タイマー自動始動", alert_type="spike", duration_ms=4000)
-                    print(f"🎯 [Chat Auto-Sync] 敵 {c_name} のUltタイマーを自動始動しました！")
-                break
+        target, spell_type = parsed
+        success = spell_tracker.trigger_spell_by_target(target, spell_type)
+        if success:
+            spell_label = "Flash" if spell_type == "FLASH" else ("Ult(R)" if spell_type == "ULT" else spell_type)
+            toast_alert.show_alert("⚡", f"🎯 [{target}] {spell_label} 使用検知！タイマー自動始動", alert_type="spike", duration_ms=4000)
+            print(f"🎯 [Chat Auto-Sync] {target} の {spell_label} タイマーを自動始動しました！")
 
     # 初期表示状態: TopBar(右上), SpellTracker(右下), MatchupCard(左側) を常時表示
     top_bar.show()
@@ -233,6 +229,35 @@ def main():
             if game_state_tracker["was_in_game"]:
                 game_state_tracker["was_in_game"] = False
                 on_game_ended(game_state_tracker["last_active_state"])
+
+        # JG視点ガンク成功率＆キル判定のリアルタイム計算
+        if is_active:
+            try:
+                from v2_CORE._LOL.overlay.gank_opportunity_engine import GankOpportunityEngine
+            except ImportError:
+                from overlay.gank_opportunity_engine import GankOpportunityEngine
+            
+            my_champ = state.get("my_champion", "LeeSin")
+            my_lvl = state.get("my_level", 6)
+            enemy_details = state.get("enemy_team_details", [])
+            gank_results = []
+            for ep in enemy_details:
+                e_champ = ep.get("champion", "Enemy")
+                e_lvl = ep.get("level", 6)
+                e_hp = ep.get("current_hp_pct", 70.0)
+                e_flash = ep.get("has_flash", True)
+                e_lane = ep.get("role", "MID")
+                res = GankOpportunityEngine.calculate_gank_opportunity(
+                    jg_champ=my_champ,
+                    jg_level=my_lvl,
+                    enemy_champ=e_champ,
+                    enemy_level=e_lvl,
+                    enemy_current_hp_pct=e_hp,
+                    enemy_has_flash=e_flash,
+                    lane=e_lane
+                )
+                gank_results.append(res)
+            spell_tracker.update_gank_scores(gank_results)
 
         top_bar.update_data(state)
         matchup_card.update_data(state)

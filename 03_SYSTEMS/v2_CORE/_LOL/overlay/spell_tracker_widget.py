@@ -157,6 +157,54 @@ class EnemyColumn(QWidget):
         self.btn_spell2 = CoolDownButton("SPELL", self.spell2, spell2_cd, self)
         col_layout.addWidget(self.btn_spell2, alignment=Qt.AlignmentFlag.AlignCenter)
 
+        # 5. [ JG ガンク成功率バッジ ] (JG視点のガンク・キルチャンスをリアルタイム提示)
+        self.gank_badge = QLabel("─", self)
+        self.gank_badge.setFixedHeight(16)
+        self.gank_badge.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.gank_badge.setStyleSheet("""
+            QLabel {
+                background-color: rgba(30, 25, 40, 0.8);
+                color: #94a3b8;
+                font-size: 9px;
+                font-weight: bold;
+                border-radius: 3px;
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                padding: 0px 2px;
+            }
+        """)
+        col_layout.addWidget(self.gank_badge, alignment=Qt.AlignmentFlag.AlignCenter)
+
+    def set_gank_info(self, score: float, verdict_color: str = "#22c55e", label: str = ""):
+        """ガンク成功率バッジの更新"""
+        if score > 0:
+            self.gank_badge.setText(f"{int(score)}%")
+            self.gank_badge.setStyleSheet(f"""
+                QLabel {{
+                    background-color: rgba(10, 10, 15, 0.9);
+                    color: {verdict_color};
+                    font-size: 10px;
+                    font-weight: bold;
+                    border-radius: 3px;
+                    border: 1px solid {verdict_color};
+                    padding: 0px 2px;
+                }}
+            """)
+            if label:
+                self.gank_badge.setToolTip(label)
+        else:
+            self.gank_badge.setText("─")
+            self.gank_badge.setStyleSheet("""
+                QLabel {
+                    background-color: rgba(30, 25, 40, 0.8);
+                    color: #94a3b8;
+                    font-size: 9px;
+                    font-weight: bold;
+                    border-radius: 3px;
+                    border: 1px solid rgba(255, 255, 255, 0.1);
+                    padding: 0px 2px;
+                }
+            """)
+
     def update_stats(self, champion: str, level: int, items: list, spell1: str = None, spell2: str = None):
         """敵のレベルアップやアイテム購入を反映して実効CDを自動更新"""
         if champion and self.champion != champion:
@@ -287,6 +335,65 @@ class SpellTrackerWidget(QWidget):
                     spell1=ep_info.get("spell1", "Flash"),
                     spell2=ep_info.get("spell2", "Teleport")
                 )
+
+    def update_gank_scores(self, gank_results: list):
+        """敵各レーンのガンク成功率をバッジに反映"""
+        if not gank_results:
+            return
+        for i, res in enumerate(gank_results):
+            if i < len(self.columns):
+                score = res.get("score", 0.0)
+                color = res.get("color", "#22c55e")
+                label = f"{res.get('verdict_label', '')}\n" + "\n".join(res.get("reasons", []))
+                self.columns[i].set_gank_info(score, color, label)
+
+    def trigger_spell_by_target(self, target: str, spell_type: str) -> bool:
+        """
+        チャット検知から対象（チャンピオン名またはレーン名）の該当スペルタイマーを自動始動。
+        例: target="Darius", spell_type="FLASH"
+            target="MID", spell_type="ULT"
+        """
+        t_lower = target.lower()
+        matched_column = None
+
+        # 1. チャンピオン名照合
+        for col in self.columns:
+            if getattr(col, "champion", "").lower() == t_lower:
+                matched_column = col
+                break
+
+        # 2. ロール名照合 (TOP, JG, MID, ADC, SUP)
+        if not matched_column:
+            for col in self.columns:
+                if getattr(col, "role", "").lower() == t_lower:
+                    matched_column = col
+                    break
+
+        if not matched_column:
+            return False
+
+        # スペル種別ごとのトリガー
+        if spell_type == "ULT":
+            matched_column.btn_ult.trigger_cooldown()
+            return True
+        elif spell_type == "FLASH":
+            if matched_column.spell1.lower() == "flash":
+                matched_column.btn_spell1.trigger_cooldown()
+            elif matched_column.spell2.lower() == "flash":
+                matched_column.btn_spell2.trigger_cooldown()
+            else:
+                matched_column.btn_spell1.trigger_cooldown()
+            return True
+        else:
+            # 他サモスペ（TP, Ignite, Ghost, Heal等）
+            s_type_lower = spell_type.lower()
+            if s_type_lower in matched_column.spell1.lower() or matched_column.spell1.lower() in s_type_lower:
+                matched_column.btn_spell1.trigger_cooldown()
+            elif s_type_lower in matched_column.spell2.lower() or matched_column.spell2.lower() in s_type_lower:
+                matched_column.btn_spell2.trigger_cooldown()
+            else:
+                matched_column.btn_spell2.trigger_cooldown()
+            return True
 
     # ドラッグ移動
     def mousePressEvent(self, event):

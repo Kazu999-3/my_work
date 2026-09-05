@@ -28,6 +28,7 @@ from v2_CORE._LOL.overlay.dynamic_build_advisor import DynamicBuildAdvisor
 from v2_CORE._LOL.overlay.hud_state_engine import HudStateEngine, extract_champion_name
 from v2_CORE._LOL.overlay.kill_line_calculator import KillLineCalculator
 from v2_CORE._LOL.overlay.chat_spell_detector import ChatSpellDetector
+from v2_CORE._LOL.overlay.gank_opportunity_engine import GankOpportunityEngine
 from v2_CORE._LOL.overlay.top_bar_widget import TopBarWidget
 from v2_CORE._LOL.overlay.matchup_card_widget import MatchupCardWidget
 from v2_CORE._LOL.overlay.spell_tracker_widget import SpellTrackerWidget
@@ -262,6 +263,43 @@ class TestOverlayWidgetsVisual(unittest.TestCase):
         lane.close()
 
 
+class TestGankOpportunityEngine(unittest.TestCase):
+    """5. JG視点ガンク成功率 ＆ キル確定判定エンジンのテスト"""
+
+    def test_high_success_gank_case(self):
+        """敵瀕死 ＋ Flashなし ＋ 味方確定CCありの場合、確実キル (90%以上) と判定されること"""
+        res = GankOpportunityEngine.calculate_gank_opportunity(
+            jg_champ="Elise",
+            jg_level=6,
+            enemy_champ="Syndra",
+            enemy_level=6,
+            enemy_current_hp_pct=30.0,
+            enemy_has_flash=False,
+            ally_laner_champ="Ahri",
+            lane="MID"
+        )
+        self.assertGreaterEqual(res["score"], 80.0)
+        self.assertEqual(res["verdict"], "KILL_CONFIRMED")
+        self.assertEqual(res["color"], "#22c55e")
+
+    def test_high_risk_gank_case(self):
+        """敵レベル先行 ＋ 敵満タンHP ＋ 味方レーナー瀕死の場合、危険判定されること"""
+        res = GankOpportunityEngine.calculate_gank_opportunity(
+            jg_champ="MasterYi",
+            jg_level=5,
+            enemy_champ="Darius",
+            enemy_level=7,
+            enemy_current_hp_pct=95.0,
+            enemy_has_flash=True,
+            ally_laner_champ="Aatrox",
+            ally_laner_hp_pct=20.0,
+            lane="TOP"
+        )
+        self.assertLessEqual(res["score"], 40.0)
+        self.assertEqual(res["verdict"], "HIGH_RISK")
+        self.assertEqual(res["color"], "#ef4444")
+
+
 def run_full_suite():
     print("=" * 65)
     print("🧪 Sovereign HUD - オーバーレイ全自動テストスイート実行")
@@ -273,6 +311,7 @@ def run_full_suite():
     suite.addTest(loader.loadTestsFromTestCase(TestHudStateEngine))
     suite.addTest(loader.loadTestsFromTestCase(TestKillLineCalculator))
     suite.addTest(loader.loadTestsFromTestCase(TestChatSpellDetector))
+    suite.addTest(loader.loadTestsFromTestCase(TestGankOpportunityEngine))
     suite.addTest(loader.loadTestsFromTestCase(TestOverlayWidgetsVisual))
 
     runner = unittest.TextTestRunner(verbosity=2)

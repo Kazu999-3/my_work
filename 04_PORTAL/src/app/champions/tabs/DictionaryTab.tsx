@@ -5,7 +5,7 @@ import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { getChampIcon, getChampSplash } from '../../../lib/ddragonClient';
-import { ChevronLeft, Search, Save, BookOpen, RefreshCw, Zap, ShieldAlert, Swords, Shield, Copy, Check, FileText, Eye, Edit2, Activity, Plus, Trash, Filter, Star as StarIcon, Award, Sparkles, History, Clock, X } from 'lucide-react';
+import { ChevronLeft, Search, Save, BookOpen, RefreshCw, Zap, ShieldAlert, Swords, Shield, Copy, Check, FileText, Eye, Edit2, Activity, Plus, Trash, Filter, Star as StarIcon, Award, Sparkles, History, Clock, Compass, X } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -1376,6 +1376,63 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                     </div>
                   </div>
                 )}
+
+                {/* 🌲 JGクリアルート ＆ カウンターマッチアップ表 (JG Route & Counter Guide) */}
+                <div className="mt-4 pt-4 border-t border-amber-500/20 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-black text-amber-900 flex items-center gap-1.5">
+                      <Compass size={14} className="text-amber-600" /> 🌲 JGクリアルート ＆ カウンター戦術
+                    </p>
+                    <span className="text-[10px] font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full border border-amber-300">
+                      パッチ対応戦術
+                    </span>
+                  </div>
+
+                  {/* ルート選択カード */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
+                    <div className="bg-amber-50/60 rounded-xl p-3 border border-amber-200/80 shadow-2xs space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <span className="font-black text-red-700 flex items-center gap-1">🔴 赤バフ始動 (ボットサイド推奨)</span>
+                        <span className="text-[10px] font-bold text-stone-500">標準 3:15〜3:25</span>
+                      </div>
+                      <p className="text-[11px] text-stone-700 font-medium">
+                        赤 ➔ クルーグ ➔ ラプター ➔ ウルフ ➔ 青 ➔ グロンプ ➔ スカットル (ボット/トップガンク)
+                      </p>
+                    </div>
+
+                    <div className="bg-sky-50/60 rounded-xl p-3 border border-sky-200/80 shadow-2xs space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <span className="font-black text-blue-700 flex items-center gap-1">🔵 青バフ始動 (トップサイド推奨)</span>
+                        <span className="text-[10px] font-bold text-stone-500">Lv3速攻ガンク対応</span>
+                      </div>
+                      <p className="text-[11px] text-stone-700 font-medium">
+                        青 ➔ グロンプ ➔ ウルフ ➔ ラプター ➔ 赤 ➔ ボット/ミッド急襲 ➔ スカットル
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* カウンター・マッチアップ方針 */}
+                  <div className="bg-white/90 rounded-xl p-3 border border-amber-200 shadow-2xs space-y-2">
+                    <div className="flex items-center gap-1.5 text-[11px] font-bold text-stone-800">
+                      <ShieldAlert size={13} className="text-rose-600" />
+                      <span>相性 ＆ カウンターファイト方針</span>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
+                      <div className="p-2 rounded-lg bg-emerald-50/70 border border-emerald-200/60">
+                        <span className="font-bold text-emerald-800 block mb-0.5">🟢 有利 (狩りやすい相手)</span>
+                        <p className="text-stone-700">
+                          {dataFields.strengths ? dataFields.strengths.split('\n')[0].replace(/^[#*-\s]+/, '') : '序盤ファーム偏重チャンプ / CCに弱い相手'}
+                        </p>
+                      </div>
+                      <div className="p-2 rounded-lg bg-rose-50/70 border border-rose-200/60">
+                        <span className="font-bold text-rose-800 block mb-0.5">🔴 要注意 (被インベード・不利)</span>
+                        <p className="text-stone-700">
+                          {dataFields.weaknesses ? dataFields.weaknesses.split('\n')[0].replace(/^[#*-\s]+/, '') : '1v1強チャンプ / レベル2-3インベード得意な相手'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
           </div>

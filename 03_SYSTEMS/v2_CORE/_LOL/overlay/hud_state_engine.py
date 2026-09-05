@@ -422,6 +422,13 @@ class HudStateEngine:
             sp2_raw = spells.get("summonerSpellTwo", {}).get("displayName") or spells.get("summonerSpellTwo", {}).get("rawDisplayName", "Teleport")
             sp1 = normalize_spell_name(sp1_raw)
             sp2 = normalize_spell_name(sp2_raw)
+            
+            # HP%の算出
+            ep_stats = ep.get("championStats", {})
+            cur_hp = ep_stats.get("currentHealth", 0.0)
+            max_hp = ep_stats.get("maxHealth", 0.0)
+            hp_pct = (cur_hp / max_hp * 100.0) if max_hp > 0 else 70.0
+
             enemy_team_details.append({
                 "role": ep.get("position", "MID"),
                 "champion": extract_champion_name(ep),
@@ -429,6 +436,8 @@ class HudStateEngine:
                 "items": ep.get("items", []),
                 "spell1": sp1,
                 "spell2": sp2,
+                "current_hp_pct": hp_pct,
+                "has_flash": (sp1 == "Flash" or sp2 == "Flash"),
             })
         # --- 9. 対面攻略メモ ---
         matchup_memo = self.get_matchup_memo(my_champion, enemy_champion)
