@@ -366,6 +366,45 @@ export default function CasinoPage() {
     }
   };
 
+  const handleCreateMockMatch = async () => {
+    try {
+      const mockResult = {
+        teamBlue: [
+          { name: 'かずき', role: 'TOP', rank: 'DIAMOND', mmr: 2100 },
+          { name: 'Player_Jg', role: 'JG', rank: 'EMERALD', mmr: 1750 },
+          { name: 'Player_Mid', role: 'MID', rank: 'PLATINUM', mmr: 1550 },
+          { name: 'Player_Adc', role: 'ADC', rank: 'GOLD', mmr: 1350 },
+          { name: 'Player_Sup', role: 'SUP', rank: 'GOLD', mmr: 1300 },
+        ],
+        teamRed: [
+          { name: 'Rival_Top', role: 'TOP', rank: 'DIAMOND', mmr: 2050 },
+          { name: 'Rival_Jg', role: 'JG', rank: 'EMERALD', mmr: 1800 },
+          { name: 'Rival_Mid', role: 'MID', rank: 'PLATINUM', mmr: 1600 },
+          { name: 'Rival_Adc', role: 'ADC', rank: 'PLATINUM', mmr: 1500 },
+          { name: 'Rival_Sup', role: 'SUP', rank: 'SILVER', mmr: 1100 },
+        ],
+        blueWinRate: 0.52,
+        isExhibition: false,
+      };
+
+      const res = await fetch('/api/balancer/pending', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ balanceResult: mockResult }),
+      });
+
+      if (res.ok) {
+        triggerCelebration();
+        fetchActiveMatch();
+        alert('🎮 模擬カスタム対戦を生成しました！勝敗予想の受付を開始します🔥');
+      } else {
+        alert('模擬対戦の生成に失敗しました。');
+      }
+    } catch (e: any) {
+      alert('エラー: ' + e.message);
+    }
+  };
+
   return (
     <div className="min-h-screen pb-16 bg-[#eae4d4] text-[#201c2b]">
       {/* ヒーローセクション */}
@@ -777,7 +816,7 @@ export default function CasinoPage() {
                     バランサーでチーム分けが確定されると、ここに自動で5v5対戦カードが出現し、勝敗予想の受付が開始されます🔥
                   </p>
                 </div>
-                <div className="pt-2">
+                <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
                   <Link
                     href="/balancer"
                     className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-stone-900 hover:bg-amber-600 text-white font-black text-xs transition-all shadow-md hover:shadow-lg cursor-pointer transform active:scale-95"
@@ -786,6 +825,15 @@ export default function CasinoPage() {
                     バランサーでチーム分けを行う
                     <ArrowRight size={14} />
                   </Link>
+
+                  <button
+                    type="button"
+                    onClick={handleCreateMockMatch}
+                    className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-amber-500 hover:bg-amber-600 text-stone-950 font-black text-xs transition-all shadow-md hover:shadow-lg cursor-pointer transform active:scale-95"
+                  >
+                    <Dices size={16} />
+                    🎮 模擬カスタム対戦を生成して今すぐベットを試す
+                  </button>
                 </div>
               </div>
             )}
