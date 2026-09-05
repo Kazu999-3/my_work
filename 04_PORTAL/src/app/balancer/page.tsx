@@ -1392,9 +1392,6 @@ export default function BalancerPage() {
         <div className="flex flex-col gap-3 border-b border-stone-200 pb-4">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
             <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-              <Link href="/" className="px-2.5 py-1.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-xs border border-stone-200 transition shrink-0" title="ポータルトップへ戻る">
-                ← ポータル
-              </Link>
               <h1 className="text-2xl md:text-3xl font-bold text-stone-900 flex items-center gap-2">
                 <Users className="h-6 w-6 md:h-8 md:w-8 text-amber-700" /> チーム分けバランサー
               </h1>

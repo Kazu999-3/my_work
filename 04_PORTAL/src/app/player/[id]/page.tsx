@@ -844,10 +844,10 @@ export default function PlayerMyPage() {
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 title={tab.name}
-                className={`flex items-center justify-center gap-2 shrink-0 px-3 sm:px-4 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 whitespace-nowrap ${
+                className={`flex items-center justify-center gap-2 shrink-0 px-3 sm:px-4 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 whitespace-nowrap cursor-pointer ${
                   isActive
-                    ? 'bg-gradient-to-r from-cyan-500 to-indigo-500 text-black font-black shadow-[0_4px_12px_rgba(6,182,212,0.25)]'
-                    : 'text-stone-500 hover:text-stone-900 hover:bg-black/5'
+                    ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white font-black shadow-md scale-102'
+                    : 'text-stone-600 hover:text-stone-900 hover:bg-black/5'
                 }`}
               >
                 {tab.icon}
