@@ -43,27 +43,17 @@ export async function POST(req: Request) {
       }
     }
 
-    // Discord Webhookへ公式発動アナウンス送信（ショップ専用Webhook最優先）
-    const webhookUrl = process.env.DISCORD_SHOP_WEBHOOK_URL || process.env.DISCORD_KTM_WEBHOOK_URL || process.env.DISCORD_WEBHOOK_URL;
-    if (webhookUrl) {
-      try {
-        await fetch(webhookUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            embeds: [{
-              title: `📣【特権発動宣言】${playerName || player?.name} さんが発動しました！`,
-              description: `**${itemIcon || '🎟️'} ${itemName}**\n${itemDesc || '次回カスタム試合でこの特権が適用されます！'}\n\n進行役・対戦相手の皆様はルールのご確認をお願いします🔥`,
-              color: 0xec4899,
-              footer: { text: 'KTM Sovereign Shop' },
-              timestamp: new Date().toISOString()
-            }]
-          })
-        });
-      } catch (e) {
-        console.error('Failed to send discord webhook for announce:', e);
-      }
-    }
+    // Discordへ公式発動アナウンス送信（指定チャンネル: 1545806575770276061 / #ショップ通知 へ送信）
+    const { sendShopNotification } = await import('../../../../../lib/discordNotify');
+    await sendShopNotification({
+      embeds: [{
+        title: `📣【特権発動宣言】${playerName || player?.name} さんが発動しました！`,
+        description: `**${itemIcon || '🎟️'} ${itemName}**\n${itemDesc || '次回カスタム試合でこの特権が適用されます！'}\n\n進行役・対戦相手の皆様はルールのご確認をお願いします🔥`,
+        color: 0xec4899,
+        footer: { text: 'KTM Sovereign Shop' },
+        timestamp: new Date().toISOString()
+      }]
+    });
 
     return NextResponse.json({
       success: true,

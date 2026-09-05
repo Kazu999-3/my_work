@@ -184,26 +184,17 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: '購入処理（コイン控除）に失敗しました。' }, { status: 500 });
     }
 
-    // Discordへの特権発動アナウンス（ショップ専用Webhook最優先）
-    const webhookUrl = process.env.DISCORD_SHOP_WEBHOOK_URL || process.env.DISCORD_KTM_WEBHOOK_URL || process.env.DISCORD_WEBHOOK_URL;
-    if (webhookUrl) {
-      try {
-        await fetch(webhookUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            embeds: [{
-              title: `🛒【特権アイテム購入】${player.name} さんが購入！`,
-              description: `**${item.name}** を購入しました！\n${item.desc}\n\n🪙 **購入価格:** ${item.price}コイン (残高: ${newCoins}pt)`,
-              color: 0xf59e0b,
-              timestamp: new Date().toISOString()
-            }]
-          })
-        });
-      } catch (e) {
-        console.error('Failed to send discord webhook for shop purchase:', e);
-      }
-    }
+    // Discordへの特権発動アナウンス（指定チャンネル: 1545806575770276061 / #ショップ通知 へ送信）
+    const { sendShopNotification } = await import('../../../../lib/discordNotify');
+    await sendShopNotification({
+      embeds: [{
+        title: `🛒【特権アイテム購入】${player.name} さんが購入！`,
+        description: `**${item.name}** を購入しました！\n${item.desc}\n\n🪙 **購入価格:** ${item.price}コイン (残高: ${newCoins}pt)`,
+        color: 0xf59e0b,
+        footer: { text: 'KTM Sovereign Shop' },
+        timestamp: new Date().toISOString()
+      }]
+    });
 
     return NextResponse.json({
       success: true,
