@@ -198,6 +198,38 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'プレイヤーが見つかりません。名簿登録を行ってください。' }, { status: 404 });
     }
 
+    // ⚔️ 出場選手（BLUE / RED チームメンバー）のベット禁止チェック
+    try {
+      const { data: latestPending } = await supabase
+        .from('edge_tasks')
+        .select('payload')
+        .eq('task_type', 'balancer_pending')
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      const bResult = latestPending?.payload?.balanceResult;
+      if (bResult) {
+        const playingMembers = [...(bResult.teamBlue || []), ...(bResult.teamRed || [])];
+        const isParticipant = playingMembers.some((p: any) => {
+          const pName = (p.name || '').trim().toLowerCase();
+          const pDiscord = p.discordId || p.discord_id;
+          const targetName = (player.name || '').trim().toLowerCase();
+          const targetDiscord = player.discord_id || discordId;
+          return pName === targetName || (pDiscord && targetDiscord && pDiscord === targetDiscord);
+        });
+
+        if (isParticipant) {
+          return NextResponse.json({
+            error: '⚔️ 試合の出場選手はこの試合にベットすることはできません（公正な運用のための観戦者・非参加者限定機能です）。全力で勝利を目指してください🔥'
+          }, { status: 403 });
+        }
+      }
+    } catch (chkErr) {
+      console.warn('[bet POST] Participant check warning:', chkErr);
+    }
+
     const currentCoins = getPlayerCoins(player);
     const betAmount = Math.min(parsedAmount, currentCoins);
     if (betAmount <= 0 || currentCoins < betAmount) {
