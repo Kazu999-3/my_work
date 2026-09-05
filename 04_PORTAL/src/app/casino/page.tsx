@@ -153,8 +153,10 @@ export default function CasinoPage() {
 
   const fetchInventory = async () => {
     try {
-      const param = user?.discordId ? `discordId=${user.discordId}` : `name=${encodeURIComponent(user?.displayName || '')}`;
-      const res = await fetch(`/api/bet/shop?${param}`);
+      const params = new URLSearchParams();
+      if (user?.discordId) params.append('discordId', user.discordId);
+      if (user?.displayName) params.append('name', user.displayName);
+      const res = await fetch(`/api/bet/shop?${params.toString()}`);
       if (res.ok) {
         const data = await res.json();
         setInventory(data.inventory || []);
@@ -209,8 +211,10 @@ export default function CasinoPage() {
   const fetchBetData = async () => {
     try {
       setLoading(true);
-      const param = user?.discordId ? `discordId=${user.discordId}` : (user?.displayName ? `name=${encodeURIComponent(user.displayName)}` : '');
-      const res = await fetch(`/api/bet?${param}`);
+      const params = new URLSearchParams();
+      if (user?.discordId) params.append('discordId', user.discordId);
+      if (user?.displayName) params.append('name', user.displayName);
+      const res = await fetch(`/api/bet?${params.toString()}`);
       if (res.ok) {
         const data = await res.json();
         setRanking(data.ranking || []);
@@ -235,7 +239,7 @@ export default function CasinoPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           discordId: user.discordId,
-          playerName: user.displayName,
+          playerName: user.displayName || user.username,
           type
         })
       });
@@ -263,7 +267,7 @@ export default function CasinoPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           discordId: user?.discordId,
-          playerName: activePlayerName,
+          playerName: activePlayerName || user?.username,
           itemId: item.id,
           itemName: item.name,
           itemIcon: item.icon,
@@ -284,7 +288,7 @@ export default function CasinoPage() {
 
   const handlePlaceBet = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!activePlayerName.trim()) {
+    if (!activePlayerName.trim() && !user?.discordId) {
       alert('Discordでログインするか、お名前を選択してください。');
       return;
     }
@@ -301,7 +305,8 @@ export default function CasinoPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          playerName: activePlayerName.trim(),
+          discordId: user?.discordId,
+          playerName: activePlayerName.trim() || user?.username,
           team: betTeam,
           amount: betAmount,
           odds: currentOdds,
@@ -340,7 +345,8 @@ export default function CasinoPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          playerName: activePlayerName.trim(),
+          discordId: user.discordId,
+          playerName: activePlayerName.trim() || user.username,
           itemId,
         }),
       });

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
+import { findOrCreatePlayer, getPlayerCoins } from '../../../../lib/playerCoins';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,19 +24,17 @@ export async function GET() {
       return NextResponse.json({ user: null });
     }
 
-    // 最新のコイン残高とランクをDBから取得
-    const { data: players } = await supabase
-      .from('ktm_players')
-      .select('id, name, ign, coins, highest_rank')
-      .eq('discord_id', sessionData.discordId)
-      .limit(1);
-
-    const player = players && players.length > 0 ? players[0] : null;
+    // 最新のコイン残高とランクを安全に取得
+    const player = await findOrCreatePlayer({
+      discordId: sessionData.discordId,
+      name: sessionData.displayName || sessionData.username,
+      autoCreate: true,
+    });
 
     const user = {
       ...sessionData,
       displayName: player?.name || player?.ign || sessionData.displayName,
-      coins: player?.coins ?? sessionData.coins ?? 1000,
+      coins: player ? getPlayerCoins(player) : (sessionData.coins ?? 1000),
       rank: player?.highest_rank || sessionData.rank || 'UNRANKED',
     };
 

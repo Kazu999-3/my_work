@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
+import { findOrCreatePlayer, getPlayerCoins, updatePlayerCoinsAndInventory } from '../../../../lib/playerCoins';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,6 +14,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: '1コイン以上の金額を指定してください。' }, { status: 400 });
     }
 
+    if (!fromDiscordId && !fromName) {
+      return NextResponse.json({ error: '送信者情報が不足しています。' }, { status: 400 });
+    }
+
+    if (!toDiscordId && !toName) {
+      return NextResponse.json({ error: '送信相手情報が不足しています。' }, { status: 400 });
+    }
+
     // 他者のコインを勝手に送金しないよう本人・管理者検証
     const { verifyUserOrAdmin } = await import('../../../../lib/authGuard');
     const authCheck = await verifyUserOrAdmin(fromDiscordId || fromName);
@@ -20,29 +29,46 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: authCheck.error }, { status: 403 });
     }
 
-    // 送信者のコイン確認
-    let qSender = supabase.from('ktm_players').select('name, coins');
-    if (fromDiscordId) qSender = qSender.eq('discord_id', fromDiscordId);
-    else if (fromName) qSender = qSender.eq('name', fromName);
-    const { data: sender } = await qSender.single();
+    // 送信者の確認・取得
+    const sender = await findOrCreatePlayer({
+      discordId: fromDiscordId,
+      name: fromName,
+      autoCreate: true,
+    });
 
-    if (!sender || (sender.coins ?? 1000) < amount) {
-      return NextResponse.json({ error: `所持コインが不足しています（現在: ${sender?.coins ?? 1000}コイン）。` }, { status: 400 });
+    if (!sender) {
+      return NextResponse.json({ error: '送信者プレイヤーの取得に失敗しました。' }, { status: 404 });
     }
 
-    // 受信者の確認
-    let qReceiver = supabase.from('ktm_players').select('name, coins');
-    if (toDiscordId) qReceiver = qReceiver.eq('discord_id', toDiscordId);
-    else if (toName) qReceiver = qReceiver.eq('name', toName);
-    const { data: receiver } = await qReceiver.single();
+    const senderCoins = getPlayerCoins(sender);
+    if (senderCoins < amount) {
+      return NextResponse.json({ error: `所持コインが不足しています（現在: ${senderCoins}コイン）。` }, { status: 400 });
+    }
+
+    // 受信者の確認・取得
+    const receiver = await findOrCreatePlayer({
+      discordId: toDiscordId,
+      name: toName,
+      autoCreate: true,
+    });
 
     if (!receiver) {
       return NextResponse.json({ error: '送信相手が見つかりません。' }, { status: 404 });
     }
 
     // コイン移動
-    await supabase.from('ktm_players').update({ coins: (sender.coins ?? 1000) - amount }).eq('name', sender.name);
-    await supabase.from('ktm_players').update({ coins: (receiver.coins ?? 1000) + amount }).eq('name', receiver.name);
+    const newSenderCoins = senderCoins - amount;
+    const newReceiverCoins = getPlayerCoins(receiver) + amount;
+
+    await updatePlayerCoinsAndInventory({
+      player: sender,
+      newCoins: newSenderCoins,
+    });
+
+    await updatePlayerCoinsAndInventory({
+      player: receiver,
+      newCoins: newReceiverCoins,
+    });
 
     return NextResponse.json({
       success: true,
@@ -50,7 +76,7 @@ export async function POST(req: Request) {
       to: receiver.name,
       amount,
       message: message || 'ナイスプレイ！',
-      remainingSenderCoins: (sender.coins ?? 1000) - amount,
+      remainingSenderCoins: newSenderCoins,
       announcement: `🎉 **【チップ送金】** **${sender.name}** さんが **${receiver.name}** さんに **${amount}コイン** を贈りました！\n💬 「${message || 'ナイスプレイ！'}」`
     });
   } catch (error: any) {

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
+import { findOrCreatePlayer, getPlayerCoins, updatePlayerCoinsAndInventory } from '../../../../lib/playerCoins';
 
 export const dynamic = 'force-dynamic';
 
@@ -41,19 +42,39 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'ハンデ対象のプレイヤー名を指定してください。' }, { status: 400 });
     }
 
-    // 発動者（格下側）のコイン確認
-    let q = supabase.from('ktm_players').select('name, coins');
-    if (fromDiscordId) q = q.eq('discord_id', fromDiscordId);
-    else if (fromName) q = q.eq('name', fromName);
-    const { data: user } = await q.single();
+    if (!fromDiscordId && !fromName) {
+      return NextResponse.json({ error: '発動者情報が不足しています。' }, { status: 400 });
+    }
 
-    if (!user || (user.coins ?? 1000) < handicap.cost) {
-      return NextResponse.json({ error: `所持コインが不足しています（現在: ${user?.coins ?? 1000}コイン / 必要: ${handicap.cost}コイン）。` }, { status: 400 });
+    // 他者のコインを勝手に使わないよう本人・管理者検証
+    const { verifyUserOrAdmin } = await import('../../../../lib/authGuard');
+    const authCheck = await verifyUserOrAdmin(fromDiscordId || fromName);
+    if (!authCheck.ok) {
+      return NextResponse.json({ error: authCheck.error }, { status: 403 });
+    }
+
+    // 発動者（格下側）の特定
+    const user = await findOrCreatePlayer({
+      discordId: fromDiscordId,
+      name: fromName,
+      autoCreate: true,
+    });
+
+    if (!user) {
+      return NextResponse.json({ error: '発動者プレイヤーの取得に失敗しました。' }, { status: 404 });
+    }
+
+    const currentCoins = getPlayerCoins(user);
+    if (currentCoins < handicap.cost) {
+      return NextResponse.json({ error: `所持コインが不足しています（現在: ${currentCoins}コイン / 必要: ${handicap.cost}コイン）。` }, { status: 400 });
     }
 
     // コインを控除
-    const remaining = (user.coins ?? 1000) - handicap.cost;
-    await supabase.from('ktm_players').update({ coins: remaining }).eq('name', user.name);
+    const remaining = currentCoins - handicap.cost;
+    await updatePlayerCoinsAndInventory({
+      player: user,
+      newCoins: remaining,
+    });
 
     return NextResponse.json({
       success: true,

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../../lib/supabaseAdmin';
+import { findOrCreatePlayer, getPlayerInventory, updatePlayerCoinsAndInventory } from '../../../../../lib/playerCoins';
 
 export const dynamic = 'force-dynamic';
 
@@ -8,8 +9,12 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { discordId, playerName, itemId, itemName, itemIcon, itemDesc } = body;
 
-    if (!playerName || !itemName) {
-      return NextResponse.json({ error: 'プレイヤー名またはアイテム情報が不足しています。' }, { status: 400 });
+    if (!playerName && !discordId) {
+      return NextResponse.json({ error: 'プレイヤー情報が不足しています。' }, { status: 400 });
+    }
+
+    if (!itemName) {
+      return NextResponse.json({ error: 'アイテム情報が不足しています。' }, { status: 400 });
     }
 
     // 他者のチケットを勝手に発動しないよう本人・管理者検証
@@ -19,24 +24,22 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: authCheck.error }, { status: 403 });
     }
 
-    // プレイヤーのインベントリから該当アイテムを使用済みに更新
-    let q = supabase.from('ktm_players').select('name, inventory, role_preferences');
-    if (discordId) q = q.eq('discord_id', discordId);
-    else q = q.eq('name', playerName);
-    const { data: player } = await q.single();
+    // プレイヤーの特定
+    const player = await findOrCreatePlayer({
+      discordId,
+      name: playerName,
+      autoCreate: false,
+    });
 
     if (player) {
-      const currentInventory = (player.inventory || player.role_preferences?.inventory || []) as Array<any>;
+      const currentInventory = getPlayerInventory(player);
       const targetIndex = currentInventory.findIndex(item => item.id === itemId || item.name === itemName);
       if (targetIndex !== -1) {
         currentInventory.splice(targetIndex, 1); // 1枚消費
-        const updatedPreferences = {
-          ...(player.role_preferences || {}),
-          inventory: currentInventory
-        };
-        await supabase.from('ktm_players').update({
-          role_preferences: updatedPreferences
-        }).eq('name', player.name);
+        await updatePlayerCoinsAndInventory({
+          player,
+          newInventory: currentInventory,
+        });
       }
     }
 
@@ -49,7 +52,7 @@ export async function POST(req: Request) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             embeds: [{
-              title: `📣【特権発動宣言】${playerName} さんが発動しました！`,
+              title: `📣【特権発動宣言】${playerName || player?.name} さんが発動しました！`,
               description: `**${itemIcon || '🎟️'} ${itemName}**\n${itemDesc || '次回カスタム試合でこの特権が適用されます！'}\n\n進行役・対戦相手の皆様はルールのご確認をお願いします🔥`,
               color: 0xec4899,
               footer: { text: 'KTM Sovereign Shop' },

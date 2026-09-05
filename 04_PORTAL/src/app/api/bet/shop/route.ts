@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
+import { findOrCreatePlayer, getPlayerCoins, getPlayerInventory, updatePlayerCoinsAndInventory } from '../../../../lib/playerCoins';
 
 export const dynamic = 'force-dynamic';
 
@@ -105,12 +106,13 @@ export async function GET(req: Request) {
       return NextResponse.json({ inventory: [] });
     }
 
-    let q = supabase.from('ktm_players').select('name, inventory, role_preferences');
-    if (discordId) q = q.eq('discord_id', discordId);
-    else if (name) q = q.eq('name', name);
-    const { data: player } = await q.single();
+    const player = await findOrCreatePlayer({
+      discordId,
+      name,
+      autoCreate: false,
+    });
 
-    const inventory = (player?.inventory || player?.role_preferences?.inventory || []) as Array<{ id: string; name: string; icon: string; boughtAt: string }>;
+    const inventory = player ? getPlayerInventory(player) : [];
 
     return NextResponse.json({
       success: true,
@@ -133,6 +135,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: '無効なアイテムIDです。' }, { status: 400 });
     }
 
+    if (!discordId && !playerName) {
+      return NextResponse.json({ error: 'Discordログインが必要です。' }, { status: 401 });
+    }
+
     // 他者のコインを勝手に使わないよう本人・管理者検証
     const { verifyUserOrAdmin } = await import('../../../../lib/authGuard');
     const authCheck = await verifyUserOrAdmin(discordId || playerName);
@@ -140,17 +146,24 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: authCheck.error }, { status: 403 });
     }
 
-    let q = supabase.from('ktm_players').select('name, coins, inventory, role_preferences');
-    if (discordId) q = q.eq('discord_id', discordId);
-    else if (playerName) q = q.eq('name', playerName);
-    const { data: player } = await q.single();
+    // プレイヤーの特定（未登録なら初期化）
+    const player = await findOrCreatePlayer({
+      discordId,
+      name: playerName,
+      autoCreate: true,
+    });
 
-    if (!player || (player.coins ?? 1000) < item.price) {
-      return NextResponse.json({ error: `所持コインが不足しています（現在: ${player?.coins ?? 1000}コイン / 必要: ${item.price}コイン）。` }, { status: 400 });
+    if (!player) {
+      return NextResponse.json({ error: 'プレイヤー情報の取得に失敗しました。' }, { status: 404 });
     }
 
-    const newCoins = (player.coins ?? 1000) - item.price;
-    const currentInventory = (player.inventory || player.role_preferences?.inventory || []) as Array<{ id: string; name: string; icon: string; boughtAt: string }>;
+    const currentCoins = getPlayerCoins(player);
+    if (currentCoins < item.price) {
+      return NextResponse.json({ error: `所持コインが不足しています（現在: ${currentCoins}コイン / 必要: ${item.price}コイン）。` }, { status: 400 });
+    }
+
+    const newCoins = currentCoins - item.price;
+    const currentInventory = getPlayerInventory(player);
     const newInventory = [
       ...currentInventory,
       {
@@ -161,16 +174,15 @@ export async function POST(req: Request) {
       }
     ];
 
-    // role_preferences 内にもフォールバック保存
-    const updatedPreferences = {
-      ...(player.role_preferences || {}),
-      inventory: newInventory
-    };
+    const updateRes = await updatePlayerCoinsAndInventory({
+      player,
+      newCoins,
+      newInventory,
+    });
 
-    await supabase.from('ktm_players').update({ 
-      coins: newCoins,
-      role_preferences: updatedPreferences
-    }).eq('name', player.name);
+    if (!updateRes.success) {
+      return NextResponse.json({ error: '購入処理（コイン控除）に失敗しました。' }, { status: 500 });
+    }
 
     // Discordへの特権発動アナウンス（Webhookがあれば通知）
     const webhookUrl = process.env.DISCORD_WEBHOOK_URL;
@@ -181,8 +193,8 @@ export async function POST(req: Request) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             embeds: [{
-              title: `🛒【特権アイテム発動】${player.name} さんが購入！`,
-              description: `**${item.name}** が発動されました！\n${item.desc}\n\n🪙 **購入価格:** ${item.price}コイン (残高: ${newCoins}pt)`,
+              title: `🛒【特権アイテム購入】${player.name} さんが購入！`,
+              description: `**${item.name}** を購入しました！\n${item.desc}\n\n🪙 **購入価格:** ${item.price}コイン (残高: ${newCoins}pt)`,
               color: 0xf59e0b,
               timestamp: new Date().toISOString()
             }]
