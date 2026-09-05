@@ -33,6 +33,7 @@ export async function GET(req: Request) {
     // 2. 指定ユーザーの残高と履歴
     let userCoins = 1000;
     let lastClaimDate: string | null = null;
+    let lastRescueMonth: string | null = null;
 
     if (discordId || name) {
       const player = await findOrCreatePlayer({
@@ -44,6 +45,7 @@ export async function GET(req: Request) {
       if (player) {
         userCoins = getPlayerCoins(player);
         lastClaimDate = player.role_preferences?.lastDailyClaim || null;
+        lastRescueMonth = player.role_preferences?.lastRescueMonth || null;
       }
     }
 
@@ -81,6 +83,7 @@ export async function GET(req: Request) {
       userCoins,
       ranking,
       lastClaimDate,
+      lastRescueMonth,
       jackpot,
       betStats: {
         blueAmount,
@@ -132,6 +135,8 @@ export async function PUT(req: Request) {
     let addedCoins = 0;
     let successMessage = '';
 
+    const currentMonth = todayStr.slice(0, 7); // 'YYYY-MM'
+
     if (type === 'daily') {
       const lastClaim = player.role_preferences?.lastDailyClaim;
       if (lastClaim === todayStr) {
@@ -140,18 +145,23 @@ export async function PUT(req: Request) {
       addedCoins = 100;
       successMessage = '🎁 デイリーボーナス +100コイン を受け取りました！';
     } else if (type === 'rescue') {
+      const lastRescue = player.role_preferences?.lastRescueMonth;
+      if (lastRescue === currentMonth) {
+        return NextResponse.json({ error: '破産救済保険の受取は月1回までです。今月分はすでに利用済みです（来月1日以降に再度利用可能になります）。' }, { status: 400 });
+      }
       if (currentCoins >= 100) {
         return NextResponse.json({ error: '破産救済ボーナスは残高100コイン未満のときのみ利用可能です。' }, { status: 400 });
       }
       addedCoins = 300;
-      successMessage = '💸 破産救済保険が発動！ +300コイン を獲得して復活しました！🔥';
+      successMessage = '💸 破産救済保険が発動！ +300コイン を獲得して復活しました！🔥（※月1回限定）';
     } else {
       return NextResponse.json({ error: '不正なボーナスタイプです。' }, { status: 400 });
     }
 
     const newCoins = currentCoins + addedCoins;
     const rolePreferencesUpdate = {
-      ...(type === 'daily' ? { lastDailyClaim: todayStr } : {})
+      ...(type === 'daily' ? { lastDailyClaim: todayStr } : {}),
+      ...(type === 'rescue' ? { lastRescueMonth: currentMonth } : {}),
     };
 
     const updateRes = await updatePlayerCoinsAndInventory({

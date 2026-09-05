@@ -118,6 +118,7 @@ export default function CasinoPage() {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [inventory, setInventory] = useState<Array<{ id: string; name: string; icon: string; boughtAt: string }>>([]);
   const [lastClaimDate, setLastClaimDate] = useState<string | null>(null);
+  const [lastRescueMonth, setLastRescueMonth] = useState<string | null>(null);
   const [betStats, setBetStats] = useState<{
     blueAmount: number;
     redAmount: number;
@@ -277,6 +278,7 @@ export default function CasinoPage() {
           });
         }
         if (data.lastClaimDate) setLastClaimDate(data.lastClaimDate);
+        if (data.lastRescueMonth) setLastRescueMonth(data.lastRescueMonth);
       }
     } catch (e) {
       console.error('Failed to fetch bet data:', e);
@@ -560,15 +562,26 @@ export default function CasinoPage() {
                 </button>
 
                 {(user.coins ?? 1000) < 100 && (
-                  <button
-                    type="button"
-                    onClick={() => handleClaimBonus('rescue')}
-                    className="px-3 py-1.5 rounded-xl bg-rose-500 hover:bg-rose-600 text-white font-black text-xs shadow transition flex items-center gap-1.5 cursor-pointer animate-bounce"
-                    title="所持コインが100枚未満のときの救済措置"
-                  >
-                    <span className="text-sm">💸</span>
-                    <span>破産救済保険 (+300pt)</span>
-                  </button>
+                  (() => {
+                    const currentMonthStr = new Intl.DateTimeFormat('ja-JP', { timeZone: 'Asia/Tokyo', year: 'numeric', month: '2-digit' }).format(new Date()).replace(/\//g, '-');
+                    const isRescueClaimedThisMonth = lastRescueMonth === currentMonthStr;
+                    return isRescueClaimedThisMonth ? (
+                      <div className="px-3 py-1.5 rounded-xl bg-stone-200 text-stone-500 font-bold text-xs flex items-center gap-1.5 cursor-not-allowed" title="破産救済保険は月1回までです（今月分は受取済み）">
+                        <span className="text-sm">🔒</span>
+                        <span>破産救済 (今月受取済)</span>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => handleClaimBonus('rescue')}
+                        className="px-3 py-1.5 rounded-xl bg-rose-500 hover:bg-rose-600 text-white font-black text-xs shadow transition flex items-center gap-1.5 cursor-pointer animate-bounce"
+                        title="所持コインが100枚未満のときの救済措置（※月1回限定）"
+                      >
+                        <span className="text-sm">💸</span>
+                        <span>破産救済保険 (+300pt / 月1回)</span>
+                      </button>
+                    );
+                  })()
                 )}
 
                 <button
