@@ -91,8 +91,13 @@ export async function POST(req: Request) {
       const promises = batchIds.map(async (id) => {
         try {
           const detail = await fetchMatchDetails(id, apiKey);
-          // 自分自身の参加スタッツを抽出
-          const me = detail.participants.find(p => p.riotIdName.toLowerCase() === dbPlayer.name.toLowerCase() || p.championName.length > 0); // 簡易一致
+          // 自分自身の参加スタッツを正確に抽出（PUUID一致またはIGN/名前一致）
+          const targetPuuid = puuid || dbPlayer.puuid;
+          const targetNames = [dbPlayer.ign, dbPlayer.name].filter(Boolean).map((n: string) => n.toLowerCase());
+          const me = detail.participants.find(p => 
+            (targetPuuid && p.puuid === targetPuuid) || 
+            (p.riotIdName && targetNames.includes(p.riotIdName.toLowerCase()))
+          );
           if (me) {
             let gold_diff_9 = 0;
             let xp_diff_9 = 0;

@@ -56,6 +56,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: '送信相手が見つかりません。' }, { status: 404 });
     }
 
+    // 自分自身への送金を防止
+    if (sender.id === receiver.id || sender.name.toLowerCase() === receiver.name.toLowerCase()) {
+      return NextResponse.json({ error: '自分自身にチップを送金することはできません。' }, { status: 400 });
+    }
+
     // コイン移動
     const newSenderCoins = senderCoins - amount;
     const newReceiverCoins = getPlayerCoins(receiver) + amount;

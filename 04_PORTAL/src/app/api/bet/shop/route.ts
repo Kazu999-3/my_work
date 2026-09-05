@@ -185,7 +185,7 @@ export async function POST(req: Request) {
     }
 
     // Discordへの特権発動アナウンス（Webhookがあれば通知）
-    const webhookUrl = process.env.DISCORD_WEBHOOK_URL;
+    const webhookUrl = process.env.DISCORD_KTM_WEBHOOK_URL || process.env.DISCORD_WEBHOOK_URL;
     if (webhookUrl) {
       try {
         await fetch(webhookUrl, {

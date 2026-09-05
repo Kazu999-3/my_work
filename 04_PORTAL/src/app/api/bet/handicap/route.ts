@@ -64,6 +64,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: '発動者プレイヤーの取得に失敗しました。' }, { status: 404 });
     }
 
+    if (user.name.toLowerCase() === targetName.toLowerCase()) {
+      return NextResponse.json({ error: '自分自身にハンデを発動することはできません。相手チームのプレイヤーを指定してください。' }, { status: 400 });
+    }
+
     const currentCoins = getPlayerCoins(user);
     if (currentCoins < handicap.cost) {
       return NextResponse.json({ error: `所持コインが不足しています（現在: ${currentCoins}コイン / 必要: ${handicap.cost}コイン）。` }, { status: 400 });
@@ -75,6 +79,27 @@ export async function POST(req: Request) {
       player: user,
       newCoins: remaining,
     });
+
+    // Discord速報通知
+    const webhookUrl = process.env.DISCORD_KTM_WEBHOOK_URL || process.env.DISCORD_WEBHOOK_URL;
+    if (webhookUrl) {
+      try {
+        await fetch(webhookUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            embeds: [{
+              title: `🎗️【下剋上ハンデ発動】${user.name} ➔ ${targetName}`,
+              description: `**${handicap.title}** が発動されました！\n${handicap.desc}\n\n🪙 **消費:** ${handicap.cost}コイン (対象実効MMR: -${handicap.mmrPenalty})`,
+              color: 0xef4444,
+              timestamp: new Date().toISOString()
+            }]
+          })
+        });
+      } catch (e) {
+        console.warn('Failed to send discord webhook for handicap:', e);
+      }
+    }
 
     return NextResponse.json({
       success: true,
