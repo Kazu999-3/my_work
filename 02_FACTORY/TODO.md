@@ -30,6 +30,16 @@
 
 ---
 
+## ✅ 2026-09-05 Antigravity セッションで対応済み
+
+- [x] **コイン機能・ログインボーナス・ショップ購入の不具合解消**
+  - 新規プレイヤー照合＆自動作成基盤 (`playerCoins.ts`) を新設。Discordログイン時に名簿（`ktm_players`）未登録のユーザーでも初期1,000コインで自動作成・安全紐付け。
+  - デイリーボーナス受取（`/api/bet` PUT）での「ユーザーが見つからない」エラーを解消。
+  - ショップ特権アイテム購入（`/api/bet/shop` POST）で `discordId` 欠落およびユーザー照合不備を解消。
+  - コイン・インベントリの `role_preferences` / `metadata` 二重フォールバック保存とマイグレーションDDL (`72_ktm_players_coins_inventory.sql`) を整備。
+
+---
+
 ## ✅ 2026-09-04 Antigravity セッションで対応済み
 
 - [x] **Sovereign HUD オーバーレイのフルスペック化**
