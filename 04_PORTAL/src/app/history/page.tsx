@@ -283,8 +283,11 @@ export default function HistoryPage() {
                                     title={blueP.champion_name}
                                     width={28}
                                     height={28}
-                                    className="w-5 h-5 md:w-7 md:h-7 rounded-full border border-blue-300 shrink-0"
-                                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                                    className="w-5 h-5 md:w-7 md:h-7 rounded-full border border-blue-300 shrink-0 object-cover"
+                                    onError={(e) => {
+                                      const target = e.target as HTMLImageElement;
+                                      target.src = 'https://ddragon.leagueoflegends.com/cdn/14.24.1/img/profileicon/29.png';
+                                    }}
                                   />
                                 )}
                               </>
@@ -309,8 +312,11 @@ export default function HistoryPage() {
                                     title={redP.champion_name}
                                     width={28}
                                     height={28}
-                                    className="w-5 h-5 md:w-7 md:h-7 rounded-full border border-rose-300 shrink-0"
-                                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                                    className="w-5 h-5 md:w-7 md:h-7 rounded-full border border-rose-300 shrink-0 object-cover"
+                                    onError={(e) => {
+                                      const target = e.target as HTMLImageElement;
+                                      target.src = 'https://ddragon.leagueoflegends.com/cdn/14.24.1/img/profileicon/29.png';
+                                    }}
                                   />
                                 )}
                                 <span className="font-bold text-[11px] md:text-sm text-stone-900 truncate max-w-[65px] sm:max-w-[120px]">{redP.player_name}</span>

@@ -75,7 +75,7 @@ export default function LeaderboardPage() {
       }
     })();
   }, [activeTab, metaData, metaLoading]);
-  const [minGames, setMinGames] = useState<number>(3);
+  const [minGames, setMinGames] = useState<number>(0);
   const [search, setSearch] = useState(''); // プレイヤー名検索(L-03)
   const [sortMetric, setSortMetric] = useState<'mmr' | 'winRate' | 'games'>('mmr');
 

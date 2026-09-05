@@ -24,7 +24,7 @@ export default function SynergyPage() {
   const [loading, setLoading] = useState(true);
   const [allyStats, setAllyStats] = useState<AllyStat[]>([]);
   const [allPlayersList, setAllPlayersList] = useState<string[]>([]);
-  const [minGames, setMinGames] = useState(3);
+  const [minGames, setMinGames] = useState(1);
   const [groupStats, setGroupStats] = useState<Record<number, GroupStat[]>>({ 3: [], 4: [], 5: [] });
   const [groupSize, setGroupSize] = useState<2 | 3 | 4 | 5>(2);
   const [simPlayer1, setSimPlayer1] = useState('');
@@ -67,7 +67,7 @@ export default function SynergyPage() {
     .filter(a => a.games >= minGames)
     .sort((a, b) => a.winRate === b.winRate ? b.games - a.games : a.winRate - b.winRate);
 
-  const groupMin = groupSize >= 4 ? Math.min(minGames, 2) : minGames;
+  const groupMin = minGames;
   const filteredGroupsBest = (groupStats[groupSize] || [])
     .filter(g => g.games >= groupMin)
     .sort((a, b) => b.winRate === a.winRate ? b.games - a.games : b.winRate - a.winRate)
@@ -195,19 +195,35 @@ export default function SynergyPage() {
           )}
         </div>
 
-        {/* 人数切替タブ (2〜5人選択) */}
+        {/* 人数切替タブ (2〜5人選択) & 最小試合数フィルター */}
         <div className="flex items-center justify-between flex-wrap gap-4 bg-surface border border-border p-3 rounded-2xl">
-          <div className="flex items-center gap-2">
-            <Users className="text-fuchsia-700" size={20} />
-            <span className="text-sm font-black text-stone-900">対象人数:</span>
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex items-center gap-2">
+              <Users className="text-fuchsia-700" size={20} />
+              <span className="text-sm font-black text-stone-900">対象人数:</span>
+            </div>
+            <div className="flex gap-2">
+              {([2, 3, 4, 5] as const).map(n => (
+                <button key={n} onClick={() => setGroupSize(n)}
+                  className={`px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${groupSize === n ? 'bg-gradient-to-r from-fuchsia-600 to-pink-600 text-white shadow-lg shadow-fuchsia-500/20' : 'bg-background text-stone-500 hover:text-stone-900 border border-border'}`}>
+                  {n}人コンビ / チーム
+                </button>
+              ))}
+            </div>
           </div>
-          <div className="flex gap-2">
-            {([2, 3, 4, 5] as const).map(n => (
-              <button key={n} onClick={() => setGroupSize(n)}
-                className={`px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${groupSize === n ? 'bg-gradient-to-r from-fuchsia-600 to-pink-600 text-white shadow-lg shadow-fuchsia-500/20' : 'bg-background text-stone-500 hover:text-stone-900 border border-border'}`}>
-                {n}人コンビ / チーム
-              </button>
-            ))}
+
+          <div className="flex items-center gap-2 bg-background border border-border rounded-xl px-3 py-1.5 text-xs font-bold">
+            <span className="text-stone-500">最小共闘数:</span>
+            <select
+              value={minGames}
+              onChange={(e) => setMinGames(Number(e.target.value))}
+              className="bg-black/5 text-stone-900 text-xs font-bold rounded-lg border border-border px-2 py-1 focus:outline-none focus:border-fuchsia-500"
+            >
+              <option value={1}>1試合以上 (全員表示)</option>
+              <option value={2}>2試合以上</option>
+              <option value={3}>3試合以上</option>
+              <option value={5}>5試合以上</option>
+            </select>
           </div>
         </div>
 

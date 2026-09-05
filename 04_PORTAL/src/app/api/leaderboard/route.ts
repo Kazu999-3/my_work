@@ -86,8 +86,7 @@ export async function GET(req: Request) {
             rankBadge: getKtmRank(mmr),
           };
         })
-        .sort((a: any, b: any) => b.mmr - a.mmr)
-        .slice(0, 5);
+        .sort((a: any, b: any) => b.mmr - a.mmr);
       result[role] = roleRanking;
     });
 

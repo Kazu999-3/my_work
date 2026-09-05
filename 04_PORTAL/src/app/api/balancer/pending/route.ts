@@ -74,13 +74,17 @@ export async function POST(request: Request) {
       ));
       const { data: validPlayers } = await supabase
         .from('ktm_players')
-        .select('name')
+        .select('name, is_spectator_fixed, is_active')
         .in('name', uniqueSpectators);
-      const validNames = (validPlayers || []).map((p: any) => p.name);
 
-      if (validNames.length > 0) {
+      // 見学固定（試合に出ない人）および非アクティブな待機者はPity加算対象から除外
+      const eligibleNames = (validPlayers || [])
+        .filter((p: any) => p.is_spectator_fixed !== true && p.is_active !== false)
+        .map((p: any) => p.name);
+
+      if (eligibleNames.length > 0) {
         const { error: pityError } = await supabase.rpc('increment_ktm_pity', {
-          p_names: validNames,
+          p_names: eligibleNames,
           p_amount: 10,
         });
         if (pityError) console.warn('[balancer/pending] pity加算に失敗（続行）:', pityError);

@@ -17,7 +17,7 @@ export default function PlayerIndexPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("ALL");
-  const [statusFilter, setStatusFilter] = useState<"ALL" | "ACTIVE" | "INACTIVE">("ACTIVE");
+  const [statusFilter, setStatusFilter] = useState<"ALL" | "ACTIVE" | "INACTIVE">("ALL");
 
   useEffect(() => {
     async function fetchPlayers() {
@@ -36,15 +36,19 @@ export default function PlayerIndexPage() {
   }, []);
 
   const filteredPlayers = useMemo(() => {
+    const q = search.trim().toLowerCase();
     return players.filter((p) => {
       const matchSearch =
-        p.name.toLowerCase().includes(search.toLowerCase()) ||
-        (p.ign && p.ign.toLowerCase().includes(search.toLowerCase()));
+        !q ||
+        (p.name && p.name.toLowerCase().includes(q)) ||
+        (p.ign && p.ign.toLowerCase().includes(q)) ||
+        (p.highest_rank && p.highest_rank.toLowerCase().includes(q));
 
+      const isActive = p.is_active !== false; // null/undefined はデフォルト有効扱い
       const matchStatus =
         statusFilter === "ALL" ||
-        (statusFilter === "ACTIVE" && p.is_active) ||
-        (statusFilter === "INACTIVE" && !p.is_active);
+        (statusFilter === "ACTIVE" && isActive) ||
+        (statusFilter === "INACTIVE" && !isActive);
 
       const prefs = p.role_preferences || {};
       const primary = (prefs.primary || "").toUpperCase();

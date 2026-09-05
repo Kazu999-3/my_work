@@ -72,7 +72,15 @@ const ID_CORRECTION_MAP: Record<string, string> = {
   "kog'maw": "KogMaw",
   "kogmaw": "KogMaw",
   "rek'sai": "RekSai",
-  "reksai": "RekSai"
+  "reksai": "RekSai",
+  "ambessa": "Ambessa",
+  "aurora": "Aurora",
+  "smolder": "Smolder",
+  "hwei": "Hwei",
+  "briar": "Briar",
+  "naafiri": "Naafiri",
+  "milio": "Milio",
+  "mel": "Mel"
 };
 
 export function formatChampId(champId: string): string {
@@ -92,7 +100,9 @@ export function formatChampId(champId: string): string {
  * チャンピオンIDからアイコン画像のURLを取得します (404 割れ対策完了版)
  */
 export function getChampIcon(champId: string): string {
-  if (!champId || champId === "Unknown") return "https://ddragon.leagueoflegends.com/cdn/14.24.1/img/profileicon/29.png";
+  if (!champId || champId === "Unknown" || champId === "未選択") {
+    return "https://ddragon.leagueoflegends.com/cdn/14.24.1/img/profileicon/29.png";
+  }
   const formattedId = formatChampId(champId);
   return `https://ddragon.leagueoflegends.com/cdn/${cachedLatestPatch}/img/champion/${formattedId}.png`;
 }
