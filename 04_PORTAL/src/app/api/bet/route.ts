@@ -73,11 +73,15 @@ export async function GET(req: Request) {
     const blueRatio = totalAmount > 0 ? Math.round((blueAmount / totalAmount) * 100) : 50;
     const redRatio = totalAmount > 0 ? 100 - blueRatio : 50;
 
+    const { getJackpotPool, addToJackpot } = await import('../../../lib/jackpot');
+    const jackpot = await getJackpotPool();
+
     return NextResponse.json({
       success: true,
       userCoins,
       ranking,
       lastClaimDate,
+      jackpot,
       betStats: {
         blueAmount,
         redAmount,
@@ -85,7 +89,8 @@ export async function GET(req: Request) {
         redCount,
         totalAmount,
         blueRatio,
-        redRatio
+        redRatio,
+        jackpotAmount: jackpot.amount
       }
     });
   } catch (error: any) {
@@ -265,8 +270,12 @@ export async function POST(req: Request) {
             created_at: new Date().toISOString()
           }
         });
+
+      // 💎 ベット金額の 5% をサーバー共有ジャックポット金庫へ自動積立
+      const { addToJackpot } = await import('../../../lib/jackpot');
+      await addToJackpot(Math.max(1, Math.floor(betAmount * 0.05)));
     } catch (bErr) {
-      console.warn('[bet POST] edge_tasks insert warning:', bErr);
+      console.warn('[bet POST] edge_tasks / jackpot insert warning:', bErr);
     }
 
     const oddsText = odds ? ` (オッズ: x${odds}倍)` : '';

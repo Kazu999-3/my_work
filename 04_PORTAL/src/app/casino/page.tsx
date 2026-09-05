@@ -126,14 +126,26 @@ export default function CasinoPage() {
     totalAmount: number;
     blueRatio: number;
     redRatio: number;
+    jackpot?: {
+      amount: number;
+      lastWinner: string | null;
+      lastPayout: number;
+      lastWonAt: string | null;
+    };
   }>({
-    blueAmount: 2800,
-    redAmount: 2200,
-    blueCount: 4,
-    redCount: 3,
-    totalAmount: 5000,
-    blueRatio: 56,
-    redRatio: 44
+    blueAmount: 0,
+    redAmount: 0,
+    blueCount: 0,
+    redCount: 0,
+    totalAmount: 0,
+    blueRatio: 50,
+    redRatio: 50,
+    jackpot: {
+      amount: 12800,
+      lastWinner: null,
+      lastPayout: 0,
+      lastWonAt: null
+    }
   });
 
   // 実効プレイヤー名（ログインユーザー優先）
@@ -258,7 +270,12 @@ export default function CasinoPage() {
       if (res.ok) {
         const data = await res.json();
         setRanking(data.ranking || []);
-        if (data.betStats) setBetStats(data.betStats);
+        if (data.betStats) {
+          setBetStats({
+            ...data.betStats,
+            jackpot: data.jackpot || data.betStats.jackpot,
+          });
+        }
         if (data.lastClaimDate) setLastClaimDate(data.lastClaimDate);
       }
     } catch (e) {
@@ -463,11 +480,22 @@ export default function CasinoPage() {
           </p>
 
           {/* ジャックポット金庫バナー */}
-          <div className="mt-4 inline-flex flex-wrap items-center justify-center gap-1.5 md:gap-3 px-3 md:px-4 py-2 rounded-2xl bg-amber-950/80 border border-amber-500/40 text-amber-200 text-xs font-black text-center max-w-full">
-            <span className="text-base">💎</span>
-            <span>サーバー共有ジャックポット金庫:</span>
-            <span className="text-amber-400 font-mono text-sm">12,800 コイン</span>
-            <span className="text-[10px] text-stone-400 font-normal">（ペンタキルで総取り！）</span>
+          <div className="mt-4 inline-flex flex-col items-center justify-center gap-1.5 px-4 md:px-6 py-2.5 rounded-2xl bg-amber-950/80 border-2 border-amber-500/40 text-amber-200 text-xs font-black text-center max-w-full shadow-lg">
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              <span className="text-base animate-bounce">💎</span>
+              <span>サーバー共有ジャックポット金庫:</span>
+              <span className="text-amber-400 font-mono text-base font-black">
+                {(betStats.jackpot?.amount ?? 12800).toLocaleString()} コイン
+              </span>
+              <span className="text-[10px] text-amber-300/80 font-bold bg-amber-500/20 px-2 py-0.5 rounded-full border border-amber-500/30">
+                🔥 ペンタキルで総取り！
+              </span>
+            </div>
+            {betStats.jackpot?.lastWinner && (
+              <div className="text-[10px] text-stone-400 font-medium">
+                👑 直近の総取り当選者: <strong className="text-amber-300">{betStats.jackpot.lastWinner}</strong> さん（+{betStats.jackpot.lastPayout.toLocaleString()}🪙）
+              </div>
+            )}
           </div>
         </div>
       </div>
