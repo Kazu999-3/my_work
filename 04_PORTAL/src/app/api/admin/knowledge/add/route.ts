@@ -361,7 +361,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: authResult.error }, { status: 401 });
     }
 
-    const { url, text } = await req.json();
+    const body = await req.json().catch(() => ({}));
+    const url = body.url;
+    const text = body.text || body.memo || body.content;
 
     if (!url && !text) {
       return NextResponse.json({ error: 'URLまたはメモテキストを入力してください。' }, { status: 400 });

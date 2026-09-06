@@ -57,7 +57,7 @@ function KnowledgeBaseContent() {
   // ナレッジの追加（要約＆分類）
   const handleAddKnowledge = async (e: React.FormEvent) => {
     e.preventDefault();
-    const payload = ingestMode === 'url' ? { type: 'url', url: inputUrl } : { type: 'memo', memo: inputMemo };
+    const payload = ingestMode === 'url' ? { type: 'url', url: inputUrl } : { type: 'memo', memo: inputMemo, text: inputMemo };
     if (ingestMode === 'url' && !inputUrl) {
       showFeedback('URLを入力してください。', 'error');
       return;
