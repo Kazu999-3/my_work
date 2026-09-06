@@ -24,18 +24,24 @@ export async function GET() {
       return NextResponse.json({ user: null });
     }
 
-    // 最新のコイン残高とランクを安全に取得
+    // 最新のコイン残高、ランク、管理者権限を安全に取得
     const player = await findOrCreatePlayer({
       discordId: sessionData.discordId,
       name: sessionData.displayName || sessionData.username,
       autoCreate: true,
     });
 
+    const adminIds = (process.env.ADMIN_DISCORD_IDS || '697220229964759130')
+      .split(',')
+      .map((s) => s.trim());
+    const isAdmin = adminIds.includes(sessionData.discordId) || sessionData.discordId === '697220229964759130' || sessionData.username === 'kazuki' || player?.name?.includes('かずき');
+
     const user = {
       ...sessionData,
       displayName: player?.name || player?.ign || sessionData.displayName,
       coins: player ? getPlayerCoins(player) : (sessionData.coins ?? 1000),
       rank: player?.highest_rank || sessionData.rank || 'UNRANKED',
+      isAdmin,
     };
 
     return NextResponse.json({ user });

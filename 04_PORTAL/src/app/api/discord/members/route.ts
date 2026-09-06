@@ -51,9 +51,12 @@ export async function GET(request: Request) {
     const toDeactivate: any[] = [];
     const activeSync: any[] = [];
     
+    const safeLower = (s: any) => (typeof s === 'string' ? s.trim().toLowerCase() : '');
+
     const dbPlayersMap = new Map();
     dbPlayers.forEach((p: any) => {
-      dbPlayersMap.set(p.discord_id || p.name.toLowerCase(), p);
+      const key = p.discord_id || safeLower(p.name);
+      if (key) dbPlayersMap.set(key, p);
     });
 
     const discordIdsFound = new Set();
@@ -66,7 +69,7 @@ export async function GET(request: Request) {
 
       let dbPlayer = dbPlayersMap.get(discordId);
       if (!dbPlayer) {
-         const byName = dbPlayers.find((p: any) => p.name.toLowerCase() === displayName.toLowerCase());
+         const byName = dbPlayers.find((p: any) => safeLower(p.name) === safeLower(displayName));
          if (byName) dbPlayer = byName;
       }
 
@@ -108,7 +111,7 @@ export async function GET(request: Request) {
         // IDが未登録の場合は名前で判定
         const found = humanMembers.some(m => {
           const displayName = resolveDisplayName(m);
-          return displayName.toLowerCase() === p.name.toLowerCase();
+          return safeLower(displayName) === safeLower(p.name);
         });
         if (!found) {
           toDeactivate.push(p);
