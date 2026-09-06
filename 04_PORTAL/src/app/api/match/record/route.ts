@@ -338,6 +338,7 @@ export async function POST(request: Request) {
         mmr: newTotalMmr,
         pity: newPity,
         off_role_pity: newOffRolePity,
+        coins: newCoins,
         role_preferences: { ...currentRolePrefs, coins: newCoins },
         metadata: { ...currentMeta, coins: newCoins }
       };

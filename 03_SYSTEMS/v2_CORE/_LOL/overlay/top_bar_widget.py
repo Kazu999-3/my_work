@@ -167,10 +167,10 @@ class TopBarWidget(QWidget):
         self.cs_value_label.setStyleSheet(f"color: {cs_col}; font-size: 13px; font-weight: bold;")
 
         # 3. 次のおすすめ目標アイテム ＆ プログレスバー
-        advice = state.get("next_item_advice", {})
+        advice = state.get("next_item_advice") or {}
         target_name = advice.get("item_name", "1stコアアイテム")
         target_price = max(1, advice.get("price", 1100))
-        my_gold = int(state.get("my_gold", 0))
+        my_gold = int(state.get("my_gold", 0) or 0)
 
         self.target_name_label.setText(f"🛍️ 目標: {target_name} ({target_price}G)")
 
