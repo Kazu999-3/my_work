@@ -1237,45 +1237,47 @@ function TimingHeatmapTab() {
             )}
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="border-collapse text-[10px]" onMouseLeave={() => setActiveCell(null)}>
-              <thead>
-                <tr>
-                  <th className="w-8"></th>
-                  {Array.from({ length: 24 }, (_, h) => (
-                    <th key={h} className="px-0.5 font-normal text-foreground/40" style={{ minWidth: '18px' }}>
-                      {h % 3 === 0 ? h : ''}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {HEATMAP_DAYS.map((dayLabel, day) => (
-                  <tr key={day}>
-                    <td className="pr-1 text-right font-bold text-foreground/50">{dayLabel}</td>
-                    {Array.from({ length: 24 }, (_, hour) => {
-                      const c = cellMap.get(`${day}-${hour}`);
-                      const games = c?.games || 0;
-                      const winRate = c?.winRate ?? 0;
-                      const isActive = activeCell?.day === day && activeCell?.hour === hour;
-                      return (
-                        <td key={hour} className="p-0.5">
-                          <div
-                            onMouseEnter={() => setActiveCell({ day, hour })}
-                            onClick={() => setActiveCell(isActive ? null : { day, hour })}
-                            className={`h-4 w-4 rounded-sm cursor-pointer transition-all ${cellColor(winRate, games)} ${
-                              isActive ? 'ring-2 ring-offset-1 ring-indigo-500 scale-110' : ''
-                            }`}
-                          />
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="w-full">
+            {/* 時間ヘッダー */}
+            <div className="grid grid-cols-[1.25rem_repeat(24,1fr)] gap-[1px] text-[9px] text-foreground/40 text-center mb-1">
+              <div className="w-5"></div>
+              {Array.from({ length: 24 }, (_, h) => (
+                <div key={h} className="leading-none">
+                  {h % 3 === 0 ? <span className="scale-75 inline-block origin-center font-mono">{h}</span> : ''}
+                </div>
+              ))}
+            </div>
+
+            {/* 曜日ごとの行 */}
+            <div className="space-y-[2px]" onMouseLeave={() => setActiveCell(null)}>
+              {HEATMAP_DAYS.map((dayLabel, day) => (
+                <div key={day} className="grid grid-cols-[1.25rem_repeat(24,1fr)] gap-[1px] items-center">
+                  <div className="text-[10px] font-bold text-foreground/50 text-center leading-none pr-0.5">
+                    {dayLabel}
+                  </div>
+                  {Array.from({ length: 24 }, (_, hour) => {
+                    const c = cellMap.get(`${day}-${hour}`);
+                    const games = c?.games || 0;
+                    const winRate = c?.winRate ?? 0;
+                    const isActive = activeCell?.day === day && activeCell?.hour === hour;
+                    return (
+                      <button
+                        type="button"
+                        key={hour}
+                        onMouseEnter={() => setActiveCell({ day, hour })}
+                        onClick={() => setActiveCell(isActive ? null : { day, hour })}
+                        className={`aspect-square w-full rounded-[2px] cursor-pointer transition-all ${cellColor(winRate, games)} ${
+                          isActive ? 'ring-2 ring-offset-1 ring-indigo-500 scale-125 z-10 relative' : 'hover:scale-110'
+                        }`}
+                        title={`${dayLabel}曜 ${hour}時: ${games > 0 ? `${winRate}% (${c!.wins}/${games}勝)` : 'データなし'}`}
+                      />
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
           </div>
-          <p className="text-[10px] text-foreground/30">※ グレーは3試合未満のためサンプル不足のセル。マスにカーソルを合わせる（スマホはタップ）と上に詳細を表示します。</p>
+          <p className="text-[10px] text-foreground/30">※ グレーは3試合未満のためサンプル不足。マスを選択・ホバーすると詳細が表示されます。</p>
         </div>
       )}
     </div>
