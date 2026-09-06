@@ -9,6 +9,7 @@ export type AtomicInsightPreview = {
   summary: string;
   tags: string[];
   scope: 'champion_specific' | 'lane_general';
+  targetLane?: string;
 };
 
 export type KnowledgePreview = {
@@ -23,6 +24,15 @@ export type KnowledgePreview = {
   atomicInsights: AtomicInsightPreview[];
 };
 
+const LANE_OPTIONS = [
+  { key: 'TOP', label: '🗺️ TOP (トップ)' },
+  { key: 'JG', label: '🗺️ JG (ジャングル)' },
+  { key: 'MID', label: '🗺️ MID (ミッド)' },
+  { key: 'ADC', label: '🗺️ ADC (ボット)' },
+  { key: 'SUP', label: '🗺️ SUP (サポート)' },
+  { key: 'COMMON', label: '🗺️ 全レーン共通' },
+];
+
 // 「記事のどこがチャンピオン辞典に保存されるかプレビュー画面を挟みたい」という要望への対応
 // (2026-08-15)。AI解析結果(まだDB未保存)を表示し、チャンピオン判定や分割知見の取捨選択を
 // 確認・修正してから初めて実際に保存する。
@@ -36,7 +46,7 @@ export default function KnowledgePreviewModal({
 }) {
   const [champion, setChampion] = useState(preview.champion);
   const [insights, setInsights] = useState(
-    preview.atomicInsights.map((i) => ({ ...i, included: true }))
+    preview.atomicInsights.map((i) => ({ ...i, included: true, targetLane: i.targetLane || 'COMMON' }))
   );
 
   const toggleIncluded = (idx: number) => {
@@ -46,6 +56,9 @@ export default function KnowledgePreviewModal({
     setInsights((prev) => prev.map((i, n) => (n === idx
       ? { ...i, scope: i.scope === 'lane_general' ? 'champion_specific' : 'lane_general' }
       : i)));
+  };
+  const changeTargetLane = (idx: number, lane: string) => {
+    setInsights((prev) => prev.map((i, n) => (n === idx ? { ...i, targetLane: lane } : i)));
   };
 
   const handleConfirm = () => {
@@ -96,7 +109,7 @@ export default function KnowledgePreviewModal({
               <div className="space-y-2">
                 {insights.map((insight, idx) => (
                   <div key={idx} className={`border rounded-xl p-3 transition ${insight.included ? 'bg-white border-gray-200' : 'bg-gray-50 border-gray-100 opacity-50'}`}>
-                    <div className="flex items-start justify-between gap-2 mb-1.5">
+                    <div className="flex items-start justify-between gap-2 mb-1.5 flex-wrap sm:flex-nowrap">
                       <label className="flex items-start gap-2 flex-1 min-w-0 cursor-pointer">
                         <input
                           type="checkbox"
@@ -106,19 +119,38 @@ export default function KnowledgePreviewModal({
                         />
                         <span className="text-xs font-bold text-gray-900">{insight.title}</span>
                       </label>
-                      <button
-                        type="button"
-                        onClick={() => toggleScope(idx)}
-                        disabled={!insight.included}
-                        className={`shrink-0 text-[10px] font-black px-2 py-1 rounded-lg border disabled:opacity-40 ${
-                          insight.scope === 'lane_general'
-                            ? 'bg-sky-50 border-sky-200 text-sky-700'
-                            : 'bg-amber-50 border-amber-200 text-amber-700'
-                        }`}
-                        title="クリックで切り替え"
-                      >
-                        {insight.scope === 'lane_general' ? 'レーン一般論' : 'チャンピオン固有'}
-                      </button>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => toggleScope(idx)}
+                          disabled={!insight.included}
+                          className={`shrink-0 text-[10px] font-black px-2 py-1 rounded-lg border disabled:opacity-40 transition ${
+                            insight.scope === 'lane_general'
+                              ? 'bg-sky-50 border-sky-200 text-sky-700'
+                              : 'bg-amber-50 border-amber-200 text-amber-700'
+                          }`}
+                          title="クリックで切り替え"
+                        >
+                          {insight.scope === 'lane_general' ? 'レーン一般論' : 'チャンピオン固有'}
+                        </button>
+                        {insight.scope === 'lane_general' && (
+                          <div className="flex items-center gap-1 bg-sky-100/70 border border-sky-300 rounded-lg px-2 py-0.5">
+                            <span className="text-[10px] font-bold text-sky-800">統合先:</span>
+                            <select
+                              value={insight.targetLane || 'COMMON'}
+                              onChange={(e) => changeTargetLane(idx, e.target.value)}
+                              disabled={!insight.included}
+                              className="text-[10px] font-black bg-transparent text-sky-950 outline-none cursor-pointer"
+                            >
+                              {LANE_OPTIONS.map((opt) => (
+                                <option key={opt.key} value={opt.key}>
+                                  {opt.label}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        )}
+                      </div>
                     </div>
                     <p className="text-[11px] text-gray-500 leading-relaxed pl-6">{insight.summary}</p>
                   </div>

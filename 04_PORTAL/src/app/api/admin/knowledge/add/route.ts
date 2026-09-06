@@ -3,6 +3,7 @@ import { supabaseAdmin as supabase } from '../../../../../lib/supabaseAdmin';
 import { callGeminiWithRetry } from '../../../../../lib/geminiClient';
 import { verifyAdminSession } from '../../../../../lib/adminAuth';
 import { resolveToRosterChampion } from '../../../../../lib/dictFactCheck';
+import { detectLane } from '../../../../../lib/laneGuideMerge';
 
 // ============================================================
 // X (Twitter) 投稿の画像および「動画メディア(MP4/サムネイル)」を全自動動画・画像AI解析
@@ -287,7 +288,7 @@ async function analyzeWithGemini(title: string, content: string): Promise<{
   genre: string;
   tags: string[];
   champion: string;
-  atomicInsights: { title: string; summary: string; tags: string[]; scope: 'champion_specific' | 'lane_general' }[];
+  atomicInsights: { title: string; summary: string; tags: string[]; scope: 'champion_specific' | 'lane_general'; targetLane?: 'TOP' | 'JG' | 'MID' | 'ADC' | 'SUP' | 'COMMON' }[];
 }> {
   const prompt = `以下のインプット情報（Webサイトの内容、X投稿のマルチモーダル画像・動画解析結果、またはメモ書き）を解析し、以下の処理を行ってください。
 
@@ -311,7 +312,7 @@ async function analyzeWithGemini(title: string, content: string): Promise<{
    - 単一の主張・情報しか無い短い内容の場合は、無理に分解せず空配列 [] を返すこと。
    - 元の全文網羅ナレッジ(summary)と重複が多くても構わない（こちらは検索・再利用のための短い抜粋という位置づけ）。
    - 各メモに scope を付けてください: そのチャンピオン固有の性能・ビルド・スキル使用法の話なら "champion_specific"、特定チャンピオンに限らずそのレーン全般で通用するマクロ・立ち回り・判断の話（例:「ミッドはウェーブが溜まったら必ずロームする」）なら "lane_general"。
-     "lane_general"と判定した知見は、後続処理でこの記事のchampion欄とは切り離し、レーン別ガイドへ直接統合されるため、レーン一般論をchampion_specificに混ぜないよう厳密に判定すること。
+   - scope が "lane_general" の場合、targetLane を "TOP", "JG", "MID", "ADC", "SUP", "COMMON"（全レーン共通）の中から最も当てはまるものを指定してください。
 
 出力は、必ず以下のJSONフォーマットのみを返却してください。
 
@@ -322,7 +323,13 @@ async function analyzeWithGemini(title: string, content: string): Promise<{
   "tags": ["タグ1", "タグ2", "タグ3"],
   "champion": "特定したチャンピオン名",
   "atomicInsights": [
-    { "title": "具体的で短いタイトル", "summary": "2〜4文程度の独立した知見の要約", "tags": ["タグ1"], "scope": "champion_specific または lane_general" }
+    {
+      "title": "具体的で短いタイトル",
+      "summary": "2〜4文程度の独立した知見の要約",
+      "tags": ["タグ1"],
+      "scope": "champion_specific または lane_general",
+      "targetLane": "TOP または JG または MID または ADC または SUP または COMMON"
+    }
   ]
 }
 
@@ -389,7 +396,23 @@ export async function POST(req: NextRequest) {
     // そのままDBに混入し正規のページから漏れる（辞典の表記ゆれ汚染の主要な発生源だった）。
     // 実在チャンピオンへ正規化し、解決できなければ既存の「対象外」慣習値にフォールバックする。
     const resolvedChampion = await resolveToRosterChampion(analyzed.champion);
-    const atomicInsights = Array.isArray(analyzed.atomicInsights) ? analyzed.atomicInsights.slice(0, 5) : [];
+    const rawAtomicInsights = Array.isArray(analyzed.atomicInsights) ? analyzed.atomicInsights.slice(0, 5) : [];
+    
+    // 各知見に対してレーン判定を補完
+    const atomicInsights = rawAtomicInsights.map((insight: any) => {
+      const detected = detectLane({
+        champion: insight.scope === 'champion_specific' ? resolvedChampion : '',
+        title: insight.title,
+        content: insight.summary,
+        raw_content: insight.summary,
+      });
+      const validLanes = ['TOP', 'JG', 'MID', 'ADC', 'SUP', 'COMMON'];
+      const targetLane = validLanes.includes(insight.targetLane) ? insight.targetLane : detected;
+      return {
+        ...insight,
+        targetLane,
+      };
+    });
 
     // 元ソース情報（動画・記事URL）を記事の先頭に必ず明記する（2026-08-17、ユーザー指示）
     let finalSummary = analyzed.summary || '';

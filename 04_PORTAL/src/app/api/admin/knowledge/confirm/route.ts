@@ -83,21 +83,27 @@ export async function POST(req: NextRequest) {
       const { error: atomicError } = await supabase
         .from('personal_knowledge')
         .insert(
-          insights.map((insight: any) => ({
-            title: insight.title,
-            content: insight.summary,
-            raw_content: insight.summary,
-            source_url: url || '',
-            genre: genre || 'その他',
-            tags: Array.isArray(insight.tags) ? insight.tags : [],
-            champion: insight.scope === 'lane_general'
-              ? getNoChampionMarker('personal_knowledge')
-              : (resolvedChampion || getNoChampionMarker('personal_knowledge')),
-            author: authorKey || null,
-            parent_id: data.id,
-            is_atomic: true,
-            review_status: 'pending',
-          }))
+          insights.map((insight: any) => {
+            const insightTags = Array.isArray(insight.tags) ? [...insight.tags] : [];
+            if (insight.scope === 'lane_general' && insight.targetLane && !insightTags.includes(insight.targetLane)) {
+              insightTags.unshift(insight.targetLane);
+            }
+            return {
+              title: insight.title,
+              content: insight.summary,
+              raw_content: insight.summary,
+              source_url: url || '',
+              genre: genre || 'その他',
+              tags: insightTags,
+              champion: insight.scope === 'lane_general'
+                ? getNoChampionMarker('personal_knowledge')
+                : (resolvedChampion || getNoChampionMarker('personal_knowledge')),
+              author: authorKey || null,
+              parent_id: data.id,
+              is_atomic: true,
+              review_status: 'pending',
+            };
+          })
         );
       if (atomicError) console.error('❌ [Knowledge Confirm API] 原子的な知見の保存に失敗:', atomicError);
     }
