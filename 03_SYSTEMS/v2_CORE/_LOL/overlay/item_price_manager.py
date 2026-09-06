@@ -13,7 +13,7 @@ from pathlib import Path
 import httpx
 
 CACHE_DIR = Path(__file__).parent / "cache"
-CACHE_DIR.mkdir(exist_ok=True)
+CACHE_DIR.mkdir(parents=True, exist_ok=True)
 ITEM_CACHE_FILE = CACHE_DIR / "ddragon_items.json"
 
 DDRAGON_VERSION = "14.24.1"

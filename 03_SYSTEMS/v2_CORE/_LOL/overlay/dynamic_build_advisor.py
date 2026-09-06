@@ -25,14 +25,13 @@ ITEM_DB = {
     "Thornmail": {"id": 3075, "name": "ソーンメイル", "price": 2700, "icon": "3075.png", "type": "heal_cut"},
 
     # 貫通（AR/MR対策）
-    "BlackCleaver": {"id": 3071, "name": "ブラック クリーバー (物理破砕)", "price": 3000, "icon": "3071.png", "type": "pen"},
-    "LordDominiksRegards": {"id": 3036, "name": "ドミニク リガード (物理貫通)", "price": 3000, "icon": "3036.png", "type": "pen"},
-    # 貫通（AR/MR対策）
-    "BlackCleaver": {"id": 3071, "name": "ブラック クリーバー (物理破砕)", "price": 3000, "icon": "3071.png", "type": "pen"},
-    "LordDominiksRegards": {"id": 3036, "name": "ドミニク リガード (物理貫通)", "price": 3000, "icon": "3036.png", "type": "pen"},
-    "SeryldasGrudge": {"id": 6694, "name": "セリルダの怨恨 (物理貫通)", "price": 3200, "icon": "6694.png", "type": "pen"},
-    "Cryptbloom": {"id": 3137, "name": "クリプトブルーム (魔法貫通)", "price": 2850, "icon": "3137.png", "type": "pen"},
-    "VoidStaff": {"id": 3135, "name": "ヴォイド スタッフ (魔法貫通)", "price": 3000, "icon": "3135.png", "type": "pen"},
+    "BlackCleaver": {"id": 3071, "name": "ブラック クリーバー", "price": 3000, "icon": "3071.png", "type": "pen"},
+    "LordDominiksRegards": {"id": 3036, "name": "ドミニク リガード", "price": 3000, "icon": "3036.png", "type": "pen"},
+    "SeryldasGrudge": {"id": 6694, "name": "セリルダの怨恨", "price": 3200, "icon": "6694.png", "type": "pen"},
+    "Cryptbloom": {"id": 3137, "name": "クリプトブルーム", "price": 2850, "icon": "3137.png", "type": "pen"},
+    "VoidStaff": {"id": 3135, "name": "ヴォイド スタッフ", "price": 3000, "icon": "3135.png", "type": "pen"},
+    "GuardianAngel": {"id": 3026, "name": "ガーディアン エンジェル", "price": 3200, "icon": "3026.png", "type": "core"},
+    "RabadonsDeathcap": {"id": 3089, "name": "ラバドン デスキャップ", "price": 3600, "icon": "3089.png", "type": "core"},
 
     # 汎用コアアイテム
     "SunderedSky": {"id": 6610, "name": "サンダード スカイ", "price": 3100, "icon": "6610.png", "type": "core"},
@@ -315,10 +314,53 @@ class DynamicBuildAdvisor:
                 "priority": "HIGH",
             }
         else:
-            return {
-                "item_name": "ステラックの篭手",
-                "price": 3200,
-                "tag": "🛡️ 3rd 集団戦耐久",
-                "reason": "集団戦でのフォーカス集中を耐え抜く巨大シールドを確保！",
-                "priority": "MID",
-            }
+            if "ap" in champ_class:
+                has_zhonya = any(it.get("itemID") == 3157 for it in my_items)
+                if not has_zhonya:
+                    return {
+                        "item_name": "ゾーニャの砂時計",
+                        "price": 3250,
+                        "tag": "⏳ 無敵＆魔力",
+                        "reason": "集団戦でフォーカスされても2.5秒無敵でスキルCTを稼ぎ逆転！",
+                        "priority": "MID",
+                    }
+                return {
+                    "item_name": "ラバドン デスキャップ",
+                    "price": 3600,
+                    "tag": "👑 魔力極限強化",
+                    "reason": "総APを35%増加させ、スキルの破壊力を圧倒的次元へ引き上げる！",
+                    "priority": "MID",
+                }
+            elif "marksman" in champ_class:
+                has_ga = any(it.get("itemID") == 3026 for it in my_items)
+                if not has_ga:
+                    return {
+                        "item_name": "ガーディアン エンジェル",
+                        "price": 3200,
+                        "tag": "🛡️ 復活の保険",
+                        "reason": "アサシンや集団戦の即死を防ぎ、復活して継続火力を叩き込む！",
+                        "priority": "MID",
+                    }
+                return {
+                    "item_name": "ドミニク リガード",
+                    "price": 3000,
+                    "tag": "⚔️ 割合ダメージ貫通",
+                    "reason": "高HP・高ARのタンクを溶かすための最終火力を確保！",
+                    "priority": "MID",
+                }
+            elif "tank" in champ_class:
+                return {
+                    "item_name": "カイーニック ルーケーン",
+                    "price": 2900,
+                    "tag": "🛡️ 魔法完全防壁",
+                    "reason": "常時魔法シールドを展開し、敵集団戦のバーストに耐え抜く！",
+                    "priority": "MID",
+                }
+            else:
+                return {
+                    "item_name": "ステラックの篭手",
+                    "price": 3200,
+                    "tag": "🛡️ 3rd 集団戦耐久",
+                    "reason": "集団戦でのフォーカス集中を耐え抜く巨大シールドを確保！",
+                    "priority": "MID",
+                }
