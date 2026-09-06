@@ -123,7 +123,7 @@ export async function executeLotteryDraw(): Promise<LotteryResult> {
         key: 'casino_jackpot_pool',
         value: {
           amount: RESET_JACKPOT,
-          lastWinner: firstPrizeWinner.name || 'Anonymous',
+          lastWinner: firstPrizeWinner.name || firstPrizeWinner.ign || 'Anonymous',
           lastPayout: firstPrizePayout,
           lastWonAt: new Date().toISOString(),
         },
@@ -138,6 +138,7 @@ export async function executeLotteryDraw(): Promise<LotteryResult> {
   // 🥈 2等 (ラッキー賞): 購入チケットの中から必ず1口選出（1,000コイン）
   const secondPrizeTicket = flatTickets[Math.floor(Math.random() * flatTickets.length)];
   const secondPrizeWinner = secondPrizeTicket.player;
+  const secondPrizeWinnerName = secondPrizeWinner?.name || secondPrizeWinner?.ign || 'Anonymous';
   const SECOND_PRIZE_COINS = 1000;
   coinGains.set(secondPrizeWinner.id, (coinGains.get(secondPrizeWinner.id) || 0) + SECOND_PRIZE_COINS);
 
@@ -165,12 +166,12 @@ export async function executeLotteryDraw(): Promise<LotteryResult> {
 
   // 5. Discord `#ショップ通知` へ豪華Embedアナウンス送信
   const firstPrizeText = isFirstPrizeWon
-    ? `🎉 **当選者誕生！！**\n👑 **${firstPrizeWinner.name}** さんが **\`${firstPrizePayout.toLocaleString()}\` コイン** を総取り獲得！おめでとうございます！`
+    ? `🎉 **当選者誕生！！**\n👑 **${firstPrizeWinner?.name || firstPrizeWinner?.ign || 'Anonymous'}** さんが **\`${firstPrizePayout.toLocaleString()}\` コイン** を総取り獲得！おめでとうございます！`
     : `🔥 **当選者なし（キャリーオーバー発動！）**\n次週の賞金プールにチケット売上が加算され、さらに巨大化しました！\n💰 **次回キャリーオーバー額**: **\`${nextJackpotAmount.toLocaleString()}\` コイン**`;
 
   const embed = {
     title: '🎟️ 【週末メガ宝くじ】 当選結果速報！',
-    description: `今週のメガ宝くじ抽選が完了いたしました！\n総購入口数: **${totalTickets} 口** （参加者: **${totalParticipants} 名**）\n\n━━━━━━━━━━━━━━━━━━━\n🥇 **1等: MEGA JACKPOT (総取り)**\n${firstPrizeText}\n\n🥈 **2等: ラッキー賞 (1,000 コイン)**\n🎯 当選者: **${secondPrizeWinner.name}** さん (+1,000コイン)\n\n🥉 **3等: 参加還元賞**\n🛡️ 参加者全員へ 1口につき **${REFUND_PER_TICKET} コイン** をキャッシュバック還元！\n━━━━━━━━━━━━━━━━━━━`,
+    description: `今週のメガ宝くじ抽選が完了いたしました！\n総購入口数: **${totalTickets} 口** （参加者: **${totalParticipants} 名**）\n\n━━━━━━━━━━━━━━━━━━━\n🥇 **1等: MEGA JACKPOT (総取り)**\n${firstPrizeText}\n\n🥈 **2等: ラッキー賞 (1,000 コイン)**\n🎯 当選者: **${secondPrizeWinnerName}** さん (+1,000コイン)\n\n🥉 **3等: 参加還元賞**\n🛡️ 参加者全員へ 1口につき **${REFUND_PER_TICKET} コイン** をキャッシュバック還元！\n━━━━━━━━━━━━━━━━━━━`,
     color: isFirstPrizeWon ? 0x10b981 : 0xec4899,
     fields: [
       {
@@ -190,9 +191,9 @@ export async function executeLotteryDraw(): Promise<LotteryResult> {
     totalTickets,
     totalParticipants,
     isFirstPrizeWon,
-    firstPrizeWinner: firstPrizeWinner?.name || null,
+    firstPrizeWinner: firstPrizeWinner?.name || firstPrizeWinner?.ign || null,
     firstPrizePayout,
-    secondPrizeWinner: secondPrizeWinner.name,
+    secondPrizeWinner: secondPrizeWinnerName,
     secondPrizePayout: SECOND_PRIZE_COINS,
     refundTotal: totalRefund,
     nextJackpotAmount,

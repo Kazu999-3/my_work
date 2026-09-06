@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Coins, Trophy, Flame, Swords, CheckCircle2, TrendingUp, Sparkles, Shield, ArrowRight, ShoppingBag, Heart, Gift, Target, Dices, Ticket, LogIn, LogOut, UserCheck } from 'lucide-react';
+import { Coins, Trophy, Flame, Swords, CheckCircle2, TrendingUp, Sparkles, Shield, ArrowRight, ShoppingBag, Heart, Gift, Target, Dices, Ticket, LogIn, LogOut, UserCheck, Send, MessageSquare } from 'lucide-react';
 import Link from 'next/link';
 import confetti from 'canvas-confetti';
 import { useCurrentUser } from '../../hooks/useCurrentUser';
@@ -119,6 +119,14 @@ export default function CasinoPage() {
   const [inventory, setInventory] = useState<Array<{ id: string; name: string; icon: string; boughtAt: string }>>([]);
   const [lastClaimDate, setLastClaimDate] = useState<string | null>(null);
   const [lastRescueMonth, setLastRescueMonth] = useState<string | null>(null);
+  
+  // 🪙 チップ送金モーダル用ステート
+  const [isTipModalOpen, setIsTipModalOpen] = useState<boolean>(false);
+  const [tipToPlayer, setTipToPlayer] = useState<string>('');
+  const [tipAmount, setTipAmount] = useState<number>(100);
+  const [tipMessage, setTipMessage] = useState<string>('');
+  const [isTipSubmitting, setIsTipSubmitting] = useState<boolean>(false);
+  const [allPlayersList, setAllPlayersList] = useState<Array<{ name: string; rank: string }>>([]);
   const [betStats, setBetStats] = useState<{
     blueAmount: number;
     redAmount: number;
@@ -155,6 +163,7 @@ export default function CasinoPage() {
   useEffect(() => {
     fetchBetData();
     fetchActiveMatch();
+    fetchPlayersList();
     if (user?.discordId || user?.displayName) {
       fetchInventory();
     }
@@ -222,6 +231,69 @@ export default function CasinoPage() {
       }
     } catch (e) {
       console.error('Failed to fetch active match:', e);
+    }
+  };
+
+  const fetchPlayersList = async () => {
+    try {
+      const res = await fetch('/api/players');
+      if (res.ok) {
+        const data = await res.json();
+        const players = (data.players || []).map((p: any) => ({
+          name: p.name,
+          rank: p.rank || 'GOLD'
+        }));
+        setAllPlayersList(players);
+      }
+    } catch (e) {
+      console.error('Failed to fetch players list:', e);
+    }
+  };
+
+  const handleSendTip = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) {
+      alert('チップを贈るにはDiscordログインが必要です。');
+      return;
+    }
+    if (!tipToPlayer.trim()) {
+      alert('チップを贈る相手を選択または入力してください。');
+      return;
+    }
+    if (tipAmount <= 0) {
+      alert('1コイン以上のチップを指定してください。');
+      return;
+    }
+
+    try {
+      setIsTipSubmitting(true);
+      const res = await fetch('/api/bet/tip', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fromDiscordId: user.discordId,
+          fromPlayerName: activePlayerName || user.username,
+          toPlayerName: tipToPlayer.trim(),
+          amount: tipAmount,
+          message: tipMessage.trim(),
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        triggerCelebration();
+        alert(data.message);
+        setIsTipModalOpen(false);
+        setTipMessage('');
+        fetchBetData();
+        refreshUser();
+      } else {
+        alert(data.error || 'チップの送信に失敗しました。');
+      }
+    } catch (e: any) {
+      alert('エラーが発生しました: ' + e.message);
+    } finally {
+      setIsTipSubmitting(false);
     }
   };
 
@@ -589,6 +661,19 @@ export default function CasinoPage() {
                     );
                   })()
                 )}
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTipToPlayer('');
+                    setIsTipModalOpen(true);
+                  }}
+                  className="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-black text-xs shadow transition flex items-center gap-1.5 cursor-pointer"
+                  title="フレンドや活躍したプレイヤーにコインをチップとして贈ります"
+                >
+                  <Gift size={14} />
+                  <span>チップを贈る</span>
+                </button>
 
                 <button
                   type="button"
@@ -1009,10 +1094,26 @@ export default function CasinoPage() {
                         </div>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <span className="text-xs font-black text-amber-600 font-mono">
-                        🪙 {(p.coins ?? 1000).toLocaleString()}
-                      </span>
+                    <div className="flex items-center gap-2">
+                      <div className="text-right">
+                        <span className="text-xs font-black text-amber-600 font-mono">
+                          🪙 {(p.coins ?? 1000).toLocaleString()}
+                        </span>
+                      </div>
+                      {user && p.name !== activePlayerName && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setTipToPlayer(p.name);
+                            setIsTipModalOpen(true);
+                          }}
+                          className="px-2 py-1 rounded-lg bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 text-[10px] font-black transition flex items-center gap-1 cursor-pointer"
+                          title={`${p.name} さんにチップを贈る`}
+                        >
+                          <Gift size={11} />
+                          <span>贈る</span>
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -1173,6 +1274,134 @@ export default function CasinoPage() {
         </div>
 
       </div>
+
+      {/* 🪙 チップ送金モーダル */}
+      {isTipModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl p-6 md:p-8 max-w-md w-full shadow-2xl border border-stone-200 space-y-5">
+            <div className="flex items-center justify-between border-b border-stone-100 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-2xl bg-purple-50 text-purple-600 border border-purple-200 flex items-center justify-center font-bold">
+                  <Gift size={18} />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-stone-900">コインをチップとして贈る</h3>
+                  <p className="text-[11px] text-stone-500">ナイスプレイや日頃の感謝を込めてコインをプレゼント！</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsTipModalOpen(false)}
+                className="w-8 h-8 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-500 flex items-center justify-center text-sm font-black transition cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleSendTip} className="space-y-4">
+              {/* 相手選択 */}
+              <div className="space-y-1.5">
+                <label className="block text-xs font-black text-stone-700">
+                  🎁 送信先プレイヤー
+                </label>
+                <div className="flex gap-2">
+                  <select
+                    value={tipToPlayer}
+                    onChange={(e) => setTipToPlayer(e.target.value)}
+                    className="flex-1 bg-stone-50 border border-stone-300 rounded-xl px-3 py-2 text-xs font-bold text-stone-800 focus:outline-none focus:border-purple-500"
+                  >
+                    <option value="">-- プレイヤー一覧から選択 --</option>
+                    {allPlayersList
+                      .filter((p) => p.name !== activePlayerName)
+                      .map((p) => (
+                        <option key={p.name} value={p.name}>
+                          {p.name} ({p.rank})
+                        </option>
+                      ))}
+                  </select>
+                </div>
+                <input
+                  type="text"
+                  placeholder="または直接名前を入力..."
+                  value={tipToPlayer}
+                  onChange={(e) => setTipToPlayer(e.target.value)}
+                  className="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-1.5 text-xs text-stone-800 focus:outline-none focus:border-purple-500"
+                />
+              </div>
+
+              {/* 金額選択 */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-black text-stone-700">
+                    🪙 チップ金額 (コイン)
+                  </label>
+                  <span className="text-[10px] text-stone-500 font-bold">
+                    所持: {(user?.coins ?? 1000).toLocaleString()}pt
+                  </span>
+                </div>
+                <div className="grid grid-cols-4 gap-1.5">
+                  {[50, 100, 300, 500].map((amt) => (
+                    <button
+                      key={amt}
+                      type="button"
+                      onClick={() => setTipAmount(amt)}
+                      className={`py-1.5 rounded-xl text-xs font-black border transition cursor-pointer ${
+                        tipAmount === amt
+                          ? 'bg-purple-600 text-white border-purple-700 shadow-xs'
+                          : 'bg-stone-50 hover:bg-purple-50 text-stone-700 border-stone-200'
+                      }`}
+                    >
+                      {amt}
+                    </button>
+                  ))}
+                </div>
+                <input
+                  type="number"
+                  min="1"
+                  max={user?.coins ?? 1000}
+                  value={tipAmount}
+                  onChange={(e) => setTipAmount(Number(e.target.value))}
+                  className="w-full bg-white border border-stone-300 rounded-xl px-3 py-2 text-sm font-black text-stone-900 focus:outline-none focus:border-purple-500 font-mono"
+                />
+              </div>
+
+              {/* メッセージ */}
+              <div className="space-y-1.5">
+                <label className="block text-xs font-black text-stone-700 flex items-center gap-1">
+                  <MessageSquare size={13} />
+                  <span>応援メッセージ（任意 / Discordに公開通知）</span>
+                </label>
+                <input
+                  type="text"
+                  maxLength={100}
+                  placeholder="ナイスキャリーでした！ / いつもカスタムありがとう！"
+                  value={tipMessage}
+                  onChange={(e) => setTipMessage(e.target.value)}
+                  className="w-full bg-stone-50 border border-stone-300 rounded-xl px-3 py-2 text-xs text-stone-800 focus:outline-none focus:border-purple-500"
+                />
+              </div>
+
+              <div className="pt-2 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsTipModalOpen(false)}
+                  className="flex-1 py-3 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 font-black text-xs transition cursor-pointer"
+                >
+                  キャンセル
+                </button>
+                <button
+                  type="submit"
+                  disabled={isTipSubmitting || !tipToPlayer.trim() || tipAmount <= 0}
+                  className="flex-1 py-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-black text-xs shadow-md transition flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+                >
+                  <Send size={14} />
+                  <span>{isTipSubmitting ? '送信中...' : `🪙 ${tipAmount}コインを贈る`}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

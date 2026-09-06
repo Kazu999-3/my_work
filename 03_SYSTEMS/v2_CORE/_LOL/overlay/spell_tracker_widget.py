@@ -353,43 +353,48 @@ class SpellTrackerWidget(QWidget):
         例: target="Darius", spell_type="FLASH"
             target="MID", spell_type="ULT"
         """
-        t_lower = target.lower()
+        if not target:
+            return False
+        t_lower = str(target).lower().strip()
         matched_column = None
 
         # 1. チャンピオン名照合
         for col in self.columns:
-            if getattr(col, "champion", "").lower() == t_lower:
+            if str(getattr(col, "champion", "") or "").lower().strip() == t_lower:
                 matched_column = col
                 break
 
         # 2. ロール名照合 (TOP, JG, MID, ADC, SUP)
         if not matched_column:
             for col in self.columns:
-                if getattr(col, "role", "").lower() == t_lower:
+                if str(getattr(col, "role", "") or "").lower().strip() == t_lower:
                     matched_column = col
                     break
 
         if not matched_column:
             return False
 
+        sp1_name = str(getattr(matched_column, "spell1", "") or "").lower()
+        sp2_name = str(getattr(matched_column, "spell2", "") or "").lower()
+
         # スペル種別ごとのトリガー
         if spell_type == "ULT":
             matched_column.btn_ult.trigger_cooldown()
             return True
         elif spell_type == "FLASH":
-            if matched_column.spell1.lower() == "flash":
+            if "flash" in sp1_name:
                 matched_column.btn_spell1.trigger_cooldown()
-            elif matched_column.spell2.lower() == "flash":
+            elif "flash" in sp2_name:
                 matched_column.btn_spell2.trigger_cooldown()
             else:
                 matched_column.btn_spell1.trigger_cooldown()
             return True
         else:
             # 他サモスペ（TP, Ignite, Ghost, Heal等）
-            s_type_lower = spell_type.lower()
-            if s_type_lower in matched_column.spell1.lower() or matched_column.spell1.lower() in s_type_lower:
+            s_type_lower = str(spell_type or "").lower()
+            if s_type_lower and (s_type_lower in sp1_name or sp1_name in s_type_lower):
                 matched_column.btn_spell1.trigger_cooldown()
-            elif s_type_lower in matched_column.spell2.lower() or matched_column.spell2.lower() in s_type_lower:
+            elif s_type_lower and (s_type_lower in sp2_name or sp2_name in s_type_lower):
                 matched_column.btn_spell2.trigger_cooldown()
             else:
                 matched_column.btn_spell2.trigger_cooldown()
