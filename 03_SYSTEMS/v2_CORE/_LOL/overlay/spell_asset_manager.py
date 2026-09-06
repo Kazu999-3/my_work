@@ -13,7 +13,7 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QPixmap, QColor
 
 CACHE_DIR = Path(__file__).parent / "cache"
-CACHE_DIR.mkdir(exist_ok=True)
+CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
 DDRAGON_VERSION = "14.24.1"
 CDN_BASE = f"https://ddragon.leagueoflegends.com/cdn/{DDRAGON_VERSION}/img"
@@ -199,7 +199,7 @@ class SpellAssetManager:
                 with open(cache_file, "wb") as f:
                     f.write(r.content)
                 pix = QPixmap(str(cache_file))
-                cls._pixmap_cache[spell_name] = pix
+                cls._pixmap_cache[norm_name] = pix
                 return pix
         except Exception:
             pass

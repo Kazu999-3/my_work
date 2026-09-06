@@ -80,25 +80,20 @@ export async function POST(req: Request) {
       newCoins: remaining,
     });
 
-    // Discord速報通知
-    const webhookUrl = process.env.DISCORD_KTM_WEBHOOK_URL || process.env.DISCORD_WEBHOOK_URL;
-    if (webhookUrl) {
-      try {
-        await fetch(webhookUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            embeds: [{
-              title: `🎗️【下剋上ハンデ発動】${user.name} ➔ ${targetName}`,
-              description: `**${handicap.title}** が発動されました！\n${handicap.desc}\n\n🪙 **消費:** ${handicap.cost}コイン (対象実効MMR: -${handicap.mmrPenalty})`,
-              color: 0xef4444,
-              timestamp: new Date().toISOString()
-            }]
-          })
-        });
-      } catch (e) {
-        console.warn('Failed to send discord webhook for handicap:', e);
-      }
+    // Discord速報通知（#ショップ通知 / 1545806575770276061）
+    try {
+      const { sendShopNotification } = await import('../../../../lib/discordNotify');
+      await sendShopNotification({
+        embeds: [{
+          title: `🎗️【下剋上ハンデ発動】${user.name} ➔ ${targetName}`,
+          description: `**${handicap.title}** が発動されました！\n${handicap.desc}\n\n🪙 **消費:** ${handicap.cost.toLocaleString()}コイン (対象実効MMR: -${handicap.mmrPenalty} / 残高: ${remaining.toLocaleString()}コイン)`,
+          color: 0xef4444,
+          footer: { text: 'KTM Sovereign Handicap System' },
+          timestamp: new Date().toISOString()
+        }]
+      });
+    } catch (e) {
+      console.warn('Failed to send discord webhook for handicap:', e);
     }
 
     return NextResponse.json({
