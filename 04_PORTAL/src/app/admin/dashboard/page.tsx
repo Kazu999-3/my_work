@@ -2,10 +2,30 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Activity, Zap, ShieldAlert, Cpu, Network, Gamepad2, RefreshCw, CheckCircle2, X, ChevronRight, Sparkles, Play, AlertTriangle } from 'lucide-react';
-import { supabaseBrowser } from '../../../lib/supabaseBrowserClient';
+import {
+  Activity,
+  Zap,
+  ShieldAlert,
+  Cpu,
+  RefreshCw,
+  ChevronRight,
+  AlertTriangle,
+  Trophy,
+  Coins,
+  Swords,
+  Users,
+  TrendingUp,
+  Shield,
+  Layers,
+  Database,
+  ExternalLink,
+  BookOpen,
+  Calendar,
+  Clock,
+  Sparkles,
+  Flame,
+} from 'lucide-react';
 import Link from 'next/link';
-
 
 function summarizeError(errorStr?: string): { label: string; bg: string } {
   if (!errorStr) return { label: 'エラー発生', bg: 'bg-stone-100 text-stone-700 border-stone-200' };
@@ -17,7 +37,7 @@ function summarizeError(errorStr?: string): { label: string; bg: string } {
     return { label: '動画が非公開/削除済み', bg: 'bg-rose-100 text-rose-900 border-rose-300' };
   }
   if (s.includes('timeout') || s.includes('econnreset') || s.includes('network')) {
-    return { label: 'ネットワーク接続タイムアウト', bg: 'bg-orange-100 text-orange-900 border-orange-300' };
+    return { label: 'ネットワークタイムアウト', bg: 'bg-orange-100 text-orange-900 border-orange-300' };
   }
   if (s.includes('syntax') || s.includes('parse')) {
     return { label: 'JSONパース不整合', bg: 'bg-purple-100 text-purple-900 border-purple-300' };
@@ -25,18 +45,15 @@ function summarizeError(errorStr?: string): { label: string; bg: string } {
   return { label: '処理失敗', bg: 'bg-rose-100 text-rose-900 border-rose-300' };
 }
 
-export default function Home() {
+export default function AdminDashboardPage() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-  const [systemMetrics, setSystemMetrics] = useState<any>({ queue: { pending: 0, completed: 0 }, cloud_workers: {} });
-  const [needsAttention, setNeedsAttention] = useState<{ failedTasks: any[]; youtubeErrorCount: number; dictReviewCount: number }>({ failedTasks: [], youtubeErrorCount: 0, dictReviewCount: 0 });
-  const [retryingTaskId, setRetryingTaskId] = useState<string | null>(null);
-  const [isRetryingAll, setIsRetryingAll] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<string>('');
 
-  // システムの稼働状況とジョブキューの状況を監視する状態
+  // インフラ・システムステータス
   const [systemStatus, setSystemStatus] = useState<{
-    worker: { active: boolean; status: string; last_active: string | null };
+    worker: { active: boolean; status: string; last_active: string | null; diff_seconds?: number };
     queue: any[];
     history: any[];
   }>({
@@ -45,13 +62,118 @@ export default function Home() {
     history: []
   });
 
+  const [systemMetrics, setSystemMetrics] = useState<any>({
+    services: {},
+    queue: { pending: 0, running: 0, completed: 0 },
+    cloud_workers: {}
+  });
+
+  // 大会 & カジノ運用メトリクス
+  const [ktmStats, setKtmStats] = useState<{
+    activePlayers: number;
+    totalMatches: number;
+    recentMatches: number;
+    latestMatchDate: string | null;
+  }>({
+    activePlayers: 0,
+    totalMatches: 0,
+    recentMatches: 0,
+    latestMatchDate: null
+  });
+
+  const [casinoStats, setCasinoStats] = useState<{
+    totalCirculatingCoins: number;
+    pendingBetTotalAmount: number;
+    pendingBetCount: number;
+    blueAmount: number;
+    redAmount: number;
+    blueCount: number;
+    redCount: number;
+  }>({
+    totalCirculatingCoins: 0,
+    pendingBetTotalAmount: 0,
+    pendingBetCount: 0,
+    blueAmount: 0,
+    redAmount: 0,
+    blueCount: 0,
+    redCount: 0
+  });
+
+  // 知識ベース & 辞典ヘルス
+  const [kbStats, setKbStats] = useState<{
+    facts: number | null;
+    library: number | null;
+    laneGuides: number | null;
+    memos: number | null;
+    matchupLog: number | null;
+  }>({
+    facts: null,
+    library: null,
+    laneGuides: null,
+    memos: null,
+    matchupLog: null,
+  });
+
+  const [dictHealthSummary, setDictHealthSummary] = useState<{
+    verified: number;
+    aiGenerated: number;
+    stale: number;
+  } | null>(null);
+
+  // 要対応
+  const [needsAttention, setNeedsAttention] = useState<{
+    failedTasks: any[];
+    youtubeErrorCount: number;
+    dictReviewCount: number;
+  }>({ failedTasks: [], youtubeErrorCount: 0, dictReviewCount: 0 });
+
+  const [isRetryingAll, setIsRetryingAll] = useState(false);
+
+  // 認証チェック
+  useEffect(() => {
+    fetch('/api/auth/verify', { method: 'POST', credentials: 'include' })
+      .then(res => setIsAuthenticated(res.ok))
+      .catch(() => setIsAuthenticated(false));
+  }, []);
+
+  const fetchData = async (silent = false) => {
+    if (!silent) setIsRefreshing(true);
+    try {
+      const res = await fetch('/api/admin/dashboard-stats', { credentials: 'include' });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.worker) setSystemStatus({ worker: data.worker, queue: data.queue || [], history: data.history || [] });
+        if (data.systemMetrics) setSystemMetrics(data.systemMetrics);
+        if (data.ktmStats) setKtmStats(data.ktmStats);
+        if (data.casinoStats) setCasinoStats(data.casinoStats);
+        if (data.kbStats) setKbStats(data.kbStats);
+        if (data.dictHealthSummary) setDictHealthSummary(data.dictHealthSummary);
+        if (data.needsAttention) setNeedsAttention(data.needsAttention);
+        setLastUpdated(new Date().toLocaleTimeString('ja-JP'));
+      }
+    } catch (err) {
+      console.error('Error fetching dashboard stats:', err);
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    fetchData();
+    const timer = setInterval(() => fetchData(true), 30000); // 30秒ごとにバックグラウンド更新
+    return () => clearInterval(timer);
+  }, [isAuthenticated]);
+
   // 失敗タスクの一括再実行
   const handleRetryAll = async () => {
     if (needsAttention.failedTasks.length === 0) return;
     setIsRetryingAll(true);
     try {
       const res = await fetch('/api/admin/tasks/retry-all', {
-        method: 'POST', credentials: 'include',
+        method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ tasks: needsAttention.failedTasks }),
       });
@@ -69,39 +191,6 @@ export default function Home() {
     }
   };
 
-  // 1. 認証の確認
-  useEffect(() => {
-    fetch('/api/auth/verify', { method: 'POST', credentials: 'include' })
-      .then(res => setIsAuthenticated(res.ok))
-      .catch(() => setIsAuthenticated(false));
-  }, []);
-
-  // 知識ベースの整備状況（件数のみ・head:trueでエグレスを抑える）
-  const [kbStats, setKbStats] = useState<{ facts: number | null; library: number | null; laneGuides: number | null; memos: number | null; matchupLog: number | null }>({
-    facts: null, library: null, laneGuides: null, memos: null, matchupLog: null,
-  });
-  // 辞典ヘルス(確認済み/AI生成/要対応の内訳)
-  const [dictHealthSummary, setDictHealthSummary] = useState<{ verified: number; aiGenerated: number; stale: number } | null>(null);
-
-  const fetchData = async (silent = false) => {
-    if (!silent) setIsLoading(true);
-    try {
-      const res = await fetch('/api/admin/dashboard-stats', { credentials: 'include' });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.worker) setSystemStatus({ worker: data.worker, queue: data.queue || [], history: data.history || [] });
-        if (data.kbStats) setKbStats(data.kbStats);
-        if (data.dictHealthSummary) setDictHealthSummary(data.dictHealthSummary);
-        if (data.systemMetrics) setSystemMetrics(data.systemMetrics);
-        if (data.needsAttention) setNeedsAttention(data.needsAttention);
-      }
-    } catch (err) {
-      console.error('Error fetching dashboard stats:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const TASK_LABELS: Record<string, string> = {
     champion_trend: 'チャンピオントレンド更新',
     resolve_youtube_channel: 'YouTubeチャンネル登録',
@@ -114,8 +203,6 @@ export default function Home() {
     youtube_absorb: 'YouTube動画解析',
   };
 
-  // 「詳細へ」の遷移先をtask_typeごとに正しく振り分ける（以前は全種別が一律/admin/youtubeに
-  // 飛んでいて、辞典一括更新等の失敗がYouTube管理画面を開いても何も解決できなかった）
   const TASK_LINKS: Record<string, string> = {
     resolve_youtube_channel: '/champions?scope=knowledge&tab=video',
     resolve_youtube_playlist: '/champions?scope=knowledge&tab=video',
@@ -126,79 +213,29 @@ export default function Home() {
     champion_db_bulk_update: '/champions?scope=health',
   };
 
-  const handleRetryFailedTask = async (task: any) => {
-    if (task.task_type !== 'champion_trend') return;
-    setRetryingTaskId(task.id);
-    try {
-      const res = await fetch('/api/admin/champions/trend', {
-        method: 'POST', credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ champion: task.payload?.champion, role: task.payload?.role || 'Jungle' }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        setNeedsAttention((prev) => ({ ...prev, failedTasks: prev.failedTasks.filter((t) => t.id !== task.id) }));
-      } else {
-        alert(data.error || '再実行の登録に失敗しました。');
-      }
-    } catch {
-      alert('再実行の登録中に通信エラーが発生しました。');
-    } finally {
-      setRetryingTaskId(null);
-    }
-  };
-
-
-
-
-  useEffect(() => {
-    if (!isAuthenticated) return;
-    fetchData();
-    setLastUpdated(new Date().toLocaleTimeString('ja-JP'));
-  }, [isAuthenticated]);
-
-
-
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: { staggerChildren: 0.1 }
-    }
-  };
-
-  const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
-    visible: {
-      y: 0,
-      opacity: 1,
-      transition: { type: 'spring' as const, stiffness: 100 }
-    }
-  };
-
-  if (isAuthenticated === null) {
+  if (isAuthenticated === null || isLoading) {
     return (
-      <div style={{ minHeight: '100vh' }} className="flex-1 flex items-center justify-center bg-background">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-black/10 border-t-amber-600" />
+      <div className="min-h-screen flex items-center justify-center bg-[#fbf9f4]">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-amber-500/20 border-t-amber-600" />
+          <p className="text-xs font-bold text-stone-500">システム運用ダッシュボードを読み込み中...</p>
+        </div>
       </div>
     );
   }
 
   if (isAuthenticated === false) {
     return (
-      <div
-        style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #f5f1e6 0%, #fdfcf9 60%, #f5f1e6 100%)' }}
-        className="flex-1 flex items-center justify-center p-4 font-sans text-stone-900"
-      >
-        <div className="text-center max-w-sm rounded-3xl border border-stone-200 bg-white p-8 shadow-2xl">
-          <div className="text-4xl mb-4">🔑</div>
-          <h2 className="text-lg font-bold mb-2">認証が必要です</h2>
-          <p className="text-sm text-stone-500 mb-4 leading-relaxed">
-            この管理版コントロールセンターは管理者専用です。Discordアカウントでログインしてからアクセスしてください。
+      <div className="min-h-screen flex items-center justify-center p-4 bg-[#fbf9f4] text-stone-900 font-sans">
+        <div className="text-center max-w-sm rounded-3xl border border-stone-200 bg-white p-8 shadow-xl">
+          <div className="text-4xl mb-3">🔑</div>
+          <h2 className="text-lg font-black mb-2">管理者認証が必要です</h2>
+          <p className="text-xs text-stone-500 mb-6 leading-relaxed">
+            システム運用コントロールセンターは管理者専用です。Discord管理者アカウントでログインしてください。
           </p>
           <a
             href="/login"
-            className="inline-block w-full rounded-xl bg-amber-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-amber-500 shadow-lg hover:shadow-amber-500/20"
+            className="inline-block w-full rounded-xl bg-amber-600 px-5 py-3 text-sm font-black text-white transition hover:bg-amber-500 shadow-md hover:shadow-amber-500/20"
           >
             ログインページへ
           </a>
@@ -207,407 +244,517 @@ export default function Home() {
     );
   }
 
+  const hasNeedsAttention = needsAttention.failedTasks.length > 0 || needsAttention.youtubeErrorCount > 0 || needsAttention.dictReviewCount > 0;
+  const totalBetAmount = casinoStats.blueAmount + casinoStats.redAmount;
+  const bluePercent = totalBetAmount > 0 ? Math.round((casinoStats.blueAmount / totalBetAmount) * 100) : 50;
+  const redPercent = totalBetAmount > 0 ? 100 - bluePercent : 50;
+
   return (
-    <div className="min-h-screen w-full bg-background">
-    <div className="min-h-screen p-4 md:p-6 max-w-7xl mx-auto flex flex-col gap-6 relative overflow-hidden">
+    <div className="min-h-screen w-full bg-[#fcfbfa] text-stone-900">
+      <div className="max-w-7xl mx-auto p-4 md:p-8 flex flex-col gap-6">
 
-      {/* Background Decorative Orbs */}
-      <div className="absolute top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
-        <div className="absolute top-[-10%] right-[-5%] w-[40vw] h-[40vw] rounded-full bg-amber-500/10 blur-[120px] animate-pulse"></div>
-        <div className="absolute bottom-[-10%] left-[-10%] w-[50vw] h-[50vw] rounded-full bg-orange-500/10 blur-[150px] animate-pulse" style={{ animationDelay: '2s' }}></div>
-      </div>
-
-      {/* Header Section */}
-      <motion.header
-        initial={{ y: -30, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.6, type: 'spring' }}
-        className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 mb-2"
-      >
-        <div className="relative">
-          <div className="absolute -inset-1 bg-gradient-to-r from-amber-500 to-orange-600 blur opacity-10"></div>
-          <h1 className="relative text-2xl md:text-3xl font-black tracking-tighter mb-1">
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-amber-700 via-orange-700 to-rose-700">Sovereign OS</span>
-            <span className="text-stone-500 ml-2 font-mono text-2xl opacity-80">v5.0</span>
-          </h1>
-          <p className="text-amber-700 font-bold text-xs uppercase tracking-[0.2em] flex items-center gap-1.5 mt-1">
-            <Activity size={14} className="animate-pulse text-amber-600" />
-            <span>Advanced Agentic Control Center</span>
-          </p>
-        </div>
-
-        <div className="flex flex-col md:flex-row items-end md:items-center gap-3 flex-wrap">
-          <Link href="/admin/prompts" className="px-3 py-2 rounded-xl bg-white border border-stone-200 hover:bg-stone-50 hover:border-stone-300 text-xs font-bold text-stone-600 transition-all flex items-center gap-1.5 shadow-sm">
-            <Cpu size={13} className="text-amber-600" />
-            <span>AI プロンプト設定 ➔</span>
-          </Link>
-          {lastUpdated && (
-            <span className="text-[11px] text-stone-500 font-mono">最終更新: {lastUpdated}</span>
-          )}
-        </div>
-      </motion.header>
-
-      {/* ワーカー停止監視アラート */}
-      {!systemStatus.worker.active && (
-        <div className="bg-rose-50 border-2 border-rose-300 rounded-2xl p-4 shadow-xs flex items-center justify-between gap-3 text-rose-950">
-          <div className="flex items-center gap-3">
-            <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0 animate-bounce" />
-            <div>
-              <span className="font-black text-xs block">⚠️ ローカルPythonワーカーが停止しています</span>
-              <p className="text-[11px] text-rose-700 font-medium">
-                バックグラウンド収集・分析タスクが待機中になります。ポータルの「ワーカー起動」またはコマンドラインからワーカーを起動してください。
-              </p>
-            </div>
-          </div>
-          {systemStatus.worker.last_active && (
-            <span className="text-[10px] text-rose-500 font-mono shrink-0">
-              最終稼働: {new Date(systemStatus.worker.last_active).toLocaleTimeString('ja-JP')}
-            </span>
-          )}
-        </div>
-      )}
-
-
-      {/* 要対応パネル: 失敗タスクとエラーを一括リトライ付きで表示 */}
-      {(needsAttention.failedTasks.length > 0 || needsAttention.youtubeErrorCount > 0 || needsAttention.dictReviewCount > 0) && (
-        <motion.div
-          initial={{ y: -10, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          className="glass-panel rounded-2xl p-4 border border-rose-300 bg-rose-50/80 space-y-3"
-        >
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-rose-200 pb-2.5">
-            <h3 className="text-sm font-black text-rose-800 flex items-center gap-2">
-              <ShieldAlert size={18} /> ⚠️ 要対応タスク（{needsAttention.failedTasks.length + (needsAttention.youtubeErrorCount > 0 ? 1 : 0) + (needsAttention.dictReviewCount > 0 ? 1 : 0)}件）
-            </h3>
-
-            {needsAttention.failedTasks.length > 0 && (
-              <button
-                type="button"
-                onClick={handleRetryAll}
-                disabled={isRetryingAll}
-                className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white font-black text-xs rounded-xl shadow-xs transition-all flex items-center gap-1.5 cursor-pointer shrink-0"
-              >
-                <RefreshCw size={12} className={isRetryingAll ? 'animate-spin' : ''} />
-                <span>⚡ 失敗タスクを一括再実行 ({needsAttention.failedTasks.length}件)</span>
-              </button>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            {needsAttention.failedTasks.map((task) => {
-              const errSummary = summarizeError(task.error_message);
-              return (
-                <div key={task.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 rounded-xl bg-white border border-rose-100 shadow-2xs">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 flex-wrap mb-1">
-                      <span className="text-xs font-black text-stone-900">
-                        {TASK_LABELS[task.task_type] || task.task_type}
-                        {task.payload?.champion && <span className="text-stone-500 font-normal"> （{task.payload.champion}/{task.payload.role || ''}）</span>}
-                      </span>
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${errSummary.bg}`}>
-                        {errSummary.label}
-                      </span>
-                    </div>
-                    <div className="text-[11px] text-stone-500 font-mono truncate" title={task.error_message || ''}>
-                      {(task.error_message || '').slice(0, 90) || '(エラー詳細なし)'}
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2 shrink-0">
-                    <Link href={TASK_LINKS[task.task_type] || '/admin/dashboard'} className="text-[11px] font-bold text-stone-500 hover:text-stone-900 underline">
-                      詳細へ
-                    </Link>
-                  </div>
-                </div>
-              );
-            })}
-
-            {needsAttention.youtubeErrorCount > 0 && (
-              <Link
-                href="/admin/youtube"
-                className="flex items-center justify-between flex-wrap gap-2 p-2.5 rounded-xl bg-white border border-rose-200 hover:border-rose-300 transition-colors"
-              >
-                <span className="text-xs font-bold text-stone-900 min-w-0 break-words flex-1">YouTube動画キューのエラー・手動対応要 {needsAttention.youtubeErrorCount}件</span>
-                <span className="text-[11px] font-bold text-rose-700 shrink-0">管理画面へ →</span>
-              </Link>
-            )}
-            {needsAttention.dictReviewCount > 0 && (
-              <Link
-                href="/champions?scope=health"
-                className="flex items-center justify-between flex-wrap gap-2 p-2.5 rounded-xl bg-white border border-rose-200 hover:border-rose-300 transition-colors"
-              >
-                <span className="text-xs font-bold text-stone-900 min-w-0 break-words flex-1">辞典鮮度レビュー要対応 {needsAttention.dictReviewCount}件（週次自動検知）</span>
-                <span className="text-[11px] font-bold text-rose-700 shrink-0">データ整備へ →</span>
-              </Link>
-            )}
-          </div>
-        </motion.div>
-      )}
-
-      {/* Main Content */}
-      <motion.main
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3.5"
-      >
-
-        {/* エッジワーカー依存機能 & 起動コントロールカード (2カラム化) */}
-        <motion.div variants={itemVariants} className="md:col-span-2 lg:col-span-2 glass-panel rounded-2xl p-3.5 relative overflow-hidden border border-black/5 bg-gradient-to-r from-amber-50/60 via-white/40 to-orange-50/60 flex flex-col justify-between">
+        {/* 🌟 1. ヘッダー ＆ クイックナビゲーション */}
+        <header className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 pb-4 border-b border-stone-200">
           <div>
-            <div className="flex items-center justify-between gap-2 mb-2">
-              <div className="flex items-center gap-2">
-                <div className={`p-2 rounded-xl border ${systemStatus.worker.active ? 'bg-emerald-100 border-emerald-300 text-emerald-700' : 'bg-rose-100 border-rose-300 text-rose-700'}`}>
-                  <Cpu size={18} className={systemStatus.worker.active ? '' : 'animate-pulse'} />
-                </div>
-                <div>
-                  <h3 className="text-base font-black text-stone-900 flex items-center gap-1.5 flex-wrap">
-                    エッジワーカー
-                    <span className={`text-[10px] font-black px-2 py-0.5 rounded-full border ${
-                      systemStatus.worker.active
-                        ? 'bg-emerald-100 border-emerald-300 text-emerald-700'
-                        : 'bg-rose-100 border-rose-300 text-rose-700 animate-pulse'
-                    }`}>
-                      {systemStatus.worker.active ? '🟢 稼働中' : '🔴 停止中'}
-                    </span>
-                  </h3>
-                </div>
+            <div className="flex items-center gap-2 mb-1">
+              <div className="p-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-700">
+                <Shield size={20} />
               </div>
+              <h1 className="text-2xl md:text-3xl font-black tracking-tight text-stone-900">
+                システム運用ダッシュボード
+              </h1>
+              <span className="text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-stone-100 text-stone-600 border border-stone-200">
+                HQ v5.2
+              </span>
             </div>
-            <p className="text-[11px] text-stone-500 mb-3">
-              YouTube解析等、PC上でのWorker実行が必要なタスク用ステータスです。
+            <p className="text-xs text-stone-500 font-medium">
+              Sovereign OS 全体の稼働状況、大会・勝敗予想メトリクス、AI知識ベースの総合管制センター
             </p>
           </div>
 
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              onClick={() => fetchData(false)}
+              disabled={isRefreshing}
+              className="px-3.5 py-2 rounded-xl bg-white border border-stone-200 hover:bg-stone-50 hover:border-stone-300 text-xs font-bold text-stone-700 transition shadow-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+              title="データを即時更新"
+            >
+              <RefreshCw size={13} className={isRefreshing ? 'animate-spin text-amber-600' : 'text-stone-500'} />
+              <span>{isRefreshing ? '更新中...' : '即時リフレッシュ'}</span>
+            </button>
+
+            <Link
+              href="/ktm-admin"
+              className="px-3.5 py-2 rounded-xl bg-indigo-50 border border-indigo-200 hover:bg-indigo-100 text-xs font-bold text-indigo-700 transition shadow-xs flex items-center gap-1.5"
+            >
+              <Trophy size={13} />
+              <span>KTM大会管理</span>
+            </Link>
+
+            <Link
+              href="/admin/prompts"
+              className="px-3.5 py-2 rounded-xl bg-white border border-stone-200 hover:bg-stone-50 hover:border-stone-300 text-xs font-bold text-stone-700 transition shadow-xs flex items-center gap-1.5"
+            >
+              <Cpu size={13} className="text-amber-600" />
+              <span>AIプロンプト</span>
+            </Link>
+
+            <Link
+              href="/admin/analytics"
+              className="px-3.5 py-2 rounded-xl bg-white border border-stone-200 hover:bg-stone-50 hover:border-stone-300 text-xs font-bold text-stone-700 transition shadow-xs flex items-center gap-1.5"
+            >
+              <TrendingUp size={13} className="text-teal-600" />
+              <span>note分析</span>
+            </Link>
+
+            {lastUpdated && (
+              <span className="text-[11px] text-stone-400 font-mono flex items-center gap-1 ml-1">
+                <Clock size={11} /> {lastUpdated}
+              </span>
+            )}
+          </div>
+        </header>
+
+        {/* 🚨 2. アラート ＆ 要対応セクション（問題がある時のみ目立たせて表示） */}
+        {!systemStatus.worker.active && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="p-4 rounded-2xl bg-amber-500/10 border-2 border-amber-500/30 text-amber-950 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 shadow-xs"
+          >
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-xl bg-amber-500 text-white shadow-xs shrink-0">
+                <Zap size={18} className="animate-pulse" />
+              </div>
+              <div>
+                <span className="font-black text-xs block text-stone-900">
+                  ℹ️ ローカルPythonワーカー（エッジワーカー）は待機中/未起動です
+                </span>
+                <p className="text-[11px] text-stone-600 font-medium mt-0.5">
+                  YouTube動画解析タスクなどPCリソースが必要な処理のみワーカー起動が必要です。通常のポータル利用・大会運営はクラウドで自律稼働しています。
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0 w-full md:w-auto justify-end">
               <a
                 href="sovereign-worker://start"
-                className="px-3.5 py-2 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-white font-black text-[11px] rounded-xl shadow transition-all flex items-center gap-1.5 cursor-pointer"
-                title="ローカルワーカーを起動"
+                className="px-3.5 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-black transition shadow-xs flex items-center gap-1.5"
               >
-                <Zap size={14} /> 🚀 ワーカー起動
+                <Zap size={12} /> 起動
               </a>
               <button
                 onClick={() => {
                   navigator.clipboard.writeText("d:/my_work/.venv/Scripts/python.exe d:/my_work/03_SYSTEMS/v2_CORE/edge_worker_daemon.py");
                   alert("📋 起動コマンドをクリップボードにコピーしました！\nPowerShell等で実行してください。");
                 }}
-                className="px-3 py-2 glass-panel glass-panel-hover text-stone-600 hover:text-stone-900 rounded-xl text-[11px] font-bold transition-all flex items-center gap-1"
+                className="px-3 py-1.5 rounded-xl bg-white border border-stone-300 hover:bg-stone-50 text-stone-700 text-xs font-bold transition shadow-xs"
               >
-                📋 コピー
+                コマンドコピー
               </button>
             </div>
+          </motion.div>
+        )}
 
-            <details className="group border-t border-black/5 pt-2">
-              <summary className="text-[10px] font-bold text-stone-500 hover:text-stone-700 cursor-pointer select-none list-none flex items-center gap-1">
-                <ChevronRight size={12} className="transition-transform group-open:rotate-90" />
-                内訳詳細
-              </summary>
-              <div className="pt-2 text-[10px] text-stone-600 space-y-1">
-                <div>⚡ <strong>PC起動必須:</strong> YouTube動画解析</div>
-                <div>🌐 <strong>クラウド自動:</strong> 辞典更新/プロビルド/5v5/戦績同期</div>
-              </div>
-            </details>
-          </div>
-        </motion.div>
+        {hasNeedsAttention && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-950 space-y-3 shadow-xs"
+          >
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-rose-200/80 pb-2.5">
+              <h3 className="text-xs font-black text-rose-800 flex items-center gap-1.5">
+                <ShieldAlert size={16} className="text-rose-600" />
+                <span>⚠️ 要対応タスク ({needsAttention.failedTasks.length + (needsAttention.youtubeErrorCount > 0 ? 1 : 0) + (needsAttention.dictReviewCount > 0 ? 1 : 0)}件)</span>
+              </h3>
 
-
-
-        {/* 🛠️ システムコクピット (System Cockpit) */}
-        <motion.div variants={itemVariants} className="md:col-span-2 lg:col-span-4 mt-2">
-          <div className="glass-panel rounded-2xl p-3.5 border border-black/5 bg-white/50 space-y-3">
-
-            {/* ヘッダー */}
-            <div className="flex justify-between items-center border-b border-black/5 pb-2.5 flex-wrap gap-2">
-              <div className="flex items-center gap-2">
-                <div className="w-1.5 h-5 bg-gradient-to-b from-orange-400 via-amber-400 to-rose-500 rounded-full"></div>
-                <h3 className="text-base font-black text-stone-900">🛠️ サービス監視コクピット</h3>
-              </div>
-              <span className="text-[11px] font-bold text-stone-500 bg-stone-100 px-2.5 py-1 rounded-lg border border-stone-200">
-                ⚡ タスクキュー状況はヘッダー/サイドバーの「タスク」から画面遷移なしで確認できます
-              </span>
+              {needsAttention.failedTasks.length > 0 && (
+                <button
+                  type="button"
+                  onClick={handleRetryAll}
+                  disabled={isRetryingAll}
+                  className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white font-black text-xs rounded-xl shadow-xs transition flex items-center gap-1.5 cursor-pointer shrink-0"
+                >
+                  <RefreshCw size={12} className={isRetryingAll ? 'animate-spin' : ''} />
+                  <span>⚡ 失敗タスクを一括再実行 ({needsAttention.failedTasks.length}件)</span>
+                </button>
+              )}
             </div>
 
-            {/* 1. 🛰️ サービス監視 (Nodes Sentinel) */}
-            <div className="mt-3 space-y-3">
-              <p className="text-[11px] text-stone-500">
-                ポータルとBotはクラウドで常時稼働しています。動画解析まわりはPC起動時のみ動くため、<strong className="text-stone-700">「未起動」は正常な状態</strong>です。
+            <div className="space-y-2">
+              {needsAttention.failedTasks.map((task) => {
+                const errSummary = summarizeError(task.error_message);
+                return (
+                  <div key={task.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-2.5 rounded-xl bg-white border border-rose-100 shadow-2xs">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                        <span className="text-xs font-black text-stone-900">
+                          {TASK_LABELS[task.task_type] || task.task_type}
+                          {task.payload?.champion && <span className="text-stone-500 font-normal">（{task.payload.champion}/{task.payload.role || ''}）</span>}
+                        </span>
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${errSummary.bg}`}>
+                          {errSummary.label}
+                        </span>
+                      </div>
+                      <div className="text-[10px] text-stone-500 font-mono truncate" title={task.error_message || ''}>
+                        {(task.error_message || '').slice(0, 90) || '(エラー詳細なし)'}
+                      </div>
+                    </div>
+
+                    <Link href={TASK_LINKS[task.task_type] || '/admin/dashboard'} className="text-[11px] font-bold text-rose-700 hover:text-rose-900 underline shrink-0">
+                      詳細へ →
+                    </Link>
+                  </div>
+                );
+              })}
+
+              {needsAttention.youtubeErrorCount > 0 && (
+                <Link
+                  href="/admin/youtube"
+                  className="flex items-center justify-between p-2.5 rounded-xl bg-white border border-rose-200 hover:border-rose-300 transition"
+                >
+                  <span className="text-xs font-bold text-stone-900">YouTube動画キューのエラー・手動対応要 ({needsAttention.youtubeErrorCount}件)</span>
+                  <span className="text-[11px] font-bold text-rose-700">管理画面へ →</span>
+                </Link>
+              )}
+              {needsAttention.dictReviewCount > 0 && (
+                <Link
+                  href="/champions?scope=health"
+                  className="flex items-center justify-between p-2.5 rounded-xl bg-white border border-rose-200 hover:border-rose-300 transition"
+                >
+                  <span className="text-xs font-bold text-stone-900">チャンピオン辞典 鮮度レビュー要対応 ({needsAttention.dictReviewCount}件)</span>
+                  <span className="text-[11px] font-bold text-rose-700">データ整備へ →</span>
+                </Link>
+              )}
+            </div>
+          </motion.div>
+        )}
+
+        {/* 🏆 3. 大会 ＆ 勝敗予想（カジノ）運用状況 (新規統合) */}
+        <section className="space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-1.5 h-4 bg-indigo-600 rounded-full"></div>
+              <h2 className="text-sm font-black text-stone-900 uppercase tracking-wider">
+                🏆 大会 ＆ コミュニティ運用ステータス
+              </h2>
+            </div>
+            <div className="flex items-center gap-2">
+              <Link href="/ktm-admin" className="text-xs font-bold text-indigo-600 hover:underline">
+                大会管理 ➔
+              </Link>
+              <span className="text-stone-300">|</span>
+              <Link href="/casino" className="text-xs font-bold text-amber-600 hover:underline">
+                勝敗予想 ➔
+              </Link>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3.5">
+            {/* 登録プレイヤー */}
+            <div className="p-4 rounded-2xl bg-white border border-stone-200/80 shadow-xs flex flex-col justify-between">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold text-stone-500 flex items-center gap-1.5">
+                  <Users size={14} className="text-indigo-600" />
+                  登録プレイヤー
+                </span>
+                <Link href="/player" className="text-[11px] font-bold text-indigo-600 hover:underline">
+                  名簿 →
+                </Link>
+              </div>
+              <div className="text-2xl font-black text-stone-900">
+                {ktmStats.activePlayers.toLocaleString()} <span className="text-xs font-bold text-stone-400">名</span>
+              </div>
+              <p className="text-[10px] text-stone-400 mt-1">
+                レーティング・ロール設定済みのアクティブメンバー
               </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
-                {[
-                  { id: 'portal', name: 'Next.js Portal', desc: 'ポータル (Vercel)', kind: 'cloud' as const },
-                  { id: 'bot', name: 'Discord Bot (KTM)', desc: 'Bot (Workers)', kind: 'cloud' as const },
-                  { id: 'edge_worker', name: 'Edge Worker', desc: 'タスク実行 (ローカル)', kind: 'worker' as const },
-                  { id: 'youtube_absorber', name: 'YouTube Absorber', desc: '動画解析 (ローカル)', kind: 'local' as const },
-                ].map((service) => {
-                  const status = systemMetrics.services?.[service.id] || {};
-                  const metricsTime = systemMetrics.updated_at ? Number(systemMetrics.updated_at) * 1000 : 0;
-                  const isDaemonOffline = !metricsTime || (Date.now() - metricsTime > 60000);
-                  const isRunning = isDaemonOffline ? false : status.running;
+            </div>
 
-                  let statusText = '停止中';
-                  let statusColor = 'text-stone-500 bg-stone-100 border-stone-200';
-                  let indicatorColor = 'bg-stone-400';
+            {/* 大会試合数 */}
+            <div className="p-4 rounded-2xl bg-white border border-stone-200/80 shadow-xs flex flex-col justify-between">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold text-stone-500 flex items-center gap-1.5">
+                  <Trophy size={14} className="text-amber-600" />
+                  カスタム大会 試合数
+                </span>
+                <Link href="/history" className="text-[11px] font-bold text-amber-600 hover:underline">
+                  履歴 →
+                </Link>
+              </div>
+              <div className="flex items-baseline gap-2">
+                <div className="text-2xl font-black text-stone-900">
+                  {ktmStats.totalMatches.toLocaleString()} <span className="text-xs font-bold text-stone-400">試合</span>
+                </div>
+                {ktmStats.recentMatches > 0 && (
+                  <span className="text-[11px] font-black text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                    直近7日: +{ktmStats.recentMatches}
+                  </span>
+                )}
+              </div>
+              <p className="text-[10px] text-stone-400 mt-1">
+                {ktmStats.latestMatchDate ? `最終開催: ${new Date(ktmStats.latestMatchDate).toLocaleDateString('ja-JP')}` : '開催履歴なし'}
+              </p>
+            </div>
 
-                  if (service.kind === 'cloud') {
-                    statusText = '稼働中';
-                    statusColor = 'text-emerald-700 bg-emerald-100 border-emerald-200';
-                    indicatorColor = 'bg-emerald-400';
-                  } else if (service.kind === 'worker') {
-                    if (systemStatus.worker.active) {
-                      statusText = '稼働中';
-                      statusColor = 'text-amber-700 bg-amber-100 border-amber-200';
-                      indicatorColor = 'bg-amber-400 animate-pulse';
-                    } else {
-                      statusText = '未起動';
-                      statusColor = 'text-stone-500 bg-black/[0.03] border-black/10';
-                      indicatorColor = 'bg-stone-400';
-                    }
-                  } else if (service.id === 'youtube_absorber' && systemStatus.worker.active) {
-                    statusText = isRunning ? '解析中' : '待機中 (稼働中)';
-                    statusColor = 'text-emerald-700 bg-emerald-100 border-emerald-200';
-                    indicatorColor = 'bg-emerald-400 animate-pulse';
-                  } else if (isRunning) {
-                    statusText = '稼働中';
-                    statusColor = 'text-amber-700 bg-amber-100 border-amber-200';
-                    indicatorColor = 'bg-amber-400 animate-pulse';
-                  } else {
-                    statusText = '未起動';
-                    statusColor = 'text-stone-500 bg-black/[0.03] border-black/10';
-                    indicatorColor = 'bg-stone-400';
-                  }
+            {/* 総流通コイン */}
+            <div className="p-4 rounded-2xl bg-white border border-stone-200/80 shadow-xs flex flex-col justify-between">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold text-stone-500 flex items-center gap-1.5">
+                  <Coins size={14} className="text-amber-500" />
+                  総流通コイン量
+                </span>
+                <Link href="/leaderboard" className="text-[11px] font-bold text-amber-600 hover:underline">
+                  順位表 →
+                </Link>
+              </div>
+              <div className="text-2xl font-black text-amber-700">
+                🪙 {casinoStats.totalCirculatingCoins.toLocaleString()} <span className="text-xs font-bold text-stone-400">pt</span>
+              </div>
+              <p className="text-[10px] text-stone-400 mt-1">
+                コミュニティ全体のプレイヤー所持コイン総額
+              </p>
+            </div>
+
+            {/* 受付中ベット */}
+            <div className="p-4 rounded-2xl bg-white border border-stone-200/80 shadow-xs flex flex-col justify-between">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold text-stone-500 flex items-center gap-1.5">
+                  <Flame size={14} className="text-rose-500" />
+                  勝敗予想（未精算）
+                </span>
+                <Link href="/casino" className="text-[11px] font-bold text-rose-600 hover:underline">
+                  カジノ →
+                </Link>
+              </div>
+              <div>
+                <div className="text-2xl font-black text-stone-900">
+                  {casinoStats.pendingBetTotalAmount > 0 ? (
+                    <>
+                      {casinoStats.pendingBetTotalAmount.toLocaleString()} <span className="text-xs font-bold text-stone-400">pt ({casinoStats.pendingBetCount}票)</span>
+                    </>
+                  ) : (
+                    <span className="text-base text-stone-400 font-bold">待機中 (受付なし)</span>
+                  )}
+                </div>
+                {totalBetAmount > 0 && (
+                  <div className="mt-2 space-y-1">
+                    <div className="h-2 w-full bg-stone-100 rounded-full overflow-hidden flex">
+                      <div style={{ width: `${bluePercent}%` }} className="bg-sky-500 h-full"></div>
+                      <div style={{ width: `${redPercent}%` }} className="bg-rose-500 h-full"></div>
+                    </div>
+                    <div className="flex justify-between text-[9px] font-bold text-stone-500">
+                      <span className="text-sky-600">青 {bluePercent}% ({casinoStats.blueCount}票)</span>
+                      <span className="text-rose-600">赤 {redPercent}% ({casinoStats.redCount}票)</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+              <p className="text-[10px] text-stone-400 mt-1">
+                次回カスタム試合のリアルタイム投票状況
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* 🛰️ 4. サービス稼働ノード ＆ クラウド自動実行 (インフラコクピット) */}
+        <section className="space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-1.5 h-4 bg-emerald-500 rounded-full"></div>
+              <h2 className="text-sm font-black text-stone-900 uppercase tracking-wider">
+                🛰️ システムインフラ ＆ 自動ワークフロー
+              </h2>
+            </div>
+            <span className="text-[11px] text-stone-400 font-medium">常時自律監視中</span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3.5">
+            {[
+              { id: 'portal', name: 'Webポータル', desc: 'Vercel / Next.js 15', kind: 'cloud' as const },
+              { id: 'bot', name: 'Discord Bot (KTM)', desc: 'Cloudflare Workers', kind: 'cloud' as const },
+              { id: 'edge_worker', name: 'エッジワーカー', desc: 'ローカルPython実行エンジン', kind: 'worker' as const },
+              { id: 'youtube_absorber', name: 'YouTube解析', desc: '動画知識吸収ノード', kind: 'local' as const },
+            ].map((service) => {
+              let statusText = '稼働中';
+              let statusColor = 'text-emerald-700 bg-emerald-50 border-emerald-200';
+              let indicatorColor = 'bg-emerald-500';
+
+              if (service.kind === 'worker') {
+                if (systemStatus.worker.active) {
+                  statusText = '稼働中';
+                  statusColor = 'text-emerald-700 bg-emerald-50 border-emerald-200';
+                  indicatorColor = 'bg-emerald-500';
+                } else {
+                  statusText = '待機中 (必要時起動)';
+                  statusColor = 'text-stone-600 bg-stone-100 border-stone-200';
+                  indicatorColor = 'bg-stone-400';
+                }
+              } else if (service.kind === 'local') {
+                if (systemStatus.worker.active) {
+                  statusText = '待機中 (即時実行可)';
+                  statusColor = 'text-emerald-700 bg-emerald-50 border-emerald-200';
+                  indicatorColor = 'bg-emerald-500 animate-pulse';
+                } else {
+                  statusText = '待機中';
+                  statusColor = 'text-stone-600 bg-stone-100 border-stone-200';
+                  indicatorColor = 'bg-stone-400';
+                }
+              }
+
+              return (
+                <div key={service.id} className="p-4 rounded-2xl bg-white border border-stone-200/80 shadow-xs flex flex-col justify-between">
+                  <div>
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-xs font-black text-stone-900">{service.name}</span>
+                      <span className={`w-2.5 h-2.5 rounded-full ${indicatorColor}`}></span>
+                    </div>
+                    <p className="text-[10px] text-stone-400 mb-3">{service.desc}</p>
+                  </div>
+                  <div className="flex justify-between items-center pt-2 border-t border-stone-100">
+                    <span className="text-[10px] font-bold text-stone-400">{service.kind === 'cloud' ? '常時稼働' : 'オンデマンド'}</span>
+                    <span className={`px-2 py-0.5 rounded-full border text-[10px] font-bold ${statusColor}`}>{statusText}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* GitHub Actions クラウド定期ワーカー実行ログ */}
+          {systemMetrics.cloud_workers && Object.keys(systemMetrics.cloud_workers).length > 0 && (
+            <div className="p-4 rounded-2xl bg-white border border-stone-200/80 shadow-xs space-y-3">
+              <h3 className="text-xs font-black text-stone-800 flex items-center gap-1.5">
+                <span>☁️</span> GitHub Actions 定期自動実行ログ
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {Object.entries(systemMetrics.cloud_workers).map(([workerKey, log]: [string, any]) => {
+                  const isOk = log.status === 'ok';
+                  const isWarn = log.status === 'warn';
+                  const updatedAtMs = log.updated_at ? new Date(log.updated_at).getTime() : NaN;
+                  const ageHours = Number.isFinite(updatedAtMs) ? (Date.now() - updatedAtMs) / (1000 * 60 * 60) : Infinity;
+                  const isStale = ageHours > 24;
+
+                  const statusBg = isStale ? 'border-stone-200 bg-stone-50/50' : isOk ? 'border-emerald-200 bg-emerald-50/40' : isWarn ? 'border-amber-200 bg-amber-50/40' : 'border-rose-200 bg-rose-50/40';
+                  const badgeColor = isStale ? 'text-stone-600 bg-stone-100 border-stone-300' : isOk ? 'text-emerald-700 bg-emerald-100 border-emerald-200' : isWarn ? 'text-amber-700 bg-amber-100 border-amber-200' : 'text-rose-700 bg-rose-100 border-rose-200';
+                  const lastResultLabel = isOk ? '正常完了' : isWarn ? '一部警告' : 'エラー';
+                  const ageLabel = Number.isFinite(ageHours) ? (ageHours < 24 ? `${Math.max(1, Math.round(ageHours))}時間前` : `${Math.round(ageHours / 24)}日前`) : '';
+                  const updatedTime = log.updated_at ? new Date(log.updated_at).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }) : '時刻不明';
 
                   return (
-                    <div key={service.id} className="bg-black/[0.03] p-3 rounded-xl border border-black/5 flex flex-col justify-between hover:border-black/10 transition-colors">
-                      <div>
-                        <div className="flex justify-between items-center mb-1">
-                          <span className="text-xs font-bold text-stone-800">{service.name}</span>
-                          <span className={`w-2 h-2 rounded-full ${indicatorColor}`}></span>
-                        </div>
-                        <p className="text-[9px] text-stone-500 mb-2">{service.desc}</p>
+                    <div key={workerKey} className={`p-3.5 rounded-xl border text-xs ${statusBg}`}>
+                      <div className="flex justify-between items-center mb-1.5">
+                        <span className="font-black text-stone-900 uppercase tracking-tight">{workerKey}</span>
+                        <span className={`px-2 py-0.5 rounded-full border text-[9px] font-bold ${badgeColor}`}>
+                          {lastResultLabel}
+                        </span>
                       </div>
-                      <div className="flex justify-between items-center mt-auto">
-                        <span className="text-[9px] font-mono text-stone-400">{service.kind === 'cloud' ? '常時' : '必要時'}</span>
-                        <span className={`px-2 py-0.5 rounded-full border text-[9px] font-bold ${statusColor}`}>{statusText}</span>
+                      <p className="text-[11px] text-stone-700 mb-2 font-medium">{log.summary}</p>
+                      {log.details && log.details.length > 0 && (
+                        <div className="space-y-0.5 mb-2 bg-black/[0.03] p-2 rounded-lg text-[10px] text-stone-600 font-mono">
+                          {log.details.slice(0, 2).map((detail: string, i: number) => (
+                            <div key={i} className="truncate">• {detail}</div>
+                          ))}
+                        </div>
+                      )}
+                      <div className="text-[9px] text-stone-400 text-right">
+                        最終実行: {updatedTime} {ageLabel && `(${ageLabel})`}
                       </div>
                     </div>
                   );
                 })}
               </div>
-
-              {/* ☁️ クラウドワーカー (GitHub Actions) の最終実行ログ */}
-              {systemMetrics.cloud_workers && Object.keys(systemMetrics.cloud_workers).length > 0 && (
-                <div className="pt-6 border-t border-black/5">
-                  <h4 className="text-xs font-bold text-stone-700 mb-3 flex items-center gap-2">
-                    <span>☁️</span> GitHub Actions ワーカー実行ステータス
-                  </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {Object.entries(systemMetrics.cloud_workers).map(([workerKey, log]: [string, any]) => {
-                      const isOk = log.status === 'ok';
-                      const isWarn = log.status === 'warn';
-
-                      const updatedAtMs = log.updated_at ? new Date(log.updated_at).getTime() : NaN;
-                      const ageHours = Number.isFinite(updatedAtMs) ? (Date.now() - updatedAtMs) / (1000 * 60 * 60) : Infinity;
-                      const isStale = ageHours > 24;
-
-                      const statusBg = isStale ? 'border-stone-200 bg-stone-50' : isOk ? 'border-emerald-200 bg-emerald-50' : isWarn ? 'border-amber-200 bg-amber-50' : 'border-rose-200 bg-rose-50';
-                      const badgeColor = isStale ? 'text-stone-600 bg-stone-100 border-stone-300' : isOk ? 'text-emerald-700 bg-emerald-100 border-emerald-200' : isWarn ? 'text-amber-700 bg-amber-100 border-amber-200' : 'text-rose-700 bg-rose-100 border-rose-200';
-                      const lastResultLabel = isOk ? '正常完了' : isWarn ? '一部失敗/警告' : 'エラー';
-                      const ageLabel = Number.isFinite(ageHours)
-                        ? ageHours < 24 ? `${Math.max(1, Math.round(ageHours))}時間前` : `${Math.round(ageHours / 24)}日前`
-                        : '';
-                      const badgeLabel = isStale ? `古い情報(前回:${lastResultLabel})` : lastResultLabel;
-
-                      const updatedTime = log.updated_at ? new Date(log.updated_at).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }) : '時刻不明';
-
-                      return (
-                        <div key={workerKey} className={`p-4 rounded-2xl border text-xs bg-white/60 ${statusBg}`}>
-                          <div className="flex justify-between items-center mb-2">
-                            <span className="font-bold text-stone-900 uppercase">{workerKey}</span>
-                            <span className={`px-2 py-0.5 rounded-full border text-[9px] font-bold ${badgeColor}`}>
-                              {badgeLabel}
-                            </span>
-                          </div>
-                          <p className="text-[11px] text-stone-700 mb-2 font-medium">{log.summary}</p>
-                          {log.details && log.details.length > 0 && (
-                            <div className="space-y-1 mb-2 bg-black/[0.04] p-2 rounded-lg text-[10px] text-stone-600 font-mono">
-                              {log.details.slice(0, 3).map((detail: string, i: number) => (
-                                <div key={i} className="truncate">• {detail}</div>
-                              ))}
-                            </div>
-                          )}
-                          <div className="text-[9px] text-stone-500 text-right">最終実行: {updatedTime}{ageLabel && ` (${ageLabel})`}</div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
             </div>
+          )}
+        </section>
+
+        {/* 📚 5. AI知識ベース ＆ チャンピオン辞典ヘルス */}
+        <section className="space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-1.5 h-4 bg-amber-500 rounded-full"></div>
+              <h2 className="text-sm font-black text-stone-900 uppercase tracking-wider">
+                📚 AI知識ベース ＆ 攻略辞典ヘルス
+              </h2>
+            </div>
+            <Link href="/champions?tab=knowledge" className="text-xs font-bold text-amber-700 hover:underline">
+              データ整備へ ➔
+            </Link>
           </div>
-        </motion.div>
 
-        <motion.div variants={itemVariants} className="md:col-span-2 lg:col-span-4 mt-2 grid grid-cols-1 md:grid-cols-2 gap-3.5">
-
-          {/* 知識ベースの整備状況 */}
-          <div className="glass-panel rounded-2xl p-3.5 border border-black/5 bg-gradient-to-br from-emerald-50/70 to-transparent lg:col-span-2">
-            <div className="flex justify-between items-center mb-3 flex-wrap gap-2">
-              <h3 className="text-base font-black text-stone-900 flex items-center gap-1.5">
-                <div className="w-1.5 h-5 bg-emerald-500 rounded-full"></div>
-                知識ベースの整備状況
-              </h3>
-              <Link href="/champions?tab=knowledge" className="text-xs font-bold text-emerald-700 hover:text-emerald-800 hover:underline">🛠️ データ整備へ →</Link>
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-              {[
-                { label: 'チャンピオン辞典', value: kbStats.facts, href: '/champions', color: 'text-amber-700' },
-                { label: '未整理の記事', value: kbStats.library, href: '/champions?tab=knowledge', color: 'text-orange-700' },
-                { label: 'レーン別ガイド', value: kbStats.laneGuides, href: '/lane-guides', color: 'text-amber-700', suffix: '/6' },
-                { label: '対面メモ', value: kbStats.memos, href: '/coach?tab=matchup-memo', color: 'text-amber-700' },
-                { label: '対面カルテ', value: kbStats.matchupLog, href: '/coach?tab=matchup-memo', color: 'text-rose-700' },
-              ].map((s) => (
-                <Link key={s.label} href={s.href}
-                  className="bg-black/[0.03] rounded-xl p-2.5 border border-black/5 hover:bg-black/5 transition-colors text-center">
-                  <div className={`text-xl font-black ${s.color}`}>
-                    {s.value === null ? '—' : s.value}
-                    {s.suffix && <span className="text-xs text-stone-400">{s.suffix}</span>}
-                  </div>
-                  <div className="text-[10px] text-stone-500 font-bold mt-0.5">{s.label}</div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+            {/* 知識ベース統計 */}
+            <div className="p-4 rounded-2xl bg-white border border-stone-200/80 shadow-xs space-y-3">
+              <div className="flex justify-between items-center">
+                <h3 className="text-xs font-black text-stone-900 flex items-center gap-1.5">
+                  <Database size={14} className="text-emerald-600" />
+                  知識ベース登録資産
+                </h3>
+                <Link href="/champions" className="text-[11px] font-bold text-emerald-700 hover:underline">
+                  辞典を見る →
                 </Link>
-              ))}
+              </div>
+
+              <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+                {[
+                  { label: 'チャンピオン辞典', value: kbStats.facts, href: '/champions', color: 'text-amber-700' },
+                  { label: '未整理記事', value: kbStats.library, href: '/champions?tab=knowledge', color: 'text-orange-700' },
+                  { label: 'レーンガイド', value: kbStats.laneGuides, href: '/lane-guides', color: 'text-indigo-700', suffix: '/6' },
+                  { label: '対面メモ', value: kbStats.memos, href: '/coach?tab=matchup-memo', color: 'text-emerald-700' },
+                  { label: '対面カルテ', value: kbStats.matchupLog, href: '/coach?tab=matchup-memo', color: 'text-rose-700' },
+                ].map((s) => (
+                  <Link
+                    key={s.label}
+                    href={s.href}
+                    className="p-2.5 rounded-xl bg-stone-50 border border-stone-100 hover:bg-stone-100/80 transition text-center"
+                  >
+                    <div className={`text-lg font-black ${s.color}`}>
+                      {s.value === null ? '—' : s.value}
+                      {s.suffix && <span className="text-[10px] text-stone-400 font-normal">{s.suffix}</span>}
+                    </div>
+                    <div className="text-[9px] text-stone-500 font-bold mt-0.5 truncate">{s.label}</div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+
+            {/* 辞典ヘルス */}
+            <div className="p-4 rounded-2xl bg-white border border-stone-200/80 shadow-xs space-y-3">
+              <div className="flex justify-between items-center">
+                <h3 className="text-xs font-black text-stone-900 flex items-center gap-1.5">
+                  <Sparkles size={14} className="text-amber-500" />
+                  攻略辞典 鮮度・品質ヘルス
+                </h3>
+                <Link href="/champions?scope=health" className="text-[11px] font-bold text-rose-700 hover:underline">
+                  詳細ダッシュボード →
+                </Link>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2">
+                <Link
+                  href="/champions?scope=health"
+                  className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 hover:bg-emerald-100/70 transition text-center"
+                >
+                  <div className="text-lg font-black text-emerald-800">{dictHealthSummary === null ? '—' : dictHealthSummary.verified}</div>
+                  <div className="text-[10px] text-emerald-700 font-bold mt-0.5">🟢 確認済み</div>
+                </Link>
+                <Link
+                  href="/champions?scope=health"
+                  className="p-3 rounded-xl bg-amber-50 border border-amber-200 hover:bg-amber-100/70 transition text-center"
+                >
+                  <div className="text-lg font-black text-amber-800">{dictHealthSummary === null ? '—' : dictHealthSummary.aiGenerated}</div>
+                  <div className="text-[10px] text-amber-700 font-bold mt-0.5">🟡 AI生成</div>
+                </Link>
+                <Link
+                  href="/champions?scope=health"
+                  className="p-3 rounded-xl bg-rose-50 border border-rose-200 hover:bg-rose-100/70 transition text-center"
+                >
+                  <div className="text-lg font-black text-rose-800">{dictHealthSummary === null ? '—' : dictHealthSummary.stale}</div>
+                  <div className="text-[10px] text-rose-700 font-bold mt-0.5">🔴 要対応</div>
+                </Link>
+              </div>
             </div>
           </div>
+        </section>
 
-          {/* 辞典ヘルス */}
-          <div className="glass-panel rounded-2xl p-3.5 border border-black/5 bg-gradient-to-br from-rose-50/70 to-transparent lg:col-span-2">
-            <div className="flex justify-between items-center mb-3 flex-wrap gap-2">
-              <h3 className="text-base font-black text-stone-900 flex items-center gap-1.5">
-                <div className="w-1.5 h-5 bg-rose-500 rounded-full"></div>
-                辞典ヘルス
-              </h3>
-              <Link href="/champions?scope=health" className="text-xs font-bold text-rose-700 hover:text-rose-800 hover:underline">📊 ヘルスダッシュボードへ →</Link>
-            </div>
-            <div className="grid grid-cols-3 gap-2">
-              <Link href="/champions?scope=health" className="bg-emerald-100/60 rounded-xl p-2.5 border border-emerald-200 hover:bg-emerald-100 transition-colors text-center">
-                <div className="text-xl font-black text-emerald-800">{dictHealthSummary === null ? '—' : dictHealthSummary.verified}</div>
-                <div className="text-[10px] text-emerald-700 font-bold mt-0.5">🟢 確認済み</div>
-              </Link>
-              <Link href="/champions?scope=health" className="bg-amber-100/60 rounded-xl p-2.5 border border-amber-200 hover:bg-amber-100 transition-colors text-center">
-                <div className="text-xl font-black text-amber-800">{dictHealthSummary === null ? '—' : dictHealthSummary.aiGenerated}</div>
-                <div className="text-[10px] text-amber-700 font-bold mt-0.5">🟡 AI生成</div>
-              </Link>
-              <Link href="/champions?scope=health" className="bg-red-100/60 rounded-xl p-2.5 border border-red-200 hover:bg-red-100 transition-colors text-center">
-                <div className="text-xl font-black text-red-800">{dictHealthSummary === null ? '—' : dictHealthSummary.stale}</div>
-                <div className="text-[10px] text-red-700 font-bold mt-0.5">🔴 要対応</div>
-              </Link>
-            </div>
-          </div>
-        </motion.div>
-
-      </motion.main>
-
-    </div>
+      </div>
     </div>
   );
 }
