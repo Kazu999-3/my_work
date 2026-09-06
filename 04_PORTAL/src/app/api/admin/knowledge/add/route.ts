@@ -122,112 +122,200 @@ async function analyzeXPostImagesWithGemini(photos: any[], videos: any[], tweetT
 }
 
 // ============================================================
-// URLからタイトルと本文（多重フォールバック対応）をスクレイピング
 // ============================================================
-async function extractUrlContent(url: string): Promise<{ title: string; textContent: string; authorKey: string | null }> {
+// 単一のX投稿またはスレッド(ツリー)を全自動抽出・全メディア回収
+// ============================================================
+async function extractXPostOrThread(url: string, tweetId: string): Promise<{ title: string; textContent: string; authorKey: string | null }> {
+  let tweets: { text: string; authorName: string; authorScreenName: string; photos: any[]; videos: any[] }[] = [];
+  let author = 'X(Twitter) ユーザー';
+  let authorScreenName = '';
+
+  // 1. FxTwitter API v2 thread エンドポイント (スレッド/ツリーを一括取得)
+  try {
+    const threadRes = await fetch(`https://api.fxtwitter.com/2/thread/${tweetId}`, {
+      headers: { 'User-Agent': 'Mozilla/5.0' },
+      signal: AbortSignal.timeout(9000),
+    });
+    if (threadRes.ok) {
+      const threadData = await threadRes.json();
+      const rawTweets = Array.isArray(threadData.tweets) ? threadData.tweets : (threadData.tweet ? [threadData.tweet] : []);
+      if (rawTweets.length > 0) {
+        rawTweets.forEach((tw: any) => {
+          const tText = tw.text || '';
+          const sName = tw.author?.screen_name || '';
+          const aName = tw.author?.name || '';
+          if (sName) authorScreenName = sName;
+          if (aName) author = `${aName} (@${sName})`;
+
+          const tPhotos: any[] = [];
+          const tVideos: any[] = [];
+          if (tw.media?.photos) tPhotos.push(...tw.media.photos);
+          if (tw.media?.videos) tVideos.push(...tw.media.videos);
+
+          tweets.push({
+            text: tText,
+            authorName: aName,
+            authorScreenName: sName,
+            photos: tPhotos,
+            videos: tVideos,
+          });
+        });
+      }
+    }
+  } catch (e: any) {
+    console.warn(`fxtwitter thread API error: ${e.message}`);
+  }
+
+  // 2. VxTwitter API フォールバック (単一ポスト用)
+  if (tweets.length === 0) {
+    try {
+      const vxRes = await fetch(`https://api.vxtwitter.com/Twitter/status/${tweetId}`, {
+        headers: { 'User-Agent': 'Mozilla/5.0' },
+        signal: AbortSignal.timeout(8000)
+      });
+      if (vxRes.ok) {
+        const vxData = await vxRes.json();
+        const tweetText = vxData.text || '';
+        authorScreenName = vxData.user_screen_name || '';
+        author = `${vxData.user_name || 'Unknown'} (@${authorScreenName})`;
+        const photos: any[] = vxData.media_urls || [];
+        const videos: any[] = [];
+        if (vxData.media_extended) {
+          vxData.media_extended.forEach((m: any) => {
+            if (m.type === 'video' || m.type === 'gif') {
+              videos.push({ url: m.url, thumbnail_url: m.thumbnail_url });
+            } else {
+              photos.push({ url: m.url });
+            }
+          });
+        }
+        if (tweetText || photos.length > 0 || videos.length > 0) {
+          tweets.push({
+            text: tweetText,
+            authorName: vxData.user_name || '',
+            authorScreenName,
+            photos,
+            videos,
+          });
+        }
+      }
+    } catch (e: any) {
+      console.warn(`vxtwitter API error: ${e.message}`);
+    }
+  }
+
+  // 3. FXTwitter 単一ポスト API フォールバック
+  if (tweets.length === 0) {
+    try {
+      const fxRes = await fetch(`https://api.fxtwitter.com/status/${tweetId}`, {
+        headers: { 'User-Agent': 'Mozilla/5.0' },
+        signal: AbortSignal.timeout(8000)
+      });
+      if (fxRes.ok) {
+        const fxData = await fxRes.json();
+        const tweet = fxData.tweet;
+        if (tweet) {
+          const tweetText = tweet.text || '';
+          authorScreenName = tweet.author?.screen_name || '';
+          author = `${tweet.author?.name || 'Unknown'} (@${authorScreenName})`;
+          tweets.push({
+            text: tweetText,
+            authorName: tweet.author?.name || '',
+            authorScreenName,
+            photos: tweet.media?.photos || [],
+            videos: tweet.media?.videos || [],
+          });
+        }
+      }
+    } catch (e: any) {
+      console.warn(`fxtwitter single API error: ${e.message}`);
+    }
+  }
+
+  // 4. FixUpX メタタグフォールバック
+  if (tweets.length === 0) {
+    try {
+      const fixRes = await fetch(`https://fixupx.com/i/status/${tweetId}`, {
+        headers: { 'User-Agent': 'facebookexternalhit/1.1' },
+        signal: AbortSignal.timeout(8000)
+      });
+      if (fixRes.ok) {
+        const html = await fixRes.text();
+        const descMatch = html.match(/property="og:description" content="([^"]+)"/i);
+        const tweetText = descMatch ? descMatch[1] : '';
+        const photos: any[] = [];
+        const imgMatches = [...html.matchAll(/property="og:image" content="([^"]+)"/gi)];
+        imgMatches.forEach(m => photos.push({ url: m[1] }));
+        if (tweetText || photos.length > 0) {
+          tweets.push({
+            text: tweetText,
+            authorName: 'X(Twitter) ユーザー',
+            authorScreenName: '',
+            photos,
+            videos: [],
+          });
+        }
+      }
+    } catch (e: any) {
+      console.warn(`fixupx fallback error: ${e.message}`);
+    }
+  }
+
+  // 全ツイートの全メディアとテキストを統合
+  const allPhotos: any[] = [];
+  const allVideos: any[] = [];
+  tweets.forEach((tw) => {
+    if (tw.photos) allPhotos.push(...tw.photos);
+    if (tw.videos) allVideos.push(...tw.videos);
+  });
+
+  // スレッド全体のテキスト結合
+  let combinedTweetBody = '';
+  if (tweets.length === 1) {
+    combinedTweetBody = tweets[0].text;
+  } else if (tweets.length > 1) {
+    combinedTweetBody = `【🧵 スレッド・ツリー投稿 (全 ${tweets.length} 件)】\n\n` +
+      tweets.map((tw, idx) => `--- 📝 【ポスト ${idx + 1}/${tweets.length}】 ---\n${tw.text}`).join('\n\n');
+  } else {
+    combinedTweetBody = '投稿本文の取得完了';
+  }
+
+  // 動画および画像のAI視覚・動画解析
+  let aiVisualAnalysis = await analyzeXPostImagesWithGemini(allPhotos, allVideos, combinedTweetBody || url);
+
+  let mediaDesc = [];
+  if (allPhotos.length > 0) mediaDesc.push(`添付画像 ${allPhotos.length} 枚`);
+  if (allVideos.length > 0) mediaDesc.push(`添付動画 ${allVideos.length} 本`);
+  const mediaString = mediaDesc.length > 0 ? ` [メディア: ${mediaDesc.join(', ')}]` : '';
+  const threadHeader = tweets.length > 1 ? ` (🧵 スレッド全${tweets.length}件一括取り込み)` : '';
+
+  const finalContent = `【X (Twitter) 完全網羅マルチモーダルAI解析ナレッジ${threadHeader}】\n` +
+    `投稿者: ${author}\n` +
+    `投稿リンク: ${url}\n` +
+    (tweets.length > 1 ? `スレッド構成: 全 ${tweets.length} ポスト${mediaString}\n\n` : `投稿本文: ${combinedTweetBody}${mediaString}\n\n`) +
+    (tweets.length > 1 ? `${combinedTweetBody}\n\n` : '') +
+    (aiVisualAnalysis ? `【AI動画＆全添付メディア視覚解読詳細（無省略）】\n${aiVisualAnalysis}` : `※添付画像/動画メディアと投稿本文を統合した高密度AIナレッジです。`);
+
+  const firstText = tweets[0]?.text || url;
+  return {
+    title: `X解析 (${author})${tweets.length > 1 ? ` [🧵全${tweets.length}件]` : ''}: ${firstText.slice(0, 28)}...`,
+    textContent: finalContent,
+    authorKey: authorScreenName ? `x:${authorScreenName}` : null
+  };
+}
+
+// ============================================================
+// 単一URLのスクレイピング（Web記事 / X投稿・ツリー / YouTube）
+// ============================================================
+async function extractSingleUrlContent(url: string): Promise<{ title: string; textContent: string; authorKey: string | null }> {
   try {
     const isXPost = /x\.com|twitter\.com/i.test(url) && /status\/\d+/i.test(url);
 
     if (isXPost) {
       const match = url.match(/status\/(\d+)/i);
       const tweetId = match ? match[1] : '';
-
       if (tweetId) {
-        let tweetText = '';
-        let author = 'X(Twitter) ユーザー';
-        let authorScreenName = '';
-        let photos: any[] = [];
-        let videos: any[] = [];
-
-        // 1. VxTwitter API (最も安定 200 OK) を試行
-        try {
-          const vxRes = await fetch(`https://api.vxtwitter.com/Twitter/status/${tweetId}`, {
-            headers: { 'User-Agent': 'Mozilla/5.0' },
-            signal: AbortSignal.timeout(8000)
-          });
-          if (vxRes.ok) {
-            const vxData = await vxRes.json();
-            tweetText = vxData.text || '';
-            authorScreenName = vxData.user_screen_name || '';
-            author = `${vxData.user_name || 'Unknown'} (@${authorScreenName})`;
-            if (vxData.media_urls) {
-              photos = vxData.media_urls;
-            }
-            if (vxData.media_extended) {
-              vxData.media_extended.forEach((m: any) => {
-                if (m.type === 'video' || m.type === 'gif') {
-                  videos.push({ url: m.url, thumbnail_url: m.thumbnail_url });
-                } else {
-                  photos.push({ url: m.url });
-                }
-              });
-            }
-          }
-        } catch (e: any) {
-          console.warn(`vxtwitter API error: ${e.message}`);
-        }
-
-        // 2. FXTwitter API フォールバック
-        if (!tweetText) {
-          try {
-            const fxRes = await fetch(`https://api.fxtwitter.com/status/${tweetId}`, {
-              headers: { 'User-Agent': 'Mozilla/5.0' },
-              signal: AbortSignal.timeout(8000)
-            });
-            if (fxRes.ok) {
-              const fxData = await fxRes.json();
-              const tweet = fxData.tweet;
-              if (tweet) {
-                tweetText = tweet.text || '';
-                authorScreenName = tweet.author?.screen_name || '';
-                author = `${tweet.author?.name || 'Unknown'} (@${authorScreenName})`;
-                photos = tweet.media?.photos || [];
-                videos = tweet.media?.videos || [];
-              }
-            }
-          } catch (e: any) {
-            console.warn(`fxtwitter API error: ${e.message}`);
-          }
-        }
-
-        // 3. FixUpX メタタグフォールバック
-        if (!tweetText) {
-          try {
-            const fixRes = await fetch(`https://fixupx.com/i/status/${tweetId}`, {
-              headers: { 'User-Agent': 'facebookexternalhit/1.1' },
-              signal: AbortSignal.timeout(8000)
-            });
-            if (fixRes.ok) {
-              const html = await fixRes.text();
-              const descMatch = html.match(/property="og:description" content="([^"]+)"/i);
-              if (descMatch) tweetText = descMatch[1];
-              const imgMatches = [...html.matchAll(/property="og:image" content="([^"]+)"/gi)];
-              imgMatches.forEach(m => photos.push({ url: m[1] }));
-            }
-          } catch (e: any) {
-            console.warn(`fixupx fallback error: ${e.message}`);
-          }
-        }
-
-        // 動画および画像のAI視覚・動画解析
-        let aiVisualAnalysis = await analyzeXPostImagesWithGemini(photos, videos, tweetText || url);
-
-        let mediaDesc = [];
-        if (photos.length > 0) mediaDesc.push(`添付画像 ${photos.length} 枚`);
-        if (videos.length > 0) mediaDesc.push(`添付動画 ${videos.length} 本`);
-        const mediaString = mediaDesc.length > 0 ? ` [メディア: ${mediaDesc.join(', ')}]` : '';
-
-        const finalContent = `【X (Twitter) 完全網羅マルチモーダルAI解析ナレッジ】\n` +
-          `投稿者: ${author}\n` +
-          `投稿本文: ${tweetText || '投稿本文の取得完了'}${mediaString}\n` +
-          `投稿リンク: ${url}\n\n` +
-          (aiVisualAnalysis ? `【AI動画＆全添付メディア視覚解読詳細（無省略）】\n${aiVisualAnalysis}` : `※添付画像/動画メディアと投稿本文を統合した高密度AIナレッジです。`);
-
-        return {
-          title: `X解析 (${author}): ${(tweetText || url).slice(0, 30)}...`,
-          textContent: finalContent,
-          authorKey: authorScreenName ? `x:${authorScreenName}` : null
-        };
+        return await extractXPostOrThread(url, tweetId);
       }
     }
 
@@ -277,6 +365,31 @@ async function extractUrlContent(url: string): Promise<{ title: string; textCont
     console.error(`URLスクレイピングエラー: ${e.message}`);
     return { title: 'Webコンテンツ', textContent: `URL: ${url} (自動抽出結果)`, authorKey: null };
   }
+}
+
+// ============================================================
+// 複数URL（改行・空白区切り）または単一URLの統合スクレイピング
+// ============================================================
+async function extractUrlContent(rawInput: string): Promise<{ title: string; textContent: string; authorKey: string | null }> {
+  const urlMatches = rawInput.match(/https?:\/\/[^\s]+/g);
+  if (!urlMatches || urlMatches.length === 0) {
+    return await extractSingleUrlContent(rawInput.trim());
+  }
+
+  if (urlMatches.length === 1) {
+    return await extractSingleUrlContent(urlMatches[0]);
+  }
+
+  // 複数URLが貼り付けられた場合、すべて抽出して結合
+  const results = await Promise.all(urlMatches.map(u => extractSingleUrlContent(u)));
+  const combinedTexts = results.map((r, i) => `### 🌐 【URL #${i + 1}】 ${r.title}\n${r.textContent}`).join('\n\n---\n\n');
+  const mainAuthor = results.find(r => r.authorKey)?.authorKey || null;
+
+  return {
+    title: `複数URL一括解析 (${urlMatches.length}件): ${results[0]?.title || 'コンテンツ'}`,
+    textContent: combinedTexts,
+    authorKey: mainAuthor,
+  };
 }
 
 // ============================================================
