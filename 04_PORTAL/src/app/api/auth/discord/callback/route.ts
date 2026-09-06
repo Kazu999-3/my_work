@@ -78,7 +78,11 @@ export async function GET(req: Request) {
       ? player.highest_rank 
       : (player?.mmr ? (player.mmr >= 2000 ? 'DIAMOND' : player.mmr >= 1700 ? 'EMERALD' : player.mmr >= 1500 ? 'PLATINUM' : player.mmr >= 1300 ? 'GOLD' : 'SILVER') : 'GOLD');
 
-    const isAdmin = discordUser.id === '697220229964759130' || discordUser.username === 'kazuki' || displayName?.includes('かずき');
+    const adminIds = (process.env.ADMIN_DISCORD_IDS || '697220229964759130')
+      .split(',')
+      .map((s) => s.trim());
+
+    const isAdmin = adminIds.includes(discordUser.id) || discordUser.id === '697220229964759130' || discordUser.username === 'kazuki' || displayName?.includes('かずき');
 
     // 4. セッションオブジェクト作成
     const sessionData = {

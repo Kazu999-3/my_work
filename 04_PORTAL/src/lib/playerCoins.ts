@@ -119,11 +119,11 @@ export async function findOrCreatePlayer(params: {
         };
       }
 
-      // 類似検索 (ilike)
+      // 大文字小文字無視の完全一致 (ilike はワイルドカードなし)
       const { data: byIlike } = await supabase
         .from('ktm_players')
         .select('*')
-        .ilike('name', `%${cleanName}%`)
+        .ilike('name', cleanName)
         .limit(1);
 
       if (byIlike && byIlike.length > 0) {

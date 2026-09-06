@@ -10,8 +10,9 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { fromDiscordId, fromName, toDiscordId, toName, amount, message } = body;
 
-    if (!amount || amount <= 0) {
-      return NextResponse.json({ error: '1コイン以上の金額を指定してください。' }, { status: 400 });
+    const cleanAmount = Math.floor(Number(amount));
+    if (!cleanAmount || isNaN(cleanAmount) || cleanAmount <= 0) {
+      return NextResponse.json({ error: '1コイン以上の有効な金額（整数）を指定してください。' }, { status: 400 });
     }
 
     if (!fromDiscordId && !fromName) {
@@ -41,7 +42,7 @@ export async function POST(req: Request) {
     }
 
     const senderCoins = getPlayerCoins(sender);
-    if (senderCoins < amount) {
+    if (senderCoins < cleanAmount) {
       return NextResponse.json({ error: `所持コインが不足しています（現在: ${senderCoins}コイン）。` }, { status: 400 });
     }
 
@@ -62,8 +63,8 @@ export async function POST(req: Request) {
     }
 
     // コイン移動
-    const newSenderCoins = senderCoins - amount;
-    const newReceiverCoins = getPlayerCoins(receiver) + amount;
+    const newSenderCoins = senderCoins - cleanAmount;
+    const newReceiverCoins = getPlayerCoins(receiver) + cleanAmount;
 
     await updatePlayerCoinsAndInventory({
       player: sender,
@@ -75,14 +76,32 @@ export async function POST(req: Request) {
       newCoins: newReceiverCoins,
     });
 
+    const tipMessage = message?.trim() || 'ナイスプレイ！';
+
+    // 📣 Discord (#ショップ通知 / 1545806575770276061) へチップ贈呈アナウンス送信
+    try {
+      const { sendShopNotification } = await import('../../../../lib/discordNotify');
+      await sendShopNotification({
+        embeds: [{
+          title: `💖【チップ贈呈】${sender.name} ➔ ${receiver.name}`,
+          description: `**${sender.name}** さんが **${receiver.name}** さんに **${cleanAmount.toLocaleString()} コイン** のチップを贈りました！✨\n\n💬 **メッセージ:**\n「${tipMessage}」`,
+          color: 0xec4899,
+          footer: { text: 'KTM Sovereign Tip System' },
+          timestamp: new Date().toISOString()
+        }]
+      });
+    } catch (dErr) {
+      console.warn('[tip POST] Discord notification warning:', dErr);
+    }
+
     return NextResponse.json({
       success: true,
       from: sender.name,
       to: receiver.name,
-      amount,
-      message: message || 'ナイスプレイ！',
+      amount: cleanAmount,
+      message: tipMessage,
       remainingSenderCoins: newSenderCoins,
-      announcement: `🎉 **【チップ送金】** **${sender.name}** さんが **${receiver.name}** さんに **${amount}コイン** を贈りました！\n💬 「${message || 'ナイスプレイ！'}」`
+      announcement: `🎉 **【チップ送金】** **${sender.name}** さんが **${receiver.name}** さんに **${cleanAmount}コイン** を贈りました！\n💬 「${tipMessage}」`
     });
   } catch (error: any) {
     console.error('Tip API error:', error);
