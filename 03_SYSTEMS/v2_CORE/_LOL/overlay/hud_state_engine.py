@@ -448,18 +448,29 @@ class HudStateEngine:
         # --- 9. 対面攻略メモ ---
         matchup_memo = self.get_matchup_memo(my_champion, enemy_champion)
 
-        # --- 11. 案A: 即死キルライン計算 (DataDragon確定公式) ---
-        enemy_lvl = opponent_obj.get("level", 6) if opponent_obj else 6
-        kill_line = KillLineCalculator.calculate_kill_line(
-            enemy_champ=enemy_champion,
-            enemy_level=enemy_lvl,
-            enemy_bonus_ad=25.0,
-            has_ignite=True,
-            my_champ=my_champion,
-            my_max_hp=1150.0 + (my_level * 90),
-            my_armor=45.0 + (my_level * 4),
-            my_mr=36.0 + (my_level * 1.5),
-        )
+        # --- 11. 敵の最警戒スキル ＆ 仕掛けチャンス (実戦インテル) ---
+        threat_skill_map = {
+            "Darius": {"skill_name": "E (捕縛・引き寄せ)", "badge": "最重要 🔴", "advice": "敵E使用後のCD（24〜14秒）が最大の反撃チャンス！近接外から仕掛けよう。"},
+            "Aatrox": {"skill_name": "Q3 ＆ W (拘束陣)", "badge": "回避必須 🔴", "advice": "Q1・Q2を避け、Q3のノックアップ範囲外へステップ。Qクールダウン中にトレード！"},
+            "Renekton": {"skill_name": "強化W (スタン＋シールド破壊)", "badge": "警戒 🔴", "advice": "フューリー50以上の赤バー時は距離を取る。ゲージを消費させた直後に反撃！"},
+            "Riven": {"skill_name": "Q3ノックアップ ＆ Wスタン", "badge": "警戒 🟠", "advice": "全Qを振った後の5〜8秒間は無力。ミニオンと一緒に強気に殴ろう。"},
+            "Jax": {"skill_name": "E (カウンターストライク)", "badge": "回避必須 🔴", "advice": "E起動中はAA無効。飛びつきを避けてE終了後にオールイン！"},
+            "Fiora": {"skill_name": "W (リポスト・パリィ)", "badge": "読み合い 🟡", "advice": "こちらの主力CCをフェイントで釣ってWを使わせれば、次20秒間は圧倒有利。"},
+            "Malphite": {"skill_name": "R (アンストッパブル・フォース)", "badge": "Lv6警戒 🔴", "advice": "FlashでRを回避できれば敵は無防備。Lv6直前のオールインに要注意。"},
+            "Zed": {"skill_name": "W (影分身・位置入替)", "badge": "最重要 🔴", "advice": "影を出して手裏剣を振った後（約20秒間）は逃げスキル無し。大チャンス！"},
+            "Ahri": {"skill_name": "E (チャーム)", "badge": "回避必須 🔴", "advice": "ミニオンの盾を使ってチャームを防ぐ。Eが外れたら即座に前へ！"},
+            "Syndra": {"skill_name": "E (乱雑な弱者・遠距離スタン)", "badge": "最重要 🔴", "advice": "ダークスフィアと直線上に立たない。E使用後は大接近してトレード可能。"},
+            "Blitzcrank": {"skill_name": "Q (ロケットグラブ)", "badge": "回避必須 🔴", "advice": "グラブを外した直後の20秒間はただの置物。強気ラインを上げてプレッシャー！"},
+            "Thresh": {"skill_name": "Q (死の宣告・フック)", "badge": "回避必須 🔴", "advice": "ミニオン裏をキープ。フック失敗時はレーン主導権を握ってゾーニング！"},
+            "Leona": {"skill_name": "E (ゼニスブレード)", "badge": "警戒 🔴", "advice": "Eの突進モーションを見てステップ。外れたら敵ADへ反撃集中！"},
+            "Nautilus": {"skill_name": "Q (錨投げ)", "badge": "回避必須 🔴", "advice": "壁やミニオンに吸わせる。Q不発後は足が遅いためカイトし放題。"}
+        }
+
+        threat_skill_info = threat_skill_map.get(enemy_champion, {
+            "skill_name": f"{enemy_champion}の主力CC/高火力スキル",
+            "badge": "警戒 🟠",
+            "advice": f"敵が主要スキルをミニオン処理等で空振りした直後のCD中に前へ出てトレード有利を作ろう！"
+        })
 
         # --- 12. 案B: レーン戦3段階勝ちパターン手順 ＆ 現在フェーズ抽出 ---
         blueprint_data = MatchupBlueprintEngine.get_blueprint(my_champion, enemy_champion)
@@ -561,8 +572,9 @@ class HudStateEngine:
             "lane_dominance": lane_dominance,
             # 全ファイトの勝因・敗因ディープアナリティクス
             "all_fights_analyzed": all_fights_analyzed,
-            # 案A: 即死キルライン
-            "kill_line": kill_line,
+            # 敵の最警戒スキル ＆ 仕掛けチャンス
+            "threat_skill_info": threat_skill_info,
+            "kill_line": threat_skill_info,
             # 案B: 現在フェーズ手順 ＆ 勝ちパターン手順書
             "current_phase": current_phase,
             "matchup_blueprint": blueprint_data,

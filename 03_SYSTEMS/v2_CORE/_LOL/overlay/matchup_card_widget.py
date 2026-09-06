@@ -61,50 +61,35 @@ class MatchupCardWidget(QWidget):
 
         card_layout.addLayout(header_layout)
 
-        # 2. 🩸 セクション①: 即死キルライン警告メーター
-        self.kill_line_frame = QFrame(self.card_frame)
-        self.kill_line_frame.setStyleSheet("""
+        # 2. ⚠️ セクション①: 敵の最警戒スキル ＆ 仕掛けチャンス (実戦インテル)
+        self.threat_frame = QFrame(self.card_frame)
+        self.threat_frame.setStyleSheet("""
             QFrame {
                 background-color: rgba(239, 68, 68, 0.12);
                 border: 1px solid rgba(239, 68, 68, 0.45);
                 border-radius: 8px;
             }
         """)
-        kill_line_layout = QVBoxLayout(self.kill_line_frame)
-        kill_line_layout.setContentsMargins(10, 8, 10, 8)
-        kill_line_layout.setSpacing(4)
+        threat_layout = QVBoxLayout(self.threat_frame)
+        threat_layout.setContentsMargins(10, 8, 10, 8)
+        threat_layout.setSpacing(4)
 
-        kill_header = QHBoxLayout()
-        self.kill_line_title = QLabel("💀 敵Lv6即死ライン", self.kill_line_frame)
-        self.kill_line_title.setStyleSheet("color: #fca5a5; font-size: 13px; font-weight: 900; background: transparent; border: none;")
-        kill_header.addWidget(self.kill_line_title)
+        threat_header = QHBoxLayout()
+        self.threat_title = QLabel("⚠️ 警戒スキル ＆ 勝機", self.threat_frame)
+        self.threat_title.setStyleSheet("color: #fca5a5; font-size: 13px; font-weight: 900; background: transparent; border: none;")
+        threat_header.addWidget(self.threat_title)
 
-        self.kill_line_badge = QLabel("警戒 🟠", self.kill_line_frame)
-        self.kill_line_badge.setStyleSheet("color: #fb923c; font-size: 11px; font-weight: 900; background: transparent; border: none;")
-        kill_header.addWidget(self.kill_line_badge, alignment=Qt.AlignmentFlag.AlignRight)
-        kill_line_layout.addLayout(kill_header)
+        self.threat_badge = QLabel("最重要 🔴", self.threat_frame)
+        self.threat_badge.setStyleSheet("color: #fb923c; font-size: 11px; font-weight: 900; background: transparent; border: none;")
+        threat_header.addWidget(self.threat_badge, alignment=Qt.AlignmentFlag.AlignRight)
+        threat_layout.addLayout(threat_header)
 
-        self.kill_line_bar = QProgressBar(self.kill_line_frame)
-        self.kill_line_bar.setFixedHeight(8)
-        self.kill_line_bar.setTextVisible(False)
-        self.kill_line_bar.setStyleSheet("""
-            QProgressBar {
-                background-color: rgba(34, 197, 94, 0.4);
-                border-radius: 4px;
-                border: none;
-            }
-            QProgressBar::chunk {
-                background-color: #ef4444;
-                border-radius: 4px;
-            }
-        """)
-        kill_line_layout.addWidget(self.kill_line_bar)
+        self.threat_advice = QLabel("敵の主要CC・エンゲージスキルを避けた直後が最大の反撃チャンス！", self.threat_frame)
+        self.threat_advice.setStyleSheet("color: #ffffff; font-size: 11.5px; font-weight: bold; background: transparent; border: none; line-height: 1.3;")
+        self.threat_advice.setWordWrap(True)
+        threat_layout.addWidget(self.threat_advice)
 
-        self.kill_line_advice = QLabel("自HP 28% (501以下) でワンコン即死圏内", self.kill_line_frame)
-        self.kill_line_advice.setStyleSheet("color: #ffffff; font-size: 12px; font-weight: bold; background: transparent; border: none;")
-        kill_line_layout.addWidget(self.kill_line_advice)
-
-        card_layout.addWidget(self.kill_line_frame)
+        card_layout.addWidget(self.threat_frame)
 
         # 3. 🗺️ セクション②: 現在の立ち回り手順 ＆ 勝利クリア条件
         self.phase_frame = QFrame(self.card_frame)
@@ -190,7 +175,7 @@ class MatchupCardWidget(QWidget):
     def update_data(self, state: dict):
         if not state or not state.get("active"):
             self.title_label.setText("⚔️ vs 試合待機中")
-            self.kill_line_frame.setVisible(False)
+            self.threat_frame.setVisible(False)
             self.phase_frame.setVisible(False)
             self.build_frame.setVisible(False)
             self.compass_frame.setVisible(False)
@@ -208,21 +193,20 @@ class MatchupCardWidget(QWidget):
             self.title_label.setText(f"⚔️ {my_champ}  vs  {enemy_champ}")
             self.sub_badge.setText("対面インテル")
 
-        # 1. スマイト火力 / 即死キルライン (JG時は最上段を非表示にしてスッキリ化)
-        kline = state.get("kill_line", {})
+        # 1. 警戒スキル ＆ 仕掛けチャンス (JG時は非表示にしてルート指示を優先)
+        threat_info = state.get("threat_skill_info", {})
         if is_jg:
-            self.kill_line_frame.setVisible(False)
-        elif kline:
-            dmg = kline.get("total_lethal_damage", 534)
-            pct = kline.get("kill_hp_percent", 46)
-            badge = kline.get("danger_badge", "警戒 🟠")
-            self.kill_line_title.setText(f"💀 敵Lv6即死ライン: {dmg} dmg")
-            self.kill_line_badge.setText(f"HP {pct}%以下 {badge}")
-            self.kill_line_bar.setValue(pct)
-            self.kill_line_advice.setText(f"自HP {pct}% ({dmg}以下) で敵のLv6フルコンボ即死圏内。")
-            self.kill_line_frame.setVisible(True)
+            self.threat_frame.setVisible(False)
+        elif threat_info or enemy_champ:
+            skill_name = threat_info.get("skill_name", f"{enemy_champ}の主要スキル")
+            window = threat_info.get("window", "スキル使用後のCD中（15〜20秒間）")
+            advice = threat_info.get("advice", f"敵が{skill_name}を外した/使用した直後は反撃の絶好の勝機。積極的に前へ出てトレード有利を取ろう！")
+            self.threat_title.setText(f"⚠️ 警戒: {skill_name}")
+            self.threat_badge.setText(f"{threat_info.get('badge', '最重要 🔴')}")
+            self.threat_advice.setText(advice)
+            self.threat_frame.setVisible(True)
         else:
-            self.kill_line_frame.setVisible(False)
+            self.threat_frame.setVisible(False)
 
         # 2. ガンク優先レーン (JG) / レーン戦手順 (Laner)
         if is_jg:

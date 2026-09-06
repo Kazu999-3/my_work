@@ -109,7 +109,7 @@ class TestHudStateEngine(unittest.TestCase):
         self.assertEqual(state["enemy_champion"], "Darius")
         self.assertGreater(state["my_gold"], 0)
         self.assertIn("gold_diff_str", state)
-        self.assertIn("kill_line", state)
+        self.assertIn("threat_skill_info", state)
         self.assertIn("next_item_advice", state)
         self.assertIn("lane_dominance", state)
 
