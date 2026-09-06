@@ -1032,60 +1032,78 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                 </div>
               )}
 
-              {/* 右側クイックアクション群 */}
+              {/* 右側クイックアクション群（ワンストップ化・ノイズ削減） */}
               <div className="flex items-center gap-2 flex-wrap ml-auto">
                 {isAdmin && (
                   <>
                     <button
                       onClick={handleFetchTrend}
                       disabled={fetchingTrend}
-                      className="px-3 py-1.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-stone-950 font-black rounded-xl transition-all flex items-center gap-1.5 text-xs shadow-sm disabled:opacity-50 cursor-pointer"
+                      className="px-3.5 py-1.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-stone-950 font-black rounded-xl transition-all flex items-center gap-1.5 text-xs shadow-sm disabled:opacity-50 cursor-pointer"
                       title="最新パッチのメタ・プロビルド・トレンド情報をAIで自動更新"
                     >
                       <RefreshCw size={13} className={fetchingTrend ? "animate-spin" : ""} />
-                      <span>{trendPhase === 'running' ? "AI生成中..." : trendPhase === 'pending' ? "順番待ち..." : fetchingTrend ? "登録中..." : "⚡ 最新トレンド取得"}</span>
+                      <span>{trendPhase === 'running' ? "AI生成中..." : trendPhase === 'pending' ? "順番待ち..." : fetchingTrend ? "登録中..." : "⚡ 最新データに更新 (AI)"}</span>
                     </button>
 
-                    <button
-                      onClick={() => handleStartRefineFacts(selected.id || selected.name, selectedRole)}
-                      disabled={refiningFacts}
-                      className="px-3 py-1.5 bg-stone-800 hover:bg-stone-700 text-white font-bold rounded-xl transition-all flex items-center gap-1.5 text-xs shadow-sm disabled:opacity-50 cursor-pointer"
-                      title="蓄積された知見の重複を排除し、最新メタ仕様にAIで清書"
-                    >
-                      <Sparkles size={13} className="text-amber-400" />
-                      <span>✨ AI清書</span>
-                    </button>
-
-                    <button
-                      onClick={async () => {
-                        try {
-                          const res = await fetch('/api/admin/dict-health/verify', {
-                            method: 'POST', credentials: 'include',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ champion: selected.id, action: 'verify' }),
-                          });
-                          if (res.ok) {
-                            setSaveSuccess(true);
-                            setTimeout(() => setSaveSuccess(false), 3000);
-                          }
-                        } catch (e: any) {
-                          console.error(e);
-                        }
-                      }}
-                      className="px-3 py-1.5 bg-emerald-700/80 hover:bg-emerald-600 text-white font-bold rounded-xl transition-all flex items-center gap-1.5 text-xs shadow-sm cursor-pointer"
-                      title="このチャンピオンの情報を確認済みにマーク"
-                    >
-                      <Check size={13} />
-                      <span>確認済みに設定</span>
-                    </button>
+                    {/* 🛠️ 辞典メンテナンス ドロップダウンメニュー */}
+                    <div className="relative group">
+                      <button
+                        type="button"
+                        className="px-3 py-1.5 bg-stone-800 hover:bg-stone-700 text-stone-200 hover:text-white font-bold rounded-xl transition-all flex items-center gap-1.5 text-xs shadow-sm cursor-pointer border border-stone-700/60"
+                      >
+                        <span>🛠️ メンテナンス</span>
+                        <span className="text-[10px] opacity-70">▼</span>
+                      </button>
+                      
+                      <div className="absolute right-0 top-full mt-1 w-52 bg-stone-900 border border-stone-700 rounded-xl shadow-2xl p-1.5 hidden group-hover:block z-50 animate-in fade-in slide-in-from-top-1">
+                        <button
+                          onClick={() => handleStartRefineFacts(selected.id || selected.name, selectedRole)}
+                          disabled={refiningFacts}
+                          className="w-full text-left px-3 py-2 text-xs font-bold text-stone-200 hover:bg-stone-800 rounded-lg flex items-center gap-2 transition disabled:opacity-50"
+                        >
+                          <Sparkles size={13} className="text-amber-400 shrink-0" />
+                          <span>✨ AI清書・重複排除</span>
+                        </button>
+                        <button
+                          onClick={handleQualityCheck}
+                          disabled={checkingQuality}
+                          className="w-full text-left px-3 py-2 text-xs font-bold text-stone-200 hover:bg-stone-800 rounded-lg flex items-center gap-2 transition disabled:opacity-50"
+                        >
+                          <Activity size={13} className="text-emerald-400 shrink-0" />
+                          <span>{checkingQuality ? '品質診断中...' : '🔍 品質チェック'}</span>
+                        </button>
+                        <button
+                          onClick={async () => {
+                            try {
+                              const res = await fetch('/api/admin/dict-health/verify', {
+                                method: 'POST', credentials: 'include',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ champion: selected.id, action: 'verify' }),
+                              });
+                              if (res.ok) {
+                                setSaveSuccess(true);
+                                setTimeout(() => setSaveSuccess(false), 3000);
+                              }
+                            } catch (e: any) {
+                              console.error(e);
+                            }
+                          }}
+                          className="w-full text-left px-3 py-2 text-xs font-bold text-stone-200 hover:bg-stone-800 rounded-lg flex items-center gap-2 transition"
+                        >
+                          <Check size={13} className="text-sky-400 shrink-0" />
+                          <span>✅ 確認済みにマーク</span>
+                        </button>
+                      </div>
+                    </div>
                   </>
                 )}
 
                 <Link
                   href={`/coach?champion=${encodeURIComponent(selected.id)}`}
-                  className="px-3 py-1.5 bg-indigo-600/90 hover:bg-indigo-600 text-white font-bold rounded-xl transition-all flex items-center gap-1.5 text-xs shadow-sm"
+                  className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl transition-all flex items-center gap-1.5 text-xs shadow-sm"
                 >
-                  <Zap size={13} /> <span>AIコーチ起動</span>
+                  <Zap size={13} /> <span>⚡ AIコーチ起動</span>
                 </Link>
               </div>
             </div>
@@ -1207,7 +1225,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                   e.preventDefault();
                   handleOpenHistory('jg_style', 'プレイスタイル分類');
                 }}
-                className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-black/5 hover:bg-amber-100 hover:text-amber-800 text-stone-700 transition-all flex items-center gap-1 border border-black/10 shadow-xs cursor-pointer"
+                className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-black/5 hover:bg-amber-100 hover:text-amber-800 text-stone-700 transition-all flex items-center gap-1 border border-black/10 shadow-xs cursor-pointer opacity-0 group-hover:opacity-100"
                 title="この項目の変更履歴を確認"
               >
                 <History size={13} /> 📜 履歴
@@ -1739,7 +1757,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                               e.preventDefault();
                               handleOpenHistory('customFields', `カスタム項目: ${key}`);
                             }}
-                            className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-black/5 hover:bg-amber-100 hover:text-amber-800 text-stone-700 transition-all flex items-center gap-1 border border-black/10 shadow-xs cursor-pointer"
+                            className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-black/5 hover:bg-amber-100 hover:text-amber-800 text-stone-700 transition-all flex items-center gap-1 border border-black/10 shadow-xs cursor-pointer opacity-0 group-hover:opacity-100"
                             title="この項目の変更履歴を確認"
                           >
                             <History size={13} /> 📜 履歴
@@ -2278,7 +2296,7 @@ const TextAreaCard = ({
           <h3 className={`text-sm font-black flex items-center gap-2 ${textColor}`}>
             <Icon size={16} /> {title}
           </h3>
-          <div className="flex items-center gap-1.5">
+          <div className={`flex items-center gap-1.5 transition-opacity ${isEditing ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
             {fieldKey && onOpenHistory && (
               <button
                 type="button"
