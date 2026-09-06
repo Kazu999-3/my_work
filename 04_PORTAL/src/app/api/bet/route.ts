@@ -17,6 +17,7 @@ export async function GET(req: Request) {
       const { data: topPlayers } = await supabase
         .from('ktm_players')
         .select('name, discord_id, highest_rank, coins, role_preferences')
+        .neq('is_active', false)
         .order('coins', { ascending: false })
         .limit(10);
 
