@@ -67,13 +67,14 @@ export async function GET(request: Request) {
 
     if (apErr) throw apErr;
 
-    const matchMap = new Map<number, any>();
-    (matches || []).forEach((m: any) => matchMap.set(m.id, m));
+    const matchMap = new Map<string, any>();
+    (matches || []).forEach((m: any) => matchMap.set(String(m.id), m));
 
-    const partsMap = new Map<number, any[]>();
+    const partsMap = new Map<string, any[]>();
     (allParts || []).forEach((p: any) => {
-      if (!partsMap.has(p.match_id)) partsMap.set(p.match_id, []);
-      partsMap.get(p.match_id)!.push(p);
+      const pKey = String(p.match_id);
+      if (!partsMap.has(pKey)) partsMap.set(pKey, []);
+      partsMap.get(pKey)!.push(p);
     });
 
     // 集計用オブジェクトの準備
@@ -90,7 +91,8 @@ export async function GET(request: Request) {
       const role = normalizeRole(row.role);
       if (!role) return;
 
-      const match = matchMap.get(row.match_id);
+      const mKey = String(row.match_id);
+      const match = matchMap.get(mKey);
       if (!match) return;
 
       const isWin = row.team === match.winning_team;
@@ -107,7 +109,7 @@ export async function GET(request: Request) {
       if (isWin) laneStats[role].champions[champ].wins += 1;
 
       // 2. 対面（マッチアップ）の集計
-      const allParticipants = partsMap.get(row.match_id) || [];
+      const allParticipants = partsMap.get(mKey) || [];
       const opponent = allParticipants.find((p: any) => normalizeRole(p.role) === role && p.team !== row.team);
       
       if (opponent && opponent.champion_name) {
@@ -162,8 +164,8 @@ export async function GET(request: Request) {
     // 逆算を行うために、すべてのマッチを新しい順にソート
     const sortedMatches = [...playerMatches]
       .sort((a: any, b: any) => {
-         const dateA = new Date(matchMap.get(a.match_id)?.created_at || 0).getTime();
-         const dateB = new Date(matchMap.get(b.match_id)?.created_at || 0).getTime();
+         const dateA = new Date(matchMap.get(String(a.match_id))?.created_at || 0).getTime();
+         const dateB = new Date(matchMap.get(String(b.match_id))?.created_at || 0).getTime();
          return dateB - dateA; // 降順（新しい順）
       });
 
@@ -186,7 +188,8 @@ export async function GET(request: Request) {
     };
 
     const formattedHistory = sortedMatches.map((row: any) => {
-      const match = matchMap.get(row.match_id);
+      const mKey = String(row.match_id);
+      const match = matchMap.get(mKey);
 
       const matchMmr = {
         TOP: currentTop,
@@ -206,7 +209,7 @@ export async function GET(request: Request) {
       else if (role === 'SUP') currentSup -= delta;
       if (laneG[role] !== undefined && laneG[role] > 0) laneG[role] -= 1;
 
-      const parts = partsMap.get(row.match_id) || [];
+      const parts = partsMap.get(mKey) || [];
       const opp = parts.find((p: any) => p.role?.toUpperCase() === role && p.team !== row.team);
 
       return {
@@ -242,7 +245,7 @@ export async function GET(request: Request) {
     // 全対戦（全期間）の通算スタッツを集計
     let totalK = 0, totalD = 0, totalA = 0, totalWins = 0;
     playerMatches.forEach((row: any) => {
-      const match = matchMap.get(row.match_id);
+      const match = matchMap.get(String(row.match_id));
       const isWin = match ? row.team === match.winning_team : false;
       if (isWin) totalWins++;
       totalK += row.kills || 0;

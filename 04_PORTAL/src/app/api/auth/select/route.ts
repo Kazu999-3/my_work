@@ -20,6 +20,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: '名簿に登録されていません。' }, { status: 404 });
     }
 
+    const { getPlayerCoins } = await import('../../../../lib/playerCoins');
+    const userCoins = getPlayerCoins(player);
+
+    const adminIds = (process.env.ADMIN_DISCORD_IDS || '697220229964759130')
+      .split(',')
+      .map((s) => s.trim());
+    const isAdmin = adminIds.includes(player.discord_id) || player.discord_id === '697220229964759130' || player.name === 'kazuki' || player.name?.includes('かずき');
+
     const sessionData = {
       discordId: player.discord_id || `local_${player.name}`,
       username: player.name,
@@ -27,8 +35,9 @@ export async function POST(req: Request) {
       avatar: player.discord_id
         ? `https://cdn.discordapp.com/embed/avatars/${Number(BigInt(player.discord_id.replace(/\D/g, '') || '0') % BigInt(5))}.png`
         : `https://cdn.discordapp.com/embed/avatars/0.png`,
-      coins: player.coins ?? 1000,
+      coins: userCoins,
       rank: player.highest_rank || 'UNRANKED',
+      isAdmin: isAdmin,
       loggedInAt: Date.now(),
     };
 
@@ -42,6 +51,22 @@ export async function POST(req: Request) {
       sameSite: 'lax',
       maxAge: 60 * 60 * 24 * 30, // 30日間有効
     });
+
+    if (isAdmin) {
+      try {
+        const { createSessionToken, ADMIN_SESSION_COOKIE } = await import('../../../../lib/adminSession');
+        const { token, maxAgeSec } = createSessionToken();
+        response.cookies.set(ADMIN_SESSION_COOKIE, token, {
+          path: '/',
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax',
+          maxAge: maxAgeSec,
+        });
+      } catch (e) {
+        console.error('Failed to issue admin_session cookie in auth/select:', e);
+      }
+    }
 
     return response;
   } catch (err: any) {
