@@ -1,6 +1,6 @@
 {
   "patch_version": "26.17",
-  "updated_at": "2026-09-04T18:56:28.968847+00:00",
+  "updated_at": "2026-09-06T09:20:55.479447+00:00",
   "status": "suspended",
   "queue": {
     "Aatrox": {
@@ -125,50 +125,50 @@
     },
     "Caitlyn": {
       "name": "ケイトリン",
-      "status": "pending",
-      "updated_at": "2026-08-23T19:05:01.635151+00:00",
+      "status": "completed",
+      "updated_at": "2026-09-06T07:56:16.972575+00:00",
       "error": null
     },
     "Camille": {
       "name": "カミール",
-      "status": "pending",
-      "updated_at": "2026-08-23T19:05:47.993248+00:00",
+      "status": "completed",
+      "updated_at": "2026-09-06T07:57:08.915531+00:00",
       "error": null
     },
     "Cassiopeia": {
       "name": "カシオペア",
-      "status": "pending",
-      "updated_at": "2026-08-23T19:06:33.666577+00:00",
+      "status": "completed",
+      "updated_at": "2026-09-06T07:58:00.242020+00:00",
       "error": null
     },
     "Chogath": {
       "name": "チョ＝ガス",
-      "status": "pending",
-      "updated_at": "2026-08-23T19:07:22.388268+00:00",
+      "status": "completed",
+      "updated_at": "2026-09-06T07:58:52.803594+00:00",
       "error": null
     },
     "Corki": {
       "name": "コーキ",
-      "status": "pending",
-      "updated_at": "2026-08-23T19:08:09.766680+00:00",
+      "status": "completed",
+      "updated_at": "2026-09-06T08:00:40.645937+00:00",
       "error": null
     },
     "Darius": {
       "name": "ダリウス",
-      "status": "pending",
-      "updated_at": "2026-08-23T19:08:56.959669+00:00",
+      "status": "completed",
+      "updated_at": "2026-09-06T08:01:31.377684+00:00",
       "error": null
     },
     "Diana": {
       "name": "ダイアナ",
-      "status": "pending",
-      "updated_at": "2026-08-23T19:09:43.772668+00:00",
+      "status": "completed",
+      "updated_at": "2026-09-06T08:02:22.139835+00:00",
       "error": null
     },
     "Draven": {
       "name": "ドレイヴン",
-      "status": "pending",
-      "updated_at": "2026-08-23T19:10:29.936086+00:00",
+      "status": "completed",
+      "updated_at": "2026-09-06T08:03:13.867580+00:00",
       "error": null
     },
     "DrMundo": {
