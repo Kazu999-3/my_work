@@ -10,6 +10,8 @@ import ctypes
 from PyQt6.QtCore import QObject, pyqtSignal, QTimer
 
 VK_TAB = 0x09
+VK_CONTROL = 0x11 # Ctrl
+VK_MENU = 0x12    # Alt
 VK_NUMPADS = [0x61, 0x62, 0x63, 0x64, 0x65] # テンキー 1〜5
 
 class GlobalKeyListener(QObject):
@@ -49,11 +51,15 @@ class GlobalKeyListener(QObject):
             self.is_tab_down = is_tab
             self.tab_state_changed.emit(self.is_tab_down)
 
-        # 2. テンキー 1〜5 の押下エッジ判定（押された瞬間に1回だけ発火）
+        # 2. テンキー 1〜5 の押下エッジ判定（誤爆防止のため Ctrl または Alt 同時押しでのみ発火）
+        ctrl_down = bool(self.user32.GetAsyncKeyState(VK_CONTROL) & 0x8000)
+        alt_down = bool(self.user32.GetAsyncKeyState(VK_MENU) & 0x8000)
+        is_modifier = ctrl_down or alt_down
+
         for idx, vk in enumerate(VK_NUMPADS):
             raw = self.user32.GetAsyncKeyState(vk)
             is_down = bool(raw & 0x8000)
-            if is_down and not self.numpad_states[idx]:
+            if is_down and is_modifier and not self.numpad_states[idx]:
                 self.numpad_pressed.emit(idx)
             self.numpad_states[idx] = is_down
 

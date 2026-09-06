@@ -19,6 +19,7 @@ import MatchupSmartCard from './MatchupSmartCard';
 import MatchFightsAnalyticsCard from './MatchFightsAnalyticsCard';
 import MatchupBlueprintCard from './MatchupBlueprintCard';
 import PostGameDeepAnalyticsDashboard from './PostGameDeepAnalyticsDashboard';
+import OverlayLauncherButton from './OverlayLauncherButton';
 
 // ============================
 // 型定義
@@ -1581,6 +1582,7 @@ export default function CoachPage() {
 
           {/* クイックアクションボタン群 */}
           <div className="flex items-center gap-2 flex-wrap justify-end">
+            <OverlayLauncherButton />
             <PushOptIn scope="admin" label="通知" inline />
             <button
               onClick={() => setIsReflectionModalOpen(true)}

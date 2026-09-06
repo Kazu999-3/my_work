@@ -145,6 +145,25 @@ def calculate_effective_spell_cd(spell_name: str, items: list) -> int:
     
     return base_cd
 
+# DDragon公式アイコンファイル名への正規化マッピング (特殊名・新チャンプ網羅)
+CHAMPION_DDRAGON_KEYS = {
+    "Wukong": "MonkeyKing", "wukong": "MonkeyKing", "悟空": "MonkeyKing",
+    "Nunu": "Nunu", "Nunu & Willump": "Nunu", "ヌヌ": "Nunu",
+    "Renata": "Renata", "Renata Glasc": "Renata", "レナータ": "Renata",
+    "KSante": "KSante", "K'Sante": "KSante", "クサンテ": "KSante",
+    "ChoGath": "Chogath", "Chogath": "Chogath", "チョガス": "Chogath",
+    "KaiSa": "Kaisa", "Kaisa": "Kaisa", "カイサ": "Kaisa",
+    "KhaZix": "Khazix", "Khazix": "Khazix", "カジックス": "Khazix",
+    "VelKoz": "Velkoz", "Velkoz": "Velkoz", "ヴェルコズ": "Velkoz",
+    "BelVeth": "Belveth", "Belveth": "Belveth", "ベルヴェス": "Belveth",
+    "LeBlanc": "Leblanc", "Leblanc": "Leblanc", "ルブラン": "Leblanc",
+    "JarvanIV": "JarvanIV", "Jarvan IV": "JarvanIV", "ジャーヴァンIV": "JarvanIV",
+    "DrMundo": "DrMundo", "Dr. Mundo": "DrMundo", "ムンド": "DrMundo",
+    "Smolder": "Smolder", "スモルダー": "Smolder",
+    "Aurora": "Aurora", "オーロラ": "Aurora",
+    "Ambessa": "Ambessa", "アンベッサ": "Ambessa",
+}
+
 class SpellAssetManager:
     _pixmap_cache = {}
 
@@ -153,24 +172,27 @@ class SpellAssetManager:
         """チャンピオンの顔アイコンを取得"""
         if not champion_name or champion_name in ("Enemy", "Unknown"):
             champion_name = "Aatrox"
+
+        norm_key = CHAMPION_DDRAGON_KEYS.get(champion_name, champion_name)
         
-        cache_file = CACHE_DIR / f"champ_{champion_name}.png"
-        if champion_name in cls._pixmap_cache:
-            return cls._pixmap_cache[champion_name]
+        cache_file = CACHE_DIR / f"champ_{norm_key}.png"
+        if norm_key in cls._pixmap_cache:
+            return cls._pixmap_cache[norm_key]
 
         if cache_file.exists():
             pix = QPixmap(str(cache_file))
-            cls._pixmap_cache[champion_name] = pix
-            return pix
+            if not pix.isNull():
+                cls._pixmap_cache[norm_key] = pix
+                return pix
 
-        url = f"{CDN_BASE}/champion/{champion_name}.png"
+        url = f"{CDN_BASE}/champion/{norm_key}.png"
         try:
             r = httpx.get(url, timeout=3.0)
             if r.status_code == 200:
                 with open(cache_file, "wb") as f:
                     f.write(r.content)
                 pix = QPixmap(str(cache_file))
-                cls._pixmap_cache[champion_name] = pix
+                cls._pixmap_cache[norm_key] = pix
                 return pix
         except Exception:
             pass

@@ -142,11 +142,16 @@ def main():
             lane_dominance.hide()
 
     def on_numpad_pressed(idx: int):
-        # テンキー1〜5 (0: TOP, 1: JG, 2: MID, 3: ADC, 4: SUP) でフルスクリーン時も敵Flashタイマー始動
+        # Ctrl/Alt + テンキー1〜5 (0: TOP, 1: JG, 2: MID, 3: ADC, 4: SUP)
+        # タイマー動作中ならリセット（解除）、停止中なら始動する安全トグル動作
         if 0 <= idx < len(spell_tracker.columns):
             col = spell_tracker.columns[idx]
-            col.btn_spell1.trigger_cooldown()
-            toast_alert.show_alert("⚡", f"🎯 [{col.champion}] Flash タイマー始動 (Num{idx+1})", alert_type="spike", duration_ms=2500)
+            if col.btn_spell1.ready_time > 0:
+                col.btn_spell1.reset_cooldown()
+                toast_alert.show_alert("⚡", f"🔄 [{col.champion}] Flash タイマー解除 (Ready)", alert_type="info", duration_ms=2000)
+            else:
+                col.btn_spell1.trigger_cooldown()
+                toast_alert.show_alert("⚡", f"🎯 [{col.champion}] Flash タイマー始動", alert_type="spike", duration_ms=2500)
 
     key_listener.tab_state_changed.connect(on_tab_state_changed)
     key_listener.numpad_pressed.connect(on_numpad_pressed)
