@@ -133,13 +133,6 @@ export default function HistoryPage() {
               <Trophy className="h-4 w-4 text-amber-600" />
               <span>手動記録</span>
             </Link>
-            <Link
-              href="/coach?tab=postgame"
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white font-black text-xs shadow-xs hover:scale-102 transition-all shrink-0"
-            >
-              <span>👑</span>
-              <span>1分振り返り</span>
-            </Link>
           </div>
         </div>
 

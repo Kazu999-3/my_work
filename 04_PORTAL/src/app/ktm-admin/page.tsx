@@ -228,37 +228,7 @@ export default function KtmAdminPage() {
   const [integrityData, setIntegrityData] = useState<any>(null);
   const [checkingIntegrity, setCheckingIntegrity] = useState(false);
 
-  // 当日出欠・チェックイン管理ステート
-  const [checkedInPlayerIds, setCheckedInPlayerIds] = useState<number[]>([]);
 
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem('ktm_checked_in_players');
-      if (saved) setCheckedInPlayerIds(JSON.parse(saved));
-    } catch {}
-  }, []);
-
-  const toggleCheckIn = (id: number) => {
-    setCheckedInPlayerIds(prev => {
-      const next = prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id];
-      try { localStorage.setItem('ktm_checked_in_players', JSON.stringify(next)); } catch {}
-      return next;
-    });
-  };
-
-  const checkInAllVisible = (ids: number[]) => {
-    setCheckedInPlayerIds(prev => {
-      const next = Array.from(new Set([...prev, ...ids]));
-      try { localStorage.setItem('ktm_checked_in_players', JSON.stringify(next)); } catch {}
-      return next;
-    });
-  };
-
-  const clearAllCheckIns = () => {
-    if (!confirm('全てのプレイヤーのチェックイン（出席状態）をクリアしますか？')) return;
-    setCheckedInPlayerIds([]);
-    try { localStorage.removeItem('ktm_checked_in_players'); } catch {}
-  };
 
   const checkIntegrity = async () => {
     setCheckingIntegrity(true);
@@ -793,7 +763,6 @@ export default function KtmAdminPage() {
       }
       
       if (statusFilter) {
-        if (statusFilter === 'checked_in' && !checkedInPlayerIds.includes(p.id)) return false;
         if (statusFilter === 'active' && (!p.is_active || p.is_spectator_fixed)) return false;
         if (statusFilter === 'spectator' && !p.is_spectator_fixed) return false;
         if (statusFilter === 'inactive' && p.is_active) return false;
@@ -1417,12 +1386,11 @@ export default function KtmAdminPage() {
             {/* ★ フィルターUI ＆ 大会当日チェックイン操作バー */}
             <div className="space-y-3 bg-white/70 p-4 rounded-2xl border border-border shadow-xs mb-4">
               <div className="flex flex-col md:flex-row gap-3 items-start md:items-center justify-between">
-                {/* 左：ステータス & チェックイン絞り込み */}
+                {/* 左：ステータス絞り込み */}
                 <div className="flex flex-wrap items-center gap-1.5 w-full md:w-auto">
                   <span className="text-xs text-stone-500 font-bold mr-1">絞り込み:</span>
                   {[
                     { key: null, label: `全員 (${players.length})` },
-                    { key: 'checked_in', label: `🟢 チェックイン済 (${checkedInPlayerIds.length})` },
                     { key: 'active', label: '参加予定' },
                     { key: 'spectator', label: '見学のみ' },
                     { key: 'inactive', label: '不参加' }
@@ -1432,9 +1400,7 @@ export default function KtmAdminPage() {
                       onClick={() => setStatusFilter(tab.key)}
                       className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                         statusFilter === tab.key
-                          ? tab.key === 'checked_in'
-                            ? 'bg-emerald-600 text-white shadow-md'
-                            : 'bg-amber-600 text-white shadow-md'
+                          ? 'bg-amber-600 text-white shadow-md'
                           : 'bg-black/5 text-stone-600 hover:text-stone-900 hover:bg-black/8'
                       }`}
                     >
@@ -1443,28 +1409,8 @@ export default function KtmAdminPage() {
                   ))}
                 </div>
 
-                {/* 右：大会当日バランサー連携 & チェックイン一括操作 */}
+                {/* 右：大会当日バランサー連携 */}
                 <div className="flex items-center gap-2 w-full md:w-auto justify-end">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const visibleIds = sortedPlayers.map(p => p.id).filter(Boolean);
-                      checkInAllVisible(visibleIds);
-                    }}
-                    className="text-[11px] font-bold px-2.5 py-1.5 bg-black/5 hover:bg-black/10 rounded-lg text-stone-700 transition"
-                    title="表示中の全プレイヤーを出席状態にします"
-                  >
-                    表示中全員出席
-                  </button>
-                  {checkedInPlayerIds.length > 0 && (
-                    <button
-                      type="button"
-                      onClick={clearAllCheckIns}
-                      className="text-[11px] font-bold px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-lg border border-rose-200 transition"
-                    >
-                      出欠クリア
-                    </button>
-                  )}
                   <a
                     href="/balancer"
                     className="px-3.5 py-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs font-black rounded-xl shadow-md transition flex items-center gap-1.5"
@@ -1509,24 +1455,12 @@ export default function KtmAdminPage() {
             <div className="md:hidden space-y-2.5">
               {sortedPlayers.map((p) => {
                 const uid = p.id || p.discord_id;
-                const isCheckedIn = checkedInPlayerIds.includes(p.id);
                 return (
                   <div key={uid} className={`bg-surface border rounded-2xl p-3.5 transition shadow-2xs space-y-2.5 ${
-                    isCheckedIn ? 'border-emerald-500 bg-emerald-50/40 ring-1 ring-emerald-400/40' : p.is_active ? 'border-amber-400 bg-amber-50/30' : 'border-border'
+                    p.is_active ? 'border-amber-400 bg-amber-50/30' : 'border-border'
                   }`}>
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2 min-w-0">
-                        <button
-                          type="button"
-                          onClick={() => toggleCheckIn(p.id)}
-                          className={`shrink-0 px-2.5 py-1 rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-1 ${
-                            isCheckedIn
-                              ? 'bg-emerald-600 text-white shadow-xs'
-                              : 'bg-stone-200 text-stone-600 hover:bg-emerald-100 hover:text-emerald-800'
-                          }`}
-                        >
-                          <span>{isCheckedIn ? '🟢 出席' : '⚪ 未着'}</span>
-                        </button>
                         <input
                           type="text"
                           value={p.name}
@@ -1592,7 +1526,6 @@ export default function KtmAdminPage() {
                   <thead className="bg-black/5 text-stone-400 uppercase text-xs tracking-wider sticky top-0 z-30 shadow-md backdrop-blur-sm">
                     <tr>
                       <SortableHeader label="No." sortKey="no" />
-                      <th className="px-2 py-2 text-center text-xs font-bold text-stone-600">出欠</th>
                       <SortableHeader label="Active" sortKey="is_active" />
                       <SortableHeader label="名前" sortKey="name" sticky={true} />
                       <SortableHeader label="最高Rank" sortKey="highest_rank" />
@@ -1608,13 +1541,10 @@ export default function KtmAdminPage() {
                   <tbody className="divide-y divide-border text-sm">
                     {sortedPlayers.map((p) => {
                       const uid = p.id || p.discord_id;
-                      const isCheckedIn = checkedInPlayerIds.includes(p.id);
                       return (
                         <React.Fragment key={uid}>
                           <tr 
                             className={`hover:bg-black/5 transition-all duration-300 ${
-                              isCheckedIn ? 'bg-emerald-50/50 font-medium' : ''
-                            } ${
                               flashingPlayerIds.includes(uid) 
                                 ? 'bg-emerald-100 text-emerald-700 font-bold border-y border-emerald-300 shadow-[inset_0_0_15px_rgba(16,185,129,0.15)]' 
                                 : ''
@@ -1622,20 +1552,6 @@ export default function KtmAdminPage() {
                           >
                         <td className="px-2 py-1.5 text-center font-bold text-stone-500 text-xs">
                           {p.no}
-                        </td>
-                        <td className="px-2 py-1.5 text-center">
-                          <button
-                            type="button"
-                            onClick={() => toggleCheckIn(p.id)}
-                            className={`px-2 py-0.5 rounded-lg text-[10px] font-black transition cursor-pointer ${
-                              isCheckedIn
-                                ? 'bg-emerald-600 text-white shadow-2xs'
-                                : 'bg-stone-200 text-stone-600 hover:bg-emerald-100 hover:text-emerald-800'
-                            }`}
-                            title="クリックで出席状態を切り替え"
-                          >
-                            {isCheckedIn ? '🟢 出席' : '⚪ 未着'}
-                          </button>
                         </td>
                         <td className="px-2 py-1.5 text-center">
                           <input
