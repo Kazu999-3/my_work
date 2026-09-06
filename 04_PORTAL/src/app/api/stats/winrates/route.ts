@@ -7,15 +7,17 @@ export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    // 1. アクティブなプレイヤー一覧を取得
-    const { data: players, error: pError } = await supabase
+    // 1. プレイヤー一覧を取得（is_active が NULL のプレイヤーも確実に含める）
+    const { data: rawPlayers, error: pError } = await supabase
       .from('ktm_players')
-      .select('name, discord_id, is_active, mmr_top, mmr_jg, mmr_mid, mmr_adc, mmr_sup, mmr')
-      .neq('is_active', false);
+      .select('name, discord_id, is_active, mmr_top, mmr_jg, mmr_mid, mmr_adc, mmr_sup, mmr');
 
-    if (pError || !players) {
+    if (pError || !rawPlayers) {
       throw new Error("Failed to fetch players");
     }
+
+    // 明示的に is_active === false 以外の全プレイヤーを対象
+    const players = rawPlayers.filter((p: any) => p.is_active !== false);
 
     // 2. 過去の全試合の参加者を取得（1000件超に備えページネーション）
     const { data: participants, error: hError } = await fetchAllRows((from, to) =>
@@ -40,19 +42,42 @@ export async function GET() {
       throw new Error("Failed to fetch matches");
     }
 
-    // ktm_matches.id は uuid なので Number() に通すと全件 NaN になり、Mapのキーが
-    // 事実上1つに潰れて全参加者が同じ1試合の勝敗と比較されてしまっていた。文字列のまま使う。
+    // ktm_matches.id は uuid なので文字列のままMapにセット
     const matchWinMap = new Map<string, string>();
     matches.forEach((m: any) => {
       matchWinMap.set(String(m.id), m.winning_team);
     });
 
-    // 4. データ集計用のマッピング準備 (discord_id と name の両方で引けるようにする)
+    // 4. データ集計用のマッピング準備 (discord_id と name_lower の両方で引けるようにする)
     const byDiscord = new Map<string, any>();
-    const byName = new Map<string, any>();
+    const byNameLower = new Map<string, any>();
     players.forEach((p: any) => {
-      if (p.discord_id) byDiscord.set(p.discord_id, p);
-      byName.set(p.name, p);
+      if (p.discord_id) byDiscord.set(String(p.discord_id).trim(), p);
+      if (p.name) byNameLower.set(String(p.name).trim().toLowerCase(), p);
+    });
+
+    // 試合参加者の中で ktm_players に未登録のプレイヤーも補完
+    (participants || []).forEach((m: any) => {
+      const dId = m.discord_id ? String(m.discord_id).trim() : '';
+      const pName = m.player_name ? String(m.player_name).trim() : '';
+      const pNameLower = pName.toLowerCase();
+      const existing = (dId && byDiscord.get(dId)) || (pNameLower && byNameLower.get(pNameLower));
+      if (!existing && pName) {
+        const dummyPlayer = {
+          name: pName,
+          discord_id: dId || null,
+          mmr: 1200,
+          mmr_top: 1200,
+          mmr_jg: 1200,
+          mmr_mid: 1200,
+          mmr_adc: 1200,
+          mmr_sup: 1200,
+          is_active: true,
+        };
+        players.push(dummyPlayer);
+        if (dId) byDiscord.set(dId, dummyPlayer);
+        byNameLower.set(pNameLower, dummyPlayer);
+      }
     });
 
     const statsMap: Record<string, any> = {};
@@ -75,7 +100,9 @@ export async function GET() {
 
     // 5. 勝敗の集計
     participants.forEach((row: any) => {
-      const resolved = (row.discord_id && byDiscord.get(row.discord_id)) || byName.get(row.player_name);
+      const dId = row.discord_id ? String(row.discord_id).trim() : '';
+      const pNameLower = row.player_name ? String(row.player_name).trim().toLowerCase() : '';
+      const resolved = (dId && byDiscord.get(dId)) || (pNameLower && byNameLower.get(pNameLower));
       if (!resolved) return;
 
       const pName = resolved.name;

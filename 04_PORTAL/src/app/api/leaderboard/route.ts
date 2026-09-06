@@ -16,11 +16,14 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const minGames = Number(searchParams.get('minGames')) || 0;
 
-    const { data: players, error: pError } = await supabase
+    // プレイヤー全件を取得（is_active が NULL のプレイヤーも確実に含める）
+    const { data: rawPlayers, error: pError } = await supabase
       .from('ktm_players')
-      .select('name, discord_id, mmr_top, mmr_jg, mmr_mid, mmr_adc, mmr_sup')
-      .neq('is_active', false);
-    if (pError || !players) throw pError || new Error('players not found');
+      .select('name, discord_id, mmr_top, mmr_jg, mmr_mid, mmr_adc, mmr_sup, is_active');
+    if (pError || !rawPlayers) throw pError || new Error('players not found');
+
+    // 明示的に is_active === false に設定されているプレイヤー以外は全員対象
+    const players = (rawPlayers || []).filter((p: any) => p.is_active !== false);
 
     const { data: matchesData, error: mError } = await fetchAllRows((from, to) =>
       supabase
@@ -39,11 +42,35 @@ export async function GET(req: Request) {
     (rawMatches || []).forEach((m: any) => matchWinMap.set(String(m.id), m.winning_team));
 
     const byDiscord = new Map<string, any>();
-    const byName = new Map<string, any>();
+    const byNameLower = new Map<string, any>();
     players.forEach((p: any) => {
-      if (p.discord_id) byDiscord.set(p.discord_id, p);
-      byName.set(p.name, p);
+      if (p.discord_id) byDiscord.set(String(p.discord_id).trim(), p);
+      if (p.name) byNameLower.set(String(p.name).trim().toLowerCase(), p);
     });
+
+    // 試合参加者の中で ktm_players に未登録のプレイヤーも補完
+    (matchesData || []).forEach((m: any) => {
+      const dId = m.discord_id ? String(m.discord_id).trim() : '';
+      const pName = m.player_name ? String(m.player_name).trim() : '';
+      const pNameLower = pName.toLowerCase();
+      const existing = (dId && byDiscord.get(dId)) || (pNameLower && byNameLower.get(pNameLower));
+      if (!existing && pName) {
+        const dummyPlayer = {
+          name: pName,
+          discord_id: dId || null,
+          mmr_top: 1200,
+          mmr_jg: 1200,
+          mmr_mid: 1200,
+          mmr_adc: 1200,
+          mmr_sup: 1200,
+          is_active: true,
+        };
+        players.push(dummyPlayer);
+        if (dId) byDiscord.set(dId, dummyPlayer);
+        byNameLower.set(pNameLower, dummyPlayer);
+      }
+    });
+
     const keyOfPlayer = (p: any) => p.discord_id || p.name;
 
     const statsMap: Record<string, Record<string, { games: number; wins: number }>> = {};
@@ -55,7 +82,9 @@ export async function GET(req: Request) {
     });
 
     (matchesData || []).forEach((m: any) => {
-      const resolved = (m.discord_id && byDiscord.get(m.discord_id)) || byName.get(m.player_name);
+      const dId = m.discord_id ? String(m.discord_id).trim() : '';
+      const pNameLower = m.player_name ? String(m.player_name).trim().toLowerCase() : '';
+      const resolved = (dId && byDiscord.get(dId)) || (pNameLower && byNameLower.get(pNameLower));
       if (!resolved) return;
       const key = keyOfPlayer(resolved);
       const role = normalizeRole(m.role);
@@ -72,15 +101,16 @@ export async function GET(req: Request) {
       const roleRanking = players
         .filter((p: any) => {
           const stats = statsMap[keyOfPlayer(p)]?.[role];
+          // minGames フィルタ
           return stats && stats.games >= minGames;
         })
         .map((p: any) => {
-          const stats = statsMap[keyOfPlayer(p)][role];
+          const stats = statsMap[keyOfPlayer(p)]?.[role] || { games: 0, wins: 0 };
           const mmr = Number(p[mmrKey] || 1200);
           const winRate = stats.games > 0 ? ((stats.wins / stats.games) * 100).toFixed(1) : '0.0';
           return {
             name: p.name,
-            discordId: p.discord_id,
+            discordId: p.discord_id || '',
             mmr,
             games: stats.games,
             winRate,
