@@ -40,8 +40,7 @@ export async function GET() {
 
     const { data: allPlayersData, error: allPlayersError } = await supabase
       .from('ktm_players')
-      .select('name, is_active')
-      .neq('is_active', false);
+      .select('name');
     if (allPlayersError) throw allPlayersError;
 
     const registeredPlayerNames = new Set<string>(
