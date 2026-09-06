@@ -74,10 +74,10 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const myChamp = searchParams.get('my') || 'Aatrox';
   const enemyChamp = searchParams.get('enemy') || 'Darius';
-  const enemyLevel = parseInt(searchParams.get('level') || '6', 10);
-  const myMaxHp = parseFloat(searchParams.get('myHp') || '1150');
-  const myArmor = parseFloat(searchParams.get('myArmor') || '45');
-  const myMr = parseFloat(searchParams.get('myMr') || '36');
+  const enemyLevel = Math.max(1, Math.min(18, parseInt(searchParams.get('level') || '6', 10) || 6));
+  const myMaxHp = Math.max(100, parseFloat(searchParams.get('myHp') || '1150') || 1150);
+  const myArmor = Math.max(0, parseFloat(searchParams.get('myArmor') || '45') || 45);
+  const myMr = Math.max(0, parseFloat(searchParams.get('myMr') || '36') || 36);
 
   const hasIgnite = searchParams.get('ignite') !== 'false';
 

@@ -124,8 +124,8 @@ class ToastAlertWidget(QWidget):
         elif compass and compass.get("active"):
             self.row3_label.setText(f"🧭 逆転方針: {compass.get('strategy', 'スプリット')}")
             self.row3_label.setStyleSheet("color: #c084fc; font-size: 11.5px; font-weight: 900;")
-        elif fight_dmg and fight_dmg > 0:
-            self.row3_label.setText(f"🔥 直前ファイト与ダメージ: {fight_dmg:,} dmg")
+        elif isinstance(fight_dmg, (int, float)) and fight_dmg > 0:
+            self.row3_label.setText(f"🔥 直前ファイト与ダメージ: {int(fight_dmg):,} dmg")
             self.row3_label.setStyleSheet("color: #fde047; font-size: 11.5px; font-weight: bold;")
         else:
             self.row3_label.setText("🎯 安定ファーム継続・次のウェーブ管理を意識")

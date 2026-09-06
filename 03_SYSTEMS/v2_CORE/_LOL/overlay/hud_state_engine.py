@@ -111,8 +111,14 @@ class HudStateEngine:
                 "Authorization": f"Bearer {self.supabase_key}"
             }
             # 1. matchup_sentinel から対面メモ取得
-            url = f"{self.supabase_url}/rest/v1/matchup_sentinel?champion=ilike.{enemy_norm}&enemy_champion=ilike.{my_champion}&select=summary,advice,raw_data&limit=1"
-            res = httpx.get(url, headers=headers, timeout=3.0)
+            url = f"{self.supabase_url}/rest/v1/matchup_sentinel"
+            params = {
+                "champion": f"ilike.{enemy_norm}",
+                "enemy_champion": f"ilike.{my_champion}",
+                "select": "summary,advice,raw_data",
+                "limit": "1"
+            }
+            res = httpx.get(url, headers=headers, params=params, timeout=3.0)
             if res.status_code == 200 and res.json():
                 row = res.json()[0]
                 advice = row.get("advice") or row.get("summary") or ""
