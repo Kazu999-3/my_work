@@ -63,6 +63,8 @@ export async function POST(req: Request) {
     player.role_preferences = player.role_preferences || {};
     if (main) player.role_preferences.primary = main;
     if (sub) player.role_preferences.secondary = sub;
+    if (player.role_preferences.coins === undefined) player.role_preferences.coins = 1000;
+    if (player.role_preferences.inventory === undefined) player.role_preferences.inventory = [];
     if (ng1) player.ng_lane_1 = ng1;
     if (ng2) player.ng_lane_2 = ng2;
     if (weight !== undefined && weight !== null && weight !== '') {
@@ -78,6 +80,7 @@ export async function POST(req: Request) {
       name: player.name,
       discord_id: player.discord_id,
       role_preferences: player.role_preferences,
+      coins: player.coins ?? player.role_preferences.coins ?? 1000,
       highest_rank: player.highest_rank || 'UNRANKED',
       is_active: player.is_active ?? true,
     };
