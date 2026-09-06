@@ -17,7 +17,7 @@ export default function PlayerIndexPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("ALL");
-  const [statusFilter, setStatusFilter] = useState<"ALL" | "ACTIVE" | "INACTIVE">("ACTIVE");
+  const [statusFilter, setStatusFilter] = useState<"ALL" | "ACTIVE" | "INACTIVE">("ALL");
 
   useEffect(() => {
     async function fetchPlayers() {
@@ -111,24 +111,24 @@ export default function PlayerIndexPage() {
         {/* アクティブ状態切り替え */}
         <div className="flex items-center gap-1 bg-stone-100 p-1 rounded-xl text-[11px] font-bold">
           <button
-            onClick={() => setStatusFilter("ACTIVE")}
-            className={`px-2.5 py-1 rounded-lg transition cursor-pointer ${
-              statusFilter === "ACTIVE"
-                ? "bg-white text-stone-900 shadow-xs font-black"
-                : "text-stone-500 hover:text-stone-900"
-            }`}
-          >
-            アクティブ ({players.filter((p) => p.is_active).length})
-          </button>
-          <button
             onClick={() => setStatusFilter("ALL")}
-            className={`px-2.5 py-1 rounded-lg transition cursor-pointer ${
+            className={`px-3 py-1 rounded-lg transition cursor-pointer ${
               statusFilter === "ALL"
                 ? "bg-white text-stone-900 shadow-xs font-black"
                 : "text-stone-500 hover:text-stone-900"
             }`}
           >
             全員 ({players.length})
+          </button>
+          <button
+            onClick={() => setStatusFilter("ACTIVE")}
+            className={`px-3 py-1 rounded-lg transition cursor-pointer ${
+              statusFilter === "ACTIVE"
+                ? "bg-white text-stone-900 shadow-xs font-black"
+                : "text-stone-500 hover:text-stone-900"
+            }`}
+          >
+            参加中 ({players.filter((p) => p.is_active).length})
           </button>
         </div>
       </div>
