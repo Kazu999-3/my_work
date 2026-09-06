@@ -290,6 +290,26 @@ export default function AdminDashboardPage() {
               <span>{isRefreshing ? '更新中...' : '即時リフレッシュ'}</span>
             </button>
 
+            <a
+              href="sovereign-worker://start"
+              className="px-3.5 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-xs font-black text-white transition shadow-xs flex items-center gap-1.5 cursor-pointer"
+              title="ローカルエッジワーカーを起動"
+            >
+              <Zap size={13} />
+              <span>ワーカー起動</span>
+            </a>
+
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText("d:/my_work/.venv/Scripts/python.exe d:/my_work/03_SYSTEMS/v2_CORE/edge_worker_daemon.py");
+                alert("📋 起動コマンドをクリップボードにコピーしました！\nPowerShell等で実行してください。");
+              }}
+              className="px-3 py-2 rounded-xl bg-white/80 backdrop-blur-md border border-stone-200 hover:bg-white hover:border-stone-300 text-xs font-bold text-stone-700 transition shadow-xs flex items-center gap-1 cursor-pointer"
+              title="Python起動コマンドをコピー"
+            >
+              <span>📋 コマンドコピー</span>
+            </button>
+
             <Link
               href="/ktm-admin"
               className="px-3.5 py-2 rounded-xl bg-indigo-50/90 backdrop-blur-md border border-indigo-200 hover:bg-indigo-100 text-xs font-bold text-indigo-700 transition shadow-xs flex items-center gap-1.5"
@@ -614,9 +634,31 @@ export default function AdminDashboardPage() {
                       <span className="text-xs font-black text-stone-900">{service.name}</span>
                       <span className={`w-2.5 h-2.5 rounded-full ${indicatorColor}`}></span>
                     </div>
-                    <p className="text-[10px] text-stone-400 mb-3">{service.desc}</p>
+                    <p className="text-[10px] text-stone-400 mb-2">{service.desc}</p>
+                    
+                    {service.id === 'edge_worker' && (
+                      <div className="flex items-center gap-1.5 my-2">
+                        <a
+                          href="sovereign-worker://start"
+                          className="px-2.5 py-1 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-[10px] font-black transition shadow-2xs flex items-center gap-1 cursor-pointer"
+                          title="ローカルワーカーを起動"
+                        >
+                          <Zap size={11} /> 起動
+                        </a>
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText("d:/my_work/.venv/Scripts/python.exe d:/my_work/03_SYSTEMS/v2_CORE/edge_worker_daemon.py");
+                            alert("📋 起動コマンドをクリップボードにコピーしました！\nPowerShell等で実行してください。");
+                          }}
+                          className="px-2 py-1 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-700 text-[10px] font-bold border border-stone-200 transition cursor-pointer"
+                          title="Python起動コマンドをコピー"
+                        >
+                          📋 コピー
+                        </button>
+                      </div>
+                    )}
                   </div>
-                  <div className="flex justify-between items-center pt-2 border-t border-stone-100">
+                  <div className="flex justify-between items-center pt-2 border-t border-stone-100 mt-1">
                     <span className="text-[10px] font-bold text-stone-400">{service.kind === 'cloud' ? '常時稼働' : 'オンデマンド'}</span>
                     <span className={`px-2 py-0.5 rounded-full border text-[10px] font-bold ${statusColor}`}>{statusText}</span>
                   </div>
