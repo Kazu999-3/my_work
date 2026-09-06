@@ -50,6 +50,10 @@ def main():
         from v2_CORE._LOL.overlay.test_overlay_suite import run_full_suite
         sys.exit(run_full_suite())
 
+    # Windows 高DPI環境（125%, 150%, 4K）での座標ズレ・滲み防止
+    if hasattr(Qt.HighDpiScaleFactorRoundingPolicy, 'PassThrough'):
+        QApplication.setHighDpiScaleFactorRoundingPolicy(Qt.HighDpiScaleFactorRoundingPolicy.PassThrough)
+
     app = QApplication(sys.argv)
     
     live_client = LiveClient()
@@ -125,9 +129,9 @@ def main():
     else:
         lane_dominance.hide()
 
-    # TABキーフック連動 (中央下 レーン優勢度パネル)
-    tab_listener = TabKeyListener()
-    tab_listener.start()
+    # グローバルキーフック連動 (TABキー ＆ テンキー1〜5)
+    key_listener = TabKeyListener()
+    key_listener.start()
 
     def on_tab_state_changed(is_pressed: bool):
         if args.always_show:
@@ -137,7 +141,15 @@ def main():
         else:
             lane_dominance.hide()
 
-    tab_listener.tab_state_changed.connect(on_tab_state_changed)
+    def on_numpad_pressed(idx: int):
+        # テンキー1〜5 (0: TOP, 1: JG, 2: MID, 3: ADC, 4: SUP) でフルスクリーン時も敵Flashタイマー始動
+        if 0 <= idx < len(spell_tracker.columns):
+            col = spell_tracker.columns[idx]
+            col.btn_spell1.trigger_cooldown()
+            toast_alert.show_alert("⚡", f"🎯 [{col.champion}] Flash タイマー始動 (Num{idx+1})", alert_type="spike", duration_ms=2500)
+
+    key_listener.tab_state_changed.connect(on_tab_state_changed)
+    key_listener.numpad_pressed.connect(on_numpad_pressed)
 
     # リスク3解消: 試合終了時の完全非同期スレッド自動データ転送 (threading.Thread)
     game_state_tracker = {
@@ -229,6 +241,7 @@ def main():
             if game_state_tracker["was_in_game"]:
                 game_state_tracker["was_in_game"] = False
                 on_game_ended(game_state_tracker["last_active_state"])
+                state_engine = HudStateEngine() # 次の試合に向けて完全クリーンアップ
 
         # JG視点ガンク成功率＆キル判定のリアルタイム計算
         if is_active:

@@ -1,8 +1,8 @@
 """
-Sovereign HUD - TABキー監視マネージャー (Tab Key Listener)
-=========================================================
-Windows API (GetAsyncKeyState) を使用して、ゲーム画面内でのTABキー
-（スコアボード表示）の押下状態をリアルタイムに検知する。
+Sovereign HUD - グローバルキー監視マネージャー (Global Key Listener)
+================================================================
+Windows API (GetAsyncKeyState) を使用して、ゲーム画面内（フルスクリーン）での
+TABキー（スコアボード）およびテンキー1〜5（敵Flashタイマー始動）の押下をリアルタイム検知。
 Riot規約（TOS）100%完全準拠の安全設計。
 """
 
@@ -10,20 +10,24 @@ import ctypes
 from PyQt6.QtCore import QObject, pyqtSignal, QTimer
 
 VK_TAB = 0x09
+VK_NUMPADS = [0x61, 0x62, 0x63, 0x64, 0x65] # テンキー 1〜5
 
-class TabKeyListener(QObject):
+class GlobalKeyListener(QObject):
     # TABキー押下状態変化シグナル (True: 押下中, False: 離した)
     tab_state_changed = pyqtSignal(bool)
+    # テンキー1〜5 押下シグナル (0: TOP, 1: JG, 2: MID, 3: ADC, 4: SUP)
+    numpad_pressed = pyqtSignal(int)
 
-    def __init__(self, check_interval_ms: int = 50, parent=None):
+    def __init__(self, check_interval_ms: int = 40, parent=None):
         super().__init__(parent)
         self.is_tab_down = False
+        self.numpad_states = [False] * 5
         self.user32 = ctypes.windll.user32
 
-        # 50ms (秒間20回) で超軽量ポーリング
+        # 40ms (秒間25回) で超軽量ポーリング
         self.check_interval_ms = check_interval_ms
         self.poll_timer = QTimer(self)
-        self.poll_timer.timeout.connect(self.check_tab_state)
+        self.poll_timer.timeout.connect(self.check_keys)
         self.poll_timer.start(self.check_interval_ms)
 
     def start(self):
@@ -36,11 +40,23 @@ class TabKeyListener(QObject):
         if self.poll_timer.isActive():
             self.poll_timer.stop()
 
-    def check_tab_state(self):
-        # 最上位ビットが立っていればキー押下中 (0x8000)
-        state = self.user32.GetAsyncKeyState(VK_TAB)
-        is_pressed = bool(state & 0x8000)
+    def check_keys(self):
+        # 1. TABキーの状態判定
+        tab_raw = self.user32.GetAsyncKeyState(VK_TAB)
+        is_tab = bool(tab_raw & 0x8000)
 
-        if is_pressed != self.is_tab_down:
-            self.is_tab_down = is_pressed
+        if is_tab != self.is_tab_down:
+            self.is_tab_down = is_tab
             self.tab_state_changed.emit(self.is_tab_down)
+
+        # 2. テンキー 1〜5 の押下エッジ判定（押された瞬間に1回だけ発火）
+        for idx, vk in enumerate(VK_NUMPADS):
+            raw = self.user32.GetAsyncKeyState(vk)
+            is_down = bool(raw & 0x8000)
+            if is_down and not self.numpad_states[idx]:
+                self.numpad_pressed.emit(idx)
+            self.numpad_states[idx] = is_down
+
+# 後方互換クラス名
+class TabKeyListener(GlobalKeyListener):
+    pass
