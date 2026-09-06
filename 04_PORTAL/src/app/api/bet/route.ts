@@ -14,19 +14,23 @@ export async function GET(req: Request) {
     // 1. 所持コインランキング TOP 10
     let ranking: any[] = [];
     try {
-      const { data: topPlayers } = await supabase
+      const { data: allPlayers, error: pErr } = await supabase
         .from('ktm_players')
-        .select('name, discord_id, highest_rank, coins, role_preferences')
-        .neq('is_active', false)
-        .order('coins', { ascending: false })
-        .limit(10);
+        .select('name, discord_id, highest_rank, role_preferences, metadata, is_active');
 
-      ranking = (topPlayers || []).map((p: any) => ({
-        name: p.name,
-        discordId: p.discord_id,
-        rank: p.highest_rank || 'UNRANKED',
-        coins: getPlayerCoins(p),
-      }));
+      if (pErr) throw pErr;
+
+      const activeList = (allPlayers || []).filter((p: any) => p.is_active !== false);
+
+      ranking = activeList
+        .map((p: any) => ({
+          name: p.name,
+          discordId: p.discord_id,
+          rank: p.highest_rank || 'UNRANKED',
+          coins: getPlayerCoins(p),
+        }))
+        .sort((a: { coins: number }, b: { coins: number }) => b.coins - a.coins)
+        .slice(0, 10);
     } catch (rErr) {
       console.warn('[bet GET] Ranking query failed:', rErr);
     }
