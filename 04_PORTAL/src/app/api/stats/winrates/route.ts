@@ -55,29 +55,6 @@ export async function GET() {
       if (p.name) byNameLower.set(String(p.name).trim().toLowerCase(), p);
     });
 
-    // 試合参加者の中で ktm_players に未登録のプレイヤーも補完
-    (participants || []).forEach((m: any) => {
-      const dId = m.discord_id ? String(m.discord_id).trim() : '';
-      const pName = m.player_name ? String(m.player_name).trim() : '';
-      const pNameLower = pName.toLowerCase();
-      const existing = (dId && byDiscord.get(dId)) || (pNameLower && byNameLower.get(pNameLower));
-      if (!existing && pName) {
-        const dummyPlayer = {
-          name: pName,
-          discord_id: dId || null,
-          mmr: 1200,
-          mmr_top: 1200,
-          mmr_jg: 1200,
-          mmr_mid: 1200,
-          mmr_adc: 1200,
-          mmr_sup: 1200,
-        };
-        players.push(dummyPlayer);
-        if (dId) byDiscord.set(dId, dummyPlayer);
-        byNameLower.set(pNameLower, dummyPlayer);
-      }
-    });
-
     const statsMap: Record<string, any> = {};
     players.forEach((p: any) => {
       statsMap[p.name] = {
