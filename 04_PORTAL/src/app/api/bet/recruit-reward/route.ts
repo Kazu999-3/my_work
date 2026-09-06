@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
+import { findOrCreatePlayer, getPlayerCoins, updatePlayerCoinsAndInventory } from '../../../../lib/playerCoins';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,30 +13,48 @@ export async function POST(req: Request) {
     const ownerReward = isCustom ? 200 : 100;
     const participantReward = isCustom ? 100 : 50;
 
-    // 募集主のコイン加算
+    // 1. 募集主のコイン加算
     if (ownerDiscordId || ownerName) {
-      let q = supabase.from('ktm_players').select('name, coins');
-      if (ownerDiscordId) q = q.eq('discord_id', ownerDiscordId);
-      else if (ownerName) q = q.eq('name', ownerName);
-      const { data: owner } = await q.single();
+      const owner = await findOrCreatePlayer({
+        discordId: ownerDiscordId,
+        name: ownerName,
+        autoCreate: true,
+      });
+
       if (owner) {
-        const cur = owner.coins ?? 1000;
-        await supabase.from('ktm_players').update({ coins: cur + ownerReward }).eq('name', owner.name);
+        const cur = getPlayerCoins(owner);
+        await updatePlayerCoinsAndInventory({
+          player: owner,
+          newCoins: cur + ownerReward,
+        });
       }
     }
 
-    // 参加者のコイン加算
-    if (joinedNames && Array.isArray(joinedNames) && joinedNames.length > 0) {
-      const { data: participants } = await supabase
-        .from('ktm_players')
-        .select('name, coins')
-        .in('name', joinedNames);
+    // 2. 参加者のコイン加算
+    const namesList: string[] = Array.isArray(joinedNames) ? joinedNames : [];
+    const discordIdsList: string[] = Array.isArray(joinedDiscordIds) ? joinedDiscordIds : [];
+    const maxLen = Math.max(namesList.length, discordIdsList.length);
 
-      for (const p of (participants || [])) {
-        if (p.name !== ownerName) {
-          const cur = p.coins ?? 1000;
-          await supabase.from('ktm_players').update({ coins: cur + participantReward }).eq('name', p.name);
-        }
+    for (let i = 0; i < maxLen; i++) {
+      const pName = namesList[i];
+      const pDiscord = discordIdsList[i];
+
+      // 募集主と同一人物の場合は二重付与防止
+      if (pName && ownerName && pName.toLowerCase() === ownerName.toLowerCase()) continue;
+      if (pDiscord && ownerDiscordId && pDiscord === ownerDiscordId) continue;
+
+      const pPlayer = await findOrCreatePlayer({
+        discordId: pDiscord,
+        name: pName,
+        autoCreate: true,
+      });
+
+      if (pPlayer) {
+        const cur = getPlayerCoins(pPlayer);
+        await updatePlayerCoinsAndInventory({
+          player: pPlayer,
+          newCoins: cur + participantReward,
+        });
       }
     }
 

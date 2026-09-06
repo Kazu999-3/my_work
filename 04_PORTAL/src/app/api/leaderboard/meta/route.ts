@@ -20,8 +20,8 @@ export async function GET() {
       .select('id, winning_team');
     if (matchWinsError) throw matchWinsError;
 
-    const winMap: Record<number, string> = {};
-    (matchWins || []).forEach((m: any) => { winMap[m.id] = m.winning_team; });
+    const winMap: Record<string, string> = {};
+    (matchWins || []).forEach((m: any) => { winMap[String(m.id)] = m.winning_team; });
 
     const agg: Record<string, { games: number; wins: number; k: number; d: number; a: number }> = {};
     (partData || []).forEach((r: any) => {
@@ -29,7 +29,7 @@ export async function GET() {
       if (!c) return;
       if (!agg[c]) agg[c] = { games: 0, wins: 0, k: 0, d: 0, a: 0 };
       agg[c].games += 1;
-      const winningTeam = winMap[r.match_id];
+      const winningTeam = winMap[String(r.match_id)];
       if (r.team === winningTeam) agg[c].wins += 1;
       agg[c].k += r.kills || 0; agg[c].d += r.deaths || 0; agg[c].a += r.assists || 0;
     });

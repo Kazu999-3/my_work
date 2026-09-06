@@ -236,12 +236,12 @@ export default function CasinoPage() {
 
   const fetchPlayersList = async () => {
     try {
-      const res = await fetch('/api/players');
+      const res = await fetch('/api/players/list');
       if (res.ok) {
         const data = await res.json();
         const players = (data.players || []).map((p: any) => ({
           name: p.name,
-          rank: p.rank || 'GOLD'
+          rank: p.highest_rank || p.rank || 'GOLD'
         }));
         setAllPlayersList(players);
       }

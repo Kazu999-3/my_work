@@ -136,7 +136,13 @@ export async function executeLotteryDraw(): Promise<LotteryResult> {
   }
 
   // 🥈 2等 (ラッキー賞): 購入チケットの中から必ず1口選出（1,000コイン）
-  const secondPrizeTicket = flatTickets[Math.floor(Math.random() * flatTickets.length)];
+  // 複数人参加時は1等当選者以外の参加者チケットから優先選出（コミュニティへの公平分配）
+  const eligibleSecondTickets = (isFirstPrizeWon && totalParticipants > 1)
+    ? flatTickets.filter(t => t.player.id !== firstPrizeWinner?.id)
+    : flatTickets;
+  const poolForSecond = eligibleSecondTickets.length > 0 ? eligibleSecondTickets : flatTickets;
+
+  const secondPrizeTicket = poolForSecond[Math.floor(Math.random() * poolForSecond.length)];
   const secondPrizeWinner = secondPrizeTicket.player;
   const secondPrizeWinnerName = secondPrizeWinner?.name || secondPrizeWinner?.ign || 'Anonymous';
   const SECOND_PRIZE_COINS = 1000;

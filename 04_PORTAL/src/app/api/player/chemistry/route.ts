@@ -43,8 +43,8 @@ export async function GET(request: Request) {
 
     if (mErr) throw mErr;
 
-    const winMap = new Map<number, string>();
-    (matches || []).forEach((m: any) => winMap.set(m.id, m.winning_team));
+    const winMap = new Map<string, string>();
+    (matches || []).forEach((m: any) => winMap.set(String(m.id), m.winning_team));
 
     // 2. それらの試合に同席した全員のデータを一括取得（1000件超に備えページネーション）
     const { data: allParticipants, error: allError } = await fetchAllRows((from, to) =>
@@ -60,10 +60,10 @@ export async function GET(request: Request) {
     if (!allParticipants) throw new Error('同席プレイヤーのデータ取得に失敗しました。');
 
     // 3. マップ化
-    const myMatchesMap: Record<number, { team: string, isWin: boolean }> = {};
+    const myMatchesMap: Record<string, { team: string, isWin: boolean }> = {};
     myMatches.forEach((m: any) => {
-      const winningTeam = winMap.get(m.match_id);
-      myMatchesMap[m.match_id] = {
+      const winningTeam = winMap.get(String(m.match_id));
+      myMatchesMap[String(m.match_id)] = {
         team: m.team,
         isWin: m.team === winningTeam
       };
@@ -85,7 +85,7 @@ export async function GET(request: Request) {
       const partnerName = p.player_name;
       if (!registeredPlayerNames.has(partnerName)) return; // 未登録プレイヤーは除外
 
-      const myMatch = myMatchesMap[p.match_id];
+      const myMatch = myMatchesMap[String(p.match_id)];
       if (!myMatch) return;
 
       const sameTeam = myMatch.team === p.team;

@@ -35,8 +35,8 @@ export async function GET() {
       .select('id, winning_team');
     if (matchWinsError) throw matchWinsError;
 
-    const winMap: Record<number, 'BLUE' | 'RED'> = {};
-    (matchWins || []).forEach((m: any) => { winMap[m.id] = m.winning_team; });
+    const winMap: Record<string, 'BLUE' | 'RED'> = {};
+    (matchWins || []).forEach((m: any) => { winMap[String(m.id)] = m.winning_team; });
 
     const { data: allPlayersData, error: allPlayersError } = await supabase
       .from('ktm_players')
@@ -51,18 +51,21 @@ export async function GET() {
 
     if (!data) throw new Error('No data');
 
-    const matches: Record<number, { BLUE: string[], RED: string[], winner: 'BLUE' | 'RED' }> = {};
+    const matches: Record<string, { BLUE: string[], RED: string[], winner: 'BLUE' | 'RED' }> = {};
     data.forEach((row: any) => {
-      const winner = winMap[row.match_id];
+      const winner = winMap[String(row.match_id)];
       const rawName = row.player_name?.trim();
       if (!winner || !rawName) return;
       // アクティブな登録プレイヤー以外（トラとらお等の未登録ゲストや非アクティブ選手）は除外
       if (!registeredPlayerNames.has(rawName)) return;
 
-      if (!matches[row.match_id]) {
-        matches[row.match_id] = { BLUE: [], RED: [], winner };
+      const mId = String(row.match_id);
+      if (!matches[mId]) {
+        matches[mId] = { BLUE: [], RED: [], winner };
       }
-      matches[row.match_id][row.team as 'BLUE' | 'RED'].push(rawName);
+      if (row.team === 'BLUE' || row.team === 'RED') {
+        matches[mId][row.team as 'BLUE' | 'RED'].push(rawName);
+      }
     });
 
     const allyMap: Record<string, { games: number, wins: number }> = {};
