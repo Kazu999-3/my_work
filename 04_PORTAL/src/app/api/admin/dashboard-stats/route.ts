@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 import { verifyAdminSession } from '../../../../lib/adminAuth';
+import { getPlayerCoins } from '../../../../lib/playerCoins';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,8 +15,6 @@ export async function GET(req: NextRequest) {
     const heartbeatId = '00000000-0000-0000-0000-000000000000';
 
     // 1回のリクエストで全クエリを並列超高速実行
-    const sevenDaysAgoIso = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-
     const [
       { data: heartbeat },
       { data: queueTasks },
@@ -33,8 +32,8 @@ export async function GET(req: NextRequest) {
       { data: dictReviewNotif },
       { data: champdbBulkProgress },
       { data: dictHealthRows },
-      { data: activePlayers, count: totalPlayersCount },
-      { data: allMatches, count: totalMatchesCount },
+      { data: activePlayers },
+      { data: allMatches },
       { data: pendingBetTasks },
     ] = await Promise.all([
       // ワーカーハートビート
@@ -84,9 +83,9 @@ export async function GET(req: NextRequest) {
       // 辞典ヘルス
       supabase.from('champion_facts').select('confidence, patch, strengths'),
       // 🏆 大会メトリクス用: 登録プレイヤー
-      supabase.from('ktm_players').select('id, name, coins, is_active').neq('is_active', false),
+      supabase.from('ktm_players').select('id, name, role_preferences, metadata, is_active'),
       // 🏆 大会メトリクス用: 試合履歴
-      supabase.from('ktm_matches').select('id, match_date, created_at').order('created_at', { ascending: false }).limit(100),
+      supabase.from('ktm_matches').select('id, created_at').order('created_at', { ascending: false }).limit(200),
       // 🪙 カジノメトリクス用: 未精算ベットタスク
       supabase.from('edge_tasks').select('id, payload, created_at').eq('task_type', 'bet_record').eq('status', 'pending'),
     ]);
@@ -194,21 +193,21 @@ export async function GET(req: NextRequest) {
     }
 
     // 🏆 大会メトリクス集計
-    const playersList = activePlayers || [];
+    const allPlayersList = activePlayers || [];
+    const playersList = allPlayersList.filter((p: any) => p.is_active !== false);
     const activePlayerCount = playersList.length;
     const matchesList = allMatches || [];
     const totalMatchCount = matchesList.length;
     
     const sevenDaysAgoMs = Date.now() - 7 * 24 * 60 * 60 * 1000;
     const recentMatchesCount = matchesList.filter((m: any) => {
-      const d = m.match_date || m.created_at;
+      const d = m.created_at;
       return d ? new Date(d).getTime() >= sevenDaysAgoMs : false;
     }).length;
 
     // 🪙 カジノメトリクス集計
     const totalCirculatingCoins = playersList.reduce((acc: number, p: any) => {
-      const c = typeof p.coins === 'number' ? p.coins : 1000;
-      return acc + c;
+      return acc + getPlayerCoins(p);
     }, 0);
 
     const pendingBets = pendingBetTasks || [];
@@ -243,7 +242,7 @@ export async function GET(req: NextRequest) {
         activePlayers: activePlayerCount,
         totalMatches: totalMatchCount,
         recentMatches: recentMatchesCount,
-        latestMatchDate: matchesList[0]?.match_date || matchesList[0]?.created_at || null,
+        latestMatchDate: matchesList[0]?.created_at || null,
       },
       casinoStats: {
         totalCirculatingCoins,

@@ -215,7 +215,7 @@ export default function AdminDashboardPage() {
 
   if (isAuthenticated === null || isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#fbf9f4]">
+      <div className="min-h-screen flex items-center justify-center bg-[#f7f5f0]">
         <div className="flex flex-col items-center gap-3">
           <div className="h-10 w-10 animate-spin rounded-full border-4 border-amber-500/20 border-t-amber-600" />
           <p className="text-xs font-bold text-stone-500">システム運用ダッシュボードを読み込み中...</p>
@@ -226,8 +226,8 @@ export default function AdminDashboardPage() {
 
   if (isAuthenticated === false) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-[#fbf9f4] text-stone-900 font-sans">
-        <div className="text-center max-w-sm rounded-3xl border border-stone-200 bg-white p-8 shadow-xl">
+      <div className="min-h-screen flex items-center justify-center p-4 bg-[#f7f5f0] text-stone-900 font-sans">
+        <div className="text-center max-w-sm rounded-3xl border border-stone-200/80 bg-white/90 backdrop-blur-md p-8 shadow-xl">
           <div className="text-4xl mb-3">🔑</div>
           <h2 className="text-lg font-black mb-2">管理者認証が必要です</h2>
           <p className="text-xs text-stone-500 mb-6 leading-relaxed">
@@ -250,20 +250,27 @@ export default function AdminDashboardPage() {
   const redPercent = totalBetAmount > 0 ? 100 - bluePercent : 50;
 
   return (
-    <div className="min-h-screen w-full bg-[#fcfbfa] text-stone-900">
-      <div className="max-w-7xl mx-auto p-4 md:p-8 flex flex-col gap-6">
+    <div className="min-h-screen w-full bg-[#f7f5f0] text-stone-900 relative overflow-hidden">
+      {/* Background Decorative Ambient Orbs */}
+      <div className="absolute top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
+        <div className="absolute top-[-5%] right-[-5%] w-[45vw] h-[45vw] rounded-full bg-amber-500/10 blur-[130px] animate-pulse"></div>
+        <div className="absolute top-[30%] left-[-10%] w-[40vw] h-[40vw] rounded-full bg-orange-500/10 blur-[140px] animate-pulse" style={{ animationDelay: '2s' }}></div>
+        <div className="absolute bottom-[-10%] right-[10%] w-[50vw] h-[50vw] rounded-full bg-amber-600/8 blur-[150px] animate-pulse" style={{ animationDelay: '4s' }}></div>
+      </div>
+
+      <div className="max-w-7xl mx-auto p-4 md:p-8 flex flex-col gap-6 relative z-10">
 
         {/* 🌟 1. ヘッダー ＆ クイックナビゲーション */}
-        <header className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 pb-4 border-b border-stone-200">
+        <header className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 pb-4 border-b border-stone-200/80">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <div className="p-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-700">
+              <div className="p-2 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-800 shadow-2xs">
                 <Shield size={20} />
               </div>
               <h1 className="text-2xl md:text-3xl font-black tracking-tight text-stone-900">
                 システム運用ダッシュボード
               </h1>
-              <span className="text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-stone-100 text-stone-600 border border-stone-200">
+              <span className="text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-800 border border-amber-500/20">
                 HQ v5.2
               </span>
             </div>
@@ -276,7 +283,7 @@ export default function AdminDashboardPage() {
             <button
               onClick={() => fetchData(false)}
               disabled={isRefreshing}
-              className="px-3.5 py-2 rounded-xl bg-white border border-stone-200 hover:bg-stone-50 hover:border-stone-300 text-xs font-bold text-stone-700 transition shadow-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+              className="px-3.5 py-2 rounded-xl bg-white/80 backdrop-blur-md border border-stone-200 hover:bg-white hover:border-stone-300 text-xs font-bold text-stone-700 transition shadow-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
               title="データを即時更新"
             >
               <RefreshCw size={13} className={isRefreshing ? 'animate-spin text-amber-600' : 'text-stone-500'} />
@@ -285,7 +292,7 @@ export default function AdminDashboardPage() {
 
             <Link
               href="/ktm-admin"
-              className="px-3.5 py-2 rounded-xl bg-indigo-50 border border-indigo-200 hover:bg-indigo-100 text-xs font-bold text-indigo-700 transition shadow-xs flex items-center gap-1.5"
+              className="px-3.5 py-2 rounded-xl bg-indigo-50/90 backdrop-blur-md border border-indigo-200 hover:bg-indigo-100 text-xs font-bold text-indigo-700 transition shadow-xs flex items-center gap-1.5"
             >
               <Trophy size={13} />
               <span>KTM大会管理</span>
@@ -293,7 +300,7 @@ export default function AdminDashboardPage() {
 
             <Link
               href="/admin/prompts"
-              className="px-3.5 py-2 rounded-xl bg-white border border-stone-200 hover:bg-stone-50 hover:border-stone-300 text-xs font-bold text-stone-700 transition shadow-xs flex items-center gap-1.5"
+              className="px-3.5 py-2 rounded-xl bg-white/80 backdrop-blur-md border border-stone-200 hover:bg-white hover:border-stone-300 text-xs font-bold text-stone-700 transition shadow-xs flex items-center gap-1.5"
             >
               <Cpu size={13} className="text-amber-600" />
               <span>AIプロンプト</span>
@@ -301,7 +308,7 @@ export default function AdminDashboardPage() {
 
             <Link
               href="/admin/analytics"
-              className="px-3.5 py-2 rounded-xl bg-white border border-stone-200 hover:bg-stone-50 hover:border-stone-300 text-xs font-bold text-stone-700 transition shadow-xs flex items-center gap-1.5"
+              className="px-3.5 py-2 rounded-xl bg-white/80 backdrop-blur-md border border-stone-200 hover:bg-white hover:border-stone-300 text-xs font-bold text-stone-700 transition shadow-xs flex items-center gap-1.5"
             >
               <TrendingUp size={13} className="text-teal-600" />
               <span>note分析</span>
@@ -320,7 +327,7 @@ export default function AdminDashboardPage() {
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="p-4 rounded-2xl bg-amber-500/10 border-2 border-amber-500/30 text-amber-950 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 shadow-xs"
+            className="p-4 rounded-2xl bg-amber-500/15 border-2 border-amber-500/30 text-amber-950 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 shadow-xs backdrop-blur-md"
           >
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-xl bg-amber-500 text-white shadow-xs shrink-0">
@@ -347,7 +354,7 @@ export default function AdminDashboardPage() {
                   navigator.clipboard.writeText("d:/my_work/.venv/Scripts/python.exe d:/my_work/03_SYSTEMS/v2_CORE/edge_worker_daemon.py");
                   alert("📋 起動コマンドをクリップボードにコピーしました！\nPowerShell等で実行してください。");
                 }}
-                className="px-3 py-1.5 rounded-xl bg-white border border-stone-300 hover:bg-stone-50 text-stone-700 text-xs font-bold transition shadow-xs"
+                className="px-3 py-1.5 rounded-xl bg-white/90 border border-stone-300 hover:bg-white text-stone-700 text-xs font-bold transition shadow-xs"
               >
                 コマンドコピー
               </button>
@@ -359,7 +366,7 @@ export default function AdminDashboardPage() {
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-950 space-y-3 shadow-xs"
+            className="p-4 rounded-2xl bg-rose-50/90 border border-rose-200/80 text-rose-950 space-y-3 shadow-xs backdrop-blur-md"
           >
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-rose-200/80 pb-2.5">
               <h3 className="text-xs font-black text-rose-800 flex items-center gap-1.5">
@@ -384,7 +391,7 @@ export default function AdminDashboardPage() {
               {needsAttention.failedTasks.map((task) => {
                 const errSummary = summarizeError(task.error_message);
                 return (
-                  <div key={task.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-2.5 rounded-xl bg-white border border-rose-100 shadow-2xs">
+                  <div key={task.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-2.5 rounded-xl bg-white/90 border border-rose-100 shadow-2xs">
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap mb-0.5">
                         <span className="text-xs font-black text-stone-900">
@@ -410,7 +417,7 @@ export default function AdminDashboardPage() {
               {needsAttention.youtubeErrorCount > 0 && (
                 <Link
                   href="/admin/youtube"
-                  className="flex items-center justify-between p-2.5 rounded-xl bg-white border border-rose-200 hover:border-rose-300 transition"
+                  className="flex items-center justify-between p-2.5 rounded-xl bg-white/90 border border-rose-200 hover:border-rose-300 transition"
                 >
                   <span className="text-xs font-bold text-stone-900">YouTube動画キューのエラー・手動対応要 ({needsAttention.youtubeErrorCount}件)</span>
                   <span className="text-[11px] font-bold text-rose-700">管理画面へ →</span>
@@ -419,7 +426,7 @@ export default function AdminDashboardPage() {
               {needsAttention.dictReviewCount > 0 && (
                 <Link
                   href="/champions?scope=health"
-                  className="flex items-center justify-between p-2.5 rounded-xl bg-white border border-rose-200 hover:border-rose-300 transition"
+                  className="flex items-center justify-between p-2.5 rounded-xl bg-white/90 border border-rose-200 hover:border-rose-300 transition"
                 >
                   <span className="text-xs font-bold text-stone-900">チャンピオン辞典 鮮度レビュー要対応 ({needsAttention.dictReviewCount}件)</span>
                   <span className="text-[11px] font-bold text-rose-700">データ整備へ →</span>
@@ -451,7 +458,7 @@ export default function AdminDashboardPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3.5">
             {/* 登録プレイヤー */}
-            <div className="p-4 rounded-2xl bg-white border border-stone-200/80 shadow-xs flex flex-col justify-between">
+            <div className="p-4 rounded-2xl bg-white/80 backdrop-blur-md border border-stone-200/80 shadow-xs flex flex-col justify-between hover:border-stone-300 transition">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-bold text-stone-500 flex items-center gap-1.5">
                   <Users size={14} className="text-indigo-600" />
@@ -470,7 +477,7 @@ export default function AdminDashboardPage() {
             </div>
 
             {/* 大会試合数 */}
-            <div className="p-4 rounded-2xl bg-white border border-stone-200/80 shadow-xs flex flex-col justify-between">
+            <div className="p-4 rounded-2xl bg-white/80 backdrop-blur-md border border-stone-200/80 shadow-xs flex flex-col justify-between hover:border-stone-300 transition">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-bold text-stone-500 flex items-center gap-1.5">
                   <Trophy size={14} className="text-amber-600" />
@@ -485,7 +492,7 @@ export default function AdminDashboardPage() {
                   {ktmStats.totalMatches.toLocaleString()} <span className="text-xs font-bold text-stone-400">試合</span>
                 </div>
                 {ktmStats.recentMatches > 0 && (
-                  <span className="text-[11px] font-black text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                  <span className="text-[11px] font-black text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-full border border-emerald-300">
                     直近7日: +{ktmStats.recentMatches}
                   </span>
                 )}
@@ -496,7 +503,7 @@ export default function AdminDashboardPage() {
             </div>
 
             {/* 総流通コイン */}
-            <div className="p-4 rounded-2xl bg-white border border-stone-200/80 shadow-xs flex flex-col justify-between">
+            <div className="p-4 rounded-2xl bg-white/80 backdrop-blur-md border border-stone-200/80 shadow-xs flex flex-col justify-between hover:border-stone-300 transition">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-bold text-stone-500 flex items-center gap-1.5">
                   <Coins size={14} className="text-amber-500" />
@@ -515,7 +522,7 @@ export default function AdminDashboardPage() {
             </div>
 
             {/* 受付中ベット */}
-            <div className="p-4 rounded-2xl bg-white border border-stone-200/80 shadow-xs flex flex-col justify-between">
+            <div className="p-4 rounded-2xl bg-white/80 backdrop-blur-md border border-stone-200/80 shadow-xs flex flex-col justify-between hover:border-stone-300 transition">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-bold text-stone-500 flex items-center gap-1.5">
                   <Flame size={14} className="text-rose-500" />
@@ -537,7 +544,7 @@ export default function AdminDashboardPage() {
                 </div>
                 {totalBetAmount > 0 && (
                   <div className="mt-2 space-y-1">
-                    <div className="h-2 w-full bg-stone-100 rounded-full overflow-hidden flex">
+                    <div className="h-2 w-full bg-stone-200/60 rounded-full overflow-hidden flex">
                       <div style={{ width: `${bluePercent}%` }} className="bg-sky-500 h-full"></div>
                       <div style={{ width: `${redPercent}%` }} className="bg-rose-500 h-full"></div>
                     </div>
@@ -569,19 +576,19 @@ export default function AdminDashboardPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3.5">
             {[
-              { id: 'portal', name: 'Webポータル', desc: 'Vercel / Next.js 15', kind: 'cloud' as const },
+              { id: 'portal', name: 'Webポータル', desc: 'Vercel / Next.js 16', kind: 'cloud' as const },
               { id: 'bot', name: 'Discord Bot (KTM)', desc: 'Cloudflare Workers', kind: 'cloud' as const },
               { id: 'edge_worker', name: 'エッジワーカー', desc: 'ローカルPython実行エンジン', kind: 'worker' as const },
               { id: 'youtube_absorber', name: 'YouTube解析', desc: '動画知識吸収ノード', kind: 'local' as const },
             ].map((service) => {
               let statusText = '稼働中';
-              let statusColor = 'text-emerald-700 bg-emerald-50 border-emerald-200';
+              let statusColor = 'text-emerald-700 bg-emerald-100/80 border-emerald-300';
               let indicatorColor = 'bg-emerald-500';
 
               if (service.kind === 'worker') {
                 if (systemStatus.worker.active) {
                   statusText = '稼働中';
-                  statusColor = 'text-emerald-700 bg-emerald-50 border-emerald-200';
+                  statusColor = 'text-emerald-700 bg-emerald-100/80 border-emerald-300';
                   indicatorColor = 'bg-emerald-500';
                 } else {
                   statusText = '待機中 (必要時起動)';
@@ -591,7 +598,7 @@ export default function AdminDashboardPage() {
               } else if (service.kind === 'local') {
                 if (systemStatus.worker.active) {
                   statusText = '待機中 (即時実行可)';
-                  statusColor = 'text-emerald-700 bg-emerald-50 border-emerald-200';
+                  statusColor = 'text-emerald-700 bg-emerald-100/80 border-emerald-300';
                   indicatorColor = 'bg-emerald-500 animate-pulse';
                 } else {
                   statusText = '待機中';
@@ -601,7 +608,7 @@ export default function AdminDashboardPage() {
               }
 
               return (
-                <div key={service.id} className="p-4 rounded-2xl bg-white border border-stone-200/80 shadow-xs flex flex-col justify-between">
+                <div key={service.id} className="p-4 rounded-2xl bg-white/80 backdrop-blur-md border border-stone-200/80 shadow-xs flex flex-col justify-between hover:border-stone-300 transition">
                   <div>
                     <div className="flex justify-between items-center mb-1">
                       <span className="text-xs font-black text-stone-900">{service.name}</span>
@@ -620,7 +627,7 @@ export default function AdminDashboardPage() {
 
           {/* GitHub Actions クラウド定期ワーカー実行ログ */}
           {systemMetrics.cloud_workers && Object.keys(systemMetrics.cloud_workers).length > 0 && (
-            <div className="p-4 rounded-2xl bg-white border border-stone-200/80 shadow-xs space-y-3">
+            <div className="p-4 rounded-2xl bg-white/80 backdrop-blur-md border border-stone-200/80 shadow-xs space-y-3">
               <h3 className="text-xs font-black text-stone-800 flex items-center gap-1.5">
                 <span>☁️</span> GitHub Actions 定期自動実行ログ
               </h3>
@@ -681,7 +688,7 @@ export default function AdminDashboardPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
             {/* 知識ベース統計 */}
-            <div className="p-4 rounded-2xl bg-white border border-stone-200/80 shadow-xs space-y-3">
+            <div className="p-4 rounded-2xl bg-white/80 backdrop-blur-md border border-stone-200/80 shadow-xs space-y-3 hover:border-stone-300 transition">
               <div className="flex justify-between items-center">
                 <h3 className="text-xs font-black text-stone-900 flex items-center gap-1.5">
                   <Database size={14} className="text-emerald-600" />
@@ -703,7 +710,7 @@ export default function AdminDashboardPage() {
                   <Link
                     key={s.label}
                     href={s.href}
-                    className="p-2.5 rounded-xl bg-stone-50 border border-stone-100 hover:bg-stone-100/80 transition text-center"
+                    className="p-2.5 rounded-xl bg-stone-50/80 border border-stone-100 hover:bg-stone-100/90 transition text-center"
                   >
                     <div className={`text-lg font-black ${s.color}`}>
                       {s.value === null ? '—' : s.value}
@@ -716,7 +723,7 @@ export default function AdminDashboardPage() {
             </div>
 
             {/* 辞典ヘルス */}
-            <div className="p-4 rounded-2xl bg-white border border-stone-200/80 shadow-xs space-y-3">
+            <div className="p-4 rounded-2xl bg-white/80 backdrop-blur-md border border-stone-200/80 shadow-xs space-y-3 hover:border-stone-300 transition">
               <div className="flex justify-between items-center">
                 <h3 className="text-xs font-black text-stone-900 flex items-center gap-1.5">
                   <Sparkles size={14} className="text-amber-500" />
@@ -730,21 +737,21 @@ export default function AdminDashboardPage() {
               <div className="grid grid-cols-3 gap-2">
                 <Link
                   href="/champions?scope=health"
-                  className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 hover:bg-emerald-100/70 transition text-center"
+                  className="p-3 rounded-xl bg-emerald-50/80 border border-emerald-200 hover:bg-emerald-100/80 transition text-center"
                 >
                   <div className="text-lg font-black text-emerald-800">{dictHealthSummary === null ? '—' : dictHealthSummary.verified}</div>
                   <div className="text-[10px] text-emerald-700 font-bold mt-0.5">🟢 確認済み</div>
                 </Link>
                 <Link
                   href="/champions?scope=health"
-                  className="p-3 rounded-xl bg-amber-50 border border-amber-200 hover:bg-amber-100/70 transition text-center"
+                  className="p-3 rounded-xl bg-amber-50/80 border border-amber-200 hover:bg-amber-100/80 transition text-center"
                 >
                   <div className="text-lg font-black text-amber-800">{dictHealthSummary === null ? '—' : dictHealthSummary.aiGenerated}</div>
                   <div className="text-[10px] text-amber-700 font-bold mt-0.5">🟡 AI生成</div>
                 </Link>
                 <Link
                   href="/champions?scope=health"
-                  className="p-3 rounded-xl bg-rose-50 border border-rose-200 hover:bg-rose-100/70 transition text-center"
+                  className="p-3 rounded-xl bg-rose-50/80 border border-rose-200 hover:bg-rose-100/80 transition text-center"
                 >
                   <div className="text-lg font-black text-rose-800">{dictHealthSummary === null ? '—' : dictHealthSummary.stale}</div>
                   <div className="text-[10px] text-rose-700 font-bold mt-0.5">🔴 要対応</div>
