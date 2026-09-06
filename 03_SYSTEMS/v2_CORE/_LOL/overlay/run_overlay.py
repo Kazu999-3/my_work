@@ -194,7 +194,7 @@ def main():
     tick_count = 0
 
     def update_all():
-        nonlocal game_state_tracker, last_reported_status, tick_count
+        nonlocal game_state_tracker, last_reported_status, tick_count, state_engine
         tick_count += 1
 
         if args.demo:

@@ -171,18 +171,46 @@ class MatchupCardWidget(QWidget):
         self.compass_frame.setVisible(False)
         card_layout.addWidget(self.compass_frame)
 
+        # 6. ⏳ 待機中案内フレーム (ゲーム開始前)
+        self.waiting_frame = QFrame(self.card_frame)
+        self.waiting_frame.setStyleSheet("""
+            QFrame {
+                background-color: rgba(30, 41, 59, 0.70);
+                border: 1px dashed rgba(148, 163, 184, 0.40);
+                border-radius: 8px;
+            }
+        """)
+        waiting_layout = QVBoxLayout(self.waiting_frame)
+        waiting_layout.setContentsMargins(10, 10, 10, 10)
+        waiting_layout.setSpacing(4)
+
+        waiting_title = QLabel("🟢 Sovereign HUD 待機中", self.waiting_frame)
+        waiting_title.setStyleSheet("color: #38bdf8; font-size: 12px; font-weight: bold;")
+        waiting_layout.addWidget(waiting_title)
+
+        waiting_desc = QLabel("サモナーズリフト（LoL試合）に入ると、対面インテル・即死ライン・動的ビルドが自動表示されます。", self.waiting_frame)
+        waiting_desc.setStyleSheet("color: #94a3b8; font-size: 11px; font-weight: 500;")
+        waiting_desc.setWordWrap(True)
+        waiting_layout.addWidget(waiting_desc)
+
+        card_layout.addWidget(self.waiting_frame)
+
         self.main_layout.addWidget(self.card_frame)
         self.adjustSize()
 
     def update_data(self, state: dict):
         if not state or not state.get("active"):
-            self.title_label.setText("⚔️ vs 試合待機中")
+            self.title_label.setText("⚔️ Sovereign HUD 稼働中")
+            self.sub_badge.setText("待機中 ⏳")
+            self.waiting_frame.setVisible(True)
             self.threat_frame.setVisible(False)
             self.phase_frame.setVisible(False)
             self.build_frame.setVisible(False)
             self.compass_frame.setVisible(False)
             self.adjustSize()
             return
+
+        self.waiting_frame.setVisible(False)
 
         is_jg = state.get("is_jg", False)
         enemy_champ = state.get("enemy_champion", "Enemy")
