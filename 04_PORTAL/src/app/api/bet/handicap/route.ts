@@ -68,6 +68,17 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: '自分自身にハンデを発動することはできません。相手チームのプレイヤーを指定してください。' }, { status: 400 });
     }
 
+    // 対象プレイヤーの実在確認
+    const { data: targetPlayer } = await supabase
+      .from('ktm_players')
+      .select('name')
+      .eq('name', targetName)
+      .maybeSingle();
+
+    if (!targetPlayer) {
+      return NextResponse.json({ error: `指定された対象プレイヤー「${targetName}」が名簿に見つかりません。` }, { status: 404 });
+    }
+
     const currentCoins = getPlayerCoins(user);
     if (currentCoins < handicap.cost) {
       return NextResponse.json({ error: `所持コインが不足しています（現在: ${currentCoins}コイン / 必要: ${handicap.cost}コイン）。` }, { status: 400 });
