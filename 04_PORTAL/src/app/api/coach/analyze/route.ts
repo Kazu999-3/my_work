@@ -816,43 +816,56 @@ ${sentinelCtx || '（辞典データなし）'}`;
     }
 
     // ----------------------------
-    // MODE: counter_pick - 敵チャンプに対する有利カウンターTOP3・推奨ルーン・初手ビルド
+    // ----------------------------
+    // MODE: counter_pick - 選択チャンピオン vs 敵チャンプのマッチアップ攻略・推奨ルーン・ビルド
     // ----------------------------
     if (mode === 'counter_pick') {
+      const myChamp: string = body.myChampion || '';
       const enemy: string = body.enemyChampion || '';
       if (!enemy) return NextResponse.json({ error: 'enemyChampionを指定してください。' }, { status: 400 });
 
-      // チャンピオン知識と対面メモを取得
-      const knowledge = await getChampionKnowledge(supabase, enemy).catch(() => ({ text: '', hasData: false }));
-      
+      // 自分のチャンピオンと敵チャンピオンの知識を取得
+      const [myKnowledge, enemyKnowledge] = await Promise.all([
+        myChamp ? getChampionKnowledge(supabase, myChamp).catch(() => ({ text: '', hasData: false })) : { text: '', hasData: false },
+        getChampionKnowledge(supabase, enemy).catch(() => ({ text: '', hasData: false })),
+      ]);
+
       const prompt = `あなたはLoLの専属アナリスト兼コーチです。
-敵チャンピオン「${enemy}」に対する【有利なカウンターピック3選】および【推奨ルーン・初手ビルド・序盤の戦い方】をJSON形式で出力してください。
+【プレイヤー使用チャンピオン】: ${myChamp || '未指定（汎用）'}
+【対面敵チャンピオン】: ${enemy}
 
-=== 敵チャンピオン情報 ===
-${knowledge.text || `${enemy} の基本データ`}
+=== プレイヤー側チャンピオン情報 ===
+${myKnowledge.text || `${myChamp} のデータ`}
 
-以下の厳密なJSON形式のみで出力してください（マークダウンのコードブロック不要）:
+=== 対面敵チャンピオン情報 ===
+${enemyKnowledge.text || `${enemy} の基本データ`}
+
+【要求事項】
+1. プレイヤー使用チャンピオン「${myChamp || '自分'}」が「${enemy}」と対戦する際の【最も実戦的で勝率の高い推奨ルーン（キーストーン、サブルーン、破片）】
+2. 【初手スタートアイテム】および【対「${enemy}」用のコアビルド順（1st/2nd/3rdアイテム・ブーツ）】
+3. 対「${enemy}」における【序盤レーン戦/JGトレードの戦い方・極意】
+4. 「${enemy}」に対する【有利なカウンターチャンピオン3選】
+
+以下の厳密なJSON形式のみで出力してください（マークダウン不要）:
 {
   "enemy": "${enemy}",
+  "myChampion": "${myChamp}",
+  "recommendedRunes": "キーストーン名 ＋ 主要サブルーン（例: 征服者 ＋ 凱旋 / 迅速 / 背水の陣 ＋ 魔法の靴 / 宇宙の英知）",
+  "runeReason": "このルーン構成が${enemy}相手に有効な具体的理由（1〜2文）",
+  "recommendedItems": "スタートアイテム ＋ 1st/2ndコア（例: ドランブレード＋ポーション ➔ エクリプス ➔ サンデードスカイ ➔ プレートスチールキャップ）",
+  "itemReason": "このビルド順が${enemy}相手に刺さる理由（1〜2文）",
+  "tips": "Lv1〜Lv6で${enemy}と戦う際の決定的なトレードの極意・注意点（1〜2文）",
   "counters": [
     {
-      "champion": "カウンターチャンプ名（英語英名例: Poppy）",
-      "nameJp": "日本語名（例: ポッピー）",
-      "reason": "なぜカウンターなのかの明確な理由（1〜2文）",
-      "difficulty": "Easy" | "Medium" | "Hard"
+      "champion": "カウンターチャンプ英名",
+      "nameJp": "日本語名",
+      "reason": "なぜカウンターなのかの明確な理由",
+      "difficulty": "Easy"
     }
-  ],
-  "recommendedRune": {
-    "keystone": "推奨キーストーン（例: 征服者 / アフターショック / フェイズラッシュ）",
-    "primaryTree": "メインパス名（例: 栄華）",
-    "secondaryTree": "サブパス名（例: 覇道）",
-    "shardNotes": "ステータス破片の注意点（例: 攻撃速度 + 物理防御）"
-  },
-  "starterItem": "推奨スタートアイテム（例: ドランブレード + ポーション / 詰め替えポーション + 涙）",
-  "earlyLaningTip": "Lv1〜Lv3で絶対に意識すべき対面対策の核心（1〜2文）"
+  ]
 }`;
 
-      const raw = await callGemini(prompt, `counter_pick_${enemy}`);
+      const raw = await callGemini(prompt, `matchup_build_${myChamp}_vs_${enemy}`);
       let parsed: any;
       try {
         let cleaned = raw.trim();
@@ -864,10 +877,13 @@ ${knowledge.text || `${enemy} の基本データ`}
       } catch {
         parsed = {
           enemy,
-          counters: [],
-          recommendedRune: { keystone: '汎用', primaryTree: '栄華', secondaryTree: '覇道', shardNotes: '' },
-          starterItem: '標準スタートアイテム',
-          earlyLaningTip: '序盤は敵の主要スキルを避けてからダメージトレードを行いましょう。'
+          myChampion: myChamp,
+          recommendedRunes: '征服者 / 凱旋 / 迅速 / 背水の陣 (不撓不屈 / 息継ぎ)',
+          runeReason: `${enemy}とのトレードで持続火力を最大化しつつ、耐久力を補強します。`,
+          recommendedItems: 'ドランブレード / ドランシールド ➔ 1stコア ➔ 状況別防御靴',
+          itemReason: '相手のダメージ属性（物理/魔法）に合わせて靴を選択し、1stコア完成を最優先。',
+          tips: `${enemy}の主要スキルのクールダウン中を狙ってショートトレードを仕掛けましょう。`,
+          counters: []
         };
       }
 

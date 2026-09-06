@@ -12,18 +12,18 @@ interface ChampionQuickSelectorProps {
   onLiveMatchDetected?: (myChamp: string, enemyChamp: string) => void;
 }
 
-// ユーザーの主力JGプール（Kazurinお気に入り）
-const MY_FAVORITE_CHAMPIONS = [
+// ユーザーの主力JGプール（マスタリー＆実戦上位）
+const DEFAULT_MY_CHAMPIONS = [
+  { id: 'JarvanIV', name: 'ジャーヴァンIV' },
+  { id: 'Lillia', name: 'リリア' },
   { id: 'Graves', name: 'グレイブス' },
   { id: 'Viego', name: 'ヴィエゴ' },
-  { id: 'Nidalee', name: 'ニダリー' },
-  { id: 'Lillia', name: 'リリア' },
-  { id: 'Hecarim', name: 'ヘカリム' },
   { id: 'Nocturne', name: 'ノクターン' },
+  { id: 'XinZhao', name: 'シン・ジャオ' },
+  { id: 'LeeSin', name: 'リー・シン' },
+  { id: 'Hecarim', name: 'ヘカリム' },
   { id: 'Kindred', name: 'キンドレッド' },
-  { id: 'Kayn', name: 'ケイン' },
-  { id: 'Talon', name: 'タロン' },
-  { id: 'Briar', name: 'ブライアー' },
+  { id: 'Vi', name: 'ヴァイ' },
 ];
 
 // よくあるメタ対面JG
@@ -381,7 +381,7 @@ export default function ChampionQuickSelector({
             ⭐ 自分の主力:
           </span>
           <div className="flex items-center gap-1.5 flex-wrap">
-            {MY_FAVORITE_CHAMPIONS.map((c) => {
+            {DEFAULT_MY_CHAMPIONS.map((c) => {
               const isSelected = normalizeChampionName(myChampion) === c.id;
               return (
                 <button

@@ -72,49 +72,30 @@ const BLUEPRINTS: Record<string, any[]> = {
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
-  const myChamp = searchParams.get('my') || 'Aatrox';
-  const enemyChamp = searchParams.get('enemy') || 'Darius';
-  const enemyLevel = Math.max(1, Math.min(18, parseInt(searchParams.get('level') || '6', 10) || 6));
-  const myMaxHp = Math.max(100, parseFloat(searchParams.get('myHp') || '1150') || 1150);
-  const myArmor = Math.max(0, parseFloat(searchParams.get('myArmor') || '45') || 45);
-  const myMr = Math.max(0, parseFloat(searchParams.get('myMr') || '36') || 36);
-
-  const hasIgnite = searchParams.get('ignite') !== 'false';
-
-  // 即死キルライン計算
-  const prof = BURST_PROFILES[enemyChamp] || { baseLvl6: 450, adScale: 2.0, apScale: 1.5, primaryType: 'physical' };
-  const baseDmg = prof.baseLvl6 * (0.6 + (enemyLevel * 0.066));
-  const rawBurst = baseDmg + (25 * prof.adScale);
-  const igniteDmg = hasIgnite ? (70 + (20 * enemyLevel)) : 0;
-
-  let mitigated = rawBurst * (100 / (100 + (prof.primaryType === 'magic' ? myMr : myArmor)));
-  if (prof.primaryType === 'true_hybrid') {
-    mitigated = (rawBurst * 0.6 * (100 / (100 + myArmor))) + (rawBurst * 0.4);
-  }
-  const totalLethal = Math.round(mitigated + igniteDmg);
-  const killHpPercent = Math.min(95, Math.max(20, Math.round((totalLethal / myMaxHp) * 100)));
+  const myChamp = searchParams.get('my') || 'JarvanIV';
+  const enemyChamp = searchParams.get('enemy') || 'LeeSin';
 
   // 3段階手順書
   const phases = BLUEPRINTS[enemyChamp] || [
     {
       phase: "Phase 1 (Lv1〜2)",
-      title: "無理なトレードを避けウェーブ管理",
-      action: "敵の序盤スキル威力を確認し、ミニオンの多い有利なタイミングでファーム。",
-      win_trigger: "HPを維持して安定してLv3到達",
+      title: "無理なトレードを避けウェーブ・ルート管理",
+      action: "敵の序盤スキル威力を警戒し、有利なタイミングでファーム・クリアを先行。",
+      win_trigger: "HPを8割以上維持して安定してLv3到達",
       badge: "安定 🛡️"
     },
     {
       phase: "Phase 2 (Lv3〜5)",
-      title: "敵主要スキルのCD中にショートトレード",
-      action: "敵がファームにスキルを使った瞬間を狙ってトレードを仕掛ける。",
-      win_trigger: "敵のHPを削りリコール優位を奪う",
+      title: "敵主要スキルのCD中にショートトレード / ガンク展開",
+      action: "敵がスキルを空振りした瞬間や、視界の取れたサイドでアクションを仕掛ける。",
+      win_trigger: "敵のHPまたはFlashを削り主導権を奪う",
       badge: "好機 ⚔️"
     },
     {
       phase: "Phase 3 (Lv6〜)",
-      title: "パワースパイクを活かしてレーン制覇",
-      action: "自分の1stコア完成・Ult習得のタイミングでオールインまたはプレート破壊。",
-      win_trigger: "タワー1stプレート獲得またはソロキル",
+      title: "パワースパイクを活かしてオブジェクト制覇",
+      action: "Ult習得・1stコア完成のタイミングで集団戦またはオブジェクト（ヴォイドグラブ/ドラゴン）を完全制圧。",
+      win_trigger: "オブジェクト確保またはキル獲得で試合テンポを掌握",
       badge: "勝利 👑"
     }
   ];
@@ -123,18 +104,6 @@ export async function GET(request: NextRequest) {
     success: true,
     my_champion: myChamp,
     enemy_champion: enemyChamp,
-    enemy_level: enemyLevel,
-    kill_line: {
-      total_lethal_damage: totalLethal,
-      raw_burst_damage: Math.round(rawBurst),
-      ignite_damage: igniteDmg,
-      kill_hp_percent: killHpPercent,
-      my_max_hp: myMaxHp,
-      safe_hp_threshold: Math.max(0, Math.round(myMaxHp - totalLethal)),
-      danger_badge: killHpPercent >= 50 ? "超危険 🔴" : (killHpPercent >= 40 ? "警戒 🟠" : "通常 🟡"),
-      danger_color: killHpPercent >= 50 ? "#ef4444" : (killHpPercent >= 40 ? "#f97316" : "#eab308"),
-      advice: `HP ${killHpPercent}% (${totalLethal}以下) で敵のLv${enemyLevel}フルコンボ即死圏内。`
-    },
     blueprint: {
       phases
     }

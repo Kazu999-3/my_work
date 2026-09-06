@@ -66,85 +66,9 @@ const PLAY_STYLE_TYPES = [
   },
 ];
 
-// セルフ診断テスト用の5つの質問
-const QUIZ_QUESTIONS = [
-  {
-    id: 1,
-    question: '1周目のフルクリア（3:15〜3:30）が終わった時、最初の行動は？',
-    options: [
-      { text: 'スカトルを取って即リコールし、アイテムを買って2周目へ入る', type: 'farmer_scaler' },
-      { text: '敵JGの出現位置をマップで見て、逆サイドの敵キャンプへ侵入する', type: 'invader_counter' },
-      { text: '押されているレーンやHPの削り合いがあるレーンへ即ガンクする', type: 'gank_snowball' },
-      { text: '敵JGのガンク先を予測し、川の視界を置いて味方レーンの背後に潜む', type: 'controller_tank' },
-    ],
-  },
-  {
-    id: 2,
-    question: '味方ボットが連続でソロデスしてピンを連打してきた時、どう対応する？',
-    options: [
-      { text: 'ボットは捨ててトップ側で確実にCSとヴォイドグラブを回収する', type: 'farmer_scaler' },
-      { text: '敵JGがボットへ寄りそうなので、敵のトップ側ジャングルを丸ごと奪う', type: 'invader_counter' },
-      { text: 'これ以上の崩壊を防ぐため、フルガンクして1キルをボットに渡す', type: 'gank_snowball' },
-      { text: 'ボット周囲の視界を固め、タワーダイブされないようにカバーに入る', type: 'controller_tank' },
-    ],
-  },
-  {
-    id: 3,
-    question: 'ドラゴンとヴォイドグラブが同時に湧いている時、優先順位は？',
-    options: [
-      { text: '触りやすい方のオブジェクトを速攻で触り、ファームに戻る', type: 'farmer_scaler' },
-      { text: '敵JGがいる逆側のオブジェクトをノーリスクでスティールする', type: 'invader_counter' },
-      { text: '先に近くのレーンをガンクして人数有利を作ってから両方狙う', type: 'gank_snowball' },
-      { text: '視界が取れていて味方が寄れる方のオブジェクトを優先する', type: 'controller_tank' },
-    ],
-  },
-  {
-    id: 4,
-    question: '中盤（15〜20分）の集団戦前、どこに位置取ることが多い？',
-    options: [
-      { text: 'サイドレーンのウェーブを押し込み、安全なファームを回収してから合流', type: 'farmer_scaler' },
-      { text: '敵の裏側のブッシュに潜み、敵の甘えた孤立キャリーを狙う', type: 'invader_counter' },
-      { text: '先頭を切って敵キャリーへフラッシュイン・イニシエートを狙う', type: 'gank_snowball' },
-      { text: '味方ADCの隣でピール（護衛）しながら敵のエンゲージを待つ', type: 'controller_tank' },
-    ],
-  },
-  {
-    id: 5,
-    question: '試合に負けた時、最も多いシチュエーションは？',
-    options: [
-      { text: '自分はKDAもCSも良好だが、味方レーンが壊れていて集団戦で負けた', type: 'farmer_scaler' },
-      { text: '敵陣に深く入りすぎて味方のカバーが間に合わず捕まった', type: 'invader_counter' },
-      { text: '序盤の無理なガンクが失敗して相手JGにレベル差をつけられた', type: 'gank_snowball' },
-      { text: 'オブジェクト前で味方が先にキャッチされて戦えなかった', type: 'controller_tank' },
-    ],
-  },
-];
-
 export default function PlayerStyleRadarCard() {
   const p = KAZURIN_STYLE_PROFILE;
-  const [activeTab, setActiveTab] = useState<'profile' | 'types' | 'quiz'>('profile');
-  const [quizAnswers, setQuizAnswers] = useState<Record<number, string>>({});
-  const [quizResult, setQuizResult] = useState<string | null>(null);
-
-  const handleSelectQuiz = (qId: number, type: string) => {
-    const updated = { ...quizAnswers, [qId]: type };
-    setQuizAnswers(updated);
-
-    if (Object.keys(updated).length === QUIZ_QUESTIONS.length) {
-      // 多数決でタイプ決定
-      const counts: Record<string, number> = {};
-      Object.values(updated).forEach((t) => {
-        counts[t] = (counts[t] || 0) + 1;
-      });
-      const topType = Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0];
-      setQuizResult(topType);
-    }
-  };
-
-  const resetQuiz = () => {
-    setQuizAnswers({});
-    setQuizResult(null);
-  };
+  const [activeTab, setActiveTab] = useState<'profile' | 'types'>('profile');
 
   return (
     <div className="rounded-3xl border border-stone-200/90 bg-white/95 p-5 shadow-xs space-y-4">
@@ -184,15 +108,6 @@ export default function PlayerStyleRadarCard() {
             }`}
           >
             🧭 4大スタイル比較
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('quiz')}
-            className={`px-2.5 py-1 text-xs font-bold rounded-lg transition cursor-pointer ${
-              activeTab === 'quiz' ? 'bg-white text-stone-900 shadow-2xs' : 'text-stone-500 hover:text-stone-800'
-            }`}
-          >
-            🎯 5問セルフ診断
           </button>
         </div>
       </div>
@@ -372,87 +287,6 @@ export default function PlayerStyleRadarCard() {
       {/* ========================================================================= */}
       {/* 3. 5問セルフ診断テスト */}
       {/* ========================================================================= */}
-      {activeTab === 'quiz' && (
-        <div className="space-y-4 animate-in fade-in">
-          <div className="flex items-center justify-between">
-            <p className="text-xs text-stone-500">
-              5つの実戦シチュエーションに答えて、直近の思考パターン・プレイスタイルを判定します。
-            </p>
-            {quizResult && (
-              <button
-                type="button"
-                onClick={resetQuiz}
-                className="text-xs font-bold text-amber-700 hover:text-amber-900"
-              >
-                🔄 やり直す
-              </button>
-            )}
-          </div>
-
-          {quizResult ? (
-            <div className="rounded-2xl border-2 border-amber-400 bg-amber-50/70 p-5 space-y-3 animate-in zoom-in-95">
-              <div className="text-center space-y-1">
-                <span className="text-3xl">🎉</span>
-                <h4 className="text-sm font-black text-stone-900">診断結果</h4>
-                <div className="text-base font-black text-amber-900">
-                  {PLAY_STYLE_TYPES.find((t) => t.id === quizResult)?.name}
-                </div>
-              </div>
-
-              <div className="rounded-xl bg-white p-3.5 border border-amber-200 space-y-2 text-xs">
-                <p className="text-stone-700 font-medium leading-relaxed">
-                  {PLAY_STYLE_TYPES.find((t) => t.id === quizResult)?.desc}
-                </p>
-                <div className="border-t border-stone-100 pt-2 space-y-1 text-[11px]">
-                  <div className="text-emerald-700 font-bold">
-                    <span>強み: </span>{PLAY_STYLE_TYPES.find((t) => t.id === quizResult)?.pros}
-                  </div>
-                  <div className="text-rose-700 font-bold">
-                    <span>注意点: </span>{PLAY_STYLE_TYPES.find((t) => t.id === quizResult)?.cons}
-                  </div>
-                  <div className="text-stone-800 font-bold">
-                    <span>推奨チャンピオン: </span>
-                    {PLAY_STYLE_TYPES.find((t) => t.id === quizResult)?.recommendedChamps.join(', ')}
-                  </div>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {QUIZ_QUESTIONS.map((q, idx) => (
-                <div key={q.id} className="rounded-2xl border border-stone-200 bg-stone-50/50 p-3.5 space-y-2">
-                  <div className="text-xs font-bold text-stone-800 flex items-start gap-2">
-                    <span className="w-4 h-4 rounded-full bg-amber-600 text-white flex items-center justify-center text-[10px] shrink-0 mt-0.5">
-                      {idx + 1}
-                    </span>
-                    <span>{q.question}</span>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 pt-1">
-                    {q.options.map((opt, oIdx) => {
-                      const isSelected = quizAnswers[q.id] === opt.type;
-                      return (
-                        <button
-                          key={oIdx}
-                          type="button"
-                          onClick={() => handleSelectQuiz(q.id, opt.type)}
-                          className={`p-2.5 rounded-xl text-left text-xs font-medium transition border cursor-pointer ${
-                            isSelected
-                              ? 'bg-amber-600 text-white border-amber-700 shadow-xs'
-                              : 'bg-white hover:bg-stone-100 text-stone-700 border-stone-200'
-                          }`}
-                        >
-                          {opt.text}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
     </div>
   );
 }
