@@ -83,6 +83,7 @@ export default function AdminDashboardPage() {
 
   const [casinoStats, setCasinoStats] = useState<{
     totalCirculatingCoins: number;
+    topPlayers?: Array<{ id: number; name: string; coins: number; rank?: string }>;
     pendingBetTotalAmount: number;
     pendingBetCount: number;
     blueAmount: number;
@@ -91,6 +92,7 @@ export default function AdminDashboardPage() {
     redCount: number;
   }>({
     totalCirculatingCoins: 0,
+    topPlayers: [],
     pendingBetTotalAmount: 0,
     pendingBetCount: 0,
     blueAmount: 0,
@@ -580,6 +582,53 @@ export default function AdminDashboardPage() {
               </p>
             </div>
           </div>
+
+          {/* 👑 KTM 長者番付 TOP 10 */}
+          {casinoStats.topPlayers && casinoStats.topPlayers.length > 0 && (
+            <div className="p-4 rounded-2xl bg-white/80 backdrop-blur-md border border-stone-200/80 shadow-xs space-y-3 hover:border-stone-300 transition">
+              <div className="flex justify-between items-center pb-2 border-b border-stone-100">
+                <h3 className="text-xs font-black text-stone-900 flex items-center gap-1.5">
+                  <Trophy size={14} className="text-amber-500" />
+                  <span>👑 KTM 長者番付 TOP 10 （コイン富豪ランキング）</span>
+                </h3>
+                <Link href="/leaderboard" className="text-[11px] font-bold text-amber-600 hover:underline flex items-center gap-1">
+                  全プレイヤー順位表へ →
+                </Link>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-2.5">
+                {casinoStats.topPlayers.map((player, idx) => {
+                  const rankMedal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `${idx + 1}位`;
+                  const rankBg = idx === 0 ? 'bg-amber-500/15 border-amber-500/30 text-amber-900' :
+                                 idx === 1 ? 'bg-stone-200/80 border-stone-300 text-stone-800' :
+                                 idx === 2 ? 'bg-amber-700/10 border-amber-700/20 text-amber-950' :
+                                 'bg-stone-50 border-stone-200/60 text-stone-700';
+
+                  return (
+                    <div
+                      key={player.name || idx}
+                      className={`p-2.5 rounded-xl border flex items-center justify-between gap-2 transition hover:shadow-2xs ${rankBg}`}
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="font-black text-xs shrink-0 w-6 text-center">{rankMedal}</span>
+                        <div className="min-w-0">
+                          <div className="font-black text-xs truncate text-stone-900">{player.name}</div>
+                          {player.rank && (
+                            <div className="text-[9px] font-bold text-stone-400 truncate">{player.rank}</div>
+                          )}
+                        </div>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <span className="text-xs font-black text-amber-700 font-mono">
+                          🪙 {player.coins.toLocaleString()}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </section>
 
         {/* 🛰️ 4. サービス稼働ノード ＆ クラウド自動実行 (インフラコクピット) */}

@@ -30,7 +30,6 @@ export async function GET(req: NextRequest) {
       { count: youtubeErrorCount },
       { data: systemMetricsRow },
       { data: dictReviewNotif },
-      { data: champdbBulkProgress },
       { data: dictHealthRows },
       { data: activePlayers },
       { data: allMatches },
@@ -40,7 +39,7 @@ export async function GET(req: NextRequest) {
       supabase.from('edge_tasks').select('*').eq('id', heartbeatId).maybeSingle(),
       // 実行中・待機中タスク一覧
       supabase.from('edge_tasks').select('*').neq('id', heartbeatId).in('status', ['running', 'pending']),
-      // YouTube 吸収キュー件数 (youtube_queue.status の実値は pending/completed/on_hold/error_*/failed/manually_closed のみ)
+      // YouTube 吸収キュー件数
       supabase.from('youtube_queue').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
       supabase.from('youtube_queue').select('id', { count: 'exact', head: true }).eq('status', 'completed'),
       // 直近完了・失敗履歴
@@ -75,15 +74,10 @@ export async function GET(req: NextRequest) {
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle(),
-      // 辞典一括更新ハートビート
-      supabase.from('edge_tasks')
-        .select('status, payload, updated_at')
-        .eq('id', '00000000-0000-0000-0000-000000000002')
-        .maybeSingle(),
       // 辞典ヘルス
       supabase.from('champion_facts').select('confidence, patch, strengths'),
       // 🏆 大会メトリクス用: 登録プレイヤー
-      supabase.from('ktm_players').select('id, name, role_preferences, metadata, is_active'),
+      supabase.from('ktm_players').select('id, name, highest_rank, role_preferences, metadata, is_active'),
       // 🏆 大会メトリクス用: 試合履歴
       supabase.from('ktm_matches').select('id, created_at').order('created_at', { ascending: false }).limit(200),
       // 🪙 カジノメトリクス用: 未精算ベットタスク
@@ -91,7 +85,6 @@ export async function GET(req: NextRequest) {
     ]);
 
     // dict-health/route.tsのgetCurrentPatch()と同じロジック(西暦下2桁基準への変換)。
-    // ここがズレると全チャンピオンが誤って「パッチ不一致」判定される。
     const dictHealthCurrentPatch = await (async () => {
       try {
         const res = await fetch('https://ddragon.leagueoflegends.com/api/versions.json');
@@ -103,17 +96,15 @@ export async function GET(req: NextRequest) {
       }
     })();
 
-    // (task_type, payload)ごとに最新の1件だけを残し、それが failed のものだけを
-    // 「まだ未解決の要対応」として抽出する（再実行後に成功していれば自動的に消える）。
+    // (task_type, payload)ごとに最新の1件だけを残し、それが failed のものだけを抽出
     const latestByKey = new Map<string, any>();
     for (const t of (recentTaskData || [])) {
       const key = `${t.task_type}|${JSON.stringify(t.payload || {})}`;
-      if (!latestByKey.has(key)) latestByKey.set(key, t); // 降順取得済みなので最初の1件が最新
+      if (!latestByKey.has(key)) latestByKey.set(key, t);
     }
     const failedTaskData = Array.from(latestByKey.values())
       .filter((t) => {
         if (t.status !== 'failed') return false;
-        // チャンピオン辞典一括更新のタイムアウト＆自動再キューは正常な分割処理のため要対応から除外
         if (
           t.task_type === 'champion_db_bulk_update' &&
           typeof t.error_message === 'string' &&
@@ -121,7 +112,6 @@ export async function GET(req: NextRequest) {
         ) {
           return false;
         }
-        // クォータ枯渇・レート制限による安全スキップは要対応（バグ）から除外
         const errMsg = String(t.error_message || '').toLowerCase();
         if (
           errMsg.includes('quota') ||
@@ -138,9 +128,7 @@ export async function GET(req: NextRequest) {
       })
       .slice(0, 10);
 
-
-
-    // ワーカー判定 (DBのupdated_at と payload.last_active の双方からタイムスタンプをパース)
+    // ワーカー判定
     let workerActive = false;
     let diffSec = 9999;
     
@@ -151,12 +139,10 @@ export async function GET(req: NextRequest) {
       const updatedMs = updatedAt.getTime();
       if (!isNaN(updatedMs)) {
         diffSec = Math.max(0, Math.floor((nowMs - updatedMs) / 1000));
-        // ワーカーのハートビート間隔(5秒〜30秒)＋クロック差・遅延を考慮し90秒以内なら稼働中と判定
         workerActive = diffSec <= 90;
       }
     }
 
-    // 正しい edge_tasks のリアルタイム集計をシステムコクピットデータとしてマッピング
     const pendingTasks = queueTasks?.filter((t: any) => t.status === 'pending') || [];
     const runningTasks = queueTasks?.filter((t: any) => t.status === 'running') || [];
 
@@ -192,6 +178,17 @@ export async function GET(req: NextRequest) {
     const totalCirculatingCoins = playersList.reduce((acc: number, p: any) => {
       return acc + getPlayerCoins(p);
     }, 0);
+
+    // 🏆 長者番付 TOP 10
+    const topPlayers = playersList
+      .map((p: any) => ({
+        id: p.id,
+        name: p.name,
+        coins: getPlayerCoins(p),
+        rank: p.highest_rank || 'UNRANKED',
+      }))
+      .sort((a: { coins: number }, b: { coins: number }) => b.coins - a.coins)
+      .slice(0, 10);
 
     const pendingBets = pendingBetTasks || [];
     let pendingBetBlueAmount = 0;
@@ -229,6 +226,7 @@ export async function GET(req: NextRequest) {
       },
       casinoStats: {
         totalCirculatingCoins,
+        topPlayers,
         pendingBetTotalAmount: pendingBetBlueAmount + pendingBetRedAmount,
         pendingBetCount: pendingBets.length,
         blueAmount: pendingBetBlueAmount,
