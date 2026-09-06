@@ -75,7 +75,7 @@ export default function LeaderboardPage() {
       }
     })();
   }, [activeTab, metaData, metaLoading]);
-  const [minGames, setMinGames] = useState<number>(0);
+  const [minGames, setMinGames] = useState<number>(1);
   const [search, setSearch] = useState(''); // プレイヤー名検索(L-03)
   const [sortMetric, setSortMetric] = useState<'mmr' | 'winRate' | 'games'>('mmr');
 
@@ -240,8 +240,7 @@ export default function LeaderboardPage() {
                   onChange={(e) => setMinGames(Number(e.target.value))}
                   className="bg-black/5 text-stone-900 text-xs font-bold rounded-lg border border-border px-2 py-1 focus:outline-none focus:border-amber-500"
                 >
-                  <option value={0}>制限なし</option>
-                  <option value={1}>1試合以上</option>
+                  <option value={1}>1試合以上 (全実績者)</option>
                   <option value={3}>3試合以上</option>
                   <option value={5}>5試合以上</option>
                   <option value={10}>10試合以上</option>

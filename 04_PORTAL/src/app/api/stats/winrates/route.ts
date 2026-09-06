@@ -7,17 +7,16 @@ export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    // 1. プレイヤー一覧を取得（is_active が NULL のプレイヤーも確実に含める）
+    // 1. プレイヤー一覧を取得（登録されている約60名全員を無条件で対象）
     const { data: rawPlayers, error: pError } = await supabase
       .from('ktm_players')
-      .select('name, discord_id, is_active, mmr_top, mmr_jg, mmr_mid, mmr_adc, mmr_sup, mmr');
+      .select('name, discord_id, mmr_top, mmr_jg, mmr_mid, mmr_adc, mmr_sup, mmr');
 
     if (pError || !rawPlayers) {
       throw new Error("Failed to fetch players");
     }
 
-    // 明示的に is_active === false 以外の全プレイヤーを対象
-    const players = rawPlayers.filter((p: any) => p.is_active !== false);
+    const players = [...rawPlayers];
 
     // 2. 過去の全試合の参加者を取得（1000件超に備えページネーション）
     const { data: participants, error: hError } = await fetchAllRows((from, to) =>
@@ -72,7 +71,6 @@ export async function GET() {
           mmr_mid: 1200,
           mmr_adc: 1200,
           mmr_sup: 1200,
-          is_active: true,
         };
         players.push(dummyPlayer);
         if (dId) byDiscord.set(dId, dummyPlayer);
@@ -123,15 +121,17 @@ export async function GET() {
       }
     });
 
-    // 6. 配列に変換し、総試合数が多い順にソート
-    const results = Object.values(statsMap).sort((a, b) => {
-      if (b.totalGames !== a.totalGames) {
-        return b.totalGames - a.totalGames;
-      }
-      const aWr = a.totalGames > 0 ? a.totalWins / a.totalGames : 0;
-      const bWr = b.totalGames > 0 ? b.totalWins / b.totalGames : 0;
-      return bWr - aWr;
-    });
+    // 6. 配列に変換し、総試合数が1試合以上のプレイヤーのみに絞り込んでソート（0戦除外）
+    const results = Object.values(statsMap)
+      .filter((p: any) => p.totalGames > 0)
+      .sort((a: any, b: any) => {
+        if (b.totalGames !== a.totalGames) {
+          return b.totalGames - a.totalGames;
+        }
+        const aWr = a.totalGames > 0 ? a.totalWins / a.totalGames : 0;
+        const bWr = b.totalGames > 0 ? b.totalWins / b.totalGames : 0;
+        return bWr - aWr;
+      });
 
     return NextResponse.json({ status: "SUCCESS", data: results });
 

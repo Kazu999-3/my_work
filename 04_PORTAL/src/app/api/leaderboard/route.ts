@@ -16,14 +16,13 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const minGames = Number(searchParams.get('minGames')) || 0;
 
-    // プレイヤー全件を取得（is_active が NULL のプレイヤーも確実に含める）
+    // プレイヤー全件を取得（登録されている約60名全員を無条件で対象）
     const { data: rawPlayers, error: pError } = await supabase
       .from('ktm_players')
-      .select('name, discord_id, mmr_top, mmr_jg, mmr_mid, mmr_adc, mmr_sup, is_active');
+      .select('name, discord_id, mmr_top, mmr_jg, mmr_mid, mmr_adc, mmr_sup');
     if (pError || !rawPlayers) throw pError || new Error('players not found');
 
-    // 明示的に is_active === false に設定されているプレイヤー以外は全員対象
-    const players = (rawPlayers || []).filter((p: any) => p.is_active !== false);
+    const players = [...rawPlayers];
 
     const { data: matchesData, error: mError } = await fetchAllRows((from, to) =>
       supabase
@@ -63,7 +62,6 @@ export async function GET(req: Request) {
           mmr_mid: 1200,
           mmr_adc: 1200,
           mmr_sup: 1200,
-          is_active: true,
         };
         players.push(dummyPlayer);
         if (dId) byDiscord.set(dId, dummyPlayer);
@@ -95,14 +93,16 @@ export async function GET(req: Request) {
       }
     });
 
+    // 0戦は除外（最低1試合以上出場したレーンのみランキングに表示）
+    const effectiveMinGames = Math.max(minGames, 1);
+
     const result: Record<string, any[]> = { TOP: [], JG: [], MID: [], ADC: [], SUP: [] };
     ROLES.forEach((role) => {
       const mmrKey = `mmr_${role.toLowerCase()}`;
       const roleRanking = players
         .filter((p: any) => {
           const stats = statsMap[keyOfPlayer(p)]?.[role];
-          // minGames フィルタ
-          return stats && stats.games >= minGames;
+          return stats && stats.games >= effectiveMinGames;
         })
         .map((p: any) => {
           const stats = statsMap[keyOfPlayer(p)]?.[role] || { games: 0, wins: 0 };
