@@ -138,24 +138,7 @@ export async function GET(req: NextRequest) {
       })
       .slice(0, 10);
 
-    // 辞典一括更新が内部でsuspended(API制限等で一時停止)している場合、上のデデュープ
-    // では検知できないため別枠で先頭に追加する。
-    const bulkProgress = champdbBulkProgress?.payload as any;
-    if (champdbBulkProgress?.status === 'suspended' && bulkProgress) {
-      failedTaskData.unshift({
-        id: 'champdb_bulk_progress',
-        task_type: 'champion_db_bulk_update',
-        payload: {
-          completed: bulkProgress.completed,
-          total: bulkProgress.total,
-          patch_version: bulkProgress.patch_version,
-        },
-        status: 'suspended',
-        error_message: `${bulkProgress.completed ?? 0}/${bulkProgress.total ?? '?'}体完了、API制限等により一時停止中です`,
-        updated_at: champdbBulkProgress.updated_at,
-        executor: null,
-      });
-    }
+
 
     // ワーカー判定 (DBのupdated_at と payload.last_active の双方からタイムスタンプをパース)
     let workerActive = false;
