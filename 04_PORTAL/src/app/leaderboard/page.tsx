@@ -30,14 +30,15 @@ interface LeaderboardData {
 }
 
 import WinrateMatrixPanel from './WinrateMatrixPanel';
-import { Trophy, Activity, Info } from 'lucide-react';
+import CoinsRankingPanel from './CoinsRankingPanel';
+import { Trophy, Activity, Info, Coins } from 'lucide-react';
 
 export default function LeaderboardPage() {
   const [data, setData] = useState<LeaderboardData>({
     TOP: [], JG: [], MID: [], ADC: [], SUP: []
   });
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'ranking' | 'winrate' | 'meta'>('ranking');
+  const [activeTab, setActiveTab] = useState<'ranking' | 'winrate' | 'meta' | 'coins'>('ranking');
 
   // KTM内メタ統計(#80): チャンピオン別のピック数・勝率・平均KDA
   const [metaData, setMetaData] = useState<any[] | null>(null);
@@ -143,6 +144,17 @@ export default function LeaderboardPage() {
               MMRランキング
             </button>
             <button
+              onClick={() => setActiveTab('coins')}
+              className={`flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2 rounded-xl text-xs sm:text-sm font-black transition-all whitespace-nowrap cursor-pointer ${
+                activeTab === 'coins'
+                  ? 'bg-amber-500 text-stone-950 shadow-xs scale-102 font-extrabold'
+                  : 'text-stone-600 hover:text-stone-900 hover:bg-stone-100'
+              }`}
+            >
+              <Coins size={16} className="text-amber-500" />
+              🪙 コイン長者番付
+            </button>
+            <button
               onClick={() => setActiveTab('winrate')}
               className={`flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2 rounded-xl text-xs sm:text-sm font-black transition-all whitespace-nowrap cursor-pointer ${
                 activeTab === 'winrate'
@@ -166,7 +178,9 @@ export default function LeaderboardPage() {
           </div>
         </div>
 
-        {activeTab === 'meta' ? (
+        {activeTab === 'coins' ? (
+          <CoinsRankingPanel />
+        ) : activeTab === 'meta' ? (
           /* KTM内メタ統計(#80) */
           <div className="max-w-4xl mx-auto">
             <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
