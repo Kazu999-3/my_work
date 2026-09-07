@@ -25,8 +25,7 @@ export interface CoinRankingResponse {
 
 export async function GET() {
   try {
-    // coins カラムが未マイグレーションの環境でもエラーにならないよう、
-    // select('*') または存在する確実なカラムを指定
+    // 1. ktm_players から登録・未登録・アクティブ有無問わず全プレイヤーを取得
     let allPlayers: any[] = [];
     const { data: pData, error: pErr } = await supabase
       .from('ktm_players')
@@ -39,32 +38,71 @@ export async function GET() {
         .select('name, discord_id, highest_rank, role_preferences, metadata, is_active');
 
       if (minErr) {
-        console.error('[leaderboard/coins] fallback query also failed:', minErr);
-        throw minErr;
+        console.error('[leaderboard/coins] fallback query failed:', minErr);
+      } else {
+        allPlayers = minData || [];
       }
-      allPlayers = minData || [];
     } else {
       allPlayers = pData || [];
     }
 
-    const activeList = allPlayers.filter((p: any) => p.is_active !== false);
+    const playerMap = new Map<string, {
+      name: string;
+      discordId: string;
+      coins: number;
+      highestRank: string;
+    }>();
 
-    const sortedList = activeList
-      .map((p: any) => {
-        const coins = getPlayerCoins(p);
-        const highestRank = p.highest_rank || 'UNRANKED';
-        return {
-          name: p.name || 'Unknown',
-          discordId: p.discord_id || '',
-          coins,
-          highestRank,
-          rankBadge: getKtmRank(1200),
-        };
-      })
-      .sort((a: any, b: any) => b.coins - a.coins);
+    // 登録者・非アクティブ関係なく全行を格納
+    for (const p of allPlayers) {
+      const name = (p.name || '').trim();
+      const discordId = (p.discord_id || '').trim();
+      const key = discordId || name.toLowerCase();
+      if (!key && !name) continue;
+
+      const coins = getPlayerCoins(p);
+      const highestRank = p.highest_rank || 'UNRANKED';
+
+      playerMap.set(key, {
+        name: name || `Player_${discordId.slice(-4) || 'User'}`,
+        discordId,
+        coins,
+        highestRank,
+      });
+    }
+
+    // 2. 過去の試合参加者（ktm_match_participants）にのみ存在するユーザーも名寄せ
+    try {
+      const { data: participants } = await supabase
+        .from('ktm_match_participants')
+        .select('player_name, discord_id');
+
+      if (participants) {
+        for (const pt of participants) {
+          const name = (pt.player_name || '').trim();
+          const discordId = (pt.discord_id || '').trim();
+          const key = discordId || name.toLowerCase();
+          if (!key && !name) continue;
+
+          if (!playerMap.has(key)) {
+            playerMap.set(key, {
+              name: name || `Player_${discordId.slice(-4) || 'User'}`,
+              discordId,
+              coins: 1000, // 初期コイン
+              highestRank: 'UNRANKED',
+            });
+          }
+        }
+      }
+    } catch (ptErr) {
+      console.warn('[leaderboard/coins] participants fetch warning:', ptErr);
+    }
+
+    // ソート（コイン多い順）
+    const sortedList = Array.from(playerMap.values()).sort((a, b) => b.coins - a.coins);
 
     // 順位付け
-    const players: CoinRankingPlayer[] = sortedList.map((p: any, index: number) => ({
+    const players: CoinRankingPlayer[] = sortedList.map((p, index) => ({
       rank: index + 1,
       name: p.name,
       discordId: p.discordId,
@@ -89,6 +127,13 @@ export async function GET() {
     return NextResponse.json(response);
   } catch (err: any) {
     console.error('[leaderboard/coins] Exception:', err);
-    return NextResponse.json({ error: err.message || 'コインランキングの取得に失敗しました', players: [], stats: { totalPlayers: 0, totalCoins: 0, avgCoins: 0 } }, { status: 500 });
+    return NextResponse.json(
+      {
+        error: err.message || 'コインランキングの取得に失敗しました',
+        players: [],
+        stats: { totalPlayers: 0, totalCoins: 0, avgCoins: 0 },
+      },
+      { status: 500 }
+    );
   }
 }
