@@ -25,16 +25,29 @@ export interface CoinRankingResponse {
 
 export async function GET() {
   try {
-    const { data: allPlayers, error: pErr } = await supabase
+    // coins カラムが未マイグレーションの環境でもエラーにならないよう、
+    // select('*') または存在する確実なカラムを指定
+    let allPlayers: any[] = [];
+    const { data: pData, error: pErr } = await supabase
       .from('ktm_players')
-      .select('id, name, discord_id, highest_rank, role_preferences, metadata, coins, is_active');
+      .select('*');
 
     if (pErr) {
-      console.error('[leaderboard/coins] Database error:', pErr);
-      throw pErr;
+      console.warn('[leaderboard/coins] select(*) failed, falling back to minimal columns:', pErr);
+      const { data: minData, error: minErr } = await supabase
+        .from('ktm_players')
+        .select('name, discord_id, highest_rank, role_preferences, metadata, is_active');
+
+      if (minErr) {
+        console.error('[leaderboard/coins] fallback query also failed:', minErr);
+        throw minErr;
+      }
+      allPlayers = minData || [];
+    } else {
+      allPlayers = pData || [];
     }
 
-    const activeList = (allPlayers || []).filter((p: any) => p.is_active !== false);
+    const activeList = allPlayers.filter((p: any) => p.is_active !== false);
 
     const sortedList = activeList
       .map((p: any) => {
@@ -45,7 +58,7 @@ export async function GET() {
           discordId: p.discord_id || '',
           coins,
           highestRank,
-          rankBadge: getKtmRank(1200), // デフォルト
+          rankBadge: getKtmRank(1200),
         };
       })
       .sort((a: any, b: any) => b.coins - a.coins);
@@ -76,6 +89,6 @@ export async function GET() {
     return NextResponse.json(response);
   } catch (err: any) {
     console.error('[leaderboard/coins] Exception:', err);
-    return NextResponse.json({ error: err.message || 'コインランキングの取得に失敗しました' }, { status: 500 });
+    return NextResponse.json({ error: err.message || 'コインランキングの取得に失敗しました', players: [], stats: { totalPlayers: 0, totalCoins: 0, avgCoins: 0 } }, { status: 500 });
   }
 }

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
-import { Coins, Trophy, Search, Sparkles, TrendingUp, Users, ArrowUpRight, Shield, Award } from 'lucide-react';
+import { Coins, Trophy, Search, Sparkles, TrendingUp, Users, ArrowUpRight, Shield, Award, RefreshCw, AlertCircle } from 'lucide-react';
 import { Spinner } from '../../components/Feedback';
 import { getColorFromRankName } from '../../lib/mmr';
 
@@ -25,24 +25,30 @@ export default function CoinsRankingPanel() {
   const [players, setPlayers] = useState<CoinRankingPlayer[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [sortDir, setSortDir] = useState<'desc' | 'asc'>('desc');
 
-  useEffect(() => {
-    async function fetchCoinsRanking() {
-      setLoading(true);
-      try {
-        const res = await fetch('/api/leaderboard/coins');
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'コインランキングの取得に失敗しました');
-        setPlayers(data.players || []);
-        setStats(data.stats || null);
-      } catch (err) {
-        console.error('Coins ranking fetch failed:', err);
-      } finally {
-        setLoading(false);
+  const fetchCoinsRanking = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/leaderboard/coins');
+      const data = await res.json();
+      if (!res.ok && !data.players) {
+        throw new Error(data.error || 'コインランキングの取得に失敗しました');
       }
+      setPlayers(data.players || []);
+      setStats(data.stats || null);
+    } catch (err: any) {
+      console.error('Coins ranking fetch failed:', err);
+      setError(err.message || 'データ取得中にエラーが発生しました');
+    } finally {
+      setLoading(false);
     }
+  };
+
+  useEffect(() => {
     fetchCoinsRanking();
   }, []);
 
@@ -60,6 +66,22 @@ export default function CoinsRankingPanel() {
     return (
       <div className="py-20 flex justify-center items-center">
         <Spinner label="コイン長者番付を集計中..." />
+      </div>
+    );
+  }
+
+  if (error && players.length === 0) {
+    return (
+      <div className="max-w-md mx-auto p-6 bg-red-50/80 border border-red-200 rounded-2xl text-center space-y-3">
+        <AlertCircle size={32} className="text-red-500 mx-auto" />
+        <p className="text-sm font-bold text-red-700">{error}</p>
+        <button
+          onClick={fetchCoinsRanking}
+          className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-black rounded-xl transition inline-flex items-center gap-1.5 cursor-pointer shadow-xs"
+        >
+          <RefreshCw size={14} />
+          再読み込み
+        </button>
       </div>
     );
   }
@@ -125,7 +147,7 @@ export default function CoinsRankingPanel() {
               </div>
               <div className="space-y-1 my-2">
                 <Link
-                  href={`/player/${top2.discordId}`}
+                  href={`/player/${top2.discordId || top2.name}`}
                   className="text-base font-black text-stone-900 hover:text-amber-600 transition flex items-center gap-1.5 group"
                 >
                   <span className="truncate">{top2.name}</span>
@@ -158,7 +180,7 @@ export default function CoinsRankingPanel() {
               </div>
               <div className="space-y-1.5 my-2">
                 <Link
-                  href={`/player/${top1.discordId}`}
+                  href={`/player/${top1.discordId || top1.name}`}
                   className="text-lg font-black text-stone-950 hover:text-amber-700 transition flex items-center gap-1.5 group"
                 >
                   <span className="truncate">{top1.name}</span>
@@ -190,7 +212,7 @@ export default function CoinsRankingPanel() {
               </div>
               <div className="space-y-1 my-2">
                 <Link
-                  href={`/player/${top3.discordId}`}
+                  href={`/player/${top3.discordId || top3.name}`}
                   className="text-base font-black text-stone-900 hover:text-amber-600 transition flex items-center gap-1.5 group"
                 >
                   <span className="truncate">{top3.name}</span>
@@ -227,7 +249,7 @@ export default function CoinsRankingPanel() {
           {search && (
             <button
               onClick={() => setSearch('')}
-              className="text-stone-400 hover:text-stone-700 text-xs px-2 py-0.5 rounded-md bg-stone-100"
+              className="text-stone-400 hover:text-stone-700 text-xs px-2 py-0.5 rounded-md bg-stone-100 cursor-pointer"
             >
               クリア
             </button>
@@ -286,7 +308,7 @@ export default function CoinsRankingPanel() {
                 {/* プレイヤー名 */}
                 <div className="flex-1 min-w-0">
                   <Link
-                    href={`/player/${player.discordId}`}
+                    href={`/player/${player.discordId || player.name}`}
                     className="font-extrabold text-stone-900 group-hover:text-amber-600 transition text-xs sm:text-sm truncate block"
                   >
                     {player.name}
@@ -313,7 +335,7 @@ export default function CoinsRankingPanel() {
                 {/* カルテリンク */}
                 <div className="w-16 text-center shrink-0">
                   <Link
-                    href={`/player/${player.discordId}`}
+                    href={`/player/${player.discordId || player.name}`}
                     className="inline-flex items-center justify-center p-1.5 rounded-lg bg-stone-100 hover:bg-amber-500 hover:text-white text-stone-500 transition cursor-pointer"
                     title={`${player.name} の個人カルテ`}
                   >
