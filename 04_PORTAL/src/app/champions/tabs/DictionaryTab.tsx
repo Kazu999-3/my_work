@@ -1206,17 +1206,18 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                       >
                         <Compass size={13} className="text-stone-400" />
                         <span>データ管理</span>
-                        <span className="text-[9px] opacity-70">▼</span>
+                        <span className="text-[9px] opacity-70">▲</span>
                       </button>
                       
-                      <div className="absolute right-0 top-full mt-1.5 w-64 bg-stone-900/95 backdrop-blur-xl border border-stone-700/80 rounded-2xl shadow-2xl p-2 hidden group-hover:block z-50 animate-in fade-in slide-in-from-top-1">
+                      {/* 上方向（バナー内）に展開して overflow-hidden による見切れを完全防止 */}
+                      <div className="absolute right-0 bottom-full mb-2 w-64 bg-stone-900/95 backdrop-blur-xl border border-stone-700/90 rounded-2xl shadow-2xl p-2 hidden group-hover:block z-50 animate-in fade-in slide-in-from-bottom-2">
                         <div className="text-[10px] font-bold text-stone-400 px-2.5 py-1 uppercase tracking-wider border-b border-stone-800 mb-1">
                           辞典メンテナンスツール
                         </div>
                         <button
                           onClick={() => handleStartRefineFacts(selected.id || selected.name, selectedRole)}
                           disabled={refiningFacts}
-                          className="w-full text-left p-2 text-xs text-stone-200 hover:bg-stone-800/80 rounded-xl flex items-start gap-2.5 transition disabled:opacity-50"
+                          className="w-full text-left p-2 text-xs text-stone-200 hover:bg-stone-800/80 rounded-xl flex items-start gap-2.5 transition disabled:opacity-50 cursor-pointer"
                         >
                           <Sparkles size={14} className="text-amber-400 shrink-0 mt-0.5" />
                           <div>
@@ -1227,7 +1228,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                         <button
                           onClick={handleQualityCheck}
                           disabled={checkingQuality}
-                          className="w-full text-left p-2 text-xs text-stone-200 hover:bg-stone-800/80 rounded-xl flex items-start gap-2.5 transition disabled:opacity-50"
+                          className="w-full text-left p-2 text-xs text-stone-200 hover:bg-stone-800/80 rounded-xl flex items-start gap-2.5 transition disabled:opacity-50 cursor-pointer"
                         >
                           <Activity size={14} className="text-emerald-400 shrink-0 mt-0.5" />
                           <div>
@@ -1251,7 +1252,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                               console.error(e);
                             }
                           }}
-                          className="w-full text-left p-2 text-xs text-stone-200 hover:bg-stone-800/80 rounded-xl flex items-start gap-2.5 transition"
+                          className="w-full text-left p-2 text-xs text-stone-200 hover:bg-stone-800/80 rounded-xl flex items-start gap-2.5 transition cursor-pointer"
                         >
                           <Check size={14} className="text-sky-400 shrink-0 mt-0.5" />
                           <div>
