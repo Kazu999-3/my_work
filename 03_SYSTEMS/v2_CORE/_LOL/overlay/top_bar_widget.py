@@ -39,10 +39,10 @@ class TopBarWidget(QWidget):
         self.card_frame = QFrame(self)
         self.card_frame.setStyleSheet("""
             QFrame {
-                background-color: rgba(12, 10, 18, 0.84);
-                border: 1px solid rgba(212, 140, 40, 0.40);
-                border-radius: 10px;
-                padding: 6px;
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 rgba(9, 20, 40, 0.94), stop:1 rgba(1, 10, 19, 0.96));
+                border: 1px solid #785A28;
+                border-radius: 6px;
+                padding: 4px;
             }
         """)
         
@@ -53,10 +53,10 @@ class TopBarWidget(QWidget):
         # 1. 💰 チームゴールド差行
         gold_row = QHBoxLayout()
         gold_title = QLabel("💰 チーム差 :", self.card_frame)
-        gold_title.setStyleSheet("color: #a8a29e; font-size: 12px; font-weight: bold;")
+        gold_title.setStyleSheet("color: #C8AA6E; font-family: 'BeaufortforLOL', sans-serif; font-size: 12px; font-weight: bold;")
         
         self.gold_value_label = QLabel("+0G (互角 🟡)", self.card_frame)
-        self.gold_value_label.setStyleSheet("color: #eab308; font-size: 13px; font-weight: bold;")
+        self.gold_value_label.setStyleSheet("color: #F0E6D2; font-family: 'BeaufortforLOL', sans-serif; font-size: 13px; font-weight: 900;")
 
         gold_row.addWidget(gold_title)
         gold_row.addWidget(self.gold_value_label)

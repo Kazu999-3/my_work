@@ -71,32 +71,43 @@ class CoolDownButton(QPushButton):
 
     def update_appearance(self, ready: bool):
         if ready:
-            border_color = "rgba(56, 189, 248, 0.6)" if self.spell_name == "Flash" else ("rgba(192, 132, 252, 0.6)" if self.spell_type == "ULT" else "rgba(245, 158, 11, 0.6)")
-            text_color = "#e0f2fe" if self.spell_name == "Flash" else ("#fae8ff" if self.spell_type == "ULT" else "#fef3c7")
+            if self.spell_name == "Flash":
+                border = "#F5EE9E" # Flash Gold
+                glow = "#F5EE9E"
+            elif self.spell_type == "ULT":
+                border = "#C89B3C" # Hextech Gold
+                glow = "#0AC8B9" # Hextech Blue Shimmer
+            else:
+                border = "#785A28"
+                glow = "#C8AA6E"
+
             self.setStyleSheet(f"""
                 QPushButton {{
-                    background-color: rgba(20, 16, 28, 0.85);
-                    color: {text_color};
+                    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 rgba(14, 30, 50, 0.92), stop:1 rgba(3, 14, 28, 0.95));
+                    color: #F0E6D2;
+                    font-family: 'BeaufortforLOL', 'Segoe UI', sans-serif;
                     font-size: 11px;
-                    font-weight: bold;
-                    border: 1px solid {border_color};
-                    border-radius: 4px;
+                    font-weight: 900;
+                    border: 1px solid {border};
+                    border-radius: 3px;
                     padding: 0px;
                 }}
                 QPushButton:hover {{
-                    background-color: rgba(255, 255, 255, 0.25);
+                    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 rgba(10, 200, 185, 0.35), stop:1 rgba(9, 20, 40, 0.95));
+                    border: 1px solid #0AC8B9;
                 }}
             """)
             self.update_icon()
         else:
             self.setStyleSheet("""
                 QPushButton {{
-                    background-color: rgba(220, 38, 38, 0.40);
-                    color: #ffffff;
+                    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 rgba(50, 12, 18, 0.95), stop:1 rgba(25, 5, 8, 0.98));
+                    color: #FF7B89;
+                    font-family: 'BeaufortforLOL', 'Segoe UI', sans-serif;
                     font-size: 10px;
-                    font-weight: bold;
-                    border: 1px solid #ef4444;
-                    border-radius: 4px;
+                    font-weight: 900;
+                    border: 1px solid #E84057;
+                    border-radius: 3px;
                     padding: 0px;
                 }}
             """)
@@ -139,7 +150,7 @@ class EnemyColumn(QWidget):
         pix = SpellAssetManager.get_champion_icon(self.champion)
         if not pix.isNull():
             self.avatar_label.setPixmap(pix)
-        self.avatar_label.setStyleSheet("border-radius: 4px; border: 1px solid rgba(255,255,255,0.35);")
+        self.avatar_label.setStyleSheet("border-radius: 3px; border: 1px solid #C89B3C; background: #010A13;")
         col_layout.addWidget(self.avatar_label, alignment=Qt.AlignmentFlag.AlignCenter)
 
         # 2. [ R (Ult) ] ボタン
@@ -159,16 +170,17 @@ class EnemyColumn(QWidget):
 
         # 5. [ JG ガンク成功率バッジ ] (JG視点のガンク・キルチャンスをリアルタイム提示)
         self.gank_badge = QLabel("─", self)
-        self.gank_badge.setFixedHeight(16)
+        self.gank_badge.setFixedHeight(15)
         self.gank_badge.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.gank_badge.setStyleSheet("""
             QLabel {
-                background-color: rgba(30, 25, 40, 0.8);
-                color: #94a3b8;
+                background-color: rgba(1, 10, 19, 0.90);
+                color: #A09B8C;
+                font-family: 'BeaufortforLOL', sans-serif;
                 font-size: 9px;
                 font-weight: bold;
-                border-radius: 3px;
-                border: 1px solid rgba(255, 255, 255, 0.1);
+                border-radius: 2px;
+                border: 1px solid #785A28;
                 padding: 0px 2px;
             }
         """)
@@ -180,11 +192,12 @@ class EnemyColumn(QWidget):
             self.gank_badge.setText(f"{int(score)}%")
             self.gank_badge.setStyleSheet(f"""
                 QLabel {{
-                    background-color: rgba(10, 10, 15, 0.9);
+                    background-color: rgba(1, 10, 19, 0.95);
                     color: {verdict_color};
-                    font-size: 10px;
-                    font-weight: bold;
-                    border-radius: 3px;
+                    font-family: 'BeaufortforLOL', sans-serif;
+                    font-size: 9px;
+                    font-weight: 900;
+                    border-radius: 2px;
                     border: 1px solid {verdict_color};
                     padding: 0px 2px;
                 }}
@@ -195,12 +208,13 @@ class EnemyColumn(QWidget):
             self.gank_badge.setText("─")
             self.gank_badge.setStyleSheet("""
                 QLabel {
-                    background-color: rgba(30, 25, 40, 0.8);
-                    color: #94a3b8;
+                    background-color: rgba(1, 10, 19, 0.90);
+                    color: #A09B8C;
+                    font-family: 'BeaufortforLOL', sans-serif;
                     font-size: 9px;
                     font-weight: bold;
-                    border-radius: 3px;
-                    border: 1px solid rgba(255, 255, 255, 0.1);
+                    border-radius: 2px;
+                    border: 1px solid #785A28;
                     padding: 0px 2px;
                 }
             """)
@@ -223,8 +237,8 @@ class EnemyColumn(QWidget):
             self.btn_spell2.spell_name = spell2
             self.btn_spell2.update_appearance(ready=(self.btn_spell2.ready_time == 0.0))
 
-        self.level = level
-        self.items = items
+        self.level = level or 6
+        self.items = items or []
 
         # 動的CD再計算
         eff_ult = calculate_effective_ult_cd(self.champion, self.level, self.items)
@@ -267,10 +281,10 @@ class SpellTrackerWidget(QWidget):
         self.card_frame = QFrame(self)
         self.card_frame.setStyleSheet("""
             QFrame {
-                background-color: rgba(12, 10, 18, 0.78);
-                border: 1px solid rgba(212, 140, 40, 0.35);
-                border-radius: 8px;
-                padding: 4px;
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 rgba(9, 20, 40, 0.94), stop:1 rgba(1, 10, 19, 0.96));
+                border: 1px solid #785A28;
+                border-radius: 6px;
+                padding: 3px;
             }
         """)
 

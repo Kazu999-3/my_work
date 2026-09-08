@@ -66,26 +66,26 @@ SPELL_COOLDOWNS = {
     "Smite": 90,
 }
 
-# チャンピオン別Ult ランク1(Lv6), ランク2(Lv11), ランク3(Lv16) 基礎CDテーブル [R1, R2, R3]
-CHAMPION_ULT_COOLDOWNS = {
-    "Aatrox": [120, 100, 80],
-    "Ahri": [130, 115, 100],
-    "Amumu": [130, 115, 100],
-    "Ashe": [100, 80, 60],
-    "Blitzcrank": [60, 40, 20],
-    "Darius": [120, 100, 80],
-    "Elise": [4, 4, 4],
-    "Ezreal": [120, 105, 90],
-    "Jinx": [70, 55, 40],
-    "KaiSa": [130, 100, 70],
-    "LeeSin": [110, 85, 60],
-    "Leona": [90, 75, 60],
-    "Malphite": [130, 105, 80],
-    "Nautilus": [120, 100, 80],
-    "Sylas": [80, 55, 30],
-    "Thresh": [140, 120, 100],
-    "Zed": [120, 100, 80],
-}
+# 辞書ファイルから全チャンピオンのUlt CDおよびスキル情報をロード
+import json
+
+MASTER_DICT_PATH = Path(__file__).parent.parent.parent.parent / "01_INTEL" / "_LOL" / "ddragon_master_dict.json"
+DYNAMIC_CHAMPION_ULT_CDS = {}
+DYNAMIC_CHAMPION_ULT_SPELL_IDS = {}
+
+if MASTER_DICT_PATH.exists():
+    try:
+        with open(MASTER_DICT_PATH, "r", encoding="utf-8") as f:
+            m_dict = json.load(f)
+            for key, skill in m_dict.get("skills", {}).items():
+                if key.endswith(":R"):
+                    champ = key.split(":")[0]
+                    cds = skill.get("cooldown", [])
+                    if cds and len(cds) >= 3:
+                        DYNAMIC_CHAMPION_ULT_CDS[champ] = [int(cds[0]), int(cds[1]), int(cds[2])]
+                    DYNAMIC_CHAMPION_ULT_SPELL_IDS[champ] = skill.get("spell_id", "")
+    except Exception as e:
+        print(f"Warning: Failed to load master dict in spell_asset_manager: {e}")
 
 DEFAULT_ULT_RANKS = [120, 100, 80]
 
@@ -110,14 +110,13 @@ ITEM_ABILITY_HASTE = {
     3001: 15,  # Abyssal Mask
 }
 
-def calculate_effective_ult_cd(champion_name: str, level: int, items: list) -> int:
-    """敵のレベルと所持アイテムのスキルヘイストから実効Ultクールダウン秒数を算出"""
-    ranks = CHAMPION_ULT_COOLDOWNS.get(champion_name, DEFAULT_ULT_RANKS)
-    
-    # 1. レベルに応じたランク判定
-    if level >= 16:
+def calculate_effective_ult_cd(champion: str, enemy_level: int, items: list[int] = None) -> int:
+    """敵のレベルと所持アイテムから現在の実効Ultクールダウン（秒）を計算"""
+    # 1. 基礎CD (Lv6未満=R1, Lv6~10=R1, Lv11~15=R2, Lv16+=R3)
+    ranks = DYNAMIC_CHAMPION_ULT_CDS.get(champion, DEFAULT_ULT_RANKS)
+    if enemy_level >= 16:
         base_cd = ranks[2]
-    elif level >= 11:
+    elif enemy_level >= 11:
         base_cd = ranks[1]
     else:
         base_cd = ranks[0]

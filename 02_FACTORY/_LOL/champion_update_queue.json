@@ -1,6 +1,6 @@
 {
   "patch_version": "26.17",
-  "updated_at": "2026-09-08T04:59:01.618357+00:00",
+  "updated_at": "2026-09-08T13:42:21.970058+00:00",
   "status": "suspended",
   "queue": {
     "Aatrox": {
@@ -485,26 +485,26 @@
     },
     "Maokai": {
       "name": "マオカイ",
-      "status": "pending",
-      "updated_at": "2026-09-07T02:29:34.613409+00:00",
+      "status": "completed",
+      "updated_at": "2026-09-08T08:20:29.071365+00:00",
       "error": null
     },
     "MasterYi": {
       "name": "マスター・イー",
-      "status": "pending",
-      "updated_at": "2026-09-07T02:30:21.031340+00:00",
+      "status": "completed",
+      "updated_at": "2026-09-08T08:21:16.958946+00:00",
       "error": null
     },
     "Mel": {
       "name": "メル",
-      "status": "pending",
-      "updated_at": "2026-09-07T02:31:06.163476+00:00",
+      "status": "completed",
+      "updated_at": "2026-09-08T08:22:03.800560+00:00",
       "error": null
     },
     "Milio": {
       "name": "ミリオ",
-      "status": "pending",
-      "updated_at": "2026-09-07T02:31:52.688703+00:00",
+      "status": "completed",
+      "updated_at": "2026-09-08T08:22:54.873565+00:00",
       "error": null
     },
     "MissFortune": {
