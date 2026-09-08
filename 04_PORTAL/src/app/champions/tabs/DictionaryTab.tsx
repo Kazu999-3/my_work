@@ -1129,7 +1129,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
             {/* 複数レーン対応: レーン別辞典切替タブ ＆ クイックアクションバー */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pt-2">
               {availableRoles.length > 0 && (
-                <div className="flex items-center gap-1.5 bg-black/50 backdrop-blur-md p-1 rounded-2xl border border-white/10 shadow-inner">
+                <div className="flex items-center gap-1 bg-black/40 backdrop-blur-md p-1 rounded-xl border border-white/10 shadow-inner">
                   {availableRoles.map((r) => {
                     const isSelected = selectedRole.toUpperCase() === r.toUpperCase();
                     return (
@@ -1152,9 +1152,9 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                             setDetailLoading(false);
                           }
                         }}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
+                        className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
                           isSelected
-                            ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-stone-950 shadow-md scale-105'
+                            ? 'bg-[#c89b3c] text-stone-950 shadow-md font-black'
                             : 'text-stone-300 hover:text-white hover:bg-white/10'
                         }`}
                       >
@@ -1165,46 +1165,75 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                 </div>
               )}
 
-              {/* 右側クイックアクション群（ワンストップ化・ノイズ削減） */}
+              {/* 右側アクション群（Hextechダークグラス調で統一） */}
               <div className="flex items-center gap-2 flex-wrap ml-auto">
+                {/* 1. AIコーチ起動（対面相談・立ち回り質問） */}
+                <Link
+                  href={`/coach?champion=${encodeURIComponent(selected.id)}`}
+                  className="px-3.5 py-2 bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-200 hover:text-white font-bold rounded-xl transition-all flex items-center gap-2 text-xs border border-indigo-500/40 backdrop-blur-md shadow-sm group cursor-pointer"
+                  title="このチャンピオンの立ち回りや対面対策をAIに対話形式で質問・相談"
+                >
+                  <Zap size={14} className="text-indigo-400 group-hover:scale-110 transition-transform" />
+                  <div className="flex flex-col text-left">
+                    <span className="leading-tight font-bold">AIコーチに相談</span>
+                  </div>
+                </Link>
+
+                {/* 2. 管理者ツール（最新同期 ＆ データ管理） */}
                 {isAdmin && (
                   <>
+                    {/* 最新データ同期 */}
                     <button
                       onClick={handleFetchTrend}
                       disabled={fetchingTrend}
-                      className="px-3.5 py-1.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-stone-950 font-black rounded-xl transition-all flex items-center gap-1.5 text-xs shadow-sm disabled:opacity-50 cursor-pointer"
-                      title="最新パッチのメタ・プロビルド・トレンド情報をAIで自動更新"
+                      className="px-3.5 py-2 bg-[#c89b3c]/20 hover:bg-[#c89b3c]/30 text-amber-200 hover:text-white font-bold rounded-xl transition-all flex items-center gap-2 text-xs border border-[#c89b3c]/40 backdrop-blur-md shadow-sm disabled:opacity-50 cursor-pointer group"
+                      title="最新パッチのメタ・プロビルド・トレンド情報をAIで自動同期"
                     >
-                      <RefreshCw size={13} className={fetchingTrend ? "animate-spin" : ""} />
-                      <span>{trendPhase === 'running' ? "AI生成中..." : trendPhase === 'pending' ? "順番待ち..." : fetchingTrend ? "登録中..." : "⚡ 最新データに更新 (AI)"}</span>
+                      <RefreshCw size={13} className={`text-amber-400 group-hover:rotate-180 transition-transform ${fetchingTrend ? 'animate-spin' : ''}`} />
+                      <div className="flex flex-col text-left">
+                        <span className="leading-tight font-bold">
+                          {trendPhase === 'running' ? 'AI生成中...' : trendPhase === 'pending' ? '順番待ち...' : fetchingTrend ? '登録中...' : '最新パッチ同期'}
+                        </span>
+                      </div>
                     </button>
 
-                    {/* 🛠️ 辞典メンテナンス ドロップダウンメニュー */}
+                    {/* データ管理メニュー */}
                     <div className="relative group">
                       <button
                         type="button"
-                        className="px-3 py-1.5 bg-stone-800 hover:bg-stone-700 text-stone-200 hover:text-white font-bold rounded-xl transition-all flex items-center gap-1.5 text-xs shadow-sm cursor-pointer border border-stone-700/60"
+                        className="px-3 py-2 bg-white/10 hover:bg-white/15 text-stone-200 hover:text-white font-bold rounded-xl transition-all flex items-center gap-1.5 text-xs backdrop-blur-md border border-white/15 cursor-pointer shadow-sm"
+                        title="記事のAI清書や品質チェックなどの管理機能"
                       >
-                        <span>🛠️ メンテナンス</span>
-                        <span className="text-[10px] opacity-70">▼</span>
+                        <Compass size={13} className="text-stone-400" />
+                        <span>データ管理</span>
+                        <span className="text-[9px] opacity-70">▼</span>
                       </button>
                       
-                      <div className="absolute right-0 top-full mt-1 w-52 bg-stone-900 border border-stone-700 rounded-xl shadow-2xl p-1.5 hidden group-hover:block z-50 animate-in fade-in slide-in-from-top-1">
+                      <div className="absolute right-0 top-full mt-1.5 w-64 bg-stone-900/95 backdrop-blur-xl border border-stone-700/80 rounded-2xl shadow-2xl p-2 hidden group-hover:block z-50 animate-in fade-in slide-in-from-top-1">
+                        <div className="text-[10px] font-bold text-stone-400 px-2.5 py-1 uppercase tracking-wider border-b border-stone-800 mb-1">
+                          辞典メンテナンスツール
+                        </div>
                         <button
                           onClick={() => handleStartRefineFacts(selected.id || selected.name, selectedRole)}
                           disabled={refiningFacts}
-                          className="w-full text-left px-3 py-2 text-xs font-bold text-stone-200 hover:bg-stone-800 rounded-lg flex items-center gap-2 transition disabled:opacity-50"
+                          className="w-full text-left p-2 text-xs text-stone-200 hover:bg-stone-800/80 rounded-xl flex items-start gap-2.5 transition disabled:opacity-50"
                         >
-                          <Sparkles size={13} className="text-amber-400 shrink-0" />
-                          <span>✨ AI清書・重複排除</span>
+                          <Sparkles size={14} className="text-amber-400 shrink-0 mt-0.5" />
+                          <div>
+                            <div className="font-bold text-stone-100">AI清書・重複排除</div>
+                            <div className="text-[10px] text-stone-400 font-normal">文章の重複を整理し読みやすく校正</div>
+                          </div>
                         </button>
                         <button
                           onClick={handleQualityCheck}
                           disabled={checkingQuality}
-                          className="w-full text-left px-3 py-2 text-xs font-bold text-stone-200 hover:bg-stone-800 rounded-lg flex items-center gap-2 transition disabled:opacity-50"
+                          className="w-full text-left p-2 text-xs text-stone-200 hover:bg-stone-800/80 rounded-xl flex items-start gap-2.5 transition disabled:opacity-50"
                         >
-                          <Activity size={13} className="text-emerald-400 shrink-0" />
-                          <span>{checkingQuality ? '品質診断中...' : '🔍 品質チェック'}</span>
+                          <Activity size={14} className="text-emerald-400 shrink-0 mt-0.5" />
+                          <div>
+                            <div className="font-bold text-stone-100">{checkingQuality ? '品質診断中...' : '品質スコア診断'}</div>
+                            <div className="text-[10px] text-stone-400 font-normal">情報量・整合性のチェックを実行</div>
+                          </div>
                         </button>
                         <button
                           onClick={async () => {
@@ -1218,26 +1247,22 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                                 setSaveSuccess(true);
                                 setTimeout(() => setSaveSuccess(false), 3000);
                               }
-                            } catch (e: any) {
+                            } catch (e) {
                               console.error(e);
                             }
                           }}
-                          className="w-full text-left px-3 py-2 text-xs font-bold text-stone-200 hover:bg-stone-800 rounded-lg flex items-center gap-2 transition"
+                          className="w-full text-left p-2 text-xs text-stone-200 hover:bg-stone-800/80 rounded-xl flex items-start gap-2.5 transition"
                         >
-                          <Check size={13} className="text-sky-400 shrink-0" />
-                          <span>✅ 確認済みにマーク</span>
+                          <Check size={14} className="text-sky-400 shrink-0 mt-0.5" />
+                          <div>
+                            <div className="font-bold text-stone-100">確認済みにマーク</div>
+                            <div className="text-[10px] text-stone-400 font-normal">データ鮮度アラートをリセット</div>
+                          </div>
                         </button>
                       </div>
                     </div>
                   </>
                 )}
-
-                <Link
-                  href={`/coach?champion=${encodeURIComponent(selected.id)}`}
-                  className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl transition-all flex items-center gap-1.5 text-xs shadow-sm"
-                >
-                  <Zap size={13} /> <span>⚡ AIコーチ起動</span>
-                </Link>
               </div>
             </div>
 
