@@ -70,8 +70,184 @@ export function getChampionSkills(champId: string): Record<string, ChampionSkill
   return result;
 }
 
+// 追加の略称・サモスペ・スラング辞書
+const CUSTOM_TERM_MAP: Record<string, string> = {
+  // サモナースペル
+  'Flash': 'フラッシュ',
+  'Smite': 'スマイト',
+  'Ignite': 'イグナイト',
+  'Teleport': 'テレポート',
+  'Ghost': 'ゴースト',
+  'Heal': 'ヒール',
+  'Barrier': 'バリア',
+  'Cleanse': 'クレンズ',
+  'Exhaust': 'イグゾースト',
+
+  // アイテム略称・通称
+  'Shojin': 'ショウジンの矛',
+  'Spear of Shojin': 'ショウジンの矛',
+  'Death\'s Dance': 'デス ダンス',
+  'Deaths Dance': 'デス ダンス',
+  'Death Dance': 'デス ダンス',
+  'Trinity Force': 'トリニティ フォース',
+  'Trinity': 'トリニティ フォース',
+  'Black Cleaver': 'ブラック クリーバー',
+  'Cleaver': 'ブラック クリーバー',
+  'The Collector': 'コレクター',
+  'Collector': 'コレクター',
+  'Jak\'Sho': 'ジャック=ショー',
+  'JakSho': 'ジャック=ショー',
+  'Jak\'Sho, The Protean': 'ジャック=ショー',
+  'Kraken Slayer': 'クラーケン スレイヤー',
+  'Kraken': 'クラーケン スレイヤー',
+  'Youmuu\'s Ghostblade': '妖夢の霊剣',
+  'Ghostblade': '妖夢の霊剣',
+  'Bork': 'ルインドキング ブレード',
+  'BOTRK': 'ルインドキング ブレード',
+  'Blade of the Ruined King': 'ルインドキング ブレード',
+  'Infinity Edge': 'インフィニティ エッジ',
+  'Rabadon\'s Deathcap': 'ラバドン デスキャップ',
+  'Deathcap': 'ラバドン デスキャップ',
+  'Zhonya\'s Hourglass': 'ゾーニャの砂時計',
+  'Zhonyas': 'ゾーニャの砂時計',
+  'Zhonya': 'ゾーニャの砂時計',
+  'Guinsoo\'s Rageblade': 'グインソー レイジブレード',
+  'Rageblade': 'グインソー レイジブレード',
+  'Sterak\'s Gage': 'ステラックの篭手',
+  'Steraks Gage': 'ステラックの篭手',
+  'Steraks': 'ステラックの篭手',
+  'Sundered Sky': 'サンダード スカイ',
+  'Profane Hydra': 'プロフェイン ハイドラ',
+  'Ravenous Hydra': 'ラバナス ハイドラ',
+  'Titanic Hydra': 'タイタニック ハイドラ',
+  'Heartsteel': 'ハートスチール',
+  'Kaenic Rookern': 'ケイニック ルーコーン',
+  'Rookern': 'ケイニック ルーコーン',
+  'Frozen Heart': 'フローズン ハート',
+  'Thornmail': 'ソーンメイル',
+  'Sunfire Aegis': 'サンファイア イージス',
+  'Hollow Radiance': 'ホロウ レディアンス',
+  'Liandry\'s Torment': 'ライアンドリーの苦悶',
+  'Liandrys': 'ライアンドリーの苦悶',
+  'Liandry': 'ライアンドリーの苦悶',
+  'Ludens Companion': 'ルーデン コンパニオン',
+  'Luden\'s Companion': 'ルーデン コンパニオン',
+  'Ludens': 'ルーデン コンパニオン',
+  'Shadowflame': 'シャドウフレイム',
+  'Stormsurge': 'ストームサージ',
+  'Nashor\'s Tooth': 'ナッシャー トゥース',
+  'Nashors': 'ナッシャー トゥース',
+  'Rylai\'s Crystal Scepter': 'クリスタル セプター',
+  'Rylais': 'クリスタル セプター',
+  'Cryptbloom': 'クリプトブルーム',
+  'Void Staff': 'ヴォイド スタッフ',
+  'Lord Dominik\'s Regards': 'ドミニク リガード',
+  'LDR': 'ドミニク リガード',
+  'Mortal Reminder': 'モータル リマインダー',
+  'Rapid Firecannon': 'ラピッド ファイアキャノン',
+  'RFC': 'ラピッド ファイアキャノン',
+  'Phantom Dancer': 'ファントム ダンサー',
+  'Bloodthirster': 'ブラッドサースター',
+  'BT': 'ブラッドサースター',
+  'Essence Reaver': 'エッセンス リーバー',
+  'ER': 'エッセンス リーバー',
+  'Eclipse': '赤月の刃',
+  'Hubris': 'ヒュブリス',
+  'Opportunity': 'オポチュニティ',
+  'Voltaic Cyclosword': 'ボルテック サイクロソード',
+  'Serylda\'s Grudge': 'セリルダの怨恨',
+  'Seryldas': 'セリルダの怨恨',
+  'Warmog\'s Armor': 'ワーモグ アーマー',
+  'Warmogs': 'ワーモグ アーマー',
+  'Force of Nature': '自然の力',
+  'Dead Man\'s Plate': 'デッドマン プレート',
+  'Randuin\'s Omen': 'ランデュイン オーメン',
+  'Randuins': 'ランデュイン オーメン',
+  'Spirit Visage': 'スピリット ビサージュ',
+  'Abyssal Mask': 'アビサル マスク',
+  'Maw of Malmortius': 'マルモティウスの胃袋',
+  'Maw': 'マルモティウスの胃袋',
+  'Mercurial Scimitar': 'マーキュリアル シミター',
+  'QSS': 'サッシュ・シルバー',
+  'Quicksilver Sash': 'サッシュ・シルバー',
+
+  // ルーン略称
+  'Conqueror': '征服者',
+  'Conq': '征服者',
+  'Lethal Tempo': 'リーサルテンポ',
+  'Press the Attack': 'プレスアタック',
+  'Press The Attack': 'プレスアタック',
+  'PTA': 'プレスアタック',
+  'Fleet Footwork': 'フリートフットワーク',
+  'Fleet': 'フリートフットワーク',
+  'Electrocute': '電撃',
+  'Dark Harvest': '魂の収穫',
+  'Phase Rush': 'フェイズラッシュ',
+  'Arcane Comet': '秘術の彗星',
+  'Comet': '秘術の彗星',
+  'Summon Aery': 'エアリー召喚',
+  'Aery': 'エアリー召喚',
+  'Grasp of the Undying': '不死者の握撃',
+  'Grasp': '不死者の握撃',
+  'Aftershock': 'アフターショック',
+  'Guardian': 'ガーディアン',
+  'Glacial Augment': 'グレイシャルオーグメント',
+  'Glacial': 'グレイシャルオーグメント',
+  'First Strike': 'ファーストストライク',
+  'Presence of Mind': '冷静沈着',
+  'POM': '冷静沈着',
+  'Legend: Alacrity': '迅速',
+  'Alacrity': '迅速',
+  'Legend: Bloodline': '血脈',
+  'Bloodline': '血脈',
+  'Legend: Haste': 'ヘイスト',
+  'Coup de Grace': '最期の慈悲',
+  'Cut Down': '切り崩し',
+  'Last Stand': '背水の陣',
+  'Taste of Blood': '血の味わい',
+  'Cheap Shot': '追い打ち',
+  'Sudden Impact': 'サドンステルス',
+  'Eyeball Collection': '目玉コレクター',
+  'Treasure Hunter': '執拗な賞金首狩り',
+  'Ultimate Hunter': '至極の賞金首狩り',
+  'Relentless Hunter': '執拗な賞金首狩り',
+  'Manaflow Band': 'マナフローバンド',
+  'Transcendence': '至高',
+  'Scorch': '追火',
+  'Gathering Storm': '強まる嵐',
+  'Demolish': '打ちこわし',
+  'Shield Bash': 'シールドバッシュ',
+  'Conditioning': '心身調整',
+  'Second Wind': '息継ぎ',
+  'Bone Plating': 'ボーンアーマー',
+  'Overgrowth': '超成長',
+  'Revitalize': '生気付与',
+  'Unflinching': '気迫',
+  'Magical Footwear': '魔法の靴',
+  'Cosmic Insight': '宇宙の英知',
+  'Biscuits': 'ビスケットデリバリー',
+  'Biscuit Delivery': 'ビスケットデリバリー',
+
+  // ゲーム用語
+  'Ult': 'アルティメット(R)',
+  'ULT': 'アルティメット(R)',
+  'Ultimate': 'アルティメット(R)',
+  'Omnivamp': '全ダメージ吸血',
+  'Lifesteal': 'ライフスティール',
+  'Life Steal': 'ライフスティール',
+  'Tenacity': '行動妨害耐性',
+  'Armor Penetration': '物理防御貫通',
+  'Magic Penetration': '魔法防御貫通',
+  'Ability Haste': 'スキルヘイスト',
+  'Attack Speed': '攻撃速度',
+  'Movement Speed': '移動速度',
+  'Critical Strike': 'クリティカル',
+  'Crit': 'クリティカル',
+  'Cooldown': 'クールダウン',
+};
+
 /**
- * テキスト中の英語アイテム名・ルーン名・スキル名を公式日本語名に正規化
+ * テキスト中の英語アイテム名・ルーン名・スキル名・サモスペ・チャンピオン名を公式日本語名に正規化
  */
 export function normalizeLoLTerms(text: string, champId?: string): string {
   if (!text) return text;
@@ -81,32 +257,42 @@ export function normalizeLoLTerms(text: string, champId?: string): string {
   let normalized = text;
 
   // 1. スキル名の正規化 (champIdが指定されている場合)
-  if (champId) {
+  if (champId && dict.skills) {
     const normChamp = normalizeChampionId(champId) || champId;
     for (const slot of ['Passive', 'Q', 'W', 'E', 'R']) {
       const skill = dict.skills[`${normChamp}:${slot}`];
       if (skill?.name_en && skill?.name_ja) {
-        // 例: "Orb of Deception" -> "Q「幻惑のオーブ」"
         const regex = new RegExp(`\\b${escapeRegExp(skill.name_en)}\\b`, 'gi');
         normalized = normalized.replace(regex, `${slot === 'Passive' ? 'P' : slot}「${skill.name_ja}」`);
       }
     }
   }
 
-  // 2. アイテム名の正規化 (大文字小文字無視)
-  for (const [nameEn, nameJa] of Object.entries(dict.item_name_to_ja)) {
-    if (nameEn.length >= 4) { // 誤爆防止のため短すぎる単語は除外
-      const regex = new RegExp(`\\b${escapeRegExp(nameEn)}\\b`, 'gi');
-      normalized = normalized.replace(regex, nameJa);
+  // 2. 統合置換辞書（長い単語順にソートして誤爆防止）
+  const fullDict: Record<string, string> = {
+    ...CUSTOM_TERM_MAP,
+    ...(dict.item_name_to_ja || {}),
+    ...(dict.rune_name_to_ja || {}),
+  };
+
+  // チャンピオン英語名も追加
+  for (const [id, c] of Object.entries(dict.champions || {})) {
+    if (c.name_ja) {
+      fullDict[id] = c.name_ja;
+      if (c.name_en) fullDict[c.name_en] = c.name_ja;
     }
   }
 
-  // 3. ルーン名の正規化
-  for (const [runeEn, runeJa] of Object.entries(dict.rune_name_to_ja)) {
-    if (runeEn.length >= 4) {
-      const regex = new RegExp(`\\b${escapeRegExp(runeEn)}\\b`, 'gi');
-      normalized = normalized.replace(regex, runeJa);
-    }
+  const sortedEntries = Object.entries(fullDict).sort((a, b) => b[0].length - a[0].length);
+  const seen = new Set<string>();
+
+  for (const [en, ja] of sortedEntries) {
+    if (en.length < 3 || seen.has(en.toLowerCase())) continue;
+    seen.add(en.toLowerCase());
+    if (en.toLowerCase() === ja.toLowerCase()) continue;
+
+    const regex = new RegExp(`\\b${escapeRegExp(en)}\\b`, 'gi');
+    normalized = normalized.replace(regex, ja);
   }
 
   return normalized;
