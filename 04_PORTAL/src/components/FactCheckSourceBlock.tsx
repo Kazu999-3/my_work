@@ -69,25 +69,47 @@ export default function FactCheckSourceBlock({
     } catch (e: any) { setError(e.message); } finally { setSaving(false); }
   };
 
+  const clearContent = async () => {
+    if (!confirm(`「${block.label}」の記載内容をクリア（空文字に）して削除します。よろしいですか？`)) return;
+    setSaving(true); setError('');
+    try {
+      const res = await fetch('/api/admin/dict-fact-check/source', {
+        method: 'PATCH', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ table: block.table, id: block.id, champion: block.champion, field: block.field, value: '' }),
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error || '記載のクリアに失敗しました');
+      setValue('');
+      setDraft('');
+      setEditing(false);
+      onChanged?.();
+    } catch (e: any) { setError(e.message); } finally { setSaving(false); }
+  };
+
   if (deleted) return null;
 
   return (
     <div className="rounded-lg border border-sky-200 bg-white p-2.5 text-[11px]">
-      <div className="flex items-center justify-between gap-2 mb-1">
+      <div className="flex items-center justify-between gap-2 mb-1 flex-wrap">
         <span className="font-bold text-sky-900">{block.label}</span>
         {!editing && (
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-1.5 shrink-0 flex-wrap">
             {onPickAsCorrect && (
               <button onClick={() => onPickAsCorrect(block.label, value)} className="text-emerald-700 hover:text-emerald-900 font-bold flex items-center gap-0.5">
                 <CheckCircle2 size={11} /> これが正しい
               </button>
             )}
             <button onClick={() => { setDraft(value); setEditing(true); }} className="px-2 py-0.5 rounded bg-sky-100 text-sky-800 border border-sky-200 font-bold hover:bg-sky-200 flex items-center gap-1 transition">
-              <Edit2 size={11} /> ✏️ 文章を直接修正・保存
+              <Edit2 size={11} /> ✏️ 修正
             </button>
-            {block.deletable && (
-              <button onClick={remove} disabled={saving} className="text-stone-500 hover:text-rose-700 flex items-center gap-0.5 disabled:opacity-50">
-                <Trash2 size={11} /> 削除
+            {block.deletable ? (
+              <button onClick={remove} disabled={saving} className="px-2 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 font-bold flex items-center gap-0.5 disabled:opacity-50 transition">
+                <Trash2 size={11} /> 記事を削除
+              </button>
+            ) : (
+              <button onClick={clearContent} disabled={saving || !value} className="px-2 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 font-bold flex items-center gap-0.5 disabled:opacity-50 transition" title="このフィールドの文章を空にして削除">
+                <Trash2 size={11} /> 記載をクリア
               </button>
             )}
           </div>

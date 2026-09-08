@@ -132,11 +132,90 @@ export default function FactCheckQueueCard({ item, onActed }: { item: QueueItem;
     }
   };
 
+  // AIによる書き換え案の生成状態
+  const [suggesting, setSuggesting] = useState(false);
+  const [aiSuggestion, setAiSuggestion] = useState<{ text: string; explanation: string } | null>(null);
+
+  // AIに書き換え案を作成してもらう
+  const handleRequestAiSuggestion = async () => {
+    setSuggesting(true);
+    setError('');
+    try {
+      const currentVal = filteredEditable[0]?.value || '';
+      const res = await fetch('/api/admin/dict-fact-check/suggest-fix', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          champion: it.champion,
+          issue_type: it.issue_type,
+          summary: it.summary,
+          conflict_reason: it.detail?.conflict_reason,
+          target_field: targetField || filteredEditable[0]?.field,
+          current_value: currentVal,
+          claim_a: it.detail?.claim_a,
+          claim_b: it.detail?.claim_b,
+        }),
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error || 'AI修正案の生成に失敗しました');
+      setAiSuggestion({
+        text: d.suggested_text,
+        explanation: d.explanation,
+      });
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setSuggesting(false);
+    }
+  };
+
+  // 1タップで「元データテキストをクリア（削除）」＋「キュー完了」
+  const clearAndFinish = async () => {
+    if (!confirm(`対象の記載内容をすべて削除（クリア）し、このキューを点検完了にします。よろしいですか？`)) return;
+    setActing(true);
+    setError('');
+    try {
+      if (filteredEditable.length > 0) {
+        await Promise.all(
+          filteredEditable.map((block) =>
+            fetch('/api/admin/dict-fact-check/source', {
+              method: 'PATCH',
+              credentials: 'include',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                table: block.table,
+                id: block.id,
+                champion: block.champion,
+                field: block.field,
+                value: '',
+              }),
+            })
+          )
+        );
+      }
+      const res = await fetch('/api/admin/dict-fact-check/queue', {
+        method: 'PATCH',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: it.id, action: 'acknowledge' }),
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error || '完了処理に失敗しました');
+      onActed(it.id);
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setActing(false);
+    }
+  };
+
   return (
-    <div className="rounded-xl border border-stone-200 bg-stone-50 p-3">
+    <div className="rounded-xl border border-stone-200 bg-white p-3.5 shadow-2xs space-y-3">
+      {/* ヘッダー */}
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="font-bold text-stone-900 text-sm">{it.champion}</span>
+          <span className="font-extrabold text-stone-900 text-sm">{it.champion}</span>
           <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${ISSUE_LABEL[it.issue_type]?.cls}`}>
             {ISSUE_LABEL[it.issue_type]?.label || it.issue_type}
           </span>
@@ -146,16 +225,38 @@ export default function FactCheckQueueCard({ item, onActed }: { item: QueueItem;
         </div>
         {it.issue_type !== 'invalid_champion_tag' && (
           <a href={`/champions?select=${encodeURIComponent(it.champion)}`} target="_blank" rel="noreferrer"
-            className="text-[10px] text-sky-700 hover:underline flex items-center gap-0.5 shrink-0">
+            className="text-[10px] text-sky-700 hover:underline flex items-center gap-0.5 shrink-0 font-bold">
             辞典で確認 <ExternalLink size={10} />
           </a>
         )}
       </div>
-      <p className="text-xs text-stone-700 mt-1.5 font-bold">{it.summary}</p>
+
+      <p className="text-xs text-stone-800 font-bold leading-relaxed">{it.summary}</p>
+
+      {/* 🧭 アクション案内ガイド（何を行えばよいか） */}
+      <div className="bg-amber-50/80 border border-amber-200/80 rounded-xl p-2.5 text-[11px] text-amber-950 space-y-1">
+        <div className="font-black flex items-center gap-1 text-amber-900">
+          <span>💡</span> この指摘への対応方法（推奨手順）:
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5 pt-1 text-[10px] font-bold">
+          <div className="bg-white/80 border border-amber-200 rounded-lg p-1.5 flex items-start gap-1">
+            <span className="text-emerald-600 font-black">①</span>
+            <span><strong>AI提案で書き換え</strong>: 下の「AI修正案」を採用して1タップで更新＆完了</span>
+          </div>
+          <div className="bg-white/80 border border-amber-200 rounded-lg p-1.5 flex items-start gap-1">
+            <span className="text-rose-600 font-black">②</span>
+            <span><strong>記載を削除</strong>: 誤った古い記述自体を消去して完了</span>
+          </div>
+          <div className="bg-white/80 border border-amber-200 rounded-lg p-1.5 flex items-start gap-1">
+            <span className="text-stone-600 font-black">③</span>
+            <span><strong>誤検知として却下</strong>: AIの誤判定の場合はそのまま却下</span>
+          </div>
+        </div>
+      </div>
 
       {/* ⚡ AIがピンポイント抽出した矛盾・問題箇所の比較対比カード ⚡ */}
       {it.detail && (it.detail.claim_a || it.detail.claim_b) && (
-        <div className="mt-3 p-3.5 rounded-xl border border-rose-300 bg-rose-50/60 space-y-3 shadow-xs">
+        <div className="p-3 rounded-xl border border-rose-300 bg-rose-50/60 space-y-3 shadow-xs">
           <div className="text-xs font-black text-rose-900 flex items-center gap-1.5 border-b border-rose-200 pb-2">
             <span className="text-base">⚡</span> AIが検出したピンポイント的矛盾・不整合箇所
           </div>
@@ -179,7 +280,7 @@ export default function FactCheckQueueCard({ item, onActed }: { item: QueueItem;
                   disabled={acting}
                   className="px-3 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-lg text-[11px] font-extrabold transition flex items-center justify-center gap-1 w-full mt-2 shadow-xs cursor-pointer disabled:opacity-50"
                 >
-                  <Check size={13} /> ⚡ 1タップ全自動採用（テキスト更新＋AI再発防止記録）
+                  <Check size={13} /> ⚡ 1タップ全自動採用（テキスト更新＋完了）
                 </button>
               </div>
             )}
@@ -195,7 +296,7 @@ export default function FactCheckQueueCard({ item, onActed }: { item: QueueItem;
                   disabled={acting}
                   className="px-3 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-lg text-[11px] font-extrabold transition flex items-center justify-center gap-1 w-full mt-2 shadow-xs cursor-pointer disabled:opacity-50"
                 >
-                  <Check size={13} /> ⚡ 1タップ全自動採用（テキスト更新＋AI再発防止記録）
+                  <Check size={13} /> ⚡ 1タップ全自動採用（テキスト更新＋完了）
                 </button>
               </div>
             )}
@@ -203,12 +304,69 @@ export default function FactCheckQueueCard({ item, onActed }: { item: QueueItem;
         </div>
       )}
 
-      {/* 🎯 指摘該当記事・記載内容のみ（無関係な何十件ものノイズを排して1〜2件のみ強調表示） */}
+      {/* 🪄 AI修正案（書き換え提案）セクション */}
+      {it.issue_type !== 'invalid_champion_tag' && (
+        <div className="p-3 rounded-xl border border-emerald-300 bg-emerald-50/60 space-y-2">
+          <div className="flex items-center justify-between flex-wrap gap-2 border-b border-emerald-200 pb-2">
+            <span className="text-xs font-black text-emerald-950 flex items-center gap-1">
+              <span>🪄</span> AIによる書き換え推奨案
+            </span>
+            {!aiSuggestion && (
+              <button
+                type="button"
+                onClick={handleRequestAiSuggestion}
+                disabled={suggesting}
+                className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[11px] font-bold transition flex items-center gap-1 shadow-2xs disabled:opacity-50 cursor-pointer"
+              >
+                {suggesting ? '🤖 AIが修正案を生成中...' : '✨ AIに修正案を作ってもらう'}
+              </button>
+            )}
+          </div>
+
+          {aiSuggestion ? (
+            <div className="space-y-2 pt-1">
+              <div className="bg-white p-2.5 rounded-lg border border-emerald-200 text-xs text-stone-800 font-mono whitespace-pre-wrap leading-relaxed">
+                {aiSuggestion.text}
+              </div>
+              {aiSuggestion.explanation && (
+                <p className="text-[11px] text-emerald-900 font-bold bg-emerald-100/60 p-2 rounded">
+                  💡 <strong>修正理由:</strong> {aiSuggestion.explanation}
+                </p>
+              )}
+              <div className="flex items-center gap-2 pt-1 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => pickCorrect('AI修正提案', aiSuggestion.text)}
+                  disabled={acting}
+                  className="px-3 py-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-lg text-xs font-black transition flex items-center gap-1 shadow-xs cursor-pointer disabled:opacity-50"
+                >
+                  <Check size={13} /> ✨ このAI修正案を採用して上書き更新＆完了（1タップ）
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFixInput(aiSuggestion.text);
+                  }}
+                  className="px-2.5 py-1.5 bg-white border border-stone-300 hover:bg-stone-100 text-stone-700 rounded-lg text-xs font-bold transition"
+                >
+                  ✏️ 入力欄にコピーして手動調整
+                </button>
+              </div>
+            </div>
+          ) : (
+            <p className="text-[11px] text-emerald-800 leading-relaxed font-bold">
+              「AIに修正案を作ってもらう」を押すと、最新のゲーム知識をもとに元の記述を自然に書き換えたテキスト案を即座に作成します。
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* 🎯 指摘該当記事・記載内容のみ（確認対象） */}
       {it.issue_type !== 'invalid_champion_tag' && (filteredEditable.length > 0 || filteredLinked.length > 0) && (
-        <div className="mt-3 p-3.5 rounded-xl border border-sky-300 bg-sky-50/70 space-y-2">
+        <div className="p-3 rounded-xl border border-sky-300 bg-sky-50/70 space-y-2">
           <div className="text-xs font-black text-sky-950 flex items-center justify-between border-b border-sky-200 pb-2">
             <span className="flex items-center gap-1.5">
-              <span className="text-base">🎯</span> 指摘該当記事・記載内容（確認対象）
+              <span className="text-base">🎯</span> 指摘該当箇所の現在の記載（確認対象）
             </span>
             <span className="text-[10px] bg-sky-200 text-sky-900 px-2 py-0.5 rounded-full font-bold">
               該当 {filteredEditable.length + filteredLinked.length} 件のみ抽出
@@ -241,7 +399,7 @@ export default function FactCheckQueueCard({ item, onActed }: { item: QueueItem;
 
       {/* invalid_champion_tagはchampion列自体がゴミ値のことが多く、参照元レコードの中身をここに直接プレビュー表示する */}
       {it.issue_type === 'invalid_champion_tag' && it.sourcePreview && (
-        <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50/70 p-2.5 text-xs">
+        <div className="rounded-lg border border-amber-200 bg-amber-50/70 p-2.5 text-xs">
           <div className="font-bold text-amber-900">📄 {it.sourcePreview.title || '(タイトルなし)'}</div>
           {it.sourcePreview.body && (
             <p className="text-stone-600 mt-1 whitespace-pre-wrap leading-relaxed">{it.sourcePreview.body}{it.sourcePreview.body.length >= 300 ? '…' : ''}</p>
@@ -255,9 +413,10 @@ export default function FactCheckQueueCard({ item, onActed }: { item: QueueItem;
         </div>
       )}
 
-      {error && <p className="text-xs text-rose-700 mt-2">{error}</p>}
+      {error && <p className="text-xs text-rose-700 mt-2 font-bold">{error}</p>}
 
-      <div className="flex items-center gap-2 mt-2.5 flex-wrap">
+      {/* フッターアクション */}
+      <div className="flex items-center gap-2 pt-2 border-t border-stone-200 flex-wrap">
         {it.issue_type === 'invalid_champion_tag' ? (
           <>
             <input
@@ -292,39 +451,40 @@ export default function FactCheckQueueCard({ item, onActed }: { item: QueueItem;
           </>
         ) : (
           <>
-            {it.detail?.conflict_reason && (
+            {filteredEditable.length > 0 && (
               <button
                 type="button"
-                onClick={() => act('record_correction', it.detail?.conflict_reason)}
+                onClick={clearAndFinish}
                 disabled={acting}
-                className="flex items-center gap-1 text-xs font-black bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white px-3 py-1.5 rounded-lg shadow-xs transition disabled:opacity-50 cursor-pointer"
-                title="AIが分析した指摘・理由をそのまま正解訂正として記録し、キューを完了にします"
+                className="flex items-center gap-1 text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200 px-2.5 py-1.5 rounded-lg hover:bg-rose-100 disabled:opacity-50 transition"
+                title="この問題の記載内容を空にして削除し、キューを完了にします"
               >
-                <Check size={12} /> ✨ AI提案どおりに訂正＆完了（1タップ）
+                <Trash2 size={12} /> 記載を削除して完了
               </button>
             )}
+
             <input
               value={fixInput}
               onChange={(e) => setFixInput(e.target.value)}
-              placeholder={isContradiction ? '上記のどちらも不正確な場合のみ、正しい内容を自分で入力' : '正しい内容を記録（任意・入力すると再発防止に使われます）'}
-              className="text-xs px-2.5 py-1.5 border border-stone-300 rounded-lg bg-white text-stone-900 w-72"
+              placeholder="手動で正しい文章を入力して反映する場合"
+              className="text-xs px-2.5 py-1.5 border border-stone-300 rounded-lg bg-white text-stone-900 flex-1 min-w-[200px]"
             />
-            <button onClick={() => act('record_correction')} disabled={acting || !fixInput.trim()}
-              title="今後のAI生成すべてに『これが正しい』として反映されます"
-              className="flex items-center gap-1 text-xs font-bold bg-indigo-100 text-indigo-700 border border-indigo-200 px-3 py-1.5 rounded-lg hover:bg-indigo-200 disabled:opacity-50">
-              <Check size={12} /> 訂正を記録（再発防止）
+            <button onClick={() => pickCorrect('手動入力', fixInput)} disabled={acting || !fixInput.trim()}
+              title="入力した内容で元データを更新し、再発防止記録に登録します"
+              className="flex items-center gap-1 text-xs font-bold bg-indigo-100 text-indigo-700 border border-indigo-200 px-3 py-1.5 rounded-lg hover:bg-indigo-200 disabled:opacity-50 shrink-0">
+              <Check size={12} /> 手動入力内容で更新
             </button>
             <button onClick={() => act('acknowledge')} disabled={acting}
-              title="指摘の内容は事実として認めるが、『正しい情報』の記録はしない（後で自分で書き直す場合など）。今後のAI生成には反映されない"
-              className="flex items-center gap-1 text-xs font-bold bg-emerald-100 text-emerald-700 border border-emerald-200 px-3 py-1.5 rounded-lg hover:bg-emerald-200 disabled:opacity-50">
-              <Check size={12} /> 事実として把握（訂正は記録しない）
+              title="指摘の内容は把握・確認したとして完了にする（元テキストはそのまま）"
+              className="flex items-center gap-1 text-xs font-bold bg-stone-100 text-stone-700 border border-stone-200 px-2.5 py-1.5 rounded-lg hover:bg-stone-200 disabled:opacity-50 shrink-0">
+              <Check size={12} /> 確認済みとして完了
             </button>
           </>
         )}
         <button onClick={() => act('dismiss')} disabled={acting}
           title="AIの誤判定。実際には矛盾・誤り・未確証ではない。このキュー項目を却下して消す"
-          className="flex items-center gap-1 text-xs font-bold bg-amber-100 text-amber-700 border border-amber-200 px-3 py-1.5 rounded-lg hover:bg-amber-200 disabled:opacity-50">
-          <X size={12} /> AIの誤検知（この指摘自体が間違い）
+          className="flex items-center gap-1 text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200 px-2.5 py-1.5 rounded-lg hover:bg-amber-100 disabled:opacity-50 shrink-0 ml-auto">
+          <X size={12} /> 誤検知（指摘自体を却下）
         </button>
       </div>
     </div>

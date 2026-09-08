@@ -134,6 +134,7 @@ def upsert_power_spike(champion: str, data: dict, patch: str, retries: int = 3) 
         logging.warning(f"⚠️ [{champion}] 無効または不完全なパワースパイクデータのため保存をスキップします: {data!r}")
         return False
 
+    from datetime import datetime, timezone
     payload = {
         "champion": champion,
         "early_game_score": int(data["early_game_score"]),
@@ -143,6 +144,7 @@ def upsert_power_spike(champion: str, data: dict, patch: str, retries: int = 3) 
         "summary": data.get("summary", ""),
         "source": "gemini",
         "patch": patch,
+        "updated_at": datetime.now(timezone.utc).isoformat(),
     }
     url = f"{SUPABASE_URL}/rest/v1/champion_power_spikes?on_conflict=champion"
     headers = {
