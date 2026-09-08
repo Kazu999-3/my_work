@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
-import { verifyAdminSession } from '../../../../lib/adminAuth';
+import { getDDragonMaster } from '../../../../lib/dataDragonMaster';
 
 // champions/tabs/DictionaryTab.tsx の一覧グリッド用データ。
 // フェーズ1 SSOT化: champion_factsを正本として、日付・パッチ・JGスタイル・
@@ -14,6 +14,18 @@ const normalizeKey = (str: string) => String(str || '').toLowerCase().replace(/[
 
 export async function GET(req: Request) {
   try {
+    const masterDict = getDDragonMaster();
+    const ddragonChampions = masterDict?.champions
+      ? Object.values(masterDict.champions).map((c: any) => ({
+          id: c.id,
+          key: c.key || c.id,
+          name: c.name_ja || c.name || c.id,
+          title: c.title_ja || c.title || '',
+          tags: c.tags || [],
+          searchKey: `${c.id.toLowerCase()} ${c.name_ja || ''} ${c.name_en || ''} ${c.title_ja || ''}`.toLowerCase(),
+        }))
+      : [];
+
     const [{ data: factsData, error: factsError }, { data: spikeRows, error: spikeError }, { data: laneRoleRows, error: laneRoleError }, { data: favRows, error: favError }] = await Promise.all([
       // champion_facts (SSOT) から一覧用データを取得
       supabase.from('champion_facts')
@@ -22,9 +34,7 @@ export async function GET(req: Request) {
       supabase.from('champion_power_spikes').select('champion, early_game_score, mid_game_score, late_game_score'),
       // op.gg由来のレーン絞り込み実データ(migration 62, 2026-08-12)
       supabase.from('champion_lane_roles').select('champion, role'),
-      // お気に入り(/api/champions/favorite が書き込む先)。書き込み経路は実装済みだったが、
-      // ここが常に空配列を返す実装のまま放置されていたため、実際はlocalStorage単独運用と
-      // 変わらず「他デバイス/localStorageクリアで消える」状態になっていた(2026-08-12発覚)。
+      // お気に入り(/api/champions/favorite が書き込む先)
       supabase.from('matchup_sentinel').select('champion, raw_data').eq('raw_data->>is_favorited', 'true'),
     ]);
     if (factsError) throw factsError;
@@ -108,7 +118,17 @@ export async function GET(req: Request) {
       }
     });
 
-    return NextResponse.json({ dates, pending, patchMetas, jgStyles, powerSpikes, dbFavorites, confidences, laneRoles });
+    return NextResponse.json({ 
+      champions: ddragonChampions,
+      dates, 
+      pending, 
+      patchMetas, 
+      jgStyles, 
+      powerSpikes, 
+      dbFavorites, 
+      confidences, 
+      laneRoles 
+    });
   } catch (err: any) {
     console.error('[champions/dictionary-overview] error:', err);
     return NextResponse.json({ error: err.message }, { status: 500 });

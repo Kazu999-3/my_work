@@ -28,6 +28,37 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
   const [sortOrder, setSortOrder] = useState(() => searchParams.get('sort') || 'updated_desc');
   const [roleFilter, setRoleFilter] = useState<string>(() => searchParams.get('role') || 'ALL');
 
+  // 略称・通称・エイリアス辞書
+  const CHAMP_ALIASES: Record<string, string[]> = {
+    TwistedFate: ['tf', 'ツイフェイ', 'カード', 'ついふぇい'],
+    MissFortune: ['mf', 'ミスフォ', 'みすふぉ'],
+    AurelionSol: ['asol', 'エーソル', 'えーそる', 'ドラゴン', '宇宙'],
+    JarvanIV: ['j4', 'ジャーヴァン', 'じゃーゔぁん', 'おうじ', '王子'],
+    Warwick: ['ww', 'ワーウィック', 'わーうぃっく', 'オオカミ', '狼'],
+    MasterYi: ['yi', 'イー', 'いー', 'マスターイー', 'ますたーいー'],
+    Gangplank: ['gp', 'ガングプランク', 'ガンプラ', 'みかん'],
+    LeBlanc: ['lb', 'ルブラン', 'るぶらん'],
+    Katarina: ['kata', 'カタ', 'かた', 'カタリナ', 'かたりな'],
+    Mordekaiser: ['morde', 'モルデ', 'もるで', '鉄'],
+    Nocturne: ['noc', 'ノク', 'のく', '暗闇'],
+    Pantheon: ['panth', 'パンテ', 'ぱんて', 'パン'],
+    Kaisa: ['カイサ', 'かいさ', '虚空'],
+    KogMaw: ['kog', 'コグ', 'こぐ', 'ゲロ'],
+    Renata: ['レナータ', 'れなーた'],
+    XinZhao: ['xin', 'シンジャオ', 'しんじゃお'],
+    TahmKench: ['tahm', 'タム', 'たむ', 'カエル', 'なまず'],
+    Vladimir: ['vlad', 'ブラッド', 'ぶらっど', '吸血鬼'],
+    Cassiopeia: ['cass', 'カシオペア', 'かしおぺあ', 'ヘビ'],
+    Heimerdinger: ['heimer', 'ハイマー', 'はいまー', 'タレット'],
+    Sejuani: ['seju', 'セジュ', 'せじゅ', 'イノシシ'],
+    Tryndamere: ['trynd', 'トリン', 'とりん', '不死身'],
+    DrMundo: ['mundo', 'ムンド', 'むんど'],
+    Blitzcrank: ['blitz', 'ブリッツ', 'ぶりっつ', 'フック'],
+    Nautilus: ['naut', 'ノーチ', 'のーち', 'いかり'],
+    LeeSin: ['lee', 'リー', 'りー', '盲目'],
+    MonkeyKing: ['wukong', 'ウーコン', 'うーこん', 'サル', '猿'],
+  };
+
   // DDragonのtags → ロールへのマッピングテーブル
   const ROLE_MAP: Record<string, string[]> = {
     TOP: ['Fighter', 'Tank'],
@@ -200,6 +231,32 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
   const [isDraftsCollapsed, setIsDraftsCollapsed] = useState(true);
   const [isMatchupsCollapsed, setIsMatchupsCollapsed] = useState(true);
 
+  // ⚔️ 対面VS直接比較モード (Split View)
+  const [vsMode, setVsMode] = useState(false);
+  const [vsEnemyId, setVsEnemyId] = useState('');
+  const [vsEnemyData, setVsEnemyData] = useState<any>(null);
+  const [vsEnemyLoading, setVsEnemyLoading] = useState(false);
+
+  const handleSelectVsEnemy = async (enemyId: string) => {
+    setVsEnemyId(enemyId);
+    if (!enemyId) {
+      setVsEnemyData(null);
+      return;
+    }
+    setVsEnemyLoading(true);
+    try {
+      const res = await fetch(`/api/champions/detail?champion=${encodeURIComponent(enemyId)}`, { credentials: 'include' });
+      const d = await res.json();
+      if (res.ok && d.dataFields) {
+        setVsEnemyData(d.dataFields);
+      }
+    } catch (e) {
+      console.error('VS敵データ取得エラー:', e);
+    } finally {
+      setVsEnemyLoading(false);
+    }
+  };
+
   // ✨ 蓄積知見のAI清書・重複排除 (AI Refine Facts)
   const [refiningFacts, setRefiningFacts] = useState(false);
   const [savingRefinedFacts, setSavingRefinedFacts] = useState(false);
@@ -337,12 +394,36 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
           setChampStats(statsData.stats);
         }
 
-        if (ddragonData && ddragonData.data) {
-          const fetchedChampions = Object.values(ddragonData.data).map((c: any) => ({
-            id: c.id, key: c.key, name: c.name, title: c.title, tags: c.tags,
-            searchKey: `${c.id.toLowerCase()} ${c.name}`
-          }));
+        let fetchedChampions: any[] = [];
+        if (overview && Array.isArray(overview.champions) && overview.champions.length > 0) {
+          fetchedChampions = overview.champions.map((c: any) => {
+            const aliases = CHAMP_ALIASES[c.id] || [];
+            const hiraName = c.name.replace(/[\u30a1-\u30f6]/g, (match: string) => String.fromCharCode(match.charCodeAt(0) - 0x60));
+            return {
+              id: c.id,
+              key: c.key || c.id,
+              name: c.name,
+              title: c.title,
+              tags: c.tags,
+              searchKey: `${c.id.toLowerCase()} ${c.name} ${hiraName} ${c.title || ''} ${aliases.join(' ')}`.toLowerCase()
+            };
+          });
+        } else if (ddragonData && ddragonData.data) {
+          fetchedChampions = Object.values(ddragonData.data).map((c: any) => {
+            const aliases = CHAMP_ALIASES[c.id] || [];
+            const hiraName = (c.name || '').replace(/[\u30a1-\u30f6]/g, (match: string) => String.fromCharCode(match.charCodeAt(0) - 0x60));
+            return {
+              id: c.id,
+              key: c.key,
+              name: c.name,
+              title: c.title,
+              tags: c.tags,
+              searchKey: `${c.id.toLowerCase()} ${c.name} ${hiraName} ${c.title || ''} ${aliases.join(' ')}`.toLowerCase()
+            };
+          });
+        }
 
+        if (fetchedChampions.length > 0) {
           setChampPowerSpikes(overview?.powerSpikes || {});
           setChampDates(overview?.dates || {});
           setChampPending(overview?.pending || {});
@@ -685,11 +766,25 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
 
   const filtered = useMemo(() => {
     let result = champions;
-    // テキスト検索（ひらがな→カタカナ変換対応）
+    // 超強力テキストあいまい検索（略称・ひらがな・カタカナ・長音・スペース無視全対応）
     if (search.trim()) {
-      const q = search.toLowerCase();
-      const hiraToKata = q.replace(/[\u3041-\u3096]/g, match => String.fromCharCode(match.charCodeAt(0) + 0x60));
-      result = result.filter(c => c.searchKey.includes(q) || c.searchKey.includes(hiraToKata));
+      const q = search.trim().toLowerCase();
+      const hira = q.replace(/[\u30a1-\u30f6]/g, m => String.fromCharCode(m.charCodeAt(0) - 0x60));
+      const kata = q.replace(/[\u3041-\u3096]/g, m => String.fromCharCode(m.charCodeAt(0) + 0x60));
+      const noChoonHira = hira.replace(/ー/g, '');
+      const noChoonKata = kata.replace(/ー/g, '');
+      const rawNoSpace = q.replace(/\s+/g, '');
+      result = result.filter(c => {
+        const k = c.searchKey || '';
+        return (
+          k.includes(q) ||
+          k.includes(hira) ||
+          k.includes(kata) ||
+          k.includes(noChoonHira) ||
+          k.includes(noChoonKata) ||
+          k.includes(rawNoSpace)
+        );
+      });
     }
     // ロール（レーン）別フィルター
     if (roleFilter !== 'ALL') {
@@ -1001,6 +1096,9 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
               const isFav = favoriteChamps.includes(c.id);
               const jgStyle = champJgStyles[c.id] || {};
               const powerSpike = champPowerSpikes[c.id];
+              const patchMeta = champPatchMetas[c.id];
+              const patchVer = patchMeta?.patch || (champDates[c.id] ? '蓄積済' : null);
+              const isLatest = patchVer && (patchVer.includes('26.17') || patchVer.includes('最新'));
 
               return (
                 <div
@@ -1013,13 +1111,15 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                   }`}
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
-                    <Image
-                      src={getChampIcon(c.id)}
-                      alt={c.name}
-                      width={38}
-                      height={38}
-                      className="w-9 h-9 rounded-lg border border-black/10 shrink-0"
-                    />
+                    <div className="relative shrink-0">
+                      <Image
+                        src={getChampIcon(c.id)}
+                        alt={c.name}
+                        width={38}
+                        height={38}
+                        className="w-9 h-9 rounded-lg border border-black/10 shrink-0"
+                      />
+                    </div>
                     <div className="min-w-0">
                       <div className="flex items-center gap-1.5">
                         <span className="font-bold text-xs text-stone-900 truncate">{c.name}</span>
@@ -1027,6 +1127,19 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                       </div>
                       <div className="flex items-center gap-1.5 text-[10px] text-stone-400">
                         <span className="truncate">{c.id}</span>
+                        {patchVer ? (
+                          <span className={`px-1 py-0.2 rounded text-[9px] font-mono font-bold ${
+                            isLatest 
+                              ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' 
+                              : patchVer === '蓄積済'
+                              ? 'bg-stone-100 text-stone-600 border border-stone-200'
+                              : 'bg-amber-100 text-amber-800 border border-amber-300'
+                          }`}>
+                            {isLatest ? `🟢 ${patchVer}` : patchVer === '蓄積済' ? '⚪ 蓄積済' : `🟡 ${patchVer}`}
+                          </span>
+                        ) : (
+                          <span className="text-[9px] text-stone-400">⚪ 未取得</span>
+                        )}
                         {champDates[c.id] && (
                           <span className="text-[9px] text-stone-400">
                             • {getRelativeTimeString(new Date(champDates[c.id]).getTime() / 1000)}
@@ -1167,6 +1280,21 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
 
               {/* 右側アクション群（Hextechダークグラス調で統一） */}
               <div className="flex items-center gap-2 flex-wrap ml-auto">
+                {/* ⚔️ 対面VS直接比較モード切り替え */}
+                <button
+                  type="button"
+                  onClick={() => setVsMode(!vsMode)}
+                  className={`px-3.5 py-2 font-bold rounded-xl transition-all flex items-center gap-2 text-xs border backdrop-blur-md shadow-sm cursor-pointer group ${
+                    vsMode
+                      ? 'bg-rose-500/30 text-rose-200 border-rose-400 ring-2 ring-rose-500/50'
+                      : 'bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 hover:text-white border-rose-500/30'
+                  }`}
+                  title="敵チャンピオンを選択して左右に弱点・立ち回りを直接比較"
+                >
+                  <Swords size={14} className="text-rose-400 group-hover:scale-110 transition-transform" />
+                  <span className="leading-tight font-bold">{vsMode ? '通常表示に戻る' : '⚔️ 対面VS直接比較'}</span>
+                </button>
+
                 {/* 1. AIコーチ起動（対面相談・立ち回り質問） */}
                 <Link
                   href={`/coach?champion=${encodeURIComponent(selected.id)}`}
@@ -1321,6 +1449,140 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
         </div>
 
 
+
+        {/* ⚔️ 対面VS直接比較モード (Split View) */}
+        {vsMode && (
+          <div className="bg-gradient-to-b from-[#12131a] to-[#0a0b10] border-2 border-rose-500/50 rounded-3xl p-5 shadow-2xl space-y-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-rose-500/20 pb-3">
+              <div className="flex items-center gap-2">
+                <Swords size={20} className="text-rose-400" />
+                <h2 className="text-base font-black text-white">⚔️ 対面VS直接比較 (Split View)</h2>
+                <span className="text-[10px] font-bold bg-rose-500/20 text-rose-300 px-2 py-0.5 rounded-full border border-rose-500/30">
+                  リアルタイム比較
+                </span>
+              </div>
+              
+              {/* 敵チャンピオン選択セレクター */}
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <span className="text-xs font-bold text-stone-300 shrink-0">対戦相手:</span>
+                <select
+                  value={vsEnemyId}
+                  onChange={(e) => handleSelectVsEnemy(e.target.value)}
+                  className="bg-stone-900 text-white border border-stone-600 rounded-xl px-3 py-1.5 text-xs font-bold focus:outline-none focus:border-rose-400 w-full sm:w-56"
+                >
+                  <option value="">-- 敵チャンピオンを選択 --</option>
+                  {champions
+                    .filter((c) => c.id !== selected.id)
+                    .map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name} ({c.id})
+                      </option>
+                    ))}
+                </select>
+              </div>
+            </div>
+
+            {vsEnemyLoading && (
+              <div className="py-12 text-center text-rose-300 flex items-center justify-center gap-2">
+                <RefreshCw size={18} className="animate-spin" />
+                <span className="text-sm font-bold">敵チャンピオンの対策知見を読み込み中...</span>
+              </div>
+            )}
+
+            {!vsEnemyId && !vsEnemyLoading && (
+              <div className="py-8 text-center text-stone-400 space-y-2">
+                <p className="text-sm font-bold text-stone-200">対戦相手のチャンピオンを選択してください</p>
+                <p className="text-xs text-stone-400">自チャンプの立ち回り手順書・強みと、敵チャンプの弱点・パワースパイクを左右に並べて一目で有利不利を比較できます。</p>
+              </div>
+            )}
+
+            {vsEnemyId && !vsEnemyLoading && (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                {/* 左側: あなたのチャンピオン */}
+                <div className="bg-stone-900/90 border border-[#c89b3c]/40 rounded-2xl p-4 flex flex-col gap-3 shadow-lg">
+                  <div className="flex items-center gap-3 border-b border-stone-800 pb-2.5">
+                    <Image
+                      src={getChampIcon(selected.id)}
+                      alt={selected.name}
+                      width={44}
+                      height={44}
+                      className="w-11 h-11 rounded-xl border-2 border-[#c89b3c]"
+                    />
+                    <div>
+                      <span className="text-[10px] font-bold text-[#c89b3c] uppercase">あなた側 (YOU)</span>
+                      <h3 className="text-base font-black text-white">{selected.name}</h3>
+                    </div>
+                  </div>
+
+                  {/* 強み ＆ パワースパイク */}
+                  <div className="space-y-2.5 text-xs">
+                    <div className="bg-stone-950/60 rounded-xl p-3 border border-emerald-500/30">
+                      <span className="text-[10px] font-bold text-emerald-400 block mb-1">💪 自チャンプの強み・勝ち筋</span>
+                      <p className="text-stone-200 text-[11px] whitespace-pre-wrap leading-relaxed">
+                        {dataFields.strengths || '強みデータ未登録'}
+                      </p>
+                    </div>
+
+                    <div className="bg-stone-950/60 rounded-xl p-3 border border-amber-500/30">
+                      <span className="text-[10px] font-bold text-amber-400 block mb-1">⚡ パワースパイク・仕掛け時</span>
+                      <p className="text-stone-200 text-[11px] whitespace-pre-wrap leading-relaxed">
+                        {dataFields.powerSpikes || 'パワースパイク未登録'}
+                      </p>
+                    </div>
+
+                    <div className="bg-stone-950/60 rounded-xl p-3 border border-purple-500/30">
+                      <span className="text-[10px] font-bold text-purple-400 block mb-1">🛡️ ビルド・ルーン構成</span>
+                      <p className="text-stone-200 text-[11px] whitespace-pre-wrap leading-relaxed">
+                        {dataFields.buildRunes || 'ビルドデータ未登録'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 右側: 相手のチャンピオン */}
+                <div className="bg-stone-900/90 border border-rose-500/40 rounded-2xl p-4 flex flex-col gap-3 shadow-lg">
+                  <div className="flex items-center gap-3 border-b border-stone-800 pb-2.5">
+                    <Image
+                      src={getChampIcon(vsEnemyId)}
+                      alt={vsEnemyId}
+                      width={44}
+                      height={44}
+                      className="w-11 h-11 rounded-xl border-2 border-rose-500"
+                    />
+                    <div>
+                      <span className="text-[10px] font-bold text-rose-400 uppercase">対戦相手 (ENEMY)</span>
+                      <h3 className="text-base font-black text-white">{champions.find(c => c.id === vsEnemyId)?.name || vsEnemyId}</h3>
+                    </div>
+                  </div>
+
+                  {/* 相手の弱み ＆ 要注意スキル */}
+                  <div className="space-y-2.5 text-xs">
+                    <div className="bg-stone-950/60 rounded-xl p-3 border border-rose-500/30">
+                      <span className="text-[10px] font-bold text-rose-400 block mb-1">⚠️ 相手の弱み・突くべき隙</span>
+                      <p className="text-stone-200 text-[11px] whitespace-pre-wrap leading-relaxed">
+                        {vsEnemyData?.weaknesses || '弱みデータ未登録'}
+                      </p>
+                    </div>
+
+                    <div className="bg-stone-950/60 rounded-xl p-3 border border-amber-500/30">
+                      <span className="text-[10px] font-bold text-amber-400 block mb-1">💥 相手のパワースパイク・警戒タイミング</span>
+                      <p className="text-stone-200 text-[11px] whitespace-pre-wrap leading-relaxed">
+                        {vsEnemyData?.powerSpikes || 'パワースパイク未登録'}
+                      </p>
+                    </div>
+
+                    <div className="bg-stone-950/60 rounded-xl p-3 border border-cyan-500/30">
+                      <span className="text-[10px] font-bold text-cyan-400 block mb-1">🎯 相手側の対面推奨・特徴</span>
+                      <p className="text-stone-200 text-[11px] whitespace-pre-wrap leading-relaxed">
+                        {vsEnemyData?.pickRecommendation || vsEnemyData?.strengths || '特徴データ未登録'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* ⚡ 15秒サクッと対策カード（ロード中15秒で頭に入る要点） */}
         <div className="bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-amber-500/15 border border-amber-400/50 rounded-2xl p-4 shadow-xs">

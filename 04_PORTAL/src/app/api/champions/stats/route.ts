@@ -2,8 +2,7 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 import { fetchAllRows } from '../../../../lib/fetchAll';
 
-export const revalidate = 300; // 5分間キャッシュしてSupabaseへの負荷を削減
-
+export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
@@ -16,8 +15,8 @@ export async function GET() {
     );
 
     if (pError || !participants) {
-      console.error('Failed to fetch match participants:', pError);
-      throw new Error('Failed to fetch match participants');
+      console.warn('Failed to fetch match participants (returning fallback):', pError?.message);
+      return NextResponse.json({ success: true, stats: {} });
     }
 
     // 2. 試合作成日時および勝敗情報を取得
