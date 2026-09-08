@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { verifyAdminSession } from '../../../../../lib/adminAuth';
+import { callGeminiWithRetry } from '../../../../../lib/geminiClient';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,42 +19,41 @@ export async function POST(req: Request) {
       current_value,
       claim_a,
       claim_b,
+      chosen_claim, // ユーザーが明示的に選んだ正解候補 ('claim_a' | 'claim_b' | または任意の文章)
     } = body;
 
-    const apiKey = process.env.GEMINI_API_KEY;
-
-    // フォールバック用の基本テキスト生成
-    const fallbackSuggestion = claim_a || conflict_reason || summary || '指摘内容に基づき修正された内容';
-
-    if (!apiKey) {
-      return NextResponse.json({
-        suggested_text: fallbackSuggestion,
-        explanation: 'APIキー未設定のため、指摘内容から基本案を抽出しました。',
-      });
-    }
+    let targetDescription = target_field || '指定項目';
+    if (target_field === 'power_spikes') targetDescription = 'パワースパイク（強い時間帯・時期）';
+    if (target_field === 'strengths') targetDescription = '強み・特徴';
+    if (target_field === 'weaknesses') targetDescription = '弱み・対策';
+    if (target_field === 'build_runes') targetDescription = 'ルーン・ビルド';
+    if (target_field === 'strategy') targetDescription = '立ち回り・戦術';
 
     const prompt = `あなたはLeague of Legendsのプロフェッショナルコーチ兼データ管理者です。
 現在、チャンピオン辞典およびナレッジのファクトチェック（事実確認・整合性チェック）を行っています。
-以下の問題指摘および現在の記載内容を確認し、問題点を解消した【修正後の推奨テキスト】を1つ作成してください。
+以下の問題指摘および現在の記載内容を確認し、問題点を解消した【修正後の推奨テキスト（完成版）】を作成してください。
 
 【対象チャンピオン】: ${champion || '不明'}
-【項目名 / フィールド】: ${target_field || '未指定'}
+【項目名 / フィールド】: ${targetDescription} (${target_field || '未指定'})
 【指摘種別】: ${issue_type || '事実確認'}
 【指摘サマリー】: ${summary || 'なし'}
-【食い違い・問題の理由】: ${conflict_reason || 'なし'}
+${conflict_reason ? `【食い違い・問題の理由】: ${conflict_reason}` : ''}
 ${claim_a ? `【候補 A】: ${claim_a}` : ''}
 ${claim_b ? `【候補 B】: ${claim_b}` : ''}
-${current_value ? `【現在の記載内容】:\n${current_value}` : ''}
+${chosen_claim ? `【採用するべき正解方針】: 「${chosen_claim}」の内容を正として反映してください。` : ''}
 
-【指示】
-1. 誤りや矛盾を解消し、プレイヤーにとって正確・実践的・簡潔な文章にリライトしてください。
-2. 語尾やトーンは既存の辞典スタイル（です・ます調、または箇条書きの体言止めスタイルに合わせる）に統一してください。
+【現在の元文章（Before）】:
+${current_value ? current_value : '(現在空欄または未登録)'}
+
+【リライト指示】
+1. 現在の元文章の文脈や良い部分をできる限り活かしながら、誤り・矛盾・古い情報となっている箇所だけを的確に修正してください。
+2. 短い単語の箇条書きだけでなく、そのまま辞典の項目として読める自然で実践的な日本語文章（です・ます調または体言止め）に仕上げてください。
 3. 出力は必ず以下のJSON形式のみで返してください（Markdownのコードブロック等も含む純粋なJSON）。
 
 \`\`\`json
 {
-  "suggested_text": "修正後の完成テキスト（そのまま元データに上書き保存できる完全な文章）",
-  "explanation": "どう修正したかの短い解説（例: ○○のパッチ変更を踏まえ、パワースパイク時期を中盤に修正）"
+  "suggested_text": "修正後の完成文章（そのまま元のデータフィールドに上書き保存できる完全なテキスト）",
+  "explanation": "どう修正したかの短い解説（例: 記述Aの方針に合わせ、パワースパイクの記述を序盤から中盤へ修正）"
 }
 \`\`\``;
 
@@ -61,34 +61,35 @@ ${current_value ? `【現在の記載内容】:\n${current_value}` : ''}
     let explanation = '';
 
     try {
-      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: {
-            temperature: 0.3,
-            maxOutputTokens: 1000,
-          },
-        }),
+      const aiResponse = await callGeminiWithRetry(prompt, {
+        temperature: 0.3,
+        maxOutputTokens: 1200,
+        responseMimeType: 'application/json',
       });
 
-      if (res.ok) {
-        const data = await res.json();
-        const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-        const jsonMatch = rawText.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          const parsed = JSON.parse(jsonMatch[0]);
-          suggested_text = parsed.suggested_text;
-          explanation = parsed.explanation;
-        }
+      const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0]);
+        suggested_text = parsed.suggested_text || '';
+        explanation = parsed.explanation || '';
       }
-    } catch (apiErr) {
-      console.warn('[suggest-fix] Gemini API call failed, falling back:', apiErr);
+    } catch (apiErr: any) {
+      console.warn('[suggest-fix] callGeminiWithRetry failed:', apiErr);
+      // フォールバック
+      if (chosen_claim) {
+        suggested_text = chosen_claim;
+        explanation = 'AI生成が一時的に利用できなかったため、選択した正解候補を適用しました。';
+      } else if (claim_a) {
+        suggested_text = claim_a;
+        explanation = '候補Aの内容を採用しました。';
+      } else if (conflict_reason) {
+        suggested_text = conflict_reason;
+        explanation = '指摘理由からテキストを抽出しました。';
+      }
     }
 
     if (!suggested_text) {
-      suggested_text = fallbackSuggestion;
+      suggested_text = current_value || summary || '修正内容';
       explanation = '指摘内容に基づいて生成しました。';
     }
 
