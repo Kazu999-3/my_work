@@ -129,6 +129,7 @@ ${JSON.stringify(fieldTexts, null, 2)}
 
     const rawResponse = await callGeminiWithRetry(prompt, {
       temperature: 0.2,
+      maxOutputTokens: 8192,
       responseMimeType: 'application/json',
     });
 
@@ -153,8 +154,19 @@ ${JSON.stringify(fieldTexts, null, 2)}
         const sanitized = cleaned.replace(/[\x00-\x1F\x7F-\x9F]/g, (c) => c === '\n' || c === '\r' || c === '\t' ? c : '');
         refinedFields = JSON.parse(sanitized);
       } catch (fallbackErr: any) {
-        console.error('[champions/refine-facts] JSON parse error, raw:', rawResponse);
-        throw new Error(`AI生成結果のJSON解析に失敗しました: ${parseErr.message}`);
+        // キーごとの正規表現抽出によるフォールバック復元
+        console.warn('[champions/refine-facts] Full JSON parse failed, falling back to regex field extraction:', parseErr.message);
+        for (const f of TREND_FIELDS) {
+          const fieldRegex = new RegExp(`"${f.key}"\\s*:\\s*"([\\s\\S]*?)(?:"\\s*,|"\\s*})`, 'i');
+          const match = cleaned.match(fieldRegex);
+          if (match && match[1]) {
+            refinedFields[f.key] = match[1].replace(/\\n/g, '\n').replace(/\\"/g, '"');
+          }
+        }
+        if (Object.keys(refinedFields).length === 0) {
+          console.error('[champions/refine-facts] JSON parse error, raw:', rawResponse);
+          throw new Error(`AI生成結果のJSON解析に失敗しました: ${parseErr.message}`);
+        }
       }
     }
 
