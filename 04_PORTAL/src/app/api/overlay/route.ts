@@ -40,11 +40,21 @@ function findPythonAndScript() {
   return { venvPython, scriptPath, logsDir };
 }
 
+function getStartupShortcutPath() {
+  const appData = process.env.APPDATA || '';
+  if (!appData) return null;
+  return path.join(appData, 'Microsoft', 'Windows', 'Start Menu', 'Programs', 'Startup', 'Sovereign_HUD_Overlay.lnk');
+}
+
 export async function GET() {
   const isRunning = overlayProcess !== null && !overlayProcess.killed;
+  const shortcutPath = getStartupShortcutPath();
+  const autostartEnabled = shortcutPath ? fs.existsSync(shortcutPath) : false;
+
   return NextResponse.json({
     running: isRunning,
     pid: overlayProcess ? overlayProcess.pid : null,
+    autostartEnabled,
   });
 }
 
@@ -52,6 +62,44 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json().catch(() => ({}));
     const action = body.action || 'start';
+
+    // スタートアップ自動起動の有効化
+    if (action === 'enable_autostart') {
+      const shortcutPath = getStartupShortcutPath();
+      if (!shortcutPath) {
+        return NextResponse.json({ error: 'APPDATA環境変数が見つかりません。' }, { status: 500 });
+      }
+      const { scriptPath } = findPythonAndScript();
+      const baseDir = path.dirname(path.dirname(path.dirname(path.dirname(scriptPath)))); // D:/my_work
+      const vbsPath = path.resolve(baseDir, '03_SYSTEMS', 'start_overlay_silent.vbs');
+
+      if (!fs.existsSync(vbsPath)) {
+        return NextResponse.json({ error: `ランチャーファイルが見つかりません: ${vbsPath}` }, { status: 500 });
+      }
+
+      const psScript = `$ws = New-Object -ComObject WScript.Shell; $s = $ws.CreateShortcut('${shortcutPath.replace(/'/g, "''")}'); $s.TargetPath = 'wscript.exe'; $s.Arguments = '\"${vbsPath.replace(/'/g, "''")}\"'; $s.WorkingDirectory = '${path.dirname(vbsPath).replace(/'/g, "''")}'; $s.Description = 'Sovereign HUD LoL Overlay Auto-Launcher'; $s.Save()`;
+      const cp = spawn('powershell.exe', ['-NoProfile', '-Command', psScript]);
+      await new Promise((resolve) => cp.on('close', resolve));
+
+      return NextResponse.json({
+        success: true,
+        message: 'Windows起動時の自動常駐（スタートアップ）を有効にしました！LoL起動で自動表示されます。',
+        autostartEnabled: true,
+      });
+    }
+
+    // スタートアップ自動起動の無効化
+    if (action === 'disable_autostart') {
+      const shortcutPath = getStartupShortcutPath();
+      if (shortcutPath && fs.existsSync(shortcutPath)) {
+        fs.unlinkSync(shortcutPath);
+      }
+      return NextResponse.json({
+        success: true,
+        message: 'Windows起動時の自動常駐（スタートアップ）を無効にしました。',
+        autostartEnabled: false,
+      });
+    }
 
     if (action === 'stop') {
       if (overlayProcess && !overlayProcess.killed) {
@@ -108,7 +156,7 @@ export async function POST(req: NextRequest) {
 
       return NextResponse.json({
         success: true,
-        message: action === 'demo' ? '🎮 オーバーレイ（デモモード）を起動しました！' : '🎮 Sovereign HUD オーバーレイを起動しました！',
+        message: action === 'demo' ? '🎮 オーバーレイ（デモモード）を起動しました！' : '🎮 Sovereign HUD オーバーレイを起動しました！(LoL待機中)',
         running: true,
         pid: overlayProcess ? overlayProcess.pid : null
       });

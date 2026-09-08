@@ -1,11 +1,14 @@
 """
-Sovereign HUD - オーバーレイ統合ランチャー (リスク1〜4完全解決版)
-===================================================================
-1. TopBarWidget (画面右上): 経済＆マクロ ➔ 【常時表示】
-2. SpellTrackerWidget (画面右下): 敵Ult＆スペルタイマー ➔ 【常時表示 ＆ テンキー1〜5連動】
-3. MatchupCardWidget (画面左側): 対面手順＆キルライン ➔ 【TAB連動】
-4. LaneDominanceWidget (画面中央下部): 対面ゴールド差 ➔ 【TAB連動 / スコアボード完全非被り】
-5. 試合終了時バックグラウンド完全非同期スレッド送信 (threading.Thread)
+Sovereign HUD - オーバーレイ統合ランチャー (LoL自動起動連動 ＆ バックグラウンド常駐版)
+================================================================================
+1. LoL起動自動検知: サモナーズリフト（League of Legends.exe）の開始時に自動でオーバーレイを展開
+2. 試合終了自動非表示: 試合終了時は画面から自動で消えて、省電力バックグラウンド待機
+3. システムトレイ常駐: タスクバー通知領域に👑アイコンで常駐。右クリックで手動表示/終了
+4. TopBarWidget (画面右上): 経済＆マクロ
+5. SpellTrackerWidget (画面右下): 敵Ult＆スペルタイマー
+6. MatchupCardWidget (画面左側): 対面手順＆キルライン
+7. LaneDominanceWidget (画面中央下部): 対面ゴールド差 (TAB連動)
+8. 試合終了時バックグラウンド完全非同期スレッド送信 (threading.Thread)
 """
 
 import os
@@ -21,9 +24,9 @@ if sys.stdout and hasattr(sys.stdout, 'reconfigure'):
 import argparse
 import threading
 from pathlib import Path
-from PyQt6.QtWidgets import QApplication
+from PyQt6.QtWidgets import QApplication, QSystemTrayIcon, QMenu
 from PyQt6.QtCore import QTimer, Qt
-from PyQt6.QtGui import QKeySequence, QShortcut
+from PyQt6.QtGui import QIcon, QPixmap, QPainter, QColor, QFont, QAction
 
 # パス追加
 sys.path.append(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
@@ -38,12 +41,32 @@ from v2_CORE._LOL.overlay.lane_dominance_widget import LaneDominanceWidget
 from v2_CORE._LOL.overlay.tab_key_listener import TabKeyListener
 from v2_CORE._LOL.overlay.hud_config import load_widget_positions
 
+
+def create_tray_icon() -> QIcon:
+    """システムトレイ用のHextechゴールド王冠アイコンを動的生成"""
+    pixmap = QPixmap(64, 64)
+    pixmap.fill(Qt.GlobalColor.transparent)
+    painter = QPainter(pixmap)
+    painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+
+    # 背景円（ダークHextech）
+    painter.setBrush(QColor(10, 14, 23, 230))
+    painter.setPen(QColor(200, 155, 60, 255))
+    painter.drawEllipse(2, 2, 60, 60)
+
+    # 王冠文字 👑
+    painter.setFont(QFont("Segoe UI Emoji", 28))
+    painter.drawText(pixmap.rect(), Qt.AlignmentFlag.AlignCenter, "👑")
+    painter.end()
+    return QIcon(pixmap)
+
+
 def main():
     parser = argparse.ArgumentParser(description="Sovereign HUD Overlay")
     parser.add_argument("--mock", action="store_true", help="モックデータを使用してUIテストを実行")
     parser.add_argument("--demo", action="store_true", help="リアルタイム試合シミュレーション(デモモード)を実行")
     parser.add_argument("--test", action="store_true", help="自動テストスイートを実行")
-    parser.add_argument("--always-show", action="store_true", help="すべてのウィジェットを常時表示")
+    parser.add_argument("--always-show", action="store_true", help="すべてのウィジェットを常時表示（非アクティブ時も非表示にしない）")
     args = parser.parse_args()
 
     if args.test:
@@ -55,7 +78,9 @@ def main():
         QApplication.setHighDpiScaleFactorRoundingPolicy(Qt.HighDpiScaleFactorRoundingPolicy.PassThrough)
 
     app = QApplication(sys.argv)
-    
+    # ウィジェットがすべてhide状態でもアプリを終了させずにトレイ常駐
+    app.setQuitOnLastWindowClosed(False)
+
     live_client = LiveClient()
     state_engine = HudStateEngine()
 
@@ -66,7 +91,7 @@ def main():
     spell_tracker = SpellTrackerWidget()
     lane_dominance = LaneDominanceWidget()
 
-    # リスク2解消: 解像度自動取得 ＆ スコアボード完全非被り安全領域自動スナップ
+    # 解像度自動取得 ＆ 安全領域自動スナップ
     saved_positions = load_widget_positions()
     screen = app.primaryScreen().geometry()
     screen_w = screen.width()
@@ -103,7 +128,66 @@ def main():
     # ⑤ トーストアラート (画面中央上部)
     toast_alert.move(int((screen_w - 320) / 2), 60)
 
-    # チャット・スペル自動検知連動 (チャットで「牛 f」「Darius: Flash」「mid tp」「jg no r」等が出たら自動始動)
+    # 表示状態管理
+    hud_visible = False
+
+    def show_hud_widgets():
+        nonlocal hud_visible
+        top_bar.show()
+        spell_tracker.show()
+        matchup_card.show()
+        hud_visible = True
+
+    def hide_hud_widgets():
+        nonlocal hud_visible
+        top_bar.hide()
+        spell_tracker.hide()
+        matchup_card.hide()
+        lane_dominance.hide()
+        toast_alert.hide()
+        hud_visible = False
+
+    # デモやモック、常時表示オプション指定時は最初から表示
+    if args.always_show or args.demo or args.mock:
+        show_hud_widgets()
+        if args.always_show:
+            lane_dominance.show()
+    else:
+        # 通常のLoL監視モード: ゲーム開始まで完全非表示
+        hide_hud_widgets()
+
+    # システムトレイアイコンの構築
+    tray_icon = QSystemTrayIcon(create_tray_icon(), app)
+    tray_icon.setToolTip("👑 Sovereign HUD (LoL自動連動オーバーレイ)")
+
+    tray_menu = QMenu()
+    status_action = QAction("⏳ 状態: LoL起動監視中 (待機)", tray_menu)
+    status_action.setEnabled(False)
+    tray_menu.addAction(status_action)
+    tray_menu.addSeparator()
+
+    def toggle_manual_visibility():
+        nonlocal hud_visible
+        if hud_visible:
+            hide_hud_widgets()
+            tray_icon.showMessage("Sovereign HUD", "オーバーレイを手動で非表示にしました", QSystemTrayIcon.MessageIcon.Information, 1500)
+        else:
+            show_hud_widgets()
+            tray_icon.showMessage("Sovereign HUD", "オーバーレイを手動で表示しました", QSystemTrayIcon.MessageIcon.Information, 1500)
+
+    toggle_action = QAction("👁️ オーバーレイ手動 表示/非表示", tray_menu)
+    toggle_action.triggered.connect(toggle_manual_visibility)
+    tray_menu.addAction(toggle_action)
+
+    tray_menu.addSeparator()
+    quit_action = QAction("❌ Sovereign HUD を終了", tray_menu)
+    quit_action.triggered.connect(app.quit)
+    tray_menu.addAction(quit_action)
+
+    tray_icon.setContextMenu(tray_menu)
+    tray_icon.show()
+
+    # チャット・スペル自動検知連動
     def on_chat_spell_event(chat_message: str):
         try:
             from v2_CORE._LOL.overlay.chat_spell_detector import ChatSpellDetector
@@ -119,22 +203,12 @@ def main():
             toast_alert.show_alert("⚡", f"🎯 [{target}] {spell_label} 使用検知！タイマー自動始動", alert_type="spike", duration_ms=4000)
             print(f"🎯 [Chat Auto-Sync] {target} の {spell_label} タイマーを自動始動しました！")
 
-    # 初期表示状態: TopBar(右上), SpellTracker(右下), MatchupCard(左側) を常時表示
-    top_bar.show()
-    spell_tracker.show()
-    matchup_card.show()
-
-    if args.always_show:
-        lane_dominance.show()
-    else:
-        lane_dominance.hide()
-
     # グローバルキーフック連動 (TABキー ＆ テンキー1〜5)
     key_listener = TabKeyListener()
     key_listener.start()
 
     def on_tab_state_changed(is_pressed: bool):
-        if args.always_show:
+        if not hud_visible and not args.always_show:
             return
         if is_pressed:
             lane_dominance.show()
@@ -142,8 +216,8 @@ def main():
             lane_dominance.hide()
 
     def on_numpad_pressed(idx: int):
-        # Ctrl/Alt + テンキー1〜5 (0: TOP, 1: JG, 2: MID, 3: ADC, 4: SUP)
-        # タイマー動作中ならリセット（解除）、停止中なら始動する安全トグル動作
+        if not hud_visible and not args.always_show:
+            return
         if 0 <= idx < len(spell_tracker.columns):
             col = spell_tracker.columns[idx]
             if col.btn_spell1.ready_time > 0:
@@ -156,7 +230,7 @@ def main():
     key_listener.tab_state_changed.connect(on_tab_state_changed)
     key_listener.numpad_pressed.connect(on_numpad_pressed)
 
-    # リスク3解消: 試合終了時の完全非同期スレッド自動データ転送 (threading.Thread)
+    # 試合終了時の完全非同期スレッド自動データ転送 (threading.Thread)
     game_state_tracker = {
         "was_in_game": False,
         "last_active_state": None
@@ -186,7 +260,6 @@ def main():
             pass
 
     def on_game_ended(last_state):
-        # メインGUIスレッドを1msも止めずに別スレッドで送信
         threading.Thread(target=async_sync_worker, args=(last_state,), daemon=True).start()
 
     # 定期更新ループ (1秒おき)
@@ -194,7 +267,7 @@ def main():
     tick_count = 0
 
     def update_all():
-        nonlocal game_state_tracker, last_reported_status, tick_count, state_engine
+        nonlocal game_state_tracker, last_reported_status, tick_count, state_engine, hud_visible
         tick_count += 1
 
         if args.demo:
@@ -214,7 +287,6 @@ def main():
             raw_data = LiveClient.get_mock_game_data()
             state = state_engine.analyze_frame(raw_data)
         else:
-            # 2回叩かず直接 allgamedata を取得して高速化・安定化
             raw_data = live_client.fetch_all_game_data()
             if raw_data:
                 state = state_engine.analyze_frame(raw_data)
@@ -223,24 +295,40 @@ def main():
 
         is_active = state.get("active", False)
 
-        # 接続状態の変化をコンソールに出力
+        # 接続状態の変化
         if is_active:
             my_champ = state.get("my_champion", "---")
             enemy_champ = state.get("enemy_champion", "---")
             t_str = state.get("game_time_str", "00:00")
             g_str = state.get("gold_diff_str", "0G")
+
+            if not hud_visible:
+                # 🎮 LoL開始を検知 ➔ 自動でオーバーレイを画面上に展開！
+                show_hud_widgets()
+                toast_alert.show_alert("👑", f"Sovereign HUD 接続完了: {my_champ} vs {enemy_champ}", alert_type="info", duration_ms=4000)
+                status_action.setText(f"⚔️ 試合中: {my_champ} vs {enemy_champ} ({t_str})")
+                tray_icon.setToolTip(f"👑 Sovereign HUD (試合中: {my_champ})")
+
             if last_reported_status != "in_game":
-                print(f"\n🟢 [インゲーム連動成功！] 試合時間: {t_str} | {my_champ} vs {enemy_champ} | {g_str}")
-                print("💡 画面右上/右下のHUDが実データに更新されました！（TABキーを押すと左側に対面手順書＆中央にレーン差が出現）\n")
+                print(f"\n🟢 [インゲーム自動連動成功！] 試合時間: {t_str} | {my_champ} vs {enemy_champ} | {g_str}")
+                print("💡 オーバーレイが自動表示されました！（TABキーで対面手順書＆レーン優勢度が出現）\n")
                 last_reported_status = "in_game"
             elif tick_count % 10 == 0:
                 print(f"⏱️ [In-Game] {t_str} | {my_champ} vs {enemy_champ} | CS: {state.get('my_cs', 0)} ({state.get('cs_per_min', 0)}/m) | {g_str}")
+                status_action.setText(f"⚔️ 試合中: {my_champ} vs {enemy_champ} ({t_str})")
 
             game_state_tracker["was_in_game"] = True
             game_state_tracker["last_active_state"] = state
         else:
+            if hud_visible and not args.always_show and not args.demo and not args.mock:
+                # 🏁 試合終了またはゲーム終了 ➔ 自動で画面から非表示
+                hide_hud_widgets()
+                status_action.setText("⏳ 状態: LoL起動監視中 (待機)")
+                tray_icon.setToolTip("👑 Sovereign HUD (LoL自動連動オーバーレイ - 待機中)")
+
             if last_reported_status != "waiting":
-                print("⏳ [ゲーム待機中...] サモナーズリフト（League of Legends.exe）の開始を待機しています...")
+                print("⏳ [LoL起動監視中...] サモナーズリフト（League of Legends.exe）の開始を待機しています...")
+                status_action.setText("⏳ 状態: LoL起動監視中 (待機)")
                 last_reported_status = "waiting"
 
             if game_state_tracker["was_in_game"]:
@@ -277,11 +365,12 @@ def main():
                 gank_results.append(res)
             spell_tracker.update_gank_scores(gank_results)
 
-        top_bar.update_data(state)
-        matchup_card.update_data(state)
-        toast_alert.update_events(state)
-        spell_tracker.update_enemies(state)
-        lane_dominance.update_data(state)
+        if hud_visible or args.always_show:
+            top_bar.update_data(state)
+            matchup_card.update_data(state)
+            toast_alert.update_events(state)
+            spell_tracker.update_enemies(state)
+            lane_dominance.update_data(state)
 
     timer = QTimer()
     timer.timeout.connect(update_all)
@@ -289,19 +378,18 @@ def main():
     update_all()
 
     print("=" * 65)
-    print("👑 Sovereign HUD (v2.0 リスク1〜4完全解決版)")
-    print("  [1] 💰 経済＆マクロ (画面右上 / 常時表示)")
-    print("  [2] ⚡ 敵Ult＆スペル管理 (画面右下 / 常時表示 ＆ チャット自動連動)")
-    print("  [3] ⚔️ 対面インテル＆動的ビルド (画面左側 / 常時表示)")
-    print("  [4] 📊 各メンバー対面ゴールド差 (画面中央下部 / TAB連動)")
-    print("  [5] 🚀 試合終了時完全非同期データ転送 (threading.Thread)")
+    print("👑 Sovereign HUD (LoL自動連動 ＆ バックグラウンド常駐版)")
+    print("  [1] 🎮 LoL起動自動検知: 試合開始時に自動でオーバーレイを展開")
+    print("  [2] 🏁 試合終了自動非表示: ゲーム外では画面から消えて静かに待機")
+    print("  [3] 👑 システムトレイ常駐: タスクバー通知領域に常駐（右クリックで操作）")
+    print("  [4] ⌨️ TABキー連動: スコアボード確認時にレーン優勢度が出現")
+    print("  [5] 💬 チャット連動: スペルタイマー自動始動")
     print("-----------------------------------------------------------------")
-    print("👁️ 左側対面カード・右上マクロ・右下スペルが常時表示されます。")
-    print("⌨️ 【TABキー連動】: スコアボード確認時、中央下にレーン優勢度が出現！")
-    print("💬 【チャット自動連動】: 「ダリウスがフラッシュを使用」「Darius: Flash」を自動検知！")
+    print("💡 LoLを起動して試合を開始すると、自動的に画面上にHUDが表示されます。")
     print("=" * 65)
 
     sys.exit(app.exec())
+
 
 if __name__ == "__main__":
     main()
