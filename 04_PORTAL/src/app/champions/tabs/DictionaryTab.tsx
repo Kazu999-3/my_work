@@ -798,23 +798,41 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
         {/* ── 左ペイン: マスターリスト (lg:col-span-4 xl:col-span-3) ── */}
         <div className={`lg:col-span-4 xl:col-span-3 flex flex-col gap-3.5 lg:sticky lg:top-4 ${selected ? 'hidden lg:flex' : 'flex'} w-full min-w-0`}>
           {/* 検索バー ＆ フィルター */}
-          <div className="bg-white border border-stone-200 p-3.5 rounded-2xl shadow-xs space-y-3">
-            <div className="relative">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400" size={16} />
-              <input
-                type="text"
-                placeholder="Ahri / アリ (英・日対応)..."
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                className="w-full bg-stone-50 border border-stone-200 focus:border-[#c89b3c] focus:bg-white rounded-xl py-2 pl-9 pr-3 text-stone-900 font-bold outline-none transition-all text-xs"
-              />
+          <div className="bg-white border border-stone-200/80 p-3 rounded-2xl shadow-xs space-y-2.5">
+            {/* 1段目: 検索バー ＋ 目的別フィルター開閉ボタン */}
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" size={15} />
+                <input
+                  type="text"
+                  placeholder="チャンピオン検索 (英・日対応)..."
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  className="w-full bg-stone-50 border border-stone-200 focus:border-[#c89b3c] focus:bg-white rounded-xl py-2 pl-8.5 pr-3 text-stone-900 font-bold outline-none transition-all text-xs"
+                />
+              </div>
+              <button
+                onClick={() => setIsFilterOpen(!isFilterOpen)}
+                className={`relative px-2.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 border ${
+                  isFilterOpen || pickFilter !== 'ALL' || typeFilter !== 'ALL'
+                    ? 'bg-[#c89b3c]/10 border-[#c89b3c] text-[#936d1b]'
+                    : 'bg-stone-50 border-stone-200 text-stone-600 hover:text-stone-900 hover:bg-stone-100'
+                }`}
+                title="ドラフト適性や戦術スタイルで絞り込み"
+              >
+                <Filter size={14} />
+                <span className="text-[11px]">絞り込み</span>
+                {(pickFilter !== 'ALL' || typeFilter !== 'ALL') && (
+                  <span className="w-2 h-2 rounded-full bg-[#c89b3c]" />
+                )}
+              </button>
             </div>
 
-            {/* ロール別ピルフィルター */}
-            <div className="flex items-center gap-1 overflow-x-auto pb-1 scrollbar-none">
+            {/* 2段目: ロール別ピルフィルター */}
+            <div className="flex items-center gap-1 overflow-x-auto pb-0.5 scrollbar-none">
               <button
                 onClick={() => setRoleFilter(roleFilter === 'FAVORITES' ? 'ALL' : 'FAVORITES' as any)}
-                className={`px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition shrink-0 flex items-center gap-1 ${
+                className={`px-2 py-1.5 rounded-lg text-[11px] font-bold transition shrink-0 flex items-center gap-1 ${
                   (roleFilter as any) === 'FAVORITES'
                     ? 'bg-amber-400 text-stone-950 shadow-xs'
                     : 'text-amber-700 bg-amber-50 hover:bg-amber-100'
@@ -827,9 +845,9 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                 <button
                   key={role}
                   onClick={() => setRoleFilter(role)}
-                  className={`px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition shrink-0 ${
+                  className={`flex-1 py-1.5 rounded-lg text-[11px] font-bold transition text-center shrink-0 ${
                     roleFilter === role
-                      ? 'bg-[#c89b3c] text-stone-950 shadow-xs font-black'
+                      ? 'bg-stone-900 text-white shadow-xs font-black'
                       : 'text-stone-600 hover:text-stone-900 hover:bg-stone-100'
                   }`}
                 >
@@ -838,71 +856,141 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
               ))}
             </div>
 
-            {/* ピック属性 ＆ タイプフィルター */}
-            <div className="flex flex-col gap-2 pt-2 border-t border-stone-100 text-[10px]">
-              {/* ソート順選択 ＆ 件数 */}
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-1.5 flex-1 min-w-0">
-                  <span className="text-stone-500 font-bold shrink-0 text-[10px]">並び順:</span>
-                  <select
-                    value={sortOrder}
-                    onChange={(e) => setSortOrder(e.target.value)}
-                    className="w-full bg-stone-50 border border-stone-200 rounded-lg px-2 py-1 text-[10px] font-bold text-stone-800 outline-none focus:border-[#c89b3c]"
-                  >
-                    <option value="updated_desc">🔄 更新が新しい順</option>
-                    <option value="updated_asc">⏳ 更新が古い順</option>
-                    <option value="blind_pickable_desc">🛡️ 先出し適性順</option>
-                    <option value="counter_pickable_desc">⚔️ 後出し適性順</option>
-                    <option value="style_farm_desc">🌾 ファーム型優先</option>
-                    <option value="name_asc">🔤 名前順</option>
-                  </select>
-                </div>
-                <span className="text-stone-400 font-mono font-bold shrink-0 text-[11px]">
-                  {filtered.length} 体
-                </span>
-              </div>
+            {/* 目的別フィルターパネル（アコーディオン） */}
+            <AnimatePresence>
+              {isFilterOpen && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.15 }}
+                  className="overflow-hidden"
+                >
+                  <div className="p-3 bg-stone-50 border border-stone-200/80 rounded-xl space-y-3 text-xs">
+                    {/* ① ドラフト適性 */}
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-[11px] font-black text-stone-800 flex items-center gap-1">
+                          🎯 ピック順・ドラフト方針
+                        </span>
+                        <span className="text-[9px] text-stone-500 font-medium">いつ出すか？</span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-1.5">
+                        {[
+                          { key: 'ALL', label: 'すべて', desc: '全チャンピオン' },
+                          { key: 'BLIND', label: '🛡️ 先出し安定', desc: '対面見えずとも事故りにくい' },
+                          { key: 'COUNTER', label: '⚔️ 後出し特化', desc: '特定対面を強烈にメタる' },
+                        ].map(p => (
+                          <button
+                            key={p.key}
+                            onClick={() => setPickFilter(p.key as any)}
+                            className={`p-1.5 rounded-lg text-left transition border ${
+                              pickFilter === p.key
+                                ? 'bg-white border-[#c89b3c] shadow-xs text-stone-950 font-bold'
+                                : 'bg-white/60 border-stone-200/70 text-stone-600 hover:bg-white hover:text-stone-900'
+                            }`}
+                          >
+                            <div className="text-[10px] font-bold leading-tight">{p.label}</div>
+                            <div className="text-[8px] text-stone-600 mt-0.5 leading-none font-medium">{p.desc}</div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
 
-              {/* 先出し / 後出し 属性 */}
-              <div className="flex items-center gap-1">
-                <span className="text-stone-500 font-bold shrink-0 text-[10px]">適性:</span>
-                {(['ALL', 'BLIND', 'COUNTER'] as const).map(p => (
-                  <button
-                    key={p}
-                    onClick={() => setPickFilter(p)}
-                    className={`px-2 py-1 rounded-md font-bold transition ${
-                      pickFilter === p
-                        ? 'bg-stone-900 text-white shadow-2xs'
-                        : 'text-stone-600 bg-stone-100 hover:bg-stone-200'
-                    }`}
-                  >
-                    {p === 'ALL' ? '全適性' : p === 'BLIND' ? '先出し推奨' : '後出し推奨'}
-                  </button>
-                ))}
-              </div>
+                    {/* ② 戦術スタイル */}
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-[11px] font-black text-stone-800 flex items-center gap-1">
+                          ⚡ チーム戦術・役割
+                        </span>
+                        <span className="text-[9px] text-stone-500 font-medium">何をするキャラか？</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-1.5">
+                        {[
+                          { key: 'ALL', label: 'すべて', desc: '全スタイル' },
+                          { key: 'FARM', label: '🌾 ファーム型', desc: '終盤の集団戦キャリー' },
+                          { key: 'GANK', label: '⚡ ガンク型', desc: '序盤から主導権を握る' },
+                          { key: 'INVASION', label: '🗡️ 侵入型', desc: '敵陣荒らし・タイマン' },
+                          { key: 'TANK', label: '🛡️ タンク型', desc: '前衛・集団戦の起点' },
+                        ].map(t => (
+                          <button
+                            key={t.key}
+                            onClick={() => setTypeFilter(t.key as any)}
+                            className={`p-1.5 rounded-lg text-left transition border ${
+                              typeFilter === t.key
+                                ? 'bg-white border-amber-500 shadow-xs text-stone-950 font-bold'
+                                : 'bg-white/60 border-stone-200/70 text-stone-600 hover:bg-white hover:text-stone-900'
+                            }`}
+                          >
+                            <div className="text-[10px] font-bold leading-tight">{t.label}</div>
+                            <div className="text-[8px] text-stone-600 mt-0.5 leading-none font-medium">{t.desc}</div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
 
-              {/* 戦術スタイル (ファーム / ガンク / インベード / タンク) */}
-              <div className="flex items-center gap-1 overflow-x-auto pb-0.5 scrollbar-none">
-                <span className="text-stone-500 font-bold shrink-0 text-[10px]">タイプ:</span>
-                {[
-                  { key: 'ALL', label: 'すべて' },
-                  { key: 'FARM', label: '🌾 ファーム' },
-                  { key: 'GANK', label: '⚡ ガンク' },
-                  { key: 'INVASION', label: '🗡️ 侵入' },
-                  { key: 'TANK', label: '🛡️ タンク' },
-                ].map(t => (
-                  <button
-                    key={t.key}
-                    onClick={() => setTypeFilter(t.key as any)}
-                    className={`px-2 py-1 rounded-md font-bold transition shrink-0 ${
-                      typeFilter === t.key
-                        ? 'bg-amber-600 text-white shadow-2xs'
-                        : 'text-stone-600 bg-stone-100 hover:bg-stone-200'
-                    }`}
-                  >
-                    {t.label}
-                  </button>
-                ))}
+                    {/* リセットボタン */}
+                    {(pickFilter !== 'ALL' || typeFilter !== 'ALL') && (
+                      <button
+                        onClick={() => {
+                          setPickFilter('ALL');
+                          setTypeFilter('ALL');
+                        }}
+                        className="w-full py-1 text-center text-[10px] font-bold text-stone-500 hover:text-stone-800 hover:underline"
+                      >
+                        すべての絞り込み条件をリセット
+                      </button>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* アクティブフィルタータグ（パネル閉じている時でも状態がわかるように） */}
+            {!isFilterOpen && (pickFilter !== 'ALL' || typeFilter !== 'ALL') && (
+              <div className="flex items-center gap-1.5 flex-wrap pt-1">
+                {pickFilter !== 'ALL' && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#c89b3c]/15 text-[#936d1b] font-bold text-[10px] border border-[#c89b3c]/30">
+                    {pickFilter === 'BLIND' ? '🛡️ 先出し安定' : '⚔️ 後出し特化'}
+                    <button onClick={() => setPickFilter('ALL')} className="hover:text-stone-900 ml-0.5">
+                      <X size={10} />
+                    </button>
+                  </span>
+                )}
+                {typeFilter !== 'ALL' && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-100 text-amber-900 font-bold text-[10px] border border-amber-200">
+                    {typeFilter === 'FARM' && '🌾 ファーム型'}
+                    {typeFilter === 'GANK' && '⚡ ガンク型'}
+                    {typeFilter === 'INVASION' && '🗡️ 侵入型'}
+                    {typeFilter === 'TANK' && '🛡️ タンク型'}
+                    <button onClick={() => setTypeFilter('ALL')} className="hover:text-stone-900 ml-0.5">
+                      <X size={10} />
+                    </button>
+                  </span>
+                )}
               </div>
+            )}
+
+            {/* 並び順セレクト ＆ 件数 */}
+            <div className="flex items-center justify-between gap-2 pt-1 border-t border-stone-100">
+              <div className="flex items-center gap-1 flex-1 min-w-0">
+                <span className="text-stone-500 font-bold shrink-0 text-[10px]">並び:</span>
+                <select
+                  value={sortOrder}
+                  onChange={(e) => setSortOrder(e.target.value)}
+                  className="w-full bg-stone-50 border border-stone-200 rounded-lg px-1.5 py-1 text-[10px] font-bold text-stone-700 outline-none focus:border-[#c89b3c]"
+                >
+                  <option value="updated_desc">🔄 更新が新しい順</option>
+                  <option value="updated_asc">⏳ 更新が古い順</option>
+                  <option value="blind_pickable_desc">🛡️ 先出し適性順</option>
+                  <option value="counter_pickable_desc">⚔️ 後出し適性順</option>
+                  <option value="style_farm_desc">🌾 ファーム型優先</option>
+                  <option value="name_asc">🔤 名前順</option>
+                </select>
+              </div>
+              <span className="text-stone-500 font-mono font-bold shrink-0 text-[10px] px-1.5 py-0.5 bg-stone-100 rounded-md">
+                {filtered.length} 体
+              </span>
             </div>
           </div>
 
