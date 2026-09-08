@@ -126,12 +126,36 @@ ${JSON.stringify(fieldTexts, null, 2)}
 \`\`\`
 `;
 
-    const rawResponse = await callGeminiWithRetry(prompt, { temperature: 0.2 });
+    const rawResponse = await callGeminiWithRetry(prompt, {
+      temperature: 0.2,
+      responseMimeType: 'application/json',
+    });
 
-    // JSON抽出
-    const jsonMatch = rawResponse.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
-    const jsonStr = jsonMatch ? jsonMatch[1] : rawResponse;
-    const refinedFields: Record<string, string> = JSON.parse(jsonStr.trim());
+    // 堅牢なJSON抽出・パース処理（多層防御）
+    let cleaned = (rawResponse || '').trim();
+    // 1. Markdownのコードブロック記法 (```json ... ```) を除去
+    cleaned = cleaned.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '');
+    
+    // 2. { から } までの最外殻JSONオブジェクトを抽出
+    const firstBrace = cleaned.indexOf('{');
+    const lastBrace = cleaned.lastIndexOf('}');
+    if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+      cleaned = cleaned.substring(firstBrace, lastBrace + 1);
+    }
+
+    let refinedFields: Record<string, string> = {};
+    try {
+      refinedFields = JSON.parse(cleaned);
+    } catch (parseErr: any) {
+      try {
+        // 改行や制御文字のエスケープサニタイズ試行
+        const sanitized = cleaned.replace(/[\x00-\x1F\x7F-\x9F]/g, (c) => c === '\n' || c === '\r' || c === '\t' ? c : '');
+        refinedFields = JSON.parse(sanitized);
+      } catch (fallbackErr: any) {
+        console.error('[champions/refine-facts] JSON parse error, raw:', rawResponse);
+        throw new Error(`AI生成結果のJSON解析に失敗しました: ${parseErr.message}`);
+      }
+    }
 
     const resultPayload: any = {
       champion,
