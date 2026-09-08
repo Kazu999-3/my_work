@@ -3,6 +3,7 @@ import { supabaseAdmin as supabase } from '../../../../../lib/supabaseAdmin';
 import { verifyAdminSession } from '../../../../../lib/adminAuth';
 import { callGeminiWithRetry } from '../../../../../lib/geminiClient';
 import { recordRevision } from '../../../../../lib/knowledgeRevisions';
+import { normalizeLoLTerms } from '../../../../../lib/dataDragonMaster';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -167,7 +168,9 @@ ${JSON.stringify(fieldTexts, null, 2)}
 
     for (const f of TREND_FIELDS) {
       const before = fieldTexts[f.key] || '';
-      const after = (refinedFields[f.key] || before).trim();
+      const rawAfter = (refinedFields[f.key] || before).trim();
+      // 公式マスター辞書（アイテム・ルーン・スキル）で自動正規化
+      const after = normalizeLoLTerms(rawAfter, champion);
       resultPayload[f.key] = after;
       diffs.push({
         fieldKey: f.key,
