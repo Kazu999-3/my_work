@@ -53,6 +53,7 @@ from v2_CORE._LOL.overlay.spell_tracker_widget import SpellTrackerWidget
 from v2_CORE._LOL.overlay.lane_dominance_widget import LaneDominanceWidget
 from v2_CORE._LOL.overlay.tab_key_listener import TabKeyListener
 from v2_CORE._LOL.overlay.hud_config import load_widget_positions
+from v2_CORE._LOL.overlay.status_pill_widget import MiniStatusPillWidget
 
 
 def create_tray_icon() -> QIcon:
@@ -151,6 +152,29 @@ def main():
     # ⑤ トーストアラート (画面中央上部)
     toast_alert.move(int((screen_w - 320) / 2), 60)
 
+    # ⑥ フローティングステータスバッジ (画面右下に常駐)
+    def toggle_manual_visibility():
+        nonlocal hud_visible
+        if hud_visible:
+            hide_hud_widgets()
+            try:
+                tray_icon.showMessage("Sovereign HUD", "オーバーレイを手動で非表示にしました", QSystemTrayIcon.MessageIcon.Information, 1500)
+            except Exception:
+                pass
+        else:
+            show_hud_widgets()
+            try:
+                tray_icon.showMessage("Sovereign HUD", "オーバーレイを手動で表示しました", QSystemTrayIcon.MessageIcon.Information, 1500)
+            except Exception:
+                pass
+
+    status_pill = MiniStatusPillWidget(
+        on_toggle_hud=toggle_manual_visibility,
+        on_quit=app.quit
+    )
+    status_pill.move(screen_w - 240, screen_h - 45)
+    status_pill.show()
+
     # 表示状態管理
     hud_visible = False
 
@@ -189,15 +213,6 @@ def main():
     tray_menu.addAction(status_action)
     tray_menu.addSeparator()
 
-    def toggle_manual_visibility():
-        nonlocal hud_visible
-        if hud_visible:
-            hide_hud_widgets()
-            tray_icon.showMessage("Sovereign HUD", "オーバーレイを手動で非表示にしました", QSystemTrayIcon.MessageIcon.Information, 1500)
-        else:
-            show_hud_widgets()
-            tray_icon.showMessage("Sovereign HUD", "オーバーレイを手動で表示しました", QSystemTrayIcon.MessageIcon.Information, 1500)
-
     toggle_action = QAction("👁️ オーバーレイ手動 表示/非表示", tray_menu)
     toggle_action.triggered.connect(toggle_manual_visibility)
     tray_menu.addAction(toggle_action)
@@ -208,7 +223,6 @@ def main():
     tray_menu.addAction(quit_action)
 
     def on_tray_icon_activated(reason):
-        # 左クリック (Trigger) または ダブルクリック (DoubleClick) で表示切替
         if reason in (QSystemTrayIcon.ActivationReason.Trigger, QSystemTrayIcon.ActivationReason.DoubleClick):
             toggle_manual_visibility()
 
@@ -217,15 +231,19 @@ def main():
     tray_icon.show()
 
     # 画面上部にウェルカムトーストを表示（起動を視覚的に通知）
+    toast_alert.show()
     toast_alert.show_alert("👑", "Sovereign HUD 待機開始 (LoL試合を自動検知)", alert_type="spike", duration_ms=4000)
 
     # Windows通知領域にもトースト表示
-    tray_icon.showMessage(
-        "👑 Sovereign HUD 起動完了",
-        "LoLの試合開始を自動検知して待機中...\n（アイコンクリックで手動表示/非表示）",
-        QSystemTrayIcon.MessageIcon.Information,
-        3000
-    )
+    try:
+        tray_icon.showMessage(
+            "👑 Sovereign HUD 起動完了",
+            "LoLの試合開始を自動検知して待機中...\n（バッジまたはアイコンクリックで手動表示/非表示）",
+            QSystemTrayIcon.MessageIcon.Information,
+            3000
+        )
+    except Exception:
+        pass
 
     # チャット・スペル自動検知連動
     def on_chat_spell_event(chat_message: str):
@@ -348,14 +366,17 @@ def main():
                 toast_alert.show_alert("👑", f"Sovereign HUD 接続完了: {my_champ} vs {enemy_champ}", alert_type="info", duration_ms=4000)
                 status_action.setText(f"⚔️ 試合中: {my_champ} vs {enemy_champ} ({t_str})")
                 tray_icon.setToolTip(f"👑 Sovereign HUD (試合中: {my_champ})")
+                status_pill.set_status(True, my_champ)
 
             if last_reported_status != "in_game":
                 print(f"\n🟢 [インゲーム自動連動成功！] 試合時間: {t_str} | {my_champ} vs {enemy_champ} | {g_str}")
                 print("💡 オーバーレイが自動表示されました！（TABキーで対面手順書＆レーン優勢度が出現）\n")
                 last_reported_status = "in_game"
+                status_pill.set_status(True, my_champ)
             elif tick_count % 10 == 0:
                 print(f"⏱️ [In-Game] {t_str} | {my_champ} vs {enemy_champ} | CS: {state.get('my_cs', 0)} ({state.get('cs_per_min', 0)}/m) | {g_str}")
                 status_action.setText(f"⚔️ 試合中: {my_champ} vs {enemy_champ} ({t_str})")
+                status_pill.set_status(True, my_champ)
 
             game_state_tracker["was_in_game"] = True
             game_state_tracker["last_active_state"] = state
@@ -365,11 +386,13 @@ def main():
                 hide_hud_widgets()
                 status_action.setText("⏳ 状態: LoL起動監視中 (待機)")
                 tray_icon.setToolTip("👑 Sovereign HUD (LoL自動連動オーバーレイ - 待機中)")
+                status_pill.set_status(False)
 
             if last_reported_status != "waiting":
                 print("⏳ [LoL起動監視中...] サモナーズリフト（League of Legends.exe）の開始を待機しています...")
                 status_action.setText("⏳ 状態: LoL起動監視中 (待機)")
                 last_reported_status = "waiting"
+                status_pill.set_status(False)
 
             if game_state_tracker["was_in_game"]:
                 game_state_tracker["was_in_game"] = False
