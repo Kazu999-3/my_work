@@ -817,6 +817,14 @@ export default function BalancerPage() {
       }
     }
 
+    // スワップ後の各チームMMRとBlue勝率をリアルタイム再計算
+    const totalBlue = (newResult.teamBlue || []).reduce((sum: number, p: any) => sum + (Number(p.mmr) || 1200), 0);
+    const totalRed = (newResult.teamRed || []).reduce((sum: number, p: any) => sum + (Number(p.mmr) || 1200), 0);
+    newResult.totalMmrBlue = totalBlue;
+    newResult.totalMmrRed = totalRed;
+    newResult.diff = Math.abs(totalBlue - totalRed);
+    newResult.predictedBlueWinProb = calculateBlueWinProbability(totalBlue, totalRed);
+
     setBalanceResult(newResult);
     // proposalsの該当する案も同期
     setProposals(prev => prev.map((p, idx) => idx === selectedProposalIdx ? newResult : p));

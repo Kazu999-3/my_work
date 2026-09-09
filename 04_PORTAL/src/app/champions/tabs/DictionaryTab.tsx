@@ -90,6 +90,22 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [pickFilter, setPickFilter] = useState<'ALL' | 'BLIND' | 'COUNTER'>(() => (searchParams.get('pick') as any) || 'ALL');
 
+  // チャンピオン選択ハンドラ（URLクエリ連動）
+  const handleSelectChampion = (champ: any) => {
+    setSelected(champ);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('select', champ.id);
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  };
+
+  const handleClearSelection = () => {
+    setSelected(null);
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete('select');
+    const qs = params.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+  };
+
   // 現在のフィルタ・ソート状態をURLクエリへ反映する。チャンピオン詳細を開いている
   // 間(selected有り)は一覧側のクエリを書き換えない。
   useEffect(() => {
@@ -1120,7 +1136,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
               return (
                 <div
                   key={c.id}
-                  onClick={() => setSelected(c)}
+                  onClick={() => handleSelectChampion(c)}
                   className={`p-2.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-2.5 ${
                     isSelected
                       ? 'bg-amber-500/10 border-[#c89b3c] shadow-xs ring-1 ring-[#c89b3c]'
@@ -1201,7 +1217,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
               {/* モバイル用 戻るボタン ＆ ステータスバー */}
               <div className="flex items-center justify-between flex-wrap gap-2 w-full">
                 <button
-                  onClick={() => setSelected(null)}
+                  onClick={handleClearSelection}
                   className="lg:hidden flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-stone-200/80 text-stone-800 text-xs font-bold hover:bg-stone-300 transition cursor-pointer"
                 >
                   <ChevronLeft size={16} /> チャンピオン一覧へ戻る
