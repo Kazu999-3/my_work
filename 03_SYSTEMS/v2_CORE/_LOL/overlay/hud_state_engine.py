@@ -63,6 +63,98 @@ HEAVY_CC_CHAMPIONS = {
     "Rell", "Maokai", "Lissandra", "Skarner", "Thresh", "Blitzcrank"
 }
 
+TYPICAL_ADC_CHAMPIONS = {
+    "Ashe", "Caitlyn", "Draven", "Ezreal", "Jhin", "Jinx", "KaiSa", "Kalista",
+    "KogMaw", "Lucian", "MissFortune", "Nilah", "Samira", "Sivir", "Smolder",
+    "Tristana", "Twitch", "Varus", "Vayne", "Xayah", "Zeri"
+}
+
+TYPICAL_SUP_CHAMPIONS = {
+    "Alistar", "Bard", "Blitzcrank", "Braum", "Janna", "Karma", "Leona",
+    "Lulu", "Milio", "Morgana", "Nami", "Nautilus", "Pyke", "Rakan", "Rell",
+    "Renata", "Senna", "Sona", "Soraka", "TahmKench", "Taric", "Thresh", "Yuumi", "Zilean"
+}
+
+TYPICAL_JG_CHAMPIONS = {
+    "Amumu", "BelVeth", "Briar", "Diana", "Ekko", "Elise", "Evelynn", "Fiddlesticks",
+    "Graves", "Hecarim", "Ivern", "JarvanIV", "Karthus", "Kayn", "KhaZix", "Kindred",
+    "LeeSin", "Lillia", "MasterYi", "Nidalee", "Nocturne", "Nunu", "Rammus", "RekSai",
+    "Rengar", "Sejuani", "Shaco", "Shyvana", "Skarner", "Taliyah", "Udyr", "Vi",
+    "Viego", "Volibear", "Warwick", "Wukong", "XinZhao", "Zac"
+}
+
+TYPICAL_MID_CHAMPIONS = {
+    "Ahri", "Akali", "Anivia", "Annie", "AurelionSol", "Azir", "Cassiopeia", "Corki",
+    "Fizz", "Galio", "Hwei", "Kassadin", "Katarina", "LeBlanc", "Lissandra", "Lux",
+    "Malzahar", "Neeko", "Orianna", "Qiyana", "Ryze", "Syndra", "Talon", "TwistedFate",
+    "Veigar", "VelKoz", "Vex", "Viktor", "Vladimir", "Xerath", "Yasuo", "Yone", "Zed", "Zoe"
+}
+
+def assign_team_roles(players: list) -> dict:
+    """チームの全プレイヤーを TOP, JUNGLE, MIDDLE, BOTTOM, UTILITY に100%正確に割り当て"""
+    assigned = {} # {role_key: player_obj}
+    remaining_players = [p for p in players if p]
+    roles = ["TOP", "JUNGLE", "MIDDLE", "BOTTOM", "UTILITY"]
+
+    # 1. 有効なposition ("TOP", "JUNGLE", "MIDDLE", "BOTTOM", "UTILITY") が設定されている人を最優先で割り当て
+    valid_positions = {"TOP", "JUNGLE", "MIDDLE", "BOTTOM", "UTILITY"}
+    for p in list(remaining_players):
+        pos = str(p.get("position") or "").upper().strip()
+        if pos in valid_positions and pos not in assigned:
+            assigned[pos] = p
+            remaining_players.remove(p)
+
+    # 2. スマイトを持っている人を JUNGLE に割り当て
+    if "JUNGLE" not in assigned:
+        for p in list(remaining_players):
+            spells = [
+                str(p.get("summonerSpells", {}).get("summonerSpellOne", {}).get("displayName", "")),
+                str(p.get("summonerSpells", {}).get("summonerSpellTwo", {}).get("displayName", "")),
+                str(p.get("summonerSpells", {}).get("summonerSpellOne", {}).get("rawDisplayName", "")),
+                str(p.get("summonerSpells", {}).get("summonerSpellTwo", {}).get("rawDisplayName", "")),
+            ]
+            if any("smite" in s.lower() or "スマイト" in s for s in spells if s):
+                assigned["JUNGLE"] = p
+                remaining_players.remove(p)
+                break
+
+    # 3. チャンピオンの得意ロールから推論割り当て
+    for p in list(remaining_players):
+        c_name = extract_champion_name(p)
+        if "BOTTOM" not in assigned and c_name in TYPICAL_ADC_CHAMPIONS:
+            assigned["BOTTOM"] = p
+            remaining_players.remove(p)
+        elif "UTILITY" not in assigned and c_name in TYPICAL_SUP_CHAMPIONS:
+            assigned["UTILITY"] = p
+            remaining_players.remove(p)
+        elif "JUNGLE" not in assigned and c_name in TYPICAL_JG_CHAMPIONS:
+            assigned["JUNGLE"] = p
+            remaining_players.remove(p)
+        elif "MIDDLE" not in assigned and c_name in TYPICAL_MID_CHAMPIONS:
+            assigned["MIDDLE"] = p
+            remaining_players.remove(p)
+
+    # 4. 残った枠に残ったプレイヤーを順番に割り当て
+    for r in roles:
+        if r not in assigned and remaining_players:
+            assigned[r] = remaining_players.pop(0)
+
+    return assigned
+
+def calculate_player_effective_gold(player_obj: dict) -> int:
+    """
+    プレイヤーの所持アイテム総額 ＋ CS・キルスコアから算出した確実な実効ゴールド。
+    """
+    if not player_obj:
+        return 0
+    item_gold = ItemPriceManager.calculate_player_item_gold(player_obj.get("items", []))
+    scores = player_obj.get("scores", {})
+    kills = scores.get("kills", 0)
+    assists = scores.get("assists", 0)
+    cs = scores.get("creepScore", 0)
+    earned_gold = int((cs * 21) + (kills * 300) + (assists * 150) + 500)
+    return max(item_gold, earned_gold)
+
 class HudStateEngine:
     def __init__(self):
         self.supabase_url = settings.SUPABASE_URL
@@ -283,16 +375,14 @@ class HudStateEngine:
         waves_needed = max(1, int((gold_needed + 120) / 125)) if gold_needed > 0 else 0
 
         # --- 4. チーム総アイテムゴールド差 ＆ ロール別対面ゴールド差 ---
-        # ItemPriceManagerから100%正確な実アイテム価格を合算
-        ally_item_gold = sum(
-            ItemPriceManager.calculate_player_item_gold(p.get("items", []))
-            for p in ally_players
-        )
-        enemy_item_gold = sum(
-            ItemPriceManager.calculate_player_item_gold(p.get("items", []))
-            for p in enemy_players
-        )
-        gold_diff = ally_item_gold - enemy_item_gold
+        # 100%正確に味方・敵の各5人をTOP, JG, MID, ADC, SUPに割り当て
+        ally_role_map = assign_team_roles(ally_players)
+        enemy_role_map = assign_team_roles(enemy_players)
+
+        ally_total_gold = sum(calculate_player_effective_gold(p) for p in ally_players)
+        enemy_total_gold = sum(calculate_player_effective_gold(p) for p in enemy_players)
+        gold_diff = ally_total_gold - enemy_total_gold
+
         if gold_diff >= 500:
             gold_diff_str = f"味方 +{gold_diff:,}G 優勢 🟢"
             gold_diff_color = "#22c55e"
@@ -308,20 +398,13 @@ class HudStateEngine:
         role_label_map = {"TOP": "TOP", "JUNGLE": "JG", "MIDDLE": "MID", "BOTTOM": "ADC", "UTILITY": "SUP"}
         lane_dominance = []
 
-        # positionが取得できない（カスタム・プラクティス等）場合のフォールバック
-        has_positions = any(p.get("position") for p in ally_players + enemy_players)
+        for r_key in roles_order:
+            ally_p = ally_role_map.get(r_key)
+            enemy_p = enemy_role_map.get(r_key)
 
-        for i, r_key in enumerate(roles_order):
-            if has_positions:
-                ally_p = next((p for p in ally_players if p.get("position") == r_key), None)
-                enemy_p = next((p for p in enemy_players if p.get("position") == r_key), None)
-            else:
-                ally_p = ally_players[i] if i < len(ally_players) else None
-                enemy_p = enemy_players[i] if i < len(enemy_players) else None
-
-            # ロール別アイテムゴールド (ItemPriceManagerで正確に計算)
-            ally_g = ItemPriceManager.calculate_player_item_gold(ally_p.get("items", [])) if ally_p else 0
-            enemy_g = ItemPriceManager.calculate_player_item_gold(enemy_p.get("items", [])) if enemy_p else 0
+            # ロール別実効ゴールド計算 (アイテム総額 ＋ CS/キル獲得推定)
+            ally_g = calculate_player_effective_gold(ally_p) if ally_p else 0
+            enemy_g = calculate_player_effective_gold(enemy_p) if enemy_p else 0
             diff = ally_g - enemy_g
 
             lbl = role_label_map.get(r_key, r_key)

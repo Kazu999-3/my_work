@@ -108,8 +108,8 @@ class LaneDominanceWidget(QWidget):
         card_layout.setSpacing(4)
 
         # ヘッダー行
-        header = QLabel("📊 レーン優勢度 ＆ 対面ゴールド差", self.card_frame)
-        header.setStyleSheet("color: #fbbf24; font-size: 12px; font-weight: bold;")
+        header = QLabel("📊 レーン優勢度 ＆ 実効ゴールド差", self.card_frame)
+        header.setStyleSheet("color: #fbbf24; font-size: 11.5px; font-weight: 900;")
         card_layout.addWidget(header)
 
         # 5レーンの行
