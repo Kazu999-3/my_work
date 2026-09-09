@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { apiJson } from '../../lib/apiClient';
 import ScoutTab, { type LiveRosterEntry } from './ScoutTab';
@@ -1286,76 +1287,11 @@ function TimingHeatmapTab() {
 }
 
 // ============================
-// タブ: マッチアップ分析
-// ============================
-function MatchupTab({ champion, enemyChampion, triggerSignal }: { champion: string; enemyChampion: string; triggerSignal?: number }) {
-  const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<any>(null);
-  const [error, setError] = useState('');
-
-  const analyze = async () => {
-    if (!champion || !enemyChampion) { setError('上部の共通入力欄に両方入力してください。'); return; }
-    setLoading(true); setError(''); setResult(null);
-    try {
-      const data = await callCoachAPI({ mode: 'matchup', champion, enemyChampion });
-      setResult(data);
-    } catch (e: any) { setError(e.message); }
-    finally { setLoading(false); }
-  };
-
-  useEffect(() => {
-    if (triggerSignal) analyze();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [triggerSignal]);
-
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-sm text-foreground/50">
-          偵察でライブゲームの自分・対面チャンピオンが判明すると自動的に分析します
-          （ナレッジDBとチャンピオン辞典の記述をAIが要約）。
-        </p>
-        <button
-          onClick={analyze}
-          disabled={loading || !champion || !enemyChampion}
-          title="上部の共通入力欄の内容で手動再分析"
-          className="shrink-0 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-emerald-500 disabled:opacity-50"
-        >
-          {loading ? '分析中...' : '🔄 再分析'}
-        </button>
-      </div>
-
-      {loading && <Spinner />}
-      {error && <p className="text-sm text-red-600">❌ {error}</p>}
-
-      {result && (
-        <div className="space-y-3 animate-in fade-in">
-          <Card>
-            <div className="flex items-center gap-3 text-sm">
-              <Tag color="blue">{result.myChampion}</Tag>
-              <span className="text-foreground/30">vs</span>
-              <Tag color="red">{result.enemyChampion}</Tag>
-            </div>
-            <div className="mt-2 flex gap-2 text-xs">
-              <span className="text-foreground/40">{result.knowledgeSources}</span>
-              <span className="text-foreground/40">{result.sentinelSources}</span>
-            </div>
-          </Card>
-
-          {result.counterStats && <CounterStatsBox text={result.counterStats} />}
-
-          <AdviceBox text={result.advice} />
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ============================
 // メインページ
 // ============================
 
-export default function CoachPage() {
+function CoachPageContent() {
+  const searchParams = useSearchParams();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [isReflectionModalOpen, setIsReflectionModalOpen] = useState(false);
   const [isTiltPopupOpen, setIsTiltPopupOpen] = useState(false);
@@ -1470,16 +1406,9 @@ export default function CoachPage() {
   }, [isAuthenticated]);
 
   // 「事前分析」と「マッチアップ」で同じチャンピオン名を二度入力させていたのを統合。
-  // localStorage と同期し、ページ再読み込み・タブ切り替えでも再入力の手間を完全にゼロ化。
+  // URLクエリパラメータ(?champion=xxx&enemy=yyy)または localStorage と同期。
   const [sharedChampion, setSharedChampionState] = useState('');
   const [sharedEnemyChampion, setSharedEnemyChampionState] = useState('');
-
-  useEffect(() => {
-    const savedMy = localStorage.getItem('coach_my_champ') || '';
-    const savedEnemy = localStorage.getItem('coach_enemy_champ') || '';
-    if (savedMy) setSharedChampionState(savedMy);
-    if (savedEnemy) setSharedEnemyChampionState(savedEnemy);
-  }, []);
 
   const setSharedChampion = (val: string) => {
     setSharedChampionState(val);
@@ -1490,6 +1419,23 @@ export default function CoachPage() {
     setSharedEnemyChampionState(val);
     localStorage.setItem('coach_enemy_champ', val);
   };
+
+  useEffect(() => {
+    const queryChamp = searchParams.get('champion');
+    const queryEnemy = searchParams.get('enemy');
+    if (queryChamp) {
+      setSharedChampion(queryChamp);
+    } else {
+      const savedMy = localStorage.getItem('coach_my_champ') || '';
+      if (savedMy) setSharedChampionState(savedMy);
+    }
+    if (queryEnemy) {
+      setSharedEnemyChampion(queryEnemy);
+    } else {
+      const savedEnemy = localStorage.getItem('coach_enemy_champ') || '';
+      if (savedEnemy) setSharedEnemyChampionState(savedEnemy);
+    }
+  }, [searchParams]);
 
   // 「マッチアップ」タブを廃止し、偵察(ScoutTab)がライブゲームから自分・対面の
   // チャンピオンを検知した瞬間に自動でマッチアップ分析を走らせる(#①)。
@@ -1879,5 +1825,17 @@ export default function CoachPage() {
         onSaved={() => { fetchLastReflection(); setReflectionRefreshSignal((s) => s + 1); }}
       />
     </div>
+  );
+}
+
+export default function CoachPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-stone-300 border-t-primary" />
+      </div>
+    }>
+      <CoachPageContent />
+    </Suspense>
   );
 }
