@@ -30,9 +30,9 @@ class CoolDownButton(QPushButton):
         self.max_cd = max_cd
         self.ready_time = 0.0
         
-        # 3桁秒数 (300s) も収まるサイズ (幅36px, 高さ24px)
-        self.setFixedSize(36, 24)
-        self.setIconSize(QSize(18, 18))
+        # スリム化サイズ (幅34px, 高さ22px)
+        self.setFixedSize(34, 22)
+        self.setIconSize(QSize(16, 16))
         self.update_appearance(ready=True)
 
     def set_max_cd(self, new_cd: int):
@@ -60,56 +60,66 @@ class CoolDownButton(QPushButton):
 
     def update_icon(self):
         if self.spell_type == "ULT":
+            self.setIcon(QIcon())
             self.setText("R")
         else:
             pix = SpellAssetManager.get_spell_icon(self.spell_name)
             if not pix.isNull():
                 self.setIcon(QIcon(pix))
+                self.setText("")
             else:
-                label = "F" if self.spell_name == "Flash" else self.spell_name[:2]
-                self.setText(label)
+                # アイコンがない場合のフォールバック文字
+                if "flash" in self.spell_name.lower():
+                    self.setText("F")
+                elif "teleport" in self.spell_name.lower():
+                    self.setText("TP")
+                elif "ignite" in self.spell_name.lower():
+                    self.setText("Ig")
+                elif "smite" in self.spell_name.lower():
+                    self.setText("Sm")
+                elif "ghost" in self.spell_name.lower():
+                    self.setText("Gh")
+                elif "heal" in self.spell_name.lower():
+                    self.setText("Hl")
+                elif "barrier" in self.spell_name.lower():
+                    self.setText("Br")
+                elif "exhaust" in self.spell_name.lower():
+                    self.setText("Ex")
+                elif "cleanse" in self.spell_name.lower():
+                    self.setText("Cl")
+                else:
+                    self.setText(self.spell_name[:2])
 
     def update_appearance(self, ready: bool):
         if ready:
-            if self.spell_name == "Flash":
-                border = "#F5EE9E" # Flash Gold
-                glow = "#F5EE9E"
-            elif self.spell_type == "ULT":
-                border = "#C89B3C" # Hextech Gold
-                glow = "#0AC8B9" # Hextech Blue Shimmer
-            else:
-                border = "#785A28"
-                glow = "#C8AA6E"
-
-            self.setStyleSheet(f"""
-                QPushButton {{
-                    background: rgba(14, 26, 42, 0.55);
-                    color: #F0E6D2;
-                    font-family: 'BeaufortforLOL', 'Segoe UI', sans-serif;
-                    font-size: 10.5px;
-                    font-weight: 900;
-                    border: 1px solid {border};
-                    border-radius: 3px;
-                    padding: 0px;
-                }}
-                QPushButton:hover {{
-                    background: rgba(10, 200, 185, 0.35);
-                    border: 1px solid #0AC8B9;
-                }}
-            """)
             self.update_icon()
-        else:
             self.setStyleSheet("""
-                QPushButton {{
-                    background: rgba(45, 10, 16, 0.60);
-                    color: #FF7B89;
-                    font-family: 'BeaufortforLOL', 'Segoe UI', sans-serif;
-                    font-size: 9.5px;
-                    font-weight: 900;
-                    border: 1px solid rgba(232, 64, 87, 0.7);
+                QPushButton {
+                    background-color: rgba(9, 20, 40, 0.90);
+                    border: 1px solid #C89B3C;
                     border-radius: 3px;
+                    color: #F0E6D2;
+                    font-size: 10px;
+                    font-weight: bold;
                     padding: 0px;
-                }}
+                }
+                QPushButton:hover {
+                    background-color: rgba(30, 45, 75, 0.95);
+                    border: 1px solid #0AC8B9;
+                }
+            """)
+        else:
+            self.setIcon(QIcon())
+            self.setStyleSheet("""
+                QPushButton {
+                    background-color: rgba(232, 64, 87, 0.85);
+                    border: 1px solid #FF4655;
+                    border-radius: 3px;
+                    color: #FFFFFF;
+                    font-size: 10px;
+                    font-weight: 900;
+                    padding: 0px;
+                }
             """)
 
     def mousePressEvent(self, event):
@@ -138,7 +148,7 @@ def format_role_short(role: str) -> str:
     return "TOP"
 
 class EnemyColumn(QWidget):
-    """1人の敵の [大きな顔アイコン 36px] [Ult] [Flash] [Spell2] を縦に並べたカラム"""
+    """1人の敵の [顔アイコン 32px] [Ult] [Flash] [Spell2] を縦に並べたカラム"""
     def __init__(self, role: str, champion: str, spell1: str = "Flash", spell2: str = "Teleport", parent=None):
         super().__init__(parent)
         self.role = role
@@ -148,42 +158,42 @@ class EnemyColumn(QWidget):
         self.level = 6
         self.items = []
         self.champ_name = champion  # 互換用エイリアス
-        self.setFixedWidth(54)
+        self.setFixedWidth(48)
         self.init_ui()
 
     def init_ui(self):
         col_layout = QVBoxLayout(self)
-        col_layout.setContentsMargins(1, 1, 1, 1)
-        col_layout.setSpacing(3)
+        col_layout.setContentsMargins(0, 0, 0, 0)
+        col_layout.setSpacing(2)
 
         # 0. [ ロール名 ＆ 対面ゴールド差バッジ (常時統合表示) ]
         short_role = format_role_short(self.role)
         self.role_label = QLabel(short_role, self)
-        self.role_label.setFixedHeight(12)
+        self.role_label.setFixedHeight(16)
         self.role_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.role_label.setStyleSheet("color: #C8AA6E; font-size: 10px; font-weight: 900; background: transparent;")
+        self.role_label.setStyleSheet("color: #C8AA6E; font-size: 10.5px; font-weight: 900; background: transparent; padding: 0px; margin: 0px;")
         col_layout.addWidget(self.role_label, alignment=Qt.AlignmentFlag.AlignCenter)
 
         self.gold_badge = QLabel("+0G", self)
-        self.gold_badge.setFixedHeight(16)
+        self.gold_badge.setFixedHeight(15)
         self.gold_badge.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.gold_badge.setStyleSheet("""
             QLabel {
                 background-color: rgba(35, 30, 15, 0.90);
                 color: #eab308;
                 font-family: 'Segoe UI', Consolas, monospace;
-                font-size: 10px;
+                font-size: 9.5px;
                 font-weight: 800;
                 border-radius: 2px;
                 border: 1px solid rgba(234, 179, 8, 0.5);
-                padding: 0px 2px;
+                padding: 0px 1px;
             }
         """)
         col_layout.addWidget(self.gold_badge, alignment=Qt.AlignmentFlag.AlignCenter)
 
-        # 1. 大きなチャンピオン顔アイコン (36px × 36px)
+        # 1. チャンピオン顔アイコン (32px × 32px)
         self.avatar_label = QLabel(self)
-        self.avatar_label.setFixedSize(36, 36)
+        self.avatar_label.setFixedSize(32, 32)
         self.avatar_label.setScaledContents(True)
         pix = SpellAssetManager.get_champion_icon(self.champion)
         if not pix.isNull():
@@ -208,18 +218,18 @@ class EnemyColumn(QWidget):
 
         # 5. [ JG ガンク成功率バッジ ] (JG視点のガンク・キルチャンスをリアルタイム提示)
         self.gank_badge = QLabel("─", self)
-        self.gank_badge.setFixedHeight(14)
+        self.gank_badge.setFixedHeight(13)
         self.gank_badge.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.gank_badge.setStyleSheet("""
             QLabel {
                 background-color: rgba(1, 10, 19, 0.90);
                 color: #A09B8C;
                 font-family: 'BeaufortforLOL', sans-serif;
-                font-size: 8.5px;
+                font-size: 8px;
                 font-weight: bold;
                 border-radius: 2px;
                 border: 1px solid #785A28;
-                padding: 0px 2px;
+                padding: 0px 1px;
             }
         """)
         col_layout.addWidget(self.gank_badge, alignment=Qt.AlignmentFlag.AlignCenter)
@@ -329,6 +339,7 @@ from PyQt6.QtWidgets import (
 class SpellTrackerWidget(QWidget):
     def __init__(self):
         super().__init__()
+        self.setFixedWidth(268)
         self.drag_position = QPoint()
         self.is_dragging = False
         self.columns = []
@@ -346,7 +357,6 @@ class SpellTrackerWidget(QWidget):
             Qt.WindowType.Tool
         )
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
-        self.setFixedWidth(310)
 
         self.main_layout = QVBoxLayout(self)
         self.main_layout.setContentsMargins(0, 0, 0, 0)
@@ -354,25 +364,25 @@ class SpellTrackerWidget(QWidget):
         self.card_frame = QFrame(self)
         self.card_frame.setStyleSheet("""
             QFrame {
-                background: rgba(8, 14, 24, 0.45);
-                border: 1px solid rgba(200, 155, 60, 0.35);
-                border-radius: 10px;
-                padding: 2px;
+                background: rgba(8, 14, 24, 0.65);
+                border: 1px solid rgba(200, 155, 60, 0.40);
+                border-radius: 8px;
+                padding: 1px;
             }
         """)
 
         card_layout = QVBoxLayout(self.card_frame)
-        card_layout.setContentsMargins(5, 4, 5, 4)
-        card_layout.setSpacing(4)
+        card_layout.setContentsMargins(4, 3, 4, 4)
+        card_layout.setSpacing(3)
 
         # 極薄のドラッグハンドルバー
         self.drag_handle = QFrame(self.card_frame)
-        self.drag_handle.setFixedHeight(4)
+        self.drag_handle.setFixedHeight(3)
         self.drag_handle.setStyleSheet("""
             QFrame {
                 background-color: rgba(255, 255, 255, 0.15);
-                border-radius: 2px;
-                margin: 0px 50px;
+                border-radius: 1px;
+                margin: 0px 40px;
             }
         """)
         card_layout.addWidget(self.drag_handle)
@@ -381,17 +391,17 @@ class SpellTrackerWidget(QWidget):
         # 統合マクロヘッダー (ゴールド差 & CSペース)
         # ==============================================================
         macro_row = QHBoxLayout()
-        macro_row.setSpacing(4)
-        macro_row.setContentsMargins(2, 0, 2, 0)
+        macro_row.setSpacing(3)
+        macro_row.setContentsMargins(1, 0, 1, 0)
 
         self.gold_label = QLabel("💰 +0G 🟡", self.card_frame)
-        self.gold_label.setStyleSheet("color: #eab308; font-size: 11px; font-weight: bold;")
+        self.gold_label.setStyleSheet("color: #eab308; font-size: 10.5px; font-weight: bold;")
 
         sep = QLabel("|", self.card_frame)
-        sep.setStyleSheet("color: rgba(255,255,255,0.2); font-size: 10px;")
+        sep.setStyleSheet("color: rgba(255,255,255,0.2); font-size: 9px;")
 
         self.cs_label = QLabel("🎯 0CS (0.0/分)", self.card_frame)
-        self.cs_label.setStyleSheet("color: #22c55e; font-size: 11px; font-weight: bold;")
+        self.cs_label.setStyleSheet("color: #22c55e; font-size: 10.5px; font-weight: bold;")
 
         macro_row.addWidget(self.gold_label)
         macro_row.addWidget(sep)
@@ -405,38 +415,39 @@ class SpellTrackerWidget(QWidget):
         item_box = QFrame(self.card_frame)
         item_box.setStyleSheet("""
             QFrame {
-                background-color: rgba(0, 0, 0, 0.25);
+                background-color: rgba(0, 0, 0, 0.30);
                 border-radius: 4px;
-                padding: 2px 4px;
+                padding: 1px 3px;
             }
         """)
         item_layout = QVBoxLayout(item_box)
-        item_layout.setContentsMargins(3, 2, 3, 2)
-        item_layout.setSpacing(2)
+        item_layout.setContentsMargins(2, 1, 2, 1)
+        item_layout.setSpacing(1)
 
         item_text_row = QHBoxLayout()
         self.target_name_label = QLabel("🛍️ 1stコア目標", item_box)
         self.target_name_label.setStyleSheet("color: #fef08a; font-size: 9.5px; font-weight: bold;")
 
-        self.target_gold_info_label = QLabel("あと 1100G", item_box)
-        self.target_gold_info_label.setStyleSheet("color: #cbd5e1; font-size: 9px;")
+        self.target_gold_info_label = QLabel("あと 0G", item_box)
+        self.target_gold_info_label.setStyleSheet("color: #cbd5e1; font-size: 8.5px;")
         self.target_gold_info_label.setAlignment(Qt.AlignmentFlag.AlignRight)
 
         item_text_row.addWidget(self.target_name_label)
+        item_text_row.addStretch()
         item_text_row.addWidget(self.target_gold_info_label)
         item_layout.addLayout(item_text_row)
 
         self.progress_bar = QProgressBar(item_box)
-        self.progress_bar.setFixedHeight(4)
+        self.progress_bar.setFixedHeight(3)
         self.progress_bar.setTextVisible(False)
         self.progress_bar.setStyleSheet("""
             QProgressBar {
                 background-color: rgba(0, 0, 0, 0.5);
-                border-radius: 2px;
+                border-radius: 1px;
             }
             QProgressBar::chunk {
                 background-color: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #d97706, stop:1 #fbbf24);
-                border-radius: 2px;
+                border-radius: 1px;
             }
         """)
         item_layout.addWidget(self.progress_bar)

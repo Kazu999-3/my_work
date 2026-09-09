@@ -254,8 +254,12 @@ def main():
             return
         if is_pressed:
             lane_dominance.show()
+            if not matchup_card.is_pinned:
+                matchup_card.show()
         else:
             lane_dominance.hide()
+            if not matchup_card.is_pinned:
+                matchup_card.hide()
 
     def on_numpad_pressed(idx: int):
         if not hud_visible and not args.always_show:

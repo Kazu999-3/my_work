@@ -8,9 +8,9 @@ Sovereign HUD - 対面インテル ＆ 勝利手順書カード (Matchup Card Wi
 ※ LoL公式Hextech Dark Gold（#C89B3C / #0AC8B9 / #091428 / #010A13）デザイン完全準拠。
 """
 
-from PyQt6.QtCore import Qt, QPoint
+from PyQt6.QtCore import Qt, QPoint, QTimer
 from PyQt6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QFrame
+    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QFrame, QPushButton
 )
 from v2_CORE._LOL.overlay.hud_config import save_widget_position
 
@@ -20,7 +20,61 @@ class MatchupCardWidget(QWidget):
         super().__init__()
         self.data_provider_cb = data_provider_cb
         self.drag_position = QPoint()
+        
+        # スマート表示管理 (必要な時だけポップアップ)
+        self.is_pinned = False  # 📌 常時ピン留めフラグ (False = スマートモード)
+        self.last_phase_str = ""
+        self.was_dead = False
+        self.was_in_base = False
+        self.hide_timer = QTimer(self)
+        self.hide_timer.setSingleShot(True)
+        self.hide_timer.timeout.connect(self._on_hide_timeout)
+
         self.init_ui()
+
+    def _on_hide_timeout(self):
+        if not self.is_pinned:
+            self.hide()
+
+    def popup_for_duration(self, duration_ms: int = 15000):
+        """指定ミリ秒間だけカードをポップアップ表示し、自動で消す"""
+        self.show()
+        if not self.is_pinned:
+            self.hide_timer.start(duration_ms)
+
+    def toggle_pin(self):
+        """ピン留め（常時表示 ⇄ スマートモード）切り替え"""
+        self.is_pinned = not self.is_pinned
+        if self.is_pinned:
+            self.hide_timer.stop()
+            self.show()
+            self.pin_btn.setText("📌 固定中")
+            self.pin_btn.setStyleSheet("""
+                QPushButton {
+                    background-color: rgba(200, 155, 60, 0.35);
+                    border: 1px solid #C89B3C;
+                    color: #F0E6D2;
+                    font-size: 10px;
+                    font-weight: bold;
+                    border-radius: 3px;
+                    padding: 1px 4px;
+                }
+            """)
+        else:
+            self.pin_btn.setText("👁️ スマート")
+            self.pin_btn.setStyleSheet("""
+                QPushButton {
+                    background-color: rgba(10, 200, 185, 0.15);
+                    border: 1px solid rgba(10, 200, 185, 0.4);
+                    color: #0AC8B9;
+                    font-size: 10px;
+                    font-weight: bold;
+                    border-radius: 3px;
+                    padding: 1px 4px;
+                }
+            """)
+            # スマートモードに戻ったら5秒後に自動で隠す
+            self.hide_timer.start(5000)
 
     def init_ui(self):
         self.setWindowFlags(
@@ -37,7 +91,7 @@ class MatchupCardWidget(QWidget):
         self.card_frame = QFrame(self)
         self.card_frame.setStyleSheet("""
             QFrame#cardFrame {
-                background: rgba(8, 14, 24, 0.82);
+                background: rgba(8, 14, 24, 0.85);
                 border: 1.5px solid rgba(200, 155, 60, 0.55);
                 border-radius: 10px;
             }
@@ -60,7 +114,7 @@ class MatchupCardWidget(QWidget):
         """)
         card_layout.addWidget(self.drag_handle)
 
-        # 1. タイトルヘッダー (対面カード名 ＆ レーン名)
+        # 1. タイトルヘッダー (対面カード名 ＆ ピン留めトグル)
         header_layout = QHBoxLayout()
         header_layout.setContentsMargins(0, 0, 0, 0)
 
@@ -68,9 +122,23 @@ class MatchupCardWidget(QWidget):
         self.title_label.setStyleSheet("color: #F0E6D2; font-size: 13.5px; font-weight: 900;")
         header_layout.addWidget(self.title_label)
 
-        self.sub_badge = QLabel("TACTICS", self.card_frame)
-        self.sub_badge.setStyleSheet("color: #0AC8B9; font-size: 10.5px; font-weight: 900; background-color: rgba(10, 200, 185, 0.18); border: 1px solid rgba(10, 200, 185, 0.5); border-radius: 3px; padding: 2px 6px;")
-        header_layout.addWidget(self.sub_badge, alignment=Qt.AlignmentFlag.AlignRight)
+        self.pin_btn = QPushButton("👁️ スマート", self.card_frame)
+        self.pin_btn.setStyleSheet("""
+            QPushButton {
+                background-color: rgba(10, 200, 185, 0.15);
+                border: 1px solid rgba(10, 200, 185, 0.4);
+                color: #0AC8B9;
+                font-size: 10px;
+                font-weight: bold;
+                border-radius: 3px;
+                padding: 1px 4px;
+            }
+            QPushButton:hover {
+                background-color: rgba(10, 200, 185, 0.35);
+            }
+        """)
+        self.pin_btn.clicked.connect(self.toggle_pin)
+        header_layout.addWidget(self.pin_btn, alignment=Qt.AlignmentFlag.AlignRight)
 
         card_layout.addLayout(header_layout)
 
@@ -217,7 +285,6 @@ class MatchupCardWidget(QWidget):
     def update_data(self, state: dict):
         if not state or not state.get("active"):
             self.title_label.setText("⚔️ Sovereign HUD 稼働中")
-            self.sub_badge.setText("READY ⏳")
             self.waiting_frame.setVisible(True)
             self.threat_frame.setVisible(False)
             self.phase_frame.setVisible(False)
@@ -234,10 +301,8 @@ class MatchupCardWidget(QWidget):
 
         if is_jg:
             self.title_label.setText(f"🌲 {my_champ} (JG) vs {enemy_champ}")
-            self.sub_badge.setText("JG RADAR")
         else:
             self.title_label.setText(f"⚔️ {my_champ} vs {enemy_champ}")
-            self.sub_badge.setText("TACTICS")
 
         # 1. 警戒スキル ＆ 仕掛けチャンス
         threat_info = state.get("threat_skill_info", {})
@@ -254,6 +319,7 @@ class MatchupCardWidget(QWidget):
             self.threat_frame.setVisible(False)
 
         # 2. ガンク優先レーン (JG) / レーン戦手順 (Laner)
+        curr_phase_str = ""
         if is_jg:
             self.phase_badge_label.setText("🎯 ガンク優先ターゲット (Gank Radar)")
             gank_list = state.get("jg_gank_targets", [])
@@ -262,6 +328,7 @@ class MatchupCardWidget(QWidget):
             obj_plan = state.get("jg_objective_plan", "3:30 スカットル争奪 ➔ 5:00 ヴォイドグラブ")
             self.phase_trigger_label.setText(f"🗺️ ルート・オブジェクト: {obj_plan}")
             self.phase_frame.setVisible(True)
+            curr_phase_str = "JG_MAIN"
         else:
             cphase = state.get("current_phase", {})
             if cphase:
@@ -275,6 +342,7 @@ class MatchupCardWidget(QWidget):
                 self.phase_action_label.setText(f"・{p_title}: {p_action}")
                 self.phase_trigger_label.setText(f"🎯 勝利条件: {p_trigger}")
                 self.phase_frame.setVisible(True)
+                curr_phase_str = p_name
             else:
                 self.phase_frame.setVisible(False)
 
@@ -300,6 +368,33 @@ class MatchupCardWidget(QWidget):
             self.compass_frame.setVisible(False)
 
         self.adjustSize()
+
+        # ==============================================================
+        # 5. スマート表示トリガー判定 (必要なタイミングでのみ自動ポップアップ)
+        # ==============================================================
+        if not self.is_pinned:
+            game_time = state.get("game_time", 0.0)
+            is_dead = state.get("is_dead", False)
+            in_base = state.get("in_base", False)
+
+            # ① 試合開幕 (0:00〜1:30): 初期警戒・手順をインプットするために表示
+            if game_time <= 90:
+                self.show()
+            # ② フェーズ変化検知 (Lvアップや手順の移行): 15秒間フワッとポップアップ
+            elif curr_phase_str and curr_phase_str != self.last_phase_str:
+                if self.last_phase_str:  # 初回以外で変化した時
+                    self.popup_for_duration(15000)
+                self.last_phase_str = curr_phase_str
+            # ③ デス中 / ベース滞在（買い物時）: アイテム確認のために表示
+            elif is_dead or in_base:
+                self.show()
+                self.was_dead = is_dead
+                self.was_in_base = in_base
+            # ④ デス復帰・ベース出発直後: 10秒後に自動で隠す
+            elif self.was_dead or self.was_in_base:
+                self.was_dead = False
+                self.was_in_base = False
+                self.popup_for_duration(10000)
 
     # ドラッグ移動 ＆ 位置自動保存
     def mousePressEvent(self, event):
