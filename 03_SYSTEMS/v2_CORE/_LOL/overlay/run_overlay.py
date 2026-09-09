@@ -121,33 +121,26 @@ def main():
     screen_w = screen.width()
     screen_h = screen.height()
 
-    # ① 画面右上 (TopBar): 幅340px
-    pos_top = saved_positions.get("top_bar", {})
-    if pos_top:
-        top_bar.move(pos_top.get("x", screen_w - 360), pos_top.get("y", 40))
-    else:
-        top_bar.move(screen_w - 360, 40)
-
-    # ② 画面右側 (統合インテリジェンスハブ: SpellTracker + TopBar機能):
+    # ① 画面右側 (統合インテリジェンスハブ: SpellTracker + TopBar機能):
     pos_spell = saved_positions.get("spell_tracker", {})
     if pos_spell:
         spell_tracker.move(pos_spell.get("x", screen_w - 420), pos_spell.get("y", screen_h - 220))
     else:
         spell_tracker.move(screen_w - 420, screen_h - 220)
 
-    # ③ 画面左側 (MatchupCard): スコアボードの左側余白 (x=24)
+    # ② 画面左側 (MatchupCard): スコアボードの左側余白 (x=24)
     pos_card = saved_positions.get("matchup_card", {})
     if pos_card:
         matchup_card.move(pos_card.get("x", 24), pos_card.get("y", int(screen_h * 0.22)))
     else:
         matchup_card.move(24, int(screen_h * 0.22))
 
-    # ④ 画面中央 (LaneDominance): LoLスコアボードの各レーン対面ゴールド差
+    # ③ 画面中央 (LaneDominance): LoLスコアボードの各レーン対面ゴールド差（ビルド欄直結ピル）
     pos_lane = saved_positions.get("lane_dominance", {})
     if pos_lane:
-        lane_dominance.move(pos_lane.get("x", int((screen_w - 260) / 2)), pos_lane.get("y", int(screen_h * 0.32)))
+        lane_dominance.move(pos_lane.get("x", int(screen_w * 0.48)), pos_lane.get("y", int(screen_h * 0.36)))
     else:
-        lane_dominance.move(int((screen_w - 260) / 2), int(screen_h * 0.32))
+        lane_dominance.move(int(screen_w * 0.48), int(screen_h * 0.36))
 
     # ⑤ トーストアラート (画面中央上部 - 平常時は非表示、アラート時のみポップアップ)
     toast_alert.move(int((screen_w - 320) / 2), 50)
