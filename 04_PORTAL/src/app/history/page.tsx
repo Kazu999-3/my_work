@@ -268,7 +268,13 @@ export default function HistoryPage() {
                                 <span className="font-mono text-xs bg-stone-100 px-1.5 py-0.5 rounded text-stone-600 font-bold hidden sm:inline">
                                   {blueP.kills}/{blueP.deaths}/{blueP.assists}
                                 </span>
-                                <span className="font-bold text-[11px] md:text-sm text-stone-900 truncate max-w-[65px] sm:max-w-[120px]">{blueP.player_name}</span>
+                                <Link
+                                  href={`/player/${encodeURIComponent(blueP.player_name)}`}
+                                  className="font-bold text-[11px] md:text-sm text-stone-900 hover:text-blue-600 truncate max-w-[65px] sm:max-w-[120px] transition cursor-pointer"
+                                  title={`${blueP.player_name} のカルテを見る`}
+                                >
+                                  {blueP.player_name}
+                                </Link>
                                 {blueP.champion_name && (
                                   <Image
                                     src={getChampIcon(blueP.champion_name)}
@@ -312,7 +318,13 @@ export default function HistoryPage() {
                                     }}
                                   />
                                 )}
-                                <span className="font-bold text-[11px] md:text-sm text-stone-900 truncate max-w-[65px] sm:max-w-[120px]">{redP.player_name}</span>
+                                <Link
+                                  href={`/player/${encodeURIComponent(redP.player_name)}`}
+                                  className="font-bold text-[11px] md:text-sm text-stone-900 hover:text-rose-600 truncate max-w-[65px] sm:max-w-[120px] transition cursor-pointer"
+                                  title={`${redP.player_name} のカルテを見る`}
+                                >
+                                  {redP.player_name}
+                                </Link>
                                 <span className="font-mono text-xs bg-stone-100 px-1.5 py-0.5 rounded text-stone-600 font-bold hidden sm:inline">
                                   {redP.kills}/{redP.deaths}/{redP.assists}
                                 </span>
