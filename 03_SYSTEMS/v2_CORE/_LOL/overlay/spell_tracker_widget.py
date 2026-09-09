@@ -254,6 +254,11 @@ class EnemyColumn(QWidget):
         self.btn_spell1.update_tick()
         self.btn_spell2.update_tick()
 
+from PyQt6.QtWidgets import (
+    QWidget, QHBoxLayout, QVBoxLayout, QLabel,
+    QPushButton, QFrame, QProgressBar
+)
+
 class SpellTrackerWidget(QWidget):
     def __init__(self):
         super().__init__()
@@ -289,22 +294,96 @@ class SpellTrackerWidget(QWidget):
         """)
 
         card_layout = QVBoxLayout(self.card_frame)
-        card_layout.setContentsMargins(4, 2, 4, 4)
-        card_layout.setSpacing(3)
+        card_layout.setContentsMargins(5, 4, 5, 4)
+        card_layout.setSpacing(4)
 
         # 極薄のドラッグハンドルバー
         self.drag_handle = QFrame(self.card_frame)
-        self.drag_handle.setFixedHeight(6)
+        self.drag_handle.setFixedHeight(4)
         self.drag_handle.setStyleSheet("""
             QFrame {
                 background-color: rgba(255, 255, 255, 0.15);
-                border-radius: 3px;
-                margin: 0px 40px;
+                border-radius: 2px;
+                margin: 0px 50px;
             }
         """)
         card_layout.addWidget(self.drag_handle)
 
+        # ==============================================================
+        # 統合マクロヘッダー (ゴールド差 & CSペース)
+        # ==============================================================
+        macro_row = QHBoxLayout()
+        macro_row.setSpacing(4)
+        macro_row.setContentsMargins(2, 0, 2, 0)
+
+        self.gold_label = QLabel("💰 +0G 🟡", self.card_frame)
+        self.gold_label.setStyleSheet("color: #eab308; font-size: 11px; font-weight: bold;")
+
+        sep = QLabel("|", self.card_frame)
+        sep.setStyleSheet("color: rgba(255,255,255,0.2); font-size: 10px;")
+
+        self.cs_label = QLabel("🎯 0CS (0.0/分)", self.card_frame)
+        self.cs_label.setStyleSheet("color: #22c55e; font-size: 11px; font-weight: bold;")
+
+        macro_row.addWidget(self.gold_label)
+        macro_row.addWidget(sep)
+        macro_row.addWidget(self.cs_label)
+        macro_row.addStretch()
+        card_layout.addLayout(macro_row)
+
+        # ==============================================================
+        # 目標アイテム ＆ ミニプログレスバー
+        # ==============================================================
+        item_box = QFrame(self.card_frame)
+        item_box.setStyleSheet("""
+            QFrame {
+                background-color: rgba(0, 0, 0, 0.25);
+                border-radius: 4px;
+                padding: 2px 4px;
+            }
+        """)
+        item_layout = QVBoxLayout(item_box)
+        item_layout.setContentsMargins(3, 2, 3, 2)
+        item_layout.setSpacing(2)
+
+        item_text_row = QHBoxLayout()
+        self.target_name_label = QLabel("🛍️ 1stコア目標", item_box)
+        self.target_name_label.setStyleSheet("color: #fef08a; font-size: 9.5px; font-weight: bold;")
+
+        self.target_gold_info_label = QLabel("あと 1100G", item_box)
+        self.target_gold_info_label.setStyleSheet("color: #cbd5e1; font-size: 9px;")
+        self.target_gold_info_label.setAlignment(Qt.AlignmentFlag.AlignRight)
+
+        item_text_row.addWidget(self.target_name_label)
+        item_text_row.addWidget(self.target_gold_info_label)
+        item_layout.addLayout(item_text_row)
+
+        self.progress_bar = QProgressBar(item_box)
+        self.progress_bar.setFixedHeight(4)
+        self.progress_bar.setTextVisible(False)
+        self.progress_bar.setStyleSheet("""
+            QProgressBar {
+                background-color: rgba(0, 0, 0, 0.5);
+                border-radius: 2px;
+            }
+            QProgressBar::chunk {
+                background-color: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #d97706, stop:1 #fbbf24);
+                border-radius: 2px;
+            }
+        """)
+        item_layout.addWidget(self.progress_bar)
+        card_layout.addWidget(item_box)
+
+        # 区切りライン
+        line = QFrame(self.card_frame)
+        line.setFrameShape(QFrame.Shape.HLine)
+        line.setFrameShadow(QFrame.Shadow.Sunken)
+        line.setStyleSheet("background-color: rgba(200, 155, 60, 0.20); max-height: 1px;")
+        card_layout.addWidget(line)
+
+        # ==============================================================
         # 敵5人のスペルボタングリッド (横並び)
+        # ==============================================================
         self.enemy_row_layout = QHBoxLayout()
         self.enemy_row_layout.setSpacing(4)
 
@@ -330,9 +409,67 @@ class SpellTrackerWidget(QWidget):
             col.update_tick()
 
     def update_data(self, state: dict):
-        self.update_enemy_status(state)
+        if not state or not state.get("active"):
+            return
 
-    def update_enemies(self, state: dict):
+        # 1. マクロ経済 & CS
+        gold_str = state.get("gold_diff_str", "互角 🟡")
+        gold_col = state.get("gold_diff_color", "#eab308")
+        self.gold_label.setText(f"💰 {gold_str}")
+        self.gold_label.setStyleSheet(f"color: {gold_col}; font-size: 11px; font-weight: bold;")
+
+        is_jg = state.get("is_jg", False)
+        my_cs = int(state.get("my_cs", 0) or 0)
+        cspm = state.get("cs_per_min", 0.0)
+        cs_col = state.get("cs_color", "#22c55e")
+        if is_jg:
+            smite_dmg = state.get("smite_damage", 900)
+            self.cs_label.setText(f"🌲 {my_cs}CS ({cspm}/m ⚡{smite_dmg})")
+        else:
+            self.cs_label.setText(f"🎯 {my_cs}CS ({cspm}/m)")
+        self.cs_label.setStyleSheet(f"color: {cs_col}; font-size: 11px; font-weight: bold;")
+
+        # 2. 目標アイテム ＆ プログレスバー
+        advice = state.get("next_item_advice") or {}
+        target_name = advice.get("item_name", "目標アイテム")
+        target_price = max(1, advice.get("price", 1100))
+        my_gold = int(state.get("my_gold", 0) or 0)
+
+        self.target_name_label.setText(f"🛍️ {target_name} ({target_price}G)")
+        pct = min(100, int((my_gold / target_price) * 100))
+        self.progress_bar.setValue(pct)
+
+        gold_needed = max(0, target_price - my_gold)
+        waves = max(1, int((gold_needed + 120) / 125)) if gold_needed > 0 else 0
+
+        if gold_needed > 0:
+            self.target_gold_info_label.setText(f"あと {gold_needed}G ({waves}W)")
+            self.target_gold_info_label.setStyleSheet("color: #cbd5e1; font-size: 9px;")
+            self.progress_bar.setStyleSheet("""
+                QProgressBar {
+                    background-color: rgba(0, 0, 0, 0.5);
+                    border-radius: 2px;
+                }
+                QProgressBar::chunk {
+                    background-color: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #d97706, stop:1 #fbbf24);
+                    border-radius: 2px;
+                }
+            """)
+        else:
+            self.target_gold_info_label.setText("💰 購入可能！🟢")
+            self.target_gold_info_label.setStyleSheet("color: #4ade80; font-size: 9px; font-weight: bold;")
+            self.progress_bar.setStyleSheet("""
+                QProgressBar {
+                    background-color: rgba(0, 0, 0, 0.5);
+                    border-radius: 2px;
+                }
+                QProgressBar::chunk {
+                    background-color: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #15803d, stop:1 #22c55e);
+                    border-radius: 2px;
+                }
+            """)
+
+        # 3. 敵ステータス
         self.update_enemy_status(state)
 
     def update_enemy_status(self, state: dict):

@@ -128,12 +128,12 @@ def main():
     else:
         top_bar.move(screen_w - 360, 40)
 
-    # ② 画面右下 (SpellTracker):
+    # ② 画面右側 (統合インテリジェンスハブ: SpellTracker + TopBar機能):
     pos_spell = saved_positions.get("spell_tracker", {})
     if pos_spell:
-        spell_tracker.move(pos_spell.get("x", screen_w - 420), pos_spell.get("y", screen_h - 180))
+        spell_tracker.move(pos_spell.get("x", screen_w - 420), pos_spell.get("y", screen_h - 220))
     else:
-        spell_tracker.move(screen_w - 420, screen_h - 180)
+        spell_tracker.move(screen_w - 420, screen_h - 220)
 
     # ③ 画面左側 (MatchupCard): スコアボードの左側余白 (x=24)
     pos_card = saved_positions.get("matchup_card", {})
@@ -142,17 +142,17 @@ def main():
     else:
         matchup_card.move(24, int(screen_h * 0.22))
 
-    # ④ 画面中央下部 (LaneDominance): LoLスコアボード（y: 120〜450）の下側安全マージン (y: 600)
+    # ④ 画面中央 (LaneDominance): LoLスコアボードの各レーン対面ゴールド差
     pos_lane = saved_positions.get("lane_dominance", {})
     if pos_lane:
-        lane_dominance.move(pos_lane.get("x", int((screen_w - 520) / 2)), pos_lane.get("y", int(screen_h * 0.62)))
+        lane_dominance.move(pos_lane.get("x", int((screen_w - 260) / 2)), pos_lane.get("y", int(screen_h * 0.32)))
     else:
-        lane_dominance.move(int((screen_w - 520) / 2), int(screen_h * 0.62))
+        lane_dominance.move(int((screen_w - 260) / 2), int(screen_h * 0.32))
 
-    # ⑤ トーストアラート (画面中央上部)
-    toast_alert.move(int((screen_w - 320) / 2), 60)
+    # ⑤ トーストアラート (画面中央上部 - 平常時は非表示、アラート時のみポップアップ)
+    toast_alert.move(int((screen_w - 320) / 2), 50)
+    toast_alert.hide()
 
-    # ⑥ フローティングステータスバッジ (画面右下に常駐)
     def toggle_manual_visibility():
         nonlocal hud_visible
         if hud_visible:
@@ -168,26 +168,17 @@ def main():
             except Exception:
                 pass
 
-    status_pill = MiniStatusPillWidget(
-        on_toggle_hud=toggle_manual_visibility,
-        on_quit=app.quit
-    )
-    status_pill.move(screen_w - 240, screen_h - 45)
-    status_pill.show()
-
     # 表示状態管理
     hud_visible = False
 
     def show_hud_widgets():
         nonlocal hud_visible
-        top_bar.show()
         spell_tracker.show()
         matchup_card.show()
         hud_visible = True
 
     def hide_hud_widgets():
         nonlocal hud_visible
-        top_bar.hide()
         spell_tracker.hide()
         matchup_card.hide()
         lane_dominance.hide()
@@ -372,11 +363,9 @@ def main():
                 print(f"\n🟢 [インゲーム自動連動成功！] 試合時間: {t_str} | {my_champ} vs {enemy_champ} | {g_str}")
                 print("💡 オーバーレイが自動表示されました！（TABキーで対面手順書＆レーン優勢度が出現）\n")
                 last_reported_status = "in_game"
-                status_pill.set_status(True, my_champ)
             elif tick_count % 10 == 0:
                 print(f"⏱️ [In-Game] {t_str} | {my_champ} vs {enemy_champ} | CS: {state.get('my_cs', 0)} ({state.get('cs_per_min', 0)}/m) | {g_str}")
                 status_action.setText(f"⚔️ 試合中: {my_champ} vs {enemy_champ} ({t_str})")
-                status_pill.set_status(True, my_champ)
 
             game_state_tracker["was_in_game"] = True
             game_state_tracker["last_active_state"] = state
@@ -386,13 +375,11 @@ def main():
                 hide_hud_widgets()
                 status_action.setText("⏳ 状態: LoL起動監視中 (待機)")
                 tray_icon.setToolTip("👑 Sovereign HUD (LoL自動連動オーバーレイ - 待機中)")
-                status_pill.set_status(False)
 
             if last_reported_status != "waiting":
                 print("⏳ [LoL起動監視中...] サモナーズリフト（League of Legends.exe）の開始を待機しています...")
                 status_action.setText("⏳ 状態: LoL起動監視中 (待機)")
                 last_reported_status = "waiting"
-                status_pill.set_status(False)
 
             if game_state_tracker["was_in_game"]:
                 game_state_tracker["was_in_game"] = False
@@ -436,10 +423,9 @@ def main():
             spell_tracker.update_gank_scores(gank_results)
 
         if hud_visible or args.always_show:
-            top_bar.update_data(state)
+            spell_tracker.update_data(state)
             matchup_card.update_data(state)
             toast_alert.update_events(state)
-            spell_tracker.update_enemies(state)
             lane_dominance.update_data(state)
 
     timer = QTimer()

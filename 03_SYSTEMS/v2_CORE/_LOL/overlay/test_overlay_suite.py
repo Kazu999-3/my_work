@@ -239,9 +239,9 @@ class TestOverlayWidgetsVisual(unittest.TestCase):
         pix_card.save(str(self.screenshot_dir / "02_matchup_card.png"))
         self.assertFalse(pix_card.isNull(), "MatchupCard screenshot should not be null")
 
-        # 3. SpellTrackerWidget (画面右下: 敵スペル＆Ultタイマー)
+        # 3. SpellTrackerWidget (画面右側: マクロヘッダー ＆ 敵スペル/Ultタイマー)
         tracker = SpellTrackerWidget()
-        tracker.update_enemies(state)
+        tracker.update_data(state)
         tracker.show()
         self.app.processEvents()
         pix_tracker = tracker.grab()
