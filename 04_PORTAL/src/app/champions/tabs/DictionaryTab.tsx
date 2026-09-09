@@ -904,18 +904,28 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
             {/* 1段目: 検索バー ＋ 目的別フィルター開閉ボタン */}
             <div className="flex items-center gap-2">
               <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" size={15} />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none" size={15} />
                 <input
                   type="text"
                   placeholder="チャンピオン検索 (英・日対応)..."
                   value={search}
                   onChange={e => setSearch(e.target.value)}
-                  className="w-full bg-stone-50 border border-stone-200 focus:border-[#c89b3c] focus:bg-white rounded-xl py-2 pl-8.5 pr-3 text-stone-900 font-bold outline-none transition-all text-xs"
+                  className="w-full bg-stone-50 border border-stone-200 focus:border-[#c89b3c] focus:bg-white rounded-xl py-2 pl-8.5 pr-8 text-stone-900 font-bold outline-none transition-all text-xs"
                 />
+                {search && (
+                  <button
+                    type="button"
+                    onClick={() => setSearch('')}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-700 p-0.5 rounded-full hover:bg-stone-200/60 transition"
+                    title="検索をクリア"
+                  >
+                    <X size={13} />
+                  </button>
+                )}
               </div>
               <button
                 onClick={() => setIsFilterOpen(!isFilterOpen)}
-                className={`relative px-2.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 border ${
+                className={`relative px-2.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 border cursor-pointer ${
                   isFilterOpen || pickFilter !== 'ALL' || typeFilter !== 'ALL'
                     ? 'bg-[#c89b3c]/10 border-[#c89b3c] text-[#936d1b]'
                     : 'bg-stone-50 border-stone-200 text-stone-600 hover:text-stone-900 hover:bg-stone-100'

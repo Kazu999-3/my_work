@@ -236,7 +236,7 @@ export default function PlayerMyPage() {
       });
     });
     return Object.entries(agg)
-      .map(([name, s]) => ({ name, games: s.games, winRate: Math.round((s.wins / s.games) * 100) }))
+      .map(([name, s]) => ({ name, games: s.games, winRate: s.games > 0 ? Math.round((s.wins / s.games) * 100) : 0 }))
       .sort((a, b) => b.games - a.games).slice(0, 8);
   }, [stats]);
 

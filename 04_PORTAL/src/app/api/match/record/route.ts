@@ -578,33 +578,28 @@ export async function POST(request: Request) {
         const isDev = process.env.NODE_ENV === 'development';
         if (isDev) {
           console.log('[match/record DEV] ローカル開発環境のため Discord Webhook 送信をスキップしました。');
-          return NextResponse.json({
-            success: true,
-            matchId: newMatchId,
-            message: '試合結果が正常に記録されました（ローカル開発のためDiscord通知はスキップ）。'
-          });
-        }
+        } else {
+          // ?wait=true でメッセージ本体(id/channel_id)を受け取り、満足度投票の👍/👎を付ける（課題#42）
+          const sep = webhookUrl.includes('?') ? '&' : '?';
+          const whRes = await fetch(`${webhookUrl}${sep}wait=true`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          }).catch(err => { console.error("Discord webhook error:", err); return null; });
 
-        // ?wait=true でメッセージ本体(id/channel_id)を受け取り、満足度投票の👍/👎を付ける（課題#42）
-        const sep = webhookUrl.includes('?') ? '&' : '?';
-        const whRes = await fetch(`${webhookUrl}${sep}wait=true`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        }).catch(err => { console.error("Discord webhook error:", err); return null; });
-
-        // 満足度は管理者が入力時に記録する方式に変更したため、リアクション付与は廃止。
-        // 結果メッセージIDだけは参照用に紐付けておく。
-        try {
-          const msg = whRes && whRes.ok ? await whRes.json() : null;
-          if (msg?.id && msg?.channel_id) {
-            await supabase
-              .from('balancer_predictions')
-              .update({ result_message_id: msg.id, result_channel_id: msg.channel_id })
-              .eq('match_id', newMatchId);
+          // 満足度は管理者が入力時に記録する方式に変更したため、リアクション付与は廃止。
+          // 結果メッセージIDだけは参照用に紐付けておく。
+          try {
+            const msg = whRes && whRes.ok ? await whRes.json() : null;
+            if (msg?.id && msg?.channel_id) {
+              await supabase
+                .from('balancer_predictions')
+                .update({ result_message_id: msg.id, result_channel_id: msg.channel_id })
+                .eq('match_id', newMatchId);
+            }
+          } catch (linkErr) {
+            console.warn('[match/record] 結果メッセージIDの紐付けに失敗（続行）:', linkErr);
           }
-        } catch (linkErr) {
-          console.warn('[match/record] 結果メッセージIDの紐付けに失敗（続行）:', linkErr);
         }
       }
     } catch (discordErr) {

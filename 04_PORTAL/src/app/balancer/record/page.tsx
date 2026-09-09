@@ -12,6 +12,7 @@ const ROLES: Role[] = ['TOP', 'JG', 'MID', 'ADC', 'SUP'];
 
 interface PlayerStat {
   name: string;
+  raw_ocr_name?: string; // OCRが抽出した元の名前（学習用）
   team: 'BLUE' | 'RED';
   currentRole: Role;
   kills: number;
@@ -25,6 +26,33 @@ interface PlayerStat {
   objective_damage: number;
   cs: number;
 }
+
+const OCR_ALIAS_STORAGE_KEY = 'ktm_ocr_player_aliases_v1';
+
+// OCR誤認識の別名マッピングを取得
+const getOcrAliases = (): Record<string, string> => {
+  if (typeof window === 'undefined') return {};
+  try {
+    const raw = localStorage.getItem(OCR_ALIAS_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+};
+
+// OCR誤認識の別名マッピングを保存・学習
+const saveOcrAlias = (ocrExtractedName: string, registeredName: string) => {
+  if (typeof window === 'undefined' || !ocrExtractedName || !registeredName) return;
+  const cleanExtracted = ocrExtractedName.toLowerCase().replace(/[^a-z0-9ぁ-んァ-ヶ一-龠]/g, '');
+  if (!cleanExtracted) return;
+  try {
+    const current = getOcrAliases();
+    current[cleanExtracted] = registeredName;
+    localStorage.setItem(OCR_ALIAS_STORAGE_KEY, JSON.stringify(current));
+  } catch (err) {
+    console.warn('OCRエイリアスの保存に失敗:', err);
+  }
+};
 
 function CustomRecordPageContent() {
   const searchParams = useSearchParams();
@@ -67,10 +95,20 @@ function CustomRecordPageContent() {
     return initial;
   });
 
-  // プレイヤー名曖昧マッチング
+  // プレイヤー名曖昧マッチング（学習済みエイリアス辞書 ➔ 完全一致 ➔ 部分一致）
   const matchPlayer = (extractedName: string, pool: { name: string, ign?: string }[]) => {
     if (!extractedName) return '';
     const cleanExtracted = extractedName.toLowerCase().replace(/[^a-z0-9ぁ-んァ-ヶ一-龠]/g, '');
+    if (!cleanExtracted) return '';
+
+    // 0. 学習済みOCR誤認識辞書（過去の修正履歴）から最優先で解決
+    const aliases = getOcrAliases();
+    if (aliases[cleanExtracted]) {
+      const aliasTarget = aliases[cleanExtracted];
+      if (pool.some(p => p.name === aliasTarget)) {
+        return aliasTarget;
+      }
+    }
     
     // 1. 完全一致（記号除外後）
     for (const p of pool) {
@@ -209,6 +247,11 @@ function CustomRecordPageContent() {
               const bluePlayers = resolvedWinner === 'BLUE' ? winnerBlock : loserBlock;
               const redPlayers = resolvedWinner === 'RED' ? winnerBlock : loserBlock;
 
+              let resolvedCount = 0;
+              let aliasHitCount = 0;
+              let unresolvedCount = 0;
+              const currentAliases = getOcrAliases();
+
               setStats(prev => {
                 return prev.map((currentStat, idx) => {
                   const isBlue = currentStat.team === 'BLUE';
@@ -217,9 +260,19 @@ function CustomRecordPageContent() {
                   const found = teamPlayers[playerIdx];
                   
                   if (found) {
+                    const rawOcr = (found.name || '').trim();
+                    const cleanRaw = rawOcr.toLowerCase().replace(/[^a-z0-9ぁ-んァ-ヶ一-龠]/g, '');
+                    const isAliasMatch = !!(cleanRaw && currentAliases[cleanRaw]);
                     const matchedName = matchPlayer(found.name, playersPool);
                     const matchedChamp = matchChampion(found.champion_name, championsList);
                     
+                    if (matchedName) {
+                      resolvedCount++;
+                      if (isAliasMatch) aliasHitCount++;
+                    } else {
+                      unresolvedCount++;
+                    }
+
                     let assignedRole: Role = ROLES[playerIdx];
                     if (found.role && ROLES.includes(found.role.toUpperCase() as Role)) {
                       assignedRole = found.role.toUpperCase() as Role;
@@ -227,6 +280,7 @@ function CustomRecordPageContent() {
                     
                     return {
                       ...currentStat,
+                      raw_ocr_name: rawOcr,
                       currentRole: assignedRole,
                       name: matchedName,
                       champion_name: matchedChamp,
@@ -238,7 +292,15 @@ function CustomRecordPageContent() {
                   return currentStat;
                 });
               });
-              setMessage({ type: 'success', text: '画像の解析結果を反映しました。誤りがないか確認し、必要に応じて修正してください。' });
+
+              let msgText = `画像の解析結果を反映しました（10名中 ${resolvedCount} 名照合完了）。`;
+              if (aliasHitCount > 0) {
+                msgText += ` 💡 過去の誤認識学習辞書から ${aliasHitCount} 名を自動補正しました。`;
+              }
+              if (unresolvedCount > 0) {
+                msgText += ` ⚠️ 未照合が ${unresolvedCount} 名あります。ドロップダウンから選択してください（修正内容は次回以降自動学習されます）。`;
+              }
+              setMessage({ type: unresolvedCount > 0 ? 'error' : 'success', text: msgText });
             }
           } catch (innerErr: any) {
             setMessage({ type: 'error', text: `解析処理エラー: ${innerErr.message}` });
@@ -479,7 +541,13 @@ function CustomRecordPageContent() {
     setStats(prev => prev.map((p, idx) => {
       if (idx === index) {
         if (field === 'currentRole') return { ...p, currentRole: value as Role };
-        if (field === 'name') return { ...p, name: value };
+        if (field === 'name') {
+          // ユーザーが手動で名前を修正した場合、OCRの抽出文字列と紐付けて次回以降自動解決できるように学習
+          if (p.raw_ocr_name && value) {
+            saveOcrAlias(p.raw_ocr_name, value);
+          }
+          return { ...p, name: value };
+        }
         if (field === 'champion_name') return { ...p, champion_name: value };
         const num = parseInt(value) || 0;
         return { ...p, [field]: num };
@@ -515,6 +583,13 @@ function CustomRecordPageContent() {
     setSubmitting(true);
     setMessage({ type: '', text: '' });
     try {
+      // 確定したプレイヤー名とOCR原文の対応関係を自動学習・定着
+      stats.forEach(s => {
+        if (s.raw_ocr_name && s.name) {
+          saveOcrAlias(s.raw_ocr_name, s.name);
+        }
+      });
+
       const res = await fetch('/api/match/record', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -554,7 +629,7 @@ function CustomRecordPageContent() {
         isExhibition,
         playersCount: stats.filter(s => s.name).length
       });
-      setMessage({ type: 'success', text: '✅ 試合結果を記録し、MMRを更新しました！' });
+      setMessage({ type: 'success', text: '✅ 試合結果を記録し、MMRを更新しました！（OCR誤認識学習も更新されました）' });
     } catch (err: any) {
       setMessage({ type: 'error', text: `保存エラー: ${err.message}` });
     } finally {
