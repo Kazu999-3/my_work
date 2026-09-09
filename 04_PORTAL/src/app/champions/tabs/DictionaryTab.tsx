@@ -913,10 +913,16 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
 
   // 初回ロード時にチャンピオン一覧が存在し、PC画面(lg以上)で未選択の場合、先頭を自動選択する
   useEffect(() => {
-    if (!selected && filtered.length > 0 && typeof window !== 'undefined' && window.innerWidth >= 1024) {
-      setSelected(filtered[0]);
+    if (!selected && champions.length > 0 && typeof window !== 'undefined' && window.innerWidth >= 1024) {
+      const selectId = searchParams.get('select');
+      if (selectId) {
+        const found = champions.find(c => c.id === selectId);
+        if (found) setSelected(found);
+      } else if (filtered.length > 0) {
+        setSelected(filtered[0]);
+      }
     }
-  }, [filtered.length]);
+  }, [champions.length]);
 
   return (
     <div className="w-full flex flex-col gap-4">
@@ -968,13 +974,14 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
             {/* 2段目: ロール別ピルフィルター */}
             <div className="flex items-center gap-1 overflow-x-auto pb-0.5 scrollbar-none">
               <button
-                onClick={() => setRoleFilter(roleFilter === 'FAVORITES' ? 'ALL' : 'FAVORITES' as any)}
-                className={`px-2 py-1.5 rounded-lg text-[11px] font-bold transition shrink-0 flex items-center gap-1 ${
-                  (roleFilter as any) === 'FAVORITES'
-                    ? 'bg-amber-400 text-stone-950 shadow-xs'
+                type="button"
+                onClick={() => setShowFavoritesOnly(prev => !prev)}
+                className={`px-2 py-1.5 rounded-lg text-[11px] font-bold transition shrink-0 flex items-center gap-1 cursor-pointer ${
+                  showFavoritesOnly
+                    ? 'bg-amber-400 text-stone-950 shadow-xs font-black'
                     : 'text-amber-700 bg-amber-50 hover:bg-amber-100'
                 }`}
-                title="お気に入りのみ表示"
+                title="お気に入りのみ表示 (⭐️)"
               >
                 ⭐️
               </button>
@@ -982,7 +989,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                 <button
                   key={role}
                   onClick={() => setRoleFilter(role)}
-                  className={`flex-1 py-1.5 rounded-lg text-[11px] font-bold transition text-center shrink-0 ${
+                  className={`flex-1 py-1.5 rounded-lg text-[11px] font-bold transition text-center shrink-0 cursor-pointer ${
                     roleFilter === role
                       ? 'bg-stone-900 text-white shadow-xs font-black'
                       : 'text-stone-600 hover:text-stone-900 hover:bg-stone-100'
@@ -1208,6 +1215,26 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                 </div>
               );
             })}
+            {filtered.length === 0 && (
+              <div className="p-6 text-center bg-white border border-stone-200 rounded-2xl space-y-2 text-stone-500">
+                <div className="text-2xl">🔍</div>
+                <div className="text-xs font-bold text-stone-700">条件に一致するチャンピオンが見つかりません</div>
+                <p className="text-[10px] text-stone-400">検索文字やフィルター条件を変更してお試しください。</p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearch('');
+                    setRoleFilter('ALL');
+                    setPickFilter('ALL');
+                    setTypeFilter('ALL');
+                    setShowFavoritesOnly(false);
+                  }}
+                  className="mt-2 px-3 py-1.5 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-xs transition cursor-pointer"
+                >
+                  条件をすべてリセット
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
