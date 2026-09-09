@@ -120,6 +120,7 @@ export async function GET(req: Request) {
       availableRoles: availableRoles.length > 0 ? availableRoles : ['GLOBAL'],
       dataFields,
       powerSpikes: spikeRes.data || null,
+      powerSpikeScores: spikeRes.data || null,
       matchupsList,
       pastInterrogations,
       realJungleTiming,

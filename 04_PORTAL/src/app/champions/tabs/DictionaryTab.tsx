@@ -505,7 +505,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
         } else {
           setIsMatchupsCollapsed(true);
         }
-        setPowerSpikeScores(detail.powerSpikeScores || null);
+        setPowerSpikeScores(detail.powerSpikeScores || detail.powerSpikes || null);
         setRealJungleTiming(detail.realJungleTiming || null);
 
         // 下書き (champ_draft_{champId}) のチェックと自動復元
