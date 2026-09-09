@@ -333,9 +333,13 @@ export default function LeaderboardPage() {
                               {idx + 1}
                             </div>
                             <div className="min-w-0 flex-1">
-                              <a href={`/player/${player.discordId}`} className="font-extrabold text-stone-900 hover:text-primary truncate block transition text-xs" title={`${player.name} の詳細を見る`}>
+                              <Link 
+                                href={`/player/${encodeURIComponent(player.discordId || player.name)}`} 
+                                className="font-extrabold text-stone-900 hover:text-amber-600 truncate block transition text-xs cursor-pointer" 
+                                title={`${player.name} の詳細を見る`}
+                              >
                                 {player.name}
-                              </a>
+                              </Link>
                               <div className="text-[10px] text-stone-500 font-bold whitespace-nowrap">
                                 {player.games}戦 (<span className={parseFloat(player.winRate) >= 60 ? 'text-emerald-700 font-extrabold' : parseFloat(player.winRate) <= 45 ? 'text-rose-700' : 'text-stone-700'}>{player.winRate}%</span>)
                               </div>

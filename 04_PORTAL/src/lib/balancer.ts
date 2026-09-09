@@ -147,7 +147,7 @@ export function selectPlayersWithPity(allPlayers: Player[]): { selected: Player[
   // 抽選用の情報を付与
   const candidateInfo = candidatesPool.map(p => ({
     player: p,
-    pity: p.pity,
+    pity: p.pity || 0,
     spectator_pity: p.spectator_pity || 0,
     rand: Math.random()
   }));
