@@ -297,8 +297,58 @@ def is_item_owned(item_info: dict, my_items: list) -> bool:
     return False
 
 class DynamicBuildAdvisor:
-    @staticmethod
+    _db_blueprint_cache = {}
+
+    @classmethod
+    def fetch_blueprint_from_bible(cls, champion_name: str) -> dict:
+        """Supabaseのチャンピオン辞典(matchup_sentinel)から最新ビルドデータを動的取得"""
+        norm_name = str(champion_name).replace(" ", "").replace("'", "").replace(".", "").lower()
+        if norm_name in cls._db_blueprint_cache:
+            return cls._db_blueprint_cache[norm_name]
+
+        try:
+            from v2_CORE.settings import settings
+            if settings.SUPABASE_URL and settings.SUPABASE_KEY:
+                import httpx
+                url = f"{settings.SUPABASE_URL}/rest/v1/matchup_sentinel"
+                headers = {
+                    "apikey": settings.SUPABASE_KEY,
+                    "Authorization": f"Bearer {settings.SUPABASE_KEY}"
+                }
+                params = {
+                    "champion": f"ilike.{champion_name}",
+                    "select": "summary,advice,raw_data",
+                    "limit": "1"
+                }
+                r = httpx.get(url, headers=headers, params=params, timeout=1.5)
+                if r.status_code == 200 and r.json():
+                    row = r.json()[0]
+                    raw = row.get("raw_data") or {}
+                    trend_items = raw.get("trend_items") or []
+                    if trend_items:
+                        cores = []
+                        for it_name in trend_items:
+                            for db_k, db_v in ITEM_DB.items():
+                                if db_v["name"] in it_name or it_name in db_v["name"]:
+                                    cores.append(db_k)
+                                    break
+                        if cores:
+                            bp = {
+                                "class": "ad_fighter",
+                                "first_core": cores[0],
+                                "second_cores": cores[1:3] if len(cores) > 1 else ["SunderedSky"],
+                                "boots_default": "PlatedSteelcaps"
+                            }
+                            cls._db_blueprint_cache[norm_name] = bp
+                            return bp
+        except Exception:
+            pass
+
+        return None
+
+    @classmethod
     def advise_next_item(
+        cls,
         my_champion: str,
         my_items: list,
         enemy_players: list,
@@ -321,13 +371,16 @@ class DynamicBuildAdvisor:
             1 for ep in enemy_players if ep.get("championName") in ["Ahri", "Elise", "Sylas", "Vladimir", "Syndra", "Orianna", "Viktor", "Veigar", "Evelynn"]
         )
 
-        # チャンピオン名正規化マッチング (大文字小文字・記号・別名を完全吸収)
-        norm_name = str(my_champion).replace(" ", "").replace("'", "").replace(".", "").lower()
-        blueprint = None
-        for k, v in CHAMPION_CORE_BLUEPRINTS.items():
-            if k.replace(" ", "").replace("'", "").replace(".", "").lower() == norm_name:
-                blueprint = v
-                break
+        # 1. チャンピオン辞典 (Supabase DB) からの優先取得
+        blueprint = cls.fetch_blueprint_from_bible(my_champion)
+
+        # 2. ローカル定義辞書からの取得
+        if not blueprint:
+            norm_name = str(my_champion).replace(" ", "").replace("'", "").replace(".", "").lower()
+            for k, v in CHAMPION_CORE_BLUEPRINTS.items():
+                if k.replace(" ", "").replace("'", "").replace(".", "").lower() == norm_name:
+                    blueprint = v
+                    break
 
         if not blueprint:
             # チャンピオン名キーワードによる推論フォールバック
