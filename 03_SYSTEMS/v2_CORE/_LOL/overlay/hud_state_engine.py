@@ -6,9 +6,10 @@ Live Client Data API の生データを受け取り、
 敵コア完成パワースパイク、動的ビルド提案、バフ持続時間を計算してHUD描画データを生成する。
 """
 
-import sys
 import os
+import sys
 import time
+import re
 import httpx
 from pathlib import Path
 
@@ -154,18 +155,22 @@ def assign_team_roles(players: list) -> dict:
 
     return assigned
 
-    return assigned
-
 def find_my_player(active_player: dict, all_players: list) -> dict:
     """
     activePlayer と allPlayers を照合し、自分自身のplayerオブジェクトを100%確実に特定する。
+    1. Riot ID / サモナーネームの完全・部分一致
+    2. activePlayerの所持スキル (abilities) から自チャンピオン名を特定して照合
+    3. ルーン構成 (fullRunes vs runes) での厳密照合
     """
     if not all_players:
         return {}
 
-    # 1. activePlayer から各種識別子を抽出 (小文字・#タグ分割)
+    if not active_player:
+        return all_players[0]
+
+    # --- 判定1: 名前 (Riot ID / Summoner Name / GameName) による照合 ---
     my_names = set()
-    for k in ["summonerName", "riotId", "riotIdGameName"]:
+    for k in ["summonerName", "riotId", "riotIdGameName", "riotIdTagLine"]:
         v = active_player.get(k)
         if v:
             s = str(v).strip().lower()
@@ -173,36 +178,49 @@ def find_my_player(active_player: dict, all_players: list) -> dict:
             if "#" in s:
                 my_names.add(s.split("#")[0].strip())
 
-    # 2. 名前による一致判定
-    for p in all_players:
-        p_names = set()
-        for k in ["summonerName", "riotId", "riotIdGameName"]:
-            v = p.get(k)
-            if v:
-                s = str(v).strip().lower()
-                p_names.add(s)
-                if "#" in s:
-                    p_names.add(s.split("#")[0].strip())
-        if my_names and (my_names & p_names):
-            return p
-
-    # 3. 名前で一致しない場合、championStats (maxHealth, attackDamage, level) で照合
-    act_stats = active_player.get("championStats", {})
-    act_hp = act_stats.get("maxHealth", 0.0)
-    act_ad = act_stats.get("attackDamage", 0.0)
-    act_lvl = active_player.get("level", 0)
-
-    if act_hp > 0:
+    if my_names:
         for p in all_players:
-            p_stats = p.get("championStats", {})
-            p_hp = p_stats.get("maxHealth", 0.0)
-            p_ad = p_stats.get("attackDamage", 0.0)
-            p_lvl = p.get("level", 0)
-            if abs(p_hp - act_hp) < 1.0 and abs(p_ad - act_ad) < 1.0:
-                if act_lvl == 0 or p_lvl == act_lvl:
-                    return p
+            p_names = set()
+            for k in ["summonerName", "riotId", "riotIdGameName", "riotIdTagLine"]:
+                v = p.get(k)
+                if v:
+                    s = str(v).strip().lower()
+                    p_names.add(s)
+                    if "#" in s:
+                        p_names.add(s.split("#")[0].strip())
+            if my_names & p_names:
+                return p
 
-    # 4. フォールバック
+    # --- 判定2: activePlayer のスキル (abilities) から自チャンピオン名を特定して照合 ---
+    abilities = active_player.get("abilities", {})
+    detected_champ_name = ""
+    for ab_key, ab_info in abilities.items():
+        if isinstance(ab_info, dict):
+            raw_id = str(ab_info.get("id", "") or ab_info.get("rawDisplayName", ""))
+            if raw_id:
+                # 例: "HeimerdingerQ" -> "Heimerdinger", "UrgotW" -> "Urgot"
+                m = re.match(r'^([A-Z][a-zA-Z]+?)(?:[QWER]|Passive|_|$)', raw_id)
+                if m:
+                    detected_champ_name = m.group(1).lower()
+                    break
+
+    if detected_champ_name:
+        for p in all_players:
+            c_name = extract_champion_name(p).lower()
+            if c_name == detected_champ_name or detected_champ_name in c_name:
+                return p
+
+    # --- 判定3: ルーン構成 (fullRunes vs runes) による照合 ---
+    act_runes = active_player.get("fullRunes", {})
+    act_keystone = act_runes.get("keystone", {}).get("id") or act_runes.get("primaryRuneTree", {}).get("id")
+    if act_keystone:
+        for p in all_players:
+            p_runes = p.get("runes", {})
+            p_keystone = p_runes.get("keystone", {}).get("id") or p_runes.get("primaryRuneTree", {}).get("id")
+            if p_keystone and p_keystone == act_keystone:
+                return p
+
+    # --- 判定4: フォールバック ---
     return all_players[0]
 
 def calculate_player_effective_gold(
