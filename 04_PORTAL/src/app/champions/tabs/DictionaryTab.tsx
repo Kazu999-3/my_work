@@ -549,6 +549,15 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
     // 1. localStorage をトグル
     const isNowFav = toggleFavoriteChampion(selected.id);
 
+    // React ステートを即時更新して一覧のスターバッジ・ソート順およびヘッダーにリアルタイム反映
+    setFavoriteChamps(prev => {
+      if (isNowFav) {
+        return Array.from(new Set([...prev, selected.id]));
+      } else {
+        return prev.filter(id => id !== selected.id);
+      }
+    });
+
     // 2. Supabase への同期保存。
     // 以前は管理者専用の /api/admin/champions/save を経由していたため、管理者ログインして
     // いないスマホ閲覧時はここが401で失敗し、お気に入りがlocalStorageだけに残って
@@ -1530,7 +1539,35 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
             )}
 
             {vsEnemyId && !vsEnemyLoading && (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+              <div className="space-y-4">
+                {/* 🎯 この対面専用の特化攻略メモ（存在する場合に最優先ハイライト） */}
+                {(() => {
+                  const specificMatchup = matchupsList.find(m => 
+                    (m.enemy && m.enemy.toLowerCase() === vsEnemyId.toLowerCase()) || 
+                    (m.enemy_name && m.enemy_name.toLowerCase() === vsEnemyId.toLowerCase()) ||
+                    (m.title && m.title.toLowerCase().includes(vsEnemyId.toLowerCase()))
+                  );
+                  if (!specificMatchup) return null;
+                  return (
+                    <div className="bg-gradient-to-r from-amber-500/20 via-emerald-500/20 to-stone-900 border-2 border-amber-400/80 rounded-2xl p-4 shadow-xl text-xs space-y-2 animate-in fade-in slide-in-from-top-2">
+                      <div className="flex items-center justify-between flex-wrap gap-2 border-b border-amber-400/30 pb-2">
+                        <span className="font-black text-amber-300 flex items-center gap-1.5 text-sm">
+                          🔥 【特化攻略】対 {champions.find(c => c.id === vsEnemyId)?.name || vsEnemyId} 戦の専用マッチアップ手順書
+                        </span>
+                        {specificMatchup.difficulty && (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-400/30 text-amber-200 border border-amber-300/40">
+                            難易度: {specificMatchup.difficulty}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-stone-100 text-xs leading-relaxed whitespace-pre-wrap font-medium">
+                        {specificMatchup.strategy || specificMatchup.summary || '専用知見あり'}
+                      </p>
+                    </div>
+                  );
+                })()}
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
                 {/* 左側: あなたのチャンピオン */}
                 <div className="bg-stone-900/90 border border-[#c89b3c]/40 rounded-2xl p-4 flex flex-col gap-3 shadow-lg">
                   <div className="flex items-center gap-3 border-b border-stone-800 pb-2.5">
@@ -1613,9 +1650,10 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                   </div>
                 </div>
               </div>
-            )}
-          </div>
-        )}
+            </div>
+          )}
+        </div>
+      )}
 
         {/* ⚡ 15秒サクッと対策カード（ロード中15秒で頭に入る要点） */}
         <div className="bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-amber-500/15 border border-amber-400/50 rounded-2xl p-4 shadow-xs">
