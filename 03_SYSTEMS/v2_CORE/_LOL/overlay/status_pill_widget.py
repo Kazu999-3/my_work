@@ -17,13 +17,13 @@ class MiniStatusPillWidget(QWidget):
         self.on_quit = on_quit
         self.drag_position = QPoint()
 
-        # 最前面・枠なし・タスクバー非表示ツールウィンドウ
+        # 最前面・枠なし独立フローティングウィンドウ
         self.setWindowFlags(
             Qt.WindowType.FramelessWindowHint |
-            Qt.WindowType.WindowStaysOnTopHint |
-            Qt.WindowType.Tool
+            Qt.WindowType.WindowStaysOnTopHint
         )
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+        self.setAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating)
 
         layout = QHBoxLayout(self)
         layout.setContentsMargins(10, 4, 10, 4)

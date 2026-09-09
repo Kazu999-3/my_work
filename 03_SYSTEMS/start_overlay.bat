@@ -2,8 +2,18 @@
 setlocal
 cd /d "%~dp0"
 
-:: 独立したバックグラウンドプロセスとして起動
-start "" "..\.venv\Scripts\python.exe" "v2_CORE\_LOL\overlay\run_overlay.py"
+echo ===================================================
+echo   Sovereign HUD Overlay - Live Monitor Mode
+echo ===================================================
+echo.
+echo [INFO] Overlay is running in background.
+echo [INFO] You can minimize this window (Keep it open during play).
+echo.
 
-:: cmdウィンドウは即座に自動終了
-exit
+"..\.venv\Scripts\python.exe" "v2_CORE\_LOL\overlay\run_overlay.py"
+
+if %ERRORLEVEL% NEQ 0 (
+    echo.
+    echo [ERROR] Process exited with error code: %ERRORLEVEL%
+    pause
+)
