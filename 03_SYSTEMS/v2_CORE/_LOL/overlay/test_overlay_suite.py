@@ -121,6 +121,31 @@ class TestHudStateEngine(unittest.TestCase):
             self.assertTrue(row["enemy_champ"])
             self.assertIn("diff_str", row)
 
+    def test_effective_gold_includes_self_current_gold(self):
+        """自分自身の実効ゴールド計算に手持ちゴールド(currentGold)が正しく合算されること"""
+        from v2_CORE._LOL.overlay.hud_state_engine import calculate_player_effective_gold, find_my_player
+        
+        player_obj = {
+            "summonerName": "Kazu#JP1",
+            "items": [{"itemID": 1055, "displayName": "Doran's Blade", "price": 450, "count": 1}],
+            "scores": {"creepScore": 10, "kills": 0, "assists": 0}
+        }
+        
+        # 自分自身の場合 (アイテム450G + 手持ち1150G = 1600G)
+        gold_self = calculate_player_effective_gold(player_obj, is_self=True, self_current_gold=1150.0)
+        self.assertEqual(gold_self, 1600)
+
+        # 敵・他人の場合 (手持ちゴールドは加算されず、アイテム総額 vs 推計獲得額)
+        gold_other = calculate_player_effective_gold(player_obj, is_self=False, self_current_gold=0.0)
+        self.assertGreaterEqual(gold_other, 450)
+
+        # find_my_player でタグ付き/タグなしのRiot IDが一致すること
+        active_player = {"riotId": "Kazu#JP1", "summonerName": ""}
+        all_players = [{"summonerName": "Other"}, {"riotIdGameName": "Kazu", "summonerName": "Kazu#JP1"}]
+        matched = find_my_player(active_player, all_players)
+        self.assertEqual(matched.get("summonerName"), "Kazu#JP1")
+
+
 class TestKillLineCalculator(unittest.TestCase):
     """3. キルライン計算エンジンのテスト"""
 

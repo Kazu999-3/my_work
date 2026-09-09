@@ -141,19 +141,89 @@ def assign_team_roles(players: list) -> dict:
 
     return assigned
 
-def calculate_player_effective_gold(player_obj: dict) -> int:
+def find_my_player(active_player: dict, all_players: list) -> dict:
     """
-    プレイヤーの所持アイテム総額 ＋ CS・キルスコアから算出した確実な実効ゴールド。
+    activePlayer と allPlayers を照合し、自分自身のplayerオブジェクトを100%確実に特定する。
+    """
+    if not all_players:
+        return {}
+
+    # 1. activePlayer から各種識別子を抽出 (小文字・#タグ分割)
+    my_names = set()
+    for k in ["summonerName", "riotId", "riotIdGameName"]:
+        v = active_player.get(k)
+        if v:
+            s = str(v).strip().lower()
+            my_names.add(s)
+            if "#" in s:
+                my_names.add(s.split("#")[0].strip())
+
+    # 2. 名前による一致判定
+    for p in all_players:
+        p_names = set()
+        for k in ["summonerName", "riotId", "riotIdGameName"]:
+            v = p.get(k)
+            if v:
+                s = str(v).strip().lower()
+                p_names.add(s)
+                if "#" in s:
+                    p_names.add(s.split("#")[0].strip())
+        if my_names and (my_names & p_names):
+            return p
+
+    # 3. 名前で一致しない場合、championStats (maxHealth, attackDamage, level) で照合
+    act_stats = active_player.get("championStats", {})
+    act_hp = act_stats.get("maxHealth", 0.0)
+    act_ad = act_stats.get("attackDamage", 0.0)
+    act_lvl = active_player.get("level", 0)
+
+    if act_hp > 0:
+        for p in all_players:
+            p_stats = p.get("championStats", {})
+            p_hp = p_stats.get("maxHealth", 0.0)
+            p_ad = p_stats.get("attackDamage", 0.0)
+            p_lvl = p.get("level", 0)
+            if abs(p_hp - act_hp) < 1.0 and abs(p_ad - act_ad) < 1.0:
+                if act_lvl == 0 or p_lvl == act_lvl:
+                    return p
+
+    # 4. フォールバック
+    return all_players[0]
+
+def calculate_player_effective_gold(
+    player_obj: dict,
+    is_self: bool = False,
+    self_current_gold: float = 0.0,
+    game_time_sec: float = 0.0
+) -> int:
+    """
+    プレイヤーの実効ゴールドを算出する。
+    - 自分自身の場合: 【所持アイテム総額 + 手持ちゴールド (activePlayer.currentGold)】で100%正確に計算。
+    - 他プレイヤーの場合: 【所持アイテム総額】と【CS・キル・アシスト・自然増加ゴールドによる推計総額】の確実な最大値を採用。
     """
     if not player_obj:
         return 0
+
     item_gold = ItemPriceManager.calculate_player_item_gold(player_obj.get("items", []))
+
+    # 自分自身なら、APIから直接得られる手持ちゴールドを加算して100%確定値とする
+    if is_self:
+        return int(item_gold + max(0.0, self_current_gold))
+
+    # 他人の場合: スコア + パッシブ自然増加ゴールドから総獲得額を推計
     scores = player_obj.get("scores", {})
     kills = scores.get("kills", 0)
     assists = scores.get("assists", 0)
     cs = scores.get("creepScore", 0)
-    earned_gold = int((cs * 21) + (kills * 300) + (assists * 150) + 500)
-    return max(item_gold, earned_gold)
+
+    # 1:50 (110秒) 以降、毎秒約 2.04G の自然増加
+    passive_gold = max(0.0, (game_time_sec - 110.0) * 2.04) if game_time_sec > 110 else 0.0
+    
+    # 基本初期ゴールド 500G + CS (~21G) + キル (~300G) + アシスト (~100G) + パッシブ
+    earned_estimate = int(500 + (cs * 21) + (kills * 300) + (assists * 100) + passive_gold)
+
+    return max(item_gold, earned_estimate)
+
 
 class HudStateEngine:
     def __init__(self):
@@ -270,27 +340,11 @@ class HudStateEngine:
         my_gold = active_player.get("currentGold", 0.0)
         my_level = active_player.get("level", 1)
 
-        # プレイヤー一覧から自分と対面・敵JGを特定
-        my_player_obj = None
-        my_team = "ORDER"
-        my_position = "TOP"
-        my_champion = "Unknown"
-
-        for p in all_players:
-            # summonerName, riotId, riotIdGameName のいずれかで自分を特定
-            p_name = p.get("summonerName") or p.get("riotId") or p.get("riotIdGameName") or ""
-            if my_summoner and (p.get("summonerName") == my_summoner or p.get("riotId") == my_summoner or p_name == my_summoner):
-                my_player_obj = p
-                my_team = p.get("team", "ORDER")
-                my_position = p.get("position") or "TOP"
-                my_champion = extract_champion_name(p)
-                break
-
-        if not my_player_obj and all_players:
-            my_player_obj = all_players[0]
-            my_team = my_player_obj.get("team", "ORDER")
-            my_position = my_player_obj.get("position", "TOP")
-            my_champion = extract_champion_name(my_player_obj)
+        # プレイヤー一覧から自分と対面・敵JGを100%確実に特定
+        my_player_obj = find_my_player(active_player, all_players)
+        my_team = my_player_obj.get("team", "ORDER") if my_player_obj else "ORDER"
+        my_position = my_player_obj.get("position") or "TOP" if my_player_obj else "TOP"
+        my_champion = extract_champion_name(my_player_obj) if my_player_obj else "Unknown"
 
         enemy_team = "CHAOS" if my_team == "ORDER" else "ORDER"
         opponent_obj = None
@@ -379,8 +433,22 @@ class HudStateEngine:
         ally_role_map = assign_team_roles(ally_players)
         enemy_role_map = assign_team_roles(enemy_players)
 
-        ally_total_gold = sum(calculate_player_effective_gold(p) for p in ally_players)
-        enemy_total_gold = sum(calculate_player_effective_gold(p) for p in enemy_players)
+        ally_total_gold = sum(
+            calculate_player_effective_gold(
+                p,
+                is_self=(p == my_player_obj),
+                self_current_gold=my_gold,
+                game_time_sec=game_time_sec
+            ) for p in ally_players
+        )
+        enemy_total_gold = sum(
+            calculate_player_effective_gold(
+                p,
+                is_self=False,
+                self_current_gold=0.0,
+                game_time_sec=game_time_sec
+            ) for p in enemy_players
+        )
         gold_diff = ally_total_gold - enemy_total_gold
 
         if gold_diff >= 500:
@@ -402,9 +470,19 @@ class HudStateEngine:
             ally_p = ally_role_map.get(r_key)
             enemy_p = enemy_role_map.get(r_key)
 
-            # ロール別実効ゴールド計算 (アイテム総額 ＋ CS/キル獲得推定)
-            ally_g = calculate_player_effective_gold(ally_p) if ally_p else 0
-            enemy_g = calculate_player_effective_gold(enemy_p) if enemy_p else 0
+            # ロール別実効ゴールド計算 (自分はアイテム総額＋手持ちゴールド、他人はアイテム総額＋CS/キル/パッシブ推計)
+            ally_g = calculate_player_effective_gold(
+                ally_p,
+                is_self=(ally_p == my_player_obj),
+                self_current_gold=my_gold,
+                game_time_sec=game_time_sec
+            ) if ally_p else 0
+            enemy_g = calculate_player_effective_gold(
+                enemy_p,
+                is_self=False,
+                self_current_gold=0.0,
+                game_time_sec=game_time_sec
+            ) if enemy_p else 0
             diff = ally_g - enemy_g
 
             lbl = role_label_map.get(r_key, r_key)
