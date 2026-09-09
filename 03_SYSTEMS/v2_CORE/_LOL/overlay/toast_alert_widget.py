@@ -7,7 +7,7 @@ Sovereign HUD - 複数行安定型インテリジェンス・アラートパネ�
 ドラッグ移動 ＆ 位置記憶に対応。
 """
 
-from PyQt6.QtCore import Qt, QPoint
+from PyQt6.QtCore import Qt, QPoint, QTimer
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QFrame,
     QGraphicsDropShadowEffect
