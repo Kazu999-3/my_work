@@ -1503,7 +1503,11 @@ export default function BalancerPage() {
               <span className="text-xs">参加</span>
               <span className={`text-2xl font-black leading-none ${canBalance ? 'text-emerald-700' : 'text-amber-700'}`}>{activeCount}</span>
               <span className="text-xs opacity-60">人</span>
-              {canBalance && <span className="text-xs text-emerald-700 font-black border-l border-emerald-300 pl-2">✅ 準備完了！</span>}
+              {canBalance ? (
+                <span className="text-xs text-emerald-700 font-black border-l border-emerald-300 pl-2">✅ 準備完了！</span>
+              ) : (
+                <span className="text-xs text-amber-700 font-bold border-l border-amber-300 pl-2">あと {10 - activeCount} 人必要</span>
+              )}
             </div>
             {spectatorCount > 0 && (
               <div className="flex items-center gap-2 px-3 py-2 rounded-xl border border-amber-200 bg-amber-100 text-amber-700 font-bold text-sm">
@@ -1952,14 +1956,29 @@ export default function BalancerPage() {
           {/* ★ 追加: フィルターUI (junglepedia風のインタラクティブなフィルタリング機能) */}
           <div className="p-3 md:p-4 bg-black/[0.04] border-b border-black/5 flex flex-col lg:flex-row gap-3 items-center justify-between">
             {/* 検索入力 */}
-            <div className="relative w-full lg:max-w-xs">
+            <div className="relative w-full lg:max-w-xs flex items-center">
               <input
                 type="text"
                 placeholder="プレイヤーを検索..."
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                className="w-full bg-white border border-stone-200 rounded-lg px-3 py-2 text-xs text-stone-900 placeholder-stone-500 focus:outline-none focus:border-amber-500 transition"
+                className="w-full bg-white border border-stone-200 rounded-lg pl-3 pr-16 py-2 text-xs text-stone-900 placeholder-stone-500 focus:outline-none focus:border-amber-500 transition"
               />
+              <div className="absolute right-2 flex items-center gap-1">
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery('')}
+                    className="p-1 text-stone-400 hover:text-stone-700 text-xs font-bold"
+                    title="検索クリア"
+                  >
+                    ✕
+                  </button>
+                )}
+                <span className="text-[10px] font-mono font-bold text-stone-400 bg-stone-100 px-1.5 py-0.5 rounded">
+                  {filteredPlayers.length}
+                </span>
+              </div>
             </div>
 
             <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto justify-end">
@@ -2160,6 +2179,28 @@ export default function BalancerPage() {
                     </Fragment>
                   );
                 })}
+                {filteredPlayers.length === 0 && (
+                  <tr>
+                    <td colSpan={13} className="py-12 text-center text-stone-500">
+                      <div className="space-y-2">
+                        <div className="text-xl">🔍</div>
+                        <div className="text-sm font-bold text-stone-700">条件に一致するプレイヤーが見つかりません</div>
+                        <p className="text-xs text-stone-400">検索文字やステータス・ロールフィルターを変更してください。</p>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSearchQuery('');
+                            setStatusFilter(null);
+                            setRoleFilter(null);
+                          }}
+                          className="mt-2 px-3 py-1.5 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-xs transition cursor-pointer"
+                        >
+                          フィルター条件をリセット
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
@@ -2227,6 +2268,24 @@ export default function BalancerPage() {
                 </div>
               );
             })}
+            {filteredPlayers.length === 0 && (
+              <div className="p-8 text-center text-stone-500 space-y-2">
+                <div className="text-xl">🔍</div>
+                <div className="text-sm font-bold text-stone-700">条件に一致するプレイヤーが見つかりません</div>
+                <p className="text-xs text-stone-400">検索文字やフィルターを変更してください。</p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchQuery('');
+                    setStatusFilter(null);
+                    setRoleFilter(null);
+                  }}
+                  className="mt-2 px-3 py-1.5 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-xs transition cursor-pointer"
+                >
+                  条件をリセット
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
