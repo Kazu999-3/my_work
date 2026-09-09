@@ -416,6 +416,10 @@ def main():
                 e_hp = ep.get("current_hp_pct", 70.0)
                 e_flash = ep.get("has_flash", True)
                 e_lane = ep.get("role", "MID")
+                a_champ = ep.get("ally_champ", my_champ)
+                a_hp = ep.get("ally_hp_pct", 80.0)
+                l_diff = ep.get("lane_gold_diff", 0)
+
                 res = GankOpportunityEngine.calculate_gank_opportunity(
                     jg_champ=my_champ,
                     jg_level=my_lvl,
@@ -423,6 +427,9 @@ def main():
                     enemy_level=e_lvl,
                     enemy_current_hp_pct=e_hp,
                     enemy_has_flash=e_flash,
+                    ally_laner_champ=a_champ,
+                    ally_laner_hp_pct=a_hp,
+                    lane_gold_diff=l_diff,
                     lane=e_lane
                 )
                 gank_results.append(res)

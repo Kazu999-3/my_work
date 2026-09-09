@@ -324,6 +324,37 @@ class TestGankOpportunityEngine(unittest.TestCase):
         self.assertEqual(res["verdict"], "HIGH_RISK")
         self.assertEqual(res["color"], "#ef4444")
 
+    def test_champion_matchup_turnaround_risk(self):
+        """Illaoi等の1v2返り討ちチャンピオンに対する高リスク判定、およびPantheon確定CCでの高成功率判定"""
+        # 1. Illaoi 高HP時 ➔ 返り討ちリスクで減点
+        res_illaoi = GankOpportunityEngine.calculate_gank_opportunity(
+            jg_champ="LeeSin",
+            jg_level=6,
+            enemy_champ="Illaoi",
+            enemy_level=6,
+            enemy_current_hp_pct=80.0,
+            enemy_has_flash=True,
+            ally_laner_champ="Aatrox",
+            lane="TOP"
+        )
+        self.assertLessEqual(res_illaoi["score"], 40.0)
+        self.assertEqual(res_illaoi["verdict"], "HIGH_RISK")
+
+        # 2. 味方Pantheon確定スタン + 敵Ashe(ブリンクなし&Flash落ち) ➔ 確実キル
+        res_pantheon = GankOpportunityEngine.calculate_gank_opportunity(
+            jg_champ="JarvanIV",
+            jg_level=6,
+            enemy_champ="Ashe",
+            enemy_level=6,
+            enemy_current_hp_pct=60.0,
+            enemy_has_flash=False,
+            ally_laner_champ="Pantheon",
+            lane="BOTTOM"
+        )
+        self.assertGreaterEqual(res_pantheon["score"], 80.0)
+        self.assertEqual(res_pantheon["verdict"], "KILL_CONFIRMED")
+
+
 
 def run_full_suite():
     print("=" * 65)

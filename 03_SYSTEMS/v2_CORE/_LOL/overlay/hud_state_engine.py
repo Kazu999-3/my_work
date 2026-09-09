@@ -581,7 +581,7 @@ class HudStateEngine:
         recent_fight = self.fight_tracker.get_recent_finished_fight()
         recent_fight_dmg = int(recent_fight.get("my_damage_dealt", 2380)) if recent_fight else (2380 if game_time_sec > 180 else 1450)
 
-        # --- 10. 敵5人の動的ステータス (Ult・スペル・アイテム・レベル) ---
+        # --- 10. 敵5人の動的ステータス (Ult・スペル・アイテム・レベル・対面味方情報) ---
         enemy_team_details = []
         for ep in enemy_players:
             spells = ep.get("summonerSpells", {})
@@ -596,8 +596,30 @@ class HudStateEngine:
             max_hp = ep_stats.get("maxHealth", 0.0)
             hp_pct = (cur_hp / max_hp * 100.0) if max_hp > 0 else 70.0
 
+            # 対面の味方レーナー情報を取得
+            e_pos = ep.get("position", "MID")
+            matching_ally = ally_role_map.get(e_pos)
+            if matching_ally:
+                a_champ_name = extract_champion_name(matching_ally)
+                a_stats = matching_ally.get("championStats", {})
+                a_cur_hp = a_stats.get("currentHealth", 0.0)
+                a_max_hp = a_stats.get("maxHealth", 0.0)
+                a_hp_pct = (a_cur_hp / a_max_hp * 100.0) if a_max_hp > 0 else 80.0
+                a_gold = calculate_player_effective_gold(
+                    matching_ally,
+                    is_self=(matching_ally == my_player_obj),
+                    self_current_gold=my_gold,
+                    game_time_sec=game_time_sec
+                )
+                e_gold = calculate_player_effective_gold(ep, is_self=False, self_current_gold=0.0, game_time_sec=game_time_sec)
+                l_diff = a_gold - e_gold
+            else:
+                a_champ_name = my_champion
+                a_hp_pct = 80.0
+                l_diff = 0
+
             enemy_team_details.append({
-                "role": ep.get("position", "MID"),
+                "role": e_pos,
                 "champion": extract_champion_name(ep),
                 "level": ep.get("level", 6),
                 "items": ep.get("items", []),
@@ -605,6 +627,9 @@ class HudStateEngine:
                 "spell2": sp2,
                 "current_hp_pct": hp_pct,
                 "has_flash": (sp1 == "Flash" or sp2 == "Flash"),
+                "ally_champ": a_champ_name,
+                "ally_hp_pct": a_hp_pct,
+                "lane_gold_diff": l_diff
             })
         # --- 9. 対面攻略メモ ---
         matchup_memo = self.get_matchup_memo(my_champion, enemy_champion)
