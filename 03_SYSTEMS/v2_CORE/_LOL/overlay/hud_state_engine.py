@@ -63,6 +63,15 @@ HEAVY_CC_CHAMPIONS = {
     "Rell", "Maokai", "Lissandra", "Skarner", "Thresh", "Blitzcrank"
 }
 
+TYPICAL_TOP_CHAMPIONS = {
+    "Aatrox", "Camille", "ChoGath", "Darius", "DrMundo", "Fiora", "Gangplank",
+    "Garen", "Gnar", "Gwen", "Illaoi", "Irelia", "Jax", "Jayce", "Kayle",
+    "Kennen", "Kled", "KSante", "Malphite", "Mordekaiser", "Nasus", "Olaf",
+    "Ornn", "Pantheon", "Poppy", "Quinn", "Renekton", "Riven", "Rumble",
+    "Sett", "Shen", "Singed", "Sion", "TahmKench", "Teemo", "Trundle",
+    "Tryndamere", "Urgot", "Volibear", "Warwick", "Wukong", "Yorick", "Heimerdinger"
+}
+
 TYPICAL_ADC_CHAMPIONS = {
     "Ashe", "Caitlyn", "Draven", "Ezreal", "Jhin", "Jinx", "KaiSa", "Kalista",
     "KogMaw", "Lucian", "MissFortune", "Nilah", "Samira", "Sivir", "Smolder",
@@ -70,9 +79,10 @@ TYPICAL_ADC_CHAMPIONS = {
 }
 
 TYPICAL_SUP_CHAMPIONS = {
-    "Alistar", "Bard", "Blitzcrank", "Braum", "Janna", "Karma", "Leona",
-    "Lulu", "Milio", "Morgana", "Nami", "Nautilus", "Pyke", "Rakan", "Rell",
-    "Renata", "Senna", "Sona", "Soraka", "TahmKench", "Taric", "Thresh", "Yuumi", "Zilean"
+    "Alistar", "Bard", "Blitzcrank", "Brand", "Braum", "Janna", "Karma", "Leona",
+    "Lulu", "Lux", "Milio", "Morgana", "Nami", "Nautilus", "Pyke", "Rakan", "Rell",
+    "Renata", "Senna", "Seraphine", "Sona", "Soraka", "TahmKench", "Taric", "Thresh",
+    "VelKoz", "Xerath", "Yuumi", "Zilean", "Zyra"
 }
 
 TYPICAL_JG_CHAMPIONS = {
@@ -130,6 +140,9 @@ def assign_team_roles(players: list) -> dict:
         elif "JUNGLE" not in assigned and c_name in TYPICAL_JG_CHAMPIONS:
             assigned["JUNGLE"] = p
             remaining_players.remove(p)
+        elif "TOP" not in assigned and c_name in TYPICAL_TOP_CHAMPIONS:
+            assigned["TOP"] = p
+            remaining_players.remove(p)
         elif "MIDDLE" not in assigned and c_name in TYPICAL_MID_CHAMPIONS:
             assigned["MIDDLE"] = p
             remaining_players.remove(p)
@@ -138,6 +151,8 @@ def assign_team_roles(players: list) -> dict:
     for r in roles:
         if r not in assigned and remaining_players:
             assigned[r] = remaining_players.pop(0)
+
+    return assigned
 
     return assigned
 
@@ -339,29 +354,31 @@ class HudStateEngine:
         my_stats = active_player.get("championStats", {})
         my_gold = active_player.get("currentGold", 0.0)
         my_level = active_player.get("level", 1)
-
-        # プレイヤー一覧から自分と対面・敵JGを100%確実に特定
+        # プレイヤー一覧から自分と対面・敵JGを特定
         my_player_obj = find_my_player(active_player, all_players)
         my_team = my_player_obj.get("team", "ORDER") if my_player_obj else "ORDER"
-        my_position = my_player_obj.get("position") or "TOP" if my_player_obj else "TOP"
         my_champion = extract_champion_name(my_player_obj) if my_player_obj else "Unknown"
 
         enemy_team = "CHAOS" if my_team == "ORDER" else "ORDER"
-        opponent_obj = None
-        enemy_jg_obj = None
-        enemy_players = []
-        ally_players = []
+        enemy_players = [p for p in all_players if p.get("team") == enemy_team]
+        ally_players = [p for p in all_players if p.get("team") != enemy_team]
 
-        for p in all_players:
-            if p.get("team") == enemy_team:
-                enemy_players.append(p)
-                pos = p.get("position")
-                if pos == my_position and not opponent_obj:
-                    opponent_obj = p
-                if pos == "JUNGLE":
-                    enemy_jg_obj = p
-            else:
-                ally_players.append(p)
+        # 味方・敵チームのロールを推論・確定
+        ally_roles = assign_team_roles(ally_players)
+        enemy_roles = assign_team_roles(enemy_players)
+
+        # 自身のロールを特定
+        my_role = "TOP"
+        for r_k, r_p in ally_roles.items():
+            if r_p == my_player_obj:
+                my_role = r_k
+                break
+        
+        my_position = my_role
+
+        # 対面プレイヤーおよび敵JGの特定
+        opponent_obj = enemy_roles.get(my_role)
+        enemy_jg_obj = enemy_roles.get("JUNGLE")
 
         if not opponent_obj and enemy_players:
             opponent_obj = enemy_players[0]
