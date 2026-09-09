@@ -2321,15 +2321,30 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
           {!isMatchupsCollapsed && (
             <div className="p-6 border-t border-black/10 relative space-y-4">
               {/* 対面チャンプ・インクリメンタル検索窓 */}
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" size={16} />
+              <div className="relative flex items-center">
+                <Search className="absolute left-3 text-stone-400" size={16} />
                 <input
                   type="text"
                   placeholder="対面チャンプ名で絞り込み (例: Lee Sin, Malphite)..."
                   value={matchupSearch}
                   onChange={(e) => setMatchupSearch(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 border border-stone-200 rounded-xl bg-white text-xs text-stone-900 font-bold outline-none focus:border-[#00cfef]"
+                  className="w-full pl-9 pr-16 py-2 border border-stone-200 rounded-xl bg-white text-xs text-stone-900 font-bold outline-none focus:border-[#00cfef]"
                 />
+                <div className="absolute right-2 flex items-center gap-1">
+                  {matchupSearch && (
+                    <button
+                      type="button"
+                      onClick={() => setMatchupSearch('')}
+                      className="p-1 text-stone-400 hover:text-stone-700 text-xs font-bold"
+                      title="検索クリア"
+                    >
+                      ✕
+                    </button>
+                  )}
+                  <span className="text-[10px] font-mono font-bold text-stone-400 bg-stone-100 px-1.5 py-0.5 rounded">
+                    {filteredMatchupsList.length} 件
+                  </span>
+                </div>
               </div>
 
               {filteredMatchupsList.map((m) => {
@@ -2632,6 +2647,21 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                   </div>
                 );
               })}
+              {filteredMatchupsList.length === 0 && (
+                <div className="py-8 text-center text-stone-500 space-y-2">
+                  <div className="text-xl">🔍</div>
+                  <div className="text-xs font-bold text-stone-700">条件に一致する対面マッチアップが見つかりません</div>
+                  {matchupSearch && (
+                    <button
+                      type="button"
+                      onClick={() => setMatchupSearch('')}
+                      className="px-3 py-1.5 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-xs transition cursor-pointer"
+                    >
+                      検索をクリア
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </div>
