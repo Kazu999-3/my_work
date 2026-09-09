@@ -212,32 +212,14 @@ def calculate_player_effective_gold(
     game_time_sec: float = 0.0
 ) -> int:
     """
-    プレイヤーの実効ゴールドを算出する。
-    - 自分自身の場合: 【所持アイテム総額 + 手持ちゴールド (activePlayer.currentGold)】で100%正確に計算。
-    - 他プレイヤーの場合: 【所持アイテム総額】と【CS・キル・アシスト・自然増加ゴールドによる推計総額】の確実な最大値を採用。
+    プレイヤーの正確な実効アイテムゴールド（ビルド総額）を算出する。
+    全プレイヤーを100%同一の公式アイテム価格データに基づいて厳密に計算し、
+    スコアボード上のビルド金額差と完全に一致させる。
     """
     if not player_obj:
         return 0
 
-    item_gold = ItemPriceManager.calculate_player_item_gold(player_obj.get("items", []))
-
-    # 自分自身なら、APIから直接得られる手持ちゴールドを加算して100%確定値とする
-    if is_self:
-        return int(item_gold + max(0.0, self_current_gold))
-
-    # 他人の場合: スコア + パッシブ自然増加ゴールドから総獲得額を推計
-    scores = player_obj.get("scores", {})
-    kills = scores.get("kills", 0)
-    assists = scores.get("assists", 0)
-    cs = scores.get("creepScore", 0)
-
-    # 1:50 (110秒) 以降、毎秒約 2.04G の自然増加
-    passive_gold = max(0.0, (game_time_sec - 110.0) * 2.04) if game_time_sec > 110 else 0.0
-    
-    # 基本初期ゴールド 500G + CS (~21G) + キル (~300G) + アシスト (~100G) + パッシブ
-    earned_estimate = int(500 + (cs * 21) + (kills * 300) + (assists * 100) + passive_gold)
-
-    return max(item_gold, earned_estimate)
+    return ItemPriceManager.calculate_player_item_gold(player_obj.get("items", []))
 
 
 class HudStateEngine:

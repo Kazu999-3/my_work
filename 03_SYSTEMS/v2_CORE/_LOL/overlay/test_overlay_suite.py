@@ -145,13 +145,9 @@ class TestHudStateEngine(unittest.TestCase):
             "scores": {"creepScore": 10, "kills": 0, "assists": 0}
         }
         
-        # 自分自身の場合 (アイテム450G + 手持ち1150G = 1600G)
-        gold_self = calculate_player_effective_gold(player_obj, is_self=True, self_current_gold=1150.0)
-        self.assertEqual(gold_self, 1600)
-
-        # 敵・他人の場合 (手持ちゴールドは加算されず、アイテム総額 vs 推計獲得額)
-        gold_other = calculate_player_effective_gold(player_obj, is_self=False, self_current_gold=0.0)
-        self.assertGreaterEqual(gold_other, 450)
+        # プレイヤーのアイテム総額の厳密算出テスト (Doran's Blade 450G)
+        gold_val = calculate_player_effective_gold(player_obj)
+        self.assertEqual(gold_val, 450)
 
         # find_my_player でタグ付き/タグなしのRiot IDが一致すること
         active_player = {"riotId": "Kazu#JP1", "summonerName": ""}
