@@ -124,6 +124,66 @@ CHAMPION_CORE_BLUEPRINTS = {
     "Varus": {"class": "marksman", "first_core": "BladeOfTheRuinedKing", "second_cores": ["GuinsoosRageblade", "Terminus"], "boots_default": "BerserkersGreaves"},
 
     # Mid / AP Mage / AP Assassin
+    "Heimerdinger": {"class": "ap_mage", "first_core": "LiandrysTorment", "second_cores": ["RylaisCrystalScepter", "ZhonyasHourglass"], "boots_default": "SorcerersShoes"},
+    "Urgot": {"class": "ad_juggernaut", "first_core": "BlackCleaver", "second_cores": ["SteraksGage", "TitanicHydra"], "boots_default": "PlatedSteelcaps"},
+    "Teemo": {"class": "ap_mage", "first_core": "LiandrysTorment", "second_cores": ["NashorsTooth", "Shadowflame"], "boots_default": "SorcerersShoes"},
+    "Kennen": {"class": "ap_mage", "first_core": "Rocketbelt", "second_cores": ["Shadowflame", "ZhonyasHourglass"], "boots_default": "SorcerersShoes"},
+    "Gwen": {"class": "ap_fighter", "first_core": "NashorsTooth", "second_cores": ["Riftmaker", "RabadonsDeathcap"], "boots_default": "PlatedSteelcaps"},
+    "Rumble": {"class": "ap_fighter", "first_core": "LiandrysTorment", "second_cores": ["Shadowflame", "ZhonyasHourglass"], "boots_default": "SorcerersShoes"},
+    "Vladimir": {"class": "ap_mage", "first_core": "Rocketbelt", "second_cores": ["RabadonsDeathcap", "ZhonyasHourglass"], "boots_default": "IonianBoots"},
+    "Singed": {"class": "ap_fighter", "first_core": "RylaisCrystalScepter", "second_cores": ["LiandrysTorment", "DeadMansPlate"], "boots_default": "BootsOfSwiftness"},
+    "Kayle": {"class": "ap_fighter", "first_core": "NashorsTooth", "second_cores": ["GuinsoosRageblade", "RabadonsDeathcap"], "boots_default": "BerserkersGreaves"},
+    "Gangplank": {"class": "ad_fighter", "first_core": "TrinityForce", "second_cores": ["TheCollector", "InfinityEdge"], "boots_default": "IonianBoots"},
+    "Jayce": {"class": "ad_fighter", "first_core": "Eclipse", "second_cores": ["Muramana", "SeryldasGrudge"], "boots_default": "IonianBoots"},
+    "Gnar": {"class": "ad_fighter", "first_core": "TrinityForce", "second_cores": ["BlackCleaver", "SteraksGage"], "boots_default": "PlatedSteelcaps"},
+    "Illaoi": {"class": "ad_juggernaut", "first_core": "SunderedSky", "second_cores": ["SteraksGage", "BlackCleaver"], "boots_default": "PlatedSteelcaps"},
+    "Nasus": {"class": "tank", "first_core": "TrinityForce", "second_cores": ["FrozenHeart", "SpiritVisage"], "boots_default": "PlatedSteelcaps"},
+    "Olaf": {"class": "ad_fighter", "first_core": "RavenousHydra", "second_cores": ["TrinityForce", "SteraksGage"], "boots_default": "PlatedSteelcaps"},
+    "Pantheon": {"class": "ad_fighter", "first_core": "Eclipse", "second_cores": ["SunderedSky", "BlackCleaver"], "boots_default": "PlatedSteelcaps"},
+    "Poppy": {"class": "tank", "first_core": "SunfireAegis", "second_cores": ["IcebornGauntlet", "DeadMansPlate"], "boots_default": "PlatedSteelcaps"},
+    "Quinn": {"class": "marksman", "first_core": "YoumuusGhostblade", "second_cores": ["TheCollector", "LordDominiksRegards"], "boots_default": "BerserkersGreaves"},
+    "TahmKench": {"class": "tank", "first_core": "Heartsteel", "second_cores": ["SunfireAegis", "UnendingDespair"], "boots_default": "PlatedSteelcaps"},
+    "Trundle": {"class": "ad_fighter", "first_core": "TrinityForce", "second_cores": ["RavenousHydra", "BladeOfTheRuinedKing"], "boots_default": "PlatedSteelcaps"},
+    "Tryndamere": {"class": "ad_melee", "first_core": "RavenousHydra", "second_cores": ["PhantomDancer", "InfinityEdge"], "boots_default": "BerserkersGreaves"},
+    "Volibear": {"class": "ad_juggernaut", "first_core": "SunderedSky", "second_cores": ["Riftmaker", "DeadMansPlate"], "boots_default": "IonianBoots"},
+    "Warwick": {"class": "ad_fighter", "first_core": "BladeOfTheRuinedKing", "second_cores": ["TitanicHydra", "SteraksGage"], "boots_default": "PlatedSteelcaps"},
+    "Wukong": {"class": "ad_fighter", "first_core": "TrinityForce", "second_cores": ["SunderedSky", "Eclipse"], "boots_default": "PlatedSteelcaps"},
+    "Yorick": {"class": "ad_juggernaut", "first_core": "ProfaneHydra", "second_cores": ["SeryldasGrudge", "TrinityForce"], "boots_default": "PlatedSteelcaps"},
+    "Kled": {"class": "ad_fighter", "first_core": "ProfaneHydra", "second_cores": ["Eclipse", "BlackCleaver"], "boots_default": "PlatedSteelcaps"},
+    "Akshan": {"class": "marksman", "first_core": "KrakenSlayer", "second_cores": ["TheCollector", "InfinityEdge"], "boots_default": "BerserkersGreaves"},
+    "Swain": {"class": "ap_mage", "first_core": "RylaisCrystalScepter", "second_cores": ["LiandrysTorment", "ZhonyasHourglass"], "boots_default": "SorcerersShoes"},
+    "Malzahar": {"class": "ap_mage", "first_core": "LiandrysTorment", "second_cores": ["RylaisCrystalScepter", "Shadowflame"], "boots_default": "IonianBoots"},
+    "Brand": {"class": "ap_mage", "first_core": "LiandrysTorment", "second_cores": ["RylaisCrystalScepter", "ZhonyasHourglass"], "boots_default": "SorcerersShoes"},
+    "Cassiopeia": {"class": "ap_mage", "first_core": "ArchangelsStaff", "second_cores": ["RylaisCrystalScepter", "LiandrysTorment"], "boots_default": "SorcerersShoes"},
+    "Anivia": {"class": "ap_mage", "first_core": "ArchangelsStaff", "second_cores": ["LiandrysTorment", "ZhonyasHourglass"], "boots_default": "SorcerersShoes"},
+    "Annie": {"class": "ap_mage", "first_core": "Malignance", "second_cores": ["Shadowflame", "ZhonyasHourglass"], "boots_default": "SorcerersShoes"},
+    "Kassadin": {"class": "ap_assassin", "first_core": "Malignance", "second_cores": ["ArchangelsStaff", "ZhonyasHourglass"], "boots_default": "SorcerersShoes"},
+    "Ryze": {"class": "ap_mage", "first_core": "ArchangelsStaff", "second_cores": ["RodOfAges", "ZhonyasHourglass"], "boots_default": "SorcerersShoes"},
+    "TwistedFate": {"class": "ap_mage", "first_core": "LichBane", "second_cores": ["RapidFirecannon", "ZhonyasHourglass"], "boots_default": "IonianBoots"},
+    "Zoe": {"class": "ap_mage", "first_core": "LudensCompanion", "second_cores": ["HorizonFocus", "Shadowflame"], "boots_default": "SorcerersShoes"},
+    "Ziggs": {"class": "ap_mage", "first_core": "LudensCompanion", "second_cores": ["LiandrysTorment", "HorizonFocus"], "boots_default": "SorcerersShoes"},
+    "Xerath": {"class": "ap_mage", "first_core": "LudensCompanion", "second_cores": ["HorizonFocus", "Shadowflame"], "boots_default": "SorcerersShoes"},
+    "Velkoz": {"class": "ap_mage", "first_core": "LudensCompanion", "second_cores": ["HorizonFocus", "LiandrysTorment"], "boots_default": "SorcerersShoes"},
+    "Karthus": {"class": "ap_mage", "first_core": "Malignance", "second_cores": ["LiandrysTorment", "Shadowflame"], "boots_default": "SorcerersShoes"},
+    "Lillia": {"class": "ap_fighter", "first_core": "LiandrysTorment", "second_cores": ["Riftmaker", "RylaisCrystalScepter"], "boots_default": "IonianBoots"},
+    "Gragas": {"class": "ap_fighter", "first_core": "LichBane", "second_cores": ["Shadowflame", "ZhonyasHourglass"], "boots_default": "SorcerersShoes"},
+    "Shyvana": {"class": "ap_fighter", "first_core": "Shojin", "second_cores": ["LiandrysTorment", "Riftmaker"], "boots_default": "IonianBoots"},
+    "Udyr": {"class": "ap_fighter", "first_core": "LiandrysTorment", "second_cores": ["DeadMansPlate", "ForceOfNature"], "boots_default": "BootsOfSwiftness"},
+    "Nocturne": {"class": "ad_assassin", "first_core": "Eclipse", "second_cores": ["BlackCleaver", "SteraksGage"], "boots_default": "PlatedSteelcaps"},
+    "Shaco": {"class": "ad_assassin", "first_core": "ProfaneHydra", "second_cores": ["TheCollector", "InfinityEdge"], "boots_default": "BerserkersGreaves"},
+    "KhaZix": {"class": "ad_assassin", "first_core": "ProfaneHydra", "second_cores": ["YoumuusGhostblade", "SeryldasGrudge"], "boots_default": "IonianBoots"},
+    "Rengar": {"class": "ad_assassin", "first_core": "ProfaneHydra", "second_cores": ["Hubris", "TheCollector"], "boots_default": "IonianBoots"},
+    "Hecarim": {"class": "ad_fighter", "first_core": "Shojin", "second_cores": ["Eclipse", "SteraksGage"], "boots_default": "IonianBoots"},
+    "Graves": {"class": "marksman", "first_core": "TheCollector", "second_cores": ["InfinityEdge", "LordDominiksRegards"], "boots_default": "PlatedSteelcaps"},
+    "Kindred": {"class": "marksman", "first_core": "KrakenSlayer", "second_cores": ["TrinityForce", "Terminus"], "boots_default": "BerserkersGreaves"},
+    "BelVeth": {"class": "ad_fighter", "first_core": "KrakenSlayer", "second_cores": ["BladeOfTheRuinedKing", "Terminus"], "boots_default": "PlatedSteelcaps"},
+    "Briar": {"class": "ad_fighter", "first_core": "TitanicHydra", "second_cores": ["BlackCleaver", "SteraksGage"], "boots_default": "PlatedSteelcaps"},
+    "Diana": {"class": "ap_assassin", "first_core": "NashorsTooth", "second_cores": ["LichBane", "ZhonyasHourglass"], "boots_default": "SorcerersShoes"},
+    "Nidalee": {"class": "ap_assassin", "first_core": "LichBane", "second_cores": ["Shadowflame", "ZhonyasHourglass"], "boots_default": "SorcerersShoes"},
+    "Fiddlesticks": {"class": "ap_mage", "first_core": "LiandrysTorment", "second_cores": ["ZhonyasHourglass", "Shadowflame"], "boots_default": "SorcerersShoes"},
+    "Ivern": {"class": "enchanter", "first_core": "MoonstoneRenewer", "second_cores": ["EchoesOfHelia", "ImperialMandate"], "boots_default": "IonianBoots"},
+
+    # Mid / AP Mage / AP Assassin
     "Ahri": {"class": "ap_mage", "first_core": "LudensCompanion", "second_cores": ["Malignance", "ZhonyasHourglass"], "boots_default": "SorcerersShoes"},
     "Syndra": {"class": "ap_mage", "first_core": "LudensCompanion", "second_cores": ["Shadowflame", "RabadonsDeathcap"], "boots_default": "SorcerersShoes"},
     "Lux": {"class": "ap_mage", "first_core": "LudensCompanion", "second_cores": ["HorizonFocus", "RabadonsDeathcap"], "boots_default": "SorcerersShoes"},
@@ -244,24 +304,33 @@ class DynamicBuildAdvisor:
             1 for ep in enemy_players if ep.get("championName") in ["Ahri", "Elise", "Sylas", "Vladimir", "Syndra", "Orianna", "Viktor", "Veigar", "Evelynn"]
         )
 
-        blueprint = CHAMPION_CORE_BLUEPRINTS.get(my_champion)
+        # チャンピオン名正規化マッチング (大文字小文字・記号・別名を完全吸収)
+        norm_name = str(my_champion).replace(" ", "").replace("'", "").replace(".", "").lower()
+        blueprint = None
+        for k, v in CHAMPION_CORE_BLUEPRINTS.items():
+            if k.replace(" ", "").replace("'", "").replace(".", "").lower() == norm_name:
+                blueprint = v
+                break
+
         if not blueprint:
-            # チャンピオン名による推論フォールバック
-            c_low = my_champion.lower()
-            if any(k in c_low for k in ["lux", "ahri", "syndra", "veigar", "viktor", "hwei", "xerath", "velkoz", "ziggs", "anivia", "brand", "malzahar", "cassiopeia"]):
-                blueprint = {"class": "ap_mage", "first_core": "LudensCompanion", "second_cores": ["Shadowflame", "ZhonyasHourglass"], "boots_default": "SorcerersShoes"}
-            elif any(k in c_low for k in ["kaisa", "jinx", "vayne", "caitlyn", "ashe", "jhin", "lucian", "sivir", "tristana", "varus", "kogmaw", "aphelios", "kalista"]):
+            # チャンピオン名キーワードによる推論フォールバック
+            c_low = norm_name
+            if any(k in c_low for k in ["heimer", "lux", "ahri", "syndra", "veigar", "viktor", "hwei", "xerath", "velkoz", "ziggs", "anivia", "brand", "malzahar", "cassiopeia", "teemo", "kennen", "swain", "annie", "kassadin", "ryze", "zoe"]):
+                blueprint = {"class": "ap_mage", "first_core": "LiandrysTorment" if "heimer" in c_low or "teemo" in c_low or "brand" in c_low else "LudensCompanion", "second_cores": ["Shadowflame", "ZhonyasHourglass"], "boots_default": "SorcerersShoes"}
+            elif any(k in c_low for k in ["urgot", "darius", "garen", "sett", "illaoi", "yorick", "mordekaiser"]):
+                blueprint = {"class": "ad_juggernaut", "first_core": "BlackCleaver" if "urgot" in c_low else "SunderedSky", "second_cores": ["SteraksGage", "TitanicHydra"], "boots_default": "PlatedSteelcaps"}
+            elif any(k in c_low for k in ["kaisa", "jinx", "vayne", "caitlyn", "ashe", "jhin", "lucian", "sivir", "tristana", "varus", "kogmaw", "aphelios", "kalista", "quinn", "akshan"]):
                 blueprint = {"class": "marksman", "first_core": "KrakenSlayer", "second_cores": ["InfinityEdge", "LordDominiksRegards"], "boots_default": "BerserkersGreaves"}
-            elif any(k in c_low for k in ["zed", "talon", "qiyana", "khazix", "rengar", "naafiri", "shaco", "pyke"]):
-                blueprint = {"class": "ad_assassin", "first_core": "YoumuusGhostblade", "second_cores": ["ProfaneHydra", "SeryldasGrudge"], "boots_default": "IonianBoots"}
-            elif any(k in c_low for k in ["malphite", "ornn", "sion", "mundo", "chogath", "zac", "sejuani", "amumu", "rammus", "shen"]):
+            elif any(k in c_low for k in ["zed", "talon", "qiyana", "khazix", "rengar", "naafiri", "shaco", "pyke", "kayn"]):
+                blueprint = {"class": "ad_assassin", "first_core": "ProfaneHydra", "second_cores": ["YoumuusGhostblade", "SeryldasGrudge"], "boots_default": "IonianBoots"}
+            elif any(k in c_low for k in ["malphite", "ornn", "sion", "mundo", "chogath", "zac", "sejuani", "amumu", "rammus", "shen", "poppy", "tahm"]):
                 blueprint = {"class": "tank", "first_core": "SunfireAegis", "second_cores": ["Heartsteel", "KaenicRookern"], "boots_default": "PlatedSteelcaps"}
             elif any(k in c_low for k in ["nautilus", "leona", "thresh", "blitzcrank", "alistar", "braum", "rell"]):
                 blueprint = {"class": "tank_support", "first_core": "LocketOfTheIronSolari", "second_cores": ["KnightsVow", "Trailblazer"], "boots_default": "BootsOfSwiftness"}
-            elif any(k in c_low for k in ["lulu", "nami", "soraka", "janna", "sona", "milio", "yuumi"]):
+            elif any(k in c_low for k in ["lulu", "nami", "soraka", "janna", "sona", "milio", "yuumi", "ivern"]):
                 blueprint = {"class": "enchanter", "first_core": "MoonstoneRenewer", "second_cores": ["EchoesOfHelia", "ArdentCenser"], "boots_default": "IonianBoots"}
             else:
-                blueprint = {"class": "ad_fighter", "first_core": "TrinityForce", "second_cores": ["Eclipse", "BlackCleaver"], "boots_default": "PlatedSteelcaps"}
+                blueprint = {"class": "ad_fighter", "first_core": "SunderedSky", "second_cores": ["Eclipse", "BlackCleaver"], "boots_default": "PlatedSteelcaps"}
 
         champ_class = blueprint.get("class", "ad_fighter")
         
