@@ -397,12 +397,21 @@ class HudStateEngine:
 
         # --- 1. CS / 分の計算 ---
         my_cs = my_player_obj.get("scores", {}).get("creepScore", 0) if my_player_obj else 0
-        cs_per_min = round(my_cs / max(1.0, game_time_min), 1) if game_time_min > 0.5 else 0.0
-        
-        if cs_per_min >= 8.0:
+        if game_time_min >= 2.0:
+            cs_per_min = round(my_cs / game_time_min, 1)
+        elif game_time_sec > 90:
+            # 序盤補正 (ミニオン到達後からのペース換算)
+            cs_per_min = round(my_cs / max(0.5, (game_time_sec - 60.0) / 60.0), 1)
+        else:
+            cs_per_min = 0.0
+
+        if game_time_sec < 180 and my_cs >= 12:
             cs_rating = "HIGH"
             cs_color = "#22c55e"
-        elif cs_per_min >= 6.5:
+        elif cs_per_min >= 7.5:
+            cs_rating = "HIGH"
+            cs_color = "#22c55e"
+        elif cs_per_min >= 6.0:
             cs_rating = "MID"
             cs_color = "#eab308"
         else:

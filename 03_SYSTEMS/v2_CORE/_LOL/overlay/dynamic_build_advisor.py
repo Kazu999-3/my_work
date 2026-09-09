@@ -156,6 +156,8 @@ HEAVY_CC_CHAMPS = {
     "Rell", "Maokai", "Lissandra", "Skarner", "Thresh", "Blitzcrank"
 }
 
+from v2_CORE._LOL.overlay.item_price_manager import ItemPriceManager
+
 class DynamicBuildAdvisor:
     @staticmethod
     def advise_next_item(
@@ -166,9 +168,9 @@ class DynamicBuildAdvisor:
     ) -> dict:
         """次に購入すべき最適なアイテムとその理由を判定"""
         my_item_names = {it.get("displayName", "") for it in my_items}
-        my_item_ids = {it.get("itemID", 0) for it in my_items}
-        has_boots = any(it.get("itemID") in [3047, 3111, 3158, 3020, 3006, 3009, 1001] for it in my_items)
-        has_completed_boots = any(it.get("itemID") in [3047, 3111, 3158, 3020, 3006, 3009] for it in my_items)
+        my_item_ids = {int(it.get("itemID", 0)) for it in my_items}
+        has_boots = any(int(it.get("itemID", 0)) in [3047, 3111, 3158, 3020, 3006, 3009, 1001] for it in my_items)
+        has_completed_boots = any(int(it.get("itemID", 0)) in [3047, 3111, 3158, 3020, 3006, 3009] for it in my_items)
 
         # 敵チームの分析
         enemy_has_heal = any(ep.get("championName") in HEAL_HEAVY_CHAMPS for ep in enemy_players)
@@ -203,7 +205,13 @@ class DynamicBuildAdvisor:
                 blueprint = {"class": "ad_fighter", "first_core": "TrinityForce", "second_cores": ["Eclipse", "BlackCleaver"], "boots_default": "PlatedSteelcaps"}
 
         champ_class = blueprint.get("class", "ad_fighter")
-        completed_core_count = sum(1 for it in my_items if it.get("price", 0) >= 2600)
+        
+        # 完成コア数 (価格2600G以上または代表的完成アイテム)
+        completed_core_count = sum(
+            1 for it in my_items
+            if ItemPriceManager.get_item_price(it.get("itemID", 0)) >= 2600
+            or it.get("price", 0) >= 2600
+        )
 
         # --- 判定1: 回復阻害（重傷）が最優先で必要か？ ---
         has_heal_cut = any(it.get("itemID") in [3123, 3916, 3076, 3033, 3165, 3075] for it in my_items)
@@ -292,10 +300,24 @@ class DynamicBuildAdvisor:
                     "priority": "HIGH",
                 }
 
-        # --- 判定5: 1stコア / 2ndコアの基本進行 ---
-        if completed_core_count == 0:
-            core1_key = blueprint.get("first_core", "SunderedSky")
-            core1_info = ITEM_DB.get(core1_key, {"name": "サンダード スカイ", "price": 3100})
+        # --- 判定5: 1stコア / 2ndコア / 3rdコアの基本進行 ---
+        core1_key = blueprint.get("first_core", "SunderedSky")
+        core1_info = ITEM_DB.get(core1_key, {"name": "サンダード スカイ", "price": 3100, "id": 6610})
+        core1_id = core1_info.get("id", 0)
+
+        # 2nd コア候補から未所持のものを選択
+        core2_candidates = blueprint.get("second_cores", ["Eclipse"])
+        core2_info = None
+        for c2_k in core2_candidates:
+            c2_dat = ITEM_DB.get(c2_k, {"name": c2_k, "price": 2800, "id": 0})
+            if c2_dat.get("id", 0) not in my_item_ids:
+                core2_info = c2_dat
+                break
+        if not core2_info:
+            core2_info = ITEM_DB.get(core2_candidates[0], {"name": "エクリプス", "price": 2800})
+
+        # 1st コア未所持かつ完成コア0個の場合
+        if core1_id not in my_item_ids and completed_core_count == 0:
             return {
                 "item_name": core1_info["name"],
                 "price": core1_info["price"],
@@ -303,9 +325,8 @@ class DynamicBuildAdvisor:
                 "reason": f"{my_champion} のパワースパイクの核。完成時のサステインと火力が劇的向上！",
                 "priority": "HIGH",
             }
-        elif completed_core_count == 1:
-            core2_key = blueprint.get("second_cores", ["Eclipse"])[0]
-            core2_info = ITEM_DB.get(core2_key, {"name": "エクリプス", "price": 2800})
+        # 2nd コア未所持の場合
+        elif (core2_info.get("id", 0) not in my_item_ids) and completed_core_count <= 1:
             return {
                 "item_name": core2_info["name"],
                 "price": core2_info["price"],
@@ -315,7 +336,7 @@ class DynamicBuildAdvisor:
             }
         else:
             if "ap" in champ_class:
-                has_zhonya = any(it.get("itemID") == 3157 for it in my_items)
+                has_zhonya = any(int(it.get("itemID", 0)) == 3157 for it in my_items)
                 if not has_zhonya:
                     return {
                         "item_name": "ゾーニャの砂時計",
@@ -332,7 +353,7 @@ class DynamicBuildAdvisor:
                     "priority": "MID",
                 }
             elif "marksman" in champ_class:
-                has_ga = any(it.get("itemID") == 3026 for it in my_items)
+                has_ga = any(int(it.get("itemID", 0)) == 3026 for it in my_items)
                 if not has_ga:
                     return {
                         "item_name": "ガーディアン エンジェル",
