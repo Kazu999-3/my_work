@@ -2807,6 +2807,17 @@ const TextAreaCard = ({
 }) => {
   const [textColor, borderColor] = color.split(' ');
   const [isEditing, setIsEditing] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    if (!value) return;
+    navigator.clipboard.writeText(value).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }).catch(console.error);
+  };
 
   return (
     <div className={`glass-panel border-t-2 p-5 rounded-2xl group transition-all hover:shadow-[0_4px_20px_rgba(0,0,0,0.15)] ${borderColor} flex flex-col justify-between`}>
@@ -2816,6 +2827,17 @@ const TextAreaCard = ({
             <Icon size={16} /> {title}
           </h3>
           <div className={`flex items-center gap-1.5 transition-opacity ${isEditing ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+            {value && !isEditing && (
+              <button
+                type="button"
+                onClick={handleCopy}
+                className="text-[11px] font-bold px-2 py-1 rounded-lg bg-black/5 hover:bg-stone-200 text-stone-700 transition-all flex items-center gap-1 border border-black/10 shadow-xs cursor-pointer"
+                title={`${title}のテキストをコピー`}
+              >
+                {copied ? <Check size={12} className="text-emerald-600" /> : <Copy size={12} />}
+                <span>{copied ? '済' : 'コピー'}</span>
+              </button>
+            )}
             {fieldKey && onOpenHistory && (
               <button
                 type="button"

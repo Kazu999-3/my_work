@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { supabase } from '../../../lib/supabaseClient';
-import { Book, ChevronLeft, ChevronDown, ChevronUp, Clock, User, Sparkles, Pencil, Save, X, Trash2, Search, Activity, Eye, Edit2, Star as StarIcon, RefreshCw, Zap } from 'lucide-react';
+import { Book, ChevronLeft, ChevronDown, ChevronUp, Clock, User, Sparkles, Pencil, Save, X, Trash2, Search, Activity, Eye, Edit2, Star as StarIcon, RefreshCw, Zap, Copy, Check } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -113,7 +113,27 @@ export function LibraryTabContentInner() {
     type: 'success',
   });
   
+  const [copiedArticleId, setCopiedArticleId] = useState<number | string | null>(null);
 
+  const handleCopyArticleContent = (article: any, e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+    const content = article.content || article.raw_content || '';
+    if (!content) {
+      showToast('コピーする本文がありません', 'info');
+      return;
+    }
+    const formatted = `# ${article.title || '記事'}\n\n${content}`;
+    navigator.clipboard.writeText(formatted).then(() => {
+      setCopiedArticleId(article.id);
+      setTimeout(() => setCopiedArticleId(null), 2000);
+      showToast('📋 記事本文をクリップボードにコピーしました！', 'success');
+    }).catch(err => {
+      showToast('コピーに失敗しました: ' + err.message, 'error');
+    });
+  };
 
   const [reAnalyzeId, setReAnalyzeId] = useState<number | string | null>(null);
   const handleReAnalyzeArticle = async (article: any, e: React.MouseEvent) => {
@@ -1104,8 +1124,17 @@ export function LibraryTabContentInner() {
                       </button>
                     )}
                     <button
+                      type="button"
+                      onClick={(e) => handleCopyArticleContent(selectedArticle, e)}
+                      className="px-3.5 py-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 border border-stone-300 text-stone-800 text-xs font-bold shrink-0 transition flex items-center gap-1.5 cursor-pointer"
+                      title="記事タイトルと本文をクリップボードにコピー"
+                    >
+                      {copiedArticleId === selectedArticle.id ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
+                      <span>{copiedArticleId === selectedArticle.id ? 'コピー完了' : '本文コピー'}</span>
+                    </button>
+                    <button
                       onClick={() => handleToggleFavorite(selectedArticle.id, selectedArticle.title || '')}
-                      className={`p-2.5 rounded-xl transition-all border shrink-0 ${
+                      className={`p-2.5 rounded-xl transition-all border shrink-0 cursor-pointer ${
                         favoriteArticles.includes(selectedArticle.id)
                           ? 'bg-amber-100 border-amber-300 text-amber-700 shadow-[0_0_10px_rgba(251,191,36,0.3)]'
                           : 'bg-black/5 border-black/10 text-gray-400 hover:text-gray-900 hover:bg-black/10'
@@ -1548,9 +1577,18 @@ export function LibraryTabContentInner() {
                                 <div className="flex gap-3 flex-wrap">
                                   <button
                                     onClick={(e) => { e.stopPropagation(); setSelectedArticle(article); }}
-                                    className="px-4 py-2 glass-panel glass-panel-hover text-violet-700 rounded-xl text-sm font-bold flex items-center gap-2 transition-colors"
+                                    className="px-4 py-2 glass-panel glass-panel-hover text-violet-700 rounded-xl text-sm font-bold flex items-center gap-2 transition-colors cursor-pointer"
                                   >
                                     <Eye size={14} /> 全文を読む
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => handleCopyArticleContent(article, e)}
+                                    className="px-4 py-2 glass-panel glass-panel-hover text-stone-700 rounded-xl text-sm font-bold flex items-center gap-2 transition-colors cursor-pointer"
+                                    title="記事タイトルと本文をコピー"
+                                  >
+                                    {copiedArticleId === article.id ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
+                                    <span>{copiedArticleId === article.id ? 'コピー完了' : '本文コピー'}</span>
                                   </button>
                                   <button
                                     onClick={(e) => {
