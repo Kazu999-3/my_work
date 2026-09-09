@@ -396,7 +396,12 @@ class HudStateEngine:
             smite_tier_name = "Unleashed"
 
         # --- 1. CS / 分の計算 ---
-        my_cs = my_player_obj.get("scores", {}).get("creepScore", 0) if my_player_obj else 0
+        scores = my_player_obj.get("scores", {}) if my_player_obj else {}
+        my_cs = scores.get("creepScore", 0)
+        if my_cs == 0:
+            my_cs = scores.get("minionsKilled", 0) + scores.get("neutralMinionsKilled", 0)
+        
+        # ゲーム時間（分）によるペース算出
         if game_time_min >= 2.0:
             cs_per_min = round(my_cs / game_time_min, 1)
         elif game_time_sec > 90:

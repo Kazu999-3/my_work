@@ -153,20 +153,21 @@ class TopBarWidget(QWidget):
 
         # 2. CSペース / JGファーム
         is_jg = state.get("is_jg", False)
+        my_cs = int(state.get("my_cs", 0) or 0)
         cspm = state.get("cs_per_min", 0.0)
         cs_rating = state.get("cs_rating", "MID")
         cs_col = state.get("cs_color", "#22c55e")
         rating_text = "好調 🟢" if cs_rating == "HIGH" else ("普通 🟡" if cs_rating == "MID" else "警戒 🔴")
         
         if is_jg:
-            self.cs_title.setText("🌲 JGファーム :")
+            self.cs_title.setText("🌲 JG :")
             smite_dmg = state.get("smite_damage", 900)
-            self.cs_value_label.setText(f"{cspm}/分 (⚡{smite_dmg})")
+            self.cs_value_label.setText(f"{my_cs}CS ({cspm}/分 ⚡{smite_dmg})")
         else:
-            self.cs_title.setText("🎯 CSペース :")
-            self.cs_value_label.setText(f"{cspm} /分 ({rating_text})")
+            self.cs_title.setText("🎯 CS :")
+            self.cs_value_label.setText(f"{my_cs}CS ({cspm}/分 {rating_text})")
 
-        self.cs_value_label.setStyleSheet(f"color: {cs_col}; font-size: 13px; font-weight: bold;")
+        self.cs_value_label.setStyleSheet(f"color: {cs_col}; font-size: 12px; font-weight: bold;")
 
         # 3. 次のおすすめ目標アイテム ＆ プログレスバー
         advice = state.get("next_item_advice") or {}
