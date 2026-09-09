@@ -85,6 +85,20 @@ class TestDynamicBuildAdvisor(unittest.TestCase):
         self.assertIn("重傷", rec["tag"])
         self.assertEqual(rec["item_name"], "処刑人の劫罰")
 
+    def test_owned_items_not_recommended(self):
+        """1stコア(SunderedSky)購入後は1stコアが除外され、2ndコアまたは靴・重傷等に自動遷移すること"""
+        # Aatrox で SunderedSky (ID: 6610) をすでに持っている場合
+        rec = DynamicBuildAdvisor.advise_next_item(
+            my_champion="Aatrox",
+            my_items=[{"displayName": "Sundered Sky", "price": 3100, "itemID": 6610}],
+            enemy_players=[{"championName": "Darius"}],
+            game_time_sec=700.0
+        )
+        # Sundered Sky ではなく 2nd コア (エクリプス等) または靴が提案されること
+        self.assertNotEqual(rec["item_name"], "サンダード スカイ")
+        self.assertIn(rec["item_name"], ["エクリプス", "ブラック クリーバー", "プレート スチールキャップ", "マーキュリー ブーツ"])
+
+
 
 class TestHudStateEngine(unittest.TestCase):
     """2. Live Client Data パーサー & 状態分析エンジンのテスト"""

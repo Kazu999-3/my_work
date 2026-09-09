@@ -7,19 +7,20 @@ Sovereign HUD - 動的ビルド推薦エンジン (Dynamic Build Advisor)
 """
 
 # 主要アイテムのID・名前・価格・アイコン名
+# 主要アイテムのID・名前・価格・アイコン名
 ITEM_DB = {
     # ブーツ
     "PlatedSteelcaps": {"id": 3047, "name": "プレート スチールキャップ", "price": 1100, "icon": "3047.png", "type": "boots"},
     "MercuryTreads": {"id": 3111, "name": "マーキュリー ブーツ", "price": 1200, "icon": "3111.png", "type": "boots"},
-    "IonianBoots": {"id": 3158, "name": "アイオニア ブーツ (明敏の靴)", "price": 900, "icon": "3158.png", "type": "boots"},
+    "IonianBoots": {"id": 3158, "name": "アイオニア ブーツ", "price": 900, "icon": "3158.png", "type": "boots"},
     "SorcerersShoes": {"id": 3020, "name": "ソーサラー シューズ", "price": 1100, "icon": "3020.png", "type": "boots"},
     "BerserkersGreaves": {"id": 3006, "name": "バーサーカー ブーツ", "price": 1100, "icon": "3006.png", "type": "boots"},
     "BootsOfSwiftness": {"id": 3009, "name": "スイフトネス ブーツ", "price": 1000, "icon": "3009.png", "type": "boots"},
 
     # 重傷（回復阻害）
-    "ExecutionersCalling": {"id": 3123, "name": "処刑人の劫罰 (重傷)", "price": 800, "icon": "3123.png", "type": "heal_cut"},
-    "OblivionOrb": {"id": 3916, "name": "忘却のオーブ (重傷)", "price": 800, "icon": "3916.png", "type": "heal_cut"},
-    "BrambleVest": {"id": 3076, "name": "ブランブル ベスト (重傷)", "price": 800, "icon": "3076.png", "type": "heal_cut"},
+    "ExecutionersCalling": {"id": 3123, "name": "処刑人の劫罰", "price": 800, "icon": "3123.png", "type": "heal_cut"},
+    "OblivionOrb": {"id": 3916, "name": "忘却のオーブ", "price": 800, "icon": "3916.png", "type": "heal_cut"},
+    "BrambleVest": {"id": 3076, "name": "ブランブル ベスト", "price": 800, "icon": "3076.png", "type": "heal_cut"},
     "MortalReminder": {"id": 3033, "name": "モータル リマインダー", "price": 3000, "icon": "3033.png", "type": "heal_cut"},
     "Morellonomicon": {"id": 3165, "name": "モレロノミコン", "price": 2200, "icon": "3165.png", "type": "heal_cut"},
     "Thornmail": {"id": 3075, "name": "ソーンメイル", "price": 2700, "icon": "3075.png", "type": "heal_cut"},
@@ -30,30 +31,74 @@ ITEM_DB = {
     "SeryldasGrudge": {"id": 6694, "name": "セリルダの怨恨", "price": 3200, "icon": "6694.png", "type": "pen"},
     "Cryptbloom": {"id": 3137, "name": "クリプトブルーム", "price": 2850, "icon": "3137.png", "type": "pen"},
     "VoidStaff": {"id": 3135, "name": "ヴォイド スタッフ", "price": 3000, "icon": "3135.png", "type": "pen"},
-    "GuardianAngel": {"id": 3026, "name": "ガーディアン エンジェル", "price": 3200, "icon": "3026.png", "type": "core"},
-    "RabadonsDeathcap": {"id": 3089, "name": "ラバドン デスキャップ", "price": 3600, "icon": "3089.png", "type": "core"},
+    "Terminus": {"id": 3302, "name": "ターミナス", "price": 3000, "icon": "3302.png", "type": "pen"},
 
-    # 汎用コアアイテム
+    # 防御・ユーティリティ
+    "GuardianAngel": {"id": 3026, "name": "ガーディアン エンジェル", "price": 3200, "icon": "3026.png", "type": "core"},
+    "ZhonyasHourglass": {"id": 3157, "name": "ゾーニャの砂時計", "price": 3250, "icon": "3157.png", "type": "core"},
+    "SteraksGage": {"id": 3053, "name": "ステラックの篭手", "price": 3200, "icon": "3053.png", "type": "defensive_core"},
+    "MawOfMalmortius": {"id": 3156, "name": "マルモティウスの胃袋", "price": 3100, "icon": "3156.png", "type": "mr_core"},
+    "KaenicRookern": {"id": 2504, "name": "カイーニック ルーケーン", "price": 2900, "icon": "2504.png", "type": "mr_core"},
+    "EdgeOfNight": {"id": 3814, "name": "ナイト エッジ", "price": 2800, "icon": "3814.png", "type": "core"},
+    "Shieldbow": {"id": 6673, "name": "イモータル シールドボウ", "price": 3000, "icon": "6673.png", "type": "core"},
+
+    # 汎用ファイター・アサシン・ADC コア
     "SunderedSky": {"id": 6610, "name": "サンダード スカイ", "price": 3100, "icon": "6610.png", "type": "core"},
     "Eclipse": {"id": 6692, "name": "エクリプス", "price": 2800, "icon": "6692.png", "type": "core"},
     "TrinityForce": {"id": 3078, "name": "トリニティ フォース", "price": 3333, "icon": "3078.png", "type": "core"},
-    "SteraksGage": {"id": 3053, "name": "ステラックの篭手", "price": 3200, "icon": "3053.png", "type": "defensive_core"},
-    "MawOfMalmortius": {"id": 3156, "name": "マルモティウスの胃袋", "price": 3100, "icon": "3156.png", "type": "mr_core"},
-    "ZhonyasHourglass": {"id": 3157, "name": "ゾーニャの砂時計", "price": 3250, "icon": "3157.png", "type": "core"},
-    "LudensCompanion": {"id": 3285, "name": "ルーデン コンパニオン", "price": 3000, "icon": "3285.png", "type": "core"},
-    "LiandrysTorment": {"id": 3151, "name": "ライアンドリーの苦悶", "price": 3000, "icon": "3151.png", "type": "core"},
+    "BladeOfTheRuinedKing": {"id": 3153, "name": "ルインドキング ブレード", "price": 3200, "icon": "3153.png", "type": "core"},
+    "Shojin": {"id": 3161, "name": "ショウジンの矛", "price": 3100, "icon": "3161.png", "type": "core"},
+    "Muramana": {"id": 3004, "name": "マナムネ", "price": 2900, "icon": "3004.png", "type": "core"},
+    "ProfaneHydra": {"id": 6698, "name": "プロフェイン ハイドラ", "price": 3300, "icon": "6698.png", "type": "core"},
+    "RavenousHydra": {"id": 3074, "name": "ラバナス ハイドラ", "price": 3300, "icon": "3074.png", "type": "core"},
+    "TitanicHydra": {"id": 3748, "name": "タイタン ハイドラ", "price": 3300, "icon": "3748.png", "type": "core"},
+    "YoumuusGhostblade": {"id": 3142, "name": "妖夢の霊剣", "price": 2800, "icon": "3142.png", "type": "core"},
+    "Hubris": {"id": 6697, "name": "ヒューブリス", "price": 3000, "icon": "6697.png", "type": "core"},
+    "Opportunity": {"id": 6695, "name": "オポチュニティ", "price": 2700, "icon": "6695.png", "type": "core"},
+
+    # マークスマン (ADC) コア
     "InfinityEdge": {"id": 3031, "name": "インフィニティ エッジ", "price": 3400, "icon": "3031.png", "type": "core"},
     "KrakenSlayer": {"id": 6672, "name": "クラーケン スレイヤー", "price": 3100, "icon": "6672.png", "type": "core"},
     "StatikkShiv": {"id": 3087, "name": "スタティック シヴ", "price": 2900, "icon": "3087.png", "type": "core"},
     "GuinsoosRageblade": {"id": 3124, "name": "グインソー レイジブレード", "price": 3000, "icon": "3124.png", "type": "core"},
     "TheCollector": {"id": 6676, "name": "コレクター", "price": 3200, "icon": "6676.png", "type": "core"},
-    "BladeOfTheRuinedKing": {"id": 3153, "name": "ルインドキング ブレード (王剣)", "price": 3200, "icon": "3153.png", "type": "core"},
+    "EssenceReaver": {"id": 3508, "name": "エッセンス リーバー", "price": 3150, "icon": "3508.png", "type": "core"},
+    "Bloodthirster": {"id": 3072, "name": "ブラッドサースター", "price": 3400, "icon": "3072.png", "type": "core"},
+    "Navori": {"id": 6675, "name": "ナヴォリ フリッカーブレード", "price": 2600, "icon": "6675.png", "type": "core"},
+    "RapidFirecannon": {"id": 3094, "name": "ラピッド ファイアキャノン", "price": 3000, "icon": "3094.png", "type": "core"},
+    "RunaansHurricane": {"id": 3085, "name": "ルナーン ハリケーン", "price": 2600, "icon": "3085.png", "type": "core"},
+    "PhantomDancer": {"id": 3046, "name": "ファントム ダンサー", "price": 2600, "icon": "3046.png", "type": "core"},
+
+    # メイジ (AP) コア
+    "LudensCompanion": {"id": 3285, "name": "ルーデン コンパニオン", "price": 3000, "icon": "3285.png", "type": "core"},
+    "LiandrysTorment": {"id": 3151, "name": "ライアンドリーの苦悶", "price": 3000, "icon": "3151.png", "type": "core"},
+    "RabadonsDeathcap": {"id": 3089, "name": "ラバドン デスキャップ", "price": 3600, "icon": "3089.png", "type": "core"},
+    "Shadowflame": {"id": 4645, "name": "シャドウフレイム", "price": 3200, "icon": "4645.png", "type": "core"},
+    "Malignance": {"id": 3118, "name": "マリグナンス", "price": 2700, "icon": "3118.png", "type": "core"},
+    "HorizonFocus": {"id": 4628, "name": "ホライゾン フォーカス", "price": 2700, "icon": "4628.png", "type": "core"},
     "NashorsTooth": {"id": 3115, "name": "ナッシャー トゥース", "price": 3000, "icon": "3115.png", "type": "core"},
+    "LichBane": {"id": 3100, "name": "リッチ ベイン", "price": 3100, "icon": "3100.png", "type": "core"},
+    "Rocketbelt": {"id": 3152, "name": "ヘクステック ロケットベルト", "price": 2500, "icon": "3152.png", "type": "core"},
+    "Riftmaker": {"id": 4633, "name": "リフトメーカー", "price": 3100, "icon": "4633.png", "type": "core"},
+    "RylaisCrystalScepter": {"id": 3116, "name": "クリスタル セプター", "price": 2600, "icon": "3116.png", "type": "core"},
+    "ArchangelsStaff": {"id": 3003, "name": "大天使の杖", "price": 2900, "icon": "3003.png", "type": "core"},
+
+    # タンク・サポート
     "Heartsteel": {"id": 3084, "name": "ハートスチール", "price": 3000, "icon": "3084.png", "type": "core"},
     "SunfireAegis": {"id": 3068, "name": "サンファイア イージス", "price": 2700, "icon": "3068.png", "type": "core"},
-    "YoumuusGhostblade": {"id": 3142, "name": "妖夢の霊剣", "price": 2800, "icon": "3142.png", "type": "core"},
-    "Hubris": {"id": 6697, "name": "ヒューブリス", "price": 3000, "icon": "6697.png", "type": "core"},
-    "KaenicRookern": {"id": 2504, "name": "カイーニック ルーケーン (対AP最強盾)", "price": 2900, "icon": "2504.png", "type": "mr_core"},
+    "WarmogsArmor": {"id": 3083, "name": "ワーモグ アーマー", "price": 3100, "icon": "3083.png", "type": "core"},
+    "FrozenHeart": {"id": 3110, "name": "フローズン ハート", "price": 2500, "icon": "3110.png", "type": "core"},
+    "IcebornGauntlet": {"id": 3069, "name": "アイスボーン ガントレット", "price": 2600, "icon": "3069.png", "type": "core"},
+    "DeadMansPlate": {"id": 3742, "name": "デッドマン プレート", "price": 2900, "icon": "3742.png", "type": "core"},
+    "SpiritVisage": {"id": 3065, "name": "スピリット ビサージュ", "price": 2700, "icon": "3065.png", "type": "core"},
+    "LocketOfTheIronSolari": {"id": 3190, "name": "ソラリのロケット", "price": 2200, "icon": "3190.png", "type": "core"},
+    "KnightsVow": {"id": 3109, "name": "騎士の誓い", "price": 2200, "icon": "3109.png", "type": "core"},
+    "Trailblazer": {"id": 3002, "name": "トレイルブレイザー", "price": 2400, "icon": "3002.png", "type": "core"},
+    "MoonstoneRenewer": {"id": 6617, "name": "ムーンストーンの再生", "price": 2200, "icon": "6617.png", "type": "core"},
+    "EchoesOfHelia": {"id": 6620, "name": "ヘリアの残響", "price": 2200, "icon": "6620.png", "type": "core"},
+    "ImperialMandate": {"id": 4005, "name": "帝国の指令", "price": 2200, "icon": "4005.png", "type": "core"},
+    "ArdentCenser": {"id": 3504, "name": "アーデント センサー", "price": 2200, "icon": "3504.png", "type": "core"},
+    "Redemption": {"id": 3107, "name": "リデンプション", "price": 2300, "icon": "3107.png", "type": "core"},
 }
 
 # チャンピオン別 基本ビルドツリー (全ロール網羅)
@@ -158,6 +203,22 @@ HEAVY_CC_CHAMPS = {
 
 from v2_CORE._LOL.overlay.item_price_manager import ItemPriceManager
 
+def is_item_owned(item_info: dict, my_items: list) -> bool:
+    """アイテム（IDまたは名前）をすでにインベントリに所持しているかを100%確実に判定"""
+    if not item_info or not my_items:
+        return False
+    target_id = item_info.get("id", 0)
+    target_name = str(item_info.get("name", "")).lower().replace(" ", "").replace("（", "").replace("）", "")
+    
+    for it in my_items:
+        i_id = int(it.get("itemID", 0))
+        if target_id > 0 and i_id == target_id:
+            return True
+        d_name = str(it.get("displayName", "")).lower().replace(" ", "").replace("（", "").replace("）", "")
+        if d_name and (target_name in d_name or d_name in target_name):
+            return True
+    return False
+
 class DynamicBuildAdvisor:
     @staticmethod
     def advise_next_item(
@@ -166,10 +227,8 @@ class DynamicBuildAdvisor:
         enemy_players: list,
         game_time_sec: float
     ) -> dict:
-        """次に購入すべき最適なアイテムとその理由を判定"""
-        my_item_names = {it.get("displayName", "") for it in my_items}
+        """次に購入すべき最適な【未所持】アイテムとその理由を判定"""
         my_item_ids = {int(it.get("itemID", 0)) for it in my_items}
-        has_boots = any(int(it.get("itemID", 0)) in [3047, 3111, 3158, 3020, 3006, 3009, 1001] for it in my_items)
         has_completed_boots = any(int(it.get("itemID", 0)) in [3047, 3111, 3158, 3020, 3006, 3009] for it in my_items)
 
         # 敵チームの分析
@@ -190,17 +249,17 @@ class DynamicBuildAdvisor:
             # チャンピオン名による推論フォールバック
             c_low = my_champion.lower()
             if any(k in c_low for k in ["lux", "ahri", "syndra", "veigar", "viktor", "hwei", "xerath", "velkoz", "ziggs", "anivia", "brand", "malzahar", "cassiopeia"]):
-                blueprint = {"class": "ap_mage", "first_core": "LudensCompanion", "second_cores": ["Shadowflame"], "boots_default": "SorcerersShoes"}
+                blueprint = {"class": "ap_mage", "first_core": "LudensCompanion", "second_cores": ["Shadowflame", "ZhonyasHourglass"], "boots_default": "SorcerersShoes"}
             elif any(k in c_low for k in ["kaisa", "jinx", "vayne", "caitlyn", "ashe", "jhin", "lucian", "sivir", "tristana", "varus", "kogmaw", "aphelios", "kalista"]):
-                blueprint = {"class": "marksman", "first_core": "KrakenSlayer", "second_cores": ["InfinityEdge"], "boots_default": "BerserkersGreaves"}
+                blueprint = {"class": "marksman", "first_core": "KrakenSlayer", "second_cores": ["InfinityEdge", "LordDominiksRegards"], "boots_default": "BerserkersGreaves"}
             elif any(k in c_low for k in ["zed", "talon", "qiyana", "khazix", "rengar", "naafiri", "shaco", "pyke"]):
-                blueprint = {"class": "ad_assassin", "first_core": "YoumuusGhostblade", "second_cores": ["ProfaneHydra"], "boots_default": "IonianBoots"}
+                blueprint = {"class": "ad_assassin", "first_core": "YoumuusGhostblade", "second_cores": ["ProfaneHydra", "SeryldasGrudge"], "boots_default": "IonianBoots"}
             elif any(k in c_low for k in ["malphite", "ornn", "sion", "mundo", "chogath", "zac", "sejuani", "amumu", "rammus", "shen"]):
-                blueprint = {"class": "tank", "first_core": "SunfireAegis", "second_cores": ["Heartsteel"], "boots_default": "PlatedSteelcaps"}
+                blueprint = {"class": "tank", "first_core": "SunfireAegis", "second_cores": ["Heartsteel", "KaenicRookern"], "boots_default": "PlatedSteelcaps"}
             elif any(k in c_low for k in ["nautilus", "leona", "thresh", "blitzcrank", "alistar", "braum", "rell"]):
-                blueprint = {"class": "tank_support", "first_core": "LocketOfTheIronSolari", "second_cores": ["KnightsVow"], "boots_default": "BootsOfSwiftness"}
+                blueprint = {"class": "tank_support", "first_core": "LocketOfTheIronSolari", "second_cores": ["KnightsVow", "Trailblazer"], "boots_default": "BootsOfSwiftness"}
             elif any(k in c_low for k in ["lulu", "nami", "soraka", "janna", "sona", "milio", "yuumi"]):
-                blueprint = {"class": "enchanter", "first_core": "MoonstoneRenewer", "second_cores": ["EchoesOfHelia"], "boots_default": "IonianBoots"}
+                blueprint = {"class": "enchanter", "first_core": "MoonstoneRenewer", "second_cores": ["EchoesOfHelia", "ArdentCenser"], "boots_default": "IonianBoots"}
             else:
                 blueprint = {"class": "ad_fighter", "first_core": "TrinityForce", "second_cores": ["Eclipse", "BlackCleaver"], "boots_default": "PlatedSteelcaps"}
 
@@ -217,107 +276,99 @@ class DynamicBuildAdvisor:
         has_heal_cut = any(it.get("itemID") in [3123, 3916, 3076, 3033, 3165, 3075] for it in my_items)
         if enemy_has_heal and not has_heal_cut and completed_core_count >= 1:
             if "ap" in champ_class:
-                return {
-                    "item_name": "忘却のオーブ",
-                    "price": 800,
-                    "tag": "🩸 重傷必須",
-                    "reason": "敵に強回復持ち（Vlad/Soraka/Aatrox等）がいます。800G素材で回復を半減させましょう！",
-                    "priority": "HIGH",
-                }
+                it_info = ITEM_DB.get("OblivionOrb")
+                if not is_item_owned(it_info, my_items):
+                    return {
+                        "item_name": it_info["name"],
+                        "price": it_info["price"],
+                        "tag": "🩸 重傷必須",
+                        "reason": "敵に強回復持ちがいます。800G忘却のオーブで回復を半減させましょう！",
+                        "priority": "HIGH",
+                    }
             elif "tank" in champ_class:
-                return {
-                    "item_name": "ブランブル ベスト",
-                    "price": 800,
-                    "tag": "🩸 重傷反射",
-                    "reason": "敵の通常攻撃・回復持ちに対抗するため、800Gブランブルを挟みましょう！",
-                    "priority": "HIGH",
-                }
+                it_info = ITEM_DB.get("BrambleVest")
+                if not is_item_owned(it_info, my_items):
+                    return {
+                        "item_name": it_info["name"],
+                        "price": it_info["price"],
+                        "tag": "🩸 重傷反射",
+                        "reason": "敵の通常攻撃・回復持ちに対抗するため、800Gブランブルを挟みましょう！",
+                        "priority": "HIGH",
+                    }
             else:
-                return {
-                    "item_name": "処刑人の劫罰",
-                    "price": 800,
-                    "tag": "🩸 重傷必須",
-                    "reason": "敵の回復量が激しいため、800Gの処刑人を早期購入してキルラインを下げましょう！",
-                    "priority": "HIGH",
-                }
+                it_info = ITEM_DB.get("ExecutionersCalling")
+                if not is_item_owned(it_info, my_items):
+                    return {
+                        "item_name": it_info["name"],
+                        "price": it_info["price"],
+                        "tag": "🩸 重傷必須",
+                        "reason": "敵の回復量が激しいため、800Gの処刑人を早期購入してキルラインを下げましょう！",
+                        "priority": "HIGH",
+                    }
 
         # --- 判定2: 靴のアップグレード ---
         if not has_completed_boots and completed_core_count >= 1:
             if cc_count >= 2:
-                return {
-                    "item_name": "マーキュリー ブーツ",
-                    "price": 1200,
-                    "tag": "👟 CC耐性靴",
-                    "reason": f"敵にハードCC持ちが{cc_count}人います。行動不能時間を30%短縮して生き残りを優先！",
-                    "priority": "HIGH",
-                }
+                b_info = ITEM_DB.get("MercuryTreads")
             elif enemy_ap_count >= 3:
-                return {
-                    "item_name": "マーキュリー ブーツ",
-                    "price": 1200,
-                    "tag": "👟 魔法防御靴",
-                    "reason": "敵チームはAPダメージが主体です。魔法防御を稼ぎましょう！",
-                    "priority": "MID",
-                }
+                b_info = ITEM_DB.get("MercuryTreads")
             else:
+                b_key = blueprint.get("boots_default", "PlatedSteelcaps")
+                b_info = ITEM_DB.get(b_key, ITEM_DB["PlatedSteelcaps"])
+            
+            if not is_item_owned(b_info, my_items):
                 return {
-                    "item_name": "プレート スチールキャップ",
-                    "price": 1100,
-                    "tag": "👟 物理防御靴",
-                    "reason": "敵の通常攻撃ダメージを12%軽減。対面との殴り合いで圧倒的優位に！",
-                    "priority": "MID",
+                    "item_name": b_info["name"],
+                    "price": b_info["price"],
+                    "tag": "👟 靴完成",
+                    "reason": "移動速度と戦闘ステータス（耐性/攻撃速度）を確保して機動力を最大化！",
+                    "priority": "HIGH",
                 }
 
         # --- 判定3: 敵タンク多数・高AR時の貫通アイテム ---
-        has_armor_pen = any(it.get("itemID") in [3071, 3036, 6694] for it in my_items)
+        has_armor_pen = any(it.get("itemID") in [3071, 3036, 6694, 3302] for it in my_items)
         if enemy_armor_count >= 3 and not has_armor_pen and completed_core_count >= 2:
             if "ad" in champ_class:
-                return {
-                    "item_name": "ブラック クリーバー",
-                    "price": 3000,
-                    "tag": "🛡️ 物理破砕",
-                    "reason": "敵前衛が硬化中。味方全員の物理与ダメージを引き上げる黒斧を推奨！",
-                    "priority": "HIGH",
-                }
+                bc_info = ITEM_DB.get("BlackCleaver")
+                if not is_item_owned(bc_info, my_items):
+                    return {
+                        "item_name": bc_info["name"],
+                        "price": bc_info["price"],
+                        "tag": "🛡️ 物理破砕",
+                        "reason": "敵前衛が硬化中。味方全員の物理与ダメージを引き上げる黒斧を推奨！",
+                        "priority": "HIGH",
+                    }
 
         # --- 判定4: 敵APバーストが育っている時の防魔アイテム ---
-        has_mr_item = any(it.get("itemID") in [3156, 2504, 3001] for it in my_items)
+        has_mr_item = any(it.get("itemID") in [3156, 2504, 3001, 3065] for it in my_items)
         if enemy_ap_count >= 3 and not has_mr_item and completed_core_count >= 2:
             if "ad" in champ_class:
-                return {
-                    "item_name": "マルモティウスの胃袋",
-                    "price": 3100,
-                    "tag": "🛡️ 対APバリア",
-                    "reason": "敵APのバースト対策。HP低下時に巨大な魔法シールドを展開！",
-                    "priority": "HIGH",
-                }
+                maw_info = ITEM_DB.get("MawOfMalmortius")
+                if not is_item_owned(maw_info, my_items):
+                    return {
+                        "item_name": maw_info["name"],
+                        "price": maw_info["price"],
+                        "tag": "🛡️ 対APバリア",
+                        "reason": "敵APのバースト対策。HP低下時に巨大な魔法シールドを展開！",
+                        "priority": "HIGH",
+                    }
             else:
-                return {
-                    "item_name": "カイーニック ルーケーン",
-                    "price": 2900,
-                    "tag": "🛡️ 最強対AP盾",
-                    "reason": "常時魔法ダメージシールドを付与し、敵メイジのポーク・コンボを無効化！",
-                    "priority": "HIGH",
-                }
+                kr_info = ITEM_DB.get("KaenicRookern")
+                if not is_item_owned(kr_info, my_items):
+                    return {
+                        "item_name": kr_info["name"],
+                        "price": kr_info["price"],
+                        "tag": "🛡️ 最強対AP盾",
+                        "reason": "常時魔法ダメージシールドを付与し、敵メイジのポーク・コンボを無効化！",
+                        "priority": "HIGH",
+                    }
 
-        # --- 判定5: 1stコア / 2ndコア / 3rdコアの基本進行 ---
+        # --- 判定5: 1stコア / 2ndコア / 3rdコア以降の順次推薦 ---
         core1_key = blueprint.get("first_core", "SunderedSky")
         core1_info = ITEM_DB.get(core1_key, {"name": "サンダード スカイ", "price": 3100, "id": 6610})
-        core1_id = core1_info.get("id", 0)
 
-        # 2nd コア候補から未所持のものを選択
-        core2_candidates = blueprint.get("second_cores", ["Eclipse"])
-        core2_info = None
-        for c2_k in core2_candidates:
-            c2_dat = ITEM_DB.get(c2_k, {"name": c2_k, "price": 2800, "id": 0})
-            if c2_dat.get("id", 0) not in my_item_ids:
-                core2_info = c2_dat
-                break
-        if not core2_info:
-            core2_info = ITEM_DB.get(core2_candidates[0], {"name": "エクリプス", "price": 2800})
-
-        # 1st コア未所持かつ完成コア0個の場合
-        if core1_id not in my_item_ids and completed_core_count == 0:
+        # 1st コア未所持なら 1st コア
+        if not is_item_owned(core1_info, my_items):
             return {
                 "item_name": core1_info["name"],
                 "price": core1_info["price"],
@@ -325,63 +376,47 @@ class DynamicBuildAdvisor:
                 "reason": f"{my_champion} のパワースパイクの核。完成時のサステインと火力が劇的向上！",
                 "priority": "HIGH",
             }
-        # 2nd コア未所持の場合
-        elif (core2_info.get("id", 0) not in my_item_ids) and completed_core_count <= 1:
-            return {
-                "item_name": core2_info["name"],
-                "price": core2_info["price"],
-                "tag": "⚔️ 2nd コア",
-                "reason": "1stコアとの相乗効果で集団戦の生存率とバースト火力を最大化！",
-                "priority": "HIGH",
-            }
-        else:
-            if "ap" in champ_class:
-                has_zhonya = any(int(it.get("itemID", 0)) == 3157 for it in my_items)
-                if not has_zhonya:
-                    return {
-                        "item_name": "ゾーニャの砂時計",
-                        "price": 3250,
-                        "tag": "⏳ 無敵＆魔力",
-                        "reason": "集団戦でフォーカスされても2.5秒無敵でスキルCTを稼ぎ逆転！",
-                        "priority": "MID",
-                    }
+
+        # 2nd コア候補から未所持のものを選択
+        core2_candidates = blueprint.get("second_cores", ["Eclipse", "BlackCleaver"])
+        for c2_k in core2_candidates:
+            c2_info = ITEM_DB.get(c2_k)
+            if c2_info and not is_item_owned(c2_info, my_items):
                 return {
-                    "item_name": "ラバドン デスキャップ",
-                    "price": 3600,
-                    "tag": "👑 魔力極限強化",
-                    "reason": "総APを35%増加させ、スキルの破壊力を圧倒的次元へ引き上げる！",
+                    "item_name": c2_info["name"],
+                    "price": c2_info["price"],
+                    "tag": "⚔️ 2nd コア",
+                    "reason": "1stコアとの相乗効果で集団戦の生存率とバースト火力を最大化！",
+                    "priority": "HIGH",
+                }
+
+        # 3rd コア以降（ロール別 未所持の決定打アイテム）
+        fallback_pool = []
+        if "ap" in champ_class:
+            fallback_pool = ["ZhonyasHourglass", "RabadonsDeathcap", "VoidStaff", "Shadowflame", "LiandrysTorment"]
+        elif "marksman" in champ_class:
+            fallback_pool = ["InfinityEdge", "LordDominiksRegards", "GuardianAngel", "Bloodthirster", "MortalReminder"]
+        elif "tank" in champ_class:
+            fallback_pool = ["KaenicRookern", "Thornmail", "WarmogsArmor", "FrozenHeart", "UnendingDespair"]
+        else: # ad_fighter / ad_assassin
+            fallback_pool = ["SteraksGage", "BlackCleaver", "GuardianAngel", "DeathDance", "MawOfMalmortius", "SeryldasGrudge"]
+
+        for item_key in fallback_pool:
+            cand_info = ITEM_DB.get(item_key)
+            if cand_info and not is_item_owned(cand_info, my_items):
+                return {
+                    "item_name": cand_info["name"],
+                    "price": cand_info["price"],
+                    "tag": "🛡️ 3rd+ コア",
+                    "reason": f"集団戦での決定打と生存力を最大化する最適アイテム！",
                     "priority": "MID",
                 }
-            elif "marksman" in champ_class:
-                has_ga = any(int(it.get("itemID", 0)) == 3026 for it in my_items)
-                if not has_ga:
-                    return {
-                        "item_name": "ガーディアン エンジェル",
-                        "price": 3200,
-                        "tag": "🛡️ 復活の保険",
-                        "reason": "アサシンや集団戦の即死を防ぎ、復活して継続火力を叩き込む！",
-                        "priority": "MID",
-                    }
-                return {
-                    "item_name": "ドミニク リガード",
-                    "price": 3000,
-                    "tag": "⚔️ 割合ダメージ貫通",
-                    "reason": "高HP・高ARのタンクを溶かすための最終火力を確保！",
-                    "priority": "MID",
-                }
-            elif "tank" in champ_class:
-                return {
-                    "item_name": "カイーニック ルーケーン",
-                    "price": 2900,
-                    "tag": "🛡️ 魔法完全防壁",
-                    "reason": "常時魔法シールドを展開し、敵集団戦のバーストに耐え抜く！",
-                    "priority": "MID",
-                }
-            else:
-                return {
-                    "item_name": "ステラックの篭手",
-                    "price": 3200,
-                    "tag": "🛡️ 3rd 集団戦耐久",
-                    "reason": "集団戦でのフォーカス集中を耐え抜く巨大シールドを確保！",
-                    "priority": "MID",
-                }
+
+        # 最終フォールバック (エリクサー等)
+        return {
+            "item_name": "憤怒のエリクサー",
+            "price": 500,
+            "tag": "🍷 決戦強化",
+            "reason": "フルビルド達成！エリクサーを服用して決戦のステータスを底上げしましょう。",
+            "priority": "LOW",
+        }
