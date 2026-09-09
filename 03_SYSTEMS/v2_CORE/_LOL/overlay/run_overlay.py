@@ -13,6 +13,19 @@ Sovereign HUD - オーバーレイ統合ランチャー (LoL自動起動連動 �
 
 import os
 import sys
+import io
+
+# pythonw.exe (GUIモード) で sys.stdout / sys.stderr が None の場合の安全ガード
+if sys.stdout is None:
+    try:
+        log_dir = os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", "00_LOGS")
+        os.makedirs(log_dir, exist_ok=True)
+        sys.stdout = open(os.path.join(log_dir, "overlay.log"), "a", encoding="utf-8", buffering=1)
+    except Exception:
+        sys.stdout = io.StringIO()
+
+if sys.stderr is None:
+    sys.stderr = sys.stdout if sys.stdout else io.StringIO()
 
 # Windows コンソールでの文字化け・UnicodeEncodeError防止
 if sys.stdout and hasattr(sys.stdout, 'reconfigure'):
@@ -43,22 +56,32 @@ from v2_CORE._LOL.overlay.hud_config import load_widget_positions
 
 
 def create_tray_icon() -> QIcon:
-    """システムトレイ用のHextechゴールド王冠アイコンを動的生成"""
+    """システムトレイ用のHextechゴールド王冠アイコンを確実に生成"""
+    icon_path = os.path.join(os.path.dirname(__file__), "tray_icon.png")
+    
+    # 確実に視認できるHextechゴールドの幾何学王冠アイコンを描画
     pixmap = QPixmap(64, 64)
-    pixmap.fill(Qt.GlobalColor.transparent)
+    pixmap.fill(QColor(10, 14, 23)) # ダークHextech背景
     painter = QPainter(pixmap)
     painter.setRenderHint(QPainter.RenderHint.Antialiasing)
 
-    # 背景円（ダークHextech）
-    painter.setBrush(QColor(10, 14, 23, 230))
-    painter.setPen(QColor(200, 155, 60, 255))
-    painter.drawEllipse(2, 2, 60, 60)
+    # ゴールド枠
+    painter.setPen(QColor(200, 155, 60))
+    painter.setBrush(QColor(200, 155, 60, 40))
+    painter.drawRoundedRect(4, 4, 56, 56, 12, 12)
 
     # 王冠文字 👑
-    painter.setFont(QFont("Segoe UI Emoji", 28))
+    painter.setPen(QColor(240, 195, 80))
+    font = QFont("Segoe UI Emoji", 26)
+    painter.setFont(font)
     painter.drawText(pixmap.rect(), Qt.AlignmentFlag.AlignCenter, "👑")
     painter.end()
-    return QIcon(pixmap)
+
+    try:
+        pixmap.save(icon_path)
+        return QIcon(icon_path)
+    except Exception:
+        return QIcon(pixmap)
 
 
 def main():
@@ -184,8 +207,25 @@ def main():
     quit_action.triggered.connect(app.quit)
     tray_menu.addAction(quit_action)
 
+    def on_tray_icon_activated(reason):
+        # 左クリック (Trigger) または ダブルクリック (DoubleClick) で表示切替
+        if reason in (QSystemTrayIcon.ActivationReason.Trigger, QSystemTrayIcon.ActivationReason.DoubleClick):
+            toggle_manual_visibility()
+
+    tray_icon.activated.connect(on_tray_icon_activated)
     tray_icon.setContextMenu(tray_menu)
     tray_icon.show()
+
+    # 画面上部にウェルカムトーストを表示（起動を視覚的に通知）
+    toast_alert.show_alert("👑", "Sovereign HUD 待機開始 (LoL試合を自動検知)", alert_type="spike", duration_ms=4000)
+
+    # Windows通知領域にもトースト表示
+    tray_icon.showMessage(
+        "👑 Sovereign HUD 起動完了",
+        "LoLの試合開始を自動検知して待機中...\n（アイコンクリックで手動表示/非表示）",
+        QSystemTrayIcon.MessageIcon.Information,
+        3000
+    )
 
     # チャット・スペル自動検知連動
     def on_chat_spell_event(chat_message: str):
