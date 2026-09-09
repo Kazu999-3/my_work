@@ -125,6 +125,18 @@ class CoolDownButton(QPushButton):
     def mouseMoveEvent(self, event):
         event.accept()
 
+def format_role_short(role: str) -> str:
+    r = str(role or "").upper().strip()
+    if "JUNG" in r or "JG" in r:
+        return "JG"
+    elif "MID" in r:
+        return "MID"
+    elif "BOT" in r or "ADC" in r:
+        return "BOT"
+    elif "SUP" in r or "UTIL" in r:
+        return "SUP"
+    return "TOP"
+
 class EnemyColumn(QWidget):
     """1人の敵の [大きな顔アイコン 36px] [Ult] [Flash] [Spell2] を縦に並べたカラム"""
     def __init__(self, role: str, champion: str, spell1: str = "Flash", spell2: str = "Teleport", parent=None):
@@ -136,6 +148,7 @@ class EnemyColumn(QWidget):
         self.level = 6
         self.items = []
         self.champ_name = champion  # 互換用エイリアス
+        self.setFixedWidth(54)
         self.init_ui()
 
     def init_ui(self):
@@ -144,21 +157,22 @@ class EnemyColumn(QWidget):
         col_layout.setSpacing(3)
 
         # 0. [ ロール名 ＆ 対面ゴールド差バッジ (常時統合表示) ]
-        self.role_label = QLabel(self.role, self)
+        short_role = format_role_short(self.role)
+        self.role_label = QLabel(short_role, self)
         self.role_label.setFixedHeight(12)
         self.role_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.role_label.setStyleSheet("color: #C8AA6E; font-size: 9.5px; font-weight: 900; background: transparent;")
+        self.role_label.setStyleSheet("color: #C8AA6E; font-size: 10px; font-weight: 900; background: transparent;")
         col_layout.addWidget(self.role_label, alignment=Qt.AlignmentFlag.AlignCenter)
 
         self.gold_badge = QLabel("+0G", self)
-        self.gold_badge.setFixedHeight(15)
+        self.gold_badge.setFixedHeight(16)
         self.gold_badge.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.gold_badge.setStyleSheet("""
             QLabel {
                 background-color: rgba(35, 30, 15, 0.90);
                 color: #eab308;
                 font-family: 'Segoe UI', Consolas, monospace;
-                font-size: 9.5px;
+                font-size: 10px;
                 font-weight: 800;
                 border-radius: 2px;
                 border: 1px solid rgba(234, 179, 8, 0.5);
@@ -332,7 +346,7 @@ class SpellTrackerWidget(QWidget):
             Qt.WindowType.Tool
         )
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
-        self.setFixedWidth(226)
+        self.setFixedWidth(310)
 
         self.main_layout = QVBoxLayout(self)
         self.main_layout.setContentsMargins(0, 0, 0, 0)
@@ -538,7 +552,7 @@ class SpellTrackerWidget(QWidget):
                 col = self.columns[i]
                 role = ep_info.get("role", col.role)
                 col.role = role
-                col.role_label.setText(role)
+                col.role_label.setText(format_role_short(role))
                 col.update_stats(
                     champion=ep_info.get("champion", "Enemy"),
                     level=ep_info.get("level", 6),
