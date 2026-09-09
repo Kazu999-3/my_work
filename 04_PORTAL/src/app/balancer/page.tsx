@@ -4,7 +4,7 @@ import { useEffect, useState, useRef, useCallback, useMemo, Fragment } from "rea
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "../../lib/supabaseClient";
-import { Users, RefreshCw, Swords, X, Activity, Globe, MessageSquare, Info, Crown, Trophy, History, Shield, AlertTriangle, ChevronDown, Trees, Zap, Target, Heart, Settings, Sparkles, Coins } from "lucide-react";
+import { Users, RefreshCw, Swords, X, Activity, Globe, MessageSquare, Info, Crown, Trophy, History, Shield, AlertTriangle, ChevronDown, Trees, Zap, Target, Heart, Settings, Sparkles, Coins, Copy, Check } from "lucide-react";
 import { getColorFromRankName, calculateBlueWinProbability } from "../../lib/mmr";
 import ProfileModal from "../ktm-admin/ProfileModal";
 import MatchRecordPanel from "../ktm-admin/MatchRecordPanel";
@@ -54,6 +54,7 @@ export default function BalancerPage() {
   const [saving, setSaving] = useState(false);
   const [savingPending, setSavingPending] = useState(false);
   const [announcingStats, setAnnouncingStats] = useState(false);
+  const [copiedResult, setCopiedResult] = useState(false);
   const [message, setMessage] = useState({ type: "", text: "" });
 
   // ★ 管理者パネル (ktm-admin/balancerをページ分割せず、ログイン中の管理者だけに
@@ -747,6 +748,43 @@ export default function BalancerPage() {
     }
   };
 
+  const handleCopyResultText = () => {
+    if (!balanceResult) return;
+    const blueAvg = balanceResult.teamBlue.reduce((s: number, p: any) => s + (p.mmr || 1200), 0) / (balanceResult.teamBlue.length || 1);
+    const redAvg = balanceResult.teamRed.reduce((s: number, p: any) => s + (p.mmr || 1200), 0) / (balanceResult.teamRed.length || 1);
+    const pBlue = calculateBlueWinProbability(blueAvg, redAvg);
+    const bluePct = Math.round(pBlue * 100);
+    const redPct = 100 - bluePct;
+
+    const roles = ['TOP', 'JG', 'MID', 'ADC', 'SUP'];
+    const blueLines = roles.map(r => {
+      const p = balanceResult.teamBlue.find((x: any) => x.currentRole === r);
+      return p ? `  ${r.padEnd(3, ' ')}: ${p.name} (${p.mmr || 1000})` : `  ${r.padEnd(3, ' ')}: -`;
+    }).join('\n');
+
+    const redLines = roles.map(r => {
+      const p = balanceResult.teamRed.find((x: any) => x.currentRole === r);
+      return p ? `  ${r.padEnd(3, ' ')}: ${p.name} (${p.mmr || 1000})` : `  ${r.padEnd(3, ' ')}: -`;
+    }).join('\n');
+
+    const specText = (balanceResult.spectators && balanceResult.spectators.length > 0)
+      ? `\n👀 観戦/待機: ${balanceResult.spectators.join(', ')}`
+      : '';
+
+    const text = `【KTM カスタム チーム分け結果】\n` +
+      `🟦 BLUE TEAM (合計: ${balanceResult.teamBlueMMR} / 勝率予測: ${bluePct}%)\n${blueLines}\n\n` +
+      `🟥 RED TEAM (合計: ${balanceResult.teamRedMMR} / 勝率予測: ${redPct}%)\n${redLines}\n\n` +
+      `⚖️ MMR差: ${balanceResult.mmrDiff}${specText}`;
+
+    navigator.clipboard.writeText(text).then(() => {
+      setCopiedResult(true);
+      setTimeout(() => setCopiedResult(false), 2000);
+      setMessage({ type: "success", text: "📋 チーム分け結果テキストをクリップボードにコピーしました！" });
+    }).catch(err => {
+      setMessage({ type: "error", text: "コピーに失敗しました: " + err.message });
+    });
+  };
+
   const handleSwapPlayer = (targetTeam: 'teamBlue' | 'teamRed' | 'spectators', targetRole: string, newPlayerName: string) => {
     if (!balanceResult) return;
     
@@ -1028,6 +1066,15 @@ export default function BalancerPage() {
                   className="flex items-center gap-1.5 bg-[#5865F2] hover:bg-[#4752C4] text-white px-3 py-1.5 rounded-lg font-bold transition text-xs md:text-sm">
                   {sendingDiscord ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <MessageSquare className="h-3.5 w-3.5" />}
                   Discord通知
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCopyResultText}
+                  className="flex items-center gap-1.5 bg-stone-100 hover:bg-stone-200 border border-stone-300 text-stone-800 px-3 py-1.5 rounded-lg font-bold transition text-xs md:text-sm cursor-pointer"
+                  title="チャットやメモに貼り付け可能な整形テキストをコピー"
+                >
+                  {copiedResult ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5 text-stone-600" />}
+                  <span>{copiedResult ? 'コピー完了！' : 'テキストコピー'}</span>
                 </button>
                 <button onClick={() => setShowResultModal(false)}
                   className="p-1.5 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-400 hover:text-stone-900 transition" title="閉じる (ESC)">
