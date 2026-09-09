@@ -18,9 +18,10 @@ ITEM_DB = {
     "BootsOfSwiftness": {"id": 3009, "name": "スイフトネス ブーツ", "price": 1000, "icon": "3009.png", "type": "boots"},
 
     # 重傷（回復阻害）
-    "ExecutionersCalling": {"id": 3123, "name": "処刑人の劫罰", "price": 800, "icon": "3123.png", "type": "heal_cut"},
-    "OblivionOrb": {"id": 3916, "name": "忘却のオーブ", "price": 800, "icon": "3916.png", "type": "heal_cut"},
+    "ExecutionersCalling": {"id": 3123, "name": "エクセキューショナー コーリング", "price": 800, "icon": "3123.png", "type": "heal_cut"},
+    "OblivionOrb": {"id": 3916, "name": "オブリビオン オーブ", "price": 800, "icon": "3916.png", "type": "heal_cut"},
     "BrambleVest": {"id": 3076, "name": "ブランブル ベスト", "price": 800, "icon": "3076.png", "type": "heal_cut"},
+    "ChempunkChainsword": {"id": 6609, "name": "ケミパンク チェーンソード", "price": 2800, "icon": "6609.png", "type": "heal_cut"},
     "MortalReminder": {"id": 3033, "name": "モータル リマインダー", "price": 3000, "icon": "3033.png", "type": "heal_cut"},
     "Morellonomicon": {"id": 3165, "name": "モレロノミコン", "price": 2200, "icon": "3165.png", "type": "heal_cut"},
     "Thornmail": {"id": 3075, "name": "ソーンメイル", "price": 2700, "icon": "3075.png", "type": "heal_cut"},
@@ -28,7 +29,7 @@ ITEM_DB = {
     # 貫通（AR/MR対策）
     "BlackCleaver": {"id": 3071, "name": "ブラック クリーバー", "price": 3000, "icon": "3071.png", "type": "pen"},
     "LordDominiksRegards": {"id": 3036, "name": "ドミニク リガード", "price": 3000, "icon": "3036.png", "type": "pen"},
-    "SeryldasGrudge": {"id": 6694, "name": "セリルダの怨恨", "price": 3200, "icon": "6694.png", "type": "pen"},
+    "SeryldasGrudge": {"id": 6694, "name": "セリルダの怨嗟", "price": 3200, "icon": "6694.png", "type": "pen"},
     "Cryptbloom": {"id": 3137, "name": "クリプトブルーム", "price": 2850, "icon": "3137.png", "type": "pen"},
     "VoidStaff": {"id": 3135, "name": "ヴォイド スタッフ", "price": 3000, "icon": "3135.png", "type": "pen"},
     "Terminus": {"id": 3302, "name": "ターミナス", "price": 3000, "icon": "3302.png", "type": "pen"},
@@ -38,7 +39,9 @@ ITEM_DB = {
     "ZhonyasHourglass": {"id": 3157, "name": "ゾーニャの砂時計", "price": 3250, "icon": "3157.png", "type": "core"},
     "SteraksGage": {"id": 3053, "name": "ステラックの篭手", "price": 3200, "icon": "3053.png", "type": "defensive_core"},
     "MawOfMalmortius": {"id": 3156, "name": "マルモティウスの胃袋", "price": 3100, "icon": "3156.png", "type": "mr_core"},
-    "KaenicRookern": {"id": 2504, "name": "カイーニック ルーケーン", "price": 2900, "icon": "2504.png", "type": "mr_core"},
+    "KaenicRookern": {"id": 2504, "name": "ケイニック ルーケーン", "price": 2900, "icon": "2504.png", "type": "mr_core"},
+    "BansheesVeil": {"id": 3102, "name": "バンシー ヴェール", "price": 3100, "icon": "3102.png", "type": "mr_core"},
+    "SerpentsFang": {"id": 6695, "name": "毒蛇の牙 (サーペント ファング)", "price": 2500, "icon": "6695.png", "type": "core"},
     "EdgeOfNight": {"id": 3814, "name": "ナイト エッジ", "price": 2800, "icon": "3814.png", "type": "core"},
     "Shieldbow": {"id": 6673, "name": "イモータル シールドボウ", "price": 3000, "icon": "6673.png", "type": "core"},
 
@@ -421,7 +424,7 @@ class DynamicBuildAdvisor:
                         "item_name": it_info["name"],
                         "price": it_info["price"],
                         "tag": "🩸 重傷必須",
-                        "reason": "敵に強回復持ちがいます。800G忘却のオーブで回復を半減させましょう！",
+                        "reason": "敵に強回復持ちがいます。800Gオブリビオン オーブで回復を半減させましょう！",
                         "priority": "HIGH",
                     }
             elif "tank" in champ_class:
@@ -431,7 +434,7 @@ class DynamicBuildAdvisor:
                         "item_name": it_info["name"],
                         "price": it_info["price"],
                         "tag": "🩸 重傷反射",
-                        "reason": "敵の通常攻撃・回復持ちに対抗するため、800Gブランブルを挟みましょう！",
+                        "reason": "敵の通常攻撃・回復持ちに対抗するため、800Gブランブル ベストを挟みましょう！",
                         "priority": "HIGH",
                     }
             else:
@@ -441,7 +444,7 @@ class DynamicBuildAdvisor:
                         "item_name": it_info["name"],
                         "price": it_info["price"],
                         "tag": "🩸 重傷必須",
-                        "reason": "敵の回復量が激しいため、800Gの処刑人を早期購入してキルラインを下げましょう！",
+                        "reason": "敵の回復量が激しいため、800Gエクセキューショナー コーリングを早期購入してキルラインを下げましょう！",
                         "priority": "HIGH",
                     }
 
@@ -711,7 +714,7 @@ class DynamicBuildAdvisor:
         # 5. 対シールド (シールドブレイク)
         if found_shields and is_ad and not is_adc:
             s_str = "・".join(found_shields[:2])
-            it = {"name": "毒蛇の牙 (Serpent's Fang)", "price": 2500, "id": 6695}
+            it = ITEM_DB.get("SerpentsFang")
             owned = is_item_owned(it, my_items)
             counters.append({
                 "item_name": it["name"],

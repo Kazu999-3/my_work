@@ -83,7 +83,7 @@ class TestDynamicBuildAdvisor(unittest.TestCase):
             game_time_sec=900.0
         )
         self.assertIn("重傷", rec["tag"])
-        self.assertEqual(rec["item_name"], "処刑人の劫罰")
+        self.assertEqual(rec["item_name"], "エクセキューショナー コーリング")
 
     def test_owned_items_not_recommended(self):
         """1stコア(SunderedSky)購入後は1stコアが除外され、2ndコアまたは靴・重傷等に自動遷移すること"""
