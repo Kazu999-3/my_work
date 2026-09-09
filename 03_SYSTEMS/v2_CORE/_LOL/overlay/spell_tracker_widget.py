@@ -143,6 +143,30 @@ class EnemyColumn(QWidget):
         col_layout.setContentsMargins(1, 1, 1, 1)
         col_layout.setSpacing(3)
 
+        # 0. [ ロール名 ＆ 対面ゴールド差バッジ (常時統合表示) ]
+        self.role_label = QLabel(self.role, self)
+        self.role_label.setFixedHeight(12)
+        self.role_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.role_label.setStyleSheet("color: #C8AA6E; font-size: 9.5px; font-weight: 900; background: transparent;")
+        col_layout.addWidget(self.role_label, alignment=Qt.AlignmentFlag.AlignCenter)
+
+        self.gold_badge = QLabel("+0G", self)
+        self.gold_badge.setFixedHeight(15)
+        self.gold_badge.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.gold_badge.setStyleSheet("""
+            QLabel {
+                background-color: rgba(35, 30, 15, 0.90);
+                color: #eab308;
+                font-family: 'Segoe UI', Consolas, monospace;
+                font-size: 9.5px;
+                font-weight: 800;
+                border-radius: 2px;
+                border: 1px solid rgba(234, 179, 8, 0.5);
+                padding: 0px 2px;
+            }
+        """)
+        col_layout.addWidget(self.gold_badge, alignment=Qt.AlignmentFlag.AlignCenter)
+
         # 1. 大きなチャンピオン顔アイコン (36px × 36px)
         self.avatar_label = QLabel(self)
         self.avatar_label.setFixedSize(36, 36)
@@ -170,14 +194,14 @@ class EnemyColumn(QWidget):
 
         # 5. [ JG ガンク成功率バッジ ] (JG視点のガンク・キルチャンスをリアルタイム提示)
         self.gank_badge = QLabel("─", self)
-        self.gank_badge.setFixedHeight(15)
+        self.gank_badge.setFixedHeight(14)
         self.gank_badge.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.gank_badge.setStyleSheet("""
             QLabel {
                 background-color: rgba(1, 10, 19, 0.90);
                 color: #A09B8C;
                 font-family: 'BeaufortforLOL', sans-serif;
-                font-size: 9px;
+                font-size: 8.5px;
                 font-weight: bold;
                 border-radius: 2px;
                 border: 1px solid #785A28;
@@ -185,6 +209,35 @@ class EnemyColumn(QWidget):
             }
         """)
         col_layout.addWidget(self.gank_badge, alignment=Qt.AlignmentFlag.AlignCenter)
+
+    def set_lane_gold_diff(self, diff_str: str, diff: int, color: str = "#eab308"):
+        """各レーンの対面ゴールド差バッジを更新"""
+        if diff >= 300:
+            bg = "rgba(16, 40, 24, 0.90)"
+            border = "rgba(34, 197, 94, 0.7)"
+            text_color = "#22c55e"
+        elif diff <= -300:
+            bg = "rgba(45, 16, 16, 0.90)"
+            border = "rgba(239, 68, 68, 0.7)"
+            text_color = "#ef4444"
+        else:
+            bg = "rgba(35, 30, 15, 0.90)"
+            border = "rgba(234, 179, 8, 0.5)"
+            text_color = "#eab308"
+
+        self.gold_badge.setText(diff_str)
+        self.gold_badge.setStyleSheet(f"""
+            QLabel {{
+                background-color: {bg};
+                color: {text_color};
+                font-family: 'Segoe UI', Consolas, monospace;
+                font-size: 9.5px;
+                font-weight: 800;
+                border-radius: 2px;
+                border: 1px solid {border};
+                padding: 0px 2px;
+            }}
+        """)
 
     def set_gank_info(self, score: float, verdict_color: str = "#22c55e", label: str = ""):
         """ガンク成功率バッジの更新"""
@@ -477,15 +530,32 @@ class SpellTrackerWidget(QWidget):
             return
 
         details = state.get("enemy_team_details", [])
+        lane_map = {ld.get("role"): ld for ld in state.get("lane_dominance", [])}
+
         for i, ep_info in enumerate(details[:5]):
             if i < len(self.columns):
-                self.columns[i].update_stats(
+                col = self.columns[i]
+                role = ep_info.get("role", col.role)
+                col.role = role
+                col.role_label.setText(role)
+                col.update_stats(
                     champion=ep_info.get("champion", "Enemy"),
                     level=ep_info.get("level", 6),
                     items=ep_info.get("items", []),
                     spell1=ep_info.get("spell1", "Flash"),
                     spell2=ep_info.get("spell2", "Teleport")
                 )
+
+                # レーン対面ゴールド差を反映
+                l_data = lane_map.get(role, {})
+                if l_data:
+                    col.set_lane_gold_diff(
+                        diff_str=l_data.get("diff_str", "+0G"),
+                        diff=l_data.get("diff", 0),
+                        color=l_data.get("color", "#eab308")
+                    )
+                else:
+                    col.set_lane_gold_diff("+0G", 0, "#eab308")
 
     def update_gank_scores(self, gank_results: list):
         """敵各レーンのガンク成功率をバッジに反映"""

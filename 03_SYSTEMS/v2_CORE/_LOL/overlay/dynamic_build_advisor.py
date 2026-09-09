@@ -261,22 +261,38 @@ HEAVY_CC_CHAMPS = {
     "Rell", "Maokai", "Lissandra", "Skarner", "Thresh", "Blitzcrank"
 }
 
+import re
 from v2_CORE._LOL.overlay.item_price_manager import ItemPriceManager
 
 def is_item_owned(item_info: dict, my_items: list) -> bool:
     """アイテム（IDまたは名前）をすでにインベントリに所持しているかを100%確実に判定"""
     if not item_info or not my_items:
         return False
-    target_id = item_info.get("id", 0)
+
+    target_id = int(item_info.get("id", 0))
     target_name = str(item_info.get("name", "")).lower().replace(" ", "").replace("（", "").replace("）", "")
-    
+
     for it in my_items:
-        i_id = int(it.get("itemID", 0))
+        # 1. 直接の itemID / id の整数照合
+        i_id = int(it.get("itemID") or it.get("id") or 0)
         if target_id > 0 and i_id == target_id:
             return True
-        d_name = str(it.get("displayName", "")).lower().replace(" ", "").replace("（", "").replace("）", "")
-        if d_name and (target_name in d_name or d_name in target_name):
-            return True
+
+        # 2. rawDisplayName / rawDescription からのID抽出 (例: "Item_3151_Name" -> 3151)
+        for raw_k in ["rawDisplayName", "rawDescription"]:
+            raw_v = str(it.get(raw_k, ""))
+            if raw_v:
+                m = re.search(r'item_(\d+)', raw_v, re.IGNORECASE)
+                if m and int(m.group(1)) == target_id:
+                    return True
+
+        # 3. displayName または rawDisplayName による名称照合
+        for name_k in ["displayName", "name", "rawDisplayName"]:
+            d_name = str(it.get(name_k, "")).lower().replace(" ", "").replace("（", "").replace("）", "").replace("'", "")
+            if d_name:
+                if target_name and (target_name in d_name or d_name in target_name):
+                    return True
+
     return False
 
 class DynamicBuildAdvisor:
