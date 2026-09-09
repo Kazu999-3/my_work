@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
-import { calculateNewMMRDetailed, calculateKdaScore, MmrCalcContext, calculateInitialMmr, computeRepresentativeMmr } from '../../../../lib/mmr';
+import { calculateNewMMRDetailed, calculateKdaScore, MmrCalcContext, calculateInitialMmr, computeRepresentativeMmr, propagateCrossLaneMmr } from '../../../../lib/mmr';
 import { fetchAllRows } from '../../../../lib/fetchAll';
 
 export async function POST(request: Request) {
@@ -278,16 +278,22 @@ export async function POST(request: Request) {
 
     // (3) ktm_players のMMRとPityとコインをUPDATE
     for (const r of results) {
-      const roleMmrKey = `mmr_${r.role.toLowerCase()}`;
       const gamesKey = `games_${r.role.toLowerCase()}`;
-      const newRoleMmr = r.currentMmr + r.mmrDelta;
 
-      // お祭りマッチ時はMMRと公式試合数は現状維持
-      const top = isExhibition ? (r.dbPlayer.mmr_top || 1200) : (r.role === 'TOP' ? newRoleMmr : (r.dbPlayer.mmr_top || 1200));
-      const jg = isExhibition ? (r.dbPlayer.mmr_jg || 1200) : (r.role === 'JG' ? newRoleMmr : (r.dbPlayer.mmr_jg || 1200));
-      const mid = isExhibition ? (r.dbPlayer.mmr_mid || 1200) : (r.role === 'MID' ? newRoleMmr : (r.dbPlayer.mmr_mid || 1200));
-      const adc = isExhibition ? (r.dbPlayer.mmr_adc || 1200) : (r.role === 'ADC' ? newRoleMmr : (r.dbPlayer.mmr_adc || 1200));
-      const sup = isExhibition ? (r.dbPlayer.mmr_sup || 1200) : (r.role === 'SUP' ? newRoleMmr : (r.dbPlayer.mmr_sup || 1200));
+      // ⑤ レーン間MMR連動 (Cross-Lane Propagation)
+      const currentLaneMmrs = {
+        TOP: r.dbPlayer.mmr_top || 1200,
+        JG:  r.dbPlayer.mmr_jg  || 1200,
+        MID: r.dbPlayer.mmr_mid || 1200,
+        ADC: r.dbPlayer.mmr_adc || 1200,
+        SUP: r.dbPlayer.mmr_sup || 1200,
+      };
+      const propagated = propagateCrossLaneMmr(currentLaneMmrs, r.role, r.mmrDelta);
+      const top = isExhibition ? currentLaneMmrs.TOP : propagated.TOP;
+      const jg  = isExhibition ? currentLaneMmrs.JG  : propagated.JG;
+      const mid = isExhibition ? currentLaneMmrs.MID : propagated.MID;
+      const adc = isExhibition ? currentLaneMmrs.ADC : propagated.ADC;
+      const sup = isExhibition ? currentLaneMmrs.SUP : propagated.SUP;
 
       const newGames = {
         TOP: (r.dbPlayer.games_top || 0) + (!isExhibition && r.role === 'TOP' ? 1 : 0),
@@ -333,7 +339,11 @@ export async function POST(request: Request) {
       const currentMeta = typeof r.dbPlayer.metadata === 'object' && r.dbPlayer.metadata !== null ? r.dbPlayer.metadata : {};
 
       const baseUpdate: any = {
-        [roleMmrKey]: newRoleMmr,
+        mmr_top: top,
+        mmr_jg: jg,
+        mmr_mid: mid,
+        mmr_adc: adc,
+        mmr_sup: sup,
         [gamesKey]: (newGames as any)[r.role],
         mmr: newTotalMmr,
         pity: newPity,

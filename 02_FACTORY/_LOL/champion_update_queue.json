@@ -1,6 +1,6 @@
 {
   "patch_version": "26.17",
-  "updated_at": "2026-09-09T06:21:56.981843+00:00",
+  "updated_at": "2026-09-09T09:35:56.157258+00:00",
   "status": "suspended",
   "queue": {
     "Aatrox": {
@@ -509,26 +509,26 @@
     },
     "MissFortune": {
       "name": "ミス・フォーチュン",
-      "status": "pending",
-      "updated_at": "2026-09-07T02:32:38.719811+00:00",
+      "status": "completed",
+      "updated_at": "2026-09-09T08:52:26.558579+00:00",
       "error": null
     },
     "MonkeyKing": {
       "name": "ウーコン",
-      "status": "pending",
-      "updated_at": "2026-09-07T02:33:27.427351+00:00",
+      "status": "completed",
+      "updated_at": "2026-09-09T08:53:25.828674+00:00",
       "error": null
     },
     "Mordekaiser": {
       "name": "モルデカイザー",
-      "status": "pending",
-      "updated_at": "2026-09-07T02:34:14.075688+00:00",
+      "status": "completed",
+      "updated_at": "2026-09-09T08:54:23.744791+00:00",
       "error": null
     },
     "Morgana": {
       "name": "モルガナ",
-      "status": "pending",
-      "updated_at": "2026-09-07T02:35:01.862505+00:00",
+      "status": "completed",
+      "updated_at": "2026-09-09T08:55:19.067563+00:00",
       "error": null
     },
     "Naafiri": {

@@ -57,6 +57,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
     Nautilus: ['naut', 'ノーチ', 'のーち', 'いかり'],
     LeeSin: ['lee', 'リー', 'りー', '盲目'],
     MonkeyKing: ['wukong', 'ウーコン', 'うーこん', 'サル', '猿'],
+    Ambessa: ['アンベッサ', 'あんべっさ', 'ambessa', '母', 'メルの母'],
   };
 
   // DDragonのtags → ロールへのマッピングテーブル
@@ -851,6 +852,12 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
       });
     }
     return [...result].sort((a, b) => {
+      // ⭐️ お気に入りピン留め最優先（お気に入り登録されたチャンピオンは常に上位）
+      const isFavA = favoriteChamps.includes(a.id);
+      const isFavB = favoriteChamps.includes(b.id);
+      if (isFavA && !isFavB) return -1;
+      if (!isFavA && isFavB) return 1;
+
       if (sortOrder === 'updated_desc') {
         const dateA = champDates[a.id] ? new Date(champDates[a.id]).getTime() : 0;
         const dateB = champDates[b.id] ? new Date(champDates[b.id]).getTime() : 0;

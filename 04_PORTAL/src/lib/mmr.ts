@@ -212,12 +212,18 @@ export function calculateNewMMR(ctx: MmrCalcContext): number {
   // 基準KDA 2.0から加点 (最大+15点のボーナス)
   const kdaBonus = Math.max(0, Math.min(15, (kdaScore - 2.0) * 5));
 
+  // ③-B ジャイアントキリング加点 (格上対面 MMR+200以上に勝利・高KDAを達成した際の快挙ボーナス)
+  let giantKillingBonus = 0;
+  if (mmrDiff >= 200 && (isWin || kdaScore >= 3.0)) {
+    giantKillingBonus = Math.min(6, Math.max(2, Math.round(mmrDiff / 80)));
+  }
+
   // ④ 対面回数補正 (案A: 完全撤廃)
   // 身内カスタムでの勝利の達成感・手応えを最大化するため、対面回数による減衰(0.9~0.7倍)は完全廃止(1.0倍固定)。
   const matchupDampener = 1.0;
 
   // ボーナスを合算
-  let delta = (baseDelta + kdaBonus) * matchupDampener;
+  let delta = (baseDelta + kdaBonus + giantKillingBonus) * matchupDampener;
   if (isPlacement) delta *= 1.5; // プレースメント中は変動を増幅(N5)
   delta = Math.round(delta);
 
@@ -231,6 +237,32 @@ export function calculateNewMMR(ctx: MmrCalcContext): number {
   }
 
   return delta;
+}
+
+/**
+ * ⑤ レーン間MMRの連動・底上げ (Cross-Lane MMR Propagation)
+ * メインのレーンで実力が上がった際、ゲーム全体のマクロ理解度・ファーム力向上を
+ * 他4レーンにも25%波及させて底上げし、オフロール時の初狩り事故を防止する。
+ */
+export function propagateCrossLaneMmr(
+  currentRates: { TOP: number; JG: number; MID: number; ADC: number; SUP: number },
+  playedRole: string,
+  primaryDelta: number
+): { TOP: number; JG: number; MID: number; ADC: number; SUP: number } {
+  const roles: ('TOP' | 'JG' | 'MID' | 'ADC' | 'SUP')[] = ['TOP', 'JG', 'MID', 'ADC', 'SUP'];
+  const newRates = { ...currentRates };
+  const normRole = (playedRole || '').toUpperCase();
+  const subDelta = Math.round(primaryDelta * 0.25);
+
+  for (const r of roles) {
+    if (r === normRole) {
+      newRates[r] = Math.max(800, Math.min(3000, currentRates[r] + primaryDelta));
+    } else {
+      newRates[r] = Math.max(800, Math.min(3000, currentRates[r] + subDelta));
+    }
+  }
+
+  return newRates;
 }
 
 // M-03: MMR変動の内訳。「なぜ+18なのか」をUIで見せるための構造。
@@ -563,4 +595,15 @@ export async function performFullMmrRebuild(supabase: SupabaseClient) {
   }
 
   return { success: true, message: `Rebuild completed for ${playersMap.size} players over ${allMatches.length} matches.` };
+}
+
+/**
+ * Blueチームの予測勝率を計算する（Eloロジスティック + Blueサイド勝率+1.5%補正）
+ */
+export function calculateBlueWinProbability(blueAvg: number, redAvg: number): number {
+  // Eloロジスティック: 400点差で約10倍
+  const baseProb = 1 / (1 + Math.pow(10, (redAvg - blueAvg) / 400));
+  // ④ Blueサイド勝率補正 (+1.5%のマップ構造的優位性)
+  const correctedProb = baseProb + 0.015;
+  return Number(Math.min(0.99, Math.max(0.01, correctedProb)).toFixed(4));
 }

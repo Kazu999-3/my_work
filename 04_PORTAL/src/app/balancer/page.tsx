@@ -5,8 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "../../lib/supabaseClient";
 import { Users, RefreshCw, Swords, X, Activity, Globe, MessageSquare, Info, Crown, Trophy, History, Shield, AlertTriangle, ChevronDown, Trees, Zap, Target, Heart, Settings, Sparkles, Coins } from "lucide-react";
-import { getChampIcon } from "../../lib/ddragonClient";
-import { getColorFromRankName } from "../../lib/mmr";
+import { getColorFromRankName, calculateBlueWinProbability } from "../../lib/mmr";
 import ProfileModal from "../ktm-admin/ProfileModal";
 import MatchRecordPanel from "../ktm-admin/MatchRecordPanel";
 import { Spinner } from "../../components/Feedback";
@@ -1055,7 +1054,7 @@ export default function BalancerPage() {
               {(() => {
                 const blueAvg = balanceResult.teamBlue.reduce((s: number, p: any) => s + (p.mmr || 1200), 0) / (balanceResult.teamBlue.length || 1);
                 const redAvg = balanceResult.teamRed.reduce((s: number, p: any) => s + (p.mmr || 1200), 0) / (balanceResult.teamRed.length || 1);
-                const pBlue = 1 / (1 + Math.pow(10, (redAvg - blueAvg) / 400));
+                const pBlue = calculateBlueWinProbability(blueAvg, redAvg);
                 const bluePct = Math.round(pBlue * 100);
                 const redPct = 100 - bluePct;
                 const mmrDiff = Math.abs(balanceResult.teamBlueMMR - balanceResult.teamRedMMR);

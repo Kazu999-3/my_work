@@ -5,6 +5,15 @@
 export type Role = 'TOP' | 'JG' | 'MID' | 'ADC' | 'SUP';
 export const ROLES: Role[] = ['TOP', 'JG', 'MID', 'ADC', 'SUP'];
 
+// ① キャリーレーン影響力重み付け (JG/MIDの格差を最重要視)
+export const ROLE_IMPACT_WEIGHTS: Record<Role, number> = {
+  JG: 1.15,
+  MID: 1.15,
+  ADC: 1.05,
+  TOP: 0.95,
+  SUP: 0.75,
+};
+
 export interface Player {
   name: string;
   discordId?: string;
@@ -23,6 +32,7 @@ export interface Player {
   isFixed?: boolean;
   isSpectatorFixed?: boolean;
   fixedRole?: Role | null;
+  todayStreak?: number; // ⑦ 当日モメンタム（連勝+1,+2 / 連敗-1,-2）
   // 計算用
   isNewbie?: boolean;
   avgMMR?: number;
@@ -41,6 +51,8 @@ export interface BalanceContext {
   teammateHistory: Map<string, number>; // 'A<=>B' の同チーム回数
   winStreakTeam: Set<string> | null; // 直近2連勝している5人のSet
   sideHistory: Record<string, { BLUE: number; RED: number }>;
+  // ② 2人組の共闘勝率・相性マトリクス (Chemistry Matrix)
+  duoSynergyMap?: Map<string, { games: number; winRate: number }>;
   // 同じチームにしない禁止ペア（#30: 従来はコードに直書きされていた「こんぺい/tamias」をDB設定化）。
   // 各要素は [名前1, 名前2]。完全一致（表記揺れ吸収）で判定する。未指定なら制約なし。
   forbiddenPairs?: [string, string][];
@@ -239,6 +251,11 @@ function runBalanceSearch(players: Player[], ctx: BalanceContext): RawBalanceCan
       if (p.handicapMmrPenalty) {
         eff -= p.handicapMmrPenalty; // ポイント消費型ハンデ補正 (Lv.1: -150 / Lv.2: -300 / Lv.3: -500)
       }
+      // ⑦ 当日モメンタム・調子補正 (同日連勝ゾーン +20~60 / 連敗スランプ -20~-60)
+      if (p.todayStreak) {
+        const momentumMmr = Math.max(-60, Math.min(60, p.todayStreak * 20));
+        eff += momentumMmr;
+      }
       p.effectiveRates![role] = Math.max(100, eff);
     });
   });
@@ -354,7 +371,7 @@ function runBalanceSearch(players: Player[], ctx: BalanceContext): RawBalanceCan
 
     let compositionPenalty = 0;
 
-    // 同チーム重複ペナルティ
+    // 同チーム重複 ＆ ② デュオ相性マトリクス (Chemistry Matrix)
     const addTeammatePenalty = (teamIndices: number[]) => {
       const names = teamIndices.map(i => players[i].name);
       for (let x = 0; x < names.length; x++) {
@@ -365,6 +382,20 @@ function runBalanceSearch(players: Player[], ctx: BalanceContext): RawBalanceCan
             compositionPenalty += (count - 2) * 12000; // ペナルティを8000から12000に強化
           } else if (count === 2) {
             compositionPenalty += 4000; // 2回連続で同チームの場合も軽微なペナルティで抑制
+          }
+
+          // ② 過去の共闘勝率相性 (Duo Synergy)
+          if (ctx.duoSynergyMap && ctx.duoSynergyMap.has(key)) {
+            const syn = ctx.duoSynergyMap.get(key)!;
+            if (syn.games >= 3) {
+              if (syn.winRate >= 75) {
+                // 黄金ペア（勝率75%以上）が同チームに入る場合は戦力偏りペナルティ
+                compositionPenalty += 8000;
+              } else if (syn.winRate <= 25) {
+                // 不仲・機能不全ペア（勝率25%以下）
+                compositionPenalty += 6000;
+              }
+            }
           }
         }
       }
@@ -404,11 +435,6 @@ function runBalanceSearch(players: Player[], ctx: BalanceContext): RawBalanceCan
 
         let penalty = compositionPenalty, totalA = 0, totalB = 0;
 
-        // N2: 以前あった「最高MMRと最低MMRは同じチームに(別チームなら+30000)」は、
-        // 下の calcTeamSpreadPenalty(1チーム内の強弱差が大きいと大ペナルティ)と真っ向から
-        // 矛盾していた(強者と弱者を同居させると spread ペナルティが必ず勝つ)。方針を
-        // 「総合MMR均等 + チーム内格差を避ける」に一本化し、この矛盾ルールは撤去した。
-
         let lanesAdvantagedA = 0, lanesAdvantagedB = 0;
         let highRankCountA = 0, highRankCountB = 0;
         let laneAdvantageScoreA = 0, laneAdvantageScoreB = 0;
@@ -425,22 +451,24 @@ function runBalanceSearch(players: Player[], ctx: BalanceContext): RawBalanceCan
           const effA = pLayerA.effectiveRates![role];
           const effB = pLayerB.effectiveRates![role];
 
+          // ① キャリーレーン影響力重み付け (JG/MIDの対面格差を重く評価)
+          const roleImpact = ROLE_IMPACT_WEIGHTS[role] || 1.0;
+          const roleGapMultiplier = (role === 'JG' || role === 'MID') ? 1.4 : (role === 'ADC' ? 1.15 : 1.0);
+
           // ★ 対面MMRの格差チェック (シルバー vs プラチナなどの格差対面を強力に抑制)
-          // 格上許可(allowHigher)の整合: 弱い側が「格上OK」なら格差抑制を大幅に緩和する。
-          // 以前は格上判定(600超)より先に格差禁止(300)が発動し、この設定が実質無意味だった。
           const laneMmrDiff = Math.abs(mmrA - mmrB);
           const weakerSide = mmrA < mmrB ? pLayerA : pLayerB;
           const gapScale = weakerSide.allowHigher ? 0.15 : 1;
           if (laneMmrDiff >= 300) {
-            penalty += 60000 * gapScale; // 超格差（許可なしは強い抑制）
+            penalty += 60000 * gapScale * roleGapMultiplier; // 超格差（許可なしは強い抑制）
           } else if (laneMmrDiff >= 200) {
-            penalty += 25000 * gapScale; // 中格差（抑止）
+            penalty += 25000 * gapScale * roleGapMultiplier; // 中格差（抑止）
           } else if (laneMmrDiff >= 150) {
-            penalty += 8000 * gapScale;  // 軽微な格差（ソフト抑制）
+            penalty += 8000 * gapScale * roleGapMultiplier;  // 軽微な格差（ソフト抑制）
           }
 
-          penalty += Math.pow(Math.abs(effA - effB), 2) / 2.5; // 対面のレーン格差ペナルティ（実効レートで評価）
-          totalA += effA; totalB += effB; // チーム合計も実効レートで統一（B4）
+          penalty += (Math.pow(Math.abs(effA - effB), 2) / 2.5) * roleGapMultiplier; // 対面のレーン格差ペナルティ
+          totalA += effA * roleImpact; totalB += effB * roleImpact; // チーム合計もロール影響力で重み付け評価
 
           laneAdvantageScoreA += Math.max(0, effA - effB);
           laneAdvantageScoreB += Math.max(0, effB - effA);
@@ -969,3 +997,6 @@ export async function reviewBalancerPredictionAccuracy(
 
   return { accuracy, sampleSize: rows.length, notified: true };
 }
+
+export { calculateBlueWinProbability } from './mmr';
+

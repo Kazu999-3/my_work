@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
+import { calculateBlueWinProbability } from '../../../../lib/mmr';
 
 // 以前はプロセス内メモリ(Map)に保存していたが、Vercelはリクエストごとに別インスタンス
 // (別プロセス)で実行されうるため、POSTしたインスタンスとGETしたインスタンスが異なると
@@ -33,10 +34,7 @@ export async function POST(request: Request) {
 
     const pendingId = inserted.id;
 
-    // ★ バランサー予測勝率の記録（課題: 予測勝率の検証）
-    // チーム確定の瞬間に、MMR差から青チームの勝率をEloロジスティックで算出して保存する。
-    // 後で試合結果(ktm_matches)が記録されたら突き合わせて的中率を集計する。
-    // balancer_predictions テーブルが未作成でも try/catch で握りつぶし、本筋は止めない。
+    // ★ バランサー予測勝率の記録（課題: 予測勝率の検証 ＆ Blueサイド勝率+1.5%補正）
     try {
       const blue = balanceResult.teamBlue || [];
       const red = balanceResult.teamRed || [];
@@ -44,14 +42,13 @@ export async function POST(request: Request) {
         const avg = (arr: any[]) => arr.reduce((s: number, p: any) => s + (Number(p.mmr) || 1200), 0) / arr.length;
         const blueAvg = avg(blue);
         const redAvg = avg(red);
-        // Eloロジスティック: 400点差で約10倍の勝ちやすさ
-        const predictedBlueWinprob = 1 / (1 + Math.pow(10, (redAvg - blueAvg) / 400));
+        const predictedBlueWinprob = calculateBlueWinProbability(blueAvg, redAvg);
         await supabase.from('balancer_predictions').insert({
           blue_players: blue.map((p: any) => p.name),
           red_players: red.map((p: any) => p.name),
           blue_avg_mmr: Math.round(blueAvg),
           red_avg_mmr: Math.round(redAvg),
-          predicted_blue_winprob: Number(predictedBlueWinprob.toFixed(4)),
+          predicted_blue_winprob: predictedBlueWinprob,
         });
       }
     } catch (e) {
