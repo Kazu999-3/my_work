@@ -225,6 +225,36 @@ class MatchupCardWidget(QWidget):
 
         card_layout.addWidget(self.build_frame)
 
+        # 4.5 🎯 セクション④: 敵味方構成 必須対策アイテム (重傷・防魔・貫通・CC耐性)
+        self.counter_frame = QFrame(self.card_frame)
+        self.counter_frame.setStyleSheet("""
+            QFrame {
+                background-color: rgba(30, 20, 45, 0.40);
+                border: 1px solid rgba(168, 85, 247, 0.45);
+                border-radius: 6px;
+            }
+        """)
+        counter_layout = QVBoxLayout(self.counter_frame)
+        counter_layout.setContentsMargins(8, 6, 8, 6)
+        counter_layout.setSpacing(3)
+
+        counter_header = QHBoxLayout()
+        self.counter_title = QLabel("🎯 構成対策キーアイテム", self.counter_frame)
+        self.counter_title.setStyleSheet("color: #C084FC; font-size: 12px; font-weight: 900; background: transparent; border: none;")
+        counter_header.addWidget(self.counter_title)
+
+        self.counter_badge = QLabel("COUNTER", self.counter_frame)
+        self.counter_badge.setStyleSheet("color: #E879F9; font-size: 9.5px; font-weight: 900; background: transparent; border: none;")
+        counter_header.addWidget(self.counter_badge, alignment=Qt.AlignmentFlag.AlignRight)
+        counter_layout.addLayout(counter_header)
+
+        self.counter_items_label = QLabel("・処刑人の劫罰 (800G) - 敵ソラカの回復阻害", self.counter_frame)
+        self.counter_items_label.setStyleSheet("color: #F0E6D2; font-size: 11.5px; font-weight: 600; line-height: 1.3; background: transparent; border: none;")
+        self.counter_items_label.setWordWrap(True)
+        counter_layout.addWidget(self.counter_items_label)
+
+        card_layout.addWidget(self.counter_frame)
+
         # 5. 🧭 劣勢逆転コンパスフレーム (劣勢時のみ表示)
         self.compass_frame = QFrame(self.card_frame)
         self.compass_frame.setStyleSheet("""
@@ -357,6 +387,18 @@ class MatchupCardWidget(QWidget):
             self.build_frame.setVisible(True)
         else:
             self.build_frame.setVisible(False)
+
+        # 3.5 敵味方構成 対策キーアイテム
+        counters = state.get("composition_counters", [])
+        if counters:
+            lines = []
+            for c in counters[:2]:
+                status_str = "🟢 [購入済]" if c.get("is_owned") else "⚡ [未購入]"
+                lines.append(f"{c['tag']} {c['item_name']} ({c['price']}G) {status_str}\n  └ {c['reason']}")
+            self.counter_items_label.setText("\n".join(lines))
+            self.counter_frame.setVisible(True)
+        else:
+            self.counter_frame.setVisible(False)
 
         # 4. 劣勢逆転コンパス
         compass = state.get("comeback_compass")

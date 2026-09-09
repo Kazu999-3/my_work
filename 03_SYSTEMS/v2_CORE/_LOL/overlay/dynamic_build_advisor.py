@@ -559,3 +559,169 @@ class DynamicBuildAdvisor:
             "reason": "フルビルド達成！エリクサーを服用して決戦のステータスを底上げしましょう。",
             "priority": "LOW",
         }
+
+    @classmethod
+    def analyze_composition_counters(
+        cls,
+        my_champion: str,
+        my_items: list,
+        enemy_champions: list,
+        enemy_items: list = None
+    ) -> list:
+        """
+        敵味方の構成（5v5）を包括スキャンし、対策として絶対・推奨されるアイテムリストを生成。
+        （重傷、対AP防魔、対タンク貫通/割合、対CC耐性、対シールド等）
+        """
+        counters = []
+        if not my_champion:
+            return counters
+
+        # 自身のクラス判定
+        blueprint = CHAMPION_CORE_BLUEPRINTS.get(my_champion, {})
+        champ_class = blueprint.get("class", "ad_fighter")
+        is_ap = "ap" in champ_class
+        is_tank = "tank" in champ_class
+        is_adc = "marksman" in champ_class
+        is_ad = not is_ap and not is_tank
+
+        # 敵構成のスキャン
+        HEAL_THREATS = {
+            "Aatrox": "エイトロックス", "Warwick": "ワーウィック", "Briar": "ブライアー",
+            "Vladimir": "ブラッドミア", "Soraka": "ソラカ", "Yuumi": "ユーミ",
+            "Sylas": "サイラス", "Swain": "スウェイン", "Fiora": "フィオラ",
+            "Irelia": "イレリア", "DrMundo": "ムンド", "Mundo": "ムンド",
+            "Volibear": "ボリベア", "Illaoi": "イラオイ", "Kayn": "ケイン",
+            "Redemption": "回復サポート", "Sona": "ソナ", "Nami": "ナミ"
+        }
+        AP_THREATS = {
+            "Brand", "LeBlanc", "Leblanc", "Syndra", "Evelynn", "Katarina", "Ahri",
+            "Vex", "Viktor", "Orianna", "Lux", "Xerath", "Zoe", "Hwei", "Aurora",
+            "Veigar", "Anivia", "Cassiopeia", "Kassadin", "Ekko", "Fizz", "Diana",
+            "Lillia", "Elise", "Nidalee", "Fiddlesticks", "Taliyah", "Ziggs", "Kennen"
+        }
+        TANK_THREATS = {
+            "Malphite": "マルファイト", "Sion": "サイオン", "Ornn": "オーン",
+            "Sejuani": "セジュアニ", "TahmKench": "タム・ケンチ", "ChoGath": "チョ＝ガス",
+            "Rammus": "ラムス", "KSante": "カサンテ", "Ksante": "カサンテ",
+            "Zac": "ザック", "Maokai": "マオカイ", "Nautilus": "ノーチラス",
+            "Leona": "レオーナ", "Braum": "ブラウム", "Alistar": "アリスター"
+        }
+        CC_THREATS = {
+            "Leona", "Nautilus", "Morgana", "Ashe", "Amumu", "Sejuani", "Lissandra",
+            "Skarner", "TwistedFate", "Veigar", "Galio", "Rell", "Thresh"
+        }
+        SHIELD_THREATS = {
+            "Lulu": "ルル", "Karma": "カルマ", "Janna": "ジャンナ",
+            "Sett": "セット", "TahmKench": "タム・ケンチ", "Shen": "シェン",
+            "Mordekaiser": "モルデカイザー", "Ivern": "アイバーン"
+        }
+
+        found_healers = [HEAL_THREATS[c] for c in enemy_champions if c in HEAL_THREATS]
+        ap_enemies = [c for c in enemy_champions if c in AP_THREATS]
+        found_tanks = [TANK_THREATS[c] for c in enemy_champions if c in TANK_THREATS]
+        found_ccs = [c for c in enemy_champions if c in CC_THREATS]
+        found_shields = [SHIELD_THREATS[c] for c in enemy_champions if c in SHIELD_THREATS]
+
+        # 1. 回復阻害 (重傷)
+        if found_healers:
+            h_str = "・".join(found_healers[:2])
+            if is_ap:
+                it = ITEM_DB.get("OblivionOrb")
+                c_item = ITEM_DB.get("Morellonomicon")
+            elif is_tank:
+                it = ITEM_DB.get("BrambleVest")
+                c_item = ITEM_DB.get("Thornmail")
+            elif is_adc:
+                it = ITEM_DB.get("ExecutionersCalling")
+                c_item = ITEM_DB.get("MortalReminder")
+            else:
+                it = ITEM_DB.get("ExecutionersCalling")
+                c_item = ITEM_DB.get("ChempunkChainsword", it)
+
+            owned = is_item_owned(it, my_items) or (c_item and is_item_owned(c_item, my_items))
+            counters.append({
+                "item_name": it["name"],
+                "price": it["price"],
+                "tag": "🩸 重傷必須",
+                "reason": f"敵の強回復（{h_str}）を40%カット",
+                "target_threat": h_str,
+                "is_owned": owned,
+                "priority": "CRITICAL"
+            })
+
+        # 2. 対AP (魔法シールド / 防魔)
+        if len(ap_enemies) >= 3:
+            if is_ad:
+                it = ITEM_DB.get("MawOfMalmortius")
+            elif is_tank:
+                it = ITEM_DB.get("KaenicRookern")
+            elif is_ap:
+                it = ITEM_DB.get("BansheesVeil", ITEM_DB.get("ZhonyasHourglass"))
+            else: # adc
+                it = ITEM_DB.get("MawOfMalmortius", ITEM_DB.get("MercuryTreads"))
+
+            owned = is_item_owned(it, my_items)
+            counters.append({
+                "item_name": it["name"],
+                "price": it["price"],
+                "tag": "🛡️ 対AP防魔",
+                "reason": f"敵AP過多（{len(ap_enemies)}体）のバースト蒸発を防止",
+                "target_threat": f"AP {len(ap_enemies)}体",
+                "is_owned": owned,
+                "priority": "HIGH"
+            })
+
+        # 3. 対タンク (貫通 / 割合ダメージ)
+        if len(found_tanks) >= 2:
+            t_str = "・".join(found_tanks[:2])
+            if is_adc:
+                it = ITEM_DB.get("LordDominiksRegards")
+            elif is_ap:
+                it = ITEM_DB.get("VoidStaff")
+            elif is_ad:
+                it = ITEM_DB.get("BlackCleaver")
+            else:
+                it = ITEM_DB.get("SunfireAegis")
+
+            owned = is_item_owned(it, my_items)
+            counters.append({
+                "item_name": it["name"],
+                "price": it["price"],
+                "tag": "⚔️ タンク破砕",
+                "reason": f"敵前衛（{t_str}）を削る割合/貫通ダメージ",
+                "target_threat": t_str,
+                "is_owned": owned,
+                "priority": "HIGH"
+            })
+
+        # 4. 対ハードCC (行動妨害耐性)
+        if len(found_ccs) >= 2:
+            it = ITEM_DB.get("MercuryTreads")
+            owned = is_item_owned(it, my_items)
+            counters.append({
+                "item_name": it["name"],
+                "price": it["price"],
+                "tag": "👟 行動妨害耐性",
+                "reason": f"敵のチェーンCC（{len(found_ccs)}体）拘束時間を30%短縮",
+                "target_threat": f"CC {len(found_ccs)}体",
+                "is_owned": owned,
+                "priority": "MID"
+            })
+
+        # 5. 対シールド (シールドブレイク)
+        if found_shields and is_ad and not is_adc:
+            s_str = "・".join(found_shields[:2])
+            it = {"name": "毒蛇の牙 (Serpent's Fang)", "price": 2500, "id": 6695}
+            owned = is_item_owned(it, my_items)
+            counters.append({
+                "item_name": it["name"],
+                "price": it["price"],
+                "tag": "🗡️ シールド破壊",
+                "reason": f"敵の分厚いシールド（{s_str}）を50%低減",
+                "target_threat": s_str,
+                "is_owned": owned,
+                "priority": "MID"
+            })
+
+        return counters
+

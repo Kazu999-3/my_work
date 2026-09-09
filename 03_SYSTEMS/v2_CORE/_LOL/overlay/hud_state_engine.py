@@ -573,6 +573,13 @@ class HudStateEngine:
             game_time_sec=game_time_sec
         )
 
+        enemy_champ_names = [p.get("rawChampionName", p.get("championName", "")).replace("game_character_displayname_", "") for p in enemy_players]
+        composition_counters = DynamicBuildAdvisor.analyze_composition_counters(
+            my_champion=my_champion,
+            my_items=my_items,
+            enemy_champions=enemy_champ_names
+        )
+
         build_recommendations = [f"{next_item_advice['tag']}: {next_item_advice['item_name']} ({next_item_advice['price']}G)"]
         if next_item_advice.get("reason"):
             build_recommendations.append(next_item_advice["reason"])
@@ -791,6 +798,7 @@ class HudStateEngine:
             # 敵5人の動的詳細
             "enemy_team_details": enemy_team_details,
             "next_item_advice": next_item_advice,
+            "composition_counters": composition_counters,
             "shop_alert": shop_alert,
             # ロール別対面ゴールド差
             "lane_dominance": lane_dominance,

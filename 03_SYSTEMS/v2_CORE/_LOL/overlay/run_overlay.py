@@ -108,12 +108,11 @@ def main():
     live_client = LiveClient()
     state_engine = HudStateEngine()
 
-    # 5つのウィジェットを初期化
+    # 4つのコアウィジェットを初期化
     top_bar = TopBarWidget()
     matchup_card = MatchupCardWidget()
     toast_alert = ToastAlertWidget()
     spell_tracker = SpellTrackerWidget()
-    lane_dominance = LaneDominanceWidget()
 
     # 解像度自動取得 ＆ 安全領域自動スナップ
     saved_positions = load_widget_positions()
@@ -135,14 +134,7 @@ def main():
     else:
         matchup_card.move(24, int(screen_h * 0.22))
 
-    # ③ 画面中央 (LaneDominance): LoLスコアボードの各レーン対面ゴールド差（ビルド欄直結ピル）
-    pos_lane = saved_positions.get("lane_dominance", {})
-    if pos_lane:
-        lane_dominance.move(pos_lane.get("x", int(screen_w * 0.48)), pos_lane.get("y", int(screen_h * 0.36)))
-    else:
-        lane_dominance.move(int(screen_w * 0.48), int(screen_h * 0.36))
-
-    # ⑤ トーストアラート (画面中央上部 - 平常時は非表示、アラート時のみポップアップ)
+    # ③ トーストアラート (画面中央上部 - 平常時は非表示、アラート時のみポップアップ)
     toast_alert.move(int((screen_w - 320) / 2), 50)
     toast_alert.hide()
 
@@ -174,15 +166,12 @@ def main():
         nonlocal hud_visible
         spell_tracker.hide()
         matchup_card.hide()
-        lane_dominance.hide()
         toast_alert.hide()
         hud_visible = False
 
     # デモやモック、常時表示オプション指定時は最初から表示
     if args.always_show or args.demo or args.mock:
         show_hud_widgets()
-        if args.always_show:
-            lane_dominance.show()
     else:
         # 通常のLoL監視モード: ゲーム開始まで完全非表示
         hide_hud_widgets()
@@ -253,11 +242,9 @@ def main():
         if not hud_visible and not args.always_show:
             return
         if is_pressed:
-            lane_dominance.show()
             if not matchup_card.is_pinned:
                 matchup_card.show()
         else:
-            lane_dominance.hide()
             if not matchup_card.is_pinned:
                 matchup_card.hide()
 
@@ -422,7 +409,6 @@ def main():
             spell_tracker.update_data(state)
             matchup_card.update_data(state)
             toast_alert.update_events(state)
-            lane_dominance.update_data(state)
 
     timer = QTimer()
     timer.timeout.connect(update_all)
