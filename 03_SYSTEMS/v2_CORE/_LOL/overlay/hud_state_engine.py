@@ -612,9 +612,19 @@ class HudStateEngine:
         recent_fight = self.fight_tracker.get_recent_finished_fight()
         recent_fight_dmg = int(recent_fight.get("my_damage_dealt", 2380)) if recent_fight else (2380 if game_time_sec > 180 else 1450)
 
-        # --- 10. 敵5人の動的ステータス (Ult・スペル・アイテム・レベル・対面味方情報) ---
+        # --- 10. 敵5人の動的ステータス (左から TOP, JG, MID, ADC, SUP の固定順序) ---
+        roles_order = ["TOP", "JUNGLE", "MIDDLE", "BOTTOM", "UTILITY"]
         enemy_team_details = []
-        for ep in enemy_players:
+
+        for r_key in roles_order:
+            ep = enemy_roles.get(r_key)
+            if not ep and enemy_players:
+                # もし未割当なら残りの敵からフォールバック
+                ep = enemy_players.pop(0)
+
+            if not ep:
+                continue
+
             spells = ep.get("summonerSpells", {})
             sp1_raw = spells.get("summonerSpellOne", {}).get("displayName") or spells.get("summonerSpellOne", {}).get("rawDisplayName", "Flash")
             sp2_raw = spells.get("summonerSpellTwo", {}).get("displayName") or spells.get("summonerSpellTwo", {}).get("rawDisplayName", "Teleport")
@@ -628,29 +638,26 @@ class HudStateEngine:
             hp_pct = (cur_hp / max_hp * 100.0) if max_hp > 0 else 70.0
 
             # 対面の味方レーナー情報を取得
-            e_pos = ep.get("position", "MID")
-            matching_ally = ally_role_map.get(e_pos)
+            matching_ally = ally_roles.get(r_key)
             if matching_ally:
                 a_champ_name = extract_champion_name(matching_ally)
                 a_stats = matching_ally.get("championStats", {})
                 a_cur_hp = a_stats.get("currentHealth", 0.0)
                 a_max_hp = a_stats.get("maxHealth", 0.0)
                 a_hp_pct = (a_cur_hp / a_max_hp * 100.0) if a_max_hp > 0 else 80.0
-                a_gold = calculate_player_effective_gold(
-                    matching_ally,
-                    is_self=(matching_ally == my_player_obj),
-                    self_current_gold=my_gold,
-                    game_time_sec=game_time_sec
-                )
-                e_gold = calculate_player_effective_gold(ep, is_self=False, self_current_gold=0.0, game_time_sec=game_time_sec)
+                a_gold = calculate_player_effective_gold(matching_ally)
+                e_gold = calculate_player_effective_gold(ep)
                 l_diff = a_gold - e_gold
             else:
                 a_champ_name = my_champion
                 a_hp_pct = 80.0
                 l_diff = 0
 
+            role_display = "JG" if r_key == "JUNGLE" else ("MID" if r_key == "MIDDLE" else ("ADC" if r_key == "BOTTOM" else ("SUP" if r_key == "UTILITY" else "TOP")))
+
             enemy_team_details.append({
-                "role": e_pos,
+                "role": role_display,
+                "role_raw": r_key,
                 "champion": extract_champion_name(ep),
                 "level": ep.get("level", 6),
                 "items": ep.get("items", []),
