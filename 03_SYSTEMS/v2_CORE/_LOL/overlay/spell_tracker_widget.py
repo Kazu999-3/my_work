@@ -83,17 +83,17 @@ class CoolDownButton(QPushButton):
 
             self.setStyleSheet(f"""
                 QPushButton {{
-                    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 rgba(14, 30, 50, 0.92), stop:1 rgba(3, 14, 28, 0.95));
+                    background: rgba(14, 26, 42, 0.55);
                     color: #F0E6D2;
                     font-family: 'BeaufortforLOL', 'Segoe UI', sans-serif;
-                    font-size: 11px;
+                    font-size: 10.5px;
                     font-weight: 900;
                     border: 1px solid {border};
                     border-radius: 3px;
                     padding: 0px;
                 }}
                 QPushButton:hover {{
-                    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 rgba(10, 200, 185, 0.35), stop:1 rgba(9, 20, 40, 0.95));
+                    background: rgba(10, 200, 185, 0.35);
                     border: 1px solid #0AC8B9;
                 }}
             """)
@@ -101,12 +101,12 @@ class CoolDownButton(QPushButton):
         else:
             self.setStyleSheet("""
                 QPushButton {{
-                    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 rgba(50, 12, 18, 0.95), stop:1 rgba(25, 5, 8, 0.98));
+                    background: rgba(45, 10, 16, 0.60);
                     color: #FF7B89;
                     font-family: 'BeaufortforLOL', 'Segoe UI', sans-serif;
-                    font-size: 10px;
+                    font-size: 9.5px;
                     font-weight: 900;
-                    border: 1px solid #E84057;
+                    border: 1px solid rgba(232, 64, 87, 0.7);
                     border-radius: 3px;
                     padding: 0px;
                 }}
@@ -281,10 +281,10 @@ class SpellTrackerWidget(QWidget):
         self.card_frame = QFrame(self)
         self.card_frame.setStyleSheet("""
             QFrame {
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 rgba(9, 20, 40, 0.94), stop:1 rgba(1, 10, 19, 0.96));
-                border: 1px solid #785A28;
-                border-radius: 6px;
-                padding: 3px;
+                background: rgba(8, 14, 24, 0.45);
+                border: 1px solid rgba(200, 155, 60, 0.35);
+                border-radius: 10px;
+                padding: 2px;
             }
         """)
 

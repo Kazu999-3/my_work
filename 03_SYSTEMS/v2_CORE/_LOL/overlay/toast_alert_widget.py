@@ -39,8 +39,8 @@ class ToastAlertWidget(QWidget):
         self.panel_frame.setObjectName("alertPanelFrame")
         self.panel_frame.setStyleSheet("""
             QFrame#alertPanelFrame {
-                background-color: rgba(12, 10, 18, 0.88);
-                border: 1px solid rgba(245, 158, 11, 0.40);
+                background-color: rgba(8, 14, 24, 0.45);
+                border: 1px solid rgba(200, 155, 60, 0.35);
                 border-radius: 10px;
             }
         """)

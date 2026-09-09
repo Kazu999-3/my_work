@@ -31,7 +31,7 @@ class MatchupCardWidget(QWidget):
         )
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
         self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
-        self.setFixedWidth(380)
+        self.setFixedWidth(270)
 
         self.main_layout = QVBoxLayout(self)
         self.main_layout.setContentsMargins(0, 0, 0, 0)
@@ -39,27 +39,27 @@ class MatchupCardWidget(QWidget):
         self.card_frame = QFrame(self)
         self.card_frame.setStyleSheet("""
             QFrame#cardFrame {
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 rgba(9, 20, 40, 0.96), stop:1 rgba(1, 10, 19, 0.98));
-                border: 1.5px solid #C89B3C;
-                border-radius: 8px;
+                background: rgba(8, 14, 24, 0.45);
+                border: 1px solid rgba(200, 155, 60, 0.35);
+                border-radius: 10px;
             }
         """)
         self.card_frame.setObjectName("cardFrame")
         
         card_layout = QVBoxLayout(self.card_frame)
-        card_layout.setContentsMargins(14, 12, 14, 14)
-        card_layout.setSpacing(10)
+        card_layout.setContentsMargins(8, 7, 8, 8)
+        card_layout.setSpacing(6)
 
         # 1. タイトルヘッダー (対面カード名 ＆ レーン名)
         header_layout = QHBoxLayout()
         header_layout.setContentsMargins(0, 0, 0, 0)
 
-        self.title_label = QLabel("⚔️ 対面インテル ＆ 勝利手順書", self.card_frame)
-        self.title_label.setStyleSheet("color: #F0E6D2; font-family: 'BeaufortforLOL', sans-serif; font-weight: 900; font-size: 14px; letter-spacing: 0.5px;")
+        self.title_label = QLabel("⚔️ 対面インテル ＆ 手順書", self.card_frame)
+        self.title_label.setStyleSheet("color: #F0E6D2; font-size: 11.5px; font-weight: 900;")
         header_layout.addWidget(self.title_label)
 
         self.sub_badge = QLabel("TACTICS", self.card_frame)
-        self.sub_badge.setStyleSheet("color: #0AC8B9; font-family: 'BeaufortforLOL', sans-serif; font-size: 10px; font-weight: 900; background-color: rgba(10, 200, 185, 0.15); border: 1px solid #0AC8B9; border-radius: 3px; padding: 2px 6px;")
+        self.sub_badge.setStyleSheet("color: #0AC8B9; font-size: 9px; font-weight: 900; background-color: rgba(10, 200, 185, 0.15); border: 1px solid rgba(10, 200, 185, 0.4); border-radius: 3px; padding: 1px 4px;")
         header_layout.addWidget(self.sub_badge, alignment=Qt.AlignmentFlag.AlignRight)
 
         card_layout.addLayout(header_layout)
@@ -68,27 +68,27 @@ class MatchupCardWidget(QWidget):
         self.threat_frame = QFrame(self.card_frame)
         self.threat_frame.setStyleSheet("""
             QFrame {
-                background-color: rgba(232, 64, 87, 0.15);
-                border: 1px solid #E84057;
+                background-color: rgba(232, 64, 87, 0.12);
+                border: 1px solid rgba(232, 64, 87, 0.35);
                 border-radius: 6px;
             }
         """)
         threat_layout = QVBoxLayout(self.threat_frame)
-        threat_layout.setContentsMargins(10, 8, 10, 8)
-        threat_layout.setSpacing(4)
+        threat_layout.setContentsMargins(6, 5, 6, 5)
+        threat_layout.setSpacing(2)
 
         threat_header = QHBoxLayout()
         self.threat_title = QLabel("⚠️ 警戒スキル ＆ 勝機", self.threat_frame)
-        self.threat_title.setStyleSheet("color: #FF7B89; font-family: 'BeaufortforLOL', sans-serif; font-size: 12px; font-weight: 900; background: transparent; border: none;")
+        self.threat_title.setStyleSheet("color: #FF7B89; font-size: 10.5px; font-weight: 900; background: transparent; border: none;")
         threat_header.addWidget(self.threat_title)
 
         self.threat_badge = QLabel("CRITICAL", self.threat_frame)
-        self.threat_badge.setStyleSheet("color: #C89B3C; font-family: 'BeaufortforLOL', sans-serif; font-size: 10px; font-weight: 900; background: transparent; border: none;")
+        self.threat_badge.setStyleSheet("color: #C89B3C; font-size: 9px; font-weight: 900; background: transparent; border: none;")
         threat_header.addWidget(self.threat_badge, alignment=Qt.AlignmentFlag.AlignRight)
         threat_layout.addLayout(threat_header)
 
         self.threat_advice = QLabel("敵の主要スキル・エンゲージを避けた直後が最大の反撃チャンス！", self.threat_frame)
-        self.threat_advice.setStyleSheet("color: #F0E6D2; font-size: 11px; font-weight: bold; background: transparent; border: none; line-height: 1.3;")
+        self.threat_advice.setStyleSheet("color: #F0E6D2; font-size: 10px; font-weight: bold; background: transparent; border: none; line-height: 1.2;")
         self.threat_advice.setWordWrap(True)
         threat_layout.addWidget(self.threat_advice)
 
@@ -98,27 +98,26 @@ class MatchupCardWidget(QWidget):
         self.phase_frame = QFrame(self.card_frame)
         self.phase_frame.setStyleSheet("""
             QFrame {
-                background-color: rgba(9, 20, 40, 0.85);
-                border: 1px solid #785A28;
+                background-color: rgba(0, 0, 0, 0.25);
+                border: 1px solid rgba(255, 255, 255, 0.08);
                 border-radius: 6px;
             }
         """)
         phase_layout = QVBoxLayout(self.phase_frame)
-        phase_layout.setContentsMargins(10, 8, 10, 8)
-        phase_layout.setSpacing(4)
+        phase_layout.setContentsMargins(6, 5, 6, 5)
+        phase_layout.setSpacing(2)
 
-        phase_header = QHBoxLayout()
-        self.phase_badge_label = QLabel("🗺️ レーン戦手順: [Phase 1] 🛡️ 安定", self.phase_frame)
-        self.phase_badge_label.setStyleSheet("color: #C8AA6E; font-family: 'BeaufortforLOL', sans-serif; font-size: 12px; font-weight: 900; background: transparent; border: none;")
+        self.phase_badge_label = QLabel("🗺️ 手順: [Phase 1] 🛡️ 安定", self.phase_frame)
+        self.phase_badge_label.setStyleSheet("color: #C8AA6E; font-size: 10.5px; font-weight: 900; background: transparent; border: none;")
         phase_layout.addWidget(self.phase_badge_label)
 
         self.phase_action_label = QLabel("・Lv1は無理せずCSを捨ててプルウェーブを作る", self.phase_frame)
-        self.phase_action_label.setStyleSheet("color: #F0E6D2; font-size: 11px; font-weight: 500; line-height: 1.35; background: transparent; border: none;")
+        self.phase_action_label.setStyleSheet("color: #F0E6D2; font-size: 10px; font-weight: 500; line-height: 1.25; background: transparent; border: none;")
         self.phase_action_label.setWordWrap(True)
         phase_layout.addWidget(self.phase_action_label)
 
         self.phase_trigger_label = QLabel("🎯 勝利条件: タワー前でウェーブ固定できれば第1段階クリア", self.phase_frame)
-        self.phase_trigger_label.setStyleSheet("color: #0AC8B9; font-family: 'BeaufortforLOL', sans-serif; font-size: 10.5px; font-weight: 800; background: transparent; border: none;")
+        self.phase_trigger_label.setStyleSheet("color: #0AC8B9; font-size: 9.5px; font-weight: 800; background: transparent; border: none;")
         self.phase_trigger_label.setWordWrap(True)
         phase_layout.addWidget(self.phase_trigger_label)
 
@@ -128,21 +127,21 @@ class MatchupCardWidget(QWidget):
         self.build_frame = QFrame(self.card_frame)
         self.build_frame.setStyleSheet("""
             QFrame {
-                background-color: rgba(9, 20, 40, 0.85);
-                border: 1px solid #785A28;
+                background-color: rgba(0, 0, 0, 0.25);
+                border: 1px solid rgba(255, 255, 255, 0.08);
                 border-radius: 6px;
             }
         """)
         build_layout = QVBoxLayout(self.build_frame)
-        build_layout.setContentsMargins(10, 7, 10, 7)
-        build_layout.setSpacing(3)
+        build_layout.setContentsMargins(6, 4, 6, 4)
+        build_layout.setSpacing(2)
 
-        self.build_item_name = QLabel("🛡️ 優先対策: プレート スチールキャップ (1100G)", self.build_frame)
-        self.build_item_name.setStyleSheet("color: #C8AA6E; font-family: 'BeaufortforLOL', sans-serif; font-size: 12px; font-weight: 900; background: transparent; border: none;")
+        self.build_item_name = QLabel("🛡️ 優先: プレート スチールキャップ (1100G)", self.build_frame)
+        self.build_item_name.setStyleSheet("color: #C8AA6E; font-size: 10.5px; font-weight: 900; background: transparent; border: none;")
         build_layout.addWidget(self.build_item_name)
 
         self.build_reason = QLabel("敵の通常攻撃ダメージを12%軽減。殴り合いで圧倒的優位に！", self.build_frame)
-        self.build_reason.setStyleSheet("color: #A09B8C; font-size: 11px; font-weight: 500; background: transparent; border: none;")
+        self.build_reason.setStyleSheet("color: #A09B8C; font-size: 9.5px; font-weight: 500; background: transparent; border: none;")
         self.build_reason.setWordWrap(True)
         build_layout.addWidget(self.build_reason)
 

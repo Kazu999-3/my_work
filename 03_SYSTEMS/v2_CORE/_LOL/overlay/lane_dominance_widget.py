@@ -97,8 +97,8 @@ class LaneDominanceWidget(QWidget):
         self.card_frame = QFrame(self)
         self.card_frame.setStyleSheet("""
             QFrame {
-                background-color: rgba(12, 10, 18, 0.88);
-                border: 1px solid rgba(212, 140, 40, 0.40);
+                background-color: rgba(8, 14, 24, 0.45);
+                border: 1px solid rgba(200, 155, 60, 0.35);
                 border-radius: 10px;
             }
         """)

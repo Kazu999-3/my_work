@@ -31,7 +31,7 @@ class TopBarWidget(QWidget):
         )
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
         self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
-        self.setFixedWidth(310)
+        self.setFixedWidth(240)
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -39,24 +39,24 @@ class TopBarWidget(QWidget):
         self.card_frame = QFrame(self)
         self.card_frame.setStyleSheet("""
             QFrame {
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 rgba(9, 20, 40, 0.94), stop:1 rgba(1, 10, 19, 0.96));
-                border: 1px solid #785A28;
-                border-radius: 6px;
-                padding: 4px;
+                background: rgba(8, 14, 24, 0.45);
+                border: 1px solid rgba(200, 155, 60, 0.35);
+                border-radius: 10px;
+                padding: 2px;
             }
         """)
         
         card_layout = QVBoxLayout(self.card_frame)
-        card_layout.setContentsMargins(8, 6, 8, 8)
-        card_layout.setSpacing(6)
+        card_layout.setContentsMargins(8, 5, 8, 6)
+        card_layout.setSpacing(4)
 
         # 1. 💰 チームゴールド差行
         gold_row = QHBoxLayout()
-        gold_title = QLabel("💰 チーム差 :", self.card_frame)
-        gold_title.setStyleSheet("color: #C8AA6E; font-family: 'BeaufortforLOL', sans-serif; font-size: 12px; font-weight: bold;")
+        gold_title = QLabel("💰 差 :", self.card_frame)
+        gold_title.setStyleSheet("color: rgba(200, 170, 110, 0.9); font-size: 11px; font-weight: bold;")
         
         self.gold_value_label = QLabel("+0G (互角 🟡)", self.card_frame)
-        self.gold_value_label.setStyleSheet("color: #F0E6D2; font-family: 'BeaufortforLOL', sans-serif; font-size: 13px; font-weight: 900;")
+        self.gold_value_label.setStyleSheet("color: #F0E6D2; font-size: 11.5px; font-weight: 900;")
 
         gold_row.addWidget(gold_title)
         gold_row.addWidget(self.gold_value_label)
@@ -65,11 +65,11 @@ class TopBarWidget(QWidget):
 
         # 2. 🎯 CSペース行
         cs_row = QHBoxLayout()
-        self.cs_title = QLabel("🎯 CSペース :", self.card_frame)
-        self.cs_title.setStyleSheet("color: #a8a29e; font-size: 12px; font-weight: bold;")
+        self.cs_title = QLabel("🎯 CS :", self.card_frame)
+        self.cs_title.setStyleSheet("color: rgba(168, 162, 158, 0.9); font-size: 11px; font-weight: bold;")
 
-        self.cs_value_label = QLabel("0.0 /分 (---)", self.card_frame)
-        self.cs_value_label.setStyleSheet("color: #22c55e; font-size: 13px; font-weight: bold;")
+        self.cs_value_label = QLabel("0.0 /分", self.card_frame)
+        self.cs_value_label.setStyleSheet("color: #22c55e; font-size: 11.5px; font-weight: bold;")
 
         cs_row.addWidget(self.cs_title)
         cs_row.addWidget(self.cs_value_label)
@@ -80,32 +80,32 @@ class TopBarWidget(QWidget):
         target_box = QFrame(self.card_frame)
         target_box.setStyleSheet("""
             QFrame {
-                background-color: rgba(255, 255, 255, 0.05);
+                background-color: rgba(0, 0, 0, 0.25);
                 border-radius: 6px;
-                padding: 4px;
+                padding: 2px;
             }
         """)
         target_layout = QVBoxLayout(target_box)
-        target_layout.setContentsMargins(6, 4, 6, 4)
-        target_layout.setSpacing(3)
+        target_layout.setContentsMargins(5, 3, 5, 3)
+        target_layout.setSpacing(2)
 
-        self.target_name_label = QLabel("🛍️ 目標: プレート スチールキャップ (1100G)", target_box)
-        self.target_name_label.setStyleSheet("color: #fef08a; font-size: 11px; font-weight: bold;")
+        self.target_name_label = QLabel("🛍️ プレート スチールキャップ (1100G)", target_box)
+        self.target_name_label.setStyleSheet("color: #fef08a; font-size: 10px; font-weight: bold;")
         target_layout.addWidget(self.target_name_label)
 
         # プログレスバー
         self.progress_bar = QProgressBar(target_box)
-        self.progress_bar.setFixedHeight(12)
+        self.progress_bar.setFixedHeight(6)
         self.progress_bar.setTextVisible(False)
         self.progress_bar.setStyleSheet("""
             QProgressBar {
-                background-color: rgba(0, 0, 0, 0.5);
-                border-radius: 6px;
-                border: 1px solid rgba(255, 255, 255, 0.1);
+                background-color: rgba(0, 0, 0, 0.4);
+                border-radius: 3px;
+                border: 1px solid rgba(255, 255, 255, 0.08);
             }
             QProgressBar::chunk {
                 background-color: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #d97706, stop:1 #fbbf24);
-                border-radius: 5px;
+                border-radius: 2px;
             }
         """)
         target_layout.addWidget(self.progress_bar)

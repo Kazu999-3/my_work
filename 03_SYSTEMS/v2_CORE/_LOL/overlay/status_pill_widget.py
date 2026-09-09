@@ -36,17 +36,17 @@ class MiniStatusPillWidget(QWidget):
 
         self.setStyleSheet("""
             QWidget {
-                background-color: rgba(10, 14, 23, 210);
-                border: 1px solid rgba(200, 155, 60, 180);
-                border-radius: 13px;
+                background-color: rgba(8, 12, 20, 110);
+                border: 1px solid rgba(200, 155, 60, 120);
+                border-radius: 12px;
             }
             QWidget:hover {
-                background-color: rgba(15, 22, 35, 240);
-                border: 1px solid rgba(240, 195, 80, 240);
+                background-color: rgba(14, 20, 32, 170);
+                border: 1px solid rgba(240, 195, 80, 200);
             }
         """)
 
-        self.setFixedHeight(28)
+        self.setFixedHeight(24)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
 
     def set_status(self, is_in_game: bool, champ_name: str = ""):
@@ -55,9 +55,9 @@ class MiniStatusPillWidget(QWidget):
             self.label.setStyleSheet("color: #00ffcc; background: transparent;")
             self.setStyleSheet("""
                 QWidget {
-                    background-color: rgba(6, 20, 30, 230);
-                    border: 1px solid rgba(0, 255, 204, 200);
-                    border-radius: 13px;
+                    background-color: rgba(6, 18, 26, 120);
+                    border: 1px solid rgba(0, 255, 204, 150);
+                    border-radius: 12px;
                 }
             """)
         else:
@@ -65,13 +65,13 @@ class MiniStatusPillWidget(QWidget):
             self.label.setStyleSheet("color: #e6c87a; background: transparent;")
             self.setStyleSheet("""
                 QWidget {
-                    background-color: rgba(10, 14, 23, 210);
-                    border: 1px solid rgba(200, 155, 60, 180);
-                    border-radius: 13px;
+                    background-color: rgba(8, 12, 20, 110);
+                    border: 1px solid rgba(200, 155, 60, 120);
+                    border-radius: 12px;
                 }
                 QWidget:hover {
-                    background-color: rgba(15, 22, 35, 240);
-                    border: 1px solid rgba(240, 195, 80, 240);
+                    background-color: rgba(14, 20, 32, 170);
+                    border: 1px solid rgba(240, 195, 80, 200);
                 }
             """)
         self.adjustSize()
