@@ -70,7 +70,7 @@ TYPICAL_TOP_CHAMPIONS = {
     "Kennen", "Kled", "KSante", "Malphite", "Mordekaiser", "Nasus", "Olaf",
     "Ornn", "Pantheon", "Poppy", "Quinn", "Renekton", "Riven", "Rumble",
     "Sett", "Shen", "Singed", "Sion", "TahmKench", "Teemo", "Trundle",
-    "Tryndamere", "Urgot", "Volibear", "Warwick", "Wukong", "Yorick", "Heimerdinger"
+    "Tryndamere", "Urgot", "Volibear", "Warwick", "Wukong", "Yorick", "Heimerdinger", "Ambessa"
 }
 
 TYPICAL_ADC_CHAMPIONS = {
@@ -91,7 +91,7 @@ TYPICAL_JG_CHAMPIONS = {
     "Graves", "Hecarim", "Ivern", "JarvanIV", "Karthus", "Kayn", "KhaZix", "Kindred",
     "LeeSin", "Lillia", "MasterYi", "Nidalee", "Nocturne", "Nunu", "Rammus", "RekSai",
     "Rengar", "Sejuani", "Shaco", "Shyvana", "Skarner", "Taliyah", "Udyr", "Vi",
-    "Viego", "Volibear", "Warwick", "Wukong", "XinZhao", "Zac"
+    "Viego", "Volibear", "Warwick", "Wukong", "XinZhao", "Zac", "Ambessa"
 }
 
 TYPICAL_MID_CHAMPIONS = {

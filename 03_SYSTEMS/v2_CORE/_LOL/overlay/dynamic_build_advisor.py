@@ -182,6 +182,7 @@ CHAMPION_CORE_BLUEPRINTS = {
     "Nidalee": {"class": "ap_assassin", "first_core": "LichBane", "second_cores": ["Shadowflame", "ZhonyasHourglass"], "boots_default": "SorcerersShoes"},
     "Fiddlesticks": {"class": "ap_mage", "first_core": "LiandrysTorment", "second_cores": ["ZhonyasHourglass", "Shadowflame"], "boots_default": "SorcerersShoes"},
     "Ivern": {"class": "enchanter", "first_core": "MoonstoneRenewer", "second_cores": ["EchoesOfHelia", "ImperialMandate"], "boots_default": "IonianBoots"},
+    "Ambessa": {"class": "ad_assassin_fighter", "first_core": "ProfaneHydra", "second_cores": ["Eclipse", "SeryldasGrudge", "SunderedSky"], "boots_default": "IonianBoots"},
 
     # Mid / AP Mage / AP Assassin
     "Ahri": {"class": "ap_mage", "first_core": "LudensCompanion", "second_cores": ["Malignance", "ZhonyasHourglass"], "boots_default": "SorcerersShoes"},
