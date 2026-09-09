@@ -357,7 +357,6 @@ def main():
                 toast_alert.show_alert("👑", f"Sovereign HUD 接続完了: {my_champ} vs {enemy_champ}", alert_type="info", duration_ms=4000)
                 status_action.setText(f"⚔️ 試合中: {my_champ} vs {enemy_champ} ({t_str})")
                 tray_icon.setToolTip(f"👑 Sovereign HUD (試合中: {my_champ})")
-                status_pill.set_status(True, my_champ)
 
             if last_reported_status != "in_game":
                 print(f"\n🟢 [インゲーム自動連動成功！] 試合時間: {t_str} | {my_champ} vs {enemy_champ} | {g_str}")
