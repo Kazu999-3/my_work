@@ -96,6 +96,9 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
     const params = new URLSearchParams(searchParams.toString());
     params.set('select', champ.id);
     router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   const handleClearSelection = () => {
@@ -104,6 +107,9 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
     params.delete('select');
     const qs = params.toString();
     router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+    if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   // 現在のフィルタ・ソート状態をURLクエリへ反映する。チャンピオン詳細を開いている
@@ -144,6 +150,24 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
   };
   
   const [isGuideOpen, setIsGuideOpen] = useState(false);
+  const [isDataMenuOpen, setIsDataMenuOpen] = useState(false);
+  const dataMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
+      if (dataMenuRef.current && !dataMenuRef.current.contains(event.target as Node)) {
+        setIsDataMenuOpen(false);
+      }
+    };
+    if (isDataMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('touchstart', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, [isDataMenuOpen]);
   const [dataFields, setDataFields] = useState<any>({
     strengths: '', weaknesses: '', powerSpikes: '', buildRunes: '',
     fullClearTime: '', counterChampions: '', mustBanChampions: '', pickRecommendation: '',
@@ -1348,7 +1372,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
               )}
 
               {/* 右側アクション群（Hextechダークグラス調で統一） */}
-              <div className="flex items-center gap-2 flex-wrap ml-auto">
+              <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto sm:ml-auto justify-start sm:justify-end">
                 {/* ⚔️ 対面VS直接比較モード切り替え */}
                 <button
                   type="button"
@@ -1395,69 +1419,83 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                     </button>
 
                     {/* データ管理メニュー */}
-                    <div className="relative group">
+                    <div className="relative" ref={dataMenuRef}>
                       <button
                         type="button"
-                        className="px-3 py-2 bg-white/10 hover:bg-white/15 text-stone-200 hover:text-white font-bold rounded-xl transition-all flex items-center gap-1.5 text-xs backdrop-blur-md border border-white/15 cursor-pointer shadow-sm"
-                        title="記事のAI清書や品質チェックなどの管理機能"
+                        onClick={() => setIsDataMenuOpen(prev => !prev)}
+                        className={`px-3 py-2 ${isDataMenuOpen ? 'bg-white/25 text-white ring-2 ring-white/30' : 'bg-white/10 hover:bg-white/15 text-stone-200 hover:text-white'} font-bold rounded-xl transition-all flex items-center gap-1.5 text-xs backdrop-blur-md border border-white/15 cursor-pointer shadow-sm active:scale-95`}
+                        title="高度AI・品質チェックなどの管理機能"
                       >
                         <Compass size={13} className="text-stone-400" />
                         <span>データ管理</span>
-                        <span className="text-[9px] opacity-70">▲</span>
+                        <span className={`text-[9px] opacity-70 transition-transform ${isDataMenuOpen ? 'rotate-180' : ''}`}>▲</span>
                       </button>
                       
-                      {/* 上方向（バナー内）に展開して overflow-hidden による見切れを完全防止 */}
-                      <div className="absolute right-0 bottom-full mb-2 w-64 bg-stone-900/95 backdrop-blur-xl border border-stone-700/90 rounded-2xl shadow-2xl p-2 hidden group-hover:block z-50 animate-in fade-in slide-in-from-bottom-2">
-                        <div className="text-[10px] font-bold text-stone-400 px-2.5 py-1 uppercase tracking-wider border-b border-stone-800 mb-1">
-                          辞典メンテナンスツール
-                        </div>
-                        <button
-                          onClick={() => handleStartRefineFacts(selected.id || selected.name, selectedRole)}
-                          disabled={refiningFacts}
-                          className="w-full text-left p-2 text-xs text-stone-200 hover:bg-stone-800/80 rounded-xl flex items-start gap-2.5 transition disabled:opacity-50 cursor-pointer"
-                        >
-                          <Sparkles size={14} className="text-amber-400 shrink-0 mt-0.5" />
-                          <div>
-                            <div className="font-bold text-stone-100">AI清書・重複排除</div>
-                            <div className="text-[10px] text-stone-400 font-normal">文章の重複を整理し読みやすく校正</div>
+                      {/* ポップアップメニュー */}
+                      {isDataMenuOpen && (
+                        <div className="absolute right-0 bottom-full mb-2 w-64 max-w-[calc(100vw-2rem)] bg-stone-900/95 backdrop-blur-xl border border-stone-700/90 rounded-2xl shadow-2xl p-2 z-50 animate-in fade-in slide-in-from-bottom-2">
+                          <div className="text-[10px] font-bold text-stone-400 px-2.5 py-1 uppercase tracking-wider border-b border-stone-800 mb-1">
+                            メンテナンスツール
                           </div>
-                        </button>
-                        <button
-                          onClick={handleQualityCheck}
-                          disabled={checkingQuality}
-                          className="w-full text-left p-2 text-xs text-stone-200 hover:bg-stone-800/80 rounded-xl flex items-start gap-2.5 transition disabled:opacity-50 cursor-pointer"
-                        >
-                          <Activity size={14} className="text-emerald-400 shrink-0 mt-0.5" />
-                          <div>
-                            <div className="font-bold text-stone-100">{checkingQuality ? '品質診断中...' : '品質スコア診断'}</div>
-                            <div className="text-[10px] text-stone-400 font-normal">情報量・整合性のチェックを実行</div>
-                          </div>
-                        </button>
-                        <button
-                          onClick={async () => {
-                            try {
-                              const res = await fetch('/api/admin/dict-health/verify', {
-                                method: 'POST', credentials: 'include',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ champion: selected.id, action: 'verify' }),
-                              });
-                              if (res.ok) {
-                                setSaveSuccess(true);
-                                setTimeout(() => setSaveSuccess(false), 3000);
+                          <button
+                            onClick={() => {
+                              setIsDataMenuOpen(false);
+                              handleStartRefineFacts(selected.id || selected.name, selectedRole);
+                            }}
+                            disabled={refiningFacts}
+                            className="w-full text-left p-2 text-xs text-stone-200 hover:bg-stone-800/80 rounded-xl flex items-start gap-2.5 transition disabled:opacity-50 cursor-pointer"
+                          >
+                            <Sparkles size={14} className="text-amber-400 shrink-0 mt-0.5" />
+                            <div>
+                              <div className="font-bold text-stone-100">AI洗練・重複排除</div>
+                              <div className="text-[10px] text-stone-400 font-normal">知識の重複を整理・読みやすく要約</div>
+                            </div>
+                          </button>
+                          <button
+                            onClick={() => {
+                              setIsDataMenuOpen(false);
+                              handleQualityCheck();
+                            }}
+                            disabled={checkingQuality}
+                            className="w-full text-left p-2 text-xs text-stone-200 hover:bg-stone-800/80 rounded-xl flex items-start gap-2.5 transition disabled:opacity-50 cursor-pointer"
+                          >
+                            <Activity size={14} className="text-emerald-400 shrink-0 mt-0.5" />
+                            <div>
+                              <div className="font-bold text-stone-100">{checkingQuality ? '品質診断中...' : '品質スコア診断'}</div>
+                              <div className="text-[10px] text-stone-400 font-normal">基準・網羅度のチェックを実行</div>
+                            </div>
+                          </button>
+                          <button
+                            onClick={async () => {
+                              setIsDataMenuOpen(false);
+                              try {
+                                const res = await fetch('/api/admin/dict-health/verify', {
+                                  method: 'POST', credentials: 'include',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({ champion: selected.id, action: 'verify' }),
+                                });
+                                if (res.ok) {
+                                  setSaveSuccess(true);
+                                  setTimeout(() => setSaveSuccess(false), 3000);
+                                } else {
+                                  const errData = await res.json().catch(() => ({}));
+                                  alert(errData.error || '確認済みマークの更新に失敗しました');
+                                }
+                              } catch (e: any) {
+                                console.error(e);
+                                alert(e.message || '通信エラーが発生しました');
                               }
-                            } catch (e) {
-                              console.error(e);
-                            }
-                          }}
-                          className="w-full text-left p-2 text-xs text-stone-200 hover:bg-stone-800/80 rounded-xl flex items-start gap-2.5 transition cursor-pointer"
-                        >
-                          <Check size={14} className="text-sky-400 shrink-0 mt-0.5" />
-                          <div>
-                            <div className="font-bold text-stone-100">確認済みにマーク</div>
-                            <div className="text-[10px] text-stone-400 font-normal">データ鮮度アラートをリセット</div>
-                          </div>
-                        </button>
-                      </div>
+                            }}
+                            className="w-full text-left p-2 text-xs text-stone-200 hover:bg-stone-800/80 rounded-xl flex items-start gap-2.5 transition cursor-pointer"
+                          >
+                            <Check size={14} className="text-sky-400 shrink-0 mt-0.5" />
+                            <div>
+                              <div className="font-bold text-stone-100">確認済みにマーク</div>
+                              <div className="text-[10px] text-stone-400 font-normal">データ鮮度アラートをリセット</div>
+                            </div>
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </>
                 )}
@@ -1744,7 +1782,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                   e.preventDefault();
                   handleOpenHistory('jg_style', 'プレイスタイル分類');
                 }}
-                className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-black/5 hover:bg-amber-100 hover:text-amber-800 text-stone-700 transition-all flex items-center gap-1 border border-black/10 shadow-xs cursor-pointer opacity-0 group-hover:opacity-100"
+                className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-black/5 hover:bg-amber-100 hover:text-amber-800 text-stone-700 transition-all flex items-center gap-1 border border-black/10 shadow-xs cursor-pointer opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
                 title="この項目の変更履歴を確認"
               >
                 <History size={13} /> 📜 履歴
@@ -2276,7 +2314,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                               e.preventDefault();
                               handleOpenHistory('customFields', `カスタム項目: ${key}`);
                             }}
-                            className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-black/5 hover:bg-amber-100 hover:text-amber-800 text-stone-700 transition-all flex items-center gap-1 border border-black/10 shadow-xs cursor-pointer opacity-0 group-hover:opacity-100"
+                            className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-black/5 hover:bg-amber-100 hover:text-amber-800 text-stone-700 transition-all flex items-center gap-1 border border-black/10 shadow-xs cursor-pointer opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
                             title="この項目の変更履歴を確認"
                           >
                             <History size={13} /> 📜 履歴
@@ -2856,7 +2894,7 @@ const TextAreaCard = ({
           <h3 className={`text-sm font-black flex items-center gap-2 ${textColor}`}>
             <Icon size={16} /> {title}
           </h3>
-          <div className={`flex items-center gap-1.5 transition-opacity ${isEditing ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+          <div className={`flex items-center gap-1.5 transition-opacity ${isEditing ? 'opacity-100' : 'opacity-100 sm:opacity-0 sm:group-hover:opacity-100'}`}>
             {value && !isEditing && (
               <button
                 type="button"

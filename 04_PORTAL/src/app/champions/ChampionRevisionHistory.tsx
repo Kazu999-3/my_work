@@ -242,7 +242,7 @@ export default function ChampionRevisionHistory({
   if (isModal) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={onClose}>
-        <div className="bg-white border border-stone-200 rounded-2xl p-5 w-full max-w-xl shadow-2xl space-y-4" onClick={(e) => e.stopPropagation()}>
+        <div className="bg-white border border-stone-200 rounded-2xl p-4 sm:p-5 w-full max-w-xl max-h-[90vh] overflow-y-auto shadow-2xl space-y-4" onClick={(e) => e.stopPropagation()}>
           {content}
         </div>
       </div>
