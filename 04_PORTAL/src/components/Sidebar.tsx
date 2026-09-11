@@ -17,15 +17,21 @@ function UserAuthWidget({ collapsed }: { collapsed?: boolean }) {
 
   if (user) {
     return (
-      <div className={`p-2 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center gap-2 ${collapsed ? 'justify-center' : ''}`}>
+      <Link
+        href="/mypage"
+        className={`p-2 rounded-xl bg-amber-500/10 border border-amber-500/20 hover:border-amber-500/60 flex items-center gap-2 transition group cursor-pointer ${
+          collapsed ? 'justify-center' : ''
+        }`}
+        title="マイページを開く (希望レーン・師弟設定)"
+      >
         <img
           src={user.avatar}
           alt={user.displayName}
-          className="w-7 h-7 rounded-full border border-amber-500/40 shrink-0"
+          className="w-7 h-7 rounded-full border border-amber-500/40 shrink-0 group-hover:scale-105 transition"
         />
         {!collapsed && (
           <div className="min-w-0 flex-1">
-            <div className="text-[11px] font-black text-stone-900 truncate">
+            <div className="text-[11px] font-black text-stone-900 truncate group-hover:text-amber-800 transition">
               {user.displayName}
             </div>
             <div className="text-[10px] font-bold text-amber-700 flex items-center gap-1">
@@ -37,14 +43,18 @@ function UserAuthWidget({ collapsed }: { collapsed?: boolean }) {
         {!collapsed && (
           <button
             type="button"
-            onClick={logout}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              logout();
+            }}
             title="ログアウト"
-            className="p-1 text-stone-400 hover:text-stone-700 transition"
+            className="p-1 text-stone-400 hover:text-rose-600 transition"
           >
             <LogOut size={13} />
           </button>
         )}
-      </div>
+      </Link>
     );
   }
 
@@ -93,6 +103,7 @@ function MobileNavItem({ item, active, pending, onClick }: { item: MenuItem; act
 }
 
 const MENU_ITEMS: MenuItem[] = [
+  { id: 'mypage', label: 'マイページ / 希望レーン', shortLabel: 'マイページ', icon: Users, href: '/mypage', color: 'text-amber-500', activeBg: 'bg-amber-500/15' },
   { id: 'balancer', label: 'チーム分け', shortLabel: 'チーム', icon: Swords, href: '/balancer', color: 'text-rose-600', activeBg: 'bg-rose-500/15' },
   { id: 'casino', label: '勝敗予想', shortLabel: 'カジノ', icon: Coins, href: '/casino', color: 'text-amber-600', activeBg: 'bg-amber-500/15' },
   { id: 'history', label: '試合履歴', shortLabel: '履歴', icon: History, href: '/history', color: 'text-purple-600', activeBg: 'bg-purple-500/15' },
@@ -104,6 +115,8 @@ const MENU_ITEMS: MenuItem[] = [
 ];
 
 const ADMIN_ONLY_MENU_ITEMS: MenuItem[] = [
+  // ── 👤 ユーザー ──
+  { id: 'mypage', label: 'マイページ / 希望レーン', shortLabel: 'マイページ', icon: Users, href: '/mypage', color: 'text-amber-500', activeBg: 'bg-amber-500/15', section: 'ユーザー' },
   // ── ⚙️ システム ＆ 分析 ──
   { id: 'dashboard', label: 'システム運用', shortLabel: '設定', icon: LayoutDashboard, href: '/admin/dashboard', color: 'text-stone-800', activeBg: 'bg-black/10', section: 'システム ＆ 分析' },
   { id: 'analytics', label: 'note分析', shortLabel: '分析', icon: TrendingUp, href: '/admin/analytics', color: 'text-teal-600', activeBg: 'bg-teal-500/15', section: 'システム ＆ 分析' },
@@ -122,6 +135,7 @@ const ADMIN_ONLY_MENU_ITEMS: MenuItem[] = [
 ];
 
 const ADMIN_GENERAL_MENU_ITEMS: MenuItem[] = [
+  { id: 'mypage', label: 'マイページ / 希望レーン', shortLabel: 'マイページ', icon: Users, href: '/mypage', color: 'text-amber-500', activeBg: 'bg-amber-500/15' },
   { id: 'balancer', label: 'チーム分け', shortLabel: 'チーム', icon: Swords, href: '/balancer', color: 'text-rose-600', activeBg: 'bg-rose-500/15' },
   { id: 'casino', label: '勝敗予想', shortLabel: 'カジノ', icon: Coins, href: '/casino', color: 'text-amber-600', activeBg: 'bg-amber-500/15' },
   { id: 'history', label: '試合履歴', shortLabel: '履歴', icon: History, href: '/history', color: 'text-purple-600', activeBg: 'bg-purple-500/15' },
@@ -308,6 +322,11 @@ export default function Sidebar() {
               <button onClick={() => setShowMobileMore(false)} className="p-1.5 rounded-full hover:bg-stone-200">
                 <XIcon size={18} />
               </button>
+            </div>
+
+            {/* スマホ用 ユーザー認証 / プロフィール */}
+            <div className="mb-4">
+              <UserAuthWidget />
             </div>
 
             {/* スマホ用 管理者 / 一般 切り替えタブ */}

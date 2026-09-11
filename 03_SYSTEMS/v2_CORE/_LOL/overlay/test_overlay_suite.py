@@ -85,6 +85,17 @@ class TestDynamicBuildAdvisor(unittest.TestCase):
         self.assertIn("重傷", rec["tag"])
         self.assertEqual(rec["item_name"], "エクセキューショナー コーリング")
 
+    def test_zyra_first_core_recommendation(self):
+        """Zyra (ザイラ) でプレイ時、SunderedSkyではなくLiandrysTorment (ライアンドリーの苦悶) が1stコアとして推薦されること"""
+        rec = DynamicBuildAdvisor.advise_next_item(
+            my_champion="Zyra",
+            my_items=[],
+            enemy_players=[{"championName": "Jinx"}, {"championName": "Thresh"}],
+            game_time_sec=300.0
+        )
+        self.assertEqual(rec["item_name"], "ライアンドリーの苦悶")
+        self.assertNotEqual(rec["item_name"], "サンダード スカイ")
+
     def test_owned_items_not_recommended(self):
         """1stコア(SunderedSky)購入後は1stコアが除外され、2ndコアまたは靴・重傷等に自動遷移すること"""
         # Aatrox で SunderedSky (ID: 6610) をすでに持っている場合

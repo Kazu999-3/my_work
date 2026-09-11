@@ -244,7 +244,24 @@ CHAMPION_CORE_BLUEPRINTS = {
     "Sejuani": {"class": "tank", "first_core": "SunfireAegis", "second_cores": ["WarmogsArmor", "KaenicRookern"], "boots_default": "PlatedSteelcaps"},
     "Amumu": {"class": "tank", "first_core": "SunfireAegis", "second_cores": ["LiandrysTorment", "Thornmail"], "boots_default": "PlatedSteelcaps"},
 
-    # Support
+    # Support & Mage Support
+    "Zyra": {"class": "ap_mage", "first_core": "LiandrysTorment", "second_cores": ["RylaisCrystalScepter", "ZhonyasHourglass"], "boots_default": "SorcerersShoes"},
+    "Morgana": {"class": "ap_mage", "first_core": "LiandrysTorment", "second_cores": ["ZhonyasHourglass", "RylaisCrystalScepter"], "boots_default": "SorcerersShoes"},
+    "Karma": {"class": "enchanter", "first_core": "Malignance", "second_cores": ["MoonstoneRenewer", "ImperialMandate"], "boots_default": "IonianBoots"},
+    "Senna": {"class": "marksman", "first_core": "YoumuusGhostblade", "second_cores": ["TheCollector", "InfinityEdge"], "boots_default": "BootsOfSwiftness"},
+    "Milio": {"class": "enchanter", "first_core": "MoonstoneRenewer", "second_cores": ["EchoesOfHelia", "ArdentCenser"], "boots_default": "IonianBoots"},
+    "Sona": {"class": "enchanter", "first_core": "MoonstoneRenewer", "second_cores": ["ArchangelsStaff", "EchoesOfHelia"], "boots_default": "IonianBoots"},
+    "Janna": {"class": "enchanter", "first_core": "MoonstoneRenewer", "second_cores": ["ImperialMandate", "EchoesOfHelia"], "boots_default": "BootsOfSwiftness"},
+    "Yuumi": {"class": "enchanter", "first_core": "MoonstoneRenewer", "second_cores": ["EchoesOfHelia", "ArdentCenser"], "boots_default": "IonianBoots"},
+    "Braum": {"class": "tank_support", "first_core": "LocketOfTheIronSolari", "second_cores": ["KnightsVow", "Trailblazer"], "boots_default": "PlatedSteelcaps"},
+    "Alistar": {"class": "tank_support", "first_core": "LocketOfTheIronSolari", "second_cores": ["Trailblazer", "Thornmail"], "boots_default": "BootsOfSwiftness"},
+    "Rakan": {"class": "tank_support", "first_core": "Trailblazer", "second_cores": ["LocketOfTheIronSolari", "KnightsVow"], "boots_default": "IonianBoots"},
+    "Bard": {"class": "tank_support", "first_core": "LocketOfTheIronSolari", "second_cores": ["DeadMansPlate", "KaenicRookern"], "boots_default": "BootsOfSwiftness"},
+    "Rell": {"class": "tank_support", "first_core": "LocketOfTheIronSolari", "second_cores": ["Trailblazer", "Thornmail"], "boots_default": "BootsOfSwiftness"},
+    "Taric": {"class": "tank_support", "first_core": "LocketOfTheIronSolari", "second_cores": ["FrozenHeart", "KnightsVow"], "boots_default": "PlatedSteelcaps"},
+    "Zilean": {"class": "ap_mage", "first_core": "LudensCompanion", "second_cores": ["ArchangelsStaff", "ZhonyasHourglass"], "boots_default": "IonianBoots"},
+    "Mel": {"class": "ap_mage", "first_core": "LudensCompanion", "second_cores": ["HorizonFocus", "Shadowflame"], "boots_default": "SorcerersShoes"},
+    "Aurora": {"class": "ap_assassin", "first_core": "Malignance", "second_cores": ["Shadowflame", "ZhonyasHourglass"], "boots_default": "SorcerersShoes"},
     "Nautilus": {"class": "tank_support", "first_core": "LocketOfTheIronSolari", "second_cores": ["KnightsVow", "Trailblazer"], "boots_default": "BootsOfSwiftness"},
     "Leona": {"class": "tank_support", "first_core": "LocketOfTheIronSolari", "second_cores": ["KnightsVow", "Thornmail"], "boots_default": "PlatedSteelcaps"},
     "Thresh": {"class": "tank_support", "first_core": "LocketOfTheIronSolari", "second_cores": ["KnightsVow", "Trailblazer"], "boots_default": "BootsOfSwiftness"},
@@ -388,19 +405,19 @@ class DynamicBuildAdvisor:
         if not blueprint:
             # チャンピオン名キーワードによる推論フォールバック
             c_low = norm_name
-            if any(k in c_low for k in ["heimer", "lux", "ahri", "syndra", "veigar", "viktor", "hwei", "xerath", "velkoz", "ziggs", "anivia", "brand", "malzahar", "cassiopeia", "teemo", "kennen", "swain", "annie", "kassadin", "ryze", "zoe"]):
-                blueprint = {"class": "ap_mage", "first_core": "LiandrysTorment" if "heimer" in c_low or "teemo" in c_low or "brand" in c_low else "LudensCompanion", "second_cores": ["Shadowflame", "ZhonyasHourglass"], "boots_default": "SorcerersShoes"}
+            if any(k in c_low for k in ["zyra", "heimer", "lux", "ahri", "syndra", "veigar", "viktor", "hwei", "xerath", "velkoz", "ziggs", "anivia", "brand", "malzahar", "cassiopeia", "teemo", "kennen", "swain", "annie", "kassadin", "ryze", "zoe", "morgana", "zilean", "mel", "aurora", "vladimir", "neeko"]):
+                blueprint = {"class": "ap_mage", "first_core": "LiandrysTorment" if any(k in c_low for k in ["zyra", "morgana", "heimer", "teemo", "brand", "malzahar", "swain"]) else "LudensCompanion", "second_cores": ["Shadowflame", "ZhonyasHourglass"], "boots_default": "SorcerersShoes"}
             elif any(k in c_low for k in ["urgot", "darius", "garen", "sett", "illaoi", "yorick", "mordekaiser"]):
                 blueprint = {"class": "ad_juggernaut", "first_core": "BlackCleaver" if "urgot" in c_low else "SunderedSky", "second_cores": ["SteraksGage", "TitanicHydra"], "boots_default": "PlatedSteelcaps"}
-            elif any(k in c_low for k in ["kaisa", "jinx", "vayne", "caitlyn", "ashe", "jhin", "lucian", "sivir", "tristana", "varus", "kogmaw", "aphelios", "kalista", "quinn", "akshan"]):
+            elif any(k in c_low for k in ["kaisa", "jinx", "vayne", "caitlyn", "ashe", "jhin", "lucian", "sivir", "tristana", "varus", "kogmaw", "aphelios", "kalista", "quinn", "akshan", "smolder", "senna"]):
                 blueprint = {"class": "marksman", "first_core": "KrakenSlayer", "second_cores": ["InfinityEdge", "LordDominiksRegards"], "boots_default": "BerserkersGreaves"}
             elif any(k in c_low for k in ["zed", "talon", "qiyana", "khazix", "rengar", "naafiri", "shaco", "pyke", "kayn"]):
                 blueprint = {"class": "ad_assassin", "first_core": "ProfaneHydra", "second_cores": ["YoumuusGhostblade", "SeryldasGrudge"], "boots_default": "IonianBoots"}
             elif any(k in c_low for k in ["malphite", "ornn", "sion", "mundo", "chogath", "zac", "sejuani", "amumu", "rammus", "shen", "poppy", "tahm"]):
                 blueprint = {"class": "tank", "first_core": "SunfireAegis", "second_cores": ["Heartsteel", "KaenicRookern"], "boots_default": "PlatedSteelcaps"}
-            elif any(k in c_low for k in ["nautilus", "leona", "thresh", "blitzcrank", "alistar", "braum", "rell"]):
+            elif any(k in c_low for k in ["nautilus", "leona", "thresh", "blitzcrank", "alistar", "braum", "rell", "taric", "rakan", "bard"]):
                 blueprint = {"class": "tank_support", "first_core": "LocketOfTheIronSolari", "second_cores": ["KnightsVow", "Trailblazer"], "boots_default": "BootsOfSwiftness"}
-            elif any(k in c_low for k in ["lulu", "nami", "soraka", "janna", "sona", "milio", "yuumi", "ivern"]):
+            elif any(k in c_low for k in ["lulu", "nami", "soraka", "janna", "sona", "milio", "yuumi", "ivern", "karma"]):
                 blueprint = {"class": "enchanter", "first_core": "MoonstoneRenewer", "second_cores": ["EchoesOfHelia", "ArdentCenser"], "boots_default": "IonianBoots"}
             else:
                 blueprint = {"class": "ad_fighter", "first_core": "SunderedSky", "second_cores": ["Eclipse", "BlackCleaver"], "boots_default": "PlatedSteelcaps"}

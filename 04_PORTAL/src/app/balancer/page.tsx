@@ -4,10 +4,11 @@ import { useEffect, useState, useRef, useCallback, useMemo, Fragment } from "rea
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "../../lib/supabaseClient";
-import { Users, RefreshCw, Swords, X, Activity, Globe, MessageSquare, Info, Crown, Trophy, History, Shield, AlertTriangle, ChevronDown, Trees, Zap, Target, Heart, Settings, Sparkles, Coins, Copy, Check } from "lucide-react";
+import { Users, RefreshCw, Swords, X, Activity, Globe, MessageSquare, Info, Crown, Trophy, History, Shield, AlertTriangle, ChevronDown, Trees, Zap, Target, Heart, Settings, Sparkles, Coins, Copy, Check, Shuffle } from "lucide-react";
 import { getColorFromRankName, calculateBlueWinProbability } from "../../lib/mmr";
 import ProfileModal from "../ktm-admin/ProfileModal";
 import MatchRecordPanel from "../ktm-admin/MatchRecordPanel";
+import AramRotationPanel from "./AramRotationPanel";
 import { Spinner } from "../../components/Feedback";
 
 const RoleIcon = ({ role, className = "w-3.5 h-3.5" }: { role: string; className?: string }) => {
@@ -51,6 +52,7 @@ export default function BalancerPage() {
   const router = useRouter();
   const [players, setPlayers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [modeTab, setModeTab] = useState<'standard' | 'aram_rotation'>('standard');
   const [saving, setSaving] = useState(false);
   const [savingPending, setSavingPending] = useState(false);
   const [announcingStats, setAnnouncingStats] = useState(false);
@@ -1012,32 +1014,82 @@ export default function BalancerPage() {
   const inactiveCount  = players.filter(p => !p.is_active).length;
   const canBalance     = activeCount >= 10;
 
+  if (modeTab === 'aram_rotation') {
+    return (
+      <div className="min-h-screen bg-background text-stone-800 p-4 md:p-8 lg:p-10 max-w-[1680px] w-full mx-auto space-y-6">
+        {/* 🔄 モード切り替えタブバー */}
+        <div className="flex items-center gap-3 p-1.5 bg-[#2b2620]/90 border border-stone-800 rounded-2xl shadow-md w-full max-w-xl">
+          <button
+            type="button"
+            onClick={() => setModeTab('standard')}
+            className="flex-1 py-2.5 px-4 rounded-xl text-xs sm:text-sm font-black flex items-center justify-center gap-2 transition-all cursor-pointer text-stone-400 hover:text-stone-200"
+          >
+            <Swords className="w-4 h-4" />
+            <span>⚔️ 通常 5v5 バランサー</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setModeTab('aram_rotation')}
+            className="flex-1 py-2.5 px-4 rounded-xl text-xs sm:text-sm font-black flex items-center justify-center gap-2 transition-all cursor-pointer bg-gradient-to-r from-amber-500 to-amber-600 text-stone-950 shadow-md shadow-amber-500/20"
+          >
+            <Shuffle className="w-4 h-4" />
+            <span>🔄 大人数 ARAM ローテーション</span>
+          </button>
+        </div>
+
+        <AramRotationPanel availablePlayers={players} isAdmin={isAdmin} />
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-background text-stone-800 p-4 md:p-8 lg:p-10 max-w-[1680px] w-full mx-auto space-y-4">
+    <div className="min-h-screen bg-background text-stone-800 p-4 md:p-8 lg:p-10 max-w-[1680px] w-full mx-auto space-y-6">
+
+      {/* 🔄 モード切り替えタブバー */}
+      <div className="flex items-center gap-3 p-1.5 bg-[#2b2620]/90 border border-stone-800 rounded-2xl shadow-md w-full max-w-xl">
+        <button
+          type="button"
+          onClick={() => setModeTab('standard')}
+          className="flex-1 py-2.5 px-4 rounded-xl text-xs sm:text-sm font-black flex items-center justify-center gap-2 transition-all cursor-pointer bg-amber-500 text-stone-950 shadow-md shadow-amber-500/20"
+        >
+          <Swords className="w-4 h-4" />
+          <span>⚔️ 通常 5v5 バランサー</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setModeTab('aram_rotation')}
+          className="flex-1 py-2.5 px-4 rounded-xl text-xs sm:text-sm font-black flex items-center justify-center gap-2 transition-all cursor-pointer text-stone-400 hover:text-stone-200"
+        >
+          <Shuffle className="w-4 h-4" />
+          <span>🔄 大人数 ARAM ローテーション</span>
+        </button>
+      </div>
 
       {/* 🔰 チーム分けツールの使い方ガイド */}
       <div className="bg-amber-500/10 border border-amber-300/60 rounded-2xl p-3.5 text-stone-900 shadow-xs">
-        <button
-          onClick={() => setIsGuideOpen(!isGuideOpen)}
-          className="w-full flex items-center justify-between font-bold text-xs text-amber-900 hover:text-amber-950 transition cursor-pointer"
-        >
-          <div className="flex items-center gap-2">
-            <span className="text-base">⚡</span>
-            <span className="font-black text-xs sm:text-sm">3秒でわかるチーム分け手順</span>
-          </div>
-          <span className="text-[10px] bg-amber-200/80 px-2 py-0.5 rounded-full font-black">
-            {isGuideOpen ? '閉じる ▲' : '見る ▼'}
-          </span>
-        </button>
+            <button
+              onClick={() => setIsGuideOpen(!isGuideOpen)}
+              className="w-full flex items-center justify-between font-bold text-xs text-amber-900 hover:text-amber-950 transition cursor-pointer"
+            >
+              <div className="flex items-center gap-2">
+                <span className="text-base">⚡</span>
+                <span className="font-black text-xs sm:text-sm">3秒でわかるチーム分け手順</span>
+              </div>
+              <span className="text-[10px] bg-amber-200/80 px-2 py-0.5 rounded-full font-black">
+                {isGuideOpen ? '閉じる ▲' : '見る ▼'}
+              </span>
+            </button>
 
-        {isGuideOpen && (
-          <div className="mt-2.5 pt-2.5 border-t border-amber-300/40 text-xs text-stone-800 space-y-1.5 leading-relaxed animate-fade-in font-bold">
-            <p>① 参加するメンバーにチェックを入れる（10人〜）</p>
-            <p>② 希望レーン（TOP/JG/MID/ADC/SUP）を選ぶ</p>
-            <p>③ 下の「⚔️ チーム分け実行」を押すだけ！</p>
+            {isGuideOpen && (
+              <div className="mt-2.5 pt-2.5 border-t border-amber-300/40 text-xs text-stone-800 space-y-1.5 leading-relaxed animate-fade-in font-bold">
+                <p>① 参加するメンバーにチェックを入れる（10人〜）</p>
+                <p>② 希望レーン（TOP/JG/MID/ADC/SUP）を選ぶ</p>
+                <p>③ 下の「⚔️ チーム分け実行」を押すだけ！</p>
+              </div>
+            )}
           </div>
-        )}
-      </div>
 
       {/* ★ チーム分け結果モーダル */}
       {balanceResult && showResultModal && (
