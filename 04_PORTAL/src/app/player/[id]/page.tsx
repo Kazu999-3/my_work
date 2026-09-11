@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
+import PlayerSettingsPanel from "../PlayerSettingsPanel";
 import ScoutingReport from "../../../components/ScoutingReport";
 import { 
   Activity, 
@@ -20,7 +21,8 @@ import {
   Sparkles,
   Trophy,
   Flame,
-  Award
+  Award,
+  Settings
 } from "lucide-react";
 import Image from "next/image";
 import { getChampIcon, getChampNameById, getChampSplash } from "../../../lib/ddragonClient";
@@ -51,6 +53,8 @@ const LANE_COLORS: Record<'TOP' | 'JG' | 'MID' | 'ADC' | 'SUP', string> = {
 
 export default function PlayerMyPage() {
   const { id } = useParams(); // Discord ID or Player Name
+  const searchParams = useSearchParams();
+  const initialTab = (searchParams.get("tab") as any) || "summary";
   const { user: currentUser } = useCurrentUser();
   const [player, setPlayer] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -69,7 +73,7 @@ export default function PlayerMyPage() {
   const [syncingSoloq, setSyncingSoloq] = useState(false);
   
   // タブ管理用のステートを追加
-  const [activeTab, setActiveTab] = useState<'summary' | 'lanes' | 'chemistry' | 'champions' | 'history'>('summary');
+  const [activeTab, setActiveTab] = useState<'summary' | 'lanes' | 'chemistry' | 'champions' | 'history' | 'settings'>(initialTab);
 
   // グラフの表示期間フィルタ（#49）: 直近10 / 30 / 全部
   const [chartPeriod, setChartPeriod] = useState<10 | 30 | 0>(0);
@@ -591,20 +595,21 @@ export default function PlayerMyPage() {
     );
   }
 
-  // タブアイテム定義
+  // ログイン中の自分自身かどうか判定
+  const isMe = currentUser && (
+    (player?.discord_id && player.discord_id === currentUser.discordId) ||
+    (player?.name && (player.name === currentUser.displayName || player.name === currentUser.username))
+  );
+
+  // タブアイテム定義（自分の場合は設定タブを統合）
   const tabItems = [
     { id: "summary", name: "総合分析", icon: <Activity className="w-4 h-4" /> },
     { id: "lanes", name: "レーン別戦績", icon: <Swords className="w-4 h-4" /> },
     { id: "chemistry", name: "相性＆好敵手", icon: <Users className="w-4 h-4" /> },
     { id: "champions", name: "魂のキャラ", icon: <Star className="w-4 h-4" /> },
     { id: "history", name: "試合履歴", icon: <Clock className="w-4 h-4" /> },
+    ...(isMe ? [{ id: "settings", name: "⚙️ 希望・師弟設定", icon: <Settings className="w-4 h-4 text-amber-500" /> }] : []),
   ] as const;
-
-  // ログイン中の自分自身かどうか判定
-  const isMe = currentUser && (
-    (player?.discord_id && player.discord_id === currentUser.discordId) ||
-    (player?.name && (player.name === currentUser.displayName || player.name === currentUser.username))
-  );
 
   return (
     <div className="min-h-screen bg-background text-foreground p-4 md:p-8 font-sans selection:bg-amber-300/40 overflow-x-hidden">
@@ -623,22 +628,27 @@ export default function PlayerMyPage() {
               </div>
               <div>
                 <h4 className="text-sm font-black text-amber-950 flex items-center gap-1.5">
-                  <span>これはあなたの個人カルテです</span>
+                  <span>これはあなたの個人カルテ（マイページ）です</span>
                   <span className="text-[10px] px-2 py-0.2 rounded-full bg-amber-400 text-stone-950 font-bold">YOU</span>
                 </h4>
                 <p className="text-xs text-stone-600 mt-0.5">
-                  希望レーン・NGレーン設定や、師弟バディ企画の参加設定は統合マイページから変更できます。
+                  希望レーン・NGレーン設定や、師弟バディ企画の参加設定を下の「⚙️ 希望・師弟設定」タブから変更できます。
                 </p>
               </div>
             </div>
 
-            <Link
-              href="/mypage"
-              className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950 font-black text-xs flex items-center gap-1.5 shadow transition self-stretch sm:self-auto justify-center cursor-pointer shrink-0"
+            <button
+              type="button"
+              onClick={() => setActiveTab('settings')}
+              className={`px-4 py-2 rounded-xl text-xs font-black flex items-center gap-1.5 shadow transition self-stretch sm:self-auto justify-center cursor-pointer shrink-0 ${
+                activeTab === 'settings'
+                  ? 'bg-amber-600 text-white'
+                  : 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950'
+              }`}
             >
-              <Sparkles className="w-4 h-4 fill-current" />
-              <span>マイページを開く (設定・レーン変更) ➔</span>
-            </Link>
+              <Settings className="w-4 h-4" />
+              <span>希望・師弟設定を変更する ➔</span>
+            </button>
           </div>
         )}
 
@@ -878,7 +888,7 @@ export default function PlayerMyPage() {
             return (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => setActiveTab(tab.id as any)}
                 title={tab.name}
                 className={`flex items-center justify-center gap-2 shrink-0 px-3 sm:px-4 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 whitespace-nowrap cursor-pointer ${
                   isActive
@@ -1870,6 +1880,18 @@ export default function PlayerMyPage() {
                       </div>
                     )}
                   </div>
+                </div>
+              )}
+
+              {/* 6. 希望・師弟設定タブ (自分自身のみ表示) */}
+              {activeTab === 'settings' && isMe && (
+                <div className="space-y-6">
+                  <PlayerSettingsPanel 
+                    player={player} 
+                    onSaved={(up) => {
+                      setPlayer((prev: any) => ({ ...prev, ...up }));
+                    }} 
+                  />
                 </div>
               )}
 
