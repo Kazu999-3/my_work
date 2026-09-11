@@ -5,7 +5,7 @@ import Link from "next/link";
 import { 
   User, Shield, Trees, Zap, Target, Heart, Shuffle, Ban, 
   Save, Coins, Trophy, Award, ArrowRight, CheckCircle2, AlertTriangle, RefreshCw,
-  GraduationCap, Sparkles, BookOpenCheck
+  GraduationCap, Sparkles, BookOpenCheck, Flame, History, Swords, Star, Activity, ChevronRight
 } from "lucide-react";
 
 interface MentorshipPref {
@@ -24,6 +24,22 @@ interface RolePref {
   mentorship?: MentorshipPref;
 }
 
+interface PlayerStats {
+  total: { g: number; w: number };
+  roles: Record<string, { g: number; w: number }>;
+  topChampions?: Array<{ champion: string; games: number; wins: number; winRate: number }>;
+  recentMatches?: Array<{
+    matchId: string;
+    date: string;
+    isWin: boolean;
+    role: string;
+    champion: string;
+    kills: number;
+    deaths: number;
+    assists: number;
+  }>;
+}
+
 interface PlayerData {
   id: string;
   discord_id: string;
@@ -32,10 +48,7 @@ interface PlayerData {
   highest_rank: string;
   coins: number;
   role_preferences: RolePref;
-  stats?: {
-    total?: { g: number; w: number };
-    roles?: Record<string, { g: number; w: number }>;
-  };
+  stats?: PlayerStats;
   mmr?: number;
   avatar?: string;
   isAdmin?: boolean;
@@ -93,7 +106,6 @@ export default function MyPage() {
 
           // 師弟設定の復元（互換性対応）
           const m = prefs.mentorship || {};
-          // 旧形式 ('STUDENT' / 'MENTOR') または新形式 (isStudent / isMentor)
           const isStud = m.isStudent ?? (m.type === 'STUDENT');
           const isMent = m.isMentor ?? (m.type === 'MENTOR');
 
@@ -175,7 +187,7 @@ export default function MyPage() {
       <div className="min-h-screen bg-[#1c1917] text-stone-100 flex items-center justify-center p-6">
         <div className="flex flex-col items-center gap-4">
           <RefreshCw className="w-8 h-8 text-amber-500 animate-spin" />
-          <p className="text-stone-400 text-sm font-medium">マイページを読み込み中...</p>
+          <p className="text-stone-400 text-sm font-medium">マイページ＆名簿戦績を読み込み中...</p>
         </div>
       </div>
     );
@@ -204,27 +216,31 @@ export default function MyPage() {
 
   const totalGames = player?.stats?.total?.g || 0;
   const totalWins = player?.stats?.total?.w || 0;
+  const totalLosses = Math.max(0, totalGames - totalWins);
   const winRate = totalGames > 0 ? Math.round((totalWins / totalGames) * 100) : 0;
+  const roleStats = player?.stats?.roles || {};
+  const topChamps = player?.stats?.topChampions || [];
+  const recentMatches = player?.stats?.recentMatches || [];
 
   return (
     <div className="min-h-screen bg-[#1c1917] text-stone-100 py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-4xl mx-auto space-y-8">
+      <div className="max-w-5xl mx-auto space-y-8">
         
         {/* プロフィールヘッダーカード */}
-        <div className="bg-[#2b2620]/90 backdrop-blur-md border border-amber-500/20 rounded-2xl p-6 sm:p-8 shadow-xl relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/5 rounded-full blur-3xl pointer-events-none" />
+        <div className="bg-[#2b2620]/95 backdrop-blur-md border border-amber-500/20 rounded-2xl p-6 sm:p-8 shadow-xl relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-80 h-80 bg-amber-500/5 rounded-full blur-3xl pointer-events-none" />
           
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 relative z-10">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative z-10">
             <div className="flex items-center gap-5">
               <div className="relative">
                 {player?.avatar ? (
                   <img
                     src={player.avatar}
                     alt={player.name}
-                    className="w-20 h-20 rounded-2xl border-2 border-amber-500/40 object-cover shadow-lg"
+                    className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl border-2 border-amber-500/40 object-cover shadow-lg"
                   />
                 ) : (
-                  <div className="w-20 h-20 rounded-2xl bg-amber-500/20 border-2 border-amber-500/40 flex items-center justify-center text-amber-400 font-bold text-2xl">
+                  <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-amber-500/20 border-2 border-amber-500/40 flex items-center justify-center text-amber-400 font-bold text-3xl">
                     {player?.name?.[0]?.toUpperCase() || "P"}
                   </div>
                 )}
@@ -235,26 +251,26 @@ export default function MyPage() {
                 )}
               </div>
 
-              <div>
-                <div className="flex items-center gap-3">
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-3 flex-wrap">
                   <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
                     {player?.name}
                   </h1>
-                  <span className="px-2.5 py-0.5 bg-stone-800/80 border border-stone-700 text-stone-300 text-xs font-bold rounded-lg">
+                  <span className="px-2.5 py-0.5 bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-bold rounded-lg">
                     {player?.highest_rank || "UNRANKED"}
                   </span>
                 </div>
-                <p className="text-xs text-stone-400 mt-1 flex items-center gap-2">
+                <div className="text-xs text-stone-400 flex items-center gap-3 flex-wrap">
                   <span>IGN: <strong className="text-amber-300 font-mono">{player?.ign || "未設定"}</strong></span>
                   <span>•</span>
                   <span>MMR: <strong className="text-stone-200">{player?.mmr || 1200}</strong></span>
-                </p>
+                </div>
               </div>
             </div>
 
-            {/* コイン ＆ カルテリンク */}
-            <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end">
-              <div className="px-4 py-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center gap-2">
+            {/* コイン ＆ 名簿カルテ連携リンク */}
+            <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end flex-wrap">
+              <div className="px-4 py-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center gap-2.5">
                 <Coins className="w-5 h-5 text-amber-400 animate-pulse" />
                 <div>
                   <div className="text-[10px] text-amber-400/80 font-bold uppercase tracking-wider">所持コイン</div>
@@ -264,17 +280,191 @@ export default function MyPage() {
                 </div>
               </div>
 
-              {player?.discord_id && (
+              {player?.discord_id ? (
                 <Link
                   href={`/player/${player.discord_id}`}
-                  className="px-4 py-2.5 rounded-xl bg-stone-800 hover:bg-stone-700 border border-stone-700 text-stone-300 text-xs font-bold flex items-center gap-1.5 transition-all"
+                  className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950 text-xs font-black flex items-center gap-1.5 shadow-md shadow-amber-500/20 transition-all cursor-pointer"
+                  title="プレイヤー名簿の個人カルテ画面を開く"
                 >
-                  <span>個人カルテ</span>
-                  <ArrowRight className="w-4 h-4" />
+                  <Activity className="w-4 h-4" />
+                  <span>名簿カルテ詳細</span>
+                  <ChevronRight className="w-4 h-4" />
+                </Link>
+              ) : (
+                <Link
+                  href="/player"
+                  className="px-4 py-2.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-300 text-xs font-bold flex items-center gap-1.5 transition"
+                >
+                  <User className="w-4 h-4" />
+                  <span>名簿一覧</span>
                 </Link>
               )}
             </div>
           </div>
+        </div>
+
+        {/* 📊 通算戦績 ＆ 名簿データ統合パネル */}
+        <div className="bg-[#2b2620]/90 border border-amber-500/20 rounded-2xl p-6 sm:p-8 shadow-xl space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-stone-800 pb-4">
+            <div>
+              <h2 className="text-lg sm:text-xl font-black text-white flex items-center gap-2">
+                <Trophy className="w-5 h-5 text-amber-400" />
+                <span>カスタム通算戦績 (名簿データ連携)</span>
+              </h2>
+              <p className="text-xs text-stone-400 mt-1">
+                KTMカスタムマッチの全試合履歴から自動集計されたリアルタイム戦績です。
+              </p>
+            </div>
+            {player?.discord_id && (
+              <Link
+                href={`/player/${player.discord_id}`}
+                className="text-xs text-amber-400 hover:text-amber-300 font-bold flex items-center gap-1 transition self-start sm:self-auto"
+              >
+                <span>プレイスタイル・相性分析はこちら</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            )}
+          </div>
+
+          {/* 戦績サマリーグリッド */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="bg-stone-900/70 border border-stone-800 rounded-xl p-4 text-center">
+              <div className="text-[11px] font-bold text-stone-400 uppercase tracking-wider">総試合数</div>
+              <div className="text-2xl font-black text-white font-mono mt-1">{totalGames} <span className="text-xs font-normal text-stone-400">戦</span></div>
+            </div>
+            <div className="bg-stone-900/70 border border-stone-800 rounded-xl p-4 text-center">
+              <div className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider">勝利数 / 敗北数</div>
+              <div className="text-2xl font-black text-emerald-300 font-mono mt-1">
+                {totalWins} <span className="text-xs text-stone-400 font-normal">勝</span> <span className="text-stone-600">/</span> {totalLosses} <span className="text-xs text-stone-400 font-normal">敗</span>
+              </div>
+            </div>
+            <div className="bg-stone-900/70 border border-stone-800 rounded-xl p-4 text-center">
+              <div className="text-[11px] font-bold text-amber-400 uppercase tracking-wider">総合勝率</div>
+              <div className={`text-2xl font-black font-mono mt-1 ${winRate >= 50 ? 'text-amber-300' : 'text-stone-300'}`}>
+                {totalGames > 0 ? `${winRate}%` : "-"}
+              </div>
+            </div>
+            <div className="bg-stone-900/70 border border-stone-800 rounded-xl p-4 text-center">
+              <div className="text-[11px] font-bold text-blue-400 uppercase tracking-wider">推定レーティング</div>
+              <div className="text-2xl font-black text-blue-300 font-mono mt-1">{player?.mmr || 1200} <span className="text-xs font-normal text-stone-400">MMR</span></div>
+            </div>
+          </div>
+
+          {/* ロール別戦績バー ＆ 得意チャンピオン */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+            
+            {/* ロール別勝率 */}
+            <div className="bg-stone-900/50 border border-stone-800/80 rounded-xl p-4 space-y-3">
+              <h3 className="text-xs font-bold text-stone-300 uppercase tracking-wider flex items-center gap-1.5">
+                <Swords className="w-4 h-4 text-amber-400" />
+                <span>ロール別 出場・勝率</span>
+              </h3>
+              <div className="space-y-2.5">
+                {["TOP", "JG", "MID", "ADC", "SUP"].map((rId) => {
+                  const roleObj = ROLES.find(r => r.id === rId);
+                  const s = roleStats[rId] || { g: 0, w: 0 };
+                  const rRate = s.g > 0 ? Math.round((s.w / s.g) * 100) : 0;
+                  const Icon = roleObj?.icon || Shield;
+                  return (
+                    <div key={rId} className="space-y-1">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="flex items-center gap-1.5 font-bold text-stone-300">
+                          <Icon className="w-3.5 h-3.5 text-stone-400" />
+                          <span>{roleObj?.name || rId}</span>
+                        </span>
+                        <span className="text-stone-400 font-mono text-[11px]">
+                          {s.g}戦 {s.w}勝 ({s.g > 0 ? `${rRate}%` : "-"})
+                        </span>
+                      </div>
+                      <div className="w-full h-1.5 bg-stone-800 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all duration-500 ${
+                            rRate >= 60 ? 'bg-amber-400' : rRate >= 45 ? 'bg-emerald-500' : 'bg-stone-600'
+                          }`}
+                          style={{ width: `${s.g > 0 ? rRate : 0}%` }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* 得意チャンピオン */}
+            <div className="bg-stone-900/50 border border-stone-800/80 rounded-xl p-4 space-y-3">
+              <h3 className="text-xs font-bold text-stone-300 uppercase tracking-wider flex items-center gap-1.5">
+                <Star className="w-4 h-4 text-amber-400" />
+                <span>得意チャンピオン (使用数順)</span>
+              </h3>
+              {topChamps.length > 0 ? (
+                <div className="space-y-2">
+                  {topChamps.map((c, idx) => (
+                    <div
+                      key={c.champion}
+                      className="p-2.5 rounded-lg bg-stone-900/80 border border-stone-800 flex items-center justify-between"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <span className="w-5 h-5 rounded-md bg-stone-800 text-stone-400 text-[10px] font-black flex items-center justify-center font-mono">
+                          {idx + 1}
+                        </span>
+                        <span className="text-xs font-bold text-white">{c.champion}</span>
+                      </div>
+                      <div className="text-xs font-mono text-stone-300 flex items-center gap-3">
+                        <span className="text-stone-400">{c.games}試合</span>
+                        <span className={`font-bold ${c.winRate >= 50 ? 'text-emerald-400' : 'text-stone-400'}`}>
+                          {c.winRate}% 勝率
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-6 text-center text-xs text-stone-500">
+                  まだ試合履歴データがありません。カスタムマッチに参加すると集計されます！
+                </div>
+              )}
+            </div>
+
+          </div>
+
+          {/* 直近の試合履歴 */}
+          {recentMatches.length > 0 && (
+            <div className="pt-2">
+              <h3 className="text-xs font-bold text-stone-300 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
+                <History className="w-4 h-4 text-amber-400" />
+                <span>直近のカスタム対戦履歴 (最新5試合)</span>
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-5 gap-2">
+                {recentMatches.map((m) => (
+                  <div
+                    key={m.matchId}
+                    className={`p-3 rounded-xl border flex flex-col justify-between ${
+                      m.isWin
+                        ? 'bg-blue-950/20 border-blue-500/40 text-blue-200'
+                        : 'bg-rose-950/20 border-rose-500/40 text-rose-200'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between text-[11px] font-bold">
+                      <span className={`px-1.5 py-0.2 rounded text-[10px] font-black ${
+                        m.isWin ? 'bg-blue-500 text-white' : 'bg-rose-600 text-white'
+                      }`}>
+                        {m.isWin ? 'WIN' : 'LOSE'}
+                      </span>
+                      <span className="text-[10px] text-stone-400 font-mono">
+                        {m.date ? new Date(m.date).toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' }) : '-'}
+                      </span>
+                    </div>
+                    <div className="mt-2">
+                      <div className="text-xs font-black truncate">{m.champion}</div>
+                      <div className="text-[10px] text-stone-400 mt-0.5">
+                        {m.role} • {m.kills}/{m.deaths}/{m.assists}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* 希望レーン & NGレーン設定フォーム */}
@@ -318,7 +508,7 @@ export default function MyPage() {
                     key={`pri-${r.id}`}
                     type="button"
                     onClick={() => setPrimaryRole(r.id)}
-                    className={`flex flex-col items-center justify-center p-3 rounded-xl border text-center transition-all ${
+                    className={`flex flex-col items-center justify-center p-3 rounded-xl border text-center transition-all cursor-pointer ${
                       isSelected
                         ? `${r.color} shadow-lg ring-1 ring-amber-400/50 scale-[1.02]`
                         : "bg-stone-900/60 border-stone-800 text-stone-400 hover:border-stone-700 hover:text-stone-300"
@@ -347,7 +537,7 @@ export default function MyPage() {
                     key={`sec-${r.id}`}
                     type="button"
                     onClick={() => setSecondaryRole(r.id)}
-                    className={`flex flex-col items-center justify-center p-3 rounded-xl border text-center transition-all ${
+                    className={`flex flex-col items-center justify-center p-3 rounded-xl border text-center transition-all cursor-pointer ${
                       isSelected
                         ? "bg-stone-700/80 border-stone-500 text-white shadow-md scale-[1.02]"
                         : "bg-stone-900/60 border-stone-800 text-stone-400 hover:border-stone-700 hover:text-stone-300"
@@ -381,7 +571,7 @@ export default function MyPage() {
                     key={`ng-${r.id}`}
                     type="button"
                     onClick={() => toggleNgRole(r.id)}
-                    className={`flex items-center justify-center gap-2 p-3 rounded-xl border text-center transition-all ${
+                    className={`flex items-center justify-center gap-2 p-3 rounded-xl border text-center transition-all cursor-pointer ${
                       isNg
                         ? "bg-rose-950/40 border-rose-500/80 text-rose-300 shadow-md shadow-rose-950/50 scale-[1.02]"
                         : "bg-stone-900/60 border-stone-800 text-stone-400 hover:border-stone-700 hover:text-stone-300"
@@ -458,7 +648,7 @@ export default function MyPage() {
                               key={`student-lane-${r.id}`}
                               type="button"
                               onClick={() => setStudentLane(r.id)}
-                              className={`py-1.5 px-2 rounded-lg border text-[11px] font-bold text-center transition-all ${
+                              className={`py-1.5 px-2 rounded-lg border text-[11px] font-bold text-center transition-all cursor-pointer ${
                                 isSel
                                   ? 'bg-emerald-500/30 border-emerald-400 text-emerald-200 shadow'
                                   : 'bg-stone-900/90 border-stone-800 text-stone-400 hover:border-stone-700'
@@ -527,7 +717,7 @@ export default function MyPage() {
                               key={`mentor-lane-${r.id}`}
                               type="button"
                               onClick={() => setMentorLane(r.id)}
-                              className={`py-1.5 px-2 rounded-lg border text-[11px] font-bold text-center transition-all ${
+                              className={`py-1.5 px-2 rounded-lg border text-[11px] font-bold text-center transition-all cursor-pointer ${
                                 isSel
                                   ? 'bg-amber-500/30 border-amber-400 text-amber-200 shadow'
                                   : 'bg-stone-900/90 border-stone-800 text-stone-400 hover:border-stone-700'
@@ -564,11 +754,11 @@ export default function MyPage() {
               {saveSuccess && (
                 <div className="flex items-center gap-2 text-emerald-400 text-xs font-bold animate-fade-in">
                   <CheckCircle2 className="w-4 h-4" />
-                  <span>レーン設定を正常に保存しました！</span>
+                  <span>設定を正常に保存しました！次回のカスタムから反映されます。</span>
                 </div>
               )}
               {error && (
-                <div className="flex items-center gap-2 text-rose-400 text-xs font-bold">
+                <div className="flex items-center gap-2 text-rose-400 text-xs font-bold animate-fade-in">
                   <AlertTriangle className="w-4 h-4" />
                   <span>{error}</span>
                 </div>
@@ -579,7 +769,7 @@ export default function MyPage() {
               type="button"
               onClick={handleSave}
               disabled={saving}
-              className="w-full sm:w-auto px-8 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950 font-black text-sm flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 disabled:opacity-50 transition-all cursor-pointer"
+              className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950 font-black text-sm flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 disabled:opacity-50 transition-all cursor-pointer"
             >
               {saving ? (
                 <>
@@ -594,55 +784,7 @@ export default function MyPage() {
               )}
             </button>
           </div>
-        </div>
 
-        {/* 成績サマリー */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-[#2b2620]/80 border border-stone-800 rounded-2xl p-5">
-            <div className="text-xs font-bold text-stone-400 uppercase tracking-wider mb-1 flex items-center gap-1.5">
-              <Trophy className="w-4 h-4 text-amber-400" />
-              <span>通算戦績</span>
-            </div>
-            <div className="text-2xl font-black text-white font-mono">
-              {totalGames} <span className="text-sm font-normal text-stone-400">試合</span>
-            </div>
-            <div className="text-xs text-stone-400 mt-2 flex items-center justify-between">
-              <span>{totalWins}勝 {totalGames - totalWins}敗</span>
-              <span className="font-bold text-amber-400">勝率 {winRate}%</span>
-            </div>
-          </div>
-
-          <div className="bg-[#2b2620]/80 border border-stone-800 rounded-2xl p-5">
-            <div className="text-xs font-bold text-stone-400 uppercase tracking-wider mb-1 flex items-center gap-1.5">
-              <Award className="w-4 h-4 text-amber-400" />
-              <span>最高ランク</span>
-            </div>
-            <div className="text-2xl font-black text-amber-300 font-mono">
-              {player?.highest_rank || "UNRANKED"}
-            </div>
-            <p className="text-[11px] text-stone-500 mt-2">
-              カスタム戦のMMR補正基準として使用されます
-            </p>
-          </div>
-
-          <div className="bg-[#2b2620]/80 border border-stone-800 rounded-2xl p-5 flex flex-col justify-between">
-            <div>
-              <div className="text-xs font-bold text-stone-400 uppercase tracking-wider mb-1 flex items-center gap-1.5">
-                <Coins className="w-4 h-4 text-amber-400" />
-                <span>KTM カジノ ＆ ベット</span>
-              </div>
-              <p className="text-[11px] text-stone-400 mt-1">
-                コインを使って試合結果を予想したりアイテムを購入できます。
-              </p>
-            </div>
-            <Link
-              href="/casino"
-              className="mt-3 inline-flex items-center justify-center gap-1 text-xs font-bold text-amber-400 hover:text-amber-300 py-1.5 px-3 bg-amber-500/10 rounded-lg border border-amber-500/20 transition-colors"
-            >
-              <span>カジノへ行く</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
         </div>
 
       </div>
