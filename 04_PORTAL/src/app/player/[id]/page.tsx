@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 import ScoutingReport from "../../../components/ScoutingReport";
 import { 
   Activity, 
@@ -49,7 +50,8 @@ const LANE_COLORS: Record<'TOP' | 'JG' | 'MID' | 'ADC' | 'SUP', string> = {
 };
 
 export default function PlayerMyPage() {
-  const { id } = useParams(); // Discord ID
+  const { id } = useParams(); // Discord ID or Player Name
+  const { user: currentUser } = useCurrentUser();
   const [player, setPlayer] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<any>(null);
@@ -598,6 +600,12 @@ export default function PlayerMyPage() {
     { id: "history", name: "試合履歴", icon: <Clock className="w-4 h-4" /> },
   ] as const;
 
+  // ログイン中の自分自身かどうか判定
+  const isMe = currentUser && (
+    (player?.discord_id && player.discord_id === currentUser.discordId) ||
+    (player?.name && (player.name === currentUser.displayName || player.name === currentUser.username))
+  );
+
   return (
     <div className="min-h-screen bg-background text-foreground p-4 md:p-8 font-sans selection:bg-amber-300/40 overflow-x-hidden">
       {/* 背景ネオンデコレーション */}
@@ -606,6 +614,34 @@ export default function PlayerMyPage() {
 
       <div className="max-w-[1600px] w-full mx-auto space-y-6">
         
+        {/* 👑 ログイン中の自分自身のカルテを開いている場合のマイページ案内バナー */}
+        {isMe && (
+          <div className="bg-gradient-to-r from-amber-500/20 via-amber-500/10 to-transparent border border-amber-400/50 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-md animate-fade-in">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-500 text-stone-950 flex items-center justify-center font-black text-lg shadow">
+                👑
+              </div>
+              <div>
+                <h4 className="text-sm font-black text-amber-950 flex items-center gap-1.5">
+                  <span>これはあなたの個人カルテです</span>
+                  <span className="text-[10px] px-2 py-0.2 rounded-full bg-amber-400 text-stone-950 font-bold">YOU</span>
+                </h4>
+                <p className="text-xs text-stone-600 mt-0.5">
+                  希望レーン・NGレーン設定や、師弟バディ企画の参加設定は統合マイページから変更できます。
+                </p>
+              </div>
+            </div>
+
+            <Link
+              href="/mypage"
+              className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950 font-black text-xs flex items-center gap-1.5 shadow transition self-stretch sm:self-auto justify-center cursor-pointer shrink-0"
+            >
+              <Sparkles className="w-4 h-4 fill-current" />
+              <span>マイページを開く (設定・レーン変更) ➔</span>
+            </Link>
+          </div>
+        )}
+
         {/* Header / Control Panel (得意チャンピオンの公式スプラッシュアート背景 ＆ グラスモルフィズム) */}
         <div className="bg-white/60 backdrop-blur-xl border border-black/10 rounded-3xl p-6 shadow-[0_8px_32px_0_rgba(32,28,43,0.08)] relative overflow-hidden group">
           {/* 公式スプラッシュアート背景 */}

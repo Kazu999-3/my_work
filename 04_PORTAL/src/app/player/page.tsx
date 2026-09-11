@@ -2,7 +2,8 @@
 
 import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
-import { Search, User, Trophy, Activity, Shield, Trees, Zap, Target, Heart } from "lucide-react";
+import { Search, User, Trophy, Activity, Shield, Trees, Zap, Target, Heart, Sparkles, Settings } from "lucide-react";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 const ROLE_ICONS: Record<string, any> = {
   TOP: Shield,
@@ -13,6 +14,7 @@ const ROLE_ICONS: Record<string, any> = {
 };
 
 export default function PlayerIndexPage() {
+  const { user: currentUser } = useCurrentUser();
   const [players, setPlayers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -77,15 +79,27 @@ export default function PlayerIndexPage() {
           </p>
         </div>
 
-        <div className="relative w-full md:w-72">
-          <input
-            type="text"
-            placeholder="名前 / サモナーネームで検索..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full bg-white border border-stone-300 rounded-xl pl-10 pr-4 py-2.5 text-xs font-bold text-stone-900 focus:outline-none focus:border-indigo-500 transition-all shadow-xs"
-          />
-          <Search className="absolute left-3.5 top-3 text-stone-400 w-4 h-4" />
+        <div className="flex items-center gap-3 w-full md:w-auto">
+          {currentUser && (
+            <Link
+              href="/mypage"
+              className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950 font-black text-xs flex items-center gap-1.5 shadow-sm transition shrink-0 cursor-pointer"
+            >
+              <Sparkles className="w-4 h-4" />
+              <span>あなたのマイページ ➔</span>
+            </Link>
+          )}
+
+          <div className="relative w-full md:w-72">
+            <input
+              type="text"
+              placeholder="名前 / サモナーネームで検索..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full bg-white border border-stone-300 rounded-xl pl-10 pr-4 py-2.5 text-xs font-bold text-stone-900 focus:outline-none focus:border-indigo-500 transition-all shadow-xs"
+            />
+            <Search className="absolute left-3.5 top-3 text-stone-400 w-4 h-4" />
+          </div>
         </div>
       </div>
 
@@ -146,6 +160,14 @@ export default function PlayerIndexPage() {
             const subRole = (prefs.secondary || "").toUpperCase();
             const RoleIconComp = ROLE_ICONS[mainRole] || (roleFilter !== "ALL" ? ROLE_ICONS[roleFilter] : null);
 
+            // ログイン中の自分自身かどうか判定
+            const isMe = currentUser && (
+              (player.discord_id && player.discord_id === currentUser.discordId) ||
+              (player.name && (player.name === currentUser.displayName || player.name === currentUser.username))
+            );
+
+            const targetHref = isMe ? "/mypage" : `/player/${player.name}`;
+
             const roleKey = roleFilter !== "ALL" ? `mmr_${roleFilter.toLowerCase()}` : null;
             const specificMmr = roleKey ? player[roleKey] : null;
             const avgMmr = Math.round(
@@ -170,9 +192,20 @@ export default function PlayerIndexPage() {
             })();
 
             return (
-              <Link href={`/player/${player.name}`} key={player.id}>
-                <div className="bg-white border border-stone-200/90 hover:border-indigo-400 rounded-2xl p-5 transition-all hover:shadow-lg group cursor-pointer h-full flex flex-col relative overflow-hidden">
-                  {!player.is_active && (
+              <Link href={targetHref} key={player.id}>
+                <div className={`bg-white border rounded-2xl p-5 transition-all hover:shadow-lg group cursor-pointer h-full flex flex-col relative overflow-hidden ${
+                  isMe
+                    ? 'border-amber-400 ring-2 ring-amber-400/30 shadow-md bg-gradient-to-b from-amber-50/20 to-white'
+                    : 'border-stone-200/90 hover:border-indigo-400'
+                }`}>
+                  {isMe && (
+                    <div className="absolute top-0 right-0 bg-amber-500 text-stone-950 text-[10px] font-black px-2.5 py-0.5 rounded-bl-lg shadow-sm flex items-center gap-1">
+                      <Sparkles className="w-3 h-3 fill-current" />
+                      <span>あなた (マイページ)</span>
+                    </div>
+                  )}
+
+                  {!player.is_active && !isMe && (
                     <div className="absolute top-0 right-0 bg-stone-100 text-stone-500 text-[10px] font-bold px-2 py-0.5 rounded-bl-lg border-b border-l border-stone-200">
                       INACTIVE
                     </div>
@@ -181,7 +214,9 @@ export default function PlayerIndexPage() {
                   <div className="flex items-center gap-3.5 mb-4">
                     <div
                       className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black text-base border shadow-xs transition-transform group-hover:scale-105 shrink-0 ${
-                        player.is_active
+                        isMe
+                          ? "bg-amber-100 border-amber-300 text-amber-900"
+                          : player.is_active
                           ? "bg-gradient-to-br from-indigo-50 to-indigo-100 border-indigo-200 text-indigo-700"
                           : "bg-stone-100 border-stone-200 text-stone-500"
                       }`}
@@ -190,12 +225,14 @@ export default function PlayerIndexPage() {
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1.5">
-                        <h3 className="font-extrabold text-base text-stone-900 group-hover:text-indigo-600 transition-colors truncate">
+                        <h3 className={`font-extrabold text-base transition-colors truncate ${
+                          isMe ? 'text-amber-950 font-black' : 'text-stone-900 group-hover:text-indigo-600'
+                        }`}>
                           {player.name}
                         </h3>
                         {RoleIconComp && (
                           <span title={mainRole ? `希望: ${mainRole}${subRole ? ` / ${subRole}` : ''}` : 'ロール未設定'}>
-                            <RoleIconComp className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                            <RoleIconComp className={`w-3.5 h-3.5 shrink-0 ${isMe ? 'text-amber-600' : 'text-indigo-600'}`} />
                           </span>
                         )}
                       </div>
@@ -222,7 +259,9 @@ export default function PlayerIndexPage() {
                       <Trophy className="w-3.5 h-3.5 text-amber-500" />
                       <span className="font-mono">{player.highest_rank || "UNRANKED"}</span>
                     </div>
-                    <div className="flex items-center gap-1 font-mono font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md">
+                    <div className={`flex items-center gap-1 font-mono font-bold px-2 py-0.5 rounded-md ${
+                      isMe ? 'text-amber-900 bg-amber-100/80' : 'text-indigo-700 bg-indigo-50'
+                    }`}>
                       <Activity className="w-3.5 h-3.5" />
                       <span>{displayMmr} MMR{roleFilter !== "ALL" && specificMmr ? ` (${roleFilter})` : ''}</span>
                     </div>
