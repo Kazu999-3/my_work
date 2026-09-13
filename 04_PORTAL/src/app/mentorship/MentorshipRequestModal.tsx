@@ -2,14 +2,14 @@
 
 import React, { useState } from 'react';
 import { MentorshipProfile } from '../api/mentorship/profiles/route';
-import { CHAMPION_JA } from '../../lib/championConstants';
-import { Send, X, Sparkles } from 'lucide-react';
+import { MENTORSHIP_DURATIONS } from '../../lib/mentorshipConstants';
+import { Send, X, Clock, RefreshCw } from 'lucide-react';
 
 interface MentorshipRequestModalProps {
   isOpen: boolean;
   onClose: () => void;
   targetProfile: MentorshipProfile | null;
-  onSubmit: (targetProfileId: string, message: string) => Promise<void>;
+  onSubmit: (targetProfileId: string, message: string, durationKey: string, autoRenew: boolean) => Promise<void>;
 }
 
 const TEMPLATE_MESSAGES_FOR_MENTOR = [
@@ -30,6 +30,8 @@ export function MentorshipRequestModal({
   onSubmit,
 }: MentorshipRequestModalProps) {
   const [message, setMessage] = useState('');
+  const [durationKey, setDurationKey] = useState('14_DAYS');
+  const [autoRenew, setAutoRenew] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (!isOpen || !targetProfile) return null;
@@ -41,7 +43,7 @@ export function MentorshipRequestModal({
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      await onSubmit(targetProfile.id, message);
+      await onSubmit(targetProfile.id, message, durationKey, autoRenew);
       setMessage('');
       onClose();
     } catch (err) {
@@ -53,9 +55,9 @@ export function MentorshipRequestModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/60 backdrop-blur-xs animate-in fade-in duration-150">
-      <div className="bg-white border border-stone-200 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden text-stone-900 animate-in zoom-in-95 duration-150">
+      <div className="bg-white border border-stone-200 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden text-stone-900 animate-in zoom-in-95 duration-150 max-h-[90vh] flex flex-col">
         {/* ヘッダー */}
-        <div className={`p-5 flex items-center justify-between border-b ${
+        <div className={`p-5 flex items-center justify-between border-b shrink-0 ${
           isTargetMentor ? 'bg-amber-50/70 border-amber-200' : 'bg-emerald-50/70 border-emerald-200'
         }`}>
           <div className="flex items-center gap-2.5">
@@ -81,7 +83,7 @@ export function MentorshipRequestModal({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-5 space-y-4">
+        <form onSubmit={handleSubmit} className="p-5 space-y-4 overflow-y-auto">
           {/* 相手のプロフィール概要 */}
           <div className="p-3.5 bg-stone-50 rounded-2xl border border-stone-200 space-y-2">
             <div className="flex items-center justify-between">
@@ -100,6 +102,58 @@ export function MentorshipRequestModal({
                 <span className="text-stone-900">{targetProfile.lanes.join(', ')}</span>
               </div>
             )}
+          </div>
+
+          {/* 期間設定 (Duration) */}
+          <div className="space-y-2">
+            <label className="block text-xs font-black text-stone-700 flex items-center gap-1.5">
+              <Clock size={14} className="text-amber-600" />
+              <span>希望するペア活動・指導の期間</span>
+            </label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {Object.entries(MENTORSHIP_DURATIONS).map(([key, item]) => {
+                const isSelected = durationKey === key;
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setDurationKey(key)}
+                    className={`p-2.5 rounded-xl text-left border text-xs font-bold transition flex items-center justify-between cursor-pointer ${
+                      isSelected
+                        ? 'bg-amber-50 border-amber-400 text-amber-950 shadow-2xs'
+                        : 'bg-stone-50 border-stone-200 text-stone-700 hover:bg-stone-100'
+                    }`}
+                  >
+                    <span>{item.label}</span>
+                    {isSelected && <span className="text-amber-600 text-xs">✓</span>}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* 期間切れ後の自動継続（そのまま実行）設定 */}
+          <div className="p-3 bg-stone-50 rounded-2xl border border-stone-200 flex items-center justify-between gap-3">
+            <div className="space-y-0.5">
+              <div className="flex items-center gap-1.5 text-xs font-black text-stone-900">
+                <RefreshCw size={13} className="text-emerald-600" />
+                <span>期間満了時の設定</span>
+              </div>
+              <p className="text-[11px] text-stone-500 font-medium">
+                {autoRenew ? '期間終了後もワンクリックまたは自動でそのまま継続します' : '期間終了時に卒業手続きまたは延長を選択します'}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setAutoRenew(!autoRenew)}
+              className={`px-3 py-1.5 rounded-xl text-xs font-black transition cursor-pointer border shrink-0 ${
+                autoRenew
+                  ? 'bg-emerald-100 border-emerald-300 text-emerald-800'
+                  : 'bg-stone-200 border-stone-300 text-stone-600'
+              }`}
+            >
+              {autoRenew ? '⚡ そのまま継続' : '🎓 終了時に相談'}
+            </button>
           </div>
 
           {/* ひと言メッセージ入力 */}
@@ -133,7 +187,7 @@ export function MentorshipRequestModal({
           </div>
 
           {/* フッターアクション */}
-          <div className="pt-2 flex items-center justify-end gap-2 border-t border-stone-100">
+          <div className="pt-2 flex items-center justify-end gap-2 border-t border-stone-100 shrink-0">
             <button
               type="button"
               onClick={onClose}
@@ -159,3 +213,4 @@ export function MentorshipRequestModal({
     </div>
   );
 }
+

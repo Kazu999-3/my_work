@@ -132,7 +132,12 @@ export default function MentorshipHubPanel() {
   };
 
   // 申請を送信
-  const handleSendRequest = async (targetProfileId: string, message: string) => {
+  const handleSendRequest = async (
+    targetProfileId: string,
+    message: string,
+    durationKey: string = '14_DAYS',
+    autoRenew: boolean = true
+  ) => {
     try {
       const res = await fetch('/api/mentorship/matches', {
         method: 'POST',
@@ -141,6 +146,8 @@ export default function MentorshipHubPanel() {
           action: 'APPLY',
           targetProfileId,
           message,
+          durationKey,
+          autoRenew,
         }),
       });
       const data = await res.json();
@@ -207,6 +214,66 @@ export default function MentorshipHubPanel() {
         fetchMatches();
       } else {
         toast.error(data.error || '処理に失敗しました');
+      }
+    } catch (err) {
+      toast.error('エラーが発生しました');
+    }
+  };
+
+  // ⚡ 期間をそのまま実行（期間延長）
+  const handleExtendMatch = async (matchId: string, days: number = 14) => {
+    try {
+      const res = await fetch('/api/mentorship/matches', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'EXTEND',
+          matchId,
+          extendDays: days,
+        }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        toast.success(data.message || `師弟期間を ${days} 日間延長しました！`);
+        fetchMatches();
+      } else {
+        toast.error(data.error || '期間延長に失敗しました');
+      }
+    } catch (err) {
+      toast.error('エラーが発生しました');
+    }
+  };
+
+  // 🎓 目標達成・卒業完了手続き
+  const handleCompleteMatch = async (matchId: string) => {
+    if (!confirm('この師弟ペアの活動を目標達成として卒業完了にしますか？\n両者に卒業ボーナス（+200コイン）が付与され、新たな募集が可能になります。')) {
+      return;
+    }
+    try {
+      const res = await fetch('/api/mentorship/matches', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'COMPLETE',
+          matchId,
+        }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        try {
+          const confetti = (await import('canvas-confetti')).default;
+          confetti({
+            particleCount: 150,
+            spread: 100,
+            origin: { y: 0.5 },
+          });
+        } catch (_) {}
+
+        toast.success(data.message || '🎓 卒業完了しました！(+200コイン獲得)');
+        fetchProfiles();
+        fetchMatches();
+      } else {
+        toast.error(data.error || '卒業手続きに失敗しました');
       }
     } catch (err) {
       toast.error('エラーが発生しました');
@@ -365,7 +432,7 @@ export default function MentorshipHubPanel() {
                 : 'bg-stone-100 hover:bg-stone-200 text-stone-700'
             }`}
           >
-            <span>🤝 成立した師弟ペア</span>
+            <span>🤝 師弟ペア・活動状況</span>
             <span className="text-[10px] bg-white/20 px-1.5 py-0.2 rounded-full">
               {matches.length}
             </span>
@@ -406,8 +473,8 @@ export default function MentorshipHubPanel() {
             {pendingReceived.map((req) => {
               const partner = req.mentor_discord_id === myDiscordId ? req.pupil : req.mentor;
               const isPartnerMentor = partner?.role_type === 'MENTOR';
-              // notes からメッセージを抽出
-              const cleanNotes = (req.notes || '').replace(/\[FROM:[^\]]+\]\s*/, '');
+              const cleanNotes = req.meta?.message || (req.notes || '').replace(/\[FROM:[^\]]+\]\s*/, '');
+              const durationLabel = req.meta?.durationLabel || '2週間育成コース';
 
               return (
                 <div
@@ -425,6 +492,17 @@ export default function MentorshipHubPanel() {
                       <span className="text-[11px] font-bold text-stone-600 bg-stone-100 px-2 py-0.5 rounded-md">
                         {partner?.current_rank}
                       </span>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
+                      <span className="px-2 py-0.5 rounded-lg bg-amber-100 text-amber-900 font-bold border border-amber-200">
+                        ⏱️ 希望期間: {durationLabel}
+                      </span>
+                      {req.meta?.autoRenew && (
+                        <span className="px-2 py-0.5 rounded-lg bg-emerald-100 text-emerald-800 font-bold border border-emerald-200">
+                          ⚡ 満了時そのまま継続
+                        </span>
+                      )}
                     </div>
 
                     {cleanNotes && (
@@ -557,28 +635,104 @@ export default function MentorshipHubPanel() {
         </div>
       ) : activeTab === 'MATCHES' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {matches.map((match) => (
-            <div
-              key={match.id}
-              className="bg-white rounded-2xl p-5 border border-indigo-200 shadow-xs flex items-center justify-between"
-            >
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <span className="text-base">🤝</span>
-                  <span className="text-xs font-black text-indigo-900">師弟ペア成立</span>
-                  <span className="text-[10px] text-stone-500 font-mono">
-                    {new Date(match.started_at || match.created_at).toLocaleDateString('ja-JP')}
-                  </span>
+          {matches.map((match) => {
+            const isMyMatch =
+              match.mentor_discord_id === myDiscordId || match.pupil_discord_id === myDiscordId;
+            const isCompleted = match.status === 'COMPLETED';
+            const isExpired = match.isExpired;
+            const durationLabel = match.meta?.durationLabel || '2週間育成コース';
+            const remainingDays = match.remainingDays;
+
+            return (
+              <div
+                key={match.id}
+                className={`rounded-2xl p-5 border shadow-xs flex flex-col justify-between gap-3.5 transition ${
+                  isCompleted
+                    ? 'bg-stone-50/80 border-stone-200 opacity-90'
+                    : isExpired
+                    ? 'bg-amber-50/70 border-amber-300 ring-2 ring-amber-400/50'
+                    : isMyMatch
+                    ? 'bg-gradient-to-br from-indigo-50/90 to-white border-indigo-300'
+                    : 'bg-white border-indigo-200'
+                }`}
+              >
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-base">{isCompleted ? '🎓' : isExpired ? '⏳' : '🤝'}</span>
+                      <span className="text-xs font-black text-stone-900">
+                        {isCompleted ? '卒業済みペア' : isExpired ? '期間満了（延長・完了待ち）' : '共闘中の師弟ペア'}
+                      </span>
+                    </div>
+
+                    {/* ステータスバッジ */}
+                    {isCompleted ? (
+                      <span className="text-[11px] font-bold text-stone-600 bg-stone-200 px-2.5 py-0.5 rounded-full">
+                        🎓 卒業完了
+                      </span>
+                    ) : isExpired ? (
+                      <span className="text-[11px] font-black text-amber-800 bg-amber-200 px-2.5 py-0.5 rounded-full animate-pulse">
+                        ⚠️ 期間満了
+                      </span>
+                    ) : (
+                      <span className="text-[11px] font-black text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-full">
+                        🔥 残り {remainingDays} 日
+                      </span>
+                    )}
+                  </div>
+
+                  {/* ペア名 */}
+                  <div className="text-sm font-black text-stone-900 flex items-center gap-2">
+                    <span>👑 {match.mentor?.player_name || '師匠'}</span>
+                    <span className="text-stone-400">×</span>
+                    <span>🌱 {match.pupil?.player_name || '弟子'}</span>
+                  </div>
+
+                  {/* 期間情報 */}
+                  <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
+                    <span className="px-2 py-0.5 rounded-lg bg-stone-100 text-stone-700 font-bold">
+                      {durationLabel}
+                    </span>
+                    <span className="text-stone-500 font-medium">
+                      開始: {new Date(match.started_at || match.created_at).toLocaleDateString('ja-JP')}
+                    </span>
+                    {match.meta?.autoRenew && !isCompleted && (
+                      <span className="text-emerald-700 font-bold text-[10px]">
+                        (自動継続ON)
+                      </span>
+                    )}
+                  </div>
                 </div>
-                <div className="text-sm font-black text-stone-900">
-                  👑 {match.mentor?.player_name || '師匠'} × 🌱 {match.pupil?.player_name || '弟子'}
-                </div>
+
+                {/* 自分のペアである場合のアクション（そのまま実行・期間延長 / 卒業完了） */}
+                {isMyMatch && !isCompleted && (
+                  <div className="pt-2 border-t border-stone-200/80 flex flex-wrap items-center justify-between gap-2">
+                    <div className="text-[11px] font-bold text-stone-600">
+                      ペア管理アクション:
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleExtendMatch(match.id, 14)}
+                        className="px-3 py-1.5 rounded-xl font-black text-xs bg-amber-600 hover:bg-amber-500 text-white shadow-xs transition flex items-center gap-1 cursor-pointer"
+                        title="現在の期間をさらに14日間そのまま延長します"
+                      >
+                        <span>⚡ そのまま実行（+14日延長）</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleCompleteMatch(match.id)}
+                        className="px-3 py-1.5 rounded-xl font-black text-xs bg-emerald-600 hover:bg-emerald-500 text-white shadow-xs transition flex items-center gap-1 cursor-pointer"
+                        title="目標達成として円満卒業し、両者に+200コインを付与します"
+                      >
+                        <span>🎓 卒業・完了 (+200🪙)</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
-              <div className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
-                共闘中 🔥
-              </div>
-            </div>
-          ))}
+            );
+          })}
 
           {matches.length === 0 && (
             <div className="col-span-full py-12 text-center text-stone-400 text-xs font-bold bg-white rounded-2xl border border-stone-200">
@@ -641,3 +795,4 @@ export default function MentorshipHubPanel() {
     </div>
   );
 }
+

@@ -193,18 +193,18 @@ export default function GuidePortalTab() {
               </span>
             </div>
             <h3 className="text-base md:text-lg font-black text-stone-900">
-              師弟マッチングハブ（AI相性分析 ＆ 安心マッチング）
+              師弟マッチングハブ（AI相性分析・期間設定 ＆ そのまま継続）
             </h3>
             <p className="text-stone-600 text-xs leading-relaxed">
-              教えたい師匠（Mentor）と学びたい弟子（Pupil）を繋ぐ公式掲示板です。AIがプレイスタイルや使用チャンプから相性を自動算出し、メッセージ付きの申請・承諾フローで安心してペアを結成できます。
+              教えたい師匠（Mentor）と学びたい弟子（Pupil）を繋ぐ公式掲示板です。AIがプレイスタイルから相性を算出し、メッセージ付きの申請・承諾フローで安心ペア結成。期間満了後は「⚡ そのまま実行（継続）」や「🎓 卒業完了（ボーナス獲得）」がワンクリックで行えます。
             </p>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 pt-1">
               <div className="bg-stone-50 rounded-2xl p-3 border border-stone-200/80 text-xs text-stone-700 space-y-1">
                 <div className="font-bold text-stone-900 flex items-center gap-1 text-[11px]">
                   <span>🎯</span> AI相性マッチング
                 </div>
                 <p className="text-[11px] text-stone-600">
-                  ロール・得意レーン・使用チャンピオンから相性スコア（60〜98%）をリアルタイム算出。
+                  得意レーン・使用チャンプ・課題タグから相性スコア（60〜98%）をリアルタイム算出。
                 </p>
               </div>
               <div className="bg-stone-50 rounded-2xl p-3 border border-stone-200/80 text-xs text-stone-700 space-y-1">
@@ -212,7 +212,15 @@ export default function GuidePortalTab() {
                   <span>⚔️</span> 5大専門指導テーマ
                 </div>
                 <p className="text-[11px] text-stone-600">
-                  カイト、エンゲージ、ピール、ウェーブ管理など、実戦で勝てる専門スキルを細かく選択可能。
+                  カイト、エンゲージ、ピール、ウェーブ管理、JG周回など実戦に直結する指導項目を選択可能。
+                </p>
+              </div>
+              <div className="bg-stone-50 rounded-2xl p-3 border border-stone-200/80 text-xs text-stone-700 space-y-1">
+                <div className="font-bold text-stone-900 flex items-center gap-1 text-[11px]">
+                  <span>⏱️</span> 期間＆そのまま実行
+                </div>
+                <p className="text-[11px] text-stone-600">
+                  1週間/2週間/1ヶ月等を選択。期間終了後は「⚡ そのまま実行」で即時延長または自動継続！
                 </p>
               </div>
               <div className="bg-stone-50 rounded-2xl p-3 border border-stone-200/80 text-xs text-stone-700 space-y-1">
@@ -220,7 +228,7 @@ export default function GuidePortalTab() {
                   <span>🪙</span> コインボーナス
                 </div>
                 <p className="text-[11px] text-stone-600">
-                  初回カード登録で即時 <strong className="text-amber-800">+500コイン</strong>、ペア成立で双方に <strong className="text-amber-800">+300コイン</strong> をプレゼント！
+                  カード登録で <strong className="text-amber-800">+500🪙</strong>、成立で <strong className="text-amber-800">+300🪙</strong>、目標達成卒業で <strong className="text-amber-800">+200🪙</strong> 獲得！
                 </p>
               </div>
             </div>

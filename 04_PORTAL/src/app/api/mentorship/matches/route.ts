@@ -2,8 +2,75 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 import { getAuthSession } from '../../../../lib/authGuard';
 import { findOrCreatePlayer, getPlayerCoins, updatePlayerCoinsAndInventory } from '../../../../lib/playerCoins';
+import { MENTORSHIP_DURATIONS } from '../../../../lib/mentorshipConstants';
 
 export const dynamic = 'force-dynamic';
+
+
+export interface MatchMeta {
+  durationKey: string;
+  durationLabel: string;
+  durationDays: number;
+  autoRenew: boolean;
+  message: string;
+  fromDiscordId: string;
+}
+
+export function parseNotesMeta(notes: string | null): MatchMeta {
+  const defaultMeta: MatchMeta = {
+    durationKey: '14_DAYS',
+    durationLabel: '🔥 2週間育成コース（14日・推奨）',
+    durationDays: 14,
+    autoRenew: true,
+    message: '',
+    fromDiscordId: '',
+  };
+
+  if (!notes) return defaultMeta;
+
+  try {
+    if (notes.startsWith('{') && notes.endsWith('}')) {
+      const parsed = JSON.parse(notes);
+      return { ...defaultMeta, ...parsed };
+    }
+  } catch (_) {}
+
+  // 構造化タグ文字列のパース: [FROM:xxx][DURATION:14_DAYS][AUTORENEW:true] message
+  const fromMatch = notes.match(/\[FROM:([^\]]+)\]/);
+  const durMatch = notes.match(/\[DURATION:([^\]]+)\]/);
+  const renewMatch = notes.match(/\[AUTORENEW:([^\]]+)\]/);
+  const cleanMsg = notes
+    .replace(/\[FROM:[^\]]+\]/g, '')
+    .replace(/\[DURATION:[^\]]+\]/g, '')
+    .replace(/\[AUTORENEW:[^\]]+\]/g, '')
+    .trim();
+
+  const durKey = durMatch ? durMatch[1] : '14_DAYS';
+  const durationInfo = MENTORSHIP_DURATIONS[durKey] || MENTORSHIP_DURATIONS['14_DAYS'];
+
+  return {
+    durationKey: durKey,
+    durationLabel: durationInfo.label,
+    durationDays: durationInfo.days,
+    autoRenew: renewMatch ? renewMatch[1] === 'true' : true,
+    message: cleanMsg,
+    fromDiscordId: fromMatch ? fromMatch[1] : '',
+  };
+}
+
+export function encodeNotesMeta(meta: Partial<MatchMeta>): string {
+  const durKey = meta.durationKey || '14_DAYS';
+  const durInfo = MENTORSHIP_DURATIONS[durKey] || MENTORSHIP_DURATIONS['14_DAYS'];
+  const fullMeta: MatchMeta = {
+    durationKey: durKey,
+    durationLabel: durInfo.label,
+    durationDays: durInfo.days,
+    autoRenew: meta.autoRenew !== undefined ? meta.autoRenew : true,
+    message: meta.message || '',
+    fromDiscordId: meta.fromDiscordId || '',
+  };
+  return JSON.stringify(fullMeta);
+}
 
 /**
  * GET: 成立済みペア一覧 ＆ ログインユーザーの申請一覧（受信/送信）の取得
@@ -13,7 +80,7 @@ export async function GET() {
     const session = await getAuthSession();
     const myDiscordId = session?.discordId;
 
-    // 1. 成立済みペア一覧 (ACTIVE)
+    // 1. 成立済み・卒業済みペア一覧 (ACTIVE or COMPLETED)
     const { data: rawMatches } = await supabase
       .from('mentorship_matches')
       .select(`
@@ -21,15 +88,37 @@ export async function GET() {
         mentor:mentorship_profiles!mentorship_matches_mentor_profile_id_fkey(*),
         pupil:mentorship_profiles!mentorship_matches_pupil_profile_id_fkey(*)
       `)
-      .eq('status', 'ACTIVE')
+      .in('status', ['ACTIVE', 'COMPLETED'])
       .order('started_at', { ascending: false });
 
-    // 2. ログインユーザー宛の受信申請 (PENDING)
+    // メタデータの展開と残り日数の計算
+    const parsedMatches = (rawMatches || []).map((m: any) => {
+      const meta = parseNotesMeta(m.notes);
+      const started = m.started_at ? new Date(m.started_at) : new Date(m.created_at);
+      const expiresAt = m.completed_at && m.status === 'COMPLETED'
+        ? new Date(m.completed_at)
+        : new Date(started.getTime() + (meta.durationDays || 14) * 24 * 60 * 60 * 1000);
+
+      const now = new Date();
+      const diffTime = expiresAt.getTime() - now.getTime();
+      const remainingDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      const isExpired = remainingDays <= 0 && m.status === 'ACTIVE';
+
+      return {
+        ...m,
+        meta,
+        expiresAt: expiresAt.toISOString(),
+        remainingDays,
+        isExpired,
+      };
+    });
+
+    // 2. ログインユーザー宛の受信申請 / 送信申請 (PENDING)
     let pendingReceived: any[] = [];
     let pendingSent: any[] = [];
 
     if (myDiscordId) {
-      const { data: received } = await supabase
+      const { data: pendingData } = await supabase
         .from('mentorship_matches')
         .select(`
           *,
@@ -39,25 +128,25 @@ export async function GET() {
         .eq('status', 'PENDING')
         .or(`mentor_discord_id.eq.${myDiscordId},pupil_discord_id.eq.${myDiscordId}`);
 
-      if (received) {
-        // 自分が受信者か送信者かを判定
-        // notes 内に applicant_id があるか、または mentor/pupil で判定
-        pendingReceived = received.filter((m: any) => {
-          const isSender = (m.notes?.includes(`[FROM:${myDiscordId}]`));
-          return !isSender;
-        });
-        pendingSent = received.filter((m: any) => {
-          const isSender = (m.notes?.includes(`[FROM:${myDiscordId}]`));
-          return isSender;
+      if (pendingData) {
+        pendingData.forEach((m: any) => {
+          const meta = parseNotesMeta(m.notes);
+          const item = { ...m, meta };
+          if (meta.fromDiscordId === myDiscordId) {
+            pendingSent.push(item);
+          } else {
+            pendingReceived.push(item);
+          }
         });
       }
     }
 
     return NextResponse.json({
       ok: true,
-      matches: rawMatches || [],
+      matches: parsedMatches,
       pendingReceived,
       pendingSent,
+      myDiscordId: myDiscordId || null,
     });
   } catch (err: any) {
     console.error('[mentorship/matches] GET error:', err);
@@ -66,7 +155,7 @@ export async function GET() {
 }
 
 /**
- * POST: 師弟マッチング操作 (APPLY: 申請 / ACCEPT: 承諾 / REJECT: 辞退)
+ * POST: 師弟マッチング操作 (APPLY / ACCEPT / REJECT / EXTEND / COMPLETE / TOGGLE_RENEW)
  */
 export async function POST(request: Request) {
   try {
@@ -79,17 +168,124 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { action = 'APPLY', targetProfileId, matchId, message = '' } = body;
+    const {
+      action = 'APPLY',
+      targetProfileId,
+      matchId,
+      message = '',
+      durationKey = '14_DAYS',
+      autoRenew = true,
+      extendDays,
+    } = body;
 
     // ==========================================
-    // 1. 申請承諾 (ACCEPT)
+    // 1. 期間延長 / そのまま実行 (EXTEND)
+    // ==========================================
+    if (action === 'EXTEND') {
+      if (!matchId) {
+        return NextResponse.json({ ok: false, error: '対象のマッチIDが必要です。' }, { status: 400 });
+      }
+
+      const { data: match, error: mErr } = await supabase
+        .from('mentorship_matches')
+        .select('*')
+        .eq('id', matchId)
+        .single();
+
+      if (mErr || !match) {
+        return NextResponse.json({ ok: false, error: 'マッチが見つかりません。' }, { status: 404 });
+      }
+
+      const currentMeta = parseNotesMeta(match.notes);
+      const addDays = extendDays || currentMeta.durationDays || 14;
+      const newDurationDays = currentMeta.durationDays + addDays;
+
+      const newMeta: MatchMeta = {
+        ...currentMeta,
+        durationDays: newDurationDays,
+        durationLabel: `🔥 継続中（計${newDurationDays}日間）`,
+      };
+
+      await supabase
+        .from('mentorship_matches')
+        .update({
+          notes: JSON.stringify(newMeta),
+          status: 'ACTIVE',
+        })
+        .eq('id', matchId);
+
+      return NextResponse.json({
+        ok: true,
+        message: `⚡ 師弟期間を ${addDays} 日間そのまま延長しました！引き続き共闘をお楽しみください。`,
+      });
+    }
+
+    // ==========================================
+    // 2. 卒業・指導完了 (COMPLETE)
+    // ==========================================
+    if (action === 'COMPLETE') {
+      if (!matchId) {
+        return NextResponse.json({ ok: false, error: '対象のマッチIDが必要です。' }, { status: 400 });
+      }
+
+      const { data: match, error: mErr } = await supabase
+        .from('mentorship_matches')
+        .select('*')
+        .eq('id', matchId)
+        .single();
+
+      if (mErr || !match) {
+        return NextResponse.json({ ok: false, error: 'マッチが見つかりません。' }, { status: 404 });
+      }
+
+      await supabase
+        .from('mentorship_matches')
+        .update({
+          status: 'COMPLETED',
+          completed_at: new Date().toISOString(),
+        })
+        .eq('id', matchId);
+
+      // プロフィールステータスを OPEN に戻す（再募集・新規ペア結成可能に）
+      await supabase
+        .from('mentorship_profiles')
+        .update({ status: 'OPEN' })
+        .in('id', [match.mentor_profile_id, match.pupil_profile_id]);
+
+      // 卒業ボーナス (+200コイン) を両者に付与
+      try {
+        const mentorPlayer = await findOrCreatePlayer({ discordId: match.mentor_discord_id });
+        const pupilPlayer = await findOrCreatePlayer({ discordId: match.pupil_discord_id });
+        if (mentorPlayer) {
+          await updatePlayerCoinsAndInventory({
+            player: mentorPlayer,
+            newCoins: getPlayerCoins(mentorPlayer) + 200,
+          });
+        }
+        if (pupilPlayer) {
+          await updatePlayerCoinsAndInventory({
+            player: pupilPlayer,
+            newCoins: getPlayerCoins(pupilPlayer) + 200,
+          });
+        }
+      } catch (coinErr) {
+        console.warn('[mentorship/matches] Complete bonus coin warning:', coinErr);
+      }
+
+      return NextResponse.json({
+        ok: true,
+        message: '🎓 師弟ペアの目標達成・円満卒業が完了しました！(+200コイン獲得)',
+      });
+    }
+
+    // ==========================================
+    // 3. 申請承諾 (ACCEPT)
     // ==========================================
     if (action === 'ACCEPT') {
       if (!matchId) {
         return NextResponse.json({ ok: false, error: '承諾するマッチIDが必要です。' }, { status: 400 });
       }
 
-      // マッチ情報を取得
       const { data: match, error: mErr } = await supabase
         .from('mentorship_matches')
         .select('*')
@@ -100,7 +296,6 @@ export async function POST(request: Request) {
         return NextResponse.json({ ok: false, error: '申請が見つかりません。' }, { status: 404 });
       }
 
-      // ステータスを ACTIVE に更新
       await supabase
         .from('mentorship_matches')
         .update({
@@ -109,7 +304,6 @@ export async function POST(request: Request) {
         })
         .eq('id', matchId);
 
-      // 両プロフィールのステータスを MATCHED に更新
       await supabase
         .from('mentorship_profiles')
         .update({ status: 'MATCHED' })
@@ -139,7 +333,7 @@ export async function POST(request: Request) {
     }
 
     // ==========================================
-    // 2. 申請辞退 (REJECT)
+    // 4. 申請辞退 (REJECT)
     // ==========================================
     if (action === 'REJECT') {
       if (!matchId) {
@@ -155,13 +349,12 @@ export async function POST(request: Request) {
     }
 
     // ==========================================
-    // 3. 申請送信 (APPLY)
+    // 5. 申請送信 (APPLY)
     // ==========================================
     if (!targetProfileId) {
       return NextResponse.json({ ok: false, error: '相手のプロフィールIDが必要です。' }, { status: 400 });
     }
 
-    // 相手のプロフィールを取得
     const { data: targetProfile, error: tErr } = await supabase
       .from('mentorship_profiles')
       .select('*')
@@ -176,7 +369,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: false, error: '自分自身のカードには申請できません。' }, { status: 400 });
     }
 
-    // 自分のプロフィールを取得（相手と逆のロール）
     const myRoleType = targetProfile.role_type === 'PUPIL' ? 'MENTOR' : 'PUPIL';
     let { data: myProfile } = await supabase
       .from('mentorship_profiles')
@@ -185,7 +377,6 @@ export async function POST(request: Request) {
       .eq('role_type', myRoleType)
       .maybeSingle();
 
-    // 自分のプロフィールがまだ無ければ自動作成
     if (!myProfile) {
       const myPlayer = await findOrCreatePlayer({
         discordId: session.discordId,
@@ -227,9 +418,15 @@ export async function POST(request: Request) {
       );
     }
 
-    // 申請（PENDING）を作成
-    const cleanMsg = message.trim() || 'よろしくお願いします！';
-    const notesPayload = `[FROM:${session.discordId}] ${cleanMsg}`;
+    const durObj = MENTORSHIP_DURATIONS[durationKey] || MENTORSHIP_DURATIONS['14_DAYS'];
+    const notesJson = encodeNotesMeta({
+      durationKey,
+      durationLabel: durObj.label,
+      durationDays: durObj.days,
+      autoRenew: !!autoRenew,
+      message: message.trim() || 'よろしくお願いします！',
+      fromDiscordId: session.discordId,
+    });
 
     const { data: match, error: mErr } = await supabase
       .from('mentorship_matches')
@@ -239,7 +436,7 @@ export async function POST(request: Request) {
         mentor_discord_id: mentorDiscord,
         pupil_discord_id: pupilDiscord,
         status: 'PENDING',
-        notes: notesPayload,
+        notes: notesJson,
       })
       .select()
       .single();
@@ -248,7 +445,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       ok: true,
-      message: `${targetProfile.player_name} さんへ申請を送信しました！相手が承諾すると正式にペア結成となります。`,
+      message: `${targetProfile.player_name} さんへ「${durObj.label}」の申請を送信しました！相手が承諾すると正式にペア結成となります。`,
       match,
     });
   } catch (err: any) {
@@ -256,3 +453,4 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: err.message }, { status: 500 });
   }
 }
+
