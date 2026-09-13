@@ -3,6 +3,7 @@
 import React from 'react';
 import { MentorshipProfile } from '../api/mentorship/profiles/route';
 import { getKtmRank, RANKS } from '../../lib/mmr';
+import { CHAMPION_JA } from '../../components/ChampSelect';
 
 interface MentorshipCardProps {
   profile: MentorshipProfile;
@@ -133,7 +134,7 @@ export function MentorshipCard({
                 return (
                   <div
                     key={champName}
-                    className="flex items-center gap-1 px-2 py-0.5 bg-stone-800/60 border border-stone-700/80 rounded-lg text-xs text-stone-300"
+                    className="flex items-center gap-1.5 px-2 py-0.5 bg-stone-800/80 border border-stone-700 rounded-lg text-xs font-medium text-stone-200"
                   >
                     <img
                       src={iconUrl}
@@ -143,7 +144,7 @@ export function MentorshipCard({
                         (e.target as HTMLImageElement).style.display = 'none';
                       }}
                     />
-                    <span>{champName}</span>
+                    <span>{CHAMPION_JA[champName]?.ja || champName}</span>
                   </div>
                 );
               })}
