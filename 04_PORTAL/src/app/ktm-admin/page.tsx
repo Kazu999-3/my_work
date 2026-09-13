@@ -62,6 +62,18 @@ function getColorFromRole(role: string): string {
   if (r === "ALL") return "text-amber-700 font-bold";
   return "text-stone-400 font-medium";
 }
+
+// 参加者の経験度（新規・ライト・常連）判定
+export const getPlayerExperienceBadge = (p: any) => {
+  const totalG = p.total_games ?? p.games ?? p.metadata?.games ?? 0;
+  if (totalG === 0) {
+    return { label: '🔰 初参加', color: 'bg-emerald-100 text-emerald-900 border-emerald-300', tip: '通算0戦：初参加のプレイヤーです！大歓迎✨' };
+  }
+  if (totalG <= 5) {
+    return { label: '🌱 ライト', color: 'bg-teal-100 text-teal-900 border-teal-300', tip: `通算${totalG}戦：参加回数5戦以内のライトプレイヤーです` };
+  }
+  return { label: '👑 常連', color: 'bg-amber-100 text-amber-900 border-amber-300', tip: `通算${totalG}戦：コミュニティの頼もしいレギュラーメンバーです` };
+};
 const MmrBadgeInput = ({ value, onChange }: { value: number, onChange: (v: number) => void }) => {
   const [editing, setEditing] = useState(false);
   const rank = getRankFromMMR(value);
@@ -1383,6 +1395,48 @@ export default function KtmAdminPage() {
               </div>
             )}
 
+            {/* ★ 参加メンバーの経験層分析サマリー */}
+            {(() => {
+              const activePlayers = players.filter(p => p.is_active);
+              const totalActive = activePlayers.length;
+              const newPlayers = activePlayers.filter(p => (p.total_games ?? p.games ?? p.metadata?.games ?? 0) === 0);
+              const lightPlayers = activePlayers.filter(p => {
+                const g = p.total_games ?? p.games ?? p.metadata?.games ?? 0;
+                return g >= 1 && g <= 5;
+              });
+              const regularPlayers = activePlayers.filter(p => (p.total_games ?? p.games ?? p.metadata?.games ?? 0) > 5);
+              const newLightRatio = totalActive > 0 ? Math.round(((newPlayers.length + lightPlayers.length) / totalActive) * 100) : 0;
+
+              return (
+                <div className="p-3.5 rounded-2xl bg-gradient-to-br from-emerald-500/10 via-teal-500/5 to-transparent border border-emerald-500/30 flex flex-col justify-between gap-2 shadow-xs mb-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-base">🔰</span>
+                      <div>
+                        <h4 className="text-xs font-black text-emerald-950">参加メンバーの経験層分析</h4>
+                        <p className="text-[10px] text-stone-600">初心者・初参加の方も安心して参加できる環境です</p>
+                      </div>
+                    </div>
+                    <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-emerald-500 text-stone-950">
+                      新規・ライト層 {newLightRatio}%
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-2 flex-wrap text-xs pt-1 border-t border-emerald-500/20">
+                    <span className="inline-flex items-center gap-1 font-bold text-emerald-900 bg-emerald-100/80 px-2 py-0.5 rounded-md text-[11px]">
+                      🔰 初参加: <strong>{newPlayers.length}名</strong>
+                    </span>
+                    <span className="inline-flex items-center gap-1 font-bold text-teal-900 bg-teal-100/80 px-2 py-0.5 rounded-md text-[11px]">
+                      🌱 ライト: <strong>{lightPlayers.length}名</strong>
+                    </span>
+                    <span className="inline-flex items-center gap-1 font-bold text-amber-900 bg-amber-100/80 px-2 py-0.5 rounded-md text-[11px]">
+                      👑 常連: <strong>{regularPlayers.length}名</strong>
+                    </span>
+                  </div>
+                </div>
+              );
+            })()}
+
             {/* ★ フィルターUI ＆ 大会当日チェックイン操作バー */}
             <div className="space-y-3 bg-white/70 p-4 rounded-2xl border border-border shadow-xs mb-4">
               <div className="flex flex-col md:flex-row gap-3 items-start md:items-center justify-between">
@@ -1455,19 +1509,26 @@ export default function KtmAdminPage() {
             <div className="md:hidden space-y-2.5">
               {sortedPlayers.map((p) => {
                 const uid = p.id || p.discord_id;
+                const exp = getPlayerExperienceBadge(p);
                 return (
                   <div key={uid} className={`bg-surface border rounded-2xl p-3.5 transition shadow-2xs space-y-2.5 ${
                     p.is_active ? 'border-amber-400 bg-amber-50/30' : 'border-border'
                   }`}>
                     <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2 min-w-0">
+                      <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
                         <input
                           type="text"
                           value={p.name}
                           onChange={(e) => handleInputChange(uid, "name", e.target.value)}
                           onBlur={handleBlurSave}
-                          className="bg-transparent font-black text-stone-900 text-sm outline-none truncate"
+                          className="bg-transparent font-black text-stone-900 text-sm outline-none max-w-[120px]"
                         />
+                        <span
+                          className={`text-[9px] font-black px-1.5 py-0.2 rounded border shadow-2xs whitespace-nowrap ${exp.color}`}
+                          title={exp.tip}
+                        >
+                          {exp.label}
+                        </span>
                       </div>
                       <div className="flex items-center gap-1.5 shrink-0">
                         <button onClick={() => setSelectedPlayer(p)} className="text-amber-700 p-1 hover:bg-black/5 rounded">
@@ -1541,6 +1602,7 @@ export default function KtmAdminPage() {
                   <tbody className="divide-y divide-border text-sm">
                     {sortedPlayers.map((p) => {
                       const uid = p.id || p.discord_id;
+                      const exp = getPlayerExperienceBadge(p);
                       return (
                         <React.Fragment key={uid}>
                           <tr 
@@ -1562,10 +1624,10 @@ export default function KtmAdminPage() {
                           />
                         </td>
                         <td className="px-2 py-1.5 sticky left-0 z-10 bg-surface shadow-[2px_0_5px_rgba(0,0,0,0.3)]">
-                          <div className="flex items-center gap-1">
+                          <div className="flex items-center gap-1.5">
                             <button 
                               onClick={() => setSelectedPlayer(p)}
-                              className="text-amber-700 hover:text-stone-900 p-1 hover:bg-black/5 rounded transition"
+                              className="text-amber-700 hover:text-stone-900 p-1 hover:bg-black/5 rounded transition shrink-0"
                               title="プロフィールを表示"
                             >
                               <Info className="w-3 h-3" />
@@ -1575,8 +1637,14 @@ export default function KtmAdminPage() {
                               value={p.name}
                               onChange={(e) => handleInputChange(uid, "name", e.target.value)}
                               onBlur={handleBlurSave}
-                              className="bg-transparent border border-transparent focus:border-border hover:border-border focus:bg-black/5 rounded px-1 py-0.5 outline-none w-20 font-bold text-stone-900 text-xs"
+                              className="bg-transparent border border-transparent focus:border-border hover:border-border focus:bg-black/5 rounded px-1 py-0.5 outline-none min-w-[70px] max-w-[120px] font-bold text-stone-900 text-xs"
                             />
+                            <span
+                              className={`text-[9px] font-black px-1.5 py-0.2 rounded border shadow-2xs shrink-0 whitespace-nowrap ${exp.color}`}
+                              title={exp.tip}
+                            >
+                              {exp.label}
+                            </span>
                           </div>
                         </td>
                         <td className="px-2 py-1.5">

@@ -83,6 +83,16 @@ export default function ProfileModal({ player, onClose }: ProfileModalProps) {
                 <span className="bg-orange-100 text-orange-700 border border-orange-200 px-2 py-0.5 rounded text-xs font-bold">
                   MMR: {player.mmr || 1000}
                 </span>
+                {(() => {
+                  const totalG = player.total_games ?? player.games ?? player.metadata?.games ?? stats?.totalMatches ?? 0;
+                  const label = totalG === 0 ? '🔰 初参加' : totalG <= 5 ? '🌱 ライト' : '👑 常連';
+                  const color = totalG === 0 ? 'bg-emerald-100 text-emerald-900 border-emerald-300' : totalG <= 5 ? 'bg-teal-100 text-teal-900 border-teal-300' : 'bg-amber-100 text-amber-900 border-amber-300';
+                  return (
+                    <span className={`px-2 py-0.5 rounded text-xs font-black border ${color}`}>
+                      {label} (通算{totalG}戦)
+                    </span>
+                  );
+                })()}
               </div>
             </div>
           </div>
