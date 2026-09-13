@@ -102,7 +102,6 @@ export function MentorshipProfileModal({
   const [bio, setBio] = useState('');
   const [activeHours, setActiveHours] = useState('');
   const [isSaving, setIsSaving] = useState(false);
-  const [isAiGenerating, setIsAiGenerating] = useState(false);
   const [activeTab, setActiveTab] = useState<'edit' | 'preview'>('edit');
 
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -134,36 +133,6 @@ export function MentorshipProfileModal({
       setActiveHours('平日 21:00〜24:00 / 休日');
     }
   }, [initialProfile, isOpen, user]);
-
-  // AIカルテ自動生成
-  const handleAiGenerate = async () => {
-    setIsAiGenerating(true);
-    try {
-      const res = await fetch('/api/mentorship/ai-generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          role_type: roleType,
-          lanes,
-          champions: selectedChampions,
-          rank: currentRank,
-          player_name: user?.displayName || user?.username || 'プレイヤー',
-        }),
-      });
-      const result = await res.json();
-      if (result.ok && result.data) {
-        if (result.data.bio) setBio(result.data.bio);
-        if (Array.isArray(result.data.tags) && result.data.tags.length > 0) {
-          const merged = Array.from(new Set([...selectedTags, ...result.data.tags])).slice(0, 8);
-          setSelectedTags(merged);
-        }
-      }
-    } catch (e) {
-      console.error('AI generation failed:', e);
-    } finally {
-      setIsAiGenerating(false);
-    }
-  };
 
   // チャンピオン検索のフィルタリング (日本語名 / 英語名 / 読み)
   const filteredChampions = ALL_CHAMPIONS.filter((id) => {
@@ -710,7 +679,7 @@ export function MentorshipProfileModal({
                 </div>
               </div>
 
-              {/* 6. 自己紹介文 ＆ AI自動生成 ＆ 1クリックテンプレート */}
+              {/* 6. 自己紹介文 ＆ 1クリックテンプレート */}
               <div className="space-y-2.5">
                 <div className="flex items-center justify-between flex-wrap gap-1">
                   <label className="block text-xs font-black text-stone-700 flex items-center gap-1.5">
@@ -718,20 +687,9 @@ export function MentorshipProfileModal({
                     自己紹介・意気込み
                   </label>
                   <span className="text-[11px] text-amber-700 font-bold flex items-center gap-1">
-                    <Sparkles size={12} /> AI生成 ＆ 例文テンプレートから自動入力可能
+                    📝 例文テンプレートから自動入力可能
                   </span>
                 </div>
-
-                {/* 🤖 AIカルテ自動生成ボタン */}
-                <button
-                  type="button"
-                  onClick={handleAiGenerate}
-                  disabled={isAiGenerating}
-                  className="w-full py-2.5 px-4 rounded-2xl bg-gradient-to-r from-amber-500 via-amber-600 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white font-black text-xs flex items-center justify-center gap-2 shadow-sm transition active:scale-98 disabled:opacity-50 cursor-pointer"
-                >
-                  <Sparkles size={15} className={isAiGenerating ? 'animate-spin' : 'animate-bounce'} />
-                  <span>{isAiGenerating ? 'AIがあなたのLoL自己紹介カルテを生成中...' : '✨ AIに自己紹介文＆おすすめタグを自動生成してもらう (1クリック)'}</span>
-                </button>
 
                 {/* テンプレートボタン群 */}
                 <div className="flex flex-wrap gap-1.5 pb-1">
@@ -751,7 +709,7 @@ export function MentorshipProfileModal({
                   rows={3}
                   value={bio}
                   onChange={(e) => setBio(e.target.value)}
-                  placeholder="自己紹介や教えてほしいこと、どんな雰囲気でやりたいかを自由に記入してください（上のAIボタンを押すと自動入力されます）..."
+                  placeholder="自己紹介や教えてほしいこと、どんな雰囲気でやりたいかを自由に記入してください（上の例文ボタンから簡単入力も可能です）..."
                   className="w-full bg-stone-50 border border-stone-300 rounded-2xl p-3 text-stone-900 text-xs focus:border-amber-500 focus:bg-white focus:outline-hidden leading-relaxed font-medium"
                 />
               </div>
