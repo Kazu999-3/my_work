@@ -67,6 +67,104 @@ export default function BalancerPage() {
   const [checkingIntegrity, setCheckingIntegrity] = useState(false);
   const [rebuildingMmr, setRebuildingMmr] = useState(false);
 
+  // 🏆 BO3 (Best of 3) シリーズ管理ステート
+  const [bo3State, setBo3State] = useState<{
+    isActive: boolean;
+    gameNumber: number; // 1, 2, 3
+    team1Name: string;
+    team2Name: string;
+    team1Wins: number;
+    team2Wins: number;
+    team1IsCurrentlyBlue: boolean;
+    isFinished: boolean;
+    history: Array<{ game: number; winnerTeamName: string; winnerSide: 'BLUE' | 'RED' }>;
+  } | null>(null);
+
+  // BO3シリーズ開始
+  const handleStartBo3 = () => {
+    if (!balanceResult) return;
+    const t1Name = `Team ${balanceResult.teamBlue?.[0]?.name || 'Blue'}`;
+    const t2Name = `Team ${balanceResult.teamRed?.[0]?.name || 'Red'}`;
+    setBo3State({
+      isActive: true,
+      gameNumber: 1,
+      team1Name: t1Name,
+      team2Name: t2Name,
+      team1Wins: 0,
+      team2Wins: 0,
+      team1IsCurrentlyBlue: true,
+      isFinished: false,
+      history: []
+    });
+    setMessage({ type: 'success', text: `🏆 【BO3シリーズ開始】${t1Name} vs ${t2Name} の2本先取マッチがスタートしました！` });
+  };
+
+  // BO3ゲーム勝敗記録
+  const handleRecordBo3Win = (side: 'BLUE' | 'RED') => {
+    if (!bo3State || bo3State.isFinished) return;
+
+    const isTeam1Winner = (side === 'BLUE' && bo3State.team1IsCurrentlyBlue) || (side === 'RED' && !bo3State.team1IsCurrentlyBlue);
+    const winnerName = isTeam1Winner ? bo3State.team1Name : bo3State.team2Name;
+    const nextT1Wins = isTeam1Winner ? bo3State.team1Wins + 1 : bo3State.team1Wins;
+    const nextT2Wins = !isTeam1Winner ? bo3State.team2Wins + 1 : bo3State.team2Wins;
+    const isSeriesFinished = nextT1Wins >= 2 || nextT2Wins >= 2;
+
+    const newHistory = [
+      ...bo3State.history,
+      { game: bo3State.gameNumber, winnerTeamName: winnerName, winnerSide: side }
+    ];
+
+    setBo3State({
+      ...bo3State,
+      team1Wins: nextT1Wins,
+      team2Wins: nextT2Wins,
+      isFinished: isSeriesFinished,
+      history: newHistory
+    });
+
+    if (isSeriesFinished) {
+      const champion = nextT1Wins >= 2 ? bo3State.team1Name : bo3State.team2Name;
+      const score = `${Math.max(nextT1Wins, nextT2Wins)} - ${Math.min(nextT1Wins, nextT2Wins)}`;
+      setMessage({ type: 'success', text: `🎉 【BO3シリーズ決着】${champion} が ${score} でシリーズを制覇しました！🏆` });
+      alert(`🎉 【BO3シリーズ決着】\n${champion} が ${score} でシリーズを制覇しました！\nDiscordへ総合リザルトを投稿できます。`);
+    } else {
+      setMessage({ type: 'success', text: `✅ 第${bo3State.gameNumber}戦: ${winnerName} が勝利！「第${bo3State.gameNumber + 1}戦へ（サイド交代）」を押して次戦へ進んでください。` });
+    }
+  };
+
+  // BO3次戦移行（サイド交代）
+  const handleNextBo3Game = () => {
+    if (!bo3State || !balanceResult) return;
+    if (bo3State.isFinished) return;
+
+    // 陣営を交代
+    setBalanceResult({
+      ...balanceResult,
+      teamBlue: balanceResult.teamRed,
+      teamRed: balanceResult.teamBlue,
+      teamBlueMMR: balanceResult.teamRedMMR,
+      teamRedMMR: balanceResult.teamBlueMMR,
+    });
+
+    setBo3State({
+      ...bo3State,
+      gameNumber: bo3State.gameNumber + 1,
+      team1IsCurrentlyBlue: !bo3State.team1IsCurrentlyBlue
+    });
+
+    setMessage({
+      type: 'success',
+      text: `🔄 【BO3 第${bo3State.gameNumber + 1}戦】サイドを交代しました！（${bo3State.gameNumber + 1 === 3 ? '🔥 1-1 運命の最終決戦！' : ''}）`
+    });
+  };
+
+  // BO3リセット
+  const handleResetBo3 = () => {
+    if (!confirm('BO3シリーズを終了してリセットしますか？')) return;
+    setBo3State(null);
+    setMessage({ type: 'success', text: 'BO3シリーズを終了しました。' });
+  };
+
   useEffect(() => {
     fetch("/api/auth/verify", { method: "POST", credentials: "include" })
       .then((res) => setIsAdmin(res.ok))
@@ -1589,6 +1687,100 @@ export default function BalancerPage() {
                 </div>
               )}
 
+              {/* 🏆 BO3 シリーズスコアボード (アクティブ時) */}
+              {bo3State && (
+                <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-50 via-orange-50 to-amber-50 border-2 border-amber-300 shadow-md space-y-3">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-base">🏆</span>
+                      <strong className="text-stone-900 text-sm font-black">
+                        BO3 シリーズ進行中 — 第{bo3State.gameNumber}戦
+                      </strong>
+                      {bo3State.gameNumber === 3 && (
+                        <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-rose-600 text-white animate-pulse">
+                          🔥 1-1 運命の最終決戦！
+                        </span>
+                      )}
+                      {bo3State.isFinished && (
+                        <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-600 text-white">
+                          🎉 シリーズ決着！
+                        </span>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleResetBo3}
+                      className="text-[11px] font-bold text-stone-500 hover:text-stone-800 underline cursor-pointer"
+                    >
+                      BO3を終了
+                    </button>
+                  </div>
+
+                  {/* チーム別スコア比較 */}
+                  <div className="grid grid-cols-2 gap-3 bg-white p-3 rounded-xl border border-amber-200">
+                    {/* BLUEチーム */}
+                    <div className="text-center space-y-1">
+                      <span className="text-[11px] font-extrabold text-blue-700 block">
+                        🔵 BLUE: {bo3State.team1IsCurrentlyBlue ? bo3State.team1Name : bo3State.team2Name}
+                      </span>
+                      <div className="flex items-center justify-center gap-1.5 text-lg font-black">
+                        <span className={`w-3.5 h-3.5 rounded-full border ${ (bo3State.team1IsCurrentlyBlue ? bo3State.team1Wins : bo3State.team2Wins) >= 1 ? 'bg-blue-600 border-blue-600' : 'bg-stone-200 border-stone-300' }`} />
+                        <span className={`w-3.5 h-3.5 rounded-full border ${ (bo3State.team1IsCurrentlyBlue ? bo3State.team1Wins : bo3State.team2Wins) >= 2 ? 'bg-blue-600 border-blue-600' : 'bg-stone-200 border-stone-300' }`} />
+                        <span className="text-sm font-mono ml-1 text-blue-900">
+                          ({bo3State.team1IsCurrentlyBlue ? bo3State.team1Wins : bo3State.team2Wins}勝)
+                        </span>
+                      </div>
+                      {!bo3State.isFinished && (
+                        <button
+                          type="button"
+                          onClick={() => handleRecordBo3Win('BLUE')}
+                          className="mt-1 px-2.5 py-1 rounded-lg bg-blue-100 hover:bg-blue-200 text-blue-900 font-bold text-[11px] border border-blue-300 transition cursor-pointer"
+                        >
+                          🔵 この試合 Blue勝利
+                        </button>
+                      )}
+                    </div>
+
+                    {/* REDチーム */}
+                    <div className="text-center space-y-1 border-l border-stone-200">
+                      <span className="text-[11px] font-extrabold text-rose-700 block">
+                        🔴 RED: {!bo3State.team1IsCurrentlyBlue ? bo3State.team1Name : bo3State.team2Name}
+                      </span>
+                      <div className="flex items-center justify-center gap-1.5 text-lg font-black">
+                        <span className={`w-3.5 h-3.5 rounded-full border ${ (!bo3State.team1IsCurrentlyBlue ? bo3State.team1Wins : bo3State.team2Wins) >= 1 ? 'bg-rose-600 border-rose-600' : 'bg-stone-200 border-stone-300' }`} />
+                        <span className={`w-3.5 h-3.5 rounded-full border ${ (!bo3State.team1IsCurrentlyBlue ? bo3State.team1Wins : bo3State.team2Wins) >= 2 ? 'bg-rose-600 border-rose-600' : 'bg-stone-200 border-stone-300' }`} />
+                        <span className="text-sm font-mono ml-1 text-rose-900">
+                          ({!bo3State.team1IsCurrentlyBlue ? bo3State.team1Wins : bo3State.team2Wins}勝)
+                        </span>
+                      </div>
+                      {!bo3State.isFinished && (
+                        <button
+                          type="button"
+                          onClick={() => handleRecordBo3Win('RED')}
+                          className="mt-1 px-2.5 py-1 rounded-lg bg-rose-100 hover:bg-rose-200 text-rose-900 font-bold text-[11px] border border-rose-300 transition cursor-pointer"
+                        >
+                          🔴 この試合 Red勝利
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* 次戦へ進むボタン */}
+                  {!bo3State.isFinished && (
+                    <div className="flex justify-center">
+                      <button
+                        type="button"
+                        onClick={handleNextBo3Game}
+                        className="w-full bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white px-4 py-2.5 rounded-xl font-black text-xs transition flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
+                      >
+                        <RefreshCw className="w-3.5 h-3.5" />
+                        第{bo3State.gameNumber + 1}戦へ進む (陣営サイド交代)
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* 試合結果記録 & BO3 / ドラフトシミュレータ直結 */}
               <div className="pt-3 border-t border-stone-200 space-y-2">
                 <div className="flex flex-wrap items-center justify-center gap-2.5">
@@ -1601,6 +1793,18 @@ export default function BalancerPage() {
                     <Trophy className="h-4 w-4" />
                     {savingPending ? '一時保存中...' : 'この編成で試合結果を記録 🏆'}
                   </button>
+
+                  {!bo3State && (
+                    <button
+                      type="button"
+                      onClick={handleStartBo3}
+                      className="bg-amber-100 hover:bg-amber-200 border border-amber-300 text-amber-950 px-4 py-3 rounded-xl font-black transition flex items-center justify-center gap-1.5 cursor-pointer text-xs sm:text-sm shadow-xs"
+                      title="このチーム編成のままBO3（2本先取）マッチを開始します"
+                    >
+                      <Trophy className="h-4 w-4 text-amber-700" />
+                      🏆 BO3シリーズ開始 (2本先取)
+                    </button>
+                  )}
 
                   <button
                     type="button"
@@ -1620,28 +1824,6 @@ export default function BalancerPage() {
                   >
                     <Shuffle className="h-4 w-4 text-indigo-600" />
                     サイド交代 (BLUE ⇄ RED)
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (!balanceResult) return;
-                      // 陣営を交代
-                      setBalanceResult({
-                        ...balanceResult,
-                        teamBlue: balanceResult.teamRed,
-                        teamRed: balanceResult.teamBlue,
-                        teamBlueMMR: balanceResult.teamRedMMR,
-                        teamRedMMR: balanceResult.teamBlueMMR,
-                      });
-                      setMessage({ type: 'success', text: '🔁 【BO3 / チーム維持】サイドを交代して第2戦の準備が完了しました！' });
-                      alert('🔁 【BO3 / チーム維持】\n同じメンバー構成のままサイドを交代しました！\n第2戦・第3戦をプレイ後、同様に「試合結果を記録」を行ってください。');
-                    }}
-                    className="bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-900 px-4 py-3 rounded-xl font-black transition flex items-center justify-center gap-1.5 cursor-pointer text-xs sm:text-sm"
-                    title="同じメンバーで連戦を行う場合のBO3モード（サイド交代して次戦へ）"
-                  >
-                    <RefreshCw className="h-4 w-4 text-amber-700" />
-                    BO3 (チーム維持して第2戦へ)
                   </button>
 
                   <Link
@@ -1737,6 +1919,47 @@ export default function BalancerPage() {
               <span className="text-xl font-black text-stone-400">{inactiveCount}</span>
               <span className="text-xs opacity-60">人</span>
             </div>
+
+            {/* 🏆 BO3 シリーズ進行状況バナー (アクティブ時) */}
+            {bo3State && (
+              <div className="w-full flex flex-wrap items-center justify-between gap-3 p-3 bg-gradient-to-r from-amber-500/15 via-orange-500/15 to-amber-500/15 border-2 border-amber-500/40 rounded-2xl shadow-sm">
+                <div className="flex items-center gap-2.5 flex-wrap">
+                  <span className="text-xl">🏆</span>
+                  <span className="text-xs font-black text-amber-950">
+                    BO3 シリーズ進行中 [第{bo3State.gameNumber}戦]
+                  </span>
+                  <span className="text-xs font-black px-2.5 py-1 rounded-lg bg-blue-100 text-blue-900 border border-blue-300">
+                    🔵 {bo3State.team1IsCurrentlyBlue ? bo3State.team1Name : bo3State.team2Name}: {bo3State.team1IsCurrentlyBlue ? bo3State.team1Wins : bo3State.team2Wins}勝
+                  </span>
+                  <span className="text-xs font-black text-stone-500">VS</span>
+                  <span className="text-xs font-black px-2.5 py-1 rounded-lg bg-rose-100 text-rose-900 border border-rose-300">
+                    🔴 {!bo3State.team1IsCurrentlyBlue ? bo3State.team1Name : bo3State.team2Name}: {!bo3State.team1IsCurrentlyBlue ? bo3State.team1Wins : bo3State.team2Wins}勝
+                  </span>
+                  {bo3State.gameNumber === 3 && (
+                    <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-rose-600 text-white animate-pulse">
+                      🔥 1-1 最終決戦！
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowResultModal(true)}
+                    className="px-3 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-black text-xs shadow-xs transition cursor-pointer flex items-center gap-1"
+                  >
+                    <span>スコアボードを開く 📊</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleResetBo3}
+                    className="text-[11px] font-bold text-stone-500 hover:text-stone-800 underline cursor-pointer"
+                  >
+                    終了
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* 📢 KTMカスタム新方針・ルール案内チップ */}
             <div className="w-full flex flex-wrap items-center gap-2 text-xs bg-amber-50/80 border border-amber-200/80 rounded-xl p-2.5 text-amber-950">
