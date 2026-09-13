@@ -74,7 +74,20 @@ export default function MentorshipHubPanel() {
       });
       const data = await res.json();
       if (data.ok) {
-        toast.success('🪪 自己紹介カードを公開・更新しました！');
+        if (data.isFirstTimeBonus) {
+          // 紙吹雪＆初回ボーナス祝勝トースト
+          try {
+            const confetti = (await import('canvas-confetti')).default;
+            confetti({
+              particleCount: 100,
+              spread: 70,
+              origin: { y: 0.6 },
+            });
+          } catch (_) {}
+          toast.success(`🎉 初回作成ボーナス +${data.bonusCoins || 500}コインを獲得しました！カードを公開しました。`);
+        } else {
+          toast.success('🪪 自己紹介カードを公開・更新しました！');
+        }
         fetchProfiles();
       } else {
         toast.error(data.error || '保存に失敗しました');
@@ -107,6 +120,59 @@ export default function MentorshipHubPanel() {
     toast.success(`📢 ${targetProfile.player_name} さんへのアプローチ機能は準備中です！Discordで直接メンションしてみましょう。`);
   };
 
+  const myProfile = profiles.find((p) => p.discord_id === myDiscordId);
+
+  // 🎯 AI相性スコアの算出ロジック
+  const calculateMatchScore = (target: MentorshipProfile): { score: number; reason: string } => {
+    if (!myProfile || target.discord_id === myProfile.discord_id) {
+      return { score: 0, reason: '' };
+    }
+
+    let score = 50; // ベーススコア
+    const reasons: string[] = [];
+
+    // 1. 役割の補完性 (弟子×師匠)
+    if (myProfile.role_type !== target.role_type) {
+      score += 20;
+    }
+
+    // 2. レーン適合度
+    const sharedLanes = (myProfile.lanes || []).filter((l) => (target.lanes || []).includes(l));
+    if (sharedLanes.length > 0) {
+      score += 20;
+      reasons.push(`${sharedLanes.join('/')}専`);
+    } else {
+      // BOT x SUP や MID x JG などのシナジー
+      const isDuoSynergy =
+        (myProfile.lanes?.includes('BOT') && target.lanes?.includes('SUPPORT')) ||
+        (myProfile.lanes?.includes('SUPPORT') && target.lanes?.includes('BOT')) ||
+        (myProfile.lanes?.includes('MID') && target.lanes?.includes('JUNGLE')) ||
+        (myProfile.lanes?.includes('JUNGLE') && target.lanes?.includes('MID'));
+      if (isDuoSynergy) {
+        score += 15;
+        reasons.push('相性抜群のレーンシナジー');
+      }
+    }
+
+    // 3. 得意チャンピオンの共通性
+    const sharedChamps = (myProfile.champions || []).filter((c) => (target.champions || []).includes(c));
+    if (sharedChamps.length > 0) {
+      score += 10;
+      reasons.push('共通チャンプあり');
+    }
+
+    // 4. 指導・学習スタイルのタグ共通性
+    const sharedTags = (myProfile.tags || []).filter((t) => (target.tags || []).includes(t));
+    if (sharedTags.length > 0) {
+      score += Math.min(sharedTags.length * 4, 12);
+      if (reasons.length < 2) reasons.push(sharedTags[0]);
+    }
+
+    const finalScore = Math.min(Math.max(score, 60), 98);
+    const reasonText = reasons.length > 0 ? reasons.join(' ＆ ') : 'プレイスタイルが適合';
+    return { score: finalScore, reason: reasonText };
+  };
+
   // フィルタリング処理
   const filteredProfiles = profiles.filter((p) => {
     if (activeTab !== 'MATCHES' && p.role_type !== activeTab) return false;
@@ -122,7 +188,15 @@ export default function MentorshipHubPanel() {
     return true;
   });
 
-  const myProfile = profiles.find((p) => p.discord_id === myDiscordId);
+  // おすすめピックアップ（相性スコア上位2名）
+  const recommendedProfiles = myProfile
+    ? profiles
+        .filter((p) => p.discord_id !== myDiscordId && p.role_type !== myProfile.role_type)
+        .map((p) => ({ profile: p, ...calculateMatchScore(p) }))
+        .filter((item) => item.score >= 75)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 2)
+    : [];
 
   return (
     <div className="space-y-6">
@@ -240,6 +314,73 @@ export default function MentorshipHubPanel() {
         </div>
       )}
 
+      {/* 🎯 AI相性マッチング・おすすめバディセクション */}
+      {activeTab !== 'MATCHES' && (
+        myProfile ? (
+          recommendedProfiles.length > 0 && (
+            <div className="p-5 rounded-3xl bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-amber-500/15 border-2 border-amber-400/40 shadow-sm space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-amber-600 animate-bounce" />
+                  <h3 className="text-sm font-black text-stone-900">
+                    🎯 あなたと相性抜群のバディ（AI相性分析）
+                  </h3>
+                </div>
+                <span className="text-[10px] font-bold bg-white/90 text-amber-900 border border-amber-300 px-2 py-0.5 rounded-full">
+                  リアルタイムマッチング
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {recommendedProfiles.map(({ profile: p, score, reason }) => (
+                  <MentorshipCard
+                    key={`rec-${p.id}`}
+                    profile={p}
+                    isMine={false}
+                    matchScore={score}
+                    matchReason={reason}
+                    onOffer={handleOffer}
+                    onEdit={() => {
+                      setEditingProfile(p);
+                      setIsModalOpen(true);
+                    }}
+                    onDelete={() => handleDeleteProfile(p.id)}
+                  />
+                ))}
+              </div>
+            </div>
+          )
+        ) : (
+          <div className="p-4 md:p-5 rounded-3xl bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-emerald-500/10 border border-emerald-400/30 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-2xs">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-emerald-100 text-emerald-800 flex items-center justify-center text-xl shrink-0 font-bold shadow-2xs">
+                💡
+              </div>
+              <div className="space-y-0.5 text-center sm:text-left">
+                <h4 className="text-xs font-black text-stone-900">
+                  あなたの自己紹介カードを登録して、AI相性マッチングを体験しよう！
+                </h4>
+                <p className="text-[11px] text-stone-600 font-medium">
+                  得意チャンプや目標を登録すると、あなたにぴったりの師匠・弟子が自動表示されます（初回ボーナス +500コイン🎁）。
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                setEditingProfile(null);
+                setIsModalOpen(true);
+              }}
+              className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs transition shadow-sm shrink-0 flex items-center gap-1.5 cursor-pointer active:scale-95"
+            >
+              <Plus size={14} />
+              <span>カードを登録する</span>
+            </button>
+          </div>
+        )
+      )}
+
       {/* コンテンツ一覧 */}
       {isLoading ? (
         <div className="py-12 text-center text-xs font-bold text-stone-500 animate-pulse">
@@ -278,19 +419,24 @@ export default function MentorshipHubPanel() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {filteredProfiles.map((p) => (
-            <MentorshipCard
-              key={p.id}
-              profile={p}
-              isMine={p.discord_id === myDiscordId}
-              onOffer={handleOffer}
-              onEdit={() => {
-                setEditingProfile(p);
-                setIsModalOpen(true);
-              }}
-              onDelete={() => handleDeleteProfile(p.id)}
-            />
-          ))}
+          {filteredProfiles.map((p) => {
+            const matchInfo = calculateMatchScore(p);
+            return (
+              <MentorshipCard
+                key={p.id}
+                profile={p}
+                isMine={p.discord_id === myDiscordId}
+                matchScore={matchInfo.score}
+                matchReason={matchInfo.reason}
+                onOffer={handleOffer}
+                onEdit={() => {
+                  setEditingProfile(p);
+                  setIsModalOpen(true);
+                }}
+                onDelete={() => handleDeleteProfile(p.id)}
+              />
+            );
+          })}
 
           {filteredProfiles.length === 0 && (
             <div className="col-span-full py-12 text-center text-stone-400 text-xs font-bold bg-white rounded-2xl border border-stone-200">

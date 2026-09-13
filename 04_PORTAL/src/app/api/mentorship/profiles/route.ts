@@ -128,6 +128,9 @@ export async function POST(request: Request) {
       .maybeSingle();
 
     let resultData;
+    let isFirstTimeBonus = false;
+    let updatedCoins = 1000;
+
     if (existing?.id) {
       // 更新
       const { data, error } = await supabase
@@ -151,6 +154,14 @@ export async function POST(request: Request) {
       if (error) throw error;
       resultData = data;
     } else {
+      // 過去に他のロールでもプロフィールを作成したことがあるか確認
+      const { count } = await supabase
+        .from('mentorship_profiles')
+        .select('id', { count: 'exact', head: true })
+        .eq('discord_id', effectiveDiscordId);
+
+      const isFirstCreationEver = (count || 0) === 0;
+
       // 新規作成
       const { data, error } = await supabase
         .from('mentorship_profiles')
@@ -173,9 +184,28 @@ export async function POST(request: Request) {
 
       if (error) throw error;
       resultData = data;
+
+      // 初回作成ボーナス（+500pt）を付与
+      if (isFirstCreationEver && player) {
+        const { getPlayerCoins, updatePlayerCoinsAndInventory } = await import('../../../../lib/playerCoins');
+        const currentCoins = getPlayerCoins(player);
+        const newCoins = currentCoins + 500;
+        await updatePlayerCoinsAndInventory({
+          player,
+          newCoins,
+        });
+        isFirstTimeBonus = true;
+        updatedCoins = newCoins;
+      }
     }
 
-    return NextResponse.json({ ok: true, profile: resultData });
+    return NextResponse.json({
+      ok: true,
+      profile: resultData,
+      isFirstTimeBonus,
+      bonusCoins: isFirstTimeBonus ? 500 : 0,
+      newCoins: updatedCoins,
+    });
   } catch (err: any) {
     console.error('[mentorship/profiles] POST error:', err);
     return NextResponse.json({ ok: false, error: err.message }, { status: 500 });

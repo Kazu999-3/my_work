@@ -12,6 +12,8 @@ interface MentorshipCardProps {
   onOffer: (profile: MentorshipProfile) => void;
   onEdit?: (profile: MentorshipProfile) => void;
   onDelete?: (profileId: string) => void;
+  matchScore?: number;
+  matchReason?: string;
 }
 
 const LANE_ICONS: Record<string, string> = {
@@ -28,6 +30,8 @@ export function MentorshipCard({
   onOffer,
   onEdit,
   onDelete,
+  matchScore,
+  matchReason,
 }: MentorshipCardProps) {
   const isMentor = profile.role_type === 'MENTOR';
   const rankKey = (profile.current_rank || 'UNRANKED').toUpperCase().split(' ')[0];
@@ -36,14 +40,29 @@ export function MentorshipCard({
 
   return (
     <div className={`relative rounded-3xl border transition-all duration-200 overflow-hidden flex flex-col justify-between bg-white/95 backdrop-blur-sm ${
+      matchScore && matchScore >= 80
+        ? 'ring-2 ring-amber-400 shadow-lg scale-[1.01]'
+        : ''
+    } ${
       isMentor
         ? 'border-amber-400/40 hover:border-amber-500 shadow-md shadow-amber-900/5 hover:shadow-lg'
         : 'border-emerald-400/40 hover:border-emerald-500 shadow-md shadow-emerald-900/5 hover:shadow-lg'
     }`}>
+      {/* AI相性おすすめリボン */}
+      {matchScore !== undefined && matchScore > 0 && (
+        <div className="bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 text-stone-950 px-3 py-1 flex items-center justify-between text-[11px] font-black tracking-tight">
+          <span className="flex items-center gap-1">
+            <Sparkles size={13} className="text-stone-950 animate-bounce" />
+            <span>AI相性スコア: <strong>{matchScore}%</strong></span>
+          </span>
+          {matchReason && <span className="opacity-90 font-bold truncate max-w-[200px]">{matchReason}</span>}
+        </div>
+      )}
+
       {/* 上部ヘッダーバッジ */}
       <div className="p-5 space-y-3.5">
         <div className="flex items-start justify-between gap-2">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             {/* 役職バッジ */}
             <div className={`px-3 py-1 rounded-full text-xs font-black tracking-wider uppercase flex items-center gap-1.5 ${
               isMentor

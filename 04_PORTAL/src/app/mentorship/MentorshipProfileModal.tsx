@@ -102,6 +102,7 @@ export function MentorshipProfileModal({
   const [bio, setBio] = useState('');
   const [activeHours, setActiveHours] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [isAiGenerating, setIsAiGenerating] = useState(false);
   const [activeTab, setActiveTab] = useState<'edit' | 'preview'>('edit');
 
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -133,6 +134,36 @@ export function MentorshipProfileModal({
       setActiveHours('平日 21:00〜24:00 / 休日');
     }
   }, [initialProfile, isOpen, user]);
+
+  // AIカルテ自動生成
+  const handleAiGenerate = async () => {
+    setIsAiGenerating(true);
+    try {
+      const res = await fetch('/api/mentorship/ai-generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          role_type: roleType,
+          lanes,
+          champions: selectedChampions,
+          rank: currentRank,
+          player_name: user?.displayName || user?.username || 'プレイヤー',
+        }),
+      });
+      const result = await res.json();
+      if (result.ok && result.data) {
+        if (result.data.bio) setBio(result.data.bio);
+        if (Array.isArray(result.data.tags) && result.data.tags.length > 0) {
+          const merged = Array.from(new Set([...selectedTags, ...result.data.tags])).slice(0, 8);
+          setSelectedTags(merged);
+        }
+      }
+    } catch (e) {
+      console.error('AI generation failed:', e);
+    } finally {
+      setIsAiGenerating(false);
+    }
+  };
 
   // チャンピオン検索のフィルタリング (日本語名 / 英語名 / 読み)
   const filteredChampions = ALL_CHAMPIONS.filter((id) => {
@@ -268,6 +299,28 @@ export function MentorshipProfileModal({
 
         {/* モーダルボディ */}
         <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
+          
+          {/* 🎁 初回登録ボーナス告知バナー */}
+          {!initialProfile && (
+            <div className="p-3.5 rounded-2xl bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-amber-500/15 border border-amber-400/50 flex items-center justify-between gap-3 shadow-2xs">
+              <div className="flex items-center gap-2.5">
+                <span className="text-2xl animate-bounce">🎁</span>
+                <div>
+                  <div className="text-xs font-black text-amber-950 flex items-center gap-1.5">
+                    <span>自己紹介カード 初回作成ボーナス</span>
+                    <span className="px-2 py-0.2 rounded-full bg-amber-500 text-stone-950 font-mono text-[10px] font-black">+500 コイン</span>
+                  </div>
+                  <p className="text-[11px] text-amber-800 font-medium">
+                    カードを保存・公開すると、KTMショップや勝敗予想で使えるコインを即時GET！
+                  </p>
+                </div>
+              </div>
+              <span className="text-[10px] font-bold text-amber-900 bg-white/80 px-2 py-1 rounded-xl border border-amber-300 shrink-0 hidden sm:inline">
+                即時付与🪙
+              </span>
+            </div>
+          )}
+
           {activeTab === 'preview' ? (
             /* プレビュー表示 */
             <div className="space-y-4">
@@ -284,48 +337,50 @@ export function MentorshipProfileModal({
                   <span className="text-xs text-emerald-700 font-black bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">🟢 募集中</span>
                 </div>
 
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-2xl bg-amber-100 border border-amber-300 flex items-center justify-center text-xl font-black text-amber-900 shadow-2xs">
-                    {(user?.displayName || user?.username || 'あなた').slice(0, 1).toUpperCase()}
-                  </div>
-                  <div>
-                    <h3 className="text-base font-black text-stone-900">{user?.displayName || user?.username || 'あなた (プレイヤー名)'}</h3>
-                    <div className="flex items-center gap-2 text-xs mt-0.5">
-                      <span className={`px-2 py-0.5 rounded-md text-[11px] font-black ${rankInfo.bg} ${rankInfo.color} border border-current/20 shadow-2xs`}>
-                        {rankInfo.name} ({currentRank})
-                      </span>
-                      {!isMentor && targetRank && (
-                        <span className="text-[11px] text-emerald-700 font-bold bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">➔ 目標: {targetRank}</span>
-                      )}
+                <div className="space-y-1">
+                  <h3 className="text-base font-black text-stone-900 flex items-center gap-2">
+                    {user?.displayName || user?.username || 'あなたのプレイヤー名'}
+                    <span className="text-xs font-mono font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-lg border border-amber-300">
+                      🏆 {currentRank}
+                    </span>
+                  </h3>
+                  {roleType === 'PUPIL' && targetRank && (
+                    <div className="text-xs text-emerald-700 font-bold flex items-center gap-1">
+                      <span>🎯 目標ランク:</span>
+                      <span className="font-black underline">{targetRank}</span>
                     </div>
+                  )}
+                </div>
+
+                {/* メインレーン */}
+                <div className="space-y-1">
+                  <div className="text-[11px] font-bold text-stone-500">プレイレーン</div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {lanes.length > 0 ? (
+                      lanes.map((l) => (
+                        <span key={l} className="px-2.5 py-0.5 rounded-lg bg-stone-100 text-stone-800 text-xs font-black border border-stone-200">
+                          {AVAILABLE_LANES.find((item) => item.id === l)?.label || l}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="text-xs text-stone-400">未選択</span>
+                    )}
                   </div>
                 </div>
 
-                {/* レーン */}
-                {lanes.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5">
-                    {lanes.map((l) => (
-                      <span key={l} className="px-2.5 py-1 bg-stone-100 border border-stone-200 rounded-lg text-xs font-bold text-stone-700">
-                        {AVAILABLE_LANES.find(al => al.id === l)?.label || l}
-                      </span>
-                    ))}
-                  </div>
-                )}
-
-                {/* チャンピオン */}
+                {/* 得意チャンピオン */}
                 {selectedChampions.length > 0 && (
-                  <div className="space-y-1.5">
+                  <div className="space-y-1">
                     <div className="text-[11px] font-bold text-stone-500">
-                      {isMentor ? '⚔️ 指導可能チャンピオン:' : '🎯 練習中チャンピオン:'}
+                      {roleType === 'PUPIL' ? '練習中・使いたいチャンピオン' : '得意・指導可能チャンピオン'}
                     </div>
                     <div className="flex flex-wrap gap-1.5">
                       {selectedChampions.map((c) => (
-                        <div key={c} className="flex items-center gap-1.5 px-2 py-1 bg-stone-50 border border-stone-200 rounded-xl text-xs font-bold text-stone-800 shadow-2xs">
+                        <div key={c} className="flex items-center gap-1 px-2 py-0.5 bg-stone-50 rounded-lg border border-stone-200 text-xs font-bold text-stone-800">
                           <img
                             src={`https://ddragon.leagueoflegends.com/cdn/14.24.1/img/champion/${c}.png`}
                             alt={c}
-                            className="w-4.5 h-4.5 rounded-md object-cover"
-                            onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }}
+                            className="w-4 h-4 rounded-full"
                           />
                           <span>{CHAMPION_JA[c]?.ja || c}</span>
                         </div>
@@ -334,30 +389,25 @@ export function MentorshipProfileModal({
                   </div>
                 )}
 
-                {/* タグ */}
+                {/* 自己紹介文 */}
+                <div className="space-y-1">
+                  <div className="text-[11px] font-bold text-stone-500">自己紹介・意気込み</div>
+                  <p className="text-xs text-stone-800 leading-relaxed whitespace-pre-wrap bg-stone-50 p-3 rounded-2xl border border-stone-200 font-medium">
+                    {bio || '（自己紹介文が未記入です）'}
+                  </p>
+                </div>
+
+                {/* タグ一覧 */}
                 {selectedTags.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5">
-                    {selectedTags.map((t) => (
-                      <span key={t} className={`px-2.5 py-0.5 rounded-lg text-xs font-semibold border ${isMentor ? 'bg-amber-50 text-amber-900 border-amber-200' : 'bg-emerald-50 text-emerald-900 border-emerald-200'}`}>
-                        #{t}
+                  <div className="flex flex-wrap gap-1.5 pt-1">
+                    {selectedTags.map((tag) => (
+                      <span
+                        key={tag}
+                        className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${isMentor ? 'bg-amber-50 text-amber-900 border-amber-300' : 'bg-emerald-50 text-emerald-900 border-emerald-300'}`}
+                      >
+                        #{tag}
                       </span>
                     ))}
-                  </div>
-                )}
-
-                {/* 自己紹介 */}
-                {bio && (
-                  <div className="p-3.5 bg-stone-50 rounded-2xl border border-stone-200 text-xs text-stone-800 leading-relaxed whitespace-pre-wrap font-medium">
-                    {bio}
-                  </div>
-                )}
-
-                {/* 活動時間 */}
-                {activeHours && (
-                  <div className="flex items-center gap-1.5 text-xs text-stone-600 bg-stone-100/70 p-2 rounded-xl border border-stone-200/60">
-                    <Clock size={13} className="text-amber-600" />
-                    <span className="font-bold text-stone-500">活動時間:</span>
-                    <span className="text-stone-800 font-bold">{activeHours}</span>
                   </div>
                 )}
               </div>
@@ -548,6 +598,18 @@ export function MentorshipProfileModal({
                       placeholder="日本語名（例: アーリ、ヤスオ）または英語名で検索..."
                       className="w-full bg-stone-50 border border-stone-300 rounded-xl pl-9 pr-3 py-2 text-stone-900 text-xs font-medium focus:border-amber-500 focus:bg-white focus:outline-hidden"
                     />
+                    {champSearchQuery && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setChampSearchQuery('');
+                          setIsChampDropdownOpen(false);
+                        }}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 text-xs font-bold"
+                      >
+                        ✕
+                      </button>
+                    )}
                   </div>
 
                   {/* サジェストドロップダウン */}
@@ -648,17 +710,28 @@ export function MentorshipProfileModal({
                 </div>
               </div>
 
-              {/* 6. 自己紹介文 ＆ 1クリックテンプレート */}
-              <div className="space-y-2">
+              {/* 6. 自己紹介文 ＆ AI自動生成 ＆ 1クリックテンプレート */}
+              <div className="space-y-2.5">
                 <div className="flex items-center justify-between flex-wrap gap-1">
                   <label className="block text-xs font-black text-stone-700 flex items-center gap-1.5">
                     <span className="w-4.5 h-4.5 rounded-full bg-amber-500 text-white text-[11px] flex items-center justify-center font-black">6</span>
                     自己紹介・意気込み
                   </label>
                   <span className="text-[11px] text-amber-700 font-bold flex items-center gap-1">
-                    <Sparkles size={12} /> 例文テンプレートから自動入力可能
+                    <Sparkles size={12} /> AI生成 ＆ 例文テンプレートから自動入力可能
                   </span>
                 </div>
+
+                {/* 🤖 AIカルテ自動生成ボタン */}
+                <button
+                  type="button"
+                  onClick={handleAiGenerate}
+                  disabled={isAiGenerating}
+                  className="w-full py-2.5 px-4 rounded-2xl bg-gradient-to-r from-amber-500 via-amber-600 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white font-black text-xs flex items-center justify-center gap-2 shadow-sm transition active:scale-98 disabled:opacity-50 cursor-pointer"
+                >
+                  <Sparkles size={15} className={isAiGenerating ? 'animate-spin' : 'animate-bounce'} />
+                  <span>{isAiGenerating ? 'AIがあなたのLoL自己紹介カルテを生成中...' : '✨ AIに自己紹介文＆おすすめタグを自動生成してもらう (1クリック)'}</span>
+                </button>
 
                 {/* テンプレートボタン群 */}
                 <div className="flex flex-wrap gap-1.5 pb-1">
@@ -678,7 +751,7 @@ export function MentorshipProfileModal({
                   rows={3}
                   value={bio}
                   onChange={(e) => setBio(e.target.value)}
-                  placeholder="自己紹介や教えてほしいこと、どんな雰囲気でやりたいかを自由に記入してください..."
+                  placeholder="自己紹介や教えてほしいこと、どんな雰囲気でやりたいかを自由に記入してください（上のAIボタンを押すと自動入力されます）..."
                   className="w-full bg-stone-50 border border-stone-300 rounded-2xl p-3 text-stone-900 text-xs focus:border-amber-500 focus:bg-white focus:outline-hidden leading-relaxed font-medium"
                 />
               </div>
