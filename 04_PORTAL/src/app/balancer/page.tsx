@@ -800,7 +800,7 @@ export default function BalancerPage() {
     setSelectedProposalIdx(0);
     setBalanceResult(festivalResult);
     setShowResultModal(true);
-    setMessage({ type: "success", text: "🎉 【日曜お祭り】完全ランダムシャッフルを実行しました！（全員同室VCでワイワイ対戦推奨です）" });
+    setMessage({ type: "success", text: "🎉 【日曜お祭り】完全ランダムシャッフルを実行しました！（MMR変動なし）" });
   };
 
   // 4案すべてをDiscordへ投稿(#77)。メンバーはリアクションで希望表明。
@@ -1208,7 +1208,7 @@ export default function BalancerPage() {
                   if (balanceResult.isFestivalMode) {
                     return (
                       <span className="text-[10px] font-black px-2.5 py-1 rounded-full bg-purple-100 text-purple-900 border border-purple-300 flex items-center gap-1 shadow-xs">
-                        🎪 ピック形式: <strong>日曜お祭り (完全ランダム / MMRなし / 全員同室VC推奨)</strong>
+                        🎪 ピック形式: <strong>日曜お祭り (完全ランダム / MMRなし)</strong>
                       </span>
                     );
                   }
