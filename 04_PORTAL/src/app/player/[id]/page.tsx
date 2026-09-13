@@ -84,7 +84,14 @@ export default function PlayerMyPage() {
   const [claimingDaily, setClaimingDaily] = useState(false);
   const [dailyBonusMsg, setDailyBonusMsg] = useState<string | null>(null);
 
-  const todayStr = new Date().toISOString().slice(0, 10);
+  const todayStr = useMemo(() => {
+    return new Intl.DateTimeFormat('ja-JP', {
+      timeZone: 'Asia/Tokyo',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).format(new Date()).replace(/\//g, '-');
+  }, []);
   const claimedDailyToday = player?.role_preferences?.lastDailyClaim === todayStr;
 
   const handleClaimDaily = async () => {

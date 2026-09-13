@@ -17,6 +17,7 @@ import GuideQuickStartTab from './tabs/GuideQuickStartTab';
 import GuideBotTab from './tabs/GuideBotTab';
 import GuidePortalTab from './tabs/GuidePortalTab';
 import GuideUpdatesTab from './tabs/GuideUpdatesTab';
+import GuideRulesTab from './tabs/GuideRulesTab';
 
 function GuideContent() {
   const router = useRouter();
@@ -28,7 +29,7 @@ function GuideContent() {
 
   useEffect(() => {
     const tabParam = searchParams.get('tab');
-    if (tabParam && ['quickstart', 'bot', 'portal', 'updates'].includes(tabParam)) {
+    if (tabParam && ['quickstart', 'rules', 'bot', 'portal', 'updates'].includes(tabParam)) {
       setActiveTab(tabParam);
     }
   }, [searchParams]);
@@ -53,6 +54,14 @@ function GuideContent() {
       icon: Zap,
       color: 'text-amber-700',
       activeBg: 'bg-amber-500/15 border-amber-500/40 text-amber-900',
+    },
+    {
+      id: 'rules',
+      label: '📜 公式ルール ＆ 特殊マッチ',
+      shortLabel: 'ルール',
+      icon: BookOpen,
+      color: 'text-rose-700',
+      activeBg: 'bg-rose-500/15 border-rose-500/40 text-rose-900',
     },
     {
       id: 'bot',
@@ -150,6 +159,7 @@ function GuideContent() {
         {/* タブコンテンツ */}
         <div className="transition-all duration-200">
           {activeTab === 'quickstart' && <GuideQuickStartTab onSelectTab={handleTabChange} />}
+          {activeTab === 'rules' && <GuideRulesTab />}
           {activeTab === 'bot' && <GuideBotTab />}
           {activeTab === 'portal' && <GuidePortalTab />}
           {activeTab === 'updates' && <GuideUpdatesTab />}
