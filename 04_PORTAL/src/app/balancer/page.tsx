@@ -2804,6 +2804,8 @@ export default function BalancerPage() {
                           <div className="flex items-center gap-1.5 flex-wrap">
                             <button onClick={() => setSelectedPlayer(p)} className="text-amber-700 hover:text-stone-900 p-0.5 hover:bg-stone-100 rounded transition flex-shrink-0" title="プロフィール">
                               <Info className="w-3.5 h-3.5" /></button>
+                            <span className="font-extrabold text-stone-900">{p.name}</span>
+                            
                             {/* 🔰/🌱/👑 参加者層バッジ */}
                             {(() => {
                               const exp = getPlayerExperienceBadge(p);
@@ -2975,6 +2977,20 @@ export default function BalancerPage() {
                     <div className="flex-1 min-w-0 space-y-1.5">
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <span className="font-bold text-stone-900 text-sm">{p.name}</span>
+                        {/* 🔰/🌱/👑 参加者層バッジ */}
+                        {(() => {
+                          const exp = getPlayerExperienceBadge(p);
+                          return (
+                            <span className={`text-[9px] font-black px-1.5 py-0.2 rounded border shadow-2xs ${exp.color}`}>
+                              {exp.label}
+                            </span>
+                          );
+                        })()}
+                        {p.participation_style && (
+                          <span className="text-[9px] font-black px-1.5 py-0.2 rounded border bg-purple-100 text-purple-900 border-purple-300">
+                            {p.participation_style === 'single' ? '⏱️1戦のみ' : p.participation_style === 'late' ? '🌙途中参加' : '🟢フル'}
+                          </span>
+                        )}
                         <span className={`text-xs font-semibold ${getColorFromRankName(p.highest_rank)}`}>{p.highest_rank ? p.highest_rank.split(' ')[0] : 'UNR'}</span>
                         <span className="font-mono text-amber-700 text-xs font-bold ml-auto">{p.mmr}</span>
                       </div>
