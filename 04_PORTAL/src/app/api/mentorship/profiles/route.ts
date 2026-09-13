@@ -78,18 +78,6 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const session = await getAuthSession();
-    if (!session || !session.discordId) {
-      return NextResponse.json(
-        { ok: false, error: 'プロフィールを登録するにはDiscordログインが必要です。' },
-        { status: 401 }
-      );
-    }
-
-    const player = await findOrCreatePlayer({
-      discordId: session.discordId,
-      name: session.displayName || session.username || 'Player',
-    });
-
     const body = await request.json();
     const {
       role_type,
@@ -101,7 +89,25 @@ export async function POST(request: Request) {
       bio = '',
       active_hours = '',
       status = 'OPEN',
+      discord_id: bodyDiscordId,
+      player_name: bodyPlayerName,
     } = body;
+
+    // Discord OAuth セッションがあれば優先、なければリクエストボディのフォールバックを使用
+    const effectiveDiscordId = session?.discordId || bodyDiscordId || (bodyPlayerName ? `local_${bodyPlayerName}` : null);
+    const effectivePlayerName = session?.displayName || session?.username || bodyPlayerName || 'Player';
+
+    if (!effectiveDiscordId) {
+      return NextResponse.json(
+        { ok: false, error: 'プロフィールを登録するにはDiscordログインまたはプレイヤー選択が必要です。' },
+        { status: 401 }
+      );
+    }
+
+    const player = await findOrCreatePlayer({
+      discordId: effectiveDiscordId,
+      name: effectivePlayerName,
+    });
 
     if (!role_type || !['PUPIL', 'MENTOR'].includes(role_type)) {
       return NextResponse.json(
@@ -110,14 +116,14 @@ export async function POST(request: Request) {
       );
     }
 
-    const playerName = session.displayName || session.username || player?.name || 'Player';
+    const playerName = effectivePlayerName || player?.name || 'Player';
     const finalCurrentRank = current_rank || player?.highest_rank || 'UNRANKED';
 
     // 既存のプロフィール（同一role_type）があるか確認
     const { data: existing } = await supabase
       .from('mentorship_profiles')
       .select('id')
-      .eq('discord_id', session.discordId)
+      .eq('discord_id', effectiveDiscordId)
       .eq('role_type', role_type)
       .maybeSingle();
 
@@ -150,7 +156,7 @@ export async function POST(request: Request) {
         .from('mentorship_profiles')
         .insert({
           player_id: player?.id || null,
-          discord_id: session.discordId,
+          discord_id: effectiveDiscordId,
           player_name: playerName,
           role_type,
           lanes,
@@ -182,12 +188,15 @@ export async function POST(request: Request) {
 export async function DELETE(request: Request) {
   try {
     const session = await getAuthSession();
-    if (!session || !session.discordId) {
-      return NextResponse.json({ ok: false, error: '認証が必要です。' }, { status: 401 });
-    }
-
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
+    const paramDiscordId = searchParams.get('discordId');
+
+    const effectiveDiscordId = session?.discordId || paramDiscordId;
+
+    if (!effectiveDiscordId) {
+      return NextResponse.json({ ok: false, error: '認証が必要です。' }, { status: 401 });
+    }
 
     if (!id) {
       return NextResponse.json({ ok: false, error: 'Profile ID is required' }, { status: 400 });
@@ -197,7 +206,7 @@ export async function DELETE(request: Request) {
       .from('mentorship_profiles')
       .delete()
       .eq('id', id)
-      .eq('discord_id', session.discordId);
+      .eq('discord_id', effectiveDiscordId);
 
     if (error) throw error;
 

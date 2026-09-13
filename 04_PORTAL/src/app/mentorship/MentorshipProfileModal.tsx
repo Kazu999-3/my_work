@@ -200,6 +200,8 @@ export function MentorshipProfileModal({
         bio,
         active_hours: activeHours,
         status: 'OPEN',
+        discord_id: user?.discordId,
+        player_name: user?.displayName || user?.username,
       });
       onClose();
     } catch (err) {
