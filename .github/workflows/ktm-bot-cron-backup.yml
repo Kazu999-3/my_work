@@ -11,16 +11,13 @@ name: KTM Bot Cron Backup
 
 on:
   schedule:
-    # 水・金・土 20:15 JST → 直前通知のバックアップ。
-    # wrangler.toml本体のスケジュール(0 11 * * 3,5,6)は水・金・土を同格で扱っているのに、
-    # このバックアップは金・土しか対象にしておらず、Cloudflare側のネイティブcronが
-    # best-effortで飛んだ場合に水曜日だけ拾う保険が無かった（水曜アナウンス欠落の原因）。
-    - cron: '15 11 * * 3,5,6'
-    - cron: '10 12 * * 6'    # 土 21:10 JST → 翌週定期カスタム募集投稿のバックアップ
+    - cron: '15 3 * * 1'     # 月 12:15 JST (UTC 03:15) → 週末定期カスタム募集投稿のバックアップ
+    - cron: '15 3 * * 3'     # 水 12:15 JST (UTC 03:15) → 水曜中間アナウンスのバックアップ
+    - cron: '15 10 * * 5'    # 金 19:15 JST (UTC 10:15) → 金曜前日アナウンスのバックアップ
   workflow_dispatch:
     inputs:
       mode:
-        description: 'mode (event_notify=人数集計アナウンス / weekly_recruit=定期募集 / 空=直前通知)'
+        description: 'mode (event_notify=人数集計アナウンス / weekly_recruit=定期募集)'
         required: false
         default: ''
 
@@ -39,22 +36,11 @@ jobs:
           fi
           KEY="${TRIGGER_KEY:-ktm_v3_internal_secret_2026}"
 
-          # 手動実行なら入力modeを使用。スケジュール実行なら「実際にマッチしたcron式」
-          # (github.event.schedule)で判定する。以前は実行時の現在時刻(UTC時)が12時かどうか
-          # だけで判定していたため、GitHub Actionsのスケジュール実行が大きく遅延して
-          # 金曜20:15 JST用のcronがUTC12時台にずれ込むと、誤って土曜用のweekly_recruitモードで
-          # 発火してしまうバグがあった（定期カスタム募集が火曜に届いた原因）。
-          #
-          # 水・金・土20:15 JSTのバックアップ("15 11 * * 3,5,6")は、mode未設定のままだと
-          # handleScheduledEventのデフォルト分岐(sendRecruitStatusNotification=開始24時間以内
-          # の募集専用の直前リマインド)に落ちてしまい、土曜開催(24時間以上先)には常に無反応で
-          # 沈黙していた。本来ここで呼びたいのは人数集計アナウンス(sendEventUsersNotification)
-          # なので、専用の"event_notify"モードを明示的に渡す。
           MODE="${{ github.event.inputs.mode }}"
           if [ "${{ github.event_name }}" = "schedule" ]; then
-            if [ "${{ github.event.schedule }}" = "10 12 * * 6" ]; then
+            if [ "${{ github.event.schedule }}" = "15 3 * * 1" ]; then
               MODE="weekly_recruit"
-            elif [ "${{ github.event.schedule }}" = "15 11 * * 3,5,6" ]; then
+            elif [ "${{ github.event.schedule }}" = "15 3 * * 3" ] || [ "${{ github.event.schedule }}" = "15 10 * * 5" ]; then
               MODE="event_notify"
             else
               MODE=""

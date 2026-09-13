@@ -228,6 +228,67 @@ export default function GuideBotTab() {
           )}
         </div>
 
+        {/* 1.5 週末定期カスタム募集 詳細 */}
+        <div className="bg-white rounded-3xl border border-stone-200 shadow-xs overflow-hidden">
+          <button
+            type="button"
+            onClick={() => toggleSection('periodic')}
+            className="w-full p-6 text-left flex items-center justify-between gap-4 hover:bg-stone-50 transition cursor-pointer"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 font-bold text-xl">
+                ⚔️
+              </div>
+              <div>
+                <h3 className="text-base font-black text-stone-900">
+                  2. 週末定期カスタム募集（土曜本戦 ＆ 日曜お祭り）
+                </h3>
+                <p className="text-xs text-stone-500">毎週月曜12時に自動投稿される定期募集と参加ボタンの役割</p>
+              </div>
+            </div>
+            {openSection === 'periodic' ? <ChevronUp size={20} className="text-stone-400" /> : <ChevronDown size={20} className="text-stone-400" />}
+          </button>
+
+          {openSection === 'periodic' && (
+            <div className="p-6 pt-0 border-t border-stone-100 space-y-5">
+              <div className="bg-stone-50 rounded-2xl p-4 border border-stone-200 text-xs text-stone-700 space-y-2">
+                <div className="font-bold text-stone-900 flex items-center gap-1.5">
+                  <Sparkles size={14} className="text-amber-600" />
+                  定期カスタムの開催日程 ＆ 通知スケジュール
+                </div>
+                <ul className="space-y-1 text-stone-600">
+                  <li>・<strong className="text-stone-800">毎週月曜 12:00:</strong> 土日分の募集カードが自動投下されます。</li>
+                  <li>・<strong className="text-stone-800">毎週水曜 12:00:</strong> 中間人数アナウンス（あと◯名で確定）。</li>
+                  <li>・<strong className="text-stone-800">毎週金曜 19:00:</strong> 前日最終アナウンス（土曜開催の直前確認）。</li>
+                </ul>
+              </div>
+
+              <div>
+                <h4 className="text-xs font-black text-stone-900 mb-2">🔘 週末定期募集の2つの参加ボタン</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="p-3.5 rounded-2xl bg-blue-50/70 border border-blue-200 space-y-1.5">
+                    <div className="font-black text-xs text-blue-900 flex items-center gap-1.5">
+                      <span>🎮</span> 土曜カスタムに参加 (自動振り分け)
+                    </div>
+                    <p className="text-[11px] text-blue-800 leading-relaxed">
+                      代表MMRに応じて「シルバー以下 (ブラインド/MMRあり)」または「ゴルプラ (ドラフト/MMRあり)」に自動でエントリーされます。土曜20:00時点で10名未満の部門は中止となり、ノーマルやメイヘム募集へ切り替わります。
+                    </p>
+                  </div>
+
+                  <div className="p-3.5 rounded-2xl bg-emerald-50/70 border border-emerald-200 space-y-1.5">
+                    <div className="font-black text-xs text-emerald-900 flex items-center gap-1.5">
+                      <span>🎪</span> 日曜お祭りカスタムに参加
+                    </div>
+                    <p className="text-[11px] text-emerald-800 leading-relaxed">
+                      ランク・MMR不問！誰でも参加できる完全お遊び枠です。特殊ルールやランダム、メイヘムなどでワイワイ対戦します（公式MMRの変動はありません）。
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
         {/* 2. /lane 詳細 */}
         <div className="bg-white rounded-3xl border border-stone-200 shadow-xs overflow-hidden">
           <button

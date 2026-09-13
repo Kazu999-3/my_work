@@ -12,31 +12,17 @@ export async function handleScheduledEvent(event, env, ctx) {
   const cronExpression = (event.cron || "").trim();
   const mode = event.mode || "";
 
-  // 毎週日曜 0:00 JST (土曜 UTC 15:00): 最優先で判定
-  // 2026-08-01: Cloudflareの曜日番号は1=日〜7=土(wrangler.tomlのコメント参照)。
-  if (cronExpression.includes("0 15 * * 7") || mode === "weekly_recruit") {
-    console.log("[Scheduled] Executing weekly recruitment posting...");
+  // 1. 毎週月曜 12:00 JST (月曜 UTC 3:00 / Cloudflare dow=2): 週末定期カスタム募集（土日分）自動投稿
+  if (cronExpression.includes("0 3 * * 2") || mode === "weekly_recruit") {
+    console.log("[Scheduled] Executing weekly recruitment posting (Monday 12:00 JST)...");
     await postWeeklyRecruitment(env);
   } else if (cronExpression.includes("0 0 * * 2") || mode === "weekly_report") {
-    // 毎週月曜 9:00 JST (UTC 0:00 月曜=Cloudflare基準dow=2): 個人週間レポート配信。
-    // 以前はcronに未登録でmode==="weekly_report"経由(手動テストのみ)でしか到達せず、
-    // 「毎週月曜配信」という文言に反して一度も自動送信されていなかった
-    // (2026-08-13、KTM運営Bot監査#19で発覚)。
+    // 毎週月曜 9:00 JST (UTC 0:00 月曜=Cloudflare基準dow=2): 個人週間レポート配信
     await sendWeeklyReports(env);
-  } else if (mode === "create") {
-    // createWeeklyEvents はDiscordイベント作成のPOSTを書く前に処理が終わる未完成実装のため
-    // (2026-08-13の同監査で発覚)、意図的にcronへは登録しない。手動テスト(mode指定)のみ到達可能。
-    await createWeeklyEvents(env);
-  } else if (mode === "event_notify" || cronExpression.includes("0 11 * *")) {
-    await sendEventUsersNotification(env, { lookaheadHours: 48 });
-  } else if (cronExpression.includes("*/10 * * * *") || mode === "recruit_reminder") {
-    // 10分ごと: 開始時刻が近い募集の参加者へリマインド(D1)
-    await sendRecruitmentReminders(env);
-    // 同じ10分おきcronで、試合終了3分後に予約されたリザルト自動取得も処理する
-    await processPendingMatchSyncs(env);
-  } else if (cronExpression.includes("0 * * * *") || mode === "recruit_status") {
-    // 毎時0分: 直前通知（進行中の募集の集まり具合を通知し、不足なら欠員アラート）。
-    await sendRecruitStatusNotification(env);
+  } else if (mode === "event_notify" || cronExpression.includes("0 3 * * 4") || cronExpression.includes("0 10 * * 6") || cronExpression.includes("0 11 * *")) {
+    // 毎週水曜 12:00 JST (UTC 3:00 水曜=dow 4) & 金曜 19:00 JST (UTC 10:00 金曜=dow 6):
+    // 参加状況・同期アナウンス通知
+    await sendEventUsersNotification(env, { lookaheadHours: 72 });
   } else if (cronExpression.includes("0 3 1 * *") || mode === "monthly_award") {
     // 毎月1日 12:00 JST (UTC 3:00 毎月1日): 月間アワード表彰の自動投稿
     console.log("[Scheduled] Executing monthly award announcement...");
@@ -417,71 +403,86 @@ async function postWeeklyRecruitment(env) {
       console.warn('[WeeklyRecruit] 前回の募集締め切り処理のエラー:', closeErr);
     }
 
-    // 2. 毎週日曜 0:00 JST 投稿時 ➔ 直近の「土曜日 21:00 JST (=UTC 12:00)」を開催日時とする
+    // 2. 毎週月曜 12:00 JST 投稿時 ➔ 直近の「土曜日 21:00 JST」および「日曜日 21:00 JST」を開催日時とする
     const now = new Date();
     const jstNow = new Date(now.getTime() + 9 * 3600 * 1000);
     const currentDay = jstNow.getUTCDay(); // 0(日)〜6(土)
     
-    // 直近の土曜日までの日数（日曜日の場合 6日後）
+    // 今週の土曜日までの日数（月曜日の場合 5日後）
     let diffToSaturday = (6 - currentDay + 7) % 7;
     if (diffToSaturday === 0 && jstNow.getUTCHours() >= 21) {
       diffToSaturday = 7; // すでに土曜21時を過ぎている場合は来週
     }
+    const diffToSunday = diffToSaturday + 1;
 
-    const targetDate = jstNow.getUTCDate() + diffToSaturday;
-    const startUtcMs = Date.UTC(jstNow.getUTCFullYear(), jstNow.getUTCMonth(), targetDate, 12, 0, 0, 0);
+    const satDate = jstNow.getUTCDate() + diffToSaturday;
+    const startSatUtcMs = Date.UTC(jstNow.getUTCFullYear(), jstNow.getUTCMonth(), satDate, 12, 0, 0, 0);
+    const satAtIso = new Date(startSatUtcMs).toISOString();
+    const satJst = new Date(startSatUtcMs + 9 * 3600 * 1000);
+    const satLabel = `${satJst.getUTCMonth() + 1}/${satJst.getUTCDate()}(土)`;
 
-    const startAtIso = new Date(startUtcMs).toISOString();
-    const startJstDate = new Date(startUtcMs + 9 * 3600 * 1000);
-    const dateLabel = `${startJstDate.getUTCMonth() + 1}/${startJstDate.getUTCDate()}(土)`;
+    const sunDate = jstNow.getUTCDate() + diffToSunday;
+    const startSunUtcMs = Date.UTC(jstNow.getUTCFullYear(), jstNow.getUTCMonth(), sunDate, 12, 0, 0, 0);
+    const sunJst = new Date(startSunUtcMs + 9 * 3600 * 1000);
+    const sunLabel = `${sunJst.getUTCMonth() + 1}/${sunJst.getUTCDate()}(日)`;
+
     const ownerId = CONFIG.ADMIN_ID;
     
-    // 2部屋統合用メタデータ
+    // 3部屋統合用メタデータ
     const metadata = {
       mode: '定期カスタム',
-      time: `${dateLabel} 21:00`,
-      maxCount: 20,
-      memo: `【定期カスタム】${dateLabel} 21:00 開催予定！下のボタンからご希望の部門に参加してください🎮`,
+      time: `${satLabel} & ${sunLabel} 21:00`,
+      maxCount: 30,
+      memo: `【定期カスタム】${satLabel}・${sunLabel} 21:00 開催予定！下のボタンからご希望の部門に参加してください🎮`,
       owner: ownerId,
       createdAt: new Date().toISOString(),
-      silverJoined: [],
-      goldJoined: [],
       names: { [ownerId]: 'KTM定期カスタム' }
     };
 
-    // 2部屋統合 Embed (プログレスバー付き初期状態)
-    const initialStatusText = `🔥 **【定期カスタム募集中！合計 0/20名】**\n🛡️ **シルバー以下 (ブラインド/MMRあり)**: \`[□□□□□□□□□□] 0/10名\` (あと**10**名)\n👑 **ゴルプラ (ドラフト/MMRあり)**: \`[□□□□□□□□□□] 0/10名\` (あと**10**名)\n※20:00時点で10名未満の部門は中止（ノーマル/メイヘム再募集）となります`;
+    // 3部屋統合 Embed (プログレスバー付き初期状態)
+    const initialStatusText = `🔥 **【週末定期カスタム募集中！合計 0/30名】**\n🛡️ **土曜・シルバー以下 (ブラインド/MMRあり)**: \`[□□□□□□□□□□] 0/10名\` (あと**10**名)\n👑 **土曜・ゴルプラ (ドラフト/MMRあり)**: \`[□□□□□□□□□□] 0/10名\` (あと**10**名)\n🎪 **日曜・お祭りカスタム (ランク不問/MMRなし)**: \`[□□□□□□□□□□] 0/10名\` (あと**10**名)\n※土曜は当日20:00時点で10名未満の部門は中止（ノーマル/メイヘム再募集）となります`;
 
     const embed = {
-      title: `⚔️ KTM 定期カスタム開催告知 [${dateLabel} 21:00]`,
-      description: `${initialStatusText}\n\n毎週末恒例の定期カスタム戦です！\n下のボタンを押すだけで参加エントリーできます（部門は名簿の代表MMRから自動振り分けされます）。\n\n💡 **1戦だけのスポット参加も大歓迎！途中抜け・交代も気軽に行えます。**\n💡 **希望レーンに変更がある方は、ポータルの「マイページ」より変更をお願いします！**`,
+      title: `⚔️ KTM 週末定期カスタム開催告知 [${satLabel}・${sunLabel} 21:00〜]`,
+      description: `${initialStatusText}\n\n毎週末恒例の定期カスタム戦です！\n下のボタンから参加したいカスタムにエントリーしてください（土曜は代表MMRから自動振り分け、日曜は誰でも参加OK！）。\n\n💡 **1戦だけのスポット参加・途中抜けも大歓迎！**\n💡 **希望レーンに変更がある方は、ポータルの「マイページ」より変更をお願いします！**`,
       color: 0xc89b3c, // 琥珀色
       fields: [
         {
-          name: `🛡️ 【シルバー以下部門】 (0/10名) 🔲 ブラインドピック (MMR変動あり)`,
+          name: `🛡️ 【土曜・シルバー以下部門】 (0/10名) 🔲 ブラインド (MMRあり)`,
           value: `▫ 参加者: なし\n※対象: 初心者〜シルバーレベル（MMR変動あり / 気軽に参加OK！）`,
           inline: false
         },
         {
-          name: `👑 【ゴルプラ部門】 (0/10名) ⚔️ ドラフトピック (MMR変動あり)`,
+          name: `👑 【土曜・ゴルプラ部門】 (0/10名) ⚔️ ドラフト (MMRあり)`,
           value: `▫ 参加者: なし\n※対象: ゴールド〜プラチナレベル（MMR変動あり）`,
+          inline: false
+        },
+        {
+          name: `🎪 【日曜・お祭り部門】 (0/10名) 🎲 ランク不問 (MMRなし)`,
+          value: `▫ 参加者: なし\n※対象: 全員OK！特殊ルール/ランダム/メイヘム等（MMR変動なし）`,
           inline: false
         }
       ],
-      footer: { text: `日時: ${dateLabel} 21:00〜 | 主催: KTM運営 | 1戦のみ参加OK` },
+      footer: { text: `開催: 土曜21:00〜 ＆ 日曜21:00〜 | 主催: KTM運営 | 1戦のみ参加OK` },
       timestamp: new Date().toISOString()
     };
 
-    // 参加ボタン
+    // 参加ボタン（土曜参加 / 日曜参加の2ボタン）
     const components = [
       {
         type: 1, // Action Row
         components: [
           {
             type: 2,
-            label: "🎮 参加する (あと各10名)",
+            label: "🎮 土曜カスタムに参加 (自動振り分け)",
             style: 1, // Primary (Blue)
             custom_id: "join_periodic_auto"
+          },
+          {
+            type: 2,
+            label: "🎪 日曜お祭りカスタムに参加",
+            style: 3, // Success (Green)
+            custom_id: "join_periodic_sunday"
           }
         ]
       }
@@ -491,7 +492,7 @@ async function postWeeklyRecruitment(env) {
       method: 'POST',
       headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        content: `📢 **【定期カスタム募集】${dateLabel} 21:00 開催！** 🔥 **【シルバー以下 あと10名 / ゴルプラ あと10名】** <@&${CONFIG.NOTIFICATION_ROLE_ID}>`,
+        content: `📢 **【週末定期カスタム募集】${satLabel}・${sunLabel} 21:00 開催！** <@&${CONFIG.NOTIFICATION_ROLE_ID}>`,
         embeds: [embed],
         components: components,
         allowed_mentions: { roles: [CONFIG.NOTIFICATION_ROLE_ID] }
@@ -510,14 +511,15 @@ async function postWeeklyRecruitment(env) {
       channelId: targetChannelId,
       ownerDiscordId: ownerId,
       mode: '定期カスタム',
-      maxCount: 20,
-      startAt: startAtIso,
+      maxCount: 30,
+      startAt: satAtIso,
     });
-    console.log(`[WeeklyRecruit] 2部屋統合定期カスタム募集を投稿しました (msg ${sent.id})`);
+    console.log(`[WeeklyRecruit] 3部屋統合定期カスタム募集を投稿しました (msg ${sent.id})`);
 
     try {
       const { fetchPortalAPI } = await import('../utils/api.js');
-      await fetchPortalAPI(env, '/api/push/notify-recruit', { mode: '定期カスタム', time: `${dateLabel} 21:00` }).catch(() => {});
+      await fetchPortalAPI(env, '/api/push/notify-recruit', { mode: '定期カスタム', time: `${satLabel} 21:00` }).catch(() => {});
+    } catch (e) {}
     } catch (e) {}
   } catch (err) {
     console.error('[WeeklyRecruit] error:', err);
@@ -643,6 +645,7 @@ async function sendEventUsersNotification(env, options = {}) {
     }
     let silverCount = 0;
     let goldCount = 0;
+    let sundayCount = 0;
 
     if (activeEmbed && activeEmbed.fields) {
       activeEmbed.fields.forEach(f => {
@@ -651,16 +654,16 @@ async function sendEventUsersNotification(env, options = {}) {
           silverCount = matches.length;
         } else if (f.name.includes("ゴルプラ")) {
           goldCount = matches.length;
+        } else if (f.name.includes("お祭り") || f.name.includes("日曜")) {
+          sundayCount = matches.length;
         }
       });
     }
 
-    // 色・状態フラグはutils/recruitmentStatus.jsの共通関数で計算する(#①)。
-    // 以前はこのファイル単独でembedColorを再実装しており、「募集中」の色コードが
-    // components.js側の0xc89b3c(琥珀色)とズレて0xe74c3c(赤)になっていた。
-    const recruitStatus = computeRecruitmentStatus(silverCount, goldCount);
+    const recruitStatus = computeRecruitmentStatus(silverCount, goldCount, sundayCount);
     const silverShortfall = recruitStatus.silverRem;
     const goldShortfall = recruitStatus.goldRem;
+    const sundayShortfall = recruitStatus.sundayRem;
     const totalJoined = recruitStatus.totalJoined;
 
     // 4. アナウンス Embed の作成（募集カードを完全同期 ＆ 参加者の希望レーンを自動付与）
@@ -705,11 +708,9 @@ async function sendEventUsersNotification(env, options = {}) {
                 const uId = uMatch[1];
                 const prefStr = prefMap.get(uId);
                 if (prefStr && !line.includes("【第1:")) {
-                  // すでに余分な【希望: 未設定】などの文字列が入っていれば除去してから付与
                   const cleanLine = line.replace(/【希望: [^】]+】/g, '').replace(/\*\(希望: [^\)]+\)\*/g, '').trim();
                   return `${cleanLine} ${prefStr}`;
                 } else if (!prefStr) {
-                  // 名簿に未登録のユーザーの場合は余計な未設定ラベルを消去
                   return line.replace(/【希望: [^】]+】/g, '').replace(/\*\(希望: [^\)]+\)\*/g, '').trim();
                 }
               }
@@ -724,48 +725,35 @@ async function sendEventUsersNotification(env, options = {}) {
     }
     
     if (!syncFields || syncFields.length === 0) {
-      // 同期元となる既存の募集カードが見つからない場合（新規募集サイクルの初回等）の初期状態。
       syncFields = [
-        { name: "📝 シルバー以下 (0名)", value: "「興味あり」を押しているプレイヤーはいません。", inline: false },
-        { name: "📝 ゴルプラ (0名)", value: "「興味あり」を押しているプレイヤーはいません。", inline: false }
+        { name: "🛡️ 【土曜・シルバー以下部門】 (0/10名)", value: "▫ 参加者: なし", inline: false },
+        { name: "👑 【土曜・ゴルプラ部門】 (0/10名)", value: "▫ 参加者: なし", inline: false },
+        { name: "🎪 【日曜・お祭り部門】 (0/10名)", value: "▫ 参加者: なし", inline: false }
       ];
     }
 
     const recruitLink = targetMessageId ? `\n\n👉 [元の募集メッセージを開く](https://discord.com/channels/${guildId}/${channelId}/${targetMessageId})` : '';
     const laneNote = `\n\n💡 **希望レーンに変更がある方は、ポータルの「マイページ」より事前に変更をお願いします！**`;
 
-    // 新方針: ゴルプラとシルバー以下は完全分離（混合は行わない）。20:00時点で10名未満は中止。
     const isAllReady = recruitStatus.isAllReady;
-    const isSilverReady = recruitStatus.isSilverReady;
-    const isGoldReady = recruitStatus.isGoldReady;
-    const isConfirmed = recruitStatus.isConfirmed;
-
     let statusMessage = '';
     if (isAllReady) {
-      statusMessage = `🎉 **両部門ともに開催確定！** 現在 **シルバー以下: ${silverCount}名 (ブラインド) / ゴルプラ: ${goldCount}名 (ドラフト)** エントリー済みです！このまま開催します。${laneNote}${recruitLink}`;
-    } else if (isSilverReady && !isGoldReady) {
-      statusMessage = `⚡ **シルバー以下部門 開催確定！** (10名達成 / ブラインドピック)\n👑 **ゴルプラ**: あと **${goldShortfall}名** (※20:00時点で10名未満の場合はゴルプラのみ中止しノーマル/メイヘムへ)${laneNote}${recruitLink}`;
-    } else if (!isSilverReady && isGoldReady) {
-      statusMessage = `⚡ **ゴルプラ部門 開催確定！** (10名達成 / ドラフトピック)\n🛡️ **シルバー以下**: あと **${silverShortfall}名** (※20:00時点で10名未満の場合はシルバー以下のみ中止しノーマル/メイヘムへ)${laneNote}${recruitLink}`;
+      statusMessage = `🎉 **週末の全3部門ともに開催確定！** 土曜（シルバー・ゴルプラ）＆ 日曜（お祭り）すべて10名達成しました！${laneNote}${recruitLink}`;
     } else {
-      statusMessage = `⚠️ **定期カスタム募集中！** 現在 **シルバー: ${silverCount}名 / ゴルプラ: ${goldCount}名** です。\n▫ 🛡️ シルバー以下 (ブラインド): あと **${silverShortfall}名**\n▫ 👑 ゴルプラ (ドラフト): あと **${goldShortfall}名**\n💡 **1戦だけのスポット参加も大歓迎！**\n※20:00時点で10名未満の部門はカスタム中止（ノーマル/メイヘム再募集）となります。${laneNote}${recruitLink}`;
+      statusMessage = `⚠️ **週末定期カスタム募集中！** 現在 **土曜シルバー: ${silverCount}名 / 土曜ゴルプラ: ${goldCount}名 / 日曜お祭り: ${sundayCount}名** です。\n▫ 🛡️ 土曜・シルバー以下 (ブラインド/MMRあり): あと **${silverShortfall}名**\n▫ 👑 土曜・ゴルプラ (ドラフト/MMRあり): あと **${goldShortfall}名**\n▫ 🎪 日曜・お祭りカスタム (ランク不問/MMRなし): あと **${sundayShortfall}名**\n💡 **1戦だけのスポット参加も大歓迎！**\n下のボタンからエントリーしてください！${laneNote}${recruitLink}`;
     }
     const embedColor = recruitStatus.color;
 
     const embed = {
-      title: activeEmbed ? activeEmbed.title : (isAdvanceNotice ? `📅 【定期】イベント 事前告知 🔔` : `📅 【定期】カスタム戦 参加メンバー状況`),
+      title: activeEmbed ? activeEmbed.title : `📅 【週末定期】カスタム戦 参加メンバー状況 🔔`,
       description: statusMessage,
       color: embedColor,
       fields: syncFields,
-      footer: { text: "KTM Bot | 募集カード同期アナウンス" },
+      footer: { text: "KTM Bot | 週末募集同期アナウンス" },
       timestamp: new Date().toISOString()
     };
 
-    // 二重投稿防止: Cloudflareのネイティブcron(20:00 JST)とGitHub Actionsの
-    // バックアップキック(20:15 JST、#85)が両方発火すると、このアナウンスだけ
-    // sendRecruitStatusNotificationと違って重複チェックが無く、15分違いで
-    // 同じ内容が2回届いていた(2026-08-08発覚)。直近1時間以内に同じタイトルの
-    // Bot投稿があればスキップする。
+    // 二重投稿防止: 直近1時間以内に同一タイトルのBot投稿があればスキップ
     try {
       const recentRes = await fetchWithRetry(
         `https://discord.com/api/v10/channels/${channelId}/messages?limit=10`,
@@ -794,20 +782,27 @@ async function sendEventUsersNotification(env, options = {}) {
           components: [
             {
               type: 2,
-              label: "🎮 参加する",
+              label: "🎮 土曜カスタムに参加 (自動振り分け)",
               style: 1, // Primary (Blue)
               custom_id: "join_periodic_auto"
+            },
+            {
+              type: 2,
+              label: "🎪 日曜お祭りカスタムに参加",
+              style: 3, // Success (Green)
+              custom_id: "join_periodic_sunday"
             }
           ]
         }
       ]
     };
 
-    if (!isConfirmed && roleId) {
+    if (!isAllReady && roleId) {
       let shortText = [];
-      if (silverShortfall > 0) shortText.push(`シルバー以下 あと${silverShortfall}名`);
-      if (goldShortfall > 0) shortText.push(`ゴルプラ あと${goldShortfall}名`);
-      messageBody.content = `<@&${roleId}> 🚨 **【${shortText.join(' / ')}】でカスタム開催です！** 参加できる方は下のボタンからエントリーをお願いします！`;
+      if (silverShortfall > 0) shortText.push(`土曜シルバー あと${silverShortfall}名`);
+      if (goldShortfall > 0) shortText.push(`土曜ゴルプラ あと${goldShortfall}名`);
+      if (sundayShortfall > 0) shortText.push(`日曜お祭り あと${sundayShortfall}名`);
+      messageBody.content = `<@&${roleId}> 📢 **【${shortText.join(' / ')}】で週末カスタム開催です！** 参加できる方は下のボタンからエントリーをお願いします！`;
       messageBody.allowed_mentions = { roles: [roleId] };
     }
 
