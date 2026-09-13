@@ -10,20 +10,13 @@ export async function POST(req: Request) {
 
     // ステータス指定（例: 'game1' | 'game2' | 'reset' | カスタム文字列）
     const botToken = process.env.DISCORD_BOT_TOKEN;
-    const channelId = customChannelId || process.env.DISCORD_CUSTOM_VC_ID || process.env.DISCORD_VOICE_CHANNEL_ID;
+    const channelId = customChannelId || process.env.DISCORD_CUSTOM_VC_ID || process.env.DISCORD_VOICE_CHANNEL_ID || '1548675524086472796';
 
     if (!botToken) {
       return NextResponse.json({
         success: false,
         error: 'DISCORD_BOT_TOKEN が環境変数に設定されていません。'
       }, { status: 500 });
-    }
-
-    if (!channelId) {
-      return NextResponse.json({
-        success: false,
-        error: '対象のDiscordボイスチャンネルID（DISCORD_CUSTOM_VC_ID）が環境変数に設定されていません。'
-      }, { status: 400 });
     }
 
     let newChannelName = '';
