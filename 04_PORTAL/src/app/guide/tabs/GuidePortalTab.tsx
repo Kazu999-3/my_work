@@ -181,6 +181,63 @@ export default function GuidePortalTab() {
           </div>
         </div>
 
+        {/* 5. 師弟マッチングハブ */}
+        <div className="bg-white rounded-3xl p-6 border border-stone-200 shadow-xs flex flex-col justify-between hover:border-amber-400 transition-all group col-span-1 md:col-span-2">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 font-bold text-2xl group-hover:scale-105 transition">
+                🤝
+              </div>
+              <span className="text-[11px] font-bold text-amber-800 bg-amber-100 px-2.5 py-1 rounded-full border border-amber-200">
+                新登場 ✨
+              </span>
+            </div>
+            <h3 className="text-base md:text-lg font-black text-stone-900">
+              師弟マッチングハブ（AI相性分析 ＆ 安心マッチング）
+            </h3>
+            <p className="text-stone-600 text-xs leading-relaxed">
+              教えたい師匠（Mentor）と学びたい弟子（Pupil）を繋ぐ公式掲示板です。AIがプレイスタイルや使用チャンプから相性を自動算出し、メッセージ付きの申請・承諾フローで安心してペアを結成できます。
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+              <div className="bg-stone-50 rounded-2xl p-3 border border-stone-200/80 text-xs text-stone-700 space-y-1">
+                <div className="font-bold text-stone-900 flex items-center gap-1 text-[11px]">
+                  <span>🎯</span> AI相性マッチング
+                </div>
+                <p className="text-[11px] text-stone-600">
+                  ロール・得意レーン・使用チャンピオンから相性スコア（60〜98%）をリアルタイム算出。
+                </p>
+              </div>
+              <div className="bg-stone-50 rounded-2xl p-3 border border-stone-200/80 text-xs text-stone-700 space-y-1">
+                <div className="font-bold text-stone-900 flex items-center gap-1 text-[11px]">
+                  <span>⚔️</span> 5大専門指導テーマ
+                </div>
+                <p className="text-[11px] text-stone-600">
+                  カイト、エンゲージ、ピール、ウェーブ管理など、実戦で勝てる専門スキルを細かく選択可能。
+                </p>
+              </div>
+              <div className="bg-stone-50 rounded-2xl p-3 border border-stone-200/80 text-xs text-stone-700 space-y-1">
+                <div className="font-bold text-stone-900 flex items-center gap-1 text-[11px]">
+                  <span>🪙</span> コインボーナス
+                </div>
+                <p className="text-[11px] text-stone-600">
+                  初回カード登録で即時 <strong className="text-amber-800">+500コイン</strong>、ペア成立で双方に <strong className="text-amber-800">+300コイン</strong> をプレゼント！
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="mt-4 pt-3 border-t border-stone-100 flex items-center justify-between">
+            <span className="text-[11px] text-stone-500 font-medium">
+              カードを登録して相性の良いバディを探してみましょう！
+            </span>
+            <Link
+              href="/mentorship"
+              className="text-xs font-black text-amber-700 hover:text-amber-900 flex items-center gap-1 group-hover:translate-x-1 transition"
+            >
+              師弟ハブへ移動 <ArrowRight size={13} />
+            </Link>
+          </div>
+        </div>
+
       </div>
     </div>
   );
